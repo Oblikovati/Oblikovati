@@ -318,8 +318,16 @@ func curvedWeldPins() []fingerprintPin {
 		// concave torus arm, the spiric station loft, the closed-rim weld routing, and the tube-band
 		// mesher, so any later slice touching those fails loud. Same cross-platform-risk caveat.
 		{"J5", 6757909.464672484435, 1181692, 0x21f4472585f96261, ""},
-		{"J3", 7395592.451696694829, 1115132, 0x60907356101f946a, ""},
-		{"A4", 15409136.952526209876, 1180684, 0xee50b6c93f5cf261, "bfuseblend"},
+		// J3/A4 REBASELINED 2026-09-08 (ADR-0061 stage 5): the tube-wrapping band loft was generalised
+		// from "two spiric ovals" to "two edges that each go the whole way round the tube", and it now
+		// claims these two hosts' torus faces before the denser CDT downstream of it does. Same geometry
+		// to five decimals — J3 7395243.913 against the old 7395592.452 (rel 4.7e-5), A4 15408786.198
+		// against 15409136.953 (rel 2.3e-5), both still watertight — at a THIRD of the triangles
+		// (1115132 → 340988, 1180684 → 406540). A loft that carries each boundary's exact edge
+		// discretisation and fills between them needs far fewer than a triangulation that re-covers the
+		// whole trim, and the volume says it loses nothing.
+		{"J3", 7395243.913186325692, 340988, 0xb3fcd06089a56c0c, ""},
+		{"A4", 15408786.198051279411, 406540, 0xc77a3a360368ed8d, "bfuseblend"},
 		{"A5", 117038179.720218241215, 788492, 0xcd9879937ec3c456, "bfuseblend"},
 		{"A6", 113037851.868033841252, 526348, 0xb5bf46a9e57af953, "bfuseblend"},
 		// M5 (simple): the notch-wall concave cove sign (W-DH capability wave). A box − quarter-cylinder

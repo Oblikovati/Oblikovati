@@ -4,38 +4,47 @@ package tessellate
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
-// spiricBandMesh meshes the v-wrapping torus BAND a plane parallel to the axis cuts through the central
-// hole (Oblikovati/Oblikovati#1375): the band swept around the tube between the two spiric ovals, the kept
-// side {g ≤ 0} (through u = Phi+π). The band wraps the tube seam, so toUVLoops can't chart it; instead it
-// lofts in u between the two oval edges — each boundary row is the EXACT discretization of its oval edge
-// (so it welds to that oval's planar lid), interior rows fill u between the two branches at the finer oval's
-// tube stations, and consecutive rows are stitched watertight by the shared band zipper. ok=false unless the
-// face is a torus carrying exactly the two oval (spiric) edges.
+// spiricBandMesh meshes a v-wrapping torus BAND: the strip swept around the tube between two edges that
+// each go the whole way round it. A plane parallel to the axis cutting through the central hole leaves
+// one, bounded by the two spiric ovals (Oblikovati/Oblikovati#1375); so does a ball swallowing a stretch
+// of the tube, bounded by two torus∩quadric sections (ADR-0061 stage 5). The band wraps the tube seam,
+// so toUVLoops cannot chart it; instead it lofts in u between the two edges — each boundary row is the
+// EXACT discretization of its edge, so it welds to whatever meets it there; interior rows fill u between
+// the branches at the finer edge's tube stations; and consecutive rows are stitched watertight by the
+// shared band zipper.
+//
+// What it accepts is the SHAPE, not the curve kind: a torus face with exactly two edges that each WRAP
+// the tube. That test is also the guard the spiric-only version needed for its own reason — an arc
+// fillet run out on a side plane at each end carries one QUARTER-tube spiric section per end, cut by two
+// different planes, and lofting between those sweeps the whole tube (measured on simple/W2, whose 0.418
+// band read 4.9146, 52% of the entire torus). Neither of those wraps, so neither reaches here.
 func spiricBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	t, isTorus := s.(geom.Torus)
 	if !isTorus {
 		return nil, false
 	}
-	plus, minus, ok := twoOvalEdges(f)
+	first, second, ok := tubeWrappingEdges(f, t, q)
 	if !ok {
 		return nil, false
 	}
 	m := &Mesh{}
-	lo := spiricRow(m, t, dropClosingDup(DiscretizeEdge(plus.edge, q)))
-	hi := spiricRow(m, t, dropClosingDup(DiscretizeEdge(minus.edge, q)))
+	lo := spiricRow(m, t, dropClosingDup(DiscretizeEdge(first, q)))
+	hi := spiricRow(m, t, dropClosingDup(DiscretizeEdge(second, q)))
 	if len(lo.idx) < 3 || len(hi.idx) < 3 {
 		return nil, false
 	}
-	span := spiricBandSpan(f.Chart(), plus.arc, minus.arc)
+	loU, hiU := branchAzimuthAt(m, t, first, lo), branchAzimuthAt(m, t, second, hi)
+	vs := finerRowVs(lo, hi)
+	dir := bandDirection(f.Chart(), loU, hiU, vs)
 	rows := []bandRow{lo}
-	rows = append(rows, spiricInteriorRows(m, t, plus.arc, minus.arc, finerRowVs(lo, hi), span, q)...)
+	rows = append(rows, tubeInteriorRows(m, t, loU, hiU, vs, dir, q)...)
 	rows = append(rows, hi)
 	for i := 0; i+1 < len(rows); i++ {
 		stitchBandRows(m, rows[i], rows[i+1])
@@ -43,47 +52,41 @@ func spiricBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	return m, true
 }
 
-// spiricEdge pairs an oval edge with its analytic SpiricArc (the +1 / −1 branch the band lofts between).
-type spiricEdge struct {
-	edge *topo.Edge
-	arc  geom.SpiricArc
-}
-
-// twoOvalEdges returns the face's two spiric OVAL edges, the +1 branch as plus and the −1 as minus.
-// ok=false unless exactly two spiric edges are present AND they are the two arccos roots of ONE section.
-//
-// ★ "of one section" is load-bearing, not tidiness. A torus face can carry two spiric edges that bound no
-// oval band at all: an ARC FILLET run out on a side plane at each END (fillet_arc_runout.go) carries one
-// quarter-tube section per end, cut by two DIFFERENT planes, and is closed by its two tangent circles.
-// Lofting between those sweeps the whole tube instead of the patch — measured on simple/W2, whose 0.418
-// band read 4.9146 (52% of the entire torus) until this guard.
-func twoOvalEdges(f *topo.Face) (plus, minus spiricEdge, ok bool) {
-	var arcs []spiricEdge
+// tubeWrappingEdges returns the face's two edges that each go the whole way round the TUBE, which is
+// what makes the face a band the loft can sweep. ok=false for any other count: one such edge bounds a
+// cap, none bounds an ordinary patch, and three or more is not a band.
+func tubeWrappingEdges(f *topo.Face, t geom.Torus, q Quality) (first, second *topo.Edge, ok bool) {
+	var wrapping []*topo.Edge
 	for _, e := range f.Edges() {
-		if a, isSpiric := e.Geometry().(geom.SpiricArc); isSpiric {
-			arcs = append(arcs, spiricEdge{edge: e, arc: a})
+		if edgeWrapsTheTube(t, DiscretizeEdge(e, q)) {
+			wrapping = append(wrapping, e)
 		}
 	}
-	if len(arcs) != 2 || !oppositeRootsOfOneSection(arcs[0].arc, arcs[1].arc) {
-		return plus, minus, false
+	if len(wrapping) != 2 {
+		return nil, nil, false
 	}
-	plus, minus = arcs[0], arcs[1]
-	if plus.arc.Branch < 0 {
-		plus, minus = minus, plus
-	}
-	return plus, minus, true
+	return wrapping[0], wrapping[1], true
 }
 
-// oppositeRootsOfOneSection reports whether two spiric arcs are the +1 and −1 arccos roots of the SAME
-// plane's section of the SAME torus — the pair that closes one spiric loop, and the only pair the band
-// loft is defined between.
-func oppositeRootsOfOneSection(a, b geom.SpiricArc) bool {
-	if a.Branch*b.Branch >= 0 {
+// edgeWrapsTheTube reports whether a discretised edge's NET turn around the tube is a whole period. It
+// is the net, so a chain that runs part way round and back — a quarter-tube fillet section, a cap's rim
+// — turns by less and is not a band boundary.
+func edgeWrapsTheTube(t geom.Torus, pts []math.Point3) bool {
+	if len(pts) < 3 {
 		return false
 	}
-	scale := stdmath.Max(1, a.Torus.MajorRadius)
-	return stdmath.Abs(a.Phi-b.Phi) < 1e-9 && stdmath.Abs(a.M-b.M) < 1e-9 &&
-		stdmath.Abs(a.C-b.C) < 1e-9 && stdmath.Abs(a.K-b.K) < 1e-9*scale
+	turn, prev := 0.0, vParam(t, pts[0])
+	for _, p := range pts[1:] {
+		v := unwrapNearAngle(prev, vParam(t, p))
+		turn, prev = turn+v-prev, v
+	}
+	return stdmath.Abs(turn) > stdmath.Pi // a net turn past a half period can only be the whole one
+}
+
+// unwrapNearAngle carries an angle onto the branch nearest a reference, so a walk of a periodic
+// coordinate accumulates its true turn instead of a saw-tooth.
+func unwrapNearAngle(ref, a float64) float64 {
+	return a - 2*stdmath.Pi*stdmath.Round((a-ref)/(2*stdmath.Pi))
 }
 
 // spiricRow adds a band row from exact 3D boundary points, keyed by each point's tube parameter v (so the
@@ -96,74 +99,189 @@ func spiricRow(m *Mesh, t geom.Torus, pts []math.Point3) bandRow {
 	return addRow(m, t, pts, ang)
 }
 
-// spiricBandSpan is the u-offset the loft crosses from the +1 branch to the −1 branch: +2π for the band
-// through u = Phi+π (the long way round the tube, the kept side of a cut through the hole), 0 for the lens
-// between the branches through u = Phi (the kept side of an intersect). The FACE says which, through its
-// chart (ADR-0063): the row's midpoint the long way is either in the trim or it is not. A face without a
-// chart takes the long way, which is the side this loft always assumed — and assumed wrongly for the
-// lens, whose mesh then covered the band on the far side of the tube (ADR-0061 stage 4).
-func spiricBandSpan(chart [][]math.Point2, plus, minus geom.SpiricArc) float64 {
-	if len(chart) == 0 {
-		return 2 * stdmath.Pi
+// branchAzimuthAt returns the azimuth one boundary reaches at any tube station. A spiric oval carries a
+// closed form for it and keeps it: the interior rows are then exact where they were before, which is
+// what the figure-eight pinch needs — its band closes to zero width at the tangency, and a boundary
+// read from samples rounds that corner. Any other section curve has no such form, and the row IS the
+// edge's agreed discretisation — the same points whatever meets the edge meshes — so interpolating it
+// keeps the loft's interior consistent with the boundary the mesh actually carries.
+func branchAzimuthAt(m *Mesh, t geom.Torus, e *topo.Edge, row bandRow) func(float64) float64 {
+	if arc, isSpiric := e.Geometry().(geom.SpiricArc); isSpiric {
+		return arc.UAt
 	}
-	v := (plus.V0 + plus.V1) / 2
-	uLo, uHi := plus.UAt(v), minus.UAt(v)+2*stdmath.Pi
-	if chartHoldsUV(chart, (uLo+uHi)/2, v, 2*stdmath.Pi, 2*stdmath.Pi) {
-		return 2 * stdmath.Pi
-	}
-	return 0
+	return sampledAzimuthAt(m, t, row)
 }
 
-// chartHoldsUV is the even-odd test of a parameter point against a chart's closed contours, the point
-// first carried onto each contour's own branch of the periodic axes.
-func chartHoldsUV(chart [][]math.Point2, u, v, uPeriod, vPeriod float64) bool {
-	inside := false
+// sampledAzimuthAt reads a boundary's azimuth from its own row samples.
+func sampledAzimuthAt(m *Mesh, t geom.Torus, row bandRow) func(float64) float64 {
+	us := make([]float64, len(row.idx))
+	for i, ix := range row.idx {
+		us[i], _ = t.ParamAt(m.Positions[ix])
+	}
+	return azimuthInterpolator(append([]float64(nil), row.ang...), us)
+}
+
+// azimuthInterpolator interpolates u over the tube period from a boundary's (v, u) samples. Both axes
+// are periodic, so the stations are read as a closed ring and each u is carried onto the branch nearest
+// its predecessor before interpolating — a boundary crossing the azimuth seam is one curve, not a jump.
+func azimuthInterpolator(vs, us []float64) func(float64) float64 {
+	if len(vs) == 0 {
+		return func(float64) float64 { return 0 }
+	}
+	order := ringOrderByAngle(vs)
+	sv, su := make([]float64, len(order)), make([]float64, len(order))
+	for i, k := range order {
+		sv[i] = vs[k]
+		su[i] = us[k]
+		if i > 0 {
+			su[i] = unwrapNearAngle(su[i-1], su[i])
+		}
+	}
+	return func(v float64) float64 { return interpolateOnRing(sv, su, wrapToPeriod(v)) }
+}
+
+// interpolateOnRing reads the ring's value at station v, the stations taken as a closed cycle so the
+// segment spanning the seam is one segment like any other. Each segment's far end is carried onto the
+// branch nearest its near end, so the interpolation follows the curve instead of averaging across a
+// whole turn.
+func interpolateOnRing(sv, su []float64, v float64) float64 {
+	for i := range sv {
+		lo, hi := sv[i], sv[(i+1)%len(sv)]
+		if hi < lo {
+			hi += 2 * stdmath.Pi
+		}
+		w := v
+		if w < lo {
+			w += 2 * stdmath.Pi
+		}
+		if w > hi {
+			continue
+		}
+		if hi == lo {
+			return su[i]
+		}
+		far := unwrapNearAngle(su[i], su[(i+1)%len(su)])
+		return su[i] + (far-su[i])*(w-lo)/(hi-lo)
+	}
+	return su[0]
+}
+
+// ringOrderByAngle returns the indices of vs in ascending angle, each folded onto one period.
+func ringOrderByAngle(vs []float64) []int {
+	order := make([]int, len(vs))
+	for i := range order {
+		order[i] = i
+	}
+	sort.SliceStable(order, func(i, j int) bool {
+		return wrapToPeriod(vs[order[i]]) < wrapToPeriod(vs[order[j]])
+	})
+	return order
+}
+
+// wrapToPeriod folds an angle onto [0, 2π).
+func wrapToPeriod(a float64) float64 {
+	a = stdmath.Mod(a, 2*stdmath.Pi)
+	if a < 0 {
+		a += 2 * stdmath.Pi
+	}
+	return a
+}
+
+// bandDirection is which way round the tube the loft travels from the first boundary to the second:
+// +1 forward in u, −1 backward. Those are the only two candidates, and they are the two bands the pair
+// of boundaries bounds — the strip directly between them and the band the other way round. The FACE
+// says which, through its chart (ADR-0063), and it says it by AREA: the chart's own (u,v) area over the
+// tube period is the mean azimuth width of the region the face covers, and the forward band's mean
+// width plus the backward band's is exactly one period.
+//
+// Area rather than a containment test, because the complement band WRAPS the azimuth and the chart
+// records it as two contours split at the chart's own seam. An even-odd test then has to fold the query
+// onto each contour's branch separately, and a point can land inside both — which reads as outside, and
+// sent every cut and union round the short way (ADR-0061 stage 5).
+//
+// A face without a chart travels forward, which is the direction the spiric-only loft always took.
+func bandDirection(chart [][]math.Point2, loU, hiU func(float64) float64, vs []float64) float64 {
+	if len(chart) == 0 || len(vs) == 0 {
+		return 1
+	}
+	forward := meanBandWidth(loU, hiU, vs, 1)
+	want := chartMeanWidth(chart)
+	if stdmath.Abs(want-forward) <= stdmath.Abs(want-(2*stdmath.Pi-forward)) {
+		return 1
+	}
+	return -1
+}
+
+// bandWidthAt is how far to travel in u from the first boundary to the second in the given direction —
+// the gap folded onto ONE period and signed by dir, so every station crosses the SAME band.
+//
+// Folding is what makes it safe: an azimuth read from a boundary's own samples carries an arbitrary
+// whole turn (the samples were unwrapped along the curve), so a raw difference can be a period out at
+// one station and not at the next. The loft then varies its width by 2π across the band and covers the
+// tube more than once — measured as 636 mm³ on a torus of 395 (ADR-0061 stage 5).
+func bandWidthAt(loU, hiU func(float64) float64, v, dir float64) float64 {
+	forward := wrapToPeriod(hiU(v) - loU(v))
+	if dir > 0 {
+		return forward
+	}
+	// The backward travel is the REST of the period, which is a period when the two boundaries meet.
+	// Folding the reversed difference instead would answer zero there, and the band would collapse at
+	// exactly the station where it is widest: the figure-eight's two ovals touch at their tangency, and
+	// the complement band goes the whole way round the tube precisely there (ADR-0061 stage 5).
+	return forward - 2*stdmath.Pi
+}
+
+// meanBandWidth is the mean magnitude of that travel over the boundary's own stations.
+func meanBandWidth(loU, hiU func(float64) float64, vs []float64, dir float64) float64 {
+	sum := 0.0
+	for _, v := range vs {
+		sum += stdmath.Abs(bandWidthAt(loU, hiU, v, dir))
+	}
+	return sum / float64(len(vs))
+}
+
+// chartMeanWidth is the chart's own (u,v) area spread over the tube period — the mean azimuth width of
+// the region the face actually covers, which is what the two candidate bands are compared against.
+func chartMeanWidth(chart [][]math.Point2) float64 {
+	area := 0.0
 	for _, contour := range chart {
 		if len(contour) < 3 {
 			continue
 		}
-		cu, cv := 0.0, 0.0
-		for _, p := range contour {
-			cu, cv = cu+float64(p.X), cv+float64(p.Y)
+		sum := 0.0
+		for i := range contour {
+			a, b := contour[i], contour[(i+1)%len(contour)]
+			sum += float64(a.X*b.Y - b.X*a.Y)
 		}
-		cu, cv = cu/float64(len(contour)), cv/float64(len(contour))
-		qu := u - uPeriod*stdmath.Round((u-cu)/uPeriod)
-		qv := v - vPeriod*stdmath.Round((v-cv)/vPeriod)
-		if probe.PointInLoop2D(math.P2(qu, qv), contour) {
-			inside = !inside
-		}
+		area += stdmath.Abs(sum / 2)
 	}
-	return inside
+	return area / (2 * stdmath.Pi)
 }
 
-// spiricInteriorRows builds the interior loft rows: at each u-fraction between the branches, fill u from the
-// +1 branch to the −1 branch offset by span (+2π: the long way, through u = Phi+π; 0: the lens between
-// them) at the given tube stations vs. The rows always run in the sense of increasing u from the first
-// row, so the zipper winds them alike whichever side is meshed.
-func spiricInteriorRows(m *Mesh, t geom.Torus, plus, minus geom.SpiricArc, vs []float64, span float64, q Quality) []bandRow {
-	nCols := spiricBandColumns(plus, minus, span, q)
+// tubeInteriorRows builds the interior loft rows: at each fraction of the way across the band, fill u
+// from the first boundary toward the second in the chosen direction, at the given tube stations. The
+// rows always run the same way from the first row, so the zipper winds them alike.
+func tubeInteriorRows(m *Mesh, t geom.Torus, loU, hiU func(float64) float64, vs []float64, dir float64, q Quality) []bandRow {
+	nCols := tubeBandColumns(loU, hiU, vs, dir, q)
 	rows := make([]bandRow, 0, nCols-1)
 	for k := 1; k < nCols; k++ {
 		frac := float64(k) / float64(nCols)
 		pts := make([]math.Point3, len(vs))
 		for i, v := range vs {
-			uLo := plus.UAt(v)
-			uHi := minus.UAt(v) + span
-			pts[i] = t.PointAt(uLo+frac*(uHi-uLo), v)
+			pts[i] = t.PointAt(loU(v)+frac*bandWidthAt(loU, hiU, v, dir), v)
 		}
 		rows = append(rows, addRow(m, t, pts, vs))
 	}
 	return rows
 }
 
-// spiricBandColumns picks the loft column count from the band's widest u-span and the angular tolerance, so
-// even the wide ( |K|/M small ) band is faceted to the chord deflection.
-func spiricBandColumns(plus, minus geom.SpiricArc, span float64, q Quality) int {
+// tubeBandColumns picks the loft column count from the band's widest travel and the angular tolerance,
+// so even a wide band is faceted to the chord deflection.
+func tubeBandColumns(loU, hiU func(float64) float64, vs []float64, dir float64, q Quality) int {
 	var maxSpan float64
-	for k := range 8 {
-		v := 2 * stdmath.Pi * float64(k) / 8
-		if s := stdmath.Abs(minus.UAt(v) + span - plus.UAt(v)); s > maxSpan {
-			maxSpan = s
+	for _, v := range vs {
+		if w := stdmath.Abs(bandWidthAt(loU, hiU, v, dir)); w > maxSpan {
+			maxSpan = w
 		}
 	}
 	if n := int(stdmath.Ceil(maxSpan / q.AngleTol())); n > 2 {
@@ -173,7 +291,7 @@ func spiricBandColumns(plus, minus geom.SpiricArc, span float64, q Quality) int 
 }
 
 // finerRowVs returns the tube parameters of whichever boundary row has more samples — the interior loft
-// rows reuse them so a clean quad strip forms against the finer oval (the other zips).
+// rows reuse them so a clean quad strip forms against the finer boundary (the other zips).
 func finerRowVs(a, b bandRow) []float64 {
 	if len(a.ang) >= len(b.ang) {
 		return a.ang

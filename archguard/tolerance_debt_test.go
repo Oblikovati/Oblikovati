@@ -146,7 +146,6 @@ var toleranceDebt = map[string]int{
 	"ops/tessellate/sphere_seamed_cap_mesh.go":    1,
 	"ops/tessellate/sphere_zone_band_mesh.go":     2,
 	"ops/tessellate/sphere_zone_mesh.go":          1,
-	"ops/tessellate/spiric_band_mesh.go":          2,
 	"ops/tessellate/tessellate_rectilinear.go":    1,
 	"ops/tessellate/tessellate_wedge_band.go":     5,
 	"ops/tessellate/union_holes.go":               1,

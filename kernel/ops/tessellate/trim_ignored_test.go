@@ -37,10 +37,16 @@ func hasIgnoredTrim(t *testing.T, b *topo.Body) bool {
 	return false
 }
 
-// TestADiscardedTrimIsReported: the ring∩ball lens is a torus band wrapping the tube between two
-// section curves. No mesher charts it, so the router meshes the whole torus — 227 mm³ where the face
-// carries 24 — and the body must report the degradation.
-func TestADiscardedTrimIsReported(t *testing.T) {
+// TestATubeWrappingBandMeshesItsOwnRegion: a ball swallowing a stretch of a ring's tube leaves a band
+// that WRAPS the tube between two torus∩quadric sections. Nothing charted it before — the router meshed
+// the whole torus, 227 mm³ where the intersection carries 24 — and the band loft now does, because what
+// it accepts is the SHAPE (a torus face with two edges that each go the whole way round the tube)
+// rather than the curve kind its boundaries happen to be.
+//
+// Both sides of the same section are asserted, because the loft has to choose WHICH of the two bands
+// the boundaries bound is the face's, and choosing wrong is invisible in one of them alone: the cut and
+// the intersect are complementary, so a mesher that always takes the same side meshes them identically.
+func TestATubeWrappingBandMeshesItsOwnRegion(t *testing.T) {
 	t.Parallel()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
@@ -50,16 +56,59 @@ func TestADiscardedTrimIsReported(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ball: %v", err)
 	}
-	lens, err := ops.Boolean(ops.Intersect, ring, ball)
+	for _, c := range []struct {
+		name string
+		op   ops.PartFeatureOperation
+		want float64 // the analytic volume, from the boolean's own certified corpus
+	}{
+		{"ring ∩ ball", ops.Intersect, 23.86935},
+		{"ring − ball", ops.Cut, 198.19675},
+	} {
+		body, err := ops.Boolean(c.op, ring, ball)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		mesh, _ := tessellate.TessellateBody(body, ops.DefaultQuality())
+		if free := tessellate.FreeEdgeCount(mesh); free != 0 {
+			t.Errorf("%s meshed with %d free edges, want a watertight mesh", c.name, free)
+		}
+		if hasIgnoredTrim(t, body) {
+			t.Errorf("%s reported a discarded trim; the band loft charts it now", c.name)
+		}
+		// A chord deficit at this quality is a couple of percent — the bare torus's own is 1.3%. What
+		// this separates it from is the WRONG band, which misses by a factor.
+		got := tessellate.MeshGeometryProperties(mesh).Volume
+		if rel := stdmath.Abs(got-c.want) / c.want; rel > 0.05 {
+			t.Errorf("%s meshes to %.5f against an analytic %.5f (rel %.4f); that is not a chord deficit",
+				c.name, got, c.want, rel)
+		}
+	}
+}
+
+// TestADiscardedTrimIsReported: a ring bored by a COAXIAL shaft leaves two bands that wrap the ring's
+// azimuth rather than its tube, and no mesher charts those. The router meshes the whole torus and the
+// body must report the degradation — which is what keeps the gap visible until the chart-driven mesher
+// covers it.
+func TestADiscardedTrimIsReported(t *testing.T) {
+	t.Parallel()
+	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
-		t.Fatalf("ring ∩ ball: %v", err)
+		t.Fatalf("ring: %v", err)
+	}
+	shaft, err := brep.SolidCylinder(math.P3(0, 0, -4), math.V3(0, 0, 1), 4, 8)
+	if err != nil {
+		t.Fatalf("shaft: %v", err)
+	}
+	bored, err := ops.Boolean(ops.Cut, ring, shaft)
+	if err != nil {
+		t.Fatalf("ring − coaxial shaft: %v", err)
 	}
 	// The B-rep is right — that is the point of reporting the MESH rather than refusing the boolean.
-	if v := ops.Validate(lens); !v.Valid || !v.Closed || !v.Manifold {
-		t.Fatalf("the lens B-rep is not a valid closed manifold solid: %+v", v)
+	if v := ops.Validate(bored); !v.Valid || !v.Closed || !v.Manifold {
+		t.Fatalf("the bored ring's B-rep is not a valid closed manifold solid: %+v", v)
 	}
-	if !hasIgnoredTrim(t, lens) {
-		t.Error("the lens meshed over the torus's whole domain without recording the discarded trim")
+	if !hasIgnoredTrim(t, bored) {
+		t.Error("the bored ring meshed over the torus's whole domain without recording the discarded trim")
 	}
 }
 

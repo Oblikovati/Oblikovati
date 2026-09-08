@@ -2284,6 +2284,56 @@ each face from the `(u, v)` contours the boolean already records on it (ADR-0063
 — the lens came back at 23.15 against 23.87, a 3% chord deficit like any other face. But it broke
 watertightness everywhere it touched, because a face's boundary must be discretised identically on both
 sides of every shared edge, and the chart's own sampling is not the tessellated edge's. So the mesher
-has to take the REGION from the chart and the POINTS from the shared edges — mapping each tessellated
-boundary point into the chart's branch rather than re-sampling the contour. That is the next slice, and
-it is what retires the ladder.
+has to take the REGION from the chart and the POINTS from the shared edges.
+
+### The tube-wrapping band, generalised
+
+One family already had a mesher built that way, and generalising it takes the lens with it. The spiric
+band loft meshes the strip a plane parallel to the axis leaves swept around the tube: each boundary row
+is the EXACT discretisation of its edge (so it welds to whatever meets it there) and only the interior
+rows are lofted. What it would not take was any boundary that is not a `SpiricArc` — it asked whether
+two spiric arcs were the opposite roots of ONE plane's section, which is a question about curve KIND.
+
+It now asks about the SHAPE: a torus face with exactly two edges that each go the whole way round the
+tube. That test also subsumes the guard the old one needed for its own reason — an arc fillet run out on
+a side plane at each end carries one QUARTER-tube section per end, and lofting between those sweeps the
+whole tube (measured on simple/W2, whose 0.418 band read 4.9146). Neither wraps, so neither reaches it.
+
+| body | before | after |
+| --- | --- | --- |
+| ring ∩ ball | 852% high, 64 free edges | **1.3% chord deficit, watertight** |
+| ring − ball | 6.5% high, 64 free edges | **1.1% chord deficit, watertight** |
+| torus − box (two-oval band) | 1.1% low | unchanged |
+| torus − box (figure-eight pinch) | 4.4% low | unchanged |
+
+Three things had to be right, and each was wrong first:
+
+- **Which of the two bands.** A pair of tube-wrapping boundaries bounds two, and they are
+  complementary — so a loft that always takes the same one meshes a cut and its intersect IDENTICALLY,
+  which is what the spiric-only version did (both came back 246.6967 on a torus of 394.78). The chart
+  decides it, by AREA rather than by containment: the chart's own (u,v) area over the tube period is the
+  region's mean azimuth width, and the two candidates' widths sum to a period. Containment cannot answer
+  it, because the complement band wraps the azimuth and the chart records it as two contours split at
+  its own seam; an even-odd test folds the query onto each contour's branch separately and a point can
+  land inside BOTH, which reads as outside.
+- **The width must be folded onto one period at every station.** An azimuth read from a boundary's own
+  samples carries an arbitrary whole turn, so a raw difference is a period out at one station and not
+  the next; the loft then varied its width by 2π and covered the tube more than once — 636 mm³ on a
+  torus of 395.
+- **The backward travel is the REST of the period, not the folded reverse difference.** They differ by
+  exactly one case, and it is the one that matters: where the two boundaries MEET, the forward gap is
+  zero and the backward travel is a whole period. Folding the reversed difference answers zero there and
+  the band collapses at precisely the station where it is widest — the figure-eight's tangency, which
+  came back with 67 free edges.
+
+It also reaches two bodies that already had a mesher: J3 and A4, the spiric closed-rim canal hosts, whose
+torus faces the loft now claims before the denser triangulation downstream of it does. Same geometry to
+five decimal places — J3 7 395 243.913 against 7 395 592.452, A4 15 408 786.198 against 15 409 136.953,
+both still watertight — at **a third of the triangles** (1 115 132 → 340 988 and 1 180 684 → 406 540). A
+loft that carries each boundary's exact edge discretisation and fills between them needs far fewer than a
+triangulation that re-covers the whole trim, and the volumes say it loses nothing. Their byte-identity
+fingerprints are rebaselined with that measurement beside them.
+
+What is left on the full-domain path is a band wrapping the ring's AZIMUTH rather than its tube (a
+coaxial shaft bored through a ring), and the sphere and cylinder faces of the folded-window family.
+`CodeTrimIgnoredFullDomain` reports each of them.

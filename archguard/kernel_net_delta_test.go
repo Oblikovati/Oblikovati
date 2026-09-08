@@ -47,7 +47,12 @@ var kernelNetDeltaPin = map[string]int{
 	// 226 → 216 (2026-09-07, ADR-0061 stage 4): a FALL of 10 — the deleted recognizer drivers carried
 	// their own calibrated tolerances (the corner-junction weld, the scallop and boss wall snaps, the
 	// cap-crossing corner bracket), and the general pipeline reads the model-relative resolution instead.
-	"tolerance-constants": 216,
+	// 216 → 214 (2026-09-08, ADR-0061 stage 5): a FALL — the torus band loft's two calibrated spiric
+	// coefficients went with the guard that used them. It accepted a pair of boundaries by asking
+	// whether two spiric arcs were the opposite roots of ONE plane's section, which needed a tolerance
+	// on each coefficient; it now asks whether each boundary goes the whole way round the tube, which
+	// is a NET turn against half a period and needs none.
+	"tolerance-constants": 214,
 	// 765 → 754 (2026-09-05, ADR-0061 stage 2): a FALL — the analytic half-space pipeline is deleted,
 	// and its per-primitive dispatch took eleven geometry-kind assertions with it.
 	// 754 → 746 (2026-09-06, ADR-0061 stage 4): a FALL — restricting an edge's curve to its own
