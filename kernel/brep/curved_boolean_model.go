@@ -29,6 +29,11 @@ type loopEdge struct {
 	// (imprint/split), which facesOf never sees; start()/end() keep using PointAt so the curved
 	// pipeline is unchanged (ADR-0058 blocker-3 resolution).
 	v0, v1 math.Point3
+	// source is the topo edge this traversal walks, set by orientedLoopEdge and carried through every
+	// cut of it (splitEdgeAtPoints, reverseEdge); nil on a SYNTHESIZED edge. It is the edge's IDENTITY,
+	// which the curve cannot be: two loop edges can carry equal curves that are two edges, and a value
+	// Polyline curve cannot be compared at all (final fix wave, finding 3).
+	source *topo.Edge
 }
 
 // start and end return the loop-oriented endpoints of the edge, evaluated on the curve.
@@ -148,14 +153,14 @@ func orientedLoopEdge(u *topo.EdgeUse) loopEdge {
 	lo, hi := c.Domain()
 	if e.StartVertex() == e.EndVertex() {
 		if u.Reversed() {
-			return loopEdge{curve: c, t0: hi, t1: lo, v0: p0, v1: p1}
+			return loopEdge{curve: c, t0: hi, t1: lo, v0: p0, v1: p1, source: e}
 		}
-		return loopEdge{curve: c, t0: lo, t1: hi, v0: p0, v1: p1}
+		return loopEdge{curve: c, t0: lo, t1: hi, v0: p0, v1: p1, source: e}
 	}
 	t0, _ := geom.CurveParamAtPoint3(c, e.StartVertex().Point())
 	t1, _ := geom.CurveParamAtPoint3(c, e.EndVertex().Point())
 	if u.Reversed() {
-		return loopEdge{curve: c, t0: t1, t1: t0, v0: p0, v1: p1}
+		return loopEdge{curve: c, t0: t1, t1: t0, v0: p0, v1: p1, source: e}
 	}
-	return loopEdge{curve: c, t0: t0, t1: t1, v0: p0, v1: p1}
+	return loopEdge{curve: c, t0: t0, t1: t1, v0: p0, v1: p1, source: e}
 }

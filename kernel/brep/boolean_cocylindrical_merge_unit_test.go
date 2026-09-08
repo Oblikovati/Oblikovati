@@ -79,41 +79,111 @@ func TestSharedEdgeTwinsPairsWholeEdgesOnly(t *testing.T) {
 	}
 }
 
-// TestDropSeamSlitsRemovesACurveWalkedBothWays: a seam the dissolve orphans bounds nothing, and a loop
+// seamWalkedWall is a cylinder wall whose ONE outer loop walks its seam twice — bottom rim, seam up,
+// top rim, seam down — with the seam's curve chosen by the caller: the slit shape dropSeamSlits exists
+// for, built through the topo builder so every loop edge carries its source edge as the merge sees it.
+// twoSeams builds the down traversal on a SECOND edge along the same curve, which is two edges and not a
+// slit whatever their curves look like.
+func seamWalkedWall(t *testing.T, seam func(a, b math.Point3) geom.Curve3, twoSeams bool) []loopEdge {
+	t.Helper()
+	const r, h = 2.0, 4.0
+	bottom, _ := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), r)
+	top := geom.Circle{Center: math.P3(0, 0, h), Normal: bottom.Normal, RefDir: bottom.RefDir, Radius: r}
+	side, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), r)
+	lin := func(role string, i int) topo.Lineage { return topo.NewLineage(topo.Tok("slit", role, i)) }
+	bld := topo.NewBuilder(true, lin("body", 0))
+	vb, vt := bld.AddVertex(bottom.PointAt(0), lin("v", 0)), bld.AddVertex(top.PointAt(0), lin("v", 1))
+	eb, et := bld.AddEdge(bottom, vb, vb, lin("e", 0)), bld.AddEdge(top, vt, vt, lin("e", 1))
+	up := bld.AddEdge(seam(vb.Point(), vt.Point()), vb, vt, lin("e", 2))
+	down := up
+	if twoSeams {
+		down = bld.AddEdge(seam(vb.Point(), vt.Point()), vb, vt, lin("e", 3))
+	}
+	f := bld.AddFace(side, lin("f", 0), topo.OuterLoop(topo.Fwd(eb), topo.Fwd(up), topo.Rev(et), topo.Rev(down)))
+	return loopEdgesOf(f.Loops()[0])
+}
+
+// straightSeam is the ordinary seam: one line segment.
+func straightSeam(a, b math.Point3) geom.Curve3 { return geom.NewLineSegment(a, b) }
+
+// polylineSeam is a seam carried as a VALUE polyline — the kind a marched section leaves on an edge, and
+// the kind `==` panics on.
+func polylineSeam(a, b math.Point3) geom.Curve3 {
+	return geom.Polyline{Vertices: []math.Point3{a, math.P3(a.X, a.Y, (a.Z+b.Z)/2), b}}
+}
+
+// TestDropSeamSlitsRemovesAnEdgeWalkedBothWays: a seam the dissolve orphans bounds nothing, and a loop
 // that is nothing but that slit disappears with it.
-func TestDropSeamSlitsRemovesACurveWalkedBothWays(t *testing.T) {
+func TestDropSeamSlitsRemovesAnEdgeWalkedBothWays(t *testing.T) {
 	t.Parallel()
-	seg := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(0, 0, 1))
-	circle := geom.Circle{Center: math.P3(0, 0, 0), Normal: math.V3(0, 0, 1).AsUnit(),
-		RefDir: math.V3(1, 0, 0).AsUnit(), Radius: 2}
-	up, down := loopEdge{curve: seg, t0: 0, t1: 1}, loopEdge{curve: seg, t0: 1, t1: 0}
-	rim := loopEdge{curve: circle, t0: 0, t1: 1}
+	edges := seamWalkedWall(t, straightSeam, false) // rim, up, rim, down
+	rim, up, down := edges[0], edges[1], edges[3]
 	got := dropSeamSlits([]curvedLoop{{edges: []loopEdge{up, down, rim}}, {edges: []loopEdge{up, down}}})
 	if len(got) != 1 || len(got[0].edges) != 1 {
 		t.Fatalf("dropSeamSlits gave %v, want one loop of one edge (the rim)", got)
 	}
-	if got[0].edges[0].curve != circle {
+	if got[0].edges[0].source != rim.source {
 		t.Error("dropSeamSlits kept the wrong edge")
 	}
 }
 
-// TestIsReverseTwinIsExact: the slit test compares the curve and the SWAPPED span, never a distance.
-// Curve equality is by value, which is the right question — one curve walked back over exactly the same
-// span IS a slit, whichever loop copy carries it — while a curve of a different shape, or the same
-// curve over a different span, is a boundary and stays.
-func TestIsReverseTwinIsExact(t *testing.T) {
+// TestIsReverseTwinReadsTheEdgeIdentity: the slit test compares the source EDGE and the SWAPPED span,
+// never a distance and never the curve's value. One edge walked back over exactly the same span IS a
+// slit; the same edge over a different span is a boundary and stays; and two edges carrying equal
+// curves are two edges — a synthesized copy of the seam's curve is nobody's twin.
+func TestIsReverseTwinReadsTheEdgeIdentity(t *testing.T) {
 	t.Parallel()
-	seg := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(0, 0, 1))
-	other := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(0, 1, 0))
-	up := loopEdge{curve: seg, t0: 0, t1: 1}
-	if !isReverseTwin(up, loopEdge{curve: seg, t0: 1, t1: 0}) {
-		t.Error("one segment walked both ways is not reported as a slit")
+	edges := seamWalkedWall(t, straightSeam, false)
+	up, down := edges[1], edges[3]
+	if !isReverseTwin(up, down) {
+		t.Error("one edge walked both ways is not reported as a slit")
 	}
-	if isReverseTwin(up, loopEdge{curve: seg, t0: 0.5, t1: 0}) {
+	if isReverseTwin(up, loopEdge{curve: down.curve, t0: (down.t0 + down.t1) / 2, t1: down.t1, source: down.source}) {
 		t.Error("a partial reverse run was reported as a slit")
 	}
-	if isReverseTwin(up, loopEdge{curve: other, t0: 1, t1: 0}) {
-		t.Error("a different curve was reported as this seam's other side")
+	if isReverseTwin(up, loopEdge{curve: down.curve, t0: down.t0, t1: down.t1}) {
+		t.Error("a synthesized edge carrying the seam's curve was reported as the seam's other side")
+	}
+	if isReverseTwin(loopEdge{curve: up.curve, t0: up.t0, t1: up.t1}, loopEdge{curve: down.curve, t0: down.t0, t1: down.t1}) {
+		t.Error("two source-less edges were reported as twins of one another")
+	}
+}
+
+// TestASlitOfValuePolylinesDropsWithoutAPanic is the regression row for finding 3 of the final fix
+// wave: `a.curve == b.curve` on two value Polylines is a run-time panic ("comparing uncomparable type
+// geom.Polyline"), and a marched section leaves exactly that on an edge. A seam carried as a value
+// polyline and walked both ways must still drop; two DIFFERENT polyline edges beside one another must
+// stay — and neither may panic.
+func TestASlitOfValuePolylinesDropsWithoutAPanic(t *testing.T) {
+	t.Parallel()
+	one := seamWalkedWall(t, polylineSeam, false)
+	if got := withoutSlitPairs([]loopEdge{one[1], one[3]}); len(got) != 0 {
+		t.Errorf("a polyline seam walked both ways left %d edge(s), want the slit gone", len(got))
+	}
+	two := seamWalkedWall(t, polylineSeam, true)
+	if got := withoutSlitPairs([]loopEdge{two[1], two[3]}); len(got) != 2 {
+		t.Errorf("two polyline edges of equal shape were dropped as a slit; they are two edges (%d left)", len(got))
+	}
+}
+
+// TestCutSeamPiecesKeepTheirSource: splitAtSharedRunEnds cuts a seam into pieces, and the pieces of both
+// traversals must still name the edge they came from, or a slit several edges deep could never unwind.
+func TestCutSeamPiecesKeepTheirSource(t *testing.T) {
+	t.Parallel()
+	edges := seamWalkedWall(t, straightSeam, false)
+	up := edges[1]
+	res := geom.ResolutionForSize(10)
+	pieces := splitEdgeAtPoints(up, []math.Point3{up.curve.PointAt((up.t0 + up.t1) / 2)}, res)
+	if len(pieces) != 2 {
+		t.Fatalf("the seam cut at its midpoint gave %d pieces, want 2", len(pieces))
+	}
+	for i, p := range pieces {
+		if p.source != up.source {
+			t.Errorf("piece %d lost its source edge", i)
+		}
+	}
+	if r := reverseEdge(up); r.source != up.source {
+		t.Error("reverseEdge dropped the source edge")
 	}
 }
 

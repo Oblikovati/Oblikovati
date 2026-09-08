@@ -267,9 +267,10 @@ func rejoinAcrossDrop(edges []loopEdge) []loopEdge {
 	return out
 }
 
-// continuesCurve reports that b carries on where a stopped, along the same curve.
+// continuesCurve reports that b carries on where a stopped, along the same curve. Identity is read
+// through geom.SameCurveObject: an edge here can carry a marched value Polyline, on which `==` panics.
 func continuesCurve(a, b loopEdge) bool {
-	return a.curve == b.curve && a.t1 == b.t0
+	return geom.SameCurveObject(a.curve, b.curve) && a.t1 == b.t0
 }
 
 // wrappingSolidFaces emits a kept region that WRAPS the longitude. A cap is exactly that: bounded above

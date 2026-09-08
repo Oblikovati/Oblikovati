@@ -127,7 +127,7 @@ func (c *ruledFaceUV) frameEdgeIsSeam(loop, edge int) bool {
 	seen := 0
 	for _, l := range c.face.loops {
 		for _, e := range l.edges {
-			if e.curve == curve {
+			if geom.SameCurveObject(e.curve, curve) { // a marched value Polyline panics under ==; it is no seam
 				seen++
 			}
 		}

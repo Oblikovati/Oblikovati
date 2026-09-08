@@ -377,8 +377,10 @@ func sameRun(a, b recoveredEdge) bool {
 	switch a.kind {
 	case segImprint, segPolygon:
 		// A polygon edge, like an imprint arc, is a distinct analytic curve; equal v does NOT imply same run
-		// (that is only true for a constant-v rim), so identity is the run test (#1591).
-		return a.curve == b.curve
+		// (that is only true for a constant-v rim), so identity is the run test (#1591). A frame edge can
+		// carry a marched value Polyline, on which `==` panics; such a curve has no identity and each of
+		// its recovered pieces re-emits on its own (geom.SameCurveObject).
+		return geom.SameCurveObject(a.curve, b.curve)
 	case segRim:
 		return stdmath.Abs(float64(a.a.Y)-float64(b.a.Y)) < 1e-6
 	default:

@@ -63,5 +63,5 @@ func reverseEdgeChain(chain []loopEdge) []loopEdge {
 
 // reverseEdge walks one loop edge the other way: the same curve over its parameter span reversed.
 func reverseEdge(e loopEdge) loopEdge {
-	return loopEdge{curve: e.curve, t0: e.t1, t1: e.t0}
+	return loopEdge{curve: e.curve, t0: e.t1, t1: e.t0, source: e.source}
 }

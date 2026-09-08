@@ -52,7 +52,7 @@ func splitEdgeAtPoints(e loopEdge, pts []math.Point3, res geom.Resolution) []loo
 	pieces := make([]loopEdge, 0, len(params)-1)
 	for i := 1; i < len(params); i++ {
 		if params[i] != params[i-1] {
-			pieces = append(pieces, loopEdge{curve: e.curve, t0: params[i-1], t1: params[i]})
+			pieces = append(pieces, loopEdge{curve: e.curve, t0: params[i-1], t1: params[i], source: e.source})
 		}
 	}
 	return pieces

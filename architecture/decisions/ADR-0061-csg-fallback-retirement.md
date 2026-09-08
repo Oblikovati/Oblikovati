@@ -4119,3 +4119,28 @@ Two determinism rows: `TestAConvergingArrangementArrangesIdenticallyEveryRun` (a
 standing on one spine, twenty runs, cells printed in full and compared) and
 `TestTheNonConvergentDrillRefusesIdenticallyEveryRun` (the r = 1.585e-7 drill, twenty runs, error and
 every diagnostic record byte for byte). The drill row still refuses by name in 0.07 s.
+
+### Final fix wave, finding 3 — a slit is one EDGE walked both ways, not one curve (2026-09-08)
+
+`isReverseTwin` compared `a.curve == b.curve` on two `geom.Curve3` interfaces. That is a run-time
+panic the moment both hold the same uncomparable dynamic type — reproduced with a value `geom.Polyline`
+("comparing uncomparable type geom.Polyline") — and a marched section leaves exactly that on the edge
+that carries it, so a boolean chained on a boolean's result could reach the cocylindrical merge with two
+of them. It was also the wrong question: two loop edges can carry equal curves and be two edges.
+
+A `loopEdge` now carries its source `*topo.Edge`, set by `orientedLoopEdge` and kept through every cut
+of it (`splitEdgeAtPoints`, `reverseEdge`); `isReverseTwin` compares that identity and the swapped span,
+exactly, and a synthesized edge (no source) is nobody's twin. A cut of the seam cuts both traversals at
+the same parameters, so the pieces pair as the whole did. The stage-5 unit rows were rebuilt on real
+edges through the topo builder (`seamWalkedWall`), and two Polyline rows were added: a value-polyline
+seam walked both ways still drops, two different polyline edges beside one another stay, and neither
+panics — the old comparison is proven to panic on the first.
+
+The other three `==` sites on curve interfaces (`continuesCurve`, `sameRun`'s imprint/polygon arm,
+`frameEdgeIsSeam`) compare curves an edge can carry as a marched value polyline too. They read identity
+through `geom.SameCurveObject`, which guards with `reflect.Value.Comparable` on the VALUE (a struct type
+with a `Curve3` field is comparable as a type while a value of it holding a Polyline is not — `SubCurve`
+over a marched section) and answers false for a value that has no identity: such a frame edge re-emits
+per recovered piece rather than panicking, and a polyline is never a seam. `TestSameCurveObjectNeverPanics`
+covers each kind. Net delta: no new tolerance, recognizer, geometry-kind assertion or diag code; one
+field on a private struct.

@@ -104,11 +104,15 @@ func firstSlitPair(edges []loopEdge) (int, bool) {
 	return 0, false
 }
 
-// isReverseTwin reports whether two edges are one curve walked both ways. It is EXACT: a slit's two
-// sides are the same face's own two traversals of one seam, so they carry the identical curve and the
-// swapped parameter span. Nothing is compared within a tolerance here (ADR-0042).
+// isReverseTwin reports whether two edges are one edge walked both ways. It is EXACT: a slit's two
+// sides are the same face's own two traversals of ONE topo edge (the seam), so they carry that edge's
+// identity and the swapped parameter span — and a cut of the seam (splitAtSharedRunEnds) cuts both
+// traversals at the same parameters, so the pieces pair the same way. Nothing is compared within a
+// tolerance here (ADR-0042), and nothing is compared by curve VALUE: `a.curve == b.curve` panicked on
+// two value Polylines ("comparing uncomparable type"), and two edges carrying equal curves are still
+// two edges. A synthesized edge (no source) is nobody's twin.
 func isReverseTwin(a, b loopEdge) bool {
-	return a.curve == b.curve && a.t0 == b.t1 && a.t1 == b.t0
+	return a.source != nil && a.source == b.source && a.t0 == b.t1 && a.t1 == b.t0
 }
 
 // withoutCyclicPair drops the edges at k and its cyclic successor.
