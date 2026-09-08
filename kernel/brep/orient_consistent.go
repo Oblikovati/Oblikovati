@@ -35,8 +35,8 @@ func orientFaceSigns(faces []fluxFace) []float64 {
 	}
 	var oriented []fluxFace
 	for _, shell := range fluxShellsLargestFirst(faces, signs) {
-		enclosed := shellEnclosedBy(oriented, faces, shell)
-		probed := probeShellSigns(faces, shell, enclosed)
+		sides := probeShellSides(faces, shell)
+		probed := shellProbedSigns(sides, shellEnclosedBy(oriented, faces, shell, sides))
 		bit := shellBit(faces, signs, shell, probed)
 		for _, i := range shell {
 			if probed[i] != 0 {
@@ -52,34 +52,80 @@ func orientFaceSigns(faces []fluxFace) []float64 {
 	return signs
 }
 
-// probeShellSigns reads each face's outward sign from the geometry, ORIENTATION-FREE: a point a
-// stand-off along the face's geometric normal S_u×S_v, and one against it, are classified by ray
-// parity against the shell (an odd crossing count is inside — no sign is read). The material of a
-// lump is inside its shell, that of a void outside, so the sign is +1 when the +normal side is the
-// non-material side. A face whose two probes agree (a wall thinner than the stand-off) or whose rays
-// all graze reads 0, and falls back to its loop handedness under the shell's bit.
+// shellSides is one shell read ORIENTATION-FREE, by its own ray parity: for each face the probe could
+// decide, whether the +S_u×S_v side of it lies INSIDE the region the shell bounds, and one point that
+// lies strictly inside that region. Both readings come from the same casts, so the enclosure decision
+// and the per-face signs can never be taken from two different readings of the same shell.
+type shellSides struct {
+	plusInside map[int]bool
+	interior   math.Point3
+	found      bool // whether interior holds a point
+}
+
+// probeShellSides reads the shell's own geometry: a point a stand-off along each face's geometric
+// normal S_u×S_v, and one against it, classified by ray parity against the shell (an odd crossing count
+// is inside the region it bounds). A face whose two probes agree (a wall thinner than the stand-off) or
+// whose rays all graze reads nothing and is passed over.
 //
-// This replaced reading the sign from the loop handedness alone: on the stubs a near-pinch cut leaves,
-// the handedness read two of a stub's three faces wrong, and the whole-body volume sign that used to
-// settle the last bit hid it because the errors balanced (ADR-0060).
-func probeShellSigns(faces []fluxFace, shell []int, enclosed bool) map[int]float64 {
+// This replaced reading a face's sign from its loop handedness alone: on the stubs a near-pinch cut
+// leaves, the handedness read two of a stub's three faces wrong, and the whole-body volume sign that
+// used to settle the last bit hid it because the errors balanced (ADR-0060). The INTERIOR point it also
+// yields is what the enclosure test needs — see shellEnclosedBy.
+func probeShellSides(faces []fluxFace, shell []int) shellSides {
 	own := newShellProbe(fluxFacesAt(faces, shell))
 	step := float64(own.box.Diagonal().Length()) * probeOffsetRel
-	out := map[int]float64{}
+	out := shellSides{plusInside: make(map[int]bool, len(shell))}
 	for _, i := range shell {
-		q, n, ok := faceProbePoint(&faces[i])
+		up, down, plus, ok := faceSideInShell(own, &faces[i], step)
 		if !ok {
 			continue
 		}
-		plus, okP := own.parityInside(q.TranslateBy(n.Scale(math.Scalar(step))))
-		minus, okM := own.parityInside(q.TranslateBy(n.Scale(math.Scalar(-step))))
-		if !okP || !okM || plus == minus {
-			continue
-		}
+		out.plusInside[i] = plus
+		out.takeInterior(up, down, plus)
+	}
+	return out
+}
+
+// takeInterior records the FIRST point the probe found strictly inside the region the shell bounds —
+// the point shellEnclosedBy answers at. Keeping the first makes the answer depend only on the shell's
+// member order, which is sorted (walkFaceComponents).
+func (s *shellSides) takeInterior(up, down math.Point3, plusInside bool) {
+	if s.found {
+		return
+	}
+	s.interior, s.found = down, true
+	if plusInside {
+		s.interior = up
+	}
+}
+
+// faceSideInShell steps a stand-off either side of one face and reports which side lies inside the
+// region the shell bounds, with both stepped points. ok=false when the two sides agree or the casts
+// grazed, which reads nothing.
+func faceSideInShell(own *shellProbe, f *fluxFace, step float64) (up, down math.Point3, plusInside, ok bool) {
+	q, n, okP := faceProbePoint(f)
+	if !okP {
+		return up, down, false, false
+	}
+	up, down = q.TranslateBy(n.Scale(math.Scalar(step))), q.TranslateBy(n.Scale(math.Scalar(-step)))
+	plus, okUp := own.parityInside(up)
+	minus, okDown := own.parityInside(down)
+	if !okUp || !okDown || plus == minus {
+		return up, down, false, false
+	}
+	return up, down, plus, true
+}
+
+// shellProbedSigns turns the orientation-free side readings into outward signs, once the shell's ROLE
+// is known: the material of a lump is inside the region it bounds and that of a void outside it, so the
+// sign is +1 exactly when the +S_u×S_v side is the non-material one. A face the probe could not read
+// carries no entry and falls back to its loop handedness under the shell's bit.
+func shellProbedSigns(sides shellSides, enclosed bool) map[int]float64 {
+	out := make(map[int]float64, len(sides.plusInside))
+	for i, plus := range sides.plusInside {
+		out[i] = -1
 		if plus == enclosed {
 			out[i] = 1
-		} else {
-			out[i] = -1
 		}
 	}
 	return out
@@ -133,11 +179,20 @@ func faceProbePoint(f *fluxFace) (math.Point3, math.Vector3, bool) {
 }
 
 // shellEnclosedBy reports whether a shell is a VOID of the shells already oriented outward: its box
-// lies within theirs and one of its points classifies inside them. The box gate is what keeps two
-// lumps that TOUCH — a rod's stubs either side of a near-pinch cut, whose boundaries pass within the
-// tolerance of each other — from being classified at a point the flux cannot read.
-func shellEnclosedBy(oriented, faces []fluxFace, shell []int) bool {
-	if len(oriented) == 0 {
+// lies within theirs and a point of the region it bounds classifies inside them. The box gate is what
+// keeps two lumps that TOUCH — a rod's stubs either side of a near-pinch cut, whose boundaries pass
+// within the tolerance of each other — from being classified at a point the flux cannot read.
+//
+// The point is one taken strictly INSIDE the region the shell bounds (shellSides.interior), never a
+// point of its boundary. It used to be a loop VERTEX, and a vertex is exactly where the question has no
+// answer: it lies on the shell being classified AND, where two lumps kiss, on the shells it is being
+// classified against, so the nearest crossing along every ray is the self-hit at t≈0 and the side read
+// from it is a coin flip. A cut that severed a lump touching the rest — a slot between two already-cut
+// slots of the Inventor multipoint disk, and the 22-face plate fixture that reproduces it — read the
+// severed lump as a void and inverted all of its faces' stored senses against their own loop winding
+// (Oblikovati/Oblikovati#3512).
+func shellEnclosedBy(oriented, faces []fluxFace, shell []int, sides shellSides) bool {
+	if len(oriented) == 0 || !sides.found {
 		return false
 	}
 	box := paddedBox(fluxFacesBox(oriented), probeOffsetRel)
@@ -145,7 +200,7 @@ func shellEnclosedBy(oriented, faces []fluxFace, shell []int) bool {
 		return false
 	}
 	q := &fluxQuery{faces: oriented}
-	return q.inside(shellSamplePoint(faces, shell), box)
+	return q.inside(sides.interior, box)
 }
 
 // fluxFacesAt selects the prepared faces of one shell.
@@ -201,16 +256,6 @@ func shellSignedVolume(faces []fluxFace, signs []float64, shell []int) float64 {
 		volume += signs[i] * faceVolumeTerm(&faces[i])
 	}
 	return volume
-}
-
-// shellSamplePoint is a point ON the shell (a loop vertex of its first face), for the enclosure test
-// against the shells oriented before it.
-func shellSamplePoint(faces []fluxFace, shell []int) math.Point3 {
-	f := faces[shell[0]].cf
-	if len(f.loops) == 0 || len(f.loops[0].edges) == 0 {
-		return f.surface.PointAt(faces[shell[0]].u0, faces[shell[0]].v0)
-	}
-	return f.loops[0].edges[0].start()
 }
 
 // fluxWindingAt sums each prepared face's signed solid angle at p: a closed outward shell gives ≈4π

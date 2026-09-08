@@ -4376,3 +4376,71 @@ replaces a silent assumption rather than adding a case to a ladder; no ordered t
 one function deleted is the one the new classification made redundant. The `+1` fallback site is the
 honest cost of `CurveBox` declining a curve kind: the alternative — every call site sampling for
 itself — is the shape the defect came from.
+
+### The severed lump that kissed the rest was read as a void (2026-09-09)
+
+The Inventor corpus part `real_multipoint_disk` (ReelToReel's TorquimeterDisk) stopped rebuilding once
+the faceted engines were retired: its `Extrusion4` — the 52-region cut — declined on lump `p2` with
+`boolean.winding-reject` and then `boolean.no-exact-curved-path`, the whole feature went sick, and the
+engine carried the pre-Extrusion4 body forward (9111 mm³ against Inventor 2027's 7679).
+
+The decline was already there at `dcb5a5d2`'s parent; the faceted rescue built a usable body over it, so
+the retirement did not cause it — it uncovered it. The close-out above says this row is "pre-existing,
+fails at the wave base"; the second half is true only because the wave base already contains
+`dcb5a5d2`. The part passes on `develop` and at `4a15b799`, and the defect it was hiding is below.
+
+**The cut is right; the orientation it was emitted with was not.** The p2 prism severs a lump — the
+tooth of the disk between the p2 slot and the two already cut — and that severed lump still KISSES the
+remainder, along the vertical edges where two slots meet at a point. Points strictly inside the 55-face
+severed shell are inside the target and outside the tool, so it is material the cut must keep.
+
+`orientFaceSigns` (`kernel/brep/orient_consistent.go`) walks a result's connected shells largest first
+and asks, per shell, whether it is a VOID of the shells already oriented — a void's faces carry the
+opposite outward sense. It asked at `shellSamplePoint`: a loop VERTEX of the shell's first face. A
+vertex is exactly where that question has no answer. It lies on the shell being classified and, at a
+kiss, on the shell it is being classified against, so `fluxQuery.inside`'s nearest-crossing cast finds
+only the self-hit at t ≈ 0 and reads the side from what amounts to a coin flip. Here it came up
+"inside": the severed tooth was taken for a void, its `bit` came out −1, and all 55 of its faces had
+their stored sense inverted while their loops kept the winding they were built with.
+`brep.FaceWindingConsistent` — the emission post-condition — then refused the body BY NAME, correctly.
+This is the shared-plane degeneracy of `boolean_classify_coplanar.go` in a second place: a membership
+query answered at a point ON the boundary it is asked about.
+
+**The fix** is to answer where the question has an answer: at a point strictly INSIDE the region the
+shell bounds, found ORIENTATION-FREE by the shell's own ray parity. `probeShellSigns` already cast
+exactly those probes to read each face's side; it becomes `probeShellSides`, returning `shellSides` —
+the per-face reading plus the first interior point — so the enclosure decision and the per-face signs
+come from ONE reading of the shell instead of two.
+
+Measured on the corpus row `TestCutThatSeversAKissingLumpWindsBothLumpsOutward`
+(`kernel/ops/boolean/boolean_severed_lump_test.go`: a 10×10×2 plate and four through-slots that free the
+square island [4,6]×[4,6] and leave it kissing the plate along the edge through (6,6)):
+
+| | before | after |
+| --- | --- | --- |
+| faces wound against their outward normal | 6 of 22 | 0 of 22 |
+| shells | 1 | 2 |
+| severed island's analytic shell volume | −8 (read as a void) | +8 (a lump) |
+| body volume (Requicha: 10·10·2 − 20) | 164 | 180 |
+| multipoint disk `Extrusion4` | sick, whole part 9111 mm³ | ok, whole part 8064 mm³ |
+
+`Extrusion5` still declines on this part after the fix, with the same `boolean.winding-reject` on one
+face of its own p0 lump; that is a second cause, below. The part is 8064 mm³ against 9111 before.
+
+The watertightness metric is not the gate on that row: it counts edges not shared by exactly two
+triangles, and the kiss the fixture is built around is a legitimate FOUR-triangle edge. Mesh volume at
+both facetings is, and it means the same thing at a kiss as anywhere else.
+
+**Deleted**: `shellSamplePoint`, and `connectedFaceComponents`' duplicate component walk (it is
+`walkFaceComponents` with an empty visitor). A component's members now come back SORTED: the adjacency
+is built over a map, so the BFS reached them in map order, and the readers that take the FIRST member —
+the closed-surface anchor, and now the enclosure probe point — were not byte-stable. The anchor comment
+already claimed "the lowest index anchors"; it is true now. Net delta: recognizers, tolerance constants,
+fallback sites and type assertions all unchanged (no new constant, code or assertion).
+
+**What this does NOT change.** `orientFaceSigns` still lets the per-face probe OVERRIDE a face's loop
+handedness where the two disagree, and `senseFromLoopWinding` writes that sign into the face's
+`reversed` flag without touching its loops. On a traversal-consistent shell the handedness is one
+orientation up to a single global bit, so a per-face override there can only introduce the very
+flag-against-winding inconsistency the gate refuses. It did not fire once the enclosure was fixed
+(`kernel/...` and the Inventor corpus are green), but it is a live hazard and a separate cause.

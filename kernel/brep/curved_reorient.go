@@ -2,7 +2,11 @@
 
 package brep
 
-import "oblikovati.org/kernel/geom"
+import (
+	"sort"
+
+	"oblikovati.org/kernel/geom"
+)
 
 // Curved-shell orientation repair (#1818). The near-pinch cut/join assembles a shell from faces built by
 // DIFFERENT machinery: the (u,v) arrangement (self-consistent by construction) and the raw whole-loop
@@ -136,27 +140,10 @@ func anchorOnClosedSurface(faces []curvedFace, comp []int, flip []bool) {
 	}
 }
 
-// connectedFaceComponents groups the faces into connected components over the adjacency (one per shell),
-// each listed in discovery order from its lowest-index face.
+// connectedFaceComponents groups the faces into connected components over the adjacency (one per
+// shell). It is walkFaceComponents with nothing to do on each tree edge.
 func connectedFaceComponents(adj [][]orientFlipNeighbour) [][]int {
-	var comps [][]int
-	comp := -1
-	seen := make([]bool, len(adj))
-	walkFaceComponents(adj, func(from, to int, _ bool) {
-		if !seen[from] {
-			seen[from] = true
-			comps = append(comps, []int{from})
-			comp = len(comps) - 1
-		}
-		seen[to] = true
-		comps[comp] = append(comps[comp], to)
-	})
-	for f := range adj {
-		if !seen[f] {
-			comps = append(comps, []int{f})
-		}
-	}
-	return comps
+	return walkFaceComponents(adj, func(int, int, bool) {})
 }
 
 // walkFaceComponents breadth-first walks every connected component of the adjacency, calling visit on
@@ -183,6 +170,10 @@ func walkFaceComponents(adj [][]orientFlipNeighbour, visit func(from, to int, sa
 				q = append(q, e.face)
 			}
 		}
+		// Sorted, because the adjacency is built over a MAP: the BFS reaches a component's members in
+		// whatever order the map handed back its edge groups, and the readers take the anchor and the
+		// enclosure probe point from the FIRST member. An explicit total order is the determinism rule.
+		sort.Ints(members)
 		comps = append(comps, members)
 	}
 	return comps
