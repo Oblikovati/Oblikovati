@@ -4320,3 +4320,59 @@ Causes 2, 3 and 4 are latent defects, not arm64 defects: each is a decision take
 finer than the quantity deciding it, and the FMA difference only chose which side of it this corpus
 landed on. Each carries a regression test that fails on amd64 too (the fold tangency and the
 degenerate face box), or a unit test of the predicate that closes the gap (the rim contact).
+
+#### The residual: bit-identity is NOT achieved (issue #3528)
+
+Read the four causes above as what they are: each fixed a DECISION that was being taken at a precision
+finer than the quantity deciding it. None of them made the arithmetic itself platform-independent, and
+this section exists so no reader finishes the four and believes the ground rule is now met. It is not.
+
+`math.Vector3.Dot` is `v.X*o.X + v.Y*o.Y + v.Z*o.Z` and the torus station's `ρ = R + r·cos v` is
+`z + x*y`: both still contract to a fused multiply-add on arm64 and never on amd64, so intermediate
+values across the kernel still differ between the two platforms by an ulp. Measured on this branch:
+the same torus station reads `rho = 6.1472632809267331` on amd64 and `6.1472632809267322` on arm64.
+What the four fixes buy is that no decision downstream of that difference can now see it — the weld
+grid is six orders above it, the band classification is a real tolerance above it, and the fold
+azimuth no longer amplifies it through a square root. Meeting the rule literally needs a project-wide
+FMA policy (a `math` whose primitives round explicitly, and predicates that are FMA-safe by
+construction), which is a separate measurable piece of work: **Oblikovati/Oblikovati#3528**.
+
+Two disclosures the four causes do not make on their own:
+
+- **`torusFoldAzimuth` is keyed on the PARAMETER, not on the conditioning.** `atFoldTurn` tests
+  `s == 0 || s == π || s == 2π` rather than asking whether the discriminant has fallen to its own
+  rounding. That is sound here because every `TorusQuadricLoop`'s `V0`/`V1` come from
+  `periodicRootWindows` on the discriminant with `folds` required true (`intersect_torus_quadric_skew.go`,
+  `intersect_torus_quadric.go`), so a window end is a fold BY CONSTRUCTION and never a domain clip —
+  the parameter test cannot misfire. It is kept deliberately: a conditioning gate would put a
+  ~1e-8-wide band of clamped azimuths around each fold, which is geometry the loop should still
+  resolve. The consequence to know is that the ~1e-8 azimuth noise `root()` produces still exists
+  just off a fold, so a consumer that discretises a loop near `t = 0` or `t = 0.5` reads it; only the
+  closure point itself is pinned.
+- **A third window, not a unification.** `spanIsRimContact` gives the rim case its own verdict beside
+  `bandPlacement`'s two rather than merging the placement's padded window with the clip's unpadded one.
+  The classification is now total — both walk `crossingSpanSamples` over the same domain through the
+  same `bandV`, so anything reaching more than a pad into the band is guaranteed a positive `bandDepth`
+  sample and the "clip found nothing" decline is unreachable — but that is coverage, not construction.
+
+#### Kernel net delta for this fix
+
+Ground rule: every kernel PR reports its net change. This one is **positive**, and here is why.
+
+| measure | net | what |
+| --- | --- | --- |
+| recognizers | ±0 | no new dispatch entry; every fix is inside an existing path |
+| functions | **+7** | +8 (`CurveSpanBox`, `sampledSpanBox`, `stepReach`, `grownBox`, `spanIsRimContact`, `torusFoldAzimuth`, `torusHarmonic.foldRoot`, `atFoldTurn`), −1 (`crossingBandPlacement`, deleted with its only caller inlined) |
+| tolerance constants | ±0 | `spanIsRimContact` reuses `bandCullPad`; the sampled box's pad is the curve's OWN derivative; no new epsilon |
+| fallback sites | **+1** | `CurveSpanBox`'s sampled branch, taken only where no closed-form axial extent exists |
+| type assertions | ±0 | none added |
+| count constants | +1 | `curveSpanSamples` — a step count, not a tolerance; the bound holds at any value of it |
+
+The +7 is the cost of stating three things that were previously left implicit: what a fold's merged
+azimuth IS (`torusFoldAzimuth` + `foldRoot` + `atFoldTurn`, one per reduction plus the parameter test),
+what a curve with no closed-form extent is bounded BY (`CurveSpanBox` + its three parts, split so each
+stays inside the 4–20 line rule), and what a crossing lying ON a rim means (`spanIsRimContact`). Each
+replaces a silent assumption rather than adding a case to a ladder; no ordered try-list grew, and the
+one function deleted is the one the new classification made redundant. The `+1` fallback site is the
+honest cost of `CurveBox` declining a curve kind: the alternative — every call site sampling for
+itself — is the shape the defect came from.
