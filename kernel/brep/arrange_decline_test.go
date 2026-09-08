@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -180,4 +181,41 @@ func TestTheRefusalCountsSegmentsNotFaces(t *testing.T) {
 	if got := imprintSegmentCount(nil); got != 0 {
 		t.Errorf("imprintSegmentCount(nil) = %d, want 0", got)
 	}
+}
+
+// TestAConvergingArrangementArrangesIdenticallyEveryRun: the T-junction pass walks a sorted snapshot
+// of the edge set, so an input whose chains END on other segments' interiors — the comb below, nine
+// teeth standing on one spine — arranges to the same cells and the same verdict on every run. Walking
+// the live map in its random order made the pair-adding count, and so decline-versus-converge near
+// the budget, a run-to-run coin toss (final fix wave, finding 7).
+func TestAConvergingArrangementArrangesIdenticallyEveryRun(t *testing.T) {
+	t.Parallel()
+	segs := combSegments()
+	first, firstOK := arrangementFingerprint(segs)
+	if !firstOK {
+		t.Fatal("the comb must converge; it is the CONVERGING row")
+	}
+	for run := 1; run < 20; run++ {
+		if got, ok := arrangementFingerprint(segs); got != first || ok != firstOK {
+			t.Fatalf("run %d arranged differently from run 0:\n%s\nvs\n%s", run, got, first)
+		}
+	}
+}
+
+// combSegments is a spine with nine teeth whose feet land on the spine's INTERIOR, closed by a rail
+// across their tips — every tooth foot is a T-junction the pass must weld shut.
+func combSegments() [][2]math.Point2 {
+	segs := [][2]math.Point2{{math.P2(0, 0), math.P2(10, 0)}, {math.P2(0, 1), math.P2(10, 1)},
+		{math.P2(0, 0), math.P2(0, 1)}, {math.P2(10, 0), math.P2(10, 1)}}
+	for i := 1; i < 10; i++ {
+		x := float64(i)
+		segs = append(segs, [2]math.Point2{math.P2(x, 0), math.P2(x, 1)})
+	}
+	return segs
+}
+
+// arrangementFingerprint is the arrangement's cells printed in full, and its verdict.
+func arrangementFingerprint(segs [][2]math.Point2) (string, bool) {
+	cells, ok := ArrangeChecked(segs)
+	return fmt.Sprintf("%v", cells), ok
 }

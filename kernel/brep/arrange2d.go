@@ -80,19 +80,24 @@ func planarize(segments [][2]math.Point2) ([]math.Point2, [][2]int, bool) {
 		}
 	}
 	converged := splitTJunctions(weld.points, edges)
+	return weld.points, sortedEdgePairs(edges), converged
+}
+
+// sortedEdgePairs is the edge set in one total order — by first index, then second. Map iteration
+// order is random and was producing run-to-run-different arrangements on tolerance-fragile inputs;
+// every walk over the set, the T-junction pass included, reads it through this.
+func sortedEdgePairs(edges map[[2]int]bool) [][2]int {
 	out := make([][2]int, 0, len(edges))
 	for e := range edges {
 		out = append(out, e)
 	}
-	// Sort for determinism (map iteration order is random and was producing
-	// run-to-run-different arrangements on tolerance-fragile inputs).
 	sort.Slice(out, func(i, j int) bool {
 		if out[i][0] != out[j][0] {
 			return out[i][0] < out[j][0]
 		}
 		return out[i][1] < out[j][1]
 	})
-	return weld.points, out, converged
+	return out
 }
 
 // tjTol bounds the perpendicular distance at which a welded vertex counts as lying ON an
@@ -107,6 +112,12 @@ const tjTol = 1e-7 // tol:calibrated — matches the welder grid; see arrTol
 // chain clipped to land exactly on a hole-loop edge, #860), the touch point welds as a vertex
 // but the host edge is left whole, so the chain dangles and the face never partitions. This
 // pass welds such chains shut, the crux of robust planar arrangement under faceted-curve cuts.
+//
+// Each pass walks a SORTED snapshot of the set, never the live map. The budget below counts the
+// pair-adding splits in the order they are made, and whether a given split adds a pair depends on
+// which splits came before it — so on a converging input near the budget, walking the map in its
+// random order made decline-versus-converge a run-to-run coin toss (final fix wave, finding 7). Halves
+// added during a pass are not in its snapshot; the next pass takes them.
 func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 	// The welded point set is fixed here (only edges split), so one grid hash over it culls
 	// every vertex-on-edge scan below (#1607).
@@ -114,7 +125,7 @@ func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 	budget := tjSplitBudget(len(pts))
 	for changed := true; changed; {
 		changed = false
-		for e := range edges {
+		for _, e := range sortedEdgePairs(edges) {
 			c := vertexOnEdgeInterior(pts, e[0], e[1], verts)
 			if c < 0 {
 				continue
@@ -151,6 +162,14 @@ func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 //     two pair-adding splits the pass makes finitely many of them and is not counted.
 //
 // Hence the pass terminates, and exceeding the budget is the failure below.
+//
+// Counting DISTINCT pairs ever added instead — which would make n(n−1)/2 a theorem — was considered and
+// rejected (final fix wave, finding 7): such a count is bounded by n(n−1)/2 by construction, so it can
+// never exceed the budget and the pass would never decline. The runaway this bound exists for IS
+// re-adding: at the tjTol scale a vertex that did not qualify on an edge qualifies on the shorter half
+// that replaces it, and the r = 1.585e-7 drill would hang again. What makes the decline honest is that
+// the count is taken in ONE order (splitTJunctions walks a sorted snapshot), so decline-versus-converge
+// is a function of the input alone, and the drill row asserts that twenty runs give one answer.
 //
 // It has to exist because the loop's termination argument silently depends on scale. tjTol is an
 // ABSOLUTE 1e-7, and it is used twice over: as a perpendicular DISTANCE to the edge and as a

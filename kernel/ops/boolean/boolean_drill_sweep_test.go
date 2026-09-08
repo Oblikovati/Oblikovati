@@ -4,6 +4,7 @@ package boolean
 
 import (
 	"errors"
+	"fmt"
 	stdmath "math"
 	"strings"
 	"testing"
@@ -275,4 +276,32 @@ func drillDeadline(t *testing.T) time.Duration {
 		}
 	}
 	return 30 * time.Second
+}
+
+// TestTheNonConvergentDrillRefusesIdenticallyEveryRun is the determinism half of the row above. The
+// refusal is a budget on pair-adding T-junction splits, counted in the order the splits are made; the
+// pass now walks a sorted snapshot of its edge set (brep.splitTJunctions), so twenty runs of the same
+// drill must give one error and one diagnostic record, byte for byte (final fix wave, finding 7).
+func TestTheNonConvergentDrillRefusesIdenticallyEveryRun(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 1.585e-7)
+	first := drillRefusalFingerprint(t, ring, drill)
+	for run := 1; run < 20; run++ {
+		if got := drillRefusalFingerprint(t, ring, drill); got != first {
+			t.Fatalf("run %d refused differently from run 0:\n%s\nvs\n%s", run, got, first)
+		}
+	}
+}
+
+// drillRefusalFingerprint runs the cut once and prints its error and every recorded diagnostic.
+func drillRefusalFingerprint(t *testing.T, ring, drill *topo.Body) string {
+	t.Helper()
+	rec := &diag.Recorder{}
+	_, err := BooleanWithDiagnostics(Cut, ring, drill, rec)
+	var b strings.Builder
+	fmt.Fprintf(&b, "err=%v\n", err)
+	for _, d := range rec.Records() {
+		fmt.Fprintf(&b, "%s|%v|%s\n", d.Code, d.Severity, d.Detail)
+	}
+	return b.String()
 }

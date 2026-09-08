@@ -4098,3 +4098,24 @@ chooses different diagonals in the corner's neighbourhood — still a chord defi
 byte-identical at both facetings. The ratchets are untouched (no new tolerance, recognizer, assertion or
 code); `chart_face_mesh.go` reached its size limit and its clearance section moved verbatim to
 `chart_face_clearance.go`.
+
+### Final fix wave, finding 7 — the T-junction pass walks one order (2026-09-08)
+
+`brep.splitTJunctions` iterated the live `edges` map while mutating it, and `tjSplitBudget` counted the
+pair-adding splits in that order. Whether a given split adds a pair depends on which splits came before
+it, so on a converging input near the budget, decline-versus-converge was a run-to-run coin toss — the
+one outcome a refusal may not have. Each pass now walks a SORTED snapshot of the set through the same
+total order `planarize` already sorted its output by (`sortedEdgePairs`, one function for both walks);
+halves added during a pass are not in its snapshot and the next pass takes them.
+
+The bound itself is unchanged, and the alternative the review named — counting DISTINCT pairs ever
+added, which would make n(n−1)/2 a theorem — was implemented in thought and rejected: such a count is
+bounded by n(n−1)/2 by construction, so it can never exceed the budget and the pass would never decline.
+The runaway the bound exists for IS re-adding: at the `tjTol` scale a vertex that did not qualify on an
+edge qualifies on the shorter half that replaces it (G9), and the r = 1.585e-7 drill would hang again.
+The budget stays a budget; what is new is that its verdict is a function of the input alone.
+
+Two determinism rows: `TestAConvergingArrangementArrangesIdenticallyEveryRun` (a comb of nine teeth
+standing on one spine, twenty runs, cells printed in full and compared) and
+`TestTheNonConvergentDrillRefusesIdenticallyEveryRun` (the r = 1.585e-7 drill, twenty runs, error and
+every diagnostic record byte for byte). The drill row still refuses by name in 0.07 s.
