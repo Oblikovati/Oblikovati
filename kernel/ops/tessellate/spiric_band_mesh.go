@@ -35,7 +35,7 @@ func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool) {
 	}
 	loU, hiU := branchAzimuthAt(m, t, first, lo), branchAzimuthAt(m, t, second, hi)
 	vs := finerRowVs(lo, hi)
-	if bandPinches(t, loU, hiU, vs, append(loPts, hiPts...)) {
+	if bandPinches(t, loU, hiU, vs, loPts, hiPts) {
 		return nil, false // see bandPinches: a pinched band is no single sweep round the tube
 	}
 	dir := bandDirection(f.Chart(), loU, hiU, vs)
@@ -62,8 +62,8 @@ func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool) {
 //
 // "Touch" is an ARC LENGTH on the tube against the boundary's own weld tolerance (ADR-0042), not a bare
 // angle: the same band at a different scale must decide the same way.
-func bandPinches(t geom.Torus, loU, hiU func(float64) float64, vs []float64, rims []math.Point3) bool {
-	weld := geom.ResolutionForPoints(rims).Sew()
+func bandPinches(t geom.Torus, loU, hiU func(float64) float64, vs []float64, loPts, hiPts []math.Point3) bool {
+	weld := geom.ResolutionForPoints(append(append([]math.Point3(nil), loPts...), hiPts...)).Sew()
 	for _, v := range vs {
 		if stdmath.Abs(wrapToPeriod(hiU(v)-loU(v)))*tubeSweepRadius(t, v) <= weld {
 			return true

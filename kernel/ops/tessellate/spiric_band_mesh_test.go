@@ -141,14 +141,15 @@ func TestTubeSweepRadiusIsTheTorusOwnSpeed(t *testing.T) {
 func TestBandPinchesWhereTheBoundariesTouch(t *testing.T) {
 	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	rims := []math.Point3{math.P3(7, 0, 0), math.P3(-7, 0, 0), math.P3(0, 7, 0)} // sets the weld scale
+	loRim := []math.Point3{math.P3(7, 0, 0), math.P3(-7, 0, 0)} // together these set the weld scale
+	hiRim := []math.Point3{math.P3(0, 7, 0), math.P3(0, -7, 0)}
 	vs := []float64{0, 1, 2, stdmath.Pi, 4, 5, 6}
 	apart := func(v float64) float64 { return 0.8 + 0.1*stdmath.Cos(v) }
-	if bandPinches(tor, func(float64) float64 { return 0 }, apart, vs, rims) {
+	if bandPinches(tor, func(float64) float64 { return 0 }, apart, vs, loRim, hiRim) {
 		t.Error("bandPinches called a strip 0.7–0.9 rad wide pinched")
 	}
 	touching := func(v float64) float64 { return stdmath.Abs(v - stdmath.Pi) } // meets the other at v = π
-	if !bandPinches(tor, func(float64) float64 { return 0 }, touching, vs, rims) {
+	if !bandPinches(tor, func(float64) float64 { return 0 }, touching, vs, loRim, hiRim) {
 		t.Error("bandPinches missed boundaries that MEET at v = π — the figure-eight's own tangency")
 	}
 }
