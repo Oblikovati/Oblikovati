@@ -90,10 +90,15 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 
 // meshSeamCrossingFace meshes a curved face whose boundary loop wraps the periodic seam (so toUVLoops
 // can't unwrap it): a full cylinder/cone side or a torus rim-fillet band closes the seam watertight via
-// closedDomainMesh; a singly-periodic sphere cap straddling the pole goes through the best-fit-plane CDT
-// (the full-domain grid tears there); and a doubly-periodic torus no wrapping mesher reduces is meshed
-// from the region it CARRIES (chartedTrimMesh, ADR-0061/ADR-0063), not from the surface's whole domain —
-// only a face recording no chart still falls that far, and that degradation is reported.
+// closedDomainMesh; and a face no wrapping mesher reduces is meshed from the region it CARRIES
+// (chartedTrimMesh / chartFaceMesh, ADR-0061/ADR-0063), not from the surface's whole domain — only a
+// face recording no chart still falls that far, and that degradation is reported.
+//
+// That last rule now covers the SINGLY-periodic surfaces too. A cylinder band whose notched rim steps
+// axially is not a v(u) graph, so the ruled loft declines it and it used to land on the best-fit-plane
+// CDT, which flattens a wrapping band: measured on the merged cocylindrical wall a D-prism leaves on a
+// cylinder of its own radius, 61 free edges. A charted band is meshed from its chart like every other
+// charted face; the best-fit-plane CDT stays for the sphere cap straddling the pole, which records none.
 func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
 		if m, ok := unequalRimBandMesh(f, s, bandGridStations(s, us, vs), q); ok {
@@ -119,13 +124,24 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		return chartedTrimMesh(f, s, q)
 	}
 	if IsPeriodic(s.UDomain()) != IsPeriodic(s.VDomain()) {
-		m := trimmedPatchMesh(s, outer3D, holes3D) // sphere cap on the pole: CDT in the best-fit plane
-		recordUnmeshedWallWrap(m, s, outer3D, len(holes3D))
-		return m
+		return singlyPeriodicWrapMesh(f, s, outer3D, holes3D, q)
 	}
 	// A seam-wrapping face no wrapping mesher reduced: the chart carries its region (ADR-0063), so the
 	// chart-driven mesher takes it; only a face that carries NO chart falls through to the defect.
 	return chartedTrimMesh(f, s, q)
+}
+
+// singlyPeriodicWrapMesh meshes a seam-wrapping face on a cylinder, cone or sphere that no wrapping
+// mesher reduced: from the region it RECORDS when it carries one, else through the best-fit-plane CDT,
+// which is the sphere cap straddling the pole (the full-domain grid tears there) and which reports the
+// wall wrap it could not mesh.
+func singlyPeriodicWrapMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
+	if m, ok := chartFaceMesh(f, s, q); ok {
+		return m
+	}
+	m := trimmedPatchMesh(s, outer3D, holes3D)
+	recordUnmeshedWallWrap(m, s, outer3D, len(holes3D))
+	return m
 }
 
 // chartedTrimMesh is the single classification at the end of the curved-face router: a trimmed face
