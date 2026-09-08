@@ -63,8 +63,15 @@ func TestTheSecondHarmonicIsTheQuadricOnTheTorus(t *testing.T) {
 
 // TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily is the reproduction proof for the closed form
 // this reduction generalises. Where M is invariant about the torus axis the two second-harmonic
-// coefficients are EXACTLY zero and the rest is torusHarmonicAt's own level, reach and phase — so the
-// arccos path is not an approximation of the general one, it is the general one written out.
+// coefficients are EXACTLY zero and the rest is the one-harmonic form's own level, reach and phase —
+// so the arccos path is not an approximation of the general one, it is the general one written out.
+//
+// The level is asserted against the CLOSED FORM's own arithmetic, `constant + m11·ρ²`, and not against
+// torusHarmonic.level: since the arm64 fix (CI run 34280554924 macos-latest) harmonic() READS
+// secondHarmonic().Level, so comparing the two structs would be comparing one expression with itself.
+// The two spellings are not identical either — they differ by ρ²(m11−m22)/2, and axisInvariantEntries
+// admits |m11−m22| up to axisInvarianceTol·scale before it calls the tensor invariant at all — so the
+// bound is derived from that admission rather than guessed (levelFormsBound).
 func TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily(t *testing.T) {
 	t.Parallel()
 	ring := testRing(t)
@@ -73,7 +80,8 @@ func TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily(t *testing.T) {
 		if invariant != c.invariant {
 			t.Fatalf("%s: classified invariant=%v, want %v", c.name, invariant, c.invariant)
 		}
-		g := torusSecondHarmonicAt(ring, c.quad, 0.7)
+		st := torusStationAt(ring, c.quad, 0.7)
+		g := st.secondHarmonic()
 		if !c.invariant {
 			if g.Cos2 == 0 && g.Sin2 == 0 {
 				t.Errorf("%s: the second harmonic is zero, but its tensor is not axis-invariant", c.name)
@@ -83,13 +91,46 @@ func TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily(t *testing.T) {
 		if g.Cos2 != 0 || g.Sin2 != 0 {
 			t.Errorf("%s: second harmonic (%g, %g), want exactly zero", c.name, g.Cos2, g.Sin2)
 		}
-		if g.Level != h.level {
-			t.Errorf("%s: level %.17g, want the one-harmonic form's %.17g bit for bit", c.name, g.Level, h.level)
-		}
+		assertLevelFormsAgree(t, c.name, c.quad, st, g.Level)
 		assertNearly(t, c.name+" reach", stdmath.Hypot(g.Cos1, g.Sin1), h.reach)
 		assertNearly(t, c.name+" phase", stdmath.Atan2(g.Sin1, g.Cos1), h.phase)
 	}
 }
+
+// assertLevelFormsAgree checks the general form's Level against the one-harmonic closed form's own
+// arithmetic for the same station, within what the invariance classification already permits.
+func assertLevelFormsAgree(t *testing.T, name string, q Quadric, st torusStation, level float64) {
+	t.Helper()
+	closed := st.constant + st.m11*st.rho*st.rho
+	if bound := levelFormsBound(q, st, level); stdmath.Abs(level-closed) > bound {
+		t.Errorf("%s: general level %.17g vs the closed form's %.17g differ by %.3e, over the %.3e the "+
+			"invariance classification admits", name, level, closed, stdmath.Abs(level-closed), bound)
+	}
+}
+
+// levelFormsBound is how far the station's two level spellings may legitimately differ.
+//
+// The closed form reads constant + m11·ρ² and the general one constant + ρ²(m11+m22)/2, so the two
+// differ by ρ²(m11−m22)/2 — and axisInvariantEntries (the gate that decided this station IS invariant)
+// admits |m11−m22| up to axisInvarianceTol·scale, with the same scale it uses. That term is the bound;
+// levelFormsUlps adds the two spellings' own rounding on top, which is what a platform that fuses the
+// closed form's product into its add costs.
+func levelFormsBound(q Quadric, st torusStation, level float64) float64 {
+	scale := stdmath.Max(q.M.Norm(), stdmath.Abs(st.m11))
+	admitted := axisInvarianceTol * scale * st.rho * st.rho / 2
+	return admitted + levelFormsUlps*ulpOf(level)
+}
+
+// ulpOf is the spacing of float64 at x — the unit the two spellings' own roundings are counted in.
+func ulpOf(x float64) float64 {
+	a := stdmath.Abs(x)
+	return stdmath.Nextafter(a, stdmath.Inf(1)) - a
+}
+
+// levelFormsUlps is how many roundings apart the two spellings of one level may land: each forms its
+// own product and sum, and one of them may fuse the product into the sum on a platform that contracts
+// x*y+z. It counts ULPS of the value itself, so it carries no model scale.
+const levelFormsUlps = 4 // tol:numeric — roundings between two spellings of one quantity
 
 // assertNearly compares two readings of the same quantity at the level their own arithmetic differs by.
 func assertNearly(t *testing.T, what string, got, want float64) {

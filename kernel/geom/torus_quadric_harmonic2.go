@@ -135,12 +135,14 @@ func (st torusStation) secondHarmonic() torusSecondHarmonic {
 		Sin2: rr * st.m12,
 		Cos1: st.rho * st.x,
 		Sin1: st.rho * st.y,
-		// float64(...) rounds the term BEFORE it is added, which the Go spec guarantees an explicit
-		// conversion does. It is the one term of this station a SECOND caller also reads (harmonic,
-		// above), so it is a value two paths must agree on bit for bit; without the conversion a
-		// platform that fuses x*y+z is free to carry it at full precision and round once, and the two
-		// paths part by an ulp (CI run 34280554924 macos-latest).
-		Level: st.constant + float64(rr*(st.m11+st.m22)/2),
+		// The term added to the constant ends in a DIVISION, and a division result is not a product,
+		// so no platform may fuse it into this add — which is what makes this spelling of the level the
+		// stable one and the closed form's `constant + m11·ρ²` the one that parted by an ulp on arm64
+		// (CI run 34280554924 macos-latest). harmonic() reads this Level rather than respelling it for
+		// exactly that reason. Keep the division last if this line is ever rewritten; an explicit
+		// float64() round of the term would pin it too, and was dropped only because it cannot fire
+		// here and a conversion that documents a mechanism it does not use reads as a live guard.
+		Level: st.constant + rr*(st.m11+st.m22)/2,
 	}
 }
 
