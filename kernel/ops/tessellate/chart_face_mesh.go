@@ -358,18 +358,32 @@ func inwardProbe(stations []float64, i int, periodic bool) float64 {
 // stations) and an interior node lands INSIDE the chord rather than beside it. What bounds that is the
 // chord itself.
 //
-// So it is swept, on the three bodies whose charted faces the clearance governs — the genus-1 lemniscate
-// complement, RS− and RD− — at both facetings, counting failures over
-// ./kernel/ops/tessellate/ ./kernel/ops/boolean/:
+// So it is measured. Swept on the three bodies whose charted faces the clearance governs — the genus-1
+// lemniscate complement, RS− and RD− — reading each body's free edges and its torus FACE's own area at
+// BOTH facetings, so a plateau is flat in the numbers and not merely in a pass/fail count:
 //
-//	k          0.125  0.25  0.5  0.75  0.875  1.0  1.1  1.25  1.5  2.0  3.0  4.0
-//	failures      5     4    2    0      0     0    0     1     3    4    7   16
+//	k       complement D      complement P        RS− D       RS− P       RD− D       RD− P
+//	0.50    0 / 263.72994     272 / 296.06212     0 / 236.36  0 / 237.87  0 / 290.29  0 / 291.88
+//	0.55    0 / 263.72994     272 / 296.06212     — as 0.50 —
+//	0.60    0 / 263.68219     0 / 264.87124       0 / 236.36  0 / 237.87  0 / 290.29  0 / 291.88
+//	0.70    0 / 263.60871     0 / 264.87119       0 / 236.10  0 / 237.87  0 / 290.29  0 / 291.88
+//	0.875   0 / 263.55487     0 / 264.87111       0 / 236.10  0 / 237.87  0 / 290.29  0 / 291.88
+//	1.00    0 / 263.42317     0 / 264.87104       0 / 236.10  0 / 237.87  0 / 290.29  0 / 291.88
+//	1.10    0 / 263.33288     0 / 264.87097       0 / 235.44  0 / 237.87  0 / 290.28  0 / 291.88
+//	1.50    0 / 263.15360     0 / 264.87045       — watertight, area falling —
+//	3.00    0 / 260.51898     0 / 264.86644       — watertight, area falling —
 //
-// A plateau of 0.75 … 1.1, pinned at its middle. Below it the complement tears at PropertyQuality (272
-// free edges, the face declined and fallen to the surface's whole domain); above it the clearance starts
-// eating the interior next to a coarse boundary and the complement's own volume walks away from the
-// analytic (−1.30 % at 0.875, −1.72 % at 1.25, −11.0 % at 4.0).
-const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.125…4, plateau 0.75…1.1)
+// Only ONE body and ONE faceting ever fails: the complement at PropertyQuality, for k ≤ 0.55, where the
+// face is declined and falls to the surface's whole domain (296.062 against the 264.871 it builds). The
+// upper end is not a failure boundary at all — it is a monotone COST, the clearance removing interior
+// nodes next to a coarse boundary, and every area above falls with k as a rule that only ever removes
+// nodes must.
+//
+// 0.875 is therefore chosen, not centred: as small as the cost argument wants, with a real margin over
+// the edge. It is 1.6× the largest k that fails and 1.46× the smallest that passes, and it costs
+// 0.13 mm² of 263.7 — 0.05% — against sitting at 0.6. The complement's face area is pinned two-sided at
+// the value this k gives (chart_face_mesh_test.go), so the constant cannot move without saying so.
+const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.125…4, fails at k ≤ 0.55)
 
 // chartNodeClearance is the fraction of a grid gap an interior node must keep from the boundary. A node
 // ON a constraint owns no triangle and derails the segment recovery; one just inside it makes a sliver

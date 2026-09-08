@@ -230,12 +230,22 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 	assertComplementFaceArea(t, body)
 }
 
-// complementTorusFaceArea is the torus face's own meshed area at DefaultQuality, pinned TWO-SIDED. The
+// complementTorusFaceArea is the torus face's own meshed area at DefaultQuality, pinned TWO-SIDED: the
 // boundary clearance buys the lemniscate's watertightness with interior density next to a coarse
-// boundary, and this is what that costs: 263.596 with the clearance the window mesher's replacement
-// shipped, 263.423 at a whole chord, 263.610 at the swept 0.875. A window of 0.5 mm² is a tenth of the
-// spread the sweep covers (261.9 at k=4), so it holds the trade without pinning the last digit.
-const complementTorusFaceArea, complementTorusFaceWindow = 263.610, 0.5
+// boundary, and this is the only place that price is visible.
+//
+// The window is 0.05 mm², not the 0.5 a first attempt used, because 0.5 pinned nothing: it admitted BOTH
+// values the clearance moved between (263.42317 at k = 1.0 and 263.72994 at k = 0.5), so a row meant to
+// catch the constant drifting would have sat green through exactly that. Tessellation is byte-identical
+// run to run by ground rule, so the reading is exact; the window absorbs only the five decimals this
+// literal is written to (1e-5) and the last-place spread an FMA-contracting toolchain gives an area sum.
+// 0.05 is four decades above that and a factor of 2.6 below the nearest reading it has to exclude.
+//
+// Measured at the shipped k = 0.875. Across the sweep the same face reads 263.72994 (k ≤ 0.55),
+// 263.68219 (0.6), 263.60871 (0.7–0.75), 263.55487 (0.875), 263.45103 (0.925), 263.42317 (1.0),
+// 263.15360 (1.5), 260.51898 (3.0) — monotone in k, which is what a clearance that only ever REMOVES
+// interior nodes must be.
+const complementTorusFaceArea, complementTorusFaceWindow = 263.55487, 0.05
 
 // assertComplementFaceArea holds the complement's torus face to its measured area, both ways.
 func assertComplementFaceArea(t *testing.T, body *topo.Body) {
@@ -246,7 +256,7 @@ func assertComplementFaceArea(t *testing.T, body *topo.Body) {
 		}
 		got := tessellate.MeshGeometryProperties(tessellate.TessellateFace(f, ops.DefaultQuality())).Area
 		if stdmath.Abs(got-complementTorusFaceArea) > complementTorusFaceWindow {
-			t.Errorf("the complement's torus face meshes %.5f mm², off its pin of %.3f ± %.1f — the "+
+			t.Errorf("the complement's torus face meshes %.5f mm², off its pin of %.5f ± %g — the "+
 				"boundary clearance moved, or the covering's density next to a coarse rim did",
 				got, complementTorusFaceArea, complementTorusFaceWindow)
 		}
