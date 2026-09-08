@@ -130,9 +130,19 @@ func booleanOnce(op Op, fa, fb []curvedFace, a, b *topo.Body, rec *diag.Recorder
 	keptA, okA := selectFaces(fa, impA, newSolidProbe(b), fb, pairs.bForA, op, false, prov, rec)
 	keptB, okB := selectFaces(fb, impB, newSolidProbe(a), fa, pairs.aForB, op, true, prov, rec)
 	if !okA || !okB {
-		return nil, false, unconvergedArrangement(len(impA) + len(impB))
+		return nil, false, unconvergedArrangement(imprintSegmentCount(impA) + imprintSegmentCount(impB))
 	}
 	return stitch(append(keptA, keptB...), nil, prov)
+}
+
+// imprintSegmentCount is the number of imprint SEGMENTS across a per-face imprint list — what the
+// refusal reports; len(imp) is the number of faces, and the message says "segments".
+func imprintSegmentCount(imp [][][2]math.Point3) int {
+	n := 0
+	for _, onFace := range imp {
+		n += len(onFace)
+	}
+	return n
 }
 
 // CodeBooleanTangentContact marks a boolean whose operands met at a tangent/grazing contact — a

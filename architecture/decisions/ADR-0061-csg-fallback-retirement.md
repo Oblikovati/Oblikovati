@@ -3612,3 +3612,30 @@ own account and is not counted.
 | coverage | 1 corpus row | 1 corpus row + a source guard over every site, proven by deletion |
 | budget counts | every split (argument bounded only pair-adding ones) | pair-adding splits only |
 | `fallback-sites` | 31 | 32 (`CodeArrangementDroppedCells`) |
+
+#### Review round 4 (2026-09-08): the guard reads the AST, the flag has a test, the argument is stated exactly
+
+Three things round 3 left short, none of them a behaviour change.
+
+The source guard was a regex over call LINES plus an 8-line substring scan for the decline. It
+matched `faces, _, err := trimByImprint(` and nothing else — not `return trimByImprint(...)`, not a
+selector target, not a nested call — and a COMMENT naming `recordArrangementDecline` satisfied it.
+`TestEveryArrangingSplitReportsANonConvergentArrangement` now parses each production file with
+`go/parser`: a call is any `*ast.CallExpr` whose callee is the identifier `trimByImprint` or
+`splitFace`, and the decline must be a `recordArrangementDecline` call expression (or, for a function
+that carries no recorder, an `unconvergedArrangement` call in a `return`) in the SAME function body;
+the parser drops comments before either is looked for. The scanner is proven on in-memory sources in
+every call form, guarded, unguarded and comment-only (`arrange_decline_guard_test.go`), and again live
+by deleting one production decline.
+
+`CodeArrangementDroppedCells` had no test. `TestRecordDroppedCellsFlagsOnlyANonConvergedArrangement`
+pins both senses geometry-free, and the two `unionTris` rows assert convergence on the ordinary path
+instead of discarding the flag.
+
+The budget argument, as round 3 stated it ("the quantity the n(n−1)/2 argument actually bounds"),
+overstates: pairs can be deleted and re-added, so it is not "each pair is added at most once". What
+holds is weaker and sufficient — the budget is an ENFORCED cap on pair-adding splits, set to the size
+of the pair universe so that a run needing more has re-added a pair it already removed; a
+non-adding split strictly shrinks a finite set; hence the pass terminates. `tjSplitBudget`'s comment
+now says exactly that. `booleanOnce`'s refusal reported a FACE count in a message that says
+"segments"; it now counts the segments.

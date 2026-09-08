@@ -137,14 +137,20 @@ func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 	return true
 }
 
-// tjSplitBudget is the PROVABLE bound on how many PAIR-ADDING T-junction splits a converging run can
-// make, not a tuned number. A split replaces one edge with two whose endpoints are existing welded
-// vertices, so every edge it can ever produce is a member of the set of unordered index pairs over
-// the n welded points, and that set holds n(n−1)/2 members. A split that adds at least one pair
-// therefore cannot happen more than n(n−1)/2 times in total, however the pass interleaves them; a
-// split that adds neither half only removes an edge, strictly shrinking the set, so it cannot run
-// away by itself and is not counted. Exceeding the budget means the pass is manufacturing pairs
-// without converging, which is the failure below.
+// tjSplitBudget is the ENFORCED bound on how many PAIR-ADDING T-junction splits a run may make; the
+// termination argument is the bound itself plus one fact about the other kind of split, and the
+// number n(n−1)/2 is the size the bound is set to, not a theorem about the pass. The argument:
+//
+//   - A split replaces one edge with two whose endpoints are existing welded vertices, so every edge
+//     the pass can ever hold is one of the n(n−1)/2 unordered index pairs over the n welded points.
+//   - A split that adds at least one pair not currently in the set is counted against the budget, so
+//     there are at most n(n−1)/2 of them. (Pairs CAN be deleted and re-added, so this is not "each pair
+//     is added once"; it is that a run needing more pair-adding splits than there are distinct pairs
+//     has re-added a pair it already removed, which is churn, not progress.)
+//   - A split that adds neither half only removes an edge, strictly shrinking a finite set, so between
+//     two pair-adding splits the pass makes finitely many of them and is not counted.
+//
+// Hence the pass terminates, and exceeding the budget is the failure below.
 //
 // It has to exist because the loop's termination argument silently depends on scale. tjTol is an
 // ABSOLUTE 1e-7, and it is used twice over: as a perpendicular DISTANCE to the edge and as a

@@ -40,8 +40,8 @@ func unconvergedArrangement(segs int) error {
 // recordArrangementDecline reports the refusal on the recorder, naming WHICH of the splits declined —
 // there are four (the closed-surface trim, the ruled-wall trim, the uv-plane trim and the planar face
 // split), they fail for the same reason and a report that did not distinguish them would send the
-// reader to the wrong one. Every site calls this; arrangementDeclineSites is the guard that keeps it
-// so as new splits are added.
+// reader to the wrong one. Every site calls this; TestEveryArrangingSplitReportsANonConvergentArrangement
+// is the guard that keeps it so as new splits are added.
 func recordArrangementDecline(rec *diag.Recorder, site string, err error) {
 	if !errors.Is(err, ErrUnconvergedArrangement) {
 		return

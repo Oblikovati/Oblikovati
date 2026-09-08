@@ -3,8 +3,10 @@
 package brep
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -20,37 +22,106 @@ import (
 // takes the closed-surface trim), so this is the guard that covers the rest and, more importantly,
 // covers the split that has not been written yet: it fails when a new call site appears without a
 // decline beside it.
+//
+// It reads the AST, not the text (review round 4): the round-3 regex matched only `x, _, err :=
+// trimByImprint(` and missed `return trimByImprint(...)`, a selector target and a nested call, and
+// its "decline within 8 lines" was a substring scan a COMMENT could satisfy. Here a call is any
+// *ast.CallExpr whose callee is trimByImprint or splitFace, the decline must be a CallExpr in the
+// same function body, and the parser drops comments before either is looked for.
 func TestEveryArrangingSplitReportsANonConvergentArrangement(t *testing.T) {
 	t.Parallel()
-	calls := regexp.MustCompile(`(?m)^\s*(?:[\w, ]+:?=\s*)?trimByImprint\(|^\s*(?:[\w, ]+:?=\s*)?splitFace\(`)
+	var found int
 	for _, f := range productionGoFiles(t) {
-		src, err := os.ReadFile(f)
-		if err != nil {
-			t.Fatalf("reading %s: %v", f, err)
+		unguarded, calls := unguardedArrangingCalls(t, f, nil)
+		found += calls
+		for _, site := range unguarded {
+			t.Errorf("%s arranges a face without a recordArrangementDecline call (or a returned "+
+				"unconvergedArrangement) in its function body: an unconverged arrangement there would "+
+				"surface only as a generic refusal, naming nothing", site)
 		}
-		lines := strings.Split(string(src), "\n")
-		for i, l := range lines {
-			if !calls.MatchString(l) {
-				continue
-			}
-			if !declineWithin(lines, i, 8) {
-				t.Errorf("%s:%d arranges a face (%s) without a recordArrangementDecline within 8 lines: "+
-					"an unconverged arrangement there would surface only as a generic refusal, naming nothing",
-					f, i+1, strings.TrimSpace(l))
-			}
-		}
+	}
+	if found == 0 {
+		t.Fatal("the scanner found no trimByImprint/splitFace call in the package; the guard is vacuous")
 	}
 }
 
-// declineWithin reports whether a recordArrangementDecline (or an explicit propagation of the named
-// error) appears within n lines after the call — the shape every site uses.
-func declineWithin(lines []string, at, n int) bool {
-	for i := at; i < len(lines) && i <= at+n; i++ {
-		if strings.Contains(lines[i], "recordArrangementDecline") || strings.Contains(lines[i], "unconvergedArrangement(") {
+// unguardedArrangingCalls parses one Go source (from src, or from filename when src is nil) and
+// returns the position of every trimByImprint / splitFace call whose enclosing function body carries
+// neither a recordArrangementDecline call nor a returned unconvergedArrangement call, plus the total
+// number of arranging calls seen so a caller can tell an empty answer from a vacuous scan.
+func unguardedArrangingCalls(t *testing.T, filename string, src []byte) ([]string, int) {
+	t.Helper()
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filename, parserSource(src), 0)
+	if err != nil {
+		t.Fatalf("parsing %s: %v", filename, err)
+	}
+	var unguarded []string
+	total := 0
+	for _, d := range file.Decls {
+		fn, ok := d.(*ast.FuncDecl)
+		if !ok || fn.Body == nil {
+			continue
+		}
+		calls, declined := arrangingCallsInBody(fn.Body)
+		total += len(calls)
+		if declined {
+			continue
+		}
+		for _, c := range calls {
+			unguarded = append(unguarded, fset.Position(c.Pos()).String())
+		}
+	}
+	return unguarded, total
+}
+
+// parserSource keeps a nil slice nil: a nil []byte boxed as `any` is a non-nil interface holding an
+// empty source, and the parser would read THAT instead of the file.
+func parserSource(src []byte) any {
+	if src == nil {
+		return nil
+	}
+	return src
+}
+
+// arrangingCallsInBody collects the arranging calls in one function body and reports whether the
+// body declines by name: a recordArrangementDecline call, or — for a function that carries no
+// recorder, like the public imprint entry — an unconvergedArrangement call returned to its caller.
+func arrangingCallsInBody(body *ast.BlockStmt) (calls []*ast.CallExpr, declined bool) {
+	ast.Inspect(body, func(n ast.Node) bool {
+		switch node := n.(type) {
+		case *ast.ReturnStmt:
+			declined = declined || returnsUnconvergedArrangement(node)
+		case *ast.CallExpr:
+			switch calleeName(node) {
+			case "trimByImprint", "splitFace":
+				calls = append(calls, node)
+			case "recordArrangementDecline":
+				declined = true
+			}
+		}
+		return true
+	})
+	return calls, declined
+}
+
+// returnsUnconvergedArrangement reports whether a return statement hands the named refusal up.
+func returnsUnconvergedArrangement(ret *ast.ReturnStmt) bool {
+	for _, r := range ret.Results {
+		if call, ok := r.(*ast.CallExpr); ok && calleeName(call) == "unconvergedArrangement" {
 			return true
 		}
 	}
 	return false
+}
+
+// calleeName is the bare identifier a call invokes, or "" for anything that is not a plain
+// function call (method calls, function literals, conversions).
+func calleeName(call *ast.CallExpr) string {
+	if id, ok := call.Fun.(*ast.Ident); ok {
+		return id.Name
+	}
+	return ""
 }
 
 // productionGoFiles lists this package's non-test .go files.
@@ -86,13 +157,27 @@ func TestArrangeCheckedReportsConvergenceOnAnOrdinarySet(t *testing.T) {
 }
 
 // TestTheSplitBudgetIsTheEdgePairSetSize pins the bound's ARGUMENT, not a number: it is the size of
-// the canonical undirected index-pair set the pass grows, so it is what a run can spend and still be
-// making progress.
+// the canonical undirected index-pair set the pass draws its edges from, so a run that spends more
+// pair-adding splits than that has re-added a pair it already removed.
 func TestTheSplitBudgetIsTheEdgePairSetSize(t *testing.T) {
 	t.Parallel()
 	for _, n := range []int{0, 1, 2, 10, 100} {
 		if got, want := tjSplitBudget(n), n*(n-1)/2; got != want {
 			t.Errorf("tjSplitBudget(%d) = %d, want %d (the number of distinct unordered pairs)", n, got, want)
 		}
+	}
+}
+
+// TestTheRefusalCountsSegmentsNotFaces: booleanOnce reported len(impA)+len(impB) — a FACE count —
+// in a message that says "segments" (review round 4). The count is now the segments themselves.
+func TestTheRefusalCountsSegmentsNotFaces(t *testing.T) {
+	t.Parallel()
+	seg := [2]math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0)}
+	perFace := [][][2]math.Point3{{seg, seg, seg}, nil, {seg}}
+	if got := imprintSegmentCount(perFace); got != 4 {
+		t.Errorf("imprintSegmentCount over 3 faces holding 3+0+1 segments = %d, want 4", got)
+	}
+	if got := imprintSegmentCount(nil); got != 0 {
+		t.Errorf("imprintSegmentCount(nil) = %d, want 0", got)
 	}
 }

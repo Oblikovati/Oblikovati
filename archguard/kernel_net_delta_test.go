@@ -153,8 +153,9 @@ var kernelNetDeltaPin = map[string]int{
 	// planar T-junction pass subdivided "until stable" and, on geometry at the scale of its absolute
 	// 1e-7 tolerance, never became stable — measured, an axial drill of radius 1.585e-7 through the
 	// RING body never returned at all. A hang is neither a refusal nor a wrong body, and the ground
-	// rules admit only those two. The pass now stops at a provable budget (n(n-1)/2 splits, the size
-	// of the canonical edge-pair set it grows) and the boolean refuses by name instead of hanging.
+	// rules admit only those two. The pass now stops at a budget on its PAIR-ADDING splits (n(n-1)/2,
+	// the size of the canonical edge-pair set it draws from) and the boolean refuses by name instead
+	// of hanging.
 	// 31 → 32 (2026-09-08, ADR-0061 stage 6, review round 3): CodeArrangementDroppedCells. A RISE that
 	// names the second half of the same silence. Bounding the T-junction pass made brep.Arrange able to
 	// return NO cells, and its two production callers both read that as an ordinary empty answer: the
