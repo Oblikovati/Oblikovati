@@ -34,7 +34,7 @@ func TestBooleanRefusesAnUnmodelledConfigurationByName(t *testing.T) {
 	// harmonic's lanes took (stage 5's third slice). What is left with genuinely no closed form is a
 	// pair where NEITHER side supplies an implicit quadric to substitute a chart into. The positive
 	// forms of the three retired fixtures are TestSpherePairVolumesAreExact,
-	// TestRingAndBallBooleansAgreeWithRequicha and TestSkewRodThroughARingIsExact.
+	// TestRingAndBallBooleansAgreeWithRequicha and TestASkewToolThroughARingIsExact.
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
