@@ -153,7 +153,19 @@ func isSpiricTubeBand(f *topo.Face, s geom.Surface, q Quality) bool {
 
 // isTwoRimHoledBand reports whether the trim is a singly-periodic developable side whose hole loops are
 // ONE full-wrap rim plus at least one lens window. The lens is what separates it from
-// kindRuledBandLoft, which the pure rim-to-rim loft can mesh precisely because it carries none.
+// kindRuledBandLoft, which the pure rim-to-rim loft meshes exactly because it carries none.
+//
+// This arm is the one the chart mesher very nearly takes, and the measurement of why it does not is
+// worth keeping (ADR-0061 stage 5). The unroll is not an exact fast path — it bridges the two rims at
+// an invented seam and triangulates the flattened branch, and on the rod a ball is set into it meshes
+// the right 24.5 mm² of wall with triangles whose planes pass 0.5 from the axis, so the wall
+// integrates 7.19 where 8.26 is right. Per FACE the chart mesher is better: over the corpus's 19
+// charted two-rim holed bands it matches the unroll to ±0.2% of area on 18 and betters the rod wall by
+// 1.5%, with 40–85% fewer triangles and the same rim count, and routing them to it moves RODB∪/RODB−
+// from 8.72%/9.02% to 1.44%/1.43%. Per BODY it is not: at PropertyQuality the corner junction's wall
+// (#1738) comes back with 870 rim edges against its neighbours' 864, cracking the body with 6 free
+// edges, and its area FALLS from 160.93 to 158.65 as the chord tolerance tightens — refinement is
+// meant to raise it. Until that is fixed the wall the boolean charts stays on the unroll.
 func isTwoRimHoledBand(s geom.Surface, holes3D [][]math.Point3) bool {
 	if !isDevelopableSide(s) || IsPeriodic(s.UDomain()) == IsPeriodic(s.VDomain()) {
 		return false

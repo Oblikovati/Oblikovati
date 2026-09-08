@@ -31,6 +31,12 @@ import (
 func hasIgnoredTrim(t *testing.T, b *topo.Body) bool {
 	t.Helper()
 	mesh, _ := tessellate.TessellateBody(b, ops.DefaultQuality())
+	return meshReportsIgnoredTrim(mesh)
+}
+
+// meshReportsIgnoredTrim reads the verdict off a mesh a caller already has, so a corpus row that
+// measures a body's volume does not tessellate it a second time just to read its diagnostics.
+func meshReportsIgnoredTrim(mesh *tessellate.Mesh) bool {
 	for _, d := range mesh.Diagnostics {
 		if d.Code == tessellate.CodeTrimIgnoredFullDomain {
 			return true

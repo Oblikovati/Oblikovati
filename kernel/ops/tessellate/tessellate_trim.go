@@ -91,7 +91,9 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 // meshSeamCrossingFace meshes a curved face whose boundary loop wraps the periodic seam (so toUVLoops
 // can't unwrap it): a full cylinder/cone side or a torus rim-fillet band closes the seam watertight via
 // closedDomainMesh; a singly-periodic sphere cap straddling the pole goes through the best-fit-plane CDT
-// (the full-domain grid tears there); a doubly-periodic torus we can't reduce keeps the full-domain grid.
+// (the full-domain grid tears there); and a doubly-periodic torus no wrapping mesher reduces is meshed
+// from the region it CARRIES (chartedTrimMesh, ADR-0061/ADR-0063), not from the surface's whole domain —
+// only a face recording no chart still falls that far, and that degradation is reported.
 func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
 		if m, ok := unequalRimBandMesh(f, s, bandGridStations(s, us, vs), q); ok {

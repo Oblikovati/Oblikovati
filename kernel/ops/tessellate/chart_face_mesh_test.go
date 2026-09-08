@@ -149,20 +149,31 @@ func TestChartedFacesMeshTheirOwnRegion(t *testing.T) {
 		if free := tessellate.FreeEdgeCount(mesh); free != 0 {
 			t.Errorf("%s meshed with %d free edges, want a watertight mesh", row.name, free)
 		}
-		if hasIgnoredTrim(t, body) {
+		if meshReportsIgnoredTrim(mesh) {
 			t.Errorf("%s reported a discarded trim; the chart mesher charts it now", row.name)
 		}
-		got := tessellate.MeshGeometryProperties(mesh).Volume
-		rel := stdmath.Abs(got-row.want) / row.want
-		if row.maxRel > 0 && rel > row.maxRel {
-			t.Errorf("%s meshes to %.5f against an analytic %.5f (rel %.4f > %.4f); that is not a chord deficit",
-				row.name, got, row.want, rel, row.maxRel)
-		}
-		if row.pinWindow > 0 && stdmath.Abs(rel-row.pinnedRel) > row.pinWindow {
-			t.Errorf("%s meshes to %.5f against an analytic %.5f (rel %.4f), off its pin of %.4f ± %.4f — "+
-				"a regression, or the wall mesher was retired and this row is now the chart mesher's to bound",
-				row.name, got, row.want, rel, row.pinnedRel, row.pinWindow)
-		}
+		assertCorpusVolume(t, row, tessellate.MeshGeometryProperties(mesh).Volume)
+	}
+}
+
+// assertCorpusVolume holds one row's mesh volume against its analytic value, the way the row asks to
+// be held: a bound for a row the chart mesher owns, a two-sided pin for one it does not. A row that
+// carries NEITHER asserts nothing about its volume, which would make it a watertightness test wearing
+// a corpus row's clothes, so that is a failure of the row itself.
+func assertCorpusVolume(t *testing.T, row chartCorpusRow, got float64) {
+	t.Helper()
+	rel := stdmath.Abs(got-row.want) / row.want
+	if row.maxRel <= 0 && row.pinWindow <= 0 {
+		t.Errorf("%s carries neither a bound nor a pin, so its volume of %.5f is unchecked", row.name, got)
+	}
+	if row.maxRel > 0 && rel > row.maxRel {
+		t.Errorf("%s meshes to %.5f against an analytic %.5f (rel %.4f > %.4f); that is not a chord deficit",
+			row.name, got, row.want, rel, row.maxRel)
+	}
+	if row.pinWindow > 0 && stdmath.Abs(rel-row.pinnedRel) > row.pinWindow {
+		t.Errorf("%s meshes to %.5f against an analytic %.5f (rel %.4f), off its pin of %.4f ± %.4f — "+
+			"a regression, or the wall mesher was retired and this row is now the chart mesher's to bound",
+			row.name, got, row.want, rel, row.pinnedRel, row.pinWindow)
 	}
 }
 
@@ -195,8 +206,11 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 		t.Error("the genus-1 complement reported a discarded trim")
 	}
 	got := tessellate.MeshGeometryProperties(mesh).Volume
-	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > 0.05 {
-		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f)", got, an.Volume, rel)
+	// 0.02, not the 0.05 the other rows carry: this row is MEASURED at 1.11% (201.63 against 203.90),
+	// and a bound four times looser than the reading would sit green through the window mesher's own
+	// 1.39% — the very number this row exists to have beaten.
+	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > 0.02 {
+		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f > 0.02)", got, an.Volume, rel)
 	}
 }
 

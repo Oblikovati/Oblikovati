@@ -67,6 +67,12 @@ func classificationCorpus() []struct {
 		{"plate with a conical drill point", func(t *testing.T) *topo.Body {
 			return cutWith(t, mustBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 3.5)), mustConeDrill(t))
 		}},
+		// The corner junction (#1738): a notched cylinder drilled by a rod that crosses the notch. Its
+		// wall is a two-rim band carrying a lens hole and recording NO chart, which is the only trim
+		// left on the unroll (curved_trim_classify.go).
+		{"notched cylinder − crossing rod", func(t *testing.T) *topo.Body {
+			return cutWith(t, notchedRod(t), mustCylinder(t, math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12))
+		}},
 		{"drilled plate", func(t *testing.T) *topo.Body {
 			return cutWith(t, mustBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 3.5)),
 				mustCylinder(t, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5, 6))
@@ -156,6 +162,20 @@ func mustTorus(t *testing.T) *topo.Body {
 		t.Fatalf("ring: %v", err)
 	}
 	return ring
+}
+
+// notchedRod is a cylinder with one oblique half-space bite taken out of its top rim (#1738's first cut).
+func notchedRod(t *testing.T) *topo.Body {
+	t.Helper()
+	pl, err := geom.NewPlane(math.P3(1.5, 0, 8), math.V3(1, 0, 1))
+	if err != nil {
+		t.Fatalf("notch plane: %v", err)
+	}
+	notched, err := brep.HalfSpaceCut(mustCylinder(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10), pl)
+	if err != nil {
+		t.Fatalf("notch cut: %v", err)
+	}
+	return notched
 }
 
 // mustConeDrill builds the conical drill whose apex-reaching cone face is the cone-apex arm's shape.
