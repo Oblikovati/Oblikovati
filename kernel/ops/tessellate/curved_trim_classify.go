@@ -103,7 +103,7 @@ func classifyCurvedTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, hol
 	if b, ok := spiricTubeTrimOf(f, s, q); ok {
 		return curvedTrim{kind: kindSpiricBand, tube: b}
 	}
-	if h, ok := twoRimHoledTrimOf(s, holes3D); ok {
+	if h, ok := twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D); ok {
 		return curvedTrim{kind: kindTwoRimHoledBand, holed: h}
 	}
 	if w, ok := wedgeBandTrimOf(f, s, q); ok {

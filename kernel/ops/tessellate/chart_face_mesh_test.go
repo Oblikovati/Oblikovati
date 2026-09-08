@@ -116,17 +116,20 @@ func chartCorpus() []chartCorpusRow {
 		{name: "RD− ring − axial drill", want: 216.26, maxRel: 0.05, body: func(t *testing.T) *topo.Body {
 			return ringMinus(t, mustCylinder(t, math.P3(5, 0, -4), math.V3(0, 0, 1), 0.8, 8))
 		}},
-		// The folded-window family, PINNED rather than bounded. Its SPHERE — the ball's bulge outside
-		// the rod, a sphere minus a window — was the full domain (the whole ball) with 28 free edges,
-		// and the chart mesher takes it. What is left in these rows is the rod's WALL, which
-		// specialCurvedMeshers claims before the router ever reaches the chart (twoRimHoledBandMesh):
-		// it meshes 24.47 mm² of wall area with triangles whose planes pass as close as 0.5 to the
-		// axis, so the wall integrates 7.19 where 8.26 is right. Driving that face through the chart
-		// mesher instead measures 1.44% and 1.43% here — it needs three wrapping meshers retired
-		// together, which is a slice of its own. The pin is what makes that slice announce itself.
-		{name: "RODB∪ rod ∪ ball", want: 13.077910, pinnedRel: 0.0872, pinWindow: 0.005,
+		// The folded-window family. Both faces are the chart mesher's now: the ball's bulge (a sphere
+		// minus a window, once the whole ball with 28 free edges) and the rod's WALL, which the unroll
+		// used to claim — it meshed 24.47 mm² of wall with triangles whose planes pass as close as 0.5
+		// to the axis, so the wall integrated 7.19 where 8.26 is right, and the two rows sat PINNED at
+		// 0.0872 and 0.0902 with that number written down as what would move them.
+		//
+		// It moved. The unroll now keeps only the bands the general covering cannot serve — an
+		// uncharted one, or one whose lens windows nearly pinch (twoRimHoledTrimOf) — and these two
+		// measure 0.0144 and 0.0143, exactly the 1.44 %/1.43 % the pin predicted. They are bounded
+		// rows again, at 0.02: a chord deficit is all that is left, and pinning one would fail the day
+		// the faceting improves.
+		{name: "RODB∪ rod ∪ ball", want: 13.077910, maxRel: 0.02,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Join) }},
-		{name: "RODB− rod − ball", want: 12.555898, pinnedRel: 0.0902, pinWindow: 0.005,
+		{name: "RODB− rod − ball", want: 12.555898, maxRel: 0.02,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Cut) }},
 		// RODB∩'s two faces are small single-loop patches chorded flat across a lens 0.1 deep. The rod
 		// WALL's carries a chart and no special shape claims it, so the classification names it
@@ -135,7 +138,12 @@ func chartCorpus() []chartCorpusRow {
 		// flat across the lens — that is what the remaining 27% is. (Verified by logging the kind of
 		// both faces: sphere → sphere-patch, cylinder → chart.) Pinned so the pair's third operation
 		// cannot move, in either direction, without saying so.
-		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.2741, pinWindow: 0.005,
+		//
+		// 0.2741 → 0.2810 (Task 7): re-MEASURED, not widened. Giving a STRAIGHT covering axis the cell
+		// size the other axis's chord asks for (balancedCoverGrid) refines the rod wall's lens patch,
+		// and a finer faceting of a lens 0.1 mm deep on a body of 0.012 mm³ takes a little more volume
+		// out of it. The body it belongs to is unchanged everywhere else.
+		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.2810, pinWindow: 0.005,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Intersect) }},
 	}
 }

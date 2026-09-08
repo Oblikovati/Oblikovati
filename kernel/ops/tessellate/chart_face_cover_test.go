@@ -262,3 +262,36 @@ func coverCircumradius(b *chartCover, tri [3]int) float64 {
 	}
 	return ab * bc * ca / (2 * twiceArea)
 }
+
+// TestAStraightAxisTakesItsCellFromTheOther: a floored axis (a cylinder's height, which has no chord to
+// resolve) is refined until its cells are no longer than the other axis's; an axis the chord already
+// subdivided is left exactly as it is. See balancedCoverGrid for the #1738 measurement.
+func TestAStraightAxisTakesItsCellFromTheOther(t *testing.T) {
+	t.Parallel()
+	columns := []float64{0, 0.1, 0.2, 0.3} // four chord-chosen stations: more than the floor
+	rows := []float64{0, 5, 10}            // the floor: a straight axis brings nothing else
+	gotU, gotV := balancedCoverGrid(columns, rows, 3, 1)
+	if len(gotU) != len(columns) {
+		t.Errorf("the chord-subdivided axis was re-balanced: %d stations, want its own %d", len(gotU), len(columns))
+	}
+	if widest := widestStationGap(gotV) * 1; widest > widestStationGap(columns)*3 {
+		t.Errorf("the straight axis's widest cell is %.4f, want no more than the other's %.4f",
+			widest, widestStationGap(columns)*3)
+	}
+	if len(gotV) <= len(rows) {
+		t.Errorf("the straight axis kept its %d floor stations; it must take the other's cell size", len(gotV))
+	}
+}
+
+// TestBalancingNeverExceedsTheCellCap: the refinement is bounded by the package's own maximum cell
+// count, so a chord far finer than a face is long cannot explode the covering.
+func TestBalancingNeverExceedsTheCellCap(t *testing.T) {
+	t.Parallel()
+	_, rows := balancedCoverGrid([]float64{0, 1e-6, 2e-6}, []float64{0, 1000}, 1, 1)
+	if cells := len(rows) - 1; cells > maxInteriorCells {
+		t.Errorf("balancing produced %d cells, past the %d cap", cells, maxInteriorCells)
+	}
+	if len(rows) < 2 {
+		t.Errorf("balancing dropped the axis entirely: %v", rows)
+	}
+}

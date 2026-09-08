@@ -3,6 +3,8 @@
 package tessellate
 
 import (
+	stdmath "math"
+
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -81,21 +83,21 @@ type twoRimHoledTrim struct {
 }
 
 // twoRimHoledTrimOf recognises a singly-periodic developable side whose hole loops are ONE full-wrap
-// rim plus at least one lens window. The lens is what separates it from kindRuledBandLoft, whose pure
-// rim-to-rim loft is exact precisely because it carries none.
+// rim plus at least one lens window — and which the GENERAL chart-driven mesher cannot serve. The lens
+// is what separates the shape from kindRuledBandLoft, whose pure rim-to-rim loft is exact precisely
+// because it carries none.
 //
-// This arm is the one the chart mesher very nearly takes, and the measurement of why it does not is
-// worth keeping (ADR-0061 stage 5). The unroll is not an exact fast path — it bridges the two rims at
-// an invented seam and triangulates the flattened branch, and on the rod a ball is set into it meshes
-// the right 24.5 mm² of wall with triangles whose planes pass 0.5 from the axis, so the wall
-// integrates 7.19 where 8.26 is right. Per FACE the chart mesher is better: over the corpus's 19
-// charted two-rim holed bands it matches the unroll to ±0.2% of area on 18 and betters the rod wall by
-// 1.5%, with 40–85% fewer triangles and the same rim count, and routing them to it moves RODB∪/RODB−
-// from 8.72%/9.02% to 1.44%/1.43%. Per BODY it is not: at PropertyQuality the corner junction's wall
-// (#1738) comes back with 870 rim edges against its neighbours' 864, cracking the body with 6 free
-// edges, and its area FALLS from 160.93 to 158.65 as the chord tolerance tightens — refinement is
-// meant to raise it. Until that is fixed the wall the boolean charts stays on the unroll.
-func twoRimHoledTrimOf(s geom.Surface, holes3D [][]math.Point3) (twoRimHoledTrim, bool) {
+// The unroll is not an exact fast path: it bridges the two rims at an invented seam and triangulates the
+// flattened branch, and on the rod a ball is set into it meshes the right 24.5 mm² of wall with
+// triangles whose planes pass 0.5 from the axis, so the wall integrates 7.19 where 8.26 is right. Per
+// FACE the chart mesher is better on every band whose windows its own sampling can separate — over the
+// corpus it matches the unroll to ±0.2 % of area with 40–85 % fewer triangles and the same rim count,
+// and routing those to it moves RODB∪/RODB− from 8.72 %/9.02 % to 1.44 %/1.43 %.
+//
+// So the arm keeps exactly two configurations, both of them CONDITIONING on the general path, not shape:
+// a face that records no chart (there is no region to mesh from), and a band whose windows nearly pinch
+// (below). Everything else is kindChart.
+func twoRimHoledTrimOf(chart [][]math.Point2, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3) (twoRimHoledTrim, bool) {
 	if !isDevelopableSide(s) || IsPeriodic(s.UDomain()) == IsPeriodic(s.VDomain()) {
 		return twoRimHoledTrim{}, false
 	}
@@ -103,7 +105,56 @@ func twoRimHoledTrimOf(s geom.Surface, holes3D [][]math.Point3) (twoRimHoledTrim
 	if len(rims) != 1 || len(lenses) == 0 {
 		return twoRimHoledTrim{}, false
 	}
+	if len(chart) > 0 && !lensCorridorOutrunsTheSampling(lenses, meanChainChord(outer3D)) {
+		return twoRimHoledTrim{}, false // the general chart-driven mesher serves this band
+	}
 	return twoRimHoledTrim{rim: rims[0], lenses: lenses}, true
+}
+
+// nearPinchCorridorChords is how many boundary chords wide the corridor between two lens windows must
+// be before the covering mesher is trusted with it.
+//
+// The chart mesher lays its boundary CONSTRAINTS at the shared edges' own discretisation. Where two
+// windows pass closer than a few of those chords, the two chord polygons no longer separate the
+// corridor and the constrained triangulation loses it: measured on the #1818 near-pinch crossings
+// (R = 3 and 30, |Δr| = 4e-5 … 3.2e-4 scaled), it comes back with 126–2359 unpaired edges against rims
+// of 128–2304 and its region as much as 4 % out. The unroll's BENT seam is built for exactly that
+// corridor (ADR-0061 stage 4), so those bands keep it.
+//
+// The measured corridor/chord ratio over the whole two-rim corpus is 0.05 … 2.4 on every band the chart
+// mesher LOSES and 8.6 or infinite (a single window) on every band it takes, at all three sampled
+// tolerances. 4 sits in that gap with a factor of two either side; the split it produces is asserted
+// face by face, against the mesher's own verdict, by TestEveryChartedTwoRimBandIsMeshedByItsArm.
+const nearPinchCorridorChords = 4
+
+// lensCorridorOutrunsTheSampling reports whether two lens windows pass within nearPinchCorridorChords of
+// the boundary's own chord — the corridor the covering cannot resolve. A band with a single window has
+// no corridor and never does.
+func lensCorridorOutrunsTheSampling(lenses [][]math.Point3, chord float64) bool {
+	return closestLensApproach(lenses) < nearPinchCorridorChords*chord
+}
+
+// closestLensApproach is the smallest distance between points of two DIFFERENT lens windows (+Inf when
+// there is only one).
+func closestLensApproach(lenses [][]math.Point3) float64 {
+	best := stdmath.Inf(1)
+	for i := range lenses {
+		for j := i + 1; j < len(lenses); j++ {
+			best = stdmath.Min(best, closestPointPair(lenses[i], lenses[j]))
+		}
+	}
+	return best
+}
+
+// closestPointPair is the smallest distance between a point of a and a point of b.
+func closestPointPair(a, b []math.Point3) float64 {
+	best := stdmath.Inf(1)
+	for _, p := range a {
+		for _, q := range b {
+			best = stdmath.Min(best, float64(p.DistanceTo(q)))
+		}
+	}
+	return best
 }
 
 // wedgeBandTrim is the wedge arm's recognition: the cylinder and its two oblique end chains.

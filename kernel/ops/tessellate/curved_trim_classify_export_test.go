@@ -46,7 +46,7 @@ func curvedTrimRecognizers(f *topo.Face, s geom.Surface, outer3D []math.Point3, 
 	_, isCap := sphereCapTrimOf(f, sph, outer3D, holes3D, q)
 	_, isBelt := sphereBeltTrimOf(f, sph, q)
 	_, isTube := spiricTubeTrimOf(f, s, q)
-	_, isHoled := twoRimHoledTrimOf(s, holes3D)
+	_, isHoled := twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D)
 	_, isWedge := wedgeBandTrimOf(f, s, q)
 	return []curvedTrimVerdict{
 		{kindConeApexFan, isCone},
@@ -143,3 +143,34 @@ func ChartedTrimKindName() string { return kindChart.String() }
 
 // SpherePatchTrimKindName names the sphere family's residual arm.
 func SpherePatchTrimKindName() string { return kindSpherePatch.String() }
+
+// TwoRimHoledBandVerdict reports, for one face, whether it has the two-rim HOLED band shape at all,
+// whether it records a chart to mesh from, and whether the classification sends it to that arm. The
+// three together are what says the conditioning gate sorts the corpus the way it claims to.
+func TwoRimHoledBandVerdict(f *topo.Face, q Quality) (isShape, charted, toArm bool) {
+	s := f.Geometry()
+	outer3D, holes3D := FaceOuterBoundary(f, q), faceHoleBoundaries(f, q)
+	_, isShape = twoRimHoledTrimOf(nil, s, outer3D, holes3D) // nil chart: the SHAPE, ungated
+	_, toArm = twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D)
+	return isShape, len(f.Chart()) > 0, toArm
+}
+
+// ChartMeshVerdict drives the chart-driven mesher directly and reports whether it accepted the face,
+// its welded free-edge count and the rim it was given — the three numbers its acceptance gate compares.
+func ChartMeshVerdict(f *topo.Face, q Quality) (ok bool, free, rim int, area float64) {
+	s := f.Geometry()
+	m, ok := chartFaceMesh(f, s, q)
+	r, _ := newChartRegion(f, s)
+	rim = chainSegmentCount(chartBoundaryChains(f, s, r, q))
+	if m != nil {
+		free, area = WeldedFreeEdgeCount(m), m.Area()
+	}
+	return ok, free, rim, area
+}
+
+// TwoRimCorridorProbe reports the closest approach between two lens windows and the boundary chord the
+// gate compares it against.
+func TwoRimCorridorProbe(f *topo.Face, q Quality) (gap, chord float64) {
+	_, lenses := splitWrappingHoles(f.Geometry(), faceHoleBoundaries(f, q))
+	return closestLensApproach(lenses), meanChainChord(FaceOuterBoundary(f, q))
+}

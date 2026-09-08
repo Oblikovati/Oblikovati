@@ -85,6 +85,7 @@ type chartCover struct {
 func newChartCover(s geom.Surface, r chartRegion, q Quality) *chartCover {
 	b := &chartCover{s: s, r: r, us: chartStations(s, r, q, true), vs: chartStations(s, r, q, false)}
 	b.su, b.sv = trimMetricScale(s, r.contours[0])
+	b.us, b.vs = balancedCoverGrid(b.us, b.vs, b.su, b.sv)
 	cell := coarsestCoverCell(b.us, b.vs, b.su, b.sv)
 	b.padU = chartPad(cell, b.su, r.uHi-r.uLo)
 	b.padV = chartPad(cell, b.sv, r.vHi-r.vLo)
@@ -110,6 +111,55 @@ func newChartCover(s geom.Surface, r chartRegion, q Quality) *chartCover {
 // the figure-eight torus band at PropertyQuality, 23.16 s against 1.69 s for the same 97460 triangles,
 // because a doubly-periodic covering has nine shifts.
 const chartCoverPadStations = 3
+
+// balancedCoverGrid gives a STRAIGHT axis the cell size the other axis's chord asks for.
+//
+// The breakpoints each axis brings are the CHORD's, and a straight axis — a cylinder or cone's height —
+// has no chord to resolve, so it arrives with nothing but the package's minimum-cell floor. Its cells
+// are then as long as the whole face while the wrapping axis's are a chord apart, and the covering's
+// triangles reach right across it: measured on the #1738 corner junction, the wall's facets cut 0.16 mm
+// INTO a solid of radius 3, and 2617 interior points of a 60³ audit read outside the body they are
+// inside. The mesh is watertight and its area is right to 0.07 %, which is why only a membership oracle
+// sees it. Square cells are also what the replication pad's own premise assumes.
+//
+// Only a floored axis is refined. An axis the chord already subdivided carries the density the quality
+// asked for, and second-guessing it moves every curved face's faceting (measured: re-balancing a
+// torus's tube against its ring drove the figure-eight band from 110.947 mm² to the whole torus).
+func balancedCoverGrid(us, vs []float64, su, sv float64) ([]float64, []float64) {
+	uCell, vCell := widestStationGap(us)*su, widestStationGap(vs)*sv
+	return balancedAxis(us, su, vCell), balancedAxis(vs, sv, uCell)
+}
+
+// balancedAxis subdivides each cell of a FLOORED axis into equal parts until none is longer than target
+// (a 3D length), never exceeding maxInteriorCells cells in all. An axis the chord subdivided, a target
+// of zero or a degenerate scale leaves it alone.
+func balancedAxis(ps []float64, scale, target float64) []float64 {
+	if len(ps) > minInteriorCells+1 {
+		return ps // the chord already chose this axis's density
+	}
+	steps := balancedSubdivision(ps, scale, target)
+	if steps < 2 {
+		return ps
+	}
+	out := make([]float64, 0, (len(ps)-1)*steps+1)
+	for i := 0; i+1 < len(ps); i++ {
+		for k := range steps {
+			out = append(out, ps[i]+(ps[i+1]-ps[i])*float64(k)/float64(steps))
+		}
+	}
+	return append(out, ps[len(ps)-1])
+}
+
+// balancedSubdivision is how many equal parts each of an axis's cells is cut into: enough that its
+// widest is no longer than target, and few enough that the axis stays under maxInteriorCells cells.
+func balancedSubdivision(ps []float64, scale, target float64) int {
+	if len(ps) < 2 || target <= 0 || scale <= 0 {
+		return 1
+	}
+	widest := widestStationGap(ps) * scale
+	steps := int(stdmath.Ceil(widest / target))
+	return min(steps, maxInteriorCells/(len(ps)-1))
+}
 
 // coarsestCoverCell is the diagonal, as a 3D length, of the largest cell the interior grid leaves — the
 // scale of the largest empty circle the triangulation can have, and so of the largest circumcircle the

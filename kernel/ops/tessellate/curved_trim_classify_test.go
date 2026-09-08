@@ -73,6 +73,14 @@ func classificationCorpus() []struct {
 		{"notched cylinder − crossing rod", func(t *testing.T) *topo.Body {
 			return cutWith(t, notchedRod(t), mustCylinder(t, math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12))
 		}},
+		// The #1818 near-pinch crossing: two cylinders of ALMOST the same radius joined, whose merged
+		// wall carries two lens windows whose corridor is narrower than the boundary's own chords. That
+		// corridor is what the general covering cannot resolve and the unroll's bent seam is built for,
+		// so this is the trim kindTwoRimHoledBand is left with (curved_trim_recognize.go).
+		{"near-pinch crossing rods ∪", func(t *testing.T) *topo.Body {
+			return joinWith(t, mustCylinder(t, math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12),
+				mustCylinder(t, math.P3(0, 0, -6), math.V3(0, 0, 1), 3.00004, 12))
+		}},
 		{"drilled plate", func(t *testing.T) *topo.Body {
 			return cutWith(t, mustBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 3.5)),
 				mustCylinder(t, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5, 6))
@@ -151,6 +159,52 @@ func TestTheClassificationCorpusReachesEveryArm(t *testing.T) {
 	}
 }
 
+// nearPinchCorpusBody is the one corpus body whose two-rim band the arm still keeps: its two lens
+// windows pass 0.031 mm apart on a boundary sampled every 0.588 mm, and no covering laid at that
+// sampling separates them. Every other two-rim band in the corpus goes to the general chart-driven
+// mesher (curved_trim_recognize.go's corridor gate).
+const nearPinchCorpusBody = "near-pinch crossing rods ∪"
+
+// TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe is the conditioning gate's own proof over the
+// corpus: the arm must keep exactly the bands the general chart-driven mesher cannot serve — one that
+// records no chart, and the near-pinch body's, whose two windows pass closer than the boundary is
+// sampled — and give up every other two-rim holed band there is. Both directions are asserted and the
+// test fails if the corpus stops covering either, so a gate that let go of everything — or of
+// nothing — is caught.
+func TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe(t *testing.T) {
+	t.Parallel()
+	q := ops.DefaultQuality()
+	kept, given := 0, 0
+	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
+		isShape, charted, toArm := tessellate.TwoRimHoledBandVerdict(f, q)
+		if !isShape {
+			return
+		}
+		wantArm := !charted || body == nearPinchCorpusBody
+		if toArm {
+			kept++
+		} else {
+			given++
+		}
+		if toArm != wantArm {
+			t.Errorf("%s face %d (charted=%v): the corridor gate sends this two-rim band to the %s; want the %s",
+				body, i, charted, armOrChart(toArm), armOrChart(wantArm))
+		}
+	})
+	if kept == 0 || given == 0 {
+		t.Errorf("the corpus presents %d bands the arm keeps and %d it gives up; it must cover both or "+
+			"the gate is proved in one direction only", kept, given)
+	}
+}
+
+// armOrChart names which mesher a verdict selects, for the failure message.
+func armOrChart(toArm bool) string {
+	if toArm {
+		return "unrolled arm"
+	}
+	return "chart-driven mesher"
+}
+
 // classifiedCurvedFaces counts the curved faces of the whole corpus by the kind they classify as.
 func classifiedCurvedFaces(t *testing.T) map[string]int {
 	t.Helper()
@@ -226,6 +280,16 @@ func cutWith(t *testing.T, base, tool *topo.Body) *topo.Body {
 	body, err := ops.Boolean(ops.Cut, base, tool)
 	if err != nil {
 		t.Fatalf("cut: %v", err)
+	}
+	return body
+}
+
+// joinWith unions two bodies, failing the test rather than returning an error.
+func joinWith(t *testing.T, base, tool *topo.Body) *topo.Body {
+	t.Helper()
+	body, err := ops.Boolean(ops.Join, base, tool)
+	if err != nil {
+		t.Fatalf("join: %v", err)
 	}
 	return body
 }
