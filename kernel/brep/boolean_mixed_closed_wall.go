@@ -75,15 +75,18 @@ func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, geom.SectionDec
 // keepCrossingsOnTheWall keeps the crossings that lie on the wall itself and drops the ones the
 // infinite surface contributes. A crossing that leaves through a RIM is CLIPPED to the band: the
 // stretch between the rims is real imprint and the rim circle in the face's own frame closes the
-// region it opens (clipCrossingToBand). ok=false only when the clip finds nothing inside a band the
-// placement called a straddle.
+// region it opens (clipCrossingToBand). A crossing that IS a rim (spanIsRimContact) is dropped with
+// the clear ones — it imprints the edge the face already carries — so only a true straddle reaches
+// the clip, and ok=false stays what it says: the clip found nothing inside a band the placement
+// called a straddle.
 func keepCrossingsOnTheWall(curves []geom.Curve3, rs ruledSide) ([]geom.Curve3, bool) {
 	var out []geom.Curve3
 	for _, cv := range curves {
-		switch inside, clear := crossingBandPlacement(cv, rs); {
+		lo, hi := crossingAxialSpan(cv, rs)
+		switch inside, clear := bandPlacement(lo, hi, rs.band); {
 		case inside:
 			out = append(out, cv)
-		case clear:
+		case clear || spanIsRimContact(lo, hi, rs.band):
 		default:
 			clipped, ok := clipCrossingToBand(cv, rs)
 			if !ok {
@@ -106,12 +109,6 @@ func crossingsClose(curves []geom.Curve3, res geom.Resolution) bool {
 		}
 	}
 	return true
-}
-
-// crossingBandPlacement classifies a crossing's axial span against the wall's band (bandPlacement).
-func crossingBandPlacement(cv geom.Curve3, rs ruledSide) (inside, clear bool) {
-	lo, hi := crossingAxialSpan(cv, rs)
-	return bandPlacement(lo, hi, rs.band)
 }
 
 // crossingAxialSpan is the crossing's extent along the wall's axis, walked on the curve itself. The

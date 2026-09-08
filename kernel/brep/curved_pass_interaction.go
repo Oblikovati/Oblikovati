@@ -266,6 +266,22 @@ func bandPlacement(lo, hi float64, band coneSideBand_) (inside, clear bool) {
 	return lo > band.vMin+pad && hi < band.vMax-pad, !spanMeetsBand(lo, hi, band)
 }
 
+// spanIsRimContact reports an axial span lying wholly within the band's own cull pad of ONE of its
+// rims: the crossing IS that rim at the tolerance the band is classified at, so it imprints nothing
+// the face does not already carry as an edge.
+//
+// It closes a gap between two windows for ONE incidence. bandPlacement pads both of its verdicts, so a
+// crossing sitting on a rim is neither inside nor clear and falls to clipCrossingToBand — whose
+// bandDepth measures against the UNPADDED band, finds nothing between the rims, and refuses the whole
+// boolean. Which of the two windows a rim crossing landed in was then decided by the last bit of its
+// axial coordinate: a chamfer cone meeting its shaft wall exactly at the wedge's own rim fell inside
+// the band on amd64 and outside it on arm64, where the compiler fuses x*y+z (CI run 34280554924
+// macos-latest, ADR-0061).
+func spanIsRimContact(lo, hi float64, band coneSideBand_) bool {
+	pad := bandCullPad(band)
+	return hi <= band.vMin+pad || lo >= band.vMax-pad
+}
+
 // conicEntersTrimInBand reports whether an unbounded conic section has a point inside BOTH the wall's
 // axial band and the tool face's trim. The band window is inverted to the branch's own parameters
 // (geom.AxialWindowParams) and those spans are walked: a branch that reaches the band at all reaches it
