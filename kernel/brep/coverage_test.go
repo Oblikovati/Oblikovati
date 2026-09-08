@@ -184,11 +184,11 @@ func TestVerticesOnSegment(t *testing.T) {
 
 func TestArrangeEmptyAndDegenerate(t *testing.T) {
 	t.Parallel()
-	if Arrange(nil) != nil {
+	if arrangeForTest(nil) != nil {
 		t.Error("Arrange of no segments should be nil")
 	}
 	// A single zero-length segment yields no edges ⇒ nil.
-	if Arrange([][2]math.Point2{{math.P2(1, 1), math.P2(1, 1)}}) != nil {
+	if arrangeForTest([][2]math.Point2{{math.P2(1, 1), math.P2(1, 1)}}) != nil {
 		t.Error("Arrange of a degenerate segment should be nil")
 	}
 }

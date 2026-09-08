@@ -34,7 +34,7 @@ func faceAreas(faces []Face2D) []float64 {
 
 func TestArrangeSingleSquare(t *testing.T) {
 	t.Parallel()
-	faces := Arrange(squareSegs(0, 0, 2, 2))
+	faces := arrangeForTest(squareSegs(0, 0, 2, 2))
 	if len(faces) != 1 {
 		t.Fatalf("square → %d faces, want 1", len(faces))
 	}
@@ -49,7 +49,7 @@ func TestArrangeSingleSquare(t *testing.T) {
 func TestArrangeChordSplitsInTwo(t *testing.T) {
 	t.Parallel()
 	segs := append(squareSegs(0, 0, 2, 2), seg(1, 0, 1, 2)) // vertical mid chord
-	faces := Arrange(segs)
+	faces := arrangeForTest(segs)
 	if len(faces) != 2 {
 		t.Fatalf("square+chord → %d faces, want 2", len(faces))
 	}
@@ -64,7 +64,7 @@ func TestArrangePlusSplitsInFour(t *testing.T) {
 	t.Parallel()
 	segs := squareSegs(0, 0, 2, 2)
 	segs = append(segs, seg(1, 0, 1, 2), seg(0, 1, 2, 1)) // a full cross
-	faces := Arrange(segs)
+	faces := arrangeForTest(segs)
 	if len(faces) != 4 {
 		t.Fatalf("square+cross → %d faces, want 4", len(faces))
 	}
@@ -80,7 +80,7 @@ func TestArrangeNestedSquareIsHoleAndFace(t *testing.T) {
 	// A big square with a disjoint small square inside → the annulus (big with a hole)
 	// plus the inner square as its own face.
 	segs := append(squareSegs(0, 0, 6, 6), squareSegs(2, 2, 4, 4)...)
-	faces := Arrange(segs)
+	faces := arrangeForTest(segs)
 	if len(faces) != 2 {
 		t.Fatalf("nested squares → %d faces, want 2", len(faces))
 	}
@@ -101,4 +101,13 @@ func TestArrangeNestedSquareIsHoleAndFace(t *testing.T) {
 	if a := stdmath.Abs(signedArea2D(inner.Outer)); stdmath.Abs(a-4) > 1e-9 {
 		t.Errorf("inner face area = %g, want 4", a)
 	}
+}
+
+// arrangeForTest is the tests' unchecked wrapper. Production has no such entry ON PURPOSE — both
+// callers that had one dropped geometry silently (ADR-0061 stage 6, review round 3) — but a test that
+// feeds a small, well-conditioned segment set is asserting the CELLS, not the convergence, and the
+// convergence itself has its own rows (TestArrangeChecked*).
+func arrangeForTest(segments [][2]math.Point2) []Face2D {
+	cells, _ := ArrangeChecked(segments)
+	return cells
 }

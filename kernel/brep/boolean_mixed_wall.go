@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -180,10 +181,10 @@ func rulingSegments(line geom.Line, of curvedFace, axis math.Vector3, band coneS
 // wallSplitFaces trims each wall by its imprints through the ruled chart, classifying kept cells by
 // the boolean's keep table over the other operand's membership oracle; a wall with no imprints keeps
 // the whole-face pass-through classification; a kept Difference tool wall reverses into the cavity.
-func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool) ([]curvedFace, bool) {
+func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	var out []curvedFace
 	for i, wf := range p.wall {
-		faces, ok := wallSplitOne(wf, imprints[i], other, others, op, isB)
+		faces, ok := wallSplitOne(wf, imprints[i], other, others, op, isB, rec)
 		if !ok {
 			return nil, false
 		}
@@ -195,7 +196,7 @@ func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracl
 // wallSplitOne trims one wall (or classifies it whole when it has no imprints). The keep test is the
 // shared one: a point covered by a face of the other operand on the SAME surface follows the ON/ON
 // table, so two coaxial walls emit their overlap once (coincidentKeepAt).
-func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool) ([]curvedFace, bool) {
+func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	keepAt := coincidentKeepAt(wf, others, other, op, isB)
 	if len(imprint) == 0 {
 		return wallWholeKept(wf, keepAt, other, op, isB)
@@ -212,6 +213,7 @@ func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, othe
 	}
 	faces, _, err := trimByImprint(c, wf, rs.surface, imprint, ruledFaceMaterial(c))
 	if err != nil {
+		recordArrangementDecline(rec, siteWallTrim, err)
 		return nil, false
 	}
 	if op == Difference && isB {

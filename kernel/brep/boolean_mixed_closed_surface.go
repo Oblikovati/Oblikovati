@@ -173,7 +173,7 @@ func closedSurfaceSplitOne(sf curvedFace, imprint []geom.Curve3, other insideOra
 	}
 	faces, _, err := trimByImprint(side, sf, sf.surface, imprint, material)
 	if err != nil {
-		recordArrangementDecline(rec, err) // a hang would have been the alternative; say why we refused
+		recordArrangementDecline(rec, siteClosedSurfaceTrim, err)
 		return nil, false
 	}
 	faces = boundedTrims(faces)

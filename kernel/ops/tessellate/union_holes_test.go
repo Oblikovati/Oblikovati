@@ -24,7 +24,7 @@ func TestUnionTrisTwoOverlappingSquares(t *testing.T) {
 	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	holes := [][]math.Point2{rectHole(3, 3, 6, 6), rectHole(5, 5, 8, 8)}
-	verts, tris := unionTris(outer, holes)
+	verts, tris, _ := unionTris(outer, holes)
 	if got := trisArea(verts, tris); stdmath.Abs(got-83) > 1e-6 {
 		t.Errorf("union area = %g, want 83 (100 − union 17)", got)
 	}
@@ -43,7 +43,7 @@ func TestUnionTrisGridHoles(t *testing.T) {
 	for _, y := range []float64{3, 5, 7} {
 		holes = append(holes, rectHole(1, y-0.2, 9, y+0.2))
 	}
-	verts, tris := unionTris(outer, holes)
+	verts, tris, _ := unionTris(outer, holes)
 	if got := trisArea(verts, tris); stdmath.Abs(got-82.24) > 1e-6 {
 		t.Errorf("union area = %g, want 82.24 (100 − union 17.76)", got)
 	}

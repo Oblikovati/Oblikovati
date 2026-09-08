@@ -5,6 +5,7 @@ package boolean
 import (
 	"errors"
 	stdmath "math"
+	"strings"
 	"testing"
 	"time"
 
@@ -61,7 +62,7 @@ const (
 func sweepDrill(t *testing.T, bore float64) drillOutcome {
 	t.Helper()
 	ring, drill := ringAndDrill(t, bore)
-	body, err, ok := booleanWithinDeadline(t, ring, drill)
+	body, ok, err := booleanWithinDeadline(t, ring, drill)
 	if !ok {
 		t.Fatalf("bore %g: the boolean did not terminate within %s", bore, drillDeadline(t))
 	}
@@ -76,7 +77,7 @@ func sweepDrill(t *testing.T, bore float64) drillOutcome {
 
 // booleanWithinDeadline runs one cut under a deadline, so a pipeline that stops terminating fails the
 // sweep as a test rather than hanging the whole suite (the r=1.585e-7 row is exactly that case).
-func booleanWithinDeadline(t *testing.T, ring, drill *topo.Body) (*topo.Body, error, bool) {
+func booleanWithinDeadline(t *testing.T, ring, drill *topo.Body) (*topo.Body, bool, error) {
 	t.Helper()
 	type result struct {
 		body *topo.Body
@@ -89,9 +90,9 @@ func booleanWithinDeadline(t *testing.T, ring, drill *topo.Body) (*topo.Body, er
 	}()
 	select {
 	case r := <-done:
-		return r.body, r.err, true
+		return r.body, true, r.err
 	case <-time.After(drillDeadline(t)):
-		return nil, nil, false
+		return nil, false, nil
 	}
 }
 
@@ -244,7 +245,19 @@ func TestTheNonConvergentDrillTerminatesAndIsNamed(t *testing.T) {
 			drillDeadline(t))
 	}
 	if !rec.Has(brep.CodeArrangementUnconverged) {
-		t.Errorf("the unconverged subdivision must be REPORTED, not silently broken out of; got %v", rec.Records())
+		t.Fatalf("the unconverged subdivision must be REPORTED, not silently broken out of; got %v", rec.Records())
+	}
+	// The report must name WHICH of the four splits declined. There are four sites that arrange a
+	// face and they fail for the same reason, so a diagnostic that did not distinguish them would
+	// send the reader to the wrong one (review round 3).
+	var detail string
+	for _, d := range rec.Records() {
+		if d.Code == brep.CodeArrangementUnconverged {
+			detail = d.Detail
+		}
+	}
+	if !strings.Contains(detail, "closed-surface") {
+		t.Errorf("the decline must name the split that made it; got %q", detail)
 	}
 }
 
@@ -255,7 +268,10 @@ func drillDeadline(t *testing.T) time.Duration {
 	t.Helper()
 	if d, ok := t.Deadline(); ok {
 		if budget := time.Until(d) / 4; budget < 30*time.Second {
-			return budget
+			// Never below a second: close to the binary's own deadline the quarter-share collapses
+			// (and goes negative once it passes), which would turn every row into an instant failure
+			// reported as a hang. A second is still ~14x the slowest point the sweep measured.
+			return max(budget, time.Second)
 		}
 	}
 	return 30 * time.Second

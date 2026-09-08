@@ -3,10 +3,12 @@
 package tessellate
 
 import (
+	"fmt"
 	stdmath "math"
 	"sort"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/math"
@@ -42,7 +44,7 @@ func unionHoledMesh(outer3D []math.Point3, holes3D [][]math.Point3, normal math.
 	for i, h := range holes3D {
 		holes2D[i] = Project2D(h, to2D)
 	}
-	verts2D, tris := unionTris(outer2D, holes2D)
+	verts2D, tris, converged := unionTris(outer2D, holes2D)
 	m := &Mesh{}
 	for _, q := range verts2D {
 		m.AddVertex(to3D(q), normal)
@@ -50,20 +52,47 @@ func unionHoledMesh(outer3D []math.Point3, holes3D [][]math.Point3, normal math.
 	for _, t := range tris {
 		m.AddTriangle(t[0], t[1], t[2])
 	}
+	return recordDroppedCells(m, converged, len(holes3D))
+}
+
+// CodeArrangementDroppedCells marks a face meshed from a planar arrangement that did not converge, so
+// an unknown number of its cells are missing: the mesh covers less material than the face carries and
+// its boundary is incomplete where a cell was dropped.
+//
+// The mesh still ships — a partial covering beats a missing face in a viewport — but the ground rules
+// do not allow it to ship SILENTLY. Until round 3 of the stage-6 review this path read the unchecked
+// brep.Arrange, which returns nil cells on non-convergence, so a holed face could come back with NO
+// triangles at all and nothing said (ADR-0061 stage 6).
+const CodeArrangementDroppedCells diag.Code = "tessellate.arrangement-dropped-cells"
+
+// recordDroppedCells flags a face whose overlapping-hole arrangement did not converge. A converged
+// arrangement records nothing: this is the ordinary path for every overlapping-hole face in the system.
+func recordDroppedCells(m *Mesh, converged bool, holes int) *Mesh {
+	if m == nil || converged {
+		return m
+	}
+	m.Diagnose(diag.Diagnostic{
+		Code:     CodeArrangementDroppedCells,
+		Severity: diag.Defect,
+		Detail: fmt.Sprintf("the planar arrangement of a face with %d overlapping hole(s) did not "+
+			"converge, so its cells were dropped: this face's mesh is incomplete and everything "+
+			"integrated from it (area, volume, mass properties) is short by the missing material", holes),
+	})
 	return m
 }
 
 // unionTris triangulates outer minus the union of holes, returning a fresh vertex list (the
 // arrangement may introduce crossing points absent from the inputs) and triangles indexing it.
 // It is used only when the holes overlap; non-overlapping faces stay on the direct earcut path.
-func unionTris(outer []math.Point2, holes [][]math.Point2) ([]math.Point2, [][3]int) {
+func unionTris(outer []math.Point2, holes [][]math.Point2) ([]math.Point2, [][3]int, bool) {
 	segs := loopSegments(outer)
 	for _, h := range holes {
 		segs = append(segs, loopSegments(h)...)
 	}
+	cells, converged := brep.ArrangeChecked(segs)
 	var verts []math.Point2
 	var tris [][3]int
-	for _, cell := range brep.Arrange(segs) {
+	for _, cell := range cells {
 		if !cellIsMaterial(cell, holes) {
 			continue
 		}
@@ -74,7 +103,7 @@ func unionTris(outer []math.Point2, holes [][]math.Point2) ([]math.Point2, [][3]
 			tris = append(tris, [3]int{t[0] + base, t[1] + base, t[2] + base})
 		}
 	}
-	return verts, tris
+	return verts, tris, converged
 }
 
 // loopSegments returns a closed loop's undirected edges as point pairs.

@@ -257,10 +257,10 @@ func booleanMixed(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool,
 	if !okI {
 		return nil, false, ErrUnsupportedMixedBoolean
 	}
-	kept, demoted, okK := mixedKeptFragments(pa, pb, impA, impB, pra, prb, pairs, op, prov)
+	kept, demoted, okK := mixedKeptFragments(pa, pb, impA, impB, pra, prb, pairs, op, prov, rec)
 	pass, okP := mixedPassFaces(pa, pb, pra, prb, uvImpA, uvImpB, sphImpA, sphImpB, op, rec)
 	pass = append(pass, demoted...)
-	walls, okQ := mixedWallFaces(pa, pb, pra, prb, wallImpA, wallImpB, op)
+	walls, okQ := mixedWallFaces(pa, pb, pra, prb, wallImpA, wallImpB, op, rec)
 	if !okK || !okP || !okQ {
 		return nil, false, ErrUnsupportedMixedBoolean
 	}
@@ -268,9 +268,9 @@ func booleanMixed(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool,
 }
 
 // mixedKeptFragments runs both operands' polygonal splits (with detached-hole re-attachment).
-func mixedKeptFragments(pa, pb facePartition, impA, impB [][][2]math.Point3, pra, prb insideOracle, pairs facePairs, op Op, prov []imprintSeg) ([]subFace, []curvedFace, bool) {
-	keptA, demotedA, okA := selectFacesDetached(pa, impA, prb, pb.planar, pairs.bForA, op, false, prov, pb.allFaces())
-	keptB, demotedB, okB := selectFacesDetached(pb, impB, pra, pa.planar, pairs.aForB, op, true, prov, pa.allFaces())
+func mixedKeptFragments(pa, pb facePartition, impA, impB [][][2]math.Point3, pra, prb insideOracle, pairs facePairs, op Op, prov []imprintSeg, rec *diag.Recorder) ([]subFace, []curvedFace, bool) {
+	keptA, demotedA, okA := selectFacesDetached(pa, impA, prb, pb.planar, pairs.bForA, op, false, prov, pb.allFaces(), rec)
+	keptB, demotedB, okB := selectFacesDetached(pb, impB, pra, pa.planar, pairs.aForB, op, true, prov, pa.allFaces(), rec)
 	return append(append([]subFace{}, keptA...), keptB...), append(demotedA, demotedB...), okA && okB
 }
 
@@ -297,9 +297,9 @@ func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, p
 }
 
 // mixedWallFaces trims both operands' walls into the stitch's pass list.
-func mixedWallFaces(pa, pb facePartition, pra, prb insideOracle, wallImpA, wallImpB [][]geom.Curve3, op Op) ([]curvedFace, bool) {
-	wallA, okA := wallSplitFaces(pa, wallImpA, prb, pb.allFaces(), op, false)
-	wallB, okB := wallSplitFaces(pb, wallImpB, pra, pa.allFaces(), op, true)
+func mixedWallFaces(pa, pb facePartition, pra, prb insideOracle, wallImpA, wallImpB [][]geom.Curve3, op Op, rec *diag.Recorder) ([]curvedFace, bool) {
+	wallA, okA := wallSplitFaces(pa, wallImpA, prb, pb.allFaces(), op, false, rec)
+	wallB, okB := wallSplitFaces(pb, wallImpB, pra, pa.allFaces(), op, true, rec)
 	return append(wallA, wallB...), okA && okB
 }
 
@@ -308,8 +308,8 @@ func mixedWallFaces(pa, pb facePartition, pra, prb insideOracle, wallImpA, wallI
 func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB, sphImpA, sphImpB [][]geom.Curve3, op Op, rec *diag.Recorder) ([]curvedFace, bool) {
 	passA, okA := passThroughKept(pa.pass, prb, op, false)
 	passB, okB := passThroughKept(pb.pass, pra, op, true)
-	uvA, okVA := uvSplitFaces(pa, uvImpA, prb, pb.allFaces(), op, false)
-	uvB, okVB := uvSplitFaces(pb, uvImpB, pra, pa.allFaces(), op, true)
+	uvA, okVA := uvSplitFaces(pa, uvImpA, prb, pb.allFaces(), op, false, rec)
+	uvB, okVB := uvSplitFaces(pb, uvImpB, pra, pa.allFaces(), op, true, rec)
 	sphA, okSA := closedSurfaceSplitFaces(pa, sphImpA, prb, op, false, rec)
 	sphB, okSB := closedSurfaceSplitFaces(pb, sphImpB, pra, op, true, rec)
 	if !okA || !okB || !okVA || !okVB || !okSA || !okSB {
@@ -326,20 +326,23 @@ func mixedPassFaces(pa, pb facePartition, pra, prb insideOracle, uvImpA, uvImpB,
 // polygonal split's case at all: the hole is invisible to that arrangement. Such a face is DEMOTED to
 // the exact-frame chart with its full loops, where the hole's circle is a frame edge and every
 // crossing with it is solved in closed form (ADR-0060); its trims come back as curvedFaces.
-func selectFacesDetached(p facePartition, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg, allOthers []curvedFace) ([]subFace, []curvedFace, bool) {
+func selectFacesDetached(p facePartition, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg, allOthers []curvedFace, rec *diag.Recorder) ([]subFace, []curvedFace, bool) {
 	var kept []subFace
 	var demoted []curvedFace
 	for i, f := range p.planar {
 		detached := p.planarHoles[i]
 		if len(detached) > 0 && imprintMeetsHole(imprints[i], detached, facePlane(f)) {
-			trims, ok := demotedHoleFaceTrims(p.planarFull[i], imprints[i], other, allOthers, op, isB)
+			trims, ok := demotedHoleFaceTrims(p.planarFull[i], imprints[i], other, allOthers, op, isB, rec)
 			if !ok {
 				return nil, nil, false
 			}
 			demoted = append(demoted, trims...)
 			continue
 		}
-		fromFace := selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov)
+		fromFace, okF := selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov, rec)
+		if !okF {
+			return nil, nil, false
+		}
 		if len(detached) > 0 && !attachExactHoles(fromFace, detached, facePlane(f)) {
 			return nil, nil, false
 		}
@@ -350,12 +353,12 @@ func selectFacesDetached(p facePartition, imprints [][][2]math.Point3, other ins
 
 // demotedHoleFaceTrims trims a holed planar face through the exact-frame chart: its polygonal imprints
 // become the chart's straight imprints, its holes the frame's conic edges.
-func demotedHoleFaceTrims(full curvedFace, imprints [][2]math.Point3, other insideOracle, allOthers []curvedFace, op Op, isB bool) ([]curvedFace, bool) {
+func demotedHoleFaceTrims(full curvedFace, imprints [][2]math.Point3, other insideOracle, allOthers []curvedFace, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	curves := make([]geom.Curve3, 0, len(imprints))
 	for _, s := range imprints {
 		curves = append(curves, geom.NewLineSegment(s[0], s[1]))
 	}
-	return uvSplitOne(full, faceLoopBox(full), curves, coincidentKeepAt(full, allOthers, other, op, isB), op, isB)
+	return uvSplitOne(full, faceLoopBox(full), curves, coincidentKeepAt(full, allOthers, other, op, isB), op, isB, rec)
 }
 
 // imprintMeetsHole reports an imprint segment crossing, ending on, or lying inside a detached hole
@@ -559,10 +562,10 @@ func pairUVUVImprints(pa, pb *facePartition, uvA, uvB [][]geom.Curve3) bool {
 // classifying cells by the boolean's keep table over the other operand's membership oracle. A face
 // with no imprints passes through whole (the pass-through classification). A kept Difference tool
 // face reverses into the cavity. ok=false declines: a grazing contact, or a trim error.
-func uvSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool) ([]curvedFace, bool) {
+func uvSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	var out []curvedFace
 	for i, uf := range p.uv {
-		faces, ok := uvSplitOne(uf, p.uvBox[i], imprints[i], coincidentKeepAt(uf, others, other, op, isB), op, isB)
+		faces, ok := uvSplitOne(uf, p.uvBox[i], imprints[i], coincidentKeepAt(uf, others, other, op, isB), op, isB, rec)
 		if !ok {
 			return nil, false
 		}
@@ -588,7 +591,7 @@ func uvWholeKept(uf curvedFace, keepAt func(math.Point3) bool, op Op, isB bool) 
 }
 
 // uvSplitOne trims one exact-frame face (or classifies it whole when it has no imprints).
-func uvSplitOne(uf curvedFace, box math.Box, imprint []geom.Curve3, keepAt func(math.Point3) bool, op Op, isB bool) ([]curvedFace, bool) {
+func uvSplitOne(uf curvedFace, box math.Box, imprint []geom.Curve3, keepAt func(math.Point3) bool, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	if len(imprint) == 0 {
 		return uvWholeKept(uf, keepAt, op, isB)
 	}
@@ -598,6 +601,7 @@ func uvSplitOne(uf curvedFace, box math.Box, imprint []geom.Curve3, keepAt func(
 	}
 	faces, _, err := trimByImprint(c, uf, uf.surface, imprint, planeFaceMaterial(c, keepAt))
 	if err != nil {
+		recordArrangementDecline(rec, siteUVPlaneTrim, err)
 		return nil, false
 	}
 	if op == Difference && isB {

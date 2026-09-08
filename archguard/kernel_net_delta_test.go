@@ -143,7 +143,6 @@ var kernelNetDeltaPin = map[string]int{
 	// pipeline and failed its acceptance gate reporting only "no exact path claims this", while a 1e-10
 	// one came back as the ring UNCHANGED with err=nil and NOTHING recorded — a Cut that removed
 	// nothing, silently, because "removed nothing" sits inside the Requicha bracket for a difference.
-	// The boolean now classifies on size before any geometry is built and refuses by name.
 	// The boolean now classifies on size before any geometry is built and refuses by name. It is +2,
 	// not +1: the counter counts every `diag.Code` ValueSpec under kernel/, so the ops facade's
 	// re-export of the same code — the one name a model-layer consumer matches on, the convention the
@@ -156,7 +155,14 @@ var kernelNetDeltaPin = map[string]int{
 	// RING body never returned at all. A hang is neither a refusal nor a wrong body, and the ground
 	// rules admit only those two. The pass now stops at a provable budget (n(n-1)/2 splits, the size
 	// of the canonical edge-pair set it grows) and the boolean refuses by name instead of hanging.
-	"fallback-sites": 31,
+	// 31 → 32 (2026-09-08, ADR-0061 stage 6, review round 3): CodeArrangementDroppedCells. A RISE that
+	// names the second half of the same silence. Bounding the T-junction pass made brep.Arrange able to
+	// return NO cells, and its two production callers both read that as an ordinary empty answer: the
+	// planar boolean dropped the face, and the tessellator's overlapping-hole path meshed nothing. The
+	// unchecked entry is deleted, the boolean now refuses by name, and a tessellated face whose cells
+	// were dropped carries this Defect on its mesh — the mesh still ships, because a partial covering
+	// beats a missing face in a viewport, but it no longer ships silently.
+	"fallback-sites": 32,
 }
 
 func TestKernelNetDelta(t *testing.T) {

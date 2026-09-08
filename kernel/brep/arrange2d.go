@@ -36,19 +36,21 @@ type Face2D struct {
 	Holes [][]math.Point2
 }
 
-// Arrange computes the planar subdivision induced by the undirected segments and returns
+// ArrangeChecked computes the planar subdivision induced by the undirected segments and returns
 // the bounded faces (the regions they enclose), each with its holes. The unbounded outer
 // region is excluded. Segments are split at every interior crossing and coincident
 // endpoints are welded, so the result is a valid cell complex.
-func Arrange(segments [][2]math.Point2) []Face2D {
-	cells, _ := ArrangeChecked(segments)
-	return cells
-}
-
-// ArrangeChecked is [Arrange] with the T-junction pass's convergence reported. ok=false means the
-// subdivision hit [tjSplitBudget] and the cell complex CANNOT be trusted — the caller must decline,
-// never use the cells. Arrange returns them anyway for the callers that predate this and cannot act
-// on the answer; every caller that can refuse should use this one.
+//
+// ok=false means the T-junction pass hit [tjSplitBudget] and the cell complex CANNOT be trusted: the
+// caller must decline or report, never use the cells.
+//
+// There is deliberately no unchecked sibling. One existed for a single commit, returning the cells and
+// discarding the flag "for the callers that cannot act on the answer" — and both of its production
+// callers COULD act on it. The planar boolean's splitFace read nil cells as "this face has no material
+// sub-faces" and dropped the face with no error and no diagnostic, leaving ops.Validate to report an
+// open body whose cause had been erased; the tessellator's overlapping-hole path dropped every cell of
+// a face and meshed nothing. Making the flag impossible to discard is what stops that recurring
+// (ADR-0061 stage 6, review round 3).
 func ArrangeChecked(segments [][2]math.Point2) ([]Face2D, bool) {
 	pts, edges, converged := planarize(segments)
 	if !converged {
@@ -117,23 +119,32 @@ func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 			if c < 0 {
 				continue
 			}
-			if budget--; budget < 0 {
-				return false // churning, not converging: see tjSplitBudget
+			lo, hi := canonEdge(e[0], c), canonEdge(c, e[1])
+			if !edges[lo] || !edges[hi] {
+				// A split that ADDS a pair is the only kind that can run away, and the budget counts
+				// exactly those. One that adds neither half strictly shrinks the set (it removes e and
+				// re-adds two pairs already in it), so it cannot loop on its own account and is free.
+				if budget--; budget < 0 {
+					return false // churning, not converging: see tjSplitBudget
+				}
 			}
 			delete(edges, e)
-			edges[canonEdge(e[0], c)] = true
-			edges[canonEdge(c, e[1])] = true
+			edges[lo] = true
+			edges[hi] = true
 			changed = true
 		}
 	}
 	return true
 }
 
-// tjSplitBudget is the PROVABLE bound on how many T-junction splits a converging run can make, not a
-// tuned number. Each split replaces one edge with two whose endpoints are existing welded vertices,
-// so it strictly grows a SET keyed by canonical index pairs; a set of undirected pairs over n
-// vertices holds at most n(n−1)/2 members, so at most that many splits can ever add anything. A run
-// that exceeds it is not subdividing towards a fixed point, it is revisiting pairs it already has.
+// tjSplitBudget is the PROVABLE bound on how many PAIR-ADDING T-junction splits a converging run can
+// make, not a tuned number. A split replaces one edge with two whose endpoints are existing welded
+// vertices, so every edge it can ever produce is a member of the set of unordered index pairs over
+// the n welded points, and that set holds n(n−1)/2 members. A split that adds at least one pair
+// therefore cannot happen more than n(n−1)/2 times in total, however the pass interleaves them; a
+// split that adds neither half only removes an edge, strictly shrinking the set, so it cannot run
+// away by itself and is not counted. Exceeding the budget means the pass is manufacturing pairs
+// without converging, which is the failure below.
 //
 // It has to exist because the loop's termination argument silently depends on scale. tjTol is an
 // ABSOLUTE 1e-7, and it is used twice over: as a perpendicular DISTANCE to the edge and as a

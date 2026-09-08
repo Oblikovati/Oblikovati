@@ -80,7 +80,7 @@ func BooleanDiag(op Op, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, error)
 		res, tangent, err := booleanMixed(op, a, b, rec)
 		return recordTangent(res, tangent, err, rec)
 	}
-	res, tangent, err := booleanOnce(op, fa, fb, a, b)
+	res, tangent, err := booleanOnce(op, fa, fb, a, b, rec)
 	return recordTangent(res, tangent, err, rec)
 }
 
@@ -120,17 +120,19 @@ func exactTangentIsValid(b *topo.Body) bool {
 // booleanOnce runs one pass: imprint, split, classify, keep, stitch. The bool is true when the pass
 // resolved a tangent/grazing contact (a vertex pair used by more than two faces), so the caller can
 // note whether that contact shipped as a valid manifold.
-func booleanOnce(op Op, fa, fb []curvedFace, a, b *topo.Body) (*topo.Body, bool, error) {
+func booleanOnce(op Op, fa, fb []curvedFace, a, b *topo.Body, rec *diag.Recorder) (*topo.Body, bool, error) {
 	// One AABB-culled candidate set feeds imprint, provenance AND the coplanar-cover scans —
 	// the retired brute version recomputed the O(Fa·Fb) pairing 2–3× per pass — and each
 	// operand is flattened ONCE into a solidProbe for every ray-cast classification, instead
 	// of per query point (#1607).
 	pairs := crossingFaceCandidates(fa, fb)
 	impA, impB, prov := imprintCandidates(fa, fb, pairs)
-	var kept []subFace
-	kept = append(kept, selectFaces(fa, impA, newSolidProbe(b), fb, pairs.bForA, op, false, prov)...)
-	kept = append(kept, selectFaces(fb, impB, newSolidProbe(a), fa, pairs.aForB, op, true, prov)...)
-	return stitch(kept, nil, prov)
+	keptA, okA := selectFaces(fa, impA, newSolidProbe(b), fb, pairs.bForA, op, false, prov, rec)
+	keptB, okB := selectFaces(fb, impB, newSolidProbe(a), fa, pairs.aForB, op, true, prov, rec)
+	if !okA || !okB {
+		return nil, false, unconvergedArrangement(len(impA) + len(impB))
+	}
+	return stitch(append(keptA, keptB...), nil, prov)
 }
 
 // CodeBooleanTangentContact marks a boolean whose operands met at a tangent/grazing contact — a
@@ -205,27 +207,36 @@ func intersectIntervals(a, b [][2]float64) [][2]float64 {
 // operation wants, classifying each via [classifySubFace]. `others` is the other solid's
 // face list (for the coplanar overlap test), culled per face to its box-overlap candidates
 // `otherCand` (#1607); `other` is the body's cached probe (for the winding-number cast).
-func selectFaces(faces []curvedFace, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg) []subFace {
+func selectFaces(faces []curvedFace, imprints [][][2]math.Point3, other insideOracle, others []curvedFace, otherCand [][]int, op Op, isB bool, prov []imprintSeg, rec *diag.Recorder) ([]subFace, bool) {
 	var kept []subFace
 	for i, f := range faces {
-		kept = append(kept, selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov)...)
+		from, ok := selectFragments(f, imprints[i], other, facesAt(others, otherCand[i]), op, isB, prov, rec)
+		if !ok {
+			return nil, false
+		}
+		kept = append(kept, from...)
 	}
-	return kept
+	return kept, true
 }
 
 // selectFragments splits ONE face by its imprints, classifies and keeps its material sub-faces,
 // dissolves filled holes and names the pieces — the per-face body selectFaces and the mixed
 // dispatch's detached-hole variant share.
-func selectFragments(f curvedFace, imprints [][2]math.Point3, other insideOracle, near []curvedFace, op Op, isB bool, prov []imprintSeg) []subFace {
+func selectFragments(f curvedFace, imprints [][2]math.Point3, other insideOracle, near []curvedFace, op Op, isB bool, prov []imprintSeg, rec *diag.Recorder) ([]subFace, bool) {
+	pieces, converged := splitFace(f, imprints)
+	if !converged {
+		recordArrangementDecline(rec, sitePlanarSplit, unconvergedArrangement(len(imprints)))
+		return nil, false
+	}
 	var fromFace []subFace
-	for _, sf := range splitFace(f, imprints) {
+	for _, sf := range pieces {
 		if out, ok := classifySubFace(sf, f, other, near, op, isB); ok {
 			fromFace = append(fromFace, out)
 		}
 	}
 	fromFace = mergeFilledHoles(fromFace)
 	nameFragments(fromFace, f.lineage, isB, prov)
-	return fromFace
+	return fromFace, true
 }
 
 // nameFragments assigns each kept piece of one source face its reference-key lineage. A face that

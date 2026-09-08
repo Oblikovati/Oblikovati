@@ -14,13 +14,23 @@ import (
 // splitFace splits a face by its imprint segments via the 2D arrangement and returns the
 // material sub-faces (regions inside the original face), each carried back to 3D with an
 // interior point for classification. A face with no imprints yields itself unchanged.
-func splitFace(f curvedFace, imprints [][2]math.Point3) []subFace {
+//
+// ok=false means the arrangement did not converge (see [ArrangeChecked]); the caller MUST refuse.
+// It cannot be folded into "no sub-faces": a non-converged split and a face whose every region is
+// outside the material both yield an empty slice, and the first is a defect while the second is the
+// ordinary answer. Reading them as the same thing dropped the face silently and left ops.Validate to
+// report an open body whose cause had been erased (ADR-0061 stage 6, review round 3).
+func splitFace(f curvedFace, imprints [][2]math.Point3) ([]subFace, bool) {
 	segs := faceBoundarySegments(f)
 	for _, s := range imprints {
 		segs = append(segs, [2]math.Point2{to2D(facePlane(f), s[0]), to2D(facePlane(f), s[1])})
 	}
+	regions, converged := ArrangeChecked(segs)
+	if !converged {
+		return nil, false
+	}
 	var out []subFace
-	for _, r := range Arrange(segs) {
+	for _, r := range regions {
 		ip, ok := interiorPoint2D(r)
 		if !ok || !pointInFace2D(ip, f) {
 			continue // a region outside the face's material (e.g. inside one of its holes)
@@ -31,7 +41,7 @@ func splitFace(f curvedFace, imprints [][2]math.Point3) []subFace {
 		}
 		out = append(out, sf)
 	}
-	return out
+	return out, true
 }
 
 // mergeFilledHoles dissolves the artificial split where one kept sub-face exactly FILLS a hole

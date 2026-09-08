@@ -3550,3 +3550,65 @@ The stage-6 round-1 section above stands as written (this ADR is append-only); t
    — a wrong body of coincidentally right volume would pass it.
 3. **The benchmark invocation.** The recorded command said `-benchtime 200x`; the numbers were taken
    at `300x`.
+
+### Stage 6, review round 3 — the bound's own silent exits (2026-09-08)
+
+Bounding the T-junction pass in round 2 introduced two new silent exits of exactly the kind this
+stage exists to close, and the round-2 text above is wrong where it says the cap is "NOT a silent
+break". It was not, at the one call site round 2 looked at. It was at the other two.
+
+`ArrangeChecked` returns `(nil, false)` when the pass hits its budget, and round 2 kept an unchecked
+`Arrange` that discarded the flag "for the callers that cannot act on the answer". Both production
+callers COULD act on it:
+
+| caller | what it did with `nil` cells |
+| --- | --- |
+| `brep.splitFace` (the PLANAR boolean face split) | read it as "this face has no material sub-faces" and dropped the face — no error, no `diag.Defect`. `ops.Validate` then reported an open body, with the cause erased. |
+| `tessellate.unionTris` (overlapping-hole faces) | dropped every cell and meshed nothing, silently. |
+
+**The unchecked entry is deleted** (delete-first: there is no unchecked sibling, and the doc comment
+now records why, so it cannot be reintroduced as a convenience). `splitFace` returns
+`([]subFace, bool)`; the planar chain — `selectFragments` → `selectFaces` → `booleanOnce` — carries
+the flag to `BooleanDiag`'s recorder and the boolean refuses by name. `rebuildImprinted` (the public
+imprint entry) returns the named error. The tessellator records `tessellate.arrangement-dropped-cells`
+on the face mesh, the same result-carried shape as `CodeTrimIgnoredFullDomain`: the mesh still ships,
+because a partial covering beats a missing face in a viewport, but it no longer ships silently.
+
+Not folding the flag into "no sub-faces" is the load-bearing part. A non-converged split and a face
+whose every region is outside the material both produce an empty slice, and the first is a defect
+while the second is the ordinary answer; reading them as the same thing is what erased the cause.
+
+#### The decline now names its site, and a guard keeps every site reporting
+
+Round 2 threaded the recorder into ONE of the three `trimByImprint` call sites. The other two
+(`wallSplitFaces`, `uvSplitFaces`) returned a bare `ok=false`, so an unconverged arrangement there
+surfaced only as the generic `ErrUnmodelledBoolean`, naming nothing. All four arranging splits — the
+closed-surface trim, the ruled-wall trim, the uv-plane trim and the planar face split — now record,
+and the diagnostic NAMES which one declined: they fail for the same reason, so a report that did not
+distinguish them would send the reader to the wrong one.
+
+The coverage is a source guard rather than four corpus rows, and deliberately so. Only ONE of the four
+is reachable geometrically with the fixtures the sweep can build: the RING drilled at r ≈ 1.585e−7
+takes the closed-surface trim, and a rod, a block, an off-centreline drill and a thin planar slab all
+refuse earlier for other reasons before any of the other three arranges anything (swept, 1e−9 … 1e−4).
+`TestEveryArrangingSplitReportsANonConvergentArrangement` therefore scans the package for every
+`trimByImprint`/`splitFace` call and requires a decline beside it, which covers the three unreachable
+sites AND the split nobody has written yet. It was proven live by deleting one decline: the guard
+names the file, the line and the call.
+
+#### A correction to round 2's budget argument
+
+The round-2 comment claimed the budget is bounded because "each split strictly grows a SET keyed by
+canonical index pairs", while the code decremented on EVERY split. Those are not the same statement:
+a split whose two halves are both already present adds nothing and only removes an edge. The code now
+decrements only on a split that adds at least one pair, which is the quantity the n(n−1)/2 argument
+actually bounds; a split that adds neither half strictly shrinks the set, so it cannot run away on its
+own account and is not counted.
+
+| | round 2 | round 3 |
+| --- | --- | --- |
+| unchecked `Arrange` | present, flag discarded at 2 production sites | DELETED |
+| arranging splits that report | 1 of 4 | 4 of 4, each naming its site |
+| coverage | 1 corpus row | 1 corpus row + a source guard over every site, proven by deletion |
+| budget counts | every split (argument bounded only pair-adding ones) | pair-adding splits only |
+| `fallback-sites` | 31 | 32 (`CodeArrangementDroppedCells`) |
