@@ -47,28 +47,16 @@ func tessellateEdgeWithParams(e *topo.Edge, q Quality) ([]math.Point3, []float64
 // cyl/cone faces touching a crack so a trimmed wall conforms to its planar neighbour; a watertight body
 // has no cracks and is untouched.
 func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
-	faces, fm := TessellateBodyFaces(b, q)
-	mesh, spans := mergedBodyMesh(fm)
-	recordMeshTear(mesh, b, faces, spans) // the body's own post-condition: a closed solid meshes closed
+	_, fm := TessellateBodyFaces(b, q)
+	mesh := &Mesh{}
+	for _, m := range fm {
+		MergeMesh(mesh, m) // MergeMesh carries each face's diagnostics up, the body's tear among them
+	}
 	var edges [][]math.Point3
 	for _, e := range b.Edges() {
 		edges = append(edges, TessellateEdge(e, q))
 	}
 	return mesh, edges
-}
-
-// mergedBodyMesh merges the per-face meshes into one and returns, beside it, the triangle index each
-// face's own triangles begin at (with a final sentinel). A defect found on the whole-body mesh can then
-// be named against the faces it belongs to, which a bare merge loses.
-func mergedBodyMesh(fm []*Mesh) (*Mesh, []int) {
-	out := &Mesh{}
-	spans := make([]int, len(fm)+1)
-	for i, m := range fm {
-		spans[i] = out.TriangleCount()
-		MergeMesh(out, m)
-	}
-	spans[len(fm)] = out.TriangleCount()
-	return out, spans
 }
 
 // TessellateBodyFaces runs the per-face meshing pipeline (facet, cross-face
@@ -84,6 +72,9 @@ func TessellateBodyFaces(b *topo.Body, q Quality) ([]*topo.Face, []*Mesh) {
 	}
 	conformCylConeFaces(faces, idx, fm, q)
 	orientFacesOutward(fm) // re-orient imported faces whose B-rep sense came in inverted (Normal-Debug red)
+	// The body's own post-condition, here because this is the ONE point every route passes through:
+	// the whole-body mesh, the facet store, and the diagnostics harvest that reaches feature health.
+	recordBodyMeshTear(b, faces, fm)
 	return faces, fm
 }
 

@@ -31,16 +31,33 @@ func TestAWatertightSolidRecordsNothing(t *testing.T) {
 	}
 }
 
-// TestATornMeshOfAClosedSolidIsReported drives the post-condition itself: a closed solid whose mesh has
-// been torn (one triangle removed) must come back with the named defect, the count, and the face.
+// TestATornMeshOfAClosedSolidIsReported drives the post-condition itself: a closed solid whose per-face
+// meshes do not join into a closed surface (one triangle removed) must come back with the named defect,
+// the count, and the face.
 func TestATornMeshOfAClosedSolidIsReported(t *testing.T) {
 	t.Parallel()
 	body := subd.ToBody(subd.Box(2, 2, 2), "box")
 	faces, fm := TessellateBodyFaces(body, DefaultQuality())
 	fm[0].Indices = fm[0].Indices[3:] // tear the first face's mesh: one triangle short of its own rim
-	mesh, spans := mergedBodyMesh(fm)
-	recordMeshTear(mesh, body, faces, spans)
-	assertTearReported(t, mesh, string(faces[0].ReferenceKey()))
+	fm[0].Diagnostics = nil
+	recordBodyMeshTear(body, faces, fm)
+	assertTearReported(t, fm[0], string(faces[0].ReferenceKey()))
+}
+
+// TestATearReachesTheWholeBodyMesh: the tear is recorded on a FACE mesh, and MergeMesh carries face
+// diagnostics up, so a caller holding only the whole-body mesh still sees it. That is the route
+// TessellateBody's own callers take.
+func TestATearReachesTheWholeBodyMesh(t *testing.T) {
+	t.Parallel()
+	body := subd.ToBody(subd.Box(2, 2, 2), "box")
+	faces, fm := TessellateBodyFaces(body, DefaultQuality())
+	fm[0].Indices, fm[0].Diagnostics = fm[0].Indices[3:], nil
+	recordBodyMeshTear(body, faces, fm)
+	whole := &Mesh{}
+	for _, m := range fm {
+		MergeMesh(whole, m)
+	}
+	assertTearReported(t, whole, string(faces[0].ReferenceKey()))
 }
 
 // assertTearReported checks the mesh carries the named Defect and that it points at the face.

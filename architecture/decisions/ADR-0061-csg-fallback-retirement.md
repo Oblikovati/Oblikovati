@@ -3056,3 +3056,34 @@ refused by name (`declineMixedComplement`).
 never the weld it was written for. It now uses a station half a weld away — asserting first that the
 two differ bitwise — and a third eight welds away that must survive, so the dedup cannot be a blanket
 collapse.
+
+#### Review round 2: the post-condition reached nobody (2026-09-08, later still)
+
+Round 1 above claims the mesh tear "reaches feature health, the API and the UI". It did not, and this
+corrects it. `recordMeshTear` recorded onto the mesh `TessellateBody` returns, and **every** caller of
+that function discards it — the renderer's draw list, mass properties, inertia, the identical-bodies
+compare, hidden-line removal, the mesh-format writers, the feature preview all take `mesh, _ :=`.
+Worse, the two paths that DO harvest mesh diagnostics never ran the check at all: both
+`query.BodyMeshDiagnostics` (the #2058 harvest that feeds a feature reply) and
+`model/facetstore` → `CalculateBodyFacets` take the FACES route, `TessellateBodyFaces`. So the piston
+head's crack was recorded onto a value nobody read. A defect that reaches no user is the same silence
+the round-1 finding was about, one layer further out.
+
+The check now runs in `TessellateBodyFaces` — the one point every route passes through — and records
+on the FACE mesh of the lowest-indexed face the tear touches. That single call site reaches all three
+consumers: `MergeMesh` carries face diagnostics onto the whole-body mesh, the facet store keeps the
+face meshes, and the harvest reads them directly. `TessellateBody` goes back to a plain merge, and the
+per-face triangle spans round 1 added to name faces are deleted with it: the tear now knows which mesh
+it came from because the walk carries it.
+
+`tornAcrossMeshes` welds the whole GROUP of face meshes at once, which is what makes a body's faces
+meet — two faces' copies of one boundary point are separate vertices until they weld — and
+`tornMeshEdges` for a single mesh is that same function with one member, so `WeldedFreeEdgeCount` and
+the body post-condition still cannot disagree.
+
+Rows that pin it where it has to be true: `query.BodyMeshDiagnostics` carries the code for a torn
+closed body and stays silent for a plain cylinder, and `model/feature`'s
+`TestPistonHeadMeshTearReachesTheFeaturesDiagnostics` reads the #2167 boss feature's OWN report — the
+list a feature reply, the API and the UI show. The measured cost is the group weld on every
+tessellation: no change on the bodies that dominate (a filleted box 8.38 → 8.37 ms, a torus 3.31 →
+3.43 ms), and tens of microseconds on the smallest (a chamfered box 35 → 63 µs).

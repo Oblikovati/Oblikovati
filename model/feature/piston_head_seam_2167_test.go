@@ -6,8 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/math"
 	"oblikovati.org/model/sketch"
 )
@@ -74,4 +76,36 @@ func TestPistonHeadCocylindricalJoinKeepsAnalyticWalls(t *testing.T) {
 	if v := query.BodyGeometryProperties(body, ops.PropertyQuality()).Volume; relErr(v, analytic) > 5e-3 {
 		t.Fatalf("piston-head join volume = %g, want %g — faceted, not the analytic union", v, analytic)
 	}
+}
+
+// TestPistonHeadMeshTearReachesTheFeaturesDiagnostics: the merged cocylindrical wall is a band whose
+// second rim is NOTCHED, and the tessellation router meshes it with a crack at the notch's corner
+// (ADR-0061 stage 5 — orderedRing's stable azimuth sort reverses one of the rim's two same-azimuth
+// runs). That is not this B-rep's defect to fix, but it IS a rendered surface with a hole in it, and
+// the ground rules do not let it ship silently: it must reach the user who asked for the feature.
+//
+// This is that row. It drives the #2167 extrude pair and reads the FEATURE's own report — the same
+// list a feature reply, the API and the UI show — so the defect cannot go quiet without failing here.
+// When the router's fix lands, the mesh closes and this row converts to asserting the silence.
+func TestPistonHeadMeshTearReachesTheFeaturesDiagnostics(t *testing.T) {
+	t.Parallel()
+	const r, theta, h1, h2 = 3.0, 0.6, 6.0, 4.0
+	fs := NewPartFeatures(nil)
+	ex := NewExtrudeFeatures(fs)
+	ex.AddByDistanceExtent(circleSketchAt(0, 0, r), 0, ops.NewBody, func() float64 { return h1 })
+	boss := ex.AddByDistanceExtent(dProfileSketchOnPlaneZ(h1, r, theta), 0, ops.Join, func() float64 { return h2 })
+	fs.Recompute()
+	assertFeatureReportsMeshTear(t, boss.Diagnostics())
+}
+
+// assertFeatureReportsMeshTear requires the body's mesh tear on a feature's own report, at Defect.
+func assertFeatureReportsMeshTear(t *testing.T, ds []diag.Diagnostic) {
+	t.Helper()
+	for _, d := range ds {
+		if d.Code == tessellate.CodeMeshNotWatertight && d.Severity == diag.Defect {
+			return
+		}
+	}
+	t.Errorf("the piston head's mesh tear reaches no user: the feature reports %v, without %q",
+		ds, tessellate.CodeMeshNotWatertight)
 }
