@@ -203,13 +203,62 @@ func TestBoxIsNearRejectsWhatIsFarEnoughAway(t *testing.T) {
 	}
 }
 
-// TestChartPadGrowsWithTheStationGap.
-func TestChartPadGrowsWithTheStationGap(t *testing.T) {
+// TestThePadIsMeasuredOnTheCoarsestCell is the premise the canonical selection rests on: within the
+// replication pad the covering repeats exactly, so the Delaunay triangulation is the same on both sides
+// of the branch window and each seam-spanning triangle has exactly one translate whose centroid the
+// window keeps. That holds only while the pad contains a triangle's circumcircle, and a triangle is as
+// large as the covering's COARSEST cell — which on a wall with a straight axis is a row gap, not the
+// column gap the pad used to be measured in. See chartCoverPadStations for the #1738 measurement.
+func TestThePadIsMeasuredOnTheCoarsestCell(t *testing.T) {
 	t.Parallel()
-	if got := chartPad(32, 0, 2*stdmath.Pi); stdmath.Abs(got-chartCoverPadStations*2*stdmath.Pi/32) > 1e-12 { // tol:numeric
-		t.Errorf("chartPad = %g, want %d station gaps", got, chartCoverPadStations)
+	columns, rows := []float64{0, 0.1, 0.2}, []float64{0, 5, 10} // the wall's own shape: fine u, three v rows
+	cell := coarsestCoverCell(columns, rows, 3, 1)
+	if want := stdmath.Hypot(0.1*3, 5.0); stdmath.Abs(cell-want) > 1e-12 { // tol:numeric
+		t.Errorf("coarsestCoverCell = %g, want the ROW gap's diagonal %g, not the column gap's", cell, want)
 	}
-	if got := chartPad(1, 0, 5); got != 5 {
-		t.Errorf("chartPad with no gaps = %g, want the whole window", got)
+	if pad := chartPad(cell, 3, 2*stdmath.Pi); pad <= chartCoverPadStations*0.1 {
+		t.Errorf("chartPad = %g: still measured in column gaps (%g), which is the #1738 defect", pad, 0.1)
 	}
+	if pad := chartPad(cell, 3, 0.5); pad != 0.5 {
+		t.Errorf("chartPad = %g past a window only 0.5 wide, want it capped at the window", pad)
+	}
+}
+
+// TestTheCoveringPadHoldsEveryTriangleItKeeps measures the pad against what it has to contain: no
+// triangle the canonical window keeps may have a circumcircle wider than the replicated band, or the
+// two sides of the window are deciding it against different neighbours.
+func TestTheCoveringPadHoldsEveryTriangleItKeeps(t *testing.T) {
+	t.Parallel()
+	f := rimBoundedWindowedWall(t, 3.0, 4.0, 3.0, 6.0)
+	s, q := f.Geometry(), DefaultQuality()
+	r := mustRegion(t, f)
+	chains := chartBoundaryChains(f, s, r, q)
+	b := newChartCover(s, r, q)
+	loops := b.addChains(chains)
+	b.addInterior(chains)
+	kept := b.keepChartTriangles(constrainedTriangulationAll(b.xy, loops))
+	if len(kept) == 0 {
+		t.Fatal("the charted wall kept no triangle")
+	}
+	worst := 0.0
+	for _, tri := range kept {
+		worst = stdmath.Max(worst, coverCircumradius(b, tri))
+	}
+	if pad := b.padU * b.su; worst > pad {
+		t.Errorf("the widest kept triangle's circumcircle is %.4f across against a pad of %.4f — the "+
+			"covering is not periodic out to it", worst, pad)
+	}
+}
+
+// coverCircumradius is a covering triangle's circumradius in the metric-scaled (u,v).
+func coverCircumradius(b *chartCover, tri [3]int) float64 {
+	a, c, d := b.xy[tri[0]], b.xy[tri[1]], b.xy[tri[2]]
+	ab := stdmath.Hypot(c[0]-a[0], c[1]-a[1])
+	bc := stdmath.Hypot(d[0]-c[0], d[1]-c[1])
+	ca := stdmath.Hypot(a[0]-d[0], a[1]-d[1])
+	twiceArea := stdmath.Abs((c[0]-a[0])*(d[1]-a[1]) - (d[0]-a[0])*(c[1]-a[1]))
+	if twiceArea == 0 {
+		return 0 // a degenerate triangle the weld drops
+	}
+	return ab * bc * ca / (2 * twiceArea)
 }

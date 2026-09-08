@@ -79,22 +79,71 @@ type chartCover struct {
 	padV   float64
 }
 
-// chartCoverPadStations is how many grid gaps of replicated covering are kept either side of the branch
-// window. The point set within it is then EXACTLY periodic out past any triangle's circumcircle, so a
-// seam-spanning triangle is built identically on both sides and exactly one of its replicas is kept.
-const chartCoverPadStations = 3
-
 // newChartCover sizes the covering: the trim-local (u,v) metric, the interior grid's parameter lines
 // (the SAME adaptive breakpoints the full-domain grid uses, so a charted face is faceted at the density
 // the quality asks for and not at one of this mesher's own), and the replication pad.
 func newChartCover(s geom.Surface, r chartRegion, q Quality) *chartCover {
-	us, vs := chartStations(s, r, q, true), chartStations(s, r, q, false)
-	b := &chartCover{s: s, r: r, us: us, vs: vs,
-		padU: chartPad(len(us), r.uLo, r.uHi), padV: chartPad(len(vs), r.vLo, r.vHi)}
+	b := &chartCover{s: s, r: r, us: chartStations(s, r, q, true), vs: chartStations(s, r, q, false)}
 	b.su, b.sv = trimMetricScale(s, r.contours[0])
+	cell := coarsestCoverCell(b.us, b.vs, b.su, b.sv)
+	b.padU = chartPad(cell, b.su, r.uHi-r.uLo)
+	b.padV = chartPad(cell, b.sv, r.vHi-r.vLo)
 	b.normalAt = func(u, v float64) math.Vector3 { return s.NormalAt(r.fold(u, v)) }
 	b.carry = b.inPad
 	return b
+}
+
+// chartCoverPadStations is how many of the covering's COARSEST cells of replicated covering are kept
+// either side of the branch window. Within that band the point set is exactly periodic, so a triangle
+// whose circumcircle fits inside it is built identically on both sides of the window and exactly one of
+// its replicas is kept.
+//
+// The measure is the coarsest cell of the WHOLE covering, not the axis's own station gap, and that
+// distinction is the whole of the pad's correctness. A STRAIGHT axis gets no chord subdivision, so a
+// cylinder wall's covering is three ROWS tall against 256 columns and its triangles reach the whole
+// height; three column gaps is 0.22 mm on the #1738 corner junction against circumcircles of several
+// millimetres. Measured there at PropertyQuality, the two ends of the window triangulated the same rim
+// differently and the canonical window kept one triangle from each: 871 unpaired edges against a rim of
+// 868, three rim segments carrying two triangles each, and the body cracked with 6 free edges.
+//
+// Replicating the whole period instead is correct but costs what the pad exists to avoid: measured on
+// the figure-eight torus band at PropertyQuality, 23.16 s against 1.69 s for the same 97460 triangles,
+// because a doubly-periodic covering has nine shifts.
+const chartCoverPadStations = 3
+
+// coarsestCoverCell is the diagonal, as a 3D length, of the largest cell the interior grid leaves — the
+// scale of the largest empty circle the triangulation can have, and so of the largest circumcircle the
+// pad has to contain.
+func coarsestCoverCell(us, vs []float64, su, sv float64) float64 {
+	return stdmath.Hypot(widestStationGap(us)*su, widestStationGap(vs)*sv)
+}
+
+// widestStationGap is the largest gap between consecutive stations of one axis (0 for fewer than two).
+func widestStationGap(ps []float64) float64 {
+	gap := 0.0
+	for i := 1; i < len(ps); i++ {
+		gap = stdmath.Max(gap, ps[i]-ps[i-1])
+	}
+	return gap
+}
+
+// chartPad is the replication pad on one axis, in that axis's own parameter: chartCoverPadStations of
+// the covering's coarsest cell, measured as a 3D length and carried back through the axis's metric. A
+// pad wider than the window itself is pointless — the whole period is already replicated — so it is
+// capped there.
+func chartPad(cell, scale, span float64) float64 {
+	if scale <= 0 {
+		return span
+	}
+	return stdmath.Min(chartCoverPadStations*cell/scale, span)
+}
+
+// inPad reports whether a replicated (u,v) is close enough to the branch window to be worth carrying.
+func (b *chartCover) inPad(u, v float64) bool {
+	if b.r.uPer && (u < b.r.uLo-b.padU || u > b.r.uHi+b.padU) {
+		return false
+	}
+	return !b.r.vPer || (v >= b.r.vLo-b.padV && v <= b.r.vHi+b.padV)
 }
 
 // chartStations are one axis's grid parameter lines over the branch window. The closing station of a
@@ -129,22 +178,6 @@ func atLeastMinimumCells(ps []float64, lo, hi float64) []float64 {
 		out = append(out, lo+(hi-lo)*float64(i)/minInteriorCells)
 	}
 	return out
-}
-
-// chartPad is the replication pad in one axis: chartCoverPadStations grid gaps.
-func chartPad(stations int, lo, hi float64) float64 {
-	if stations < 2 {
-		return hi - lo
-	}
-	return chartCoverPadStations * (hi - lo) / float64(stations)
-}
-
-// inPad reports whether a replicated (u,v) is close enough to the branch window to be worth carrying.
-func (b *chartCover) inPad(u, v float64) bool {
-	if b.r.uPer && (u < b.r.uLo-b.padU || u > b.r.uHi+b.padU) {
-		return false
-	}
-	return !b.r.vPer || (v >= b.r.vLo-b.padV && v <= b.r.vHi+b.padV)
 }
 
 // addChains lays every boundary chain into the covering at each period shift, returning the constraint
