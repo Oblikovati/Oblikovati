@@ -23,17 +23,17 @@ func refinementQualities() (coarse, fine ops.Quality) {
 	return ops.DefaultQuality(), ops.PropertyQuality()
 }
 
-// knownFreeEdgesAtFineQuality pins the one corpus body that is NOT watertight at PropertyQuality, so
-// the gate ships green while saying exactly what is broken and trips the day it is fixed.
+// knownFreeEdgesAtFineQuality pins any corpus body that is NOT watertight at PropertyQuality, so the
+// gate ships green while saying exactly what is broken and trips the day it is fixed. It is EMPTY, and
+// the map stays because the next such body should be named here rather than silently tolerated.
 //
-// "ring − half space" is the torus cut by the plane x = R, whose section is the LEMNISCATE: the two
-// spiric branches meet at (R, 0, ±r), so the face's boundary passes through the same 3D point twice.
-// At PropertyQuality the chart-driven mesher comes back with 276 unpaired edges against a rim of 272 —
-// four extra, two per node — is declined by its own rim gate, and the face falls to the surface's whole
-// domain (296.062 mm² against the 264.830 it had built), cracking the body's planar cap with it. The
-// count is PRE-EXISTING and was proved so by removing this task's spiric conditioning gate and
-// re-measuring: identical, 272. At DefaultQuality the body is watertight, which is why no gate saw it.
-var knownFreeEdgesAtFineQuality = map[string]int{"ring − half space": 272}
+// It held "ring − half space" at 272 for one round, called PRE-EXISTING on an ablation of this task's
+// own changes. That was wrong, and the mandated bisect against the wave base said so: at c1e8f2a8 the
+// body meshes watertight at PropertyQuality (203.866 mm³), and `git bisect run` over c1e8f2a8..HEAD
+// names 6f8f5125 — the slice that deleted torusComplementMesh and sent the genus-1 complement to the
+// chart-driven mesher, measuring only DefaultQuality. See chartBoundaryClearance for the fix and its
+// numbers.
+var knownFreeEdgesAtFineQuality = map[string]int{}
 
 // TestEveryCorpusBodyIsWatertightUnderRefinement meshes every classification-corpus body at both
 // facetings and demands no free edge at either. Volume is deliberately NOT asserted monotone here: a
@@ -47,14 +47,14 @@ func TestEveryCorpusBodyIsWatertightUnderRefinement(t *testing.T) {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()
 			body := row.build(t)
-			lo, hi := meshOf(t, body, coarse), meshOf(t, body, fine)
-			if lo.free != 0 {
-				t.Errorf("%d free edges at the coarse faceting (want 0)", lo.free)
+			if lo := meshedFreeEdges(t, body, coarse); lo != 0 {
+				t.Errorf("%d free edges at the coarse faceting (want 0)", lo)
 			}
-			if want := knownFreeEdgesAtFineQuality[row.name]; hi.free != want {
+			hi := meshedFreeEdges(t, body, fine)
+			if want := knownFreeEdgesAtFineQuality[row.name]; hi != want {
 				t.Errorf("%d free edges at the fine faceting, want %d — see knownFreeEdgesAtFineQuality: "+
 					"either a new crack, or the lemniscate node is fixed and this row is now watertight",
-					hi.free, want)
+					hi, want)
 			}
 		})
 	}
@@ -91,15 +91,10 @@ func TestEveryChartedFaceGainsAreaUnderRefinement(t *testing.T) {
 // and this only absorbs the last-place rounding of two independent summations.
 const refinementSlack = 1e-9 // tol:numeric
 
-// meshRow is one body's watertightness and volume at one faceting.
-type meshRow struct {
-	free   int
-	volume float64
-}
-
-// meshOf tessellates a body and reads the two numbers the refinement gate compares.
-func meshOf(t *testing.T, body *topo.Body, q ops.Quality) meshRow {
+// meshedFreeEdges tessellates a body and counts its unpaired edges — the one number the refinement gate
+// compares (volume is deliberately not asserted monotone; see the gate's own doc).
+func meshedFreeEdges(t *testing.T, body *topo.Body, q ops.Quality) int {
 	t.Helper()
 	m, _ := tessellate.TessellateBody(body, q)
-	return meshRow{free: tessellate.FreeEdgeCount(m), volume: tessellate.MeshGeometryProperties(m).Volume}
+	return tessellate.FreeEdgeCount(m)
 }

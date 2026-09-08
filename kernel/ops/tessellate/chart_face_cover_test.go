@@ -274,9 +274,10 @@ func TestAStraightAxisTakesItsCellFromTheOther(t *testing.T) {
 	if len(gotU) != len(columns) {
 		t.Errorf("the chord-subdivided axis was re-balanced: %d stations, want its own %d", len(gotU), len(columns))
 	}
-	if widest := widestStationGap(gotV) * 1; widest > widestStationGap(columns)*3 {
+	const rowScale, columnScale = 1.0, 3.0 // the wall's own metric: v is the axis, u sweeps radius 3
+	if widest := widestStationGap(gotV) * rowScale; widest > widestStationGap(columns)*columnScale {
 		t.Errorf("the straight axis's widest cell is %.4f, want no more than the other's %.4f",
-			widest, widestStationGap(columns)*3)
+			widest, widestStationGap(columns)*columnScale)
 	}
 	if len(gotV) <= len(rows) {
 		t.Errorf("the straight axis kept its %d floor stations; it must take the other's cell size", len(gotV))
