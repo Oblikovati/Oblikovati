@@ -72,6 +72,11 @@ func BooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, re
 	if op == NewBody {
 		return tool, nil
 	}
+	// Size classification, BEFORE any geometry: an operand below the seam resolution is refused by
+	// name rather than run through a pipeline that cannot separate its two sides (ADR-0061 stage 6).
+	if err := declineSubResolutionOperand(op, target, tool, rec); err != nil {
+		return nil, err
+	}
 	rel := classify(target, tool)
 	switch op {
 	case Join:

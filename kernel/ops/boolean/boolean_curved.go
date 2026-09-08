@@ -115,35 +115,62 @@ var curvedGuardBracketOverride *float64
 // booleanGeneral falls through to the guarded planar/CSG path. On acceptance it restores
 // original-edge identity (ADR-0043) like the planar path.
 func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	// The size classification runs here too, not only in BooleanWithDiagnostics: CurvedBoolean is a
+	// PUBLIC entry, and a sub-resolution pair reaching it certified as "nothing removed" — a valid
+	// body, every face accounted for, and a Cut volume the Requicha bracket admits (ADR-0061 stage 6).
+	if declineSubResolutionOperand(op, target, tool, rec) != nil {
+		return nil, false
+	}
 	body, ok := curvedExactBoolean(op, target, tool, rec)
 	if !ok {
 		declineCurvedExact(op, target, tool, rec)
 		return nil, false
 	}
-	if !certifyBooleanFaces(op, target, tool, body) {
-		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
-			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
-		return nil, false
-	}
+	// Validate stays HERE, at the exit that returns the body, rather than inside the gate below: the
+	// post-condition of a public operation has to be visible on the path its result travels
+	// (archguard TestExportedOpsValidateTheirResult follows only the calls whose result is returned).
 	if !Validate(body).ValidSolid() {
 		rec.Recordf(CodeBooleanAnalyticInvalid, diag.Defect,
 			"curved %s analytic result is not a valid closed solid: falling back to the guarded path", op)
 		return nil, false
 	}
-	if inverted, found := invertedFace(body); found {
-		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
-			"curved %s analytic result has a face wound against its outward normal (%q): falling back to the guarded path", op, inverted.ReferenceKey())
-		return nil, false
-	}
-	tv, wv, bv := boolVolumes(target, tool, body)
-	if volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
-		rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
-			"curved %s analytic result volume %g outside the Requicha bracket (V(A)=%g V(B)=%g): falling back to the guarded path",
-			op, bv, tv, wv)
+	if curvedResultRejected(op, target, tool, body, rec) {
 		return nil, false
 	}
 	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
 	return body, true
+}
+
+// curvedResultRejected is the acceptance gate curvedExactGuarded applies to a VALID built result, in
+// the order the ground rules put them: the per-face membership certificate is the PROOF, winding is a
+// post-condition the certificate cannot see, and the whole-body volume bracket is the closing smoke
+// test. Each rejection records its own Defect naming which certificate refused, so a demotion says WHY
+// rather than only that it happened. Validity is checked by the caller, at the exit (see there).
+func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body, rec *diag.Recorder) bool {
+	if !certifyBooleanFaces(op, target, tool, body) {
+		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
+			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
+		return true
+	}
+	if inverted, found := invertedFace(body); found {
+		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
+			"curved %s analytic result has a face wound against its outward normal (%q): falling back to the guarded path", op, inverted.ReferenceKey())
+		return true
+	}
+	return curvedVolumeRejected(op, target, tool, body, rec)
+}
+
+// curvedVolumeRejected is the acceptance gate's last stage: the Requicha two-sided volume bracket,
+// split out so each stage stays one decision.
+func curvedVolumeRejected(op PartFeatureOperation, target, tool, body *topo.Body, rec *diag.Recorder) bool {
+	tv, wv, bv := boolVolumes(target, tool, body)
+	if !volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
+		return false
+	}
+	rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
+		"curved %s analytic result volume %g outside the Requicha bracket (V(A)=%g V(B)=%g): falling back to the guarded path",
+		op, bv, tv, wv)
+	return true
 }
 
 // declineCurvedExact records the NAMED decline when no exact analytic path claims a configuration that

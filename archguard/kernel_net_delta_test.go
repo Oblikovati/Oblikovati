@@ -137,7 +137,14 @@ var kernelNetDeltaPin = map[string]int{
 	// post-condition — a closed solid's mesh is a closed surface — and reports the tear with the
 	// faces it touches. The check reads the B-REP for closure, so it cannot fire on a body that is
 	// genuinely open.
-	"fallback-sites": 28,
+	// 28 → 29 (2026-09-08, ADR-0061 stage 6; rebased after the merge slice): CodeBooleanSubResolutionTool. A RISE that names a
+	// degradation nothing reported before, and it names the LOUDEST kind: an operand whose material is
+	// thinner than the model's seam weld. Measured on the RING row, a 1e-6 axial drill ran the whole
+	// pipeline and failed its acceptance gate reporting only "no exact path claims this", while a 1e-10
+	// one came back as the ring UNCHANGED with err=nil and NOTHING recorded — a Cut that removed
+	// nothing, silently, because "removed nothing" sits inside the Requicha bracket for a difference.
+	// The boolean now classifies on size before any geometry is built and refuses by name.
+	"fallback-sites": 29,
 }
 
 func TestKernelNetDelta(t *testing.T) {
