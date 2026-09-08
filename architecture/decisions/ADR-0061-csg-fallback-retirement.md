@@ -2847,7 +2847,7 @@ Corpus rows that move, per BODY:
 | --- | --- | --- | --- |
 | RODB∪ rod ∪ ball | 11.93691 (8.72 % low) | 12.88969 (**1.44 %**) | 13.077910 |
 | RODB− rod − ball | 11.42387 (9.02 % low) | 12.37665 (**1.43 %**) | 12.555898 |
-| RODB∩ rod ∩ ball | 0.008847 (27.41 %) | 0.008764 (28.10 %) | 0.012187 |
+| RODB∩ rod ∩ ball | 0.008847 (27.41 %) | 0.00876 (28.10 %) | 0.012187 |
 
 RODB∪ and RODB− were PINNED two-sided at 8.72 % and 9.02 % with 1.44 %/1.43 % written down as the number
 that would move them; it did, and they are bounded rows again at 2 %. RODB∩'s pin is re-measured, not
