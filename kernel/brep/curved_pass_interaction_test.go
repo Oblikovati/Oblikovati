@@ -213,6 +213,11 @@ func TestSpanIsRimContact(t *testing.T) {
 		{"exactly on the bottom rim", 0, 0, true},
 		{"well inside the band", 1, 3, false},
 		{"crossing the top rim by more than the pad", 4 - 10*pad, 4 + 10*pad, false},
+		// A LONG span is a rim contact too when only its band-ward end is at a rim: it enters the band
+		// by less than the pad, however far it reaches the other way, so it imprints nothing inside.
+		{"reaching far below the band but entering it by half a pad", -100, pad / 2, true},
+		{"reaching far above the band but entering it by half a pad", 4 - pad/2, 100, true},
+		{"a long span that crosses the whole band", -100, 100, false},
 	} {
 		if got := spanIsRimContact(c.lo, c.hi, band); got != c.wantRim {
 			t.Errorf("%s: spanIsRimContact(%g, %g) = %v, want %v", c.name, c.lo, c.hi, got, c.wantRim)

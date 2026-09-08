@@ -266,9 +266,14 @@ func bandPlacement(lo, hi float64, band coneSideBand_) (inside, clear bool) {
 	return lo > band.vMin+pad && hi < band.vMax-pad, !spanMeetsBand(lo, hi, band)
 }
 
-// spanIsRimContact reports an axial span lying wholly within the band's own cull pad of ONE of its
-// rims: the crossing IS that rim at the tolerance the band is classified at, so it imprints nothing
-// the face does not already carry as an edge.
+// spanIsRimContact reports an axial span that reaches no further INTO the band than one of its rims,
+// to the band's own cull pad: everything the span covers lies at or rim-ward of vMin+pad, or at or
+// rim-ward of vMax−pad. So it is true of a crossing sitting exactly ON a rim, and equally of one that
+// only grazes the band from outside — a span like [−100, vMin+pad/2], which extends far beyond the
+// band on the far side but still enters it by less than the pad. Both mean the same thing here: what
+// the crossing could imprint inside the band is under the tolerance the band is classified at, and the
+// rim it coincides with is already an edge of the face, so there is nothing to imprint. It says
+// nothing about how far the span reaches the OTHER way; only the band-ward end is a decision.
 //
 // It closes a gap between two windows for ONE incidence. bandPlacement pads both of its verdicts, so a
 // crossing sitting on a rim is neither inside nor clear and falls to clipCrossingToBand — whose
