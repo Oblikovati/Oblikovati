@@ -21,15 +21,16 @@ import (
 // the ring's hole.
 
 // TorusQuadricSection returns the exact intersection of a torus with an implicit quadric, on the
-// torus's own chart. ok=false when the quadric's quadratic form is not invariant about the torus axis —
-// a skew rod, a tilted cone — because the azimuth dependence is then a second harmonic whose roots are
-// not this closed form's.
+// torus's own chart. The quadric's quadratic form is CLASSIFIED once — invariant about the torus axis
+// or not — and exactly one reduction runs: the one-harmonic arccos of this file, or the general
+// second-harmonic lanes of intersect_torus_quadric_skew.go. ok=false is a named decline from whichever
+// one the classification chose.
 //
 //	curves, ok := geom.TorusQuadricSection(ring, drill.QuadricForm(), geom.ResolutionForBox(box))
 func TorusQuadricSection(t Torus, q Quadric, res Resolution) ([]Curve3, bool) {
 	_, e1, e2 := torusAxisFrame(t)
-	if _, ok := quadricIsAxisInvariant(q, e1, e2); !ok {
-		return nil, false
+	if _, invariant := quadricIsAxisInvariant(q, e1, e2); !invariant {
+		return torusSkewSection(t, q, res)
 	}
 	if coaxialTorusQuadric(t, q) {
 		return torusCoaxialCircles(t, q)
@@ -44,9 +45,15 @@ func TorusQuadricSection(t Torus, q Quadric, res Resolution) ([]Curve3, bool) {
 	if len(spans) == 0 {
 		return nil, true // it reaches the tube nowhere: they do not meet, and that is an answer
 	}
+	return torusHarmonicLoops(t, q, spans, res)
+}
+
+// torusHarmonicLoops builds one folded loop per tube-angle window of the one-harmonic reduction.
+func torusHarmonicLoops(t Torus, q Quadric, spans [][2]float64, res Resolution) ([]Curve3, bool) {
 	out := make([]Curve3, 0, len(spans))
 	for _, w := range spans {
-		loop := TorusQuadricLoop{Torus: t, Quad: q, V0: w[0], V1: w[1]}
+		anchor, _ := torusHarmonicAt(t, q, (w[0]+w[1])/2)
+		loop := TorusQuadricLoop{Torus: t, Quad: q, V0: w[0], V1: w[1], UA: anchor.phase}
 		if !torusWindowConditioning(loop, res) {
 			return nil, false
 		}
@@ -163,13 +170,21 @@ func torusWindowConditioning(l TorusQuadricLoop, res Resolution) bool {
 	widest := 0.0
 	for i := 1; i < torusWindowProbes; i++ {
 		v := l.V0 + (l.V1-l.V0)*float64(i)/torusWindowProbes
-		h, ok := torusHarmonicAt(l.Torus, l.Quad, v)
-		if !ok {
-			return false
-		}
-		widest = stdmath.Max(widest, torusBranchGap(l.Torus, h))
+		widest = stdmath.Max(widest, torusBranchGapAt(l.Torus, l.Quad, v, l.UA))
 	}
 	return widest > res.Stitch()
+}
+
+// torusBranchGapAt is the arc length a branch pair spans at one tube angle, whichever reduction the
+// station takes: the one-harmonic arccos, or the lane the anchor names in the general one. It is the
+// one place the two forms' separations are read, so the conditioning gates above apply the same
+// certificate to both.
+func torusBranchGapAt(t Torus, q Quadric, v, anchor float64) float64 {
+	st := torusStationAt(t, q, v)
+	if st.invariant {
+		return torusBranchGap(t, st.harmonic())
+	}
+	return torusLaneAt(st.secondHarmonic(), anchor).separation() * (t.MajorRadius + t.MinorRadius)
 }
 
 // torusWindowProbes samples a window's interior for its widest branch separation, which has one interior

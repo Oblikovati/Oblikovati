@@ -119,21 +119,25 @@ func TestCoaxialShaftThroughARingIsExact(t *testing.T) {
 	}
 }
 
-// TestSkewRodThroughARingIsRefusedByName: a rod ACROSS the ring is not in the closed form's family. Its
-// quadratic form is not invariant about the ring's axis, so the azimuth dependence is a second harmonic
-// whose roots are a quartic rather than an arccos, and the section declines. The refusal must stay loud.
-func TestSkewRodThroughARingIsRefusedByName(t *testing.T) {
+// TestATorusPairIsRefusedByName: the reduction substitutes the TORUS's chart into the other surface's
+// quadratic form, so what it needs of that other surface is a quadric — not a type. A second TORUS has
+// none (a torus is quartic), so neither role assignment reduces and the pair is refused by name. The
+// refusal is where the kernel states its boundary and it must stay loud.
+//
+// The row was a skew rod through this ring until the second harmonic's lanes solved that section
+// exactly (ADR-0061 stage 5, third slice); its positive form is boolean_torus_skew_test.go.
+func TestATorusPairIsRefusedByName(t *testing.T) {
 	t.Parallel()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	rod, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1, 9)
+	linked, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
 	if err != nil {
-		t.Fatalf("rod: %v", err)
+		t.Fatalf("linked ring: %v", err)
 	}
-	if _, err := ops.Boolean(ops.Cut, ring, rod); err == nil {
-		t.Fatal("a skew rod through a ring must be refused by name, not built")
+	if _, err := ops.Boolean(ops.Cut, ring, linked); err == nil {
+		t.Fatal("a torus pair must be refused by name, not built")
 	}
 }
 

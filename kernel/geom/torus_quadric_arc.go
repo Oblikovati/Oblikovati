@@ -74,14 +74,8 @@ func torusAxisFrame(t Torus) (axis, e1, e2 math.Vector3) {
 // on the surface's type: a sphere passes wherever it sits, a cylinder or cone passes exactly when its
 // own axis is parallel to the torus's, and anything else fails. Gate on conditioning, not on type.
 func quadricIsAxisInvariant(q Quadric, e1, e2 math.Vector3) (alpha float64, ok bool) {
-	alpha = float64(e1.Dot(q.M.Apply(e1)))
-	beta := float64(e2.Dot(q.M.Apply(e2)))
-	cross := float64(e1.Dot(q.M.Apply(e2)))
-	scale := stdmath.Max(q.M.Norm(), stdmath.Abs(alpha))
-	if scale <= 0 {
-		return 0, false // a degenerate (planar) quadric: torus∩plane is the spiric closed form
-	}
-	return alpha, stdmath.Abs(alpha-beta) <= axisInvarianceTol*scale && stdmath.Abs(cross) <= axisInvarianceTol*scale
+	m11, m22, m12 := inPlaneTensorEntries(q, e1, e2)
+	return m11, axisInvariantEntries(q, m11, m22, m12)
 }
 
 // axisInvarianceTol is how far a quadratic form may depart from acting the same way on every direction
@@ -93,22 +87,11 @@ const axisInvarianceTol = 1e-12 // tol:numeric — relative departure of a tenso
 // torusHarmonicAt reduces the quadric's constraint on the torus at tube angle v. ok=false when M is not
 // axis-invariant, in which case no single harmonic describes the station and this form does not apply.
 func torusHarmonicAt(t Torus, q Quadric, v float64) (torusHarmonic, bool) {
-	axis, e1, e2 := torusAxisFrame(t)
-	alpha, ok := quadricIsAxisInvariant(q, e1, e2)
-	if !ok {
+	st := torusStationAt(t, q, v)
+	if !st.invariant {
 		return torusHarmonic{}, false
 	}
-	cv, sv := cosSin(v)
-	rho := t.MajorRadius + t.MinorRadius*cv
-	w0 := q.Anchor.VectorTo(t.Center).Add(axis.Scale(math.Scalar(t.MinorRadius * sv)))
-	mw0 := q.M.Apply(w0)
-	reachVec := mw0.Scale(2).Add(q.G.Scale(2))
-	x, y := float64(reachVec.Dot(e1)), float64(reachVec.Dot(e2))
-	return torusHarmonic{
-		level: float64(w0.Dot(mw0)) + 2*float64(q.G.Dot(w0)) + q.K + alpha*rho*rho,
-		reach: rho * stdmath.Hypot(x, y),
-		phase: stdmath.Atan2(y, x),
-	}, true
+	return st.harmonic(), true
 }
 
 // TorusQuadricArc is a bounded run of the EXACT intersection of a torus with an axis-invariant quadric,

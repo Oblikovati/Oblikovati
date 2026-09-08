@@ -31,20 +31,21 @@ func sphereOnCylinderWall(t *testing.T) (*topo.Body, *topo.Body) {
 	return a, b
 }
 
-// skewRodThroughARing is a pair NO closed form covers. A torus is quartic, so it is no implicit quadric
-// and the ruled substitution cannot reach it; and the torus's own reduction needs the other surface's
-// quadratic form to be invariant about the RING's axis, which a rod driven across the ring's plane is
-// not — its azimuth dependence is a second harmonic whose roots are a quartic rather than an arccos. It
-// is the corpus row for the named refusal, the exit that must stay loud.
-func skewRodThroughARing(t *testing.T) (*topo.Body, *topo.Body) {
+// interlockedRings is a pair NO closed form covers, and the fixture has moved for the same reason twice.
+// It was a skew rod through a ring, whose section the second harmonic's lanes now solve exactly
+// (ADR-0061 stage 5, third slice; its positive form is boolean_torus_skew_test.go). What is left is a
+// pair where NEITHER side supplies an implicit quadric: a torus is quartic, so the torus reduction —
+// which substitutes one torus's chart into the other surface's quadratic form — has nothing to
+// substitute into. It is the corpus row for the named refusal, the exit that must stay loud.
+func interlockedRings(t *testing.T) (*topo.Body, *topo.Body) {
 	t.Helper()
 	a, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	b, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1, 9)
+	b, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
 	if err != nil {
-		t.Fatalf("rod: %v", err)
+		t.Fatalf("linked ring: %v", err)
 	}
 	return a, b
 }
@@ -55,7 +56,7 @@ func skewRodThroughARing(t *testing.T) (*topo.Body, *topo.Body) {
 // engines gone (stage 7) it is also the operation's error rather than a stand-in body.
 func TestABooleanWithNoExactCurvedPathRefusesByName(t *testing.T) {
 	t.Parallel()
-	a, b := skewRodThroughARing(t)
+	a, b := interlockedRings(t)
 	rec := &diag.Recorder{}
 	body, err := BooleanWithDiagnostics(Join, a, b, rec)
 	if !errors.Is(err, ErrUnmodelledBoolean) {

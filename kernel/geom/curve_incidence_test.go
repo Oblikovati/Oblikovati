@@ -22,6 +22,7 @@ func TestEverySectionCurveReportsItsIncidence(t *testing.T) {
 	ring, _ := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
 	drill, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0, 0, 1), 0.8)
 	onTube, _ := NewSphere(math.P3(5, 0, 0), 2)
+	skewRod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1)
 
 	for _, c := range []struct {
 		name string
@@ -32,6 +33,7 @@ func TestEverySectionCurveReportsItsIncidence(t *testing.T) {
 		{"ruled window (ball off a rod's axis)", [2]Surface{ball, cyl}, 10},
 		{"torus window (an axial drill)", [2]Surface{ring, drill}, 12},
 		{"torus wrap (a ball on the tube)", [2]Surface{ring, onTube}, 12},
+		{"torus lane (a rod across the ring)", [2]Surface{ring, skewRod}, 12},
 	} {
 		curves, handled := IntersectSurfacesAnalytic(c.pair[0], c.pair[1], ResolutionForSize(c.size))
 		if !handled || len(curves) == 0 {

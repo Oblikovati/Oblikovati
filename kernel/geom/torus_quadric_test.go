@@ -143,21 +143,33 @@ func TestCoaxialQuadricAgainstARingIsCircles(t *testing.T) {
 	}
 }
 
-// TestSkewQuadricAgainstARingDeclines: a rod ACROSS the ring has a quadratic form that is not invariant
-// about the ring's axis, so the azimuth dependence is a second harmonic and its roots are a quartic
-// rather than an arccos. The form must decline rather than answer, and the gate is on the TENSOR, not
-// on the surface's type — a cone coaxial with the ring passes it, the same cone tilted does not.
-func TestSkewQuadricAgainstARingDeclines(t *testing.T) {
+// TestSkewQuadricAgainstARingIsExact: a rod ACROSS the ring, and the same drill TILTED, have quadratic
+// forms that are NOT invariant about the ring's axis. Their azimuth dependence is the second harmonic,
+// so a station carries up to four azimuths in two lanes rather than two ordered roots, and the roots are
+// a quartic in tan(u/2) rather than an arccos. Both come back exact (ADR-0061 stage 5, third slice); the
+// row asserted the refusal until then.
+//
+// The rod is INFINITE as a quadric, so it pierces the tube on both of the ring's flanks: two piercings,
+// an entry and an exit seam each, four folded loops. The tilted drill enters the tube's top and leaves
+// its bottom: two.
+func TestSkewQuadricAgainstARingIsExact(t *testing.T) {
 	t.Parallel()
 	ring := testRing(t)
 	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1)
-	if _, handled := IntersectSurfacesAnalytic(ring, rod, ResolutionForSize(12)); handled {
-		t.Error("a rod across the ring must decline: its section is not one harmonic")
+	curves, handled := IntersectSurfacesAnalytic(ring, rod, ResolutionForSize(12))
+	if !handled || len(curves) != 4 {
+		t.Fatalf("rod across the ring: handled=%v curves=%d, want four folded loops", handled, len(curves))
 	}
-	tilted, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0.2, 0, 1), 0.8)
-	if _, handled := IntersectSurfacesAnalytic(ring, tilted, ResolutionForSize(12)); handled {
-		t.Error("a TILTED drill must decline too — the reduction is gated on the tensor, not on the type")
+	assertSectionOnBothSurfaces(t, "rod across the ring", curves, ring, rod)
+	assertTangentsAreRegular(t, "rod across the ring", curves)
+
+	tilted, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0.3, 0, 1), 0.8)
+	drilled, handled := IntersectSurfacesAnalytic(ring, tilted, ResolutionForSize(12))
+	if !handled || len(drilled) != 2 {
+		t.Fatalf("tilted drill: handled=%v curves=%d, want the two seams it leaves", handled, len(drilled))
 	}
+	assertSectionOnBothSurfaces(t, "tilted drill", drilled, ring, tilted)
+	assertTangentsAreRegular(t, "tilted drill", drilled)
 }
 
 // TestARingAndAFarBallDoNotMeet: a ball clear of the ring is an ANSWER — empty and handled — not a

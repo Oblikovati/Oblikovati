@@ -24,6 +24,12 @@ type TorusQuadricLoop struct {
 	Torus  Torus   // the torus the loop is evaluated on
 	Quad   Quadric // the implicit form of the other surface
 	V0, V1 float64 // the two fold tube angles bounding the window, V0 < V1
+	// UA is the LANE the two branches belong to: the azimuth of the station extremum they straddle. A
+	// second-harmonic station carries up to four azimuths in two pairs (a rod across a ring pierces the
+	// tube on both flanks), and this is what keeps a loop on its own pair from station to station. The
+	// one-harmonic family has exactly one lane, so its reader does not consult this; it is recorded
+	// there too, and means the same thing.
+	UA float64
 }
 
 // Kind reports the loop as a torus section: the same closed form as [TorusQuadricArc], over a window
@@ -47,11 +53,11 @@ func (l TorusQuadricLoop) PointAt(t float64) math.Point3 {
 	return l.Torus.PointAt(l.azimuthAt(s, v), v)
 }
 
-// azimuthAt is the azimuth of the branch s selects at tube angle v. At and just outside a fold the
-// harmonic's root reader clamps to the phase, so the two halves meet at exactly the same point.
+// azimuthAt is the azimuth of the branch s selects at tube angle v. At and just outside a fold both
+// reductions return the merged azimuth itself — the harmonic clamps to its phase, the lane returns its
+// own extremum — so the two halves meet at exactly the same point and the loop closes.
 func (l TorusQuadricLoop) azimuthAt(s, v float64) float64 {
-	h, _ := torusHarmonicAt(l.Torus, l.Quad, v)
-	return h.root(upperHalf(s))
+	return torusAzimuthAt(l.Torus, l.Quad, v, l.UA, upperHalf(s))
 }
 
 // TangentAt returns dP/dt by the same central difference [TorusQuadricArc.TangentAt] uses, in the

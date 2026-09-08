@@ -28,24 +28,24 @@ func TestBooleanRefusesAnUnmodelledConfigurationByName(t *testing.T) {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
 	t.Parallel()
-	// A rod driven ACROSS a ring. This fixture has moved twice, each time because the pipeline grew
+	// Two INTERLOCKED rings. This fixture has moved three times, each time because the pipeline grew
 	// past it: it was a sphere PAIR, which now lands analytically, then a ball joined to a torus, which
-	// the torus reduction now takes (ADR-0061 stage 5). What is left with genuinely no closed form is a
-	// pair the torus reduction cannot reach either: the rod's quadratic form is not invariant about the
-	// RING's axis, so the azimuth dependence is a second harmonic whose roots are a quartic. The
-	// positive forms of the two retired fixtures are TestSpherePairVolumesAreExact and
-	// TestRingAndBallBooleansAgreeWithRequicha.
+	// the torus reduction took (ADR-0061 stage 5), then a rod driven ACROSS a ring, which its second
+	// harmonic's lanes took (stage 5's third slice). What is left with genuinely no closed form is a
+	// pair where NEITHER side supplies an implicit quadric to substitute a chart into. The positive
+	// forms of the three retired fixtures are TestSpherePairVolumesAreExact,
+	// TestRingAndBallBooleansAgreeWithRequicha and TestSkewRodThroughARingIsExact.
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	rod, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1, 9)
+	linked, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
 	if err != nil {
-		t.Fatalf("rod: %v", err)
+		t.Fatalf("linked ring: %v", err)
 	}
 
 	var rec diag.Recorder
-	res, err := ops.BooleanWithDiagnostics(ops.Cut, ring, rod, &rec)
+	res, err := ops.BooleanWithDiagnostics(ops.Cut, ring, linked, &rec)
 	if !errors.Is(err, ops.ErrUnmodelledBoolean) {
 		t.Fatalf("a configuration no exact path models must be refused by name; got err=%v", err)
 	}
