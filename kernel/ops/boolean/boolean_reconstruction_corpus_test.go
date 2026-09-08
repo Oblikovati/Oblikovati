@@ -75,10 +75,11 @@ func TestCocylindricalCapOnWallIsOneAnalyticFace(t *testing.T) {
 	}
 	minor := 0.5 * 9 * (1.2 - stdmath.Sin(1.2))
 	assertVolume(t, body, stdmath.Pi*9*6+(stdmath.Pi*9-minor)*4, 5e-3)
-	assertMergedBandMeshesWatertight(t, body)
+	assertMergedBandMeshesClosedAndSilentAtBothQualities(t, body)
 }
 
-// assertMergedBandMeshesWatertight requires the merged band's MESH to be a closed surface at BOTH gate
+// assertMergedBandMeshesClosedAndSilentAtBothQualities requires the merged band's MESH to be a closed
+// surface at BOTH gate
 // facetings, and to report no tear.
 //
 // This row was pinned at 4 free edges while the tessellator could not mesh the merged face, with the
@@ -102,7 +103,7 @@ func TestCocylindricalCapOnWallIsOneAnalyticFace(t *testing.T) {
 // which is a re-basing by something other than a whole period. It now cuts at the interpolated
 // crossing and shifts by whole turns only, so every vertex of the chart is the face's own. Both
 // facetings are watertight and the pin is gone.
-func assertMergedBandMeshesWatertight(t *testing.T, b *topo.Body) {
+func assertMergedBandMeshesClosedAndSilentAtBothQualities(t *testing.T, b *topo.Body) {
 	t.Helper()
 	for _, gq := range gateQualities() {
 		mesh, _ := tessellate.TessellateBody(b, gq.q)

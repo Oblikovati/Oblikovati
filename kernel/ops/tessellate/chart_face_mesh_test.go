@@ -189,9 +189,15 @@ func assertCorpusVolume(t *testing.T, row chartCorpusRow, got float64) {
 // TestTheGenusOneComplementIsChartedNotWindowed is the re-pointed row of the deleted
 // torusComplementMesh (Oblikovati#1375): a torus cut by an axis-parallel half-space keeps the whole
 // tube minus ONE oval cap — a torus-minus-disk, outerless, with the oval as its only boundary. The
-// window-and-patch construction that used to mesh it is gone; the same face now comes out of the chart
-// mesher watertight and closer to the analytic solid (measured 201.63 against 201.07 for a body of
-// 203.90, so 1.11% where the window mesher read 1.39%).
+// window-and-patch construction that used to mesh it is gone and the chart-driven mesher takes the face.
+//
+// Its section under x = R is the LEMNISCATE, so the boundary passes through the same 3D point twice and
+// this row is what the boundary clearance is swept on (chartBoundaryClearance). Re-measured there:
+// 201.258 against an analytic 203.905 at DefaultQuality, 1.30 % — the comment said 1.11 % from before the
+// sweep, and the number moved with the constant. At PropertyQuality it is 203.869, 0.017 %.
+//
+// The torus FACE's own area is pinned two-sided beside the body volume, because the clearance trades
+// interior density for the boundary and only a per-face reading shows what it costs.
 func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 	t.Parallel()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
@@ -215,12 +221,38 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 		t.Error("the genus-1 complement reported a discarded trim")
 	}
 	got := tessellate.MeshGeometryProperties(mesh).Volume
-	// 0.02, not the 0.05 the other rows carry: this row is MEASURED at 1.11% (201.63 against 203.90),
+	// 0.02, not the 0.05 the other rows carry: this row is MEASURED at 1.30% (201.258 against 203.905),
 	// and a bound four times looser than the reading would sit green through the window mesher's own
 	// 1.39% — the very number this row exists to have beaten.
 	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > 0.02 {
 		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f > 0.02)", got, an.Volume, rel)
 	}
+	assertComplementFaceArea(t, body)
+}
+
+// complementTorusFaceArea is the torus face's own meshed area at DefaultQuality, pinned TWO-SIDED. The
+// boundary clearance buys the lemniscate's watertightness with interior density next to a coarse
+// boundary, and this is what that costs: 263.596 with the clearance the window mesher's replacement
+// shipped, 263.423 at a whole chord, 263.610 at the swept 0.875. A window of 0.5 mm² is a tenth of the
+// spread the sweep covers (261.9 at k=4), so it holds the trade without pinning the last digit.
+const complementTorusFaceArea, complementTorusFaceWindow = 263.610, 0.5
+
+// assertComplementFaceArea holds the complement's torus face to its measured area, both ways.
+func assertComplementFaceArea(t *testing.T, body *topo.Body) {
+	t.Helper()
+	for _, f := range body.Faces() {
+		if _, isTorus := f.Geometry().(geom.Torus); !isTorus {
+			continue
+		}
+		got := tessellate.MeshGeometryProperties(tessellate.TessellateFace(f, ops.DefaultQuality())).Area
+		if stdmath.Abs(got-complementTorusFaceArea) > complementTorusFaceWindow {
+			t.Errorf("the complement's torus face meshes %.5f mm², off its pin of %.3f ± %.1f — the "+
+				"boundary clearance moved, or the covering's density next to a coarse rim did",
+				got, complementTorusFaceArea, complementTorusFaceWindow)
+		}
+		return
+	}
+	t.Fatal("the genus-1 complement has no torus face; the area pin covers nothing")
 }
 
 // TestTheAzimuthBandMeshesOneTurnNotTwo is the PER-FACE gate on the representative row, which a body
