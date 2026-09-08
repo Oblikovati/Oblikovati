@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
@@ -77,25 +78,45 @@ func TestCocylindricalCapOnWallIsOneAnalyticFace(t *testing.T) {
 	assertMergedBandMeshFreeEdges(t, body, 4)
 }
 
-// assertMergedBandMeshFreeEdges pins the merged band's MESH free-edge count.
+// assertMergedBandMeshFreeEdges pins the merged band's MESH free-edge count AND that the tear is
+// reported, so nothing about it is silent.
 //
-// It is 4 and not 0, and the reason is downstream of this B-rep and named rather than left to be
-// found. The merged wall is a band whose second rim is NOTCHED: it runs along the host's rim at
-// v = 6 across the boss's flat, and along the boss's own top rim at v = 10 everywhere else, joined by
-// two runs at ONE azimuth each (the boss's chord edges). The tessellation router hands such a face to
-// twoRimHoledBandMesh, whose bridgeRimsAtSeam orders each rim with orderedRing — a STABLE SORT BY
-// AZIMUTH. A stable sort keeps a tie's input order, and the two chord runs are approached from
-// opposite sides, so one of them comes out reversed: the ring jumps rim-to-rim at that corner and the
-// four triangles around it do not pair. Disabling that mesher is worse, not better — the router then
-// short-circuits at IsPeriodic(u) != IsPeriodic(v) to the flat-patch CDT (61 free edges, and it says
-// so), so the chart-driven mesher this face wants is not reachable for a singly-periodic surface at
-// all. Both are the chart mesher's own router to settle (ADR-0061 stage 5); the count is pinned here
-// so landing that trips this row and converts it, exactly as the face count was pinned before this.
+// It is 4 and not 0, and the reason is downstream of this B-rep. The merged wall is a band whose
+// second rim is NOTCHED: it runs along the host's rim at v = 6 across the boss's flat, and along the
+// boss's own top rim at v = 10 everywhere else, joined by two runs at ONE azimuth each (the boss's
+// chord edges). The tessellation router hands such a face to twoRimHoledBandMesh, whose
+// bridgeRimsAtSeam orders each rim with orderedRing — a STABLE SORT BY AZIMUTH. A stable sort keeps a
+// tie's input order, and the two chord runs are approached from opposite sides, so one of them comes
+// out reversed: the ring jumps rim-to-rim at that corner and the four triangles around it do not pair.
+// Disabling that mesher is worse, not better — the router then short-circuits at
+// IsPeriodic(u) != IsPeriodic(v) to the flat-patch CDT (61 free edges, and it says so), so the
+// chart-driven mesher this face wants is not reachable for a singly-periodic surface at all. Both are
+// the chart mesher's own router to settle (ADR-0061 stage 5).
+//
+// What this row will NOT let happen is the tear shipping unreported: TessellateBody's post-condition
+// says a closed solid's mesh is a closed surface, and the defect it records names the faces the tear
+// touches. The count is pinned so landing the router's fix trips this row and converts it, exactly as
+// the face count was pinned before the merge landed.
 func assertMergedBandMeshFreeEdges(t *testing.T, b *topo.Body, want int) {
 	t.Helper()
 	mesh, _ := tessellate.TessellateBody(b, DefaultQuality())
 	if n := tessellate.FreeEdgeCount(mesh); n != want {
 		t.Errorf("the merged body meshes with %d free edges, pinned at %d", n, want)
+	}
+	assertMeshTearIsReported(t, mesh, want)
+}
+
+// assertMeshTearIsReported requires the torn mesh to carry the named Defect — a degradation the ground
+// rules do not let ship silently — and requires a watertight one to carry none.
+func assertMeshTearIsReported(t *testing.T, m *tessellate.Mesh, freeEdges int) {
+	t.Helper()
+	reported := false
+	for _, d := range m.Diagnostics {
+		reported = reported || (d.Code == tessellate.CodeMeshNotWatertight && d.Severity == diag.Defect)
+	}
+	if reported != (freeEdges > 0) {
+		t.Errorf("the mesh has %d free edges and reports %q = %v; the two must agree",
+			freeEdges, tessellate.CodeMeshNotWatertight, reported)
 	}
 }
 

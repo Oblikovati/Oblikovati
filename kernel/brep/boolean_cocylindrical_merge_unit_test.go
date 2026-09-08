@@ -34,9 +34,9 @@ func TestDissolveJoinsTwoAbuttingBandsIntoOneLoop(t *testing.T) {
 	t.Parallel()
 	a, b := wallFaceOf(t, math.P3(0, 0, 0), 2, 4), wallFaceOf(t, math.P3(0, 0, 4), 2, 3)
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	loops, ok := dissolveSharedEdges(a, b, res)
-	if !ok {
-		t.Fatal("two bands meeting at a rim share that rim; the dissolve declined")
+	loops, why := dissolveSharedEdges(a, b, res)
+	if why != mergeJoined {
+		t.Fatalf("two bands meeting at a rim share that rim; the dissolve declined: %s", why)
 	}
 	if len(loops) != 1 || len(loops[0].edges) != 6 {
 		t.Fatalf("the dissolve gave %d loops (first has %d edges), want 1 of 6 (two seams twice, two rims)",
@@ -54,8 +54,13 @@ func TestDissolveDeclinesTwoBandsThatShareNoEdge(t *testing.T) {
 		t.Fatal("two coaxial walls of one radius are not reported on one surface; the negative row is vacuous")
 	}
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	if _, ok := dissolveSharedEdges(a, b, res); ok {
-		t.Error("two separated bands were merged; they share no edge")
+	_, why := dissolveSharedEdges(a, b, res)
+	if why != declineUnshared {
+		t.Errorf("two separated bands gave %q, want the ordinary unshared exit — and it must stay the "+
+			"one reason that records nothing, since nothing was given up", why)
+	}
+	if why.reportable() {
+		t.Error("the ordinary two-faces-are-two-faces exit is reported as a degradation")
 	}
 }
 
@@ -65,9 +70,9 @@ func TestSharedEdgeTwinsPairsWholeEdgesOnly(t *testing.T) {
 	t.Parallel()
 	a, b := wallFaceOf(t, math.P3(0, 0, 0), 2, 4), wallFaceOf(t, math.P3(0, 0, 4), 2, 3)
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	twin, ok := sharedEdgeTwins(a, b, res)
-	if !ok {
-		t.Fatal("the abutting bands' shared rim was not paired")
+	twin, why := sharedEdgeTwins(a, b, res)
+	if why != mergeJoined {
+		t.Fatalf("the abutting bands' shared rim was not paired: %s", why)
 	}
 	if len(twin) != 2 { // the pair is recorded from both ends
 		t.Errorf("the pairing holds %d entries, want 2 (one edge pair, both ways)", len(twin))
@@ -113,18 +118,29 @@ func TestIsReverseTwinIsExact(t *testing.T) {
 }
 
 // TestWeldedCutsDropsAStationNamedTwice: one station is named by the rim's end and by the wall edge
-// that starts there, and the two arrive as different bits. Cutting at both mints a zero-length edge.
+// that starts there, and the two arrive as DIFFERENT BITS. Cutting at both mints a zero-length edge,
+// because splitEdgeAtPoints's own duplicate test is exact. The near point here is asserted to differ
+// bitwise, so the row exercises the weld and not that exactness; the far one is just outside the weld
+// and must survive, so the dedup cannot be a blanket collapse.
 func TestWeldedCutsDropsAStationNamedTwice(t *testing.T) {
 	t.Parallel()
 	res := geom.ResolutionForBox(math.BoxFromPoints(math.P3(0, 0, 0), math.P3(3, 3, 3)))
 	p := math.P3(1, 2, 3)
-	near := math.P3(1+1e-16, 2, 3)
-	got := weldedCuts([]math.Point3{p, near, math.P3(0, 0, 0)}, res)
+	near := math.P3(1+math.Scalar(res.Weld()/2), 2, 3)
+	far := math.P3(1+math.Scalar(res.Weld()*8), 2, 3)
+	if near == p {
+		t.Fatalf("the near station is bit-identical to the first at weld %g; the row would not test the weld", res.Weld())
+	}
+	got := weldedCuts([]math.Point3{p, near, far}, res)
 	if len(got) != 2 {
-		t.Fatalf("weldedCuts kept %d points, want 2 (the repeated station welds)", len(got))
+		t.Fatalf("weldedCuts kept %d points, want 2 (the repeated station welds, the far one does not)", len(got))
 	}
 	if got[0] != p {
 		t.Error("weldedCuts did not keep the FIRST of a welded group; the order must be the caller's")
+	}
+	if got[1] != far {
+		t.Errorf("weldedCuts kept %v as the second point, want the far station %v — a point outside the "+
+			"weld is a station of its own", got[1], far)
 	}
 }
 

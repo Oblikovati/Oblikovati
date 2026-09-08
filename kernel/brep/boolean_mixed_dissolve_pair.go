@@ -9,10 +9,10 @@ import (
 // Pairing the shared edges, and clearing the seam the pairing orphans (ADR-0061 stage 5).
 
 // sharedEdgeTwins pairs each edge of a with the edge of b that walks the same stretch of the same
-// curve the other way round. ok=false when the two share nothing, or when an edge would take two
-// partners: their common boundary is then subdivided differently on the two sides, and re-chaining it
-// would have to choose. That is a decline, not a guess.
-func sharedEdgeTwins(a, b curvedFace, res geom.Resolution) (map[edgeAddr]edgeAddr, bool) {
+// curve the other way round. It names two different refusals: sharing nothing is the ordinary case,
+// while an edge that would take two partners means their common boundary is subdivided differently on
+// the two sides and re-chaining it would have to choose — a reported decline, not a guess.
+func sharedEdgeTwins(a, b curvedFace, res geom.Resolution) (map[edgeAddr]edgeAddr, mergeDecline) {
 	twin := map[edgeAddr]edgeAddr{}
 	for _, x := range faceEdgeAddrs(a, 0) {
 		y, n := onlyPartnerOf(a, x, b, res)
@@ -20,11 +20,14 @@ func sharedEdgeTwins(a, b curvedFace, res geom.Resolution) (map[edgeAddr]edgeAdd
 			continue
 		}
 		if n > 1 || twinTaken(twin, x, y) {
-			return nil, false
+			return nil, declineAmbiguousPairing
 		}
 		twin[x], twin[y] = y, x
 	}
-	return twin, len(twin) > 0
+	if len(twin) == 0 {
+		return nil, declineUnshared
+	}
+	return twin, mergeJoined
 }
 
 // twinTaken reports whether either end of the pair is already spoken for.

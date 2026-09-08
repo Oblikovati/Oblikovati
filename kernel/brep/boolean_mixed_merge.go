@@ -26,63 +26,93 @@ import (
 // when exactly ONE edge was shared. Dissolving a SET of edges is what the configuration needs, plus
 // the rule below for the seam the set orphans.
 
-// CodeCocylindricalMergeUndecided marks two faces on one surface whose shared boundary dissolved but
-// whose merged parametric trim its fused loops do not determine (ADR-0063 refuses to guess a side).
-// The pair is left unmerged — two faces where one belongs — and this says so rather than shipping a
-// chart nothing verified.
-const CodeCocylindricalMergeUndecided diag.Code = "boolean.cocylindrical-merge-undecided"
-
-// mergeCoincidentFaces joins result faces on ONE surface until no two of them share a boundary.
+// mergeCoincidentFaces joins result faces on ONE surface until no two of them share a boundary, and
+// reports every pair it could not join.
+//
+// The declines are reported from the LAST scan only. Merging one pair restarts the scan, so a pair
+// that refuses would otherwise be reported again on every pass, and a diagnostic repeated N times says
+// nothing the first one did not.
 //
 // Example:
 //
 //	faces = mergeCoincidentFaces(faces, rec) // two coaxial cylinder bands become one wall
 func mergeCoincidentFaces(faces []curvedFace, rec *diag.Recorder) []curvedFace {
 	for {
-		next, merged := mergeFirstPair(faces, rec)
+		next, declined, merged := mergeFirstPair(faces)
 		if !merged {
+			reportDeclines(rec, declined)
 			return faces
 		}
 		faces = next
 	}
 }
 
+// reportDeclines names every pair that shares a boundary the merge could not dissolve.
+func reportDeclines(rec *diag.Recorder, declined []declinedMerge) {
+	for _, d := range declined {
+		recordMergeDecline(rec, d.on, d.why)
+	}
+}
+
+// declinedMerge is one pair that IS one face and could not be made one, kept until the scan finishes.
+type declinedMerge struct {
+	on  curvedFace
+	why mergeDecline
+}
+
 // mergeFirstPair merges the first mergeable pair in index order — never in map or pointer order, so
-// the result is the same body on every run — and reports whether it found one.
-func mergeFirstPair(faces []curvedFace, rec *diag.Recorder) ([]curvedFace, bool) {
+// the result is the same body on every run — and returns the declines it passed on the way.
+func mergeFirstPair(faces []curvedFace) ([]curvedFace, []declinedMerge, bool) {
+	var declined []declinedMerge
 	for i := range faces {
-		j, joined, ok := firstMergeableWith(faces, i, rec)
+		j, joined, seen, ok := firstMergeableWith(faces, i)
+		declined = append(declined, seen...)
 		if !ok {
 			continue
 		}
 		faces[i] = joined
-		return append(faces[:j], faces[j+1:]...), true
+		return append(faces[:j], faces[j+1:]...), nil, true
 	}
-	return faces, false
+	return faces, declined, false
 }
 
-// firstMergeableWith returns the lowest-indexed face after i that merges with it.
-func firstMergeableWith(faces []curvedFace, i int, rec *diag.Recorder) (int, curvedFace, bool) {
+// firstMergeableWith returns the lowest-indexed face after i that merges with it, and every reportable
+// refusal it met before that.
+func firstMergeableWith(faces []curvedFace, i int) (int, curvedFace, []declinedMerge, bool) {
+	var declined []declinedMerge
 	for j := i + 1; j < len(faces); j++ {
-		if joined, ok := mergeOnSharedBoundary(faces[i], faces[j], rec); ok {
-			return j, joined, true
+		joined, why := mergePairOnOneSurface(faces[i], faces[j])
+		if why == mergeJoined {
+			return j, joined, declined, true
+		}
+		if why.reportable() {
+			declined = append(declined, declinedMerge{on: faces[i], why: why})
 		}
 	}
-	return 0, curvedFace{}, false
+	return 0, curvedFace{}, declined, false
 }
 
-// mergeOnSharedBoundary merges two faces across every edge they share. ok=false when they are not on
-// one surface, differ in sense, share no edge, or the fused loops do not determine a chart.
-func mergeOnSharedBoundary(a, b curvedFace, rec *diag.Recorder) (curvedFace, bool) {
+// mergePairOnOneSurface merges two faces across every edge they share, and names its reason when it
+// does not. A pair that is not a candidate at all — different sense, different surface — gives the
+// ordinary unshared reason, which is the only one that is never reported.
+func mergePairOnOneSurface(a, b curvedFace) (curvedFace, mergeDecline) {
 	if a.reversed != b.reversed || !onOneSurface(a, b) {
-		return curvedFace{}, false
+		return curvedFace{}, declineUnshared
 	}
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	loops, ok := dissolveSharedEdges(a, b, res)
-	if !ok {
-		return curvedFace{}, false
+	loops, why := dissolveSharedEdges(a, b, res)
+	if why != mergeJoined {
+		return curvedFace{}, why
 	}
-	return chartedMerge(a, b, loops, rec)
+	return chartedMerge(a, b, loops)
+}
+
+// mergeOnSharedBoundary is mergePairOnOneSurface with its refusal reported at once — the single-pair
+// entry the merge's own rows drive, where there is no later scan to report from.
+func mergeOnSharedBoundary(a, b curvedFace, rec *diag.Recorder) (curvedFace, bool) {
+	merged, why := mergePairOnOneSurface(a, b)
+	recordMergeDecline(rec, a, why)
+	return merged, why == mergeJoined
 }
 
 // onOneSurface is the "same surface" decision the radial sew already makes (ADR-0058): surface
@@ -95,7 +125,14 @@ func onOneSurface(a, b curvedFace) bool {
 // and the chart those loops determine — the union of the two trims in the covering space, taken on the
 // branch loopToUV unwraps the FIRST loop onto (ADR-0063). A chart the loops do not determine is a
 // named decline, not a guess.
-func chartedMerge(a, b curvedFace, loops []curvedLoop, rec *diag.Recorder) (curvedFace, bool) {
+//
+// The complement flag is the one datum the fused loops CANNOT carry — it is precisely what ADR-0063
+// says a face's rings do not determine — so it is taken from the parents, and a pair that disagrees on
+// it is refused rather than given a's answer.
+func chartedMerge(a, b curvedFace, loops []curvedLoop) (curvedFace, mergeDecline) {
+	if a.outerless != b.outerless {
+		return curvedFace{}, declineMixedComplement
+	}
 	out := a
 	out.loops = loops
 	out.chart = nil // the merged trim is neither operand's chart; the fused loops determine it
@@ -103,13 +140,10 @@ func chartedMerge(a, b curvedFace, loops []curvedLoop, rec *diag.Recorder) (curv
 	uPer, vPer := surfacePeriodic(out.surface)
 	chart, ok := faceChart(out, uPer, vPer)
 	if !ok {
-		rec.Recordf(CodeCocylindricalMergeUndecided, diag.Defect,
-			"two %T faces on one surface share a boundary, but the %d loops it fuses them into do not "+
-				"determine a trim in (u,v); left as two faces", a.surface, len(loops))
-		return curvedFace{}, false
+		return curvedFace{}, declineUndecidedChart
 	}
 	out.chart = chart
-	return out, true
+	return out, mergeJoined
 }
 
 // mergedAliasKeys is every reference key that resolved to either parent, so a pick on either survives

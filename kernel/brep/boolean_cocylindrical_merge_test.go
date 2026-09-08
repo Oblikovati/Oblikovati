@@ -4,6 +4,7 @@ package brep
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/diag"
@@ -163,16 +164,102 @@ func assertChartSpansTheUnion(t *testing.T, f *topo.Face) {
 	}
 }
 
-// TestMergeDeclinesRatherThanGuessAChart records that the merge is a post-conditioned operation: a
-// recorder is threaded to it, and the code it reports names the configuration it left alone.
-func TestMergeDeclinesRatherThanGuessAChart(t *testing.T) {
+// TestAmbiguousPairingIsRefusedByName drives a REAL pair through the merge to a refusal, and asserts
+// the refusal reaches the recorder.
+//
+// The pair is a cylinder's own wall against a face that carries ONE edge on that wall's seam. The wall
+// walks its seam twice — up and down — so both traversals run with that single edge, and which of them
+// it dissolves is not decidable. That is the ambiguous-pairing exit, and it must ship as a named
+// diagnostic rather than a body quietly carrying two faces where one belongs.
+func TestAmbiguousPairingIsRefusedByName(t *testing.T) {
 	t.Parallel()
-	if CodeCocylindricalMergeUndecided == "" {
-		t.Fatal("the merge's decline has no code to report")
+	wall := wallFaceOf(t, math.P3(0, 0, 0), 2, 4)
+	rec := &diag.Recorder{}
+	if _, ok := mergeOnSharedBoundary(wall, faceOnSeamOf(t, wall), rec); ok {
+		t.Fatal("a pair whose shared boundary cannot be paired one-to-one was merged anyway")
+	}
+	assertMergeDeclineRecorded(t, rec, "an edge of one runs with two of the other")
+}
+
+// faceOnSeamOf builds a face on the SAME surface whose only boundary is the given wall's seam edge,
+// walked the other way. It is the smallest pair that makes the pairing ambiguous.
+func faceOnSeamOf(t *testing.T, wall curvedFace) curvedFace {
+	t.Helper()
+	seam := wall.loops[0].edges[0]
+	return curvedFace{surface: wall.surface, reversed: wall.reversed,
+		loops: []curvedLoop{{edges: []loopEdge{{curve: seam.curve, t0: seam.t1, t1: seam.t0}}}}}
+}
+
+// TestUndecidedChartIsRefusedByName: the fused loops of a pair on a DOUBLY periodic surface — a torus
+// — do not determine which of the two regions the merged face is, and ADR-0063 refuses to guess. The
+// merge must refuse with it and say so, not hand the face a's chart or none.
+func TestUndecidedChartIsRefusedByName(t *testing.T) {
+	t.Parallel()
+	torus, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
+	if err != nil {
+		t.Fatalf("NewTorus: %v", err)
+	}
+	equator := geom.Circle{Center: math.P3(0, 0, 0), Normal: math.V3(0, 0, 1).AsUnit(),
+		RefDir: math.V3(1, 0, 0).AsUnit(), Radius: 6.5}
+	face := curvedFace{surface: torus, loops: []curvedLoop{{edges: []loopEdge{{curve: equator, t0: 0, t1: 1}}}}}
+	if _, why := chartedMerge(face, face, face.loops); why != declineUndecidedChart {
+		t.Fatalf("a torus band whose fused loops bound two regions gave %q, want the undecided-chart decline", why)
 	}
 	rec := &diag.Recorder{}
-	rec.Recordf(CodeCocylindricalMergeUndecided, diag.Defect, "probe")
-	if !rec.Has(CodeCocylindricalMergeUndecided) {
-		t.Error("the merge's decline code does not reach a recorder")
+	recordMergeDecline(rec, face, declineUndecidedChart)
+	assertMergeDeclineRecorded(t, rec, "do not determine a trim")
+}
+
+// TestMixedComplementIsRefusedByName: the complement flag is the ONE datum a face's rings cannot
+// carry (ADR-0063), so a pair that disagrees on it cannot be given either parent's answer. Inheriting
+// a's silently would decide the merged face's outer loop by which operand happened to be first.
+func TestMixedComplementIsRefusedByName(t *testing.T) {
+	t.Parallel()
+	a := wallFaceOf(t, math.P3(0, 0, 0), 2, 4)
+	b := a
+	b.outerless = true
+	if _, why := chartedMerge(a, b, a.loops); why != declineMixedComplement {
+		t.Fatalf("a complement merged with a patch gave %q, want the mixed-complement decline", why)
 	}
+	rec := &diag.Recorder{}
+	recordMergeDecline(rec, a, declineMixedComplement)
+	assertMergeDeclineRecorded(t, rec, "closed-surface complement")
+}
+
+// TestARefusedPairIsReportedOnceAcrossTheWholeScan: merging one pair restarts the scan, so a pair that
+// refuses is revisited. It must still be reported ONCE — a defect repeated on every pass says nothing
+// the first one did not, and buries the pairs that matter.
+func TestARefusedPairIsReportedOnceAcrossTheWholeScan(t *testing.T) {
+	t.Parallel()
+	wall := wallFaceOf(t, math.P3(0, 0, 0), 2, 4)
+	rec := &diag.Recorder{}
+	// Two bands that DO merge, plus the seam face that cannot be paired: the merge of the first pair
+	// restarts the scan over the refusing one.
+	faces := mergeCoincidentFaces([]curvedFace{
+		wall, wallFaceOf(t, math.P3(0, 0, 4), 2, 3), faceOnSeamOf(t, wall)}, rec)
+	if len(faces) != 2 {
+		t.Fatalf("the scan left %d faces, want 2 (the two bands merged, the seam face refused)", len(faces))
+	}
+	n := 0
+	for _, d := range rec.Records() {
+		if d.Code == CodeCocylindricalMergeUndecided {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("the refused pair was reported %d times, want exactly 1; got %v", n, rec.Records())
+	}
+}
+
+// assertMergeDeclineRecorded checks the named decline reached the recorder as a Defect, carrying the
+// reason that refused.
+func assertMergeDeclineRecorded(t *testing.T, rec *diag.Recorder, reason string) {
+	t.Helper()
+	for _, d := range rec.Records() {
+		if d.Code == CodeCocylindricalMergeUndecided && d.Severity == diag.Defect &&
+			strings.Contains(d.Detail, reason) {
+			return
+		}
+	}
+	t.Errorf("no %q Defect naming %q on the recorder; got %v", CodeCocylindricalMergeUndecided, reason, rec.Records())
 }
