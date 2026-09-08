@@ -45,7 +45,7 @@ func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	b := newChartCover(s, r, q)
 	loops := b.addChains(chains)
 	b.addInterior(chains)
-	kept := b.keepCanonical(constrainedTriangulationAll(b.xy, loops))
+	kept := b.keepChartTriangles(constrainedTriangulationAll(b.xy, loops))
 	if len(kept) == 0 {
 		return nil, false
 	}
@@ -55,27 +55,28 @@ func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	return m, chartMeshIsBoundedByItsRim(m, chains)
 }
 
-// chartMeshIsBoundedByItsRim accepts the mesh only when its unpaired edges number no more than the
-// boundary segments it was given — a patch whose only free edges ARE its rim. A charted face that came
-// out torn (a seam that did not close, a region the triangulation lost) is DECLINED, so the router's
-// defect reporter speaks instead of the tear shipping quietly.
+// chartMeshIsBoundedByItsRim accepts the mesh only when its unpaired edges are EXACTLY the boundary
+// segments it was given — a patch whose only free edges are its rim, no more and no fewer.
+//
+// Equality, not a bound. Too many means the mesh tore (a seam that did not close, a region the
+// triangulation lost). Too FEW means it closed over its own boundary — a covering of the whole surface
+// has no free edges at all, and that is precisely the full-domain degradation this mesher exists to
+// remove, so a one-sided bound would wave it through. Either way the face is DECLINED and the router's
+// defect reporter speaks, rather than the wrong mesh shipping quietly.
 func chartMeshIsBoundedByItsRim(m *Mesh, chains []chartChain) bool {
-	return m != nil && m.TriangleCount() > 0 && WeldedFreeEdgeCount(m) <= chainSegmentCount(chains)
+	return m != nil && m.TriangleCount() > 0 && WeldedFreeEdgeCount(m) == chainSegmentCount(chains)
 }
 
-// chartCover accumulates the covering: exact 3D positions with their surface normals, the
-// metric-scaled (u,v) the triangulation runs in, and the UNFOLDED (u,v) the canonical selection reads.
+// chartCover is the shared covering accumulator (covering_vertices.go) with the chart's own
+// bookkeeping: the region it reads material from, the grid's parameter lines, and the pad past the
+// branch window within which a replica is worth carrying.
 type chartCover struct {
+	coverVertices
 	s      geom.Surface
 	r      chartRegion
-	su, sv float64   // the (u,v) metric, so the triangulation runs in a space isometric to 3D
 	us, vs []float64 // the interior grid's parameter lines
 	padU   float64   // how far past the branch window a replica is kept
 	padV   float64
-	pos    []math.Point3
-	nrm    []math.Vector3
-	xy     [][2]float64
-	uu, vv []float64
 }
 
 // chartCoverPadStations is how many grid gaps of replicated covering are kept either side of the branch
@@ -87,11 +88,13 @@ const chartCoverPadStations = 3
 // (the SAME adaptive breakpoints the full-domain grid uses, so a charted face is faceted at the density
 // the quality asks for and not at one of this mesher's own), and the replication pad.
 func newChartCover(s geom.Surface, r chartRegion, q Quality) *chartCover {
-	su, sv := trimMetricScale(s, r.contours[0])
-	us := chartStations(s, r, q, true)
-	vs := chartStations(s, r, q, false)
-	return &chartCover{s: s, r: r, su: su, sv: sv, us: us, vs: vs,
+	us, vs := chartStations(s, r, q, true), chartStations(s, r, q, false)
+	b := &chartCover{s: s, r: r, us: us, vs: vs,
 		padU: chartPad(len(us), r.uLo, r.uHi), padV: chartPad(len(vs), r.vLo, r.vHi)}
+	b.su, b.sv = trimMetricScale(s, r.contours[0])
+	b.normalAt = func(u, v float64) math.Vector3 { return s.NormalAt(r.fold(u, v)) }
+	b.carry = b.inPad
+	return b
 }
 
 // chartStations are one axis's grid parameter lines over the branch window. The closing station of a
@@ -136,19 +139,6 @@ func chartPad(stations int, lo, hi float64) float64 {
 	return chartCoverPadStations * (hi - lo) / float64(stations)
 }
 
-// add records one covering vertex: its exact 3D point, the surface normal at its FOLDED parameters
-// (the branch a replica lives on is a bookkeeping fact, not a geometric one), and both the scaled and
-// the raw (u,v).
-func (b *chartCover) add(p math.Point3, u, v float64) int {
-	fu, fv := b.r.fold(u, v)
-	i := len(b.pos)
-	b.pos = append(b.pos, p)
-	b.nrm = append(b.nrm, b.s.NormalAt(fu, fv))
-	b.xy = append(b.xy, [2]float64{u * b.su, v * b.sv})
-	b.uu, b.vv = append(b.uu, u), append(b.vv, v)
-	return i
-}
-
 // inPad reports whether a replicated (u,v) is close enough to the branch window to be worth carrying.
 func (b *chartCover) inPad(u, v float64) bool {
 	if b.r.uPer && (u < b.r.uLo-b.padU || u > b.r.uHi+b.padU) {
@@ -158,42 +148,15 @@ func (b *chartCover) inPad(u, v float64) bool {
 }
 
 // addChains lays every boundary chain into the covering at each period shift, returning the constraint
-// pairs. A chain is constrained SEGMENT by segment rather than as a closed loop because a boundary that
-// wraps a period does not close in the covering space; per-segment pairs constrain it either way, and
-// the caller classifies triangles itself rather than by the loop-parity flood.
+// pairs the triangulation is aligned to.
 func (b *chartCover) addChains(chains []chartChain) [][]int {
 	var loops [][]int
 	for _, sh := range b.r.shifts() {
 		for _, c := range chains {
-			loops = append(loops, b.addChain(c, sh)...)
+			loops = append(loops, b.addChain(c.p3, c.uv, sh[0], sh[1])...)
 		}
 	}
 	return loops
-}
-
-// addChain adds one shifted chain, keeping only the points inside the pad, and returns its segments.
-func (b *chartCover) addChain(c chartChain, sh [2]float64) [][]int {
-	idx := make([]int, len(c.uv))
-	for i, p := range c.uv {
-		u, v := p[0]+sh[0], p[1]+sh[1]
-		idx[i] = -1
-		if b.inPad(u, v) {
-			idx[i] = b.add(c.p3[i], u, v)
-		}
-	}
-	return chainConstraints(idx)
-}
-
-// chainConstraints is the chain's consecutive index pairs, skipping any segment an end of which fell
-// outside the pad — that segment's own replica carries it.
-func chainConstraints(idx []int) [][]int {
-	var segs [][]int
-	for i := 0; i+1 < len(idx); i++ {
-		if idx[i] >= 0 && idx[i+1] >= 0 {
-			segs = append(segs, []int{idx[i], idx[i+1]})
-		}
-	}
-	return segs
 }
 
 // addInterior lays the covering's grid nodes: every station pair the chart covers and which stands
@@ -301,7 +264,8 @@ func (b *chartCover) chainIsNear(c chartChain, sh [2]float64, u, v, gridMargin f
 	}
 	for i := 0; i+1 < len(c.uv); i++ {
 		a, e := c.uv[i], c.uv[i+1]
-		if distToSeg2D(x, y, (a[0]+sh[0])*b.su, (a[1]+sh[1])*b.sv, (e[0]+sh[0])*b.su, (e[1]+sh[1])*b.sv) < margin {
+		if distToSeg2D(x, y, (float64(a.X)+sh[0])*b.su, (float64(a.Y)+sh[1])*b.sv,
+			(float64(e.X)+sh[0])*b.su, (float64(e.Y)+sh[1])*b.sv) < margin {
 			return true
 		}
 	}
@@ -319,17 +283,10 @@ func boxIsNear(box [4]float64, x, y, margin float64) bool {
 	return x >= box[0]-margin && x <= box[1]+margin && y >= box[2]-margin && y <= box[3]+margin
 }
 
-// keepCanonical keeps each triangle whose centroid lies in the chart's branch window AND on its
-// material side. Replication gives every seam-spanning triangle exactly one translate with its centroid
-// in the window, so this de-duplicates the seam without ever cutting the mesh at it.
-func (b *chartCover) keepCanonical(tris [][3]int) [][3]int {
-	out := make([][3]int, 0, len(tris))
-	for _, t := range tris {
-		u := (b.uu[t[0]] + b.uu[t[1]] + b.uu[t[2]]) / 3
-		v := (b.vv[t[0]] + b.vv[t[1]] + b.vv[t[2]]) / 3
-		if b.r.inWindow(u, v) && b.r.covers(u, v) {
-			out = append(out, t)
-		}
-	}
-	return out
+// keepChartTriangles keeps each triangle whose centroid lies in the chart's branch window AND on its
+// material side — the region's own two-part definition, handed to the shared canonical selection.
+func (b *chartCover) keepChartTriangles(tris [][3]int) [][3]int {
+	return b.keepCanonical(tris, func(u, v float64) bool {
+		return b.r.inWindow(u, v) && b.r.covers(u, v)
+	})
 }

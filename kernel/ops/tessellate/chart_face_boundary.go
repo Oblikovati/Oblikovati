@@ -3,8 +3,6 @@
 package tessellate
 
 import (
-	stdmath "math"
-
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/topo"
@@ -30,7 +28,7 @@ import (
 // segment is a constraint like any other.
 type chartChain struct {
 	p3                     []math.Point3
-	uv                     [][2]float64
+	uv                     []math.Point2
 	uMin, uMax, vMin, vMax float64 // the chain's own (u,v) box, so a clearance query rejects it cheaply
 	chord                  float64 // its mean 3D chord — the scale of its own discretisation
 }
@@ -56,11 +54,11 @@ func liftLoopOntoChart(s geom.Surface, r chartRegion, loop []math.Point3) (chart
 	us, vs := surfaceParamsOfLoop(s, loop)
 	cu, cv := continuousTrace(us, r.uPer), continuousTrace(vs, r.vPer)
 	du, dv := r.branchOffset(cu, cv)
-	c := chartChain{p3: append(append([]math.Point3(nil), loop...), loop[0]), uv: make([][2]float64, len(cu))}
+	c := chartChain{p3: append(append([]math.Point3(nil), loop...), loop[0]), uv: make([]math.Point2, len(cu))}
 	for i := range cu {
-		c.uv[i] = [2]float64{cu[i] + du, cv[i] + dv}
+		c.uv[i] = math.P2(cu[i]+du, cv[i]+dv)
 	}
-	c.uMin, c.uMax, c.vMin, c.vMax = chainBox(c.uv)
+	c.uMin, c.uMax, c.vMin, c.vMax = uvBBox(c.uv)
 	c.chord = meanChainChord(c.p3)
 	return c, true
 }
@@ -84,17 +82,6 @@ func surfaceParamsOfLoop(s geom.Surface, loop []math.Point3) (us, vs []float64) 
 		us[i], vs[i] = s.ParamAt(p)
 	}
 	return us, vs
-}
-
-// chainBox is a lifted chain's (u,v) bounding box.
-func chainBox(uv [][2]float64) (uMin, uMax, vMin, vMax float64) {
-	uMin, vMin = stdmath.Inf(1), stdmath.Inf(1)
-	uMax, vMax = stdmath.Inf(-1), stdmath.Inf(-1)
-	for _, p := range uv {
-		uMin, uMax = stdmath.Min(uMin, p[0]), stdmath.Max(uMax, p[0])
-		vMin, vMax = stdmath.Min(vMin, p[1]), stdmath.Max(vMax, p[1])
-	}
-	return uMin, uMax, vMin, vMax
 }
 
 // meanChainChord is a lifted chain's mean 3D segment length — the scale at which the shared edge was

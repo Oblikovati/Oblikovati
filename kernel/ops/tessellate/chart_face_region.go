@@ -108,12 +108,18 @@ func (r chartRegion) shifts() [][2]float64 {
 	return out
 }
 
-// periodOffsets is one axis's replication offsets.
+// periodOffsets is one axis's replication offsets, over the package's one set of cover shifts
+// (coverShifts, periodic_nurbs_cover.go): a bounded axis has no replica, a wrapping one has the
+// period either side.
 func periodOffsets(periodic bool) []float64 {
 	if !periodic {
 		return []float64{0}
 	}
-	return []float64{-2 * stdmath.Pi, 0, 2 * stdmath.Pi}
+	out := make([]float64, len(coverShifts))
+	for i, sh := range coverShifts {
+		out[i] = sh * 2 * stdmath.Pi
+	}
+	return out
 }
 
 // branchOffset is the whole-period shift that brings a lifted boundary trace onto the chart's branch.
@@ -142,16 +148,16 @@ func meanOfParams(xs []float64) float64 {
 	return sum / float64(len(xs))
 }
 
-// chartBounds is the (u,v) bounding box of every contour together. ok=false for a chart that bounds no
-// area in one of the axes, which no mesher can take a region from.
+// chartBounds is the (u,v) bounding box of every contour together, over the package's one loop-bbox
+// (uvBBox). ok=false for a chart that bounds no area in one of the axes, which no mesher can take a
+// region from.
 func chartBounds(contours [][]math.Point2) (u0, u1, v0, v1 float64, ok bool) {
 	u0, v0 = stdmath.Inf(1), stdmath.Inf(1)
 	u1, v1 = stdmath.Inf(-1), stdmath.Inf(-1)
 	for _, c := range contours {
-		for _, p := range c {
-			u0, u1 = stdmath.Min(u0, float64(p.X)), stdmath.Max(u1, float64(p.X))
-			v0, v1 = stdmath.Min(v0, float64(p.Y)), stdmath.Max(v1, float64(p.Y))
-		}
+		cu0, cu1, cv0, cv1 := uvBBox(c)
+		u0, u1 = stdmath.Min(u0, cu0), stdmath.Max(u1, cu1)
+		v0, v1 = stdmath.Min(v0, cv0), stdmath.Max(v1, cv1)
 	}
 	return u0, u1, v0, v1, u1 > u0 && v1 > v0
 }

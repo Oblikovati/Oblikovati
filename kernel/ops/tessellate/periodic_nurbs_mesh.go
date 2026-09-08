@@ -35,6 +35,16 @@ type cylLoop struct {
 	v  []float64
 }
 
+// uvPoints pairs the loop's parallel parameter slices into the (u,v) points the covering accumulator
+// lays out (covering_vertices.go).
+func (l cylLoop) uvPoints() []math.Point2 {
+	out := make([]math.Point2, len(l.u))
+	for i := range l.u {
+		out[i] = math.P2(l.u[i], l.v[i])
+	}
+	return out
+}
+
 // periodicNurbsFaceMesh meshes a closed-in-u B-spline face via the covering-space periodic CDT. It
 // returns (nil, false) — so splineFaceMesh falls back to nurbsPcurveMesh — unless the face is genuinely a
 // singly-closed B-spline band (closed in u, open in v) with recoverable rim+mouth loops.

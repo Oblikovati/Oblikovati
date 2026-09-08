@@ -61,8 +61,10 @@ func TestAChartedWallIsMeshedOverItsOwnRegion(t *testing.T) {
 	if got := m.Area(); stdmath.Abs(got-want)/want > 0.02 {
 		t.Errorf("the charted wall meshes %.4f mm², want the analytic %.4f (wall minus window)", got, want)
 	}
-	if free, rim := WeldedFreeEdgeCount(m), chainSegmentCount(chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality())); free > rim {
-		t.Errorf("the charted wall has %d unpaired edges against a %d-segment rim; the seam did not close", free, rim)
+	// EXACTLY the rim: more means the mesh tore, fewer means it closed over its own boundary, which is
+	// what a covering of the whole surface looks like.
+	if free, rim := WeldedFreeEdgeCount(m), chainSegmentCount(chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality())); free != rim {
+		t.Errorf("the charted wall has %d unpaired edges against a %d-segment rim", free, rim)
 	}
 }
 
