@@ -14,29 +14,37 @@ import (
 // is in torus_quadric_harmonic2.go; these rows verify it against the quadric itself rather than against
 // a restatement of the algebra.
 
-// skewTestQuadrics is the family the reduction has to cover: two axis-invariant members, whose second
-// harmonic must VANISH, and three that are not, one of each kind the kernel can build.
-func skewTestQuadrics(t *testing.T) []struct {
+// skewQuadricCase is one member of the family the reduction has to cover: the SURFACE, its quadric
+// form, and whether its tensor is invariant about the torus axis. The surface is carried rather than
+// rebuilt by name at the rows that need it — a second copy of the fixture would pair a newly added row
+// with whatever its lookup happened to fall through to.
+type skewQuadricCase struct {
 	name      string
+	surface   Surface
 	quad      Quadric
 	invariant bool
-} {
+}
+
+// skewTestQuadrics is the family the reduction has to cover: two axis-invariant members, whose second
+// harmonic must VANISH, and three that are not, one of each kind the kernel can build.
+func skewTestQuadrics(t *testing.T) []skewQuadricCase {
 	t.Helper()
-	ball, _ := NewSphere(math.P3(3, 2, 1), 2.5)
-	axial, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0, 0, 1), 0.8)
-	rod, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1)
-	tilted, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0.3, 0, 1), 0.8)
-	skewCone, _ := NewCone(math.P3(4, 1, -3), math.V3(0.4, 0.2, 1), 0.5)
-	return []struct {
-		name      string
-		quad      Quadric
-		invariant bool
-	}{
-		{"ball off centre", ball.QuadricForm(), true},
-		{"axial drill", axial.QuadricForm(), true},
-		{"rod across the ring", rod.QuadricForm(), false},
-		{"tilted drill", tilted.QuadricForm(), false},
-		{"tilted cone", skewCone.QuadricForm(), false},
+	ball, errBall := NewSphere(math.P3(3, 2, 1), 2.5)
+	axial, errAxial := NewCylinder(math.P3(5, 0, 0), math.V3(0, 0, 1), 0.8)
+	rod, errRod := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1)
+	tilted, errTilted := NewCylinder(math.P3(5, 0, 0), math.V3(0.3, 0, 1), 0.8)
+	skewCone, errCone := NewCone(math.P3(4, 1, -3), math.V3(0.4, 0.2, 1), 0.5)
+	for _, err := range []error{errBall, errAxial, errRod, errTilted, errCone} {
+		if err != nil {
+			t.Fatalf("skew fixture: %v", err)
+		}
+	}
+	return []skewQuadricCase{
+		{"ball off centre", ball, ball.QuadricForm(), true},
+		{"axial drill", axial, axial.QuadricForm(), true},
+		{"rod across the ring", rod, rod.QuadricForm(), false},
+		{"tilted drill", tilted, tilted.QuadricForm(), false},
+		{"tilted cone", skewCone, skewCone.QuadricForm(), false},
 	}
 }
 
@@ -388,7 +396,7 @@ func TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold(t *testing.T) {
 	ring := testRing(t)
 	folds := 0
 	for _, c := range skewTestQuadrics(t) {
-		curves, _, ok := IntersectSurfacesAnalyticDeclining(ring, quadricSurfaceOf(t, c.name), ResolutionForSize(20))
+		curves, _, ok := IntersectSurfacesAnalyticDeclining(ring, c.surface, ResolutionForSize(20))
 		if !ok {
 			continue
 		}
@@ -426,25 +434,3 @@ func assertFoldIsTangent(t *testing.T, name string, ring Torus, q Quadric, l Tor
 // own coefficient scale. It compares a slope with the coefficients it was formed from, so it carries no
 // model scale; a branch root read at a fold misses it by ~1e-8, six orders above this.
 const foldTangencyTol = 1e-13 // tol:numeric — relative slope at a station's tangency
-
-// quadricSurfaceOf rebuilds the surface behind one of skewTestQuadrics' entries, which the section
-// entry point takes rather than the quadric form.
-func quadricSurfaceOf(t *testing.T, name string) Surface {
-	t.Helper()
-	switch name {
-	case "ball off centre":
-		s, _ := NewSphere(math.P3(3, 2, 1), 2.5)
-		return s
-	case "axial drill":
-		s, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0, 0, 1), 0.8)
-		return s
-	case "rod across the ring":
-		s, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 1)
-		return s
-	case "tilted drill":
-		s, _ := NewCylinder(math.P3(5, 0, 0), math.V3(0.3, 0, 1), 0.8)
-		return s
-	}
-	s, _ := NewCone(math.P3(4, 1, -3), math.V3(0.4, 0.2, 1), 0.5)
-	return s
-}
