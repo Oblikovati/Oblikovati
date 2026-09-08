@@ -30,9 +30,56 @@ type ValidationReport struct {
 	// HolesContained reports whether every planar face's hole loops lie strictly inside their outer loop
 	// (the B-rep invariant that a hole is an interior void). It is a diagnostic flag, NOT folded into Valid
 	// yet: a malformed protruding-hole face is invisible to the per-edge manifold/closed checks but poisons
-	// the tessellator. See checkHoleContainment.
+	// the tessellator. See checkHoleContainment. Meaningful only when HoleContainmentChecked is true.
 	HolesContained bool
-	Issues         []string
+	// HoleContainmentChecked records whether the hole-containment level actually RAN. [ValidateTopology]
+	// leaves it false: that level is the per-edge and Euler tests only, and reporting a not-looked-for
+	// defect as "none found" is the kind of quiet lie this package exists to prevent.
+	HoleContainmentChecked bool
+	Issues                 []string
+}
+
+// ValidateTopology is validity LEVEL 1, the cheapest of the ordered levels: the per-edge manifold /
+// closed / orientation tests and the Euler-Poincare admissibility check, over the body's edge and
+// loop counts alone. It reads no surface geometry, projects nothing, and tessellates nothing, so it
+// is the level a caller can afford on EVERY result of every recompute — which is what the feature
+// engine's post-condition runs (ADR-0061 stage 6). It leaves HoleContainmentChecked false.
+//
+// [Validate] is this plus the hole-containment level; prefer it whenever the extra work is
+// affordable, and this when it is not.
+//
+//	if !ops.ValidateTopology(b).Valid { /* an invalid body is an error, not a return value */ }
+func ValidateTopology(b *topo.Body) ValidationReport {
+	r := ValidationReport{Manifold: true, Closed: true, OrientationOK: true, EulerConsistent: true, IsSolid: b.IsSolid()}
+	for _, e := range b.Edges() {
+		r.checkEdgeUses(e, b.IsSolid())
+	}
+	r.checkEuler(b)
+	// HolesContained is intentionally NOT folded into Valid yet — the fillet trim that stops producing
+	// protruding-hole faces must land first, or existing valid-solid assertions would flip red. It is a
+	// tripwire flag until then, which is also why level 1 can skip it without weakening Valid.
+	r.Valid = r.Manifold && r.OrientationOK && (!b.IsSolid() || (r.Closed && r.EulerConsistent))
+	return r
+}
+
+// checkEdgeUses applies the per-edge manifold/closed/orientation rules to one edge: an edge of a
+// manifold solid must be used by exactly two faces with opposite orientation.
+func (r *ValidationReport) checkEdgeUses(e *topo.Edge, solid bool) {
+	switch uses := e.Uses(); {
+	case len(uses) < 2:
+		r.Closed = false
+		if solid {
+			r.Issues = append(r.Issues, fmt.Sprintf("boundary (open) edge %d on a solid", e.ID()))
+		}
+	case len(uses) > 2:
+		r.Manifold = false
+		r.Issues = append(r.Issues, fmt.Sprintf("non-manifold edge %d used by %d faces", e.ID(), len(uses)))
+	default:
+		if uses[0].Reversed() == uses[1].Reversed() {
+			r.OrientationOK = false
+			r.Issues = append(r.Issues, fmt.Sprintf("inconsistent orientation at edge %d", e.ID()))
+		}
+	}
 }
 
 // Validate checks a body's topology: every edge of a manifold solid must be used by
@@ -40,31 +87,15 @@ type ValidationReport struct {
 // edges), and its Euler characteristic must be admissible for a closed orientable
 // solid. It reports each offending edge precisely (PBI-084) — a surface body is
 // allowed to be open.
+//
+// It is [ValidateTopology] followed by the hole-containment level, which projects every multi-loop
+// planar face's loops into the face plane and tests containment analytically. That second level is
+// materially more expensive than the first and its verdict is NOT part of Valid, so a caller that
+// only needs the Valid bar should call [ValidateTopology] instead.
 func Validate(b *topo.Body) ValidationReport {
-	r := ValidationReport{Manifold: true, Closed: true, OrientationOK: true, EulerConsistent: true, HolesContained: true, IsSolid: b.IsSolid()}
-	for _, e := range b.Edges() {
-		switch uses := e.Uses(); {
-		case len(uses) < 2:
-			r.Closed = false
-			if b.IsSolid() {
-				r.Issues = append(r.Issues, fmt.Sprintf("boundary (open) edge %d on a solid", e.ID()))
-			}
-		case len(uses) > 2:
-			r.Manifold = false
-			r.Issues = append(r.Issues, fmt.Sprintf("non-manifold edge %d used by %d faces", e.ID(), len(uses)))
-		default:
-			if uses[0].Reversed() == uses[1].Reversed() {
-				r.OrientationOK = false
-				r.Issues = append(r.Issues, fmt.Sprintf("inconsistent orientation at edge %d", e.ID()))
-			}
-		}
-	}
-	r.checkEuler(b)
+	r := ValidateTopology(b)
 	r.checkHoleContainment(b)
-	// HolesContained is intentionally NOT folded into Valid yet — the fillet trim that stops producing
-	// protruding-hole faces must land first, or existing valid-solid assertions would flip red. It is a
-	// tripwire flag until then.
-	r.Valid = r.Manifold && r.OrientationOK && (!b.IsSolid() || (r.Closed && r.EulerConsistent))
+	r.HoleContainmentChecked = true
 	return r
 }
 

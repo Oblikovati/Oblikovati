@@ -27,6 +27,10 @@ type (
 // Validate runs the levelled validity check. See [validate.Validate].
 func Validate(b *topo.Body) ValidationReport { return validate.Validate(b) }
 
+// ValidateTopology is validity level 1 — the per-edge and Euler tests only, reading no surface
+// geometry. See [validate.ValidateTopology].
+func ValidateTopology(b *topo.Body) ValidationReport { return validate.ValidateTopology(b) }
+
 // BoundaryEdges returns the body's boundary (non-manifold) edges.
 // See [validate.BoundaryEdges].
 func BoundaryEdges(b *topo.Body) []*topo.Edge { return validate.BoundaryEdges(b) }

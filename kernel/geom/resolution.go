@@ -174,12 +174,37 @@ func (r Resolution) Volume() float64 { return volCoef * r.size * r.size * r.size
 // conservative, round ceiling.
 const spanCeilingOrders = 15
 
+// Resolves reports whether a feature of size featureSize is distinguishable at this resolution —
+// THE single answer to "can this model hold a feature that small", and the one predicate every
+// caller must use: the UI's span-ceiling warning (SpanCeilingWarning, and the part definition's
+// FeatureScaleWarning above it) and the boolean's size classification both read it, so the UI can
+// never call a feature resolvable that the modeller then refuses (ADR-0061 stage 6; the two used to
+// answer at different floors, 1e-9 and 1e-6 of model size, and disagreed across the whole band
+// between them).
+//
+// The floor is Weld — the model's coincidence scale — because that is the size at which two
+// distinct points of the feature ARE one point in this model, so the feature has no interior left
+// to build with. It is measured, not asserted: the boolean sweep in
+// kernel/ops/boolean/boolean_sub_resolution_test.go drives an axial drill through a torus over
+// eight decades and finds the operation returns the target UNTOUCHED, silently, for every tool
+// thinner than ~0.16 x Weld, and refuses loudly above it. Weld is the smallest round floor that
+// covers the whole silent band with margin.
+//
+//	if !geom.ResolutionForBox(box).Resolves(size) { /* refuse; do not build */ }
+func (r Resolution) Resolves(featureSize float64) bool { return featureSize >= r.Weld() }
+
+// ScaleRemedy is the modelling advice that accompanies every sub-resolution refusal, in geom
+// because the refusal is raised in two layers (the span-ceiling warning and the boolean's size
+// decline) and the user must read one sentence, not two paraphrases of it. The fault is the RATIO
+// between the feature and the model, so a tighter tolerance cannot help — only re-scaling can.
+const ScaleRemedy = "model at a working unit closer to the feature scale, or split the design across documents"
+
 // FeatureResolvable reports whether a feature of size featureSize is distinguishable in a model
-// whose extent is modelBox — i.e. it is at least the model's coincidence resolution. A false
-// result means the feature is below the single-model span ceiling (float64 ~15 orders) and would
-// be welded away; the caller should surface SpanCeilingWarning rather than build silently.
+// whose extent is modelBox. It is [Resolution.Resolves] over the box's own resolution; a false
+// result means the feature would be welded away, and the caller should surface SpanCeilingWarning
+// rather than build silently.
 func FeatureResolvable(modelBox math.Box, featureSize float64) bool {
-	return featureSize >= ResolutionForBox(modelBox).Weld()
+	return ResolutionForBox(modelBox).Resolves(featureSize)
 }
 
 // SpanCeilingWarning returns a human-readable diagnostic when a feature of size featureSize
@@ -189,11 +214,10 @@ func FeatureResolvable(modelBox math.Box, featureSize float64) bool {
 // names the offending size, the model's resolution, and the working-scale remedy.
 func SpanCeilingWarning(modelBox math.Box, featureSize float64) string {
 	res := ResolutionForBox(modelBox)
-	if featureSize <= 0 || featureSize >= res.Weld() {
+	if featureSize <= 0 || res.Resolves(featureSize) {
 		return ""
 	}
 	return fmt.Sprintf("feature size %g is below this model's resolution %g (extent %g spans more than "+
-		"the ~%d orders of magnitude float64 can represent in one model); it would be merged away — "+
-		"model at a working unit closer to the feature scale, or split the design across documents",
-		featureSize, res.Weld(), res.Size(), spanCeilingOrders)
+		"the ~%d orders of magnitude float64 can represent in one model); it would be merged away — %s",
+		featureSize, res.Weld(), res.Size(), spanCeilingOrders, ScaleRemedy)
 }

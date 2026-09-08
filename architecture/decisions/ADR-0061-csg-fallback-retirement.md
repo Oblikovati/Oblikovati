@@ -3361,3 +3361,116 @@ face and one loop edge, four boundary edges short of closed and a shape no opera
 Its invalidity was invisible while the engine stored whatever it was handed; with the post-condition
 it sickens every test that uses it. It is `brep.SolidBlock` now — a fixture has to be something the
 modeller could actually produce.
+
+### Stage 6, review round 1 — the floor is measured, and the two policies become one (2026-09-08)
+
+The stage-6 section above set the boolean's size floor by argument. This section replaces that
+argument with a measurement, and the measurement moved the floor by three orders of magnitude —
+downward, because most of what the first floor claimed was not a resolution limit at all.
+
+#### The sweep
+
+`TestTheAxialDrillSweepPinsTheResolutionFloor` and `TestNoDrillRadiusIsAnsweredSilently` drive the
+RD− family — the RING corpus body (`brep.SolidTorus(P3(0,0,0), V3(0,0,1), 5, 1.5)`) cut by an axial
+drill at (5,0,−4) along +Z — over twelve decades of tool radius, five points per decade. The pair's
+extent is 20.0499, so `Weld` = 2.005e−8 and `Stitch` = 2.005e−5. Outcomes are classified against an
+INDEPENDENT polar-quadrature oracle for the removed volume (`boreRemovalOracle`), which agrees with
+the shipped exact row at r=0.8 to 3.5e−7 relative.
+
+| tool thickness (2r) | thickness / Weld | thickness / extent | outcome |
+| --- | --- | --- | --- |
+| 2e−12 … 2e−9 | 1e−4 … 0.0998 | 1e−13 … 1e−10 | **SILENT**: the ring comes back untouched — err=nil, one face, removed=0, nothing recorded |
+| 3.17e−9 … 1.262e−7 | 0.158 … 6.3 | 1.6e−10 … 6.3e−9 | refused by name (`boolean.no-exact-curved-path`) |
+| 2e−7 … 1.262e−3 | 10 … 63 000 | 1e−8 … 6.3e−5 | refused by name (`boolean.no-exact-curved-path`) |
+| 1.262e−3 … 1.262e−1 | 63 000 … 6.3e6 | 6.3e−5 … 6.3e−3 | refused by the Requicha bracket (`boolean.analytic-volume-reject`) — a VALID body of materially wrong volume, caught only there |
+| 2e−1 … 1.6 | 1e7 … 8e7 | 1e−2 … 8e−2 | **exact**: torus + cylinder, 2 loops each, removed volume within 3.6e−6 of the oracle |
+
+Three regimes, and only the first is a resolution limit.
+
+#### Why the floor is Weld and not the plateau
+
+The largest ratio below which the pipeline is not exact is ~6.3e−3 of the extent — a 1 mm bore in a
+100 mm ring. Setting the floor there would refuse ordinary geometry on "resolution" grounds and, worse,
+would relabel a real capability gap — the torus∧cylinder section at small radius, which builds a body
+removing 2.84 where the true bore is 9.4e−6 — as a size policy, hiding it. The ground rule is the
+opposite: find the invariant the pipeline breaks and fix it there; the failing input becomes a corpus
+row. So the gap keeps its own loud refusal and gains a row that pins it,
+`TestASmallBoreIsRefusedNotShippedWrong`, which asserts BOTH that no wrong body ships AND that the
+refusal is not the size one. The day the section is fixed, that row says so.
+
+What the size classification may claim is the SILENT band, whose top edge the sweep puts at
+0.0998 × Weld. The floor is `Weld` itself: the smallest round, already-defined quantity that covers
+the whole silent band, with ~6× margin, and nothing above it that used to work stops working — every
+radius between the silent edge and Weld was already refused by name; only the name changes to the
+truer one.
+
+| | first cut | measured |
+| --- | --- | --- |
+| floor | `Stitch()` = 1e−6 × extent | `Weld()` = 1e−9 × extent |
+| basis | asserted from the seam-merge argument | the sweep table above |
+| radii claimed as sub-resolution | r ≤ 1e−5 | r ≤ 1e−9 |
+| radii whose refusal keeps its own honest name | — | 1.585e−9 … 6.31e−2 |
+
+#### One predicate, one sentence
+
+`geom.FeatureResolvable` / `geom.SpanCeilingWarning` — surfaced to the user by
+`PartComponentDefinition.FeatureScaleWarning` — answered the same question at `Weld`, while the first
+cut of the decline refused at `Stitch`. Across the whole band between them the UI said "resolvable"
+and the modeller refused. There is now ONE predicate, `geom.Resolution.Resolves`, and both callers
+read it; the remedy sentence, previously typed out in both places, is `geom.ScaleRemedy`.
+
+Making them share the predicate was not enough on its own: they were feeding it different extents.
+`ResolutionForBodies` takes the LARGEST operand (right for a weld tolerance on a multi-body op),
+while the UI measures the part's whole range box. On the RING pair those differ — 18.6 against
+20.0499 — so a 2e−8-thick drill sat above one floor and below the other, and
+`TestTheBooleanFloorAgreesWithTheFeatureScaleWarning` caught it. The decline now measures the union
+of the operands' boxes (`pairExtentResolution`), which is the extent the user sees.
+
+#### The exemption set, surveyed
+
+The first cut exempted the base feature and the part derive, sampled rather than surveyed, so the
+same imperfect STEP body was REPORTED through a part derive and SICKENED the feature through an
+assembly derive. The complete set is the non-parametric base plus the three derive-family features
+already grouped by `DeriveStatus`:
+
+| feature | why it adopts |
+| --- | --- |
+| `NonParametricBaseFeature` | wraps bodies a translator produced (a STEP/STL import). |
+| `DerivedPartComponent` | pulls a source PART's bodies, placed by a transform. |
+| `DerivedAssemblyComponent` | pulls a source ASSEMBLY's placed bodies and merges the included ones. |
+| `ShrinkwrapComponent` | simplifies a source assembly's bodies; a simplification cannot be more valid than what it simplifies. |
+
+Each also falls back to `frozen` bodies captured at BreakLink, which are adopted twice over.
+`AssemblyProxyCutFeature` is deliberately NOT in the set and is pinned as the counter-example: it
+reads another occurrence's bodies as a TOOL and BUILDS a boolean, so its result is this engine's work
+and carries the full post-condition.
+
+#### An adopted defect now reaches health
+
+Reporting the adopted body as a `diag.Defect` and returning nil left `pf.health` Healthy with an
+empty Reason — a green tick over a torn body, which is the silence the stage exists to end. The
+engine already owns a non-fatal channel, the one `ErrDeferred` and reference-heal drift use, so an
+adopted invalid body is now `health.Warning` carrying the Validate reason, the body is kept, and
+dependents are NOT quarantined.
+
+#### The level the post-condition runs, and what it costs
+
+The recorded justification was wrong: `ops.Validate` is not "topology and Euler only". It also runs
+`checkHoleContainment`, which projects every multi-loop planar face's loops into the face plane —
+and whose verdict, `HolesContained`, is not folded into `Valid`, so the post-condition was paying for
+a result it discarded. `kernel/ops/validate` now exposes the ordered levels: `ValidateTopology` is
+level 1, `Validate` is level 1 plus containment, and a new `HoleContainmentChecked` field stops a
+level-1 report from reading as "no protruding hole found" when it never looked.
+
+Measured on a drilled plate (a block with two bores, whose top and bottom faces each carry an outer
+loop and two holes — exactly the shape containment works on), `go test ./kernel/ops/validate/
+-bench Level -benchtime 300x`:
+
+| level | ns/op | ratio |
+| --- | --- | --- |
+| `ValidateTopology` (level 1) | 888 | 1x |
+| `Validate` (level 1 + containment) | 118 152 | **133x** |
+
+The feature engine's post-condition runs level 1. That is a benchmark rather than a suite wall time
+on purpose: it is not affected by what else the machine is doing, and it names the mechanism instead
+of hiding it inside a 900-second number.

@@ -112,20 +112,64 @@ func TestThePostconditionSkipsPassedThroughBodies(t *testing.T) {
 // An ADOPTED body — an imported STEP, a derived component's source — is REPORTED, not refused: its
 // defect belongs to the file, and refusing every imperfect import is a product decision. Measured on
 // the blend-parity corpus's own fixtures: simple/H3 and simple/H5 import with three boundary edges.
+//
+// "Reported" has to mean reaching HEALTH, not only the diagnostics list. The first cut of this
+// recorded the Defect and returned nil, which left pf.health Healthy with an empty Reason — a green
+// tick over a torn body, which is the silence this stage exists to end (finding 2 of the stage-6
+// review). It is a Warning: the engine's existing non-fatal channel, the one ErrDeferred and
+// reference-heal drift already use.
 func TestAnAdoptedInvalidBodyIsReportedNotRefused(t *testing.T) {
 	t.Parallel()
 	fs := NewPartFeatures(nil)
 	pf := NewBaseFeatures(fs).AddBase(tornSquareSolid())
 	fs.Recompute()
 
-	if pf.Health().Status == health.Sick {
-		t.Errorf("an imported body must not sicken the feature that wraps it; got %+v", pf.Health())
+	if pf.Health().Status != health.Warning {
+		t.Fatalf("an imported invalid body must reach health as a Warning; got %+v", pf.Health())
+	}
+	for _, want := range []string{"base", "adopted body is not a valid B-rep", "closed=false", "boundary (open) edge"} {
+		if !strings.Contains(pf.Health().Reason, want) {
+			t.Errorf("the warning reason must name %q; got %q", want, pf.Health().Reason)
+		}
 	}
 	if !hasDiagCode(pf.Diagnostics(), CodeFeatureInvalidResult) {
 		t.Errorf("an invalid imported body must still be REPORTED; got %v", pf.Diagnostics())
 	}
 	if got := len(fs.Result()); got != 1 {
 		t.Errorf("an adopted body is kept, not dropped; the result holds %d bodies", got)
+	}
+}
+
+// A Warning is not a quarantine: an adopted body's defect must not poison the features built on it,
+// or every part derived from an imperfect import would go dark downstream.
+func TestAnAdoptedInvalidBodyDoesNotQuarantineDependents(t *testing.T) {
+	t.Parallel()
+	fs := NewPartFeatures(nil)
+	adopted := NewBaseFeatures(fs).AddBase(tornSquareSolid())
+	downstream := fs.Add(passThroughFeature{}, adopted.ID())
+	fs.Recompute()
+	if downstream.Health().Status == health.Sick {
+		t.Errorf("a dependent of a WARNING must not be quarantined; got %+v", downstream.Health())
+	}
+}
+
+// Every feature that adopts bodies must declare it — the whole derive family, not the two that
+// happened to be noticed first. The assembly derive and the shrinkwrap were missing, so the same
+// imperfect STEP body was reported through a part derive and SICKENED the feature through an
+// assembly derive (finding 1 of the stage-6 review).
+func TestTheWholeDeriveFamilyDeclaresItsBodiesAdopted(t *testing.T) {
+	t.Parallel()
+	for _, f := range []Feature{
+		&NonParametricBaseFeature{}, &DerivedPartComponent{}, &DerivedAssemblyComponent{}, &ShrinkwrapComponent{},
+	} {
+		if !adoptsExternalBodies(f) {
+			t.Errorf("%s pulls bodies it did not build and must declare AdoptsExternalBodies", f.Kind())
+		}
+	}
+	// The counter-example that keeps the exemption honest: a proxy cut READS another occurrence's
+	// bodies but BUILDS a boolean from them, so its result is this engine's work.
+	if adoptsExternalBodies(&AssemblyProxyCutFeature{}) {
+		t.Error("a proxy cut builds its result and must carry the full post-condition")
 	}
 }
 

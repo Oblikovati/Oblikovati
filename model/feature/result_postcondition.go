@@ -30,38 +30,64 @@ import (
 // the running state falls back to the prefix rather than carrying a broken body forward.
 var ErrInvalidFeatureResult = errors.New("the rebuilt body is not a valid B-rep")
 
+// ErrAdoptedInvalidBody is the post-condition's NON-FATAL verdict: the body is invalid but the
+// feature only adopted it (see [AdoptedBodiesFeature]), so the fault belongs to the source document.
+// classify maps it to health.Warning with this reason and KEEPS the body — the same shape the engine
+// already uses for ErrDeferred and for reference-heal drift. It must reach health, not only the
+// diagnostics list: a green tick over a torn imported body is the silence this stage exists to end
+// (finding 2 of the stage-6 review).
+var ErrAdoptedInvalidBody = errors.New("the adopted body is not a valid B-rep")
+
 // CodeFeatureInvalidResult names the post-condition failure on the diagnostic channel so an add-in
 // and the UI see WHICH invariant broke, not only that the feature is sick.
 const CodeFeatureInvalidResult diag.Code = "feature.invalid-result"
 
 // AdoptedBodiesFeature is a feature whose bodies come from OUTSIDE the modelling engine rather than
-// from a kernel operation: a non-parametric base wrapping an imported STEP/STL body, a derived
-// component pulling another document's. Its output can only be as valid as the file it came from, and
-// refusing every imperfect import is a product decision rather than a kernel one — so the
-// post-condition REPORTS such a body instead of sickening the feature that adopted it. Measured: two
-// of the OCCT blend-parity corpus's own STEP fixtures (simple/H3 and simple/H5) import with three
-// boundary edges each.
+// from a kernel operation: an import, or another document's geometry pulled through a derive. Its
+// output can only be as valid as the source it came from, and refusing every imperfect import is a
+// product decision rather than a kernel one — so the post-condition reports such a body as a
+// health.Warning carrying the Validate reason, and keeps it, instead of sickening the feature that
+// adopted it. Measured: two of the OCCT blend-parity corpus's own STEP fixtures (simple/H3 and
+// simple/H5) import with three boundary edges each.
 type AdoptedBodiesFeature interface {
 	Feature
 	// AdoptsExternalBodies reports that this feature's output is adopted, not built.
 	AdoptsExternalBodies() bool
 }
 
-// Both features whose bodies come from outside the engine declare it here, so the compiler keeps the
-// declaration and the post-condition's exemption in step.
+// The COMPLETE adopted set, surveyed rather than sampled (finding 1 of the stage-6 review, which
+// caught DerivedAssemblyComponent and ShrinkwrapComponent missing: the same imperfect STEP body was
+// reported through a part derive and SICKENED the feature through an assembly derive). It is the
+// non-parametric base plus the three derive-family features already grouped by DeriveStatus in
+// derived_assembly.go — each either replays bodies it was handed or pulls another document's, and
+// each falls back to `frozen` bodies captured at BreakLink, which are adopted twice over:
+//
+//	NonParametricBaseFeature  wraps bodies a translator produced (STEP/STL import).
+//	DerivedPartComponent      pulls a source PART's bodies, placed by a transform.
+//	DerivedAssemblyComponent  pulls a source ASSEMBLY's placed bodies and merges the included ones.
+//	ShrinkwrapComponent       simplifies a source assembly's bodies; the simplification cannot be
+//	                          more valid than what it simplifies.
+//
+// AssemblyProxyCutFeature is deliberately NOT here: it reads another occurrence's bodies as a TOOL
+// and BUILDS a boolean result, so its output is this engine's work and carries the full
+// post-condition.
 var (
 	_ AdoptedBodiesFeature = (*NonParametricBaseFeature)(nil)
 	_ AdoptedBodiesFeature = (*DerivedPartComponent)(nil)
+	_ AdoptedBodiesFeature = (*DerivedAssemblyComponent)(nil)
+	_ AdoptedBodiesFeature = (*ShrinkwrapComponent)(nil)
 )
 
-// postconditionError runs [ops.Validate] on the bodies the feature BUILT and returns the named error
-// for the first invalid one, recording it as a Defect on rec. It returns nil when every built body is
-// valid, and nil-with-a-Defect for an [AdoptedBodiesFeature].
+// postconditionError runs [ops.ValidateTopology] on the bodies the feature BUILT and returns the
+// named verdict for the first invalid one, recording it as a Defect on rec: ErrInvalidFeatureResult
+// for a body this engine built, ErrAdoptedInvalidBody for one it only adopted. nil when every built
+// body is valid.
 //
-// ops.Validate is the CHEAPEST of the ordered validity levels — topology and Euler only, over the
-// body's edge list, reading no geometry and no tessellation — which is what makes it affordable on
-// every feature of every recompute. The self-intersection and tolerance-consistency levels are
-// separate operations and deliberately not run here.
+// It runs ops.ValidateTopology, not ops.Validate: level 1 is the per-edge and Euler tests over the
+// body's edge and loop counts, which is what makes it affordable on every feature of every
+// recompute. ops.Validate adds the hole-containment level, which projects every multi-loop planar
+// face's loops into the face plane — materially more work for a verdict (HolesContained) that is not
+// part of Valid and that this post-condition would discard (finding 5 of the stage-6 review).
 func postconditionError(f Feature, before, after []*topo.Body, rec *diag.Recorder) error {
 	report, found := firstInvalidBuiltBody(before, after)
 	if !found {
@@ -70,16 +96,16 @@ func postconditionError(f Feature, before, after []*topo.Body, rec *diag.Recorde
 	detail := invalidBodyDetail(f.Kind(), report)
 	rec.Recordf(CodeFeatureInvalidResult, diag.Defect, "%s", detail)
 	if adoptsExternalBodies(f) {
-		return nil // the defect belongs to the imported file, not to the feature that adopted it
+		return fmt.Errorf("%w: %s", ErrAdoptedInvalidBody, detail)
 	}
 	return fmt.Errorf("%w: %s", ErrInvalidFeatureResult, detail)
 }
 
-// firstInvalidBuiltBody returns the validity report of the first body the feature built that fails
-// ops.Validate, in the order the feature returned them.
+// firstInvalidBuiltBody returns the level-1 validity report of the first body the feature built that
+// fails it, in the order the feature returned them.
 func firstInvalidBuiltBody(before, after []*topo.Body) (ops.ValidationReport, bool) {
 	for _, b := range builtBodies(before, after) {
-		if r := ops.Validate(b); !r.Valid {
+		if r := ops.ValidateTopology(b); !r.Valid {
 			return r, true
 		}
 	}

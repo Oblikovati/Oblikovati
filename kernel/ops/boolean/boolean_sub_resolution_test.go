@@ -33,14 +33,12 @@ func ringAndDrill(t *testing.T, bore float64) (*topo.Body, *topo.Body) {
 	return ring, drill
 }
 
-// TestASubResolutionDrillIsRefusedByName is the corpus row for the size classification. The ring bored
-// by a 1e-6 drill ran the whole pipeline and failed its acceptance gate reporting only "no exact path
-// claims this configuration"; at 1e-10 it came back as the ring UNCHANGED, err=nil, with nothing
-// recorded at all — a Cut that removed nothing, silently. Both are refused by name now, before any
-// geometry is built.
+// TestASubResolutionDrillIsRefusedByName is the corpus row for the size classification: the radii the
+// sweep below shows the pipeline answered SILENTLY — the ring came back unchanged, err=nil, one face,
+// removed=0, nothing recorded. Both sit inside the silent band (thickness <= 0.0998 x Weld).
 func TestASubResolutionDrillIsRefusedByName(t *testing.T) {
 	t.Parallel()
-	for _, bore := range []float64{1e-6, 1e-10} {
+	for _, bore := range []float64{1e-10, 1e-9} {
 		ring, drill := ringAndDrill(t, bore)
 		rec := &diag.Recorder{}
 		body, err := BooleanWithDiagnostics(Cut, ring, drill, rec)
@@ -60,10 +58,10 @@ func TestASubResolutionDrillIsRefusedByName(t *testing.T) {
 // user's remedy is to re-author at a working unit, which they cannot discover from a bare failure.
 func TestTheSubResolutionRefusalNamesTheThicknessAndTheFloor(t *testing.T) {
 	t.Parallel()
-	ring, drill := ringAndDrill(t, 1e-6)
+	ring, drill := ringAndDrill(t, 1e-10)
 	rec := &diag.Recorder{}
 	_, err := BooleanWithDiagnostics(Cut, ring, drill, rec)
-	for _, want := range []string{"cut tool", "2e-06", "seam resolution", "working unit"} {
+	for _, want := range []string{"cut tool", "2e-10", "below this model's resolution", "working unit"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("the refusal must name %q; got %q", want, err.Error())
 		}
@@ -119,6 +117,49 @@ func TestTheSubResolutionFloorIsModelRelative(t *testing.T) {
 	}
 	if err := declineSubResolutionOperand(Cut, ring, drill, nil); err != nil {
 		t.Fatalf("a millimetre-scale ring and its proportional drill must classify as modellable: %v", err)
+	}
+}
+
+// The boolean's floor and the UI's feature-scale warning must be ONE predicate: a size the UI calls
+// resolvable that the boolean then refuses is the disagreement finding 3 of the stage-6 review
+// found (they answered at 1e-9 and 1e-6 of model size). This drives both through the same drill.
+func TestTheBooleanFloorAgreesWithTheFeatureScaleWarning(t *testing.T) {
+	t.Parallel()
+	for _, bore := range []float64{1e-10, 1e-9, 1e-8, 1e-6, 1e-3, 0.8} {
+		ring, drill := ringAndDrill(t, bore)
+		box := ring.RangeBox().Union(drill.RangeBox())
+		thickness, ok := solidThickness(drill)
+		if !ok {
+			t.Fatalf("bore %g: the drill is a solid and must measure", bore)
+		}
+		uiSaysResolvable := geom.FeatureResolvable(box, thickness)
+		booleanRefuses := declineSubResolutionOperand(Cut, ring, drill, nil) != nil
+		if uiSaysResolvable == booleanRefuses {
+			t.Errorf("bore %g (thickness %g): the UI says resolvable=%v while the boolean refuses=%v — "+
+				"the two policies must be one predicate", bore, thickness, uiSaysResolvable, booleanRefuses)
+		}
+		if warn := geom.SpanCeilingWarning(box, thickness); (warn != "") != booleanRefuses {
+			t.Errorf("bore %g: SpanCeilingWarning=%q disagrees with the boolean refusal=%v", bore, warn, booleanRefuses)
+		}
+	}
+}
+
+// The remedy sentence has ONE home. It used to be typed out twice — once in geom.SpanCeilingWarning
+// and once in the boolean's decline — which is two things to keep in step and two things for the
+// user to read as if they were different advice.
+func TestBothRefusalsCarryTheOneRemedySentence(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 1e-10)
+	thickness, _ := solidThickness(drill)
+	err := declineSubResolutionOperand(Cut, ring, drill, nil)
+	if err == nil {
+		t.Fatal("want a refusal")
+	}
+	warn := geom.SpanCeilingWarning(ring.RangeBox().Union(drill.RangeBox()), thickness)
+	for name, text := range map[string]string{"the boolean refusal": err.Error(), "SpanCeilingWarning": warn} {
+		if !strings.Contains(text, geom.ScaleRemedy) {
+			t.Errorf("%s must carry geom.ScaleRemedy verbatim; got %q", name, text)
+		}
 	}
 }
 

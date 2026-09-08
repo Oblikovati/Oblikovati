@@ -274,6 +274,11 @@ func (s *ShrinkwrapComponent) Definition() *ShrinkwrapComponent { return s }
 // Kind implements [Feature].
 func (s *ShrinkwrapComponent) Kind() string { return "shrinkwrap" }
 
+// AdoptsExternalBodies marks a shrinkwrap's bodies as adopted: it SIMPLIFIES a source assembly's
+// geometry, and a simplification cannot be more valid than what it simplifies (see
+// [AdoptedBodiesFeature]).
+func (s *ShrinkwrapComponent) AdoptsExternalBodies() bool { return true }
+
 // SourceVersion returns the source assembly's geometry version, or "" when the source is
 // not bound (after restore, before [BindSource]).
 func (s *ShrinkwrapComponent) SourceVersion() string {
