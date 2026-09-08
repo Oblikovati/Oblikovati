@@ -100,9 +100,15 @@ func axisInvariantEntries(q Quadric, m11, m22, m12 float64) bool {
 
 // harmonic reduces the station to the ONE-harmonic form level + reach·cos(u − phase), which describes
 // it exactly while the station is axis-invariant.
+//
+// The level is READ from the general form rather than respelled as constant + m11·ρ². Two spellings of
+// one quantity are two roundings of it: on a platform that fuses a multiply into the following add
+// (arm64 does, amd64 never) the two parted by an ulp, so the reproduction proof this file rests on —
+// that the arccos path is the general path written out, not an approximation of it — held on one
+// platform and failed on the other (CI run 34280554924 macos-latest). One expression, one value.
 func (st torusStation) harmonic() torusHarmonic {
 	return torusHarmonic{
-		level: st.constant + st.m11*st.rho*st.rho,
+		level: st.secondHarmonic().Level,
 		reach: st.rho * stdmath.Hypot(st.x, st.y),
 		phase: stdmath.Atan2(st.y, st.x),
 	}
@@ -125,11 +131,16 @@ type torusSecondHarmonic struct {
 func (st torusStation) secondHarmonic() torusSecondHarmonic {
 	rr := st.rho * st.rho
 	return torusSecondHarmonic{
-		Cos2:  rr * (st.m11 - st.m22) / 2,
-		Sin2:  rr * st.m12,
-		Cos1:  st.rho * st.x,
-		Sin1:  st.rho * st.y,
-		Level: st.constant + rr*(st.m11+st.m22)/2,
+		Cos2: rr * (st.m11 - st.m22) / 2,
+		Sin2: rr * st.m12,
+		Cos1: st.rho * st.x,
+		Sin1: st.rho * st.y,
+		// float64(...) rounds the term BEFORE it is added, which the Go spec guarantees an explicit
+		// conversion does. It is the one term of this station a SECOND caller also reads (harmonic,
+		// above), so it is a value two paths must agree on bit for bit; without the conversion a
+		// platform that fuses x*y+z is free to carry it at full precision and round once, and the two
+		// paths part by an ulp (CI run 34280554924 macos-latest).
+		Level: st.constant + float64(rr*(st.m11+st.m22)/2),
 	}
 }
 
