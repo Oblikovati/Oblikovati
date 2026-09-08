@@ -176,3 +176,30 @@ func TwoRimCorridorProbe(f *topo.Face, q Quality) (gap, chord float64) {
 	_, lenses := splitWrappingHoles(f.Geometry(), faceHoleBoundaries(f, q))
 	return closestLensApproach(lenses), meanChainChord(FaceOuterBoundary(f, q))
 }
+
+// ChartRimOnlyTriangles drives the chart-driven mesher and counts the OUTPUT triangles whose three
+// vertices are all boundary points — the ear keptWithoutRimEars exists to refuse. It keys the rim the
+// way the mesh welds, so the count is over what ships, not over covering indices. ok=false when the
+// mesher declined the face.
+func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, ok bool) {
+	s := f.Geometry()
+	m, ok := chartFaceMesh(f, s, q)
+	if !ok {
+		return 0, false
+	}
+	r, _ := newChartRegion(f, s)
+	grid := geom.ResolutionForPoints(m.Positions).Weld()
+	rim := map[[3]int64]bool{}
+	for _, c := range chartBoundaryChains(f, s, r, q) {
+		for _, p := range c.p3 {
+			rim[WeldKey(p, grid)] = true
+		}
+	}
+	for t := 0; 3*t+2 < len(m.Indices); t++ {
+		if rim[WeldKey(m.Positions[m.Indices[3*t]], grid)] && rim[WeldKey(m.Positions[m.Indices[3*t+1]], grid)] &&
+			rim[WeldKey(m.Positions[m.Indices[3*t+2]], grid)] {
+			n++
+		}
+	}
+	return n, true
+}

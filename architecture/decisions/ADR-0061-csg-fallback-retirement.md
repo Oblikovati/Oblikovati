@@ -4035,3 +4035,66 @@ and at HEAD with the same number. Re-proven for this close-out in a clean worktr
 
 It is unrelated to this ADR — a translator rebuild, not a boolean — and it is the only red row in the
 whole local gate at either end of the wave.
+
+### Final fix wave, finding 1 — the rim-only ear (2026-09-08)
+
+The close-out table above records FIG8− at `DefaultQuality` as "2 free edges between a planar lid and
+the torus face" and G10 calls it a crack. Re-measured on the same HEAD with `tornAcrossMeshes`: the two
+edges are of degree FOUR, `on=[lid lid torus torus]`, the edge (0.968, 3, +0.765)–(0.968, 3, −0.765) and
+its mirror. No edge has degree 1. The torus chart mesh emitted the triangle (P_lo, pinch, P_hi) — the
+first three points of a lobe chain — whose three vertices all lie on y = 3: it is the lid's own tip
+triangle with the opposite normal, a doubled surface and not a crack.
+
+The cause is the boundary clearance meeting a corner. At the pinch the material corner is ~102° wide
+and both boundary chords are 1.23 mm; `chainIsNear` culls every interior node within
+`chartBoundaryClearance · chord ≈ 0.68 mm` of a boundary segment, which is the whole corner, so the
+constrained triangulation closes it with a boundary-only ear. At `PropertyQuality` the chords are ~8×
+shorter and the body is watertight. Lowering the clearance is not the fix: k ≤ 0.55 loses the genus-1
+complement at `PropertyQuality` (the sweep in `chart_face_clearance.go`).
+
+The fix (`chart_rim_ear.go`): after the kept selection, every kept triangle whose three vertices are
+boundary vertices AND which the weld will emit is split at the surface point under its own (u,v)
+centroid — `s.PointAt(r.fold(centroid))`, a point the region already certified material, evaluated on
+the surface, nothing moved — and the ONE constrained triangulation runs again over the enlarged point
+set, at most `chartRimEarRounds` = 8 times; an ear still standing after that declines the face and the
+router reports the discarded trim. No deviation threshold decides it. A covering triangle two of whose
+rim vertices are one 3D point (the intersect piece's single loop passes its pinch twice) collapses at
+the weld and is not an ear.
+
+Three tests: `TestTheFigureEightPiecesMeshClosedAtBothQualities` (body level, both pieces, both
+facetings: 0 free edges and no `CodeMeshNotWatertight`); both figure-eight pieces are rows of
+`classificationCorpus()`, so every corpus gate meshes them each run; and
+`TestNoChartedFaceEmitsARimOnlyTriangle`, the mesher-level invariant over every charted corpus face at
+both facetings. All three were proven to trip with the split disabled — and the invariant found a
+SECOND instance nobody had seen: the #1738 corner-junction wall at `PropertyQuality` emitted two
+rim-only triangles that happened to be watertight (a chord plane cutting into the wall at the notch's
+corner, not a neighbour's plane). Both are split now.
+
+The chart corpus re-measured at both facetings, before → after (body free edges / charted face area, mm²;
+`TessellateBody` and `chartFaceMesh` directly; "=" means byte-identical):
+
+| row | face | D free | D area | P free | P area |
+| --- | --- | --- | --- | --- | --- |
+| RS− ring − coaxial shaft | torus | 0 = | 236.10153 = | 0 = | 237.87007 = |
+| RS− | cylinder | 0 = | 56.10829 = | 0 = | 56.19711 = |
+| RD− ring − axial drill | torus | 0 = | 290.28594 = | 0 = | 291.88065 = |
+| RD− | cylinder | 0 = | 13.92081 = | 0 = | 13.94356 = |
+| RODB∪ rod ∪ ball | sphere | 0 = | 2.86078 = | 0 = | 2.88193 = |
+| RODB∪ | cylinder | 0 = | 24.85688 = | 0 = | 24.89270 = |
+| RODB− rod − ball | sphere | 0 = | 0.25358 = | 0 = | 0.25928 = |
+| RODB− | cylinder | 0 = | 24.85688 = | 0 = | 24.89270 = |
+| RODB∩ rod ∩ ball | sphere | 0 = | 0.25358 = | 0 = | 0.25928 = |
+| RODB∩ | cylinder | 0 = | 0.23655 = | 0 = | 0.23942 = |
+| HALF ring − half space (the complement) | torus | 0 = | 263.55487 = | 0 = | 264.87111 = |
+| FIG8− torus − y>3 | torus | **2 → 0** | **281.61313 → 281.51437** | 0 = | 283.07523 = |
+| FIG8∩ torus ∩ y>3 | torus | 0 = | 110.87045 = | 0 = | 111.67495 = |
+| DPRISM cyl ∪ D-prism (merged band) | cylinder | 0 = | 173.75394 = | 0 = | 174.09117 = |
+
+FIG8−'s body volume at `DefaultQuality` moves 276.07755 → 276.15601 (analytic 279.898): the doubled
+surface is gone. Its torus face area FALLS by 0.099 mm² because the re-triangulation over one more point
+chooses different diagonals in the corner's neighbourhood — still a chord deficit under the analytic
+283.100 (−0.56 %), inside the per-face gate's (−1 %, 0]. No pin moved: the complement's two-sided
+263.55487 ± 0.05 reads 263.55487, RODB∩'s 0.2810 ± 0.005 is unchanged, and every other row is
+byte-identical at both facetings. The ratchets are untouched (no new tolerance, recognizer, assertion or
+code); `chart_face_mesh.go` reached its size limit and its clearance section moved verbatim to
+`chart_face_clearance.go`.

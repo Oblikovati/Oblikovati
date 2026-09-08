@@ -190,3 +190,40 @@ func meshReportsIgnoredTrim(m *tessellate.Mesh) bool {
 	}
 	return false
 }
+
+// TestTheFigureEightPiecesMeshClosedAtBothQualities is the body-level gate the per-face area gate
+// above cannot give: each piece's whole mesh is a closed surface and reports no tear, at BOTH facetings.
+//
+// At DefaultQuality the cut piece meshed with two free edges of degree FOUR — not a crack but a doubled
+// surface: the torus chart mesh closed the material corner at the pinch with a triangle whose three
+// vertices were all rim points on y=3, the lid's own tip triangle with the opposite normal. The chart
+// mesher now splits every rim-only ear at the surface point under its centroid (chart_rim_ear.go), and
+// this row holds it at the corpus's coarse faceting, where the ear appeared, as well as the fine one.
+func TestTheFigureEightPiecesMeshClosedAtBothQualities(t *testing.T) {
+	t.Parallel()
+	for _, op := range []ops.PartFeatureOperation{ops.Cut, ops.Intersect} {
+		piece := figureEightPiece(t, op)
+		for _, gq := range figureEightQualities() {
+			mesh, _ := tessellate.TessellateBody(piece, gq.q)
+			free := tessellate.FreeEdgeCount(mesh)
+			if free != 0 {
+				t.Errorf("%s quality, %v piece: the body meshes with %d free edges, want 0", gq.name, op, free)
+			}
+			assertTearReportAgreesWithTheMesh(t, mesh, free)
+		}
+	}
+}
+
+// assertTearReportAgreesWithTheMesh is the same shape the merged-band gate asserts: a torn mesh carries
+// CodeMeshNotWatertight as a Defect, and a watertight one carries none.
+func assertTearReportAgreesWithTheMesh(t *testing.T, m *tessellate.Mesh, freeEdges int) {
+	t.Helper()
+	reported := false
+	for _, d := range m.Diagnostics {
+		reported = reported || (d.Code == tessellate.CodeMeshNotWatertight && d.Severity == diag.Defect)
+	}
+	if reported != (freeEdges > 0) {
+		t.Errorf("the mesh has %d free edges and reports %q = %v; the two must agree",
+			freeEdges, tessellate.CodeMeshNotWatertight, reported)
+	}
+}

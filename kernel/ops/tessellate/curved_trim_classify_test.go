@@ -86,6 +86,12 @@ func classificationCorpus() []struct {
 			return cutWith(t, mustBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 3.5)),
 				mustCylinder(t, math.P3(0, 0, -1), math.V3(0, 0, 1), 1.5, 6))
 		}},
+		// The figure-eight torus band, both pieces (chart_rim_ear_test.go): the cut piece's torus face is
+		// outerless with two lobes for holes that TOUCH at the pinch, and at DefaultQuality its chart mesh
+		// closed the material corner there with a rim-only ear lying in the lid's plane — two free edges
+		// of degree four. The intersect piece's single loop passes the pinch twice.
+		{"figure-eight torus − y>3", func(t *testing.T) *topo.Body { return figureEightPiece(t, ops.Cut) }},
+		{"figure-eight torus ∩ y>3", func(t *testing.T) *topo.Body { return figureEightPiece(t, ops.Intersect) }},
 	}
 }
 
