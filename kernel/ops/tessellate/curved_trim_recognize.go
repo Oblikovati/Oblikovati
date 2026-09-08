@@ -122,9 +122,10 @@ func twoRimHoledTrimOf(chart [][]math.Point2, s geom.Surface, outer3D []math.Poi
 // corridor (ADR-0061 stage 4), so those bands keep it.
 //
 // The measured corridor/chord ratio over the whole two-rim corpus is 0.05 … 2.4 on every band the chart
-// mesher LOSES and 8.6 or infinite (a single window) on every band it takes, at all three sampled
-// tolerances. 4 sits in that gap with a factor of two either side; the split it produces is asserted
-// face by face, against the mesher's own verdict, by TestEveryChartedTwoRimBandIsMeshedByItsArm.
+// mesher LOSES and 8.6 … 8.8 or infinite (a single window) on every band it takes, at all three sampled
+// tolerances. Swept against the kernel's own corpus, the failure count by ratio is 0.5→8, 1→5, 2→2,
+// 3→0, 4→0, 6→0, 8→0, 12→1, 20→1, 40→1: a plateau of 3 … 8, with 4 inside it. The split it produces is
+// asserted in both directions by TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe.
 const nearPinchCorridorChords = 4
 
 // lensCorridorOutrunsTheSampling reports whether two lens windows pass within nearPinchCorridorChords of
