@@ -66,8 +66,27 @@ type spiricTubeTrim struct {
 }
 
 // spiricTubeTrimOf recognises a torus band bounded by two tube-wrapping edges (#1375) — a torus cut
-// through its hole.
+// through its hole — that records NO chart. A band that records one is the general chart-driven
+// mesher's, like every other charted face.
+//
+// The loft is not an exact fast path: it sweeps ONE direction round the tube for the whole band, which
+// describes the region only while the strip between its boundaries has a width everywhere. Measured on
+// all ten spiric faces the kernel corpus builds, every one of them charted, the chart mesher accepts
+// each and reads the same area to within 0.004–0.17 % on the eight that do not pinch, with a THIRD
+// fewer triangles at PropertyQuality (120184 against 171008 on the widest). On the two that DO pinch —
+// the figure-eight, a torus R=5 r=2 cut by y=3 tangent to its inner equator — the loft was not merely
+// coarser but wrong: 310.800 mm² and 215.177 where the analytic regions are 283.100 and 111.684, its
+// two halves summing to 525.98 against a torus of 394.78, because it covered the tangency twice. The
+// chart mesher reads 283.075 and 111.675.
+//
+// What keeps the loft is the UNCHARTED band, which the chart mesher cannot serve at all: occtparity's
+// J3 and A4 host tori record no chart (measured: chart=0, chartFaceMesh declines), and the loft meshes
+// them in 340988 and 406540 triangles against the 1115132 and 1180684 the generic CDT downstream of it
+// needs.
 func spiricTubeTrimOf(f *topo.Face, s geom.Surface, q Quality) (spiricTubeTrim, bool) {
+	if len(f.Chart()) > 0 {
+		return spiricTubeTrim{}, false // the general chart-driven mesher serves this band
+	}
 	t, first, second, ok := tubeWrappingEdges(f, s, q)
 	if !ok {
 		return spiricTubeTrim{}, false
@@ -126,7 +145,7 @@ func twoRimHoledTrimOf(chart [][]math.Point2, s geom.Surface, outer3D []math.Poi
 // tolerances. Swept against the kernel's own corpus, the failure count by ratio is 0.5→8, 1→5, 2→2,
 // 3→0, 4→0, 6→0, 8→0, 12→1, 20→1, 40→1: a plateau of 3 … 8, with 4 inside it. The split it produces is
 // asserted in both directions by TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe.
-const nearPinchCorridorChords = 4
+const nearPinchCorridorChords = 4 // tol:mesh-density (multiples of the boundary's own chord)
 
 // lensCorridorOutrunsTheSampling reports whether two lens windows pass within nearPinchCorridorChords of
 // the boundary's own chord — the corridor the covering cannot resolve. A band with a single window has

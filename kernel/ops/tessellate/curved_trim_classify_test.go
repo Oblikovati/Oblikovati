@@ -68,8 +68,9 @@ func classificationCorpus() []struct {
 			return cutWith(t, mustBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 3.5)), mustConeDrill(t))
 		}},
 		// The corner junction (#1738): a notched cylinder drilled by a rod that crosses the notch. Its
-		// wall is a two-rim band carrying a lens hole and recording NO chart, which is the only trim
-		// left on the unroll (curved_trim_classify.go).
+		// wall is a two-rim band carrying a lens hole AND a chart whose two windows are far apart, so the
+		// corridor gate gives it to the chart-driven mesher (curved_trim_recognize.go). It is here for
+		// the exclusivity proof and for the refinement gate, which caught the fine-quality crack.
 		{"notched cylinder − crossing rod", func(t *testing.T) *topo.Body {
 			return cutWith(t, notchedRod(t), mustCylinder(t, math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12))
 		}},
@@ -144,13 +145,20 @@ func forEachCurvedCorpusFace(t *testing.T, visit func(body string, i int, f *top
 
 // TestTheClassificationCorpusReachesEveryArm keeps the exclusivity proof from going vacuous: an
 // overlap test over faces that never reach an arm proves nothing. Every arm below is measured on this
-// corpus. kindWedgeBand is the one arm no primitive boolean produces — an oblique-ended cylinder wedge
-// comes off the blend engine (A1/D4), and model/feature/occtparity carries its rows — so the list
-// names the arms this package can build, and a new arm has to appear here or say why not.
+// corpus. TWO arms are named exceptions and say why:
+//
+//   - kindWedgeBand: no primitive boolean produces an oblique-ended cylinder wedge; it comes off the
+//     blend engine (A1/D4), and model/feature/occtparity carries its rows.
+//   - kindSpiricBand: it keeps only the band that records NO chart, and every torus a primitive boolean
+//     cuts here records one — measured, all ten of them, and the chart-driven mesher accepts every one.
+//     The uncharted band is occtparity's J3 and A4 host tori (measured: chart=0, chartFaceMesh
+//     declines), which the loft meshes in a third of the triangles the generic CDT needs.
+//
+// A new arm has to appear here or say why not.
 func TestTheClassificationCorpusReachesEveryArm(t *testing.T) {
 	t.Parallel()
 	want := []string{"chart", "cone-apex-fan", "ruled-band-loft", "sphere-cap-fan", "sphere-patch",
-		"sphere-zone-band", "spiric-band", "two-rim-holed-band", "uncharted"}
+		"sphere-zone-band", "two-rim-holed-band", "uncharted"}
 	seen := classifiedCurvedFaces(t)
 	for _, kind := range want {
 		if seen[kind] == 0 {

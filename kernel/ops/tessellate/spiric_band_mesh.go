@@ -28,16 +28,13 @@ import (
 func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool) {
 	t, first, second := b.torus, b.first, b.second
 	m := &Mesh{}
-	loPts, hiPts := dropClosingDup(DiscretizeEdge(first, q)), dropClosingDup(DiscretizeEdge(second, q))
-	lo, hi := spiricRow(m, t, loPts), spiricRow(m, t, hiPts)
+	lo := spiricRow(m, t, dropClosingDup(DiscretizeEdge(first, q)))
+	hi := spiricRow(m, t, dropClosingDup(DiscretizeEdge(second, q)))
 	if len(lo.idx) < 3 || len(hi.idx) < 3 {
 		return nil, false
 	}
 	loU, hiU := branchAzimuthAt(m, t, first, lo), branchAzimuthAt(m, t, second, hi)
 	vs := finerRowVs(lo, hi)
-	if bandPinches(t, loU, hiU, vs, loPts, hiPts) {
-		return nil, false // see bandPinches: a pinched band is no single sweep round the tube
-	}
 	dir := bandDirection(f.Chart(), loU, hiU, vs)
 	rows := []bandRow{lo}
 	rows = append(rows, tubeInteriorRows(m, t, loU, hiU, vs, dir, q)...)
@@ -46,37 +43,6 @@ func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool) {
 		stitchBandRows(m, rows[i], rows[i+1])
 	}
 	return m, true
-}
-
-// bandPinches reports whether the two boundaries TOUCH at some tube station, so the strip between them
-// closes to nothing there.
-//
-// This loft sweeps ONE direction round the tube for the whole band, and that is a description of the
-// region only while the strip has a width everywhere. Where the boundaries meet, the region is two lobes
-// joined at a point and the sweep cannot say which side of the meeting each row belongs to: measured on
-// the figure-eight (torus R=5 r=2 cut by the plane y=3, which touches its inner equator), the loft meshed
-// 310.800 mm² where the analytic region is 283.100 and 215.177 where it is 111.684 — its two halves
-// summing to 525.98 against a torus of 394.78, so it covered the tangency twice. The chart-driven mesher
-// reads the region the face records and meshes 281.62 and 110.95, a chord deficit under each; declining
-// here is what sends the face to it.
-//
-// "Touch" is an ARC LENGTH on the tube against the boundary's own weld tolerance (ADR-0042), not a bare
-// angle: the same band at a different scale must decide the same way.
-func bandPinches(t geom.Torus, loU, hiU func(float64) float64, vs []float64, loPts, hiPts []math.Point3) bool {
-	weld := geom.ResolutionForPoints(append(append([]math.Point3(nil), loPts...), hiPts...)).Sew()
-	for _, v := range vs {
-		if stdmath.Abs(wrapToPeriod(hiU(v)-loU(v)))*tubeSweepRadius(t, v) <= weld {
-			return true
-		}
-	}
-	return false
-}
-
-// tubeSweepRadius is how far a whole turn in u travels at tube station v, per radian — the torus's own
-// |dP/du|, which is what turns an azimuth gap into the arc length a tolerance can be compared with.
-func tubeSweepRadius(t geom.Torus, v float64) float64 {
-	du, _ := t.DerivativesAt(0, v)
-	return du.Length()
 }
 
 // tubeWrappingEdges returns the face's two edges that each go the whole way round the TUBE, which is
