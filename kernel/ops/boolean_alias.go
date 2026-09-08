@@ -69,8 +69,13 @@ const (
 	CodeBooleanAnalyticVolumeReject diag.Code = boolean.CodeBooleanAnalyticVolumeReject
 	CodeBooleanAnalyticFaceReject   diag.Code = boolean.CodeBooleanAnalyticFaceReject
 	CodeBooleanNoExactCurvedPath    diag.Code = boolean.CodeBooleanNoExactCurvedPath
+	CodeBooleanSubResolutionTool    diag.Code = boolean.CodeBooleanSubResolutionTool
 )
 
 // ErrUnmodelledBoolean is the boolean's refusal: the operands meet in a configuration no exact path
 // models. See [boolean.ErrUnmodelledBoolean].
 var ErrUnmodelledBoolean = boolean.ErrUnmodelledBoolean
+
+// ErrSubResolutionOperand is the boolean's size refusal: an operand's material is thinner than the
+// model's seam resolution. See [boolean.ErrSubResolutionOperand].
+var ErrSubResolutionOperand = boolean.ErrSubResolutionOperand

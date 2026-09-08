@@ -3270,3 +3270,94 @@ subject: `query.TestATornClosedBodyReportsThroughTheHarvest` needed a body that 
 the corpus tears any more. It is replaced by the identity it was really guarding — the harvest's codes
 are exactly the codes the face meshes carry — driven on the near-pinch crossing rods, the one corpus
 body whose faces still record anything at `PropertyQuality`, and it refuses to pass on an empty set.
+
+### Stage 6, the two silent exits and the engine's missing post-condition (2026-09-08)
+
+Two places still let a wrong or unbuilt answer through without a word, and they are at opposite ends
+of the same pipeline: the boolean's SMALLEST inputs, and the engine that stores whatever the boolean
+returns.
+
+#### The boolean's bottom end
+
+`ops.Boolean` had no size classification at all. Measured on the RING corpus row (`brep.SolidTorus`
+major 5, minor 1.5) cut by an axial drill at (5,0,-4) along +Z:
+
+| drill radius | tool thickness | seam resolution | what shipped before |
+| --- | --- | --- | --- |
+| 0.8 (the RD− row) | 1.6 | 2.005e-5 | exact: 2 faces, 1 shell, volume 216.2569 |
+| 1e-3 | 2e-3 | 2.005e-5 | refused — the built body's volume missed the Requicha bracket |
+| 1e-5 … 1e-8 | 2e-5 … 2e-8 | 2.005e-5 | refused — but only AFTER the full intersect → imprint → classify → stitch, and reported as `boolean.no-exact-curved-path`, whose text says "the result will be faceted" (no longer true since stage 7) |
+| 1e-10, 1e-12 | 2e-10, 2e-12 | 2.005e-5 | **the ring UNCHANGED**: `err=nil`, a valid closed 1-face solid, volume 222.066099 — every face certified against the operands, and inside the Cut bracket because `[V(A)−V(B), V(A)]` admits "removed nothing". Nothing recorded. |
+
+`CurvedBoolean`, the public curved entry, did the same on its own account: it CERTIFIED the
+unchanged ring as a cut result, because "removed nothing" passes the per-face membership rule and
+the volume bracket alike.
+
+Both rows are one configuration: a solid operand whose material is thinner than the tolerance at
+which the boolean merges seam points, so the seam cannot separate the two sides of the tool. The
+ground rule says an unsupported configuration is refused AT CLASSIFICATION with a named decline,
+before any geometry is built. `declineSubResolutionOperand` is that classification — the thinnest
+bounding-box extent of each SOLID operand against the pair's `geom.Resolution.Stitch()`, refused as
+`ErrSubResolutionOperand` with a `boolean.sub-resolution-tool` Defect carrying the thickness, the
+floor and the modelling remedy.
+
+Three things it deliberately is not. It is not absolute: the same drill is refused in a big model and
+built in a small one, because what fails is the ratio (a millimetre-scale ring with a proportional
+drill classifies as modellable). It measures MATERIAL, so a sheet body — whose zero thickness is its
+representation, not a part too thin to build — is not measured at all, and the split/replace-face
+features that cut with one are untouched. And it is not a new tolerance: `Stitch()` is the weld the
+boolean's own seam merge already uses, so `tolerance-constants` does not move.
+
+#### The engine's end
+
+`Validate` is a post-condition of every public kernel operation. The engine that STORES what those
+operations return had none. Measured with a fake feature returning a body declared solid whose single
+face leaves four boundary edges: `health = ok`, `diagnostics = []`, one body in `fs.Result()`, and the
+viewport meshes it.
+
+The post-condition now runs at ONE site — `evaluateBody`, between the recompute and the health
+classification — so all 200-odd feature kinds and any added later inherit it without opting in. An
+invalid body becomes an ordinary recompute error, which the existing mechanism already handles
+correctly: the feature goes Sick with a reason naming the broken invariant, its dependents are
+quarantined, and the body is DROPPED rather than carried forward.
+
+One exemption, and it is the one the ground rules already name. A feature whose bodies come from
+OUTSIDE the engine — a non-parametric base wrapping an imported STEP/STL body, a derived component
+pulling another document's — can only be as valid as the file it came from, and refusing every
+imperfect import is a product decision rather than a kernel one (the same reasoning that leaves
+`meshbrep.MeshToBRep` on the validate-debt ledger). Such a feature declares
+`AdoptedBodiesFeature`, and the post-condition REPORTS its invalid body as a Defect on feature
+health instead of sickening it. That exemption is not hypothetical: two of the OCCT blend-parity
+corpus's own STEP fixtures, `simple/H3` and `simple/H5`, import with three boundary edges each — a
+fact the corpus recorded as a fillet decline ("is not a supported blend") while the real fault was
+one layer upstream, in the input.
+
+#### The measurement, stage 6
+
+| | before | after |
+| --- | --- | --- |
+| `ops.Boolean(Cut, RING, drill r=1e-10)` | the ring unchanged, err=nil, 0 diagnostics | `ErrSubResolutionOperand`, 1 Defect |
+| `ops.Boolean(Cut, RING, drill r=1e-6)` | refused after the full pipeline, mis-named | refused at classification, named |
+| `CurvedBoolean(Cut, RING, drill r=1e-10)` | ok=true, the unchanged ring | ok=false, 1 Defect |
+| feature engine post-condition sites | 0 | 1 |
+| features exempt from it | — | 2, both `AdoptedBodiesFeature` (imported base, derived component) |
+| a feature returning an invalid body | health ok, body stored | health sick, dependents quarantined, body dropped |
+| `model/feature` suite wall time | 900.4 s | 908.3 s (+0.9 %, and the after run carried MORE background load) |
+| `fallback-sites` | 26 | 28 (the code, plus its re-export through the `ops` facade — the counter counts both declarations) |
+| `tolerance-constants` / `type-assertions` / `recognizers` | 214 / 691 / 11 | unchanged |
+
+The suite cost is inside the run-to-run noise — the same code measured 900 s to 1014 s on this
+machine depending on what else was running, an order of magnitude more spread than any difference the
+post-condition could make — so no gating was needed. `ops.Validate` is already the
+CHEAPEST of the ordered validity levels — topology and Euler over the body's edge list, reading no
+geometry and no tessellation — and the post-condition measures only the bodies a feature BUILT: one a
+feature passed through is the same pointer (the identity `producerOf` already relies on) and was
+validated at the exit of the feature that built it, so re-checking it would cost O(features × bodies)
+for an answer that cannot have changed.
+
+What was deleted: nothing in the kernel — this stage adds the two refusals the pipeline was missing.
+What it corrected is a FIXTURE: `model/feature`'s `makeBody` built a body declared solid with one
+face and one loop edge, four boundary edges short of closed and a shape no operation could return.
+Its invalidity was invisible while the engine stored whatever it was handed; with the post-condition
+it sickens every test that uses it. It is `brep.SolidBlock` now — a fixture has to be something the
+modeller could actually produce.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -24,13 +24,17 @@ func (f *fakeBodySource) SurfaceBodies() *topo.SurfaceBodies { return f.bodies }
 func (f *fakeBodySource) ModelGeometryVersion() string       { return fmt.Sprintf("v%d", f.version) }
 func (f *fakeBodySource) edit()                              { f.version++ }
 
+// oneBody is the derive fixture's source body: ONE unit block, built through the kernel's own
+// constructor. Like makeBody in engine_test.go it used to be a hand-wired solid with a single face
+// and one loop edge — invalid by construction, and invisible until Validate became the feature
+// engine's post-condition (ADR-0061 stage 6). A derived component copies its source, so an invalid
+// source made the derive feature sick, correctly.
 func oneBody() *topo.Body {
-	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("src", "body", 0)))
-	v := bld.AddVertex(math.P3(0, 0, 0), topo.NewLineage(topo.Tok("src", "vertex", 0)))
-	e := bld.AddEdge(geom.NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0)), v, v, topo.NewLineage(topo.Tok("src", "edge", 0)))
-	plane, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
-	bld.AddFace(plane, topo.NewLineage(topo.Tok("src", "face", 0)), topo.OuterLoop(topo.Fwd(e)))
-	return bld.Build()
+	b, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "src")
+	if err != nil {
+		panic(fmt.Sprintf("derived test fixture: SolidBlock(0,0,0 .. 1,1,1) failed: %v", err))
+	}
+	return b
 }
 
 func TestDerivedComponentPullsSourceAssociatively(t *testing.T) {

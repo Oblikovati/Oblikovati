@@ -144,7 +144,12 @@ var kernelNetDeltaPin = map[string]int{
 	// one came back as the ring UNCHANGED with err=nil and NOTHING recorded — a Cut that removed
 	// nothing, silently, because "removed nothing" sits inside the Requicha bracket for a difference.
 	// The boolean now classifies on size before any geometry is built and refuses by name.
-	"fallback-sites": 29,
+	// The boolean now classifies on size before any geometry is built and refuses by name. It is +2,
+	// not +1: the counter counts every `diag.Code` ValueSpec under kernel/, so the ops facade's
+	// re-export of the same code — the one name a model-layer consumer matches on, the convention the
+	// other four boolean codes already follow — is counted a second time. One new degradation, two
+	// declarations of its name.
+	"fallback-sites": 30,
 }
 
 func TestKernelNetDelta(t *testing.T) {
