@@ -4444,3 +4444,57 @@ handedness where the two disagree, and `senseFromLoopWinding` writes that sign i
 orientation up to a single global bit, so a per-face override there can only introduce the very
 flag-against-winding inconsistency the gate refuses. It did not fire once the enclosure was fixed
 (`kernel/...` and the Inventor corpus are green), but it is a live hazard and a separate cause.
+
+### The probe settles a shell's bit; it does not overrule a face's loops (2026-09-09)
+
+With the enclosure fixed, the multipoint disk's `Extrusion5` still declined with
+`boolean.winding-reject`, on ONE face — `Extrusion5/p0:side#5`, a slot wall 0.6 µm by 0.25 µm in
+section on a body 39 mm across. On that cut's 365-face shell, 348 probed faces agreed with their loop
+handedness, sixteen abstained, and exactly one disagreed: the sliver.
+
+`orientFaceSigns` seeded each face's sign from its loop handedness and then let the geometric probe
+OVERRIDE it wherever the two disagreed. The probe steps a stand-off of 1e-3 of the SHELL's diagonal
+(≈ 4 mm here) either side of a face; on a 0.6 µm wall that samples nothing near the face, so its reading
+is not about that face at all. `senseFromLoopWinding` then wrote the overriding sign into the face's
+`reversed` flag without touching its loops, and the emission gate (`brep.FaceWindingConsistent`) refused
+a correct body.
+
+A shell whose loops are traversal-consistent carries ONE orientation, up to a single global bit. A
+per-face verdict that contradicts the handedness there is evidence about the PROBE, never about the
+face: the loops already agree with one another. So the probe now VOTES and nothing more — `shellBit`
+already takes the majority of the faces it could read — and each face's sign is its own handedness under
+that bit. The stored sense then agrees with the loops by construction, which is what
+`senseFromLoopWinding` promises and what the gate checks.
+
+**What the override was masking, and why it could not simply be deleted.** With it gone, the #1610 scale
+sweep failed at 1e-4 and 1e-3: the drilled plate's bore integrated as ADDED (2.4565e-12 against a slab of
+2.4e-12), so the Requicha bracket refused the cut. `materialSideVotes` decides which side of a boundary
+edge holds the face's material by stepping a quarter of that edge's own length off it — as a quarter TURN
+in (u, v), which is "left" only where the chart is metrically isotropic. A cylinder's u is an angle and
+its v a length: on a 30 µm bore a rim segment's du/4 ≈ 0.05 lands far outside a chart 6e-5 tall, so every
+rim station abstained and the seam stations carried the vote the wrong way. The step is now a quarter of
+the segment's ARC LENGTH, taken in space as N × T and mapped back through the first fundamental form
+(`quarterArcLeftOf`) — the chart-agnostic form of the same question, which on an orthonormal chart
+reduces to the quarter turn it replaces. That is the ground rule "angular → arc length through |dP/du|"
+applied where the handedness reader had been ignoring it.
+
+The two land together because either alone is red: without the arc-length step the deletion regresses the
+scale sweep, and without the deletion the sliver's decline stands.
+
+| | before | after |
+| --- | --- | --- |
+| `TestThinFinWallKeepsTheSenseItsLoopsCarry` faces wound against their normal | 1 of 12 | 0 of 12 |
+| `TestBoreIntegratesAsRemovedAtEveryScale` at 1e-4 / 1e-3 | refused by the Requicha bracket | exact to 1e-9 relative |
+| multipoint disk `Extrusion5` | sick (405-face target, 18-face tool) | ok |
+| multipoint disk | 8064 mm³ (+5.0 %), Extrusion5 sick | 7691.5 mm³ (+0.16 %), 7 of 7 ok |
+
+Fixture for the deletion: a 10×10×2 plate cut twice so one wall stands 3 mm of material from open space
+on one side and 4 mm of gap from the rest of the plate on the other, both cuts stopping short of the far
+edge so the body stays ONE shell and only the sign rule is under test. Fixture for the arc-length step:
+the drilled slab at 1e-4, 1e-3, 1 and 1e3, gated on its analytic volume rather than on a mesh — the
+handedness error is a modelling one and shows there first.
+
+ADR-0060's note that "the handedness read two of a stub's three faces wrong" was measured against the
+SHOELACE handedness, which has since been replaced twice (#3506's whole-circuit rim reading, and
+ADR-0063's chart region). `./kernel/... ./archguard/...` is green without the override, near-pinch rows
+and the OCCT blend corpus included.

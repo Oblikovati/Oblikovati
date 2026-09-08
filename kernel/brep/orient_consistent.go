@@ -28,6 +28,15 @@ import (
 // The mixed boolean's two-lump result (a pin cut clean through) made the single global flip visible:
 // the sum of a positive lump and an inverted one stayed positive, so the inverted lump was never turned
 // (ADR-0060). A one-shell body takes exactly the path it always did.
+//
+// The geometric probe (probeShellSides) settles that ONE BIT and nothing else. It used to override a
+// face's handedness outright wherever the two disagreed, and on a shell whose loops are one orientation
+// that can only introduce error: the loops already agree with each other, so a single face reading
+// differently is the PROBE misreading it — its stand-off is a fraction of the whole shell's diagonal,
+// and the multipoint disk's Extrusion5 hands it a wall 0.6 µm across, where a 4 mm stand-off samples
+// nothing near the face. The override then wrote a sense contradicting that face's own loops, and the
+// boolean's emission gate (brep.FaceWindingConsistent) refused the body. A majority over the faces the
+// probe COULD read is what a shell's free bit needs, and shellBit already takes it.
 func orientFaceSigns(faces []fluxFace) []float64 {
 	signs := make([]float64, len(faces))
 	for i := range faces {
@@ -39,11 +48,7 @@ func orientFaceSigns(faces []fluxFace) []float64 {
 		probed := shellProbedSigns(sides, shellEnclosedBy(oriented, faces, shell, sides))
 		bit := shellBit(faces, signs, shell, probed)
 		for _, i := range shell {
-			if probed[i] != 0 {
-				signs[i] = probed[i]
-			} else {
-				signs[i] *= bit
-			}
+			signs[i] *= bit
 			f := faces[i]
 			f.sign = signs[i]
 			oriented = append(oriented, f)
@@ -118,8 +123,9 @@ func faceSideInShell(own *shellProbe, f *fluxFace, step float64) (up, down math.
 
 // shellProbedSigns turns the orientation-free side readings into outward signs, once the shell's ROLE
 // is known: the material of a lump is inside the region it bounds and that of a void outside it, so the
-// sign is +1 exactly when the +S_u×S_v side is the non-material one. A face the probe could not read
-// carries no entry and falls back to its loop handedness under the shell's bit.
+// sign is +1 exactly when the +S_u×S_v side is the non-material one. These are the VOTES shellBit
+// counts — never a per-face verdict; a face's own sign comes from its loops (see orientFaceSigns). A
+// face the probe could not read carries no entry and abstains.
 func shellProbedSigns(sides shellSides, enclosed bool) map[int]float64 {
 	out := make(map[int]float64, len(sides.plusInside))
 	for i, plus := range sides.plusInside {
@@ -292,7 +298,7 @@ func loopHandedness(f curvedFace, r trimRegion) float64 {
 	}
 	votes := 0
 	for _, ring := range trimPolys(f, r.uPeriodic, r.vPeriodic) {
-		votes += materialSideVotes(ring, r)
+		votes += materialSideVotes(f.surface, ring, r)
 	}
 	if votes < 0 {
 		return -1
@@ -301,19 +307,18 @@ func loopHandedness(f curvedFace, r trimRegion) float64 {
 }
 
 // materialSideVotes counts, over one projected loop ring, the edges whose LEFT side holds the face's
-// material less those whose right side does. The probe steps a quarter of the edge's own length, so it
-// scales with the sampling and reads no absolute distance; an edge whose two sides answer alike (both
+// material less those whose right side does. The probe steps a quarter of the edge's own ARC LENGTH, so
+// it scales with the sampling and reads no absolute distance; an edge whose two sides answer alike (both
 // in, both out — a step across a thin neck) abstains.
-func materialSideVotes(ring []math.Point2, r trimRegion) int {
+func materialSideVotes(s geom.Surface, ring []math.Point2, r trimRegion) int {
 	votes := 0
 	for _, i := range ringVoteStations(len(ring)) {
 		a, b := ring[i-1], ring[i]
-		d := a.VectorTo(b)
-		if float64(d.Length()) == 0 {
+		mid := a.TranslateBy(a.VectorTo(b).Scale(0.5))
+		left, ok := quarterArcLeftOf(s, mid, a.VectorTo(b))
+		if !ok {
 			continue
 		}
-		mid := a.TranslateBy(d.Scale(0.5))
-		left := math.V2(-float64(d.Y)/4, float64(d.X)/4)
 		switch inLeft, inRight := r.contains(mid.TranslateBy(left)), r.contains(mid.TranslateBy(left.Scale(-1))); {
 		case inLeft && !inRight:
 			votes++
@@ -322,6 +327,34 @@ func materialSideVotes(ring []math.Point2, r trimRegion) int {
 		}
 	}
 	return votes
+}
+
+// quarterArcLeftOf is the (u, v) offset that steps a quarter of the segment's own ARC LENGTH to the left
+// of its travel, seen along the chart normal S_u×S_v. ok=false for a degenerate segment or a chart with
+// no local frame (a pole), which names no direction.
+//
+// A quarter turn in (u, v) — the offset this used to take — is "left" only on a metrically ISOTROPIC
+// chart. On a cylinder u is an angle and v a length, so the same numeric step is R·du one way and dv the
+// other: at a 30 µm bore radius a rim segment's du/4 ≈ 0.05 lands far outside a chart 6e-5 tall, every
+// rim station abstained, and the seam stations decided the vote the wrong way — the drilled plate's bore
+// integrated as ADDED at 1e-4 and 1e-3 scale (Oblikovati/Oblikovati#3512, the #1610 scale sweep). The
+// direction is therefore taken in SPACE, as N × T, and mapped back through the first fundamental form,
+// which is the chart-agnostic statement of the same question. On an orthonormal chart (a plane) E = G =
+// 1, F = 0 and |N| = 1, so it reduces to the quarter turn it replaces.
+func quarterArcLeftOf(s geom.Surface, at math.Point2, d math.Vector2) (math.Vector2, bool) {
+	pu, pv := s.DerivativesAt(float64(at.X), float64(at.Y))
+	tangent := pu.Scale(d.X).Add(pv.Scale(d.Y))
+	e, f, g := pu.Dot(pu), pu.Dot(pv), pv.Dot(pv)
+	det := float64(e*g - f*f)
+	normal := pu.Cross(pv)
+	scale := 4 * float64(normal.Length())
+	if det <= 0 || scale == 0 || float64(tangent.Length()) == 0 {
+		return math.Vector2{}, false
+	}
+	left := normal.Cross(tangent) // ⊥ to the travel, in the tangent plane, of length |N|·|T|
+	du := float64(g*left.Dot(pu)-f*left.Dot(pv)) / det
+	dv := float64(e*left.Dot(pv)-f*left.Dot(pu)) / det
+	return math.V2(math.Scalar(du/scale), math.Scalar(dv/scale)), true
 }
 
 // ringVoteStations picks the edges that vote: every edge of a short ring, and materialSideStations
