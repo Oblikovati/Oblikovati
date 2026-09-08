@@ -2933,3 +2933,84 @@ area, and `TestEveryChartedFaceGainsAreaUnderRefinement` asserts it on every cha
 | `recognizers` | 12, unmoved | `lensCorridorOutrunsTheSampling` is a CONDITIONING gate inside `twoRimHoledTrimOf`, not a bespoke shape; the registry counts shapes |
 | `fallback-sites` | 26, unmoved | no `diag.Code` added or removed |
 | `geomSwitchDebt["kernel/ops/tessellate"]` | 45, unmoved | same |
+
+### Stage 5, fourth slice: the cocylindrical wall merge (2026-09-08)
+
+Two kept faces of one boolean result that lie on ONE surface and share a boundary are ONE face. The
+splice that shipped with stage 4 merged them only across a whole shared LOOP or exactly ONE whole
+shared edge, and the section above recorded the case it left behind — a D-profile prism seated on a
+cylinder of its own radius — with this reading:
+
+> Their common boundary is part of the cylinder's rim, not a whole edge of it, and
+> `mergeCoincidentFaces` merges only a whole shared boundary. Splicing a partial one needs more than
+> cutting the edge at the run's ends: the two faces' chart SEAMS meet inside the run being dissolved,
+> so the merged loop has to fuse those too.
+
+**That reading was wrong, and it is why the earlier attempt was reverted.** Measured on the pair the
+merge actually sees — before the stitch, where `mergeCoincidentFaces` runs — the host's wall is a FULL
+band whose top rim is ONE closed circle, and the boss's wall is a bare arc band. So the run is a whole
+edge on the boss's side and part of an edge on the host's, which no edge-to-edge pairing can match.
+Cutting each side at the OTHER's vertices — which the stitch does downstream anyway, and which is the
+whole of the "partial boundary" problem — makes it whole on both. Cut first, and the run is **two**
+whole edges, because the host's own seam ruling splits it. The thing to generalise was never a partial
+splice; it was the assumption that the shared boundary is ONE edge.
+
+**What the merge is now.** Dispatch is unchanged: the pair is decided by `geom.SurfacesCoincide` — the
+same "one surface" answer the radial sew makes (ADR-0058) — plus equal sense. Then:
+
+1. `splitAtSharedRunEnds` cuts each face's boundary at the other's vertices that fall inside a run the
+   two WALK together, so a vertex that merely lands on the other's curve splits nothing.
+2. `sharedEdgeTwins` pairs the shared edges one to one; an edge that would take two partners is a
+   boundary subdivided differently on the two sides, and declines.
+3. The merged boundary follows each loop's own order and CROSSES at every dissolved edge into the edge
+   after its twin. No coordinate decides a successor. That matters: the point where two cocylindrical
+   walls' seams meet carries four seam ends, and a "turn left at the vertex" rule would have to pick
+   among them.
+4. `dropSeamSlits` removes what the crossing orphans — the artificial seam, walked up and straight back
+   down, dangling into the merged face's interior. A loop that is nothing but that slit disappears, and
+   what is left is the two-rim band the face is.
+5. The merged face keeps a's lineage and carries every reference key either parent resolved, and its
+   chart is the one its FUSED loops determine (`faceChart`, ADR-0063) — the union of the two trims in
+   the covering space, on the branch `loopToUV` unwraps the first loop onto. A pair whose fused loops
+   determine no chart is a named decline, `CodeCocylindricalMergeUndecided`, not a chart nobody
+   verified. `fallback-sites` rises 26 → 27 for it: a degradation nothing reported before.
+
+**A defect this needed, fixed at its source.** `curveParamWithin` inverted a point and compared the
+parameter with the span directly. `CurveParamAt` answers inside the curve's own domain, so a span
+running UP TO that domain's end — exactly what a closed rim split at another face's vertices gives —
+never matched at its own end: the point comes back as the domain's START, a whole period away.
+`paramOnSpanBranch` places the parameter on the branch the span lives on, for a closed curve only. It
+is the whole-turn rule this ADR already states for an azimuth, applied where the same inversion is read.
+
+**Before and after**, on the pair the section above named, plus the two rows the merge must not change
+and the negative row it must refuse:
+
+| row | before | after |
+| --- | --- | --- |
+| D-prism on a cylinder of its own radius (JOIN) | 6 faces, 2 cylinder faces | 5 faces, **1** cylinder face |
+| rod on rod, abutting cap to cap (JOIN) | 3 faces, 1 cylinder face | unchanged, now carrying its chart |
+| rod on rod, overlapping bands (JOIN) | 3 faces, 1 cylinder face | unchanged, now carrying its chart |
+| a bore continuing a bore (two CUTs) | 1 cylinder wall | unchanged |
+| two bores separated by material (two CUTs) | 2 cylinder walls | **2**, unmerged — they share no edge |
+
+Volume, `Validate` and `AchievedBoundaryTolerance` are unchanged on every row: the merge is
+combinatorial, and no coordinate moves.
+
+**Deleted:** `joinedLoops`, `spliceOnSharedEdge`, `rotatedChain`, `sharedEdgePair`, `sharedLoopPair`,
+`loopsRunTogether`, `everyEdgeRunsAlong` and brep's `loopsExcept`. The whole-loop form and the
+single-edge form are the general dissolve's ordinary cases, so they go with it rather than standing
+beside it.
+
+**One gap, named and measured rather than left to be found.** The merged wall's MESH has 4 free edges
+where the two-face body had 0, and the cause is downstream of this B-rep. The merged face is a band
+whose second rim is NOTCHED — along the host's rim at v = 6 across the boss's flat, along the boss's own
+top rim at v = 10 elsewhere, joined by two runs at ONE azimuth each. The tessellation router hands such
+a face to `twoRimHoledBandMesh`, whose `bridgeRimsAtSeam` orders each rim with `orderedRing`, a STABLE
+SORT BY AZIMUTH. A stable sort keeps a tie's input order, and the rim approaches its two same-azimuth
+runs from opposite sides, so one comes out reversed: the ring jumps rim to rim at that corner and the
+four triangles around it do not pair. Disabling that mesher is worse — the router then short-circuits at
+`IsPeriodic(u) != IsPeriodic(v)` to the flat-patch CDT, 61 free edges with the defect reported — so the
+chart-driven mesher this face wants is not reachable for a singly-periodic surface at all. Both belong
+to the chart mesher's own router. The count is pinned in
+`TestCocylindricalCapOnWallIsOneAnalyticFace` with that diagnosis beside it, so landing the router's
+fix trips the row and converts it, exactly as the face count was pinned before this slice.
