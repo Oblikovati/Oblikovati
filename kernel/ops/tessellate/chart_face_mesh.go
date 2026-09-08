@@ -71,17 +71,31 @@ func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // to remove. Either way the face is DECLINED and the router's defect reporter speaks, rather than the
 // wrong mesh shipping quietly.
 func chartMeshIsBoundedByItsRim(m *Mesh, chains []chartChain) bool {
+	extra, missing := chartRimMismatch(m, chains)
+	return m != nil && m.TriangleCount() > 0 && extra == 0 && missing == 0
+}
+
+// chartRimMismatch is the gate's own comparison, in the two numbers it decides on: how many of the
+// mesh's unpaired edges are no rim segment, and how many rim segments the mesh does not bound. (0, 0) is
+// a patch bounded by exactly its rim.
+//
+// It is the ONE place a rim is keyed. The tests read the gate through it rather than counting segments
+// their own way: a count taken on a different weld grid, or per chain instead of per face, is a
+// different question, and a corpus row that asks a different question from the gate is not asserting the
+// gate. (−1, −1) for a mesh there is nothing to compare.
+func chartRimMismatch(m *Mesh, chains []chartChain) (extra, missing int) {
 	if m == nil || m.TriangleCount() == 0 {
-		return false
+		return -1, -1
 	}
 	rim := chainSegmentKeys(chains, geom.ResolutionForPoints(m.Positions).Weld())
 	for _, e := range weldedFreeEdgeKeys(m) {
 		if !rim[e] {
-			return false // a free edge that is no rim segment
+			extra++
+			continue
 		}
 		delete(rim, e)
 	}
-	return len(rim) == 0 // every rim segment accounted for
+	return extra, len(rim)
 }
 
 // weldedFreeEdgeKeys is the mesh's unpaired edges, keyed the way a boundary segment is — so the two can

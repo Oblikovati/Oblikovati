@@ -4,6 +4,7 @@ package boolean_test
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/diag"
@@ -141,9 +142,14 @@ func TestAnUnchartedPinchedBandIsRefusedAndSaidSo(t *testing.T) {
 		if !meshReportsIgnoredTrim(mesh) {
 			t.Errorf("%v: an uncharted pinched band was meshed with no named decline: %v", op, mesh.Diagnostics)
 		}
-		// The reported fallback is the surface's WHOLE domain, a chord deficit under 394.784; the loft's
-		// own answers for these two pieces are 310.800 and 215.177, so anything near either is the sweep
-		// this row exists to refuse.
+		// The decline must say WHICH shape was refused, not just that the whole domain was used: a reader
+		// who cannot tell "nothing recognised it" from "the loft gave it up" cannot act on the report.
+		if !meshDeclineNames(mesh, "boundaries MEET") {
+			t.Errorf("%v: the decline does not name the pinch: %v", op, mesh.Diagnostics)
+		}
+		// The reported fallback is the surface's WHOLE domain — measured 392.571 mm², a chord deficit
+		// under 394.784. The loft's own answers for these two pieces are 310.800 and 215.177, so
+		// anything near either is the sweep this row exists to refuse.
 		if area := tessellate.MeshGeometryProperties(mesh).Area; area < 0.95*figureEightTorusArea {
 			t.Errorf("%v: the uncharted pinched band meshed %.5f mm² — the loft's own answer, not the "+
 				"reported whole-domain fallback (%.5f less a chord deficit)", op, area, figureEightTorusArea)
@@ -163,6 +169,16 @@ func unchartedFigureEightTorusFace(t *testing.T, op ops.PartFeatureOperation) *t
 	}
 	t.Fatalf("the figure-eight %v piece has no torus face", op)
 	return nil
+}
+
+// meshDeclineNames reports whether the discarded-trim defect's detail contains the given phrase.
+func meshDeclineNames(m *tessellate.Mesh, phrase string) bool {
+	for _, d := range m.Diagnostics {
+		if d.Code == tessellate.CodeTrimIgnoredFullDomain && strings.Contains(d.Detail, phrase) {
+			return true
+		}
+	}
+	return false
 }
 
 // meshReportsIgnoredTrim reports whether a mesh carries the discarded-trim defect at Defect severity.

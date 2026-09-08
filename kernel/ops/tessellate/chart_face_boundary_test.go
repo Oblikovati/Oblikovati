@@ -74,8 +74,10 @@ func TestALoopLiftsOntoTheChartsBranch(t *testing.T) {
 	if stdmath.Abs(c.vMin-vRim) > 1e-9 || stdmath.Abs(c.vMax-vRim) > 1e-9 { // tol:numeric
 		t.Errorf("the lifted rim spans v [%g,%g], want the constant %g", c.vMin, c.vMax, vRim)
 	}
-	if chainSegmentCount([]chartChain{c}) != len(rim) {
-		t.Errorf("chainSegmentCount = %d, want one segment per sample", chainSegmentCount([]chartChain{c}))
+	// The gate's own key set, on this chain's own weld grid: one segment per sample, the closing one
+	// included, because a wrapping chain's last point is its first continued a period along.
+	if got := len(chainSegmentKeys([]chartChain{c}, geom.ResolutionForPoints(c.p3).Weld())); got != len(rim) {
+		t.Errorf("the lifted rim keys %d segments, want one per sample (%d)", got, len(rim))
 	}
 }
 

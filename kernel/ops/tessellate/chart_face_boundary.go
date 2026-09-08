@@ -97,9 +97,10 @@ func meanChainChord(p3 []math.Point3) float64 {
 	return sum / float64(len(p3)-1)
 }
 
-// chainSegmentCount is how many boundary segments a set of chains carries an ODD number of times — the
-// number of unpaired mesh edges a correctly meshed patch bounded by them has, and so the acceptance
-// bound.
+// chainSegmentKeys is the SET of boundary segments a set of chains carries an odd number of times, keyed
+// the way the mesh's own welded edges are — the rim a correctly meshed patch must have, exactly. It is
+// read once per FACE, on the mesh's own weld grid (chartRimMismatch), never per chain: two chains of one
+// face share endpoints, and keying them on different grids would let a shared point come out as two.
 //
 // Odd, not all, because a face's boundary may walk an artificial SLIT twice: the piston head's merged
 // cocylindrical wall arrives as ONE wrapping loop of 56 points — its bottom circle (32), its notched rim
@@ -107,16 +108,6 @@ func meanChainChord(p3 []math.Point3) float64 {
 // points in opposite order; a correct patch welds them into an interior edge and bounds 54, not 56. The
 // gate read 56, declined a mesh that was right, and the wall fell to the flat-patch CDT (57.913 mm²
 // where 173.811 is the region's own area, and the body reported a 32-edge tear).
-func chainSegmentCount(chains []chartChain) int {
-	n := 0
-	for _, c := range chains {
-		n += len(chainSegmentKeys([]chartChain{c}, geom.ResolutionForPoints(c.p3).Weld()))
-	}
-	return n
-}
-
-// chainSegmentKeys is the SET of boundary segments a set of chains carries an odd number of times, keyed
-// the way the mesh's own welded edges are — the rim a correctly meshed patch must have, exactly.
 func chainSegmentKeys(chains []chartChain, grid float64) map[[2][3]int64]bool {
 	used := map[[2][3]int64]int{}
 	for _, c := range chains {

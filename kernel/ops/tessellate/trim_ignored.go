@@ -34,7 +34,7 @@ const CodeTrimIgnoredFullDomain diag.Code = "tessellate.trim-ignored-full-domain
 
 // recordIgnoredTrim flags a face whose trim the full-domain grid discarded. loops is the face's own
 // boundary-loop count: zero means the face is the whole surface and the grid is correct.
-func recordIgnoredTrim(m *Mesh, s geom.Surface, loops int) *Mesh {
+func recordIgnoredTrim(m *Mesh, s geom.Surface, loops int, refused string) *Mesh {
 	if m == nil || loops == 0 {
 		return m
 	}
@@ -42,8 +42,18 @@ func recordIgnoredTrim(m *Mesh, s geom.Surface, loops int) *Mesh {
 		Code:     CodeTrimIgnoredFullDomain,
 		Severity: diag.Defect,
 		Detail: fmt.Sprintf("a trimmed %T face bounded by %d loop(s) was meshed over the surface's whole "+
-			"domain: no mesher recognised its boundary on this surface, so the mesh covers material the face "+
-			"does not carry and omits the face's own boundary", s, loops),
+			"domain: %s, so the mesh covers material the face does not carry and omits the face's own "+
+			"boundary", s, loops, ignoredTrimCause(refused)),
 	})
 	return m
+}
+
+// ignoredTrimCause names WHY the face reached the whole domain: a mesher that recognised it and gave it
+// up on its own conditioning says which shape it could not describe, and everything else fell through
+// unrecognised. A reader who has to guess between the two cannot act on the report.
+func ignoredTrimCause(refused string) string {
+	if refused == "" {
+		return "no mesher recognised its boundary on this surface"
+	}
+	return "the mesher that recognised it refused the shape — " + refused
 }

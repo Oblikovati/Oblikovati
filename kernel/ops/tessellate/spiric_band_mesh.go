@@ -25,18 +25,22 @@ import (
 // fillet run out on a side plane at each end carries one QUARTER-tube spiric section per end, cut by two
 // different planes, and lofting between those sweeps the whole tube (measured on simple/W2, whose 0.418
 // band read 4.9146, 52% of the entire torus). Neither of those wraps, so neither reaches here.
-func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool) {
+// refused names the conditioning that stopped it, so the reporter downstream says which shape was given
+// up rather than "no mesher recognised this boundary".
+func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool, string) {
 	t, first, second := b.torus, b.first, b.second
 	m := &Mesh{}
 	loPts, hiPts := dropClosingDup(DiscretizeEdge(first, q)), dropClosingDup(DiscretizeEdge(second, q))
 	lo, hi := spiricRow(m, t, loPts), spiricRow(m, t, hiPts)
 	if len(lo.idx) < 3 || len(hi.idx) < 3 {
-		return nil, false
+		return nil, false, ""
 	}
 	loU, hiU := branchAzimuthAt(m, t, first, lo), branchAzimuthAt(m, t, second, hi)
 	vs := finerRowVs(lo, hi)
 	if bandPinches(t, loU, hiU, vs, loPts, hiPts) {
-		return nil, false // see bandPinches: a pinched band is no single sweep round the tube
+		// See bandPinches: a pinched band is no single sweep round the tube.
+		return nil, false, "its two tube-wrapping boundaries MEET, so the band is two lobes joined at a " +
+			"point and no single sweep round the tube describes it"
 	}
 	dir := bandDirection(f.Chart(), loU, hiU, vs)
 	rows := []bandRow{lo}
@@ -45,7 +49,7 @@ func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool) {
 	for i := 0; i+1 < len(rows); i++ {
 		stitchBandRows(m, rows[i], rows[i+1])
 	}
-	return m, true
+	return m, true, ""
 }
 
 // bandPinches reports whether the two boundaries TOUCH at some tube station, so the strip between them
@@ -68,9 +72,11 @@ func spiricBandMesh(f *topo.Face, b spiricTubeTrim, q Quality) (*Mesh, bool) {
 // "Touch" is an ARC LENGTH on the tube against the boundary's own weld tolerance (ADR-0042), not a bare
 // angle: the same band at a different scale must decide the same way.
 func bandPinches(t geom.Torus, loU, hiU func(float64) float64, vs []float64, loPts, hiPts []math.Point3) bool {
-	weld := geom.ResolutionForPoints(append(append([]math.Point3(nil), loPts...), hiPts...)).Sew()
+	// Sew, not Weld: the two rims are INDEPENDENT sources, so this is the tolerance that decides whether
+	// two separately computed points are the same one (ADR-0042's classification of a comparison).
+	sew := geom.ResolutionForPoints(append(append([]math.Point3(nil), loPts...), hiPts...)).Sew()
 	for _, v := range vs {
-		if stdmath.Abs(wrapToPeriod(hiU(v)-loU(v)))*tubeSweepRadius(t, v) <= weld {
+		if stdmath.Abs(wrapToPeriod(hiU(v)-loU(v)))*tubeSweepRadius(t, v) <= sew {
 			return true
 		}
 	}

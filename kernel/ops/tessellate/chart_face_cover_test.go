@@ -61,10 +61,12 @@ func TestAChartedWallIsMeshedOverItsOwnRegion(t *testing.T) {
 	if got := m.Area(); stdmath.Abs(got-want)/want > 0.02 {
 		t.Errorf("the charted wall meshes %.4f mm², want the analytic %.4f (wall minus window)", got, want)
 	}
-	// EXACTLY the rim: more means the mesh tore, fewer means it closed over its own boundary, which is
-	// what a covering of the whole surface looks like.
-	if free, rim := WeldedFreeEdgeCount(m), chainSegmentCount(chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality())); free != rim {
-		t.Errorf("the charted wall has %d unpaired edges against a %d-segment rim", free, rim)
+	// EXACTLY the rim, read through the GATE's own comparison: an unpaired edge that is no rim segment
+	// means the mesh tore, a rim segment the mesh does not bound means it closed over its own boundary —
+	// which is what a covering of the whole surface looks like.
+	if extra, missing := chartRimMismatch(m, chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality())); extra != 0 || missing != 0 {
+		t.Errorf("the charted wall has %d unpaired edges that are no rim segment and %d rim segments it "+
+			"does not bound", extra, missing)
 	}
 }
 
@@ -125,10 +127,10 @@ func chartedPlanarTriangle(t *testing.T) *topo.Face {
 func TestAFaceWithoutAChartStillReportsItsDiscardedTrim(t *testing.T) {
 	t.Parallel()
 	side, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), wallR)
-	if got := recordIgnoredTrim(&Mesh{}, side, 2); !hasCode(got, CodeTrimIgnoredFullDomain) {
+	if got := recordIgnoredTrim(&Mesh{}, side, 2, ""); !hasCode(got, CodeTrimIgnoredFullDomain) {
 		t.Error("a trimmed face meshed over the whole domain reported nothing")
 	}
-	if got := recordIgnoredTrim(&Mesh{}, side, 0); hasCode(got, CodeTrimIgnoredFullDomain) {
+	if got := recordIgnoredTrim(&Mesh{}, side, 0, ""); hasCode(got, CodeTrimIgnoredFullDomain) {
 		t.Error("an untrimmed face reported a discarded trim; the whole domain IS its region")
 	}
 }
@@ -294,5 +296,42 @@ func TestBalancingNeverExceedsTheCellCap(t *testing.T) {
 	}
 	if len(rows) < 2 {
 		t.Errorf("balancing dropped the axis entirely: %v", rows)
+	}
+}
+
+// TestTheRimIsKeyedOnceForTheWholeFace is the guard the round before this needed: the gate keys a rim
+// ONCE per face, on the MESH's own weld grid, and a test that keys it per CHAIN on per-chain grids is
+// asking a different question. The grids differ by construction — geom.ResolutionForPoints scales with
+// the points it is given, and one loop of a face spans a different extent from another — so on a
+// multi-loop face the two answers can disagree, and a corpus row built on the per-chain count would stop
+// asserting the gate that ships.
+//
+// The windowed wall is the multi-loop case: three boundary loops (two rim circles and a window) on one
+// charted face. The row asserts that the per-chain reading agrees with the gate's, so nothing can go on
+// asserting the old way without failing here, and that the face passes the gate's own comparison.
+func TestTheRimIsKeyedOnceForTheWholeFace(t *testing.T) {
+	t.Parallel()
+	f := rimBoundedWindowedWall(t, 3.0, 4.0, 3.0, 6.0)
+	s, q := f.Geometry(), DefaultQuality()
+	chains := chartBoundaryChains(f, s, mustRegion(t, f), q)
+	if len(chains) < 3 {
+		t.Fatalf("the fixture presents %d boundary chains; the row needs a multi-loop face", len(chains))
+	}
+	m, ok := chartFaceMesh(f, s, q)
+	if !ok {
+		t.Fatal("chartFaceMesh declined the charted windowed wall")
+	}
+	whole := len(chainSegmentKeys(chains, geom.ResolutionForPoints(m.Positions).Weld()))
+	perChain := 0
+	for _, c := range chains {
+		perChain += len(chainSegmentKeys([]chartChain{c}, geom.ResolutionForPoints(c.p3).Weld()))
+	}
+	if whole != perChain {
+		t.Errorf("the rim keys %d segments for the whole face and %d summed per chain — a row that counts "+
+			"per chain is not asserting the gate", whole, perChain)
+	}
+	if extra, missing := chartRimMismatch(m, chains); extra != 0 || missing != 0 {
+		t.Errorf("the windowed wall has %d unpaired edges that are no rim segment and %d rim segments it "+
+			"does not bound", extra, missing)
 	}
 }

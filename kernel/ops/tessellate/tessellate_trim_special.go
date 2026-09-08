@@ -23,31 +23,37 @@ import (
 // classifyCurvedTrim named, and hands it that classification's own recognition rather than making it
 // read the face again; if the builder declines on its own conditioning the face demotes to the generic
 // path rather than to a second special case.
-func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
+// refused, when it declines, names WHY if a mesher recognised the face and gave it up on its own
+// conditioning — so the reporter at the end of the router says more than "nothing recognised it".
+func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (m *Mesh, ok bool, refused string) {
 	t := classifyCurvedTrim(f, s, outer3D, holes3D, q)
 	switch t.kind {
 	case kindConeApexFan:
-		return apexFan(t.cone), true
+		return apexFan(t.cone), true, ""
 	case kindSphereCapFan:
-		return buildSphereCap(t.cap.sph, t.cap.rim, t.cap.axis, q), true
+		return buildSphereCap(t.cap.sph, t.cap.rim, t.cap.axis, q), true, ""
 	case kindSphereZoneBand:
-		return SphereZoneBandFan(t.belt, q), true
+		return SphereZoneBandFan(t.belt, q), true, ""
 	case kindSpherePatch:
-		return SpherePatchMesh(t.patch, outer3D, holes3D, q)
+		return withNoRefusal(SpherePatchMesh(t.patch, outer3D, holes3D, q))
 	case kindRuledBandLoft:
-		return saddleBandLoftMesh(f, s, q)
+		return withNoRefusal(saddleBandLoftMesh(f, s, q))
 	case kindSpiricBand:
 		return spiricBandMesh(f, t.tube, q)
 	case kindTwoRimHoledBand:
-		return twoRimHoledBandMesh(f.Chart(), s, outer3D, t.holed, q)
+		return withNoRefusal(twoRimHoledBandMesh(f.Chart(), s, outer3D, t.holed, q))
 	case kindWedgeBand:
-		return wedgeBandLoftMesh(t.wedge), true
+		return wedgeBandLoftMesh(t.wedge), true, ""
 	default:
 		// kindChart meshes the region the face itself records; kindUncharted records none, so the
 		// same call declines and the face falls through to the generic (u,v) trim path.
-		return chartFaceMesh(f, s, q)
+		return withNoRefusal(chartFaceMesh(f, s, q))
 	}
 }
+
+// withNoRefusal adapts a mesher that cannot refuse on conditioning to the arm's three-value answer: it
+// either builds the face or was never the right mesher for it, and neither is a shape it gave up on.
+func withNoRefusal(m *Mesh, ok bool) (*Mesh, bool, string) { return m, ok, "" }
 
 // apexFan builds the apex→rim triangle fan for a cone (rim in path order, apex excluded), each
 // triangle wound to agree with the cone's outward normal — a reversed face then flips it. A CLOSED rim
