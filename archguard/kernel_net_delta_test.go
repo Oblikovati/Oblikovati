@@ -202,6 +202,11 @@ func TestKernelNetDelta(t *testing.T) {
 // is how "11 → 8" first got written here. Every name below must be a function declared in
 // kernel/ops/tessellate and every key must be a case of specialCurvedMesh's switch; the test checks
 // both, so a recognizer cannot be renamed or dropped without moving this number.
+//
+// It is a READABLE registry, not the count's source: the names are derived from classifyCurvedTrim's
+// own reads (recognizer_derivation_test.go) and this table must equal that derivation name for name,
+// so a fourth rim form, a second cone topology or a new gate inside an arm fails the build until it is
+// written down here.
 var curvedTrimRecognizers = map[string][]string{
 	"kindConeApexFan":     {"coneApexTrimOf", "faceIsConeApexCap"},
 	"kindSphereCapFan":    {"planarCircleCapRim", "poleSeamedCapRim", "multiArcSeamCapRim"},
@@ -218,14 +223,16 @@ const curvedTrimSwitch = "kernel/ops/tessellate/tessellate_trim_special.go:speci
 
 // countRecognizers counts the entries of the ordered dispatch tables plus the shape recognizers behind
 // the classification arms that replaced them — the count "generality over special cases" is measured by.
+//
+// The classification's share is DERIVED from its source (derivedRecognizers, recognizer_derivation_test.go),
+// not read off the registry: the registry says which arm each recognizer stands behind and is asserted
+// equal to the derivation, so a recognizer added inside an arm moves this number whether or not anybody
+// remembered to register it (final fix wave, finding 6).
 func countRecognizers(t *testing.T) int {
 	t.Helper()
 	assertCurvedTrimArmsMatchSwitch(t)
 	assertRecognizersAreDeclared(t)
-	n := countLadderEntries(t)
-	for _, names := range curvedTrimRecognizers {
-		n += len(names)
-	}
+	n := countLadderEntries(t) + len(derivedRecognizers(t))
 	if n == 0 {
 		t.Fatal("counted no recognizers — the dispatch tables moved; update dispatchLadders/curvedTrimRecognizers")
 	}

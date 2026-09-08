@@ -4144,3 +4144,35 @@ over a marched section) and answers false for a value that has no identity: such
 per recovered piece rather than panicking, and a polyline is never a seam. `TestSameCurveObjectNeverPanics`
 covers each kind. Net delta: no new tolerance, recognizer, geometry-kind assertion or diag code; one
 field on a private struct.
+
+### Final fix wave, finding 6 — the recognizer count is derived from the classification's source (2026-09-08)
+
+`curvedTrimRecognizers` was a hand-written registry checked only against the switch's case names and
+"each name is still declared". A fourth sphere rim form, a second cone topology inside `coneApexTrimOf`,
+or a new recogniser gate inside an existing arm moved `recognizers` by zero — the three events the
+ratchet exists to catch.
+
+The count is now derived (`archguard/recognizer_derivation_test.go`). Starting at `classifyCurvedTrim`,
+a recogniser is a package function the classification READS for a shape verdict, found by syntactic
+shape — a payload gate `if v, ok := f(…); ok`, a boolean gate `if f(…)`, an inventory read `v, ok := f(…)`
+whose `ok` is never `!ok`-guarded, the positive operands of a returned `||`/`&&` (a negated call is a
+guard), and a `case …: return f(…)` — and followed only when the callee is a VERDICT function, declared to
+return `bool` or `(<…Trim payload>, bool)`. That contract is what every arm already keeps, and it is what
+stops the walk at a geometric helper: `capAxis` returns a vector, `chooseSphereChart` a chart,
+`splitWrappingHoles` two slices, and the first cut of the derivation followed all three into the mesher.
+A function that reads nothing is a leaf and counts once; one that reads others counts itself too only
+when it owns a verdict — a returned bool built from a call that is no read, `coneApexTrimOf`'s
+`len(rim) != len(outer3D)` — so `classifySphereTrim`, `sphereCapTrimOf`, `sphereCapRimOfForm` and
+`ruledTwoRimBandHolds` are dispatchers and count nothing. The derivation yields the twelve names the
+registry holds, and the registry is now asserted equal to it NAME for name
+(`TestTheRecognizerRegistryEqualsItsDerivation`); the sphere rim forms are asserted as one inventory
+across the `sphereCapRimForm` constants, `sphereCapRimOfForm`'s cases and the registry
+(`TestTheSphereRimFormsAreOneInventory`); and `countRecognizers` reads the derivation, not the table.
+
+Proven to trip, in a throwaway that was reverted: a fourth rim form (`rimFormFake` + its case + its
+function), a second cone topology (`if faceIsConeStub(f)` inside `coneApexTrimOf`) and a gate inside
+`wedgeBandTrimOf` (`if w, ok := fakeWedgeTrimOf(f); ok`) all appear in the derived set, the inventory
+reads 4 constants / 4 cases / 3 registered, and the pin reports `recognizers: 12 → 14`. The name-set
+equality is the guard, not the count: the wedge gate turned `wedgeBandTrimOf` into a dispatcher (its own
+verdict is a literal after guards), so that event alone would leave the COUNT at 12 while the names
+differ. `recognizers` stays 12; nothing in the kernel changed.
