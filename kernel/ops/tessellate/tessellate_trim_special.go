@@ -17,9 +17,11 @@ import (
 // in their own tessellate_*.go files.
 
 // specialCurvedMesh meshes a curved face whose trim is one of the surface-specific shapes the generic
-// (u,v) path mis-meshes, or returns (nil,false) for every other trim so the caller falls through to
-// toUVLoops. It selects ONE mesher — the kind classifyCurvedTrim names — and if that mesher declines
-// on its own conditioning, the face demotes to the generic path rather than to a second special case.
+// (u,v) path mis-meshes, or a face that carries its own parametric trim (kindChart, meshed from the
+// region ADR-0063 records). It returns (nil,false) only for kindUncharted — a face with no chart and
+// no special shape — so the caller falls through to toUVLoops. It selects ONE mesher, the kind
+// classifyCurvedTrim names, and if that mesher declines on its own conditioning the face demotes to
+// the generic path rather than to a second special case.
 func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
 	switch classifyCurvedTrim(f, s, outer3D, holes3D, q) {
 	case kindConeApexFan:
@@ -38,8 +40,11 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 		return twoRimHoledBandMesh(f.Chart(), s, outer3D, holes3D, q)
 	case kindWedgeBand:
 		return wedgeBandLoftMesh(f, s, q)
+	default:
+		// kindChart meshes the region the face itself records; kindUncharted records none, so the
+		// same call declines and the face falls through to the generic (u,v) trim path.
+		return chartFaceMesh(f, s, q)
 	}
-	return nil, false // kindChart and kindUncharted: the generic (u,v) trim path
 }
 
 // coneApexMesh meshes a cone face that closes to its apex — a closed conic apex CAP (a drill point or

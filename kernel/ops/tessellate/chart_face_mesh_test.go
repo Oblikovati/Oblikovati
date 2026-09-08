@@ -128,10 +128,13 @@ func chartCorpus() []chartCorpusRow {
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Join) }},
 		{name: "RODB− rod − ball", want: 12.555898, pinnedRel: 0.0902, pinWindow: 0.005,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Cut) }},
-		// RODB∩ reaches the chart mesher on neither face — both are small single-loop patches on the
-		// ordinary (u,v) path, chorded flat across a lens 0.1 deep. Pinned so the pair's third
-		// operation cannot move, in either direction, without saying so.
-		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.3020, pinWindow: 0.005,
+		// RODB∩'s two faces are small single-loop patches chorded flat across a lens 0.1 deep. One of
+		// them — the sphere's — carries a chart, and since the curved-trim classification names such a
+		// face kindChart it is now meshed from that chart: 0.30200 → 0.27410 (measured, 60 triangles,
+		// 0 free edges). The other is the rod wall's uncharted patch and still runs flat, which is what
+		// the remaining 27% is. Pinned so the pair's third operation cannot move, in either direction,
+		// without saying so.
+		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.2741, pinWindow: 0.005,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Intersect) }},
 	}
 }

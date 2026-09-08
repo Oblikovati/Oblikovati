@@ -22,8 +22,8 @@ import (
 // the mechanism.
 //
 // The classification is TOTAL: a face no special kind claims is named too — kindChart when it carries
-// the parametric trim ADR-0063 records, kindUncharted when it does not. Both keep the generic (u,v)
-// trim path, whose own end (chartedTrimMesh) makes that same split.
+// the parametric trim ADR-0063 records, so the chart-driven mesher meshes the face's OWN region, and
+// kindUncharted when it does not, which keeps the generic (u,v) trim path.
 
 // curvedTrimKind names the ONE mesher a curved face's trim selects.
 type curvedTrimKind int
@@ -32,8 +32,8 @@ const (
 	// kindUncharted is a trim no special kind claims on a face that carries no chart. It keeps the
 	// generic (u,v) trim path (iso grid, rectilinear cells, or the boundary CDT).
 	kindUncharted curvedTrimKind = iota
-	// kindChart is a trim no special kind claims on a face that DOES carry a chart, so the region the
-	// face records is available to mesh from.
+	// kindChart is a trim no special kind claims on a face that DOES carry a chart: chartFaceMesh
+	// meshes the region the face records, taking its boundary points from the shared edges.
 	kindChart
 	// kindConeApexFan is a cone closing to its apex — a drill point, an oblique apex cut, or an
 	// apex-collapsed angular sector. A cone is developable, so a fan from the apex has exact area.
