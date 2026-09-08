@@ -3792,3 +3792,246 @@ and the window absorbs only the five decimals the literal is written to plus the
 FMA-contracting toolchain gives an area sum — four decades above that, and a factor of 2.6 below the
 nearest reading it must exclude. Proven to fire: at k = 1.0 it reports "the complement's torus face
 meshes 263.42317 mm², off its pin of 263.55487 ± 0.05".
+
+### The retirement, measured at close (2026-09-08)
+
+ADR-0061 set out to retire the CSG fallback: the triangle-soup BSP and the exact mesh arrangement that
+stood behind the analytic boolean, and everything that existed only to keep them fed. The doors are
+shut (`faceted-entry-sites` 0), the room is gone (`faceted-engine-files` 0), and the ladder that chose
+between them is a classification. This section is the measurement at close: every corpus row rebuilt
+through `ops.Boolean` on this HEAD, the archguard pins' trajectory from the wave base `c1e8f2a8`, and
+the list of what the kernel still refuses or still serves from a bespoke arm.
+
+Nothing below is a new claim. It is what the shipped code does today, measured in one pass by a
+throwaway harness that was deleted before this commit — every number is reproducible from the corpus
+tests named beside it.
+
+#### The corpus at close
+
+Built with `ops.BooleanWithDiagnostics`, validated with `ops.Validate`, meshed with
+`tessellate.TessellateBody` at `ops.DefaultQuality()` and `ops.PropertyQuality()`, integrated with
+`query.AnalyticGeometryProperties` (the analytic B-rep, not the mesh) and
+`tessellate.MeshGeometryProperties`. "Oracle" is the value the row was certified against by the task
+that landed it; where a row has no independent closed form the analytic integrator's own value is shown
+and the certification is the Requicha identity plus the jittered membership integral in
+`boolean_torus_skew_test.go`.
+
+| row | outcome | Validate v/c/m/solid | analytic V | oracle | rel | free @D | free @P | mesh V @D | rel | diag codes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| RING ring | built | ✓/✓/✓/✓ | 222.06610 | 222.06610 | 0.0000 % | 0 | 0 | 219.22695 | 1.28 % | — |
+| RB∩ ring ∩ ball | built | ✓/✓/✓/✓ | 23.86935 | 23.86935 | 0.0000 % | 0 | 0 | 23.53639 | 1.39 % | — |
+| RB− ring − ball | built | ✓/✓/✓/✓ | 198.19675 | 198.19675 | 0.0000 % | 0 | 0 | 195.76723 | 1.23 % | — |
+| RS− ring − coaxial shaft | built | ✓/✓/✓/✓ | 203.59254 | 203.59 | 0.0012 % | 0 | 0 | 199.83714 | 1.84 % | — |
+| RD− ring − axial drill | built | ✓/✓/✓/✓ | 216.25687 | 216.26 | 0.0014 % | 0 | 0 | 213.47272 | 1.29 % | — |
+| RODB∪ rod ∪ ball | built | ✓/✓/✓/✓ | 13.07777 | 13.077910 | 0.0010 % | 0 | 0 | 12.99201 | 0.66 % | — |
+| RODB− rod − ball | built | ✓/✓/✓/✓ | 12.55418 | 12.555898 | 0.0137 % | 0 | 0 | 12.47920 | 0.61 % | — |
+| RODB∩ rod ∩ ball | built | ✓/✓/✓/✓ | 0.01219 | 0.012187 | 0.0647 % | 0 | 0 | 0.00876 | 28.10 % | — |
+| SKEW rod across ring ∪ | built | ✓/✓/✓/✓ | 241.42303 | 241.42303 | Requicha 1e-9 | 0 | 0 | 238.36236 | 1.27 % | — |
+| SKEW rod across ring − | built | ✓/✓/✓/✓ | 213.14870 | 213.14870 | Requicha 1e-9 | 0 | 0 | 210.41873 | 1.28 % | — |
+| SKEW rod across ring ∩ | built | ✓/✓/✓/✓ | 8.91740 | 8.91740 | membership 2e-3 | 0 | 0 | 8.80899 | 1.22 % | — |
+| TILT ring − tilted drill | built | ✓/✓/✓/✓ | 216.25531 | 216.25531 | Requicha 1e-9 | 0 | 0 | 213.47580 | 1.29 % | — |
+| TILT ring ∩ tilted drill | built | ✓/✓/✓/✓ | 5.81079 | 5.81079 | membership 2e-3 | 0 | 0 | 5.75447 | 0.97 % | — |
+| FAT ring − fat rod r=2 | **refused by name** | — | — | — | — | — | — | — | — | `section.conditioning-demotion`, `boolean.no-exact-curved-path` |
+| DPRISM cyl ∪ D-prism | built | ✓/✓/✓/✓ | 277.92004 | 277.92004 | 0.0000 % | 0 | 0 | 275.88981 | 0.73 % | — |
+| PISTON #2167 feature body | built | ✓/✓/✓/✓ | 277.92004 | 277.92004 | 0.0000 % | 0 | 0 | 275.53673 | 0.86 % | — |
+| HALF ring − half space | built | ✓/✓/✓/✓ | 203.90487 | 203.90487 | — | 0 | 0 | 201.25781 | 1.30 % | — |
+| FIG8− torus − y>3 | built | ✓/✓/✓/✓ | declined | 279.89786 (= torus − ∩) | — | **2** | 0 | 276.07755 | 1.36 % | `tessellate.mesh-not-watertight` |
+| FIG8∩ torus ∩ y>3 | built | ✓/✓/✓/✓ | 114.88632 | 114.88632 | — | 0 | 0 | 112.52207 | 2.06 % | — |
+| NPX near-pinch crossing rods ∪ | built | ✓/✓/✓/✓ | 534.59058 | 534.59058 | — | 0 | 0 | 527.08218 | 1.40 % | `tessellate.cap-saturated` |
+| SUBRES ring − drill r=1e-10 | **refused by name** | — | — | — | — | — | — | — | — | `boolean.sub-resolution-tool` |
+| NONTERM ring − drill r=1.585e-7 | **refused by name**, terminates | — | — | — | — | — | — | — | — | `arrangement.unconverged`, `boolean.no-exact-curved-path` |
+
+Reading the table:
+
+- **Every built row is a valid, closed, manifold solid**, and every one whose analytic integrator claims
+  it lands on its oracle to at worst 6.5e-4 relative. The B-rep is exact; the mesh error is a chord
+  deficit, 0.6–2.1 % at `DefaultQuality` on every row but one.
+- **SKEW is no longer a refusal.** The constraints table this wave started from recorded "rod ACROSS ring"
+  as refused by name; the torus's second harmonic (stage 5, third slice) builds all three operations, and
+  the named-refusal fixtures moved to the pair that genuinely has no closed form — two interlocked TORI.
+- **RODB∩ is the one row whose mesh is not a chord deficit** (28.10 %, pinned two-sided at 0.2810 ± 0.005
+  in `chart_face_mesh_test.go`). Its two faces are lens patches 0.1 mm deep on a body of 0.012 mm³; the
+  rod's wall is charted, the ball's face classifies as `kindSpherePatch` and chords flat across the lens.
+  It is a faceting bound on the sphere-patch arm, not a wrong body: the analytic volume is 0.065 % off.
+- **FIG8− is the one row that tears, and it says so.** At `DefaultQuality` the cut piece meshes with 2
+  free edges between a planar lid and the torus face, and `CodeMeshNotWatertight` names both faces. At
+  `PropertyQuality` it is watertight (279.846 against 279.898, 0.019 %). This is NEW in this wave: at
+  `c1e8f2a8` the same body meshed 0 / 0 free edges — but it meshed the WRONG surface, its torus face
+  covering the pinch twice at 317.639 mm² where the analytic share is 283.100, so that the two figure-
+  eight pieces summed to 527.88 mm² of a torus whose whole area is 394.78. At HEAD they sum to 394.75.
+  A visible, named 2-edge crack at the coarse faceting replaced an invisible 133 mm² of doubled surface
+  across the pair (+34.5 on the cut piece, +98.6 on the intersect piece).
+  It is a defect and it is listed below, not written off.
+- **The analytic integrator declines the FIG8 cut piece** — pre-existing, measured identically at
+  `c1e8f2a8` — so that row's oracle is the complement identity rather than a direct integral.
+- **The three refusals are refusals**, not hangs and not wrong bodies. The sub-resolution row names the
+  offending thickness and the floor ("cut tool is 2e-10 thick, below this model's resolution 2.005e-8");
+  the non-terminating row returns instead of hanging, naming `arrangement.unconverged` and which of the
+  four arranging splits declined; the fat rod names the conditioning demotion that lost the closed form.
+
+#### The archguard pins from `c1e8f2a8` to HEAD
+
+`TestKernelNetDelta` fails on ANY move, up or down, so every line below is a re-pin with a dated
+reason in the pin file. These are the moves of THIS wave only; the earlier stages' moves are recorded
+in the sections above.
+
+| ratchet | `c1e8f2a8` | HEAD | net |
+| --- | --- | --- | --- |
+| tolerance-constants | 214 | **214** | 0 |
+| type-assertions | 692 | **684** | −8 |
+| recognizers | 11 | **12** | +1 |
+| fallback-sites | 25 | **32** | +7 |
+| `dispatchLadders` (registry size) | 1 | **0** | −1 |
+| `faceted-entry-sites` | 0 | **0** | 0 |
+| `faceted-engine-files` | 0 | **0** | 0 |
+| `mixed-decline-returns` | 3 | **3** | 0 |
+
+The moves, one line each:
+
+- **tolerance-constants 214 → 214.** No move, and the `toleranceDebt` map is byte-identical to the
+  base's — not one file's count changed. The constants this wave DID add all carry a `// tol:`
+  annotation, which is what clears a line out of `toleranceDebt`, so none of them is debt — but an
+  annotation is not a proof. Only two are swept: `chartBoundaryClearance` (twelve values, per body, per
+  faceting) and `nearPinchCorridorChords` (a measured plateau with a two-directional corpus proof).
+  `chartContourIncidence` has an annotation and a resolution argument but no sweep, and
+  `chartNodeClearance` (0.3) has neither. Both are open items below (G16, G17).
+- **type-assertions 692 → 691** (stage 5, chart-driven mesher): a FALL — the curved-face router's
+  `s.(geom.Torus)` went with `torusComplementMesh`. An outerless face on any periodic surface is now
+  meshed from the chart it carries, so the router asks what the FACE records, not what its surface is.
+- **type-assertions 691 → 684** (stage 5, the classification): a FALL of 7 — the seven geometry-kind
+  assertions the curved-trim classification collapsed.
+- **recognizers 11 → 12** (stage 5, the classification): a RISE that is a CORRECTION OF THE MEASUREMENT,
+  not new code. The old 11 counted ladder ENTRIES, and an entry was never one recognizer: entry 0
+  recognized TWO cone shapes, and three entries read three RIM FORMS into one `buildSphereCap`. Counting
+  the shape recognizers behind the arms (`curvedTrimRecognizers`) gives 12 before this slice and 12
+  after. `specialCurvedMeshers` is gone and its eleven entries are eight classification arms, but no
+  bespoke SHAPE was deleted — what was deleted is builder duplication.
+- **fallback-sites 25 → 26** (stage 5, third slice): `CodeSectionConditioningDemotion`. The analytic
+  intersector refused two different things with one anonymous `ok=false` — "no bucket claims this pair",
+  which is the ordinary case, and a CONDITIONING demotion, which is a fallback. Only the second is a
+  degradation and it was indistinguishable from the first.
+- **fallback-sites 26 → 27** (stage 5, cocylindrical wall merge): `CodeCocylindricalMergeUndecided`.
+  Where the fused loops do not determine the merged face's trim, ADR-0063 refuses to guess a side — and
+  the pair was then left as two faces with nothing said.
+- **fallback-sites 27 → 28** (same slice, review round 1): `CodeMeshNotWatertight`. Every per-face mesher
+  certified its own patch and nothing certified the BODY, so a crack between two correctly-meshed faces
+  was invisible until somebody counted free edges.
+- **fallback-sites 28 → 30** (stage 6): `CodeBooleanSubResolutionTool`, +2 not +1 — the counter counts
+  every `diag.Code` ValueSpec under `kernel/`, and the ops facade re-exports the name. One new
+  degradation, two declarations of it: an operand thinner than the model's seam weld used to come back
+  as the target UNCHANGED with `err=nil` and nothing recorded.
+- **fallback-sites 30 → 31** (stage 6, review round 2): `CodeArrangementUnconverged`. A degradation that
+  COULD not be reported before: the planar T-junction pass subdivided "until stable" and, at the scale of
+  its absolute 1e-7 tolerance, never became stable — the operation hung, which is neither a refusal nor a
+  wrong body.
+- **fallback-sites 31 → 32** (stage 6, review round 3): `CodeArrangementDroppedCells`. Bounding the
+  T-junction pass made `brep.Arrange` able to return NO cells, and both production callers read that as
+  an ordinary empty answer. The unchecked entry is deleted and both routes now say so.
+- **`dispatchLadders` 1 → 0.** The tessellator's 11-entry `specialCurvedMeshers` (#3409) is replaced by
+  `classifyCurvedTrim`, a classification whose predicates are proved mutually exclusive. Its registry
+  entry is REMOVED rather than kept at zero — the registry may only shrink — and there is no first-fit
+  ladder left in the kernel to register.
+- **A new guard was added, not a pin moved**: `TestNoUnprovenPayloadGatedChains` (`archguard/`), which
+  registers every consecutive payload-gated recogniser chain in `kernel/ops/tessellate` with what makes
+  it not a ladder. It exists because the first attempt at retiring the tessellator's ladder turned the
+  sphere family into exactly that shape and nothing saw it. Three entries today: one proved disjoint,
+  two registered as DEBT (#3410, #3411).
+- **The three `fallbackDebt` rows did not move**, and two of them are floors, not targets:
+  `faceted-entry-sites` and `faceted-engine-files` were driven to 0 by stages 6 and 7 before this wave
+  began and the guard now keeps an engine from coming back unnoticed. `mixed-decline-returns` stays at 3
+  and is not going to zero — it counts the three sites at which the general pipeline REFUSES by name,
+  which is where the kernel states its boundary.
+
+#### What is still refused, and what is still bespoke
+
+Each line names the guard that keeps it visible. Nothing here is silent.
+
+Refused by name, correctly — the kernel's stated boundary:
+
+- **G1.** **Torus × torus** — neither side supplies an implicit quadric, so no closed-form section exists.
+  Guard: `TestATorusPairIsRefusedByName`, `TestCurvedImprintTorusPairDefers`.
+- **G2.** **A conditioning demotion on the skew reduction** (the fat rod, r > tube radius: four independent
+  full-period branches the second-harmonic reduction does not carry). Guard:
+  `TestALaneConditioningDemotionIsReported` + `CodeSectionConditioningDemotion`.
+- **G3.** **A sub-resolution operand** (material thinner than the model's seam weld). Guard:
+  `TestASubResolutionDrillIsRefusedByName`, `CodeBooleanSubResolutionTool`.
+- **G4.** **A non-convergent planar T-junction subdivision** (r ≈ 1.585e-7 through the RING). Guard:
+  `TestTheNonConvergentDrillTerminatesAndIsNamed`, `CodeArrangementUnconverged`,
+  `TestEveryArrangingSplitReportsANonConvergentArrangement`.
+- **G5.** **An arrangement that returns no cells.** Guard: `CodeArrangementDroppedCells`.
+- **G6.** **A cocylindrical merge whose fused loops do not determine the merged trim** — ADR-0063 refuses to
+  guess a side. Guard: `CodeCocylindricalMergeUndecided`.
+- **G7.** **An uncharted pinching band offered to the loft.** Guard: `bandPinches` +
+  `TestAnUnchartedPinchedBandIsRefusedAndSaidSo`.
+
+Capability gaps — refused rather than shipped wrong, but a real hole:
+
+- **G8.** **The torus bore from ~1.6e-10 to ~6.3e-3 of the pair's extent cannot be built.** Measured on the RING
+  pair: 1.6e-10…6.3e-5 of extent is refused by name (`no-exact-curved-path`); 6.3e-5…6.3e-3 builds a
+  VALID body of materially wrong volume and is caught only by the post-hoc Requicha bracket
+  (`analytic-volume-reject`) — a smoke test, not a proof. A 1 mm bore in a 100 mm ring is in that band.
+  It was deliberately NOT relabelled a resolution policy, which would have hidden it. Guard:
+  `TestASmallBoreIsRefusedNotShippedWrong` (4 rows), `boolean_drill_sweep_test.go`.
+- **G9.** **`tjTol` is an absolute 1e-7 read as BOTH a length and a parameter.** It is why the row above exists
+  and why the T-junction pass had to be bounded rather than fixed; a model-relative `geom.Resolution`
+  there would likely shrink G8. Guard: the bound (`brep.tjSplitBudget`) and its named decline. Note what
+  the tolerance ratchet does NOT do here: `tjTol` carries `// tol:calibrated`, which is exactly what
+  clears a line out of `toleranceDebt`, so a length tolerance annotated as dimensionless is invisible to
+  the guard — the one move `toleranceDebt`'s own doc comment tells you not to make.
+- **G10.** **The FIG8 cut piece meshes with 2 free edges at `DefaultQuality`** (0 at `PropertyQuality`), between
+  a planar lid and the torus face at the lemniscate pinch. New in this wave — the base meshed it closed
+  but wrong. Guard: `CodeMeshNotWatertight` fires on it, and
+  `TestTheFigureEightTorusBandsPartitionTheTorus` holds both pieces' faces to their analytic share.
+- **G11.** **The near-pinch crossing rods record `tessellate.cap-saturated` at `PropertyQuality`** — the corridor
+  between two lens windows is narrower than the boundary's own chords. Guard:
+  `TestTheHarvestCarriesEveryCodeTheFaceMeshesDo` (which requires the code to REACH the body harvest).
+
+Still bespoke — arms the general chart mesher has not absorbed:
+
+- **G12.** **`kindTwoRimHoledBand` keeps 8 corpus faces (near-pinch) and one uncharted-band configuration.**
+  Guard: `TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe`, which fails in BOTH directions (ratio 40:
+  the saddle band goes to the arm; ratio 0.001: nothing does).
+- **G13.** **`kindSpiricBand` keeps the `occtparity` J3 and A4 hosts**, whose tori record chart = 0 so
+  `chartFaceMesh` declines them outright. Deleting the arm was implemented and measured: J3 and A4 drift.
+  Guard: the `occtparity` cluster itself.
+- **G14.** **Twelve shape recognizers survive** behind eight classification arms (`curvedTrimRecognizers`).
+  The classification is proved disjoint; the recognizers are not deleted. Guard: `recognizers` = 12,
+  `TestCurvedTrimKindsAreMutuallyExclusive`, `TestTheClassificationCorpusReachesEveryArm`.
+- **G15.** **Two payload-gated chains remain in `kernel/ops/tessellate`** as registered DEBT: `splineFaceMesh`
+  (#3410) and `meshSeamCrossingFace` (#3411). Guard: `TestNoUnprovenPayloadGatedChains` — the registry
+  may only shrink.
+
+Unswept constants and ungated code:
+
+- **G16.** **`chartContourIncidence` has no sweep.** It has a resolution argument (the stored contour is
+  `math.Point2`) and three certifications an ungated retry regressed, but not the per-body table
+  `chartBoundaryClearance` now carries.
+- **G17.** **`chartNodeClearance` (0.3) has neither a `// tol:` annotation nor a sweep.**
+- **G18.** **`chartBoundaryClearance`'s failure edge rests on ONE face** — the complement's lemniscate self-touch
+  at `PropertyQuality`. A second self-touching boundary in the corpus would be worth more than another
+  value of k. Guard: the two-sided pin `263.55487 ± 0.05`, proven to fire at k = 1.0.
+- **G19.** **The `head/` module is outside every gate** in this wave: `go test ./...` at the repo root does not
+  reach it, and neither does the lint run. Nothing in this wave touched it, but that is an assertion
+  about the diff, not a measurement.
+
+Accepted product decisions, recorded so they are not mistaken for oversights:
+
+- **G20.** **An imported or adopted invalid body is REPORTED, not sickened.** `H3` and `H5` in the blend-parity
+  corpus import from STEP with 3 boundary edges each — valid=false, closed=false — and refusing every
+  imperfect import would block the user. The feature engine's `Validate` post-condition exempts the
+  adopt/derive family and warns instead. Guard: `TestAnAdoptedInvalidBodyIsReportedNotRefused`,
+  `TestAnAdoptedInvalidBodyDoesNotQuarantineDependents`.
+
+#### The known pre-existing failure, re-proven
+
+`model/exchange/translators/inventor` `TestMultipointDiskRebuildsAsAClosedSolid` fails at the wave base
+and at HEAD with the same number. Re-proven for this close-out in a clean worktree at `c1e8f2a8`
+(`GOWORK=off go test -count=1 ./...`, 4 m 58 s):
+
+```
+--- FAIL: TestMultipointDiskRebuildsAsAClosedSolid (140.70s)
+  multipoint_disk_test.go:70: disk volume = 9111 mm³, want 7679 ±5% (Inventor 2027)
+```
+
+It is unrelated to this ADR — a translator rebuild, not a boolean — and it is the only red row in the
+whole local gate at either end of the wave.
