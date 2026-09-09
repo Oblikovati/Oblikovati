@@ -117,10 +117,17 @@ func firstSlitPair(edges []loopEdge) (int, bool) {
 // two value Polylines ("comparing uncomparable type"), and two edges carrying equal curves are still
 // two edges. A synthesized edge (no source) is nobody's twin.
 //
-// That narrowing costs nothing, MEASURED rather than assumed (Oblikovati#3521): over ./kernel/... and
-// ./model/... it saw 2120 cyclically adjacent pairs and paired 7, and not one of the 2113 it refused
-// walks the same stretch straight back — so no re-emitted imprint run has yet needed a source edge it
-// does not carry. CodeMergeEdgeSources and CodeSeamSlitDropped keep that measurable on every run.
+// The narrowing costs nothing, MEASURED rather than assumed (Oblikovati#3521). Over ./kernel/... and
+// ./model/... this test was evaluated 2119 times and paired 7. Of the 2112 pairs it refused, exactly
+// FOUR walk the same stretch of space back — and all four are the deliberate negative fixture
+// (seamWalkedWall's twoSeams: two DIFFERENT edges carrying identical polylines), where pairing them
+// would DELETE a legitimate boundary. Over real boolean bodies the count is ZERO. So value-pairing
+// would not merely miss nothing: the one place where value and identity disagree is the place where
+// value is WRONG, and no re-emitted imprint run has yet needed a source edge it does not carry.
+//
+// That is a gate, not a claim: TestNoCorpusBodyKeepsAPairThatWalksAStretchBack fails if a corpus body
+// ever keeps such a pair, and CodeMergeEdgeSources/CodeSeamSlitDropped keep the populations countable
+// on every run.
 func isReverseTwin(a, b loopEdge) bool {
 	return a.source != nil && a.source == b.source && a.t0 == b.t1 && a.t1 == b.t0
 }

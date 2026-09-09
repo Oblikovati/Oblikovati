@@ -31,7 +31,7 @@ const CodeSeamSlitDropped diag.Code = "boolean.seam-slit-dropped"
 // only when it has something to say cannot tell a zero from a merge that never ran.
 func recordEdgeSourceCensus(rec *diag.Recorder, faces []curvedFace) {
 	if rec == nil {
-		return
+		return // not for safety — Recordf is nil-safe — but to skip the walk when nobody is listening
 	}
 	edges, sourceless := edgeSourceCounts(faces)
 	rec.Recordf(CodeMergeEdgeSources, diag.Info,
@@ -77,6 +77,8 @@ func recordSeamSlitDrop(rec *diag.Recorder, a curvedFace, dropped int) {
 	if dropped == 0 {
 		return
 	}
+	// The corpus row asserts the COUNT through this exact wording ("dropped N orphaned seam edge"),
+	// because diag.Diagnostic carries no structured payload; reword it and re-word the row with it.
 	rec.Recordf(CodeSeamSlitDropped, diag.Info,
 		"the merged %T face dropped %d orphaned seam edge(s): the dissolve left the face's own two "+
 			"traversals of one edge adjacent, and a curve walked straight back bounds nothing",

@@ -3,6 +3,7 @@
 package brep_test
 
 import (
+	"fmt"
 	stdmath "math"
 	"strings"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -52,9 +54,15 @@ func TestBossOnACocylindricalHostDropsTheOrphanedSeam(t *testing.T) {
 		t.Fatalf("union of the host and the boss standing on it: %v", err)
 	}
 	checkSolid(t, "boss on a cocylindrical host", body, bossOnHostVolume())
+	if n := len(body.Faces()); n != 5 {
+		t.Errorf("the body has %d faces, want 5 (the merged wall, the host's floor, the boss's roof, "+
+			"the planed flat, and the shoulder the boss leaves on the host's top)", n)
+	}
 	wall := theMergedCylinderWall(t, body)
 	assertOuterLoopIsTheBareRim(t, wall)
+	assertTopBoundaryIsTheBossOutline(t, wall)
 	assertNoLoopWalksAnEdgeStraightBack(t, wall)
+	assertMergedWallArea(t, wall)
 	assertMergedWallResolves(t, body, hostKey, bossKey)
 	assertSeamSlitDropWasRecorded(t, rec)
 }
@@ -125,6 +133,59 @@ func assertOuterLoopIsTheBareRim(t *testing.T, f *topo.Face) {
 		t.Errorf("the merged wall's outer loop walks a %T, want the bottom rim circle",
 			uses[0].Edge().Geometry())
 	}
+}
+
+// assertTopBoundaryIsTheBossOutline pins the SECOND boundary component edge for edge. The outer-loop
+// assertion above only says the slit left the loop it was in; this says the loop that survived is the
+// planed boss's outline and not a re-chained approximation of it — the rim arc kept whole, both
+// rulings of the plane, and the boss's own top arc, each walked the way the merged wall walks them.
+// A restructure (Oblikovati#3523) that splits the kept rim arc, drops a ruling or flips a use keeps
+// one wall, two loops, a bare outer rim and the body's volume, and would pass without this.
+func assertTopBoundaryIsTheBossOutline(t *testing.T, f *topo.Face) {
+	t.Helper()
+	uses := f.Loops()[1].EdgeUses()
+	if len(uses) != 4 {
+		t.Fatalf("the merged wall's top boundary walks %d edges, want 4 (the kept rim arc, two rulings "+
+			"of the planed flat, and the boss's top arc)", len(uses))
+	}
+	want := []string{"geom.Arc3d", "geom.LineSegment", "geom.Arc3d", "geom.LineSegment"}
+	for i, u := range uses {
+		assertUseIsReversedKind(t, i, u, want[i])
+	}
+}
+
+// assertUseIsReversedKind checks one use's curve kind and sense; every use of this loop is reversed,
+// because the merged wall's material is below its top boundary.
+func assertUseIsReversedKind(t *testing.T, i int, u *topo.EdgeUse, want string) {
+	t.Helper()
+	if got := fmt.Sprintf("%T", u.Edge().Geometry()); got != want {
+		t.Errorf("the top boundary's edge %d is a %s, want a %s", i, got, want)
+	}
+	if !u.Reversed() {
+		t.Errorf("the top boundary's edge %d is walked forward, want reversed", i)
+	}
+}
+
+// assertMergedWallArea is the per-face gate the ground rules ask for: "Result gates are per-face
+// (area, surface type, loop count) against the oracle. A whole-body volume or area match is a smoke
+// test, never a proof." The wall is the whole host cylinder plus the boss's surviving azimuth.
+func assertMergedWallArea(t *testing.T, f *topo.Face) {
+	t.Helper()
+	got, ok := query.AnalyticFaceArea(f)
+	if !ok {
+		t.Fatal("the merged wall has no analytic area; the per-face gate would be a tessellated one")
+	}
+	if want := mergedWallArea(); stdmath.Abs(got-want) > 1e-9 {
+		t.Errorf("the merged wall's area is %.9f, want %.9f", got, want)
+	}
+}
+
+// mergedWallArea is the analytic oracle for that area: the host band's whole circumference over its
+// height, plus the boss's band over the azimuth the planer left it.
+func mergedWallArea() float64 {
+	r, d := seamSlitRadius, seamSlitPlaneX
+	kept := 2*stdmath.Pi - 2*stdmath.Acos(d/r) // the azimuth the planed flat does NOT cut away
+	return 2*stdmath.Pi*r*seamSlitHostTop + kept*r*(seamSlitBossTop-seamSlitHostTop)
 }
 
 // assertNoLoopWalksAnEdgeStraightBack states the slit invariant on the RESULT: no loop may use one edge
