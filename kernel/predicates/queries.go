@@ -92,9 +92,9 @@ func SegmentPiercesTriangle(p, q, a, b, c [3]float64) bool {
 func dominantNormalAxis(a, b, c [3]float64) int {
 	ux, uy, uz := b[0]-a[0], b[1]-a[1], b[2]-a[2]
 	vx, vy, vz := c[0]-a[0], c[1]-a[1], c[2]-a[2]
-	nx := math.Abs(uy*vz - uz*vy)
-	ny := math.Abs(uz*vx - ux*vz)
-	nz := math.Abs(ux*vy - uy*vx)
+	nx := math.Abs(float64(uy*vz) - float64(uz*vy))
+	ny := math.Abs(float64(uz*vx) - float64(ux*vz))
+	nz := math.Abs(float64(ux*vy) - float64(uy*vx))
 	if nx >= ny && nx >= nz {
 		return 0
 	}
