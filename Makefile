@@ -274,6 +274,28 @@ arm64-fma: ## Count the FMA instructions the arm64 build of PKG still emits (sho
 	@echo "$(PKG): $$(wc -l < $(ARM64_BIN).fma) fused multiply-add instruction(s) on arm64"
 	@rm -f $(ARM64_BIN).fma
 
+# The declared residual of ADR-0064: five complex128 sites in Ferrari's quartic factoring, which
+# no conversion can round (a complex conversion does not round its operand) and which therefore
+# still emit ten fused instructions. Everything else in the covered packages must be zero.
+FMA_RESIDUAL ?= 10
+
+# fma-gate is the ADR-0064 completeness check, and it is the only thing that sees what the
+# compiler actually DID. The archguard walk reads the source; a shape the walk cannot see (a
+# compound assignment did not used to be one) still shows up here. Run it before a push that
+# touches math/, kernel/geom/ or kernel/predicates/.
+.PHONY: fma-gate
+fma-gate: ## Fail if the arm64 build of the FMA-policy packages emits more than FMA_RESIDUAL fused ops
+	@total=0; for p in ./math ./kernel/geom ./kernel/predicates; do \
+	  n=$$(GOARCH=arm64 $(GO) build -a -gcflags=-S $$p 2>&1 \
+	    | grep -cE '\b(FMADDD|FMSUBD|FNMADDD|FNMSUBD|FMADDS|FMSUBS|FNMADDS|FNMSUBS)\b'); \
+	  echo "  $$p: $$n"; total=$$((total+n)); done; \
+	  echo "total $$total, declared residual $(FMA_RESIDUAL) (ADR-0064)"; \
+	  if [ "$$total" -gt "$(FMA_RESIDUAL)" ]; then \
+	    echo "FAIL: a product the policy binds is still fused; run 'make arm64-fma PKG=<pkg>' to locate it"; exit 1; \
+	  elif [ "$$total" -lt "$(FMA_RESIDUAL)" ]; then \
+	    echo "FAIL: the residual FELL to $$total — lower FMA_RESIDUAL so the ratchet holds the new floor"; exit 1; \
+	  fi
+
 .PHONY: cover
 cover: ## Run tests with coverage and enforce COVER_MIN
 	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(PKG)
