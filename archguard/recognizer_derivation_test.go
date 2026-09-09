@@ -4,10 +4,7 @@ package archguard
 
 import (
 	"go/ast"
-	"go/parser"
 	"go/token"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -21,8 +18,8 @@ import (
 // events a "recognizers" ratchet exists to catch. The count is now DERIVED from the source and the
 // registry must equal the derivation, name for name.
 //
-// A recogniser is a package function the classification READS for a shape verdict. Reads are found by
-// their syntactic shape, starting at classifyCurvedTrim and following each read into its callee:
+// A recogniser is a function the classification READS for a shape verdict. Reads are found by their
+// syntactic shape, starting at classifyCurvedTrim and following each read into its callee:
 //
 //	R1  if v, ok := f(…); ok { … }          a payload gate
 //	R2  if f(…) { … }                        a boolean gate
@@ -30,11 +27,11 @@ import (
 //	R4  return … a(…) || (!g(…) && b(…))     positive operands of a returned boolean; a negated call is a guard
 //	R5  case …: return f(…)                  a form dispatched by name
 //
-// Only a VERDICT function is a read: one declared to return `bool`, or `(<payload>, bool)` where the
-// payload is one of the classification's own `…Trim` types (coneApexTrim, sphereCapTrim, curvedTrim…).
-// That is the contract every arm already keeps, and it is what stops the walk at a geometric helper —
-// capAxis returns a vector, chooseSphereChart a chart, splitWrappingHoles two slices — instead of
-// following it into the mesher.
+// WHICH declaration a read reaches, and WHETHER that declaration returns a verdict, are both resolved
+// by recognizerIndex (recognizer_index_test.go). Neither answer is a spelling: a callee may be a bare
+// call, a method, or a call into a package of the classification's own tree, and a verdict is any
+// result set ending in a bool whose earlier results are the payloads the verdict struct carries, or
+// bools (#3522). The index's own doc states what it still cannot see, and the probe plants it.
 //
 // A function that reads nothing is a leaf and counts once. A function that reads others counts itself
 // too when it also OWNS a verdict — a returned bool built from a call that is no read (coneApexTrimOf's
@@ -50,22 +47,40 @@ const recognizerRoot = "classifyCurvedTrim"
 // derivedRecognizers walks the classification and returns every recogniser it reads, sorted.
 func derivedRecognizers(t *testing.T) []string {
 	t.Helper()
-	decls := tessellateFuncDecls(t)
+	return derivedRecognizersIn(t, tessellateIndex(t))
+}
+
+// derivedRecognizersIn is the walk itself, over any index — the kernel's, or the probe's planted one.
+func derivedRecognizersIn(t *testing.T, idx *recognizerIndex) []string {
+	t.Helper()
+	assertUnambiguousVerdictNames(t, idx)
+	if idx.lookup(recognizerRoot) == nil {
+		t.Fatalf("no %s is declared in the indexed tree; the derivation has nothing to walk", recognizerRoot)
+	}
 	seen := map[string]bool{}
 	var walk func(name string)
 	walk = func(name string) {
-		if seen[name] {
+		d := idx.lookup(name)
+		if seen[name] || d == nil {
 			return
 		}
 		seen[name] = true
-		for _, r := range shapeReads(decls[name], decls) {
+		for _, r := range (&reader{*d, idx}).shapeReads() {
 			walk(r)
 		}
 	}
 	walk(recognizerRoot)
+	return recognizersAmong(seen, idx)
+}
+
+// recognizersAmong keeps, of everything the walk reached, the names that COUNT as recognizers.
+func recognizersAmong(seen map[string]bool, idx *recognizerIndex) []string {
 	var out []string
 	for name := range seen {
-		if name != recognizerRoot && countsAsRecognizer(decls[name], decls) {
+		if name == recognizerRoot {
+			continue
+		}
+		if (&reader{*idx.lookup(name), idx}).countsAsRecognizer() {
 			out = append(out, name)
 		}
 	}
@@ -73,53 +88,41 @@ func derivedRecognizers(t *testing.T) []string {
 	return out
 }
 
-// countsAsRecognizer: a leaf always; a reader only when it owns a verdict of its own.
-func countsAsRecognizer(fn *ast.FuncDecl, decls map[string]*ast.FuncDecl) bool {
-	reads := shapeReads(fn, decls)
-	return len(reads) == 0 || ownsVerdict(fn, reads)
-}
-
-// tessellateFuncDecls parses every non-test file of kernel/ops/tessellate into name → declaration.
-func tessellateFuncDecls(t *testing.T) map[string]*ast.FuncDecl {
+// assertUnambiguousVerdictNames refuses a tree in which one key names two declarations and either could
+// be a verdict. "Ambiguous key resolution is an error; unguarded first-match lookups are forbidden."
+func assertUnambiguousVerdictNames(t *testing.T, idx *recognizerIndex) {
 	t.Helper()
-	dir := filepath.Join("..", "kernel", "ops", "tessellate")
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatalf("reading %s: %v", dir, err)
+	if names := idx.ambiguousVerdictNames(); len(names) > 0 {
+		t.Errorf("these names reach more than one declaration and at least one of each pair is "+
+			"verdict-shaped, so a read would resolve against whichever was indexed first — rename one "+
+			"side:\n  %s", strings.Join(names, "\n  "))
 	}
-	decls := map[string]*ast.FuncDecl{}
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") || strings.HasSuffix(e.Name(), "_test.go") {
-			continue
-		}
-		f, parseErr := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, e.Name()), nil, 0)
-		if parseErr != nil {
-			t.Fatalf("parsing %s: %v", e.Name(), parseErr)
-		}
-		for _, d := range f.Decls {
-			if fd, isFunc := d.(*ast.FuncDecl); isFunc && fd.Recv == nil {
-				decls[fd.Name.Name] = fd
-			}
-		}
-	}
-	return decls
 }
 
-// shapeReads is every package function fn reads for a verdict (R1–R5), in source order, once each.
-func shapeReads(fn *ast.FuncDecl, decls map[string]*ast.FuncDecl) []string {
-	if fn == nil || fn.Body == nil {
+// reader is one declaration being walked, with the index its names resolve against.
+type reader struct {
+	d   declaredHere
+	idx *recognizerIndex
+}
+
+// countsAsRecognizer: a leaf always; a reader only when it owns a verdict of its own.
+func (r *reader) countsAsRecognizer() bool {
+	reads := r.shapeReads()
+	return len(reads) == 0 || r.ownsVerdict(reads)
+}
+
+// shapeReads is every function r reads for a verdict (R1–R5), in source order, once each.
+func (r *reader) shapeReads() []string {
+	if r.d.fn == nil || r.d.fn.Body == nil {
 		return nil
 	}
-	guarded := negatedGuards(fn.Body)
+	guarded := negatedGuards(r.d.fn.Body)
 	var out []string
-	add := func(name string) {
-		if d, declared := decls[name]; declared && isVerdictFunc(d) && !contains(out, name) {
-			out = append(out, name)
-		}
-	}
-	ast.Inspect(fn.Body, func(n ast.Node) bool {
-		for _, name := range readsOfStatement(n, guarded) {
-			add(name)
+	ast.Inspect(r.d.fn.Body, func(n ast.Node) bool {
+		for _, name := range r.readsOfStatement(n, guarded) {
+			if d := r.idx.lookup(name); d != nil && r.idx.isVerdict(*d) && !contains(out, name) {
+				out = append(out, name)
+			}
 		}
 		return true
 	})
@@ -127,33 +130,43 @@ func shapeReads(fn *ast.FuncDecl, decls map[string]*ast.FuncDecl) []string {
 }
 
 // readsOfStatement returns the callee names one node reads for a verdict.
-func readsOfStatement(n ast.Node, guarded map[string]bool) []string {
+func (r *reader) readsOfStatement(n ast.Node, guarded map[string]bool) []string {
 	switch st := n.(type) {
 	case *ast.IfStmt:
-		return ifReads(st)
+		return r.ifReads(st)
 	case *ast.AssignStmt:
-		return inventoryRead(st, guarded)
+		return r.inventoryRead(st, guarded)
 	case *ast.ReturnStmt:
-		return returnedVerdictReads(st)
+		return r.returnedVerdictReads(st)
 	case *ast.CaseClause:
-		return caseReturnRead(st)
+		return r.caseReturnRead(st)
 	}
 	return nil
 }
 
 // ifReads: R1 (payload gate) and R2 (boolean gate).
-func ifReads(st *ast.IfStmt) []string {
-	if name, ok := payloadGatedCallName(st); ok {
+func (r *reader) ifReads(st *ast.IfStmt) []string {
+	if name, ok := r.payloadGateName(st); ok {
 		return []string{name}
 	}
 	if st.Init == nil {
-		return positiveCallOperands(st.Cond)
+		return r.positiveCallOperands(st.Cond)
 	}
 	return nil
 }
 
+// payloadGateName is the callee of `if v, ok := f(…); ok { … }`, resolved through the index so a
+// method or a tree-package call is as visible as a bare one.
+func (r *reader) payloadGateName(st *ast.IfStmt) (string, bool) {
+	call, ok := payloadGatedCall(st)
+	if !ok {
+		return "", false
+	}
+	return r.idx.calleeName(call, r.d)
+}
+
 // inventoryRead: R3 — `v, ok := f(…)` whose ok is never a negated guard.
-func inventoryRead(st *ast.AssignStmt, guarded map[string]bool) []string {
+func (r *reader) inventoryRead(st *ast.AssignStmt, guarded map[string]bool) []string {
 	if len(st.Lhs) != 2 || len(st.Rhs) != 1 {
 		return nil
 	}
@@ -162,22 +175,22 @@ func inventoryRead(st *ast.AssignStmt, guarded map[string]bool) []string {
 	if !isCall || !isIdent || guarded[ok.Name] {
 		return nil
 	}
-	if name, plain := plainCallee(call); plain {
+	if name, resolved := r.idx.calleeName(call, r.d); resolved {
 		return []string{name}
 	}
 	return nil
 }
 
 // returnedVerdictReads: R4 — the positive call operands of a returned boolean expression.
-func returnedVerdictReads(st *ast.ReturnStmt) []string {
+func (r *reader) returnedVerdictReads(st *ast.ReturnStmt) []string {
 	if len(st.Results) == 0 {
 		return nil
 	}
-	return positiveCallOperands(st.Results[len(st.Results)-1])
+	return r.positiveCallOperands(st.Results[len(st.Results)-1])
 }
 
 // caseReturnRead: R5 — a case clause whose body is `return f(…)`.
-func caseReturnRead(cc *ast.CaseClause) []string {
+func (r *reader) caseReturnRead(cc *ast.CaseClause) []string {
 	if len(cc.List) == 0 || len(cc.Body) != 1 {
 		return nil
 	}
@@ -186,26 +199,26 @@ func caseReturnRead(cc *ast.CaseClause) []string {
 		return nil
 	}
 	if call, isCall := ret.Results[0].(*ast.CallExpr); isCall {
-		if name, plain := plainCallee(call); plain {
+		if name, resolved := r.idx.calleeName(call, r.d); resolved {
 			return []string{name}
 		}
 	}
 	return nil
 }
 
-// positiveCallOperands walks a boolean expression and returns the plain calls that are NOT under a
+// positiveCallOperands walks a boolean expression and returns the calls that are NOT under a
 // negation — `a() || (!g() && b())` gives a and b; g is a guard.
-func positiveCallOperands(e ast.Expr) []string {
+func (r *reader) positiveCallOperands(e ast.Expr) []string {
 	switch x := e.(type) {
 	case *ast.CallExpr:
-		if name, plain := plainCallee(x); plain {
+		if name, resolved := r.idx.calleeName(x, r.d); resolved {
 			return []string{name}
 		}
 	case *ast.ParenExpr:
-		return positiveCallOperands(x.X)
+		return r.positiveCallOperands(x.X)
 	case *ast.BinaryExpr:
 		if x.Op == token.LOR || x.Op == token.LAND {
-			return append(positiveCallOperands(x.X), positiveCallOperands(x.Y)...)
+			return append(r.positiveCallOperands(x.X), r.positiveCallOperands(x.Y)...)
 		}
 	}
 	return nil
@@ -232,11 +245,11 @@ func negatedGuards(body *ast.BlockStmt) map[string]bool {
 // ownsVerdict reports whether a reading function also returns a verdict of its own: a returned bool
 // that calls something which is no read of its — a measurement, not a delegation. A call under `!` is a
 // guard and never a verdict.
-func ownsVerdict(fn *ast.FuncDecl, reads []string) bool {
+func (r *reader) ownsVerdict(reads []string) bool {
 	owns := false
-	ast.Inspect(fn.Body, func(n ast.Node) bool {
+	ast.Inspect(r.d.fn.Body, func(n ast.Node) bool {
 		if ret, isRet := n.(*ast.ReturnStmt); isRet && len(ret.Results) > 0 {
-			owns = owns || callsOutsideReads(ret.Results[len(ret.Results)-1], reads)
+			owns = owns || r.callsOutsideReads(ret.Results[len(ret.Results)-1], reads)
 		}
 		return true
 	})
@@ -244,49 +257,21 @@ func ownsVerdict(fn *ast.FuncDecl, reads []string) bool {
 }
 
 // callsOutsideReads walks a boolean expression, skipping anything negated, and reports a call whose
-// callee is not one of the reads — a builtin, a method, or a package function that is no verdict.
-func callsOutsideReads(e ast.Expr, reads []string) bool {
+// callee is not one of the reads — a builtin, a call the index cannot resolve, or a function that is
+// no verdict.
+func (r *reader) callsOutsideReads(e ast.Expr, reads []string) bool {
 	switch x := e.(type) {
 	case *ast.UnaryExpr:
-		return x.Op != token.NOT && callsOutsideReads(x.X, reads)
+		return x.Op != token.NOT && r.callsOutsideReads(x.X, reads)
 	case *ast.ParenExpr:
-		return callsOutsideReads(x.X, reads)
+		return r.callsOutsideReads(x.X, reads)
 	case *ast.BinaryExpr:
-		return callsOutsideReads(x.X, reads) || callsOutsideReads(x.Y, reads)
+		return r.callsOutsideReads(x.X, reads) || r.callsOutsideReads(x.Y, reads)
 	case *ast.CallExpr:
-		name, plain := plainCallee(x)
-		return !plain || !contains(reads, name)
+		name, resolved := r.idx.calleeName(x, r.d)
+		return !resolved || !contains(reads, name)
 	}
 	return false
-}
-
-// isVerdictFunc reports whether a declaration returns a classification verdict: `bool` alone, or a
-// `…Trim` payload with a `bool`.
-func isVerdictFunc(fn *ast.FuncDecl) bool {
-	if fn.Type.Results == nil {
-		return false
-	}
-	var types []string
-	for _, f := range fn.Type.Results.List {
-		id, isIdent := f.Type.(*ast.Ident)
-		if !isIdent {
-			return false
-		}
-		types = append(types, id.Name)
-	}
-	if len(types) == 1 {
-		return types[0] == "bool"
-	}
-	return len(types) == 2 && strings.HasSuffix(types[0], "Trim") && types[1] == "bool"
-}
-
-// plainCallee is the bare identifier a call invokes; a method or a package-qualified call is not one.
-func plainCallee(call *ast.CallExpr) (string, bool) {
-	id, isIdent := call.Fun.(*ast.Ident)
-	if !isIdent {
-		return "", false
-	}
-	return id.Name, true
 }
 
 func contains(list []string, s string) bool {
@@ -321,14 +306,25 @@ func TestTheRecognizerRegistryEqualsItsDerivation(t *testing.T) {
 // on, and the registry's kindSphereCapFan entries are three readings of ONE inventory and must agree.
 func TestTheSphereRimFormsAreOneInventory(t *testing.T) {
 	t.Parallel()
-	decls := tessellateFuncDecls(t)
+	idx := tessellateIndex(t)
+	form := idx.lookup("sphereCapRimOfForm")
+	if form == nil {
+		t.Fatal("sphereCapRimOfForm is not declared in the classification's tree")
+	}
 	cases := 0
-	ast.Inspect(decls["sphereCapRimOfForm"].Body, func(n ast.Node) bool {
-		if cc, isCase := n.(*ast.CaseClause); isCase && len(caseReturnRead(cc)) == 1 {
+	r := &reader{*form, idx}
+	ast.Inspect(form.fn.Body, func(n ast.Node) bool {
+		if cc, isCase := n.(*ast.CaseClause); isCase && len(r.caseReturnRead(cc)) == 1 {
 			cases++
 		}
 		return true
 	})
+	assertRimFormInventoriesAgree(t, cases)
+}
+
+// assertRimFormInventoriesAgree compares the dispatched cases with the constants and the registry.
+func assertRimFormInventoriesAgree(t *testing.T, cases int) {
+	t.Helper()
 	forms := sphereCapRimFormConstants(t)
 	registered := len(curvedTrimRecognizers["kindSphereCapFan"])
 	if cases != forms || forms != registered {

@@ -7,7 +7,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -88,6 +87,14 @@ var kernelNetDeltaPin = map[string]int{
 	// was deleted is builder duplication — coneApexFan and coneSectorFan became one apexFan, and
 	// sphereZoneCapFan, sphereSeamedCapFan, notchedRimBandMesh, twoClosedRimBandMesh and SphereCapFan
 	// became arms over shared builders. The number falls when a SHAPE goes, which is what it is for.
+	// 12 → 12 (2026-09-09, #3522): NO MOVE, and it is written down because the INSTRUMENT changed, not
+	// the code. The derivation could not see a recognizer reached through a METHOD or through a package
+	// of the classification's own tree, nor one returning any verdict but `bool` and
+	// `(<something>Trim, bool)`; it now resolves a callee through an index of the whole tree and a
+	// verdict by its RESULT-TYPE SET. Both walks were run over the same source and derive the SAME
+	// twelve names, so this 12 is a re-measurement that CONFIRMS the old one rather than a number that
+	// stood still by luck — which is what a later fall has to be measured from. Seven planted shapes the
+	// old walk scored 0 on now score 1 (TestTheDerivationSeesEveryCalleeAndVerdictShape).
 	"recognizers": 12,
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
@@ -265,9 +272,10 @@ const curvedTrimSwitch = "kernel/ops/tessellate/tessellate_trim_special.go:speci
 // remembered to register it (final fix wave, finding 6).
 func countRecognizers(t *testing.T) int {
 	t.Helper()
+	idx := tessellateIndex(t)
 	assertCurvedTrimArmsMatchSwitch(t)
-	assertRecognizersAreDeclared(t)
-	n := countLadderEntries(t) + len(derivedRecognizers(t))
+	assertRecognizersAreDeclared(t, idx)
+	n := countLadderEntries(t) + len(derivedRecognizersIn(t, idx))
 	if n == 0 {
 		t.Fatal("counted no recognizers — the dispatch tables moved; update dispatchLadders/curvedTrimRecognizers")
 	}
@@ -319,44 +327,22 @@ func switchCaseNames(t *testing.T, f *ast.File, fn string) []string {
 	return names
 }
 
-// assertRecognizersAreDeclared keeps the registry honest: every name it counts must still be a
-// function of kernel/ops/tessellate, so deleting one MOVES the number instead of leaving it stale.
-func assertRecognizersAreDeclared(t *testing.T) {
+// assertRecognizersAreDeclared keeps the registry honest: every name it counts must still reach a
+// declaration of the classification's package tree, so deleting one MOVES the number instead of
+// leaving it stale. The lookup goes through the same index the derivation resolves reads with
+// (#3522), so a registered name may be a function, a method, or a `pkg.Name` of a package beneath the
+// classification — the registry and the derivation cannot disagree about what a name means.
+func assertRecognizersAreDeclared(t *testing.T, idx *recognizerIndex) {
 	t.Helper()
-	declared := packageFuncNames(t, filepath.Join("..", "kernel", "ops", "tessellate"))
 	for arm, names := range curvedTrimRecognizers {
 		for _, n := range names {
-			if !declared[n] {
-				t.Errorf("curvedTrimRecognizers counts %s for %s, but no such function is declared in "+
-					"kernel/ops/tessellate — delete the entry with the recognizer", n, arm)
+			if idx.lookup(n) == nil {
+				t.Errorf("curvedTrimRecognizers counts %s for %s, but no such function, method or "+
+					"tree-package function is declared under %s — delete the entry with the recognizer",
+					n, arm, classificationDir)
 			}
 		}
 	}
-}
-
-// packageFuncNames is every function declared in the package's non-test files.
-func packageFuncNames(t *testing.T, dir string) map[string]bool {
-	t.Helper()
-	names := map[string]bool{}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		t.Fatalf("reading %s: %v", dir, err)
-	}
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") || strings.HasSuffix(e.Name(), "_test.go") {
-			continue
-		}
-		f, parseErr := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, e.Name()), nil, 0)
-		if parseErr != nil {
-			t.Fatalf("parsing %s: %v", e.Name(), parseErr)
-		}
-		for _, d := range f.Decls {
-			if fd, isFunc := d.(*ast.FuncDecl); isFunc {
-				names[fd.Name.Name] = true
-			}
-		}
-	}
-	return names
 }
 
 // countLadderEntries counts the []func entries of every registered first-fit ladder.

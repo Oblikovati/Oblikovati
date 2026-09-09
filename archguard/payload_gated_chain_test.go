@@ -168,21 +168,32 @@ func allDistinct(run []string) bool {
 
 // payloadGatedCallName returns the callee of `if <payload…>, ok := call(…); ok { … return }`.
 func payloadGatedCallName(st ast.Stmt) (string, bool) {
+	call, gated := payloadGatedCall(st)
+	if !gated {
+		return "", false
+	}
+	return calleeName(call.Fun)
+}
+
+// payloadGatedCall is the CALL a payload gate reads, before any name is put to it. The recognizer
+// derivation needs the call itself, because it resolves a callee through the classification's index
+// rather than by its bare selector (#3522).
+func payloadGatedCall(st ast.Stmt) (*ast.CallExpr, bool) {
 	ifs, ok := st.(*ast.IfStmt)
 	if !ok || ifs.Init == nil || !endsInReturn(ifs.Body) {
-		return "", false
+		return nil, false
 	}
 	as, isAssign := ifs.Init.(*ast.AssignStmt)
 	if !isAssign || len(as.Rhs) != 1 || len(as.Lhs) < 2 {
-		return "", false
+		return nil, false
 	}
 	call, isCall := as.Rhs[0].(*ast.CallExpr)
 	last, isIdent := as.Lhs[len(as.Lhs)-1].(*ast.Ident)
 	cond, isCond := ifs.Cond.(*ast.Ident)
 	if !isCall || !isIdent || !isCond || cond.Name != last.Name {
-		return "", false
+		return nil, false
 	}
-	return calleeName(call.Fun)
+	return call, true
 }
 
 // endsInReturn reports whether the block's last statement is a return — what makes the gate an EXIT
