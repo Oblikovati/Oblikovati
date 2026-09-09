@@ -74,17 +74,18 @@ func BooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, re
 	}
 	// Size classification, BEFORE any geometry: an operand below the seam resolution is refused by
 	// name rather than run through a pipeline that cannot separate its two sides (ADR-0061 stage 6).
-	if err := declineSubResolutionOperand(op, target, tool, rec); err != nil {
+	sizes, err := classifyOperandSize(op, target, tool, rec)
+	if err != nil {
 		return nil, err
 	}
-	rel := classify(target, tool)
+	cls := pairClassification{rel: classify(target, tool), sizes: sizes}
 	switch op {
 	case Join:
-		return join(lin, target, tool, rel, rec)
+		return join(lin, target, tool, cls, rec)
 	case Cut:
-		return cut(lin, target, tool, rel, rec)
+		return cut(lin, target, tool, cls, rec)
 	default: // Intersect
-		return intersect(lin, target, tool, rel, rec)
+		return intersect(lin, target, tool, cls, rec)
 	}
 }
 
@@ -101,8 +102,8 @@ func BooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, re
 // planar imprint cannot stitch — does this fall to the mesh-arrangement engine,
 // adopting it only if IT is a valid solid. That result is FACETED (#2153), so it is a
 // rescue for a case that otherwise ships broken, never a preference.
-func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
-	body, err := booleanGeneralExact(op, target, tool, lin, rec)
+func booleanGeneral(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, sizes operandSizes, rec *diag.Recorder) (*topo.Body, error) {
+	body, err := booleanGeneralExact(op, target, tool, lin, sizes, rec)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +123,8 @@ var errInvalidExactResult = errors.New("the exact result is not a valid closed s
 // B-rep boolean. A configuration neither models is REFUSED by name (ADR-0061 stage 6) — there is no
 // triangle-soup CSG and no mesh-arrangement rescue behind it any more, so a caller that reaches this
 // error quarantines the feature instead of shipping a faceted body that looks solid.
-func booleanGeneralExact(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, rec *diag.Recorder) (*topo.Body, error) {
-	if body, ok := curvedExactGuarded(op, target, tool, rec); ok {
+func booleanGeneralExact(op PartFeatureOperation, target, tool *topo.Body, lin topo.Lineage, sizes operandSizes, rec *diag.Recorder) (*topo.Body, error) {
+	if body, ok := curvedExactGuarded(op, target, tool, sizes, rec); ok {
 		return body, nil
 	}
 	bop, ok := toBrepOp(op)
@@ -150,7 +151,7 @@ func booleanGeneralExact(op PartFeatureOperation, target, tool *topo.Body, lin t
 	// so every case the planar path already handles is untouched. The fallback is gated on a
 	// modest operand size: triangle CSG on a large body is expensive and rarely recovers it,
 	// so above the limit we keep the (fast) planar result rather than pay a big CSG attempt.
-	if shouldFallbackBoolean(op, target, tool, body) {
+	if shouldFallbackBoolean(op, target, tool, body, sizes) {
 		return nil, unmodelledBoolean(op, target, tool, errFailedAcceptance)
 	}
 	return body, nil

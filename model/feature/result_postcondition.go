@@ -97,7 +97,7 @@ var (
 // recompute. ops.Validate adds the hole-containment level, which projects every multi-loop planar
 // face's loops into the face plane — materially more work for a verdict (HolesContained) that is not
 // part of Valid and that this post-condition would discard (finding 5 of the stage-6 review).
-func postconditionError(f Feature, before, after []*topo.Body, rec *diag.Recorder) error {
+func postconditionError(f Feature, before bodyProvenance, after []*topo.Body, rec *diag.Recorder) error {
 	report, found := firstInvalidBuiltBody(before, after)
 	if !found {
 		return nil
@@ -112,7 +112,7 @@ func postconditionError(f Feature, before, after []*topo.Body, rec *diag.Recorde
 
 // firstInvalidBuiltBody returns the level-1 validity report of the first body the feature built that
 // fails it, in the order the feature returned them.
-func firstInvalidBuiltBody(before, after []*topo.Body) (ops.ValidationReport, bool) {
+func firstInvalidBuiltBody(before bodyProvenance, after []*topo.Body) (ops.ValidationReport, bool) {
 	for _, b := range builtBodies(before, after) {
 		if r := ops.ValidateTopology(b); !r.Valid {
 			return r, true
@@ -134,15 +134,48 @@ func adoptsExternalBodies(f Feature) bool {
 	return ok && a.AdoptsExternalBodies()
 }
 
-// builtBodies returns the bodies of after that are not one of before — the ones this feature actually
-// BUILT. A feature that leaves a body alone hands back the same pointer (the identity the engine
-// already relies on in producerOf), and that body was validated at the exit of the feature that built
-// it, so re-validating it here would make the post-condition cost O(features × bodies) for an answer
-// that cannot have changed: a built body's geometry is immutable.
-func builtBodies(before, after []*topo.Body) []*topo.Body {
+// bodyProvenance is what the running body state WAS when the engine handed it to a feature: every
+// input body with the topological signature it had at that moment. It is captured BEFORE the feature
+// runs, which is the only moment at which "the feature did not touch this body" is still provable.
+//
+// Example: in := captureBodyProvenance(bodies); out, _ := f.Recompute(...); builtBodies(in, out.Bodies)
+type bodyProvenance struct {
+	wasGiven map[*topo.Body]topo.TopologySignature
+}
+
+// captureBodyProvenance records the input state's bodies and their signatures.
+func captureBodyProvenance(bodies []*topo.Body) bodyProvenance {
+	given := make(map[*topo.Body]topo.TopologySignature, len(bodies))
+	for _, b := range bodies {
+		if b != nil {
+			given[b] = b.TopologySignature()
+		}
+	}
+	return bodyProvenance{wasGiven: given}
+}
+
+// passedThrough reports whether b left the feature exactly as it entered it: the same body, with the
+// same topology it had on the way in.
+func (p bodyProvenance) passedThrough(b *topo.Body) bool {
+	was, given := p.wasGiven[b]
+	return given && was == b.TopologySignature()
+}
+
+// builtBodies returns the bodies of after that this feature BUILT or CHANGED — everything the
+// post-condition must therefore check. A body that came in and went out untouched was validated at
+// the exit of the feature that built it, so re-validating it here would make the post-condition cost
+// O(features × bodies) for an answer that cannot have changed. It would also SICKEN the wrong
+// feature: an adopted invalid body is a warning on the feature that adopted it, not on every feature
+// downstream that passes it along.
+//
+// "Untouched" is a claim about the body's topology and not about the pointer. Pointer identity was
+// the whole test until #3524, and it survives an in-place mutation: a builder that reuses an existing
+// edge appends an edge-use to it, which leaves the body that edge belongs to non-manifold at the same
+// address. That body used to walk straight past the post-condition.
+func builtBodies(before bodyProvenance, after []*topo.Body) []*topo.Body {
 	var built []*topo.Body
 	for _, b := range after {
-		if b != nil && !holdsBody(before, b) {
+		if b != nil && !before.passedThrough(b) {
 			built = append(built, b)
 		}
 	}

@@ -4,7 +4,12 @@ package boolean
 
 import (
 	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
 	stdmath "math"
+	"sort"
 	"strings"
 	"testing"
 
@@ -115,7 +120,7 @@ func TestTheSubResolutionFloorIsModelRelative(t *testing.T) {
 	if err != nil {
 		t.Fatalf("drill: %v", err)
 	}
-	if err := declineSubResolutionOperand(Cut, ring, drill, nil); err != nil {
+	if _, err := classifyOperandSize(Cut, ring, drill, nil); err != nil {
 		t.Fatalf("a millimetre-scale ring and its proportional drill must classify as modellable: %v", err)
 	}
 }
@@ -128,12 +133,13 @@ func TestTheBooleanFloorAgreesWithTheFeatureScaleWarning(t *testing.T) {
 	for _, bore := range []float64{1e-10, 1e-9, 1e-8, 1e-6, 1e-3, 0.8} {
 		ring, drill := ringAndDrill(t, bore)
 		box := ring.RangeBox().Union(drill.RangeBox())
-		thickness, ok := solidThickness(drill)
+		thickness, ok := solidThickness(drill, 0)
 		if !ok {
 			t.Fatalf("bore %g: the drill is a solid and must measure", bore)
 		}
 		uiSaysResolvable := geom.FeatureResolvable(box, thickness)
-		booleanRefuses := declineSubResolutionOperand(Cut, ring, drill, nil) != nil
+		_, sizeErr := classifyOperandSize(Cut, ring, drill, nil)
+		booleanRefuses := sizeErr != nil
 		if uiSaysResolvable == booleanRefuses {
 			t.Errorf("bore %g (thickness %g): the UI says resolvable=%v while the boolean refuses=%v — "+
 				"the two policies must be one predicate", bore, thickness, uiSaysResolvable, booleanRefuses)
@@ -150,8 +156,8 @@ func TestTheBooleanFloorAgreesWithTheFeatureScaleWarning(t *testing.T) {
 func TestBothRefusalsCarryTheOneRemedySentence(t *testing.T) {
 	t.Parallel()
 	ring, drill := ringAndDrill(t, 1e-10)
-	thickness, _ := solidThickness(drill)
-	err := declineSubResolutionOperand(Cut, ring, drill, nil)
+	thickness, _ := solidThickness(drill, 0)
+	_, err := classifyOperandSize(Cut, ring, drill, nil)
 	if err == nil {
 		t.Fatal("want a refusal")
 	}
@@ -167,7 +173,7 @@ func TestBothRefusalsCarryTheOneRemedySentence(t *testing.T) {
 func TestTheExactDrillRowStillPassesTheSizeClassification(t *testing.T) {
 	t.Parallel()
 	ring, drill := ringAndDrill(t, 0.8)
-	if err := declineSubResolutionOperand(Cut, ring, drill, nil); err != nil {
+	if _, err := classifyOperandSize(Cut, ring, drill, nil); err != nil {
 		t.Fatalf("the RD− corpus row must not be refused on size: %v", err)
 	}
 }
@@ -202,10 +208,10 @@ func squareSheet(t *testing.T) *topo.Body {
 func TestSolidThicknessDeclinesASheetBody(t *testing.T) {
 	t.Parallel()
 	sheet := squareSheet(t)
-	if _, ok := solidThickness(sheet); ok {
+	if _, ok := solidThickness(sheet, 0); ok {
 		t.Error("a sheet body has no material thickness to measure")
 	}
-	if err := declineSubResolutionOperand(Cut, sheet, sheet, nil); err != nil {
+	if _, err := classifyOperandSize(Cut, sheet, sheet, nil); err != nil {
 		t.Errorf("a sheet operand must not be refused on thickness: %v", err)
 	}
 }
@@ -218,11 +224,88 @@ func TestSolidThicknessIsTheSmallestExtent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("slab: %v", err)
 	}
-	got, ok := solidThickness(slab)
+	got, ok := solidThickness(slab, 0)
 	if !ok || stdmath.Abs(got-0.25) > 1e-12 { // tol:numeric — an exact box extent, float noise only
 		t.Errorf("solidThickness(10x4x0.25 block) = %g, %v; want 0.25", got, ok)
 	}
-	if _, ok := solidThickness(nil); ok {
+	if _, ok := solidThickness(nil, 0); ok {
 		t.Error("a nil body has no thickness")
 	}
+}
+
+// TestTheSizeClassificationHasOneCallSitePerEntry is the structural half of "decide each incidence
+// once" (#3524). The predicate used to run TWICE for every curved pair — once in
+// BooleanWithDiagnostics and again inside curvedExactGuarded, which the exact path reaches through
+// booleanGeneralExact — so one pair was measured twice with two chances of a different answer. It now
+// runs at each PUBLIC entry and nowhere else, and the result travels down the pipeline on
+// operandSizes.
+//
+// No runtime test can see this: both evaluations agreed, so the double work left no trace in the
+// result. The source is where the invariant lives, so the source is what this reads.
+func TestTheSizeClassificationHasOneCallSitePerEntry(t *testing.T) {
+	t.Parallel()
+	want := map[string]bool{"BooleanWithDiagnostics": true, "CurvedBooleanWithDiagnostics": true}
+	got := callersOfInPackage(t, "classifyOperandSize")
+	for _, caller := range got {
+		if !want[caller] {
+			t.Errorf("classifyOperandSize is called from %s; the size classification belongs at the "+
+				"public entries only, and its result travels on operandSizes", caller)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("classifyOperandSize has %d call sites (%v); want exactly one per public entry %v",
+			len(got), got, want)
+	}
+}
+
+// callersOfInPackage returns the name of the enclosing function of every call to name in this
+// package's non-test sources, one entry per call site.
+func callersOfInPackage(t *testing.T, name string) []string {
+	t.Helper()
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, ".", func(fi fs.FileInfo) bool {
+		return !strings.HasSuffix(fi.Name(), "_test.go")
+	}, 0)
+	if err != nil {
+		t.Fatalf("parse the boolean package: %v", err)
+	}
+	var callers []string
+	for _, pkg := range pkgs {
+		for _, file := range pkg.Files {
+			callers = append(callers, callersInFile(file, name)...)
+		}
+	}
+	sort.Strings(callers)
+	return callers
+}
+
+// callersInFile collects the enclosing function of every call to name in one file.
+func callersInFile(file *ast.File, name string) []string {
+	var callers []string
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		for range countCalls(fn.Body, name) {
+			callers = append(callers, fn.Name.Name)
+		}
+	}
+	return callers
+}
+
+// countCalls returns a slice with one element per call to name inside body — the shape a range needs.
+func countCalls(body *ast.BlockStmt, name string) []struct{} {
+	var hits []struct{}
+	ast.Inspect(body, func(n ast.Node) bool {
+		call, ok := n.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		if id, ok := call.Fun.(*ast.Ident); ok && id.Name == name {
+			hits = append(hits, struct{}{})
+		}
+		return true
+	})
+	return hits
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
@@ -101,10 +102,10 @@ func TestThePostconditionSkipsPassedThroughBodies(t *testing.T) {
 	t.Parallel()
 	torn := tornSquareSolid()
 	in := []*topo.Body{torn}
-	if err := postconditionError(passThroughFeature{}, in, in, nil); err != nil {
+	if err := postconditionError(passThroughFeature{}, captureBodyProvenance(in), in, nil); err != nil {
 		t.Errorf("a body the feature did not build must not be re-validated: %v", err)
 	}
-	if err := postconditionError(&tornBodyFeature{}, nil, in, nil); !errors.Is(err, ErrInvalidFeatureResult) {
+	if err := postconditionError(&tornBodyFeature{}, captureBodyProvenance(nil), in, nil); !errors.Is(err, ErrInvalidFeatureResult) {
 		t.Errorf("the same body BUILT here must fail the post-condition; got %v", err)
 	}
 }
@@ -215,5 +216,73 @@ func TestAValidResultKeepsItsFeatureHealthy(t *testing.T) {
 	}
 	if hasDiagCode(base.Diagnostics(), CodeFeatureInvalidResult) {
 		t.Errorf("a valid result must record no post-condition defect; got %v", base.Diagnostics())
+	}
+}
+
+// edgeStealingFeature is the named fake for the in-place mutation: it hands back the body it was
+// GIVEN, unchanged as far as any pointer can tell, after building a new face on one of that body's
+// own edges. The builder appends an edge-use to the shared edge, so the input body is left with a
+// non-manifold edge — used by three faces — at the same address it always had.
+//
+// This is not a contrived shape. topo.Builder.buildLoop links every use back onto its edge, so any
+// operation that reuses an input body's topology mutates that input body.
+type edgeStealingFeature struct{}
+
+func (edgeStealingFeature) Kind() string { return "edgesteal" }
+
+func (edgeStealingFeature) Recompute(in Input) (Output, error) {
+	victim := in.Bodies[0].Edges()[0]
+	lin := topo.NewLineage(topo.Tok("test", "steal", 0))
+	bld := topo.NewBuilder(false, lin)
+	plane, err := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
+	if err != nil {
+		return Output{}, err
+	}
+	bld.AddFace(plane, lin, topo.OuterLoop(topo.Fwd(victim)))
+	bld.Build()
+	return Output{Bodies: in.Bodies}, nil
+}
+
+// TestAnInPlaceMutationDoesNotEscapeThePostcondition is the regression for the third part of #3524.
+// builtBodies asked "is this pointer one of the ones that went in?", which an in-place mutation
+// answers YES to, so the mutated body was skipped and the feature reported healthy over a
+// non-manifold solid. The question is now "is this the SAME BODY it was", which the topological
+// signature answers.
+func TestAnInPlaceMutationDoesNotEscapeThePostcondition(t *testing.T) {
+	t.Parallel()
+	block, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "block")
+	if err != nil {
+		t.Fatalf("block: %v", err)
+	}
+	fs := NewPartFeatures(nil)
+	base := NewBaseFeatures(fs).AddBase(block)
+	thief := fs.Add(edgeStealingFeature{}, base.ID())
+	fs.Recompute()
+
+	if !base.Health().OK() {
+		t.Fatalf("the block is valid when the base feature returns it: %+v", base.Health())
+	}
+	if thief.Health().Status != health.Sick {
+		t.Fatalf("a feature that left its input body non-manifold must be sick; got %+v", thief.Health())
+	}
+	if !strings.Contains(thief.Health().Reason, "non-manifold edge") {
+		t.Errorf("the reason must name the invariant the mutation broke; got %q", thief.Health().Reason)
+	}
+	if !hasDiagCode(thief.Diagnostics(), CodeFeatureInvalidResult) {
+		t.Errorf("the post-condition must record its named diagnostic; got %v", thief.Diagnostics())
+	}
+}
+
+// A body that really did pass through untouched is still skipped: the signature is a change detector,
+// not a second full validation of the whole running state on every feature.
+func TestAnUntouchedBodyStillSkipsThePostcondition(t *testing.T) {
+	t.Parallel()
+	torn := []*topo.Body{tornSquareSolid()}
+	given := captureBodyProvenance(torn)
+	if got := builtBodies(given, torn); len(got) != 0 {
+		t.Errorf("an untouched body must not count as built; got %d", len(got))
+	}
+	if got := builtBodies(given, append(torn, tornSquareSolid())); len(got) != 1 {
+		t.Errorf("a body the feature added must count as built; got %d", len(got))
 	}
 }

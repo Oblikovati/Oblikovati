@@ -49,29 +49,62 @@ var ErrSubResolutionOperand = errors.New("boolean: an operand is thinner than th
 // has to be able to SEE which operand was too thin and by how much.
 const CodeBooleanSubResolutionTool diag.Code = "boolean.sub-resolution-tool"
 
-// declineSubResolutionOperand is the boolean's size classification: it returns the named refusal when
-// either operand's material is below the pair's resolution, and nil otherwise. It runs before
-// classify() and therefore before any intersection, imprint or stitch. The floor is
-// geom.Resolution.Resolves — the SAME predicate the UI's feature-scale warning reads, so the two
-// cannot disagree (finding 3 of the stage-6 review).
-func declineSubResolutionOperand(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) error {
-	res := pairExtentResolution(target, tool)
-	if err := subResolutionRefusal(op, "target", target, res, rec); err != nil {
-		return err
-	}
-	return subResolutionRefusal(op, "tool", tool, res, rec)
+// operandSize is one operand's measured material thickness. measured is false where there is nothing
+// to measure — a nil, empty or non-solid body — and a thickness that was never measured can never
+// refuse anything.
+type operandSize struct {
+	thickness float64
+	measured  bool
 }
 
-// subResolutionRefusal refuses one operand by name, recording the Defect that carries the refusal to
-// feature health. Only a SOLID is measured: a sheet body's zero thickness is its representation, not
-// material below resolution, so the test does not apply to it.
-func subResolutionRefusal(op PartFeatureOperation, role string, b *topo.Body, res Resolution, rec *diag.Recorder) error {
-	thickness, ok := solidThickness(b)
-	if !ok || res.Resolves(thickness) {
+// operandSizes is the boolean's SIZE classification: the resolution of the extent the pair spans, and
+// each operand's material thickness measured against it.
+//
+// It is decided ONCE per operation, by classifyOperandSize at a public entry, and CARRIED to the
+// stages that need it rather than recomputed there. The predicate used to run twice for every curved
+// pair — once in BooleanWithDiagnostics and again inside curvedExactGuarded — which is two chances to
+// answer differently about one pair, the thing the ground rule on deciding an incidence once forbids
+// (#3524).
+type operandSizes struct {
+	res          Resolution
+	target, tool operandSize
+}
+
+// classifyOperandSize is the boolean's size classification: it measures both operands against the
+// pair's resolution and returns the named refusal when either operand's material is below it. It runs
+// before classify() and therefore before any intersection, imprint or stitch. The floor is
+// geom.Resolution.Resolves — the SAME predicate the UI's feature-scale warning reads, so the two
+// cannot disagree (finding 3 of the stage-6 review).
+//
+// Example:
+//
+//	sizes, err := classifyOperandSize(op, target, tool, rec)
+//	if err != nil { return nil, err }
+func classifyOperandSize(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (operandSizes, error) {
+	res := pairExtentResolution(target, tool)
+	sizes := operandSizes{res: res, target: measureOperand(target, res), tool: measureOperand(tool, res)}
+	if err := subResolutionRefusal(op, "target", sizes.target, res, rec); err != nil {
+		return sizes, err
+	}
+	return sizes, subResolutionRefusal(op, "tool", sizes.tool, res, rec)
+}
+
+// measureOperand measures one operand's material thickness against the pair's resolution. Only a
+// SOLID is measured: a sheet body's zero thickness is its representation, not material below
+// resolution, so the test does not apply to it.
+func measureOperand(b *topo.Body, res Resolution) operandSize {
+	thickness, ok := solidThickness(b, res.Weld())
+	return operandSize{thickness: thickness, measured: ok}
+}
+
+// subResolutionRefusal refuses one measured operand by name, recording the Defect that carries the
+// refusal to feature health.
+func subResolutionRefusal(op PartFeatureOperation, role string, size operandSize, res Resolution, rec *diag.Recorder) error {
+	if !size.measured || res.Resolves(size.thickness) {
 		return nil
 	}
 	detail := fmt.Sprintf("%s %s is %g thick, below this model's resolution %g: %s",
-		op, role, thickness, res.Weld(), geom.ScaleRemedy)
+		op, role, size.thickness, res.Weld(), geom.ScaleRemedy)
 	rec.Recordf(CodeBooleanSubResolutionTool, diag.Defect, "%s", detail)
 	return fmt.Errorf("%w: %s", ErrSubResolutionOperand, detail)
 }
@@ -90,19 +123,4 @@ func subResolutionRefusal(op PartFeatureOperation, role string, b *topo.Body, re
 func pairExtentResolution(target, tool *topo.Body) Resolution {
 	box := target.RangeBox().Union(tool.RangeBox())
 	return geom.ResolutionForBox(box)
-}
-
-// solidThickness is a solid body's smallest bounding-box extent — how thin its material gets in the
-// direction it is thinnest. ok is false for a nil, non-solid or empty body: a sheet has no thickness
-// to measure and an empty body no material.
-func solidThickness(b *topo.Body) (float64, bool) {
-	if b == nil || !b.IsSolid() {
-		return 0, false
-	}
-	box := b.RangeBox()
-	if box.IsEmpty() {
-		return 0, false
-	}
-	d := box.Diagonal()
-	return float64(min(min(d.X, d.Y), d.Z)), true
 }

@@ -97,13 +97,16 @@ func (fs *PartFeatures) evaluateBody(pf *PartFeature, bodies []*topo.Body, sick 
 	}
 	pf.recomputes++
 	rec := &diag.Recorder{}
+	// Captured BEFORE the feature runs: afterwards there is no way left to tell a body it handed back
+	// untouched from one it changed in place (#3524).
+	given := captureBodyProvenance(bodies)
 	out, err := safeRecompute(pf, Input{Bodies: bodies, Params: fs.params, SourceTool: fs.sourceTool, SourceTools: fs.sourceTools,
 		Diag: rec, Relief: fs.reliefSpec(), Corner: fs.cornerReliefSpec(), Transition: fs.bendTransition(), MiterGap: fs.miterGapOf(), PriorBends: fs.bendsBefore(pf)})
 	if err == nil {
 		// Validate is a post-condition of every public kernel operation, and this is the ONE place the
 		// engine stores what one returned (ADR-0061 stage 6). An invalid body becomes an ordinary
 		// recompute error, so classify sickens the feature, quarantines its dependents and DROPS the body.
-		err = postconditionError(pf.feature, bodies, out.Bodies, rec)
+		err = postconditionError(pf.feature, given, out.Bodies, rec)
 	}
 	pf.diags = rec.Records()
 	return fs.classify(pf, bodies, out, err, sick)

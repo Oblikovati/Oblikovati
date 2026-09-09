@@ -114,13 +114,12 @@ var curvedGuardBracketOverride *float64
 // the wrong place. When either rejects, this records a Defect and declines (ok=false) so
 // booleanGeneral falls through to the guarded planar/CSG path. On acceptance it restores
 // original-edge identity (ADR-0043) like the planar path.
-func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	// The size classification runs here too, not only in BooleanWithDiagnostics: CurvedBoolean is a
-	// PUBLIC entry, and a sub-resolution pair reaching it certified as "nothing removed" — a valid
-	// body, every face accounted for, and a Cut volume the Requicha bracket admits (ADR-0061 stage 6).
-	if declineSubResolutionOperand(op, target, tool, rec) != nil {
-		return nil, false
-	}
+//
+// sizes is the pair's SIZE classification, already decided by whichever public entry the call came
+// through. This core does not re-run it — it used to, which made the predicate run twice for every
+// curved pair reached through booleanGeneralExact (#3524) — and passes it on to the certificate,
+// which needs the same pair resolution.
+func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, sizes operandSizes, rec *diag.Recorder) (*topo.Body, bool) {
 	body, ok := curvedExactBoolean(op, target, tool, rec)
 	if !ok {
 		declineCurvedExact(op, target, tool, rec)
@@ -134,7 +133,7 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *d
 			"curved %s analytic result is not a valid closed solid: falling back to the guarded path", op)
 		return nil, false
 	}
-	if curvedResultRejected(op, target, tool, body, rec) {
+	if curvedResultRejected(op, target, tool, body, sizes, rec) {
 		return nil, false
 	}
 	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
@@ -146,8 +145,8 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *d
 // post-condition the certificate cannot see, and the whole-body volume bracket is the closing smoke
 // test. Each rejection records its own Defect naming which certificate refused, so a demotion says WHY
 // rather than only that it happened. Validity is checked by the caller, at the exit (see there).
-func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body, rec *diag.Recorder) bool {
-	if !certifyBooleanFaces(op, target, tool, body) {
+func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body, sizes operandSizes, rec *diag.Recorder) bool {
+	if !certifyBooleanFaces(op, target, tool, body, sizes.res) {
 		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
 			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
 		return true
@@ -250,25 +249,34 @@ func analyticVolumesExact(target, tool *topo.Body) bool {
 // why widening that gate to a classification (ADR-0061) had to close this seam first: one operation, one
 // certification, whoever calls it.
 func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
-	return curvedExactGuarded(op, target, tool, nil)
+	return CurvedBooleanWithDiagnostics(op, target, tool, nil)
 }
 
 // CurvedBooleanWithDiagnostics is [CurvedBoolean] with a diagnostic recorder (nil to discard):
 // the exact paths record imprint-quality diagnostics (#1404) and their internal fallbacks, so a
 // feature-level caller carries the kernel's quality signal instead of dropping it (#1601).
 func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return curvedExactGuarded(op, target, tool, rec)
+	// The size classification runs at THIS entry as well as at BooleanWithDiagnostics, because this is
+	// a PUBLIC entry too and a sub-resolution pair reaching the core is certified as "nothing removed"
+	// — a valid body, every face accounted for, and a Cut volume the Requicha bracket admits (ADR-0061
+	// stage 6). It runs at the entry and NOT in the core, so one call classifies the pair exactly once
+	// however it arrived (#3524).
+	sizes, err := classifyOperandSize(op, target, tool, rec)
+	if err != nil {
+		return nil, false
+	}
+	return curvedExactGuarded(op, target, tool, sizes, rec)
 }
 
 // shouldFallbackBoolean decides whether a result must be abandoned for the next path. Validity comes
 // first (an invalid body is never a result), then the per-face membership certificate — the proof
 // that the faces are the ones this operation keeps — and only then the whole-body volume bracket,
 // which is a cheap smoke test for what the per-face gate could not probe (M48/C3 #3446/#3447).
-func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body) bool {
+func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Body, sizes operandSizes) bool {
 	if !Validate(body).ValidSolid() {
 		return true
 	}
-	if !certifyBooleanFaces(op, target, tool, body) {
+	if !certifyBooleanFaces(op, target, tool, body, sizes.res) {
 		return true
 	}
 	return invalidBooleanVolume(op, target, tool, body)

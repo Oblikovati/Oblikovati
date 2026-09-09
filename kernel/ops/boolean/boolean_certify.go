@@ -30,12 +30,16 @@ import (
 // the certificate refuses results it can disprove, and never rejects one merely because a probe was
 // unavailable.
 //
-// Example: if !certifyBooleanFaces(Cut, target, tool, body) { /* fall back to the guarded path */ }
-func certifyBooleanFaces(op PartFeatureOperation, target, tool, body *topo.Body) bool {
+// res is the pair's extent resolution, decided once by the size classification and carried here:
+// the certificate used to rebuild it from the two range boxes, which is the same predicate evaluated
+// a second time with its own chance of a different answer (#3524).
+//
+// Example: if !certifyBooleanFaces(Cut, target, tool, body, sizes.res) { /* fall back */ }
+func certifyBooleanFaces(op PartFeatureOperation, target, tool, body *topo.Body, res Resolution) bool {
 	if body == nil || target == nil || tool == nil {
 		return false
 	}
-	tol := geom.ResolutionForBox(target.RangeBox().Union(tool.RangeBox())).Sew()
+	tol := res.Sew()
 	ta, to := newBoundaryIndex(target), newBoundaryIndex(tool)
 	for _, f := range body.Faces() {
 		p, ok := query.FaceInteriorPoint(f)
