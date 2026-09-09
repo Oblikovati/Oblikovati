@@ -39,6 +39,13 @@ type TorusCoForm interface {
 	// the azimuth error while the position error does not, so only a length can see a branch that has
 	// wandered off the surface there.
 	distanceTo(p math.Point3) float64
+	// stationValueLipschitz bounds |∂f/∂v| — how fast the value of the form's OWN implicit polynomial,
+	// read on the chart torus, can change with the TUBE ANGLE — everywhere on the chart at once. It is
+	// what lets a sampled sweep reason about the gaps BETWEEN its samples instead of only at them, and
+	// every form can state it because ∂f/∂v is ∇F(P)·∂P/∂v: a bound on the form's own gradient over the
+	// chart's reach, times |∂P/∂v| = the chart's minor radius exactly. Each form answers from the
+	// representation that carries its gradient (Oblikovati/Oblikovati#3515).
+	stationValueLipschitz(chart Torus) float64
 	// coaxialLevelFactors returns the tube-angle polynomials whose roots are exactly the tube angles at
 	// which this form meets a COAXIAL chart torus. They are solved, never sampled: how many circles the
 	// section has is a topological question, and torus_coaxial_section.go carries why each form's level
@@ -73,6 +80,20 @@ func (q Quadric) distanceTo(p math.Point3) float64 {
 		return stdmath.Inf(1)
 	}
 	return float64(stdmath.Abs(q.ValueAt(p)) / grad)
+}
+
+// stationValueLipschitz is exact arithmetic on the two factors, not an estimate. ∂f/∂v is ∇Q(P)·∂P/∂v
+// with ∇Q(X) = 2(M W + G), and |∂P/∂v| is the chart's minor radius exactly (∂P/∂v = r(−sin v·e(u) +
+// cos v·â), an orthogonal pair scaled by r). |W| is at most the distance from the quadric's anchor to the
+// chart's centre plus the chart's own reach, R + r. The tensor norm is Frobenius, which dominates the
+// spectral norm, so the product is an upper bound on every direction M can act in.
+//
+// The bound also covers the value AT an extremum track, which is what the wrap sweep reads: by the
+// envelope theorem dA/dv = ∂f/∂v there, because ∂f/∂u vanishes at an extremum by definition.
+func (q Quadric) stationValueLipschitz(chart Torus) float64 {
+	reach := float64(q.Anchor.VectorTo(chart.Center).Length()) + chart.MajorRadius + chart.MinorRadius
+	slope := float64(q.M.Norm()*reach) + float64(q.G.Length())
+	return float64(2 * slope * chart.MinorRadius)
 }
 
 // chartTorus reports that a quadric is not a torus, so it can only ever take the implicit role.

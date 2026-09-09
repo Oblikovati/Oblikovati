@@ -207,15 +207,56 @@ func (h torusSecondHarmonic) isOneHarmonic() bool {
 // itself is at the solve's own rounding. Nothing here decides which root is physical: every root that
 // certifies is returned, and the caller's lane structure says which pair bounds which arc.
 func (h torusSecondHarmonic) azimuths() []float64 {
-	scale := h.scale()
+	shift, scale := h.chartShift(), h.scale()
+	g := h.rotated(shift)
 	out := make([]float64, 0, 4)
-	for _, u := range trigQuadraticRoots(float64(2*h.Cos2), h.Sin2, h.Cos1, h.Sin1, h.Level-h.Cos2) {
-		u = h.polish(u)
+	for _, w := range trigQuadraticRoots(float64(2*g.Cos2), g.Sin2, g.Cos1, g.Sin1, g.Level-g.Cos2) {
+		u := h.polish(wrapAngle(w + shift))
 		if stdmath.Abs(h.valueAt(u)) <= torusRootResidualTol*scale {
 			out = append(out, u)
 		}
 	}
 	return sortedDedupedAngles(out)
+}
+
+// chartShift is the azimuth the tan(u/2) substitution is taken ABOUT, and it exists because that chart
+// has a pole at the half-turn. The quartic's leading coefficient is f(π): as a root approaches π the
+// quartic drops toward a cubic, and the cancellation costs the OTHER roots their residual certificate
+// too, so the solver silently returns a partial set.
+//
+// Measured: on a random ring × rod pair at tube angle v = 2.953097 the station has four sign changes and
+// the unshifted solve certified two; one level down, the same collapse in the DERIVATIVE's solve left a
+// station reporting one extremum instead of four, which is a station no lane can be read on
+// (Oblikovati/Oblikovati#3515, review round 2).
+//
+// Shifting is exact — [torusSecondHarmonic.rotated] is a rotation of the coefficients, not an
+// approximation — and it is a CONDITIONING choice, not a topological one: whichever chart is used, the
+// roots come back through the same Newton polish and the same residual certificate on the ORIGINAL
+// polynomial. The shifts are tried in a fixed order and the first that clears the floor wins, so the
+// choice is deterministic and the output byte-identical across runs and platforms.
+func (h torusSecondHarmonic) chartShift() float64 {
+	floor := float64(torusChartPoleFloor * h.scale())
+	for _, d := range torusChartShifts {
+		if stdmath.Abs(h.valueAt(stdmath.Pi+d)) > floor {
+			return d
+		}
+	}
+	return 0 // every chart has a near-root at its pole: solve in the plain one and let the caller certify
+}
+
+// rotated returns the same polynomial written about a shifted azimuth: rotated(δ).valueAt(w) is
+// h.valueAt(w + δ). A trigonometric polynomial's harmonics rotate independently, the first by δ and the
+// second by 2δ, so this is a pair of plane rotations on the coefficients and nothing is lost.
+func (h torusSecondHarmonic) rotated(delta float64) torusSecondHarmonic {
+	c1, s1 := cosSin(delta)
+	c2, s2 := cosSin(float64(2 * delta))
+	return torusSecondHarmonic{
+		Cos2:  float64(h.Cos2*c2) + float64(h.Sin2*s2),
+		Sin2:  float64(h.Sin2*c2) - float64(h.Cos2*s2),
+		Cos1:  float64(h.Cos1*c1) + float64(h.Sin1*s1),
+		Sin1:  float64(h.Sin1*c1) - float64(h.Cos1*s1),
+		Level: h.Level,
+	}
 }
 
 // polish takes a candidate azimuth to the root itself by Newton on f. It stops at a stalled slope,
@@ -244,3 +285,26 @@ const torusRootResidualTol = 1e-9 // tol:numeric — relative residual of a cert
 // torusRootPolishSteps is how many Newton steps in the angle a quartic root gets. The quartic solver
 // already polishes in t; two more steps in u remove what the tan(u/2) chart's conditioning left.
 const torusRootPolishSteps = 3
+
+// torusChartPoleFloor is how far the station polynomial must stand from zero AT A CHART'S POLE, relative
+// to its own largest coefficient, for that chart to be well conditioned. It compares a value with the
+// coefficients it was formed from, so it carries no model scale. Below it the quartic in tan(u/2) is
+// solved by cancellation and loses roots — the ill-conditioned regime a fast path must leave, which here
+// means turning the chart rather than abandoning it.
+//
+// SWEPT, not chosen. 55 000 stations drawn from random ring × rod pairs, each hunted to a tube angle
+// where the station or its derivative has a root at the pole and then sampled on a geometric ladder away
+// from it, comparing the plain chart's certified roots with the union over all four charts:
+//
+//	|f(π)|/scale     ≥1e-4   1e-5   1e-6   1e-7   1e-8  …  1e-11   ≤1e-13
+//	plain loses one  0.000%  1.47%  24.3%  65.6%  82.4%    99.5%   0.000%
+//
+// Zero losses over the 12 255 stations at or above 1e-4, and the band below 1e-13 recovers because there
+// the pole IS a root and the quartic drops to the cubic the solver handles. One decade of margin above
+// the top of the damaged band puts the floor here.
+const torusChartPoleFloor = 1e-3 // tol:conditioning — relative value of a station at its chart's pole
+
+// torusChartShifts are the azimuths the substitution may be taken about, tried in this order. Zero is
+// first so a well-conditioned station keeps exactly the chart, and the bits, it always had. The rest are
+// spread over the half-turn, because two shifts that differ by π share a pole.
+var torusChartShifts = [4]float64{0, stdmath.Pi / 2, stdmath.Pi / 4, 3 * stdmath.Pi / 4}

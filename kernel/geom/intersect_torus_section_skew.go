@@ -126,18 +126,29 @@ func torusLaneWrapArc(t Torus, co TorusCoForm, anchor float64, res Resolution) (
 }
 
 // torusUpperTrackSweep walks the tube's whole turn once and answers both questions an arc rests on:
-// whether the lane's upper track exists at EVERY station, and how close it comes to any other azimuth
-// the station carries. It stops at the first station the track is missing from, because there is no arc
-// to certify past that point.
+// whether the lane's upper track runs the WHOLE turn, and how close the branch comes to any other
+// azimuth the station carries. It stops at the first station that fails, because there is no arc to
+// certify past that point.
+//
+// "Whole turn" is CERTIFIED, not sampled. Asking only whether the track's discriminant was positive at
+// each of 720 stations proved nothing about the 720 gaps between them: where the track vanished between
+// two samples an arc was built over tube angles at which its branch does not exist, and
+// [TorusSectionArc.azimuthAt] then answered the lane's own extremum — a point on the torus that is not
+// on the quadric. Measured on a random torus × cylinder sweep, that reached a BUILT body carrying
+// thirteen times the correct volume, valid and closed and manifold, with nothing recorded
+// (Oblikovati/Oblikovati#3515, review round 2). Each sample now has to clear the distance the station
+// value can travel before the next one reads it, which closes the gaps rather than narrowing them.
 func torusUpperTrackSweep(t Torus, co TorusCoForm, anchor float64) (wraps bool, clearance float64) {
+	floor := float64(co.stationValueLipschitz(t) * (twoPi / (2 * torusStationProbes)))
 	clearance = stdmath.Inf(1)
 	for i := range torusStationProbes {
 		h := torusSecondHarmonicAt(t, co, float64(twoPi*float64(i)/torusStationProbes))
-		l, ok := torusLaneAt(h, anchor)
-		if !ok || l.trackDiscriminant(true) <= 0 {
+		ex, roots := h.extrema(), h.azimuths()
+		l, ok := torusLaneFrom(h, ex, roots, anchor)
+		if !ok || !l.upperTrackIsCertified(floor) {
 			return false, 0
 		}
-		clearance = stdmath.Min(clearance, torusArcClearanceAt(t, h, l.upper))
+		clearance = stdmath.Min(clearance, torusArcClearanceAt(t, roots, l.upper))
 	}
 	return true, clearance
 }
@@ -158,9 +169,9 @@ func torusUpperTrackSweep(t Torus, co TorusCoForm, anchor float64) (wraps bool, 
 // it to zero and torusUpperTrackSweep answers wraps=false before any clearance is read. What is left is
 // a non-adjacent branch landing on u's own bits, which the weld collapses and the azimuth census then
 // refuses — the count drops. Excluding by index would not change any of that.
-func torusArcClearanceAt(t Torus, h torusSecondHarmonic, u float64) float64 {
+func torusArcClearanceAt(t Torus, roots []float64, u float64) float64 {
 	least := twoPi
-	for _, r := range h.azimuths() {
+	for _, r := range roots {
 		if r != u {
 			least = stdmath.Min(least, stdmath.Abs(shortestTurnDelta(u, r)))
 		}
@@ -225,10 +236,18 @@ func torusLaneOwnsStation(l TorusSectionLoop, v float64) (owns, ok bool) {
 //
 // The certificate samples at HALF the construction's station step, so it reads every station the sweep
 // read AND the midpoint between each neighbouring pair. A grid that steps in lockstep with the thing it
-// certifies cannot correct a sweep that stepped over a feature (review round 1, finding M2); this one
-// halves the step it can step over. It does not abolish it — a tangency narrower than half a step is
-// still invisible to both, and refining the sweep to the minimum of the track discriminant is the
-// standing follow-up, not something a finer grid replaces.
+// certifies cannot correct a sweep that stepped over a feature (review round 1, finding M2).
+//
+// HALF IS A FLOOR CHOSEN FOR COST, NOT A DERIVED SUFFICIENCY, and the measurement says so: at a QUARTER
+// of the construction step a differential sweep of 4000 random pairs refuses 8 rows this grid passes, and
+// at an EIGHTH, 26 — monotone, with no reversals in either direction (review round 2, finding M2/NEW-3).
+// The grid is therefore under-resolved at any factor, and the answer is not a finer grid: it is that the
+// things this census exists to catch are certified where they are decided instead. Two of them now are —
+// the wrap by [TorusCoForm.stationValueLipschitz] and the station solve by its own post-condition — and the
+// remaining one, finding the tube angle at which a tangency lives, is the standing follow-up.
+//
+// Doubling the grid costs about a tenth of the section build (measured: 12.77 → 14.16 ms on a folded
+// section, 25.90 → 27.57 ms on a wrapping one), and each further halving costs that again.
 //
 // A probe within ONE step of a window END is skipped: an end IS a fold, where the two azimuths have
 // merged and the station carries one rather than two, so reading there would report a mismatch that is
@@ -258,6 +277,14 @@ func torusCurvesAccountForEveryAzimuth(t Torus, co TorusCoForm, curves []Curve3)
 // carries a double root that no pair of branches can bound, which is a statement about the input; a
 // station with no tangency that still does not balance is a statement about this reduction. They are
 // different things and they used to share one name (review round 1, finding 3).
+//
+// THE TANGENCY IS ASKED FIRST, AND IT IS NOT A TIE-BREAK. Review round 2 (NEW-5) observed that a station
+// carrying a double root ANYWHERE on its circle takes the tangency name even when the imbalance also has
+// another cause. That ordering is deliberate: a double root is a configuration NO pairing of branches can
+// carry, so the section would refuse at that station whatever else were true of the curve set, and naming
+// the second cause instead would tell a user to look at the kernel when the input is the thing that
+// cannot be sectioned. The order is stated here because it is a real precedence, not an accident of the
+// switch.
 func torusStationIsAccountedFor(h torusSecondHarmonic, curves []Curve3, v float64) SectionDecline {
 	ex, roots := h.extrema(), h.azimuths()
 	carried := torusAzimuthsCarriedAt(h, ex, roots, curves, v)
@@ -346,7 +373,8 @@ func torusAzimuthAt(t Torus, co TorusCoForm, v, anchor float64, upper bool) floa
 		return st.harmonic().root(upper)
 	}
 	h := st.secondHarmonic()
-	return torusLaneRoot(h, h.extrema(), h.azimuths(), anchor, upper)
+	ex := h.extrema()
+	return torusLaneRoot(h, ex, h.azimuths(), anchor, upper)
 }
 
 // torusFoldAzimuth is the MERGED azimuth of a station's branch pair: the one azimuth both branches

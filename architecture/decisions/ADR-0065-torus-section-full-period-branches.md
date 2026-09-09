@@ -106,10 +106,13 @@ the set.
 Measured independently in review (`.superpowers/sdd/csg-leftovers-plan/L13-review-1.md`), base against
 head, over **4000 random torus × cylinder pairs**: 942 rows changed, and every
 one of them from `the torus section's branch pair never folds` to `ok=true`. Zero rows went the other
-way, zero produced `ok=true` with an empty section, zero produced NaN. The other 3058 rows are
-identical **including the sampled-point checksum**, so the 1252 previously built sections reproduce
-bit-for-bit. Independently: 2194 sections built over that sweep, 160 351 sampled points, worst distance
-to *both* surfaces 1.753e-13 — the new full-period arcs are exact, not merely balanced.
+way and zero produced `ok=true` with an empty section. The other 3058 rows are identical **including the
+sampled-point checksum**, so the 1252 previously built sections reproduce bit-for-bit.
+
+That sweep sampled 11 points per curve, which is enough to state the decline-to-build transition and not
+enough to state anything about the curves themselves; an earlier draft of this ADR quoted its "zero
+produced NaN" as a certificate and that clause is withdrawn (review round 2, NEW-4). What the built
+sections are worth is measured separately and at a density that can carry the claim — §"Round 2" below.
 
 ### `periodicRootWindows`'s rise/fall parity branch
 
@@ -150,6 +153,81 @@ ADR-0061's G2 is retired. In its place, for the same reduction:
   `TestADroppedSectionLoopIsCaughtByTheAzimuthCount` and `TestFourArcsOnOneLaneAreRefused`.
 
 G1, G3 and G4 of ADR-0061's table are untouched.
+
+## Round 2 — a balanced section is not a right section
+
+The certificate above says the curves account for the station's roots. It does not, on its own, say the
+curves are ON the tool, and review round 2 found the difference: on an input the wave base refused BY
+NAME, this reduction built an intersect of volume 113.28 against an 8.63 membership oracle — thirteen
+times wrong, `Valid`, `Closed`, `Manifold`, with nothing recorded. Eight of 4000 random pairs carried
+curves 0.054 to 8.05 units off the tool, three of them NaN. That is the failure the ground rules forbid
+outright, and it is the wrap's own, so it is decided here rather than deferred.
+
+**Three causes, three certificates, and one deletion.**
+
+**1. The chart's pole (the cause of the 13× body).** The station's azimuths come from a quartic in
+tan(u/2) whose leading coefficient is f(π). A root at the half-turn collapses that solve, and the
+cancellation costs the OTHER roots their residual certificate, so `azimuths()` returns a PARTIAL station
+in silence. `arcRootFrom` then finds nothing in the arc, answers the lane's own extremum by design, and
+the arc evaluates to a point on the torus that is not on the quadric. Measured at v = 2.953097 of one
+pair: four sign changes, two certified roots, one arc 26.2 units off the rod. One level down the same
+collapse in the DERIVATIVE's solve reported one extremum where the polynomial has four, which is a
+station no lane can be read on at all.
+
+The chart now turns away from its pole. `chartShift` picks the first of four fixed shifts whose pole the
+station clears; `rotated` is an exact rotation of the coefficients; roots come back through the same
+Newton polish and the same residual certificate on the ORIGINAL polynomial, so the shift is a
+conditioning choice and never a topological one. Zero shift is tried first, so a well-conditioned station
+keeps exactly the chart and the bits it always had.
+
+`torusChartPoleFloor` is swept, not chosen. 55 000 stations, each hunted onto a pole crossing and sampled
+away from it on a geometric ladder, comparing the plain chart's certified roots against the union over
+all four charts:
+
+| \|f(π)\|/scale | ≥1e-4 | 1e-5 | 1e-6 | 1e-7 | 1e-8 | 1e-11 | ≤1e-13 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| plain chart loses a root | **0.000 %** | 1.47 % | 24.3 % | 65.6 % | 82.4 % | 99.5 % | 0.000 % |
+
+Zero losses over the 12 255 stations at or above 1e-4; the band below 1e-13 recovers because there the
+pole IS a root and the quartic drops to the cubic the solver handles. The floor sits one decade above the
+top of the damaged band, at 1e-3. It is the ONE tolerance constant this change adds; it is annotated
+`// tol:conditioning`, so `archguard`'s unjustified-epsilon ratchet does not move.
+
+**2. The station solve now carries a post-condition.** `torusStationRootsAreComplete`: every arc between
+neighbouring extrema whose ends differ in sign must hold one of the certified azimuths. Which arcs hold a
+root is decided by two SIGNS — a combinatorial fact no chart can lose — while the azimuths come from a
+chart that can. A station that fails it is unreadable and the lane declines by name.
+
+**A bisection that repaired the missing root was written first and DELETED.** With the chart turned, the
+post-condition fires 0 times in 1 920 000 stations drawn from 4000 random pairs, polynomial and
+derivative alike. A repair nothing reaches is a second engine standing beside the first, which is the
+thing this wave exists to remove.
+
+**3. The wrap is certified, not sampled.** An arc over [0, 2π) asserts its branch exists at every tube
+angle; 720 samples cannot establish that. `torusStationValueLipschitz` bounds |∂f/∂v| over the whole
+torus at once — exact arithmetic on two factors, |∇Q| ≤ 2(‖M‖ᶠ·reach + |G|) and |∂P/∂v| = r exactly — and
+by the envelope theorem that bound covers the value along an extremum track too, since ∂f/∂u vanishes
+there. A sample whose |value| clears the bound times half a step cannot vanish before the next sample
+reads it, so a sweep that clears it everywhere has PROVED the track runs the whole turn.
+
+Disclosed plainly: on a 4000-pair sweep this floor refuses 17 of 1999 built rows (0.85 %), and it is the
+only one of the three whose necessity could not be exhibited. Searching those 4000 pairs at twenty times
+the construction's resolution found **no** lane positive at all 720 stations and negative between them
+(0 of 1769 wrapping candidates). The floor is kept because the arc's claim is about every v and a sample
+is not, and because it refuses rather than builds; the global bound is crude and tightening it would buy
+most of those 17 rows back.
+
+**The gate is the geometry, not the balance.** `TestEveryFullPeriodArcLiesOnBothSurfaces` sweeps 4000
+random pairs and requires every point of every arc to lie on the quadric, sampled at 997 parameters —
+prime, and offset by 1/π of a step — so the check shares no grid with the 720-station construction or the
+1440-station census. Result at head: **0 arcs off the surface, 0 NaN**, over 1844 built sections.
+`TestTheSectionThatBeatTheSampler` pins the row that broke it; `TestTheChartTurnsAwayFromItsPole` pins the
+mechanism.
+
+**What this does NOT fix, proven by bisect.** Four rows of that sweep build FOLDED LOOPS that run off the
+quadric or evaluate NaN, and all four do so identically at the wave base fff94140. They are a pre-existing
+defect of the folded-window path, they are outside this ADR, and they need their own issue. The corpus
+row gates arcs at zero and says so rather than licensing a failure count.
 
 ## Consequences
 

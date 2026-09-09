@@ -53,9 +53,15 @@ func torusLaneAt(h torusSecondHarmonic, anchor float64) (torusLane, bool) {
 
 // torusLaneFrom is [torusLaneAt] with the station's extrema and roots supplied. A caller that reads
 // SEVERAL lanes off one station — the azimuth census reads one per curve — must not solve the same two
-// quartics again for each of them ("decide each incidence once and reuse the result").
+// quartics again for each of them ("decide each incidence once and reuse the result"). The roots must
+// be the station's own certified azimuths.
+//
+// ok=false is a station no lane can be named on: fewer than two extrema, or a root the sign pattern
+// insists on that the solve did not produce. The second is the post-condition on the locator, and it is here
+// rather than in the caller because EVERY reader of a lane depends on it — the arc's own evaluator most
+// of all (Oblikovati/Oblikovati#3515, review round 2).
 func torusLaneFrom(h torusSecondHarmonic, ex, roots []float64, anchor float64) (torusLane, bool) {
-	if len(ex) < 2 {
+	if len(ex) < 2 || !torusStationRootsAreComplete(h, ex, roots) {
 		return torusLane{}, false
 	}
 	i, n := nearestAngleIndex(ex, anchor), len(ex)
@@ -91,6 +97,23 @@ func (l torusLane) trackDiscriminant(upper bool) float64 {
 	return float64(-l.value * l.flanks[0])
 }
 
+// upperTrackIsCertified reports the lane's upper track existing not merely AT this station but through
+// the half-step of tube angle either side of it — which is what a SWEEP over samples has to know, and
+// what a bare sign test cannot say.
+//
+// Two things must hold. The extrema bounding the track take opposite signs, so a root lies between them;
+// and each of those two values stands further from zero than the station value can travel in half a
+// sampling step, so neither can vanish unseen between this sample and the next. floor is that travel
+// (see [TorusCoForm.stationValueLipschitz]).
+//
+// A sweep that finds this true at every sample has PROVED the track runs the whole turn. A sweep that
+// only found the discriminant positive at every sample had proved nothing about the gaps, and built
+// arcs over tube angles where the branch does not exist (Oblikovati/Oblikovati#3515, review round 2).
+func (l torusLane) upperTrackIsCertified(floor float64) bool {
+	return l.trackDiscriminant(true) > 0 &&
+		stdmath.Abs(l.value) > floor && stdmath.Abs(l.flanks[1]) > floor
+}
+
 // root returns the lane's upper (increasing-u) or lower azimuth.
 func (l torusLane) root(upper bool) float64 {
 	if upper {
@@ -111,6 +134,51 @@ func (l torusLane) separation() float64 {
 // belongs to a flank is the COMPLEMENTARY arc of its neighbours' lanes, already carried by them.
 func (l torusLane) mergesAtItsCenter() bool {
 	return stdmath.Abs(l.value) < stdmath.Min(stdmath.Abs(l.flanks[0]), stdmath.Abs(l.flanks[1]))
+}
+
+// torusStationRootsAreComplete is the POST-CONDITION on the station solve: every arc between neighbouring
+// extrema whose ends differ in sign holds one of the certified azimuths. f is monotone between two of its
+// own critical points, so which arcs hold a root is decided by two signs — a combinatorial fact no chart
+// can lose — while the azimuths themselves come from a quartic in tan(u/2) that can. Where the two
+// disagree the solver has returned a partial station, and everything downstream that reads it, the arc's
+// own evaluator most of all, is reading a station that is not there.
+//
+// It does not ask the converse: a station with MORE azimuths than sign changes carries a double root,
+// which is a tangency and has its own name.
+//
+// It is a post-condition and not a repair. [torusSecondHarmonic.chartShift] turns the chart away from its
+// pole, which is where the loss came from, and after that this never fires: measured at 0 over 1 920 000
+// stations drawn from 4000 random ring × rod pairs, station polynomial and derivative alike. A bisection
+// that recovered the missing root was written first and DELETED when that measurement came in — a repair
+// nothing reaches is a second engine beside the first (Oblikovati/Oblikovati#3515, review round 2).
+//
+// The check itself stays, and it is not the dead parity branch this branch also deleted. That one was
+// unreachable by proof — a cyclic walk over two classes has equally many transitions each way — and this
+// one is not: the chart family is finite, and a station whose roots block all four poles would reach it.
+// It is what makes the chart shift's correctness checkable rather than assumed.
+func torusStationRootsAreComplete(h torusSecondHarmonic, ex, roots []float64) bool {
+	for i := range ex {
+		if stationArcIsMissingItsRoot(h, roots, ex[i], ex[(i+1)%len(ex)]) {
+			return false
+		}
+	}
+	return true
+}
+
+// stationArcIsMissingItsRoot reports an arc between neighbouring extrema whose ends differ in sign — so
+// a root lies between them, f being monotone there — and which holds none of the certified azimuths.
+//
+// An arc whose root has merged ONTO one of its ends is not missing anything: that is the fold, arcRootFrom
+// answers the extremum itself there by design, and the arc's interior legitimately holds nothing. The end
+// is judged a root by the certificate azimuths() applies to any candidate — its residual against the
+// polynomial's own coefficient scale — so no new tolerance enters.
+func stationArcIsMissingItsRoot(h torusSecondHarmonic, roots []float64, lo, hi float64) bool {
+	limit := float64(torusRootResidualTol * h.scale())
+	at, to := h.valueAt(lo), h.valueAt(hi)
+	if stdmath.Abs(at) <= limit || stdmath.Abs(to) <= limit {
+		return false
+	}
+	return (at > 0) != (to > 0) && arcRootFrom(roots, lo, hi, true) == lo
 }
 
 // arcRootFrom returns the root nearest `from` inside the open arc running from `from` toward `to` in

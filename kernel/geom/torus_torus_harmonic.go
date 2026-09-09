@@ -92,6 +92,27 @@ func (t Torus) distanceTo(p math.Point3) float64 {
 	return stdmath.Abs(float64(SignedDistanceToSurface(t, p)))
 }
 
+// stationValueLipschitz bounds |∂f/∂v| for the TORUS's quartic on the chart, the same statement
+// [Quadric.stationValueLipschitz] makes for a quadric and derived the same way — a bound on |∇F| over
+// everywhere the chart reaches, times |∂P/∂v| = the chart's minor radius exactly.
+//
+// With W = X − C and k = R² − r², F = (|W|² + k)² − 4R²(|W|² − (W·â)²), so
+//
+//	∇F = 4(|W|² + k)W − 8R²(W − (W·â)â)
+//
+// and |W − (W·â)â| ≤ |W| because it is W's own perpendicular part. With |k| ≤ R² + r² and m the
+// farthest the chart reaches from this torus's centre, |∇F| ≤ 4m³ + 4m(R² + r²) + 8R²m, which is
+// 4m(m² + 3R² + r²). Every factor is monotone in |W|, so evaluating at m bounds the whole ball.
+//
+// It is CRUDER than the quadric's, and it is crude in the same direction: it can only refuse a wrap the
+// sweep could not otherwise certify, never admit one. Tightening it — a per-station |∇F| instead of a
+// global one — is ADR-0065's standing follow-up for both forms.
+func (t Torus) stationValueLipschitz(chart Torus) float64 {
+	m := float64(t.Center.VectorTo(chart.Center).Length()) + chart.MajorRadius + chart.MinorRadius
+	spread := float64(m*m) + float64(3*float64(t.MajorRadius*t.MajorRadius)) + float64(t.MinorRadius*t.MinorRadius)
+	return float64(4 * m * spread * chart.MinorRadius)
+}
+
 // chartTorus reports that a torus can take the chart role: it is the one form that is also a surface
 // the reduction can parametrise on.
 func (t Torus) chartTorus() (Torus, bool) { return t, true }
