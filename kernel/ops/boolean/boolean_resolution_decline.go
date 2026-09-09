@@ -22,9 +22,14 @@ import (
 //	<= 0.0998           the ring comes back UNTOUCHED: err=nil, one face, removed=0, and NOTHING
 //	                    recorded. The silent exit.
 //	0.158 .. ~4e4       refused loudly and by name (no-exact-curved-path)
-//	~6e4 .. ~4e5        the EXACT section — valid, torus + cylinder, four loops, both edges on both
-//	                    surfaces to 4.4e-16 — whose analytic REMOVED volume misses the oracle, by
-//	                    42.9% at the bottom of the band and 1.2% at its top
+//	~4.5e4 .. ~4e5      the EXACT section — valid, torus + cylinder, four loops, both edges on both
+//	                    surfaces to 4.4e-16 — whose analytic REMOVED volume misses the oracle. The
+//	                    miss is NOISE, not a law: over 20 sample radii per decade it runs +18%, -35%,
+//	                    -21%, -12%, +252%, -105%, -43%, -20%, -11%, +17%, +13%, -4.7%, +4.9%, +0.2%,
+//	                    -4.5%, -2.6%, -0.6%, and the two extremes are impossible rather than merely
+//	                    imprecise (see CodeBooleanMovedVolumeOutOfToolBracket, which records them).
+//	                    Nor is the REFUSAL set below it an interval: 3.98e-4 and 7.94e-4 in bore
+//	                    refuse while both of their neighbours build.
 //	>= ~6e5             exact: torus + cylinder, 2 loops each, volume within 3e-3 of the oracle at
 //	                    the plateau's edge and 3e-6 well inside it
 //

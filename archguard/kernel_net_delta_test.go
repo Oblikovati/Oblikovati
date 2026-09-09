@@ -228,7 +228,17 @@ var kernelNetDeltaPin = map[string]int{
 	// The measurement is not restated here: it lives on certifyBooleanFaces in
 	// kernel/ops/boolean/boolean_certify.go, with the band it belongs to on
 	// kernel/ops/boolean/boolean_resolution_decline.go.
-	"diag-codes": 38,
+	//
+	// 36 → 37 (2026-09-09, #3516 fix round 1): CodeBooleanMovedVolumeOutOfToolBracket. Again ONE
+	// declaration and a **fallback-site delta of 0**: it refuses nothing and adds no path. It names a
+	// contradiction the bracket beside it cannot see — the Requicha volume guard's tolerance is
+	// MODEL-relative (6.464e-3 mm³ on the RING pair, 686x the material a 1e-3 bore removes), so a
+	// feature smaller than the model's resolution cube passed it whatever its measurement said. Two
+	// radii in that band shipped with err=nil and an empty recorder, one of them reporting a NEGATIVE
+	// removal. The new code is the same rule at the TOOL's scale, where a violation is a
+	// contradiction and needs no tolerance of its own. No ADR is owed for a new engine, recognizer or
+	// tolerance; the ADR that IS owed is the one superseding ADR-0061's G8 entry, which #3515 writes.
+	"diag-codes": 39,
 }
 
 func TestKernelNetDelta(t *testing.T) {

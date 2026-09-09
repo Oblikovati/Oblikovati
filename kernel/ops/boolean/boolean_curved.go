@@ -147,29 +147,123 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, sizes 
 // rather than only that it happened, and an ACCEPTANCE the certificate could not take in full records
 // how much of the body it read. Validity is checked by the caller, at the exit (see there).
 func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body, sizes operandSizes, rec *diag.Recorder) bool {
-	certified, unprobed := certifyBooleanFaces(op, target, tool, body, sizes.res)
-	if !certified {
-		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
-			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
+	if faceCertificateRejected(op, target, tool, body, sizes.res, rec) {
 		return true
-	}
-	if unprobed > 0 {
-		rec.Recordf(CodeBooleanFaceNotProbed, diag.Warning,
-			"curved %s analytic result: %d of %d faces had no interior point, so the membership certificate could not examine them",
-			op, unprobed, len(body.Faces()))
 	}
 	if inverted, found := invertedFace(body); found {
 		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
 			"curved %s analytic result has a face wound against its outward normal (%q): falling back to the guarded path", op, inverted.ReferenceKey())
 		return true
 	}
-	return curvedVolumeRejected(op, target, tool, body, rec)
+	tv, wv, bv := boolVolumes(target, tool, body)
+	recordMovedVolumeOutOfToolBracket(op, tv, wv, bv, rec)
+	return curvedVolumeRejected(op, target, tool, tv, wv, bv, rec)
 }
 
+// faceCertificateRejected is the per-face half of the acceptance gate: the evidence certifyBooleanFaces
+// collects, judged. Each refusal records its OWN Defect, so a demotion says which of the three
+// quantities disagreed — where a face lies, or how much boundary the result shows — rather than only
+// that something did.
+func faceCertificateRejected(op PartFeatureOperation, target, tool, body *topo.Body, res Resolution, rec *diag.Recorder) bool {
+	ev := certifyBooleanFaces(op, target, tool, body, res)
+	if !ev.kept {
+		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
+			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
+		return true
+	}
+	return overclaimRejected(op, target, tool, ev, rec) || recordUnprobedFaces(op, body, ev, rec)
+}
+
+// overclaimRejected refuses a result showing more boundary than its operands have between them.
+func overclaimRejected(op PartFeatureOperation, target, tool *topo.Body, ev faceEvidence, rec *diag.Recorder) bool {
+	available, over := ev.overclaimsItsOperands(target, tool)
+	if !over {
+		return false
+	}
+	rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
+		"curved %s analytic result shows %g of boundary where its operands have %g between them: a boolean "+
+			"trims its operands and cannot grow them — falling back to the guarded path", op, ev.claimed, available)
+	return true
+}
+
+// recordUnprobedFaces reports how much of the body the certificate could not read. It never refuses —
+// the gate disproves, it does not demand a probe — so it always returns false.
+func recordUnprobedFaces(op PartFeatureOperation, body *topo.Body, ev faceEvidence, rec *diag.Recorder) bool {
+	if ev.unprobed > 0 {
+		rec.Recordf(CodeBooleanFaceNotProbed, diag.Warning,
+			"curved %s analytic result: %d of %d faces had no interior point, so the membership certificate could not examine them",
+			op, ev.unprobed, len(body.Faces()))
+	}
+	return false
+}
+
+// recordMovedVolumeOutOfToolBracket reports the material the operation MOVED against the tool that
+// moved it — the per-operation half of Requicha's rule taken at the TOOL's scale instead of the
+// model's, which is the only scale at which a small feature is visible at all.
+//
+// The bracket above it is model-relative: on the RING pair its tolerance is
+// ResolutionForBodies(ring, drill).Volume() = 6.464e-3 mm³, which is 686x the material a 1e-3 bore
+// removes and 2740x a 6.31e-4 bore's. It is therefore structurally blind to every feature under
+// ~6.5e-3 mm³ on a 20 mm part, and it rejected the G8 band only because the ARTEFACT it was reading
+// (2.839, the ring's tessellation deficit) happened to be 440x its tolerance. With that artefact
+// gone (#3516) the band ships, and at bore 8.913e-4 it shipped a Cut whose measured removal is
+// NEGATIVE — the result measuring larger than the target it was cut from — with err=nil and an empty
+// recorder.
+//
+// This is not an accuracy statement and needs no tolerance of its own: no operation can move more
+// material than its tool holds, and none can move a negative amount, so a violation is a
+// CONTRADICTION and saying so cannot over-claim. It is recorded, not refused: the body is the exact
+// section (#3516 measured its faces and edges), and what is wrong is the number, which the caller
+// now sees instead of storing silently.
+func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, tv, wv, bv float64, rec *diag.Recorder) {
+	moved, ok := movedVolume(op, tv, bv)
+	slack := movedVolumeSlack * wv
+	if !ok || (moved >= -slack && moved <= wv+slack) {
+		return
+	}
+	rec.Recordf(CodeBooleanMovedVolumeOutOfToolBracket, diag.Defect,
+		"%s moved %g of material with a tool holding %g (V(A)=%g V(result)=%g): outside [0, V(tool)], "+
+			"which no %s can be — the result's measured volume is wrong, not merely imprecise",
+		op, moved, wv, tv, bv, op)
+}
+
+// movedVolumeSlack is how far outside [0, V(tool)] a measured move may sit before it is a
+// contradiction rather than a rounding, as a fraction of the TOOL's own volume. It is not a fitted
+// threshold: swept across the whole of kernel/ops, it fires 8 times at 0 and 0 times at 1e-14, 1e-9
+// and 1e-2 alike, so every value on that plateau gives the same verdicts. The eight are correct
+// results that consume their tool WHOLE and overshoot at the last ulp — the largest is 5.7e-15 of
+// V(tool), a cut moving 12.566370614359244 against a tool holding 12.566370614359172 — while the
+// RING band's real violations are 1.9e-2 BELOW zero and 3.2e-1 above one. Twelve orders separate
+// the two populations; 1e-9 sits in the middle of that gap.
+const movedVolumeSlack = 1e-9 // tol:calibrated — plateau 1e-14..1e-2, populations 12 orders apart
+
+// movedVolume is how much material the operation moved, in the direction its own definition moves it:
+// what a Cut REMOVED from the target, what a Join ADDED to it, and what an Intersect KEPT. Requicha
+// bounds all three the same way — by the tool — so one bracket serves them and there is no per-op
+// arm to keep in step. ok is false for an operation with no membership rule.
+func movedVolume(op PartFeatureOperation, targetVol, bodyVol float64) (float64, bool) {
+	switch op {
+	case Cut:
+		return targetVol - bodyVol, true
+	case Join:
+		return bodyVol - targetVol, true
+	case Intersect:
+		return bodyVol, true
+	}
+	return 0, false
+}
+
+// CodeBooleanMovedVolumeOutOfToolBracket marks a boolean whose result moved material the tool cannot
+// account for: a negative removal, or more material than the tool holds. Unlike the model-relative
+// bracket beside it, this one is at the TOOL's scale, so it still sees a feature far below the
+// model's resolution cube — which is exactly where a wrong measurement used to ship in silence
+// (Oblikovati/Oblikovati#3516).
+const CodeBooleanMovedVolumeOutOfToolBracket diag.Code = "boolean.moved-volume-out-of-tool-bracket"
+
 // curvedVolumeRejected is the acceptance gate's last stage: the Requicha two-sided volume bracket,
-// split out so each stage stays one decision.
-func curvedVolumeRejected(op PartFeatureOperation, target, tool, body *topo.Body, rec *diag.Recorder) bool {
-	tv, wv, bv := boolVolumes(target, tool, body)
+// split out so each stage stays one decision. It takes the volumes its caller already measured, so
+// the two brackets read ONE measurement of each body rather than two of each.
+func curvedVolumeRejected(op PartFeatureOperation, target, tool *topo.Body, tv, wv, bv float64, rec *diag.Recorder) bool {
 	if !volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
 		return false
 	}
@@ -290,7 +384,7 @@ func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Bod
 	if !Validate(body).ValidSolid() {
 		return true
 	}
-	if certified, _ := certifyBooleanFaces(op, target, tool, body, sizes.res); !certified {
+	if !certifyBooleanFaces(op, target, tool, body, sizes.res).kept {
 		return true
 	}
 	return invalidBooleanVolume(op, target, tool, body)

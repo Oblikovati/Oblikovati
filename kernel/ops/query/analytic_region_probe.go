@@ -24,9 +24,13 @@ import (
 // measured the ring 2.839 mm³ light, 300000x the material a 1e-3 bore removes. The boolean's volume
 // bracket then rejected a body that was right; nothing could measure it.
 //
-// So the grid is laid over each loop's OWN box as well as the shared one. A face with a containing
-// outer loop is unchanged — that loop's box IS the shared box, and the shared box is tried first —
-// while a face whose loops are disjoint gets a grid at each loop's own scale, however small.
+// So the grid is laid over each loop's OWN box as well as the shared one, shared box first. A face
+// whose shared box already yields a deep probe on its first rows — the ordinary trimmed face, and
+// the case the early exit was written for — takes exactly the window and the point it always did.
+// A face whose shared box does NOT reach that depth on its own, which is the slender region the
+// retained comment below says needs the full sweep, now also searches the per-loop windows and may
+// return a different, deeper point than before. That is the intended change: deeper is better for
+// both callers, and it is not "unchanged".
 
 // regionProbeGrid is the resolution of the search for one point strictly on the wanted side of the
 // loops. It only has to find A point, not a particular one, so the count is a robustness margin for
@@ -86,32 +90,56 @@ func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 	return deepestProbe(polys, per, regionProbeWindows(polys), true)
 }
 
-// faceComplementUV returns one parameter point OUTSIDE every loop, over the surface's own parameter
-// rectangle. It is the probe for a face on a CLOSED surface that holds the complement of what its
-// loops enclose — a torus with a bore through it, a sphere with a hole — where the enclosed-region
-// probe lands on the side the face does not own and there is otherwise no representative point at
-// all. An unbounded rectangle has no such grid to lay and declines.
+// faceComplementUV returns one parameter point OUTSIDE every loop. It is the probe for a face on a
+// CLOSED surface that holds the complement of what its loops enclose — a torus with a bore through
+// it, a sphere with a hole — where the enclosed-region probe lands on the side the face does not own
+// and there is otherwise no representative point at all. An unbounded rectangle has no grid to lay
+// and declines.
+//
+// It grids the SAME window list the enclosed side does, plus the surface's own rectangle, so there is
+// one mechanism and not two. What that reaches is complement area lying inside some loop's own
+// bounding box, at that loop's scale. What it does NOT reach — stated because it would otherwise read
+// as fixed — is a thin complement lying BETWEEN two disjoint loops: no loop's box contains it, and
+// the surface rectangle grids it at one fixed scale, which is this file's own indictment applied to
+// the far side. A probe built from the gap between two loops' nearest samples would reach it; there
+// is no measured case demanding one yet, and four faces in kernel/ops/boolean are still unprobed.
+//
+// A loop set that WRAPS the parameter seam declines outright rather than being put to the even-odd
+// test, which is the rule regionProbeUV states one file over: a wrapping loop is not a closed
+// polygon in the plane, so its crossing parity — and therefore the depth ranking built on it — means
+// nothing. brep.PointInFaceTrim would still keep an off-face probe out, but a probe whose DEPTH is
+// meaningless can sit a hair inside the trim, which is the ambiguity regionProbeDeepEnough exists to
+// prevent. No probe is better than an unranked one.
 func faceComplementUV(s geom.Surface, loops []faceLoop) (u, v float64, ok bool) {
-	var w probeWindow
-	w.uLo, w.uHi = s.UDomain()
-	w.vLo, w.vHi = s.VDomain()
-	if !allFinite(w.uLo, w.uHi, w.vLo, w.vHi) {
+	if loopsWrapASeam(loops) {
+		return 0, 0, false // see loopsWrapASeam: even-odd says nothing about an open polyline
+	}
+	var rect probeWindow
+	rect.uLo, rect.uHi = s.UDomain()
+	rect.vLo, rect.vHi = s.VDomain()
+	if !allFinite(rect.uLo, rect.uHi, rect.vLo, rect.vHi) {
 		return 0, 0, false
 	}
 	polys, per := loopUVPolygons(loops), loopsUVPeriod(loops)
-	return deepestProbe(polys, per, []probeWindow{w}, false)
+	return deepestProbe(polys, per, append([]probeWindow{rect}, regionProbeWindows(polys)...), false)
 }
 
-// deepestProbe grids each window in turn and keeps the deepest point on the wanted side, stopping as
-// soon as a window's own deepEnough depth is reached.
+// deepestProbe grids each window in turn and keeps the point that sits deepest RELATIVE to the window
+// that found it, stopping as soon as one reaches regionProbeDeepEnough of its own diagonal.
+//
+// The comparison is relative because the ACCEPTANCE is: deepestInWindow stops at a fraction of the
+// window's diagonal, so ranking windows by absolute depth would let a probe 2% inside a shared box
+// spanning half the chart beat a probe 30% inside a small loop's own box — and 2% inside is exactly
+// the ambiguous point regionProbeDeepEnough exists to reject. One scale for the rule and another for
+// the ranking is two rules.
 func deepestProbe(polys [][]arcSample, per uvPeriod, windows []probeWindow, inside bool) (u, v float64, ok bool) {
-	best := -1.0
+	best := 0.0
 	for _, w := range windows {
 		pu, pv, d := deepestInWindow(polys, per, w, inside)
-		if d > best {
-			best, u, v = d, pu, pv
+		if d > 0 && d/w.diagonal() > best {
+			best, u, v = d/w.diagonal(), pu, pv
 		}
-		if best >= regionProbeDeepEnough*w.diagonal() {
+		if best >= regionProbeDeepEnough {
 			break
 		}
 	}

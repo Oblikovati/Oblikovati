@@ -62,6 +62,12 @@ const (
 	// separate defects: a wrong body is a modelling failure, this is a MEASUREMENT one, and calling
 	// them the same thing is what let the RING band be filed as "the section is wrong" for a whole
 	// milestone when the section was right and only the number was not (Oblikovati/Oblikovati#3516).
+	//
+	// "Coarse" understates it and is kept only because the SHAPE is the thing this outcome asserts:
+	// the miss is not a bounded imprecision but noise that can be sign-wrong — at bore 8.913e-4 the
+	// measured removal is NEGATIVE, the result reading larger than the ring it was cut from. Those
+	// radii are recorded by CodeBooleanMovedVolumeOutOfToolBracket and pinned by
+	// TestAnImpossibleRemovalIsRecorded; the root is Oblikovati/Oblikovati#3538.
 	drillCoarse drillOutcome = "coarse"
 )
 
@@ -148,8 +154,10 @@ func TestTheAxialDrillSweepPinsTheResolutionFloor(t *testing.T) {
 		// which mis-stated the classification's reach by an order of magnitude.)
 		{1e-11, drillRefused}, {1e-10, drillRefused}, {1e-9, drillRefused}, {1e-8, drillRefused},
 		// ABOVE the floor: the size classification does not answer, and the outcome is the pipeline's
-		// own. Up to ~4e-4 the general per-face boolean declines the pair BY NAME
-		// (boolean.no-exact-curved-path) and no geometry is built.
+		// own. Below ~4e-4 the general per-face boolean declines the pair BY NAME
+		// (boolean.no-exact-curved-path) and no geometry is built. "Below" and not "up to": the
+		// refusals do not form an interval — 3.98e-4 and 7.94e-4 refuse while both of their
+		// neighbours build — so these rows pin two radii, not a boundary.
 		{1e-6, drillRefused}, {1e-4, drillRefused},
 		// From ~6.3e-4 the pipeline BUILDS the exact section — valid, one torus, one cylinder, four
 		// loops, both intersection edges on both surfaces to 4.4e-16 (torus) and 4.4e-12 (cylinder).
@@ -159,8 +167,11 @@ func TestTheAxialDrillSweepPinsTheResolutionFloor(t *testing.T) {
 		// and the removed volume misses the oracle (Oblikovati/Oblikovati#3516; the measured law and
 		// the two plateau sweeps that refute a tuned step are in that issue).
 		// Measured on this pair: the removed volume misses the oracle by 42.9% at 1e-3 and 9.4% at
-		// 2e-3, and the transition to the plateau is between 4e-3 (1.17%) and 6e-3 (0.06%). The two
-		// rows are chosen away from that edge, where the miss is noise and a pinned row would flake.
+		// 2e-3. The miss is NOISE and not a law — over 20 radii per decade it runs from -105% (a cut
+		// measuring LARGER than its target) to +252% with no monotone trend, and both extremes are
+		// recorded by CodeBooleanMovedVolumeOutOfToolBracket. Nor is the plateau's edge a point: rows
+		// at 2.24e-3, 3.16e-3 and 4.47e-3 already measure exact while 2.51e-3, 3.98e-3 between them do
+		// not. These two rows are pinned deep inside the coarse side, where the outcome is stable.
 		{1e-3, drillCoarse}, {0.002, drillCoarse},
 		// The exact plateau, whose lower edge is a DECADE below where ADR-0061 G8 measured it. It moved
 		// because the analytic integrator stopped declining the bored torus face, not because the
@@ -234,7 +245,7 @@ func TestASmallBoreBuildsTheExactSectionAndIsMeasuredAnalytically(t *testing.T) 
 		t.Fatalf("the section must be the exact one (torus + cylinder, 4 loops, valid); got %q", got)
 	}
 	assertEveryFaceIsProbeable(t, body)
-	assertBoredRingIsIntegratedAnalytically(t, body, 1e-3)
+	assertBoredRingRemovesMaterialAnalytically(t, body, drill, 1e-3)
 }
 
 // assertEveryFaceIsProbeable is the #3516 regression on the certificate's blind spot: a face with no
@@ -250,12 +261,22 @@ func assertEveryFaceIsProbeable(t *testing.T, body *topo.Body) {
 	}
 }
 
-// assertBoredRingIsIntegratedAnalytically is the #3516 regression on the integrator: the bored torus
-// face must be integrable, so the body's volume comes from its analytic B-rep and not from a mesh.
-// The bound is 1e-6 RELATIVE — three orders looser than the 1.8e-8 measured, and four orders tighter
-// than the 1.28e-2 the tessellated fallback returns, so it separates the two answers without pinning
-// the integrator's own precision.
-func assertBoredRingIsIntegratedAnalytically(t *testing.T, body *topo.Body, bore float64) {
+// assertBoredRingRemovesMaterialAnalytically is the #3516 regression on the integrator: the bored
+// torus face must be integrable, so the body's volume comes from its analytic B-rep and not from a
+// mesh, AND the material that volume accounts for must be the bore's.
+//
+// It asserts the REMOVED volume, not the body's. The first cut of this row bounded the body's own
+// volume at 1e-6 relative of ring − oracle, which an UNDRILLED ring passes: at 222.06609902451 it
+// sits 4.24e-8 from the target, 24x inside the bound, so the row could not fail for the thing it
+// claimed to measure. The removal cannot be faked that way — an undrilled ring removes exactly zero
+// and fails the first bound below.
+//
+// The two bounds are different in kind. `0 < removed <= V(tool)` is Requicha's own rule taken at the
+// tool's scale; it is an identity, so it carries no tolerance. The comparison against the oracle is
+// an accuracy statement and is deliberately loose: at this radius the removal is 42.9% low
+// (Oblikovati/Oblikovati#3538), so a factor-of-two bound is what separates "the right feature,
+// measured badly" from "no feature" or "twice the feature" without pinning a number that is noise.
+func assertBoredRingRemovesMaterialAnalytically(t *testing.T, body, drill *topo.Body, bore float64) {
 	t.Helper()
 	props, ok := query.AnalyticGeometryProperties(body)
 	if !ok {
@@ -263,9 +284,50 @@ func assertBoredRingIsIntegratedAnalytically(t *testing.T, body *topo.Body, bore
 			"this torus %g light, which is %gx the bore's own material",
 			ringAnalyticVolume-219.2269659, (ringAnalyticVolume-219.2269659)/boreRemovalOracle(5, 1.5, 5, bore, boreQuadratureCells))
 	}
-	want := ringAnalyticVolume - boreRemovalOracle(5, 1.5, 5, bore, boreQuadratureCells)
-	if rel := stdmath.Abs(props.Volume-want) / want; rel > 1e-6 { // tol:calibrated — measured 1.8e-8
-		t.Errorf("bored-ring volume %.12g, want %.12g (%.3g relative)", props.Volume, want, rel)
+	tool, ok := query.AnalyticGeometryProperties(drill)
+	if !ok {
+		t.Fatalf("the drill must integrate analytically for its volume to bound the removal")
+	}
+	removed := ringAnalyticVolume - props.Volume
+	if removed <= 0 || removed > tool.Volume {
+		t.Fatalf("a cut removed %g with a tool holding %g: outside (0, V(tool)], which no cut can be",
+			removed, tool.Volume)
+	}
+	oracle := boreRemovalOracle(5, 1.5, 5, bore, boreQuadratureCells)
+	if rel := stdmath.Abs(removed-oracle) / oracle; rel > 1 { // tol:calibrated — measured 0.429
+		t.Errorf("removed %.12g against an oracle of %.12g (%.3g relative)", removed, oracle, rel)
+	}
+}
+
+// TestAnImpossibleRemovalIsRecorded is the corpus row for the gate the #3516 review found missing.
+//
+// Two radii in the band the analytic-region-probe fix unlocked measure a removal no cut can produce:
+// at 8.913e-4 the result is LARGER than the ring it was cut from (removed = −3.873e-7), and at
+// 7.079e-4 it removes 1.664e-5 with a tool holding only 1.260e-5. Both returned err=nil with an
+// EMPTY recorder before this: the model-relative Requicha bracket beside it has a tolerance of
+// 6.464e-3 on this pair, 686x the material a 1e-3 bore removes, so it cannot see a feature this size
+// at all. The tool-scale bracket can, needs no tolerance of its own, and says so.
+//
+// The plateau row is here too, and it is the half that keeps the gate honest: a correct cut must NOT
+// record it.
+func TestAnImpossibleRemovalIsRecorded(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		bore float64
+		want bool
+		// The two radii are sweep points of the 20-per-decade scan that found them, written as the
+		// scan writes them: at this scale the removal is noise, and rounding the radius to four
+		// digits moves it off the row that misbehaves.
+	}{{stdmath.Pow(10, -3.05), true}, {stdmath.Pow(10, -3.15), true}, {0.1, false}, {0.8, false}} {
+		ring, drill := ringAndDrill(t, tc.bore)
+		rec := &diag.Recorder{}
+		if _, err := BooleanWithDiagnostics(Cut, ring, drill, rec); err != nil {
+			t.Fatalf("bore %g must build for its measurement to be judged: %v", tc.bore, err)
+		}
+		if got := rec.Has(CodeBooleanMovedVolumeOutOfToolBracket); got != tc.want {
+			t.Errorf("bore %g: recorded %q = %v, want %v; records %v",
+				tc.bore, CodeBooleanMovedVolumeOutOfToolBracket, got, tc.want, rec.Records())
+		}
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -112,4 +113,81 @@ func boredRing(t *testing.T, bore float64) *topo.Body {
 		t.Fatalf("bore %g: %v", bore, err)
 	}
 	return body
+}
+
+// uvDenseRing is a rectangular closed uv polyline with n samples per side, so a probe's distance to
+// "the nearest boundary sample" means distance to the boundary. uvBoxRing's four corners do not:
+// the middle of a long thin rectangle is a corner's length away from all of them.
+func uvDenseRing(uLo, uHi, vLo, vHi float64, n int) []arcSample {
+	var out []arcSample
+	for i := range n {
+		f := float64(i) / float64(n)
+		out = append(out, arcSample{u: uLo + (uHi-uLo)*f, v: vLo})
+	}
+	for i := range n {
+		f := float64(i) / float64(n)
+		out = append(out, arcSample{u: uHi, v: vLo + (vHi-vLo)*f})
+	}
+	for i := range n {
+		f := float64(i) / float64(n)
+		out = append(out, arcSample{u: uHi - (uHi-uLo)*f, v: vHi})
+	}
+	for i := range n {
+		f := float64(i) / float64(n)
+		out = append(out, arcSample{u: uLo, v: vHi - (vHi-vLo)*f})
+	}
+	return out
+}
+
+// TestTheDeepestProbeIsRankedRelativeToItsOwnWindow pins the comparison deepestProbe makes across
+// windows. Acceptance is RELATIVE — deepestInWindow stops at regionProbeDeepEnough of the window's
+// diagonal — so ranking by ABSOLUTE depth lets a probe 0.25% inside a huge shared box beat one 9.8%
+// inside a small loop's own box, and 0.25% inside is the ambiguous point that rule exists to reject.
+//
+// The two loops here are both slender, so no window reaches deepEnough and every one is searched:
+// loop A (100 x 1) admits probes up to 0.5 deep, which is 0.5% of its window; loop B (1 x 0.2)
+// admits 0.1, which is 9.8% of its. Absolute ranking returns A's point, relative ranking B's.
+func TestTheDeepestProbeIsRankedRelativeToItsOwnWindow(t *testing.T) {
+	t.Parallel()
+	polys := [][]arcSample{
+		uvDenseRing(0, 100, 0, 1, 60),
+		uvDenseRing(200, 201, 0, 0.2, 60),
+	}
+	per := uvPeriod{}
+	u, v, ok := deepestProbe(polys, per, regionProbeWindows(polys), true)
+	if !ok {
+		t.Fatalf("no probe found inside either loop")
+	}
+	if !uvCrossingsOdd(polys, u, v, per) {
+		t.Fatalf("probe (%g, %g) is not inside the region the loops enclose", u, v)
+	}
+	if u < 150 {
+		t.Errorf("probe (%g, %g) is in the slender 100x1 loop, %g of its own window deep; the 1x0.2 "+
+			"loop admits a probe ~0.098 of ITS window deep, which is the unambiguous one",
+			u, v, uvDepthOn(polys, u, v, per, true)/regionProbeWindows(polys)[1].diagonal())
+	}
+}
+
+// TestTheComplementProbeDeclinesOnASeamWrappingLoop holds the rule regionProbeUV states for the
+// enclosed side and faceComplementUV now states for the far one: a loop that travels a whole period
+// instead of returning to where it started is not a closed polygon in the plane, so its even-odd
+// parity — and the depth ranking built on it — mean nothing. brep.PointInFaceTrim would still keep an
+// off-face probe out, but an unranked probe can sit a hair inside the trim, which is the ambiguity
+// the depth rule exists to prevent.
+func TestTheComplementProbeDeclinesOnASeamWrappingLoop(t *testing.T) {
+	t.Parallel()
+	tor, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
+	if err != nil {
+		t.Fatalf("torus: %v", err)
+	}
+	band := faceLoop{
+		edges: []loopEdge{{samples: uvDenseRing(0, 2*stdmath.Pi, 1, 1.2, 40), uPeriod: 2 * stdmath.Pi, vPeriod: 2 * stdmath.Pi}},
+		netU:  2 * stdmath.Pi,
+	}
+	if !loopsWrapASeam([]faceLoop{band}) {
+		t.Fatalf("the premise is stale: a loop with netU = one period no longer reads as seam-wrapping")
+	}
+	if _, _, ok := faceComplementUV(tor, []faceLoop{band}); ok {
+		t.Errorf("the complement probe answered for a seam-wrapping loop, whose crossing parity is undefined")
+	}
 }

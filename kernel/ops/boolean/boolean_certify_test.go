@@ -133,3 +133,41 @@ func wholeSphereBody(t *testing.T, radius float64) *topo.Body {
 	bld.AddFace(sphere, topo.NewLineage(topo.Tok("certifyball", "face", 0)))
 	return bld.Build()
 }
+
+// TestAResultShowingMoreBoundaryThanItsOperandsIsRefused is the per-face AREA gate the ground rules
+// name ("result gates are per-face — area, surface type, loop count — against the oracle"), and its
+// proof that it can fire. The oracle is the operands: every face of A op B lies on ∂A or ∂B and a
+// boolean only trims them, so the result cannot show more boundary than the two have between them.
+//
+// The probe hands the certificate a real result with a tool too small to account for it: the exact
+// 0.8 bore through the RING, certified against a drill of the same radius but half a unit long
+// instead of 8. Membership still passes — the bore wall's interior point does lie on that stub, and
+// the operation keeps it there — so this row exercises the AREA gate and nothing else. The result
+// then shows 305.850 of boundary where ring + stub hold 302.622 between them, 1.07e-2 over, against
+// a slack of 1e-6 and a corpus whose largest accepted ratio is 1 + 1e-15.
+func TestAResultShowingMoreBoundaryThanItsOperandsIsRefused(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 0.8)
+	body, err := Boolean(Cut, ring, drill)
+	if err != nil {
+		t.Fatalf("the RD- row must build: %v", err)
+	}
+	stub, err := brep.SolidCylinder(math.P3(5, 0, -0.25), math.V3(0, 0, 1), 0.8, 0.5)
+	if err != nil {
+		t.Fatalf("stub: %v", err)
+	}
+	if ev := certifyBooleanFaces(Cut, ring, drill, body); !ev.kept {
+		t.Fatalf("the genuine operands must certify; the probe below is meaningless otherwise")
+	} else if _, over := ev.overclaimsItsOperands(ring, drill); over {
+		t.Fatalf("the genuine pair overclaims: %g of boundary", ev.claimed)
+	}
+	ev := certifyBooleanFaces(Cut, ring, stub, body)
+	if !ev.kept {
+		t.Fatalf("membership must still pass against the stub, or this row is not measuring the area gate")
+	}
+	available, over := ev.overclaimsItsOperands(ring, stub)
+	if !over {
+		t.Errorf("a result showing %g of boundary certified against operands holding %g between them",
+			ev.claimed, available)
+	}
+}
