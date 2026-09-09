@@ -33,20 +33,24 @@ import stdmath "math"
 //
 // Every refusal here is NAMED ([SectionDecline]) rather than an anonymous ok=false, because each one is
 // a conditioning demotion — the closed form applies to the pair, it just cannot name its own answer at
-// these numbers — and the caller records it as a defect. The three are: a station with no azimuth
-// dependence at all; extremum tracks that cross or change in number over the turn, which makes "which
-// branch pair" a guess; and branches that never separate past the stitch resolution. A branch pair that
-// never folds used to be a fourth. It is not a refusal any more — it is the wrap, and it is built —
-// and the decline that named it is deleted rather than left standing over a case that no longer
-// reaches it (Oblikovati/Oblikovati#3515).
+// these numbers — and the caller records it as a defect. Five names, asked in this order: a station with
+// no azimuth dependence at all; extremum tracks that cross or change in number over the turn, which makes
+// "which branch pair" a guess; branches that never separate past the stitch resolution; and then, on the
+// finished set, a station where the co-form TOUCHES the tube circle rather than crossing it, or one whose
+// azimuths this reduction cannot account for. The last two used to share one name, which told a user
+// whose surfaces graze that the kernel's loops did not add up (review round 1, finding 3). A branch pair
+// that never folds was a sixth. It is not a refusal any more — it is the wrap, and it is built — and the
+// decline that named it is deleted rather than left standing over a case that no longer reaches it
+// (Oblikovati/Oblikovati#3515).
 //
-// The FOURTH certificate is on the RESULT rather than on any one step, and it is the one that makes the
-// branch count a RUNTIME certificate instead of a construction: at every probe station the finished
-// curves must account for exactly the azimuths that station's quartic certifies there — two for a
-// folded loop covering it, one for a full-period arc. Windows are skipped along the way — a pair that
+// The last certificate is on the RESULT rather than on any one step, and it is the one that makes the
+// branch count a RUNTIME certificate instead of a construction: at every probe station the azimuths the
+// finished curves TAKE must be exactly the azimuths that station's quartic certifies there — one from a
+// full-period arc, both from a folded loop covering it. Windows are skipped along the way — a pair that
 // merges at a FLANKING extremum is the complementary arc of a neighbouring lane, which carries it
-// itself — and that skip rests on a premise about a neighbour that nothing else checks. Counting the
-// roots checks it, and a section curve can no longer go missing, or be doubled, quietly.
+// itself — and that skip rests on a premise about a neighbour that nothing else checks. Reading the
+// positions back checks it, and a section curve can no longer go missing, be doubled, or sit on a
+// branch another curve already carries.
 
 // torusSkewSection returns the exact intersection of a torus with a quadric that is not invariant about
 // the torus axis, on the torus's own chart. An empty result with ok=true is the honest "they do not
@@ -77,13 +81,13 @@ func torusSkewSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, Sectio
 // lane's PAIR owns. The two are independent — a lane's upper track can run the whole turn while its
 // lower one folds — so both are asked, and either may come back empty.
 func torusLaneCurves(t Torus, co TorusCoForm, anchor float64, res Resolution) ([]Curve3, SectionDecline) {
+	spans, readable := torusLaneWindows(t, co, anchor) // readability first: the cheaper and more specific refusal
+	if !readable {
+		return nil, DeclineTorusLaneStation
+	}
 	arcs, why := torusLaneWrapArc(t, co, anchor, res)
 	if why != DeclineNone {
 		return nil, why
-	}
-	spans, readable := torusLaneWindows(t, co, anchor)
-	if !readable {
-		return nil, DeclineTorusLaneStation
 	}
 	loops, why := torusWindowLoops(t, co, anchor, spans, res)
 	if why != DeclineNone {
@@ -144,6 +148,16 @@ func torusUpperTrackSweep(t Torus, co TorusCoForm, anchor float64) (wraps bool, 
 //
 // A station carrying u alone answers a whole turn: there is no second branch for the stitch to confuse
 // it with, so nothing about it is ill-conditioned.
+//
+// u is excluded from its own minimum by VALUE, and that is exact rather than lucky: arcRootFrom returns
+// an element of this same slice, so the comparison is bit-for-bit. Review round 1 (M1) asked whether a
+// NEIGHBOUR coinciding with u to the last bit could be welded away by sortedDedupedAngles and leave the
+// clearance measured to the branch beyond it. It cannot reach here. A track merges with its lower
+// neighbour through the lane's own extremum (value → 0) and with its upper neighbour through the
+// flanking one (flanks[1] → 0), and trackDiscriminant(true) is −value·flanks[1], so EITHER merge drives
+// it to zero and torusUpperTrackSweep answers wraps=false before any clearance is read. What is left is
+// a non-adjacent branch landing on u's own bits, which the weld collapses and the azimuth census then
+// refuses — the count drops. Excluding by index would not change any of that.
 func torusArcClearanceAt(t Torus, h torusSecondHarmonic, u float64) float64 {
 	least := twoPi
 	for _, r := range h.azimuths() {
@@ -196,50 +210,114 @@ func torusLaneOwnsStation(l TorusSectionLoop, v float64) (owns, ok bool) {
 
 // torusCurvesAccountForEveryAzimuth certifies the finished curve SET against the stations themselves,
 // and it is where the section's branch count is DECIDED rather than declared: at every probe tube angle
-// the curves covering it must account for exactly the azimuths the station's quartic certifies there.
-// The reduction never counts branches — it reads whatever real roots the station polynomial has and
-// whatever extremum tracks label them — so this is the runtime certificate that the two agree.
+// the azimuths the curves TAKE must be exactly the azimuths the station's quartic certifies there. The
+// reduction never counts branches — it reads whatever real roots the station polynomial has and whatever
+// extremum tracks label them — so this is the runtime certificate that the two agree.
+//
+// It compares POSITIONS, not a tally. A tally is not a certificate: four arcs on one lane carry the right
+// NUMBER of branches with three of them duplicates and three certified roots carried by nothing, and a
+// count passes that (review round 1, finding 1). "Certify a root or branch choice at runtime against the
+// geometry" is a statement about where the curve IS.
 //
 // It is also what turns "a neighbouring lane carries this window" from a premise into a measurement: a
 // dropped loop leaves two azimuths belonging to nothing, a doubled arc leaves one too many, and a lane
 // whose root count changes across the turn shows up at the station where it changed.
 //
-// A probe within half a step of a window END is skipped: an end IS a fold, where the two azimuths have
-// merged and the station carries one rather than two, so counting there would report a mismatch that is
-// the fold's arithmetic rather than a missing loop. Every window the discriminant sampler found has an
-// interior probe of its own, which is where a genuinely dropped loop shows up.
+// The certificate samples at HALF the construction's station step, so it reads every station the sweep
+// read AND the midpoint between each neighbouring pair. A grid that steps in lockstep with the thing it
+// certifies cannot correct a sweep that stepped over a feature (review round 1, finding M2); this one
+// halves the step it can step over. It does not abolish it — a tangency narrower than half a step is
+// still invisible to both, and refining the sweep to the minimum of the track discriminant is the
+// standing follow-up, not something a finer grid replaces.
+//
+// A probe within ONE step of a window END is skipped: an end IS a fold, where the two azimuths have
+// merged and the station carries one rather than two, so reading there would report a mismatch that is
+// the fold's arithmetic rather than a missing loop. One step of this grid is half a step of the
+// construction's, which is the same reach the skip has always had.
 func torusCurvesAccountForEveryAzimuth(t Torus, co TorusCoForm, curves []Curve3) SectionDecline {
-	step := twoPi / torusStationProbes
-	for i := range torusStationProbes {
+	step := twoPi / (2 * torusStationProbes)
+	for i := range 2 * torusStationProbes {
 		v := float64(step * float64(i))
-		if nearAWindowEnd(curves, v, float64(step/2)) {
+		if nearAWindowEnd(curves, v, step) {
 			continue
 		}
-		if len(torusSecondHarmonicAt(t, co, v).azimuths()) != azimuthsCarriedAt(curves, v) {
-			return DeclineTorusLaneUnaccounted
+		if why := torusStationIsAccountedFor(torusSecondHarmonicAt(t, co, v), curves, v); why != DeclineNone {
+			return why
 		}
 	}
 	return DeclineNone
 }
 
-// azimuthsCarriedAt is how many of a station's azimuths the section's curves account for at tube angle
-// v: TWO for every folded loop whose window contains it — a loop runs out along one branch of its pair
-// and back along the other — and ONE for every full-period arc, which carries a single branch at every
-// station there is. A window is folded onto one period, so one that straddles the chart's seam counts
-// like any other.
-func azimuthsCarriedAt(curves []Curve3, v float64) int {
-	n := 0
+// torusStationIsAccountedFor compares the azimuths the section's curves take at ONE station with the ones
+// its quartic certifies, as multisets: as many carried as certified, no two curves on one branch, and
+// every carried azimuth one of the certified roots. Coincidence is judged by sortedDedupedAngles, the
+// same weld azimuths() itself uses to decide two roots are one, so the certificate and the solver agree
+// about what "the same branch" means.
+//
+// A disagreement is classified before it is reported. A station where the co-form TOUCHES the tube circle
+// carries a double root that no pair of branches can bound, which is a statement about the input; a
+// station with no tangency that still does not balance is a statement about this reduction. They are
+// different things and they used to share one name (review round 1, finding 3).
+func torusStationIsAccountedFor(h torusSecondHarmonic, curves []Curve3, v float64) SectionDecline {
+	ex, roots := h.extrema(), h.azimuths()
+	carried := torusAzimuthsCarriedAt(h, ex, roots, curves, v)
+	distinct := len(sortedDedupedAngles(append([]float64(nil), carried...)))
+	together := len(sortedDedupedAngles(append(append([]float64(nil), carried...), roots...)))
+	switch {
+	case len(carried) == len(roots) && distinct == len(roots) && together == len(roots):
+		return DeclineNone
+	case torusStationTouchesWithoutCrossing(h, ex):
+		return DeclineTorusTangentStation
+	}
+	return DeclineTorusLaneUnaccounted
+}
+
+// torusStationTouchesWithoutCrossing reports the station polynomial vanishing AT one of its own extrema.
+// f and df/du are zero at the same azimuth there, so the co-form TOUCHES the tube circle instead of
+// crossing it and the two azimuths that would bound a branch are one — the configuration no pairing of
+// branches can carry, whatever the pairing.
+//
+// The test is the certificate azimuths() applies to a candidate root, applied to the only azimuths at
+// which a root can be double: it reads the residual against the polynomial's own coefficient scale, so
+// it carries no model scale and needs no tolerance of its own.
+func torusStationTouchesWithoutCrossing(h torusSecondHarmonic, ex []float64) bool {
+	scale := h.scale()
+	for _, e := range ex {
+		if stdmath.Abs(h.valueAt(e)) <= torusRootResidualTol*scale {
+			return true
+		}
+	}
+	return false
+}
+
+// torusAzimuthsCarriedAt collects the azimuth every curve of the section actually takes at tube angle v:
+// the one branch a full-period arc follows, and BOTH branches of a folded loop whose window contains v —
+// a loop runs out along one and back along the other. A window is folded onto one period, so one that
+// straddles the chart's seam counts like any other.
+func torusAzimuthsCarriedAt(h torusSecondHarmonic, ex, roots []float64, curves []Curve3, v float64) []float64 {
+	out := make([]float64, 0, 2*len(curves))
 	for _, cv := range curves {
 		switch c := cv.(type) {
 		case TorusSectionLoop:
 			if wrapAngle(v-c.V0) < c.V1-c.V0 {
-				n += 2
+				out = append(out, torusLaneRoot(h, ex, roots, c.UA, false), torusLaneRoot(h, ex, roots, c.UA, true))
 			}
 		case TorusSectionArc:
-			n++
+			out = append(out, torusLaneRoot(h, ex, roots, c.UA, c.Upper))
 		}
 	}
-	return n
+	return out
+}
+
+// torusLaneRoot is the azimuth one lane's branch takes on an ALREADY-solved station. It is the body
+// [torusAzimuthAt] reaches for a non-invariant station — the same lane, the same root — with the two
+// quartic solves hoisted out, and NaN for a station that carries no lane, exactly as that reader answers.
+func torusLaneRoot(h torusSecondHarmonic, ex, roots []float64, anchor float64, upper bool) float64 {
+	l, ok := torusLaneFrom(h, ex, roots, anchor)
+	if !ok {
+		return stdmath.NaN()
+	}
+	return l.root(upper)
 }
 
 // nearAWindowEnd reports v sitting within reach of some loop's fold, where the station's two azimuths
@@ -267,11 +345,8 @@ func torusAzimuthAt(t Torus, co TorusCoForm, v, anchor float64, upper bool) floa
 	if st.invariant {
 		return st.harmonic().root(upper)
 	}
-	l, ok := torusLaneAt(st.secondHarmonic(), anchor)
-	if !ok {
-		return stdmath.NaN()
-	}
-	return l.root(upper)
+	h := st.secondHarmonic()
+	return torusLaneRoot(h, h.extrema(), h.azimuths(), anchor, upper)
 }
 
 // torusFoldAzimuth is the MERGED azimuth of a station's branch pair: the one azimuth both branches

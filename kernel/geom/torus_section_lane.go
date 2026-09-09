@@ -48,13 +48,18 @@ type torusLane struct {
 // is not a root of this one, so returning it would put a point on the torus that is not on the quadric
 // and say nothing. The caller declines instead.
 func torusLaneAt(h torusSecondHarmonic, anchor float64) (torusLane, bool) {
-	ex := h.extrema()
+	return torusLaneFrom(h, h.extrema(), h.azimuths(), anchor)
+}
+
+// torusLaneFrom is [torusLaneAt] with the station's extrema and roots supplied. A caller that reads
+// SEVERAL lanes off one station — the azimuth census reads one per curve — must not solve the same two
+// quartics again for each of them ("decide each incidence once and reuse the result").
+func torusLaneFrom(h torusSecondHarmonic, ex, roots []float64, anchor float64) (torusLane, bool) {
 	if len(ex) < 2 {
 		return torusLane{}, false
 	}
 	i, n := nearestAngleIndex(ex, anchor), len(ex)
 	prev, next := ex[(i+n-1)%n], ex[(i+1)%n]
-	roots := h.azimuths()
 	return torusLane{
 		center: ex[i],
 		value:  h.valueAt(ex[i]),

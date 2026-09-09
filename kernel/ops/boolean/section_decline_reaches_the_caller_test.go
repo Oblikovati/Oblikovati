@@ -38,6 +38,7 @@ func TestTheDeclineSaysWhichGateRefused(t *testing.T) {
 	}
 	assertRecorded(t, rec, CodeBooleanNoExactCurvedPath, "no exact analytic path")
 	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "geom.Cylinder cylinder:f#2 ∩ geom.Torus ring:face#0")
+	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "touches the torus's tube circle without crossing it")
 }
 
 // TestATorusPairsRefusalNamesItsOwnGate: the other example of #3525. A torus PAIR's refusal has to

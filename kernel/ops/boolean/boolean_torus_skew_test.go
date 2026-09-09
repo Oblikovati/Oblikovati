@@ -5,6 +5,7 @@ package boolean_test
 import (
 	stdmath "math"
 	"math/rand"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/brep"
@@ -390,8 +391,22 @@ func TestALaneConditioningDemotionIsReported(t *testing.T) {
 		if rec.Count(diag.Defect) == 0 {
 			t.Errorf("%v: a conditioning demotion must be a Defect", op)
 		}
+		// And it names what this pair IS. "The section's curves do not add up" would describe the kernel;
+		// these two surfaces touch (Oblikovati/Oblikovati#3515, review round 1).
+		assertADiagnosticNames(t, &rec, "touches the torus's tube circle without crossing it")
 	}
 	assertTheCarriedRodsRecordNoDemotion(t, ring)
+}
+
+// assertADiagnosticNames fails unless some record on the recorder carries the phrase.
+func assertADiagnosticNames(t *testing.T, rec *diag.Recorder, want string) {
+	t.Helper()
+	for _, d := range rec.Records() {
+		if strings.Contains(d.Detail, want) {
+			return
+		}
+	}
+	t.Errorf("no diagnostic names %q; the recorder holds %v", want, rec.Records())
 }
 
 // assertTheCarriedRodsRecordNoDemotion requires both rods the reduction carries — the one that pierces

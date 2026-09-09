@@ -86,7 +86,13 @@ func TestAnIllConditionedLaneDeclinesByName(t *testing.T) {
 		t.Fatal("the grazing ring-in-rod cut built; the fixture no longer exercises the lane decline")
 	}
 	d := onlyDiagWithCode(t, rec, CodeSectionConditioningDemotion)
-	for _, want := range []string{"geom.Cylinder cylinder:f#2 ∩ geom.Torus ring:face#0", "the torus section's"} {
+	// The gate is named for what the FIXTURE is: these two surfaces touch and never cross. A refusal that
+	// said only "the section's curves do not add up" would describe the kernel, not the input
+	// (Oblikovati/Oblikovati#3515, review round 1).
+	for _, want := range []string{
+		"geom.Cylinder cylinder:f#2 ∩ geom.Torus ring:face#0",
+		"touches the torus's tube circle without crossing it",
+	} {
 		if !strings.Contains(d.Detail, want) {
 			t.Errorf("the lane decline does not name %q: %s", want, d.Detail)
 		}

@@ -52,18 +52,24 @@ func assertEveryCurveIsAFullTurnArc(t *testing.T, curves []Curve3) {
 	}
 }
 
-// assertBranchCountMatchesTheRoots is the certificate itself, re-read from outside the reduction: at
-// every station the curves must carry exactly as many azimuths as the quartic has certified real roots,
-// and each curve's own azimuth must BE one of them. A count that agreed while the arcs sat on the wrong
-// azimuths would pass the first half and fail the second.
+// assertBranchCountMatchesTheRoots re-reads the certificate from OUTSIDE the reduction: at every station
+// the curves must carry exactly as many azimuths as the quartic has certified real roots, and each
+// curve's own azimuth must BE one of them.
+//
+// The second half is not redundant with the production certificate, which reads each curve's LANE
+// (torusLaneRoot) rather than evaluating the curve. This row asks TorusSectionArc.azimuthAt — the
+// evaluator a consumer actually calls — so a curve whose evaluator drifted off its own lane fails here
+// and nowhere else. Review round 1 planted exactly that (+1e-9 inside azimuthAt) and this is what caught
+// it.
 func assertBranchCountMatchesTheRoots(t *testing.T, ring Torus, q Quadric, curves []Curve3) {
 	t.Helper()
 	seen := map[int]int{}
 	for i := range 97 {
 		v := twoPi * float64(i) / 97
-		roots := torusSecondHarmonicAt(ring, q, v).azimuths()
+		h := torusSecondHarmonicAt(ring, q, v)
+		roots := h.azimuths()
 		seen[len(roots)]++
-		if got := azimuthsCarriedAt(curves, v); got != len(roots) {
+		if got := len(torusAzimuthsCarriedAt(h, h.extrema(), roots, curves, v)); got != len(roots) {
 			t.Fatalf("v=%g: the curves carry %d azimuths, the station certifies %d", v, got, len(roots))
 		}
 		for j, cv := range curves {
@@ -86,56 +92,62 @@ func assertAzimuthIsACertifiedRoot(t *testing.T, v float64, arc int, u float64, 
 	t.Fatalf("v=%g: arc %d takes azimuth %.17g, which is none of the station's roots %v", v, arc, u, roots)
 }
 
-// TestFoldsAlternateOnEverySignPattern is the proof behind a DELETED branch. periodicRootWindows used
-// to refuse a discriminant whose rises and falls came back in unequal numbers, calling it numerical
-// noise, and that refusal made "not a window" mean two different things at every call site — which is
-// what hid the wrap the fat-rod section needs (Oblikovati/Oblikovati#3515).
+// TestFourArcsOnOneLaneAreRefused is the plant review round 1 found the certificate blind to (finding 1).
+// The section's azimuth census used to be a TALLY: two per covering loop, one per arc, compared with the
+// number of roots. Four arcs all anchored on the SAME lane carry the right number of branches, three of
+// them duplicates of the first and three certified roots carried by nothing — and a tally passes it. The
+// certificate now compares POSITIONS, so it does not.
 //
-// It was unreachable. The sign pattern is taken from a FIXED sample array walked as a cycle, so the
-// up-transitions and the down-transitions bound the same arcs and are equal in number whatever the
-// samples are. This row drives every one of the 4096 twelve-probe patterns and requires the windows to
-// come back well formed: one per rise, each one a non-empty span, and none of them the whole period.
-func TestFoldsAlternateOnEverySignPattern(t *testing.T) {
+// The row builds the real section first and then re-anchors every arc onto one lane, so what changes is
+// only the thing under test: the same four curves, on the same torus, taking one azimuth between them.
+func TestFourArcsOnOneLaneAreRefused(t *testing.T) {
 	t.Parallel()
-	const probes = 12
-	for pattern := range 1 << probes {
-		spans, folded := periodicRootWindows(func(u float64) float64 {
-			return float64(pattern>>probeIndexAt(u, probes)&1)*2 - 1
-		}, probes)
-		assertWindowsAreWellFormed(t, pattern, spans, folded)
+	ring := testRing(t)
+	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2)
+	q := fat.QuadricForm()
+	curves, _, ok := torusSkewSection(ring, q, ResolutionForSize(12))
+	if !ok || len(curves) != 4 {
+		t.Fatalf("the fat rod gave ok=%v with %d curves; this row needs the four-arc section", ok, len(curves))
+	}
+	if why := torusCurvesAccountForEveryAzimuth(ring, q, curves); why != DeclineNone {
+		t.Fatalf("the correct section is reported as %v", why)
+	}
+	if why := torusCurvesAccountForEveryAzimuth(ring, q, arcsReanchoredOntoOneLane(t, curves)); why != DeclineTorusLaneUnaccounted {
+		t.Errorf("four arcs on one lane are reported as %v, want the unaccounted refusal", why)
 	}
 }
 
-// probeIndexAt is which of the probes' equal arcs an angle falls in, so a bit pattern reads as a
-// piecewise-constant discriminant the fold bisection can be driven over.
-func probeIndexAt(u float64, probes int) int {
-	return int(wrapAngle(u) * float64(probes) / twoPi)
-}
-
-// assertWindowsAreWellFormed requires one sign pattern's windows to match the shape the classification
-// promises: a wrap carries no spans, and every span of a folded section is a proper sub-arc.
-func assertWindowsAreWellFormed(t *testing.T, pattern int, spans [][2]float64, folded bool) {
+// arcsReanchoredOntoOneLane copies the section with every arc moved onto the first one's lane, so all of
+// them trace the same branch.
+func arcsReanchoredOntoOneLane(t *testing.T, curves []Curve3) []Curve3 {
 	t.Helper()
-	if !folded && len(spans) != 0 {
-		t.Fatalf("pattern %012b: a wrap came back with %d spans", pattern, len(spans))
+	first, isArc := curves[0].(TorusSectionArc)
+	if !isArc {
+		t.Fatalf("curve 0 is %T; this row re-anchors arcs", curves[0])
 	}
-	for _, w := range spans {
-		if w[1] <= w[0] || w[1]-w[0] >= twoPi {
-			t.Fatalf("pattern %012b: span [%g, %g] is not a proper sub-arc of the period", pattern, w[0], w[1])
-		}
+	out := make([]Curve3, 0, len(curves))
+	for _, cv := range curves {
+		a := cv.(TorusSectionArc)
+		a.UA = first.UA
+		out = append(out, a)
 	}
+	return out
 }
 
-// TestAWrapIsNotAnEmptySection pins the distinction the folded flag carries: positive at every station
-// is the WRAP, and non-positive at every station is the empty section. Both have no fold, and reading
-// them as one thing is what made a fat rod's four branches look like a refusal.
-func TestAWrapIsNotAnEmptySection(t *testing.T) {
+// TestAGrazingStationIsNamedATangency splits what review round 1 found sharing one name (finding 3). A
+// rod whose wall lies TANGENT to the top of the ring's tube touches it along the ring's own top circle
+// and crosses it nowhere. That is a statement about the INPUT — no pairing of branches can carry a double
+// root — and it must not reach a user as "the kernel's curves are not the azimuths the stations certify",
+// which is a statement about this reduction.
+func TestAGrazingStationIsNamedATangency(t *testing.T) {
 	t.Parallel()
-	if _, folded := periodicRootWindows(func(float64) float64 { return 1 }, 8); folded {
-		t.Error("an everywhere-positive discriminant was classified as folded, want the wrap")
+	ring := testRing(t)
+	grazing, _ := NewCylinder(math.P3(0, 0, 3.5), math.V3(1, 0, 0), 2)
+	_, why, ok := IntersectSurfacesAnalyticDeclining(ring, grazing, ResolutionForSize(12))
+	if ok {
+		t.Fatal("the grazing rod built; the fixture no longer drives the tangency refusal")
 	}
-	spans, folded := periodicRootWindows(func(float64) float64 { return -1 }, 8)
-	if !folded || len(spans) != 0 {
-		t.Errorf("an everywhere-negative discriminant gave folded=%v spans=%d, want the empty section", folded, len(spans))
+	if why != DeclineTorusTangentStation || !why.IsConditioning() {
+		t.Errorf("the grazing rod refused with %v (conditioning=%v), want the tangency", why, why.IsConditioning())
 	}
 }

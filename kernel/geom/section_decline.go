@@ -34,8 +34,16 @@ const (
 	// DeclineTorusLaneTracks is extremum tracks that cross, merge or change in number over the turn,
 	// which makes "which branch pair" a guess.
 	DeclineTorusLaneTracks
-	// DeclineTorusLaneUnaccounted is a loop set that does not account for every azimuth the stations
-	// carry — the certificate that no section loop was dropped.
+	// DeclineTorusTangentStation is a tube angle at which the other surface TOUCHES the tube circle instead
+	// of crossing it: the station polynomial vanishes at one of its own extrema, so two azimuths that would
+	// bound a branch are one and no pairing of branches can carry the station. It is a statement about
+	// the INPUT, and it is the refusal a grazing pair of surfaces gets (Oblikovati/Oblikovati#3515).
+	DeclineTorusTangentStation
+	// DeclineTorusLaneUnaccounted is a curve set whose azimuths are not the ones the stations certify —
+	// too few, too many, or two curves on one branch — at a station with no tangency to explain it. It is
+	// a statement about this REDUCTION rather than about the input: the certificate that no section curve
+	// was dropped or doubled. A grazing pair declines [DeclineTorusTangentStation] instead, because a
+	// user whose surfaces touch must not be told the kernel's loops do not add up.
 	DeclineTorusLaneUnaccounted
 	// DeclineTorusLaneSeparation is a window whose two branches never separate by more than the stitch
 	// resolution, so the loop is a sliver two faces could not be told apart across.
@@ -65,7 +73,8 @@ var sectionDeclineNames = [...]string{
 	DeclineNoClosedForm:           "no closed form claims this surface pair",
 	DeclineTorusLaneStation:       "a torus station with no azimuth dependence",
 	DeclineTorusLaneTracks:        "the torus section's extremum tracks are not separable",
-	DeclineTorusLaneUnaccounted:   "the torus section's loops do not account for every azimuth",
+	DeclineTorusTangentStation:    "the other surface touches the torus's tube circle without crossing it",
+	DeclineTorusLaneUnaccounted:   "the torus section's curves are not the azimuths the stations certify",
 	DeclineTorusLaneSeparation:    "the torus section's branches never separate past the stitch resolution",
 	DeclineTorusSectionOffItsForm: "the torus section's own points do not satisfy the form it was solved from",
 	DeclineOpenSection:            "the closed-form section does not close on itself",
