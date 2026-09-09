@@ -112,137 +112,161 @@ func recognizerProbeRows() []recognizerProbeRow {
 		name: "control: a classification that reads nothing",
 		why:  "the control must derive zero, or every other row's number means nothing",
 	}}
-	for _, group := range [][]recognizerProbeRow{blindCalleeShapes, blindVerdictShapes,
+	for _, group := range []func() []recognizerProbeRow{blindCalleeShapes, blindVerdictShapes,
 		blindGenericShapes, preservedVerdictShapes, preservedGenericShapes, walkBoundaryShapes} {
-		rows = append(rows, group...)
+		rows = append(rows, group()...)
 	}
 	return rows
 }
 
 // blindCalleeShapes are the calls the first cut could not resolve, because plainCallee accepted only a
 // bare identifier: a METHOD, and a call into a package of the classification's own tree.
-var blindCalleeShapes = []recognizerProbeRow{{
-	name:  "a recognizer called as a method",
-	body:  "\tp := prober{}\n\tif c, ok := p.coneApexTrimOf(); ok {\n\t\treturn curvedTrim{cone: c}\n\t}",
-	decls: "func (p prober) coneApexTrimOf() (coneApexTrim, bool) { return coneApexTrim{}, true }",
-	want:  []string{"coneApexTrimOf"},
-	why:   "`x.f(…)` is a call like any other; refusing it lets an arm hide a recognizer behind a receiver",
-}, {
-	name: "a boolean gate moved into a package of the tree",
-	body: "\tif trim.MovedGateHolds() {\n\t\treturn curvedTrim{}\n\t}",
-	sub:  "func MovedGateHolds() bool { return true }",
-	want: []string{"trim.MovedGateHolds"},
-	why:  "moving a gate one directory down is not deleting a shape, so the count must not fall for it",
-}, {
-	name: "a payload recognizer moved into a package of the tree",
-	body: "\tif m, ok := trim.MovedTrimOf(); ok {\n\t\treturn curvedTrim{moved: m}\n\t}",
-	sub:  "func MovedTrimOf() (MovedTrim, bool) { return MovedTrim{}, true }",
-	want: []string{"trim.MovedTrimOf"},
-	why:  "the verdict struct carries trim.MovedTrim, so trim.MovedTrim IS one of the payloads",
-}}
+func blindCalleeShapes() []recognizerProbeRow {
+	return []recognizerProbeRow{{
+		name:  "a recognizer called as a method",
+		body:  "\tp := prober{}\n\tif c, ok := p.coneApexTrimOf(); ok {\n\t\treturn curvedTrim{cone: c}\n\t}",
+		decls: "func (p prober) coneApexTrimOf() (coneApexTrim, bool) { return coneApexTrim{}, true }",
+		want:  []string{"coneApexTrimOf"},
+		why:   "`x.f(…)` is a call like any other; refusing it lets an arm hide a recognizer behind a receiver",
+	}, {
+		name: "a boolean gate moved into a package of the tree",
+		body: "\tif trim.MovedGateHolds() {\n\t\treturn curvedTrim{}\n\t}",
+		sub:  "func MovedGateHolds() bool { return true }",
+		want: []string{"trim.MovedGateHolds"},
+		why:  "moving a gate one directory down is not deleting a shape, so the count must not fall for it",
+	}, {
+		name: "a recognizer called through a FIELD of a stated receiver",
+		body: "\tb := coverProbe{}\n\tif b.inner.holdsShape() {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "type coverProbe struct{ inner prober }\n\n" +
+			"func (p prober) holdsShape() bool { return true }",
+		want: []string{"holdsShape"},
+		why: "`b.r.covers(u, v)` is how the chart mesher is written, and the index has already parsed " +
+			"the struct that declares r. Refusing to resolve a field made seven such call sites in real " +
+			"kernel source unattributable (review N1), and the remedy the refusal prescribed was to " +
+			"rewrite clean code to appease a guard",
+	}, {
+		name: "a payload recognizer moved into a package of the tree",
+		body: "\tif m, ok := trim.MovedTrimOf(); ok {\n\t\treturn curvedTrim{moved: m}\n\t}",
+		sub:  "func MovedTrimOf() (MovedTrim, bool) { return MovedTrim{}, true }",
+		want: []string{"trim.MovedTrimOf"},
+		why:  "the verdict struct carries trim.MovedTrim, so trim.MovedTrim IS one of the payloads",
+	}}
+}
 
 // blindVerdictShapes are the verdicts the first cut could not read, because isVerdictFunc knew two
 // literal spellings rather than a result-type set.
-var blindVerdictShapes = []recognizerProbeRow{{
-	name:  "a payload renamed off the \"Trim\" suffix",
-	body:  "\tif c, ok := sphereCapRecognitionOf(); ok {\n\t\treturn curvedTrim{cap: c}\n\t}",
-	decls: "func sphereCapRecognitionOf() (sphereCapRecognition, bool) { return sphereCapRecognition{}, true }",
-	want:  []string{"sphereCapRecognitionOf"},
-	why:   "a payload is what the verdict struct CARRIES, not what its name ends in",
-}, {
-	name:  "a payload returned by pointer",
-	body:  "\tif c, ok := conePointerTrimOf(); ok {\n\t\treturn curvedTrim{cone: *c}\n\t}",
-	decls: "func conePointerTrimOf() (*coneApexTrim, bool) { return nil, false }",
-	want:  []string{"conePointerTrimOf"},
-	why:   "*coneApexTrim hands back the same recognition coneApexTrim does",
-}, {
-	name:  "a verdict with a third result",
-	body:  "\tif c, k, ok := coneAndKindOf(); ok {\n\t\treturn curvedTrim{cone: c, kind: k}\n\t}",
-	decls: "func coneAndKindOf() (coneApexTrim, curvedTrimKind, bool) { return coneApexTrim{}, 0, true }",
-	want:  []string{"coneAndKindOf"},
-	why:   "the two-spellings reading accepted exactly two results, so a third hid the recognizer",
-}, {
-	name:  "a verdict returned as a named bool",
-	body:  "\tif namedBoolGateHolds() {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func namedBoolGateHolds() verdictBool { return true }",
-	want:  []string{"namedBoolGateHolds"},
-	why:   "`type verdictBool bool` is a bool; only its spelling differs",
-}}
+func blindVerdictShapes() []recognizerProbeRow {
+	return []recognizerProbeRow{{
+		name:  "a payload renamed off the \"Trim\" suffix",
+		body:  "\tif c, ok := sphereCapRecognitionOf(); ok {\n\t\treturn curvedTrim{cap: c}\n\t}",
+		decls: "func sphereCapRecognitionOf() (sphereCapRecognition, bool) { return sphereCapRecognition{}, true }",
+		want:  []string{"sphereCapRecognitionOf"},
+		why:   "a payload is what the verdict struct CARRIES, not what its name ends in",
+	}, {
+		name:  "a payload returned by pointer",
+		body:  "\tif c, ok := conePointerTrimOf(); ok {\n\t\treturn curvedTrim{cone: *c}\n\t}",
+		decls: "func conePointerTrimOf() (*coneApexTrim, bool) { return nil, false }",
+		want:  []string{"conePointerTrimOf"},
+		why:   "*coneApexTrim hands back the same recognition coneApexTrim does",
+	}, {
+		name:  "a verdict with a third result",
+		body:  "\tif c, k, ok := coneAndKindOf(); ok {\n\t\treturn curvedTrim{cone: c, kind: k}\n\t}",
+		decls: "func coneAndKindOf() (coneApexTrim, curvedTrimKind, bool) { return coneApexTrim{}, 0, true }",
+		want:  []string{"coneAndKindOf"},
+		why:   "the two-spellings reading accepted exactly two results, so a third hid the recognizer",
+	}, {
+		name:  "a verdict returned as a named bool",
+		body:  "\tif namedBoolGateHolds() {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func namedBoolGateHolds() verdictBool { return true }",
+		want:  []string{"namedBoolGateHolds"},
+		why:   "`type verdictBool bool` is a bool; only its spelling differs",
+	}}
+}
 
 // blindGenericShapes is the callee shape #3536's precedent demanded be either handled or named: a
 // generic recognizer called with its type argument WRITTEN OUT. `f[T](…)` is an *ast.IndexExpr and
 // `f[T1, T2](…)` an *ast.IndexListExpr, and the first cut resolved neither — while seeing the very same
 // recognizer when the type argument was inferred (preservedGenericShapes). A blindness that depends on
 // how the caller spells the call is exactly the calibrated-to-today's-code reading this task removes.
-var blindGenericShapes = []recognizerProbeRow{{
-	name:  "a generic recognizer called with an explicit type argument",
-	body:  "\tif explicitGateHolds[int]() {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func explicitGateHolds[T any]() bool { return true }",
-	want:  []string{"explicitGateHolds"},
-	why:   "`f[T](…)` instantiates f; the instantiation is not a different function",
-}, {
-	name:  "a generic recognizer called with two explicit type arguments",
-	body:  "\tif pairGateHolds[int, string]() {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func pairGateHolds[A any, B any]() bool { return true }",
-	want:  []string{"pairGateHolds"},
-	why:   "*ast.IndexListExpr is the two-argument spelling of the same thing",
-}}
+func blindGenericShapes() []recognizerProbeRow {
+	return []recognizerProbeRow{{
+		name:  "a generic recognizer called with an explicit type argument",
+		body:  "\tif explicitGateHolds[int]() {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func explicitGateHolds[T any]() bool { return true }",
+		want:  []string{"explicitGateHolds"},
+		why:   "`f[T](…)` instantiates f; the instantiation is not a different function",
+	}, {
+		name:  "a generic recognizer called with two explicit type arguments",
+		body:  "\tif pairGateHolds[int, string]() {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func pairGateHolds[A any, B any]() bool { return true }",
+		want:  []string{"pairGateHolds"},
+		why:   "*ast.IndexListExpr is the two-argument spelling of the same thing",
+	}}
+}
 
 // preservedGenericShapes is the counterpart the blindness was measured against: the SAME recognizer with
 // its type argument inferred was always visible, which is what made the explicit spelling a blind spot
 // rather than a decision about generics.
-var preservedGenericShapes = []recognizerProbeRow{{
-	name:  "a generic recognizer with its type argument inferred",
-	body:  "\tif inferredGateHolds(1) {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func inferredGateHolds[T any](v T) bool { return true }",
-	want:  []string{"inferredGateHolds"},
-	why:   "an inferred call is a bare identifier and was never blind",
-}}
+func preservedGenericShapes() []recognizerProbeRow {
+	return []recognizerProbeRow{{
+		name:  "a generic recognizer with its type argument inferred",
+		body:  "\tif inferredGateHolds(1) {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func inferredGateHolds[T any](v T) bool { return true }",
+		want:  []string{"inferredGateHolds"},
+		why:   "an inferred call is a bare identifier and was never blind",
+	}}
+}
 
 // preservedVerdictShapes is the one row here that is NOT a blind shape the widening fixed: the first
 // cut already accepted `(found, ok bool)`, though by accident — it counted result FIELDS, saw a single
 // field of type bool, and read it as the bare `bool` spelling. The result-type set reads it as two
 // results and reaches the same answer for the right reason. It is planted because the reading changed
 // underneath it, so "unchanged" is a measured claim rather than an assumption.
-var preservedVerdictShapes = []recognizerProbeRow{{
-	name:  "a verdict whose two results are declared in one field",
-	body:  "\tif _, ok := foundAndOK(); ok {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func foundAndOK() (found, ok bool) { return true, true }",
-	want:  []string{"foundAndOK"},
-	why:   "results are counted one per RESULT, not one per field; `(found, ok bool)` is two",
-}}
+func preservedVerdictShapes() []recognizerProbeRow {
+	return []recognizerProbeRow{{
+		name:  "a verdict whose two results are declared in one field",
+		body:  "\tif _, ok := foundAndOK(); ok {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func foundAndOK() (found, ok bool) { return true, true }",
+		want:  []string{"foundAndOK"},
+		why:   "results are counted one per RESULT, not one per field; `(found, ok bool)` is two",
+	}}
+}
 
 // walkBoundaryShapes are the edges the widening must NOT cross. They are the reason the walk stops at a
 // geometric helper instead of following it into the mesher, and the reason a library predicate is not
 // counted as a bespoke recognizer.
-var walkBoundaryShapes = []recognizerProbeRow{{
-	name:  "a chart a recognizer USES is not a verdict",
-	body:  "\tif _, ok := chooseSphereChart(); ok {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func chooseSphereChart() (sphereChart, bool) { return sphereChart{}, true }",
-	why: "sphereChart is no field of the verdict struct, so it is no payload — this is what keeps " +
-		"the walk out of the mesher, and widening to \"anything with a trailing bool\" would break it",
-}, {
-	name:  "a call into a package OUTSIDE the tree keeps its own identity",
-	body:  "\tif stdmath.Signbit(-1) {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func Signbit(f float64) bool { return f < 0 }",
-	why: "resolving `stdmath.Signbit` by its bare selector would count the local Signbit as a " +
-		"recognizer the classification never reads",
-}, {
-	name:  "a method on a receiver from OUTSIDE the tree keeps its own identity",
-	body:  "\tvar when stdtime.Time\n\tif when.IsZero() {\n\t\treturn curvedTrim{}\n\t}",
-	decls: "func IsZero() bool { return false }",
-	why: "this row guards a regression this task itself introduced and then removed: claiming every " +
-		"bare selector as a method let `when.IsZero()` answer to the local IsZero and INFLATE the " +
-		"pin by a recognizer the classification never reads (review I1). An inflated base is worse " +
-		"than a missed recognizer, because the fall measured from it looks real",
-}, {
-	name:  "a payload returned as a SLICE is not resolved",
-	body:  "\tif c, ok := manyConeApexTrimsOf(); ok {\n\t\treturn curvedTrim{cone: c[0]}\n\t}",
-	decls: "func manyConeApexTrimsOf() ([]coneApexTrim, bool) { return nil, false }",
-	why: "a documented limit, planted so it is a known one (review M4). Unwrapping a slice to its " +
-		"element would also turn `func f() []bool` into a verdict, which is a worse inflation than " +
-		"the recognizer spelling it would catch; the header names the limit instead",
-}}
+func walkBoundaryShapes() []recognizerProbeRow {
+	return []recognizerProbeRow{{
+		name:  "a chart a recognizer USES is not a verdict",
+		body:  "\tif _, ok := chooseSphereChart(); ok {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func chooseSphereChart() (sphereChart, bool) { return sphereChart{}, true }",
+		why: "sphereChart is no field of the verdict struct, so it is no payload — this is what keeps " +
+			"the walk out of the mesher, and widening to \"anything with a trailing bool\" would break it",
+	}, {
+		name:  "a call into a package OUTSIDE the tree keeps its own identity",
+		body:  "\tif stdmath.Signbit(-1) {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func Signbit(f float64) bool { return f < 0 }",
+		why: "resolving `stdmath.Signbit` by its bare selector would count the local Signbit as a " +
+			"recognizer the classification never reads",
+	}, {
+		name:  "a method on a receiver from OUTSIDE the tree keeps its own identity",
+		body:  "\tvar when stdtime.Time\n\tif when.IsZero() {\n\t\treturn curvedTrim{}\n\t}",
+		decls: "func IsZero() bool { return false }",
+		why: "this row guards a regression this task itself introduced and then removed: claiming every " +
+			"bare selector as a method let `when.IsZero()` answer to the local IsZero and INFLATE the " +
+			"pin by a recognizer the classification never reads (review I1). An inflated base is worse " +
+			"than a missed recognizer, because the fall measured from it looks real",
+	}, {
+		name:  "a payload returned as a SLICE is not resolved",
+		body:  "\tif c, ok := manyConeApexTrimsOf(); ok {\n\t\treturn curvedTrim{cone: c[0]}\n\t}",
+		decls: "func manyConeApexTrimsOf() ([]coneApexTrim, bool) { return nil, false }",
+		why: "a documented limit, planted so it is a known one (review M4). Unwrapping a slice to its " +
+			"element would also turn `func f() []bool` into a verdict. MEASURED over the whole index: " +
+			"the unwrap makes 4 existing declarations verdicts (ConsistentOutwardFlips, floodInside, " +
+			"frustratedFaces, and seamEndMask, which returns ([]bool, bool)) and catches 0 recognizers, " +
+			"because no ([]payload, bool) declaration exists in the tree. Inflation 4, catch 0",
+	}}
+}
 
 // TestTheDerivationRefusesAnAmbiguousVerdictName plants the one shape the index cannot resolve — two
 // declarations answering to one key, either of which could be the verdict a read reaches — and the one

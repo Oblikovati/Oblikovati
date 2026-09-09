@@ -151,62 +151,66 @@ func (r *reader) countsAsRecognizer() bool {
 	return len(reads) == 0 || r.ownsVerdict(reads)
 }
 
-// shapeReads is every function r reads for a verdict (R1–R5), in source order, once each.
-func (r *reader) shapeReads() []string {
+// readCalls is every CALL this declaration makes in a READ position (R1–R5), in source order. It is the
+// one place the read shapes are recognised: shapeReads puts names to these calls, and
+// unattributableMethodCalls refuses the ones it cannot attribute — so the refusal can only ever speak
+// about a call that could move the number (review N1).
+func (r *reader) readCalls() []*ast.CallExpr {
 	if r.d.fn == nil || r.d.fn.Body == nil {
 		return nil
 	}
 	guarded := negatedGuards(r.d.fn.Body)
-	var out []string
+	var out []*ast.CallExpr
 	ast.Inspect(r.d.fn.Body, func(n ast.Node) bool {
-		for _, name := range r.readsOfStatement(n, guarded) {
-			if d := r.idx.lookup(name); d != nil && r.idx.isVerdict(*d) && !contains(out, name) {
-				out = append(out, name)
-			}
-		}
+		out = append(out, readCallsOfStatement(n, guarded)...)
 		return true
 	})
 	return out
 }
 
-// readsOfStatement returns the callee names one node reads for a verdict.
-func (r *reader) readsOfStatement(n ast.Node, guarded map[string]bool) []string {
+// shapeReads is every function r reads for a verdict (R1–R5), in source order, once each.
+func (r *reader) shapeReads() []string {
+	var out []string
+	for _, call := range r.readCalls() {
+		name, resolved := r.idx.calleeName(call, r.d)
+		if !resolved || contains(out, name) {
+			continue
+		}
+		if d := r.idx.lookup(name); d != nil && r.idx.isVerdict(*d) {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
+// readCallsOfStatement returns the calls one node makes in a read position.
+func readCallsOfStatement(n ast.Node, guarded map[string]bool) []*ast.CallExpr {
 	switch st := n.(type) {
 	case *ast.IfStmt:
-		return r.ifReads(st)
+		return ifReadCalls(st)
 	case *ast.AssignStmt:
-		return r.inventoryRead(st, guarded)
+		return inventoryReadCall(st, guarded)
 	case *ast.ReturnStmt:
-		return r.returnedVerdictReads(st)
+		return returnedVerdictCalls(st)
 	case *ast.CaseClause:
-		return r.caseReturnRead(st)
+		return caseReturnCall(st)
 	}
 	return nil
 }
 
-// ifReads: R1 (payload gate) and R2 (boolean gate).
-func (r *reader) ifReads(st *ast.IfStmt) []string {
-	if name, ok := r.payloadGateName(st); ok {
-		return []string{name}
+// ifReadCalls: R1 (payload gate) and R2 (boolean gate).
+func ifReadCalls(st *ast.IfStmt) []*ast.CallExpr {
+	if call, gated := payloadGatedCall(st); gated {
+		return []*ast.CallExpr{call}
 	}
 	if st.Init == nil {
-		return r.positiveCallOperands(st.Cond)
+		return positiveCalls(st.Cond)
 	}
 	return nil
 }
 
-// payloadGateName is the callee of `if v, ok := f(…); ok { … }`, resolved through the index so a
-// method or a tree-package call is as visible as a bare one.
-func (r *reader) payloadGateName(st *ast.IfStmt) (string, bool) {
-	call, ok := payloadGatedCall(st)
-	if !ok {
-		return "", false
-	}
-	return r.idx.calleeName(call, r.d)
-}
-
-// inventoryRead: R3 — `v, ok := f(…)` whose ok is never a negated guard.
-func (r *reader) inventoryRead(st *ast.AssignStmt, guarded map[string]bool) []string {
+// inventoryReadCall: R3 — `v, ok := f(…)` whose ok is never a negated guard.
+func inventoryReadCall(st *ast.AssignStmt, guarded map[string]bool) []*ast.CallExpr {
 	if len(st.Lhs) != 2 || len(st.Rhs) != 1 {
 		return nil
 	}
@@ -215,22 +219,19 @@ func (r *reader) inventoryRead(st *ast.AssignStmt, guarded map[string]bool) []st
 	if !isCall || !isIdent || guarded[ok.Name] {
 		return nil
 	}
-	if name, resolved := r.idx.calleeName(call, r.d); resolved {
-		return []string{name}
-	}
-	return nil
+	return []*ast.CallExpr{call}
 }
 
-// returnedVerdictReads: R4 — the positive call operands of a returned boolean expression.
-func (r *reader) returnedVerdictReads(st *ast.ReturnStmt) []string {
+// returnedVerdictCalls: R4 — the positive call operands of a returned boolean expression.
+func returnedVerdictCalls(st *ast.ReturnStmt) []*ast.CallExpr {
 	if len(st.Results) == 0 {
 		return nil
 	}
-	return r.positiveCallOperands(st.Results[len(st.Results)-1])
+	return positiveCalls(st.Results[len(st.Results)-1])
 }
 
-// caseReturnRead: R5 — a case clause whose body is `return f(…)`.
-func (r *reader) caseReturnRead(cc *ast.CaseClause) []string {
+// caseReturnCall: R5 — a case clause whose body is `return f(…)`.
+func caseReturnCall(cc *ast.CaseClause) []*ast.CallExpr {
 	if len(cc.List) == 0 || len(cc.Body) != 1 {
 		return nil
 	}
@@ -239,26 +240,22 @@ func (r *reader) caseReturnRead(cc *ast.CaseClause) []string {
 		return nil
 	}
 	if call, isCall := ret.Results[0].(*ast.CallExpr); isCall {
-		if name, resolved := r.idx.calleeName(call, r.d); resolved {
-			return []string{name}
-		}
+		return []*ast.CallExpr{call}
 	}
 	return nil
 }
 
-// positiveCallOperands walks a boolean expression and returns the calls that are NOT under a
-// negation — `a() || (!g() && b())` gives a and b; g is a guard.
-func (r *reader) positiveCallOperands(e ast.Expr) []string {
+// positiveCalls walks a boolean expression and returns the calls that are NOT under a negation —
+// `a() || (!g() && b())` gives a and b; g is a guard.
+func positiveCalls(e ast.Expr) []*ast.CallExpr {
 	switch x := e.(type) {
 	case *ast.CallExpr:
-		if name, resolved := r.idx.calleeName(x, r.d); resolved {
-			return []string{name}
-		}
+		return []*ast.CallExpr{x}
 	case *ast.ParenExpr:
-		return r.positiveCallOperands(x.X)
+		return positiveCalls(x.X)
 	case *ast.BinaryExpr:
 		if x.Op == token.LOR || x.Op == token.LAND {
-			return append(r.positiveCallOperands(x.X), r.positiveCallOperands(x.Y)...)
+			return append(positiveCalls(x.X), positiveCalls(x.Y)...)
 		}
 	}
 	return nil
@@ -314,23 +311,17 @@ func (r *reader) callsOutsideReads(e ast.Expr, reads []string) bool {
 	return false
 }
 
-// unattributableMethodCalls are the method calls in this declaration whose receiver the AST does not
-// state and whose name reaches a verdict of the tree.
+// unattributableMethodCalls are the READ-POSITION calls whose receiver the AST does not state and whose
+// name reaches a verdict of the tree. Read positions only: `w.less(a, b)` inside a struct literal is not
+// a read in any shape, can never move the number, and refusing it would ask a contributor to rewrite
+// clean kernel source to satisfy a guard that had nothing to say about it (review N1).
 func (r *reader) unattributableMethodCalls() []string {
-	if r.d.fn == nil || r.d.fn.Body == nil {
-		return nil
-	}
 	var out []string
-	ast.Inspect(r.d.fn.Body, func(n ast.Node) bool {
-		call, isCall := n.(*ast.CallExpr)
-		if !isCall {
-			return true
-		}
+	for _, call := range r.readCalls() {
 		if name, unattributable := r.idx.unattributableMethod(call, r.d); unattributable {
 			out = append(out, name+" at "+r.idx.fset.Position(call.Pos()).String())
 		}
-		return true
-	})
+	}
 	return out
 }
 
@@ -372,9 +363,8 @@ func TestTheSphereRimFormsAreOneInventory(t *testing.T) {
 		t.Fatal("sphereCapRimOfForm is not declared in the classification's tree")
 	}
 	cases := 0
-	r := &reader{*form, idx}
 	ast.Inspect(form.fn.Body, func(n ast.Node) bool {
-		if cc, isCase := n.(*ast.CaseClause); isCase && len(r.caseReturnRead(cc)) == 1 {
+		if cc, isCase := n.(*ast.CaseClause); isCase && len(caseReturnCall(cc)) == 1 {
 			cases++
 		}
 		return true

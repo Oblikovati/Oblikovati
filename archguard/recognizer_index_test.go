@@ -65,8 +65,10 @@ import (
 //     whose PAYLOAD is a type parameter is not.
 //   - A payload returned inside a slice, array or map — `([]coneApexTrim, bool)` — is not resolved, so
 //     such a recognizer is invisible. Unwrapping the element would also make `func f() []bool` a
-//     verdict, and that inflation is worse than the spelling it would catch. Planted, as a known
-//     limit, by walkBoundaryShapes.
+//     verdict, and that is measured, not guessed: on today's tree the unwrap turns 4 existing
+//     declarations into verdicts (ConsistentOutwardFlips, floodInside, frustratedFaces, and seamEndMask,
+//     which returns `([]bool, bool)`) and catches 0 recognizers, since no `([]payload, bool)`
+//     declaration exists. Inflation 4, catch 0 — so the limit stands, planted by walkBoundaryShapes.
 //   - Two declarations answering to one key are refused rather than guessed
 //     (assertUnambiguousVerdictNames), and so is a method call whose receiver type the AST does not
 //     state when its name reaches a verdict (assertNoUnresolvableMethodReads). Neither refusal can
@@ -124,8 +126,7 @@ type recognizerIndex struct {
 	boolTypes map[string]bool // canonical keys of named types whose underlying is bool
 	treeTypes map[string]bool // canonical keys of EVERY type the tree declares, for receiver origin
 	payloads  map[string]bool // canonical keys of the classification's own verdict payload types
-	verdict   *ast.StructType
-	verdictIn declaredHere // the scope and imports the verdict struct's field types are written in
+	structs   map[string]treeStruct
 	fset      *token.FileSet
 }
 
@@ -142,14 +143,15 @@ func newRecognizerIndex(t *testing.T, root, importPath string) *recognizerIndex 
 	t.Helper()
 	idx := &recognizerIndex{
 		scopes: map[string]*packageScope{}, decls: map[string][]declaredHere{},
-		boolTypes: map[string]bool{}, treeTypes: map[string]bool{}, fset: token.NewFileSet(),
+		boolTypes: map[string]bool{}, treeTypes: map[string]bool{},
+		structs: map[string]treeStruct{}, fset: token.NewFileSet(),
 	}
 	packages := idx.parseTree(t, root, importPath)
 	for _, pkg := range packages {
 		idx.declareTypeNames(pkg)
 	}
 	for _, pkg := range packages {
-		idx.indexPackage(pkg, pkg.importPath == importPath)
+		idx.indexPackage(pkg)
 	}
 	idx.payloads = idx.verdictPayloads(t)
 	return idx
@@ -193,13 +195,19 @@ func (idx *recognizerIndex) declareTypeNames(pkg treePackage) {
 	}
 }
 
-// indexPackage records a package's named bools, its verdict struct when it is the root, and every
-// function and method it declares.
-func (idx *recognizerIndex) indexPackage(pkg treePackage, isRoot bool) {
+// indexPackage records a package's named bools and structs, and every function and method it declares.
+func (idx *recognizerIndex) indexPackage(pkg treePackage) {
 	for _, f := range pkg.files {
-		idx.collectTypeShapes(f, pkg.scope, isRoot)
+		idx.collectTypeShapes(f, pkg.scope)
 		idx.collectDeclarations(f, pkg.scope)
 	}
+}
+
+// treeStruct is a struct the tree declares, with the declaration its FIELD TYPES are written in. The
+// verdict struct is one of these; so is every struct a method call's receiver may be a field of.
+type treeStruct struct {
+	fields *ast.StructType
+	in     declaredHere
 }
 
 // packageDirsUnder is every directory at or below root that holds non-test Go source, sorted, so the
@@ -263,17 +271,17 @@ func (idx *recognizerIndex) parsePackage(t *testing.T, dir string) []*ast.File {
 	return files
 }
 
-// collectTypeShapes records the named bools of a package and, in the root, the verdict struct whose
-// fields are the payload set.
-func (idx *recognizerIndex) collectTypeShapes(f *ast.File, scope *packageScope, isRoot bool) {
-	imports := idx.fileImports(f)
+// collectTypeShapes records the named bools and the structs of a package. The verdict struct, whose
+// fields are the payload set, is just the one whose key is verdictStructName — only the classification
+// itself has an empty prefix, so a struct of that name in a package beneath it cannot be mistaken for it.
+func (idx *recognizerIndex) collectTypeShapes(f *ast.File, scope *packageScope) {
+	in := declaredHere{scope: scope, imports: idx.fileImports(f)}
 	forEachTypeSpec(f, func(spec *ast.TypeSpec) {
 		if id, isIdent := spec.Type.(*ast.Ident); isIdent && id.Name == "bool" {
 			idx.boolTypes[scope.qualify(spec.Name.Name)] = true
 		}
-		st, isStruct := spec.Type.(*ast.StructType)
-		if isRoot && isStruct && spec.Name.Name == verdictStructName {
-			idx.verdict, idx.verdictIn = st, declaredHere{scope: scope, imports: imports}
+		if st, isStruct := spec.Type.(*ast.StructType); isStruct {
+			idx.structs[scope.qualify(spec.Name.Name)] = treeStruct{fields: st, in: in}
 		}
 	})
 }
@@ -337,13 +345,14 @@ func (idx *recognizerIndex) importLocalName(spec *ast.ImportSpec, path string) s
 // an arm's recognition has to land in the verdict, so the fields ARE the inventory of payloads.
 func (idx *recognizerIndex) verdictPayloads(t *testing.T) map[string]bool {
 	t.Helper()
-	if idx.verdict == nil {
+	verdict, declared := idx.structs[verdictStructName]
+	if !declared {
 		t.Fatalf("no %s struct is declared in %s: the derivation reads the payload set off that "+
 			"struct's fields, so it cannot resolve a verdict without it", verdictStructName, classificationDir)
 	}
-	out := map[string]bool{idx.verdictIn.scope.qualify(verdictStructName): true}
-	for _, field := range idx.verdict.Fields.List {
-		if key := idx.typeKey(field.Type, idx.verdictIn); key != "" {
+	out := map[string]bool{verdictStructName: true}
+	for _, field := range verdict.fields.Fields.List {
+		if key := idx.typeKey(field.Type, verdict.in); key != "" {
 			out[key] = true
 		}
 	}

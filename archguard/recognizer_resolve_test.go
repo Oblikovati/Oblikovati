@@ -185,37 +185,57 @@ const (
 
 // receiverOriginOf resolves the type of a method call's receiver from what the AST states about it.
 func (idx *recognizerIndex) receiverOriginOf(base ast.Expr, d declaredHere) receiverOrigin {
-	stated := idx.statedTypeOf(base, d)
+	stated, in := idx.statedTypeOf(base, d)
 	if stated == nil {
 		return receiverUnstated
 	}
-	if idx.treeTypes[idx.typeKey(stated, d)] {
+	if idx.treeTypes[idx.typeKey(stated, in)] {
 		return receiverInTree
 	}
 	return receiverOutsideTree
 }
 
-// statedTypeOf is the type expression the AST gives for a method call's receiver, or nil.
-func (idx *recognizerIndex) statedTypeOf(base ast.Expr, d declaredHere) ast.Expr {
+// statedTypeOf is the type expression the AST gives for a method call's receiver, together with the
+// declaration that type expression is WRITTEN IN — a field's type is spelled in its struct's scope, not
+// in the caller's, and canonicalising it against the wrong scope would resolve the wrong type.
+func (idx *recognizerIndex) statedTypeOf(base ast.Expr, d declaredHere) (ast.Expr, declaredHere) {
 	switch x := base.(type) {
 	case *ast.ParenExpr:
 		return idx.statedTypeOf(x.X, d)
 	case *ast.UnaryExpr:
 		return idx.addressOfType(x, d)
 	case *ast.CompositeLit:
-		return x.Type
+		return x.Type, d
 	case *ast.Ident:
-		return declaredTypeOfName(x.Name, d.fn)
+		return declaredTypeOfName(x.Name, d.fn), d
+	case *ast.SelectorExpr:
+		return idx.fieldTypeOf(x, d)
 	}
-	return nil
+	return nil, d
 }
 
 // addressOfType unwraps `&T{…}`; any other unary expression states no type.
-func (idx *recognizerIndex) addressOfType(u *ast.UnaryExpr, d declaredHere) ast.Expr {
+func (idx *recognizerIndex) addressOfType(u *ast.UnaryExpr, d declaredHere) (ast.Expr, declaredHere) {
 	if u.Op != token.AND {
-		return nil
+		return nil, d
 	}
 	return idx.statedTypeOf(u.X, d)
+}
+
+// fieldTypeOf resolves `x.field` when x's own type is a struct the tree declares. The chart mesher
+// writes `b.r.covers(u, v)`, where r is a field of an in-tree struct the index has ALREADY parsed;
+// giving up on it made seven ordinary call sites in real kernel source unattributable, and the remedy
+// the refusal prescribes would have been to rewrite clean code to appease a guard (review N1).
+func (idx *recognizerIndex) fieldTypeOf(sel *ast.SelectorExpr, d declaredHere) (ast.Expr, declaredHere) {
+	owner, in := idx.statedTypeOf(sel.X, d)
+	if owner == nil {
+		return nil, d
+	}
+	declared, isStruct := idx.structs[idx.typeKey(owner, in)]
+	if !isStruct {
+		return nil, d
+	}
+	return fieldTypeNamed(sel.Sel.Name, declared.fields.Fields), declared.in
 }
 
 // declaredTypeOfName is the type fn states for a name: its own receiver, a parameter, a named result, a
