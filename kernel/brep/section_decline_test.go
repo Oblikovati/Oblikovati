@@ -19,14 +19,21 @@ import (
 // pairings, and the third came back as DeclineNone — a refusal that names nothing. Each must now say
 // WHICH gate refused, on the recorder brep.BooleanDiag was handed.
 
-// ringAndRod is the (torus, cylinder) fixture the lane cases are read on: a ring driven across a rod.
-func ringAndRod(t *testing.T, major, minor float64) (*topo.Body, *topo.Body) {
+// ringAndGrazingRod is the (torus, cylinder) fixture the lane cases are read on: a ring inside a rod
+// whose wall is TANGENT to the ring's outer equator. Their surfaces touch at two points and cross
+// nowhere, so the section's azimuths meet without separating and the closed form cannot name the set it
+// would build — an ill-conditioned section by construction, at any (major, minor).
+//
+// It used to be a rod merely THICKER than the ring's tube, which is not ill-conditioned at all: that is
+// four full-period branches, and they are built now (Oblikovati/Oblikovati#3515). The gate has to be
+// driven by a section the closed form genuinely cannot name, or it stops testing the gate.
+func ringAndGrazingRod(t *testing.T, major, minor float64) (*topo.Body, *topo.Body) {
 	t.Helper()
 	ring, err := SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), major, minor, "ring")
 	if err != nil {
 		t.Fatalf("SolidTorus(%g, %g): %v", major, minor, err)
 	}
-	rod, err := SolidCylinder(math.P3(0, 0, -10), math.V3(0, 0, 1), 3, 20)
+	rod, err := SolidCylinder(math.P3(0, 0, -10), math.V3(0, 0, 1), major+minor, 20)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
@@ -68,15 +75,15 @@ func TestAnOrdinaryRefusalIsRecordedAsInfo(t *testing.T) {
 	}
 }
 
-// TestAnIllConditionedLaneDeclinesByName: the torus∩cylinder closed form APPLIES to a ring on a rod and
-// still cannot use its answer at these numbers. That is a degradation — a Defect, and a different one
-// from the torus pair above, which is the whole point of naming the gate.
+// TestAnIllConditionedLaneDeclinesByName: the torus∩cylinder closed form APPLIES to a ring grazing the
+// inside of a rod and still cannot use its answer at these numbers. That is a degradation — a Defect,
+// and a different one from the torus pair above, which is the whole point of naming the gate.
 func TestAnIllConditionedLaneDeclinesByName(t *testing.T) {
 	t.Parallel()
-	ring, rod := ringAndRod(t, 6, 1.5)
+	ring, rod := ringAndGrazingRod(t, 6, 1.5)
 	rec := &diag.Recorder{}
 	if _, err := BooleanDiag(Difference, rod, ring, rec); err == nil {
-		t.Fatal("the ring-on-rod cut built; the fixture no longer exercises the lane decline")
+		t.Fatal("the grazing ring-in-rod cut built; the fixture no longer exercises the lane decline")
 	}
 	d := onlyDiagWithCode(t, rec, CodeSectionConditioningDemotion)
 	for _, want := range []string{"geom.Cylinder cylinder:f#2 ∩ geom.Torus ring:face#0", "the torus section's"} {

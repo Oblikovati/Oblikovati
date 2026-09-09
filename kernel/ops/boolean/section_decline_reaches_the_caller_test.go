@@ -16,21 +16,25 @@ import (
 // in — the one a feature reply reads, and with it the API and the UI — must also carry WHICH gate
 // refused, on the same operation.
 
-// TestTheDeclineSaysWhichGateRefused: a ring driven across a rod demotes for CONDITIONING, and the
-// operation reports both the generic decline and the gate behind it.
+// TestTheDeclineSaysWhichGateRefused: a ring sitting inside a rod whose wall is TANGENT to the ring's
+// outer equator demotes for CONDITIONING — their surfaces touch and never cross, so the section's
+// azimuths meet without separating — and the operation reports both the generic decline and the gate
+// behind it. The fixture used to be a rod merely thicker than the ring's tube, which is built now
+// (Oblikovati/Oblikovati#3515) and so no longer drives this gate.
 func TestTheDeclineSaysWhichGateRefused(t *testing.T) {
 	t.Parallel()
-	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 6, 1.5, "ring")
+	const major, minor = 6.0, 1.5
+	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), major, minor, "ring")
 	if err != nil {
 		t.Fatalf("SolidTorus: %v", err)
 	}
-	rod, err := brep.SolidCylinder(math.P3(0, 0, -10), math.V3(0, 0, 1), 3, 20)
+	rod, err := brep.SolidCylinder(math.P3(0, 0, -10), math.V3(0, 0, 1), major+minor, 20)
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
 	rec := &diag.Recorder{}
 	if _, err := BooleanWithDiagnostics(Cut, rod, ring, rec); err == nil {
-		t.Fatal("the ring-on-rod cut built; the fixture no longer exercises the decline")
+		t.Fatal("the grazing ring-in-rod cut built; the fixture no longer exercises the decline")
 	}
 	assertRecorded(t, rec, CodeBooleanNoExactCurvedPath, "no exact analytic path")
 	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "geom.Cylinder cylinder:f#2 ∩ geom.Torus ring:face#0")

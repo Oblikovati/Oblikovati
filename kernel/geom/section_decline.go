@@ -34,9 +34,6 @@ const (
 	// DeclineTorusLaneTracks is extremum tracks that cross, merge or change in number over the turn,
 	// which makes "which branch pair" a guess.
 	DeclineTorusLaneTracks
-	// DeclineTorusLaneFullTurn is a branch pair that exists at EVERY tube angle: four independent
-	// full-period branches rather than a folded pair, a topology this reduction does not carry.
-	DeclineTorusLaneFullTurn
 	// DeclineTorusLaneUnaccounted is a loop set that does not account for every azimuth the stations
 	// carry — the certificate that no section loop was dropped.
 	DeclineTorusLaneUnaccounted
@@ -68,7 +65,6 @@ var sectionDeclineNames = [...]string{
 	DeclineNoClosedForm:           "no closed form claims this surface pair",
 	DeclineTorusLaneStation:       "a torus station with no azimuth dependence",
 	DeclineTorusLaneTracks:        "the torus section's extremum tracks are not separable",
-	DeclineTorusLaneFullTurn:      "the torus section's branch pair never folds",
 	DeclineTorusLaneUnaccounted:   "the torus section's loops do not account for every azimuth",
 	DeclineTorusLaneSeparation:    "the torus section's branches never separate past the stitch resolution",
 	DeclineTorusSectionOffItsForm: "the torus section's own points do not satisfy the form it was solved from",

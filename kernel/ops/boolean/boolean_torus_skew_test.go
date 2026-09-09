@@ -26,6 +26,9 @@ import (
 //   - a rod ACROSS the ring, whose quadric is an infinite cylinder and so pierces the tube on BOTH
 //     flanks: two lanes per station, four section loops, of which only the ones inside the rod's own
 //     finite trim survive into the body;
+//   - the same rod FATTER than the tube it crosses, which swallows the tube's flank whole. Its branch
+//     pair never folds, so the section is four independent FULL-PERIOD branches rather than folded
+//     loops — the topology the reduction used to decline by name (Oblikovati/Oblikovati#3515);
 //   - a TILTED drill, one lane, entering the tube's top and leaving its bottom;
 //   - an off-centre COUNTERSINK, whose axis is parallel to the ring's. That one is axis-invariant —
 //     being off-centre moves the quadric's linear term, never its tensor — so it is the reproduction
@@ -83,6 +86,40 @@ func skewCorpusRod(t *testing.T) skewRingTool {
 			ops.Cut: {tori: 1, cylinders: 1, faces: 2},
 			// The plug: the rod's wall between the seams, capped by the two torus patches it cut out.
 			ops.Intersect: {tori: 2, cylinders: 1, faces: 3},
+		},
+	}
+}
+
+// skewCorpusFatRod is the same rod at a radius that EXCEEDS the tube's own. Its axis runs down the
+// tube's centre circle at (5, 0, 0), so a radius over 1.5 contains that whole tube circle: the rod
+// swallows the ring's flank instead of piercing it, and severs the ring into a C.
+//
+// That is what makes the section wrap. The tube circle meets the rod's wall at four azimuths at EVERY
+// tube angle and no two of them ever merge, so there is no fold to bound a window with and the section
+// is four full-period branches. Nothing in the reduction is told there are four: the station's quartic
+// certifies its own real roots and the extremum tracks label them (Oblikovati/Oblikovati#3515).
+//
+// It is an ordinary part — a pin through a ring's cross-section — and it used to be a named decline.
+func skewCorpusFatRod(t *testing.T) skewRingTool {
+	t.Helper()
+	rod, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2, 9)
+	if err != nil {
+		t.Fatalf("fat rod: %v", err)
+	}
+	return skewRingTool{
+		name:   "rod fatter than the tube",
+		body:   rod,
+		volume: stdmath.Pi * 4 * 9,
+		inside: func(x, y, z float64) bool { return y*y+z*z <= 4 && x >= 0 && x <= 9 },
+		census: map[ops.PartFeatureOperation]skewFaceCensus{
+			// The ring's surface with the swallowed collar cut out of it — one face bounded by the two
+			// full-period branches — plus the rod's wall holed where the ring's two cut ends stand in it,
+			// and the rod's two caps, both clear of the ring.
+			ops.Join: {tori: 1, cylinders: 1, planes: 2, faces: 4},
+			// The severed C: the ring's surface, and the rod's wall in the two patches that close the cut.
+			ops.Cut: {tori: 1, cylinders: 2, faces: 3},
+			// The plug: the swallowed collar of the ring's surface, closed by the same two wall patches.
+			ops.Intersect: {tori: 1, cylinders: 2, faces: 3},
 		},
 	}
 }
@@ -169,23 +206,45 @@ func TestASkewToolThroughARingIsExact(t *testing.T) {
 	ring := skewCorpusRing(t)
 	ringVol := 2 * stdmath.Pi * stdmath.Pi * 5 * 1.5 * 1.5
 	inRing := func(x, y, z float64) bool { d := stdmath.Hypot(x, y) - 5; return d*d+z*z <= 1.5*1.5 }
-	for _, tool := range []skewRingTool{skewCorpusRod(t), skewCorpusTiltedDrill(t), skewCorpusCountersink(t)} {
+	tools := []skewRingTool{skewCorpusRod(t), skewCorpusFatRod(t), skewCorpusTiltedDrill(t), skewCorpusCountersink(t)}
+	for _, tool := range tools {
 		t.Run(tool.name, func(t *testing.T) {
 			t.Parallel()
-			join := skewOpVolume(t, ops.Join, ring, tool)
-			cut := skewOpVolume(t, ops.Cut, ring, tool)
-			lens := skewOpVolume(t, ops.Intersect, ring, tool)
-			assertRelative(t, "V(−) + V(∩)", cut+lens, ringVol, requichaTol)
-			assertRelative(t, "V(∪) + V(∩)", join+lens, ringVol+tool.volume, requichaTol)
+			join := skewOpVolumes(t, ops.Join, ring, tool)
+			cut := skewOpVolumes(t, ops.Cut, ring, tool)
+			lens := skewOpVolumes(t, ops.Intersect, ring, tool)
+			assertRequichaAtEveryFaceting(t, ringVol, tool.volume, join, cut, lens)
 			whole := ring.RangeBox().Union(tool.body.RangeBox())
 			assertRelative(t, "V(∪) against the membership integral",
-				join, skewMembershipVolume(ops.Join, inRing, tool.inside, whole), membershipTol)
+				join[0], skewMembershipVolume(ops.Join, inRing, tool.inside, whole), membershipTol)
 			assertRelative(t, "V(−) against the membership integral",
-				cut, skewMembershipVolume(ops.Cut, inRing, tool.inside, whole), membershipTol)
+				cut[0], skewMembershipVolume(ops.Cut, inRing, tool.inside, whole), membershipTol)
 			assertRelative(t, "V(∩) against the membership integral",
-				lens, skewMembershipVolume(ops.Intersect, inRing, tool.inside, overlapBox(ring.RangeBox(), tool.body.RangeBox())),
+				lens[0], skewMembershipVolume(ops.Intersect, inRing, tool.inside, overlapBox(ring.RangeBox(), tool.body.RangeBox())),
 				membershipTol)
 		})
+	}
+}
+
+// skewFacetings are the tessellation qualities every row's volumes are read at. Requicha's identity
+// ties three ANALYTIC bodies to each other, so a residual that MOVES with the faceting is a tessellation
+// artefact wearing the identity's clothes rather than a certificate that the section was right. Reading
+// it at two qualities is what tells the two apart.
+var skewFacetings = [...]struct {
+	name    string
+	quality ops.Quality
+}{
+	{"default faceting", ops.DefaultQuality()},
+	{"property faceting", ops.PropertyQuality()},
+}
+
+// assertRequichaAtEveryFaceting ties the three operations to each other and to the operands' own
+// analytic volumes, at each faceting the volumes were read at.
+func assertRequichaAtEveryFaceting(t *testing.T, ringVol, toolVol float64, join, cut, lens [len(skewFacetings)]float64) {
+	t.Helper()
+	for i, f := range skewFacetings {
+		assertRelative(t, f.name+": V(−) + V(∩)", cut[i]+lens[i], ringVol, requichaTol)
+		assertRelative(t, f.name+": V(∪) + V(∩)", join[i]+lens[i], ringVol+toolVol, requichaTol)
 	}
 }
 
@@ -198,9 +257,9 @@ const requichaTol = 1e-5
 // of those. The kernel's answer is exact.
 const membershipTol = 2e-3
 
-// skewOpVolume runs one boolean, asserts it is a valid closed manifold solid with the face census the
-// contact implies and an exact boundary, and returns its analytic volume.
-func skewOpVolume(t *testing.T, op ops.PartFeatureOperation, ring *topo.Body, tool skewRingTool) float64 {
+// skewOpVolumes runs one boolean, asserts it is a valid closed manifold solid with the face census the
+// contact implies and an exact boundary, and returns its volume read at each of [skewFacetings].
+func skewOpVolumes(t *testing.T, op ops.PartFeatureOperation, ring *topo.Body, tool skewRingTool) [len(skewFacetings)]float64 {
 	t.Helper()
 	res, err := ops.Boolean(op, ring, tool.body)
 	if err != nil {
@@ -215,7 +274,11 @@ func skewOpVolume(t *testing.T, op ops.PartFeatureOperation, ring *topo.Body, to
 	if got, want := skewCensusOf(res), tool.census[op]; got != want {
 		t.Errorf("%s %v: census %+v, want %+v", tool.name, op, got, want)
 	}
-	return query.BodyGeometryProperties(res, ops.DefaultQuality()).Volume
+	var out [len(skewFacetings)]float64
+	for i, f := range skewFacetings {
+		out[i] = query.BodyGeometryProperties(res, f.quality).Volume
+	}
+	return out
 }
 
 // skewCensusOf tallies a body's faces by analytic surface kind.
@@ -291,27 +354,35 @@ func jitteredStratum(rng *rand.Rand, i int) float64 {
 // per height), a lattice this fine lands within 2e-5 relative — a hundredth of membershipTol.
 const skewStrata = 160
 
-// TestALaneConditioningDemotionIsReported: a rod across the ring whose radius EXCEEDS the tube's
-// swallows the tube's flank at every tube angle, so the branch pair never folds — four independent
-// full-period branches rather than a folded pair, which the second-harmonic reduction does not carry.
-// It refuses, and the refusal is the kind that has to be said out loud: the closed form APPLIED to this
-// pair and gave up ground it normally holds, which is a fallback, and a fallback is a diag.Defect that
+// TestALaneConditioningDemotionIsReported: a rod laid TANGENT to the top of the ring's tube touches it
+// along the ring's own top circle and crosses it nowhere. The station's azimuths meet there without
+// separating, so the reduction's azimuth census cannot account for the set it would build, and it
+// refuses. That refusal is the kind that has to be said out loud: the closed form APPLIED to this pair
+// and gave up ground it normally holds, which is a fallback, and a fallback is a diag.Defect that
 // reaches feature health, the API and the UI.
 //
-// The counterpart matters as much: the same rod at a radius the reduction DOES carry must record
-// nothing. A diagnostic that fires on the ordinary case is noise, and "no closed form claims this pair"
-// — a torus against a torus, say — is the ordinary case.
+// The fixture used to be a rod FATTER than the tube. That is no longer a refusal — its four
+// full-period branches are built, and skewCorpusFatRod certifies the bodies (Oblikovati/Oblikovati#3515)
+// — so the guard is re-pointed at a section that is genuinely ill-conditioned rather than merely one
+// the reduction had not been taught. Widening a fast path and quietly losing its demotion would trade
+// one defect for a worse one.
+//
+// The counterpart matters as much: a rod the reduction DOES carry must record nothing. A diagnostic
+// that fires on the ordinary case is noise, and "no closed form claims this pair" — a torus against a
+// torus, say — is the ordinary case.
 func TestALaneConditioningDemotionIsReported(t *testing.T) {
 	t.Parallel()
 	ring := skewCorpusRing(t)
-	fat, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2, 9)
+	// Radius 2 on an axis 3.5 above the ring's plane puts the rod's lowest ruling at z = 1.5, which is
+	// exactly the height of the tube's top circle: one tangential touch, no crossing.
+	grazing, err := brep.SolidCylinder(math.P3(0, 0, 3.5), math.V3(1, 0, 0), 2, 9)
 	if err != nil {
-		t.Fatalf("fat rod: %v", err)
+		t.Fatalf("grazing rod: %v", err)
 	}
 	for _, op := range []ops.PartFeatureOperation{ops.Cut, ops.Join} {
 		var rec diag.Recorder
-		if _, err := ops.BooleanWithDiagnostics(op, ring, fat, &rec); err == nil {
-			t.Fatalf("%v: the full-turn topology must be refused, not built", op)
+		if _, err := ops.BooleanWithDiagnostics(op, ring, grazing, &rec); err == nil {
+			t.Fatalf("%v: an unnameable section must be refused, not built", op)
 		}
 		if !rec.Has(brep.CodeSectionConditioningDemotion) {
 			t.Errorf("%v: the demotion recorded no %q; got %v", op, brep.CodeSectionConditioningDemotion, rec.Records())
@@ -320,11 +391,20 @@ func TestALaneConditioningDemotionIsReported(t *testing.T) {
 			t.Errorf("%v: a conditioning demotion must be a Defect", op)
 		}
 	}
-	var quiet diag.Recorder
-	if _, err := ops.BooleanWithDiagnostics(ops.Cut, ring, skewCorpusRod(t).body, &quiet); err != nil {
-		t.Fatalf("the rod the reduction carries must build: %v", err)
-	}
-	if quiet.Has(brep.CodeSectionConditioningDemotion) {
-		t.Errorf("a section the closed form named recorded a demotion: %v", quiet.Records())
+	assertTheCarriedRodsRecordNoDemotion(t, ring)
+}
+
+// assertTheCarriedRodsRecordNoDemotion requires both rods the reduction carries — the one that pierces
+// the tube and the one that swallows it — to build with no demotion recorded at all.
+func assertTheCarriedRodsRecordNoDemotion(t *testing.T, ring *topo.Body) {
+	t.Helper()
+	for _, tool := range []skewRingTool{skewCorpusRod(t), skewCorpusFatRod(t)} {
+		var quiet diag.Recorder
+		if _, err := ops.BooleanWithDiagnostics(ops.Cut, ring, tool.body, &quiet); err != nil {
+			t.Fatalf("the %s the reduction carries must build: %v", tool.name, err)
+		}
+		if quiet.Has(brep.CodeSectionConditioningDemotion) {
+			t.Errorf("%s: a section the closed form named recorded a demotion: %v", tool.name, quiet.Records())
+		}
 	}
 }

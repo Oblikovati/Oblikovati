@@ -19,12 +19,19 @@ import stdmath "math"
 // the exact station where it crosses zero. A span that wraps the seam comes back as [S0, S0+width] with
 // the end past 2π, which a periodic chart evaluates unchanged.
 //
-// ok=false is "not a window at all": the discriminant never changes sign while being positive somewhere,
-// which is the FULL-PERIOD case a wrapping form owns and which must not be dressed up as a window whose
-// two folds are the same station. An empty list with ok=true is the honest "they do not meet".
+// folded=false is exactly ONE thing, and the callers depend on that: the discriminant is positive at
+// EVERY station, so the two roots never merge and each traces its own branch over the whole period.
+// That is a shape in its own right — a wrap — not a refusal, and it must not be dressed up as a window
+// whose two folds are the same station. folded=true with an empty list is the honest "they do not meet".
 //
-//	spans, ok := periodicRootWindows(func(u float64) float64 { return co(u).discriminant() }, 720)
-func periodicRootWindows(disc func(float64) float64, probes int) ([][2]float64, bool) {
+// It used to carry a third outcome: a rise/fall count that disagreed, "numerical noise". That branch
+// was unreachable. The classification is taken from a FIXED sample array walked as a cycle, and on a
+// cycle of two classes the up-transitions and the down-transitions are equal in number whatever the
+// samples are — TestFoldsAlternateOnEverySignPattern drives it over 4096 patterns. A dead refusal is
+// worse than none: it made "not a window" ambiguous at every call site (Oblikovati/Oblikovati#3515).
+//
+//	spans, folded := periodicRootWindows(func(u float64) float64 { return co(u).discriminant() }, 720)
+func periodicRootWindows(disc func(float64) float64, probes int) (spans [][2]float64, folded bool) {
 	step := float64(twoPi / float64(probes))
 	samples := make([]float64, probes)
 	for i := range samples {
@@ -40,11 +47,8 @@ func periodicRootWindows(disc func(float64) float64, probes int) ([][2]float64, 
 			falls = append(falls, foldStation(disc, float64(float64(i-1)*step), float64(float64(i)*step)))
 		}
 	}
-	if len(rises) == 0 && len(falls) == 0 {
+	if len(rises) == 0 {
 		return nil, allNonPositive(samples)
-	}
-	if len(rises) != len(falls) {
-		return nil, false // sign changes alternate on a circle; a count that disagrees is numerical noise
 	}
 	out := make([][2]float64, 0, len(rises))
 	for _, s0 := range rises {
@@ -53,7 +57,8 @@ func periodicRootWindows(disc func(float64) float64, probes int) ([][2]float64, 
 	return out, true
 }
 
-// allNonPositive reports that the two roots meet or miss at every probe.
+// allNonPositive reports that the two roots meet or miss at every probe — the empty windowed section,
+// as against the wrap, which is positive at every probe.
 func allNonPositive(samples []float64) bool {
 	for _, d := range samples {
 		if d > 0 {

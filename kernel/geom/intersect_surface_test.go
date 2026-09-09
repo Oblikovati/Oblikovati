@@ -80,13 +80,19 @@ func TestSurfaceIntersectNonCrossingIsHandledEmpty(t *testing.T) {
 // answered by the tracer, and the demotion used to vanish there — SurfaceIntersect discarded the
 // reason, so a caller could not tell an exact section from a marched stand-in for one
 // (Oblikovati/Oblikovati#3525). handled stays true; the reason rides along.
+//
+// The fixture is a rod lying TANGENT to the top of the ring's tube: its wall touches the ring along the
+// ring's own top circle and crosses it nowhere near there, so the section's branches meet without
+// separating and the closed form's azimuth census refuses the set it would otherwise build. It used to
+// be a rod fatter than the tube, which is no longer a refusal at all — that topology is four
+// full-period branches and it is built (Oblikovati/Oblikovati#3515).
 func TestTheMarchCarriesTheClosedFormsRefusal(t *testing.T) {
 	t.Parallel()
-	ring, err := NewTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 6, 1.5)
+	ring, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
 	if err != nil {
 		t.Fatalf("NewTorus: %v", err)
 	}
-	rod, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	rod, err := NewCylinder(math.P3(0, 0, 3.5), math.V3(1, 0, 0), 2)
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
 	}

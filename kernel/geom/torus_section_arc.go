@@ -119,8 +119,15 @@ func torusHarmonicAt(t Torus, co TorusCoForm, v float64) (torusHarmonic, bool) {
 type TorusSectionArc struct {
 	Torus  Torus       // the torus the arc is evaluated on
 	Co     TorusCoForm // the implicit form of the other surface — a quadric, or a second torus
-	Upper  bool        // which of the two azimuths this branch follows
+	Upper  bool        // which of the branch pair's two azimuths this arc follows
 	V0, V1 float64     // tube-angle range; t∈[0,1] maps to v = V0 + t·(V1−V0)
+	// UA is the LANE the branch belongs to, and it means exactly what [TorusSectionLoop.UA] means: the
+	// azimuth of the station extremum the pair straddles. A rod FATTER than the tube it crosses puts
+	// four azimuths at every station and none of them ever fold, so the section is four full-period
+	// arcs and the lane is the only thing that keeps each one on its own branch
+	// (Oblikovati/Oblikovati#3515). The one-harmonic family has a single lane and its reader does not
+	// consult this; it is recorded there too, and means the same thing.
+	UA float64
 }
 
 // Kind reports the arc as a torus section — the same closed form as [TorusSectionLoop], over a range
@@ -136,8 +143,7 @@ func (a TorusSectionArc) vAt(t float64) float64 { return a.V0 + float64(t*(a.V1-
 // PointAt returns the point at t ∈ [0,1], evaluated on the torus at (u, v).
 func (a TorusSectionArc) PointAt(t float64) math.Point3 {
 	v := a.vAt(t)
-	h, _ := torusHarmonicAt(a.Torus, a.Co, v)
-	return a.Torus.PointAt(h.root(a.Upper), v)
+	return a.Torus.PointAt(a.azimuthAt(v), v)
 }
 
 // TangentAt returns dP/dt = (V1−V0)·(∂P/∂v + du/dv·∂P/∂u), with du/dv from a central difference of the
@@ -152,10 +158,11 @@ func (a TorusSectionArc) TangentAt(t float64) math.Vector3 {
 	return dv.Add(du.Scale(math.Scalar(slope))).Scale(math.Scalar(a.V1 - a.V0))
 }
 
-// azimuthAt is this branch's azimuth at tube angle v.
+// azimuthAt is this branch's azimuth at tube angle v, read through the ONE azimuth reader both torus
+// section forms share: the arccos where the station is axis-invariant — the same value, from the same
+// expression, this arc has always taken — and the lane UA names where it is not.
 func (a TorusSectionArc) azimuthAt(v float64) float64 {
-	h, _ := torusHarmonicAt(a.Torus, a.Co, v)
-	return h.root(a.Upper)
+	return torusAzimuthAt(a.Torus, a.Co, v, a.UA, a.Upper)
 }
 
 // torusArcDerivativeStep is the central difference's step as a fraction of the arc's own tube-angle

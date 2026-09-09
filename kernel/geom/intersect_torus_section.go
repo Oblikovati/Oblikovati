@@ -151,15 +151,14 @@ const (
 // torusOneHarmonicSection is the arccos family's topology: the maximal tube-angle windows where the
 // two azimuths exist, or two full-period branches when they exist everywhere.
 func torusOneHarmonicSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
-	spans, ok := periodicRootWindows(func(v float64) float64 {
+	spans, folded := periodicRootWindows(func(v float64) float64 {
 		h, _ := torusHarmonicAt(t, co, v)
 		return h.discriminant()
 	}, torusStationProbes)
-	if !ok {
-		curves, full := torusFullTurnSection(t, co, res) // the form reaches the tube at every station
-		return curves, noClosedFormWhen(full), full
-	}
-	if len(spans) == 0 {
+	switch {
+	case !folded:
+		return torusFullTurnSection(t, co, res) // the form reaches the tube at every station
+	case len(spans) == 0:
 		return nil, DeclineNone, true // it reaches the tube nowhere: they do not meet, and that is an answer
 	}
 	return torusHarmonicLoops(t, co, spans, res)
@@ -280,26 +279,40 @@ func torusStationCircle(t Torus, v float64) Circle {
 	}
 }
 
-// torusFullTurnSection returns the two branches as full-period arcs, for a quadric that reaches the tube
-// at every station. ok=false when the two branches come close enough to be one curve at the modelling
-// resolution — the same separation certificate the ruled wrap form applies, and for the same reason: two
-// branches the stitch cannot tell apart are not two curves.
-func torusFullTurnSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, bool) {
-	least := stdmath.Inf(1)
-	for i := range torusStationProbes {
-		h, ok := torusHarmonicAt(t, co, float64(twoPi*float64(i)/torusStationProbes))
-		if !ok {
-			return nil, false
-		}
-		least = stdmath.Min(least, torusBranchGap(t, h))
+// torusFullTurnSection returns the ONE-harmonic form's two branches as full-period arcs, for a co-form
+// that reaches the tube at every station. Its lane is the harmonic's phase — recorded for the same
+// reason [TorusSectionLoop] records one, and read by nothing on this path, because the arccos names its
+// own two branches.
+func torusFullTurnSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
+	anchor, ok := torusHarmonicAt(t, co, 0)
+	if !ok {
+		return nil, DeclineNoClosedForm, false
 	}
-	if least <= res.Stitch() {
-		return nil, false
+	if !torusWrapConditioning(t, co, anchor.phase, res) {
+		return nil, DeclineTorusLaneSeparation, false
 	}
 	return []Curve3{
-		TorusSectionArc{Torus: t, Co: co, Upper: false, V0: 0, V1: twoPi},
-		TorusSectionArc{Torus: t, Co: co, Upper: true, V0: 0, V1: twoPi},
-	}, true
+		TorusSectionArc{Torus: t, Co: co, Upper: false, UA: anchor.phase, V0: 0, V1: twoPi},
+		TorusSectionArc{Torus: t, Co: co, Upper: true, UA: anchor.phase, V0: 0, V1: twoPi},
+	}, DeclineNone, true
+}
+
+// torusWrapConditioning certifies the ONE-harmonic form's branch pair before full-period arcs are built
+// on it: the pair must span more than the stitch resolution at EVERY station. It reads the MINIMUM
+// across the turn because a wrap has no fold — the mirror of [torusWindowConditioning], which reads the
+// maximum inside a window because a window's branches meet at both ends by construction.
+//
+// The general reduction certifies its own wrap differently, and has to: it builds ONE arc per track,
+// not a pair, so what it must know is each branch's clearance from its neighbours rather than a pair's
+// span (torusArcClearanceAt). The two are the same statement only where a station carries exactly two
+// azimuths, which is what makes this form the one-harmonic form's.
+func torusWrapConditioning(t Torus, co TorusCoForm, anchor float64, res Resolution) bool {
+	least := stdmath.Inf(1)
+	for i := range torusStationProbes {
+		v := float64(twoPi * float64(i) / torusStationProbes)
+		least = stdmath.Min(least, torusBranchGapAt(t, co, v, anchor))
+	}
+	return least > res.Stitch()
 }
 
 // torusBranchGap is the arc length between the two azimuths at one station — the branches' separation

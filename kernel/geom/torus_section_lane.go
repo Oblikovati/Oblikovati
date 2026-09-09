@@ -66,8 +66,24 @@ func torusLaneAt(h torusSecondHarmonic, anchor float64) (torusLane, bool) {
 
 // discriminant is positive exactly where the lane's two azimuths exist and distinct, and crosses zero
 // at each fold — the same contract [torusHarmonic.discriminant] has, so periodicRootWindows reads both.
+// The pair exists exactly while BOTH its branches do, which is why it is the smaller of the two tracks.
 func (l torusLane) discriminant() float64 {
-	return stdmath.Min(float64(-l.value*l.flanks[0]), float64(-l.value*l.flanks[1]))
+	return stdmath.Min(l.trackDiscriminant(false), l.trackDiscriminant(true))
+}
+
+// trackDiscriminant is positive exactly while ONE of the lane's two azimuths exists: f takes opposite
+// signs at the two extrema bounding that side's arc, so the arc between them carries a root, and it
+// crosses zero where the root merges into an extremum.
+//
+// A track is what a full-period branch is made of. Consecutive lanes SHARE the track between them — a
+// lane is one extremum with the root on each side — so a lane names its upper track and its predecessor
+// names the same one as its lower, and reading each lane's UPPER track once names every azimuth the
+// station carries exactly once, however many there are (Oblikovati/Oblikovati#3515).
+func (l torusLane) trackDiscriminant(upper bool) float64 {
+	if upper {
+		return float64(-l.value * l.flanks[1])
+	}
+	return float64(-l.value * l.flanks[0])
 }
 
 // root returns the lane's upper (increasing-u) or lower azimuth.

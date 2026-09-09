@@ -202,7 +202,8 @@ func ruledSubstitutionAdmits(base Surface, quad Quadric, res Resolution) bool {
 }
 
 // ruledDiscriminantWindows is the ruled form's station question, answered by the shared
-// periodicRootWindows: the azimuths where the ruling quadratic has two roots.
+// periodicRootWindows: the azimuths where the ruling quadratic has two roots. ok=false is the full wrap
+// [RuledQuadricSection] owns, which this form's caller already treats as "not mine".
 func ruledDiscriminantWindows(base Surface, quad Quadric) ([][2]float64, bool) {
 	return periodicRootWindows(func(u float64) float64 {
 		return quad.alongRuling(straightRulingAt(base, u)).discriminant()

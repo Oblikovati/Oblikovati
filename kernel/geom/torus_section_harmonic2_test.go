@@ -329,47 +329,23 @@ func TestADroppedSectionLoopIsCaughtByTheAzimuthCount(t *testing.T) {
 	if !ok || why != DeclineNone || len(loops) != 4 {
 		t.Fatalf("rod across the ring: ok=%v why=%v loops=%d, want four loops and no decline", ok, why, len(loops))
 	}
-	if got := torusLoopsAccountForEveryAzimuth(ring, q, loops); got != DeclineNone {
+	if got := torusCurvesAccountForEveryAzimuth(ring, q, loops); got != DeclineNone {
 		t.Fatalf("the correct loop set is reported as %v", got)
 	}
 	for i := range loops {
 		short := append(append([]Curve3{}, loops[:i]...), loops[i+1:]...)
-		if got := torusLoopsAccountForEveryAzimuth(ring, q, short); got != DeclineTorusLaneUnaccounted {
+		if got := torusCurvesAccountForEveryAzimuth(ring, q, short); got != DeclineTorusLaneUnaccounted {
 			t.Errorf("dropping loop %d goes unnoticed: %v", i, got)
 		}
 	}
-	if got := torusLoopsAccountForEveryAzimuth(ring, q, append(loops, loops[0])); got != DeclineTorusLaneUnaccounted {
+	if got := torusCurvesAccountForEveryAzimuth(ring, q, append(loops, loops[0])); got != DeclineTorusLaneUnaccounted {
 		t.Errorf("a doubled loop goes unnoticed: %v", got)
 	}
 }
 
-// TestTheFullTurnTopologyDeclinesByName: a rod ACROSS the ring whose radius exceeds the tube's swallows
-// the tube's own flank at every tube angle, so the branch pair never folds. That is four independent
-// full-period branches rather than a folded pair, a topology this reduction does not carry — and the
-// refusal has to say so, because it is a CONDITIONING demotion (the closed form applies to the pair)
-// and not the ordinary "nothing claims this pair".
-func TestTheFullTurnTopologyDeclinesByName(t *testing.T) {
-	t.Parallel()
-	ring := testRing(t)
-	fat, _ := NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2)
-	curves, why, ok := IntersectSurfacesAnalyticDeclining(ring, fat, ResolutionForSize(12))
-	if ok || len(curves) != 0 {
-		t.Fatalf("ok=%v curves=%d, want the named refusal", ok, len(curves))
-	}
-	if why != DeclineTorusLaneFullTurn || !why.IsConditioning() {
-		t.Errorf("refused with %v (conditioning=%v), want the full-turn decline", why, why.IsConditioning())
-	}
-}
-
-// TestAnOrdinaryRefusalIsNotAConditioningDemotion: two crossing ELLIPTICAL CYLINDERS have no closed
-// form in any bucket, and that is not a degradation — nothing was given up. Reporting it as one would
-// put a defect on every marched boolean in the system, which is the noise that makes a diagnostic
-// worthless.
-//
-// The row used to be a torus PAIR. That pair is solved exactly now (ADR-0066, #3514) and its positive
-// form is torus_torus_test.go; what the row pins — that the ORDINARY refusal stays ordinary — needed a
-// pair the intersector still does not claim, and an elliptical cylinder is one: it is straight-ruled
-// but carries no implicit quadric, so neither bucket reaches a pair of them.
+// TestAnOrdinaryRefusalIsNotAConditioningDemotion: a torus PAIR has no closed form in any bucket, and
+// that is not a degradation — nothing was given up. Reporting it as one would put a defect on every
+// marched boolean in the system, which is the noise that makes a diagnostic worthless.
 func TestAnOrdinaryRefusalIsNotAConditioningDemotion(t *testing.T) {
 	t.Parallel()
 	first, err := NewEllipticalCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 4, 2)
