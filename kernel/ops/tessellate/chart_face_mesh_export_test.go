@@ -37,6 +37,6 @@ func ChartFaceRimMismatch(f *topo.Face, q Quality) (extra, missing int, meshed b
 	pos, nrm, idx := weldCoverTriangles(b.pos, b.nrm, kept)
 	m := patchMeshFrom(pos, nrm, idx)
 	validate.RepairFolds(m, 8)
-	e, mi := chartRimMismatch(m, chains)
+	e, mi := chartRimMismatch(m, chains, b.weld)
 	return e, mi, true, ""
 }

@@ -2,7 +2,7 @@
 
 package tessellate
 
-import "oblikovati.org/math"
+import "fmt"
 
 // The BOUNDARY half of the chart-driven mesher's classification (Oblikovati/Oblikovati#3518).
 //
@@ -14,11 +14,11 @@ import "oblikovati.org/math"
 //
 // Measured on the #1818 near-pinch crossing rods — r = 3 joined to r = 3.00004, whose merged wall
 // carries two lens windows that pass 0.031 mm apart — at PropertyQuality: in the pinch neighbourhood
-// (u > 6.27, |v - 6| < 0.05) the face's chart contour carries ONE point and its shared edge carries
-// 63. All 56 edge points across the pinch read MATERIAL against the chart, up to 2.05e-3 in (u,v)
-// outside its contour, while lying inside the lens the mesh is bounded by. The covering triangulates
-// that band, the centroid test keeps it, and the face ships a skin inside its own hole: 112 of each
-// lens chain's 380 segments came back bounded by TWO triangles instead of one.
+// (u > 6.27, |v - 6| < 0.05) that lens's chart contour carries ONE point of its 256 and its shared
+// edge carries 63. All 63 edge points there read MATERIAL against the chart, standing as far as
+// 2.071e-3 in (u,v) from the nearest contour, while lying inside the lens the mesh is bounded by. The
+// covering triangulates that band, the centroid test keeps it, and the face ships a skin inside its
+// own hole: 112 of each lens chain's 380 segments came back bounded by TWO triangles instead of one.
 //
 // The chart may not be asked a question finer than its own sampling, so the answer is not a finer
 // query. It is that the BOUNDARY decides the triangles it bounds. A constrained triangulation puts
@@ -43,7 +43,7 @@ import "oblikovati.org/math"
 // segment), against the #3520 base fff94140:
 //
 //	                 rim segments unbound    unpaired edges that are no rim segment    rows exactly rim-bounded
-//	base                          1873                                       637                     4 of 16
+//	base                          1777                                       637                     4 of 16
 //	after                            0                                        38                    10 of 16
 //
 // Per face the area against query.AnalyticFaceArea is within 0.0003 % at PropertyQuality, where it
@@ -73,8 +73,7 @@ type rimSegment struct{ a, b, chain int }
 // instead was tried and is wrong for exactly that reason: replication then reads as slitting, the
 // pinch stretch of a lens is carried at two shifts and counts even, and the rule stops applying there
 // — the near-pinch corpus went from 0 unbound rim segments back to 889.
-func (b *chartCover) directedRimSegments(segs []rimSegment, chains []chartChain) map[[2]int]int {
-	grid := weldGrid([][]math.Point3{b.pos})
+func (b *chartCover) directedRimSegments(segs []rimSegment, chains []chartChain, grid float64) map[[2]int]int {
 	rim := chainSegmentKeys(chains, grid)
 	out := make(map[[2]int]int, len(segs))
 	for _, s := range segs {
@@ -108,6 +107,9 @@ func directedEdgeOwner(tris [][3]int) map[[2]int]int {
 type rimSide struct {
 	left    []bool
 	decided []bool
+	// conflict names the chain whose decisive segments did NOT agree, and is why the face is refused
+	// rather than bound to a side a majority chose (#3518 review I4).
+	conflict string
 }
 
 // bindToTheRim makes the kept set bounded by exactly the face's own boundary: for every boundary
@@ -115,6 +117,9 @@ type rimSide struct {
 // other side is not.
 func (b *chartCover) bindToTheRim(tris [][3]int, keep []bool) {
 	side := b.materialSideOfEachChain(tris, keep)
+	if side.conflict != "" {
+		b.rimSideConflict = side.conflict
+	}
 	owner := directedEdgeOwner(tris)
 	want, drop := make([]bool, len(tris)), make([]bool, len(tris))
 	for e, ci := range b.rimChain {
@@ -150,7 +155,16 @@ func (b *chartCover) triangleInWindow(t [3]int) bool {
 }
 
 // materialSideOfEachChain reads each chain's material side off the rim segments the chart ALREADY
-// bounded exactly once — where its answer and the mesh's boundary agree — by majority.
+// bounded exactly once — where its answer and the mesh's boundary agree — and requires them to AGREE.
+//
+// Unanimity, not a majority. A loop is wound consistently, so its decisive segments cannot honestly
+// name two sides; if they do, the chart is wrong about this chain in a way no count can repair, and a
+// majority would then bind the whole chain to a side confidently. The rim gate would not catch that:
+// a chain bound to the WRONG side still bounds every one of its segments exactly once, and
+// chartRimMismatch answers (0, 0) for that band. So a disagreement is refused by name instead.
+//
+// It costs nothing today: measured over the near-pinch corpus, every chain of every row is unanimous —
+// right = 0 throughout, left 30 … 565 per chain, 1110 summed on the r = 3 face at PropertyQuality.
 func (b *chartCover) materialSideOfEachChain(tris [][3]int, keep []bool) rimSide {
 	fwd := keptDirectedEdgeUse(tris, keep)
 	left, right := make([]int, b.chains), make([]int, b.chains)
@@ -165,12 +179,17 @@ func (b *chartCover) materialSideOfEachChain(tris [][3]int, keep []bool) rimSide
 	return rimSideFrom(left, right)
 }
 
-// rimSideFrom turns each chain's two vote counts into its side and whether it has one.
+// rimSideFrom turns each chain's two counts into its side, whether it has one, and — when the two
+// disagree — the refusal that names the chain and both counts.
 func rimSideFrom(left, right []int) rimSide {
 	s := rimSide{left: make([]bool, len(left)), decided: make([]bool, len(left))}
 	for ci := range left {
-		s.left[ci] = left[ci] > right[ci]
-		s.decided[ci] = left[ci] != right[ci]
+		s.left[ci] = left[ci] > 0
+		s.decided[ci] = (left[ci] > 0) != (right[ci] > 0)
+		if left[ci] > 0 && right[ci] > 0 {
+			s.conflict = fmt.Sprintf("its boundary chain %d names both sides as material (%d segments "+
+				"say left, %d say right), so no side of it can be trusted", ci, left[ci], right[ci])
+		}
 	}
 	return s
 }

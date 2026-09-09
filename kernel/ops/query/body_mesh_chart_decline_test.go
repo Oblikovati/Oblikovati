@@ -18,18 +18,22 @@ import (
 // feature reply, the API and the UI read. Both bodies are real booleans through the general pipeline,
 // not hand-built faces.
 //
-// They pin the two ends of what the new code means. rodMinusBall is the SILENT case — it carries
+// They pin the two ends of what the new code means. ringMeetingADrill is the SILENT case — it carries
 // neither of the two codes that already existed for a lost trim, so before this change nothing anywhere
 // said the selected mesher had given the face up. wideCrossingRods is the LOUD one — it raises the code
 // at the DISPLAY faceting, where feature health reads it, on a face that comes back 28.7 % short of its
 // analytic area. Together they say the report is neither redundant nor cosmetic.
 //
-// The silent row's body CHANGED with #3518: it used to be offsetCrossingRods, whose r = 3 wall failed
-// the chart mesher's rim gate because the region kept triangles between its chart's contour and the
-// finer chord polygon of its shared edges. That is fixed (chart_face_rim_side.go), and swept over the
-// crossing-rod family — radii 1.5 … 3.5 against the r = 3 rod, offsets 0 … 2, all three operators, both
-// facetings — not one rod-rod body declines silently any more. So the silent row moved to the rod-ball
-// third of the same sweep, and offsetCrossingRods stayed on as the quiet body it now genuinely is.
+// The silent row's body CHANGED with #3518, twice, and the second move is the one that matters. It used
+// to be offsetCrossingRods, whose r = 3 wall failed the chart mesher's rim gate because the region kept
+// triangles between its chart's contour and the finer chord polygon of its shared edges. That is fixed
+// (chart_face_rim_side.go), and swept over the crossing-rod family — radii 1.5 … 3.5 against the r = 3
+// rod, offsets 0 … 2, all three operators, both facetings — not one rod-rod body declines silently any
+// more. The first replacement was a rod-ball body, and it broke the PAIRING these two rows carry: it
+// declined at BOTH facetings, on a face only 0.169 % short of its analytic area, so the
+// display-faceting guard below had nothing left to guard and the Defect it raised there was unearned
+// (#3518 review I3). ringMeetingADrill restores the pairing: measured, it is silent at DefaultQuality
+// and declines with nothing else at PropertyQuality, so ONE body carries both rows again.
 //
 // A note for whoever extends this: the row's declining face is `selected` by the classification AND
 // declines, so adding either body to `classificationCorpus()` in kernel/ops/tessellate would turn
@@ -45,7 +49,7 @@ import (
 // one harvest. The two were separate rows and re-meshed the same body twice for no gain.
 func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 	t.Parallel()
-	got := BodyMeshDiagnostics(rodMinusBall(t), PropertyQuality())
+	got := BodyMeshDiagnostics(ringMeetingADrill(t), PropertyQuality())
 	d, found := findCode(got, tessellate.CodeChartMesherDeclined)
 	if !found {
 		t.Fatalf("the harvest carries %v; the chart mesher gave a face of this body up and nothing said so",
@@ -75,8 +79,9 @@ func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 // be one users learn to ignore — #2058's third acceptance.
 func TestTheDisplayFacetingIsQuietOnThisBody(t *testing.T) {
 	t.Parallel()
-	if got := BodyMeshDiagnostics(offsetCrossingRods(t), tessellate.DefaultQuality()); len(got) != 0 {
-		t.Errorf("the display faceting reports %v on two ordinary crossing rods, want nothing", codeList(got))
+	if got := BodyMeshDiagnostics(ringMeetingADrill(t), tessellate.DefaultQuality()); len(got) != 0 {
+		t.Errorf("the display faceting reports %v on the very body that declines at PropertyQuality, want "+
+			"nothing — the pairing is what says the channel is quiet where a user reads it", codeList(got))
 	}
 }
 
@@ -132,32 +137,25 @@ func meshCarries(m *tessellate.Mesh, code diag.Code) bool {
 	return false
 }
 
-// rodMinusBall is the SILENT case: the r = 3 rod along +x with an r = 3.5 ball centred 0.5 mm off its
-// axis cut out of it. Its chart mesh fails its own rim gate at BOTH facetings and the body raises
-// neither of the older codes, which is what this row needs.
-func rodMinusBall(t *testing.T) *topo.Body {
+// ringMeetingADrill is the SILENT case AND the quiet one — the pairing both rows need in one body: the
+// R = 5, r = 1.5 ring met by an axial drill of radius 1.4 standing at x = 5, offset 1 mm in y, kept.
+// Measured: nothing at DefaultQuality, and at PropertyQuality the chart-mesher decline alone, with
+// neither of the two older codes for a lost trim.
+func ringMeetingADrill(t *testing.T) *topo.Body {
 	t.Helper()
-	rod, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
-		t.Fatalf("along-x rod: %v", err)
+		t.Fatalf("ring: %v", err)
 	}
-	ball, err := brep.SolidSphere(math.P3(0, 0.5, 0), 3.5, "ball")
+	drill, err := brep.SolidCylinder(math.P3(5, 1, -4), math.V3(0, 0, 1), 1.4, 8)
 	if err != nil {
-		t.Fatalf("ball: %v", err)
+		t.Fatalf("drill: %v", err)
 	}
-	body, err := brep.Boolean(brep.Difference, rod, ball)
+	body, err := brep.Boolean(brep.Intersection, ring, drill)
 	if err != nil {
-		t.Fatalf("rod − ball: %v", err)
+		t.Fatalf("ring ∩ drill: %v", err)
 	}
 	return body
-}
-
-// offsetCrossingRods is the QUIET body: r = 3 along +x met by r = 2.5 along +z, whose axis is offset
-// 1 mm. It used to be the silent declining case; since #3518 its walls mesh clean at both facetings,
-// which is exactly what the false-positive guard wants of it.
-func offsetCrossingRods(t *testing.T) *topo.Body {
-	t.Helper()
-	return crossingRods(t, 2.5, 1)
 }
 
 // wideCrossingRods is the LOUD case: the same r = 3 rod met by a WIDER r = 3.5 rod offset 0.5 mm, the

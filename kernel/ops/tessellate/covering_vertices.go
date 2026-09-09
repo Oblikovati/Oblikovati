@@ -31,44 +31,49 @@ type coverVertices struct {
 	nrm    []math.Vector3
 	xy     [][2]float64
 	uu, vv []float64
+	// at is the whole-period translate each vertex was laid at, as the INDEX of the shift that laid it.
+	// It is what the canonical selection orders on: an integer the owner chose, not a float it derived
+	// (cover_replica.go).
+	at []int
 }
 
-// add records one covering vertex and returns its index.
-func (c *coverVertices) add(p math.Point3, u, v float64) int {
+// add records one covering vertex laid at shift index at, and returns its index.
+func (c *coverVertices) add(p math.Point3, u, v float64, at int) int {
 	i := len(c.pos)
 	c.pos = append(c.pos, p)
 	c.nrm = append(c.nrm, c.normalAt(u, v))
 	c.xy = append(c.xy, [2]float64{u * c.su, v * c.sv})
 	c.uu, c.vv = append(c.uu, u), append(c.vv, v)
+	c.at = append(c.at, at)
 	return i
 }
 
 // place records a vertex the owner may not want at this replica, returning -1 when it declines.
-func (c *coverVertices) place(p math.Point3, u, v float64) int {
+func (c *coverVertices) place(p math.Point3, u, v float64, at int) int {
 	if c.carry != nil && !c.carry(u, v) {
 		return -1
 	}
-	return c.add(p, u, v)
+	return c.add(p, u, v, at)
 }
 
 // addChain lays one boundary chain into the covering at a whole-period offset and returns its
 // PER-SEGMENT constraints. Per-segment rather than as a closed loop because a boundary that wraps a
 // period does not close in the covering space, and a spurious closing edge would constrain a chord the
 // face does not have; the owner classifies triangles itself rather than by the loop-parity flood.
-func (c *coverVertices) addChain(p3 []math.Point3, uv []math.Point2, du, dv float64) [][]int {
+func (c *coverVertices) addChain(p3 []math.Point3, uv []math.Point2, du, dv float64, at int) [][]int {
 	idx := make([]int, len(p3))
 	for i := range p3 {
-		idx[i] = c.place(p3[i], float64(uv[i].X)+du, float64(uv[i].Y)+dv)
+		idx[i] = c.place(p3[i], float64(uv[i].X)+du, float64(uv[i].Y)+dv, at)
 	}
 	return chainConstraints(idx)
 }
 
 // addRing lays a chain that DOES close in the covering space as one loop constraint (constrain wraps
 // its last edge back to its first), returning its vertex index sequence.
-func (c *coverVertices) addRing(p3 []math.Point3, uv []math.Point2, du, dv float64) []int {
+func (c *coverVertices) addRing(p3 []math.Point3, uv []math.Point2, du, dv float64, at int) []int {
 	idx := make([]int, len(p3))
 	for i := range p3 {
-		idx[i] = c.add(p3[i], float64(uv[i].X)+du, float64(uv[i].Y)+dv)
+		idx[i] = c.add(p3[i], float64(uv[i].X)+du, float64(uv[i].Y)+dv, at)
 	}
 	return idx
 }
@@ -90,13 +95,33 @@ func (c *coverVertices) centroid(t [3]int) (u, v float64) {
 	return (c.uu[t[0]] + c.uu[t[1]] + c.uu[t[2]]) / 3, (c.vv[t[0]] + c.vv[t[1]] + c.vv[t[2]]) / 3
 }
 
-// keepCanonical keeps each triangle whose centroid the predicate accepts. Period replication gives
-// every seam-spanning triangle exactly one translate whose centroid is in the canonical window, so a
-// predicate that is half-open there de-duplicates the seam without ever cutting the mesh at it.
+// keepCanonical keeps each triangle the predicate calls material, ONE translate of each.
+//
+// The predicate is the CANDIDATE filter and no longer the de-duplication, which is the correction
+// #3518 landed. A half-open window de-duplicates a POINT exactly — of p and its whole-period
+// translates exactly one satisfies lo <= x < hi — and the premise this doc used to state is that the
+// same holds for a triangle. It does not: a replica's centroid is recomputed from its own shifted
+// vertices, so it equals the original's plus a period only to within rounding, and a triangle whose
+// centroid lands on the window's edge is taken twice or not at all (measured, see cover_replica.go).
+//
+// So the predicate is asked with a CLOSED window, which offers at least one translate of every
+// triangle, and keepOneReplicaEach picks exactly one of them on the integer shift each vertex was
+// laid at.
 func (c *coverVertices) keepCanonical(tris [][3]int, material func(u, v float64) bool) [][3]int {
+	keep := make([]bool, len(tris))
+	for i, t := range tris {
+		u, v := c.centroid(t)
+		keep[i] = material(u, v)
+	}
+	c.keepOneReplicaEach(tris, keep)
+	return selectTriangles(tris, keep)
+}
+
+// selectTriangles is the marked subset, in the order the triangulation produced it.
+func selectTriangles(tris [][3]int, keep []bool) [][3]int {
 	out := make([][3]int, 0, len(tris))
-	for _, t := range tris {
-		if u, v := c.centroid(t); material(u, v) {
+	for i, t := range tris {
+		if keep[i] {
 			out = append(out, t)
 		}
 	}

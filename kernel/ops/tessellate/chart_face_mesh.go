@@ -63,6 +63,9 @@ func chartRegionMesh(f *topo.Face, s geom.Surface, r chartRegion, q Quality) (*M
 	loops := b.addChains(chains)
 	b.addInterior(chains)
 	kept, ok := b.keptWithoutRimEars(loops)
+	if b.rimSideConflict != "" {
+		return nil, b.rimSideConflict
+	}
 	if !ok {
 		return nil, fmt.Sprintf("its %d rim-only-ear splitting rounds were spent with an ear still "+
 			"standing, and an ear carries no surface point of its own", chartRimEarRounds)
@@ -104,7 +107,7 @@ func weldAndCertifyChartMesh(b *chartCover, kept [][3]int, chains []chartChain) 
 	if m == nil || m.TriangleCount() == 0 {
 		return nil, fmt.Sprintf("welding its %d kept covering triangle(s) left no triangle at all", len(kept))
 	}
-	extra, missing := chartRimMismatch(m, chains)
+	extra, missing := chartRimMismatch(m, chains, b.weld)
 	if extra != 0 || missing != 0 {
 		return nil, fmt.Sprintf("the mesh it built is not bounded by its own rim: %d unpaired edge(s) "+
 			"are no rim segment and %d rim segment(s) it does not bound", extra, missing)
@@ -116,16 +119,19 @@ func weldAndCertifyChartMesh(b *chartCover, kept [][3]int, chains []chartChain) 
 // mesh's unpaired edges are no rim segment, and how many rim segments the mesh does not bound. (0, 0) is
 // a patch bounded by exactly its rim.
 //
-// It is the ONE place a rim is keyed. The tests read the gate through it rather than counting segments
-// their own way: a count taken on a different weld grid, or per chain instead of per face, is a
-// different question, and a corpus row that asks a different question from the gate is not asserting the
-// gate. (−1, −1) for a mesh there is nothing to compare.
-func chartRimMismatch(m *Mesh, chains []chartChain) (extra, missing int) {
+// It is the ONE place a rim is keyed, and it is handed the covering's OWN weld resolution rather than
+// deriving one: the rule that binds triangles to the rim (chart_face_rim_side.go) keys the same set,
+// and two derivations that agree only while the covering and the welded mesh share a bounding box are
+// an agreement by luck (#3518 review M9). The tests read the gate through it rather than counting
+// segments their own way: a count taken on a different weld grid, or per chain instead of per face, is
+// a different question, and a corpus row that asks a different question from the gate is not asserting
+// the gate. (−1, −1) for a mesh there is nothing to compare.
+func chartRimMismatch(m *Mesh, chains []chartChain, grid float64) (extra, missing int) {
 	if m == nil || m.TriangleCount() == 0 {
 		return -1, -1
 	}
-	rim := chainSegmentKeys(chains, geom.ResolutionForPoints(m.Positions).Weld())
-	for _, e := range weldedFreeEdgeKeys(m) {
+	rim := chainSegmentKeys(chains, grid)
+	for _, e := range weldedFreeEdgeKeys(m, grid) {
 		if !rim[e] {
 			extra++
 			continue
@@ -137,8 +143,7 @@ func chartRimMismatch(m *Mesh, chains []chartChain) (extra, missing int) {
 
 // weldedFreeEdgeKeys is the mesh's unpaired edges, keyed the way a boundary segment is — so the two can
 // be compared as SETS and not merely counted.
-func weldedFreeEdgeKeys(m *Mesh) [][2][3]int64 {
-	grid := geom.ResolutionForPoints(m.Positions).Weld()
+func weldedFreeEdgeKeys(m *Mesh, grid float64) [][2][3]int64 {
 	torn := tornMeshEdges(m)
 	out := make([][2][3]int64, 0, len(torn))
 	for _, t := range torn {
@@ -160,6 +165,12 @@ type chartCover struct {
 	rim      int            // vertices [0, rim) are the boundary chains', laid before any interior node
 	rimChain map[[2]int]int // each boundary segment's own chain, directed (chart_face_rim_side.go)
 	chains   int            // how many boundary chains the face has
+	// weld is the ONE resolution this covering welds and keys a rim at, so the rule that binds
+	// triangles to the rim and the gate that judges the result cannot key it differently (#3518
+	// review M9).
+	weld float64
+	// rimSideConflict is a chain whose own segments named two material sides — a refusal, not a mesh.
+	rimSideConflict string
 }
 
 // newChartCover sizes the covering: the trim-local (u,v) metric, the interior grid's parameter lines
@@ -318,9 +329,9 @@ func atLeastMinimumCells(ps []float64, lo, hi float64) []float64 {
 func (b *chartCover) addChains(chains []chartChain) [][]int {
 	var loops [][]int
 	var segs []rimSegment
-	for _, sh := range b.r.shifts() {
+	for si, sh := range b.r.shifts() {
 		for ci, c := range chains {
-			pairs := b.addChain(c.p3, c.uv, sh[0], sh[1])
+			pairs := b.addChain(c.p3, c.uv, sh[0], sh[1], si)
 			for _, p := range pairs {
 				segs = append(segs, rimSegment{a: p[0], b: p[1], chain: ci})
 			}
@@ -328,7 +339,8 @@ func (b *chartCover) addChains(chains []chartChain) [][]int {
 		}
 	}
 	b.rim, b.chains = len(b.pos), len(chains)
-	b.rimChain = b.directedRimSegments(segs, chains)
+	b.weld = weldGrid([][]math.Point3{b.pos})
+	b.rimChain = b.directedRimSegments(segs, chains, b.weld)
 	return loops
 }
 
@@ -351,9 +363,9 @@ func (b *chartCover) addInterior(chains []chartChain) {
 
 // addReplicas adds one interior node at every period shift that lands inside the pad.
 func (b *chartCover) addReplicas(p math.Point3, u, v float64) {
-	for _, sh := range b.r.shifts() {
+	for si, sh := range b.r.shifts() {
 		if b.inPad(u+sh[0], v+sh[1]) {
-			b.add(p, u+sh[0], v+sh[1])
+			b.add(p, u+sh[0], v+sh[1], si)
 		}
 	}
 }
@@ -401,17 +413,6 @@ func (b *chartCover) keepChartTriangles(tris [][3]int) [][3]int {
 	b.bindToTheRim(tris, keep)
 	b.keepOneReplicaEach(tris, keep)
 	return selectTriangles(tris, keep)
-}
-
-// selectTriangles is the marked subset, in the order the triangulation produced it.
-func selectTriangles(tris [][3]int, keep []bool) [][3]int {
-	out := make([][3]int, 0, len(tris))
-	for i, t := range tris {
-		if keep[i] {
-			out = append(out, t)
-		}
-	}
-	return out
 }
 
 // triangleIsMaterial answers the region for one triangle: at its centroid, and — only when that answers

@@ -50,7 +50,7 @@ func nearPinchJoinBody(t *testing.T, r, dr float64) *topo.Body {
 // TestTheChartMesherBoundsEveryNearPinchBandByItsOwnRim is the regression the boundary-side
 // classification exists for (#3518). Before it, the chart mesher kept triangles in the band between
 // its chart's contour and the finer chord polygon its shared edges gave it — a skin inside the face's
-// own lens — and 1873 rim segments over these sixteen rows came back bounded by TWO triangles instead
+// own lens — and 1777 rim segments over these sixteen rows came back bounded by TWO triangles instead
 // of one. Not one may now.
 //
 // Only the "does not bound" half is asserted. The other half — unpaired edges that are no rim segment

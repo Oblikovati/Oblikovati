@@ -3,6 +3,7 @@
 package tessellate
 
 import (
+	"strings"
 	"testing"
 
 	"oblikovati.org/math"
@@ -15,7 +16,7 @@ import (
 func TestASlitIsNoRimSegment(t *testing.T) {
 	t.Parallel()
 	b, chains := slitCover(t)
-	got := b.directedRimSegments([]rimSegment{{0, 1, 0}, {1, 2, 0}, {3, 4, 0}, {4, 5, 0}}, chains)
+	got := b.directedRimSegments([]rimSegment{{0, 1, 0}, {1, 2, 0}, {3, 4, 0}, {4, 5, 0}}, chains, weldGrid([][]math.Point3{b.pos}))
 	if len(got) != 0 {
 		t.Errorf("directedRimSegments kept %d segment(s) of a boundary that is entirely slit; want 0 — "+
 			"the two traversals are different covering vertices at the same 3D points", len(got))
@@ -28,7 +29,7 @@ func TestASlitIsNoRimSegment(t *testing.T) {
 func TestEachChainKeepsItsOwnSegments(t *testing.T) {
 	t.Parallel()
 	b, chains := openChainCover(t)
-	got := b.directedRimSegments([]rimSegment{{0, 1, 0}, {1, 2, 0}, {2, 3, 1}}, chains)
+	got := b.directedRimSegments([]rimSegment{{0, 1, 0}, {1, 2, 0}, {2, 3, 1}}, chains, weldGrid([][]math.Point3{b.pos}))
 	if got[[2]int{0, 1}] != 0 || got[[2]int{1, 2}] != 0 {
 		t.Errorf("chain 0's segments are filed under %d/%d; want 0", got[[2]int{0, 1}], got[[2]int{1, 2}])
 	}
@@ -46,7 +47,7 @@ func slitCover(t *testing.T) (*chartCover, []chartChain) {
 	order := []int{0, 1, 2, 2, 1, 0}
 	run := make([]math.Point3, 0, len(order))
 	for _, i := range order {
-		b.add(p[i], float64(i), 0)
+		b.add(p[i], float64(i), 0, 0)
 		run = append(run, p[i])
 	}
 	return b, []chartChain{{p3: run}}
@@ -60,7 +61,7 @@ func openChainCover(t *testing.T) (*chartCover, []chartChain) {
 	run := make([]math.Point3, 0, 4)
 	for i := range 4 {
 		p := math.P3(float64(i), 0, 0)
-		b.add(p, float64(i), 0)
+		b.add(p, float64(i), 0, 0)
 		run = append(run, p)
 	}
 	return b, []chartChain{{p3: run[:3]}, {p3: run[2:]}}
@@ -75,18 +76,42 @@ func newBareCover(t *testing.T) *chartCover {
 	return b
 }
 
-// TestAChainWithNoDecisiveSegmentConstrainsNothing: the side is READ from the chart, so a chain the
-// chart never bounded exactly once has no side and may not drop anything.
-func TestAChainWithNoDecisiveSegmentConstrainsNothing(t *testing.T) {
+// TestOnlyAUnanimousChainGetsASide: the side is READ from the chart, so a chain the chart never
+// bounded exactly once has no side — and a chain whose decisive segments name BOTH sides has none
+// either. A loop is wound consistently, so a disagreement means the chart is wrong about that chain in
+// a way no count repairs, and binding it to the majority would ship the wrong side confidently past a
+// rim gate that cannot see it (#3518 review I4).
+func TestOnlyAUnanimousChainGetsASide(t *testing.T) {
 	t.Parallel()
-	s := rimSideFrom([]int{3, 0, 2}, []int{1, 0, 2})
+	s := rimSideFrom([]int{3, 0, 2, 0}, []int{0, 0, 2, 5})
 	for _, c := range []struct {
 		ci            int
 		left, decided bool
-	}{{0, true, true}, {1, false, false}, {2, false, false}} {
+		why           string
+	}{
+		{0, true, true, "unanimous left"},
+		{1, false, false, "no decisive segment"},
+		{2, true, false, "both sides named"},
+		{3, false, true, "unanimous right"},
+	} {
 		if s.left[c.ci] != c.left || s.decided[c.ci] != c.decided {
-			t.Errorf("chain %d: left=%v decided=%v; want %v/%v", c.ci, s.left[c.ci], s.decided[c.ci], c.left, c.decided)
+			t.Errorf("chain %d (%s): left=%v decided=%v; want %v/%v", c.ci, c.why, s.left[c.ci], s.decided[c.ci], c.left, c.decided)
 		}
+	}
+}
+
+// TestADisagreeingChainIsRefusedByName: the conflict is not silence. It carries the chain and both
+// counts, so the router's decline says what to look at.
+func TestADisagreeingChainIsRefusedByName(t *testing.T) {
+	t.Parallel()
+	got := rimSideFrom([]int{0, 7}, []int{0, 4}).conflict
+	for _, want := range []string{"chain 1", "7 segments", "4 say right"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the refusal %q does not name %q — a reader cannot act on it", got, want)
+		}
+	}
+	if quiet := rimSideFrom([]int{3, 0}, []int{0, 0}).conflict; quiet != "" {
+		t.Errorf("a unanimous corpus produced the refusal %q; it must be empty", quiet)
 	}
 }
 

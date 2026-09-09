@@ -29,7 +29,7 @@ func unitChain() ([]math.Point3, []math.Point2) {
 func TestACoveringVertexKeepsBothItsParameters(t *testing.T) {
 	t.Parallel()
 	c := flatCover(nil)
-	i := c.add(math.P3(7, 8, 9), 1.5, 2.5)
+	i := c.add(math.P3(7, 8, 9), 1.5, 2.5, 0)
 	if i != 0 || len(c.pos) != 1 {
 		t.Fatalf("add returned index %d with %d positions, want the first vertex", i, len(c.pos))
 	}
@@ -50,7 +50,7 @@ func TestACarryGateDropsAReplicaAndItsSegments(t *testing.T) {
 	t.Parallel()
 	c := flatCover(func(_, v float64) bool { return v < 0.5 }) // drops the chain's third point only
 	p3, uv := unitChain()
-	segs := c.addChain(p3, uv, 0, 0)
+	segs := c.addChain(p3, uv, 0, 0, 0)
 	if len(c.pos) != 3 {
 		t.Errorf("the covering carries %d of 4 chain points, want the 3 the gate accepts", len(c.pos))
 	}
@@ -65,7 +65,7 @@ func TestAnUngatedChainConstrainsEverySegment(t *testing.T) {
 	t.Parallel()
 	c := flatCover(nil)
 	p3, uv := unitChain()
-	if segs := c.addChain(p3, uv, 0, 0); len(segs) != 3 {
+	if segs := c.addChain(p3, uv, 0, 0, 0); len(segs) != 3 {
 		t.Errorf("addChain constrained %d segments, want 3 for a 4-point chain", len(segs))
 	}
 }
@@ -76,7 +76,7 @@ func TestARingIsOneLoopConstraint(t *testing.T) {
 	t.Parallel()
 	c := flatCover(nil)
 	p3, uv := unitChain()
-	idx := c.addRing(p3[:3], uv[:3], 10, 20)
+	idx := c.addRing(p3[:3], uv[:3], 10, 20, 0)
 	if len(idx) != 3 {
 		t.Fatalf("addRing returned %d indices, want 3", len(idx))
 	}
@@ -90,8 +90,10 @@ func TestARingIsOneLoopConstraint(t *testing.T) {
 func TestTheCanonicalSelectionReadsTheCentroid(t *testing.T) {
 	t.Parallel()
 	c := flatCover(nil)
-	for _, uv := range [][2]float64{{0, 0}, {3, 0}, {0, 3}, {9, 9}} {
-		c.add(math.P3(0, 0, 0), uv[0], uv[1])
+	// Distinct 3D points, so the canonical selection is decided by the centroid alone and not by the
+	// replica de-duplication that runs after it (cover_replica.go).
+	for i, uv := range [][2]float64{{0, 0}, {3, 0}, {0, 3}, {9, 9}} {
+		c.add(math.P3(float64(i), 0, 0), uv[0], uv[1], 0)
 	}
 	if u, v := c.centroid([3]int{0, 1, 2}); u != 1 || v != 1 {
 		t.Errorf("centroid = (%g,%g), want (1,1)", u, v)

@@ -65,7 +65,7 @@ func TestAChartedWallIsMeshedOverItsOwnRegion(t *testing.T) {
 	// EXACTLY the rim, read through the GATE's own comparison: an unpaired edge that is no rim segment
 	// means the mesh tore, a rim segment the mesh does not bound means it closed over its own boundary —
 	// which is what a covering of the whole surface looks like.
-	if extra, missing := chartRimMismatch(m, chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality())); extra != 0 || missing != 0 {
+	if extra, missing := chartRimMismatch(m, chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality()), weldGrid([][]math.Point3{m.Positions})); extra != 0 || missing != 0 {
 		t.Errorf("the charted wall has %d unpaired edges that are no rim segment and %d rim segments it "+
 			"does not bound", extra, missing)
 	}
@@ -342,7 +342,7 @@ func TestTheRimIsKeyedOnceForTheWholeFace(t *testing.T) {
 		t.Errorf("the rim keys %d segments for the whole face and %d summed per chain — a row that counts "+
 			"per chain is not asserting the gate", whole, perChain)
 	}
-	if extra, missing := chartRimMismatch(m, chains); extra != 0 || missing != 0 {
+	if extra, missing := chartRimMismatch(m, chains, weldGrid([][]math.Point3{m.Positions})); extra != 0 || missing != 0 {
 		t.Errorf("the windowed wall has %d unpaired edges that are no rim segment and %d rim segments it "+
 			"does not bound", extra, missing)
 	}

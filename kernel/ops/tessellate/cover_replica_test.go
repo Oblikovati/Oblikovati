@@ -47,17 +47,23 @@ func TestATriangleWithOneTranslateIsKept(t *testing.T) {
 	}
 }
 
-// TestTheTranslateNearestTheWindowMiddleWins pins the total order the choice is made on, so the same
-// input gives the same mesh on every run and platform.
-func TestTheTranslateNearestTheWindowMiddleWins(t *testing.T) {
+// TestTheLowerTranslateWins pins the total order the choice is made on: the INTEGER shift each vertex
+// was laid at, so the same input gives the same mesh on every run and platform. The fixture is the
+// configuration the corpus actually presents — a triangle whose centroid sits on the window's edge and
+// its +2pi image on the other edge — where the distance-from-the-middle key the first cut used is
+// EXACTLY tied and decides nothing (#3518 review I5).
+func TestTheLowerTranslateWins(t *testing.T) {
 	t.Parallel()
 	b := seamStraddlingCover(t)
-	inner, outer := b.centreOffset([3]int{0, 1, 2}), b.centreOffset([3]int{3, 4, 5})
-	if !(inner < outer) {
-		t.Fatalf("centre offsets %g and %g: the translate inside the window must read nearer", inner, outer)
+	inner, outer := b.translateOf([3]int{0, 1, 2}), b.translateOf([3]int{3, 4, 5})
+	if inner >= outer {
+		t.Fatalf("translate keys %d and %d: a triangle's two images must order strictly", inner, outer)
 	}
-	if !b.nearerTheWindowCentre([3]int{0, 1, 2}, [3]int{3, 4, 5}) {
-		t.Error("nearerTheWindowCentre chose the translate outside the window")
+	uIn, _ := b.centroid([3]int{0, 1, 2})
+	uOut, _ := b.centroid([3]int{3, 4, 5})
+	if lo, hi := b.r.uLo, b.r.uHi; stdmath.Abs(uIn-(lo+hi)/2) != stdmath.Abs(uOut-(lo+hi)/2) {
+		t.Errorf("the fixture's two candidates are %g and %g from the window's middle; the row exists "+
+			"because that distance is EXACTLY tied here, so it may not be the key", uIn, uOut)
 	}
 }
 
@@ -70,9 +76,9 @@ func seamStraddlingCover(t *testing.T) *chartCover {
 	b := &chartCover{r: chartRegion{uPer: true, uLo: lo, uHi: lo + 2*stdmath.Pi, vLo: 0, vHi: 1}}
 	b.normalAt = func(float64, float64) math.Vector3 { return math.V3(0, 0, 1) }
 	b.su, b.sv = 1, 1
-	for _, du := range []float64{0, 2 * stdmath.Pi} {
-		for i, p := range []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)} {
-			b.add(p, lo+du+float64(i)*1e-9, 0.5)
+	for at, du := range []float64{0, 2 * stdmath.Pi} {
+		for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(0, 1, 0)} {
+			b.add(p, lo+du, 0.5, at)
 		}
 	}
 	return b

@@ -149,9 +149,16 @@ func twoRimHoledTrimOf(chart [][]math.Point2, s geom.Surface, outer3D []math.Poi
 // cause is the covering seam, not the corridor — chart_face_replica.go carries the measurement and
 // names what it needs.
 //
+// The UPPER bracket the first sweep gave still stands and still brackets the value: over the whole
+// two-rim corpus the ratio is 8.6 … 8.8, or infinite for a band with a single window, on every band
+// the chart mesher takes, so nothing between the near-pinch rows' 2.380 and that 8.6 has to be
+// separated. 4 sits inside that gap.
+//
 // So the gate stays, at 4, because removing it ships those six as torn faces (196–1196 free edges on
-// the body, measured), and it is now a SUPERSET keep rather than a plateau. It is the last thing
-// holding the unrolled arm alive; #3517 deletes both when the seam is exact.
+// the body, measured), and it is now a SUPERSET keep bracketed above rather than a plateau. The split
+// it produces is still asserted in BOTH directions by
+// TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe, which is the constant's plant. It is the last
+// thing holding the unrolled arm alive; #3517 deletes both when the seam is exact.
 const nearPinchCorridorChords = 4 // tol:mesh-density (multiples of the boundary's own chord; see above)
 
 // lensCorridorOutrunsTheSampling reports whether two lens windows pass within nearPinchCorridorChords of

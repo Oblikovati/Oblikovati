@@ -45,13 +45,13 @@ func coveringPeriodicMesh(s geom.BSplineSurface, q Quality, ulo, uhi float64, ri
 // closed loops.
 func (b *coverBuilder) replicateBoundary(rims, mouths []cylLoop) [][]int {
 	var loops [][]int
-	for _, sh := range coverShifts {
+	for si, sh := range coverShifts {
 		off := sh * b.period
 		for _, r := range rims {
-			loops = append(loops, b.addChain(r, off)...)
+			loops = append(loops, b.addChain(r, off, si)...)
 		}
 		for _, m := range mouths {
-			loops = append(loops, b.addRing(m, off))
+			loops = append(loops, b.addRing(m, off, si))
 		}
 	}
 	return loops
@@ -76,14 +76,14 @@ func newCoverBuilder(s geom.BSplineSurface, ulo, period float64) *coverBuilder {
 
 // addChain adds a shifted rim loop as an OPEN chain (it does not close across the seam) and returns its
 // per-segment 2-vertex constraints, so the triangulation aligns to the rim without a spurious closing edge.
-func (b *coverBuilder) addChain(l cylLoop, off float64) [][]int {
-	return b.coverVertices.addChain(l.p3, l.uvPoints(), off, 0)
+func (b *coverBuilder) addChain(l cylLoop, off float64, at int) [][]int {
+	return b.coverVertices.addChain(l.p3, l.uvPoints(), off, 0, at)
 }
 
 // addRing adds a shifted mouth loop as a closed-loop constraint (constrain wraps the last edge to the
 // first), returning its vertex index sequence.
-func (b *coverBuilder) addRing(l cylLoop, off float64) []int {
-	return b.coverVertices.addRing(l.p3, l.uvPoints(), off, 0)
+func (b *coverBuilder) addRing(l cylLoop, off float64, at int) []int {
+	return b.coverVertices.addRing(l.p3, l.uvPoints(), off, 0, at)
 }
 
 // addInteriorNodes lays a curvature-adaptive staggered grid over the canonical band (between the rims,
@@ -107,19 +107,21 @@ func (b *coverBuilder) addInteriorNodes(q Quality, ulo, uhi, vmin, vmax float64,
 				continue
 			}
 			p := b.s.PointAt(u, v)
-			for _, sh := range coverShifts {
-				b.add(p, u+sh*b.period, v)
+			for si, sh := range coverShifts {
+				b.add(p, u+sh*b.period, v, si)
 			}
 		}
 	}
 }
 
-// selectCanonical keeps each triangle whose centroid lies in the canonical period [ulo, ulo+P) and in the
-// material region (inside the band, outside every mouth). Period replication means each periodic triangle
-// has exactly one translate with centroid in the canonical period, so this de-duplicates without splitting.
+// selectCanonical keeps each triangle that is in the material region (inside the band, outside every
+// mouth) and whose centroid lies in the canonical period, CLOSED at both ends. The closed window is the
+// candidate filter only: keepCanonical picks one translate per 3D triangle off the integer shift each
+// vertex was laid at, because a replica's centroid is not exactly the original's plus a period
+// (cover_replica.go, #3518).
 func (b *coverBuilder) selectCanonical(tris [][3]int, ulo, period float64, vBot, vTop rimFunc, mouths []cylLoop) [][3]int {
 	return b.keepCanonical(tris, func(cu, cv float64) bool {
-		if cu < ulo || cu >= ulo+period {
+		if cu < ulo || cu > ulo+period {
 			return false
 		}
 		return materialPoint(canonU(cu, ulo, period), cv, period, vBot, vTop, mouths, 0)
