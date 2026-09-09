@@ -46,10 +46,10 @@ const angEps = 1e-9
 func CircleSegments(radius, chordTol, angleTol float64) int {
 	need := 3.0 // a circle needs at least a triangle's worth of segments
 	if angleTol > 0 {
-		need = stdmath.Max(need, stdmath.Pi/angleTol)
+		need = stdmath.Max(need, float64(stdmath.Pi/angleTol))
 	}
 	if chordTol > 0 && chordTol < radius {
-		need = stdmath.Max(need, stdmath.Pi/stdmath.Acos(1-chordTol/radius))
+		need = stdmath.Max(need, float64(stdmath.Pi/stdmath.Acos(1-float64(chordTol/radius))))
 	}
 	n := 4
 	for float64(n) < need {
@@ -101,11 +101,11 @@ func CircleConformalSamples(c Circle, seam math.Point3, chordTol, angleTol float
 	seamAbs := frameAngle(c.Center, u0, w0, seam)
 	ordered := canonicalAnglesFromSeam(seamAbs, CircleSegments(c.Radius, chordTol, angleTol))
 	pts = append(pts, seam)
-	params = append(params, frameAngle(c.Center, ref, bin, seam)/twoPi)
+	params = append(params, float64(frameAngle(c.Center, ref, bin, seam)/twoPi))
 	for _, ang := range ordered {
 		p := pointOnCircle(c.Center, u0, w0, c.Radius, ang)
 		pts = append(pts, p)
-		params = append(params, frameAngle(c.Center, ref, bin, p)/twoPi)
+		params = append(params, float64(frameAngle(c.Center, ref, bin, p)/twoPi))
 	}
 	return append(pts, seam), append(params, params[0]+1) // close on the seam, param at the domain end
 }
@@ -117,7 +117,7 @@ func canonicalAnglesFromSeam(seamAbs float64, n int) []float64 {
 	type ordered struct{ frac, ang float64 }
 	var s []ordered
 	for k := 0; k < n; k++ {
-		ang := twoPi * float64(k) / float64(n)
+		ang := float64(twoPi * float64(k) / float64(n))
 		if frac := wrap2pi(ang - seamAbs); frac > angEps && frac < twoPi-angEps {
 			s = append(s, ordered{frac, ang})
 		}
@@ -148,7 +148,7 @@ func ArcConformalSamples(a Arc3d, chordTol, angleTol float64) (pts []math.Point3
 	params = append(params, 0)
 	for _, s := range interior {
 		pts = append(pts, pointOnCircle(a.Center, u0, w0, a.Radius, s.ang))
-		params = append(params, s.frac/sweepMag)
+		params = append(params, float64(s.frac/sweepMag))
 	}
 	return append(pts, end), append(params, 1)
 }
@@ -181,10 +181,10 @@ type canonAngle struct{ frac, ang float64 }
 // downstream mesh. Conformance survives — the kept stations are still a subset of the full
 // circle's, so a coaxial circle and arc still share every station the arc keeps.
 func arcInteriorAngles(startAbs, sweepMag float64, ccw bool, n int) []canonAngle {
-	minGap := stdmath.Pi / float64(n) // half a canonical step
+	minGap := float64(stdmath.Pi / float64(n)) // half a canonical step
 	var s []canonAngle
 	for k := 0; k < n; k++ {
-		ang := twoPi * float64(k) / float64(n)
+		ang := float64(twoPi * float64(k) / float64(n))
 		frac := wrap2pi(ang - startAbs)
 		if !ccw {
 			frac = wrap2pi(startAbs - ang)

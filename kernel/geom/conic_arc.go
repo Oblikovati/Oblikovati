@@ -44,7 +44,7 @@ func ConicArcBetween(c Curve3, a, b, near math.Point3) (Curve3, bool) {
 func circleArcWay(c Circle, ta, tb float64, forward bool) Curve3 {
 	return Arc3d{
 		Center: c.Center, Normal: c.Normal, RefDir: c.RefDir, Radius: c.Radius,
-		StartAngle: twoPi * ta, SweepAngle: arcSweepWay(ta, tb, forward),
+		StartAngle: float64(twoPi * ta), SweepAngle: arcSweepWay(ta, tb, forward),
 	}
 }
 
@@ -54,7 +54,7 @@ func ellipseArcWay(e EllipseFull, ta, tb float64, forward bool) Curve3 {
 	return EllipticalArc{
 		Center: e.Center, Normal: e.Normal, MajorAxis: e.MajorAxis,
 		MajorRadius: e.MajorRadius, MinorRadius: e.MinorRadius,
-		StartAngle: twoPi * ta, SweepAngle: arcSweepWay(ta, tb, forward),
+		StartAngle: float64(twoPi * ta), SweepAngle: arcSweepWay(ta, tb, forward),
 	}
 }
 
@@ -63,9 +63,9 @@ func ellipseArcWay(e EllipseFull, ta, tb float64, forward bool) Curve3 {
 func arcSweepWay(ta, tb float64, forward bool) float64 {
 	fwd := wrapUnit(tb - ta)
 	if forward {
-		return twoPi * fwd
+		return float64(twoPi * fwd)
 	}
-	return twoPi * (fwd - 1)
+	return float64(twoPi * (fwd - 1))
 }
 
 // nearerArc returns whichever candidate passes closer to `near` at its own midpoint. The two arcs of

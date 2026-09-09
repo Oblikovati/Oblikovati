@@ -60,7 +60,7 @@ func bridgeNet(ca, cb BSplineCurve) (BSplineSurface, error) {
 		ctrl[i] = make([]math.Point3, bridgeVRows)
 		w[i] = make([]float64, bridgeVRows)
 		for r := range bridgeVRows {
-			ctrl[i][r] = ca.Ctrl[i].Lerp(cb.Ctrl[i], float64(r)/float64(bridgeVRows-1))
+			ctrl[i][r] = ca.Ctrl[i].Lerp(cb.Ctrl[i], float64(float64(r)/float64(bridgeVRows-1)))
 			w[i][r] = 1
 		}
 	}

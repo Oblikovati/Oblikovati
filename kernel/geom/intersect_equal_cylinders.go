@@ -38,7 +38,7 @@ func equalCylinderSection(a, b Surface, res Resolution) ([]Curve3, bool) {
 	if !ok {
 		return nil, false // the axes pass by one another: no common centre, no planar section
 	}
-	half := stdmath.Acos(math.Clamp(float64(e1.AsUnit().Dot(e2.AsUnit())), -1, 1)) / 2
+	half := float64(stdmath.Acos(math.Clamp(float64(e1.AsUnit().Dot(e2.AsUnit())), -1, 1)) / 2)
 	return equalCylinderEllipses(centre, e1, e2, w, ca.Radius, half)
 }
 
@@ -61,7 +61,7 @@ func equalCylinderEllipses(centre math.Point3, e1, e2, w math.Vector3, r, half f
 		if arm.scale <= equalCylinderSkewFloor {
 			return nil, false
 		}
-		el, err := NewEllipseFull(centre, arm.major.Cross(w), arm.major, r/arm.scale, r)
+		el, err := NewEllipseFull(centre, arm.major.Cross(w), arm.major, float64(r/arm.scale), r)
 		if err != nil {
 			return nil, false
 		}
@@ -74,11 +74,11 @@ func equalCylinderEllipses(centre math.Point3, e1, e2, w math.Vector3, r, half f
 // point and their equal-radius section is not planar, so the pair falls back to the general form.
 func axesMeetingPoint(ca, cb Cylinder, e1, e2, w math.Vector3, res Resolution) (math.Point3, bool) {
 	d := ca.Origin.VectorTo(cb.Origin)
-	if stdmath.Abs(float64(d.Dot(w))/float64(w.Length())) > res.Sew() {
+	if stdmath.Abs(float64(float64(d.Dot(w))/float64(w.Length()))) > res.Sew() {
 		return math.Point3{}, false // skew: the axes miss each other
 	}
 	// Solve ca.Origin + s·e1 = cb.Origin + t·e2 in the plane the two axes span.
 	den := float64(w.LengthSquared())
-	s := float64(d.Cross(e2).Dot(w)) / den
+	s := float64(float64(d.Cross(e2).Dot(w)) / den)
 	return ca.Origin.TranslateBy(e1.Scale(math.Scalar(s))), true
 }

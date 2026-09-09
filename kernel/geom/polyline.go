@@ -153,7 +153,7 @@ func sampleParams(domain func() (lo, hi float64), segments int) ([]float64, erro
 	}
 	ts := make([]float64, segments+1)
 	for i := range ts {
-		ts[i] = lo + (hi-lo)*float64(i)/float64(segments)
+		ts[i] = lo + float64((hi-lo)*float64(i)/float64(segments))
 	}
 	return ts, nil
 }
@@ -163,7 +163,7 @@ func sampleParams(domain func() (lo, hi float64), segments int) ([]float64, erro
 // assumed >= 2 (enforced by the constructors).
 func locateSegment(vertexCount int, t float64) (seg int, local float64) {
 	segs := vertexCount - 1
-	s := t * float64(segs)
+	s := float64(t * float64(segs))
 	seg = int(stdmath.Floor(s))
 	if seg < 0 {
 		return 0, 0

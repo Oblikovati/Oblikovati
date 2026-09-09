@@ -101,7 +101,7 @@ func edgeDerivCoeffs(knots []float64, deg, order int, edgeAtMax bool, intoSign f
 			s = intoSign
 		}
 		for j := 0; j <= order; j++ {
-			c[k][j] = s * ders[k][j]
+			c[k][j] = float64(s * ders[k][j])
 		}
 	}
 	return c

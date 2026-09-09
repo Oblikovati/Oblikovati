@@ -67,7 +67,7 @@ func (c Cylinder) radial(u float64) math.Vector3 {
 // DerivativesAt returns ∂P/∂u (tangent around) and ∂P/∂v (the axis direction).
 func (c Cylinder) DerivativesAt(u, _ float64) (du, dv math.Vector3) {
 	cos, sin := cosSin(u)
-	du = c.Ref.AsVector().Scale(-c.Radius * sin).Add(c.binormal.Scale(c.Radius * cos))
+	du = c.Ref.AsVector().Scale(float64(-c.Radius * sin)).Add(c.binormal.Scale(float64(c.Radius * cos)))
 	return du, c.AxisDir.AsVector()
 }
 

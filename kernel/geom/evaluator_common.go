@@ -23,7 +23,7 @@ const (
 // adaptiveSimpson integrates f over [a, b] to the given absolute tolerance,
 // recursing where the local Simpson estimates disagree (Richardson-corrected).
 func adaptiveSimpson(f func(float64) float64, a, b, tol float64) float64 {
-	m := (a + b) / 2
+	m := float64((a + b) / 2)
 	fa, fm, fb := f(a), f(m), f(b)
 	whole := simpsonRule(a, b, fa, fm, fb)
 	return simpsonRecurse(f, a, b, fa, fm, fb, whole, tol, lengthMaxDepth)
@@ -31,21 +31,21 @@ func adaptiveSimpson(f func(float64) float64, a, b, tol float64) float64 {
 
 // simpsonRule returns Simpson's estimate over [a, b] from the three samples.
 func simpsonRule(a, b, fa, fm, fb float64) float64 {
-	return (b - a) / 6 * (fa + 4*fm + fb)
+	return float64((b - a) / 6 * (fa + float64(4*fm) + fb))
 }
 
 // simpsonRecurse refines one interval until the half-sums agree within tol.
 func simpsonRecurse(f func(float64) float64, a, b, fa, fm, fb, whole, tol float64, depth int) float64 {
-	m := (a + b) / 2
-	lm, rm := (a+m)/2, (m+b)/2
+	m := float64((a + b) / 2)
+	lm, rm := float64((a+m)/2), float64((m+b)/2)
 	flm, frm := f(lm), f(rm)
 	left := simpsonRule(a, m, fa, flm, fm)
 	right := simpsonRule(m, b, fm, frm, fb)
 	if depth <= 0 || stdmath.Abs(left+right-whole) <= 15*tol {
-		return left + right + (left+right-whole)/15
+		return left + right + float64((left+right-whole)/15)
 	}
-	return simpsonRecurse(f, a, m, fa, flm, fm, left, tol/2, depth-1) +
-		simpsonRecurse(f, m, b, fm, frm, fb, right, tol/2, depth-1)
+	return simpsonRecurse(f, a, m, fa, flm, fm, left, float64(tol/2), depth-1) +
+		simpsonRecurse(f, m, b, fm, frm, fb, right, float64(tol/2), depth-1)
 }
 
 // integrateSpans integrates f piecewise over [a, b] split at the given interior
@@ -56,10 +56,10 @@ func integrateSpans(f func(float64) float64, a, b float64, breaks []float64) flo
 		if k <= prev || k >= b {
 			continue
 		}
-		total += adaptiveSimpson(f, prev, k, lengthRelTol*(k-prev))
+		total += adaptiveSimpson(f, prev, k, float64(lengthRelTol*(k-prev)))
 		prev = k
 	}
-	return total + adaptiveSimpson(f, prev, b, lengthRelTol*(b-prev))
+	return total + adaptiveSimpson(f, prev, b, float64(lengthRelTol*(b-prev)))
 }
 
 // interiorKnots returns the distinct knot values strictly inside the domain —
@@ -106,7 +106,7 @@ func invertLength(signedLength func(float64) float64, speed func(float64) float6
 	if signedLength(lo) >= target {
 		return lo
 	}
-	t := (lo + hi) / 2
+	t := float64((lo + hi) / 2)
 	for range 64 {
 		miss := signedLength(t) - target
 		if stdmath.Abs(miss) <= lengthRelTol*stdmath.Max(1, stdmath.Abs(target)) {
@@ -130,12 +130,12 @@ func shrinkBracket(lo, hi, t, miss float64) (float64, float64) {
 // well-defined, otherwise bisects.
 func newtonOrBisect(t, miss, slope, lo, hi float64) float64 {
 	if slope > 0 {
-		next := t - miss/slope
+		next := t - float64(miss/slope)
 		if next > lo && next < hi {
 			return next
 		}
 	}
-	return (lo + hi) / 2
+	return float64((lo + hi) / 2)
 }
 
 // orderedInterval returns the interval with lo ≤ hi (length and stroking are

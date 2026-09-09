@@ -122,29 +122,29 @@ func (r Resolution) Size() float64 { return r.size }
 // same vertex. Used for every coincidence weld — CSG output, point welder, hole/planar
 // arrangement, loop closure, convex-hull dedup. It must stay tight; see the coefficient
 // note above.
-func (r Resolution) Weld() float64 { return weldCoef * epsRel * r.size }
+func (r Resolution) Weld() float64 { return float64(weldCoef * epsRel * r.size) }
 
 // Plane is the coplanar / on-plane / on-line classification tolerance: how far a point may
 // sit from a cutting plane (BSP), a segment (T-junction) or an arrangement edge and still
 // count as on it.
-func (r Resolution) Plane() float64 { return planeCoef * epsRel * r.size }
+func (r Resolution) Plane() float64 { return float64(planeCoef * epsRel * r.size) }
 
 // Sew is the default gap a Sew with tolerance 0 closes — deliberately generous.
-func (r Resolution) Sew() float64 { return sewCoef * epsRel * r.size }
+func (r Resolution) Sew() float64 { return float64(sewCoef * epsRel * r.size) }
 
 // Stitch is the boolean seam-stitch weld: how close two independently computed copies of the same
 // seam point may sit and still merge into one vertex. Deliberately coarser than Weld — stitched
 // points carry SSI-tracer noise (1e-7 of the trace extent), not float noise; see stitchCoef (#1602).
-func (r Resolution) Stitch() float64 { return stitchCoef * epsRel * r.size }
+func (r Resolution) Stitch() float64 { return float64(stitchCoef * epsRel * r.size) }
 
 // Area is the relative area / cross-product tolerance for degenerate-triangle and
 // turn-direction tests in the planar arrangement: areas scale with size², so this keeps
 // a "near-zero area" classification scale-faithful (reproduces the old 1e-9 at size 1).
-func (r Resolution) Area() float64 { return epsRel * r.size * r.size }
+func (r Resolution) Area() float64 { return float64(epsRel * r.size * r.size) }
 
 // Volume is the relative volume tolerance for boolean result classification. It scales
 // with size³.
-func (r Resolution) Volume() float64 { return volCoef * r.size * r.size * r.size }
+func (r Resolution) Volume() float64 { return float64(volCoef * r.size * r.size * r.size) }
 
 // How geom primitives relate to Resolution (ADR-0042, #1504).
 //

@@ -32,12 +32,12 @@ func (t TrimmedCurve3) Domain() (lo, hi float64) { return 0, 1 }
 
 // PointAt maps the unit parameter s∈[0,1] affinely onto the base sub-interval [Lo, Hi].
 func (t TrimmedCurve3) PointAt(s float64) math.Point3 {
-	return t.Base.PointAt(t.Lo + s*(t.Hi-t.Lo))
+	return t.Base.PointAt(t.Lo + float64(s*(t.Hi-t.Lo)))
 }
 
 // TangentAt applies the chain rule dP/ds = (dP/dt)·(Hi-Lo). For a reversed sub-span (Lo>Hi) the
 // factor is negative, so the tangent points along the 0→1 (reversed) direction, consistent with
 // PointAt.
 func (t TrimmedCurve3) TangentAt(s float64) math.Vector3 {
-	return t.Base.TangentAt(t.Lo + s*(t.Hi-t.Lo)).Scale(t.Hi - t.Lo)
+	return t.Base.TangentAt(t.Lo + float64(s*(t.Hi-t.Lo))).Scale(t.Hi - t.Lo)
 }

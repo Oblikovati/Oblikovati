@@ -212,7 +212,7 @@ func shoulderHomogeneous(cols []arcStation) [][]float64 {
 	out := make([][]float64, len(cols))
 	for i, c := range cols {
 		w := c.weight
-		out[i] = []float64{w * float64(c.shoulder.X), w * float64(c.shoulder.Y), w * float64(c.shoulder.Z), w}
+		out[i] = []float64{float64(w * float64(c.shoulder.X)), float64(w * float64(c.shoulder.Y)), float64(w * float64(c.shoulder.Z)), w}
 	}
 	return out
 }

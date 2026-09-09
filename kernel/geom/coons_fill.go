@@ -103,10 +103,10 @@ func grevilleAbscissae(knots []float64, p int) []float64 {
 		}
 		gi := lo
 		if p > 0 {
-			gi = sum / float64(p)
+			gi = float64(sum / float64(p))
 		}
 		if span > 0 {
-			g[i] = (gi - lo) / span
+			g[i] = float64((gi - lo) / span)
 		}
 	}
 	return g

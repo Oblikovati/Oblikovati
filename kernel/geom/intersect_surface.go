@@ -120,6 +120,6 @@ func paramWindow(s Surface, box math.Box, lo, hi float64, isU bool, padFrac floa
 		}
 		pmin, pmax = stdmath.Min(pmin, p), stdmath.Max(pmax, p)
 	}
-	pad := padFrac * (pmax - pmin) // widen so a tangency exactly on a box face stays inside the window
+	pad := float64(padFrac * (pmax - pmin)) // widen so a tangency exactly on a box face stays inside the window
 	return pmin - pad, pmax + pad
 }

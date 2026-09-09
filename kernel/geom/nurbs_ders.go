@@ -44,9 +44,9 @@ func basisTriangle(span, p int, u float64, knots []float64) [][]float64 {
 		saved := 0.0
 		for r := 0; r < j; r++ {
 			ndu[j][r] = right[r+1] + left[j-r] // knot difference, reused below
-			temp := ndu[r][j-1] / ndu[j][r]
-			ndu[r][j] = saved + right[r+1]*temp
-			saved = left[j-r] * temp
+			temp := float64(ndu[r][j-1] / ndu[j][r])
+			ndu[r][j] = saved + float64(right[r+1]*temp)
+			saved = float64(left[j-r] * temp)
 		}
 		ndu[j][j] = saved
 	}
@@ -63,8 +63,8 @@ func derivativeRow(ndu [][]float64, ders [][]float64, r, p, order int) {
 		d := 0.0
 		rk, pk := r-k, p-k
 		if r >= k {
-			a[s2][0] = a[s1][0] / ndu[pk+1][rk]
-			d = a[s2][0] * ndu[rk][pk]
+			a[s2][0] = float64(a[s1][0] / ndu[pk+1][rk])
+			d = float64(a[s2][0] * ndu[rk][pk])
 		}
 		d += derivativeInner(ndu, a, s1, s2, r, k, p)
 		ders[k][r] = d
@@ -84,12 +84,12 @@ func derivativeInner(ndu [][]float64, a [2][]float64, s1, s2, r, k, p int) float
 	}
 	d := 0.0
 	for j := j1; j <= j2; j++ {
-		a[s2][j] = (a[s1][j] - a[s1][j-1]) / ndu[pk+1][rk+j]
-		d += a[s2][j] * ndu[rk+j][pk]
+		a[s2][j] = float64((a[s1][j] - a[s1][j-1]) / ndu[pk+1][rk+j])
+		d += float64(a[s2][j] * ndu[rk+j][pk])
 	}
 	if r <= pk {
-		a[s2][k] = -a[s1][k-1] / ndu[pk+1][r]
-		d += a[s2][k] * ndu[r][pk]
+		a[s2][k] = float64(-a[s1][k-1] / ndu[pk+1][r])
+		d += float64(a[s2][k] * ndu[r][pk])
 	}
 	return d
 }
@@ -122,7 +122,7 @@ func (c BSplineCurve) DersAt(t float64, order int) []math.Vector3 {
 	for k := 0; k <= order; k++ {
 		for j := 0; j <= c.Degree; j++ {
 			i := span - c.Degree + j
-			bw := basis[k][j] * c.Weights[i]
+			bw := float64(basis[k][j] * c.Weights[i])
 			num[k] = num[k].Add(c.Ctrl[i].AsVector().Scale(bw))
 			den[k] += bw
 		}
@@ -138,9 +138,9 @@ func rationalDers3(num []math.Vector3, den []float64, order int) []math.Vector3 
 		v := num[k]
 		bin := binomialRow(k)
 		for i := 1; i <= k; i++ {
-			v = v.Sub(out[k-i].Scale(bin[i] * den[i]))
+			v = v.Sub(out[k-i].Scale(float64(bin[i] * den[i])))
 		}
-		out[k] = v.Scale(1 / den[0])
+		out[k] = v.Scale(float64(1 / den[0]))
 	}
 	return out
 }
@@ -154,7 +154,7 @@ func (c BSplineCurve2d) DersAt(t float64, order int) []math.Vector2 {
 	for k := 0; k <= order; k++ {
 		for j := 0; j <= c.Degree; j++ {
 			i := span - c.Degree + j
-			bw := basis[k][j] * c.Weights[i]
+			bw := float64(basis[k][j] * c.Weights[i])
 			num[k] = num[k].Add(c.Ctrl[i].AsVector().Scale(bw))
 			den[k] += bw
 		}
@@ -169,9 +169,9 @@ func rationalDers2(num []math.Vector2, den []float64, order int) []math.Vector2 
 		v := num[k]
 		bin := binomialRow(k)
 		for i := 1; i <= k; i++ {
-			v = v.Sub(out[k-i].Scale(bin[i] * den[i]))
+			v = v.Sub(out[k-i].Scale(float64(bin[i] * den[i])))
 		}
-		out[k] = v.Scale(1 / den[0])
+		out[k] = v.Scale(float64(1 / den[0]))
 	}
 	return out
 }
@@ -217,7 +217,7 @@ func (s BSplineSurface) homogeneousDer(us, vs int, ub, vb []float64) (math.Vecto
 	for i := 0; i <= s.UDegree; i++ {
 		for j := 0; j <= s.VDegree; j++ {
 			ci, cj := us-s.UDegree+i, vs-s.VDegree+j
-			bw := ub[i] * vb[j] * s.Weights[ci][cj]
+			bw := float64(ub[i] * vb[j] * s.Weights[ci][cj])
 			a = a.Add(s.Ctrl[ci][cj].AsVector().Scale(bw))
 			w += bw
 		}
@@ -235,8 +235,8 @@ func rationalSurfaceDer(out [][]math.Vector3, num [][]math.Vector3, den [][]floa
 			if i == 0 && j == 0 {
 				continue
 			}
-			v = v.Sub(out[k-i][l-j].Scale(bk[i] * bl[j] * den[i][j]))
+			v = v.Sub(out[k-i][l-j].Scale(float64(bk[i] * bl[j] * den[i][j])))
 		}
 	}
-	return v.Scale(1 / den[0][0])
+	return v.Scale(float64(1 / den[0][0]))
 }

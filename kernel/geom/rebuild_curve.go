@@ -76,8 +76,8 @@ func sampleCurveAt(src Curve3, samples int) (pts [][]float64, ubar []float64) {
 	pts = make([][]float64, samples+1)
 	ubar = make([]float64, samples+1)
 	for i := range pts {
-		f := float64(i) / float64(samples)
-		p := src.PointAt(lo + (hi-lo)*f)
+		f := float64(float64(i) / float64(samples))
+		p := src.PointAt(lo + float64((hi-lo)*f))
 		pts[i] = []float64{float64(p.X), float64(p.Y), float64(p.Z)}
 		ubar[i] = f
 	}
@@ -91,7 +91,7 @@ func curveDeviation(src Curve3, rebuilt BSplineCurve, samples int) float64 {
 	lo, hi := src.Domain()
 	maxDev := 0.0
 	for i := 0; i <= samples; i++ {
-		t := lo + (hi-lo)*float64(i)/float64(samples)
+		t := lo + float64((hi-lo)*float64(i)/float64(samples))
 		p := src.PointAt(t)
 		u, _ := CurveParamAtPoint3(rebuilt, p)
 		if d := float64(p.DistanceTo(rebuilt.PointAt(u))); d > maxDev {

@@ -63,12 +63,12 @@ func correctorStep(nb, no math.Vector3, sb, so float64) math.Vector3 {
 // (parallel normals — the planes are coincident/parallel and the intersection line is undefined).
 func tangentPlaneSolve(nb, no math.Vector3, sb, so float64) (a, b float64, ok bool) {
 	c := float64(nb.Dot(no))
-	den := 1 - c*c
+	den := 1 - float64(c*c)
 	if stdmath.Abs(den) < 1-ssiTangencyCos {
 		return 0, 0, false
 	}
-	b = (sb*c - so) / den
-	a = -sb - b*c
+	b = float64((float64(sb*c) - so) / den)
+	a = -sb - float64(b*c)
 	return a, b, true
 }
 
@@ -111,8 +111,8 @@ func refineTangency(base, other Surface, p math.Point3, tol float64) (math.Point
 // point exactly on the boundary still counts).
 func inWindow(base Surface, pc math.Point3, g SurfaceGrid) bool {
 	u, v, _ := ProjectPointToSurface(base, pc)
-	mu := (g.UMax - g.UMin) * 1e-9 // tol:parametric — fraction of the u-window
-	mv := (g.VMax - g.VMin) * 1e-9 // tol:parametric — fraction of the v-window
+	mu := float64((g.UMax - g.UMin) * 1e-9) // tol:parametric — fraction of the u-window
+	mv := float64((g.VMax - g.VMin) * 1e-9) // tol:parametric — fraction of the v-window
 	return u >= g.UMin-mu && u <= g.UMax+mu && v >= g.VMin-mv && v <= g.VMax+mv
 }
 
@@ -138,13 +138,13 @@ func nearAnyCurve(curves [][]math.Point3, p math.Point3, tol float64) bool {
 // ssiTolerance is the model-relative on-curve tolerance: 1e-7 of the base's 3D extent (the stated
 // acceptance tolerance, reachable by the NURBS Gauss–Newton projection — a 1e-9 target is not).
 func ssiTolerance(base Surface, g SurfaceGrid) float64 {
-	return ssiToleranceFraction * ssiExtent(base, g)
+	return float64(ssiToleranceFraction * ssiExtent(base, g))
 }
 
 // ssiStep is the nominal march step: a small fraction of the base's 3D extent, so a full curve is a
 // few thousand points at most while fine enough to resolve curvature.
 func ssiStep(base Surface, g SurfaceGrid) float64 {
-	return ssiStepFraction * ssiExtent(base, g)
+	return float64(ssiStepFraction * ssiExtent(base, g))
 }
 
 // ssiExtentSamples is the per-axis lattice for the extent estimate. Five samples put nodes at the
@@ -173,9 +173,9 @@ func sampledPatchBox(base Surface, g SurfaceGrid) math.Box {
 	n := ssiExtentSamples - 1
 	pts := make([]math.Point3, 0, ssiExtentSamples*ssiExtentSamples)
 	for i := 0; i <= n; i++ {
-		u := g.UMin + (g.UMax-g.UMin)*float64(i)/float64(n)
+		u := g.UMin + float64((g.UMax-g.UMin)*float64(i)/float64(n))
 		for j := 0; j <= n; j++ {
-			v := g.VMin + (g.VMax-g.VMin)*float64(j)/float64(n)
+			v := g.VMin + float64((g.VMax-g.VMin)*float64(j)/float64(n))
 			pts = append(pts, base.PointAt(u, v))
 		}
 	}

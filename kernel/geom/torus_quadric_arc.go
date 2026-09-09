@@ -44,7 +44,9 @@ type torusHarmonic struct {
 // discriminant is reach² − level², positive exactly where the tube circle at this station crosses the
 // quadric twice. It is the torus form's counterpart of the ruling quadratic's b² − 4ac, and it feeds
 // the same shared window finder.
-func (h torusHarmonic) discriminant() float64 { return h.reach*h.reach - h.level*h.level }
+func (h torusHarmonic) discriminant() float64 {
+	return float64(h.reach*h.reach) - float64(h.level*h.level)
+}
 
 // root returns the upper or lower azimuth of the two the harmonic admits, ordered by their offset from
 // the phase so that "upper" names the same branch at every station. It returns the fold azimuth itself
@@ -54,7 +56,7 @@ func (h torusHarmonic) root(upper bool) float64 {
 	if h.reach == 0 {
 		return stdmath.NaN() // no azimuth dependence at all: the section is whole circles, not two roots
 	}
-	arg := stdmath.Max(-1, stdmath.Min(1, -h.level/h.reach))
+	arg := stdmath.Max(-1, stdmath.Min(1, float64(-h.level/h.reach)))
 	if upper {
 		return h.phase + stdmath.Acos(arg)
 	}
@@ -128,7 +130,7 @@ func (a TorusQuadricArc) Kind() CurveKind { return CurveTorusQuadric }
 func (a TorusQuadricArc) Domain() (lo, hi float64) { return 0, 1 }
 
 // vAt maps the curve parameter to the tube angle.
-func (a TorusQuadricArc) vAt(t float64) float64 { return a.V0 + t*(a.V1-a.V0) }
+func (a TorusQuadricArc) vAt(t float64) float64 { return a.V0 + float64(t*(a.V1-a.V0)) }
 
 // PointAt returns the point at t ∈ [0,1], evaluated on the torus at (u, v).
 func (a TorusQuadricArc) PointAt(t float64) math.Point3 {
@@ -144,8 +146,8 @@ func (a TorusQuadricArc) PointAt(t float64) math.Point3 {
 func (a TorusQuadricArc) TangentAt(t float64) math.Vector3 {
 	v := a.vAt(t)
 	du, dv := a.Torus.DerivativesAt(a.azimuthAt(v), v)
-	step := torusArcDerivativeStep * stdmath.Abs(a.V1-a.V0)
-	slope := shortestTurnDelta(a.azimuthAt(v-step), a.azimuthAt(v+step)) / (2 * step)
+	step := float64(torusArcDerivativeStep * stdmath.Abs(a.V1-a.V0))
+	slope := float64(shortestTurnDelta(a.azimuthAt(v-step), a.azimuthAt(v+step)) / (2 * step))
 	return dv.Add(du.Scale(math.Scalar(slope))).Scale(math.Scalar(a.V1 - a.V0))
 }
 

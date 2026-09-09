@@ -19,13 +19,13 @@ func CurveDerivatives3(c Curve3, t float64) (d1, d2, d3 math.Vector3) {
 	case Line, LineSegment, Polyline:
 		return c.TangentAt(t), math.Vector3{}, math.Vector3{}
 	case Circle:
-		return circularDers3(g.RefDir.AsVector(), g.binormal(), g.Radius, g.Radius, twoPi*t, twoPi)
+		return circularDers3(g.RefDir.AsVector(), g.binormal(), g.Radius, g.Radius, float64(twoPi*t), twoPi)
 	case Arc3d:
-		return circularDers3(g.RefDir.AsVector(), g.binormal(), g.Radius, g.Radius, g.StartAngle+t*g.SweepAngle, g.SweepAngle)
+		return circularDers3(g.RefDir.AsVector(), g.binormal(), g.Radius, g.Radius, g.StartAngle+float64(t*g.SweepAngle), g.SweepAngle)
 	case EllipseFull:
-		return circularDers3(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, twoPi*t, twoPi)
+		return circularDers3(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, float64(twoPi*t), twoPi)
 	case EllipticalArc:
-		return circularDers3(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, g.StartAngle+t*g.SweepAngle, g.SweepAngle)
+		return circularDers3(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, g.StartAngle+float64(t*g.SweepAngle), g.SweepAngle)
 	case Helix3d:
 		return helixDers(g, t)
 	case BSplineCurve:
@@ -41,9 +41,9 @@ func CurveDerivatives3(c Curve3, t float64) (d1, d2, d3 math.Vector3) {
 // axis term and gains a factor of rate.
 func circularDers3(major, minor math.Vector3, a, b, angle, rate float64) (d1, d2, d3 math.Vector3) {
 	cos, sin := cosSin(angle)
-	d1 = major.Scale(-a * sin).Add(minor.Scale(b * cos)).Scale(rate)
-	d2 = major.Scale(-a * cos).Add(minor.Scale(-b * sin)).Scale(rate * rate)
-	d3 = major.Scale(a * sin).Add(minor.Scale(-b * cos)).Scale(rate * rate * rate)
+	d1 = major.Scale(float64(-a * sin)).Add(minor.Scale(float64(b * cos))).Scale(rate)
+	d2 = major.Scale(float64(-a * cos)).Add(minor.Scale(float64(-b * sin))).Scale(float64(rate * rate))
+	d3 = major.Scale(float64(a * sin)).Add(minor.Scale(float64(-b * cos))).Scale(float64(rate * rate * rate))
 	return d1, d2, d3
 }
 
@@ -53,16 +53,16 @@ func circularDers3(major, minor math.Vector3, a, b, angle, rate float64) (d1, d2
 func helixDers(h Helix3d, t float64) (d1, d2, d3 math.Vector3) {
 	cos, sin := cosSin(h.angleAt(t))
 	ref, bin := h.RefDir.AsVector(), h.binormal()
-	u := ref.Scale(cos).Add(bin.Scale(sin))          // radial unit
-	w := ref.Scale(-sin).Add(bin.Scale(cos))         // its angular derivative
-	rho, s := h.RadialPerTurn*h.Turns, twoPi*h.Turns // dr/dt, |dθ/dt|
+	u := ref.Scale(cos).Add(bin.Scale(sin))                            // radial unit
+	w := ref.Scale(-sin).Add(bin.Scale(cos))                           // its angular derivative
+	rho, s := float64(h.RadialPerTurn*h.Turns), float64(twoPi*h.Turns) // dr/dt, |dθ/dt|
 	if h.Clockwise {
 		s = -s
 	}
 	r := h.radiusAt(t)
-	d1 = u.Scale(rho).Add(w.Scale(r * s)).Add(h.Axis.AsVector().Scale(h.AxialPerTurn * h.Turns))
-	d2 = w.Scale(2 * rho * s).Sub(u.Scale(r * s * s))
-	d3 = u.Scale(-3 * rho * s * s).Sub(w.Scale(r * s * s * s))
+	d1 = u.Scale(rho).Add(w.Scale(float64(r * s))).Add(h.Axis.AsVector().Scale(float64(h.AxialPerTurn * h.Turns)))
+	d2 = w.Scale(float64(2 * rho * s)).Sub(u.Scale(float64(r * s * s)))
+	d3 = u.Scale(float64(-3 * rho * s * s)).Sub(w.Scale(float64(r * s * s * s)))
 	return d1, d2, d3
 }
 
@@ -88,22 +88,22 @@ func numericDers3(c Curve3, t float64) (d1, d2, d3 math.Vector3) {
 // numericD1 is the 2-point central first derivative at the d1-optimal step.
 func numericD1(c Curve3, t float64) math.Vector3 {
 	h := stepD1
-	return c.PointAt(t + h).AsVector().Sub(c.PointAt(t - h).AsVector()).Scale(1 / (2 * h))
+	return c.PointAt(t + h).AsVector().Sub(c.PointAt(t - h).AsVector()).Scale(float64(1 / (2 * h)))
 }
 
 // numericD2 is the 3-point central second derivative at the d2-optimal step.
 func numericD2(c Curve3, t float64) math.Vector3 {
 	h := stepD2
 	pm, p0, pp := c.PointAt(t-h).AsVector(), c.PointAt(t).AsVector(), c.PointAt(t+h).AsVector()
-	return pp.Add(pm).Sub(p0.Scale(2)).Scale(1 / (h * h))
+	return pp.Add(pm).Sub(p0.Scale(2)).Scale(float64(1 / (h * h)))
 }
 
 // numericD3 is the 4-point central third derivative at the d3-optimal step.
 func numericD3(c Curve3, t float64) math.Vector3 {
 	h := stepD3
-	p2m, pm := c.PointAt(t-2*h).AsVector(), c.PointAt(t-h).AsVector()
-	pp, p2p := c.PointAt(t+h).AsVector(), c.PointAt(t+2*h).AsVector()
-	return p2p.Sub(pp.Scale(2)).Add(pm.Scale(2)).Sub(p2m).Scale(1 / (2 * h * h * h))
+	p2m, pm := c.PointAt(t-float64(2*h)).AsVector(), c.PointAt(t-h).AsVector()
+	pp, p2p := c.PointAt(t+h).AsVector(), c.PointAt(t+float64(2*h)).AsVector()
+	return p2p.Sub(pp.Scale(2)).Add(pm.Scale(2)).Sub(p2m).Scale(float64(1 / (2 * h * h * h)))
 }
 
 // CurveCurvature3 returns the unit principal-normal direction and curvature
@@ -116,11 +116,11 @@ func CurveCurvature3(c Curve3, t float64) (direction math.Vector3, magnitude flo
 		return math.Vector3{}, 0
 	}
 	cross := d1.Cross(d2)
-	magnitude = cross.Length() / (speed * speed * speed)
+	magnitude = float64(cross.Length() / (speed * speed * speed))
 	if magnitude == 0 {
 		return math.Vector3{}, 0
 	}
-	tangent := d1.Scale(1 / speed)
+	tangent := d1.Scale(float64(1 / speed))
 	normal := d2.Sub(tangent.Scale(d2.Dot(tangent))) // reject P″ from the tangent
 	return unitOrZero(normal), magnitude
 }

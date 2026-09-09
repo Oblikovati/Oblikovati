@@ -33,19 +33,19 @@ func (c Circle) binormal() math.Vector3 {
 
 // PointAt returns the point at angle 2πt.
 func (c Circle) PointAt(t float64) math.Point3 {
-	return pointOnCircle(c.Center, c.RefDir.AsVector(), c.binormal(), c.Radius, twoPi*t)
+	return pointOnCircle(c.Center, c.RefDir.AsVector(), c.binormal(), c.Radius, float64(twoPi*t))
 }
 
 // TangentAt returns the derivative dP/dt at parameter t.
 func (c Circle) TangentAt(t float64) math.Vector3 {
-	return circleTangent(c.RefDir.AsVector(), c.binormal(), c.Radius, twoPi*t).Scale(twoPi)
+	return circleTangent(c.RefDir.AsVector(), c.binormal(), c.Radius, float64(twoPi*t)).Scale(twoPi)
 }
 
 // Domain returns [0, 1].
 func (c Circle) Domain() (lo, hi float64) { return 0, 1 }
 
 // Circumference returns 2πr.
-func (c Circle) Circumference() float64 { return twoPi * c.Radius }
+func (c Circle) Circumference() float64 { return float64(twoPi * c.Radius) }
 
 // CircleByThreePoints builds the unique 3D circle through three points (contract:
 // CreateCircleByThreePoints): it lies in the plane the points span and is centered at

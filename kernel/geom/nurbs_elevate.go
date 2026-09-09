@@ -67,10 +67,10 @@ func (e *degElevator) initBezalfs() {
 // fillBezalfsLow computes the lower-index half of the coefficient table directly.
 func (e *degElevator) fillBezalfsLow() {
 	for i := 1; i <= e.ph2; i++ {
-		inv := 1 / binomial(e.ph, i)
+		inv := float64(1 / binomial(e.ph, i))
 		mpi := min(e.p, i)
 		for j := max(0, i-e.t); j <= mpi; j++ {
-			e.bezalfs[i][j] = inv * binomial(e.p, j) * binomial(e.t, i-j)
+			e.bezalfs[i][j] = float64(inv * binomial(e.p, j) * binomial(e.t, i-j))
 		}
 	}
 }
@@ -151,7 +151,7 @@ func (e *degElevator) bezierBounds(oldr int) (lbz, rbz int) {
 func (e *degElevator) insertToBezier(mul int) {
 	numer := e.ub - e.ua
 	for k := e.p; k > mul; k-- {
-		e.alfs[k-mul-1] = numer / (e.U[e.a+k] - e.ua)
+		e.alfs[k-mul-1] = float64(numer / (e.U[e.a+k] - e.ua))
 	}
 	for j := 1; j <= e.r; j++ {
 		save := e.r - j
@@ -179,7 +179,7 @@ func (e *degElevator) elevateBezier(lbz int) {
 func (e *degElevator) removeAfterElevation(oldr, lbz int) {
 	first, last := e.kind-2, e.kind
 	den := e.ub - e.ua
-	bet := (e.ub - e.Uh[e.kind-1]) / den
+	bet := float64((e.ub - e.Uh[e.kind-1]) / den)
 	for tr := 1; tr < oldr; tr++ {
 		e.removalPass(tr, oldr, lbz, first, last, den, bet)
 		first--
@@ -194,7 +194,7 @@ func (e *degElevator) removalPass(tr, oldr, lbz, first, last int, den, bet float
 	kj := j - e.kind + 1
 	for j-i > tr {
 		if i < e.cind {
-			alf := (e.ub - e.Uh[i]) / (e.ua - e.Uh[i])
+			alf := float64((e.ub - e.Uh[i]) / (e.ua - e.Uh[i]))
 			e.Qw[i] = e.Qw[i].lerp(e.Qw[i-1], 1-alf)
 		}
 		if j >= lbz {
@@ -207,7 +207,7 @@ func (e *degElevator) removalPass(tr, oldr, lbz, first, last int, den, bet float
 // removalBlend chooses A5.9's interior (gamma) or boundary (beta) blend for one ebpts entry.
 func (e *degElevator) removalBlend(j, tr, kj, oldr int, den, bet float64) hpoint4 {
 	if j-tr <= e.kind-e.ph+oldr {
-		gam := (e.ub - e.Uh[j-tr]) / den
+		gam := float64((e.ub - e.Uh[j-tr]) / den)
 		return e.ebpts[kj].lerp(e.ebpts[kj+1], 1-gam)
 	}
 	return e.ebpts[kj].lerp(e.ebpts[kj+1], 1-bet)
@@ -272,7 +272,7 @@ func binomial(n, k int) float64 {
 	}
 	c := 1.0
 	for i := 0; i < k; i++ {
-		c = c * float64(n-i) / float64(i+1)
+		c = float64(c * float64(n-i) / float64(i+1))
 	}
 	return c
 }

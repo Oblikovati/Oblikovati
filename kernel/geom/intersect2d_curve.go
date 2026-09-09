@@ -83,7 +83,7 @@ func curveSignedCrossings(c Curve2, f func(math.Point2) float64) []math.Point2 {
 		out = append(out, c.PointAt(lo))
 	}
 	for i := 1; i <= curveIntersectSamples; i++ {
-		t := lo + (hi-lo)*float64(i)/curveIntersectSamples
+		t := lo + float64((hi-lo)*float64(i)/curveIntersectSamples)
 		ft := f(c.PointAt(t))
 		switch {
 		case ft == 0: // the sample landed exactly on the zero
@@ -101,7 +101,7 @@ func curveSignedCrossings(c Curve2, f func(math.Point2) float64) []math.Point2 {
 // resolution and returns the zero's parameter.
 func bisectCurveZero(c Curve2, f func(math.Point2) float64, a, b, fa float64) float64 {
 	for range [curveZeroIterations]int{} {
-		mid := (a + b) / 2
+		mid := float64((a + b) / 2)
 		fm := f(c.PointAt(mid))
 		if fm == 0 {
 			return mid
@@ -112,7 +112,7 @@ func bisectCurveZero(c Curve2, f func(math.Point2) float64, a, b, fa float64) fl
 			b = mid
 		}
 	}
-	return (a + b) / 2
+	return float64((a + b) / 2)
 }
 
 // projectOnSegment returns p's parameter along seg (0 at the start, 1 at the
@@ -124,5 +124,5 @@ func projectOnSegment(seg LineSegment2d, p math.Point2) float64 {
 	if len2 == 0 {
 		return -1
 	}
-	return float64(seg.StartPoint.VectorTo(p).Dot(d)) / len2
+	return float64(float64(seg.StartPoint.VectorTo(p).Dot(d)) / len2)
 }

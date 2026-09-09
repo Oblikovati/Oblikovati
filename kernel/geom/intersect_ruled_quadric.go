@@ -148,7 +148,7 @@ func ruledQuadricConditioning(base Surface, quad Quadric, res Resolution) bool {
 	}
 	gaps := make([]float64, ruledQuadricAzimuthProbes)
 	for i := range gaps {
-		g, ok := gapAt(twoPi * float64(i) / ruledQuadricAzimuthProbes)
+		g, ok := gapAt(float64(twoPi * float64(i) / ruledQuadricAzimuthProbes))
 		if !ok {
 			return false
 		}
@@ -161,7 +161,7 @@ func ruledQuadricConditioning(base Surface, quad Quadric, res Resolution) bool {
 // returns the smallest, reading the sweep as the circle it is.
 func minimumBranchGap(gaps []float64, gapAt func(float64) (float64, bool)) float64 {
 	n := len(gaps)
-	step := twoPi / float64(n)
+	step := float64(twoPi / float64(n))
 	least := stdmath.Inf(1)
 	for i, g := range gaps {
 		if g > gaps[(i+n-1)%n] || g > gaps[(i+1)%n] {
@@ -170,7 +170,7 @@ func minimumBranchGap(gaps []float64, gapAt func(float64) (float64, bool)) float
 		u := ExtremumOnBracket(func(u float64) float64 {
 			gap, _ := gapAt(u)
 			return gap
-		}, float64(i-1)*step, float64(i+1)*step, false)
+		}, float64(float64(i-1)*step), float64(float64(i+1)*step), false)
 		if gap, ok := gapAt(u); ok {
 			g = stdmath.Min(g, gap)
 		}
@@ -190,7 +190,7 @@ func ruledSubstitutionAdmits(base Surface, quad Quadric, res Resolution) bool {
 		return false // a degenerate (planar) quadric: the plane∩ruled conics are their own closed form
 	}
 	for i := range ruledQuadricAzimuthProbes {
-		r := straightRulingAt(base, twoPi*float64(i)/ruledQuadricAzimuthProbes)
+		r := straightRulingAt(base, float64(twoPi*float64(i)/ruledQuadricAzimuthProbes))
 		if r.SecondDiffScale > res.Weld() {
 			return false
 		}
@@ -223,7 +223,7 @@ func ruledQuadricWindowConditioning(l RuledQuadricLoop, res Resolution) bool {
 	}
 	widest := 0.0
 	for i := 1; i < ruledQuadricWindowProbes; i++ {
-		u := l.U0 + (l.U1-l.U0)*float64(i)/ruledQuadricWindowProbes
+		u := l.U0 + float64((l.U1-l.U0)*float64(i)/ruledQuadricWindowProbes)
 		widest = stdmath.Max(widest, l.coeffsAt(u).separation())
 	}
 	return widest > res.Stitch()

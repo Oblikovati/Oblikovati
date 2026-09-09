@@ -25,19 +25,19 @@ import stdmath "math"
 //
 //	spans, ok := periodicRootWindows(func(u float64) float64 { return co(u).discriminant() }, 720)
 func periodicRootWindows(disc func(float64) float64, probes int) ([][2]float64, bool) {
-	step := twoPi / float64(probes)
+	step := float64(twoPi / float64(probes))
 	samples := make([]float64, probes)
 	for i := range samples {
-		samples[i] = disc(float64(i) * step)
+		samples[i] = disc(float64(float64(i) * step))
 	}
 	var rises, falls []float64
 	for i, d := range samples {
 		prev := samples[(i+probes-1)%probes]
 		switch {
 		case prev <= 0 && d > 0:
-			rises = append(rises, foldStation(disc, float64(i-1)*step, float64(i)*step))
+			rises = append(rises, foldStation(disc, float64(float64(i-1)*step), float64(float64(i)*step)))
 		case prev > 0 && d <= 0:
-			falls = append(falls, foldStation(disc, float64(i-1)*step, float64(i)*step))
+			falls = append(falls, foldStation(disc, float64(float64(i-1)*step), float64(float64(i)*step)))
 		}
 	}
 	if len(rises) == 0 && len(falls) == 0 {
@@ -87,7 +87,7 @@ func nextStationAbove(falls []float64, s0 float64) float64 {
 func foldStation(disc func(float64) float64, lo, hi float64) float64 {
 	loPositive := disc(lo) > 0
 	for range foldBisectionSteps {
-		mid := (lo + hi) / 2
+		mid := float64((lo + hi) / 2)
 		if (disc(mid) > 0) == loPositive {
 			lo = mid
 			continue

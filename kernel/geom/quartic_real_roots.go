@@ -44,14 +44,14 @@ const quarticRealImagTol = 1e-9
 // candidates coincide to within a relative floor (a genuinely repeated root, e.g. an exact
 // tangency).
 func RealQuarticRoots(c0, c1, c2, c3, c4 float64) []float64 {
-	b3, b2, b1, b0 := c3/c4, c2/c4, c1/c4, c0/c4
+	b3, b2, b1, b0 := float64(c3/c4), float64(c2/c4), float64(c1/c4), float64(c0/c4)
 	// Depress: t = y − b3/4 kills the cubic term, giving y⁴+p·y²+q·y+s = 0.
-	p := b2 - 3*b3*b3/8
-	q := b3*b3*b3/8 - b3*b2/2 + b1
-	s := -3*b3*b3*b3*b3/256 + b3*b3*b2/16 - b3*b1/4 + b0
+	p := b2 - float64(3*b3*b3/8)
+	q := float64(b3*b3*b3/8) - float64(b3*b2/2) + b1
+	s := float64(-3*b3*b3*b3*b3/256) + float64(b3*b3*b2/16) - float64(b3*b1/4) + b0
 
 	ys := ferrariDepressedRoots(p, q, s)
-	shift := complex(b3/4, 0)
+	shift := complex(float64(b3/4), 0)
 	var out []float64
 	for _, y := range ys {
 		t := real(y) - real(shift)
@@ -98,9 +98,9 @@ func ferrariDepressedRoots(p, q, s float64) [4]complex128 {
 		r1, r2 := cmplx.Sqrt(z1), cmplx.Sqrt(z2)
 		return [4]complex128{r1, -r1, r2, -r2}
 	}
-	m := largestRealRootOfCubic(8, 8*p, 2*p*p-8*s, -q*q)
-	sq2m := cmplx.Sqrt(complex(2*m, 0))
-	half := complex(p/2+m, 0)
+	m := largestRealRootOfCubic(8, float64(8*p), float64(2*p*p)-float64(8*s), float64(-q*q))
+	sq2m := cmplx.Sqrt(complex(float64(2*m), 0))
+	half := complex(float64(p/2)+m, 0)
 	qTerm := complex(q, 0) / (2 * sq2m)
 	z1a, z1b := complexQuadraticRoots(complex(1, 0), -sq2m, half+qTerm)
 	z2a, z2b := complexQuadraticRoots(complex(1, 0), sq2m, half-qTerm)
@@ -125,7 +125,7 @@ func newtonPolishRoot(t float64, coeffs []float64) float64 {
 		if fp == 0 {
 			break
 		}
-		t -= f / fp
+		t -= float64(f / fp)
 	}
 	return t
 }
@@ -134,8 +134,8 @@ func newtonPolishRoot(t float64, coeffs []float64) float64 {
 // the numerically strongest way to read both (Numerical Recipes §5.3).
 func hornerValueAndSlope(coeffs []float64, t float64) (f, slope float64) {
 	for i := len(coeffs) - 1; i >= 0; i-- {
-		slope = slope*t + f
-		f = f*t + coeffs[i]
+		slope = float64(slope*t) + f
+		f = float64(f*t) + coeffs[i]
 	}
 	return f, slope
 }
@@ -159,7 +159,7 @@ func realRootsUpToQuartic(c0, c1, c2, c3, c4 float64) []float64 {
 	case stdmath.Abs(c2) > trigLeadingZero*scale:
 		return realQuadraticRoots(c0, c1, c2)
 	case stdmath.Abs(c1) > trigLeadingZero*scale:
-		return []float64{-c0 / c1}
+		return []float64{float64(-c0 / c1)}
 	}
 	return nil // a constant: either no root or every t, and neither is a root SET
 }
@@ -168,12 +168,12 @@ func realRootsUpToQuartic(c0, c1, c2, c3, c4 float64) []float64 {
 // n³+p·n+q and solved by the same Cardano/Viète split the resolvent cubic above uses, then
 // Newton-polished against the original.
 func realCubicRoots(c0, c1, c2, c3 float64) []float64 {
-	a, b, c := c2/c3, c1/c3, c0/c3
-	p := b - a*a/3
-	q := 2*a*a*a/27 - a*b/3 + c
+	a, b, c := float64(c2/c3), float64(c1/c3), float64(c0/c3)
+	p := b - float64(a*a/3)
+	q := float64(2*a*a*a/27) - float64(a*b/3) + c
 	var out []float64
 	for _, n := range depressedCubicRealRoots(p, q) {
-		t := newtonPolishRoot(n-a/3, []float64{c0, c1, c2, c3})
+		t := newtonPolishRoot(n-float64(a/3), []float64{c0, c1, c2, c3})
 		out = appendDedupedRoot(out, t, monicScale(a, b, c))
 	}
 	return out
@@ -182,15 +182,15 @@ func realCubicRoots(c0, c1, c2, c3 float64) []float64 {
 // realQuadraticRoots returns the real roots of c2·t²+c1·t+c0 = 0 (c2 ≠ 0) by the cancellation-free
 // form (q = −(b + sign(b)·√Δ)/2, roots q/a and c/q).
 func realQuadraticRoots(c0, c1, c2 float64) []float64 {
-	disc := c1*c1 - 4*c2*c0
+	disc := float64(c1*c1) - float64(4*c2*c0)
 	if disc < 0 {
 		return nil
 	}
-	q := -0.5 * (c1 + stdmath.Copysign(stdmath.Sqrt(disc), nonZeroSign(c1)))
+	q := float64(-0.5 * (c1 + stdmath.Copysign(stdmath.Sqrt(disc), nonZeroSign(c1))))
 	if q == 0 {
 		return []float64{0} // both roots are the origin
 	}
-	return appendDedupedRoot([]float64{q / c2}, c0/q, monicScale(c1/c2, c0/c2))
+	return appendDedupedRoot([]float64{float64(q / c2)}, float64(c0/q), monicScale(float64(c1/c2), float64(c0/c2)))
 }
 
 // largestRealRootOfCubic returns the largest real root of a·m³+b·m²+c·m+d=0 (a≠0) — a
@@ -199,9 +199,9 @@ func realQuadraticRoots(c0, c1, c2 float64) []float64 {
 // trigonometric form (three real roots), per the sign of the Cardano discriminant
 // (q/2)²+(p/3)³ (Numerical Recipes §5.6).
 func largestRealRootOfCubic(a, b, c, d float64) float64 {
-	bigA, bigB, bigC := b/a, c/a, d/a
-	p := bigB - bigA*bigA/3
-	q := 2*bigA*bigA*bigA/27 - bigA*bigB/3 + bigC
+	bigA, bigB, bigC := float64(b/a), float64(c/a), float64(d/a)
+	p := bigB - float64(bigA*bigA/3)
+	q := float64(2*bigA*bigA*bigA/27) - float64(bigA*bigB/3) + bigC
 	roots := depressedCubicRealRoots(p, q)
 	best := roots[0]
 	for _, r := range roots[1:] {
@@ -209,31 +209,31 @@ func largestRealRootOfCubic(a, b, c, d float64) float64 {
 			best = r
 		}
 	}
-	return best - bigA/3
+	return best - float64(bigA/3)
 }
 
 // depressedCubicRealRoots returns every real root of n³+p·n+q=0 (always ≥1) via Cardano's
 // radical form (disc>0: one real root) or the trigonometric Viète form (disc<0: three real
 // roots), disc = (q/2)²+(p/3)³.
 func depressedCubicRealRoots(p, q float64) []float64 {
-	disc := q*q/4 + p*p*p/27
+	disc := float64(q*q/4) + float64(p*p*p/27)
 	switch {
 	case disc > 0:
 		sq := stdmath.Sqrt(disc)
-		return []float64{stdmath.Cbrt(-q/2+sq) + stdmath.Cbrt(-q/2-sq)}
+		return []float64{stdmath.Cbrt(float64(-q/2)+sq) + stdmath.Cbrt(float64(-q/2)-sq)}
 	case disc == 0:
 		if p == 0 {
 			return []float64{0}
 		}
-		u := stdmath.Cbrt(-q / 2)
-		return []float64{2 * u, -u}
+		u := stdmath.Cbrt(float64(-q / 2))
+		return []float64{float64(2 * u), -u}
 	default: // disc < 0 ⇒ p < 0 (three distinct real roots — Viète's trigonometric substitution)
-		radius := stdmath.Sqrt(-p * p * p / 27)
-		phi := stdmath.Acos(math.Clamp(-q/(2*radius), -1, 1))
-		amp := 2 * stdmath.Sqrt(-p/3)
+		radius := stdmath.Sqrt(float64(-p * p * p / 27))
+		phi := stdmath.Acos(math.Clamp(float64(-q/(2*radius)), -1, 1))
+		amp := float64(2 * stdmath.Sqrt(float64(-p/3)))
 		roots := make([]float64, 3)
 		for k := range roots {
-			roots[k] = amp * stdmath.Cos((phi-2*stdmath.Pi*float64(k))/3)
+			roots[k] = float64(amp * stdmath.Cos(float64((phi-float64(2*stdmath.Pi*float64(k)))/3)))
 		}
 		return roots
 	}

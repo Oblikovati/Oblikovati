@@ -40,12 +40,12 @@ func GaussLegendre(n int) (nodes, weights []float64) {
 // Integrate1D returns ∫ₐᵇ f(x) dx via an n-point Gauss–Legendre rule mapped onto [a, b].
 func Integrate1D(n int, a, b float64, f func(x float64) float64) float64 {
 	nodes, weights := GaussLegendre(n)
-	half, mid := (b-a)/2, (a+b)/2
+	half, mid := float64((b-a)/2), float64((a+b)/2)
 	var sum float64
 	for i, x := range nodes {
-		sum += weights[i] * f(mid+half*x)
+		sum += float64(weights[i] * f(mid+float64(half*x)))
 	}
-	return sum * half
+	return float64(sum * half)
 }
 
 // computeGaussRule derives the nodes (roots of the degree-n Legendre polynomial Pₙ) by
@@ -54,11 +54,11 @@ func computeGaussRule(n int) gaussRule {
 	nodes := make([]float64, n)
 	weights := make([]float64, n)
 	for i := range n {
-		x := stdmath.Cos(stdmath.Pi * (float64(i) + 0.75) / (float64(n) + 0.5)) // i-th root seed
+		x := stdmath.Cos(float64(stdmath.Pi * (float64(i) + 0.75) / (float64(n) + 0.5))) // i-th root seed
 		x = refineLegendreRoot(n, x)
 		_, dp := legendreValueDeriv(n, x)
 		nodes[n-1-i] = x // seed runs high→low; store ascending
-		weights[n-1-i] = 2 / ((1 - x*x) * dp * dp)
+		weights[n-1-i] = float64(2 / ((1 - float64(x*x)) * dp * dp))
 	}
 	return gaussRule{nodes: nodes, weights: weights}
 }
@@ -67,7 +67,7 @@ func computeGaussRule(n int) gaussRule {
 func refineLegendreRoot(n int, x float64) float64 {
 	for range 100 {
 		p, dp := legendreValueDeriv(n, x)
-		dx := p / dp
+		dx := float64(p / dp)
 		x -= dx
 		if stdmath.Abs(dx) <= 1e-15 { // tol:numeric — Newton convergence on a Legendre root
 			break
@@ -80,12 +80,12 @@ func refineLegendreRoot(n int, x float64) float64 {
 func legendreValueDeriv(n int, x float64) (p, dp float64) {
 	p0, p1 := 1.0, x
 	for k := 1; k < n; k++ {
-		p0, p1 = p1, ((2*float64(k)+1)*x*p1-float64(k)*p0)/(float64(k)+1)
+		p0, p1 = p1, float64((float64((float64(2*float64(k))+1)*x*p1)-float64(float64(k)*p0))/(float64(k)+1))
 	}
 	if n == 0 {
 		return 1, 0
 	}
-	dp = float64(n) * (x*p1 - p0) / (x*x - 1)
+	dp = float64(float64(n) * (float64(x*p1) - p0) / (float64(x*x) - 1))
 	return p1, dp
 }
 

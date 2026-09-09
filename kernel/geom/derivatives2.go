@@ -12,13 +12,13 @@ func CurveDerivatives2(c Curve2, t float64) (d1, d2, d3 math.Vector2) {
 	case Line2d, LineSegment2d, Polyline2d:
 		return c.TangentAt(t), math.Vector2{}, math.Vector2{}
 	case Circle2d:
-		return circularDers2(math.V2(1, 0), math.V2(0, 1), g.Radius, g.Radius, twoPi*t, twoPi)
+		return circularDers2(math.V2(1, 0), math.V2(0, 1), g.Radius, g.Radius, float64(twoPi*t), twoPi)
 	case Arc2d:
 		return circularDers2(math.V2(1, 0), math.V2(0, 1), g.Radius, g.Radius, g.angleAt(t), g.SweepAngle)
 	case EllipseFull2d:
-		return circularDers2(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, twoPi*t, twoPi)
+		return circularDers2(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, float64(twoPi*t), twoPi)
 	case EllipticalArc2d:
-		return circularDers2(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, g.StartAngle+t*g.SweepAngle, g.SweepAngle)
+		return circularDers2(g.MajorAxis.AsVector(), g.minorAxis(), g.MajorRadius, g.MinorRadius, g.StartAngle+float64(t*g.SweepAngle), g.SweepAngle)
 	case BSplineCurve2d:
 		ders := g.DersAt(t, 3)
 		return ders[1], ders[2], ders[3]
@@ -31,9 +31,9 @@ func CurveDerivatives2(c Curve2, t float64) (d1, d2, d3 math.Vector2) {
 // with angle = … + t·rate (the 2D twin of circularDers3).
 func circularDers2(major, minor math.Vector2, a, b, angle, rate float64) (d1, d2, d3 math.Vector2) {
 	cos, sin := cosSin(angle)
-	d1 = major.Scale(-a * sin).Add(minor.Scale(b * cos)).Scale(rate)
-	d2 = major.Scale(-a * cos).Add(minor.Scale(-b * sin)).Scale(rate * rate)
-	d3 = major.Scale(a * sin).Add(minor.Scale(-b * cos)).Scale(rate * rate * rate)
+	d1 = major.Scale(float64(-a * sin)).Add(minor.Scale(float64(b * cos))).Scale(rate)
+	d2 = major.Scale(float64(-a * cos)).Add(minor.Scale(float64(-b * sin))).Scale(float64(rate * rate))
+	d3 = major.Scale(float64(a * sin)).Add(minor.Scale(float64(-b * cos))).Scale(float64(rate * rate * rate))
 	return d1, d2, d3
 }
 
@@ -44,12 +44,12 @@ func circularDers2(major, minor math.Vector2, a, b, angle, rate float64) (d1, d2
 // 5–50% error (#1323, #1402).
 func numericDers2(c Curve2, t float64) (d1, d2, d3 math.Vector2) {
 	h1, h2, h3 := stepD1, stepD2, stepD3
-	d1 = c.PointAt(t + h1).AsVector().Sub(c.PointAt(t - h1).AsVector()).Scale(1 / (2 * h1))
+	d1 = c.PointAt(t + h1).AsVector().Sub(c.PointAt(t - h1).AsVector()).Scale(float64(1 / (2 * h1)))
 	pm, p0, pp := c.PointAt(t-h2).AsVector(), c.PointAt(t).AsVector(), c.PointAt(t+h2).AsVector()
-	d2 = pp.Add(pm).Sub(p0.Scale(2)).Scale(1 / (h2 * h2))
-	q2m, qm := c.PointAt(t-2*h3).AsVector(), c.PointAt(t-h3).AsVector()
-	qp, q2p := c.PointAt(t+h3).AsVector(), c.PointAt(t+2*h3).AsVector()
-	d3 = q2p.Sub(qp.Scale(2)).Add(qm.Scale(2)).Sub(q2m).Scale(1 / (2 * h3 * h3 * h3))
+	d2 = pp.Add(pm).Sub(p0.Scale(2)).Scale(float64(1 / (h2 * h2)))
+	q2m, qm := c.PointAt(t-float64(2*h3)).AsVector(), c.PointAt(t-h3).AsVector()
+	qp, q2p := c.PointAt(t+h3).AsVector(), c.PointAt(t+float64(2*h3)).AsVector()
+	d3 = q2p.Sub(qp.Scale(2)).Add(qm.Scale(2)).Sub(q2m).Scale(float64(1 / (2 * h3 * h3 * h3)))
 	return d1, d2, d3
 }
 
@@ -61,5 +61,5 @@ func CurveCurvature2(c Curve2, t float64) float64 {
 	if speed == 0 {
 		return 0
 	}
-	return d1.Cross(d2) / (speed * speed * speed)
+	return float64(d1.Cross(d2) / (speed * speed * speed))
 }

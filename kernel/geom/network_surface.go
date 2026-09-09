@@ -41,9 +41,9 @@ func networkGrid(uCurves, vCurves []BSplineCurve) ([][]math.Point3, error) {
 	grid := make([][]math.Point3, nu)
 	for a := range nu {
 		grid[a] = make([]math.Point3, nv)
-		us := float64(a) / float64(nu-1)
+		us := float64(float64(a) / float64(nu-1))
 		for b := range nv {
-			vs := float64(b) / float64(nv-1)
+			vs := float64(float64(b) / float64(nv-1))
 			pu := uCurves[b].PointAt(us) // u-curve b at u-station a
 			pv := vCurves[a].PointAt(vs) // v-curve a at v-station b
 			if d := float64(pu.DistanceTo(pv)); d > gapTol {

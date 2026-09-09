@@ -92,9 +92,9 @@ func sampleSurfaceGrid(src Surface, samples int) (grid [][]math.Point3, uu, vv [
 	grid = make([][]math.Point3, samples+1)
 	for i := 0; i <= samples; i++ {
 		grid[i] = make([]math.Point3, samples+1)
-		u := ulo + (uhi-ulo)*uu[i]
+		u := ulo + float64((uhi-ulo)*uu[i])
 		for j := 0; j <= samples; j++ {
-			grid[i][j] = src.PointAt(u, vlo+(vhi-vlo)*vv[j])
+			grid[i][j] = src.PointAt(u, vlo+float64((vhi-vlo)*vv[j]))
 		}
 	}
 	return grid, uu, vv
@@ -109,11 +109,11 @@ func surfaceDeviation(src Surface, rebuilt BSplineSurface, samples int) float64 
 	rvlo, rvhi := rebuilt.VDomain()
 	maxDev := 0.0
 	for i := 0; i <= samples; i++ {
-		f := float64(i) / float64(samples)
+		f := float64(float64(i) / float64(samples))
 		for j := 0; j <= samples; j++ {
-			g := float64(j) / float64(samples)
-			p := src.PointAt(ulo+(uhi-ulo)*f, vlo+(vhi-vlo)*g)
-			q := rebuilt.PointAt(rulo+(ruhi-rulo)*f, rvlo+(rvhi-rvlo)*g)
+			g := float64(float64(j) / float64(samples))
+			p := src.PointAt(ulo+float64((uhi-ulo)*f), vlo+float64((vhi-vlo)*g))
+			q := rebuilt.PointAt(rulo+float64((ruhi-rulo)*f), rvlo+float64((rvhi-rvlo)*g))
 			if d := float64(p.DistanceTo(q)); d > maxDev {
 				maxDev = d
 			}
@@ -126,7 +126,7 @@ func surfaceDeviation(src Surface, rebuilt BSplineSurface, samples int) float64 
 func uniformParams(samples int) []float64 {
 	u := make([]float64, samples+1)
 	for i := range u {
-		u[i] = float64(i) / float64(samples)
+		u[i] = float64(float64(i) / float64(samples))
 	}
 	return u
 }

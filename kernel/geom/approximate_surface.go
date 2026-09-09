@@ -65,10 +65,10 @@ func surfaceNormalSystem(points []math.Point3, us, vs []float64, du, dv, nu, nv 
 		qc := [3]float64{float64(q.X), float64(q.Y), float64(q.Z)}
 		for x, r := range rows {
 			for c := range 3 {
-				rhs[r][c] += vals[x] * qc[c]
+				rhs[r][c] += float64(vals[x] * qc[c])
 			}
 			for y, rr := range rows {
-				ntn[r][rr] += vals[x] * vals[y]
+				ntn[r][rr] += float64(vals[x] * vals[y])
 			}
 		}
 	}
@@ -88,7 +88,7 @@ func activeTensorBasis(u, v float64, du, dv, nu, nv int, uknots, vknots []float6
 	for a := 0; a <= du; a++ {
 		for c := 0; c <= dv; c++ {
 			rows = append(rows, (su-du+a)*nv+(sv-dv+c))
-			vals = append(vals, bu[a]*bv[c])
+			vals = append(vals, float64(bu[a]*bv[c]))
 		}
 	}
 	return rows, vals
@@ -103,7 +103,7 @@ func applyRidge(ntn [][]float64) {
 			maxDiag = ntn[i][i]
 		}
 	}
-	eps := surfaceFitRidge * maxDiag
+	eps := float64(surfaceFitRidge * maxDiag)
 	for i := range ntn {
 		ntn[i][i] += eps
 	}
@@ -131,7 +131,7 @@ func uniformClampedKnots(nctrl, p int) []float64 {
 		knots[nctrl+i] = 1
 	}
 	for j := 1; j <= interior; j++ {
-		knots[p+j] = float64(j) / float64(interior+1)
+		knots[p+j] = float64(float64(j) / float64(interior+1))
 	}
 	return knots
 }

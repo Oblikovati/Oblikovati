@@ -60,7 +60,7 @@ func buildTorusCylLadder(t Torus, cyl Cylinder, v0, u0, v1, u1, weld float64) ([
 	ladder := make([]torusCylSample, 0, torusCylLadderSteps+1)
 	u := u0
 	for i := 0; i <= torusCylLadderSteps; i++ {
-		v := v0 + (v1-v0)*float64(i)/float64(torusCylLadderSteps)
+		v := v0 + float64((v1-v0)*float64(i)/float64(torusCylLadderSteps))
 		un, ok := solveTorusCylU(t, cyl, v, u, weld)
 		if !ok {
 			return nil, false // fold or non-convergence between the feet: the trim is not a single u(v)-graph
@@ -82,7 +82,7 @@ func buildTorusCylLadder(t Torus, cyl Cylinder, v0, u0, v1, u1, weld float64) ([
 func torusCylLandedOnFoot(t Torus, v1, uEnd, u1, weld float64) bool {
 	d := uEnd - u1
 	wrapped := stdmath.Atan2(stdmath.Sin(d), stdmath.Cos(d)) // shortest angular gap in (−π, π]
-	rho := stdmath.Abs(t.MajorRadius + t.MinorRadius*stdmath.Cos(v1))
+	rho := stdmath.Abs(t.MajorRadius + float64(t.MinorRadius*stdmath.Cos(v1)))
 	return stdmath.Abs(wrapped)*rho <= weld
 }
 
@@ -91,18 +91,18 @@ func torusCylLandedOnFoot(t Torus, v1, uEnd, u1, weld float64) bool {
 // |∂P/∂u| scale) — a double azimuth root, the section grazing the u-sweep — returning false (honest-reject).
 func solveTorusCylU(t Torus, cyl Cylinder, v, uSeed, weld float64) (float64, bool) {
 	a2 := cyl.AxisDir.AsVector()
-	rho := stdmath.Abs(t.MajorRadius + t.MinorRadius*stdmath.Cos(v))
+	rho := stdmath.Abs(t.MajorRadius + float64(t.MinorRadius*stdmath.Cos(v)))
 	u := uSeed
 	for range 40 {
 		e := cyl.Origin.VectorTo(t.PointAt(u, v)) // E = P(u,v) − O₂
 		ea := float64(e.Dot(a2))
-		g := float64(e.LengthSquared()) - ea*ea - cyl.Radius*cyl.Radius
+		g := float64(e.LengthSquared()) - float64(ea*ea) - float64(cyl.Radius*cyl.Radius)
 		du, _ := t.DerivativesAt(u, v) // ∂P/∂u
-		gp := 2*float64(e.Dot(du)) - 2*ea*float64(du.Dot(a2))
+		gp := float64(2*float64(e.Dot(du))) - float64(2*ea*float64(du.Dot(a2)))
 		if stdmath.Abs(gp) <= 2*rho*weld {
 			return 0, false // fold: |g′(u)| below the point-space floor
 		}
-		step := g / gp
+		step := float64(g / gp)
 		u -= step
 		if stdmath.Abs(step)*rho <= weld {
 			return u, true
@@ -114,7 +114,7 @@ func solveTorusCylU(t Torus, cyl Cylinder, v, uSeed, weld float64) (float64, boo
 // PointAt returns the point at t∈[0,1], evaluated on the torus at (u(v),v): v=V0+t(V1−V0), u re-polished from
 // the nearest ladder entry so the point is EXACT on the torus and on the cylinder to weld.
 func (a TorusCylinderArc) PointAt(t float64) math.Point3 {
-	v := a.V0 + t*(a.V1-a.V0)
+	v := a.V0 + float64(t*(a.V1-a.V0))
 	return a.Torus.PointAt(a.polishU(v), v)
 }
 
@@ -143,7 +143,7 @@ func (a TorusCylinderArc) nearestLadderU(v float64) float64 {
 // (du/dv = −g_v/g_u). The chord-and-angle edge sampler drives off PointAt, so a large tangent near a fold is
 // harmless.
 func (a TorusCylinderArc) TangentAt(t float64) math.Vector3 {
-	v := a.V0 + t*(a.V1-a.V0)
+	v := a.V0 + float64(t*(a.V1-a.V0))
 	u := a.polishU(v)
 	du, dv := a.Torus.DerivativesAt(u, v)
 	return du.Scale(math.Scalar(a.dUdV(u, v))).Add(dv).Scale(math.Scalar(a.V1 - a.V0))
@@ -156,12 +156,12 @@ func (a TorusCylinderArc) dUdV(u, v float64) float64 {
 	e := a.Cyl.Origin.VectorTo(a.Torus.PointAt(u, v))
 	ea := float64(e.Dot(a2))
 	du, dv := a.Torus.DerivativesAt(u, v)
-	gu := 2*float64(e.Dot(du)) - 2*ea*float64(du.Dot(a2))
-	gv := 2*float64(e.Dot(dv)) - 2*ea*float64(dv.Dot(a2))
+	gu := float64(2*float64(e.Dot(du))) - float64(2*ea*float64(du.Dot(a2)))
+	gv := float64(2*float64(e.Dot(dv))) - float64(2*ea*float64(dv.Dot(a2)))
 	if gu == 0 {
 		return 0
 	}
-	return -gv / gu
+	return float64(-gv / gu)
 }
 
 // Domain returns [0, 1].

@@ -54,7 +54,7 @@ func TransformSurface(s Surface, m math.Matrix4) (Surface, error) {
 	case Cone:
 		return transformCone(g, m)
 	case Sphere:
-		return NewSphere(m.TransformPoint(g.Center), g.Radius*scale)
+		return NewSphere(m.TransformPoint(g.Center), float64(g.Radius*scale))
 	case Torus:
 		return transformTorus(g, m, scale)
 	case BSplineSurface:
@@ -92,7 +92,7 @@ func transformCircle(c Circle, m math.Matrix4, scale float64) (Circle, error) {
 	if err != nil {
 		return Circle{}, err
 	}
-	return Circle{Center: m.TransformPoint(c.Center), Normal: n, RefDir: ref, Radius: c.Radius * scale}, nil
+	return Circle{Center: m.TransformPoint(c.Center), Normal: n, RefDir: ref, Radius: float64(c.Radius * scale)}, nil
 }
 
 func transformArc(a Arc3d, m math.Matrix4, scale float64) (Arc3d, error) {
@@ -106,12 +106,12 @@ func transformArc(a Arc3d, m math.Matrix4, scale float64) (Arc3d, error) {
 	}
 	return Arc3d{
 		Center: m.TransformPoint(a.Center), Normal: n, RefDir: ref,
-		Radius: a.Radius * scale, StartAngle: a.StartAngle, SweepAngle: a.SweepAngle,
+		Radius: float64(a.Radius * scale), StartAngle: a.StartAngle, SweepAngle: a.SweepAngle,
 	}, nil
 }
 
 func transformCylinder(c Cylinder, m math.Matrix4, scale float64) (Cylinder, error) {
-	out, err := NewCylinder(m.TransformPoint(c.Origin), m.TransformVector(c.AxisDir.AsVector()), c.Radius*scale)
+	out, err := NewCylinder(m.TransformPoint(c.Origin), m.TransformVector(c.AxisDir.AsVector()), float64(c.Radius*scale))
 	return out, err
 }
 
@@ -122,7 +122,7 @@ func transformCone(c Cone, m math.Matrix4) (Cone, error) {
 
 func transformTorus(t Torus, m math.Matrix4, scale float64) (Torus, error) {
 	out, err := NewTorus(m.TransformPoint(t.Center), m.TransformVector(t.AxisDir.AsVector()),
-		t.MajorRadius*scale, t.MinorRadius*scale)
+		float64(t.MajorRadius*scale), float64(t.MinorRadius*scale))
 	return out, err
 }
 
@@ -184,5 +184,5 @@ func similarityScale(m math.Matrix4) (float64, error) {
 	if stdmath.Abs(sx-sy) > tol*sx || stdmath.Abs(sx-sz) > tol*sx {
 		return 0, fmt.Errorf("geom.similarityScale: non-uniform scale (axis lengths %g,%g,%g); only similarity transforms are supported", sx, sy, sz)
 	}
-	return (sx + sy + sz) / 3, nil
+	return float64((sx + sy + sz) / 3), nil
 }

@@ -61,7 +61,7 @@ func insertBlend(p int, knots []float64, tmp, out []hpoint4, u float64, k, s, r 
 	for j := 1; j <= r; j++ {
 		L = k - p + j
 		for i := 0; i <= p-j-s; i++ {
-			alpha := (u - knots[L+i]) / (knots[i+k+1] - knots[L+i])
+			alpha := float64((u - knots[L+i]) / (knots[i+k+1] - knots[L+i]))
 			tmp[i] = tmp[i].lerp(tmp[i+1], alpha)
 		}
 		out[L] = tmp[0]

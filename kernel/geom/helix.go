@@ -55,7 +55,7 @@ func (h Helix3d) binormal() math.Vector3 { return h.Axis.Cross(h.RefDir) }
 
 // angleAt returns the signed winding angle at parameter t (negative when clockwise).
 func (h Helix3d) angleAt(t float64) float64 {
-	a := twoPi * h.Turns * t
+	a := float64(twoPi * h.Turns * t)
 	if h.Clockwise {
 		return -a
 	}
@@ -64,11 +64,11 @@ func (h Helix3d) angleAt(t float64) float64 {
 
 // radiusAt returns the radius at parameter t (StartRadius plus the per-turn growth).
 func (h Helix3d) radiusAt(t float64) float64 {
-	return h.StartRadius + h.RadialPerTurn*h.Turns*t
+	return h.StartRadius + float64(h.RadialPerTurn*h.Turns*t)
 }
 
 // heightAt returns the axial advance at parameter t.
-func (h Helix3d) heightAt(t float64) float64 { return h.AxialPerTurn * h.Turns * t }
+func (h Helix3d) heightAt(t float64) float64 { return float64(h.AxialPerTurn * h.Turns * t) }
 
 // PointAt returns the position at parameter t.
 func (h Helix3d) PointAt(t float64) math.Point3 {
@@ -84,12 +84,12 @@ func (h Helix3d) TangentAt(t float64) math.Vector3 {
 	cos, sin := cosSin(ang)
 	ref, bin := h.RefDir.AsVector(), h.binormal()
 
-	dRadius := h.RadialPerTurn * h.Turns
-	dAngle := twoPi * h.Turns
+	dRadius := float64(h.RadialPerTurn * h.Turns)
+	dAngle := float64(twoPi * h.Turns)
 	if h.Clockwise {
 		dAngle = -dAngle
 	}
-	dHeight := h.AxialPerTurn * h.Turns
+	dHeight := float64(h.AxialPerTurn * h.Turns)
 
 	radialUnit := ref.Scale(math.Scalar(cos)).Add(bin.Scale(math.Scalar(sin)))
 	radialTangent := ref.Scale(math.Scalar(-sin)).Add(bin.Scale(math.Scalar(cos)))
@@ -111,9 +111,9 @@ func (h Helix3d) EndPoint() math.Point3   { return h.PointAt(1) }
 // to ~1e-9 otherwise.
 func (h Helix3d) Length() float64 {
 	if h.RadialPerTurn == 0 {
-		circumference := twoPi * h.StartRadius
+		circumference := float64(twoPi * h.StartRadius)
 		perTurn := stdmath.Hypot(circumference, h.AxialPerTurn)
-		return perTurn * h.Turns
+		return float64(perTurn * h.Turns)
 	}
 	return simpsonLength(h.speedAt, 0, 1, helixLengthIntervals)
 }
@@ -127,15 +127,15 @@ const helixLengthIntervals = 256
 
 // simpsonLength integrates f over [a, b] by composite Simpson with n (even) intervals.
 func simpsonLength(f func(float64) float64, a, b float64, n int) float64 {
-	step := (b - a) / float64(n)
+	step := float64((b - a) / float64(n))
 	sum := f(a) + f(b)
 	for i := 1; i < n; i++ {
-		x := a + float64(i)*step
+		x := a + float64(float64(i)*step)
 		if i%2 == 1 {
-			sum += 4 * f(x)
+			sum += float64(4 * f(x))
 		} else {
-			sum += 2 * f(x)
+			sum += float64(2 * f(x))
 		}
 	}
-	return sum * step / 3
+	return float64(sum * step / 3)
 }

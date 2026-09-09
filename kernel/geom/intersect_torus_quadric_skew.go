@@ -95,7 +95,7 @@ func torusWindowLoops(t Torus, q Quadric, anchor float64, spans [][2]float64, re
 // each end, because periodicRootWindows returns the fold on the non-positive side where the pair has
 // already merged and every candidate reads the same azimuth. ok=false is an unreadable station.
 func torusLaneOwnsWindow(l TorusQuadricLoop) (owns, ok bool) {
-	step := (l.V1 - l.V0) / torusWindowProbes
+	step := float64((l.V1 - l.V0) / torusWindowProbes)
 	first, okA := torusLaneOwnsStation(l, l.V0+step)
 	last, okB := torusLaneOwnsStation(l, l.V1-step)
 	return first && last, okA && okB
@@ -121,8 +121,8 @@ func torusLaneOwnsStation(l TorusQuadricLoop, v float64) (owns, ok bool) {
 func torusLoopsAccountForEveryAzimuth(t Torus, q Quadric, loops []Curve3) SectionDecline {
 	step := twoPi / torusStationProbes
 	for i := range torusStationProbes {
-		v := step * float64(i)
-		if nearAWindowEnd(loops, v, step/2) {
+		v := float64(step * float64(i))
+		if nearAWindowEnd(loops, v, float64(step/2)) {
 			continue
 		}
 		if len(torusSecondHarmonicAt(t, q, v).azimuths()) != 2*loopsCovering(loops, v) {

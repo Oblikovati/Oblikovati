@@ -24,8 +24,8 @@ func Segment2dIntersection(a, b LineSegment2d, tol float64) (pt math.Point2, s, 
 		return math.Point2{}, 0, 0, false // parallel or degenerate
 	}
 	w := a.StartPoint.VectorTo(b.StartPoint)
-	s = w.Cross(d) / denom
-	t = w.Cross(r) / denom
+	s = float64(w.Cross(d) / denom)
+	t = float64(w.Cross(r) / denom)
 	if s < -tol || s > 1+tol || t < -tol || t > 1+tol {
 		return math.Point2{}, 0, 0, false
 	}

@@ -110,7 +110,7 @@ func renormalize(c BSplineCurve) BSplineCurve {
 	}
 	k := make([]float64, len(c.Knots))
 	for i, u := range c.Knots {
-		k[i] = (u - lo) / (hi - lo)
+		k[i] = float64((u - lo) / (hi - lo))
 	}
 	bc, _ := NewBSplineCurve(c.Degree, c.Ctrl, c.Weights, k)
 	return bc

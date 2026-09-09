@@ -25,7 +25,7 @@ func LineCircle2dIntersection(l Line2d, c Circle2d, tol float64) []math.Point2 {
 	if dist > c.Radius+tol {
 		return nil
 	}
-	half := stdmath.Sqrt(stdmath.Max(0, c.Radius*c.Radius-dist*dist))
+	half := stdmath.Sqrt(stdmath.Max(0, float64(c.Radius*c.Radius)-float64(dist*dist)))
 	if half <= tol {
 		return []math.Point2{foot}
 	}
@@ -62,10 +62,10 @@ func Circle2dCircle2dIntersection(c1, c2 Circle2d, tol float64) []math.Point2 {
 		return nil
 	}
 	// Distance from c1.Center to the radical line, along the center direction.
-	a := (d*d + c1.Radius*c1.Radius - c2.Radius*c2.Radius) / (2 * d)
-	dir := c1.Center.VectorTo(c2.Center).Scale(1 / d) // unit
+	a := float64((float64(d*d) + float64(c1.Radius*c1.Radius) - float64(c2.Radius*c2.Radius)) / (2 * d))
+	dir := c1.Center.VectorTo(c2.Center).Scale(float64(1 / d)) // unit
 	mid := c1.Center.TranslateBy(dir.Scale(a))
-	h2 := c1.Radius*c1.Radius - a*a
+	h2 := float64(c1.Radius*c1.Radius) - float64(a*a)
 	if h2 <= tol*tol {
 		return []math.Point2{mid}
 	}
@@ -82,8 +82,8 @@ func onSegment2d(seg LineSegment2d, p math.Point2, tol float64) bool {
 	if lenSq == 0 {
 		return false
 	}
-	t := seg.StartPoint.VectorTo(p).Dot(v) / lenSq
-	eps := tol / stdmath.Sqrt(lenSq) // geometric tol → parameter slack
+	t := float64(seg.StartPoint.VectorTo(p).Dot(v) / lenSq)
+	eps := float64(tol / stdmath.Sqrt(lenSq)) // geometric tol → parameter slack
 	return t >= -eps && t <= 1+eps
 }
 

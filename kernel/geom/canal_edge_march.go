@@ -185,7 +185,7 @@ func projectIntoSectionPlane(seed math.Point3, an CanalEdgeAnchor, p, q math.Vec
 // |C−foot|−r distances, Jacobian rows the unit foot normals projected into (p, q) — the
 // envelope-theorem gradient of the distance-to-surface function.
 func newtonCanalCentre(a, b *canalMarchHostState, r float64, p, q math.Vector3, c math.Point3, weld float64) (math.Point3, CanalFoot, CanalFoot, error) {
-	tol := 0.25 * weld
+	tol := float64(0.25 * weld)
 	for range canalMarchMaxNewton {
 		fa, fb, g1, g2, err := canalStationResiduals(a, b, c, r)
 		if err != nil {
@@ -225,11 +225,11 @@ func solveCanalNewtonStep(c math.Point3, fa, fb CanalFoot, p, q math.Vector3, g1
 	nb := c.VectorTo(fb.P).Scale(-1)
 	a11, a12 := unitDot(na, p), unitDot(na, q)
 	a21, a22 := unitDot(nb, p), unitDot(nb, q)
-	det := a11*a22 - a12*a21
+	det := float64(a11*a22) - float64(a12*a21)
 	if stdmath.Abs(det) < canalTangentSineFloor(r, weld) {
 		return 0, 0, fmt.Errorf("near-tangent hosts: section-plane normal wedge %.3e under floor %.3e", det, canalTangentSineFloor(r, weld))
 	}
-	return (-g1*a22 + g2*a12) / det, (-g2*a11 + g1*a21) / det, nil
+	return float64((float64(-g1*a22) + float64(g2*a12)) / det), float64((float64(-g2*a11) + float64(g1*a21)) / det), nil
 }
 
 // canalTangentSineFloor is the conditioning floor on the section-plane normal wedge (the
@@ -237,7 +237,7 @@ func solveCanalNewtonStep(c math.Point3, fa, fb CanalFoot, p, q math.Vector3, g1
 // pattern, ADR-0042) floored at 1e-6 so a huge radius on a small model cannot demand a
 // wedge below numeric noise.
 func canalTangentSineFloor(r, weld float64) float64 {
-	return stdmath.Max(1e-6, weld/r)
+	return stdmath.Max(1e-6, float64(weld/r))
 }
 
 // unitDot is (unit(v))·w for a possibly non-unit v; 0 for a degenerate v.
@@ -246,13 +246,13 @@ func unitDot(v, w math.Vector3) float64 {
 	if l == 0 {
 		return 0
 	}
-	return float64(v.Dot(w)) / l
+	return float64(float64(v.Dot(w)) / l)
 }
 
 // dampCanalStep applies the Newton step with halving line-search on the squared residual
 // norm, keeping the centre in the section plane by stepping only along (p, q).
 func dampCanalStep(a, b *canalMarchHostState, c math.Point3, r float64, p, q math.Vector3, dx, dy, g1, g2 float64) math.Point3 {
-	best := g1*g1 + g2*g2
+	best := float64(g1*g1) + float64(g2*g2)
 	alpha := 1.0
 	for range 8 {
 		cand := c.TranslateBy(p.Scale(math.Scalar(alpha * dx))).TranslateBy(q.Scale(math.Scalar(alpha * dy)))
@@ -277,7 +277,7 @@ func canalResidualNorm(a, b *canalMarchHostState, c math.Point3, r float64) floa
 	}
 	g1 := float64(c.DistanceTo(fa.P)) - r
 	g2 := float64(c.DistanceTo(fb.P)) - r
-	return g1*g1 + g2*g2
+	return float64(g1*g1) + float64(g2*g2)
 }
 
 // acceptCanalStation runs the per-station invariants: feet at radius (within weld), frozen
@@ -336,7 +336,7 @@ func canalBallClearance(h CanalMarchHost, c math.Point3, f CanalFoot, r float64)
 	du, dv := h.derivsAtLifted(f.U, f.V)
 	for _, span := range []float64{canalBallClearanceSpanFrac, 2 * canalBallClearanceSpanFrac} {
 		for _, dir := range [4][2]float64{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
-			su, sv := paramSpanFor(du, dv, span*r, dir)
+			su, sv := paramSpanFor(du, dv, float64(span*r), dir)
 			p := h.pointAtLifted(f.U+su, f.V+sv)
 			if d := float64(c.DistanceTo(p)); d < r*(1-canalBallClearancePenetration) {
 				return fmt.Errorf("ball of radius %g penetrates host near foot (sample dist %g): radius past local curvature", r, d)
@@ -351,10 +351,10 @@ func canalBallClearance(h CanalMarchHost, c math.Point3, f CanalFoot, r float64)
 func paramSpanFor(du, dv math.Vector3, span float64, dir [2]float64) (su, sv float64) {
 	lu, lv := float64(du.Length()), float64(dv.Length())
 	if dir[0] != 0 && lu > 0 {
-		su = dir[0] * span / lu
+		su = float64(dir[0] * span / lu)
 	}
 	if dir[1] != 0 && lv > 0 {
-		sv = dir[1] * span / lv
+		sv = float64(dir[1] * span / lv)
 	}
 	return su, sv
 }

@@ -112,7 +112,7 @@ func projectArcToEllipse2d(pl Plane, k Arc3d) (Curve2, bool) {
 	ell := full.(EllipseFull2d)
 	lo, hi := k.Domain()
 	a0 := ellipseEccentricAngle(ell, planeUV(pl, k.PointAt(lo)))
-	am := ellipseEccentricAngle(ell, planeUV(pl, k.PointAt((lo+hi)/2)))
+	am := ellipseEccentricAngle(ell, planeUV(pl, k.PointAt(float64((lo+hi)/2))))
 	an := ellipseEccentricAngle(ell, planeUV(pl, k.PointAt(hi)))
 	start, sweep := arcSweepThroughMid(a0, am, an)
 	arc, err := NewEllipticalArc2d(ell.Center, ell.MajorAxis.AsVector(), ell.MajorRadius, ell.MinorRadius, start, sweep)
@@ -141,7 +141,7 @@ func arcConjugateSemiDiameters(pl Plane, k Arc3d) (u, v math.Vector2) {
 // when the minor radius collapses (a circle projected edge-on → a segment).
 func ellipseFromConjugate(center math.Point2, u, v math.Vector2) (Curve2, bool) {
 	uu, vv, uv := float64(u.Dot(u)), float64(v.Dot(v)), float64(u.Dot(v))
-	theta := 0.5 * stdmath.Atan2(2*uv, uu-vv)
+	theta := float64(0.5 * stdmath.Atan2(float64(2*uv), uu-vv))
 	c, s := math.Scalar(stdmath.Cos(theta)), math.Scalar(stdmath.Sin(theta))
 	p1 := u.Scale(c).Add(v.Scale(s))  // semi-diameter at θ
 	p2 := u.Scale(-s).Add(v.Scale(c)) // orthogonal semi-diameter at θ+90°
@@ -162,8 +162,8 @@ func ellipseFromConjugate(center math.Point2, u, v math.Vector2) (Curve2, bool) 
 // ellipseEccentricAngle returns the angle α with p = center + majorR·cosα·major + minorR·sinα·minor.
 func ellipseEccentricAngle(e EllipseFull2d, p math.Point2) float64 {
 	d := e.Center.VectorTo(p)
-	ca := float64(d.Dot(e.MajorAxis.AsVector())) / e.MajorRadius
-	sa := float64(d.Dot(e.minorAxis())) / e.MinorRadius
+	ca := float64(float64(d.Dot(e.MajorAxis.AsVector())) / e.MajorRadius)
+	sa := float64(float64(d.Dot(e.minorAxis())) / e.MinorRadius)
 	return stdmath.Atan2(sa, ca)
 }
 
@@ -204,7 +204,7 @@ func SampleCurve3(c Curve3, n int) []math.Point3 {
 	lo, hi := c.Domain()
 	pts := make([]math.Point3, n+1)
 	for i := range pts {
-		pts[i] = c.PointAt(lo + (hi-lo)*float64(i)/float64(n))
+		pts[i] = c.PointAt(lo + float64((hi-lo)*float64(i)/float64(n)))
 	}
 	return pts
 }

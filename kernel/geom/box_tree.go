@@ -113,10 +113,10 @@ func widestBoxAxis(box math.Box) int {
 func boxCentroidOnAxis(box math.Box, axis int) float64 {
 	switch axis {
 	case 0:
-		return float64(box.Min.X+box.Max.X) / 2
+		return float64(float64(box.Min.X+box.Max.X) / 2)
 	case 1:
-		return float64(box.Min.Y+box.Max.Y) / 2
+		return float64(float64(box.Min.Y+box.Max.Y) / 2)
 	default:
-		return float64(box.Min.Z+box.Max.Z) / 2
+		return float64(float64(box.Min.Z+box.Max.Z) / 2)
 	}
 }

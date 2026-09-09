@@ -207,7 +207,7 @@ func (t ssiTracer) growFromSeed(curves [][]math.Point3, seed math.Point3) [][]ma
 		return curves
 	}
 	pc, nb, no, ok := correctToBothSurfaces(t.base, t.other, seed, t.tol)
-	if !ok || nearAnyCurve(curves, pc, t.step*ssiDedupSteps) {
+	if !ok || nearAnyCurve(curves, pc, float64(t.step*ssiDedupSteps)) {
 		return curves // failed to correct, or lands on an already-traced curve (within a march step)
 	}
 	return append(curves, t.marchCurve(pc, nb, no))
@@ -263,13 +263,13 @@ func (tr ssiTracer) marchOneWay(start math.Point3, nb, no math.Vector3, forward 
 // newSSITracer derives the model-relative controller context from the base patch extent.
 func newSSITracer(base, other Surface, g SurfaceGrid) ssiTracer {
 	h0 := ssiStep(base, g)
-	extent := h0 / ssiStepFraction
+	extent := float64(h0 / ssiStepFraction)
 	return ssiTracer{
 		base: base, other: other, g: g,
 		step: h0, tol: ssiTolerance(base, g),
-		eps:  ssiChordFraction * extent,
-		hMin: ssiMinStepFraction * extent, hMax: ssiMaxStepFraction * extent,
-		arcCap: ssiMaxArcExtents * extent,
+		eps:  float64(ssiChordFraction * extent),
+		hMin: float64(ssiMinStepFraction * extent), hMax: float64(ssiMaxStepFraction * extent),
+		arcCap: float64(ssiMaxArcExtents * extent),
 		spent:  new(int),
 	}
 }

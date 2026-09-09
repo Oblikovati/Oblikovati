@@ -86,7 +86,7 @@ func chordParams(pts [][]float64) ([]float64, error) {
 	}
 	u := make([]float64, n)
 	for k := range u {
-		u[k] = cum[k] / total
+		u[k] = float64(cum[k] / total)
 	}
 	u[n-1] = 1
 	return u, nil
@@ -107,7 +107,7 @@ func averagedKnots(ubar []float64, p int) []float64 {
 		for i := j; i <= j+p-1; i++ {
 			sum += ubar[i]
 		}
-		knots[j+p] = sum / float64(p)
+		knots[j+p] = float64(sum / float64(p))
 	}
 	return knots
 }
@@ -142,7 +142,7 @@ func gaussSolve(a, b [][]float64) error {
 		eliminate(a, b, col)
 	}
 	for i := range a {
-		scaleRow(b[i], 1/a[i][i])
+		scaleRow(b[i], float64(1/a[i][i]))
 	}
 	return nil
 }
@@ -164,15 +164,15 @@ func eliminate(a, b [][]float64, col int) {
 		if r == col {
 			continue
 		}
-		f := a[r][col] / a[col][col]
+		f := float64(a[r][col] / a[col][col])
 		if f == 0 {
 			continue
 		}
 		for c := col; c < len(a); c++ {
-			a[r][c] -= f * a[col][c]
+			a[r][c] -= float64(f * a[col][c])
 		}
 		for c := range b[r] {
-			b[r][c] -= f * b[col][c]
+			b[r][c] -= float64(f * b[col][c])
 		}
 	}
 }
@@ -189,7 +189,7 @@ func coordDist(a, b []float64) float64 {
 	sum := 0.0
 	for i := range a {
 		d := a[i] - b[i]
-		sum += d * d
+		sum += float64(d * d)
 	}
 	return stdmath.Sqrt(sum)
 }

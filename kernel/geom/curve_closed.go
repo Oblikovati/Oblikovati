@@ -42,7 +42,7 @@ func curveGaugePoints(c Curve3, lo, hi float64) []math.Point3 {
 	const gaugeSamples = 8
 	pts := make([]math.Point3, 0, gaugeSamples+1)
 	for i := 0; i <= gaugeSamples; i++ {
-		pts = append(pts, c.PointAt(lo+(hi-lo)*float64(i)/gaugeSamples))
+		pts = append(pts, c.PointAt(lo+float64((hi-lo)*float64(i)/gaugeSamples)))
 	}
 	return pts
 }

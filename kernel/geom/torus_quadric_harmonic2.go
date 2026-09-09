@@ -69,8 +69,8 @@ func torusStationAt(t Torus, q Quadric, v float64) torusStation {
 	reachVec := mw0.Scale(2).Add(q.G.Scale(2))
 	m11, m22, m12 := inPlaneTensorEntries(q, e1, e2)
 	return torusStation{
-		rho:       t.MajorRadius + t.MinorRadius*cv,
-		constant:  float64(w0.Dot(mw0)) + 2*float64(q.G.Dot(w0)) + q.K,
+		rho:       t.MajorRadius + float64(t.MinorRadius*cv),
+		constant:  float64(w0.Dot(mw0)) + float64(2*float64(q.G.Dot(w0))) + q.K,
 		x:         float64(reachVec.Dot(e1)),
 		y:         float64(reachVec.Dot(e2)),
 		m11:       m11,
@@ -109,7 +109,7 @@ func axisInvariantEntries(q Quadric, m11, m22, m12 float64) bool {
 func (st torusStation) harmonic() torusHarmonic {
 	return torusHarmonic{
 		level: st.secondHarmonic().Level,
-		reach: st.rho * stdmath.Hypot(st.x, st.y),
+		reach: float64(st.rho * stdmath.Hypot(st.x, st.y)),
 		phase: stdmath.Atan2(st.y, st.x),
 	}
 }
@@ -129,12 +129,12 @@ type torusSecondHarmonic struct {
 // secondHarmonic rewrites the station's cos²/cos·sin/sin² terms as cos 2u and sin 2u (see the file
 // comment's half-angle identities), leaving the five coefficients of f.
 func (st torusStation) secondHarmonic() torusSecondHarmonic {
-	rr := st.rho * st.rho
+	rr := float64(st.rho * st.rho)
 	return torusSecondHarmonic{
-		Cos2: rr * (st.m11 - st.m22) / 2,
-		Sin2: rr * st.m12,
-		Cos1: st.rho * st.x,
-		Sin1: st.rho * st.y,
+		Cos2: float64(rr * (st.m11 - st.m22) / 2),
+		Sin2: float64(rr * st.m12),
+		Cos1: float64(st.rho * st.x),
+		Sin1: float64(st.rho * st.y),
 		// The term added to the constant ends in a DIVISION, and a division result is not a product,
 		// so no platform may fuse it into this add — which is what makes this spelling of the level the
 		// stable one and the closed form's `constant + m11·ρ²` the one that parted by an ulp on arm64
@@ -142,7 +142,7 @@ func (st torusStation) secondHarmonic() torusSecondHarmonic {
 		// exactly that reason. Keep the division last if this line is ever rewritten; an explicit
 		// float64() round of the term would pin it too, and was dropped only because it cannot fire
 		// here and a conversion that documents a mechanism it does not use reads as a live guard.
-		Level: st.constant + rr*(st.m11+st.m22)/2,
+		Level: st.constant + float64(rr*(st.m11+st.m22)/2),
 	}
 }
 
@@ -157,21 +157,21 @@ func torusSecondHarmonicAt(t Torus, q Quadric, v float64) torusSecondHarmonic {
 // valueAt evaluates f at one azimuth.
 func (h torusSecondHarmonic) valueAt(u float64) float64 {
 	cu, su := cosSin(u)
-	c2, s2 := cosSin(2 * u)
-	return h.Level + h.Cos1*cu + h.Sin1*su + h.Cos2*c2 + h.Sin2*s2
+	c2, s2 := cosSin(float64(2 * u))
+	return h.Level + float64(h.Cos1*cu) + float64(h.Sin1*su) + float64(h.Cos2*c2) + float64(h.Sin2*s2)
 }
 
 // slopeAt evaluates df/du at one azimuth.
 func (h torusSecondHarmonic) slopeAt(u float64) float64 {
 	cu, su := cosSin(u)
-	c2, s2 := cosSin(2 * u)
-	return -h.Cos1*su + h.Sin1*cu + 2*(h.Sin2*c2-h.Cos2*s2)
+	c2, s2 := cosSin(float64(2 * u))
+	return float64(-h.Cos1*su) + float64(h.Sin1*cu) + float64(2*(float64(h.Sin2*c2)-float64(h.Cos2*s2)))
 }
 
 // derivative returns df/du as a station polynomial of the SAME shape, so the extrema that name the
 // lanes are found by the same solver the roots are — no second machinery for the critical points.
 func (h torusSecondHarmonic) derivative() torusSecondHarmonic {
-	return torusSecondHarmonic{Cos2: 2 * h.Sin2, Sin2: -2 * h.Cos2, Cos1: h.Sin1, Sin1: -h.Cos1}
+	return torusSecondHarmonic{Cos2: float64(2 * h.Sin2), Sin2: float64(-2 * h.Cos2), Cos1: h.Sin1, Sin1: -h.Cos1}
 }
 
 // scale is the polynomial's own coefficient magnitude, what a residual is judged against. It carries
@@ -188,7 +188,7 @@ func (h torusSecondHarmonic) scale() float64 {
 func (h torusSecondHarmonic) azimuths() []float64 {
 	scale := h.scale()
 	out := make([]float64, 0, 4)
-	for _, u := range trigQuadraticRoots(2*h.Cos2, h.Sin2, h.Cos1, h.Sin1, h.Level-h.Cos2) {
+	for _, u := range trigQuadraticRoots(float64(2*h.Cos2), h.Sin2, h.Cos1, h.Sin1, h.Level-h.Cos2) {
 		u = h.polish(u)
 		if stdmath.Abs(h.valueAt(u)) <= torusRootResidualTol*scale {
 			out = append(out, u)
@@ -205,7 +205,7 @@ func (h torusSecondHarmonic) polish(u float64) float64 {
 		if d == 0 {
 			break
 		}
-		u -= h.valueAt(u) / d
+		u -= float64(h.valueAt(u) / d)
 	}
 	return wrapAngle(u)
 }

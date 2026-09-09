@@ -82,7 +82,7 @@ func centroidOf(pts []math.Point3) math.Point3 {
 	for _, p := range pts {
 		sum = sum.Add(p.AsVector())
 	}
-	return sum.Scale(1 / float64(len(pts))).AsPoint()
+	return sum.Scale(float64(1 / float64(len(pts)))).AsPoint()
 }
 
 // scatterMatrix returns M = Σ(pᵢ−c)(pᵢ−c)ᵀ, the unnormalized covariance whose eigenvectors
@@ -95,7 +95,7 @@ func scatterMatrix(pts []math.Point3, c math.Point3) [3][3]float64 {
 		row := [3]float64{float64(d.X), float64(d.Y), float64(d.Z)}
 		for i := range 3 {
 			for j := range 3 {
-				m[i][j] += row[i] * row[j]
+				m[i][j] += float64(row[i] * row[j])
 			}
 		}
 	}
@@ -122,7 +122,7 @@ func planeFrameFromEigen(values [3]float64, vectors [3][3]float64, res Resolutio
 		return math.Vector3{}, math.Vector3{}, math.Vector3{}, fmt.Errorf(
 			"geom: AveragePlane anchors are collinear/rank-deficient (in-plane spread ratio %.3e below floor "+
 				"%.3e; spreads(lo,mid,hi)=(%.6g,%.6g,%.6g)); need >=2 independent in-plane directions to fit a plane",
-			minorSpread/majorSpread, domainDegenerateTol, stdmath.Sqrt(stdmath.Max(0, values[lo])), minorSpread, majorSpread)
+			float64(minorSpread/majorSpread), domainDegenerateTol, stdmath.Sqrt(stdmath.Max(0, values[lo])), minorSpread, majorSpread)
 	}
 	nUnit, err := math.UnitVector3FromVector(columnVector(vectors, lo))
 	if err != nil {
@@ -207,7 +207,7 @@ const jacobiSkipFloor = 1e-30
 // vectors (vectors[i][k] is the i-th component of the k-th eigenvector).
 func jacobiEigen3(a [3][3]float64) (values [3]float64, vectors [3][3]float64) {
 	vectors = identity3()
-	floor := jacobiConvergedRelTol * jacobiConvergedRelTol * frobeniusNormSquared(a)
+	floor := float64(jacobiConvergedRelTol * jacobiConvergedRelTol * frobeniusNormSquared(a))
 	for range jacobiMaxSweeps {
 		if jacobiSweep(&a, &vectors) <= floor {
 			break
@@ -229,7 +229,7 @@ func frobeniusNormSquared(a [3][3]float64) float64 {
 	var sum float64
 	for i := range 3 {
 		for j := range 3 {
-			sum += a[i][j] * a[i][j]
+			sum += float64(a[i][j] * a[i][j])
 		}
 	}
 	return sum
@@ -243,7 +243,7 @@ func jacobiSweep(a, v *[3][3]float64) float64 {
 	for _, pq := range pairs {
 		jacobiRotate(a, v, pq[0], pq[1])
 	}
-	return a[0][1]*a[0][1] + a[0][2]*a[0][2] + a[1][2]*a[1][2]
+	return float64(a[0][1]*a[0][1]) + float64(a[0][2]*a[0][2]) + float64(a[1][2]*a[1][2])
 }
 
 // jacobiRotate applies the Givens rotation that zeroes a[p][q] using the t/c/s form (Golub &
@@ -255,10 +255,10 @@ func jacobiRotate(a, v *[3][3]float64, p, q int) {
 	if stdmath.Abs(apq) < jacobiSkipFloor {
 		return
 	}
-	theta := (a[q][q] - a[p][p]) / (2 * apq)
+	theta := float64((a[q][q] - a[p][p]) / (2 * apq))
 	t := jacobiRotationTangent(theta)
-	c := 1 / stdmath.Sqrt(t*t+1)
-	s := t * c
+	c := float64(1 / stdmath.Sqrt(float64(t*t)+1))
+	s := float64(t * c)
 	rotateMatrixEntries(a, p, q, c, s, t)
 	rotateEigenvectorColumns(v, p, q, c, s)
 }
@@ -270,20 +270,20 @@ func jacobiRotationTangent(theta float64) float64 {
 	if theta < 0 {
 		sign = -1
 	}
-	return sign / (stdmath.Abs(theta) + stdmath.Sqrt(theta*theta+1))
+	return float64(sign / (stdmath.Abs(theta) + stdmath.Sqrt(float64(theta*theta)+1)))
 }
 
 // rotateMatrixEntries applies the Jacobi rotation's effect on a's diagonal, zeroes the (p,q)
 // pair, and rotates the remaining row/column r ∉ {p,q} (Golub & Van Loan eq. 8.4.3-8.4.4).
 func rotateMatrixEntries(a *[3][3]float64, p, q int, c, s, t float64) {
 	apq := a[p][q]
-	a[p][p] -= t * apq
-	a[q][q] += t * apq
+	a[p][p] -= float64(t * apq)
+	a[q][q] += float64(t * apq)
 	a[p][q], a[q][p] = 0, 0
 	r := thirdIndex(p, q)
 	arp, arq := a[r][p], a[r][q]
-	a[r][p], a[p][r] = c*arp-s*arq, c*arp-s*arq
-	a[r][q], a[q][r] = s*arp+c*arq, s*arp+c*arq
+	a[r][p], a[p][r] = float64(c*arp)-float64(s*arq), float64(c*arp)-float64(s*arq)
+	a[r][q], a[q][r] = float64(s*arp)+float64(c*arq), float64(s*arp)+float64(c*arq)
 }
 
 // thirdIndex returns the index in {0,1,2} that is neither p nor q.
@@ -296,7 +296,7 @@ func thirdIndex(p, q int) int {
 func rotateEigenvectorColumns(v *[3][3]float64, p, q int, c, s float64) {
 	for i := range 3 {
 		vip, viq := v[i][p], v[i][q]
-		v[i][p] = c*vip - s*viq
-		v[i][q] = s*vip + c*viq
+		v[i][p] = float64(c*vip) - float64(s*viq)
+		v[i][q] = float64(s*vip) + float64(c*viq)
 	}
 }

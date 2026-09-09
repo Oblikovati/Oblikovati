@@ -40,15 +40,15 @@ func (l TorusQuadricLoop) Kind() CurveKind { return CurveTorusQuadric }
 func (l TorusQuadricLoop) Domain() (lo, hi float64) { return 0, 1 }
 
 // mid and half are the tube-angle window's centre and half-width.
-func (l TorusQuadricLoop) mid() float64  { return (l.V0 + l.V1) / 2 }
-func (l TorusQuadricLoop) half() float64 { return (l.V1 - l.V0) / 2 }
+func (l TorusQuadricLoop) mid() float64  { return float64((l.V0 + l.V1) / 2) }
+func (l TorusQuadricLoop) half() float64 { return float64((l.V1 - l.V0) / 2) }
 
 // vAt maps one turn of s to the tube angle, by the cosine that makes the loop regular at its folds.
-func (l TorusQuadricLoop) vAt(s float64) float64 { return l.mid() - l.half()*stdmath.Cos(s) }
+func (l TorusQuadricLoop) vAt(s float64) float64 { return l.mid() - float64(l.half()*stdmath.Cos(s)) }
 
 // PointAt returns the point at t ∈ [0,1], on the azimuth the half-turn selects.
 func (l TorusQuadricLoop) PointAt(t float64) math.Point3 {
-	s := twoPi * t
+	s := float64(twoPi * t)
 	v := l.vAt(s)
 	return l.Torus.PointAt(l.azimuthAt(s, v), v)
 }
@@ -81,14 +81,14 @@ func atFoldTurn(s float64) bool { return s == 0 || s == stdmath.Pi || s == twoPi
 // du/ds does not, so differencing the composed azimuth u(s) rather than u(v) stays finite all the way
 // round without a limit to special-case.
 func (l TorusQuadricLoop) TangentAt(t float64) math.Vector3 {
-	s := twoPi * t
+	s := float64(twoPi * t)
 	v := l.vAt(s)
 	du, dv := l.Torus.DerivativesAt(l.azimuthAt(s, v), v)
 	step := torusLoopDerivativeStep
-	dvds := (l.vAt(s+step) - l.vAt(s-step)) / (2 * step)
+	dvds := float64((l.vAt(s+step) - l.vAt(s-step)) / (2 * step))
 	before := l.azimuthAt(s-step, l.vAt(s-step))
 	after := l.azimuthAt(s+step, l.vAt(s+step))
-	duds := shortestTurnDelta(before, after) / (2 * step)
+	duds := float64(shortestTurnDelta(before, after) / (2 * step))
 	return dv.Scale(math.Scalar(dvds)).Add(du.Scale(math.Scalar(duds))).Scale(twoPi)
 }
 

@@ -22,20 +22,20 @@ func ExtremumOnBracket(f func(float64) float64, a, b float64, wantMax bool) floa
 	}
 	const ratio = 0.6180339887498949 // (√5 − 1)/2, the golden section
 	lo, hi := stdmath.Min(a, b), stdmath.Max(a, b)
-	x1, x2 := hi-ratio*(hi-lo), lo+ratio*(hi-lo)
-	f1, f2 := sign*f(x1), sign*f(x2)
+	x1, x2 := hi-float64(ratio*(hi-lo)), lo+float64(ratio*(hi-lo))
+	f1, f2 := float64(sign*f(x1)), float64(sign*f(x2))
 	for hi-lo > extremumBracketFloor*(stdmath.Abs(lo)+stdmath.Abs(hi)+1) {
 		if f1 < f2 {
 			hi, x2, f2 = x2, x1, f1
-			x1 = hi - ratio*(hi-lo)
-			f1 = sign * f(x1)
+			x1 = hi - float64(ratio*(hi-lo))
+			f1 = float64(sign * f(x1))
 		} else {
 			lo, x1, f1 = x1, x2, f2
-			x2 = lo + ratio*(hi-lo)
-			f2 = sign * f(x2)
+			x2 = lo + float64(ratio*(hi-lo))
+			f2 = float64(sign * f(x2))
 		}
 	}
-	return (lo + hi) / 2
+	return float64((lo + hi) / 2)
 }
 
 // extremumBracketFloor ends the golden-section search once the bracket is a few units of the

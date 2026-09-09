@@ -77,13 +77,13 @@ type HyperbolicArc struct {
 
 // PointAt returns the point at parameter t∈[0,1].
 func (h HyperbolicArc) PointAt(t float64) math.Point3 {
-	theta := h.Theta0 + t*(h.Theta1-h.Theta0)
+	theta := h.Theta0 + float64(t*(h.Theta1-h.Theta0))
 	return hyperbolaPoint(h.Center, h.TransverseAxis.AsVector(), h.ConjugateAxis.AsVector(), h.A, h.B, theta)
 }
 
 // TangentAt returns dP/dt (chain rule: dP/dθ scaled by the θ-span).
 func (h HyperbolicArc) TangentAt(t float64) math.Vector3 {
-	theta := h.Theta0 + t*(h.Theta1-h.Theta0)
+	theta := h.Theta0 + float64(t*(h.Theta1-h.Theta0))
 	return hyperbolaTangent(h.TransverseAxis.AsVector(), h.ConjugateAxis.AsVector(), h.A, h.B, theta).Scale(math.Scalar(h.Theta1 - h.Theta0))
 }
 

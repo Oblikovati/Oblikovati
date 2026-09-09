@@ -94,7 +94,7 @@ func (sw *ssiSweep) closes(pc math.Point3, tc math.Vector3) bool {
 // number of retries before the sweep gives up (returning the curve traced so far, open).
 func (sw *ssiSweep) halve() bool {
 	if sw.h > sw.tr.hMin {
-		sw.h = stdmath.Max(sw.h/2, sw.tr.hMin)
+		sw.h = stdmath.Max(float64(sw.h/2), sw.tr.hMin)
 		return true
 	}
 	sw.rejectsAtMin++
@@ -112,7 +112,7 @@ func (sw *ssiSweep) accept(pc math.Point3, tc math.Vector3) {
 	sw.arc += float64(sw.p.DistanceTo(pc))
 	hPlan := sw.tr.hMax
 	if kappa := sw.curvatureEstimate(pc, tc); kappa > 0 {
-		hPlan = ssiStepSafety * 2 * stdmath.Sqrt(2*sw.tr.eps/kappa)
+		hPlan = float64(ssiStepSafety * 2 * stdmath.Sqrt(float64(2*sw.tr.eps/kappa)))
 	}
 	// Tangency brake: the ANALYTIC intersection-curve curvature carries a 1/sin²θ pole at
 	// a tangency (θ = angle between the surface normals) that the discrete estimate — the
@@ -121,7 +121,7 @@ func (sw *ssiSweep) accept(pc math.Point3, tc math.Vector3) {
 	// pinch crossing is REPRESENTED by vertices, not merely straddled within the sag
 	// budget by one long chord.
 	if sw.align > ssiTangencyBrakeCos {
-		hPlan = stdmath.Min(hPlan, sw.tr.step/2)
+		hPlan = stdmath.Min(hPlan, float64(sw.tr.step/2))
 	}
 	sw.h = clampStep(hPlan, sw.h, sw.tr.hMin, sw.tr.hMax)
 	sw.pPrev, sw.havePrev = sw.p, true
@@ -141,7 +141,7 @@ func (sw *ssiSweep) curvatureEstimate(pc math.Point3, tc math.Vector3) float64 {
 		return kappa
 	}
 	cosTurn := stdmath.Min(1, stdmath.Max(-1, float64(tc.Dot(sw.dir))))
-	if turn := stdmath.Acos(cosTurn) / ds; turn > kappa {
+	if turn := float64(stdmath.Acos(cosTurn) / ds); turn > kappa {
 		return turn
 	}
 	return kappa
@@ -161,12 +161,12 @@ func (sw *ssiSweep) discreteCurvature(pc math.Point3) float64 {
 	if l1 < 10*sw.tr.tol || l2 < 10*sw.tr.tol || chord == 0 {
 		return 0
 	}
-	return 2 * float64(e1.Cross(e2).Length()) / (l1 * l2 * chord)
+	return float64(2 * float64(e1.Cross(e2).Length()) / (l1 * l2 * chord))
 }
 
 // clampStep rate-limits the controller (halve fast, grow ≤×1.4) and clamps to the global bounds.
 func clampStep(plan, current, hMin, hMax float64) float64 {
-	h := stdmath.Min(stdmath.Max(plan, current/2), current*ssiStepGrow)
+	h := stdmath.Min(stdmath.Max(plan, float64(current/2)), float64(current*ssiStepGrow))
 	return stdmath.Min(stdmath.Max(h, hMin), hMax)
 }
 

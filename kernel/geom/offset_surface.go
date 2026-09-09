@@ -63,8 +63,8 @@ func (o OffsetSurface) DerivativesAt(u, v float64) (du, dv math.Vector3) {
 // domain span, so the step adapts to the base's parameter scale (a NURBS [0,1] vs an analytic [0,2π]
 // domain) and the truncation/roundoff balance holds at any model scale (#1322, #1402).
 func (o OffsetSurface) normalDerivs(u, v float64) (dNdu, dNdv math.Vector3) {
-	hu := stepD1 * spanOr1(o.Base.UDomain())
-	hv := stepD1 * spanOr1(o.Base.VDomain())
+	hu := float64(stepD1 * spanOr1(o.Base.UDomain()))
+	hv := float64(stepD1 * spanOr1(o.Base.VDomain()))
 	dNdu = centralDiff(o.Base.NormalAt(u+hu, v), o.Base.NormalAt(u-hu, v), hu)
 	dNdv = centralDiff(o.Base.NormalAt(u, v+hv), o.Base.NormalAt(u, v-hv), hv)
 	return dNdu, dNdv
@@ -116,9 +116,9 @@ func (o OffsetSurface) foldPoint() (u, v float64, folds bool) {
 	vLo, vHi := finiteRange(o.VDomain())
 	const n = 24
 	for i := 0; i <= n; i++ {
-		uu := uLo + (uHi-uLo)*float64(i)/n
+		uu := uLo + float64((uHi-uLo)*float64(i)/n)
 		for j := 0; j <= n; j++ {
-			vv := vLo + (vHi-vLo)*float64(j)/n
+			vv := vLo + float64((vHi-vLo)*float64(j)/n)
 			if s, ok := o.minTangentScale(uu, vv); ok && s < foldTol {
 				return uu, vv, true
 			}
@@ -143,23 +143,23 @@ func (o OffsetSurface) minTangentScale(u, v float64) (float64, bool) {
 	if degenerateFirstForm(e, f, g) { // scale-invariant (parallel/collapsed tangents), #1402
 		return 0, false
 	}
-	det := e*g - f*f
+	det := float64(e*g) - float64(f*f)
 	nu, nv := o.normalDerivs(u, v)
 	// Express ∂N/∂u, ∂N/∂v in the {Su,Sv} basis (solve the metric system) → the 2×2 map W.
 	w11, w21 := solveMetric(e, f, g, det, dot(nu, su), dot(nu, sv))
 	w12, w22 := solveMetric(e, f, g, det, dot(nv, su), dot(nv, sv))
 	d := o.Distance
-	a, b, c, dd := 1+d*w11, d*w12, d*w21, 1+d*w22
-	disc := (a-dd)*(a-dd) + 4*b*c
+	a, b, c, dd := 1+float64(d*w11), float64(d*w12), float64(d*w21), 1+float64(d*w22)
+	disc := float64((a-dd)*(a-dd)) + float64(4*b*c)
 	if disc < 0 {
 		disc = 0 // numerically tiny negative from FD noise on a (real-spectrum) shape operator
 	}
-	return ((a + dd) - stdmath.Sqrt(disc)) / 2, true
+	return float64(((a + dd) - stdmath.Sqrt(disc)) / 2), true
 }
 
 // solveMetric solves [[e,f],[f,g]]·x = [r1;r2] (det = e·g−f², precomputed nonzero).
 func solveMetric(e, f, g, det, r1, r2 float64) (float64, float64) {
-	return (g*r1 - f*r2) / det, (-f*r1 + e*r2) / det
+	return float64((float64(g*r1) - float64(f*r2)) / det), float64((float64(-f*r1) + float64(e*r2)) / det)
 }
 
 // dot is float64(a·b), for the metric arithmetic above.

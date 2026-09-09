@@ -36,7 +36,7 @@ func IntersectCurveSurface(c Curve3, s Surface) []math.Point3 {
 	prevD := SignedDistanceToSurface(s, c.PointAt(lo))
 	out = appendIfOnSurface(out, c, lo, prevD)
 	for i := 1; i <= curveSurfaceSamples; i++ {
-		t := lo + (hi-lo)*float64(i)/float64(curveSurfaceSamples)
+		t := lo + float64((hi-lo)*float64(i)/float64(curveSurfaceSamples))
 		d := SignedDistanceToSurface(s, c.PointAt(t))
 		if isCrossing(prevD, d) {
 			tc := bisectCurveSurface(c, s, prevT, t)
@@ -68,7 +68,7 @@ func appendIfOnSurface(out []math.Point3, c Curve3, t, d float64) []math.Point3 
 func bisectCurveSurface(c Curve3, s Surface, a, b float64) float64 {
 	da := SignedDistanceToSurface(s, c.PointAt(a))
 	for range curveSurfaceBisectIter {
-		mid := (a + b) / 2
+		mid := float64((a + b) / 2)
 		dm := SignedDistanceToSurface(s, c.PointAt(mid))
 		if dm == 0 {
 			return mid
@@ -79,5 +79,5 @@ func bisectCurveSurface(c Curve3, s Surface, a, b float64) float64 {
 			a, da = mid, dm
 		}
 	}
-	return (a + b) / 2
+	return float64((a + b) / 2)
 }

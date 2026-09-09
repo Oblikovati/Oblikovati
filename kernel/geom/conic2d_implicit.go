@@ -32,7 +32,7 @@ type Conic2dImplicit struct{ A, B, C, D, E, F float64 }
 //
 // Example: inside := c.Value(p.X, p.Y) < 0 // for an ellipse written with a negative interior
 func (c Conic2dImplicit) Value(x, y float64) float64 {
-	return c.A*x*x + c.B*y*y + 2*c.C*x*y + 2*c.D*x + 2*c.E*y + c.F
+	return float64(c.A*x*x) + float64(c.B*y*y) + float64(2*c.C*x*y) + float64(2*c.D*x) + float64(2*c.E*y) + c.F
 }
 
 // ImplicitConic2dOf returns the quadratic form of a plane conic given by its centre, its two
@@ -53,16 +53,16 @@ func ImplicitConic2dOf(center math.Point2, u, v math.Vector2, a, b float64, hype
 	// In the conic's frame: q(x', y') = (x'/a)² + sy·(y'/b)² − 1, with (x', y') = R·(p − centre).
 	ux, uy := float64(u.X), float64(u.Y)
 	vx, vy := float64(v.X), float64(v.Y)
-	ia, ib := 1/(a*a), sy/(b*b)
+	ia, ib := float64(1/(a*a)), float64(sy/(b*b))
 	f := Conic2dImplicit{
-		A: ia*ux*ux + ib*vx*vx,
-		B: ia*uy*uy + ib*vy*vy,
-		C: ia*ux*uy + ib*vx*vy,
+		A: float64(ia*ux*ux) + float64(ib*vx*vx),
+		B: float64(ia*uy*uy) + float64(ib*vy*vy),
+		C: float64(ia*ux*uy) + float64(ib*vx*vy),
 	}
 	cx, cy := float64(center.X), float64(center.Y)
-	f.D = -(f.A*cx + f.C*cy)
-	f.E = -(f.B*cy + f.C*cx)
-	f.F = f.A*cx*cx + f.B*cy*cy + 2*f.C*cx*cy - 1
+	f.D = -(float64(f.A*cx) + float64(f.C*cy))
+	f.E = -(float64(f.B*cy) + float64(f.C*cx))
+	f.F = float64(f.A*cx*cx) + float64(f.B*cy*cy) + float64(2*f.C*cx*cy) - 1
 	return f, true
 }
 

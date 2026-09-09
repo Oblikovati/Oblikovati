@@ -60,11 +60,11 @@ func approximationKnots(ubar []float64, p, nctrl int) []float64 {
 	for i := nctrl; i <= nctrl+p; i++ {
 		knots[i] = ubar[m]
 	}
-	d := float64(m+1) / float64(n-p+1)
+	d := float64(float64(m+1) / float64(n-p+1))
 	for j := 1; j <= n-p; j++ {
 		i := int(float64(j) * d)
-		alpha := float64(j)*d - float64(i)
-		knots[p+j] = (1-alpha)*ubar[i-1] + alpha*ubar[i]
+		alpha := float64(float64(j)*d) - float64(i)
+		knots[p+j] = float64((1-alpha)*ubar[i-1]) + float64(alpha*ubar[i])
 	}
 	return knots
 }
@@ -81,10 +81,10 @@ func normalSystem(pts [][]float64, ubar []float64, p, nctrl int, knots []float64
 		rk := residual(pts[k], pts[0], pts[m], nk[0], nk[n])
 		for i := 1; i <= n-1; i++ {
 			for c := range dim {
-				rhs[i-1][c] += nk[i] * rk[c]
+				rhs[i-1][c] += float64(nk[i] * rk[c])
 			}
 			for j := 1; j <= n-1; j++ {
-				ntn[i-1][j-1] += nk[i] * nk[j]
+				ntn[i-1][j-1] += float64(nk[i] * nk[j])
 			}
 		}
 	}
@@ -108,7 +108,7 @@ func denseBasis(u float64, p, nctrl int, knots []float64) []float64 {
 func residual(qk, q0, qm []float64, n0, nn float64) []float64 {
 	r := make([]float64, len(qk))
 	for c := range qk {
-		r[c] = qk[c] - n0*q0[c] - nn*qm[c]
+		r[c] = qk[c] - float64(n0*q0[c]) - float64(nn*qm[c])
 	}
 	return r
 }

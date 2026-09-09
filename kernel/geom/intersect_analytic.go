@@ -119,7 +119,7 @@ func planeTorusCurve(pl Plane, t Torus, res Resolution) ([]Curve3, bool) {
 		// Oblique / axis-parallel: a spiric quartic when it cuts the tube. But a plane that CLEARS the whole
 		// torus (its distance exceeds the torus's reach along n) carries no section — report that (handled,
 		// empty) so a box's far clearing faces compose; only a genuine spiric cut defers to CSG.
-		reach := (t.MajorRadius+t.MinorRadius)*float64(n.Sub(axis.Scale(math.Scalar(cosA))).Length()) + t.MinorRadius*stdmath.Abs(cosA)
+		reach := float64((t.MajorRadius+t.MinorRadius)*float64(n.Sub(axis.Scale(math.Scalar(cosA))).Length())) + float64(t.MinorRadius*stdmath.Abs(cosA))
 		if stdmath.Abs(float64(t.Center.VectorTo(pl.Origin).Dot(n))) >= reach-res.Weld() {
 			return nil, true // the plane clears the torus
 		}
@@ -132,7 +132,7 @@ func planeTorusCurve(pl Plane, t Torus, res Resolution) ([]Curve3, bool) {
 	if stdmath.Abs(d) >= r-res.Weld() {
 		return nil, true // the plane clears or grazes the tube: no crossing section
 	}
-	half := stdmath.Sqrt(r*r - d*d)
+	half := stdmath.Sqrt(float64(r*r) - float64(d*d))
 	level := t.Center.TranslateBy(axis.Scale(math.Scalar(d)))
 	outer := Circle{Center: level, Normal: t.AxisDir, RefDir: t.Ref, Radius: t.MajorRadius + half}
 	inner := Circle{Center: level, Normal: t.AxisDir, RefDir: t.Ref, Radius: t.MajorRadius - half}
@@ -165,8 +165,8 @@ func planePlaneCurve(a, b Plane) ([]Curve3, bool) {
 	da := na.Dot(a.Origin.AsVector())
 	db := nb.Dot(b.Origin.AsVector())
 	num := nb.Cross(dir).Scale(da).Add(dir.Cross(na).Scale(db))
-	k := 1 / dir.LengthSquared()
-	p := math.P3(num.X*math.Scalar(k), num.Y*math.Scalar(k), num.Z*math.Scalar(k))
+	k := float64(1 / dir.LengthSquared())
+	p := math.P3(float64(num.X*math.Scalar(k)), float64(num.Y*math.Scalar(k)), float64(num.Z*math.Scalar(k)))
 	ln, err := NewLine(p, dir)
 	if err != nil {
 		return nil, true
@@ -187,7 +187,7 @@ func planeCylinderCurve(pl Plane, cyl Cylinder, res Resolution) ([]Curve3, bool)
 	if abs < axisAlignCosTol { // axis ∥ plane → 0/1/2 lines along the axis
 		return cylinderAxisParallelLines(pl, cyl, n, axis, res)
 	}
-	t := n.Dot(cyl.Origin.VectorTo(pl.Origin)) / axis.Dot(n)
+	t := float64(n.Dot(cyl.Origin.VectorTo(pl.Origin)) / axis.Dot(n))
 	center := cyl.Origin.TranslateBy(axis.Scale(t))
 	if abs > 1-axisAlignCosTol { // perpendicular → circle
 		c, err := NewCircle(center, axis, cyl.Radius)
@@ -199,7 +199,7 @@ func planeCylinderCurve(pl Plane, cyl Cylinder, res Resolution) ([]Curve3, bool)
 	// Oblique → ellipse: minor radius = r, major = r/|cosA|; major axis is the cylinder
 	// axis projected into the plane.
 	majorDir := axis.Add(n.Scale(math.Scalar(-cosA)))
-	e, err := NewEllipseFull(center, n, majorDir, cyl.Radius/abs, cyl.Radius)
+	e, err := NewEllipseFull(center, n, majorDir, float64(cyl.Radius/abs), cyl.Radius)
 	if err != nil {
 		return nil, true
 	}
@@ -215,8 +215,8 @@ func cylinderAxisParallelLines(pl Plane, cyl Cylinder, n, axis math.Vector3, res
 	if stdmath.Abs(d) >= cyl.Radius-res.Weld() {
 		return nil, true // plane clears or merely touches the cylinder: no line pair
 	}
-	half := stdmath.Sqrt(cyl.Radius*cyl.Radius - d*d) // half-chord of the cross-section
-	tangent := unitVec3(n.Cross(axis))                // in-plane, perpendicular to the axis
+	half := stdmath.Sqrt(float64(cyl.Radius*cyl.Radius) - float64(d*d)) // half-chord of the cross-section
+	tangent := unitVec3(n.Cross(axis))                                  // in-plane, perpendicular to the axis
 	foot := cyl.Origin.TranslateBy(n.Scale(math.Scalar(-d)))
 	var out []Curve3
 	for _, s := range []float64{half, -half} {
@@ -245,8 +245,8 @@ func planeConeCurve(pl Plane, cone Cone, res Resolution) ([]Curve3, bool) {
 	if along < 1-axisAlignCosTol { // oblique → ellipse / hyperbola (parabolic boundary deferred inside)
 		return coneObliqueConic(pl, cone, n, axis)
 	}
-	t := n.Dot(cone.Apex.VectorTo(pl.Origin)) / axis.Dot(n)
-	r := stdmath.Abs(float64(t)) * stdmath.Tan(cone.HalfAngle)
+	t := float64(n.Dot(cone.Apex.VectorTo(pl.Origin)) / axis.Dot(n))
+	r := float64(stdmath.Abs(float64(t)) * stdmath.Tan(cone.HalfAngle))
 	if r < res.Weld() { // plane through the apex
 		return nil, true
 	}
@@ -272,7 +272,7 @@ func coneAxisParallelHyperbola(pl Plane, cone Cone, n, axis math.Vector3, res Re
 	conjugate := axis.Cross(n)
 	tanA := stdmath.Tan(cone.HalfAngle)
 	center := cone.Apex.TranslateBy(n.Scale(math.Scalar(d)))
-	h, err := NewHyperbola(center, axis, conjugate, stdmath.Abs(d)/tanA, stdmath.Abs(d))
+	h, err := NewHyperbola(center, axis, conjugate, float64(stdmath.Abs(d)/tanA), stdmath.Abs(d))
 	if err != nil {
 		return nil, true
 	}
@@ -287,7 +287,7 @@ func planeSphereCurve(pl Plane, sp Sphere, res Resolution) ([]Curve3, bool) {
 	if stdmath.Abs(d) >= sp.Radius-res.Weld() {
 		return nil, true // clear of, or tangent to, the plane: no circle
 	}
-	r := stdmath.Sqrt(sp.Radius*sp.Radius - d*d)
+	r := stdmath.Sqrt(float64(sp.Radius*sp.Radius) - float64(d*d))
 	center := sp.Center.TranslateBy(n.Scale(math.Scalar(-d))) // foot of the center on the plane
 	c, err := NewCircle(center, n, r)
 	if err != nil {

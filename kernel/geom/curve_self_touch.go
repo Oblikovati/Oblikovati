@@ -78,10 +78,10 @@ func CurveTouches(a, b Curve3, same bool, tol float64) [][2]float64 {
 	var out [][2]float64
 	for _, cell := range distinctCells(touchCandidateCells(pa, pb, same, CurveIsClosed(a)), pa, pb, reach) {
 		ta, tb := refineTouch(a, b,
-			aLo+(aHi-aLo)*float64(cell[0])/curveTouchScan, bLo+(bHi-bLo)*float64(cell[1])/curveTouchScan,
-			(aHi-aLo)/curveTouchScan, (bHi-bLo)/curveTouchScan)
+			aLo+float64((aHi-aLo)*float64(cell[0])/curveTouchScan), bLo+float64((bHi-bLo)*float64(cell[1])/curveTouchScan),
+			float64((aHi-aLo)/curveTouchScan), float64((bHi-bLo)/curveTouchScan))
 		if float64(a.PointAt(ta).DistanceTo(b.PointAt(tb))) <= tol {
-			out = appendDistinctTouch(out, ta, tb, (aHi-aLo)/curveTouchScan, (bHi-bLo)/curveTouchScan)
+			out = appendDistinctTouch(out, ta, tb, float64((aHi-aLo)/curveTouchScan), float64((bHi-bLo)/curveTouchScan))
 		}
 	}
 	return out
@@ -140,7 +140,7 @@ func curveExtent(c Curve3) (math.Box, float64) {
 	box := math.EmptyBox()
 	widest, prev := 0.0, c.PointAt(lo)
 	for i := 0; i <= curveCullStations; i++ {
-		p := c.PointAt(lo + (hi-lo)*float64(i)/curveCullStations)
+		p := c.PointAt(lo + float64((hi-lo)*float64(i)/curveCullStations))
 		box = box.ExtendPoint(p)
 		widest = stdmath.Max(widest, float64(prev.DistanceTo(p)))
 		prev = p
@@ -152,7 +152,7 @@ func curveExtent(c Curve3) (math.Box, float64) {
 func scanCurveStations(c Curve3, lo, hi float64) []math.Point3 {
 	pts := make([]math.Point3, curveTouchScan+1)
 	for i := range pts {
-		pts[i] = c.PointAt(lo + (hi-lo)*float64(i)/curveTouchScan)
+		pts[i] = c.PointAt(lo + float64((hi-lo)*float64(i)/curveTouchScan))
 	}
 	return pts
 }
@@ -235,7 +235,7 @@ func isSeparationMinimum(pa, pb []math.Point3, i, j, n int) bool {
 // meeting is a return rather than continuity. On a CLOSED curve the separation is the shorter way
 // round, which is what excludes the closure itself — its first and last stations are the same point.
 func stationsReturn(i, j, n int, closed bool) bool {
-	gap := float64(j-i) / float64(n)
+	gap := float64(float64(j-i) / float64(n))
 	if closed && 1-gap < gap {
 		gap = 1 - gap
 	}
@@ -276,17 +276,17 @@ const goldenRatio = 0.6180339887498949
 
 // goldenMin narrows [lo, hi] onto the minimum of a unimodal f, returning the argument and the value.
 func goldenMin(f func(float64) float64, lo, hi float64) (float64, float64) {
-	c, d := hi-goldenRatio*(hi-lo), lo+goldenRatio*(hi-lo)
+	c, d := hi-float64(goldenRatio*(hi-lo)), lo+float64(goldenRatio*(hi-lo))
 	fc, fd := f(c), f(d)
 	for range curveTouchGoldenSteps {
 		if fc < fd {
 			hi, d, fd = d, c, fc
-			c = hi - goldenRatio*(hi-lo)
+			c = hi - float64(goldenRatio*(hi-lo))
 			fc = f(c)
 			continue
 		}
 		lo, c, fc = c, d, fd
-		d = lo + goldenRatio*(hi-lo)
+		d = lo + float64(goldenRatio*(hi-lo))
 		fd = f(d)
 	}
 	if fc < fd {

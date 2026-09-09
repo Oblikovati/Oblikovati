@@ -188,7 +188,7 @@ func alphaParams(rows [][]float64, alpha float64) ([]float64, error) {
 	}
 	u := make([]float64, n)
 	for k := range u {
-		u[k] = cum[k] / total
+		u[k] = float64(cum[k] / total)
 	}
 	u[n-1] = 1
 	return u, nil

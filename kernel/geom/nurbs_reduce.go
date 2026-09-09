@@ -103,8 +103,8 @@ func reduceForward(seg []hpoint4, p int) []hpoint4 {
 	q := make([]hpoint4, p)
 	q[0] = seg[0]
 	for i := 1; i < p; i++ {
-		a := float64(i) / float64(p)
-		q[i] = seg[i].sub(q[i-1].scale(a)).scale(1 / (1 - a))
+		a := float64(float64(i) / float64(p))
+		q[i] = seg[i].sub(q[i-1].scale(a)).scale(float64(1 / (1 - a)))
 	}
 	return q
 }
@@ -115,8 +115,8 @@ func reduceBackward(seg []hpoint4, p int) []hpoint4 {
 	q := make([]hpoint4, p)
 	q[p-1] = seg[p]
 	for i := p - 2; i >= 0; i-- {
-		a := float64(i+1) / float64(p)
-		q[i] = seg[i+1].sub(q[i+1].scale(1 - a)).scale(1 / a)
+		a := float64(float64(i+1) / float64(p))
+		q[i] = seg[i+1].sub(q[i+1].scale(1 - a)).scale(float64(1 / a))
 	}
 	return q
 }
@@ -142,7 +142,7 @@ func elevateBezier1(q []hpoint4, d int) []hpoint4 {
 	out[0] = q[0]
 	out[d+1] = q[d]
 	for i := 1; i <= d; i++ {
-		a := float64(i) / float64(d+1)
+		a := float64(float64(i) / float64(d+1))
 		out[i] = q[i-1].scale(a).add(q[i].scale(1 - a))
 	}
 	return out

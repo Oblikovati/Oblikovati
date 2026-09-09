@@ -47,7 +47,7 @@ func WrapCurveOntoSurface(surface Surface, source Curve3, frame WrapFrame, sampl
 	lo, hi := source.Domain()
 	out := make([]math.Point3, samples+1)
 	for i := range out {
-		t := lo + (hi-lo)*float64(i)/float64(samples)
+		t := lo + float64((hi-lo)*float64(i)/float64(samples))
 		a, b := frame.flatten(source.PointAt(t))
 		v := arcLengthParam(v0, b, func(vv float64) float64 { return vDirSpeed(surface, u0, vv) })
 		u := arcLengthParam(u0, a, func(uu float64) float64 { return uDirSpeed(surface, uu, v) })
@@ -84,14 +84,14 @@ func arcLengthParam(param0, target float64, speed func(float64) float64) float64
 		if sp <= 0 {
 			break
 		}
-		dParam := dir * (remaining / float64(wrapArcLengthSteps-i)) / sp
-		mid := speed(param + dParam/2)
+		dParam := float64(dir * (remaining / float64(wrapArcLengthSteps-i)) / sp)
+		mid := speed(param + float64(dParam/2))
 		if mid <= 0 {
 			mid = sp
 		}
-		step := stdmath.Abs(dParam) * mid
+		step := float64(stdmath.Abs(dParam) * mid)
 		if step >= remaining {
-			return param + dir*(remaining/mid) // finish within this step
+			return param + float64(dir*(remaining/mid)) // finish within this step
 		}
 		remaining -= step
 		param += dParam

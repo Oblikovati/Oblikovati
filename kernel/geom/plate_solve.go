@@ -50,7 +50,7 @@ type PlateCoeffs struct {
 // normalize maps a world Ω coordinate into the unit-diameter frame the coefficients were solved
 // in (û=(u−u0)/scale, v̂=(v−v0)/scale). The inverse of the assembly-time similarity transform.
 func (c PlateCoeffs) normalize(u, v float64) (uh, vh float64) {
-	return (u - c.u0) / c.scale, (v - c.v0) / c.scale
+	return float64((u - c.u0) / c.scale), float64((v - c.v0) / c.scale)
 }
 
 // PlateSolve solves the Duchon order-3 plate for ONE scalar field: it packs each constraint's
@@ -93,7 +93,7 @@ func PlateSolveMulti(cs []PlateConstraint, values [][]float64) ([]PlateCoeffs, e
 	// non-dimensionalization; the normalized floor is res.Weld()² = rFloor_world/scale² because
 	// the normalized squared radius R̂ = R_world/scale² (advisory §4 step 4).
 	res := ResolutionForSize(frame.scale)
-	rFloor := res.Weld() * res.Weld()
+	rFloor := float64(res.Weld() * res.Weld())
 	ncs := frame.normalizeConstraints(cs)
 	nvals := frame.normalizeValues(cs, values)
 	a := assemblePlateMatrix(ncs, rFloor)
@@ -143,8 +143,8 @@ func plateDomainDiameter(cs []PlateConstraint) float64 {
 // instead; this world form is kept for the assembly-symmetry self-check, which assembles the
 // matrix directly on world constraints without the normalizing frame.
 func plateRFloor(res Resolution) float64 {
-	w := res.Weld() * res.Size()
-	return w * w
+	w := float64(res.Weld() * res.Size())
+	return float64(w * w)
 }
 
 // plateDomainFrame is the similarity transform that non-dimensionalizes the bordered TPS system
@@ -177,12 +177,12 @@ func newPlateDomainFrame(cs []PlateConstraint) (plateDomainFrame, error) {
 			"geom: plate domain degenerate: all %d constraints coincide in (u,v) (diameter %.6g, need > 0)",
 			len(cs), scale)
 	}
-	return plateDomainFrame{u0: (minU + maxU) / 2, v0: (minV + maxV) / 2, scale: scale}, nil
+	return plateDomainFrame{u0: float64((minU + maxU) / 2), v0: float64((minV + maxV) / 2), scale: scale}, nil
 }
 
 // normalize maps a world (u,v) into the unit-diameter frame û=(u−u0)/scale, v̂=(v−v0)/scale.
 func (f plateDomainFrame) normalize(u, v float64) (uh, vh float64) {
-	return (u - f.u0) / f.scale, (v - f.v0) / f.scale
+	return float64((u - f.u0) / f.scale), float64((v - f.v0) / f.scale)
 }
 
 // normalizeConstraints rebuilds the constraint list in the unit-diameter frame — same Order and
@@ -205,7 +205,7 @@ func (f plateDomainFrame) normalizeValues(cs []PlateConstraint, values [][]float
 	for fld, vf := range values {
 		out[fld] = make([]float64, len(vf))
 		for i, v := range vf {
-			out[fld][i] = v * f.orderScale(cs[i].Order)
+			out[fld][i] = float64(v * f.orderScale(cs[i].Order))
 		}
 	}
 	return out
@@ -234,11 +234,11 @@ func plateColSign(order [2]int) float64 {
 func plateMonoRow(u, v float64, order [2]int) [6]float64 {
 	switch {
 	case order[0] == 1 && order[1] == 0:
-		return [6]float64{0, 1, 0, 2 * u, v, 0}
+		return [6]float64{0, 1, 0, float64(2 * u), v, 0}
 	case order[0] == 0 && order[1] == 1:
-		return [6]float64{0, 0, 1, 0, u, 2 * v}
+		return [6]float64{0, 0, 1, 0, u, float64(2 * v)}
 	default:
-		return [6]float64{1, u, v, u * u, u * v, v * v}
+		return [6]float64{1, u, v, float64(u * u), float64(u * v), float64(v * v)}
 	}
 }
 
@@ -262,7 +262,7 @@ func fillKBlock(a [][]float64, cs []PlateConstraint, rFloor float64) {
 			du := cs[i].U - cs[j].U
 			dv := cs[i].V - cs[j].V
 			oi, oj := cs[i].Order, cs[j].Order
-			a[i][j] = plateColSign(oj) * plateDeriv(oi[0]+oj[0], oi[1]+oj[1], du, dv, rFloor)
+			a[i][j] = float64(plateColSign(oj) * plateDeriv(oi[0]+oj[0], oi[1]+oj[1], du, dv, rFloor))
 		}
 	}
 }
@@ -353,7 +353,7 @@ func residualMatrix(a, b, x [][]float64) [][]float64 {
 func dotRowColumn(row []float64, x [][]float64, f int) float64 {
 	sum := 0.0
 	for k, ak := range row {
-		sum += ak * x[k][f]
+		sum += float64(ak * x[k][f])
 	}
 	return sum
 }
@@ -380,7 +380,7 @@ func acceptPlateResidual(a, b, x [][]float64, weld float64) error {
 		if rn > weld*bn {
 			return fmt.Errorf(
 				"geom: plate solve did not converge: field %d residual %.6g exceeds weld·‖b‖ = %.6g "+
-					"(weld %.6g, ‖b‖ %.6g)", f, rn, weld*bn, weld, bn)
+					"(weld %.6g, ‖b‖ %.6g)", f, rn, float64(weld*bn), weld, bn)
 		}
 	}
 	return nil
@@ -390,7 +390,7 @@ func acceptPlateResidual(a, b, x [][]float64, weld float64) error {
 func columnNorm(m [][]float64, f int) float64 {
 	sum := 0.0
 	for i := range m {
-		sum += m[i][f] * m[i][f]
+		sum += float64(m[i][f] * m[i][f])
 	}
 	return stdmath.Sqrt(sum)
 }
@@ -443,8 +443,8 @@ func (c PlateCoeffs) Eval(u, v float64) float64 {
 	sum := polyValue(c.poly, uh, vh)
 	for j, center := range c.centers {
 		du, dv := uh-center.U, vh-center.V
-		psi := plateColSign(center.Order) * plateDeriv(center.Order[0], center.Order[1], du, dv, c.rFloor)
-		sum += c.lambda[j] * psi
+		psi := float64(plateColSign(center.Order) * plateDeriv(center.Order[0], center.Order[1], du, dv, c.rFloor))
+		sum += float64(c.lambda[j] * psi)
 	}
 	return sum
 }
@@ -458,22 +458,22 @@ func (c PlateCoeffs) EvalGrad(u, v float64) (fu, fv float64) {
 	fu, fv = polyGrad(c.poly, uh, vh)
 	for j, center := range c.centers {
 		du, dv := uh-center.U, vh-center.V
-		sign := c.lambda[j] * plateColSign(center.Order)
+		sign := float64(c.lambda[j] * plateColSign(center.Order))
 		au, bv := center.Order[0], center.Order[1]
-		fu += sign * plateDeriv(au+1, bv, du, dv, c.rFloor)
-		fv += sign * plateDeriv(au, bv+1, du, dv, c.rFloor)
+		fu += float64(sign * plateDeriv(au+1, bv, du, dv, c.rFloor))
+		fv += float64(sign * plateDeriv(au, bv+1, du, dv, c.rFloor))
 	}
-	return fu / c.scale, fv / c.scale
+	return float64(fu / c.scale), float64(fv / c.scale)
 }
 
 // polyValue evaluates the quadratic a·[1,u,v,u²,uv,v²].
 func polyValue(p [6]float64, u, v float64) float64 {
-	return p[0] + p[1]*u + p[2]*v + p[3]*u*u + p[4]*u*v + p[5]*v*v
+	return p[0] + float64(p[1]*u) + float64(p[2]*v) + float64(p[3]*u*u) + float64(p[4]*u*v) + float64(p[5]*v*v)
 }
 
 // polyGrad returns the gradient of the quadratic a·[1,u,v,u²,uv,v²].
 func polyGrad(p [6]float64, u, v float64) (pu, pv float64) {
-	pu = p[1] + 2*p[3]*u + p[4]*v
-	pv = p[2] + p[4]*u + 2*p[5]*v
+	pu = p[1] + float64(2*p[3]*u) + float64(p[4]*v)
+	pv = p[2] + float64(p[4]*u) + float64(2*p[5]*v)
 	return pu, pv
 }

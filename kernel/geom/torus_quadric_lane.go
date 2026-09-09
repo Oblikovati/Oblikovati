@@ -67,7 +67,7 @@ func torusLaneAt(h torusSecondHarmonic, anchor float64) (torusLane, bool) {
 // discriminant is positive exactly where the lane's two azimuths exist and distinct, and crosses zero
 // at each fold — the same contract [torusHarmonic.discriminant] has, so periodicRootWindows reads both.
 func (l torusLane) discriminant() float64 {
-	return stdmath.Min(-l.value*l.flanks[0], -l.value*l.flanks[1])
+	return stdmath.Min(float64(-l.value*l.flanks[0]), float64(-l.value*l.flanks[1]))
 }
 
 // root returns the lane's upper (increasing-u) or lower azimuth.
@@ -150,9 +150,9 @@ func torusLaneAnchors(t Torus, q Quadric) ([]float64, bool) {
 	if len(seed) < 2 {
 		return nil, false // a station with no extremum to name a lane by
 	}
-	reach := minimumAngleGap(seed) / 2
+	reach := float64(minimumAngleGap(seed) / 2)
 	for i := 1; i < torusStationProbes; i++ {
-		ex := torusSecondHarmonicAt(t, q, twoPi*float64(i)/torusStationProbes).extrema()
+		ex := torusSecondHarmonicAt(t, q, float64(twoPi*float64(i)/torusStationProbes)).extrema()
 		if !anglesTrackSeeds(seed, ex, reach) {
 			return nil, false
 		}

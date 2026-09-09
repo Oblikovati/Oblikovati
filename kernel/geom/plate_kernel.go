@@ -24,7 +24,7 @@ import stdmath "math"
 // kernel functions share one floor guard and one log (no duplication, kit §1's "guard on
 // R_floor, else lr = log R and combine").
 func plateRadial(du, dv, rFloor float64) (bigR, logR float64, singular bool) {
-	bigR = du*du + dv*dv
+	bigR = float64(du*du) + float64(dv*dv)
 	if bigR < rFloor {
 		return bigR, 0, true
 	}
@@ -37,7 +37,7 @@ func plateE(du, dv, rFloor float64) float64 {
 	if singular {
 		return 0
 	}
-	return bigR * bigR * logR
+	return float64(bigR * bigR * logR)
 }
 
 // plateEu is ∂E/∂Δu = 2·Δu·R·(2·log R + 1) — "the single most load-bearing derivative"
@@ -47,7 +47,7 @@ func plateEu(du, dv, rFloor float64) float64 {
 	if singular {
 		return 0
 	}
-	return 2 * du * bigR * (2*logR + 1)
+	return float64(2 * du * bigR * (float64(2*logR) + 1))
 }
 
 // plateEv is ∂E/∂Δv = 2·Δv·R·(2·log R + 1) — the Δv companion of plateEu. Odd in Δv.
@@ -56,7 +56,7 @@ func plateEv(du, dv, rFloor float64) float64 {
 	if singular {
 		return 0
 	}
-	return 2 * dv * bigR * (2*logR + 1)
+	return float64(2 * dv * bigR * (float64(2*logR) + 1))
 }
 
 // plateEuu is ∂²E/∂Δu² = 2·R·(2 log R + 1) + 4·Δu²·(2 log R + 3) (kit §1); appears wherever a
@@ -66,7 +66,7 @@ func plateEuu(du, dv, rFloor float64) float64 {
 	if singular {
 		return 0
 	}
-	return 2*bigR*(2*logR+1) + 4*du*du*(2*logR+3)
+	return float64(2*bigR*(float64(2*logR)+1)) + float64(4*du*du*(float64(2*logR)+3))
 }
 
 // plateEvv is ∂²E/∂Δv² = 2·R·(2 log R + 1) + 4·Δv²·(2 log R + 3) — the Δv companion of
@@ -76,7 +76,7 @@ func plateEvv(du, dv, rFloor float64) float64 {
 	if singular {
 		return 0
 	}
-	return 2*bigR*(2*logR+1) + 4*dv*dv*(2*logR+3)
+	return float64(2*bigR*(float64(2*logR)+1)) + float64(4*dv*dv*(float64(2*logR)+3))
 }
 
 // plateEuv is ∂²E/∂Δu∂Δv = 4·Δu·Δv·(2 log R + 3) (kit §1); the ∂u-row/∂v-column entry. Even.
@@ -85,7 +85,7 @@ func plateEuv(du, dv, rFloor float64) float64 {
 	if singular {
 		return 0
 	}
-	return 4 * du * dv * (2*logR + 3)
+	return float64(4 * du * dv * (float64(2*logR) + 3))
 }
 
 // plateDeriv evaluates D^{(a,b)}E at (Δu,Δv) for combined order a+b ≤ 2 — the only orders the

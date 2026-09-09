@@ -89,7 +89,7 @@ func fullDomain(cv Curve3, t0, t1 float64) bool {
 	if stdmath.IsInf(dlo, 0) || stdmath.IsInf(dhi, 0) || !(dhi > dlo) {
 		return false
 	}
-	slack := subRangeSlack * (dhi - dlo)
+	slack := float64(subRangeSlack * (dhi - dlo))
 	lo, hi := stdmath.Min(t0, t1), stdmath.Max(t0, t1)
 	return lo < dlo+slack && hi > dhi-slack
 }
@@ -101,7 +101,7 @@ const subRangeSlack = 1e-9 // tol:parametric — a run's parameter at its curve'
 // circleSubArc builds the Arc3d covering a circle's parameter sub-range [t0, t1] (Circle.PointAt(t) is
 // the point at angle 2πt), so the edge tessellates over that arc alone.
 func circleSubArc(c Circle, t0, t1 float64) Curve3 {
-	a, _ := NewArc3d(c.Center, c.Normal.AsVector(), c.RefDir.AsVector(), c.Radius, twoPi*t0, twoPi*(t1-t0))
+	a, _ := NewArc3d(c.Center, c.Normal.AsVector(), c.RefDir.AsVector(), c.Radius, float64(twoPi*t0), float64(twoPi*(t1-t0)))
 	return a
 }
 
@@ -109,7 +109,7 @@ func circleSubArc(c Circle, t0, t1 float64) Curve3 {
 func arcSubArc(a Arc3d, t0, t1 float64) Curve3 {
 	return Arc3d{
 		Center: a.Center, Normal: a.Normal, RefDir: a.RefDir, Radius: a.Radius,
-		StartAngle: a.StartAngle + t0*a.SweepAngle, SweepAngle: (t1 - t0) * a.SweepAngle,
+		StartAngle: a.StartAngle + float64(t0*a.SweepAngle), SweepAngle: float64((t1 - t0) * a.SweepAngle),
 	}
 }
 
@@ -117,7 +117,7 @@ func arcSubArc(a Arc3d, t0, t1 float64) Curve3 {
 // (EllipseFull.PointAt(t) is the point at angle 2πt), so the edge tessellates over that arc alone.
 func ellipseSubArc(e EllipseFull, t0, t1 float64) Curve3 {
 	a, _ := NewEllipticalArc(e.Center, e.Normal.AsVector(), e.MajorAxis.AsVector(), e.MajorRadius, e.MinorRadius,
-		twoPi*t0, twoPi*(t1-t0))
+		float64(twoPi*t0), float64(twoPi*(t1-t0)))
 	return a
 }
 
@@ -130,7 +130,7 @@ func ellipseSubArc(e EllipseFull, t0, t1 float64) Curve3 {
 // run that already spans the whole arc forward this returns an identical arc.
 func ellipticalSubArc(e EllipticalArc, t0, t1 float64) Curve3 {
 	a, _ := NewEllipticalArc(e.Center, e.Normal.AsVector(), e.MajorAxis.AsVector(), e.MajorRadius, e.MinorRadius,
-		e.StartAngle+t0*e.SweepAngle, (t1-t0)*e.SweepAngle)
+		e.StartAngle+float64(t0*e.SweepAngle), float64((t1-t0)*e.SweepAngle))
 	return a
 }
 
@@ -141,8 +141,8 @@ func ellipticalSubArc(e EllipticalArc, t0, t1 float64) Curve3 {
 // comes out the right size, #1406); the stitch anchors the edge to this native arc's endpoints so the
 // reversed flag stays correct.
 func spiricSubArc(sa SpiricArc, t0, t1 float64) Curve3 {
-	v0 := sa.V0 + t0*(sa.V1-sa.V0)
-	v1 := sa.V0 + t1*(sa.V1-sa.V0)
+	v0 := sa.V0 + float64(t0*(sa.V1-sa.V0))
+	v1 := sa.V0 + float64(t1*(sa.V1-sa.V0))
 	if v0 > v1 {
 		v0, v1 = v1, v0
 	}

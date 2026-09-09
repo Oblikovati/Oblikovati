@@ -41,7 +41,7 @@ func uniformPeriodicKnots(n int) []float64 {
 	p := periodicDegree
 	knots := make([]float64, n+2*p+1)
 	for i := range knots {
-		knots[i] = float64(i-p) / float64(n)
+		knots[i] = float64(float64(i-p) / float64(n))
 	}
 	return knots
 }

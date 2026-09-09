@@ -64,7 +64,7 @@ func noClosedFormWhen(ok bool) SectionDecline {
 func torusHarmonicLoops(t Torus, q Quadric, spans [][2]float64, res Resolution) ([]Curve3, SectionDecline, bool) {
 	out := make([]Curve3, 0, len(spans))
 	for _, w := range spans {
-		anchor, _ := torusHarmonicAt(t, q, (w[0]+w[1])/2)
+		anchor, _ := torusHarmonicAt(t, q, float64((w[0]+w[1])/2))
 		loop := TorusQuadricLoop{Torus: t, Quad: q, V0: w[0], V1: w[1], UA: anchor.phase}
 		if !torusWindowConditioning(loop, res) {
 			return nil, DeclineTorusLaneSeparation, false
@@ -84,7 +84,7 @@ const torusStationProbes = ruledQuadricAzimuthProbes
 // the coaxial cylinder, cone or centred sphere, and its section is circles rather than curves.
 func coaxialTorusQuadric(t Torus, q Quadric) bool {
 	for i := range torusStationProbes {
-		h, ok := torusHarmonicAt(t, q, twoPi*float64(i)/torusStationProbes)
+		h, ok := torusHarmonicAt(t, q, float64(twoPi*float64(i)/torusStationProbes))
 		if !ok || h.reach != 0 {
 			return false
 		}
@@ -103,10 +103,10 @@ func torusCoaxialCircles(t Torus, q Quadric) ([]Curve3, bool) {
 	var out []Curve3
 	prev := level(0)
 	for i := 1; i <= torusStationProbes; i++ {
-		v := twoPi * float64(i) / torusStationProbes
+		v := float64(twoPi * float64(i) / torusStationProbes)
 		cur := level(v)
 		if (prev > 0) != (cur > 0) {
-			out = append(out, torusStationCircle(t, bisectLevelRoot(level, twoPi*float64(i-1)/torusStationProbes, v)))
+			out = append(out, torusStationCircle(t, bisectLevelRoot(level, float64(twoPi*float64(i-1)/torusStationProbes), v)))
 		}
 		prev = cur
 	}
@@ -123,7 +123,7 @@ func torusStationCircle(t Torus, v float64) Circle {
 		Center: centre,
 		Normal: t.AxisDir,
 		RefDir: t.Ref,
-		Radius: t.MajorRadius + t.MinorRadius*cv,
+		Radius: t.MajorRadius + float64(t.MinorRadius*cv),
 	}
 }
 
@@ -131,14 +131,14 @@ func torusStationCircle(t Torus, v float64) Circle {
 func bisectLevelRoot(level func(float64) float64, lo, hi float64) float64 {
 	loPositive := level(lo) > 0
 	for range foldBisectionSteps {
-		mid := (lo + hi) / 2
+		mid := float64((lo + hi) / 2)
 		if (level(mid) > 0) == loPositive {
 			lo = mid
 			continue
 		}
 		hi = mid
 	}
-	return (lo + hi) / 2
+	return float64((lo + hi) / 2)
 }
 
 // torusFullTurnSection returns the two branches as full-period arcs, for a quadric that reaches the tube
@@ -148,7 +148,7 @@ func bisectLevelRoot(level func(float64) float64, lo, hi float64) float64 {
 func torusFullTurnSection(t Torus, q Quadric, res Resolution) ([]Curve3, bool) {
 	least := stdmath.Inf(1)
 	for i := range torusStationProbes {
-		h, ok := torusHarmonicAt(t, q, twoPi*float64(i)/torusStationProbes)
+		h, ok := torusHarmonicAt(t, q, float64(twoPi*float64(i)/torusStationProbes))
 		if !ok {
 			return nil, false
 		}
@@ -170,8 +170,8 @@ func torusBranchGap(t Torus, h torusHarmonic) float64 {
 	if h.reach == 0 {
 		return 0
 	}
-	arg := stdmath.Max(-1, stdmath.Min(1, -h.level/h.reach))
-	return 2 * stdmath.Acos(arg) * (t.MajorRadius + t.MinorRadius)
+	arg := stdmath.Max(-1, stdmath.Min(1, float64(-h.level/h.reach)))
+	return float64(2 * stdmath.Acos(arg) * (t.MajorRadius + t.MinorRadius))
 }
 
 // torusWindowConditioning certifies one tube-angle window before a loop is built on it: its two azimuths
@@ -181,7 +181,7 @@ func torusBranchGap(t Torus, h torusHarmonic) float64 {
 func torusWindowConditioning(l TorusQuadricLoop, res Resolution) bool {
 	widest := 0.0
 	for i := 1; i < torusWindowProbes; i++ {
-		v := l.V0 + (l.V1-l.V0)*float64(i)/torusWindowProbes
+		v := l.V0 + float64((l.V1-l.V0)*float64(i)/torusWindowProbes)
 		widest = stdmath.Max(widest, torusBranchGapAt(l.Torus, l.Quad, v, l.UA))
 	}
 	return widest > res.Stitch()
@@ -200,7 +200,7 @@ func torusBranchGapAt(t Torus, q Quadric, v, anchor float64) float64 {
 	if !ok {
 		return 0 // an unreadable station: a zero gap fails the gate, which is the decline
 	}
-	return l.separation() * (t.MajorRadius + t.MinorRadius)
+	return float64(l.separation() * (t.MajorRadius + t.MinorRadius))
 }
 
 // torusWindowProbes samples a window's interior for its widest branch separation, which has one interior

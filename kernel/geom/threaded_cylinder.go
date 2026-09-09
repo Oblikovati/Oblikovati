@@ -39,17 +39,17 @@ func (t ThreadedCylinder) radiusAt(u, v float64) float64 {
 	if !t.RightHanded {
 		hand = -1.0
 	}
-	phase := stdmath.Mod(v-hand*t.Pitch*u/(2*stdmath.Pi), t.Pitch)
+	phase := stdmath.Mod(v-float64(hand*t.Pitch*u/(2*stdmath.Pi)), t.Pitch)
 	if phase < 0 {
 		phase += t.Pitch
 	}
-	frac := phase / t.Pitch             // 0..1 within one thread
-	groove := 1 - stdmath.Abs(2*frac-1) // V: 0 at crest (0,1), 1 at root (0.5)
+	frac := float64(phase / t.Pitch)             // 0..1 within one thread
+	groove := 1 - stdmath.Abs(float64(2*frac)-1) // V: 0 at crest (0,1), 1 at root (0.5)
 	groove *= t.runout(v)
 	if t.Internal {
-		return t.Radius + t.Depth*groove // bore: cut outward
+		return t.Radius + float64(t.Depth*groove) // bore: cut outward
 	}
-	return t.Radius - t.Depth*groove // shaft: cut inward
+	return t.Radius - float64(t.Depth*groove) // shaft: cut inward
 }
 
 // runout ramps the thread amplitude from 0 at each end (over one pitch) to 1 in the middle, so
@@ -58,7 +58,7 @@ func (t ThreadedCylinder) runout(v float64) float64 {
 	if t.Pitch <= 0 {
 		return 1
 	}
-	return stdmath.Min(math.Clamp01((v-t.VMin)/t.Pitch), math.Clamp01((t.VMax-v)/t.Pitch))
+	return stdmath.Min(math.Clamp01(float64((v-t.VMin)/t.Pitch)), math.Clamp01(float64((t.VMax-v)/t.Pitch)))
 }
 
 // PointAt returns the threaded surface point at (u = angle, v = axial distance).
@@ -73,10 +73,10 @@ func (t ThreadedCylinder) PointAt(u, v float64) math.Point3 {
 // span in u and the threaded run in v — so the step stays scale-invariant rather than a fixed 1e-5
 // that ignored both the [0,2π] angular scale and the part size (#1402).
 func (t ThreadedCylinder) DerivativesAt(u, v float64) (du, dv math.Vector3) {
-	eu := stepD1 * spanOr1(t.UDomain())
-	ev := stepD1 * spanOr1(t.VDomain())
-	du = t.PointAt(u-eu, v).VectorTo(t.PointAt(u+eu, v)).Scale(1 / (2 * eu))
-	dv = t.PointAt(u, v-ev).VectorTo(t.PointAt(u, v+ev)).Scale(1 / (2 * ev))
+	eu := float64(stepD1 * spanOr1(t.UDomain()))
+	ev := float64(stepD1 * spanOr1(t.VDomain()))
+	du = t.PointAt(u-eu, v).VectorTo(t.PointAt(u+eu, v)).Scale(float64(1 / (2 * eu)))
+	dv = t.PointAt(u, v-ev).VectorTo(t.PointAt(u, v+ev)).Scale(float64(1 / (2 * ev)))
 	return du, dv
 }
 

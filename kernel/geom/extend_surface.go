@@ -97,7 +97,7 @@ func boundaryDerivatives(srows [][]math.Point3, coeff [][]float64, order, nv int
 func bezierExtensionPoint(d [][]math.Vector3, j, p int, e float64, order, a int) math.Point3 {
 	var v math.Vector3
 	for k := 0; k <= order && k <= j; k++ {
-		coef := binomial(j, k) / binomial(p, k) * powInt(e, k) / factorial(k)
+		coef := float64(binomial(j, k) / binomial(p, k) * powInt(e, k) / factorial(k))
 		v = v.Add(d[k][a].Scale(math.Scalar(coef)))
 	}
 	return v.AsPoint()
@@ -113,7 +113,7 @@ func extensionParam(d [][]math.Vector3, distance float64) float64 {
 	if speed < 1e-12 {
 		return distance
 	}
-	return distance / (speed / float64(n))
+	return float64(distance / (speed / float64(n)))
 }
 
 // reverseU returns s with its u parameterization reversed (control rows and knots flipped about the

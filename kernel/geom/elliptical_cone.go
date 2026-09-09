@@ -44,8 +44,8 @@ func NewEllipticalCone(apex math.Point3, axisDir, majorAxis math.Vector3, majorA
 // PointAt returns the point at (u, v).
 func (c EllipticalCone) PointAt(u, v float64) math.Point3 {
 	cos, sin := cosSin(u)
-	rMaj, rMin := v*stdmath.Tan(c.MajorAngle), v*stdmath.Tan(c.MinorAngle)
-	radial := c.Ref.AsVector().Scale(rMaj * cos).Add(c.binormal.Scale(rMin * sin))
+	rMaj, rMin := float64(v*stdmath.Tan(c.MajorAngle)), float64(v*stdmath.Tan(c.MinorAngle))
+	radial := c.Ref.AsVector().Scale(float64(rMaj * cos)).Add(c.binormal.Scale(float64(rMin * sin)))
 	return c.Apex.TranslateBy(c.AxisDir.AsVector().Scale(v)).TranslateBy(radial)
 }
 
@@ -53,8 +53,8 @@ func (c EllipticalCone) PointAt(u, v float64) math.Point3 {
 func (c EllipticalCone) DerivativesAt(u, v float64) (du, dv math.Vector3) {
 	cos, sin := cosSin(u)
 	tMaj, tMin := stdmath.Tan(c.MajorAngle), stdmath.Tan(c.MinorAngle)
-	du = c.Ref.AsVector().Scale(-v * tMaj * sin).Add(c.binormal.Scale(v * tMin * cos))
-	dv = c.AxisDir.AsVector().Add(c.Ref.AsVector().Scale(tMaj * cos)).Add(c.binormal.Scale(tMin * sin))
+	du = c.Ref.AsVector().Scale(float64(-v * tMaj * sin)).Add(c.binormal.Scale(float64(v * tMin * cos)))
+	dv = c.AxisDir.AsVector().Add(c.Ref.AsVector().Scale(float64(tMaj * cos))).Add(c.binormal.Scale(float64(tMin * sin)))
 	return du, dv
 }
 
@@ -78,8 +78,8 @@ func (c EllipticalCone) ParamAt(q math.Point3) (u, v float64) {
 	d := c.Apex.VectorTo(q)
 	v = d.Dot(c.AxisDir.AsVector())
 	r := d.Sub(c.AxisDir.AsVector().Scale(v))
-	uMaj := r.Dot(c.Ref.AsVector()) / stdmath.Tan(c.MajorAngle)
-	uMin := r.Dot(c.binormal) / stdmath.Tan(c.MinorAngle)
+	uMaj := float64(r.Dot(c.Ref.AsVector()) / stdmath.Tan(c.MajorAngle))
+	uMin := float64(r.Dot(c.binormal) / stdmath.Tan(c.MinorAngle))
 	return wrap2pi(stdmath.Atan2(uMin, uMaj)), v
 }
 

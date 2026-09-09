@@ -99,7 +99,7 @@ func tangentCosine(g, tangentLen, rLen float64) float64 {
 	if tangentLen < projectTol {
 		return 0
 	}
-	return stdmath.Abs(g) / (tangentLen * rLen)
+	return float64(stdmath.Abs(g) / (tangentLen * rLen))
 }
 
 // lineSearchToward backtracks the Gauss–Newton step (ddu, ddv) until it actually reduces
@@ -111,7 +111,7 @@ func tangentCosine(g, tangentLen, rLen float64) float64 {
 func lineSearchToward(s Surface, q math.Point3, u, v, ddu, ddv, d2 float64) (nu, nv float64, moved bool) {
 	alpha := 1.0
 	for range 8 {
-		cu, cv := clampToSurface(s, u+alpha*ddu, v+alpha*ddv)
+		cu, cv := clampToSurface(s, u+float64(alpha*ddu), v+float64(alpha*ddv))
 		if float64(s.PointAt(cu, cv).VectorTo(q).LengthSquared()) < d2 {
 			return cu, cv, true
 		}
@@ -130,8 +130,8 @@ func gaussNewtonStep(du, dv math.Vector3, gu, gv float64) (ddu, ddv float64, ok 
 	if degenerateFirstForm(a, b, c) {
 		return 0, 0, false
 	}
-	det := a*c - b*b
-	return (c*gu - b*gv) / det, (a*gv - b*gu) / det, true
+	det := float64(a*c) - float64(b*b)
+	return float64((float64(c*gu) - float64(b*gv)) / det), float64((float64(a*gv) - float64(b*gu)) / det), true
 }
 
 // clampToSurface pins (u, v) into the surface's finite parameter bounds (an unbounded or
