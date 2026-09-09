@@ -276,7 +276,9 @@ const torusAreaGrid = 1200
 // become a silent one.
 //
 // The B-rep is exact — assertBoundaryAreaMatchesTheOracle reads it against an independent oracle and it
-// agrees to a part in ten thousand. Its display MESH is not: the torus face that keeps its whole surface
+// agrees to a part in ten thousand. So is the DISPLAY mesh: at DefaultQuality the face is correctly
+// trimmed (284.98 against a whole-torus 296.09, no diagnostic), and every export preset is clean. The
+// gap is at PROPERTY faceting, which this row asserts at: the torus face that keeps its whole surface
 // less one window, bounded by a torus×torus section loop, is meshed over the surface's whole domain,
 // covering material the face does not carry. The tessellator does not do that quietly — it records
 // tessellate.trim-ignored-full-domain and tessellate.chart-mesher-declined as Defects — and this row
