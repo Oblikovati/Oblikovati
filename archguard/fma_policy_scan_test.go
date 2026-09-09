@@ -80,10 +80,14 @@ func convertsToFloat(info *types.Info, fun ast.Expr) bool {
 	}
 	b, isBasic := tv.Type.Underlying().(*types.Basic)
 	if !isBasic {
-		// An interface or a type parameter proves nothing about rounding: `any(a*b) + c` boxes a
-		// value the compiler is still free to contract, and a generic `T(a*b)` at T = complex128 is
-		// the complex case wearing another name. Both were measured emitting FMADDD while this
-		// check said "settled" (#3528 re-review, N1), so a non-basic target is NOT a round.
+		// An interface target proves nothing about rounding: `any(a*b) + c` boxes a value the
+		// compiler is still free to contract, measured emitting FMADDD while this check said
+		// "settled" (#3528 re-review, N1). That shape is what this line catches, proved by planting
+		// it.
+		//
+		// A generic `T(a*b) + c` at T = complex128 also fuses, and this line does NOT catch it —
+		// [fusableKind] returns notFusable for any type-parameter operand, so no arithmetic inside a
+		// generic function is ever classified as a product. #3536 fixes that where it belongs.
 		return false
 	}
 	return b.Info()&types.IsComplex == 0
