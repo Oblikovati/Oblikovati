@@ -41,8 +41,9 @@ func fusableKind(info *types.Info, e ast.Expr) productKind {
 	return notFusable
 }
 
-// roundedByContext reports whether a product's value cannot reach an add unrounded: it is already
-// inside an explicit conversion, or it feeds another multiplication, division or comparison.
+// roundedByContext reports whether a product's value cannot reach a floating-point add unrounded:
+// it is already inside an explicit conversion that rounds or consumes it, or it feeds another
+// multiplication, division or comparison.
 func roundedByContext(info *types.Info, parents map[ast.Node]ast.Node, m ast.Node) bool {
 	for {
 		switch p := parents[m].(type) {
@@ -56,12 +57,29 @@ func roundedByContext(info *types.Info, parents map[ast.Node]ast.Node, m ast.Nod
 		case *ast.BinaryExpr:
 			return p.Op == token.MUL || p.Op == token.QUO || isComparison(p.Op)
 		case *ast.CallExpr:
-			tv, ok := info.Types[p.Fun]
-			return ok && tv.IsType()
+			return convertsToFloat(info, p.Fun)
 		default:
 			return false
 		}
 	}
+}
+
+// convertsToFloat reports whether the call around fun settles the product's value: fun must denote
+// a TYPE (an ordinary call does not round — an inlined identity function leaves the product
+// fusable, measured), and that type must not be COMPLEX.
+//
+// The complex exclusion is the whole point of the check, not a detail. `complex128(a*b)` does not
+// round its operand — it widens it into a complex's real part still unrounded — so
+// `complex128(a*b) + c` contracts on arm64 exactly as the bare form does (ADR-0064 §5). Every other
+// conversion settles the value: to a float it rounds (the spec guarantee this policy rests on), and
+// to anything else it leaves floating-point arithmetic entirely, where no FP add can consume it.
+func convertsToFloat(info *types.Info, fun ast.Expr) bool {
+	tv, ok := info.Types[fun]
+	if !ok || !tv.IsType() || tv.Type == nil {
+		return false
+	}
+	b, isBasic := tv.Type.Underlying().(*types.Basic)
+	return !isBasic || b.Info()&types.IsComplex == 0
 }
 
 // isComparison reports whether op compares rather than computes. arm64 has no fused
@@ -92,10 +110,10 @@ func parentLinks(f *ast.File) map[ast.Node]ast.Node {
 	return parents
 }
 
-// exprText renders an expression back to source so the failure names the offending line.
-func exprText(fset *token.FileSet, e ast.Expr) string {
+// nodeText renders a node back to source so the failure names the offending line.
+func nodeText(fset *token.FileSet, n ast.Node) string {
 	var buf bytes.Buffer
-	if err := printer.Fprint(&buf, fset, e); err != nil {
+	if err := printer.Fprint(&buf, fset, n); err != nil {
 		return "<unprintable>"
 	}
 	return buf.String()

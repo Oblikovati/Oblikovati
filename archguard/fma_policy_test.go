@@ -127,26 +127,47 @@ func scanFusableProducts(t *testing.T) ([]string, map[string]int) {
 	return unrounded, complexes
 }
 
-// collectFusableProducts appends every float product/quotient in f that the compiler may still
-// contract, and tallies the complex ones per file.
+// collectFusableProducts appends every float product or quotient in f that the compiler may still
+// contract, and tallies the complex ones per file. TWO node shapes carry one: a written `a * b`,
+// and a compound assignment `x *= a` — which contains no BinaryExpr at all and is therefore
+// invisible to a walk that only inspects expressions, while compiling to the same FMADDD.
 func collectFusableProducts(fset *token.FileSet, info *types.Info, f *ast.File, unrounded *[]string, complexes map[string]int) {
 	parents := parentLinks(f)
 	ast.Inspect(f, func(n ast.Node) bool {
-		b, ok := n.(*ast.BinaryExpr)
-		if !ok || (b.Op != token.MUL && b.Op != token.QUO) {
-			return true
+		switch e := n.(type) {
+		case *ast.BinaryExpr:
+			if e.Op == token.MUL || e.Op == token.QUO {
+				recordFusable(fset, e, fusableKind(info, e), roundedByContext(info, parents, e), unrounded, complexes)
+			}
+		case *ast.AssignStmt:
+			recordFusableAssign(fset, info, e, unrounded, complexes)
 		}
-		kind := fusableKind(info, b)
-		if kind == notFusable || roundedByContext(info, parents, b) {
-			return true
-		}
-		pos := fset.Position(b.Pos())
-		rel := relativeToRepo(pos.Filename)
-		if kind == complexProduct {
-			complexes[rel]++
-			return true
-		}
-		*unrounded = append(*unrounded, rel+":"+strconv.Itoa(pos.Line)+": "+exprText(fset, b))
 		return true
 	})
+}
+
+// recordFusableAssign reports a compound multiply- or divide-assignment on a floating-point
+// left-hand side. `x *= a` IS the product `x * a`, and it cannot be wrapped where it is written:
+// the rewrite is `x = float64(x * a)`.
+func recordFusableAssign(fset *token.FileSet, info *types.Info, as *ast.AssignStmt, unrounded *[]string, complexes map[string]int) {
+	if as.Tok != token.MUL_ASSIGN && as.Tok != token.QUO_ASSIGN {
+		return
+	}
+	for _, lhs := range as.Lhs {
+		recordFusable(fset, as, fusableKind(info, lhs), false, unrounded, complexes)
+	}
+}
+
+// recordFusable files one site under its kind, unless its context already rounds it.
+func recordFusable(fset *token.FileSet, n ast.Node, kind productKind, rounded bool, unrounded *[]string, complexes map[string]int) {
+	if kind == notFusable || rounded {
+		return
+	}
+	pos := fset.Position(n.Pos())
+	rel := relativeToRepo(pos.Filename)
+	if kind == complexProduct {
+		complexes[rel]++
+		return
+	}
+	*unrounded = append(*unrounded, rel+":"+strconv.Itoa(pos.Line)+": "+nodeText(fset, n))
 }
