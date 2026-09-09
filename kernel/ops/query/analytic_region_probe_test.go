@@ -168,13 +168,13 @@ func TestTheDeepestProbeIsRankedRelativeToItsOwnWindow(t *testing.T) {
 	}
 }
 
-// TestTheComplementProbeDeclinesOnASeamWrappingLoop holds the rule regionProbeUV states for the
-// enclosed side and faceComplementUV now states for the far one: a loop that travels a whole period
-// instead of returning to where it started is not a closed polygon in the plane, so its even-odd
-// parity — and the depth ranking built on it — mean nothing. brep.PointInFaceTrim would still keep an
-// off-face probe out, but an unranked probe can sit a hair inside the trim, which is the ambiguity
-// the depth rule exists to prevent.
-func TestTheComplementProbeDeclinesOnASeamWrappingLoop(t *testing.T) {
+// TestTheComplementProbeAnswersForASeamWrappingLoop pins the REVERT of a decline that cost probe
+// coverage. A loop set wrapping the parameter seam has no meaningful crossing parity, so the depth
+// this probe ranks by is meaningless there — but declining on that ground took the certificate from
+// 4 unprobed faces to 26 across kernel/ops/boolean and from 0 to 5 on its drill/torus/ring rows, for
+// a risk no measured case demonstrated. brep.PointInFaceTrim certifies the probe against the face
+// either way, so the worst an unranked probe can be is near the trim rather than deep inside it.
+func TestTheComplementProbeAnswersForASeamWrappingLoop(t *testing.T) {
 	t.Parallel()
 	tor, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
 	if err != nil {
@@ -187,7 +187,31 @@ func TestTheComplementProbeDeclinesOnASeamWrappingLoop(t *testing.T) {
 	if !loopsWrapASeam([]faceLoop{band}) {
 		t.Fatalf("the premise is stale: a loop with netU = one period no longer reads as seam-wrapping")
 	}
-	if _, _, ok := faceComplementUV(tor, []faceLoop{band}); ok {
-		t.Errorf("the complement probe answered for a seam-wrapping loop, whose crossing parity is undefined")
+	if _, _, ok := faceComplementUV(tor, []faceLoop{band}); !ok {
+		t.Error("the complement probe declined a seam-wrapping loop; an unranked certified probe beats none")
+	}
+}
+
+// TestEveryFaceOfTheCorpusPairsIsProbeable is the RATCHET on probe coverage, and it exists because
+// coverage was won and then quietly given back. Round 0 of #3516 took the boolean certificate from
+// 26 unexamined faces to 0 on this corpus; round 1's seam decline took it back to 5, in exchange for
+// a robustness argument with no measured case behind it. A count nothing pins drifts.
+//
+// The faces at stake are the bored torus of a drilled ring — the one that holds the COMPLEMENT of
+// what its loops enclose — swept across the radii the corpus uses. None of these radii produces a
+// seam-wrapping loop set, so this row does NOT catch the decline that caused the regression: that is
+// TestTheComplementProbeAnswersForASeamWrappingLoop's job, and it fails the moment the decline
+// returns. This row holds the other half — that the complement probe keeps answering at all — and it
+// is the one that would catch a probe lost to the window list or the ranking instead.
+func TestEveryFaceOfTheCorpusPairsIsProbeable(t *testing.T) {
+	t.Parallel()
+	for _, bore := range []float64{1e-3, 1e-2, 0.05, 0.0631, 0.1, 0.2, 0.4, 0.631, 0.8, 1.2} {
+		body := boredRing(t, bore)
+		for _, f := range body.Faces() {
+			if _, ok := FaceInteriorPoint(f); !ok {
+				t.Errorf("bore %g: face %q (%T, %d loops) has no interior point, so every per-face gate "+
+					"that skips an unprobeable face skips it", bore, f.ReferenceKey(), f.Geometry(), len(f.Loops()))
+			}
+		}
 	}
 }

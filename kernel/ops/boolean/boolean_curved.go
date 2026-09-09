@@ -155,9 +155,9 @@ func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body
 			"curved %s analytic result has a face wound against its outward normal (%q): falling back to the guarded path", op, inverted.ReferenceKey())
 		return true
 	}
-	tv, wv, bv := boolVolumes(target, tool, body)
-	recordMovedVolumeOutOfToolBracket(op, tv, wv, bv, rec)
-	return curvedVolumeRejected(op, target, tool, tv, wv, bv, rec)
+	tv, wv, bv, m := boolVolumes(target, tool, body)
+	recordMovedVolumeOutOfToolBracket(op, tv, wv, bv, m.allAnalytic(), rec)
+	return curvedVolumeRejected(op, target, tool, tv, wv, bv, m.operandsAnalytic(), rec)
 }
 
 // faceCertificateRejected is the per-face half of the acceptance gate: the evidence certifyBooleanFaces
@@ -166,12 +166,15 @@ func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body
 // that something did.
 func faceCertificateRejected(op PartFeatureOperation, target, tool, body *topo.Body, res Resolution, rec *diag.Recorder) bool {
 	ev := certifyBooleanFaces(op, target, tool, body, res)
+	// FIRST, and unconditionally: how much of the body the certificate could read is most worth
+	// knowing on the paths that go on to refuse it, and a `||` short-circuit hid it from exactly those.
+	recordUnexaminedFaces(op, body, ev, rec)
 	if !ev.kept {
 		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
 			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
 		return true
 	}
-	return overclaimRejected(op, target, tool, ev, rec) || recordUnprobedFaces(op, body, ev, rec)
+	return overclaimRejected(op, target, tool, ev, rec)
 }
 
 // overclaimRejected refuses a result showing more boundary than its operands have between them.
@@ -186,15 +189,18 @@ func overclaimRejected(op PartFeatureOperation, target, tool *topo.Body, ev face
 	return true
 }
 
-// recordUnprobedFaces reports how much of the body the certificate could not read. It never refuses —
-// the gate disproves, it does not demand a probe — so it always returns false.
-func recordUnprobedFaces(op PartFeatureOperation, body *topo.Body, ev faceEvidence, rec *diag.Recorder) bool {
-	if ev.unprobed > 0 {
-		rec.Recordf(CodeBooleanFaceNotProbed, diag.Warning,
-			"curved %s analytic result: %d of %d faces had no interior point, so the membership certificate could not examine them",
-			op, ev.unprobed, len(body.Faces()))
+// recordUnexaminedFaces reports how much of the body the certificate could not read: the faces with no
+// interior point, which the membership rule was never applied to, and the faces with no analytic area,
+// which the boundary bound does not cover. It never refuses — the gate disproves, it does not demand a
+// probe.
+func recordUnexaminedFaces(op PartFeatureOperation, body *topo.Body, ev faceEvidence, rec *diag.Recorder) {
+	if ev.unprobed == 0 && ev.unmeasured == 0 {
+		return
 	}
-	return false
+	rec.Recordf(CodeBooleanFaceNotProbed, diag.Warning,
+		"curved %s analytic result: of %d faces, %d had no interior point (the membership rule was not "+
+			"applied to them) and %d had no analytic area (the boundary bound does not cover them)",
+		op, len(body.Faces()), ev.unprobed, ev.unmeasured)
 }
 
 // recordMovedVolumeOutOfToolBracket reports the material the operation MOVED against the tool that
@@ -215,10 +221,13 @@ func recordUnprobedFaces(op PartFeatureOperation, body *topo.Body, ev faceEviden
 // CONTRADICTION and saying so cannot over-claim. It is recorded, not refused: the body is the exact
 // section (#3516 measured its faces and edges), and what is wrong is the number, which the caller
 // now sees instead of storing silently.
-func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, tv, wv, bv float64, rec *diag.Recorder) {
+func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, tv, wv, bv float64, exact bool, rec *diag.Recorder) {
 	moved, ok := movedVolume(op, tv, bv)
 	slack := movedVolumeSlack * wv
-	if !ok || (moved >= -slack && moved <= wv+slack) {
+	if !ok || !exact {
+		return
+	}
+	if moved >= -slack && moved <= wv+slack {
 		return
 	}
 	rec.Recordf(CodeBooleanMovedVolumeOutOfToolBracket, diag.Defect,
@@ -229,13 +238,15 @@ func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, tv, wv, bv float
 
 // movedVolumeSlack is how far outside [0, V(tool)] a measured move may sit before it is a
 // contradiction rather than a rounding, as a fraction of the TOOL's own volume. It is not a fitted
-// threshold: swept across the whole of kernel/ops, it fires 8 times at 0 and 0 times at 1e-14, 1e-9
-// and 1e-2 alike, so every value on that plateau gives the same verdicts. The eight are correct
-// results that consume their tool WHOLE and overshoot at the last ulp — the largest is 5.7e-15 of
-// V(tool), a cut moving 12.566370614359244 against a tool holding 12.566370614359172 — while the
-// RING band's real violations are 1.9e-2 BELOW zero and 3.2e-1 above one. Twelve orders separate
-// the two populations; 1e-9 sits in the middle of that gap.
-const movedVolumeSlack = 1e-9 // tol:calibrated — plateau 1e-14..1e-2, populations 12 orders apart
+// threshold: swept across the whole of kernel/ops at slack 0, the excursions fall into two
+// populations with nothing between them. NINE are correct results that consume their tool WHOLE and
+// overshoot at the last ulp, the largest by 5.6e-15 of V(tool) — a cut moving 12.566370614359244
+// against a tool holding 12.566370614359172. Two are the RING band's real violations, 1.94e-2 BELOW
+// zero and 3.21e-1 above one. Any slack in (5.6e-15, 1.94e-2) silences the nine and keeps the two;
+// that window is 12.5 orders wide, and 1e-9 sits within a factor of 3 of its geometric centre. The
+// normalisation is what makes it scale-free: the excursion is measured against V(tool), so the
+// benign population stays at ulp scale whatever the model's size.
+const movedVolumeSlack = 1e-9 // tol:calibrated — plateau (5.6e-15, 1.94e-2), measured across kernel/ops
 
 // movedVolume is how much material the operation moved, in the direction its own definition moves it:
 // what a Cut REMOVED from the target, what a Join ADDED to it, and what an Intersect KEPT. Requicha
@@ -263,8 +274,8 @@ const CodeBooleanMovedVolumeOutOfToolBracket diag.Code = "boolean.moved-volume-o
 // curvedVolumeRejected is the acceptance gate's last stage: the Requicha two-sided volume bracket,
 // split out so each stage stays one decision. It takes the volumes its caller already measured, so
 // the two brackets read ONE measurement of each body rather than two of each.
-func curvedVolumeRejected(op PartFeatureOperation, target, tool *topo.Body, tv, wv, bv float64, rec *diag.Recorder) bool {
-	if !volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
+func curvedVolumeRejected(op PartFeatureOperation, target, tool *topo.Body, tv, wv, bv float64, exact bool, rec *diag.Recorder) bool {
+	if !volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv, exact)) {
 		return false
 	}
 	rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
@@ -323,25 +334,32 @@ const CodeBooleanAnalyticFaceReject diag.Code = "boolean.analytic-face-reject"
 // operands integrate analytically (the volumes are exact, so nothing wider is justified), widened to
 // curvedVolumeGuardFraction of the larger operand when either fell back to the tessellation, whose
 // chord deficit the bracket must then absorb.
-func curvedGuardTolerance(target, tool *topo.Body, tv, wv float64) float64 {
+func curvedGuardTolerance(target, tool *topo.Body, tv, wv float64, exact bool) float64 {
 	if curvedGuardBracketOverride != nil {
 		return *curvedGuardBracketOverride
 	}
-	if analyticVolumesExact(target, tool) {
+	if exact {
 		return ResolutionForBodies(target, tool).Volume()
 	}
 	return curvedVolumeGuardFraction * max(tv, wv)
 }
 
-// analyticVolumesExact reports whether both operands integrate over their analytic B-rep, so their
-// volumes carry no tessellation deficit for the bracket to absorb.
-func analyticVolumesExact(target, tool *topo.Body) bool {
-	if _, ok := query.AnalyticGeometryProperties(target); !ok {
-		return false
-	}
-	_, ok := query.AnalyticGeometryProperties(tool)
-	return ok
-}
+// volumeSource records, for each of the three bodies the acceptance brackets measure, whether its
+// volume came from the analytic B-rep or from a tessellation. It replaces a separate
+// analyticVolumesExact pass that re-integrated both operands to ask the same question the
+// measurement had already answered.
+type volumeSource struct{ target, tool, body bool }
+
+// operandsAnalytic reports whether both OPERANDS integrated analytically, so their volumes carry no
+// tessellation deficit for the Requicha bracket to absorb.
+func (m volumeSource) operandsAnalytic() bool { return m.target && m.tool }
+
+// allAnalytic reports whether all three did. The tool-scale bracket needs the stronger form: it has
+// no tolerance to absorb a deficit with, so comparing a meshed number with an analytic one — the
+// artefact #3516 exists to correct — would Defect a CORRECT body at a ~1e-2 mesh error against a
+// 1e-9 slack. Nothing in kernel/ops reaches it, every excursion measured there being at ulp scale,
+// but the declines this issue found are exactly how a body stops integrating.
+func (m volumeSource) allAnalytic() bool { return m.operandsAnalytic() && m.body }
 
 // CurvedBoolean attempts the exact analytic curved boolean and reports whether it applied. It is SAFE to
 // call on any operands — each path declines (ok=false) when it does not handle (op, target, tool), and none
@@ -394,20 +412,35 @@ func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body
 	// Model-relative volume tolerance (ADR-0042): scales with the operands' size³ so
 	// the result-volume sanity check is faithful at any scale, not just ~cm parts. The
 	// planar path's arithmetic is exact-plane, so a tight resolution-cube tol is right.
-	tv, wv, bv := boolVolumes(target, tool, body)
+	tv, wv, bv, _ := boolVolumes(target, tool, body)
 	return volumeOutOfBracket(op, tv, wv, bv, ResolutionForBodies(target, tool).Volume())
 }
 
-// boolVolumes measures the target, tool and result volumes for the acceptance bracket. All three go
-// through query.BodyGeometryProperties, which integrates the ANALYTIC B-rep (M48/C3 #3448), so the bracket
-// no longer compares three tessellations whose chord deficits it had to be widened to absorb. The
-// quality is shared and only reaches a body the analytic path declines, where having all three
-// measured the same way still lets their deficits partly cancel.
-func boolVolumes(target, tool, body *topo.Body) (targetVol, toolVol, bodyVol float64) {
+// boolVolumes measures the target, tool and result volumes for the acceptance brackets, and reports
+// for each whether the number is analytic or meshed. All three integrate the ANALYTIC B-rep where
+// they can (M48/C3 #3448), so the bracket no longer compares three tessellations whose chord deficits
+// it had to be widened to absorb. The quality is shared and only reaches a body the analytic path
+// declines, where having all three measured the same way still lets their deficits partly cancel.
+//
+// The SOURCE comes back with the numbers because a bracket that does not know which it holds can
+// compare a meshed volume with an analytic one, which is precisely the artefact #3516 was filed for.
+// Reading it here costs nothing: it is the choice BodyGeometryProperties already makes internally.
+func boolVolumes(target, tool, body *topo.Body) (targetVol, toolVol, bodyVol float64, src volumeSource) {
 	q := DefaultQuality()
-	return query.BodyGeometryProperties(target, q).Volume,
-		query.BodyGeometryProperties(tool, q).Volume,
-		query.BodyGeometryProperties(body, q).Volume
+	targetVol, src.target = analyticOrMeshedVolume(target, q)
+	toolVol, src.tool = analyticOrMeshedVolume(tool, q)
+	bodyVol, src.body = analyticOrMeshedVolume(body, q)
+	return targetVol, toolVol, bodyVol, src
+}
+
+// analyticOrMeshedVolume is BodyGeometryProperties' own choice made where the caller can SEE it: the
+// analytic integral when the body admits one, the tessellation at q otherwise. It costs the same
+// single integration either way, and it is what lets the brackets above know which number they hold.
+func analyticOrMeshedVolume(b *topo.Body, q Quality) (float64, bool) {
+	if props, ok := query.AnalyticGeometryProperties(b); ok {
+		return props.Volume, true
+	}
+	return query.BodyGeometryProperties(b, q).Volume, false
 }
 
 // volumeOutOfBracket reports whether a result volume falls outside the Requicha two-sided

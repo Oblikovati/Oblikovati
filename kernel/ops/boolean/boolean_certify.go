@@ -38,7 +38,12 @@ import (
 // 296.088 of the result's 296.107 of area — at every bore radius including the ones it certifies as
 // exact, because FaceInteriorPoint had no probe for a face holding the COMPLEMENT of what its loops
 // enclose. It therefore examined one face of two and called the result certified. Over the
-// drill/torus/ring rows of this package that was 26 unexamined faces; it is 0 now.
+// drill/torus/ring/bore rows of this package that was 26 unexamined faces of 248; it is 0 of 272 now.
+// Over the whole package, 4 of 2469 remain — two single-loop spheres and two two-loop tori, which I
+// did not chase. TestEveryFaceOfTheCorpusPairsIsProbeable and
+// TestTheComplementProbeAnswersForASeamWrappingLoop hold that coverage: fix round 1 of #3516 gave 22
+// of those probes back for a robustness argument with no measured case, and a count nothing pins
+// drifts.
 //
 // Example: if ev := certifyBooleanFaces(Cut, target, tool, body, sizes.res); !ev.kept { /* guarded */ }
 // res is the pair's extent resolution, decided once by the size classification and carried here: the
@@ -52,6 +57,7 @@ func certifyBooleanFaces(op PartFeatureOperation, target, tool, body *topo.Body,
 	ev := faceEvidence{kept: true}
 	ta, to := newBoundaryIndex(target), newBoundaryIndex(tool)
 	for _, f := range body.Faces() {
+		ev.addArea(f) // BEFORE the probe: the area bound must cover the faces the probe cannot find
 		p, ok := query.FaceInteriorPoint(f)
 		if !ok {
 			ev.unprobed++
@@ -61,7 +67,6 @@ func certifyBooleanFaces(op PartFeatureOperation, target, tool, body *topo.Body,
 			ev.kept = false
 			return ev
 		}
-		ev.addArea(f)
 	}
 	return ev
 }
@@ -76,8 +81,13 @@ type faceEvidence struct {
 	claimed    float64 // total analytic area of the faces it did measure
 }
 
-// addArea credits a face's analytic area to the result's total. A face whose area declines is counted
-// and left OUT, which can only make the total smaller — so the bound it feeds stays sound.
+// addArea credits a face's analytic area to the result's total. It runs on EVERY face, including the
+// ones the interior probe cannot find: the membership certificate is blind there and the area bound
+// must not be, or a result that grew boundary on an unprobeable face would be invisible to both.
+//
+// A face whose analytic area declines is counted in unmeasured and left OUT of the total, which can
+// only make it smaller — the bound stays sound, but it stops covering the whole body, so the count is
+// REPORTED rather than only kept. Sound and vacuous are compatible.
 func (ev *faceEvidence) addArea(f *topo.Face) {
 	area, ok := query.AnalyticFaceArea(f)
 	if !ok {

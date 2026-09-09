@@ -104,16 +104,20 @@ func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 // the far side. A probe built from the gap between two loops' nearest samples would reach it; there
 // is no measured case demanding one yet, and four faces in kernel/ops/boolean are still unprobed.
 //
-// A loop set that WRAPS the parameter seam declines outright rather than being put to the even-odd
-// test, which is the rule regionProbeUV states one file over: a wrapping loop is not a closed
-// polygon in the plane, so its crossing parity — and therefore the depth ranking built on it — means
-// nothing. brep.PointInFaceTrim would still keep an off-face probe out, but a probe whose DEPTH is
-// meaningless can sit a hair inside the trim, which is the ambiguity regionProbeDeepEnough exists to
-// prevent. No probe is better than an unranked one.
+// A loop set that WRAPS the parameter seam is searched too, and its probe is UNRANKED. regionProbeUV
+// refuses to put such a loop to the even-odd test one file over, on the ground that a wrapping loop
+// is not a closed polygon and its crossing parity says nothing — and by that argument the depth this
+// file ranks by says nothing either. Declining on it was tried and REVERTED: it cost probe coverage
+// on 22 faces across kernel/ops/boolean and 5 on its drill/torus/ring rows, in exchange for a
+// robustness argument with no measured case behind it. brep.PointInFaceTrim certifies every probe
+// this returns against the face itself, so what a meaningless ranking can produce is a probe near the
+// trim rather than deep inside it — and a certified probe near the trim is strictly more proof than
+// no probe at all, which is what the certificate has for a face it cannot probe. The ambiguity
+// regionProbeDeepEnough guards against is real for the SIDE test, which chooses a branch; this
+// caller only needs a point the face holds. Pinned by TestTheComplementProbeAnswersForASeamWrappingLoop,
+// which fails the moment the decline returns, and by TestEveryFaceOfTheCorpusPairsIsProbeable, which
+// holds the coverage the decline cost.
 func faceComplementUV(s geom.Surface, loops []faceLoop) (u, v float64, ok bool) {
-	if loopsWrapASeam(loops) {
-		return 0, 0, false // see loopsWrapASeam: even-odd says nothing about an open polyline
-	}
 	var rect probeWindow
 	rect.uLo, rect.uHi = s.UDomain()
 	rect.vLo, rect.vHi = s.VDomain()

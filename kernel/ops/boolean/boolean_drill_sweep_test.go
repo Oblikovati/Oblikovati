@@ -16,6 +16,7 @@ import (
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // The sweep behind the resolution floor (finding 4 of the stage-6 review: the floor was asserted, not
@@ -299,36 +300,119 @@ func assertBoredRingRemovesMaterialAnalytically(t *testing.T, body, drill *topo.
 	}
 }
 
-// TestAnImpossibleRemovalIsRecorded is the corpus row for the gate the #3516 review found missing.
+// TestTheMovedVolumeBracketRefusesOnlyImpossibleMoves is the gate's own truth table, over synthetic
+// volumes so every row is exact arithmetic and none of it can drift with the geometry pipeline.
 //
-// Two radii in the band the analytic-region-probe fix unlocked measure a removal no cut can produce:
-// at 8.913e-4 the result is LARGER than the ring it was cut from (removed = −3.873e-7), and at
-// 7.079e-4 it removes 1.664e-5 with a tool holding only 1.260e-5. Both returned err=nil with an
-// EMPTY recorder before this: the model-relative Requicha bracket beside it has a tolerance of
-// 6.464e-3 on this pair, 686x the material a 1e-3 bore removes, so it cannot see a feature this size
-// at all. The tool-scale bracket can, needs no tolerance of its own, and says so.
-//
-// The plateau row is here too, and it is the half that keeps the gate honest: a correct cut must NOT
-// record it.
-func TestAnImpossibleRemovalIsRecorded(t *testing.T) {
+// The bracket is one rule for three operations — what a Cut removed, a Join added, an Intersect kept,
+// each bounded by the tool that moved it — so the table walks all three at both bounds, at the slack
+// on either side of each, and at the guard that keeps a MESH volume out of an analytic comparison.
+func TestTheMovedVolumeBracketRefusesOnlyImpossibleMoves(t *testing.T) {
 	t.Parallel()
+	const tool = 4.0
 	for _, tc := range []struct {
-		bore float64
-		want bool
-		// The two radii are sweep points of the 20-per-decade scan that found them, written as the
-		// scan writes them: at this scale the removal is noise, and rounding the radius to four
-		// digits moves it off the row that misbehaves.
-	}{{stdmath.Pow(10, -3.05), true}, {stdmath.Pow(10, -3.15), true}, {0.1, false}, {0.8, false}} {
-		ring, drill := ringAndDrill(t, tc.bore)
-		rec := &diag.Recorder{}
-		if _, err := BooleanWithDiagnostics(Cut, ring, drill, rec); err != nil {
-			t.Fatalf("bore %g must build for its measurement to be judged: %v", tc.bore, err)
-		}
-		if got := rec.Has(CodeBooleanMovedVolumeOutOfToolBracket); got != tc.want {
-			t.Errorf("bore %g: recorded %q = %v, want %v; records %v",
-				tc.bore, CodeBooleanMovedVolumeOutOfToolBracket, got, tc.want, rec.Records())
+		name         string
+		op           PartFeatureOperation
+		tv, wv, bv   float64
+		exact        bool
+		wantRecorded bool
+	}{
+		{"cut removes half its tool", Cut, 100, tool, 98, true, false},
+		{"cut removes exactly its tool", Cut, 100, tool, 96, true, false},
+		{"cut removes nothing", Cut, 100, tool, 100, true, false},
+		{"cut removes an ulp less than nothing", Cut, 100, tool, 100 + tool*movedVolumeSlack/2, true, false},
+		{"cut removes measurably less than nothing", Cut, 100, tool, 100 + tool*movedVolumeSlack*10, true, true},
+		{"cut removes measurably more than its tool", Cut, 100, tool, 96 - tool*movedVolumeSlack*10, true, true},
+		{"join adds half its tool", Join, 100, tool, 102, true, false},
+		{"join adds more than its tool", Join, 100, tool, 105, true, true},
+		{"join loses material", Join, 100, tool, 99, true, true},
+		{"intersect keeps part of the tool", Intersect, 100, tool, 3, true, false},
+		{"intersect keeps more than the tool", Intersect, 100, tool, 5, true, true},
+		{"an operation with no membership rule", NewBody, 100, tool, 500, true, false},
+		// The guard #3516's own root cause demands: one operand measured by mesh and the other
+		// analytically is the artefact this issue exists to correct, and a ~1e-2 mesh deficit against
+		// a 1e-9 slack would Defect a correct body.
+		{"an impossible move measured by mesh", Cut, 100, tool, 105, false, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := &diag.Recorder{}
+			recordMovedVolumeOutOfToolBracket(tc.op, tc.tv, tc.wv, tc.bv, tc.exact, rec)
+			if got := rec.Has(CodeBooleanMovedVolumeOutOfToolBracket); got != tc.wantRecorded {
+				t.Errorf("recorded = %v, want %v; records %v", got, tc.wantRecorded, rec.Records())
+			}
+		})
+	}
+}
+
+// TestAToolTooSmallToAccountForTheRemovalIsRecorded proves the gate on a REAL result, by construction
+// rather than by finding a radius that misbehaves. It measures the exact 0.8 bore through the RING —
+// 5.809 of material removed — against a stub tool of the same radius but one unit long, which holds
+// only 2.011. No cut can move 2.9x its own tool.
+//
+// The row it replaces pinned two radii where the pipeline's own measurement happens to fall outside
+// the bracket, and a 1e-5 RELATIVE change in either bore flips the verdict (measured: +7.45e-6,
+// -3.87e-7, +4.83e-6 across a 2e-5 window). Output has to be byte-identical across PLATFORMS, and
+// this repo already carries an arm64/amd64 contraction divergence (ADR-0064, #3528); a verdict that
+// turns on the last digits of a cancelling difference does not survive one.
+func TestAToolTooSmallToAccountForTheRemovalIsRecorded(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 0.8)
+	body, err := Boolean(Cut, ring, drill)
+	if err != nil {
+		t.Fatalf("the RD- row must build: %v", err)
+	}
+	stub, err := brep.SolidCylinder(math.P3(5, 0, -0.5), math.V3(0, 0, 1), 0.8, 1)
+	if err != nil {
+		t.Fatalf("stub: %v", err)
+	}
+	honest := &diag.Recorder{}
+	tv, wv, bv, _ := boolVolumes(ring, drill, body)
+	recordMovedVolumeOutOfToolBracket(Cut, tv, wv, bv, true, honest)
+	if honest.Has(CodeBooleanMovedVolumeOutOfToolBracket) {
+		t.Fatalf("the genuine pair is out of bracket, so the probe below proves nothing: %v", honest.Records())
+	}
+	rec := &diag.Recorder{}
+	_, stubVol, _, _ := boolVolumes(ring, stub, body)
+	recordMovedVolumeOutOfToolBracket(Cut, tv, stubVol, bv, true, rec)
+	if !rec.Has(CodeBooleanMovedVolumeOutOfToolBracket) {
+		t.Errorf("a cut removing %g with a tool holding %g was not recorded", tv-bv, stubVol)
+	}
+}
+
+// TestTheBandRecordsItsImpossibleRadiiAndThePlateauRecordsNone is the band's own half of the gate,
+// written as an EXISTENCE statement so an ulp of drift in the geometry cannot move which radius
+// misbehaves and fail the row. What it asserts is the shape the sweep measured: somewhere in the
+// coarse band a built result reports a move its tool cannot account for, and nowhere on the exact
+// plateau does one.
+func TestTheBandRecordsItsImpossibleRadiiAndThePlateauRecordsNone(t *testing.T) {
+	t.Parallel()
+	fired := 0
+	for k := range 20 {
+		bore := stdmath.Pow(10, -3.5+float64(k)/20.0) // 3.16e-4 .. 1.78e-3, the coarse band
+		if recordsAnImpossibleMove(t, bore) {
+			fired++
 		}
 	}
+	if fired == 0 {
+		t.Errorf("no radius in the coarse band recorded %q; the band's own measurements were what "+
+			"this gate was added for", CodeBooleanMovedVolumeOutOfToolBracket)
+	}
+	for _, bore := range []float64{0.02, 0.0631, 0.1, 0.4, 0.8} {
+		if recordsAnImpossibleMove(t, bore) {
+			t.Errorf("bore %g is on the exact plateau and recorded %q", bore, CodeBooleanMovedVolumeOutOfToolBracket)
+		}
+	}
+}
+
+// recordsAnImpossibleMove cuts one bore and reports whether the result's measured move is one its
+// tool cannot account for. A refused bore records nothing by definition: no body, no measurement.
+func recordsAnImpossibleMove(t *testing.T, bore float64) bool {
+	t.Helper()
+	ring, drill := ringAndDrill(t, bore)
+	rec := &diag.Recorder{}
+	if _, err := BooleanWithDiagnostics(Cut, ring, drill, rec); err != nil {
+		return false
+	}
+	return rec.Has(CodeBooleanMovedVolumeOutOfToolBracket)
 }
 
 // The oracle must be trustworthy before any row leans on it: it is checked against the shipped RD-

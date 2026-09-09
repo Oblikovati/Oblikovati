@@ -221,9 +221,9 @@ var kernelNetDeltaPin = map[string]int{
 	// **fallback-site delta is 0**: no path was added, and no acceptance changed. It names an existing
 	// SILENT hole in a PROOF rather than a degradation of a result — certifyBooleanFaces skips a face
 	// whose interior point it cannot find, and nothing reported how many it had skipped. Measured on
-	// this package's drill/torus/ring/bore rows, that was 26 faces skipped before #3516 and 0 after;
-	// over the whole kernel/ops/boolean package 4 remain. The count is what makes the residue
-	// countable, so no ADR is owed for a new engine, recognizer or tolerance.
+	// this package's drill/torus/ring/bore rows, that was 26 faces skipped of 248 before #3516 and 0 of
+	// 272 after; over the whole kernel/ops/boolean package 4 of 2469 remain. The count is what makes
+	// the residue countable, so no ADR is owed for a new engine, recognizer or tolerance.
 	//
 	// The measurement is not restated here: it lives on certifyBooleanFaces in
 	// kernel/ops/boolean/boolean_certify.go, with the band it belongs to on
@@ -238,7 +238,16 @@ var kernelNetDeltaPin = map[string]int{
 	// removal. The new code is the same rule at the TOOL's scale, where a violation is a
 	// contradiction and needs no tolerance of its own. No ADR is owed for a new engine, recognizer or
 	// tolerance; the ADR that IS owed is the one superseding ADR-0061's G8 entry, which #3515 writes.
-	"diag-codes": 39,
+	//
+	// 39 → 41 (2026-09-09, #3516 fix round 2): NO new codes. These two are RE-EXPORTS of
+	// CodeBooleanFaceNotProbed and CodeBooleanMovedVolumeOutOfToolBracket through
+	// kernel/ops/boolean_alias.go, which countDiagCodes counts as declarations because it counts
+	// ValueSpecs of type diag.Code and an alias is one. The kernel gained no code and no fallback
+	// site; a consumer gained the ability to NAME two it previously had to match by string, which is
+	// what "reaches feature health, the API and the UI" requires of a degradation. Nothing here needs
+	// an ADR — and if this key is ever redefined to count distinct code VALUES rather than
+	// declarations, this entry falls back to 39 and the entry above it stands unchanged.
+	"diag-codes": 41,
 }
 
 func TestKernelNetDelta(t *testing.T) {
