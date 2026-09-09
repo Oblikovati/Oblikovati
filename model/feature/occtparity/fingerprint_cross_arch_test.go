@@ -25,6 +25,11 @@ import (
 // The set is a ratchet in both directions. A body that drifts without being listed is a real
 // regression — this policy is meant to be closing that gap, not opening it. A listed body that
 // stops drifting means the gap closed and the entry must go, or the list stops meaning anything.
+//
+// Being listed excuses a HASH, not a structure: a listed body is still held to its amd64 triangle
+// count exactly unless it is also in crossArchTriangleDrift (three bodies, and that set ratchets
+// too). A different hash is a coordinate rounding differently; a different count is a refinement
+// decision landing on the other side, and the two must not be excused by one entry.
 
 // crossArchHashDrift names the pinned bodies whose mesh still differs on a platform that contracts
 // x*y+z into an FMA — arm64, which is the macOS CI leg. It is a list of NAMES, not a second set of
@@ -53,6 +58,21 @@ import (
 //
 // So this list is a measurement of how much of the kernel still contracts, and it shrinks to empty
 // as `make arm64-fma` reaches zero package by package (#3528 follow-ups).
+// crossArchTriangleDrift is the subset of crossArchHashDrift whose TRIANGLE COUNT also differs on a
+// contracting platform, i.e. where a refinement decision lands on the other side rather than a
+// coordinate rounding differently. Every other listed body is still held to its amd64 count
+// EXACTLY: being excused a hash is not being excused a structural change.
+//
+// Measured on arm64 at this HEAD (amd64 -> arm64): simple/E3 430000 -> 411240 (−4.36%),
+// simple/G9 56226 -> 56246 (+0.04%), simple/Z1 34808 -> 34809 (+0.003%). Three of the 46, down
+// from sixteen at the wave base. It ratchets both ways — a body that regains its amd64 count fails
+// here and must be deleted from the set.
+var crossArchTriangleDrift = map[string]bool{
+	"simple/E3": true,
+	"simple/G9": true,
+	"simple/Z1": true,
+}
+
 var crossArchHashDrift = map[string]bool{
 	"bfuseblend/A4":      true,
 	"bfuseblend/A6":      true,
@@ -128,6 +148,17 @@ func assertPinnedFingerprint(t *testing.T, tc fingerprintPin, fp meshFingerprint
 		}
 		return
 	}
+	if crossArchHashDrift[key] && !crossArchTriangleDrift[key] && fp.Triangles != tc.tris {
+		t.Fatalf("%s is allowed to drift in its last bits on %s/%s, but its TRIANGLE COUNT moved: "+
+			"%d, want %d. A different hash is rounding; a different count is a refinement decision "+
+			"landing on the other side, which is a structural change and not what this list excuses "+
+			"(ADR-0064, #3528)", key, runtime.GOOS, runtime.GOARCH, fp.Triangles, tc.tris)
+	}
+	if crossArchTriangleDrift[key] && fp.Triangles == tc.tris {
+		t.Fatalf("%s now has its amd64 triangle count on %s/%s — DELETE its crossArchTriangleDrift "+
+			"entry; the body is back to a hash-only difference (ADR-0064, #3528)",
+			key, runtime.GOOS, runtime.GOARCH)
+	}
 	switch listed := crossArchHashDrift[key]; {
 	case matched && listed:
 		t.Fatalf("%s now matches its amd64 pin on %s/%s — the contraction no longer reaches this "+
@@ -177,6 +208,11 @@ func TestCrossArchDriftListIsExactlyThePinnedNames(t *testing.T) {
 	for name := range crossArchHashDrift {
 		if !pinned[name] {
 			orphans = append(orphans, name)
+		}
+	}
+	for name := range crossArchTriangleDrift {
+		if !crossArchHashDrift[name] {
+			orphans = append(orphans, name+" (in crossArchTriangleDrift but not crossArchHashDrift)")
 		}
 	}
 	sort.Strings(orphans)
