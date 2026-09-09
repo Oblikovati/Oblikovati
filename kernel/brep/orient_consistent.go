@@ -330,8 +330,9 @@ func materialSideVotes(s geom.Surface, ring []math.Point2, r trimRegion) int {
 }
 
 // quarterArcLeftOf is the (u, v) offset that steps a quarter of the segment's own ARC LENGTH to the left
-// of its travel, seen along the chart normal S_u×S_v. ok=false for a degenerate segment or a chart with
-// no local frame (a pole), which names no direction.
+// of its travel, seen along the chart normal S_u×S_v. ok=false for a degenerate segment, a chart with no
+// local frame (a pole, where S_u vanishes and det is 0 EXACTLY), or a step the chart cannot hold as a
+// local one (stepStaysOnOneBranch).
 //
 // A quarter turn in (u, v) — the offset this used to take — is "left" only on a metrically ISOTROPIC
 // chart. On a cylinder u is an angle and v a length, so the same numeric step is R·du one way and dv the
@@ -354,7 +355,27 @@ func quarterArcLeftOf(s geom.Surface, at math.Point2, d math.Vector2) (math.Vect
 	left := normal.Cross(tangent) // ⊥ to the travel, in the tangent plane, of length |N|·|T|
 	du := float64(g*left.Dot(pu)-f*left.Dot(pv)) / det
 	dv := float64(e*left.Dot(pv)-f*left.Dot(pu)) / det
-	return math.V2(math.Scalar(du/scale), math.Scalar(dv/scale)), true
+	off := math.V2(math.Scalar(du/scale), math.Scalar(dv/scale))
+	return off, stepStaysOnOneBranch(s, off)
+}
+
+// stepStaysOnOneBranch reports whether a (u, v) offset is still a LOCAL step: on a PERIODIC axis it has
+// to be shorter than half a turn, or the two sides of the boundary land on the same branch — or on
+// crossed ones — and the probe is reading a point somewhere else on the surface entirely. The chart's
+// own period says how long that is; nothing is chosen.
+//
+// This is the conditioning gate the exact-zero frame guards above cannot be. det is 0 EXACTLY where the
+// frame collapses (S_u vanishes at a sphere pole and a cone apex), so those stations are refused there;
+// a station a HAIR off one has a tiny-but-positive det and maps a perfectly legitimate quarter-arc to an
+// unbounded du, which is arithmetically right and geometrically useless. On a non-periodic axis an
+// over-long step needs no gate — the chart is finite, the probe lands outside it, and both sides then
+// answer alike, which every caller already reads as "measured nothing". Only a periodic axis can wrap
+// round and answer confidently about the wrong place.
+func stepStaysOnOneBranch(s geom.Surface, off math.Vector2) bool {
+	uPer, vPer := surfacePeriodic(s)
+	halfTurn := twoPi / 2
+	return (!uPer || stdmath.Abs(float64(off.X)) < halfTurn) &&
+		(!vPer || stdmath.Abs(float64(off.Y)) < halfTurn)
 }
 
 // ringVoteStations picks the edges that vote: every edge of a short ring, and materialSideStations
