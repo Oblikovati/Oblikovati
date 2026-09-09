@@ -4525,3 +4525,17 @@ ring's own (u, v) sampling), `unitLeftOf` (the quarter turn) and `medianOf` are 
 `quarterArcLeftOf` and applies `outwardSenseInUV` to it. `face_winding.go` 141 → 126 lines, one
 `tol:parametric` constant gone, and `./kernel/... ./archguard/...` is green with no pin moved.
 
+### Two residuals recorded beside the fixes (2026-09-09, review round 1)
+
+- **`shellEnclosedBy` narrows the on-boundary degeneracy; it does not close it.** The point it now asks
+  at is certified inside the region the shell under classification bounds, so it is never on THAT
+  shell's boundary. It can still land on an ALREADY-ORIENTED shell's boundary — an internally tangent
+  void is the configuration — and neither `fluxQuery.inside` nor `parityInside` declines an on-boundary
+  query. That is a far narrower case than the loop vertex it replaces, which was on the boundary always;
+  closing it needs an on-boundary decline in the classifier itself, which is its own change.
+- **The shell tie-break moved.** The deleted `connectedFaceComponents` body appended isolated faces
+  last; `walkFaceComponents` emits components in face-index order and sorts their members. So
+  `fluxShellsLargestFirst`'s `SliceStable` now breaks a tie between two shells of equal |volume| by
+  lowest face index rather than by discovery order, and `anchorOnClosedSurface` takes the lowest-index
+  closed-surface face rather than the first the BFS reached — which is what its own comment already
+  claimed. Both orders are total and deterministic; neither was before.
