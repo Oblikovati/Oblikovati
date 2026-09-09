@@ -35,17 +35,29 @@ PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 # Minimum total coverage gate for `make cover` (raise as the suite grows).
 COVER_MIN ?= 0
 
-# The three exchange translators are SEPARATE modules (own go.mod), and unlike head/
-# they are not in go.work either, so `./...` at the root reaches none of them and a
+# Every nested Go module the gate must run, DERIVED from the tree and never typed: a
+# module added tomorrow is in the gate the day it lands, with no edit here (#3526). A
+# hand-kept list re-introduces the exact defect this target exists to remove — silent
+# under-coverage — on a timer. `archguard.TestGateReachesEveryTrackedModule` fails when
+# this set and CI's own module lists disagree.
+#
+# `git ls-files`, not `find`: it sees exactly what is committed, so an ignored
+# experiment or a stray agent worktree under .claude/ cannot drag a second copy of the
+# whole repo into the gate. Modules deliberately absent from this set, each because it
+# has a leg of its own:
+#   .        -> `make ci`
+#   head     -> `make test-head` (cgo module, own Makefile, native deps)
+#   head/... -> the two c-shared add-in fixtures head's own loader tests compile
+#
+# They are not in go.work either, so `./...` at the root reaches none of them and a
 # plain `go test ./...` inside one fails with "directory prefix . does not contain
-# modules listed in go.work" — hence GOWORK=off. `make gate` is what runs them (#3526).
-TRANSLATOR_MODULES := model/exchange/translators/olecf \
-                      model/exchange/translators/inventor \
-                      model/exchange/translators/solidworks
+# modules listed in go.work" — hence GOWORK=off below.
+GATE_NESTED_MODULES := $(filter-out head head/%, \
+  $(patsubst %/go.mod,%,$(filter-out go.mod,$(shell git ls-files '*go.mod' 2>/dev/null))))
 
 # 30m: the inventor batch-translate package rebuilds all 77 testdata parts (527 s on CI
 # run 34280554924) and hit `go test`'s 10m per-package default once (run 33765461130).
-TRANSLATOR_TIMEOUT ?= 30m
+NESTED_MODULE_TIMEOUT ?= 30m
 
 # Revision `make test-impacted` compares against to find the change set.
 IMPACT_BASE ?= origin/develop
@@ -55,7 +67,7 @@ IMPACT_BASE ?= origin/develop
 .PHONY: help
 help: ## List available targets
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
-	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: tidy
 tidy: ## Sync go.mod / go.sum
@@ -97,7 +109,17 @@ lint: ## Run golangci-lint (install with `make tools`)
 
 .PHONY: docs-lint
 docs-lint: ## Lint the docs (markdownlint via npx; needs node). Link check runs in CI (lychee).
+	@command -v npx >/dev/null 2>&1 \
+	  || { echo "docs-lint: npx not found - install Node; CI enforces markdownlint as a required job"; exit 1; }
 	npx --yes markdownlint-cli2
+
+# CI enforces this as its own required job (ci.yml, job `spdx`). It was the second check
+# `make gate` claimed to be THE pre-push gate without running (#3526).
+.PHONY: spdx-check
+spdx-check: ## Fail if any .go file is missing its SPDX header (what CI's spdx job runs)
+	@command -v python3 >/dev/null 2>&1 \
+	  || { echo "spdx-check: python3 not found - it runs scripts/add-spdx-headers.py"; exit 1; }
+	python3 scripts/add-spdx-headers.py --check
 
 # The suite runs in two tiers (architecture/testing/03-test-tiers-and-selection.md).
 # TIER 1 (`make test`, -short) skips the corpus and oracle tests. TIER 2 (`make
@@ -177,13 +199,27 @@ test-slowest-serial: ## Rank tier 2 with NO parallelism — the measurement the 
 	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) > $(TESTJSON); \
 	  status=$$?; $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
-.PHONY: test-translators
-test-translators: ## Tier 2 on the three exchange translator modules (own go.mod)
-	@for m in $(TRANSLATOR_MODULES); do \
+# No CGO_ENABLED pin: CI runs these modules with cgo at its default (ci.yml, step
+# "Translator-module coverage"), and the gate must never cover LESS than CI. The root
+# targets pin CGO_ENABLED=0 for ADR-0008 reasons that do not apply to a nested module.
+.PHONY: test-nested-modules
+test-nested-modules: ## Tier 2 on every nested module (the exchange translators today)
+	@if [ -z "$(GATE_NESTED_MODULES)" ]; then \
+	  echo "gate: derived NO nested modules - git ls-files '*go.mod' returned nothing"; \
+	  echo "gate: (not a git checkout? git missing?). Refusing to report green over a"; \
+	  echo "gate: module set it could not measure."; \
+	  exit 1; \
+	fi; \
+	for m in $(GATE_NESTED_MODULES); do \
 	  echo "→ $$m"; \
-	  (cd $$m && GOWORK=off CGO_ENABLED=0 $(GO) test -timeout $(TRANSLATOR_TIMEOUT) $(PKG)) \
-	    || exit 1; \
+	  (cd $$m && GOWORK=off $(GO) test -timeout $(NESTED_MODULE_TIMEOUT) $(PKG)) || exit 1; \
 	done
+
+# The gate-coverage guard reads this instead of re-deriving the set, so the test measures
+# what the gate will actually run rather than a copy of the same expression (#3526).
+.PHONY: print-gate-modules
+print-gate-modules: ## Print the derived nested-module set, one per line
+	@for m in $(GATE_NESTED_MODULES); do echo $$m; done
 
 .PHONY: test-race
 test-race: ## Run the suite under the race detector (needs cgo)
@@ -222,13 +258,18 @@ run-cli: ## Run the headless CLI
 ci: fmt-check vet lint cover ## Everything a PR must pass, locally (both modules)
 
 # THE pre-push gate (#3526). `make ci` covers the root module and lints/vets head, but
-# nothing ran the head module's TESTS or the translator modules at all, so "this wave
-# did not touch head" was an assertion about a diff rather than a measurement. `gate`
-# closes that: head-deps runs FIRST so a machine without the native deps is told which
-# one is missing in one second, instead of after the full suite — and it exits non-zero
-# there, because a gate that quietly covers four of five modules is worse than no gate.
+# nothing ran the head module's TESTS or the nested modules at all, and neither the SPDX
+# nor the markdownlint job CI requires — so "this wave did not touch head" was an
+# assertion about a diff rather than a measurement.
+#
+# Leg order is cheapest-and-most-likely-to-be-forgotten first, so a missing SPDX header
+# or a markdownlint error surfaces in seconds rather than 26 minutes in; then the ground
+# this issue newly covers (head, the nested modules); then `ci`, the longest and
+# best-known leg, last. head-deps is leg 1 for the same reason: a machine that cannot
+# build head is told which dependency is missing in 0.2 s, and exits non-zero, because a
+# gate that quietly covers some of the modules is worse than no gate.
 .PHONY: gate
-gate: head-deps ci test-translators test-head ## Pre-push: EVERY module — root, translators, cgo head
+gate: head-deps spdx-check docs-lint test-head test-nested-modules ci ## Pre-push: EVERY module + every check CI requires
 
 .PHONY: ci-race
 ci-race: ci test-race ## `make ci` plus the race detector (the pre-release gate)
