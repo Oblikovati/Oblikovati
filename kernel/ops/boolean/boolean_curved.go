@@ -144,12 +144,19 @@ func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, sizes 
 // the order the ground rules put them: the per-face membership certificate is the PROOF, winding is a
 // post-condition the certificate cannot see, and the whole-body volume bracket is the closing smoke
 // test. Each rejection records its own Defect naming which certificate refused, so a demotion says WHY
-// rather than only that it happened. Validity is checked by the caller, at the exit (see there).
+// rather than only that it happened, and an ACCEPTANCE the certificate could not take in full records
+// how much of the body it read. Validity is checked by the caller, at the exit (see there).
 func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body, sizes operandSizes, rec *diag.Recorder) bool {
-	if !certifyBooleanFaces(op, target, tool, body, sizes.res) {
+	certified, unprobed := certifyBooleanFaces(op, target, tool, body, sizes.res)
+	if !certified {
 		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
 			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
 		return true
+	}
+	if unprobed > 0 {
+		rec.Recordf(CodeBooleanFaceNotProbed, diag.Warning,
+			"curved %s analytic result: %d of %d faces had no interior point, so the membership certificate could not examine them",
+			op, unprobed, len(body.Faces()))
 	}
 	if inverted, found := invertedFace(body); found {
 		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
@@ -204,6 +211,13 @@ const CodeBooleanNoExactCurvedPath diag.Code = "boolean.no-exact-curved-path"
 // CurvedBoolean entries took this guarded path, is none of them (ADR-0061). A tracked degradation: the
 // analytic result is refused and the operation falls to the guarded planar path.
 const CodeBooleanAnalyticInvalid diag.Code = "boolean.analytic-invalid"
+
+// CodeBooleanFaceNotProbed marks a curved analytic result the per-face certificate could not examine
+// in full: a face of it has no interior point to classify, so the membership rule was never applied
+// there. It is a Warning, not a Defect — every face that COULD be read passed, and the result is
+// probably fine — but it is the honest size of the proof: "certified" on a body with unprobed faces
+// means fewer faces were checked than the body has (Oblikovati/Oblikovati#3516).
+const CodeBooleanFaceNotProbed diag.Code = "boolean.face-not-probed"
 
 // CodeBooleanAnalyticFaceReject marks a curved analytic boolean whose result carried a face the
 // operands cannot account for under the operation's membership rule — a face on neither operand's
@@ -276,7 +290,7 @@ func shouldFallbackBoolean(op PartFeatureOperation, target, tool, body *topo.Bod
 	if !Validate(body).ValidSolid() {
 		return true
 	}
-	if !certifyBooleanFaces(op, target, tool, body, sizes.res) {
+	if certified, _ := certifyBooleanFaces(op, target, tool, body, sizes.res); !certified {
 		return true
 	}
 	return invalidBooleanVolume(op, target, tool, body)

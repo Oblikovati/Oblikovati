@@ -57,6 +57,12 @@ const (
 	drillSilent    drillOutcome = "silent"    // returned the target untouched, err=nil, nothing recorded
 	drillExact     drillOutcome = "exact"     // torus + cylinder, 4 loops, volume matches the oracle
 	drillWrongBody drillOutcome = "wrongbody" // a body that is not the exact answer, returned anyway
+	// drillCoarse is the exact SECTION — valid, torus + cylinder, 4 loops — whose analytic removed
+	// volume misses the oracle. It is a separate outcome from drillWrongBody because the two are
+	// separate defects: a wrong body is a modelling failure, this is a MEASUREMENT one, and calling
+	// them the same thing is what let the RING band be filed as "the section is wrong" for a whole
+	// milestone when the section was right and only the number was not (Oblikovati/Oblikovati#3516).
+	drillCoarse drillOutcome = "coarse"
 )
 
 // sweepDrill runs one point of the sweep and classifies the outcome against the oracle.
@@ -120,7 +126,7 @@ func classifyBoredRing(ring, body *topo.Body, bore float64) drillOutcome {
 	removed := query.BodyGeometryProperties(ring, q).Volume - query.BodyGeometryProperties(body, q).Volume
 	oracle := boreRemovalOracle(5, 1.5, 5, bore, boreQuadratureCells)
 	if stdmath.Abs(removed-oracle) > 0.01*oracle { // tol:calibrated — 1%, four orders above the oracle's own 3.5e-7
-		return drillWrongBody
+		return drillCoarse // the shape gate passed: the section is right and the measurement is not
 	}
 	return drillExact
 }
@@ -141,11 +147,28 @@ func TestTheAxialDrillSweepPinsTheResolutionFloor(t *testing.T) {
 		// covers it with margin. An earlier version of this comment filed 1e-8 as "above the floor",
 		// which mis-stated the classification's reach by an order of magnitude.)
 		{1e-11, drillRefused}, {1e-10, drillRefused}, {1e-9, drillRefused}, {1e-8, drillRefused},
-		// ABOVE the floor, inside the capability gap: the size classification does not answer, and these
-		// are refused on the pipeline's own merits — by name up to ~6.3e-5 of the extent, and by the
-		// post-hoc Requicha volume bracket above that (see TestASmallBoreIsRefusedNotShippedWrong).
-		{1e-6, drillRefused}, {1e-4, drillRefused}, {1e-3, drillRefused}, {0.0631, drillRefused},
-		// The exact plateau.
+		// ABOVE the floor: the size classification does not answer, and the outcome is the pipeline's
+		// own. Up to ~4e-4 the general per-face boolean declines the pair BY NAME
+		// (boolean.no-exact-curved-path) and no geometry is built.
+		{1e-6, drillRefused}, {1e-4, drillRefused},
+		// From ~6.3e-4 the pipeline BUILDS the exact section — valid, one torus, one cylinder, four
+		// loops, both intersection edges on both surfaces to 4.4e-16 (torus) and 4.4e-12 (cylinder).
+		// What separates this row from the plateau is not the body but the number: the section curve's
+		// tangent is a fixed-step central difference of an azimuth root whose own error grows as the
+		// section's azimuth swing shrinks, so the Green face integral reads this bore's wall 43% light
+		// and the removed volume misses the oracle (Oblikovati/Oblikovati#3516; the measured law and
+		// the two plateau sweeps that refute a tuned step are in that issue).
+		// Measured on this pair: the removed volume misses the oracle by 42.9% at 1e-3 and 9.4% at
+		// 2e-3, and the transition to the plateau is between 4e-3 (1.17%) and 6e-3 (0.06%). The two
+		// rows are chosen away from that edge, where the miss is noise and a pinned row would flake.
+		{1e-3, drillCoarse}, {0.002, drillCoarse},
+		// The exact plateau, whose lower edge is a DECADE below where ADR-0061 G8 measured it. It moved
+		// because the analytic integrator stopped declining the bored torus face, not because the
+		// boolean changed: the face's interior probe was a fixed 33x33 grid over the bounding box of
+		// ALL its loops, and the two bore mouths sit half a tube-turn apart, so no grid point landed
+		// inside either one below bore ~0.0713. The tessellated fallback then measured the ring 2.839
+		// light — 300000x a 1e-3 bore's own material — and the Requicha bracket rejected a correct body.
+		{0.02, drillExact}, {0.0631, drillExact},
 		{0.1, drillExact}, {0.2, drillExact}, {0.4, drillExact}, {0.631, drillExact}, {0.8, drillExact},
 	} {
 		if got := sweepDrill(t, tc.bore); got != tc.want {
@@ -178,30 +201,71 @@ func TestNoDrillRadiusIsAnsweredSilently(t *testing.T) {
 	}
 }
 
-// TestASmallBoreIsRefusedNotShippedWrong is the corpus row for the CAPABILITY gap the sweep exposed,
-// pinned here rather than deferred to a ticket. At r=1e-3 the pipeline builds a valid closed solid
-// that removes 2.84 of material where the true bore is 9.4e-6 — a factor of 300000 — and only the
-// Requicha volume bracket stands between it and the model. The row asserts the refusal, so the day
-// the section is fixed this test says so, and until then a wrong body cannot start shipping.
-func TestASmallBoreIsRefusedNotShippedWrong(t *testing.T) {
+// The RING volume the rows below measure against: the corpus torus integrated over its own analytic
+// B-rep, which is exact for a torus (2·pi^2·R·r^2 = 222.06609902451055...).
+const ringAnalyticVolume = 222.06609902451055
+
+// TestASmallBoreBuildsTheExactSectionAndIsMeasuredAnalytically is the corpus row for #3516, and it
+// asserts the two things that were wrong there — neither of which was the section.
+//
+// The row it replaces (TestASmallBoreIsRefusedNotShippedWrong) recorded that a 1e-3 bore "builds a
+// valid closed solid that removes 2.84 of material where the true bore is 9.4e-6 — a factor of
+// 300000". That premise was measured again and refuted. 2.839 is the DEFICIT of the ring's own
+// tessellation at DefaultQuality, not material the boolean removed: the analytic integrator declined
+// the bored torus face, BodyGeometryProperties fell back to the mesh for the result while the intact
+// ring still integrated analytically, and the bracket then compared two different measurements of the
+// same torus. The body was right the whole time, and the Requicha bracket — the "only thing standing
+// between it and the model" — was rejecting it for an artefact.
+//
+// So this row pins the measurement, face by face: the section builds, BOTH of its faces carry an
+// interior point the membership certificate can classify (the torus face had none at ANY bore before
+// #3516), the body integrates ANALYTICALLY, and its volume is the ring's minus the bore's to within a
+// bound far tighter than the tessellated answer's 1.28e-2. It does NOT assert the removed volume
+// against the oracle: at this radius that misses by 43%, which is the drillCoarse row above and a
+// different defect.
+func TestASmallBoreBuildsTheExactSectionAndIsMeasuredAnalytically(t *testing.T) {
 	t.Parallel()
 	ring, drill := ringAndDrill(t, 1e-3)
 	body, err := Boolean(Cut, ring, drill)
-	if err == nil {
-		q := DefaultQuality()
-		removed := query.BodyGeometryProperties(ring, q).Volume - query.BodyGeometryProperties(body, q).Volume
-		oracle := boreRemovalOracle(5, 1.5, 5, 1e-3, boreQuadratureCells)
-		t.Fatalf("a 1e-3 bore built a body removing %g where the oracle says %g: either the section is "+
-			"fixed (re-point this row at drillExact) or a wrong body is shipping", removed, oracle)
+	if err != nil || body == nil {
+		t.Fatalf("a 1e-3 bore in a 5/1.5 ring is an ordinary feature and must build: %v", err)
 	}
-	// It is a NAMED refusal, and NOT the size one: the feature is resolvable, the pipeline just
-	// cannot build it, and mislabelling that as sub-resolution would hide the defect.
-	if errors.Is(err, ErrSubResolutionOperand) {
-		t.Errorf("a 1e-3 bore is 100x above the resolution floor; refusing it on SIZE would relabel a "+
-			"capability gap as a policy: %v", err)
+	if got := classifyBoredRing(ring, body, 1e-3); got != drillCoarse && got != drillExact {
+		t.Fatalf("the section must be the exact one (torus + cylinder, 4 loops, valid); got %q", got)
 	}
-	if !errors.Is(err, ErrUnmodelledBoolean) {
-		t.Errorf("want the boolean's named refusal; got %v", err)
+	assertEveryFaceIsProbeable(t, body)
+	assertBoredRingIsIntegratedAnalytically(t, body, 1e-3)
+}
+
+// assertEveryFaceIsProbeable is the #3516 regression on the certificate's blind spot: a face with no
+// interior point is one certifyBooleanFaces SKIPS, so a result can be "certified" on a strict subset
+// of its own faces. On this pair that subset was the bore wall alone — 0.0189 of 296.11 of area.
+func assertEveryFaceIsProbeable(t *testing.T, body *topo.Body) {
+	t.Helper()
+	for _, f := range body.Faces() {
+		if _, ok := query.FaceInteriorPoint(f); !ok {
+			t.Errorf("face %q (%T, %d loops) has no interior point, so the membership certificate skips it",
+				f.ReferenceKey(), f.Geometry(), len(f.Loops()))
+		}
+	}
+}
+
+// assertBoredRingIsIntegratedAnalytically is the #3516 regression on the integrator: the bored torus
+// face must be integrable, so the body's volume comes from its analytic B-rep and not from a mesh.
+// The bound is 1e-6 RELATIVE — three orders looser than the 1.8e-8 measured, and four orders tighter
+// than the 1.28e-2 the tessellated fallback returns, so it separates the two answers without pinning
+// the integrator's own precision.
+func assertBoredRingIsIntegratedAnalytically(t *testing.T, body *topo.Body, bore float64) {
+	t.Helper()
+	props, ok := query.AnalyticGeometryProperties(body)
+	if !ok {
+		t.Fatalf("the bored ring must integrate over its analytic B-rep; the mesh fallback measures "+
+			"this torus %g light, which is %gx the bore's own material",
+			ringAnalyticVolume-219.2269659, (ringAnalyticVolume-219.2269659)/boreRemovalOracle(5, 1.5, 5, bore, boreQuadratureCells))
+	}
+	want := ringAnalyticVolume - boreRemovalOracle(5, 1.5, 5, bore, boreQuadratureCells)
+	if rel := stdmath.Abs(props.Volume-want) / want; rel > 1e-6 { // tol:calibrated — measured 1.8e-8
+		t.Errorf("bored-ring volume %.12g, want %.12g (%.3g relative)", props.Volume, want, rel)
 	}
 }
 

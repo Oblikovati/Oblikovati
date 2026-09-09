@@ -21,16 +21,26 @@ import (
 //	thickness / Weld    behaviour
 //	<= 0.0998           the ring comes back UNTOUCHED: err=nil, one face, removed=0, and NOTHING
 //	                    recorded. The silent exit.
-//	0.158 .. 63 000     refused loudly and by name (no-exact-curved-path)
-//	63 000 .. 6.3e6     refused by the Requicha bracket (analytic-volume-reject): a VALID body of
-//	                    materially wrong volume, which the bracket alone keeps from shipping
-//	>= 1e7              exact: torus + cylinder, 2 loops each, volume within 3.6e-6 of the oracle
+//	0.158 .. ~4e4       refused loudly and by name (no-exact-curved-path)
+//	~6e4 .. ~4e5        the EXACT section — valid, torus + cylinder, four loops, both edges on both
+//	                    surfaces to 4.4e-16 — whose analytic REMOVED volume misses the oracle, by
+//	                    42.9% at the bottom of the band and 1.2% at its top
+//	>= ~6e5             exact: torus + cylinder, 2 loops each, volume within 3e-3 of the oracle at
+//	                    the plateau's edge and 3e-6 well inside it
 //
 // Only the FIRST regime is a resolution limit. The second is a capability gap in the torus-cylinder
-// section at small radius — real, already refused by name, and pinned by its own corpus row
-// (TestASmallBoreIsRefusedNotShippedWrong); calling it "sub-resolution" would relabel a bug as a
-// policy and hide it. So the floor is the top of the silent band, rounded up to the model's own
-// coincidence scale: geom.Resolution.Weld, which sits ~6x above the highest silent point measured.
+// section at small radius — real, refused by name, and pinned by the sweep's own rows; calling it
+// "sub-resolution" would relabel a bug as a policy and hide it. So the floor is the top of the silent
+// band, rounded up to the model's own coincidence scale: geom.Resolution.Weld, which sits ~6x above
+// the highest silent point measured.
+//
+// The THIRD regime is neither. It read "refused by the Requicha bracket (analytic-volume-reject): a
+// VALID body of materially wrong volume" until #3516 measured what the bracket was actually seeing:
+// the analytic integrator declined the bored torus face, the result fell back to its tessellation
+// while the intact ring still integrated analytically, and the bracket compared two measurements of
+// the same torus 2.839 apart. The body was correct at every radius in it. The bracket now sees two
+// analytic volumes, the exact plateau reaches a DECADE lower than ADR-0061 G8 recorded, and what is
+// left in the band is a measurement limit in the section curve's tangent, not a modelling one.
 //
 // A solid operand thinner than that is narrower, in some direction, than the distance at which this
 // model calls two points the same point: it has no interior left to build with. The ground rule is

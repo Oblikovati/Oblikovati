@@ -26,31 +26,40 @@ import (
 // gating a result must be more exact than the result it gates.
 
 // certifyBooleanFaces reports whether every face of body is one the operands can account for under
-// op's membership rule. A face whose interior point cannot be found is SKIPPED rather than failed:
-// the certificate refuses results it can disprove, and never rejects one merely because a probe was
-// unavailable.
+// op's membership rule, and how many faces it could NOT examine. A face whose interior point cannot
+// be found is SKIPPED rather than failed: the certificate refuses results it can disprove, and never
+// rejects one merely because a probe was unavailable.
 //
 // res is the pair's extent resolution, decided once by the size classification and carried here:
 // the certificate used to rebuild it from the two range boxes, which is the same predicate evaluated
 // a second time with its own chance of a different answer (#3524).
 //
-// Example: if !certifyBooleanFaces(Cut, target, tool, body, sizes.res) { /* fall back */ }
-func certifyBooleanFaces(op PartFeatureOperation, target, tool, body *topo.Body, res Resolution) bool {
+// The COUNT is returned because the skip is the certificate's blind spot, and a blind spot nothing
+// reports is a proof nobody can size. Measured on the RING corpus (Oblikovati/Oblikovati#3516), the
+// certificate skipped the bored torus face of every drilled ring — 296.088 of the result's 296.107
+// of area — at every bore radius including the ones it certifies as exact, because
+// FaceInteriorPoint had no probe for a face holding the COMPLEMENT of what its loops enclose. It
+// therefore examined one face of two and called the result certified. Over the drill/torus/ring rows
+// of this package that was 26 unexamined faces; it is 0 now, and the count is what says so.
+//
+// Example: if ok, _ := certifyBooleanFaces(Cut, target, tool, body, sizes.res); !ok { /* guarded */ }
+func certifyBooleanFaces(op PartFeatureOperation, target, tool, body *topo.Body, res Resolution) (certified bool, unprobed int) {
 	if body == nil || target == nil || tool == nil {
-		return false
+		return false, 0
 	}
 	tol := res.Sew()
 	ta, to := newBoundaryIndex(target), newBoundaryIndex(tool)
 	for _, f := range body.Faces() {
 		p, ok := query.FaceInteriorPoint(f)
 		if !ok {
+			unprobed++
 			continue
 		}
 		if !pointKeptBy(op, ta, to, p, tol) {
-			return false
+			return false, unprobed
 		}
 	}
-	return true
+	return true, unprobed
 }
 
 // boundaryIndex is one operand prepared for repeated "does this point lie on the boundary?"

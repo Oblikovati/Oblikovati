@@ -216,7 +216,19 @@ var kernelNetDeltaPin = map[string]int{
 	// call, and boolean.seam-slit-dropped reports a removal that leaves no other trace in the result.
 	// Both are diag.Info: nothing degraded, and under this key's true name (diagnostic VOCABULARY, the
 	// rename #3525 made) two codes is honestly +2, not a reason to fold two distinct markers into one.
-	"diag-codes": 37,
+	//
+	// 37 → 38 (2026-09-09, #3516): CodeBooleanFaceNotProbed. ONE new diag.Code DECLARATION, and the
+	// **fallback-site delta is 0**: no path was added, and no acceptance changed. It names an existing
+	// SILENT hole in a PROOF rather than a degradation of a result — certifyBooleanFaces skips a face
+	// whose interior point it cannot find, and nothing reported how many it had skipped. Measured on
+	// this package's drill/torus/ring/bore rows, that was 26 faces skipped before #3516 and 0 after;
+	// over the whole kernel/ops/boolean package 4 remain. The count is what makes the residue
+	// countable, so no ADR is owed for a new engine, recognizer or tolerance.
+	//
+	// The measurement is not restated here: it lives on certifyBooleanFaces in
+	// kernel/ops/boolean/boolean_certify.go, with the band it belongs to on
+	// kernel/ops/boolean/boolean_resolution_decline.go.
+	"diag-codes": 38,
 }
 
 func TestKernelNetDelta(t *testing.T) {

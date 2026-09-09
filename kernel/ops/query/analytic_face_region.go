@@ -23,11 +23,6 @@ import (
 // whole surface's minus the enclosed region's, which is exact; a sign flip would not be, because the
 // complement of a region is not its negation.
 
-// regionProbeGrid is the resolution of the search for one point strictly inside the enclosed region.
-// It only has to find A point, not a particular one, so the count is a robustness margin for a
-// slender region, not an accuracy parameter: nothing downstream depends on which point it returns.
-const regionProbeGrid = 33
-
 // loopRegionSigns orients every loop's boundary integral so their sum is the measure of the region
 // the loops ENCLOSE: a loop at EVEN nesting depth is a top-level boundary and adds its own enclosed
 // measure, one at odd depth is a hole and subtracts it.
@@ -371,62 +366,32 @@ func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 	if !ok {
 		return math.Point3{}, false
 	}
-	u, v, found := regionProbeUV(s, loops)
+	if u, v, found := regionProbeUV(s, loops); found {
+		if p := s.PointAt(u, v); brep.PointInFaceTrim(f, p) {
+			return p, true
+		}
+	}
+	return faceComplementPoint(f, loops)
+}
+
+// faceComplementPoint probes the side of the chart OPPOSITE the region the loops enclose, for the
+// face that holds it. On a closed surface a loop set bounds two regions and the face may own either;
+// the enclosed-region probe answers only for the near one, so a torus with a bore through it — the
+// face carrying 296.088 of a bored ring's 296.107 of area — had NO representative point at any bore
+// radius, and certifyBooleanFaces, which skips a face it cannot probe, therefore never examined it
+// (Oblikovati/Oblikovati#3516). The probe is certified the same way the near one is: it is returned
+// only when brep.PointInFaceTrim, an independent classifier, agrees the point is on the face.
+func faceComplementPoint(f *topo.Face, loops []faceLoop) (math.Point3, bool) {
+	s := f.Geometry()
+	u, v, found := faceComplementUV(s, loops)
 	if !found {
 		return math.Point3{}, false
 	}
 	p := s.PointAt(u, v)
 	if !brep.PointInFaceTrim(f, p) {
-		return math.Point3{}, false // the enclosed side is the face's complement; no probe here
+		return math.Point3{}, false
 	}
 	return p, true
-}
-
-// regionInteriorUV returns one parameter point strictly inside the region the loops enclose: of the
-// grid points with an ODD even-odd crossing count — inside the outer loop and outside every hole —
-// it takes the one FARTHEST from the boundary. Depth matters: a probe a hair inside the trim is a
-// point where two independent classifiers may legitimately disagree, and the answer here selects a
-// branch, so the point must be unambiguous rather than merely inside. The samples are the loops'
-// unwrapped uv polylines, so a seam-crossing loop stays a simple polygon here.
-func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
-	polys, per := loopUVPolygons(loops), loopsUVPeriod(loops)
-	uLo, uHi, vLo, vHi := uvPolygonBounds(polys)
-	if !(uLo < uHi && vLo < vHi) {
-		return 0, 0, false
-	}
-	best, deepEnough := -1.0, regionProbeDeepEnough*stdmath.Hypot(uHi-uLo, vHi-vLo)
-	for i := 1; i < regionProbeGrid && best < deepEnough; i++ {
-		for j := 1; j < regionProbeGrid; j++ {
-			pu := uLo + (uHi-uLo)*float64(i)/regionProbeGrid
-			pv := vLo + (vHi-vLo)*float64(j)/regionProbeGrid
-			if d := uvDepthOf(polys, pu, pv, per); d > best {
-				best, u, v = d, pu, pv
-			}
-		}
-	}
-	return u, v, best > 0
-}
-
-// regionProbeDeepEnough is the depth, as a fraction of the region's parameter box diagonal, past
-// which a probe is unambiguous and the search stops. The scan is over a grid of points each measured
-// against every boundary sample, so on an ordinary face — where the first row already lands well
-// inside — this turns a full sweep into a few rows. A slender region never reaches it and falls back
-// to the full sweep, which is the case that needs one.
-const regionProbeDeepEnough = 0.1 // tol:parametric — probe depth that ends the search, relative
-
-// uvDepthOf is how far (u, v) sits inside the region: its distance to the nearest boundary sample,
-// or −1 when it is outside the region altogether.
-func uvDepthOf(polys [][]arcSample, u, v float64, per uvPeriod) float64 {
-	if !uvCrossingsOdd(polys, u, v, per) {
-		return -1
-	}
-	nearest := stdmath.Inf(1)
-	for _, poly := range polys {
-		for _, s := range poly {
-			nearest = stdmath.Min(nearest, stdmath.Hypot(s.u-u, s.v-v))
-		}
-	}
-	return nearest
 }
 
 // loopUVPolygons flattens each loop's edge samples into one closed uv polyline per loop, INDEX-
@@ -547,19 +512,6 @@ func wholePeriodOffset(gap, period float64) float64 {
 		return 0
 	}
 	return period * stdmath.Round(gap/period)
-}
-
-// uvPolygonBounds is the parameter-space box of every polygon.
-func uvPolygonBounds(polys [][]arcSample) (uLo, uHi, vLo, vHi float64) {
-	uLo, vLo = stdmath.Inf(1), stdmath.Inf(1)
-	uHi, vHi = stdmath.Inf(-1), stdmath.Inf(-1)
-	for _, poly := range polys {
-		for _, s := range poly {
-			uLo, uHi = stdmath.Min(uLo, s.u), stdmath.Max(uHi, s.u)
-			vLo, vHi = stdmath.Min(vLo, s.v), stdmath.Max(vHi, s.v)
-		}
-	}
-	return uLo, uHi, vLo, vHi
 }
 
 // uvCrossingsOdd is the even-odd point-in-polygons test at (u, v) over every loop: an ODD number of
