@@ -35,10 +35,16 @@ import (
 // forgetting visible; it does not make it impossible. chartDeclineLog is an ordinary package-level
 // struct with a usable zero value, so a new file here can write chartFaceMesh(f, s, q,
 // &chartDeclineLog{}), drop the answer and fall back in silence — that compiles, and it is precisely
-// what a reviewer built against the first cut of this change. What forbids it is
-// archguard's TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog, which fails when any production file
-// but tessellate_trim.go constructs a log, and fails the other way when the router stops constructing
-// one. Trust the guard, not the compiler.
+// what a reviewer built against the first cut of this change.
+//
+// What forbids it is archguard's TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog, which fails three
+// ways: a second production file CONSTRUCTING a log, the owner no longer constructing one, and the
+// owner no longer STAMPING it with recordOn. Construction is matched in all three shapes Go offers —
+// a composite literal, new(chartDeclineLog), and a var declaration — because the first cut matched only
+// the brace form and a reviewer walked past it with new(). A *chartDeclineLog PARAMETER is deliberately
+// not a construction; taking the router's log is how every legitimate caller works. Each of those five
+// facts is planted by a probe in TestTheOwnershipGuardBitesEveryConstructionForm. Trust the guard, not
+// the compiler.
 //
 // A decline is recorded only when the mesher OWNED the face: chartFaceMesh answers false both for "the
 // chart said give this up" and for "this was never my face" (no chart recorded, or a surface that wraps
@@ -49,9 +55,21 @@ import (
 // rather than restating it, because the first cut of #3520 carried two contradictory sets of numbers in
 // one commit. Re-run 2026-09-09 on m48/chart-decline-recorder over the sweep described here.
 //
-// Bodies: 128 attempted (72 crossing-rod, 48 rod ∪/−/∩ ball, 8 ring cut by a half space), of which 106
-// BUILT — 22 booleans returned an error and were not scanned. Each built body harvested through
-// query.BodyMeshDiagnostics at two facetings, so 212 body-faceting pairs.
+// Bodies: 128 attempted (72 crossing-rod, 48 rod ∪/−/∩ ball, 8 ring cut by a half space), built through
+// **ops.Boolean** — the general pipeline — of which 106 BUILT: 22 were refused by its own acceptance
+// gate ("the exact result failed its own acceptance gate") and not scanned. Each built body harvested
+// through query.BodyMeshDiagnostics at two facetings, so 212 body-faceting pairs.
+//
+// The entry point is part of the number, not a footnote. brep.Boolean admits the 22 that ops.Boolean
+// refuses, and on the crossing-rod third alone that turns 28 hits and ONE at chord 0.05 into 40 hits and
+// SEVEN — because six of the extra display-faceting hits sit on bodies the general pipeline never
+// ships. A reader reproducing this through the other entry point gets a different answer and concludes
+// the receipt is wrong, so: ops.Boolean.
+//
+// (The corpus rows in kernel/ops/query build their two bodies with brep.Boolean instead, and must:
+// kernel/ops depends on kernel/ops/query, so an internal query test cannot import ops without a cycle.
+// Both row bodies are in the ops.Boolean set too — they are hits under both entry points — so the rows
+// assert on bodies the general pipeline really produces.)
 //
 // Hits: 31. Thirty at chord 0.001 (PropertyQuality) and ONE at chord 0.05 (DefaultQuality) — the
 // faceting model/feature/result_diagnostics.go harvests into feature health, so this code does reach a
@@ -109,12 +127,17 @@ func (l *chartDeclineLog) reason() string { return l.why }
 // code is raised.
 //
 // A face that declined and then meshed NOTHING is the worst outcome there is — no geometry and no
-// report — so the record does not depend on the fall-through having produced a mesh. Every fall-through
-// in this router constructs one (fullDomainGridMesh, trimmedPatchMesh and the generic (u,v) path all
-// end at patchMeshFrom or a grid builder, and none of them returns nil), so the empty mesh below is
-// unreachable today; it is here so the invariant is "a decline is always reported" rather than "a
-// decline is reported as long as something else succeeded" (#3520 review M3). Without a pending
-// decline nothing is allocated: the ordinary face keeps whatever the router returned, nil included.
+// report — so the record does not depend on the fall-through having produced a mesh. The invariant is
+// "a decline is always reported", not "reported as long as something else succeeded" (#3520 review M3).
+//
+// I found no fall-through in this router that returns nil — fullDomainGridMesh, trimmedPatchMesh and the
+// generic (u,v) path all end at patchMeshFrom or a grid builder, each of which starts from &Mesh{} — but
+// that is a reading of the arms, not a probe, so the branch is written as live code rather than
+// documented away. If it does fire, the face ships a non-nil mesh with zero triangles carrying one
+// Defect: MergeMesh contributes nothing from it, so no body's geometry changes, and
+// query.BodyMeshDiagnostics harvests it (it skips nil meshes and reads the Diagnostics of every other),
+// which is the whole point. Without a pending decline nothing is allocated and the ordinary face keeps
+// whatever the router returned, nil included.
 func (l *chartDeclineLog) recordOn(m *Mesh, s geom.Surface) *Mesh {
 	if l.why == "" {
 		return m

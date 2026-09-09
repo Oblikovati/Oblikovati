@@ -36,9 +36,10 @@ import (
 // back silently, and a route added or uncovered later (the arm deletions of #3517/#3518 send their
 // faces here) inherits the report by taking the log as a parameter.
 //
-// This is the file archguard names as the log's owner: a production file that constructs its own
+// This is the file archguard names as the log's owner. A production file that constructs its own
 // chartDeclineLog compiles fine and reports into a slot nobody stamps, so
-// TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog fails on the second one.
+// TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog fails on the second one — and on this file dropping
+// the recordOn call below, which would leave the log built and never read.
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	log := &chartDeclineLog{}
 	s := f.Geometry()

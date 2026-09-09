@@ -28,6 +28,11 @@ import (
 // declines, so adding either body to `classificationCorpus()` in kernel/ops/tessellate would turn
 // TestNoChartedFaceEmitsARimOnlyTriangle red. That is the acceptance assertion working, not a
 // regression — the bodies live here on purpose.
+//
+// They are built with brep.Boolean rather than ops.Boolean, and must be: kernel/ops depends on
+// kernel/ops/query, so this internal test cannot import ops without an import cycle. The sweep behind
+// chart_decline.go's THE MEASUREMENT block runs through ops.Boolean, which admits fewer bodies — both
+// of these are in that set too, so the rows assert on bodies the general pipeline really produces.
 
 // TestAChartMesherDeclineReachesTheBodysMeshDiagnostics is the wiring plus the "was silent" half, on
 // one harvest. The two were separate rows and re-meshed the same body twice for no gain.
