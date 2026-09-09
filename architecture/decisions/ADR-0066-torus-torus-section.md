@@ -260,25 +260,24 @@ proof over the quadric corpus, because it moves the anchor for pairs that build 
 
 ## Two defects surfaced by the measurements, neither fixed here, both bisected
 
-1. **A torus face bounded by a torus × torus section loop does not mesh AT PROPERTY FACETING.** The
-   B-rep is exact — the boundary oracle agrees to a part in ten thousand — and so is every mesh a user
-   can reach. At DefaultQuality, the display density, the face is correctly trimmed (284.98 against a
-   whole-torus 296.09, no diagnostic), and all three export presets are clean and diagnostic-free
-   (Low −4.76 %, Medium −0.56 %, High −0.14 %, which is faceting bias, not this gap); the finest
-   export preset is about 12× coarser than the flip. The gap appears only at PropertyQuality
-   (chord 0.001 / 1°), where the face meshes 296.06 — the whole domain — and both defects fire
-   (+7.9 % join, +3.1 % cut, plus `mesh-not-watertight` on Cut). Swept: clean to chord 0.001 at 5°,
-   declining from about 0.0005.
+1. **A torus face bounded by a torus × torus section loop did not mesh at property faceting — and
+   that CLOSED before this landed.** On this branch alone, the face that keeps its whole surface less
+   one window was meshed over the surface's WHOLE domain at PropertyQuality (296.06), recorded by name
+   as `tessellate.trim-ignored-full-domain` and `tessellate.chart-mesher-declined`, with a row pinning
+   that it kept saying so and carrying its own inversion instruction. The chart-mesher work of #3518
+   and #3520 landed underneath and earned the inversion. Measured on the lane, per face against
+   `query.AnalyticFaceArea`:
 
-   It therefore does NOT reach feature health, and that is correct rather than a hole in the
-   reporting: `bodyDegradations` reads `displayQuality()`, and at that density there is nothing
-   wrong to report. Do not wire property diagnostics into it to "fix" this — that would report a
-   defect no user can see. Mass properties integrate the analytic B-rep and are exact to 1.4e-16. It is not silent: the
-   tessellator records `tessellate.trim-ignored-full-domain` and `tessellate.chart-mesher-declined` as
-   Defects, and `TestTheHoledTorusFaceDeclinesItsMeshByName` pins that it keeps saying so, inverting
-   when the chart mesher takes the shape. The gap is specific to this boundary: the same ring cut by an
-   AXIAL DRILL leaves a two-loop torus face whose mesh IS bounded by its rim (291.88 against a
-   whole-torus 296.09, no diagnostic).
+   | faceting | holed face | analytic | relative |
+   | --- | --- | --- | --- |
+   | PropertyQuality | 286.6502 | 286.6764 | −9.2e-05 |
+   | DefaultQuality | 284.9818 | 286.6764 | −5.9e-03 |
+
+   Both facetings now converge on the analytic area from below, which is the chord bias a correct mesh
+   has; the old failure did not move with the chord. `TestTheHoledTorusFaceMeshesInsideItsRim` asserts
+   the result — every face inside its rim to its faceting, and no full-domain trim recorded — so it
+   fails again if the mesher ever hands the face back.
+
 2. **A built quadric-family section can carry a NaN point.** An unreadable station makes the lane
    reader answer NaN by design, and that NaN reaches a coordinate. Fixture: a cylinder at origin
    (−3.3617, 6.2435, 0.0778), axis (0.2568, −0.9663, 0.0158), radius 0.8992, against the corpus ring —

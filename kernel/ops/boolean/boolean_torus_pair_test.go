@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/mesh"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
@@ -272,41 +272,69 @@ func keptBoundaryArea(self, other torusSpec) float64 {
 // parts in ten thousand on these regions and cost about a second per pair.
 const torusAreaGrid = 1200
 
-// TestTheHoledTorusFaceDeclinesItsMeshByName pins a KNOWN GAP one layer downstream, so that it cannot
-// become a silent one.
+// TestTheHoledTorusFaceMeshesInsideItsRim pins a gap that CLOSED while this branch waited.
 //
-// The B-rep is exact — assertBoundaryAreaMatchesTheOracle reads it against an independent oracle and it
-// agrees to a part in ten thousand. So is the DISPLAY mesh: at DefaultQuality the face is correctly
-// trimmed (284.98 against a whole-torus 296.09, no diagnostic), and every export preset is clean. The
-// gap is at PROPERTY faceting, which this row asserts at: the torus face that keeps its whole surface
-// less one window, bounded by a torus×torus section loop, is meshed over the surface's whole domain,
-// covering material the face does not carry. The tessellator does not do that quietly — it records
-// tessellate.trim-ignored-full-domain and tessellate.chart-mesher-declined as Defects — and this row
-// asserts that it keeps saying so, which is the contract the ground rules actually impose ("never
-// degrade silently"). The row inverts when the chart mesher takes the shape (ADR-0066's follow-up).
+// It was written as its inverse: on this branch alone the torus face that keeps its whole surface less
+// one window, bounded by a torus×torus section loop, meshed over the surface's WHOLE domain at
+// property faceting, and the row asserted that the tessellator kept saying so
+// (tessellate.trim-ignored-full-domain, a Defect) rather than degrading in silence. The row carried
+// its own inversion instruction, and the chart-mesher work of #3518 and #3520 — which landed under
+// this branch, not in it — earned it: the face is now meshed inside its rim, and there is nothing
+// left to report.
 //
-// The gap is specific to this face: the same ring cut by an AXIAL DRILL leaves a two-loop torus face
-// whose mesh IS bounded by its rim (measured: 291.88 against a whole-torus 296.09, no diagnostic).
-func TestTheHoledTorusFaceDeclinesItsMeshByName(t *testing.T) {
+// Measured on the lane, per face against query.AnalyticFaceArea:
+//
+//	PropertyQuality  holed face 286.6502 against 286.6764 analytic (-9.2e-05), lens faces -1.4e-04
+//	DefaultQuality   holed face 284.9818 against 286.6764 analytic (-5.9e-03), lens faces -1.1e-02
+//
+// Both facetings converge on the analytic area from below, which is the chord bias a correct mesh
+// has; the old failure was 296.06, the whole domain, and it did not move with the chord. So this row
+// now asserts the RESULT — every face inside its rim to its faceting — and that no full-domain trim
+// is recorded. It fails if the mesher ever hands the face back.
+func TestTheHoledTorusFaceMeshesInsideItsRim(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier: `make test-corpus`")
 	}
 	t.Parallel()
 	row := torusPairCorpusRows()[1] // the small ring through the hole
 	res := builtTorusPair(t, ops.Cut, row.a.body(t, "a"), row.b.body(t, "b"))
-	found := false
-	for _, d := range query.BodyMeshDiagnostics(res, ops.PropertyQuality()) {
-		if d.Code == tessellate.CodeTrimIgnoredFullDomain {
-			found = true
-			if d.Severity != diag.Defect {
-				t.Errorf("the dropped trim is recorded as %v, want a Defect", d.Severity)
+	for _, q := range []ops.Quality{ops.DefaultQuality(), ops.PropertyQuality()} {
+		for _, d := range query.BodyMeshDiagnostics(res, q) {
+			if d.Code == tessellate.CodeTrimIgnoredFullDomain {
+				t.Errorf("at %v the holed torus face is meshed over its whole domain again: %s", q, d.Detail)
 			}
 		}
+		assertEveryFaceMeshesInsideItsRim(t, res, q)
 	}
-	if !found {
-		t.Errorf("the holed torus face meshed without recording %q; either the mesher took the shape — "+
-			"invert this row — or the degradation went silent", tessellate.CodeTrimIgnoredFullDomain)
+}
+
+// assertEveryFaceMeshesInsideItsRim gates each face's meshed area against its own analytic area. A
+// mesh may fall SHORT by the chord bias of its faceting (a chord cuts the corner off a curved face)
+// but may never EXCEED it: covering material the face does not carry is the defect this pins.
+func assertEveryFaceMeshesInsideItsRim(t *testing.T, b *topo.Body, q ops.Quality) {
+	t.Helper()
+	faces, meshes := tessellate.TessellateBodyFaces(b, q)
+	for i, f := range faces {
+		want, ok := query.AnalyticFaceArea(f)
+		if !ok {
+			continue
+		}
+		got := meshedArea(meshes[i])
+		if rel := (got - want) / want; rel > 1e-9 || rel < -2e-2 {
+			t.Errorf("face %d (%T) at %v meshes %.4f against an analytic %.4f (rel %.3e), want inside its rim "+
+				"and within the faceting's chord bias", i, f.Geometry(), q, got, want, rel)
+		}
 	}
+}
+
+// meshedArea sums the triangle areas of one face's mesh.
+func meshedArea(m *mesh.Mesh) float64 {
+	area := 0.0
+	for k := 0; k+2 < len(m.Indices); k += 3 {
+		a, b, c := m.Positions[m.Indices[k]], m.Positions[m.Indices[k+1]], m.Positions[m.Indices[k+2]]
+		area += float64(a.VectorTo(b).Cross(a.VectorTo(c)).Length()) / 2
+	}
+	return area
 }
 
 // TestATorusPairSatisfiesRequichaAtBothFacetings is the whole-body layer, and it is a SMOKE TEST beside
