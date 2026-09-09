@@ -55,7 +55,7 @@ func (b OrientedBox) Corners() [8]Point3 {
 			if i&(1<<axis) == 0 {
 				sign = -1
 			}
-			offset = offset.Add(b.Axes[axis].AsVector().Scale(sign * b.HalfExtents[axis]))
+			offset = offset.Add(b.Axes[axis].AsVector().Scale(Scalar(sign * b.HalfExtents[axis])))
 		}
 		c[i] = b.Center.TranslateBy(offset)
 	}
@@ -71,7 +71,7 @@ func (b OrientedBox) ToAABB() Box {
 // Volume returns the box volume — the product of the three full edge lengths
 // (each axis's full extent is twice its half-extent).
 func (b OrientedBox) Volume() Scalar {
-	return 8 * b.HalfExtents[0] * b.HalfExtents[1] * b.HalfExtents[2]
+	return Scalar(8 * b.HalfExtents[0] * b.HalfExtents[1] * b.HalfExtents[2])
 }
 
 // MinCorner returns the corner at the negative end of every axis — the origin of
@@ -90,7 +90,7 @@ func (b OrientedBox) MinCorner() Point3 {
 func (b OrientedBox) EdgeVectors() [3]Vector3 {
 	var e [3]Vector3
 	for i := range 3 {
-		e[i] = b.Axes[i].AsVector().Scale(2 * b.HalfExtents[i])
+		e[i] = b.Axes[i].AsVector().Scale(Scalar(2 * b.HalfExtents[i]))
 	}
 	return e
 }

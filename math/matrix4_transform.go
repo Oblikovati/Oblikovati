@@ -25,18 +25,18 @@ func rodrigues(angle Scalar, axis UnitVector3) [9]Scalar {
 	t := 1 - c
 	x, y, z := axis.X(), axis.Y(), axis.Z()
 	return [9]Scalar{
-		t*x*x + c, t*x*y - s*z, t*x*z + s*y,
-		t*x*y + s*z, t*y*y + c, t*y*z - s*x,
-		t*x*z - s*y, t*y*z + s*x, t*z*z + c,
+		Scalar(t*x*x) + c, Scalar(t*x*y) - Scalar(s*z), Scalar(t*x*z) + Scalar(s*y),
+		Scalar(t*x*y) + Scalar(s*z), Scalar(t*y*y) + c, Scalar(t*y*z) - Scalar(s*x),
+		Scalar(t*x*z) - Scalar(s*y), Scalar(t*y*z) + Scalar(s*x), Scalar(t*z*z) + c,
 	}
 }
 
 // transformLinear applies a row-major 3×3 matrix to v.
 func transformLinear(m [9]Scalar, v Vector3) Vector3 {
 	return Vector3{
-		m[0]*v.X + m[1]*v.Y + m[2]*v.Z,
-		m[3]*v.X + m[4]*v.Y + m[5]*v.Z,
-		m[6]*v.X + m[7]*v.Y + m[8]*v.Z,
+		Scalar(m[0]*v.X) + Scalar(m[1]*v.Y) + Scalar(m[2]*v.Z),
+		Scalar(m[3]*v.X) + Scalar(m[4]*v.Y) + Scalar(m[5]*v.Z),
+		Scalar(m[6]*v.X) + Scalar(m[7]*v.Y) + Scalar(m[8]*v.Z),
 	}
 }
 
@@ -60,11 +60,11 @@ func CoordinateSystem4(origin Point3, xAxis, yAxis, zAxis Vector3) Matrix4 {
 // normals stay outward. Used by MirrorFeature and the mirror pattern.
 func Reflection4(origin Point3, normal UnitVector3) Matrix4 {
 	n := normal.AsVector()
-	d := 2 * origin.AsVector().Dot(n) // translation component = 2(o·n)n
+	d := Scalar(2 * origin.AsVector().Dot(n)) // translation component = 2(o·n)n
 	return Matrix4{[16]Scalar{
-		1 - 2*n.X*n.X, -2 * n.X * n.Y, -2 * n.X * n.Z, d * n.X,
-		-2 * n.Y * n.X, 1 - 2*n.Y*n.Y, -2 * n.Y * n.Z, d * n.Y,
-		-2 * n.Z * n.X, -2 * n.Z * n.Y, 1 - 2*n.Z*n.Z, d * n.Z,
+		1 - Scalar(2*n.X*n.X), Scalar(-2 * n.X * n.Y), Scalar(-2 * n.X * n.Z), Scalar(d * n.X),
+		Scalar(-2 * n.Y * n.X), 1 - Scalar(2*n.Y*n.Y), Scalar(-2 * n.Y * n.Z), Scalar(d * n.Y),
+		Scalar(-2 * n.Z * n.X), Scalar(-2 * n.Z * n.Y), 1 - Scalar(2*n.Z*n.Z), Scalar(d * n.Z),
 		0, 0, 0, 1,
 	}}
 }

@@ -53,7 +53,7 @@ func RobustPointBox(pts []Point3) Box {
 // (a true stray) is excluded. ok is false when there is no spread to bound.
 func robustWindow(pts []Point3) (lo, hi Point3, ok bool) {
 	xs, ys, zs := axisValues(pts)
-	margin := robustExtentMargin * max(coreSize(xs), max(coreSize(ys), coreSize(zs)))
+	margin := Scalar(robustExtentMargin * max(coreSize(xs), max(coreSize(ys), coreSize(zs))))
 	if margin <= 0 {
 		return Point3{}, Point3{}, false
 	}

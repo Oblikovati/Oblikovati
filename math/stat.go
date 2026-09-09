@@ -31,11 +31,11 @@ func Percentile(v []float64, q float64) float64 {
 	if len(v) == 1 {
 		return v[0]
 	}
-	pos := q * float64(len(v)-1)
+	pos := Scalar(q * float64(len(v)-1))
 	lo := int(pos)
 	frac := pos - float64(lo)
 	if lo+1 >= len(v) {
 		return v[len(v)-1]
 	}
-	return v[lo] + frac*(v[lo+1]-v[lo])
+	return v[lo] + Scalar(frac*(v[lo+1]-v[lo]))
 }

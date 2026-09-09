@@ -69,7 +69,7 @@ func (b Box) Volume() Scalar {
 		return 0
 	}
 	d := b.Diagonal()
-	return d.X * d.Y * d.Z
+	return Scalar(d.X * d.Y * d.Z)
 }
 
 // Contains reports whether p lies within the closed box.
@@ -167,7 +167,7 @@ func (b Box) IntersectsRay(origin Point3, dir Vector3) (tEnter Scalar, ok bool) 
 			}
 			continue
 		}
-		t1, t2 := (a.lo-a.o)/a.d, (a.hi-a.o)/a.d
+		t1, t2 := Scalar((a.lo-a.o)/a.d), Scalar((a.hi-a.o)/a.d)
 		if t1 > t2 {
 			t1, t2 = t2, t1
 		}

@@ -20,11 +20,11 @@ type UnitVector3 struct {
 // magnitude is below [DefaultTolerance]); the error reports the offending
 // magnitude, per the project's exception-message convention.
 func NewUnitVector3(x, y, z Scalar) (UnitVector3, error) {
-	length := stdmath.Sqrt(x*x + y*y + z*z)
+	length := stdmath.Sqrt(Scalar(x*x) + Scalar(y*y) + Scalar(z*z))
 	if length <= DefaultTolerance {
 		return UnitVector3{}, fmt.Errorf("math: cannot normalize zero-length vector (%g, %g, %g), magnitude %g <= %g", x, y, z, length, DefaultTolerance)
 	}
-	return UnitVector3{x / length, y / length, z / length}, nil
+	return UnitVector3{Scalar(x / length), Scalar(y / length), Scalar(z / length)}, nil
 }
 
 // UnitVector3FromVector normalizes v, see [NewUnitVector3].
@@ -54,7 +54,7 @@ func (u UnitVector3) Negate() UnitVector3 {
 // Dot returns the dot product with o, which equals cos of the angle between
 // them because both are unit length.
 func (u UnitVector3) Dot(o UnitVector3) Scalar {
-	return u.x*o.x + u.y*o.y + u.z*o.z
+	return Scalar(u.x*o.x) + Scalar(u.y*o.y) + Scalar(u.z*o.z)
 }
 
 // AngleTo returns the unsigned angle in radians between u and o, in [0, π].

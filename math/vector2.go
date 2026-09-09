@@ -28,7 +28,7 @@ func (v Vector2) Sub(o Vector2) Vector2 {
 
 // Scale returns v multiplied by the scalar s.
 func (v Vector2) Scale(s Scalar) Vector2 {
-	return Vector2{v.X * s, v.Y * s}
+	return Vector2{Scalar(v.X * s), Scalar(v.Y * s)}
 }
 
 // Negate returns -v.
@@ -38,14 +38,14 @@ func (v Vector2) Negate() Vector2 {
 
 // Dot returns the dot product v·o.
 func (v Vector2) Dot(o Vector2) Scalar {
-	return v.X*o.X + v.Y*o.Y
+	return Scalar(v.X*o.X) + Scalar(v.Y*o.Y)
 }
 
 // Cross returns the scalar 2D cross product (the signed area of the
 // parallelogram, i.e. the Z of the 3D cross). Positive means o is
 // counter-clockwise from v.
 func (v Vector2) Cross(o Vector2) Scalar {
-	return v.X*o.Y - v.Y*o.X
+	return Scalar(v.X*o.Y) - Scalar(v.Y*o.X)
 }
 
 // LengthSquared returns |v|².
@@ -66,11 +66,11 @@ func (v Vector2) AsPoint() Point2 {
 // AngleTo returns the unsigned angle in radians between v and o, in [0, π].
 // Returns 0 when either vector is zero-length.
 func (v Vector2) AngleTo(o Vector2) Scalar {
-	denom := v.Length() * o.Length()
+	denom := Scalar(v.Length() * o.Length())
 	if denom == 0 {
 		return 0
 	}
-	return stdmath.Acos(Clamp(v.Dot(o)/denom, -1, 1))
+	return stdmath.Acos(Clamp(Scalar(v.Dot(o)/denom), -1, 1))
 }
 
 // IsEqualTo reports whether v and o are componentwise equal within tol. Pass
@@ -83,7 +83,7 @@ func (v Vector2) IsEqualTo(o Vector2, tol Scalar) bool {
 // IsParallelTo reports whether v and o lie along the same line within the
 // angular tolerance tol (radians). Pass tol <= 0 to use [AngleTolerance].
 func (v Vector2) IsParallelTo(o Vector2, tol Scalar) bool {
-	denom := v.LengthSquared() * o.LengthSquared()
+	denom := Scalar(v.LengthSquared() * o.LengthSquared())
 	if denom == 0 {
 		return false
 	}
@@ -95,7 +95,7 @@ func (v Vector2) IsParallelTo(o Vector2, tol Scalar) bool {
 // IsPerpendicularTo reports whether v and o are at right angles within the
 // angular tolerance tol (radians). Pass tol <= 0 to use [AngleTolerance].
 func (v Vector2) IsPerpendicularTo(o Vector2, tol Scalar) bool {
-	denom := v.Length() * o.Length()
+	denom := Scalar(v.Length() * o.Length())
 	if denom == 0 {
 		return false
 	}

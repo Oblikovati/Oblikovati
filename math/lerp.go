@@ -17,5 +17,5 @@ func Lerp(a, b, t Scalar) Scalar {
 	if t == 1 {
 		return b
 	}
-	return a + t*(b-a)
+	return a + Scalar(t*(b-a))
 }
