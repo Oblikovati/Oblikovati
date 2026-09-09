@@ -7,10 +7,15 @@ package math
 // in a B-rep kernel two packages interpolating the "same" point along a shared
 // edge must agree to the last bit, so every lerp now routes through here.
 //
-// Form: the fused a + t*(b−a) (bit-identical to both historical spellings —
-// IEEE-754 multiplication commutes), which is exact at t=0 and monotone, but
+// Form: the single spelling a + t*(b−a) (bit-identical to both historical ones
+// — IEEE-754 multiplication commutes), which is exact at t=0 and monotone, but
 // not always exact at t=1 (a + (b−a) can round past b, e.g. a=0.1, b=0.3).
 // The t==1 pin restores endpoint exactness, mirroring C++ std::lerp (P0811).
+//
+// The Scalar(...) below is ADR-0064's required rounding, not noise: without it
+// the compiler FUSES the product into the add on arm64 and this function — the
+// one evaluation order for the whole kernel — returns different last bits on
+// the macOS CI leg than on Linux and Windows. Do not remove it.
 //
 //	mid := math.Lerp(lo, hi, 0.5)
 func Lerp(a, b, t Scalar) Scalar {

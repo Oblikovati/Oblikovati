@@ -135,13 +135,18 @@ func (st torusStation) secondHarmonic() torusSecondHarmonic {
 		Sin2: float64(rr * st.m12),
 		Cos1: float64(st.rho * st.x),
 		Sin1: float64(st.rho * st.y),
-		// The term added to the constant ends in a DIVISION, and a division result is not a product,
-		// so no platform may fuse it into this add — which is what makes this spelling of the level the
-		// stable one and the closed form's `constant + m11·ρ²` the one that parted by an ulp on arm64
-		// (CI run 34280554924 macos-latest). harmonic() reads this Level rather than respelling it for
-		// exactly that reason. Keep the division last if this line is ever rewritten; an explicit
-		// float64() round of the term would pin it too, and was dropped only because it cannot fire
-		// here and a conversion that documents a mechanism it does not use reads as a live guard.
+		// ★ CORRECTED by ADR-0064 (#3528). This comment used to say that the term "ends in a DIVISION,
+		// and a division result is not a product, so no platform may fuse it into this add", and that
+		// the float64() round below "was dropped only because it cannot fire here". BOTH were wrong,
+		// and the second one is why this line went unconverted. The divisor is 2: gc strength-reduces
+		// a divide by a power of two into a MULTIPLY before its contraction pass, so `a + b/2` compiles
+		// to FMADDD on arm64 while `a + b/3` does not (ADR-0064 §4, measured by disassembly). This line
+		// WAS a live fusion site, and the float64() is what pins it — do not remove it.
+		//
+		// What still stands from the original note: this spelling of the level is the stable one, the
+		// closed form's `constant + m11·ρ²` is the one that parted by an ulp on arm64 (CI run
+		// 34280554924 macos-latest), and harmonic() reads this Level rather than respelling it for
+		// exactly that reason. The reason is now the conversion, not the division.
 		Level: st.constant + float64(rr*(st.m11+st.m22)/2),
 	}
 }
