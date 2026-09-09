@@ -40,6 +40,8 @@ is `0x3c40a3d70a3d70a4`.
 | `p.Add(v.Scale(s))` — the product is returned in a composite literal and the caller adds it | separate | **fused** |
 | `a + b/2` (a power-of-two divide) | separate | **fused** — gc strength-reduces it to `a + b*0.5` |
 | `a + b/3` | separate | separate |
+| `x := a` … `x *= b` … `x + c` | separate | **fused** — and it contains no product NODE at all |
+| `x := a` … `x /= 2` … `x + c` | separate | **fused** |
 | `float64(a*b) + c` | separate | separate |
 | `Scalar(a*b) + c` (`Scalar` is an alias for `float64`) | separate | separate |
 | the same with `Scale` returning `Vector3{float64(v.X * s), …}` | separate | separate |
@@ -114,20 +116,27 @@ are deliberate and live in `math/unfused_test.go`, where the unconverted form IS
 ### Enforcement
 
 - `archguard.TestNoFusableProductSums` type-checks the three packages FROM SOURCE and reports every
-  product or quotient the rule binds that is not rounded. From source, because the gc export-data
-  importer cannot see `oblikovati.org/math` or `oblikovati.org/api` — neither is in GOROOT or
-  GOPATH — and it fails SILENTLY, leaving the affected expressions untyped: measured on the
-  unconverted tree it finds 1307 of the 1495 sites, and on the converted one it invents 24 that are
-  not there.
+  product or quotient the rule binds that is not rounded, in either of the two node shapes that can
+  carry one: a written `a * b`, and a compound assignment `x *= a` — which contains no product node
+  at all and is therefore invisible to a walk that inspects only expressions, while compiling to the
+  same `FMADDD`. A conversion clears a site only when its target type is not COMPLEX: `complex128(x)`
+  does not round, so that shape falls through to the complex tally instead of passing silently.
+  From source, because the gc export-data importer cannot see `oblikovati.org/math` or
+  `oblikovati.org/api` — neither is in GOROOT or GOPATH — and it fails SILENTLY, leaving the
+  affected expressions untyped: measured on the unconverted tree it finds 1307 of the 1508 sites,
+  and on the converted one it invents 24 that are not there.
   The budget is zero. `complexFusionDebt` pins the complex128 sites the policy cannot reach; it may
   fall, never rise.
 - `math.TestExplicitConversionBlocksContraction` is the runtime half: it fails if a conversion ever
   stops forcing a rounding, and it fails on the macOS leg, where the contraction actually happens.
   Its companion pins the other side — that the unconverted form still contracts on arm64 and still
   does not on amd64 — so the cost argument below cannot go stale unnoticed.
-- `make arm64-fma PKG=./kernel/geom` disassembles the arm64 build and counts the fused instructions
-  the compiler actually emitted. That is the completeness oracle: the AST walk checks the source,
-  this checks what was done with it.
+- `make fma-gate` disassembles the arm64 build of all three packages and fails unless the fused
+  instruction count is EXACTLY the declared complex128 residual — on a rise and on a fall. It runs
+  on every PR (the `lint` job); it needs a cross-compile and neither a container nor an arm64
+  machine. That is the completeness oracle, and it is the layer that does not depend on the walk
+  being able to see a shape: the AST walk checks the source, this checks what the compiler did with
+  it. `make arm64-fma PKG=...` is the same count for one package, with the site list.
 - `make arm64 PKG=… [RUN=…]` runs one package's tests under emulation, so a developer can see the
   macOS leg before pushing.
 
@@ -154,14 +163,22 @@ measurement instrument, and the way to prove a residual is the contraction and n
 
 ### Conversions
 
-The rule binds 1495 products and quotients across the three packages, and every one of them is
+The rule binds 1508 products and quotients across the three packages, and every one of them is
 converted:
 
 | package | conversions | files |
 | --- | --- | --- |
-| `math` | 244 | 18 |
-| `kernel/geom` | 1211 | 124 |
+| `math` | 245 | 18 |
+| `kernel/geom` | 1223 | 124 |
 | `kernel/predicates` | 40 — 14 new, and 26 `rounded(…)` calls respelled | 3 |
+
+Thirteen of those (twelve in `kernel/geom`, `mat_internal.go`'s `inv[i] /= det` in `math`) are
+compound assignments rewritten as `x = float64(x * a)`. They were found by widening the guard in
+review round 1, not by the first sweep: `x *= a` is the product this rule is about and it contains
+no product node, so the walk that looked only at expressions could not see it. None of them was
+emitting a fused instruction on arm64 — the compiler happened to have no add to fuse them into —
+but that was luck, and a one-line edit at any of them would have reintroduced the platform split
+with the guard green.
 
 `kernel/predicates.rounded` is deleted. Its docstring was the policy in miniature and its job is now
 the guard's; the package doc keeps the reasoning and points here.
@@ -230,8 +247,31 @@ differently lands differently, which is what a PARTIAL conversion means. The res
 NAMED, ratcheted set (`crossArchHashDrift`) rather than a skipped test, and it shrinks package by
 package: `make arm64-fma` to zero, then re-measure the pins.
 
-Closing the standard-library half needs this project to own a portable elementary-function layer.
-That is a separate decision, and it is the real ceiling on the ground rule as written.
+### The ceiling, measured on this codebase's own API
+
+A differential oracle over 200 000 pseudo-random inputs folds every result to one 64-bit hash, in
+two folds: one over ONLY the arithmetic this ADR converts (`math.Vector3`, `math.Matrix4`,
+`kernel/predicates`), and one that adds `geom.Torus`/`geom.Cylinder` surface evaluation, which calls
+`stdmath.Sin`/`Cos`. Run at the wave base, at this ADR's HEAD, and at HEAD with the compiler's
+contraction disabled everywhere:
+
+| | converted arithmetic only | plus surface evaluation |
+| --- | --- | --- |
+| base, amd64 | `0a1929b18768c3cf` | `d3a096f23a039a85` |
+| base, arm64 | `2281d2335babaad7` ✗ | `12ed9b41a6ae8355` ✗ |
+| HEAD, amd64 | `0a1929b18768c3cf` | `d3a096f23a039a85` |
+| HEAD, arm64 | `0a1929b18768c3cf` **✓** | `a4bdcff8eff7d527` ✗ |
+| HEAD, arm64, `-d=fmahash=<never matches>` | `0a1929b18768c3cf` ✓ | `d3a096f23a039a85` **✓** |
+
+Four things, all measured rather than argued. amd64 does not move. The arithmetic this ADR converts
+was platform-split at the base and is now **bit-identical across platforms**. Adding two calls to
+`stdmath.Sin`/`Cos` splits it again. And disabling the contraction EVERYWHERE — including inside the
+standard library, which no source rule here can reach — makes arm64 reproduce amd64 exactly on both
+folds, so the library's own contraction is the WHOLE remaining cause on that path and there is
+nothing else hiding behind it.
+
+Closing that half needs this project to own a portable elementary-function layer. That is a separate
+decision, and it is the real ceiling on the ground rule as written.
 
 ### The perturbation row
 
