@@ -25,23 +25,15 @@ import (
 // tiled at exactly its shared-edge stations, and each rail is tiled as the single segment its
 // planar host tiles (the gate requires the rail to discretize to its 2 endpoints).
 
-// wedgeBandLoftMesh meshes an open oblique-ended cylinder wedge band as one zipped strip, or
-// ok=false for any face that is not exactly that shape (holes, a seam wrap, a curved rail, a
-// densified rail, iso ends — all fall through to the shipped paths, byte-identical).
-func wedgeBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	cyl, isCyl := s.(geom.Cylinder)
-	if !isCyl || len(f.Loops()) != 1 {
-		return nil, false
-	}
-	ends, ok := wedgeBandEndChains(f, cyl, q)
-	if !ok {
-		return nil, false
-	}
+// wedgeBandLoftMesh meshes the open oblique-ended cylinder wedge band wedgeBandTrimOf recognised, as
+// one zipped strip between its two end chains. The recognition is the caller's — the classification
+// already read it — so this only builds.
+func wedgeBandLoftMesh(w wedgeBandTrim) *Mesh {
 	m := &Mesh{}
-	a := addRow(m, s, ends[0].pts, ends[0].ang)
-	b := addRow(m, s, ends[1].pts, ends[1].ang)
+	a := addRow(m, w.cyl, w.ends[0].pts, w.ends[0].ang)
+	b := addRow(m, w.cyl, w.ends[1].pts, w.ends[1].ang)
 	zipOpenRows(m, a, b)
-	return m, true
+	return m
 }
 
 // wedgeEndChain is one end cross-section chain: its exact shared-edge points and their unwrapped
@@ -55,27 +47,28 @@ type wedgeEndChain struct {
 // axis-parallel RAIL edges that discretize to their endpoints, separating exactly 2 maximal end-chain
 // runs (a run may be several edges — a miter seam stored as chord segments), each u-monotone, at
 // least one oblique (non-iso in v) — all spanning less than a half turn. ok=false otherwise.
-func wedgeBandEndChains(f *topo.Face, cyl geom.Cylinder, q Quality) ([2]wedgeEndChain, bool) {
-	if len(seamEdgesOf(f)) != 0 {
-		return [2]wedgeEndChain{}, false
+func wedgeBandEndChains(f *topo.Face, s geom.Surface, q Quality) (geom.Cylinder, [2]wedgeEndChain, bool) {
+	cyl, isCyl := s.(geom.Cylinder)
+	if !isCyl || len(f.Loops()) != 1 || len(seamEdgesOf(f)) != 0 {
+		return cyl, [2]wedgeEndChain{}, false
 	}
 	runs, ok := wedgeChainRuns(f, cyl, q)
 	if !ok || len(runs) != 2 {
-		return [2]wedgeEndChain{}, false
+		return cyl, [2]wedgeEndChain{}, false
 	}
 	var chains []wedgeEndChain
 	for _, run := range runs {
 		ch, chOK := wedgeChainAngles(cyl, run)
 		if !chOK {
-			return [2]wedgeEndChain{}, false
+			return cyl, [2]wedgeEndChain{}, false
 		}
 		chains = append(chains, ch)
 	}
 	wedgeAlignChainBranches(chains)
 	if !wedgeSpanBelowHalfTurn(chains) || !wedgeEndsOblique(cyl, chains) {
-		return [2]wedgeEndChain{}, false
+		return cyl, [2]wedgeEndChain{}, false
 	}
-	return [2]wedgeEndChain{chains[0], chains[1]}, true
+	return cyl, [2]wedgeEndChain{chains[0], chains[1]}, true
 }
 
 // wedgeAlignChainBranches re-anchors chains[1]'s angles onto chains[0]'s periodic branch (shifts by

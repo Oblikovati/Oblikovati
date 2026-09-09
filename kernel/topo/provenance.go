@@ -125,7 +125,7 @@ func nameGroup(g *provGroup, sep, rankSeed LineageToken) {
 		g.members[0].set(NameByParents(g.parents, sep, rankSeed, 0))
 		return
 	}
-	sort.Slice(g.members, func(i, j int) bool { return lessPoint(g.members[i].at, g.members[j].at) })
+	sort.Slice(g.members, func(i, j int) bool { return LessPoint(g.members[i].at, g.members[j].at) })
 	for i, m := range g.members {
 		m.set(NameByParents(g.parents, sep, rankSeed, i+1))
 	}
@@ -161,8 +161,11 @@ func edgeRankPoint(e *Edge) math.Point3 {
 	return e.curve.PointAt((lo + hi) / 2)
 }
 
-// lessPoint is a total order on points (x, then y, then z) for stable sibling ranking.
-func lessPoint(a, b math.Point3) bool {
+// LessPoint is a total order on points (x, then y, then z) for stable sibling ranking — the order
+// every provenance rank that has no intersection line to measure along falls back to.
+//
+// Example: sort.Slice(rims, func(i, j int) bool { return topo.LessPoint(mid[i], mid[j]) })
+func LessPoint(a, b math.Point3) bool {
 	if a.X != b.X {
 		return a.X < b.X
 	}

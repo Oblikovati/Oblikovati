@@ -101,26 +101,39 @@ func meshMaxZ(m *Mesh) float64 {
 }
 
 // TestSeamedCapFanDeclinesForeignShapes drives the recognizer's decline arms directly: a shape it
-// does not understand must fall through to the existing paths, never mesh a wrong fan.
+// does not understand must fall through to the existing paths, never mesh a wrong fan. The recognizer
+// is one of the three RIM FORMS the sphere-cap arm of the curved-trim classification reads
+// (curved_trim_classify.go); it used to be a ladder rung of its own.
 func TestSeamedCapFanDeclinesForeignShapes(t *testing.T) {
 	t.Parallel()
 	const radius = 13.0
+	seamedRim := func(f *topo.Face) bool {
+		sph, isSphere := sphereOf(f.Geometry())
+		if !isSphere {
+			return false
+		}
+		_, _, ok := recognizeSeamedCapRim(f, sph, PropertyQuality())
+		return ok
+	}
 	t.Run("plain multi-arc rim without a seam declines (sphereCapFan's shape)", func(t *testing.T) {
 		face := coplanarRimFace(t, radius)
-		if _, ok := sphereSeamedCapFan(face, face.Geometry(), PropertyQuality()); ok {
-			t.Fatal("seamed-cap fan claimed a seamless coplanar rim — that is sphereCapFan's face")
+		if seamedRim(face) {
+			t.Fatal("seamed-cap fan claimed a seamless coplanar rim — that is the bare rim form's face")
 		}
 	})
 	t.Run("doubled edge that is not a pole seam declines (a slit, not a seam)", func(t *testing.T) {
 		face := slitRimFace(t, radius)
-		if _, ok := sphereSeamedCapFan(face, face.Geometry(), PropertyQuality()); ok {
+		if seamedRim(face) {
 			t.Fatal("seamed-cap fan claimed a doubled edge that never reaches the pole")
 		}
 	})
 	t.Run("the seamed hemisphere itself is claimed", func(t *testing.T) {
 		face := seamedHemisphereFace(t, radius, 6)
-		if _, ok := sphereSeamedCapFan(face, face.Geometry(), PropertyQuality()); !ok {
+		if !seamedRim(face) {
 			t.Fatal("seamed-cap fan declined the exact shape it exists for")
+		}
+		if got := ClassifyCurvedTrimName(face, PropertyQuality()); got != kindSphereCapFan.String() {
+			t.Fatalf("the seamed hemisphere classifies as %s, want %s", got, kindSphereCapFan)
 		}
 	})
 }
@@ -186,18 +199,67 @@ func TestSpherePatchGridClampIsDiagnosed(t *testing.T) {
 		ring[i] = math.P3(math.Scalar(radius*stdmath.Sin(2*stdmath.Pi/3)*c),
 			math.Scalar(radius*stdmath.Sin(2*stdmath.Pi/3)*s), math.Scalar(radius*stdmath.Cos(2*stdmath.Pi/3)))
 	}
-	fine, ok := SpherePatchMesh(nil, sph, ring, nil, Quality{ChordTolerance: 1e-3, AngleTolerance: stdmath.Pi / 180})
+	fine, ok := SpherePatchMeshOf(nil, sph, ring, nil, Quality{ChordTolerance: 1e-3, AngleTolerance: stdmath.Pi / 180})
 	if !ok {
 		t.Fatal("spherePatchMesh declined the 120° cap rim")
 	}
 	if !hasDiag(fine.Diagnostics, CodeTessellateCapSaturated) {
 		t.Fatalf("grid budget-scaled below chord tol 1e-3 but no %s diagnostic on the mesh", CodeTessellateCapSaturated)
 	}
-	coarse, ok := SpherePatchMesh(nil, sph, ring, nil, Quality{ChordTolerance: 0.5, AngleTolerance: stdmath.Pi / 180})
+	coarse, ok := SpherePatchMeshOf(nil, sph, ring, nil, Quality{ChordTolerance: 0.5, AngleTolerance: stdmath.Pi / 180})
 	if !ok {
 		t.Fatal("spherePatchMesh declined the 120° cap rim at the coarse tolerance")
 	}
 	if hasDiag(coarse.Diagnostics, CodeTessellateCapSaturated) {
 		t.Fatal("budget honoured the coarse tolerance yet still reported saturation — the diagnostic would cry wolf")
 	}
+}
+
+// TestTheTwoSeamedRimFormsAreDisjoint is the regression for the collision that a first-fit ladder can
+// carry forever and a classification cannot: a loop of [seam, ONE full circle, seam-reversed] reads as
+// a pole-seamed rim (one full-circle edge plus a lone pole vertex) AND as a seamed multi-arc rim (a
+// lone doubled edge plus a coplanar rim ring). The ladder tried the pole-seamed rung first and never
+// noticed; reading the forms as an inventory turned it into a refusal, and OCCT blend/simple J2's
+// byte-identity fingerprint fell over (33991 triangles against 165886). The rim EDGE COUNT is what
+// separates them — one edge or several — and this holds both readings to it.
+func TestTheTwoSeamedRimFormsAreDisjoint(t *testing.T) {
+	t.Parallel()
+	const radius = 13.0
+	q := PropertyQuality()
+	for _, row := range []struct {
+		name string
+		face *topo.Face
+		want string
+	}{
+		{"one full-circle rim edge (J2's shape)", poleSeamedHemisphereFace(t, radius), "pole-seamed-rim"},
+		{"a rim subdivided into six arcs (S6/S7's shape)", seamedHemisphereFace(t, radius, 6), "multi-arc-seam-rim"},
+	} {
+		hits := SphereCapRimFormHits(row.face, q)
+		if len(hits) != 1 || hits[0] != row.want {
+			t.Errorf("%s: cap rim forms %v, want exactly [%s]", row.name, hits, row.want)
+		}
+	}
+}
+
+// poleSeamedHemisphereFace builds a hemisphere face whose outer loop is ONE closed equator circle edge
+// plus one seam meridian edge used twice out to the pole and back — the shape OCCT blend/simple J2
+// ships and the one both seamed readings claimed.
+func poleSeamedHemisphereFace(t *testing.T, radius float64) *topo.Face {
+	t.Helper()
+	sphere, err := geom.NewSphere(math.P3(0, 0, 0), radius)
+	if err != nil {
+		t.Fatalf("NewSphere(R=%.3f): %v", radius, err)
+	}
+	equator, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), radius)
+	if err != nil {
+		t.Fatalf("NewCircle(R=%.3f): %v", radius, err)
+	}
+	lin := func(s string, i int) topo.Lineage { return topo.NewLineage(topo.Tok("poleseam", s, i)) }
+	bld := topo.NewBuilder(true, lin("body", 0))
+	vp := bld.AddVertex(math.P3(0, 0, math.Scalar(radius)), lin("vp", 0))
+	vr := bld.AddVertex(equatorPt(radius, 0), lin("vr", 0))
+	seam := bld.AddEdge(seamMeridian(t, radius), vp, vr, lin("seam", 0))
+	rim := bld.AddEdge(equator, vr, vr, lin("rim", 0))
+	bld.AddFace(sphere, lin("sph", 0), topo.OuterLoop(topo.Fwd(seam), topo.Fwd(rim), topo.Rev(seam)))
+	return bld.Build().Faces()[0]
 }

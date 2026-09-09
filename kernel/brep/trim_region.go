@@ -10,48 +10,45 @@ import (
 )
 
 // A face's region in its surface's (u, v) domain, as the flux quadrature and the orientation probe both
-// have to read it: the unwrapped trim rings PLUS which side of them the face is.
+// have to read it.
 //
-// A ring alone does not name a region on a CLOSED parameter domain (a sphere, a torus). Both sides of it
-// are bounded there, so a face is as often the ring's COMPLEMENT as its interior — a ball joined with a
-// rod through its top keeps the 9/10-of-the-sphere cap BELOW the seam, and that cap's only ring is the
-// small circle around the rod. Reading the ring as the region inverted BOTH readings the winding path
-// takes off it: the outward sign (a ring that runs CCW around the small cap runs CW around the big one)
-// and the quadrature rectangle (the ring's bounding box covers the small cap). So the ball's own centre
-// classified as OUTSIDE its own solid, and the boolean that built it was demoted to a faceted fallback
-// even though its faces were exact (Oblikovati/Oblikovati#3453, #3429).
-//
-// On an OPEN domain the question cannot arise: the region outside the rings runs to the domain's own
-// boundary or to infinity, so a trimmed face is always the rings' interior, and [pointInTrimUV] reads it
-// that way by construction. The side is therefore decided ONCE per face at preparation — never per
-// query — by asking the authoritative trim classifier about a single probe deep inside the rings, and
-// only on the closed domains where that classifier has an independent answer to give.
+// It is the face's CHART: closed contours in the covering space, material on the left (face_chart.go,
+// ADR-0063). A closed contour needs no rule about which side of it the face is, because it has an
+// inside — which is the whole point of carrying it. What used to live here instead was four rules that
+// tried to recover that from open polylines: an azimuth-wrapping rim read by an upward ray, a
+// tube-wrapping ring read by the nearest rim above and its material side, a choice between the two
+// windows two rim levels bound on a periodic axis, and the outerless complement flag. Each was correct
+// for the case it was written for and wrong for the next one (Oblikovati#3453, #3429, #3506, ADR-0062).
 type trimRegion struct {
-	rings      [][]math.Point2
-	complement bool
-	// uPeriodic/vPeriodic say whether the surface's own parameter wraps, which is what makes a ring
-	// able to be an OPEN polyline in the covering space rather than a closed contour (see
-	// regionSignedArea).
+	contours [][]math.Point2
+	// decided is false when the face carries no chart and its loops do not determine one. The readers
+	// then decline (fluxDomain returns ok=false, so a shell is left uncertified) rather than picking a
+	// side, which is what the deleted rules did (ADR-0063).
+	decided bool
+	// uPeriodic/vPeriodic say whether the surface's own parameter wraps, which is what decides whether
+	// a query has to be taken into the chart's branch before it is tested.
 	uPeriodic, vPeriodic bool
+	// index buckets the contours' segments by v so a query scans only those a +u ray can cross. nil for
+	// a chart short enough to scan whole (face_chart_index.go).
+	index *chartIndex
 }
 
-// contains is the region's own point membership in (u, v): the rings' even-odd interior, or everything
-// but it. A boundaryless face (a whole sphere/torus) owns its entire domain.
+// contains is the region's own point membership in (u, v). A boundaryless face (a whole sphere/torus)
+// owns its entire domain.
 func (r trimRegion) contains(q math.Point2) bool {
-	if len(r.rings) == 0 {
+	if len(r.contours) == 0 {
 		return true
 	}
-	return pointInLoops2D(r.rings, q) != r.complement
+	return chartContainsIndexed(r.contours, r.index, q, r.uPeriodic, r.vPeriodic)
 }
 
-// faceTrimRegion projects a face's trim into (u, v) once — loopToUV inverts ParamAt per sample, so this
-// must not run per query — and decides which side of those rings the face is.
+// faceTrimRegion takes the face's chart once — deriving it costs a ParamAt per loop sample, so this
+// must not run per query.
 func faceTrimRegion(f curvedFace) trimRegion {
 	uPer, vPer := surfacePeriodic(f.surface)
-	return trimRegion{
-		rings: trimPolys(f, uPer, vPer), complement: faceIsRingComplement(f, uPer, vPer),
-		uPeriodic: uPer, vPeriodic: vPer,
-	}
+	contours, ok := faceChart(f, uPer, vPer)
+	return trimRegion{contours: contours, decided: ok, uPeriodic: uPer, vPeriodic: vPer,
+		index: newChartIndex(contours)}
 }
 
 // trimPolys projects every loop of the face into one continuous (u, v) polyline (reusing loopToUV's seam
@@ -69,45 +66,31 @@ func trimPolys(f curvedFace, uPer, vPer bool) [][]math.Point2 {
 	return polys
 }
 
-// faceIsRingComplement reports whether the face owns everything EXCEPT the region its rings enclose.
+// fluxDomain is the (u, v) rectangle the quadrature covers: the chart's own bounding box, and the
+// surface's finite domain for a boundaryless face. It fails (ok=false) only for a face whose domain is
+// unbounded and which carries no chart, which a closed body never has.
 //
-// It can be true only on a closed parameter domain — one with no axis reaching an exterior ([castAxis])
-// — because that is the only domain on which the rings' interior and its complement are both admissible
-// regions; everywhere else the region runs to the domain's own boundary and a trimmed face is always the
-// rings' interior. Which of the two it is, is a TOPOLOGICAL datum, not a geometric one:
-// [curvedFace.outerless] is set exactly when the face's boundary is holes only, so the face wraps the
-// whole closed surface minus them (Oblikovati#1406), and topo carries it on the loop through
-// topo.LoopSpec/Loop.IsOuter.
-//
-// It used to be probed instead — the point deepest inside the rings, classified by [pointInTrimUV] —
-// which on a closed domain resolved to a reading of the loop's traversal handedness. Handedness orients
-// a shell only up to one global sign (orient_consistent.go picks that sign from the body's signed
-// volume), so on a body carrying the inverted-but-coherent choice the probe answered "complement" for
-// every sphere and torus face (Oblikovati/Oblikovati#3477).
-func faceIsRingComplement(f curvedFace, uPer, vPer bool) bool {
-	if _, ok := castAxis(f.surface, uPer, vPer); ok {
-		return false
-	}
-	return f.outerless
-}
-
-// fluxDomain is the (u, v) rectangle the quadrature covers: the rings' unwrapped bounding box when the
-// face is the region they enclose, and the surface's own finite domain when the face is boundaryless or
-// is the rings' COMPLEMENT — where that bounding box covers exactly the wrong region. It fails
-// (ok=false) only for a face whose domain is unbounded and whose region is not the rings' interior,
-// which a closed body never has.
+// The chart's box is the right window because a chart BOUNDS the material: there is no longer a second
+// window on the far side of a periodic axis to choose between, which is what periodicWindowHoldingMaterial
+// existed to do — a torus half whose material lay through the seam used to sample its whole quadrature
+// over the other half (ADR-0062).
 func fluxDomain(f curvedFace, r trimRegion) (u0, u1, v0, v1 float64, ok bool) {
-	if len(r.rings) > 0 && !r.complement {
-		return polyBounds(r.rings)
+	if !r.decided {
+		return 0, 0, 0, 0, false
+	}
+	if len(r.contours) > 0 {
+		if u0, u1, v0, v1, ok = polyBounds(r.contours); ok {
+			return u0, u1, v0, v1, true
+		}
 	}
 	return surfaceDomainRect(f.surface, r)
 }
 
 // surfaceDomainRect is the surface's whole finite domain, with each PERIODIC axis re-centred on the
-// rings' own branch: loopToUV unwraps a ring onto whichever turn it started on, which the canonical
-// [0, 2π] window need not contain, and the quadrature's ring test reads only that branch.
+// chart's own branch: a contour lives on whichever turn the arrangement recorded it, which the canonical
+// [0, 2π] window need not contain, and the quadrature's containment test reads only that branch.
 func surfaceDomainRect(s geom.Surface, r trimRegion) (u0, u1, v0, v1 float64, ok bool) {
-	centre := ringBranchCentre(r)
+	centre := chartBranchCentre(r)
 	uPer, vPer := surfacePeriodic(s)
 	ul, uh := s.UDomain()
 	vl, vh := s.VDomain()
@@ -116,7 +99,7 @@ func surfaceDomainRect(s geom.Surface, r trimRegion) (u0, u1, v0, v1 float64, ok
 	return u0, u1, v0, v1, isFiniteRect(u0, u1, v0, v1)
 }
 
-// axisWindow is one axis of that rectangle: a full turn centred on the rings' branch when the axis is
+// axisWindow is one axis of that rectangle: a full turn centred on the chart's branch when the axis is
 // periodic, else the surface's own domain.
 func axisWindow(lo, hi float64, periodic bool, centre float64) (float64, float64) {
 	if !periodic {
@@ -125,14 +108,14 @@ func axisWindow(lo, hi float64, periodic bool, centre float64) (float64, float64
 	return centre - stdmath.Pi, centre + stdmath.Pi
 }
 
-// ringBranchCentre is the (u, v) centroid of the first ring — the branch the periodic axes are centred
-// on. A boundaryless face has no ring to place, and every full turn is the same window there, so the
-// origin serves.
-func ringBranchCentre(r trimRegion) math.Point2 {
-	if len(r.rings) == 0 {
+// chartBranchCentre is the (u, v) centroid of the first contour — the branch the periodic axes are
+// centred on. A boundaryless face has none to place, and every full turn is the same window there, so
+// the origin serves.
+func chartBranchCentre(r trimRegion) math.Point2 {
+	if len(r.contours) == 0 {
 		return math.P2(0, 0)
 	}
-	return loopCentroid(r.rings[0])
+	return loopCentroid(r.contours[0])
 }
 
 // isFiniteRect reports whether the rectangle is bounded and non-degenerate, the precondition of the
@@ -142,4 +125,27 @@ func isFiniteRect(u0, u1, v0, v1 float64) bool {
 		return false
 	}
 	return u1 > u0 && v1 > v0
+}
+
+// boundaryDistance is the (u,v) distance from q to the nearest contour segment — how far inside its trim
+// a point sits, for choosing a probe point clear of the boundary.
+func (r trimRegion) boundaryDistance(q math.Point2) float64 {
+	best := stdmath.Inf(1)
+	for _, contour := range r.contours {
+		for i := range contour {
+			best = stdmath.Min(best, pointSegmentDistance2D(q, contour[i], contour[(i+1)%len(contour)]))
+		}
+	}
+	return best
+}
+
+// pointSegmentDistance2D is the distance from q to the segment a→b.
+func pointSegmentDistance2D(q, a, b math.Point2) float64 {
+	ab := a.VectorTo(b)
+	l2 := float64(ab.Dot(ab))
+	t := 0.0
+	if l2 > 0 {
+		t = stdmath.Max(0, stdmath.Min(1, float64(a.VectorTo(q).Dot(ab))/l2))
+	}
+	return float64(q.DistanceTo(a.TranslateBy(ab.Scale(math.Scalar(t)))))
 }

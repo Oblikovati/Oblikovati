@@ -174,9 +174,9 @@ func TestBallJoinRodContainsBallCentre(t *testing.T) {
 	if err != nil {
 		t.Fatalf("rod: %v", err)
 	}
-	join, ok := CoaxialSphereRodJoin(ball, rod)
-	if !ok {
-		t.Fatal("ball ∪ shoulder rod declined")
+	join, err := Boolean(Union, ball, rod)
+	if err != nil {
+		t.Fatalf("ball ∪ shoulder rod: %v", err)
 	}
 	assertBigCapClaimsItsInterior(t, join)
 	for _, p := range []math.Point3{math.P3(0, 0, 0), math.P3(0, -3, 0), math.P3(0, 0, 4)} {
@@ -189,11 +189,14 @@ func TestBallJoinRodContainsBallCentre(t *testing.T) {
 	}
 }
 
-// assertBigCapClaimsItsInterior checks the trim verdict on the joined body's spherical face directly, so
-// a failure names the classifier rather than the ray caster that consumes it.
+// assertBigCapClaimsItsInterior checks the trim verdict on the joined body's BIG spherical cap directly,
+// so a failure names the classifier rather than the ray caster that consumes it. The rod stops past the
+// seam but short of the pole, so the ball survives in two pieces — the big cap below the seam at y=4 and
+// a tip above the rod's end plane at y=4.5 — and the cap has to be picked by its rim, not by being the
+// body's only sphere face.
 func assertBigCapClaimsItsInterior(t *testing.T, join *topo.Body) {
 	t.Helper()
-	f := soleSphereFace(t, join)
+	f := sphereCapAtRim(t, join, 4)
 	for _, y := range []float64{-4.9, -4, -2, 0, 2, 3.9} {
 		if p := meridianPoint(5, y, 0); !PointInFaceTrim(f, p) {
 			t.Errorf("the joined ball's cap disowns %v (y=%g)", p, y)
@@ -202,4 +205,25 @@ func assertBigCapClaimsItsInterior(t *testing.T, join *topo.Body) {
 	if p := meridianPoint(5, 4.5, 0); PointInFaceTrim(f, p) {
 		t.Errorf("the joined ball's cap claims %v, which the rod replaced", p)
 	}
+}
+
+// sphereCapAtRim returns the body's spherical face bounded by a rim at the given axial station. The
+// station is solved (√(R²−r²)), so it is matched within a weld rather than exactly.
+func sphereCapAtRim(t *testing.T, b *topo.Body, station float64) *topo.Face {
+	t.Helper()
+	for _, f := range b.Faces() {
+		if surfaceKind(f) != "sphere" {
+			continue
+		}
+		for _, l := range f.Loops() {
+			for _, u := range l.EdgeUses() {
+				c, ok := u.Edge().Geometry().(geom.Circle)
+				if ok && stdmath.Abs(float64(c.Center.Y)-station) < 1e-9 { // tol:weld — solved station vs nominal
+					return f
+				}
+			}
+		}
+	}
+	t.Fatalf("body has no spherical face rimmed at y=%g", station)
+	return nil
 }

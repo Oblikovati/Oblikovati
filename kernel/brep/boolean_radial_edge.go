@@ -25,8 +25,8 @@ import (
 // vertex (partitionVertexDisks) — so two solids kissing along a line become two
 // coincident-but-distinct shells.
 //
-// It is a total function over a naming-free plan. It never moves a coordinate, never mints a topo
-// entity and never names one (naming: boolean_mint.go hooks; construction: curved_stitch.go). A
+// These are total functions over a naming-free plan. They never move a coordinate, never mint a topo
+// entity and never name one (naming: boolean_mint.go hooks; construction: curved_stitch.go). A
 // contact the radial sort cannot pair is encoded faithfully as an unpaired singleton group; the
 // caller's solidity gate then declines the body rather than shipping an invalid one (the CSG-fallback
 // path). See ADR-0047.
@@ -47,12 +47,13 @@ type vertexDisk struct {
 	groups []int // indices into sewPlan.groups incident to this disk at `welded`
 }
 
-// sewPlan is the naming-free combinatorial result of the radial-edge sew: the manifold edge-groups,
-// the per-welded-vertex disk partition, and the map from each half-edge use to its group.
+// sewPlan is the naming-free combinatorial result of the radial-edge sew: the manifold edge-groups and
+// the per-welded-vertex disk partition. buildCurvedStitchPlan assembles it as it walks the geometric
+// edges, in first-encounter order — which is what the edge lineage ordinals are built from, so the
+// walk's order is part of the contract and not an implementation detail.
 type sewPlan struct {
-	groups   []edgeGroup
-	disks    map[int][]vertexDisk
-	useGroup map[[3]int]int
+	groups []edgeGroup
+	disks  map[int][]vertexDisk
 }
 
 // faceDirAt returns the outward material direction of a half-edge use at a point on the shared edge —
@@ -60,50 +61,6 @@ type sewPlan struct {
 // injecting it (OCCT's GetFaceDir) is what makes the Weiler resolution surface-agnostic: a planar face
 // returns its constant normal, a curved face its normal evaluated on the surface at the edge (ADR-0058).
 type faceDirAt func(h loopEdgeUse, edgePoint math.Point3) math.Vector3
-
-// radialSew resolves every tangent/grazing contact in the welded face set into a manifold sew plan.
-// The common case (every vertex pair used exactly twice, every vertex one disk) passes through
-// unchanged — the radial machinery engages only where a pair is over-used or a vertex holds more
-// than one disk. normalAt supplies each using face's surface normal at the edge, so the resolution is
-// surface-agnostic (planar and curved alike).
-func radialSew(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt faceDirAt) sewPlan {
-	groups := extractEdgeGroups(verts, uses, normalAt)
-	return sewPlan{
-		groups:   groups,
-		disks:    partitionVertexDisks(groups),
-		useGroup: indexUsesByGroup(groups),
-	}
-}
-
-// extractEdgeGroups walks the vertex pairs in sorted order and splits each into its manifold
-// edge-groups (resolveEdgeUses), so a pair used twice yields one group and an over-used tangent
-// contact yields one group per filled wedge. The order is deterministic (sorted pair keys) so the
-// downstream ordinal naming is stable.
-func extractEdgeGroups(verts []math.Point3, uses map[[2]int][]loopEdgeUse, normalAt faceDirAt) []edgeGroup {
-	var groups []edgeGroup
-	for _, k := range sortedPairKeys(uses) {
-		axisOf := func() (math.Vector3, math.Point3) { // the chord axis + midpoint of a straight edge
-			p0, p1 := verts[k[0]], verts[k[1]]
-			return p0.VectorTo(p1).AsUnit().AsVector(), math.P3((p0.X+p1.X)/2, (p0.Y+p1.Y)/2, (p0.Z+p1.Z)/2)
-		}
-		for _, g := range resolveEdgeUses(uses[k], axisOf, normalAt) {
-			groups = append(groups, edgeGroup{pair: k, uses: g})
-		}
-	}
-	return groups
-}
-
-// indexUsesByGroup maps each half-edge use (face,ring,pos) to the index of the edge-group carrying
-// it, so the loop builder can resolve every directed loop edge to its shared topo edge.
-func indexUsesByGroup(groups []edgeGroup) map[[3]int]int {
-	m := make(map[[3]int]int)
-	for gi := range groups {
-		for _, h := range groups[gi].uses {
-			m[[3]int{h.face, h.ring, h.pos}] = gi
-		}
-	}
-	return m
-}
 
 // partitionVertexDisks groups, per welded vertex, its incident edge-groups into radial disks: two
 // groups share a disk iff some face uses both at that vertex (groupFans). A manifold vertex yields
@@ -126,36 +83,31 @@ func partitionVertexDisks(groups []edgeGroup) map[int][]vertexDisk {
 	return disks
 }
 
-// groupFans partitions a vertex's incident edge-groups into disks connected by shared faces: two
+// groupFans partitions a vertex's incident edge-groups into disks connected by shared LOOPS: two
 // groups join iff some face loop uses both at that vertex. A clean manifold vertex yields one disk.
+//
+// The connector is the loop, not the face. A face whose boundary passes through one vertex on TWO of
+// its loops is pinched there — the two loops are two separate fans on that face, exactly as two faces
+// kissing at a point are two fans on the body — and joining them by face identity alone merged them
+// into one vertex. That is what a torus cut by a plane tangent to its inner equator produces: the two
+// lobes of the figure-eight bound one torus face through two loops, so the pinch welded to a single
+// vertex and the body came out with an odd Euler characteristic (V−E+2F−L = 1), which the validity
+// gate rightly refuses. Two loops of one face are still unioned transitively wherever another face
+// genuinely joins their groups, so this only ever REFINES the partition (ADR-0061).
 func groupFans(groups []edgeGroup, inc []int) [][]int {
 	return topo.ComponentGroups(inc, func(join func(a, b int)) {
-		byFace := map[int]int{} // face → first incident group seen using it
+		byLoop := map[[2]int]int{} // (face, ring) → first incident group seen using it
 		for _, gi := range inc {
 			for _, u := range groups[gi].uses {
-				if first, ok := byFace[u.face]; ok {
+				key := [2]int{u.face, u.ring}
+				if first, ok := byLoop[key]; ok {
 					join(gi, first)
 				} else {
-					byFace[u.face] = gi
+					byLoop[key] = gi
 				}
 			}
 		}
 	})
-}
-
-// sortedPairKeys returns the vertex pairs in ascending order for stable edge lineage.
-func sortedPairKeys(uses map[[2]int][]loopEdgeUse) [][2]int {
-	keys := make([][2]int, 0, len(uses))
-	for k := range uses {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		if keys[i][0] != keys[j][0] {
-			return keys[i][0] < keys[j][0]
-		}
-		return keys[i][1] < keys[j][1]
-	})
-	return keys
 }
 
 // resolveEdgeUses partitions a vertex pair's uses into manifold groups of two. The common case

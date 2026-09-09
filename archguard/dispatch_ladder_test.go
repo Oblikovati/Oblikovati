@@ -32,13 +32,13 @@ import (
 // it with a classification. It may only SHRINK: a new ladder fails this test, and removing one
 // demands its entry go with it.
 var dispatchLadders = map[string]string{
-	// 26 analytic recognizers tried in order; the comment on the table says the order is
-	// load-bearing. ADR-0056 "What this deletes" names the recognizers a completed
-	// reconstruction retires.
-	"kernel/ops/boolean/boolean_curved.go": "#3397",
-	// Surface-specific meshers tried in priority order before the generic (u,v) trim path.
-	// #3235-#3251 delete them one at a time as the general mesher covers each.
-	"kernel/ops/tessellate/tessellate_trim_special.go": "#3409",
+	// The curved boolean's 26-recognizer ladder (#3397) is GONE — ADR-0061 stage 4 deleted
+	// curvedExactPaths and the 15 brep drivers behind it, leaving brep's per-face dispatch as the
+	// one path. Its entry is removed rather than kept at zero: the registry may only shrink.
+	// The tessellator's 11-entry specialCurvedMeshers ladder (#3409) is GONE — ADR-0061 stage 5
+	// replaced it with classifyCurvedTrim, a classification whose predicates are mutually exclusive
+	// (kernel/ops/tessellate/curved_trim_classify.go). Its entry is removed rather than kept at zero:
+	// the registry may only shrink, and there is no ladder left in the kernel to register.
 }
 
 func TestNoFirstFitDispatchLadders(t *testing.T) {

@@ -5,68 +5,36 @@ package boolean
 import (
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 )
 
-// The CURVED half of the boolean: the analytic recognizers and the guards that decide whether to
-// trust one (split out of boolean.go for #2215).
+// The CURVED half of the boolean: the general per-face pipeline and the guards that decide whether to
+// trust its result (split out of boolean.go for #2215).
 //
-// curvedExactPaths is an ordered first-fit list of 26 recognizers whose try-order is load-bearing.
-// The ground rules forbid that shape — "dispatch is a classification that selects exactly one
-// path" — and #3397 replaces it; ADR-0056 "What this deletes" names the recognizers a completed
-// reconstruction retires. It is gathered in one file so that work has one place to land.
+// There is ONE path here. Until ADR-0061 stage 4 this file opened with curvedExactPaths, an ordered
+// first-fit list of 26 bespoke recognizers tried BEFORE the general pipeline; the ground rules forbid
+// that shape — "dispatch is a classification that selects exactly one path" — and every pair those
+// recognizers claimed is now built by brep's per-face dispatch. What they were (the ruled crossings, the
+// equal-radius Steinmetz family, the drill through-hole and the cylinder boss, the cap crossings, the
+// coaxial ball and rod) and why each is no longer a separate handler is recorded in ADR-0045 and
+// ADR-0061; the brep drivers behind them are deleted with them.
 //
-// The guards below it are why a wrong analytic result does not ship: a recognizer's body must be a
-// valid solid AND land inside the Requicha volume bracket, or the operation falls through.
+// The guards below are why a wrong result does not ship: the body must be a valid closed solid, its
+// faces must pass the Requicha membership certificate, no face may be wound against its outward normal,
+// and the volume must land inside the Requicha bracket. A pair the pipeline cannot model is refused BY
+// NAME (ErrUnmodelledBoolean); nothing is faceted behind the caller's back.
 
-// curvedExactBoolean tries each exact analytic curved-boolean path in turn, returning the first that
-// applies (M2, ADR-0027 §M2). Each keeps the operands' exact analytic surfaces instead of the triangle-soup
-// CSG fallback; one that does not apply returns ok=false so booleanGeneral moves on. Every path belongs to
-// one of three boolean KINDs (ADR-0045), distinguished by the DIMENSIONALITY of the operands' contact:
+// curvedExactBoolean runs brep's per-face-dispatch boolean (ADR-0058) on a pair carrying at least one
+// curved face and adopts the result only as a valid, correctly-wound solid. It is the ONLY curved path:
+// what brep's scope gate declines (ErrUnsupportedMixedBoolean) the caller refuses by name, where it once
+// fell first to the 26 recognizers and then to the mesh reconstruction (ADR-0061 stages 4 and 6).
 //
-//	TRANSVERSAL CROSSING (contact = a 1-D curve; the general SSI → (u,v)-arrangement → classify → stitch
-//	pipeline, or a curved solid trimmed by a convex tool's planar half-spaces, #1403/#1476):
-//	  - a curved solid ∩/− a convex planar tool or prism (a box; cylinder − box) → composed half-space cuts (#1334);
-//	  - two crossing cylinders ∩/−/∪ (rod band + fat-wall lens caps) (#1335);
-//	  - a cone crossing a cylinder, and a cone crossing a fatter cone, ∩/−/∪ (#1335);
-//	  - two EQUAL-radius perpendicular cylinders ∩/−/∪ (the Steinmetz bicylinder, imprint split at its pinches) (#1403);
-//	  - a thin rod ending inside a fatter solid ∩/−/∪ (a partial penetration: plug, blind hole, one-sided stub) (#1335);
-//	  - a rod COAXIAL with a ball, ending inside it ∩/−/∪ (the ball stud, its blind spherical bore, its plug) —
-//	    transversal, but the contact is one PLANAR circle and a sphere is not a rim-bounded band, so the split is
-//	    by construction and no arrangement runs; OCCT special-cases the same pair in closed form (#2036).
-//
-//	CURVED-ON-PLANAR (contact = one closed conic STRICTLY INSIDE a planar face, added as an inner loop; no
-//	SSI arrangement — the periodic (u,v) machinery does not apply to a flat bounded face, ADR-0045):
-//	  - drilling a clean through-hole in a slab with a straight cylinder (box − cylinder) (#1336);
-//	  - the union of a cylinder seated flush on a planar face (a boss/spigot) → seat-face hole + wall + cap (#1336).
-//
-//	DEGENERATE OVERLAP (contact = a 2-D region of COINCIDENT surfaces; a simplification, not an SSI handler,
-//	ADR-0045):
-//	  - the union of two coaxial equal-radius cylinders that overlap/abut → one taller cylinder (#1336).
+// An all-planar pair declines here (ok=false) and keeps its own guarded planar pipeline downstream,
+// byte-for-byte.
 func curvedExactBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	for _, exact := range curvedExactPaths {
-		if body, ok := exact(op, target, tool, rec); ok {
-			return body, true
-		}
-	}
-	// General per-face dispatch (ADR-0058): when the curved faces are clear of the other operand,
-	// the exact planar pipeline splits the planar faces and the curved ones pass through whole —
-	// an EXACT analytic result where no bespoke recognizer applied, tried before the mesh rescue.
-	if body, ok := mixedPassThroughBoolean(op, target, tool, rec); ok {
-		return body, true
-	}
-	// Last resort (ADR-0056 L5): no analytic recognizer applied — rebuild the join from the
-	// exact mesh boolean's provenance on the operands' exact surfaces, instead of faceting.
-	return reconstructedCurvedBoolean(op, target, tool, rec)
-}
-
-// mixedPassThroughBoolean runs brep's per-face-dispatch boolean on MIXED operands (ADR-0058): only
-// when a curved face is present (an all-planar pair keeps its own guarded pipeline downstream,
-// byte-for-byte), and only adopted as a valid solid — brep's conservative scope gate declines the
-// rest (ErrUnsupportedMixedBoolean), falling through to the mesh reconstruction exactly as before.
-func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	if analyticFaceCount(target)+analyticFaceCount(tool) == 0 {
+	if !hasCurvedFace(target) && !hasCurvedFace(tool) {
 		return nil, false
 	}
 	bop, ok := toBrepOp(op)
@@ -77,8 +45,42 @@ func mixedPassThroughBoolean(op PartFeatureOperation, target, tool *topo.Body, r
 	if err != nil || body == nil || !Validate(body).ValidSolid() {
 		return nil, false
 	}
+	if inverted, found := invertedFace(body); found {
+		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
+			"curved %s general result has a face wound against its outward normal (%q): declining it", op, inverted.ReferenceKey())
+		return nil, false
+	}
 	return body, true
 }
+
+// hasCurvedFace reports whether a body carries a non-planar (analytic curved) face.
+func hasCurvedFace(b *topo.Body) bool {
+	for _, f := range b.Faces() {
+		if _, planar := f.Geometry().(geom.Plane); !planar {
+			return true
+		}
+	}
+	return false
+}
+
+// invertedFace returns a face of the body whose loops wind against its outward normal — the emission
+// post-condition the per-edge validity test cannot see (brep.FaceWindingConsistent). A face the
+// certificate cannot read is not reported: the gate refuses only what it can prove.
+func invertedFace(b *topo.Body) (*topo.Face, bool) {
+	for _, f := range b.Faces() {
+		if ok, certain := brep.FaceWindingConsistent(f); certain && !ok {
+			return f, true
+		}
+	}
+	return nil, false
+}
+
+// CodeBooleanWindingReject marks a curved boolean result refused because one of its faces is wound
+// against its outward normal. Validate's per-edge test admits such a body — two faces inverted
+// together across the edge they share stay pairwise consistent — and the tessellator then meshes the
+// face's complement while the analytic integrator, which signs a loop from its own boundary integral,
+// still reports the right volume. The torus tangent cut shipped so for every axis (ADR-0061 stage 4).
+const CodeBooleanWindingReject diag.Code = "boolean.winding-reject"
 
 // CodeBooleanAnalyticVolumeReject marks a curved analytic boolean whose result fell OUTSIDE the
 // Requicha two-sided volume bracket (#1601): the recognizer produced a valid body of materially
@@ -113,25 +115,96 @@ var curvedGuardBracketOverride *float64
 // booleanGeneral falls through to the guarded planar/CSG path. On acceptance it restores
 // original-edge identity (ADR-0043) like the planar path.
 func curvedExactGuarded(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
+	// The size classification runs here too, not only in BooleanWithDiagnostics: CurvedBoolean is a
+	// PUBLIC entry, and a sub-resolution pair reaching it certified as "nothing removed" — a valid
+	// body, every face accounted for, and a Cut volume the Requicha bracket admits (ADR-0061 stage 6).
+	if declineSubResolutionOperand(op, target, tool, rec) != nil {
+		return nil, false
+	}
 	body, ok := curvedExactBoolean(op, target, tool, rec)
 	if !ok {
+		declineCurvedExact(op, target, tool, rec)
 		return nil, false
 	}
-	if !certifyBooleanFaces(op, target, tool, body) {
-		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
-			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
+	// Validate stays HERE, at the exit that returns the body, rather than inside the gate below: the
+	// post-condition of a public operation has to be visible on the path its result travels
+	// (archguard TestExportedOpsValidateTheirResult follows only the calls whose result is returned).
+	if !Validate(body).ValidSolid() {
+		rec.Recordf(CodeBooleanAnalyticInvalid, diag.Defect,
+			"curved %s analytic result is not a valid closed solid: falling back to the guarded path", op)
 		return nil, false
 	}
-	tv, wv, bv := boolVolumes(target, tool, body)
-	if volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
-		rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
-			"curved %s analytic result volume %g outside the Requicha bracket (V(A)=%g V(B)=%g): falling back to the guarded path",
-			op, bv, tv, wv)
+	if curvedResultRejected(op, target, tool, body, rec) {
 		return nil, false
 	}
 	body.InheritOriginalEdges(append(append([]*topo.Edge(nil), target.Edges()...), tool.Edges()...))
 	return body, true
 }
+
+// curvedResultRejected is the acceptance gate curvedExactGuarded applies to a VALID built result, in
+// the order the ground rules put them: the per-face membership certificate is the PROOF, winding is a
+// post-condition the certificate cannot see, and the whole-body volume bracket is the closing smoke
+// test. Each rejection records its own Defect naming which certificate refused, so a demotion says WHY
+// rather than only that it happened. Validity is checked by the caller, at the exit (see there).
+func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body, rec *diag.Recorder) bool {
+	if !certifyBooleanFaces(op, target, tool, body) {
+		rec.Recordf(CodeBooleanAnalyticFaceReject, diag.Defect,
+			"curved %s analytic result has a face the operands do not account for: falling back to the guarded path", op)
+		return true
+	}
+	if inverted, found := invertedFace(body); found {
+		rec.Recordf(CodeBooleanWindingReject, diag.Defect,
+			"curved %s analytic result has a face wound against its outward normal (%q): falling back to the guarded path", op, inverted.ReferenceKey())
+		return true
+	}
+	return curvedVolumeRejected(op, target, tool, body, rec)
+}
+
+// curvedVolumeRejected is the acceptance gate's last stage: the Requicha two-sided volume bracket,
+// split out so each stage stays one decision.
+func curvedVolumeRejected(op PartFeatureOperation, target, tool, body *topo.Body, rec *diag.Recorder) bool {
+	tv, wv, bv := boolVolumes(target, tool, body)
+	if !volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv)) {
+		return false
+	}
+	rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
+		"curved %s analytic result volume %g outside the Requicha bracket (V(A)=%g V(B)=%g): falling back to the guarded path",
+		op, bv, tv, wv)
+	return true
+}
+
+// declineCurvedExact records the NAMED decline when no exact analytic path claims a configuration that
+// carries curved geometry. Until now this was the one exit of the guarded entry that said nothing: the
+// three REJECTIONS below each record, while "no path applied" returned silently and the caller quietly
+// produced triangle soup. The ground rule is that a fallback is a diag.Defect that reaches feature
+// health, the API and the UI — a demotion the user cannot see is the failure mode ADR-0061 stage 6 is
+// named for, and the torus figure-eight's three faceted rows reached the corpus through exactly this
+// silence.
+//
+// Silence stays correct for an all-planar pair: the planar B-rep path takes those exactly, so declining
+// the curved paths costs nothing and saying so on every boolean in the system would be noise.
+func declineCurvedExact(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) {
+	if !hasCurvedFace(target) && !hasCurvedFace(tool) {
+		return
+	}
+	rec.Recordf(CodeBooleanNoExactCurvedPath, diag.Defect,
+		"curved %s: no exact analytic path claims this configuration (target %d faces, tool %d faces); the result will be faceted",
+		op, len(target.Faces()), len(tool.Faces()))
+}
+
+// CodeBooleanNoExactCurvedPath marks a boolean with a curved operand that no exact analytic path
+// claimed, so the result comes from the faceted fallback. A tracked degradation, not an error: the
+// operation succeeds and the body is valid, but it is a tessellation of the answer rather than the
+// answer.
+const CodeBooleanNoExactCurvedPath diag.Code = "boolean.no-exact-curved-path"
+
+// CodeBooleanAnalyticInvalid marks a curved analytic boolean whose result is not a valid closed solid.
+// Validate is the post-condition of every public kernel operation, and this entry had none: the inner
+// paths that DO validate (mixedPassThroughBoolean) covered most of the surface, so a recognizer that
+// returned a torn body shipped it to whichever caller did not re-check — which, once the public
+// CurvedBoolean entries took this guarded path, is none of them (ADR-0061). A tracked degradation: the
+// analytic result is refused and the operation falls to the guarded planar path.
+const CodeBooleanAnalyticInvalid diag.Code = "boolean.analytic-invalid"
 
 // CodeBooleanAnalyticFaceReject marks a curved analytic boolean whose result carried a face the
 // operands cannot account for under the operation's membership rule — a face on neither operand's
@@ -168,32 +241,23 @@ func analyticVolumesExact(target, tool *topo.Body) bool {
 // hangs (unlike the planar B-rep boolean, which loops on a full periodic curved face). The model layer uses
 // it to combine a still-analytic primitive (a revolved torus, an extruded cylinder) by its curved faces
 // before falling back to faceting the operands for the planar path (#129).
+//
+// It is the GUARDED entry (curvedExactGuarded), the same one booleanGeneralExact takes: a result must pass
+// the per-face membership certificate and the Requicha volume bracket, or this declines. The public entry
+// used to call curvedExactBoolean directly, so a recognizer that over-matched to a valid body of materially
+// wrong shape shipped to the feature layer uncertified while the identical call inside the kernel was
+// certified. Only the feature layer's face-COUNT gate stood between a wrong result and the model — which is
+// why widening that gate to a classification (ADR-0061) had to close this seam first: one operation, one
+// certification, whoever calls it.
 func CurvedBoolean(op PartFeatureOperation, target, tool *topo.Body) (*topo.Body, bool) {
-	return curvedExactBoolean(op, target, tool, nil)
+	return curvedExactGuarded(op, target, tool, nil)
 }
 
 // CurvedBooleanWithDiagnostics is [CurvedBoolean] with a diagnostic recorder (nil to discard):
 // the exact paths record imprint-quality diagnostics (#1404) and their internal fallbacks, so a
 // feature-level caller carries the kernel's quality signal instead of dropping it (#1601).
 func CurvedBooleanWithDiagnostics(op PartFeatureOperation, target, tool *topo.Body, rec *diag.Recorder) (*topo.Body, bool) {
-	return curvedExactBoolean(op, target, tool, rec)
-}
-
-// curvedExactPaths is the ordered list of exact analytic curved-boolean paths curvedExactBoolean tries; each
-// returns ok=false when it does not apply to (op, target, tool). The recorder carries the SSI imprint's
-// closure diagnostics (#1404) up to the boolean's caller; a path that takes no imprint ignores it. The paths
-// are grouped by op (the try-order within an op is load-bearing; do not reorder across a pair that two paths
-// could both accept) and tagged with their boolean KIND (ADR-0045): [T] transversal crossing, [P] curved-on-
-// planar, [D] degenerate overlap.
-var curvedExactPaths = []func(PartFeatureOperation, *topo.Body, *topo.Body, *diag.Recorder) (*topo.Body, bool){
-	// Intersect — all [T] transversal (curved∩convex-planar half-space, then ruled crossings).
-	curvedConvexIntersect, curvedConvexSubtract,
-	curvedRuledCrossingIntersect, curvedSteinmetzIntersect,
-	curvedPartialIntersect, curvedBallRodIntersect,
-	// Cut — [P] the drill through-hole and the edge scallop (curved-on-planar), the rest [T] transversal.
-	curvedCylindricalHoleCut, curvedEdgeScallopCut, curvedFlatSubtract, curvedPartialCut, curvedSteinmetzCut, curvedRuledCrossingCut, curvedCapCrossCut, curvedRimCrossCut, curvedTwoCapCrossCut, curvedConeCapCrossCut, curvedPartialRimCut, curvedPartialRimCornerCut, curvedBallRodCut,
-	// Join — [D] coaxial (degenerate overlap), [P] boss interior then straddling (curved-on-planar), the rest [T] transversal.
-	curvedCoaxialJoin, curvedCylinderBossJoin, curvedPartialBossJoin, curvedPartialJoin, curvedRuledCrossingJoin, curvedSteinmetzJoin, curvedBallRodJoin,
+	return curvedExactGuarded(op, target, tool, rec)
 }
 
 // shouldFallbackBoolean decides whether a result must be abandoned for the next path. Validity comes

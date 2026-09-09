@@ -150,13 +150,39 @@ func stitchKeyFor(le loopEdge, pw *welder3, byKey map[[3]int]*stitchKeyUses, key
 }
 
 // stitchUseReversed reports whether this use traverses the geometric edge opposite its canonical
-// representative: by sweep sign for a closed edge (a full seam circle), by start weld otherwise —
-// both from pass-1 cached indices, no welder re-probe.
+// representative: by traversal sense for a closed edge (a full seam circle, a section loop), by start
+// weld otherwise — the latter from pass-1 cached indices, no welder re-probe.
 func stitchUseReversed(le loopEdge, ka int, ku *stitchKeyUses) bool {
 	if ku.closed {
-		return (le.t1 < le.t0) != (ku.rep.t1 < ku.rep.t0)
+		return closedRunsOppose(le, ku.rep)
 	}
 	return ka != ku.pair[0]
+}
+
+// closedRunsOppose reports whether two runs of one CLOSED geometric edge walk it in opposite senses.
+//
+// Both runs start at the loop's one vertex — that is what put them in one group — so the sense is read
+// where it is exact: the traversal tangents at that shared point either agree or oppose. Comparing the
+// two runs' parameter directions instead assumed they carry the same curve, and they need not: a lid
+// takes its section from the plane cut and the wall its clipped copy of the same loop, and where those
+// are parametrised the other way round the parameter rule flagged both uses forward, so the two faces
+// walked the loop the same way and one of them came out inverted — the torus figure-eight's second
+// lobe (ADR-0061 stage 4). A degenerate tangent at the vertex falls back to the parameter rule.
+func closedRunsOppose(a, b loopEdge) bool {
+	if dot := float64(runStartTangent(a).Dot(runStartTangent(b))); dot != 0 {
+		return dot < 0
+	}
+	return (a.t1 < a.t0) != (b.t1 < b.t0)
+}
+
+// runStartTangent is a run's traversal tangent at its start: the curve's tangent there, turned round
+// when the run walks the curve's parameter downwards.
+func runStartTangent(le loopEdge) math.Vector3 {
+	tan := le.curve.TangentAt(le.t0)
+	if le.t1 < le.t0 {
+		return tan.Scale(-1)
+	}
+	return tan
 }
 
 // stitchAxisOf is the lazy radial axis of a geometric edge: the canonical representative's unit curve

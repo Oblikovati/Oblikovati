@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -28,9 +29,25 @@ func facesOf(b *topo.Body) ([]curvedFace, bool) {
 	return faces, true
 }
 
-// facePlane is a planar face's plane (the planar boolean only ever holds curvedFaces whose surface is a
-// geom.Plane — facesOf guarantees it).
-func facePlane(f curvedFace) geom.Plane { return f.surface.(geom.Plane) }
+// facePlane is a planar face's plane. The polygonal pipeline only ever holds curvedFaces whose surface
+// is a geom.Plane (facesOf guarantees it), so a non-planar face here is a routing bug in the caller,
+// not a geometry case: it panics, naming the surface it got and the face it came from, rather than the
+// bare type-assertion message that sent #3459 hunting through a recovered stack.
+func facePlane(f curvedFace) geom.Plane {
+	pl, ok := planeOf(f)
+	if !ok {
+		panic(fmt.Sprintf("brep: facePlane on a non-planar face: surface is %T, want geom.Plane (face %v)", f.surface, f.lineage))
+	}
+	return pl
+}
+
+// planeOf is facePlane for a face that may NOT be planar: the mixed boolean's buckets hold cylinders
+// and cones beside planes, and a predicate about PLANES asked about one of those must answer "no"
+// (#3459). It owns the only geometry-kind assertion of the pair.
+func planeOf(f curvedFace) (geom.Plane, bool) {
+	pl, ok := f.surface.(geom.Plane)
+	return pl, ok
+}
 
 // faceNormal is a planar face's outward surface normal (constant over a plane).
 func faceNormal(f curvedFace) math.Vector3 { return f.surface.NormalAt(0, 0) }

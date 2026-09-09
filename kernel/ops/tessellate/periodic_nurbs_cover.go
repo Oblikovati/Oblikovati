@@ -22,9 +22,8 @@ var coverShifts = []float64{-1, 0, 1}
 // 3D, so welding the kept triangles closes the seam.
 func coveringPeriodicMesh(s geom.BSplineSurface, q Quality, ulo, uhi float64, rims, mouths []cylLoop) *Mesh {
 	period := uhi - ulo
-	su, sv := MetricScale(s)
 	vBot, vTop, vmin, vmax := rimBand(rims, ulo, period)
-	b := &coverBuilder{s: s, su: su, sv: sv, ulo: ulo, period: period}
+	b := newCoverBuilder(s, ulo, period)
 	loops := b.replicateBoundary(rims, mouths)
 	b.addInteriorNodes(q, ulo, uhi, vmin, vmax, vBot, vTop, mouths)
 	tris := constrainedTriangulationAll(b.xy, loops)
@@ -58,50 +57,33 @@ func (b *coverBuilder) replicateBoundary(rims, mouths []cylLoop) [][]int {
 	return loops
 }
 
-// coverBuilder accumulates the covering's vertices: exact 3D positions + surface normals, the metric-
-// scaled (u,v) the CDT triangulates in, and the unwrapped u/v used to select the canonical period.
+// coverBuilder is the shared covering accumulator (covering_vertices.go) with the band's own period
+// bookkeeping: the canonical period's lower bound and its width, which fold a covering point back onto
+// the surface for its normal and pick the canonical translate of a triangle.
 type coverBuilder struct {
+	coverVertices
 	s           geom.BSplineSurface
-	su, sv      float64
 	ulo, period float64
-	pos         []math.Point3
-	nrm         []math.Vector3
-	xy          [][2]float64
-	uu, vv      []float64
 }
 
-func (b *coverBuilder) add(p math.Point3, u, v float64) int {
-	i := len(b.pos)
-	b.pos = append(b.pos, p)
-	b.nrm = append(b.nrm, b.s.NormalAt(canonU(u, b.ulo, b.period), v))
-	b.xy = append(b.xy, [2]float64{u * b.su, v * b.sv})
-	b.uu = append(b.uu, u)
-	b.vv = append(b.vv, v)
-	return i
+// newCoverBuilder sizes the covering for one closed-in-u B-spline band.
+func newCoverBuilder(s geom.BSplineSurface, ulo, period float64) *coverBuilder {
+	b := &coverBuilder{s: s, ulo: ulo, period: period}
+	b.su, b.sv = MetricScale(s)
+	b.normalAt = func(u, v float64) math.Vector3 { return s.NormalAt(canonU(u, ulo, period), v) }
+	return b
 }
 
 // addChain adds a shifted rim loop as an OPEN chain (it does not close across the seam) and returns its
 // per-segment 2-vertex constraints, so the triangulation aligns to the rim without a spurious closing edge.
 func (b *coverBuilder) addChain(l cylLoop, off float64) [][]int {
-	idx := make([]int, len(l.p3))
-	for i := range l.p3 {
-		idx[i] = b.add(l.p3[i], l.u[i]+off, l.v[i])
-	}
-	segs := make([][]int, 0, len(idx)-1)
-	for i := 0; i+1 < len(idx); i++ {
-		segs = append(segs, []int{idx[i], idx[i+1]})
-	}
-	return segs
+	return b.coverVertices.addChain(l.p3, l.uvPoints(), off, 0)
 }
 
 // addRing adds a shifted mouth loop as a closed-loop constraint (constrain wraps the last edge to the
 // first), returning its vertex index sequence.
 func (b *coverBuilder) addRing(l cylLoop, off float64) []int {
-	idx := make([]int, len(l.p3))
-	for i := range l.p3 {
-		idx[i] = b.add(l.p3[i], l.u[i]+off, l.v[i])
-	}
-	return idx
+	return b.coverVertices.addRing(l.p3, l.uvPoints(), off, 0)
 }
 
 // addInteriorNodes lays a curvature-adaptive staggered grid over the canonical band (between the rims,
@@ -136,19 +118,12 @@ func (b *coverBuilder) addInteriorNodes(q Quality, ulo, uhi, vmin, vmax float64,
 // material region (inside the band, outside every mouth). Period replication means each periodic triangle
 // has exactly one translate with centroid in the canonical period, so this de-duplicates without splitting.
 func (b *coverBuilder) selectCanonical(tris [][3]int, ulo, period float64, vBot, vTop rimFunc, mouths []cylLoop) [][3]int {
-	var out [][3]int
-	for _, t := range tris {
-		cu := (b.uu[t[0]] + b.uu[t[1]] + b.uu[t[2]]) / 3
+	return b.keepCanonical(tris, func(cu, cv float64) bool {
 		if cu < ulo || cu >= ulo+period {
-			continue
+			return false
 		}
-		cv := (b.vv[t[0]] + b.vv[t[1]] + b.vv[t[2]]) / 3
-		if !materialPoint(canonU(cu, ulo, period), cv, period, vBot, vTop, mouths, 0) {
-			continue
-		}
-		out = append(out, t)
-	}
-	return out
+		return materialPoint(canonU(cu, ulo, period), cv, period, vBot, vTop, mouths, 0)
+	})
 }
 
 // rimFunc gives the band boundary v at a canonical u (linearly interpolated along a rim).

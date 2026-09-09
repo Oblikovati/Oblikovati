@@ -108,8 +108,11 @@ func TestAsConicCoversThePlaneQuadricSections(t *testing.T) {
 	if !ok || !hf.Hyperbolic {
 		t.Fatalf("AsConic(hyperbola) = %+v, ok=%v — the branch must be recognised", hf, ok)
 	}
-	if amp := hf.AxialAmplitude(axis); amp != 0 {
-		t.Errorf("an UNBOUNDED branch reports amplitude %v; it must report 0, meaning 'no amplitude'", amp)
+	// A branch runs to infinity along the axis, so its half-extent IS infinite. It used to report 0
+	// with a caveat that callers must read that as "no amplitude"; a caller read it as "flat" and a
+	// cone cut parallel to its axis lost the tool's face (ADR-0062).
+	if amp := hf.AxialAmplitude(axis); !stdmath.IsInf(amp, 1) {
+		t.Errorf("an UNBOUNDED branch reports amplitude %v; it reaches every v, so the half-extent is +Inf", amp)
 	}
 	if _, ok := geom.AsConic(geom.NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0))); ok {
 		t.Error("a line segment is not a conic")

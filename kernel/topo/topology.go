@@ -41,14 +41,17 @@ func extendBoxByEdges(box math.Box, edges []*Edge) math.Box {
 // faceSamplesPerAxis grids a boundary-less face's UV domain for its range-box contribution.
 const faceSamplesPerAxis = 8
 
-// extendBoxByBoundarylessFaces extends box by the surface of every face with NO boundary loops — a whole
-// sphere or torus, whose extent comes from neither vertices nor edges (it has none). Without this a bare
-// analytic primitive (SolidSphere) reports an empty range box, so boolean classification wrongly judges
-// it disjoint from any tool. Only bounded closed surfaces reach here; an unbounded domain is skipped.
+// extendBoxByBoundarylessFaces extends box by the surface of every face with NO boundary loops and no
+// chart — a whole sphere or torus, whose extent comes from neither vertices nor edges (it has none).
+// Without this a bare analytic primitive (SolidSphere) reports an empty range box, so boolean
+// classification wrongly judges it disjoint from any tool. A face that carries a chart is swept over
+// that instead (extendBoxByChartedFaces), which is the same answer for a whole surface and a far
+// tighter one for a trimmed patch. Only bounded closed surfaces reach here; an unbounded domain is
+// skipped.
 func extendBoxByBoundarylessFaces(box math.Box, faces []*Face) math.Box {
 	for _, f := range faces {
-		if len(f.loops) > 0 {
-			continue
+		if len(f.loops) > 0 || len(f.chart) > 0 {
+			continue // bounded by its edges, or — more precisely — by its own chart window
 		}
 		uLo, uHi := f.surface.UDomain()
 		vLo, vHi := f.surface.VDomain()
@@ -64,6 +67,63 @@ func extendBoxByBoundarylessFaces(box math.Box, faces []*Face) math.Box {
 		}
 	}
 	return box
+}
+
+// extendBoxByChartedFaces extends box by the surface of every face that carries its parametric trim
+// (ADR-0063), over the (u, v) window that trim occupies.
+//
+// A trimmed curved face can reach PAST its own boundary edges, and then the edge sweep alone does not
+// bound it. A hemisphere is the smallest case: its only edge is the equator, so the body reported a
+// range box of ZERO height — `{-5,-5,0}..{5,5,0}` for a ball of radius 5 — and a tool built to cover
+// that box then missed the body entirely (ADR-0061). A ruled side cannot do this (its rims span its
+// whole azimuth, so the edges already reach every extremum) and a plane cannot either, but no rule
+// about the EDGES tells those apart from a cap: the equator bounds the upper hemisphere and the lower
+// one alike, and only the trim says which.
+//
+// The window, not the trim itself, is what is swept: the surface over the trim's bounding window
+// encloses the surface over the trim, so a non-rectangular patch is bounded generously rather than
+// missed. The grid is the one the boundaryless sweep uses, so this stays a SAMPLED bound of the same
+// kind the edge sweep above already produces — a cheap enclosure for culling and for the
+// model-relative resolution, never a modelling decision. The certified-tight box, which reads each
+// surface's interior extrema in closed form, is query.PreciseRangeBox; use that where exactness is the
+// point.
+func extendBoxByChartedFaces(box math.Box, faces []*Face) math.Box {
+	for _, f := range faces {
+		box = extendBoxByChartWindow(box, f)
+	}
+	return box
+}
+
+// extendBoxByChartWindow sweeps one charted face's (u, v) window onto its surface.
+func extendBoxByChartWindow(box math.Box, f *Face) math.Box {
+	u0, u1, v0, v1, ok := chartWindow(f.chart)
+	if !ok {
+		return box
+	}
+	for i := 0; i <= faceSamplesPerAxis; i++ {
+		for j := 0; j <= faceSamplesPerAxis; j++ {
+			u := u0 + (u1-u0)*float64(i)/faceSamplesPerAxis
+			v := v0 + (v1-v0)*float64(j)/faceSamplesPerAxis
+			box = box.ExtendPoint(f.surface.PointAt(u, v))
+		}
+	}
+	return box
+}
+
+// chartWindow is the (u, v) bounding window of a face's chart contours. ok=false for a face with none.
+func chartWindow(chart [][]math.Point2) (u0, u1, v0, v1 float64, ok bool) {
+	for _, contour := range chart {
+		for _, p := range contour {
+			u, v := float64(p.X), float64(p.Y)
+			if !ok {
+				u0, u1, v0, v1, ok = u, u, v, v, true
+				continue
+			}
+			u0, u1 = stdmath.Min(u0, u), stdmath.Max(u1, u)
+			v0, v1 = stdmath.Min(v0, v), stdmath.Max(v1, v)
+		}
+	}
+	return u0, u1, v0, v1, ok
 }
 
 // Vertex is a 0-dimensional topological entity: a point with identity.
@@ -238,6 +298,18 @@ type Face struct {
 	// face on recompute, so no leak and no stale geometry), and written only by the single-threaded
 	// pick/tessellation path per body.
 	metricScaleMemo any
+	// chart is this face's trim as CLOSED contours in the covering space of its surface's (u,v)
+	// domain, in the surface's OWN parameters — the outer contour first, holes after, material on the
+	// left of every contour. It is the parametric half of a trimmed face's definition, and on a
+	// PERIODIC surface the 3D loops alone do not determine it: a band's two rim circles bound the
+	// strip between them AND the strip the other way round the seam, and only the contour that carries
+	// the seam says which (ADR-0063). OCCT stores the same fact as the seam edge's two pcurves.
+	//
+	// nil for a face whose producer did not record one — every face on a non-periodic surface (where
+	// the loops close on their own and the chart is derivable), and the primitives, whose trim is the
+	// whole parameter rectangle. brep derives those; it declines a face that needs a chart and has
+	// none rather than guess.
+	chart [][]math.Point2
 	// trimUVMemo memoizes the brep-owned development of this face's boundary loops into the surface's
 	// (u,v) domain — the ring brep.PointInFaceTrim classifies against. Building it samples every loop
 	// edge and inverts each sample through geom.Surface.ParamAt, which for a B-spline surface is a
@@ -298,6 +370,20 @@ func (f *Face) MetricScaleMemo() any { return f.metricScaleMemo }
 // topo (the ops package defines and type-asserts it), keeping the metric computation out of the
 // topology layer while giving the memo the face's lifetime.
 func (f *Face) SetMetricScaleMemo(v any) { f.metricScaleMemo = v }
+
+// Chart returns this face's parametric trim: closed contours in its surface's (u,v) covering space,
+// outer first then holes, material on the left. nil when the producer recorded none — see the chart
+// field for when that is legitimate and what reads it (ADR-0063).
+//
+// Example:
+//
+//	if contours := f.Chart(); contours != nil { inside = evenOdd(contours, uv) }
+func (f *Face) Chart() [][]math.Point2 { return f.chart }
+
+// SetChart records the face's parametric trim. It is written by the builder that WOUND the face, which
+// is the only place the seam-carrying contour exists; a later reader can only re-derive it, which is
+// the guessing ADR-0063 removes.
+func (f *Face) SetChart(contours [][]math.Point2) { f.chart = contours }
 
 // TrimUVMemo returns the opaque, brep-owned memo of this face's boundary loops developed into the
 // surface's (u,v) domain (nil until the first containment query builds it). See the trimUVMemo field
@@ -373,7 +459,16 @@ func (f *Face) RangeBox() math.Box {
 	for _, v := range f.Vertices() {
 		box = box.ExtendPoint(v.point)
 	}
-	return extendBoxByEdges(box, f.Edges())
+	box = extendBoxByEdges(box, f.Edges())
+	// A BOUNDARY-LESS face is bounded by its surface. A bare ball has no vertex and no edge, so the box
+	// above is EMPTY, and every pairing that screens a face against another on their boxes then finds no
+	// contact at all — a sphere intersected with a box came back WHOLE (ADR-0061 stage 4).
+	//
+	// The chart-window sweep the BODY's box also takes is deliberately not applied here. A window
+	// encloses a non-rectangular trim generously, which costs a body nothing (its box is a union over
+	// everything anyway) but would inflate a single face's box and pull spurious pairs into a per-face
+	// screen — measured, it took a slot's breach off its exact ruling.
+	return extendBoxByBoundarylessFaces(box, []*Face{f})
 }
 
 // Shell is a connected set of faces; a closed shell bounds a solid region.

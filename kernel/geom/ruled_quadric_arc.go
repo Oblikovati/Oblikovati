@@ -51,6 +51,20 @@ func (a RuledQuadricArc) Domain() (lo, hi float64) { return 0, 1 }
 // uAt maps the curve parameter to the base azimuth.
 func (a RuledQuadricArc) uAt(t float64) float64 { return a.U0 + t*(a.U1-a.U0) }
 
+// SubArc restricts the arc to the sub-interval [t0, t1] of its own [0,1] domain, re-presented over
+// [0,1] so the returned arc's WHOLE domain is the piece asked for. Orientation is baked in: t0 > t1
+// gives the reversed sub-arc.
+//
+// A kernel edge's curve must span exactly that edge, or every consumer that reads the curve's domain —
+// the tessellator above all — walks more than the edge covers. A crossing clipped between two triple
+// points and stored whole meshed as the entire closed crossing, and the neighbouring face's mesh then
+// met it nowhere (ADR-0061 stage 4).
+//
+//	sub := arc.SubArc(0.25, 0.75) // the middle half, over its own [0,1]
+func (a RuledQuadricArc) SubArc(t0, t1 float64) RuledQuadricArc {
+	return RuledQuadricArc{Base: a.Base, Quad: a.Quad, Upper: a.Upper, U0: a.uAt(t0), U1: a.uAt(t1)}
+}
+
 // PointAt returns the point at t∈[0,1], evaluated on the base surface at (u, v(u)).
 func (a RuledQuadricArc) PointAt(t float64) math.Point3 {
 	u := a.uAt(t)
@@ -140,6 +154,33 @@ func (c ruledQuadricCoeffs) root(upper bool) float64 {
 		return hi
 	}
 	return lo
+}
+
+// discriminantSlope returns dΔ/du = 2bb′ − 4(a′c + ac′) — how fast the two branches separate as the
+// azimuth leaves a fold. At a fold Δ itself has cancelled to zero, so this is the only quantity there
+// that still carries full precision, and [RuledQuadricLoop] reads its tangent from it.
+func (c ruledQuadricCoeffs) discriminantSlope() float64 {
+	return 2*c.b*c.db - 4*(c.da*c.c+c.a*c.dc)
+}
+
+// foldRoot is [ruledQuadricCoeffs.root] with the fold admitted: where Δ has fallen to zero the two
+// branches MEET at the double root −b/2a, and that point is on both surfaces. root answers NaN there,
+// which is right for a full-azimuth arc — it never reaches a fold — and wrong for a loop, whose two
+// ends ARE folds. A rounding below zero is read as the fold it is, not as a miss.
+func (c ruledQuadricCoeffs) foldRoot(upper bool) float64 {
+	if c.a == 0 {
+		return stdmath.NaN()
+	}
+	if c.discriminant() <= 0 {
+		return -c.b / (2 * c.a)
+	}
+	return c.root(upper)
+}
+
+// regularDvDu is dv/du with the branch term removed: the part of the derivative that stays finite at a
+// fold. The full derivative is this plus ±(Δ′/4a)/√Δ, which [RuledQuadricLoop.branchRatio] carries.
+func (c ruledQuadricCoeffs) regularDvDu(v float64) float64 {
+	return -c.db/(2*c.a) - v*c.da/c.a
 }
 
 // separation returns |v₊ − v₋| = √Δ/|a|, the two branches' gap along the ruling — the length the

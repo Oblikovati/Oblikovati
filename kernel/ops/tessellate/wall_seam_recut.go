@@ -55,7 +55,7 @@ func rebridgedWallLoop(s geom.Surface, outer3D []math.Point3, holes3D [][]math.P
 	if !ok {
 		return nil, false
 	}
-	return bridgeRimsAtSeam(s, top, bot, lenses)
+	return bridgeRimsAtSeam(s, top, bot, lenses, clearSeamAngle(s, orderedRing(s, top), lenses))
 }
 
 // SplitSeamBridgedRims splits a wall's seam-bridged outer loop back into its two rim rings. The loop

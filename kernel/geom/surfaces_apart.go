@@ -32,7 +32,7 @@ func SurfacesApart(a, b Surface, gap float64) bool {
 		return ok && parallelPlanesApart(x, y, gap)
 	case Cylinder:
 		y, ok := b.(Cylinder)
-		return ok && coaxialCylindersApart(x, y, gap)
+		return ok && parallelCylindersApart(x, y, gap)
 	case Cone:
 		y, ok := b.(Cone)
 		return ok && parallelConesApart(x, y, gap)
@@ -50,17 +50,27 @@ func parallelPlanesApart(a, b Plane, gap float64) bool {
 	return stdmath.Abs(float64(a.Origin.VectorTo(b.Origin).Dot(n1))) > gap
 }
 
-// coaxialCylindersApart: two cylinders on the SAME axis line are everywhere |r1−r2| apart. Axes
-// that are parallel but distinct, or skew, are not proven here — the surfaces can still be apart,
-// but the separation is no longer this expression.
-func coaxialCylindersApart(a, b Cylinder, gap float64) bool {
+// parallelCylindersApart: two cylinders with PARALLEL axes a distance d apart are never closer than
+// d − r₁ − r₂ when they sit side by side, and than the outer radius less the inner radius less d when
+// one is nested in the other — the least separation, in closed form, which is what an apartness proof
+// needs; coaxial cylinders are the nested case at d = 0. Skew axes are not proven here. A bore inside a
+// disc's rim is the nested case, and refusing it made every second bore of a patterned disc "overlap
+// an uncovered wall" and decline the general pipeline (ADR-0061 stage 4).
+func parallelCylindersApart(a, b Cylinder, gap float64) bool {
 	if !parallelDirs(a.AxisDir.AsVector(), b.AxisDir.AsVector()) {
 		return false
 	}
-	if !onAxisLine(a.Origin, a.AxisDir, b.Origin) {
-		return false
+	d := axisLineDistance(a.Origin, a.AxisDir, b.Origin)
+	if d > a.Radius+b.Radius+gap {
+		return true // side by side
 	}
-	return stdmath.Abs(a.Radius-b.Radius) > gap
+	return d+stdmath.Min(a.Radius, b.Radius) < stdmath.Max(a.Radius, b.Radius)-gap // nested
+}
+
+// axisLineDistance is the perpendicular distance from p to the line through origin along dir.
+func axisLineDistance(origin math.Point3, dir math.UnitVector3, p math.Point3) float64 {
+	v := origin.VectorTo(p)
+	return float64(v.Sub(dir.AsVector().Scale(v.Dot(dir.AsVector()))).Length())
 }
 
 // parallelConesApart: two cones sharing an axis LINE and a half-angle are translates of one
@@ -117,10 +127,22 @@ type ConicForm struct {
 	Major, Minor math.UnitVector3
 	A, B         float64
 	Hyperbolic   bool
+	// Parabolic marks the third conic, whose form is not the (Center, A, B) of the other two: a
+	// parabola has no centre and no semi-axes. Center is then its VERTEX, Major its cross direction
+	// (the parameter's), Minor the direction it opens toward, and Focal its focal length; A and B are
+	// zero and mean nothing. Like a hyperbola branch it is unbounded (ADR-0062).
+	Parabolic bool
+	Focal     float64
 }
 
-// AsConic recognises the conics a plane∩quadric section can be. ok=false for anything else,
-// including a parabola (no centre) and a bounded arc, which is not the whole conic.
+// AsConic recognises the conics a plane∩quadric section can be — all THREE of them. ok=false for
+// anything else.
+//
+// The parabola was missing, and it is not a rare case: it is the section a plane parallel to a cone's
+// own generator makes, which is what an axis-aligned cut of a tilted frustum is. Everything that asked
+// "is this a conic" — the promotion of a planar receiver to the exact-frame bucket, the axial span, the
+// clip — answered no, so the section fell to the polygonal route whose currency is straight segments,
+// and the cut declined (ADR-0062).
 //
 // Example:
 //
@@ -128,18 +150,15 @@ type ConicForm struct {
 func AsConic(c Curve3) (ConicForm, bool) {
 	switch x := c.(type) {
 	case Circle:
-		minor, err := math.UnitVector3FromVector(x.Normal.AsVector().Cross(x.RefDir.AsVector()))
-		if err != nil {
-			return ConicForm{}, false
-		}
-		return ConicForm{Center: x.Center, Major: x.RefDir, Minor: minor, A: x.Radius, B: x.Radius}, true
+		return circularForm(x.Center, x.Normal, x.RefDir, x.Radius)
+	case Arc3d:
+		// A circular ARC runs on a circle, and the conic it runs on is what a crossing solver or a
+		// section plane needs (ADR-0060); its bounds are its parameterisation, as for the hyperbolic arc.
+		return circularForm(x.Center, x.Normal, x.RefDir, x.Radius)
 	case EllipseFull:
-		minor, err := math.UnitVector3FromVector(x.Normal.AsVector().Cross(x.MajorAxis.AsVector()))
-		if err != nil {
-			return ConicForm{}, false
-		}
-		return ConicForm{Center: x.Center, Major: x.MajorAxis, Minor: minor,
-			A: x.MajorRadius, B: x.MinorRadius}, true
+		return ellipticForm(x.Center, x.Normal, x.MajorAxis, x.MajorRadius, x.MinorRadius)
+	case EllipticalArc:
+		return ellipticForm(x.Center, x.Normal, x.MajorAxis, x.MajorRadius, x.MinorRadius)
 	case Hyperbola:
 		return ConicForm{Center: x.Center, Major: x.TransverseAxis, Minor: x.ConjugateAxis,
 			A: x.A, B: x.B, Hyperbolic: true}, true
@@ -148,20 +167,60 @@ func AsConic(c Curve3) (ConicForm, bool) {
 		// own bounds are its parameterisation, not its shape.
 		return ConicForm{Center: x.Center, Major: x.TransverseAxis, Minor: x.ConjugateAxis,
 			A: x.A, B: x.B, Hyperbolic: true}, true
+	case Parabola:
+		return parabolicForm(x.Vertex, x.CrossDir, x.AxisDir, x.Focal)
+	case ParabolicArc:
+		return parabolicForm(x.Vertex, x.CrossDir, x.AxisDir, x.Focal)
 	}
 	return ConicForm{}, false
+}
+
+// parabolicForm is the conic form of a parabola: its vertex for a centre, its cross direction for a
+// major axis (the parameter runs along it) and its opening direction for a minor.
+func parabolicForm(vertex math.Point3, cross, axis math.UnitVector3, focal float64) (ConicForm, bool) {
+	return ConicForm{Center: vertex, Major: cross, Minor: axis, Parabolic: true, Focal: focal}, true
+}
+
+// circularForm is the conic form of a circle: equal semi-axes along its reference direction and
+// the in-plane direction a quarter turn on.
+func circularForm(center math.Point3, normal, ref math.UnitVector3, r float64) (ConicForm, bool) {
+	minor, err := math.UnitVector3FromVector(normal.AsVector().Cross(ref.AsVector()))
+	if err != nil {
+		return ConicForm{}, false
+	}
+	return ConicForm{Center: center, Major: ref, Minor: minor, A: r, B: r}, true
+}
+
+// ellipticForm is the conic form of an ellipse from its centre, plane normal, major axis and radii.
+func ellipticForm(center math.Point3, normal, major math.UnitVector3, a, b float64) (ConicForm, bool) {
+	minor, err := math.UnitVector3FromVector(normal.AsVector().Cross(major.AsVector()))
+	if err != nil {
+		return ConicForm{}, false
+	}
+	return ConicForm{Center: center, Major: major, Minor: minor, A: a, B: b}, true
 }
 
 // AxialAmplitude is the conic's half-extent along axis about its centre — how far the curve reaches
 // up and down a wall band. A closed conic in a plane perpendicular to the axis gives 0.
 //
-// A hyperbola branch is UNBOUNDED and has no such extent; it returns 0, which callers must read as
-// "no amplitude" rather than "flat". That is sound where it is used: an unbounded curve with any
-// point inside a bounded trim must cross that trim's boundary, so the exact crossing scan decides
-// the verdict before any amplitude is consulted.
+// A hyperbola branch is UNBOUNDED along the axis, so it returns +Inf. It used to return 0 with a
+// caveat that callers must read that as "no amplitude" rather than "flat" — and the caveat's own
+// premise was wrong: a crossing scan decides the verdict FIRST only where the crossings fall inside
+// the band being tested, and an arm can pass through the band well inside a large trim while crossing
+// its boundary far outside. The mixed boolean then read amplitude 0 as a flat conic that clears every
+// wall, so a plane sectioning a cone parallel to its axis dropped the tool's own face and left the cut
+// open (ADR-0062). +Inf is the honest value and needs no reading.
 func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 	if c.Hyperbolic {
-		return 0
+		return stdmath.Inf(1)
+	}
+	if c.Parabolic {
+		// P(t) = Vertex + t·Major + (t²/4f)·Minor, so the extent along axis runs to infinity unless
+		// axis is normal to the parabola's own plane, where it is zero.
+		if c.Major.AsVector().Dot(axis) == 0 && c.Minor.AsVector().Dot(axis) == 0 {
+			return 0
+		}
+		return stdmath.Inf(1)
 	}
 	a := c.A * float64(c.Major.AsVector().Dot(axis))
 	b := c.B * float64(c.Minor.AsVector().Dot(axis))
@@ -185,12 +244,22 @@ func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 	switch x := c.(type) {
 	case Circle:
-		d := x.Center.VectorTo(p)
-		cos := d.Dot(x.RefDir.AsVector())
-		sin := d.Dot(x.Normal.Cross(x.RefDir))
-		return wrapUnit(stdmath.Atan2(float64(sin), float64(cos)) / (2 * stdmath.Pi)), true
+		return wrapUnit(circleAngleAt(x.Center, x.RefDir, x.Normal, p) / (2 * stdmath.Pi)), true
+	case Arc3d:
+		return arcParamAt(circleAngleAt(x.Center, x.RefDir, x.Normal, p), x.StartAngle, x.SweepAngle), true
 	case EllipseFull:
 		return ellipseParamAt(x, p), true
+	case EllipticalArc:
+		theta := ellipseAngleAt(x.Center, x.MajorAxis, x.Normal, x.MajorRadius, x.MinorRadius, p)
+		return arcParamAt(theta, x.StartAngle, x.SweepAngle), true
+	}
+	return unboundedConicParamAt(c, p)
+}
+
+// unboundedConicParamAt inverts the two conics that run to infinity — the hyperbola branch and the
+// parabola — and the bounded arcs of each, which report their own [0,1].
+func unboundedConicParamAt(c Curve3, p math.Point3) (float64, bool) {
+	switch x := c.(type) {
 	case Hyperbola:
 		return hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p), true
 	case HyperbolicArc:
@@ -199,16 +268,39 @@ func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 		}
 		theta := hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p)
 		return (theta - x.Theta0) / (x.Theta1 - x.Theta0), true
+	case Parabola:
+		// The parabola's own parameter IS the cross coordinate, so the inversion is a projection —
+		// exact, single-valued, and needing no root at all.
+		return parabolaCross(x.Vertex, x.CrossDir, p), true
+	case ParabolicArc:
+		if x.T1 == x.T0 {
+			return 0, false
+		}
+		return (parabolaCross(x.Vertex, x.CrossDir, p) - x.T0) / (x.T1 - x.T0), true
 	}
 	return 0, false
 }
 
+// parabolaCross is the cross coordinate of p on a parabola — its own parameter t.
+func parabolaCross(vertex math.Point3, cross math.UnitVector3, p math.Point3) float64 {
+	return float64(vertex.VectorTo(p).Dot(cross.AsVector()))
+}
+
+// circleAngleAt is the polar angle of p about a circle's centre, from its reference direction.
+func circleAngleAt(center math.Point3, ref, normal math.UnitVector3, p math.Point3) float64 {
+	d := center.VectorTo(p)
+	return stdmath.Atan2(float64(d.Dot(normal.Cross(ref))), float64(d.Dot(ref.AsVector())))
+}
+
+// ellipseAngleAt is the eccentric angle of p on an ellipse: each axis component scaled by its radius.
+func ellipseAngleAt(center math.Point3, major, normal math.UnitVector3, a, b float64, p math.Point3) float64 {
+	d := center.VectorTo(p)
+	return stdmath.Atan2(float64(d.Dot(normal.Cross(major)))/b, float64(d.Dot(major.AsVector()))/a)
+}
+
 // ellipseParamAt inverts a full ellipse onto its [0,1) parameter.
 func ellipseParamAt(e EllipseFull, p math.Point3) float64 {
-	d := e.Center.VectorTo(p)
-	cos := float64(d.Dot(e.MajorAxis.AsVector())) / e.MajorRadius
-	sin := float64(d.Dot(e.Normal.Cross(e.MajorAxis))) / e.MinorRadius
-	return wrapUnit(stdmath.Atan2(sin, cos) / (2 * stdmath.Pi))
+	return wrapUnit(ellipseAngleAt(e.Center, e.MajorAxis, e.Normal, e.MajorRadius, e.MinorRadius, p) / (2 * stdmath.Pi))
 }
 
 // hyperbolaTheta inverts a hyperbola branch onto its hyperbolic angle through ASINH, which is
@@ -251,6 +343,14 @@ func ConicSubArc(c Curve3, t0, t1 float64) (Curve3, bool) {
 			Center: x.Center, TransverseAxis: x.TransverseAxis, ConjugateAxis: x.ConjugateAxis,
 			A: x.A, B: x.B,
 			Theta0: x.Theta0 + t0*span, Theta1: x.Theta0 + t1*span,
+		}, true
+	case Parabola:
+		return x.Arc(t0, t1), true
+	case ParabolicArc:
+		span := x.T1 - x.T0
+		return ParabolicArc{
+			Vertex: x.Vertex, AxisDir: x.AxisDir, CrossDir: x.CrossDir, Focal: x.Focal,
+			T0: x.T0 + t0*span, T1: x.T0 + t1*span,
 		}, true
 	}
 	return nil, false

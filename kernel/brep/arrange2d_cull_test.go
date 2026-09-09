@@ -137,7 +137,7 @@ func TestPlanarizeGridMatchesBrute(t *testing.T) {
 	rng := stdrand.New(stdrand.NewSource(11))
 	for trial := range 20 {
 		segments := randomArrangementSegments(rng, 80)
-		gotPts, gotEdges := planarize(segments)
+		gotPts, gotEdges, _ := planarize(segments)
 		wantPts, wantEdges := brutePlanarize(segments)
 		if !reflect.DeepEqual(gotPts, wantPts) {
 			t.Fatalf("trial %d: welded points differ (%d vs %d)", trial, len(gotPts), len(wantPts))
@@ -155,7 +155,7 @@ func TestVertexOnEdgeInteriorGridMatchesFullScan(t *testing.T) {
 	t.Parallel()
 	rng := stdrand.New(stdrand.NewSource(13))
 	for trial := range 20 {
-		pts, edges := planarize(randomArrangementSegments(rng, 40))
+		pts, edges, _ := planarize(randomArrangementSegments(rng, 40))
 		grid := newVertexCullGrid(pts)
 		full := &vertexCullGrid{cell: 1e30, cells: map[[2]int32][]int32{}} // tol:numeric — one-giant-cell degradation, not a length tolerance
 		for i := range pts {

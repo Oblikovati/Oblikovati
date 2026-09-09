@@ -40,28 +40,38 @@ import (
 // the kernel that vocabulary. They are capped rather than exempted: if the right answer is an
 // exemption, that is an ADR, not a silent hole in a guard.
 var geomSwitchDebt = map[string]int{
-	"addin/opregistry":             1,
-	"addin/router":                 5,
-	"app":                          13,
-	"kernel/blend":                 15,
-	"kernel/brep":                  102,
+	"addin/opregistry": 1,
+	"addin/router":     5,
+	"app":              13,
+	"kernel/blend":     15,
+	"kernel/brep":      42, // 93 → 82 (ADR-0061 stage 2, the analytic half-space pipeline deleted)
+	//                                     → 74 (stage 4): the edge sub-range switch moved to geom.SubCurve
 	"kernel/exchange/step/geommap": 11,
 	"kernel/geomapi":               9,
 	"kernel/ops":                   1,
 	"kernel/ops/blend":             400,
-	"kernel/ops/boolean":           22,
+	"kernel/ops/boolean":           1,
 	"kernel/ops/heal":              12,
 	"kernel/ops/internal/probe":    3,
 	"kernel/ops/surface":           21,
-	"kernel/ops/tessellate":        53,
-	"kernel/ops/transform":         4,
-	"kernel/ops/validate":          9,
-	"kernel/topo":                  3,
-	"model/assembly":               4,
-	"model/compdef":                1,
-	"model/drawing":                20,
-	"model/feature":                50,
-	"model/sketch":                 15,
+	// 53 → 52 (2026-09-08, ADR-0061): the torus-complement branch's `s.(geom.Torus)` is gone with
+	// torusComplementMesh — the chart-driven mesher takes an outerless charted face on ANY periodic
+	// surface, so the router asks whether the face carries a chart, not what its surface is.
+	// 52 → 45 (2026-09-08, ADR-0061 stage 5): a FALL of 7 — the curved-trim CLASSIFICATION asks each
+	// surface family ONCE and hands the answer on. sphereOf is the tessellator's single sphere test (it
+	// replaced four); the cone test lives only in coneApexTrimOf (it replaced three, with coneApexFan
+	// and coneApexSectorMesh); and tubeWrappingEdges and wedgeBandEndChains now RETURN the torus and
+	// the cylinder they decided, so spiricBandMesh's `t, _ := s.(geom.Torus)` — a second assertion of a
+	// kind already decided, with its result discarded — is gone with them.
+	"kernel/ops/tessellate": 45,
+	"kernel/ops/transform":  4,
+	"kernel/ops/validate":   9,
+	"kernel/topo":           3,
+	"model/assembly":        4,
+	"model/compdef":         1,
+	"model/drawing":         20,
+	"model/feature":         49,
+	"model/sketch":          15,
 }
 
 func TestGeometryKindSwitchesLiveInGeom(t *testing.T) {

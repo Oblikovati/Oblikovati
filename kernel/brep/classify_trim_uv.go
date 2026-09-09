@@ -118,7 +118,32 @@ func loopRayCrossings(q math.Point2, poly []math.Point2, uPer, vPer, alongV bool
 		qv = unwrapAzimuthNear(c.Y, qv)
 	}
 	closed := !loopWrapsCrossAxis(poly, uPer, vPer, alongV)
+	if !closed {
+		// A wrapping ring covers exactly one period of the cross axis between its samples and the
+		// closing image; the query is reduced into THAT span, not to the branch nearest the centroid,
+		// which leaves a one-step window on either end where the ray misses the ring (ADR-0060).
+		qu, qv = reduceIntoRingSpan(poly, math.P2(qu, qv), alongV)
+	}
 	return rayCrossingCount(math.P2(qu, qv), poly, closed, alongV)
+}
+
+// reduceIntoRingSpan moves the query's cross-axis coordinate by whole turns into the span the wrapping
+// ring covers: from the lower of its extreme sample and closing image, one period up.
+func reduceIntoRingSpan(poly []math.Point2, q math.Point2, alongV bool) (u, v math.Scalar) {
+	image := closingImage(poly, false, alongV)
+	lo := stdmath.Inf(1)
+	for _, p := range append(append([]math.Point2{}, poly...), image) {
+		if alongV {
+			lo = stdmath.Min(lo, float64(p.X))
+		} else {
+			lo = stdmath.Min(lo, float64(p.Y))
+		}
+	}
+	reduce := func(x float64) float64 { return lo + stdmath.Mod(stdmath.Mod(x-lo, twoPi)+twoPi, twoPi) }
+	if alongV {
+		return math.Scalar(reduce(float64(q.X))), q.Y
+	}
+	return q.X, math.Scalar(reduce(float64(q.Y)))
 }
 
 // loopWrapsCrossAxis reports whether the loop makes a full 2π circuit of the periodic axis that is
@@ -138,17 +163,32 @@ func loopWrapsCrossAxis(poly []math.Point2, uPer, vPer, alongV bool) bool {
 // polyline, standard crossing-number even-odd. An open polyline (closed=false) omits the last→first
 // segment.
 func rayCrossingCount(q math.Point2, poly []math.Point2, closed, alongV bool) int {
-	n, segs := len(poly), len(poly)-1
-	if closed {
-		segs = len(poly)
-	}
+	n := len(poly)
 	count := 0
-	for i := 0; i < segs; i++ {
-		if raySegmentCrosses(q, poly[i], poly[(i+1)%n], alongV) {
+	for i := 0; i+1 < n; i++ {
+		if raySegmentCrosses(q, poly[i], poly[i+1], alongV) {
 			count++
 		}
 	}
+	if raySegmentCrosses(q, poly[n-1], closingImage(poly, closed, alongV), alongV) {
+		count++
+	}
 	return count
+}
+
+// closingImage is the point the polyline's last sample closes onto: its first sample for a ring that
+// closes, and for a ring that WRAPS the cross axis, that sample's periodic image one turn on — the
+// sampling stops one step short of the full turn, and a ray through that last step must still cross
+// the ring, or a band reads its own interior as outside there (ADR-0060).
+func closingImage(poly []math.Point2, closed, alongV bool) math.Point2 {
+	first, last := poly[0], poly[len(poly)-1]
+	if closed {
+		return first
+	}
+	if alongV {
+		return math.P2(float64(first.X)+stdmath.Copysign(2*stdmath.Pi, float64(last.X-first.X)), float64(first.Y))
+	}
+	return math.P2(float64(first.X), float64(first.Y)+stdmath.Copysign(2*stdmath.Pi, float64(last.Y-first.Y)))
 }
 
 // raySegmentCrosses reports whether the ray from q toward +axis crosses segment ab. The segment must

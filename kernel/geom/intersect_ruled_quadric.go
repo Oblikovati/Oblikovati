@@ -11,10 +11,12 @@ import stdmath "math"
 // stays strictly positive across the whole sweep, the answer is unambiguous — two closed loops, one
 // per ordered root, each single-valued in u and regular everywhere — and each is exactly one
 // [RuledQuadricArc]. Where the discriminant reaches zero the two roots meet at a FOLD: the section is
-// then a window (two arcs joined at their turning points) or a pinched pair, whose u-parametrisation
-// has a square-root singularity at the fold. That is refused here, with the same base tried the other
-// way round first, because a rod crossing a wall is a full wrap on the ROD's chart even when it is a
-// window on the wall's.
+// then a WINDOW — the ruling meets the quadric over part of the sweep and misses it outside, so the
+// two arcs join at their turning points into one closed loop. The wrap form is tried first, on either
+// base in turn, because a rod crossing a wall is a full wrap on the ROD's chart even when it is a
+// window on the wall's, and the wrap has no singular point to carry. A pair that is a window on BOTH
+// charts — a ball crossing a rod off its axis is the smallest example — is the window form's own case
+// and comes back as [RuledQuadricLoop] (ADR-0061 stage 5).
 
 // intersectRuledQuadric returns the exact intersection curves of a straight-ruled surface and an
 // implicit quadric, or handled=false when neither role assignment is well-conditioned. Both role
@@ -24,7 +26,14 @@ func intersectRuledQuadric(a, b Surface, res Resolution) ([]Curve3, bool) {
 	if curves, ok := RuledQuadricSection(a, b, res); ok {
 		return curves, true
 	}
-	return RuledQuadricSection(b, a, res)
+	if curves, ok := RuledQuadricSection(b, a, res); ok {
+		return curves, true
+	}
+	// Neither chart carries the section as a full wrap, so it folds on both: the window form owns it.
+	if curves, ok := RuledQuadricWindows(a, b, res); ok {
+		return curves, true
+	}
+	return RuledQuadricWindows(b, a, res)
 }
 
 // RuledQuadricSection returns the two exact full-azimuth section loops of base∩other, evaluated on
@@ -44,9 +53,45 @@ func RuledQuadricSection(base, other Surface, res Resolution) ([]Curve3, bool) {
 		return nil, false
 	}
 	return []Curve3{
-		RuledQuadricArc{Base: base, Quad: quad, Upper: false, U0: 0, U1: twoPi},
-		RuledQuadricArc{Base: base, Quad: quad, Upper: true, U0: 0, U1: twoPi},
+		canonicalSection(RuledQuadricArc{Base: base, Quad: quad, Upper: false, U0: 0, U1: twoPi}, res),
+		canonicalSection(RuledQuadricArc{Base: base, Quad: quad, Upper: true, U0: 0, U1: twoPi}, res),
 	}, true
+}
+
+// RuledQuadricWindows returns base∩other as closed WINDOW loops on base's chart — the folded form of
+// the same closed section, for the pairs whose ruling meets the quadric over part of the azimuth only
+// (ADR-0061 stage 5). An empty result with ok=true means the ruling misses the quadric everywhere, so
+// the surfaces are known not to cross; ok=false is the same refusal [RuledQuadricSection] makes — base
+// is not straight-ruled and periodic, other has no quadric form, or a window is too ill-conditioned to
+// name (its branches never separate past the stitch resolution, or a fold is a double root rather than
+// a turning point).
+//
+//	loops, ok := geom.RuledQuadricWindows(rodCylinder, ball, geom.ResolutionForBox(box))
+func RuledQuadricWindows(base, other Surface, res Resolution) ([]Curve3, bool) {
+	implicit, ok := other.(ImplicitQuadric)
+	if !ok || !isFullAzimuth(base) {
+		return nil, false
+	}
+	quad := implicit.QuadricForm()
+	if !ruledSubstitutionAdmits(base, quad, res) {
+		return nil, false
+	}
+	spans, ok := ruledDiscriminantWindows(base, quad)
+	if !ok {
+		return nil, false // no fold on this chart: the section is a full wrap, which RuledQuadricSection owns
+	}
+	if len(spans) == 0 {
+		return nil, true // the ruling misses the quadric at every azimuth: no crossing, and that is an answer
+	}
+	loops := make([]Curve3, 0, len(spans))
+	for _, w := range spans {
+		loop := RuledQuadricLoop{Base: base, Quad: quad, U0: w[0], U1: w[1]}
+		if !ruledQuadricWindowConditioning(loop, res) {
+			return nil, false
+		}
+		loops = append(loops, loop)
+	}
+	return loops, true
 }
 
 // isFullAzimuth reports whether a surface's u runs the full periodic circle — the domain the two
@@ -59,8 +104,7 @@ func isFullAzimuth(s Surface) bool {
 
 // ruledQuadricAzimuthProbes is how many azimuths the conditioning gate samples across the full sweep.
 // The coefficients a, b, c are low-order trigonometric polynomials in u for every ruled/quadric pair,
-// so this resolves the discriminant's extrema far finer than the branch-separation margin the gate
-// then demands.
+// so this brackets every local minimum of the branch gap, which is then refined to rounding.
 const ruledQuadricAzimuthProbes = 720
 
 // ruledQuadricSkewFloor is the smallest |a| the gate accepts, as a fraction of ‖M‖·|D|². a = D·(M D)
@@ -70,35 +114,122 @@ const ruledQuadricAzimuthProbes = 720
 // regime the fast path must demote from, per the kernel ground rules.
 const ruledQuadricSkewFloor = 1e-3 // tol:conditioning — dimensionless transversality of ruling to quadric
 
-// ruledQuadricBranchSeparation is the smallest branch gap the gate accepts, as a fraction of the
-// largest gap over the sweep. The two roots meeting (gap → 0) is the fold that turns two wraps into a
-// window or a pinch, so this is the margin that certifies the wrap topology between the probes as well
-// as at them. It is a ratio of two lengths, hence model-scale free.
-const ruledQuadricBranchSeparation = 0.05 // tol:conditioning — min/max branch gap over the azimuth sweep
-
 // ruledQuadricConditioning reports whether base∩quad is the well-conditioned two-wrap section: base is
 // affine in its ruling parameter (the straight-ruling certificate), the ruling stays transverse to the
-// quadric, and the two roots stay apart across the whole azimuth. It is a gate on CONDITIONING, not on
-// surface type — a torus or a B-spline base fails the affine certificate, and a tangent or
-// near-parallel pair of cylinders fails the numeric margins, both landing on the general marcher.
+// quadric, and the two roots stay APART across the whole azimuth — apart at the modelling resolution,
+// which is the certificate that the two branches are two curves the stitch can tell from one another.
+// It is a gate on CONDITIONING, not on surface type — a torus or a B-spline base fails the affine
+// certificate, a near-parallel pair the transversality floor, and a tangent pair the separation.
+//
+// The separation is read at its exact minimum: the probes bracket every local minimum of the gap and
+// the extremum solver refines each to rounding, so the certificate holds between the probes as well as
+// at them. It used to demand a MARGIN instead — the smallest gap at least a twentieth of the largest —
+// which refused every near-pinch crossing while its roots were exact to 1e-13: two cylinders whose
+// radii differ by a part in a hundred thousand keep their branches 2√(2R·Δr) apart, a thousand welds,
+// and the margin was a policy standing in for this measurement. OCCT's cylinder∩cylinder walker
+// (IntPatch_ImpImpIntersection, CyCyNoGeometric) parametrises the same section with no separation
+// margin at all; what it guards is the fold, which this intersector refuses by base role
+// (ADR-0061 stage 4).
 func ruledQuadricConditioning(base Surface, quad Quadric, res Resolution) bool {
 	mNorm := quad.M.Norm()
 	if mNorm <= 0 {
 		return false // a degenerate (planar) quadric: the plane∩ruled conics are their own closed form
 	}
-	minGap, maxGap := stdmath.Inf(1), 0.0
-	for i := range ruledQuadricAzimuthProbes {
-		u := twoPi * float64(i) / ruledQuadricAzimuthProbes
+	gapAt := func(u float64) (float64, bool) {
 		r := straightRulingAt(base, u)
 		if r.SecondDiffScale > res.Weld() {
-			return false // not affine in v: this surface has no straight ruling to substitute
+			return 0, false // not affine in v: this surface has no straight ruling to substitute
 		}
 		co := quad.alongRuling(r)
 		if stdmath.Abs(co.a) < ruledQuadricSkewFloor*mNorm*float64(r.Dir.LengthSquared()) {
-			return false // the ruling runs (near) along the quadric: one root escapes, the solve cancels
+			return 0, false // the ruling runs (near) along the quadric: one root escapes, the solve cancels
 		}
-		gap := co.separation()
-		minGap, maxGap = stdmath.Min(minGap, gap), stdmath.Max(maxGap, gap)
+		return co.separation(), true
 	}
-	return minGap > 0 && minGap >= ruledQuadricBranchSeparation*maxGap
+	gaps := make([]float64, ruledQuadricAzimuthProbes)
+	for i := range gaps {
+		g, ok := gapAt(twoPi * float64(i) / ruledQuadricAzimuthProbes)
+		if !ok {
+			return false
+		}
+		gaps[i] = g
+	}
+	return minimumBranchGap(gaps, gapAt) > res.Stitch()
 }
+
+// minimumBranchGap refines every bracketed local minimum of the sampled gap to its exact value and
+// returns the smallest, reading the sweep as the circle it is.
+func minimumBranchGap(gaps []float64, gapAt func(float64) (float64, bool)) float64 {
+	n := len(gaps)
+	step := twoPi / float64(n)
+	least := stdmath.Inf(1)
+	for i, g := range gaps {
+		if g > gaps[(i+n-1)%n] || g > gaps[(i+1)%n] {
+			continue
+		}
+		u := ExtremumOnBracket(func(u float64) float64 {
+			gap, _ := gapAt(u)
+			return gap
+		}, float64(i-1)*step, float64(i+1)*step, false)
+		if gap, ok := gapAt(u); ok {
+			g = stdmath.Min(g, gap)
+		}
+		least = stdmath.Min(least, g)
+	}
+	return least
+}
+
+// ruledSubstitutionAdmits certifies that the ruling substitution is the right closed form for this pair
+// at all — the two things the wrap form's gate also refuses, before either looks at a root: a base that
+// is not affine in its ruling parameter (it has no straight ruling to substitute), and a ruling that
+// runs along the quadric (one root escapes to infinity and the solve cancels). Only the SEPARATION test
+// differs between the two forms, because a window's branches are MEANT to meet at its ends.
+func ruledSubstitutionAdmits(base Surface, quad Quadric, res Resolution) bool {
+	mNorm := quad.M.Norm()
+	if mNorm <= 0 {
+		return false // a degenerate (planar) quadric: the plane∩ruled conics are their own closed form
+	}
+	for i := range ruledQuadricAzimuthProbes {
+		r := straightRulingAt(base, twoPi*float64(i)/ruledQuadricAzimuthProbes)
+		if r.SecondDiffScale > res.Weld() {
+			return false
+		}
+		if co := quad.alongRuling(r); stdmath.Abs(co.a) < ruledQuadricSkewFloor*mNorm*float64(r.Dir.LengthSquared()) {
+			return false
+		}
+	}
+	return true
+}
+
+// ruledDiscriminantWindows is the ruled form's station question, answered by the shared
+// periodicRootWindows: the azimuths where the ruling quadratic has two roots.
+func ruledDiscriminantWindows(base Surface, quad Quadric) ([][2]float64, bool) {
+	return periodicRootWindows(func(u float64) float64 {
+		return quad.alongRuling(straightRulingAt(base, u)).discriminant()
+	}, ruledQuadricAzimuthProbes)
+}
+
+// ruledQuadricWindowConditioning certifies one window before a loop is built on it: its branches must
+// separate, somewhere inside, by more than the stitch resolution — otherwise the whole loop is a
+// grazing sliver two faces could not be told apart across — and each fold must be a simple root of the
+// discriminant, which is what makes it a turning point rather than a tangency the window closes on.
+//
+// It is deliberately the mirror of the wrap form's gate: that one reads the MINIMUM separation across
+// the sweep, because a wrap has no fold and its two branches must never meet; this one reads the
+// MAXIMUM inside the window, because a window's branches meet at both ends by construction.
+func ruledQuadricWindowConditioning(l RuledQuadricLoop, res Resolution) bool {
+	if l.coeffsAt(l.U0).discriminantSlope() == 0 || l.coeffsAt(l.U1).discriminantSlope() == 0 {
+		return false // a double root: the window closes on a tangency, not on a turning point
+	}
+	widest := 0.0
+	for i := 1; i < ruledQuadricWindowProbes; i++ {
+		u := l.U0 + (l.U1-l.U0)*float64(i)/ruledQuadricWindowProbes
+		widest = stdmath.Max(widest, l.coeffsAt(u).separation())
+	}
+	return widest > res.Stitch()
+}
+
+// ruledQuadricWindowProbes samples a window's interior for its widest branch separation. The separation
+// has one interior maximum for every ruled/quadric pair (it is √Δ/|a| with Δ a low-order trigonometric
+// polynomial vanishing at both ends), so a coarse sweep finds it.
+const ruledQuadricWindowProbes = 64

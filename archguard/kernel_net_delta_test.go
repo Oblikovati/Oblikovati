@@ -7,7 +7,9 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
+	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -27,7 +29,7 @@ import (
 //
 //	tolerance constants  toleranceDebt      (TestNoUnjustifiedAbsoluteEpsilons, #2189)
 //	type assertions      geomSwitchDebt     (TestGeometryKindSwitchesLiveInGeom, #2188)
-//	recognizers          the dispatch tables TestNoFirstFitDispatchLadders pins (#2186)
+//	recognizers          the classification arms (and any surviving dispatch table) below
 //	fallback sites       diag.Code declarations under kernel/
 //
 // Fallback sites are counted as declared diag.Code kinds because the rules require a degradation
@@ -41,10 +43,127 @@ import (
 // kernelNetDeltaPin is the checked-in baseline. Update it in the same commit as the change that
 // moves it, and say in the PR which direction each moved and why.
 var kernelNetDeltaPin = map[string]int{
-	"tolerance-constants": 233,
-	"type-assertions":     774,
-	"recognizers":         37, // 26 curvedExactPaths + 11 specialCurvedMeshers
-	"fallback-sites":      28,
+	// 232 → 231 (2026-09-06, ADR-0061 stage 4): a FALL — the ruled∩quadric gate's branch-separation
+	// margin (a twentieth of the largest gap) is gone; the gate reads the exact minimum of the gap
+	// against the stitch resolution instead, and the near-pinch crossings it refused are exact.
+	// 226 → 216 (2026-09-07, ADR-0061 stage 4): a FALL of 10 — the deleted recognizer drivers carried
+	// their own calibrated tolerances (the corner-junction weld, the scallop and boss wall snaps, the
+	// cap-crossing corner bracket), and the general pipeline reads the model-relative resolution instead.
+	// 216 → 214 (2026-09-08, ADR-0061 stage 5): a FALL — the torus band loft's two calibrated spiric
+	// coefficients went with the guard that used them. It accepted a pair of boundaries by asking
+	// whether two spiric arcs were the opposite roots of ONE plane's section, which needed a tolerance
+	// on each coefficient; it now asks whether each boundary goes the whole way round the tube, which
+	// is a NET turn against half a period and needs none.
+	"tolerance-constants": 214,
+	// 765 → 754 (2026-09-05, ADR-0061 stage 2): a FALL — the analytic half-space pipeline is deleted,
+	// and its per-primitive dispatch took eleven geometry-kind assertions with it.
+	// 754 → 746 (2026-09-06, ADR-0061 stage 4): a FALL — restricting an edge's curve to its own
+	// sub-range moved out of the stitch and into geom.SubCurve, where the rules put a switch over
+	// curve kinds; the stitch now asks for the piece and gets back whatever kind owns it.
+	// 727 → 692 (2026-09-07, ADR-0061 stage 4): a FALL of 35 — the 15 deleted brep drivers each opened
+	// by asserting its operands' surface kinds (a cylinder side, a cone frustum, a bare sphere, a
+	// planar cap), which is how a per-pair recognizer recognises. The general pipeline classifies a
+	// face by its chart, not by a type switch on its surface.
+	// 692 → 691 (2026-09-08, ADR-0061 stage 5): a FALL — the curved-face router's `s.(geom.Torus)`
+	// went with torusComplementMesh. An outerless face on any periodic surface is now meshed from the
+	// chart it carries, so the router asks what the FACE records, not what its surface is.
+	// 691 → 684 (2026-09-08, ADR-0061 stage 5): a FALL of 7 — the same seven geometry-kind assertions
+	// the curved-trim classification collapsed, counted by the net-delta ratchet.
+	"type-assertions": 684,
+	// 37 → 11 (2026-09-07, ADR-0061 stage 4): a FALL of 26 — curvedExactPaths is DELETED. It was an
+	// ordered first-fit ladder of 26 bespoke recognizers tried before the general per-face pipeline,
+	// the shape the ground rules forbid ("dispatch is a classification that selects exactly one path"),
+	// and every pair it claimed — the ruled crossings, the equal-radius Steinmetz family, the drill
+	// through-hole and the cylinder boss, the four cap-crossing slices, the partial rim and its corner
+	// junction, the coaxial ball and rod — now goes through brep's one dispatch. The 15 brep driver
+	// files behind them (~2700 lines) went with them, and every corpus row they carried was re-pointed
+	// at the general entry rather than deleted.
+	// 11 → 12 (2026-09-08, ADR-0061 stage 5): a RISE that is a CORRECTION OF THE MEASUREMENT, not new
+	// code, and it is the honest number the guard's own words ask for ("bespoke shapes the general
+	// pipeline has not yet absorbed"). The old 11 counted LADDER ENTRIES, and an entry was never one
+	// recognizer: entry 0 recognized TWO cone shapes (an apex cap and an apex-collapsed sector), and
+	// three entries read three RIM FORMS into one buildSphereCap. Counting the shape recognizers behind
+	// the arms (curvedTrimRecognizers) gives 12 BEFORE this slice and 12 after: specialCurvedMeshers is
+	// gone and its eleven entries are eight classification arms, but no bespoke SHAPE was deleted. What
+	// was deleted is builder duplication — coneApexFan and coneSectorFan became one apexFan, and
+	// sphereZoneCapFan, sphereSeamedCapFan, notchedRimBandMesh, twoClosedRimBandMesh and SphereCapFan
+	// became arms over shared builders. The number falls when a SHAPE goes, which is what it is for.
+	"recognizers": 12,
+	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
+	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
+	// shipped it silently; the degradation is now refused AND reported.
+	// 29 → 30 (2026-09-05, ADR-0061): CodeBooleanNoExactCurvedPath. A RISE that is an improvement — the
+	// guarded curved entry's fourth exit, "no exact path claims this", returned silently while the other
+	// three reported, so a boolean with a curved operand could fall to triangle soup with nothing
+	// downstream able to say why. The degradation is the same; it is now named.
+	// 30 → 31 (2026-09-06, ADR-0061 stage 4): CodeBooleanWindingReject. A RISE that names a degradation
+	// nothing reported before: a boolean result with a face wound against its outward normal, which the
+	// per-edge validity test admits and which shipped as a valid solid meshing as its own complement.
+	// A recognizer body that fails the winding certificate now demotes to the general pipeline and
+	// says so; a general-pipeline body that fails declines and says so.
+	// 26 → 24 (2026-09-07, ADR-0061 stage 4): a FALL — CodeImprintNearPinchDeclined and the
+	// near-pinch gate that recorded it are deleted. The gate declined a crossing whose two lens loops
+	// leave a narrow neck so the bespoke Steinmetz constructor could take it below the snap ceiling and
+	// the faceted route above; both destinations are gone and the general trace resolves the neck
+	// itself, so the whole band is ordinary geometry with nothing to report.
+	// 24 → 25 (2026-09-08, ADR-0061 stage 5): CodeTrimIgnoredFullDomain. A RISE that names a
+	// degradation nothing reported before, which is what the ratchet exists to allow. The curved-face
+	// router ends at the surface's WHOLE parametric domain for a boundary no wrapping mesher
+	// recognised; on a TRIMMED face that mesh carries material the face does not have and omits the
+	// face's own boundary, and it shipped silently. The stage-5 booleans — a ring meeting a ball, a
+	// ring bored by a coaxial shaft — are exact B-reps whose meshes land there, so what was an
+	// invisible wrong picture is now a reported one. The degradation is the same; it is now named.
+	// 25 → 26 (2026-09-08, ADR-0061 stage 5, third slice): CodeSectionConditioningDemotion. A RISE that
+	// names a degradation nothing reported before. The analytic intersector refused two different things
+	// with one anonymous ok=false: "no bucket claims this pair", which is the ordinary case and no loss
+	// at all, and a CONDITIONING demotion — the closed form applies to the pair and cannot name its own
+	// answer at these numbers, so the exact pipeline gives up ground it normally holds. Only the second
+	// is a fallback, and it was indistinguishable from the first. geom now returns the reason
+	// (geom.SectionDecline) and brep records it as a Defect naming which certificate refused; the
+	// ordinary refusal still records nothing, because a diagnostic that fires on every marched boolean
+	// in the system is noise.
+	// 26 → 27 (2026-09-08, ADR-0061 stage 5, cocylindrical wall merge):
+	// CodeCocylindricalMergeUndecided. A RISE that names a degradation nothing reported before. Two
+	// kept faces on ONE surface whose shared boundary dissolves are one face, and the merged face's
+	// parametric trim is the union of the two in the covering space. Where the fused loops do not
+	// determine that trim, ADR-0063 refuses to guess a side — and the pair was then left as two faces
+	// with nothing said. It now says so, and the merge is post-conditioned on a chart it verified
+	// rather than shipping one nobody did.
+	// 27 → 28 (2026-09-08, ADR-0061 stage 5, cocylindrical wall merge, review round 1):
+	// CodeMeshNotWatertight. A RISE that names a degradation nothing reported before. Every per-face
+	// mesher certifies its own patch, but nothing certified the BODY: two faces can each mesh
+	// correctly and still discretise the boundary they SHARE differently, and the crack that leaves
+	// was invisible until somebody counted free edges. TessellateBody now carries its own
+	// post-condition — a closed solid's mesh is a closed surface — and reports the tear with the
+	// faces it touches. The check reads the B-REP for closure, so it cannot fire on a body that is
+	// genuinely open.
+	// 28 → 29 (2026-09-08, ADR-0061 stage 6; rebased after the merge slice): CodeBooleanSubResolutionTool. A RISE that names a
+	// degradation nothing reported before, and it names the LOUDEST kind: an operand whose material is
+	// thinner than the model's seam weld. Measured on the RING row, a 1e-6 axial drill ran the whole
+	// pipeline and failed its acceptance gate reporting only "no exact path claims this", while a 1e-10
+	// one came back as the ring UNCHANGED with err=nil and NOTHING recorded — a Cut that removed
+	// nothing, silently, because "removed nothing" sits inside the Requicha bracket for a difference.
+	// The boolean now classifies on size before any geometry is built and refuses by name. It is +2,
+	// not +1: the counter counts every `diag.Code` ValueSpec under kernel/, so the ops facade's
+	// re-export of the same code — the one name a model-layer consumer matches on, the convention the
+	// other four boolean codes already follow — is counted a second time. One new degradation, two
+	// declarations of its name.
+	// 30 → 31 (2026-09-08, ADR-0061 stage 6, review round 2): CodeArrangementUnconverged. A RISE that
+	// names a degradation nothing reported before, and one that COULD not be reported before: the
+	// planar T-junction pass subdivided "until stable" and, on geometry at the scale of its absolute
+	// 1e-7 tolerance, never became stable — measured, an axial drill of radius 1.585e-7 through the
+	// RING body never returned at all. A hang is neither a refusal nor a wrong body, and the ground
+	// rules admit only those two. The pass now stops at a budget on its PAIR-ADDING splits (n(n-1)/2,
+	// the size of the canonical edge-pair set it draws from) and the boolean refuses by name instead
+	// of hanging.
+	// 31 → 32 (2026-09-08, ADR-0061 stage 6, review round 3): CodeArrangementDroppedCells. A RISE that
+	// names the second half of the same silence. Bounding the T-junction pass made brep.Arrange able to
+	// return NO cells, and its two production callers both read that as an ordinary empty answer: the
+	// planar boolean dropped the face, and the tessellator's overlapping-hole path meshed nothing. The
+	// unchecked entry is deleted, the boolean now refuses by name, and a tessellated face whose cells
+	// were dropped carries this Defect on its mesh — the mesh still ships, because a partial covering
+	// beats a missing face in a viewport, but it no longer ships silently.
+	"fallback-sites": 32,
 }
 
 func TestKernelNetDelta(t *testing.T) {
@@ -76,36 +195,165 @@ func TestKernelNetDelta(t *testing.T) {
 	}
 }
 
-// countRecognizers counts the entries of the ordered dispatch tables — each entry is one
-// analytic recognizer, and the count is what "generality over special cases" is measured by.
+// curvedTrimRecognizers is what "recognizer" MEANS once a ladder becomes a classification: the bespoke
+// SHAPE recognizers still standing behind the arms, keyed by the arm that selects them. An arm is not
+// one recognizer — kindConeApexFan reads two cone topologies, kindSphereCapFan three rim forms,
+// kindRuledBandLoft two band shapes — so counting arms would have counted a MERGE as a deletion, which
+// is how "11 → 8" first got written here. Every name below must be a function declared in
+// kernel/ops/tessellate and every key must be a case of specialCurvedMesh's switch; the test checks
+// both, so a recognizer cannot be renamed or dropped without moving this number.
+//
+// It is a READABLE registry, not the count's source: the names are derived from classifyCurvedTrim's
+// own reads (recognizer_derivation_test.go) and this table must equal that derivation name for name,
+// so a fourth rim form, a second cone topology or a new gate inside an arm fails the build until it is
+// written down here.
+var curvedTrimRecognizers = map[string][]string{
+	"kindConeApexFan":     {"coneApexTrimOf", "faceIsConeApexCap"},
+	"kindSphereCapFan":    {"planarCircleCapRim", "poleSeamedCapRim", "multiArcSeamCapRim"},
+	"kindSphereZoneBand":  {"sphereBeltTrimOf"},
+	"kindSpherePatch":     {"spherePatchTrimOf"},
+	"kindRuledBandLoft":   {"hasTwoClosedRimsNoOpen", "hasFullCircleAndNotchedRim"},
+	"kindSpiricBand":      {"spiricTubeTrimOf"},
+	"kindTwoRimHoledBand": {"twoRimHoledTrimOf"},
+	"kindWedgeBand":       {"wedgeBandTrimOf"},
+}
+
+// curvedTrimSwitch is where those arms are selected; its case clauses must match the keys above.
+const curvedTrimSwitch = "kernel/ops/tessellate/tessellate_trim_special.go:specialCurvedMesh"
+
+// countRecognizers counts the entries of the ordered dispatch tables plus the shape recognizers behind
+// the classification arms that replaced them — the count "generality over special cases" is measured by.
+//
+// The classification's share is DERIVED from its source (derivedRecognizers, recognizer_derivation_test.go),
+// not read off the registry: the registry says which arm each recognizer stands behind and is asserted
+// equal to the derivation, so a recognizer added inside an arm moves this number whether or not anybody
+// remembered to register it (final fix wave, finding 6).
 func countRecognizers(t *testing.T) int {
 	t.Helper()
-	fset := token.NewFileSet()
+	assertCurvedTrimArmsMatchSwitch(t)
+	assertRecognizersAreDeclared(t)
+	n := countLadderEntries(t) + len(derivedRecognizers(t))
+	if n == 0 {
+		t.Fatal("counted no recognizers — the dispatch tables moved; update dispatchLadders/curvedTrimRecognizers")
+	}
+	return n
+}
+
+// assertCurvedTrimArmsMatchSwitch keeps the registry from listing a phantom arm or missing a new one.
+func assertCurvedTrimArmsMatchSwitch(t *testing.T) {
+	t.Helper()
+	file, fn, _ := strings.Cut(curvedTrimSwitch, ":")
+	arms := switchCaseNames(t, parseKernelFile(t, file), fn)
+	for _, arm := range arms {
+		if _, ok := curvedTrimRecognizers[arm]; !ok {
+			t.Errorf("%s selects %s but curvedTrimRecognizers does not list its recognizers", fn, arm)
+		}
+	}
+	for arm := range curvedTrimRecognizers {
+		if !slices.Contains(arms, arm) {
+			t.Errorf("curvedTrimRecognizers lists %s but %s has no such case", arm, fn)
+		}
+	}
+}
+
+// switchCaseNames returns the identifier of every case clause of the switch inside the named function.
+// A default clause carries no expression and is not an arm — it is where the general pipeline takes
+// the face.
+func switchCaseNames(t *testing.T, f *ast.File, fn string) []string {
+	t.Helper()
+	var names []string
+	ast.Inspect(f, func(n ast.Node) bool {
+		decl, ok := n.(*ast.FuncDecl)
+		if !ok || decl.Name.Name != fn {
+			return true
+		}
+		ast.Inspect(decl.Body, func(inner ast.Node) bool {
+			cc, isCase := inner.(*ast.CaseClause)
+			if !isCase {
+				return true
+			}
+			for _, e := range cc.List {
+				if id, isIdent := e.(*ast.Ident); isIdent {
+					names = append(names, id.Name)
+				}
+			}
+			return true
+		})
+		return false
+	})
+	return names
+}
+
+// assertRecognizersAreDeclared keeps the registry honest: every name it counts must still be a
+// function of kernel/ops/tessellate, so deleting one MOVES the number instead of leaving it stale.
+func assertRecognizersAreDeclared(t *testing.T) {
+	t.Helper()
+	declared := packageFuncNames(t, filepath.Join("..", "kernel", "ops", "tessellate"))
+	for arm, names := range curvedTrimRecognizers {
+		for _, n := range names {
+			if !declared[n] {
+				t.Errorf("curvedTrimRecognizers counts %s for %s, but no such function is declared in "+
+					"kernel/ops/tessellate — delete the entry with the recognizer", n, arm)
+			}
+		}
+	}
+}
+
+// packageFuncNames is every function declared in the package's non-test files.
+func packageFuncNames(t *testing.T, dir string) map[string]bool {
+	t.Helper()
+	names := map[string]bool{}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("reading %s: %v", dir, err)
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") || strings.HasSuffix(e.Name(), "_test.go") {
+			continue
+		}
+		f, parseErr := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, e.Name()), nil, 0)
+		if parseErr != nil {
+			t.Fatalf("parsing %s: %v", e.Name(), parseErr)
+		}
+		for _, d := range f.Decls {
+			if fd, isFunc := d.(*ast.FuncDecl); isFunc {
+				names[fd.Name.Name] = true
+			}
+		}
+	}
+	return names
+}
+
+// countLadderEntries counts the []func entries of every registered first-fit ladder.
+func countLadderEntries(t *testing.T) int {
+	t.Helper()
 	n := 0
 	for file := range dispatchLadders {
-		f, err := parser.ParseFile(fset, filepath.Join("..", file), nil, 0)
-		if err != nil {
-			t.Fatalf("parsing %s: %v", file, err)
-		}
-		ast.Inspect(f, func(node ast.Node) bool {
+		ast.Inspect(parseKernelFile(t, file), func(node ast.Node) bool {
 			cl, ok := node.(*ast.CompositeLit)
 			if !ok {
 				return true
 			}
-			at, ok := cl.Type.(*ast.ArrayType)
-			if !ok || at.Len != nil {
-				return true
-			}
-			if _, isFunc := at.Elt.(*ast.FuncType); isFunc {
-				n += len(cl.Elts)
+			at, isSlice := cl.Type.(*ast.ArrayType)
+			if isSlice && at.Len == nil {
+				if _, isFunc := at.Elt.(*ast.FuncType); isFunc {
+					n += len(cl.Elts)
+				}
 			}
 			return true
 		})
 	}
-	if n == 0 {
-		t.Fatal("counted no recognizers — the dispatch tables moved; update dispatchLadders")
-	}
 	return n
+}
+
+// parseKernelFile parses one file of the kernel module, failing the test rather than returning an error.
+func parseKernelFile(t *testing.T, file string) *ast.File {
+	t.Helper()
+	f, err := parser.ParseFile(token.NewFileSet(), filepath.Join("..", file), nil, 0)
+	if err != nil {
+		t.Fatalf("parsing %s: %v", file, err)
+	}
+	return f
 }
 
 // countDiagCodes counts the declared diag.Code kinds under kernel/: one per way the kernel can

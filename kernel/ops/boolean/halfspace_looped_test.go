@@ -15,11 +15,10 @@ import (
 )
 
 // Looped split acceptance (M2 Phase 1, Oblikovati/Oblikovati#1334): the second of two composed
-// HalfSpaceCuts crosses a curved face (a sphere cap) and its planar lid, exercising loopedSplit on both
-// plus chaining the section arc + line into one lid. The oracle is SYMMETRY: cutting a body by a plane
-// of symmetry through its centroid yields exactly half its volume — exact and tessellation-robust when
-// the kept sphere patch stays within a hemisphere (a larger patch is a spherePatchMesh follow-up, not a
-// split-logic concern).
+// HalfSpaceCuts crosses a curved face (a sphere cap) and its planar lid, so both are split by a section
+// that closes on itself. The oracle is SYMMETRY: cutting a body by a plane of symmetry through its
+// centroid yields exactly half its volume — exact and tessellation-robust when the kept sphere patch
+// stays within a hemisphere.
 
 // TestLoopedSplitHalvesACapBySymmetry cuts a small spherical cap (kept z ≤ −3, a sub-hemisphere cap) by
 // a plane of symmetry (x ≤ 0, y ≤ 0): the result must be a valid analytic solid of half the cap's volume.

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -17,6 +18,12 @@ import (
 
 // uvWallFixture builds the partitions of a cylinder (radius 5, z∈[0,4]) and a plate (16×16, z∈[1,3]).
 func uvWallFixture(t *testing.T) (cyl, plate facePartition) {
+	c, p := uvWallBodies(t)
+	return partitionFaces(c), partitionFaces(p)
+}
+
+// uvWallBodies is uvWallFixture's geometry: a Ø10 × 4 cylinder through a plate spanning z 1..3.
+func uvWallBodies(t *testing.T) (cyl, plate *topo.Body) {
 	t.Helper()
 	c, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 4)
 	if err != nil {
@@ -26,7 +33,14 @@ func uvWallFixture(t *testing.T) (cyl, plate facePartition) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return partitionFaces(c), partitionFaces(p)
+	return c, p
+}
+
+// cylOracle is the membership oracle of the fixture's cylinder, which the imprint pairing asks whether
+// the other solid CROSSES a receiving face or rests on it.
+func cylOracle(t *testing.T) insideOracle {
+	c, _ := uvWallBodies(t)
+	return newInsideOracle(c, partitionFaces(c).allFaces())
 }
 
 // planeFaceAtZ returns the plate's horizontal face at height z, from the polygonal bucket.
@@ -197,7 +211,7 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	promoteConicReceivers(&plate, &cyl)
-	curves, ok := uvWallSharedImprint(plate.uv[0], cyl.wall[0])
+	curves, _, ok := uvWallSharedImprint(plate.uv[0], cyl.wall[0], cylOracle(t))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("uvWallSharedImprint = %d curves, ok=%v; want 1 circle", len(curves), ok)
 	}
@@ -207,13 +221,16 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 	}
 }
 
-// TestUvWallSharedImprintDeclinesConicFrame: a receiver whose own boundary is curved (a cylinder cap)
-// would need conic×conic frame crossings, so the pairing declines by name rather than approximating.
-func TestUvWallSharedImprintDeclinesConicFrame(t *testing.T) {
+// TestUvWallSharedImprintOwnCapIsNoImprint: a cylinder's cap paired with its OWN wall sections it along
+// the wall's rim — a curve lying in one of the wall's own edges. That is a boundary contact, not an
+// imprint: the pairing succeeds and contributes nothing (ADR-0060). It used to decline by name, which
+// also declined a plate resting on the boss beneath it.
+func TestUvWallSharedImprintOwnCapIsNoImprint(t *testing.T) {
 	t.Parallel()
 	cyl, _ := uvWallFixture(t)
-	if _, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0]); ok {
-		t.Error("a circle-framed cap must decline the uv×wall pairing")
+	curves, _, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0], cylOracle(t))
+	if !ok || len(curves) != 0 {
+		t.Errorf("own cap × wall = %d curves ok=%v, want no imprint and no decline", len(curves), ok)
 	}
 }
 
@@ -222,7 +239,7 @@ func TestUvWallSharedImprintDeclinesConicFrame(t *testing.T) {
 func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 	t.Parallel()
 	cyl, plate := uvWallFixture(t)
-	rs, ok := ruledSideBandOf(cyl.wall[0])
+	rs, ok := ruledFaceOf(cyl.wall[0])
 	if !ok {
 		t.Fatal("the cylinder side is a ruled band")
 	}
@@ -230,7 +247,7 @@ func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pieces, ok := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), rs); len(pieces) > 0 || ok {
+	if pieces, ok := wallSectionIsland(circle, planeFaceAtZ(t, plate, 3), cyl.wall[0], rs); len(pieces) > 0 || ok {
 		t.Errorf("a section on the band rim gave %d pieces, ok=%v; want none and a named decline",
 			len(pieces), ok)
 	}
@@ -240,12 +257,12 @@ func TestWallSectionIslandStraddlingRimDeclines(t *testing.T) {
 func TestCollectWallIslandsDropsClearSections(t *testing.T) {
 	t.Parallel()
 	cyl, plate := uvWallFixture(t)
-	rs, _ := ruledSideBandOf(cyl.wall[0])
+	rs, _ := ruledFaceOf(cyl.wall[0])
 	far, err := geom.NewCircle(math.P3(60, 0, 3), math.V3(0, 0, 1), 5)
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, ok := collectWallIslands([]geom.Curve3{far}, planeFaceAtZ(t, plate, 3), rs)
+	out, _, ok := collectWallIslands([]geom.Curve3{far}, planeFaceAtZ(t, plate, 3), cyl.wall[0], rs, cylOracle(t))
 	if !ok || len(out) != 0 {
 		t.Errorf("collectWallIslands = (%d curves, ok=%v), want (0, true)", len(out), ok)
 	}
@@ -259,7 +276,7 @@ func TestPairUVWallImprintsWritesBothSides(t *testing.T) {
 	promoteConicReceivers(&plate, &cyl)
 	uvImp := make([][]geom.Curve3, len(plate.uv))
 	wallImp := make([][]geom.Curve3, len(cyl.wall))
-	if !pairUVWallImprints(&plate, &cyl, uvImp, wallImp) {
+	if !pairUVWallImprints(&plate, &cyl, uvImp, wallImp, cylOracle(t)) {
 		t.Fatal("pairUVWallImprints declined the cylinder-through-plate contact")
 	}
 	if len(uvImp[0]) != 1 || len(uvImp[1]) != 1 || len(wallImp[0]) != 2 {
@@ -267,5 +284,40 @@ func TestPairUVWallImprintsWritesBothSides(t *testing.T) {
 	}
 	if uvImp[0][0] != wallImp[0][0] && uvImp[0][0] != wallImp[0][1] {
 		t.Error("the uv face's imprint curve is not the wall's own: the two sides would split differently")
+	}
+}
+
+// TestFaceLoopBoxBoundsAClosedNonConicLoop: a face bounded by ONE closed section whose curve kind has
+// no closed-form axial extent must still measure its own scale. Its two loop ends are the same point,
+// so an endpoint-only box is a POINT, and geom.ResolutionForBox then hands the face the model-size
+// floor — a 1e-15 stitch weld grid, below the rounding of the face's own coordinates. Two readings of
+// the torus figure-eight's shared pinch point then stayed unmerged wherever they were not bit-identical
+// and the seam tore open (CI run 34280554924 macos-latest, ADR-0061).
+func TestFaceLoopBoxBoundsAClosedNonConicLoop(t *testing.T) {
+	t.Parallel()
+	ring, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lid, err := geom.NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	curves, ok := geom.IntersectSurfacesAnalytic(ring, lid, geom.ResolutionForSize(20))
+	if !ok || len(curves) == 0 {
+		t.Fatalf("torus∩plane at the saddle: ok=%v n=%d", ok, len(curves))
+	}
+	lobe := curves[0]
+	lo, hi := lobe.Domain()
+	if _, closedForm := geom.CurveBox(lobe, lo, hi); closedForm {
+		t.Skipf("%T now has a closed-form extent; this row needs another curve kind", lobe)
+	}
+	f := curvedFace{surface: lid, loops: []curvedLoop{{edges: []loopEdge{{curve: lobe, t0: lo, t1: hi}}}}}
+	box := faceLoopBox(f)
+	if size := float64(box.Diagonal().Length()); size < 1 {
+		t.Fatalf("faceLoopBox of a lobe of a torus of major radius 5 has diagonal %g; it is units across", size)
+	}
+	if grid := geom.ResolutionForBox(box).Stitch(); grid < 1e-9 {
+		t.Fatalf("the face's stitch weld grid is %g — the model-size floor, not the face's own scale", grid)
 	}
 }

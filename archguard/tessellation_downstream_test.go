@@ -48,12 +48,7 @@ var tessellationDebt = map[string]int{
 
 	// boolean/ — the mesh-arrangement operand path (ADR-0052/0056). #3459-#3462 remove the
 	// tessellation-first arrangement input once analytic reconstruction covers it.
-	"boolean/aliases.go":              1,
-	"boolean/csg_body.go":             1,
-	"boolean/meshbool_imprint.go":     1,
-	"boolean/meshbool_reconstruct.go": 1,
-	"boolean/meshbool_soup.go":        1,
-	"boolean/meshbool_tagged_soup.go": 2,
+	"boolean/aliases.go": 1,
 
 	// heal/ — repair reading a mesh to decide what to snap or rebuild.
 	"heal/pcurve_reconstruct.go": 1,

@@ -14,13 +14,16 @@ import (
 // strictly positive resolution (ADR-0042 §Phase 1).
 func TestResolutionForSizeFloorsDegenerate(t *testing.T) {
 	t.Parallel()
-	for _, size := range []float64{0, -5, 0.001, math.NaN()} {
+	for _, size := range []float64{0, -5, 1e-12, math.NaN()} {
 		if got := ResolutionForSize(size).Size(); got != minModelSize {
 			t.Errorf("ResolutionForSize(%v).Size() = %v, want floor %v", size, got, minModelSize)
 		}
 	}
-	if got := ResolutionForSize(50).Size(); got != 50 {
-		t.Errorf("ResolutionForSize(50).Size() = %v, want 50", got)
+	for _, size := range []float64{0.001, 50} {
+		if got := ResolutionForSize(size).Size(); got != size {
+			t.Errorf("ResolutionForSize(%v).Size() = %v, want the size itself — the floor is for "+
+				"degeneracy, not a smallest part", size, got)
+		}
 	}
 }
 

@@ -32,9 +32,9 @@ func shoulderRodJoin(t *testing.T) *topo.Body {
 	if err != nil {
 		t.Fatalf("SolidCylinder: %v", err)
 	}
-	join, ok := CoaxialSphereRodJoin(ball, rod)
-	if !ok {
-		t.Fatal("ball ∪ shoulder rod declined the analytic path")
+	join, err := Boolean(Union, ball, rod)
+	if err != nil {
+		t.Fatalf("ball ∪ shoulder rod: %v", err)
 	}
 	return join
 }
@@ -76,28 +76,12 @@ func TestBallJoinRodPointInsideClaimsItsInterior(t *testing.T) {
 	}
 }
 
-// TestComplementIsClaimedOnlyOnAClosedDomain guards the generalization: the complement reading is asked
-// for on a closed parameter domain only, so the rod's cylindrical wall and its planar lid — whose rings
-// do bound their faces — keep the rings' interior, and exactly the one spherical cap flips.
-func TestComplementIsClaimedOnlyOnAClosedDomain(t *testing.T) {
-	t.Parallel()
-	q := newFluxQuery(facesOfAny(shoulderRodJoin(t)))
-	complements := 0
-	for i := range q.faces {
-		s := q.faces[i].cf.surface
-		if !q.faces[i].region.complement {
-			continue
-		}
-		complements++
-		uPer, vPer := surfacePeriodic(s)
-		if _, open := castAxis(s, uPer, vPer); open {
-			t.Errorf("face %d (%T) is read as its ring's complement on an OPEN domain", i, s)
-		}
-	}
-	if complements != 1 {
-		t.Errorf("ball ∪ shoulder rod has %d complement face(s), want 1 (the big spherical cap)", complements)
-	}
-}
+// TestComplementIsClaimedOnlyOnAClosedDomain is gone with the flag it read. A face is no longer told
+// apart from its own complement by a boolean the reader consults: its chart's outer contour bounds it
+// directly, and an outerless face is framed by its surface's own parameter rectangle
+// (withDomainFrame, ADR-0063). The reading it guarded — the ball's big spherical cap claiming its own
+// interior rather than the rod's little one — is what TestBallJoinRodPointInsideClaimsItsInterior
+// above asserts end to end, and TestOuterlessFaceIsFramedByItsSurfaceDomain asserts of the frame.
 
 // signProbeOffset steps off the surface for the independent sign probe. The body is ~10 units across and
 // its thinnest feature is the rod's 0.5-long free stub, so this step lands well inside the material on

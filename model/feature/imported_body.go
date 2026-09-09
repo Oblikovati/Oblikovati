@@ -26,6 +26,12 @@ func (f *ImportedBodyFeature) Body() *topo.Body { return f.body }
 // Kind implements [Feature].
 func (f *ImportedBodyFeature) Kind() string { return "importedBody" }
 
+// AdoptsExternalBodies marks the imported body as adopted, not built: it comes out of a translator,
+// so the engine's Validate post-condition reports an invalid one as a Warning rather than sickening
+// the feature that wraps it (see [AdoptedBodiesFeature]). An STL in particular is very often not a
+// valid closed solid, and refusing every such file is a product decision, not a kernel one.
+func (f *ImportedBodyFeature) AdoptsExternalBodies() bool { return true }
+
 // Recompute appends the imported body to the running state, leaving earlier bodies in
 // place so a part can hold both modeled and imported geometry.
 func (f *ImportedBodyFeature) Recompute(in Input) (Output, error) {

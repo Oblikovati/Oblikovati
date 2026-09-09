@@ -20,25 +20,12 @@ import (
 // curvature. Like coneApexFan it claims only the single-circle-boundary case; an arc-bounded
 // sphere patch (a box cut) keeps the existing path.
 
-// SphereCapFan meshes a sphere face whose outer boundary is a single planar circle by fanning
-// latitude rings from that rim to the enclosed pole. ok=false unless the surface is a sphere and
-// the boundary is one circle (every rim point coplanar) — any other trim defers to the caller.
-// A face carrying HOLES is not a cap: the fan sweeps the rim straight to the pole and would pave
-// right over them, so it declines and lets a mesher that can carry the hole take the face (a
-// coaxial circular hole makes it a BELT, sphereZoneBandFan; anything else the gnomonic CDT).
-//
-// Example: a unit sphere cut by z=0, the lower face's rim is the equator → a watertight, true
-// hemisphere cap (tessellated volume → 2/3 πr³).
-func SphereCapFan(s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (*Mesh, bool) {
+// sphereOf is the tessellator's ONE sphere test. Concentrating it here keeps the geometry-kind
+// assertion in a single place per surface family rather than one per mesher (kernel ground rules;
+// archguard geomSwitchDebt).
+func sphereOf(s geom.Surface) (geom.Sphere, bool) {
 	sph, ok := s.(geom.Sphere)
-	if !ok || len(outer3D) < 3 || len(holes3D) > 0 {
-		return nil, false
-	}
-	axis, ok := capAxis(sph, outer3D)
-	if !ok {
-		return nil, false
-	}
-	return buildSphereCap(sph, outer3D, axis, q), true
+	return sph, ok
 }
 
 // capAxis returns the unit direction from the sphere centre toward the pole the cap encloses (the

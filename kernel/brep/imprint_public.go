@@ -51,7 +51,10 @@ func rebuildImprinted(faces []curvedFace, imprints [][][2]math.Point3) (ImprintR
 	var kept []subFace
 	touched := map[string]bool{}
 	for i, f := range faces {
-		pieces := splitFace(f, imprints[i])
+		pieces, converged := splitFace(f, imprints[i])
+		if !converged {
+			return ImprintResult{}, unconvergedArrangement(len(imprints[i]))
+		}
 		for k := range pieces {
 			if len(pieces) == 1 {
 				pieces[k].lineage = f.lineage

@@ -192,3 +192,41 @@ func TestCylinderPassClearEllipseAboveBand(t *testing.T) {
 		t.Error("cylinderPassClear reported contact for an ellipse section above the wall band")
 	}
 }
+
+// TestSpanIsRimContact: a crossing whose axial span reaches no further INTO the band than one rim's
+// cull pad — however far it reaches the OTHER way — IS that rim, and imprints nothing the face does
+// not already carry as an edge. It is the case
+// bandPlacement leaves unclassified — neither strictly inside nor clear by the pad — while the clip
+// downstream measures against the UNPADDED band and finds nothing between the rims, so a rim crossing
+// refused the whole boolean (CI run 34280554924 macos-latest, ADR-0061).
+func TestSpanIsRimContact(t *testing.T) {
+	t.Parallel()
+	band := coneSideBand_{bottom: math.P3(0, 0, 0), rBot: 1, rTop: 1, vMin: 0, vMax: 4}
+	pad := bandCullPad(band)
+	for _, c := range []struct {
+		name    string
+		lo, hi  float64
+		wantRim bool
+	}{
+		{"exactly on the top rim", 4, 4, true},
+		{"a rounding above the top rim", 4 + 1e-15, 4 + 2e-15, true},
+		{"a rounding below the top rim", 4 - 1e-15, 4, true},
+		{"exactly on the bottom rim", 0, 0, true},
+		{"well inside the band", 1, 3, false},
+		{"crossing the top rim by more than the pad", 4 - 10*pad, 4 + 10*pad, false},
+		// A LONG span is a rim contact too when only its band-ward end is at a rim: it enters the band
+		// by less than the pad, however far it reaches the other way, so it imprints nothing inside.
+		{"reaching far below the band but entering it by half a pad", -100, pad / 2, true},
+		{"reaching far above the band but entering it by half a pad", 4 - pad/2, 100, true},
+		{"a long span that crosses the whole band", -100, 100, false},
+	} {
+		if got := spanIsRimContact(c.lo, c.hi, band); got != c.wantRim {
+			t.Errorf("%s: spanIsRimContact(%g, %g) = %v, want %v", c.name, c.lo, c.hi, got, c.wantRim)
+		}
+	}
+	// The gap this closes: a rim span is neither inside nor clear, so without the rim verdict it fell
+	// to the clip.
+	if inside, clear := bandPlacement(4, 4, band); inside || clear {
+		t.Fatalf("a span on the top rim reads (inside,clear) = (%v,%v); the rim verdict is what classifies it", inside, clear)
+	}
+}

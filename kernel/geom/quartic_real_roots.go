@@ -58,23 +58,32 @@ func RealQuarticRoots(c0, c1, c2, c3, c4 float64) []float64 {
 		if stdmath.Abs(imag(y)) > quarticRealImagTol*stdmath.Max(1, cmplx.Abs(y)) {
 			continue // genuinely complex (conjugate-pair) root — not physical
 		}
-		t = quarticNewtonPolish(t, c0, c1, c2, c3, c4)
-		out = appendDedupedRoot(out, t, b3, b2, b1, b0)
+		t = newtonPolishRoot(t, []float64{c0, c1, c2, c3, c4})
+		out = appendDedupedRoot(out, t, monicScale(b3, b2, b1, b0))
 	}
 	return out
 }
 
-// appendDedupedRoot appends t to roots unless a near-duplicate (relative to the quartic's own
+// appendDedupedRoot appends t to roots unless a near-duplicate (relative to the polynomial's own
 // coefficient scale) is already present — Ferrari's factoring can rediscover the same root twice
 // at an exact tangency (a genuinely repeated root of the quartic), which callers must see once.
-func appendDedupedRoot(roots []float64, t, b3, b2, b1, b0 float64) []float64 {
-	scale := stdmath.Max(1, stdmath.Abs(b3)+stdmath.Abs(b2)+stdmath.Abs(b1)+stdmath.Abs(b0))
+func appendDedupedRoot(roots []float64, t, scale float64) []float64 {
 	for _, r := range roots {
 		if stdmath.Abs(r-t) < quarticRealImagTol*scale {
 			return roots
 		}
 	}
 	return append(roots, t)
+}
+
+// monicScale is the scale a monic polynomial's roots are deduplicated against: the sum of its
+// remaining coefficients, floored at one so the comparison is meaningful for a small polynomial.
+func monicScale(cs ...float64) float64 {
+	sum := 0.0
+	for _, c := range cs {
+		sum += stdmath.Abs(c)
+	}
+	return stdmath.Max(1, sum)
 }
 
 // ferrariDepressedRoots factors the depressed quartic y⁴+p·y²+q·y+s=0 into its 4 (complex) roots.
@@ -106,19 +115,82 @@ func complexQuadraticRoots(a, b, c complex128) (complex128, complex128) {
 	return (-b + disc) / (2 * a), (-b - disc) / (2 * a)
 }
 
-// quarticNewtonPolish refines a real root candidate against the ORIGINAL (non-depressed) real
-// quartic — Ferrari's closed form is accurate to ~1e-9 relative; two Newton steps against F and
-// F' remove the accumulated depression/factoring error.
-func quarticNewtonPolish(t, c0, c1, c2, c3, c4 float64) float64 {
+// newtonPolishRoot refines a real root candidate against the ORIGINAL (non-depressed) real
+// polynomial, whose coefficients are given in ASCENDING degree — the closed forms below are
+// accurate to ~1e-9 relative; two Newton steps against F and F′ remove the accumulated
+// depression/factoring error.
+func newtonPolishRoot(t float64, coeffs []float64) float64 {
 	for range quarticNewtonPolishSteps {
-		f := (((c4*t+c3)*t+c2)*t+c1)*t + c0
-		fp := ((4*c4*t+3*c3)*t+2*c2)*t + c1
+		f, fp := hornerValueAndSlope(coeffs, t)
 		if fp == 0 {
 			break
 		}
 		t -= f / fp
 	}
 	return t
+}
+
+// hornerValueAndSlope evaluates the polynomial and its derivative at t in one Horner sweep, which is
+// the numerically strongest way to read both (Numerical Recipes §5.3).
+func hornerValueAndSlope(coeffs []float64, t float64) (f, slope float64) {
+	for i := len(coeffs) - 1; i >= 0; i-- {
+		slope = slope*t + f
+		f = f*t + coeffs[i]
+	}
+	return f, slope
+}
+
+// realRootsUpToQuartic returns the real roots of c4·t⁴+c3·t³+c2·t²+c1·t+c0 for ANY coefficients,
+// deflating to the cubic, the quadratic or the line as the leading ones vanish.
+//
+// [RealQuarticRoots] needs c4 ≠ 0 — it divides by it — and a vanishing leading coefficient is not an
+// exotic input: the Weierstrass substitution t = tan(u/2) drops a degree exactly when the equation has
+// a root at the half-turn, which is common enough that trigQuadraticRoots already recovers that root
+// by hand. Before this deflation the rest of the solve divided by zero there and every OTHER root of
+// that station came back NaN — silently, since a NaN fails every "is this root real" comparison it is
+// put through. A torus meeting a rod across its axis is exactly that station (ADR-0061 stage 5).
+func realRootsUpToQuartic(c0, c1, c2, c3, c4 float64) []float64 {
+	scale := polyScale(c0, c1, c2, c3, c4)
+	switch {
+	case stdmath.Abs(c4) > trigLeadingZero*scale:
+		return RealQuarticRoots(c0, c1, c2, c3, c4)
+	case stdmath.Abs(c3) > trigLeadingZero*scale:
+		return realCubicRoots(c0, c1, c2, c3)
+	case stdmath.Abs(c2) > trigLeadingZero*scale:
+		return realQuadraticRoots(c0, c1, c2)
+	case stdmath.Abs(c1) > trigLeadingZero*scale:
+		return []float64{-c0 / c1}
+	}
+	return nil // a constant: either no root or every t, and neither is a root SET
+}
+
+// realCubicRoots returns every real root of c3·t³+c2·t²+c1·t+c0 = 0 (c3 ≠ 0), depressed to
+// n³+p·n+q and solved by the same Cardano/Viète split the resolvent cubic above uses, then
+// Newton-polished against the original.
+func realCubicRoots(c0, c1, c2, c3 float64) []float64 {
+	a, b, c := c2/c3, c1/c3, c0/c3
+	p := b - a*a/3
+	q := 2*a*a*a/27 - a*b/3 + c
+	var out []float64
+	for _, n := range depressedCubicRealRoots(p, q) {
+		t := newtonPolishRoot(n-a/3, []float64{c0, c1, c2, c3})
+		out = appendDedupedRoot(out, t, monicScale(a, b, c))
+	}
+	return out
+}
+
+// realQuadraticRoots returns the real roots of c2·t²+c1·t+c0 = 0 (c2 ≠ 0) by the cancellation-free
+// form (q = −(b + sign(b)·√Δ)/2, roots q/a and c/q).
+func realQuadraticRoots(c0, c1, c2 float64) []float64 {
+	disc := c1*c1 - 4*c2*c0
+	if disc < 0 {
+		return nil
+	}
+	q := -0.5 * (c1 + stdmath.Copysign(stdmath.Sqrt(disc), nonZeroSign(c1)))
+	if q == 0 {
+		return []float64{0} // both roots are the origin
+	}
+	return appendDedupedRoot([]float64{q / c2}, c0/q, monicScale(c1/c2, c0/c2))
 }
 
 // largestRealRootOfCubic returns the largest real root of a·m³+b·m²+c·m+d=0 (a≠0) — a

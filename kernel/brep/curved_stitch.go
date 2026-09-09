@@ -112,6 +112,7 @@ func (m *radialMinter) buildFace(fi int, f curvedFace, provByFace map[*topo.Face
 	} else {
 		built = m.bld.AddFace(f.surface, f.lineage, specs...)
 	}
+	built.SetChart(f.chart) // the parametric trim travels with the face (ADR-0063)
 	if len(f.lineage.Key()) > 0 {
 		provByFace[built] = f.lineage
 	}
@@ -150,16 +151,15 @@ func (m *radialMinter) mintVertex(p math.Point3, pinch bool) *topo.Vertex {
 	return tv
 }
 
-// curvedFaceBox bounds the loop-edge endpoints of the faces being stitched — the geometry whose
-// Resolution sets the stitch weld grid (#1602).
+// curvedFaceBox bounds the faces being stitched — the geometry whose Resolution sets the stitch weld
+// grid (#1602). It is faceLoopBox over the set, so an edge is bounded over its OWN span: a cap and its
+// lid are each bounded by ONE closed circle whose two ends are the same seam point, and an
+// endpoint-only box degenerates to that point, flooring the weld grid to the degeneracy resolution and
+// leaving the circle's two seam copies (1.2e-15 apart) unmerged (ADR-0042, ADR-0061 stage 4).
 func curvedFaceBox(faces []curvedFace) math.Box {
 	box := math.EmptyBox()
 	for _, f := range faces {
-		for _, loop := range f.loops {
-			for _, le := range loop.edges {
-				box = box.ExtendPoint(le.start()).ExtendPoint(le.end())
-			}
-		}
+		box = box.Union(faceLoopBox(f))
 	}
 	return box
 }
@@ -191,7 +191,7 @@ func loopSpecOf(outer bool, uses []topo.Use) topo.LoopSpec {
 // edgeFor returns the minted edge for group gi, minting it on first demand: the canonical
 // representative's restricted curve between its disk-resolved endpoint vertices, oriented along the
 // representative's traversal (so the creating loop uses it forward, except a reversed-sweep closed
-// circle). An OPEN spiric branch is stored in its native direction (V0<V1, see spiricArcOf) and
+// circle). An OPEN spiric branch is stored in its native direction (V0<V1, see geom.SubCurve) and
 // anchored to the curve's own endpoints, so the reversed flag — not a flipped curve — orients it.
 func (m *radialMinter) edgeFor(gi int) *topo.Edge {
 	if e := m.edges[gi]; e != nil {
@@ -217,8 +217,9 @@ func (m *radialMinter) edgeLineage(gi int) topo.Lineage {
 }
 
 // edgeEnds resolves a group's endpoint vertices (disk-aware, welds cached from pass 1) plus whether
-// the stored curve runs opposite the representative's traversal (repFlip — true only for a spiric
-// branch stored in its native direction, see spiricArcOf).
+// the stored curve runs opposite the representative's traversal (repFlip): a spiric branch stored in
+// its native direction, and a CLOSED loop, which is always stored whole and forward (geom.SubCurve)
+// and so runs opposite a representative that walked it backwards.
 func (m *radialMinter) edgeEnds(gi int, rep loopEdge, curve geom.Curve3) (vs, ve *topo.Vertex, repFlip bool) {
 	ends := m.plan.repEnds[gi]
 	if sa, ok := curve.(geom.SpiricArc); ok && !m.plan.closed[gi] {
@@ -229,101 +230,25 @@ func (m *radialMinter) edgeEnds(gi int, rep loopEdge, curve geom.Curve3) (vs, ve
 	a := rep.start()
 	if m.plan.closed[gi] {
 		v := m.vertexFor(gi, ends[0], a)
-		return v, v, false
+		return v, v, rep.t1 < rep.t0
 	}
 	return m.vertexFor(gi, ends[0], a), m.vertexFor(gi, ends[1], rep.end()), false
 }
 
 // useReversedFor reports whether a loop's use of its slot's group traverses the stored edge curve
-// backwards: a closed seam edge by its sweep sign (the stored closed curve runs forward), an open
-// edge by its pass-1 rep-relative direction XOR the group's stored-curve flip — no welder re-probe.
-func (m *radialMinter) useReversedFor(slot stitchSlot, le loopEdge) bool {
-	if m.plan.closed[slot.gi] {
-		return le.t1 < le.t0
-	}
+// backwards: its pass-1 rep-relative direction XOR the group's stored-curve flip — one rule for open
+// and closed edges alike, no welder re-probe. A closed use used to be read from its own parameter
+// direction, which assumed the stored curve ran the way its own curve did; see closedRunsOppose.
+func (m *radialMinter) useReversedFor(slot stitchSlot, _ loopEdge) bool {
 	return slot.rev != m.repFlip[slot.gi]
 }
 
 // edgeCurveFor returns the curve to store on the topo edge so its WHOLE domain is exactly the loop
-// edge's [t0, t1] segment: a circle/arc sub-range becomes an Arc3d (else TessellateEdge would walk the
-// full circle), a line sub-range a LineSegment between the endpoints, a full closed curve is kept.
+// edge's [t0, t1] segment. The restriction itself is geom.SubCurve: what a curve kind's parameter means
+// is geom's business, and a switch over kinds here would have to be found and taught again every time a
+// kind is added (#2188).
 func edgeCurveFor(le loopEdge) geom.Curve3 {
-	switch c := le.curve.(type) {
-	case geom.Circle:
-		if isFullDomain(le.t0, le.t1) {
-			return c
-		}
-		return arcOfCircle(c, le.t0, le.t1)
-	case geom.Arc3d:
-		return subArc(c, le.t0, le.t1)
-	case geom.LineSegment:
-		return geom.NewLineSegment(le.start(), le.end())
-	case geom.Line:
-		return geom.NewLineSegment(le.start(), le.end())
-	default:
-		return conicEdgeCurveFor(le)
-	}
-}
-
-// conicEdgeCurveFor restricts the analytic conic edges (the oblique cone-cut sections) to their loop
-// sub-range: a hyperbola/parabola to its bounded arc, an elliptical arc as-is, a full ellipse to the
-// elliptical arc over [t0, t1]. Any other curve is stored whole.
-func conicEdgeCurveFor(le loopEdge) geom.Curve3 {
-	// Both hyperbola forms restrict through geom, which knows what each one's parameter means: a
-	// Hyperbola's is θ, an already-bounded HyperbolicArc's is its own [0,1]. Storing a pre-clipped
-	// arc unsliced would leave the edge's curve spanning more than its two vertices (#3459).
-	if arc, ok := geom.ConicSubArc(le.curve, le.t0, le.t1); ok {
-		return arc
-	}
-	switch c := le.curve.(type) {
-	case geom.Parabola:
-		return c.Arc(le.t0, le.t1) // a parabola loop edge's params are the cross coordinate t; store the bounded arc
-	case geom.EllipticalArc:
-		return ellipticalSubArc(c, le.t0, le.t1) // restrict/re-anchor to the run's [t0,t1] (the reversed lobe walk)
-	case geom.EllipseFull:
-		return ellipseArcOf(c, le.t0, le.t1) // a section sub-arc of a full ellipse (the (u,v) cone split)
-	case geom.SpiricArc:
-		return spiricArcOf(c, le.t0, le.t1) // a torus-cut spiric branch, oriented to the loop's traversal
-	default:
-		return c
-	}
-}
-
-// spiricArcOf restricts a SpiricArc to its loop sub-range [t0, t1], stored in its NATIVE tube-angle direction
-// (V0 < V1) regardless of how this loop walks it — orientation is carried by the edge's reversed flag, not by
-// flipping V0/V1. A reversed-range edge (V0 > V1) would mesh as a DIFFERENT region in the direction-sensitive
-// spiric loft (the two branches of a bigon must both be native so the cap patch comes out the right size,
-// #1406); newEdge anchors the edge to this native arc's endpoints so the reversed flag stays correct.
-func spiricArcOf(sa geom.SpiricArc, t0, t1 float64) geom.Curve3 {
-	v0 := sa.V0 + t0*(sa.V1-sa.V0)
-	v1 := sa.V0 + t1*(sa.V1-sa.V0)
-	if v0 > v1 {
-		v0, v1 = v1, v0
-	}
-	sa.V0, sa.V1 = v0, v1
-	return sa
-}
-
-// ellipticalSubArc restricts a partial EllipticalArc to its loop sub-range [t0, t1], re-anchored so the
-// stored curve's PointAt(0) is the edge's StartVertex and PointAt(1) its EndVertex (EllipticalArc.PointAt(t)
-// walks StartAngle+t·SweepAngle over t∈[0,1]). A lobe of the equal-radius Steinmetz bicylinder walks its
-// shared arc in the arc's DECREASING-parameter direction (t0=1, t1=0); keeping the arc's original forward
-// parameterisation left PointAt(0) at the FAR pinch, 2R from the edge's StartVertex, so the face's
-// discretised boundary crossed the solid and the (u,v) trim loop self-intersected (#1403). For a run that
-// already spans the whole arc forward (t0=0, t1=1, the oblique cone-cut rim/lid) this returns an identical
-// arc, so those paths are unchanged.
-func ellipticalSubArc(e geom.EllipticalArc, t0, t1 float64) geom.Curve3 {
-	a, _ := geom.NewEllipticalArc(e.Center, e.Normal.AsVector(), e.MajorAxis.AsVector(), e.MajorRadius, e.MinorRadius,
-		e.StartAngle+t0*e.SweepAngle, (t1-t0)*e.SweepAngle)
-	return a
-}
-
-// ellipseArcOf builds the EllipticalArc covering a full ellipse's parameter sub-range [t0, t1]
-// (EllipseFull.PointAt(t) is the point at angle 2πt), so the edge tessellates over that arc alone.
-func ellipseArcOf(e geom.EllipseFull, t0, t1 float64) geom.Curve3 {
-	const twoPi = 2 * stdmath.Pi
-	a, _ := geom.NewEllipticalArc(e.Center, e.Normal.AsVector(), e.MajorAxis.AsVector(), e.MajorRadius, e.MinorRadius, twoPi*t0, twoPi*(t1-t0))
-	return a
+	return geom.SubCurve(le.curve, le.t0, le.t1)
 }
 
 // isFullDomain reports whether [t0, t1] spans a curve's whole [0, 1] domain (a closed seam circle),
@@ -331,20 +256,4 @@ func ellipseArcOf(e geom.EllipseFull, t0, t1 float64) geom.Curve3 {
 func isFullDomain(t0, t1 float64) bool {
 	lo, hi := stdmath.Min(t0, t1), stdmath.Max(t0, t1)
 	return lo < 1e-9 && hi > 1-1e-9
-}
-
-// arcOfCircle builds the Arc3d covering a circle's parameter sub-range [t0, t1] (Circle.PointAt(t) is
-// the point at angle 2πt), so the edge tessellates over that arc alone.
-func arcOfCircle(c geom.Circle, t0, t1 float64) geom.Curve3 {
-	const twoPi = 2 * stdmath.Pi
-	a, _ := geom.NewArc3d(c.Center, c.Normal.AsVector(), c.RefDir.AsVector(), c.Radius, twoPi*t0, twoPi*(t1-t0))
-	return a
-}
-
-// subArc restricts an Arc3d to a parameter sub-range [t0, t1].
-func subArc(a geom.Arc3d, t0, t1 float64) geom.Curve3 {
-	return geom.Arc3d{
-		Center: a.Center, Normal: a.Normal, RefDir: a.RefDir, Radius: a.Radius,
-		StartAngle: a.StartAngle + t0*a.SweepAngle, SweepAngle: (t1 - t0) * a.SweepAngle,
-	}
 }

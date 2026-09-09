@@ -5,12 +5,14 @@
 // intersections, splits faces along them via the 2D planar arrangement
 // ([Arrange]), classifies the sub-faces against the other solid, and stitches the
 // kept faces into a clean, low-face-count, chainable B-rep. On top of that core
-// sit the exact analytic curved paths: half-space cuts ([HalfSpaceCut]),
-// cylindrical/conical hole and boss primitives (CutCylindricalHole,
-// JoinCylindricalBoss, …), and the crossing-cylinder / cone / Steinmetz general
-// intersect–cut–join specials (ADR-0027; kind taxonomy in ADR-0045). Dispatch
-// between these paths — and the residual triangle-CSG fallback — lives one level
-// up in kernel/ops.
+// sits the per-face dispatch that carries curved operands too (ADR-0058): a face
+// is trimmed in its own chart by the sections it meets, and the kept faces stitch
+// with the planar ones. There is ONE such path — the 26-recognizer ladder above it
+// and the triangle-CSG fallback below it are both deleted (ADR-0061 stages 4, 6
+// and 7), so a pair the pipeline cannot model is refused by name rather than
+// approximated. Modelling PRIMITIVES stay ([HalfSpaceCut], [CutCylindricalHole],
+// the revolution and sweep builders): those construct geometry, they do not
+// recognise a boolean.
 //
 // The invariant that matters: every result face carries its source lineage
 // forward (and new intersection edges are named by their generating face pair,

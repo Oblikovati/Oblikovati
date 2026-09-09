@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -101,7 +102,7 @@ func loopRegionSign(depthEven bool, signedMeasure float64) float64 {
 // by a stud, so a 15.708 sphere zone integrated as its 298.451 complement. Dropping it moved four
 // corpus cases into the analytic regime with nothing else changed (Oblikovati/Oblikovati#3489).
 func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
-	u, v, ok := regionProbeUV(loops)
+	u, v, ok := regionProbeUV(f.Geometry(), loops)
 	if !ok {
 		return false, false
 	}
@@ -115,11 +116,17 @@ func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain boo
 // WRAPS a periodic seam is not a closed polygon in the plane, so the even-odd search cannot be
 // asked about it — every torus band and every bore wall would get a meaningless answer. For those
 // the probe steps inward from the boundary instead, which is well defined for any loop.
-func regionProbeUV(loops []faceLoop) (u, v float64, ok bool) {
-	if loopsWrapASeam(loops) {
-		return bandInteriorUV(loops)
+func regionProbeUV(s geom.Surface, loops []faceLoop) (u, v float64, ok bool) {
+	if !loopsWrapASeam(loops) {
+		return regionInteriorUV(loops)
 	}
-	return regionInteriorUV(loops)
+	// A CAP is not a band: its one rim has no v-span for the band probe to read, so every station
+	// declined and the side could not be certified at all (ADR-0062). Its interior lies between the
+	// rim and the pole its contour closes at, which capPoleContour names.
+	if u, v, ok = capInteriorUV(s, loops); ok {
+		return u, v, true
+	}
+	return bandInteriorUV(loops)
 }
 
 // loopsWrapASeam reports whether any loop travels a WHOLE PERIOD in a parameter instead of returning
@@ -338,18 +345,16 @@ func uSpanOf(samples []arcSample) float64 {
 // analytic surface and its uv loops — never from a tessellation. It is the representative point a
 // per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447).
 //
-// It DECLINES for a face whose loops wrap the parameter seam, and that is deliberate. A gate exists
-// to disprove a result; a probe it had to guess at can disprove a CORRECT one, and the cost of that
-// is not a weaker gate but a right answer thrown away — a five-face blind hole demoted to a
-// 1830-face faceted rescue. On a wrapping band no probe here has proved trustworthy: an even-odd
-// grid returns a point in the band the operation discards, and a step inward from the boundary can
-// land outside the true region while the loops' sampled polygon still calls it inside. Until a
-// wrapping band's interior can be certified exactly, the gate skips those faces under its own
-// "skipped rather than failed" rule and the volume bracket carries them.
-//
-// (The integrator's own side test does probe a wrapping band, through bandInteriorUV. That is sound
-// there for a different reason: a wrong answer is caught by the vector-area closure post-condition,
-// which declines the body rather than shipping it.)
+// A face whose loops WRAP the parameter seam is probed through regionProbeUV — the band and cap
+// probes the integrator's own side test uses — and not, as it once was, declined outright. The
+// decline was the right answer while the probe was a guess: a gate exists to disprove a result, and a
+// probe it had to guess at can disprove a CORRECT one, at the cost of a five-face blind hole demoted
+// to a 1830-face faceted rescue. What makes the probe safe is not the probe but the CERTIFICATION
+// below it: whatever uv the band or cap rule proposes, the point is returned only when
+// brep.PointInFaceTrim — an independent classifier, not these loops' polygon — agrees it is on the
+// face. A probe that lands in the band the operation discards fails that test and still declines, so
+// the gate never gains a probe it cannot stand behind, and it stops skipping every ordinary bore wall
+// and rod tunnel the general pipeline builds (ADR-0061 stage 4).
 //
 // Example: p, ok := query.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
 func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
@@ -363,10 +368,10 @@ func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
 		return s.PointAt((uLo+uHi)/2, (vLo+vHi)/2), true
 	}
 	loops, ok := buildFaceLoops(s, f)
-	if !ok || loopsWrapASeam(loops) {
-		return math.Point3{}, false // see the seam-wrapping note above
+	if !ok {
+		return math.Point3{}, false
 	}
-	u, v, found := regionInteriorUV(loops)
+	u, v, found := regionProbeUV(s, loops)
 	if !found {
 		return math.Point3{}, false
 	}

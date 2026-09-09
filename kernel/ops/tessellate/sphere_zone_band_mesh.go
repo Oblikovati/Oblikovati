@@ -28,22 +28,14 @@ import (
 // (its seam and poles are artefacts fixed to world +Z). Both rims are kept at their own edge
 // discretization, so the belt welds to whatever shares them.
 
-// SphereZoneBandFan meshes a sphere face bounded by two coaxial full-circle rims by sweeping latitude
-// rings between them. ok=false unless that exact shape holds, so every other sphere face keeps its
-// existing path.
+// SphereZoneBandFan meshes the belt sphereBeltTrimOf recognised by sweeping latitude rings between its
+// two coaxial rims. The recognition is the caller's — the classification already read it — so this only
+// builds.
 //
 // Example: a ball with an axle bored right through keeps a belt whose area is exactly 2πR·h, where h
 // is the axial distance between the two rim planes.
-func SphereZoneBandFan(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	sph, ok := s.(geom.Sphere)
-	if !ok {
-		return nil, false
-	}
-	near, far, fr, ok := zoneBandRims(f, sph, q)
-	if !ok {
-		return nil, false
-	}
-	return buildSphereZoneBand(sph, near, far, fr, q), true
+func SphereZoneBandFan(b sphereBeltTrim, q Quality) *Mesh {
+	return buildSphereZoneBand(b.sph, b.near, b.far, b.frame, q)
 }
 
 // zoneRing is one rim of the belt: its own edge discretization ordered by azimuth about the band axis,

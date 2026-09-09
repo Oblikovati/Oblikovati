@@ -18,10 +18,11 @@ import (
 // diagnostic-carrying imprintTraceLoops. One entry now serves every curved-crossing pair, and grows to
 // new pairs (a sphere/torus side) the moment primaryCurvedSurface recognises them — no new imprint.
 //
-// The per-pair wrappers keep only their TYPE GUARD (both cones / both cylinders / a cone and a cylinder)
-// and their conditioning gates (the Steinmetz snap ceiling, the near-pinch decline); the trace body is
-// this one function. That guard is the dispatch classification kernel/ops keys on (curvedExactPaths),
-// so routing a mismatched pair still declines exactly as before.
+// The per-pair wrappers that used to sit in front of it — each with a type guard (both cones / both
+// cylinders / a cone and a cylinder) and its own conditioning gate (the Steinmetz snap ceiling, the
+// near-pinch decline) — are deleted with the recognizers they served (ADR-0061 stage 4). What is left is
+// this trace: a pair with no primary curved surface declines here, and every pair that has one is
+// traced the same way.
 
 // primaryCurvedSurface returns the operand's principal curved side surface — the surface whose SSI with
 // the other operand is the boolean imprint. It recognises a bare cone/frustum side and a bare cylinder

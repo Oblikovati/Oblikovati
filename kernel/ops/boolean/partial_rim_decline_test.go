@@ -3,6 +3,7 @@
 package boolean_test
 
 import (
+	"errors"
 	stdmath "math"
 	"testing"
 
@@ -17,10 +18,13 @@ import (
 // already-cut target — whose cylinder side now carries a section-arc boundary from the first cut (a notched
 // rim), so it is no longer a two-full-circle band — is the partial-rim case the recognizer does NOT build an
 // exact solid for (composing a pre-existing boundary with a new SSI imprint is a coupled (u,v)-arrangement
-// build, tracked separately). The EPIC's correctness bar is that such a still-declining config declines
-// OBSERVABLY: it must fall to the recorded CSG fallback, never panic or error. This pins that bar (and guards
-// the orphan-vertex CSG panic fix at the integration level — the chain used to crash here).
-func TestPartialRimChainedCutDeclinesObservably(t *testing.T) {
+// build, tracked separately). The EPIC's correctness bar was that such a still-declining config declined
+// OBSERVABLY, to the recorded CSG fallback. ADR-0061 stage 7 deleted that fallback, so the bar is now the
+// stronger one the ground rules always asked for: the operation REFUSES by name, with the refusal on the
+// error and in the diagnostics, and ships no body at all.
+// This asserts the DECLINE, never a faceted body: when the configuration lands analytically the assertion
+// converts to a positive corpus case rather than being deleted to move a number.
+func TestPartialRimChainedCutRefusesByName(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
@@ -46,13 +50,13 @@ func TestPartialRimChainedCutDeclinesObservably(t *testing.T) {
 	}
 	rec := &diag.Recorder{}
 	cut2, err := ops.BooleanWithDiagnostics(ops.Cut, cut1, tool2, rec)
-	if err != nil {
-		t.Fatalf("partial-rim second cut must not error (observable decline, not a hard failure): %v", err)
+	if !errors.Is(err, ops.ErrUnmodelledBoolean) {
+		t.Fatalf("the partial-rim second cut must be refused by name, never panic or ship a stand-in; got err=%v", err)
 	}
-	if cut2 == nil {
-		t.Fatal("partial-rim second cut returned nil body")
+	if cut2 != nil {
+		t.Fatalf("a refused cut must return no body; got %d faces", len(cut2.Faces()))
 	}
-	if !rec.Has(ops.CodeBooleanCSGFallback) {
-		t.Error("partial-rim second cut did not record ops.CodeBooleanCSGFallback — the decline must be observable (#1724)")
+	if !rec.Has(ops.CodeBooleanNoExactCurvedPath) {
+		t.Error("the partial-rim refusal recorded no ops.CodeBooleanNoExactCurvedPath — it must be observable (#1724)")
 	}
 }

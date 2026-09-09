@@ -3,8 +3,7 @@
 package brep
 
 import (
-	stdmath "math"
-
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -52,8 +51,34 @@ func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geo
 // uncovered — an emboss pad seated on a chamfer cone overlaps that cone's box completely while
 // riding a constant sagitta clear of it (#3459).
 func wallOverlapsUncovered(wf curvedFace, box math.Box, other *facePartition) bool {
-	return overlapsUnprovenPair(wf, box, other.wall, other.wallBox) ||
+	return overlapsUncarriedWall(wf, box, other) ||
 		overlapsUnprovenPair(wf, box, other.pass, other.passBox)
+}
+
+// overlapsUncarriedWall reports a wall of other whose box overlaps wf and whose crossing with it the
+// wall-versus-wall pairing does NOT carry. A pair it does carry is no longer uncovered — that is the
+// whole of ADR-0061 stage 4's first ruled slice — but a pair outside that pairing's narrow scope
+// (a crossing that is not closed, or that straddles a rim) must keep declining: admitting one it
+// cannot imprint trades a decline for a wrong body, which a grazing partial-rim cut showed at once.
+func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) bool {
+	for i, b := range other.wallBox {
+		if !box.Intersects(b) || i >= len(other.wall) {
+			continue
+		}
+		if geom.SurfacesApart(wf.surface, other.wall[i].surface, facePairCullPad) {
+			continue
+		}
+		// Carried means the pair was DECIDED, not that curves came back. An empty decided result is a
+		// proof of its own: the two infinite surfaces are known not to cross, or every crossing they
+		// have lies clear of one of the two bands — a tool that enters a cylinder through one cap and
+		// leaves through the other never touches its wall, and the wall stays whole. Reading the
+		// EMPTINESS as the undecided case declined that whole two-cap family (ADR-0061 stage 4).
+		if _, ok := wallWallImprint(wf, other.wall[i]); ok {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 // overlapsUnprovenPair reports whether wf's box overlaps any of the given faces WITHOUT a
@@ -77,32 +102,17 @@ type ruledSide struct {
 	surface geom.Surface
 	band    coneSideBand_
 	axis    math.Vector3
-}
-
-// ruledSideBandOf resolves a wall face to its ruled side. A cylinder is the degenerate cone, and the
-// band model already carries a separate bottom and top radius, so both go through one description
-// (ADR-0058: the dispatch buckets faces by REPRESENTATION — here "ruled band" — not by surface type).
-// ok=false for anything that is not a full periodic side band.
-func ruledSideBandOf(f curvedFace) (ruledSide, bool) {
-	if cyl, band, ok := fullCylinderSideBand(f); ok {
-		return ruledSide{surface: cyl, band: band, axis: cyl.AxisDir.AsVector()}, true
-	}
-	if cone, band, ok := fullConeSideBand(f); ok {
-		return ruledSide{surface: cone, band: band, axis: cone.AxisDir.AsVector()}, true
-	}
-	return ruledSide{}, false
+	frame   geom.RuledFrame
 }
 
 // size is the band's characteristic length, for the resolution its intersections are taken at.
-func (r ruledSide) size() float64 {
-	return 2*stdmath.Max(r.band.rBot, r.band.rTop) + (r.band.vMax - r.band.vMin)
-}
+func (r ruledSide) size() float64 { return bandSize(r.band) }
 
 // wallPairImprint is the exact shared imprint of one (wall, planar face) pair: every plane∩wall
 // ruling line clipped to the tool face's trim, emitted as segments for the wall AND mirrored onto the
 // tool's polygonal imprint list. A circle/ellipse curve entering the tool trim declines (v1).
 func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]geom.Curve3, bool) {
-	rs, ok := ruledSideBandOf(wf)
+	rs, ok := ruledFaceOf(wf)
 	if !ok {
 		return nil, false
 	}
@@ -131,13 +141,7 @@ func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]g
 // ruled route, not the cylinder route).
 func wallCurveSegments(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) ([][2]math.Point3, bool) {
 	if line, ok := cv.(geom.Line); ok {
-		var segs [][2]math.Point3
-		for _, iv := range faceLineIntervals(of, line.Origin, line.Dir.AsVector()) {
-			if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
-				segs = append(segs, [2]math.Point3{line.PointAt(iv[0]), line.PointAt(iv[1])})
-			}
-		}
-		return segs, true
+		return rulingSegments(line, of, axis, band), true
 	}
 	// Every other section a plane can cut from a ruled wall is a CONIC — a circle or ellipse when
 	// the plane crosses the axis, a hyperbola branch when it runs parallel to one (an emboss pad's
@@ -151,13 +155,36 @@ func wallCurveSegments(cv geom.Curve3, of curvedFace, axis math.Vector3, band co
 	return nil, !conicTouchesTool(cv, of, axis, band, cf.AxialAmplitude(axis))
 }
 
+// rulingSegments clips one plane∩wall RULING to both trims that bound it: the tool face's polygon
+// intervals along the line, and the wall's own axial band.
+//
+// The band clip is not optional. A ruling is an INFINITE line, and clipping it to the tool face alone
+// leaves whatever part of it the tool covers — which can lie wholly outside the wall. A D-profile
+// prism seated on a cylinder of the same radius meets that cylinder's surface along two rulings
+// through its chord's corners, and the tool's chord face covers them over the PRISM's height, four
+// units above the wall the imprint was being written onto. The wall then split on a segment that never
+// touches it and closed the fragment with a spurious full-turn arc at each corner (ADR-0061 stage 7).
+func rulingSegments(line geom.Line, of curvedFace, axis math.Vector3, band coneSideBand_) [][2]math.Point3 {
+	inBand, ok := geom.AxialWindowParams(line, bandBase(axis, band), axis, band.vMin, band.vMax)
+	if !ok {
+		return nil // the ruling never reaches the band: no imprint on this wall
+	}
+	var segs [][2]math.Point3
+	for _, iv := range intersectIntervals(faceLineIntervals(of, line.Origin, line.Dir.AsVector()), inBand) {
+		if iv[1]-iv[0] > 1e-9 { // tol:calibrated — planar imprint overlap length (see arrange2d arrTol)
+			segs = append(segs, [2]math.Point3{line.PointAt(iv[0]), line.PointAt(iv[1])})
+		}
+	}
+	return segs
+}
+
 // wallSplitFaces trims each wall by its imprints through the ruled chart, classifying kept cells by
 // the boolean's keep table over the other operand's membership oracle; a wall with no imprints keeps
 // the whole-face pass-through classification; a kept Difference tool wall reverses into the cavity.
-func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
 	var out []curvedFace
 	for i, wf := range p.wall {
-		faces, ok := wallSplitOne(wf, imprints[i], other, op, isB)
+		faces, ok := wallSplitOne(wf, imprints[i], other, others, op, isB, rec)
 		if !ok {
 			return nil, false
 		}
@@ -166,21 +193,48 @@ func wallSplitFaces(p facePartition, imprints [][]geom.Curve3, other insideOracl
 	return out, true
 }
 
-// wallSplitOne trims one wall (or classifies it whole when it has no imprints).
-func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+// wallSplitOne trims one wall (or classifies it whole when it has no imprints). The keep test is the
+// shared one: a point covered by a face of the other operand on the SAME surface follows the ON/ON
+// table, so two coaxial walls emit their overlap once (coincidentKeepAt).
+func wallSplitOne(wf curvedFace, imprint []geom.Curve3, other insideOracle, others []curvedFace, op Op, isB bool, rec *diag.Recorder) ([]curvedFace, bool) {
+	keepAt := coincidentKeepAt(wf, others, other, op, isB)
 	if len(imprint) == 0 {
-		return passThroughKept([]curvedFace{wf}, other, op, isB)
+		return wallWholeKept(wf, keepAt, other, op, isB)
 	}
-	rs, ok := ruledSideBandOf(wf)
+	rs, ok := ruledFaceOf(wf)
 	if !ok {
 		return nil, false
 	}
-	faces, _, err := curvedSideSolidSplit(wf, rs.surface, rs.band, imprint, op, isB, other.inside)
+	c := newRuledFaceUV(wf, rs, op, isB, other.inside)
+	c.keepAt = keepAt
+	imprint = c.admits(imprint)
+	if len(imprint) == 0 {
+		return wallWholeKept(wf, keepAt, other, op, isB) // every imprint lay on the frame: untouched
+	}
+	faces, _, err := trimByImprint(c, wf, rs.surface, imprint, ruledFaceMaterial(c))
 	if err != nil {
+		recordArrangementDecline(rec, siteWallTrim, err)
 		return nil, false
 	}
 	if op == Difference && isB {
 		faces = reverseCurvedFaces(faces)
 	}
 	return faces, true
+}
+
+// wallWholeKept classifies an imprint-free wall as a whole, through the shared keep test — so a wall
+// wholly covered by a coincident wall of the other operand drops from one side and survives from the
+// other, instead of both sides asking a membership oracle about a point on the boundary they share.
+func wallWholeKept(wf curvedFace, keepAt func(math.Point3) bool, other insideOracle, op Op, isB bool) ([]curvedFace, bool) {
+	p, ok := passSamplePoint(wf)
+	if !ok {
+		return passThroughKept([]curvedFace{wf}, other, op, isB)
+	}
+	if !keepAt(p) {
+		return nil, true
+	}
+	if op == Difference && isB {
+		return reverseCurvedFaces([]curvedFace{wf}), true
+	}
+	return []curvedFace{wf}, true
 }

@@ -25,8 +25,9 @@ import (
 // curvedStitch drill assembly (drillThroughCurved), the same machinery the multi-hole, blind and
 // counterbore variants use — one drill assembly, not a second bespoke planar welder (#1403).
 //
-// Partial holes (the circle clipping a face boundary, or a blind hole) return an error here — the
-// general boolean's CSG fallback takes those (see DrillThroughHole).
+// It is a modelling PRIMITIVE, not a boolean recognizer: the caller has already decided it wants a
+// clean through-hole. Partial holes (the circle clipping a face boundary, or a blind hole) return an
+// error here — ask [Boolean] for those, which trims each face in its own chart and handles both.
 func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3, radius float64) (*topo.Body, error) {
 	if radius <= 0 {
 		return nil, fmt.Errorf("brep: drill radius must be positive, got %g", radius)
@@ -37,34 +38,6 @@ func CutCylindricalHole(slab *topo.Body, base math.Point3, axisDir math.Vector3,
 	}
 	// A through-all drill: the axis is conceptually unbounded, so no tool-span gate applies.
 	return drillThroughCurved(slab, base, ua, radius, stdmath.Inf(-1), stdmath.Inf(1))
-}
-
-// DrillThroughHole cuts slab − cylinderTool as an EXACT through-hole when cylinderTool is a single
-// straight cylinder passing cleanly through two planar faces of an all-planar slab (a drilled plate). It
-// is the boolean entry point that keeps a drilled plate an exact curved B-rep rather than triangle-soup
-// CSG (M2 Phase 3, Oblikovati/Oblikovati#1336 — the reverse of the #1334 cylinder − box case). It returns
-// ok=false when cylinderTool is not a bare cylinder solid, or when the hole is partial / clipped / not
-// perpendicular-through (CutCylindricalHole errors), so the caller keeps its CSG fallback. The result
-// preserves the cylinder surface as the hole wall.
-//
-// Example:
-//
-//	res, ok := brep.DrillThroughHole(plate, rod) // plate − rod, exact round hole, ok==true
-func DrillThroughHole(slab, cylinderTool *topo.Body) (*topo.Body, bool) {
-	cyl, base, height, ok := cylinderSolidParams(facesOfAny(cylinderTool))
-	if !ok {
-		return nil, false // tool is not a single bare cylinder
-	}
-	ua := cyl.AxisDir.AsVector()
-	// One curvedStitch drill path serves both an all-planar slab and one that already carries curved faces
-	// (a prior bore's wall), so a drilled plate chains exactly instead of falling to CSG (#1336/#1403).
-	// The finite tool must SPAN the slab: both pierced caps must lie within its axial extent, or the
-	// cut is embedded/blind and drilling the unbounded axis would remove too much (wrong volume).
-	res, err := drillThroughCurved(slab, base, ua, cyl.Radius, 0, height)
-	if err != nil {
-		return nil, false // partial / clipped / overlapping / off-axis hole → defer to the general fallback
-	}
-	return res, true
 }
 
 // drillCap is a point where the hole axis pierces an entry/exit face — the centre of the hole circle

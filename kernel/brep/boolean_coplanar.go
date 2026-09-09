@@ -19,11 +19,21 @@ import (
 
 // coplanar reports whether two planar faces lie in the same plane (parallel normals and a
 // shared point), so their overlap is an area rather than the line an imprint would find.
+//
+// A face that is not planar is coplanar with nothing. The kind is checked FIRST because a cylinder's
+// NormalAt(0,0) is a perfectly good unit vector that can pass the parallel test, and the plane was
+// then taken from it — the mixed boolean's coplanar cover screens every face of the other operand,
+// cylinders included, and panicked in the type assertion on the slotted screw's cross-hole (#3459).
 func coplanar(a, b curvedFace) bool {
+	pa, aok := planeOf(a)
+	pb, bok := planeOf(b)
+	if !aok || !bok {
+		return false
+	}
 	if stdmath.Abs(faceNormal(a).Dot(faceNormal(b))) < 1-1e-7 { // tol:angular — parallel-normals cosine
 		return false // not parallel
 	}
-	return stdmath.Abs(facePlane(b).Origin.VectorTo(facePlane(a).Origin).Dot(faceNormal(b))) < 1e-7 // tol:calibrated — coplanar gap (see arrange2d arrTol)
+	return stdmath.Abs(pb.Origin.VectorTo(pa.Origin).Dot(faceNormal(b))) < 1e-7 // tol:calibrated — coplanar gap (see arrange2d arrTol)
 }
 
 // faceEdges3D returns all of a face's loop edges as 3D segments — imprinted onto a coplanar
@@ -96,13 +106,26 @@ func loopCrossingParams(f curvedFace, seg geom.LineSegment2d) []float64 {
 
 // coplanarCover reports whether sub-face point ip is covered by a coplanar face of the other
 // solid, and if so whether that face's normal agrees with f's (shared vs. anti-shared).
-func coplanarCover(f curvedFace, ip math.Point3, others []curvedFace) (covered, sameNormal bool) {
+//
+// degenerate is true when ip lies within band of the BOUNDARY of a coplanar face of the other solid.
+// That is exactly the condition under which a volumetric query at ip cannot be answered: every ray
+// from ip pierces that face at t≈0 and grazes its boundary (rayGrazes → nearFaceBoundary), so no
+// direction is clean, and the winding fallback zeroes the same face by design. Away from the
+// boundary the plain query is sound, which matters — the two-sided probe costs two whole-body casts
+// instead of one, and this is the boolean's hot loop (#3459).
+func coplanarCover(f curvedFace, ip math.Point3, others []curvedFace, band float64) (covered, sameNormal, degenerate bool) {
 	for _, o := range others {
-		if coplanar(f, o) && pointInFace2D(to2D(facePlane(o), ip), o) {
-			return true, faceNormal(f).Dot(faceNormal(o)) > 0
+		if !coplanar(f, o) {
+			continue
+		}
+		if !degenerate && nearFaceBoundary(o, ip, band) {
+			degenerate = true
+		}
+		if pointInFace2D(to2D(facePlane(o), ip), o) {
+			return true, faceNormal(f).Dot(faceNormal(o)) > 0, degenerate
 		}
 	}
-	return false, false
+	return false, false, degenerate
 }
 
 // coplanarKeep is the selection table for a coplanar overlap fragment. The shared boundary

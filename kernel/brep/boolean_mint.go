@@ -5,6 +5,7 @@ package brep
 import (
 	"sort"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -43,8 +44,10 @@ func nameEdgeGroups(groups []edgeGroup, verts []math.Point3, prov []imprintSeg) 
 }
 
 // rankNamedEdges assigns each parented edge its rank among edges sharing the same parent pair,
-// ordered by the transform-invariant characteristic along the pair's intersection line. A lone edge
-// of a pair keeps rank 0 (no disambiguator); the common case is therefore untouched.
+// ordered by the transform-invariant characteristic along the pair's intersection line — or, for a
+// pair with no such line (two rims a wall and a cap share), by the total order on the edges'
+// midpoints, the order the curved relineage ranks by. A lone edge of a pair keeps rank 0 (no
+// disambiguator); the common case is therefore untouched.
 func rankNamedEdges(named []namedEdge, groups []edgeGroup, verts []math.Point3, prov []imprintSeg) {
 	byPair := map[string][]int{}
 	for i := range named {
@@ -59,12 +62,63 @@ func rankNamedEdges(named []namedEdge, groups []edgeGroup, verts []math.Point3, 
 		}
 		d, ok := pairLineDir(named[idxs[0]].lo, named[idxs[0]].hi, prov)
 		sort.SliceStable(idxs, func(a, b int) bool {
-			return ok && lineCharacteristic(groupMid(groups[idxs[a]], verts), d) < lineCharacteristic(groupMid(groups[idxs[b]], verts), d)
+			ma, mb := groupMid(groups[idxs[a]], verts), groupMid(groups[idxs[b]], verts)
+			if ok {
+				return lineCharacteristic(ma, d) < lineCharacteristic(mb, d)
+			}
+			return topo.LessPoint(ma, mb)
 		})
 		for r, i := range idxs {
 			named[i].rank = r
 		}
 	}
+}
+
+// curvedRimLineages parents every unparented CURVED edge group by the faces that border it. Such an
+// edge is a rim a curved trim emitted — a bore's circle where a tool wall meets a cap — which no planar
+// imprint segment generated, so nameEdgeGroups had nothing to read and the stitch minted a build-order
+// ordinal for it: the one name in a drilled plate that renumbered under an unrelated upstream edit
+// (ADR-0061 stage 4). The bordering faces carry the provenance the curved relineage would have read;
+// it is applied here, to these groups only, so every planar name the goldens pin stays as minted. A
+// straight unparented edge is left alone: it is the planar path's split-original fragment, whose
+// ordinal is that path's own convention.
+func curvedRimLineages(named []namedEdge, groups []edgeGroup, verts []math.Point3, all []curvedFace) {
+	for gi := range groups {
+		if named[gi].parented || !groupIsCurved(groups[gi], all) {
+			continue
+		}
+		lo, hi, ok := borderingFaceParents(groups[gi], all)
+		if !ok {
+			continue
+		}
+		named[gi] = namedEdge{lo: lo, hi: hi, parented: true}
+	}
+	rankNamedEdges(named, groups, verts, nil)
+}
+
+// groupIsCurved reports whether the group's edge runs on a curve that is not straight.
+func groupIsCurved(g edgeGroup, all []curvedFace) bool {
+	if len(g.uses) == 0 {
+		return false
+	}
+	u := g.uses[0]
+	return !geom.IsStraightCurve(all[u.face].loops[u.ring].edges[u.pos].curve)
+}
+
+// borderingFaceParents returns the canonical (lo, hi) lineages of the two faces using the group, or
+// ok=false when it is not bordered by exactly two keyed faces.
+func borderingFaceParents(g edgeGroup, all []curvedFace) (lo, hi topo.Lineage, ok bool) {
+	if len(g.uses) != 2 {
+		return topo.Lineage{}, topo.Lineage{}, false
+	}
+	a, b := all[g.uses[0].face].lineage, all[g.uses[1].face].lineage
+	if len(a.Key()) == 0 || len(b.Key()) == 0 {
+		return topo.Lineage{}, topo.Lineage{}, false
+	}
+	if string(a.Key()) > string(b.Key()) {
+		a, b = b, a
+	}
+	return a, b, true
 }
 
 // groupMid is an edge-group's midpoint — the witness point the rank disambiguator projects onto the

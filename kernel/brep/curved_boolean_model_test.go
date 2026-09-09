@@ -191,13 +191,37 @@ func TestCurvedImprintRuledPairIsExactSection(t *testing.T) {
 }
 
 // TestCurvedImprintTorusPairDefers: a torus is neither a straight-ruled parametrisation nor an implicit
-// quadric, so no closed form applies and curvedImprint must report handled=false (the caller routes the
-// pair to the SSI tracer), NOT an empty "they don't cross" result.
+// quadric, so the ruled closed form cannot reach it. Its OWN reduction substitutes the torus chart into
+// the OTHER surface's quadric (ADR-0061 stage 5), which needs that surface to have one — so an axial
+// drill and a rod driven ACROSS the ring are both handled exactly (the second through the second
+// harmonic's lanes, stage 5's third slice) and a second TORUS is not: curvedImprint must report
+// handled=false there (the caller routes the pair to the SSI tracer), NOT an empty "they don't cross".
 func TestCurvedImprintTorusPairDefers(t *testing.T) {
 	t.Parallel()
-	a, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
-	b, _ := geom.NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
-	if _, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1)); ok {
-		t.Error("torus∩cylinder should defer (handled=false) to the tracer, not be handled analytically")
+	ring, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
+	linked, _ := geom.NewTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1)
+	if _, ok := curvedImprint(curvedFace{surface: ring}, curvedFace{surface: linked}, geom.ResolutionForSize(1)); ok {
+		t.Error("torus∩torus should defer (handled=false) to the tracer, not be handled analytically")
 	}
+	for _, c := range []struct {
+		name  string
+		other geom.Surface
+	}{
+		{"axial drill", mustCylinder(t, math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)},
+		{"skew rod", mustCylinder(t, math.P3(0, 0, 0), math.V3(1, 0, 0), 0.5)},
+	} {
+		if _, ok := curvedImprint(curvedFace{surface: ring}, curvedFace{surface: c.other}, geom.ResolutionForSize(1)); !ok {
+			t.Errorf("torus∩%s has a closed-form section and must be handled, not deferred", c.name)
+		}
+	}
+}
+
+// mustCylinder builds a cylinder for a fixture, failing the test rather than returning a zero value.
+func mustCylinder(t *testing.T, origin math.Point3, axis math.Vector3, radius float64) geom.Cylinder {
+	t.Helper()
+	c, err := geom.NewCylinder(origin, axis, radius)
+	if err != nil {
+		t.Fatalf("cylinder at %v: %v", origin, err)
+	}
+	return c
 }

@@ -52,11 +52,44 @@ func drillToolFrom(center math.Point3, axisInto math.UnitVector3, radius, depth,
 // so a caller always gets a tool.
 func cylinderTool(center math.Point3, axisInto math.UnitVector3, radius, depth, entry float64, feat string) *topo.Body {
 	base := center.TranslateBy(axisInto.AsVector().Scale(math.Scalar(-entry)))
-	cyl, err := brep.SolidCylinder(base, axisInto.AsVector(), radius, depth+entry)
+	cyl, err := brep.SolidCylinderNamed(base, axisInto.AsVector(), radius, depth+entry, feat)
 	if err != nil || cyl == nil {
 		return drillToolFrom(center, axisInto, radius, depth, entry, feat)
 	}
 	return cyl
+}
+
+// revolvedTool builds a hole's tool as ONE solid of revolution about the bore axis, from a meridian
+// given in (radius, depth-into-the-part) with depth measured from the placement surface — negative
+// depth is the entry overhang above it. A counterbore is a stepped meridian, a countersink a
+// chamfered one, a drilled point a cone at the end: one tool, one boolean, one namespace, where the
+// exact drill builders each built a bespoke body and the faceted fallback cut twice (ADR-0061
+// stage 4). Every face of it is analytic, so the boolean's result is too.
+func revolvedTool(center math.Point3, axisInto math.UnitVector3, meridian []math.Point2, feat string) (*topo.Body, error) {
+	return brep.SolidOfRevolution(center, axisInto.AsVector(), meridian, feat)
+}
+
+// counterboreMeridian is a recess of radius cr and depth cd over a bore of radius r to boreEnd, the
+// tool starting entry above the surface.
+func counterboreMeridian(r, cr, cd, boreEnd, entry float64) []math.Point2 {
+	return []math.Point2{
+		math.P2(0, -entry), math.P2(cr, -entry), math.P2(cr, cd), math.P2(r, cd), math.P2(r, boreEnd), math.P2(0, boreEnd),
+	}
+}
+
+// countersinkMeridian is a cone from radius cr at the surface down to the bore radius r at depth
+// sinkDepth, over a bore to boreEnd; above the surface the cone keeps widening for the overhang.
+func countersinkMeridian(r, cr, sinkDepth, boreEnd, entry float64) []math.Point2 {
+	slope := (cr - r) / sinkDepth
+	return []math.Point2{
+		math.P2(0, -entry), math.P2(cr+slope*entry, -entry), math.P2(r, sinkDepth), math.P2(r, boreEnd), math.P2(0, boreEnd),
+	}
+}
+
+// drillPointMeridian is a bore of radius r to depth ending in a cone whose apex lies tipDepth
+// further in.
+func drillPointMeridian(r, depth, tipDepth, entry float64) []math.Point2 {
+	return []math.Point2{math.P2(0, -entry), math.P2(r, -entry), math.P2(r, depth), math.P2(0, depth+tipDepth)}
 }
 
 // regularPolygon returns an n-gon of the given radius centered at the origin, wound

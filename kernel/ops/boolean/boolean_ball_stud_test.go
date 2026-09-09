@@ -3,6 +3,7 @@
 package boolean
 
 import (
+	"errors"
 	stdmath "math"
 	"testing"
 
@@ -355,11 +356,14 @@ func TestOffAxisRodDoesNotTakeTheCoaxialPath(t *testing.T) {
 	if _, ok := CurvedBoolean(Join, ball, rod); ok {
 		t.Fatal("an off-axis rod was claimed by an exact analytic path; its seam is not a circle")
 	}
+	// With the faceted engines gone (ADR-0061 stage 7) there is nothing behind that refusal: the
+	// operation says so rather than shipping a valid-looking faceted stud. The assertion converts to a
+	// positive corpus case when the off-axis seam — a quartic on both surfaces — lands analytically.
 	stud, err := Boolean(Join, ball, rod)
-	if err != nil {
-		t.Fatalf("join: %v", err)
+	if !errors.Is(err, ErrUnmodelledBoolean) {
+		t.Fatalf("an off-axis rod on a ball must be refused by name; got err=%v", err)
 	}
-	if r := Validate(stud); !r.Valid {
-		t.Errorf("the fallback produced an invalid solid: %v", r.Issues)
+	if stud != nil {
+		t.Fatalf("a refused join must return no body; got %d faces", len(stud.Faces()))
 	}
 }

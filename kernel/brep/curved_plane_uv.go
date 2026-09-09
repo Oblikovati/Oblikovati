@@ -60,8 +60,8 @@ func (c *planeUV) multiFace() bool { return true }
 
 // wrappingSolidFaces never applies to a plane (there is no wrapping tube band); it defers to the standard
 // contractible-outer emission (uvSide).
-func (c *planeUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, bool) {
-	return nil, false
+func (c *planeUV) wrappingSolidFaces(_ []Face2D, _ []uvSeg, _ geom.Surface, _ curvedFace) ([]curvedFace, []loopEdge, bool) {
+	return nil, nil, false
 }
 
 // finalizeLoops is identity: a plane has no apex-pole rim or torus hole to re-mark (uvSide).
@@ -225,13 +225,19 @@ func planeMaterial(c *planeUV) func() materialPredicate {
 	}
 }
 
+// sortedUniqueGap is how close two curve parameters may be and still count as one sample: a PARAMETER
+// gap on the curve's own domain, so it carries no model scale. Below it a segment between them spans
+// nothing the arrangement can weld.
+const sortedUniqueGap = 1e-12 // tol:parametric — coincident sample parameters
+
 // sortedUniqueParams sorts the parameter list and drops near-duplicates (an injected crossing that coincides
-// with a uniform sample), so no zero-length sample segment is emitted.
+// with a uniform sample), so no zero-length sample segment is emitted. The FIRST of a coincident pair is
+// kept; preferInjected then hands a kept station over to the incidence it stood for.
 func sortedUniqueParams(params []float64) []float64 {
 	sort.Float64s(params)
 	out := params[:0:0]
 	for i, p := range params {
-		if i == 0 || p-out[len(out)-1] > 1e-12 {
+		if i == 0 || p-out[len(out)-1] > sortedUniqueGap {
 			out = append(out, p)
 		}
 	}
@@ -251,27 +257,6 @@ func sortedEdgeCrossings(crossings []planeCrossing, loop, edge int) []planeCross
 	return on
 }
 
-// capMaterial builds the material predicate for the exposed overhang UNDERSIDE of a boss straddling the seat
-// edge: keep a cell inside the tool (the boss footprint) AND outside the seat polygon — the mirror of
-// planeMaterial, run on the SAME base-plane arrangement so the two share the imprint arc exactly (#1591).
-func capMaterial(c *planeUV) func() materialPredicate {
-	return func() materialPredicate {
-		return func(uv math.Point2) bool {
-			return c.inTool(to3D(c.plane, uv)) && !pointInUVLoops(uv, c.seatUV)
-		}
-	}
-}
-
-// planeCrossingsOf returns the exact seat-boundary crossings of one imprint conic (the assembler shares them
-// with the wall base split and the T-junction resolution so every face meets on the same points).
-func (c *planeUV) planeCrossingsOf(cv geom.Curve3) []planeCrossing {
-	pc, ok := toPlaneConic(cv, c.plane)
-	if !ok {
-		return nil
-	}
-	return c.conicCrossings(cv, pc)
-}
-
 // pointInUVLoops reports whether q is inside a face given as (u,v) loops (outer first, then holes): inside the
 // outer loop and outside every hole — the even-odd containment the planar boolean uses (pointInPolygon2D).
 func pointInUVLoops(q math.Point2, loops [][]math.Point2) bool {
@@ -285,3 +270,7 @@ func pointInUVLoops(q math.Point2, loops [][]math.Point2) bool {
 	}
 	return true
 }
+
+// seamOrigin is the identity: a bounded plane has no artificial seam, so its chart is already in the
+// surface's own parameters (uvSide, ADR-0063).
+func (c *planeUV) seamOrigin() math.Point2 { return math.P2(0, 0) }

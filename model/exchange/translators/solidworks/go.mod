@@ -12,7 +12,7 @@ require (
 	golang.org/x/image v0.41.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	oblikovati.org/api v0.151.1 // indirect
+	oblikovati.org/api v0.154.0 // indirect
 )
 
 // Resolved locally via the workspace (go.work); the replaces let non-workspace tooling

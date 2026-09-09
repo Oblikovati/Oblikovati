@@ -79,6 +79,10 @@ func (d *DerivedPartComponent) BindSource(source BodySource, currentDBRevID stri
 // Kind implements [Feature].
 func (d *DerivedPartComponent) Kind() string { return "derived" }
 
+// AdoptsExternalBodies marks a derived component's bodies as adopted: they are another document's
+// geometry, placed here but not built here (see [AdoptedBodiesFeature]).
+func (d *DerivedPartComponent) AdoptsExternalBodies() bool { return true }
+
 // BreakLink freezes the current derived bodies and severs the source link.
 func (d *DerivedPartComponent) BreakLink() error {
 	bodies, err := d.build()
@@ -147,6 +151,11 @@ func (b *NonParametricBaseFeature) Bodies() []*topo.Body {
 
 // Kind implements [Feature].
 func (b *NonParametricBaseFeature) Kind() string { return "base" }
+
+// AdoptsExternalBodies marks the base feature's bodies as adopted, not built: they arrive from a
+// translator, so the engine's Validate post-condition reports an invalid one rather than sickening
+// the feature that wraps it (see [AdoptedBodiesFeature]).
+func (b *NonParametricBaseFeature) AdoptsExternalBodies() bool { return true }
 
 // Recompute appends the frozen base bodies to the running state.
 func (b *NonParametricBaseFeature) Recompute(in Input) (Output, error) {

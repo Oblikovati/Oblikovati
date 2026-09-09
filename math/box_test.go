@@ -172,3 +172,18 @@ func TestIsNearZero(t *testing.T) {
 		t.Error("0.05 should be near zero at explicit tolerance 0.1")
 	}
 }
+
+// The empty box is union's identity, as EmptyBox documents: a union with it must return the other box
+// unchanged, never the infinite box its ±Inf corners would produce.
+func TestBoxUnionEmptyIsIdentity(t *testing.T) {
+	b := NewBox(P3(0, 0, 0), P3(10, 10, 10))
+	if got := b.Union(EmptyBox()); got != b {
+		t.Errorf("b.Union(empty) = %v, want %v", got, b)
+	}
+	if got := EmptyBox().Union(b); got != b {
+		t.Errorf("empty.Union(b) = %v, want %v", got, b)
+	}
+	if got := EmptyBox().Union(EmptyBox()); !got.IsEmpty() {
+		t.Errorf("empty.Union(empty) = %v, want an empty box", got)
+	}
+}

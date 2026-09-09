@@ -29,6 +29,11 @@ type loopEdge struct {
 	// (imprint/split), which facesOf never sees; start()/end() keep using PointAt so the curved
 	// pipeline is unchanged (ADR-0058 blocker-3 resolution).
 	v0, v1 math.Point3
+	// source is the topo edge this traversal walks, set by orientedLoopEdge and carried through every
+	// cut of it (splitEdgeAtPoints, reverseEdge); nil on a SYNTHESIZED edge. It is the edge's IDENTITY,
+	// which the curve cannot be: two loop edges can carry equal curves that are two edges, and a value
+	// Polyline curve cannot be compared at all (final fix wave, finding 3).
+	source *topo.Edge
 }
 
 // start and end return the loop-oriented endpoints of the edge, evaluated on the curve.
@@ -59,6 +64,12 @@ type curvedFace struct {
 	// torus minus it (Oblikovati#1406). loopSpecs then emits every loop as an InnerLoop. Default false: the
 	// usual convention (loops[0] is the outer loop) holds.
 	outerless bool
+	// chart is the face's PARAMETRIC trim: closed contours in the surface's own (u,v), material on the
+	// left, carried from the arrangement that wound it (ADR-0063, face_chart.go). On a periodic surface
+	// the 3D loops alone do not say which of two complementary regions the face is; the contour that
+	// carries the seam does. nil for a face no arrangement built — the primitives and the planar
+	// constructors, whose loops close on their own.
+	chart [][]math.Point2
 }
 
 // facesOfAny flattens EVERY face of a body into a curvedFace, unlike facesOf which rejects any
@@ -81,7 +92,7 @@ func facesOfAny(b *topo.Body) []curvedFace {
 // outerless flag).
 func curvedFaceOf(f *topo.Face) curvedFace {
 	return curvedFace{surface: f.Geometry(), reversed: f.Reversed(), loops: loopsOf(f),
-		lineage: f.Lineage(), outerless: isOuterlessFace(f)}
+		lineage: f.Lineage(), outerless: isOuterlessFace(f), chart: f.Chart()}
 }
 
 // isOuterlessFace reports whether the face has loops but NONE of them is the outer loop — the
@@ -142,14 +153,14 @@ func orientedLoopEdge(u *topo.EdgeUse) loopEdge {
 	lo, hi := c.Domain()
 	if e.StartVertex() == e.EndVertex() {
 		if u.Reversed() {
-			return loopEdge{curve: c, t0: hi, t1: lo, v0: p0, v1: p1}
+			return loopEdge{curve: c, t0: hi, t1: lo, v0: p0, v1: p1, source: e}
 		}
-		return loopEdge{curve: c, t0: lo, t1: hi, v0: p0, v1: p1}
+		return loopEdge{curve: c, t0: lo, t1: hi, v0: p0, v1: p1, source: e}
 	}
 	t0, _ := geom.CurveParamAtPoint3(c, e.StartVertex().Point())
 	t1, _ := geom.CurveParamAtPoint3(c, e.EndVertex().Point())
 	if u.Reversed() {
-		return loopEdge{curve: c, t0: t1, t1: t0, v0: p0, v1: p1}
+		return loopEdge{curve: c, t0: t1, t1: t0, v0: p0, v1: p1, source: e}
 	}
-	return loopEdge{curve: c, t0: t0, t1: t1, v0: p0, v1: p1}
+	return loopEdge{curve: c, t0: t0, t1: t1, v0: p0, v1: p1, source: e}
 }

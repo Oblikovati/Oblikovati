@@ -79,16 +79,18 @@ func RotateBetween(from, to UnitVector3) Matrix4 {
 		return Identity4()
 	}
 	if approxEqual(d, -1, AngleTolerance) {
-		return Rotation4(stdmath.Pi, anyPerpendicular(from), P3(0, 0, 0))
+		return Rotation4(stdmath.Pi, AnyPerpendicular(from), P3(0, 0, 0))
 	}
 	axis, _ := UnitVector3FromVector(from.Cross(to))
 	return Rotation4(stdmath.Acos(d), axis, P3(0, 0, 0))
 }
 
-// anyPerpendicular returns some unit vector perpendicular to u. It crosses u
+// AnyPerpendicular returns some unit vector perpendicular to u. It crosses u
 // with whichever world axis is least aligned with it, so the cross product is
 // never near zero.
-func anyPerpendicular(u UnitVector3) UnitVector3 {
+//
+// Example: n1 := math.AnyPerpendicular(dir); n2 := dir.Cross(n1) // a frame about dir
+func AnyPerpendicular(u UnitVector3) UnitVector3 {
 	seed := V3(1, 0, 0)
 	if stdmath.Abs(u.X()) > 0.9 {
 		seed = V3(0, 1, 0)

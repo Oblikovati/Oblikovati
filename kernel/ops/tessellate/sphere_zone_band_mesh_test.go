@@ -123,18 +123,20 @@ func TestSphereZoneRegionIntegralNamesTheBelt(t *testing.T) {
 	}
 }
 
-// TestSphereCapFanDeclinesAHoledFace guards the gate that lets the belt reach its own mesher at all. A
+// TestSphereCapFanDeclinesAHoledFace guards the gate that lets the belt reach its own arm at all. A
 // cap fan sweeps its rim straight to the enclosed pole, so it would pave right over any hole; before
-// this it claimed a two-loop belt and returned the outer cap, silently 12% over the true area.
+// this it claimed a two-loop belt and returned the outer cap, silently 12% over the true area. It
+// drives the cap arm's RECOGNIZER, which is where that gate lives now.
 func TestSphereCapFanDeclinesAHoledFace(t *testing.T) {
 	t.Parallel()
 	sph, hi, lo := zoneTestRims(t)
 	outer := circleRing(hi, 64)
-	if _, ok := tessellate.SphereCapFan(sph, outer, nil, tessellate.DefaultQuality()); !ok {
-		t.Fatal("the cap fan declined a plain single-rim cap")
+	q := tessellate.DefaultQuality()
+	if !tessellate.SphereCapRimIsRecognized(nil, sph, outer, nil, q) {
+		t.Fatal("the cap arm declined a plain single-rim cap")
 	}
-	if _, ok := tessellate.SphereCapFan(sph, outer, [][]math.Point3{circleRing(lo, 64)}, tessellate.DefaultQuality()); ok {
-		t.Error("the cap fan claimed a HOLED face; it would pave over the hole")
+	if tessellate.SphereCapRimIsRecognized(nil, sph, outer, [][]math.Point3{circleRing(lo, 64)}, q) {
+		t.Error("the cap arm claimed a HOLED face; it would pave over the hole")
 	}
 }
 
@@ -148,7 +150,7 @@ func TestSphereZoneBandFanDeclinesNonCoaxialRims(t *testing.T) {
 		t.Fatalf("NewCircle: %v", err)
 	}
 	body := twoLoopZone(t, sph, hi, tilted)
-	if _, ok := tessellate.SphereZoneBandFan(body.Faces()[0], sph, tessellate.DefaultQuality()); ok {
+	if _, ok := tessellate.SphereZoneBandFanOf(body.Faces()[0], sph, tessellate.DefaultQuality()); ok {
 		t.Error("the belt fan claimed two rims whose planes are not parallel")
 	}
 }

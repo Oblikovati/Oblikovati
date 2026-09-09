@@ -26,14 +26,18 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	if len(faces) == 0 && len(pass) == 0 {
 		return nil, false, nil
 	}
-	w := newWelder3(planarStitchGrid)
+	// The weld grid is the operands' own stitch resolution (ADR-0042), as the curved stitch's already
+	// is: an absolute grid merged distinct vertices of a millimetre-scale drilled plate and dropped its
+	// cap, where the same plate at unit scale welded cleanly (ADR-0061 stage 4).
+	w := newWelder3(geom.ResolutionForBox(stitchInputBox(faces, pass)).Stitch())
 	// Pass 1: weld every face's loops to vertex indices (collect the full vertex set).
 	out := make([]builtFace, len(faces))
 	for i, sf := range faces {
 		rings := [][]int{w.ring(orientRing(sf.outer, sf.normal, true))}
 		for _, h := range sf.holes {
-			rings = append(rings, w.ring(orientRing(h, sf.normal, false)))
+			rings = append(rings, splitPinchedRing(w.ring(orientRing(h, sf.normal, false)))...)
 		}
+
 		out[i] = builtFace{rings: rings, normal: sf.normal, fromB: sf.fromB, lineage: sf.lineage, exactHoles: sf.exactHoles}
 	}
 	// Pass 2: with all vertices known, split every loop edge at any welded vertex lying on
@@ -42,12 +46,7 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	// indexed once (a BoxTree over the welded points) so each edge queries only its own
 	// neighbourhood instead of scanning every vertex — the O(V·E) scan was the boolean's top
 	// profile cost after the stitch unification (ADR-0058).
-	tjTree := newTJPointTree(w.points)
-	for fi := range out {
-		for ri := range out[fi].rings {
-			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w, tjTree)
-		}
-	}
+	pass = conformSharedEdges(out, pass, w)
 	if len(pass) == 0 {
 		reorientFaces(out, w.points) // the legacy closed-set path, byte-identical
 	} else {
@@ -62,19 +61,38 @@ func stitch(faces []subFace, pass []curvedFace, prov []imprintSeg) (*topo.Body, 
 	// flood fill over the WHOLE set, and is a no-op on already-consistent input by construction,
 	// so the paths that were already consistent are unchanged (#1818, #3459).
 	all := curvedReorient(append(builtFacesToCurved(out, w.points), pass...))
-	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out))
+	body := curvedStitchNamed(all, planarStitchNaming(prov, w, out, all))
 	return body, tangent, nil
+}
+
+// stitchInputBox bounds every point the stitch welds: the planar fragments' rings and the pass-through
+// faces' loop ends.
+func stitchInputBox(faces []subFace, pass []curvedFace) math.Box {
+	box := curvedFaceBox(pass)
+	for _, sf := range faces {
+		for _, p := range sf.outer {
+			box = box.ExtendPoint(p)
+		}
+		for _, h := range sf.holes {
+			for _, p := range h {
+				box = box.ExtendPoint(p)
+			}
+		}
+	}
+	return box
 }
 
 // planarStitchNaming is the planar boolean's ADR-0043 naming policy for the unified stitch: every
 // intersection edge named by its generating parent face pair (disambiguated by rank along the parents'
 // intersection line), every intersection vertex by its meeting faces, originals keeping ordinal keys —
 // the same names the retired planar assemble minted. The curved relineage is off: these names are
-// already build-order-independent.
-func planarStitchNaming(prov []imprintSeg, w *welder3, faces []builtFace) stitchNaming {
+// already build-order-independent. A CURVED edge the imprint did not generate — a rim a wall's trim
+// emitted — is named from the faces that border it (curvedRimLineages), which is the provenance the
+// relineage would have read, applied only where the imprint has nothing to say.
+func planarStitchNaming(prov []imprintSeg, w *welder3, faces []builtFace, all []curvedFace) stitchNaming {
 	return stitchNaming{
 		edges: func(groups []edgeGroup, verts []math.Point3) []topo.Lineage {
-			return planarEdgeLineages(groups, verts, prov)
+			return planarEdgeLineages(groups, verts, prov, all)
 		},
 		vertex: planarVertexNamer(prov, w, faces),
 	}
@@ -83,8 +101,9 @@ func planarStitchNaming(prov []imprintSeg, w *welder3, faces []builtFace) stitch
 // planarEdgeLineages resolves each stitch group's edge lineage from the imprint provenance
 // (nameEdgeGroups), assigning the unparented ordinal fallbacks in sorted-pair order — the retired
 // assemble's deterministic order.
-func planarEdgeLineages(groups []edgeGroup, verts []math.Point3, prov []imprintSeg) []topo.Lineage {
+func planarEdgeLineages(groups []edgeGroup, verts []math.Point3, prov []imprintSeg, all []curvedFace) []topo.Lineage {
 	named := nameEdgeGroups(groups, verts, prov)
+	curvedRimLineages(named, groups, verts, all)
 	order := make([]int, len(groups))
 	for i := range order {
 		order[i] = i
@@ -135,7 +154,9 @@ func builtFacesToCurved(faces []builtFace, verts []math.Point3) []curvedFace {
 		rings := ringsPoints(f.rings, verts)
 		pl, _ := geom.NewPlane(ringCentroid(rings), f.normal)
 		cf := planarFaceFromRings(pl, rings, faceLineage(f, i))
-		cf.loops = append(cf.loops, f.exactHoles...) // detached curved holes re-attach as exact inner loops
+		for _, h := range f.exactHoles {
+			cf.loops = append(cf.loops, holeWoundAgainst(h, f.normal)) // detached curved holes re-attach as exact inner loops
+		}
 		out[i] = cf
 	}
 	return out
@@ -275,6 +296,34 @@ func segCandidates(pa, pb math.Point3, grid float64, tree *geom.BoxTree) []int {
 // builtFace is a welded sub-face ready for the unified stitch: its loop rings (vertex indices, outer
 // first), its outward normal (the plane is re-derived from ring + normal at conversion), and the
 // source lineage to carry onto the result face (K1a).
+// splitPinchedRing splits a hole ring that returns to a vertex into the closed rings it really is, and
+// drops the degenerate remnants a shared run leaves behind.
+//
+// A ring that visits one vertex twice is TWO loops, not one. Two glyphs of an embossed word whose
+// outlines meet trace as a single walk through the shared contact, and welding that walk onto one
+// vertex leaves a PINCH: the body is closed and edge-manifold but its Euler characteristic is odd,
+// which the validity gate rightly refuses. The triangle-soup CSG used to split such vertices apart
+// (splitPinchedVertices) and there is no fallback behind the exact pipeline any more (ADR-0061 stage 7).
+//
+// Only HOLE rings go through here. They are the polygonal split's own rings; a curved face's chart
+// seam, which legitimately visits one vertex twice, is carried as a curvedLoop and never reaches this.
+func splitPinchedRing(ring []int) [][]int {
+	at := map[int]int{}
+	for i, v := range ring {
+		j, seen := at[v]
+		if !seen {
+			at[v] = i
+			continue
+		}
+		lobe, rest := ring[j:i], append(append([]int{}, ring[:j]...), ring[i:]...)
+		return append(splitPinchedRing(lobe), splitPinchedRing(rest)...)
+	}
+	if len(ring) < 3 {
+		return nil // a slit's remnant: a run walked out and back bounds no area
+	}
+	return [][]int{ring}
+}
+
 type builtFace struct {
 	rings      [][]int
 	normal     math.Vector3
@@ -427,4 +476,141 @@ func centroid3(loop []math.Point3) math.Point3 {
 	}
 	n := float64(len(loop))
 	return math.P3(sx/n, sy/n, sz/n)
+}
+
+// conformSharedEdges runs the T-junction pass over the polygonal rings AND the pass-through faces
+// against one welded vertex set, so every shared edge subdivides identically on both faces.
+func conformSharedEdges(out []builtFace, pass []curvedFace, w *welder3) []curvedFace {
+	weldPassVertices(pass, w)
+	tjTree := newTJPointTree(w.points)
+	for fi := range out {
+		for ri := range out[fi].rings {
+			out[fi].rings[ri] = splitRingTJunctions(out[fi].rings[ri], w, tjTree)
+		}
+	}
+	return splitPassTJunctions(pass, w, tjTree)
+}
+
+// weldPassVertices adds every pass-through face's loop vertices to the planar weld set BEFORE the
+// T-junction pass, so a polygonal fragment's edge splits where an exact-frame fragment's vertex lands on
+// it — a block's side face at the two corners of the cap's hole its coplanar bottom face was trimmed
+// against (ADR-0060). Without it the pass faces were conformed to nothing and the polygonal edge stayed
+// whole across two neighbours.
+func weldPassVertices(pass []curvedFace, w *welder3) {
+	for _, f := range pass {
+		for _, l := range f.loops {
+			for _, e := range l.edges {
+				w.add(e.start())
+			}
+		}
+	}
+}
+
+// splitPassTJunctions is splitRingTJunctions for the pass-through faces' STRAIGHT edges: each is cut at
+// every welded vertex lying strictly inside it, so the shared edge subdivides identically on both faces.
+// A conic edge needs no pass — the exact-frame chart already injected every incidence on it as a vertex.
+func splitPassTJunctions(pass []curvedFace, w *welder3, tree *geom.BoxTree) []curvedFace {
+	out := make([]curvedFace, len(pass))
+	for i, f := range pass {
+		loops := make([]curvedLoop, len(f.loops))
+		for li, l := range f.loops {
+			own := w.ring(loopStarts(l))
+			var edges []loopEdge
+			for _, e := range l.edges {
+				edges = append(edges, splitStraightEdgeAt(e, own, w, tree)...)
+			}
+			loops[li] = curvedLoop{edges: edges}
+		}
+		f.loops = loops
+		out[i] = f
+	}
+	return out
+}
+
+// loopStarts is a loop's vertex chain: each edge's start point.
+func loopStarts(l curvedLoop) []math.Point3 {
+	pts := make([]math.Point3, 0, len(l.edges))
+	for _, e := range l.edges {
+		pts = append(pts, e.start())
+	}
+	return pts
+}
+
+// splitStraightEdgeAt returns an edge cut at the welded vertices strictly inside it (in order along
+// it), or the edge itself when none lie on it. A straight edge takes the ring pass's exact test; a
+// conic edge takes the vertices its sampled box holds that invert onto its curve within the weld.
+func splitStraightEdgeAt(e loopEdge, own []int, w *welder3, tree *geom.BoxTree) []loopEdge {
+	if !geom.IsStraightCurve(e.curve) {
+		return splitEdgeAtPoints(e, offEdgeVertices(e, own, w, tree), geom.ResolutionForBox(edgeSampleBox(e)))
+	}
+	a, b := w.add(e.start()), w.add(e.end())
+	mids := verticesOnSegment(a, b, own, w, tree)
+	if len(mids) == 0 {
+		return []loopEdge{e}
+	}
+	chain := append([]math.Point3{e.start()}, pointsAt(mids, w)...)
+	chain = append(chain, e.end())
+	out := make([]loopEdge, 0, len(chain)-1)
+	for i := 1; i < len(chain); i++ {
+		out = append(out, loopEdge{curve: geom.NewLineSegment(chain[i-1], chain[i]), t0: 0, t1: 1})
+	}
+	return out
+}
+
+// offEdgeVertices returns the welded vertices inside a conic edge's sampled box that are not the
+// loop's own, as candidate split points.
+func offEdgeVertices(e loopEdge, own []int, w *welder3, tree *geom.BoxTree) []math.Point3 {
+	onRing := ringSet(own)
+	var pts []math.Point3
+	tree.Query(edgeSampleBox(e), func(v int) bool {
+		if !onRing[v] {
+			pts = append(pts, w.points[v])
+		}
+		return false
+	})
+	return pts
+}
+
+// edgeSampleBox bounds an edge by its samples, padded by the welder grid.
+func edgeSampleBox(e loopEdge) math.Box {
+	box := math.EmptyBox()
+	for k := 0; k <= imprintSampleCount; k++ {
+		box = box.ExtendPoint(e.curve.PointAt(e.t0 + (e.t1-e.t0)*float64(k)/imprintSampleCount))
+	}
+	return paddedBox(box, probeBoxPadRel)
+}
+
+// pointsAt resolves welded vertex indices to their coordinates.
+func pointsAt(idx []int, w *welder3) []math.Point3 {
+	pts := make([]math.Point3, len(idx))
+	for i, v := range idx {
+		pts[i] = w.points[v]
+	}
+	return pts
+}
+
+// holeWoundAgainst returns the exact hole wound CLOCKWISE about the face's outward normal — the sense
+// every hole of a consistently wound face has (orientRing gives the polygonal holes exactly that). A
+// re-attached hole kept the traversal its SOURCE face stored, and a source wound the other way about
+// its own normal left the hole running with the outer ring, so the rim it shares with the boss's wall
+// was traversed the same way by both faces (ADR-0060).
+func holeWoundAgainst(h curvedLoop, normal math.Vector3) curvedLoop {
+	var pts []math.Point3
+	for _, e := range h.edges {
+		for k := 0; k < imprintSampleCount; k++ {
+			pts = append(pts, e.curve.PointAt(e.t0+(e.t1-e.t0)*float64(k)/imprintSampleCount))
+		}
+	}
+	if len(pts) < 3 {
+		return h
+	}
+	area := 0.0
+	for k := range pts {
+		a, b := pts[0].VectorTo(pts[k]), pts[0].VectorTo(pts[(k+1)%len(pts)])
+		area += float64(a.Cross(b).Dot(normal))
+	}
+	if area > 0 {
+		return reverseCurvedLoop(h)
+	}
+	return h
 }

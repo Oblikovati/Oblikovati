@@ -160,7 +160,7 @@ func lineTouchesWallAndTool(l geom.Line, of curvedFace, axis math.Vector3, band 
 	for _, iv := range faceLineIntervals(of, l.Origin, l.Dir.AsVector()) {
 		vA := bandV(l.PointAt(iv[0]), axis, band)
 		vB := bandV(l.PointAt(iv[1]), axis, band)
-		if spansOverlap(stdmath.Min(vA, vB), stdmath.Max(vA, vB), band.vMin, band.vMax, facePairCullPad) {
+		if spanMeetsBand(stdmath.Min(vA, vB), stdmath.Max(vA, vB), band) {
 			return true
 		}
 	}
@@ -177,6 +177,13 @@ func conicTouchesTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band con
 	if !ok {
 		return true
 	}
+	if stdmath.IsInf(amp, 0) {
+		// An UNBOUNDED branch is not settled by its boundary crossings. It can pass THROUGH the band
+		// well inside the trim while crossing that trim's boundary far outside the band, and the scan
+		// then reports crossings but none in range — "clear", when the arm sweeps the whole wall
+		// (ADR-0062). Ask the direct question instead.
+		return conicEntersTrimInBand(cv, of, axis, band)
+	}
 	if hit, touched := conicPolygonCrossingInBand(pc, of, axis, band); touched {
 		return hit
 	}
@@ -184,7 +191,7 @@ func conicTouchesTool(cv geom.Curve3, of curvedFace, axis math.Vector3, band con
 		return false // the conic lies wholly outside the polygon trim
 	}
 	vc := bandV(to3D(pl, pc.center), axis, band) // the conic centre, back through the tool chart
-	return spansOverlap(vc-amp, vc+amp, band.vMin, band.vMax, facePairCullPad)
+	return spanMeetsBand(vc-amp, vc+amp, band)
 }
 
 // conicPolygonCrossingInBand scans the polygon's edges for exact conic crossings; touched=true when a
@@ -225,7 +232,96 @@ func bandV(p math.Point3, axis math.Vector3, band coneSideBand_) float64 {
 	return band.vMin + float64(band.bottom.VectorTo(p).Dot(axis))
 }
 
-// spansOverlap reports whether [a0,a1] and [b0,b1] come within pad of each other.
-func spansOverlap(a0, a1, b0, b1, pad float64) bool {
-	return a0 <= b1+pad && b0 <= a1+pad
+// spanMeetsBand reports whether the axial span [lo,hi] comes within the band's own cull margin of the
+// band. Every caller asks about one band, so the band is the argument and the margin is read off it.
+func spanMeetsBand(lo, hi float64, band coneSideBand_) bool {
+	pad := bandCullPad(band)
+	return lo <= band.vMax+pad && band.vMin <= hi+pad
+}
+
+// bandCullPad is the axial margin a section must clear a wall's rim by to count as strictly inside the
+// band — facePairCullPad expressed against the band's OWN extent instead of as an absolute length.
+//
+// It is ten stitch welds, which is exactly what facePairCullPad is (ten planar stitch grids) at the
+// historical ~1-unit part, so no larger part's classification moves. As an absolute length it was a
+// margin only at that one scale: a 0.2 mm plate's cap sits exactly one such pad below its bore's rim,
+// so the section read as a rim contact and the simplest drill there is declined (ADR-0042, ADR-0061).
+func bandCullPad(band coneSideBand_) float64 {
+	return cullPadStitches * geom.ResolutionForSize(bandSize(band)).Stitch()
+}
+
+// cullPadStitches is the cull margin counted in stitch welds — dimensionless, so it scales with the band.
+const cullPadStitches = 10 // tol:numeric — margin in stitch welds, not a length
+
+// bandSize is a wall band's own extent: its diameter at the wider rim plus its axial height.
+func bandSize(band coneSideBand_) float64 {
+	return 2*stdmath.Max(band.rBot, band.rTop) + (band.vMax - band.vMin)
+}
+
+// bandPlacement classifies an axial span against a wall band: strictly inside it, or strictly clear of
+// it. Neither means the span straddles a rim, which its callers decline. The span's SOURCE differs — a
+// conic's centre and amplitude in closed form, a general crossing walked — the rule does not.
+func bandPlacement(lo, hi float64, band coneSideBand_) (inside, clear bool) {
+	pad := bandCullPad(band)
+	return lo > band.vMin+pad && hi < band.vMax-pad, !spanMeetsBand(lo, hi, band)
+}
+
+// spanIsRimContact reports an axial span that reaches no further INTO the band than one of its rims,
+// to the band's own cull pad: everything the span covers lies at or rim-ward of vMin+pad, or at or
+// rim-ward of vMax−pad. So it is true of a crossing sitting exactly ON a rim, and equally of one that
+// only grazes the band from outside — a span like [−100, vMin+pad/2], which extends far beyond the
+// band on the far side but still enters it by less than the pad. Both mean the same thing here: what
+// the crossing could imprint inside the band is under the tolerance the band is classified at, and the
+// rim it coincides with is already an edge of the face, so there is nothing to imprint. It says
+// nothing about how far the span reaches the OTHER way; only the band-ward end is a decision.
+//
+// It closes a gap between two windows for ONE incidence. bandPlacement pads both of its verdicts, so a
+// crossing sitting on a rim is neither inside nor clear and falls to clipCrossingToBand — whose
+// bandDepth measures against the UNPADDED band, finds nothing between the rims, and refuses the whole
+// boolean. Which of the two windows a rim crossing landed in was then decided by the last bit of its
+// axial coordinate: a chamfer cone meeting its shaft wall exactly at the wedge's own rim fell inside
+// the band on amd64 and outside it on arm64, where the compiler fuses x*y+z (CI run 34280554924
+// macos-latest, ADR-0061).
+func spanIsRimContact(lo, hi float64, band coneSideBand_) bool {
+	pad := bandCullPad(band)
+	return hi <= band.vMin+pad || lo >= band.vMax-pad
+}
+
+// conicEntersTrimInBand reports whether an unbounded conic section has a point inside BOTH the wall's
+// axial band and the tool face's trim. The band window is inverted to the branch's own parameters
+// (geom.AxialWindowParams) and those spans are walked: a branch that reaches the band at all reaches it
+// over an interval, so a sampled walk of that interval finds the contact when there is one.
+func conicEntersTrimInBand(cv geom.Curve3, of curvedFace, axis math.Vector3, band coneSideBand_) bool {
+	base := bandBase(axis, band)
+	spans, ok := geom.AxialWindowParams(cv, base, axis, band.vMin, band.vMax)
+	if !ok {
+		return true // the branch's band window cannot be bracketed: be conservative
+	}
+	pl := facePlane(of)
+	for _, sp := range spans {
+		for k := 0; k <= conicBandWalkSamples; k++ {
+			t := sp[0] + (sp[1]-sp[0])*float64(k)/conicBandWalkSamples
+			if pointInFace2D(to2D(pl, cv.PointAt(t)), of) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// conicBandWalkSamples walks the branch's in-band interval finely enough to find a contact with any
+// trim a modelled tool face has.
+const conicBandWalkSamples = 64
+
+// bandBase is the point the band's axial coordinate is measured FROM: the point on the axis where
+// bandV reads ZERO, so origin.VectorTo(p)·axis IS bandV(p) and a [vMin, vMax] window means what it says.
+//
+// It is the bottom rim offset BACK by vMin, because bandV(bottom) is vMin and not zero. The expression
+// this replaces read `-bandV(bottom) + vMin`, which cancels to zero and returned the bottom rim itself.
+// That was invisible while every band began at vMin = 0 and shifted the window by a whole band height
+// on one that does not: an annular ring's REVERSED inner wall frames itself from its far rim and
+// reports [-1, 0], so a ruling clipped to its band came back over the band below it, the wall kept no
+// fragment, and the cut left eight open edges (ADR-0061).
+func bandBase(axis math.Vector3, band coneSideBand_) math.Point3 {
+	return band.bottom.TranslateBy(axis.Scale(math.Scalar(-band.vMin)))
 }

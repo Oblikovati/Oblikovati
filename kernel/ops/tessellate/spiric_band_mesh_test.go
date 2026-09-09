@@ -23,42 +23,133 @@ func TestFinerRowVs(t *testing.T) {
 	}
 }
 
-// spiricBandColumns scales the loft column count with the band's widest u-span and the angle tolerance.
-func TestSpiricBandColumns(t *testing.T) {
+// tubeBandColumns scales the loft column count with the band's widest travel and the angle tolerance.
+func TestTubeBandColumns(t *testing.T) {
 	t.Parallel()
 	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
 	pl, _ := geom.NewPlane(math.P3(0, 2, 0), math.V3(0, 1, 0))
 	phi, m, k, c := geom.TorusSectionCoeffs(tor, pl)
 	plus := geom.SpiricArc{Torus: tor, Phi: phi, M: m, K: k, C: c, Branch: +1, V0: 0, V1: 2 * stdmath.Pi}
 	minus := geom.SpiricArc{Torus: tor, Phi: phi, M: m, K: k, C: c, Branch: -1, V0: 0, V1: 2 * stdmath.Pi}
-	if n := spiricBandColumns(plus, minus, DefaultQuality()); n < 3 {
-		t.Errorf("spiricBandColumns = %d, want ≥3 for a wide band at default angle tolerance", n)
+	loU, hiU := plus.UAt, minus.UAt
+	vs := make([]float64, 32)
+	for i := range vs {
+		vs[i] = 2 * stdmath.Pi * float64(i) / 32
+	}
+	if n := tubeBandColumns(loU, hiU, vs, 1, DefaultQuality()); n < 3 {
+		t.Errorf("tubeBandColumns = %d, want ≥3 for a wide band at default angle tolerance", n)
 	}
 	// A coarse angle tolerance needs fewer columns than a fine one.
-	coarse := spiricBandColumns(plus, minus, Quality{AngleTolerance: 1})
-	fine := spiricBandColumns(plus, minus, Quality{AngleTolerance: 0.05})
+	coarse := tubeBandColumns(loU, hiU, vs, 1, Quality{AngleTolerance: 1})
+	fine := tubeBandColumns(loU, hiU, vs, 1, Quality{AngleTolerance: 0.05})
 	if coarse >= fine {
-		t.Errorf("spiricBandColumns coarse=%d should be < fine=%d", coarse, fine)
+		t.Errorf("tubeBandColumns coarse=%d should be < fine=%d", coarse, fine)
 	}
 }
 
-// oppositeRootsOfOneSection must accept the two arccos roots of one plane's section and reject two
-// sections of DIFFERENT planes — the arc band's two run-out terminations, which are not an oval pair.
-func TestOppositeRootsOfOneSection(t *testing.T) {
+// TestBandWidthAtIsOnePeriodEitherWay: the two directions across a band partition the tube's period, at
+// every station. That is the invariant the whole side-choice rests on, and it is what a raw azimuth
+// difference does NOT give — a boundary's samples carry an arbitrary whole turn, so an unfolded
+// difference can be a period out at one station and not the next, and the loft then covers the tube
+// more than once.
+func TestBandWidthAtIsOnePeriodEitherWay(t *testing.T) {
 	t.Parallel()
-	tor, _ := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 5, 2)
-	plus := geom.SpiricArc{Torus: tor, Phi: 1, M: 1, K: -3, C: 0, Branch: +1, V0: 0, V1: 2 * stdmath.Pi}
-	minus := plus
-	minus.Branch = -1
-	if !oppositeRootsOfOneSection(plus, minus) {
-		t.Errorf("oppositeRootsOfOneSection rejected the two roots of one section")
+	// Two boundaries whose raw azimuths are deliberately on different branches.
+	loU := func(v float64) float64 { return 0.4*stdmath.Sin(v) + 12*stdmath.Pi }
+	hiU := func(v float64) float64 { return 2.2 + 0.3*stdmath.Cos(v) - 8*stdmath.Pi }
+	for _, v := range []float64{0, 1, 2, 3, 4, 5, 6} {
+		fwd := stdmath.Abs(bandWidthAt(loU, hiU, v, 1))
+		back := stdmath.Abs(bandWidthAt(loU, hiU, v, -1))
+		if stdmath.Abs(fwd+back-2*stdmath.Pi) > 1e-9 { // tol:numeric — the fold's own rounding
+			t.Errorf("at v=%g the two directions span %.6f + %.6f, want one period", v, fwd, back)
+		}
+		if fwd < 0 || fwd > 2*stdmath.Pi {
+			t.Errorf("at v=%g the forward travel is %.6f, outside one period", v, fwd)
+		}
 	}
-	if oppositeRootsOfOneSection(plus, plus) {
-		t.Errorf("oppositeRootsOfOneSection accepted two copies of the SAME root")
+}
+
+// TestEdgeWrapsTheTube is the gate that replaced the spiric-pair test: a band's boundary goes the WHOLE
+// way round the tube, and an arc fillet's quarter-tube run-out section does not. The old guard
+// (oppositeRootsOfOneSection) asked whether two spiric arcs were the two roots of one plane's section,
+// which answered the same question for spiric edges only; this one answers it for any curve, which is
+// what lets the loft take a torus∩quadric section too (ADR-0061 stage 5).
+func TestEdgeWrapsTheTube(t *testing.T) {
+	t.Parallel()
+	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	whole := make([]math.Point3, 0, 65)
+	quarter := make([]math.Point3, 0, 17)
+	for i := 0; i <= 64; i++ {
+		v := 2 * stdmath.Pi * float64(i) / 64
+		whole = append(whole, tor.PointAt(0.3, v))
+		if i <= 16 {
+			quarter = append(quarter, tor.PointAt(0.3, v))
+		}
 	}
-	other := minus
-	other.K = 1 // a different plane's section
-	if oppositeRootsOfOneSection(plus, other) {
-		t.Errorf("oppositeRootsOfOneSection accepted sections of two different planes")
+	if !edgeWrapsTheTube(tor, whole) {
+		t.Error("a boundary going the whole way round the tube was not recognised as a band's")
+	}
+	if edgeWrapsTheTube(tor, quarter) {
+		t.Error("a quarter-tube section was taken for a band boundary; lofting between two of those sweeps the whole tube")
+	}
+	// A chain that runs out and BACK covers the same stations twice and turns by nothing.
+	outAndBack := append(append([]math.Point3(nil), quarter...), quarter[len(quarter)-2]) //nolint:gocritic // deliberate
+	for i := len(quarter) - 2; i >= 0; i-- {
+		outAndBack = append(outAndBack, quarter[i])
+	}
+	if edgeWrapsTheTube(tor, outAndBack) {
+		t.Error("a chain that runs out and back was taken for a band boundary; its NET turn is zero")
+	}
+}
+
+// TestAzimuthInterpolatorFollowsTheSeam: a boundary's azimuth is read from its own samples, and those
+// samples cross the azimuth seam like any curve. The interpolator must follow it as one curve rather
+// than average across the jump, or the loft's interior rows land on the far side of the torus.
+func TestAzimuthInterpolatorFollowsTheSeam(t *testing.T) {
+	t.Parallel()
+	// A boundary at a nearly constant azimuth just below the seam, straddling it.
+	vs := []float64{0, 1, 2, 3, 4, 5}
+	us := []float64{6.2, 6.28, 0.02, 0.08, 6.27, 6.2}
+	at := azimuthInterpolator(vs, us)
+	for _, v := range []float64{0.5, 1.5, 2.5, 3.5, 4.5} {
+		u := wrapToPeriod(at(v))
+		if u > 0.3 && u < 2*stdmath.Pi-0.3 {
+			t.Errorf("at v=%g the interpolated azimuth is %.4f, far from the boundary's own band near the seam", v, u)
+		}
+	}
+}
+
+// TestTubeSweepRadiusIsTheTorusOwnSpeed: the arc a radian of azimuth travels is R + r·cos v — the
+// torus's own |dP/du|, which is what turns the band's angular width into a length a tolerance can be
+// compared against.
+func TestTubeSweepRadiusIsTheTorusOwnSpeed(t *testing.T) {
+	t.Parallel()
+	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	for _, row := range []struct {
+		v, want float64
+	}{{0, 7}, {stdmath.Pi, 3}, {stdmath.Pi / 2, 5}} {
+		if got := tubeSweepRadius(tor, row.v); stdmath.Abs(got-row.want) > 1e-9 { // tol:numeric
+			t.Errorf("tubeSweepRadius at v=%g is %.9f, want R + r·cos v = %g", row.v, got, row.want)
+		}
+	}
+}
+
+// TestBandPinchesWhereTheBoundariesTouch is the conditioning gate the figure-eight needs: a strip whose
+// two boundaries MEET at some tube station is two lobes joined at a point, and one sweep round the tube
+// cannot say which side of the meeting a row belongs to (see bandPinches for the 310.800-vs-283.100
+// measurement). A strip that keeps a width everywhere is swept as before.
+func TestBandPinchesWhereTheBoundariesTouch(t *testing.T) {
+	t.Parallel()
+	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	loRim := []math.Point3{math.P3(7, 0, 0), math.P3(-7, 0, 0)} // together these set the weld scale
+	hiRim := []math.Point3{math.P3(0, 7, 0), math.P3(0, -7, 0)}
+	vs := []float64{0, 1, 2, stdmath.Pi, 4, 5, 6}
+	apart := func(v float64) float64 { return 0.8 + 0.1*stdmath.Cos(v) }
+	if bandPinches(tor, func(float64) float64 { return 0 }, apart, vs, loRim, hiRim) {
+		t.Error("bandPinches called a strip 0.7–0.9 rad wide pinched")
+	}
+	touching := func(v float64) float64 { return stdmath.Abs(v - stdmath.Pi) } // meets the other at v = π
+	if !bandPinches(tor, func(float64) float64 { return 0 }, touching, vs, loRim, hiRim) {
+		t.Error("bandPinches missed boundaries that MEET at v = π — the figure-eight's own tangency")
 	}
 }

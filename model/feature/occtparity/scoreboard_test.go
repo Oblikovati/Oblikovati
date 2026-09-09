@@ -330,14 +330,18 @@ func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGr
 	// SELF-INTERSECT (#3491) — found when isWatertightSolid began reading the exact face-pair scan
 	// (#3477) instead of a tessellation too coarse to see a 0.03 overlap. The bodies are bit-identical
 	// at the branch point, so the green they held was the detector's blindness, not parity. Their
-	// pendingCapability entries fail loudly the moment each is fixed, pulling this number back up.
-	if simpleGreen != 127 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 127 (114 base + 17 wave greens + W3, "+
-			"minus the 5 self-intersecting results of #3491)", simpleGreen)
+	// pendingCapability entries fail loudly the moment each is fixed, pulling this number back up —
+	// which is what happened to FOUR of them on 2026-09-06 (127 → 131): two blend flanks of equal
+	// radius are the degenerate cylinder pair whose section the ruled∩quadric form declined, and the
+	// closed form now inside the intersector gives it exactly (ADR-0061 stage 4). J5 is a torus
+	// through a plane and stands.
+	if simpleGreen != 131 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 131 (114 base + 17 wave greens + W3, "+
+			"minus J5, the one self-intersecting result of #3491 still open)", simpleGreen)
 	}
-	if allGridGreen != 143 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 143 (127 simple + 11 bfuseblend-only "+
-			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→148→143 by #3491)", allGridGreen)
+	if allGridGreen != 147 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 147 (131 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→148→143→147)", allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+

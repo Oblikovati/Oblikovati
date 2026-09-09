@@ -17,7 +17,7 @@ import (
 // Characterization golden for the boolean manifold-extraction sew (#1726, Slice 0).
 //
 // This is the REGRESSION GATE for the Weiler radial-edge refactor (ADR-0047): the sew is
-// being re-shaped (radialSew → sewPlan → mintEntities), and every NON-degenerate boolean and
+// being re-shaped (resolveEdgeUses → sewPlan → mintEntities), and every NON-degenerate boolean and
 // every COPLANAR-FLUSH union must come out BYTE-IDENTICAL — same V/E/F/chi AND the same
 // reference keys (ADR-0043 topological naming), because downstream feature references
 // (fillets/chamfers keyed on brep:edge#N) break if a key drifts. The signature hashes the

@@ -77,27 +77,3 @@ func TestHalfSpaceCutTorusFigureEight(t *testing.T) {
 		}
 	}
 }
-
-// torusAxisParallelFigureEight matches ONLY the degenerate inner-equator tangent (offset = R−r), the one
-// spiric case kept analytic; a clean two-oval offset, a single-oval offset, and a perpendicular cut all route
-// through the unified trimmer and so must NOT be claimed here (Oblikovati#1406).
-func TestTorusAxisParallelFigureEightGuards(t *testing.T) {
-	t.Parallel()
-	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
-	for _, tc := range []struct {
-		name   string
-		origin math.Point3
-		normal math.Vector3
-		want   bool
-	}{
-		{"figure-eight tangent (offset 3 = R−r)", math.P3(0, 3, 0), math.V3(0, 1, 0), true},
-		{"clean two-oval (offset 2 < R−r)", math.P3(0, 2, 0), math.V3(0, 1, 0), false},
-		{"single-oval (offset 6 in (R−r,R+r))", math.P3(0, 6, 0), math.V3(0, 1, 0), false},
-		{"perpendicular to axis", math.P3(0, 0, 1), math.V3(0, 0, 1), false},
-	} {
-		plane, _ := geom.NewPlane(tc.origin, tc.normal)
-		if got := torusAxisParallelFigureEight(tor, plane); got != tc.want {
-			t.Errorf("%s: torusAxisParallelFigureEight = %v, want %v", tc.name, got, tc.want)
-		}
-	}
-}

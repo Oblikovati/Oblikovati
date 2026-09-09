@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/internal/testcage"
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/topo"
@@ -17,7 +17,7 @@ import (
 // TestFacetIsDeterministic pins #23: re-faceting the SAME analytic body must yield the same
 // topology every time, not merely the same vertices.
 //
-// ops.Facet unifies its triangle cage back into maximal coplanar faces, and that pass chains boundary
+// UnifyCoplanarFaces chains a triangle cage back into maximal coplanar faces, and that pass chains boundary
 // half-edges into face loops through Go maps. Map iteration is randomized, so where two coplanar
 // boundary loops touched at a vertex the pairing — hence the LOOPS themselves — varied run to run.
 // Nothing downstream could recover: the feature layer re-facets every analytic operand before the
@@ -25,7 +25,7 @@ import (
 // (ReelToReel BigChunkyPlate) alternated between solid and surface with its volume wandering ~300
 // mm^3 across identical runs. The vertex set matched throughout, which is why this asserts
 // CONNECTIVITY.
-func TestFacetIsDeterministic(t *testing.T) {
+func TestUnifiedCageIsDeterministic(t *testing.T) {
 	t.Parallel()
 	cyl, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	if err != nil {
@@ -33,9 +33,9 @@ func TestFacetIsDeterministic(t *testing.T) {
 	}
 	var want string
 	for i := range 25 {
-		faceted := ops.Facet(cyl, "f")
+		faceted := testcage.Body(cyl, "f")
 		if faceted == nil {
-			t.Fatalf("run %d: ops.Facet returned nil", i)
+			t.Fatalf("run %d: testcage.Body returned nil", i)
 		}
 		got := faceTopologyKey(faceted)
 		if i == 0 {

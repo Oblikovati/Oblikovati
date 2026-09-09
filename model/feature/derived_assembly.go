@@ -139,6 +139,10 @@ func (d *DerivedAssemblyComponent) Definition() *DerivedAssemblyComponent { retu
 // Kind implements [Feature].
 func (d *DerivedAssemblyComponent) Kind() string { return "derivedAssembly" }
 
+// AdoptsExternalBodies marks a derived assembly's bodies as adopted: they are the source assembly's
+// placed geometry, merged here but not built here (see [AdoptedBodiesFeature]).
+func (d *DerivedAssemblyComponent) AdoptsExternalBodies() bool { return true }
+
 // SourceVersion returns the source assembly's current geometry version (change tracking),
 // or "" when the source is not bound (after restore, before [BindSource]).
 func (d *DerivedAssemblyComponent) SourceVersion() string {

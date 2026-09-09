@@ -73,8 +73,8 @@ func TestNearPinchRecoveredBandWatertight(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Boolean(Intersect): %v", err)
 				}
-				if rec.Has(brep.CodeImprintNearPinchDeclined) {
-					t.Fatalf("R=%g dr=%g must ship the analytic per-loop path, not decline (#1818)", r, dr)
+				if n := rec.Count(diag.Defect); n != 0 {
+					t.Fatalf("R=%g dr=%g must ship the analytic per-loop path with no degradation (#1818); got %v", r, dr, rec.Records())
 				}
 				assertWatertightCrossing(t, got, r, dr)
 			})
@@ -130,8 +130,8 @@ func TestNearPinchCutJoinWatertight(t *testing.T) {
 					if err != nil {
 						t.Fatalf("Boolean(%v): %v", op, err)
 					}
-					if rec.Has(brep.CodeImprintNearPinchDeclined) {
-						t.Fatalf("%v R=%g dr=%g must ship the analytic near-pinch path, not decline (#1818)", op, r, dr)
+					if n := rec.Count(diag.Defect); n != 0 {
+						t.Fatalf("%v R=%g dr=%g must ship the analytic near-pinch path with no degradation (#1818); got %v", op, r, dr, rec.Records())
 					}
 					assertWatertightSolid(t, got)
 					assertCutJoinVolume(t, op, got, r, dr)

@@ -1,0 +1,182 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package brep
+
+import (
+	stdmath "math"
+
+	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
+)
+
+// The CLOSED-SURFACE × RULED-WALL crossing (ADR-0061 stage 4, first slice). A ball and a coaxial rod
+// meet along a circle that lies on a sphere AND on a cylinder — the simplest curved-versus-curved
+// contact there is, and until now the mixed boolean declined it on box overlap alone and handed the
+// whole family to the bespoke ball-and-rod recognizers.
+//
+// The rule is the one the plane×wall pairing already follows: solve the crossing ONCE, in closed form,
+// and write the same curves into BOTH sides' imprint lists, so the two charts split on identical
+// coordinates and their fragments weld. What is new is only which two buckets are paired.
+
+// pairClosedSurfaceWallImprints imprints every (closed-surface face of p, ruled wall of other) pair
+// whose boxes overlap, appending the shared crossing to both lists. ok=false declines the boolean, and
+// a section that declined for CONDITIONING is recorded before it does (recordSectionDecline).
+func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]geom.Curve3, rec *diag.Recorder) bool {
+	faces, boxes := p.closedSurfaces()
+	for i, sf := range faces {
+		box := inflateBox(boxes[i])
+		for k, wf := range other.wall {
+			if !box.Intersects(inflateBox(other.wallBox[k])) {
+				continue
+			}
+			curves, why, ok := closedSurfaceWallImprint(sf, wf)
+			if !ok {
+				recordSectionDecline(rec, why, sf, wf)
+				return false
+			}
+			sphImp[i] = append(sphImp[i], curves...)
+			wallImp[k] = append(wallImp[k], curves...)
+		}
+	}
+	return true
+}
+
+// closedSurfaceWallImprint is the exact shared imprint of one (closed surface, ruled wall) pair.
+//
+// SCOPE, and it is deliberately narrow — this is the first slice of stage 4, not the whole of it:
+//
+//   - the closed surface must be BOUNDARY-LESS (a bare ball or torus), so every crossing is inside its
+//     trim by construction and no crossing with one of its own edges has to be solved;
+//   - every crossing curve must come back CLOSED, so it is an island on both charts and each side
+//     splits by even-odd containment alone;
+//   - every crossing must lie strictly INSIDE the wall's band or strictly clear of it. A crossing with
+//     the INFINITE ruled surface is not a crossing with the wall: a rod that starts at a ball's centre
+//     crosses the sphere in two circles, and only one of them is on the rod. Imprinting the other cut
+//     the ball where nothing touches it and the difference came back with the ball's face missing.
+//
+// Anything else declines, and pairing it is the rest of stage 4.
+func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, geom.SectionDecline, bool) {
+	rs, ok := ruledFaceOf(wf)
+	if !ok || len(sf.loops) > 0 {
+		return nil, geom.DeclineNoClosedForm, false
+	}
+	res := geom.ResolutionForSize(rs.size())
+	curves, why, handled := geom.IntersectSurfacesAnalyticDeclining(sf.surface, rs.surface, res)
+	if !handled || !crossingsClose(curves, res) {
+		return nil, why, false
+	}
+	kept, ok := keepCrossingsOnTheWall(curves, rs)
+	if !ok {
+		return nil, geom.DeclineNoClosedForm, false // the band clip's own scope, not the section's
+	}
+	return kept, geom.DeclineNone, true
+}
+
+// keepCrossingsOnTheWall keeps the crossings that lie on the wall itself and drops the ones the
+// infinite surface contributes. A crossing that leaves through a RIM is CLIPPED to the band: the
+// stretch between the rims is real imprint and the rim circle in the face's own frame closes the
+// region it opens (clipCrossingToBand). A crossing that IS a rim (spanIsRimContact) is dropped with
+// the clear ones — it imprints the edge the face already carries — so only a true straddle reaches
+// the clip, and ok=false stays what it says: the clip found nothing inside a band the placement
+// called a straddle.
+func keepCrossingsOnTheWall(curves []geom.Curve3, rs ruledSide) ([]geom.Curve3, bool) {
+	var out []geom.Curve3
+	for _, cv := range curves {
+		lo, hi := crossingAxialSpan(cv, rs)
+		switch inside, clear := bandPlacement(lo, hi, rs.band); {
+		case inside:
+			out = append(out, cv)
+		case clear || spanIsRimContact(lo, hi, rs.band):
+		default:
+			clipped, ok := clipCrossingToBand(cv, rs)
+			if !ok {
+				return nil, false
+			}
+			out = append(out, clipped...)
+		}
+	}
+	return out, true
+}
+
+// crossingsClose reports that every curve an intersector returned comes back to where it started. An
+// OPEN curve out of the intersector is a partial answer, and a partial answer is refused — unlike the
+// open arcs keepCrossingsOnTheWall itself produces, whose ends are rims this pipeline knows about.
+func crossingsClose(curves []geom.Curve3, res geom.Resolution) bool {
+	for _, cv := range curves {
+		lo, hi := cv.Domain()
+		if float64(cv.PointAt(lo).DistanceTo(cv.PointAt(hi))) > res.Sew() {
+			return false
+		}
+	}
+	return true
+}
+
+// crossingAxialSpan is the crossing's extent along the wall's axis, walked on the curve itself. The
+// curve is analytic and the question is metric — where does it sit between the rims — so sampling it
+// bounds the span without deciding any topology.
+func crossingAxialSpan(cv geom.Curve3, rs ruledSide) (lo, hi float64) {
+	t0, t1 := cv.Domain()
+	lo, hi = stdmath.Inf(1), stdmath.Inf(-1)
+	for i := 0; i <= crossingSpanSamples; i++ {
+		v := bandV(cv.PointAt(t0+(t1-t0)*float64(i)/crossingSpanSamples), rs.axis, rs.band)
+		lo, hi = stdmath.Min(lo, v), stdmath.Max(hi, v)
+	}
+	return lo, hi
+}
+
+// crossingSpanSamples walks a crossing to bound its axial extent. It places the curve between two rims,
+// nothing finer.
+const crossingSpanSamples = 64
+
+// pairWallWallImprints imprints every (wall of p, wall of other) pair whose boxes overlap, appending the
+// shared crossing to both lists — the ruled-versus-ruled counterpart of the closed-surface pairing above
+// (ADR-0061 stage 4). ok=false declines the boolean.
+func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve3) bool {
+	for i, wf := range p.wall {
+		box := inflateBox(p.wallBox[i])
+		for k, of := range other.wall {
+			// A box overlap alone is not contact, and a pair the separation proof settles must not be
+			// asked for a crossing it does not have: an emboss pad riding a constant sagitta clear of a
+			// chamfer cone overlaps its box completely (#3459).
+			if !box.Intersects(inflateBox(other.wallBox[k])) ||
+				geom.SurfacesApart(wf.surface, of.surface, facePairCullPad) {
+				continue
+			}
+			curves, ok := wallWallImprint(wf, of)
+			if !ok {
+				return false
+			}
+			impP[i] = append(impP[i], curves...)
+			impOther[k] = append(impOther[k], curves...)
+		}
+	}
+	return true
+}
+
+// wallWallImprint is the exact shared imprint of one (wall, wall) pair, under the same narrow scope the
+// closed-surface pairing takes: every crossing must come back CLOSED, and must lie strictly inside BOTH
+// bands or strictly clear of them. Anything else declines.
+func wallWallImprint(a, b curvedFace) ([]geom.Curve3, bool) {
+	ra, okA := ruledFaceOf(a)
+	rb, okB := ruledFaceOf(b)
+	if !okA || !okB {
+		return nil, false
+	}
+	res := geom.ResolutionForSize(stdmath.Max(ra.size(), rb.size()))
+	// Two walls on ONE surface do not cross, and asking an intersector for the crossing they do not
+	// have returns "cannot", which is not the same as "unsupported": their contact is the region where
+	// the two bands overlap, and what divides it is where one band ends inside the other (ADR-0045,
+	// the degenerate-overlap class — boolean_mixed_coincident.go).
+	if geom.SurfacesCoincide(ra.surface, rb.surface, res) {
+		return coincidentWallImprint(ra, rb), true
+	}
+	curves, handled := geom.IntersectSurfacesAnalytic(ra.surface, rb.surface, res)
+	if !handled || !crossingsClose(curves, res) {
+		return nil, false
+	}
+	kept, ok := keepCrossingsOnTheWall(curves, ra)
+	if !ok {
+		return nil, false
+	}
+	return keepCrossingsOnTheWall(kept, rb)
+}

@@ -17,23 +17,6 @@ import (
 // two rim rows — each the exact tessellation of its own saddle edge, so the band welds to the caps that
 // share those edges — is itself an exact loft of the band.
 
-// notchedRimBandMesh meshes a singly-periodic ruled side whose two rims are ONE full-period circle and
-// ONE notched rim — a frustum flat that fades out before the small rim, leaving the kept cone side as a
-// band with a complete circular rim plus a rim notched down to the hyperbola vertex
-// (Oblikovati/Oblikovati#1374). toUVLoops "succeeds" on such a face (the notched outer loop unwraps) and
-// would route it to metricPatchMesh, which treats the full circle as an interior hole and meshes a
-// boundary that does not weld to the cap sharing that rim. But it is a genuine two-rim band, so the
-// saddle-band loft meshes it exactly (ruled rows) AND tessellates each rim by its own shared edge, so it
-// welds. ok=false unless the face is a developable side carrying both a full-circle rim and an open
-// (notched) rim edge — so a plain two-circle band (which already bypasses toUVLoops) is untouched.
-func notchedRimBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	if !isDevelopableSide(s) || faceHasLensHole(f, s, q) || !hasFullCircleAndNotchedRim(f) {
-		return nil, false // a band carrying a genuine (non-wrapping) lens hole is twoRimHoledBandMesh's job:
-		// the saddle loft pools ALL open edges into one rim, so it would fold the lens into the base rim (#1591).
-	}
-	return saddleBandLoftMesh(f, s, q)
-}
-
 // faceHasLensHole reports whether the face carries a genuine LENS hole — an interior loop that does NOT wrap
 // the full period. A non-outer loop that DOES wrap (a second full-wrap rim faceHoleBoundaries mis-demoted to a
 // "hole") is still a valid two-rim-band rim the saddle loft meshes, so it must NOT disqualify the face; only a
@@ -50,24 +33,12 @@ func faceHasLensHole(f *topo.Face, s geom.Surface, q Quality) bool {
 	return false
 }
 
-// twoClosedRimBandMesh meshes a developable side (cylinder/cone) bounded by exactly TWO closed full-wrap
-// rim edges and no open rim edge — the shape produced by the (u,v) cone-side split, whose band has one
-// circular rim and one oblique-cut ellipse rim, both closed loops with no seam (Oblikovati#1375). Such a
-// face's two loops each "unwrap" through toUVLoops, which would mis-route it to metricPatchMesh — a flat
-// best-fit-plane annulus that neither follows the cone nor welds to the caps sharing those rims. But it
-// is a genuine two-rim ruled band, so the saddle-band loft meshes it exactly (ruled rim-to-rim rows) and
-// tessellates each rim by its own shared edge, so it welds. ok=false unless the face is a developable
-// side with exactly two closed rim edges and no open (non-seam) edge.
-func twoClosedRimBandMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
-	if !isDevelopableSide(s) || !hasTwoClosedRimsNoOpen(f) {
-		return nil, false
-	}
-	return saddleBandLoftMesh(f, s, q)
-}
-
 // isPeriodicTwoRimBand reports whether the face is a no-seam two-rim ruled band — either two closed rims
-// (a (u,v) cone split) or a full circle plus a notched rim (#1374) — which the saddle loft meshes exactly
-// and whose full-wrap outer loop must NOT be re-meshed through the (u,v) CDT (it can spin / tear there).
+// (the (u,v) cone split, Oblikovati#1375: a circular rim plus an oblique-cut ellipse rim) or a full
+// circle plus a notched rim (#1374: a frustum flat that fades out before the small rim) — which the
+// saddle loft meshes exactly and whose full-wrap outer loop must NOT be re-meshed through the (u,v) CDT
+// (it can spin / tear there). Either way toUVLoops "succeeds" on the face and would mis-route it to
+// metricPatchMesh, whose boundary does not weld to the caps sharing those rims.
 func isPeriodicTwoRimBand(f *topo.Face) bool {
 	return hasTwoClosedRimsNoOpen(f) || hasFullCircleAndNotchedRim(f)
 }

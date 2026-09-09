@@ -3,6 +3,7 @@
 package boolean_test
 
 import (
+	"errors"
 	"testing"
 
 	"oblikovati.org/kernel/ops/boolean"
@@ -15,37 +16,47 @@ import (
 	"oblikovati.org/math"
 )
 
-// TestBooleanRecordsCSGFallbackDiagnostic proves the diag channel end to end on the boolean side: a
-// curved configuration with no exact analytic/planar path (two overlapping spheres) falls back to
-// triangle-soup CSG, and that fallback is now RECORDED as a searchable Defect instead of silently
-// shipping a faceted mesh (the #1407 guardrail this infrastructure enables).
-func TestBooleanRecordsCSGFallbackDiagnostic(t *testing.T) {
+// TestBooleanRefusesAnUnmodelledConfigurationByName proves the diag channel end to end on the boolean
+// side. It used to prove that a configuration with no exact path fell back to triangle-soup CSG and
+// RECORDED the fallback as a searchable Defect (#1407). ADR-0061 stage 7 deleted the engine behind
+// that record, so the same fixture now proves the stronger contract: the operation REFUSES by name,
+// with the refusal both on the error and in the diagnostics, and no body is returned at all.
+// It asserts the DECLINE, never a faceted body: when this configuration lands analytically the
+// assertion converts to a positive corpus case rather than being deleted to move a number.
+func TestBooleanRefusesAnUnmodelledConfigurationByName(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
 	t.Parallel()
-	a, err := brep.SolidSphere(math.P3(0, 0, 0), 2, "a")
+	// Two INTERLOCKED rings. This fixture has moved three times, each time because the pipeline grew
+	// past it: it was a sphere PAIR, which now lands analytically, then a ball joined to a torus, which
+	// the torus reduction took (ADR-0061 stage 5), then a rod driven ACROSS a ring, which its second
+	// harmonic's lanes took (stage 5's third slice). What is left with genuinely no closed form is a
+	// pair where NEITHER side supplies an implicit quadric to substitute a chart into. The positive
+	// forms of the three retired fixtures are TestSpherePairVolumesAreExact,
+	// TestRingAndBallBooleansAgreeWithRequicha and TestASkewToolThroughARingIsExact.
+	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
-		t.Fatalf("sphere a: %v", err)
+		t.Fatalf("ring: %v", err)
 	}
-	b, err := brep.SolidSphere(math.P3(2, 0, 0), 2, "b") // overlaps a; sphere∩sphere has no exact handler
+	linked, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
 	if err != nil {
-		t.Fatalf("sphere b: %v", err)
+		t.Fatalf("linked ring: %v", err)
 	}
 
 	var rec diag.Recorder
-	res, err := ops.BooleanWithDiagnostics(ops.Intersect, a, b, &rec)
-	if err != nil {
-		t.Fatalf("ops.BooleanWithDiagnostics: %v", err)
+	res, err := ops.BooleanWithDiagnostics(ops.Cut, ring, linked, &rec)
+	if !errors.Is(err, ops.ErrUnmodelledBoolean) {
+		t.Fatalf("a configuration no exact path models must be refused by name; got err=%v", err)
 	}
-	if res == nil {
-		t.Fatal("nil result")
+	if res != nil {
+		t.Fatalf("a refused boolean must return no body; got %d faces", len(res.Faces()))
 	}
-	if !rec.Has(ops.CodeBooleanCSGFallback) {
-		t.Errorf("curved boolean fell back to CSG but recorded no %q diagnostic; got %v", ops.CodeBooleanCSGFallback, rec.Records())
+	if !rec.Has(ops.CodeBooleanNoExactCurvedPath) {
+		t.Errorf("the refusal recorded no %q diagnostic; got %v", ops.CodeBooleanNoExactCurvedPath, rec.Records())
 	}
 	if rec.Count(diag.Defect) == 0 {
-		t.Error("a CSG fallback must record a Defect-severity diagnostic")
+		t.Error("a refusal must record a Defect-severity diagnostic")
 	}
 }
 
@@ -66,8 +77,8 @@ func TestBooleanExactPathRecordsNoDiagnostic(t *testing.T) {
 	}
 }
 
-// TestBooleanNilRecorderStillWorks confirms the legacy ops.Boolean entry point (which passes a nil recorder)
-// is unaffected: the same fallback runs, just unobserved.
+// TestBooleanNilRecorderStillWorks confirms the legacy ops.Boolean entry point (which passes a nil
+// recorder) is unaffected: the same path runs, just unobserved.
 func TestBooleanNilRecorderStillWorks(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3s): `make test-corpus`")

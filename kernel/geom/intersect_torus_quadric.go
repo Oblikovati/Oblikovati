@@ -1,0 +1,208 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package geom
+
+import (
+	stdmath "math"
+
+	"oblikovati.org/math"
+)
+
+// The torus∩quadric bucket of [IntersectSurfacesAnalytic] (ADR-0061 stage 5). The reduction and the two
+// curve types are in torus_quadric_arc.go; what is left here is the same TOPOLOGY question the ruled
+// bucket asks, and periodicRootWindows answers it for both: which connected pieces the two azimuths
+// form over the tube's own period.
+//
+// There are three shapes, and the third is the one a type-driven dispatch would have missed. Where the
+// quadric reaches the tube at EVERY tube angle the section is two closed curves, one per branch. Where
+// it reaches it over part of the turn the section is one closed loop per window, folded at the ends.
+// And where the quadric is COAXIAL with the torus its constraint has no azimuth dependence at all — the
+// section is whole circles at the tube angles that satisfy it, which is a boss or a shaft standing in
+// the ring's hole.
+
+// TorusQuadricSection returns the exact intersection of a torus with an implicit quadric, on the
+// torus's own chart. The quadric's quadratic form is CLASSIFIED once — invariant about the torus axis
+// or not — and exactly one reduction runs: the one-harmonic arccos of this file, or the general
+// second-harmonic lanes of intersect_torus_quadric_skew.go. ok=false always carries the reason it
+// refused ([SectionDecline]), so a caller can tell a CONDITIONING demotion — a closed form that applies
+// but cannot name its answer at these numbers — from "no closed form claims this pair", and record the
+// first as the degradation it is.
+//
+//	curves, why, ok := geom.TorusQuadricSection(ring, drill.QuadricForm(), geom.ResolutionForBox(box))
+func TorusQuadricSection(t Torus, q Quadric, res Resolution) ([]Curve3, SectionDecline, bool) {
+	_, e1, e2 := torusAxisFrame(t)
+	if _, invariant := quadricIsAxisInvariant(q, e1, e2); !invariant {
+		return torusSkewSection(t, q, res)
+	}
+	if coaxialTorusQuadric(t, q) {
+		curves, ok := torusCoaxialCircles(t, q)
+		return curves, noClosedFormWhen(ok), ok
+	}
+	spans, ok := periodicRootWindows(func(v float64) float64 {
+		h, _ := torusHarmonicAt(t, q, v)
+		return h.discriminant()
+	}, torusStationProbes)
+	if !ok {
+		curves, full := torusFullTurnSection(t, q, res) // the quadric reaches the tube at every station
+		return curves, noClosedFormWhen(full), full
+	}
+	if len(spans) == 0 {
+		return nil, DeclineNone, true // it reaches the tube nowhere: they do not meet, and that is an answer
+	}
+	return torusHarmonicLoops(t, q, spans, res)
+}
+
+// noClosedFormWhen names the ordinary refusal for a step whose only answer is a bool.
+func noClosedFormWhen(ok bool) SectionDecline {
+	if ok {
+		return DeclineNone
+	}
+	return DeclineNoClosedForm
+}
+
+// torusHarmonicLoops builds one folded loop per tube-angle window of the one-harmonic reduction.
+func torusHarmonicLoops(t Torus, q Quadric, spans [][2]float64, res Resolution) ([]Curve3, SectionDecline, bool) {
+	out := make([]Curve3, 0, len(spans))
+	for _, w := range spans {
+		anchor, _ := torusHarmonicAt(t, q, (w[0]+w[1])/2)
+		loop := TorusQuadricLoop{Torus: t, Quad: q, V0: w[0], V1: w[1], UA: anchor.phase}
+		if !torusWindowConditioning(loop, res) {
+			return nil, DeclineTorusLaneSeparation, false
+		}
+		out = append(out, loop)
+	}
+	return out, DeclineNone, true
+}
+
+// torusStationProbes is how many tube angles the window finder samples. The harmonic's discriminant is a
+// low-order trigonometric polynomial in v for every axis-invariant quadric, so this brackets every sign
+// change; it matches the ruled bucket's azimuth sweep so the two forms resolve at the same rate.
+const torusStationProbes = ruledQuadricAzimuthProbes
+
+// coaxialTorusQuadric reports that the quadric's constraint on the torus carries NO azimuth dependence:
+// its reach is zero at every station, so the two roots are not two azimuths but a whole circle. That is
+// the coaxial cylinder, cone or centred sphere, and its section is circles rather than curves.
+func coaxialTorusQuadric(t Torus, q Quadric) bool {
+	for i := range torusStationProbes {
+		h, ok := torusHarmonicAt(t, q, twoPi*float64(i)/torusStationProbes)
+		if !ok || h.reach != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// torusCoaxialCircles returns the tube circles where a coaxial quadric meets the torus: the roots of the
+// harmonic's level term, each a full azimuth sweep at one tube angle. A root the level only GRAZES — a
+// tangency, where the level touches zero without crossing — is not a section and is left out.
+func torusCoaxialCircles(t Torus, q Quadric) ([]Curve3, bool) {
+	level := func(v float64) float64 {
+		h, _ := torusHarmonicAt(t, q, v)
+		return h.level
+	}
+	var out []Curve3
+	prev := level(0)
+	for i := 1; i <= torusStationProbes; i++ {
+		v := twoPi * float64(i) / torusStationProbes
+		cur := level(v)
+		if (prev > 0) != (cur > 0) {
+			out = append(out, torusStationCircle(t, bisectLevelRoot(level, twoPi*float64(i-1)/torusStationProbes, v)))
+		}
+		prev = cur
+	}
+	return out, true
+}
+
+// torusStationCircle is the full azimuth sweep at one tube angle: a circle about the torus axis, of the
+// radial distance the tube reaches there, at the height the tube reaches there.
+func torusStationCircle(t Torus, v float64) Circle {
+	cv, sv := cosSin(v)
+	axis := t.AxisDir.AsVector()
+	centre := t.Center.TranslateBy(axis.Scale(math.Scalar(t.MinorRadius * sv)))
+	return Circle{
+		Center: centre,
+		Normal: t.AxisDir,
+		RefDir: t.Ref,
+		Radius: t.MajorRadius + t.MinorRadius*cv,
+	}
+}
+
+// bisectLevelRoot refines a bracketed sign change of the coaxial level term to the tube angle itself.
+func bisectLevelRoot(level func(float64) float64, lo, hi float64) float64 {
+	loPositive := level(lo) > 0
+	for range foldBisectionSteps {
+		mid := (lo + hi) / 2
+		if (level(mid) > 0) == loPositive {
+			lo = mid
+			continue
+		}
+		hi = mid
+	}
+	return (lo + hi) / 2
+}
+
+// torusFullTurnSection returns the two branches as full-period arcs, for a quadric that reaches the tube
+// at every station. ok=false when the two branches come close enough to be one curve at the modelling
+// resolution — the same separation certificate the ruled wrap form applies, and for the same reason: two
+// branches the stitch cannot tell apart are not two curves.
+func torusFullTurnSection(t Torus, q Quadric, res Resolution) ([]Curve3, bool) {
+	least := stdmath.Inf(1)
+	for i := range torusStationProbes {
+		h, ok := torusHarmonicAt(t, q, twoPi*float64(i)/torusStationProbes)
+		if !ok {
+			return nil, false
+		}
+		least = stdmath.Min(least, torusBranchGap(t, h))
+	}
+	if least <= res.Stitch() {
+		return nil, false
+	}
+	return []Curve3{
+		TorusQuadricArc{Torus: t, Quad: q, Upper: false, V0: 0, V1: twoPi},
+		TorusQuadricArc{Torus: t, Quad: q, Upper: true, V0: 0, V1: twoPi},
+	}, true
+}
+
+// torusBranchGap is the arc length between the two azimuths at one station — the branches' separation
+// measured as a LENGTH, so it compares against the stitch resolution on the same footing the ruled
+// form's ruling-parameter gap does.
+func torusBranchGap(t Torus, h torusHarmonic) float64 {
+	if h.reach == 0 {
+		return 0
+	}
+	arg := stdmath.Max(-1, stdmath.Min(1, -h.level/h.reach))
+	return 2 * stdmath.Acos(arg) * (t.MajorRadius + t.MinorRadius)
+}
+
+// torusWindowConditioning certifies one tube-angle window before a loop is built on it: its two azimuths
+// must separate, somewhere inside, by more than the stitch resolution. It is the mirror of the wrap
+// form's gate — that one reads the MINIMUM across the turn because a wrap has no fold, this one the
+// MAXIMUM inside the window because a window's branches meet at both ends by construction.
+func torusWindowConditioning(l TorusQuadricLoop, res Resolution) bool {
+	widest := 0.0
+	for i := 1; i < torusWindowProbes; i++ {
+		v := l.V0 + (l.V1-l.V0)*float64(i)/torusWindowProbes
+		widest = stdmath.Max(widest, torusBranchGapAt(l.Torus, l.Quad, v, l.UA))
+	}
+	return widest > res.Stitch()
+}
+
+// torusBranchGapAt is the arc length a branch pair spans at one tube angle, whichever reduction the
+// station takes: the one-harmonic arccos, or the lane the anchor names in the general one. It is the
+// one place the two forms' separations are read, so the conditioning gates above apply the same
+// certificate to both.
+func torusBranchGapAt(t Torus, q Quadric, v, anchor float64) float64 {
+	st := torusStationAt(t, q, v)
+	if st.invariant {
+		return torusBranchGap(t, st.harmonic())
+	}
+	l, ok := torusLaneAt(st.secondHarmonic(), anchor)
+	if !ok {
+		return 0 // an unreadable station: a zero gap fails the gate, which is the decline
+	}
+	return l.separation() * (t.MajorRadius + t.MinorRadius)
+}
+
+// torusWindowProbes samples a window's interior for its widest branch separation, which has one interior
+// maximum for every axis-invariant quadric, so a coarse sweep finds it.
+const torusWindowProbes = 64

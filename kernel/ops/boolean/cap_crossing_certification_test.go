@@ -15,8 +15,7 @@ import (
 )
 
 // Cap-crossing slice-1 certification (EPIC Oblikovati/Oblikovati#1724, ADR-0046). The interior-exit
-// cap-crossing cut (brep.CapCrossingCutGeneral) is the narrowest sub-family of the deferred cap-crossing
-// gate: an oblique cylinder tool that enters the target wall once and EXITS one planar cap through an
+// cap-crossing cut is the narrowest sub-family of the deferred cap-crossing gate: an oblique cylinder tool that enters the target wall once and EXITS one planar cap through an
 // ellipse strictly inside the rim. A partial curved-boolean implementation ships manifold-but-wrong-shape
 // solids, so this slice is certified NOT by internal manifold/volume nets alone but against an INDEPENDENT
 // moment set from OpenCASCADE (BRepAlgoAPI_Cut + BRepGProp, experiments/occ-boolean-oracle): the 0th moment

@@ -4,10 +4,11 @@ package feature
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
-	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
@@ -37,13 +38,18 @@ type panicker struct{}
 func (panicker) Kind() string                    { return "panicker" }
 func (panicker) Recompute(Input) (Output, error) { panic("kernel nil-deref") }
 
+// makeBody is the engine-plumbing fixture: ONE unit block, built through the kernel's own
+// constructor. It used to be a hand-wired body declared solid with a single face and one loop edge —
+// four boundary edges short of closed, a shape no operation could ever return. That was invisible
+// while the engine stored whatever a feature handed it; with Validate as the engine's post-condition
+// (ADR-0061 stage 6) it makes every test that uses it sick, correctly. A fixture must be something
+// the modeller could actually produce.
 func makeBody() *topo.Body {
-	bld := topo.NewBuilder(true, topo.NewLineage(topo.Tok("f", "body", 0)))
-	v := bld.AddVertex(math.P3(0, 0, 0), topo.NewLineage(topo.Tok("f", "vertex", 0)))
-	e := bld.AddEdge(geom.NewLineSegment(math.P3(0, 0, 0), math.P3(1, 0, 0)), v, v, topo.NewLineage(topo.Tok("f", "edge", 0)))
-	plane, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
-	bld.AddFace(plane, topo.NewLineage(topo.Tok("f", "face", 0)), topo.OuterLoop(topo.Fwd(e)))
-	return bld.Build()
+	b, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(1, 1, 1), "box")
+	if err != nil {
+		panic(fmt.Sprintf("feature test fixture: SolidBlock(0,0,0 .. 1,1,1) failed: %v", err))
+	}
+	return b
 }
 
 func body() addBody { return addBody{kind: "box", mk: makeBody} }

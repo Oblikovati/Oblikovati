@@ -6,6 +6,7 @@ import (
 	stdmath "math"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"oblikovati.org/api/types"
 	"oblikovati.org/kernel/ops"
@@ -41,10 +42,17 @@ func TestMultipointDiskRebuildsAsAClosedSolid(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	ws := doc.NewWorkspace(persistence.NewPackageStore(), contentset.Default())
+	start := time.Now()
 	document, _, err := buildPart(ws, filepath.Join(t.TempDir(), "disk.opd"), d, false)
 	if err != nil {
 		t.Fatalf("buildPart: %v", err)
 	}
+	// The rebuild time IS a quality signal on this part, not incidental (ADR-0061). A feature that
+	// falls to a faceted engine leaves a 500-face polyhedron behind, so every LATER feature meets
+	// facets: the same 52-region rebuild has measured 39 s fully analytic and 226 s once the operands
+	// were faceted, and 35 min in the shape #33 was filed on. Log it so a regression in the retirement
+	// shows up as a number a reader can compare, rather than as a slow suite nobody attributes.
+	t.Logf("multipoint disk rebuilt in %s", time.Since(start).Round(time.Millisecond))
 	def := document.Content().(*compdef.PartComponentDefinition)
 	bodies := def.SurfaceBodies().All()
 	if len(bodies) != 1 {

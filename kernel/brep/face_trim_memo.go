@@ -46,6 +46,13 @@ type faceTrimUV struct {
 	castable   bool // false ⇒ no exterior axis to cast toward: a sphere, a torus
 	ringsBound bool // the rings close in the covering plane AND nest, so they bound one region there
 	complement bool // the face is the region OUTSIDE its rings (an outerless closed-surface face)
+	// charted marks rings that came from the face's CARRIED chart (ADR-0063) rather than from
+	// projecting its loops. A chart's contours close through the seam, so they are read by plain
+	// even-odd and none of the fields below are consulted.
+	charted bool
+	// index buckets a carried chart's segments for the repeated containment queries this memo exists
+	// to make cheap; nil on the un-memoized path, which scans (face_chart_index.go).
+	index *chartIndex
 }
 
 // faceTrimUVOf returns f's development, building it on first use and reusing it thereafter.
@@ -59,6 +66,11 @@ func faceTrimUVOf(f *topo.Face) *faceTrimUV {
 		return m
 	}
 	m := developFaceTrim(curvedFaceOf(f))
+	// The index is built HERE and not in developFaceTrim, because pointInTrimUV develops a synthesized
+	// face afresh on every call — the curved boolean's shell probe casts a ray per face per direction —
+	// and an index built per query costs more than the scan it saves. On a memoized face it is built
+	// once and paid back by every query after (face_chart_index.go).
+	m.index = newChartIndex(m.chartContours())
 	f.SetTrimUVMemo(m)
 	return m
 }
@@ -71,6 +83,10 @@ func developFaceTrim(cf curvedFace) *faceTrimUV {
 		return m
 	}
 	m.uPer, m.vPer = surfacePeriodic(cf.surface)
+	if cf.chart != nil {
+		m.rings, m.charted = cf.chart, true
+		return m // the producer recorded the trim; nothing here has to work it out (ADR-0063)
+	}
 	m.alongV, m.castable = castAxis(cf.surface, m.uPer, m.vPer)
 	for _, loop := range cf.loops {
 		m.rings = append(m.rings, loopToUV(cf.surface, loop, m.uPer, m.vPer))
@@ -81,6 +97,15 @@ func developFaceTrim(cf curvedFace) *faceTrimUV {
 		m.complement = cf.outerless
 	}
 	return m
+}
+
+// chartContours is the memo's rings when they came from a carried chart, and nil otherwise — what the
+// containment index can be built over.
+func (m *faceTrimUV) chartContours() [][]math.Point2 {
+	if !m.charted {
+		return nil
+	}
+	return m.rings
 }
 
 // contains reports whether p (on the face's surface) lies within the trimmed region, from the
@@ -105,13 +130,16 @@ func developFaceTrim(cf curvedFace) *faceTrimUV {
 // two two-sided regions (a sphere zone: the belt, or the two caps its rims equally bound) — has nothing
 // but the winding to go on, and keeps reading it.
 func (m *faceTrimUV) contains(p math.Point3) bool {
-	if len(m.face.loops) == 0 {
+	if len(m.face.loops) == 0 && !m.charted {
 		return true // a boundary-less closed face (a whole sphere/torus) contains every surface point
+	}
+	up, vp := m.face.surface.ParamAt(p)
+	if m.charted {
+		return chartContainsIndexed(m.rings, m.index, math.P2(up, vp), m.uPer, m.vPer)
 	}
 	if !m.castable && !m.ringsBound {
 		return pointInCurvedFace(m.face, p)
 	}
-	up, vp := m.face.surface.ParamAt(p)
 	return trimRingParity(m.rings, math.P2(up, vp), m.uPer, m.vPer, m.alongV) != m.complement
 }
 

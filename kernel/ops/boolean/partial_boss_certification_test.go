@@ -33,9 +33,9 @@ func straddlingBoss(t *testing.T) *topo.Body {
 	if err != nil {
 		t.Fatalf("boss: %v", err)
 	}
-	res, ok := brep.JoinPartialBoss(plate, boss)
-	if !ok {
-		t.Fatal("JoinPartialBoss declined the straddling boss")
+	res, err := brep.Boolean(brep.Union, plate, boss)
+	if err != nil {
+		t.Fatalf("straddling boss union: %v", err)
 	}
 	return res
 }

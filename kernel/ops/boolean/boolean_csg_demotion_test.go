@@ -15,17 +15,17 @@ import (
 	"oblikovati.org/math"
 )
 
-// CSG-demotion exactness guard (M2 Phase 3, Oblikovati/Oblikovati#1336 — "retire BSP-CSG as the primary
-// curved path"). The triangle-soup CSG is now only a last-resort fallback: booleanGeneral tries every
-// exact analytic path first (curvedExactPaths) and reaches booleanCSG only when none applies. This is the
-// regression net that keeps it that way — it runs a representative boolean from EVERY exact-path family
-// through the public ops.Boolean and asserts the result is the EXACT analytic B-rep, not faceted CSG.
+// Exactness guard (M2 Phase 3, Oblikovati/Oblikovati#1336 — "retire BSP-CSG as the primary curved path").
+// It runs a representative boolean from EVERY curved family through the public ops.Boolean and asserts
+// the result is the EXACT analytic B-rep: an analytic cylinder/cone/sphere face present, no non-analytic
+// face, and a small face count.
 //
-// The witness is the result Faces: the CSG fallback (trianglesToBody) emits ONLY planar triangle facets —
-// hundreds of them, zero analytic curved faces. So a curved-boolean result that carries an analytic
-// cylinder/cone/sphere face, no non-analytic face, and a small face count provably took the exact path.
-// If a refactor makes any exact path silently return ok=false, its case here flips from a handful of
-// analytic faces to triangle soup and the test fails — catching the regression the umbrella worries about.
+// The guard was written when a triangle-soup CSG fallback stood behind the boolean and the witness was
+// the contrast — trianglesToBody emitted hundreds of planar facets and zero curved faces, so a handful of
+// analytic faces proved the exact path ran. That engine is deleted (ADR-0061 stage 7) and so are the 26
+// recognizers this file's cases were named after (stage 4), which leaves the assertions saying something
+// simpler and stronger: these are the shapes the ONE pipeline must build analytically, and a family it
+// stops covering fails here rather than degrading quietly.
 
 // exactCurvedFaceCeiling bounds an exact curved-boolean result's face count. Every exact case here is a
 // few analytic faces (≤ ~10); the CSG fallback for these inputs is hundreds of triangles, so any result
@@ -346,7 +346,7 @@ func crossingCylinders(t *testing.T) (*topo.Body, *topo.Body) {
 
 // capCrossingCutBodies is the slice-1 cap-crossing fixture (#1724): an r=3 h=10 target cylinder and an
 // oblique r=0.9 tool whose 45° axis enters the curved wall once and EXITS the top cap through an ellipse
-// strictly inside the rim — the interior-exit case CapCrossingCutGeneral handles. Shared by the exactness,
+// strictly inside the rim — the interior-exit case. Shared by the exactness,
 // OCC-volume, and full-moment certification guards. The same numbers back experiments/occ-boolean-oracle.
 func capCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 	s := 1 / stdmath.Sqrt2
@@ -356,8 +356,8 @@ func capCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 
 // rimCrossingCutBodies is the slice-2 rim-crossing fixture (#1724): the same r=3 h=10 target and oblique
 // r=0.9 tool as slice 1, but at base -5.6 so the 45° tool's exit ellipse CROSSES the top rim — the tool
-// exits partly through the cap and partly through the wall (a top-rim notch), the case RimCrossingCutGeneral
-// handles. Shared by the exactness, OCC-volume, and full-moment certification guards.
+// exits partly through the cap and partly through the wall (a top-rim notch). Shared by the exactness,
+// OCC-volume, and full-moment certification guards.
 func rimCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 	s := 1 / stdmath.Sqrt2
 	return demoCyl(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10),
@@ -366,7 +366,7 @@ func rimCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 
 // twoCapCrossingCutBodies is the two-cap-exit fixture (#1724): the r=3 h=10 target and a steeper oblique
 // r=0.7 tool (20 deg from +z) positioned to enter one cap and exit the OTHER, staying inside the wall the
-// whole way (an angled through-hole) — TwoCapCrossingCutGeneral's case (wall intact, both caps holed).
+// whole way: an angled through-hole, wall intact and both caps holed.
 func twoCapCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 	th := 20.0 * stdmath.Pi / 180
 	ux, uz := stdmath.Sin(th), stdmath.Cos(th)
@@ -376,9 +376,9 @@ func twoCapCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 
 // coneCapCrossingCutBodies is the cone-tool cap-crossing fixture (#1724): the r=3 h=10 target and an oblique
 // FRUSTUM tool (rBase 0.9 → rTop 0.6) whose 45° slender wall enters the target wall once and EXITS the top
-// cap through an ellipse strictly inside the rim — the cone analogue of slice 1 (ConeCapCrossingCutGeneral).
-// The frustum is long enough that its wall also grazes the target's INFINITE surface past the cap; the
-// recognizer drops that phantom loop (wallEntryLoops) and keeps the single real wall-entry hole.
+// cap through an ellipse strictly inside the rim — the cone analogue of slice 1. The frustum is long enough
+// that its wall also grazes the target's INFINITE surface past the cap; the trim keeps the single real
+// wall-entry hole and drops that phantom loop, because a face is bounded by its own band, not its surface.
 func coneCapCrossingCutBodies(t *testing.T) (*topo.Body, *topo.Body) {
 	s := 1 / stdmath.Sqrt2
 	top := math.P3(math.Scalar(-6.5+16*s), 0, math.Scalar(2+16*s))

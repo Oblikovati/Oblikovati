@@ -36,7 +36,7 @@ func TestArrangeAdjacentRegionsFormOneHole(t *testing.T) {
 	segs = append(segs, rectSegments(2, 2, 5, 6)...)   // left cell
 	segs = append(segs, rectSegments(5, 2, 8, 6)...)   // right cell, sharing the x=5 edge
 
-	frame := faceWithOuterArea(t, Arrange(segs), 100)
+	frame := faceWithOuterArea(t, arrangeForTest(segs), 100)
 	if len(frame.Holes) != 1 {
 		t.Fatalf("frame has %d holes, want 1 — two adjacent regions form ONE connected opening", len(frame.Holes))
 	}
@@ -62,7 +62,7 @@ func TestArrangeDisjointRegionsStayTwoHoles(t *testing.T) {
 	segs = append(segs, rectSegments(2, 2, 4, 6)...)
 	segs = append(segs, rectSegments(6, 2, 8, 6)...)
 
-	if frame := faceWithOuterArea(t, Arrange(segs), 100); len(frame.Holes) != 2 {
+	if frame := faceWithOuterArea(t, arrangeForTest(segs), 100); len(frame.Holes) != 2 {
 		t.Errorf("frame has %d holes, want 2 — the cells are disjoint openings", len(frame.Holes))
 	}
 }
@@ -76,7 +76,7 @@ func TestArrangeNestedFramesKeepTheirOwnHole(t *testing.T) {
 	segs = append(segs, rectSegments(0, 0, 10, 10)...)
 	segs = append(segs, rectSegments(2, 2, 8, 8)...)
 	segs = append(segs, rectSegments(4, 4, 6, 6)...)
-	faces := Arrange(segs)
+	faces := arrangeForTest(segs)
 
 	outer := faceWithOuterArea(t, faces, 100)
 	if len(outer.Holes) != 1 {

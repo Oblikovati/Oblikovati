@@ -29,6 +29,17 @@ type planeConic struct {
 	// One representation carries both because a plane cuts a cone in either, depending only on
 	// how the plane is tilted, and an imprint must not care which it got (#3459).
 	hyper bool
+	// para marks the THIRD conic. A parabola has no centre and no semi-axes: center is its vertex,
+	// maj its cross direction, and its equation in that frame is ξ² = 4·focal·η rather than the
+	// signed ξ²±η²=1 the other two share. A plane cuts a cone in any of the three depending only on
+	// how it is tilted, and an imprint must not care which it got (ADR-0062).
+	para  bool
+	focal float64
+	// paraSign orients η for the parabola. The chart's perpendicular is a fixed quarter turn from
+	// maj, which may oppose the direction the parabola actually OPENS toward; η appears LINEARLY in
+	// ξ²=4f·η, so unlike the other two conics — whose metric squares it — the sign is load-bearing.
+	// Without it every crossing came back mirrored through the vertex.
+	paraSign float64
 }
 
 // sig is the metric's sign: +1 for the ellipse, -1 for the hyperbola.
@@ -44,6 +55,19 @@ func (pc planeConic) sig() float64 {
 // root on the mirror branch is not on this curve at all and must be dropped.
 func (pc planeConic) onBranch(xi float64) bool { return !pc.hyper || xi > 0 }
 
+// quadraticCoefficients is the quadratic α·s²+β·s+γ=0 whose roots are the crossings of this conic with
+// the edge running from (ax, ay) along (dx, dy) in the conic's own frame. All three conics reduce to
+// one quadratic, so there is one solver: the ellipse and hyperbola through their signed unit metric
+// ξ²+σ·η²=1, the parabola through ξ²−4f·η=0.
+func (pc planeConic) quadraticCoefficients(ax, ay, dx, dy float64) (alpha, beta, gamma float64) {
+	if pc.para {
+		f4 := 4 * pc.focal
+		return dx * dx, 2*ax*dx - f4*dy, ax*ax - f4*ay
+	}
+	sg := pc.sig()
+	return dx*dx + sg*dy*dy, 2 * (ax*dx + sg*ay*dy), ax*ax + sg*ay*ay - 1
+}
+
 // conicHit is one exact crossing of the conic with a polygon edge: the edge parameter in [0,1] and the
 // crossing point in the (u,v) chart (exactly on the edge; on the conic to the quadratic's precision).
 type conicHit struct {
@@ -52,20 +76,33 @@ type conicHit struct {
 }
 
 // toPlaneConic projects a 3-D imprint conic (which lies in the seat plane pl) into pl's (u,v) chart. It
-// handles the shapes a cylinder/cone∩plane yields — circle, ellipse and hyperbola branch; ok=false for a parabola or any
-// other curve, which the planeUV gate declines to CSG for now (#1591).
+// handles every shape a cylinder/cone∩plane yields — circle, ellipse, hyperbola branch and parabola;
+// ok=false for any other curve, which the planeUV gate declines (#1591, ADR-0062).
 func toPlaneConic(curve geom.Curve3, pl geom.Plane) (planeConic, bool) {
 	cf, ok := geom.AsConic(curve)
 	if !ok {
 		return planeConic{}, false
 	}
+	maj := unitVec2(to2Dvec(pl, cf.Major.AsVector()))
 	return planeConic{
-		center: to2D(pl, cf.Center),
-		maj:    unitVec2(to2Dvec(pl, cf.Major.AsVector())),
-		A:      cf.A,
-		B:      cf.B,
-		hyper:  cf.Hyperbolic,
+		center:   to2D(pl, cf.Center),
+		maj:      maj,
+		A:        cf.A,
+		B:        cf.B,
+		hyper:    cf.Hyperbolic,
+		para:     cf.Parabolic,
+		focal:    cf.Focal,
+		paraSign: openingSign(maj, to2Dvec(pl, cf.Minor.AsVector())),
 	}, true
+}
+
+// openingSign is +1 when the chart's quarter turn from maj agrees with the conic's own minor
+// direction and -1 when it opposes it; it orients a parabola's η.
+func openingSign(maj, minor math.Vector2) float64 {
+	if float64(minor.Dot(math.V2(-maj.Y, maj.X))) < 0 {
+		return -1
+	}
+	return 1
 }
 
 // conicEdgeHits solves C ∩ (a→b) EXACTLY, keeping only crossings STRICTLY inside the edge.
@@ -95,13 +132,11 @@ func conicSegmentHits(pc planeConic, a, b math.Point2, res geom.Resolution, sPad
 	ax, ay := pc.normalize(a)
 	bx, by := pc.normalize(b)
 	dx, dy := bx-ax, by-ay
-	sg := pc.sig()
-	alpha := dx*dx + sg*dy*dy
-	beta := 2 * (ax*dx + sg*ay*dy)
-	gamma := ax*ax + sg*ay*ay - 1
-	// alpha vanishes when the edge runs parallel to an ASYMPTOTE — a hyperbola-only case, and not
-	// a degeneracy. (For an ellipse alpha is a sum of squares, so it can only vanish on the
-	// degenerate edge already rejected above.)
+	alpha, beta, gamma := pc.quadraticCoefficients(ax, ay, dx, dy)
+	// alpha vanishes when the edge runs parallel to a hyperbola's ASYMPTOTE, or to a parabola's axis
+	// of symmetry — in both the quadratic collapses to a linear equation with ONE root, and neither is
+	// a degeneracy. (For an ellipse alpha is a sum of squares, so it can only vanish on the degenerate
+	// edge already rejected above.)
 	if stdmath.Abs(alpha) < res.Weld()*res.Weld() {
 		return pc.asymptoteParallelHit(a, b, ax, dx, beta, gamma, res, sPad)
 	}
@@ -115,9 +150,9 @@ func conicSegmentHits(pc planeConic, a, b math.Point2, res geom.Resolution, sPad
 	return hits, conicTangent(a, b, s1, s2, disc, res)
 }
 
-// asymptoteParallelHit solves the degenerate-quadratic case: the edge runs parallel to a
-// hyperbola's asymptote, so the quadratic collapses to a linear equation with a single root. An
-// edge lying ON the asymptote has no isolated crossing at all.
+// asymptoteParallelHit solves the degenerate-quadratic case: the edge runs parallel to a hyperbola's
+// asymptote or to a parabola's axis, so the quadratic collapses to a linear equation with a single
+// root. An edge lying ON the asymptote has no isolated crossing at all.
 func (pc planeConic) asymptoteParallelHit(a, b math.Point2, ax, dx, beta, gamma float64,
 	res geom.Resolution, sPad float64,
 ) (hits []conicHit, tangent bool) {
@@ -141,6 +176,9 @@ func (pc planeConic) appendBranchHit(hits []conicHit, a, b math.Point2, ax, dx, 
 func (pc planeConic) normalize(p math.Point2) (xi, eta float64) {
 	d := pc.center.VectorTo(p)
 	perp := math.V2(-pc.maj.Y, pc.maj.X)
+	if pc.para {
+		return float64(d.Dot(pc.maj)), float64(d.Dot(perp)) * pc.paraSign // no semi-axes to divide by
+	}
 	return float64(d.Dot(pc.maj)) / pc.A, float64(d.Dot(perp)) / pc.B
 }
 

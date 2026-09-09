@@ -51,7 +51,7 @@ func TestExactCurvedPathStaysQuiet(t *testing.T) {
 	if !base.Health().OK() || !drill.Health().OK() {
 		t.Fatalf("features went unhealthy: base=%+v drill=%+v", base.Health(), drill.Health())
 	}
-	if hasDiagCode(drill.Diagnostics(), ops.CodeBooleanAnalyticFaceted) || hasDiagCode(drill.Diagnostics(), ops.CodeBooleanCSGFallback) {
+	if hasDiagCode(drill.Diagnostics(), ops.CodeBooleanAnalyticFaceted) {
 		t.Errorf("the exact box-drill cut carries degradation diagnostics it should not: %v", drill.Diagnostics())
 	}
 }

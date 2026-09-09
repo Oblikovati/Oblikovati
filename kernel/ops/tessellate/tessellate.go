@@ -50,7 +50,7 @@ func TessellateBody(b *topo.Body, q Quality) (*Mesh, [][]math.Point3) {
 	_, fm := TessellateBodyFaces(b, q)
 	mesh := &Mesh{}
 	for _, m := range fm {
-		MergeMesh(mesh, m)
+		MergeMesh(mesh, m) // MergeMesh carries each face's diagnostics up, the body's tear among them
 	}
 	var edges [][]math.Point3
 	for _, e := range b.Edges() {
@@ -72,6 +72,9 @@ func TessellateBodyFaces(b *topo.Body, q Quality) ([]*topo.Face, []*Mesh) {
 	}
 	conformCylConeFaces(faces, idx, fm, q)
 	orientFacesOutward(fm) // re-orient imported faces whose B-rep sense came in inverted (Normal-Debug red)
+	// The body's own post-condition, here because this is the ONE point every route passes through:
+	// the whole-body mesh, the facet store, and the diagnostics harvest that reaches feature health.
+	recordBodyMeshTear(b, faces, fm)
 	return faces, fm
 }
 

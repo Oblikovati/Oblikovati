@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 // Command scallopshot is a throwaway live-capture driver for the partial curved-on-planar boolean
-// (#1591, ADR-0049): it models a plate and drills an edge-CLIPPING through-hole (an edge scallop,
-// CutEdgeScallop) through the real feature pipeline, renders the production frame loop and saves a
+// (#1591, ADR-0049): it models a plate and drills an edge-CLIPPING through-hole (an edge scallop)
+// through the real feature pipeline, renders the production frame loop and saves a
 // PNG — so the capture visually confirms the analytic scallop wall renders CRACK-FREE (the live
 // equivalent of the headless freeEdgeCount==0 tessellation gate).
 //

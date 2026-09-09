@@ -111,23 +111,32 @@ func TestMarchedDeviationOfDegenerateInputIsZero(t *testing.T) {
 	}
 }
 
-// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: a torus crossed by a cylinder has NO closed
-// form in either bucket (a torus is quartic, so it is neither a straight-ruled parametrisation nor an
-// implicit quadric), so SurfaceIntersect marches it — and every curve it returns must carry the achieved
-// deviation of that march, not a silent claim of exactness. The magnitude is checked against the sagitta
-// of the marched loops' own chord spacing, so the test measures the pipeline rather than freezing a
-// constant (#3489).
+// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: two interlocked TORI have no closed form in
+// any bucket. A torus is quartic, so neither is an implicit quadric: the ruled bucket cannot reach
+// either, and the torus bucket's own reduction substitutes ONE torus chart into the other surface's
+// quadratic form, which the second torus does not have (ADR-0061 stage 5). So SurfaceIntersect marches
+// the pair — and every curve it returns must carry the achieved deviation of that march, not a silent
+// claim of exactness. The magnitude is checked against the sagitta of the marched loops' own chord
+// spacing, so the test measures the pipeline rather than freezing a constant (#3489).
+//
+// The fixture has moved twice, each time because the pair it used stopped marching: first an AXIAL
+// drill through a ring (the axis-invariant reduction), then a SKEW rod across one (the second-harmonic
+// lanes, ADR-0061 stage 5 third slice). What it pins is unchanged — a pair with no closed form still
+// reports how exact it is.
 func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
 	t.Parallel()
 	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
 	if err != nil {
 		t.Fatalf("torus: %v", err)
 	}
-	drill, _ := NewCylinder(math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)
-	box := math.NewBox(math.P3(-6, -6, -6), math.P3(6, 6, 6))
-	curves, handled := SurfaceIntersect(tor, drill, box, ResolutionForBox(box))
+	linked, err := NewTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1)
+	if err != nil {
+		t.Fatalf("linked torus: %v", err)
+	}
+	box := math.NewBox(math.P3(-8, -8, -8), math.P3(10, 8, 8))
+	curves, handled := SurfaceIntersect(tor, linked, box, ResolutionForBox(box))
 	if !handled || len(curves) == 0 {
-		t.Fatalf("torus ∩ cylinder: handled=%v, %d curves; want a marched result", handled, len(curves))
+		t.Fatalf("torus ∩ torus: handled=%v, %d curves; want a marched result", handled, len(curves))
 	}
 	for i, c := range curves {
 		pl, ok := c.(Polyline)
@@ -138,7 +147,7 @@ func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
 		if dev <= 0 {
 			t.Fatalf("curve %d (%d pts) reports deviation %g; a marched chord approximation is never exact", i, len(pl.Vertices), dev)
 		}
-		lo, hi := sagittaBand(0.5, len(pl.Vertices))
+		lo, hi := sagittaBand(1, len(pl.Vertices))
 		if dev < lo || dev > hi {
 			t.Errorf("curve %d (%d pts) deviation %.6g outside the chord-bow band [%.6g, %.6g]", i, len(pl.Vertices), dev, lo, hi)
 		}

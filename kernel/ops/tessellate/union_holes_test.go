@@ -4,8 +4,10 @@ package tessellate
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/math"
 )
 
@@ -24,7 +26,10 @@ func TestUnionTrisTwoOverlappingSquares(t *testing.T) {
 	t.Parallel()
 	outer := rectHole(0, 0, 10, 10)
 	holes := [][]math.Point2{rectHole(3, 3, 6, 6), rectHole(5, 5, 8, 8)}
-	verts, tris := unionTris(outer, holes)
+	verts, tris, converged := unionTris(outer, holes)
+	if !converged {
+		t.Fatal("two overlapping squares are a well-conditioned arrangement; it must converge")
+	}
 	if got := trisArea(verts, tris); stdmath.Abs(got-83) > 1e-6 {
 		t.Errorf("union area = %g, want 83 (100 − union 17)", got)
 	}
@@ -43,7 +48,10 @@ func TestUnionTrisGridHoles(t *testing.T) {
 	for _, y := range []float64{3, 5, 7} {
 		holes = append(holes, rectHole(1, y-0.2, 9, y+0.2))
 	}
-	verts, tris := unionTris(outer, holes)
+	verts, tris, converged := unionTris(outer, holes)
+	if !converged {
+		t.Fatal("a 3x3 grid of crossing bars is a well-conditioned arrangement; it must converge")
+	}
 	if got := trisArea(verts, tris); stdmath.Abs(got-82.24) > 1e-6 {
 		t.Errorf("union area = %g, want 82.24 (100 − union 17.76)", got)
 	}
@@ -96,5 +104,28 @@ func TestHoledPlanarMeshRoutesOverlapToUnion(t *testing.T) {
 	m := holedPlanarMesh(Project2D(outer3D, flat), outer3D, holes3D, flat, normal)
 	if got := m.Area(); stdmath.Abs(got-83) > 1e-4 {
 		t.Errorf("holedPlanarMesh area = %g, want 83 (overlap routed to union)", got)
+	}
+}
+
+// TestRecordDroppedCellsFlagsOnlyANonConvergedArrangement pins both senses of the flag on the face
+// mesh, geometry-free (the shape of TestAFaceWithoutAChartStillReportsItsDiscardedTrim): a
+// non-converged arrangement carries CodeArrangementDroppedCells as a Defect naming the hole count, a
+// converged one carries nothing — it is the ordinary path for every overlapping-hole face — and a nil
+// mesh stays nil rather than being diagnosed into existence.
+func TestRecordDroppedCellsFlagsOnlyANonConvergedArrangement(t *testing.T) {
+	t.Parallel()
+	got := recordDroppedCells(&Mesh{}, false, 2)
+	if !hasCode(got, CodeArrangementDroppedCells) {
+		t.Fatal("a face whose arrangement did not converge reported nothing")
+	}
+	d := got.Diagnostics[0]
+	if d.Severity != diag.Defect || !strings.Contains(d.Detail, "2 overlapping hole(s)") {
+		t.Errorf("dropped-cells diagnostic = %+v, want a Defect naming the 2 holes", d)
+	}
+	if got := recordDroppedCells(&Mesh{}, true, 2); hasCode(got, CodeArrangementDroppedCells) {
+		t.Error("a converged arrangement reported dropped cells; nothing was dropped")
+	}
+	if got := recordDroppedCells(nil, false, 2); got != nil {
+		t.Error("a nil mesh must stay nil, not be diagnosed into existence")
 	}
 }

@@ -3,7 +3,6 @@
 package brep
 
 import (
-	stdmath "math"
 	"testing"
 
 	"oblikovati.org/kernel/geom"
@@ -75,29 +74,6 @@ func TestHalfSpaceCutTorusObliqueOffMatrix(t *testing.T) {
 	}
 	if e := len(res.Edges()); e != 2 {
 		t.Errorf("off-matrix oblique oval has %d edges, want 2 (the two spiric branches)", e)
-	}
-}
-
-// torusObliqueOvalRange finds the oval's tube-angle interval and pinch sign from the closed-form w=±1
-// crossings, exactly where the sampled section starts/ends.
-func TestTorusObliqueOvalRange(t *testing.T) {
-	t.Parallel()
-	tor, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0.6, 0.8), 5, 2)
-	plane, _ := geom.NewPlane(math.P3(0, 0, 3.6), math.V3(0, 0, 1))
-	_, m, k, c := geom.TorusSectionCoeffs(tor, plane)
-	v0, v1, pinch, ok := torusObliqueOvalRange(tor, m, k, c)
-	if !ok {
-		t.Fatal("expected a single oval")
-	}
-	// |w|=1 at both ends, |w|<1 strictly inside.
-	if w := stdmath.Abs(torusW(tor, m, k, c, v0)); stdmath.Abs(w-1) > 1e-9 {
-		t.Errorf("|w(v0)|=%g, want 1", w)
-	}
-	if w := stdmath.Abs(torusW(tor, m, k, c, (v0+v1)/2)); w > 1 {
-		t.Errorf("|w(mid)|=%g, want <1 (inside the oval)", w)
-	}
-	if pinch != 1 && pinch != -1 {
-		t.Errorf("pinch=%g, want ±1", pinch)
 	}
 }
 

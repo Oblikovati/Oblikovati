@@ -39,7 +39,7 @@ func TestSplitImprintByKind(t *testing.T) {
 	if len(straight) != 2 || len(islands) != 1 || len(open) != 0 {
 		t.Fatalf("split = %d straight, %d islands, %d open; want 2, 1 and 0", len(straight), len(islands), len(open))
 	}
-	if islands[0] != geom.Curve3(circle) {
+	if len(islands[0]) != 1 || islands[0][0].curve != geom.Curve3(circle) {
 		t.Error("the circle must land in the island list, not the straight one")
 	}
 }
@@ -53,7 +53,7 @@ func TestConicIslandSegsCoverTheWholeCircle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	segs := c.conicIslandSegs(circle)
+	segs := c.islandCurveSegs(oneArc(circle))
 	if len(segs) != imprintSampleCount {
 		t.Fatalf("island segments = %d, want %d", len(segs), imprintSampleCount)
 	}
@@ -83,7 +83,7 @@ func TestIslandSegsConcatenatesEveryConic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(c.islandSegs([]geom.Curve3{inner, outer})); got != 2*imprintSampleCount {
+	if got := len(c.islandSegs([]imprintCycle{oneCycle(inner), oneCycle(outer)})); got != 2*imprintSampleCount {
 		t.Errorf("islandSegs = %d segments, want %d", got, 2*imprintSampleCount)
 	}
 	if got := len(c.islandSegs(nil)); got != 0 {
@@ -126,9 +126,15 @@ func sampledRingArea(segs []uvSeg) float64 {
 	return stdmath.Abs(twice) / 2
 }
 
-// TestIslandContactOKDeclinesACrossedIsland: an island a straight imprint cuts through would be resolved
-// on the island's sampled chord, so the trim declines instead (#3460).
-func TestIslandContactOKDeclinesACrossedIsland(t *testing.T) {
+// TestACrossedIslandIsSolvedNotDeclined: an island a straight imprint cuts through used to be refused,
+// because the meeting would have been resolved on the island's sampled CHORD — off the true curve by
+// the sagitta — leaving a T-junction the stitch could not weld (#3460). It is now SOLVED:
+// islandStraightHits places the meeting exactly and splits both sides there, so the refusal is gone and
+// the configuration is built (ADR-0061 stage 2).
+//
+// The test asserts the solve, not merely the absence of the refusal: a gate that stopped refusing
+// without the incidence being placed would pass a weaker check and fail the body downstream.
+func TestACrossedIslandIsSolvedNotDeclined(t *testing.T) {
 	t.Parallel()
 	c := islandChart(t)
 	circle, err := geom.NewCircle(math.P3(0, 0, 3), math.V3(0, 0, 1), 5)
@@ -136,12 +142,23 @@ func TestIslandContactOKDeclinesACrossedIsland(t *testing.T) {
 		t.Fatal(err)
 	}
 	across := geom.NewLineSegment(math.P3(-8, 0, 3), math.P3(8, 0, 3))
-	clear := geom.NewLineSegment(math.P3(-8, 7, 3), math.P3(8, 7, 3))
-	if islandContactOK(c, []geom.Curve3{circle}, []geom.Curve3{across}) {
-		t.Error("a straight imprint crossing the island must decline")
+	if !islandContactOK(c, []imprintCycle{oneCycle(circle)}) {
+		t.Error("a straight imprint crossing an island is solved now, and must not decline")
 	}
-	if !islandContactOK(c, []geom.Curve3{circle}, []geom.Curve3{clear}) {
-		t.Error("a straight imprint clear of the island is fine")
+	split, onStraight := splitIslandsAtTouches([]imprintCycle{oneCycle(circle)}, []geom.Curve3{across})
+	if len(onStraight) != 2 {
+		t.Fatalf("the chord crosses the circle twice; %d crossings were solved on it", len(onStraight))
+	}
+	for _, cr := range onStraight {
+		if d := stdmath.Abs(float64(cr.at.X)) - 5; stdmath.Abs(d) > 1e-9 {
+			t.Errorf("a crossing landed at %v, want x = ±5 on the circle", cr.at)
+		}
+	}
+	// Three arcs, not two: the circle's own domain start is still an arc boundary, so cutting at two
+	// interior parameters leaves [lo,t1], [t1,t2], [t2,hi]. The two lobes are [t1,t2] and the pair that
+	// meet at the closure, which the welder rejoins.
+	if len(split[0]) != 3 {
+		t.Errorf("the island was split into %d arcs, want 3 (two crossings plus its own closure)", len(split[0]))
 	}
 }
 
@@ -178,5 +195,105 @@ func TestConicsNestedOrApartScansEveryPair(t *testing.T) {
 	}
 	if conicsNestedOrApart([]planeConic{at(0, 2), at(10, 2), at(11, 3)}) {
 		t.Error("a crossing pair anywhere in the set must decline")
+	}
+}
+
+// oneArc walks a closed curve over its whole domain.
+func oneArc(cv geom.Curve3) imprintArc {
+	lo, hi := cv.Domain()
+	return imprintArc{curve: cv, t0: lo, t1: hi}
+}
+
+// oneCycle is the island a single closed curve makes.
+func oneCycle(cv geom.Curve3) imprintCycle { return imprintCycle{oneArc(cv)} }
+
+// cyclesOf is one single-curve island per curve.
+func cyclesOf(cvs ...geom.Curve3) []imprintCycle {
+	out := make([]imprintCycle, 0, len(cvs))
+	for _, cv := range cvs {
+		out = append(out, oneCycle(cv))
+	}
+	return out
+}
+
+// TestChainImprintCyclesAssemblesABigon: a section need not arrive as one curve. The two spiric
+// branches of a single oval meet end to end and close; neither closes on its own, so neither is an
+// island, and neither crosses the receiving face's boundary, so neither is an open crossing. Assembled
+// first — as OCCT's PerformLoops builds wires before PerformAreas classifies them — the pair is one
+// island (ADR-0062).
+func TestChainImprintCyclesAssemblesABigon(t *testing.T) {
+	t.Parallel()
+	tor, err := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2)
+	if err != nil {
+		t.Fatalf("NewTorus: %v", err)
+	}
+	plane, err := geom.NewPlane(math.P3(0, 6, 0), math.V3(0, 1, 0))
+	if err != nil {
+		t.Fatalf("NewPlane: %v", err)
+	}
+	arcs, ok := geom.TorusPlaneSection(tor, plane)
+	if !ok || len(arcs) != 2 {
+		t.Fatalf("want one oval in two branches, got ok=%v n=%d", ok, len(arcs))
+	}
+	straight, islands, open := splitImprintByKind(arcs)
+	if len(straight) != 0 || len(open) != 0 {
+		t.Fatalf("split = %d straight, %d open; both branches belong to the island", len(straight), len(open))
+	}
+	if len(islands) != 1 || len(islands[0]) != 2 {
+		t.Fatalf("split made %d islands; want one cycle of two arcs", len(islands))
+	}
+	// The cycle is continuous: each arc ends where the next begins, and the last returns to the first.
+	cyc := islands[0]
+	for i, arc := range cyc {
+		next := cyc[(i+1)%len(cyc)]
+		end := arc.curve.PointAt(arc.t1)
+		if d := float64(end.DistanceTo(next.curve.PointAt(next.t0))); d > 1e-9 {
+			t.Errorf("arc %d ends %g from where the next begins: the cycle is not continuous", i, d)
+		}
+	}
+}
+
+// TestChainImprintCyclesLeavesOpenArcsAlone: arcs that do not close stay open, so a genuine crossing is
+// never mistaken for an island.
+func TestChainImprintCyclesLeavesOpenArcsAlone(t *testing.T) {
+	t.Parallel()
+	a, err := geom.NewArc3d(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 2, 0, 1)
+	if err != nil {
+		t.Fatalf("NewArc3d: %v", err)
+	}
+	b, err := geom.NewArc3d(math.P3(9, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 2, 0, 1)
+	if err != nil {
+		t.Fatalf("NewArc3d: %v", err)
+	}
+	cycles, rest := chainImprintCycles([]geom.Curve3{a, b})
+	if len(cycles) != 0 {
+		t.Errorf("two arcs that never meet made %d cycles, want none", len(cycles))
+	}
+	if len(rest) != 2 {
+		t.Errorf("%d arcs came back open, want both", len(rest))
+	}
+}
+
+// TestIslandsWalkNestedOrApartJudgesByTheWalk: the walk-based verdict is the one a NON-conic island
+// gets — a torus's spiric oval has no closed form to separate it by — so it is exercised directly.
+// A pair that crosses has samples on both sides of the other's ring; a pair apart, or nested, does not.
+func TestIslandsWalkNestedOrApartJudgesByTheWalk(t *testing.T) {
+	t.Parallel()
+	c := islandChart(t)
+	circle := func(x, r float64) geom.Curve3 {
+		cv, err := geom.NewCircle(math.P3(math.Scalar(x), 0, 3), math.V3(0, 0, 1), r)
+		if err != nil {
+			t.Fatalf("NewCircle: %v", err)
+		}
+		return cv
+	}
+	if !islandsWalkNestedOrApart(c, cyclesOf(circle(0, 1), circle(10, 1))) {
+		t.Error("two islands wholly apart were declined")
+	}
+	if !islandsWalkNestedOrApart(c, cyclesOf(circle(0, 4), circle(0, 1))) {
+		t.Error("two NESTED islands were declined")
+	}
+	if islandsWalkNestedOrApart(c, cyclesOf(circle(0, 2), circle(3, 2))) {
+		t.Error("two CROSSING islands were admitted")
 	}
 }

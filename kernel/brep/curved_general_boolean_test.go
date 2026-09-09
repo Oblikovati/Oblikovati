@@ -77,20 +77,6 @@ func TestDedgeLoopContains(t *testing.T) {
 	}
 }
 
-// TestCurvedSolidMembershipDeclinesNonCone: the membership oracle handles a cone solid and declines a shape
-// it has no analytic test for, so the general path defers rather than misclassify.
-func TestCurvedSolidMembershipDeclinesNonCone(t *testing.T) {
-	t.Parallel()
-	cone, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "cone")
-	if _, ok := curvedSolidMembership(cone); !ok {
-		t.Error("cone solid membership should be available")
-	}
-	sph, _ := SolidSphere(math.P3(0, 0, 0), 3, "sph")
-	if _, ok := curvedSolidMembership(sph); ok {
-		t.Error("sphere solid membership is not wired yet; want ok=false so the caller defers")
-	}
-}
-
 // TestPointInsideConeSolid pins the analytic frustum membership at the band edges and the rim.
 func TestPointInsideConeSolid(t *testing.T) {
 	t.Parallel()
@@ -109,10 +95,13 @@ func TestPointInsideConeSolid(t *testing.T) {
 	}
 }
 
-// Unified ruled-crossing intersect (ADR-0058 phase 3). ONE driver — ruledCrossingIntersect — builds every
-// ruled∩ruled crossing (cone∩cone, cone∩cylinder, cylinder∩cylinder incl. near-pinch) through the general
-// SSI→trimByImprint→solid-membership→curvedStitch path, with NO per-pair loop→body constructor. Each case
-// must be a watertight solid whose analytic face composition matches the bespoke handler it replaced.
+// Ruled-crossing corpus (ADR-0058 phase 3, ADR-0061 stage 4). Every ruled∩ruled crossing — cone∩cone,
+// cone∩cylinder, cylinder∩cylinder including the near-pinch — is built by the ONE general pipeline
+// Boolean routes to: SSI → trimByImprint → solid membership → curvedStitch, with no per-pair loop→body
+// constructor and no recognizer in front of it. These rows used to call the bespoke drivers
+// (ruledCrossingIntersect, RuledCrossing{Cut,Join}General) directly; they now drive Boolean, so the face
+// composition they pin is the composition the KERNEL ships, not one an unreachable driver could still
+// produce. Each case must be a watertight solid whose analytic faces are the ones the pair implies.
 
 // TestRuledCrossingIntersectConeCone crosses a narrow frustum through a fatter one: a watertight solid of 3
 // analytic cones (the rod band between the two imprint loops + the two fat-cone lens caps).
@@ -121,9 +110,9 @@ func TestRuledCrossingIntersectConeCone(t *testing.T) {
 	thin, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 0.8, 1.5, "thin")
 	fat, _ := SolidCylinderCone(math.P3(0, 0, -6), math.P3(0, 0, 6), 2, 4, "fat")
 
-	res, ok := ruledCrossingIntersect(thin, fat, nil)
-	if !ok {
-		t.Fatal("cone∩cone declined; want the three-face intersection")
+	res, err := Boolean(Intersection, thin, fat)
+	if err != nil {
+		t.Fatalf("cone∩cone: %v", err)
 	}
 	assertWatertight(t, res)
 	cones, cyls, planes := faceTypeCounts(t, res)
@@ -131,75 +120,79 @@ func TestRuledCrossingIntersectConeCone(t *testing.T) {
 		t.Errorf("cone∩cone got %d cone + %d cyl + %d plane faces, want 3 cones (rod band + 2 fat lens caps)",
 			cones, cyls, planes)
 	}
-	if _, ok := ruledCrossingIntersect(fat, thin, nil); !ok { // order-independent
-		t.Error("cone∩cone should resolve with the fat cone passed first too")
+	if _, err := Boolean(Intersection, fat, thin); err != nil { // order-independent
+		t.Errorf("cone∩cone with the fat cone first: %v", err)
 	}
 }
 
 // TestRuledCrossingIntersectConeCylinder crosses a cone through a cylinder: 1 cone band inside the cylinder +
-// the two cylinder-wall lens caps, watertight, and order-independent through the exported entry.
+// the two cylinder-wall lens caps, watertight, and order-independent.
 func TestRuledCrossingIntersectConeCylinder(t *testing.T) {
 	t.Parallel()
 	cone, _ := SolidCylinderCone(math.P3(-6, 0, 0), math.P3(6, 0, 0), 1, 2.5, "cone")
 	cyl, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	res, ok := ruledCrossingIntersect(cone, cyl, nil)
-	if !ok {
-		t.Fatal("cone∩cylinder declined; want the three-face intersection")
+	res, err := Boolean(Intersection, cone, cyl)
+	if err != nil {
+		t.Fatalf("cone∩cylinder: %v", err)
 	}
 	assertWatertight(t, res)
 	cones, cyls, planes := faceTypeCounts(t, res)
 	if cones != 1 || cyls != 2 || planes != 0 {
 		t.Errorf("cone∩cylinder got %d cone + %d cyl + %d plane faces, want 1 cone band + 2 cylinder lens caps", cones, cyls, planes)
 	}
-	if _, ok := RuledCrossingIntersectGeneral(cyl, cone, nil); !ok {
-		t.Error("cone∩cylinder should resolve with the cylinder passed first too")
+	if _, err := Boolean(Intersection, cyl, cone); err != nil {
+		t.Errorf("cone∩cylinder with the cylinder first: %v", err)
 	}
 }
 
 // TestRuledCrossingIntersectCylinderCylinder crosses two cylinders: a watertight 3-cylinder solid (rod band +
-// two fat lens caps). Cylinder∩cylinder now runs through the SAME unified driver, not a separate one.
+// two fat lens caps).
 func TestRuledCrossingIntersectCylinderCylinder(t *testing.T) {
 	t.Parallel()
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	res, ok := ruledCrossingIntersect(rod, fat, nil)
-	if !ok {
-		t.Fatal("cylinder∩cylinder declined; want the three-face intersection")
+	res, err := Boolean(Intersection, rod, fat)
+	if err != nil {
+		t.Fatalf("cylinder∩cylinder: %v", err)
 	}
 	assertWatertight(t, res)
 	cones, cyls, planes := faceTypeCounts(t, res)
 	if cones != 0 || cyls != 3 || planes != 0 {
 		t.Errorf("cylinder∩cylinder got %d cone + %d cyl + %d plane faces, want 3 cylinders (rod band + 2 lens caps)", cones, cyls, planes)
 	}
-	if _, ok := RuledCrossingIntersectGeneral(fat, rod, nil); !ok {
-		t.Error("crossing cylinders should resolve with the fat passed first too")
+	if _, err := Boolean(Intersection, fat, rod); err != nil {
+		t.Errorf("crossing cylinders with the fat first: %v", err)
 	}
 }
 
-// TestRuledCrossingIntersectDeclinesPlanarPair: two planar blocks have no curved side, so the unified driver
-// declines (ok=false) rather than trim a non-existent ruled crossing.
-func TestRuledCrossingIntersectDeclinesPlanarPair(t *testing.T) {
+// TestRuledCrossingIntersectPlanarPairStaysPlanar: two planar blocks carry no ruled side, so the ruled
+// machinery must not claim them — the planar half of the same pipeline returns the 6-face box overlap.
+// The driver this replaced answered ok=false here so kernel/ops could fall back; there is no fallback
+// now, so the assertion is the ANSWER rather than the decline (ADR-0061 stage 4).
+func TestRuledCrossingIntersectPlanarPairStaysPlanar(t *testing.T) {
 	t.Parallel()
 	x, _ := SolidBlock(math.P3(0, 0, 0), math.P3(2, 2, 2), "x")
 	y, _ := SolidBlock(math.P3(1, 1, 1), math.P3(3, 3, 3), "y")
-	if _, ok := RuledCrossingIntersectGeneral(x, y, nil); ok {
-		t.Error("two planar blocks must decline from the ruled-crossing driver (ok=false)")
+	res, err := Boolean(Intersection, x, y)
+	if err != nil {
+		t.Fatalf("block∩block: %v", err)
+	}
+	assertWatertight(t, res)
+	cones, cyls, planes := faceTypeCounts(t, res)
+	if cones != 0 || cyls != 0 || planes != 6 {
+		t.Errorf("block∩block got %d cone + %d cyl + %d plane faces, want the 6-plane overlap box", cones, cyls, planes)
 	}
 }
 
-// TestCrossingCylinderCutGeneral checks the STRUCTURE the general cut builder emits — its face composition and
-// edge-USE-COUNT (every edge used twice). It does NOT assert orientation/region correctness: this builder is
-// known broken (Oblikovati#1476, the OUTSIDE-keep region bug) and is NOT wired into kernel/ops — crossing-
-// cylinder subtract stays on the bespoke handler. Orientation/volume are validated in ops (TestGeneral...
-// IsAdopted covers the intersect path; cut/join join that guard once #1476 lands). Edge-count watertightness
-// alone is exactly what masked the silent fallback, so this is intentionally scoped to structure (#1403).
-func TestCrossingCylinderCutGeneral(t *testing.T) {
+// TestCrossingCylinderCut drills a crossing rod through a fat cylinder: the breached fat wall + the rod
+// tunnel (2 cylinders) and the fat cylinder's two caps.
+func TestCrossingCylinderCut(t *testing.T) {
 	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
-	res, ok := RuledCrossingCutGeneral(fat, rod, nil)
-	if !ok {
-		t.Fatal("general crossing-cylinder cut declined; want the drilled solid")
+	res, err := Boolean(Difference, fat, rod)
+	if err != nil {
+		t.Fatalf("fat − rod: %v", err)
 	}
 	assertWatertight(t, res)
 	cones, cyls, planes := faceTypeCounts(t, res)
@@ -208,18 +201,16 @@ func TestCrossingCylinderCutGeneral(t *testing.T) {
 	}
 }
 
-// TestCrossingCylinderJoinGeneral: target ∪ tool (fat side-breached by a crossing rod) through the general
-// pipeline yields the correct welded solid — the fat's holed wall (a keyhole-bridged tube), the two disjoint
-// rod stubs (split by connected band), and BOTH bodies' whole caps. The OUTSIDE-keep wrapping-band emission
-// (Oblikovati#1476) is what makes this mesh the right region; its volume is checked against OCC in ops
-// (TestCurvedBooleanVolumesMatchOCC, crossing ∪). Here we assert the watertight face structure (#1403/#1476).
-func TestCrossingCylinderJoinGeneral(t *testing.T) {
+// TestCrossingCylinderJoin: target ∪ tool (a fat cylinder side-breached by a crossing rod) welds into the
+// fat's holed wall (a keyhole-bridged tube), the two disjoint rod stubs split by the connected band, and
+// both bodies' whole caps.
+func TestCrossingCylinderJoin(t *testing.T) {
 	t.Parallel()
 	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
 	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
-	res, ok := RuledCrossingJoinGeneral(fat, rod, nil)
-	if !ok {
-		t.Fatal("general crossing-cylinder join declined; want the welded solid")
+	res, err := Boolean(Union, fat, rod)
+	if err != nil {
+		t.Fatalf("fat ∪ rod: %v", err)
 	}
 	assertWatertight(t, res)
 	cones, cyls, planes := faceTypeCounts(t, res)
@@ -230,36 +221,27 @@ func TestCrossingCylinderJoinGeneral(t *testing.T) {
 	}
 }
 
-// TestCrossingCylinderJoinGeneralDeclines: a non-crossing pair (far apart, no imprint) declines so kernel/ops
-// keeps its fallback.
-func TestCrossingCylinderJoinGeneralDeclines(t *testing.T) {
+// TestDisjointCylindersBooleanByComponent: two cylinders far apart share no imprint. The union is both
+// bodies whole (2 walls + 4 caps) and the difference is the target untouched — the answers the ruled
+// drivers used to decline so a fallback could produce them.
+func TestDisjointCylindersBooleanByComponent(t *testing.T) {
 	t.Parallel()
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
 	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
-	if _, ok := RuledCrossingJoinGeneral(a, b, nil); ok {
-		t.Error("non-intersecting cylinders should decline from the join general path")
-	}
-}
 
-// TestJoinFacesAssembly: the union assembly keeps both walls outward (no reversal) and contributes each body's
-// caps that lie OUTSIDE the other solid — for a clean full crossing that is all four caps.
-func TestJoinFacesAssembly(t *testing.T) {
-	t.Parallel()
-	fat, _ := SolidCylinder(math.P3(0, 0, -6), math.V3(0, 0, 1), 3, 12)
-	rod, _ := SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 1.5, 12)
-	fatOp, _ := cylinderOperand(fat)
-	rodOp, _ := cylinderOperand(rod)
-	wallA := []curvedFace{{reversed: false}}
-	wallB := []curvedFace{{reversed: false}}
-	faces := joinFaces(fatOp, wallA, rodOp, wallB)
-	for i, f := range faces {
-		if f.reversed {
-			t.Errorf("joinFaces[%d] reversed=true, want all walls/caps outward (union keeps outward sense)", i)
-		}
+	union, err := Boolean(Union, a, b)
+	if err != nil {
+		t.Fatalf("disjoint ∪: %v", err)
 	}
-	// 1 wallA + 2 fat caps + 1 wallB + 2 rod caps = 6 faces (all caps outside in a full crossing).
-	if len(faces) != 6 {
-		t.Errorf("joinFaces produced %d faces, want 6 (1 wallA + 2 fat caps + 1 wallB + 2 rod caps)", len(faces))
+	if cones, cyls, planes := faceTypeCounts(t, union); cones != 0 || cyls != 2 || planes != 4 {
+		t.Errorf("disjoint ∪ got %d cone + %d cyl + %d plane faces, want both cylinders whole (2 walls + 4 caps)", cones, cyls, planes)
+	}
+	diff, err := Boolean(Difference, a, b)
+	if err != nil {
+		t.Fatalf("disjoint −: %v", err)
+	}
+	if cones, cyls, planes := faceTypeCounts(t, diff); cones != 0 || cyls != 1 || planes != 2 {
+		t.Errorf("disjoint − got %d cone + %d cyl + %d plane faces, want the target untouched (1 wall + 2 caps)", cones, cyls, planes)
 	}
 }
 
@@ -273,13 +255,38 @@ func TestReverseCurvedFaces(t *testing.T) {
 	}
 }
 
-// TestCrossingCylinderCutGeneralDeclines: a non-crossing pair (parallel, no imprint) declines so kernel/ops
-// keeps its fallback.
-func TestCrossingCylinderCutGeneralDeclines(t *testing.T) {
+// TestCurvedBooleanWatertightAcrossScales sweeps one crossing-cylinder cut, one cone-pair cut and one
+// equal-radius Steinmetz cut over four decades of model size. Everything the trim reads is
+// model-relative (ADR-0042), so the answer must not depend on how big the part is; when it did, a
+// tolerance somewhere was absolute. Carried over from the deleted drivers' own scale sweep.
+func TestCurvedBooleanWatertightAcrossScales(t *testing.T) {
 	t.Parallel()
-	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 12)
-	b, _ := SolidCylinder(math.P3(20, 0, 0), math.V3(0, 0, 1), 1.5, 12) // far apart, no intersection
-	if _, ok := RuledCrossingCutGeneral(a, b, nil); ok {
-		t.Error("non-intersecting cylinders should decline from the cut general path")
+	for _, s := range []float64{1, 10, 50, 200} {
+		fat, _ := SolidCylinder(math.P3(0, 0, math.Scalar(-1.2*s)), math.V3(0, 0, 1), math.Scalar(0.6*s), math.Scalar(2.4*s))
+		rod, _ := SolidCylinder(math.P3(math.Scalar(-1.2*s), 0, 0), math.V3(1, 0, 0), math.Scalar(0.3*s), math.Scalar(2.4*s))
+		res, err := Boolean(Difference, fat, rod)
+		if err != nil {
+			t.Errorf("scale %g: crossing-cylinder cut: %v", s, err)
+		} else {
+			assertWatertight(t, res)
+		}
+
+		fatC, _ := SolidCylinderCone(math.P3(0, 0, math.Scalar(-1.2*s)), math.P3(0, 0, math.Scalar(1.2*s)), 0.4*s, 0.8*s, "fat")
+		rodC, _ := SolidCylinderCone(math.P3(math.Scalar(-1.2*s), 0, 0), math.P3(math.Scalar(1.2*s), 0, 0), 0.16*s, 0.3*s, "rod")
+		resC, err := Boolean(Difference, fatC, rodC)
+		if err != nil {
+			t.Errorf("scale %g: cone-cone cut: %v", s, err)
+		} else {
+			assertWatertight(t, resC)
+		}
+
+		a, _ := SolidCylinder(math.P3(math.Scalar(-1.2*s), 0, 0), math.V3(1, 0, 0), math.Scalar(0.6*s), math.Scalar(2.4*s))
+		b, _ := SolidCylinder(math.P3(0, 0, math.Scalar(-1.2*s)), math.V3(0, 0, 1), math.Scalar(0.6*s), math.Scalar(2.4*s))
+		resS, err := Boolean(Difference, a, b)
+		if err != nil {
+			t.Errorf("scale %g: Steinmetz cut: %v", s, err)
+		} else {
+			assertWatertight(t, resS)
+		}
 	}
 }

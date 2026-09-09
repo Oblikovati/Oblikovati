@@ -4,6 +4,7 @@ package geom
 
 import (
 	stdmath "math"
+	"sort"
 
 	"oblikovati.org/math"
 )
@@ -62,7 +63,29 @@ func (s SpiricArc) uOfV(v float64) float64 {
 	cv, sv := cosSin(v)
 	denom := s.M * (s.Torus.MajorRadius + s.Torus.MinorRadius*cv)
 	w := (s.K - s.C*s.Torus.MinorRadius*sv) / denom
-	return s.Phi + s.Branch*stdmath.Acos(math.Clamp(w, -1, 1))
+	return s.Phi + s.Branch*stdmath.Acos(spiricCosineAtLimit(w))
+}
+
+// spiricCosineAtLimit resolves w for the arccos, snapping it to ±1 where it is within rounding of them.
+//
+// |w| = 1 is the oval's v-EXTREME: the two branches of one oval meet there, and it is the only place
+// they do. Arccos is infinitely steep at its ends, so |w| short of 1 by δ gives an angle √(2δ) away
+// from the limit — half the mantissa is lost, and δ of half an ulp puts the two branches 3·10⁻⁸ apart
+// in azimuth. Each then samples the shared point to a different place, the two arcs of the oval fail to
+// weld into one loop, and the arrangement sees an open chain that divides nothing: a torus cut by a
+// plane between its tube radii kept the WHOLE face on both sides (ADR-0062).
+//
+// A |w| that exceeds 1 by rounding is not a solution at all, and one short of it by rounding IS the
+// limit — the arc's domain is by construction the interval where |w| ≤ 1. So both are answered the same
+// way, and the two branches then evaluate one azimuth, not two.
+func spiricCosineAtLimit(w float64) float64 {
+	// tol:calibrated — a few ulps of 1, the rounding w itself carries; arccos amplifies it by a square
+	// root, so the snap must happen BEFORE the call, not be absorbed after it.
+	const limitUlps = 8 * 2.220446049250313e-16
+	if stdmath.Abs(w) >= 1-limitUlps {
+		return stdmath.Copysign(1, w)
+	}
+	return math.Clamp(w, -1, 1)
 }
 
 // UAt returns the azimuth u on this branch at tube angle v — the spiric section's single-valued u(v).
@@ -102,3 +125,129 @@ func (s SpiricArc) dUdV(v float64) float64 {
 
 // Domain returns [0, 1].
 func (s SpiricArc) Domain() (lo, hi float64) { return 0, 1 }
+
+// TorusPlaneSection returns the curves a plane cuts from a torus when the section is a SPIRIC — the
+// quartic of Perseus — rather than the two concentric circles a perpendicular plane gives. It is the
+// analytic answer for every other plane, so the section solver need not decline them (ADR-0061 stage 3).
+//
+// The section is single-valued in the tube angle on each branch: u(v) = Φ ± arccos w(v), with
+// w(v) = (K − C·r·sin v) / (M·(R + r·cos v)) (see [TorusSectionCoeffs]). Where |w| < 1 both branches
+// exist; where |w| = 1 they meet, and the curve turns. So the section is read off the v-set on which the
+// plane reaches the tube:
+//
+//   - |w| ≤ 1 for EVERY v — the plane passes through the hole and cuts both walls — gives two curves,
+//     each a branch wrapping the whole tube period;
+//   - otherwise the set is a union of v-intervals, and each interval closes into one oval: the +1 branch
+//     out and the −1 branch back.
+//
+// ok=false when the coefficients are degenerate (a cut normal that is purely axial, where M = 0 and the
+// azimuth is not single-valued in the tube angle).
+func TorusPlaneSection(t Torus, pl Plane) ([]Curve3, bool) {
+	phi, m, k, c := TorusSectionCoeffs(t, pl)
+	if m <= 0 {
+		return nil, false // the cut normal has no radial part: u is not single-valued in v
+	}
+	arc := func(branch, v0, v1 float64) Curve3 {
+		return SpiricArc{Torus: t, Phi: phi, M: m, K: k, C: c, Branch: branch, V0: v0, V1: v1}
+	}
+	spans, whole := spiricTubeSpans(t, m, k, c)
+	if whole {
+		return []Curve3{arc(1, -stdmath.Pi, stdmath.Pi), arc(-1, -stdmath.Pi, stdmath.Pi)}, true
+	}
+	out := make([]Curve3, 0, 2*len(spans))
+	for _, sp := range spans {
+		out = appendRealArc(out, arc(1, sp[0], sp[1]), t)
+		out = appendRealArc(out, arc(-1, sp[1], sp[0]), t)
+	}
+	return out, len(out) > 0
+}
+
+// appendRealArc keeps a section arc that spans real length, and drops one that is a POINT.
+//
+// At the offset where the plane is exactly tangent to the tube, the two boundary roots of w(v) = ±1
+// coincide, so one of the spans between them has zero width and BOTH of its branch arcs are the tangency
+// point repeated. They are not lobes and they bound nothing: fed to a boolean as imprints they are
+// closed curves of zero extent, and everything downstream that samples an imprint — the island walk,
+// the arrangement, the meeting solver — sees a ring of identical points. Measured on the axis-parallel
+// figure-eight, the section returned FOUR arcs where there are two lobes, the two extra ones collapsed
+// onto (0, 3, 0), and the cut came out with one lid instead of two (ADR-0061 stage 2).
+//
+// The test is the arc's own extent against the tube's weld, not its parameter width: a span is an
+// angle, and what disqualifies an arc is bounding no length.
+func appendRealArc(out []Curve3, cv Curve3, t Torus) []Curve3 {
+	if arcSpansLength(cv, ResolutionForSize(t.MinorRadius).Weld()) {
+		return append(out, cv)
+	}
+	return out
+}
+
+// arcSpansLength reports an arc reaching farther than tol from where it starts.
+func arcSpansLength(cv Curve3, tol float64) bool {
+	lo, hi := cv.Domain()
+	start := cv.PointAt(lo)
+	for i := 1; i <= arcExtentProbe; i++ {
+		if float64(start.DistanceTo(cv.PointAt(lo+(hi-lo)*float64(i)/arcExtentProbe))) > tol {
+			return true
+		}
+	}
+	return false
+}
+
+// arcExtentProbe samples an arc to see whether it goes anywhere. It bounds the curve, nothing more.
+const arcExtentProbe = 8
+
+// spiricTubeSpans is the set of tube angles on which the plane reaches the tube — where |w(v)| ≤ 1 —
+// as intervals, or whole=true when that is every angle. The boundaries solve w(v) = ±1, each of which
+// is A·cos v + B·sin v = D and so closed form.
+func spiricTubeSpans(t Torus, m, k, c float64) (spans [][2]float64, whole bool) {
+	r, rr := t.MinorRadius, t.MajorRadius
+	roots := append(
+		harmonicRoots(m*r, c*r, k-m*rr),
+		harmonicRoots(-m*r, c*r, k+m*rr)...)
+	inside := func(v float64) bool {
+		cv, sv := cosSin(v)
+		return stdmath.Abs((k-c*r*sv)/(m*(rr+r*cv))) <= 1
+	}
+	if len(roots) == 0 {
+		return nil, inside(0) // no boundary: the plane reaches the tube at every angle, or at none
+	}
+	sort.Float64s(roots)
+	roots = append(roots, roots[0]+2*stdmath.Pi) // close the period
+	for i := 0; i+1 < len(roots); i++ {
+		if inside((roots[i] + roots[i+1]) / 2) {
+			spans = append(spans, [2]float64{roots[i], roots[i+1]})
+		}
+	}
+	return spans, false
+}
+
+// harmonicRoots solves A·cos v + B·sin v = D for v in [−π, π), as the two roots of
+// cos(v − atan2(B, A)) = D / √(A²+B²) when that ratio is within reach.
+//
+// The ratio goes through spiricCosineAtLimit for the same reason w does: |D| = amp is the TANGENCY,
+// where the two roots coincide, and arccos is infinitely steep there. A ratio short of 1 by half an ulp
+// put the double root's two halves 1.5·10⁻⁸ apart in v — 1.03·10⁻⁷ apart on a tube of radius 2 — so the
+// section's two lobes each came back as an arc that does not close on itself, by a hair. Downstream
+// that is not a hair: the stitch stores a near-closed edge as an OPEN one and recovers its direction by
+// inverting the curve at endpoints 10⁻⁷ apart, which does not round-trip, and one lobe's loop came back
+// wound against its own material (ADR-0061).
+func harmonicRoots(a, b, d float64) []float64 {
+	amp := stdmath.Hypot(a, b)
+	if amp == 0 || stdmath.Abs(d) > amp {
+		return nil
+	}
+	base := stdmath.Atan2(b, a)
+	off := stdmath.Acos(spiricCosineAtLimit(d / amp))
+	return []float64{wrapToPi(base + off), wrapToPi(base - off)}
+}
+
+// wrapToPi folds an angle into [−π, π).
+func wrapToPi(v float64) float64 {
+	for v < -stdmath.Pi {
+		v += 2 * stdmath.Pi
+	}
+	for v >= stdmath.Pi {
+		v -= 2 * stdmath.Pi
+	}
+	return v
+}
