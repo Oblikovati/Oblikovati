@@ -96,11 +96,11 @@ vet-head: ## go vet the cgo head module (needs the native deps; see head/Makefil
 
 .PHONY: head-deps
 head-deps: ## Fail (naming the missing dep) when head's cgo/Vulkan deps are absent
-	$(MAKE) -C head deps-check
+	$(MAKE) -C head deps-check display-check HEAD_ALLOW_NO_DISPLAY=
 
 .PHONY: test-head
 test-head: head-deps ## Run the cgo head module's tests (never skipped silently)
-	$(MAKE) -C head test
+	$(MAKE) -C head test HEAD_ALLOW_NO_DISPLAY=
 
 .PHONY: lint
 lint: ## Run golangci-lint (install with `make tools`)

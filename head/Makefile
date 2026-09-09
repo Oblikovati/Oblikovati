@@ -18,7 +18,7 @@ export PKG_CONFIG_SYSROOT_DIR := /run/host
 export LD_LIBRARY_PATH := $(LOCAL_NATIVE_LIB_DIR)$(if $(LD_LIBRARY_PATH),:$(LD_LIBRARY_PATH))
 endif
 
-.PHONY: build smoke run run-watch lint test deps-check shaders native-libs clean
+.PHONY: build smoke run run-watch lint test deps-check display-check shaders native-libs clean
 
 # native-libs exposes only the host GLFW/Vulkan runtime libs to Flatpak builds.
 # Do not put the whole host libdir on LD_LIBRARY_PATH; it can load host libc into
@@ -76,21 +76,35 @@ deps-check: native-libs
 		echo "head: the cgo Vulkan module cannot be built or tested here, so the gate is NOT satisfied"; \
 		exit 1; \
 	fi; \
-	if [ -z "$$DISPLAY" ] && [ -z "$$WAYLAND_DISPLAY" ] && ! command -v xvfb-run >/dev/null 2>&1; then \
-		echo "head: MISSING a display: no DISPLAY, no WAYLAND_DISPLAY and no xvfb-run"; \
-		echo "head: Debian/Ubuntu: sudo apt-get install xvfb   (CI runs: xvfb-run -a go test ./...)"; \
-		echo "head: or run the gate from a desktop session"; \
-		echo "head: without one the in-window GLFW/Vulkan tests SKIP and their packages still print ok"; \
-		exit 1; \
-	fi; \
 	echo "head: native deps OK (glfw3 $$(pkg-config --modversion glfw3), vulkan $$(pkg-config --modversion vulkan))"; \
-	echo "head: display $(if $(HEAD_SESSION_DISPLAY),$(HEAD_SESSION_DISPLAY),a private Xvfb via $(XVFB_RUN)), Vulkan ICD manifests $(VULKAN_ICDS)"; \
 	echo "head: what this proves: the C toolchain, GLFW, and the Vulkan LOADER are installed."; \
 	echo "head: what it cannot prove: that a Vulkan DRIVER initialises. Only 'make smoke' does."; \
 	if [ "$(VULKAN_ICDS)" = "0" ]; then \
 		echo "head: WARNING zero Vulkan ICD manifests - every in-window test will skip and its"; \
 		echo "head: package will still print ok. Install mesa-vulkan-drivers for the lavapipe"; \
 		echo "head: software ICD, which is what CI uses."; \
+	fi
+
+# display-check is SEPARATE from deps-check because the two failures are different: no
+# native deps means the module cannot be built at all, while no display means only the
+# in-window tests cannot run. `make gate` demands both (it passes HEAD_ALLOW_NO_DISPLAY=
+# on the command line, which beats any environment value). A developer on a headless box
+# can still run the ~15 non-window packages with HEAD_ALLOW_NO_DISPLAY=1, and the run
+# says out loud which coverage that costs.
+display-check:
+	@if [ -n "$$DISPLAY" ] || [ -n "$$WAYLAND_DISPLAY" ] || command -v xvfb-run >/dev/null 2>&1; then \
+		echo "head: display $(if $(HEAD_SESSION_DISPLAY),$(HEAD_SESSION_DISPLAY),a private Xvfb via $(XVFB_RUN)), Vulkan ICD manifests $(VULKAN_ICDS)"; \
+	elif [ -n "$(HEAD_ALLOW_NO_DISPLAY)" ]; then \
+		echo "head: HEAD_ALLOW_NO_DISPLAY=$(HEAD_ALLOW_NO_DISPLAY): running WITHOUT a display."; \
+		echo "head: every in-window GLFW/Vulkan test SKIPS and its package still prints ok, so"; \
+		echo "head: this run does NOT cover the window path. It does not satisfy the gate."; \
+	else \
+		echo "head: MISSING a display: no DISPLAY, no WAYLAND_DISPLAY and no xvfb-run"; \
+		echo "head: Debian/Ubuntu: sudo apt-get install xvfb   (CI runs: xvfb-run -a go test ./...)"; \
+		echo "head: or run the gate from a desktop session"; \
+		echo "head: without one the in-window GLFW/Vulkan tests SKIP and their packages still print ok"; \
+		echo "head: to run only the non-window packages anyway: make test HEAD_ALLOW_NO_DISPLAY=1"; \
+		exit 1; \
 	fi
 
 # shaders recompiles the viewport GLSL to the embedded SPIR-V (needs glslangValidator
@@ -138,7 +152,7 @@ lint: native-libs
 # deps-check is a prerequisite so `make -C head test` refuses the same way `make gate`
 # does, and the last line reports what the run could NOT cover instead of leaving that in
 # a warning printed 28 minutes earlier (#3526).
-test: native-libs deps-check
+test: native-libs deps-check display-check
 	$(TEST_UNDER_DISPLAY) go test -p 1 ./...
 	@if [ "$(VULKAN_ICDS)" = "0" ]; then \
 		echo "head: ZERO Vulkan ICD manifests - every in-window test SKIPPED, so the ok lines"; \
