@@ -33,6 +33,12 @@ import (
 // result set ending in a bool whose earlier results are the payloads the verdict struct carries, or
 // bools (#3522). The index's own doc states what it still cannot see, and the probe plants it.
 //
+// R1–R5 are the read SHAPES, and #3522 did not widen them — it widened only WHICH declaration a read
+// reaches and WHETHER that declaration is a verdict. Nesting is not a limit: a gate inside a `for` body
+// is read, because shapeReads inspects the whole body. A SINGLE-LHS init gate is: `if ok := f(); ok { … }`
+// is invisible, because payloadGatedCall requires at least two left-hand names and ifReads gives up on
+// an `if` that carries an Init. A recognizer written that way moves the count by zero.
+//
 // A function that reads nothing is a leaf and counts once. A function that reads others counts itself
 // too when it also OWNS a verdict — a returned bool built from a call that is no read (coneApexTrimOf's
 // `len(rim) != len(outer3D)` beside its faceIsConeApexCap gate) — and not when every verdict it returns
@@ -54,6 +60,14 @@ func derivedRecognizers(t *testing.T) []string {
 func derivedRecognizersIn(t *testing.T, idx *recognizerIndex) []string {
 	t.Helper()
 	assertUnambiguousVerdictNames(t, idx)
+	reached := reachableFromClassification(t, idx)
+	assertNoUnresolvableMethodReads(t, idx, reached)
+	return recognizersAmong(reached, idx)
+}
+
+// reachableFromClassification is every declaration the walk reaches from the classification root.
+func reachableFromClassification(t *testing.T, idx *recognizerIndex) map[string]bool {
+	t.Helper()
 	if idx.lookup(recognizerRoot) == nil {
 		t.Fatalf("no %s is declared in the indexed tree; the derivation has nothing to walk", recognizerRoot)
 	}
@@ -70,7 +84,7 @@ func derivedRecognizersIn(t *testing.T, idx *recognizerIndex) []string {
 		}
 	}
 	walk(recognizerRoot)
-	return recognizersAmong(seen, idx)
+	return seen
 }
 
 // recognizersAmong keeps, of everything the walk reached, the names that COUNT as recognizers.
@@ -97,6 +111,32 @@ func assertUnambiguousVerdictNames(t *testing.T, idx *recognizerIndex) {
 			"verdict-shaped, so a read would resolve against whichever was indexed first — rename one "+
 			"side:\n  %s", strings.Join(names, "\n  "))
 	}
+}
+
+// assertNoUnresolvableMethodReads refuses a method call the index cannot attribute: the AST states no
+// type for its receiver, and its bare name reaches a verdict declaration of the tree. Such a call is
+// EITHER a recognizer read or a call on a foreign value that happens to share the name. Counting it
+// INFLATES the pin and dropping it deflates it, and both corrupt a later fall — so neither is guessed.
+func assertNoUnresolvableMethodReads(t *testing.T, idx *recognizerIndex, reached map[string]bool) {
+	t.Helper()
+	if sites := unresolvableReads(idx, reached); len(sites) > 0 {
+		t.Errorf("these method calls reach a verdict-shaped name of the classification's tree, but the "+
+			"AST states no type for their receiver, so the derivation cannot tell a recognizer read from "+
+			"a call on a foreign value of the same method name — give the receiver a stated type (a "+
+			"parameter, a `var`, a composite literal) or rename one side:\n  %s",
+			strings.Join(sites, "\n  "))
+	}
+}
+
+// unresolvableReads is every unattributable method call inside the declarations the walk reached,
+// sorted, so the failure is byte-identical across runs.
+func unresolvableReads(idx *recognizerIndex, reached map[string]bool) []string {
+	var out []string
+	for name := range reached {
+		out = append(out, (&reader{*idx.lookup(name), idx}).unattributableMethodCalls()...)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // reader is one declaration being walked, with the index its names resolve against.
@@ -272,6 +312,26 @@ func (r *reader) callsOutsideReads(e ast.Expr, reads []string) bool {
 		return !resolved || !contains(reads, name)
 	}
 	return false
+}
+
+// unattributableMethodCalls are the method calls in this declaration whose receiver the AST does not
+// state and whose name reaches a verdict of the tree.
+func (r *reader) unattributableMethodCalls() []string {
+	if r.d.fn == nil || r.d.fn.Body == nil {
+		return nil
+	}
+	var out []string
+	ast.Inspect(r.d.fn.Body, func(n ast.Node) bool {
+		call, isCall := n.(*ast.CallExpr)
+		if !isCall {
+			return true
+		}
+		if name, unattributable := r.idx.unattributableMethod(call, r.d); unattributable {
+			out = append(out, name+" at "+r.idx.fset.Position(call.Pos()).String())
+		}
+		return true
+	})
+	return out
 }
 
 func contains(list []string, s string) bool {

@@ -28,12 +28,18 @@ import (
 // Either one moves the count by ZERO, so a recognizer could be added inside an arm, or an existing one
 // relocated, with the ratchet reporting no change at all.
 //
-// This file is the resolution those two blind spots needed, and it makes both answers structural:
+// This file holds the INDEX — what the tree contains. What a name in it MEANS (verdict, type key,
+// callee) is resolved in recognizer_resolve_test.go. Together they make both answers structural:
 //
 //   - NAMES. Every function AND method of the classification's package, plus every package under it,
 //     is indexed under the key a caller writes: a bare name in the package itself, `pkg.Name` for a
-//     package of the tree. A selector on a package OUTSIDE the tree resolves to nothing, so
-//     `stdmath.Signbit(…)` can never answer to a local `Signbit` — planted, and measured, by
+//     package of the tree, and the same name again when the call spells its type argument out
+//     (`f[T](…)`). A selector on a package OUTSIDE the tree resolves to nothing, so
+//     `stdmath.Signbit(…)` can never answer to a local `Signbit`.
+//   - RECEIVERS. A method is claimed only when the AST states a receiver whose type the tree DECLARES.
+//     This is the half that keeps the pin from being INFLATED: `when.IsZero()` on a time.Time must not
+//     answer to an in-tree `IsZero`, and an inflated base is worse than a missed recognizer, because a
+//     later fall measured from it looks real when nothing was deleted. Both directions are planted by
 //     walkBoundaryShapes.
 //   - VERDICTS. A verdict is read off the RESULT-TYPE SET: the last result is a bool, and every
 //     earlier result is one of the classification's own payload types. The payload set is DERIVED
@@ -55,9 +61,19 @@ import (
 //     asserts the derivation reads nothing from it.
 //   - Type resolution is syntactic. `type verdict bool` is a bool; `type verdict2 verdict` is not
 //     resolved through the second hop, and neither is a payload reached through an interface or a
-//     type parameter.
-//   - A callee is resolved by NAME, not by the receiver's type. Two declarations answering to one key
-//     are refused rather than guessed (assertUnambiguousVerdictNames).
+//     type parameter. A generic recognizer's CALL is resolved (both spellings); a generic recognizer
+//     whose PAYLOAD is a type parameter is not.
+//   - A payload returned inside a slice, array or map — `([]coneApexTrim, bool)` — is not resolved, so
+//     such a recognizer is invisible. Unwrapping the element would also make `func f() []bool` a
+//     verdict, and that inflation is worse than the spelling it would catch. Planted, as a known
+//     limit, by walkBoundaryShapes.
+//   - Two declarations answering to one key are refused rather than guessed
+//     (assertUnambiguousVerdictNames), and so is a method call whose receiver type the AST does not
+//     state when its name reaches a verdict (assertNoUnresolvableMethodReads). Neither refusal can
+//     fire on today's tree; both are planted.
+//   - A receiver's type is read off what the AST states — a parameter, a named result, the enclosing
+//     receiver, a `var`, or a composite literal. `x := f()` states none, and that call is refused
+//     rather than resolved.
 
 const (
 	// classificationDir is the package classifyCurvedTrim lives in; the index covers it and every
@@ -73,8 +89,9 @@ const (
 // packageScope is one package of the classification's tree: the prefix its declarations are indexed
 // under ("" for the classification itself, "trim." for a package beneath it) and the types it declares.
 type packageScope struct {
-	prefix string
-	types  map[string]bool
+	prefix  string
+	pkgName string
+	types   map[string]bool
 }
 
 // qualify is the index key a name declared in this scope is reachable under.
@@ -105,6 +122,7 @@ type recognizerIndex struct {
 	scopes    map[string]*packageScope // import path → scope
 	decls     map[string][]declaredHere
 	boolTypes map[string]bool // canonical keys of named types whose underlying is bool
+	treeTypes map[string]bool // canonical keys of EVERY type the tree declares, for receiver origin
 	payloads  map[string]bool // canonical keys of the classification's own verdict payload types
 	verdict   *ast.StructType
 	verdictIn declaredHere // the scope and imports the verdict struct's field types are written in
@@ -124,13 +142,64 @@ func newRecognizerIndex(t *testing.T, root, importPath string) *recognizerIndex 
 	t.Helper()
 	idx := &recognizerIndex{
 		scopes: map[string]*packageScope{}, decls: map[string][]declaredHere{},
-		boolTypes: map[string]bool{}, fset: token.NewFileSet(),
+		boolTypes: map[string]bool{}, treeTypes: map[string]bool{}, fset: token.NewFileSet(),
 	}
-	for _, dir := range packageDirsUnder(t, root) {
-		idx.addPackage(t, dir, treeImportPath(importPath, root, dir), dir == root)
+	packages := idx.parseTree(t, root, importPath)
+	for _, pkg := range packages {
+		idx.declareTypeNames(pkg)
+	}
+	for _, pkg := range packages {
+		idx.indexPackage(pkg, pkg.importPath == importPath)
 	}
 	idx.payloads = idx.verdictPayloads(t)
 	return idx
+}
+
+// treePackage is one parsed package, held between the indexing phases. The phases exist because every
+// scope must be registered before any FILE's imports are read: an unaliased import is named by the
+// imported package's PACKAGE name, which only the parsed package knows, and guessing it from the
+// directory would silently drop every recognizer behind a package whose two names differ (review M7).
+type treePackage struct {
+	importPath string
+	scope      *packageScope
+	files      []*ast.File
+}
+
+// parseTree parses every package at or below root and registers its scope.
+func (idx *recognizerIndex) parseTree(t *testing.T, root, importPath string) []treePackage {
+	t.Helper()
+	var out []treePackage
+	for _, dir := range packageDirsUnder(t, root) {
+		files := idx.parsePackage(t, dir)
+		path := treeImportPath(importPath, root, dir)
+		scope := &packageScope{pkgName: files[0].Name.Name, types: map[string]bool{}}
+		if path != importPath {
+			scope.prefix = scope.pkgName + "."
+		}
+		idx.scopes[path] = scope
+		out = append(out, treePackage{importPath: path, scope: scope, files: files})
+	}
+	return out
+}
+
+// declareTypeNames records the types a package declares, in its own scope and in the tree-wide set a
+// method call's receiver is resolved against.
+func (idx *recognizerIndex) declareTypeNames(pkg treePackage) {
+	for _, f := range pkg.files {
+		forEachTypeSpec(f, func(spec *ast.TypeSpec) {
+			pkg.scope.types[spec.Name.Name] = true
+			idx.treeTypes[pkg.scope.qualify(spec.Name.Name)] = true
+		})
+	}
+}
+
+// indexPackage records a package's named bools, its verdict struct when it is the root, and every
+// function and method it declares.
+func (idx *recognizerIndex) indexPackage(pkg treePackage, isRoot bool) {
+	for _, f := range pkg.files {
+		idx.collectTypeShapes(f, pkg.scope, isRoot)
+		idx.collectDeclarations(f, pkg.scope)
+	}
 }
 
 // packageDirsUnder is every directory at or below root that holds non-test Go source, sorted, so the
@@ -180,25 +249,6 @@ func treeImportPath(importPath, root, dir string) string {
 	return importPath + "/" + filepath.ToSlash(rel)
 }
 
-// addPackage indexes one package: its type names first (a result type resolves against them), then the
-// named bools among them, the verdict struct if this is the root, and finally every declaration.
-func (idx *recognizerIndex) addPackage(t *testing.T, dir, importPath string, isRoot bool) {
-	t.Helper()
-	files := idx.parsePackage(t, dir)
-	scope := &packageScope{types: map[string]bool{}}
-	if !isRoot {
-		scope.prefix = files[0].Name.Name + "."
-	}
-	idx.scopes[importPath] = scope
-	for _, f := range files {
-		collectTypeNames(f, scope)
-	}
-	for _, f := range files {
-		idx.collectTypeShapes(f, scope, isRoot)
-		idx.collectDeclarations(f, scope)
-	}
-}
-
 // parsePackage parses the non-test files of one directory, in name order.
 func (idx *recognizerIndex) parsePackage(t *testing.T, dir string) []*ast.File {
 	t.Helper()
@@ -213,17 +263,10 @@ func (idx *recognizerIndex) parsePackage(t *testing.T, dir string) []*ast.File {
 	return files
 }
 
-// collectTypeNames records which names this package declares as types.
-func collectTypeNames(f *ast.File, scope *packageScope) {
-	forEachTypeSpec(f, func(spec *ast.TypeSpec) {
-		scope.types[spec.Name.Name] = true
-	})
-}
-
 // collectTypeShapes records the named bools of a package and, in the root, the verdict struct whose
 // fields are the payload set.
 func (idx *recognizerIndex) collectTypeShapes(f *ast.File, scope *packageScope, isRoot bool) {
-	imports := fileImports(f)
+	imports := idx.fileImports(f)
 	forEachTypeSpec(f, func(spec *ast.TypeSpec) {
 		if id, isIdent := spec.Type.(*ast.Ident); isIdent && id.Name == "bool" {
 			idx.boolTypes[scope.qualify(spec.Name.Name)] = true
@@ -253,7 +296,7 @@ func forEachTypeSpec(f *ast.File, visit func(*ast.TypeSpec)) {
 // collectDeclarations indexes every function AND method of a file. Methods are indexed under their
 // bare name because that is the only name their call site writes: `x.f(…)` says nothing about x's type.
 func (idx *recognizerIndex) collectDeclarations(f *ast.File, scope *packageScope) {
-	imports := fileImports(f)
+	imports := idx.fileImports(f)
 	for _, d := range f.Decls {
 		fd, isFunc := d.(*ast.FuncDecl)
 		if !isFunc {
@@ -267,17 +310,26 @@ func (idx *recognizerIndex) collectDeclarations(f *ast.File, scope *packageScope
 }
 
 // fileImports maps the name a file calls each import by to that import's path.
-func fileImports(f *ast.File) map[string]string {
+func (idx *recognizerIndex) fileImports(f *ast.File) map[string]string {
 	out := map[string]string{}
 	for _, spec := range f.Imports {
 		path := strings.Trim(spec.Path.Value, `"`)
-		name := path[strings.LastIndex(path, "/")+1:]
-		if spec.Name != nil {
-			name = spec.Name.Name
-		}
-		out[name] = path
+		out[idx.importLocalName(spec, path)] = path
 	}
 	return out
+}
+
+// importLocalName is what one file calls one import: its alias, else the imported package's own name.
+// For a package of the tree the index has parsed that name; for anything else the last path element is
+// the only available guess, and it is only ever used to REJECT a call, never to claim one.
+func (idx *recognizerIndex) importLocalName(spec *ast.ImportSpec, path string) string {
+	if spec.Name != nil {
+		return spec.Name.Name
+	}
+	if scope, inTree := idx.scopes[path]; inTree {
+		return scope.pkgName
+	}
+	return path[strings.LastIndex(path, "/")+1:]
 }
 
 // verdictPayloads is the classification's own payload set, derived from the verdict struct: the struct
@@ -341,121 +393,4 @@ func placesOf(found []declaredHere) string {
 		at = append(at, d.where)
 	}
 	return strings.Join(at, ", ")
-}
-
-// isVerdict reports whether a declaration returns a classification verdict, read off its RESULT-TYPE
-// SET rather than off a list of spellings (#3522): the last result is a bool (or a named bool), and
-// every earlier result is one of the classification's own payload types, or another bool.
-//
-// That is what stops the walk at a geometric helper without naming one: capAxis returns a vector,
-// chooseSphereChart a chart, splitWrappingHoles two slices — none of those is a field of curvedTrim,
-// so none of them is a verdict.
-func (idx *recognizerIndex) isVerdict(d declaredHere) bool {
-	results := idx.resultTypeKeys(d)
-	if len(results) == 0 || !idx.isBool(results[len(results)-1]) {
-		return false
-	}
-	for _, key := range results[:len(results)-1] {
-		if !idx.payloads[key] && !idx.isBool(key) {
-			return false
-		}
-	}
-	return true
-}
-
-// isBool reports whether a canonical type key denotes a boolean.
-func (idx *recognizerIndex) isBool(key string) bool {
-	return key == "bool" || idx.boolTypes[key]
-}
-
-// resultTypeKeys is the declaration's results ONE PER RESULT — `(a, b bool)` is one field and two
-// results — each canonicalised to the key its type is indexed under.
-func (idx *recognizerIndex) resultTypeKeys(d declaredHere) []string {
-	if d.fn == nil || d.fn.Type.Results == nil {
-		return nil
-	}
-	var out []string
-	for _, field := range d.fn.Type.Results.List {
-		key := idx.typeKey(field.Type, d)
-		for range max(1, len(field.Names)) {
-			out = append(out, key)
-		}
-	}
-	return out
-}
-
-// typeKey canonicalises a type expression written inside d. A pointer is the type it points at — a
-// recognizer handing back `*coneApexTrim` returns the same payload — and anything else (a slice, a map,
-// a func) is deliberately unresolvable, so it can be neither a payload nor a bool.
-func (idx *recognizerIndex) typeKey(e ast.Expr, d declaredHere) string {
-	switch x := e.(type) {
-	case *ast.ParenExpr:
-		return idx.typeKey(x.X, d)
-	case *ast.StarExpr:
-		return idx.typeKey(x.X, d)
-	case *ast.Ident:
-		return d.scope.typeKey(x.Name)
-	case *ast.SelectorExpr:
-		return idx.qualifiedTypeKey(x, d)
-	}
-	return ""
-}
-
-// qualifiedTypeKey resolves `pkg.T` when pkg is a package of the classification's own tree — a payload
-// that moved into a helper package is still that payload. A type from anywhere else (geom.Cone,
-// topo.Face) resolves to nothing, which is what keeps it out of the payload set.
-func (idx *recognizerIndex) qualifiedTypeKey(sel *ast.SelectorExpr, d declaredHere) string {
-	scope, inTree := idx.treeScopeOf(sel.X, d.imports)
-	if !inTree {
-		return ""
-	}
-	return scope.typeKey(sel.Sel.Name)
-}
-
-// treeScopeOf is the scope a selector's base names, when that base is an import of the classification's
-// own tree.
-func (idx *recognizerIndex) treeScopeOf(base ast.Expr, imports map[string]string) (*packageScope, bool) {
-	id, isIdent := base.(*ast.Ident)
-	if !isIdent {
-		return nil, false
-	}
-	path, imported := imports[id.Name]
-	if !imported {
-		return nil, false
-	}
-	scope, inTree := idx.scopes[path]
-	return scope, inTree
-}
-
-// calleeName is the index key a call reaches, in each shape Go writes a call in:
-//
-//	f(…)      a function of this package
-//	x.f(…)    a METHOD, or a call through a field; resolved by its bare name, which only names
-//	          something when the tree declares an f of its own
-//	pkg.F(…)  a package-qualified call, resolved ONLY into the classification's own tree
-//
-// A selector on an import from outside the tree returns no name at all: resolving it by its bare
-// selector would let `stdmath.Min(…)` answer to a local `Min`, which the probe test plants.
-func (idx *recognizerIndex) calleeName(call *ast.CallExpr, d declaredHere) (string, bool) {
-	switch fun := call.Fun.(type) {
-	case *ast.Ident:
-		return fun.Name, true
-	case *ast.SelectorExpr:
-		return idx.selectorCallee(fun, d)
-	}
-	return "", false
-}
-
-// selectorCallee splits `x.f` into the two calls it can be: into a package of the tree, or a method.
-func (idx *recognizerIndex) selectorCallee(sel *ast.SelectorExpr, d declaredHere) (string, bool) {
-	if base, isIdent := sel.X.(*ast.Ident); isIdent {
-		if path, imported := d.imports[base.Name]; imported {
-			scope, inTree := idx.scopes[path]
-			if !inTree {
-				return "", false
-			}
-			return scope.qualify(sel.Sel.Name), true
-		}
-	}
-	return sel.Sel.Name, true
 }

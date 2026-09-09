@@ -93,8 +93,10 @@ var kernelNetDeltaPin = map[string]int{
 	// `(<something>Trim, bool)`; it now resolves a callee through an index of the whole tree and a
 	// verdict by its RESULT-TYPE SET. Both walks were run over the same source and derive the SAME
 	// twelve names, so this 12 is a re-measurement that CONFIRMS the old one rather than a number that
-	// stood still by luck — which is what a later fall has to be measured from. Seven planted shapes the
-	// old walk scored 0 on now score 1 (TestTheDerivationSeesEveryCalleeAndVerdictShape).
+	// stood still by luck — which is what a later fall has to be measured from. Nine planted shapes the
+	// old walk (fff94140) scored 0 on now score 1, and four boundary rows score 0 under both
+	// (TestTheDerivationSeesEveryCalleeAndVerdictShape): the widening must not INFLATE this number
+	// either, because a fall measured from an inflated base looks real when nothing was deleted.
 	"recognizers": 12,
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
