@@ -7,6 +7,7 @@ import (
 
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/test-utilities/brepfixture"
 )
 
 // Keeping the identity narrowing of isReverseTwin honest (Oblikovati#3521).
@@ -25,43 +26,37 @@ import (
 
 // valueOnlyReverseRun reports the pair the retired comparison would have paired and the identity test
 // refuses: two edges that walk the same stretch of space in opposite directions WITHOUT being one edge.
-// It exists only here — production must never pair on value, because the two edges are two edges.
+// It exists only in tests — production must never pair on value, because two edges are two edges.
+//
+// The tolerance is the WELD, and NOT because the operands are the same computation: this function is
+// only ever reached when isReverseTwin has already said no, so its two operands are always two
+// different edges — independent sources, which the ADR-0042 classification would put at Sew(). The
+// weld is right for a different reason. The comparison stands in for the retired `a.curve == b.curve`,
+// which was EXACT, so ANY tolerance already over-approximates its reach; and a gate that asserts ZERO
+// must not trip on two genuinely distinct boundaries that happen to pass within a generous sew gap.
+// Every pair this must catch agrees to 0 exactly, so the tight class has five orders of headroom.
 func valueOnlyReverseRun(a, b loopEdge, res geom.Resolution) bool {
 	if isReverseTwin(a, b) {
 		return false
 	}
-	return walksTheSameStretchBack(a, b, res)
-}
-
-// walksTheSameStretchBack samples b's traversal against a's reversed and asks whether they coincide.
-// The comparison is a WELD: if the two are one stretch walked twice they are one curve evaluated
-// twice, which is the same-computation class (ADR-0042). Nine stations, because two distinct curves
-// that share both endpoints (the polyline seam against a straight one) must be separated by an
-// INTERIOR sample, and one interior sample can land on a crossing.
-func walksTheSameStretchBack(a, b loopEdge, res geom.Resolution) bool {
-	if a.curve == nil || b.curve == nil {
-		return false
-	}
-	const stations = 8
-	for i := 0; i <= stations; i++ {
-		s := float64(i) / stations
-		pa := a.curve.PointAt(a.t0 + (a.t1-a.t0)*s)
-		pb := b.curve.PointAt(b.t1 + (b.t0-b.t1)*s)
-		if float64(pa.DistanceTo(pb)) > res.Weld() {
-			return false
-		}
-	}
-	return true
+	return brepfixture.StretchWalkedBack(a.curve, a.t0, a.t1, b.curve, b.t0, b.t1, res.Weld())
 }
 
 // TestNoCorpusBodyKeepsAPairThatWalksAStretchBack is the gate the narrowing's licence rests on. Over
-// the merge corpus — the bodies whose walls the cocylindrical merge actually joins — no face keeps a
+// chartCorpus's FIVE bodies — the package's cocylindrical-merge corpus, whose "cocylindrical boss on
+// a wall" row is the same host-plus-planed-boss body the end-to-end row drives — no face keeps a
 // cyclically adjacent pair that walks one stretch straight back, whether the two are ONE edge (a slit
 // dropSeamSlits should have removed) or TWO (the pair only a value comparison would have caught).
 //
 // The two counts are complementary: a surviving one-edge slit is what neutering isReverseTwin
 // produces, and a surviving two-edge pair is the case the narrowing gave up. Both are zero, and the
 // second is the whole reason the narrowing is safe.
+//
+// It is a RATCHET, not an exhaustive sweep. The corpus-wide figures quoted at isReverseTwin were
+// measured over ./kernel/... and ./model/..., and this row gates five of those bodies; one more body
+// that drops a slit on every run — TestCocylindricalCapOnWallIsOneAnalyticFace — lives in
+// kernel/ops/boolean and is not gated here. brepfixture.ReversedRunPairs takes a *topo.Face and no
+// package-private state, so gating it there is an import and three lines whenever that is wanted.
 func TestNoCorpusBodyKeepsAPairThatWalksAStretchBack(t *testing.T) {
 	t.Parallel()
 	for _, tc := range chartCorpus(t) {
@@ -72,34 +67,31 @@ func TestNoCorpusBodyKeepsAPairThatWalksAStretchBack(t *testing.T) {
 	}
 }
 
-// assertNoStretchIsWalkedBack checks every loop of every face of one body.
+// assertNoStretchIsWalkedBack checks every face of one body.
 func assertNoStretchIsWalkedBack(t *testing.T, b *topo.Body) {
 	t.Helper()
 	for _, f := range b.Faces() {
-		res := geom.ResolutionForBox(f.RangeBox())
-		for _, l := range f.Loops() {
-			assertLoopKeepsNoReverseRun(t, f, loopEdgesOf(l), res)
-		}
+		assertFaceKeepsNoReverseRun(t, f)
 	}
 }
 
-// assertLoopKeepsNoReverseRun names which of the two kinds it found, because they mean different
+// assertFaceKeepsNoReverseRun names which of the two kinds it found, because they mean different
 // things: one edge is a slit that survived, two edges is a boundary the value comparison would have
 // deleted and the identity test correctly kept.
-func assertLoopKeepsNoReverseRun(t *testing.T, f *topo.Face, edges []loopEdge, res geom.Resolution) {
+func assertFaceKeepsNoReverseRun(t *testing.T, f *topo.Face) {
 	t.Helper()
-	for i, e := range edges {
-		next := edges[(i+1)%len(edges)]
-		if isReverseTwin(e, next) {
-			t.Errorf("face %q keeps ONE edge walked both ways at position %d: a slit dropSeamSlits did "+
-				"not remove", string(f.ReferenceKey()), i)
-		}
-		if valueOnlyReverseRun(e, next, res) {
-			t.Errorf("face %q keeps TWO edges walking one stretch back at position %d: the identity "+
-				"narrowing gave this pair up, so it must not be a slit — re-open Oblikovati#3521",
-				string(f.ReferenceKey()), i)
-		}
+	p, found := brepfixture.FirstReversedRun(f, geom.ResolutionForBox(f.RangeBox()).Weld())
+	if !found {
+		return
 	}
+	if p.OneEdge {
+		t.Errorf("face %q keeps ONE edge walked both ways at loop %d position %d: a slit dropSeamSlits "+
+			"did not remove", string(f.ReferenceKey()), p.Loop, p.At)
+		return
+	}
+	t.Errorf("face %q keeps TWO edges walking one stretch back at loop %d position %d: the identity "+
+		"narrowing gave this pair up, so it must not be a slit — re-open Oblikovati#3521",
+		string(f.ReferenceKey()), p.Loop, p.At)
 }
 
 // TestTheOnlyValueOnlyPairIsTheOneValuePairingWouldGetWRONG is the other half of the licence, and it

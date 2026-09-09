@@ -125,9 +125,11 @@ func firstSlitPair(edges []loopEdge) (int, bool) {
 // would not merely miss nothing: the one place where value and identity disagree is the place where
 // value is WRONG, and no re-emitted imprint run has yet needed a source edge it does not carry.
 //
-// That is a gate, not a claim: TestNoCorpusBodyKeepsAPairThatWalksAStretchBack fails if a corpus body
-// ever keeps such a pair, and CodeMergeEdgeSources/CodeSeamSlitDropped keep the populations countable
-// on every run.
+// The corpus-wide figures above are a MEASUREMENT; what is GATED is narrower and deliberately so.
+// TestNoCorpusBodyKeepsAPairThatWalksAStretchBack fails if any of chartCorpus's five
+// cocylindrical-merge bodies ever keeps such a pair, and the end-to-end row gates the host-plus-boss
+// body the same two ways. CodeMergeEdgeSources and CodeSeamSlitDropped keep both populations
+// countable on every run, so the measurement can be repeated rather than trusted.
 func isReverseTwin(a, b loopEdge) bool {
 	return a.source != nil && a.source == b.source && a.t0 == b.t1 && a.t1 == b.t0
 }

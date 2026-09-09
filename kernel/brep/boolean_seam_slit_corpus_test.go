@@ -14,6 +14,7 @@ import (
 	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
 )
 
 // The end-to-end row for the seam a cocylindrical merge orphans (Oblikovati#3521).
@@ -54,10 +55,7 @@ func TestBossOnACocylindricalHostDropsTheOrphanedSeam(t *testing.T) {
 		t.Fatalf("union of the host and the boss standing on it: %v", err)
 	}
 	checkSolid(t, "boss on a cocylindrical host", body, bossOnHostVolume())
-	if n := len(body.Faces()); n != 5 {
-		t.Errorf("the body has %d faces, want 5 (the merged wall, the host's floor, the boss's roof, "+
-			"the planed flat, and the shoulder the boss leaves on the host's top)", n)
-	}
+	assertBodyHasFiveFaces(t, body)
 	wall := theMergedCylinderWall(t, body)
 	assertOuterLoopIsTheBareRim(t, wall)
 	assertTopBoundaryIsTheBossOutline(t, wall)
@@ -96,6 +94,16 @@ func planedCocylindricalBoss(t *testing.T) *topo.Body {
 		t.Fatalf("planing the boss: %v", err)
 	}
 	return boss
+}
+
+// assertBodyHasFiveFaces pins the face count: a merge that joined too much or too little changes it,
+// and neither the volume nor the wall's own loops would say so.
+func assertBodyHasFiveFaces(t *testing.T, b *topo.Body) {
+	t.Helper()
+	if n := len(b.Faces()); n != 5 {
+		t.Errorf("the body has %d faces, want 5 (the merged wall, the host's floor, the boss's roof, "+
+			"the planed flat, and the shoulder the boss leaves on the host's top)", n)
+	}
 }
 
 // theMergedCylinderWall is the body's single cylinder face. That there is exactly ONE is the merge's
@@ -188,25 +196,18 @@ func mergedWallArea() float64 {
 	return 2*stdmath.Pi*r*seamSlitHostTop + kept*r*(seamSlitBossTop-seamSlitHostTop)
 }
 
-// assertNoLoopWalksAnEdgeStraightBack states the slit invariant on the RESULT: no loop may use one edge
-// and then immediately use it the other way, because a curve walked straight back bounds nothing.
+// assertNoLoopWalksAnEdgeStraightBack states the slit invariant on the RESULT: no loop may walk a
+// stretch of space and immediately walk it back, because such a boundary bounds nothing. It gates
+// BOTH kinds — ONE edge used twice (the slit dropSeamSlits removes) and TWO different edges tracing
+// one stretch (the pair the identity narrowing gives up) — so the body this whole row is built
+// around is covered by the same two arms as the merge corpus, through the same query.
 func assertNoLoopWalksAnEdgeStraightBack(t *testing.T, f *topo.Face) {
 	t.Helper()
-	for _, l := range f.Loops() {
-		assertLoopHasNoSlit(t, l)
-	}
-}
-
-// assertLoopHasNoSlit checks one loop for a cyclically adjacent pair that is one edge walked both ways.
-func assertLoopHasNoSlit(t *testing.T, l *topo.Loop) {
-	t.Helper()
-	uses := l.EdgeUses()
-	for i, u := range uses {
-		next := uses[(i+1)%len(uses)]
-		if u.Edge() == next.Edge() && u.Reversed() != next.Reversed() {
-			t.Errorf("the loop walks edge %v up at position %d and straight back down: a slit dangling "+
-				"into the merged face's interior", u.Edge().Lineage(), i)
-		}
+	tol := geom.ResolutionForBox(f.RangeBox()).Weld()
+	if p, found := brepfixture.FirstReversedRun(f, tol); found {
+		t.Errorf("the merged wall keeps a boundary pair that walks one stretch and straight back, which "+
+			"bounds nothing: %+v (OneEdge true is a slit dropSeamSlits missed, false is a pair the "+
+			"identity narrowing gave up — re-open Oblikovati#3521)", p)
 	}
 }
 
