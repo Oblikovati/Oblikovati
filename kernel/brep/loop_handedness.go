@@ -113,10 +113,12 @@ func quarterArcLeftOf(s geom.Surface, at math.Point2, d math.Vector2) (math.Vect
 // This is the conditioning gate the exact-zero frame guards above cannot be. det is 0 EXACTLY where the
 // frame collapses (S_u vanishes at a sphere pole and a cone apex), so those stations are refused there;
 // a station a HAIR off one has a tiny-but-positive det and maps a perfectly legitimate quarter-arc to an
-// unbounded du, which is arithmetically right and geometrically useless. On a non-periodic axis an
-// over-long step needs no gate — the chart is finite, the probe lands outside it, and both sides then
-// answer alike, which every caller already reads as "measured nothing". Only a periodic axis can wrap
-// round and answer confidently about the wrong place.
+// unbounded du, which is arithmetically right and geometrically useless. A non-periodic axis is left
+// UNGUARDED here, not proved safe: an over-long step usually lands outside the finite chart, where both
+// sides answer alike and every caller reads "measured nothing", but a station near one edge of a large
+// chart can put one side inside and the other outside and cast a vote from far off the boundary. The
+// majority over materialSideStations is what absorbs that today. Only a periodic axis can wrap round
+// and answer confidently about the wrong place, which is what this gate refuses.
 func stepStaysOnOneBranch(s geom.Surface, off math.Vector2) bool {
 	uPer, vPer := surfacePeriodic(s)
 	halfTurn := twoPi / 2
