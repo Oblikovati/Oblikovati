@@ -7,6 +7,7 @@ import (
 	stdmath "math"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/internal/probe"
 	"oblikovati.org/kernel/ops/query"
@@ -34,20 +35,45 @@ func SectionWithPlane(b *topo.Body, origin math.Point3, normal math.Vector3, q Q
 	if err != nil {
 		return nil, fmt.Errorf("ops.SectionWithPlane: degenerate plane at %v: %w", origin, err)
 	}
-	res := geom.ResolutionForBox(b.RangeBox())
-	d := float64(origin.AsVector().Dot(n))
-	var segs [][2]math.Point3
-	for _, f := range b.Faces() {
-		if fs, ok := faceSectionSegments(f, plane, res); ok {
-			segs = append(segs, fs...)
-		} else {
-			segs = append(segs, faceMeshSection(f, n, d, q)...) // unresolved surface pair: slice this face's mesh
-		}
-	}
+	segs, meshed := bodySectionSegments(b, plane, n, float64(origin.AsVector().Dot(n)), q)
 	if len(segs) == 0 {
 		return nil, fmt.Errorf("ops.SectionWithPlane: the plane through %v misses the body", origin)
 	}
-	return wiresFromSegments(segs, "section")
+	return wiresFromSegments(segs, "section", meshed)
+}
+
+// bodySectionSegments sections every face, and reports each one whose analytic surface∩plane pair the
+// intersector could not resolve — those fall to slicing that face's MESH, and they used to do it
+// silently (Oblikovati/Oblikovati#3525).
+func bodySectionSegments(b *topo.Body, plane geom.Plane, n math.Vector3, d float64, q Quality) ([][2]math.Point3, []diag.Diagnostic) {
+	res := geom.ResolutionForBox(b.RangeBox())
+	var segs [][2]math.Point3
+	var meshed []diag.Diagnostic
+	for _, f := range b.Faces() {
+		fs, why, ok := faceSectionSegments(f, plane, res)
+		if ok {
+			segs = append(segs, fs...)
+			continue
+		}
+		meshed = append(meshed, faceMeshedSectionDefect(f, why))
+		segs = append(segs, faceMeshSection(f, n, d, q)...)
+	}
+	return segs, meshed
+}
+
+// CodeSectionFaceMeshed marks a face whose section came from slicing its MESH rather than intersecting
+// its analytic surface with the plane. A tracked degradation: the curve is a chord approximation of the
+// exact section, its vertices are facet corners, and "no modelling decision reads tessellated data"
+// puts a section curve on the wrong side of that rule. It rode out of here silently until #3525 —
+// geom.SurfaceIntersectDeclining now says WHICH gate refused, and this carries that on the body the
+// caller gets, so it reaches feature health, the API and the UI.
+const CodeSectionFaceMeshed diag.Code = "section.face-meshed"
+
+// faceMeshedSectionDefect names one face that fell to its mesh, and the gate that sent it there.
+func faceMeshedSectionDefect(f *topo.Face, why geom.SectionDecline) diag.Diagnostic {
+	return diag.Diagnostic{Code: CodeSectionFaceMeshed, Severity: diag.Defect, Detail: fmt.Sprintf(
+		"face %q (%T): no exact surface∩plane section — %s; its section is sliced from the face's MESH",
+		f.ReferenceKey(), f.Geometry(), why)}
 }
 
 // sectionCurveSamples is the sample count along a face's section curve within its box; a straight
@@ -61,20 +87,24 @@ const trimBisectSteps = 36
 // faceSectionSegments returns the section segments of one face — the analytic surface∩plane curve clipped to
 // the face trim — and ok=false when the analytic intersector cannot resolve the surface pair or returns an
 // unbounded non-line the box cannot bracket, so the caller slices this face's mesh instead.
-func faceSectionSegments(f *topo.Face, plane geom.Plane, res geom.Resolution) (segs [][2]math.Point3, ok bool) {
+func faceSectionSegments(f *topo.Face, plane geom.Plane, res geom.Resolution) ([][2]math.Point3, geom.SectionDecline, bool) {
 	box := f.RangeBox()
-	curves, handled := geom.SurfaceIntersect(f.Geometry(), plane, box, res)
+	// The DECLINING entry: this face is about to be sliced from its mesh if the pair is unresolved, and
+	// the caller has to be able to say which gate sent it there rather than only that it happened
+	// (Oblikovati/Oblikovati#3525).
+	curves, why, handled := geom.SurfaceIntersectDeclining(f.Geometry(), plane, box, res)
 	if !handled {
-		return nil, false
+		return nil, why, false
 	}
+	var segs [][2]math.Point3
 	for _, c := range curves {
 		lo, hi, bounded := probe.SampleRange(c, box)
 		if !bounded {
-			return nil, false
+			return nil, geom.DeclineNoClosedForm, false
 		}
 		segs = append(segs, curveTrimSegments(c, f, lo, hi, res.Plane())...)
 	}
-	return segs, true
+	return segs, why, true
 }
 
 // curveTrimSegments samples the section curve c over [lo, hi], gathers every maximal run of samples inside
@@ -191,7 +221,7 @@ func sectionWeld(pts []math.Point3) float64 { return ResolutionForPoints(pts).Pl
 
 // wiresFromSegments chains loose segments into polyline wires on a fresh
 // wire-only body (shared endpoints welded on a tolerance grid).
-func wiresFromSegments(segs [][2]math.Point3, feat string) (*topo.Body, error) {
+func wiresFromSegments(segs [][2]math.Point3, feat string, report []diag.Diagnostic) (*topo.Body, error) {
 	pts := make([]math.Point3, 0, 2*len(segs))
 	for _, s := range segs {
 		pts = append(pts, s[0], s[1])
@@ -199,19 +229,14 @@ func wiresFromSegments(segs [][2]math.Point3, feat string) (*topo.Body, error) {
 	weldTol := sectionWeld(pts)
 	chains := chainSegments(segs, weldTol)
 	bld := topo.NewBuilder(false, topo.NewLineage(topo.Tok(feat, "body", 0)))
+	// Diagnose BEFORE Build: the report travels WITH the body the caller gets (topo.Builder.Diagnose,
+	// Body.BuildDiagnostics), which is how a kernel degradation reaches a feature reply (#2058).
+	for _, d := range report {
+		bld.Diagnose(d)
+	}
 	body := bld.Build()
 	for i, chain := range chains {
-		curve, err := geom.NewPolyline(chain)
-		if err != nil {
-			continue // a degenerate (sub-tolerance) chain carries no geometry
-		}
-		v0 := bld.AddVertex(chain[0], topo.NewLineage(topo.Tok(feat, "vertex", 2*i)))
-		v1 := v0
-		if float64(chain[0].DistanceTo(chain[len(chain)-1])) > weldTol {
-			v1 = bld.AddVertex(chain[len(chain)-1], topo.NewLineage(topo.Tok(feat, "vertex", 2*i+1)))
-		}
-		e := bld.AddEdge(curve, v0, v1, topo.NewLineage(topo.Tok(feat, "edge", i)))
-		body.AttachWire(topo.NewLineage(topo.Tok(feat, "wire", i)), []topo.Use{topo.Fwd(e)})
+		attachChainWire(bld, body, chain, feat, i, weldTol)
 	}
 	if len(body.Wires()) == 0 {
 		return nil, fmt.Errorf("ops: section produced no usable chains from %d segments", len(segs))
@@ -287,7 +312,7 @@ func FaceSilhouetteWires(f *topo.Face, viewDir math.Vector3, includeBoundary boo
 	if len(segs) == 0 {
 		return nil, fmt.Errorf("ops: face %d's silhouette lies outside its trim", f.ID())
 	}
-	return wiresFromSegments(segs, "silhouette")
+	return wiresFromSegments(segs, "silhouette", nil)
 }
 
 // clipPolylineToFace keeps the polyline's segments whose midpoints lie on the
@@ -375,4 +400,20 @@ func pointNearFaceBoundary(p math.Point3, f *topo.Face, tol float64) bool {
 		}
 	}
 	return false
+}
+
+// attachChainWire builds one chained polyline as a wire on the body. A degenerate (sub-tolerance)
+// chain carries no geometry and is skipped; a chain that returns to its start shares one vertex.
+func attachChainWire(bld *topo.Builder, body *topo.Body, chain []math.Point3, feat string, i int, weldTol float64) {
+	curve, err := geom.NewPolyline(chain)
+	if err != nil {
+		return
+	}
+	v0 := bld.AddVertex(chain[0], topo.NewLineage(topo.Tok(feat, "vertex", 2*i)))
+	v1 := v0
+	if float64(chain[0].DistanceTo(chain[len(chain)-1])) > weldTol {
+		v1 = bld.AddVertex(chain[len(chain)-1], topo.NewLineage(topo.Tok(feat, "vertex", 2*i+1)))
+	}
+	e := bld.AddEdge(curve, v0, v1, topo.NewLineage(topo.Tok(feat, "edge", i)))
+	body.AttachWire(topo.NewLineage(topo.Tok(feat, "wire", i)), []topo.Use{topo.Fwd(e)})
 }

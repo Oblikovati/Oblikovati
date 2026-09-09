@@ -163,17 +163,25 @@ var kernelNetDeltaPin = map[string]int{
 	// unchecked entry is deleted, the boolean now refuses by name, and a tessellated face whose cells
 	// were dropped carries this Defect on its mesh — the mesh still ships, because a partial covering
 	// beats a missing face in a viewport, but it no longer ships silently.
-	// 32 → 33 (2026-09-09, #3525): CodeSectionUnclaimedPair. A RISE that names the OTHER half of the
-	// conditioning demotion above, and the reason that entry's "the ordinary refusal records nothing,
-	// it would be noise" premise was wrong where it mattered. The four imprint pairings do not fall
-	// back per pair: an ok=false DECLINES the whole mixed boolean, and the caller then reports one
-	// generic "no exact analytic path claims this configuration" for every refusal there is. Measured
-	// on a torus pair, an ill-conditioned lane and a section that does not close, the user read the
-	// same sentence three times, and the first of the three recorded NOTHING at all — it refuses at
-	// the coverage gate, before any pairing asks for a section. The ordinary refusal now rides along
-	// as an Info naming the two surfaces and which gate refused; it fires once per DECLINED boolean,
-	// not once per marched pair, so it is not the noise the earlier entry feared.
-	"fallback-sites": 33,
+	// 32 → 34 (2026-09-09, #3525): CodeSectionUnclaimedPair and CodeSectionFaceMeshed. A RISE that
+	// names refusals nothing reported before. The imprint pairings do not fall back per pair: an
+	// ok=false DECLINES the whole mixed boolean, and the caller then reports one generic "no exact
+	// analytic path claims this configuration" for every refusal there is. Measured on a torus pair,
+	// an ill-conditioned lane and a section that does not close, the user read the same sentence
+	// three times, and the first of the three recorded NOTHING at all — it refuses at the coverage
+	// gate, before any pairing asks for a section. The ordinary refusal now rides along as an Info
+	// naming the two FACES and which gate refused. CodeSectionFaceMeshed is the second: a face whose
+	// surface∩plane section the intersector could not resolve has its section SLICED FROM ITS MESH,
+	// which "no modelling decision reads tessellated data" forbids and which shipped in silence.
+	//
+	// The KEY was renamed here (review round 1, finding 8): countDiagCodes counts declared diag.Code
+	// constants under kernel/ — diagnostic VOCABULARY — and never counted fallback sites. Since
+	// ADR-0061 retired the CSG fallback a decline is a hard refusal with nothing behind it, so neither
+	// of these two is a fallback at all. A ratchet named "fallback-sites" that fails on any rise
+	// penalises exactly what the ground rules demand: replacing silence with a named diagnostic. Under
+	// its true name the number still ratchets — a new code must be justified here — and it no longer
+	// claims a rule violation that is not one.
+	"diag-codes": 34,
 }
 
 func TestKernelNetDelta(t *testing.T) {
@@ -182,10 +190,10 @@ func TestKernelNetDelta(t *testing.T) {
 		"tolerance-constants": sumInts(toleranceDebt),
 		"type-assertions":     sumInts(geomSwitchDebt),
 		"recognizers":         countRecognizers(t),
-		"fallback-sites":      countDiagCodes(t),
+		"diag-codes":          countDiagCodes(t),
 	}
 	var moved []string
-	for _, k := range []string{"tolerance-constants", "type-assertions", "recognizers", "fallback-sites"} {
+	for _, k := range []string{"tolerance-constants", "type-assertions", "recognizers", "diag-codes"} {
 		want, have := kernelNetDeltaPin[k], got[k]
 		if want == have {
 			continue

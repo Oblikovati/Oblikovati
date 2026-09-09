@@ -21,23 +21,38 @@ import (
 // operand's planar faces, mirroring the ruling segments onto the other side's polygonal imprint lists
 // (otherImp, index-aligned with other.planar). ok=false declines: a conic (circle/ellipse) contact, an
 // unhandled surface pair, or a wall overlapping a face kind the imprint cannot cover.
-func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geom.Curve3, bool) {
+func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3, rec *diag.Recorder) ([][]geom.Curve3, bool) {
 	out := make([][]geom.Curve3, len(p.wall))
 	for i, wf := range p.wall {
 		box := inflateBox(p.wallBox[i])
-		if wallOverlapsUncovered(wf, box, other) {
+		if of, uncovered := wallOverlapsUncoveredFace(wf, box, other); uncovered {
+			recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
+				"this wall overlaps a face (%T) the ruling imprint cannot cover", of.surface), wf, of)
 			return nil, false
 		}
-		for j := range other.planarFull {
-			if !box.Intersects(paddedFaceBox(other.planar[j])) {
-				continue
-			}
-			curves, ok := wallPairImprint(wf, other.planarFull[j], otherImp, j)
-			if !ok {
-				return nil, false
-			}
-			out[i] = append(out[i], curves...)
+		curves, ok := wallPlanarImprints(wf, box, other, otherImp, rec)
+		if !ok {
+			return nil, false
 		}
+		out[i] = curves
+	}
+	return out, true
+}
+
+// wallPlanarImprints is one wall's ruling imprints against every overlapping polygonal face of other,
+// mirrored onto that side's segment lists as it goes.
+func wallPlanarImprints(wf curvedFace, box math.Box, other *facePartition, otherImp [][][2]math.Point3, rec *diag.Recorder) ([]geom.Curve3, bool) {
+	var out []geom.Curve3
+	for j := range other.planarFull {
+		if !box.Intersects(paddedFaceBox(other.planar[j])) {
+			continue
+		}
+		curves, why, ok := wallPairImprint(wf, other.planarFull[j], otherImp, j)
+		if !ok {
+			recordSectionDecline(rec, why, wf, other.planarFull[j])
+			return nil, false
+		}
+		out = append(out, curves...)
 	}
 	return out, true
 }
@@ -50,9 +65,11 @@ func wallImprints(p, other *facePartition, otherImp [][][2]math.Point3) ([][]geo
 // (geom.SurfacesApart) the pair cannot touch however their boxes sit, so it does not make the wall
 // uncovered — an emboss pad seated on a chamfer cone overlaps that cone's box completely while
 // riding a constant sagitta clear of it (#3459).
-func wallOverlapsUncovered(wf curvedFace, box math.Box, other *facePartition) bool {
-	return overlapsUncarriedWall(wf, box, other) ||
-		overlapsUnprovenPair(wf, box, other.pass, other.passBox)
+func wallOverlapsUncoveredFace(wf curvedFace, box math.Box, other *facePartition) (curvedFace, bool) {
+	if of, found := overlapsUncarriedWall(wf, box, other); found {
+		return of, true
+	}
+	return overlapsUnprovenPair(wf, box, other.pass, other.passBox)
 }
 
 // overlapsUncarriedWall reports a wall of other whose box overlaps wf and whose crossing with it the
@@ -60,7 +77,7 @@ func wallOverlapsUncovered(wf curvedFace, box math.Box, other *facePartition) bo
 // whole of ADR-0061 stage 4's first ruled slice — but a pair outside that pairing's narrow scope
 // (a crossing that is not closed, or that straddles a rim) must keep declining: admitting one it
 // cannot imprint trades a decline for a wrong body, which a grazing partial-rim cut showed at once.
-func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) bool {
+func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) (curvedFace, bool) {
 	for i, b := range other.wallBox {
 		if !box.Intersects(b) || i >= len(other.wall) {
 			continue
@@ -76,14 +93,15 @@ func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) bo
 		if _, _, ok := wallWallImprint(wf, other.wall[i]); ok {
 			continue
 		}
-		return true
+		return other.wall[i], true
 	}
-	return false
+	return curvedFace{}, false
 }
 
-// overlapsUnprovenPair reports whether wf's box overlaps any of the given faces WITHOUT a
-// surface-separation proof for that pair.
-func overlapsUnprovenPair(wf curvedFace, box math.Box, faces []curvedFace, boxes []math.Box) bool {
+// overlapsUnprovenPair returns the first of the given faces whose box overlaps wf WITHOUT a
+// surface-separation proof for that pair. It returns the FACE, not a bool, so the caller's decline can
+// name the entity that made it decline (#3525, review round 1).
+func overlapsUnprovenPair(wf curvedFace, box math.Box, faces []curvedFace, boxes []math.Box) (curvedFace, bool) {
 	for i, b := range boxes {
 		if !box.Intersects(b) {
 			continue
@@ -91,9 +109,12 @@ func overlapsUnprovenPair(wf curvedFace, box math.Box, faces []curvedFace, boxes
 		if i < len(faces) && geom.SurfacesApart(wf.surface, faces[i].surface, facePairCullPad) {
 			continue
 		}
-		return true
+		if i < len(faces) {
+			return faces[i], true
+		}
+		return curvedFace{}, true
 	}
-	return false
+	return curvedFace{}, false
 }
 
 // ruledSide is a wall face resolved to the ruled surface it lies on, its rim band, and its axis —
@@ -111,27 +132,35 @@ func (r ruledSide) size() float64 { return bandSize(r.band) }
 // wallPairImprint is the exact shared imprint of one (wall, planar face) pair: every plane∩wall
 // ruling line clipped to the tool face's trim, emitted as segments for the wall AND mirrored onto the
 // tool's polygonal imprint list. A circle/ellipse curve entering the tool trim declines (v1).
-func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]geom.Curve3, bool) {
+func wallPairImprint(wf, of curvedFace, otherImp [][][2]math.Point3, j int) ([]geom.Curve3, sectionRefusal, bool) {
 	rs, ok := ruledFaceOf(wf)
 	if !ok {
-		return nil, false
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"this pairing needs a ruled wall; got %T", wf.surface), false
 	}
-	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(of), rs.surface, geom.ResolutionForSize(rs.size()))
+	curves, why, handled := curvedImprint(facePlane(of), rs.surface, geom.ResolutionForSize(rs.size()))
 	if !handled {
-		return nil, false
+		return nil, refusal(why), false
 	}
+	return wallSectionLineSegments(curves, of, rs, otherImp, j)
+}
+
+// wallSectionLineSegments clips each plane∩wall section curve to the planar face's trim and emits the
+// surviving stretches for BOTH sides: curves for the wall, the same segments for the polygonal face.
+func wallSectionLineSegments(curves []geom.Curve3, of curvedFace, rs ruledSide, otherImp [][][2]math.Point3, j int) ([]geom.Curve3, sectionRefusal, bool) {
 	var out []geom.Curve3
 	for _, cv := range curves {
 		segs, ok := wallCurveSegments(cv, of, rs.axis, rs.band)
 		if !ok {
-			return nil, false
+			return nil, refusalf(geom.DeclineNoClosedForm,
+				"the %T ruling section could not be clipped to the planar face's trim", cv), false
 		}
 		for _, s := range segs {
 			out = append(out, geom.NewLineSegment(s[0], s[1]))
 			otherImp[j] = append(otherImp[j], s)
 		}
 	}
-	return out, true
+	return out, solved(), true
 }
 
 // wallCurveSegments clips one plane∩wall curve to the tool face's exact trim. A ruling line yields

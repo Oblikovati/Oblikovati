@@ -57,8 +57,22 @@ func sectionClosureGap(curves []geom.Curve3) float64 {
 // the one place the closure scope of the closed-surface pairings is decided, so all three refuse the
 // same thing for the same reason and report the same measured gap.
 //
+// THE CLASS SHOULD BE Weld(), AND IS NOT, and the reason is a defect elsewhere (ADR-0042; #3525,
+// review round 1). By the rule the two points compared are one curve's OWN endpoints — one PointAt on
+// one curve, the same computation, whose only spread is float noise — so Weld() is the class and Sew()
+// (five orders looser: 1e-4·size against 1e-9·size) is for independent sources.
+//
+// It stays Sew() because the RESOLUTION these pairings hand in is degenerate. closedSurfaceRes reads
+// geom.ResolutionForBox(faceLoopBox(sf)), and a BOUNDARY-LESS face — the bare ball and torus this
+// pairing exists for — has no loops, so faceLoopBox returns the EMPTY box and the resolution collapses.
+// Measured on two radius-2 spheres two apart: Weld() 1e-18, Sew() 1e-13, against the section circle's
+// own endpoint noise of 4.2e-16. Weld() there is below the operands' float noise and refuses every
+// exact sphere-pair section; Sew() admits it. Tightening the class is correct only after the
+// resolution is derived from the model rather than from an empty box, which is its own change with its
+// own measurement.
+//
 // A non-finite gap is OPEN, not "within tolerance": an UNBOUNDED curve (a plane∩plane line) has an
-// infinite domain, its endpoint distance is not a number, and `NaN > sew` is false — so reading the
+// infinite domain, its endpoint distance is not a number, and `NaN > tol` is false — so reading the
 // comparison alone let the widest possible refusal through the narrowest gate.
 func declineOpenSection(curves []geom.Curve3, res geom.Resolution) (float64, geom.SectionDecline) {
 	gap := sectionClosureGap(curves)
@@ -66,4 +80,22 @@ func declineOpenSection(curves []geom.Curve3, res geom.Resolution) (float64, geo
 		return gap, geom.DeclineOpenSection
 	}
 	return gap, geom.DeclineNone
+}
+
+// islandSection is the seam PLUS the closure scope all three closed-surface pairings take: the pair's
+// exact section, refused unless every crossing is an island on both charts. It exists because the three
+// were the same seven lines three times over, and the one that drifted is how #3525's non-closing
+// crossing came back as DeclineNone at two of them.
+//
+//	curves, why, ok := islandSection(sf.surface, rs.surface, res)
+//	if !ok { recordSectionDecline(rec, why, sf, wf); return false }
+func islandSection(a, b geom.Surface, res geom.Resolution) ([]geom.Curve3, sectionRefusal, bool) {
+	curves, why, handled := curvedImprint(a, b, res)
+	if !handled {
+		return nil, refusal(why), false
+	}
+	if gap, open := declineOpenSection(curves, res); open != geom.DeclineNone {
+		return nil, refusalf(open, "endpoint gap %g > sew %g", gap, res.Sew()), false
+	}
+	return curves, solved(), true
 }

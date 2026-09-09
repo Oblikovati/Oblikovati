@@ -129,7 +129,7 @@ func cylinderPassClear(pf, of curvedFace) bool {
 		return false
 	}
 	res := geom.ResolutionForSize(2*cyl.Radius + (band.vMax - band.vMin))
-	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(of), cyl, res)
+	curves, _, handled := curvedImprint(facePlane(of), cyl, res) // a PREDICATE: no gate to report, the caller answers conservatively
 	if !handled {
 		return false
 	}

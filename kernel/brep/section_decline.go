@@ -34,9 +34,11 @@ import (
 const CodeSectionConditioningDemotion diag.Code = "section.conditioning-demotion"
 
 // CodeSectionUnclaimedPair marks a surface pair no closed form claims, recorded where that refusal
-// DECLINES the exact boolean rather than merely routing the pair to the marcher. Info, not Defect:
-// nothing degraded here — the caller's own decline is the degradation — but without it the user cannot
-// tell which of the pairings refused, or on which two surfaces (#3525).
+// DECLINES the exact boolean rather than merely routing the pair to the marcher. Info, not Defect,
+// because nothing degrades AT THIS GATE: the boolean hard-errors on the refusal (ADR-0061 retired the
+// CSG fallback, so a decline is a refusal and not a demotion) and the degradation is already reported
+// as a Defect by the caller, ops.CodeBooleanNoExactCurvedPath. This is that Defect's EXPLANATION — the
+// two faces and the gate the generic message cannot name (#3525).
 const CodeSectionUnclaimedPair diag.Code = "section.unclaimed-pair"
 
 // sectionRefusal is one named refusal plus the evidence behind it: the [geom.SectionDecline] that says
@@ -70,19 +72,66 @@ func (r sectionRefusal) String() string {
 	return r.why.String() + " (" + r.detail + ")"
 }
 
-// recordSectionDecline reports on the recorder that a surface pair's section refused, naming the two
-// surfaces, which gate refused and what it measured. A CONDITIONING demotion is a Defect — the exact
-// path applied and was given up; anything else is an Info that explains the caller's own decline.
-// DeclineNone records nothing: there was no refusal to report.
-func recordSectionDecline(rec *diag.Recorder, r sectionRefusal, a, b geom.Surface) {
+// recordSectionDecline reports on the recorder that a face pair's section refused, naming the two
+// FACES — surface kind and lineage — which gate refused and what it measured. A CONDITIONING demotion
+// is a Defect: the exact path applied and was given up. Anything else is an Info that explains the
+// caller's own Defect. DeclineNone records nothing: there was no refusal to report.
+//
+// It takes faces, not surfaces: "failure is local — an operation returns a partial result naming the
+// faulty entity", and on a 40-face part "geom.Torus ∩ geom.Torus" names no entity a user can find.
+func recordSectionDecline(rec *diag.Recorder, r sectionRefusal, a, b curvedFace) {
 	if r.why == geom.DeclineNone {
 		return
 	}
+	first, second := orderedFaceLabels(a, b)
 	if r.why.IsConditioning() {
-		rec.Recordf(CodeSectionConditioningDemotion, diag.Defect,
-			"the %T ∩ %T closed-form section applied but its answer is unusable: %s; the exact path is declined here", a, b, r)
+		recordSectionDeclineOnce(rec, CodeSectionConditioningDemotion, diag.Defect,
+			"the %s ∩ %s closed-form section applied but its answer is unusable: %s; the exact path is declined here",
+			first, second, r)
 		return
 	}
-	rec.Recordf(CodeSectionUnclaimedPair, diag.Info,
-		"the %T ∩ %T section was refused before any geometry was built: %s; the exact path is declined here", a, b, r)
+	recordSectionDeclineOnce(rec, CodeSectionUnclaimedPair, diag.Info,
+		"the %s ∩ %s section was refused before any geometry was built: %s; the exact path is declined here",
+		first, second, r)
+}
+
+// orderedFaceLabels names the two faces in one explicit total order (lexicographic), so the SAME pair
+// reads the same however the pairing reached it. A refusal is a property of the unordered pair, and
+// each pairing runs in both operand orders: without the order the same refusal reached a user twice,
+// once as "A ∩ B" and once as "B ∩ A", which no dedupe on the message could collapse. It also makes
+// the message byte-identical across runs, which the ground rules require of every output.
+func orderedFaceLabels(a, b curvedFace) (first, second string) {
+	la, lb := faceLabel(a), faceLabel(b)
+	if la <= lb {
+		return la, lb
+	}
+	return lb, la
+}
+
+// faceLabel names one operand of a refusal: its surface kind and the lineage that identifies the face
+// it came from. A face built without a lineage (a bare primitive surface in a unit test) reads as its
+// kind alone rather than as an empty key.
+func faceLabel(f curvedFace) string {
+	if key := f.lineage.KeyString(); key != "" {
+		return fmt.Sprintf("%T %s", f.surface, key)
+	}
+	return fmt.Sprintf("%T", f.surface)
+}
+
+// recordSectionDeclineOnce records the diagnostic unless the recorder already carries that exact
+// (code, detail) pair.
+//
+// One boolean asks the SAME pair twice by construction — the pairings run in both operand orders, and
+// ops.booleanGeneralExact enters brep.BooleanDiag twice — so a single refusal reached a user four
+// times over. Four identical lines in a report whose whole subject is what a user reads is a defect of
+// its own (#3525, review round 1). Repeats are dropped rather than counted: the message says which
+// gate refused which pair, and saying it twice adds nothing to that.
+func recordSectionDeclineOnce(rec *diag.Recorder, code diag.Code, sev diag.Severity, format string, args ...any) {
+	detail := fmt.Sprintf(format, args...)
+	for _, d := range rec.Records() {
+		if d.Code == code && d.Detail == detail {
+			return
+		}
+	}
+	rec.Record(diag.Diagnostic{Code: code, Severity: sev, Detail: detail})
 }

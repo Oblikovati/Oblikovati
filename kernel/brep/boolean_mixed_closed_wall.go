@@ -31,7 +31,7 @@ func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]
 			}
 			curves, why, ok := closedSurfaceWallImprint(sf, wf)
 			if !ok {
-				recordSectionDecline(rec, why, sf.surface, wf.surface)
+				recordSectionDecline(rec, why, sf, wf)
 				return false
 			}
 			sphImp[i] = append(sphImp[i], curves...)
@@ -63,12 +63,9 @@ func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, sectionRefusal,
 			len(sf.loops), wf.surface), false
 	}
 	res := geom.ResolutionForSize(rs.size())
-	curves, why, handled := curvedImprint(sf.surface, rs.surface, res)
-	if !handled {
-		return nil, refusal(why), false
-	}
-	if gap, open := declineOpenSection(curves, res); open != geom.DeclineNone {
-		return nil, refusalf(open, "endpoint gap %g > sew %g", gap, res.Sew()), false
+	curves, why, ok := islandSection(sf.surface, rs.surface, res)
+	if !ok {
+		return nil, why, false
 	}
 	kept, ok := keepCrossingsOnTheWall(curves, rs)
 	if !ok {
@@ -139,7 +136,7 @@ func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve
 			}
 			curves, why, ok := wallWallImprint(wf, of)
 			if !ok {
-				recordSectionDecline(rec, why, wf.surface, of.surface)
+				recordSectionDecline(rec, why, wf, of)
 				return false
 			}
 			impP[i] = append(impP[i], curves...)
@@ -153,30 +150,37 @@ func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve
 // closed-surface pairing takes: every crossing must come back CLOSED, and must lie strictly inside BOTH
 // bands or strictly clear of them. Anything else declines.
 func wallWallImprint(a, b curvedFace) ([]geom.Curve3, sectionRefusal, bool) {
-	ra, okA := ruledFaceOf(a)
-	rb, okB := ruledFaceOf(b)
-	if !okA || !okB {
-		return nil, refusalf(geom.DeclineNoClosedForm,
-			"this pairing needs two ruled walls; got %T and %T", a.surface, b.surface), false
+	ra, rb, why, ok := ruledWallPair(a, b)
+	if !ok {
+		return nil, why, false
 	}
-	res := geom.ResolutionForSize(stdmath.Max(ra.size(), rb.size()))
 	// Two walls on ONE surface do not cross, and asking an intersector for the crossing they do not
 	// have returns "cannot", which is not the same as "unsupported": their contact is the region where
 	// the two bands overlap, and what divides it is where one band ends inside the other (ADR-0045,
 	// the degenerate-overlap class — boolean_mixed_coincident.go).
+	res := geom.ResolutionForSize(stdmath.Max(ra.size(), rb.size()))
 	if geom.SurfacesCoincide(ra.surface, rb.surface, res) {
 		return coincidentWallImprint(ra, rb), solved(), true
 	}
-	// The reason travels: this pairing threw it away, so an ill-conditioned wall crossing arrived at the
-	// user as the same generic message a torus pair does (Oblikovati/Oblikovati#3525).
-	curves, why, handled := curvedImprint(ra.surface, rb.surface, res)
-	if !handled {
-		return nil, refusal(why), false
-	}
-	if gap, open := declineOpenSection(curves, res); open != geom.DeclineNone {
-		return nil, refusalf(open, "endpoint gap %g > sew %g", gap, res.Sew()), false
+	// The reason travels: this pairing threw it away, so an ill-conditioned wall crossing arrived at
+	// the user as the same generic message a torus pair does (Oblikovati/Oblikovati#3525).
+	curves, why, ok := islandSection(ra.surface, rb.surface, res)
+	if !ok {
+		return nil, why, false
 	}
 	return wallWallCrossingsOnBothBands(curves, ra, rb)
+}
+
+// ruledWallPair resolves both faces to the ruled sides this pairing needs, naming the operand that is
+// not one so the refusal says which face it was.
+func ruledWallPair(a, b curvedFace) (ra, rb ruledSide, why sectionRefusal, ok bool) {
+	ra, okA := ruledFaceOf(a)
+	rb, okB := ruledFaceOf(b)
+	if !okA || !okB {
+		return ruledSide{}, ruledSide{}, refusalf(geom.DeclineNoClosedForm,
+			"this pairing needs two ruled walls; got %T and %T", a.surface, b.surface), false
+	}
+	return ra, rb, solved(), true
 }
 
 // wallWallCrossingsOnBothBands keeps the crossings that lie on BOTH walls, in the order the two clips

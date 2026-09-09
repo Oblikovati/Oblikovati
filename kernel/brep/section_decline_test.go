@@ -51,7 +51,7 @@ func TestATorusPairDeclinesByName(t *testing.T) {
 		t.Fatal("the torus pair built; the fixture no longer exercises the decline")
 	}
 	d := onlyDiagWithCode(t, rec, CodeSectionUnclaimedPair)
-	for _, want := range []string{"geom.Torus ∩ geom.Torus", "no closed form claims this surface pair"} {
+	for _, want := range []string{"geom.Torus a:face#0 ∩ geom.Torus b:face#0", "no closed form claims this surface pair"} {
 		if !strings.Contains(d.Detail, want) {
 			t.Errorf("the torus pair's decline does not name %q: %s", want, d.Detail)
 		}
@@ -72,7 +72,7 @@ func TestAnIllConditionedLaneDeclinesByName(t *testing.T) {
 		t.Fatal("the ring-on-rod cut built; the fixture no longer exercises the lane decline")
 	}
 	d := onlyDiagWithCode(t, rec, CodeSectionConditioningDemotion)
-	for _, want := range []string{"geom.Torus ∩ geom.Cylinder", "the torus section's"} {
+	for _, want := range []string{"geom.Cylinder cylinder:f#2 ∩ geom.Torus ring:face#0", "the torus section's"} {
 		if !strings.Contains(d.Detail, want) {
 			t.Errorf("the lane decline does not name %q: %s", want, d.Detail)
 		}
@@ -94,18 +94,21 @@ func TestTheThreeRefusalsReadDifferently(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewCylinder: %v", err)
 	}
+	seat := curvedFace{surface: ball, lineage: topo.NewLineage(topo.Tok("ball", "face", 0))}
+	bore := curvedFace{surface: rod, lineage: topo.NewLineage(topo.Tok("rod", "face", 1))}
 	rec := &diag.Recorder{}
-	recordSectionDecline(rec, refusal(geom.DeclineNoClosedForm), ball, rod)
-	recordSectionDecline(rec, refusal(geom.DeclineTorusLaneTracks), ball, rod)
-	recordSectionDecline(rec, refusalf(geom.DeclineOpenSection, "endpoint gap %g > sew %g", 0.25, 0.001), ball, rod)
+	recordSectionDecline(rec, refusal(geom.DeclineNoClosedForm), seat, bore)
+	recordSectionDecline(rec, refusal(geom.DeclineTorusLaneTracks), seat, bore)
+	recordSectionDecline(rec, refusalf(geom.DeclineOpenSection, "endpoint gap %g > sew %g", 0.25, 0.001), seat, bore)
 	seen := map[string]bool{}
 	for _, d := range rec.Records() {
 		if seen[d.Detail] {
 			t.Errorf("two of the three refusals read identically: %s", d.Detail)
 		}
 		seen[d.Detail] = true
-		if !strings.Contains(d.Detail, "geom.Sphere ∩ geom.Cylinder") {
-			t.Errorf("a refusal does not name the geometry pair: %s", d.Detail)
+		// The faces, not just their kinds: "failure is local — naming the faulty entity".
+		if !strings.Contains(d.Detail, "geom.Cylinder rod:face#1 ∩ geom.Sphere ball:face#0") {
+			t.Errorf("a refusal does not name the two FACES that refused: %s", d.Detail)
 		}
 	}
 	if len(seen) != 3 {
@@ -163,11 +166,13 @@ func TestEveryImprintRefusalIsNamed(t *testing.T) {
 		t.Fatalf("fixture: the base has %d walls, want 1", len(pb.wall))
 	}
 	refusals := 0
+	raised := map[string]int{}
 	check := func(what string, why sectionRefusal, ok bool) {
 		if ok {
 			return
 		}
 		refusals++
+		raised[why.why.String()]++
 		if why.why == geom.DeclineNone {
 			t.Errorf("%s refused with no reason (DeclineNone)", what)
 		}
@@ -188,7 +193,10 @@ func TestEveryImprintRefusalIsNamed(t *testing.T) {
 	if refusals == 0 {
 		t.Fatal("the sweep produced no refusal at all — it is passing vacuously")
 	}
-	t.Logf("swept %d named refusals", refusals)
+	// The names this corpus actually RAISED, against the ones geom declares. geom's
+	// TestEveryDeclineNameIsReachable proves only a syntactic mention; this is the live half, and the
+	// difference is which reasons a user can meet today (review round 1, finding 11).
+	t.Logf("swept %d named refusals across %d reasons: %v", refusals, len(raised), raised)
 }
 
 // surfacePair is one entry of the imprint sweep's corpus.
@@ -204,21 +212,34 @@ func imprintSweepSurfaces(t *testing.T) []surfacePair {
 	var out []surfacePair
 	for _, rad := range []float64{0.5, 2, 3, 6, 12} {
 		for _, dz := range []float64{-9, 0, 9} {
-			ball, err := geom.NewSphere(math.P3(0, 0, math.Scalar(dz)), math.Scalar(rad))
-			if err != nil {
-				t.Fatalf("NewSphere(%g, %g): %v", dz, rad, err)
-			}
+			// The two surfaces of a pair are DISTINCT objects at distinct places. Handing the same
+			// object twice short-circuits on SurfacesCoincide, so such an entry can never refuse and
+			// pads the count without testing anything (review round 1, finding 14).
+			ball := mustSphere(t, math.P3(0, 0, math.Scalar(dz)), rad)
+			other := mustSphere(t, math.P3(math.Scalar(rad/2), 0, math.Scalar(dz+1)), rad*0.75)
+			out = append(out, surfacePair{"sphere/sphere", ball, other})
 			ring, err := geom.NewTorus(math.P3(0, 0, math.Scalar(dz)), math.V3(1, 0, 0), math.Scalar(rad), 0.4)
 			if err != nil {
-				continue // a minor radius the major cannot carry: not a fixture
+				continue // a minor radius the major cannot carry: not a ring fixture, the spheres stand
 			}
-			out = append(out,
-				surfacePair{"sphere/ring", ball, ring},
-				surfacePair{"ring/ring", ring, ring},
-				surfacePair{"sphere/sphere", ball, ball})
+			linked, err := geom.NewTorus(math.P3(math.Scalar(rad), 0, math.Scalar(dz)), math.V3(0, 0, 1), math.Scalar(rad), 0.4)
+			if err != nil {
+				continue
+			}
+			out = append(out, surfacePair{"sphere/ring", ball, ring}, surfacePair{"ring/ring", ring, linked})
 		}
 	}
 	return out
+}
+
+// mustSphere builds a sphere for a fixture, failing the test rather than returning a zero value.
+func mustSphere(t *testing.T, centre math.Point3, radius float64) geom.Sphere {
+	t.Helper()
+	s, err := geom.NewSphere(centre, math.Scalar(radius))
+	if err != nil {
+		t.Fatalf("NewSphere(%v, %g): %v", centre, radius, err)
+	}
+	return s
 }
 
 // imprintSweepWalls is the ruled-wall corpus: rods at angles and offsets that cross the base's wall,

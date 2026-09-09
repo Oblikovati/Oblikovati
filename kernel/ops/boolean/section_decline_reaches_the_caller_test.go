@@ -33,7 +33,7 @@ func TestTheDeclineSaysWhichGateRefused(t *testing.T) {
 		t.Fatal("the ring-on-rod cut built; the fixture no longer exercises the decline")
 	}
 	assertRecorded(t, rec, CodeBooleanNoExactCurvedPath, "no exact analytic path")
-	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "the torus section's")
+	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "geom.Cylinder cylinder:f#2 ∩ geom.Torus ring:face#0")
 }
 
 // TestAnUnclaimedPairSaysSoOnTheSameRecorder: the other example of #3525 — a torus pair, which no
@@ -52,7 +52,36 @@ func TestAnUnclaimedPairSaysSoOnTheSameRecorder(t *testing.T) {
 	if _, err := BooleanWithDiagnostics(Join, a, b, rec); err == nil {
 		t.Fatal("the torus pair built; the fixture no longer exercises the decline")
 	}
-	assertRecorded(t, rec, brep.CodeSectionUnclaimedPair, "geom.Torus ∩ geom.Torus")
+	assertRecorded(t, rec, brep.CodeSectionUnclaimedPair, "geom.Torus a:face#0 ∩ geom.Torus b:face#0")
+}
+
+// TestARefusalIsReportedOnce: one boolean asks the same face pair up to four times — each pairing runs
+// in both operand orders, and booleanGeneralExact enters brep.BooleanDiag twice — so a single refusal
+// reached a user four identical times. A fix whose whole subject is what a user reads must not print
+// itself four times (#3525, review round 1).
+func TestARefusalIsReportedOnce(t *testing.T) {
+	t.Parallel()
+	a, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1, "a")
+	if err != nil {
+		t.Fatalf("SolidTorus a: %v", err)
+	}
+	b, err := brep.SolidTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1, "b")
+	if err != nil {
+		t.Fatalf("SolidTorus b: %v", err)
+	}
+	rec := &diag.Recorder{}
+	if _, err := BooleanWithDiagnostics(Join, a, b, rec); err == nil {
+		t.Fatal("the torus pair built; the fixture no longer exercises the decline")
+	}
+	seen := map[string]int{}
+	for _, d := range rec.Records() {
+		seen[string(d.Code)+": "+d.Detail]++
+	}
+	for line, n := range seen {
+		if n > 1 {
+			t.Errorf("one refusal was reported %d times: %s", n, line)
+		}
+	}
 }
 
 // assertRecorded fails unless the recorder carries a diagnostic of this code whose detail contains want.

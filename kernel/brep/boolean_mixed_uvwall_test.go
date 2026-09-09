@@ -211,7 +211,7 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 	t.Parallel()
 	cyl, plate := uvWallFixture(t)
 	promoteConicReceivers(&plate, &cyl)
-	curves, _, ok := uvWallSharedImprint(plate.uv[0], cyl.wall[0], cylOracle(t))
+	curves, _, _, ok := uvWallSharedImprint(plate.uv[0], cyl.wall[0], cylOracle(t))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("uvWallSharedImprint = %d curves, ok=%v; want 1 circle", len(curves), ok)
 	}
@@ -228,7 +228,7 @@ func TestUvWallSharedImprintYieldsOneCircle(t *testing.T) {
 func TestUvWallSharedImprintOwnCapIsNoImprint(t *testing.T) {
 	t.Parallel()
 	cyl, _ := uvWallFixture(t)
-	curves, _, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0], cylOracle(t))
+	curves, _, _, ok := uvWallSharedImprint(cyl.uv[0], cyl.wall[0], cylOracle(t))
 	if !ok || len(curves) != 0 {
 		t.Errorf("own cap × wall = %d curves ok=%v, want no imprint and no decline", len(curves), ok)
 	}
@@ -276,7 +276,7 @@ func TestPairUVWallImprintsWritesBothSides(t *testing.T) {
 	promoteConicReceivers(&plate, &cyl)
 	uvImp := make([][]geom.Curve3, len(plate.uv))
 	wallImp := make([][]geom.Curve3, len(cyl.wall))
-	if !pairUVWallImprints(&plate, &cyl, uvImp, wallImp, cylOracle(t)) {
+	if !pairUVWallImprints(&plate, &cyl, uvImp, wallImp, cylOracle(t), nil) {
 		t.Fatal("pairUVWallImprints declined the cylinder-through-plate contact")
 	}
 	if len(uvImp[0]) != 1 || len(uvImp[1]) != 1 || len(wallImp[0]) != 2 {

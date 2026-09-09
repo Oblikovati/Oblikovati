@@ -81,6 +81,11 @@ func TestNoDeclineReturnSiteIsAnonymous(t *testing.T) {
 // TestEveryDeclineNameIsReachable: a name nothing returns is a name the user can never be shown, and
 // the delete-first rule says the constant goes with the site that raised it. Derived both ways, so
 // removing a gate AND its reason keeps this green.
+//
+// It proves a SYNTACTIC mention, not a live producer: a constant returned only from a branch no input
+// can reach passes here identically. The runtime half is brep's TestEveryImprintRefusalIsNamed, which
+// logs the names its corpus actually raised — the gap between the two lists is the honest measure of
+// which reasons a user can meet today (Oblikovati/Oblikovati#3525, review round 1, finding 11).
 func TestEveryDeclineNameIsReachable(t *testing.T) {
 	t.Parallel()
 	raised := declineIdentsRaisedByAGate(t)

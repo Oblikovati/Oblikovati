@@ -59,7 +59,7 @@ func TestClearWallPairIsCarried(t *testing.T) {
 	if len(curves) != 0 {
 		t.Errorf("the wall pair produced %d imprint curves; the tool never touches the target's wall", len(curves))
 	}
-	if overlapsUncarriedWall(pa.wall[0], inflateBox(pa.wallBox[0]), &pb) {
+	if _, uncarried := overlapsUncarriedWall(pa.wall[0], inflateBox(pa.wallBox[0]), &pb); uncarried {
 		t.Error("a decided-clear wall pair still reads as uncovered")
 	}
 }
