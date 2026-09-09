@@ -62,16 +62,9 @@ func chartRegionMesh(f *topo.Face, s geom.Surface, r chartRegion, q Quality) (*M
 	b := newChartCover(s, r, q)
 	loops := b.addChains(chains)
 	b.addInterior(chains)
-	kept, ok := b.keptWithoutRimEars(loops)
-	if b.rimSideConflict != "" {
-		return nil, b.rimSideConflict
-	}
-	if !ok {
-		return nil, fmt.Sprintf("its %d rim-only-ear splitting rounds were spent with an ear still "+
-			"standing, and an ear carries no surface point of its own", chartRimEarRounds)
-	}
-	if len(kept) == 0 {
-		return nil, "the covering kept no triangle inside the chart's own window"
+	kept, why := b.meshOrRefusal(b.keptWithoutRimEars(loops))
+	if why != "" {
+		return nil, why
 	}
 	return weldAndCertifyChartMesh(b, kept, chains)
 }
@@ -170,6 +163,10 @@ type chartCover struct {
 	// review M9).
 	weld float64
 	// rimSideConflict is a chain whose own segments named two material sides — a refusal, not a mesh.
+	// It is deliberately STICKY across the ear-splitting rounds: a contradiction is a statement about
+	// the CHART, and splitting an ear adds interior points without changing what the chart says, so a
+	// later round that happened to read unanimous would be luck rather than a repair. Refusing the
+	// face is the conservative direction and the router reports it (#3518 review N3).
 	rimSideConflict string
 }
 

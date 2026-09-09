@@ -207,3 +207,25 @@ func keptDirectedEdgeUse(tris [][3]int, keep []bool) map[[2]int]int {
 	}
 	return out
 }
+
+// meshOrRefusal turns the covering's own state into either the triangles the face ships or the reason
+// it is refused, in the order those reasons outrank each other. It exists so the refusal a chain's
+// contradiction raises cannot be set and then dropped: the field and the decline are one call, and one
+// test drives it (#3518 review N2).
+//
+// A CONTRADICTION outranks the other two. A chain that names both material sides makes every triangle
+// touching it untrustworthy, so "an ear was still standing" and "nothing was kept" are symptoms of it
+// rather than reasons of their own, and reporting a symptom would send the reader to the wrong place.
+func (b *chartCover) meshOrRefusal(kept [][3]int, split bool) ([][3]int, string) {
+	if b.rimSideConflict != "" {
+		return nil, b.rimSideConflict
+	}
+	if !split {
+		return nil, fmt.Sprintf("its %d rim-only-ear splitting rounds were spent with an ear still "+
+			"standing, and an ear carries no surface point of its own", chartRimEarRounds)
+	}
+	if len(kept) == 0 {
+		return nil, "the covering kept no triangle inside the chart's own window"
+	}
+	return kept, ""
+}

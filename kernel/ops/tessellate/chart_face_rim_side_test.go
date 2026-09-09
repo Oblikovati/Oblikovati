@@ -137,3 +137,71 @@ func TestOnlyKeptTrianglesVote(t *testing.T) {
 		t.Errorf("edge use = %d forward / %d back; want 1/0 — the dropped triangle voted", got[[2]int{0, 1}], got[[2]int{1, 0}])
 	}
 }
+
+// TestAContradictionRefusesTheFaceAndOutranksTheOthers drives the wiring the conflict string exists
+// for, which nothing did before (#3518 review N2): rimSideFrom raises it, bindToTheRim copies it onto
+// the covering, and meshOrRefusal turns it into the reason chartRegionMesh returns and the router
+// reports. No corpus body produces a contradiction — measured unanimous everywhere — so without this
+// row the path is written and never executed.
+func TestAContradictionRefusesTheFaceAndOutranksTheOthers(t *testing.T) {
+	t.Parallel()
+	b, _ := openChainCover(t)
+	b.rimSideConflict = "its boundary chain 7 names both sides as material"
+	kept, why := b.meshOrRefusal([][3]int{{0, 1, 2}}, true)
+	if kept != nil || why != b.rimSideConflict {
+		t.Errorf("a covering carrying a contradiction meshed %v with reason %q; want no mesh and the "+
+			"contradiction itself", kept, why)
+	}
+	// It outranks the other two refusals, which are its symptoms rather than reasons of their own.
+	if _, spent := b.meshOrRefusal(nil, false); spent != b.rimSideConflict {
+		t.Errorf("a spent ear budget reported %q over the contradiction that caused it", spent)
+	}
+	if _, empty := b.meshOrRefusal(nil, true); empty != b.rimSideConflict {
+		t.Errorf("an empty kept set reported %q over the contradiction that caused it", empty)
+	}
+}
+
+// TestAUnanimousCoveringRaisesNoRefusal is the other direction: the ordinary covering must still get
+// its own two reasons, so the row above pins an override and not a swallow.
+func TestAUnanimousCoveringRaisesNoRefusal(t *testing.T) {
+	t.Parallel()
+	b, _ := openChainCover(t)
+	if kept, why := b.meshOrRefusal([][3]int{{0, 1, 2}}, true); why != "" || len(kept) != 1 {
+		t.Errorf("an unrefused covering came back with %d triangle(s) and reason %q; want 1 and none", len(kept), why)
+	}
+	if _, spent := b.meshOrRefusal(nil, false); !strings.Contains(spent, "ear still") {
+		t.Errorf("a spent ear budget reported %q; want the ear reason", spent)
+	}
+	if _, empty := b.meshOrRefusal(nil, true); !strings.Contains(empty, "kept no triangle") {
+		t.Errorf("an empty kept set reported %q; want the empty reason", empty)
+	}
+}
+
+// TestBindToTheRimCarriesTheContradictionOntoTheCovering closes the first hop of that path: a chain
+// whose decisive segments disagree must leave its refusal ON the covering, where meshOrRefusal reads
+// it. Two triangles traverse the same rim segment in opposite directions, so chain 0 counts one vote
+// each way.
+func TestBindToTheRimCarriesTheContradictionOntoTheCovering(t *testing.T) {
+	t.Parallel()
+	b, chains := contradictingCover(t)
+	b.chains = 1
+	b.rimChain = b.directedRimSegments([]rimSegment{{0, 1, 0}, {2, 3, 0}}, chains, weldGrid([][]math.Point3{b.pos}))
+	tris := [][3]int{{0, 1, 4}, {3, 2, 5}}
+	b.bindToTheRim(tris, []bool{true, true})
+	if !strings.Contains(b.rimSideConflict, "chain 0") {
+		t.Errorf("bindToTheRim left %q on the covering; want a refusal naming chain 0", b.rimSideConflict)
+	}
+}
+
+// contradictingCover is a covering holding two rim segments of ONE chain whose kept triangles bound
+// them from opposite sides — the disagreement no consistently wound loop can produce.
+func contradictingCover(t *testing.T) (*chartCover, []chartChain) {
+	t.Helper()
+	b := newBareCover(t)
+	pts := []math.Point3{math.P3(0, 0, 0), math.P3(1, 0, 0), math.P3(2, 0, 0), math.P3(3, 0, 0),
+		math.P3(0, 1, 0), math.P3(3, 1, 0)}
+	for i, p := range pts {
+		b.add(p, float64(i), 0, 0)
+	}
+	return b, []chartChain{{p3: []math.Point3{pts[0], pts[1]}}, {p3: []math.Point3{pts[2], pts[3]}}}
+}
