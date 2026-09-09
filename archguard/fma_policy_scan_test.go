@@ -79,7 +79,14 @@ func convertsToFloat(info *types.Info, fun ast.Expr) bool {
 		return false
 	}
 	b, isBasic := tv.Type.Underlying().(*types.Basic)
-	return !isBasic || b.Info()&types.IsComplex == 0
+	if !isBasic {
+		// An interface or a type parameter proves nothing about rounding: `any(a*b) + c` boxes a
+		// value the compiler is still free to contract, and a generic `T(a*b)` at T = complex128 is
+		// the complex case wearing another name. Both were measured emitting FMADDD while this
+		// check said "settled" (#3528 re-review, N1), so a non-basic target is NOT a round.
+		return false
+	}
+	return b.Info()&types.IsComplex == 0
 }
 
 // isComparison reports whether op compares rather than computes. arm64 has no fused
