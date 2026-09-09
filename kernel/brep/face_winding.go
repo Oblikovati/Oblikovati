@@ -3,9 +3,7 @@
 package brep
 
 import (
-	stdmath "math"
-	"sort"
-
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -21,6 +19,23 @@ import (
 // cut shipped exactly that — one lobe of the figure-eight lid inverted with the torus edge it borders —
 // as a valid solid, and only the tessellated volume showed it. This is the post-condition on the
 // EMISSION the stage-4 clip left named (ADR-0061).
+//
+// It is an INDEPENDENT verifier, on purpose. senseFromLoopWinding makes the stored sense definitionally
+// the output of loopHandedness, so a gate that shared that reader could never catch a wrong sense — it
+// would agree with it by construction. The two therefore differ, deliberately, in exactly two places,
+// and in no others:
+//
+//   - the membership tester: this asks faceTrimUV.contains, which inverts a 3-space point through
+//     ParamAt against the face's DEVELOPED boundary; loopHandedness asks trimRegion.contains against
+//     the chart, in (u, v). Two ways of asking the face where its material is, so a fault in either
+//     shows up as a disagreement rather than as a shared wrong answer.
+//   - the decision rule: this returns the FIRST station that resolves the boundary, because a gate
+//     wants the first witness of an inverted face; loopHandedness takes a majority over up to 32
+//     stations, because a sense has to be right rather than merely witnessed.
+//
+// The STEP is NOT one of those places. "A quarter of this segment, to its left" is one predicate and
+// the ground rules give it one implementation ([quarterArcLeftOf]); computing it twice is how the two
+// readers came to disagree on a chart whose axes are not the same unit (Oblikovati/Oblikovati#3512).
 //
 // It is ONE question asked once per loop, and the face's own trim answers it: step off the boundary to
 // the side the winding claims the material is on, and ask whether that point is in the face. Reading
@@ -64,20 +79,23 @@ func FaceWindingConsistent(f *topo.Face) (ok, certain bool) {
 //
 // Stations are walked rather than one taken, because a single sample can land on a self-touch, a corner
 // or a pole, and a boundary loop is entitled to have those.
+//
+// The STEP is [quarterArcLeftOf], the one reader of "a quarter of this segment, to its left" the kernel
+// has — the same one the sense itself is derived from. It used to be a chart-relative median of the
+// ring's own (u, v) sampling, which is a second answer to a question already decided elsewhere and
+// carries the very defect that reader was fixed for: a quarter TURN in (u, v) is "left" only where the
+// chart is isotropic (Oblikovati/Oblikovati#3512). What this verifier keeps of its own is stated above.
 func ringWindsWithMaterialOnItsLeft(cf curvedFace, trim *faceTrimUV, ring []math.Point2) (wound, decided bool) {
-	sense := outwardSenseInUV(cf, ring[0])
-	step := windingProbeStep(ring)
-	if step <= 0 {
-		return false, false
-	}
+	sense := math.Scalar(outwardSenseInUV(cf, ring[0]))
 	for i := range ring {
 		at, dir := ring[i], ring[i].VectorTo(ring[(i+1)%len(ring)])
-		left, okDir := unitLeftOf(dir, sense)
-		if !okDir {
+		left, ok := quarterArcLeftOf(cf.surface, at, dir)
+		if !ok {
 			continue
 		}
-		inLeft := trim.contains(cf.surface.PointAt(float64(at.X)+float64(left.X)*step, float64(at.Y)+float64(left.Y)*step))
-		inRight := trim.contains(cf.surface.PointAt(float64(at.X)-float64(left.X)*step, float64(at.Y)-float64(left.Y)*step))
+		left = left.Scale(sense) // the side the STORED outward normal claims, not the chart's own left
+		inLeft := trim.contains(surfacePointOffset(cf.surface, at, left))
+		inRight := trim.contains(surfacePointOffset(cf.surface, at, left.Scale(-1)))
 		if inLeft == inRight {
 			continue // the step resolved no boundary here
 		}
@@ -86,43 +104,10 @@ func ringWindsWithMaterialOnItsLeft(cf curvedFace, trim *faceTrimUV, ring []math
 	return false, false
 }
 
-// unitLeftOf is the unit (u,v) direction the face's material lies in if the ring is wound correctly:
-// the left of the travel direction, turned round on a chart whose handedness opposes the outward
-// normal. ok=false for a degenerate step, which names no direction.
-func unitLeftOf(dir math.Vector2, sense float64) (math.Vector2, bool) {
-	l := stdmath.Hypot(float64(dir.X), float64(dir.Y))
-	if l == 0 {
-		return math.Vector2{}, false
-	}
-	return math.V2(math.Scalar(-float64(dir.Y)/l*sense), math.Scalar(float64(dir.X)/l*sense)), true
-}
-
-// windingProbeStep is how far off the boundary the probe steps, in the chart's own parameters: a
-// fraction of the ring's own median sampling step, so it is small against the boundary's curvature and
-// large against the sampling's noise, at any model scale and on any parameterisation.
-func windingProbeStep(ring []math.Point2) float64 {
-	steps := make([]float64, 0, len(ring))
-	for i := range ring {
-		d := stdmath.Hypot(float64(ring[(i+1)%len(ring)].X-ring[i].X), float64(ring[(i+1)%len(ring)].Y-ring[i].Y))
-		if d > 0 {
-			steps = append(steps, d)
-		}
-	}
-	if len(steps) == 0 {
-		return 0
-	}
-	return windingProbeFraction * medianOf(steps)
-}
-
-// windingProbeFraction is the probe step as a fraction of the boundary's own sampling step. A quarter
-// keeps the probe well inside the face between two samples while clearing the chord's own sagitta.
-const windingProbeFraction = 0.25 // tol:parametric — probe offset as a fraction of the sampling step
-
-// medianOf returns the median of a non-empty slice, leaving the caller's slice unsorted.
-func medianOf(xs []float64) float64 {
-	c := append([]float64(nil), xs...)
-	sort.Float64s(c)
-	return c[len(c)/2]
+// surfacePointOffset is the 3-space point a (u, v) offset from at lands on.
+func surfacePointOffset(s geom.Surface, at math.Point2, off math.Vector2) math.Point3 {
+	q := at.TranslateBy(off)
+	return s.PointAt(float64(q.X), float64(q.Y))
 }
 
 // outwardSenseInUV is the sign a loop's (u,v) travel must turn to keep the face's material on its left:

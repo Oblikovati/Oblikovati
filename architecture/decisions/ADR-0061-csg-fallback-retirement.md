@@ -4498,3 +4498,30 @@ ADR-0060's note that "the handedness read two of a stub's three faces wrong" was
 SHOELACE handedness, which has since been replaced twice (#3506's whole-circuit rim reading, and
 ADR-0063's chart region). `./kernel/... ./archguard/...` is green without the override, near-pinch rows
 and the OCCT blend corpus included.
+
+### The winding gate keeps its own eyes, but takes the one step (2026-09-09, review round 1)
+
+Extends the two sections above; the ADR is append-only, so the "What this does NOT change" paragraph
+there is corrected here rather than edited.
+
+`senseFromLoopWinding` now makes a face's stored sense DEFINITIONALLY the output of `loopHandedness`.
+That is what turns `brep.FaceWindingConsistent` into a real post-condition — and it is also why the gate
+must not share that reader: a gate derived from the sense it checks agrees with it by construction and
+can never catch a wrong one. So `ringWindsWithMaterialOnItsLeft` stays an INDEPENDENT verifier, and the
+two differ deliberately in exactly two places, both now named in `face_winding.go`:
+
+- the **membership tester** — the gate asks `faceTrimUV.contains`, which inverts a 3-space point through
+  `ParamAt` against the face's developed boundary; `loopHandedness` asks `trimRegion.contains` against
+  the chart, in (u, v). Two ways of asking the face where its material is, so a fault in either surfaces
+  as a disagreement instead of a shared wrong answer.
+- the **decision rule** — the gate returns the FIRST station that resolves the boundary, because a gate
+  wants the first witness; `loopHandedness` takes a majority over up to 32 stations, because a sense has
+  to be right rather than merely witnessed.
+
+The **step** was a third difference and had no business being one. "A quarter of this segment, to its
+left" is one predicate, and computing it twice is exactly how the two readers came to disagree on a
+chart whose axes are not the same unit. The gate's `windingProbeStep` (a chart-relative median of the
+ring's own (u, v) sampling), `unitLeftOf` (the quarter turn) and `medianOf` are DELETED; it calls
+`quarterArcLeftOf` and applies `outwardSenseInUV` to it. `face_winding.go` 141 → 126 lines, one
+`tol:parametric` constant gone, and `./kernel/... ./archguard/...` is green with no pin moved.
+
