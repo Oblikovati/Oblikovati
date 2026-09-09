@@ -156,12 +156,12 @@ func TestAResultShowingMoreBoundaryThanItsOperandsIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stub: %v", err)
 	}
-	if ev := certifyBooleanFaces(Cut, ring, drill, body); !ev.kept {
+	if ev := certifyBooleanFaces(Cut, ring, drill, body, pairExtentResolution(ring, drill)); !ev.kept {
 		t.Fatalf("the genuine operands must certify; the probe below is meaningless otherwise")
 	} else if _, over := ev.overclaimsItsOperands(ring, drill); over {
 		t.Fatalf("the genuine pair overclaims: %g of boundary", ev.claimed)
 	}
-	ev := certifyBooleanFaces(Cut, ring, stub, body)
+	ev := certifyBooleanFaces(Cut, ring, stub, body, pairExtentResolution(ring, stub))
 	if !ev.kept {
 		t.Fatalf("membership must still pass against the stub, or this row is not measuring the area gate")
 	}
@@ -203,7 +203,7 @@ func TestTheCertificateLeavesExactlyTheKnownFacesUnprobed(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the pair must build for its coverage to be measured: %v", err)
 			}
-			ev := certifyBooleanFaces(tc.op, tc.target, tc.tool, body)
+			ev := certifyBooleanFaces(tc.op, tc.target, tc.tool, body, pairExtentResolution(tc.target, tc.tool))
 			if ev.unprobed != tc.wantUnprobed {
 				t.Errorf("%d of %d faces unprobed, want %d — a rise is lost coverage, a fall is an "+
 					"improvement whose pin should come down with it", ev.unprobed, len(body.Faces()), tc.wantUnprobed)
