@@ -449,3 +449,6 @@ add-in/**/*.so
 add-in/**/*.dll
 add-in/**/*.dylib
 .claude/worktrees/
+
+# Cross-compiled arm64 test binaries written by `make arm64` (ADR-0064).
+.armbin/

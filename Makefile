@@ -225,6 +225,55 @@ print-gate-modules: ## Print the derived nested-module set, one per line
 test-race: ## Run the suite under the race detector (needs cgo)
 	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(PKG)
 
+# ---------------------------------------------------------------------------
+# arm64: what the macOS CI leg runs on, without a macOS machine (ADR-0061 §Platform
+# stability, ADR-0064). The Go compiler CONTRACTS x*y+z into one unrounded FMA on
+# arm64 and never on amd64, so a package whose last bits matter must be run there
+# before it is pushed. Cross-compile the test binary natively (~40x faster than
+# compiling inside the container) and run only the binary under binfmt emulation.
+#
+# TWO things about the run, both of which cost a wasted run to learn, and both of
+# which fail the same way — the fixtures go missing and the rows SKIP or fail on a
+# file, so the run is green (or red) about nothing:
+#
+#   - the workspace is mounted at its OWN absolute path, not at /ws, because fixture
+#     lookups compiled into the test binary carry host paths;
+#   - the container's working directory is the PACKAGE's, not the repo root, because
+#     the other half of the fixture lookups are relative ("../../exchange/step/...").
+#
+# PKG names ONE package for this reason; ./... has no working directory.
+#
+#   make arm64 PKG=./kernel/geom
+#   make arm64 PKG=./model/feature/occtparity RUN='TestByteIdentityFingerprints'
+# ---------------------------------------------------------------------------
+ARM64_IMAGE   ?= golang:1.27
+ARM64_TIMEOUT ?= 4h
+ARM64_BIN     ?= .armbin
+WORKSPACE     := $(abspath $(CURDIR)/..)
+RUN           ?=
+
+.PHONY: arm64
+arm64: ## Run PKG's tests under arm64 emulation (PKG=./kernel/geom [RUN=TestName])
+	@command -v docker >/dev/null || { echo "docker is required; see ADR-0064"; exit 1; }
+	@mkdir -p $(ARM64_BIN)
+	@name=$$(echo "$(PKG)" | tr '/.' '__'); \
+	  CGO_ENABLED=0 GOARCH=arm64 $(GO) test -c -o $(ARM64_BIN)/$$name.test $(PKG); \
+	  docker run --rm --platform linux/arm64 -v $(WORKSPACE):$(WORKSPACE) -w $(CURDIR)/$(PKG) \
+	    $(ARM64_IMAGE) $(CURDIR)/$(ARM64_BIN)/$$name.test \
+	    $(if $(RUN),-test.run '$(RUN)') -test.count=1 -test.timeout $(ARM64_TIMEOUT) -test.v
+
+# The completeness oracle for ADR-0064: a package that obeys the policy emits NO
+# fused-multiply-add instruction when compiled for arm64. The archguard walk checks
+# the source; this checks what the compiler actually did with it.
+.PHONY: arm64-fma
+arm64-fma: ## Count the FMA instructions the arm64 build of PKG still emits (should be 0)
+	@GOARCH=arm64 $(GO) build -a -gcflags=-S $(PKG) 2>&1 \
+	  | grep -E '\b(FMADDD|FMSUBD|FNMADDD|FNMSUBD|FMADDS|FMSUBS|FNMADDS|FNMSUBS)\b' \
+	  > $(ARM64_BIN).fma || true
+	@sed 's|.*$(notdir $(CURDIR))/||; s|).*||' < $(ARM64_BIN).fma | sort | uniq -c | sort -rn
+	@echo "$(PKG): $$(wc -l < $(ARM64_BIN).fma) fused multiply-add instruction(s) on arm64"
+	@rm -f $(ARM64_BIN).fma
+
 .PHONY: cover
 cover: ## Run tests with coverage and enforce COVER_MIN
 	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(PKG)
