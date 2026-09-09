@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	m "oblikovati.org/math"
@@ -72,9 +73,25 @@ func TestThinFinWallKeepsTheSenseItsLoopsCarry(t *testing.T) {
 // finPlateVolume is the plate less the two through-cuts, which do not overlap.
 const finPlateVolume = 10*10*2 - 3.993*9*2 - 0.004*9*2
 
-// assertFinPlateVolume checks the Requicha volume analytically and at both facetings — a face whose
-// stored sense contradicts its loops meshes inside-out, which the mesh volume sees independently.
+// assertFinPlateVolume checks the Requicha volume against the ANALYTIC B-rep, which is the oracle: an
+// oracle that gates a result has to be more exact than the result it gates, and a mesh is not. A face
+// whose stored sense contradicts its loops integrates with the wrong sign here.
 func assertFinPlateVolume(t *testing.T, body *topo.Body) {
+	t.Helper()
+	terms, ok := query.AnalyticBodyTerms(body)
+	if !ok {
+		t.Fatalf("the fin plate has no analytic volume")
+	}
+	if stdmath.Abs(terms.Vol-finPlateVolume) > 1e-9 { // tol:calibrated — exact planar faces, only rounding
+		t.Errorf("analytic volume = %g, want %g (Requicha: plate less two through-cuts)", terms.Vol, finPlateVolume)
+	}
+	assertFinPlateMesh(t, body)
+}
+
+// assertFinPlateMesh is the secondary check: the same volume at both facetings, plus watertightness. A
+// gate that holds at one faceting is measuring the tessellation, not the geometry — and an inside-out
+// face shows in the mesh through a different code path than the analytic integrator's.
+func assertFinPlateMesh(t *testing.T, body *topo.Body) {
 	t.Helper()
 	for _, gq := range gateQualities() {
 		mesh, _ := tessellate.TessellateBody(body, gq.q)
