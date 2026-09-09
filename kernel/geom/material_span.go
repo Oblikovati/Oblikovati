@@ -74,14 +74,15 @@ func canonicalAxis(origin math.Point3, dir math.UnitVector3) (math.Point3, math.
 }
 
 // PrincipalDirections are the three orthogonal directions of a point set's OWN spread, largest
-// first — the frame its scatter matrix diagonalises. It turns with the set, which is what makes it
-// usable as a last-resort direction source for a body whose boundary supplies fewer than three
-// independent ones.
+// first — the frame its scatter matrix diagonalises. It turns with the set, and it depends on no
+// face normal being right, which is what makes it a direction source a caller can trust where the
+// boundary's own directions are a sample it cannot check.
 //
 // ok=false for fewer than two points. The frame is NOT unique when two spreads are equal (a
 // cylinder's two cross directions, a cube's three): the eigenvectors are then any basis of the
 // shared eigenspace, so a caller must expect the CHOICE to move under rotation even though the
-// frame as a whole does not. Callers use it only where nothing better exists.
+// frame as a whole does not — a width taken along it moves by a fraction of the point set's own
+// sampling step (measured: 0.15 % to 0.86 % on sub-resolution prisms, #3524).
 //
 // Example:
 //

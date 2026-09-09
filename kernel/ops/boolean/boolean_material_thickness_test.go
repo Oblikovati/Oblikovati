@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/subd"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -55,40 +56,55 @@ func turnedBlock(t *testing.T, deg float64) *topo.Body {
 	return subd.ToBody(subd.Mesh{Verts: corners[:], Faces: faces}, "slab")
 }
 
-// rotationDriftPerSpan is how far two measurements of ONE body in two frames may differ, per unit of
-// the model's own extent. The drift is not zero and cannot be: the width is computed from rotated
-// coordinates, so a 1e-10 feature carried on coordinates of size 13 loses ten digits to cancellation
-// whichever way the part is turned. It is a bound on the ARITHMETIC, not a modelling tolerance.
+// rotationDriftRelative is how far two measurements of ONE body in two frames may differ, relative.
 //
-// Measured over 0/13.7/37/90 degrees about (1,1,0): the drill's width moves 6.8e-18 absolute
-// (2.0000068716156212e-10 to 2.0000136467170038e-10) and the slab's 5.6e-16. The AABB measure this
-// replaces moved 3.4 — twelve orders of magnitude more, and enough to flip the verdict.
-const rotationDriftPerSpan = 64 * 2.220446049250313e-16 // tol:numeric — a few ULPs of the model's own coordinates
+// It is a RELATIVE floor and not an arithmetic one. An earlier version asserted a few ULPs of the
+// model's coordinates, which covers the arithmetic (the drill moved 6.8e-18 absolute, the slab
+// 5.6e-16) but NOT the two paths whose direction is only unique up to a choice: the principal frame
+// of a support cloud with two equal spreads, and the sampled support set behind every curved width.
+// Both move by a fraction of the SAMPLING step, not by ULPs.
+//
+// Measured over 0/13.7/37/90 degrees about (1,1,0), worst case per body:
+//
+//	body                                  path            drift
+//	10x4x0.25 slab                        planar normals  5.6e-16 absolute (2.2e-15 relative)
+//	cylinder drill r=1e-10                principal       0.36 %
+//	25-gon prism r=1e-10 (1 normal)       principal       0.15 %
+//	24-gon prism r=1e-9 (normals partly collapsed)        0.86 %
+//	planarized 26-face cylinder r=1e-10   principal       0.62 %
+//
+// 0.86 % is the inscribed-apothem factor 1-cos(pi/24) of that prism's own facet step, which is the
+// coarsest sampling any of these bodies carries — so the floor is set just over twice it. What it
+// has to catch is the defect it replaced: the bounding-box measure moved by 1.3 to 7.1 ABSOLUTE on
+// widths of 2e-10, ten orders of magnitude above this.
+const rotationDriftRelative = 0.02 // tol:calibrated — 2.3x the worst sampling-step drift measured above
 
 // TestTheSizeClassificationIsRotationInvariant is the acceptance row for #3524, and the measurement
 // that named the defect. solidThickness read the smallest side of the AXIS-ALIGNED bounding box, so
 // it measured the frame as much as the body. Measured on the RING corpus pair, turning both operands
 // about (1,1,0):
 //
-//	turn   drill thickness (was)     verdict (was)   drill thickness (now)  verdict (now)
-//	 0°    2e-10                     REFUSE          2e-10                  REFUSE
-//	37°    3.4043798713069418        BUILD           2e-10                  REFUSE
-//	90°    2.0000046063728405e-10    REFUSE          2e-10                  REFUSE
+//	turn   drill thickness (was)     verdict (was)   drill thickness (now)     verdict (now)
+//	 0°    2e-10                     REFUSE          2e-10                     REFUSE
+//	37°    3.4043798713069418        BUILD           1.992797038496974e-10     REFUSE
+//	90°    2.0000046063728405e-10    REFUSE          2e-10                     REFUSE
 //
 // and for the ring itself, whose tube is 3 across at every angle: 3, 8.943664347897517,
 // 10.071067811865476 — was; 3, 3, 3 — now. The same drill through the same ring decided two different
-// ways depending on how the part happened to be turned.
+// ways depending on how the part happened to be turned. The 0.36 % the drill still moves is the
+// sampling step of its own rims read through a degenerate principal frame (see rotationDriftRelative),
+// against a weld ninety times wider.
 //
 // Both operands are measured, not just the tool: the ring is the row that fails if the axis path
 // stops working, and the drill the row that fails if the width across an axis does.
 func TestTheSizeClassificationIsRotationInvariant(t *testing.T) {
 	t.Parallel()
 	for _, bore := range []float64{1e-10, 0.8} {
-		wantRing, wantDrill, wantRefused, span := turnedMeasurement(t, bore, 0)
+		wantRing, wantDrill, wantRefused := turnedMeasurement(t, bore, 0)
 		for _, deg := range []float64{13.7, 37, 90} {
-			ring, drill, refused, _ := turnedMeasurement(t, bore, deg)
-			assertSameWidth(t, "ring", bore, deg, wantRing, ring, span)
-			assertSameWidth(t, "drill", bore, deg, wantDrill, drill, span)
+			ring, drill, refused := turnedMeasurement(t, bore, deg)
+			assertSameWidth(t, "ring", bore, deg, wantRing, ring)
+			assertSameWidth(t, "drill", bore, deg, wantDrill, drill)
 			if refused != wantRefused {
 				t.Errorf("bore %g: the size classification refuses=%v at %g° and %v at 0°",
 					bore, refused, deg, wantRefused)
@@ -97,19 +113,17 @@ func TestTheSizeClassificationIsRotationInvariant(t *testing.T) {
 	}
 }
 
-// assertSameWidth compares one body's width in two frames, against the arithmetic's own floor at
-// this model's scale.
-func assertSameWidth(t *testing.T, role string, bore, deg, want, got, span float64) {
+// assertSameWidth compares one body's width in two frames.
+func assertSameWidth(t *testing.T, role string, bore, deg, want, got float64) {
 	t.Helper()
-	if drift := stdmath.Abs(got - want); drift > rotationDriftPerSpan*span {
-		t.Errorf("bore %g: the %s is %v thick at %g° and %v at 0° (drift %g, floor %g) — one body, one width",
-			bore, role, got, deg, want, drift, rotationDriftPerSpan*span)
+	if drift := stdmath.Abs(got-want) / want; drift > rotationDriftRelative {
+		t.Errorf("bore %g: the %s is %v thick at %g° and %v at 0° (drift %.3g relative, floor %g) — "+
+			"one body, one width", bore, role, got, deg, want, drift, rotationDriftRelative)
 	}
 }
 
-// turnedMeasurement is both operands' measured widths, the pair's verdict, and the model's own extent
-// at one turn.
-func turnedMeasurement(t *testing.T, bore, deg float64) (ring, drill float64, refused bool, span float64) {
+// turnedMeasurement is both operands' measured widths and the pair's verdict at one turn.
+func turnedMeasurement(t *testing.T, bore, deg float64) (ring, drill float64, refused bool) {
 	t.Helper()
 	ringBody, drillBody := turnedRingAndDrill(t, bore, deg)
 	ring, ok := solidThickness(ringBody, 0)
@@ -121,8 +135,7 @@ func turnedMeasurement(t *testing.T, bore, deg float64) (ring, drill float64, re
 		t.Fatalf("bore %g at %g°: the drill is a solid and must measure", bore, deg)
 	}
 	_, err := classifyOperandSize(Cut, ringBody, drillBody, nil)
-	box := ringBody.RangeBox().Union(drillBody.RangeBox())
-	return ring, drill, err != nil, float64(box.Diagonal().Length())
+	return ring, drill, err != nil
 }
 
 // The PLANAR path gets its own row. The drill's width comes from a radial distance to its own axis
@@ -138,13 +151,12 @@ func TestThePlanarWidthIsRotationInvariant(t *testing.T) {
 	if !ok || stdmath.Abs(want-0.25) > 1e-15 { // tol:numeric — an exact block extent
 		t.Fatalf("the unturned 10x4x0.25 slab measures %v, %v; want 0.25", want, ok)
 	}
-	span := float64(turnedBlock(t, 0).RangeBox().Diagonal().Length())
 	for _, deg := range []float64{13.7, 37, 90} {
 		got, ok := solidThickness(turnedBlock(t, deg), 0)
 		if !ok {
 			t.Fatalf("the slab at %g° must measure", deg)
 		}
-		assertSameWidth(t, "slab", 0, deg, want, got, span)
+		assertSameWidth(t, "slab", 0, deg, want, got)
 	}
 }
 
@@ -326,4 +338,81 @@ func TestABallIsMeasuredByItsOwnSupport(t *testing.T) {
 	if !ok || stdmath.Abs(got-5) > 1e-9 { // tol:numeric — the sampled sphere's own diameter
 		t.Errorf("solidThickness(ball r=2.5) = %v, %v; want 5", got, ok)
 	}
+}
+
+// turnedNgonPrism is ngonPrism built in a frame turned by deg — a FACETED body whose only geometry
+// is its vertices, so nothing about it is answered by a stored radius.
+func turnedNgonPrism(n int, radius, height, deg float64) *topo.Body {
+	m := turnAbout(deg)
+	verts := make([]math.Point3, 0, n*2)
+	for _, z := range []float64{0, height} {
+		for i := range n {
+			a := 2 * stdmath.Pi * float64(i) / float64(n)
+			p := math.P3(math.Scalar(radius*stdmath.Cos(a)), math.Scalar(radius*stdmath.Sin(a)), math.Scalar(z))
+			verts = append(verts, m.TransformPoint(p))
+		}
+	}
+	bottom, top := make([]int, n), make([]int, n)
+	for i := range n {
+		bottom[i], top[i] = n-1-i, n+i
+	}
+	faces := [][]int{bottom, top}
+	for i := range n {
+		next := (i + 1) % n
+		faces = append(faces, []int{i, next, next + n, i + n})
+	}
+	return subd.ToBody(subd.Mesh{Verts: verts, Faces: faces}, "prism")
+}
+
+// TestAFacetedPrismDecidesTheSameWayAtEveryAngle is the row for the path the two rotation rows above
+// do NOT reach: a body measured through the principal frame of its own support points, because its
+// face normals cannot be trusted.
+//
+// It is the regime where a sub-resolution prism's side normals PARTIALLY collapse — the radial part
+// of coordinates carried on a body 12 long runs out of double precision at r~1e-9, so a 24-gon keeps
+// 13 of its 24 side normals and which 13 depends on the angle. Measured with the principal frame
+// gated on the boundary naming fewer than three directions (the shape this replaced), the surviving
+// normals still spanned space, so the gate never fired and the SAME prism decided two ways:
+//
+//	turn   normals   width          verdict (weld 1.2e-8)
+//	 0°    17        1.9829e-09     refuse
+//	13.7°  13        4.1179e-08     BUILD      <- 20.6x the true 2e-9
+//	37°    13        6.2743e-08     BUILD      <- 31.4x
+//	90°    20        1.9829e-09     refuse
+//
+// The principal frame runs unconditionally now and all four refuse, 1.9829e-09 to 2.0000e-09.
+func TestAFacetedPrismDecidesTheSameWayAtEveryAngle(t *testing.T) {
+	t.Parallel()
+	for _, row := range []struct {
+		sides  int
+		radius float64
+		refuse bool
+	}{
+		{24, 1e-9, true}, {25, 1e-10, true}, {24, 1e-8, false}, {24, 1e-6, false},
+	} {
+		want, wantRefused := prismMeasurement(t, row.sides, row.radius, 0)
+		if wantRefused != row.refuse {
+			t.Fatalf("%d-gon r=%g: want refuse=%v at 0°; got %v (width %v)",
+				row.sides, row.radius, row.refuse, wantRefused, want)
+		}
+		for _, deg := range []float64{13.7, 37, 90} {
+			got, refused := prismMeasurement(t, row.sides, row.radius, deg)
+			assertSameWidth(t, "prism", row.radius, deg, want, got)
+			if refused != wantRefused {
+				t.Errorf("%d-gon r=%g: refuses=%v at %g° and %v at 0° (widths %v and %v) — "+
+					"one operand, one verdict", row.sides, row.radius, refused, deg, wantRefused, got, want)
+			}
+		}
+	}
+}
+
+// prismMeasurement is one faceted prism's width and whether its own extent refuses it.
+func prismMeasurement(t *testing.T, sides int, radius, deg float64) (float64, bool) {
+	t.Helper()
+	body := turnedNgonPrism(sides, radius, 12, deg)
+	width, ok := solidThickness(body, 0)
+	if !ok {
+		t.Fatalf("%d-gon r=%g at %g°: a faceted solid must measure", sides, radius, deg)
+	}
+	return width, !geom.ResolutionForBox(body.RangeBox()).Resolves(width)
 }

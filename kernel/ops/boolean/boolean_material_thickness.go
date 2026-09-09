@@ -20,11 +20,14 @@ import (
 // along Z, 3.4043798713069418 thick after a 37 degree turn about (1,1,0) and 2.0000046063728405e-10
 // after 90 degrees — so the size classification REFUSED it at 0 and 90 degrees and BUILT it at 37
 // (#3524). A user who rotates a part and gets a different answer has no reason to trust any answer.
+// The same drill now reads 2e-10 and 1.992797038496974e-10 over those turns — a 0.36 % band, from
+// the sampling step of its own rims, against a weld ninety times wider.
 //
 // The MEASURE is the one the bounding box made — a width, the body's whole extent along a direction.
 // Only the DIRECTIONS change: they come from the body's own faces (a plane's normal, a surface of
-// revolution's axis and every direction across it) and, for a body whose boundary supplies fewer than
-// three independent ones, from the principal frame of its own support points. All of those turn with
+// revolution's axis and every direction across it) and from the principal frame of its own support
+// points, which is asked ALWAYS and not as a fallback — a boundary's directions are a sample, and the
+// sample fails exactly where this classification matters (see principalWidth). All of them turn with
 // the body, so the width does too.
 //
 // It stays a GLOBAL measure on purpose. A local reading — the gap between one pair of opposed faces,
@@ -38,14 +41,32 @@ import (
 //
 // Read it as the operand's WIDTH and not as "the thinnest material anywhere in it": it is an extent,
 // so a plate with a pocket in it reports the plate (TestAPocketFloorIsNotAPlateThickness pins the 10,
-// not the 0.5 of roof), and a direction set is a sample of all directions, so a body thinnest in a
-// direction no face names reports the thinnest one that IS named. Both err upward, which is the safe
-// side for a classification that refuses.
+// not the 0.5 of roof), and a direction set is a SAMPLE of all directions, so a body thinnest in a
+// direction no face names reports the thinnest one that IS named. A regular tetrahedron is the worst
+// case measured: its true minimum width lies on an edge-edge common perpendicular, which no face
+// normal names, so it reads 2 when the principal frame happens to land on that perpendicular and
+// 2.3094010767585029 when it does not — a 15.5 % swing with orientation, both ABOVE the true 2. The
+// swing is the isotropic-eigenspace case (a tetrahedron's support cloud has three equal spreads, so
+// the frame is any orthonormal basis); a cube has the same cloud but its face normals name the answer
+// exactly, so the minimum takes those.
 //
-// ok is false only for a nil, non-solid or faceless body — a sheet has no material to measure. Every
-// solid with a face IS measured: a body whose boundary supplies fewer than three independent
-// directions falls back to the principal frame of its own support points, so "unmeasured, therefore
-// never refused" is not reachable (the silent exit ADR-0061 stage 6 exists to close).
+// Both err upward — the FALSE-NEGATIVE direction, which is the direction the bounding box this
+// replaces erred in too. It is not "the safe side" without qualification: erring upward means NOT
+// refusing, and a missed refusal is the silent exit ADR-0061 stage 6 exists to close. It is the side
+// that never refuses ordinary geometry, and matching base on which side it errs is the property this
+// change had to keep (#3524 review N4).
+//
+// ok is false for a nil, non-solid or faceless body — a sheet has no material to measure — and for
+// the one solid shape that supplies no support point at all: a body flagged solid whose every face is
+// boundary-less, chartless AND has an infinite parameter domain (a bare geom.Cylinder face with no
+// edges). Nothing in the kernel builds a closed shell from an unbounded face, and IsSolid() is a flag
+// rather than a proof, so the guard stands for a body no modelling operation produces (#3524 review
+// N1); it is the one hole left in "measured, therefore never silently built".
+//
+// Every solid whose faces are BOUNDED — every one this engine builds — is measured. A body whose
+// boundary supplies fewer than three independent directions falls back to the principal frame of its
+// own support points rather than going unmeasured, which is what closes the case that reopened the
+// silent exit in round 0.
 //
 // ceiling is the width at which the measurement stops caring: the caller (a size classification) only
 // asks whether the material is BELOW the model's weld, so a direction that already reaches the weld
@@ -68,7 +89,7 @@ func solidThickness(b *topo.Body, ceiling float64) (float64, bool) {
 	thin.offer(minExtentAlong(normals, support, ceiling))
 	thin.offer(minExtentAlong(axisDirections(axes), support, thin.ceiling(ceiling)))
 	thin.offer(minAxialWidth(axes, support, thin.ceiling(ceiling)))
-	thin.offer(principalWidth(normals, axes, support, thin.ceiling(ceiling)))
+	thin.offer(principalWidth(support, thin.ceiling(ceiling)))
 	if !thin.found {
 		return 0, true // a solid whose boundary names no direction at all has no extent to report
 	}
@@ -203,8 +224,9 @@ func extentAlong(dir math.UnitVector3, support []math.Point3, ceiling float64) (
 	// A ZERO extent is a measurement, and the thinnest one there is: a body flat along one of its own
 	// boundary directions has no material left in it. brep.SolidCylinderCone collapses a 2e-9-tall cone
 	// into two coincident planar discs, and reporting that as "unmeasured" is how the silent exit
-	// returns (#3524).
-	return hi - lo, len(support) > 0
+	// returns (#3524). solidThickness has already refused an empty support set, so every call here has
+	// at least one point and always measures.
+	return hi - lo, true
 }
 
 // minAxialWidth is the smallest width the body has ACROSS any of its axes: twice the furthest its
@@ -231,7 +253,7 @@ func axialWidth(a axisLine, support []math.Point3, ceiling float64) (float64, bo
 			break
 		}
 	}
-	return 2 * widest, len(support) > 0
+	return 2 * widest, true // solidThickness has already refused an empty support set
 }
 
 // radialDistance is how far p sits from an axis line — a rotation-invariant quantity, which is what
@@ -240,63 +262,35 @@ func radialDistance(p math.Point3, a axisLine) float64 {
 	return geom.DistanceToAxis(a.origin, a.dir, p)
 }
 
-// principalWidth is the last-resort width, for a body whose own boundary names fewer than three
-// independent directions: the smallest extent along its support points' principal frame.
+// principalWidth is the width along the support cloud's OWN principal frame — the three orthogonal
+// directions of its spread, largest first.
 //
-// It exists so that a solid is never left UNMEASURED, which is the same silent exit as a wrong
-// measurement. It is reached by the shape that produced one: model/feature.combine planarizes a
-// 1e-10-radius cylinder into 26 faces whose side normals have all collapsed to the cap normal, so
-// the body names one direction and is 12 long in it, while its material is 2e-10 across.
+// It is not a fallback. The directions a boundary supplies are a SAMPLE, and the sample goes wrong
+// exactly where this classification matters: a faceted prism of radius 1e-9 on a body 12 long has
+// coordinates whose radial part is at the edge of double precision, so its side-face normals
+// partially collapse. Measured on a 24-gon prism turned about (1,1,0) with the frame gated on the
+// boundary naming fewer than three directions — the round-1 shape of this function:
 //
-// A body with an axis is NOT in that case: an axis names its own direction and the whole plane across
-// it, which spans space. Bodies that reach here are near-degenerate by construction, and the frame's
-// choice is only unique up to a shared eigenspace (geom.PrincipalDirections), so the width can move
-// slightly with rotation where the exact directions cannot.
-func principalWidth(normals []math.UnitVector3, axes []axisLine, support []math.Point3, ceiling float64) (float64, bool) {
-	if len(axes) > 0 || directionsSpanSpace(normals) {
-		return 0, false
-	}
+//	turn   distinct normals   width          verdict (weld 1.2e-8)
+//	 0°    17                 1.9829e-09     refuse
+//	13.7°  13                 4.1179e-08     BUILD
+//	37°    13                 6.2743e-08     BUILD
+//	90°    20                 1.9829e-09     refuse
+//
+// The surviving normals still span space, so a rank gate never fired, and the same operand decided
+// two different ways depending on how it was turned — the defect #3524 exists to remove, reappearing
+// one regime deeper. The principal frame turns with the body and does not depend on any face normal
+// being right, so it runs ALWAYS and the minimum takes whichever is thinner.
+//
+// It costs one scatter matrix and one 3x3 Jacobi over the support, plus three extents that the
+// ceiling cuts short like any other direction.
+func principalWidth(support []math.Point3, ceiling float64) (float64, bool) {
 	frame, ok := geom.PrincipalDirections(support)
 	if !ok {
 		return 0, false
 	}
 	return minExtentAlong(frame[:], support, ceiling)
 }
-
-// directionsSpanSpace reports whether a set of directions spans all three dimensions, so that a width
-// along each of them bounds the body in every direction. It is a RANK test and not a count: three
-// normals that share a plane leave the body unmeasured across it.
-func directionsSpanSpace(dirs []math.UnitVector3) bool {
-	if len(dirs) < 3 {
-		return false
-	}
-	first := dirs[0].AsVector()
-	for i, second := range dirs {
-		if geom.ParallelDirections(dirs[0], second) {
-			continue
-		}
-		if spansThirdDimension(first.Cross(second.AsVector()), dirs[i+1:]) {
-			return true
-		}
-	}
-	return false
-}
-
-// spansThirdDimension reports whether any of the remaining directions leaves the plane the first two
-// span — the plane's own normal is what they must not all be perpendicular to.
-func spansThirdDimension(planeNormal math.Vector3, rest []math.UnitVector3) bool {
-	for _, d := range rest {
-		if stdmath.Abs(float64(d.AsVector().Dot(planeNormal))) > planarRankFloor*float64(planeNormal.Length()) {
-			return true
-		}
-	}
-	return false
-}
-
-// planarRankFloor is how far out of a plane a third direction must point to count as independent of
-// it. It is a SINE on unit directions, so it carries no model scale, and it matches the parallelism
-// the direction dedupe already uses (geom.ParallelDirections).
-const planarRankFloor = 1e-9 // tol:angular — independence of a third boundary direction
 
 // spanFloor accumulates the smallest width offered to it, and remembers whether anything was: an
 // unmeasured body must be told apart from a zero-width one.

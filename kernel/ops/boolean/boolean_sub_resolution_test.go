@@ -246,8 +246,11 @@ func TestSolidThicknessIsTheSmallestExtent(t *testing.T) {
 // The guard stops at THIS package's boundary — it parses "." — and the feature layer had its own
 // second evaluation: model/feature.combine classified the pair once through the curved entry and
 // again through the planar retry, on operands that differ because the retry facets them. That seam is
-// closed in combine itself (curvedCombine consumes the curved attempt's verdict) and pinned by
-// TestAPlanarRetryCannotOverturnASizeRefusal there.
+// closed in combine itself (curvedCombine consumes the curved attempt's verdict) and pinned there by
+// two rows: TestAPlanarRetryCannotOverturnASizeRefusal for the behaviour, and
+// TestTheCurvedEntryIsReachedOnlyThroughCurvedCombine for the structure this guard cannot reach —
+// the same AST scan, run over model/feature, asserting curvedCombine is the only caller of the
+// kernel's curved entry.
 func TestTheSizeClassificationHasOneCallSitePerEntry(t *testing.T) {
 	t.Parallel()
 	want := map[string]bool{"BooleanWithDiagnostics": true, "CurvedBooleanWithDiagnostics": true}

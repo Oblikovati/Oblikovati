@@ -21,9 +21,25 @@ import (
 // direction OTHER than a world axis can measure it the way the box does (#3524). It shares the box's
 // sampling grids (curveSamplesPerEdge, faceSamplesPerAxis) and its chartWindow, and it is deliberately
 // NOT the box rewritten on top of it: the box also sweeps PLANAR charted faces, which a width does not
-// need and whose sweep would only widen it. Sampling is what the box already does and what this keeps
-// doing: it is a bound for culling and for the model-relative resolution, never a modelling decision.
-// query.PreciseRangeBox is the certified-tight answer where exactness is the point.
+// need and whose sweep would only widen it.
+//
+// ★ A SAMPLED bound now feeds a MODELLING DECISION, and that has to be said rather than denied. The
+// boolean's size classification (ops/boolean.solidThickness → classifyOperandSize) refuses an
+// operation on an operand narrower than the model's weld, and it measures that width over this set.
+// The ground rule is that no modelling or topological decision reads tessellated data. This is the
+// accepted exception, on three grounds, and it is recorded here so the next reader does not have to
+// re-derive it (#3524 review N5):
+//
+//   - it is not NEW: the measure it replaced was the axis-aligned [Body.RangeBox], built from exactly
+//     this sampling, so the decision has always rested on it;
+//   - the sampling is a CONSERVATIVE inner bound of a curved face (samples lie ON the surface), so it
+//     can only under-report a width, which is the false-refusal direction, and by a bounded amount:
+//     a few percent of a curvature radius at 32 samples per edge;
+//   - the decision it feeds is a size RATIO against the model's weld — three or more orders of
+//     magnitude, never a few percent — so no sampling error the grid admits can move it.
+//
+// query.PreciseRangeBox is the certified-tight answer where a width has to be exact; nothing here
+// needs one.
 
 // AppendSupportPoints appends sampled points on this face that the body's VERTICES do not already
 // account for: every edge of the face, and the face's own surface where its edges do not bound it (it

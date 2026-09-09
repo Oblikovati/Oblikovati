@@ -21,18 +21,22 @@ import (
 //
 // Measured on an AMD Ryzen AI MAX+ 395, -benchtime 1s -count 2 (the two runs bracket each cell):
 //
-//	faces    aabb       weld (production)   exact
-//	   28    18-22 ns   10.1-11.0 us        9.7-10.1 us
-//	  100    19-21 ns   31-34 us            49-50 us
-//	  388    17-20 ns   106-130 us          275-318 us
-//	 1004    15-16 ns   141-150 us          1.44-1.51 ms
-//	 2004    13-15 ns   300-308 us          5.04-5.15 ms
+//	faces    aabb          weld (production)   exact
+//	   28    11.5-11.6 ns  2.12-2.15 us        2.75-2.77 us
+//	  100    11.5 ns       7.85-8.18 us        20.4 us
+//	  388    11.4 ns       35.6-36.0 us        194-195 us
+//	 1004    11.3-11.4 ns  101-102 us          1.20-1.21 ms
+//	 2004    11.3 ns       203-211 us          4.21-4.24 ms
 //
-// The exact arm is QUADRATIC — 2x the faces costs 3.4-4.7x the time — because every one of the F/2
+// The exact arm is QUADRATIC — 2x the faces costs 3.5-6.2x the time — because every one of the F/2
 // distinct side directions is then scanned over all F support points. The production arm is not: the
 // ceiling stops each direction's scan after two or three points, so it tracks the O(F log F) of the
 // direction sort. The ceiling is the whole reason the cost is acceptable, and a caller that passes 0
 // on a large body pays the quadratic form.
+//
+// The unconditional principal frame (one scatter matrix and one 3x3 Jacobi over the support, plus
+// three more extents) is inside these numbers: the whole package measured 61.83 s wall / 209.78 s CPU
+// on the wave base and 60.40 s / 210.55 s with it, run one at a time on the same box.
 //
 // Against the bounding-box read it replaces this is three to four orders of magnitude, and it is paid
 // on BOTH operands of every boolean, before classify() — so even a disjoint pair, which returns at
