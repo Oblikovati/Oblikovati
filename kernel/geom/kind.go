@@ -74,6 +74,19 @@ type KindedSurface interface {
 	Kind() SurfaceKind
 }
 
+// SurfaceKindOf names s's analytic kind, and reports false for a surface that names none. It is the
+// form a consumer needs when it holds a bare Surface: the assertion stays HERE, where the rules put
+// geometry-kind tests (#2188), instead of being written out at every call site.
+//
+// Example: if k, ok := geom.SurfaceKindOf(s); ok && k == geom.SurfaceCylinder { /* ... */ }
+func SurfaceKindOf(s Surface) (SurfaceKind, bool) {
+	kinded, ok := s.(KindedSurface)
+	if !ok {
+		return 0, false
+	}
+	return kinded.Kind(), true
+}
+
 func (p Plane) Kind() SurfaceKind              { return SurfacePlane }
 func (c Cylinder) Kind() SurfaceKind           { return SurfaceCylinder }
 func (s Sphere) Kind() SurfaceKind             { return SurfaceSphere }

@@ -5,6 +5,7 @@ package brep
 import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
+	"oblikovati.org/math"
 )
 
 // Two kept faces of one boolean result that lie on ONE surface and share a boundary are ONE face
@@ -31,7 +32,13 @@ import (
 //
 // The declines are reported from the LAST scan only. Merging one pair restarts the scan, so a pair
 // that refuses would otherwise be reported again on every pass, and a diagnostic repeated N times says
-// nothing the first one did not.
+// nothing the first one did not. That contract is why the last scan is a FULL sweep and cannot be
+// short-cut: it is the only pass that visits every pair, and it is where the declines come from.
+//
+// The restart itself is cheap, which #3523 measured before restructuring anything: on the fine-pitch
+// coil join the merges are found early in index order, so the two restarted sweeps were 4,614 pair
+// tests of 1,188,105 (0.39%) and the final full sweep was the other 99.6%. The cost is per-PAIR work
+// inside the sweep, which is what faceMergeFacts takes out of it.
 //
 // Example:
 //
@@ -65,8 +72,9 @@ type declinedMerge struct {
 // the result is the same body on every run — and returns the declines it passed on the way.
 func mergeFirstPair(faces []curvedFace, rec *diag.Recorder) ([]curvedFace, []declinedMerge, bool) {
 	var declined []declinedMerge
+	facts := faceMergeFacts(faces)
 	for i := range faces {
-		j, joined, seen, ok := firstMergeableWith(faces, i, rec)
+		j, joined, seen, ok := firstMergeableWith(faces, facts, i, rec)
 		declined = append(declined, seen...)
 		if !ok {
 			continue
@@ -78,11 +86,15 @@ func mergeFirstPair(faces []curvedFace, rec *diag.Recorder) ([]curvedFace, []dec
 }
 
 // firstMergeableWith returns the lowest-indexed face after i that merges with it, and every reportable
-// refusal it met before that.
-func firstMergeableWith(faces []curvedFace, i int, rec *diag.Recorder) (int, curvedFace, []declinedMerge, bool) {
+// refusal it met before that. It offers the pair function only same-bucket pairs, in the same ascending
+// j order — the subsequence of the whole scan that can answer anything but declineUnshared.
+func firstMergeableWith(faces []curvedFace, facts []faceMergeFact, i int, rec *diag.Recorder) (int, curvedFace, []declinedMerge, bool) {
 	var declined []declinedMerge
 	for j := i + 1; j < len(faces); j++ {
-		joined, why := mergePairOnOneSurface(faces[i], faces[j], rec)
+		if facts[i].bucket != facts[j].bucket {
+			continue
+		}
+		joined, why := mergePairOnOneSurface(faces[i], faces[j], facts[i].box, facts[j].box, rec)
 		if why == mergeJoined {
 			return j, joined, declined, true
 		}
@@ -95,12 +107,13 @@ func firstMergeableWith(faces []curvedFace, i int, rec *diag.Recorder) (int, cur
 
 // mergePairOnOneSurface merges two faces across every edge they share, and names its reason when it
 // does not. A pair that is not a candidate at all — different sense, different surface — gives the
-// ordinary unshared reason, which is the only one that is never reported.
-func mergePairOnOneSurface(a, b curvedFace, rec *diag.Recorder) (curvedFace, mergeDecline) {
-	if a.reversed != b.reversed || !onOneSurface(a, b) {
+// ordinary unshared reason, which is the only one that is never reported. The two loop boxes are the
+// caller's because they depend on ONE face each and a scan reuses them across the whole pair loop.
+func mergePairOnOneSurface(a, b curvedFace, boxA, boxB math.Box, rec *diag.Recorder) (curvedFace, mergeDecline) {
+	if a.reversed != b.reversed || !onOneSurface(a, b, boxA) {
 		return curvedFace{}, declineUnshared
 	}
-	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
+	res := geom.ResolutionForBox(boxA.Union(boxB))
 	loops, slits, why := dissolveSharedEdges(a, b, res)
 	if why != mergeJoined {
 		return curvedFace{}, why
@@ -115,15 +128,16 @@ func mergePairOnOneSurface(a, b curvedFace, rec *diag.Recorder) (curvedFace, mer
 // mergeOnSharedBoundary is mergePairOnOneSurface with its refusal reported at once — the single-pair
 // entry the merge's own rows drive, where there is no later scan to report from.
 func mergeOnSharedBoundary(a, b curvedFace, rec *diag.Recorder) (curvedFace, bool) {
-	merged, why := mergePairOnOneSurface(a, b, rec)
+	merged, why := mergePairOnOneSurface(a, b, faceLoopBox(a), faceLoopBox(b), rec)
 	recordMergeDecline(rec, a, why)
 	return merged, why == mergeJoined
 }
 
 // onOneSurface is the "same surface" decision the radial sew already makes (ADR-0058): surface
-// identity, not a tolerance on radii or axes.
-func onOneSurface(a, b curvedFace) bool {
-	return geom.SurfacesCoincide(a.surface, b.surface, geom.ResolutionForBox(faceLoopBox(a)))
+// identity, not a tolerance on radii or axes. The resolution reads a's loop box alone, which is why
+// the decision is NOT symmetric in a and b and why the caller passes that one box.
+func onOneSurface(a, b curvedFace, boxA math.Box) bool {
+	return geom.SurfacesCoincide(a.surface, b.surface, geom.ResolutionForBox(boxA))
 }
 
 // chartedMerge assembles the merged face: a's identity, the fused loops, both parents' reference keys,

@@ -105,3 +105,25 @@ func TestCurveKindNamesComplete(t *testing.T) {
 		seen[name] = true
 	}
 }
+
+// TestSurfaceKindOfNamesEveryProbe: SurfaceKindOf is the bare-Surface form of Kind(), so it must
+// agree with the method on every kind — a consumer that groups surfaces by it (kernel/brep's merge
+// bucket, #3523) is only sound while the two answers are the same one.
+func TestSurfaceKindOfNamesEveryProbe(t *testing.T) {
+	t.Parallel()
+	for k, probe := range surfaceKindProbes {
+		got, ok := SurfaceKindOf(probe)
+		if !ok || got != k {
+			t.Errorf("SurfaceKindOf(%T) = %v, %v; want %v, true", probe, got, ok, k)
+		}
+	}
+}
+
+// TestSurfaceKindOfDeclinesASurfaceThatNamesNoKind: the false arm is the one a caller must handle,
+// so it has to be reachable. saddleSurface (plate_fill_test.go) is a Surface with no Kind method.
+func TestSurfaceKindOfDeclinesASurfaceThatNamesNoKind(t *testing.T) {
+	t.Parallel()
+	if _, ok := SurfaceKindOf(saddleSurface{}); ok {
+		t.Error("SurfaceKindOf claims a kind for a surface with no Kind method")
+	}
+}

@@ -50,7 +50,7 @@ func TestDissolveJoinsTwoAbuttingBandsIntoOneLoop(t *testing.T) {
 func TestDissolveDeclinesTwoBandsThatShareNoEdge(t *testing.T) {
 	t.Parallel()
 	a, b := wallFaceOf(t, math.P3(0, 0, 0), 2, 4), wallFaceOf(t, math.P3(0, 0, 9), 2, 4)
-	if !onOneSurface(a, b) {
+	if !onOneSurface(a, b, faceLoopBox(a)) {
 		t.Fatal("two coaxial walls of one radius are not reported on one surface; the negative row is vacuous")
 	}
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
