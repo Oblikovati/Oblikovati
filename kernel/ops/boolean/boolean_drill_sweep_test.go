@@ -77,7 +77,10 @@ func sweepDrill(t *testing.T, bore float64) drillOutcome {
 }
 
 // booleanWithinDeadline runs one cut under a deadline, so a pipeline that stops terminating fails the
-// sweep as a test rather than hanging the whole suite (the r=1.585e-7 row is exactly that case).
+// sweep as a test rather than hanging the whole suite. It is a STANDING guard, not a description of any
+// row: the r=1.585e-7 row was the case it was written for, and since #3513 that row returns promptly
+// like every other. The deadline stays because "does not answer" is the outcome the ground rules do not
+// admit, and only a deadline can tell it from a slow one.
 func booleanWithinDeadline(t *testing.T, ring, drill *topo.Body) (*topo.Body, bool, error) {
 	t.Helper()
 	type result struct {
@@ -221,12 +224,24 @@ func TestTheBoreOracleAgreesWithTheShippedExactRow(t *testing.T) {
 
 // TestTheNonConvergentDrillTerminatesAndIsNamed is the corpus row for the third outcome the ground
 // rules do not admit. At r = 1.585e-7 the boolean did not RETURN AT ALL: the planar T-junction pass
-// subdivides "until stable", and at a scale comparable to its absolute 1e-7 tolerance it never became
-// stable, so the operation hung — neither a refusal nor a wrong body. splitTJunctions now stops at a
-// provable budget (brep.tjSplitBudget) and the refusal is named end to end.
+// subdivides "until stable", and at a scale comparable to its on-edge tolerance it never became
+// stable, so the operation hung — neither a refusal nor a wrong body. Two things stand between this
+// input and that hang now, and the row asserts both, because either alone can be met dishonestly.
 //
-// The row asserts BOTH halves, because either alone can be met dishonestly: a silent break would
-// terminate without a name, and a name without a bound would still hang.
+//  1. splitTJunctions stops at a provable budget (brep.tjSplitBudget) and says so: a bound without a
+//     name would break silently, a name without a bound would still hang. Guarded by the brep-side
+//     unit rows on the budget and its decline (kernel/brep/arrange_decline_test.go).
+//  2. The pass no longer CHURNS here at all (#3513, ADR-0061 G9). tjTol was one absolute read both as
+//     a perpendicular distance to an edge and as a bound on the dimensionless parameter along it; on
+//     an edge shorter than a database unit the fixed t-pad excluded no real length near the ends, so a
+//     vertex a hair inside an end re-qualified on every shorter half. The parameter reading now
+//     converts through the edge's |dP/dt|, and this drill arranges cleanly: measured over
+//     kernel/brep + kernel/ops on clean trees, 42 of 24694 arrangements exhausted the budget before,
+//     0 after — and all 42 were this drill (20 runs x 2 in the determinism row below, plus 2 here).
+//
+// So the assertion is INVERTED from what it was: the refusal must still be named and prompt, and it
+// must NOT be the arrangement's. Re-introduce the cross-class comparison and this row fails — first
+// on the unconverged record, and then, if the bound went too, on the deadline.
 func TestTheNonConvergentDrillTerminatesAndIsNamed(t *testing.T) {
 	t.Parallel()
 	ring, drill := ringAndDrill(t, 1.585e-7)
@@ -245,20 +260,14 @@ func TestTheNonConvergentDrillTerminatesAndIsNamed(t *testing.T) {
 		t.Fatalf("the boolean did not terminate within %s: a hang is neither a refusal nor a wrong body",
 			drillDeadline(t))
 	}
-	if !rec.Has(brep.CodeArrangementUnconverged) {
-		t.Fatalf("the unconverged subdivision must be REPORTED, not silently broken out of; got %v", rec.Records())
+	if rec.Has(brep.CodeArrangementUnconverged) {
+		t.Fatalf("the T-junction pass must converge on this drill since #3513 — an unconverged record "+
+			"means the on-edge tolerance is being read as a parameter again; got %v", rec.Records())
 	}
-	// The report must name WHICH of the four splits declined. There are four sites that arrange a
-	// face and they fail for the same reason, so a diagnostic that did not distinguish them would
-	// send the reader to the wrong one (review round 3).
-	var detail string
-	for _, d := range rec.Records() {
-		if d.Code == brep.CodeArrangementUnconverged {
-			detail = d.Detail
-		}
-	}
-	if !strings.Contains(detail, "closed-surface") {
-		t.Errorf("the decline must name the split that made it; got %q", detail)
+	// It is refused for the reason its NEIGHBOURS in the sweep are: the capability gap in the
+	// torus-cylinder section (G8), not a conditioning failure of the arrangement.
+	if !rec.Has(CodeBooleanNoExactCurvedPath) {
+		t.Errorf("want the same named refusal the rest of the band gets; got %v", rec.Records())
 	}
 }
 
@@ -278,10 +287,17 @@ func drillDeadline(t *testing.T) time.Duration {
 	return 30 * time.Second
 }
 
-// TestTheNonConvergentDrillRefusesIdenticallyEveryRun is the determinism half of the row above. The
-// refusal is a budget on pair-adding T-junction splits, counted in the order the splits are made; the
-// pass now walks a sorted snapshot of its edge set (brep.splitTJunctions), so twenty runs of the same
-// drill must give one error and one diagnostic record, byte for byte (final fix wave, finding 7).
+// TestTheNonConvergentDrillRefusesIdenticallyEveryRun is the determinism half of the row above: this
+// drill must refuse the SAME way on every run — one error and one set of diagnostic records, byte for
+// byte. It fingerprints whatever refusal occurs, so it holds whichever mechanism produces it.
+//
+// It was written when that mechanism was the T-junction split budget, whose count depends on the order
+// the splits are made; walking the live edge map in its random order made decline-versus-converge a
+// run-to-run coin toss, and brep.splitTJunctions walking a SORTED snapshot is what fixed it (final fix
+// wave, finding 7). Since #3513 this drill no longer reaches the budget at all — measured, 0 of 24694
+// arrangements — and its refusal is boolean.no-exact-curved-path. The sorted snapshot still stands, and
+// so does this row: byte-identical refusal is a property of every path, and the ordering it guards is
+// still the one the arrangement walks.
 func TestTheNonConvergentDrillRefusesIdenticallyEveryRun(t *testing.T) {
 	t.Parallel()
 	ring, drill := ringAndDrill(t, 1.585e-7)

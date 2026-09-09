@@ -114,10 +114,11 @@ func bruteSplitTJunctions(pts []math.Point2, edges map[[2]int]bool) {
 		verts.cells[[2]int32{cellCoord(float64(pts[i].X), verts.cell), cellCoord(float64(pts[i].Y), verts.cell)}] =
 			append(verts.cells[[2]int32{cellCoord(float64(pts[i].X), verts.cell), cellCoord(float64(pts[i].Y), verts.cell)}], int32(i))
 	}
+	tol := tjOnEdgeTol(geom.ResolutionForPoints2D(pts))
 	for changed := true; changed; {
 		changed = false
 		for e := range edges {
-			c := vertexOnEdgeInterior(pts, e[0], e[1], verts)
+			c := vertexOnEdgeInterior(pts, e[0], e[1], verts, tol)
 			if c < 0 {
 				continue
 			}
@@ -162,8 +163,9 @@ func TestVertexOnEdgeInteriorGridMatchesFullScan(t *testing.T) {
 			c := [2]int32{cellCoord(float64(pts[i].X), full.cell), cellCoord(float64(pts[i].Y), full.cell)}
 			full.cells[c] = append(full.cells[c], int32(i))
 		}
+		tol := tjOnEdgeTol(geom.ResolutionForPoints2D(pts))
 		for _, e := range edges {
-			if got, want := vertexOnEdgeInterior(pts, e[0], e[1], grid), vertexOnEdgeInterior(pts, e[0], e[1], full); got != want {
+			if got, want := vertexOnEdgeInterior(pts, e[0], e[1], grid, tol), vertexOnEdgeInterior(pts, e[0], e[1], full, tol); got != want {
 				t.Fatalf("trial %d edge %v: grid found vertex %d, full scan %d", trial, e, got, want)
 			}
 		}

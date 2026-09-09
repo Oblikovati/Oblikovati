@@ -4539,3 +4539,156 @@ ring's own (u, v) sampling), `unitLeftOf` (the quarter turn) and `medianOf` are 
   lowest face index rather than by discovery order, and `anchorOnClosedSurface` takes the lowest-index
   closed-surface face rather than the first the BFS reached — which is what its own comment already
   claimed. Both orders are total and deterministic; neither was before.
+
+### G9 closed — the T-junction tolerance is one class per comparison (2026-09-09, #3513)
+
+`tjTol` was an absolute `1e-7` read in two tolerance classes: as the perpendicular OFFSET from a welded
+vertex to an arrangement edge — an extent in the arrangement's own frame, metric for a projected face
+and parametric for a `(u,v)` band — and as a bound on the dimensionless parameter `t` ALONG that edge.
+A fixed `t`-pad is an extent only on a unit-length edge, so on a shorter edge it excluded nothing real
+near the ends, and a vertex a hair inside an end re-qualified on every shorter half the split produced.
+That is the churn `tjSplitBudget` had to bound, and the reason the T-junction pass shipped BOUNDED
+rather than fixed.
+
+Split into the two classes it was serving:
+
+- the distance reads `geom.Resolution.Plane()` — the member whose definition is "how far a point may
+  sit from a segment and still count as on it" — taken from the arrangement's OWN 2D extent
+  (`ResolutionForPoints2D`), which is the frame the points live in whether it is a projected face or a
+  `(u,v)` band;
+- it is FLOORED at `tjTol`, now written `100 * arrTol`. `arrTol` stays an absolute under #1399, so on a
+  sub-unit arrangement a purely relative distance would drop below the welder grid that generates the
+  offsets it has to absorb. At size 1 the floor and `Plane()` coincide exactly (`tjTol / arrTol` and
+  `Plane / Weld` are both 100), so the OFFSET test is bit-identical below one database unit. The
+  parameter pad changes at every scale — that is the fix, and the #3513 input is itself a sub-unit case
+  whose behaviour changed completely;
+- the parameter converts through the edge's `|dP/dt|`, which for the segment a→b is the constant `|ab|`
+  (`vertexOnEdgeInterior`).
+
+**Measured** with
+
+```text
+go test -count=1 -v ./kernel/brep/ ./kernel/ops/... -timeout 3000s
+```
+
+on two CLEAN trees — base `67938a5d` in its own worktree, head as committed, no probe or throwaway
+file in either package — with one `fmt.Fprintf` of `used`/`total`/`splits` per `splitTJunctions` call
+as the only edit. `-v` is required: `go test` discards a PASSING package's output.
+
+| | before | after |
+| --- | ---: | ---: |
+| arrangements run | 24694 | 24694 |
+| runs that exhausted `tjSplitBudget` and declined | 42 | **0** |
+| runs making at least one T-junction split | 52 | 9 |
+| T-junction splits made, all runs | 5100 | 29 |
+| splits inside the 42 declining runs | 5082 | — |
+| splits across the CONVERGING runs | 18 | **29** |
+| largest split count in one run | 121 | 4 |
+| — of which `kernel/brep` | 9 | 5 |
+| — of which `kernel/ops/boolean` | 9 | 24 |
+
+The churn is gone: 5082 of the 5100 splits were made inside runs that then declined. The RING
+axial-drill sweep confirms that end to end — the four rows at r = 1.585e-7 … 6.31e-7 which recorded
+`arrangement.unconverged` now record the same `boolean.no-exact-curved-path` as their neighbours. Sweep
+wall time is essentially unchanged (7.70 s → 7.21 s over 50 bores): the churning rows were already
+sub-second.
+
+**The converging path moves too, 18 → 29, and in both directions.** It is not "untouched", and the two
+directions are different facts. Every split was measured at the incidence: `L` the host edge length,
+`dNear` = `min(t, 1−t)·L` the distance to the NEARER endpoint, `perp` the perpendicular offset:
+
+| | base | head | L | dNear | perp | tol |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| oblique figure-eight torus ∩/− box (n = 516), incidence A | 6 | 0 | 0.100197 | **5.36e-8** | 9.85e-10 | 1e-7 |
+| the same body, incidence B | 6 | 0 | 0.100197 | **2.87e-8** | 4.52e-8 | 1e-7 |
+| partial-rim grazing cut (n = 1288) | 1 | 0 | 0.0135829 | **1.56e-8** | 3.18e-10 | 1e-7 |
+| sphere through three box faces (n = 742), edge P at t = 0.28 | 0 | 6 | 9.51894e-5 | 2.68189e-5 | 4.66833e-7 (80 % of tol) | 5.82378e-7 |
+| the same, edge P at t = 0.72 | 0 | 6 | 9.51894e-5 | 2.68189e-5 | 4.66833e-7 (80 %) | 5.82378e-7 |
+| the same body, edge Q at t = 0.28 | 0 | 6 | 1.11795e-4 | 3.15616e-5 | 5.48950e-7 (**94 %**) | 5.82378e-7 |
+| the same, edge Q at t = 0.72 | 0 | 6 | 1.11795e-4 | 3.15616e-5 | 5.48950e-7 (**94 %**) | 5.82378e-7 |
+| `TestPlanarizeGridMatchesBrute` randomized fixtures | 5 | 5 | 0.41–0.88 | 0.05–0.19 | 0 | — |
+
+- **The 13 lost splits are three incidences in two corpus bodies, replayed by six rows** (the
+  figure-eight pair appears in `kernel/brep`'s `TestFaceChartCoversTheKeptSide` and in
+  `TestCurvedBooleanVolumesMatchOCC` / `TestCurvedBooleansStayExact`; the grazing cut in
+  `TestPartialRimGrazingCutTakesTheGeneralPath`). **None of them was a weld.** Each split vertex sits
+  1.6e-8…5.4e-8 from an endpoint of an edge 0.014–0.10 long — INSIDE the 1e-7 on-edge tolerance of that
+  endpoint, so by the pass's own distance test it *is* that endpoint. The base split there only because
+  the fixed `t`-pad of 1e-7 excludes just `L × 1e-7` = 1.4e-9…1.0e-8 of length, and each split left a
+  stub edge shorter than the tolerance — which the very next degeneracy check (`lenSq < tol²`) then
+  refuses to look at again. Removing them removes sub-tolerance slivers from the cell complex.
+
+  Two further checks say the same thing. The EUCLIDEAN distance from the host endpoint,
+  `sqrt(dNear² + perp²)`, is 5.358e-8 / 5.358e-8 / 1.560e-8 — inside the 1e-7 tolerance on all three, so
+  the vertex is that endpoint however the distance is decomposed. And `t` = 2.9e-7, 5.3e-7, 1.1e-6: the
+  vertex sits a few ten-millionths along the edge, so none of them is remotely interior and none is a
+  genuine T-junction the new tolerance now misses. The re-review (round 2) fingerprinted the bodies
+  these rows build — faces / edges / verts / Euler and a SHA over the per-face edge-endpoint list at
+  `%.17g` — and found them BIT-IDENTICAL on both sides, along with the other six `chartHalfSpaceCases`
+  bodies. Removing 13 splits changes nothing in what gets built.
+- **The 24 gained splits are genuine interior crossings, and they change no body we can measure.** Four
+  incidences, each replayed six times: `t` = 0.28 / 0.72, i.e. 2.68e-5 and 3.16e-5 from the nearer end —
+  two orders outside the exclusion, so these are interior, not endpoints. Their perpendicular offsets
+  are 4.67e-7 and 5.49e-7 against a tolerance of 5.82378e-7, which is **80 % and 94 % of it**: that
+  arrangement's own extent is 5.82 database units, so the old absolute 1e-7 could not see them, and a
+  modestly tighter `planeCoef` would lose them again. Worth recording, because it means these welds sit
+  near the edge of the new tolerance rather than comfortably inside it.
+
+  What they do NOT do is fix anything. Measured on both sides with `Validate` and the diagnostic
+  recorder, on the body that produces all 24 (`SolidBlock(-2..2) ∪ / ∩ SolidSphere((1,1,1), 1.5)`):
+
+  | | base `67938a5d` | head |
+  | --- | --- | --- |
+  | Join | vol = 66.995895069351704, faces 10 / edges 213 / verts 206, valid closed manifold, `diag=[]` | **bit-identical** — same volume to 17 digits, same counts, same per-face edge-endpoint hash |
+  | Intersect | vol = 11.007267933143288, faces 5 / edges 151 / verts 148, valid closed manifold, `diag=[]` | vol = 11.00726796251398 (2.7e-9 relative), faces 5 / edges **161** / verts **158** |
+
+  So: **nothing dangled.** Both base bodies are already valid, closed, manifold solids with zero
+  recorded diagnostics and the right volume — a dangling chain is a face that fails to partition, and
+  the base partition is sound. Twelve of the 24 splits (the Join side) are pure no-ops on the result;
+  the other twelve make the Intersect complex finer by ten vertices and ten edges and move its volume by
+  2.7e-9, which is tessellation noise. No defect was fixed and no oracle moved —
+  `TestSpherePokingThroughThreeBoxFacesUnionsToTheRightVolume` gates on a 2 % TESSELLATED bracket, which
+  cannot tell these two bodies apart and is therefore not evidence for either.
+
+  The case for the `Plane()` half is accordingly the RULE, not a body that got better: see the next
+  bullet.
+- **Each half of the change is independently sufficient for the #3513 input** (verified on the base: the
+  parameter conversion alone, and the `Plane()` relativisation alone, each clear all four drill rows). So
+  the `Plane()` half is justified on RULE grounds — one class per comparison, and an on-line test whose
+  operands are model extents must scale with the model (ADR-0042) — not by any body it repairs. What the
+  change as a whole buys is measured and is enough on its own: **42 declines and 5071 thrash splits
+  removed**, a hang turned into a prompt named refusal, and the two readings separated so the next reader
+  cannot re-merge them. What it costs on the converging path is 13 sub-tolerance splits that were never
+  welds and 24 new welds that alter one body by ten vertices. That is the whole of the trade, and it is
+  a rule argument, not an outcome argument.
+
+**G8 is unchanged.** The band edges do not move: `boolean.analytic-volume-reject` still spans bore
+6.31e-4 … 0.0631 (thickness/extent 6.294e-5 … 6.294e-3) and the exact plateau still starts at bore 0.1.
+G9 was a conditioning failure INSIDE G8's lower reach, not its cause; what remains is the capability gap
+in the torus-cylinder section, which is where a follow-up has to look.
+
+**The bound stays.** It is the pass's termination argument — "until stable" is a fixpoint loop over a
+set the pass itself grows — not that input's patch, and without it the next conditioning failure is a
+hang again, the one outcome the ground rules do not admit. Because no live input reaches it any more,
+its mechanism is pinned by unit rows instead (`kernel/brep/arrange2d_tjtol_test.go`:
+`TestOnlyAPairAddingSplitIsChargedToTheBudget`, `TestTheSplitBudgetRefusesWhenExhausted`,
+`TestTheDeclineNamesTheSplitThatMadeIt`), and
+`TestTheNonConvergentDrillTerminatesAndIsNamed` is INVERTED: the drill must terminate, be refused by
+name, and NOT record an unconverged arrangement.
+
+**What the tolerance ratchet could not see.** `tjTol` carried `// tol:calibrated`, which is exactly
+what clears a line out of `toleranceDebt`, and `arrange2d.go` was never in that map. The annotation is
+per LINE and this defect was per USE — one constant, two classes — so no wording of the guard would
+have pointed at it. `toleranceDebt`'s doc comment now says so.
+
+**Residue: the same cross-class read is still LIVE elsewhere in `kernel/brep`** (#3530). The value of
+`tjTol` is unchanged (`100 * arrTol` is bit-identical to `1e-7`), so none of its other readers moved —
+but four of them compare it against a normalised curve parameter, which is this same defect:
+`curved_plane_face_uv.go:276,278` (`cr.sImp`, an imprint segment's parameter in [0,1]);
+`curved_plane_uv_frame.go:110,119` (the `sPad` of `conicSegmentHits`, whose window is `[sPad, 1−sPad]`
+in the edge's normalised parameter); `curved_plane_face_uv.go:182,185` and `curved_face_line.go:179`
+(a curve DOMAIN span and the curve's own parameter). It already has a recorded field failure:
+`curved_face_line.go:201-203` — "a fixed pad shrinks in that parameter as the part grows — a 3 m cap's
+rim landed 1.7e-9 from its window's end and its own boundary read as outside". Two further readers,
+`uv_seg_index.go` and `curved_uv_trace.go:264`, are genuine same-frame `(u,v)` offsets and are NOT the
+same defect.

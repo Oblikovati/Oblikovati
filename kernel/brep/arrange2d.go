@@ -18,8 +18,8 @@ import (
 // arrTol is the planar-arrangement coincidence/intersection tolerance (database units).
 //
 // tol:calibrated — the 2D arrangement welds points computed by EXACT planar segment intersection
-// (no accumulated curved-surface error), so this matched set (arrTol / tjTol / the welder grid) is
-// scale-robust as an absolute across the validated µm→km range (ops TestScaleSweepInvariance).
+// (no accumulated curved-surface error), so this matched set (arrTol / the tjTol floor / the welder
+// grid) is scale-robust as an absolute across the validated µm→km range (ops TestScaleSweepInvariance).
 // Relativising the welder grid to size·ε coarsens it on a large part and risks merging distinct
 // arrangement vertices — a net regression — so under #1399 it stays absolute and validated.
 const arrTol = 1e-9 // tol:calibrated — exact-planar-intersection weld; see the note above
@@ -100,11 +100,40 @@ func sortedEdgePairs(edges map[[2]int]bool) [][2]int {
 	return out
 }
 
-// tjTol bounds the perpendicular distance at which a welded vertex counts as lying ON an
-// edge — a T-junction. It matches the welder's coincidence grid (1e-7): any point that would
-// weld onto the line is at most that far off it, while genuine features sit orders of
-// magnitude further (≥1e-2), so this never splits a near-miss.
-const tjTol = 1e-7 // tol:calibrated — matches the welder grid; see arrTol
+// tjTol is the FLOOR of the T-junction on-edge distance (see [tjOnEdgeTol]), and the value the
+// pass's small-scale behaviour is calibrated at. It is 100 × the welder grid — the same ratio
+// geom.Resolution keeps between Plane() and Weld() — so a point that welded onto the line is two
+// orders inside it, while genuine features sit orders of magnitude further (≥1e-2).
+//
+// It is a FLOOR rather than the tolerance because arrTol is an ABSOLUTE under #1399: on an
+// arrangement smaller than one database unit a purely relative on-edge distance would drop below
+// the welder grid that generates the very offsets it has to absorb, and a welded chain endpoint
+// would stop counting as lying on its host edge (#3513).
+//
+// Its downward consequence, named because it is a real cliff: held absolute, the on-edge distance is a
+// GROWING FRACTION of a shrinking arrangement — 1% of the extent at E = 1e-5 — and by E ≈ 2e-7 every
+// edge is either below the degeneracy check (lenSq < tol²) or has tEndPad ≥ ½, so the T-junction pass
+// does nothing at all. That is where we want to be, because a body whose whole arrangement is 2e-7
+// across is refused upstream by the boolean's size classification (geom.Resolution.Resolves) long
+// before it gets here — but the pass going quiet is a floor effect, not a property of the input.
+const tjTol = 100 * arrTol // tol:calibrated — 100 × the absolute welder grid; see arrTol
+
+// tjOnEdgeTol is the perpendicular DISTANCE at which a welded vertex counts as lying ON an edge —
+// a T-junction. It is measured in the arrangement's OWN frame — metric for a projected planar face,
+// parametric for a (u,v) band — and the comparison it serves has both operands in that same frame,
+// which is what the single-class rule asks. So it reads the on-line member of the arrangement's
+// [geom.Resolution] (Plane: exactly "how far a point may sit from a segment and still count as on
+// it") over that frame's own extent, floored at [tjTol].
+//
+// Before #3513 this was the bare tjTol, used BOTH as this distance and as a bound on the
+// dimensionless parameter t along the edge — one constant read in two classes, which is the
+// comparison the ground rules forbid. The parameter reading now converts through the edge's
+// |dP/dt| in [vertexOnEdgeInterior]; this is the length reading.
+func tjOnEdgeTol(res geom.Resolution) float64 { return max(res.Plane(), tjTol) }
+
+// tjCullPad inflates an edge's query box in the T-junction pass: 10 × the on-edge distance
+// tolerance, so every vertex within it of the edge is guaranteed to be visited.
+func tjCullPad(tol float64) float64 { return 10 * tol }
 
 // splitTJunctions subdivides every edge at any welded vertex lying strictly on its interior,
 // repeating until stable. splitOne only cuts at proper interior crossings of two segments;
@@ -120,31 +149,56 @@ const tjTol = 1e-7 // tol:calibrated — matches the welder grid; see arrTol
 // added during a pass are not in its snapshot; the next pass takes them.
 func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 	// The welded point set is fixed here (only edges split), so one grid hash over it culls
-	// every vertex-on-edge scan below (#1607).
+	// every vertex-on-edge scan below (#1607). The on-edge distance comes from the arrangement's
+	// OWN 2D extent — the frame the points live in, metric for a planar face split and
+	// parametric for a (u,v) band — floored at tjTol (#3513).
 	verts := newVertexCullGrid(pts)
+	tol := tjOnEdgeTol(geom.ResolutionForPoints2D(pts))
 	budget := tjSplitBudget(len(pts))
-	for changed := true; changed; {
-		changed = false
-		for _, e := range sortedEdgePairs(edges) {
-			c := vertexOnEdgeInterior(pts, e[0], e[1], verts)
-			if c < 0 {
-				continue
-			}
-			lo, hi := canonEdge(e[0], c), canonEdge(c, e[1])
-			if !edges[lo] || !edges[hi] {
-				// A split that ADDS a pair is the only kind that can run away, and the budget counts
-				// exactly those. One that adds neither half strictly shrinks the set (it removes e and
-				// re-adds two pairs already in it), so it cannot loop on its own account and is free.
-				if budget--; budget < 0 {
-					return false // churning, not converging: see tjSplitBudget
-				}
-			}
-			delete(edges, e)
-			edges[lo] = true
-			edges[hi] = true
-			changed = true
+	for {
+		changed, ok := splitTJunctionPass(pts, edges, verts, tol, &budget)
+		if !ok {
+			return false // churning, not converging: see tjSplitBudget
+		}
+		if !changed {
+			return true
 		}
 	}
+}
+
+// splitTJunctionPass is one walk over a sorted snapshot of the edge set, splitting each edge at the
+// lowest welded vertex on its interior. It reports whether it changed anything and whether the budget
+// survived. Halves added during a pass are not in its snapshot; the next pass takes them.
+func splitTJunctionPass(pts []math.Point2, edges map[[2]int]bool, verts *vertexCullGrid, tol float64, budget *int) (changed, ok bool) {
+	for _, e := range sortedEdgePairs(edges) {
+		c := vertexOnEdgeInterior(pts, e[0], e[1], verts, tol)
+		if c < 0 {
+			continue
+		}
+		if !splitEdgeAt(edges, e, c, budget) {
+			return changed, false
+		}
+		changed = true
+	}
+	return changed, true
+}
+
+// splitEdgeAt replaces edge e with its two halves through vertex c, charging the budget when the
+// split ADDS a pair. It returns false when the budget is exhausted.
+//
+// A split that adds a pair is the only kind that can run away, and the budget counts exactly
+// those. One that adds neither half strictly shrinks the set (it removes e and re-adds two pairs
+// already in it), so it cannot loop on its own account and is free.
+func splitEdgeAt(edges map[[2]int]bool, e [2]int, c int, budget *int) bool {
+	lo, hi := canonEdge(e[0], c), canonEdge(c, e[1])
+	if !edges[lo] || !edges[hi] {
+		if *budget--; *budget < 0 {
+			return false
+		}
+	}
+	delete(edges, e)
+	edges[lo] = true
+	edges[hi] = true
 	return true
 }
 
@@ -166,51 +220,103 @@ func splitTJunctions(pts []math.Point2, edges map[[2]int]bool) bool {
 // Counting DISTINCT pairs ever added instead — which would make n(n−1)/2 a theorem — was considered and
 // rejected (final fix wave, finding 7): such a count is bounded by n(n−1)/2 by construction, so it can
 // never exceed the budget and the pass would never decline. The runaway this bound exists for IS
-// re-adding: at the tjTol scale a vertex that did not qualify on an edge qualifies on the shorter half
-// that replaces it, and the r = 1.585e-7 drill would hang again. What makes the decline honest is that
-// the count is taken in ONE order (splitTJunctions walks a sorted snapshot), so decline-versus-converge
-// is a function of the input alone, and the drill row asserts that twenty runs give one answer.
+// re-adding: a vertex that did not qualify on an edge qualifies on the shorter half that replaces it.
+// What makes the decline honest is that the count is taken in ONE order (splitTJunctions walks a
+// sorted snapshot), so decline-versus-converge is a function of the input alone.
 //
-// It has to exist because the loop's termination argument silently depends on scale. tjTol is an
-// ABSOLUTE 1e-7, and it is used twice over: as a perpendicular DISTANCE to the edge and as a
-// dimensionless bound on the parameter t along it. On geometry whose own features are near 1e-7 —
-// measured: the RING corpus body cut by an axial drill of radius 1.585e-7 — those two readings stop
-// agreeing, the pass keeps finding "interior" vertices on edges it has just made, and the boolean
-// never returns. A hang is neither a refusal nor a wrong body, and the ground rules admit only those
-// two (ADR-0061 stage 6, review round 2).
+// WHERE THE RUNAWAY CAME FROM, and why the bound stays anyway. It was ONE tolerance read in two
+// classes: tjTol was compared both as a perpendicular DISTANCE to the edge and as a bound on the
+// dimensionless parameter t along it. A fixed t-pad is a length only on a unit-length edge, so on an
+// edge shorter than a database unit it excluded almost nothing near the ends, and a vertex a hair
+// inside an end kept qualifying on every shorter half the split produced — measured on the RING corpus
+// body cut by an axial drill of radius 1.585e-7, which did not return in any budget the suite could
+// give it. #3513 converts the parameter reading through the edge's |dP/dt| (vertexOnEdgeInterior), so
+// the end exclusion is a length on every edge and each half is strictly longer than the tolerance.
+//
+// Measured over the kernel/brep + kernel/ops suites (24694 arrangements, -count=1 -v, clean trees):
+// before #3513, 42 runs exhausted this budget and 5100 splits were made, 5082 of them inside those 42
+// runs; after, 0 runs exhaust it and 29 splits are made in total. So the churn is gone — but the
+// CONVERGING path moves too, 18 → 29 splits, in both directions (kernel/brep 9 → 5, kernel/ops/boolean
+// 9 → 24), and the two directions are different things. See ADR-0061's "G9 closed" section for the
+// per-incidence measurement: what is lost was never a weld (splits taken 1.6e-8…5.4e-8 from an
+// endpoint of an edge 0.014–0.10 long — inside the on-edge tolerance of that endpoint, so it IS that
+// endpoint), and what is gained is interior crossings at 80–94% of the new tolerance which the old
+// absolute could not see on a 5.8-unit arrangement. The gained splits fix nothing: the bodies they
+// touch are valid, closed and diagnostic-free on BOTH sides, half of them are no-ops on the result,
+// and the rest move one body by ten vertices and 2.7e-9 of its volume. This half of the change is
+// carried by the RULE (one class per comparison), not by an outcome.
+//
+// The bound stays because it is the pass's TERMINATION argument, not a patch for that one input:
+// "until stable" is a fixpoint loop over a set the pass itself grows, and a bound plus a named decline
+// is the only thing that keeps a future conditioning failure from becoming a hang — the outcome the
+// ground rules do not admit (ADR-0061 stage 6, review round 2). The argument itself never depended on
+// the value of tol, and the runaway it bounds (a pair deleted and later re-added) is untouched here;
+// only the short-edge re-qualification cascade is removed.
 func tjSplitBudget(n int) int { return n * (n - 1) / 2 }
 
-// vertexOnEdgeInterior returns a vertex index lying strictly inside segment a→b (within
-// [tjTol] of it, parameter away from both ends), or −1 if none. The lowest such index is
-// returned for determinism. Candidates come from the vertex grid hash over the edge's padded
-// box (#1607) — every qualifying vertex lies within tjTol of the edge, so none can escape it —
-// with the qualification arithmetic unchanged from the retired full scan.
-func vertexOnEdgeInterior(pts []math.Point2, a, b int, verts *vertexCullGrid) int {
+// vertexOnEdgeInterior returns a vertex index lying strictly inside segment a→b — within `tol`
+// of it perpendicularly, and further than `tol` ALONG it from either end — or −1 if none. The
+// lowest such index is returned for determinism. Candidates come from the vertex grid hash over
+// the edge's padded box (#1607) — every qualifying vertex lies within `tol` of the edge, so none
+// can escape it — with the qualification arithmetic otherwise unchanged from the retired full scan.
+//
+// Both readings of `tol` here are extents in the arrangement's frame; neither is a bare parameter.
+// The end exclusion used to compare the dimensionless parameter t against the same absolute (#3513):
+// a fixed t-pad is a length only on a unit-length edge, so on a short edge it excluded nothing and a
+// vertex a hair inside the end kept qualifying on each shorter half the split produced — the churn
+// tjSplitBudget exists to stop. tEndPad converts through the segment's |dP/dt|, which for the chord
+// a→b is the constant |ab|, so the conversion is exact up to one Sqrt.
+//
+// What that buys is INVARIANCE: `t ≤ tol/|ab|` is the same predicate as "projected distance from pa
+// ≤ tol", which does not mention the edge's length — so a vertex excluded for sitting within tol of
+// an endpoint stays excluded on every sub-edge carrying that endpoint, and the re-qualification
+// cascade has nowhere to start. (Exact up to the child edge's direction change: the split vertex may
+// sit tol off the parent's line, turning the child by ≤ tol/L′ radians and moving the projection foot
+// by O(tol²/L′) — second order, and far inside the tolerance it is compared against.)
+func vertexOnEdgeInterior(pts []math.Point2, a, b int, verts *vertexCullGrid, tol float64) int {
 	pa, pb := pts[a], pts[b]
 	ab := pa.VectorTo(pb)
 	lenSq := ab.LengthSquared()
-	if lenSq < tjTol*tjTol {
-		return -1
+	if lenSq < tol*tol {
+		return -1 // shorter than the tolerance: it has no interior to split at
 	}
+	tEndPad := tol / stdmath.Sqrt(lenSq)
 	best := -1
-	x0 := min(float64(pa.X), float64(pb.X)) - tjCullPad
-	y0 := min(float64(pa.Y), float64(pb.Y)) - tjCullPad
-	x1 := max(float64(pa.X), float64(pb.X)) + tjCullPad
-	y1 := max(float64(pa.Y), float64(pb.Y)) + tjCullPad
+	x0, y0, x1, y1 := paddedEdgeBox(pa, pb, tjCullPad(tol))
 	verts.eachInBox(x0, y0, x1, y1, func(c int) {
 		if c == a || c == b || (best >= 0 && c >= best) {
 			return
 		}
-		t := pa.VectorTo(pts[c]).Dot(ab) / lenSq
-		if t <= tjTol || t >= 1-tjTol {
-			return
+		if onEdgeInteriorAt(pa, ab, lenSq, pts[c], tEndPad, tol) {
+			best = c
 		}
-		if pa.TranslateBy(ab.Scale(t)).DistanceTo(pts[c]) > tjTol {
-			return
-		}
-		best = c
 	})
 	return best
+}
+
+// onEdgeInteriorAt is the qualification itself: p projects into the edge's interior (further than
+// tEndPad from either end in parameter, which is `tol` in the frame — see [vertexOnEdgeInterior]) and
+// sits within `tol` of the line perpendicularly.
+//
+// It states the offset test POSITIVELY (`<= tol`) where the inlined original rejected on `> tol`. On
+// every finite input the two are the same predicate; they differ only on a NaN distance, which the
+// reject-form ACCEPTED as a T-junction (`NaN > tol` is false, so nothing rejected it) and this form
+// declines. That is a deliberate divergence from the pre-#3513 shape, not an oversight: a vertex whose
+// distance to the edge is not a number cannot be shown to lie on it, and admitting it would split an
+// edge at a point the pass knows nothing about. Pinned by TestANaNVertexIsNotOnAnEdge.
+func onEdgeInteriorAt(pa math.Point2, ab math.Vector2, lenSq float64, p math.Point2, tEndPad, tol float64) bool {
+	t := pa.VectorTo(p).Dot(ab) / lenSq
+	if t <= tEndPad || t >= 1-tEndPad {
+		return false
+	}
+	return pa.TranslateBy(ab.Scale(t)).DistanceTo(p) <= tol
+}
+
+// paddedEdgeBox is the edge's AABB grown by pad on every side — the box the vertex grid is queried
+// over, sized so no vertex the narrow phase could accept falls outside it.
+func paddedEdgeBox(pa, pb math.Point2, pad float64) (x0, y0, x1, y1 float64) {
+	return min(float64(pa.X), float64(pb.X)) - pad, min(float64(pa.Y), float64(pb.Y)) - pad,
+		max(float64(pa.X), float64(pb.X)) + pad, max(float64(pa.Y), float64(pb.Y)) + pad
 }
 
 // splitOne returns a segment's elementary edges: the chain of welded vertex indices along

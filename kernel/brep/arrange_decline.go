@@ -12,12 +12,19 @@ import (
 // Where a planar subdivision that will not converge becomes a NAMED refusal instead of a hang
 // (ADR-0061 stage 6, review round 2).
 //
-// The T-junction pass subdivides "until stable", and on geometry whose features sit at the same
-// scale as its absolute 1e-7 tolerance it never becomes stable — measured on the RING corpus body
-// cut by an axial drill of radius 1.585e-7, which did not return in any budget the suite could give
-// it. That is the one outcome the ground rules do not admit: an operation may refuse and it may
-// return a valid answer, but it may not fail to answer. splitTJunctions now stops at a provable
-// budget (tjSplitBudget) and says so; this is what "says so" means downstream.
+// The T-junction pass subdivides "until stable", and it used to never become stable on geometry whose
+// features sit at the scale of its on-edge tolerance — measured on the RING corpus body cut by an
+// axial drill of radius 1.585e-7, which did not return in any budget the suite could give it. That is
+// the one outcome the ground rules do not admit: an operation may refuse and it may return a valid
+// answer, but it may not fail to answer. splitTJunctions stops at a provable budget (tjSplitBudget)
+// and says so; this is what "says so" means downstream.
+//
+// That particular input no longer churns: #3513 split the one tolerance that was read both as an
+// offset and as a parameter, and no arrangement in the kernel corpus now reaches the budget (measured
+// over kernel/brep + kernel/ops on clean trees: 42 of 24694 before, 0 after). The budget is the pass's
+// termination argument, not that input's patch, so it and this refusal stay: a fixpoint loop over a set
+// the pass itself grows needs a bound whatever the tolerance is, and without one the next conditioning
+// failure is a hang again.
 
 // ErrUnconvergedArrangement is the refusal: the planar subdivision hit its split budget, so the cell
 // complex is untrustworthy and every face built from it would be a guess. The boolean turns it into
@@ -30,8 +37,11 @@ var ErrUnconvergedArrangement = errors.New("brep: the planar subdivision did not
 // and the fix is in the pass, not in the caller.
 const CodeArrangementUnconverged diag.Code = "arrangement.unconverged"
 
-// unconvergedArrangement builds the named refusal, carrying the segment count so a report says how
-// big the arrangement that failed was.
+// unconvergedArrangement builds the named refusal, carrying the number of SEGMENTS the caller fed the
+// arrangement — never a face count, which is what a per-face imprint list's len() is
+// (imprintSegmentCount exists for exactly that trap) — so a report says how big the input that failed
+// was. It is the caller's own count: the planar split adds the host face's boundary segments inside
+// splitFace, so the arrangement it builds is larger than the number reported here.
 func unconvergedArrangement(segs int) error {
 	return fmt.Errorf("%w: %d segments exceeded the T-junction split budget; the cells cannot be trusted",
 		ErrUnconvergedArrangement, segs)
