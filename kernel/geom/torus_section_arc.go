@@ -107,10 +107,11 @@ func torusHarmonicAt(t Torus, co TorusCoForm, v float64) (torusHarmonic, bool) {
 	return st.harmonic(), true
 }
 
-// TorusSectionArc is a bounded run of the EXACT intersection of a torus with an axis-invariant quadric,
-// evaluated on the TORUS chart so the point is exactly on the torus and on the quadric to the harmonic
-// solve's rounding. The parameter t ∈ [0,1] maps to the tube angle v = V0 + t·(V1−V0), and the point is
-// Torus.PointAt(u, v) with u the Upper or lower azimuth the harmonic admits there.
+// TorusSectionArc is a bounded run of the EXACT intersection of a torus with another surface's implicit
+// form — any [TorusCoForm], which is every quadric and a second torus (ADR-0066) — evaluated on the
+// TORUS chart, so the point is exactly on the torus and on the other surface to the station solve's
+// rounding. The parameter t ∈ [0,1] maps to the tube angle v = V0 + t·(V1−V0), and the point is
+// Torus.PointAt(u, v) with u the Upper or lower azimuth the station admits there.
 //
 // Example — the two seams an axial drill leaves in a ring, on the ring's chart:
 //

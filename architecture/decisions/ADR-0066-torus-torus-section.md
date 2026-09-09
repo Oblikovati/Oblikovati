@@ -81,6 +81,11 @@ from the representation that carries the property: a quadric from its TENSOR (`q
 untouched, a statement about every tube angle at once), a torus from its STATIONS. They are the same
 predicate on the two representations, and neither reads the other's.
 
+**One deliberate exception, and it is the subject of §4:** a coaxial quadric's section CIRCLES are not
+bit-identical, because their tube angles moved from a 60-step bisection of a 720-station scan to an
+arccos. That output is exact where it was approximate. Every statement above about bit-for-bit
+reproduction is about the station COEFFICIENTS and the lane family that reads them.
+
 ### 3. The role assignment is a classification, not a try-list
 
 The intersector used to try `torusAgainstQuadric(a, b)` and then `(b, a)`. For a torus/quadric pair at
@@ -231,17 +236,29 @@ Every one of those is a NAMED refusal that reaches the boolean as a `CodeSection
 Defect. Each has a corpus row (`TestATorusPairOutsideTheEnvelopeIsRefusedByName` in `kernel/geom`,
 `TestATorusPairOutsideTheEnvelopeIsRefusedByName` in `kernel/ops/boolean`).
 
-**`DeclineTorusLaneTracks` is the dominant gap and its cause is identified.** `torusLaneAnchors` seeds
-the lane labels from the station at v = 0 and requires all 720 stations to carry the same number of
-extrema, tracking those seeds — *including stations that carry no section at all*. A torus co-form's
+**`DeclineTorusLaneTracks` is the dominant gap, and no single cause explains it.** `torusLaneAnchors`
+seeds the lane labels from the station at v = 0 and requires all 720 stations to carry the same number
+of extrema, tracking those seeds — *including stations that carry no section at all*. A torus co-form's
 station changes between two and four extrema over the turn far more often than a quadric's: the boss
-fixture carries roots at 77 of 720 stations and four extrema at 235, so the 643 root-free stations
-decide the gate. Relaxing it needs the seed taken from a root-carrying station, which moves the anchor
-for pairs that build today and therefore needs its own bit-for-bit reproduction proof over the quadric
-corpus. **It is not done here, and it is this capability's next ticket.** `DeclineTorusLaneFullTurn` is
-deleted by ADR-0065 on a sibling branch, which will convert its 25 rows too.
+fixture carries roots at 77 of 720 stations and four extrema at 235, so there the 643 root-free stations
+decide the gate.
 
-## Two defects surfaced by the measurements, neither fixed here
+**That mechanism is real but it is a MINORITY of the population, and the scope must be written from the
+measurement rather than from the mechanism.** Over 300 sampled `LaneTracks` refusals the first station
+that breaks the gate carries **no** roots in 127 and **does** carry roots in 173. Measuring the obvious
+fix directly — seed from the first root-carrying station and judge only root-carrying stations —
+recovers **268 of 1538 refusals, 17.4 %**, taking the build rate from 34.1 % to at most ~45 % of meeting
+pairs. In population terms the follow-up is **64 % → about 53 % still refused**, not "closes the gap".
+The remaining 173-in-300 majority breaks at a station that does carry roots, where no change to the seed
+can help: those need the extremum tracks themselves to be continued through a count change, which is a
+different and larger piece of work. Sizing the ticket by the mechanism instead of by the measurement
+would send the next implementer after a sixth of the problem believing it was the whole.
+
+Either way it is not done here, and relaxing the seed at all needs its own bit-for-bit reproduction
+proof over the quadric corpus, because it moves the anchor for pairs that build today.
+`DeclineTorusLaneFullTurn` is deleted by ADR-0065 on a sibling branch, which will convert its 25 rows.
+
+## Two defects surfaced by the measurements, neither fixed here, both bisected
 
 1. **A torus face bounded by a torus × torus section loop does not mesh.** The B-rep is exact — the
    boundary oracle agrees to a part in ten thousand — but the display mesh of the face that keeps its
@@ -254,13 +271,26 @@ deleted by ADR-0065 on a sibling branch, which will convert its 25 rows too.
 2. **A built quadric-family section can carry a NaN point.** An unreadable station makes the lane
    reader answer NaN by design, and that NaN reaches a coordinate. Fixture: a cylinder at origin
    (−3.3617, 6.2435, 0.0778), axis (0.2568, −0.9663, 0.0158), radius 0.8992, against the corpus ring —
-   two NaN samples at 1025 points per curve, none at 257. It is PRE-EXISTING (the lane reader is
-   untouched by this branch) and measure-zero, so no point-sampling gate can be its answer: the fix is
-   that the reader should refuse rather than answer NaN. `withinWeld` is written as a positive test so
-   that a NaN it does sample refuses rather than passing.
+   two NaN samples at 1025 points per curve, none at 257. It is PRE-EXISTING, **bisected** (see below),
+   and measure-zero, so no point-sampling gate can be its answer: the fix is that the reader should
+   refuse rather than answer NaN. `withinWeld` is written as a positive test so that a NaN it does
+   sample refuses rather than passing.
 
-Neither claim of "pre-existing" here rests on a bisect; each rests on the defect living in code this
-branch does not modify, and the second is stated with its fixture so it can be bisected.
+**Both were bisected against the wave base `d919a151`, in a clean worktree** (global constraint 2 — a
+bisect is the only proof, and code locality is not one), and they came back DIFFERENT, which is why the
+wording above separates them:
+
+- **The NaN IS pre-existing.** The recorded fixture run on the base returns `ok=true why=none` with four
+  faces and **4 NaN samples of 16 388**, worst finite distance to the ring 1.6e-15. The defect predates
+  this branch; only its measurement is new.
+- **The un-meshed face is NOT pre-existing, and the first draft of this ADR was wrong to imply it was.**
+  The torus pair cannot be built on the base at all, so the exact face cannot exist there; the nearest
+  question that CAN be asked is whether a two-loop torus face bounded by torus-section curves already
+  fails to mesh, and on the base it does not — a ring cut by a skew rod, an axial drill and a tilted
+  drill mesh at 289.31 / 291.88 / 291.88 against a whole-torus 296.09, with no
+  `trim-ignored-full-domain` on any of them. **The gap arrives with this branch**, on a boundary kind
+  the chart mesher has not met before. What that changes is only the word: it is still refused by name
+  rather than shipped quietly, and `TestTheHoledTorusFaceDeclinesItsMeshByName` still pins that.
 
 ## Consequences
 

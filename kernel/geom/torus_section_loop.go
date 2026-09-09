@@ -9,17 +9,19 @@ import (
 )
 
 // The folded half of the torus section (ADR-0061 stage 5), the exact counterpart of
-// [RuledQuadricLoop] on the other parametric surface. Where the quadric reaches the tube over PART of
+// [RuledQuadricLoop] on the other parametric surface. Where the other surface reaches the tube over PART of
 // its turn only — an axial drill through a ring reaches it around the ring's inner and outer flanks but
 // not over its top and bottom — the two azimuths meet at the tube angles where the harmonic's
 // discriminant vanishes, and the section is one closed loop out along the upper root and back along the
 // lower. The cosine reparametrisation is the same trick and for the same reason: du/dv is infinite at a
 // fold, and the station's speed vanishes there at exactly the rate that cancels it.
 
-// TorusSectionLoop is the EXACT closed intersection of a torus with an axis-invariant quadric over one
-// tube-angle window [V0, V1], evaluated on the torus's own chart. The parameter t ∈ [0,1] runs one
-// turn: the first half follows the upper azimuth from the fold at V0 to the fold at V1, the second half
-// the lower azimuth back, so PointAt(0) == PointAt(1) exactly.
+// TorusSectionLoop is the EXACT closed intersection of a torus with another surface's implicit form
+// over one tube-angle window [V0, V1], evaluated on the torus's own chart. The other side is any
+// [TorusCoForm]: an axis-invariant quadric, a SKEW one (whose window this same type carries through the
+// second harmonic's lanes), or a second torus (ADR-0066). The parameter t ∈ [0,1] runs one turn: the
+// first half follows the upper azimuth from the fold at V0 to the fold at V1, the second half the lower
+// azimuth back, so PointAt(0) == PointAt(1) exactly.
 type TorusSectionLoop struct {
 	Torus  Torus       // the torus the loop is evaluated on
 	Co     TorusCoForm // the implicit form of the other surface — a quadric, or a second torus
