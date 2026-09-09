@@ -185,7 +185,8 @@ host seams that consume them. Evidence: `architecture/audits/`, ADR-0042..0056, 
 - A bug fix adds the failing input to the operation's corpus and makes the general pipeline pass it. A fix that passes only the corpus entry is a special case.
 - Delete-first refactor: remove the duplicate, the dead engine, or the unused seam before adding the replacement's second call site.
 - "Pre-existing" is proven only by bisecting against the wave base in a clean worktree.
-- The pre-push gate is `make gate`, and it reaches every module in the repo. "This wave did
-  not touch `head`" (or the translator modules) is a claim only a run that compiled them can
-  make; `go test ./...` at the root compiles none of them (#3526).
+- The pre-push gate is `make gate`: every module in the repo (the set derived from the tree,
+  not typed), every check CI requires (lint, markdownlint, SPDX), and head's tests on a real
+  or Xvfb display. "This wave did not touch `head`" (or a nested module) is a claim only a run
+  that compiled them can make; `go test ./...` at the root compiles none of them (#3526).
 - Size a cluster of failures by driving one representative case to a valid solid first; capabilities are layered and the next layer is hidden until then.
