@@ -11,11 +11,17 @@ import "oblikovati.org/kernel/geom"
 // a circle, plane∩cone ⟂ axis → a circle, oblique plane∩cylinder → an ellipse, plane∩plane → a
 // line, ruled∩quadric → a RuledQuadricArc, torus∩quadric → the harmonic loops.
 //
-// It is the ONE seam through which this package asks geom for a face pair's section, so every pairing
-// that declines does so with the SAME named reason (Oblikovati/Oblikovati#3525). Before, each pairing
-// called the intersector itself and several threw the reason away, which is how a torus pair, an
-// ill-conditioned lane and a section that does not close all reached the user as one generic
+// It is the ONE seam through which this package asks geom for a face pair's CLOSED-FORM section, so
+// every pairing that declines does so with the SAME named reason (Oblikovati/Oblikovati#3525). Before,
+// each pairing called the intersector itself and several threw the reason away, which is how a torus
+// pair, an ill-conditioned lane and a section that does not close all reached the user as one generic
 // "no exact analytic path claims this configuration".
+//
+// The MARCHED section is a second route and deliberately outside this seam: curved_crossing_imprint.go
+// traces geom.TraceSurfaceIntersection, and it already carries a recorder and reports its own
+// degradations (CodeImprintFallbackContour, CodeImprintUnclosedChain), so there is no silence to close
+// there. archguard's TestBrepAsksGeomForASectionThroughOneSeam enforces the closed-form half only, and
+// says so (review round 2, N7).
 
 // curvedImprint returns the analytic intersection curve(s) of two faces' surfaces, the NAMED reason it
 // refused, and whether the pair was handled in closed form. handled == false means no analytic solver

@@ -459,8 +459,8 @@ func planUVImprints(p, other *facePartition, otherImp [][][2]math.Point3, rec *d
 			curves, segs, ok := uvPairSegments(uf, other.planarFull[j])
 			if !ok {
 				recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
-					"the exact-frame face's imprint against this polygonal face could not be clipped"),
-					uf, other.planarFull[j])
+					"the exact-frame face's imprint against this polygonal face could not be clipped to its %d-loop trim",
+					len(other.planarFull[j].loops)), uf, other.planarFull[j])
 				return nil, false
 			}
 			out[i] = append(out[i], curves...)
@@ -559,7 +559,8 @@ func uvUVSharedImprint(ua, ub curvedFace, rec *diag.Recorder) (onA, onB []geom.C
 	segs, ok := uvUVPairSegments(ua, ub)
 	if !ok {
 		recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
-			"the two exact-frame faces' shared section could not be clipped to both trims"), ua, ub)
+			"the two exact-frame faces' shared section could not be clipped to both trims (%d and %d loops)",
+			len(ua.loops), len(ub.loops)), ua, ub)
 		return nil, nil, false
 	}
 	shared := make([]geom.Curve3, 0, len(segs))
@@ -576,7 +577,8 @@ func coplanarOutlineExchange(ua, ub curvedFace, rec *diag.Recorder) (onA, onB []
 	outlineB, okB := coplanarFaceImprints(ub, ua)
 	if !okA || !okB {
 		recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
-			"the two coplanar exact-frame faces could not exchange outlines"), ua, ub)
+			"the two coplanar exact-frame faces could not exchange outlines (%d and %d loops; %d and %d outlines clipped)",
+			len(ua.loops), len(ub.loops), len(outlineA), len(outlineB)), ua, ub)
 		return nil, nil, false
 	}
 	return outlineA, outlineB, true

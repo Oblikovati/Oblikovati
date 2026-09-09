@@ -75,7 +75,8 @@ func closedSurfaceUncovered(sf curvedFace, box math.Box, other *facePartition, r
 	// silent one is #3525 again with a different gate (review round 1, finding 3).
 	if of, found := planarFaceTheSectionEnters(sf, box, other); found {
 		recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
-			"this face's section enters a polygonal face's trim; that face was not promoted to a chart that can split it"), sf, of)
+			"this face's section enters a polygonal face's %d-loop trim; that face was not promoted to a chart "+
+				"that can split it", len(of.loops)), sf, of)
 		return true
 	}
 	if of, why, carried := everyClosedSurfacePairCarried(sf, box, other); !carried {
@@ -123,8 +124,11 @@ func everyClosedSurfacePairCarried(sf curvedFace, box math.Box, other *faceParti
 // passFaceOverlapping finds a PASS face of other whose box overlaps: its surface is one no chart
 // frames, so a box overlap is as much contact as this pairing can prove and it declines.
 func passFaceOverlapping(box math.Box, other *facePartition) (curvedFace, bool) {
+	// pass and passBox are index-aligned by construction (facePartition.bucket appends to both in one
+	// statement pair). A length guard here would turn a DECLINE into a skip on a desynchronised list —
+	// a wrong body where a panic would have been a bug report (review round 2, N6).
 	for i, b := range other.passBox {
-		if box.Intersects(inflateBox(b)) && i < len(other.pass) {
+		if box.Intersects(inflateBox(b)) {
 			return other.pass[i], true
 		}
 	}

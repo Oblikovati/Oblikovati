@@ -64,16 +64,28 @@ func bodySectionSegments(b *topo.Body, plane geom.Plane, n math.Vector3, d float
 // CodeSectionFaceMeshed marks a face whose section came from slicing its MESH rather than intersecting
 // its analytic surface with the plane. A tracked degradation: the curve is a chord approximation of the
 // exact section, its vertices are facet corners, and "no modelling decision reads tessellated data"
-// puts a section curve on the wrong side of that rule. It rode out of here silently until #3525 —
-// geom.SurfaceIntersectDeclining now says WHICH gate refused, and this carries that on the body the
-// caller gets, so it reaches feature health, the API and the UI.
+// puts a section curve on the wrong side of that rule. It rode out of here with nothing said at all
+// until #3525; geom.SurfaceIntersectDeclining now names WHICH gate refused and this carries it.
+//
+// HOW FAR IT TRAVELS TODAY, exactly: onto the section BODY, via topo.Builder.Diagnose, readable through
+// topo.Body.BuildDiagnostics. No further. That reader has one production consumer —
+// model/feature's bodyDegradations, over a PartFeature's RESULT bodies — and a section body is never
+// one: compdef's reference source keeps sec.Wires() and drops the body, bodyapi registers it as a
+// TRANSIENT, and addin/router returns wire.BrepWiresResult, a DTO with no diagnostics field. So the
+// degradation is recorded and pinned by a test, and a user cannot yet see it. Giving it a consumer is a
+// public-API change — a field on wire.BrepWiresResult, contract first (ADR-0018) — and is tracked on
+// #3531, not done here (#3525, review round 2, N1).
 const CodeSectionFaceMeshed diag.Code = "section.face-meshed"
 
 // faceMeshedSectionDefect names one face that fell to its mesh, and the gate that sent it there.
+//
+// The face reads as its LINEAGE key, not its raw reference key: ReferenceKey is bytes, and %q escaped
+// its leading control byte into the user-facing text ("\x03cone:cone#1"). brep's own faceLabel already
+// renders lineage, and the two halves of this fix should speak the same way (review round 2, N3).
 func faceMeshedSectionDefect(f *topo.Face, why geom.SectionDecline) diag.Diagnostic {
 	return diag.Diagnostic{Code: CodeSectionFaceMeshed, Severity: diag.Defect, Detail: fmt.Sprintf(
-		"face %q (%T): no exact surface∩plane section — %s; its section is sliced from the face's MESH",
-		f.ReferenceKey(), f.Geometry(), why)}
+		"face %s (%T): no exact surface∩plane section — %s; its section is sliced from the face's MESH",
+		f.Lineage(), f.Geometry(), why)}
 }
 
 // sectionCurveSamples is the sample count along a face's section curve within its box; a straight

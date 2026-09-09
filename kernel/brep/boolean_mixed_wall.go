@@ -101,18 +101,20 @@ func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) (c
 // overlapsUnprovenPair returns the first of the given faces whose box overlaps wf WITHOUT a
 // surface-separation proof for that pair. It returns the FACE, not a bool, so the caller's decline can
 // name the entity that made it decline (#3525, review round 1).
+//
+// faces and boxes are index-aligned by construction — facePartition.bucket appends to each bucket and
+// its box list in the same statement pair. The length guard this carried briefly was worse than
+// nothing: on a desynchronised list it turned a DECLINE into a skip, which is a wrong body where a
+// panic would have been a bug report (review round 2, N6).
 func overlapsUnprovenPair(wf curvedFace, box math.Box, faces []curvedFace, boxes []math.Box) (curvedFace, bool) {
 	for i, b := range boxes {
 		if !box.Intersects(b) {
 			continue
 		}
-		if i < len(faces) && geom.SurfacesApart(wf.surface, faces[i].surface, facePairCullPad) {
+		if geom.SurfacesApart(wf.surface, faces[i].surface, facePairCullPad) {
 			continue
 		}
-		if i < len(faces) {
-			return faces[i], true
-		}
-		return curvedFace{}, true
+		return faces[i], true
 	}
 	return curvedFace{}, false
 }
