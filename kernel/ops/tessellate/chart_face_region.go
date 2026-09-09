@@ -123,13 +123,14 @@ func (r chartRegion) fold(u, v float64) (float64, float64) {
 	return u, v
 }
 
-// inWindow reports whether an UNFOLDED (u,v) lies in the branch window — the half-open test that keeps
-// exactly one of a periodic triangle's replicas, so a seam-spanning triangle is meshed once.
-func (r chartRegion) inWindow(u, v float64) bool {
-	if r.uPer && (u < r.uLo || u >= r.uHi) {
+// windowCandidate reports whether an UNFOLDED (u,v) lies in the branch window, CLOSED at both ends: the
+// filter that says which of a periodic triangle's replicas is worth classifying at all. It is
+// deliberately not the de-duplication — see keepOneReplicaEach (chart_face_replica.go), which is.
+func (r chartRegion) windowCandidate(u, v float64) bool {
+	if r.uPer && (u < r.uLo || u > r.uHi) {
 		return false
 	}
-	return !r.vPer || (v >= r.vLo && v < r.vHi)
+	return !r.vPer || (v >= r.vLo && v <= r.vHi)
 }
 
 // shifts are the whole-period offsets the covering replicates its points over: none on a bounded axis,

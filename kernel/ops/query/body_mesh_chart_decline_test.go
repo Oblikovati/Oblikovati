@@ -18,11 +18,18 @@ import (
 // feature reply, the API and the UI read. Both bodies are real booleans through the general pipeline,
 // not hand-built faces.
 //
-// They pin the two ends of what the new code means. offsetCrossingRods is the SILENT case — it carries
+// They pin the two ends of what the new code means. rodMinusBall is the SILENT case — it carries
 // neither of the two codes that already existed for a lost trim, so before this change nothing anywhere
 // said the selected mesher had given the face up. wideCrossingRods is the LOUD one — it raises the code
 // at the DISPLAY faceting, where feature health reads it, on a face that comes back 28.7 % short of its
 // analytic area. Together they say the report is neither redundant nor cosmetic.
+//
+// The silent row's body CHANGED with #3518: it used to be offsetCrossingRods, whose r = 3 wall failed
+// the chart mesher's rim gate because the region kept triangles between its chart's contour and the
+// finer chord polygon of its shared edges. That is fixed (chart_face_rim_side.go), and swept over the
+// crossing-rod family — radii 1.5 … 3.5 against the r = 3 rod, offsets 0 … 2, all three operators, both
+// facetings — not one rod-rod body declines silently any more. So the silent row moved to the rod-ball
+// third of the same sweep, and offsetCrossingRods stayed on as the quiet body it now genuinely is.
 //
 // A note for whoever extends this: the row's declining face is `selected` by the classification AND
 // declines, so adding either body to `classificationCorpus()` in kernel/ops/tessellate would turn
@@ -38,7 +45,7 @@ import (
 // one harvest. The two were separate rows and re-meshed the same body twice for no gain.
 func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 	t.Parallel()
-	got := BodyMeshDiagnostics(offsetCrossingRods(t), PropertyQuality())
+	got := BodyMeshDiagnostics(rodMinusBall(t), PropertyQuality())
 	d, found := findCode(got, tessellate.CodeChartMesherDeclined)
 	if !found {
 		t.Fatalf("the harvest carries %v; the chart mesher gave a face of this body up and nothing said so",
@@ -125,9 +132,29 @@ func meshCarries(m *tessellate.Mesh, code diag.Code) bool {
 	return false
 }
 
-// offsetCrossingRods is the SILENT case: r = 3 along +x met by r = 2.5 along +z, whose axis is offset
-// 1 mm. The offset is what makes it this row's body rather than a symmetric crossing — the
-// intersection's two walls are then unequal and the r = 3 one's chart mesh fails its own rim gate.
+// rodMinusBall is the SILENT case: the r = 3 rod along +x with an r = 3.5 ball centred 0.5 mm off its
+// axis cut out of it. Its chart mesh fails its own rim gate at BOTH facetings and the body raises
+// neither of the older codes, which is what this row needs.
+func rodMinusBall(t *testing.T) *topo.Body {
+	t.Helper()
+	rod, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	if err != nil {
+		t.Fatalf("along-x rod: %v", err)
+	}
+	ball, err := brep.SolidSphere(math.P3(0, 0.5, 0), 3.5, "ball")
+	if err != nil {
+		t.Fatalf("ball: %v", err)
+	}
+	body, err := brep.Boolean(brep.Difference, rod, ball)
+	if err != nil {
+		t.Fatalf("rod − ball: %v", err)
+	}
+	return body
+}
+
+// offsetCrossingRods is the QUIET body: r = 3 along +x met by r = 2.5 along +z, whose axis is offset
+// 1 mm. It used to be the silent declining case; since #3518 its walls mesh clean at both facetings,
+// which is exactly what the false-positive guard wants of it.
 func offsetCrossingRods(t *testing.T) *topo.Body {
 	t.Helper()
 	return crossingRods(t, 2.5, 1)

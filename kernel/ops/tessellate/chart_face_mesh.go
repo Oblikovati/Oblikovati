@@ -152,12 +152,14 @@ func weldedFreeEdgeKeys(m *Mesh) [][2][3]int64 {
 // branch window within which a replica is worth carrying.
 type chartCover struct {
 	coverVertices
-	s      geom.Surface
-	r      chartRegion
-	us, vs []float64 // the interior grid's parameter lines
-	padU   float64   // how far past the branch window a replica is kept
-	padV   float64
-	rim    int // vertices [0, rim) are the boundary chains', laid before any interior node
+	s        geom.Surface
+	r        chartRegion
+	us, vs   []float64 // the interior grid's parameter lines
+	padU     float64   // how far past the branch window a replica is kept
+	padV     float64
+	rim      int            // vertices [0, rim) are the boundary chains', laid before any interior node
+	rimChain map[[2]int]int // each boundary segment's own chain, directed (chart_face_rim_side.go)
+	chains   int            // how many boundary chains the face has
 }
 
 // newChartCover sizes the covering: the trim-local (u,v) metric, the interior grid's parameter lines
@@ -315,12 +317,18 @@ func atLeastMinimumCells(ps []float64, lo, hi float64) []float64 {
 // pairs the triangulation is aligned to.
 func (b *chartCover) addChains(chains []chartChain) [][]int {
 	var loops [][]int
+	var segs []rimSegment
 	for _, sh := range b.r.shifts() {
-		for _, c := range chains {
-			loops = append(loops, b.addChain(c.p3, c.uv, sh[0], sh[1])...)
+		for ci, c := range chains {
+			pairs := b.addChain(c.p3, c.uv, sh[0], sh[1])
+			for _, p := range pairs {
+				segs = append(segs, rimSegment{a: p[0], b: p[1], chain: ci})
+			}
+			loops = append(loops, pairs...)
 		}
 	}
-	b.rim = len(b.pos)
+	b.rim, b.chains = len(b.pos), len(chains)
+	b.rimChain = b.directedRimSegments(segs, chains)
 	return loops
 }
 
@@ -379,12 +387,27 @@ func inwardProbe(stations []float64, i int, periodic bool) float64 {
 	return 0
 }
 
-// keepChartTriangles keeps each triangle whose centroid lies in the chart's branch window AND on its
-// material side — the region's own two-part definition.
+// keepChartTriangles is the covering's classification, in the three steps it takes: the CHART's own
+// verdict at each candidate translate's centroid, then the BOUNDARY's (a triangle carrying a rim
+// segment lies on that chain's material side, chart_face_rim_side.go), then one translate per 3D
+// triangle (chart_face_replica.go). The chart decides the interior, the boundary decides what it
+// bounds, and the replica selection decides which copy ships.
 func (b *chartCover) keepChartTriangles(tris [][3]int) [][3]int {
+	keep := make([]bool, len(tris))
+	for i, t := range tris {
+		u, v := b.centroid(t)
+		keep[i] = b.r.windowCandidate(u, v) && b.triangleIsMaterial(t, u, v)
+	}
+	b.bindToTheRim(tris, keep)
+	b.keepOneReplicaEach(tris, keep)
+	return selectTriangles(tris, keep)
+}
+
+// selectTriangles is the marked subset, in the order the triangulation produced it.
+func selectTriangles(tris [][3]int, keep []bool) [][3]int {
 	out := make([][3]int, 0, len(tris))
-	for _, t := range tris {
-		if u, v := b.centroid(t); b.r.inWindow(u, v) && b.triangleIsMaterial(t, u, v) {
+	for i, t := range tris {
+		if keep[i] {
 			out = append(out, t)
 		}
 	}
@@ -403,7 +426,8 @@ func (b *chartCover) keepChartTriangles(tris [][3]int) [][3]int {
 // wall (615 unpaired edges against a rim of 578).
 //
 // The retry can only ADD a triangle the point test refused, never duplicate one: covers is periodic, so a
-// triangle it accepts anywhere is accepted on exactly the one translate inWindow keeps. A majority, not
+// triangle it accepts anywhere is accepted on every translate, of which keepOneReplicaEach ships exactly
+// one (chart_face_replica.go). A majority, not
 // "any", so a triangle that genuinely lies outside a real boundary — where at most one sub-point can fall
 // the other side of the chart-versus-chord band — is still refused.
 func (b *chartCover) triangleIsMaterial(t [3]int, u, v float64) bool {

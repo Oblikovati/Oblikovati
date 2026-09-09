@@ -133,19 +133,26 @@ func twoRimHoledTrimOf(chart [][]math.Point2, s geom.Surface, outer3D []math.Poi
 // nearPinchCorridorChords is how many boundary chords wide the corridor between two lens windows must
 // be before the covering mesher is trusted with it.
 //
-// The chart mesher lays its boundary CONSTRAINTS at the shared edges' own discretisation. Where two
-// windows pass closer than a few of those chords, the two chord polygons no longer separate the
-// corridor and the constrained triangulation loses it: measured on the #1818 near-pinch crossings
-// (R = 3 and 30, |Δr| = 4e-5 … 3.2e-4 scaled), it comes back with 126–2359 unpaired edges against rims
-// of 128–2304 and its region as much as 4 % out. The unroll's BENT seam is built for exactly that
-// corridor (ADR-0061 stage 4), so those bands keep it.
+// THE CONSTANT NO LONGER SEPARATES WHAT IT WAS CHOSEN TO SEPARATE, and saying so is the honest part
+// (#3518). It was chosen on a sweep whose failure count by ratio read 0.5→8, 1→5, 2→2, 3→0, 4→0,
+// 6→0, 8→0, 12→1, 20→1, 40→1 — a plateau of 3 … 8 with 4 inside it — and on the reading that the
+// chart mesher "loses the corridor". Both were re-measured over the near-pinch corpus (the eight JOIN
+// bodies of TestNearPinchCutJoinWatertight, at both facetings) after the boundary-side classification
+// landed (chart_face_rim_side.go), driving chartFaceMesh on each band directly:
 //
-// The measured corridor/chord ratio over the whole two-rim corpus is 0.05 … 2.4 on every band the chart
-// mesher LOSES and 8.6 … 8.8 or infinite (a single window) on every band it takes, at all three sampled
-// tolerances. Swept against the kernel's own corpus, the failure count by ratio is 0.5→8, 1→5, 2→2,
-// 3→0, 4→0, 6→0, 8→0, 12→1, 20→1, 40→1: a plateau of 3 … 8, with 4 inside it. The split it produces is
-// asserted in both directions by TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe.
-const nearPinchCorridorChords = 4 // tol:mesh-density (multiples of the boundary's own chord)
+//	corridor/chord   0.053 0.065 0.105 0.149 | 0.105 0.129 0.211 0.298 | 0.421 0.515 0.842 1.190 | 0.842 1.031 1.683 2.380
+//	unpaired edges       0     0     0     0 |     0     8     0     8 |     4     0     4     0 |     0     8     6     0
+//
+// Ten of the sixteen come back bounded by EXACTLY their rim, the region is within 0.0003 % of
+// query.AnalyticFaceArea at PropertyQuality, and no rim segment anywhere is left unbounded. The six
+// that fail do not sort by the ratio at all: 0.129 and 1.683 fail while 0.105 and 2.380 pass. Their
+// cause is the covering seam, not the corridor — chart_face_replica.go carries the measurement and
+// names what it needs.
+//
+// So the gate stays, at 4, because removing it ships those six as torn faces (196–1196 free edges on
+// the body, measured), and it is now a SUPERSET keep rather than a plateau. It is the last thing
+// holding the unrolled arm alive; #3517 deletes both when the seam is exact.
+const nearPinchCorridorChords = 4 // tol:mesh-density (multiples of the boundary's own chord; see above)
 
 // lensCorridorOutrunsTheSampling reports whether two lens windows pass within nearPinchCorridorChords of
 // the boundary's own chord — the corridor the covering cannot resolve. A band with a single window has

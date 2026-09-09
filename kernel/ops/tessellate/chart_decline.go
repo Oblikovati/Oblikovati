@@ -85,6 +85,20 @@ import (
 //	generic (u,v)      −0.0056 %  r = 3 ∩ r = 2.5 offset 1, face 0 (49.9685 vs 49.9713), which is what
 //	                              its UNDECLINED neighbour on the same body came back at (−0.0062 %)
 //
+// RE-MEASURED AFTER #3518, and the numbers above are a snapshot of the base they were taken on. The
+// boundary-side classification (chart_face_rim_side.go) removes a whole family of declines, so the
+// hit count here is now stale in a direction worth naming. Swept over a family this block's sweep
+// contains — the r = 3 rod along +x against a second rod and against a ball, radii 1.5 … 3.5, offsets
+// 0 … 2, all three operators, both facetings, 150 bodies through brep.Boolean:
+//
+//	                     chart-mesher declines    of which nothing else named
+//	base fff94140                           44                             8
+//	after #3518                             20                             4
+//
+// Every rod-ROD silent decline is gone (4 → 0), which is why the corpus row below moved to the
+// rod-ball third. The 128-body sweep above was not re-run; whoever needs its exact hit count should
+// re-run it rather than scale these.
+//
 // The first row is the one that matters most for reading this code: the single DefaultQuality hit is a
 // face 28.7 % short of its area, so the Defect at the display faceting is EARNED, not noise. (That body
 // was already reporting CodeWallWrapUnmeshed and a torn mesh there; what this code adds is the cause.)
