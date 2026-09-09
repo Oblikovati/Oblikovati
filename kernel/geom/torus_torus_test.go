@@ -1,0 +1,441 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package geom
+
+import (
+	stdmath "math"
+	"math/rand"
+	"testing"
+
+	"oblikovati.org/math"
+)
+
+// The torus × torus corpus (ADR-0066, Oblikovati#3514).
+//
+// ADR-0061 stage 5 refused this pair by name on the premise that the second-harmonic reduction needs
+// an implicit QUADRIC on the other side. These rows are the evidence that the premise was wrong: the
+// reduction needs an implicit form whose restriction to a CIRCLE is degree two, and a torus's quartic
+// is one, because four of the eight intersections Bézout counts are spent at the circular points at
+// infinity.
+//
+// Each row certifies a different layer, and the layers are ordered so a failure names its own cause:
+// the coefficients against the quartic they claim to be; the certified roots against both surfaces;
+// the built section against both surfaces and against its own closure; and the chart assignment
+// against the caller's argument order.
+
+// torusQuarticOracle is the torus's implicit quartic, written here from its DEFINITION rather than
+// read off the reduction — so a row comparing the two compares two derivations and not one expression
+// with itself.
+//
+//	F(X) = (|W|² + R² − r²)² − 4R²(|W|² − (W·â)²),  W = X − Center
+func torusQuarticOracle(t Torus, p math.Point3) float64 {
+	w := t.Center.VectorTo(p)
+	s := float64(w.Dot(w))
+	a := float64(w.Dot(t.AxisDir.AsVector()))
+	g := s + t.MajorRadius*t.MajorRadius - t.MinorRadius*t.MinorRadius
+	return g*g - 4*t.MajorRadius*t.MajorRadius*(s-a*a)
+}
+
+// distanceToTorusSurface is the distance from p to the SURFACE OF REVOLUTION of the torus's meridian
+// circle, taken independently of anything in the kernel. It reads the meridian circle on BOTH sides of
+// the axis, because a torus whose tube reaches past its own axis sweeps the far half of that circle
+// into the near half-plane — so this is the right oracle for a ring torus and a spindle alike.
+func distanceToTorusSurface(t Torus, p math.Point3) float64 {
+	w := t.Center.VectorTo(p)
+	z := float64(w.Dot(t.AxisDir.AsVector()))
+	d := float64(w.Sub(t.AxisDir.AsVector().Scale(math.Scalar(z))).Length())
+	near := stdmath.Abs(stdmath.Hypot(d-t.MajorRadius, z) - t.MinorRadius)
+	far := stdmath.Abs(stdmath.Hypot(d+t.MajorRadius, z) - t.MinorRadius)
+	return stdmath.Min(near, far)
+}
+
+// randomRingTorus draws a ring torus (tube inside the hole radius, the family a solid is built from)
+// with its centre and axis anywhere.
+func randomRingTorus(t *testing.T, rng *rand.Rand, spread float64) Torus {
+	t.Helper()
+	major := 1 + rng.Float64()*8
+	minor := 0.1 + rng.Float64()*(major-0.15)
+	centre := math.P3(rng.NormFloat64()*spread, rng.NormFloat64()*spread, rng.NormFloat64()*spread)
+	axis := math.V3(rng.NormFloat64(), rng.NormFloat64(), rng.NormFloat64())
+	tor, err := NewTorus(centre, axis, major, minor)
+	if err != nil {
+		t.Fatalf("random torus (major %g, minor %g, axis %v): %v", major, minor, axis, err)
+	}
+	return tor
+}
+
+// TestTheTorusReductionIsTheOtherTorusQuartic is the first layer: the five coefficients the reduction
+// produces at a station must BE the other torus's quartic restricted to that tube circle, at every
+// azimuth. Everything downstream — the roots, the lanes, the folds, the certificate — reads only these
+// five numbers, so an error here would be invisible to every later row and fatal to all of them.
+//
+// The residual is judged against the polynomial's OWN coefficient scale, which is what
+// torusSecondHarmonic.azimuths certifies a candidate root against (torusRootResidualTol, 1e-9). The
+// margin is therefore the one that matters, not an absolute distance.
+func TestTheTorusReductionIsTheOtherTorusQuartic(t *testing.T) {
+	t.Parallel()
+	rng := rand.New(rand.NewSource(3))
+	worst := 0.0
+	for range torusReductionSamples {
+		chart, other := randomRingTorus(t, rng, 4), randomRingTorus(t, rng, 4)
+		v, u := rng.Float64()*twoPi, rng.Float64()*twoPi
+		poly := other.stationOn(chart, v).secondHarmonic()
+		got, want := poly.valueAt(u), torusQuarticOracle(other, chart.PointAt(u, v))
+		worst = stdmath.Max(worst, stdmath.Abs(got-want)/poly.scale())
+	}
+	t.Logf("worst relative residual over %d random (chart, other, u, v): %.3e", torusReductionSamples, worst)
+	if worst > torusReductionResidualBound {
+		t.Errorf("the reduction departs from the quartic by %.3e of the polynomial's own scale, over the %.3e "+
+			"a certified root is allowed", worst, torusReductionResidualBound)
+	}
+}
+
+// torusReductionSamples is how many random (chart, other, u, v) the reduction is checked at. The
+// identity is algebraic, so this is a search for a conditioning regime rather than a statistical claim.
+const torusReductionSamples = 20000
+
+// torusReductionResidualBound is measured, not chosen: the worst residual over the sample above is
+// 4.56e-14 relative, and this allows a little over an order of magnitude on top. It is far under the 1e-9 a root has
+// to certify within, which is the margin the layers above rest on.
+const torusReductionResidualBound = 1e-12
+
+// TestEveryTorusPairStationRootLiesOnBothTori is the second layer, and it is the one the ground rule
+// asks for by name: "certify a root or branch choice at runtime against the geometry (position,
+// second-order test)". A root that certifies against the POLYNOMIAL could still be a point the
+// polynomial should not have had — so every certified azimuth is measured against both surfaces, with
+// an oracle that knows nothing about the reduction.
+func TestEveryTorusPairStationRootLiesOnBothTori(t *testing.T) {
+	t.Parallel()
+	rng := rand.New(rand.NewSource(5))
+	worst, roots := 0.0, 0
+	for range torusStationRootPairs {
+		chart, other := randomRingTorus(t, rng, 4), randomRingTorus(t, rng, 4)
+		v := rng.Float64() * twoPi
+		for _, u := range other.stationOn(chart, v).secondHarmonic().azimuths() {
+			p := chart.PointAt(u, v)
+			worst = stdmath.Max(worst, stdmath.Max(distanceToTorusSurface(chart, p), distanceToTorusSurface(other, p)))
+			roots++
+		}
+	}
+	t.Logf("%d certified station roots over %d random pairs, worst distance to both surfaces %.3e",
+		roots, torusStationRootPairs, worst)
+	if roots == 0 {
+		t.Fatal("no station carried a root: the corpus proves nothing")
+	}
+	if worst > torusStationRootDistanceBound {
+		t.Errorf("a certified root sits %.3e off a surface it claims to be on, over the %.3e bound", worst, torusStationRootDistanceBound)
+	}
+}
+
+// torusStationRootPairs is how many random torus pairs contribute one station each.
+const torusStationRootPairs = 400
+
+// torusStationRootDistanceBound is the measured worst (9.23e-14 over the 284 roots the sample above
+// carries) with two orders of headroom. It is an absolute LENGTH because the corpus's tori are of order 10 units, so
+// it is a relative 1e-13 at that size.
+const torusStationRootDistanceBound = 1e-11
+
+// TestATorusPairSectionLiesOnBothTori is the third layer: the built curves, sampled along their own
+// parameter, on both surfaces — and each closed curve closing on itself, which is what an imprint needs
+// of a section before it can bound a face.
+func TestATorusPairSectionLiesOnBothTori(t *testing.T) {
+	t.Parallel()
+	for _, row := range torusPairCorpus(t) {
+		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
+			curves, why, ok := IntersectSurfacesAnalyticDeclining(row.a, row.b, ResolutionForSize(20))
+			if !ok {
+				t.Fatalf("declined %v, want an exact section", why)
+			}
+			chart, co, _ := torusSectionRoles(row.a, row.b)
+			if want := torusSectionComponents(chart, co); len(curves) != want {
+				t.Errorf("%d section curves, but the chart's zero set has %d connected components", len(curves), want)
+			}
+			if len(curves) != row.curves {
+				t.Fatalf("%d section curves, want %d", len(curves), row.curves)
+			}
+			assertSectionOnBothTori(t, row.a, row.b, curves)
+		})
+	}
+}
+
+// torusPairRow is one corpus pair with the section it must produce.
+type torusPairRow struct {
+	name   string
+	a, b   Torus
+	curves int
+}
+
+// torusPairCorpus is the shape corpus. The loop count is not asserted from the kernel's own answer: it
+// is the number of connected components the section has on the chart, counted independently by
+// torusSectionComponents, so a row that lost a loop fails here rather than passing quietly.
+func torusPairCorpus(t *testing.T) []torusPairRow {
+	t.Helper()
+	ring := mustTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
+	return []torusPairRow{
+		// The pair ADR-0061 recorded as the standing refusal, and the fixture
+		// ops/boolean's TestATorusPairIsRefusedByName drove.
+		{"linked rings", ring, mustTorus(t, math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5), 2},
+		// kernel/brep's TestCurvedImprintTorusPairDefers fixture, at its own radii.
+		{"brep guard rings", mustTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1),
+			mustTorus(t, math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1), 2},
+		// A small ring threaded through the big one's hole and out through its tube — the shape a
+		// chain link makes against the link it hangs from.
+		{"small ring through the hole", ring, mustTorus(t, math.P3(3.5, 0, 0), math.V3(1, 0, 0), 2, 0.7), 2},
+		// COAXIAL: two rings on one axis whose meridian circles cross, so the section is whole tube
+		// circles about that axis and no azimuth is resolved at all — the family the classification
+		// routes away from the lanes entirely.
+		{"coaxial rings", ring, mustTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 6, 1.5), 2},
+		// The same family with the second ring displaced ALONG the shared axis, so the level term's
+		// roots sit at tube angles neither ring's own symmetry supplies.
+		{"coaxial rings, offset along the axis", ring,
+			mustTorus(t, math.P3(0, 0, 2), math.V3(0, 0, 1), 5, 1.5), 2},
+	}
+}
+
+// TestATorusPairOutsideTheEnvelopeIsRefusedByName is the other half of the corpus, and it is a row
+// rather than a deletion because a refusal is a result. Each of these pairs MEETS and each is refused,
+// by a name that says which conditioning gate stopped it — never silently, and never with a section.
+//
+// Both names belong to the lane machinery this reduction reuses, not to the reduction itself:
+//
+//   - Tracks: torusLaneAnchors seeds the lane labels from the station at v = 0 and requires every one
+//     of the 720 stations to carry the same number of extrema, tracking those seeds. A torus co-form's
+//     station changes between two and four extrema over the turn far more often than a quadric's does,
+//     and the gate then cannot say which branch pair is which. Measured over 2410 meeting random ring
+//     pairs: 1538 refuse here, against 822 built and 25 apiece for the other two names. It is the
+//     capability's dominant remaining gap and it is named in ADR-0066's follow-up.
+//   - Separation: the two branches never part by more than the stitch resolution, so the loop would be
+//     a sliver two faces could not be told apart across.
+func TestATorusPairOutsideTheEnvelopeIsRefusedByName(t *testing.T) {
+	t.Parallel()
+	ring := mustTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
+	for _, row := range []struct {
+		name string
+		a, b Torus
+		want SectionDecline
+	}{
+		{"torus boss on the ring's flank", ring,
+			mustTorus(t, math.P3(6, 0, 0), math.V3(0, 0, 1), 1.2, 0.5), DeclineTorusLaneTracks},
+		{"a ring tilted out of the ring's plane", ring,
+			mustTorus(t, math.P3(0, 0, 0), math.V3(0.4, 0, 1), 5, 1.2), DeclineTorusLaneTracks},
+		{"a torus boss sunk into the tube", ring,
+			mustTorus(t, math.P3(5, 0, 0), math.V3(0, 0, 1), 2, 0.6), DeclineTorusLaneStation},
+		{"two co-centred perpendicular rings", ring,
+			mustTorus(t, math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5), DeclineTorusSectionOffItsForm},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
+			curves, why, ok := IntersectSurfacesAnalyticDeclining(row.a, row.b, ResolutionForSize(20))
+			if ok || len(curves) != 0 {
+				t.Fatalf("ok=%v with %d curves, want the named refusal %v", ok, len(curves), row.want)
+			}
+			if why != row.want {
+				t.Errorf("refused %q, want %q", why, row.want)
+			}
+			if !why.IsConditioning() {
+				t.Error("a conditioning gate's refusal must report as one, so the boolean records a defect")
+			}
+		})
+	}
+}
+
+// mustTorus builds a fixture torus or fails the test.
+func mustTorus(t *testing.T, centre math.Point3, axis math.Vector3, major, minor float64) Torus {
+	t.Helper()
+	tor, err := NewTorus(centre, axis, major, minor)
+	if err != nil {
+		t.Fatalf("torus at %v: %v", centre, err)
+	}
+	return tor
+}
+
+// assertSectionOnBothTori samples every curve and measures each point against both surfaces, then
+// checks the curve closes.
+func assertSectionOnBothTori(t *testing.T, a, b Torus, curves []Curve3) {
+	t.Helper()
+	worst := 0.0
+	for i, c := range curves {
+		for s := 0; s <= torusSectionSamples; s++ {
+			p := c.PointAt(float64(s) / torusSectionSamples)
+			worst = stdmath.Max(worst, stdmath.Max(distanceToTorusSurface(a, p), distanceToTorusSurface(b, p)))
+		}
+		if gap := float64(c.PointAt(0).VectorTo(c.PointAt(1)).Length()); gap > torusStationRootDistanceBound {
+			t.Errorf("curve %d (%T) does not close: its ends are %.3e apart", i, c, gap)
+		}
+	}
+	t.Logf("%d curves sampled at %d points each, worst distance to both surfaces %.3e", len(curves), torusSectionSamples+1, worst)
+	if worst > torusStationRootDistanceBound {
+		t.Errorf("a section point sits %.3e off a surface it claims to be on, over the %.3e bound", worst, torusStationRootDistanceBound)
+	}
+}
+
+// torusSectionSamples is how many points each section curve is measured at.
+const torusSectionSamples = 400
+
+// TestTheChartAssignmentDoesNotDependOnTheCallerOrder is the byte-identity row. A torus PAIR is the one
+// case where both role assignments apply, so it is the one case where a first-match dispatch would let
+// the arrangement's face order decide which surface the section is parametrised on — and two different
+// parametrisations of one curve are two different sets of bytes downstream.
+func TestTheChartAssignmentDoesNotDependOnTheCallerOrder(t *testing.T) {
+	t.Parallel()
+	rng := rand.New(rand.NewSource(9))
+	for range torusChartOrderPairs {
+		a, b := randomRingTorus(t, rng, 4), randomRingTorus(t, rng, 4)
+		forward, _, okF := torusSectionRoles(a, b)
+		backward, _, okB := torusSectionRoles(b, a)
+		if !okF || !okB {
+			t.Fatal("a torus pair must always assign roles")
+		}
+		if forward != backward {
+			t.Fatalf("chart depends on the argument order: %v forward, %v backward", forward.Center, backward.Center)
+		}
+	}
+}
+
+// torusChartOrderPairs is how many random pairs the order-independence row draws.
+const torusChartOrderPairs = 2000
+
+// TestTheFatterTubeIsTheBetterChart is the evidence behind torusChartPrecedes, and it is here because
+// a claim about conditioning is worth what it is measured at. The station polynomial is the CO-FORM's
+// quartic on the chart's tube circle, so it is the co-form's tube that decides how complicated the
+// station is — a thin one cuts a simple, stable root structure, a fat one a structure whose extremum
+// count changes over the turn. The chart should therefore be the FATTER torus.
+//
+// The row asserts the DIRECTION, not a rate: the chart order's own assignment must build at least as
+// many sections as the reverse one. A pair both assignments decline is a genuine refusal of the
+// reduction and counts for neither.
+func TestTheFatterTubeIsTheBetterChart(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier: `make test-corpus`")
+	}
+	t.Parallel()
+	rng := rand.New(rand.NewSource(13))
+	chosen, reversed, both := 0, 0, 0
+	for range torusChartCorpusPairs {
+		a, b := randomRingTorus(t, rng, 4), randomRingTorus(t, rng, 4)
+		fat, thin := a, b
+		if torusChartPrecedes(b, a) {
+			fat, thin = b, a
+		}
+		builtFat, builtThin := torusSectionBuilds(fat, thin), torusSectionBuilds(thin, fat)
+		switch {
+		case builtFat && builtThin:
+			both++
+		case builtFat:
+			chosen++
+		case builtThin:
+			reversed++
+		}
+	}
+	t.Logf("over %d random pairs: both assignments build %d, only the CHOSEN (fat) chart builds %d, "+
+		"only the REVERSED (thin) chart builds %d", torusChartCorpusPairs, both, chosen, reversed)
+	if chosen < reversed {
+		t.Errorf("the chosen chart built %d sections the reverse declined and lost %d the other way; "+
+			"torusChartPrecedes picks the worse chart", chosen, reversed)
+	}
+}
+
+// torusSectionBuilds reports the reduction solving this role assignment to a non-empty section.
+func torusSectionBuilds(chart, other Torus) bool {
+	curves, _, ok := TorusSection(chart, other, ResolutionForSize(20))
+	return ok && len(curves) > 0
+}
+
+// torusChartCorpusPairs is the chart-order corpus's size.
+const torusChartCorpusPairs = 4000
+
+// torusSectionComponents counts the CONNECTED COMPONENTS of the section on the chart, from the sign of
+// the station polynomial on a (u, v) grid alone — no root solving, no lane pairing, no window finding.
+// It is the topology oracle: the number of closed curves a correct section has, arrived at by a route
+// that shares nothing with the reduction beyond the five coefficients themselves.
+//
+// A grid CELL is on the section when the polynomial does not keep one sign across its four corners.
+// Such cells are joined to their neighbours on the torus's doubly periodic grid, and the number of
+// classes is the number of section curves. A pair whose contact is thinner than one cell is invisible
+// to it, which is why the corpus rows are ordinary contacts rather than grazes.
+func torusSectionComponents(chart Torus, co TorusCoForm) int {
+	sign := torusStationSignGrid(chart, co)
+	parent := make([]int, torusComponentGrid*torusComponentGrid)
+	for i := range parent {
+		parent[i] = i
+	}
+	cut := make([]bool, len(parent))
+	for i := range torusComponentGrid {
+		for j := range torusComponentGrid {
+			cut[i*torusComponentGrid+j] = torusCellIsCut(sign, i, j)
+		}
+	}
+	joinCutNeighbours(parent, cut)
+	return countCutClasses(parent, cut)
+}
+
+// torusStationSignGrid samples the sign of f over the chart's (u, v) grid: true where the co-form's
+// implicit value is positive.
+func torusStationSignGrid(chart Torus, co TorusCoForm) [][]bool {
+	out := make([][]bool, torusComponentGrid)
+	for i := range torusComponentGrid {
+		v := float64(twoPi * float64(i) / torusComponentGrid)
+		poly := co.stationOn(chart, v).secondHarmonic()
+		out[i] = make([]bool, torusComponentGrid)
+		for j := range torusComponentGrid {
+			out[i][j] = poly.valueAt(float64(twoPi*float64(j)/torusComponentGrid)) > 0
+		}
+	}
+	return out
+}
+
+// torusCellIsCut reports the cell with corner (i, j) carrying both signs, so the section crosses it.
+func torusCellIsCut(sign [][]bool, i, j int) bool {
+	n := torusComponentGrid
+	a := sign[i][j]
+	return a != sign[(i+1)%n][j] || a != sign[i][(j+1)%n] || a != sign[(i+1)%n][(j+1)%n]
+}
+
+// joinCutNeighbours unions every cut cell with its cut neighbours, wrapping both ways.
+func joinCutNeighbours(parent []int, cut []bool) {
+	n := torusComponentGrid
+	for i := range n {
+		for j := range n {
+			if !cut[i*n+j] {
+				continue
+			}
+			for _, nb := range [][2]int{{(i + 1) % n, j}, {i, (j + 1) % n}} {
+				if cut[nb[0]*n+nb[1]] {
+					unionCells(parent, i*n+j, nb[0]*n+nb[1])
+				}
+			}
+		}
+	}
+}
+
+// countCutClasses is how many distinct roots the cut cells resolve to.
+func countCutClasses(parent []int, cut []bool) int {
+	seen := map[int]bool{}
+	for i, isCut := range cut {
+		if isCut {
+			seen[findCell(parent, i)] = true
+		}
+	}
+	return len(seen)
+}
+
+// findCell and unionCells are the union-find the component count runs on.
+func findCell(parent []int, i int) int {
+	for parent[i] != i {
+		parent[i] = parent[parent[i]]
+		i = parent[i]
+	}
+	return i
+}
+
+func unionCells(parent []int, a, b int) {
+	ra, rb := findCell(parent, a), findCell(parent, b)
+	if ra != rb {
+		parent[ra] = rb
+	}
+}
+
+// torusComponentGrid is the oracle's grid side. At 512 a cell is a hundredth of a radian, which
+// resolves every contact in the corpus and costs a few million polynomial evaluations.
+const torusComponentGrid = 512

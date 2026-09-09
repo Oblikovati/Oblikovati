@@ -33,31 +33,38 @@ func ringAndRod(t *testing.T, major, minor float64) (*topo.Body, *topo.Body) {
 	return ring, rod
 }
 
-// TestATorusPairDeclinesByName: two tori have no closed-form section, and the pairing refuses BEFORE it
-// asks for one (closedSurfaceUncovered). That refusal recorded nothing, which is why it read to a user
-// exactly like the ill-conditioned lane below.
-func TestATorusPairDeclinesByName(t *testing.T) {
+// TestAnOrdinaryRefusalIsRecordedAsInfo: a refusal no closed form CLAIMS is an Info under
+// CodeSectionUnclaimedPair, naming both faces; a CONDITIONING demotion of the same pair is a Defect
+// under a different code. Two refusals that read alike is what #3525 was about, and this is the one
+// place the two are told apart.
+//
+// It reads recordSectionDecline directly, and that is not a shortcut — it is the only level left where
+// the ordinary route can be driven. The fixture used to be a TORUS PAIR, the last surface pair in the
+// kernel's primitive vocabulary that no closed form claimed; ADR-0066 (#3514) claims it, and a sweep of
+// {torus, sphere, block, cylinder, cone} in all three operations against each other now reaches
+// CodeSectionUnclaimedPair from nothing at all. The behaviour under test is the ROUTING of a reason to a
+// severity, so it is tested where that decision is made rather than through a fixture chosen to provoke
+// it — and it keeps holding when the vocabulary gains a pair the intersector does not claim.
+func TestAnOrdinaryRefusalIsRecordedAsInfo(t *testing.T) {
 	t.Parallel()
-	a, err := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1, "a")
-	if err != nil {
-		t.Fatalf("SolidTorus a: %v", err)
-	}
-	b, err := SolidTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1, "b")
-	if err != nil {
-		t.Fatalf("SolidTorus b: %v", err)
-	}
+	ringA, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
+	ringB, _ := geom.NewTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1)
+	a, b := curvedFace{surface: ringA}, curvedFace{surface: ringB}
 	rec := &diag.Recorder{}
-	if _, err := BooleanDiag(Union, a, b, rec); err == nil {
-		t.Fatal("the torus pair built; the fixture no longer exercises the decline")
-	}
+	recordSectionDecline(rec, refusal(geom.DeclineNoClosedForm), a, b)
 	d := onlyDiagWithCode(t, rec, CodeSectionUnclaimedPair)
-	for _, want := range []string{"geom.Torus a:face#0 ∩ geom.Torus b:face#0", "no closed form claims this surface pair"} {
+	for _, want := range []string{"geom.Torus ∩ geom.Torus", "no closed form claims this surface pair"} {
 		if !strings.Contains(d.Detail, want) {
-			t.Errorf("the torus pair's decline does not name %q: %s", want, d.Detail)
+			t.Errorf("the ordinary refusal does not name %q: %s", want, d.Detail)
 		}
 	}
 	if d.Severity != diag.Info {
 		t.Errorf("an unclaimed pair is %v; nothing degraded here, the caller's own decline is the degradation", d.Severity)
+	}
+	demoted := &diag.Recorder{}
+	recordSectionDecline(demoted, refusal(geom.DeclineTorusLaneTracks), a, b)
+	if got := onlyDiagWithCode(t, demoted, CodeSectionConditioningDemotion); got.Severity != diag.Defect {
+		t.Errorf("a conditioning demotion is %v, want a Defect — it is where the exact pipeline gave up ground", got.Severity)
 	}
 }
 

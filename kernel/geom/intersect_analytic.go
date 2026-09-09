@@ -28,9 +28,10 @@ const (
 // gives a conic in closed form (plane∩plane → a line, plane∩cylinder → a circle/ellipse/line pair,
 // plane∩sphere → a circle, plane∩cone → a conic), and every other pair goes to the parametric×implicit
 // substitution — a straight-ruled surface into the other's [Quadric], whose section is a
-// [RuledQuadricArc] (cylinder∩cylinder, cone∩cylinder, cone∩cone, ruled∩sphere). handled is false for
-// the pairs neither bucket solves — anything with a torus, a B-spline or an offset surface, and any
-// ruled/quadric pair the conditioning gate refuses — and the caller falls back to the numeric tracer
+// [RuledQuadricArc] (cylinder∩cylinder, cone∩cylinder, cone∩cone, ruled∩sphere). A TORUS on either side
+// takes a third bucket, which runs the same substitution the other way round (ADR-0061 stage 5,
+// ADR-0066). handled is false for the pairs none of the three solves — a B-spline or an offset surface,
+// and any pair whose conditioning gate refuses — and the caller falls back to the numeric tracer
 // [IntersectSurfaceSurface]. An empty result with handled==true means the surfaces are
 // known not to cross (parallel planes, a sphere clear of the plane, a tangent touch).
 //
@@ -69,13 +70,12 @@ func IntersectSurfacesAnalyticDeclining(a, b Surface, res Resolution) ([]Curve3,
 		return withoutReason(curves, handled) // two spheres: the circle of their radical plane, exactly
 	}
 	// A torus has no quadric form of its own, but the substitution runs the other way: its own chart is
-	// affine in the azimuth direction, so ANY quadric reduces to two harmonics there (ADR-0061 stage 5,
-	// torus_quadric_arc.go and torus_quadric_harmonic2.go). A torus against a torus still marches.
-	if curves, why, ok := torusAgainstQuadric(a, b, res); ok || why.IsConditioning() {
-		return curves, why, ok
-	}
-	if curves, why, ok := torusAgainstQuadric(b, a, res); ok || why.IsConditioning() {
-		return curves, why, ok
+	// affine in the azimuth direction, so ANY implicit form whose restriction to a circle is a degree-two
+	// trigonometric polynomial reduces there — every quadric, and a second TORUS (ADR-0066,
+	// torus_torus_harmonic.go). One classification picks the chart and the form; there is no second
+	// role order to fall through to.
+	if chart, co, ok := torusSectionRoles(a, b); ok {
+		return TorusSection(chart, co, res)
 	}
 	// No plane: the remaining bucket is PARAMETRIC × IMPLICIT — a straight-ruled surface substituted
 	// into the other's quadric, whose section is the root of one quadratic in the ruling parameter
@@ -302,17 +302,4 @@ func unitVec3(v math.Vector3) math.Vector3 {
 		return v.Scale(math.Scalar(1 / l))
 	}
 	return v
-}
-
-// torusAgainstQuadric routes a (torus, quadric) pair to the torus closed form, in that role order.
-// ok=false when the first surface is not a torus, the second has no quadric form, or the reduction
-// declines — and then the reason says which, so a conditioning demotion is not mistaken for a role
-// that simply does not apply.
-func torusAgainstQuadric(a, b Surface, res Resolution) ([]Curve3, SectionDecline, bool) {
-	t, isTorus := a.(Torus)
-	implicit, isQuadric := b.(ImplicitQuadric)
-	if !isTorus || !isQuadric {
-		return nil, DeclineNoClosedForm, false
-	}
-	return TorusQuadricSection(t, implicit.QuadricForm(), res)
 }

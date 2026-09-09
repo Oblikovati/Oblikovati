@@ -190,18 +190,26 @@ func TestCurvedImprintRuledPairIsExactSection(t *testing.T) {
 	}
 }
 
-// TestCurvedImprintTorusPairDefers: a torus is neither a straight-ruled parametrisation nor an implicit
-// quadric, so the ruled closed form cannot reach it. Its OWN reduction substitutes the torus chart into
-// the OTHER surface's quadric (ADR-0061 stage 5), which needs that surface to have one — so an axial
-// drill and a rod driven ACROSS the ring are both handled exactly (the second through the second
-// harmonic's lanes, stage 5's third slice) and a second TORUS is not: curvedImprint must report
-// handled=false there (the caller routes the pair to the SSI tracer), NOT an empty "they don't cross".
-func TestCurvedImprintTorusPairDefers(t *testing.T) {
+// TestCurvedImprintTorusPairIsClaimed: the torus reduction substitutes the torus chart into the OTHER
+// surface's implicit form, and what it needs of that form is that its restriction to a CIRCLE is a
+// degree-two trigonometric polynomial — not that it is a quadric. A second torus qualifies (ADR-0066,
+// #3514: a circle meets a torus in four finite points, the other four of Bézout's eight being spent at
+// the circular points at infinity), so every row here is HANDLED and none defers.
+//
+// The row was the negative of itself for one milestone: torus∩torus reported handled=false and routed
+// to the SSI tracer. Its positive form — the section's own points on both surfaces, its loop count
+// against an independent component count of the chart's zero set — is kernel/geom's torus_torus_test.go;
+// what this row holds is the seam, that curvedImprint passes the pair through rather than deferring it.
+func TestCurvedImprintTorusPairIsClaimed(t *testing.T) {
 	t.Parallel()
 	ring, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
 	linked, _ := geom.NewTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1)
-	if _, why, ok := curvedImprint(ring, linked, geom.ResolutionForSize(1)); ok || why != geom.DeclineNoClosedForm {
-		t.Error("torus∩torus should defer by NAME (handled=false, DeclineNoClosedForm) to the tracer")
+	curves, why, ok := curvedImprint(ring, linked, geom.ResolutionForSize(1))
+	if !ok || why != geom.DeclineNone {
+		t.Errorf("torus∩torus must be handled: ok=%v why=%v", ok, why)
+	}
+	if len(curves) != 2 {
+		t.Errorf("%d imprint curves, want the two closed section loops", len(curves))
 	}
 	for _, c := range []struct {
 		name  string

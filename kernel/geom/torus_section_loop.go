@@ -16,14 +16,14 @@ import (
 // lower. The cosine reparametrisation is the same trick and for the same reason: du/dv is infinite at a
 // fold, and the station's speed vanishes there at exactly the rate that cancels it.
 
-// TorusQuadricLoop is the EXACT closed intersection of a torus with an axis-invariant quadric over one
+// TorusSectionLoop is the EXACT closed intersection of a torus with an axis-invariant quadric over one
 // tube-angle window [V0, V1], evaluated on the torus's own chart. The parameter t ∈ [0,1] runs one
 // turn: the first half follows the upper azimuth from the fold at V0 to the fold at V1, the second half
 // the lower azimuth back, so PointAt(0) == PointAt(1) exactly.
-type TorusQuadricLoop struct {
-	Torus  Torus   // the torus the loop is evaluated on
-	Quad   Quadric // the implicit form of the other surface
-	V0, V1 float64 // the two fold tube angles bounding the window, V0 < V1
+type TorusSectionLoop struct {
+	Torus  Torus       // the torus the loop is evaluated on
+	Co     TorusCoForm // the implicit form of the other surface — a quadric, or a second torus
+	V0, V1 float64     // the two fold tube angles bounding the window, V0 < V1
 	// UA is the LANE the two branches belong to: the azimuth of the station extremum they straddle. A
 	// second-harmonic station carries up to four azimuths in two pairs (a rod across a ring pierces the
 	// tube on both flanks), and this is what keeps a loop on its own pair from station to station. The
@@ -32,22 +32,22 @@ type TorusQuadricLoop struct {
 	UA float64
 }
 
-// Kind reports the loop as a torus section: the same closed form as [TorusQuadricArc], over a window
+// Kind reports the loop as a torus section: the same closed form as [TorusSectionArc], over a window
 // that closes on itself rather than on the torus's period.
-func (l TorusQuadricLoop) Kind() CurveKind { return CurveTorusQuadric }
+func (l TorusSectionLoop) Kind() CurveKind { return CurveTorusSection }
 
 // Domain returns [0, 1].
-func (l TorusQuadricLoop) Domain() (lo, hi float64) { return 0, 1 }
+func (l TorusSectionLoop) Domain() (lo, hi float64) { return 0, 1 }
 
 // mid and half are the tube-angle window's centre and half-width.
-func (l TorusQuadricLoop) mid() float64  { return float64((l.V0 + l.V1) / 2) }
-func (l TorusQuadricLoop) half() float64 { return float64((l.V1 - l.V0) / 2) }
+func (l TorusSectionLoop) mid() float64  { return float64((l.V0 + l.V1) / 2) }
+func (l TorusSectionLoop) half() float64 { return float64((l.V1 - l.V0) / 2) }
 
 // vAt maps one turn of s to the tube angle, by the cosine that makes the loop regular at its folds.
-func (l TorusQuadricLoop) vAt(s float64) float64 { return l.mid() - float64(l.half()*stdmath.Cos(s)) }
+func (l TorusSectionLoop) vAt(s float64) float64 { return l.mid() - float64(l.half()*stdmath.Cos(s)) }
 
 // PointAt returns the point at t ∈ [0,1], on the azimuth the half-turn selects.
-func (l TorusQuadricLoop) PointAt(t float64) math.Point3 {
+func (l TorusSectionLoop) PointAt(t float64) math.Point3 {
 	s := float64(twoPi * t)
 	v := l.vAt(s)
 	return l.Torus.PointAt(l.azimuthAt(s, v), v)
@@ -65,22 +65,22 @@ func (l TorusQuadricLoop) PointAt(t float64) math.Point3 {
 // instead of identical as this type documents, and downstream the loop's closure vertex sat 1e-7 off
 // its host wall's own seam ruling on one platform and on it on the other, which arranged the wall's
 // chart into a different set of cells (CI run 34280554924 macos-latest, ADR-0061).
-func (l TorusQuadricLoop) azimuthAt(s, v float64) float64 {
+func (l TorusSectionLoop) azimuthAt(s, v float64) float64 {
 	if atFoldTurn(s) {
-		return torusFoldAzimuth(l.Torus, l.Quad, v, l.UA)
+		return torusFoldAzimuth(l.Torus, l.Co, v, l.UA)
 	}
-	return torusAzimuthAt(l.Torus, l.Quad, v, l.UA, upperHalf(s))
+	return torusAzimuthAt(l.Torus, l.Co, v, l.UA, upperHalf(s))
 }
 
 // atFoldTurn reports the turn parameters that map to the window's ends — where vAt's cosine is ±1 and
 // the two branches have merged. They are exactly the ends of the two half-turns.
 func atFoldTurn(s float64) bool { return s == 0 || s == stdmath.Pi || s == twoPi }
 
-// TangentAt returns dP/dt by the same central difference [TorusQuadricArc.TangentAt] uses, in the
+// TangentAt returns dP/dt by the same central difference [TorusSectionArc.TangentAt] uses, in the
 // LOOP's own parameter — which is where the cosine earns its keep. du/dv diverges at each fold, but
 // du/ds does not, so differencing the composed azimuth u(s) rather than u(v) stays finite all the way
 // round without a limit to special-case.
-func (l TorusQuadricLoop) TangentAt(t float64) math.Vector3 {
+func (l TorusSectionLoop) TangentAt(t float64) math.Vector3 {
 	s := float64(twoPi * t)
 	v := l.vAt(s)
 	du, dv := l.Torus.DerivativesAt(l.azimuthAt(s, v), v)

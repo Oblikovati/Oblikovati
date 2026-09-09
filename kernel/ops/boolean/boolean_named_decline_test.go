@@ -31,21 +31,26 @@ func sphereOnCylinderWall(t *testing.T) (*topo.Body, *topo.Body) {
 	return a, b
 }
 
-// interlockedRings is a pair NO closed form covers, and the fixture has moved for the same reason twice.
-// It was a skew rod through a ring, whose section the second harmonic's lanes now solve exactly
-// (ADR-0061 stage 5, third slice; its positive form is boolean_torus_skew_test.go). What is left is a
-// pair where NEITHER side supplies an implicit quadric: a torus is quartic, so the torus reduction —
-// which substitutes one torus's chart into the other surface's quadratic form — has nothing to
-// substitute into. It is the corpus row for the named refusal, the exit that must stay loud.
-func interlockedRings(t *testing.T) (*topo.Body, *topo.Body) {
+// crossedRings is a pair the exact pipeline REFUSES, and the fixture has moved for the same reason
+// three times. It was a skew rod through a ring, whose section the second harmonic's lanes now solve
+// (ADR-0061 stage 5, third slice); then two INTERLOCKED rings, on the premise that neither side supplies
+// an implicit quadric — which ADR-0066 (#3514) retired, because the reduction needs an implicit form
+// whose restriction to a CIRCLE is degree two and a torus's quartic is one. Their positive form is
+// boolean_torus_pair_test.go.
+//
+// What still refuses is a torus pair the reduction's own POST-CONDITION rejects: two co-centred
+// perpendicular rings, whose branch pair is tangent at v = 0 and v = π, so the window folds read a lane
+// extremum that is not the merged root and the section's points land 1.4e-5 off the surface they claim.
+// It is the corpus row for the named refusal, the exit that must stay loud.
+func crossedRings(t *testing.T) (*topo.Body, *topo.Body) {
 	t.Helper()
 	a, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	b, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
+	b, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5, "crossed")
 	if err != nil {
-		t.Fatalf("linked ring: %v", err)
+		t.Fatalf("crossed ring: %v", err)
 	}
 	return a, b
 }
@@ -56,7 +61,7 @@ func interlockedRings(t *testing.T) (*topo.Body, *topo.Body) {
 // engines gone (stage 7) it is also the operation's error rather than a stand-in body.
 func TestABooleanWithNoExactCurvedPathRefusesByName(t *testing.T) {
 	t.Parallel()
-	a, b := interlockedRings(t)
+	a, b := crossedRings(t)
 	rec := &diag.Recorder{}
 	body, err := BooleanWithDiagnostics(Join, a, b, rec)
 	if !errors.Is(err, ErrUnmodelledBoolean) {

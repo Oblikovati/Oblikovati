@@ -11,7 +11,7 @@ import (
 )
 
 // The second-harmonic reduction and its branch pairing (ADR-0061 stage 5, third slice). The derivation
-// is in torus_quadric_harmonic2.go; these rows verify it against the quadric itself rather than against
+// is in torus_section_harmonic2.go; these rows verify it against the quadric itself rather than against
 // a restatement of the algebra.
 
 // skewQuadricCase is one member of the family the reduction has to cover: the SURFACE, its quadric
@@ -88,7 +88,7 @@ func TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily(t *testing.T) {
 		if invariant != c.invariant {
 			t.Fatalf("%s: classified invariant=%v, want %v", c.name, invariant, c.invariant)
 		}
-		st := torusStationAt(ring, c.quad, 0.7)
+		st := c.quad.stationOn(ring, 0.7)
 		g := st.secondHarmonic()
 		if !c.invariant {
 			if g.Cos2 == 0 && g.Sin2 == 0 {
@@ -109,8 +109,9 @@ func TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily(t *testing.T) {
 // arithmetic for the same station, within what the invariance classification already permits.
 func assertLevelFormsAgree(t *testing.T, name string, q Quadric, st torusStation, level float64) {
 	t.Helper()
-	closed := st.constant + st.m11*st.rho*st.rho
-	if bound := levelFormsBound(q, st, level); stdmath.Abs(level-closed) > bound {
+	constant, m11 := quadricStationScalars(testRing(t), q, 0.7)
+	closed := constant + m11*st.rho*st.rho
+	if bound := levelFormsBound(q, m11, st.rho, level); stdmath.Abs(level-closed) > bound {
 		t.Errorf("%s: general level %.17g vs the closed form's %.17g differ by %.3e, over the %.3e the "+
 			"invariance classification admits", name, level, closed, stdmath.Abs(level-closed), bound)
 	}
@@ -123,10 +124,21 @@ func assertLevelFormsAgree(t *testing.T, name string, q Quadric, st torusStation
 // admits |m11−m22| up to axisInvarianceTol·scale, with the same scale it uses. That term is the bound;
 // levelFormsUlps adds the two spellings' own rounding on top, which is what a platform that fuses the
 // closed form's product into its add costs.
-func levelFormsBound(q Quadric, st torusStation, level float64) float64 {
-	scale := stdmath.Max(q.M.Norm(), stdmath.Abs(st.m11))
-	admitted := axisInvarianceTol * scale * st.rho * st.rho / 2
+func levelFormsBound(q Quadric, m11, rho, level float64) float64 {
+	scale := stdmath.Max(q.M.Norm(), stdmath.Abs(m11))
+	admitted := axisInvarianceTol * scale * rho * rho / 2
 	return admitted + levelFormsUlps*ulpOf(level)
+}
+
+// quadricStationScalars re-derives the two scalars the CLOSED level form is written from, here in the
+// test rather than read off the station — which is what makes the comparison a comparison of two
+// spellings and not of one expression with itself.
+func quadricStationScalars(t Torus, q Quadric, v float64) (constant, m11 float64) {
+	axis, e1, _ := torusAxisFrame(t)
+	_, sv := cosSin(v)
+	w0 := q.Anchor.VectorTo(t.Center).Add(axis.Scale(math.Scalar(t.MinorRadius * sv)))
+	mw0 := q.M.Apply(w0)
+	return float64(w0.Dot(mw0)) + 2*float64(q.G.Dot(w0)) + q.K, float64(e1.Dot(q.M.Apply(e1)))
 }
 
 // ulpOf is the spacing of float64 at x — the unit the two spellings' own roundings are counted in.
@@ -349,20 +361,32 @@ func TestTheFullTurnTopologyDeclinesByName(t *testing.T) {
 	}
 }
 
-// TestAnOrdinaryRefusalIsNotAConditioningDemotion: a torus PAIR has no closed form in any bucket, and
-// that is not a degradation — nothing was given up. Reporting it as one would put a defect on every
-// marched boolean in the system, which is the noise that makes a diagnostic worthless.
+// TestAnOrdinaryRefusalIsNotAConditioningDemotion: two crossing ELLIPTICAL CYLINDERS have no closed
+// form in any bucket, and that is not a degradation — nothing was given up. Reporting it as one would
+// put a defect on every marched boolean in the system, which is the noise that makes a diagnostic
+// worthless.
+//
+// The row used to be a torus PAIR. That pair is solved exactly now (ADR-0066, #3514) and its positive
+// form is torus_torus_test.go; what the row pins — that the ORDINARY refusal stays ordinary — needed a
+// pair the intersector still does not claim, and an elliptical cylinder is one: it is straight-ruled
+// but carries no implicit quadric, so neither bucket reaches a pair of them.
 func TestAnOrdinaryRefusalIsNotAConditioningDemotion(t *testing.T) {
 	t.Parallel()
-	ring := testRing(t)
-	linked, _ := NewTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5)
-	_, why, ok := IntersectSurfacesAnalyticDeclining(ring, linked, ResolutionForSize(12))
+	first, err := NewEllipticalCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 4, 2)
+	if err != nil {
+		t.Fatalf("elliptical cylinder: %v", err)
+	}
+	second, err := NewEllipticalCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), math.V3(0, 1, 0), 4, 2)
+	if err != nil {
+		t.Fatalf("crossing elliptical cylinder: %v", err)
+	}
+	_, why, ok := IntersectSurfacesAnalyticDeclining(first, second, ResolutionForSize(12))
 	if ok || why != DeclineNoClosedForm || why.IsConditioning() {
-		t.Errorf("torus pair: ok=%v why=%v conditioning=%v, want the ordinary refusal", ok, why, why.IsConditioning())
+		t.Errorf("elliptical cylinder pair: ok=%v why=%v conditioning=%v, want the ordinary refusal", ok, why, why.IsConditioning())
 	}
 }
 
-// TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold is the fold invariant TorusQuadricLoop rests on.
+// TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold is the fold invariant TorusSectionLoop rests on.
 // At a fold the tube circle TOUCHES the quadric: the two azimuths have merged onto the station's own
 // extremum, so the quadric's rate of change along that circle vanishes there. The loop's fold point
 // must sit at that tangency.
@@ -384,7 +408,7 @@ func TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold(t *testing.T) {
 			continue
 		}
 		for _, cv := range curves {
-			l, folded := cv.(TorusQuadricLoop)
+			l, folded := cv.(TorusSectionLoop)
 			if !folded {
 				continue
 			}
@@ -402,7 +426,7 @@ func TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold(t *testing.T) {
 }
 
 // assertFoldIsTangent reads the station polynomial's slope at the azimuth the loop takes at one fold.
-func assertFoldIsTangent(t *testing.T, name string, ring Torus, q Quadric, l TorusQuadricLoop, s float64) {
+func assertFoldIsTangent(t *testing.T, name string, ring Torus, q Quadric, l TorusSectionLoop, s float64) {
 	t.Helper()
 	v := l.vAt(s)
 	h := torusSecondHarmonicAt(ring, q, v)

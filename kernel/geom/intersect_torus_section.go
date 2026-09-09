@@ -1,0 +1,358 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package geom
+
+import (
+	stdmath "math"
+
+	"oblikovati.org/math"
+)
+
+// The TORUS bucket of [IntersectSurfacesAnalytic] (ADR-0061 stage 5, generalised by ADR-0066). The
+// reduction and the two curve types are in torus_section_arc.go, and what the other side has to supply
+// is in torus_section_form.go — an implicit form whose restriction to a circle is degree two, which is
+// every quadric AND a second torus. What is left here is the same TOPOLOGY question the ruled bucket
+// asks, and periodicRootWindows answers it for both: which connected pieces the azimuths form over the
+// tube's own period.
+//
+// There are three shapes, and the third is the one a type-driven dispatch would have missed. Where the
+// quadric reaches the tube at EVERY tube angle the section is two closed curves, one per branch. Where
+// it reaches it over part of the turn the section is one closed loop per window, folded at the ends.
+// And where the quadric is COAXIAL with the torus its constraint has no azimuth dependence at all — the
+// section is whole circles at the tube angles that satisfy it, which is a boss or a shaft standing in
+// the ring's hole.
+
+// TorusSection returns the exact intersection of a torus with another surface's implicit form, on the
+// torus's own chart. The form is CLASSIFIED once — no azimuth dependence, one harmonic, or two
+// — and exactly one reduction runs: the coaxial circles, the one-harmonic arccos of this file, or the
+// general second-harmonic lanes of intersect_torus_section_skew.go. ok=false always carries the reason it
+// refused ([SectionDecline]), so a caller can tell a CONDITIONING demotion — a closed form that applies
+// but cannot name its answer at these numbers — from "no closed form claims this pair", and record the
+// first as the degradation it is.
+//
+//	curves, why, ok := geom.TorusSection(ring, linkedRing, geom.ResolutionForBox(box))
+func TorusSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
+	curves, why, ok := torusSectionOfFamily(t, co, res)
+	if !ok || len(curves) == 0 {
+		return curves, why, ok
+	}
+	if !torusSectionSatisfiesItsForm(t, co, curves) {
+		return nil, DeclineTorusSectionOffItsForm, false
+	}
+	return curves, why, ok
+}
+
+// torusSectionOfFamily runs the ONE reduction the classification selects.
+func torusSectionOfFamily(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
+	switch co.sectionFamily(t) {
+	case torusFamilyCoaxial:
+		curves, ok := torusCoaxialCircles(t, co)
+		return curves, noClosedFormWhen(ok), ok
+	case torusFamilyLanes:
+		return torusSkewSection(t, co, res)
+	}
+	return torusOneHarmonicSection(t, co, res)
+}
+
+// torusSectionSatisfiesItsForm is the POST-CONDITION of every torus section: each curve, sampled along
+// its OWN parameter, must lie on the OTHER surface — measured as a DISTANCE, against the modelling weld
+// the operands' own size sets.
+//
+// It exists because every certificate before it certifies a PART. A root is certified where it is
+// solved; a FOLD azimuth is not a root at all but the station's own extremum, read because the two
+// branches have merged there; a lane is labelled by an anchor carried from another station; and the
+// azimuth census counts branches rather than placing them. Each is sound on its own and the composition
+// can still put a point off the surface.
+//
+// Two co-centred PERPENDICULAR rings do exactly that, and they are the reason this exists. Their branch
+// pair is tangent at v = 0 and v = π — the station drops from four roots to two there — so the turn
+// splits into two windows whose folds are that tangency, and the fold reads a lane extremum that is not
+// the merged root. Measured: the section came back ok=true, why=none, with points 1.353e-5 off the
+// surface they claimed to be on, past the anchor gate, the ownership gate, the separation gate and the
+// azimuth census alike (torus_torus_test.go).
+//
+// The measure is a DISTANCE and not the station polynomial's residual, and that is the whole point. At
+// a fold df/du is zero by definition, so f falls off QUADRATICALLY in the azimuth error: that same
+// 1.353e-5 displacement reads as a residual far under what a certified root is allowed, and a residual
+// gate is blindest exactly where this failure lives. "Certify a root or branch choice at runtime against
+// the geometry (position, second-order test)" is a statement about where the curve IS, and only a length
+// reads it. The point is on the CHART by construction — it is the chart's own PointAt — so the one
+// surface it can be off is the co-form's.
+func torusSectionSatisfiesItsForm(chart Torus, co TorusCoForm, curves []Curve3) bool {
+	weld := torusChartWeld(chart)
+	for _, c := range curves {
+		for i := range torusSectionCertificateSamples {
+			at := float64(float64(i) / (torusSectionCertificateSamples - 1))
+			if !withinWeld(co.distanceTo(c.PointAt(at)), weld) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// withinWeld reports d being a real distance no larger than the weld. It is written as a positive test
+// rather than as `d > weld` so that a NON-FINITE distance refuses: an unreadable station makes the lane
+// reader answer NaN by design, that NaN propagates into a coordinate, and `NaN > weld` is FALSE — a
+// comparison written the other way round would admit exactly the point that has no position at all.
+//
+// This makes the reading right where it looks; it does not make the gate a NaN detector. An unreadable
+// station is a measure-zero event, and a point sample steps over one: the case that found this
+// (a cylinder at origin (−3.3617, 6.2435, 0.0778), axis (0.2568, −0.9663, 0.0158), radius 0.8992,
+// against the corpus ring) shows no NaN at 257 samples per curve and two at 1025. It is a PRE-EXISTING
+// defect of the quadric family, recorded with its fixture in ADR-0066's follow-up, and its fix is that
+// the lane reader should refuse rather than answer NaN — not a finer grid.
+func withinWeld(d, weld float64) bool { return d <= weld }
+
+// torusChartWeld is the length the post-condition judges an off-surface point against: the modelling
+// weld at the CHART TORUS'S OWN reach, R + r.
+//
+// It is derived from the operand rather than read from the caller's Resolution, and that is deliberate.
+// The closed-surface pairings hand in geom.ResolutionForBox(faceLoopBox(f)), and a BOUNDARY-LESS face —
+// the bare ball and the bare torus, which is every torus pair before anything has been imprinted on it
+// — has no loops, so that box is EMPTY and the resolution collapses to a weld of ~1e-18. That is below
+// the operands' own float noise; a gate reading it would refuse every exact torus section there is.
+// kernel/brep's declineOpenSection records the same defect and works around it by loosening its class
+// to Sew(); loosening is not available here, because Sew() at these sizes is 2e-3 and the excursion
+// this gate exists to catch is 1e-5.
+//
+// The chart's reach is the right scale on its own terms: the points measured are the chart's own
+// PointAt, so what "close to the other surface" means is set by the size of the surface they came from.
+// It is model-relative in ADR-0042's sense — the same pair in metres and in millimetres gates the same
+// — and it does not depend on a caller getting its box right.
+func torusChartWeld(chart Torus) float64 {
+	return ResolutionForSize(chart.MajorRadius + chart.MinorRadius).Weld()
+}
+
+// torusSectionCertificateSamples is how many points of each section curve the post-condition reads, and
+// it is a MEASURED number rather than a round one.
+//
+// The failure it exists for is narrow: the perpendicular rings' fold excursion peaks at 1.353e-5 around
+// t = 0.9875 and has fallen to 5.6e-10 by t = 0.999, so a grid of 65 steps clean over it (worst 3.6e-15)
+// and a grid of 97 does not. 257 catches it with a 500-fold margin on the weld, and costs a third more
+// than the section it certifies (193 ms → 257 ms for twenty skew-rod sections). A spike narrower than
+// one part in 256 of a curve's own parameter is still stepped over; that is a bound this gate has, and
+// refining it belongs with the fold refinement ADR-0065 already owes.
+const torusSectionCertificateSamples = 257
+
+// torusSectionFamily is what ONE classification of a (torus, form) pair selects. Exactly one of the
+// three runs; there is no order to fall through and nothing is tried twice.
+type torusSectionFamily uint8
+
+const (
+	// torusFamilyLanes keeps the second harmonic: up to four azimuths per station, paired into lanes.
+	torusFamilyLanes torusSectionFamily = iota
+	// torusFamilyOneHarmonic collapses to level + reach·cos(u − phase): two ordered azimuths, an arccos.
+	torusFamilyOneHarmonic
+	// torusFamilyCoaxial has no azimuth dependence at all: the section is whole tube circles.
+	torusFamilyCoaxial
+)
+
+// torusOneHarmonicSection is the arccos family's topology: the maximal tube-angle windows where the
+// two azimuths exist, or two full-period branches when they exist everywhere.
+func torusOneHarmonicSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
+	spans, ok := periodicRootWindows(func(v float64) float64 {
+		h, _ := torusHarmonicAt(t, co, v)
+		return h.discriminant()
+	}, torusStationProbes)
+	if !ok {
+		curves, full := torusFullTurnSection(t, co, res) // the form reaches the tube at every station
+		return curves, noClosedFormWhen(full), full
+	}
+	if len(spans) == 0 {
+		return nil, DeclineNone, true // it reaches the tube nowhere: they do not meet, and that is an answer
+	}
+	return torusHarmonicLoops(t, co, spans, res)
+}
+
+// sectionFamily classifies a QUADRIC against a torus, from the quadric's own tensor. The tensor test is
+// a statement about every tube angle at once, which is why it is made here and not station by station.
+func (q Quadric) sectionFamily(t Torus) torusSectionFamily {
+	_, e1, e2 := torusAxisFrame(t)
+	if _, invariant := quadricIsAxisInvariant(q, e1, e2); !invariant {
+		return torusFamilyLanes
+	}
+	if quadricReachesNoAzimuth(t, q) {
+		return torusFamilyCoaxial
+	}
+	return torusFamilyOneHarmonic
+}
+
+// sectionFamily classifies a second TORUS against the chart. A torus co-form is one-harmonic exactly
+// when it is COAXIAL with the chart, and then it carries no azimuth dependence at all — so there is no
+// middle family for it, and the two questions the quadric asks separately are one question here.
+//
+// Why: the second harmonic of a torus station is Cos2 = (g₁²−g₂²)/2 + βρ²(n₁²−n₂²)/2 and
+// Sin2 = g₁g₂ + βρ²n₁n₂ (torus_torus_harmonic.go), which is the traceless part of ggᵀ + βρ²nnᵀ — a sum
+// of two positive-semidefinite rank-one forms. That vanishes only when the two are orthogonal with
+// equal weight, or when both are zero. ρ varies over the turn and the weights do not track it, so
+// "orthogonal with equal weight" cannot hold at every station: over the whole turn, both must be zero.
+// g = 0 puts the chart's tube-circle centre on the other torus's axis and n = 0 makes the axes
+// parallel, which is coaxial, and then the FIRST harmonic (Cos1, Sin1) is zero as well.
+func (t Torus) sectionFamily(chart Torus) torusSectionFamily {
+	for i := range torusStationProbes {
+		v := float64(twoPi * float64(i) / torusStationProbes)
+		if !t.stationOn(chart, v).poly.hasNoAzimuthDependence() {
+			return torusFamilyLanes
+		}
+	}
+	return torusFamilyCoaxial
+}
+
+// noClosedFormWhen names the ordinary refusal for a step whose only answer is a bool.
+func noClosedFormWhen(ok bool) SectionDecline {
+	if ok {
+		return DeclineNone
+	}
+	return DeclineNoClosedForm
+}
+
+// torusHarmonicLoops builds one folded loop per tube-angle window of the one-harmonic reduction.
+func torusHarmonicLoops(t Torus, co TorusCoForm, spans [][2]float64, res Resolution) ([]Curve3, SectionDecline, bool) {
+	out := make([]Curve3, 0, len(spans))
+	for _, w := range spans {
+		anchor, _ := torusHarmonicAt(t, co, float64((w[0]+w[1])/2))
+		loop := TorusSectionLoop{Torus: t, Co: co, V0: w[0], V1: w[1], UA: anchor.phase}
+		if !torusWindowConditioning(loop, res) {
+			return nil, DeclineTorusLaneSeparation, false
+		}
+		out = append(out, loop)
+	}
+	return out, DeclineNone, true
+}
+
+// torusStationProbes is how many tube angles the window finder samples. The harmonic's discriminant is a
+// low-order trigonometric polynomial in v for every axis-invariant quadric, so this brackets every sign
+// change; it matches the ruled bucket's azimuth sweep so the two forms resolve at the same rate.
+const torusStationProbes = ruledQuadricAzimuthProbes
+
+// quadricReachesNoAzimuth reports that an AXIS-INVARIANT quadric's constraint on the torus carries no
+// azimuth dependence: its reach is zero at every station, so the two roots are not two azimuths but a
+// whole circle. That is the coaxial cylinder, cone or centred sphere, and its section is circles.
+//
+// The comparison is exact because the reach it reads is: for a quadric whose tensor is invariant about
+// the torus axis and whose linear term is on that axis, T·ê₁ and T·ê₂ cancel to the last bit.
+func quadricReachesNoAzimuth(t Torus, q Quadric) bool {
+	for i := range torusStationProbes {
+		h, ok := torusHarmonicAt(t, q, float64(twoPi*float64(i)/torusStationProbes))
+		if !ok || h.reach != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// torusCoaxialCircles returns the tube circles where a coaxial quadric meets the torus: the roots of the
+// harmonic's level term, each a full azimuth sweep at one tube angle. A root the level only GRAZES — a
+// tangency, where the level touches zero without crossing — is not a section and is left out.
+func torusCoaxialCircles(t Torus, co TorusCoForm) ([]Curve3, bool) {
+	level := func(v float64) float64 {
+		h, _ := torusHarmonicAt(t, co, v)
+		return h.level
+	}
+	var out []Curve3
+	prev := level(0)
+	for i := 1; i <= torusStationProbes; i++ {
+		v := float64(twoPi * float64(i) / torusStationProbes)
+		cur := level(v)
+		if (prev > 0) != (cur > 0) {
+			out = append(out, torusStationCircle(t, bisectLevelRoot(level, float64(twoPi*float64(i-1)/torusStationProbes), v)))
+		}
+		prev = cur
+	}
+	return out, true
+}
+
+// torusStationCircle is the full azimuth sweep at one tube angle: a circle about the torus axis, of the
+// radial distance the tube reaches there, at the height the tube reaches there.
+func torusStationCircle(t Torus, v float64) Circle {
+	cv, sv := cosSin(v)
+	axis := t.AxisDir.AsVector()
+	centre := t.Center.TranslateBy(axis.Scale(math.Scalar(t.MinorRadius * sv)))
+	return Circle{
+		Center: centre,
+		Normal: t.AxisDir,
+		RefDir: t.Ref,
+		Radius: t.MajorRadius + float64(t.MinorRadius*cv),
+	}
+}
+
+// bisectLevelRoot refines a bracketed sign change of the coaxial level term to the tube angle itself.
+func bisectLevelRoot(level func(float64) float64, lo, hi float64) float64 {
+	loPositive := level(lo) > 0
+	for range foldBisectionSteps {
+		mid := float64((lo + hi) / 2)
+		if (level(mid) > 0) == loPositive {
+			lo = mid
+			continue
+		}
+		hi = mid
+	}
+	return float64((lo + hi) / 2)
+}
+
+// torusFullTurnSection returns the two branches as full-period arcs, for a quadric that reaches the tube
+// at every station. ok=false when the two branches come close enough to be one curve at the modelling
+// resolution — the same separation certificate the ruled wrap form applies, and for the same reason: two
+// branches the stitch cannot tell apart are not two curves.
+func torusFullTurnSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, bool) {
+	least := stdmath.Inf(1)
+	for i := range torusStationProbes {
+		h, ok := torusHarmonicAt(t, co, float64(twoPi*float64(i)/torusStationProbes))
+		if !ok {
+			return nil, false
+		}
+		least = stdmath.Min(least, torusBranchGap(t, h))
+	}
+	if least <= res.Stitch() {
+		return nil, false
+	}
+	return []Curve3{
+		TorusSectionArc{Torus: t, Co: co, Upper: false, V0: 0, V1: twoPi},
+		TorusSectionArc{Torus: t, Co: co, Upper: true, V0: 0, V1: twoPi},
+	}, true
+}
+
+// torusBranchGap is the arc length between the two azimuths at one station — the branches' separation
+// measured as a LENGTH, so it compares against the stitch resolution on the same footing the ruled
+// form's ruling-parameter gap does.
+func torusBranchGap(t Torus, h torusHarmonic) float64 {
+	if h.reach == 0 {
+		return 0
+	}
+	arg := stdmath.Max(-1, stdmath.Min(1, float64(-h.level/h.reach)))
+	return float64(2 * stdmath.Acos(arg) * (t.MajorRadius + t.MinorRadius))
+}
+
+// torusWindowConditioning certifies one tube-angle window before a loop is built on it: its two azimuths
+// must separate, somewhere inside, by more than the stitch resolution. It is the mirror of the wrap
+// form's gate — that one reads the MINIMUM across the turn because a wrap has no fold, this one the
+// MAXIMUM inside the window because a window's branches meet at both ends by construction.
+func torusWindowConditioning(l TorusSectionLoop, res Resolution) bool {
+	widest := 0.0
+	for i := 1; i < torusWindowProbes; i++ {
+		v := l.V0 + float64((l.V1-l.V0)*float64(i)/torusWindowProbes)
+		widest = stdmath.Max(widest, torusBranchGapAt(l.Torus, l.Co, v, l.UA))
+	}
+	return widest > res.Stitch()
+}
+
+// torusBranchGapAt is the arc length a branch pair spans at one tube angle, whichever reduction the
+// station takes: the one-harmonic arccos, or the lane the anchor names in the general one. It is the
+// one place the two forms' separations are read, so the conditioning gates above apply the same
+// certificate to both.
+func torusBranchGapAt(t Torus, co TorusCoForm, v, anchor float64) float64 {
+	st := co.stationOn(t, v)
+	if st.invariant {
+		return torusBranchGap(t, st.harmonic())
+	}
+	l, ok := torusLaneAt(st.secondHarmonic(), anchor)
+	if !ok {
+		return 0 // an unreadable station: a zero gap fails the gate, which is the decline
+	}
+	return float64(l.separation() * (t.MajorRadius + t.MinorRadius))
+}
+
+// torusWindowProbes samples a window's interior for its widest branch separation, which has one interior
+// maximum for every axis-invariant quadric, so a coarse sweep finds it.
+const torusWindowProbes = 64

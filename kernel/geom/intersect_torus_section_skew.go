@@ -4,15 +4,15 @@ package geom
 
 import stdmath "math"
 
-// The GENERAL half of the torus∩quadric bucket (ADR-0061 stage 5, third slice): a quadric whose
-// quadratic form is NOT invariant about the torus axis — a rod driven across a ring, a tilted drill, an
-// off-axis cone. Its azimuth dependence is the second harmonic torus_quadric_harmonic2.go derives, and
-// its branch pairing the lanes torus_quadric_lane.go names.
+// The GENERAL half of the torus bucket (ADR-0061 stage 5, third slice): a form whose constraint on the
+// tube circle is NOT invariant about the torus axis — a rod driven across a ring, a tilted drill, an
+// off-axis cone, and (ADR-0066) very nearly every second TORUS. Its azimuth dependence is the second harmonic torus_section_harmonic2.go derives, and
+// its branch pairing the lanes torus_section_lane.go names.
 //
 // The TOPOLOGY question is the one the ruled and one-harmonic buckets already ask, and periodicRootWindows
 // answers it here too — once per lane. Each lane's discriminant is positive over the tube angles where
 // that pair of azimuths exists and crosses zero at its folds, so a lane's windows are folded loops of
-// exactly the same shape the one-harmonic form builds, on the same [TorusQuadricLoop].
+// exactly the same shape the one-harmonic form builds, on the same [TorusSectionLoop].
 //
 // Every refusal here is NAMED ([SectionDecline]) rather than an anonymous ok=false, because each one is
 // a conditioning demotion — the closed form applies to the pair, it just cannot name its own answer at
@@ -32,30 +32,30 @@ import stdmath "math"
 // meet"; ok=false always carries the reason.
 //
 //	curves, why, ok := torusSkewSection(ring, rod.QuadricForm(), geom.ResolutionForBox(box))
-func torusSkewSection(t Torus, q Quadric, res Resolution) ([]Curve3, SectionDecline, bool) {
-	anchors, ok := torusLaneAnchors(t, q)
+func torusSkewSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
+	anchors, ok := torusLaneAnchors(t, co)
 	if !ok {
 		return nil, DeclineTorusLaneTracks, false
 	}
 	var out []Curve3
 	for _, anchor := range anchors {
-		loops, why := torusLaneLoops(t, q, anchor, res)
+		loops, why := torusLaneLoops(t, co, anchor, res)
 		if why != DeclineNone {
 			return nil, why, false
 		}
 		out = append(out, loops...)
 	}
-	if why := torusLoopsAccountForEveryAzimuth(t, q, out); why != DeclineNone {
+	if why := torusLoopsAccountForEveryAzimuth(t, co, out); why != DeclineNone {
 		return nil, why, false
 	}
 	return out, DeclineNone, true
 }
 
 // torusLaneLoops returns one folded loop per tube-angle window of ONE lane.
-func torusLaneLoops(t Torus, q Quadric, anchor float64, res Resolution) ([]Curve3, SectionDecline) {
+func torusLaneLoops(t Torus, co TorusCoForm, anchor float64, res Resolution) ([]Curve3, SectionDecline) {
 	readable := true
 	spans, folds := periodicRootWindows(func(v float64) float64 {
-		l, ok := torusLaneAt(torusSecondHarmonicAt(t, q, v), anchor)
+		l, ok := torusLaneAt(torusSecondHarmonicAt(t, co, v), anchor)
 		readable = readable && ok
 		return l.discriminant()
 	}, torusStationProbes)
@@ -65,16 +65,16 @@ func torusLaneLoops(t Torus, q Quadric, anchor float64, res Resolution) ([]Curve
 	case !folds:
 		return nil, DeclineTorusLaneFullTurn
 	}
-	return torusWindowLoops(t, q, anchor, spans, res)
+	return torusWindowLoops(t, co, anchor, spans, res)
 }
 
 // torusWindowLoops builds the loop of every window this lane OWNS. A window whose branch pair merges at
 // a flanking extremum instead of the lane's own belongs to a neighbouring lane and is skipped here; the
 // azimuth count on the finished set is what proves that neighbour really carried it.
-func torusWindowLoops(t Torus, q Quadric, anchor float64, spans [][2]float64, res Resolution) ([]Curve3, SectionDecline) {
+func torusWindowLoops(t Torus, co TorusCoForm, anchor float64, spans [][2]float64, res Resolution) ([]Curve3, SectionDecline) {
 	var out []Curve3
 	for _, w := range spans {
-		loop := TorusQuadricLoop{Torus: t, Quad: q, V0: w[0], V1: w[1], UA: anchor}
+		loop := TorusSectionLoop{Torus: t, Co: co, V0: w[0], V1: w[1], UA: anchor}
 		owns, ok := torusLaneOwnsWindow(loop)
 		if !ok {
 			return nil, DeclineTorusLaneStation
@@ -94,7 +94,7 @@ func torusWindowLoops(t Torus, q Quadric, anchor float64, spans [][2]float64, re
 // folds — the certificate that this lane, and not a neighbour, carries the pair. It is read just inside
 // each end, because periodicRootWindows returns the fold on the non-positive side where the pair has
 // already merged and every candidate reads the same azimuth. ok=false is an unreadable station.
-func torusLaneOwnsWindow(l TorusQuadricLoop) (owns, ok bool) {
+func torusLaneOwnsWindow(l TorusSectionLoop) (owns, ok bool) {
 	step := float64((l.V1 - l.V0) / torusWindowProbes)
 	first, okA := torusLaneOwnsStation(l, l.V0+step)
 	last, okB := torusLaneOwnsStation(l, l.V1-step)
@@ -103,8 +103,8 @@ func torusLaneOwnsWindow(l TorusQuadricLoop) (owns, ok bool) {
 
 // torusLaneOwnsStation reads the lane at one tube angle and asks whether its own extremum is the one
 // closest to vanishing there.
-func torusLaneOwnsStation(l TorusQuadricLoop, v float64) (owns, ok bool) {
-	lane, ok := torusLaneAt(torusSecondHarmonicAt(l.Torus, l.Quad, v), l.UA)
+func torusLaneOwnsStation(l TorusSectionLoop, v float64) (owns, ok bool) {
+	lane, ok := torusLaneAt(torusSecondHarmonicAt(l.Torus, l.Co, v), l.UA)
 	return ok && lane.mergesAtItsCenter(), ok
 }
 
@@ -118,14 +118,14 @@ func torusLaneOwnsStation(l TorusQuadricLoop, v float64) (owns, ok bool) {
 // merged and the station carries one rather than two, so counting there would report a mismatch that is
 // the fold's arithmetic rather than a missing loop. Every window the discriminant sampler found has an
 // interior probe of its own, which is where a genuinely dropped loop shows up.
-func torusLoopsAccountForEveryAzimuth(t Torus, q Quadric, loops []Curve3) SectionDecline {
+func torusLoopsAccountForEveryAzimuth(t Torus, co TorusCoForm, loops []Curve3) SectionDecline {
 	step := twoPi / torusStationProbes
 	for i := range torusStationProbes {
 		v := float64(step * float64(i))
 		if nearAWindowEnd(loops, v, float64(step/2)) {
 			continue
 		}
-		if len(torusSecondHarmonicAt(t, q, v).azimuths()) != 2*loopsCovering(loops, v) {
+		if len(torusSecondHarmonicAt(t, co, v).azimuths()) != 2*loopsCovering(loops, v) {
 			return DeclineTorusLaneUnaccounted
 		}
 	}
@@ -137,7 +137,7 @@ func torusLoopsAccountForEveryAzimuth(t Torus, q Quadric, loops []Curve3) Sectio
 func loopsCovering(loops []Curve3, v float64) int {
 	n := 0
 	for _, cv := range loops {
-		if l, ok := cv.(TorusQuadricLoop); ok && wrapAngle(v-l.V0) < l.V1-l.V0 {
+		if l, ok := cv.(TorusSectionLoop); ok && wrapAngle(v-l.V0) < l.V1-l.V0 {
 			n++
 		}
 	}
@@ -148,7 +148,7 @@ func loopsCovering(loops []Curve3, v float64) int {
 // have merged into one.
 func nearAWindowEnd(loops []Curve3, v, reach float64) bool {
 	for _, cv := range loops {
-		l, ok := cv.(TorusQuadricLoop)
+		l, ok := cv.(TorusSectionLoop)
 		if ok && stdmath.Min(foldedGap(v, l.V0), foldedGap(v, l.V1)) <= reach {
 			return true
 		}
@@ -164,8 +164,8 @@ func foldedGap(a, b float64) float64 { return stdmath.Abs(shortestTurnDelta(a, b
 // invariant about the torus axis, and the anchor's lane where it is not. A station neither reduction can
 // read answers NaN, as [torusHarmonic.root] does for the same reason: an azimuth that is not a root of
 // this station is not an answer, and a plausible-looking one is worse than none.
-func torusAzimuthAt(t Torus, q Quadric, v, anchor float64, upper bool) float64 {
-	st := torusStationAt(t, q, v)
+func torusAzimuthAt(t Torus, co TorusCoForm, v, anchor float64, upper bool) float64 {
+	st := co.stationOn(t, v)
 	if st.invariant {
 		return st.harmonic().root(upper)
 	}
@@ -184,8 +184,8 @@ func torusAzimuthAt(t Torus, q Quadric, v, anchor float64, upper bool) float64 {
 // is zero only to rounding, so root() still separates the pair by half a square root of that rounding
 // (~1e-8 in azimuth) instead of returning the merged value. Only a caller that KNOWS it is at a fold
 // can say so, which is why this is a second entry rather than a branch inside torusAzimuthAt.
-func torusFoldAzimuth(t Torus, q Quadric, v, anchor float64) float64 {
-	st := torusStationAt(t, q, v)
+func torusFoldAzimuth(t Torus, co TorusCoForm, v, anchor float64) float64 {
+	st := co.stationOn(t, v)
 	if st.invariant {
 		return st.harmonic().foldRoot()
 	}

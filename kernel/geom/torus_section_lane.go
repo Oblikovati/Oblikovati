@@ -145,14 +145,14 @@ func minimumAngleGap(xs []float64) float64 {
 // separable at the station spacing: the extremum count changes, a track drifts past half the spacing,
 // or two tracks claim the same extremum. Any of those makes the pairing a guess, and the pair demotes
 // to the general marcher rather than being named wrongly.
-func torusLaneAnchors(t Torus, q Quadric) ([]float64, bool) {
-	seed := torusSecondHarmonicAt(t, q, 0).extrema()
+func torusLaneAnchors(t Torus, co TorusCoForm) ([]float64, bool) {
+	seed := torusSecondHarmonicAt(t, co, 0).extrema()
 	if len(seed) < 2 {
 		return nil, false // a station with no extremum to name a lane by
 	}
 	reach := float64(minimumAngleGap(seed) / 2)
 	for i := 1; i < torusStationProbes; i++ {
-		ex := torusSecondHarmonicAt(t, q, float64(twoPi*float64(i)/torusStationProbes)).extrema()
+		ex := torusSecondHarmonicAt(t, co, float64(twoPi*float64(i)/torusStationProbes)).extrema()
 		if !anglesTrackSeeds(seed, ex, reach) {
 			return nil, false
 		}

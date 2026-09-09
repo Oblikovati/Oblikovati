@@ -136,14 +136,22 @@ func allNearZero(scale float64, vs ...float64) bool {
 // polyScale is the largest coefficient magnitude, the scale a polynomial's own coefficients are
 // judged against. It never returns zero, so a comparison against it is always meaningful.
 func polyScale(vs ...float64) float64 {
-	scale := 0.0
+	if scale := largestMagnitude(vs...); scale > 0 {
+		return scale
+	}
+	return 1
+}
+
+// largestMagnitude is the largest absolute value among vs, and it returns a true ZERO when every one
+// of them is zero. That is the whole difference from [polyScale], whose floor of 1 exists so that
+// DIVIDING by a scale is always defined — and it matters, because a caller asking whether a set of
+// coefficients has VANISHED is asking exactly the question the floor hides.
+func largestMagnitude(vs ...float64) float64 {
+	most := 0.0
 	for _, v := range vs {
-		scale = stdmath.Max(scale, stdmath.Abs(v))
+		most = stdmath.Max(most, stdmath.Abs(v))
 	}
-	if scale == 0 {
-		return 1
-	}
-	return scale
+	return most
 }
 
 // trigLeadingZero is how small a polynomial coefficient must be, RELATIVE to the largest in the same

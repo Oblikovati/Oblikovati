@@ -77,8 +77,8 @@ func TestRingAgainstAnAxialDrillIsTwoFoldedLoops(t *testing.T) {
 		t.Fatalf("handled=%v curves=%d, want two folded loops", handled, len(curves))
 	}
 	for i, cv := range curves {
-		if _, ok := cv.(TorusQuadricLoop); !ok {
-			t.Errorf("curve %d is %T, want a TorusQuadricLoop", i, cv)
+		if _, ok := cv.(TorusSectionLoop); !ok {
+			t.Errorf("curve %d is %T, want a TorusSectionLoop", i, cv)
 		}
 	}
 	assertSectionOnBothSurfaces(t, "axial drill", curves, ring, drill)
@@ -97,8 +97,8 @@ func TestRingAgainstABallIsExact(t *testing.T) {
 		t.Fatalf("ball on the tube centre: handled=%v curves=%d, want two full-turn arcs", handled, len(curves))
 	}
 	for i, cv := range curves {
-		if _, ok := cv.(TorusQuadricArc); !ok {
-			t.Errorf("curve %d is %T, want a TorusQuadricArc", i, cv)
+		if _, ok := cv.(TorusSectionArc); !ok {
+			t.Errorf("curve %d is %T, want a TorusSectionArc", i, cv)
 		}
 	}
 	assertSectionOnBothSurfaces(t, "ball on tube", curves, ring, onTube)

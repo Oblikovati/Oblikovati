@@ -19,7 +19,7 @@ import (
 // A torus is quartic and has no implicit quadric of its own, so the ruled bucket cannot reach it. The
 // substitution runs the other way instead: the torus's own chart is affine in its azimuth direction, so
 // a quadric whose quadratic form is invariant about the torus axis reduces to ONE harmonic there and the
-// two azimuths are an arccos (geom.TorusQuadricArc). That family is a sphere anywhere, and a cylinder or
+// two azimuths are an arccos (geom.TorusSectionArc). That family is a sphere anywhere, and a cylinder or
 // cone whose axis is parallel to the torus's — a ball meeting a ring, and an axial hole or boss through
 // one. A skew rod is not in it and is still refused by name.
 
@@ -119,25 +119,29 @@ func TestCoaxialShaftThroughARingIsExact(t *testing.T) {
 	}
 }
 
-// TestATorusPairIsRefusedByName: the reduction substitutes the TORUS's chart into the other surface's
-// quadratic form, so what it needs of that other surface is a quadric — not a type. A second TORUS has
-// none (a torus is quartic), so neither role assignment reduces and the pair is refused by name. The
-// refusal is where the kernel states its boundary and it must stay loud.
+// TestATorusPairTheSectionRefusesIsNotBuilt replaces TestATorusPairIsRefusedByName, whose subject
+// — that a torus PAIR has no closed form — stopped being true (ADR-0066, #3514: what the reduction needs
+// of the other side is an implicit form whose restriction to a CIRCLE is degree two, and a torus's
+// quartic is one). Its positive form is boolean_torus_pair_test.go, where the linked rings it drove are
+// built and certified against an independent oracle.
 //
-// The row was a skew rod through this ring until the second harmonic's lanes solved that section
-// exactly (ADR-0061 stage 5, third slice); its positive form is boolean_torus_skew_test.go.
-func TestATorusPairIsRefusedByName(t *testing.T) {
+// The refusal it guarded still has to stay loud, so this is the row that keeps it: two CO-CENTRED
+// PERPENDICULAR rings, whose branch pair is tangent at two stations, so the fold reads a lane extremum
+// that is not the merged root and the section's own points come back 1.4e-5 off the surface. The
+// post-condition catches that and refuses before anything is built, and the boolean reports it as the
+// degradation it is.
+func TestATorusPairTheSectionRefusesIsNotBuilt(t *testing.T) {
 	t.Parallel()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	linked, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
+	crossed, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5, "crossed")
 	if err != nil {
-		t.Fatalf("linked ring: %v", err)
+		t.Fatalf("crossed ring: %v", err)
 	}
-	if _, err := ops.Boolean(ops.Cut, ring, linked); err == nil {
-		t.Fatal("a torus pair must be refused by name, not built")
+	if _, err := ops.Boolean(ops.Cut, ring, crossed); err == nil {
+		t.Fatal("a torus pair the section post-condition refuses must not be built")
 	}
 }
 

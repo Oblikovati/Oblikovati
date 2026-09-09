@@ -9,7 +9,7 @@ import (
 )
 
 // The SECOND harmonic of the torus∩quadric reduction (ADR-0061 stage 5, third slice) — the half of the
-// family torus_quadric_arc.go's one-harmonic closed form cannot reach.
+// family torus_section_arc.go's one-harmonic closed form cannot reach.
 //
 // A point on the torus is
 //
@@ -49,34 +49,63 @@ import (
 // when the quartic drops to a cubic, which is how that solver recovers it. ONE quartic solver, at the
 // layer both callers reach; this file adds no second one.
 
-// torusStation is the quadric's constraint on ONE tube circle of the torus, before the azimuth is
-// resolved. Both reductions read it: the axis-invariant arccos takes rho, constant and (x, y), and the
-// general form takes the in-plane tensor entries with them.
+// torusStation is the OTHER surface's constraint on ONE tube circle of the torus, before the azimuth
+// is resolved: the five coefficients of f, the one-harmonic reading of f when its second harmonic
+// vanishes, and the classification that says whether it does.
+//
+// WHICH form produced it is not recorded, because nothing downstream needs to know. A quadric and a
+// second torus reduce to the same five numbers (torus_torus_harmonic.go derives the second, and says
+// why a quartic cannot make a station any richer than a quadric does), and every step past this one —
+// the lanes, the windows, the folds, the certificate — reads only them.
 type torusStation struct {
-	rho           float64 // R + r·cos v, the tube circle's distance from the axis
-	constant      float64 // W₀·MW₀ + 2 G·W₀ + K, the part of Q with no azimuth dependence
-	x, y          float64 // T·ê₁ and T·ê₂ with T = 2(M W₀ + G): the term linear in e(u)
-	m11, m22, m12 float64 // ê₁·Mê₁, ê₂·Mê₂, ê₁·Mê₂: the term quadratic in e(u)
-	invariant     bool    // M acts the same way on every direction perpendicular to the torus axis
+	rho       float64             // R + r·cos v, the tube circle's distance from the axis
+	poly      torusSecondHarmonic // the five coefficients of f
+	reach     float64             // |the first harmonic|, in the spelling the producing form gives it
+	phase     float64             // and its phase, likewise
+	invariant bool                // the second harmonic vanishes: one harmonic describes f exactly
 }
 
-// torusStationAt reduces the quadric's constraint on the torus at tube angle v.
-func torusStationAt(t Torus, q Quadric, v float64) torusStation {
+// stationOn reduces the QUADRIC's constraint on the torus to one tube circle. It is the quadric half
+// of [TorusCoForm]; torus_torus_harmonic.go is the other.
+func (q Quadric) stationOn(t Torus, v float64) torusStation {
 	axis, e1, e2 := torusAxisFrame(t)
 	cv, sv := cosSin(v)
 	w0 := q.Anchor.VectorTo(t.Center).Add(axis.Scale(math.Scalar(t.MinorRadius * sv)))
 	mw0 := q.M.Apply(w0)
 	reachVec := mw0.Scale(2).Add(q.G.Scale(2))
 	m11, m22, m12 := inPlaneTensorEntries(q, e1, e2)
+	rho := t.MajorRadius + float64(t.MinorRadius*cv)
+	x, y := float64(reachVec.Dot(e1)), float64(reachVec.Dot(e2))
+	constant := float64(w0.Dot(mw0)) + float64(2*float64(q.G.Dot(w0))) + q.K
 	return torusStation{
-		rho:       t.MajorRadius + float64(t.MinorRadius*cv),
-		constant:  float64(w0.Dot(mw0)) + float64(2*float64(q.G.Dot(w0))) + q.K,
-		x:         float64(reachVec.Dot(e1)),
-		y:         float64(reachVec.Dot(e2)),
-		m11:       m11,
-		m22:       m22,
-		m12:       m12,
+		rho:       rho,
+		poly:      quadricTubeHarmonics(rho, constant, x, y, m11, m22, m12),
+		reach:     float64(rho * stdmath.Hypot(x, y)),
+		phase:     stdmath.Atan2(y, x),
 		invariant: axisInvariantEntries(q, m11, m22, m12),
+	}
+}
+
+// quadricTubeHarmonics writes the quadric's station out as the five coefficients of f (see the file
+// comment's half-angle identities).
+//
+// Every expression here is the one that stood before the station carried its coefficients rather than
+// deriving them on demand, spelled character for character, so the quadric family's sections reproduce
+// bit for bit. In particular the LEVEL keeps this spelling and not the closed form's equivalent
+// `constant + m11·ρ²`: the two parted by an ulp on arm64 (CI run 34280554924 macos-latest), and
+// [torusStation.harmonic] reads this one for that reason.
+//
+// ★ The float64() around `rr*(m11+m22)/2` is a live FMA site, not decoration. gc strength-reduces a
+// divide by two into a multiply before its contraction pass, so `a + b/2` compiles to FMADDD on arm64
+// while `a + b/3` does not (ADR-0064 §4, measured by disassembly). Do not remove it.
+func quadricTubeHarmonics(rho, constant, x, y, m11, m22, m12 float64) torusSecondHarmonic {
+	rr := float64(rho * rho)
+	return torusSecondHarmonic{
+		Cos2:  float64(rr * (m11 - m22) / 2),
+		Sin2:  float64(rr * m12),
+		Cos1:  float64(rho * x),
+		Sin1:  float64(rho * y),
+		Level: constant + float64(rr*(m11+m22)/2),
 	}
 }
 
@@ -90,6 +119,12 @@ func inPlaneTensorEntries(q Quadric, e1, e2 math.Vector3) (m11, m22, m12 float64
 // perpendicular to the torus axis — the condition that collapses the azimuth dependence to ONE
 // harmonic. The departure is measured RELATIVE to the tensor's own entries, so it carries no model
 // scale: the same pair written in metres and in millimetres classifies identically.
+//
+// It is a statement about the TENSOR, which is stronger than the same statement about the station
+// polynomial the tensor produces: a tensor that is axis-invariant is so at every tube angle at once.
+// The torus co-form has no tensor to read and asks the polynomial instead
+// ([torusSecondHarmonic.isOneHarmonic]); the two are the same predicate on the two representations,
+// and each is read where the information is.
 func axisInvariantEntries(q Quadric, m11, m22, m12 float64) bool {
 	scale := stdmath.Max(q.M.Norm(), stdmath.Abs(m11))
 	if scale <= 0 {
@@ -98,21 +133,14 @@ func axisInvariantEntries(q Quadric, m11, m22, m12 float64) bool {
 	return stdmath.Abs(m11-m22) <= axisInvarianceTol*scale && stdmath.Abs(m12) <= axisInvarianceTol*scale
 }
 
-// harmonic reduces the station to the ONE-harmonic form level + reach·cos(u − phase), which describes
-// it exactly while the station is axis-invariant.
-//
-// The level is READ from the general form rather than respelled as constant + m11·ρ². Two spellings of
-// one quantity are two roundings of it: on a platform that fuses a multiply into the following add
-// (arm64 does, amd64 never) the two parted by an ulp, so the reproduction proof this file rests on —
-// that the arccos path is the general path written out, not an approximation of it — held on one
-// platform and failed on the other (CI run 34280554924 macos-latest). One expression, one value.
+// harmonic reads the station as the ONE-harmonic form level + reach·cos(u − phase), which describes it
+// exactly while [torusStation.invariant] holds.
 func (st torusStation) harmonic() torusHarmonic {
-	return torusHarmonic{
-		level: st.secondHarmonic().Level,
-		reach: float64(st.rho * stdmath.Hypot(st.x, st.y)),
-		phase: stdmath.Atan2(st.y, st.x),
-	}
+	return torusHarmonic{level: st.poly.Level, reach: st.reach, phase: st.phase}
 }
+
+// secondHarmonic returns the station's five coefficients.
+func (st torusStation) secondHarmonic() torusSecondHarmonic { return st.poly }
 
 // torusSecondHarmonic is the quadric's constraint on one tube circle written in full:
 //
@@ -126,37 +154,12 @@ type torusSecondHarmonic struct {
 	Level      float64 // the azimuth-independent term
 }
 
-// secondHarmonic rewrites the station's cos²/cos·sin/sin² terms as cos 2u and sin 2u (see the file
-// comment's half-angle identities), leaving the five coefficients of f.
-func (st torusStation) secondHarmonic() torusSecondHarmonic {
-	rr := float64(st.rho * st.rho)
-	return torusSecondHarmonic{
-		Cos2: float64(rr * (st.m11 - st.m22) / 2),
-		Sin2: float64(rr * st.m12),
-		Cos1: float64(st.rho * st.x),
-		Sin1: float64(st.rho * st.y),
-		// ★ CORRECTED by ADR-0064 (#3528). This comment used to say that the term "ends in a DIVISION,
-		// and a division result is not a product, so no platform may fuse it into this add", and that
-		// the float64() round below "was dropped only because it cannot fire here". BOTH were wrong,
-		// and the second one is why this line went unconverted. The divisor is 2: gc strength-reduces
-		// a divide by a power of two into a MULTIPLY before its contraction pass, so `a + b/2` compiles
-		// to FMADDD on arm64 while `a + b/3` does not (ADR-0064 §4, measured by disassembly). This line
-		// WAS a live fusion site, and the float64() is what pins it — do not remove it.
-		//
-		// What still stands from the original note: this spelling of the level is the stable one, the
-		// closed form's `constant + m11·ρ²` is the one that parted by an ulp on arm64 (CI run
-		// 34280554924 macos-latest), and harmonic() reads this Level rather than respelling it for
-		// exactly that reason. The reason is now the conversion, not the division.
-		Level: st.constant + float64(rr*(st.m11+st.m22)/2),
-	}
-}
-
 // torusSecondHarmonicAt returns the five coefficients of the quadric's constraint on the torus at tube
 // angle v. It is exact for EVERY quadric, axis-invariant or not.
 //
 //	h := torusSecondHarmonicAt(ring, rod.QuadricForm(), v) // h.valueAt(u) == rod.QuadricForm().ValueAt(ring.PointAt(u, v))
-func torusSecondHarmonicAt(t Torus, q Quadric, v float64) torusSecondHarmonic {
-	return torusStationAt(t, q, v).secondHarmonic()
+func torusSecondHarmonicAt(t Torus, co TorusCoForm, v float64) torusSecondHarmonic {
+	return co.stationOn(t, v).secondHarmonic()
 }
 
 // valueAt evaluates f at one azimuth.
@@ -183,6 +186,27 @@ func (h torusSecondHarmonic) derivative() torusSecondHarmonic {
 // the station's units, so a residual ratio against it is dimensionless.
 func (h torusSecondHarmonic) scale() float64 {
 	return polyScale(h.Cos2, h.Sin2, h.Cos1, h.Sin1, h.Level)
+}
+
+// hasNoAzimuthDependence reports f being CONSTANT in the azimuth at its own coefficient scale — the
+// station of a form coaxial with the torus, whose section is a whole tube circle rather than two
+// azimuths. It is [isOneHarmonic] carried one step further: not merely no second harmonic, no first
+// harmonic either.
+func (h torusSecondHarmonic) hasNoAzimuthDependence() bool {
+	return largestMagnitude(h.Cos2, h.Sin2, h.Cos1, h.Sin1) <= axisInvarianceTol*h.scale()
+}
+
+// isOneHarmonic reports the station's SECOND harmonic vanishing at the polynomial's own coefficient
+// scale, so that level + reach·cos(u − phase) describes f exactly. It is the same predicate
+// [axisInvariantEntries] makes about a quadric's tensor, read off the polynomial instead — which is
+// the only place a form without a tensor (a second torus) carries it.
+//
+// Reading it here is weaker in one way and stronger in another. Weaker: it is a statement about ONE
+// tube angle, and a form could be one-harmonic at one station and not at the next, so a caller that
+// needs the property over the whole turn asks at every station (coaxialOnTheTorus does). Stronger: it
+// is the property the reduction actually uses, rather than a sufficient condition for it.
+func (h torusSecondHarmonic) isOneHarmonic() bool {
+	return largestMagnitude(h.Cos2, h.Sin2) <= axisInvarianceTol*h.scale()
 }
 
 // azimuths returns the CERTIFIED azimuths where f vanishes, in ascending order. Each candidate the

@@ -43,6 +43,11 @@ const (
 	// DeclineTorusLaneSeparation is a window whose two branches never separate by more than the stitch
 	// resolution, so the loop is a sliver two faces could not be told apart across.
 	DeclineTorusLaneSeparation
+	// DeclineTorusSectionOffItsForm is a section the reduction built whose own points do not satisfy the
+	// station polynomial they were solved from. Every step before it certifies a part — a root, a fold's
+	// extremum, a lane's anchor, a branch count — and their composition can still place a curve off the
+	// other surface; this is the post-condition that reads where the curve actually is.
+	DeclineTorusSectionOffItsForm
 	// DeclineOpenSection is a section the closed form SOLVED but that does not come back to where it
 	// started. A pairing whose scope is "every crossing is an island on both charts" splits each side by
 	// even-odd containment alone, and an open arc opens a region it never closes, so the imprint would
@@ -59,14 +64,15 @@ func (d SectionDecline) String() string {
 }
 
 var sectionDeclineNames = [...]string{
-	DeclineNone:                 "none",
-	DeclineNoClosedForm:         "no closed form claims this surface pair",
-	DeclineTorusLaneStation:     "a torus station with no azimuth dependence",
-	DeclineTorusLaneTracks:      "the torus section's extremum tracks are not separable",
-	DeclineTorusLaneFullTurn:    "the torus section's branch pair never folds",
-	DeclineTorusLaneUnaccounted: "the torus section's loops do not account for every azimuth",
-	DeclineTorusLaneSeparation:  "the torus section's branches never separate past the stitch resolution",
-	DeclineOpenSection:          "the closed-form section does not close on itself",
+	DeclineNone:                   "none",
+	DeclineNoClosedForm:           "no closed form claims this surface pair",
+	DeclineTorusLaneStation:       "a torus station with no azimuth dependence",
+	DeclineTorusLaneTracks:        "the torus section's extremum tracks are not separable",
+	DeclineTorusLaneFullTurn:      "the torus section's branch pair never folds",
+	DeclineTorusLaneUnaccounted:   "the torus section's loops do not account for every azimuth",
+	DeclineTorusLaneSeparation:    "the torus section's branches never separate past the stitch resolution",
+	DeclineTorusSectionOffItsForm: "the torus section's own points do not satisfy the form it was solved from",
+	DeclineOpenSection:            "the closed-form section does not close on itself",
 }
 
 // IsConditioning reports whether the refusal is a CONDITIONING demotion — a closed form that applies to
