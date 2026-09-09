@@ -9,38 +9,29 @@ import (
 	"oblikovati.org/math"
 )
 
-// planeFacing builds a boundary surface on the plane through origin whose OUTWARD normal is n.
-func planeFacing(t *testing.T, origin math.Point3, n math.Vector3) BoundarySurface {
-	t.Helper()
-	p, err := NewPlane(origin, n)
-	if err != nil {
-		t.Fatalf("plane at %v facing %v: %v", origin, n, err)
-	}
-	return BoundarySurface{Surface: p}
-}
-
-// The two faces of one slab must land on the SAME canonical direction, whichever way each is turned,
-// or a caller cannot group them — and the grouping is what makes the measurement rotation-invariant.
+// A plane and the same plane facing the other way must report ONE direction, or a caller cannot
+// group the two faces of a slab — and the grouping is what turns a hundred coplanar facets into one
+// width.
 func TestOppositeFacesOfASlabShareOneDirection(t *testing.T) {
 	t.Parallel()
-	bottom, ok := AsMaterialSlab(planeFacing(t, math.P3(0, 0, 0), math.V3(0, 0, -1)))
+	bottom, err := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, -1))
+	if err != nil {
+		t.Fatalf("bottom: %v", err)
+	}
+	top, err := NewPlane(math.P3(0, 0, 4), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatalf("top: %v", err)
+	}
+	dLo, ok := PlanarNormal(bottom)
 	if !ok {
-		t.Fatal("a plane must report a slab")
+		t.Fatal("a plane must report a normal")
 	}
-	top, ok := AsMaterialSlab(planeFacing(t, math.P3(0, 0, 4), math.V3(0, 0, 1)))
+	dHi, ok := PlanarNormal(top)
 	if !ok {
-		t.Fatal("a plane must report a slab")
+		t.Fatal("a plane must report a normal")
 	}
-	if bottom.Dir != top.Dir {
-		t.Errorf("the two faces of a slab report %v and %v; they must canonicalise to one direction",
-			bottom.Dir, top.Dir)
-	}
-	if !bottom.MaterialAbove || top.MaterialAbove {
-		t.Errorf("material lies ABOVE the bottom face and BELOW the top; got %v and %v",
-			bottom.MaterialAbove, top.MaterialAbove)
-	}
-	if bottom.Offset != 0 || top.Offset != 4 {
-		t.Errorf("offsets are %v and %v; want 0 and 4", bottom.Offset, top.Offset)
+	if dLo != dHi {
+		t.Errorf("the two faces of a slab report %v and %v; they must canonicalise to one direction", dLo, dHi)
 	}
 }
 
@@ -52,11 +43,11 @@ func TestCanonicalDirectionIsExactForOppositeNormals(t *testing.T) {
 	for _, v := range []math.Vector3{
 		math.V3(0, 0, 1), math.V3(1, 1, 1), math.V3(-3, 7, -0.5), math.V3(0, -2, 5),
 	} {
-		a, _, err := canonicalDirection(v)
+		a, err := canonicalDirection(v)
 		if err != nil {
 			t.Fatalf("canonicalDirection(%v): %v", v, err)
 		}
-		b, _, err := canonicalDirection(v.Scale(-1))
+		b, err := canonicalDirection(v.Scale(-1))
 		if err != nil {
 			t.Fatalf("canonicalDirection(-%v): %v", v, err)
 		}
@@ -66,108 +57,83 @@ func TestCanonicalDirectionIsExactForOppositeNormals(t *testing.T) {
 	}
 }
 
-// A non-planar surface is not a slab, and a plane is not an enclosure: each function answers only
-// where it has a closed form, and says so where it has none.
-func TestTheSpanFunctionsDeclineWhereTheyHaveNoClosedForm(t *testing.T) {
+// Each accessor answers only for what it describes: a cylinder is not a plane, and a plane has no
+// axis of revolution. A caller reads "no direction here", never a wrong one.
+func TestTheDirectionAccessorsDeclineWhatTheyDoNotDescribe(t *testing.T) {
 	t.Parallel()
-	cyl, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
+	cyl, err := NewCylinder(math.P3(1, 2, 3), math.V3(0, 0, 1), 2)
 	if err != nil {
 		t.Fatalf("cylinder: %v", err)
 	}
-	if _, ok := AsMaterialSlab(BoundarySurface{Surface: cyl}); ok {
-		t.Error("a cylinder is not a planar slab")
+	if _, ok := PlanarNormal(cyl); ok {
+		t.Error("a cylinder has no plane normal")
 	}
-	if _, ok := EnclosedSpan(planeFacing(t, math.P3(0, 0, 0), math.V3(0, 0, 1))); ok {
-		t.Error("a plane encloses nothing")
-	}
-	cone, err := NewCone(math.P3(0, 0, 0), math.V3(0, 0, 1), 0.5)
+	plane, err := NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	if err != nil {
-		t.Fatalf("cone: %v", err)
+		t.Fatalf("plane: %v", err)
 	}
-	if _, ok := EnclosedSpan(BoundarySurface{Surface: cone}); ok {
-		t.Error("a cone's enclosed material runs to a point at the apex and has no surface-only span")
+	if _, _, ok := RevolvedAxisLine(plane); ok {
+		t.Error("a plane is not a surface of revolution")
 	}
-}
-
-// A closed curved surface encloses material only when its normal points OUT of it. Facing in, the same
-// cylinder is a BORE, and what it wraps is a void.
-func TestEnclosedSpanReadsTheFacingDirection(t *testing.T) {
-	t.Parallel()
-	cyl, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
-	if err != nil {
-		t.Fatalf("cylinder: %v", err)
-	}
-	got, ok := EnclosedSpan(BoundarySurface{Surface: cyl})
-	if !ok || got != 4 {
-		t.Errorf("EnclosedSpan(rod r=2) = %v, %v; want 4", got, ok)
-	}
-	if _, ok := EnclosedSpan(BoundarySurface{Surface: cyl, Reversed: true}); ok {
-		t.Error("a bore wraps a void, not material")
-	}
-	sph, err := NewSphere(math.P3(1, 2, 3), 1.5)
+	sphere, err := NewSphere(math.P3(0, 0, 0), 1)
 	if err != nil {
 		t.Fatalf("sphere: %v", err)
 	}
-	if got, ok := EnclosedSpan(BoundarySurface{Surface: sph}); !ok || got != 3 {
-		t.Errorf("EnclosedSpan(ball r=1.5) = %v, %v; want 3", got, ok)
+	if _, _, ok := RevolvedAxisLine(sphere); ok {
+		t.Error("a sphere's every direction is an axis, so it distinguishes none")
 	}
-	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.25)
+}
+
+// Two coaxial faces pointing opposite ways along one axis must report ONE axis, so a body with a
+// bore and a boss about the same line is measured across that line once.
+func TestOppositeAxesCanonicaliseToOne(t *testing.T) {
+	t.Parallel()
+	up, err := NewCylinder(math.P3(1, 2, 3), math.V3(0, 0, 1), 2)
+	if err != nil {
+		t.Fatalf("up: %v", err)
+	}
+	down, err := NewCylinder(math.P3(1, 2, 9), math.V3(0, 0, -1), 5)
+	if err != nil {
+		t.Fatalf("down: %v", err)
+	}
+	_, a, ok := RevolvedAxisLine(up)
+	if !ok {
+		t.Fatal("a cylinder has an axis")
+	}
+	_, b, ok := RevolvedAxisLine(down)
+	if !ok {
+		t.Fatal("a cylinder has an axis")
+	}
+	if a != b {
+		t.Errorf("two faces on one axis report %v and %v; they must canonicalise to one", a, b)
+	}
+	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1)
 	if err != nil {
 		t.Fatalf("torus: %v", err)
 	}
-	if got, ok := EnclosedSpan(BoundarySurface{Surface: tor}); !ok || got != 2.5 {
-		t.Errorf("EnclosedSpan(torus tube r=1.25) = %v, %v; want 2.5", got, ok)
+	if o, d, ok := RevolvedAxisLine(tor); !ok || o != math.P3(0, 0, 0) || d != a {
+		t.Errorf("RevolvedAxisLine(torus) = %v %v %v; want the torus centre and its axis", o, d, ok)
 	}
 }
 
-// A tube WALL is the span between the outer cylinder and the bore. The pair must be coaxial, and the
-// outer one must face out while the inner faces in — any other arrangement has a void between it.
-func TestOpposedSpanIsATubeWall(t *testing.T) {
+// The principal frame is what a body whose boundary names too few directions falls back on, so it
+// must find the thin direction of a flat cloud and turn with it.
+func TestPrincipalDirectionsFindTheThinDirection(t *testing.T) {
 	t.Parallel()
-	outer, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 10)
-	if err != nil {
-		t.Fatalf("outer: %v", err)
+	var cloud []math.Point3
+	for i := range 5 {
+		for j := range 5 {
+			cloud = append(cloud, math.P3(math.Scalar(i), math.Scalar(j), math.Scalar(0.001*float64((i+j)%2))))
+		}
 	}
-	inner, err := NewCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 9.75)
-	if err != nil {
-		t.Fatalf("inner: %v", err)
+	frame, ok := PrincipalDirections(cloud)
+	if !ok {
+		t.Fatal("a 25-point cloud has a principal frame")
 	}
-	got, ok := OpposedSpan(BoundarySurface{Surface: outer}, BoundarySurface{Surface: inner, Reversed: true})
-	if !ok || stdmath.Abs(got-0.25) > 1e-12 { // tol:numeric — an exact radius difference
-		t.Errorf("OpposedSpan(tube 10/9.75) = %v, %v; want 0.25", got, ok)
+	if thin := stdmath.Abs(float64(frame[2].Z())); thin < 0.999 {
+		t.Errorf("the least-spread direction of a flat cloud is its normal; got %v", frame[2])
 	}
-	if _, ok := OpposedSpan(BoundarySurface{Surface: outer}, BoundarySurface{Surface: inner}); ok {
-		t.Error("two out-facing cylinders hold a void between them, not material")
-	}
-	offAxis, err := NewCylinder(math.P3(3, 0, 0), math.V3(0, 0, 1), 9.75)
-	if err != nil {
-		t.Fatalf("off-axis: %v", err)
-	}
-	if _, ok := OpposedSpan(BoundarySurface{Surface: outer}, BoundarySurface{Surface: offAxis, Reversed: true}); ok {
-		t.Error("cylinders that do not share an axis line have no constant wall")
-	}
-}
-
-// Concentric spheres are the same shell in the other family; a pair that is not concentric is not one.
-func TestOpposedSpanIsASphericalShell(t *testing.T) {
-	t.Parallel()
-	outer, err := NewSphere(math.P3(1, 1, 1), 5)
-	if err != nil {
-		t.Fatalf("outer: %v", err)
-	}
-	inner, err := NewSphere(math.P3(1, 1, 1), 4.5)
-	if err != nil {
-		t.Fatalf("inner: %v", err)
-	}
-	got, ok := OpposedSpan(BoundarySurface{Surface: outer}, BoundarySurface{Surface: inner, Reversed: true})
-	if !ok || stdmath.Abs(got-0.5) > 1e-12 { // tol:numeric — an exact radius difference
-		t.Errorf("OpposedSpan(shell 5/4.5) = %v, %v; want 0.5", got, ok)
-	}
-	moved, err := NewSphere(math.P3(2, 1, 1), 4.5)
-	if err != nil {
-		t.Fatalf("moved: %v", err)
-	}
-	if _, ok := OpposedSpan(BoundarySurface{Surface: outer}, BoundarySurface{Surface: moved, Reversed: true}); ok {
-		t.Error("spheres that are not concentric have no constant shell")
+	if _, ok := PrincipalDirections(cloud[:1]); ok {
+		t.Error("one point has no spread and no frame")
 	}
 }

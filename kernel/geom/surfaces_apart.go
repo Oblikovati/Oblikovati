@@ -69,8 +69,7 @@ func parallelCylindersApart(a, b Cylinder, gap float64) bool {
 
 // axisLineDistance is the perpendicular distance from p to the line through origin along dir.
 func axisLineDistance(origin math.Point3, dir math.UnitVector3, p math.Point3) float64 {
-	v := origin.VectorTo(p)
-	return float64(v.Sub(dir.AsVector().Scale(v.Dot(dir.AsVector()))).Length())
+	return DistanceToAxis(origin, dir, p)
 }
 
 // parallelConesApart: two cones sharing an axis LINE and a half-angle are translates of one
@@ -94,9 +93,13 @@ func parallelConesApart(a, b Cone, gap float64) bool {
 	return delta*stdmath.Sin(a.HalfAngle) > gap
 }
 
-// coneAngleWeld is how close two half-angles must be to count as the same cone family. It is an
-// ANGLE on unit directions, so it carries no model scale.
-const coneAngleWeld = 1e-9 // tol:angular — half-angle equality for the parallel-cone test
+// coneAngleWeld is how close two half-angles must be to count as the same cone family, and — through
+// parallelDirs, which [ParallelDirections] also routes to — how nearly parallel two boundary
+// DIRECTIONS must be to count as one (#3524: it groups a body's coplanar faces, and its coaxial
+// ones, for the size classification's width). It is an ANGLE on unit directions, so it carries no
+// model scale, and both questions want the same answer: two things that differ by less than this
+// are the same thing.
+const coneAngleWeld = 1e-9 // tol:angular — half-angle equality, and direction identity
 
 // parallelDirs reports whether two unit-length directions are parallel, either sense.
 func parallelDirs(a, b math.Vector3) bool {

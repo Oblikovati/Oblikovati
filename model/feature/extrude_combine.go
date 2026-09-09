@@ -3,6 +3,9 @@
 package feature
 
 import (
+	"fmt"
+
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/topo"
 )
@@ -92,7 +95,11 @@ func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Bo
 	// which curvedBooleanWorthTrying now admits on its own, and brep.CoaxialCylinderUnion still recognises
 	// the pair from inside curvedExactPaths.
 	if curvedBooleanWorthTrying(target, body) {
-		if res, ok := ops.CurvedBooleanWithDiagnostics(op, target, body, in.Diag); ok {
+		res, ok, err := curvedCombine(op, target, body, in.Diag)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
 			return appendCombined(running, res), nil
 		}
 	}
@@ -107,6 +114,50 @@ func combine(in Input, body *topo.Body, op ops.PartFeatureOperation) ([]*topo.Bo
 		return nil, err
 	}
 	return appendCombined(running, res), nil
+}
+
+// curvedCombine runs the exact curved boolean and CONSUMES what it decided about the operands' size.
+//
+// combine has two kernel entries — the curved attempt here and the planar retry below it — and they
+// were classifying the pair twice, on operands that differ (the retry planarizes both). Two call
+// sites recomputing one predicate is what #3524 is about, and here the two could answer differently:
+// the curved entry refused a 1e-10 drill by name while the planar retry built silently on the faceted
+// stand-in, so the refusal the user should have seen was overwritten by a boolean that removed
+// nothing. Faceting cannot make an operand thicker, so a size refusal is FINAL: it comes back as an
+// error and the retry never runs.
+//
+// Precisely: each OPERAND PAIR is classified once. When the curved attempt declines for any other
+// reason the retry does classify again, but on the faceted stand-ins — a different pair, and the pair
+// the boolean will actually run on. A prism inscribed in a cylinder is narrower than the cylinder, so
+// that second classification can only ever REFUSE where the first did not, never the reverse, which
+// is the honest direction: it is the operand being built with.
+//
+// The curved attempt records into a local recorder so its verdict can be read whatever the caller's
+// recorder is (a feature may be recomputing with none); every record is forwarded, so nothing the
+// kernel said is lost.
+func curvedCombine(op ops.PartFeatureOperation, target, tool *topo.Body, out *diag.Recorder) (*topo.Body, bool, error) {
+	rec := &diag.Recorder{}
+	res, ok := ops.CurvedBooleanWithDiagnostics(op, target, tool, rec)
+	records := rec.Records()
+	for _, d := range records {
+		out.Record(d)
+	}
+	if ok {
+		return res, true, nil
+	}
+	return nil, false, subResolutionRefusal(records)
+}
+
+// subResolutionRefusal turns the kernel's recorded size decline back into the error a feature
+// sickens on, carrying the kernel's own detail so the browser names the thickness and the remedy.
+// nil when the curved attempt declined for any other reason, which the planar retry may still model.
+func subResolutionRefusal(records []diag.Diagnostic) error {
+	for _, d := range records {
+		if d.Code == ops.CodeBooleanSubResolutionTool {
+			return fmt.Errorf("%w: %s", ops.ErrSubResolutionOperand, d.Detail)
+		}
+	}
+	return nil
 }
 
 // appendCombined replaces the running target with the boolean result, dropping an empty result.

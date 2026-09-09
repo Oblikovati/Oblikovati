@@ -242,6 +242,12 @@ func TestSolidThicknessIsTheSmallestExtent(t *testing.T) {
 //
 // No runtime test can see this: both evaluations agreed, so the double work left no trace in the
 // result. The source is where the invariant lives, so the source is what this reads.
+//
+// The guard stops at THIS package's boundary — it parses "." — and the feature layer had its own
+// second evaluation: model/feature.combine classified the pair once through the curved entry and
+// again through the planar retry, on operands that differ because the retry facets them. That seam is
+// closed in combine itself (curvedCombine consumes the curved attempt's verdict) and pinned by
+// TestAPlanarRetryCannotOverturnASizeRefusal there.
 func TestTheSizeClassificationHasOneCallSitePerEntry(t *testing.T) {
 	t.Parallel()
 	want := map[string]bool{"BooleanWithDiagnostics": true, "CurvedBooleanWithDiagnostics": true}

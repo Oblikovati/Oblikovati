@@ -32,10 +32,19 @@ import (
 // policy and hide it. So the floor is the top of the silent band, rounded up to the model's own
 // coincidence scale: geom.Resolution.Weld, which sits ~6x above the highest silent point measured.
 //
-// A solid operand thinner than that has two opposite boundary faces closer together than the
-// distance at which this model calls two points the same point: it has no interior left to build
-// with. The ground rule is that an unsupported configuration is refused AT CLASSIFICATION with a
-// named decline, before any geometry is built. This is that classification.
+// A solid operand thinner than that is narrower, in some direction, than the distance at which this
+// model calls two points the same point: it has no interior left to build with. The ground rule is
+// that an unsupported configuration is refused AT CLASSIFICATION with a named decline, before any
+// geometry is built. This is that classification.
+//
+// "Thinner" is the operand's own minimum WIDTH — its whole extent in the thinnest direction its
+// boundary supplies (solidThickness). That is what the bounding box measured before #3524 and what
+// this still measures; only the DIRECTIONS moved, from the world's axes to the body's own. It is
+// deliberately GLOBAL and not a reading of the thinnest FEATURE the operand carries: a local reading
+// makes the answer depend on how the shape was modelled — a spool with a 1e-3 neck reads 0.002
+// through the neck's own cylinder and the flange diameter as a prism — and the decline would then
+// mean something different for two spellings of one part. Keeping it global keeps the decline saying
+// exactly what ADR-0061 stage 6 gave it to say, so it needs no ADR of its own.
 
 // ErrSubResolutionOperand is the boolean's refusal for an operand whose material is thinner than the
 // model's coincidence resolution. It is a REFUSAL, not a degradation: no geometry is attempted, so
