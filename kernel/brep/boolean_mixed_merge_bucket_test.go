@@ -14,6 +14,11 @@ import (
 // only if such a pair could never have answered anything but declineUnshared — the exit that merges
 // nothing, records nothing and is never reported. These rows gate exactly that, and nothing wider:
 // they say nothing about what the scan does INSIDE one bucket, where every pair is still tested.
+//
+// These rows are the SYNTHETIC half: one zero-value surface per kind, in both senses, at an empty
+// loop box. They pin the kind/sense enumeration — a new geom.SurfaceKind fails the count check
+// below. The same property over REAL faces at their own resolutions is
+// TestNoCrossBucketPairOfACorpusFaceIsAnythingButUnshared, in the corpus file beside this one.
 
 // bucketProbeSurfaces is one surface per geom.SurfaceKind. Zero values are enough: the property under
 // test is decided by SurfacesCoincide's type switch, which never reads a field when the kinds differ.

@@ -2,7 +2,11 @@
 
 package geom
 
-import "testing"
+import (
+	"testing"
+
+	"oblikovati.org/math"
+)
 
 // The kind enums are only useful if every value maps to exactly one type and vice versa.
 // These coverage tests enumerate the enum and assert a probe instance of each kind reports
@@ -125,5 +129,50 @@ func TestSurfaceKindOfDeclinesASurfaceThatNamesNoKind(t *testing.T) {
 	t.Parallel()
 	if _, ok := SurfaceKindOf(saddleSurface{}); ok {
 		t.Error("SurfaceKindOf claims a kind for a surface with no Kind method")
+	}
+}
+
+// populatedSurfaceKindProbes is the same ten types with their fields FILLED. surfaceKindProbes above
+// uses zero values, which proves the mapping only where every field is zero.
+func populatedSurfaceKindProbes(t *testing.T) map[SurfaceKind]KindedSurface {
+	t.Helper()
+	z, x, down := mustUnit(t, 0, 0, 1), mustUnit(t, 1, 0, 0), mustUnit(t, 0, 0, -1)
+	cyl := Cylinder{Origin: math.P3(1, 2, 3), AxisDir: z, Ref: x, Radius: 2.5}
+	return map[SurfaceKind]KindedSurface{
+		SurfacePlane:    Plane{Origin: math.P3(1, 2, 3), UAxis: x, VAxis: mustUnit(t, 0, 1, 0)},
+		SurfaceCylinder: cyl,
+		SurfaceSphere:   Sphere{Center: math.P3(-1, 4, 2), Radius: 3.25},
+		SurfaceCone:     Cone{Apex: math.P3(0, 1, 5), AxisDir: down, Ref: x, HalfAngle: 0.4},
+		SurfaceTorus: Torus{Center: math.P3(2, 2, 2), AxisDir: z, Ref: x,
+			MajorRadius: 5, MinorRadius: 1.5},
+		SurfaceBSpline: BSplineSurface{UDegree: 1, VDegree: 1,
+			Ctrl:   [][]math.Point3{{math.P3(0, 0, 0), math.P3(1, 0, 0)}, {math.P3(0, 1, 0), math.P3(1, 1, 1)}},
+			UKnots: []float64{0, 0, 1, 1}, VKnots: []float64{0, 0, 1, 1}},
+		SurfaceEllipticalCylinder: EllipticalCylinder{Origin: math.P3(1, 1, 0), AxisDir: z, Ref: x,
+			MajorRadius: 4, MinorRadius: 2},
+		SurfaceEllipticalCone: EllipticalCone{Apex: math.P3(0, 0, 9), AxisDir: down, Ref: x,
+			MajorAngle: 0.5, MinorAngle: 0.3},
+		SurfaceOffset:           OffsetSurface{Base: cyl, Distance: 0.75},
+		SurfaceThreadedCylinder: ThreadedCylinder{Cylinder: cyl, Pitch: 0.2, Depth: 0.1},
+	}
+}
+
+// TestKindIgnoresTheReceiversFields is the property kernel/brep's merge bucket rests on (#3523): the
+// bucket reads Kind() as a proxy for the CONCRETE TYPE, and that proxy is faithful only while Kind()
+// is a per-type constant. A Kind() that branched on a field would put two values of ONE type in two
+// buckets and the merge would stop offering them — which the zero-value coverage row above cannot
+// see, because it never varies a field.
+func TestKindIgnoresTheReceiversFields(t *testing.T) {
+	t.Parallel()
+	filled := populatedSurfaceKindProbes(t)
+	if len(filled) != int(surfaceKindCount) {
+		t.Fatalf("populatedSurfaceKindProbes has %d entries, want %d — a new kind needs a populated probe",
+			len(filled), int(surfaceKindCount))
+	}
+	for k, s := range filled {
+		if got := s.Kind(); got != k {
+			t.Errorf("a populated %T reports Kind %v, but the zero value reports %v: Kind() reads its "+
+				"receiver's fields, so it is not a proxy for the concrete type", s, got, k)
+		}
 	}
 }

@@ -13,9 +13,11 @@ import (
 // geom.ResolutionForBox(faceLoopBox(a)) is the resolution onOneSurface hands to SurfacesCoincide, and
 // faceLoopBox walks every edge of every loop of a and takes a span box per edge — for a value that
 // depends on a alone. Measured on the fine-pitch coil join (#879's 2 mm pitch on a Ø6 core), one
-// mergeCoincidentFaces call over 1541 faces built that box 1,188,105 times, 771 per face, and those
-// builds were 821 ms of the call's 926 ms. Tabulating it per scan is what made the merge fast
-// (2007 ms → 185 ms over the four pitches).
+// mergeCoincidentFaces call over 1541 faces built that box 1,188,105 times — 771 per face — and those
+// builds were 88% of the call. Tabulating it per scan takes the count to 4,620 (three scans over
+// 1541, 1540 and 1539 faces): a 257× fall. Quote that COUNT and not a wall-time ratio; the counts
+// reproduce digit for digit, while the same change timed 10.9× and 22× on two differently loaded
+// machines.
 //
 // The bucket is the other half, and it is the SMALL half: geom.SurfacesCoincide proves identity only
 // between two values of ONE analytic kind (its switch asserts b to a's type), and a merge never
