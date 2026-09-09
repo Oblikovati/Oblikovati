@@ -50,8 +50,13 @@ import (
 // the frame is any orthonormal basis); a cube has the same cloud but its face normals name the answer
 // exactly, so the minimum takes those.
 //
+// That swing is NOT harmless, and this comment used to imply it was. Straddle the weld with it —
+// s = 16, weld 34.64, widths 32 … 36.95 — and one congruent operand REFUSES at 4 of 55 orientations
+// and builds at the other 51 (#3524 review, third round). It is a rotation-dependent VERDICT, the
+// last instance of what this change removed everywhere else, and it is tracked as #3540.
+//
 // Both err upward — the FALSE-NEGATIVE direction, which is the direction the bounding box this
-// replaces erred in too. It is not "the safe side" without qualification: erring upward means NOT
+// replaces erred in too, and which stops being a comfort once a swing can cross the weld (#3540). It is not "the safe side" without qualification: erring upward means NOT
 // refusing, and a missed refusal is the silent exit ADR-0061 stage 6 exists to close. It is the side
 // that never refuses ordinary geometry, and matching base on which side it errs is the property this
 // change had to keep (#3524 review N4).
@@ -281,6 +286,12 @@ func radialDistance(p math.Point3, a axisLine) float64 {
 // two different ways depending on how it was turned — the defect #3524 exists to remove, reappearing
 // one regime deeper. The principal frame turns with the body and does not depend on any face normal
 // being right, so it runs ALWAYS and the minimum takes whichever is thinner.
+//
+// Running it always also moves the answer for ORDINARY curved bodies, which is a behaviour change,
+// not only a robustness one: a cone reads 5.91645370690201 where it read 6, a frustum
+// 5.967825189087973 where it read 6 (-1.39 % and -0.54 %). Both are still above their true widths of
+// 5.367 and 5.692, so both are more correct — but the classification boundary moved for every curved
+// body, not only the thin ones (#3524 review, third round).
 //
 // It costs one scatter matrix and one 3x3 Jacobi over the support, plus three extents that the
 // ceiling cuts short like any other direction.
