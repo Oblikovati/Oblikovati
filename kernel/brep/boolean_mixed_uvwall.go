@@ -368,8 +368,11 @@ func conicCrossesFaceBoundary(pc planeConic, f curvedFace) (crosses, ok bool) {
 	return false, true
 }
 
-// faceLoopBox is a face's exact boundary bounding box with NO cull pad — the uv bucket's box
-// convention (partitionFaces takes it from the topo face's range box, which is unpadded too).
+// faceLoopBox bounds a face's boundary edges over their own spans. Read the restriction first: for an
+// edge whose curve kind has no closed-form extent, the box holds a SAMPLED hull grown by the curve's
+// own step reach (geom.CurveSpanBox) — a bound, but a slightly larger one than the exact extent.
+// This function itself adds NO cull pad — the uv bucket's box convention (partitionFaces takes it
+// from the topo face's range box, which is unpadded too).
 //
 // It bounds each edge over its OWN span (geom.CurveSpanBox), not only the vertices the loop chains: a
 // face bounded by one closed circle has both ends at the same seam point, and a vertex-only box

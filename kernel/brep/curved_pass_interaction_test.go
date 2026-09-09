@@ -193,8 +193,9 @@ func TestCylinderPassClearEllipseAboveBand(t *testing.T) {
 	}
 }
 
-// TestSpanIsRimContact: a crossing whose whole axial span sits within the band's own cull pad of a rim
-// IS that rim, and imprints nothing the face does not already carry as an edge. It is the case
+// TestSpanIsRimContact: a crossing whose axial span reaches no further INTO the band than one rim's
+// cull pad — however far it reaches the OTHER way — IS that rim, and imprints nothing the face does
+// not already carry as an edge. It is the case
 // bandPlacement leaves unclassified — neither strictly inside nor clear by the pad — while the clip
 // downstream measures against the UNPADDED band and finds nothing between the rims, so a rim crossing
 // refused the whole boolean (CI run 34280554924 macos-latest, ADR-0061).

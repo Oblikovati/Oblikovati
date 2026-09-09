@@ -95,8 +95,9 @@ func obliqueFigureEightLobe(t *testing.T) geom.Curve3 {
 // (CI run 34280554924 macos-latest).
 //
 // Every probe is taken OFF the walk's own stations: the box is built at i/curveSpanSamples, so a probe
-// on that grid is a point the box was extended with and cannot fail. offGridParams walks a prime count
-// of half-offset parameters instead, which shares no station with the walk.
+// on that grid is a point the box was extended with and cannot fail. offGridParams walks half-offset
+// parameters at a count that PROVABLY shares no station with the walk (see its comment); a prime
+// count did not — 48.5/97 is exactly 0.5, the walk's own middle station.
 func TestCurveSpanBoxBoundsACurveWithNoClosedFormExtent(t *testing.T) {
 	t.Parallel()
 	lobe := obliqueFigureEightLobe(t)
@@ -121,9 +122,9 @@ func TestCurveSpanBoxBoundsACurveWithNoClosedFormExtent(t *testing.T) {
 // stations is an inscribed pentagon that misses the tube. Both of those numbers are load-bearing: a
 // WHOLE turn count makes the stations divide the turn evenly and land on the axes, and a start on the
 // reference direction puts the first station at +r itself, either of which makes the hull exact on an
-// axis and the row vacuous. Hence 6.4 turns from a reference direction at 45°. The row asserts BOTH halves — that the bare hull really does miss, and that
-// the returned box (the hull grown by the step reach the curve's own speed bounds) holds every
-// off-grid point anyway.
+// axis and the row vacuous. Hence 6.4 turns from a reference direction at 45°. The row asserts BOTH
+// halves — that the bare hull really does miss, and that the returned box (the hull grown by the step
+// reach the curve's own speed bounds) holds every off-grid point anyway.
 func TestCurveSpanBoxHoldsAWigglyCurveItsWalkUnderBounds(t *testing.T) {
 	t.Parallel()
 	const radius = 3.0
@@ -162,10 +163,12 @@ func stationHull(c geom.Curve3, t0, t1 float64) math.Box {
 	return box
 }
 
-// offGridParams returns parameters in (0, 1) that share no value with the walk's stations: a prime
-// count of them, each offset half a step of its own spacing.
+// offGridParams returns parameters in (0, 1) that share no value with the walk's stations. A probe
+// (k+½)/probes equals a station i/32 only when probes·i = 16·(2k+1); with probes a multiple of 32 the
+// left side is a multiple of 32 and the right side is 16 times an odd number, so no solution exists.
+// (A prime count was NOT enough: 48.5/97 is exactly 0.5, station 16 bit for bit.)
 func offGridParams() []float64 {
-	const probes = 97 // prime, so k/97 lands on i/32 only at the ends, which the half-offset removes
+	const probes = 3 * geom.CurveSpanSamplesForTest // a multiple of the walk's count: no probe is a station
 	out := make([]float64, probes)
 	for k := range out {
 		out[k] = (float64(k) + 0.5) / probes
