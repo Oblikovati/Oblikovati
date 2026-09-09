@@ -18,7 +18,7 @@ export PKG_CONFIG_SYSROOT_DIR := /run/host
 export LD_LIBRARY_PATH := $(LOCAL_NATIVE_LIB_DIR)$(if $(LD_LIBRARY_PATH),:$(LD_LIBRARY_PATH))
 endif
 
-.PHONY: build smoke run run-watch lint test shaders native-libs clean
+.PHONY: build smoke run run-watch lint test deps-check shaders native-libs clean
 
 # native-libs exposes only the host GLFW/Vulkan runtime libs to Flatpak builds.
 # Do not put the whole host libdir on LD_LIBRARY_PATH; it can load host libc into
@@ -31,6 +31,38 @@ native-libs:
 		ln -sfn "$(HOST_NATIVE_LIB_DIR)/libvulkan.so" "$(LOCAL_NATIVE_LIB_DIR)/libvulkan.so"; \
 		ln -sfn "$(HOST_NATIVE_LIB_DIR)/libvulkan.so.1" "$(LOCAL_NATIVE_LIB_DIR)/libvulkan.so.1"; \
 	fi
+
+# NATIVE_PKGS are the pkg-config names the cgo build links against (see
+# internal/native: `#cgo pkg-config: glfw3 vulkan`). deps-check exists so the repo-root
+# `make gate` can say WHICH native dep is missing and exit non-zero, instead of letting
+# the head module drop out of the gate unnoticed (#3526): "nothing touched head" has to
+# be a measurement, not an assertion.
+NATIVE_PKGS := glfw3 vulkan
+
+deps-check: native-libs
+	@missing=""; \
+	for tool in cc pkg-config; do \
+		command -v $$tool >/dev/null 2>&1 || missing="$$missing $$tool"; \
+	done; \
+	if command -v pkg-config >/dev/null 2>&1; then \
+		for pkg in $(NATIVE_PKGS); do \
+			pkg-config --exists $$pkg || missing="$$missing $$pkg(pkg-config)"; \
+		done; \
+	else \
+		missing="$$missing $(NATIVE_PKGS)(unprobed: no pkg-config)"; \
+	fi; \
+	if [ -n "$$missing" ]; then \
+		echo "head: MISSING native deps:$$missing"; \
+		echo "head: Debian/Ubuntu: sudo apt-get install build-essential pkg-config libglfw3-dev libvulkan-dev mesa-vulkan-drivers"; \
+		echo "head: macOS: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config"; \
+		echo "head: the cgo Vulkan module cannot be built or tested here, so the gate is NOT satisfied"; \
+		exit 1; \
+	fi; \
+	if [ -z "$$DISPLAY" ] && [ -z "$$WAYLAND_DISPLAY" ]; then \
+		echo "head: WARNING no DISPLAY/WAYLAND_DISPLAY - the in-window GLFW/Vulkan tests will self-skip;"; \
+		echo "head: run the gate under xvfb-run (as CI does) to cover them"; \
+	fi; \
+	echo "head: native deps OK (glfw3 $$(pkg-config --modversion glfw3), vulkan $$(pkg-config --modversion vulkan))"
 
 # shaders recompiles the viewport GLSL to the embedded SPIR-V (needs glslangValidator
 # from glslang-tools). Run after editing internal/native/shaders/*.vert|frag.
@@ -63,8 +95,15 @@ build: native-libs
 lint: native-libs
 	golangci-lint run ./...
 
+# -p 1 runs one PACKAGE at a time. Several packages here open a real GLFW window and a
+# real Vulkan device, and under a live compositor they contend for the window server:
+# a parallel `go test ./...` failed TestWaitEventsBlocksWhenIdle (a timing assertion)
+# and TestInWindowToolFaceHighlightGeneralizes in 2 of 3 runs, while 3 serial runs and
+# every isolated run were green. CI does not see this because it drives a private xvfb
+# display. The cost is ~15 s on a ~2 min suite; a gate that flakes is a gate people
+# learn to ignore (#3526).
 test: native-libs
-	go test ./...
+	go test -p 1 ./...
 
 # smoke opens a real GLFW+Vulkan window, renders a few Dear ImGui frames, and exits 0
 # if the whole native stack initialized. Requires a display (X11/Wayland) + a Vulkan

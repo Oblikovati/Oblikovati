@@ -35,6 +35,18 @@ PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 # Minimum total coverage gate for `make cover` (raise as the suite grows).
 COVER_MIN ?= 0
 
+# The three exchange translators are SEPARATE modules (own go.mod), and unlike head/
+# they are not in go.work either, so `./...` at the root reaches none of them and a
+# plain `go test ./...` inside one fails with "directory prefix . does not contain
+# modules listed in go.work" — hence GOWORK=off. `make gate` is what runs them (#3526).
+TRANSLATOR_MODULES := model/exchange/translators/olecf \
+                      model/exchange/translators/inventor \
+                      model/exchange/translators/solidworks
+
+# 30m: the inventor batch-translate package rebuilds all 77 testdata parts (527 s on CI
+# run 34280554924) and hit `go test`'s 10m per-package default once (run 33765461130).
+TRANSLATOR_TIMEOUT ?= 30m
+
 # Revision `make test-impacted` compares against to find the change set.
 IMPACT_BASE ?= origin/develop
 
@@ -43,7 +55,7 @@ IMPACT_BASE ?= origin/develop
 .PHONY: help
 help: ## List available targets
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
-	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: tidy
 tidy: ## Sync go.mod / go.sum
@@ -69,6 +81,14 @@ vet: ## Run go vet on BOTH modules (root cgo-free, then the cgo head)
 .PHONY: vet-head
 vet-head: ## go vet the cgo head module (needs the native deps; see head/Makefile)
 	CGO_ENABLED=1 $(GO) vet -C head ./...
+
+.PHONY: head-deps
+head-deps: ## Fail (naming the missing dep) when head's cgo/Vulkan deps are absent
+	$(MAKE) -C head deps-check
+
+.PHONY: test-head
+test-head: head-deps ## Run the cgo head module's tests (never skipped silently)
+	$(MAKE) -C head test
 
 .PHONY: lint
 lint: ## Run golangci-lint (install with `make tools`)
@@ -157,6 +177,14 @@ test-slowest-serial: ## Rank tier 2 with NO parallelism — the measurement the 
 	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) > $(TESTJSON); \
 	  status=$$?; $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
+.PHONY: test-translators
+test-translators: ## Tier 2 on the three exchange translator modules (own go.mod)
+	@for m in $(TRANSLATOR_MODULES); do \
+	  echo "→ $$m"; \
+	  (cd $$m && GOWORK=off CGO_ENABLED=0 $(GO) test -timeout $(TRANSLATOR_TIMEOUT) $(PKG)) \
+	    || exit 1; \
+	done
+
 .PHONY: test-race
 test-race: ## Run the suite under the race detector (needs cgo)
 	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(PKG)
@@ -192,6 +220,15 @@ run-cli: ## Run the headless CLI
 # per-change one; use `make ci-race` before cutting a release.
 .PHONY: ci
 ci: fmt-check vet lint cover ## Everything a PR must pass, locally (both modules)
+
+# THE pre-push gate (#3526). `make ci` covers the root module and lints/vets head, but
+# nothing ran the head module's TESTS or the translator modules at all, so "this wave
+# did not touch head" was an assertion about a diff rather than a measurement. `gate`
+# closes that: head-deps runs FIRST so a machine without the native deps is told which
+# one is missing in one second, instead of after the full suite — and it exits non-zero
+# there, because a gate that quietly covers four of five modules is worse than no gate.
+.PHONY: gate
+gate: head-deps ci test-translators test-head ## Pre-push: EVERY module — root, translators, cgo head
 
 .PHONY: ci-race
 ci-race: ci test-race ## `make ci` plus the race detector (the pre-release gate)

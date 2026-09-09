@@ -139,6 +139,7 @@ only figure that does not move with how the tests inside were scheduled.
 | Gate | When | Runs |
 |---|---|---|
 | pre-commit hook | every commit | tier 1 on the impacted packages |
+| `make gate` | before every push | tier 2 on **all five modules** + vet + lint (root and head) |
 | CI `test` | every PR, 3 OSes | tier 2; the Linux leg adds coverage and the guard gate |
 | CI `head` | every PR | the head module only — a separate module, no overlap |
 | CI `race` | push to `release` | tier 2 under `-race`, corpus skipped |
@@ -150,12 +151,36 @@ kernel ground rule, so it has to be checked on each.
 `make ci` runs `fmt-check vet lint cover` — one suite run, not three. `make ci-race`
 adds the race detector for a release.
 
-**Both modules, every time.** `head/` is a separate module, so `go build ./...`,
+**Every module, every time (#3526).** `head/` is a separate module, so `go build ./...`,
 `go vet ./...` and `go test ./...` from the repo root do not compile one file of it. A
 change that renames or moves a kernel symbol passes every root-level check and still
 breaks the four head CI jobs — which is what the `kernel/ops/tessellate` extraction did.
 `make vet` and `make lint` both descend into `head/` for that reason; running
 `golangci-lint run` or `go vet ./...` directly does not, and is how the gap opens.
+
+The same hole is wider than `head`: the repo holds **five** Go modules, and the root
+`./...` reaches exactly one of them.
+
+| Module | Reached by root `./...`? | Reached by `make gate` |
+|---|---|---|
+| `.` (kernel, model, app, cmd) | yes | `make ci` (`fmt-check vet lint cover`) |
+| `head/` (cgo Vulkan UI) | no — separate module | `make vet-head`, `make -C head lint`, `make test-head` |
+| `model/exchange/translators/olecf` | no — own `go.mod`, not in `go.work` | `make test-translators` |
+| `model/exchange/translators/inventor` | no — own `go.mod`, not in `go.work` | `make test-translators` |
+| `model/exchange/translators/solidworks` | no — own `go.mod`, not in `go.work` | `make test-translators` |
+
+Two further `go.mod` files sit under `head/internal/addinhost/testdata` (`echoaddin`,
+`uiaddin`): they are c-shared add-in fixtures that `head`'s own loader tests compile at
+test time, so `make test-head` covers them and they need no entry of their own.
+
+`make gate` is the pre-push gate and runs all of it. It puts `head-deps` first: on a
+machine without the C toolchain, `pkg-config`, GLFW or the Vulkan loader it prints which
+one is missing and **exits non-zero in about a second**, rather than skipping the module
+and reporting green. A gate that quietly covers one module out of five is worse than no
+gate, because "this change did not touch `head`" then reads as a measurement when it was
+only ever a claim about a diff. The three translator modules run with `GOWORK=off`: they
+are not listed in `go.work`, so inside them a plain `go test ./...` fails with *directory
+prefix . does not contain modules listed in go.work*.
 
 ## The kernel/ops split (#2183)
 
