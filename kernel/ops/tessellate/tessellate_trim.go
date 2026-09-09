@@ -34,7 +34,11 @@ import (
 // route below reaches chartFaceMesh, which records into the log this function owns, and the log is
 // stamped onto whatever mesh the face ships instead — so a face the chart mesher gave up cannot fall
 // back silently, and a route added or uncovered later (the arm deletions of #3517/#3518 send their
-// faces here) inherits the report without doing anything.
+// faces here) inherits the report by taking the log as a parameter.
+//
+// This is the file archguard names as the log's owner: a production file that constructs its own
+// chartDeclineLog compiles fine and reports into a slot nobody stamps, so
+// TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog fails on the second one.
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	log := &chartDeclineLog{}
 	s := f.Geometry()
@@ -148,8 +152,14 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 
 // singlyPeriodicWrapMesh meshes a seam-wrapping face on a cylinder, cone or sphere that no wrapping
 // mesher reduced: from the region it RECORDS when it carries one, else through the best-fit-plane CDT,
-// which is the sphere cap straddling the pole (the full-domain grid tears there) and which reports the
-// wall wrap it could not mesh.
+// which is the sphere cap straddling the pole (the full-domain grid tears there).
+//
+// This is the site #3520 is about, and it now reports TWICE over, for two different facts.
+// recordUnmeshedWallWrap says the flat CDT cannot cover a FULL WRAP — gated on the surface being a
+// developable side, because a sphere cap over its pole legitimately lands here. The chart decline the
+// log carries says the general mesher gave the face up, and that one is unconditional, because the
+// gated report was blind to a developable whose loop does not wrap AND to every sphere.
+// TestTheNamedSiteReportsADeclineItUsedToSwallow drives exactly that blind spot.
 func singlyPeriodicWrapMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3,
 	q Quality, log *chartDeclineLog) *Mesh {
 	if m, ok := chartFaceMesh(f, s, q, log); ok {
@@ -168,5 +178,20 @@ func chartedTrimMesh(f *topo.Face, s geom.Surface, q Quality, refused string, lo
 	if m, ok := chartFaceMesh(f, s, q, log); ok {
 		return m
 	}
-	return recordIgnoredTrim(fullDomainGridMesh(s, q), s, len(f.Loops()), refused)
+	// The chart-driven mesher may have recognised this face and given it up, and when it did, ITS reason
+	// is the honest cause. Without this the full-domain report said "no mesher recognised its boundary
+	// on this surface" while one had — a sentence a user can read, on every body carrying both codes
+	// (#3520 review I5).
+	return recordIgnoredTrim(fullDomainGridMesh(s, q), s, len(f.Loops()), namedRefusal(refused, log.reason()))
+}
+
+// namedRefusal is the refusal to report: the SPECIAL mesher's when the classification picked one and
+// its builder gave the shape up, else the chart-driven mesher's. Either is a mesher naming a shape it
+// could not describe; "" only when no mesher claimed the face at all, which is the one case the
+// full-domain report may call unrecognised.
+func namedRefusal(special, chart string) string {
+	if special != "" {
+		return special
+	}
+	return chart
 }

@@ -35,8 +35,10 @@ import (
 // different situations, and the log is what tells them apart: the face was never this mesher's (it
 // carries no chart, or its surface wraps in neither direction), which is the ordinary route onto the
 // generic (u,v) trim path; or the mesher OWNED the face and gave it up, which is a degradation and is
-// recorded into log unconditionally, here, so that no caller can forget or condition it (#3520,
-// chart_decline.go).
+// recorded into log unconditionally, HERE rather than at any caller, so a caller holding the router's
+// log can neither forget the report nor condition it (#3520, chart_decline.go). That the log a caller
+// holds IS the router's is a convention archguard enforces, not the compiler — see
+// TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog.
 //
 // Example: if m, ok := chartFaceMesh(f, f.Geometry(), q, log); ok { return m }
 func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality, log *chartDeclineLog) (*Mesh, bool) {
@@ -68,11 +70,16 @@ func chartRegionMesh(f *topo.Face, s geom.Surface, r chartRegion, q Quality) (*M
 	if len(kept) == 0 {
 		return nil, "the covering kept no triangle inside the chart's own window"
 	}
-	return certifiedChartMesh(b, kept, chains)
+	return weldAndCertifyChartMesh(b, kept, chains)
 }
 
-// certifiedChartMesh welds the kept covering triangles and accepts the mesh only when its unpaired
-// edges are EXACTLY the boundary segments it was given — the same SET, not merely the same count.
+// weldAndCertifyChartMesh does the three steps that turn kept covering triangles into a shippable
+// face: it WELDS them (period-shifted replicas of a boundary point are one 3D point, which is what
+// closes the seam), REPAIRS folds, and then GATES the result. The gate is the part with the receipt
+// below; the weld and the fold repair are here because the gate is only meaningful on the welded mesh.
+//
+// The gate accepts the mesh only when its unpaired edges are EXACTLY the boundary segments it was
+// given — the same SET, not merely the same count.
 //
 // The set, because a count cancels. It was a count, and on the merged cocylindrical wall at
 // PropertyQuality it read 578 against a rim of 578 while FIVE of those free edges were no rim segment
@@ -86,10 +93,17 @@ func chartRegionMesh(f *topo.Face, s geom.Surface, r chartRegion, q Quality) (*M
 // surface has no free edges at all, and that is precisely the full-domain degradation this mesher exists
 // to remove. Either way the face is DECLINED and the router's defect reporter speaks, rather than the
 // wrong mesh shipping quietly.
-func certifiedChartMesh(b *chartCover, kept [][3]int, chains []chartChain) (*Mesh, string) {
+func weldAndCertifyChartMesh(b *chartCover, kept [][3]int, chains []chartChain) (*Mesh, string) {
 	pos, nrm, idx := weldCoverTriangles(b.pos, b.nrm, kept)
 	m := patchMeshFrom(pos, nrm, idx)
 	validate.RepairFolds(m, 8)
+	// The weld can take every triangle away even though the covering kept some — a sphere pole's whole
+	// row welds to ONE vertex and the triangles around it become degenerate. chartRimMismatch answers
+	// (-1, -1) for a mesh there is nothing to compare, and -1 unpaired edges is not an offending value
+	// a reader can act on, so the empty case is named rather than formatted (#3520 review M2).
+	if m == nil || m.TriangleCount() == 0 {
+		return nil, fmt.Sprintf("welding its %d kept covering triangle(s) left no triangle at all", len(kept))
+	}
 	extra, missing := chartRimMismatch(m, chains)
 	if extra != 0 || missing != 0 {
 		return nil, fmt.Sprintf("the mesh it built is not bounded by its own rim: %d unpaired edge(s) "+

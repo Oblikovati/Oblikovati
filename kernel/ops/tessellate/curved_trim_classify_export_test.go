@@ -155,21 +155,6 @@ func TwoRimHoledBandVerdict(f *topo.Face, q Quality) (isShape, charted, toArm bo
 	return isShape, len(f.Chart()) > 0, toArm
 }
 
-// ChartMeshVerdict drives the chart-driven mesher directly and reports whether it accepted the face and
-// the two numbers its acceptance gate decides on — free edges that are no rim segment, and rim segments
-// the mesh does not bound. It reads the gate's OWN comparison, so a row built on it cannot drift from
-// what ships.
-func ChartMeshVerdict(f *topo.Face, q Quality) (ok bool, extra, missing int, area float64) {
-	s := f.Geometry()
-	m, ok := chartFaceMesh(f, s, q, &chartDeclineLog{})
-	r, _ := newChartRegion(f, s)
-	extra, missing = chartRimMismatch(m, chartBoundaryChains(f, s, r, q))
-	if m != nil {
-		area = m.Area()
-	}
-	return ok, extra, missing, area
-}
-
 // TwoRimCorridorProbe reports the closest approach between two lens windows and the boundary chord the
 // gate compares it against.
 func TwoRimCorridorProbe(f *topo.Face, q Quality) (gap, chord float64) {

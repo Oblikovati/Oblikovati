@@ -181,16 +181,23 @@ var kernelNetDeltaPin = map[string]int{
 	// penalises exactly what the ground rules demand: replacing silence with a named diagnostic. Under
 	// its true name the number still ratchets — a new code must be justified here — and it no longer
 	// claims a rule violation that is not one.
-	// 34 → 35 (2026-09-09, #3520): CodeChartMesherDeclined. A RISE that names a degradation nothing
-	// reported before, and one whose SHAPE is the point: chartFaceMesh had three callers and each had
-	// grown its own reporting, one of them CONDITIONAL — singlyPeriodicWrapMesh reported only when the
-	// surface was a developable side AND the wall wrapped, so a non-wrapping developable that spent the
-	// rim-only-ear budget fell to the flat patch CDT with nothing said. The report is now taken away
-	// from the callers entirely: chartFaceMesh records into a log it cannot be called without, and the
-	// curved-face router owns and stamps it, so a route added or uncovered later inherits the report.
-	// Measured on a sweep of 324 crossing-rod, rod∪ball and ring-cut booleans, 74 bodies raise it at
-	// PropertyQuality and none at DefaultQuality; on the classification corpus the router raises it
-	// zero times, which is what "not triggered on the corpus" in the issue meant.
+	// 34 → 35 (2026-09-09, #3520): CodeChartMesherDeclined. ONE new diag.Code DECLARATION, and that is
+	// all this number measures — countDiagCodes walks kernel/ and counts ValueSpecs of type diag.Code,
+	// which is why #3525 renames this key to "diag-codes". Read under the ground rule's actual metric,
+	// **the fallback-site delta here is 0**: no fall-through path was added. trimmedPatchMesh, the
+	// full-domain grid and the generic (u,v) trim path all existed; #3520 gives an existing SILENT
+	// fall-through a name, so no ADR is owed for a new engine, recognizer or tolerance.
+	//
+	// What it names: chartFaceMesh had three callers and reporting had grown separately in each — one
+	// spoke through its own fallback's code, one spoke only when the surface was a developable side AND
+	// the wall wrapped, and the classification's kindChart arm said nothing at all. The report is now
+	// taken off the callers: chartFaceMesh records into a *chartDeclineLog, the curved-face router owns
+	// the only one, and archguard's TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog fails if a second
+	// production file constructs one.
+	//
+	// The measurement is NOT restated here. It lives in one place — the THE MEASUREMENT block of
+	// kernel/ops/tessellate/chart_decline.go — because the first cut of this change carried two
+	// contradictory sets of numbers, this receipt's and that file's, in the same commit.
 	"diag-codes": 35,
 }
 
