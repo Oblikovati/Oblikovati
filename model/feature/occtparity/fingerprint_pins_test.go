@@ -3,7 +3,6 @@
 package occtparity
 
 import (
-	"runtime"
 	"testing"
 
 	"oblikovati.org/kernel/topo"
@@ -15,31 +14,26 @@ import (
 // stay bit-identical to the base worktree 6123169d. These VALUES were captured on base 6123169d and re-run
 // on the CN-C8 HEAD; if a future shared-code edit perturbs any of them, this fails loud with the delta. The
 // RAW volumes match the brief's references exactly (B3 190756.470897507, N7 963883.383205631).
-// It runs on amd64 only. The pin compares a mesh hash across COMMITS, which is exactly what it is for;
-// it cannot compare across ARCHITECTURES, because the Go compiler contracts x*y+z into a single FMA on
-// arm64 and does not on amd64, so the tessellation rounds differently. On macOS/arm64 the same bodies
-// land on different hashes — several with identical triangle counts (pure rounding) and a few with
-// different counts where a refinement decision flips (E3: 411240 vs 430000). Both CI amd64 legs (Linux
-// and Windows) still run it, so the do-no-harm detector keeps its teeth on every PR.
+// It used to run on amd64 only, because the Go compiler contracts x*y+z into a single FMA on arm64
+// and does not on amd64, so the same bodies tessellated to different last bits on the macOS leg.
+// ADR-0064 (#3528) removes that difference for the arithmetic `math`, `kernel/geom` and
+// `kernel/predicates` own, and the pins now run on EVERY leg: assertPinnedFingerprint holds the
+// bodies that are bit-identical to the pin exactly, and names the ones that still drift — the
+// packages that have not been converted yet — in crossArchHashDrift, which may only shrink.
 func TestByteIdentityFingerprints(t *testing.T) {
 	t.Parallel()
-	if runtime.GOARCH != "amd64" {
-		t.Skipf("byte-identical mesh hashes are architecture-specific (FMA contraction); pinned on amd64, got %s", runtime.GOARCH)
-	}
 	for _, tc := range byteIdentityPins() {
 		t.Run(tc.name, func(t *testing.T) {
 			fp := bodyMeshFingerprint(pinnedBody(t, tc.grid, tc.name))
-			if fp.Hash != tc.hash || fp.Triangles != tc.tris {
-				t.Fatalf("%s fingerprint drifted: hash=%#x tris=%d, want hash=%#x tris=%d (shared geometry changed)",
-					tc.name, fp.Hash, fp.Triangles, tc.hash, tc.tris)
-			}
+			assertPinnedFingerprint(t, tc, fp)
 			// RAW volume compared at rel volTolFor(name) — 1e-9 for a well-conditioned body (re-run noise
 			// ~1e-13, ~4 decades of margin). A body with heavy signed-tetra cancellation (M4's off-origin
 			// bore) is order-sensitive at ~1e-4: TessellateBody yields the SAME triangle SET (hash+tris stay
 			// EXACT) in a map-order-dependent SEQUENCE and FP addition is non-associative — a pre-existing
 			// kernel property, not a fillet defect (N3/N9, centred boss geometry, stay bit-stable at 1e-9).
-			if rel := relErr(fp.Volume, tc.vol); rel > volTolFor(tc.name) {
-				t.Fatalf("%s volume %.12f != base %.12f (rel %.3g, tol %.1g)", tc.name, fp.Volume, tc.vol, rel, volTolFor(tc.name))
+			if tol := pinnedVolumeTolerance(tc.grid, tc.name); relErr(fp.Volume, tc.vol) > tol {
+				t.Fatalf("%s volume %.12f != base %.12f (rel %.3g, tol %.1g)",
+					tc.name, fp.Volume, tc.vol, relErr(fp.Volume, tc.vol), tol)
 			}
 		})
 	}
@@ -91,11 +85,13 @@ func pinnedBody(t *testing.T, grid, name string) *topo.Body {
 // IDENTICAL triangle counts (pure FMA rounding, exactly the predicted quantization-boundary flip), a few
 // with different counts where a refinement decision flipped outright (E3: 411240 vs 430000).
 //
-// Resolved the way this note proposed: the hash pins are amd64-only (see the runtime.GOARCH guard on
-// TestByteIdentityFingerprints). Re-capturing a SECOND set of arm64 hashes was rejected — it would
-// double the maintenance of every future re-capture (this block already records five of them) to pin a
-// quantity that is architecture-dependent by construction. The pin's job is cross-COMMIT drift
-// detection, and both amd64 CI legs (Linux and Windows) still do it on every PR.
+// Resolved twice. FIRST by making the hash pins amd64-only: re-capturing a SECOND set of arm64
+// hashes was rejected, because it would double the maintenance of every future re-capture (this
+// block already records five of them) to pin a quantity that was architecture-dependent by
+// construction. THEN by removing the construction: ADR-0064 (#3528) rounds every product in the
+// arithmetic floor explicitly, so most of these bodies are now bit-identical on arm64 too and the
+// pins run on every leg. The bodies that still differ are NAMED in crossArchHashDrift — a list of
+// names, not a second set of hashes, so the maintenance objection above still holds.
 //
 // RE-CAPTURED for the far-end wall trim + the loop-arc alignment pass (fillet_farend_trim.go and
 // fillet_survivor_rim.go's alignCarriedArcsToSegments; farend-runon-report.md §5): ten pins moved —
