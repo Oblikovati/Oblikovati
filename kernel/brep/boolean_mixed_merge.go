@@ -37,8 +37,9 @@ import (
 //
 //	faces = mergeCoincidentFaces(faces, rec) // two coaxial cylinder bands become one wall
 func mergeCoincidentFaces(faces []curvedFace, rec *diag.Recorder) []curvedFace {
+	recordEdgeSourceCensus(rec, faces)
 	for {
-		next, declined, merged := mergeFirstPair(faces)
+		next, declined, merged := mergeFirstPair(faces, rec)
 		if !merged {
 			reportDeclines(rec, declined)
 			return faces
@@ -62,10 +63,10 @@ type declinedMerge struct {
 
 // mergeFirstPair merges the first mergeable pair in index order — never in map or pointer order, so
 // the result is the same body on every run — and returns the declines it passed on the way.
-func mergeFirstPair(faces []curvedFace) ([]curvedFace, []declinedMerge, bool) {
+func mergeFirstPair(faces []curvedFace, rec *diag.Recorder) ([]curvedFace, []declinedMerge, bool) {
 	var declined []declinedMerge
 	for i := range faces {
-		j, joined, seen, ok := firstMergeableWith(faces, i)
+		j, joined, seen, ok := firstMergeableWith(faces, i, rec)
 		declined = append(declined, seen...)
 		if !ok {
 			continue
@@ -78,10 +79,10 @@ func mergeFirstPair(faces []curvedFace) ([]curvedFace, []declinedMerge, bool) {
 
 // firstMergeableWith returns the lowest-indexed face after i that merges with it, and every reportable
 // refusal it met before that.
-func firstMergeableWith(faces []curvedFace, i int) (int, curvedFace, []declinedMerge, bool) {
+func firstMergeableWith(faces []curvedFace, i int, rec *diag.Recorder) (int, curvedFace, []declinedMerge, bool) {
 	var declined []declinedMerge
 	for j := i + 1; j < len(faces); j++ {
-		joined, why := mergePairOnOneSurface(faces[i], faces[j])
+		joined, why := mergePairOnOneSurface(faces[i], faces[j], rec)
 		if why == mergeJoined {
 			return j, joined, declined, true
 		}
@@ -95,22 +96,26 @@ func firstMergeableWith(faces []curvedFace, i int) (int, curvedFace, []declinedM
 // mergePairOnOneSurface merges two faces across every edge they share, and names its reason when it
 // does not. A pair that is not a candidate at all — different sense, different surface — gives the
 // ordinary unshared reason, which is the only one that is never reported.
-func mergePairOnOneSurface(a, b curvedFace) (curvedFace, mergeDecline) {
+func mergePairOnOneSurface(a, b curvedFace, rec *diag.Recorder) (curvedFace, mergeDecline) {
 	if a.reversed != b.reversed || !onOneSurface(a, b) {
 		return curvedFace{}, declineUnshared
 	}
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	loops, why := dissolveSharedEdges(a, b, res)
+	loops, slits, why := dissolveSharedEdges(a, b, res)
 	if why != mergeJoined {
 		return curvedFace{}, why
 	}
-	return chartedMerge(a, b, loops)
+	merged, chartWhy := chartedMerge(a, b, loops)
+	if chartWhy == mergeJoined {
+		recordSeamSlitDrop(rec, a, slits) // only what SHIPPED: a refused pair is retried on every rescan
+	}
+	return merged, chartWhy
 }
 
 // mergeOnSharedBoundary is mergePairOnOneSurface with its refusal reported at once — the single-pair
 // entry the merge's own rows drive, where there is no later scan to report from.
 func mergeOnSharedBoundary(a, b curvedFace, rec *diag.Recorder) (curvedFace, bool) {
-	merged, why := mergePairOnOneSurface(a, b)
+	merged, why := mergePairOnOneSurface(a, b, rec)
 	recordMergeDecline(rec, a, why)
 	return merged, why == mergeJoined
 }

@@ -207,7 +207,14 @@ var kernelNetDeltaPin = map[string]int{
 	// The measurement is NOT restated here. It lives in one place — the THE MEASUREMENT block of
 	// kernel/ops/tessellate/chart_decline.go — because the first cut of this change carried two
 	// contradictory sets of numbers, this receipt's and that file's, in the same commit.
-	"diag-codes": 35,
+	// 35 → 37 (2026-09-09, Oblikovati#3521): a RISE of 2, and both are POSITIVE markers rather than
+	// new degradations. The cocylindrical merge dropped orphaned seam edges and censused nothing, so
+	// "no slit was there" and "the slit test could not have seen one" read identically — and they are
+	// not the same thing, because isReverseTwin reads an edge's IDENTITY and 94% of the boundary edges
+	// reaching the merge are synthesized by an arrangement and name no edge at all.
+	// boolean.merge-edge-sources reports that population on every call, and boolean.seam-slit-dropped
+	// reports a removal that leaves no other trace in the result. Both are diag.Info: nothing degraded.
+	"diag-codes": 37,
 }
 
 func TestKernelNetDelta(t *testing.T) {
