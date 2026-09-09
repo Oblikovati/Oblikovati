@@ -200,8 +200,9 @@ func TestTheComplementProbeAnswersForASeamWrappingLoop(t *testing.T) {
 // The faces at stake are the bored torus of a drilled ring — the one that holds the COMPLEMENT of
 // what its loops enclose — swept across the radii the corpus uses. None of these radii produces a
 // seam-wrapping loop set, so this row does NOT catch the decline that caused the regression: that is
-// TestTheComplementProbeAnswersForASeamWrappingLoop's job, and it fails the moment the decline
-// returns. This row holds the other half — that the complement probe keeps answering at all — and it
+// TestTheComplementProbeAnswersForASeamWrappingLoop's job here, and
+// boolean.TestTheCertificateLeavesExactlyTheKnownFacesUnprobed's at the level the coverage is
+// counted. This row holds the other half — that the complement probe keeps answering at all — and it
 // is the one that would catch a probe lost to the window list or the ranking instead.
 func TestEveryFaceOfTheCorpusPairsIsProbeable(t *testing.T) {
 	t.Parallel()

@@ -330,14 +330,21 @@ func TestTheMovedVolumeBracketRefusesOnlyImpossibleMoves(t *testing.T) {
 		{"an operation with no membership rule", NewBody, 100, tool, 500, true, false},
 		// The guard #3516's own root cause demands: one operand measured by mesh and the other
 		// analytically is the artefact this issue exists to correct, and a ~1e-2 mesh deficit against
-		// a 1e-9 slack would Defect a correct body.
+		// a 1e-9 slack would read as a contradiction. The gate does not run — and SAYS so, which is
+		// the other half of the row: a gate that silently does not run is the blind spot this issue
+		// is about, and it appeared once already inside this very guard.
 		{"an impossible move measured by mesh", Cut, 100, tool, 105, false, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := &diag.Recorder{}
-			recordMovedVolumeOutOfToolBracket(tc.op, tc.tv, tc.wv, tc.bv, tc.exact, rec)
+			recordMovedVolumeOutOfToolBracket(tc.op, tc.tv, tc.wv, tc.bv, volumeSource{true, true, tc.exact}, rec)
 			if got := rec.Has(CodeBooleanMovedVolumeOutOfToolBracket); got != tc.wantRecorded {
 				t.Errorf("recorded = %v, want %v; records %v", got, tc.wantRecorded, rec.Records())
+			}
+			// A skipped gate has to say so. Measured over kernel/ops/boolean, 15 of 437 calls skip
+			// this way; before this assertion they skipped in silence.
+			if got := rec.Has(CodeBooleanVolumeNotBracketed); got != !tc.exact {
+				t.Errorf("reported the skipped bracket = %v, want %v; records %v", got, !tc.exact, rec.Records())
 			}
 		})
 	}
@@ -365,16 +372,38 @@ func TestAToolTooSmallToAccountForTheRemovalIsRecorded(t *testing.T) {
 		t.Fatalf("stub: %v", err)
 	}
 	honest := &diag.Recorder{}
-	tv, wv, bv, _ := boolVolumes(ring, drill, body)
-	recordMovedVolumeOutOfToolBracket(Cut, tv, wv, bv, true, honest)
+	tv, wv, bv, src := boolVolumes(ring, drill, body)
+	recordMovedVolumeOutOfToolBracket(Cut, tv, wv, bv, src, honest)
 	if honest.Has(CodeBooleanMovedVolumeOutOfToolBracket) {
 		t.Fatalf("the genuine pair is out of bracket, so the probe below proves nothing: %v", honest.Records())
 	}
+	assertThePublicEntryRunsTheBracketSilently(t, ring, drill)
 	rec := &diag.Recorder{}
-	_, stubVol, _, _ := boolVolumes(ring, stub, body)
-	recordMovedVolumeOutOfToolBracket(Cut, tv, stubVol, bv, true, rec)
+	_, stubVol, _, stubSrc := boolVolumes(ring, stub, body)
+	recordMovedVolumeOutOfToolBracket(Cut, tv, stubVol, bv, stubSrc, rec)
 	if !rec.Has(CodeBooleanMovedVolumeOutOfToolBracket) {
 		t.Errorf("a cut removing %g with a tool holding %g was not recorded", tv-bv, stubVol)
+	}
+}
+
+// assertThePublicEntryRunsTheBracketSilently drives the honest pair through BooleanWithDiagnostics and
+// requires neither of the bracket's two codes.
+//
+// It is here because of what the rows around it CANNOT see. Both call the predicate directly, so
+// deleting `recordMovedVolumeOutOfToolBracket(...)` from curvedResultRejected leaves both green —
+// measured. This half shows the public path reaching the gate and finding nothing; it does not, on
+// its own, catch a deleted call site, and only the band row below shows the gate firing through that
+// path. Saying which is which is the point: an absence assertion is not a wiring proof.
+func assertThePublicEntryRunsTheBracketSilently(t *testing.T, ring, drill *topo.Body) {
+	t.Helper()
+	rec := &diag.Recorder{}
+	if _, err := BooleanWithDiagnostics(Cut, ring, drill, rec); err != nil {
+		t.Fatalf("the RD- row must build through the public entry: %v", err)
+	}
+	for _, code := range []diag.Code{CodeBooleanMovedVolumeOutOfToolBracket, CodeBooleanVolumeNotBracketed} {
+		if rec.Has(code) {
+			t.Errorf("the exact 0.8 bore recorded %q through the public entry: %v", code, rec.Records())
+		}
 	}
 }
 

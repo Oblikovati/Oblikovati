@@ -115,8 +115,9 @@ func regionInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 // no probe at all, which is what the certificate has for a face it cannot probe. The ambiguity
 // regionProbeDeepEnough guards against is real for the SIDE test, which chooses a branch; this
 // caller only needs a point the face holds. Pinned by TestTheComplementProbeAnswersForASeamWrappingLoop,
-// which fails the moment the decline returns, and by TestEveryFaceOfTheCorpusPairsIsProbeable, which
-// holds the coverage the decline cost.
+// which fails the moment the decline returns, and — at the level the coverage was actually lost — by
+// boolean.TestTheCertificateLeavesExactlyTheKnownFacesUnprobed, whose torus ∩ box row goes 0 → 1 with
+// the decline restored.
 func faceComplementUV(s geom.Surface, loops []faceLoop) (u, v float64, ok bool) {
 	var rect probeWindow
 	rect.uLo, rect.uHi = s.UDomain()

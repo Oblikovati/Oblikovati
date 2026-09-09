@@ -70,10 +70,11 @@ const (
 	CodeBooleanAnalyticFaceReject   diag.Code = boolean.CodeBooleanAnalyticFaceReject
 	CodeBooleanNoExactCurvedPath    diag.Code = boolean.CodeBooleanNoExactCurvedPath
 	CodeBooleanSubResolutionTool    diag.Code = boolean.CodeBooleanSubResolutionTool
-	// The two #3516 added. A degradation has to reach feature health, the API and the UI, and a
+	// The three #3516 added. A degradation has to reach feature health, the API and the UI, and a
 	// consumer that cannot NAME a code has to hard-code its string to match on it.
 	CodeBooleanFaceNotProbed               diag.Code = boolean.CodeBooleanFaceNotProbed
 	CodeBooleanMovedVolumeOutOfToolBracket diag.Code = boolean.CodeBooleanMovedVolumeOutOfToolBracket
+	CodeBooleanVolumeNotBracketed          diag.Code = boolean.CodeBooleanVolumeNotBracketed
 )
 
 // ErrUnmodelledBoolean is the boolean's refusal: the operands meet in a configuration no exact path

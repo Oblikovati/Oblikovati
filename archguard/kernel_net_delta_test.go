@@ -247,7 +247,21 @@ var kernelNetDeltaPin = map[string]int{
 	// what "reaches feature health, the API and the UI" requires of a degradation. Nothing here needs
 	// an ADR — and if this key is ever redefined to count distinct code VALUES rather than
 	// declarations, this entry falls back to 39 and the entry above it stands unchanged.
-	"diag-codes": 41,
+	//
+	// 41 → 43 (2026-09-09, #3516 fix round 3): CodeBooleanVolumeNotBracketed and its alias. ONE new
+	// code, and the **fallback-site delta is 0**: it refuses nothing, changes no acceptance and adds
+	// no path. It names a gate that DOES NOT RUN — the tool-scale volume bracket skips whenever one of
+	// the three volumes came from a tessellation, because a mesh deficit is orders above its slack and
+	// would read as a contradiction. Measured over kernel/ops/boolean: 15 of 437 calls skip that way
+	// (12 cuts, 2 intersects, 1 join), and until this code they skipped in SILENCE. That is round 0's
+	// own finding — "a blind spot nothing reports is a proof nobody can size" — reappearing inside the
+	// guard added to fix it, which is why it is named rather than counted quietly.
+	//
+	// It is also the honest correction to what the guard was claimed to do: removing it takes the
+	// package's firings 8 → 9, and the one extra is the synthetic row planted to prove the guard, not
+	// a body. With that row skipped too, guard-off fires exactly 3 times — the two RING violations and
+	// the deliberate stub — so no corpus body is mis-Defected today.
+	"diag-codes": 43,
 }
 
 func TestKernelNetDelta(t *testing.T) {

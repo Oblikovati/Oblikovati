@@ -3,6 +3,8 @@
 package boolean
 
 import (
+	"strings"
+
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
@@ -156,7 +158,7 @@ func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body
 		return true
 	}
 	tv, wv, bv, m := boolVolumes(target, tool, body)
-	recordMovedVolumeOutOfToolBracket(op, tv, wv, bv, m.allAnalytic(), rec)
+	recordMovedVolumeOutOfToolBracket(op, tv, wv, bv, m, rec)
 	return curvedVolumeRejected(op, target, tool, tv, wv, bv, m.operandsAnalytic(), rec)
 }
 
@@ -221,12 +223,19 @@ func recordUnexaminedFaces(op PartFeatureOperation, body *topo.Body, ev faceEvid
 // CONTRADICTION and saying so cannot over-claim. It is recorded, not refused: the body is the exact
 // section (#3516 measured its faces and edges), and what is wrong is the number, which the caller
 // now sees instead of storing silently.
-func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, tv, wv, bv float64, exact bool, rec *diag.Recorder) {
+func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, tv, wv, bv float64, src volumeSource, rec *diag.Recorder) {
 	moved, ok := movedVolume(op, tv, bv)
-	slack := movedVolumeSlack * wv
-	if !ok || !exact {
+	if !ok {
 		return
 	}
+	if !src.allAnalytic() {
+		rec.Recordf(CodeBooleanVolumeNotBracketed, diag.Warning,
+			"curved %s: %s measured by tessellation, so the result's moved volume was NOT bracketed against "+
+				"its tool — a mesh deficit is orders above this bracket's slack and would read as a contradiction",
+			op, src.meshed())
+		return
+	}
+	slack := movedVolumeSlack * wv
 	if moved >= -slack && moved <= wv+slack {
 		return
 	}
@@ -356,10 +365,37 @@ func (m volumeSource) operandsAnalytic() bool { return m.target && m.tool }
 
 // allAnalytic reports whether all three did. The tool-scale bracket needs the stronger form: it has
 // no tolerance to absorb a deficit with, so comparing a meshed number with an analytic one — the
-// artefact #3516 exists to correct — would Defect a CORRECT body at a ~1e-2 mesh error against a
-// 1e-9 slack. Nothing in kernel/ops reaches it, every excursion measured there being at ulp scale,
-// but the declines this issue found are exactly how a body stops integrating.
+// artefact #3516 exists to correct — would read a ~1e-2 mesh deficit as a contradiction against a
+// 1e-9 slack.
+//
+// How much it is doing today, measured over kernel/ops/boolean rather than asserted: **15 of 437
+// calls** reach the bracket with at least one meshed volume (12 cuts, 2 intersects, 1 join) and are
+// skipped. Removing the guard takes the package's firings from 8 to 9 — and the ONE extra is the
+// synthetic row planted to prove the guard, not a body: with that row skipped as well, guard off
+// fires exactly 3 times, the two RING violations and the deliberate stub. **So no corpus body is
+// mis-Defected today.** The guard prevents a class this corpus does not currently exhibit, and the
+// 15 skips it produces are reported rather than silent (CodeBooleanVolumeNotBracketed) — a gate that
+// does not run is a proof nobody can size, which is the shape #3516 was filed for.
 func (m volumeSource) allAnalytic() bool { return m.operandsAnalytic() && m.body }
+
+// meshed names the bodies whose volume came from a tessellation, for the diagnostic that says the
+// bracket did not run. It never returns "" where allAnalytic is false.
+func (m volumeSource) meshed() string {
+	var out []string
+	for i, analytic := range [3]bool{m.target, m.tool, m.body} {
+		if !analytic {
+			out = append(out, [3]string{"the target", "the tool", "the result"}[i])
+		}
+	}
+	return strings.Join(out, " and ")
+}
+
+// CodeBooleanVolumeNotBracketed marks a curved analytic result whose moved volume was NOT checked
+// against its tool, because one of the three volumes came from a tessellation rather than from the
+// analytic B-rep. It is a Warning, not a Defect: nothing is known to be wrong, and that is the point
+// — the acceptance gate did not run, and a gate that silently does not run is exactly the blind spot
+// this issue exists to close (Oblikovati/Oblikovati#3516).
+const CodeBooleanVolumeNotBracketed diag.Code = "boolean.volume-not-bracketed"
 
 // CurvedBoolean attempts the exact analytic curved boolean and reports whether it applied. It is SAFE to
 // call on any operands — each path declines (ok=false) when it does not handle (op, target, tool), and none

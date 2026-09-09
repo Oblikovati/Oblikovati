@@ -171,3 +171,63 @@ func TestAResultShowingMoreBoundaryThanItsOperandsIsRefused(t *testing.T) {
 			ev.claimed, available)
 	}
 }
+
+// TestTheCertificateLeavesExactlyTheKnownFacesUnprobed is the RATCHET on probe coverage, at the level
+// the certificate itself works: how many faces of a built result it could not classify.
+//
+// It exists because the count had been prose in two comments and nothing held it. #3516 round 0 took
+// the whole package from 26 unprobed faces to 4; round 1 gave 22 of them back in a comment-level
+// change and shipped three statements that had become false. A number stated in a docstring is not a
+// ratchet.
+//
+// The pairs are the ones that OWN the residue, identified by instrumenting the package: the bored
+// ring (this issue's own family, 0 unprobed) and the two-oval torus−box cut, whose 2-loop torus face
+// is one of the four the package still cannot probe. Their totals are pinned, so a coverage loss on
+// either fails here instead of reading oddly in a comment. A RISE is a regression; a FALL means the
+// probe improved and the pin should come down with the change that earned it.
+func TestTheCertificateLeavesExactlyTheKnownFacesUnprobed(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 0.8)
+	for _, tc := range []struct {
+		name         string
+		op           PartFeatureOperation
+		target, tool *topo.Body
+		wantUnprobed int
+	}{
+		{"a bored ring", Cut, ring, drill, 0},
+		{"a two-oval torus − box", Cut, ratchetTorus(t), ratchetBlock(t), 1},
+		{"a two-oval torus ∩ box", Intersect, ratchetTorus(t), ratchetBlock(t), 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body, err := Boolean(tc.op, tc.target, tc.tool)
+			if err != nil {
+				t.Fatalf("the pair must build for its coverage to be measured: %v", err)
+			}
+			ev := certifyBooleanFaces(tc.op, tc.target, tc.tool, body)
+			if ev.unprobed != tc.wantUnprobed {
+				t.Errorf("%d of %d faces unprobed, want %d — a rise is lost coverage, a fall is an "+
+					"improvement whose pin should come down with it", ev.unprobed, len(body.Faces()), tc.wantUnprobed)
+			}
+		})
+	}
+}
+
+// ratchetTorus and ratchetBlock are the two-oval torus−box pair (boolean_csg_demotion_test.go's
+// torusTwoOvalBox), rebuilt here so the ratchet above owns its own operands.
+func ratchetTorus(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
+	if err != nil {
+		t.Fatalf("SolidTorus: %v", err)
+	}
+	return b
+}
+
+func ratchetBlock(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidBlock(math.P3(-20, 2, -20), math.P3(20, 20, 20), "block")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return b
+}

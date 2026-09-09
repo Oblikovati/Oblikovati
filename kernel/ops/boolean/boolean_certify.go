@@ -40,10 +40,12 @@ import (
 // enclose. It therefore examined one face of two and called the result certified. Over the
 // drill/torus/ring/bore rows of this package that was 26 unexamined faces of 248; it is 0 of 272 now.
 // Over the whole package, 4 of 2469 remain — two single-loop spheres and two two-loop tori, which I
-// did not chase. TestEveryFaceOfTheCorpusPairsIsProbeable and
-// TestTheComplementProbeAnswersForASeamWrappingLoop hold that coverage: fix round 1 of #3516 gave 22
-// of those probes back for a robustness argument with no measured case, and a count nothing pins
-// drifts.
+// did not chase — a torus − box cut owns one of them, and the ratchet below pins it there.
+//
+// TestTheCertificateLeavesExactlyTheKnownFacesUnprobed holds this count, because a count nothing pins
+// drifts and this one did: fix round 1 of #3516 gave 22 of those probes back in a comment-level
+// change, and shipped three statements that had become false. The ratchet fails on a RISE, which is
+// lost coverage, and on a FALL, which is an improvement whose pin should come down with it.
 //
 // Example: if ev := certifyBooleanFaces(Cut, target, tool, body, sizes.res); !ev.kept { /* guarded */ }
 // res is the pair's extent resolution, decided once by the size classification and carried here: the
