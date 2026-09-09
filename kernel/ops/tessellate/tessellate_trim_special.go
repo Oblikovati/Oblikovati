@@ -25,7 +25,8 @@ import (
 // path rather than to a second special case.
 // refused, when it declines, names WHY if a mesher recognised the face and gave it up on its own
 // conditioning — so the reporter at the end of the router says more than "nothing recognised it".
-func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (m *Mesh, ok bool, refused string) {
+func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3,
+	q Quality, log *chartDeclineLog) (m *Mesh, ok bool, refused string) {
 	t := classifyCurvedTrim(f, s, outer3D, holes3D, q)
 	switch t.kind {
 	case kindConeApexFan:
@@ -47,7 +48,7 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	default:
 		// kindChart meshes the region the face itself records; kindUncharted records none, so the
 		// same call declines and the face falls through to the generic (u,v) trim path.
-		return withNoRefusal(chartFaceMesh(f, s, q))
+		return withNoRefusal(chartFaceMesh(f, s, q, log))
 	}
 }
 

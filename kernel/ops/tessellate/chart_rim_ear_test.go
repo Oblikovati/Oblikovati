@@ -21,18 +21,38 @@ import (
 // charted face of the classification corpus, at both facetings, the chart mesh emits no rim-only
 // triangle. The figure-eight pieces are in the corpus so the case that found it is measured every run.
 
-// TestNoChartedFaceEmitsARimOnlyTriangle is the mesher-level invariant over the chart corpus.
+// TestNoChartedFaceEmitsARimOnlyTriangle is the mesher-level invariant over the chart corpus, and the
+// row that says every face the classification SENDS to this mesher is one the mesher accepts.
+//
+// The acceptance half is not decoration. Spending the ear-splitting rounds ends in a DECLINE, so a row
+// that skips declined faces reads green for exactly the input the invariant is about — which is what
+// this row did until #3520. A decline on a face the classification selected the chart mesher for is
+// therefore a failure, not a skip.
+//
+// The two answers must stay apart, though: the mesher also refuses faces it was never given (no chart,
+// or an aperiodic surface), and it is driven here DIRECTLY, past the classification, on faces another
+// arm meshes. Measured on this corpus at chord 0.001, three such faces exist — the near-pinch body's
+// two ruled-band-loft walls and its two-rim-holed-band wall, whose chart mesh is not bounded by its own
+// rim; that the chart cannot serve them is the documented reason those arms exist
+// (TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe). Asserting acceptance on a mesher the face never
+// routes to would assert something the pipeline does not claim, so acceptance is asserted for the faces
+// whose selected mesher this IS, and the rim-only count still covers every face it accepts.
 func TestNoChartedFaceEmitsARimOnlyTriangle(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~3 min on CI): `make test-corpus`")
 	}
 	t.Parallel()
 	coarse, fine := refinementQualities()
-	seen := 0
+	seen, accepted := 0, 0
 	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
 		for _, q := range []ops.Quality{coarse, fine} {
-			n, ok := tessellate.ChartRimOnlyTriangles(f, q)
-			if !ok {
+			n, meshed, declined := tessellate.ChartRimOnlyTriangles(f, q)
+			selected := tessellate.ClassifyCurvedTrimName(f, q) == tessellate.ChartedTrimKindName()
+			assertChartMesherAccepted(t, body, i, f, q, declined, selected)
+			if selected && meshed {
+				accepted++
+			}
+			if !meshed {
 				continue
 			}
 			seen++
@@ -46,6 +66,24 @@ func TestNoChartedFaceEmitsARimOnlyTriangle(t *testing.T) {
 	if seen == 0 {
 		t.Error("no corpus face reached the chart-driven mesher — the rim-only invariant covers nothing")
 	}
+	if accepted == 0 {
+		t.Error("the classification sent no corpus face to the chart-driven mesher — the acceptance " +
+			"assertion covers nothing")
+	}
+}
+
+// assertChartMesherAccepted fails the row when the mesher the classification SELECTED for this face
+// gave it up. A decline on a face routed to another arm is not this invariant's business (see the test's
+// own comment), and "the mesher never owned it" is no decline at all.
+func assertChartMesherAccepted(t *testing.T, body string, i int, f *topo.Face, q ops.Quality,
+	declined string, selected bool) {
+	t.Helper()
+	if declined == "" || !selected {
+		return
+	}
+	t.Errorf("%s face %d (%T) at chord %g: the classification selected the chart-driven mesher for this "+
+		"face and the mesher gave it up — %s; the face then ships from a covering its chart never "+
+		"certified", body, i, f.Geometry(), q.ChordTolerance, declined)
 }
 
 // figureEightPiece is one side of the torus R=5 r=2 split by the plane y=3, which touches its inner

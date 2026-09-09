@@ -53,9 +53,10 @@ func TestAChartedWallIsMeshedOverItsOwnRegion(t *testing.T) {
 	t.Parallel()
 	const uLo, uHi, vLo, vHi = 3.0, 4.0, 3.0, 6.0
 	f := rimBoundedWindowedWall(t, uLo, uHi, vLo, vHi)
-	m, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality())
+	log := &chartDeclineLog{}
+	m, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality(), log)
 	if !ok {
-		t.Fatal("chartFaceMesh declined a charted, rim-bounded windowed wall")
+		t.Fatalf("chartFaceMesh declined a charted, rim-bounded windowed wall: %s", log.why)
 	}
 	want := 2*stdmath.Pi*wallR*wallH - (uHi-uLo)*wallR*(vHi-vLo)
 	if got := m.Area(); stdmath.Abs(got-want)/want > 0.02 {
@@ -86,8 +87,14 @@ func TestChartFaceMeshDeclinesAFaceWithoutAChart(t *testing.T) {
 	t.Parallel()
 	f := rimBoundedWindowedWall(t, 3.0, 4.0, 3.0, 6.0)
 	f.SetChart(nil)
-	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality()); ok {
+	log := &chartDeclineLog{}
+	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality(), log); ok {
 		t.Error("chartFaceMesh took a face with no chart")
+	}
+	// "never my face" is not a degradation: it is the ordinary route onto the generic (u,v) trim path,
+	// and reporting it would cry on every healthy analytic face there is (#3520).
+	if log.why != "" {
+		t.Errorf("a face the mesher never owned logged a decline: %s", log.why)
 	}
 }
 
@@ -96,8 +103,12 @@ func TestChartFaceMeshDeclinesAFaceWithoutAChart(t *testing.T) {
 func TestChartFaceMeshDeclinesAnAperiodicSurface(t *testing.T) {
 	t.Parallel()
 	f := chartedPlanarTriangle(t)
-	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality()); ok {
+	log := &chartDeclineLog{}
+	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality(), log); ok {
 		t.Error("chartFaceMesh took an aperiodic surface")
+	}
+	if log.why != "" {
+		t.Errorf("an aperiodic surface logged a decline; the mesher never owned it: %s", log.why)
 	}
 }
 
@@ -317,9 +328,10 @@ func TestTheRimIsKeyedOnceForTheWholeFace(t *testing.T) {
 	if len(chains) < 3 {
 		t.Fatalf("the fixture presents %d boundary chains; the row needs a multi-loop face", len(chains))
 	}
-	m, ok := chartFaceMesh(f, s, q)
+	log := &chartDeclineLog{}
+	m, ok := chartFaceMesh(f, s, q, log)
 	if !ok {
-		t.Fatal("chartFaceMesh declined the charted windowed wall")
+		t.Fatalf("chartFaceMesh declined the charted windowed wall: %s", log.why)
 	}
 	whole := len(chainSegmentKeys(chains, geom.ResolutionForPoints(m.Positions).Weld()))
 	perChain := 0

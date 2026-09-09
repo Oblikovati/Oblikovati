@@ -181,7 +181,17 @@ var kernelNetDeltaPin = map[string]int{
 	// penalises exactly what the ground rules demand: replacing silence with a named diagnostic. Under
 	// its true name the number still ratchets — a new code must be justified here — and it no longer
 	// claims a rule violation that is not one.
-	"diag-codes": 34,
+	// 34 → 35 (2026-09-09, #3520): CodeChartMesherDeclined. A RISE that names a degradation nothing
+	// reported before, and one whose SHAPE is the point: chartFaceMesh had three callers and each had
+	// grown its own reporting, one of them CONDITIONAL — singlyPeriodicWrapMesh reported only when the
+	// surface was a developable side AND the wall wrapped, so a non-wrapping developable that spent the
+	// rim-only-ear budget fell to the flat patch CDT with nothing said. The report is now taken away
+	// from the callers entirely: chartFaceMesh records into a log it cannot be called without, and the
+	// curved-face router owns and stamps it, so a route added or uncovered later inherits the report.
+	// Measured on a sweep of 324 crossing-rod, rod∪ball and ring-cut booleans, 74 bodies raise it at
+	// PropertyQuality and none at DefaultQuality; on the classification corpus the router raises it
+	// zero times, which is what "not triggered on the corpus" in the issue meant.
+	"diag-codes": 35,
 }
 
 func TestKernelNetDelta(t *testing.T) {

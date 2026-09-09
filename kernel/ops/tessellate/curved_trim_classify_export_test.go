@@ -161,7 +161,7 @@ func TwoRimHoledBandVerdict(f *topo.Face, q Quality) (isShape, charted, toArm bo
 // what ships.
 func ChartMeshVerdict(f *topo.Face, q Quality) (ok bool, extra, missing int, area float64) {
 	s := f.Geometry()
-	m, ok := chartFaceMesh(f, s, q)
+	m, ok := chartFaceMesh(f, s, q, &chartDeclineLog{})
 	r, _ := newChartRegion(f, s)
 	extra, missing = chartRimMismatch(m, chartBoundaryChains(f, s, r, q))
 	if m != nil {
@@ -179,13 +179,18 @@ func TwoRimCorridorProbe(f *topo.Face, q Quality) (gap, chord float64) {
 
 // ChartRimOnlyTriangles drives the chart-driven mesher and counts the OUTPUT triangles whose three
 // vertices are all boundary points — the ear keptWithoutRimEars exists to refuse. It keys the rim the
-// way the mesh welds, so the count is over what ships, not over covering indices. ok=false when the
-// mesher declined the face.
-func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, ok bool) {
+// way the mesh welds, so the count is over what ships, not over covering indices.
+//
+// It separates the mesher's two false answers, which the corpus row cannot conflate (#3520): meshed is
+// false either because the mesher never owned the face — no chart, or an aperiodic surface, and then
+// declined is "" — or because it OWNED the face and gave it up, and then declined names why. A row that
+// only sees "false" cannot tell "this face has no ears" from "this face was refused".
+func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, meshed bool, declined string) {
 	s := f.Geometry()
-	m, ok := chartFaceMesh(f, s, q)
+	log := &chartDeclineLog{}
+	m, ok := chartFaceMesh(f, s, q, log)
 	if !ok {
-		return 0, false
+		return 0, false, log.why
 	}
 	r, _ := newChartRegion(f, s)
 	grid := geom.ResolutionForPoints(m.Positions).Weld()
@@ -201,5 +206,5 @@ func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, ok bool) {
 			n++
 		}
 	}
-	return n, true
+	return n, true, ""
 }

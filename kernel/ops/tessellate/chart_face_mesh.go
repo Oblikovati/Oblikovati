@@ -3,6 +3,7 @@
 package tessellate
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -30,33 +31,48 @@ import (
 // the kept triangles closes every seam; a sphere pole's whole row welds to one vertex and the
 // degenerate triangles around it drop out.
 
-// chartFaceMesh meshes a trimmed curved face from the parametric trim it carries. ok=false when the
-// face carries no chart, when its surface wraps in neither direction, or when the mesh that comes out
-// is not bounded by its own boundary — the caller then reports the discarded trim rather than shipping
-// a mesh nobody certified.
+// chartFaceMesh meshes a trimmed curved face from the parametric trim it carries. ok=false in two
+// different situations, and the log is what tells them apart: the face was never this mesher's (it
+// carries no chart, or its surface wraps in neither direction), which is the ordinary route onto the
+// generic (u,v) trim path; or the mesher OWNED the face and gave it up, which is a degradation and is
+// recorded into log unconditionally, here, so that no caller can forget or condition it (#3520,
+// chart_decline.go).
 //
-// Example: if m, ok := chartFaceMesh(f, f.Geometry(), q); ok { return m }
-func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
+// Example: if m, ok := chartFaceMesh(f, f.Geometry(), q, log); ok { return m }
+func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality, log *chartDeclineLog) (*Mesh, bool) {
 	r, ok := newChartRegion(f, s)
 	if !ok {
+		return nil, false // never this mesher's face: no chart recorded, or an aperiodic surface
+	}
+	m, why := chartRegionMesh(f, s, r, q)
+	if why != "" {
+		log.declined(why)
 		return nil, false
 	}
+	return m, true
+}
+
+// chartRegionMesh builds the covering mesh for a region this mesher owns, or names WHY it gave up — the
+// reason the router reports, so a reader can act on it rather than being told only that something fell
+// back.
+func chartRegionMesh(f *topo.Face, s geom.Surface, r chartRegion, q Quality) (*Mesh, string) {
 	chains := chartBoundaryChains(f, s, r, q)
 	b := newChartCover(s, r, q)
 	loops := b.addChains(chains)
 	b.addInterior(chains)
 	kept, ok := b.keptWithoutRimEars(loops)
-	if !ok || len(kept) == 0 {
-		return nil, false
+	if !ok {
+		return nil, fmt.Sprintf("its %d rim-only-ear splitting rounds were spent with an ear still "+
+			"standing, and an ear carries no surface point of its own", chartRimEarRounds)
 	}
-	pos, nrm, idx := weldCoverTriangles(b.pos, b.nrm, kept)
-	m := patchMeshFrom(pos, nrm, idx)
-	validate.RepairFolds(m, 8)
-	return m, chartMeshIsBoundedByItsRim(m, chains)
+	if len(kept) == 0 {
+		return nil, "the covering kept no triangle inside the chart's own window"
+	}
+	return certifiedChartMesh(b, kept, chains)
 }
 
-// chartMeshIsBoundedByItsRim accepts the mesh only when its unpaired edges are EXACTLY the boundary
-// segments it was given — the same SET, not merely the same count.
+// certifiedChartMesh welds the kept covering triangles and accepts the mesh only when its unpaired
+// edges are EXACTLY the boundary segments it was given — the same SET, not merely the same count.
 //
 // The set, because a count cancels. It was a count, and on the merged cocylindrical wall at
 // PropertyQuality it read 578 against a rim of 578 while FIVE of those free edges were no rim segment
@@ -70,9 +86,16 @@ func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // surface has no free edges at all, and that is precisely the full-domain degradation this mesher exists
 // to remove. Either way the face is DECLINED and the router's defect reporter speaks, rather than the
 // wrong mesh shipping quietly.
-func chartMeshIsBoundedByItsRim(m *Mesh, chains []chartChain) bool {
+func certifiedChartMesh(b *chartCover, kept [][3]int, chains []chartChain) (*Mesh, string) {
+	pos, nrm, idx := weldCoverTriangles(b.pos, b.nrm, kept)
+	m := patchMeshFrom(pos, nrm, idx)
+	validate.RepairFolds(m, 8)
 	extra, missing := chartRimMismatch(m, chains)
-	return m != nil && m.TriangleCount() > 0 && extra == 0 && missing == 0
+	if extra != 0 || missing != 0 {
+		return nil, fmt.Sprintf("the mesh it built is not bounded by its own rim: %d unpaired edge(s) "+
+			"are no rim segment and %d rim segment(s) it does not bound", extra, missing)
+	}
+	return m, ""
 }
 
 // chartRimMismatch is the gate's own comparison, in the two numbers it decides on: how many of the
