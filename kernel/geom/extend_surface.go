@@ -171,7 +171,7 @@ func repeatedKnot(v float64, count int) []float64 {
 func powInt(x float64, n int) float64 {
 	p := 1.0
 	for range n {
-		p *= x
+		p = float64(p * x)
 	}
 	return p
 }
@@ -180,7 +180,7 @@ func powInt(x float64, n int) float64 {
 func factorial(k int) float64 {
 	f := 1.0
 	for i := 2; i <= k; i++ {
-		f *= float64(i)
+		f = float64(f * float64(i))
 	}
 	return f
 }

@@ -115,7 +115,7 @@ func lineSearchToward(s Surface, q math.Point3, u, v, ddu, ddv, d2 float64) (nu,
 		if float64(s.PointAt(cu, cv).VectorTo(q).LengthSquared()) < d2 {
 			return cu, cv, true
 		}
-		alpha *= 0.5
+		alpha = float64(alpha * 0.5)
 	}
 	return u, v, false
 }

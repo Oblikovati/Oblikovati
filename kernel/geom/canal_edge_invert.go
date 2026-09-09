@@ -137,7 +137,7 @@ func (s *canalMarchHostState) dampFootStep(q math.Point3, u, v, su, sv, d2 float
 		if float64(r.LengthSquared()) < d2 {
 			return cu, cv, true
 		}
-		alpha *= 0.5
+		alpha = float64(alpha * 0.5)
 	}
 	return u, v, false
 }

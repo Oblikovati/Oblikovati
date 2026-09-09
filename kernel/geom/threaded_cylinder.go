@@ -45,7 +45,7 @@ func (t ThreadedCylinder) radiusAt(u, v float64) float64 {
 	}
 	frac := float64(phase / t.Pitch)             // 0..1 within one thread
 	groove := 1 - stdmath.Abs(float64(2*frac)-1) // V: 0 at crest (0,1), 1 at root (0.5)
-	groove *= t.runout(v)
+	groove = float64(groove * t.runout(v))
 	if t.Internal {
 		return t.Radius + float64(t.Depth*groove) // bore: cut outward
 	}

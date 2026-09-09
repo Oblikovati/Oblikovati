@@ -259,7 +259,7 @@ func dampCanalStep(a, b *canalMarchHostState, c math.Point3, r float64, p, q mat
 		if canalResidualNorm(a, b, cand, r) < best {
 			return cand
 		}
-		alpha *= 0.5
+		alpha = float64(alpha * 0.5)
 	}
 	return c.TranslateBy(p.Scale(math.Scalar(dx))).TranslateBy(q.Scale(math.Scalar(dy)))
 }

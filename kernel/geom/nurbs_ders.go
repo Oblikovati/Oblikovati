@@ -100,9 +100,9 @@ func scaleDerivativeRows(ders [][]float64, p, order int) {
 	factor := float64(p)
 	for k := 1; k <= order && k <= p; k++ {
 		for j := range ders[k] {
-			ders[k][j] *= factor
+			ders[k][j] = float64(ders[k][j] * factor)
 		}
-		factor *= float64(p - k)
+		factor = float64(factor * float64(p-k))
 	}
 }
 

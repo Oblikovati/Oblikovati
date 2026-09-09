@@ -161,7 +161,7 @@ func avgChordParams(grid [][]math.Point3, _ bool) []float64 {
 		}
 	}
 	for j := range sum {
-		sum[j] /= float64(len(grid))
+		sum[j] = float64(sum[j] / float64(len(grid)))
 	}
 	return sum
 }
@@ -185,7 +185,7 @@ func avgChordParamsRows(rows [][][]float64) []float64 {
 		}
 	}
 	for a := range sum {
-		sum[a] /= float64(nv)
+		sum[a] = float64(sum[a] / float64(nv))
 	}
 	return sum
 }

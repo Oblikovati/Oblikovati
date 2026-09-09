@@ -180,7 +180,7 @@ func eliminate(a, b [][]float64, col int) {
 // scaleRow multiplies every entry of row by s.
 func scaleRow(row []float64, s float64) {
 	for c := range row {
-		row[c] *= s
+		row[c] = float64(row[c] * s)
 	}
 }
 

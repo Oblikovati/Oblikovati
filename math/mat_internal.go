@@ -28,7 +28,7 @@ func invert3x3(m [9]Scalar) ([9]Scalar, bool) {
 	}
 	inv := adjugate3(m)
 	for i := range inv {
-		inv[i] /= det
+		inv[i] = Scalar(inv[i] / det)
 	}
 	return inv, true
 }

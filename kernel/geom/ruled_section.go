@@ -275,7 +275,7 @@ func axialSearchRange(c Curve3, origin math.Point3, axis math.Vector3, vMin, vMa
 		if ok && covLo <= vMin && covHi >= vMax {
 			return -span, span, true
 		}
-		span *= 2
+		span = float64(span * 2)
 	}
 	return 0, 0, false
 }
