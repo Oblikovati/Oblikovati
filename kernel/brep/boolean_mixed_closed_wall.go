@@ -31,7 +31,7 @@ func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]
 			}
 			curves, why, ok := closedSurfaceWallImprint(sf, wf)
 			if !ok {
-				recordSectionDecline(rec, why, sf, wf)
+				recordSectionDecline(rec, why, sf.surface, wf.surface)
 				return false
 			}
 			sphImp[i] = append(sphImp[i], curves...)
@@ -55,21 +55,29 @@ func pairClosedSurfaceWallImprints(p, other *facePartition, sphImp, wallImp [][]
 //     the ball where nothing touches it and the difference came back with the ball's face missing.
 //
 // Anything else declines, and pairing it is the rest of stage 4.
-func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, geom.SectionDecline, bool) {
+func closedSurfaceWallImprint(sf, wf curvedFace) ([]geom.Curve3, sectionRefusal, bool) {
 	rs, ok := ruledFaceOf(wf)
 	if !ok || len(sf.loops) > 0 {
-		return nil, geom.DeclineNoClosedForm, false
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"this pairing needs a boundary-less face against a ruled wall; the face carries %d loops and the wall is %T",
+			len(sf.loops), wf.surface), false
 	}
 	res := geom.ResolutionForSize(rs.size())
-	curves, why, handled := geom.IntersectSurfacesAnalyticDeclining(sf.surface, rs.surface, res)
-	if !handled || !crossingsClose(curves, res) {
-		return nil, why, false
+	curves, why, handled := curvedImprint(sf.surface, rs.surface, res)
+	if !handled {
+		return nil, refusal(why), false
+	}
+	if gap, open := declineOpenSection(curves, res); open != geom.DeclineNone {
+		return nil, refusalf(open, "endpoint gap %g > sew %g", gap, res.Sew()), false
 	}
 	kept, ok := keepCrossingsOnTheWall(curves, rs)
 	if !ok {
-		return nil, geom.DeclineNoClosedForm, false // the band clip's own scope, not the section's
+		// The band clip's own scope, not the section's: the placement called this crossing a straddle
+		// and the clip found nothing of it between the rims.
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"the band clip kept none of the %d crossing(s) between the wall's rims", len(curves)), false
 	}
-	return kept, geom.DeclineNone, true
+	return kept, solved(), true
 }
 
 // keepCrossingsOnTheWall keeps the crossings that lie on the wall itself and drops the ones the
@@ -98,19 +106,6 @@ func keepCrossingsOnTheWall(curves []geom.Curve3, rs ruledSide) ([]geom.Curve3, 
 	return out, true
 }
 
-// crossingsClose reports that every curve an intersector returned comes back to where it started. An
-// OPEN curve out of the intersector is a partial answer, and a partial answer is refused — unlike the
-// open arcs keepCrossingsOnTheWall itself produces, whose ends are rims this pipeline knows about.
-func crossingsClose(curves []geom.Curve3, res geom.Resolution) bool {
-	for _, cv := range curves {
-		lo, hi := cv.Domain()
-		if float64(cv.PointAt(lo).DistanceTo(cv.PointAt(hi))) > res.Sew() {
-			return false
-		}
-	}
-	return true
-}
-
 // crossingAxialSpan is the crossing's extent along the wall's axis, walked on the curve itself. The
 // curve is analytic and the question is metric — where does it sit between the rims — so sampling it
 // bounds the span without deciding any topology.
@@ -131,7 +126,7 @@ const crossingSpanSamples = 64
 // pairWallWallImprints imprints every (wall of p, wall of other) pair whose boxes overlap, appending the
 // shared crossing to both lists — the ruled-versus-ruled counterpart of the closed-surface pairing above
 // (ADR-0061 stage 4). ok=false declines the boolean.
-func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve3) bool {
+func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve3, rec *diag.Recorder) bool {
 	for i, wf := range p.wall {
 		box := inflateBox(p.wallBox[i])
 		for k, of := range other.wall {
@@ -142,8 +137,9 @@ func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve
 				geom.SurfacesApart(wf.surface, of.surface, facePairCullPad) {
 				continue
 			}
-			curves, ok := wallWallImprint(wf, of)
+			curves, why, ok := wallWallImprint(wf, of)
 			if !ok {
+				recordSectionDecline(rec, why, wf.surface, of.surface)
 				return false
 			}
 			impP[i] = append(impP[i], curves...)
@@ -156,11 +152,12 @@ func pairWallWallImprints(p, other *facePartition, impP, impOther [][]geom.Curve
 // wallWallImprint is the exact shared imprint of one (wall, wall) pair, under the same narrow scope the
 // closed-surface pairing takes: every crossing must come back CLOSED, and must lie strictly inside BOTH
 // bands or strictly clear of them. Anything else declines.
-func wallWallImprint(a, b curvedFace) ([]geom.Curve3, bool) {
+func wallWallImprint(a, b curvedFace) ([]geom.Curve3, sectionRefusal, bool) {
 	ra, okA := ruledFaceOf(a)
 	rb, okB := ruledFaceOf(b)
 	if !okA || !okB {
-		return nil, false
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"this pairing needs two ruled walls; got %T and %T", a.surface, b.surface), false
 	}
 	res := geom.ResolutionForSize(stdmath.Max(ra.size(), rb.size()))
 	// Two walls on ONE surface do not cross, and asking an intersector for the crossing they do not
@@ -168,15 +165,33 @@ func wallWallImprint(a, b curvedFace) ([]geom.Curve3, bool) {
 	// the two bands overlap, and what divides it is where one band ends inside the other (ADR-0045,
 	// the degenerate-overlap class — boolean_mixed_coincident.go).
 	if geom.SurfacesCoincide(ra.surface, rb.surface, res) {
-		return coincidentWallImprint(ra, rb), true
+		return coincidentWallImprint(ra, rb), solved(), true
 	}
-	curves, handled := geom.IntersectSurfacesAnalytic(ra.surface, rb.surface, res)
-	if !handled || !crossingsClose(curves, res) {
-		return nil, false
+	// The reason travels: this pairing threw it away, so an ill-conditioned wall crossing arrived at the
+	// user as the same generic message a torus pair does (Oblikovati/Oblikovati#3525).
+	curves, why, handled := curvedImprint(ra.surface, rb.surface, res)
+	if !handled {
+		return nil, refusal(why), false
 	}
+	if gap, open := declineOpenSection(curves, res); open != geom.DeclineNone {
+		return nil, refusalf(open, "endpoint gap %g > sew %g", gap, res.Sew()), false
+	}
+	return wallWallCrossingsOnBothBands(curves, ra, rb)
+}
+
+// wallWallCrossingsOnBothBands keeps the crossings that lie on BOTH walls, in the order the two clips
+// must run: what survives a's band is offered to b's. ok=false is a named band-clip refusal, the same
+// scope the closed-surface pairing declines on.
+func wallWallCrossingsOnBothBands(curves []geom.Curve3, ra, rb ruledSide) ([]geom.Curve3, sectionRefusal, bool) {
 	kept, ok := keepCrossingsOnTheWall(curves, ra)
 	if !ok {
-		return nil, false
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"the band clip kept none of the %d crossing(s) between the first wall's rims", len(curves)), false
 	}
-	return keepCrossingsOnTheWall(kept, rb)
+	both, ok := keepCrossingsOnTheWall(kept, rb)
+	if !ok {
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"the band clip kept none of the %d crossing(s) between the second wall's rims", len(kept)), false
+	}
+	return both, solved(), true
 }

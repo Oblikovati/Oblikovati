@@ -75,3 +75,52 @@ func TestSurfaceIntersectNonCrossingIsHandledEmpty(t *testing.T) {
 		t.Fatalf("plane clear of sphere: handled=%v curves=%d, want handled+empty", handled, len(curves))
 	}
 }
+
+// TestTheMarchCarriesTheClosedFormsRefusal: a pair the closed form gives up for CONDITIONING is
+// answered by the tracer, and the demotion used to vanish there — SurfaceIntersect discarded the
+// reason, so a caller could not tell an exact section from a marched stand-in for one
+// (Oblikovati/Oblikovati#3525). handled stays true; the reason rides along.
+func TestTheMarchCarriesTheClosedFormsRefusal(t *testing.T) {
+	t.Parallel()
+	ring, err := NewTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 6, 1.5)
+	if err != nil {
+		t.Fatalf("NewTorus: %v", err)
+	}
+	rod, err := NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	if err != nil {
+		t.Fatalf("NewCylinder: %v", err)
+	}
+	box := math.NewBox(math.P3(-9, -9, -9), math.P3(9, 9, 9))
+	if _, why, _ := IntersectSurfacesAnalyticDeclining(ring, rod, ResolutionForBox(box)); !why.IsConditioning() {
+		t.Fatalf("the fixture no longer demotes for conditioning: why=%v", why)
+	}
+	curves, why, handled := SurfaceIntersectDeclining(ring, rod, box, ResolutionForBox(box))
+	if !handled || len(curves) == 0 {
+		t.Fatalf("the marcher answered handled=%v with %d curves; the fixture needs a marched answer", handled, len(curves))
+	}
+	if !why.IsConditioning() {
+		t.Errorf("the marched answer reports why=%v; the closed form's conditioning demotion was dropped", why)
+	}
+}
+
+// TestAnExactSectionReportsNoDemotion is the other half: a pair the closed form solves reports
+// DeclineNone, so a caller cannot mistake every section for a degraded one.
+func TestAnExactSectionReportsNoDemotion(t *testing.T) {
+	t.Parallel()
+	pl, err := NewPlane(math.P3(0, 0, 1), math.V3(0, 0, 1))
+	if err != nil {
+		t.Fatalf("NewPlane: %v", err)
+	}
+	sp, err := NewSphere(math.P3(0, 0, 0), 2)
+	if err != nil {
+		t.Fatalf("NewSphere: %v", err)
+	}
+	box := math.NewBox(math.P3(-3, -3, -3), math.P3(3, 3, 3))
+	curves, why, handled := SurfaceIntersectDeclining(pl, sp, box, ResolutionForBox(box))
+	if !handled || len(curves) != 1 {
+		t.Fatalf("plane∩sphere: handled=%v with %d curves, want the one exact circle", handled, len(curves))
+	}
+	if why != DeclineNone {
+		t.Errorf("an exact section reports why=%v, want DeclineNone", why)
+	}
+}

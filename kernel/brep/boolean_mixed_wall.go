@@ -73,7 +73,7 @@ func overlapsUncarriedWall(wf curvedFace, box math.Box, other *facePartition) bo
 		// have lies clear of one of the two bands — a tool that enters a cylinder through one cap and
 		// leaves through the other never touches its wall, and the wall stays whole. Reading the
 		// EMPTINESS as the undecided case declined that whole two-cap family (ADR-0061 stage 4).
-		if _, ok := wallWallImprint(wf, other.wall[i]); ok {
+		if _, _, ok := wallWallImprint(wf, other.wall[i]); ok {
 			continue
 		}
 		return true

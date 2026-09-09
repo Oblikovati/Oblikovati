@@ -122,7 +122,7 @@ func TestCurvedImprintCylinderPlaneIsCircle(t *testing.T) {
 	cyl, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 4)
 	side := cylSide(t, facesOfAny(cyl))
 	plane, _ := geom.NewPlane(math.P3(0, 0, 2.5), math.V3(0, 0, 1))
-	curves, ok := curvedImprint(side, curvedFace{surface: plane}, geom.ResolutionForSize(1))
+	curves, _, ok := curvedImprint(side.surface, plane, geom.ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("cylinder∩plane: handled=%v, %d curves; want handled, 1 circle", ok, len(curves))
 	}
@@ -144,7 +144,7 @@ func TestCurvedImprintSpherePlaneIsCircle(t *testing.T) {
 	t.Parallel()
 	sphere, _ := geom.NewSphere(math.P3(0, 0, 0), 5)
 	plane, _ := geom.NewPlane(math.P3(0, 0, 3), math.V3(0, 0, 1))
-	curves, ok := curvedImprint(curvedFace{surface: sphere}, curvedFace{surface: plane}, geom.ResolutionForSize(1))
+	curves, _, ok := curvedImprint(sphere, plane, geom.ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("sphere∩plane: handled=%v, %d curves; want handled, 1 circle", ok, len(curves))
 	}
@@ -163,7 +163,7 @@ func TestCurvedImprintPlanePlaneIsLine(t *testing.T) {
 	a, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(0, 0, 1))
 	b, _ := geom.NewPlane(math.P3(0, 0, 0), math.V3(1, 0, 0))
 	_ = faces
-	curves, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1))
+	curves, _, ok := curvedImprint(a, b, geom.ResolutionForSize(1))
 	if !ok || len(curves) != 1 {
 		t.Fatalf("plane∩plane: handled=%v, %d curves; want handled, 1 line", ok, len(curves))
 	}
@@ -179,7 +179,7 @@ func TestCurvedImprintRuledPairIsExactSection(t *testing.T) {
 	t.Parallel()
 	a, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
 	b, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), 2)
-	curves, ok := curvedImprint(curvedFace{surface: a}, curvedFace{surface: b}, geom.ResolutionForSize(1))
+	curves, _, ok := curvedImprint(a, b, geom.ResolutionForSize(1))
 	if !ok || len(curves) != 2 {
 		t.Fatalf("cylinder∩cylinder: handled=%v, %d curves; want the 2 exact section loops", ok, len(curves))
 	}
@@ -200,8 +200,8 @@ func TestCurvedImprintTorusPairDefers(t *testing.T) {
 	t.Parallel()
 	ring, _ := geom.NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
 	linked, _ := geom.NewTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1)
-	if _, ok := curvedImprint(curvedFace{surface: ring}, curvedFace{surface: linked}, geom.ResolutionForSize(1)); ok {
-		t.Error("torus∩torus should defer (handled=false) to the tracer, not be handled analytically")
+	if _, why, ok := curvedImprint(ring, linked, geom.ResolutionForSize(1)); ok || why != geom.DeclineNoClosedForm {
+		t.Error("torus∩torus should defer by NAME (handled=false, DeclineNoClosedForm) to the tracer")
 	}
 	for _, c := range []struct {
 		name  string
@@ -210,7 +210,7 @@ func TestCurvedImprintTorusPairDefers(t *testing.T) {
 		{"axial drill", mustCylinder(t, math.P3(4, 0, 0), math.V3(0, 0, 1), 0.5)},
 		{"skew rod", mustCylinder(t, math.P3(0, 0, 0), math.V3(1, 0, 0), 0.5)},
 	} {
-		if _, ok := curvedImprint(curvedFace{surface: ring}, curvedFace{surface: c.other}, geom.ResolutionForSize(1)); !ok {
+		if _, _, ok := curvedImprint(ring, c.other, geom.ResolutionForSize(1)); !ok {
 			t.Errorf("torus∩%s has a closed-form section and must be handled, not deferred", c.name)
 		}
 	}

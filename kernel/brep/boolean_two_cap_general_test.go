@@ -52,7 +52,7 @@ func TestClearWallPairIsCarried(t *testing.T) {
 	if len(pa.wall) != 1 || len(pb.wall) != 1 {
 		t.Fatalf("fixture: target has %d walls, tool %d; want one each", len(pa.wall), len(pb.wall))
 	}
-	curves, ok := wallWallImprint(pa.wall[0], pb.wall[0])
+	curves, _, ok := wallWallImprint(pa.wall[0], pb.wall[0])
 	if !ok {
 		t.Fatal("the wall pair is undecided; the two-cap crossing needs it decided")
 	}

@@ -362,23 +362,6 @@ func TestAnOrdinaryRefusalIsNotAConditioningDemotion(t *testing.T) {
 	}
 }
 
-// TestEverySectionDeclineIsNamed: a reason with no name reaches a user as "SectionDecline(?)", which is
-// worse than no diagnostic. This fails when the next reason lands without its string.
-func TestEverySectionDeclineIsNamed(t *testing.T) {
-	t.Parallel()
-	seen := map[string]bool{}
-	for d := DeclineNone; d <= DeclineTorusLaneSeparation; d++ {
-		name := d.String()
-		if name == "SectionDecline(?)" || seen[name] {
-			t.Errorf("SectionDecline %d has a missing or duplicate name %q", d, name)
-		}
-		seen[name] = true
-	}
-	if got := SectionDecline(200).String(); got != "SectionDecline(?)" {
-		t.Errorf("an out-of-range decline names itself %q", got)
-	}
-}
-
 // TestAFoldedLoopSitsOnItsStationsTangencyAtEveryFold is the fold invariant TorusQuadricLoop rests on.
 // At a fold the tube circle TOUCHES the quadric: the two azimuths have merged onto the station's own
 // extremum, so the quadric's rate of change along that circle vanishes there. The loop's fold point

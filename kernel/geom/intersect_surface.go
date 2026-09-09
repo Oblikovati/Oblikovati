@@ -24,23 +24,43 @@ import (
 // intersected only where the two faces overlap, exactly as OCCT clips IntTools_FaceFace to the faces' UV
 // ranges; build it from the operands' bounding box, e.g. face1.RangeBox().Union(face2.RangeBox()).
 //
+// It DISCARDS the closed form's reason on purpose — a caller with nowhere to report it should not have
+// to name one. A caller that CAN report takes [SurfaceIntersectDeclining], which says which gate sent
+// the pair to the marcher (Oblikovati/Oblikovati#3525).
+//
 // Example — two equal perpendicular cylinders (the Steinmetz bicylinder) yield their two saddle curves:
 //
 //	cz := geom.Cylinder{Origin: math.P3(0, 0, 0), AxisDir: math.V3(0, 0, 1).AsUnit(), Radius: 1}
 //	cx := geom.Cylinder{Origin: math.P3(0, 0, 0), AxisDir: math.V3(1, 0, 0).AsUnit(), Radius: 1}
 //	curves, _ := geom.SurfaceIntersect(cz, cx, math.NewBox(math.P3(-2, -2, -2), math.P3(2, 2, 2)), res)
 func SurfaceIntersect(a, b Surface, box math.Box, res Resolution) (curves []Curve3, handled bool) {
-	if cs, ok := IntersectSurfacesAnalytic(a, b, res); ok {
-		return cs, true // exact closed form (an empty result = a known non-crossing / tangent touch)
+	curves, _, handled = SurfaceIntersectDeclining(a, b, box, res)
+	return curves, handled
+}
+
+// SurfaceIntersectDeclining is [SurfaceIntersect] that also NAMES what the closed form refused, the
+// same pairing [IntersectSurfacesAnalytic] and [IntersectSurfacesAnalyticDeclining] make one level
+// down. The reason survives the march: a pair the closed form gave up for CONDITIONING is answered by
+// the tracer and comes back handled=true with a non-none reason, which is precisely the case a caller
+// must be able to report — the exact pipeline gave up ground it normally holds, and a marched chord
+// approximation stands where an exact curve should (Oblikovati/Oblikovati#3525). DeclineNone with
+// handled=true is the undegraded answer; a refusal carries the reason the closed form gave.
+//
+//	curves, why, ok := geom.SurfaceIntersectDeclining(ring, rod, box, res)
+//	if why.IsConditioning() { rec.Recordf(...) } // the section is marched, not solved
+func SurfaceIntersectDeclining(a, b Surface, box math.Box, res Resolution) ([]Curve3, SectionDecline, bool) {
+	cs, why, ok := IntersectSurfacesAnalyticDeclining(a, b, res)
+	if ok {
+		return cs, DeclineNone, true // exact closed form (an empty result = a known non-crossing / tangent touch)
 	}
 	// No closed form: march. Try each operand as the base — the tracer walks the base's parameter
 	// window, and a base whose domain the box bounds more tightly seeds the continuation better.
 	for _, roles := range [2][2]Surface{{a, b}, {b, a}} {
 		if cs := marchedCurves(roles[0], roles[1], box); len(cs) > 0 {
-			return cs, true
+			return cs, why, true
 		}
 	}
-	return nil, false
+	return nil, why, false
 }
 
 // marchedCurves traces base∩other over the box-derived parameter window and wraps each traced polyline

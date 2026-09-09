@@ -1,0 +1,265 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package brep
+
+import (
+	stdmath "math"
+	"strings"
+	"testing"
+
+	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+)
+
+// The three refusals of Oblikovati/Oblikovati#3525. A torus pair, an ill-conditioned lane and a section
+// that does not close all reached the user as one generic "no exact analytic path claims this
+// configuration": the first was never recorded at all, the second only through two of the four
+// pairings, and the third came back as DeclineNone — a refusal that names nothing. Each must now say
+// WHICH gate refused, on the recorder brep.BooleanDiag was handed.
+
+// ringAndRod is the (torus, cylinder) fixture the lane cases are read on: a ring driven across a rod.
+func ringAndRod(t *testing.T, major, minor float64) (*topo.Body, *topo.Body) {
+	t.Helper()
+	ring, err := SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), major, minor, "ring")
+	if err != nil {
+		t.Fatalf("SolidTorus(%g, %g): %v", major, minor, err)
+	}
+	rod, err := SolidCylinder(math.P3(0, 0, -10), math.V3(0, 0, 1), 3, 20)
+	if err != nil {
+		t.Fatalf("SolidCylinder: %v", err)
+	}
+	return ring, rod
+}
+
+// TestATorusPairDeclinesByName: two tori have no closed-form section, and the pairing refuses BEFORE it
+// asks for one (closedSurfaceUncovered). That refusal recorded nothing, which is why it read to a user
+// exactly like the ill-conditioned lane below.
+func TestATorusPairDeclinesByName(t *testing.T) {
+	t.Parallel()
+	a, err := SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1, "a")
+	if err != nil {
+		t.Fatalf("SolidTorus a: %v", err)
+	}
+	b, err := SolidTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1, "b")
+	if err != nil {
+		t.Fatalf("SolidTorus b: %v", err)
+	}
+	rec := &diag.Recorder{}
+	if _, err := BooleanDiag(Union, a, b, rec); err == nil {
+		t.Fatal("the torus pair built; the fixture no longer exercises the decline")
+	}
+	d := onlyDiagWithCode(t, rec, CodeSectionUnclaimedPair)
+	for _, want := range []string{"geom.Torus ∩ geom.Torus", "no closed form claims this surface pair"} {
+		if !strings.Contains(d.Detail, want) {
+			t.Errorf("the torus pair's decline does not name %q: %s", want, d.Detail)
+		}
+	}
+	if d.Severity != diag.Info {
+		t.Errorf("an unclaimed pair is %v; nothing degraded here, the caller's own decline is the degradation", d.Severity)
+	}
+}
+
+// TestAnIllConditionedLaneDeclinesByName: the torus∩cylinder closed form APPLIES to a ring on a rod and
+// still cannot use its answer at these numbers. That is a degradation — a Defect, and a different one
+// from the torus pair above, which is the whole point of naming the gate.
+func TestAnIllConditionedLaneDeclinesByName(t *testing.T) {
+	t.Parallel()
+	ring, rod := ringAndRod(t, 6, 1.5)
+	rec := &diag.Recorder{}
+	if _, err := BooleanDiag(Difference, rod, ring, rec); err == nil {
+		t.Fatal("the ring-on-rod cut built; the fixture no longer exercises the lane decline")
+	}
+	d := onlyDiagWithCode(t, rec, CodeSectionConditioningDemotion)
+	for _, want := range []string{"geom.Torus ∩ geom.Cylinder", "the torus section's"} {
+		if !strings.Contains(d.Detail, want) {
+			t.Errorf("the lane decline does not name %q: %s", want, d.Detail)
+		}
+	}
+	if d.Severity != diag.Defect {
+		t.Errorf("a conditioning demotion is %v; the exact path was available and given up", d.Severity)
+	}
+}
+
+// TestTheThreeRefusalsReadDifferently is the statement of #3525 itself: the user must be able to tell
+// the three apart. Before, all three arrived as the same generic message.
+func TestTheThreeRefusalsReadDifferently(t *testing.T) {
+	t.Parallel()
+	ball, err := geom.NewSphere(math.P3(0, 0, 0), 5)
+	if err != nil {
+		t.Fatalf("NewSphere: %v", err)
+	}
+	rod, err := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 1)
+	if err != nil {
+		t.Fatalf("NewCylinder: %v", err)
+	}
+	rec := &diag.Recorder{}
+	recordSectionDecline(rec, refusal(geom.DeclineNoClosedForm), ball, rod)
+	recordSectionDecline(rec, refusal(geom.DeclineTorusLaneTracks), ball, rod)
+	recordSectionDecline(rec, refusalf(geom.DeclineOpenSection, "endpoint gap %g > sew %g", 0.25, 0.001), ball, rod)
+	seen := map[string]bool{}
+	for _, d := range rec.Records() {
+		if seen[d.Detail] {
+			t.Errorf("two of the three refusals read identically: %s", d.Detail)
+		}
+		seen[d.Detail] = true
+		if !strings.Contains(d.Detail, "geom.Sphere ∩ geom.Cylinder") {
+			t.Errorf("a refusal does not name the geometry pair: %s", d.Detail)
+		}
+	}
+	if len(seen) != 3 {
+		t.Fatalf("recorded %d refusals, want 3: %v", len(seen), rec.Records())
+	}
+	if !strings.Contains(strings.Join(detailsOf(rec), " "), "endpoint gap 0.25 > sew 0.001") {
+		t.Error("the open-section refusal dropped the value it measured")
+	}
+}
+
+// TestAnOpenSectionIsRefusedByName: the closure gate is the one that returned DeclineNone with ok=false
+// (#3525). It must name itself AND report the gap it measured — the exception-message rule.
+func TestAnOpenSectionIsRefusedByName(t *testing.T) {
+	t.Parallel()
+	res := geom.ResolutionForSize(10)
+	open, err := geom.NewLine(math.P3(0, 0, 0), math.V3(1, 0, 0))
+	if err != nil {
+		t.Fatalf("NewLine: %v", err)
+	}
+	closed, err := geom.NewCircle(math.P3(0, 0, 0), math.V3(0, 0, 1), 2)
+	if err != nil {
+		t.Fatalf("NewCircle: %v", err)
+	}
+	if gap, why := declineOpenSection([]geom.Curve3{closed}, res); why != geom.DeclineNone {
+		t.Errorf("a circle is refused as open (%v, gap %g); it closes on itself", why, gap)
+	}
+	// A BOUNDED open arc: the gap is a real number the message can name.
+	arc := geom.NewLineSegment(math.P3(0, 0, 0), math.P3(4, 0, 0))
+	gap, why := declineOpenSection([]geom.Curve3{closed, arc}, res)
+	if why != geom.DeclineOpenSection {
+		t.Fatalf("a bounded open section is refused as %v, want DeclineOpenSection", why)
+	}
+	if stdmath.Abs(gap-4) > 1e-9 {
+		t.Errorf("the open-section gate measured a gap of %g, want the segment's own length 4", gap)
+	}
+	// An UNBOUNDED curve: its endpoint distance is NaN, and `NaN > sew` is false — the comparison the
+	// gate used to make let the widest refusal through the narrowest gate.
+	if _, why := declineOpenSection([]geom.Curve3{open}, res); why != geom.DeclineOpenSection {
+		t.Errorf("an unbounded section is refused as %v, want DeclineOpenSection", why)
+	}
+}
+
+// TestEveryImprintRefusalIsNamed sweeps the pairings over a corpus of pairs and asserts the invariant
+// the AST guard cannot see: a refusal decided at RUNTIME never carries DeclineNone. The AST reads
+// `return nil, why, false` and cannot know what `why` holds there — which is exactly how #3525's
+// non-closing crossing shipped.
+func TestEveryImprintRefusalIsNamed(t *testing.T) {
+	t.Parallel()
+	base, err := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3, 10)
+	if err != nil {
+		t.Fatalf("SolidCylinder base: %v", err)
+	}
+	pb := partitionFaces(base)
+	if len(pb.wall) != 1 {
+		t.Fatalf("fixture: the base has %d walls, want 1", len(pb.wall))
+	}
+	refusals := 0
+	check := func(what string, why sectionRefusal, ok bool) {
+		if ok {
+			return
+		}
+		refusals++
+		if why.why == geom.DeclineNone {
+			t.Errorf("%s refused with no reason (DeclineNone)", what)
+		}
+		if strings.Contains(why.String(), "SectionDecline(?)") {
+			t.Errorf("%s refused with an unnamed reason %q", what, why)
+		}
+	}
+	for _, pair := range imprintSweepSurfaces(t) {
+		_, why, ok := closedSurfacePairImprint(curvedFace{surface: pair.a}, curvedFace{surface: pair.b})
+		check("closedSurfacePairImprint "+pair.name, why, ok)
+		_, why, ok = closedSurfaceWallImprint(curvedFace{surface: pair.a}, pb.wall[0])
+		check("closedSurfaceWallImprint "+pair.name, why, ok)
+	}
+	for _, tool := range imprintSweepWalls(t) {
+		_, why, ok := wallWallImprint(pb.wall[0], tool)
+		check("wallWallImprint", why, ok)
+	}
+	if refusals == 0 {
+		t.Fatal("the sweep produced no refusal at all — it is passing vacuously")
+	}
+	t.Logf("swept %d named refusals", refusals)
+}
+
+// surfacePair is one entry of the imprint sweep's corpus.
+type surfacePair struct {
+	name string
+	a, b geom.Surface
+}
+
+// imprintSweepSurfaces is the closed-surface corpus: spheres and tori at radii that straddle the base
+// cylinder's own radius, plus the torus pair that has no closed form at all.
+func imprintSweepSurfaces(t *testing.T) []surfacePair {
+	t.Helper()
+	var out []surfacePair
+	for _, rad := range []float64{0.5, 2, 3, 6, 12} {
+		for _, dz := range []float64{-9, 0, 9} {
+			ball, err := geom.NewSphere(math.P3(0, 0, math.Scalar(dz)), math.Scalar(rad))
+			if err != nil {
+				t.Fatalf("NewSphere(%g, %g): %v", dz, rad, err)
+			}
+			ring, err := geom.NewTorus(math.P3(0, 0, math.Scalar(dz)), math.V3(1, 0, 0), math.Scalar(rad), 0.4)
+			if err != nil {
+				continue // a minor radius the major cannot carry: not a fixture
+			}
+			out = append(out,
+				surfacePair{"sphere/ring", ball, ring},
+				surfacePair{"ring/ring", ring, ring},
+				surfacePair{"sphere/sphere", ball, ball})
+		}
+	}
+	return out
+}
+
+// imprintSweepWalls is the ruled-wall corpus: rods at angles and offsets that cross the base's wall,
+// graze its rim and clear it entirely.
+func imprintSweepWalls(t *testing.T) []curvedFace {
+	t.Helper()
+	var out []curvedFace
+	for _, ang := range []float64{0, 25, 55, 89} {
+		for _, dx := range []float64{-6, -3, 0, 2} {
+			th := ang * stdmath.Pi / 180
+			tool, err := SolidCylinder(math.P3(math.Scalar(dx), 0, 5),
+				math.V3(math.Scalar(stdmath.Cos(th)), 0, math.Scalar(stdmath.Sin(th))), 1, 12)
+			if err != nil {
+				t.Fatalf("SolidCylinder(%g, %g): %v", ang, dx, err)
+			}
+			p := partitionFaces(tool)
+			if len(p.wall) > 0 {
+				out = append(out, p.wall[0])
+			}
+		}
+	}
+	return out
+}
+
+// onlyDiagWithCode returns the recorder's first diagnostic carrying code, failing when there is none.
+func onlyDiagWithCode(t *testing.T, rec *diag.Recorder, code diag.Code) diag.Diagnostic {
+	t.Helper()
+	for _, d := range rec.Records() {
+		if d.Code == code {
+			return d
+		}
+	}
+	t.Fatalf("no %s diagnostic; the recorder holds %v", code, rec.Records())
+	return diag.Diagnostic{}
+}
+
+// detailsOf is the recorder's messages, for a whole-report assertion.
+func detailsOf(rec *diag.Recorder) []string {
+	var out []string
+	for _, d := range rec.Records() {
+		out = append(out, d.Detail)
+	}
+	return out
+}

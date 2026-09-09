@@ -163,7 +163,17 @@ var kernelNetDeltaPin = map[string]int{
 	// unchecked entry is deleted, the boolean now refuses by name, and a tessellated face whose cells
 	// were dropped carries this Defect on its mesh — the mesh still ships, because a partial covering
 	// beats a missing face in a viewport, but it no longer ships silently.
-	"fallback-sites": 32,
+	// 32 → 33 (2026-09-09, #3525): CodeSectionUnclaimedPair. A RISE that names the OTHER half of the
+	// conditioning demotion above, and the reason that entry's "the ordinary refusal records nothing,
+	// it would be noise" premise was wrong where it mattered. The four imprint pairings do not fall
+	// back per pair: an ok=false DECLINES the whole mixed boolean, and the caller then reports one
+	// generic "no exact analytic path claims this configuration" for every refusal there is. Measured
+	// on a torus pair, an ill-conditioned lane and a section that does not close, the user read the
+	// same sentence three times, and the first of the three recorded NOTHING at all — it refuses at
+	// the coverage gate, before any pairing asks for a section. The ordinary refusal now rides along
+	// as an Info naming the two surfaces and which gate refused; it fires once per DECLINED boolean,
+	// not once per marched pair, so it is not the noise the earlier entry feared.
+	"fallback-sites": 33,
 }
 
 func TestKernelNetDelta(t *testing.T) {

@@ -11,10 +11,12 @@ package geom
 // two look identical to a caller, and the second is the one a user needs told about — it is where the
 // exact pipeline gives up ground it normally holds.
 //
-// geom owns no I/O and takes no recorder, so it returns the REASON and its caller records it. The
-// brep boolean turns a non-none reason into a diag.Defect on the operation's recorder
+// geom owns no I/O and takes no recorder, so it returns the REASON and its caller records it. The brep
+// boolean turns a CONDITIONING reason into a diag.Defect on the operation's recorder
 // (CodeSectionConditioningDemotion), the same way it already turns an unresolved tangent contact into
-// one.
+// one, and the ORDINARY reason into an Info (CodeSectionUnclaimedPair) wherever that refusal declines
+// the whole boolean rather than merely routing one pair to the marcher — because there the caller's own
+// message is the same sentence for every refusal there is (Oblikovati/Oblikovati#3525).
 
 // SectionDecline names why [IntersectSurfacesAnalyticDeclining] refused a pair. DeclineNone means it
 // did not refuse.
@@ -41,6 +43,11 @@ const (
 	// DeclineTorusLaneSeparation is a window whose two branches never separate by more than the stitch
 	// resolution, so the loop is a sliver two faces could not be told apart across.
 	DeclineTorusLaneSeparation
+	// DeclineOpenSection is a section the closed form SOLVED but that does not come back to where it
+	// started. A pairing whose scope is "every crossing is an island on both charts" splits each side by
+	// even-odd containment alone, and an open arc opens a region it never closes, so the imprint would
+	// leave the two charts disagreeing about which side is material (Oblikovati/Oblikovati#3525).
+	DeclineOpenSection
 )
 
 // String names the decline for a diagnostic message.
@@ -59,11 +66,14 @@ var sectionDeclineNames = [...]string{
 	DeclineTorusLaneFullTurn:    "the torus section's branch pair never folds",
 	DeclineTorusLaneUnaccounted: "the torus section's loops do not account for every azimuth",
 	DeclineTorusLaneSeparation:  "the torus section's branches never separate past the stitch resolution",
+	DeclineOpenSection:          "the closed-form section does not close on itself",
 }
 
 // IsConditioning reports whether the refusal is a CONDITIONING demotion — a closed form that applies to
-// this pair but cannot name its answer at these numbers — rather than the ordinary "no bucket claims
-// this pair". Only the first is a degradation worth reporting.
+// this pair but whose answer is unusable at these numbers, whether because it cannot be named
+// ([DeclineTorusLaneTracks] and its siblings) or because it does not close ([DeclineOpenSection]) —
+// rather than the ordinary "no bucket claims this pair". Only the first is a degradation worth
+// reporting as a defect: it is where the exact pipeline gives up ground it normally holds.
 func (d SectionDecline) IsConditioning() bool {
 	return d != DeclineNone && d != DeclineNoClosedForm
 }

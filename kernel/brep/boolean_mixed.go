@@ -281,8 +281,8 @@ func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, p
 	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB)
 	wallA, okWA := wallImprints(pa, pb, impB)
 	wallB, okWB := wallImprints(pb, pa, impA)
-	sphA, okSA := closedSurfaceImprints(pa, pb, uvB)
-	sphB, okSB := closedSurfaceImprints(pb, pa, uvA)
+	sphA, okSA := closedSurfaceImprints(pa, pb, uvB, rec)
+	sphB, okSB := closedSurfaceImprints(pb, pa, uvA, rec)
 	if !okU || !okWA || !okWB || !okSA || !okSB {
 		return nil, nil, nil, nil, nil, nil, false
 	}
@@ -291,7 +291,7 @@ func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, p
 	okXX := pairUVUVImprints(pa, pb, uvA, uvB)
 	okSW := pairClosedSurfaceWallImprints(pa, pb, sphA, wallB, rec)
 	okWS := pairClosedSurfaceWallImprints(pb, pa, sphB, wallA, rec)
-	okWW := pairWallWallImprints(pa, pb, wallA, wallB)
+	okWW := pairWallWallImprints(pa, pb, wallA, wallB, rec)
 	okSS := pairClosedSurfaceImprints(pa, pb, sphA, sphB, rec)
 	return uvA, uvB, wallA, wallB, sphA, sphB, okXA && okXB && okXX && okSW && okWS && okWW && okSS
 }
