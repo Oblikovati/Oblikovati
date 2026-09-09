@@ -188,14 +188,6 @@ func (h torusSecondHarmonic) scale() float64 {
 	return polyScale(h.Cos2, h.Sin2, h.Cos1, h.Sin1, h.Level)
 }
 
-// hasNoAzimuthDependence reports f being CONSTANT in the azimuth at its own coefficient scale — the
-// station of a form coaxial with the torus, whose section is a whole tube circle rather than two
-// azimuths. It is [isOneHarmonic] carried one step further: not merely no second harmonic, no first
-// harmonic either.
-func (h torusSecondHarmonic) hasNoAzimuthDependence() bool {
-	return largestMagnitude(h.Cos2, h.Sin2, h.Cos1, h.Sin1) <= axisInvarianceTol*h.scale()
-}
-
 // isOneHarmonic reports the station's SECOND harmonic vanishing at the polynomial's own coefficient
 // scale, so that level + reach·cos(u − phase) describes f exactly. It is the same predicate
 // [axisInvariantEntries] makes about a quadric's tensor, read off the polynomial instead — which is

@@ -189,14 +189,30 @@ func (q Quadric) sectionFamily(t Torus) torusSectionFamily {
 // "orthogonal with equal weight" cannot hold at every station: over the whole turn, both must be zero.
 // g = 0 puts the chart's tube-circle centre on the other torus's axis and n = 0 makes the axes
 // parallel, which is coaxial, and then the FIRST harmonic (Cos1, Sin1) is zero as well.
+//
+// So the classification is that geometric statement, read ONCE — it is not sampled, because how many
+// curves the section has is a topological question and a grid cannot answer one.
 func (t Torus) sectionFamily(chart Torus) torusSectionFamily {
-	for i := range torusStationProbes {
-		v := float64(twoPi * float64(i) / torusStationProbes)
-		if !t.stationOn(chart, v).poly.hasNoAzimuthDependence() {
-			return torusFamilyLanes
-		}
+	if torusIsCoaxialWith(t, chart) {
+		return torusFamilyCoaxial
 	}
-	return torusFamilyCoaxial
+	return torusFamilyLanes
+}
+
+// torusIsCoaxialWith reports the two tori sharing an axis: their axes parallel, and the co-form's centre
+// on the chart's axis. The first is a dimensionless direction test and the second a LENGTH against the
+// chart's own weld, which is the class each belongs to.
+//
+// A pair this admits that is not exactly coaxial does not escape: [torusSectionSatisfiesItsForm] then
+// measures the circles it built against the co-form's surface and refuses them by name.
+func torusIsCoaxialWith(co, chart Torus) bool {
+	axis := chart.AxisDir.AsVector()
+	if float64(co.AxisDir.AsVector().Cross(axis).Length()) > coincidentNormalSinTol {
+		return false
+	}
+	off := chart.Center.VectorTo(co.Center)
+	perp := off.Sub(axis.Scale(math.Scalar(float64(off.Dot(axis)))))
+	return float64(perp.Length()) <= torusChartWeld(chart)
 }
 
 // noClosedFormWhen names the ordinary refusal for a step whose only answer is a bool.
@@ -227,40 +243,27 @@ func torusHarmonicLoops(t Torus, co TorusCoForm, spans [][2]float64, res Resolut
 const torusStationProbes = ruledQuadricAzimuthProbes
 
 // quadricReachesNoAzimuth reports that an AXIS-INVARIANT quadric's constraint on the torus carries no
-// azimuth dependence: its reach is zero at every station, so the two roots are not two azimuths but a
-// whole circle. That is the coaxial cylinder, cone or centred sphere, and its section is circles.
+// azimuth dependence AT ANY tube angle, so the section is whole tube circles rather than two azimuths.
 //
-// The comparison is exact because the reach it reads is: for a quadric whose tensor is invariant about
-// the torus axis and whose linear term is on that axis, T·ê₁ and T·ê₂ cancel to the last bit.
+// It is decided in CLOSED FORM, not sampled. The reach's two components are T(v)·ê with
+// T(v) = 2(M·W₀(v) + G) and W₀(v) = w + r·sin v·â, so each is
+//
+//	2(M w + G)·ê + r·sin v · 2(M â)·ê
+//
+// — of the form A + B·sin v, which vanishes at every v exactly when A and B both vanish. Four scalars,
+// read once. The predicate this replaces asked the same question at 720 tube angles; a function of that
+// shape with 720 zeros is identically zero, so the two agree wherever the old one was right, and this
+// one cannot be stepped over.
 func quadricReachesNoAzimuth(t Torus, q Quadric) bool {
-	for i := range torusStationProbes {
-		h, ok := torusHarmonicAt(t, q, float64(twoPi*float64(i)/torusStationProbes))
-		if !ok || h.reach != 0 {
+	axis, e1, e2 := torusAxisFrame(t)
+	base := q.M.Apply(q.Anchor.VectorTo(t.Center)).Add(q.G).Scale(2)
+	swing := q.M.Apply(axis).Scale(math.Scalar(2 * t.MinorRadius))
+	for _, e := range [2]math.Vector3{e1, e2} {
+		if float64(base.Dot(e)) != 0 || float64(swing.Dot(e)) != 0 {
 			return false
 		}
 	}
 	return true
-}
-
-// torusCoaxialCircles returns the tube circles where a coaxial quadric meets the torus: the roots of the
-// harmonic's level term, each a full azimuth sweep at one tube angle. A root the level only GRAZES — a
-// tangency, where the level touches zero without crossing — is not a section and is left out.
-func torusCoaxialCircles(t Torus, co TorusCoForm) ([]Curve3, bool) {
-	level := func(v float64) float64 {
-		h, _ := torusHarmonicAt(t, co, v)
-		return h.level
-	}
-	var out []Curve3
-	prev := level(0)
-	for i := 1; i <= torusStationProbes; i++ {
-		v := float64(twoPi * float64(i) / torusStationProbes)
-		cur := level(v)
-		if (prev > 0) != (cur > 0) {
-			out = append(out, torusStationCircle(t, bisectLevelRoot(level, float64(twoPi*float64(i-1)/torusStationProbes), v)))
-		}
-		prev = cur
-	}
-	return out, true
 }
 
 // torusStationCircle is the full azimuth sweep at one tube angle: a circle about the torus axis, of the
@@ -275,20 +278,6 @@ func torusStationCircle(t Torus, v float64) Circle {
 		RefDir: t.Ref,
 		Radius: t.MajorRadius + float64(t.MinorRadius*cv),
 	}
-}
-
-// bisectLevelRoot refines a bracketed sign change of the coaxial level term to the tube angle itself.
-func bisectLevelRoot(level func(float64) float64, lo, hi float64) float64 {
-	loPositive := level(lo) > 0
-	for range foldBisectionSteps {
-		mid := float64((lo + hi) / 2)
-		if (level(mid) > 0) == loPositive {
-			lo = mid
-			continue
-		}
-		hi = mid
-	}
-	return float64((lo + hi) / 2)
 }
 
 // torusFullTurnSection returns the two branches as full-period arcs, for a quadric that reaches the tube

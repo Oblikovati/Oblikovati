@@ -39,6 +39,11 @@ type TorusCoForm interface {
 	// the azimuth error while the position error does not, so only a length can see a branch that has
 	// wandered off the surface there.
 	distanceTo(p math.Point3) float64
+	// coaxialLevelFactors returns the tube-angle polynomials whose roots are exactly the tube angles at
+	// which this form meets a COAXIAL chart torus. They are solved, never sampled: how many circles the
+	// section has is a topological question, and torus_coaxial_section.go carries why each form's level
+	// is a low-degree trigonometric polynomial in the tube angle.
+	coaxialLevelFactors(chart Torus) []torusSecondHarmonic
 	// chartTorus returns the torus this form is, when it is one. It is how the role classification
 	// finds a chart without asserting on a geometry kind a second time.
 	chartTorus() (Torus, bool)

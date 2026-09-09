@@ -5,8 +5,9 @@
 row **G1**, which records the torus pair as a standing refusal on a premise this ADR shows to be
 false. G1 is retired here; the rest of ADR-0061 stands, and ADR-0065's retirement of G2 is untouched.
 · **Deletes:** `geom.torusAgainstQuadric` and the intersector's two-role try-list for a torus pair;
-`geom.coaxialTorusQuadric`'s role as a second classification after `quadricIsAxisInvariant`; the
-`torusStation`'s tensor fields, which no longer describe every station it carries. ·
+the coaxial family's 720-probe level scan and its `bisectLevelRoot`; `geom.coaxialTorusQuadric`'s
+720-probe reach sweep; the `torusStation`'s tensor fields, which no longer describe every station it
+carries. ·
 **Touches:** `kernel/geom` (the torus bucket), and the six guards in `kernel/geom`, `kernel/brep` and
 `kernel/ops/boolean` that named the torus pair as the pair nothing claims.
 
@@ -101,7 +102,46 @@ one loses on every seed and wins on none. An assignment by absolute minor radius
 (607 / 663 / 646); the dimensionless ASPECT is kept so the same pair in metres and in millimetres takes
 the same chart.
 
-### 4. A new post-condition: the section's own points, measured as a length
+### 4. The coaxial family is SOLVED, not sampled
+
+How many circles a coaxial section has, and where they sit, is a topological question. It used to be
+answered by scanning the level at 720 tube angles and bisecting each sign change 60 times — and a grid
+answers a topological question wrongly whenever the feature is narrower than the grid, with no amount of
+bisection afterwards able to recover a crossing the scan stepped over. That is the shape ADR-0065's
+review found fatal one bucket over.
+
+There is nothing to sample. For **a quadric**, `Level(v) = constant(v) + ρ(v)²(m₁₁+m₂₂)/2` with
+`ρ = R + r·cos v` and `W₀(v) = w + r·sin v·â`, which expands to a degree-two trigonometric polynomial
+in v — the same shape `torusSecondHarmonic` carries in the azimuth, read by the same exact quartic
+solver. For **a torus** the level FACTORS, and each factor is a first harmonic:
+
+```
+Level = ((ρ − R_b)² + a₀² − r_b²)·((ρ + R_b)² + a₀² − r_b²)
+F±(v) = (R ± R_b)² + d² + r² − r_b² + 2(R ± R_b)·r·cos v + 2d·r·sin v
+```
+
+because the `r²cos²v` and `r²sin²v` collapse to the constant `r²`. Each is `level + reach·cos(v − phase)`:
+an arccos, exact, two roots or none. Solving BOTH factors is what makes it right for a spindle torus as
+well as a ring — they are the two halves of the co-form's meridian circle.
+
+The CLASSIFICATION is exact too, and also read once rather than probed:
+
+- a quadric's reach components are `A + B·sin v`, so they vanish at every v exactly when `A` and `B` do
+  — four scalars. A function of that shape with 720 zeros is identically zero, so this agrees with the
+  sweep it replaces wherever the sweep was right, and cannot be stepped over.
+- a torus co-form is one-harmonic exactly when it is COAXIAL (§ the traceless-part argument in
+  `sectionFamily`), which is two geometric statements: the axes parallel, and the co-form's centre on
+  the chart's axis. One dimensionless direction test and one length against the chart's own weld.
+
+**This is not cosmetic, and the corpus proves it is not.**
+`TestACoaxialSectionNarrowerThanTheOldGridIsStillFound` derives a coaxial pair whose window falls
+strictly between two of the old scan's samples — centre half a grid step off a probe, half-width an
+eighth of a step, which fixes `d` and `r_b` from the algebra above. The closed form returns its two
+circles at **1.3e-15** from both surfaces; the 720-probe scan of the same level finds **zero** sign
+changes and would have returned the honest-looking empty section. The row asserts both halves, so it
+cannot pass vacuously.
+
+### 5. A new post-condition: the section's own points, measured as a length
 
 `torusSectionSatisfiesItsForm` reads 257 points of every section curve and requires each to lie on the
 co-form's surface, within the modelling weld at the chart torus's own reach.
@@ -135,6 +175,17 @@ Three things about it are deliberate and each was measured:
 **What the post-condition costs the quadric family: nothing.** Over 2000 random cylinders driven
 against the corpus ring, **871 sections built before it and 871 after**. Over 2000 random torus pairs,
 412 before and 411 after — the one it removes is a genuine excursion.
+
+### What is still decided by sampling, and whose it is
+
+The LANE family's window finding is `periodicRootWindows`, at 720 stations. It is shared with the ruled
+bucket, it is not introduced here, and this ADR does not make it exact: doing so means finding the
+discriminant's roots in v exactly, which is a resultant over the station's extrema — its own change.
+Its gate here is the sampled post-condition of §5, whose blind spot is stated with the number.
+
+So the honest summary of this bucket after this ADR: the reduction is exact, the per-station root solve
+is exact, the coaxial family is exact end to end, and the lane family's window topology is sampled and
+inherited.
 
 ## What is certified
 
@@ -214,6 +265,8 @@ branch does not modify, and the second is stated with its fixture so it can be b
 ## Consequences
 
 - One capability added; one named decline added (`DeclineTorusSectionOffItsForm`) and none removed.
+- Two sampled topological decisions deleted (the coaxial level scan and the coaxial reach sweep), one
+  bisection deleted (`bisectLevelRoot`), and no sampled decision added.
 - **Every archguard ratchet is unmoved, with no pin edited**: `tolerance-constants` 214,
   `type-assertions` 684, `recognizers` 12, `fallback-sites` unchanged (no `diag.Code` added — a
   `SectionDecline` is not one), `mixed-decline-returns` 3. The role classification asserts on two types

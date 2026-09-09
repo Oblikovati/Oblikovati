@@ -439,3 +439,70 @@ func unionCells(parent []int, a, b int) {
 // torusComponentGrid is the oracle's grid side. At 512 a cell is a hundredth of a radian, which
 // resolves every contact in the corpus and costs a few million polynomial evaluations.
 const torusComponentGrid = 512
+
+// TestACoaxialSectionNarrowerThanTheOldGridIsStillFound is the row that makes the coaxial family's
+// exactification load-bearing rather than cosmetic.
+//
+// How many circles a coaxial section has is a TOPOLOGICAL question, and it used to be answered by
+// scanning the level at 720 tube angles and bisecting each sign change. A grid answers a topological
+// question wrongly whenever the feature is narrower than the grid, and bisection afterwards cannot
+// recover a crossing the scan stepped over — which is the shape ADR-0065's review found fatal one
+// bucket over, where a wrap decided from 720 samples built bodies that were badly wrong while Validate
+// called them valid.
+//
+// The fixture is DERIVED rather than pasted, from the algebra torus_coaxial_section.go sets out. With
+// the chart (R, r) and a coaxial co-form of major radius R − δ offset d along the shared axis, the
+// level's near factor is
+//
+//	F(v) = L + reach·cos(v − phase),  L = δ² + d² + r² − r_b²,  reach = 2r·hypot(δ, d),  phase = atan2(d, δ)
+//
+// so its two roots sit at phase ± arccos(−L/reach). Choosing where that window's CENTRE and HALF-WIDTH
+// should fall therefore fixes the co-form:
+//
+//	d = δ·tan(centre),   r_b = √(δ² + d² + r² + reach·cos(halfWidth))
+//
+// The centre is put HALF a grid step off a probe and the half-width at an eighth of a step, so the whole
+// window falls strictly between two of the old scan's samples. Geometrically it is a pair whose meridian
+// circles are almost internally tangent, poking out of each other over a fifth of a milliradian.
+func TestACoaxialSectionNarrowerThanTheOldGridIsStillFound(t *testing.T) {
+	t.Parallel()
+	const major, minor, delta = 5.0, 1.5, 0.5
+	step := float64(twoPi / torusStationProbes)
+	centre, halfWidth := float64(step/2), float64(step/8)
+	d := delta * stdmath.Tan(centre)
+	reach := 2 * minor * stdmath.Hypot(delta, d)
+	coMinor := stdmath.Sqrt(delta*delta + d*d + minor*minor + reach*stdmath.Cos(halfWidth))
+	chart := mustTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), major, minor)
+	co := mustTorus(t, math.P3(0, 0, float64(math.Scalar(-d))), math.V3(0, 0, 1), major-delta, coMinor)
+	if fam := co.sectionFamily(chart); fam != torusFamilyCoaxial {
+		t.Fatalf("the pair classified as family %d, want the coaxial family", fam)
+	}
+	curves, why, ok := TorusSection(chart, co, ResolutionForSize(20))
+	if !ok {
+		t.Fatalf("declined %v, want the two tube circles", why)
+	}
+	if len(curves) != 2 {
+		t.Fatalf("%d section circles, want 2 — the near-tangent pair crosses twice", len(curves))
+	}
+	assertSectionOnBothTori(t, chart, co, curves)
+	if found := signChangesOnTheOldGrid(chart, co); found > 0 {
+		t.Errorf("a %d-probe scan of the level found %d sign changes; the row no longer proves the "+
+			"closed form catches what a grid steps over", torusStationProbes, found)
+	}
+}
+
+// signChangesOnTheOldGrid counts the level's sign changes the way the coaxial family used to find them:
+// a fixed scan at torusStationProbes tube angles. It exists only so the row above can show that scan
+// missing a section the closed form resolves.
+func signChangesOnTheOldGrid(chart Torus, co TorusCoForm) int {
+	level := func(v float64) float64 { return co.stationOn(chart, v).secondHarmonic().Level }
+	n, prev := 0, level(0)
+	for i := 1; i <= torusStationProbes; i++ {
+		cur := level(float64(twoPi * float64(i) / torusStationProbes))
+		if (prev > 0) != (cur > 0) {
+			n++
+		}
+		prev = cur
+	}
+	return n
+}
