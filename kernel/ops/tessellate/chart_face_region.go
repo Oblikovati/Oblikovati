@@ -63,7 +63,40 @@ func branchWindow(lo, hi float64, periodic bool) (float64, float64) {
 }
 
 // covers reports whether (u,v) is material: the query is carried onto the chart's own branch on each
-// wrapping axis, then counted even-odd against every contour (see the file doc for why every).
+// wrapping axis, then counted even-odd against every contour (see the file doc for why every). It is
+// the ONE membership answer the mesher gets; there is no second opinion behind it.
+//
+// There used to be. A centroid landing ON a contour edge was counted as UNDECIDED — within
+// chartContourIncidence (1e-6 of the chart's own extent) of an edge — and re-asked as a majority vote
+// over three points halfway to the triangle's vertices. It was built for the merged cocylindrical
+// wall's SLANTED artificial seam, whose grid-built centroids fell on it to 1e-11 and vanished from both
+// branches (forty holes, 615 unpaired edges against a rim of 578).
+//
+// Both of that case's conditions are gone, and the retry with them (#3519). The wall's chart no longer
+// slants — its seam runs (0,0) → (0,10) since the band re-cut was fixed to shift by whole turns
+// (ADR-0061 stage 5 round 3) — and the face no longer reaches this mesher at all: it classifies as
+// ruled-band-loft. Swept over the chart corpus (the 21 classification-corpus bodies, the merged
+// cocylindrical wall and six torus/tangent-plane figure-eight pieces) at BOTH facetings, with the band
+// set to 0, 1e-8, 1e-6, 1e-4, 1e-2 and 1e-1 of the extent:
+//
+//	band     centroids on a contour   triangles the retry rescued   corpus rows that move
+//	0                             3                             0   none (the reference)
+//	1e-8                         13                             0   none
+//	1e-6 (shipped)               19                             0   none
+//	1e-4                        751                             0   none
+//	1e-2                       8749                             0   none
+//	1e-1                      25508                             0   none
+//
+// Not one number in the corpus — free edges, body volume, per-face area — differs between DISABLING the
+// retry and widening it by five decades, because the majority vote answered "outside" every single time
+// it was asked. A constant with no plateau edge in either direction is not a tolerance that was tuned;
+// it is a branch that decides nothing, so it is deleted rather than documented.
+//
+// The hazard it named is real and is now this predicate's to own: an even-odd count exactly on a
+// contour answers by which side the ray was cast from. The fix for that, when a shape needs it, is an
+// exact or consistently-signed predicate here (kernel ground rules: "every topological decision uses an
+// exact or filtered predicate; epsilon compares metric quantities only") — not an epsilon band and a
+// vote, which is what the deleted retry was.
 func (r chartRegion) covers(u, v float64) bool {
 	fu, fv := r.fold(u, v)
 	in := false
@@ -75,40 +108,6 @@ func (r chartRegion) covers(u, v float64) bool {
 		}
 	}
 	return in
-}
-
-// chartContourIncidence is how close, as a fraction of the chart's own (u,v) extent, a query has to be
-// to a contour edge before the even-odd count there is treated as undecided rather than as an answer.
-//
-// A contour is stored as math.Point2, whose components carry about seven significant digits, so a query
-// nearer than about 1e-7 of the extent is on the edge as far as the stored contour can tell. 1e-6 is a
-// decade of margin on that and is still ten thousand times finer than the finest covering cell any
-// quality asks for, so it can only catch a genuine incidence.
-const chartContourIncidence = 1e-6 // tol:parametric (relative to the chart's own extent)
-
-// onContour reports whether (u,v) — already folded — lies ON a contour edge at some period shift, to
-// within chartContourIncidence of the chart's extent. An even-odd count there answers by which side the
-// ray was cast from, not by the geometry.
-func (r chartRegion) onContour(fu, fv float64) bool {
-	tol := chartContourIncidence * stdmath.Max(r.uHi-r.uLo, r.vHi-r.vLo)
-	for _, sh := range r.shifts() {
-		for _, c := range r.contours {
-			if distToUVPoly(c, fu+sh[0], fv+sh[1]) <= tol {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// distToUVPoly is the distance from (x,y) to a closed contour's nearest edge.
-func distToUVPoly(c []math.Point2, x, y float64) float64 {
-	best := stdmath.Inf(1)
-	for i := range c {
-		a, b := c[i], c[(i+1)%len(c)]
-		best = stdmath.Min(best, distToSeg2D(x, y, float64(a.X), float64(a.Y), float64(b.X), float64(b.Y)))
-	}
-	return best
 }
 
 // fold carries a query onto the chart's branch on each wrapping axis. A bounded axis is left alone: a

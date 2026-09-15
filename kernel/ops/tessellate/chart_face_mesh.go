@@ -401,45 +401,17 @@ func inwardProbe(stations []float64, i int, periodic bool) float64 {
 // segment lies on that chain's material side, chart_face_rim_side.go), then one translate per 3D
 // triangle (chart_face_replica.go). The chart decides the interior, the boundary decides what it
 // bounds, and the replica selection decides which copy ships.
+//
+// The chart's verdict is ONE call to covers at the centroid. A second opinion for a centroid sitting on
+// a contour edge used to follow it; it decided nothing anywhere in the corpus over six decades of band
+// width and is deleted (#3519, see covers in chart_face_region.go for the sweep).
 func (b *chartCover) keepChartTriangles(tris [][3]int) [][3]int {
 	keep := make([]bool, len(tris))
 	for i, t := range tris {
 		u, v := b.centroid(t)
-		keep[i] = b.r.windowCandidate(u, v) && b.triangleIsMaterial(t, u, v)
+		keep[i] = b.r.windowCandidate(u, v) && b.r.covers(u, v)
 	}
 	b.bindToTheRim(tris, keep)
 	b.keepOneReplicaEach(tris, keep)
 	return selectTriangles(tris, keep)
-}
-
-// triangleIsMaterial answers the region for one triangle: at its centroid, and — only when that answers
-// NO — by the majority of three points halfway from the centroid to each vertex.
-//
-// The retry is for a centroid that lands ON a contour edge, where an even-odd count answers by which
-// side the ray was cast from rather than by the geometry. That is not a measure-zero curiosity here: a
-// band's artificial seam can be SLANTED (the merged cocylindrical wall's runs from (0,0) to (−0.1963,10)),
-// and a slope of exactly eight u-stations over the whole v range puts grid-built centroids EXACTLY on it
-// — measured on that face at PropertyQuality, the centroid (−0.008181231, 0.416666667) and the seam agree
-// to 1e-11, both branches read "outside", and the triangle vanished from both. Forty such holes tore the
-// wall (615 unpaired edges against a rim of 578).
-//
-// The retry can only ADD a triangle the point test refused, never duplicate one: covers is periodic, so a
-// triangle it accepts anywhere is accepted on every translate, of which keepOneReplicaEach ships exactly
-// one (chart_face_replica.go). A majority, not
-// "any", so a triangle that genuinely lies outside a real boundary — where at most one sub-point can fall
-// the other side of the chart-versus-chord band — is still refused.
-func (b *chartCover) triangleIsMaterial(t [3]int, u, v float64) bool {
-	if b.r.covers(u, v) {
-		return true
-	}
-	if fu, fv := b.r.fold(u, v); !b.r.onContour(fu, fv) {
-		return false // a decided NO: the centroid is nowhere near a contour edge
-	}
-	votes := 0
-	for _, i := range t {
-		if b.r.covers((u+b.uu[i])/2, (v+b.vv[i])/2) {
-			votes++
-		}
-	}
-	return votes >= 2
 }
