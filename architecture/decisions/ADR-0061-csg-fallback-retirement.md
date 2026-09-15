@@ -4914,3 +4914,72 @@ for the same body. The anomaly is next to it: the insertion allocates **thirty t
 (23 606 516 for 788 250) where Bowyer–Watson should allocate about three — and does, on a jittered grid
 of 319 229 points, at two per point in 917 ms. Whatever the covering's point set does to the insertion
 is the real #3549, and it is not the facet-count policy.
+
+### A rectangular lattice is the worst input Delaunay can be given (2026-09-15, #3542/#3549/#3517)
+
+The section above left #3549 as "the insertion allocates thirty triangles per point, not isolated". It
+is isolated, and it is not the cavity. On a 90 000-point grid, by allocated-triangles-per-point / walk
+steps / insert time:
+
+| input | alloc/pt | walkSteps | time |
+| --- | --- | --- | --- |
+| regular, row-major | 70.12 | 6 196 600 | **2.197 s** |
+| jittered 3e-3, row-major | 8.30 | 519 096 | 151 ms |
+| regular, shuffled | 5.24 | 18 355 776 | 2.364 s |
+| regular, Morton-ordered | 10.44 | 496 257 | 1.933 s |
+
+Insertion order fixes the cavity and the walk and does NOT fix the time. The decisive row changes
+neither: the same Morton-ordered grid displaced by **1e-12** — cavities within 8 %, walk within 8 % —
+runs in **208 ms** against 2.144 s. The four corners of an axis-aligned rectangle are EXACTLY
+concyclic, so every cell of a covering's grid asks the in-circle predicate a question whose answer is a
+tie, and an exact predicate answers a tie by running every stage of its escalation before it can say
+"zero".
+
+`coverShear` tilts the frame the covering TRIANGULATES in so a cell is a parallelogram. No vertex
+moves: each keeps its exact (u, v) and its exact 3-D point, and the output is still a valid constrained
+triangulation of the same points under the same constraints. What it gives up is Delaunay-ness in the
+metric frame, which for a tied quad means the diagonal is chosen by a cheap deterministic rule rather
+than by a predicate that must run to the end to find there was nothing to choose.
+
+**It closes #3542.** A covering's premise is that its two branch-window ends are the same
+triangulation; near-cocircular quads at the seam flipped their diagonal differently at each end. Over
+the whole sixteen-row near-pinch corpus (rows with seam edges / seam edges / rows with an unbound rim
+segment): 6 / 38 / 0 at shear 0, and **0 / 0 / 0** at every value from 1/65536 to 1/64 — a plateau four
+decades wide, with 1/1024 in the middle. `kindTwoRimHoledBand`, `nearPinchCorridorChords` and
+`twoRimHoledBandMesh` are DELETED; `recognizers` 12 → 11.
+
+#### The spiric arm: deleted, measured, reverted — and what is left
+
+Three things made it deletable and all three stand: the chart producer (#3550), the rim rebuild's
+winding, and the cost above. With them, at DefaultQuality against DRAWEXE, the GENERAL chart-driven
+mesher reads **292 891.71 on simple/J3 (rel −2.4e-4) and 292 849.88 on bfuseblend/A4 (rel −2.4e-4),
+both with zero diagnostics**, where the arm's loft reads −3.2e-3 and −3.3e-3 — an order of magnitude
+closer to the oracle.
+
+It does not ship. At PropertyQuality, the faceting the mass-property and fingerprint tiers read, J3's
+host face takes 5.0 s at DefaultQuality and **does not finish in 875 s**, and the `occtparity` tier
+stopped completing inside 2400 s. The shear removed the TIE cost; what remains is the covering's SIZE —
+~788 000 points through an incremental CDT for ONE face. An arm whose replacement cannot mesh the
+corpus is not absorbed, so `kindSpiricBand` stands and `recognizers` stays at 11.
+
+**The remaining blocker is one sentence**: the covering triangulates its whole interior grid with a
+CDT, and a grid is not a point cloud. Its interior cells are a structured quad mesh and only the
+boundary band needs a triangulator — the ground rule's own "one tessellator per problem". That is the
+last thing between `kindSpiricBand` and deletion.
+
+#### Two things fell out that were not aimed at
+
+**The winding fix closed #3491.** `cylE`'s use on the host face was a fixed function of the blend's
+convexity, chosen to mirror `addBandFace` under Validate's 2-incidence rule — and 2-incidence is WEAKER
+than a consistently wound loop. The convex case wound the host's replacement rim against the rim it
+replaced, which is why J3's host could not carry a chart (its (u, v) ring travelled −4π) and why
+`simple/J5`'s result SELF-INTERSECTED. It now keeps that rim's own flag, as `capE` always has. J5 is
+the last of #3491's five self-intersecting results; `pendingCapabilityCount` 105 → 104, the simple-grid
+green ratchet 131 → 132, the all-grid one 147 → 148.
+
+**A chart is a DATUM, not a mesher selection.** `chartedKind` read "has a chart" as "must be meshed from
+the chart", so recording charts on imported and rebuilt faces (#3550) sent every such face through the
+covering: `TestTessellationBudget` went 0.08 s → 6.37 s against its 2.15 s ceiling. A chart says which
+of two complementary regions a face is, and that decides nothing where the loops develop into one
+(u, v) branch. The classification now asks whether the trim DEVELOPS — a property of the trim, computed
+once, selecting exactly one path — and the budget reads **0.47 s with the producer ON**.
