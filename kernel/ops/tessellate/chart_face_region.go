@@ -92,6 +92,18 @@ func branchWindow(lo, hi float64, periodic bool) (float64, float64) {
 // it was asked. A constant with no plateau edge in either direction is not a tolerance that was tuned;
 // it is a branch that decides nothing, so it is deleted rather than documented.
 //
+// The retry's PRECONDITION is in fact unreachable, which is stronger than "inert on today's corpus" and
+// is why no replacement is owed. It needed a decided NO at a centroid ON a contour edge. A centroid
+// cannot sit on a contour edge that is a triangulation CONSTRAINT — the boundary chains go to the CDT as
+// constraints and a centroid is strictly interior to its triangle — so only an artificial SEAM can carry
+// one. And covers answers TRUE on a seam: the period translate supplies the crossing that the strict `<`
+// in pointInUVPoly drops on the home branch. Measured on a chartRegion whose seam slants exactly as the
+// deleted comment recorded, (0,0) → (−0.1963,10), queried at the point exactly on it at v = 5:
+// covers = true, onContour = true, and all three half-way votes true as well. There is no decided NO to
+// retry. (Nothing referenced this branch from a test at the wave base either — `git grep` over
+// 4b3b1819 finds no `*_test.go` naming triangleIsMaterial, onContour, distToUVPoly or
+// chartContourIncidence — so the issue's "three certifications" were prose, not rows.)
+//
 // The hazard it named is real and is now this predicate's to own: an even-odd count exactly on a
 // contour answers by which side the ray was cast from. The fix for that, when a shape needs it, is an
 // exact or consistently-signed predicate here (kernel ground rules: "every topological decision uses an
