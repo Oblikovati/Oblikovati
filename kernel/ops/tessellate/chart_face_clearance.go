@@ -33,32 +33,55 @@ import (
 // oval's top and bottom, 2r = 3 mm apart. The lemniscate is the figure-eight fixture, d = R − r, a
 // different body — final fix wave, finding 4.)
 //
-// So it is measured. Swept on the three bodies whose charted faces the clearance governs — the genus-1
-// complement, RS− and RD− — reading each body's free edges and its torus FACE's own area at BOTH
-// facetings, so a plateau is flat in the numbers and not merely in a pass/fail count:
+// RE-SWEPT for #3519, over a wider range and a wider corpus, and the earlier table's two structural
+// claims are BOTH withdrawn by the measurement. It said the failure edge rests on ONE face (the
+// complement's oval apex at PropertyQuality, for k ≤ 0.55) and that the upper end is no failure boundary
+// at all. Neither holds: the complement at PropertyQuality is watertight at EVERY k swept here,
+// including 0.1 — measured with the deleted incidence retry restored as well, so it is not this slice's
+// doing but something the wave fixed after the table was written — and the corpus does tear above the
+// plateau.
 //
-//	k       complement D      complement P        RS− D       RS− P       RD− D       RD− P
-//	0.50    0 / 263.72994     272 / 296.06212     0 / 236.36  0 / 237.87  0 / 290.29  0 / 291.88
-//	0.55    0 / 263.72994     272 / 296.06212     — as 0.50 —
-//	0.60    0 / 263.68219     0 / 264.87124       0 / 236.36  0 / 237.87  0 / 290.29  0 / 291.88
-//	0.70    0 / 263.60871     0 / 264.87119       0 / 236.10  0 / 237.87  0 / 290.29  0 / 291.88
-//	0.875   0 / 263.55487     0 / 264.87111       0 / 236.10  0 / 237.87  0 / 290.29  0 / 291.88
-//	1.00    0 / 263.42317     0 / 264.87104       0 / 236.10  0 / 237.87  0 / 290.29  0 / 291.88
-//	1.10    0 / 263.33288     0 / 264.87097       0 / 235.44  0 / 237.87  0 / 290.28  0 / 291.88
-//	1.50    0 / 263.15360     0 / 264.87045       — watertight, area falling —
-//	3.00    0 / 260.51898     0 / 264.86644       — watertight, area falling —
+// The corpus is the 21 classification-corpus bodies, the merged cocylindrical wall and six
+// torus-cut-by-its-tangent-plane pieces, at BOTH facetings. Four faces decide; every other row in the
+// corpus is watertight at every k from 0.1 to 3.0. Free edges of the whole body, and the charted face's
+// own meshed area (a full-domain area is the decline, not a mesh):
 //
-// Only ONE body and ONE faceting ever fails: the complement at PropertyQuality, for k ≤ 0.55, where the
-// face is declined and falls to the surface's whole domain (296.062 against the 264.871 it builds). The
-// upper end is not a failure boundary at all — it is a monotone COST, the clearance removing interior
-// nodes next to a coarse boundary, and every area above falls with k as a rule that only ever removes
-// nodes must.
+//	k       complement D        R=5 r=2 ∩ D        R=5 r=2.5 ∩ D       R=5 r=2 − D
+//	0.1     28 / 294.42794      44 / 392.57058     48 / 490.71323      0 / 281.68147
+//	0.2     28 / 294.42794      44 / 392.57058     48 / 490.71323      0 / 281.68147
+//	0.25     0 / 263.74953      44 / 392.57058     48 / 490.71323      0 / 281.68147
+//	0.3      0 / 263.73402      44 / 392.57058     48 / 490.71323      0 / 281.69358
+//	0.35     0 / 263.73402       0 / 110.94830     48 / 490.71323      0 / 281.69147
+//	0.5      0 / 263.72994       0 / 110.94725     48 / 490.71323      0 / 281.61993
+//	0.7      0 / 263.60871       0 / 110.87427     48 / 490.71323      0 / 281.57144
+//	0.75     0 / 263.60871       0 / 110.87427      0 / 158.46089      0 / 281.57144
+//	0.8      0 / 263.56345       0 / 110.86598      0 / 158.46089      0 / 281.54775
+//	0.85     0 / 263.56345       0 / 110.87045      0 / 158.47274      0 / 281.51437
+//	0.875    0 / 263.55487       0 / 110.87045      0 / 158.47274      0 / 281.51437
+//	1.0      0 / 263.42317       0 / 110.86804      0 / 158.44277      0 / 281.54574
+//	1.2      0 / 263.33288       0 / 110.84685      0 / 158.37149      0 / 281.49772
+//	1.3      0 / 263.18783       0 / 110.82205      0 / 158.21017      2 / 281.55469
+//	1.5      0 / 263.15360       0 / 110.55359      0 / 158.25096      2 / 281.74082
+//	3.0      0 / 260.51898       0 / 108.77724      0 / 156.61430      0 / 280.72340
 //
-// 0.875 is therefore chosen, not centred: as small as the cost argument wants, with a real margin over
-// the edge. It is 1.6× the largest k that fails and 1.46× the smallest that passes, and it costs
-// 0.13 mm² of 263.7 — 0.05% — against sitting at 0.6. The complement's face area is pinned two-sided at
-// the value this k gives (chart_face_mesh_test.go), so the constant cannot move without saying so.
-const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.50…3.00 above, fails at k ≤ 0.55)
+// (0.15, 0.4, 0.45, 0.55, 0.6, 1.1 and 1.4 were swept too and fall inside the steps above; they are
+// left out only to keep the table readable.)
+//
+// The plateau is k ∈ [0.75, 1.2]: every corpus row is watertight there and nowhere wider. It is bounded
+// BELOW by a self-touching boundary — the figure-eight pinch, on two aspect ratios: R=5 r=2 declines for
+// k ≤ 0.3 and R=5 r=2.5 for k ≤ 0.7 (torus_square_pinch_test.go, #3519) — and above by the same family's
+// other piece, which tears at 1.3 and 1.5. The complement's apex, which the old table thought was the
+// whole edge, is the WEAKEST of the four: it only fails for k ≤ 0.2.
+//
+// 0.875 sits inside that plateau: 1.25× the largest k that fails below (0.7) and 1.49× under the
+// smallest that fails above (1.3); against the plateau's own ends, 1.17× above 0.75 and 1.37× below 1.2.
+// It is kept rather than re-centred (√(0.75·1.2) = 0.949 would be) because the cost above the edge is
+// monotone — the clearance only ever REMOVES interior nodes, and every area column falls with k — so the
+// smallest value with a real margin is the one the cost argument wants, and that is this one.
+//
+// The complement's face area is pinned two-sided at the value this k gives (chart_face_mesh_test.go),
+// so the constant cannot move without saying so.
+const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.10…3.00 above, plateau [0.75, 1.2])
 
 // chartNodeClearance is the fraction of a grid gap an interior node must keep from the boundary. A node
 // ON a constraint owns no triangle and derails the segment recovery; one just inside it makes a sliver

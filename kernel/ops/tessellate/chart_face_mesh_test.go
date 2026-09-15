@@ -236,18 +236,23 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 // boundary clearance buys the oval's watertightness at its apex with interior density next to a coarse
 // boundary, and this is the only place that price is visible.
 //
-// The window is 0.05 mm², not the 0.5 a first attempt used, because 0.5 pinned nothing: it admitted BOTH
-// values the clearance moved between (263.42317 at k = 1.0 and 263.72994 at k = 0.5), so a row meant to
-// catch the constant drifting would have sat green through exactly that. Tessellation is byte-identical
-// run to run by ground rule, so the reading is exact; the window absorbs only the five decimals this
-// literal is written to (1e-5) and the last-place spread an FMA-contracting toolchain gives an area sum.
-// 0.05 is four decades above that and a factor of 2.6 below the nearest reading it has to exclude.
+// The window was 0.5, then 0.05, and is 0.005 now (#3519) — each time because a FINER sweep of the
+// clearance found a value the previous window admitted. 0.5 admitted both ends of the coarse sweep
+// (263.42317 at k = 1.0 and 263.72994 at k = 0.5). 0.05 was claimed to sit "a factor of 2.6 below the
+// nearest reading it has to exclude", true of a sweep whose neighbours were 0.7 and 1.0; refining the
+// sweep put k = 0.8 and k = 0.85 at 263.56345, which is 0.0086 from the pin and INSIDE a window of 0.05,
+// so the pin could not tell the shipped clearance from two values below it.
 //
-// Measured at the shipped k = 0.875. Across the sweep the same face reads 263.72994 (k ≤ 0.55),
-// 263.68219 (0.6), 263.60871 (0.7–0.75), 263.55487 (0.875), 263.45103 (0.925), 263.42317 (1.0),
-// 263.15360 (1.5), 260.51898 (3.0) — monotone in k, which is what a clearance that only ever REMOVES
-// interior nodes must be.
-const complementTorusFaceArea, complementTorusFaceWindow = 263.55487, 0.05
+// Tessellation is byte-identical run to run by ground rule, so the reading is exact; the window absorbs
+// only the five decimals this literal is written to (1e-5) and the last-place spread an FMA-contracting
+// toolchain gives an area sum. 0.005 is 500× that and 1.7× below the nearest reading it must exclude.
+//
+// Measured at the shipped k = 0.875. Across the re-sweep (chart_face_clearance.go) the same face reads
+// 294.42794 for k ≤ 0.2 — the decline, not a mesh — then 263.74953 (0.25), 263.73402 (0.3–0.4),
+// 263.72994 (0.45–0.55), 263.68219 (0.6), 263.60871 (0.7–0.75), 263.56345 (0.8–0.85), 263.55487 (0.875),
+// 263.42317 (1.0), 263.33288 (1.1–1.2), 263.18783 (1.3), 263.15360 (1.5), 260.51898 (3.0) — monotone in
+// k, which is what a clearance that only ever REMOVES interior nodes must be.
+const complementTorusFaceArea, complementTorusFaceWindow = 263.55487, 0.005
 
 // assertComplementFaceArea holds the complement's torus face to its measured area, both ways.
 func assertComplementFaceArea(t *testing.T, body *topo.Body) {
