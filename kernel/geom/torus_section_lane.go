@@ -265,6 +265,14 @@ func torusLaneAnchors(t Torus, co TorusCoForm) ([]float64, bool) {
 // ([TorusCoForm.stationSlopeLipschitz]), applied one derivative down, and for the same reason: a count
 // is a topological fact and a grid cannot establish one.
 //
+// It is a proof over TRACKED branches, and the distinction is worth stating because the code cannot. The
+// envelope argument follows each critical point of df/du continuously from this station and bounds how
+// far its value travels; it does not by itself exclude a brand-new critical point appearing between two
+// stations away from every existing one. Measured instead: over 274 corpus rows that build a full-period
+// arc, the extremum count read on a grid 20× finer than the construction's (3 945 600 stations) moves on
+// 0 rows, and 0 of 288 000 stations have an empty derivative-extremum set, so the gate is never vacuous
+// (Oblikovati/Oblikovati#3515, review round 4).
+//
 // It is the gate that was missing. Measured on the 4000-pair corpus, two rows the wave newly admitted
 // built a full-period arc whose reader landed on a lane's own EXTREMUM rather than on a root — the fold
 // answer, at a station that has no fold — and put the arc 1.48 and 0.91 units off the rod, inside a band

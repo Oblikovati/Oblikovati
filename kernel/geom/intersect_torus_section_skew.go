@@ -62,10 +62,10 @@ func torusSkewSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, Sectio
 	if !ok {
 		return nil, DeclineTorusLaneTracks, false
 	}
-	structureHolds := torusExtremaHoldOverTheTurn(t, co)
+	structure := &torusExtremaGate{chart: t, co: co}
 	var out []Curve3
 	for _, anchor := range anchors {
-		curves, why := torusLaneCurves(t, co, anchor, res, structureHolds)
+		curves, why := torusLaneCurves(t, co, anchor, res, structure)
 		if why != DeclineNone {
 			return nil, why, false
 		}
@@ -81,12 +81,12 @@ func torusSkewSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, Sectio
 // when that track never merges with a neighbour, and a folded loop for each tube-angle window the
 // lane's PAIR owns. The two are independent — a lane's upper track can run the whole turn while its
 // lower one folds — so both are asked, and either may come back empty.
-func torusLaneCurves(t Torus, co TorusCoForm, anchor float64, res Resolution, structureHolds bool) ([]Curve3, SectionDecline) {
+func torusLaneCurves(t Torus, co TorusCoForm, anchor float64, res Resolution, structure *torusExtremaGate) ([]Curve3, SectionDecline) {
 	spans, readable := torusLaneWindows(t, co, anchor) // readability first: the cheaper and more specific refusal
 	if !readable {
 		return nil, DeclineTorusLaneStation
 	}
-	arcs, why := torusLaneWrapArc(t, co, anchor, res, structureHolds)
+	arcs, why := torusLaneWrapArc(t, co, anchor, res, structure)
 	if why != DeclineNone {
 		return nil, why
 	}
@@ -115,15 +115,16 @@ func torusLaneWindows(t Torus, co TorusCoForm, anchor float64) (spans [][2]float
 // a neighbour, and nothing at all when that track folds — then the loop the fold bounds is built by
 // whichever lane's own extremum it merges onto. The census on the finished set is what proves that
 // division rather than assuming it.
-// structureHolds is [torusExtremaHoldOverTheTurn]'s answer, read HERE and nowhere else: an arc is the
-// only curve whose claim reaches past the construction's own stations, so it is the only curve that has
-// to know the extremum structure could not have changed between two of them.
-func torusLaneWrapArc(t Torus, co TorusCoForm, anchor float64, res Resolution, structureHolds bool) ([]Curve3, SectionDecline) {
+// structure is [torusExtremaGate], asked HERE and nowhere else: an arc is the only curve whose claim
+// reaches past the construction's own stations, so it is the only curve that has to know the extremum
+// structure could not have changed between two of them. It is asked AFTER the track sweep, so a lane
+// that does not wrap never pays for it.
+func torusLaneWrapArc(t Torus, co TorusCoForm, anchor float64, res Resolution, structure *torusExtremaGate) ([]Curve3, SectionDecline) {
 	wraps, clearance := torusUpperTrackSweep(t, co, anchor)
 	switch {
 	case !wraps:
 		return nil, DeclineNone
-	case !structureHolds:
+	case !structure.holdsOverTheTurn():
 		return nil, DeclineTorusLaneTracks
 	case clearance <= res.Stitch():
 		return nil, DeclineTorusLaneSeparation
@@ -165,14 +166,33 @@ func torusUpperTrackSweep(t Torus, co TorusCoForm, anchor float64) (wraps bool, 
 	return true, clearance
 }
 
-// torusExtremaHoldOverTheTurn certifies, ONCE for the whole section, that no extremum of the station
-// polynomial can be born or die between two construction stations — see [torusStationKeepsItsExtrema]
-// for what that buys and why only a full-period arc needs it.
+// torusExtremaGate answers "no extremum of any station can be born or die before the next one is read"
+// at most ONCE per section, and only if some lane actually wraps.
 //
-// It is read once and reused because it is a property of the PAIR, not of a lane: every lane reads the
-// same 720 stations, and the check costs a third quartic solve at each of them ("decide each incidence
-// once and reuse the result"). Computing it inside the wrap sweep instead paid for it once per lane,
-// which doubled the section build on a four-lane rod.
+// Both halves are measured. It is a property of the PAIR rather than of a lane — every lane reads the
+// same 720 stations — and the answer costs a third quartic solve at each of them, so computing it inside
+// the wrap sweep paid for it once per lane and doubled the section build on a four-lane rod (+101 %).
+// And a section of folded LOOPS never reads it at all, so computing it eagerly charged the thin-rod path
+// for an answer it discards: that was most of the remaining +7 % (Oblikovati/Oblikovati#3515, review
+// round 4, Minor-4). Memoising a pure function of (chart, co) keeps the output byte-identical.
+type torusExtremaGate struct {
+	chart Torus
+	co    TorusCoForm
+	asked bool
+	holds bool
+}
+
+// holdsOverTheTurn is the gate's one question, answered on demand and remembered.
+func (g *torusExtremaGate) holdsOverTheTurn() bool {
+	if !g.asked {
+		g.holds, g.asked = torusExtremaHoldOverTheTurn(g.chart, g.co), true
+	}
+	return g.holds
+}
+
+// torusExtremaHoldOverTheTurn certifies that no extremum of the station polynomial can be born or die
+// between two construction stations — see [torusStationKeepsItsExtrema] for what that buys and why only
+// a full-period arc needs it. Reach it through [torusExtremaGate], never directly.
 func torusExtremaHoldOverTheTurn(t Torus, co TorusCoForm) bool {
 	floor := float64(co.stationSlopeLipschitz(t) * (twoPi / (2 * torusStationProbes)))
 	for i := range torusStationProbes {

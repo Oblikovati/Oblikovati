@@ -353,10 +353,14 @@ const torusChartOrderPairs = 2000
 
 // TestTheNarrowerTubeIsTheBetterChart is the evidence behind torusChartPrecedes, and it is here because
 // a claim about conditioning is worth what it is measured at. Every station is built from the chart's
-// tube circle at tube angle v — radius R + r·cos v, centre offset r·sin v — so the CHART's own minor
-// radius is the amplitude, in model units, by which the station's geometry swings over the turn: a
-// narrow chart's extremum tracks keep their identity, a wide one's change in number. The chart should
-// therefore be the NARROWER torus.
+// tube circle at tube angle v — radius R + r·cos v, centre offset r·sin v — so the CHART's own tube sets
+// how far the station's geometry swings over the turn: a narrow chart's extremum tracks keep their
+// identity, a wide one's change in number. The chart should therefore be the NARROWER torus.
+//
+// This row asserts NARROW against WIDE and nothing finer. Which narrow KEY — the minor radius or the
+// aspect r/R — is not decided here and cannot be: the two are inside each other's noise on every seed
+// measured, including one where the aspect wins. That choice is made by the `small ring through the
+// hole` row of torusPairCorpus, and torusChartPrecedes says so.
 //
 // ADR-0066 measured this the other way round and wrote the wider-tube rule. Its experiment was run
 // while a branch pair that never folds was still a REFUSAL — which is exactly the shape a narrow chart

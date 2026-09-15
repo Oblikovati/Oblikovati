@@ -167,12 +167,14 @@ func torusPairRoles(a, b Torus) (Torus, TorusCoForm, bool) {
 //
 // What the lane structure asks is that the station's extremum tracks stay separable across the whole
 // turn (torusLaneAnchors). Every station coefficient is built from the tube circle at tube angle v —
-// radius ρ(v) = R + r·cos v, centre offset r·sin v along the axis — so the CHART's own minor radius is
-// the amplitude, in model units, by which the station's geometry swings over the turn. A narrow chart's
-// stations barely move, its extremum tracks keep their identity, and its branches run the whole turn;
-// a wide one's extremum COUNT changes over the turn, and a count that changes makes "which branch pair"
-// a guess. R does not enter that amplitude, which is why the key is the minor radius and not the tube
-// aspect r/R.
+// radius ρ(v) = R + r·cos v, centre offset r·sin v along the axis — so the CHART's own tube is what sets
+// how far its geometry swings over the turn. A narrow chart's stations barely move, its extremum tracks
+// keep their identity, and its branches run the whole turn; a wide one's extremum COUNT changes over the
+// turn, and a count that changes makes "which branch pair" a guess.
+//
+// That argument picks NARROW. It does not pick between the two narrow keys, and it must not be read as
+// doing so: the coefficients are formed from ρ² = (R + r·cos v)², whose swing over the turn is 4Rr, so R
+// enters as well. The key is the minor radius because of ONE CORPUS ROW, named below.
 //
 // ADR-0066 measured this the other way round and wrote the WIDER-tube rule, on the aspect. The reversal
 // is not a disagreement about arithmetic — it is that #3514 measured in a world where a branch pair
@@ -189,10 +191,15 @@ func torusPairRoles(a, b Torus) (Torus, TorusCoForm, bool) {
 //	 13          1500          509              456            454                  370
 //	 21          1500          519              456            452                  367
 //
-// The narrow rule wins on every seed and loses on none, and the minor radius edges the aspect on every
-// seed while also keeping the "small ring through the hole" corpus row building, which the aspect drops.
-// Both are invariant under a uniform change of units — scaling both tori scales both keys, so the ORDER
-// is unchanged — so ADR-0066's reason for preferring the aspect does not separate them.
+// with seed 777001, which this file's author did not choose, giving 443 / 445 / 317 of 506 (review round
+// 4). The narrow rule wins on every seed and loses on none.
+//
+// The two NARROW keys are inside each other's noise, and on seed 777001 the ASPECT edges the minor radius
+// rather than the other way round — so no sweep separates them. What separates them is the corpus row
+// `small ring through the hole`: it builds exactly under the minor radius (3.05e-15 off the co-form) and
+// is refused, "extremum tracks are not separable", under the aspect. Both keys are invariant under a
+// uniform change of units — scaling both tori scales both, so the ORDER is unchanged — so ADR-0066's
+// reason for preferring the aspect does not separate them either.
 //
 // Everything after the swing is a TIE-BREAK, and it is exhaustive on purpose: two copies of one ring
 // is the commonest torus pair there is, and a rule that left their order to the caller would let the
@@ -201,9 +208,8 @@ func torusChartPrecedes(x, y Torus) bool {
 	return compareTorusChartKeys(torusChartKey(x), torusChartKey(y)) < 0
 }
 
-// torusChartKey is the chart order's key: the tube radius that decides it — the amplitude by which a
-// chart's stations swing over the turn — then the major radius, the centre and the axis as the
-// exhaustive tie-break.
+// torusChartKey is the chart order's key: the tube radius that decides it, then the major radius, the
+// centre and the axis as the exhaustive tie-break.
 func torusChartKey(t Torus) [8]float64 {
 	a := t.AxisDir.AsVector()
 	return [8]float64{
