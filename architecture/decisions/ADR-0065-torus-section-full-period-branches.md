@@ -270,16 +270,28 @@ both from its quartic's gradient and Hessian; the derivations are at the impleme
 ADR-0066 derived "the wider tube carries the chart" from a build-count sweep. That sweep ran while a
 branch pair that never folds was still a named refusal — which is exactly the shape a NARROW chart
 produces, so every one of its wins was declined rather than counted. With the refusal gone the same
-experiment reverses on every seed, and the key becomes the chart's MINOR RADIUS rather than the tube
-aspect: every station is built from the tube circle at tube angle v, radius R + r·cos v and centre
-offset r·sin v, so r is the amplitude in model units by which the station's geometry swings over the
-turn and R does not enter it. Counting only sections that build AND lie on the co-form:
+experiment reverses on every seed. Every station is built from the tube circle at tube angle v — radius
+ρ(v) = R + r·cos v, centre offset r·sin v — so the chart's own tube is what sets how far its geometry
+swings over the turn, which is why a NARROW chart is the better one.
+
+**That mechanism does not pick between the two narrow keys, and nothing else does either except one
+corpus row.** The coefficients are formed from ρ² = (R + r·cos v)², whose swing over the turn is 4Rr, so
+R enters and "r alone is the amplitude" is wrong. Counting only sections that build AND lie on the
+co-form:
 
 | seed | pairs | either assignment | minor radius | tube aspect | ADR-0066's wider-tube rule |
 | --- | --- | --- | --- | --- | --- |
 | 9 | 1500 | 537 | **480** | 477 | 387 |
 | 13 | 1500 | 509 | **456** | 454 | 370 |
 | 21 | 1500 | 519 | **456** | 452 | 367 |
+| 777001 (review round 4's seed) | 1500 | 506 | 443 | **445** | 317 |
+
+Narrow beats wide by 40 % or more on every seed including one this ADR's author did not choose, and that
+is the finding. The two NARROW keys are inside each other's noise, and on seed 777001 the aspect edges
+the minor radius rather than the other way round — so the earlier claim here that the minor radius wins
+on every seed is **withdrawn**. What decides the key is `small ring through the hole`, which builds
+exactly under the minor radius (3.05e-15 off the co-form) and is refused, `extremum tracks are not
+separable`, under the aspect. One corpus row, stated as one corpus row.
 
 Three pairs ADR-0066 recorded as named refusals build exactly under this ADR: a tilted ring (3.91e-15
 off the co-form over 20 001 samples per curve), a torus boss sunk into the tube (5.76e-15), and the two
@@ -289,19 +301,46 @@ is what fixes it: its branches sit at azimuth 0 and π, where the quartic in tan
 coefficient. Over 2343 meeting random ring pairs the built share goes 34% → 54%, the `FullTurn` column
 empties with the decline, and `DeclineTorusLaneTracks` (1009) remains the family's dominant gap.
 
-### The defect every certificate above missed: an extremum born between two stations
+### First, what review round 3's NEW-6 was, because this ADR should not repeat the wrong answer
 
-Round 3's corpus walk measured "off the rod" through the rod's IMPLICIT residual. That measure is blind
-exactly where this reduction fails, and ADR-0066 says why in `torusSectionSatisfiesItsForm`: at a fold
-∂f/∂u is zero, so f falls off QUADRATICALLY in the azimuth error while the position error does not.
-Re-walked with a LENGTH — the point's distance from the rod's own surface, at 8× the construction step —
-the same 4000-row corpus reads:
+Review round 3 stopped the push on bodies whose volume broke Requicha's identity by 1 % to 130 %, valid,
+closed, manifold and silent. Its measurement was correct and reproducible. **Its diagnosis, and this
+ADR's first answer to it, were both wrong.** It was neither the boolean's classification (review 3) nor
+the section (round 4): it was the `PropertyQuality` MESH the volume was read off, on bodies that were
+already right, and the fix is `196a2d94` (#3518, the chart mesher) on this wave's own base — bisected at
+seven points in `fff94140..4b3b1819` by review round 4. The same bodies read at `DefaultQuality` are
+bit-identical before and after this branch.
+
+The instrument that separates the two is one line, and it was already written in
+`kernel/ops/boolean/boolean_torus_skew_test.go`: *a residual that MOVES with the faceting is a
+tessellation artefact wearing the identity's clothes rather than a certificate that the section was
+right*. Three people read that file and none of us ran the second faceting.
+`TestAFinerFacetingNeverReadsTheIdentityWorse` now makes it a run instead of an argument.
+
+### The defect this gate DOES fix: an extremum born between two stations
+
+It is not NEW-6, and the table below carries the control row that says so. The walk is the point's
+distance from the rod's own surface — a LENGTH — at 8× the construction step, over the repo's own
+4000-row `wrapCorpusPair`:
 
 | commit | built | NaN readings | worst off the rod | rows over 1e-9 |
 | --- | --- | --- | --- | --- |
 | `fff94140` (wave base) | 1172 | 14 | 1.5961e+00 | 5 |
-| round 3, rebased (`247b67e8`) | 1948 | 0 | 1.4843e+00 | 2 |
+| `247b67e8` — rounds 0–3 replayed **on the new base**, this gate NOT applied | 1948 | 0 | 1.4843e+00 | 2 |
 | with the gate below | **1939** | **0** | **1.8463e-13** | **0** |
+
+At the BODY, `247b67e8` — the same control — is already at **0 gross and 0 silent** on that corpus and on
+review 3's, so **this gate moves nothing at the body level**. What it moves is two SECTIONS, and no
+body-level oracle in this wave finds them: their volumes satisfy Requicha to 2.9e-14 and 2.5e-14 while
+their curves sit 1.48 and 0.91 units off the surface they claim to lie on — geometry that would reach
+imprint, faces, tessellation and picks.
+
+A note on the length, because the reason to prefer it is not the reason first given here. It is NOT that
+the residual is blind: on these two rows the rod's implicit reads |F| = 4.9065 / 4.4807 with a
+first-order gap of 2.6939 / 1.1226, which would fail any gate. Review 3's walk did not see them because
+**its corpus does not contain them** — its draw ranges differ from `wrapCorpusPair`'s. The length is
+preferred because it is scale-honest and directly comparable with the modelling weld, which is a property
+it does have.
 
 The five bad rows at the base are folded loops the chart shift fixes (they read 2.48e-2 … 1.60e+00 at
 the base and 4.00e-15 … 4.00e-14 at head), and the 14 NaN readings go with them. The two that remain are
@@ -327,13 +366,23 @@ in half a station step cannot reach zero before the next station reads it. `stat
 |∂²f/∂u∂v| = Puᵀ∇²F Pv + ∇F·Puv from the co-form's Hessian and gradient, with |Pu| = ρ(v) ≤ R + r,
 |Pv| = r and |Puv| ≤ r of the CHART, all exact.
 
-It is read by `torusUpperTrackSweep` and not by `torusLaneAnchors`, and that scope is the claim rather
-than a carve-out: a full-period ARC claims "this branch exists at every tube angle", which is a statement
-about everywhere between the samples; a folded loop claims only what its window says, and its ends are
-folds the discriminant sampler bracketed. Applying it to every lane instead costs `linked rings` and
-`brep guard rings` — ADR-0066's headline corpus rows, whose extremum count is constant at 200 000
-stations — because the global bound is about 4× crude there. Scoped to the arc it costs **9 of 1948
-rows, 0.46%**, and removes 2 of 2 wrong sections.
+It is read by the ARC path and not by `torusLaneAnchors`, and that scope is the claim rather than a
+carve-out: a full-period arc claims "this branch exists at every tube angle", which is a statement about
+everywhere between the samples; a folded loop claims only what its window says, and its ends are folds
+the discriminant sampler bracketed. Applying it to every lane instead costs `linked rings` — measured:
+`torusExtremaHoldOverTheTurn` is **false** for `linked rings` and **true** for `brep guard rings`, so it
+is one of ADR-0066's headline rows and not two — whose extremum count is constant at 200 000 stations,
+because the global bound is crude there (about 4× at that row's tightest station; review round 4 measures
+the bound's typical crudeness at 2.5×, worst ratio 0.379 quadric / 0.408 torus over 300 pairs). Scoped to
+the arc it costs **9 of 1948 rows, 0.46 %**, and removes 2 of 2 wrong sections.
+
+**It is a proof over TRACKED branches, not a proof simpliciter.** The envelope argument follows each
+critical point of ∂f/∂u continuously from a station and bounds how far its value can travel; it does not,
+by itself, exclude a brand-new critical point of ∂f/∂u appearing between two stations away from every
+existing one. Empirically that does not happen: over 274 corpus rows that build a full-period arc, the
+extremum count read on a grid 20× finer than the construction's (3 945 600 stations) moves on **0** rows,
+and the gate is never vacuous — 0 of 288 000 stations have an empty derivative-extremum set (review
+round 4, §1e). The measurement is the warrant for the step the proof does not cover.
 
 `TestAnArcIsRefusedWhereAnExtremumCouldBeBorn` pins both rows and asserts the PROPERTY (no built curve
 leaves the rod), not the refusal, so a later tightening that lets them build correctly passes it.
