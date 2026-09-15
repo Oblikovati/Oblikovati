@@ -279,20 +279,18 @@ func (a *assembler) addOrientedFace(surface geom.Surface, sameSense bool, lineag
 
 // recordImportedChart derives and stores a periodic face's chart, or leaves it nil.
 //
-// IT IS OFF, and what holds it off is a tier-1 budget rather than a doubt about the chart.
-// brep.ChartOfFace is right — kernel/brep's own rows hold it — and a chart is no longer a mesher
-// selection either: chartedKind asks whether the trim DEVELOPS, so a charted face whose loops carry
-// into one (u,v) branch keeps the structured grid it always had. What is left is the faces whose loops
-// do NOT develop. Those reach the covering, which is correct (they fell to the flat patch CDT or the
-// surface's whole domain before, and said so) and is not yet affordable:
-// kernel/ops/tessellate's TestImportedAnalyticPrimitivesWatertight reads 0.95 s with this off and
-// 73 s with it on, against a 60 s tier-1 guard budget.
+// ADR-0063 made the chart part of a face's definition, because the 3-D loops of a face on a periodic
+// surface do not say which of two complementary regions it is. kernel/brep records one on every face
+// its (u, v) arrangement builds; nothing else did, so an imported body reached the tessellator with
+// chart = nil on every face and the general chart-driven mesher declined it outright — which is what
+// kept the bespoke arms of the curved-trim classification alive (#3550).
 //
-// The cost is the covering's SIZE, not the in-circle ties coverShear removed: ~788 000 points through
-// an incremental CDT for one face of occtparity simple/J3, which does not finish in 875 s at
-// PropertyQuality. The covering triangulates its whole interior GRID, and a grid is not a point cloud
-// — its cells are a structured quad mesh and only the boundary band needs a triangulator. That is the
-// one thing between this switch and ON, and it is the same thing between kindSpiricBand and deletion.
+// IT WAS OFF, and what held it off was a tier-1 BUDGET rather than any doubt about the chart. A face
+// whose trim does not DEVELOP reaches the covering, and the covering used to triangulate its whole
+// interior grid: kernel/ops/tessellate's TestImportedAnalyticPrimitivesWatertight read 73 s with this
+// on against 0.95 s with it off, on a 60 s guard budget. The covering now emits that grid as a
+// structured quad mesh and triangulates only its boundary band (chart_structured_interior.go), and
+// the same gate reads 6.37 s. TestTessellationBudget reads 0.18 s against its 2.15 s ceiling.
 func recordImportedChart(f *topo.Face) {
 	if !chartImportedFaces {
 		return
@@ -302,8 +300,7 @@ func recordImportedChart(f *topo.Face) {
 	}
 }
 
-// chartImportedFaces switches the producer on. It is one bool because the producer is BUILT and
-// tested (kernel/brep's ChartOfFace rows, and TestAnImportedPeriodicFaceCanDeriveItsChart here drives
-// the derivation on a real imported face); what is not ready is the mesher the chart routes to for a
-// face whose trim does not develop. See recordImportedChart.
-const chartImportedFaces = false
+// chartImportedFaces is what an imported face's chart used to be gated on. It is kept as ONE named
+// constant, now true, so the switch this file's history turns on is still a thing a reader can find
+// and a bisect can flip. See recordImportedChart for the budgets that decided it.
+const chartImportedFaces = true

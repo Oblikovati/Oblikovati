@@ -8,7 +8,6 @@ import (
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
-	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
 
@@ -77,19 +76,30 @@ func assertChartIsTheWall(t *testing.T, i int, chart [][]math.Point2) {
 	}
 }
 
-// TestImportedChartsAreNotRecordedYet pins the switch and, more importantly, pins WHY — so the next
-// worker flips it against a gate rather than a hunch. A face whose trim does not develop reaches the
-// covering, and kernel/ops/tessellate's TestImportedAnalyticPrimitivesWatertight measured that at 73 s
-// with the producer on against 0.95 s with it off, on a 60 s tier-1 guard budget. That gate going
-// green is the condition.
-func TestImportedChartsAreNotRecordedYet(t *testing.T) {
+// TestEveryImportedPeriodicFaceRecordsItsChart is the switch's own row, and it is the inverse of the
+// one it replaces. The producer used to be held off by a tier-1 BUDGET rather than by any doubt about
+// the chart: a face whose trim does not develop reaches the covering, and
+// kernel/ops/tessellate's TestImportedAnalyticPrimitivesWatertight read 73 s with the producer on
+// against 0.95 s with it off, on a 60 s guard budget. The covering now triangulates only its boundary
+// band (chart_structured_interior.go) and that gate reads 6.37 s, so the producer ships (#3550).
+func TestEveryImportedPeriodicFaceRecordsItsChart(t *testing.T) {
 	t.Parallel()
+	charted := 0
 	for i, f := range importOneSolid(t, "cylinder.step").Faces() {
-		if len(f.Chart()) > 0 {
-			t.Errorf("face %d records a chart: the producer is on, so both TestTessellationBudget and "+
-				"TestImportedAnalyticPrimitivesWatertight in kernel/ops/tessellate must be inside their "+
-				"budgets with it on — check them before deleting this row", i)
+		if _, isPlane := f.Geometry().(geom.Plane); isPlane {
+			if len(f.Chart()) > 0 {
+				t.Errorf("planar face %d records a chart; only a periodic surface needs one", i)
+			}
+			continue
 		}
-		_ = topo.Face{}
+		if len(f.Chart()) == 0 {
+			t.Errorf("imported face %d is a %T and records no chart", i, f.Geometry())
+			continue
+		}
+		charted++
+		assertChartIsTheWall(t, i, f.Chart())
+	}
+	if charted == 0 {
+		t.Fatal("the cylinder fixture offered no periodic face; the row asserts nothing")
 	}
 }
