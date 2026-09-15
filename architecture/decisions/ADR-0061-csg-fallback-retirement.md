@@ -4858,3 +4858,59 @@ triangles, 394 781.31 mm² against 292 951, one `diag.Defect` — which is the l
 exists for. `kernel/ops/tessellate/tube_wrapping_band_test.go` plants the invariant behind it: the arm
 meshes the band's own region and the router BEHIND the arm does not, proved red by putting the deleted
 rung back.
+
+### The chart reaches an imported face, and what it costs to let it (2026-09-15, #3548/#3549/#3550)
+
+The G13 section above ends with three things #3517 needs. Two are now built and the third is measured
+into a gate. What is NOT yet true is that `kindSpiricBand` can go; the pin stays at 12.
+
+#### #3548 — a constraint is recovered without scanning the whole mesh
+
+`recoverByFlips` asked `hasEdge`, a scan of the whole ALLOCATED triangle array, ONCE PER ITERATION of a
+loop whose own bound was also `O(len(tris))`. That is the shape `cdt.go`'s #1409 note says was removed,
+moved from the body into the guard, and `hasEdgeAround` — written for this call site and documented as
+its local replacement — was never used at it. The cap read the allocated array too, which only grows:
+on the J3 host chart at PropertyQuality, **23 606 516 allocated against 1 574 591 live**.
+
+Measured on the 264-vertex self-crossing band that drives the recovery budget: whole-mesh scans
+**1186 → 592**, and 592 is exactly the flip count. End to end, the charted J3 host face at
+PropertyQuality went from *not finishing in 880 s* to **finishing in 19 m 40 s**.
+
+#### #3550 — an imported face can derive its own chart, and the lift is the new part
+
+`brep.ChartOfFace` derives the contours from a face's own loops. `unwrapLoopRing` carries each sample
+onto the branch of the one before it, which is right INSIDE an edge and wrong ACROSS one: a face on a
+periodic surface bridges its rims with an artificial seam the loop walks TWICE, and a point-to-point
+unwrap snaps the second traversal onto the first's branch. Each edge USE is now lifted on its own and
+the uses are placed by whole-period junction shifts taken at the shared vertex.
+
+With it, `bfuseblend/A4`'s host torus meshes through the GENERAL chart-driven mesher at
+**292 849.879 mm² against DRAWEXE's 292 920 (rel −2.4e-4, zero diagnostics)**, where the bespoke
+`kindSpiricBand` loft reads 291 968.087 (rel −3.3e-3). That is the first time the general pipeline has
+beaten the arm on one of its own two customers.
+
+`simple/J3` is refused, and the refusal is right. Its host loop walks BOTH tube-wrapping rims the same
+way and travels **−4π in v**. Its IMPORTED face closes and charts; the fillet's rim rebuild is what
+breaks it — `fillet_rim_build.go`'s `Reversed: !g.concave` takes the replacement rim's flag from the
+blend's convexity, chosen to mirror the band face under Validate's 2-incidence rule, rather than from
+the rim it replaces. Flipping that flag alone stops the weld certifying ("assembled weld did not
+certify as a valid solid"); re-sensing a rim inside the lift closes the ring and gives the right region
+but the tessellator's boundary-side classification then refuses the same face for the same reason
+("its boundary chain 0 names both sides as material, 127 left, 126 right"). Both were built and
+removed. The invariant that broke is the loop's winding and the fix belongs there.
+
+#### #3549 — the producer is OFF, and this is the gate
+
+A chart does not only describe a face, it ROUTES it: `chartFaceMesh` declines an uncharted face and
+accepts a charted one. Recording charts at import therefore sends every seam-crossing imported face to
+the covering mesher. Measured by `TestTessellationBudget` on the OCC fixtures: **0.08 s off, 6.37 s on,
+against a 2.15 s budget**. Those faces were previously degraded — the flat patch CDT, or the surface's
+whole domain, reported — so the covering is doing the right thing and the price is its own cost.
+
+The ticket's premise does not survive measurement. The sample count IS derived from tolerance: 26 025
+covering points at DefaultQuality and 788 250 at PropertyQuality is 30× for a 50× tighter chord, LESS
+than √50 per axis asks for, and the generic (u, v) path that ships today produces 1 115 132 triangles
+for the same body. The anomaly is next to it: the insertion allocates **thirty triangles per point**
+(23 606 516 for 788 250) where Bowyer–Watson should allocate about three — and does, on a jittered grid
+of 319 229 points, at two per point in 917 ms. Whatever the covering's point set does to the insertion
+is the real #3549, and it is not the facet-count policy.
