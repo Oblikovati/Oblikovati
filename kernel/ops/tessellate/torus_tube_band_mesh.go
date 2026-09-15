@@ -23,6 +23,15 @@ import (
 // its own edge (so it welds to the cap discs and the canal band bit-for-bit), interior rows sweep u
 // from the circle's iso-u toward the rail's own per-station u at the RAIL's tube stations, and
 // consecutive rows are stitched by the same zipper the axis-wrapping band uses.
+//
+// IT IS THE SECOND LOFT FOR THIS SHAPE, and today it is SHADOWED (#3517). ADR-0061 stage 5 generalised
+// spiricBandMesh from "two spiric ovals" to "two edges that each wrap the tube", which is this
+// function's own acceptance test, and put it in the curved-trim CLASSIFICATION — ahead of this router.
+// So the classification claims J3 and A4 (at a third of the triangles) and nothing reaches here:
+// measured over kernel/... and model/..., zero calls. It is not dead code to delete with the arm,
+// because spiricTubeTrimOf gives a CHARTED band to the chart-driven mesher and this rung is what a
+// decline there can still fall to; but the duplication is real, and deleting the classification arm
+// alone would simply hand the shape back here. tube_band_two_lofts_test.go plants both facts.
 func torusTubeBandLoftMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 	t, isTorus := s.(geom.Torus)
 	if !isTorus {

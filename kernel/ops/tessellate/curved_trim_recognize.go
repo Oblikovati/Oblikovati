@@ -80,9 +80,24 @@ type spiricTubeTrim struct {
 // chart mesher reads 283.075 and 111.675.
 //
 // What keeps the loft is the UNCHARTED band, which the chart mesher cannot serve at all: occtparity's
-// J3 and A4 host tori record no chart (measured: chart=0, chartFaceMesh declines), and the loft meshes
-// them in 340988 and 406540 triangles against the 1115132 and 1180684 the generic CDT downstream of it
-// needs.
+// J3 and A4 host tori record no chart, and the loft meshes them in 340988 and 406540 triangles against
+// the 1115132 and 1180684 the mesher downstream of it needs.
+//
+// TWO CORRECTIONS, both measured at #3517, because the sentence above sent a reader to the wrong place.
+//
+// "chart=0" is not a property of these two faces; it is a property of every face of both bodies — all
+// four of J3's and all nine of A4's. They are a STEP import plus a fillet, and no importer and no rim
+// rebuild writes a chart (ADR-0063 puts it on the producer that WOUND the face; brep's arrangement is
+// the only producer there is). Supplying one by hand does not rescue them either: A4 then meshes, J3 is
+// refused by the boundary-side classification because its loop walks the torus's artificial v-seam
+// twice and continuousTrace snaps the second traversal onto the first's branch, and at PropertyQuality
+// — the faceting the per-face oracle reads — the covering does not finish the J3 host face in 880 s.
+//
+// And the mesher downstream is NOT the generic CDT: it is torusTubeBandLoftMesh, the OTHER bespoke loft
+// for this same shape (torus_tube_band_mesh.go), which this arm shadows. Deleting this arm therefore
+// hands the two faces to that loft rather than to the general pipeline — a lower recognizer count for a
+// shape that is still special-cased — which is why #3517 leaves the arm standing. ADR-0061's
+// "G13 stays open" section carries the measurement; tube_band_two_lofts_test.go plants it.
 func spiricTubeTrimOf(f *topo.Face, s geom.Surface, q Quality) (spiricTubeTrim, bool) {
 	if len(f.Chart()) > 0 {
 		return spiricTubeTrim{}, false // the general chart-driven mesher serves this band
@@ -158,7 +173,13 @@ func twoRimHoledTrimOf(chart [][]math.Point2, s geom.Surface, outer3D []math.Poi
 // the body, measured), and it is now a SUPERSET keep bracketed above rather than a plateau. The split
 // it produces is still asserted in BOTH directions by
 // TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe, which is the constant's plant. It is the last
-// thing holding the unrolled arm alive; #3517 deletes both when the seam is exact.
+// thing holding the unrolled arm alive.
+//
+// #3517 measured both arms and deleted NEITHER. This one stays because the six torn rows need exact
+// covering seams (#3542). The spiric arm stays for a different reason: its shape has a SECOND bespoke
+// loft behind it (torusTubeBandLoftMesh), so deleting the arm hands the shape to that loft instead of
+// to the general pipeline. ADR-0061's "G13 stays open" section carries both measurements, and #3542 is
+// the ticket that unblocks both.
 const nearPinchCorridorChords = 4 // tol:mesh-density (multiples of the boundary's own chord; see above)
 
 // lensCorridorOutrunsTheSampling reports whether two lens windows pass within nearPinchCorridorChords of
