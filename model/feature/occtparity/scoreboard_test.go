@@ -333,15 +333,20 @@ func assertHardenedRollup(t *testing.T, byGrid map[string]map[Outcome]int, allGr
 	// pendingCapability entries fail loudly the moment each is fixed, pulling this number back up —
 	// which is what happened to FOUR of them on 2026-09-06 (127 → 131): two blend flanks of equal
 	// radius are the degenerate cylinder pair whose section the ruled∩quadric form declined, and the
-	// closed form now inside the intersector gives it exactly (ADR-0061 stage 4). J5 is a torus
-	// through a plane and stands.
-	if simpleGreen != 131 {
-		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 131 (114 base + 17 wave greens + W3, "+
-			"minus J5, the one self-intersecting result of #3491 still open)", simpleGreen)
+	// closed form now inside the intersector gives it exactly (ADR-0061 stage 4). J5, a torus driven
+	// through a plane, stood alone until 2026-09-15 and is the FIFTH to come back (131 → 132): the rim
+	// rebuild wound the convex host's replacement rim against the rim it replaced, because cylE's use
+	// was a fixed function of the blend's convexity chosen to satisfy Validate's 2-incidence rule — and
+	// 2-incidence is weaker than a consistently wound loop (fillet_rim_build.go, #3550). #3491 is
+	// closed with it, and the whole self-intersecting set of five is gone.
+	if simpleGreen != 132 {
+		t.Errorf("simple grid green (Pass+PassDeviation) = %d, want 132 (114 base + 17 wave greens + W3, "+
+			"with all five of #3491's self-intersecting results recovered)", simpleGreen)
 	}
-	if allGridGreen != 147 {
-		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 147 (131 simple + 11 bfuseblend-only "+
-			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→148→143→147)", allGridGreen)
+	if allGridGreen != 148 {
+		t.Errorf("all-grid green (Pass+PassDeviation) = %d, want 148 (132 simple + 11 bfuseblend-only "+
+			"+ 5 tolblend_simple; complex/D8's coincidental green stays retired; 119→148→143→147→148)",
+			allGridGreen)
 	}
 	if skipQuarantine != 0 {
 		t.Errorf("SkipQuarantine = %d, want 0 — the corpus holds NO case; every one of the 475 records is "+
