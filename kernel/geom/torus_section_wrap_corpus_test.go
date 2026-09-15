@@ -219,6 +219,87 @@ func TestAPartialStationIsRefusedByItsPostCondition(t *testing.T) {
 	}
 }
 
+// TestAnArcIsRefusedWhereAnExtremumCouldBeBorn pins the two rows that beat every certificate before it,
+// and the property that now stops them: an extremum PAIR born between two construction stations.
+//
+// Both are pairs the wave base refused ("the torus section's branch pair never folds") and the
+// full-period branches newly admit. At a tube angle BETWEEN two construction stations — each of which
+// carries two extrema — the station carries FOUR, three of them inside 0.13 rad. The anchor's lane then
+// lands on a track whose discriminant is negative, arcRootFrom finds no root inside it and returns the
+// lane's own extremum (the FOLD answer, at a station that has no fold), and the arc leaves the rod by
+// 1.48 and 0.91 units inside a band ONE sample wide in 5761 — far narrower than the 257-sample
+// post-condition reads, and narrower than any grid this reduction could afford
+// (Oblikovati/Oblikovati#3515, review round 4).
+//
+// The row asserts the PROPERTY, not the refusal: whatever the reduction returns, no point of a curve it
+// built may sit off the rod. A later tightening of stationSlopeLipschitz that let these build correctly
+// would pass it, which is what it is for; a fix that only renamed the refusal would not.
+func TestAnArcIsRefusedWhereAnExtremumCouldBeBorn(t *testing.T) {
+	t.Parallel()
+	for _, row := range []struct {
+		name                      string
+		major, minor              float64
+		px, py, pz                float64
+		dx, dy, dz, radius        float64
+		wasOffTheRodBeforeTheGate float64
+	}{
+		{"row 311", 4.2147734347467933, 1.3463269166692093,
+			-3.9589846013182339, 3.4109907944407767, 0.46177466702321185,
+			0.10609082791453334, 0.90368294223232937, 0.41485163149098164, 2.394949210933234, 1.4843},
+		{"row 1090", 8.6786063604031458, 0.45915108170638086,
+			2.8110130560228153, -6.5566016295416834, 0.067661675240782829,
+			0.79385336232074843, 0.38981651894851882, -0.46673324360591856, 2.9092491890836212, 0.9135},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
+			ring, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), row.major, row.minor)
+			if err != nil {
+				t.Fatalf("NewTorus: %v", err)
+			}
+			rod, err := NewCylinder(
+				math.P3(math.Scalar(row.px), math.Scalar(row.py), math.Scalar(row.pz)),
+				math.V3(math.Scalar(row.dx), math.Scalar(row.dy), math.Scalar(row.dz)), row.radius)
+			if err != nil {
+				t.Fatalf("NewCylinder: %v", err)
+			}
+			curves, why, ok := TorusSection(ring, rod.QuadricForm(), ResolutionForSize(20))
+			if !ok && !why.IsConditioning() {
+				t.Fatalf("refused %q, which is not a conditioning demotion, so no defect is recorded", why)
+			}
+			assertNoCurveLeavesTheRod(t, rod, curves, row.wasOffTheRodBeforeTheGate)
+		})
+	}
+}
+
+// assertNoCurveLeavesTheRod walks every built curve at EIGHT times the construction's station step and
+// requires each point to be on the rod. The excursion this catches is one sample wide at that density,
+// which is why the walk is not the section's own 257-point post-condition.
+func assertNoCurveLeavesTheRod(t *testing.T, rod Cylinder, curves []Curve3, wasOff float64) {
+	t.Helper()
+	const walk = 8 * torusStationProbes
+	worst := 0.0
+	for _, c := range curves {
+		for i := range walk + 1 {
+			worst = stdmath.Max(worst, distanceFromRodSurface(rod, c.PointAt(float64(i)/walk)))
+		}
+	}
+	if !(worst <= torusStationRootDistanceBound) {
+		t.Errorf("a built curve leaves the rod by %.4e (it was %.4g before the gate); the bound is %.1e",
+			worst, wasOff, torusStationRootDistanceBound)
+	}
+}
+
+// distanceFromRodSurface is the point's distance from the infinite rod's surface, read off the cylinder
+// rather than through the quadric's first-order form: at a fold the implicit residual falls off
+// quadratically in the azimuth error while the POSITION error does not, so only a length sees a branch
+// that has wandered off (ADR-0066's torusSectionSatisfiesItsForm makes the same argument).
+func distanceFromRodSurface(rod Cylinder, p math.Point3) float64 {
+	w := rod.Origin.VectorTo(p)
+	axis := rod.AxisDir.AsVector()
+	perp := w.Sub(axis.Scale(math.Scalar(float64(w.Dot(axis)))))
+	return stdmath.Abs(float64(perp.Length()) - rod.Radius)
+}
+
 // TestTheStationValueBoundHoldsEverywhere is the property stationValueLipschitz asserts: no
 // measured |∂f/∂v| anywhere on the torus may exceed it. The bound is what lets a sampled sweep say
 // anything about the tube angles BETWEEN its samples, so a bound that is not a bound is worse than none.
@@ -242,6 +323,53 @@ func TestTheStationValueBoundHoldsEverywhere(t *testing.T) {
 	}
 	if checked == 0 {
 		t.Fatal("no station was measured; this row proves nothing")
+	}
+}
+
+// TestTheStationSlopeBoundHoldsEverywhere is the property stationSlopeLipschitz asserts, for both forms
+// in the class: no measured |∂(∂f/∂u)/∂v| anywhere on the chart may exceed it. It is the bound that lets
+// the wrap sweep say an extremum cannot be BORN between two stations, so a bound that is not a bound
+// would put the certificate's whole claim back where review round 4 found it.
+func TestTheStationSlopeBoundHoldsEverywhere(t *testing.T) {
+	t.Parallel()
+	t.Run("quadric co-form", func(t *testing.T) {
+		t.Parallel()
+		rng := rand.New(rand.NewSource(7))
+		for range 120 {
+			ring, rod, ok := wrapCorpusPair(rng)
+			if !ok {
+				continue
+			}
+			q := rod.QuadricForm()
+			assertSlopeBoundDominates(t, ring, q, q.stationSlopeLipschitz(ring))
+		}
+	})
+	t.Run("torus co-form", func(t *testing.T) {
+		t.Parallel()
+		rng := rand.New(rand.NewSource(11))
+		for range 120 {
+			chart, co := randomRingTorus(t, rng, 4), randomRingTorus(t, rng, 4)
+			assertSlopeBoundDominates(t, chart, co, co.stationSlopeLipschitz(chart))
+		}
+	})
+}
+
+// assertSlopeBoundDominates differences the station polynomial's azimuth SLOPE along the tube angle over
+// a (u, v) grid and requires the bound to dominate every reading.
+func assertSlopeBoundDominates(t *testing.T, chart Torus, co TorusCoForm, bound float64) {
+	t.Helper()
+	const step = 1e-6 // tol:numeric — a central difference in the tube angle
+	for i := range 41 {
+		v := twoPi * float64(i) / 41
+		hi := torusSecondHarmonicAt(chart, co, v+step)
+		lo := torusSecondHarmonicAt(chart, co, v-step)
+		for j := range 41 {
+			u := twoPi * float64(j) / 41
+			if d := (hi.slopeAt(u) - lo.slopeAt(u)) / (2 * step); stdmath.Abs(d) > bound {
+				t.Fatalf("chart(R=%g r=%g): |d(df/du)/dv| at (u=%g, v=%g) is %g, over the bound %g",
+					chart.MajorRadius, chart.MinorRadius, u, v, d, bound)
+			}
+		}
 	}
 }
 

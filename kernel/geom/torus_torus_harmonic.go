@@ -113,6 +113,23 @@ func (t Torus) stationValueLipschitz(chart Torus) float64 {
 	return float64(4 * m * spread * chart.MinorRadius)
 }
 
+// stationSlopeLipschitz for a torus co-form. Differentiating ∇F = 4(|W|² + k)W − 8R²(W − (W·â)â)
+// once more gives
+//
+//	∇²F = 4[2WWᵀ + (|W|² + k)I] − 8R²[I − ââᵀ]
+//
+// whose Frobenius norm is at most 8|W|² + 4√3·||W|² + k| + 8√2·R² (‖WWᵀ‖ = |W|², ‖I‖ = √3,
+// ‖I − ââᵀ‖ = √2). With |k| ≤ R² + r² and m the farthest the chart reaches from this torus's centre,
+// rounding 4√3 up to 7 and 8√2 up to 12 leaves 15m² + 19R² + 7r². The rest is the same assembly the
+// quadric makes: that curvature against |Pu||Pv| ≤ (R + r)·r of the CHART, plus the gradient bound
+// against |Puv| ≤ r, which is stationValueLipschitz itself.
+func (t Torus) stationSlopeLipschitz(chart Torus) float64 {
+	m := float64(t.Center.VectorTo(chart.Center).Length()) + chart.MajorRadius + chart.MinorRadius
+	hess := float64(15*float64(m*m)) + float64(19*float64(t.MajorRadius*t.MajorRadius)) + float64(7*float64(t.MinorRadius*t.MinorRadius))
+	curve := float64(hess * (chart.MajorRadius + chart.MinorRadius) * chart.MinorRadius)
+	return curve + t.stationValueLipschitz(chart)
+}
+
 // chartTorus reports that a torus can take the chart role: it is the one form that is also a surface
 // the reduction can parametrise on.
 func (t Torus) chartTorus() (Torus, bool) { return t, true }

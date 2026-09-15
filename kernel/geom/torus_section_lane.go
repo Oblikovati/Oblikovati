@@ -231,9 +231,9 @@ func minimumAngleGap(xs []float64) float64 {
 
 // torusLaneAnchors returns one azimuth per extremum TRACK of the station polynomial — the labels that
 // keep a branch pair on the same lane across the tube's turn. ok=false when the tracks are not
-// separable at the station spacing: the extremum count changes, a track drifts past half the spacing,
-// or two tracks claim the same extremum. Any of those makes the pairing a guess, and the pair demotes
-// to the general marcher rather than being named wrongly.
+// separable over the turn: the extremum count changes, a track drifts past half the spacing, two tracks
+// claim the same extremum, or a new extremum PAIR could be born between two stations. Any of those makes
+// the pairing a guess, and the pair demotes to the general marcher rather than being named wrongly.
 func torusLaneAnchors(t Torus, co TorusCoForm) ([]float64, bool) {
 	seed := torusSecondHarmonicAt(t, co, 0).extrema()
 	if len(seed) < 2 {
@@ -247,6 +247,38 @@ func torusLaneAnchors(t Torus, co TorusCoForm) ([]float64, bool) {
 		}
 	}
 	return seed, true
+}
+
+// torusStationKeepsItsExtrema certifies that no extremum of this station can be BORN OR DIE before the
+// next one is read — what a FULL-PERIOD ARC needs and a folded loop does not.
+//
+// An arc's claim is "this branch exists at EVERY tube angle", which rests on the lane's own extremum
+// still being that lane's extremum everywhere in between; a loop claims only what its window says, and
+// its ends are folds the discriminant sampler bracketed. So this is read by torusUpperTrackSweep, at the
+// station it is about, rather than by torusLaneAnchors — not because a loop is exempt from arithmetic
+// but because the arc is the curve whose claim reaches past the samples.
+//
+// A new extremum pair appears exactly where df/du gains a double root, which is where one of df/du's own
+// humps touches zero. So the quantity that must stay clear of zero is |df/du| AT THE EXTREMA OF df/du,
+// and a hump whose height exceeds what df/du can travel in half a station step cannot reach zero before
+// the next station reads it. It is the same substitution the wrap certificate makes on f
+// ([TorusCoForm.stationSlopeLipschitz]), applied one derivative down, and for the same reason: a count
+// is a topological fact and a grid cannot establish one.
+//
+// It is the gate that was missing. Measured on the 4000-pair corpus, two rows the wave newly admitted
+// built a full-period arc whose reader landed on a lane's own EXTREMUM rather than on a root — the fold
+// answer, at a station that has no fold — and put the arc 1.48 and 0.91 units off the rod, inside a band
+// one sample wide in 5761 that neither the 257-sample post-condition nor a finer grid would see. Both
+// stations carried FOUR extrema, three of them within 0.13 rad, at a tube angle BETWEEN two construction
+// stations that each carried two (Oblikovati/Oblikovati#3515, review round 4).
+func torusStationKeepsItsExtrema(h torusSecondHarmonic, floor float64) bool {
+	g := h.derivative()
+	for _, u := range g.extrema() {
+		if stdmath.Abs(g.valueAt(u)) <= floor {
+			return false
+		}
+	}
+	return true
 }
 
 // anglesTrackSeeds reports each seed claiming exactly one of this station's extrema, within reach and

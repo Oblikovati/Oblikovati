@@ -46,6 +46,13 @@ type TorusCoForm interface {
 	// chart's reach, times |∂P/∂v| = the chart's minor radius exactly. Each form answers from the
 	// representation that carries its gradient (Oblikovati/Oblikovati#3515).
 	stationValueLipschitz(chart Torus) float64
+	// stationSlopeLipschitz bounds |∂(∂f/∂u)/∂v| — how fast the station polynomial's SLOPE in the
+	// azimuth can change with the tube angle — everywhere on the chart at once. Where
+	// stationValueLipschitz lets a sweep reason about a root between its samples, this lets it reason
+	// about an EXTREMUM between them, which is what "the station carries the same number of extrema at
+	// every tube angle" needs (torus_section_lane.go). ∂²f/∂u∂v is Puᵀ·∇²F·Pv + ∇F·Puv, so a form
+	// answers it from a bound on its own HESSIAN alongside the gradient bound it already states.
+	stationSlopeLipschitz(chart Torus) float64
 	// coaxialLevelFactors returns the tube-angle polynomials whose roots are exactly the tube angles at
 	// which this form meets a COAXIAL chart torus. They are solved, never sampled: how many circles the
 	// section has is a topological question, and torus_coaxial_section.go carries why each form's level
@@ -94,6 +101,15 @@ func (q Quadric) stationValueLipschitz(chart Torus) float64 {
 	reach := float64(q.Anchor.VectorTo(chart.Center).Length()) + chart.MajorRadius + chart.MinorRadius
 	slope := float64(q.M.Norm()*reach) + float64(q.G.Length())
 	return float64(2 * slope * chart.MinorRadius)
+}
+
+// stationSlopeLipschitz for a quadric. ∇²Q is the CONSTANT 2M, so the mixed term is
+// 2‖M‖·|Pu|·|Pv| with |Pu| = ρ(v) ≤ R + r and |Pv| = r exactly, and the second term is the same
+// gradient bound [Quadric.stationValueLipschitz] already forms, against |Puv| = |ρ'(v)| ≤ r — which is
+// that function's own value. The tensor norm is Frobenius, which dominates the spectral norm.
+func (q Quadric) stationSlopeLipschitz(chart Torus) float64 {
+	curve := float64(2 * float64(q.M.Norm()) * (chart.MajorRadius + chart.MinorRadius) * chart.MinorRadius)
+	return curve + q.stationValueLipschitz(chart)
 }
 
 // chartTorus reports that a quadric is not a torus, so it can only ever take the implicit role.

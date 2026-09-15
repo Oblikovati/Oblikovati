@@ -247,3 +247,125 @@ row gates arcs at zero and says so rather than licensing a failure count.
   Unifying on the nearest-other-root form is strictly tighter than the arccos form wherever the level is
   positive, so it could newly decline axis-invariant pairs that build today, and it needs a corpus of
   axis-invariant wraps proving it declines none of them. That is its own change, with its own evidence.
+
+## Round 4 — rebased onto ADR-0066, and the certificate an arc was still missing
+
+This section is appended, not edited in: the text above records what round 3 decided and measured, and
+it stands as written. What follows is what changed when #3515 was rebased onto #3514 (ADR-0066), and the
+one defect that survived every certificate above.
+
+### The co-form, not the quadric
+
+ADR-0066 generalised the other side of a torus section from `Quadric` to `TorusCoForm` — an implicit
+form whose restriction to a circle is degree two, which is every quadric AND a second torus. Everything
+this ADR decided is a statement about the STATION POLYNOMIAL's degree and none of it about which surface
+produced the polynomial, so the full-period branches, the chart shift, the station post-condition and
+the wrap certificate are all re-expressed against `TorusCoForm`. Two of them needed a bound on the
+co-form's own derivatives, which is now stated by the form: `stationValueLipschitz` (the round-3 bound,
+with the quadric's arithmetic bit-for-bit unchanged) and `stationSlopeLipschitz` (below). A torus answers
+both from its quartic's gradient and Hessian; the derivations are at the implementations.
+
+### The chart order reverses, and it was measured in the wrong world
+
+ADR-0066 derived "the wider tube carries the chart" from a build-count sweep. That sweep ran while a
+branch pair that never folds was still a named refusal — which is exactly the shape a NARROW chart
+produces, so every one of its wins was declined rather than counted. With the refusal gone the same
+experiment reverses on every seed, and the key becomes the chart's MINOR RADIUS rather than the tube
+aspect: every station is built from the tube circle at tube angle v, radius R + r·cos v and centre
+offset r·sin v, so r is the amplitude in model units by which the station's geometry swings over the
+turn and R does not enter it. Counting only sections that build AND lie on the co-form:
+
+| seed | pairs | either assignment | minor radius | tube aspect | ADR-0066's wider-tube rule |
+| --- | --- | --- | --- | --- | --- |
+| 9 | 1500 | 537 | **480** | 477 | 387 |
+| 13 | 1500 | 509 | **456** | 454 | 370 |
+| 21 | 1500 | 519 | **456** | 452 | 367 |
+
+Three pairs ADR-0066 recorded as named refusals build exactly under this ADR: a tilted ring (3.91e-15
+off the co-form over 20 001 samples per curve), a torus boss sunk into the tube (5.76e-15), and the two
+co-centred perpendicular rings (5.61e-15) — the last being the pair whose folded-window reading put
+points 1.353e-5 off the surface and made `torusSectionSatisfiesItsForm` necessary. This ADR's chart shift
+is what fixes it: its branches sit at azimuth 0 and π, where the quartic in tan(u/2) loses its leading
+coefficient. Over 2343 meeting random ring pairs the built share goes 34% → 54%, the `FullTurn` column
+empties with the decline, and `DeclineTorusLaneTracks` (1009) remains the family's dominant gap.
+
+### The defect every certificate above missed: an extremum born between two stations
+
+Round 3's corpus walk measured "off the rod" through the rod's IMPLICIT residual. That measure is blind
+exactly where this reduction fails, and ADR-0066 says why in `torusSectionSatisfiesItsForm`: at a fold
+∂f/∂u is zero, so f falls off QUADRATICALLY in the azimuth error while the position error does not.
+Re-walked with a LENGTH — the point's distance from the rod's own surface, at 8× the construction step —
+the same 4000-row corpus reads:
+
+| commit | built | NaN readings | worst off the rod | rows over 1e-9 |
+| --- | --- | --- | --- | --- |
+| `fff94140` (wave base) | 1172 | 14 | 1.5961e+00 | 5 |
+| round 3, rebased (`247b67e8`) | 1948 | 0 | 1.4843e+00 | 2 |
+| with the gate below | **1939** | **0** | **1.8463e-13** | **0** |
+
+The five bad rows at the base are folded loops the chart shift fixes (they read 2.48e-2 … 1.60e+00 at
+the base and 4.00e-15 … 4.00e-14 at head), and the 14 NaN readings go with them. The two that remain are
+rows the base REFUSED and the full-period branches newly admit, and they are a defect of this ADR's own
+capability:
+
+> At a tube angle BETWEEN two construction stations — each of which carries two extrema — the station
+> carries FOUR, three of them inside 0.13 rad. The anchor's lane lands on a track whose discriminant is
+> negative; `arcRootFrom` finds no root inside it and returns the lane's own extremum, which is the FOLD
+> answer at a station that has no fold. The arc leaves the rod by 1.48 and 0.91 units, inside a band ONE
+> sample wide in 5761.
+
+Every certificate above is sound and none of them can see it. The azimuth census reads the construction's
+own stations. The station post-condition reads 257 points per curve, and the band is a fortieth of one of
+its steps. The wrap's Lipschitz floor certifies that the VALUE cannot reach zero between two samples —
+which is true, and is not the failure: the failure is that the EXTREMUM STRUCTURE changed, so the lane the
+anchor names at one station is not the lane it names at the next.
+
+**The gate is the same substitution, one derivative down.** A new extremum pair appears exactly where
+∂f/∂u gains a double root, which is where one of ∂f/∂u's own humps touches zero. So the quantity that
+must stay clear of zero is |∂f/∂u| at the extrema of ∂f/∂u, and a hump taller than what ∂f/∂u can travel
+in half a station step cannot reach zero before the next station reads it. `stationSlopeLipschitz` bounds
+|∂²f/∂u∂v| = Puᵀ∇²F Pv + ∇F·Puv from the co-form's Hessian and gradient, with |Pu| = ρ(v) ≤ R + r,
+|Pv| = r and |Puv| ≤ r of the CHART, all exact.
+
+It is read by `torusUpperTrackSweep` and not by `torusLaneAnchors`, and that scope is the claim rather
+than a carve-out: a full-period ARC claims "this branch exists at every tube angle", which is a statement
+about everywhere between the samples; a folded loop claims only what its window says, and its ends are
+folds the discriminant sampler bracketed. Applying it to every lane instead costs `linked rings` and
+`brep guard rings` — ADR-0066's headline corpus rows, whose extremum count is constant at 200 000
+stations — because the global bound is about 4× crude there. Scoped to the arc it costs **9 of 1948
+rows, 0.46%**, and removes 2 of 2 wrong sections.
+
+`TestAnArcIsRefusedWhereAnExtremumCouldBeBorn` pins both rows and asserts the PROPERTY (no built curve
+leaves the rod), not the refusal, so a later tightening that lets them build correctly passes it.
+Removing the gate turns both red at exactly 1.4843e+00 and 9.1350e-01.
+
+### Cost
+
+Measured on the two shapes review 3 benchmarked — a ring R=5 r=1.5 about +z against an infinite rod
+along +x through its centre, radius 2 (four lanes, four full-period arcs) and radius 0.8 (four folded
+loops) — at `-benchtime 20x -count 3`, three interleaved passes across the four trees, minimum per tree
+because the machine is shared:
+
+| section | wave base | round 2 | round 3 | round 4 |
+| --- | --- | --- | --- | --- |
+| fat rod | 2.68 ms (DECLINES) | 25.26 ms | 29.59 ms | **30.18 ms** |
+| thin rod | 9.37 ms | 15.36 ms | 18.55 ms | **19.85 ms** |
+
+Round 3 costs +17 % / +21 % over round 2, which is the chart machinery: `azimuths()` evaluates up to four
+poles and rotates the coefficients, and `extrema()` is `derivative().azimuths()`, so it lands on every
+station read. Round 4's certificate adds a THIRD quartic solve per station, and placed inside the wrap
+sweep it cost +101 % / +80 % — it ran once per lane, and the fat rod has four. Hoisted to
+`torusExtremaHoldOverTheTurn`, read once per section and consulted only by the arc path, it costs
+**+2 % / +7 %**. That is the cache NEW-7 asked about, taken rather than deferred.
+
+The base's fat rod is fast because it REFUSES; it is not a section build and it is in the table only so
+the column is not read as a regression.
+
+### What round 4 still owes
+
+- **Tightening `stationSlopeLipschitz` to a per-station reach.** The bound uses the farthest the chart
+  ever reaches from the co-form's centre; at the station where `linked rings` is tightest the true reach
+  is 8.5 against the global 11.5 and |Pu| is 3.5 against 6.5, which is the 4× that keeps the gate global.
+  A per-station bound would let the certificate cover every lane rather than only the arcs.
+- The two separation gates, unchanged from above and tracked as Oblikovati#3541.
+- The section cost this round carries, reported in the round-4 report rather than claimed here.
