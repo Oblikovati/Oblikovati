@@ -46,42 +46,58 @@ import (
 // corpus is watertight at every k from 0.1 to 3.0. Free edges of the whole body, and the charted face's
 // own meshed area (a full-domain area is the decline, not a mesh):
 //
-//	k       complement D        R=5 r=2 ∩ D        R=5 r=2.5 ∩ D       R=5 r=2 − D
-//	0.1     28 / 294.42794      44 / 392.57058     48 / 490.71323      0 / 281.68147
-//	0.2     28 / 294.42794      44 / 392.57058     48 / 490.71323      0 / 281.68147
-//	0.25     0 / 263.74953      44 / 392.57058     48 / 490.71323      0 / 281.68147
-//	0.3      0 / 263.73402      44 / 392.57058     48 / 490.71323      0 / 281.69358
-//	0.35     0 / 263.73402       0 / 110.94830     48 / 490.71323      0 / 281.69147
-//	0.5      0 / 263.72994       0 / 110.94725     48 / 490.71323      0 / 281.61993
-//	0.7      0 / 263.60871       0 / 110.87427     48 / 490.71323      0 / 281.57144
-//	0.75     0 / 263.60871       0 / 110.87427      0 / 158.46089      0 / 281.57144
-//	0.8      0 / 263.56345       0 / 110.86598      0 / 158.46089      0 / 281.54775
-//	0.85     0 / 263.56345       0 / 110.87045      0 / 158.47274      0 / 281.51437
-//	0.875    0 / 263.55487       0 / 110.87045      0 / 158.47274      0 / 281.51437
-//	1.0      0 / 263.42317       0 / 110.86804      0 / 158.44277      0 / 281.54574
-//	1.2      0 / 263.33288       0 / 110.84685      0 / 158.37149      0 / 281.49772
-//	1.3      0 / 263.18783       0 / 110.82205      0 / 158.21017      2 / 281.55469
-//	1.5      0 / 263.15360       0 / 110.55359      0 / 158.25096      2 / 281.74082
-//	3.0      0 / 260.51898       0 / 108.77724      0 / 156.61430      0 / 280.72340
+//	k        complement D        R=5 r=2 ∩ D         R=5 r=2.5 ∩ D       R=5 r=2 − D
+//	0.2      28 / 294.42794      44 / 392.57058      48 / 490.71323       0 / 281.68147
+//	0.25      0 / 263.74953      44 / 392.57058      48 / 490.71323       0 / 281.68147
+//	0.3       0 / 263.73402      44 / 392.57058      48 / 490.71323       0 / 281.69358
+//	0.35      0 / 263.73402       0 / 110.94830      48 / 490.71323       0 / 281.69147
+//	0.5       0 / 263.72994       0 / 110.94725      48 / 490.71323       0 / 281.61993
+//	0.7       0 / 263.60871       0 / 110.87427      48 / 490.71323       0 / 281.57144
+//	0.705     0 / 263.60871       0 / 110.87427       0 / 158.45510       0 / 281.57144
+//	0.8       0 / 263.56345       0 / 110.86598       0 / 158.46089       0 / 281.54775
+//	0.875     0 / 263.55487       0 / 110.87045       0 / 158.47274       0 / 281.51437
+//	0.935     0 / 263.45103       0 / 110.87045       0 / 158.47274       0 / 281.52457
+//	1.0       0 / 263.42317       0 / 110.86804       0 / 158.44277       0 / 281.54574
+//	1.24      0 / 263.28202       0 / 110.84685       0 / 158.32769       0 / 281.49772
+//	1.25      0 / 263.28202       0 / 110.84685       0 / 158.32769       2 / 281.58399
+//	1.5       0 / 263.15360       0 / 110.55359       0 / 158.25096       2 / 281.74082
+//	3.0       0 / 260.51898       0 / 108.77724       0 / 156.61430       0 / 280.72340
 //
-// (0.15, 0.4, 0.45, 0.55, 0.6, 1.1 and 1.4 were swept too and fall inside the steps above; they are
-// left out only to keep the table readable.)
+// 29 values were swept in all: 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.705,
+// 0.75, 0.8, 0.85, 0.875, 0.92, 0.935, 0.95, 1.0, 1.1, 1.2, 1.24, 1.25, 1.3, 1.4, 1.5, 3.0. The rows
+// left out of the table above fall inside the steps it shows.
 //
-// The plateau is k ∈ [0.75, 1.2]: every corpus row is watertight there and nowhere wider. It is bounded
-// BELOW by a self-touching boundary — the figure-eight pinch, on two aspect ratios: R=5 r=2 declines for
-// k ≤ 0.3 and R=5 r=2.5 for k ≤ 0.7 (torus_square_pinch_test.go, #3519) — and above by the same family's
-// other piece, which tears at 1.3 and 1.5. The complement's apex, which the old table thought was the
-// whole edge, is the WEAKEST of the four: it only fails for k ≤ 0.2.
+// So, stated as what was measured rather than as a property of the interval: EVERY ONE of those 29
+// values from 0.705 to 1.24 inclusive meshes every corpus row watertight, and the two swept values that
+// bracket that run both tear — 0.70 by 48 free edges on the R=5 r=2.5 intersect piece, 1.25 by 2 on the
+// R=5 r=2 cut piece. The first draft of this table said the plateau was [0.75, 1.2] "and nowhere wider",
+// which was a claim about where the sweep had put its steps, not about the geometry; the edges are
+// actually bracketed at (0.70, 0.705] and [1.24, 1.25). Nothing here says the run is unbroken between
+// two swept values.
 //
-// 0.875 sits inside that plateau: 1.25× the largest k that fails below (0.7) and 1.49× under the
-// smallest that fails above (1.3); against the plateau's own ends, 1.17× above 0.75 and 1.37× below 1.2.
-// It is kept rather than re-centred (√(0.75·1.2) = 0.949 would be) because the cost above the edge is
-// monotone — the clearance only ever REMOVES interior nodes, and every area column falls with k — so the
-// smallest value with a real margin is the one the cost argument wants, and that is this one.
+// BOTH brackets are a self-touching boundary: the figure-eight pinch below (R=5 r=2 declines for
+// k ≤ 0.3 and R=5 r=2.5 for k ≤ 0.70, torus_square_pinch_test.go) and the same family's other piece
+// above. The complement's apex, which the old table thought was the whole edge, is the weakest of the
+// four — it only fails for k ≤ 0.2.
+//
+// 0.935 is the LOG-CENTRE of the bracketed run, √(0.70 × 1.25) = 0.93541 to three decimals, and it is
+// 1.336× either bracketing failure. The first draft kept 0.875 (1.25× below, 1.43× above) on the
+// argument that "the cost above the edge is monotone, so the smallest value with a real margin is what
+// the cost argument wants" — which is an argument the same sweep refutes, because the upper end is a
+// TEAR and not only a cost. With a failure at both ends the cost term cannot break the tie and the
+// centre does.
+//
+// Centring is not free, and the price is a body VOLUME rather than the face area: the complement's own
+// DefaultQuality mesh volume goes from 201.258 to 201.022 against an analytic 203.905, so its coarse
+// chord deficit rises from 1.298 % to 1.414 % — just past the 1.39 % the deleted window mesher used to
+// achieve on that body, which chart_face_mesh_test.go's own comment cites. Its face area costs
+// 0.104 mm² of 263.6 (0.039 %), and no gate moves: every bound in the corpus is 1 % or looser and the
+// PropertyQuality reading of the same body is 0.017 %. It is recorded here because a rise in a measured
+// deficit is a price, not a rounding.
 //
 // The complement's face area is pinned two-sided at the value this k gives (chart_face_mesh_test.go),
-// so the constant cannot move without saying so.
-const chartBoundaryClearance = 0.875 // tol:mesh-density (chords; swept 0.10…3.00 above, plateau [0.75, 1.2])
+// so the constant cannot move to any value that changes that mesh without saying so.
+const chartBoundaryClearance = 0.935 // tol:mesh-density (chords; 29 values swept 0.10…3.00 above, tears at 0.70 and 1.25)
 
 // chartNodeClearance is the fraction of a grid gap an interior node must keep from the boundary. A node
 // ON a constraint owns no triangle and derails the segment recovery; one just inside it makes a sliver
