@@ -69,16 +69,22 @@ func (c *coverVertices) MergeCoincidentLocations(weld float64) {
 }
 
 // locationOf is the index of the vertex already laid at (u, v), when the owner asked for the merge and
-// one is there. The lookup scans the quantised cell and its eight neighbours, so a pair straddling a
-// cell boundary — which two values of one location computed two ways easily do — is still found.
+// one is there. The lookup walks the quantised cell and its eight neighbours, so a pair straddling a
+// cell boundary — which two values of one location computed two ways easily do — is still found. The
+// neighbours are walked in a fixed order and each cell holds its vertices in insertion order, so the
+// vertex a lookup finds is the same on every run and every platform; nothing here iterates a map.
+//
+// The offsets are walked rather than materialised: this runs once per covering vertex, and a covering
+// lays tens of thousands (review 2, M6).
 func (c *coverVertices) locationOf(u, v float64) (int, bool) {
 	if c.locIndex == nil {
 		return 0, false
 	}
 	x, y := u*c.su, v*c.sv
-	for _, k := range locationCells(x, y, c.locWeld) {
-		for _, i := range c.locIndex[k] {
-			if stdmath.Hypot(c.xy[i][0]-x, c.xy[i][1]-y) <= c.locWeld {
+	cx, cy := locationCell(x, y, c.locWeld)
+	for dx := int64(-1); dx <= 1; dx++ {
+		for dy := int64(-1); dy <= 1; dy++ {
+			if i, ok := c.nearestIn([2]int64{cx + dx, cy + dy}, x, y); ok {
 				return i, true
 			}
 		}
@@ -86,17 +92,19 @@ func (c *coverVertices) locationOf(u, v float64) (int, bool) {
 	return 0, false
 }
 
-// locationCells is the quantised cell of (x, y) and its eight neighbours, in a fixed order so the
-// vertex a lookup finds is the same on every platform.
-func locationCells(x, y, weld float64) [][2]int64 {
-	cx, cy := int64(stdmath.Floor(x/weld)), int64(stdmath.Floor(y/weld))
-	out := make([][2]int64, 0, 9)
-	for dx := int64(-1); dx <= 1; dx++ {
-		for dy := int64(-1); dy <= 1; dy++ {
-			out = append(out, [2]int64{cx + dx, cy + dy})
+// nearestIn is the first vertex of one cell within the weld of (x, y).
+func (c *coverVertices) nearestIn(cell [2]int64, x, y float64) (int, bool) {
+	for _, i := range c.locIndex[cell] {
+		if stdmath.Hypot(c.xy[i][0]-x, c.xy[i][1]-y) <= c.locWeld {
+			return i, true
 		}
 	}
-	return out
+	return 0, false
+}
+
+// locationCell is the quantised cell (x, y) falls in.
+func locationCell(x, y, weld float64) (int64, int64) {
+	return int64(stdmath.Floor(x / weld)), int64(stdmath.Floor(y / weld))
 }
 
 // rememberLocation files a newly laid vertex under its own cell.
@@ -104,8 +112,8 @@ func (c *coverVertices) rememberLocation(i int) {
 	if c.locIndex == nil {
 		return
 	}
-	k := locationCells(c.xy[i][0], c.xy[i][1], c.locWeld)[4] // the centre cell of the 3x3 block
-	c.locIndex[k] = append(c.locIndex[k], i)
+	cx, cy := locationCell(c.xy[i][0], c.xy[i][1], c.locWeld)
+	c.locIndex[[2]int64{cx, cy}] = append(c.locIndex[[2]int64{cx, cy}], i)
 }
 
 // add records one covering vertex laid at shift index at, and returns its index. When the owner asked

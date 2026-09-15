@@ -45,14 +45,21 @@ const figureEightUlp = 8.881784197001252e-16 // ulp(5): the last bit of this mod
 // with the platform. The covering merges coincident locations now (coverVertices.
 // MergeCoincidentLocations) and the misread is gone.
 //
-// RE-MEASURED over every offset from −8 to +8: the intersect piece meshes 111.67488 mm² and the cut
-// piece 283.07521 at EVERY offset from −8 to +4 (111.67492 / 283.07521 at −8 and −7). At +5 and
+// RE-MEASURED on THIS fixture (perturbedFigureEight, not a probe of its own) over every offset from −8
+// to +8: the intersect piece meshes 111.67491 mm² and the cut piece 283.07523 at every offset from −6
+// to +4, and 111.67496 / 283.07523 at −8 and −7, with three faces on each piece throughout. At +5 and
 // beyond the BOOLEAN refuses the fixture outright — "intersect of a 1-face target and a 6-face tool:
 // the exact result failed its own acceptance gate" — because the plane has stopped touching and the
 // section is two ovals; that is the tangential-contact gap (#3552), not this row's.
 //
-// The set below spans the three offsets that used to be misread and the widest that still build.
-var figureEightOffsetUlps = []int{-8, -3, -2, -1, 0, 1, 2, 4}
+// (The first write-up of this paragraph said 111.67488 / 283.07521. Those digits came from a probe
+// fixture with different box extents, not from this one, and did not reproduce on an independent
+// attempt — review 2, M3. The numbers above are this fixture's.)
+//
+// The set below runs from −8 to +4 without a gap from −3 up: every offset that used to be misread, and
+// every offset that still builds. It stops at +4 because +5 is refused, and it thins below −3 because
+// the rows there were never in question and each one costs two booleans and four tessellations.
+var figureEightOffsetUlps = []int{-8, -3, -2, -1, 0, 1, 2, 3, 4}
 
 // figureEightCentreUlps perturbs the torus CENTRE in x and z, which is NOT a bifurcation parameter:
 // the plane y=3 is tangent to the inner equator whatever they are, so no decision may move at any

@@ -4,7 +4,6 @@ package query
 
 import (
 	stdmath "math"
-	"sort"
 
 	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
@@ -105,52 +104,6 @@ func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain boo
 		return brep.PointInFaceTrim(f, f.Geometry().PointAt(u, v)), true
 	}
 	return bandSideOfEnclosedRegion(f, loops)
-}
-
-// bandSideOfEnclosedRegion is the side test for a face whose loops WRAP the seam, where one probe is
-// not enough (Oblikovati/Oblikovati#3553).
-//
-// A wrapping region's chart is recorded as contours split at an artificial SLIT, and the material lies
-// on both sides of one, so a classifier asked exactly ON it answers by which side its ray was cast
-// from. The band probe used to propose the midpoint of the boundary's span, which on a region symmetric
-// about its slit IS the slit, at every station — so the answer was a rounding artefact and came out
-// differently for each of the four figure-eight rings in the corpus.
-//
-// So a STATION's several candidates are read together and must AGREE. They are placed at fractions of
-// the span that no one constant-parameter line can share (bandAcrossFractions), so a slit can spoil at
-// most one of them; a station whose candidates disagree is one where a probe landed on a real boundary,
-// and it is skipped rather than believed. When no station is unanimous the side is not certified and
-// the face declines, which is what it did before for an unprobeable face.
-func bandSideOfEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
-	s := f.Geometry()
-	axis := bandAxisOf(loops)
-	if u, v, ok := capInteriorUV(s, loops); ok {
-		return brep.PointInFaceTrim(f, s.PointAt(u, v)), true
-	}
-	for _, station := range bandInteriorCandidates(loops, axis) {
-		verdict, unanimous := unanimousTrimVerdict(f, s, axis, station)
-		if unanimous {
-			return verdict, true
-		}
-	}
-	return false, false
-}
-
-// unanimousTrimVerdict reads brep.PointInFaceTrim at every candidate of one station and reports their
-// common answer, or unanimous=false when they differ.
-func unanimousTrimVerdict(f *topo.Face, s geom.Surface, axis bandAxis, station [][2]float64) (verdict, unanimous bool) {
-	for i, c := range station {
-		u, v := axis.pointOf(c[0], c[1])
-		in := brep.PointInFaceTrim(f, s.PointAt(u, v))
-		if i == 0 {
-			verdict = in
-			continue
-		}
-		if in != verdict {
-			return false, false
-		}
-	}
-	return verdict, len(station) > 0
 }
 
 // regionProbeUV returns a parameter point in the enclosed region for the side test. A loop that
@@ -258,180 +211,6 @@ func loopUVExtent(fl faceLoop) float64 {
 	return stdmath.Max(uHi-uLo, vHi-vLo)
 }
 
-// bandInteriorUV returns a point deep inside a band whose loops WRAP the parameter seam. Such a
-// band is bounded in the parameter that closes and unbounded in the one that wraps, so at any fixed
-// station of the wrapping parameter its boundary curves sit above and below: the midpoint between
-// them is interior by construction, and it is far from the boundary rather than a hair off it.
-//
-// Stepping inward off a boundary chord instead — the previous construction — could land OUTSIDE the
-// true region and go undetected, because the check available at that point compares against the
-// loops' SAMPLED polygon, which does not track the true trim curve at that scale. A probe 5.2e-3
-// outside the operand read as in-trim, the per-face gate then correctly refused a correct body, and
-// a blind hole fell to a 1830-face rescue (Oblikovati/Oblikovati#2247).
-func bandInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
-	axis := bandAxisOf(loops)
-	along, across, found := bandInterior(loops, axis)
-	if !found {
-		return 0, 0, false
-	}
-	u, v = axis.pointOf(along, across)
-	return u, v, true
-}
-
-// bandInterior is bandInteriorUV in the band's own (along, across) frame.
-func bandInterior(loops []faceLoop, axis bandAxis) (along, across float64, ok bool) {
-	for _, st := range bandInteriorCandidates(loops, axis) {
-		if len(st) > 0 {
-			return st[0][0], st[0][1], true
-		}
-	}
-	return 0, 0, false // every station tried put the point in a hole
-}
-
-// bandInteriorCandidates are the interior points the band rule proposes, best first: at each station
-// of the wrapping parameter, the across coordinate at several fractions of the boundary's span.
-//
-// Several fractions and not just the middle, because the middle is a SYMMETRY AXIS and a chart's
-// artificial slit sits on one (Oblikovati/Oblikovati#3553). A region that wraps a whole period is
-// recorded as contours split at a seam, and the slit is a constant-parameter line the material lies on
-// BOTH sides of. The figure-eight cut face is symmetric about its slit, so the span's midpoint landed on
-// it at every station — u = π, measured on all four rings of the corpus — and an even-odd count there
-// answers by which side the ray was cast from. Three of the four rings then read their own interior as
-// outside, took the complement of their own region, and integrated the far lobe: 70.92 mm² where
-// 225.17 is the face. The fourth read it as inside, by nothing but its aspect ratio.
-//
-// The fractions are coprime-ish thirds and quarters around the middle rather than a nudge off it: a
-// point at 1/3 of the span is as interior as the middle by the same argument, and no one line can be
-// the midpoint, the third and the quarter of the same span at once. The caller decides between them by
-// requiring the classifier to give the SAME answer at all of them (faceHoldsEnclosedRegion), so a
-// candidate that lands on a real boundary shows up as a disagreement and the face declines rather than
-// taking the answer a degenerate probe gave.
-func bandInteriorCandidates(loops []faceLoop, axis bandAxis) [][][2]float64 {
-	samples := allLoopSamples(loops, axis)
-	if len(samples) < 2 {
-		return nil
-	}
-	holes, per := nonWrappingPolygons(loops), loopsUVPeriod(loops)
-	var out [][][2]float64
-	for _, i := range bandStationOrder(len(samples)) {
-		lo, hi, found := vSpanAt(samples, samples[i].u)
-		if !found {
-			continue
-		}
-		if st := acrossCandidatesAt(samples[i].u, lo, hi, axis, holes, per); len(st) > 0 {
-			out = append(out, st)
-		}
-	}
-	return out
-}
-
-// acrossCandidatesAt is one station's accepted across coordinates, in the order they are preferred.
-func acrossCandidatesAt(station, lo, hi float64, axis bandAxis, holes [][]arcSample, per uvPeriod) [][2]float64 {
-	var out [][2]float64
-	for _, f := range bandAcrossFractions {
-		across := lo + (hi-lo)*f
-		hu, hv := axis.pointOf(station, across)
-		if !uvCrossingsOdd(holes, hu, hv, per) {
-			out = append(out, [2]float64{station, across})
-		}
-	}
-	return out
-}
-
-// bandAcrossFractions are where across the boundary's span the band rule places its probes, and the
-// MIDDLE is deliberately not among them.
-//
-// The middle is the one fraction a chart's artificial slit can occupy at every station at once: the
-// slit is a constant-parameter line, its fractional position in the span is (slit − lo)/(hi − lo), and
-// on a region symmetric about it — which the figure-eight cut face is — that is 1/2 everywhere.
-// Measured on all four rings: the midpoint probe read the face's own interior as outside at every
-// station, while the four fractions below read it as inside at every station. No single line can be
-// the third, the two-thirds, the quarter and the three-quarters of one span, so a slit can take at
-// most one of them, and a disagreement among them is what tells the caller the probe is not safe.
-var bandAcrossFractions = []float64{1.0 / 3, 2.0 / 3, 0.25, 0.75}
-
-// nonWrappingPolygons are the loops that close in the plane — the face's HOLES on a band, since a
-// band's own bounding curves are the ones that wrap. The midpoint of the boundary's span can fall
-// inside one of these, which is outside the face, so a station that does is rejected rather than
-// trusted.
-func nonWrappingPolygons(loops []faceLoop) [][]arcSample {
-	var out [][]arcSample
-	for i, fl := range loops {
-		if closeUV(fl.netU, fl.netV, 0, 0) {
-			out = append(out, loopUVPolygons(loops)[i])
-		}
-	}
-	return out
-}
-
-// bandStationOrder walks candidate stations from the middle of the sample range outward, so an
-// ordinary band answers on the first try and a holed one still gets alternatives to try.
-func bandStationOrder(n int) []int {
-	out := make([]int, 0, bandStationTries)
-	for k := range bandStationTries {
-		out = append(out, n*(2*k+1)/(2*bandStationTries))
-	}
-	return out
-}
-
-// bandStationTries is how many stations across the band are tried before declining. A band with
-// holes needs more than one; a plain band answers on the first.
-const bandStationTries = 9
-
-// allLoopSamples flattens every loop's uv samples, ordered by the wrapping parameter so the median
-// is a station the band actually spans. The u values are folded into ONE period first: the two rims
-// of a band are unwrapped onto different branches of the covering space — one walks 0→2π, the next
-// 2π→4π — so their raw parameters never meet even though the rims sit directly above one another,
-// and a station window over raw u would see only one of them.
-func allLoopSamples(loops []faceLoop, axis bandAxis) []arcSample {
-	period := loopsPeriod(loops, axis)
-	var out []arcSample
-	for _, fl := range loops {
-		for _, le := range fl.edges {
-			for _, sp := range le.samples {
-				a, x := axis.coordsOf(sp)
-				out = append(out, arcSample{t: sp.t, u: foldU(a, period), v: x})
-			}
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].u < out[j].u })
-	return out
-}
-
-// loopsPeriod is the face's period in the wrapping parameter, or 0 when it does not wrap.
-func loopsPeriod(loops []faceLoop, axis bandAxis) float64 {
-	for _, fl := range loops {
-		if p := axis.periodOf(fl); p > 0 {
-			return p
-		}
-	}
-	return 0
-}
-
-// vSpanAt returns the lowest and highest v the boundary reaches near the given u station. found is
-// false when the boundary has no thickness there — a station at the very end of the band, where the
-// midpoint would sit on the boundary itself.
-func vSpanAt(samples []arcSample, station float64) (lo, hi float64, found bool) {
-	lo, hi = stdmath.Inf(1), stdmath.Inf(-1)
-	window := bandStationWindow * uSpanOf(samples)
-	for _, s := range samples {
-		if stdmath.Abs(s.u-station) <= window {
-			lo, hi = stdmath.Min(lo, s.v), stdmath.Max(hi, s.v)
-		}
-	}
-	return lo, hi, hi-lo > 0
-}
-
-// bandStationWindow is how much of the band's wrapping extent counts as "at this station" when
-// reading the boundary's v span. Wide enough to catch both boundary curves through their sampling,
-// narrow enough that the span is local rather than the band's whole height.
-const bandStationWindow = 0.02 // tol:parametric — station window, relative to the band's u extent
-
-// uSpanOf is the total extent the samples cover in the wrapping parameter.
-func uSpanOf(samples []arcSample) float64 {
-	return samples[len(samples)-1].u - samples[0].u
-}
-
 // FaceInteriorPoint returns one point strictly inside face f's trimmed region, taken from the
 // analytic surface and its uv loops — never from a tessellation. It is the representative point a
 // per-face gate classifies (M48/C3, Oblikovati/Oblikovati#3447).
@@ -446,6 +225,23 @@ func uSpanOf(samples []arcSample) float64 {
 // face. A probe that lands in the band the operation discards fails that test and still declines, so
 // the gate never gains a probe it cannot stand behind, and it stops skipping every ordinary bore wall
 // and rod tunnel the general pipeline builds (ADR-0061 stage 4).
+//
+// THE POINT THIS RETURNS MOVED, for every seam-wrapping face (Oblikovati/Oblikovati#3553). It used to
+// be the MIDDLE of the boundary's span at a station — every torus band, every bore wall, every rod
+// tunnel the boolean certificate probes — and it is now a THIRD of that span. This is a public query
+// and the change is API-visible across a whole class of faces, not a tuning of one shape: any caller
+// that assumed the mid-band point, or that placed a fixture around it, reads a different point now.
+//
+// Why a third is the right point and the middle was not: the middle is the one fraction a charted
+// region's artificial SLIT occupies at every station at once, because a slit is a constant-parameter
+// line and a region symmetric about it puts it at exactly 1/2 of every span. A probe there asks the
+// classifier a question it cannot answer — an even-odd count ON a contour answers by which side its ray
+// was cast from — and the answer then tracks the model's last bit. The #2247 invariant this probe
+// carries is DEPTH, not the midpoint: a third of the band is depth, and it is the same depth at every
+// discretisation. bandInteriorCandidates has the construction and the measurement.
+//
+// What has NOT changed is the certification: whatever uv the band or cap rule proposes, the point is
+// returned only when brep.PointInFaceTrim agrees it is on the face.
 //
 // Example: p, ok := query.FaceInteriorPoint(f) // ok ⇒ brep.PointInFaceTrim(f, p)
 func FaceInteriorPoint(f *topo.Face) (math.Point3, bool) {
@@ -488,210 +284,6 @@ func faceComplementPoint(f *topo.Face, loops []faceLoop) (math.Point3, bool) {
 		return math.Point3{}, false
 	}
 	return p, true
-}
-
-// loopUVPolygons flattens each loop's edge samples into one closed uv polyline per loop, INDEX-
-// ALIGNED with loops: a degenerate loop keeps its (short) slot so a caller can address loop i.
-//
-// Every loop is unwrapped from its OWN first sample, so two loops of one face can come back on
-// different branches of the covering space — a cylinder wall's outer loop at u ∈ [−2π, 0] with its
-// window holes at [0, 2π). Nothing is wrong with either, but a nesting test comparing them across
-// branches reads a hole as OUTSIDE the loop that contains it, and the hole is then ADDED to the
-// region: a drilled cylinder wall measured 240.81 where 211.57 is right, and the body's volume came
-// out 9.8% over (Oblikovati/Oblikovati#3489). Each polygon is shifted onto the first one's branch as
-// a WHOLE, by whole periods, which preserves its shape — folding each point separately would cut any
-// polygon that straddles the fold.
-func loopUVPolygons(loops []faceLoop) [][]arcSample {
-	out := make([][]arcSample, len(loops))
-	for i, fl := range loops {
-		var poly []arcSample
-		for _, le := range fl.edges {
-			poly = append(poly, le.samples...)
-		}
-		out[i] = poly
-	}
-	return alignPolygonBranches(out, loopsPeriod(loops, bandAxis{}), loopsPeriod(loops, bandAxis{alongV: true}))
-}
-
-// alignPolygonBranches brings each inner loop onto the branch of the outer one, per parameter.
-//
-// The shift is SELF-VERIFYING: a whole period is applied only when it lands the inner loop inside the
-// outer loop's interval and the loop is not already there. Choosing the NEAREST branch instead is
-// wrong, and wrong in a way a real body reaches — a sphere zone's two rims sit exactly half a period
-// apart in their chart, which is the tie point of "nearest", so rounding moved a loop that was
-// already placed correctly and the belt went on to name the caps and report four times the area.
-// Refusing to move anything a shift cannot justify leaves that case alone and still repairs the one
-// this exists for.
-func alignPolygonBranches(polys [][]arcSample, uPeriod, vPeriod float64) [][]arcSample {
-	if len(polys) < 2 {
-		return polys
-	}
-	alignAlongAxis(polys, uPeriod, bandAxis{})
-	alignAlongAxis(polys, vPeriod, bandAxis{alongV: true})
-	return polys
-}
-
-// alignAlongAxis places the inner loops inside the outer loop's interval in ONE parameter. loops[0]
-// is the outer loop; a face with holes only (a closed surface's outerless face) has no interval that
-// should contain the rest, and the containment test then justifies no shift, which is correct.
-func alignAlongAxis(polys [][]arcSample, period float64, axis bandAxis) {
-	if period <= 0 {
-		return
-	}
-	outer, ok := polygonRangeAlong(polys[0], axis)
-	if !ok {
-		return
-	}
-	for i := 1; i < len(polys); i++ {
-		inner, ok := polygonRangeAlong(polys[i], axis)
-		if !ok || outer.holds(inner) {
-			continue
-		}
-		shift := wholePeriodOffset(outer.mid()-inner.mid(), period)
-		if shift == 0 || !outer.holds(inner.shifted(shift)) {
-			continue // no whole number of periods puts this loop inside the outer one
-		}
-		polys[i] = shiftPolygonAlong(polys[i], shift, axis)
-	}
-}
-
-// paramRange is a closed interval in one surface parameter.
-type paramRange struct{ lo, hi float64 }
-
-// holds reports whether the whole of r lies within p.
-func (p paramRange) holds(r paramRange) bool { return r.lo >= p.lo && r.hi <= p.hi }
-
-// mid is the interval's centre, the anchor a branch is chosen by.
-func (p paramRange) mid() float64 { return (p.lo + p.hi) / 2 }
-
-// shifted moves the whole interval.
-func (p paramRange) shifted(d float64) paramRange { return paramRange{p.lo + d, p.hi + d} }
-
-// polygonRangeAlong is the extent a polygon covers in one parameter.
-func polygonRangeAlong(poly []arcSample, axis bandAxis) (paramRange, bool) {
-	if len(poly) == 0 {
-		return paramRange{}, false
-	}
-	at := func(sp arcSample) float64 {
-		if axis.alongV {
-			return sp.v
-		}
-		return sp.u
-	}
-	out := paramRange{at(poly[0]), at(poly[0])}
-	for _, sp := range poly {
-		out.lo, out.hi = stdmath.Min(out.lo, at(sp)), stdmath.Max(out.hi, at(sp))
-	}
-	return out, true
-}
-
-// shiftPolygonAlong moves a whole polygon in one parameter, which preserves its shape — folding each
-// point separately would cut any polygon that straddles the fold.
-func shiftPolygonAlong(poly []arcSample, shift float64, axis bandAxis) []arcSample {
-	out := make([]arcSample, len(poly))
-	for i, sp := range poly {
-		out[i] = sp
-		if axis.alongV {
-			out[i].v += shift
-			continue
-		}
-		out[i].u += shift
-	}
-	return out
-}
-
-// wholePeriodOffset is the whole number of periods that best closes a gap, or zero when the
-// parameter does not wrap or the gap is already under half a period. (Distinct from
-// holed_cylinder_wall.go's branchShift, which brings one angle INTO a given range.)
-func wholePeriodOffset(gap, period float64) float64 {
-	if period <= 0 {
-		return 0
-	}
-	return period * stdmath.Round(gap/period)
-}
-
-// uvCrossingsOdd is the even-odd point-in-polygons test at (u, v) over every loop: an ODD number of
-// loops contains it, which means inside the outer loop and outside its holes.
-func uvCrossingsOdd(polys [][]arcSample, u, v float64, per uvPeriod) bool {
-	inside := 0
-	for _, poly := range polys {
-		if pointInLoopPolygon(poly, u, v, per) {
-			inside++
-		}
-	}
-	return inside%2 == 1
-}
-
-// pointInLoopPolygon is the even-odd point-in-polygon test asked in the SURFACE's space rather than
-// in one branch of its chart: on a periodic parameter u and u±period name the same point, so the
-// probe is tried at every whole-period translate the polygon's own extent can hold, and any hit
-// counts. A parameter that does not wrap has period 0 and only the untranslated probe.
-//
-// Testing a single branch is wrong for a loop that STRADDLES the branch cut. A wrapped emboss
-// footprint on a cone came back on u ∈ [−0.034, 0.034] while the face's outer loop occupied
-// [−2π, 0]. No whole period puts the footprint inside that interval — it hangs off both ends — so
-// alignPolygonBranches rightly declined to move it, the one-branch test then read the footprint as
-// OUTSIDE the loop enclosing it, and the hole was ADDED to the face instead of subtracted: 1333.86
-// cm² on a face whose undrilled band measures 1332.86 (Oblikovati/Oblikovati#3505; #3489 fixed the
-// sibling case where a whole loop sat on the wrong branch — this is the one no shift can repair).
-func pointInLoopPolygon(poly []arcSample, u, v float64, per uvPeriod) bool {
-	if len(poly) < 3 {
-		return false
-	}
-	uRange, _ := polygonRangeAlong(poly, bandAxis{})
-	vRange, _ := polygonRangeAlong(poly, bandAxis{alongV: true})
-	for _, du := range branchOffsets(u, uRange, per.u) {
-		for _, dv := range branchOffsets(v, vRange, per.v) {
-			if polygonCrossings(poly, u+du, v+dv)%2 == 1 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// branchOffsets lists the whole-period offsets that bring x into the polygon's own extent — the only
-// translates that can possibly be inside it. A non-periodic parameter (period 0) has the single
-// offset 0, which makes the test the ordinary planar one.
-func branchOffsets(x float64, r paramRange, period float64) []float64 {
-	if period <= 0 {
-		return []float64{0}
-	}
-	lo := stdmath.Ceil((r.lo - x) / period)
-	hi := stdmath.Floor((r.hi - x) / period)
-	out := make([]float64, 0, 3)
-	for k := lo; k <= hi && len(out) < branchOffsetCap; k++ {
-		out = append(out, k*period)
-	}
-	return out
-}
-
-// branchOffsetCap bounds the translate search. A face's loop spans one fundamental domain, so two or
-// three branches always suffice; the cap keeps a malformed loop with a huge parametric extent from
-// turning an O(1) predicate into an unbounded scan.
-const branchOffsetCap = 4
-
-// uvPeriod is a face's period in each surface parameter, 0 where that parameter does not wrap.
-type uvPeriod struct{ u, v float64 }
-
-// loopsUVPeriod reads both periods off the face's loops.
-func loopsUVPeriod(loops []faceLoop) uvPeriod {
-	return uvPeriod{u: loopsPeriod(loops, bandAxis{}), v: loopsPeriod(loops, bandAxis{alongV: true})}
-}
-
-// polygonCrossings counts how often the +u ray from (u, v) crosses one closed uv polyline.
-func polygonCrossings(poly []arcSample, u, v float64) int {
-	n := 0
-	for i := range poly {
-		a, b := poly[i], poly[(i+1)%len(poly)]
-		if (a.v > v) == (b.v > v) {
-			continue
-		}
-		if u < a.u+(v-a.v)/(b.v-a.v)*(b.u-a.u) {
-			n++
-		}
-	}
-	return n
 }
 
 // bandLoopSigns signs each loop of a face whose loops WRAP the parameter seam, where the

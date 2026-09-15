@@ -84,18 +84,88 @@ func TestTheDisplayFacetingIsQuietOnThisBody(t *testing.T) {
 	}
 }
 
-// The DISPLAY-faceting end of this pairing is GONE, and that is the fix landing rather than coverage
-// lost (Oblikovati/Oblikovati#3551). TestADeclineAlsoReachesTheDisplayFacetingWhenItIsEarned stood here
-// and pinned that the Defect reaches feature health at DefaultQuality on wideCrossingRods — the r = 3
-// rod met by a wider r = 3.5 rod offset 0.5 mm — whose declining face shipped 28.7 % less area than it
-// has. Its own instruction was "a future change that makes this face correct should delete the row, not
-// loosen it", and one did: the covering no longer lays two vertices at one location, and that body now
-// meshes both walls to 0.40 % and 0.87 % of their analytic areas at DefaultQuality and to 5e-5 and 8e-5
-// at PropertyQuality, with no diagnostic at either.
+// TestTheCuredDisplayDeclineStaysCured is what is left of the pairing's DISPLAY-faceting end, and it is
+// here rather than deleted because the ground rule says a bug fix adds its input to the corpus — and a
+// CURED input is the one the corpus most wants, since it is the one that proves the cure is in force
+// (Oblikovati/Oblikovati#3551).
 //
-// So no body in this package's sweep declines at the display faceting any more, and the severity
-// argument now rests on the PropertyQuality row above plus TestTheDisplayFacetingIsQuietOnThisBody. If a
-// shape that declines at DefaultQuality turns up again, this is where its row goes.
+// TestADeclineAlsoReachesTheDisplayFacetingWhenItIsEarned stood here and pinned that the Defect reaches
+// feature health at DefaultQuality on this body, whose declining face shipped 28.7 % less area than it
+// has. Its instruction was "a future change that makes this face correct should delete the row, not
+// loosen it", and one did: the covering no longer lays two vertices at one location. Following that
+// instruction literally cost the FIXTURE as well as the assertion, which was wrong — the assertion was
+// what had to go, not the body.
+//
+// So the row is inverted instead. The same wideCrossingRods asserts the cured behaviour: no diagnostic
+// at either faceting, and both walls meshed to their analytic areas within a chord deficit. A
+// regression puts the decline back and this row says so; the numbers are the measurement, not a bound
+// chosen in advance (0.392 % and 0.863 % at DefaultQuality, 0.0046 % and 0.0082 % at PropertyQuality).
+//
+// No body in this package's sweep declines at the display faceting any more, so the severity argument
+// rests on the PropertyQuality row above plus TestTheDisplayFacetingIsQuietOnThisBody. If a shape that
+// declines at DefaultQuality turns up again, its row goes beside this one.
+func TestTheCuredDisplayDeclineStaysCured(t *testing.T) {
+	t.Parallel()
+	body := wideCrossingRods(t)
+	for _, gq := range []struct {
+		name string
+		q    tessellate.Quality
+		band float64
+	}{{"default", tessellate.DefaultQuality(), 0.01}, {"property", tessellate.PropertyQuality(), 0.0001}} {
+		if got := BodyMeshDiagnostics(body, gq.q); len(got) != 0 {
+			t.Errorf("%s quality: wideCrossingRods reports %v; it was cured by #3551 and must stay quiet",
+				gq.name, codeList(got))
+		}
+		assertEveryWallMeshesItsAnalyticArea(t, body, gq.q, gq.name, gq.band)
+	}
+}
+
+// assertEveryWallMeshesItsAnalyticArea holds every analytically integrable face of a body to its own
+// area within band — a per-face oracle, so a body-level total cannot hide a face that is wrong.
+func assertEveryWallMeshesItsAnalyticArea(t *testing.T, b *topo.Body, q tessellate.Quality, name string, band float64) {
+	t.Helper()
+	checked := 0
+	for i, f := range b.Faces() {
+		an, ok := AnalyticFaceArea(f)
+		if !ok || an <= 0 {
+			continue
+		}
+		checked++
+		got := tessellate.MeshGeometryProperties(tessellate.TessellateFace(f, q)).Area
+		if rel := (an - got) / an; rel < 0 || rel > band {
+			t.Errorf("%s quality: face %d meshes %.5f against an analytic %.5f (deficit %.5f, want (0, %g])",
+				name, i, got, an, rel, band)
+		}
+	}
+	if checked == 0 {
+		t.Errorf("%s quality: no face of the body integrates analytically; the per-face gate covers nothing", name)
+	}
+}
+
+// wideCrossingRods is the body that #3551 cured: the r = 3 rod along +x met by a WIDER r = 3.5 rod
+// offset 0.5 mm in y, whose merged wall used to be declined at the display faceting.
+func wideCrossingRods(t *testing.T) *topo.Body {
+	t.Helper()
+	return crossingRods(t, 3.5, 0.5)
+}
+
+// crossingRods intersects the r = 3 rod along +x with a rod of radius r along +z, offset off in y.
+func crossingRods(t *testing.T, r, off float64) *topo.Body {
+	t.Helper()
+	along, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
+	if err != nil {
+		t.Fatalf("along-x rod: %v", err)
+	}
+	across, err := brep.SolidCylinder(math.P3(0, off, -6), math.V3(0, 0, 1), r, 12)
+	if err != nil {
+		t.Fatalf("across-z rod r=%g: %v", r, err)
+	}
+	body, err := brep.Boolean(brep.Intersection, along, across)
+	if err != nil {
+		t.Fatalf("crossing rods r=%g off=%g: %v", r, off, err)
+	}
+	return body
+}
 
 // ringMeetingADrill is the SILENT case AND the quiet one — the pairing both rows need in one body: the
 // R = 5, r = 1.5 ring met by an axial drill of radius 1.4 standing at x = 5, offset 1 mm in y, kept.

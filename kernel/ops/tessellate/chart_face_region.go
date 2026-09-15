@@ -88,9 +88,18 @@ func branchWindow(lo, hi float64, periodic bool) (float64, float64) {
 //	1e-1                      25508                             0   none
 //
 // Not one number in the corpus — free edges, body volume, per-face area — differs between DISABLING the
-// retry and widening it by five decades, because the majority vote answered "outside" every single time
-// it was asked. A constant with no plateau edge in either direction is not a tolerance that was tuned;
-// it is a branch that decides nothing, so it is deleted rather than documented.
+// retry and widening it by five decades: over that range the majority vote never once turned a "no"
+// into a "yes" on any of these bodies. A constant with no plateau edge in either direction is not a
+// tolerance that was tuned, so it is deleted rather than documented.
+//
+// "Inert" is as much as the corpus supports and MORE than it is true, which is the honest correction
+// (review 2, I1): off the corpus the retry was not inert, it was harmful. Measured at the wave base
+// 4b3b1819 with nothing changed but this band, two thin-torus bodies outside the corpus tore with the
+// retry on and were watertight with it off — the R=20 r=1 and R=100 r=1 tangent-plane CUT pieces at
+// PropertyQuality, 340 and 360 free edges against 0 and 0. There the vote answered INSIDE and admitted
+// triangles that tore the wall. Both bodies read 0 at this commit, which is this branch's own reading
+// of the same two rows. So the deletion is better than "it decided nothing": on the corpus it decided
+// nothing, and where it did decide it decided wrongly.
 //
 // The retry's PRECONDITION is in fact unreachable, which is stronger than "inert on today's corpus" and
 // is why no replacement is owed. It needed a decided NO at a centroid ON a contour edge. A centroid

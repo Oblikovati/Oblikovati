@@ -81,12 +81,31 @@ import (
 // third column — the clearance only ever REMOVES interior nodes, so the complement's coarse mesh loses
 // volume as k rises, monotonically, from 1.09 % at 0.1 to 5.87 % at 3.0.
 //
-// 0.90 is therefore chosen BY THE COST, not by centring, and that is the whole of its justification: it
-// is the largest swept value whose cost is under 1.39 %, the deficit the deleted window mesher used to
-// achieve on that body and which chart_face_mesh_test.go's own row exists to have beaten. 0.92 is over
-// it at 1.4136 %, and the round that sat at 0.935 was over it at 1.4137 %. Below 0.90 nothing in the
-// corpus argues for or against any value, so the claim the row makes is what decides, and a later sweep
-// that wants to move this constant has to say what it does to that claim.
+// TWO premises select 0.90, and the second one is the half a cost ceiling cannot supply on its own.
+//
+// The CEILING is 1.39 %: the deficit the deleted window mesher achieved on this body, which
+// chart_face_mesh_test.go's own row exists to have beaten. It admits every k up to 0.91 — 0.92 is the
+// first swept value over it, at 1.4136 %, and the round that sat at 0.935 was over it at 1.4137 %. A
+// ceiling defines an admissible SET, so on its own it would select the cheapest admissible value,
+// k = 0.1 at 1.0936 %.
+//
+// The second premise is why LARGER is better inside that set, and it is the paragraph above stated as a
+// rule rather than as history: a smaller clearance lets an interior node approach the rim, and the two
+// failures this sweep used to show below 0.70 were both nodes that reached it. Those particular
+// failures are fixed, but what the clearance buys is unchanged — distance between the covering's
+// interior and a boundary the chart samples differently — and nothing measures how much of that is
+// enough, because no swept value fails any more. So the rule is: take the LARGEST value the cost
+// ceiling admits, which buys the most of the thing the guard exists for at a price the corpus's own
+// claim still tolerates. That selects 0.90 (0.91 builds the identical mesh; 0.92 is over the ceiling).
+//
+// Both premises are weaker than a measured failure edge and the comment says so rather than dressing
+// them up. In particular the ceiling can never be RE-taken: the mesher that produced it is deleted, and
+// the reading is historical (commit 95cdd21e records 201.07 against an analytic 203.90 on this body,
+// a 1.388 % deficit, with its raw operands). The row's own comparison has eroded across this wave —
+// 1.11 % at 95cdd21e, 1.2982 % at 0.875, 1.3497 % here — and 0.90 sits 0.04 percentage points under
+// the ceiling. A later sweep that wants to move this constant has to say what it does to that claim,
+// and a change that retires the claim leaves this constant with no argument at all: re-derive it then,
+// do not inherit it.
 //
 // The margin above is 1.389× the smallest k that tears (1.25). There is no margin to state below,
 // because no swept value from 0.1 up fails — which is a statement about a mesher that no longer breaks

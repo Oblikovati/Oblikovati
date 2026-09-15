@@ -195,15 +195,29 @@ func squarePinchMeshVolume(t *testing.T, b *topo.Body, q ops.Quality) float64 {
 // facetings is what says the pinch itself is meshed rather than merely survived at one sampling.
 func TestTheSquarePinchCutPieceIsWatertightAtBothQualities(t *testing.T) {
 	t.Parallel()
+	t.Run("default", func(t *testing.T) {
+		t.Parallel()
+		assertSquarePinchCutPieceHolds(t, "default", ops.DefaultQuality())
+	})
+	t.Run("property", func(t *testing.T) {
+		t.Parallel()
+		assertSquarePinchCutPieceHolds(t, "property", ops.PropertyQuality())
+	})
+}
+
+// assertSquarePinchCutPieceHolds is one faceting's half of that row. The two facetings are subtests
+// rather than a loop so they run in PARALLEL: the row is the slowest unguarded test in its package and
+// its elapsed is load-sensitive (22 s quiet, 37 s under a load average of 20, against a 60 s budget),
+// and splitting the two booleans across goroutines is the cheapest headroom available without giving
+// up either faceting (review 2, M2).
+func assertSquarePinchCutPieceHolds(t *testing.T, name string, q ops.Quality) {
+	t.Helper()
 	piece := squarePinchPiece(t, ops.Cut)
-	for _, gq := range figureEightQualities() {
-		mesh, _ := tessellate.TessellateBody(piece, gq.q)
-		if free := tessellate.FreeEdgeCount(mesh); free != 0 {
-			t.Errorf("%s quality: the square-pinch cut piece meshes with %d free edges, want 0", gq.name, free)
-		}
-		assertChordDeficit(t, gq.name+" square-pinch cut face",
-			squarePinchFaceArea(t, piece, gq.q), squarePinchBelowArea)
+	mesh, _ := tessellate.TessellateBody(piece, q)
+	if free := tessellate.FreeEdgeCount(mesh); free != 0 {
+		t.Errorf("%s quality: the square-pinch cut piece meshes with %d free edges, want 0", name, free)
 	}
+	assertChordDeficit(t, name+" square-pinch cut face", squarePinchFaceArea(t, piece, q), squarePinchBelowArea)
 }
 
 // squarePinchIntersectPropertyFreeEdges and squarePinchIntersectPropertyArea are the MEASURED defect at
