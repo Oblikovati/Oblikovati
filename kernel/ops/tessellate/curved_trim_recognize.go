@@ -80,24 +80,28 @@ type spiricTubeTrim struct {
 // chart mesher reads 283.075 and 111.675.
 //
 // What keeps the loft is the UNCHARTED band, which the chart mesher cannot serve at all: occtparity's
-// J3 and A4 host tori record no chart, and the loft meshes them in 340988 and 406540 triangles against
-// the 1115132 and 1180684 the mesher downstream of it needs.
+// J3 and A4 host tori record no chart, and the arm meshes them in 340988 and 406540 triangles.
 //
-// TWO CORRECTIONS, both measured at #3517, because the sentence above sent a reader to the wrong place.
+// #3517 MEASURED WHAT DELETING IT WOULD COST, and left it standing. Three facts, in the order a reader
+// needs them.
 //
 // "chart=0" is not a property of these two faces; it is a property of every face of both bodies — all
 // four of J3's and all nine of A4's. They are a STEP import plus a fillet, and no importer and no rim
 // rebuild writes a chart (ADR-0063 puts it on the producer that WOUND the face; brep's arrangement is
-// the only producer there is). Supplying one by hand does not rescue them either: A4 then meshes, J3 is
-// refused by the boundary-side classification because its loop walks the torus's artificial v-seam
-// twice and continuousTrace snaps the second traversal onto the first's branch, and at PropertyQuality
-// — the faceting the per-face oracle reads — the covering does not finish the J3 host face in 880 s.
+// the only producer there is). That gap is #3550 and it is far wider than these two hosts.
 //
-// And the mesher downstream is NOT the generic CDT: it is torusTubeBandLoftMesh, the OTHER bespoke loft
-// for this same shape (torus_tube_band_mesh.go), which this arm shadows. Deleting this arm therefore
-// hands the two faces to that loft rather than to the general pipeline — a lower recognizer count for a
-// shape that is still special-cased — which is why #3517 leaves the arm standing. ADR-0061's
-// "G13 stays open" section carries the measurement; tube_band_two_lofts_test.go plants it.
+// Supplying a chart by hand does not rescue them. A4 then meshes; J3 is refused by the boundary-side
+// classification because its loop walks the torus's artificial v-seam twice and continuousTrace snaps
+// the second traversal onto the first's branch. And at PropertyQuality — the faceting the per-face
+// oracle reads — the covering does not finish at all: 788250 points and 5660 constraint loops into the
+// constrained triangulation, which did not return in 880 s. Two defects sit under that, #3548 (the
+// constraint recovery's budgeted loop is O(n·T)) and #3549 (the chart cover's facet-count policy emits
+// ~1e6 samples for one periodic torus face), and they hide each other.
+//
+// Delete the arm and the two faces do NOT reach the general pipeline: they fall to the surface's whole
+// domain at 2097152 triangles and 394781.31 mm² against the band's 292951, with the degradation
+// reported. Until #3548/#3549/#3550, a lower recognizer count would buy a wrong body. ADR-0061's
+// "G13 stays open" section carries the measurement; tube_wrapping_band_test.go plants it.
 func spiricTubeTrimOf(f *topo.Face, s geom.Surface, q Quality) (spiricTubeTrim, bool) {
 	if len(f.Chart()) > 0 {
 		return spiricTubeTrim{}, false // the general chart-driven mesher serves this band
@@ -176,10 +180,10 @@ func twoRimHoledTrimOf(chart [][]math.Point2, s geom.Surface, outer3D []math.Poi
 // thing holding the unrolled arm alive.
 //
 // #3517 measured both arms and deleted NEITHER. This one stays because the six torn rows need exact
-// covering seams (#3542). The spiric arm stays for a different reason: its shape has a SECOND bespoke
-// loft behind it (torusTubeBandLoftMesh), so deleting the arm hands the shape to that loft instead of
-// to the general pipeline. ADR-0061's "G13 stays open" section carries both measurements, and #3542 is
-// the ticket that unblocks both.
+// covering seams (#3542). The spiric arm stays because deleting it would ship a wrong body: its two
+// remaining faces record no chart (#3550) and the chart mesher cannot take one (#3548, #3549), so they
+// fall to the surface's whole domain. What #3517 DID delete is the second, shadowed loft that used to
+// catch them silently. ADR-0061's "G13 stays open" section carries both measurements.
 const nearPinchCorridorChords = 4 // tol:mesh-density (multiples of the boundary's own chord; see above)
 
 // lensCorridorOutrunsTheSampling reports whether two lens windows pass within nearPinchCorridorChords of

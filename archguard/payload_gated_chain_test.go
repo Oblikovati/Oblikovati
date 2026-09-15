@@ -53,6 +53,12 @@ var payloadGatedChains = map[string]string{
 	// uncharted faces fall to chartedTrimMesh's REPORTED full domain, and 4 charted singly-periodic
 	// cylinder bands reach singlyPeriodicWrapMesh, where the chart mesher ACCEPTS them. The rungs go
 	// when the chart mesher can take the 185. #3411.
+	//
+	// A SIXTH rung stood in it and is DELETED at #3517: torusTubeBandLoftMesh, a second loft for the
+	// tube-wrapping torus band. It is not in the five counted above because it never reached a face —
+	// the curved-trim classification's kindSpiricBand claims that shape first, and the rung built
+	// nothing over ./kernel/... or ./model/.... The five measured rungs are unchanged; what fell is a
+	// shadowed duplicate, not one of the 185.
 	"kernel/ops/tessellate/tessellate_trim.go:meshSeamCrossingFace": "#3411",
 }
 

@@ -68,7 +68,13 @@ var kernelNetDeltaPin = map[string]int{
 	// chart it carries, so the router asks what the FACE records, not what its surface is.
 	// 691 → 684 (2026-09-08, ADR-0061 stage 5): a FALL of 7 — the same seven geometry-kind assertions
 	// the curved-trim classification collapsed, counted by the net-delta ratchet.
-	"type-assertions": 684,
+	// 684 → 683 (2026-09-15, #3517): a FALL — the `s.(geom.Torus)` of torusTubeBandLoftMesh, the SECOND
+	// loft for the tube-wrapping torus band. The classification arm has claimed that shape since stage 5,
+	// so the rung built nothing over ./kernel/... or ./model/...; delete-first removes the duplicate.
+	// `recognizers` does NOT move with it: the rung was a router rung, never a registered recognizer,
+	// and kindSpiricBand itself stays — see ADR-0061's "G13 stays open" section for why deleting THAT
+	// would ship a wrong body.
+	"type-assertions": 683,
 	// 37 → 11 (2026-09-07, ADR-0061 stage 4): a FALL of 26 — curvedExactPaths is DELETED. It was an
 	// ordered first-fit ladder of 26 bespoke recognizers tried before the general per-face pipeline,
 	// the shape the ground rules forbid ("dispatch is a classification that selects exactly one path"),
