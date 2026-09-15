@@ -273,7 +273,10 @@ func setbackObstaclePins() []fingerprintPin {
 		// closed form too — top 10000−π·35² = 6151.548999353, bottom 10000−π·30² = 7172.566611769,
 		// bore wall 2π·30·95 = 17907.078125462, fillet torus 2π·5·(35π/2 − 5) = 1570.101137511 — so
 		// this is the oracle getting more exact, not the geometry drifting.
-		{"K1", 716207.725652512512, 67600, 0xcb1edbf4a4562d86, ""},
+		// REBASELINED 2026-09-15 (#3517): the rim rebuild now carries the chart onto the face it re-winds,
+		// so this body's periodic host reaches the GENERAL chart-driven mesher. Every per-face DRAWEXE
+		// oracle, watertight gate and the scoreboard stay green; ADR-0061 carries the table.
+		{"K1", 716207.725652512861, 131734, 0x7255a8115e752fb6, ""},
 		{"Z1", 7840.004567698298, 34808, 0x84c49b798620dc55, ""},
 		// N1 (simple): the FIRST R+r bore/notch-wall trihedral corner green (corner-blend-weld Pieces
 		// 1+2). N1 is box − r20 cylinder notch at a corner, r=5 fillet on 3 edges. The engine used to
@@ -326,7 +329,7 @@ func setbackObstaclePins() []fingerprintPin {
 		// (area-sizing-report.md); they lock the boss-base cove so any later rim slice fails loud if it
 		// perturbs a W6/W8/A1 body. Same cross-platform-risk caveat as above applies.
 		{"W6", 1013278.147300069, 67596, 0x39c85597736e6fa1, ""},
-		{"W8", 1083723.369024332, 67852, 0x2e95a5402d3049f6, ""},
+		{"W8", 1083715.188031051541, 74278, 0x4e1ac54d8281ca8f, ""},
 		{"A1", 18223007.902061027, 135180, 0xd04c71795cfaf4cb, "bfuseblend"},
 		// F4 (simple): the elliptic-prism vein tracer — a convex STRAIGHT RULING edge where a plane meets a
 		// right EllipticalCylinder wall (an oblique-prism side), filleted r=10. Its constant-radius rolling-

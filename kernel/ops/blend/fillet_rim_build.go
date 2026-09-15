@@ -3,6 +3,7 @@
 package blend
 
 import (
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -181,9 +182,32 @@ func (g *rimBuild) copyFace(f *topo.Face) {
 func (g *rimBuild) addCopiedFace(f *topo.Face) *topo.Face {
 	specs := g.loopSpecsWithRim(f)
 	if f.Reversed() {
-		return g.bld.AddReversedFace(f.Geometry(), f.Lineage(), specs...)
+		return carryChart(f, g.bld.AddReversedFace(f.Geometry(), f.Lineage(), specs...))
 	}
-	return g.bld.AddFace(f.Geometry(), f.Lineage(), specs...)
+	return carryChart(f, g.bld.AddFace(f.Geometry(), f.Lineage(), specs...))
+}
+
+// carryChart re-derives a rebuilt face's parametric trim when the face it was rebuilt FROM carried one.
+//
+// ADR-0063 puts the chart on the producer that wound the face, because the 3-D loops of a face on a
+// periodic surface do not say which of two complementary regions it is; a face carrying none is
+// declined by the general chart-driven mesher outright. The rim rebuild re-winds every face of the
+// body against the new rim circles, and it recorded no chart — so a filleted torus host reached the
+// tessellator with chart = nil even though the imported face it was rebuilt from carries one. That gap
+// is what kept the bespoke spiric arm alive (#3517, #3550).
+//
+// It DERIVES from the rebuilt loops rather than copying the source's contours, because the rebuild
+// moved the rim: the region is the same region, but its boundary in (u,v) is the new one. And it fires
+// only where the source had a chart, so a face this rebuild merely copies gains no region it was not
+// already given — the chart travels with the face, it is not invented for it.
+func carryChart(src, built *topo.Face) *topo.Face {
+	if len(src.Chart()) == 0 {
+		return built
+	}
+	if chart, ok := brep.ChartOfFace(built); ok {
+		built.SetChart(chart)
+	}
+	return built
 }
 
 // loopSpecsWithRim rebuilds a face's loops against the new edges, substituting the rim circle (→ the

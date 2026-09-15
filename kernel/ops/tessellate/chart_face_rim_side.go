@@ -193,12 +193,22 @@ func (b *chartCover) materialSideOfEachChain(tris [][3]int, keep []bool) rimSide
 // of them survives is decided by the canonical replica selection (chart_face_replica.go) rather than by
 // the chart. Counting it asks the wrong question and gets an arbitrary answer.
 //
-// It cost exactly one vote, and that one vote refused a face. Measured on occtparity bfuseblend/A4's
-// host torus with its chart derived (#3550): 253 segments say left and ONE says right, and the one is a
-// rim segment whose endpoints both sit at u = uHi to the last bit, laid at replica shift 7. Unanimity
-// is the right rule — a consistently wound loop cannot honestly name two sides, and a majority would
-// bind a whole chain to a side confidently (#3518) — so the repair is to stop counting a segment that
-// was never decisive, not to start tolerating dissent.
+// ONE vote refused a face, and removing that vote means not counting 280 segments. Both numbers matter
+// and the first sentence used to carry only the first. Measured on occtparity simple/J3's and
+// bfuseblend/A4's host tori, DefaultQuality, through the real pipeline now that the rim rebuild carries
+// their charts (#3550): each has 420 rim segments, and WITHOUT this rule 253 say left and ONE says
+// right — a contradiction, which refuses the face. WITH it, 280 of the 420 are not counted and the
+// remaining vote reads 126 left, 0 right.
+//
+// 280, not 1, because a tube-wrapping band's two rims ARE the branch window's two edges: the band runs
+// u ∈ [uLo, uHi] and each rim circle sits on one of them. So this is not a rule that excuses one odd
+// segment; it is the statement that a rim lying along the window edge carries no side information at
+// all, and only the seam does.
+//
+// Unanimity stays the rule for what remains — a consistently wound loop cannot honestly name two
+// sides, and a majority would bind a whole chain to a side confidently (#3518) — so the repair is to
+// stop counting segments that were never decisive, not to start tolerating dissent.
+// TestASegmentOnTheWindowEdgeCastsNoVote asserts both halves on a covering built for it.
 func (b *chartCover) segmentRunsAlongTheWindowEdge(e [2]int) bool {
 	tol := chartContourIncidence * stdmath.Max(b.r.uHi-b.r.uLo, b.r.vHi-b.r.vLo)
 	return onSameWindowEdge(b.uu[e[0]], b.uu[e[1]], b.r.uLo, b.r.uHi, b.r.uPer, tol) ||

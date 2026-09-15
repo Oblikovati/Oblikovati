@@ -74,7 +74,8 @@ var kernelNetDeltaPin = map[string]int{
 	// `recognizers` does NOT move with it: the rung was a router rung, never a registered recognizer,
 	// and kindSpiricBand itself stays — see ADR-0061's "G13 stays open" section for why deleting THAT
 	// would ship a wrong body.
-	"type-assertions": 683,
+	// 683 → 681 (2026-09-15, #3517): a FALL of 2 — spiric_band_mesh.go went with the kindSpiricBand arm.
+	"type-assertions": 681,
 	// 37 → 11 (2026-09-07, ADR-0061 stage 4): a FALL of 26 — curvedExactPaths is DELETED. It was an
 	// ordered first-fit ladder of 26 bespoke recognizers tried before the general per-face pipeline,
 	// the shape the ground rules forbid ("dispatch is a classification that selects exactly one path"),
@@ -111,7 +112,15 @@ var kernelNetDeltaPin = map[string]int{
 	// that made them near-cocircular. Measured over the whole sixteen-row near-pinch corpus: 6 rows
 	// carrying 38 seam edges before, 0 and 0 after, every row bounded by exactly its own rim. The
 	// general chart-driven mesher serves every two-rim holed band there is now.
-	"recognizers": 11,
+	// 11 → 10 (2026-09-15, #3517): a second FALL — kindSpiricBand and its recognizer spiricTubeTrimOf
+	// are DELETED, and with them spiric_band_mesh.go entire. The arm existed for the UNCHARTED
+	// tube-wrapping torus band, which the general mesher could not serve because no importer and no rim
+	// rebuild wrote a chart (#3550) and because a covering triangulated its whole interior grid
+	// (#3549). Both are now fixed, and the general path is BETTER on the arm's own two hosts, measured
+	// at the faceting the per-face oracle reads: PropertyQuality area against DRAWEXE 292961 on
+	// occtparity simple/J3's host torus, the arm 292950.19 (rel −3.688e-5) against the chart mesher's
+	// 292959.152 (rel −6.31e-6), six times closer, 0 diagnostics. ADR-0061 carries the table.
+	"recognizers": 10,
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
 	// shipped it silently; the degradation is now refused AND reported.
@@ -325,7 +334,6 @@ var curvedTrimRecognizers = map[string][]string{
 	"kindSphereZoneBand": {"sphereBeltTrimOf"},
 	"kindSpherePatch":    {"spherePatchTrimOf"},
 	"kindRuledBandLoft":  {"hasTwoClosedRimsNoOpen", "hasFullCircleAndNotchedRim"},
-	"kindSpiricBand":     {"spiricTubeTrimOf"},
 	"kindWedgeBand":      {"wedgeBandTrimOf"},
 }
 

@@ -50,8 +50,6 @@ const (
 	// kindRuledBandLoft is a developable side bounded by two full-wrap rims — two closed rims, or one
 	// closed rim and one notched rim. A ruled band needs no interior row.
 	kindRuledBandLoft
-	// kindSpiricBand is a torus band bounded by two edges that each wrap the whole tube.
-	kindSpiricBand
 	// kindWedgeBand is an open oblique-ended cylinder wedge: one zipped strip between its two end
 	// chains.
 	kindWedgeBand
@@ -60,7 +58,7 @@ const (
 // String names the kind, so a failing classification test says which two kinds collided.
 func (k curvedTrimKind) String() string {
 	names := [...]string{"uncharted", "chart", "cone-apex-fan", "sphere-cap-fan", "sphere-zone-band",
-		"sphere-patch", "ruled-band-loft", "spiric-band", "wedge-band"}
+		"sphere-patch", "ruled-band-loft", "wedge-band"}
 	if int(k) < 0 || int(k) >= len(names) {
 		return "curvedTrimKind(unknown)"
 	}
@@ -76,7 +74,6 @@ type curvedTrim struct {
 	cap   sphereCapTrim
 	belt  sphereBeltTrim
 	patch spherePatchTrim
-	tube  spiricTubeTrim
 	wedge wedgeBandTrim
 }
 
@@ -95,9 +92,6 @@ func classifyCurvedTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, hol
 	}
 	if ruledTwoRimBandHolds(f, s, q) {
 		return curvedTrim{kind: kindRuledBandLoft}
-	}
-	if b, ok := spiricTubeTrimOf(f, s, q); ok {
-		return curvedTrim{kind: kindSpiricBand, tube: b}
 	}
 	if w, ok := wedgeBandTrimOf(f, s, q); ok {
 		return curvedTrim{kind: kindWedgeBand, wedge: w}

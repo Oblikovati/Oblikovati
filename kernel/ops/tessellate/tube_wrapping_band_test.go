@@ -12,23 +12,31 @@ import (
 	"oblikovati.org/math"
 )
 
-// The tube-wrapping torus band now has ONE mesher, and this file is what holds that (#3517).
+// The tube-wrapping torus band has ONE mesher, and it is the general one (#3517).
 //
-// It had two. spiricBandMesh, behind the classification arm kindSpiricBand, and torusTubeBandLoftMesh,
-// a rung of meshSeamCrossingFace's ordered router, meshed the SAME shape: a torus face bounded by two
-// edges that each go the whole way round the tube, bridged by one seam the loop walks twice. ADR-0061
-// stage 5 put the first in FRONT of the second rather than replacing it, and the second then built
-// nothing — 0 builds over ./kernel/... and ./model/... — so #3517 deleted it under the delete-first
-// rule. What that buys is row two below: with the duplicate gone, removing the arm is no longer a
-// quiet handover to a second loft; the band falls to the surface's WHOLE domain, and says so.
+// It had three. spiricBandMesh, behind the classification arm kindSpiricBand, and
+// torusTubeBandLoftMesh, a rung of meshSeamCrossingFace's ordered router, meshed the SAME shape: a
+// torus face bounded by two edges that each go the whole way round the tube, bridged by one seam the
+// loop walks twice. ADR-0061 stage 5 put the first in FRONT of the second rather than replacing it,
+// and the second then built nothing — 0 builds over ./kernel/... and ./model/... — so #3517 deleted it
+// under the delete-first rule, and then deleted the arm itself.
 //
-// The fixture's far rim is a fitted BSpline rather than a second circle for exactly that reason — see
-// meridianRail. With two circles an earlier rung of the same router claims the face and row two would
-// be measuring the wrong mesher.
+// What made the arm deletable is that its two real hosts now record a chart. The arm existed for the
+// UNCHARTED band: occtparity simple/J3 and bfuseblend/A4 are a STEP import plus a fillet, and neither
+// the importer nor the rim rebuild wrote a chart, so the general mesher declined them outright. #3550
+// put one on the importer, and the rim rebuild now carries it onto the face it re-winds (carryChart,
+// fillet_rim_build.go). The covering that consumes it triangulates only its boundary band
+// (chart_structured_interior.go), so the general path meshes those hosts at the faceting the per-face
+// oracle reads: 292 959.152 mm² against DRAWEXE 292 961 where the arm read 292 950.19 — six times
+// closer, zero diagnostics (ADR-0061).
 //
-// Row three is why the deletion is safe. A band that records a chart leaves the arm on purpose, and
-// the general chart-driven mesher takes it — so nothing the arm gives up needed a second loft to
-// catch it.
+// The fixture's far rim is a fitted BSpline rather than a second circle — see meridianRail. With two
+// circles an earlier rung of the same router claims the face and row two would be measuring the wrong
+// mesher.
+//
+// The three rows are the three answers the band can now get: a CHARTED band is the chart mesher's; an
+// UNCHARTED one has no special mesher left and falls to the surface's whole domain, loudly; and
+// nothing in between claims it.
 
 // tubeWrappingBandFace builds the shape the arm recognises: a torus band between the meridian circles
 // at u=0 and u=3π/2, bridged by the outer-equator arc between them, which the loop walks in both
@@ -92,50 +100,42 @@ func meridianRail(t *testing.T, tor geom.Torus, u float64) geom.Curve3 {
 	return rail
 }
 
-// TestTheSpiricArmClaimsTheTubeWrappingBand is the classification half: the band is kindSpiricBand's,
-// and it is the only mesher left for the shape.
-func TestTheSpiricArmClaimsTheTubeWrappingBand(t *testing.T) {
-	t.Parallel()
-	f := tubeWrappingBandFace(t, 20, 5)
-	q := DefaultQuality()
-	if _, ok := spiricTubeTrimOf(f, f.Geometry(), q); !ok {
-		t.Fatal("spiricTubeTrimOf did not claim the tube-wrapping band — the rows below cover nothing")
-	}
-	got := classifyCurvedTrim(f, f.Geometry(), FaceOuterBoundary(f, q), faceHoleBoundaries(f, q), q)
-	if got.kind != kindSpiricBand {
-		t.Errorf("the tube-wrapping band classifies as %s, want %s", got.kind, kindSpiricBand)
-	}
-}
-
-// TestWithoutTheArmTheBandFallsToTheReportedWholeDomain is the guard the deletion leaves in its place,
-// and it is the reason the deletion is worth making.
-//
-// meshSeamCrossingFace is the route a face takes when the classification does NOT claim it, so driving
-// it directly is exactly "what happens if kindSpiricBand goes". While torusTubeBandLoftMesh stood in
-// it, the answer was a second loft and the only thing that noticed was two occtparity pins moving. The
-// answer now is the surface's WHOLE domain with the degradation REPORTED — which is the loud corpus
-// failure the gate exists for, and it reproduces on the real hosts: 2 097 152 triangles,
-// 394 781.31 mm² against the band's 292 951, one diag.Defect (measured on J3 and A4, review 1 §1.1).
-//
-// Both halves are asserted, because either alone can pass for the wrong reason: the ARM must mesh the
-// band's own region, and the router behind it must mesh the whole torus and say so.
-func TestWithoutTheArmTheBandFallsToTheReportedWholeDomain(t *testing.T) {
+// TestNoSpecialMesherClaimsTheTubeWrappingBand is the classification half: with the spiric arm gone,
+// an UNCHARTED tube-wrapping band is claimed by no arm at all, and a CHARTED one is the chart
+// mesher's. A regression that re-adds a shape-specific recognizer for this band fails here.
+func TestNoSpecialMesherClaimsTheTubeWrappingBand(t *testing.T) {
 	t.Parallel()
 	f := tubeWrappingBandFace(t, 20, 5)
 	q, s := DefaultQuality(), f.Geometry()
 	outer, holes := FaceOuterBoundary(f, q), faceHoleBoundaries(f, q)
-	band, torus := 0.75*wholeTorusArea, wholeTorusArea // the band is three quarters of the torus
-	arm, special, _ := specialCurvedMesh(f, s, outer, holes, q, &chartDeclineLog{})
-	if !special {
-		t.Fatal("the classification did not mesh the band — the row covers nothing")
+	if got := classifyCurvedTrim(f, s, outer, holes, q); got.kind != kindUncharted {
+		t.Errorf("the uncharted tube-wrapping band classifies as %s, want %s", got.kind, kindUncharted)
 	}
-	if got := MeshGeometryProperties(arm).Area; !withinChordDeficit(got, band) {
-		t.Fatalf("the arm meshed %.4f mm², want the band's own %.4f less a chord deficit", got, band)
+	f.SetChart([][]math.Point2{tubeWrappingBandChart()})
+	if got := classifyCurvedTrim(f, s, outer, holes, q); got.kind != kindChart {
+		t.Errorf("the charted tube-wrapping band classifies as %s, want %s", got.kind, kindChart)
+	}
+}
+
+// TestAnUnchartedBandFallsToTheReportedWholeDomain is the guard the deletion leaves in its place, and
+// it is the reason the deletion is worth making rather than a quiet handover.
+//
+// While torusTubeBandLoftMesh stood behind the classification, removing the arm would have handed the
+// band to a second loft and the only thing that noticed would have been two occtparity pins moving.
+// The answer now is the surface's WHOLE domain with the degradation REPORTED — the loud corpus failure
+// the gate exists for: 3947.84 mm² against the band's 2960.88, one diag.Defect.
+func TestAnUnchartedBandFallsToTheReportedWholeDomain(t *testing.T) {
+	t.Parallel()
+	f := tubeWrappingBandFace(t, 20, 5)
+	q, s := DefaultQuality(), f.Geometry()
+	outer, holes := FaceOuterBoundary(f, q), faceHoleBoundaries(f, q)
+	if _, special, _ := specialCurvedMesh(f, s, outer, holes, q, &chartDeclineLog{}); special {
+		t.Fatal("a special mesher claimed the uncharted band; the spiric arm is back")
 	}
 	behind := meshSeamCrossingFace(f, s, outer, holes, q, "", &chartDeclineLog{})
-	if got := MeshGeometryProperties(behind).Area; !withinChordDeficit(got, torus) {
-		t.Errorf("the router BEHIND the classification meshed %.4f mm², want the whole torus %.4f — a "+
-			"second loft for this shape has re-appeared in meshSeamCrossingFace", got, torus)
+	if got := MeshGeometryProperties(behind).Area; !withinChordDeficit(got, wholeTorusArea) {
+		t.Errorf("the uncharted band meshed %.4f mm², want the whole torus %.4f — a second loft for "+
+			"this shape has re-appeared in meshSeamCrossingFace", got, wholeTorusArea)
 	}
 	if !carriesDefect(behind, CodeTrimIgnoredFullDomain) {
 		t.Errorf("the whole-domain fall-back was not reported as a defect: %v", behind.Diagnostics)
@@ -159,19 +159,15 @@ func carriesDefect(m *Mesh, code diag.Code) bool {
 	return false
 }
 
-// TestAChartedTubeWrappingBandGoesToTheChartMesher is why deleting the second loft is safe: a band that
-// records its own region leaves the arm by design, and the GENERAL chart-driven mesher takes it — the
-// router never reaches the seam-crossing rungs at all. The chart is the face's real rectangle
-// (u ∈ [0, 3π/2] × v ∈ [0, 2π]), not a placeholder, so the row exercises the mesher and not just
-// spiricTubeTrimOf's "is there a chart" early return.
+// TestAChartedTubeWrappingBandGoesToTheChartMesher is the row the whole deletion rests on: a band that
+// records its own region is meshed by the GENERAL chart-driven mesher, at its own area. The chart is
+// the face's real rectangle (u ∈ [0, 3π/2] × v ∈ [0, 2π]), not a placeholder, so the row exercises the
+// mesher rather than a "is there a chart" early return.
 func TestAChartedTubeWrappingBandGoesToTheChartMesher(t *testing.T) {
 	t.Parallel()
 	f := tubeWrappingBandFace(t, 20, 5)
 	f.SetChart([][]math.Point2{tubeWrappingBandChart()})
 	q, s := DefaultQuality(), f.Geometry()
-	if _, ok := spiricTubeTrimOf(f, s, q); ok {
-		t.Error("spiricTubeTrimOf claimed a CHARTED band; the chart-driven mesher owns that face")
-	}
 	m, ok := chartFaceMesh(f, s, q, &chartDeclineLog{})
 	if !ok {
 		t.Fatal("the chart-driven mesher gave up the charted band — then something must catch it, and " +

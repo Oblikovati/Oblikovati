@@ -66,7 +66,9 @@ var geomSwitchDebt = map[string]int{
 	// 45 → 44 (2026-09-15, #3517): a FALL — torusTubeBandLoftMesh's own `s.(geom.Torus)` went with the
 	// function. It was the SECOND loft for the tube-wrapping torus band, shadowed by the classification
 	// arm since stage 5 and building nothing; a shadowed duplicate is what delete-first removes.
-	"kernel/ops/tessellate": 44,
+	// 44 → 42 (2026-09-15, #3517): a FALL of 2 — spiric_band_mesh.go is DELETED with the kindSpiricBand
+	// arm, and its two geom.Torus assertions (spiricBandMesh's own, and tubeWrappingEdges') with it.
+	"kernel/ops/tessellate": 42,
 	"kernel/ops/transform":  4,
 	"kernel/ops/validate":   9,
 	"kernel/topo":           3,

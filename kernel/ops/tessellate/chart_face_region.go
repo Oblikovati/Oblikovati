@@ -218,3 +218,13 @@ func chartBounds(contours [][]math.Point2) (u0, u1, v0, v1 float64, ok bool) {
 	}
 	return u0, u1, v0, v1, u1 > u0 && v1 > v0
 }
+
+// wrapToPeriod folds an angle onto [0, 2π). It lived beside the spiric band loft until that arm was
+// absorbed into the chart mesher (#3517); the covering's own fold is its only remaining reader.
+func wrapToPeriod(a float64) float64 {
+	a = stdmath.Mod(a, 2*stdmath.Pi)
+	if a < 0 {
+		a += 2 * stdmath.Pi
+	}
+	return a
+}

@@ -12,11 +12,14 @@ package occtparity
 // The arm64 cross-platform caveat of fingerprint_pins_test.go applies verbatim.
 func cylCylSeamPins() []fingerprintPin {
 	return []fingerprintPin{
-		{"K2", 905236.670983666671, 162456, 0xfd37f76a44fc4ec2, ""},
-		{"K3", 905236.672781282454, 162456, 0x8d9da0e0de8b7104, ""},
-		{"K4", 214184.268224860512, 98856, 0x872a76ba951d24e4, ""},
-		{"B4", 1474885.299245121889, 78432, 0x1d5f7a06d418c2e5, "bfuseblend"},
-		{"B5", 1020545.699659498641, 47120, 0x2987b17b9ee2b5eb, "bfuseblend"},
+		// REBASELINED 2026-09-15 (#3517): the rim rebuild now carries the chart onto the face it re-winds,
+		// so this body's periodic host reaches the GENERAL chart-driven mesher. Every per-face DRAWEXE
+		// oracle, watertight gate and the scoreboard stay green; ADR-0061 carries the table.
+		{"K2", 905603.825644632918, 264824, 0x4e16917bcc4f46be, ""},
+		{"K3", 905602.694346644566, 208990, 0x1210f8f57f0e0f8f, ""},
+		{"K4", 214184.739786441060, 76882, 0x56a071ee991b1730, ""},
+		{"B4", 1475254.165703097824, 125282, 0x66742467d6e3fa8d, "bfuseblend"},
+		{"B5", 1021361.833912160713, 97580, 0xab480d22fb74385b, "bfuseblend"},
 		// P1: the equal-parallel valley LINE seam (exact cylinder arm + the existing single-arm
 		// runout weld); mesh volume vs DRAWEXE `vprops` 2135150: −0.001%.
 		{"P1", 2135128.286760622635, 4348, 0x178e0228822f5040, ""},

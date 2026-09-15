@@ -3,6 +3,7 @@
 package tessellate
 
 import (
+	stdmath "math"
 	"strings"
 	"testing"
 
@@ -204,4 +205,73 @@ func contradictingCover(t *testing.T) (*chartCover, []chartChain) {
 		b.add(p, float64(i), 0, 0)
 	}
 	return b, []chartChain{{p3: []math.Point3{pts[0], pts[1]}}, {p3: []math.Point3{pts[2], pts[3]}}}
+}
+
+// TestOnSameWindowEdge is the predicate on its own: only a PERIODIC axis has a branch edge, and only a
+// segment BOTH of whose ends sit on the SAME end of it runs along one.
+func TestOnSameWindowEdge(t *testing.T) {
+	t.Parallel()
+	const lo, hi, tol = 0.0, 6.0, 1e-9
+	for _, row := range []struct {
+		name     string
+		a, c     float64
+		periodic bool
+		want     bool
+	}{
+		{"both at the low edge", lo, lo, true, true},
+		{"both at the high edge", hi, hi, true, true},
+		{"both at the high edge within tolerance", hi - tol/2, hi, true, true},
+		{"one at each edge", lo, hi, true, false},
+		{"one on the edge, one inside", hi, 3, true, false},
+		{"both inside", 2, 3, true, false},
+		{"a bounded axis has no branch edge", hi, hi, false, false},
+	} {
+		if got := onSameWindowEdge(row.a, row.c, lo, hi, row.periodic, tol); got != row.want {
+			t.Errorf("%s: onSameWindowEdge(%g, %g) = %v, want %v", row.name, row.a, row.c, got, row.want)
+		}
+	}
+}
+
+// TestASegmentOnTheWindowEdgeCastsNoVote is the rule in the covering, and it is asserted BOTH ways:
+// the window-edge segment would otherwise vote, and against the interior segment's vote that is a
+// contradiction — which refuses the face. Unanimity is the right rule (a consistently wound loop
+// cannot honestly name two sides), so the repair is to stop counting a segment that was never
+// decisive: the two triangles either side of a segment on the window's edge are in DIFFERENT window
+// images, and which survives is decided by the replica selection, not by the chart.
+func TestASegmentOnTheWindowEdgeCastsNoVote(t *testing.T) {
+	t.Parallel()
+	b, tris, inner, edge := windowEdgeVoteCover(t)
+	if b.segmentRunsAlongTheWindowEdge(inner) {
+		t.Fatal("the interior rim segment was read as running along the window edge")
+	}
+	if !b.segmentRunsAlongTheWindowEdge(edge) {
+		t.Fatal("the rim segment with both ends at u = uHi was not read as running along the window edge")
+	}
+	keep := []bool{true, true}
+	if fwd := keptDirectedEdgeUse(tris, keep); fwd[[2]int{edge[1], edge[0]}] != 1 || fwd[edge] != 0 {
+		t.Fatal("the window-edge segment carries no opposing use; the row asserts nothing")
+	}
+	side := b.materialSideOfEachChain(tris, keep)
+	if side.conflict != "" {
+		t.Fatalf("the window-edge segment was counted and refused the chain: %s", side.conflict)
+	}
+	if !side.decided[0] || !side.left[0] {
+		t.Errorf("the chain read decided=%v left=%v, want the interior segment's own side",
+			side.decided[0], side.left[0])
+	}
+}
+
+// windowEdgeVoteCover is one chain with two rim segments that name OPPOSITE sides: one in the middle
+// of the branch window, one with both ends exactly on its high edge.
+func windowEdgeVoteCover(t *testing.T) (b *chartCover, tris [][3]int, inner, edge [2]int) {
+	t.Helper()
+	b = newBareCover(t)
+	b.r = chartRegion{uLo: 0, uHi: 2 * stdmath.Pi, uPer: true, vLo: 0, vHi: 1}
+	b.chains = 1
+	at := func(u, v float64) int { return b.add(math.P3(u, v, 0), u, v, 0) }
+	a0, a1, apex := at(1, 0.2), at(1.5, 0.2), at(1.25, 0.6)
+	e0, e1, far := at(b.r.uHi, 0.2), at(b.r.uHi, 0.6), at(b.r.uHi-0.5, 0.4)
+	inner, edge = [2]int{a0, a1}, [2]int{e0, e1}
+	b.rimChain = map[[2]int]int{inner: 0, edge: 0}
+	return b, [][3]int{{a0, a1, apex}, {e1, e0, far}}, inner, edge
 }
