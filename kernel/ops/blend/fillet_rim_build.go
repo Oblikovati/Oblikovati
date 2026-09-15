@@ -3,7 +3,6 @@
 package blend
 
 import (
-	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -175,7 +174,7 @@ const threeQuarterTube = 2.356194490192345
 // copyFace copies one face, re-aiming the cylinder wall and the cap onto the new circles and leaving
 // every other face untouched.
 func (g *rimBuild) copyFace(f *topo.Face) {
-	recordRebuiltChart(g.addCopiedFace(f))
+	g.addCopiedFace(f)
 }
 
 // addCopiedFace adds the face in its own sense and returns it.
@@ -185,25 +184,6 @@ func (g *rimBuild) addCopiedFace(f *topo.Face) *topo.Face {
 		return g.bld.AddReversedFace(f.Geometry(), f.Lineage(), specs...)
 	}
 	return g.bld.AddFace(f.Geometry(), f.Lineage(), specs...)
-}
-
-// recordRebuiltChart derives and stores a periodic face's parametric trim on the face this rebuild has
-// just wound (ADR-0063, #3550).
-//
-// The rebuild is a PRODUCER: it re-winds every face of the body and moves one rim of two of them, so a
-// chart carried over from the source face would describe the shape before the recession. Re-deriving
-// from the loops it has just built is what ADR-0063 asks of a producer, and brep.ChartOfFace declines
-// rather than guessing where the loops do not determine a region.
-//
-// Without it the two spiric closed-rim canal hosts — occtparity simple/J3 and bfuseblend/A4 — reach
-// the tessellator uncharted, the general chart-driven mesher declines them outright, and the bespoke
-// kindSpiricBand arm is the only thing that can mesh them. With it both are charted and the general
-// mesher reads 292 891.71 and 292 849.88 mm² against DRAWEXE's 292 961 and 292 920 (rel −2.4e-4 each,
-// zero diagnostics) where that arm's loft reads −3.2e-3 and −3.3e-3.
-func recordRebuiltChart(f *topo.Face) {
-	if chart, ok := brep.ChartOfFace(f); ok {
-		f.SetChart(chart)
-	}
 }
 
 // loopSpecsWithRim rebuilds a face's loops against the new edges, substituting the rim circle (→ the

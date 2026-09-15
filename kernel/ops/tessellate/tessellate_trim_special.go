@@ -39,6 +39,8 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 		return withNoRefusal(SpherePatchMesh(t.patch, outer3D, holes3D, q))
 	case kindRuledBandLoft:
 		return withNoRefusal(saddleBandLoftMesh(f, s, q))
+	case kindSpiricBand:
+		return spiricBandMesh(f, t.tube, q)
 	case kindWedgeBand:
 		return wedgeBandLoftMesh(t.wedge), true, ""
 	default:

@@ -45,12 +45,14 @@ func curvedTrimRecognizers(f *topo.Face, s geom.Surface, outer3D []math.Point3, 
 	_, isCone := coneApexTrimOf(f, s, outer3D, holes3D)
 	_, isCap := sphereCapTrimOf(f, sph, outer3D, holes3D, q)
 	_, isBelt := sphereBeltTrimOf(f, sph, q)
+	_, isTube := spiricTubeTrimOf(f, s, q)
 	_, isWedge := wedgeBandTrimOf(f, s, q)
 	return []curvedTrimVerdict{
 		{kindConeApexFan, isCone},
 		{kindSphereCapFan, isSphere && isCap},
 		{kindSphereZoneBand, isSphere && isBelt},
 		{kindRuledBandLoft, ruledTwoRimBandHolds(f, s, q)},
+		{kindSpiricBand, isTube},
 		{kindWedgeBand, isWedge},
 	}
 }

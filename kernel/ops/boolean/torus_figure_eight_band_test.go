@@ -4,6 +4,7 @@ package boolean_test
 
 import (
 	stdmath "math"
+	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/diag"
@@ -159,22 +160,16 @@ func countTorusFaces(b *topo.Body) int {
 
 // TestAnUnchartedPinchedBandIsRefusedAndSaidSo is the gate the ROUTING alone does not give.
 //
-// No bespoke loft is left for this shape at all (#3517), so an UNCHARTED torus band meets the general
-// router's last resort. "No primitive boolean in the corpus builds an uncharted torus band" is an
-// observation about today's corpus, not an invariant, and a band whose two boundaries MEET is the one
-// shape a single sweep round the tube could never describe: the deleted loft covered the tangency twice
-// (310.800 mm² where the analytic region is 283.100, its two halves summing to 525.98 against a torus
-// of 394.78).
+// A charted spiric band never reaches the tube-wrapping loft — spiricTubeTrimOf hands it to the general
+// chart-driven mesher — so the loft's own conditioning matters only for an UNCHARTED one. "No primitive
+// boolean in the corpus builds an uncharted torus band" is an observation about today's corpus, not an
+// invariant, and a band whose two boundaries MEET is the one shape a single sweep round the tube cannot
+// describe: the loft covers the tangency twice (310.800 mm² where the analytic region is 283.100, and
+// its two halves summing to 525.98 against a torus of 394.78).
 //
-// So the figure-eight's own face is stripped of its chart and driven through the router. The mesh must
-// not be the loft's, and the fall-back must be NAMED — a diag.Defect the feature reply, the API and the
-// UI carry — not a silent sweep.
-//
-// WHAT THIS ROW LOST at #3517, said plainly. It also required the decline to NAME the pinch
-// ("boundaries MEET"), and that sentence belonged to bandPinches, inside the deleted loft. Nothing
-// recognises this shape now, so the report reads "no mesher recognised its boundary on this surface".
-// The degradation is still reported and still at Defect severity — the report's SPECIFICITY fell, not
-// its existence — and the two facts a reader acts on are still asserted below.
+// So the figure-eight's own face is stripped of its chart and driven through the router. The loft must
+// refuse it, the mesh must not be the loft's, and the refusal must be NAMED — a diag.Defect the feature
+// reply, the API and the UI carry — not a silent sweep.
 func TestAnUnchartedPinchedBandIsRefusedAndSaidSo(t *testing.T) {
 	t.Parallel()
 	for _, op := range []ops.PartFeatureOperation{ops.Cut, ops.Intersect} {
@@ -182,6 +177,11 @@ func TestAnUnchartedPinchedBandIsRefusedAndSaidSo(t *testing.T) {
 		mesh := tessellate.TessellateFace(face, ops.DefaultQuality())
 		if !meshReportsIgnoredTrim(mesh) {
 			t.Errorf("%v: an uncharted pinched band was meshed with no named decline: %v", op, mesh.Diagnostics)
+		}
+		// The decline must say WHICH shape was refused, not just that the whole domain was used: a reader
+		// who cannot tell "nothing recognised it" from "the loft gave it up" cannot act on the report.
+		if !meshDeclineNames(mesh, "boundaries MEET") {
+			t.Errorf("%v: the decline does not name the pinch: %v", op, mesh.Diagnostics)
 		}
 		// The reported fallback is the surface's WHOLE domain — measured 392.571 mm², a chord deficit
 		// under 394.784. The loft's own answers for these two pieces are 310.800 and 215.177, so
@@ -205,6 +205,16 @@ func unchartedFigureEightTorusFace(t *testing.T, op ops.PartFeatureOperation) *t
 	}
 	t.Fatalf("the figure-eight %v piece has no torus face", op)
 	return nil
+}
+
+// meshDeclineNames reports whether the discarded-trim defect's detail contains the given phrase.
+func meshDeclineNames(m *tessellate.Mesh, phrase string) bool {
+	for _, d := range m.Diagnostics {
+		if d.Code == tessellate.CodeTrimIgnoredFullDomain && strings.Contains(d.Detail, phrase) {
+			return true
+		}
+	}
+	return false
 }
 
 // meshReportsIgnoredTrim reports whether a mesh carries the discarded-trim defect at Defect severity.

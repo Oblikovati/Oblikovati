@@ -57,6 +57,60 @@ func ruledTwoRimBandHolds(f *topo.Face, s geom.Surface, q Quality) bool {
 	return hasTwoClosedRimsNoOpen(f) || (!faceHasLensHole(f, s, q) && hasFullCircleAndNotchedRim(f))
 }
 
+// spiricTubeTrim is the spiric arm's recognition: the torus and the two edges that each wrap its tube.
+type spiricTubeTrim struct {
+	torus         geom.Torus
+	first, second *topo.Edge
+}
+
+// spiricTubeTrimOf recognises a torus band bounded by two tube-wrapping edges (#1375) — a torus cut
+// through its hole — that records NO chart. A band that records one is the general chart-driven
+// mesher's, like every other charted face.
+//
+// The loft is not an exact fast path: it sweeps ONE direction round the tube for the whole band, which
+// describes the region only while the strip between its boundaries has a width everywhere. Measured on
+// all ten spiric faces the kernel corpus builds, every one of them charted, the chart mesher accepts
+// each and reads the same area to within 0.004–0.17 % on the eight that do not pinch, with a THIRD
+// fewer triangles at PropertyQuality (120184 against 171008 on the widest). On the two that DO pinch —
+// the figure-eight, a torus R=5 r=2 cut by y=3 tangent to its inner equator — the loft was not merely
+// coarser but wrong: 310.800 mm² and 215.177 where the analytic regions are 283.100 and 111.684, its
+// two halves summing to 525.98 against a torus of 394.78, because it covered the tangency twice. The
+// chart mesher reads 283.075 and 111.675.
+//
+// What keeps the loft is the UNCHARTED band, which the chart mesher cannot serve at all: occtparity's
+// J3 and A4 host tori record no chart, and the arm meshes them in 340988 and 406540 triangles.
+//
+// #3517 MEASURED WHAT DELETING IT WOULD COST, and left it standing. Three facts, in the order a reader
+// needs them.
+//
+// "chart=0" is not a property of these two faces; it is a property of every face of both bodies — all
+// four of J3's and all nine of A4's. They are a STEP import plus a fillet, and no importer and no rim
+// rebuild writes a chart (ADR-0063 puts it on the producer that WOUND the face; brep's arrangement is
+// the only producer there is). That gap is #3550 and it is far wider than these two hosts.
+//
+// Supplying a chart by hand does not rescue them. A4 then meshes; J3 is refused by the boundary-side
+// classification because its loop walks the torus's artificial v-seam twice and continuousTrace snaps
+// the second traversal onto the first's branch. And at PropertyQuality — the faceting the per-face
+// oracle reads — the covering does not finish at all: 788250 points and 5660 constraint loops into the
+// constrained triangulation, which did not return in 880 s. Two defects sit under that, #3548 (the
+// constraint recovery's budgeted loop is O(n·T)) and #3549 (the chart cover's facet-count policy emits
+// ~1e6 samples for one periodic torus face), and they hide each other.
+//
+// Delete the arm and the two faces do NOT reach the general pipeline: they fall to the surface's whole
+// domain at 2097152 triangles and 394781.31 mm² against the band's 292951, with the degradation
+// reported. Until #3548/#3549/#3550, a lower recognizer count would buy a wrong body. ADR-0061's
+// "G13 stays open" section carries the measurement; tube_wrapping_band_test.go plants it.
+func spiricTubeTrimOf(f *topo.Face, s geom.Surface, q Quality) (spiricTubeTrim, bool) {
+	if len(f.Chart()) > 0 {
+		return spiricTubeTrim{}, false // the general chart-driven mesher serves this band
+	}
+	t, first, second, ok := tubeWrappingEdges(f, s, q)
+	if !ok {
+		return spiricTubeTrim{}, false
+	}
+	return spiricTubeTrim{torus: t, first: first, second: second}, true
+}
+
 // wedgeBandTrim is the wedge arm's recognition: the cylinder and its two oblique end chains.
 type wedgeBandTrim struct {
 	cyl  geom.Cylinder
