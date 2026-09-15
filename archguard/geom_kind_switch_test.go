@@ -66,7 +66,10 @@ var geomSwitchDebt = map[string]int{
 	// 45 → 44 (2026-09-15, #3517): a FALL — torusTubeBandLoftMesh's own `s.(geom.Torus)` went with the
 	// function. It was the SECOND loft for the tube-wrapping torus band, shadowed by the classification
 	// arm since stage 5 and building nothing; a shadowed duplicate is what delete-first removes.
-	"kernel/ops/tessellate": 44,
+	// 44 → 42 (2026-09-15, #3517): a FALL of 2 — kindSpiricBand went too, and with it tubeWrappingEdges'
+	// torus test and branchAzimuthAt's SpiricArc test. The shape is the general chart-driven mesher's
+	// now, and that mesher asks what the FACE records rather than what its surface is.
+	"kernel/ops/tessellate": 42,
 	"kernel/ops/transform":  4,
 	"kernel/ops/validate":   9,
 	"kernel/topo":           3,

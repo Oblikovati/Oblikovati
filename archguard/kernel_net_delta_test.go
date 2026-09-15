@@ -71,10 +71,12 @@ var kernelNetDeltaPin = map[string]int{
 	// 684 → 683 (2026-09-15, #3517): a FALL — the `s.(geom.Torus)` of torusTubeBandLoftMesh, the SECOND
 	// loft for the tube-wrapping torus band. The classification arm has claimed that shape since stage 5,
 	// so the rung built nothing over ./kernel/... or ./model/...; delete-first removes the duplicate.
-	// `recognizers` does NOT move with it: the rung was a router rung, never a registered recognizer,
-	// and kindSpiricBand itself stays — see ADR-0061's "G13 stays open" section for why deleting THAT
-	// would ship a wrong body.
-	"type-assertions": 683,
+	// `recognizers` did NOT move with it: the rung was a router rung, never a registered recognizer.
+	// kindSpiricBand stayed for one round and is gone now — see the recognizers entry above.
+	// 683 → 681 (2026-09-15, #3517): a FALL of 2 — kindSpiricBand's own two, tubeWrappingEdges' torus
+	// test and branchAzimuthAt's SpiricArc test, gone with the arm. The tube-wrapping torus band is the
+	// general chart-driven mesher's now, and that mesher asks what the FACE records.
+	"type-assertions": 681,
 	// 37 → 11 (2026-09-07, ADR-0061 stage 4): a FALL of 26 — curvedExactPaths is DELETED. It was an
 	// ordered first-fit ladder of 26 bespoke recognizers tried before the general per-face pipeline,
 	// the shape the ground rules forbid ("dispatch is a classification that selects exactly one path"),
@@ -111,7 +113,18 @@ var kernelNetDeltaPin = map[string]int{
 	// that made them near-cocircular. Measured over the whole sixteen-row near-pinch corpus: 6 rows
 	// carrying 38 seam edges before, 0 and 0 after, every row bounded by exactly its own rim. The
 	// general chart-driven mesher serves every two-rim holed band there is now.
-	"recognizers": 11,
+	// 11 → 10 (2026-09-15, #3517): a FALL — kindSpiricBand and its recognizer (spiricTubeTrimOf) are
+	// DELETED with spiricBandMesh, and this time the shape is ABSORBED rather than handed on: the
+	// general chart-driven mesher serves it. Three things had to land together. #3550 gave the arm's
+	// two customers a chart at all (a producer at import, and one that re-derives when the fillet
+	// rebuild re-winds a face); fillet_rim_build.go's winding let the convex host's loop CLOSE in the
+	// covering space, which it could not while the replacement rim's flag came from the blend's
+	// convexity; and coverShear made the covering affordable. Measured on those two customers at
+	// DefaultQuality against DRAWEXE: simple/J3 292 891.71 against 292 961 and bfuseblend/A4
+	// 292 849.88 against 292 920, rel −2.4e-4 each with ZERO diagnostics, where the arm's loft read
+	// −3.2e-3 and −3.3e-3. The general pipeline is an order of magnitude closer to the oracle than the
+	// arm it replaces.
+	"recognizers": 10,
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
 	// shipped it silently; the degradation is now refused AND reported.
@@ -325,7 +338,6 @@ var curvedTrimRecognizers = map[string][]string{
 	"kindSphereZoneBand": {"sphereBeltTrimOf"},
 	"kindSpherePatch":    {"spherePatchTrimOf"},
 	"kindRuledBandLoft":  {"hasTwoClosedRimsNoOpen", "hasFullCircleAndNotchedRim"},
-	"kindSpiricBand":     {"spiricTubeTrimOf"},
 	"kindWedgeBand":      {"wedgeBandTrimOf"},
 }
 

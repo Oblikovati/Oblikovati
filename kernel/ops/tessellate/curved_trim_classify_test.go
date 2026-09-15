@@ -155,10 +155,6 @@ func forEachCurvedCorpusFace(t *testing.T, visit func(body string, i int, f *top
 //
 //   - kindWedgeBand: no primitive boolean produces an oblique-ended cylinder wedge; it comes off the
 //     blend engine (A1/D4), and model/feature/occtparity carries its rows.
-//   - kindSpiricBand: it keeps only the band that records NO chart, and every torus a primitive boolean
-//     cuts here records one — measured, all ten of them, and the chart-driven mesher accepts every one.
-//     The uncharted band is occtparity's J3 and A4 host tori (measured: chart=0, chartFaceMesh
-//     declines), which the loft meshes in a third of the triangles the generic CDT needs.
 //
 // A new arm has to appear here or say why not.
 func TestTheClassificationCorpusReachesEveryArm(t *testing.T) {

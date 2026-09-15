@@ -2,7 +2,10 @@
 
 package tessellate
 
-import "fmt"
+import (
+	"fmt"
+	stdmath "math"
+)
 
 // The BOUNDARY half of the chart-driven mesher's classification (Oblikovati/Oblikovati#3518).
 //
@@ -169,6 +172,9 @@ func (b *chartCover) materialSideOfEachChain(tris [][3]int, keep []bool) rimSide
 	fwd := keptDirectedEdgeUse(tris, keep)
 	left, right := make([]int, b.chains), make([]int, b.chains)
 	for e, ci := range b.rimChain {
+		if b.segmentRunsAlongTheWindowEdge(e) {
+			continue
+		}
 		switch back := [2]int{e[1], e[0]}; {
 		case fwd[e] == 1 && fwd[back] == 0:
 			left[ci]++
@@ -177,6 +183,36 @@ func (b *chartCover) materialSideOfEachChain(tris [][3]int, keep []bool) rimSide
 		}
 	}
 	return rimSideFrom(left, right)
+}
+
+// segmentRunsAlongTheWindowEdge reports whether a rim segment lies ON the branch window's own boundary,
+// which makes it UNDECISIVE rather than a dissenting vote.
+//
+// The vote reads a segment's side from which of its two adjacent triangles the kept set holds. For a
+// segment lying along the window's edge those two triangles are in DIFFERENT window images, and which
+// of them survives is decided by the canonical replica selection (chart_face_replica.go) rather than by
+// the chart. Counting it asks the wrong question and gets an arbitrary answer.
+//
+// It cost exactly one vote, and that one vote refused a face. Measured on occtparity bfuseblend/A4's
+// host torus with its chart derived (#3550): 253 segments say left and ONE says right, and the one is a
+// rim segment whose endpoints both sit at u = uHi to the last bit, laid at replica shift 7. Unanimity
+// is the right rule — a consistently wound loop cannot honestly name two sides, and a majority would
+// bind a whole chain to a side confidently (#3518) — so the repair is to stop counting a segment that
+// was never decisive, not to start tolerating dissent.
+func (b *chartCover) segmentRunsAlongTheWindowEdge(e [2]int) bool {
+	tol := chartContourIncidence * stdmath.Max(b.r.uHi-b.r.uLo, b.r.vHi-b.r.vLo)
+	return onSameWindowEdge(b.uu[e[0]], b.uu[e[1]], b.r.uLo, b.r.uHi, b.r.uPer, tol) ||
+		onSameWindowEdge(b.vv[e[0]], b.vv[e[1]], b.r.vLo, b.r.vHi, b.r.vPer, tol)
+}
+
+// onSameWindowEdge reports whether both of a segment's ends sit on the SAME end of one wrapping axis's
+// branch window. A bounded axis has no branch and so no such edge.
+func onSameWindowEdge(a, c, lo, hi float64, periodic bool, tol float64) bool {
+	if !periodic {
+		return false
+	}
+	atEnd := func(x, end float64) bool { return stdmath.Abs(x-end) <= tol }
+	return (atEnd(a, lo) && atEnd(c, lo)) || (atEnd(a, hi) && atEnd(c, hi))
 }
 
 // rimSideFrom turns each chain's two counts into its side, whether it has one, and — when the two

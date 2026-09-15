@@ -137,12 +137,12 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		if m, ok := closedBandLoftMesh(f, s, q); ok {
 			return m // torus rim-fillet band: loft so each edge ring keeps its own (differing) tessellation
 		}
-		// A SIXTH rung stood here — torusTubeBandLoftMesh, a second loft for the tube-wrapping torus band
-		// (a meridian circle + a canal rail + a seam). It is DELETED at #3517: the curved-trim
-		// classification's kindSpiricBand claims that shape first, so this rung built nothing over
-		// ./kernel/... and ./model/..., and a shadowed second engine for one shape is what the delete-first
-		// rule removes. A band the classification gives up now reaches chartedTrimMesh below, which REPORTS
-		// the degradation instead of meshing it silently a second way.
+		// TWO bespoke lofts for the tube-wrapping torus band stood here and neither does now (#3517).
+		// torusTubeBandLoftMesh was a rung of this router, shadowed by the classification's
+		// kindSpiricBand and building nothing; the arm itself went once the general chart-driven mesher
+		// could serve the shape. A band that records a chart is meshed by that mesher; one that records
+		// none reaches chartedTrimMesh below, which REPORTS the degradation instead of meshing it
+		// silently by a rule of its own.
 		//
 		// A doubly-periodic band that isn't two circles + a seam: the chart says which region it is.
 		return chartedTrimMesh(f, s, q, refused, log)

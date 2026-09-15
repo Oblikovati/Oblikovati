@@ -3,6 +3,7 @@
 package blend
 
 import (
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -36,6 +37,7 @@ func rebuildRim(b *topo.Body, rf *rimFillet, concave bool) (*topo.Body, error) {
 		rf: rf, concave: concave, bld: topo.NewBuilder(b.IsSolid(), b.Lineage()),
 		verts: map[*topo.Vertex]*topo.Vertex{}, edges: map[*topo.Edge]*topo.Edge{},
 		capRimReversed: capRimEdgeReversed(rf.cap, rf.rimEdge),
+		cylRimReversed: capRimEdgeReversed(rf.cyl, rf.rimEdge),
 	}
 	g.copyVerts(b)
 	g.addRimVerts()
@@ -65,6 +67,9 @@ type rimBuild struct {
 	// rebuild starts (see rimReplacementUse / addBandFace, #2006). It is the one piece of source-import
 	// direction the rebuild keeps verbatim.
 	capRimReversed bool
+	// cylRimReversed is the ORIGINAL rim edge's Reversed flag as used by the HOST face, captured before
+	// the rebuild — the host's counterpart of capRimReversed, and for the same reason (#3550).
+	cylRimReversed bool
 }
 
 func (g *rimBuild) copyVerts(b *topo.Body) {
@@ -170,12 +175,35 @@ const threeQuarterTube = 2.356194490192345
 // copyFace copies one face, re-aiming the cylinder wall and the cap onto the new circles and leaving
 // every other face untouched.
 func (g *rimBuild) copyFace(f *topo.Face) {
+	recordRebuiltChart(g.addCopiedFace(f))
+}
+
+// addCopiedFace adds the face in its own sense and returns it.
+func (g *rimBuild) addCopiedFace(f *topo.Face) *topo.Face {
 	specs := g.loopSpecsWithRim(f)
 	if f.Reversed() {
-		g.bld.AddReversedFace(f.Geometry(), f.Lineage(), specs...)
-		return
+		return g.bld.AddReversedFace(f.Geometry(), f.Lineage(), specs...)
 	}
-	g.bld.AddFace(f.Geometry(), f.Lineage(), specs...)
+	return g.bld.AddFace(f.Geometry(), f.Lineage(), specs...)
+}
+
+// recordRebuiltChart derives and stores a periodic face's parametric trim on the face this rebuild has
+// just wound (ADR-0063, #3550).
+//
+// The rebuild is a PRODUCER: it re-winds every face of the body and moves one rim of two of them, so a
+// chart carried over from the source face would describe the shape before the recession. Re-deriving
+// from the loops it has just built is what ADR-0063 asks of a producer, and brep.ChartOfFace declines
+// rather than guessing where the loops do not determine a region.
+//
+// Without it the two spiric closed-rim canal hosts — occtparity simple/J3 and bfuseblend/A4 — reach
+// the tessellator uncharted, the general chart-driven mesher declines them outright, and the bespoke
+// kindSpiricBand arm is the only thing that can mesh them. With it both are charted and the general
+// mesher reads 292 891.71 and 292 849.88 mm² against DRAWEXE's 292 961 and 292 920 (rel −2.4e-4 each,
+// zero diagnostics) where that arm's loft reads −3.2e-3 and −3.3e-3.
+func recordRebuiltChart(f *topo.Face) {
+	if chart, ok := brep.ChartOfFace(f); ok {
+		f.SetChart(chart)
+	}
 }
 
 // loopSpecsWithRim rebuilds a face's loops against the new edges, substituting the rim circle (→ the
@@ -207,9 +235,10 @@ func (g *rimBuild) mapUse(f *topo.Face, u *topo.EdgeUse) topo.Use {
 	return topo.Use{Edge: g.edges[u.Edge()], Reversed: u.Reversed()}
 }
 
-// capRimEdgeReversed finds the ORIGINAL rim edge's use on the cap face and returns its Reversed flag —
-// captured once, before the rebuild, so addBandFace can mirror it (see rimReplacementUse). rimFaces
-// already guarantees rim borders cap directly, so the search always finds a hit.
+// capRimEdgeReversed finds the ORIGINAL rim edge's use on the given face and returns its Reversed flag —
+// captured once, before the rebuild, so addBandFace can mirror it (see rimReplacementUse). It is read
+// for BOTH faces the rim borders, the cap and the host. rimFaces already guarantees rim borders cap
+// directly, so the search always finds a hit.
 func capRimEdgeReversed(cap *topo.Face, rim *topo.Edge) bool {
 	for _, l := range cap.Loops() {
 		for _, u := range l.EdgeUses() {
@@ -228,9 +257,19 @@ func capRimEdgeReversed(cap *topo.Face, rim *topo.Edge) bool {
 //
 // The two replacements behave differently, because their LOOP ROLE differs in how it can vary:
 //   - cylE always replaces the rim on the cylinder wall's own OUTER loop (a wall's top rim is never a
-//     hole in some larger face) — the cyl-side Reversed is a fixed function of concave/convex, mirroring
-//     whatever addBandFace hard-codes for cylE, so Validate's 2-incidence rule (opposite Reversed on a
-//     manifold edge's two uses) holds by construction.
+//     hole in some larger face). Its Reversed flag USED TO BE a fixed function of concave/convex,
+//     mirroring whatever addBandFace hard-coded for cylE. That satisfies Validate's 2-incidence rule
+//     (opposite Reversed on a manifold edge's two uses) — and 2-incidence is WEAKER than a consistently
+//     wound loop. Measured on occtparity simple/J3: the convex case put Rev where the rim it replaces
+//     was Fwd, so the host face came out with BOTH its tube-wrapping rims walked the same way, its
+//     (u,v) ring travelled −4π instead of closing, and the face could not carry a chart at all —
+//     brep.ChartOfFace refused it while the IMPORTED face it was rebuilt from charts. bfuseblend/A4,
+//     the concave case, came out consistent by the same rule and charted. So cylE now keeps the host
+//     face's own original Reversed verbatim (cylRimReversed), exactly as capE keeps the cap's, and it
+//     is addBandFace's OWN cylE winding that mirrors it. Both wave-E per-face DRAWEXE oracles and both
+//     watertight gates hold across the change; with it, J3's host torus meshes through the GENERAL
+//     chart-driven mesher at 292 891.71 mm² against DRAWEXE's 292 961 (rel −2.4e-4, zero diagnostics)
+//     where the bespoke loft reads 292 014.19 (rel −3.2e-3).
 //   - capE's cap-side ROLE does vary: on a lone cylinder cap (I9) the rim is the cap's OUTER boundary; on
 //     a boss-root rim (R8/W6/W8/W9, #2006) the "cap" is a bigger plate and the rim bounds a HOLE loop
 //     instead. A valid B-rep's hole and outer loops are, by construction, wound OPPOSITE to each other in
@@ -243,7 +282,7 @@ func (g *rimBuild) rimReplacementUse(f *topo.Face) topo.Use {
 	if f == g.rf.cap {
 		return topo.Use{Edge: g.capE, Reversed: g.capRimReversed}
 	}
-	return topo.Use{Edge: g.cylE, Reversed: !g.concave} // mirrors addBandFace's Reversed=concave on cylE
+	return topo.Use{Edge: g.cylE, Reversed: g.cylRimReversed}
 }
 
 // addBandFace adds the fillet band (a torus tube on every analytic rim, a canal BSpline on the elliptic
@@ -253,10 +292,13 @@ func (g *rimBuild) rimReplacementUse(f *topo.Face) topo.Use {
 // band (S2/S5) reverses that loop: the added material is on the far side of the tube, so the band's
 // outward normal — and thus its winding — flips, keeping the signed volume positive.
 //
-// capE's use here is NOT a fixed Fwd/Rev constant like cylE's: it is pinned to the MIRROR of
-// capRimReversed, the cap face's own (role-preserving, see rimReplacementUse) use of capE, so the two
-// faces sharing capE always end up antiparallel regardless of whether the cap's rim is an outer boundary
-// (I9) or a hole (R8/W6/W8/W9, #2006) — the one degree of freedom the source topology actually varies.
+// NEITHER rim's use here is a fixed Fwd/Rev constant any more. Each is pinned to the MIRROR of the
+// face's own (role-preserving, see rimReplacementUse) use of that edge — capUse to capRimReversed and
+// cylUse to cylRimReversed — so the two faces sharing an edge always end up antiparallel whatever the
+// source topology did, and neither face's loop is wound against the rim it inherited. capE needed this
+// because a cap's rim can be an outer boundary (I9) or a hole (R8/W6/W8/W9, #2006); cylE needed it
+// because a fixed flag wound the convex host's two rims the same way and cost it its chart (#3550,
+// see rimReplacementUse).
 func (g *rimBuild) addBandFace() {
 	// The "torus" token is KEPT DELIBERATELY even though the band may now be a canal BSpline (the elliptic
 	// rim, fillet_elliptic_rim_canal.go). It is a topological-naming token, not a description: it feeds the
@@ -265,11 +307,12 @@ func (g *rimBuild) addBandFace() {
 	// ever does need to rename it, that is a refkey-migration change with pin re-capture, not a cleanup.
 	lin := topo.NewLineage(topo.Tok("rimfillet", "torus", 0))
 	capUse := topo.Use{Edge: g.capE, Reversed: !g.capRimReversed}
+	cylUse := topo.Use{Edge: g.cylE, Reversed: !g.cylRimReversed}
 	if g.concave {
 		g.bld.AddFace(g.rf.band, lin,
-			topo.OuterLoop(topo.Rev(g.cylE), topo.Fwd(g.seamE), capUse, topo.Rev(g.seamE)))
+			topo.OuterLoop(cylUse, topo.Fwd(g.seamE), capUse, topo.Rev(g.seamE)))
 		return
 	}
 	g.bld.AddFace(g.rf.band, lin,
-		topo.OuterLoop(topo.Fwd(g.seamE), capUse, topo.Rev(g.seamE), topo.Fwd(g.cylE)))
+		topo.OuterLoop(topo.Fwd(g.seamE), capUse, topo.Rev(g.seamE), cylUse))
 }
