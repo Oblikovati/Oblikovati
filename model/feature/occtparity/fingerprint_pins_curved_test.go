@@ -314,13 +314,18 @@ func curvedWeldPins() []fingerprintPin {
 		// J5/A5/A6 = the concave closed-rim cove band on a TORUS host with a latitude cap
 		// (fillet_torusarm_concave.go — external a+r for J5/A5, internal a−r for A6); J3/A4 = the
 		// SPIRIC closed-rim canal on a meridian cap (fillet_spiric_spine.go / fillet_spiric_rim.go +
-		// the torusTubeBandLoftMesh tube-wrapping host loft). Captured on THIS HEAD; they lock the
-		// concave torus arm, the spiric station loft, the closed-rim weld routing, and the tube-band
-		// mesher, so any later slice touching those fails loud. Same cross-platform-risk caveat.
+		// the tessellator's kindSpiricBand arm, which meshes the tube-wrapping host torus). Captured on
+		// THIS HEAD; they lock the concave torus arm, the spiric station loft, the closed-rim weld
+		// routing, and the tube-band mesher, so any later slice touching those fails loud. Same
+		// cross-platform-risk caveat. (This used to name torusTubeBandLoftMesh; measured at #3517 that
+		// function took zero calls on either body, and it is deleted.)
 		{"J5", 6757909.464672484435, 1181692, 0x21f4472585f96261, ""},
 		// J3/A4 REBASELINED 2026-09-08 (ADR-0061 stage 5): the tube-wrapping band loft was generalised
 		// from "two spiric ovals" to "two edges that each go the whole way round the tube", and it now
-		// claims these two hosts' torus faces before the denser CDT downstream of it does. Same geometry
+		// claims these two hosts' torus faces. (This used to say "before the denser CDT downstream of it
+		// does"; measured at #3517, what claimed them before was torusTubeBandLoftMesh, a second loft in
+		// the seam-crossing router, and these two pins ARE what catches an attempt to delete the arm —
+		// they move to 1115132 and 1180684 triangles. That second loft is now deleted.) Same geometry
 		// to five decimals — J3 7395243.913 against the old 7395592.452 (rel 4.7e-5), A4 15408786.198
 		// against 15409136.953 (rel 2.3e-5), both still watertight — at a THIRD of the triangles
 		// (1115132 → 340988, 1180684 → 406540). A loft that carries each boundary's exact edge
