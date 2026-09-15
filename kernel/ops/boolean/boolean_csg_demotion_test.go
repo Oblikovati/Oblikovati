@@ -229,7 +229,8 @@ func torusObliqueOvalBox(t *testing.T) (*topo.Body, *topo.Body) {
 // pinched at the tangent point (0,3,0). The band loft meshes the pinch as its zero-width limit, so the same
 // path (a v-wrapping band + two oval lids that touch at the pinch) serves it exactly (Oblikovati#1375).
 func torusFigureEightBox(t *testing.T) (*topo.Body, *topo.Body) {
-	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2), demoBlock(t, math.P3(-20, 3, -20), math.P3(20, 20, 20))
+	return demoTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), figureEightRingRadius, figureEightTubeRadius),
+		demoBlock(t, math.P3(-20, figureEightCutY, -20), math.P3(20, 20, 20))
 }
 
 // torusTwoObliqueOvalBox cuts a TILTED torus (axis (0,0.6,0.8)) by the box face z=0.5 — a plane oblique to

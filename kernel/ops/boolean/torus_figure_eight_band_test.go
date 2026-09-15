@@ -26,10 +26,21 @@ import (
 // it covered the pinch twice, and the two faces summed to 525.98 where the whole torus is 394.78. The
 // chart-driven mesher reads the region the face records and meshes 281.62 and 110.95 — the analytic
 // value less a chord deficit — and the two sum to 392.57.
+//
+// The two area literals were 283.09969 and 111.68448 and are RE-MEASURED here (#3519): the correct
+// values are 283.100609557 and 111.683566487, a shift of 9.1e-4 mm² (8.2e-6 relative) on each. The
+// old pair summed to the torus, so the partition identity could not see the error; three independent
+// derivations now agree on the new pair. The surface integral 2r∫ρ·arccos(3/ρ) dv over the tube angle
+// converges to 111.683566487; a 2D midpoint sum over (u,v) with the v integral taken in closed form
+// reaches 111.68389 at 6000 stations, falling towards it; and the kernel's own analytic B-rep
+// integrator reads the INTERSECT piece's whole surface as 146.978977282 mm², which is
+// 111.683566487 plus a lid of 35.295411 (the figure-eight section's own area, integrated
+// independently). The 1% chord-deficit band the gate uses is 1200× wider than the correction, so no
+// row moves — the point is that the ORACLE is now right, not that the gate was failing.
 const (
-	figureEightTorusArea = 4 * stdmath.Pi * stdmath.Pi * 5 * 2 // 394.78418, the whole torus
-	figureEightBelowArea = 283.09969                           // ∫ over (5+2cos v)·sin u < 3, r(R+r cos v) du dv
-	figureEightAboveArea = 111.68448                           // the complement; the two sum to the torus
+	figureEightTorusArea = 4 * stdmath.Pi * stdmath.Pi * figureEightRingRadius * figureEightTubeRadius // 394.78418
+	figureEightBelowArea = 283.100609557                                                               // ∫ over (5+2cos v)·sin u < 3, r(R+r cos v) du dv
+	figureEightAboveArea = 111.683566487                                                               // the complement; the two sum to the torus
 )
 
 // TestTheFigureEightTorusBandsPartitionTheTorus is the per-face gate: each piece's torus face must
@@ -67,10 +78,34 @@ func figureEightQualities() []struct {
 // the mesher covered something twice.
 func assertChordDeficit(t *testing.T, what string, got, want float64) {
 	t.Helper()
+	assertChordDeficitWithin(t, what, got, want, chordDeficitArea)
+}
+
+// chordDeficit* are the one-sided bands the two kinds of chord deficit sit in, each the measurement
+// plus a margin rather than a round number picked in advance (#3519):
+//
+//	quantity                     worst measured over the tangent-plane rows   band
+//	torus face AREA, either quality            0.73 % (R=5 r=2 above, coarse)  1 %
+//	body VOLUME at PropertyQuality             0.025 %                         0.1 %
+//	body VOLUME at DefaultQuality              2.06 % (R=5 r=2 above)          3 %
+//
+// A volume deficit is larger than an area one at the same faceting because the inscribed band loses
+// area AND the lid it bounds loses the wedge under each chord; the coarse faceting of a piece as small
+// as the intersect lobe is where that is worst.
+const (
+	chordDeficitArea         = 0.01
+	chordDeficitVolumeCoarse = 0.03
+	chordDeficitVolumeFine   = 0.001
+)
+
+// assertChordDeficitWithin is assertChordDeficit with the band named by the caller: got must be under
+// want, and by no more than maxRel.
+func assertChordDeficitWithin(t *testing.T, what string, got, want, maxRel float64) {
+	t.Helper()
 	rel := (got - want) / want
-	if rel > 0 || rel < -0.01 {
-		t.Errorf("%s: torus band meshes %.5f mm², want %.5f less a chord deficit (rel %+.4f, want (-0.01, 0])",
-			what, got, want, rel)
+	if rel > 0 || rel < -maxRel {
+		t.Errorf("%s: meshes %.5f against an analytic %.5f, want a chord deficit (rel %+.5f, want (%+.3f, 0])",
+			what, got, want, rel, -maxRel)
 	}
 }
 
