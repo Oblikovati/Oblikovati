@@ -84,10 +84,16 @@ type cdt struct {
 	// 23 606 516 allocated against 1 574 591 live, fifteen dead for every live one (#3548). Any bound
 	// or scan written against len(tris) therefore pays for fifteen triangles that no longer exist.
 	live int
-	// fullScans counts whole-mesh scans over the ALLOCATED triangle array (hasEdge, flipOneCrossing,
-	// findIncidentScan). Each is O(len(tris)), so this is the number a test can assert on without
-	// measuring wall time: the recovery path must cost O(deg) per edge query, not O(T) (#3548).
+	// fullScans counts whole-mesh scans over the live triangle index (hasEdge, flipOneCrossing,
+	// findIncidentScan). Each is O(live), so this is the number a test can assert on without measuring
+	// wall time: the recovery path must cost O(deg) per edge query, not O(T) (#3548).
 	fullScans int
+	// liveIdx is the live triangle indices in ASCENDING order, and liveAt is the (allocated, live)
+	// pair it was built at. It is a cache, not a second source of truth: dead[] still decides, and the
+	// ascending order means every scan that uses it visits exactly the triangles a scan of the whole
+	// array would visit, in the same order, so no answer changes (#3549).
+	liveIdx []int
+	liveAt  [2]int
 }
 
 func conKey(a, b int) [2]int {

@@ -86,7 +86,10 @@ func (m *cdt) verticesOnSegment(a, b int) []int {
 		if v == a || v == b || p == pa || p == pb {
 			continue
 		}
-		if orient2d(pa, pb, p) != 0 || !inSegmentBox(pa, pb, p) {
+		// The box test FIRST: it is four float compares against an exact orient2d that a lattice makes
+		// escalate (a grid row is exactly collinear with an axis-aligned constraint), and the two are
+		// conjoined, so the order cannot change which vertices are found — only how many predicates run.
+		if !inSegmentBox(pa, pb, p) || orient2d(pa, pb, p) != 0 {
 			continue
 		}
 		on = append(on, v)
@@ -332,8 +335,9 @@ func (m *cdt) incidentTri(p int) int {
 // findIncidentScan locates a live triangle containing p by a whole-mesh scan and refreshes the hint —
 // the fallback when the incidence hint is stale or was never built.
 func (m *cdt) findIncidentScan(p int) int {
-	for t := range m.tris {
-		if !m.dead[t] && vertexLocal(m.tris[t], p) >= 0 {
+	m.fullScans++
+	for _, t := range m.liveTriangles() {
+		if vertexLocal(m.tris[t], p) >= 0 {
 			if m.incident != nil && p >= 0 && p < len(m.incident) {
 				m.incident[p] = t
 			}
