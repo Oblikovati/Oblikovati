@@ -28,9 +28,10 @@ import (
 // value less a chord deficit — and the two sum to 392.57.
 //
 // The two area literals were 283.09969 and 111.68448 and are RE-MEASURED here (#3519): the correct
-// values are 283.100609557 and 111.683566487, a shift of 9.1e-4 mm² (8.2e-6 relative) on each. The
-// old pair summed to the torus, so the partition identity could not see the error; three independent
-// derivations now agree on the new pair. The surface integral 2r∫ρ·arccos(3/ρ) dv over the tube angle
+// values are 283.100609557 and 111.683566487. Each moves by 9.2e-4 mm², which is 8.2e-6 relative on the
+// ABOVE piece and 3.2e-6 on the below one, and in OPPOSITE directions — the old pair was 9.14e-4 high
+// and 9.20e-4 low, so it still summed to the torus and the partition identity could not see it. Four
+// independent derivations now agree on the new pair to twelve digits. The surface integral 2r∫ρ·arccos(3/ρ) dv over the tube angle
 // converges to 111.683566487; a 2D midpoint sum over (u,v) with the v integral taken in closed form
 // reaches 111.68389 at 6000 stations, falling towards it; and the kernel's own analytic B-rep
 // integrator reads the INTERSECT piece's whole surface as 146.978977282 mm², which is

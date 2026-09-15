@@ -10,6 +10,7 @@ import (
 	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
@@ -26,16 +27,19 @@ import (
 //
 // This row is R=5, r=2.5. It is the second self-touching boundary AND it is what the boundary clearance's
 // LOWER failure edge now rests on (chart_face_clearance.go, re-swept for #3519): its intersect piece
-// meshes torn at DefaultQuality — 48 free edges, the torus face declined to the whole domain — for every
-// k ≤ 0.7, and watertight from k = 0.75 up. That is the highest failing k of any corpus row, so it, not
-// the genus-1 complement (which fails only for k ≤ 0.2, and whose PropertyQuality failure the old table
-// recorded no longer happens at all), is what the shipped 0.875 has to clear. A constant whose edge
-// rests on one face is one measurement away from being unpinned; this is the binding face.
+// meshes torn at DefaultQuality — 48 free edges, the torus face declined to the whole domain — at every
+// swept k up to and including 0.70, and watertight at 0.705 and at every swept value above it. That is
+// the highest failing k of any corpus row, so it, not the genus-1 complement (which fails only for
+// k ≤ 0.2, and whose PropertyQuality failure the old table recorded no longer happens at all), is what
+// the shipped clearance has to clear. A constant whose edge rests on one face is one measurement away
+// from being unpinned; this is the binding face, and 0.935 is the log-centre of the run it brackets
+// from below.
 //
 // It also carries what the first row did not: it is RED at PropertyQuality, and says so. The intersect
-// piece's torus face is declined there and ships over the surface's whole domain, 408 free edges. That
-// is not this slice's doing — it reproduces with the incidence retry restored and at every swept
-// clearance from 0.1 to 1.5 — and it is pinned two-sided below so the day it is fixed, this row says so.
+// piece's torus face is declined there and ships over the surface's whole domain, 408 free edges. That is
+// Oblikovati/Oblikovati#3551, not this slice's doing — it reproduces with the incidence retry restored
+// and at every swept clearance from 0.1 to 1.5 — and it is pinned two-sided below so the day it is fixed,
+// this row says so.
 const (
 	squarePinchRingRadius = 5.0  // R
 	squarePinchTubeRadius = 2.5  // r; R − r = r puts the pinch corner at exactly 90°
@@ -220,6 +224,13 @@ func TestTheSquarePinchCutPieceIsWatertightAtBothQualities(t *testing.T) {
 // not this slice's doing either: it reproduces with the deleted incidence retry restored. The same
 // decline hits R=5 r=1.5 (352 free edges) and R=10 r=3 (372) and NOT R=5 r=2, which is why one
 // aspect ratio in the corpus was enough to hide it.
+// The window is 0.05 mm², not the 0.005 the complement's pin carries, and the two are different jobs.
+// That pin has to separate readings 0.0086 apart, because the clearance moves the complement's face by
+// thousandths; this one has to separate the DECLINE (493.437, the whole torus less a chord deficit) from
+// the mesh the face owns (159.452) — a gap of 334 mm², four decades wider than the window. Inside its own
+// state the reading does not move at all: 493.43687 at every swept clearance from 0.1 to 1.5. 0.05 is
+// four decades above the five decimals this literal is written to, and nothing it must exclude is nearer
+// than 334.
 const (
 	squarePinchIntersectPropertyFreeEdges = 408
 	squarePinchIntersectPropertyArea      = 493.43687
@@ -228,7 +239,7 @@ const (
 
 // TestTheSquarePinchIntersectPieceIsStillTornAtPropertyQuality pins that defect, in both directions: a
 // rise means the pinch got worse, and a FALL means it was fixed and this row should become an ordinary
-// watertight gate beside the cut piece's.
+// watertight gate beside the cut piece's. The defect is Oblikovati/Oblikovati#3551.
 func TestTheSquarePinchIntersectPieceIsStillTornAtPropertyQuality(t *testing.T) {
 	t.Parallel()
 	piece := squarePinchPiece(t, ops.Intersect)
@@ -253,6 +264,42 @@ func TestTheSquarePinchIntersectPieceIsStillTornAtPropertyQuality(t *testing.T) 
 			squarePinchIntersectPropertyWindow, squarePinchAboveArea, squarePinchTorusArea)
 	}
 	assertTheTearIsReported(t, mesh)
+}
+
+// TestTheAnalyticIntegratorAgreesWithTheSquarePinchOracle is the two-way cross-check this aspect ratio
+// makes available and the R=5 r=2 pair does not: the kernel's analytic B-rep integrator answers for BOTH
+// square-pinch pieces, and its answers are this file's two volume literals to twelve digits — 413.224120115
+// and 203.626154953 — reached through a code path that shares no step with the quadrature.
+//
+// It is a cross-check, not a gate: an oracle no more exact than the number it checks proves nothing, and
+// these two agree to 1e-12. What it does prove is that the quadrature and the integrator are not both
+// wrong the same way, which no single derivation can.
+//
+// The COUNT is pinned two-sided because it is the other half of Oblikovati/Oblikovati#3553: the
+// integrator declines the CUT piece of R=5 r=1.5, R=5 r=2 and R=10 r=3 and answers for this one, so
+// "which aspect ratios integrate" is a measurement that must not drift unseen in either direction while
+// that issue is open.
+func TestTheAnalyticIntegratorAgreesWithTheSquarePinchOracle(t *testing.T) {
+	t.Parallel()
+	answered := 0
+	for _, row := range []struct {
+		op   ops.PartFeatureOperation
+		want float64
+	}{{ops.Cut, squarePinchBelowVolume}, {ops.Intersect, squarePinchAboveVolume}} {
+		an, ok := query.AnalyticGeometryProperties(squarePinchPiece(t, row.op))
+		if !ok {
+			continue
+		}
+		answered++
+		if rel := stdmath.Abs(an.Volume-row.want) / row.want; rel > 1e-9 {
+			t.Errorf("%v piece: the analytic integrator reads %.9f mm³ against the quadrature's %.9f (rel %.3e)",
+				row.op, an.Volume, row.want, rel)
+		}
+	}
+	if answered != 2 {
+		t.Errorf("the analytic integrator answers for %d of the two square-pinch pieces; the measurement is 2. "+
+			"Fewer means it lost a piece it had and the cross-check above covers less than it says (#3553)", answered)
+	}
 }
 
 // assertTheTearIsReported requires the torn mesh to carry the watertightness Defect.
