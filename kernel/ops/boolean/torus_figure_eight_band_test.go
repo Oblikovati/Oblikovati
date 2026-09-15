@@ -160,16 +160,18 @@ func countTorusFaces(b *topo.Body) int {
 
 // TestAnUnchartedPinchedBandIsRefusedAndSaidSo is the gate the ROUTING alone does not give.
 //
-// A charted spiric band never reaches the tube-wrapping loft — spiricTubeTrimOf hands it to the general
-// chart-driven mesher — so the loft's own conditioning matters only for an UNCHARTED one. "No primitive
-// boolean in the corpus builds an uncharted torus band" is an observation about today's corpus, not an
-// invariant, and a band whose two boundaries MEET is the one shape a single sweep round the tube cannot
-// describe: the loft covers the tangency twice (310.800 mm² where the analytic region is 283.100, and
-// its two halves summing to 525.98 against a torus of 394.78).
+// A band whose two boundaries MEET is the one shape a single sweep round the tube cannot describe: the
+// tube-wrapping loft covered the tangency twice (310.800 mm² where the analytic region is 283.100, and
+// its two halves summing to 525.98 against a torus of 394.78). That loft is gone — #3517 absorbed the
+// spiric arm into the chart mesher — so the wrong answer it could produce is now unreachable, and what
+// this row holds is that nothing has quietly taken its place.
 //
-// So the figure-eight's own face is stripped of its chart and driven through the router. The loft must
-// refuse it, the mesh must not be the loft's, and the refusal must be NAMED — a diag.Defect the feature
-// reply, the API and the UI carry — not a silent sweep.
+// The figure-eight's own face is stripped of its chart and driven through the router. An uncharted
+// band has no special mesher left, so it falls to the surface's WHOLE domain and must SAY so — a
+// diag.Defect the feature reply, the API and the UI carry — and the area must be the whole torus and
+// not either of the loft's two old answers. The decline is now the general one ("no mesher recognised
+// its boundary"): with no shape-specific mesher there is no shape-specific reason to give, and a row
+// asserting the loft's own wording would be asserting that the loft is back.
 func TestAnUnchartedPinchedBandIsRefusedAndSaidSo(t *testing.T) {
 	t.Parallel()
 	for _, op := range []ops.PartFeatureOperation{ops.Cut, ops.Intersect} {
@@ -178,14 +180,14 @@ func TestAnUnchartedPinchedBandIsRefusedAndSaidSo(t *testing.T) {
 		if !meshReportsIgnoredTrim(mesh) {
 			t.Errorf("%v: an uncharted pinched band was meshed with no named decline: %v", op, mesh.Diagnostics)
 		}
-		// The decline must say WHICH shape was refused, not just that the whole domain was used: a reader
-		// who cannot tell "nothing recognised it" from "the loft gave it up" cannot act on the report.
-		if !meshDeclineNames(mesh, "boundaries MEET") {
-			t.Errorf("%v: the decline does not name the pinch: %v", op, mesh.Diagnostics)
+		// The decline must name the SURFACE and the boundary it could not place the face on, so a reader
+		// can act on the report rather than merely learn that something fell back.
+		if !meshDeclineNames(mesh, "geom.Torus") {
+			t.Errorf("%v: the decline does not name the refused face: %v", op, mesh.Diagnostics)
 		}
-		// The reported fallback is the surface's WHOLE domain — measured 392.571 mm², a chord deficit
-		// under 394.784. The loft's own answers for these two pieces are 310.800 and 215.177, so
-		// anything near either is the sweep this row exists to refuse.
+		// The reported fallback is the surface's WHOLE domain — a chord deficit under 394.784. The
+		// deleted loft's own answers for these two pieces were 310.800 and 215.177, so anything near
+		// either is the sweep this row exists to keep out.
 		if area := tessellate.MeshGeometryProperties(mesh).Area; area < 0.95*figureEightTorusArea {
 			t.Errorf("%v: the uncharted pinched band meshed %.5f mm² — the loft's own answer, not the "+
 				"reported whole-domain fallback (%.5f less a chord deficit)", op, area, figureEightTorusArea)
