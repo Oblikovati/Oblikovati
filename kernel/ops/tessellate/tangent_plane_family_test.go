@@ -33,7 +33,8 @@ import (
 // family going to zero. This row's own set reads 368.
 
 // tangentFamilyFreeEdges is the whole set's free-edge total at both facetings. See the file doc for
-// what the residue is and TestTheTangentPlaneFamilyResidueIsRefusedAndReported for why it is not silent.
+// what the residue is; TestTheTangentPlaneFamilyHolds also asserts that every torn row REPORTS its
+// tear, so the residue is a capability gap and not a silent one.
 const tangentFamilyFreeEdges = 368
 
 // tangentFamilyAspects is the swept set: R/r from 100 down to 2, spanning the thin-tube end where the
@@ -62,26 +63,89 @@ func tangentPlanePiece(t *testing.T, ringR, tubeR float64, op ops.PartFeatureOpe
 	return ops.Boolean(op, ring, box)
 }
 
-// TestTheTangentPlaneFamilyMeshesWatertightAcrossItsAspectRatios is the sweep's ratchet.
-func TestTheTangentPlaneFamilyMeshesWatertightAcrossItsAspectRatios(t *testing.T) {
+// tangentFamilyTally is what one walk of the sweep collects. The three questions are asked on ONE walk
+// rather than in three rows: each row rebuilt all 38 bodies and re-tessellated all 76, which cost
+// 440 s of the six-package tier between them (review 3, M2). Sharing the built bodies across parallel
+// ROWS is the other way to save it and is not taken: a face memoises its trim and metric scale while it
+// is tessellated, so two parallel rows over one body would race on writes the gate does not look for.
+type tangentFamilyTally struct {
+	rows, freeEdges, torn, declinedEdges, chartFaces, duplicates int
+}
+
+// TestTheTangentPlaneFamilyHolds is the sweep, and it asks all three questions on one walk: the whole
+// set's free-edge total, the split of what is left by cause, and the one-location invariant across
+// every ratio rather than the four the corpus happens to carry.
+func TestTheTangentPlaneFamilyHolds(t *testing.T) {
 	if testing.Short() {
-		t.Skip("corpus tier (~4 min): `make test-corpus`")
+		t.Skip("corpus tier (~3 min): `make test-corpus`")
 	}
 	t.Parallel()
-	total, rows := 0, 0
-	forEachTangentPlanePiece(t, func(_ string, b *topo.Body, q ops.Quality, _ string) {
-		rows++
+	var got tangentFamilyTally
+	forEachTangentPlanePiece(t, func(name string, b *topo.Body, q ops.Quality, qName string) {
+		got.rows++
 		mesh, _ := tessellate.TessellateBody(b, q)
-		total += tessellate.FreeEdgeCount(mesh)
+		tallyOneTangentRow(t, &got, name+" "+qName, b, mesh, q)
 	})
-	if rows != 4*len(tangentFamilyAspects()) {
-		t.Fatalf("the sweep presented %d rows; want %d (%d ratios × 2 operations × 2 facetings)",
-			rows, 4*len(tangentFamilyAspects()), len(tangentFamilyAspects()))
+	assertTangentFamilyTally(t, got)
+}
+
+// tallyOneTangentRow adds one (ratio, operation, faceting) to the tally and makes the two assertions
+// that are per-row rather than per-sweep: a torn row must REPORT its tear, and every torus face must
+// lay one vertex per covering location.
+func tallyOneTangentRow(t *testing.T, got *tangentFamilyTally, row string, b *topo.Body, mesh *tessellate.Mesh, q ops.Quality) {
+	t.Helper()
+	free := tessellate.FreeEdgeCount(mesh)
+	got.freeEdges += free
+	if free > 0 {
+		got.torn++
+		if !tangentMeshReports(mesh, tessellate.CodeMeshNotWatertight) {
+			t.Errorf("%s tears by %d and does not report %q; a degradation that reaches nobody is worse "+
+				"than the tear: %v", row, free, tessellate.CodeMeshNotWatertight, mesh.Diagnostics)
+		}
+		if tangentMeshReports(mesh, tessellate.CodeChartMesherDeclined) {
+			got.declinedEdges += free
+		}
 	}
-	if total != tangentFamilyFreeEdges {
+	for _, f := range b.Faces() {
+		if _, isTorus := f.Geometry().(geom.Torus); !isTorus {
+			continue
+		}
+		dup, verts, ok := tessellate.ChartCoveringLocationCount(f, q)
+		if !ok {
+			continue
+		}
+		got.chartFaces++
+		got.duplicates += dup
+		if dup != 0 {
+			t.Errorf("%s: the covering lays %d of its %d vertices on top of another (#3551)", row, dup, verts)
+		}
+	}
+}
+
+// assertTangentFamilyTally holds the three per-sweep numbers, each of which fails in both directions,
+// and refuses a walk that covered nothing.
+func assertTangentFamilyTally(t *testing.T, got tangentFamilyTally) {
+	t.Helper()
+	if want := 4 * len(tangentFamilyAspects()); got.rows != want {
+		t.Fatalf("the sweep presented %d rows; want %d (%d ratios × 2 operations × 2 facetings)",
+			got.rows, want, len(tangentFamilyAspects()))
+	}
+	if got.chartFaces == 0 {
+		t.Fatal("no torus face of the family reached the chart covering; the one-location invariant covers nothing")
+	}
+	if got.freeEdges != tangentFamilyFreeEdges {
 		t.Errorf("the tangent-plane family meshes with %d free edges over the whole sweep; the "+
 			"measurement is %d. A rise is a regression. A FALL is a fix — bring this pin down with it",
-			total, tangentFamilyFreeEdges)
+			got.freeEdges, tangentFamilyFreeEdges)
+	}
+	if got.torn != tangentFamilyTornRows || got.declinedEdges != tangentFamilyDeclinedEdges {
+		t.Errorf("%d rows of the sweep tear, %d of their free edges behind a chart-mesher decline; the "+
+			"measurement is %d rows and %d edges. The split matters: one number is the covering's density "+
+			"limit and the other is a shared chord at the pinch", got.torn, got.declinedEdges,
+			tangentFamilyTornRows, tangentFamilyDeclinedEdges)
+	}
+	if got.torn == 0 {
+		t.Error("no row of the sweep tears, so the reporting assertion covers nothing — bring the pins down with it")
 	}
 }
 
@@ -114,61 +178,44 @@ func forEachTangentPlanePiece(t *testing.T, visit func(name string, b *topo.Body
 //   - ONE row is the chart mesher's: R=100 r=1 intersect at PropertyQuality, 360 free edges. Its torus
 //     face is REFUSED by the mesher's own rim gate (3 unpaired edges that are no rim segment) and the
 //     router falls back to the surface's whole domain, which is what tears. Measured, it is a covering
-//     DENSITY limit and not a defect of this slice's kind: the covering's cells on a torus of R/r = 100
-//     are 25:1 anisotropic at the quality's own chord, and the face meshes watertight with extra = 0 and
-//     no diagnostic at all once the chord reaches 2e-4 (free edges 400 at chord 5e-4, then 0 at 2e-4,
-//     1e-4 and 5e-5). Cells that square up is `balancedCoverGrid`, which refines only a FLOORED axis on
-//     purpose — re-balancing a torus's tube against its ring is recorded there as tried and reverted,
-//     because it drove the figure-eight band from 110.947 mm² to the whole torus. So closing this row
-//     means revisiting that decision with its own corpus, not widening anything here.
+//     DENSITY limit and not a defect of this slice's kind: the face meshes watertight with extra = 0 and
+//     no diagnostic at all once the chord reaches 2e-4 (272 free edges at chord 0.05, 360 at 1e-3, 400
+//     at 5e-4, then 0 at 2e-4, 1e-4 and 5e-5 — and the triangle count FALLS 524644 → 40668 there,
+//     because the decline and its whole-domain fall-through both stop). The covering's cells are
+//     25.00 : 1 anisotropic at the quality's own chord and 12.50 : 1 where it goes watertight, and
+//     `balancedCoverGrid` does not act on any row of this family — its raw and balanced grids are equal
+//     throughout, because it refines only a FLOORED axis and both of these are chord-subdivided. So
+//     squaring these cells means refining a CHORD-sized axis, which is the case that file records as
+//     tried and reverted (it drove the figure-eight band from 110.947 mm² to the whole torus). Closing
+//     this row means revisiting that decision with its own corpus, not widening anything here.
 //
-//   - FIVE rows are the LID's, not the torus's, and they are 8 free edges between them — 1 or 2 each,
-//     and every one is an OVER-MERGED edge (three or more triangles) on `box:face#2` and `ring:face#0`
-//     rather than a crack. Their torus faces are clean: rim-only triangles 0, rim mismatch (0, 0), not
-//     declined, area right. What doubles is the planar cap whose own boundary is the figure eight —
-//     the self-touching boundary in the PLANAR mesher, which is the other half of #3519's original
-//     "the FIG8 lid's tangential self-touch" and a different mesher from this one.
+//   - FIVE rows, 8 edges between them: a SHARED CHORD at the pinch, and the per-face tally is what
+//     names it. Every one of the eight is an edge of degree FOUR whose four uses split two-and-two
+//     between the cut plane and the torus — `{box:face#2 (Plane): 2, ring:face#0 (Torus): 2}` on every
+//     row, never three-and-one — and within each patch the two uses run in opposite directions, so the
+//     edge is an ordinary INTERIOR edge of both. Neither patch is doubled on its own; the two patches
+//     draw the same segment. It is not a weld artefact: the raw endpoints that weld together are
+//     bit-identical (spread 0.0 against welds of 1.4e-7 and 1.5e-8). The segment is rim-to-rim, between
+//     two points of the figure eight on opposite branches at one ring angle, so it lies in the cut plane
+//     y = R − r by construction — which is why the plane's chord and the torus's chord ARE the same
+//     segment. The torus face draws it because near the pinch the kept strip is thinner than the
+//     covering's across-cell and the chart mesher spans it in one triangle; refining does not remove it,
+//     it moves the chord closer to the pinch (z = ±0.707 coarse, ±0.195 fine on R=50 r=1), because the
+//     strip is arbitrarily thin arbitrarily close to the tangency.
 //
-// Neither is the duplicate covering location #3551 fixed: TestTheTangentPlaneFamilyLaysOneVertexPerLocation
-// holds dup = 0 on every row of the sweep, torn ones included.
+//     An earlier version of this comment called these edges the planar lid's and "NOT the chart
+//     mesher's at all". That was wrong and the way it was wrong is worth keeping: the evidence offered
+//     for it — the torus face is not declined, its rim mismatch is (0, 0), its area is right — is all
+//     true and none of it discriminates between "the lid doubled" and "the two patches share a chord".
+//     Evidence consistent with a claim is not evidence for it (review 3, I1). The tally discriminates;
+//     it says the chart mesher is a co-equal contributor.
+//
+// Neither is the duplicate covering location #3551 fixed: the same walk holds dup = 0 on every torus
+// face of every ratio, torn rows included.
 const (
 	tangentFamilyTornRows      = 6
 	tangentFamilyDeclinedEdges = 360
 )
-
-// TestTheTangentPlaneFamilyResidueIsRefusedAndReported is the half that says the residue is a
-// CAPABILITY gap and not a silent one: every torn row of the sweep reports the tear as a Defect, and
-// the one row whose chart face is refused says THAT too, so a reader who meets either is told what gave
-// up. It is the ground rules' "never degrade silently" applied to what is left rather than to what is
-// fixed, and it is what makes the count above a residue one can live beside.
-func TestTheTangentPlaneFamilyResidueIsRefusedAndReported(t *testing.T) {
-	if testing.Short() {
-		t.Skip("corpus tier (~4 min): `make test-corpus`")
-	}
-	t.Parallel()
-	torn, declinedEdges := 0, 0
-	forEachTangentPlanePiece(t, func(name string, b *topo.Body, q ops.Quality, qName string) {
-		mesh, _ := tessellate.TessellateBody(b, q)
-		free := tessellate.FreeEdgeCount(mesh)
-		if free == 0 {
-			return
-		}
-		torn++
-		if !tangentMeshReports(mesh, tessellate.CodeMeshNotWatertight) {
-			t.Errorf("%s %s tears by %d and does not report %q; a degradation that reaches nobody is "+
-				"worse than the tear: %v", name, qName, free, tessellate.CodeMeshNotWatertight, mesh.Diagnostics)
-		}
-		if tangentMeshReports(mesh, tessellate.CodeChartMesherDeclined) {
-			declinedEdges += free
-		}
-	})
-	if torn != tangentFamilyTornRows || declinedEdges != tangentFamilyDeclinedEdges {
-		t.Errorf("%d rows of the sweep tear, %d of their free edges behind a chart-mesher decline; the "+
-			"measurement is %d rows and %d edges. The split matters: one number is the covering's density "+
-			"limit and the other is the planar lid's self-touch", torn, declinedEdges,
-			tangentFamilyTornRows, tangentFamilyDeclinedEdges)
-	}
-}
 
 // tangentMeshReports reports whether a mesh carries the given code at Defect severity.
 func tangentMeshReports(m *tessellate.Mesh, code diag.Code) bool {
@@ -178,35 +225,4 @@ func tangentMeshReports(m *tessellate.Mesh, code diag.Code) bool {
 		}
 	}
 	return false
-}
-
-// TestTheTangentPlaneFamilyLaysOneVertexPerLocation is the invariant #3551 fixed, held across the whole
-// family rather than on the four ratios the corpus happens to carry. It is what says the residue above
-// is a DIFFERENT defect: every torus face of every ratio lays one vertex per covering location, torn
-// rows included.
-func TestTheTangentPlaneFamilyLaysOneVertexPerLocation(t *testing.T) {
-	if testing.Short() {
-		t.Skip("corpus tier (~4 min): `make test-corpus`")
-	}
-	t.Parallel()
-	checked := 0
-	forEachTangentPlanePiece(t, func(name string, b *topo.Body, q ops.Quality, qName string) {
-		for _, f := range b.Faces() {
-			if _, isTorus := f.Geometry().(geom.Torus); !isTorus {
-				continue
-			}
-			dup, verts, ok := tessellate.ChartCoveringLocationCount(f, q)
-			if !ok {
-				continue
-			}
-			checked++
-			if dup != 0 {
-				t.Errorf("%s %s: the covering lays %d of its %d vertices on top of another (#3551)",
-					name, qName, dup, verts)
-			}
-		}
-	})
-	if checked == 0 {
-		t.Error("no torus face of the family reached the chart covering; the invariant covers nothing")
-	}
 }

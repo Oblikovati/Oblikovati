@@ -113,7 +113,8 @@ func (c *coverVertices) rememberLocation(i int) {
 		return
 	}
 	cx, cy := locationCell(c.xy[i][0], c.xy[i][1], c.locWeld)
-	c.locIndex[[2]int64{cx, cy}] = append(c.locIndex[[2]int64{cx, cy}], i)
+	k := [2]int64{cx, cy}
+	c.locIndex[k] = append(c.locIndex[k], i)
 }
 
 // add records one covering vertex laid at shift index at, and returns its index. When the owner asked
