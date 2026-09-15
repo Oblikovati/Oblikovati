@@ -326,6 +326,14 @@ func atLeastMinimumCells(ps []float64, lo, hi float64) []float64 {
 func (b *chartCover) addChains(chains []chartChain) [][]int {
 	var loops [][]int
 	var segs []rimSegment
+	// One covering LOCATION is one vertex, and the resolution that decides it is the boundary's own.
+	// A face whose boundary touches itself hands the same (u,v) to addChain more than once, and a CDT
+	// cannot recover a constraint incident to a vertex another vertex sits on (#3551,
+	// coverVertices.MergeCoincidentLocations). The grid is taken from the chains rather than from
+	// b.pos, because b.pos is empty here and the replicas about to be laid carry no 3D point the
+	// chains do not already have — so it is the same number weldGrid gives afterwards.
+	b.weld = weldGrid(chainPoints(chains))
+	b.MergeCoincidentLocations(b.weld)
 	for si, sh := range b.r.shifts() {
 		for ci, c := range chains {
 			pairs := b.addChain(c.p3, c.uv, sh[0], sh[1], si)
@@ -336,9 +344,17 @@ func (b *chartCover) addChains(chains []chartChain) [][]int {
 		}
 	}
 	b.rim, b.chains = len(b.pos), len(chains)
-	b.weld = weldGrid([][]math.Point3{b.pos})
 	b.rimChain = b.directedRimSegments(segs, chains, b.weld)
 	return loops
+}
+
+// chainPoints is every chain's 3D points, grouped, for the one weld resolution this covering uses.
+func chainPoints(chains []chartChain) [][]math.Point3 {
+	out := make([][]math.Point3, 0, len(chains))
+	for _, c := range chains {
+		out = append(out, c.p3)
+	}
+	return out
 }
 
 // addInterior lays the covering's grid nodes: every station pair the chart covers and which stands

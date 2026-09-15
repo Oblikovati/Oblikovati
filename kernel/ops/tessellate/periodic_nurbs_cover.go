@@ -45,6 +45,14 @@ func coveringPeriodicMesh(s geom.BSplineSurface, q Quality, ulo, uhi float64, ri
 // closed loops.
 func (b *coverBuilder) replicateBoundary(rims, mouths []cylLoop) [][]int {
 	var loops [][]int
+	// One covering LOCATION is one vertex here too, at the boundary's own weld resolution: the
+	// accumulator is shared and a CDT cannot recover a constraint incident to a vertex another vertex
+	// sits on, whichever mesher laid it (#3551, coverVertices.MergeCoincidentLocations). No band in
+	// this mesher's corpus touches itself today: measured over the whole tessellate suite the merge
+	// fires 521 times and every one of them is the chart mesher's — opting this caller out leaves the
+	// count at 521 exactly. It is asked for anyway, so the invariant belongs to the covering rather
+	// than to one of its two callers.
+	b.MergeCoincidentLocations(weldGrid(coverLoopPoints(rims, mouths)))
 	for si, sh := range coverShifts {
 		off := sh * b.period
 		for _, r := range rims {
@@ -55,6 +63,18 @@ func (b *coverBuilder) replicateBoundary(rims, mouths []cylLoop) [][]int {
 		}
 	}
 	return loops
+}
+
+// coverLoopPoints is every rim and mouth's 3D points, grouped, for the covering's one weld resolution.
+func coverLoopPoints(rims, mouths []cylLoop) [][]math.Point3 {
+	out := make([][]math.Point3, 0, len(rims)+len(mouths))
+	for _, l := range rims {
+		out = append(out, l.p3)
+	}
+	for _, l := range mouths {
+		out = append(out, l.p3)
+	}
+	return out
 }
 
 // coverBuilder is the shared covering accumulator (covering_vertices.go) with the band's own period

@@ -316,6 +316,45 @@ func TestTheAzimuthBandMeshesOneTurnNotTwo(t *testing.T) {
 	}
 }
 
+// TestNoChartedCoveringLaysTwoVerticesAtOneLocation is the corpus half of the covering's
+// one-location-one-vertex invariant (Oblikovati/Oblikovati#3551, coverVertices.MergeCoincidentLocations).
+//
+// It is the invariant, not the fixture. The figure eight found it — its single loop passes the pinch
+// twice and, because the loop also wraps a whole period, the shift carrying the far pass back landed a
+// third copy on the same spot, so three rim vertices sat at (2π, π) — but any boundary that touches
+// itself does the same, and a constrained triangulation cannot recover a constraint incident to a
+// vertex another vertex sits on. That is why the symptom was a rim segment the mesh did not bound and
+// a face declined to the whole domain, and why it moved with the platform and with the model's last
+// bit rather than with anything geometric.
+//
+// Driven over every charted face of the classification corpus at both facetings, counting the covering
+// as the triangulation would see it — boundary chains and interior nodes together.
+func TestNoChartedCoveringLaysTwoVerticesAtOneLocation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~40s): `make test-corpus`")
+	}
+	t.Parallel()
+	coarse, fine := refinementQualities()
+	covered := 0
+	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
+		for _, q := range []ops.Quality{coarse, fine} {
+			dup, n, ok := tessellate.ChartCoveringLocationCount(f, q)
+			if !ok {
+				continue
+			}
+			covered++
+			if dup != 0 {
+				t.Errorf("%s face %d (%T) at chord %g: the covering lays %d of its %d vertices on top of "+
+					"another; a constraint incident to either may never be recovered",
+					body, i, f.Geometry(), q.ChordTolerance, dup, n)
+			}
+		}
+	})
+	if covered == 0 {
+		t.Error("no corpus face reached the chart covering — the one-location invariant covers nothing")
+	}
+}
+
 // chartPoleSliverFloor is the fraction of the mean triangle area the SMALLEST triangle of a
 // pole-containing charted face must reach.
 //

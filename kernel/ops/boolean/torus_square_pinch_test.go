@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/query"
@@ -35,11 +34,9 @@ import (
 // from being unpinned; this is the binding face, and 0.935 is the log-centre of the run it brackets
 // from below.
 //
-// It also carries what the first row did not: it is RED at PropertyQuality, and says so. The intersect
-// piece's torus face is declined there and ships over the surface's whole domain, 408 free edges. That is
-// Oblikovati/Oblikovati#3551, not this slice's doing — it reproduces with the incidence retry restored
-// and at every swept clearance from 0.1 to 1.5 — and it is pinned two-sided below so the day it is fixed,
-// this row says so.
+// It is also the row that FOUND Oblikovati/Oblikovati#3551 and now guards the fix. Its intersect piece
+// used to be declined at PropertyQuality and to ship the whole torus, 408 free edges; see
+// TestTheSquarePinchIntersectPieceIsWatertightAtBothQualities for what the cause turned out to be.
 const (
 	squarePinchRingRadius = 5.0  // R
 	squarePinchTubeRadius = 2.5  // r; R − r = r puts the pinch corner at exactly 90°
@@ -224,61 +221,51 @@ func TestTheSquarePinchCutPieceIsWatertightAtBothQualities(t *testing.T) {
 // not this slice's doing either: it reproduces with the deleted incidence retry restored. The same
 // decline hits R=5 r=1.5 (352 free edges) and R=10 r=3 (372) and NOT R=5 r=2, which is why one
 // aspect ratio in the corpus was enough to hide it.
-// The window is 0.05 mm², not the 0.005 the complement's pin carries, and the two are different jobs.
-// That pin has to separate readings 0.0086 apart, because the clearance moves the complement's face by
-// thousandths; this one has to separate the DECLINE (493.437, the whole torus less a chord deficit) from
-// the mesh the face owns (159.452) — a gap of 334 mm², four decades wider than the window. Inside its own
-// state the reading does not move at all: 493.43687 at every swept clearance from 0.1 to 1.5. 0.05 is
-// four decades above the five decimals this literal is written to, and nothing it must exclude is nearer
-// than 334.
-const (
-	squarePinchIntersectPropertyFreeEdges = 408
-	squarePinchIntersectPropertyArea      = 493.43687
-	squarePinchIntersectPropertyWindow    = 0.05
-)
-
-// TestTheSquarePinchIntersectPieceIsStillTornAtPropertyQuality pins that defect, in both directions: a
-// rise means the pinch got worse, and a FALL means it was fixed and this row should become an ordinary
-// watertight gate beside the cut piece's. The defect is Oblikovati/Oblikovati#3551.
-func TestTheSquarePinchIntersectPieceIsStillTornAtPropertyQuality(t *testing.T) {
+// TestTheSquarePinchIntersectPieceIsWatertightAtBothQualities is the half of the row that used to be
+// RED, and what closes Oblikovati/Oblikovati#3551.
+//
+// The intersect piece's torus face was DECLINED at PropertyQuality and shipped over the surface's
+// whole domain — 493.437 mm² against the 159.452 it owns — leaving the body with 408 free edges. The
+// same decline hit R=5 r=1.5 (352) and R=10 r=3 (372) and not R=5 r=2, which is why one aspect ratio
+// in the corpus hid it, and 352 + 408 + 372 = 1132 was the whole corpus's free-edge total.
+//
+// The cause was not this mesher's classification and not any constant of it. The covering laid THREE
+// vertices at one location at the pinch — the single loop passes it twice, and on a boundary that also
+// wraps a whole period the shift carrying the far pass back lands a third copy on the same spot — and
+// a constrained triangulation cannot recover a constraint edge incident to a vertex another vertex
+// sits on: every orientation predicate the recovery walks with reads the two as one point. One rim
+// segment was therefore never an edge of the triangulation, the mesh detoured round it through two
+// interior nodes, and the rim gate refused the face. The covering merges coincident locations now
+// (coverVertices.MergeCoincidentLocations) and the face is bounded by exactly its own rim.
+//
+// So this row asserts what the cut piece's does, at both facetings — and the count it asserts is ZERO,
+// which is the direction that cannot be reached by accident.
+func TestTheSquarePinchIntersectPieceIsWatertightAtBothQualities(t *testing.T) {
 	t.Parallel()
 	piece := squarePinchPiece(t, ops.Intersect)
-	mesh, _ := tessellate.TessellateBody(piece, ops.PropertyQuality())
-	if free := tessellate.FreeEdgeCount(mesh); free != squarePinchIntersectPropertyFreeEdges {
-		t.Errorf("the square-pinch intersect piece meshes with %d free edges at PropertyQuality; the "+
-			"measurement is %d. Fewer means the pinch decline was fixed — delete this row and gate the "+
-			"piece the way the cut piece is gated. More means it regressed",
-			free, squarePinchIntersectPropertyFreeEdges)
+	for _, gq := range figureEightQualities() {
+		mesh, _ := tessellate.TessellateBody(piece, gq.q)
+		if free := tessellate.FreeEdgeCount(mesh); free != 0 {
+			t.Errorf("%s quality: the square-pinch intersect piece meshes with %d free edges, want 0 (#3551)",
+				gq.name, free)
+		}
+		if meshReportsIgnoredTrim(mesh) {
+			t.Errorf("%s quality: the square-pinch intersect piece reports a discarded trim; its torus face "+
+				"is the chart mesher's and the chart mesher must bound it by its own rim: %v", gq.name, mesh.Diagnostics)
+		}
+		assertChordDeficit(t, gq.name+" square-pinch intersect face",
+			squarePinchFaceArea(t, piece, gq.q), squarePinchAboveArea)
 	}
-	if !meshReportsIgnoredTrim(mesh) {
-		t.Error("the square-pinch intersect piece ships a whole-domain torus face with no named decline; " +
-			"a degradation that reaches nobody is worse than the tear")
-	}
-	if !meshDeclineNames(mesh, "not bounded by its own rim") {
-		t.Errorf("the decline does not say what the chart mesher refused: %v", mesh.Diagnostics)
-	}
-	got := squarePinchFaceArea(t, piece, ops.PropertyQuality())
-	if stdmath.Abs(got-squarePinchIntersectPropertyArea) > squarePinchIntersectPropertyWindow {
-		t.Errorf("the declined torus face meshes %.5f mm², off its pin of %.5f ± %g (it owns %.5f and "+
-			"falls back to the whole torus's %.5f)", got, squarePinchIntersectPropertyArea,
-			squarePinchIntersectPropertyWindow, squarePinchAboveArea, squarePinchTorusArea)
-	}
-	assertTheTearIsReported(t, mesh)
 }
 
 // TestTheAnalyticIntegratorAgreesWithTheSquarePinchOracle is the two-way cross-check this aspect ratio
 // makes available and the R=5 r=2 pair does not: the kernel's analytic B-rep integrator answers for BOTH
-// square-pinch pieces, and its answers are this file's two volume literals to twelve digits — 413.224120115
-// and 203.626154953 — reached through a code path that shares no step with the quadrature.
+// square-pinch pieces, and its answers are this file's two volume literals to twelve digits —
+// 413.224120115 and 203.626154953 — reached through a code path that shares no step with the quadrature.
 //
 // It is a cross-check, not a gate: an oracle no more exact than the number it checks proves nothing, and
 // these two agree to 1e-12. What it does prove is that the quadrature and the integrator are not both
 // wrong the same way, which no single derivation can.
-//
-// The COUNT is pinned two-sided because it is the other half of Oblikovati/Oblikovati#3553: the
-// integrator declines the CUT piece of R=5 r=1.5, R=5 r=2 and R=10 r=3 and answers for this one, so
-// "which aspect ratios integrate" is a measurement that must not drift unseen in either direction while
-// that issue is open.
 func TestTheAnalyticIntegratorAgreesWithTheSquarePinchOracle(t *testing.T) {
 	t.Parallel()
 	answered := 0
@@ -288,6 +275,8 @@ func TestTheAnalyticIntegratorAgreesWithTheSquarePinchOracle(t *testing.T) {
 	}{{ops.Cut, squarePinchBelowVolume}, {ops.Intersect, squarePinchAboveVolume}} {
 		an, ok := query.AnalyticGeometryProperties(squarePinchPiece(t, row.op))
 		if !ok {
+			t.Errorf("%v piece: the analytic integrator declines a body it used to answer for; the "+
+				"cross-check above now covers less than it says", row.op)
 			continue
 		}
 		answered++
@@ -297,20 +286,8 @@ func TestTheAnalyticIntegratorAgreesWithTheSquarePinchOracle(t *testing.T) {
 		}
 	}
 	if answered != 2 {
-		t.Errorf("the analytic integrator answers for %d of the two square-pinch pieces; the measurement is 2. "+
-			"Fewer means it lost a piece it had and the cross-check above covers less than it says (#3553)", answered)
+		t.Errorf("the analytic integrator answered for %d of the two square-pinch pieces, want both", answered)
 	}
-}
-
-// assertTheTearIsReported requires the torn mesh to carry the watertightness Defect.
-func assertTheTearIsReported(t *testing.T, m *tessellate.Mesh) {
-	t.Helper()
-	for _, d := range m.Diagnostics {
-		if d.Code == tessellate.CodeMeshNotWatertight && d.Severity == diag.Defect {
-			return
-		}
-	}
-	t.Errorf("the torn square-pinch mesh reports no %q defect: %v", tessellate.CodeMeshNotWatertight, m.Diagnostics)
 }
 
 // TestTheSquarePinchCornerIsARightAngle keeps the comment's 90° claim honest: it is not a measurement of the mesh, it

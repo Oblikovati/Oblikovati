@@ -7,9 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/brep"
-	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
-	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 )
@@ -29,23 +27,32 @@ import (
 const figureEightUlp = 8.881784197001252e-16 // ulp(5): the last bit of this model's major radius
 
 // figureEightOffsetUlps are the perturbations of the TANGENCY OFFSET — the fixture's bifurcation
-// parameter — at which every decision holds on every platform. It is {0, +1}, and it is short
-// because of what was measured, not because less was tried.
+// parameter — at which every decision holds on every platform.
 //
-// The number below is the intersect piece's torus-face mesh area at the property faceting. Its own
-// share is 111.68 mm²; 394.75 is the WHOLE torus, i.e. the tangency classification has taken the
-// entire tube for the cap and the piece is wrong:
+// It was {0, +1}, because the intersect piece's torus face used to mesh the WHOLE torus (394.75 mm²
+// against its own share of 111.68) at offsets just below the tangency, on a pattern that differed
+// between platforms:
 //
 //	k (ulps of 5)   −3       −2       −1        0       +1       +2
 //	amd64          394.75   394.75   111.67   111.67   111.67   111.67
 //	arm64          394.75   111.67   394.75   111.67   111.67   394.75
 //
-// amd64 has a boundary at −2 and arm64 has none: the verdict alternates. So within a few ulps of
-// the tangency this decision is not a function of the geometry, it is a function of the rounding —
-// and ADR-0064 cannot fix it, because it lives in kernel/brep and kernel/ops, which still contract.
-// Both rows are pre-existing: amd64 reproduces bit-for-bit at this wave's base 6590a9ba in a clean
-// worktree, and arm64 at the base is wrong at −2 where amd64 is wrong at −2 and −3.
-var figureEightOffsetUlps = []int{0, 1}
+// That was never a rounding defect in the arithmetic, which is why ADR-0064 could not reach it. It
+// was #3551: the covering laid THREE vertices at the pinch — the loop passes it twice and the shift
+// that carries the far pass back lands a third copy there — and a constrained triangulation cannot
+// recover a constraint incident to a vertex another vertex sits on. Whether recovery happened to
+// succeed depended on the neighbourhood, which is why the verdict alternated with the last bit and
+// with the platform. The covering merges coincident locations now (coverVertices.
+// MergeCoincidentLocations) and the misread is gone.
+//
+// RE-MEASURED over every offset from −8 to +8: the intersect piece meshes 111.67488 mm² and the cut
+// piece 283.07521 at EVERY offset from −8 to +4 (111.67492 / 283.07521 at −8 and −7). At +5 and
+// beyond the BOOLEAN refuses the fixture outright — "intersect of a 1-face target and a 6-face tool:
+// the exact result failed its own acceptance gate" — because the plane has stopped touching and the
+// section is two ovals; that is the tangential-contact gap (#3552), not this row's.
+//
+// The set below spans the three offsets that used to be misread and the widest that still build.
+var figureEightOffsetUlps = []int{-8, -3, -2, -1, 0, 1, 2, 4}
 
 // figureEightCentreUlps perturbs the torus CENTRE in x and z, which is NOT a bifurcation parameter:
 // the plane y=3 is tangent to the inner equator whatever they are, so no decision may move at any
@@ -137,61 +144,4 @@ func perturbedFigureEightPiece(t *testing.T, p ulpPerturbation, op ops.PartFeatu
 		t.Fatalf("%s: the %v piece has %d faces, want 3 (torus band + two lids)", p.name, op, n)
 	}
 	return res
-}
-
-// figureEightMisreadOffsets are the tangency offsets just below the exact tangency where the
-// classification is known to fail. It fails at a DIFFERENT one on each platform (see the table on
-// figureEightOffsetUlps), so the pin below asserts that at least one of them still fails rather
-// than naming which — the defect is that any of them does.
-var figureEightMisreadOffsets = []int{-1, -2, -3}
-
-// TestTheFigureEightMisreadsAnOffsetJustBelowTheTangency pins the defect the row above stops short
-// of, so the band cannot stay narrow by inattention.
-//
-// Within three ulps BELOW the exact tangency the intersect piece's torus face meshes the whole
-// torus — 394.75 mm² where its share is 111.68 — while meshing its share at the default faceting,
-// so the face's own region is read differently at two facetings. Which offsets do it depends on the
-// platform, which is the point: nothing about the geometry changes over 2.7e-15 of a 5 mm radius.
-// It is pre-existing (it reproduces at this wave's base 6590a9ba in a clean worktree) and outside
-// ADR-0064's scope, which converts the arithmetic floor and not kernel/brep or kernel/ops.
-//
-// When this test fails, the classification is fixed: widen figureEightOffsetUlps and delete it.
-func TestTheFigureEightMisreadsAnOffsetJustBelowTheTangency(t *testing.T) {
-	if testing.Short() {
-		t.Skip("corpus tier (~10s): `make test-corpus`")
-	}
-	t.Parallel()
-	for _, k := range figureEightMisreadOffsets {
-		if figureEightIntersectIsMisread(t, k) {
-			return
-		}
-	}
-	t.Fatalf("the intersect piece is now correct at every offset in %v ulps below the tangency — "+
-		"the classification survives the perturbation. Widen figureEightOffsetUlps and delete this "+
-		"test (ADR-0064, #3528)", figureEightMisreadOffsets)
-}
-
-// figureEightIntersectIsMisread reports whether the intersect piece at k ulps below the tangency
-// comes back carrying the whole torus (or is refused outright, which is also "not the right body").
-func figureEightIntersectIsMisread(t *testing.T, k int) bool {
-	t.Helper()
-	target, tool := perturbedFigureEight(t, ulpPerturbation{offset: k})
-	res, err := ops.Boolean(ops.Intersect, target, tool)
-	if err != nil {
-		return true
-	}
-	return torusMeshArea(t, res) > figureEightTorusArea*0.9
-}
-
-// torusMeshArea is the total mesh area of a body's torus faces at the PROPERTY faceting — the one
-// the misread offsets misread.
-func torusMeshArea(t *testing.T, b *topo.Body) float64 {
-	t.Helper()
-	sum := 0.0
-	for _, f := range b.Faces() {
-		if _, isTorus := f.Geometry().(geom.Torus); isTorus {
-			sum += tessellate.MeshGeometryProperties(tessellate.TessellateFace(f, ops.PropertyQuality())).Area
-		}
-	}
-	return sum
 }
