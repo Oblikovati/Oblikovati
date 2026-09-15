@@ -24,15 +24,13 @@ import (
 // leave the pinch with dv/du = ±√((R−r)/r), so the material corner is 180° − 2·arctan√(r/(R−r)) —
 // 101.5° at R=5 r=2, and exactly 90° here, because R − r = r makes the arctan 45°.
 //
-// This row is R=5, r=2.5. It is the second self-touching boundary AND it is what the boundary clearance's
-// LOWER failure edge now rests on (chart_face_clearance.go, re-swept for #3519): its intersect piece
-// meshes torn at DefaultQuality — 48 free edges, the torus face declined to the whole domain — at every
-// swept k up to and including 0.70, and watertight at 0.705 and at every swept value above it. That is
-// the highest failing k of any corpus row, so it, not the genus-1 complement (which fails only for
-// k ≤ 0.2, and whose PropertyQuality failure the old table recorded no longer happens at all), is what
-// the shipped clearance has to clear. A constant whose edge rests on one face is one measurement away
-// from being unpinned; this is the binding face, and 0.935 is the log-centre of the run it brackets
-// from below.
+// This row is R=5, r=2.5. It is the second self-touching boundary, and it is the row that found #3551
+// and #3553 — both of which turned out to be the reason the boundary clearance appeared to have a lower
+// failure edge at all. Its intersect piece used to tear at DefaultQuality for every swept k ≤ 0.70 and
+// its cut piece was the one aspect ratio whose analytic volume the integrator would answer for. Neither
+// was a tolerance: the covering laid two vertices at one location at the pinch, and the side test probed
+// a chart's slit. With both fixed, every swept k from 0.1 up meshes the whole corpus watertight and the
+// clearance is set by its cost instead (chart_face_clearance.go).
 //
 // It is also the row that FOUND Oblikovati/Oblikovati#3551 and now guards the fix. Its intersect piece
 // used to be declined at PropertyQuality and to ship the whole torus, 408 free edges; see

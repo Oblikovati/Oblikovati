@@ -195,9 +195,9 @@ func assertCorpusVolume(t *testing.T, row chartCorpusRow, got float64) {
 // it is NOT the lemniscate this comment once claimed (that is the figure-eight fixture, d = R − r), and
 // the boundary passes through no 3D point twice. The rim's chord is coarsest in u at the oval's apex,
 // and this row is what the boundary clearance is swept on (chartBoundaryClearance). Re-measured there:
-// 201.022 against an analytic 203.904871 at DefaultQuality, 1.414 % — the comment said 1.11 % before the
-// first sweep and 1.30 % after it, and the number moves with the constant every time it does (#3519).
-// At PropertyQuality it is 203.869, 0.017 %.
+// 201.153 against an analytic 203.904871 at DefaultQuality, 1.350 % — the comment said 1.11 % before the
+// first sweep, 1.30 % after it and 1.414 % at the round that centred the clearance, and the number moves
+// with the constant every time it does (#3519). At PropertyQuality it is 203.869, 0.017 %.
 //
 // The torus FACE's own area is pinned two-sided beside the body volume, because the clearance trades
 // interior density for the boundary and only a per-face reading shows what it costs.
@@ -224,16 +224,16 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 		t.Error("the genus-1 complement reported a discarded trim")
 	}
 	got := tessellate.MeshGeometryProperties(mesh).Volume
-	// 0.02, not the 0.05 the other rows carry: this row is MEASURED at 1.414% (201.022 against an
+	// 0.02, not the 0.05 the other rows carry: this row is MEASURED at 1.350% (201.153 against an
 	// analytic 203.904871), so a bound four times looser than the reading would sit green through
 	// almost anything.
 	//
-	// The reading was 1.298% (201.258) until the boundary clearance was re-centred on its plateau
-	// (#3519, chart_face_clearance.go). That is the price of centring, written down rather than
-	// absorbed: this comment used to say the row exists to have beaten the deleted window mesher's
-	// 1.39%, and at the COARSE faceting it no longer does, by 0.024 of a percentage point. At
-	// PropertyQuality the same body reads 0.017%, and what the rise buys is the clearance that keeps
-	// the figure-eight pinch watertight at both ends of its own plateau.
+	// This number is what SETS the boundary clearance now (#3519, chart_face_clearance.go). The
+	// clearance's only remaining failure edge is above — the corpus tears from k = 1.25 and nowhere
+	// below 0.1 — and its cost is this deficit, monotone in k. So the constant is the largest swept
+	// value whose cost stays under the 1.39% the deleted window mesher used to achieve on this body,
+	// which is the number this row exists to have beaten: 0.90 reads 1.350%, 0.92 reads 1.414%. A later
+	// sweep that wants to raise the clearance has to say what it does to this claim.
 	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > 0.02 {
 		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f > 0.02)", got, an.Volume, rel)
 	}
@@ -254,21 +254,22 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 // Tessellation is byte-identical run to run by ground rule, so the reading is exact; the window absorbs
 // only the five decimals this literal is written to (1e-5) and the last-place spread an FMA-contracting
 // toolchain gives an area sum. That guarantee was CHECKED for this pin rather than assumed, at the
-// clearance shipped today: the same face reads 263.451032402150 mm² from 1804 triangles on amd64 and
-// 263.451032402150 from 1804 under arm64 emulation (ADR-0064's `make arm64`) — bit-identical, so the
-// tightened window is not a platform trap. ADR-0064 does not BIND kernel/ops, so that is an empirical
+// clearance shipped today: the same face reads the same bits from the same triangle count on amd64 and
+// under arm64 emulation (ADR-0064's `make arm64`) — bit-identical, so the tightened window is not a
+// platform trap. ADR-0064 does not BIND kernel/ops, so that is an empirical
 // result rather than a structural guarantee; the drift it would newly fail on is between 1.9e-5 and
 // 1.9e-4 relative, which is one or two nodes' worth. 0.005 is 500× the literal's own precision and 5.6×
 // below the nearest reading it must exclude.
 //
-// Measured at the shipped k = 0.935. Across the 29-value re-sweep (chart_face_clearance.go) the same
-// face reads 294.42794 for k ≤ 0.2 — the decline, not a mesh — then 263.74953 (0.25), 263.73402
-// (0.3–0.4), 263.72994 (0.45–0.55), 263.68219 (0.6), 263.60871 (0.7–0.75), 263.56345 (0.8–0.85),
-// 263.55487 (0.875), 263.45103 (0.92–0.935), 263.42317 (0.95–1.0), 263.33288 (1.1–1.2), 263.28202
-// (1.24–1.25), 263.18783 (1.3), 263.15360 (1.4–1.5), 260.51898 (3.0) — monotone in k, which is what a
-// clearance that only ever REMOVES interior nodes must be. The window separates this reading from every
-// swept k whose mesh differs; it cannot separate 0.935 from 0.92, which build the same mesh.
-const complementTorusFaceArea, complementTorusFaceWindow = 263.45103, 0.005
+// Measured at the shipped k = 0.90. Across the 33-value re-sweep (chart_face_clearance.go) the same face
+// reads 263.76393 (0.1), 263.75923 (0.2), 263.73402 (0.3), 263.72994 (0.5), 263.60871 (0.70), 263.55487
+// (0.875), 263.49469 (0.89–0.91), 263.45103 (0.92), 263.33288 (1.2), 263.28202 (1.24–1.25), 263.18783
+// (1.3), 263.15360 (1.5), 260.51898 (3.0) — monotone in k, which is what a clearance that only ever
+// REMOVES interior nodes must be. It no longer DECLINES at any swept k: the 294.42794 the low end used
+// to read was the whole domain, and the tear behind it was #3551 rather than this constant. The window
+// separates this reading from every swept k whose mesh differs (the nearest is 263.45103 at 0.92, 0.0437
+// away); it cannot separate 0.90 from 0.89 or 0.91, which build the same mesh.
+const complementTorusFaceArea, complementTorusFaceWindow = 263.49469, 0.005
 
 // assertComplementFaceArea holds the complement's torus face to its measured area, both ways.
 func assertComplementFaceArea(t *testing.T, body *topo.Body) {
