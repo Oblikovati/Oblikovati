@@ -147,6 +147,7 @@ func (m *cdt) fanCavity(ip int, c cavity) {
 	bnd := m.cavityBoundary(c)
 	for _, t := range c.order {
 		m.dead[t] = true
+		m.live--
 	}
 	pending := map[int][2]int{} // shared (ip,x) edges: other-vertex x → first (tri, localIndex)
 	link := func(t, i, other int) {
@@ -188,12 +189,16 @@ func (m *cdt) cavityBoundary(c cavity) []cavityEdge {
 func (m *cdt) addTri(a, b, c int) int {
 	m.tris = append(m.tris, cdtTri{v: [3]int{a, b, c}, n: [3]int{-1, -1, -1}})
 	m.dead = append(m.dead, false)
+	m.live++
 	m.touch(len(m.tris) - 1) // keep the incidence hint current once recovery has built it (#1409)
 	return len(m.tris) - 1
 }
 
-// hasEdge reports whether edge (a,b) is present in some live triangle.
+// hasEdge reports whether edge (a,b) is present in some live triangle, by scanning the whole
+// ALLOCATED triangle array. hasEdgeAround answers the same question in O(deg) and is what the
+// recovery path uses (#3548); this remains for the tests that assert on the mesh as a whole.
 func (m *cdt) hasEdge(a, b int) bool {
+	m.fullScans++
 	for t := range m.tris {
 		if !m.dead[t] && m.localEdge(t, a, b) >= 0 {
 			return true
@@ -274,6 +279,7 @@ func (m *cdt) representatives() []int {
 // flipOneCrossing flips one flippable triangulation edge that properly crosses segment (a,b),
 // returning whether it flipped one.
 func (m *cdt) flipOneCrossing(a, b int) bool {
+	m.fullScans++
 	pa, pb := m.pts[a], m.pts[b]
 	for t := range m.tris {
 		if m.dead[t] {
