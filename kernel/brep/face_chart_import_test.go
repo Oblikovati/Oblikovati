@@ -108,3 +108,46 @@ func torusMeridian(t *testing.T, tor geom.Torus, u float64) geom.Circle {
 		Normal: normal, RefDir: ref, Radius: tor.MinorRadius,
 	}
 }
+
+// TestChartOfFaceRefusesALoopWhoseRimsRunTheSameWay is the refusal #3550 leaves standing, and the
+// input is the real one: occtparity simple/J3's host torus, whose fillet-rebuilt loop walks both
+// tube-wrapping rims the same way and so travels −4π instead of closing. The fixture reproduces that
+// winding by reversing one rim use of the band above.
+//
+// It must DECLINE. Re-sensing a rim closes the ring and even gives the right region, and it was built
+// and measured: the tessellator's boundary-side classification then refuses the same face anyway
+// ("its boundary chain 0 names both sides as material"), because the defect is the loop's winding and
+// not the lift. A branch here would hide a producer defect behind a chart nothing can mesh.
+func TestChartOfFaceRefusesALoopWhoseRimsRunTheSameWay(t *testing.T) {
+	t.Parallel()
+	f := sameSensedRimTorusBand(t)
+	if chart, ok := ChartOfFace(f); ok {
+		u0, u1, v0, v1 := polyBoundsOf(chart[0])
+		t.Errorf("ChartOfFace charted a loop that travels two periods: u [%.4f,%.4f] v [%.4f,%.4f]",
+			u0, u1, v0, v1)
+	}
+}
+
+// sameSensedRimTorusBand is seamBridgedTorusBand with its second rim walked the same way as the first.
+func sameSensedRimTorusBand(t *testing.T) *topo.Face {
+	t.Helper()
+	tor, err := geom.NewTorusWithRef(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 20, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uLo, uHi := 0.0, 3*stdmath.Pi/2
+	lin := topo.NewLineage(topo.Tok("test", "samesense", 0))
+	bld := topo.NewBuilder(false, lin)
+	vLo := bld.AddVertex(tor.PointAt(uLo, 0), lin)
+	vHi := bld.AddVertex(tor.PointAt(uHi, 0), lin)
+	seamArc, err := geom.Arc3dByThreePoints(tor.PointAt(uLo, 0), tor.PointAt((uLo+uHi)/2, 0), tor.PointAt(uHi, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	seam := bld.AddEdge(seamArc, vLo, vHi, lin)
+	lo := bld.AddEdge(torusMeridian(t, tor, uLo), vLo, vLo, lin)
+	hi := bld.AddEdge(torusMeridian(t, tor, uHi), vHi, vHi, lin)
+	// Fwd(hi) where the wound band has Rev(hi): both rims now turn the tube the same way.
+	bld.AddFace(tor, lin, topo.OuterLoop(topo.Fwd(lo), topo.Fwd(seam), topo.Fwd(hi), topo.Rev(seam)))
+	return bld.Build().Faces()[0]
+}

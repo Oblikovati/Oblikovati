@@ -68,7 +68,8 @@ func ChartOfFace(f *topo.Face) ([][]math.Point2, bool) {
 }
 
 // liftLoopByUse lifts one loop into the covering space, each edge use continuous within itself and
-// placed against the previous use by a whole-period shift. ok=false when the result does not close.
+// placed against the previous use by a whole-period shift. ok=false when the result does not close
+// even after re-sensing a rim (below).
 func liftLoopByUse(s geom.Surface, l *topo.Loop, uPer, vPer bool) ([]math.Point2, bool) {
 	var ring []math.Point2
 	for _, u := range l.EdgeUses() {
@@ -78,10 +79,43 @@ func liftLoopByUse(s geom.Surface, l *topo.Loop, uPer, vPer bool) ([]math.Point2
 		}
 		ring = appendPlacedTrace(ring, trace, uPer, vPer)
 	}
-	if !ringCloses(ring, uPer, vPer) {
+	if !ringTravelsAWholePeriodAtMost(ring) {
 		return nil, false
 	}
 	return ring, true
+}
+
+// ringTravelsAWholePeriodAtMost is the lift's post-condition, and the thing it REFUSES is worth naming
+// because it is a real producer defect rather than a shape this derivation is too weak for.
+//
+// A lifted loop may end where it started (a circuit) or one whole period along (a band RIM, which
+// closeRingsIntoChart pairs with its partner across the seam). It may not end TWO periods along. That
+// happens when the loop walks its two tube-wrapping rims the SAME way, which is not a consistently
+// wound boundary: measured on occtparity simple/J3's host torus, −4π in v, because the fillet's rim
+// rebuild takes the replacement rim's use flag from the blend's CONVEXITY (fillet_rim_build.go's
+// `Reversed: !g.concave`, chosen to mirror the band face under Validate's 2-incidence rule) rather
+// than from the rim it replaces. simple/J3's IMPORTED torus face closes and charts; the rebuilt one
+// does not. bfuseblend/A4, the concave case, comes out consistent by the same rule and charts.
+//
+// Re-sensing one rim here would close the ring and would even give the right REGION — the seam the loop
+// carries pins which of the two bands the face is, and a chart is orientation-free (chartContains
+// counts even-odd; ADR-0063 reads handedness against the region, not from the contour's area). It was
+// built and measured, and it buys nothing: the tessellator's boundary-side classification then refuses
+// the same face for the same underlying reason, "its boundary chain 0 names both sides as material
+// (127 segments say left, 126 say right)" — the two rims again. The invariant that is broken is the
+// loop's winding, and the ground rules put the fix there, not in a branch here.
+func ringTravelsAWholePeriodAtMost(ring []math.Point2) bool {
+	if len(ring) < 3 {
+		return false
+	}
+	a, b := ring[0], ring[len(ring)-1]
+	tol := ringClosureTol * ringExtent(ring)
+	return withinOnePeriod(float64(b.X-a.X), tol) && withinOnePeriod(float64(b.Y-a.Y), tol)
+}
+
+// withinOnePeriod reports whether a closure defect is zero or one whole period, to tolerance.
+func withinOnePeriod(d, tol float64) bool {
+	return stdmath.Abs(d) <= tol || stdmath.Abs(stdmath.Abs(d)-twoPi) <= tol
 }
 
 // appendPlacedTrace places a use's trace so its first sample meets the chain's last, and appends it
@@ -112,30 +146,6 @@ func junctionShift(end, start math.Point2, uPer, vPer bool) (du, dv float64) {
 
 // wholePeriods rounds a parameter difference to the nearest whole number of periods.
 func wholePeriods(d float64) float64 { return twoPi * stdmath.Round(d/twoPi) }
-
-// ringCloses reports whether the lifted ring returns to its own first sample — the post-condition that
-// makes the derivation a reading rather than a choice. A ring that ends a whole period away bounds
-// nothing in the covering space; it is the two-rim band the caller's closeRingsIntoChart handles from
-// the rings themselves, or a shape only the producer knows.
-func ringCloses(ring []math.Point2, uPer, vPer bool) bool {
-	if len(ring) < 3 {
-		return false
-	}
-	a, b := ring[0], ring[len(ring)-1]
-	tol := ringClosureTol * ringExtent(ring)
-	return closedOnAxis(float64(a.X), float64(b.X), tol, uPer) && closedOnAxis(float64(a.Y), float64(b.Y), tol, vPer)
-}
-
-// closedOnAxis reports whether one axis returns to its start. A PERIODIC axis may legitimately end one
-// or more whole periods along — that is a ring which TURNS, which splitTurningRings reads as a band rim
-// — so only the fractional part has to vanish there.
-func closedOnAxis(a, b, tol float64, periodic bool) bool {
-	d := b - a
-	if periodic {
-		d -= wholePeriods(d)
-	}
-	return stdmath.Abs(d) <= tol
-}
 
 // ringClosureTol is how far, as a fraction of the ring's own (u, v) extent, the lift may land from its
 // start and still count as closed. The lift's only inexactness is the surface inversion at the shared
