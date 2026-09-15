@@ -157,7 +157,11 @@ type chartCover struct {
 	padV     float64
 	rim      int            // vertices [0, rim) are the boundary chains', laid before any interior node
 	rimChain map[[2]int]int // each boundary segment's own chain, directed (chart_face_rim_side.go)
-	chains   int            // how many boundary chains the face has
+	// node is the interior grid's lattice: which covering vertex each (shift, station pair) was laid
+	// at. It is what lets the structured interior be emitted as a quad mesh instead of triangulated
+	// (chart_structured_interior.go).
+	node   *gridNodeIndex
+	chains int // how many boundary chains the face has
 	// weld is the ONE resolution this covering welds and keys a rim at, so the rule that binds
 	// triangles to the rim and the gate that judges the result cannot key it differently (#3518
 	// review M9).
@@ -361,26 +365,35 @@ func chainPoints(chains []chartChain) [][]math.Point3 {
 // clear of the boundary, replicated at each period shift. One 3D point per node, shared by its
 // replicas, so the seam welds exactly.
 func (b *chartCover) addInterior(chains []chartChain) {
+	b.node = newGridNodeIndex(len(b.r.shifts()), len(b.us), len(b.vs))
 	margin := b.nodeMargin()
 	for i, u := range b.us {
 		for j, v := range b.vs {
-			if !b.stationIsMaterial(i, j) || !b.clearOfChains(chains, u, v, margin) {
+			if !b.stationIsMaterial(i, j) {
+				continue
+			}
+			clear, keep := b.nodeClearance(chains, i, j, u, v, margin)
+			if !keep {
 				continue
 			}
 			fu, fv := b.r.fold(u, v)
-			p := b.s.PointAt(fu, fv)
-			b.addReplicas(p, u, v)
+			b.node.record(i, j, b.addReplicas(b.s.PointAt(fu, fv), u, v), clear)
 		}
 	}
 }
 
-// addReplicas adds one interior node at every period shift that lands inside the pad.
-func (b *chartCover) addReplicas(p math.Point3, u, v float64) {
+// addReplicas adds one interior node at every period shift that lands inside the pad, returning the
+// covering vertex it laid at each shift (-1 where the pad declined it) so the grid node index can hold
+// the lattice the structured interior is emitted from (chart_structured_interior.go).
+func (b *chartCover) addReplicas(p math.Point3, u, v float64) []int {
+	at := make([]int, len(b.r.shifts()))
 	for si, sh := range b.r.shifts() {
+		at[si] = -1
 		if b.inPad(u+sh[0], v+sh[1]) {
-			b.add(p, u+sh[0], v+sh[1], si)
+			at[si] = b.add(p, u+sh[0], v+sh[1], si)
 		}
 	}
+	return at
 }
 
 // stationIsMaterial reports whether the grid node at station (i, j) is material.

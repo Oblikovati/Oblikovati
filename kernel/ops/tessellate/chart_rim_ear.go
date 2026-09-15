@@ -32,7 +32,7 @@ const chartRimEarRounds = 8
 // the discarded trim.
 func (b *chartCover) keptWithoutRimEars(loops [][]int) ([][3]int, bool) {
 	for range chartRimEarRounds {
-		kept := b.keepChartTriangles(constrainedTriangulationAll(b.xy, loops))
+		kept := b.keepChartTriangles(b.coveringTriangles(loops))
 		ears := b.rimEars(kept)
 		if len(ears) == 0 {
 			return kept, true
