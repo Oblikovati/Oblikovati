@@ -46,7 +46,6 @@ func curvedTrimRecognizers(f *topo.Face, s geom.Surface, outer3D []math.Point3, 
 	_, isCap := sphereCapTrimOf(f, sph, outer3D, holes3D, q)
 	_, isBelt := sphereBeltTrimOf(f, sph, q)
 	_, isTube := spiricTubeTrimOf(f, s, q)
-	_, isHoled := twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D)
 	_, isWedge := wedgeBandTrimOf(f, s, q)
 	return []curvedTrimVerdict{
 		{kindConeApexFan, isCone},
@@ -54,7 +53,6 @@ func curvedTrimRecognizers(f *topo.Face, s geom.Surface, outer3D []math.Point3, 
 		{kindSphereZoneBand, isSphere && isBelt},
 		{kindRuledBandLoft, ruledTwoRimBandHolds(f, s, q)},
 		{kindSpiricBand, isTube},
-		{kindTwoRimHoledBand, isHoled},
 		{kindWedgeBand, isWedge},
 	}
 }
@@ -144,24 +142,6 @@ func ChartedTrimKindName() string { return kindChart.String() }
 // SpherePatchTrimKindName names the sphere family's residual arm.
 func SpherePatchTrimKindName() string { return kindSpherePatch.String() }
 
-// TwoRimHoledBandVerdict reports, for one face, whether it has the two-rim HOLED band shape at all,
-// whether it records a chart to mesh from, and whether the classification sends it to that arm. The
-// three together are what says the conditioning gate sorts the corpus the way it claims to.
-func TwoRimHoledBandVerdict(f *topo.Face, q Quality) (isShape, charted, toArm bool) {
-	s := f.Geometry()
-	outer3D, holes3D := FaceOuterBoundary(f, q), faceHoleBoundaries(f, q)
-	_, isShape = twoRimHoledTrimOf(nil, s, outer3D, holes3D) // nil chart: the SHAPE, ungated
-	_, toArm = twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D)
-	return isShape, len(f.Chart()) > 0, toArm
-}
-
-// TwoRimCorridorProbe reports the closest approach between two lens windows and the boundary chord the
-// gate compares it against.
-func TwoRimCorridorProbe(f *topo.Face, q Quality) (gap, chord float64) {
-	_, lenses := splitWrappingHoles(f.Geometry(), faceHoleBoundaries(f, q))
-	return closestLensApproach(lenses), meanChainChord(FaceOuterBoundary(f, q))
-}
-
 // ChartRimOnlyTriangles drives the chart-driven mesher and counts the OUTPUT triangles whose three
 // vertices are all boundary points — the ear keptWithoutRimEars exists to refuse. It keys the rim the
 // way the mesh welds, so the count is over what ships, not over covering indices.
@@ -192,4 +172,17 @@ func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, meshed bool, decline
 		}
 	}
 	return n, true, ""
+}
+
+// IsTwoRimHoledBandShape reports whether a face has the SHAPE the deleted kindTwoRimHoledBand arm
+// recognised: a singly-periodic developable side whose hole loops are one full-wrap rim plus at least
+// one lens window. The arm is gone (#3517, once #3542's covering seam closed), but the shape is still
+// what the near-pinch corpus selects its bands by.
+func IsTwoRimHoledBandShape(f *topo.Face, q Quality) bool {
+	s := f.Geometry()
+	if !isDevelopableSide(s) || IsPeriodic(s.UDomain()) == IsPeriodic(s.VDomain()) {
+		return false
+	}
+	rims, lenses := splitWrappingHoles(s, faceHoleBoundaries(f, q))
+	return len(rims) == 1 && len(lenses) > 0
 }

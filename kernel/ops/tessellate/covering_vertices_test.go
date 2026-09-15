@@ -33,8 +33,9 @@ func TestACoveringVertexKeepsBothItsParameters(t *testing.T) {
 	if i != 0 || len(c.pos) != 1 {
 		t.Fatalf("add returned index %d with %d positions, want the first vertex", i, len(c.pos))
 	}
-	if c.xy[0] != [2]float64{3, 7.5} {
-		t.Errorf("scaled (u,v) = %v, want the metric (2,3) applied", c.xy[0])
+	if want := [2]float64{3 + coverShear*7.5, 7.5}; c.xy[0] != want {
+		t.Errorf("scaled (u,v) = %v, want %v — the metric (2,3) applied and the triangulator's own "+
+			"shear on top of it (coverShear)", c.xy[0], want)
 	}
 	if c.uu[0] != 1.5 || c.vv[0] != 2.5 {
 		t.Errorf("raw (u,v) = (%g,%g), want it unscaled", c.uu[0], c.vv[0])

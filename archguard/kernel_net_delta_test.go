@@ -103,7 +103,15 @@ var kernelNetDeltaPin = map[string]int{
 	// old walk (fff94140) scored 0 on now score 1, and four boundary rows score 0 under both
 	// (TestTheDerivationSeesEveryCalleeAndVerdictShape): the widening must not INFLATE this number
 	// either, because a fall measured from an inflated base looks real when nothing was deleted.
-	"recognizers": 12,
+	// 12 → 11 (2026-09-15, #3517): a FALL — kindTwoRimHoledBand and its one recognizer
+	// (twoRimHoledTrimOf) are DELETED, together with the corridor gate nearPinchCorridorChords that was
+	// the last thing holding the arm alive. What released them is #3542: the covering's two
+	// branch-window ends disagreed because near-cocircular quads at the seam flipped their diagonal
+	// differently at each end, and shearing the triangulator's own frame (coverShear) removes the tie
+	// that made them near-cocircular. Measured over the whole sixteen-row near-pinch corpus: 6 rows
+	// carrying 38 seam edges before, 0 and 0 after, every row bounded by exactly its own rim. The
+	// general chart-driven mesher serves every two-rim holed band there is now.
+	"recognizers": 11,
 	// 28 → 29 (2026-09-03, ADR-0061): CodeBooleanAnalyticInvalid. A RISE that is an improvement — the
 	// public curved-boolean entry had no Validate post-condition, so a recognizer returning a torn body
 	// shipped it silently; the degradation is now refused AND reported.
@@ -312,14 +320,13 @@ func TestKernelNetDelta(t *testing.T) {
 // so a fourth rim form, a second cone topology or a new gate inside an arm fails the build until it is
 // written down here.
 var curvedTrimRecognizers = map[string][]string{
-	"kindConeApexFan":     {"coneApexTrimOf", "faceIsConeApexCap"},
-	"kindSphereCapFan":    {"planarCircleCapRim", "poleSeamedCapRim", "multiArcSeamCapRim"},
-	"kindSphereZoneBand":  {"sphereBeltTrimOf"},
-	"kindSpherePatch":     {"spherePatchTrimOf"},
-	"kindRuledBandLoft":   {"hasTwoClosedRimsNoOpen", "hasFullCircleAndNotchedRim"},
-	"kindSpiricBand":      {"spiricTubeTrimOf"},
-	"kindTwoRimHoledBand": {"twoRimHoledTrimOf"},
-	"kindWedgeBand":       {"wedgeBandTrimOf"},
+	"kindConeApexFan":    {"coneApexTrimOf", "faceIsConeApexCap"},
+	"kindSphereCapFan":   {"planarCircleCapRim", "poleSeamedCapRim", "multiArcSeamCapRim"},
+	"kindSphereZoneBand": {"sphereBeltTrimOf"},
+	"kindSpherePatch":    {"spherePatchTrimOf"},
+	"kindRuledBandLoft":  {"hasTwoClosedRimsNoOpen", "hasFullCircleAndNotchedRim"},
+	"kindSpiricBand":     {"spiricTubeTrimOf"},
+	"kindWedgeBand":      {"wedgeBandTrimOf"},
 }
 
 // curvedTrimSwitch is where those arms are selected; its case clauses must match the keys above.

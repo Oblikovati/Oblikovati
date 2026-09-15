@@ -28,32 +28,6 @@ import (
 // triangles; the interior is refined by adaptiveInteriorNodes regardless.
 const seamSteps = 16
 
-// twoRimHoledBandMesh meshes a developable side bounded by two full-wrap rims (either may be notched)
-// carrying interior lens holes, by bridging the rims at a synthetic seam and unrolling. ok=false unless
-// the surface is a developable side and EXACTLY ONE of the hole loops is itself a full-wrap rim (zero →
-// holedConicWallMesh already handles it; two or more → not a two-rim band this mesher understands).
-//
-// chart is the face's own parametric trim (ADR-0063), when it carries one: its seam was placed by the
-// boolean clear of every hole, exactly, and the bridge goes there rather than into the widest gap between
-// the holes' SAMPLED points — which two lens holes that nearly pinch leave inside a lens once their
-// corridor is narrower than a sample step (ADR-0061 stage 4). nil reads the gap from the samples.
-func twoRimHoledBandMesh(chart [][]math.Point2, s geom.Surface, outer3D []math.Point3, h twoRimHoledTrim, q Quality) (*Mesh, bool) {
-	lenses := h.lenses
-	wrap, ok := bridgeRimsAtSeam(s, outer3D, h.rim, lenses, seamAngleFor(chart, s, outer3D, lenses))
-	if !ok {
-		return nil, false
-	}
-	outerUV, umin, umax, ok := wrappedWallUV(s, wrap)
-	if !ok {
-		return nil, false
-	}
-	lensUV, ok := holesIntoBranch(s, lenses, umin, umax)
-	if !ok {
-		return nil, false
-	}
-	return unrolledWallCDT(s, q, wrap, lenses, outerUV, lensUV), true
-}
-
 // splitWrappingHoles partitions hole loops into those that themselves wrap the full period (a second rim,
 // mis-demoted to a hole by faceHoleBoundaries) and the genuine non-wrapping lens holes, by their unrolled
 // angular span (a full rim spans ~2π; a lens spans a small arc).
@@ -115,32 +89,6 @@ func bridgeRimsAtSeam(s geom.Surface, top3D, bot3D []math.Point3, lenses [][]mat
 	wrap = append(wrap, topSeq[0])          // top-left corner: the seam top vertex
 	wrap = appendReversed(wrap, seam)       // left seam edge, top → bottom (same points, reversed → welds)
 	return wrap, true
-}
-
-// seamAngleFor is the azimuth the rim-bridging seam runs at: the face's chart seam when it carries one
-// and its top rim is intact — placed by the boolean in the corridor between the holes, exactly — else
-// the widest sampled gap clear of the holes and of the notch. A NOTCHED rim keeps its own placement:
-// the chart's seam is clear of the imprint, not of the rim's notch, and a bridge anchored in the notch
-// tangles the corner mesh — the corner junction's wall cracked along it (ADR-0061 stage 4).
-func seamAngleFor(chart [][]math.Point2, s geom.Surface, top []math.Point3, lenses [][]math.Point3) float64 {
-	ring := orderedRing(s, top)
-	if th, ok := chartSeamAngle(chart); ok && len(notchAngles(s, ring)) == 0 {
-		return th
-	}
-	return clearSeamAngle(s, ring, lenses)
-}
-
-// chartSeamAngle is where a face's chart cuts the azimuth: the least u of its outer contour, which on a
-// periodic surface is the seam the chart's producer placed (ADR-0063).
-func chartSeamAngle(chart [][]math.Point2) (float64, bool) {
-	if len(chart) == 0 || len(chart[0]) == 0 {
-		return 0, false
-	}
-	least := stdmath.Inf(1)
-	for _, p := range chart[0] {
-		least = stdmath.Min(least, float64(p.X))
-	}
-	return normTwoPi(least), true
 }
 
 // bentSeamOnSurface builds the bridging seam's interior points bottom→top: with no lens a straight slit

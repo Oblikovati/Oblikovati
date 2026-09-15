@@ -32,7 +32,7 @@ import (
 // FACE mesh", is pinned in kernel/ops/tessellate.
 func TestTheHarvestCarriesEveryCodeTheFaceMeshesDo(t *testing.T) {
 	t.Parallel()
-	body := nearPinchCrossingRods(t)
+	body := unchartedNearPinchCrossingRods(t)
 	_, meshes := tessellate.TessellateBodyFaces(body, PropertyQuality())
 	want := codeSet(faceMeshDiagnostics(meshes))
 	if len(want) == 0 {
@@ -41,10 +41,24 @@ func TestTheHarvestCarriesEveryCodeTheFaceMeshesDo(t *testing.T) {
 	assertSameCodes(t, codeSet(BodyMeshDiagnostics(body, PropertyQuality())), want)
 }
 
-// nearPinchCrossingRods is the one corpus body whose faces still record a tessellation degradation at
-// PropertyQuality — two rods crossing with a 4e-5 radius difference, whose wall's two lens windows
-// leave a corridor narrower than the boundary's own chords. It is the fixture that makes the identity
-// above a proof rather than a tautology.
+// unchartedNearPinchCrossingRods is the crossing rods with the charts stripped off their curved faces.
+//
+// The rods USED TO record a degradation on their own: the near-pinch wall's two lens windows leave a
+// corridor narrower than the boundary's own chords, and the covering could not resolve it. #3542 closed
+// that (coverShear), every corpus body now meshes clean, and the identity this row states would hold
+// vacuously on any of them. A face whose producer recorded NO chart is the shape that still does
+// record — it is what #3550 is about, and what the deleted bespoke arms existed to serve — so the
+// fixture makes one deliberately rather than hunting for a body that still cracks.
+func unchartedNearPinchCrossingRods(t *testing.T) *topo.Body {
+	t.Helper()
+	body := nearPinchCrossingRods(t)
+	for _, f := range body.Faces() {
+		f.SetChart(nil)
+	}
+	return body
+}
+
+// nearPinchCrossingRods is two rods crossing with a 4e-5 radius difference.
 func nearPinchCrossingRods(t *testing.T) *topo.Body {
 	t.Helper()
 	along, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)

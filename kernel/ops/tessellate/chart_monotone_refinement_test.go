@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/ops/query"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
 )
@@ -79,14 +80,36 @@ func TestEveryChartedFaceGainsAreaUnderRefinement(t *testing.T) {
 		hi := tessellate.MeshGeometryProperties(tessellate.TessellateFace(f, fine)).Area
 		// A facet chord is a SECANT of the surface, so refining can only add area back; the slack is
 		// the fine mesh's own remaining deficit, not a licence to lose any.
-		if hi < lo-refinementSlack*stdmath.Abs(lo) {
-			t.Errorf("%s face %d (%T): area FELL under refinement, %.5f → %.5f (rel %+.5f)",
-				body, i, f.Geometry(), lo, hi, (hi-lo)/lo)
+		if hi >= lo-refinementSlack*stdmath.Abs(lo) || refinementApproachedTheOracle(f, lo, hi) {
+			return
 		}
+		t.Errorf("%s face %d (%T): area FELL under refinement, %.5f → %.5f (rel %+.5f)",
+			body, i, f.Geometry(), lo, hi, (hi-lo)/lo)
 	})
 	if seen == 0 {
 		t.Error("no corpus face reached the chart-driven mesher — the refinement gate covers nothing")
 	}
+}
+
+// refinementApproachedTheOracle is the one case a FALL is not a loss, and it is the oracle that says so
+// rather than a slackened bound.
+//
+// "Refining can only add area" holds while the coarse mesh is INSIDE the surface, which is what a
+// secant chord guarantees — for a face whose covering resolves its region at that sampling. A face with
+// a near-pinch CORRIDOR is the exception: at the coarse faceting the covering bridges the corridor and
+// OVER-measures, and refining then takes the area DOWN onto the true value. Measured on the near-pinch
+// crossing rods ∪ face 6, the one corpus face that does it: analytic 154.20285, coarse 154.21847
+// (+1.012e-4), fine 154.20254 (−2.064e-6). The fall is a correction and the fine mesh is fifty times
+// closer to the truth.
+//
+// So a fall passes only when query.AnalyticFaceArea exists AND the fine mesh is strictly nearer to it.
+// A fall away from the oracle, or on a face with no oracle, still fails.
+func refinementApproachedTheOracle(f *topo.Face, lo, hi float64) bool {
+	want, ok := query.AnalyticFaceArea(f)
+	if !ok || want <= 0 {
+		return false
+	}
+	return stdmath.Abs(hi-want) < stdmath.Abs(lo-want)
 }
 
 // refinementSlack is how much of a face's coarse area the fine mesh may still be short by. It is not a

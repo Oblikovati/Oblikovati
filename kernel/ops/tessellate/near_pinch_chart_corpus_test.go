@@ -74,11 +74,15 @@ func TestTheChartMesherBoundsEveryNearPinchBandByItsOwnRim(t *testing.T) {
 	})
 }
 
-// TestSixNearPinchRowsStillCarrySeamEdges is the ratchet on what is LEFT, and it fails in both
-// directions on purpose. A rise means the seam got worse; a fall means the covering's two ends now
-// agree, and then the corridor gate (nearPinchCorridorChords) and the unrolled arm can go — that is
-// #3517, and this row is what unlocks it.
-func TestSixNearPinchRowsStillCarrySeamEdges(t *testing.T) {
+// TestNoNearPinchRowCarriesASeamEdge was TestSixNearPinchRowsStillCarrySeamEdges, and the six are
+// GONE (#3542, closed by covering_vertices.go's coverShear). A covering's premise is that its two
+// branch-window ends are the same triangulation; near-cocircular quads at the seam flipped their
+// diagonal differently at the two ends, and shearing the triangulator's own frame so a lattice cell is
+// not concyclic removes the tie that made them near-cocircular. Measured over the whole sixteen-row
+// corpus: 6 rows and 38 seam edges before, 0 and 0 after, across a shear plateau four decades wide.
+//
+// It still fails in both directions. A rise means the seam regressed. It can no longer fall.
+func TestNoNearPinchRowCarriesASeamEdge(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier (~25s): `make test-corpus`")
 	}
@@ -90,10 +94,10 @@ func TestSixNearPinchRowsStillCarrySeamEdges(t *testing.T) {
 			total += extra
 		}
 	})
-	if rows != 6 || total != 38 {
-		t.Errorf("%d of the sixteen near-pinch rows carry seam edges, %d in all; the measurement is 6 and 38. "+
-			"Fewer means the covering's two ends now agree — delete the corridor gate and the unrolled arm "+
-			"(#3517). More means the seam regressed", rows, total)
+	if rows != 0 || total != 0 {
+		t.Errorf("%d of the sixteen near-pinch rows carry seam edges, %d in all; the measurement is 0 and 0 "+
+			"since #3542 closed. The covering's two branch-window ends have stopped agreeing — see "+
+			"coverShear", rows, total)
 	}
 }
 
@@ -121,7 +125,7 @@ func visitNearPinchBands(t *testing.T, gq gateQuality, r, dr float64, visit func
 	t.Helper()
 	seen := 0
 	for i, f := range nearPinchJoinBody(t, r, dr).Faces() {
-		if isShape, _, _ := tessellate.TwoRimHoledBandVerdict(f, gq.q); !isShape {
+		if !tessellate.IsTwoRimHoledBandShape(f, gq.q) {
 			continue
 		}
 		seen++

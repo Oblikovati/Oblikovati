@@ -54,3 +54,11 @@ func TestUnmeshedWallWrapIgnoresLegitimateFlatPatches(t *testing.T) {
 		})
 	}
 }
+
+// bandCylinder is the R=3 test cylinder these rows wrap a wall around. It moved here from
+// two_rim_holed_band_test.go when that arm was deleted (#3517).
+func bandCylinder(h float64) geom.Cylinder {
+	c, _ := geom.NewCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 3)
+	_ = h
+	return c
+}

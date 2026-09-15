@@ -164,59 +164,13 @@ func forEachCurvedCorpusFace(t *testing.T, visit func(body string, i int, f *top
 func TestTheClassificationCorpusReachesEveryArm(t *testing.T) {
 	t.Parallel()
 	want := []string{"chart", "cone-apex-fan", "ruled-band-loft", "sphere-cap-fan", "sphere-patch",
-		"sphere-zone-band", "two-rim-holed-band", "uncharted"}
+		"sphere-zone-band", "uncharted"}
 	seen := classifiedCurvedFaces(t)
 	for _, kind := range want {
 		if seen[kind] == 0 {
 			t.Errorf("no corpus face classifies as %s — the exclusivity proof does not cover that arm", kind)
 		}
 	}
-}
-
-// nearPinchCorpusBody is the one corpus body whose two-rim band the arm still keeps: its two lens
-// windows pass 0.031 mm apart on a boundary sampled every 0.588 mm, and no covering laid at that
-// sampling separates them. Every other two-rim band in the corpus goes to the general chart-driven
-// mesher (curved_trim_recognize.go's corridor gate).
-const nearPinchCorpusBody = "near-pinch crossing rods ∪"
-
-// TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe is the conditioning gate's own proof over the
-// corpus: the arm must keep exactly the bands the general chart-driven mesher cannot serve — one that
-// records no chart, and the near-pinch body's, whose two windows pass closer than the boundary is
-// sampled — and give up every other two-rim holed band there is. Both directions are asserted and the
-// test fails if the corpus stops covering either, so a gate that let go of everything — or of
-// nothing — is caught.
-func TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe(t *testing.T) {
-	t.Parallel()
-	q := ops.DefaultQuality()
-	kept, given := 0, 0
-	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
-		isShape, charted, toArm := tessellate.TwoRimHoledBandVerdict(f, q)
-		if !isShape {
-			return
-		}
-		wantArm := !charted || body == nearPinchCorpusBody
-		if toArm {
-			kept++
-		} else {
-			given++
-		}
-		if toArm != wantArm {
-			t.Errorf("%s face %d (charted=%v): the corridor gate sends this two-rim band to the %s; want the %s",
-				body, i, charted, armOrChart(toArm), armOrChart(wantArm))
-		}
-	})
-	if kept == 0 || given == 0 {
-		t.Errorf("the corpus presents %d bands the arm keeps and %d it gives up; it must cover both or "+
-			"the gate is proved in one direction only", kept, given)
-	}
-}
-
-// armOrChart names which mesher a verdict selects, for the failure message.
-func armOrChart(toArm bool) string {
-	if toArm {
-		return "unrolled arm"
-	}
-	return "chart-driven mesher"
 }
 
 // classifiedCurvedFaces counts the curved faces of the whole corpus by the kind they classify as.

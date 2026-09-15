@@ -279,31 +279,16 @@ func (a *assembler) addOrientedFace(surface geom.Surface, sameSense bool, lineag
 
 // recordImportedChart derives and stores a periodic face's chart, or leaves it nil.
 //
-// IT IS OFF, and the reason is a measured regression rather than a doubt about the chart (#3549).
-// brep.ChartOfFace is right — kernel/brep's own rows hold it, and with it switched on bfuseblend/A4's
-// host torus meshes through the GENERAL chart-driven mesher at 292 849.88 mm² against DRAWEXE's
-// 292 920 (rel −2.4e-4, zero diagnostics) where the bespoke loft reads 291 968.09 (rel −3.3e-3). But a
-// chart does not only describe a face, it ROUTES it: chartFaceMesh declines an uncharted face and
-// accepts a charted one, so recording charts here sends every seam-crossing imported face to the
-// covering mesher, which triangulates the face's whole grid replicated a period either way.
-//
-// Measured on the OCC fixtures by TestTessellationBudget, which is the gate that has to go green
-// before this switch flips: **0.08 s off, 6.37 s on, against a 2.15 s budget**. The faces that move
-// were previously DEGRADED — they fell to the flat patch CDT or the surface's whole domain and said so
-// — so the covering is doing the right thing and the price is the covering's own cost. That cost is
-// #3549, and the anomaly under it is measured: on the J3 host chart the insertion allocates THIRTY
-// triangles per point (23 606 516 for 788 250 points, 1 574 591 live) where a Bowyer-Watson insert
-// should allocate about three, and on a jittered grid of 319 229 points the same code allocates two.
+// It was held OFF for one round and the gate that released it is named where it was measured: a chart
+// does not only describe a face, it ROUTES it — chartFaceMesh declines an uncharted face and accepts a
+// charted one — so recording charts here sends every seam-crossing imported face to the covering
+// mesher. kernel/ops/tessellate's TestTessellationBudget read 6.37 s against its 2.15 s ceiling with
+// this on. The covering was doing the RIGHT work (those faces fell to the flat patch CDT or the
+// surface's whole domain before, and said so); what was unaffordable was its cost, and that cost was a
+// rectangular lattice handed to an exact in-circle predicate. coverShear removed it: the same gate now
+// reads 1.49 s with every imported periodic face charted (#3549).
 func recordImportedChart(f *topo.Face) {
-	if !chartImportedFaces {
-		return
-	}
 	if chart, ok := brep.ChartOfFace(f); ok {
 		f.SetChart(chart)
 	}
 }
-
-// chartImportedFaces switches the producer on. It is one bool because the producer is BUILT and
-// tested (kernel/brep's ChartOfFace rows, and TestAnImportedPeriodicFaceCarriesItsChart here drives
-// this path directly); what is not ready is the mesher the chart routes to. See recordImportedChart.
-const chartImportedFaces = false

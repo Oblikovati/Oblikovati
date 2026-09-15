@@ -68,6 +68,20 @@ func (c *coverVertices) MergeCoincidentLocations(weld float64) {
 	c.locWeld, c.locIndex = weld, map[[2]int64][]int{}
 }
 
+// frameXY maps a covering (u, v) into the frame the triangulation runs in: the trim-local metric, then
+// coverShear's tilt. It is a FUNCTION and not two open-coded expressions because two things read this
+// frame and they must read the same one — add, which records c.xy, and the coincident-location index,
+// which buckets and compares in it (#3551 + #3542). The index built in one frame and queried in another
+// finds nothing, or finds the wrong neighbour.
+//
+// The shear does not move a location: identical (u, v) maps to identical (x, y) under any linear frame,
+// so the pairs the merge joins are exactly the pairs it joined before. It changes the metric by the
+// shear's own slope, 1/1024, which is four decades above nothing and eleven below the weld distance the
+// merge uses.
+func (c *coverVertices) frameXY(u, v float64) [2]float64 {
+	return [2]float64{u*c.su + coverShear*v*c.sv, v * c.sv}
+}
+
 // locationOf is the index of the vertex already laid at (u, v), when the owner asked for the merge and
 // one is there. The lookup walks the quantised cell and its eight neighbours, so a pair straddling a
 // cell boundary — which two values of one location computed two ways easily do — is still found. The
@@ -80,7 +94,8 @@ func (c *coverVertices) locationOf(u, v float64) (int, bool) {
 	if c.locIndex == nil {
 		return 0, false
 	}
-	x, y := u*c.su, v*c.sv
+	xy := c.frameXY(u, v)
+	x, y := xy[0], xy[1]
 	cx, cy := locationCell(x, y, c.locWeld)
 	for dx := int64(-1); dx <= 1; dx++ {
 		for dy := int64(-1); dy <= 1; dy++ {
@@ -120,6 +135,45 @@ func (c *coverVertices) rememberLocation(i int) {
 // add records one covering vertex laid at shift index at, and returns its index. When the owner asked
 // for coincident locations to be merged and one is already there, the existing vertex is returned
 // instead of a second one being laid at the same place (#3551).
+// coverShear is the slope of the frame the covering TRIANGULATES in, and it exists because a
+// RECTANGULAR lattice is the worst input a Delaunay triangulation can be given (#3549, #3542).
+//
+// The four corners of an axis-aligned rectangle are EXACTLY concyclic. A covering's interior is a grid,
+// so without a shear every single cell asks the in-circle predicate a question whose answer is a tie —
+// and an exact predicate answers a tie by running every stage of its adaptive escalation before it can
+// say "zero". Measured on a 90 000-point regular grid: 2.144 s to insert. The SAME grid displaced by
+// 1e-12 — cavity sizes within 8 %, walk length within 8 %, so neither of those is the cost — takes
+// 208 ms. Tenfold, all of it the predicate.
+//
+// A shear is not a perturbation of geometry. Every covering VERTEX keeps its exact (u, v) and its exact
+// 3-D point; what changes is the frame the triangulator reasons in, so a lattice cell is a
+// parallelogram rather than a rectangle and its corners are not concyclic. The result is still a valid
+// constrained triangulation of the same points with the same constraints. What it gives up is that the
+// triangulation is Delaunay in the METRIC frame rather than in the sheared one — which for a tied quad
+// means the diagonal is chosen by a cheap deterministic rule instead of by an exact predicate that has
+// to run to the end to discover there was nothing to choose.
+//
+// IT ALSO CLOSES #3542. A covering's premise is that its two branch-window ends are the same
+// triangulation, and they were not: near-cocircular quads at the seam flipped their diagonal
+// differently at the two ends, leaving 6 of the sixteen near-pinch rows with 38 seam edges between them
+// (cover_replica.go carries that measurement). With the ties gone the two ends agree. Swept over the
+// near-pinch corpus — the eight JOIN bodies at both gate facetings — by rows carrying seam edges /
+// seam edges in all / rows with an unbound rim segment:
+//
+//	shear    0      1/65536  1/16384  1/4096   1/1024   1/256    1/64
+//	rows     6      0        0        0        0        0        0
+//	edges    38     0        0        0        0        0        0
+//	unbound  0      0        0        0        0        0        0
+//
+// A plateau four decades wide, and the value sits in the middle of it. Below the plateau the shear
+// stops separating the tie; above it the working frame stops being near-isotropic, which is what
+// trimMetricScale exists to make it. At 1/1024 the frame is within a tenth of a percent of the metric
+// one, so triangle quality is unchanged, and the tessellation budget over the OCC fixtures runs 1.49 s
+// against its 2.15 s ceiling with every imported periodic face charted, where an unsheared covering
+// takes 3.3 s and more.
+const coverShear = 1.0 / 1024 // tol:parametric (a slope of the triangulator's own frame, not a length)
+
+// add records one covering vertex laid at shift index at, and returns its index.
 func (c *coverVertices) add(p math.Point3, u, v float64, at int) int {
 	if i, ok := c.locationOf(u, v); ok {
 		return i
@@ -127,7 +181,7 @@ func (c *coverVertices) add(p math.Point3, u, v float64, at int) int {
 	i := len(c.pos)
 	c.pos = append(c.pos, p)
 	c.nrm = append(c.nrm, c.normalAt(u, v))
-	c.xy = append(c.xy, [2]float64{u * c.su, v * c.sv})
+	c.xy = append(c.xy, c.frameXY(u, v))
 	c.uu, c.vv = append(c.uu, u), append(c.vv, v)
 	c.at = append(c.at, at)
 	c.rememberLocation(i)

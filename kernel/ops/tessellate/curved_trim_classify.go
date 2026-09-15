@@ -52,9 +52,6 @@ const (
 	kindRuledBandLoft
 	// kindSpiricBand is a torus band bounded by two edges that each wrap the whole tube.
 	kindSpiricBand
-	// kindTwoRimHoledBand is a developable side with two full-wrap rims that also carries lens holes:
-	// bridge the rims at a seam, unroll, triangulate the holes into the unrolled branch.
-	kindTwoRimHoledBand
 	// kindWedgeBand is an open oblique-ended cylinder wedge: one zipped strip between its two end
 	// chains.
 	kindWedgeBand
@@ -63,7 +60,7 @@ const (
 // String names the kind, so a failing classification test says which two kinds collided.
 func (k curvedTrimKind) String() string {
 	names := [...]string{"uncharted", "chart", "cone-apex-fan", "sphere-cap-fan", "sphere-zone-band",
-		"sphere-patch", "ruled-band-loft", "spiric-band", "two-rim-holed-band", "wedge-band"}
+		"sphere-patch", "ruled-band-loft", "spiric-band", "wedge-band"}
 	if int(k) < 0 || int(k) >= len(names) {
 		return "curvedTrimKind(unknown)"
 	}
@@ -80,7 +77,6 @@ type curvedTrim struct {
 	belt  sphereBeltTrim
 	patch spherePatchTrim
 	tube  spiricTubeTrim
-	holed twoRimHoledTrim
 	wedge wedgeBandTrim
 }
 
@@ -102,9 +98,6 @@ func classifyCurvedTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, hol
 	}
 	if b, ok := spiricTubeTrimOf(f, s, q); ok {
 		return curvedTrim{kind: kindSpiricBand, tube: b}
-	}
-	if h, ok := twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D); ok {
-		return curvedTrim{kind: kindTwoRimHoledBand, holed: h}
 	}
 	if w, ok := wedgeBandTrimOf(f, s, q); ok {
 		return curvedTrim{kind: kindWedgeBand, wedge: w}
