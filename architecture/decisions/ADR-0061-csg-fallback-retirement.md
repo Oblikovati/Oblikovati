@@ -4692,3 +4692,123 @@ in the edge's normalised parameter); `curved_plane_face_uv.go:182,185` and `curv
 rim landed 1.7e-9 from its window's end and its own boundary read as outside". Two further readers,
 `uv_seg_index.go` and `curved_uv_trace.go:264`, are genuine same-frame `(u,v)` offsets and are NOT the
 same defect.
+
+### G13 stays open — the spiric arm is one of TWO lofts, so deleting it relocates (2026-09-15, #3517)
+
+Issue #3517 asks for three things: a chart on the J3/A4 spiric hosts so `kindSpiricBand` can be deleted, the
+near-pinch corridor so `kindTwoRimHoledBand` can be deleted, and the `recognizers` ratchet falling from
+12 toward 0. #3518 already measured the second one blocked. This section measures the first and records
+it blocked as well. **No ratchet moves: `recognizers` stays at 12.**
+
+#### The whole customer list is two faces, and removing the arm does not reach the general pipeline
+
+`kindSpiricBand` keeps only the band that records NO chart — `spiricTubeTrimOf` hands a charted one to
+the chart-driven mesher — and the only faces either corpus has for it are the host tori of
+`simple/J3` and `bfuseblend/A4`, the spiric closed-rim canal hosts (torus R = 200, r = 50; one loop of
+two tube-wrapping closed rims and one `v`-seam arc walked twice). No body a primitive boolean builds
+reaches it, which is why `TestTheClassificationCorpusReachesEveryArm` names it an exception; and
+deleting the arm moves exactly two of the byte-identity pins, which is the other half of that claim.
+
+Deleting the arm was carried out in full and measured. `kernel/ops/tessellate` and `archguard` pass
+whole; `kernel/ops/boolean`'s figure-eight rows pass once one assertion is dropped (below);
+`TestWaveETorusRimPerFaceAgainstDrawexe` and `TestWaveETorusRimWatertight` pass at BOTH gate facetings;
+and of the whole byte-identity pin set exactly two pins move — to the values this ADR already records as
+the "before" of the 2026-09-08 generalisation:
+
+| pin | with the arm | without it |
+| --- | --- | --- |
+| J3 | 7 395 243.913186325692 / 340 988 tris / `0xb3fcd06089a56c0c` | 7 395 592.451696694829 / 1 115 132 / `0x60907356101f946a` |
+| A4 | 15 408 786.198051279411 / 406 540 tris / `0xc77a3a360368ed8d` | 15 409 136.952526209876 / 1 180 684 / `0xee50b6c93f5cf261` |
+
+The ratchets would fall — `recognizers` 12 → 11, `type-assertions` 684 → 682,
+`geomSwitchDebt["kernel/ops/tessellate"]` 45 → 43 — and that fall would be a lie.
+
+**Instrumented, the faces do not reach the general pipeline at all.** A counter inside
+`torusTubeBandLoftMesh`, driven over the two bodies with the arm removed, fires twice per body — and
+that function opens by asserting `geom.Torus`, while each body has exactly ONE torus face, so the calls
+are that host face, once per tessellation the run takes. `torusTubeBandLoftMesh` is
+the OTHER bespoke loft for the same shape: a rung of `meshSeamCrossingFace`'s first-fit ladder, written
+for exactly these two hosts, which stage 5 put a second loft in FRONT of rather than replacing. So
+removing `kindSpiricBand` lowers the registered recognizer count by one and leaves the shape
+special-cased under another name, at 2.9–3.3× the triangles. That is precisely what #3522's review said the
+pin cannot tell apart from a deletion, so the arm stays and the pin stays.
+
+One assertion is a real cost of the deletion and is named here rather than discovered later.
+`TestAnUnchartedPinchedBandIsRefusedAndSaidSo` requires the uncharted figure-eight's decline to NAME the
+pinch ("boundaries MEET"), and that sentence belongs to `bandPinches`, inside the deleted loft. Without
+it the face still reaches the full-domain report at `Defect` severity — the degradation is still
+reported — but the report reads "no mesher recognised its boundary on this surface". The report's
+SPECIFICITY falls; its existence does not.
+
+The duplication is planted by `kernel/ops/tessellate/tube_band_two_lofts_test.go`: one synthetic band
+that BOTH recognizers claim, the classification's verdict on it, and the charted case that keeps the
+router rung a live seam rather than proved-dead code. Each of its four assertions was probed red.
+
+Two sentences in the tree said the survivor of such a deletion was "the denser CDT downstream" and they
+are wrong; both are corrected against this measurement (`spiricTubeTrimOf`'s docstring and *The
+tube-wrapping band, generalised* above).
+
+#### The chart route the issue asks for is blocked twice over
+
+The acceptance criterion is "the boolean records a chart on the J3/A4 spiric hosts (the fillet canal
+builder)". Three measurements say that route is not available today.
+
+**Nothing produces a chart for these bodies.** They are a STEP import plus a fillet, not a boolean:
+`brep` records a chart on every face its `(u, v)` arrangement builds (ADR-0063), the importers record
+none, and the rim rebuild that retrims the host (`rimBuild.copyFace`, `fillet_rim_build.go`) copies a
+face whose chart was never written. Measured on both result bodies: **every** face records chart = 0 —
+the four of J3 and the nine of A4, not only the tori.
+
+**Supplied by hand, the chart does not carry J3.** The face's region in the covering space is the
+rectangle `u ∈ [4.7124, 9.3831] × v ∈ [0, 2π]`, and building that contour from the face's own two rims
+and driving the router at DefaultQuality:
+
+| face | loft (`kindSpiricBand`) | with a chart | DRAWEXE |
+| --- | --- | --- | --- |
+| J3 host torus | 292 014.192861 / 6 912 tris (rel −3.232e-3) | **declined** → 292 891.051700 / 32 768 (rel −2.388e-4) | 292 961 |
+| A4 host torus | 291 968.087273 / 6 912 tris (rel −3.250e-3) | 292 849.879125 / 46 882 (rel −2.394e-4) | 292 920 |
+
+A4 meshes; J3 is refused by the boundary-side classification (#3518) with *"its boundary chain 0 names
+both sides as material (127 segments say left, 126 say right)"*. The cause is in the lift, not in the
+chart: `liftLoopOntoChart`'s `continuousTrace` carries each sample onto the branch of the one before it,
+and this loop walks the torus's artificial `v`-seam TWICE — so the second traversal is snapped onto the
+first's branch, the keyhole collapses, and the chain's material side reads as contradictory. That is the
+same family as #3542: a covering whose two branch ends are not reconciled.
+
+**At the faceting the gate reads, the chart mesher does not finish.** The per-face oracle runs at
+PropertyQuality (`shippedFaceAreasDesc`). Driving the same hand-built chart there, the J3 host face did
+not complete in **880 s**, holding ~2.9 GB, and the timeout stack puts it inside `cdt.insertConstraint`
+under `constrainedTriangulationAll` ← `chartCover.keptWithoutRimEars`. The loft meshes the whole body in
+seconds.
+
+And the size is NOT the explanation, which is the part worth recording: the arguments at the timeout are
+**1035 vertices and 5664 constraint segments** — a small triangulation by this package's standards. So
+what the run measures is a constrained triangulation that does not terminate in a quarter of an hour on
+a thousand-point input, not a covering too big to build. Whatever routes this face to the chart mesher
+has to explain that first. (The machine carried other work at the time, so the wall clock is an upper
+bound on the machine's speed, not on the algorithm's; a factor of two either way does not change what a
+thousand-point CDT costs.)
+
+#### `kindTwoRimHoledBand` does not move either, and #3542 is the ticket
+
+Issue #3518 measured it and the brief for this task carries the result: with the arm removed, 10 of the 16
+near-pinch rows come back watertight and `cap-saturated` disappears, and **6 TEAR**, with 196 to 1196
+free edges. The cause is neither the arm nor the corridor gate: the two ends of the covering-space
+branch window are triangulated independently and flip a near-cocircular quad's diagonal. It needs
+fixed-point CDT coordinates — a prototype on binary-grid parameters reached 14 of 16 and could go no
+further while the triangulation runs on `u·su`. That is **#3542**, and it is the ticket that unblocks
+both arms: the same defect refuses J3's chart above.
+
+#### What #3517 needs next
+
+1. **#3542** — exact covering seams. It unblocks `kindTwoRimHoledBand` directly, and it is what lets a
+   loop that walks a seam twice be lifted onto a chart at all.
+2. **A producer for an imported face's chart.** ADR-0063 puts the chart on the producer that wound the
+   face; no importer writes one, so every imported periodic face reaches the tessellator uncharted and
+   the general mesher declines it outright. This is bigger than the two hosts.
+3. **The CDT stall above.** Even with 1 and 2, a chart on this face sends 1035 vertices and 5664
+   constraints into `cdt.insertConstraint` and does not come back in 880 s. That is a separate defect
+   and it needs its own reduction — it is not sized by the chart work.
+
+Until then the tube-wrapping torus band has TWO bespoke lofts and #3517 can only delete one of them by
+handing the shape to the other.
