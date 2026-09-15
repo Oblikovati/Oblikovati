@@ -182,6 +182,15 @@ func torusPairCorpus(t *testing.T) []torusPairRow {
 		// A small ring threaded through the big one's hole and out through its tube — the shape a
 		// chain link makes against the link it hangs from.
 		{"small ring through the hole", ring, mustTorus(t, math.P3(3.5, 0, 0), math.V3(1, 0, 0), 2, 0.7), 2},
+		// A ring TILTED out of the first ring's plane about a shared centre — ADR-0066 recorded this as
+		// a Tracks refusal; #3515's full-period branches carry it (worst 3.91e-15 off the co-form over
+		// 20 001 samples per curve).
+		{"a ring tilted out of the ring's plane", ring,
+			mustTorus(t, math.P3(0, 0, 0), math.V3(0.4, 0, 1), 5, 1.2), 2},
+		// A torus boss sunk into the ring's tube — ADR-0066 recorded this as an unreadable station;
+		// its branches wrap and #3515 carries them (worst 5.76e-15).
+		{"a torus boss sunk into the tube", ring,
+			mustTorus(t, math.P3(5, 0, 0), math.V3(0, 0, 1), 2, 0.6), 2},
 		// COAXIAL: two rings on one axis whose meridian circles cross, so the section is whole tube
 		// circles about that axis and no azimuth is resolved at all — the family the classification
 		// routes away from the lanes entirely.
@@ -190,6 +199,48 @@ func torusPairCorpus(t *testing.T) []torusPairRow {
 		// roots sit at tube angles neither ring's own symmetry supplies.
 		{"coaxial rings, offset along the axis", ring,
 			mustTorus(t, math.P3(0, 0, 2), math.V3(0, 0, 1), 5, 1.5), 2},
+	}
+}
+
+// TestTheCoCentredPerpendicularRingsSectionIsExact is the pair ADR-0066 recorded as
+// [DeclineTorusSectionOffItsForm] — the row that made torusSectionSatisfiesItsForm necessary, because
+// the folded-window reading put its points 1.353e-5 off the surface they claimed to be on.
+//
+// It now BUILDS, and the cause is #3515's chart shift rather than anything about folds. The pair's
+// branches sit at azimuth 0 and π at the tangency, and the station quartic in tan(u/2) carries its
+// leading coefficient at f(π): a root there collapses the solve and costs the other roots their
+// residual certificate, which is exactly the excursion ADR-0066 measured. With the station read on a
+// chart turned off its pole the four loops are exact.
+//
+// It is a row of its own rather than a corpus row because the component ORACLE disagrees with the curve
+// count here, for a reason that is understood and measured rather than unexplained. The four loops meet
+// PAIRWISE at the two tangency folds — loops 0 and 1 both pass through (0, 6.5, 0) and (0, 3.5, 0), and
+// loops 2 and 3 through their antipodes — so the section's point SET has two connected components while
+// the reduction's answer is four closed curves that cross at four points. Both are right about their own
+// question; torusSectionComponents counts the set, and a pinch is invisible to it.
+func TestTheCoCentredPerpendicularRingsSectionIsExact(t *testing.T) {
+	t.Parallel()
+	ring := mustTorus(t, math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5)
+	perp := mustTorus(t, math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5)
+	curves, why, ok := IntersectSurfacesAnalyticDeclining(ring, perp, ResolutionForSize(20))
+	if !ok {
+		t.Fatalf("declined %v, want an exact section", why)
+	}
+	if len(curves) != 4 {
+		t.Fatalf("%d section curves, want the four loops the two lanes' two windows carry", len(curves))
+	}
+	assertSectionOnBothTori(t, ring, perp, curves)
+	assertEveryCurveIsClosed(t, curves)
+}
+
+// assertEveryCurveIsClosed requires each section curve to come back to where it started — what an
+// imprint needs of a section before it can bound a face.
+func assertEveryCurveIsClosed(t *testing.T, curves []Curve3) {
+	t.Helper()
+	for i, c := range curves {
+		if gap := float64(c.PointAt(0).VectorTo(c.PointAt(1)).Length()); gap > torusStationRootDistanceBound {
+			t.Errorf("curve %d does not close: its ends are %.3e apart", i, gap)
+		}
 	}
 }
 
@@ -202,11 +253,19 @@ func torusPairCorpus(t *testing.T) []torusPairRow {
 //   - Tracks: torusLaneAnchors seeds the lane labels from the station at v = 0 and requires every one
 //     of the 720 stations to carry the same number of extrema, tracking those seeds. A torus co-form's
 //     station changes between two and four extrema over the turn far more often than a quadric's does,
-//     and the gate then cannot say which branch pair is which. Measured over 2410 meeting random ring
-//     pairs: 1538 refuse here, against 821 built, 25 apiece for FullTurn and Unaccounted, and 1 for the
-//     post-condition. It is the capability's dominant remaining gap — but the mechanism above is a
-//     MINORITY of it: seeding from a root-carrying station instead recovers 268 of those 1538, so the
-//     follow-up ADR-0066 names is scoped 64% → ~53% refused, not "closes the gap".
+//     and the gate then cannot say which branch pair is which. It is the capability's dominant
+//     remaining gap, and the follow-up ADR-0066 names — seeding from a root-carrying station — is
+//     scoped against it rather than claimed to close it.
+//
+// Re-measured at #3515's head over 2343 meeting random ring pairs (seed 3), which is the same
+// experiment ADR-0066 reported as 821 built of 2410:
+//
+//	BUILT                                     1258
+//	extremum tracks are not separable          1009
+//	curves are not the azimuths certified        76
+//
+// ADR-0066's FullTurn column (25) is gone with the decline itself, its post-condition column (1) is
+// empty, and the built share goes 34% → 54%. The Tracks gate is still the gap.
 //   - Separation: the two branches never part by more than the stitch resolution, so the loop would be
 //     a sliver two faces could not be told apart across.
 func TestATorusPairOutsideTheEnvelopeIsRefusedByName(t *testing.T) {
@@ -219,12 +278,6 @@ func TestATorusPairOutsideTheEnvelopeIsRefusedByName(t *testing.T) {
 	}{
 		{"torus boss on the ring's flank", ring,
 			mustTorus(t, math.P3(6, 0, 0), math.V3(0, 0, 1), 1.2, 0.5), DeclineTorusLaneTracks},
-		{"a ring tilted out of the ring's plane", ring,
-			mustTorus(t, math.P3(0, 0, 0), math.V3(0.4, 0, 1), 5, 1.2), DeclineTorusLaneTracks},
-		{"a torus boss sunk into the tube", ring,
-			mustTorus(t, math.P3(5, 0, 0), math.V3(0, 0, 1), 2, 0.6), DeclineTorusLaneStation},
-		{"two co-centred perpendicular rings", ring,
-			mustTorus(t, math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5), DeclineTorusSectionOffItsForm},
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()
@@ -298,16 +351,24 @@ func TestTheChartAssignmentDoesNotDependOnTheCallerOrder(t *testing.T) {
 // torusChartOrderPairs is how many random pairs the order-independence row draws.
 const torusChartOrderPairs = 2000
 
-// TestTheFatterTubeIsTheBetterChart is the evidence behind torusChartPrecedes, and it is here because
-// a claim about conditioning is worth what it is measured at. The station polynomial is the CO-FORM's
-// quartic on the chart's tube circle, so it is the co-form's tube that decides how complicated the
-// station is — a thin one cuts a simple, stable root structure, a fat one a structure whose extremum
-// count changes over the turn. The chart should therefore be the FATTER torus.
+// TestTheNarrowerTubeIsTheBetterChart is the evidence behind torusChartPrecedes, and it is here because
+// a claim about conditioning is worth what it is measured at. Every station is built from the chart's
+// tube circle at tube angle v — radius R + r·cos v, centre offset r·sin v — so the CHART's own minor
+// radius is the amplitude, in model units, by which the station's geometry swings over the turn: a
+// narrow chart's extremum tracks keep their identity, a wide one's change in number. The chart should
+// therefore be the NARROWER torus.
+//
+// ADR-0066 measured this the other way round and wrote the wider-tube rule. Its experiment was run
+// while a branch pair that never folds was still a REFUSAL — which is exactly the shape a narrow chart
+// produces, so its wins were being declined rather than counted. #3515 carries those branches, and the
+// same experiment reverses on every seed (Oblikovati/Oblikovati#3515).
 //
 // The row asserts the DIRECTION, not a rate: the chart order's own assignment must build at least as
 // many sections as the reverse one. A pair both assignments decline is a genuine refusal of the
-// reduction and counts for neither.
-func TestTheFatterTubeIsTheBetterChart(t *testing.T) {
+// reduction and counts for neither. "Builds" here means the section came back non-empty AND lies on the
+// co-form: a build that is wrong is worse than a decline, and an objective that counts only builds
+// would prefer the assignment that is wrong more often.
+func TestTheNarrowerTubeIsTheBetterChart(t *testing.T) {
 	if testing.Short() {
 		t.Skip("corpus tier: `make test-corpus`")
 	}
@@ -316,32 +377,45 @@ func TestTheFatterTubeIsTheBetterChart(t *testing.T) {
 	chosen, reversed, both := 0, 0, 0
 	for range torusChartCorpusPairs {
 		a, b := randomRingTorus(t, rng, 4), randomRingTorus(t, rng, 4)
-		fat, thin := a, b
+		picked, other := a, b
 		if torusChartPrecedes(b, a) {
-			fat, thin = b, a
+			picked, other = b, a
 		}
-		builtFat, builtThin := torusSectionBuilds(fat, thin), torusSectionBuilds(thin, fat)
+		builtPicked, builtOther := torusSectionBuilds(t, picked, other), torusSectionBuilds(t, other, picked)
 		switch {
-		case builtFat && builtThin:
+		case builtPicked && builtOther:
 			both++
-		case builtFat:
+		case builtPicked:
 			chosen++
-		case builtThin:
+		case builtOther:
 			reversed++
 		}
 	}
-	t.Logf("over %d random pairs: both assignments build %d, only the CHOSEN (fat) chart builds %d, "+
-		"only the REVERSED (thin) chart builds %d", torusChartCorpusPairs, both, chosen, reversed)
+	t.Logf("over %d random pairs: both assignments build %d, only the CHOSEN (thin) chart builds %d, "+
+		"only the REVERSED (fat) chart builds %d", torusChartCorpusPairs, both, chosen, reversed)
 	if chosen < reversed {
 		t.Errorf("the chosen chart built %d sections the reverse declined and lost %d the other way; "+
 			"torusChartPrecedes picks the worse chart", chosen, reversed)
 	}
 }
 
-// torusSectionBuilds reports the reduction solving this role assignment to a non-empty section.
-func torusSectionBuilds(chart, other Torus) bool {
+// torusSectionBuilds reports the reduction solving this role assignment to a non-empty section that
+// LIES on the co-form, walked at 2001 samples per curve — an order of magnitude finer than the section's
+// own 257-sample post-condition, so the chart comparison is not decided by the gate it is comparing.
+func torusSectionBuilds(t *testing.T, chart, other Torus) bool {
+	t.Helper()
 	curves, _, ok := TorusSection(chart, other, ResolutionForSize(20))
-	return ok && len(curves) > 0
+	if !ok || len(curves) == 0 {
+		return false
+	}
+	for _, c := range curves {
+		for i := range 2001 {
+			if d := other.distanceTo(c.PointAt(float64(i) / 2000)); !(d <= torusChartWeld(chart)) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // torusChartCorpusPairs is the chart-order corpus's size.

@@ -147,47 +147,58 @@ func torusPairRoles(a, b Torus) (Torus, TorusCoForm, bool) {
 	return a, b, true
 }
 
-// torusChartPrecedes orders two tori for the CHART role, FATTER tube first.
+// torusChartPrecedes orders two tori for the CHART role, the NARROWER tube first.
 //
-// The station polynomial is the CO-FORM's quartic restricted to the chart's tube circle, and the one
-// thing the lane structure asks is that its extremum tracks stay separable across the whole turn
-// (torusLaneAnchors). What decides that is the co-form, not the chart: a thin tube is nearly a wire, so
-// its quartic cuts a circle in a simple, stable root structure, while a fat one cuts a structure whose
-// extremum COUNT changes over the turn — and a count that changes makes "which branch pair" a guess.
-// So the thinner torus belongs on the implicit side, which puts the fatter one on the chart.
+// What the lane structure asks is that the station's extremum tracks stay separable across the whole
+// turn (torusLaneAnchors). Every station coefficient is built from the tube circle at tube angle v —
+// radius ρ(v) = R + r·cos v, centre offset r·sin v along the axis — so the CHART's own minor radius is
+// the amplitude, in model units, by which the station's geometry swings over the turn. A narrow chart's
+// stations barely move, its extremum tracks keep their identity, and its branches run the whole turn;
+// a wide one's extremum COUNT changes over the turn, and a count that changes makes "which branch pair"
+// a guess. R does not enter that amplitude, which is why the key is the minor radius and not the tube
+// aspect r/R.
 //
-// The rule was written the other way round first, on the reasoning that the thinner CHART moves its
-// stations least. That was wrong, and measuring is what said so. Over meeting random ring-torus pairs
-// (torus_torus_test.go's TestTheFatterTubeIsTheBetterChart, three seeds): fat-chart builds 608 / 678 /
-// 651 of 1800 / 1775 / 1797, thin-chart 543 fewer on the first seed alone. The fat rule wins on every
-// seed and loses on none. An assignment by tube aspect and one by absolute minor radius are within
-// noise of each other (607 / 663 / 646); the ASPECT is kept because it is dimensionless, so the same
-// two tori in metres and in millimetres take the same chart.
+// ADR-0066 measured this the other way round and wrote the WIDER-tube rule, on the aspect. The reversal
+// is not a disagreement about arithmetic — it is that #3514 measured in a world where a branch pair
+// that never folds was a REFUSAL ("the torus section's branch pair never folds"). A narrow chart
+// produces exactly that shape, so every one of its wins was declined rather than counted. #3515 carries
+// those branches as full-period arcs, and with the refusal gone the same experiment reverses.
 //
-// Everything after the aspect is a TIE-BREAK, and it is exhaustive on purpose: two copies of one ring
+// Measured at #3515's head over random ring-torus pairs, counting only sections that build AND lie on
+// the co-form at 1001 samples per curve (a build that is wrong is worse than a decline, so an objective
+// counting builds alone would prefer the assignment that is wrong more often):
+//
+//	seed        pairs   either assignment   minor radius   tube aspect   ADR-0066's wider-tube rule
+//	  9          1500          537              480            477                  387
+//	 13          1500          509              456            454                  370
+//	 21          1500          519              456            452                  367
+//
+// The narrow rule wins on every seed and loses on none, and the minor radius edges the aspect on every
+// seed while also keeping the "small ring through the hole" corpus row building, which the aspect drops.
+// Both are invariant under a uniform change of units — scaling both tori scales both keys, so the ORDER
+// is unchanged — so ADR-0066's reason for preferring the aspect does not separate them.
+//
+// Everything after the swing is a TIE-BREAK, and it is exhaustive on purpose: two copies of one ring
 // is the commonest torus pair there is, and a rule that left their order to the caller would let the
 // same model produce two different sets of section bytes. The keys are compared exactly.
 func torusChartPrecedes(x, y Torus) bool {
 	return compareTorusChartKeys(torusChartKey(x), torusChartKey(y)) < 0
 }
 
-// torusTubeAspect is −r/R: the fraction of its own radius the tube circle's radius varies by over the
-// turn, NEGATED so that the ascending chart order puts the fatter tube first.
-func torusTubeAspect(t Torus) float64 { return -float64(t.MinorRadius / t.MajorRadius) }
-
-// torusChartKey is the chart order's key: the tube aspect that decides it, then the radii, the centre
-// and the axis as the exhaustive tie-break.
-func torusChartKey(t Torus) [9]float64 {
+// torusChartKey is the chart order's key: the tube radius that decides it — the amplitude by which a
+// chart's stations swing over the turn — then the major radius, the centre and the axis as the
+// exhaustive tie-break.
+func torusChartKey(t Torus) [8]float64 {
 	a := t.AxisDir.AsVector()
-	return [9]float64{
-		torusTubeAspect(t), t.MajorRadius, t.MinorRadius,
+	return [8]float64{
+		t.MinorRadius, t.MajorRadius,
 		float64(t.Center.X), float64(t.Center.Y), float64(t.Center.Z),
 		float64(a.X), float64(a.Y), float64(a.Z),
 	}
 }
 
 // compareTorusChartKeys compares two chart keys lexicographically on their exact bits: −1, 0 or +1.
-func compareTorusChartKeys(x, y [9]float64) int {
+func compareTorusChartKeys(x, y [8]float64) int {
 	for i := range x {
 		if x[i] < y[i] {
 			return -1

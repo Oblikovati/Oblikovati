@@ -41,6 +41,11 @@ func TestTheDeclineSaysWhichGateRefused(t *testing.T) {
 	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "touches the torus's tube circle without crossing it")
 }
 
+// The fixture is a torus BOSS on the ring's flank. It was the co-centred perpendicular rings until
+// #3515 taught the reduction to carry a branch that never folds, which builds that pair exactly
+// (kernel/geom's TestTheCoCentredPerpendicularRingsSectionIsExact) and left this row with no refusal to
+// observe. The boss still refuses, at the lane-anchor gate, which is the same routing question.
+//
 // TestATorusPairsRefusalNamesItsOwnGate: the other example of #3525. A torus PAIR's refusal has to
 // reach the caller naming the TORUS PAIR's faces and the torus pair's own gate, so it does not read like
 // the ring-on-rod's above.
@@ -57,7 +62,7 @@ func TestATorusPairsRefusalNamesItsOwnGate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidTorus a: %v", err)
 	}
-	b, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5, "b")
+	b, err := brep.SolidTorus(math.P3(6, 0, 0), math.V3(0, 0, 1), 1.2, 0.5, "b")
 	if err != nil {
 		t.Fatalf("SolidTorus b: %v", err)
 	}
@@ -66,7 +71,7 @@ func TestATorusPairsRefusalNamesItsOwnGate(t *testing.T) {
 		t.Fatal("the torus pair built; the fixture no longer exercises the decline")
 	}
 	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "geom.Torus a:face#0 ∩ geom.Torus b:face#0")
-	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "do not satisfy the form it was solved from")
+	assertRecorded(t, rec, brep.CodeSectionConditioningDemotion, "extremum tracks are not separable")
 }
 
 // TestARefusalIsReportedOnce: one boolean asks the same face pair up to four times — each pairing runs
@@ -79,7 +84,7 @@ func TestARefusalIsReportedOnce(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SolidTorus a: %v", err)
 	}
-	b, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5, "b")
+	b, err := brep.SolidTorus(math.P3(6, 0, 0), math.V3(0, 0, 1), 1.2, 0.5, "b")
 	if err != nil {
 		t.Fatalf("SolidTorus b: %v", err)
 	}
