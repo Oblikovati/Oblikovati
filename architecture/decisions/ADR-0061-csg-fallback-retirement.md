@@ -4983,3 +4983,126 @@ covering: `TestTessellationBudget` went 0.08 s → 6.37 s against its 2.15 s cei
 of two complementary regions a face is, and that decides nothing where the loops develop into one
 (u, v) branch. The classification now asks whether the trim DEVELOPS — a property of the trim, computed
 once, selecting exactly one path — and the budget reads **0.47 s with the producer ON**.
+
+### Round 4 — the covering's interior is a structured quad mesh, and the arm goes
+
+The sentence round 3 ended on was the whole of round 4: *the covering triangulates its whole interior
+grid with a CDT, and a grid is not a point cloud.* It is now emitted as one, and with it
+`kindSpiricBand` is DELETED. `recognizers` **11 → 10**.
+
+#### 1. Two whole-mesh scans, bounded by what they can possibly touch
+
+Before the structured interior, the J3 host's PropertyQuality cost was profiled rather than guessed.
+`recoverByFlips`'s fallback `flipOneCrossing` was **36 % of the whole face's CPU**: it scanned every
+ALLOCATED triangle and asked an exact `SegmentsCross` of each of its three edges — 1741 calls over
+1.5 M live triangles of a 24.6 M-entry array, nearly all of it `orient2d` escalating to `big.Rat` on
+triangles nowhere near the constraint. Three bounds, none of which can change an answer:
+
+* a live-triangle index in **ascending** order, so a scan visits exactly the triangles a scan of the
+  whole array would visit, in the same order, and skips the fifteen dead entries per live one;
+* a bounding-box rejection per triangle: an edge that PROPERLY crosses a segment shares a point with
+  it, so its triangle's box must overlap the segment's;
+* the box test BEFORE the exact predicate in `verticesOnSegment` — the same conjunction in the other
+  order, and a lattice row is exactly collinear with an axis-aligned constraint, so the predicate it
+  asked first ran its whole escalation before it could say zero.
+
+| J3 host, PropertyQuality | before | after |
+| --- | --- | --- |
+| `constrain` | 333 962 ms | 97 997 ms |
+| whole face | 932 s | 468 s |
+| `./kernel/ops/tessellate` suite | 87 s | 16 s |
+| triangles / area | 1 546 916 / 292 959.152 | unchanged |
+
+#### 2. The structured interior
+
+Every interior node of a covering sits at a station pair whose four neighbours are known before
+anything is computed. The triangulator now gets the boundary BAND only; the block's outline goes in as
+a constraint, the emptied block's spanning fillers are discarded by their centroid (a triangle cannot
+cross a recovered constraint, so it lies wholly inside the block or wholly outside it), and the block
+is emitted directly as quads.
+
+**The diagonal is a rule, not an iteration order.** Every cell splits from (i+1, j) to (i, j+1), and
+that is the diagonal the triangulator picks anyway. The covering triangulates in the sheared frame
+`x = u·su + coverShear·v·sv`, in which a grid cell is a PARALLELOGRAM with edge vectors `a` and `b`,
+and `|a+b|² − |a−b|² = 4·coverShear·Δu·Δv·su·sv` is strictly positive for every cell of an ascending
+station grid. `a−b` is the shorter diagonal, uniformly, for any cell sizes. The shear that removed the
+in-circle TIE (#3542) is what makes the tie's resolution nameable here.
+
+**The band's width is a distance, not a count of lattice steps.** A lattice-ring erosion was built
+first and swept at 0, 1, 2, 3, 4 and 6 rings: every width byte-identical on the occtparity
+fingerprints and green on the whole tessellate suite, with cost rising monotonically (16 859 to 44 644
+band points). A plateau over the ENTIRE swept range is not a plateau — it is the corpus saying it
+cannot choose. So the choice was removed instead: a cell is structural only when its four corners
+stand a WHOLE CELL clear of every boundary chain. The clearance that decides whether a node exists at
+all is measured in the boundary's CHORDS (`chartBoundaryClearance`), and a chord can be far shorter
+than a cell, so four surviving corners are not by themselves a statement about the cell between them.
+No constant was added.
+
+| J3 host, PropertyQuality | round 3 | + scan bounds | + structured interior |
+| --- | --- | --- | --- |
+| points to the triangulator | 788 255 | 788 255 | **16 905** |
+| `insert` | 127 513 ms | 127 513 ms | **10 597 ms** |
+| `constrain` | 333 962 ms | 97 997 ms | **456 ms** |
+| whole face | 932 s | 468 s | **60 s** |
+| triangles / area | 1 546 916 / 292 959.152 | unchanged | unchanged |
+
+Byte-identity is asserted three ways: the occtparity fingerprint pins are unmoved by items 1 and 2; a
+unit row compares the kept triangle SETS of the banded and the whole-covering paths on the same
+covering; two more pin the diagonal rule and the block's premise that no rim segment crosses a
+structured cell.
+
+#### 3. The imported chart ships, and the rim rebuild carries it
+
+`chartImportedFaces` is ON (#3550). The two gates that held it off read
+`TestImportedAnalyticPrimitivesWatertight` **6.37 s** against a 60 s tier-1 budget (73 s before) and
+`TestTessellationBudget` **0.18 s** against its 2.15 s ceiling.
+
+That was only half the gap. ADR-0063 puts the chart on the producer that WOUND the face, and the
+fillet's rim rebuild re-winds every face of the body against the new rim circles while recording
+none — so a filleted torus host reached the tessellator with `chart = nil` even though the imported
+face it was rebuilt from carried one. `carryChart` re-derives it from the rebuilt loops, and only
+where the source had one: the chart travels with the face, it is not invented for it. Recording a
+chart on EVERY face every blend assembly winds was tried first and is too wide — it moved dozens of
+pins and made five per-face oracles WORSE (`simple/P1` −0.52 %, O1's concave arm +0.49 %, B5/C4/D7's
+pivot bands), so it was reverted.
+
+#### 4. The arm goes, and the exit condition was the faceting that ships
+
+Round 3's comparison of arm and general path was run at DefaultQuality on both sides, and the control
+row reverses it: at PropertyQuality, the faceting the per-face oracle reads, the arm is six times
+closer to DRAWEXE than the general path is at Default. The bar is therefore the arm's own Property
+number. Measured per face against DRAWEXE 292 961 on J3's host torus:
+
+| | area | rel | triangles |
+| --- | --- | --- | --- |
+| the arm, PropertyQuality | 292 950.19 | −3.688e-5 | 274 432 |
+| the chart mesher, PropertyQuality | **292 959.152** | **−6.31e-6** | 1 571 029 |
+| the chart mesher, DefaultQuality | 292 891.71 | −2.365e-4 | 46 878 |
+
+Six times closer, zero diagnostics, in 60 s where round 3 measured 932 s. `kindSpiricBand`,
+`spiricTubeTrimOf` and `spiric_band_mesh.go` are deleted: `recognizers` 11 → 10, `type-assertions`
+683 → 681, `geomSwitchDebt["kernel/ops/tessellate"]` 44 → 42.
+
+**Thirteen byte-identity pins are rebaselined** and nothing else moved: every per-face DRAWEXE oracle,
+both wave-E watertight gates, `TestEveryShippedMeshIsWatertight` and the blend scoreboard's green
+counts stay green. The volume deltas run 5e-16 to 8e-4 and the large movers RISE — a faceted volume
+under-reports, so a volume moving up is a mesh moving toward the analytic truth.
+
+#### 5. The facet count is still 1.9× what the tolerance demands, and that is not this mesher's
+
+The general path emits 1 571 029 triangles for the face where the arm emitted 274 432, and the two
+numbers are not comparable: the arm does not meet the chord tolerance it was handed. Its u-sampling is
+4× coarser than PropertyQuality asks for, which is exactly what its area error shows.
+
+The general path's own count is nonetheless ~1.9× more than the tolerance strictly demands, measured
+on that face: at the 2048 u-cells `adaptiveParams` returns, the worst sagitta over the covering's five
+isoparms is 2.94e-4 mm against the 1e-3 tolerance; at 1024 it is 1.177e-3 — over. The exact minimum is
+≈1111 cells, so the overshoot is 1.84× in u and 1.03× in v (512 cells, worst sagitta 9.41e-4).
+
+The cause is **dyadic quantisation in `adaptiveParams`**, which subdivides by halving and so can only
+land on a power of two: up to 2× per axis, 4× in triangles. `unionIsoparmParams` is NOT the cause —
+measured, a SINGLE isoparm already returns 2049 breakpoints on this face, so the union over five
+inflates nothing. This is a property of the one curve discretizer every curved face in the repo
+shares, not of the chart mesher, and changing it moves every curved-face pin there is. It is named
+here with its measurement rather than fixed inside a mesher, because fixing it inside one would be a
+second facet-count policy — the thing the ground rule forbids.
