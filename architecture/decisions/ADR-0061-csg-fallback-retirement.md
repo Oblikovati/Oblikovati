@@ -4693,12 +4693,13 @@ rim landed 1.7e-9 from its window's end and its own boundary read as outside". T
 `uv_seg_index.go` and `curved_uv_trace.go:264`, are genuine same-frame `(u,v)` offsets and are NOT the
 same defect.
 
-### G13 stays open — the spiric arm is one of TWO lofts, so deleting it relocates (2026-09-15, #3517)
+### G13 stays open — the arm stays, its DUPLICATE goes (2026-09-15, #3517)
 
 Issue #3517 asks for three things: a chart on the J3/A4 spiric hosts so `kindSpiricBand` can be deleted, the
 near-pinch corridor so `kindTwoRimHoledBand` can be deleted, and the `recognizers` ratchet falling from
 12 toward 0. #3518 already measured the second one blocked. This section measures the first and records
-it blocked as well. **No ratchet moves: `recognizers` stays at 12.**
+it blocked as well. **`recognizers` stays at 12** — what this task deletes is the second, shadowed loft
+behind the arm, not the arm.
 
 #### The whole customer list is two faces, and removing the arm does not reach the general pipeline
 
@@ -4731,7 +4732,8 @@ the OTHER bespoke loft for the same shape: a rung of `meshSeamCrossingFace`'s fi
 for exactly these two hosts, which stage 5 put a second loft in FRONT of rather than replacing. So
 removing `kindSpiricBand` lowers the registered recognizer count by one and leaves the shape
 special-cased under another name, at 2.9–3.3× the triangles. That is precisely what #3522's review said the
-pin cannot tell apart from a deletion, so the arm stays and the pin stays.
+pin cannot tell apart from a deletion, so the arm stays and the pin stays — and the DUPLICATE goes
+instead (below), which is what makes the next attempt answerable.
 
 One assertion is a real cost of the deletion and is named here rather than discovered later.
 `TestAnUnchartedPinchedBandIsRefusedAndSaidSo` requires the uncharted figure-eight's decline to NAME the
@@ -4740,13 +4742,23 @@ it the face still reaches the full-domain report at `Defect` severity — the de
 reported — but the report reads "no mesher recognised its boundary on this surface". The report's
 SPECIFICITY falls; its existence does not.
 
-The duplication is planted by `kernel/ops/tessellate/tube_band_two_lofts_test.go`: one synthetic band
-that BOTH recognizers claim, the classification's verdict on it, and the charted case that keeps the
-router rung a live seam rather than proved-dead code. Each of its four assertions was probed red.
+(Round 1 of this work planted the duplication as "both recognizers claim one band". A review broke that
+plant a third way — leave both recognizers alone and reroute the ARM's builder in one line, the purest
+relocation, and all three rows stayed green. The plant is replaced by
+`kernel/ops/tessellate/tube_wrapping_band_test.go`, which asserts the MESHERS' behaviour instead: the
+arm meshes the band's own region (2946.76 of 2960.88), the router behind it meshes the WHOLE torus
+(3937.55 of 3947.84), and that fall-back is a reported `diag.Defect`. All five assertions were probed
+red — the load-bearing one by putting the deleted rung back into the router, which takes the row from
+the whole torus to 2954.46 mm², the band, silently and with no defect. That is the relocation, caught.)
 
-Two sentences in the tree said the survivor of such a deletion was "the denser CDT downstream" and they
-are wrong; both are corrected against this measurement (`spiricTubeTrimOf`'s docstring and *The
-tube-wrapping band, generalised* above).
+FIVE sentences in the tree described that hand-over wrongly, and the first round of this work corrected
+two of them and said "both" — the wave's most-repeated defect, committed inside the section that names
+it. The full list, all now correct: `spiricTubeTrimOf`'s docstring and `nearPinchCorridorChords`' (round
+1); `model/feature/occtparity/fingerprint_pins_curved_test.go` lines 317 and 323, and
+`model/feature/occtparity/torus_rim_spiric_gate_test.go` line 24 (round 2), the last three of which
+named `torusTubeBandLoftMesh` as the mesher of J3's and A4's host torus — measured, it took zero calls on
+either body. *The tube-wrapping band, generalised* above is left as written; it is the record of what
+stage 5 believed, and this section is its correction.
 
 #### The chart route the issue asks for is blocked twice over
 
@@ -4757,7 +4769,8 @@ builder)". Three measurements say that route is not available today.
 `brep` records a chart on every face its `(u, v)` arrangement builds (ADR-0063), the importers record
 none, and the rim rebuild that retrims the host (`rimBuild.copyFace`, `fillet_rim_build.go`) copies a
 face whose chart was never written. Measured on both result bodies: **every** face records chart = 0 —
-the four of J3 and the nine of A4, not only the tori.
+the four of J3 and the nine of A4, not only the tori. That is **#3550**, and it is the prerequisite for
+deleting the remaining arms rather than a note about two hosts.
 
 **Supplied by hand, the chart does not carry J3.** The face's region in the covering space is the
 rectangle `u ∈ [4.7124, 9.3831] × v ∈ [0, 2π]`, and building that contour from the face's own two rims
@@ -4781,13 +4794,25 @@ not complete in **880 s**, holding ~2.9 GB, and the timeout stack puts it inside
 under `constrainedTriangulationAll` ← `chartCover.keptWithoutRimEars`. The loft meshes the whole body in
 seconds.
 
-And the size is NOT the explanation, which is the part worth recording: the arguments at the timeout are
-**1035 vertices and 5664 constraint segments** — a small triangulation by this package's standards. So
-what the run measures is a constrained triangulation that does not terminate in a quarter of an hour on
-a thousand-point input, not a covering too big to build. Whatever routes this face to the chart mesher
-has to explain that first. (The machine carried other work at the time, so the wall clock is an upper
-bound on the machine's speed, not on the algorithm's; a factor of two either way does not change what a
-thousand-point CDT costs.)
+The SIZE is the first half of the answer, and it was measured directly — a print of `len(pts)`,
+`len(loops)` and Σ`len(loop)` at the head of `constrainedTriangulationAll`, on the same chart (the face's
+own `u` window, 74 % of the period):
+
+| faceting | points | constraint loops | constraint segments | result |
+| --- | --- | --- | --- | --- |
+| Default | 26 025 | 934 | 1 868 | 32 768 triangles in 4.16 s |
+| Property | **788 250** | **5 660** | **11 320** | did not return |
+
+Thirty times the points and it does not finish in two hundred times the time. (An independent run with a
+chart over the FULL period reads 1 063 726 / 5 148 / 10 296 — same order, same outcome.)
+
+**Two defects sit under that, and they hide each other.** The covering is ~10⁶ samples for ONE periodic
+torus face, against the ground rule "one facet-count policy derived from tolerance" (**#3549**); and the
+stall itself is not the corridor walk but `recoverByFlips`, whose budgeted loop calls an O(T) `hasEdge`
+on every step — O(n·T), which puts back the freeze `cdt.go`'s own comment says #1409 removed (**#3548**).
+Fix either and the other still bites. So the honest reading is not "a small triangulation that hangs":
+it is a covering far larger than the tolerance asks for, fed to a recovery path whose cost is quadratic
+in it.
 
 #### `kindTwoRimHoledBand` does not move either, and #3542 is the ticket
 
@@ -4801,14 +4826,35 @@ both arms: the same defect refuses J3's chart above.
 
 #### What #3517 needs next
 
-1. **#3542** — exact covering seams. It unblocks `kindTwoRimHoledBand` directly, and it is what lets a
+1. **#3550** — a producer for an imported face's chart. ADR-0063 puts the chart on the producer that
+   wound the face; no importer and no rim rebuild writes one, so every imported periodic face reaches
+   the tessellator uncharted and the general mesher declines it outright.
+2. **#3549 and #3548** — the covering's facet count, and the O(n·T) constraint recovery under it. Either
+   alone leaves the other biting; together they are why a charted J3 host does not mesh at the faceting
+   the gate reads.
+3. **#3542** — exact covering seams. It unblocks `kindTwoRimHoledBand` directly, and it is what lets a
    loop that walks a seam twice be lifted onto a chart at all.
-2. **A producer for an imported face's chart.** ADR-0063 puts the chart on the producer that wound the
-   face; no importer writes one, so every imported periodic face reaches the tessellator uncharted and
-   the general mesher declines it outright. This is bigger than the two hosts.
-3. **The CDT stall above.** Even with 1 and 2, a chart on this face sends 1035 vertices and 5664
-   constraints into `cdt.insertConstraint` and does not come back in 880 s. That is a separate defect
-   and it needs its own reduction — it is not sized by the chart work.
 
-Until then the tube-wrapping torus band has TWO bespoke lofts and #3517 can only delete one of them by
-handing the shape to the other.
+#### What this task DID delete: the second loft
+
+`torusTubeBandLoftMesh` — 182 lines plus a 73-line unit test — is **deleted**. It meshed the same shape
+as `kindSpiricBand` from a rung of `meshSeamCrossingFace`, and the classification has claimed that shape
+ahead of it since stage 5: zero builds over `./kernel/...` and `./model/...`, so the deletion is
+byte-identical by construction, and it is what the delete-first rule asks for ("remove the duplicate,
+the dead engine, or the unused seam"). `type-assertions` 684 → 683 and
+`geomSwitchDebt["kernel/ops/tessellate"]` 45 → 44 go with it; `recognizers` does not move, because a
+router rung was never a registered recognizer.
+
+The defence round 1 gave for keeping it — that a CHARTED band could leave the arm and fall to it — does
+not survive the router: `chartFaceMesh` ACCEPTS a charted tube-wrapping band, `specialCurvedMesh` returns
+`special = true`, and `meshSeamCrossingFace` is never reached. For the rung to run, the chart mesher
+would first have to decline a charted doubly-periodic band, which no corpus face does — a speculative
+fallback, and "a new engine shipped beside the old one as a fallback is not complete". If the chart is
+ever declined, `chartedTrimMesh` REPORTS the degradation, which is better than a silent second loft.
+
+What it buys is the next attempt at `kindSpiricBand`. With the duplicate gone, deleting the arm is no
+longer a quiet hand-over that moves two pins: the band falls to the surface's whole domain — 2 097 152
+triangles, 394 781.31 mm² against 292 951, one `diag.Defect` — which is the loud corpus failure the gate
+exists for. `kernel/ops/tessellate/tube_wrapping_band_test.go` plants the invariant behind it: the arm
+meshes the band's own region and the router BEHIND the arm does not, proved red by putting the deleted
+rung back.
