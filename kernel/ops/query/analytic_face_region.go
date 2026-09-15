@@ -97,14 +97,60 @@ func loopRegionSign(depthEven bool, signedMeasure float64) float64 {
 // by a stud, so a 15.708 sphere zone integrated as its 298.451 complement. Dropping it moved four
 // corpus cases into the analytic regime with nothing else changed (Oblikovati/Oblikovati#3489).
 func faceHoldsEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
-	u, v, ok := regionProbeUV(f.Geometry(), loops)
-	if !ok {
-		return false, false
+	if !loopsWrapASeam(loops) {
+		u, v, ok := regionProbeUV(f.Geometry(), loops)
+		if !ok {
+			return false, false
+		}
+		return brep.PointInFaceTrim(f, f.Geometry().PointAt(u, v)), true
 	}
-	if !brep.PointInFaceTrim(f, f.Geometry().PointAt(u, v)) {
-		return false, true // the face owns the other region: its terms are the complement's
+	return bandSideOfEnclosedRegion(f, loops)
+}
+
+// bandSideOfEnclosedRegion is the side test for a face whose loops WRAP the seam, where one probe is
+// not enough (Oblikovati/Oblikovati#3553).
+//
+// A wrapping region's chart is recorded as contours split at an artificial SLIT, and the material lies
+// on both sides of one, so a classifier asked exactly ON it answers by which side its ray was cast
+// from. The band probe used to propose the midpoint of the boundary's span, which on a region symmetric
+// about its slit IS the slit, at every station — so the answer was a rounding artefact and came out
+// differently for each of the four figure-eight rings in the corpus.
+//
+// So a STATION's several candidates are read together and must AGREE. They are placed at fractions of
+// the span that no one constant-parameter line can share (bandAcrossFractions), so a slit can spoil at
+// most one of them; a station whose candidates disagree is one where a probe landed on a real boundary,
+// and it is skipped rather than believed. When no station is unanimous the side is not certified and
+// the face declines, which is what it did before for an unprobeable face.
+func bandSideOfEnclosedRegion(f *topo.Face, loops []faceLoop) (holds, certain bool) {
+	s := f.Geometry()
+	axis := bandAxisOf(loops)
+	if u, v, ok := capInteriorUV(s, loops); ok {
+		return brep.PointInFaceTrim(f, s.PointAt(u, v)), true
 	}
-	return true, true
+	for _, station := range bandInteriorCandidates(loops, axis) {
+		verdict, unanimous := unanimousTrimVerdict(f, s, axis, station)
+		if unanimous {
+			return verdict, true
+		}
+	}
+	return false, false
+}
+
+// unanimousTrimVerdict reads brep.PointInFaceTrim at every candidate of one station and reports their
+// common answer, or unanimous=false when they differ.
+func unanimousTrimVerdict(f *topo.Face, s geom.Surface, axis bandAxis, station [][2]float64) (verdict, unanimous bool) {
+	for i, c := range station {
+		u, v := axis.pointOf(c[0], c[1])
+		in := brep.PointInFaceTrim(f, s.PointAt(u, v))
+		if i == 0 {
+			verdict = in
+			continue
+		}
+		if in != verdict {
+			return false, false
+		}
+	}
+	return verdict, len(station) > 0
 }
 
 // regionProbeUV returns a parameter point in the enclosed region for the side test. A loop that
@@ -234,25 +280,75 @@ func bandInteriorUV(loops []faceLoop) (u, v float64, ok bool) {
 
 // bandInterior is bandInteriorUV in the band's own (along, across) frame.
 func bandInterior(loops []faceLoop, axis bandAxis) (along, across float64, ok bool) {
+	for _, st := range bandInteriorCandidates(loops, axis) {
+		if len(st) > 0 {
+			return st[0][0], st[0][1], true
+		}
+	}
+	return 0, 0, false // every station tried put the point in a hole
+}
+
+// bandInteriorCandidates are the interior points the band rule proposes, best first: at each station
+// of the wrapping parameter, the across coordinate at several fractions of the boundary's span.
+//
+// Several fractions and not just the middle, because the middle is a SYMMETRY AXIS and a chart's
+// artificial slit sits on one (Oblikovati/Oblikovati#3553). A region that wraps a whole period is
+// recorded as contours split at a seam, and the slit is a constant-parameter line the material lies on
+// BOTH sides of. The figure-eight cut face is symmetric about its slit, so the span's midpoint landed on
+// it at every station — u = π, measured on all four rings of the corpus — and an even-odd count there
+// answers by which side the ray was cast from. Three of the four rings then read their own interior as
+// outside, took the complement of their own region, and integrated the far lobe: 70.92 mm² where
+// 225.17 is the face. The fourth read it as inside, by nothing but its aspect ratio.
+//
+// The fractions are coprime-ish thirds and quarters around the middle rather than a nudge off it: a
+// point at 1/3 of the span is as interior as the middle by the same argument, and no one line can be
+// the midpoint, the third and the quarter of the same span at once. The caller decides between them by
+// requiring the classifier to give the SAME answer at all of them (faceHoldsEnclosedRegion), so a
+// candidate that lands on a real boundary shows up as a disagreement and the face declines rather than
+// taking the answer a degenerate probe gave.
+func bandInteriorCandidates(loops []faceLoop, axis bandAxis) [][][2]float64 {
 	samples := allLoopSamples(loops, axis)
 	if len(samples) < 2 {
-		return 0, 0, false
+		return nil
 	}
 	holes, per := nonWrappingPolygons(loops), loopsUVPeriod(loops)
+	var out [][][2]float64
 	for _, i := range bandStationOrder(len(samples)) {
-		station := samples[i].u
-		lo, hi, found := vSpanAt(samples, station)
+		lo, hi, found := vSpanAt(samples, samples[i].u)
 		if !found {
 			continue
 		}
-		mid := (lo + hi) / 2
-		hu, hv := axis.pointOf(station, mid)
-		if !uvCrossingsOdd(holes, hu, hv, per) {
-			return station, mid, true
+		if st := acrossCandidatesAt(samples[i].u, lo, hi, axis, holes, per); len(st) > 0 {
+			out = append(out, st)
 		}
 	}
-	return 0, 0, false // every station tried put the midpoint in a hole
+	return out
 }
+
+// acrossCandidatesAt is one station's accepted across coordinates, in the order they are preferred.
+func acrossCandidatesAt(station, lo, hi float64, axis bandAxis, holes [][]arcSample, per uvPeriod) [][2]float64 {
+	var out [][2]float64
+	for _, f := range bandAcrossFractions {
+		across := lo + (hi-lo)*f
+		hu, hv := axis.pointOf(station, across)
+		if !uvCrossingsOdd(holes, hu, hv, per) {
+			out = append(out, [2]float64{station, across})
+		}
+	}
+	return out
+}
+
+// bandAcrossFractions are where across the boundary's span the band rule places its probes, and the
+// MIDDLE is deliberately not among them.
+//
+// The middle is the one fraction a chart's artificial slit can occupy at every station at once: the
+// slit is a constant-parameter line, its fractional position in the span is (slit − lo)/(hi − lo), and
+// on a region symmetric about it — which the figure-eight cut face is — that is 1/2 everywhere.
+// Measured on all four rings: the midpoint probe read the face's own interior as outside at every
+// station, while the four fractions below read it as inside at every station. No single line can be
+// the third, the two-thirds, the quarter and the three-quarters of one span, so a slit can take at
+// most one of them, and a disagreement among them is what tells the caller the probe is not safe.
+var bandAcrossFractions = []float64{1.0 / 3, 2.0 / 3, 0.25, 0.75}
 
 // nonWrappingPolygons are the loops that close in the plane — the face's HOLES on a band, since a
 // band's own bounding curves are the ones that wrap. The midpoint of the boundary's span can fall

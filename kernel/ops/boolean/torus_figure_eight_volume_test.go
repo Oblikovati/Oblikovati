@@ -198,35 +198,29 @@ func figureEightMeshVolume(t *testing.T, b *topo.Body, q ops.Quality) float64 {
 	return tessellate.MeshGeometryProperties(mesh).Volume
 }
 
-// TestTheAnalyticIntegratorAgreesWithTheFigureEightOracle is the two-way cross-check, and the pin on
-// how far it reaches.
+// TestTheAnalyticIntegratorAgreesWithTheFigureEightOracle is the two-way cross-check, on BOTH pieces.
 //
-// The kernel's own analytic B-rep integrator answers for the INTERSECT piece and declines the CUT
-// piece today. Both halves are asserted: where it answers it must agree with the quadrature to nine
-// digits (two independent derivations of one number), and the COUNT of pieces it answers for is pinned
-// two-sided — a fall means it lost a piece it had, and a rise means the cut piece became integrable and
-// this row should gate it too, rather than sitting green on a skip.
+// It was one piece: the integrator answered for the intersect piece and DECLINED the cut piece, whose
+// count this row pinned two-sided so the decline could not drift unseen. It drifted in the good
+// direction — Oblikovati/Oblikovati#3553 — because the cut piece's torus face is the wrapping,
+// slit-charted shape whose side test probed the slit itself, so three of the four rings in the corpus
+// integrated the complement of their own region and the body's vector-area closure declined the result.
+// Both pieces are asserted now, and both must ANSWER: a decline here is a regression, not a skip.
 func TestTheAnalyticIntegratorAgreesWithTheFigureEightOracle(t *testing.T) {
 	t.Parallel()
-	answered := 0
 	for _, row := range []struct {
 		op   ops.PartFeatureOperation
 		want float64
 	}{{ops.Cut, figureEightBelowVolume}, {ops.Intersect, figureEightAboveVolume}} {
 		an, ok := query.AnalyticGeometryProperties(figureEightPiece(t, row.op))
 		if !ok {
+			t.Errorf("%v piece: the analytic integrator declines a body it answers for; the cross-check "+
+				"this row exists for now covers nothing (#3553)", row.op)
 			continue
 		}
-		answered++
 		if rel := stdmath.Abs(an.Volume-row.want) / row.want; rel > 1e-9 {
 			t.Errorf("%v piece: the analytic integrator reads %.9f mm³ against the quadrature's %.9f (rel %.3e)",
 				row.op, an.Volume, row.want, rel)
 		}
-	}
-	if answered != 1 {
-		t.Errorf("the analytic integrator answers for %d of the two figure-eight pieces; the measurement is 1 "+
-			"(intersect only — it declines the cut piece, whose lid is bounded by the figure eight itself). "+
-			"More means the cut piece became integrable and this row must gate it; fewer means the "+
-			"cross-check now covers nothing", answered)
 	}
 }

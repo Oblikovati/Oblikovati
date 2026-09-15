@@ -145,6 +145,13 @@ func wholeSphereBody(t *testing.T, radius float64) *topo.Body {
 // the operation keeps it there — so this row exercises the AREA gate and nothing else. The result
 // then shows 305.850 of boundary where ring + stub hold 302.622 between them, 1.07e-2 over, against
 // a slack of 1e-6 and a corpus whose largest accepted ratio is 1 + 1e-15.
+//
+// The stub spans z ∈ [−0.75, −0.25] rather than straddling z = 0, and its placement is part of the
+// fixture rather than an arbitrary offset: membership is read at the bore wall's own interior point,
+// which the band probe places a third of the way across the wall's span (#3553) — measured, z ≈ −0.5,
+// where it used to be the mid-band z = 0. The stub is centred on that with 0.25 of margin either way,
+// and it is the same half-unit cylinder as before, so both numbers this row asserts are unchanged:
+// measured, claimed 305.8500 against available 302.6226, ratio 1.01066470.
 func TestAResultShowingMoreBoundaryThanItsOperandsIsRefused(t *testing.T) {
 	t.Parallel()
 	ring, drill := ringAndDrill(t, 0.8)
@@ -152,7 +159,7 @@ func TestAResultShowingMoreBoundaryThanItsOperandsIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the RD- row must build: %v", err)
 	}
-	stub, err := brep.SolidCylinder(math.P3(5, 0, -0.25), math.V3(0, 0, 1), 0.8, 0.5)
+	stub, err := brep.SolidCylinder(math.P3(5, 0, -0.75), math.V3(0, 0, 1), 0.8, 0.5)
 	if err != nil {
 		t.Fatalf("stub: %v", err)
 	}
@@ -180,11 +187,17 @@ func TestAResultShowingMoreBoundaryThanItsOperandsIsRefused(t *testing.T) {
 // change and shipped three statements that had become false. A number stated in a docstring is not a
 // ratchet.
 //
-// The pairs are the ones that OWN the residue, identified by instrumenting the package: the bored
+// The pairs are the ones that OWNED the residue, identified by instrumenting the package: the bored
 // ring (this issue's own family, 0 unprobed) and the two-oval torus−box cut, whose 2-loop torus face
-// is one of the four the package still cannot probe. Their totals are pinned, so a coverage loss on
-// either fails here instead of reading oddly in a comment. A RISE is a regression; a FALL means the
+// used to be one of the four the package could not probe. Their totals are pinned, so a coverage loss
+// on either fails here instead of reading oddly in a comment. A RISE is a regression; a FALL means the
 // probe improved and the pin should come down with the change that earned it.
+//
+// 1 → 0 on the two-oval cut (Oblikovati/Oblikovati#3553): a face whose loops wrap the seam is probed by
+// the band rule, which placed its probe at the MIDDLE of the boundary's span — the one fraction a
+// charted region's artificial slit occupies at every station, where the classifier answers by which
+// side its ray was cast from. The probes sit at thirds and quarters now and must agree, so this face
+// is classified rather than skipped. All three rows read 0.
 func TestTheCertificateLeavesExactlyTheKnownFacesUnprobed(t *testing.T) {
 	t.Parallel()
 	ring, drill := ringAndDrill(t, 0.8)
@@ -195,7 +208,7 @@ func TestTheCertificateLeavesExactlyTheKnownFacesUnprobed(t *testing.T) {
 		wantUnprobed int
 	}{
 		{"a bored ring", Cut, ring, drill, 0},
-		{"a two-oval torus − box", Cut, ratchetTorus(t), ratchetBlock(t), 1},
+		{"a two-oval torus − box", Cut, ratchetTorus(t), ratchetBlock(t), 0},
 		{"a two-oval torus ∩ box", Intersect, ratchetTorus(t), ratchetBlock(t), 0},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

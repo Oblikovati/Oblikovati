@@ -3,7 +3,6 @@
 package query
 
 import (
-	stdmath "math"
 	"strings"
 	"testing"
 
@@ -85,57 +84,18 @@ func TestTheDisplayFacetingIsQuietOnThisBody(t *testing.T) {
 	}
 }
 
-// TestADeclineAlsoReachesTheDisplayFacetingWhenItIsEarned is the other end, and the row the first cut of
-// #3520 was missing: the new Defect DOES reach feature health at DefaultQuality on at least one body of
-// the sweep, and that body is not a false alarm. Measured here against the analytic oracle rather than
-// asserted: the declining face ships 28.7 % less area than it has.
+// The DISPLAY-faceting end of this pairing is GONE, and that is the fix landing rather than coverage
+// lost (Oblikovati/Oblikovati#3551). TestADeclineAlsoReachesTheDisplayFacetingWhenItIsEarned stood here
+// and pinned that the Defect reaches feature health at DefaultQuality on wideCrossingRods — the r = 3
+// rod met by a wider r = 3.5 rod offset 0.5 mm — whose declining face shipped 28.7 % less area than it
+// has. Its own instruction was "a future change that makes this face correct should delete the row, not
+// loosen it", and one did: the covering no longer lays two vertices at one location, and that body now
+// meshes both walls to 0.40 % and 0.87 % of their analytic areas at DefaultQuality and to 5e-5 and 8e-5
+// at PropertyQuality, with no diagnostic at either.
 //
-// The row asserts the SHORTFALL, not just the code, because "the Defect reaches the display faceting"
-// is only reassuring if the face it names is genuinely wrong. A future change that makes this face
-// correct should delete the row, not loosen it.
-func TestADeclineAlsoReachesTheDisplayFacetingWhenItIsEarned(t *testing.T) {
-	t.Parallel()
-	body := wideCrossingRods(t)
-	if got := codeSet(BodyMeshDiagnostics(body, tessellate.DefaultQuality())); !got[tessellate.CodeChartMesherDeclined] {
-		t.Fatalf("the display faceting no longer reports the decline on this body (%v); the row pins that "+
-			"it does, because the severity argument depends on knowing when a user sees it", got)
-	}
-	short := declinedFaceAreaShortfall(t, body)
-	if short < 0.2 {
-		t.Errorf("the declining face is only %.4f short of its analytic area; the row exists to say this "+
-			"Defect is EARNED at the display faceting, and a face this close no longer says that", short)
-	}
-}
-
-// declinedFaceAreaShortfall is the fractional area a declining face is missing against
-// AnalyticFaceArea — a per-face oracle, not a whole-body smoke test. It fails the row if no face of the
-// body declines at the display faceting, so the number can never be read off the wrong face.
-func declinedFaceAreaShortfall(t *testing.T, b *topo.Body) float64 {
-	t.Helper()
-	for _, f := range b.Faces() {
-		m := tessellate.TessellateFace(f, tessellate.DefaultQuality())
-		if m == nil || !meshCarries(m, tessellate.CodeChartMesherDeclined) {
-			continue
-		}
-		want, ok := AnalyticFaceArea(f)
-		if !ok || want == 0 {
-			t.Fatalf("the declining %T face has no analytic area to gate against", f.Geometry())
-		}
-		return stdmath.Abs(want-m.Area()) / want
-	}
-	t.Fatal("no face of this body declines at the display faceting; the shortfall has nothing to measure")
-	return 0
-}
-
-// meshCarries reports whether a face mesh recorded the given code.
-func meshCarries(m *tessellate.Mesh, code diag.Code) bool {
-	for _, d := range m.Diagnostics {
-		if d.Code == code {
-			return true
-		}
-	}
-	return false
-}
+// So no body in this package's sweep declines at the display faceting any more, and the severity
+// argument now rests on the PropertyQuality row above plus TestTheDisplayFacetingIsQuietOnThisBody. If a
+// shape that declines at DefaultQuality turns up again, this is where its row goes.
 
 // ringMeetingADrill is the SILENT case AND the quiet one — the pairing both rows need in one body: the
 // R = 5, r = 1.5 ring met by an axial drill of radius 1.4 standing at x = 5, offset 1 mm in y, kept.
@@ -154,31 +114,6 @@ func ringMeetingADrill(t *testing.T) *topo.Body {
 	body, err := brep.Boolean(brep.Intersection, ring, drill)
 	if err != nil {
 		t.Fatalf("ring ∩ drill: %v", err)
-	}
-	return body
-}
-
-// wideCrossingRods is the LOUD case: the same r = 3 rod met by a WIDER r = 3.5 rod offset 0.5 mm, the
-// one body of the sweep whose decline reaches the display faceting.
-func wideCrossingRods(t *testing.T) *topo.Body {
-	t.Helper()
-	return crossingRods(t, 3.5, 0.5)
-}
-
-// crossingRods intersects the r = 3 rod along +x with a rod of radius r along +z, offset off in y.
-func crossingRods(t *testing.T, r, off float64) *topo.Body {
-	t.Helper()
-	along, err := brep.SolidCylinder(math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12)
-	if err != nil {
-		t.Fatalf("along-x rod: %v", err)
-	}
-	across, err := brep.SolidCylinder(math.P3(0, off, -6), math.V3(0, 0, 1), r, 12)
-	if err != nil {
-		t.Fatalf("along-z rod r=%g: %v", r, err)
-	}
-	body, err := brep.Boolean(brep.Intersection, along, across)
-	if err != nil {
-		t.Fatalf("crossing rods r=%g off=%g ∩: %v", r, off, err)
 	}
 	return body
 }
