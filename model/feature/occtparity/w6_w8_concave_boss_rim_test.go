@@ -6,8 +6,10 @@ import (
 	stdmath "math"
 	"testing"
 
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
 	"oblikovati.org/kernel/ops/tessellate"
+	"oblikovati.org/math"
 )
 
 // W6, W8 (simple grid) and A1 (bfuseblend grid) are the re-survey's CONCAVE BOSS-BASE rim family: a
@@ -103,4 +105,54 @@ func TestSpillingConcaveRimsStayDeep(t *testing.T) {
 			t.Errorf("simple/%s scored %v, want FAIL(faulty) (deep #2012 boss-root; its spilling cove self-intersects, #2079)", id, got)
 		}
 	}
+}
+
+// TestW8CylinderWallHoldsItsChord is the per-face row the whole-body area sum cannot give, and it
+// exists because a regression hid behind exactly that sum (#3517 review 3 C1).
+//
+// W8's face 2 is a quarter cylinder of radius exactly 10 and height 100, so its area is exactly 500π
+// and its chord error is exactly readable: geom.Cylinder.ParamAt is the metric nearest point, so the
+// distance from a mesh edge's midpoint to the surface is the sagitta that edge carries. When the
+// classification handed this face to the covering — which its trim does not need, because it develops
+// into one (u,v) branch — the mesh read 36.87× PropertyQuality's 1e-3 mm tolerance with 6554
+// triangles, 49× the error for 51× the triangles, and the body's summed area still passed its 1 %
+// deps. Nothing in the repo could see it.
+//
+// So this row asks the two questions the sum cancels: does the face meet the chord it was ASKED for,
+// and is its area the analytic one less a chord deficit.
+func TestW8CylinderWallHoldsItsChord(t *testing.T) {
+	t.Parallel()
+	q := ops.PropertyQuality()
+	f := caseResultBody(t, "W8").Faces()[2]
+	cyl, ok := f.Geometry().(geom.Cylinder)
+	if !ok || cyl.Radius != 10 {
+		t.Fatalf("W8 face 2 is a %T of radius %v, want the radius-10 cylinder this row reads", f.Geometry(), cyl.Radius)
+	}
+	m := tessellate.TessellateFace(f, q)
+	if ratio := worstChordRatio(m, cyl, q); ratio > 1 {
+		t.Errorf("W8 face 2 meshes to %.3f× its own chord tolerance with %d triangles, want within it "+
+			"— a face whose trim develops onto the structured grid was meshed from the covering",
+			ratio, m.TriangleCount())
+	}
+	want := 500 * stdmath.Pi
+	if rel := (ops.MeshArea(m) - want) / want; rel > 0 || rel < -1e-4 {
+		t.Errorf("W8 face 2 meshes %.6f mm², want the analytic %.6f less a chord deficit (rel %.4g)",
+			ops.MeshArea(m), want, rel)
+	}
+}
+
+// worstChordRatio is the largest distance from a mesh edge's midpoint to the surface the mesh
+// approximates, as a multiple of the quality's own chord tolerance. 1 or less is a mesh that delivered
+// the chord it promised.
+func worstChordRatio(m *tessellate.Mesh, s geom.Surface, q tessellate.Quality) float64 {
+	worst := 0.0
+	for i := 0; i+2 < len(m.Indices); i += 3 {
+		for k := range 3 {
+			a, b := m.Positions[m.Indices[i+k]], m.Positions[m.Indices[i+(k+1)%3]]
+			mid := math.P3((a.X+b.X)/2, (a.Y+b.Y)/2, (a.Z+b.Z)/2)
+			u, v := s.ParamAt(mid)
+			worst = stdmath.Max(worst, float64(mid.DistanceTo(s.PointAt(u, v))))
+		}
+	}
+	return worst / q.Tol()
 }

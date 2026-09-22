@@ -5061,10 +5061,16 @@ That was only half the gap. ADR-0063 puts the chart on the producer that WOUND t
 fillet's rim rebuild re-winds every face of the body against the new rim circles while recording
 none — so a filleted torus host reached the tessellator with `chart = nil` even though the imported
 face it was rebuilt from carried one. `carryChart` re-derives it from the rebuilt loops, and only
-where the source had one: the chart travels with the face, it is not invented for it. Recording a
-chart on EVERY face every blend assembly winds was tried first and is too wide — it moved dozens of
-pins and made five per-face oracles WORSE (`simple/P1` −0.52 %, O1's concave arm +0.49 %, B5/C4/D7's
-pivot bands), so it was reverted.
+where the source had one.
+
+That guard is there for a reason of PRINCIPLE, not of cost: a rebuild preserves the datums its input
+carried, and a producer that INVENTS a datum for a face that never had one is a different decision,
+taken somewhere else. The first draft of this section justified it by cost instead — "recording a
+chart on every face every blend assembly winds moved dozens of pins and made five per-face oracles
+worse" — and that claim does not survive being measured at the guard it defends. Removing the
+`src.Chart()` guard costs ONE extra fingerprint pin (`bfuseblend/B3`) and ZERO per-face oracles
+(#3517 review 3 I3). The five-oracle reading came from the wider `brep.RecordCharts`-on-every-body
+form that was tried first, which is a different change; it is withdrawn here.
 
 #### 4. The arm goes, and the exit condition was the faceting that ships
 
@@ -5076,10 +5082,15 @@ number. Measured per face against DRAWEXE 292 961 on J3's host torus:
 | | area | rel | triangles |
 | --- | --- | --- | --- |
 | the arm, PropertyQuality | 292 950.19 | −3.688e-5 | 274 432 |
-| the chart mesher, PropertyQuality | **292 959.152** | **−6.31e-6** | 1 571 029 |
+| the chart mesher, PropertyQuality | **292 959.152** | **−6.31e-6** | 1 546 916 |
 | the chart mesher, DefaultQuality | 292 891.71 | −2.365e-4 | 46 878 |
 
-Six times closer, zero diagnostics, in 60 s where round 3 measured 932 s. `kindSpiricBand`,
+Six times closer, zero diagnostics. **And it costs 289× the time**: the arm meshed that face in
+**0.202 s**, the chart mesher takes **58.4 s**. "932 s → 60 s" is a true comparison against round 3
+and the wrong control for a DELETION, which is against the thing deleted; both halves belong here.
+Nothing breaks — the face is tier-2, the tier completes in 631 s against a 2400 s budget and the
+`CORPUS_TIMEOUT` is 60 min — and a 5.85× accuracy gain is worth it on a face read for mass
+properties. A reader should be able to see the price without re-deriving it. `kindSpiricBand`,
 `spiricTubeTrimOf` and `spiric_band_mesh.go` are deleted: `recognizers` 11 → 10, `type-assertions`
 683 → 681, `geomSwitchDebt["kernel/ops/tessellate"]` 44 → 42.
 
@@ -5090,7 +5101,7 @@ under-reports, so a volume moving up is a mesh moving toward the analytic truth.
 
 #### 5. The facet count is still 1.9× what the tolerance demands, and that is not this mesher's
 
-The general path emits 1 571 029 triangles for the face where the arm emitted 274 432, and the two
+The general path emits 1 546 916 triangles for the face where the arm emitted 274 432, and the two
 numbers are not comparable: the arm does not meet the chord tolerance it was handed. Its u-sampling is
 4× coarser than PropertyQuality asks for, which is exactly what its area error shows.
 
@@ -5106,3 +5117,68 @@ inflates nothing. This is a property of the one curve discretizer every curved f
 shares, not of the chart mesher, and changing it moves every curved-face pin there is. It is named
 here with its measurement rather than fixed inside a mesher, because fixing it inside one would be a
 second facet-count policy — the thing the ground rule forbids.
+
+#### 6. The classification selects ONE path, and the clearance is read from a chord it can act on
+
+Round 4 shipped with seven corpus faces that had been MEETING `PropertyQuality`'s chord tolerance and
+were now missing it, silently — `W8` face 2, a quarter cylinder of radius exactly 10 with an oracle of
+exactly 500π, by **36.87×**, with 51× the triangles for 49× the error and no diagnostic, behind a
+whole-body area sum that cancelled it. §R4.4's "0 diagnostics" and "the large movers RISE" were the
+wrong measurement for that question; the right one is per face, against the chord the quality asked
+for. Two defects, one in the ROUTING and one in the CLEARANCE.
+
+**The routing.** Round 3 made the classification ask whether a trim DEVELOPS into one (u,v) branch, so
+that a charted face whose loops carry into one branch keeps the structured grid. The classification
+said so — and the dispatch did not listen: `kindChart` and `kindUncharted` shared one branch, on the
+premise that an uncharted face carries no chart and so the same call declines. That was true only
+while "uncharted" MEANT "records no chart". Since round 3 it also means "charted, but develops", and
+for such a face `chartFaceMesh` does not decline — it meshes from the covering anyway. `W8` f02 and
+`K4` f01 are exactly those faces. Naming the two cases separately restores both to bit-identical
+meshes with their pre-#3517 fingerprints, `W8` at **0.753×** the tolerance with 128 triangles against
+36.87× with 6554, and returns the `diag.Defect` `K4` f01 had been carrying.
+
+**The clearance.** The remaining faces genuinely do not develop, so the covering is theirs — and there
+the boundary clearance was read from the chain's MEAN chord, which is not a property of any of its
+segments. The band it culls is then bridged by the triangulation with edges that span it, which IS the
+chord error the clearance exists to prevent. The chord is now capped at `chartClearanceCellCap` of the
+covering's own cell: past about a cell a clearance stops protecting the mesh and starts deleting it.
+Swept 0.125…2.0 and bounded on BOTH sides — at 0.625 and below the genus-1 complement is DECLINED and
+falls to the surface's whole domain (294.428 mm², 28 free edges on the body), at 1.25 and above every
+chord ratio reverts to the uncapped reading. The window is [0.75, 1.0]; 0.875 is its midpoint.
+
+Worst chord sagitta ÷ `PropertyQuality`'s 1e-3 mm, per face, on every charted face of the pinned
+corpus — the arm's own column, round 4 as first shipped, and now:
+
+| face | surface | arm | R4 as shipped | fixed | |
+| --- | --- | --- | --- | --- | --- |
+| `W8` f02 | Cylinder | 0.75 | **36.87** | **0.753** | met → missed by 37× → **met** |
+| `K4` f01 | Cylinder | 1.14 · diag 1 | 2.41 · diag 0 | **1.136 · diag 1** | restored, diagnostic back |
+| `I9` f00 | Cylinder | 0.94 | 3.765 | **0.941** | met → missed → **met** |
+| `K1` f05 | Cylinder | 0.56 | 2.259 | **0.565** | met → missed → **met** |
+| `B3` f07 | Cylinder | 0.56 | 2.259 | **0.565** | met → missed → **met** |
+| `A6` f06 | Torus | 0.97 | 1.882 | **0.971** | met → missed → **met** |
+| `J5` f00 | Torus | 0.90 | 4.059 | **1.465** | still over, 2.8× better |
+| `K2` f03 | Cylinder | 0.86 | 4.964 | **3.632** | still over, 1.4× better |
+| `J3` f00 | Torus | 10.43 | 4.221 | **1.530** | the arm's own face, 6.8× better |
+| `A4` f05 | Torus | 10.45 | 4.221 | **1.569** | the arm's own face, 6.7× better |
+| `B5` f01 | Cylinder | 68.26 · diag 1 | 6.347 | 6.347 | 10.7× better than the arm, still over |
+| `B4` f00 | Cylinder | 60.23 · diag 1 | 5.222 | 5.222 | 11.5× better than the arm, still over |
+| `K2` f00 | Cylinder | 54.77 · diag 1 | 5.706 | 5.706 | 9.6× better than the arm, still over |
+| `K3` f00 | Cylinder | 54.77 · diag 1 | 5.706 | 5.706 | 9.6× better than the arm, still over |
+
+Five of the seven regressions are gone outright and the other two are 1.4×–2.8× better; no face is
+worse than it was before #3517, and the arm's own two hosts improve a further 6.8×. `W8` f02 now
+carries a per-face corpus row of its own (`TestW8CylinderWallHoldsItsChord`) asserting BOTH the chord
+ratio and the area against 500π, because a whole-body area sum is precisely what hid this.
+
+**What is still open and is NOT this change's**: four cylcyl seam walls sit at 5.2×–6.3× (they were
+54×–68× WITH a reported degradation before #3517, so they improve either way), and `J5`/`K2` f03 sit at
+1.5×–3.6×. Missing `q.Tol()` silently is endemic and pre-existing — untouched faces do it on both
+sides of every change here, `K4` f00 at 12.32× throughout — and belongs to the facet-count policy §R4.5
+names, not to this mesher.
+
+Two pins move with the fix and both are re-measured rather than widened. The complement's torus face
+area 263.55487 → **263.73402** against an analytic 264.88981 — it moves TOWARD the oracle. `RODB∩`'s
+volume deficit 0.2810 → **0.3020**: a real 2.1-point LOSS on a lens patch whose deficit is 28-30 %
+either way, taken because the classification must select exactly one path and that patch's trim
+develops. Thirteen byte-identity pins move; `W8` and `K4` move back to their pre-#3517 values exactly.

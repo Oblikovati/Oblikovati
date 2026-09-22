@@ -41,10 +41,20 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 		return withNoRefusal(saddleBandLoftMesh(f, s, q))
 	case kindWedgeBand:
 		return wedgeBandLoftMesh(t.wedge), true, ""
-	default:
-		// kindChart meshes the region the face itself records; kindUncharted records none, so the
-		// same call declines and the face falls through to the generic (u,v) trim path.
+	case kindChart:
 		return withNoRefusal(chartFaceMesh(f, s, q, log))
+	default:
+		// kindUncharted: no special mesher, so the face falls through to the generic (u,v) trim path.
+		// This case is NAMED rather than sharing kindChart's branch, and that is a fix (#3517 review 3
+		// C1). It used to share it, on the premise that an uncharted face carries no chart and so the
+		// same call declines — which was true only while "uncharted" MEANT "records no chart". Since
+		// the classification began asking whether the trim DEVELOPS, a face that carries a chart AND
+		// develops into one (u,v) branch is kindUncharted, and for such a face chartFaceMesh does not
+		// decline: it meshes from the covering anyway, which is the path the classification has just
+		// said the face does not need. Measured on occtparity W8 face 2, a quarter cylinder of radius
+		// exactly 10: routed to the covering it read 36.87× PropertyQuality's chord tolerance with 6554
+		// triangles, against 0.75× with 128 on the structured grid its trim develops onto.
+		return nil, false, ""
 	}
 }
 

@@ -170,7 +170,7 @@ func (b *chartCover) clearOfChains(chains []chartChain, u, v, margin float64) bo
 // sampled at, which is the scale the chart-versus-chord band is compared against.
 func (b *chartCover) chainIsNear(c chartChain, sh [2]float64, u, v, gridMargin float64) bool {
 	x, y := u*b.su, v*b.sv
-	margin := stdmath.Max(gridMargin, chartBoundaryClearance*c.chord)
+	margin := stdmath.Max(gridMargin, chartBoundaryClearance*stdmath.Min(c.chord, chartClearanceCellCap*b.coverCell()))
 	if !boxIsNear(b.scaledChainBox(c, sh), x, y, margin) {
 		return false
 	}
@@ -193,4 +193,49 @@ func (b *chartCover) scaledChainBox(c chartChain, sh [2]float64) [4]float64 {
 // boxIsNear reports whether (x,y) is within margin of the box [xLo,xHi]×[yLo,yHi].
 func boxIsNear(box [4]float64, x, y, margin float64) bool {
 	return x >= box[0]-margin && x <= box[1]+margin && y >= box[2]-margin && y <= box[3]+margin
+}
+
+// chartClearanceCellCap caps the chord the boundary clearance is read from at this many of the
+// covering's OWN cells — because past about a cell, a clearance stops protecting the mesh and starts
+// deleting it.
+//
+// The clearance keeps interior grid nodes out of the band where the CHART's boundary and the mesh's
+// chord polygon disagree, and it is measured in chords because what fails at a coarse rim is a node
+// landing inside the chord rather than beside it. But a chord is only evidence of that band while it
+// is comparable to the grid: a chord many cells long clears many cells of interior, and the
+// triangulation then bridges the hole with edges that span the same distance — which is the chord
+// error the clearance was protecting. Measured on occtparity W8 face 2 before the routing fix, and on
+// six more faces after it, that bridging IS the chord defect.
+//
+// Swept, reading three things that fail in different directions: the genus-1 complement's torus face
+// at DefaultQuality (the case the chord term exists for — below the edge it is DECLINED and falls to
+// the surface's whole domain), the count of failing rows in ./kernel/ops/tessellate, and the worst
+// chord sagitta ÷ PropertyQuality's tolerance on the pinned corpus's charted faces:
+//
+//	cap     complement D          rows  J3 f00  A6 f06  K2 f03  J5 f00  I9 f00  K1 f05
+//	0.125   294.428, 28 free       7    1.396   0.971   0.856   1.465   0.941   0.565
+//	0.25    294.428, 28 free       7    1.396   0.971   0.856   1.465   0.941   0.565
+//	0.375   294.428, 28 free       7    —       —       —       —       —       —
+//	0.5     294.428, 28 free       7    —       —       —       —       —       —
+//	0.625   294.428, 28 free       7    —       —       —       —       —       —
+//	0.75    263.734,  0 free       3    —       —       —       —       —       —
+//	0.875   263.734,  0 free       2    1.530   0.971   3.632   1.465   0.941   0.565
+//	1.0     263.734,  0 free       2    1.581   0.971   4.119   1.465   0.941   0.565
+//	1.25    263.6,    0 free       2    4.221   1.553   4.389   4.059   3.765   2.259
+//	1.5     263.6,    0 free       2    4.221   1.553   4.964   4.059   3.765   2.259
+//	2.0+    263.555,  0 free       2    4.221   1.882   4.964   4.059   3.765   2.259
+//
+// Bounded on BOTH sides, which is what makes 0.875 a choice rather than an edge: at 0.625 and below
+// the complement loses its own region entirely, and at 1.25 and above every chord ratio reverts to the
+// uncapped reading. The window is [0.75, 1.0] and 0.875 is its midpoint, 1.4× the largest failing
+// value. The two rows that remain in the "rows" column are pins this change MOVES and which are
+// re-measured with it: the complement's own face area (263.55487 → 263.73402, against an analytic
+// 264.88981 — it moves TOWARD the oracle) and RODB∩, which the routing fix moves, not this cap.
+const chartClearanceCellCap = 0.875 // tol:mesh-density (covering cells; swept 0.125…2.0 above)
+
+// coverCell is the covering's own cell size, as a 3D length: the smaller of its two mean station gaps.
+func (b *chartCover) coverCell() float64 {
+	gu := (b.r.uHi - b.r.uLo) / stdmath.Max(1, float64(len(b.us))) * b.su
+	gv := (b.r.vHi - b.r.vLo) / stdmath.Max(1, float64(len(b.vs))) * b.sv
+	return stdmath.Min(gu, gv)
 }

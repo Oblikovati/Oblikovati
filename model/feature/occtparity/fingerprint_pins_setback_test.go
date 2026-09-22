@@ -276,7 +276,11 @@ func setbackObstaclePins() []fingerprintPin {
 		// REBASELINED 2026-09-15 (#3517): the rim rebuild now carries the chart onto the face it re-winds,
 		// so this body's periodic host reaches the GENERAL chart-driven mesher. Every per-face DRAWEXE
 		// oracle, watertight gate and the scoreboard stay green; ADR-0061 carries the table.
-		{"K1", 716207.725652512861, 131734, 0x7255a8115e752fb6, ""},
+		// RE-measured 2026-09-22 (review 3 C1): the classification now selects exactly ONE path, so a
+		// charted face whose trim DEVELOPS keeps the structured grid — W8 and K4 are bit-identical to
+		// their pre-#3517 pins again — and the boundary clearance reads a chord capped at the
+		// covering's own cell. Every moved face's worst chord sagitta falls; ADR-0061 §R4.6 has it.
+		{"K1", 716207.725652512861, 131986, 0x69dd3a0e7030163d, ""},
 		{"Z1", 7840.004567698298, 34808, 0x84c49b798620dc55, ""},
 		// N1 (simple): the FIRST R+r bore/notch-wall trihedral corner green (corner-blend-weld Pieces
 		// 1+2). N1 is box − r20 cylinder notch at a corner, r=5 fillet on 3 edges. The engine used to
@@ -329,7 +333,7 @@ func setbackObstaclePins() []fingerprintPin {
 		// (area-sizing-report.md); they lock the boss-base cove so any later rim slice fails loud if it
 		// perturbs a W6/W8/A1 body. Same cross-platform-risk caveat as above applies.
 		{"W6", 1013278.147300069, 67596, 0x39c85597736e6fa1, ""},
-		{"W8", 1083715.188031051541, 74278, 0x4e1ac54d8281ca8f, ""},
+		{"W8", 1083723.369024331914, 67852, 0x2e95a5402d3049f6, ""},
 		{"A1", 18223007.902061027, 135180, 0xd04c71795cfaf4cb, "bfuseblend"},
 		// F4 (simple): the elliptic-prism vein tracer — a convex STRAIGHT RULING edge where a plane meets a
 		// right EllipticalCylinder wall (an oblique-prism side), filleted r=10. Its constant-radius rolling-

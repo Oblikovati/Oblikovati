@@ -15,11 +15,15 @@ func cylCylSeamPins() []fingerprintPin {
 		// REBASELINED 2026-09-15 (#3517): the rim rebuild now carries the chart onto the face it re-winds,
 		// so this body's periodic host reaches the GENERAL chart-driven mesher. Every per-face DRAWEXE
 		// oracle, watertight gate and the scoreboard stay green; ADR-0061 carries the table.
-		{"K2", 905603.825644632918, 264824, 0x4e16917bcc4f46be, ""},
-		{"K3", 905602.694346644566, 208990, 0x1210f8f57f0e0f8f, ""},
-		{"K4", 214184.739786441060, 76882, 0x56a071ee991b1730, ""},
-		{"B4", 1475254.165703097824, 125282, 0x66742467d6e3fa8d, "bfuseblend"},
-		{"B5", 1021361.833912160713, 97580, 0xab480d22fb74385b, "bfuseblend"},
+		// RE-measured 2026-09-22 (review 3 C1): the classification now selects exactly ONE path, so a
+		// charted face whose trim DEVELOPS keeps the structured grid — W8 and K4 are bit-identical to
+		// their pre-#3517 pins again — and the boundary clearance reads a chord capped at the
+		// covering's own cell. Every moved face's worst chord sagitta falls; ADR-0061 §R4.6 has it.
+		{"K2", 905604.339749341947, 265482, 0x2aa251b17cb7dac4, ""},
+		{"K3", 905603.380145903095, 209242, 0xcc38f181f999b641, ""},
+		{"K4", 214184.268224860512, 98856, 0x872a76ba951d24e4, ""},
+		{"B4", 1475254.851502356119, 125534, 0xeb5dc5fdd9b5f5b4, "bfuseblend"},
+		{"B5", 1021362.302084454568, 97832, 0xc8e632163110fd47, "bfuseblend"},
 		// P1: the equal-parallel valley LINE seam (exact cylinder arm + the existing single-arm
 		// runout weld); mesh volume vs DRAWEXE `vprops` 2135150: −0.001%.
 		{"P1", 2135128.286760622635, 4348, 0x178e0228822f5040, ""},

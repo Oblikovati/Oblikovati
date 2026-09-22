@@ -143,7 +143,17 @@ func chartCorpus() []chartCorpusRow {
 		// size the other axis's chord asks for (balancedCoverGrid) refines the rod wall's lens patch,
 		// and a finer faceting of a lens 0.1 mm deep on a body of 0.012 mm³ takes a little more volume
 		// out of it. The body it belongs to is unchanged everywhere else.
-		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.2810, pinWindow: 0.005,
+		//
+		// 0.2810 → 0.3020 (#3517 review 3 C1): re-measured again, and this one is a small LOSS taken
+		// for a rule. The rod wall's lens patch DEVELOPS into one (u,v) branch, so the classification
+		// names it kindUncharted — and specialCurvedMesh now honours that instead of handing every
+		// charted face to the covering regardless (tessellate_trim_special.go). The covering read
+		// 0.2810 here and the generic path reads 0.3020, a 2.1-point loss on a patch whose deficit is
+		// 28-30 % either way because the BALL's face chords flat across the same lens. The same rule
+		// takes occtparity W8 face 2 — a quarter cylinder with an oracle of exactly 500π — from 36.87×
+		// PropertyQuality's chord tolerance back to 0.75×. A classification that selects exactly one
+		// path is the ground rule; this row is what it costs.
+		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.3020, pinWindow: 0.005,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Intersect) }},
 	}
 }
