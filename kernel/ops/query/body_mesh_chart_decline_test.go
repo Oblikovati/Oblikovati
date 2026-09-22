@@ -75,19 +75,30 @@ func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 	}
 }
 
-// TestTheBodyThatUsedToDeclineNowNeedsNoReport is the false-positive guard, and it is stronger than the
-// pairing it replaces. ringMeetingADrill declined at PropertyQuality and was quiet at DefaultQuality;
-// it is now quiet at BOTH, because its charted face develops into one (u,v) branch and the
-// classification sends it to the structured grid rather than the covering. A channel that fired on an
-// ordinary crossing would be one users learn to ignore — #2058's third acceptance — and a body that
-// stops needing the Defect is the better way to satisfy it. The row fails in EITHER direction: a code
-// re-appearing here means the routing regressed.
-func TestTheBodyThatUsedToDeclineNowNeedsNoReport(t *testing.T) {
+// TestTheBodyThatUsedToDeclineRaisesNoDeclineNow is the false-positive guard, and it is narrower than
+// the sentence I first wrote for it. ringMeetingADrill declined at PropertyQuality and was quiet at
+// DefaultQuality; it no longer DECLINES at either, because its charted face develops into one (u,v)
+// branch and the classification sends it to the structured grid rather than the covering. A channel
+// that fired on an ordinary crossing would be one users learn to ignore (#2058's third acceptance), and
+// a body that stops needing the Defect is the better way to satisfy that.
+//
+// It is not SILENT, though, and round 5's version of this row asserted that it was — on the strength of
+// a harvest that could not yet see a chord miss. Measured: the body's two torus faces come to 1.332×
+// and 1.129× the display tolerance and 1.408× and 1.342× the property one, so both name
+// CodeFaceChordNotMet (face_chord_achieved.go). They are inside 3.2e-4 of their exact analytic AREAS —
+// the body is correct, not a suppressed complaint — and still coarser at the rim than they were asked
+// to be, which is exactly the distinction the new report exists to draw. The row therefore asserts what
+// it is really about: no DECLINE, in either direction, so a routing regression brings that code back.
+func TestTheBodyThatUsedToDeclineRaisesNoDeclineNow(t *testing.T) {
 	t.Parallel()
 	for _, q := range []tessellate.Quality{tessellate.DefaultQuality(), PropertyQuality()} {
-		if got := BodyMeshDiagnostics(ringMeetingADrill(t), q); len(got) != 0 {
-			t.Errorf("at chord tolerance %g this body reports %v, want nothing — its charted face "+
-				"develops, so it is meshed on the structured grid and has nothing to give up", q.Tol(), codeList(got))
+		got := codeSet(BodyMeshDiagnostics(ringMeetingADrill(t), q))
+		for _, c := range []diag.Code{tessellate.CodeChartMesherDeclined, tessellate.CodeWallWrapUnmeshed,
+			tessellate.CodeTrimIgnoredFullDomain, tessellate.CodeMeshNotWatertight} {
+			if got[c] {
+				t.Errorf("at chord tolerance %g this body raises %q; its charted face develops, so it is "+
+					"meshed on the structured grid and has nothing to give up", q.Tol(), c)
+			}
 		}
 	}
 }

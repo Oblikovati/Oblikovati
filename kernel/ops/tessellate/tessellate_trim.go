@@ -43,7 +43,7 @@ import (
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 	log := &chartDeclineLog{}
 	s := f.Geometry()
-	return log.recordOn(curvedFaceMesh(f, s, q, log), s)
+	return recordAchievedChord(log.recordOn(curvedFaceMesh(f, s, q, log), s), s, q)
 }
 
 // curvedFaceMesh is the router's own dispatch: the mesher a curved face's trim selects, with the

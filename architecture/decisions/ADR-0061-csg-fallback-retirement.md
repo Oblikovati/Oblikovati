@@ -5166,10 +5166,25 @@ corpus — the arm's own column, round 4 as first shipped, and now:
 | `K2` f00 | Cylinder | 54.77 · diag 1 | 5.706 | 5.706 | 9.6× better than the arm, still over |
 | `K3` f00 | Cylinder | 54.77 · diag 1 | 5.706 | 5.706 | 9.6× better than the arm, still over |
 
-Five of the seven regressions are gone outright and the other two are 1.4×–2.8× better; no face is
-worse than it was before #3517, and the arm's own two hosts improve a further 6.8×. `W8` f02 now
-carries a per-face corpus row of its own (`TestW8CylinderWallHoldsItsChord`) asserting BOTH the chord
-ratio and the area against 500π, because a whole-body area sum is precisely what hid this.
+Five of the seven regressions return inside the tolerance, and the arm's own two hosts improve a
+further 6.8×. **THREE FACES END UP WORSE THAN THE MESHER THAT WAS DELETED**, and this paragraph said
+the opposite of that for two rounds while the table directly above it carried the numbers:
+
+| face | arm | now | |
+| --- | --- | --- | --- |
+| `J5` f00 | 0.8992 | **1.4649** | worse; no admissible cap recovers it |
+| `K2` f03 | 0.8563 | **3.6320** | worse; recoverable only where the complement dies |
+| `RODB∩` f01 | 0.1225 | **1.3747** | worse at PropertyQuality; 0.1614 at Default |
+
+The sentence was written from what the change intended and the table from what it did; the table was
+right. `RODB∩` f01 is the third and was disclosed only at DefaultQuality, which is the faceting where
+it is fine — the PropertyQuality half is the half mass properties read, and the body's volume deficit
+doubles with it, 0.654 % → 1.447 %. All three are now pinned per face and TWO-SIDED, so they cannot
+drift further and the pin retires itself when someone fixes them
+(`TestTheFacesLeftOverToleranceNameIt`, `TestRodBallIntersectionWallIsOverToleranceAndSaysSo`), and all
+three NAME their own limit — see below. `W8` f02 carries the same kind of row
+(`TestW8CylinderWallHoldsItsChord`), asserting BOTH the chord ratio and the area against 500π, because
+a whole-body area sum is precisely what hid all of this.
 
 **What is still open and is NOT this change's**: four cylcyl seam walls sit at 5.2×–6.3× (they were
 54×–68× WITH a reported degradation before #3517, so they improve either way), and `J5`/`K2` f03 sit at
@@ -5192,3 +5207,49 @@ area 263.55487 → **263.73402** against an analytic 264.88981 — it moves TOWA
 volume deficit 0.2810 → **0.3020**: a real 2.1-point LOSS on a lens patch whose deficit is 28-30 %
 either way, taken because the classification must select exactly one path and that patch's trim
 develops. Thirteen byte-identity pins move; `W8` and `K4` move back to their pre-#3517 values exactly.
+
+#### 7. A curved face that misses its chord now says so, and the residual is on the record
+
+The three faces §6 leaves over tolerance were **silent**, and so were eighty-seven others. Measured over
+the thirteen byte-identity pin bodies: **139 of their 318 non-planar faces exceed `PropertyQuality`'s
+1e-3 mm, and 90 of those carried no diagnostic of any kind** — across 42 bodies, the worst at **3250×**
+(`C2` face 1). Every gate in the repo was blind to all ninety, because a whole-body area or volume sum
+absorbs one face's chord deficit. That is exactly how this issue's own round-5 regressions shipped: the
+three faces were measurable by anyone who wrote a probe and invisible to everything that runs.
+
+So `CodeFaceChordNotMet` is raised by the curved-face router on every face whose mesh misses the chord
+tolerance it was handed (`face_chord_achieved.go`). It is the ground rules' own two sentences —
+"achieved tolerance is a measured output of an operation" and "never degrade silently" — applied where
+they were not. It REPORTS and does not refuse: a coarse face beats a missing one in a viewport, the
+chord is an approximation tolerance rather than a modelling one, and what would close the gap is the
+facet count, which belongs to the shared curve discretizer (§R4.5). `diag-codes` 43 → 44, a rise that
+is a reported degradation with a fallback-site delta of zero.
+
+Measured cost of doing it globally rather than for three faces: `TestTessellationBudget` unmoved at
+**0.23 s** of its 2.15 s ceiling, the `occtparity` tier **632 s** of 2400 s, and exactly **two** rows
+across `./kernel/...` and `./model/...` had to stop asserting a silence that was never true —
+`TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport`, which counted total harvested entries where it
+meant one entry per code, and this issue's own `ringMeetingADrill` row, which claimed that body was
+quiet. It is not: its two torus faces read 1.332× and 1.129× at the display tolerance and 1.408× and
+1.342× at the property one, while sitting within 3.2e-4 of their exact analytic areas. Correct body,
+coarser rim than asked — which is the distinction the report exists to draw, and which round 5 could
+not draw because nothing measured it.
+
+**The residual, with its numbers.** Of the three faces over tolerance, the clearance cap that recovered
+the other five cannot recover two of them, and the sweep says why:
+
+* `K2` f03 is a TRADE, not a gap. At `chartClearanceCellCap` 0.25 it returns to the arm's **0.8563** —
+  and 0.25 is inside the band where the genus-1 complement is DECLINED and falls to the surface's whole
+  domain (294.428 mm², 28 free edges on the body). The constant is buying the complement's existence
+  with this face's rim, and no value in the admissible window [0.75, 1.0] buys both.
+* `J5` f00 reads **1.4649 at every admissible cap**. Nothing in the window recovers it at all, so it is
+  not a trade — it is the facet count.
+* `RODB∩` f01 is the one-path dispatch's own price, paid knowingly: the face's trim develops, so the
+  structured grid is correctly its mesher, and that grid chords flat across a lens 0.1 mm deep.
+
+All three therefore belong under §R4.5's heading: the general path samples ~1.9× more than the tolerance
+strictly demands because `adaptiveParams` can only land on a power of two, and it is the SAME constant
+that leaves these faces short where the grading is wrong for them. A facet-count policy derived from
+tolerance — one discretizer, non-dyadic, per-axis — is what closes all three, and it moves every
+curved-face pin in the repo. It is not this mesher's to fix, and now that every such face reports
+itself, the next worker can size it from the corpus instead of from a probe.

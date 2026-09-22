@@ -284,7 +284,17 @@ var kernelNetDeltaPin = map[string]int{
 	// package's firings 8 → 9, and the one extra is the synthetic row planted to prove the guard, not
 	// a body. With that row skipped too, guard-off fires exactly 3 times — the two RING violations and
 	// the deliberate stub — so no corpus body is mis-Defected today.
-	"diag-codes": 43,
+	// 43 → 44 (2026-09-22, #3517 review 4): CodeFaceChordNotMet. A RISE that is a REPORTED
+	// DEGRADATION, which is the one kind this key exists to admit — the fallback-site delta is 0 and it
+	// refuses nothing. Until it existed, a curved face that missed the chord tolerance it was handed
+	// said NOTHING: measured over the thirteen byte-identity pin bodies, 139 of their 318 non-planar
+	// faces exceed PropertyQuality's 1e-3 mm and NINETY of those carried no diagnostic at all, across
+	// 42 bodies, the worst at 3250× (occtparity C2 face 1). Every gate in the repo was blind to all
+	// ninety, because a whole-body area or volume sum absorbs one face's chord deficit — which is how
+	// #3517's own round-5 regressions shipped silently. Cost measured: TestTessellationBudget unmoved at
+	// 0.23 s of 2.15 s, the occtparity tier 632 s of 2400 s, and two rows across ./kernel/... and
+	// ./model/... had to stop asserting a silence that was never true.
+	"diag-codes": 44,
 }
 
 func TestKernelNetDelta(t *testing.T) {
