@@ -5177,6 +5177,16 @@ ratio and the area against 500π, because a whole-body area sum is precisely wha
 sides of every change here, `K4` f00 at 12.32× throughout — and belongs to the facet-count policy §R4.5
 names, not to this mesher.
 
+One more thing moved with it, and it is worth recording because it is a capability retiring rather
+than a guard loosening. #3520's corpus pinned that a chart-mesher decline is the ONLY thing reported
+on some body, so the new code could not be a restatement of the two older ones for a lost trim. Every
+body with that property was a charted face whose trim DEVELOPS, and those no longer reach the covering
+at all: swept after the fix over ring ∩ drill (tube 1.2…2.0 × drill radius 0.8…1.8 × offset 0…1.5) and
+crossing rods (radius 1.5…3.5 × offset 0…2), at both facetings, **no body declines silently any more**,
+and the body that used to — `ringMeetingADrill` — now ships with no diagnostics at all. The row it
+anchored becomes the stronger statement: a body that needed the Defect and no longer does, asserted in
+both directions so a routing regression brings the code back.
+
 Two pins move with the fix and both are re-measured rather than widened. The complement's torus face
 area 263.55487 → **263.73402** against an analytic 264.88981 — it moves TOWARD the oracle. `RODB∩`'s
 volume deficit 0.2810 → **0.3020**: a real 2.1-point LOSS on a lens patch whose deficit is 28-30 %
