@@ -335,6 +335,13 @@ var curvedTrimRecognizers = map[string][]string{
 	"kindSpherePatch":    {"spherePatchTrimOf"},
 	"kindRuledBandLoft":  {"hasTwoClosedRimsNoOpen", "hasFullCircleAndNotchedRim"},
 	"kindWedgeBand":      {"wedgeBandTrimOf"},
+	// kindChart is selected by a DATUM the face carries and a property of its own trim — does it
+	// develop into one (u,v) branch — not by a shape recognizer, so its entry is deliberately EMPTY and
+	// that emptiness is the point of the classification. It earns a case of its own because the
+	// dispatch must distinguish it from kindUncharted: sharing one branch sent a face whose trim
+	// develops to the covering anyway (#3517 review 3 C1). An entry here that ever gains a name is an
+	// arm growing back inside the general path.
+	"kindChart": {},
 }
 
 // curvedTrimSwitch is where those arms are selected; its case clauses must match the keys above.

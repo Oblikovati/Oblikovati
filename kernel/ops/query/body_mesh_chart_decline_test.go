@@ -44,11 +44,23 @@ import (
 // chart_decline.go's THE MEASUREMENT block runs through ops.Boolean, which admits fewer bodies — both
 // of these are in that set too, so the rows assert on bodies the general pipeline really produces.
 
-// TestAChartMesherDeclineReachesTheBodysMeshDiagnostics is the wiring plus the "was silent" half, on
-// one harvest. The two were separate rows and re-meshed the same body twice for no gain.
+// TestAChartMesherDeclineReachesTheBodysMeshDiagnostics is the wiring: when the chart mesher owns a
+// face and gives it up, the harvest a feature reply, the API and the UI read says so, at Defect
+// severity, naming WHY.
+//
+// It reads wideCrossingRods, and it used to read ringMeetingADrill for a second property — that the
+// decline was the ONLY thing reported, so it could not be a restatement of the two older codes for a
+// lost trim. That property no longer has a body, and the reason is a fix rather than a loss: the
+// classification now selects exactly ONE path, so a charted face whose trim DEVELOPS into one (u,v)
+// branch is meshed on the structured grid instead of reaching the covering at all (#3517 review 3 C1).
+// Every silent decliner in both families this file sweeps was such a face. Measured after the fix over
+// ring ∩ drill (tube 1.2…2.0 × drill radius 0.8…1.8 × offset 0…1.5) and crossing rods (radius 1.5…3.5
+// × offset 0…2), at both facetings: NO body declines with neither older code any more, and
+// ringMeetingADrill itself now ships with no diagnostics at all at either faceting — it no longer
+// needs one, which is the outcome #3520 was built to make visible.
 func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 	t.Parallel()
-	got := BodyMeshDiagnostics(ringMeetingADrill(t), PropertyQuality())
+	got := BodyMeshDiagnostics(wideCrossingRods(t), PropertyQuality())
 	d, found := findCode(got, tessellate.CodeChartMesherDeclined)
 	if !found {
 		t.Fatalf("the harvest carries %v; the chart mesher gave a face of this body up and nothing said so",
@@ -61,26 +73,22 @@ func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 	if !strings.Contains(d.Detail, "not bounded by its own rim") {
 		t.Errorf("the report does not name WHY the mesher gave up, so a reader cannot act on it: %q", d.Detail)
 	}
-	// What makes this a regression and not a restatement: the two codes that already existed for a lost
-	// trim are BOTH absent, so this decline was reported by nothing before #3520.
-	codes := codeSet(got)
-	for _, c := range []diag.Code{tessellate.CodeWallWrapUnmeshed, tessellate.CodeTrimIgnoredFullDomain} {
-		if codes[c] {
-			t.Errorf("this body also raises %q, so it is not the silent case the row exists to pin — "+
-				"pick a body that raises neither", c)
-		}
-	}
 }
 
-// TestTheDisplayFacetingIsQuietOnThisBody is the false-positive guard, on the faceting that reaches a
-// user: feature health harvests at DefaultQuality (model/feature/result_diagnostics.go), and this body
-// meshes cleanly there. A channel that fired at the display faceting on every ordinary crossing would
-// be one users learn to ignore — #2058's third acceptance.
-func TestTheDisplayFacetingIsQuietOnThisBody(t *testing.T) {
+// TestTheBodyThatUsedToDeclineNowNeedsNoReport is the false-positive guard, and it is stronger than the
+// pairing it replaces. ringMeetingADrill declined at PropertyQuality and was quiet at DefaultQuality;
+// it is now quiet at BOTH, because its charted face develops into one (u,v) branch and the
+// classification sends it to the structured grid rather than the covering. A channel that fired on an
+// ordinary crossing would be one users learn to ignore — #2058's third acceptance — and a body that
+// stops needing the Defect is the better way to satisfy it. The row fails in EITHER direction: a code
+// re-appearing here means the routing regressed.
+func TestTheBodyThatUsedToDeclineNowNeedsNoReport(t *testing.T) {
 	t.Parallel()
-	if got := BodyMeshDiagnostics(ringMeetingADrill(t), tessellate.DefaultQuality()); len(got) != 0 {
-		t.Errorf("the display faceting reports %v on the very body that declines at PropertyQuality, want "+
-			"nothing — the pairing is what says the channel is quiet where a user reads it", codeList(got))
+	for _, q := range []tessellate.Quality{tessellate.DefaultQuality(), PropertyQuality()} {
+		if got := BodyMeshDiagnostics(ringMeetingADrill(t), q); len(got) != 0 {
+			t.Errorf("at chord tolerance %g this body reports %v, want nothing — its charted face "+
+				"develops, so it is meshed on the structured grid and has nothing to give up", q.Tol(), codeList(got))
+		}
 	}
 }
 
@@ -167,10 +175,11 @@ func crossingRods(t *testing.T, r, off float64) *topo.Body {
 	return body
 }
 
-// ringMeetingADrill is the SILENT case AND the quiet one — the pairing both rows need in one body: the
-// R = 5, r = 1.5 ring met by an axial drill of radius 1.4 standing at x = 5, offset 1 mm in y, kept.
-// Measured: nothing at DefaultQuality, and at PropertyQuality the chart-mesher decline alone, with
-// neither of the two older codes for a lost trim.
+// ringMeetingADrill is the QUIET body: the R = 5, r = 1.5 ring met by an axial drill of radius 1.4
+// standing at x = 5, offset 1 mm in y, kept. It used to be the SILENT case too — nothing at
+// DefaultQuality, the chart-mesher decline alone at PropertyQuality — and it is now quiet at both,
+// because its charted face develops into one (u,v) branch and the classification sends it to the
+// structured grid (#3517 review 3 C1).
 func ringMeetingADrill(t *testing.T) *topo.Body {
 	t.Helper()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
