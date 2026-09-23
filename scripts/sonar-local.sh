@@ -69,10 +69,13 @@ if [ "$COVERAGE_MODE" = "--coverage" ] || { [ "$COVERAGE_MODE" = "auto" ] && [ !
 	# summing counts is exactly `count` mode's semantics — CI's own awk, verbatim.
 	awk 'NR==1 && /^mode:/ {print; next} {n[$1]=$2; c[$1]+=$3} END {for (k in n) print k, n[k], c[k]}' \
 		coverage.out >coverage.merged && mv coverage.merged coverage.out
-	# The translator modules are separate go.work modules, so ./... above never ran their tests.
+	# The translator modules have their own go.mod and are NOT in go.work, so ./... above never ran
+	# their tests, and inside them go.work must be switched off or `./...` fails setup ("directory
+	# prefix . does not contain modules listed in go.work") — after the whole root suite has already
+	# run. `make gate` runs them the same way (GOWORK=off).
 	for m in model/exchange/translators/solidworks model/exchange/translators/inventor \
 		model/exchange/translators/olecf; do
-		(cd "$m" && go test -covermode=count -coverprofile=cover.out -timeout 30m ./...)
+		(cd "$m" && GOWORK=off go test -covermode=count -coverprofile=cover.out -timeout 30m ./...)
 		tail -n +2 "$m/cover.out" >>coverage.out
 	done
 elif [ "$COVERAGE_MODE" = "--impacted" ]; then
