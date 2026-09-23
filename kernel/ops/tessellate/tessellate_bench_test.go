@@ -14,8 +14,10 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Performance accountability for tessellation — the import→render hot path. boolean.TessellateBody runs in the
@@ -59,6 +61,83 @@ func BenchmarkTessellateBody(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, body := range bodies {
 					tessellate.TessellateBody(body, ops.DefaultQuality())
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkChartFaceCovering measures the chart-driven mesher on ONE face at each covering size a chart
+// region can have. A torus face wraps in BOTH parameters, so the covering replicates its points over
+// 3 × 3 = 9 period shifts; a cylinder wall wraps in one, over 3. Every interior grid node's membership
+// runs chartRegion.covers, which walks |shifts| × |contours| point-in-polygon tests, and nothing
+// measured what the wrapping costs (#3527).
+//
+// The two faces are picked out of the corpus bodies the chart rows already build, so this measures the
+// same geometry those rows gate rather than a fixture of its own.
+//
+// Baseline, amd64, -benchtime 200x: the torus band 7.26 ms/op, 11.18 MB/op, 69 655 allocs/op; the
+// cylinder wall 5.00 ms/op, 5.31 MB/op, 26 676 allocs/op. Doubly periodic costs about 1.45× singly
+// periodic here on 2.1× the allocation, which is the shape of a 9-shift covering against a 3-shift one
+// — it is a baseline to compare against, not a budget: nothing fails on it.
+func BenchmarkChartFaceCovering(b *testing.B) {
+	for _, c := range []struct {
+		name string
+		face func(b *testing.B) *topo.Face
+	}{
+		{"torus band, 9 shifts", func(b *testing.B) *topo.Face {
+			return faceOnSurfaceKind[geom.Torus](b, ringMinus(b, mustCylinder(b, math.P3(0, 0, -4), math.V3(0, 0, 1), 4, 8)))
+		}},
+		{"cylinder wall, 3 shifts", func(b *testing.B) *topo.Face {
+			return faceOnSurfaceKind[geom.Cylinder](b, rodBall(b, ops.Join))
+		}},
+	} {
+		f := c.face(b)
+		b.Run(c.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				tessellate.TessellateFace(f, ops.DefaultQuality())
+			}
+		})
+	}
+}
+
+// faceOnSurfaceKind returns the body's first face on a surface of kind S, failing the benchmark when the
+// body has none — so a fixture that stops producing the face measures nothing rather than something else.
+func faceOnSurfaceKind[S geom.Surface](b *testing.B, body *topo.Body) *topo.Face {
+	b.Helper()
+	for _, f := range body.Faces() {
+		if _, ok := f.Geometry().(S); ok {
+			return f
+		}
+	}
+	b.Fatalf("the fixture body has no face on a %T surface", *new(S))
+	return nil
+}
+
+// BenchmarkWholeBodyWeld measures the weld the tessellation post-condition runs over a body's whole
+// vertex set (WeldedFreeEdgeCount → tornAcrossMeshes → weldAcrossMeshes), with allocations, because that
+// weld concatenates every mesh's positions into ONE transient slice before gridding them: O(V) memory on
+// top of the O(V) index it has to build anyway. It ran on every tessellated body and nothing measured it
+// (#3527). A change that removes the transient — a two-pass extent then a per-mesh walk — shows here as
+// bytes per operation, which is the only way to tell it apart from noise.
+//
+// Baseline, amd64, -benchtime 200x: torus 981 µs/op and 1.69 MB/op, filleted_box 336 µs/op and
+// 666 kB/op, drilled_box 133 µs/op and 213 kB/op. The transient copy is one of the two O(V) allocations
+// inside those figures; how much of them it is has not been attributed, and this row is where a change
+// that removes it would show.
+func BenchmarkWholeBodyWeld(b *testing.B) {
+	for _, name := range []string{"torus", "filleted_box", "drilled_box"} {
+		var meshes []*tessellate.Mesh
+		for _, body := range occBodies(b, name) {
+			m, _ := tessellate.TessellateBody(body, ops.DefaultQuality())
+			meshes = append(meshes, m)
+		}
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				for _, m := range meshes {
+					tessellate.WeldedFreeEdgeCount(m)
 				}
 			}
 		})

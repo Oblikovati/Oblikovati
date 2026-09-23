@@ -39,8 +39,9 @@ type chartCorpusRow struct {
 	pinWindow float64
 }
 
-// ringMinus builds `ring − tool` for the corpus rows that bore a torus.
-func ringMinus(t *testing.T, tool *topo.Body) *topo.Body {
+// ringMinus builds `ring − tool` for the corpus rows that bore a torus. It takes a testing.TB so the
+// benchmarks in tessellate_bench_test.go can build the same fixture rather than a second copy of it.
+func ringMinus(t testing.TB, tool *topo.Body) *topo.Body {
 	t.Helper()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
@@ -54,7 +55,7 @@ func ringMinus(t *testing.T, tool *topo.Body) *topo.Body {
 }
 
 // mustCylinder builds a cylindrical tool, failing the test rather than returning an error.
-func mustCylinder(t *testing.T, base math.Point3, axis math.Vector3, radius, height float64) *topo.Body {
+func mustCylinder(t testing.TB, base math.Point3, axis math.Vector3, radius, height float64) *topo.Body {
 	t.Helper()
 	b, err := brep.SolidCylinder(base, axis, radius, height)
 	if err != nil {
@@ -64,7 +65,7 @@ func mustCylinder(t *testing.T, base math.Point3, axis math.Vector3, radius, hei
 }
 
 // mustSphere builds a spherical tool, failing the test rather than returning an error.
-func mustSphere(t *testing.T, centre math.Point3, radius float64) *topo.Body {
+func mustSphere(t testing.TB, centre math.Point3, radius float64) *topo.Body {
 	t.Helper()
 	b, err := brep.SolidSphere(centre, radius, "ball")
 	if err != nil {
@@ -84,7 +85,7 @@ func mustBlock(t *testing.T, lo, hi math.Point3) *topo.Body {
 }
 
 // rodAndBall are the folded-window pair: a rod with a ball set into its side.
-func rodAndBall(t *testing.T) (*topo.Body, *topo.Body) {
+func rodAndBall(t testing.TB) (*topo.Body, *topo.Body) {
 	t.Helper()
 	rod := mustCylinder(t, math.P3(0, 0, -2), math.V3(0, 0, 1), 1, 4)
 	ball := mustSphere(t, math.P3(1.4, 0, 0), 0.5)
@@ -92,7 +93,7 @@ func rodAndBall(t *testing.T) (*topo.Body, *topo.Body) {
 }
 
 // rodBall builds one operation of the folded-window pair.
-func rodBall(t *testing.T, op ops.PartFeatureOperation) *topo.Body {
+func rodBall(t testing.TB, op ops.PartFeatureOperation) *topo.Body {
 	t.Helper()
 	rod, ball := rodAndBall(t)
 	body, err := ops.Boolean(op, rod, ball)
