@@ -125,14 +125,6 @@ func mergePairOnOneSurface(a, b curvedFace, boxA, boxB math.Box, rec *diag.Recor
 	return merged, chartWhy
 }
 
-// mergeOnSharedBoundary is mergePairOnOneSurface with its refusal reported at once — the single-pair
-// entry the merge's own rows drive, where there is no later scan to report from.
-func mergeOnSharedBoundary(a, b curvedFace, rec *diag.Recorder) (curvedFace, bool) {
-	merged, why := mergePairOnOneSurface(a, b, faceLoopBox(a), faceLoopBox(b), rec)
-	recordMergeDecline(rec, a, why)
-	return merged, why == mergeJoined
-}
-
 // onOneSurface is the "same surface" decision the radial sew already makes (ADR-0058): surface
 // identity, not a tolerance on radii or axes. The resolution reads a's loop box alone, which is why
 // the decision is NOT symmetric in a and b and why the caller passes that one box.
