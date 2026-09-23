@@ -99,21 +99,69 @@ func TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily(t *testing.T) {
 		if g.Cos2 != 0 || g.Sin2 != 0 {
 			t.Errorf("%s: second harmonic (%g, %g), want exactly zero", c.name, g.Cos2, g.Sin2)
 		}
-		assertLevelFormsAgree(t, c.name, c.quad, st, g.Level)
+		assertLevelFormsAgree(t, c.name, c.quad, st, g.Level, 0.7)
 		assertNearly(t, c.name+" reach", stdmath.Hypot(g.Cos1, g.Sin1), h.reach)
 		assertNearly(t, c.name+" phase", stdmath.Atan2(g.Sin1, g.Cos1), h.phase)
 	}
 }
 
 // assertLevelFormsAgree checks the general form's Level against the one-harmonic closed form's own
-// arithmetic for the same station, within what the invariance classification already permits.
-func assertLevelFormsAgree(t *testing.T, name string, q Quadric, st torusStation, level float64) {
+// arithmetic for the same station, within what the invariance classification already permits. v is the
+// tube angle st was read at: the closed form's two scalars are re-derived here, and re-deriving them at
+// some OTHER station would compare two different numbers and call the difference rounding.
+func assertLevelFormsAgree(t *testing.T, name string, q Quadric, st torusStation, level, v float64) {
 	t.Helper()
-	constant, m11 := quadricStationScalars(testRing(t), q, 0.7)
+	constant, m11 := quadricStationScalars(testRing(t), q, v)
 	closed := constant + m11*st.rho*st.rho
 	if bound := levelFormsBound(q, m11, st.rho, level); stdmath.Abs(level-closed) > bound {
 		t.Errorf("%s: general level %.17g vs the closed form's %.17g differ by %.3e, over the %.3e the "+
 			"invariance classification admits", name, level, closed, stdmath.Abs(level-closed), bound)
+	}
+}
+
+// scaledBallForm is a sphere's own quadric written at a SCALE: F and c·F have the same zero set, and
+// c is exactly what the in-plane entries read, m₁₁ = m₂₂ = c.
+//
+// It exists because the kernel cannot build an axis-invariant tensor whose entries are not 1. Every
+// quadric of revolution it has is M = I − α·d̂d̂ᵀ (axialTensor3), and when d̂ IS the torus axis both
+// in-plane directions are perpendicular to d̂, so m₁₁ = m₂₂ = 1 EXACTLY — for the sphere, the coaxial
+// cylinder and the coaxial cone alike. A Quadric is a FORM and not a normalised one, and the reduction's
+// algebra is written for arbitrary entries, so this is the member of the family that tells the algebra
+// apart from that coincidence.
+func scaledBallForm(centre math.Point3, radius, c float64) Quadric {
+	return Quadric{Anchor: centre, M: SymmetricTensor3{XX: c, YY: c, ZZ: c}, K: -c * radius * radius}
+}
+
+// TestTheLevelSpellingsAgreeWhenTheTensorIsNotUnit is the other half of the reproduction proof above.
+//
+// TestTheSecondHarmonicVanishesOnTheAxisInvariantFamily holds the general Level against the closed
+// form's `constant + m₁₁·ρ²` — but on every axis-invariant fixture the kernel can build m₁₁ = m₂₂ = 1
+// (scaledBallForm says why), so the two spellings, `constant + m₁₁·ρ²` and `constant + ρ²(m₁₁+m₂₂)/2`,
+// agree whether or not either of them reads the entry at all. This row is the same proof at
+// m₁₁ = m₂₂ = 3, where a spelling that dropped the entry would be out by 2ρ², about 25 to 85 on this
+// ring rather than by the ulps the bound admits.
+func TestTheLevelSpellingsAgreeWhenTheTensorIsNotUnit(t *testing.T) {
+	t.Parallel()
+	ring := testRing(t)
+	const scale = 3.0
+	q := scaledBallForm(math.P3(3, 2, 1), 2.5, scale)
+	for _, v := range []float64{0, 0.7, 2.0, 4.1} {
+		if _, m11 := quadricStationScalars(ring, q, v); m11 == 1 {
+			t.Fatalf("v=%g: the fixture's m11 is 1, so this row is back to proving the unit case", v)
+		}
+		h, invariant := torusHarmonicAt(ring, q, v)
+		if !invariant {
+			t.Fatalf("v=%g: a scaled ball's form is not classified axis-invariant — the classification "+
+				"reads the departure relative to the tensor's own norm, so a scale cannot change it", v)
+		}
+		st := q.stationOn(ring, v)
+		g := st.secondHarmonic()
+		if g.Cos2 != 0 || g.Sin2 != 0 {
+			t.Errorf("v=%g: second harmonic (%g, %g), want exactly zero", v, g.Cos2, g.Sin2)
+		}
+		assertLevelFormsAgree(t, "scaled ball", q, st, g.Level, v)
+		assertNearly(t, "scaled ball reach", stdmath.Hypot(g.Cos1, g.Sin1), h.reach)
+		assertNearly(t, "scaled ball phase", stdmath.Atan2(g.Sin1, g.Cos1), h.phase)
 	}
 }
 
