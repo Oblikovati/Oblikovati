@@ -153,7 +153,7 @@ def issues_on(host: str, auth: str, key: str, added: dict[str, set[int]]) -> lis
 def report_coverage(go_added: dict[str, set[int]], ran: dict[str, dict[int, bool]],
                     cov_excl: list[re.Pattern[str]]) -> bool:
     """The coverage gate. True when it passes, or when there is nothing measurable to gate."""
-    total = covered = measured_files = unmeasured_files = 0
+    total = covered = measured_files = unmeasured_files = unmeasured_lines = 0
     worst: list[tuple[float, str, int, int]] = []
     for path, lines in go_added.items():
         if excluded(path, cov_excl):
@@ -164,6 +164,7 @@ def report_coverage(go_added: dict[str, set[int]], ran: dict[str, dict[int, bool
         # the percentage then describes a sample nobody chose knowingly.
         if not prof:
             unmeasured_files += 1
+            unmeasured_lines += len(lines)
             continue
         measured_files += 1
         # Only lines the compiler treated as executable appear in a profile at all; a blank line or a
@@ -185,9 +186,14 @@ def report_coverage(go_added: dict[str, set[int]], ran: dict[str, dict[int, bool
           f"{measured_files} file(s))")
     if unmeasured_files:
         # The headline must not be read as covering the whole change set.
+        # Two causes, and the message must not pick one it cannot tell apart: a scoped profile
+        # (the hook), or a package outside the -coverpkg set even in the whole-project run — CI's
+        # own recipe omits math/, so SonarCloud cannot credit those lines either. Measured once:
+        # a whole-project run said "it was scoped" about 18 math/ files.
         print(f"      NOT MEASURED: {unmeasured_files} changed file(s) are absent from the profile — "
-              f"it was scoped. The figure above describes only what it instrumented; "
-              f"`make sonar` measures the rest.")
+              f"either the profile was scoped, or their package is outside the -coverpkg set. "
+              f"If every one of their added lines were uncovered, the figure would be "
+              f"{100 * covered / (total + unmeasured_lines):.2f}%.")
     if not ok:
         print("      least-covered new files:")
         for _, path, hit, tot in sorted(worst)[:8]:
