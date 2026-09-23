@@ -54,7 +54,18 @@ const boreQuadratureCells = 240 // tol:numeric — a quadrature cell count, not 
 type drillOutcome string
 
 const (
-	drillRefused   drillOutcome = "refused"
+	// The two refusals are SEPARATE outcomes, and that is the point of naming them (#3527). The rows
+	// below the floor are refused by the size classification before any geometry is built, and the rows
+	// above it by the general per-face boolean; scoring both as "refused" let either row pass on the
+	// other's reason, so a change that moved the floor — or lost one named decline and gained the
+	// other — read green. A third value catches a refusal that is neither, which would be an error no
+	// caller can act on.
+	drillRefusedTooThin drillOutcome = "refused:sub-resolution" // ErrSubResolutionOperand, at classification
+	drillRefusedNoPath  drillOutcome = "refused:no-exact-path"  // ErrUnmodelledBoolean, after the pipeline ran
+	drillRefusedUnnamed drillOutcome = "refused:unnamed"        // an error neither of the two names
+	// drillNilBody is err=nil with no body at all. It is not a refusal (nothing was named) and not
+	// drillSilent (the ring did not come back either), and it used to be scored as a refusal.
+	drillNilBody   drillOutcome = "nilbody"
 	drillSilent    drillOutcome = "silent"    // returned the target untouched, err=nil, nothing recorded
 	drillExact     drillOutcome = "exact"     // torus + cylinder, 4 loops, volume matches the oracle
 	drillWrongBody drillOutcome = "wrongbody" // a body that is not the exact answer, returned anyway
@@ -80,13 +91,32 @@ func sweepDrill(t *testing.T, bore float64) drillOutcome {
 	if !ok {
 		t.Fatalf("bore %g: the boolean did not terminate within %s", bore, drillDeadline(t))
 	}
-	if err != nil || body == nil {
-		return drillRefused
+	if err != nil {
+		return refusalName(err)
+	}
+	if body == nil {
+		return drillNilBody
 	}
 	if len(body.Faces()) == 1 {
 		return drillSilent // the ring came back with no bore in it at all
 	}
 	return classifyBoredRing(ring, body, bore)
+}
+
+// refusalName says WHICH refusal an error is, so a row pins the reason and not merely the fact.
+//
+// Measured on this tree: the four radii at and below 1e-8 return ErrSubResolutionOperand naming the
+// tool's thickness against the model's 2.0049937655763422e-08 weld, and 1e-6 and 1e-4 return
+// ErrUnmodelledBoolean ("no exact path models this contact configuration ... the exact result failed its
+// own acceptance gate"), which is the boolean.no-exact-curved-path decline the comments below name.
+func refusalName(err error) drillOutcome {
+	switch {
+	case errors.Is(err, ErrSubResolutionOperand):
+		return drillRefusedTooThin
+	case errors.Is(err, ErrUnmodelledBoolean):
+		return drillRefusedNoPath
+	}
+	return drillRefusedUnnamed
 }
 
 // booleanWithinDeadline runs one cut under a deadline, so a pipeline that stops terminating fails the
@@ -153,13 +183,14 @@ func TestTheAxialDrillSweepPinsTheResolutionFloor(t *testing.T) {
 		// not above. (The silent band the floor exists for ends much lower, at ~0.0998 x Weld; the floor
 		// covers it with margin. An earlier version of this comment filed 1e-8 as "above the floor",
 		// which mis-stated the classification's reach by an order of magnitude.)
-		{1e-11, drillRefused}, {1e-10, drillRefused}, {1e-9, drillRefused}, {1e-8, drillRefused},
+		{1e-11, drillRefusedTooThin}, {1e-10, drillRefusedTooThin}, {1e-9, drillRefusedTooThin},
+		{1e-8, drillRefusedTooThin},
 		// ABOVE the floor: the size classification does not answer, and the outcome is the pipeline's
 		// own. Below ~4e-4 the general per-face boolean declines the pair BY NAME
 		// (boolean.no-exact-curved-path) and no geometry is built. "Below" and not "up to": the
 		// refusals do not form an interval — 3.98e-4 and 7.94e-4 refuse while both of their
 		// neighbours build — so these rows pin two radii, not a boundary.
-		{1e-6, drillRefused}, {1e-4, drillRefused},
+		{1e-6, drillRefusedNoPath}, {1e-4, drillRefusedNoPath},
 		// From ~6.3e-4 the pipeline BUILDS the exact section — valid, one torus, one cylinder, four
 		// loops, both intersection edges on both surfaces to 4.4e-16 (torus) and 4.4e-12 (cylinder).
 		// What separates this row from the plateau is not the body but the number: the section curve's
