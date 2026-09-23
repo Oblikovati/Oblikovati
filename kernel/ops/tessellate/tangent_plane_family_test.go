@@ -4,6 +4,7 @@ package tessellate_test
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	"oblikovati.org/kernel/brep"
@@ -163,16 +164,17 @@ func assertTangentFamilyTally(t *testing.T, got tangentFamilyTally) {
 	if got.chartFaces == 0 {
 		t.Fatal("no torus face of the family reached the chart covering; the one-location invariant covers nothing")
 	}
-	if got.freeEdges != tangentFamilyFreeEdges {
-		t.Errorf("the tangent-plane family meshes with %d free edges over the whole sweep; the "+
+	pin := tangentFamilyPinFor(runtime.GOARCH)
+	if got.freeEdges != pin.freeEdges {
+		t.Errorf("the tangent-plane family meshes with %d free edges over the whole sweep on %s; the "+
 			"measurement is %d. A rise is a regression. A FALL is a fix — bring this pin down with it",
-			got.freeEdges, tangentFamilyFreeEdges)
+			got.freeEdges, runtime.GOARCH, pin.freeEdges)
 	}
-	if got.torn != tangentFamilyTornRows || got.declinedEdges != tangentFamilyDeclinedEdges {
-		t.Errorf("%d rows of the sweep tear, %d of their free edges behind a chart-mesher decline; the "+
-			"measurement is %d rows and %d edges. The split matters: one number is the covering's density "+
-			"limit and the other is a shared chord at the pinch", got.torn, got.declinedEdges,
-			tangentFamilyTornRows, tangentFamilyDeclinedEdges)
+	if got.torn != pin.tornRows || got.declinedEdges != pin.declinedEdges {
+		t.Errorf("%d rows of the sweep tear on %s, %d of their free edges behind a chart-mesher decline; "+
+			"the measurement is %d rows and %d edges. The split matters: one number is the covering's "+
+			"density limit and the other is a shared chord at the pinch", got.torn, runtime.GOARCH,
+			got.declinedEdges, pin.tornRows, pin.declinedEdges)
 	}
 	if got.torn == 0 {
 		t.Error("no row of the sweep tears, so the reporting assertion covers nothing — bring the pins down with it")
@@ -270,6 +272,37 @@ const (
 	tangentFamilyDeclinedEdges = 720
 )
 
+// The same family on arm64. The kernel above ADR-0064's arithmetic floor is outside that ADR's scope
+// and still lets the compiler contract x*y+z into one fused multiply-add on arm64 — kernel/ops/tessellate
+// alone emits 140 of them (`make arm64-fma PKG=./kernel/ops/tessellate`) — so a near-tie can land on
+// the other side there. On this family it does in exactly one place: one of the five shared-chord rows
+// does not tear on arm64, taking that bullet from 8 edges to 5, while the density limit is identical —
+// the same two rows, the same 720 declined edges. Measured on the first CI run of PR #3558
+// (darwin/arm64) and reproduced under linux/arm64 emulation (`make arm64 PKG=./kernel/ops/tessellate
+// RUN=TestTheTangentPlaneFamilyHolds`). This is ADR-0064's own convention for a pin above the floor: the
+// residual is NAMED and exact, not skipped, and it retires when the package is converted and the two
+// arithmetics agree.
+const (
+	tangentFamilyFreeEdgesArm64     = 725
+	tangentFamilyTornRowsArm64      = 6
+	tangentFamilyDeclinedEdgesArm64 = 720
+)
+
+// tangentFamilyPin is the family's measurement on one arithmetic. Both are exact: a move on EITHER is a
+// finding, so the arm64 row is a second ratchet, not a looser one.
+type tangentFamilyPin struct{ freeEdges, tornRows, declinedEdges int }
+
+// tangentFamilyPinFor returns the pin for a GOARCH — amd64 never contracts, everything else this repo
+// builds for (arm64) does, which is the only distinction ADR-0064 says the kernel above the floor has.
+//
+//	pin := tangentFamilyPinFor(runtime.GOARCH)
+func tangentFamilyPinFor(goarch string) tangentFamilyPin {
+	if goarch == "amd64" {
+		return tangentFamilyPin{tangentFamilyFreeEdges, tangentFamilyTornRows, tangentFamilyDeclinedEdges}
+	}
+	return tangentFamilyPin{tangentFamilyFreeEdgesArm64, tangentFamilyTornRowsArm64, tangentFamilyDeclinedEdgesArm64}
+}
+
 // tangentMeshReports reports whether a mesh carries the given code at Defect severity.
 func tangentMeshReports(m *tessellate.Mesh, code diag.Code) bool {
 	for _, d := range m.Diagnostics {
@@ -278,4 +311,21 @@ func tangentMeshReports(m *tessellate.Mesh, code diag.Code) bool {
 		}
 	}
 	return false
+}
+
+// TestTheTangentFamilyArithmeticsDifferOnlyAtTheSharedChord holds the claim the arm64 pin rests on: the
+// two arithmetics agree on the covering's density limit and differ only in the shared-chord bullet.
+// If a later change makes them differ in the density number too, that is a new cross-arch finding,
+// not a pin to re-measure, and this says so before the three-minute corpus run does.
+func TestTheTangentFamilyArithmeticsDifferOnlyAtTheSharedChord(t *testing.T) {
+	amd, arm := tangentFamilyPinFor("amd64"), tangentFamilyPinFor("arm64")
+	if amd.declinedEdges != arm.declinedEdges {
+		t.Errorf("the density limit differs across arithmetics (amd64 %d, arm64 %d declined edges); the "+
+			"arm64 pin was justified as a shared-chord difference only", amd.declinedEdges, arm.declinedEdges)
+	}
+	amdChord, armChord := amd.freeEdges-amd.declinedEdges, arm.freeEdges-arm.declinedEdges
+	if amdChord <= 0 || armChord <= 0 || amd.tornRows-arm.tornRows != 1 {
+		t.Errorf("shared-chord edges amd64 %d / arm64 %d over %d / %d torn rows: the recorded difference "+
+			"is one row and a positive bullet on both", amdChord, armChord, amd.tornRows, arm.tornRows)
+	}
 }
