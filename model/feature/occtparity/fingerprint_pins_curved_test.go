@@ -338,8 +338,11 @@ func curvedWeldPins() []fingerprintPin {
 		// (1115132 → 340988, 1180684 → 406540). A loft that carries each boundary's exact edge
 		// discretisation and fills between them needs far fewer than a triangulation that re-covers the
 		// whole trim, and the volume says it loses nothing.
-		{"J3", 7395606.450322289951, 1621138, 0x8d7fb93a03fb36fd, ""},
-		{"A4", 15409151.085905453190, 1686228, 0xd3abf8df383a1e23, "bfuseblend"},
+		// RE-measured on the rebase onto m48/csg-leftovers: #3551's covering merges two records of one
+		// LOCATION into one vertex, which takes tens of triangles off the five bodies whose charted
+		// faces carry a coincident pair. Volumes move 6.5e-12 to 1.5e-8 — merge noise, not geometry.
+		{"J3", 7395606.450651307590, 1621114, 0xc0b3697d32490bbf, ""},
+		{"A4", 15409151.086006233469, 1686212, 0xc63c1ea6af770e55, "bfuseblend"},
 		{"A5", 117038179.720218241215, 788492, 0xcd9879937ec3c456, "bfuseblend"},
 		{"A6", 113037832.342674732208, 1015708, 0x1bf42f05e381a79e, "bfuseblend"},
 		// M5 (simple): the notch-wall concave cove sign (W-DH capability wave). A box − quarter-cylinder
