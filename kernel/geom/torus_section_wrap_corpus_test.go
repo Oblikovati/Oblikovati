@@ -141,7 +141,7 @@ func assertOneArcLiesOnTheQuadric(t *testing.T, ring Torus, rod Cylinder, arc To
 	q := rod.QuadricForm()
 	for i := range wrapCorpusSamples {
 		p := arc.PointAt(float64((float64(i) + wrapCorpusOffset) / wrapCorpusSamples))
-		if off := quadricSurfaceGap(q, p); !(off <= res.Weld()) { // NaN fails this, and must
+		if off := quadricSurfaceGap(q, p); stdmath.IsNaN(off) || off > res.Weld() { // NaN fails this, and must
 			t.Fatalf("ring(R=%.17g r=%.17g) rod(r=%.17g at %.17v along %.17v): arc on lane %.17g is %g off the quadric at sample %d",
 				ring.MajorRadius, ring.MinorRadius, rod.Radius, rod.Origin, rod.AxisDir, arc.UA, off, i)
 		}
@@ -283,7 +283,7 @@ func assertNoCurveLeavesTheRod(t *testing.T, rod Cylinder, curves []Curve3, wasO
 			worst = stdmath.Max(worst, distanceFromRodSurface(rod, c.PointAt(float64(i)/walk)))
 		}
 	}
-	if !(worst <= torusStationRootDistanceBound) {
+	if stdmath.IsNaN(worst) || worst > torusStationRootDistanceBound { // NaN fails this, and must
 		t.Errorf("a built curve leaves the rod by %.4e (it was %.4g before the gate); the bound is %.1e",
 			worst, wasOff, torusStationRootDistanceBound)
 	}

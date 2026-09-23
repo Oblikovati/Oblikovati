@@ -2,7 +2,11 @@
 
 package brep
 
-import "oblikovati.org/kernel/geom"
+import (
+	stdmath "math"
+
+	"oblikovati.org/kernel/geom"
+)
 
 // Curved boolean imprint (M2 Phase 1, Oblikovati/Oblikovati#1334). The imprint stage of the
 // curved boolean asks, for a pair of faces, "where do their surfaces meet?". For the planar
@@ -82,7 +86,7 @@ func sectionClosureGap(curves []geom.Curve3) float64 {
 // comparison alone let the widest possible refusal through the narrowest gate.
 func declineOpenSection(curves []geom.Curve3, res geom.Resolution) (float64, geom.SectionDecline) {
 	gap := sectionClosureGap(curves)
-	if !(gap <= res.Sew()) { // the negation is load-bearing: NaN must read as open
+	if stdmath.IsNaN(gap) || gap > res.Sew() { // NaN is spelled out: it must read as open
 		return gap, geom.DeclineOpenSection
 	}
 	return gap, geom.DeclineNone

@@ -225,7 +225,7 @@ func TestTheMovedVolumeBracketRefusesOnlyImpossibleMoves(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := &diag.Recorder{}
-			recordMovedVolumeOutOfToolBracket(tc.op, tc.tv, tc.wv, tc.bv, volumeSource{true, true, tc.exact}, rec)
+			recordMovedVolumeOutOfToolBracket(tc.op, volumeTriple{tc.tv, tc.wv, tc.bv}, volumeSource{true, true, tc.exact}, rec)
 			if got := rec.Has(CodeBooleanMovedVolumeOutOfToolBracket); got != tc.wantRecorded {
 				t.Errorf("recorded = %v, want %v; records %v", got, tc.wantRecorded, rec.Records())
 			}
@@ -260,17 +260,17 @@ func TestAToolTooSmallToAccountForTheRemovalIsRecorded(t *testing.T) {
 		t.Fatalf("stub: %v", err)
 	}
 	honest := &diag.Recorder{}
-	tv, wv, bv, src := boolVolumes(ring, drill, body)
-	recordMovedVolumeOutOfToolBracket(Cut, tv, wv, bv, src, honest)
+	vols, src := boolVolumes(ring, drill, body)
+	recordMovedVolumeOutOfToolBracket(Cut, vols, src, honest)
 	if honest.Has(CodeBooleanMovedVolumeOutOfToolBracket) {
 		t.Fatalf("the genuine pair is out of bracket, so the probe below proves nothing: %v", honest.Records())
 	}
 	assertThePublicEntryRunsTheBracketSilently(t, ring, drill)
 	rec := &diag.Recorder{}
-	_, stubVol, _, stubSrc := boolVolumes(ring, stub, body)
-	recordMovedVolumeOutOfToolBracket(Cut, tv, stubVol, bv, stubSrc, rec)
+	stubVols, stubSrc := boolVolumes(ring, stub, body)
+	recordMovedVolumeOutOfToolBracket(Cut, volumeTriple{vols.target, stubVols.tool, vols.body}, stubSrc, rec)
 	if !rec.Has(CodeBooleanMovedVolumeOutOfToolBracket) {
-		t.Errorf("a cut removing %g with a tool holding %g was not recorded", tv-bv, stubVol)
+		t.Errorf("a cut removing %g with a tool holding %g was not recorded", vols.target-vols.body, stubVols.tool)
 	}
 }
 

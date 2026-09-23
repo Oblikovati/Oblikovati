@@ -414,7 +414,8 @@ func torusSectionBuilds(t *testing.T, chart, other Torus) bool {
 	}
 	for _, c := range curves {
 		for i := range 2001 {
-			if d := other.distanceTo(c.PointAt(float64(i) / 2000)); !(d <= torusChartWeld(chart)) {
+			d := other.distanceTo(c.PointAt(float64(i) / 2000))
+			if stdmath.IsNaN(d) || d > torusChartWeld(chart) { // NaN fails this, and must
 				return false
 			}
 		}

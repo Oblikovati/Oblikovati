@@ -157,9 +157,9 @@ func curvedResultRejected(op PartFeatureOperation, target, tool, body *topo.Body
 			"curved %s analytic result has a face wound against its outward normal (%q): falling back to the guarded path", op, inverted.ReferenceKey())
 		return true
 	}
-	tv, wv, bv, m := boolVolumes(target, tool, body)
-	recordMovedVolumeOutOfToolBracket(op, tv, wv, bv, m, rec)
-	return curvedVolumeRejected(op, target, tool, tv, wv, bv, m.operandsAnalytic(), rec)
+	vols, m := boolVolumes(target, tool, body)
+	recordMovedVolumeOutOfToolBracket(op, vols, m, rec)
+	return curvedVolumeRejected(op, target, tool, vols, m.operandsAnalytic(), rec)
 }
 
 // faceCertificateRejected is the per-face half of the acceptance gate: the evidence certifyBooleanFaces
@@ -223,7 +223,8 @@ func recordUnexaminedFaces(op PartFeatureOperation, body *topo.Body, ev faceEvid
 // CONTRADICTION and saying so cannot over-claim. It is recorded, not refused: the body is the exact
 // section (#3516 measured its faces and edges), and what is wrong is the number, which the caller
 // now sees instead of storing silently.
-func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, tv, wv, bv float64, src volumeSource, rec *diag.Recorder) {
+func recordMovedVolumeOutOfToolBracket(op PartFeatureOperation, vols volumeTriple, src volumeSource, rec *diag.Recorder) {
+	tv, wv, bv := vols.target, vols.tool, vols.body
 	moved, ok := movedVolume(op, tv, bv)
 	if !ok {
 		return
@@ -283,13 +284,13 @@ const CodeBooleanMovedVolumeOutOfToolBracket diag.Code = "boolean.moved-volume-o
 // curvedVolumeRejected is the acceptance gate's last stage: the Requicha two-sided volume bracket,
 // split out so each stage stays one decision. It takes the volumes its caller already measured, so
 // the two brackets read ONE measurement of each body rather than two of each.
-func curvedVolumeRejected(op PartFeatureOperation, target, tool *topo.Body, tv, wv, bv float64, exact bool, rec *diag.Recorder) bool {
-	if !volumeOutOfBracket(op, tv, wv, bv, curvedGuardTolerance(target, tool, tv, wv, exact)) {
+func curvedVolumeRejected(op PartFeatureOperation, target, tool *topo.Body, vols volumeTriple, exact bool, rec *diag.Recorder) bool {
+	if !volumeOutOfBracket(op, vols, curvedGuardTolerance(target, tool, vols, exact)) {
 		return false
 	}
 	rec.Recordf(CodeBooleanAnalyticVolumeReject, diag.Defect,
 		"curved %s analytic result volume %g outside the Requicha bracket (V(A)=%g V(B)=%g): falling back to the guarded path",
-		op, bv, tv, wv)
+		op, vols.body, vols.target, vols.tool)
 	return true
 }
 
@@ -343,14 +344,14 @@ const CodeBooleanAnalyticFaceReject diag.Code = "boolean.analytic-face-reject"
 // operands integrate analytically (the volumes are exact, so nothing wider is justified), widened to
 // curvedVolumeGuardFraction of the larger operand when either fell back to the tessellation, whose
 // chord deficit the bracket must then absorb.
-func curvedGuardTolerance(target, tool *topo.Body, tv, wv float64, exact bool) float64 {
+func curvedGuardTolerance(target, tool *topo.Body, vols volumeTriple, exact bool) float64 {
 	if curvedGuardBracketOverride != nil {
 		return *curvedGuardBracketOverride
 	}
 	if exact {
 		return ResolutionForBodies(target, tool).Volume()
 	}
-	return curvedVolumeGuardFraction * max(tv, wv)
+	return curvedVolumeGuardFraction * max(vols.target, vols.tool)
 }
 
 // volumeSource records, for each of the three bodies the acceptance brackets measure, whether its
@@ -448,8 +449,8 @@ func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body
 	// Model-relative volume tolerance (ADR-0042): scales with the operands' size³ so
 	// the result-volume sanity check is faithful at any scale, not just ~cm parts. The
 	// planar path's arithmetic is exact-plane, so a tight resolution-cube tol is right.
-	tv, wv, bv, _ := boolVolumes(target, tool, body)
-	return volumeOutOfBracket(op, tv, wv, bv, ResolutionForBodies(target, tool).Volume())
+	vols, _ := boolVolumes(target, tool, body)
+	return volumeOutOfBracket(op, vols, ResolutionForBodies(target, tool).Volume())
 }
 
 // boolVolumes measures the target, tool and result volumes for the acceptance brackets, and reports
@@ -461,13 +462,18 @@ func invalidBooleanVolume(op PartFeatureOperation, target, tool, body *topo.Body
 // The SOURCE comes back with the numbers because a bracket that does not know which it holds can
 // compare a meshed volume with an analytic one, which is precisely the artefact #3516 was filed for.
 // Reading it here costs nothing: it is the choice BodyGeometryProperties already makes internally.
-func boolVolumes(target, tool, body *topo.Body) (targetVol, toolVol, bodyVol float64, src volumeSource) {
+func boolVolumes(target, tool, body *topo.Body) (vols volumeTriple, src volumeSource) {
 	q := DefaultQuality()
-	targetVol, src.target = analyticOrMeshedVolume(target, q)
-	toolVol, src.tool = analyticOrMeshedVolume(tool, q)
-	bodyVol, src.body = analyticOrMeshedVolume(body, q)
-	return targetVol, toolVol, bodyVol, src
+	vols.target, src.target = analyticOrMeshedVolume(target, q)
+	vols.tool, src.tool = analyticOrMeshedVolume(tool, q)
+	vols.body, src.body = analyticOrMeshedVolume(body, q)
+	return vols, src
 }
+
+// volumeTriple is the three volumes every acceptance bracket reads. They are kept together because
+// they are measured in one pass and always travel as a set: passed one by one they made the bracket
+// an eight-argument call in which nothing but position told the target from the tool.
+type volumeTriple struct{ target, tool, body float64 }
 
 // analyticOrMeshedVolume is BodyGeometryProperties' own choice made where the caller can SEE it: the
 // analytic integral when the body admits one, the tessellation at q otherwise. It costs the same
@@ -486,7 +492,8 @@ func analyticOrMeshedVolume(b *topo.Body, q Quality) (float64, bool) {
 // min(V(A),V(B)): its Requicha lower bound needs V(A∪B) — a second boolean, too expensive for a
 // guard — and is trivially ≥ 0 without it. Shared by the planar guard (a tight model-relative
 // tol) and the curved analytic guard (a deficit-dominating relative tol, curvedExactGuarded).
-func volumeOutOfBracket(op PartFeatureOperation, targetVol, toolVol, bodyVol, tol float64) bool {
+func volumeOutOfBracket(op PartFeatureOperation, vols volumeTriple, tol float64) bool {
+	targetVol, toolVol, bodyVol := vols.target, vols.tool, vols.body
 	switch op {
 	case Join:
 		return bodyVol+tol < max(targetVol, toolVol) || bodyVol > targetVol+toolVol+tol
