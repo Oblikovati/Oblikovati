@@ -150,6 +150,15 @@ const (
 
 // torusOneHarmonicSection is the arccos family's topology: the maximal tube-angle windows where the
 // two azimuths exist, or two full-period branches when they exist everywhere.
+//
+// Both reads of torusHarmonicAt in this file (here and in torusHarmonicLoops) DISCARD its ok, and the
+// reason is a construction rather than an omission (#3527). That flag is st.invariant, which for a
+// quadric is axisInvariantEntries over the in-plane tensor entries — and those do not depend on the tube
+// angle at all, so it is one answer for the whole turn. sectionFamily has already read exactly that
+// answer (quadricIsAxisInvariant) to select this family, and the torus co-form's own sectionFamily never
+// returns torusFamilyOneHarmonic, so nothing else reaches here. The flag cannot be false at any station
+// this function is called for; testing it would be asking the same question twice and inventing a decline
+// for the answer that cannot come.
 func torusOneHarmonicSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
 	spans, folded := periodicRootWindows(func(v float64) float64 {
 		h, _ := torusHarmonicAt(t, co, v)
@@ -222,7 +231,9 @@ func noClosedFormWhen(ok bool) SectionDecline {
 	return DeclineNoClosedForm
 }
 
-// torusHarmonicLoops builds one folded loop per tube-angle window of the one-harmonic reduction.
+// torusHarmonicLoops builds one folded loop per tube-angle window of the one-harmonic reduction. It
+// discards torusHarmonicAt's ok for the reason torusOneHarmonicSection records above: the family
+// classification has already established it, for the whole turn, before either was called.
 func torusHarmonicLoops(t Torus, co TorusCoForm, spans [][2]float64, res Resolution) ([]Curve3, SectionDecline, bool) {
 	out := make([]Curve3, 0, len(spans))
 	for _, w := range spans {

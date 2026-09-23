@@ -38,7 +38,14 @@ var dispatchLadders = map[string]string{
 	// The tessellator's 11-entry specialCurvedMeshers ladder (#3409) is GONE — ADR-0061 stage 5
 	// replaced it with classifyCurvedTrim, a classification whose predicates are mutually exclusive
 	// (kernel/ops/tessellate/curved_trim_classify.go). Its entry is removed rather than kept at zero:
-	// the registry may only shrink, and there is no ladder left in the kernel to register.
+	// the registry may only shrink, and nothing this guard's SHAPE matches is left in the kernel.
+	//
+	// That last clause is the whole claim, and it used to read "there is no ladder left in the kernel to
+	// register", which over-states it (#3527). What is gone is the `[]func` try-list this scan detects.
+	// Two ordered chains that "read the same way" are still standing and are registered next door, in
+	// payload_gated_chain_test.go: splineFaceMesh (#3410) and meshSeamCrossingFace (#3411). They are a
+	// different shape — each rung is gated on a payload rather than on a previous rung's failure — which
+	// is why they need their own guard, and why an empty registry HERE is not the end of the ladder work.
 }
 
 func TestNoFirstFitDispatchLadders(t *testing.T) {
