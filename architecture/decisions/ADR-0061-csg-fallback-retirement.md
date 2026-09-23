@@ -5028,6 +5028,18 @@ and `|a+b|² − |a−b|² = 4·coverShear·Δu·Δv·su·sv` is strictly positi
 station grid. `a−b` is the shorter diagonal, uniformly, for any cell sizes. The shear that removed the
 in-circle TIE (#3542) is what makes the tie's resolution nameable here.
 
+**AND THAT IS WHY `coverShear` IS LOAD-BEARING FOR DETERMINISM, not for a cost.** At `coverShear = 0` a
+cell is a RECTANGLE, its two diagonals are exactly equal — measured on the near-pinch corpus,
+0.6444989408828234 against itself — and the rule above has nothing left to break the tie with. "Output
+is byte-identical across runs and platforms: explicit total orders for every tie-break" is a ground
+rule, so an unbroken tie is not a worse number, it is **nondeterminism**: a correctness failure, which
+does not trade against a free-edge count at all. This is written here because §R8 below prices the shear
+in free edges, and a future worker looking to remove a tolerance constant will find that price first and
+could mistake it for the whole argument. It is not. The prices are real and secondary — shear = 0 also
+gives back #3542's closure (5 of the near-pinch corpus's 16 rows, 32 seam edges) and tears near-pinch
+crossing rods ∪ by 992 free edges at the fine faceting, with its face 6 area falling under refinement —
+but the reason the constant stays is the tie.
+
 **The band's width is a distance, not a count of lattice steps.** A lattice-ring erosion was built
 first and swept at 0, 1, 2, 3, 4 and 6 rings: every width byte-identical on the occtparity
 fingerprints and green on the whole tessellate suite, with cost rising monotonically (16 859 to 44 644
@@ -5288,3 +5300,57 @@ that leaves these faces short where the grading is wrong for them. A facet-count
 tolerance — one discretizer, non-dyadic, per-axis — is what closes all three, and it moves every
 curved-face pin in the repo. It is not this mesher's to fix, and now that every such face reports
 itself, the next worker can size it from the corpus instead of from a probe.
+
+#### 8. Rebasing onto #3519/#3551, and the one pin the shear costs
+
+This task was based at `4b3b1819` and landed on `2d7328e3`, 22 commits later. Four of those commits
+touch the same chart mesher, and the reconciliations are recorded here because two of them change what an existing
+pin gates.
+
+**#3551's one-location invariant composes with `coverShear` through ONE frame function.** #3551 makes two
+records of one covering LOCATION into one vertex — a weld, not a nudge — by bucketing laid vertices on a
+quantised grid. It buckets in the frame the triangulation runs in, and `coverShear` changes that frame, so
+the index built in one frame and queried in another would find nothing. `frameXY` is now the single place
+that says what the frame is, and both `add` and the location index read it. The shear cannot move a
+location — identical `(u, v)` maps to identical `(x, y)` under any linear frame — so the pairs the merge
+joins are exactly the pairs it joined before, and the invariant holds on every torus face of every aspect
+ratio of #3551's own sweep (`dup = 0`).
+
+**Two clearance constants now govern the boundary, and they have different jobs.** #3519's
+`chartBoundaryClearance` (0.90) says how much of a boundary CHORD an interior node must keep clear of
+it, and #3517's `chartClearanceCellCap` (0.875) caps the chord that is read from at the covering's own
+CELL. On
+the genus-1 complement's torus face they meet and the cap binds, because that face's oval apex is exactly
+where an uncapped chord is many cells long. Both numbers the clearance is judged on improve — face
+deficit against the analytic 264.88981 falls 0.50 % → 0.44 %, and the body's `DefaultQuality` volume
+deficit 1.3497 % → 1.1097 %, so #3519's own 1.39 % ceiling is met with more room. What the complement's
+pin gates has changed with it: it gates the CAP now, and `chartBoundaryClearance` stays gated by its own
+corpus-tear rows and by that ceiling.
+
+**The shear costs #3551's tangent-plane family one aspect ratio**, and the pin rises 368 → 728 free edges,
+6 → 7 torn rows. Bisected to `coverShear`: exactly one row of the 76, `R=50 r=1 intersect` at
+`PropertyQuality`, 0 → 360, with every other row bit-identical either way. It is the same residue one
+ratio along rather than a new defect — the family's own split calls `R=100 r=1` a covering DENSITY limit
+that recovers at a fine enough chord, and `R=50 r=1` does exactly that (360 free edges at chord 1e-3, 0 at
+5e-4, with the triangle count FALLING 262 500 → 30 504 where it recovers, because the decline and its
+whole-domain fall-through both stop). A defect that disappears under refinement while getting cheaper is a
+sampling limit, and what closes both rows is the facet count §R4.5 names: `adaptiveParams` can only land
+on a power of two, and one dyadic ladder cannot be right for a cell 25 : 1 anisotropic.
+
+The rise was ruled on rather than settled by the change that caused it, and the deciding reason is the
+determinism argument in §R4.2 — not the free-edge comparison, which pits totals from different families
+against each other. No value inside `coverShear`'s four-decade plateau avoids the row (1/65536, 1/16384,
+1/4096 and 1/1024 all read 728), because breaking an exact tie is a discrete choice rather than a
+magnitude.
+
+**Two of this branch's decline rows lost their fixture to a CURE**, which is worth recording as a shape.
+`TestAChartMesherDeclineReachesTheBodysMeshDiagnostics` read `ringMeetingADrill` until §6's one-path
+dispatch sent that body's developing face to the structured grid, then `wideCrossingRods` until #3551's
+merge cured that one too — swept over crossing rods (radius 1.5…4.0 × offset 0…2) at both facetings, no
+body of that family declines any more. It reads #3551's tangent-plane family at the thin-tube end now,
+which still refuses. And #3519's `TestTheCuredDisplayDeclineStaysCured` asserted no diagnostic AT ALL,
+which was the only reading of "cured" available before §7 gave a coarse face a voice: that body now
+reports 1.283× its chord and a saturated 64-cell refinement floor at `PropertyQuality` while staying
+silent at `DefaultQuality` and holding its per-face areas to 1e-4. It is narrowed to the codes it is
+ABOUT — decline, unmeshed wrap, ignored trim, tear, patch coverage — because a row that refuses every
+report has to be loosened by the next honest one, and a row that refuses the codes it names does not.

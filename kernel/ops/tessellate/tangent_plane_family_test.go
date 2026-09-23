@@ -36,38 +36,35 @@ import (
 // what the residue is; TestTheTangentPlaneFamilyHolds also asserts that every torn row REPORTS its
 // tear, so the residue is a capability gap and not a silent one.
 //
-// 368 → 728 (#3517's rebase onto this branch), and it is a RISE, taken knowingly. #3517's coverShear
-// tilts the frame the covering TRIANGULATES in by 1/1024 to break the concyclic in-circle tie a
-// rectangular lattice presents, and on this family it costs exactly ONE row: R=50 r=1 intersect at
-// PropertyQuality, 0 → 360 free edges. Bisected — every other row of the 76 is bit-identical with the
-// shear on and off, and the one-location invariant (dup = 0) holds throughout — and independent of
-// #3517's structured interior, which changes nothing here either way.
+// 368 → 728 (#3517's rebase onto this branch). It is a RISE, and it was RULED on rather than decided by
+// whoever moved the number: #3517's coverShear tilts the frame the covering TRIANGULATES in by 1/1024,
+// and on this family that costs exactly ONE row — R=50 r=1 intersect at PropertyQuality, 0 → 360 free
+// edges. Bisected: every other row of the 76 is bit-identical with the shear on and off, the
+// one-location invariant (dup = 0) holds throughout, and #3517's structured interior changes nothing
+// here either way.
 //
-// IT IS THE SAME RESIDUE ONE ASPECT RATIO ALONG, not a new defect. The split below diagnoses R=100 r=1
-// as a covering DENSITY limit that goes watertight once the chord is fine enough; R=50 r=1 now does
-// exactly that, with the same signature the density argument turns on — the triangle count FALLS when
-// it recovers, because the decline and its whole-domain fall-through both stop:
+// THE SHEAR IS KEPT FOR DETERMINISM, NOT FOR A FREE-EDGE COUNT, and the ordering of those two reasons
+// is the whole of the ruling. With the shear at 0 a covering's lattice cell has two EXACTLY equal
+// diagonals — measured, 0.6444989408828234 against itself — so the structured interior's split has no
+// tie-breaker left. "Output is byte-identical across runs and platforms: explicit total orders for every
+// tie-break" is a ground rule, and a tie with nothing to break it is not a worse number, it is
+// nondeterminism. That is a correctness failure, so it does not compete with a free-edge total at all.
 //
-//	chord     0.05   1e-3   5e-4          2e-4          1e-4
-//	R=100 r=1  272    360    400           0 (43104)     0 (85472)
-//	R=50  r=1  292    360    0 (30504)     0 (60524)     0 (60812)
+// The other consequences of shear = 0 are real and would NOT have been enough on their own, which is
+// why they are recorded second: #3542's closure is given back (5 of the near-pinch corpus's 16 rows
+// carry 32 seam edges again), near-pinch crossing rods ∪ tears by 992 free edges at the fine faceting,
+// and its face 6 area FALLS under refinement, 154.21847 → 104.32692. A capability handed back is a
+// tradeable cost, and 992 against 360 compares free-edge totals across different families, which are
+// not commensurable — neither is a reason to settle a design.
 //
-// So the shear moves the density edge from R/r = 100 to R/r = 50, and R=50 recovers at a COARSER chord
-// than R=100 does — it sits nearer the edge, which is what a half-decade shift of the same limit looks
-// like.
+// WHAT MAKES THE RISE ACCEPTABLE rather than merely ruled is that R=50 r=1 is the SAME residue one
+// aspect ratio along, not a new defect: see the density bullet in the split below, which now carries it
+// beside R=100 r=1 with its recovery numbers. A defect that disappears under refinement while getting
+// CHEAPER is a sampling limit.
 //
-// WHY THE RISE IS THE CHEAPER SIDE. Measured with the shear at 0 on this same tree: the near-pinch
-// corpus loses #3542's closure — 5 of its 16 rows carry 32 seam edges again — near-pinch crossing
-// rods ∪ tears by 992 free edges at the fine faceting, its face 6 area FALLS under refinement
-// (154.21847 → 104.32692, rel −0.32), and the chart mesher gives that face up. 992 against 360, plus a
-// lost area monotonicity, plus a structured-interior diagonal that becomes an exact tie with no rule to
-// break it (TestEveryStructuredCellIsSplitOnTheShorterDiagonal fails: 0.6444989408828234 against
-// itself). No value inside coverShear's own four-decade plateau avoids the R=50 row either — 1/65536,
-// 1/16384, 1/4096 and 1/1024 all read 728 — because breaking an exact tie is a discrete choice, not a
-// magnitude.
-//
-// This is a cross-task trade and #3517 flagged it for a ruling rather than settling it quietly. If the
-// ruling goes the other way, the change is one constant and this pin comes back to 368.
+// No value inside coverShear's own four-decade plateau avoids the row either — 1/65536, 1/16384, 1/4096
+// and 1/1024 all read 728 — because breaking an exact tie is a discrete choice, not a magnitude. If the
+// ruling is ever revisited, the change is one constant and this pin comes back to 368.
 const tangentFamilyFreeEdges = 728
 
 // tangentFamilyAspects is the swept set: R/r from 100 down to 2, spanning the thin-tube end where the
@@ -222,6 +219,23 @@ func forEachTangentPlanePiece(t *testing.T, visit func(name string, b *topo.Body
 //     tried and reverted (it drove the figure-eight band from 110.947 mm² to the whole torus). Closing
 //     this row means revisiting that decision with its own corpus, not widening anything here.
 //
+//     A SECOND row joined this bullet with #3517's rebase, and it belongs here rather than in a total:
+//     R=50 r=1 intersect at PropertyQuality, also 360 free edges, refused by the same rim gate (3
+//     unpaired edges that are no rim segment). It is the same limit at the next aspect ratio down, and
+//     it behaves the same way under refinement — 292 free edges at chord 0.05, 360 at 1e-3, then 0 at
+//     5e-4, 2e-4 and 1e-4, with the triangle count FALLING 262500 → 30504 where it recovers, because
+//     the decline and its whole-domain fall-through both stop. It recovers at a COARSER chord than
+//     R=100 r=1 does (5e-4 against 2e-4), so it sits nearer the edge: coverShear moves the edge of this
+//     density limit from R/r = 100 to R/r = 50, it does not open a new one.
+//
+//     WHAT CLOSES BOTH is a facet count, and naming it is the point of putting them together.
+//     adaptiveParams subdivides by HALVING, so it can only land on a power of two: the general path
+//     samples ~1.9× more than the tolerance demands on some faces and leaves these two short, because
+//     one dyadic ladder cannot be right for a cell 25 : 1 anisotropic. A non-dyadic per-axis
+//     discretizer derived from tolerance is what takes both rows to zero without refining a chord-sized
+//     axis, and it moves every curved-face pin in the repo (ADR-0061 §R4.5). Until then this bullet is
+//     where the family's density residue is counted, and it is two rows.
+//
 //   - FIVE rows, 8 edges between them: a SHARED CHORD at the pinch, and the per-face tally is what
 //     names it. Every one of the eight is an edge of degree FOUR whose four uses split two-and-two
 //     between the cut plane and the torus — `{box:face#2 (Plane): 2, ring:face#0 (Torus): 2}` on every
@@ -247,10 +261,10 @@ func forEachTangentPlanePiece(t *testing.T, visit func(name string, b *topo.Body
 // face of every ratio, torn rows included.
 //
 // 6 → 7 rows and 360 → 720 declined edges (#3517's rebase): R=50 r=1 intersect at PropertyQuality joins
-// the FIRST bullet — the covering density limit — for the reason and with the measurements recorded at
-// tangentFamilyFreeEdges. The five-row shared-chord bullet is unchanged at 8 edges between them, which
-// is what keeping the split separate is for: the rise is entirely inside the density number and the
-// shared-chord number did not move.
+// the FIRST bullet — the covering density limit — which names it there with its own recovery numbers
+// rather than letting it disappear into a total. The five-row shared-chord bullet is unchanged at 8
+// edges between them, and that is the property this split exists for: one defect must not be able to
+// grow inside another's number, and the rise is entirely inside the density number.
 const (
 	tangentFamilyTornRows      = 7
 	tangentFamilyDeclinedEdges = 720
