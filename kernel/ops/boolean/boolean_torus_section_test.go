@@ -122,6 +122,12 @@ func TestCoaxialShaftThroughARingIsExact(t *testing.T) {
 // post-condition catches that and refuses before anything is built, and the boolean reports it as the
 // degradation it is.
 func TestATorusPairTheSectionRefusesIsNotBuilt(t *testing.T) {
+	// Skipped in short mode for the same reason as TestABooleanWithNoExactCurvedPathRefusesByName, which
+	// drives this same pair: ~9.6 s of boolean, and the two of them were the tier-2 slow-test guard's only
+	// unguarded breaches (#3527).
+	if testing.Short() {
+		t.Skip("corpus tier (~9.6s): `make test-corpus`")
+	}
 	t.Parallel()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {

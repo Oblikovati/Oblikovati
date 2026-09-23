@@ -60,6 +60,13 @@ func crossedRings(t *testing.T) (*topo.Body, *topo.Body) {
 // a diag.Defect that must reach feature health, the API and the UI (ADR-0061), and with the faceted
 // engines gone (stage 7) it is also the operation's error rather than a stand-in body.
 func TestABooleanWithNoExactCurvedPathRefusesByName(t *testing.T) {
+	// Skipped in short mode because the co-centred perpendicular ring pair is ~9.4 s of boolean on its
+	// own, and it and its twin below were the two slowest UNGUARDED tests in the tier-2 stream — the pair
+	// `cmd/testslowest -unguarded-budget 60` kept flagging, at 45–61 s once CPU contention stretched them
+	// (#3527).
+	if testing.Short() {
+		t.Skip("corpus tier (~9.4s): `make test-corpus`")
+	}
 	t.Parallel()
 	a, b := crossedRings(t)
 	rec := &diag.Recorder{}
