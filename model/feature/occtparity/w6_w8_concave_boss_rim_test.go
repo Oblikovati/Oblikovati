@@ -144,14 +144,22 @@ func TestW8CylinderWallHoldsItsChord(t *testing.T) {
 // worstChordRatio is the largest distance from a mesh edge's midpoint to the surface the mesh
 // approximates, as a multiple of the quality's own chord tolerance. 1 or less is a mesh that delivered
 // the chord it promised.
+//
+// It measures through geom.ClosestPointOnSurface, which is the METRIC nearest point on every surface
+// kind — not through ParamAt, whose own contract says it is the metric nearest point "for the plane,
+// cylinder and sphere but not exactly for the cone or torus". This helper read ParamAt first and
+// over-stated four cone/elliptical faces into firing while they were inside tolerance (#3517 review 5
+// C1). It must stay the same oracle the production report uses (worstEdgeChord,
+// kernel/ops/tessellate/face_chord_achieved.go), or a pin here asserts a different question from the
+// diagnostic beside it.
 func worstChordRatio(m *tessellate.Mesh, s geom.Surface, q tessellate.Quality) float64 {
 	worst := 0.0
 	for i := 0; i+2 < len(m.Indices); i += 3 {
 		for k := range 3 {
 			a, b := m.Positions[m.Indices[i+k]], m.Positions[m.Indices[i+(k+1)%3]]
 			mid := math.P3((a.X+b.X)/2, (a.Y+b.Y)/2, (a.Z+b.Z)/2)
-			u, v := s.ParamAt(mid)
-			worst = stdmath.Max(worst, float64(mid.DistanceTo(s.PointAt(u, v))))
+			_, _, foot := geom.ClosestPointOnSurface(s, mid)
+			worst = stdmath.Max(worst, float64(mid.DistanceTo(foot)))
 		}
 	}
 	return worst / q.Tol()

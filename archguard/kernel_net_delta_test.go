@@ -287,13 +287,13 @@ var kernelNetDeltaPin = map[string]int{
 	// 43 → 44 (2026-09-22, #3517 review 4): CodeFaceChordNotMet. A RISE that is a REPORTED
 	// DEGRADATION, which is the one kind this key exists to admit — the fallback-site delta is 0 and it
 	// refuses nothing. Until it existed, a curved face that missed the chord tolerance it was handed
-	// said NOTHING: measured over the thirteen byte-identity pin bodies, 139 of their 318 non-planar
-	// faces exceed PropertyQuality's 1e-3 mm and NINETY of those carried no diagnostic at all, across
-	// 42 bodies, the worst at 3250× (occtparity C2 face 1). Every gate in the repo was blind to all
-	// ninety, because a whole-body area or volume sum absorbs one face's chord deficit — which is how
-	// #3517's own round-5 regressions shipped silently. Cost measured: TestTessellationBudget unmoved at
-	// 0.23 s of 2.15 s, the occtparity tier 632 s of 2400 s, and two rows across ./kernel/... and
-	// ./model/... had to stop asserting a silence that was never true.
+	// said NOTHING: measured over ALL 88 rows of occtparity's byteIdentityPins corpus, 135 of their 318
+	// non-planar faces exceed PropertyQuality's 1e-3 mm across 61 bodies, the worst at 3250× (C2 face
+	// 1), and 86 of those carried no other diagnostic at all. Every gate in the repo was blind to them,
+	// because a whole-body area or volume sum absorbs one face's chord deficit — which is how #3517's
+	// own round-5 regressions shipped silently. Cost measured: TestTessellationBudget unmoved at 0.24 s
+	// of 2.15 s, TestHeavyModelBudget 0.34 s → 0.41 s, the occtparity tier 648 s of 2400 s, and two rows
+	// across ./kernel/... and ./model/... had to stop asserting a silence that was never true.
 	"diag-codes": 44,
 }
 

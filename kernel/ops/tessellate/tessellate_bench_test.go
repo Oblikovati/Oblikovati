@@ -124,7 +124,17 @@ func TestTessellationBudget(t *testing.T) {
 
 // TestHeavyModelBudget guards the heavy REAL model named by OBK_PERF_STEP (e.g. an imported EDF duct:
 // trimmed cones + freeform NURBS) — the case the committed fixtures don't reach, and exactly where the
-// O(n²) CDT regression bit (50 ms → 3.5 s). Skipped when OBK_PERF_STEP is unset, so set it locally:
+// O(n²) CDT regression bit (50 ms → 3.5 s).
+//
+// It is therefore the ONLY row that gates the NURBS path's cost, and it is opt-in, so anything that
+// makes a freeform face more expensive is invisible to the gate. The achieved-chord report of #3517
+// (face_chord_achieved.go) is one such thing: it costs one surface point inversion per mesh edge, which
+// on an analytic face is a few Gauss-Newton steps and on a NURBS face is the expensive one — measured
+// per face, occtparity J3 face 3 went 13 ms → 808 ms and K2 face 4 26 ms → 2.46 s, 50–95×. Here, on the
+// EDF duct, the same change reads 0.34 s → 0.41 s against this 700 ms budget. If a future change moves
+// that per-face figure again, THIS is the row that sees it, and the committed fixtures will not.
+//
+// Skipped when OBK_PERF_STEP is unset, so set it locally:
 //
 //	OBK_PERF_STEP=/path/EDF.STEP go test -run TestHeavyModelBudget ./kernel/ops
 func TestHeavyModelBudget(t *testing.T) {

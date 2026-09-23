@@ -5198,9 +5198,13 @@ on some body, so the new code could not be a restatement of the two older ones f
 body with that property was a charted face whose trim DEVELOPS, and those no longer reach the covering
 at all: swept after the fix over ring ∩ drill (tube 1.2…2.0 × drill radius 0.8…1.8 × offset 0…1.5) and
 crossing rods (radius 1.5…3.5 × offset 0…2), at both facetings, **no body declines silently any more**,
-and the body that used to — `ringMeetingADrill` — now ships with no diagnostics at all. The row it
-anchored becomes the stronger statement: a body that needed the Defect and no longer does, asserted in
-both directions so a routing regression brings the code back.
+and the body that used to — `ringMeetingADrill` — no longer DECLINES at either. (It does not ship
+silent, and an earlier draft of this paragraph said it did: §7's achieved-chord report shows its two
+torus faces at 1.332× and 1.129× the display tolerance and 1.408× and 1.342× the property one, so it
+harvests one Defect at both facetings. They sit within 3.2e-4 of their exact analytic areas — a correct
+body with a rim coarser than it asked for, which is a different statement from a lost trim.) The row it
+anchored becomes the stronger statement: a body that needed the DECLINE and no longer does, asserted in
+both directions so a routing regression brings that code back.
 
 Two pins move with the fix and both are re-measured rather than widened. The complement's torus face
 area 263.55487 → **263.73402** against an analytic 264.88981 — it moves TOWARD the oracle. `RODB∩`'s
@@ -5210,12 +5214,25 @@ develops. Thirteen byte-identity pins move; `W8` and `K4` move back to their pre
 
 #### 7. A curved face that misses its chord now says so, and the residual is on the record
 
-The three faces §6 leaves over tolerance were **silent**, and so were eighty-seven others. Measured over
-the thirteen byte-identity pin bodies: **139 of their 318 non-planar faces exceed `PropertyQuality`'s
-1e-3 mm, and 90 of those carried no diagnostic of any kind** — across 42 bodies, the worst at **3250×**
-(`C2` face 1). Every gate in the repo was blind to all ninety, because a whole-body area or volume sum
-absorbs one face's chord deficit. That is exactly how this issue's own round-5 regressions shipped: the
-three faces were measurable by anyone who wrote a probe and invisible to everything that runs.
+The three faces §6 leaves over tolerance were **silent**, and so were eighty-three others. Measured over
+**all 88 rows** of `occtparity`'s `byteIdentityPins` corpus — 793 faces, of which 318 are non-planar:
+
+| faceting | curved faces | over tolerance | of those, carrying no OTHER diagnostic | bodies | worst |
+| --- | --- | --- | --- | --- | --- |
+| `PropertyQuality` (1e-3 mm) | 318 | **135** | **86** | 61 | **3250.12×** (`C2` f01) |
+| `DefaultQuality` (0.05 mm) | 318 | **99** | **98** | 54 | 62.93× (`C2` f01) |
+
+Every gate in the repo was blind to all of them, because a whole-body area or volume sum absorbs one
+face's chord deficit. That is exactly how this issue's own round-5 regressions shipped: the three faces
+were measurable by anyone who wrote a probe and invisible to everything that runs.
+
+**NINETY-NINE curved faces across 54 bodies now raise a Defect at `DefaultQuality`, and that is the
+faceting feature health harvests** (`model/feature/result_diagnostics.go`) — so roughly a third of the
+corpus's curved faces will light up in the UI where nothing did before. Ninety-eight of the ninety-nine
+carried no other diagnostic at all, so for almost all of them this is the first report of any kind. They
+ARE over the tolerance they were handed and the reports are true; what is new is that a user can see it.
+Anyone who meets that in the UI should read §R4.5: the cause is a facet count, not a broken face, and
+the mesh is a valid approximation that is coarser than requested rather than wrong.
 
 So `CodeFaceChordNotMet` is raised by the curved-face router on every face whose mesh misses the chord
 tolerance it was handed (`face_chord_achieved.go`). It is the ground rules' own two sentences —
@@ -5225,8 +5242,26 @@ chord is an approximation tolerance rather than a modelling one, and what would 
 facet count, which belongs to the shared curve discretizer (§R4.5). `diag-codes` 43 → 44, a rise that
 is a reported degradation with a fallback-site delta of zero.
 
-Measured cost of doing it globally rather than for three faces: `TestTessellationBudget` unmoved at
-**0.23 s** of its 2.15 s ceiling, the `occtparity` tier **632 s** of 2400 s, and exactly **two** rows
+**The measure is the METRIC distance, through `geom.ClosestPointOnSurface`, not through `ParamAt`.**
+`geom.Surface`'s own contract says `ParamAt` off-surface is the frame projection, "which equals the
+metric nearest point for the plane, cylinder and sphere but not exactly for the cone or torus". The
+first version of this report used `ParamAt` and asserted the opposite of that contract, and it
+over-fired exactly where the contract says it would: four faces at each faceting reported over tolerance
+while genuinely inside it (`T7` f07 1.0519 against a true 0.9929, `A7` f06 1.2239 against 0.9994, `J6`
+f00 1.2098 against 0.9986, `J8` f01 1.0145 against 0.9724), and thirteen rows that did belong over the
+line carried a figure inflated by up to 1.41× — which would have propagated into the facet-count
+decision this corpus exists to size. The error is one-sided, so there were no false NEGATIVES: zero
+faces were over-and-silent at either faceting. With the metric distance the census falls 139 → 135 and
+those four faces are the only rows that move; every committed pin is unchanged.
+
+**Cost.** Per face it is one point inversion per mesh edge, and on a NURBS face that is the expensive
+one: `J3` face 3 goes **13 ms → 808 ms** and `K2` face 4 **26 ms → 2.46 s**, 50–95×. In aggregate it
+does not signify — `TestTessellationBudget` unmoved at **0.24 s** of its 2.15 s ceiling,
+`TestHeavyModelBudget` on EDF.STEP **0.34 s → 0.41 s** of its 700 ms budget, the `occtparity` tier
+**648 s** of 2400 s. The committed fixtures do not reach NURBS, so the only row that gates this cost is
+`TestHeavyModelBudget`, which is opt-in behind `OBK_PERF_STEP`; that is where a future NURBS-heavy model
+will be caught, and it is named in that test rather than left implicit. Beyond the budget, exactly
+**two** rows
 across `./kernel/...` and `./model/...` had to stop asserting a silence that was never true —
 `TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport`, which counted total harvested entries where it
 meant one entry per code, and this issue's own `ringMeetingADrill` row, which claimed that body was
