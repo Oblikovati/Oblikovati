@@ -13,30 +13,32 @@
 # translators each own a go.mod, and the root module cannot compile them) and directories whose files
 # are all excluded by build constraints. This only removes what git does not track.
 #
+# Two constraints the first version broke, both on the first CI run:
+#   - bash 3.2: macOS ships it, and it has no `mapfile`. The script died, `$(shell)` in the Makefile
+#     swallowed the error, and the gate's package list came out EMPTY — `go test` with no package
+#     argument then tests only the current directory, a silent green. The archguard guard caught it.
+#   - no module-path arithmetic: `go list -m` prints EVERY module in a go.work workspace, so a prefix
+#     trimmed from it matched nothing. Git is handed each package's absolute directory instead, and
+#     `git check-ignore` echoes back the paths it ignores exactly as it was given them.
+#
 #   go test $(scripts/tracked-packages.sh)
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-MODULE=$(go list -m)
-
-mapfile -t pkgs < <(go list ./...)
-[ "${#pkgs[@]}" -gt 0 ] || {
+listing=$(go list -f '{{.ImportPath}} {{.Dir}}' ./...)
+if [ -z "$listing" ]; then
 	echo "tracked-packages: go list ./... returned nothing — refusing to report an empty set" >&2
 	exit 1
-}
+fi
 
-pkg_dir() { # import path -> path relative to the module root
-	local dir="${1#"$MODULE"}"
-	dir="${dir#/}"
-	printf '%s\n' "${dir:-.}"
-}
+# One `git check-ignore --stdin` for the whole set. It exits 1 when nothing is ignored, which is the
+# ordinary case on a clean checkout, so that status is an answer, not a failure.
+ignored=$(printf '%s\n' "$listing" | cut -d' ' -f2- | git check-ignore --stdin || true)
 
-# One `git check-ignore --stdin` for the whole set: it prints the paths it considers ignored, and
-# exits 1 when none is, which is the ordinary case on a clean checkout.
-ignored=$(for pkg in "${pkgs[@]}"; do pkg_dir "$pkg"; done | git check-ignore --stdin || true)
-
-for pkg in "${pkgs[@]}"; do
-	dir=$(pkg_dir "$pkg")
-	grep -qxF "$dir" <<<"$ignored" || printf '%s\n' "$pkg"
+printf '%s\n' "$listing" | while read -r pkg dir; do
+	if [ -n "$ignored" ] && printf '%s\n' "$ignored" | grep -qxF -- "$dir"; then
+		continue
+	fi
+	printf '%s\n' "$pkg"
 done

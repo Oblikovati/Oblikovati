@@ -25,15 +25,18 @@ BASE="${1:-HEAD}"
 
 # The packages whose non-test sources changed: these hold the new lines, so these are what must be
 # instrumented. A test-only change adds no new production lines and needs no -coverpkg entry.
-mapfile -t changed < <(
+#
+# Plain word-split strings rather than `mapfile` arrays: macOS ships bash 3.2, which has no mapfile,
+# and the pre-commit hook runs this on every developer's machine. Package paths hold no spaces.
+changed=$(
 	git diff --name-only "$BASE" -- '*.go' |
-		grep -v '_test\.go$' |
-		xargs -r -n1 dirname |
+		{ grep -v '_test\.go$' || true; } | # 1 = only tests changed: an answer, not a failure
+		while read -r f; do dirname "$f"; done |
 		sort -u |
-		while read -r d; do [ -d "$d" ] && echo "./$d"; done
+		while read -r d; do if [ -d "$d" ]; then echo "./$d"; fi; done
 )
 
-if [ "${#changed[@]}" -eq 0 ]; then
+if [ -z "$changed" ]; then
 	echo "no production Go package changed — nothing to measure"
 	exit 0
 fi
@@ -44,33 +47,25 @@ fi
 # `go list ./...` still walks, so a half-finished experiment on your disk fails a gate about code
 # you are committing — and CI, which never sees those files, passes. The gate measures what git
 # tracks. (The same directory fails `make test` today, for the same reason; that is #3557.)
-mapfile -t impacted < <(
-	go run ./cmd/testimpact -base "$BASE" | while read -r p; do
-		dir="${p#oblikovati.org/}"
-		[ "$dir" = "oblikovati.org" ] && dir="."
-		git check-ignore -q "$dir" 2>/dev/null || echo "$p"
-	done
-)
-if [ "${#impacted[@]}" -eq 0 ]; then
+# cmd/testimpact already drops git-ignored packages itself (#3557), so its list is used as given.
+impacted=$(go run ./cmd/testimpact -base "$BASE")
+if [ -z "$impacted" ]; then
 	echo "testimpact says no package owns the change — nothing to run"
 	exit 0
 fi
 
-coverpkg=$(
-	IFS=,
-	echo "${changed[*]}"
-)
+coverpkg=$(printf '%s\n' "$changed" | paste -sd, -)
 
 printf 'instrumenting %d changed package(s), running %d impacted test package(s)\n' \
-	"${#changed[@]}" "${#impacted[@]}"
-printf '  → %s\n' "${impacted[@]}"
+	"$(printf '%s\n' "$changed" | wc -l | tr -d ' ')" "$(printf '%s\n' "$impacted" | wc -l | tr -d ' ')"
+printf '  → %s\n' $impacted
 
 # -covermode=count to match CI: Sonar reads hit counts, and `set` mode would change the profile's
 # semantics for anything that merges it.
 CGO_ENABLED=0 go test -short -covermode=count \
 	-coverpkg="$coverpkg" \
 	-coverprofile=coverage.out \
-	"${impacted[@]}"
+	$impacted
 
 # -coverpkg emits every instrumented block once per test binary, so the same block repeats. Summing
 # the counts is exactly what `count` mode means — CI's own awk, so the file is byte-comparable.

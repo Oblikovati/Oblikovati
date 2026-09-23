@@ -12,7 +12,10 @@ PKG         := ./...
 # recursively assigned, so the derivation runs only in the recipes that use it, and narrowing with
 # `make test PKG=./kernel/geom` still bypasses it. PKG itself stays `./...` for the nested-module
 # loop and the arm64 targets, which need a pattern relative to their own directory.
-TEST_PKGS    = $(if $(filter ./...,$(PKG)),$(shell scripts/tracked-packages.sh),$(PKG))
+# An EMPTY derivation is an error, not a smaller set: `go test` with no package argument tests only
+# the current directory, so an empty list is a silent green. That happened on the first CI run, where
+# macOS's bash 3.2 could not run the derivation and $(shell) swallowed the failure.
+TEST_PKGS    = $(if $(filter ./...,$(PKG)),$(or $(shell scripts/tracked-packages.sh),$(error scripts/tracked-packages.sh derived no package; refusing to run a gate over nothing (#3557))),$(PKG))
 DIST        := dist
 
 # VERSION is {MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}, computed by cmd/obkversion
