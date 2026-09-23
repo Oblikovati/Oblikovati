@@ -266,10 +266,15 @@ issues, which have no tier problem, are gated. `make sonar` before a PR is the n
   `git diff` (`scripts/sonar-newcode.py`), intersected with Sonar's **own** duplication blocks and
   the exclusions `sonar-project.properties` declares. The server still measures everything else.
 - **`go list ./...` walks git-ignored directories.** `experiments/` is ignored scratch with zero
-  tracked files, and a half-finished experiment there failed the pre-commit hook outright — a gate
-  about code being committed, broken by code that is not (#3557). `cmd/testimpact` now asks
-  `git check-ignore` and drops those packages, which fixes every `test-impacted` consumer including
-  the hook. `PKG := ./...`, which `make test` uses directly, still walks them.
+  tracked files, and a half-finished experiment there failed the pre-commit hook outright — then,
+  once the hook was fixed, it failed a 35-minute `make gate` on a test whose fixture path was a
+  `/tmp` directory from another session. A gate about the code being committed, broken by code that
+  is not, while CI — which never sees those files — goes green (#3557). Both paths now derive the
+  package set from what git tracks: `cmd/testimpact` asks `git check-ignore` per package, and the
+  Makefile's whole-module targets take `TEST_PKGS`, which is `scripts/tracked-packages.sh`. `PKG`
+  itself stays `./...`, because the nested-module loop and the arm64 targets need a pattern relative
+  to their own directory. `archguard.TestGatePackageSetIsWhatGitTracks` holds both halves: no ignored
+  package in the set, and nothing tracked missing from it.
 - **A worktree used for measurement must be a sibling of `../Oblikovati.API`.** `go.work`'s replace
   is relative, so a worktree in `/tmp` cannot resolve the API module and every `go list` inside
   `archguard` fails — which reads exactly like a repo-wide breakage and is not one.

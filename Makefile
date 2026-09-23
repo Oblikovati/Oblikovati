@@ -6,6 +6,13 @@
 GO          ?= go
 MODULE      := oblikovati
 PKG         := ./...
+# TEST_PKGS is PKG with the git-IGNORED packages removed, which is what every whole-module target
+# below wants: `./...` walks the working tree, so ignored scratch under `experiments/` fails a gate
+# about the code being committed while CI, which never sees those files, passes (#3557). It is
+# recursively assigned, so the derivation runs only in the recipes that use it, and narrowing with
+# `make test PKG=./kernel/geom` still bypasses it. PKG itself stays `./...` for the nested-module
+# loop and the arm64 targets, which need a pattern relative to their own directory.
+TEST_PKGS    = $(if $(filter ./...,$(PKG)),$(shell scripts/tracked-packages.sh),$(PKG))
 DIST        := dist
 
 # VERSION is {MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}, computed by cmd/obkversion
@@ -83,7 +90,7 @@ fmt-check: ## Fail if any file is not gofmt-clean
 
 .PHONY: vet
 vet: ## Run go vet on BOTH modules (root cgo-free, then the cgo head)
-	CGO_ENABLED=0 $(GO) vet $(PKG)
+	CGO_ENABLED=0 $(GO) vet $(TEST_PKGS)
 	$(MAKE) vet-head
 
 # head/ is a SEPARATE module: `go vet ./...` from the repo root does not compile a single
@@ -150,11 +157,11 @@ TESTJSON ?= test-results.json
 
 .PHONY: test
 test: ## Tier 1: fast cgo-free unit tests (skips the corpus tier)
-	CGO_ENABLED=0 $(GO) test -short $(PKG)
+	CGO_ENABLED=0 $(GO) test -short $(TEST_PKGS)
 
 .PHONY: test-corpus
 test-corpus: ## Tier 2: the whole suite, corpus and oracle tests included
-	CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $(PKG)
+	CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $(TEST_PKGS)
 
 .PHONY: test-impacted
 test-impacted: ## Tier 1 on only the packages the current change set can affect
@@ -174,7 +181,7 @@ test-impacted-corpus: ## Tier 2 on only the packages the current change set can 
 # command in a pipeline, so `go test | testslowest` would go green on a red suite.
 .PHONY: test-budget
 test-budget: ## Tier 1 with the per-package time budget enforced (local, tight gate)
-	@CGO_ENABLED=0 $(GO) test -short -json $(PKG) > $(TESTJSON); status=$$?; \
+	@CGO_ENABLED=0 $(GO) test -short -json $(TEST_PKGS) > $(TESTJSON); status=$$?; \
 	  $(GO) run ./cmd/testslowest -top 15 -package-budget $(TIER1_PACKAGE_BUDGET) < $(TESTJSON) \
 	    || status=1; \
 	  rm -f $(TESTJSON); \
@@ -183,7 +190,7 @@ test-budget: ## Tier 1 with the per-package time budget enforced (local, tight g
 # What CI enforces, and it costs no extra run: one tier-2 pass gates itself.
 .PHONY: test-guards
 test-guards: ## Tier 2 with the tier-1 guard gate enforced (what CI runs)
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(TEST_PKGS) > $(TESTJSON); status=$$?; \
 	  $(GO) run ./cmd/testslowest -top 25 -unguarded-budget $(UNGUARDED_BUDGET) -module-root . \
 	    < $(TESTJSON) || status=1; \
 	  rm -f $(TESTJSON); \
@@ -191,12 +198,12 @@ test-guards: ## Tier 2 with the tier-1 guard gate enforced (what CI runs)
 
 .PHONY: test-slowest
 test-slowest: ## Rank the whole suite by test time (what to guard next)
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(TEST_PKGS) > $(TESTJSON); status=$$?; \
 	  $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
 .PHONY: test-slowest-serial
 test-slowest-serial: ## Rank tier 2 with NO parallelism — the measurement the 2s guard rule uses
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) > $(TESTJSON); \
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(TEST_PKGS) > $(TESTJSON); \
 	  status=$$?; $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
 # No CGO_ENABLED pin: CI runs these modules with cgo at its default (ci.yml, step
@@ -221,9 +228,15 @@ test-nested-modules: ## Tier 2 on every nested module (the exchange translators 
 print-gate-modules: ## Print the derived nested-module set, one per line
 	@for m in $(GATE_NESTED_MODULES); do echo $$m; done
 
+# The package-set guard reads this for the same reason (#3557): the test must measure the set the
+# gate will run, not a second copy of the expression that derives it.
+.PHONY: print-test-packages
+print-test-packages: ## Print the derived root-module package set, one per line
+	@for p in $(TEST_PKGS); do echo $$p; done
+
 .PHONY: test-race
 test-race: ## Run the suite under the race detector (needs cgo)
-	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(PKG)
+	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(TEST_PKGS)
 
 # ---------------------------------------------------------------------------
 # arm64: what the macOS CI leg runs on, without a macOS machine (ADR-0061 §Platform
@@ -298,7 +311,7 @@ fma-gate: ## Fail if the arm64 build of the FMA-policy packages emits more than 
 
 .PHONY: cover
 cover: ## Run tests with coverage and enforce COVER_MIN
-	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(PKG)
+	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(TEST_PKGS)
 	@total=$$($(GO) tool cover -func=coverage.out | awk '/total:/ {print $$3}' | tr -d '%'); \
 	  echo "total coverage: $$total% (min $(COVER_MIN)%)"; \
 	  awk "BEGIN{exit !($$total >= $(COVER_MIN))}" \

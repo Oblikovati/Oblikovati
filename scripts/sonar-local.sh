@@ -58,10 +58,13 @@ COVERAGE_MODE="${1:-auto}"
 if [ "$COVERAGE_MODE" = "--coverage" ] || { [ "$COVERAGE_MODE" = "auto" ] && [ ! -f coverage.out ]; }; then
 	log "coverage: running CI's recipe (this is the slow part — model/feature alone is ~18 min)"
 	# Identical to .github/workflows/ci.yml's Test step for the ubuntu leg: -coverpkg over the
-	# whole tree so a test binary credits the packages it actually drives, not only its own.
+	# whole tree so a test binary credits the packages it actually drives, not only its own. The
+	# package set is the TRACKED one rather than a literal `./...`, which is not a deviation from CI
+	# but fidelity to it: CI's checkout holds no git-ignored scratch, so `./...` there means exactly
+	# this set, while here it would drag in `experiments/` and fail the run (#3557).
 	go test -coverprofile=coverage.out -covermode=count \
 		-coverpkg=./kernel/...,./model/...,./app/...,./addin/...,./renderer/...,./event/...,./cmd/... \
-		-timeout 60m ./...
+		-timeout 60m $(scripts/tracked-packages.sh)
 	# -coverpkg repeats every block once per test binary (CI measured 390 MB). Collapsing them by
 	# summing counts is exactly `count` mode's semantics — CI's own awk, verbatim.
 	awk 'NR==1 && /^mode:/ {print; next} {n[$1]=$2; c[$1]+=$3} END {for (k in n) print k, n[k], c[k]}' \
