@@ -279,7 +279,24 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 // to read was the whole domain, and the tear behind it was #3551 rather than this constant. The window
 // separates this reading from every swept k whose mesh differs (the nearest is 263.45103 at 0.92, 0.0437
 // away); it cannot separate 0.90 from 0.89 or 0.91, which build the same mesh.
-const complementTorusFaceArea, complementTorusFaceWindow = 263.49469, 0.005
+//
+// 263.49469 → 263.73402 (#3517's rebase onto this branch): re-MEASURED, and WHAT THIS PIN GATES HAS
+// CHANGED. #3517 caps the chord the clearance is read from at chartClearanceCellCap of the covering's
+// own cell, and this face's oval apex is exactly where an uncapped chord is many cells long — so on
+// this face the CAP binds and k = 0.90 no longer reaches it. The reading is the same 263.73402 the
+// re-sweep above records at k = 0.3, which is what a cap that holds the clearance below what k asks
+// for must produce.
+//
+// It moves the face TOWARD its oracle (analytic 264.88981: deficit 0.50 % → 0.44 %) and it moves the
+// number the clearance is PAID IN the same way: the body's DefaultQuality volume deficit reads 1.1097 %
+// against 1.3497 % at k = 0.90, so the 1.39 % ceiling the constant above is chosen under is met with
+// more room than before, not less. Both re-measured on the merged tree.
+//
+// The window stays 0.005 and still separates this reading from every cap value whose mesh differs (the
+// nearest is 263.60871, 0.125 away; 0.75, 0.875 and 1.0 cells all build this mesh). What it no longer
+// gates is chartBoundaryClearance on THIS face — that constant is gated by its own corpus-tear rows and
+// by the deficit ceiling, which is where its own receipt puts it.
+const complementTorusFaceArea, complementTorusFaceWindow = 263.73402, 0.005
 
 // assertComplementFaceArea holds the complement's torus face to its measured area, both ways.
 func assertComplementFaceArea(t *testing.T, body *topo.Body) {
