@@ -210,10 +210,27 @@ func (b *chartCover) materialSideOfEachChain(tris [][3]int, keep []bool) rimSide
 // stop counting segments that were never decisive, not to start tolerating dissent.
 // TestASegmentOnTheWindowEdgeCastsNoVote asserts both halves on a covering built for it.
 func (b *chartCover) segmentRunsAlongTheWindowEdge(e [2]int) bool {
-	tol := chartContourIncidence * stdmath.Max(b.r.uHi-b.r.uLo, b.r.vHi-b.r.vLo)
+	tol := windowEdgeIncidence * stdmath.Max(b.r.uHi-b.r.uLo, b.r.vHi-b.r.vLo)
 	return onSameWindowEdge(b.uu[e[0]], b.uu[e[1]], b.r.uLo, b.r.uHi, b.r.uPer, tol) ||
 		onSameWindowEdge(b.vv[e[0]], b.vv[e[1]], b.r.vLo, b.r.vHi, b.r.vPer, tol)
 }
+
+// windowEdgeIncidence is how close, as a fraction of the chart's own (u,v) extent, a rim vertex has to
+// be to a branch-window edge to count as ON it.
+//
+// It is a ROUNDING tolerance and nothing more. A vertex that sits on a window edge is put there by the
+// branch shift — a whole period added to a traced parameter — so the two sides of the comparison are the
+// same number arrived at by different arithmetic, and what separates them is last-place error in that
+// addition, not geometry. Anything a rim vertex is doing NEAR but not ON the edge is a vertex the rule
+// must not claim.
+//
+// The value is inherited from chartContourIncidence, which asked the same kind of question of the same
+// spans until #3519 deleted it with the contour-incidence retry, and the reading does not depend on it:
+// swept 1e-12, 1e-9, 1e-6 and 1e-3 on occtparity simple/J3's and bfuseblend/A4's host tori at
+// DefaultQuality, all four read 280 segments excluded of 420 and a vote of 128 left, 0 right, and the
+// whole ./kernel/ops/tessellate suite is green at all four. Four decades of plateau either side of the
+// value, because the quantity it bounds is a few ulps of 2π.
+const windowEdgeIncidence = 1e-6 // tol:parametric (relative to the chart's own extent; swept 1e-12…1e-3)
 
 // onSameWindowEdge reports whether both of a segment's ends sit on the SAME end of one wrapping axis's
 // branch window. A bounded axis has no branch and so no such edge.
