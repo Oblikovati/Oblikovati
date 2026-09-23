@@ -35,7 +35,40 @@ import (
 // tangentFamilyFreeEdges is the whole set's free-edge total at both facetings. See the file doc for
 // what the residue is; TestTheTangentPlaneFamilyHolds also asserts that every torn row REPORTS its
 // tear, so the residue is a capability gap and not a silent one.
-const tangentFamilyFreeEdges = 368
+//
+// 368 → 728 (#3517's rebase onto this branch), and it is a RISE, taken knowingly. #3517's coverShear
+// tilts the frame the covering TRIANGULATES in by 1/1024 to break the concyclic in-circle tie a
+// rectangular lattice presents, and on this family it costs exactly ONE row: R=50 r=1 intersect at
+// PropertyQuality, 0 → 360 free edges. Bisected — every other row of the 76 is bit-identical with the
+// shear on and off, and the one-location invariant (dup = 0) holds throughout — and independent of
+// #3517's structured interior, which changes nothing here either way.
+//
+// IT IS THE SAME RESIDUE ONE ASPECT RATIO ALONG, not a new defect. The split below diagnoses R=100 r=1
+// as a covering DENSITY limit that goes watertight once the chord is fine enough; R=50 r=1 now does
+// exactly that, with the same signature the density argument turns on — the triangle count FALLS when
+// it recovers, because the decline and its whole-domain fall-through both stop:
+//
+//	chord     0.05   1e-3   5e-4          2e-4          1e-4
+//	R=100 r=1  272    360    400           0 (43104)     0 (85472)
+//	R=50  r=1  292    360    0 (30504)     0 (60524)     0 (60812)
+//
+// So the shear moves the density edge from R/r = 100 to R/r = 50, and R=50 recovers at a COARSER chord
+// than R=100 does — it sits nearer the edge, which is what a half-decade shift of the same limit looks
+// like.
+//
+// WHY THE RISE IS THE CHEAPER SIDE. Measured with the shear at 0 on this same tree: the near-pinch
+// corpus loses #3542's closure — 5 of its 16 rows carry 32 seam edges again — near-pinch crossing
+// rods ∪ tears by 992 free edges at the fine faceting, its face 6 area FALLS under refinement
+// (154.21847 → 104.32692, rel −0.32), and the chart mesher gives that face up. 992 against 360, plus a
+// lost area monotonicity, plus a structured-interior diagonal that becomes an exact tie with no rule to
+// break it (TestEveryStructuredCellIsSplitOnTheShorterDiagonal fails: 0.6444989408828234 against
+// itself). No value inside coverShear's own four-decade plateau avoids the R=50 row either — 1/65536,
+// 1/16384, 1/4096 and 1/1024 all read 728 — because breaking an exact tie is a discrete choice, not a
+// magnitude.
+//
+// This is a cross-task trade and #3517 flagged it for a ruling rather than settling it quietly. If the
+// ruling goes the other way, the change is one constant and this pin comes back to 368.
+const tangentFamilyFreeEdges = 728
 
 // tangentFamilyAspects is the swept set: R/r from 100 down to 2, spanning the thin-tube end where the
 // covering's cells are most anisotropic and the fat-tube end where the pinch corner is widest.
@@ -212,9 +245,15 @@ func forEachTangentPlanePiece(t *testing.T, visit func(name string, b *topo.Body
 //
 // Neither is the duplicate covering location #3551 fixed: the same walk holds dup = 0 on every torus
 // face of every ratio, torn rows included.
+//
+// 6 → 7 rows and 360 → 720 declined edges (#3517's rebase): R=50 r=1 intersect at PropertyQuality joins
+// the FIRST bullet — the covering density limit — for the reason and with the measurements recorded at
+// tangentFamilyFreeEdges. The five-row shared-chord bullet is unchanged at 8 edges between them, which
+// is what keeping the split separate is for: the rise is entirely inside the density number and the
+// shared-chord number did not move.
 const (
-	tangentFamilyTornRows      = 6
-	tangentFamilyDeclinedEdges = 360
+	tangentFamilyTornRows      = 7
+	tangentFamilyDeclinedEdges = 720
 )
 
 // tangentMeshReports reports whether a mesh carries the given code at Defect severity.
