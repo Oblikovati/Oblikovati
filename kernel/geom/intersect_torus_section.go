@@ -151,14 +151,23 @@ const (
 // torusOneHarmonicSection is the arccos family's topology: the maximal tube-angle windows where the
 // two azimuths exist, or two full-period branches when they exist everywhere.
 //
-// Both reads of torusHarmonicAt in this file (here and in torusHarmonicLoops) DISCARD its ok, and the
-// reason is a construction rather than an omission (#3527). That flag is st.invariant, which for a
-// quadric is axisInvariantEntries over the in-plane tensor entries — and those do not depend on the tube
-// angle at all, so it is one answer for the whole turn. sectionFamily has already read exactly that
-// answer (quadricIsAxisInvariant) to select this family, and the torus co-form's own sectionFamily never
-// returns torusFamilyOneHarmonic, so nothing else reaches here. The flag cannot be false at any station
-// this function is called for; testing it would be asking the same question twice and inventing a decline
-// for the answer that cannot come.
+// THE ok OF torusHarmonicAt CANNOT BE FALSE ANYWHERE ON THIS PATH, and that is a construction rather
+// than an assumption (#3527). The flag is st.invariant, which for a quadric is axisInvariantEntries over
+// the in-plane tensor entries — and those do not depend on the tube angle at all, so it is one answer for
+// the whole turn. sectionFamily has already read exactly that answer (quadricIsAxisInvariant) to select
+// this family, and the torus co-form's own sectionFamily never returns torusFamilyOneHarmonic, so nothing
+// else reaches here.
+//
+// This file reads torusHarmonicAt THREE times and they do not agree about that, which is worth saying
+// rather than leaving a reader to find (#3527 review 1, Important 3). Two — here and in
+// torusHarmonicLoops — discard the flag, which is right by the paragraph above: testing it would ask one
+// question twice. The third, in torusFullTurnSection, TESTS it and returns DeclineNoClosedForm; that
+// function is reached only from this one's `case !folded`, under the same classification, so its decline
+// is UNREACHABLE — dead in the same way crossingSegment's ok=false is dead in kernel/brep. It is kept
+// there rather than dropped because it guards a public-looking entry that a future caller could reach
+// from outside the classification, and because a bare anchor read past a non-invariant station would be
+// silent nonsense rather than a decline. If that entry ever gains a second caller, the flag is load
+// bearing again and this paragraph is what says so.
 func torusOneHarmonicSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
 	spans, folded := periodicRootWindows(func(v float64) float64 {
 		h, _ := torusHarmonicAt(t, co, v)
@@ -294,6 +303,12 @@ func torusStationCircle(t Torus, v float64) Circle {
 // that reaches the tube at every station. Its lane is the harmonic's phase — recorded for the same
 // reason [TorusSectionLoop] records one, and read by nothing on this path, because the arccos names its
 // own two branches.
+//
+// Its DeclineNoClosedForm exit is UNREACHABLE from the one caller it has: torusOneHarmonicSection's
+// `case !folded` runs under a classification that has already established the tensor is axis-invariant,
+// which is the whole of what torusHarmonicAt's ok reports (see that function's doc). The test stays
+// because reading an anchor past a non-invariant station would be silent nonsense rather than a decline,
+// and a second caller would make the flag load-bearing again (#3527 review 1).
 func torusFullTurnSection(t Torus, co TorusCoForm, res Resolution) ([]Curve3, SectionDecline, bool) {
 	anchor, ok := torusHarmonicAt(t, co, 0)
 	if !ok {

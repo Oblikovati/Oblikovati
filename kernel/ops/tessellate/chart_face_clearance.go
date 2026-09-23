@@ -71,12 +71,38 @@ import (
 // THE LAST TWO COLUMNS PREDATE chartClearanceCellCap, and reading them as this constant's shipped cost
 // is the trap this paragraph exists to close (#3527). #3517 caps the chord the clearance is read from at
 // a fraction of the covering's own cell, and on the complement's oval apex — where an uncapped chord is
-// many cells long — the CAP binds, so k = 0.90 does not reach what it asks for. The shipped reading is
-// therefore the table's k = 0.3 line and not its k = 0.90 line: measured on this tree, 1.1097 %
-// (201.642061 against the analytic 203.904871) and 263.73402 mm². The tear column is unaffected — it
-// records where the corpus breaks, which the cap does not move — and the SELECTION argument below is
-// unaffected too, because it compares swept costs to a ceiling that 1.1097 % clears with more room than
-// 1.3497 % did. A later sweep must re-read the two cost columns with the cap in place.
+// many cells long — the CAP binds, so k = 0.90 does not reach what it asks for. At the shipped constant
+// the deficit measures 1.1097 % (201.642061 against the analytic 203.904871) with a face area of
+// 263.73402 mm², which happens to equal what the table recorded at k = 0.3 — the same number, not the
+// same clearance: shipped k = 0.3 reads 1.0936 %.
+//
+// THE SELECTION ARGUMENT BELOW DOES NOT SURVIVE THAT, and this is the part a later sweeper must not
+// read past. Its rule is "take the LARGEST value the cost ceiling admits", and it names 0.92 as the
+// first swept value over the 1.39 % ceiling at 1.4136 %. Re-measured under the cap, one constant edit
+// at a time (#3527 review 1):
+//
+//	k        table's cost   measured under the cap   face area
+//	0.10         1.0936 %                 1.0936 %   263.76393
+//	0.30         1.1097 %                 1.0936 %   263.76393
+//	0.90         1.3497 %                 1.1097 %   263.73402   (shipped)
+//	0.92         1.4136 %                 1.1097 %   263.73402
+//	1.20         1.5979 %                 1.1148 %   263.72994
+//	1.24         1.7156 %                 1.1148 %   263.72994
+//	1.50         1.8616 %                 1.1148 %           —
+//	2.00         2.7038 %                 1.2708 %           —
+//	3.00         5.8686 %                 1.5979 %           —
+//
+// So 0.92 is NOT over the ceiling — it reads a fifth of the way to it — and every swept k from 0.10 to
+// 1.50 clears 1.39 % with room, the whole range 0.10–1.24 spanning 0.021 percentage points. The cost
+// premise no longer DISCRIMINATES over the admissible range, so the rule as written points at the last k
+// before the corpus tears (≈1.24), not at 0.90: the shipped constant is not what its own stated rule
+// selects. What 0.90 rests on today is the tear edge above it and the larger-is-better premise alone.
+//
+// The tear column is a separate question and was NOT re-measured here; the argument above holds either
+// way. If the tear edge is still 1.25 the rule selects 1.24; if the cap moved that too, nothing is known
+// about what the rule selects. Restoring an argument for this constant needs the 33-value sweep re-run
+// with the cap in place — a task of its own, not a comment — and until it is run, treat the value as
+// inherited rather than derived.
 //
 // THE LOWER FAILURE EDGE IS GONE, and that is the most important line here. Two rounds ago the corpus
 // tore below k = 0.70 — the R=5 r=2.5 figure-eight intersect piece by 48 free edges at every k ≤ 0.70,
@@ -92,12 +118,16 @@ import (
 // volume as k rises, monotonically, from 1.09 % at 0.1 to 5.87 % at 3.0.
 //
 // TWO premises select 0.90, and the second one is the half a cost ceiling cannot supply on its own.
+// READ THE CAP PARAGRAPH ABOVE FIRST: every cost figure in the rest of this receipt is a pre-cap
+// reading, and the first premise no longer discriminates under the cap. What follows is the argument as
+// it was made, kept because the second premise still stands and because a re-sweep has to know what it
+// is replacing.
 //
 // The CEILING is 1.39 %: the deficit the deleted window mesher achieved on this body, which
 // chart_face_mesh_test.go's own row exists to have beaten. It admits every k up to 0.91 — 0.92 is the
-// first swept value over it, at 1.4136 %, and the round that sat at 0.935 was over it at 1.4137 %. A
-// ceiling defines an admissible SET, so on its own it would select the cheapest admissible value,
-// k = 0.1 at 1.0936 %.
+// first swept value over it, at 1.4136 % (pre-cap: 0.92 reads 1.1097 % on the shipped tree, well under
+// the ceiling) — and the round that sat at 0.935 was over it at 1.4137 %. A ceiling defines an
+// admissible SET, so on its own it would select the cheapest admissible value, k = 0.1 at 1.0936 %.
 //
 // The second premise is why LARGER is better inside that set, and it is the paragraph above stated as a
 // rule rather than as history: a smaller clearance lets an interior node approach the rim, and the two
@@ -106,7 +136,9 @@ import (
 // interior and a boundary the chart samples differently — and nothing measures how much of that is
 // enough, because no swept value fails any more. So the rule is: take the LARGEST value the cost
 // ceiling admits, which buys the most of the thing the guard exists for at a price the corpus's own
-// claim still tolerates. That selects 0.90 (0.91 builds the identical mesh; 0.92 is over the ceiling).
+// claim still tolerates. That selected 0.90 on the pre-cap column (0.91 builds the identical mesh; 0.92
+// was over the ceiling there). Under the cap the same rule selects ≈1.24 instead, which is why the
+// constant now needs a re-sweep rather than a re-reading.
 //
 // Both premises are weaker than a measured failure edge and the comment says so rather than dressing
 // them up. In particular the ceiling can never be RE-taken: the mesher that produced it is deleted, and

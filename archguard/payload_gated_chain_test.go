@@ -56,9 +56,11 @@ var payloadGatedChains = map[string]string{
 	//
 	// A SIXTH rung stood in it and is DELETED at #3517: torusTubeBandLoftMesh, a second loft for the
 	// tube-wrapping torus band. It is not in the five counted above because it never reached a face —
-	// the curved-trim classification's kindSpiricBand claims that shape first, and the rung built
-	// nothing over ./kernel/... or ./model/.... The five measured rungs are unchanged; what fell is a
-	// shadowed duplicate, not one of the 185.
+	// the curved-trim classification's kindSpiricBand claimed that shape first, and the rung built
+	// nothing over ./kernel/... or ./model/.... kindSpiricBand itself went in the same issue, so the shape
+	// reaches the general chart-driven mesher now (#3527 review 1, Minor 1: this sentence was the eighth
+	// site still saying a deleted arm claims a shape today). The five measured rungs are unchanged; what
+	// fell is a shadowed duplicate, not one of the 185.
 	"kernel/ops/tessellate/tessellate_trim.go:meshSeamCrossingFace": "#3411",
 }
 

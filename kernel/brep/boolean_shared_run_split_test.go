@@ -68,6 +68,27 @@ func TestEdgesOverlapSeparatesARunFromATouch(t *testing.T) {
 	if !edgesOverlap(whole, second, res) {
 		t.Error("a bare arc of a closed rim does not overlap that rim — the configuration the split exists for")
 	}
+	assertOverlapFoundByEndsAlone(t, res)
+}
+
+// assertOverlapFoundByEndsAlone drives the ONE pair edgesOverlap can only answer through its
+// endsInsideSpan disjuncts: two arcs overlapping by a tenth of a turn, whose MIDPOINTS each fall outside
+// the other's span. Without this row both of those disjuncts could be deleted and all of kernel/brep
+// stayed green (#3527 review 1, Minor 5) — the four-way disjunction was covered three ways.
+//
+// [0, 0.5] and [0.45, 0.95]: midpoints 0.25 and 0.70 each miss, and only the second arc's START at 0.45
+// lies inside the first's span. The row asserts the midpoints really do miss, so it cannot pass through
+// the disjuncts it is not testing.
+func assertOverlapFoundByEndsAlone(t *testing.T, res geom.Resolution) {
+	t.Helper()
+	first, late := rimArc(t, 2, 0, 0.5), rimArc(t, 2, 0.45, 0.95)
+	if spansPoint(first, midParamPoint(late), res) || spansPoint(late, midParamPoint(first), res) {
+		t.Fatal("a midpoint of one arc lies on the other's span; the row would not isolate the ends test")
+	}
+	if !edgesOverlap(first, late, res) {
+		t.Error("two arcs sharing a tenth of a turn do not overlap: neither midpoint reaches the other's " +
+			"span, so the ends test is the only disjunct that can answer and it did not")
+	}
 }
 
 // TestEndsInsideSpanIsStrict: the ends test answers for an end that falls INSIDE the other's span and

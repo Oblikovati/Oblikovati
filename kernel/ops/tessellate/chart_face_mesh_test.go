@@ -216,10 +216,17 @@ func assertCorpusVolume(t *testing.T, row chartCorpusRow, got float64) {
 // Its section under x = R is a single smooth OVAL — one loop of two spiric arcs, (5,0,−1.5) → (5,0,+1.5);
 // it is NOT the lemniscate this comment once claimed (that is the figure-eight fixture, d = R − r), and
 // the boundary passes through no 3D point twice. The rim's chord is coarsest in u at the oval's apex,
-// and this row is what the boundary clearance is swept on (chartBoundaryClearance). Re-measured there:
-// 201.153 against an analytic 203.904871 at DefaultQuality, 1.350 % — the comment said 1.11 % before the
-// first sweep, 1.30 % after it and 1.414 % at the round that centred the clearance, and the number moves
-// with the constant every time it does (#3519). At PropertyQuality it is 203.869, 0.017 %.
+// and this row is what the boundary clearance is swept on (chartBoundaryClearance). It reads 201.642061
+// against an analytic 203.904871 at DefaultQuality, 1.1097 %, and 203.869771 at PropertyQuality,
+// 0.0172 % — both measured on this tree.
+//
+// The DefaultQuality figure moves with the clearance every time the clearance moves, and this comment has
+// carried each reading in turn: 1.11 % before the first sweep, 1.30 % after it, 1.414 % at the round that
+// centred the clearance, 1.350 % at k = 0.90 uncapped (#3519). It is 1.1097 % now because #3517 caps the
+// chord the clearance is read from and the cap binds on this face. The 1.350 % spelling survived HERE
+// through the edit that corrected it forty lines below, so the function contradicted itself in its own
+// doc for one commit (#3527 review 1, Important 1) — the PropertyQuality half of that sentence had
+// already been updated, which is the tell.
 //
 // The torus FACE's own area is pinned two-sided beside the body volume, because the clearance trades
 // interior density for the boundary and only a per-face reading shows what it costs.
