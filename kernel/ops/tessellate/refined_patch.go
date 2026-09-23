@@ -151,15 +151,23 @@ func pointInUVPoly(poly []math.Point2, p [2]float64) bool {
 	in := false
 	n := len(poly)
 	for i, j := 0, n-1; i < n; j, i = i, i+1 {
-		yi, yj := float64(poly[i].Y), float64(poly[j].Y)
-		if (yi > p[1]) != (yj > p[1]) {
-			xi, xj := float64(poly[i].X), float64(poly[j].X)
-			if p[0] < (xj-xi)*(p[1]-yi)/(yj-yi)+xi {
-				in = !in
-			}
+		if edgeCrossesRightOf(poly, i, j, p) {
+			in = !in
 		}
 	}
 	return in
+}
+
+// edgeCrossesRightOf is the even-odd rule's one question for edge poly[j]→poly[i]: does it straddle
+// p's horizontal line, crossing it to p's right? pointInUVPoly and the slab index both ask it through
+// this one function, so the indexed answer is the same arithmetic, not a copy of it.
+func edgeCrossesRightOf(poly []math.Point2, i, j int, p [2]float64) bool {
+	yi, yj := float64(poly[i].Y), float64(poly[j].Y)
+	if (yi > p[1]) == (yj > p[1]) {
+		return false
+	}
+	xi, xj := float64(poly[i].X), float64(poly[j].X)
+	return p[0] < (xj-xi)*(p[1]-yi)/(yj-yi)+xi
 }
 
 // MetricPatchMesh meshes an analytic curved trim (torus/sphere/cone/cylinder) over its OWN (u,v) with

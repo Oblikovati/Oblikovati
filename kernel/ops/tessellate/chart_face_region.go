@@ -26,8 +26,9 @@ import (
 // chartRegion is a face's carried parametric trim placed on its own branch of the covering space.
 type chartRegion struct {
 	contours   [][]math.Point2
-	uLo, uHi   float64 // the branch window in u: one whole period when u wraps
-	vLo, vHi   float64 // likewise in v
+	slabs      []contourSlabs // parallel to contours; a zero entry is asked the unindexed way
+	uLo, uHi   float64        // the branch window in u: one whole period when u wraps
+	vLo, vHi   float64        // likewise in v
 	uPer, vPer bool
 }
 
@@ -47,6 +48,10 @@ func newChartRegion(f *topo.Face, s geom.Surface) (chartRegion, bool) {
 		return chartRegion{}, false
 	}
 	r := chartRegion{contours: contours, uPer: uPer, vPer: vPer}
+	r.slabs = make([]contourSlabs, len(contours))
+	for i, c := range contours {
+		r.slabs[i], _ = newContourSlabs(c) // a contour that cannot be indexed keeps the zero entry
+	}
 	r.uLo, r.uHi = branchWindow(u0, u1, uPer)
 	r.vLo, r.vHi = branchWindow(v0, v1, vPer)
 	return r, true
@@ -122,13 +127,22 @@ func (r chartRegion) covers(u, v float64) bool {
 	fu, fv := r.fold(u, v)
 	in := false
 	for _, sh := range r.shifts() {
-		for _, c := range r.contours {
-			if pointInUVPoly(c, [2]float64{fu + sh[0], fv + sh[1]}) {
+		for i := range r.contours {
+			if r.contourContains(i, [2]float64{fu + sh[0], fv + sh[1]}) {
 				in = !in
 			}
 		}
 	}
 	return in
+}
+
+// contourContains is pointInUVPoly for contour i, through its slab index when it has one — the same
+// answer, bit for bit (chart_region_slabs.go says why), without walking every edge.
+func (r chartRegion) contourContains(i int, p [2]float64) bool {
+	if i < len(r.slabs) && r.slabs[i].edges != nil {
+		return r.slabs[i].contains(r.contours[i], p)
+	}
+	return pointInUVPoly(r.contours[i], p)
 }
 
 // fold carries a query onto the chart's branch on each wrapping axis. A bounded axis is left alone: a

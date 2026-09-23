@@ -216,10 +216,10 @@ func (b *chartCover) chainIsNear(c chartChain, sh [2]float64, u, v, gridMargin f
 	if !boxIsNear(b.scaledChainBox(c, sh), x, y, margin) {
 		return false
 	}
-	for i := 0; i+1 < len(c.uv); i++ {
-		a, e := c.uv[i], c.uv[i+1]
-		if distToSeg2D(x, y, (float64(a.X)+sh[0])*b.su, (float64(a.Y)+sh[1])*b.sv,
-			(float64(e.X)+sh[0])*b.su, (float64(e.Y)+sh[1])*b.sv) < margin {
+	// Spans, not every segment: see chart_chain_spans.go for why the skip cannot change the answer.
+	for _, s := range c.spans {
+		if boxIsNear(b.scaledBox(s.uMin, s.uMax, s.vMin, s.vMax, sh), x, y, spanSkipFactor*margin) &&
+			b.spanIsNear(c, s, sh, x, y, margin) {
 			return true
 		}
 	}
@@ -228,8 +228,14 @@ func (b *chartCover) chainIsNear(c chartChain, sh [2]float64, u, v, gridMargin f
 
 // scaledChainBox is a shifted chain's bounding box in the metric-scaled (u,v).
 func (b *chartCover) scaledChainBox(c chartChain, sh [2]float64) [4]float64 {
-	return [4]float64{(c.uMin + sh[0]) * b.su, (c.uMax + sh[0]) * b.su,
-		(c.vMin + sh[1]) * b.sv, (c.vMax + sh[1]) * b.sv}
+	return b.scaledBox(c.uMin, c.uMax, c.vMin, c.vMax, sh)
+}
+
+// scaledBox is a (u,v) box shifted by sh and scaled into the covering's metric frame — the same
+// arithmetic the per-segment test applies to each endpoint, so the box bounds the segments exactly.
+func (b *chartCover) scaledBox(uMin, uMax, vMin, vMax float64, sh [2]float64) [4]float64 {
+	return [4]float64{(uMin + sh[0]) * b.su, (uMax + sh[0]) * b.su,
+		(vMin + sh[1]) * b.sv, (vMax + sh[1]) * b.sv}
 }
 
 // boxIsNear reports whether (x,y) is within margin of the box [xLo,xHi]×[yLo,yHi].
