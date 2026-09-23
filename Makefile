@@ -350,6 +350,26 @@ tools: ## Install pinned dev tools into $GOBIN
 	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION)
 	$(GO) install gotest.tools/gotestsum@$(GOTESTSUM_VERSION)
 
+.PHONY: sonar
+sonar: ## Local SonarQube with CI's settings — regenerates coverage first (~40 min)
+	scripts/sonar-local.sh --coverage
+
+.PHONY: sonar-impacted
+sonar-impacted: ## Local SonarQube, coverage on the CHANGED packages only (~1 min); what the hook runs
+	scripts/sonar-local.sh --impacted
+
+.PHONY: sonar-fast
+sonar-fast: ## Local SonarQube reusing whatever coverage.out is on disk
+	scripts/sonar-local.sh
+
+.PHONY: sonar-nocover
+sonar-nocover: ## Local SonarQube, issues + duplication only (no coverage needed)
+	scripts/sonar-local.sh --no-coverage
+
+.PHONY: sonar-stop
+sonar-stop: ## Stop the local SonarQube server (its data volume is kept)
+	scripts/sonar-local.sh --stop
+
 .PHONY: hooks
 hooks: ## Point git at the repo's pre-commit hook
 	git config core.hooksPath .githooks

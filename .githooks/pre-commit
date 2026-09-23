@@ -28,3 +28,24 @@ echo "› go test -short (impacted packages)"
 # IMPACT_BASE=HEAD limits the change set to the working tree, i.e. what is being
 # committed, rather than the whole branch.
 make test-impacted IMPACT_BASE=HEAD
+
+# SonarQube with the settings CI uses (scripts/sonar-local.sh reads sonar-project.properties).
+# Two numbers fail a PR here — coverage on NEW code >80% and duplication <3% — and both used to be
+# found out only after pushing.
+#
+# Coverage is measured on the CHANGED packages only, with the tests cmd/testimpact says can reach
+# them: measured 73 s, against ~40 min for CI's whole-project recipe. That is the right scope for a
+# commit gate, because the number that fails a PR concerns the lines you are committing and those
+# live only in the packages you edited.
+#
+# It runs tier 1, so corpus and oracle tests skip themselves and the coverage figure is a FLOOR.
+# The hook reports it and does not fail a commit on it; `make sonar` before a PR measures it
+# properly. Duplication has no tier problem and is gated here.
+#
+# SKIP_SONAR=1 skips it for a single WIP commit; it is not a way to skip the gate.
+if [ -z "${SKIP_SONAR:-}" ] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+	echo "› sonarqube (local; coverage scoped to the changed packages)"
+	SONAR_IMPACT_BASE=HEAD scripts/sonar-local.sh --impacted || exit 1
+else
+	echo "› sonarqube: skipped (docker unavailable or SKIP_SONAR set)"
+fi

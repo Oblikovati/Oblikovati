@@ -138,8 +138,9 @@ only figure that does not move with how the tests inside were scheduled.
 
 | Gate | When | Runs |
 |---|---|---|
-| pre-commit hook | every commit | tier 1 on the impacted packages |
+| pre-commit hook | every commit | tier 1 on the impacted packages + local SonarQube, coverage scoped to the changed packages |
 | `make gate` | before every push | tier 2 on **every module** + vet + lint (root and head) + markdownlint + SPDX |
+| `make sonar` | before opening a PR | local SonarQube with a fresh coverage profile — the two numbers that fail a PR |
 | CI `test` | every PR, 3 OSes | tier 2; the Linux leg adds coverage and the guard gate |
 | CI `head` | every PR | the head module only — a separate module, no overlap |
 | CI `race` | push to `release` | tier 2 under `-race`, corpus skipped |
@@ -210,6 +211,73 @@ a plain `go test ./...` fails with *directory prefix . does not contain modules 
 go.work*. They run with cgo at its default, matching CI — the `CGO_ENABLED=0` pin on the
 root targets is an ADR-0008 decision about the core, and the gate must never cover less
 than CI does.
+
+## Rule 5 — ask SonarQube locally, before the push tells you
+
+Three things fail a PR here and none is visible from `go test`: **coverage on new code > 80 %**,
+**duplication < 3 %**, and **a Sonar issue on a line you just wrote**. They used to be reproduced
+with a throwaway script each time, written differently each time, which is how a measurement becomes
+an opinion.
+
+The issue gate is the one that needs a word of explanation: this project carries ~530 open code
+smells, so a project-wide count can never answer "did my change add one?". `scripts/sonar-newcode.py`
+pages Sonar's own open issues once and keeps those whose line the branch added — the same
+intersection it already does for coverage and duplication. It counts every changed file, `.go` or
+not, including files git has never seen: the working tree, not `HEAD`, is what a pre-commit gate has
+to judge, and the tooling under `scripts/` is new code too.
+
+`scripts/sonar-local.sh` runs a real SonarQube against a local server, reading
+`sonar-project.properties` — the same file CI's scanner reads — so exclusions, coverage report paths
+and the project key are never restated in two places.
+
+| target | measured cost | use |
+|---|---|---|
+| `make sonar-impacted` | **73 s** | coverage on the CHANGED packages only — what the hook runs |
+| the whole pre-commit hook | **1 m 42 s** | gofmt + vet + tier 1 impacted + the above, measured end to end |
+| `make sonar-nocover` | ~64 s | new-code issues + duplication; no coverage profile needed |
+| `make sonar-fast` | ~70 s | whatever `coverage.out` is already on disk |
+| `make sonar` | ~40 min | whole-project coverage, CI's own recipe — before opening a PR |
+| `make sonar-stop` | — | stops the server (its data volume is kept, so the next run is fast) |
+
+**Why the hook does not run CI's recipe.** CI measures the whole project, so it instruments every
+package and runs every test — about forty minutes here, which is tier 2's cost, not coverage's. But
+the number that fails a PR is coverage on **new** code, and new code lives only in the packages you
+edited. Instrumenting those and running the tests `cmd/testimpact` says can reach them measures the
+same lines: **73 s measured** for a two-package change set.
+
+The one thing that scoping costs is the tier. `sonar-impacted` runs tier 1, so corpus and oracle
+tests skip themselves and a line only they reach reads as uncovered — the figure is a **floor**. The
+hook therefore reports coverage and does not fail a commit on it, while duplication and new-code
+issues, which have no tier problem, are gated. `make sonar` before a PR is the number to believe.
+`SKIP_SONAR=1` skips a single WIP commit.
+
+### Five things this cost to get working, all of which will recur
+
+- **The scanner's blame step cannot read git's multi-pack-index.** With one present it dies
+  `MissingObjectException: Missing blob <sha>` on an object `git cat-file` resolves and `git fsck`
+  calls clean — the scanner runs on jgit, which does not read that index. The script moves it aside
+  for the scan and restores it afterwards, because `git gc` regenerates it; this cannot be a
+  one-time manual fix.
+- **A local Community server cannot compute "new code" at all, and the near-miss is worse than the
+  miss.** `sonar.newCode.referenceBranch` needs Developer Edition. Community's only alternative, a
+  `PREVIOUS_VERSION` period, attributes new lines by SCM blame **date** relative to the baseline
+  analysis — so a baseline scanned a minute earlier marked almost nothing new: **86 lines against a
+  true 5704**, a number that looks like an answer. The branch comparison therefore comes from
+  `git diff` (`scripts/sonar-newcode.py`), intersected with Sonar's **own** duplication blocks and
+  the exclusions `sonar-project.properties` declares. The server still measures everything else.
+- **`go list ./...` walks git-ignored directories.** `experiments/` is ignored scratch with zero
+  tracked files, and a half-finished experiment there failed the pre-commit hook outright — a gate
+  about code being committed, broken by code that is not (#3557). `cmd/testimpact` now asks
+  `git check-ignore` and drops those packages, which fixes every `test-impacted` consumer including
+  the hook. `PKG := ./...`, which `make test` uses directly, still walks them.
+- **A worktree used for measurement must be a sibling of `../Oblikovati.API`.** `go.work`'s replace
+  is relative, so a worktree in `/tmp` cannot resolve the API module and every `go list` inside
+  `archguard` fails — which reads exactly like a repo-wide breakage and is not one.
+- **A stale coverage profile reports a number that looks authoritative.** Measured once: a
+  two-week-old `coverage.out` in the repo root reported 73.3 % for a branch it predated by 120
+  commits. The script refuses a profile older than `HEAD` rather than using it, and a skipped
+  coverage run prints `not measured` rather than `0.00 % FAIL` — a missing measurement is the one
+  case where a red number and silence are equally wrong.
 
 ## The kernel/ops split (#2183)
 
