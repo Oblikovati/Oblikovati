@@ -139,10 +139,11 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		}
 		// A SIXTH rung stood here — torusTubeBandLoftMesh, a second loft for the tube-wrapping torus band
 		// (a meridian circle + a canal rail + a seam). It is DELETED at #3517: the curved-trim
-		// classification's kindSpiricBand claims that shape first, so this rung built nothing over
+		// classification's kindSpiricBand claimed that shape first, so this rung built nothing over
 		// ./kernel/... and ./model/..., and a shadowed second engine for one shape is what the delete-first
-		// rule removes. A band the classification gives up now reaches chartedTrimMesh below, which REPORTS
-		// the degradation instead of meshing it silently a second way.
+		// rule removes. kindSpiricBand itself is gone in the same issue, so the shape reaches
+		// chartedTrimMesh below either way — and that REPORTS the degradation instead of meshing it
+		// silently a second way.
 		//
 		// A doubly-periodic band that isn't two circles + a seam: the chart says which region it is.
 		return chartedTrimMesh(f, s, q, refused, log)

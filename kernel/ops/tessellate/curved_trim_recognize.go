@@ -47,7 +47,8 @@ func coneApexTrimOf(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D
 //
 // The lens guard belongs to the NOTCHED form alone, and deliberately so: the saddle loft pools all
 // open edges into one rim, so a notched band carrying a genuine lens would fold that lens into its
-// base rim (#1591) and is kindTwoRimHoledBand's instead. The two-closed-rim form has no open edge to
+// base rim (#1591) and is the chart-driven mesher's instead — kindTwoRimHoledBand, the arm that used to
+// take that form, is deleted (#3517). The two-closed-rim form has no open edge to
 // pool into, has never carried the guard, and must not acquire one here — a developable side whose two
 // closed edges include a lens (a drilled cone apex cap) has always been lofted and still is.
 func ruledTwoRimBandHolds(f *topo.Face, s geom.Surface, q Quality) bool {

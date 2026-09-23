@@ -53,6 +53,10 @@ const (
 	// kindWedgeBand is an open oblique-ended cylinder wedge: one zipped strip between its two end
 	// chains.
 	kindWedgeBand
+	// curvedTrimKindCount is one past the last kind. It is not a kind: it exists so the corpus test's
+	// roster is DERIVED from this enum rather than written out beside it (CurvedTrimKindNames), which is
+	// what makes a new arm fail that test until the corpus reaches it or the arm says why it cannot.
+	curvedTrimKindCount
 )
 
 // String names the kind, so a failing classification test says which two kinds collided.
@@ -82,7 +86,9 @@ type curvedTrim struct {
 // as a chain only because Go has no "the one true recognizer" expression — reordering changes no answer.
 //
 // Example: the wall of a rod a ball is set into carries one full-wrap rim plus the ball's lens window,
-// so it classifies as kindTwoRimHoledBand, carrying that rim and that lens, and nothing else.
+// so no special recognizer claims it and it classifies as kindChart — measured on rod ∪ ball and
+// rod − ball, whose cylinder faces both read "chart". It used to read kindTwoRimHoledBand here; that arm
+// and its recognizer are deleted (#3517), and the general chart-driven mesher serves the shape.
 func classifyCurvedTrim(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) curvedTrim {
 	if c, ok := coneApexTrimOf(f, s, outer3D, holes3D); ok {
 		return curvedTrim{kind: kindConeApexFan, cone: c}

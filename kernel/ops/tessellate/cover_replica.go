@@ -56,8 +56,13 @@ import "oblikovati.org/math"
 // exact anyway while the triangulation runs on u*su, because floating multiplication does not
 // distribute over the shift.
 //
-// Until then the near-pinch band keeps the unrolled arm (curved_trim_recognize.go's corridor gate) and
-// the eight join bodies keep the tessellate.cap-saturated their 64-cell grid earns.
+// #3542 IS CLOSED, and the paragraph above is now provenance rather than a standing debt. The cure is
+// the one named there: the triangulator works in a slightly SHEARED frame (coverShear,
+// covering_vertices.go), so the near-cocircular quads at the seam no longer have a tie to break and the
+// two ends agree. Measured over the whole sixteen-row near-pinch corpus: 6 rows carrying 38 seam edges
+// before, 0 rows and 0 edges after, every row bounded by exactly its own rim. The unrolled arm and its
+// corridor gate went with it (#3517), so the near-pinch band is the general chart-driven mesher's like
+// every other two-rim holed band.
 
 // keepOneReplicaEach keeps exactly ONE covering triangle per 3D triangle.
 func (c *coverVertices) keepOneReplicaEach(tris [][3]int, keep []bool) {

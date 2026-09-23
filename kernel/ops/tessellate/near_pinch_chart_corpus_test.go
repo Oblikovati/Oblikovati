@@ -18,9 +18,10 @@ import (
 // differ by |dr|, joined, so the merged wall carries two lens windows that nearly pinch. Each join
 // body has exactly one two-rim holed band; the CUT bodies have none, which is why only JOIN is here.
 //
-// These faces ship from the unrolled arm today (the corridor gate, curved_trim_recognize.go). The rows
-// below drive the CHART mesher on them directly, because that is the mesher #3517 wants to hand them
-// to, and the gate that says whether it may is chartRimMismatch.
+// These faces ship from the CHART mesher now: #3517 deleted the unrolled arm and the corridor gate that
+// used to hold it alive, once coverShear closed the covering's own seam disagreement (#3542). The rows
+// below drive the chart mesher on them directly — the same mesher the router selects — and the gate that
+// says whether it may is chartRimMismatch.
 
 // nearPinchJoinRadii and nearPinchDeltas are the corpus's two model scales and its four pinch widths.
 func nearPinchJoinRadii() []float64 { return []float64{3.0, 30.0} }

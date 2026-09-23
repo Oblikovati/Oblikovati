@@ -124,6 +124,17 @@ func SphereZoneBandFanOf(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) 
 	return SphereZoneBandFan(b, q), true
 }
 
+// CurvedTrimKindNames is EVERY kind the classification can select, in kind order, derived from the enum
+// itself. The corpus test builds its roster from this instead of listing the kinds by hand, so an arm
+// added to classifyCurvedTrim fails that test until the corpus reaches it or it is named an exception.
+func CurvedTrimKindNames() []string {
+	out := make([]string, 0, int(curvedTrimKindCount))
+	for k := curvedTrimKind(0); k < curvedTrimKindCount; k++ {
+		out = append(out, k.String())
+	}
+	return out
+}
+
 // ClassifyCurvedTrimName is the name of the kind the classification itself selects for a face.
 func ClassifyCurvedTrimName(f *topo.Face, q Quality) string {
 	s := f.Geometry()
