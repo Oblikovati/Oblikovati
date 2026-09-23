@@ -98,17 +98,8 @@ func TestCoaxialShaftThroughARingIsExact(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold || !res.IsSolid() {
 		t.Fatalf("not a valid closed manifold solid: %+v", r)
 	}
-	tori, cyls := 0, 0
-	for _, f := range res.Faces() {
-		switch f.Geometry().(type) {
-		case geom.Torus:
-			tori++
-		case geom.Cylinder:
-			cyls++
-		}
-	}
-	if tori != 1 || cyls != 1 || len(res.Faces()) != 2 {
-		t.Errorf("got %d torus + %d cylinder of %d faces, want the ring's surface and the bore wall", tori, cyls, len(res.Faces()))
+	if got, want := faceKindCensusOf(res), (faceKindCensus{tori: 1, cylinders: 1, faces: 2, loops: 4}); got != want {
+		t.Errorf("census %+v, want %+v — the ring's surface and the bore wall, each bounded by both seams", got, want)
 	}
 	// The shaft takes the tube's material inside radius 4, which is the ring less two spherical-zone-like
 	// caps; asserting it against the ring's own volume keeps the row honest without a second oracle.
@@ -178,19 +169,11 @@ func TestAxialDrillThroughARingIsExact(t *testing.T) {
 	if n, shells := len(bored.Faces()), len(bored.Shells()); n != 2 || shells != 1 {
 		t.Errorf("the bored ring has %d faces in %d shells, want the ring's surface and the bore wall in one", n, shells)
 	}
-	tori, cyls := 0, 0
-	for _, f := range bored.Faces() {
-		switch f.Geometry().(type) {
-		case geom.Torus:
-			tori++
-		case geom.Cylinder:
-			cyls++
-		}
+	if got, want := faceKindCensusOf(bored), (faceKindCensus{tori: 1, cylinders: 1, faces: 2, loops: 4}); got != want {
+		t.Errorf("census %+v, want %+v — one torus and one cylinder face", got, want)
 	}
-	if tori != 1 || cyls != 1 {
-		t.Errorf("got %d torus + %d cylinder faces, want one of each", tori, cyls)
-	}
-	// The ring's surface carries the drill's two seams as holes; the bore wall is bounded by both.
+	// The ring's surface carries the drill's two seams as holes; the bore wall is bounded by both. The
+	// census totals the loops; this says they are 2 and 2 rather than 1 and 3.
 	for _, f := range bored.Faces() {
 		if n := len(f.Loops()); n != 2 {
 			t.Errorf("face %T has %d loops, want 2 (the drill leaves two seams on each)", f.Geometry(), n)

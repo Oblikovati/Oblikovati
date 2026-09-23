@@ -72,7 +72,8 @@ func TestFoldedWindowBooleanMatchesTheMembershipIntegral(t *testing.T) {
 			if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold || !res.IsSolid() {
 				t.Fatalf("%s: not a valid closed manifold solid: %+v", c.name, r)
 			}
-			cyl, sph, plan := analyticFaceCensus(res)
+			census := faceKindCensusOf(res)
+			cyl, sph, plan := census.cylinders, census.spheres, census.planes
 			if cyl != c.wantCyl || sph != c.wantSph || plan != c.wantPlan || len(res.Faces()) != c.faces {
 				t.Errorf("%s: %d cylinder + %d sphere + %d plane of %d faces, want %d + %d + %d of %d",
 					c.name, cyl, sph, plan, len(res.Faces()), c.wantCyl, c.wantSph, c.wantPlan, c.faces)
@@ -120,21 +121,6 @@ func TestFoldedWindowSeamIsExact(t *testing.T) {
 	if seams != 1 {
 		t.Errorf("the join carries %d non-circular edges, want 1 (the ball's seam on the wall)", seams)
 	}
-}
-
-// analyticFaceCensus tallies a body's faces by analytic surface kind.
-func analyticFaceCensus(b *topo.Body) (cylinders, spheres, planes int) {
-	for _, f := range b.Faces() {
-		switch f.Geometry().(type) {
-		case geom.Cylinder:
-			cylinders++
-		case geom.Sphere:
-			spheres++
-		case geom.Plane:
-			planes++
-		}
-	}
-	return cylinders, spheres, planes
 }
 
 // TestFoldedWindowMembershipIntegral is the oracle's own regression: it re-derives the three volumes
