@@ -76,10 +76,17 @@ func BenchmarkTessellateBody(b *testing.B) {
 // The two faces are picked out of the corpus bodies the chart rows already build, so this measures the
 // same geometry those rows gate rather than a fixture of its own.
 //
-// Baseline, amd64, -benchtime 200x: the torus band 7.26 ms/op, 11.18 MB/op, 69 655 allocs/op; the
-// cylinder wall 5.00 ms/op, 5.31 MB/op, 26 676 allocs/op. Doubly periodic costs about 1.45× singly
-// periodic here on 2.1× the allocation, which is the shape of a 9-shift covering against a 3-shift one
-// — it is a baseline to compare against, not a budget: nothing fails on it.
+// Measured, amd64, -benchtime 200x. It found something on its first run, so both readings are here:
+//
+//	                           torus band (9 shifts)            cylinder wall (3 shifts)
+//	shifts() built per call    7.26 ms  11.18 MB  69 655 allocs  5.00 ms  5.31 MB  26 676 allocs
+//	shifts() a shared table    6.64 ms   8.21 MB  49 705 allocs  4.75 ms  4.99 MB  21 564 allocs
+//
+// The second row ships (chartShiftTables, chart_face_region.go): covers asked for a freshly built slice
+// on every membership query, which is once per covering grid node, and that was 29 % of the torus band's
+// allocations. Doubly periodic still costs about 1.4× singly periodic on 1.6× the allocation, which is
+// the shape of a 9-shift covering against a 3-shift one. Neither row is a budget — nothing fails on
+// these — they are what a later change is read against.
 func BenchmarkChartFaceCovering(b *testing.B) {
 	for _, c := range []struct {
 		name string

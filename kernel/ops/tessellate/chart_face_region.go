@@ -155,10 +155,36 @@ func (r chartRegion) windowCandidate(u, v float64) bool {
 
 // shifts are the whole-period offsets the covering replicates its points over: none on a bounded axis,
 // one period either side on a wrapping one, so a triangle spanning a seam finds its neighbours there.
+//
+// It hands out one of four tables built once, rather than building a slice per call, because covers calls
+// it on EVERY membership query — once per covering grid node — and clearOfChains on every node again
+// (#3527). The tables are read-only; every caller range-reads them and none has ever written to one.
 func (r chartRegion) shifts() [][2]float64 {
+	return chartShiftTables[wrapIndex(r.uPer)][wrapIndex(r.vPer)]
+}
+
+// chartShiftTables are the four offset sets a chartRegion can have, keyed [u wraps][v wraps]. There is
+// no fifth: a region's only degrees of freedom here are which axes wrap.
+var chartShiftTables = [2][2][][2]float64{
+	{crossPeriodOffsets(false, false), crossPeriodOffsets(false, true)},
+	{crossPeriodOffsets(true, false), crossPeriodOffsets(true, true)},
+}
+
+// wrapIndex is 1 when the axis wraps, which is how chartShiftTables is keyed.
+func wrapIndex(periodic bool) int {
+	if periodic {
+		return 1
+	}
+	return 0
+}
+
+// crossPeriodOffsets is the cross product of the two axes' replication offsets, in the order the covering
+// has always laid its replicas in — u outer, v inner — so the shift INDEX each vertex records, and the
+// canonical choice that reads it, are unchanged.
+func crossPeriodOffsets(uPer, vPer bool) [][2]float64 {
 	var out [][2]float64
-	for _, du := range periodOffsets(r.uPer) {
-		for _, dv := range periodOffsets(r.vPer) {
+	for _, du := range periodOffsets(uPer) {
+		for _, dv := range periodOffsets(vPer) {
 			out = append(out, [2]float64{du, dv})
 		}
 	}
