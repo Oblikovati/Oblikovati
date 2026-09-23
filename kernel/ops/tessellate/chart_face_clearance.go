@@ -68,6 +68,16 @@ import (
 // (0.15, 0.25, 0.35, 0.4, 0.45, 0.55, 0.6, 0.705, 0.75, 0.8, 0.85, 0.88, 0.89, 0.935, 0.95, 1.0, 1.1
 // and 1.4 were swept too and fall inside the steps above.)
 //
+// THE LAST TWO COLUMNS PREDATE chartClearanceCellCap, and reading them as this constant's shipped cost
+// is the trap this paragraph exists to close (#3527). #3517 caps the chord the clearance is read from at
+// a fraction of the covering's own cell, and on the complement's oval apex — where an uncapped chord is
+// many cells long — the CAP binds, so k = 0.90 does not reach what it asks for. The shipped reading is
+// therefore the table's k = 0.3 line and not its k = 0.90 line: measured on this tree, 1.1097 %
+// (201.642061 against the analytic 203.904871) and 263.73402 mm². The tear column is unaffected — it
+// records where the corpus breaks, which the cap does not move — and the SELECTION argument below is
+// unaffected too, because it compares swept costs to a ceiling that 1.1097 % clears with more room than
+// 1.3497 % did. A later sweep must re-read the two cost columns with the cap in place.
+//
 // THE LOWER FAILURE EDGE IS GONE, and that is the most important line here. Two rounds ago the corpus
 // tore below k = 0.70 — the R=5 r=2.5 figure-eight intersect piece by 48 free edges at every k ≤ 0.70,
 // and the complement itself by 28 at every k ≤ 0.2 — and the constant was placed to clear them. Neither

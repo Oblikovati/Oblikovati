@@ -107,13 +107,19 @@ func chartCorpus() []chartCorpusRow {
 	return []chartCorpusRow{
 		// The representative face: a coaxial shaft bored through a ring leaves a torus band that wraps
 		// the ring's AZIMUTH. Before: the whole torus, 144.78 against 203.59 with 64 free edges.
-		{name: "RS− ring − coaxial shaft", want: 203.59, maxRel: 0.05, body: func(t *testing.T) *topo.Body {
+		//
+		// 0.05 → 0.02 (#3527): the bound was never measured against, and these two rows read 1.3199 %
+		// and 1.2889 % (200.902780 and 213.472722 at DefaultQuality, measured on this tree). A bound
+		// four times the reading sits green through a drift most of the way to a wrong body, which is
+		// the same defect the complement row below was filed for. 0.02 is ~1.5× each reading: enough
+		// room for a faceting improvement, not enough to hide one.
+		{name: "RS− ring − coaxial shaft", want: 203.59, maxRel: 0.02, body: func(t *testing.T) *topo.Body {
 			return ringMinus(t, mustCylinder(t, math.P3(0, 0, -4), math.V3(0, 0, 1), 4, 8))
 		}},
 		// A torus carrying TWO drill windows and no outer loop. Before: the whole torus grid, SILENTLY
 		// (the one-window complement mesher declined a second window and fell through without a word),
 		// 64 free edges.
-		{name: "RD− ring − axial drill", want: 216.26, maxRel: 0.05, body: func(t *testing.T) *topo.Body {
+		{name: "RD− ring − axial drill", want: 216.26, maxRel: 0.02, body: func(t *testing.T) *topo.Body {
 			return ringMinus(t, mustCylinder(t, math.P3(5, 0, -4), math.V3(0, 0, 1), 0.8, 8))
 		}},
 		// The folded-window family. Both faces are the chart mesher's now: the ball's bulge (a sphere
@@ -122,14 +128,19 @@ func chartCorpus() []chartCorpusRow {
 		// to the axis, so the wall integrated 7.19 where 8.26 is right, and the two rows sat PINNED at
 		// 0.0872 and 0.0902 with that number written down as what would move them.
 		//
-		// It moved. The unroll now keeps only the bands the general covering cannot serve — an
-		// uncharted one, or one whose lens windows nearly pinch (twoRimHoledTrimOf) — and these two
-		// measure 0.0144 and 0.0143, exactly the 1.44 %/1.43 % the pin predicted. They are bounded
-		// rows again, at 0.02: a chord deficit is all that is left, and pinning one would fail the day
-		// the faceting improves.
-		{name: "RODB∪ rod ∪ ball", want: 13.077910, maxRel: 0.02,
+		// It moved. Both faces are the general covering's now — the unroll and the arms that kept it
+		// (twoRimHoledTrimOf, kindSpiricBand) are deleted, #3517 — and when that happened these two
+		// measured 0.0144 and 0.0143, exactly the 1.44 %/1.43 % the pin predicted. They are bounded
+		// rows again: a chord deficit is all that is left, and pinning one would fail the day the
+		// faceting improves.
+		//
+		// 0.02 → 0.01 (#3527): the day came. Re-MEASURED on this tree they read 0.006576 and 0.006117
+		// (12.991908 and 12.479096 against the analytic values beside them) — the covering's own
+		// refinements over this wave more than halved both deficits, and the bound written for a 1.44 %
+		// reading is three times a 0.66 % one. 0.01 is ~1.5× the readings.
+		{name: "RODB∪ rod ∪ ball", want: 13.077910, maxRel: 0.01,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Join) }},
-		{name: "RODB− rod − ball", want: 12.555898, maxRel: 0.02,
+		{name: "RODB− rod − ball", want: 12.555898, maxRel: 0.01,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Cut) }},
 		// RODB∩'s two faces are small single-loop patches chorded flat across a lens 0.1 deep. The rod
 		// WALL's carries a chart and no special shape claims it, so the classification names it
@@ -230,25 +241,38 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 	if free := tessellate.FreeEdgeCount(mesh); free != 0 {
 		t.Errorf("the genus-1 complement meshed with %d free edges, want a watertight mesh", free)
 	}
-	if hasIgnoredTrim(t, body) {
+	if meshReportsIgnoredTrim(mesh) {
 		t.Error("the genus-1 complement reported a discarded trim")
 	}
 	got := tessellate.MeshGeometryProperties(mesh).Volume
-	// 0.02, not the 0.05 the other rows carry: this row is MEASURED at 1.350% (201.153 against an
-	// analytic 203.904871), so a bound four times looser than the reading would sit green through
-	// almost anything.
+	// The bound is the 1.39 % CEILING itself, and that is the only number it can honestly be.
 	//
-	// This number is what SETS the boundary clearance now (#3519, chart_face_clearance.go). The
-	// clearance's only remaining failure edge is above — the corpus tears from k = 1.25 and nowhere
-	// below 0.1 — and its cost is this deficit, monotone in k. So the constant is the largest swept
-	// value whose cost stays under the 1.39% the deleted window mesher used to achieve on this body,
-	// which is the number this row exists to have beaten: 0.90 reads 1.350%, 0.92 reads 1.414%. A later
-	// sweep that wants to raise the clearance has to say what it does to this claim.
-	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > 0.02 {
-		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f > 0.02)", got, an.Volume, rel)
+	// This deficit is what SETS the boundary clearance (#3519, chart_face_clearance.go). The clearance's
+	// only remaining failure edge is above — the corpus tears from k = 1.25 and nowhere below 0.1 — and
+	// its cost is this deficit, monotone in k. So the constant is the largest swept value whose cost
+	// stays under the 1.39 % the deleted window mesher achieved on this body, which is the number this
+	// row exists to have beaten. Writing the ceiling here is what makes the row gate that claim: a
+	// clearance change that spends more than the deleted mesher did fails HERE, which is where the
+	// argument for the constant lives.
+	//
+	// 0.02 → 0.0139 (#3527). The comment this replaces said "MEASURED at 1.350% (201.153 against an
+	// analytic 203.904871)" and that reading is two rewrites old: #3517 caps the chord the clearance is
+	// read from (chartClearanceCellCap), and on this face the cap binds, so k = 0.90 no longer reaches
+	// what it asks for. Re-measured on this tree: 201.642061 against the analytic 203.904871, rel
+	// 0.011097 — 1.1097 %, which is what the pin block below already records and what the sweep table's
+	// k = 0.3 row reads. At PropertyQuality the same body reads 203.869771, 0.0172 %.
+	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > complementDeficitCeiling {
+		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f > %.4f)",
+			got, an.Volume, rel, complementDeficitCeiling)
 	}
 	assertComplementFaceArea(t, body)
 }
+
+// complementDeficitCeiling is the DefaultQuality volume deficit the deleted window mesher achieved on
+// this body (1.388 %, commit 95cdd21e, recorded in chart_face_clearance.go with its raw operands), and
+// so the most the chart mesher's boundary clearance may spend. The shipped clearance reads 1.1097 %
+// against it (measured), which is the margin the constant is chosen under.
+const complementDeficitCeiling = 0.0139
 
 // complementTorusFaceArea is the torus face's own meshed area at DefaultQuality, pinned TWO-SIDED: the
 // boundary clearance buys the oval's watertightness at its apex with interior density next to a coarse
