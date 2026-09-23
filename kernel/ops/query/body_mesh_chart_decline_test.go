@@ -48,19 +48,20 @@ import (
 // face and gives it up, the harvest a feature reply, the API and the UI read says so, at Defect
 // severity, naming WHY.
 //
-// It reads wideCrossingRods, and it used to read ringMeetingADrill for a second property — that the
-// decline was the ONLY thing reported, so it could not be a restatement of the two older codes for a
-// lost trim. That property no longer has a body, and the reason is a fix rather than a loss: the
-// classification now selects exactly ONE path, so a charted face whose trim DEVELOPS into one (u,v)
-// branch is meshed on the structured grid instead of reaching the covering at all (#3517 review 3 C1).
-// Every silent decliner in both families this file sweeps was such a face. Measured after the fix over
-// ring ∩ drill (tube 1.2…2.0 × drill radius 0.8…1.8 × offset 0…1.5) and crossing rods (radius 1.5…3.5
-// × offset 0…2), at both facetings: NO body declines with neither older code any more, and
-// ringMeetingADrill itself now ships with no diagnostics at all at either faceting — it no longer
-// needs one, which is the outcome #3520 was built to make visible.
+// ITS FIXTURE HAS MOVED TWICE, and both moves were cures rather than losses. It read ringMeetingADrill
+// until #3517's classification began selecting exactly one path, which sent that body's developing face
+// to the structured grid so it had nothing to give up. It then read wideCrossingRods until #3551 made
+// the covering lay one vertex per location, which cured that body too: swept on this tree over crossing
+// rods (radius 1.5…4.0 × offset 0…2) at both facetings, NO body of that family declines any more.
+//
+// So it reads the tangent-plane piece, which is #3551's own family and the living declining case: the
+// torus R=100 r=1 cut by the plane tangent to its inner equator, intersected, at PropertyQuality. Its
+// torus face is refused by the mesher's own rim gate (6 unpaired edges that are no rim segment) and the
+// router falls through to the surface's whole domain. tangent_plane_family_test.go carries what that
+// residue is and why it is a covering DENSITY limit; this row only asserts that it is REPORTED.
 func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 	t.Parallel()
-	got := BodyMeshDiagnostics(wideCrossingRods(t), PropertyQuality())
+	got := BodyMeshDiagnostics(tangentPlanePieceForDecline(t), PropertyQuality())
 	d, found := findCode(got, tessellate.CodeChartMesherDeclined)
 	if !found {
 		t.Fatalf("the harvest carries %v; the chart mesher gave a face of this body up and nothing said so",
@@ -73,6 +74,29 @@ func TestAChartMesherDeclineReachesTheBodysMeshDiagnostics(t *testing.T) {
 	if !strings.Contains(d.Detail, "not bounded by its own rim") {
 		t.Errorf("the report does not name WHY the mesher gave up, so a reader cannot act on it: %q", d.Detail)
 	}
+}
+
+// tangentPlanePieceForDecline is the torus R=100 r=1 cut by the plane tangent to its inner equator,
+// intersected — the thin-tube end of #3551's tangent-plane family, whose torus face the chart mesher
+// still refuses at PropertyQuality. Built with brep.Boolean like everything else in this file: kernel/ops
+// depends on kernel/ops/query, so this internal test cannot import ops.
+func tangentPlanePieceForDecline(t *testing.T) *topo.Body {
+	t.Helper()
+	const ringR, tubeR = 100.0, 1.0
+	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), ringR, tubeR, "ring")
+	if err != nil {
+		t.Fatalf("ring: %v", err)
+	}
+	far := 20 * (ringR + tubeR)
+	box, err := brep.SolidBlock(math.P3(-far, ringR-tubeR, -far), math.P3(far, far, far), "box")
+	if err != nil {
+		t.Fatalf("box: %v", err)
+	}
+	body, err := brep.Boolean(brep.Intersection, ring, box)
+	if err != nil {
+		t.Fatalf("torus ∩ tangent half-space: %v", err)
+	}
+	return body
 }
 
 // TestTheBodyThatUsedToDeclineRaisesNoDeclineNow is the false-positive guard, and it is narrower than
@@ -131,9 +155,21 @@ func TestTheCuredDisplayDeclineStaysCured(t *testing.T) {
 		q    tessellate.Quality
 		band float64
 	}{{"default", tessellate.DefaultQuality(), 0.01}, {"property", tessellate.PropertyQuality(), 0.0001}} {
-		if got := BodyMeshDiagnostics(body, gq.q); len(got) != 0 {
-			t.Errorf("%s quality: wideCrossingRods reports %v; it was cured by #3551 and must stay quiet",
-				gq.name, codeList(got))
+		// The cure this row names is the DECLINE and the tear behind it, so those are what it refuses.
+		// It asserted no diagnostic AT ALL until #3517 gave a curved face that misses the chord tolerance
+		// it was handed a voice (CodeFaceChordNotMet): at DefaultQuality this body is still completely
+		// quiet, and at PropertyQuality it now says two true things about its own approximation — its two
+		// cylinder walls reach 1.283× the 1e-3 mm asked for, and the generic path's interior refinement
+		// saturated its 64-cell floor still above that chord. Neither is a lost trim, neither is a tear,
+		// and the per-face areas below still hold to 1e-4, which is what says the body is correct rather
+		// than quietened. A row that refused every report would have had to be loosened by the next
+		// honest one; refusing the codes it is ABOUT cannot be.
+		for _, c := range []diag.Code{tessellate.CodeChartMesherDeclined, tessellate.CodeWallWrapUnmeshed,
+			tessellate.CodeTrimIgnoredFullDomain, tessellate.CodeMeshNotWatertight, tessellate.CodePatchCoverage} {
+			if codeSet(BodyMeshDiagnostics(body, gq.q))[c] {
+				t.Errorf("%s quality: wideCrossingRods raises %q; it was cured by #3551 and the cure must hold",
+					gq.name, c)
+			}
 		}
 		assertEveryWallMeshesItsAnalyticArea(t, body, gq.q, gq.name, gq.band)
 	}
