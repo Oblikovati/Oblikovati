@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/token"
 	"go/types"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -109,7 +108,14 @@ func reportComplexDebt(t *testing.T, rose, fell, stale []string) {
 func scanFusableProducts(t *testing.T) ([]string, map[string]int) {
 	t.Helper()
 	fset := token.NewFileSet()
-	im := newModuleSourceImporter(fset, "..", filepath.Join("..", "..", "Oblikovati.API"))
+	// Resolved through go rather than assumed: the first version hard-coded ../../Oblikovati.API, the
+	// local sibling layout, so on the first CI run the type-check could not import api/types. This is
+	// the same defect #1976 removed from the other contract-reading guards; the helper is theirs.
+	api, ok := apiModuleDir(t)
+	if !ok {
+		t.Skip("oblikovati.org/api is not on disk, so kernel/geom cannot be type-checked from source")
+	}
+	im := newModuleSourceImporter(fset, "..", api)
 	var unrounded []string
 	complexes := map[string]int{}
 	for _, path := range fmaPolicyPackages {
