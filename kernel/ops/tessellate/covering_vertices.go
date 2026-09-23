@@ -210,6 +210,14 @@ func (c *coverVertices) addChain(p3 []math.Point3, uv []math.Point2, du, dv floa
 
 // addRing lays a chain that DOES close in the covering space as one loop constraint (constrain wraps
 // its last edge back to its first), returning its vertex index sequence.
+//
+// It calls add and not place, so the carry gate does not apply to it, and that asymmetry with addChain is
+// deliberate rather than an oversight (#3527). A declined vertex comes back as -1, which an open chain
+// can drop — chainConstraints skips any segment with one, because that segment's own replica a period
+// along carries it — and a CLOSED ring cannot: a loop constraint with a hole in it is not the boundary
+// the triangulation was handed. The only owner of addRing is the periodic B-spline cover
+// (coverBuilder), which sets no carry at all, so the two are consistent today; a future owner that
+// wants both has to answer the -1 question before it can use this.
 func (c *coverVertices) addRing(p3 []math.Point3, uv []math.Point2, du, dv float64, at int) []int {
 	idx := make([]int, len(p3))
 	for i := range p3 {

@@ -168,6 +168,14 @@ func (r chartRegion) shifts() [][2]float64 {
 // periodOffsets is one axis's replication offsets, over the package's one set of cover shifts
 // (coverShifts, periodic_nurbs_cover.go): a bounded axis has no replica, a wrapping one has the
 // period either side.
+//
+// The 2π is not an assumption about the surface, it is what "periodic" MEANS to a chartRegion (#3527).
+// newChartRegion builds a region only for an axis IsPeriodic answers true for, and that predicate is
+// `lo ≈ 0 and hi ≈ 2π` — the kernel's normalised angular parametrisation and nothing else. branchWindow
+// and wrapToPeriod read the same constant for the same reason. The periodic B-spline cover, whose axis
+// can have any knot range, takes its period from the domain instead (coveringPeriodicMesh's
+// `period := uhi - ulo`); a chart on such a surface does not reach here at all, because IsPeriodic
+// refuses it. Widening IsPeriodic means giving chartRegion the period as data, in all three places.
 func periodOffsets(periodic bool) []float64 {
 	if !periodic {
 		return []float64{0}

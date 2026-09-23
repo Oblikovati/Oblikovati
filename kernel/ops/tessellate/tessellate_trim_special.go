@@ -58,8 +58,14 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 	}
 }
 
-// withNoRefusal adapts a mesher that cannot refuse on conditioning to the arm's three-value answer: it
-// either builds the face or was never the right mesher for it, and neither is a shape it gave up on.
+// withNoRefusal adapts a mesher whose false answer does not travel in this return value: it either
+// builds the face or was never the right mesher for it, and the arm's third value stays empty.
+//
+// It does NOT mean "this mesher cannot refuse on conditioning", which is what it used to say and is
+// false of chartFaceMesh (#3527): that one gives up on a shape it owns, and says which, through the
+// chartDeclineLog its caller passes in — see ChartRimOnlyTriangles, which reads exactly that
+// distinction. The log is where the refusal goes; this adapter only declines to invent a second copy of
+// it in the string.
 func withNoRefusal(m *Mesh, ok bool) (*Mesh, bool, string) { return m, ok, "" }
 
 // apexFan builds the apex→rim triangle fan for a cone (rim in path order, apex excluded), each

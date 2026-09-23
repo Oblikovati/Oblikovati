@@ -25,8 +25,13 @@ type mergeDecline string
 const (
 	// mergeJoined is the success value: the two faces became one.
 	mergeJoined mergeDecline = ""
-	// declineUnshared is the ORDINARY exit, and the only silent one: the two lie on one surface but
-	// share no boundary, so they are two faces and nothing was given up.
+	// declineUnshared is the ORDINARY exit, and the only silent one: the pair is not a pair. Three
+	// different readings reach it and the doc used to name only the third (#3527) — two faces of
+	// DIFFERENT sense, two faces on DIFFERENT surfaces (both from mergePairOnOneSurface, and the
+	// necessary conditions mergeBucket tabulates so a scan can skip them), and two faces on one surface
+	// that share no boundary (from dissolveSharedEdges). One name covers all three because they are one
+	// fact: nothing was given up, so there is nothing to report. Its string says the last of the three
+	// because that is the only one a reader ever sees a merged body for — and it is never recorded.
 	declineUnshared mergeDecline = "they share no boundary"
 	// declineAmbiguousPairing: an edge of one runs with two edges of the other, so their common
 	// boundary is subdivided differently on the two sides and re-chaining it would have to choose.

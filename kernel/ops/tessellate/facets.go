@@ -15,6 +15,13 @@ import (
 // BodyFacets is one body's facet set at one tolerance: the merged mesh, the
 // triangle-index count each face contributed (in body face order), and the
 // faces' own meshes for face-level retrieval.
+//
+// A tessellation diagnostic is reachable TWICE through this struct, and a
+// consumer must read one route or the other, never both (#3527): a face mesher
+// records on its own FaceMeshes entry, and MergeMesh carries every face's
+// diagnostics onto Mesh so the whole-body view has them. Reading Mesh alone is
+// the complete set; reading FaceMeshes is the same set attributed to faces.
+// Summing the two double-counts every defect in the body.
 type BodyFacets struct {
 	Mesh              *Mesh
 	IndexCountPerFace []int
