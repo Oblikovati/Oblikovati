@@ -71,9 +71,9 @@ func (t Matrix4) Cells() [16]Scalar {
 // TransformPoint applies the full affine transform to p (translation included).
 func (t Matrix4) TransformPoint(p Point3) Point3 {
 	return Point3{
-		t.m[0]*p.X + t.m[1]*p.Y + t.m[2]*p.Z + t.m[3],
-		t.m[4]*p.X + t.m[5]*p.Y + t.m[6]*p.Z + t.m[7],
-		t.m[8]*p.X + t.m[9]*p.Y + t.m[10]*p.Z + t.m[11],
+		Scalar(t.m[0]*p.X) + Scalar(t.m[1]*p.Y) + Scalar(t.m[2]*p.Z) + t.m[3],
+		Scalar(t.m[4]*p.X) + Scalar(t.m[5]*p.Y) + Scalar(t.m[6]*p.Z) + t.m[7],
+		Scalar(t.m[8]*p.X) + Scalar(t.m[9]*p.Y) + Scalar(t.m[10]*p.Z) + t.m[11],
 	}
 }
 
@@ -81,9 +81,9 @@ func (t Matrix4) TransformPoint(p Point3) Point3 {
 // because a displacement has no position).
 func (t Matrix4) TransformVector(v Vector3) Vector3 {
 	return Vector3{
-		t.m[0]*v.X + t.m[1]*v.Y + t.m[2]*v.Z,
-		t.m[4]*v.X + t.m[5]*v.Y + t.m[6]*v.Z,
-		t.m[8]*v.X + t.m[9]*v.Y + t.m[10]*v.Z,
+		Scalar(t.m[0]*v.X) + Scalar(t.m[1]*v.Y) + Scalar(t.m[2]*v.Z),
+		Scalar(t.m[4]*v.X) + Scalar(t.m[5]*v.Y) + Scalar(t.m[6]*v.Z),
+		Scalar(t.m[8]*v.X) + Scalar(t.m[9]*v.Y) + Scalar(t.m[10]*v.Z),
 	}
 }
 
@@ -100,8 +100,8 @@ func (t Matrix4) Mul(o Matrix4) Matrix4 {
 	var out [16]Scalar
 	for r := range 4 {
 		for c := range 4 {
-			out[r*4+c] = t.m[r*4]*o.m[c] + t.m[r*4+1]*o.m[4+c] +
-				t.m[r*4+2]*o.m[8+c] + t.m[r*4+3]*o.m[12+c]
+			out[r*4+c] = Scalar(t.m[r*4]*o.m[c]) + Scalar(t.m[r*4+1]*o.m[4+c]) +
+				Scalar(t.m[r*4+2]*o.m[8+c]) + Scalar(t.m[r*4+3]*o.m[12+c])
 		}
 	}
 	return Matrix4{out}
@@ -123,9 +123,9 @@ func (t Matrix4) Inverse() (Matrix4, bool) {
 	}
 	d := t.Translation()
 	return Matrix4{[16]Scalar{
-		inv[0], inv[1], inv[2], -(inv[0]*d.X + inv[1]*d.Y + inv[2]*d.Z),
-		inv[3], inv[4], inv[5], -(inv[3]*d.X + inv[4]*d.Y + inv[5]*d.Z),
-		inv[6], inv[7], inv[8], -(inv[6]*d.X + inv[7]*d.Y + inv[8]*d.Z),
+		inv[0], inv[1], inv[2], -(Scalar(inv[0]*d.X) + Scalar(inv[1]*d.Y) + Scalar(inv[2]*d.Z)),
+		inv[3], inv[4], inv[5], -(Scalar(inv[3]*d.X) + Scalar(inv[4]*d.Y) + Scalar(inv[5]*d.Z)),
+		inv[6], inv[7], inv[8], -(Scalar(inv[6]*d.X) + Scalar(inv[7]*d.Y) + Scalar(inv[8]*d.Z)),
 		0, 0, 0, 1,
 	}}, true
 }

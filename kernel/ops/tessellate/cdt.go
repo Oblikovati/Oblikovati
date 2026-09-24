@@ -78,6 +78,22 @@ type cdt struct {
 	recoverFlipWork int
 	recoverBudget   int
 	overBudget      bool
+	// live is the number of triangles not yet deleted. len(tris) is the ALLOCATED count and it only
+	// grows: every insertion appends its fan and marks the cavity dead, so on a covering-sized point
+	// set the array runs far ahead of the mesh — measured on the J3 host chart at PropertyQuality,
+	// 23 606 516 allocated against 1 574 591 live, fifteen dead for every live one (#3548). Any bound
+	// or scan written against len(tris) therefore pays for fifteen triangles that no longer exist.
+	live int
+	// fullScans counts whole-mesh scans over the live triangle index (hasEdge, flipOneCrossing,
+	// findIncidentScan). Each is O(live), so this is the number a test can assert on without measuring
+	// wall time: the recovery path must cost O(deg) per edge query, not O(T) (#3548).
+	fullScans int
+	// liveIdx is the live triangle indices in ASCENDING order, and liveAt is the (allocated, live)
+	// pair it was built at. It is a cache, not a second source of truth: dead[] still decides, and the
+	// ascending order means every scan that uses it visits exactly the triangles a scan of the whole
+	// array would visit, in the same order, so no answer changes (#3549).
+	liveIdx []int
+	liveAt  [2]int
 }
 
 func conKey(a, b int) [2]int {
@@ -133,6 +149,7 @@ func newCDT(pts [][2]float64) *cdt {
 	m := &cdt{pts: all, con: map[[2]int]int{}, nsup: nsup}
 	m.tris = []cdtTri{{v: [3]int{nsup, nsup + 1, nsup + 2}, n: [3]int{-1, -1, -1}}}
 	m.dead = []bool{false}
+	m.live = 1
 	// recoverByFlips is a rare legacy fallback: the corridor march (#1409) plus splitConstraintAtVertices
 	// recover every VALID face's constraints without it (the whole CDT/tessellation suite passes with this
 	// budget at 0). So a modest global budget lets a genuinely-hard segment still get a burst of flips while

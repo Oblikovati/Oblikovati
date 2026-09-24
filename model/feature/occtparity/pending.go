@@ -82,18 +82,18 @@ var pendingCapability = map[quarantineKey]string{
 	{"simple", "I4"}:           "curved (geom.BSplineSurface-arm) Plane∧Cylinder edge 7230 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)",
 	{"simple", "I6"}:           "curved (ops.bsplineHostArmSurface-arm) Plane∧Cylinder edge 7326 could not be welded into the solid: curved arms do not meet at one shared trihedral vertex",
 	{"simple", "I8"}:           "curved miter arms unsupported at vertex 7437 (need one torus + one cylinder equal-r arm, or two coaxial tori; radius 10)",
-	// J5: the result SOLID SELF-INTERSECTS (Oblikovati/Oblikovati#3491) — found the moment
-	// isWatertightSolid began reading the exact face-pair scan instead of a tessellation (#3477). The
-	// bodies are bit-identical at the branch point, so this is a pre-existing blend defect made
-	// visible, not a detector regression. A torus face is driven 30 units through a plane at a right
-	// angle while the AREA still matches OCCT — the overlap double-covers, which is exactly why an
-	// area match is a smoke test and not a proof.
+	// J5 STOOD HERE and is GONE (#3491 closed, 2026-09-15). The result solid self-intersected — a torus
+	// face driven 30 units through a plane at a right angle while the AREA still matched OCCT, the
+	// overlap double-covering, which is exactly why an area match is a smoke test and not a proof. The
+	// cause was the rim rebuild's WINDING: cylE's use on the host face was a fixed function of the
+	// blend's convexity, chosen to mirror addBandFace under Validate's 2-incidence rule, and
+	// 2-incidence is weaker than a consistently wound loop (fillet_rim_build.go, #3550). It now keeps
+	// the flag of the rim it replaces.
 	//
 	// K7/L1/L7/N5 stood beside it, all four "Cylinder×Cylinder blend-flank crossings ~0.03 deep". They
-	// are gone: two blend flanks of EQUAL radius are the degenerate cylinder pair whose section the
+	// went earlier: two blend flanks of EQUAL radius are the degenerate cylinder pair whose section the
 	// ruled∩quadric form declined, and the closed form now inside the intersector gives it exactly
 	// (ADR-0061 stage 4). The witnesses were the fold those declined arcs left behind.
-	{"simple", "J5"}:          "result self-intersects: Torus×Plane crossing at (-0.000,-150.000,0.000), 30.6 deep in both trims (#3491)",
 	{"simple", "J9"}:          declineCannotRoundCurvedBSpline,
 	{"simple", "L8"}:          "curved (torus-arm) Plane∧Cylinder edge 11018 could not be welded into the solid: corner solve declined (station gap / host non-tangency / closure failure)",
 	{"simple", "M3"}:          "curved (torus-arm) Plane∧Cylinder edge 11619 could not be welded into the solid: trihedral corner needs 3 arms (got 2 at vertex 11618)",
@@ -158,7 +158,9 @@ var pendingCapability = map[quarantineKey]string{
 // (J5/K7/L1/L7/N5, #3491) the exact watertight gate exposed on 2026-09-01 — geometry wrong all
 // along, counted green only while the detector read a tessellation. −4 on 2026-09-06: K7/L1/L7/N5
 // build OCCT-parity geometry now that the equal-radius cylinder section is exact (ADR-0061 stage 4).
-const pendingCapabilityCount = 105
+// −1 on 2026-09-15: J5, the LAST of those five, once the rim rebuild stopped winding the convex host's
+// replacement rim against the rim it replaces (#3550/#3491 — see the J5 note above).
+const pendingCapabilityCount = 104
 
 // pendingCapabilityReason returns the not-yet-built reason for a case and whether it is pending.
 //

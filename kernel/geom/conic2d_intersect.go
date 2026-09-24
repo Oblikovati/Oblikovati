@@ -38,11 +38,11 @@ func conicSubstitution(p EllipticalParams2d, q Conic2dImplicit) (a, b, c, d, e, 
 	cx, cy := float64(p.Center.X), float64(p.Center.Y)
 	ux, uy := float64(p.U.X), float64(p.U.Y)
 	vx, vy := float64(p.V.X), float64(p.V.Y)
-	a = q.A*ux*ux + q.B*uy*uy + 2*q.C*ux*uy
-	b = q.A*vx*vx + q.B*vy*vy + 2*q.C*vx*vy
-	c = q.A*ux*vx + q.B*uy*vy + q.C*(ux*vy+uy*vx)
-	d = q.A*cx*ux + q.B*cy*uy + q.C*(cx*uy+cy*ux) + q.D*ux + q.E*uy
-	e = q.A*cx*vx + q.B*cy*vy + q.C*(cx*vy+cy*vx) + q.D*vx + q.E*vy
+	a = float64(q.A*ux*ux) + float64(q.B*uy*uy) + float64(2*q.C*ux*uy)
+	b = float64(q.A*vx*vx) + float64(q.B*vy*vy) + float64(2*q.C*vx*vy)
+	c = float64(q.A*ux*vx) + float64(q.B*uy*vy) + float64(q.C*(float64(ux*vy)+float64(uy*vx)))
+	d = float64(q.A*cx*ux) + float64(q.B*cy*uy) + float64(q.C*(float64(cx*uy)+float64(cy*ux))) + float64(q.D*ux) + float64(q.E*uy)
+	e = float64(q.A*cx*vx) + float64(q.B*cy*vy) + float64(q.C*(float64(cx*vy)+float64(cy*vx))) + float64(q.D*vx) + float64(q.E*vy)
 	f = q.Value(cx, cy)
 	return a, b, c, d, e, f
 }
@@ -56,12 +56,12 @@ func conicSubstitution(p EllipticalParams2d, q Conic2dImplicit) (a, b, c, d, e, 
 // coefficient, so t = π is a root exactly when the quartic drops to cubic.
 func ellipticConicRoots(p EllipticalParams2d, q Conic2dImplicit) ([]float64, bool) {
 	sa, sb, sc, sd, se, sf := conicSubstitution(p, q)
-	aa, bb := sa*p.A*p.A, sb*p.B*p.B
-	cc := aa - bb            // cos² (sin² folded away)
-	cs := 2 * sc * p.A * p.B // 2·cos·sin
-	co := 2 * sd * p.A       // cos
-	si := 2 * se * p.B       // sin
-	k := sf + bb             // constant
+	aa, bb := float64(sa*p.A*p.A), float64(sb*p.B*p.B)
+	cc := aa - bb                     // cos² (sin² folded away)
+	cs := float64(2 * sc * p.A * p.B) // 2·cos·sin
+	co := float64(2 * sd * p.A)       // cos
+	si := float64(2 * se * p.B)       // sin
+	k := sf + bb                      // constant
 	// The folded coefficients are judged against the scale of the terms they were folded FROM, not
 	// against each other. For a conic that satisfies the form identically they all CANCEL, so the
 	// residue is float noise — and comparing noise with noise makes the test vacuous in exactly the
@@ -71,7 +71,7 @@ func ellipticConicRoots(p EllipticalParams2d, q Conic2dImplicit) ([]float64, boo
 	if allNearZero(scale, cc, cs, co, si, k) {
 		return nil, true // the parametric conic satisfies the implicit form everywhere: the same curve
 	}
-	return trigQuadraticRoots(cc, cs/2, co, si, k), false
+	return trigQuadraticRoots(cc, float64(cs/2), co, si, k), false
 }
 
 // trigQuadraticRoots solves a·cos²t + 2b·cos t·sin t + c·cos t + d·sin t + e = 0 over [0, 2π).
@@ -82,13 +82,13 @@ func ellipticConicRoots(p EllipticalParams2d, q Conic2dImplicit) ([]float64, boo
 // t = π, which is the root the substitution cannot reach, so that root is added exactly when the
 // leading coefficient vanishes rather than inferred from a near-infinite u.
 func trigQuadraticRoots(a, b, c, d, e float64) []float64 {
-	k4, k3, k2, k1, k0 := a-c+e, 2*d-4*b, 2*e-2*a, 4*b+2*d, a+c+e
+	k4, k3, k2, k1, k0 := a-c+e, float64(2*d)-float64(4*b), float64(2*e)-float64(2*a), float64(4*b)+float64(2*d), a+c+e
 	var ts []float64
 	if stdmath.Abs(k4) <= trigLeadingZero*polyScale(k4, k3, k2, k1, k0) {
 		ts = append(ts, stdmath.Pi) // u = ∞: the half-turn the substitution omits
 	}
 	for _, u := range realRootsUpToQuartic(k0, k1, k2, k3, k4) {
-		ts = append(ts, wrapAngle(2*stdmath.Atan(u)))
+		ts = append(ts, wrapAngle(float64(2*stdmath.Atan(u))))
 	}
 	return sortedDedupedAngles(ts)
 }
@@ -100,14 +100,14 @@ func trigQuadraticRoots(a, b, c, d, e float64) []float64 {
 // parameters, since w = e^t is positive by construction.
 func hyperbolicConicRoots(p EllipticalParams2d, q Conic2dImplicit) ([]float64, bool) {
 	sa, sb, sc, sd, se, sf := conicSubstitution(p, q)
-	ah, bh := sa*p.A*p.A, sb*p.B*p.B
-	ch, dh, eh := sc*p.A*p.B, sd*p.A, se*p.B
+	ah, bh := float64(sa*p.A*p.A), float64(sb*p.B*p.B)
+	ch, dh, eh := float64(sc*p.A*p.B), float64(sd*p.A), float64(se*p.B)
 	// cosh = (w+1/w)/2, sinh = (w−1/w)/2; times 4w²:
-	k4 := ah + bh + 2*ch
-	k3 := 4 * (dh + eh)
-	k2 := 2*ah - 2*bh + 4*sf
-	k1 := 4 * (dh - eh)
-	k0 := ah + bh - 2*ch
+	k4 := ah + bh + float64(2*ch)
+	k3 := float64(4 * (dh + eh))
+	k2 := float64(2*ah) - float64(2*bh) + float64(4*sf)
+	k1 := float64(4 * (dh - eh))
+	k0 := ah + bh - float64(2*ch)
 	if allNearZero(polyScale(ah, bh, ch, dh, eh, sf), k4, k3, k2, k1, k0) {
 		return nil, true // the branch lies on the implicit conic everywhere
 	}
@@ -136,14 +136,22 @@ func allNearZero(scale float64, vs ...float64) bool {
 // polyScale is the largest coefficient magnitude, the scale a polynomial's own coefficients are
 // judged against. It never returns zero, so a comparison against it is always meaningful.
 func polyScale(vs ...float64) float64 {
-	scale := 0.0
+	if scale := largestMagnitude(vs...); scale > 0 {
+		return scale
+	}
+	return 1
+}
+
+// largestMagnitude is the largest absolute value among vs, and it returns a true ZERO when every one
+// of them is zero. That is the whole difference from [polyScale], whose floor of 1 exists so that
+// DIVIDING by a scale is always defined — and it matters, because a caller asking whether a set of
+// coefficients has VANISHED is asking exactly the question the floor hides.
+func largestMagnitude(vs ...float64) float64 {
+	most := 0.0
 	for _, v := range vs {
-		scale = stdmath.Max(scale, stdmath.Abs(v))
+		most = stdmath.Max(most, stdmath.Abs(v))
 	}
-	if scale == 0 {
-		return 1
-	}
-	return scale
+	return most
 }
 
 // trigLeadingZero is how small a polynomial coefficient must be, RELATIVE to the largest in the same

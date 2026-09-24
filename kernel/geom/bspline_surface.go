@@ -56,7 +56,7 @@ func (s BSplineSurface) PointAt(u, v float64) math.Point3 {
 	for k := 0; k <= s.UDegree; k++ {
 		for l := 0; l <= s.VDegree; l++ {
 			ui, vj := us-s.UDegree+k, vs-s.VDegree+l
-			h.add(s.Ctrl[ui][vj], s.Weights[ui][vj]*nu[k]*nv[l])
+			h.add(s.Ctrl[ui][vj], float64(s.Weights[ui][vj]*nu[k]*nv[l]))
 		}
 	}
 	return h.point()
@@ -72,9 +72,9 @@ func (s BSplineSurface) DerivativesAt(u, v float64) (du, dv math.Vector3) {
 		for l := 0; l <= s.VDegree; l++ {
 			ui, vj := us-s.UDegree+k, vs-s.VDegree+l
 			p, w := s.Ctrl[ui][vj], s.Weights[ui][vj]
-			val.add(p, w*nu[k]*nv[l])
-			accU.add(p, w*dnu[k]*nv[l])
-			accV.add(p, w*nu[k]*dnv[l])
+			val.add(p, float64(w*nu[k]*nv[l]))
+			accU.add(p, float64(w*dnu[k]*nv[l]))
+			accV.add(p, float64(w*nu[k]*dnv[l]))
 		}
 	}
 	return val.deriv(accU), val.deriv(accV)

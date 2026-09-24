@@ -94,7 +94,14 @@ func partitionTears(torn []meshTear) (cracks, doubled []meshTear) {
 }
 
 // firstTornMesh is the lowest index a tear touches that has a mesh to record on. ok=false when nothing
-// is torn, or when every mesh a tear touches is one the mesher declined to build.
+// is torn.
+//
+// The second half of that sentence used to read "or when every mesh a tear touches is one the mesher
+// declined to build", and that case cannot happen (#3527): a tear is only ever recorded by
+// collectWeldedEdges, which returns immediately for a nil mesh, so every index in a tear's `on` names a
+// mesh that exists. The nil check inside stays as the post-condition on that reasoning — the index
+// arrives from a tear rather than from a loop over fm — but it is not a second exit a reader has to
+// account for.
 func firstTornMesh(fm []*Mesh, torn []meshTear) (int, bool) {
 	for _, i := range tornMeshIndices(torn) {
 		if i < len(fm) && fm[i] != nil {

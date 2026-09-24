@@ -19,7 +19,7 @@ import (
 // A torus is quartic and has no implicit quadric of its own, so the ruled bucket cannot reach it. The
 // substitution runs the other way instead: the torus's own chart is affine in its azimuth direction, so
 // a quadric whose quadratic form is invariant about the torus axis reduces to ONE harmonic there and the
-// two azimuths are an arccos (geom.TorusQuadricArc). That family is a sphere anywhere, and a cylinder or
+// two azimuths are an arccos (geom.TorusSectionArc). That family is a sphere anywhere, and a cylinder or
 // cone whose axis is parallel to the torus's — a ball meeting a ring, and an axial hole or boss through
 // one. A skew rod is not in it and is still refused by name.
 
@@ -98,17 +98,8 @@ func TestCoaxialShaftThroughARingIsExact(t *testing.T) {
 	if r := ops.Validate(res); !r.Valid || !r.Closed || !r.Manifold || !res.IsSolid() {
 		t.Fatalf("not a valid closed manifold solid: %+v", r)
 	}
-	tori, cyls := 0, 0
-	for _, f := range res.Faces() {
-		switch f.Geometry().(type) {
-		case geom.Torus:
-			tori++
-		case geom.Cylinder:
-			cyls++
-		}
-	}
-	if tori != 1 || cyls != 1 || len(res.Faces()) != 2 {
-		t.Errorf("got %d torus + %d cylinder of %d faces, want the ring's surface and the bore wall", tori, cyls, len(res.Faces()))
+	if got, want := faceKindCensusOf(res), (faceKindCensus{tori: 1, cylinders: 1, faces: 2, loops: 4}); got != want {
+		t.Errorf("census %+v, want %+v — the ring's surface and the bore wall, each bounded by both seams", got, want)
 	}
 	// The shaft takes the tube's material inside radius 4, which is the ring less two spherical-zone-like
 	// caps; asserting it against the ring's own volume keeps the row honest without a second oracle.
@@ -119,25 +110,35 @@ func TestCoaxialShaftThroughARingIsExact(t *testing.T) {
 	}
 }
 
-// TestATorusPairIsRefusedByName: the reduction substitutes the TORUS's chart into the other surface's
-// quadratic form, so what it needs of that other surface is a quadric — not a type. A second TORUS has
-// none (a torus is quartic), so neither role assignment reduces and the pair is refused by name. The
-// refusal is where the kernel states its boundary and it must stay loud.
+// TestATorusPairTheSectionRefusesIsNotBuilt replaces TestATorusPairIsRefusedByName, whose subject
+// — that a torus PAIR has no closed form — stopped being true (ADR-0066, #3514: what the reduction needs
+// of the other side is an implicit form whose restriction to a CIRCLE is degree two, and a torus's
+// quartic is one). Its positive form is boolean_torus_pair_test.go, where the linked rings it drove are
+// built and certified against an independent oracle.
 //
-// The row was a skew rod through this ring until the second harmonic's lanes solved that section
-// exactly (ADR-0061 stage 5, third slice); its positive form is boolean_torus_skew_test.go.
-func TestATorusPairIsRefusedByName(t *testing.T) {
+// The refusal it guarded still has to stay loud, so this is the row that keeps it: two CO-CENTRED
+// PERPENDICULAR rings, whose branch pair is tangent at two stations, so the fold reads a lane extremum
+// that is not the merged root and the section's own points come back 1.4e-5 off the surface. The
+// post-condition catches that and refuses before anything is built, and the boolean reports it as the
+// degradation it is.
+func TestATorusPairTheSectionRefusesIsNotBuilt(t *testing.T) {
+	// Skipped in short mode for the same reason as TestABooleanWithNoExactCurvedPathRefusesByName, which
+	// drives this same pair: ~9.6 s of boolean, and the two of them were the tier-2 slow-test guard's only
+	// unguarded breaches (#3527).
+	if testing.Short() {
+		t.Skip("corpus tier (~9.6s): `make test-corpus`")
+	}
 	t.Parallel()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	linked, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
+	crossed, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5, "crossed")
 	if err != nil {
-		t.Fatalf("linked ring: %v", err)
+		t.Fatalf("crossed ring: %v", err)
 	}
-	if _, err := ops.Boolean(ops.Cut, ring, linked); err == nil {
-		t.Fatal("a torus pair must be refused by name, not built")
+	if _, err := ops.Boolean(ops.Cut, ring, crossed); err == nil {
+		t.Fatal("a torus pair the section post-condition refuses must not be built")
 	}
 }
 
@@ -174,19 +175,11 @@ func TestAxialDrillThroughARingIsExact(t *testing.T) {
 	if n, shells := len(bored.Faces()), len(bored.Shells()); n != 2 || shells != 1 {
 		t.Errorf("the bored ring has %d faces in %d shells, want the ring's surface and the bore wall in one", n, shells)
 	}
-	tori, cyls := 0, 0
-	for _, f := range bored.Faces() {
-		switch f.Geometry().(type) {
-		case geom.Torus:
-			tori++
-		case geom.Cylinder:
-			cyls++
-		}
+	if got, want := faceKindCensusOf(bored), (faceKindCensus{tori: 1, cylinders: 1, faces: 2, loops: 4}); got != want {
+		t.Errorf("census %+v, want %+v — one torus and one cylinder face", got, want)
 	}
-	if tori != 1 || cyls != 1 {
-		t.Errorf("got %d torus + %d cylinder faces, want one of each", tori, cyls)
-	}
-	// The ring's surface carries the drill's two seams as holes; the bore wall is bounded by both.
+	// The ring's surface carries the drill's two seams as holes; the bore wall is bounded by both. The
+	// census totals the loops; this says they are 2 and 2 rather than 1 and 3.
 	for _, f := range bored.Faces() {
 		if n := len(f.Loops()); n != 2 {
 			t.Errorf("face %T has %d loops, want 2 (the drill leaves two seams on each)", f.Geometry(), n)

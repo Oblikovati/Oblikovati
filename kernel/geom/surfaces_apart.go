@@ -69,8 +69,7 @@ func parallelCylindersApart(a, b Cylinder, gap float64) bool {
 
 // axisLineDistance is the perpendicular distance from p to the line through origin along dir.
 func axisLineDistance(origin math.Point3, dir math.UnitVector3, p math.Point3) float64 {
-	v := origin.VectorTo(p)
-	return float64(v.Sub(dir.AsVector().Scale(v.Dot(dir.AsVector()))).Length())
+	return DistanceToAxis(origin, dir, p)
 }
 
 // parallelConesApart: two cones sharing an axis LINE and a half-angle are translates of one
@@ -94,9 +93,13 @@ func parallelConesApart(a, b Cone, gap float64) bool {
 	return delta*stdmath.Sin(a.HalfAngle) > gap
 }
 
-// coneAngleWeld is how close two half-angles must be to count as the same cone family. It is an
-// ANGLE on unit directions, so it carries no model scale.
-const coneAngleWeld = 1e-9 // tol:angular — half-angle equality for the parallel-cone test
+// coneAngleWeld is how close two half-angles must be to count as the same cone family, and — through
+// parallelDirs, which [ParallelDirections] also routes to — how nearly parallel two boundary
+// DIRECTIONS must be to count as one (#3524: it groups a body's coplanar faces, and its coaxial
+// ones, for the size classification's width). It is an ANGLE on unit directions, so it carries no
+// model scale, and both questions want the same answer: two things that differ by less than this
+// are the same thing.
+const coneAngleWeld = 1e-9 // tol:angular — half-angle equality, and direction identity
 
 // parallelDirs reports whether two unit-length directions are parallel, either sense.
 func parallelDirs(a, b math.Vector3) bool {
@@ -222,9 +225,9 @@ func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 		}
 		return stdmath.Inf(1)
 	}
-	a := c.A * float64(c.Major.AsVector().Dot(axis))
-	b := c.B * float64(c.Minor.AsVector().Dot(axis))
-	return stdmath.Sqrt(a*a + b*b)
+	a := float64(c.A * float64(c.Major.AsVector().Dot(axis)))
+	b := float64(c.B * float64(c.Minor.AsVector().Dot(axis)))
+	return stdmath.Sqrt(float64(a*a) + float64(b*b))
 }
 
 // ConicParamAt inverts a conic's own parameterisation: the parameter t with c.PointAt(t) == p, for
@@ -244,7 +247,7 @@ func (c ConicForm) AxialAmplitude(axis math.Vector3) float64 {
 func ConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 	switch x := c.(type) {
 	case Circle:
-		return wrapUnit(circleAngleAt(x.Center, x.RefDir, x.Normal, p) / (2 * stdmath.Pi)), true
+		return wrapUnit(float64(circleAngleAt(x.Center, x.RefDir, x.Normal, p) / (2 * stdmath.Pi))), true
 	case Arc3d:
 		return arcParamAt(circleAngleAt(x.Center, x.RefDir, x.Normal, p), x.StartAngle, x.SweepAngle), true
 	case EllipseFull:
@@ -267,7 +270,7 @@ func unboundedConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 			return 0, false
 		}
 		theta := hyperbolaTheta(x.Center, x.ConjugateAxis, x.B, p)
-		return (theta - x.Theta0) / (x.Theta1 - x.Theta0), true
+		return float64((theta - x.Theta0) / (x.Theta1 - x.Theta0)), true
 	case Parabola:
 		// The parabola's own parameter IS the cross coordinate, so the inversion is a projection —
 		// exact, single-valued, and needing no root at all.
@@ -276,7 +279,7 @@ func unboundedConicParamAt(c Curve3, p math.Point3) (float64, bool) {
 		if x.T1 == x.T0 {
 			return 0, false
 		}
-		return (parabolaCross(x.Vertex, x.CrossDir, p) - x.T0) / (x.T1 - x.T0), true
+		return float64((parabolaCross(x.Vertex, x.CrossDir, p) - x.T0) / (x.T1 - x.T0)), true
 	}
 	return 0, false
 }
@@ -295,19 +298,19 @@ func circleAngleAt(center math.Point3, ref, normal math.UnitVector3, p math.Poin
 // ellipseAngleAt is the eccentric angle of p on an ellipse: each axis component scaled by its radius.
 func ellipseAngleAt(center math.Point3, major, normal math.UnitVector3, a, b float64, p math.Point3) float64 {
 	d := center.VectorTo(p)
-	return stdmath.Atan2(float64(d.Dot(normal.Cross(major)))/b, float64(d.Dot(major.AsVector()))/a)
+	return stdmath.Atan2(float64(float64(d.Dot(normal.Cross(major)))/b), float64(float64(d.Dot(major.AsVector()))/a))
 }
 
 // ellipseParamAt inverts a full ellipse onto its [0,1) parameter.
 func ellipseParamAt(e EllipseFull, p math.Point3) float64 {
-	return wrapUnit(ellipseAngleAt(e.Center, e.MajorAxis, e.Normal, e.MajorRadius, e.MinorRadius, p) / (2 * stdmath.Pi))
+	return wrapUnit(float64(ellipseAngleAt(e.Center, e.MajorAxis, e.Normal, e.MajorRadius, e.MinorRadius, p) / (2 * stdmath.Pi)))
 }
 
 // hyperbolaTheta inverts a hyperbola branch onto its hyperbolic angle through ASINH, which is
 // single-valued over the whole branch — acosh would lose the sign of theta.
 func hyperbolaTheta(center math.Point3, conjugate math.UnitVector3, b float64, p math.Point3) float64 {
 	d := center.VectorTo(p)
-	return stdmath.Asinh(float64(d.Dot(conjugate.AsVector())) / b)
+	return stdmath.Asinh(float64(float64(d.Dot(conjugate.AsVector())) / b))
 }
 
 // wrapUnit folds a real onto [0,1) — the domain a closed conic reports.
@@ -342,7 +345,7 @@ func ConicSubArc(c Curve3, t0, t1 float64) (Curve3, bool) {
 		return HyperbolicArc{
 			Center: x.Center, TransverseAxis: x.TransverseAxis, ConjugateAxis: x.ConjugateAxis,
 			A: x.A, B: x.B,
-			Theta0: x.Theta0 + t0*span, Theta1: x.Theta0 + t1*span,
+			Theta0: x.Theta0 + float64(t0*span), Theta1: x.Theta0 + float64(t1*span),
 		}, true
 	case Parabola:
 		return x.Arc(t0, t1), true
@@ -350,7 +353,7 @@ func ConicSubArc(c Curve3, t0, t1 float64) (Curve3, bool) {
 		span := x.T1 - x.T0
 		return ParabolicArc{
 			Vertex: x.Vertex, AxisDir: x.AxisDir, CrossDir: x.CrossDir, Focal: x.Focal,
-			T0: x.T0 + t0*span, T1: x.T0 + t1*span,
+			T0: x.T0 + float64(t0*span), T1: x.T0 + float64(t1*span),
 		}, true
 	}
 	return nil, false

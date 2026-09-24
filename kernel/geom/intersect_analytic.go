@@ -28,9 +28,10 @@ const (
 // gives a conic in closed form (plane∩plane → a line, plane∩cylinder → a circle/ellipse/line pair,
 // plane∩sphere → a circle, plane∩cone → a conic), and every other pair goes to the parametric×implicit
 // substitution — a straight-ruled surface into the other's [Quadric], whose section is a
-// [RuledQuadricArc] (cylinder∩cylinder, cone∩cylinder, cone∩cone, ruled∩sphere). handled is false for
-// the pairs neither bucket solves — anything with a torus, a B-spline or an offset surface, and any
-// ruled/quadric pair the conditioning gate refuses — and the caller falls back to the numeric tracer
+// [RuledQuadricArc] (cylinder∩cylinder, cone∩cylinder, cone∩cone, ruled∩sphere). A TORUS on either side
+// takes a third bucket, which runs the same substitution the other way round (ADR-0061 stage 5,
+// ADR-0066). handled is false for the pairs none of the three solves — a B-spline or an offset surface,
+// and any pair whose conditioning gate refuses — and the caller falls back to the numeric tracer
 // [IntersectSurfaceSurface]. An empty result with handled==true means the surfaces are
 // known not to cross (parallel planes, a sphere clear of the plane, a tangent touch).
 //
@@ -69,13 +70,12 @@ func IntersectSurfacesAnalyticDeclining(a, b Surface, res Resolution) ([]Curve3,
 		return withoutReason(curves, handled) // two spheres: the circle of their radical plane, exactly
 	}
 	// A torus has no quadric form of its own, but the substitution runs the other way: its own chart is
-	// affine in the azimuth direction, so ANY quadric reduces to two harmonics there (ADR-0061 stage 5,
-	// torus_quadric_arc.go and torus_quadric_harmonic2.go). A torus against a torus still marches.
-	if curves, why, ok := torusAgainstQuadric(a, b, res); ok || why.IsConditioning() {
-		return curves, why, ok
-	}
-	if curves, why, ok := torusAgainstQuadric(b, a, res); ok || why.IsConditioning() {
-		return curves, why, ok
+	// affine in the azimuth direction, so ANY implicit form whose restriction to a circle is a degree-two
+	// trigonometric polynomial reduces there — every quadric, and a second TORUS (ADR-0066,
+	// torus_torus_harmonic.go). One classification picks the chart and the form; there is no second
+	// role order to fall through to.
+	if chart, co, ok := torusSectionRoles(a, b); ok {
+		return TorusSection(chart, co, res)
 	}
 	// No plane: the remaining bucket is PARAMETRIC × IMPLICIT — a straight-ruled surface substituted
 	// into the other's quadric, whose section is the root of one quadratic in the ruling parameter
@@ -119,7 +119,7 @@ func planeTorusCurve(pl Plane, t Torus, res Resolution) ([]Curve3, bool) {
 		// Oblique / axis-parallel: a spiric quartic when it cuts the tube. But a plane that CLEARS the whole
 		// torus (its distance exceeds the torus's reach along n) carries no section — report that (handled,
 		// empty) so a box's far clearing faces compose; only a genuine spiric cut defers to CSG.
-		reach := (t.MajorRadius+t.MinorRadius)*float64(n.Sub(axis.Scale(math.Scalar(cosA))).Length()) + t.MinorRadius*stdmath.Abs(cosA)
+		reach := float64((t.MajorRadius+t.MinorRadius)*float64(n.Sub(axis.Scale(math.Scalar(cosA))).Length())) + float64(t.MinorRadius*stdmath.Abs(cosA))
 		if stdmath.Abs(float64(t.Center.VectorTo(pl.Origin).Dot(n))) >= reach-res.Weld() {
 			return nil, true // the plane clears the torus
 		}
@@ -132,7 +132,7 @@ func planeTorusCurve(pl Plane, t Torus, res Resolution) ([]Curve3, bool) {
 	if stdmath.Abs(d) >= r-res.Weld() {
 		return nil, true // the plane clears or grazes the tube: no crossing section
 	}
-	half := stdmath.Sqrt(r*r - d*d)
+	half := stdmath.Sqrt(float64(r*r) - float64(d*d))
 	level := t.Center.TranslateBy(axis.Scale(math.Scalar(d)))
 	outer := Circle{Center: level, Normal: t.AxisDir, RefDir: t.Ref, Radius: t.MajorRadius + half}
 	inner := Circle{Center: level, Normal: t.AxisDir, RefDir: t.Ref, Radius: t.MajorRadius - half}
@@ -165,8 +165,8 @@ func planePlaneCurve(a, b Plane) ([]Curve3, bool) {
 	da := na.Dot(a.Origin.AsVector())
 	db := nb.Dot(b.Origin.AsVector())
 	num := nb.Cross(dir).Scale(da).Add(dir.Cross(na).Scale(db))
-	k := 1 / dir.LengthSquared()
-	p := math.P3(num.X*math.Scalar(k), num.Y*math.Scalar(k), num.Z*math.Scalar(k))
+	k := float64(1 / dir.LengthSquared())
+	p := math.P3(float64(num.X*math.Scalar(k)), float64(num.Y*math.Scalar(k)), float64(num.Z*math.Scalar(k)))
 	ln, err := NewLine(p, dir)
 	if err != nil {
 		return nil, true
@@ -187,7 +187,7 @@ func planeCylinderCurve(pl Plane, cyl Cylinder, res Resolution) ([]Curve3, bool)
 	if abs < axisAlignCosTol { // axis ∥ plane → 0/1/2 lines along the axis
 		return cylinderAxisParallelLines(pl, cyl, n, axis, res)
 	}
-	t := n.Dot(cyl.Origin.VectorTo(pl.Origin)) / axis.Dot(n)
+	t := float64(n.Dot(cyl.Origin.VectorTo(pl.Origin)) / axis.Dot(n))
 	center := cyl.Origin.TranslateBy(axis.Scale(t))
 	if abs > 1-axisAlignCosTol { // perpendicular → circle
 		c, err := NewCircle(center, axis, cyl.Radius)
@@ -199,7 +199,7 @@ func planeCylinderCurve(pl Plane, cyl Cylinder, res Resolution) ([]Curve3, bool)
 	// Oblique → ellipse: minor radius = r, major = r/|cosA|; major axis is the cylinder
 	// axis projected into the plane.
 	majorDir := axis.Add(n.Scale(math.Scalar(-cosA)))
-	e, err := NewEllipseFull(center, n, majorDir, cyl.Radius/abs, cyl.Radius)
+	e, err := NewEllipseFull(center, n, majorDir, float64(cyl.Radius/abs), cyl.Radius)
 	if err != nil {
 		return nil, true
 	}
@@ -215,8 +215,8 @@ func cylinderAxisParallelLines(pl Plane, cyl Cylinder, n, axis math.Vector3, res
 	if stdmath.Abs(d) >= cyl.Radius-res.Weld() {
 		return nil, true // plane clears or merely touches the cylinder: no line pair
 	}
-	half := stdmath.Sqrt(cyl.Radius*cyl.Radius - d*d) // half-chord of the cross-section
-	tangent := unitVec3(n.Cross(axis))                // in-plane, perpendicular to the axis
+	half := stdmath.Sqrt(float64(cyl.Radius*cyl.Radius) - float64(d*d)) // half-chord of the cross-section
+	tangent := unitVec3(n.Cross(axis))                                  // in-plane, perpendicular to the axis
 	foot := cyl.Origin.TranslateBy(n.Scale(math.Scalar(-d)))
 	var out []Curve3
 	for _, s := range []float64{half, -half} {
@@ -245,8 +245,8 @@ func planeConeCurve(pl Plane, cone Cone, res Resolution) ([]Curve3, bool) {
 	if along < 1-axisAlignCosTol { // oblique → ellipse / hyperbola (parabolic boundary deferred inside)
 		return coneObliqueConic(pl, cone, n, axis)
 	}
-	t := n.Dot(cone.Apex.VectorTo(pl.Origin)) / axis.Dot(n)
-	r := stdmath.Abs(float64(t)) * stdmath.Tan(cone.HalfAngle)
+	t := float64(n.Dot(cone.Apex.VectorTo(pl.Origin)) / axis.Dot(n))
+	r := float64(stdmath.Abs(float64(t)) * stdmath.Tan(cone.HalfAngle))
 	if r < res.Weld() { // plane through the apex
 		return nil, true
 	}
@@ -272,7 +272,7 @@ func coneAxisParallelHyperbola(pl Plane, cone Cone, n, axis math.Vector3, res Re
 	conjugate := axis.Cross(n)
 	tanA := stdmath.Tan(cone.HalfAngle)
 	center := cone.Apex.TranslateBy(n.Scale(math.Scalar(d)))
-	h, err := NewHyperbola(center, axis, conjugate, stdmath.Abs(d)/tanA, stdmath.Abs(d))
+	h, err := NewHyperbola(center, axis, conjugate, float64(stdmath.Abs(d)/tanA), stdmath.Abs(d))
 	if err != nil {
 		return nil, true
 	}
@@ -287,7 +287,7 @@ func planeSphereCurve(pl Plane, sp Sphere, res Resolution) ([]Curve3, bool) {
 	if stdmath.Abs(d) >= sp.Radius-res.Weld() {
 		return nil, true // clear of, or tangent to, the plane: no circle
 	}
-	r := stdmath.Sqrt(sp.Radius*sp.Radius - d*d)
+	r := stdmath.Sqrt(float64(sp.Radius*sp.Radius) - float64(d*d))
 	center := sp.Center.TranslateBy(n.Scale(math.Scalar(-d))) // foot of the center on the plane
 	c, err := NewCircle(center, n, r)
 	if err != nil {
@@ -302,17 +302,4 @@ func unitVec3(v math.Vector3) math.Vector3 {
 		return v.Scale(math.Scalar(1 / l))
 	}
 	return v
-}
-
-// torusAgainstQuadric routes a (torus, quadric) pair to the torus closed form, in that role order.
-// ok=false when the first surface is not a torus, the second has no quadric form, or the reduction
-// declines — and then the reason says which, so a conditioning demotion is not mistaken for a role
-// that simply does not apply.
-func torusAgainstQuadric(a, b Surface, res Resolution) ([]Curve3, SectionDecline, bool) {
-	t, isTorus := a.(Torus)
-	implicit, isQuadric := b.(ImplicitQuadric)
-	if !isTorus || !isQuadric {
-		return nil, DeclineNoClosedForm, false
-	}
-	return TorusQuadricSection(t, implicit.QuadricForm(), res)
 }

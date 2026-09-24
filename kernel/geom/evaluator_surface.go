@@ -43,7 +43,7 @@ func SurfaceSecondPartials(s Surface, u, v float64) (puu, puv, pvv math.Vector3)
 // ellipticRadial returns a·cos u·ref + b·sin u·bin, the elliptical radial term.
 func ellipticRadial(ref, bin math.Vector3, a, b, u float64) math.Vector3 {
 	cos, sin := cosSin(u)
-	return ref.Scale(a * cos).Add(bin.Scale(b * sin))
+	return ref.Scale(float64(a * cos)).Add(bin.Scale(float64(b * sin)))
 }
 
 // coneSecondPartials differentiates P = Apex + v·axis + v·tanα·radial(u).
@@ -51,15 +51,15 @@ func coneSecondPartials(g Cone, u, v float64) (puu, puv, pvv math.Vector3) {
 	tan := stdmath.Tan(g.HalfAngle)
 	cos, sin := cosSin(u)
 	radialTan := g.Ref.AsVector().Scale(-sin).Add(g.binormal.Scale(cos))
-	return g.radial(u).Scale(-v * tan), radialTan.Scale(tan), math.Vector3{}
+	return g.radial(u).Scale(float64(-v * tan)), radialTan.Scale(tan), math.Vector3{}
 }
 
 // sphereSecondPartials differentiates P = C + R·d(u, v).
 func sphereSecondPartials(g Sphere, u, v float64) (puu, puv, pvv math.Vector3) {
 	cu, su := cosSin(u)
 	cv, sv := cosSin(v)
-	puu = math.V3(-g.Radius*cv*cu, -g.Radius*cv*su, 0)
-	puv = math.V3(g.Radius*sv*su, -g.Radius*sv*cu, 0)
+	puu = math.V3(float64(-g.Radius*cv*cu), float64(-g.Radius*cv*su), 0)
+	puv = math.V3(float64(g.Radius*sv*su), float64(-g.Radius*sv*cu), 0)
 	pvv = g.direction(u, v).Scale(-g.Radius)
 	return puu, puv, pvv
 }
@@ -69,9 +69,9 @@ func torusSecondPartials(g Torus, u, v float64) (puu, puv, pvv math.Vector3) {
 	cu, su := cosSin(u)
 	cv, sv := cosSin(v)
 	radialTan := g.Ref.AsVector().Scale(-su).Add(g.binormal.Scale(cu))
-	puu = g.radial(u).Scale(-(g.MajorRadius + g.MinorRadius*cv))
-	puv = radialTan.Scale(-g.MinorRadius * sv)
-	pvv = g.radial(u).Scale(-g.MinorRadius * cv).Add(g.AxisDir.AsVector().Scale(-g.MinorRadius * sv))
+	puu = g.radial(u).Scale(-(g.MajorRadius + float64(g.MinorRadius*cv)))
+	puv = radialTan.Scale(float64(-g.MinorRadius * sv))
+	pvv = g.radial(u).Scale(float64(-g.MinorRadius * cv)).Add(g.AxisDir.AsVector().Scale(float64(-g.MinorRadius * sv)))
 	return puu, puv, pvv
 }
 
@@ -81,7 +81,7 @@ func ellipticalConeSecondPartials(g EllipticalCone, u, v float64) (puu, puv, pvv
 	tMaj, tMin := stdmath.Tan(g.MajorAngle), stdmath.Tan(g.MinorAngle)
 	cos, sin := cosSin(u)
 	puu = ellipticRadial(g.Ref.AsVector(), g.binormal, tMaj, tMin, u).Scale(-v)
-	puv = g.Ref.AsVector().Scale(-tMaj * sin).Add(g.binormal.Scale(tMin * cos))
+	puv = g.Ref.AsVector().Scale(float64(-tMaj * sin)).Add(g.binormal.Scale(float64(tMin * cos)))
 	return puu, puv, math.Vector3{}
 }
 
@@ -92,13 +92,13 @@ func ellipticalConeSecondPartials(g EllipticalCone, u, v float64) (puu, puv, pvv
 // balance holds whether the direction runs over [0,1] or [0,2π] and at any model
 // scale, rather than a fixed 1e-5 that was both non-optimal and scale-blind (#1402).
 func numericSecondPartials(s Surface, u, v float64) (puu, puv, pvv math.Vector3) {
-	hu := stepD1 * spanOr1(s.UDomain())
-	hv := stepD1 * spanOr1(s.VDomain())
+	hu := float64(stepD1 * spanOr1(s.UDomain()))
+	hv := float64(stepD1 * spanOr1(s.VDomain()))
 	pu := func(uu, vv float64) math.Vector3 { du, _ := s.DerivativesAt(uu, vv); return du }
 	pv := func(uu, vv float64) math.Vector3 { _, dv := s.DerivativesAt(uu, vv); return dv }
-	puu = pu(u+hu, v).Sub(pu(u-hu, v)).Scale(1 / (2 * hu))
-	puv = pu(u, v+hv).Sub(pu(u, v-hv)).Scale(1 / (2 * hv))
-	pvv = pv(u, v+hv).Sub(pv(u, v-hv)).Scale(1 / (2 * hv))
+	puu = pu(u+hu, v).Sub(pu(u-hu, v)).Scale(float64(1 / (2 * hu)))
+	puv = pu(u, v+hv).Sub(pu(u, v-hv)).Scale(float64(1 / (2 * hv)))
+	pvv = pv(u, v+hv).Sub(pv(u, v-hv)).Scale(float64(1 / (2 * hv)))
 	return puu, puv, pvv
 }
 
@@ -153,10 +153,10 @@ func SurfaceCurvatures(s Surface, u, v float64) (maxDir math.Vector3, kMax, kMin
 	if degenerateFirstForm(e, f, g) {
 		return math.Vector3{}, 0, 0 // parallel/collapsed tangents (scale-invariant test, #1402)
 	}
-	den := e*g - f*f
-	mean := (e*nn - 2*f*m + g*l) / (2 * den)
-	gauss := (l*nn - m*m) / den
-	disc := stdmath.Sqrt(stdmath.Max(0, mean*mean-gauss))
+	den := float64(e*g) - float64(f*f)
+	mean := float64((float64(e*nn) - float64(2*f*m) + float64(g*l)) / (2 * den))
+	gauss := float64((float64(l*nn) - float64(m*m)) / den)
+	disc := stdmath.Sqrt(stdmath.Max(0, float64(mean*mean)-gauss))
 	kMax, kMin = mean+disc, mean-disc
 	return principalDirection(du, dv, e, f, g, l, m, nn, kMax), kMax, kMin
 }
@@ -165,8 +165,8 @@ func SurfaceCurvatures(s Surface, u, v float64) (maxDir math.Vector3, kMax, kMin
 // (L−kE)·a + (M−kF)·b = 0 for the (a, b) tangent coefficients of the maximum
 // principal direction, falling back to the u tangent at an umbilic point.
 func principalDirection(du, dv math.Vector3, e, f, g, l, m, n, k float64) math.Vector3 {
-	a1, b1 := l-k*e, m-k*f
-	a2, b2 := m-k*f, n-k*g
+	a1, b1 := l-float64(k*e), m-float64(k*f)
+	a2, b2 := m-float64(k*f), n-float64(k*g)
 	a, b := b1, -a1
 	if stdmath.Abs(a1)+stdmath.Abs(b1) < stdmath.Abs(a2)+stdmath.Abs(b2) {
 		a, b = b2, -a2
@@ -183,9 +183,9 @@ func principalDirection(du, dv math.Vector3, e, f, g, l, m, n, k float64) math.V
 func SurfaceArea(s Surface) float64 {
 	switch g := s.(type) {
 	case Sphere:
-		return 2 * twoPi * g.Radius * g.Radius
+		return float64(2 * twoPi * g.Radius * g.Radius)
 	case Torus:
-		return twoPi * twoPi * g.MajorRadius * g.MinorRadius
+		return float64(twoPi * twoPi * g.MajorRadius * g.MinorRadius)
 	case BSplineSurface:
 		return bsplineSurfaceArea(g)
 	default:
@@ -216,7 +216,7 @@ func spanEdges(knots []float64, degree int) []float64 {
 // gaussCellArea integrates the area element |∂P/∂u × ∂P/∂v| over one parameter cell
 // with a tensor-product 5-point Gauss–Legendre rule (the integrand is smooth inside a span).
 func gaussCellArea(s Surface, u0, u1, v0, v1 float64) float64 {
-	hu, hv := (u1-u0)/2, (v1-v0)/2
+	hu, hv := float64((u1-u0)/2), float64((v1-v0)/2)
 	if hu <= 0 || hv <= 0 {
 		return 0
 	}
@@ -224,11 +224,11 @@ func gaussCellArea(s Surface, u0, u1, v0, v1 float64) float64 {
 	sum := 0.0
 	for i := range x {
 		for j := range x {
-			du, dv := s.DerivativesAt(u0+hu*(1+x[i]), v0+hv*(1+x[j]))
-			sum += w[i] * w[j] * float64(du.Cross(dv).Length())
+			du, dv := s.DerivativesAt(u0+float64(hu*(1+x[i])), v0+float64(hv*(1+x[j])))
+			sum += float64(w[i] * w[j] * float64(du.Cross(dv).Length()))
 		}
 	}
-	return sum * hu * hv
+	return float64(sum * hu * hv)
 }
 
 // SurfaceContinuity returns the largest maintained continuity order: the
@@ -323,8 +323,8 @@ func torusRangeBox(g Torus) math.Box {
 	for axis := range 3 {
 		ref, bin := vectorComponent(g.Ref.AsVector(), axis), vectorComponent(g.binormal, axis)
 		axial := vectorComponent(g.AxisDir.AsVector(), axis)
-		reach[axis] = (g.MajorRadius+g.MinorRadius)*stdmath.Hypot(ref, bin) +
-			g.MinorRadius*stdmath.Abs(axial)
+		reach[axis] = float64((g.MajorRadius+g.MinorRadius)*stdmath.Hypot(ref, bin)) +
+			float64(g.MinorRadius*stdmath.Abs(axial))
 	}
 	box = box.ExtendPoint(math.P3(g.Center.X-reach[0], g.Center.Y-reach[1], g.Center.Z-reach[2]))
 	return box.ExtendPoint(math.P3(g.Center.X+reach[0], g.Center.Y+reach[1], g.Center.Z+reach[2]))

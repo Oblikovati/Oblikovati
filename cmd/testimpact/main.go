@@ -7,6 +7,11 @@
 //
 // It prints nothing when no package owns the change (a docs-only edit), so the
 // caller must treat empty output as "no tests to run", not as an error.
+//
+// Packages git IGNORES are left out: `go list ./...` walks experiments/, which .gitignore
+// excludes and which holds by design unfinished code, so a half-written experiment on one
+// developer's disk failed every local run of a gate about code being committed while CI — which
+// never receives those files — passed (#3557).
 package main
 
 import (
@@ -41,6 +46,9 @@ func run(args []string, w io.Writer) error {
 
 // printImpacted resolves the module root, runs the selection against the real git
 // working copy and package graph, and writes the result to w.
+// modulePath is this module's import prefix; an import path minus it is a directory.
+const modulePath = "oblikovati.org"
+
 func printImpacted(w io.Writer, root, base string) error {
 	abs, err := filepath.Abs(root)
 	if err != nil {
@@ -53,7 +61,11 @@ func printImpacted(w io.Writer, root, base string) error {
 	if err != nil {
 		return err
 	}
-	for _, p := range paths {
+	kept, err := testimpact.DropIgnored(abs, modulePath, paths)
+	if err != nil {
+		return err
+	}
+	for _, p := range kept {
 		fmt.Fprintln(w, p)
 	}
 	return nil

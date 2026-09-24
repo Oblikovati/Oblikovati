@@ -72,14 +72,19 @@ func edgeOf(f curvedFace, at edgeAddr) loopEdge { return f.loops[at.loop].edges[
 // its seam twice; when the run that seam ended on dissolves, the two traversals become neighbours in
 // the merged loop, and a curve walked up and straight back down bounds nothing — it is a slit dangling
 // into the merged face's interior, not a boundary. A loop that is nothing but such a slit disappears.
-func dropSeamSlits(loops []curvedLoop) []curvedLoop {
-	out := make([]curvedLoop, 0, len(loops))
+// It also reports HOW MANY edges it removed, which the merge records on a committed pair: the removal
+// is invisible in the result it produces, and a count is the only thing that tells "no slit was there"
+// from "the slit test could not see one" (Oblikovati#3521).
+func dropSeamSlits(loops []curvedLoop) ([]curvedLoop, int) {
+	out, dropped := make([]curvedLoop, 0, len(loops)), 0
 	for _, l := range loops {
-		if edges := withoutSlitPairs(l.edges); len(edges) > 0 {
+		edges := withoutSlitPairs(l.edges)
+		dropped += len(l.edges) - len(edges)
+		if len(edges) > 0 {
 			out = append(out, curvedLoop{edges: edges})
 		}
 	}
-	return out
+	return out, dropped
 }
 
 // withoutSlitPairs deletes cyclically adjacent reverse twins until none is left — removing one can
@@ -111,6 +116,20 @@ func firstSlitPair(edges []loopEdge) (int, bool) {
 // tolerance here (ADR-0042), and nothing is compared by curve VALUE: `a.curve == b.curve` panicked on
 // two value Polylines ("comparing uncomparable type"), and two edges carrying equal curves are still
 // two edges. A synthesized edge (no source) is nobody's twin.
+//
+// The narrowing costs nothing, MEASURED rather than assumed (Oblikovati#3521). Over ./kernel/... and
+// ./model/... this test was evaluated 2119 times and paired 7. Of the 2112 pairs it refused, exactly
+// FOUR walk the same stretch of space back — and all four are the deliberate negative fixture
+// (seamWalkedWall's twoSeams: two DIFFERENT edges carrying identical polylines), where pairing them
+// would DELETE a legitimate boundary. Over real boolean bodies the count is ZERO. So value-pairing
+// would not merely miss nothing: the one place where value and identity disagree is the place where
+// value is WRONG, and no re-emitted imprint run has yet needed a source edge it does not carry.
+//
+// The corpus-wide figures above are a MEASUREMENT; what is GATED is narrower and deliberately so.
+// TestNoCorpusBodyKeepsAPairThatWalksAStretchBack fails if any of chartCorpus's five
+// cocylindrical-merge bodies ever keeps such a pair, and the end-to-end row gates the host-plus-boss
+// body the same two ways. CodeMergeEdgeSources and CodeSeamSlitDropped keep both populations
+// countable on every run, so the measurement can be repeated rather than trusted.
 func isReverseTwin(a, b loopEdge) bool {
 	return a.source != nil && a.source == b.source && a.t0 == b.t1 && a.t1 == b.t0
 }

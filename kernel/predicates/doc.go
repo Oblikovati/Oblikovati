@@ -45,7 +45,13 @@
 // makes these predicates neither exact nor cross-platform-stable. Every product
 // here that feeds a later add/sub is therefore wrapped with the identity
 // conversion float64(...), which the Go spec guarantees rounds to binary64 and so
-// blocks the fusion. Do NOT remove those conversions; see rounded() in filter.go.
+// blocks the fusion. Do NOT remove those conversions.
 // (The exact big.Rat path is immune to fusion; the guard protects the filter's
 // estimate, whose certified error bound assumes each op is separately rounded.)
+//
+// That local rule is now the whole kernel's rule: ADR-0064 makes the explicit
+// conversion the ONE spelling of an unfused product across this package,
+// oblikovati.org/math and kernel/geom, and archguard's
+// TestNoFusableProductSums enforces it (Oblikovati#3528). The `rounded` helper
+// this package used to carry is gone with it — one policy, one spelling.
 package predicates

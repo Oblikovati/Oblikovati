@@ -53,9 +53,10 @@ func TestAChartedWallIsMeshedOverItsOwnRegion(t *testing.T) {
 	t.Parallel()
 	const uLo, uHi, vLo, vHi = 3.0, 4.0, 3.0, 6.0
 	f := rimBoundedWindowedWall(t, uLo, uHi, vLo, vHi)
-	m, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality())
+	log := &chartDeclineLog{}
+	m, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality(), log)
 	if !ok {
-		t.Fatal("chartFaceMesh declined a charted, rim-bounded windowed wall")
+		t.Fatalf("chartFaceMesh declined a charted, rim-bounded windowed wall: %s", log.why)
 	}
 	want := 2*stdmath.Pi*wallR*wallH - (uHi-uLo)*wallR*(vHi-vLo)
 	if got := m.Area(); stdmath.Abs(got-want)/want > 0.02 {
@@ -64,7 +65,7 @@ func TestAChartedWallIsMeshedOverItsOwnRegion(t *testing.T) {
 	// EXACTLY the rim, read through the GATE's own comparison: an unpaired edge that is no rim segment
 	// means the mesh tore, a rim segment the mesh does not bound means it closed over its own boundary —
 	// which is what a covering of the whole surface looks like.
-	if extra, missing := chartRimMismatch(m, chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality())); extra != 0 || missing != 0 {
+	if extra, missing := chartRimMismatch(m, chartBoundaryChains(f, f.Geometry(), mustRegion(t, f), DefaultQuality()), weldGrid([][]math.Point3{m.Positions})); extra != 0 || missing != 0 {
 		t.Errorf("the charted wall has %d unpaired edges that are no rim segment and %d rim segments it "+
 			"does not bound", extra, missing)
 	}
@@ -86,8 +87,14 @@ func TestChartFaceMeshDeclinesAFaceWithoutAChart(t *testing.T) {
 	t.Parallel()
 	f := rimBoundedWindowedWall(t, 3.0, 4.0, 3.0, 6.0)
 	f.SetChart(nil)
-	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality()); ok {
+	log := &chartDeclineLog{}
+	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality(), log); ok {
 		t.Error("chartFaceMesh took a face with no chart")
+	}
+	// "never my face" is not a degradation: it is the ordinary route onto the generic (u,v) trim path,
+	// and reporting it would cry on every healthy analytic face there is (#3520).
+	if log.why != "" {
+		t.Errorf("a face the mesher never owned logged a decline: %s", log.why)
 	}
 }
 
@@ -96,8 +103,12 @@ func TestChartFaceMeshDeclinesAFaceWithoutAChart(t *testing.T) {
 func TestChartFaceMeshDeclinesAnAperiodicSurface(t *testing.T) {
 	t.Parallel()
 	f := chartedPlanarTriangle(t)
-	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality()); ok {
+	log := &chartDeclineLog{}
+	if _, ok := chartFaceMesh(f, f.Geometry(), DefaultQuality(), log); ok {
 		t.Error("chartFaceMesh took an aperiodic surface")
+	}
+	if log.why != "" {
+		t.Errorf("an aperiodic surface logged a decline; the mesher never owned it: %s", log.why)
 	}
 }
 
@@ -317,9 +328,10 @@ func TestTheRimIsKeyedOnceForTheWholeFace(t *testing.T) {
 	if len(chains) < 3 {
 		t.Fatalf("the fixture presents %d boundary chains; the row needs a multi-loop face", len(chains))
 	}
-	m, ok := chartFaceMesh(f, s, q)
+	log := &chartDeclineLog{}
+	m, ok := chartFaceMesh(f, s, q, log)
 	if !ok {
-		t.Fatal("chartFaceMesh declined the charted windowed wall")
+		t.Fatalf("chartFaceMesh declined the charted windowed wall: %s", log.why)
 	}
 	whole := len(chainSegmentKeys(chains, geom.ResolutionForPoints(m.Positions).Weld()))
 	perChain := 0
@@ -330,7 +342,7 @@ func TestTheRimIsKeyedOnceForTheWholeFace(t *testing.T) {
 		t.Errorf("the rim keys %d segments for the whole face and %d summed per chain — a row that counts "+
 			"per chain is not asserting the gate", whole, perChain)
 	}
-	if extra, missing := chartRimMismatch(m, chains); extra != 0 || missing != 0 {
+	if extra, missing := chartRimMismatch(m, chains, weldGrid([][]math.Point3{m.Positions})); extra != 0 || missing != 0 {
 		t.Errorf("the windowed wall has %d unpaired edges that are no rim segment and %d rim segments it "+
 			"does not bound", extra, missing)
 	}

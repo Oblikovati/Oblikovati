@@ -64,8 +64,8 @@ func (t Torus) radial(u float64) math.Vector3 {
 // PointAt returns the point at (u, v).
 func (t Torus) PointAt(u, v float64) math.Point3 {
 	cv, sv := cosSin(v)
-	planar := t.radial(u).Scale(t.MajorRadius + t.MinorRadius*cv)
-	return t.Center.TranslateBy(planar).TranslateBy(t.AxisDir.AsVector().Scale(t.MinorRadius * sv))
+	planar := t.radial(u).Scale(t.MajorRadius + float64(t.MinorRadius*cv))
+	return t.Center.TranslateBy(planar).TranslateBy(t.AxisDir.AsVector().Scale(float64(t.MinorRadius * sv)))
 }
 
 // DerivativesAt returns ∂P/∂u (around the axis) and ∂P/∂v (around the tube).
@@ -73,8 +73,8 @@ func (t Torus) DerivativesAt(u, v float64) (du, dv math.Vector3) {
 	cu, su := cosSin(u)
 	cv, sv := cosSin(v)
 	dRadial := t.Ref.AsVector().Scale(-su).Add(t.binormal.Scale(cu))
-	du = dRadial.Scale(t.MajorRadius + t.MinorRadius*cv)
-	dv = t.radial(u).Scale(-t.MinorRadius * sv).Add(t.AxisDir.AsVector().Scale(t.MinorRadius * cv))
+	du = dRadial.Scale(t.MajorRadius + float64(t.MinorRadius*cv))
+	dv = t.radial(u).Scale(float64(-t.MinorRadius * sv)).Add(t.AxisDir.AsVector().Scale(float64(t.MinorRadius * cv)))
 	return du, dv
 }
 

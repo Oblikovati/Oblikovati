@@ -30,12 +30,12 @@ func (e EllipseFull2d) minorAxis() math.Vector2 {
 
 // PointAt returns the point at angle 2πt.
 func (e EllipseFull2d) PointAt(t float64) math.Point2 {
-	return ellipsePoint2(e.Center, e.MajorAxis.AsVector(), e.minorAxis(), e.MajorRadius, e.MinorRadius, twoPi*t)
+	return ellipsePoint2(e.Center, e.MajorAxis.AsVector(), e.minorAxis(), e.MajorRadius, e.MinorRadius, float64(twoPi*t))
 }
 
 // TangentAt returns the derivative dP/dt at parameter t.
 func (e EllipseFull2d) TangentAt(t float64) math.Vector2 {
-	return ellipseTangent2(e.MajorAxis.AsVector(), e.minorAxis(), e.MajorRadius, e.MinorRadius, twoPi*t).Scale(twoPi)
+	return ellipseTangent2(e.MajorAxis.AsVector(), e.minorAxis(), e.MajorRadius, e.MinorRadius, float64(twoPi*t)).Scale(twoPi)
 }
 
 // Domain returns [0, 1].
@@ -69,13 +69,13 @@ func (e EllipticalArc2d) minorAxis() math.Vector2 {
 
 // PointAt returns the point at parameter t.
 func (e EllipticalArc2d) PointAt(t float64) math.Point2 {
-	a := e.StartAngle + t*e.SweepAngle
+	a := e.StartAngle + float64(t*e.SweepAngle)
 	return ellipsePoint2(e.Center, e.MajorAxis.AsVector(), e.minorAxis(), e.MajorRadius, e.MinorRadius, a)
 }
 
 // TangentAt returns the derivative dP/dt at parameter t.
 func (e EllipticalArc2d) TangentAt(t float64) math.Vector2 {
-	a := e.StartAngle + t*e.SweepAngle
+	a := e.StartAngle + float64(t*e.SweepAngle)
 	return ellipseTangent2(e.MajorAxis.AsVector(), e.minorAxis(), e.MajorRadius, e.MinorRadius, a).Scale(e.SweepAngle)
 }
 
@@ -85,11 +85,11 @@ func (e EllipticalArc2d) Domain() (lo, hi float64) { return 0, 1 }
 // ellipsePoint2 evaluates a 2D ellipse point at angle a.
 func ellipsePoint2(center math.Point2, major, minor math.Vector2, majorR, minorR, a float64) math.Point2 {
 	cos, sin := cosSin(a)
-	return center.TranslateBy(major.Scale(majorR * cos).Add(minor.Scale(minorR * sin)))
+	return center.TranslateBy(major.Scale(float64(majorR * cos)).Add(minor.Scale(float64(minorR * sin))))
 }
 
 // ellipseTangent2 returns the derivative of [ellipsePoint2] with respect to a.
 func ellipseTangent2(major, minor math.Vector2, majorR, minorR, a float64) math.Vector2 {
 	cos, sin := cosSin(a)
-	return major.Scale(-majorR * sin).Add(minor.Scale(minorR * cos))
+	return major.Scale(float64(-majorR * sin)).Add(minor.Scale(float64(minorR * cos)))
 }

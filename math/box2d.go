@@ -54,7 +54,7 @@ func (b Box2d) Area() Scalar {
 		return 0
 	}
 	d := b.Diagonal()
-	return d.X * d.Y
+	return Scalar(d.X * d.Y)
 }
 
 // Contains reports whether p lies within the closed box.

@@ -72,6 +72,17 @@ make help       # all targets
 
 Install the pre-commit hook (gofmt + vet + short tests) with `make hooks`.
 
+Touching `math/`, `kernel/geom/` or `kernel/predicates/` adds two:
+
+```sh
+make fma-gate                    # ADR-0064: the arm64 build must emit no fused multiply-add
+make arm64 PKG=./kernel/geom     # run one package as the macOS CI leg will
+```
+
+`make fma-gate` is what sees the compiler's output rather than the source, so it
+catches a shape the archguard walk cannot. CI runs it on every PR; running it
+locally costs about fifteen seconds and needs no container.
+
 ## Build-time gating
 
 Mode flags are compile-time constants in `build/`, toggled by build tags so dead

@@ -35,17 +35,17 @@ func filterInCircle(ax, ay, bx, by, cx, cy, dx, dy float64) (det float64, certif
 	bdx, bdy := bx-dx, by-dy
 	cdx, cdy := cx-dx, cy-dy
 
-	bdxcdy, cdxbdy := rounded(bdx*cdy), rounded(cdx*bdy)
-	cdxady, adxcdy := rounded(cdx*ady), rounded(adx*cdy)
-	adxbdy, bdxady := rounded(adx*bdy), rounded(bdx*ady)
-	alift := rounded(adx*adx) + rounded(ady*ady)
-	blift := rounded(bdx*bdx) + rounded(bdy*bdy)
-	clift := rounded(cdx*cdx) + rounded(cdy*cdy)
+	bdxcdy, cdxbdy := float64(bdx*cdy), float64(cdx*bdy)
+	cdxady, adxcdy := float64(cdx*ady), float64(adx*cdy)
+	adxbdy, bdxady := float64(adx*bdy), float64(bdx*ady)
+	alift := float64(adx*adx) + float64(ady*ady)
+	blift := float64(bdx*bdx) + float64(bdy*bdy)
+	clift := float64(cdx*cdx) + float64(cdy*cdy)
 
-	det = rounded(alift*(bdxcdy-cdxbdy)) + rounded(blift*(cdxady-adxcdy)) + rounded(clift*(adxbdy-bdxady))
-	permanent := (math.Abs(bdxcdy)+math.Abs(cdxbdy))*alift +
-		(math.Abs(cdxady)+math.Abs(adxcdy))*blift +
-		(math.Abs(adxbdy)+math.Abs(bdxady))*clift
+	det = float64(alift*(bdxcdy-cdxbdy)) + float64(blift*(cdxady-adxcdy)) + float64(clift*(adxbdy-bdxady))
+	permanent := float64((math.Abs(bdxcdy)+math.Abs(cdxbdy))*alift) +
+		float64((math.Abs(cdxady)+math.Abs(adxcdy))*blift) +
+		float64((math.Abs(adxbdy)+math.Abs(bdxady))*clift)
 	return det, math.Abs(det) >= iccFilterA*permanent
 }
 

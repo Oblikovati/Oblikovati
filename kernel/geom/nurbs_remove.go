@@ -47,10 +47,10 @@ func removeOnce(ord int, knots []float64, work, temp []hpoint4, u float64, first
 	i, j := first, last
 	ii, jj := 1, last-off
 	for j-i > t {
-		alfi := (u - knots[i]) / (knots[i+ord+t] - knots[i])
-		alfj := (u - knots[j-t]) / (knots[j+ord] - knots[j-t])
-		temp[ii] = work[i].sub(temp[ii-1].scale(1 - alfi)).scale(1 / alfi)
-		temp[jj] = work[j].sub(temp[jj+1].scale(alfj)).scale(1 / (1 - alfj))
+		alfi := float64((u - knots[i]) / (knots[i+ord+t] - knots[i]))
+		alfj := float64((u - knots[j-t]) / (knots[j+ord] - knots[j-t]))
+		temp[ii] = work[i].sub(temp[ii-1].scale(1 - alfi)).scale(float64(1 / alfi))
+		temp[jj] = work[j].sub(temp[jj+1].scale(alfj)).scale(float64(1 / (1 - alfj)))
 		i, ii, j, jj = i+1, ii+1, j-1, jj-1
 	}
 	if !removable(ord, knots, work, temp, u, i, j, ii, jj, t, tol) {
@@ -66,7 +66,7 @@ func removable(ord int, knots []float64, work, temp []hpoint4, u float64, i, j, 
 	if j-i < t {
 		return temp[ii-1].dist(temp[jj+1]) <= tol
 	}
-	alfi := (u - knots[i]) / (knots[i+ord+t] - knots[i])
+	alfi := float64((u - knots[i]) / (knots[i+ord+t] - knots[i]))
 	candidate := temp[ii+t+1].scale(alfi).add(temp[ii-1].scale(1 - alfi))
 	return work[i].dist(candidate) <= tol
 }

@@ -65,7 +65,7 @@ func TestALoopLiftsOntoTheChartsBranch(t *testing.T) {
 	}
 	// A chain that wraps spans a whole period, so it cannot sit INSIDE a one-period window; what the
 	// shift settles is which period it sits on, and the covering's replicas supply the rest.
-	if mid := (c.uMin + c.uMax) / 2; !r.inWindow(mid, vRim) {
+	if mid := (c.uMin + c.uMax) / 2; !r.windowCandidate(mid, vRim) {
 		t.Errorf("the lifted rim is centred at u=%g, off the chart's branch [%g,%g]", mid, r.uLo, r.uHi)
 	}
 	if stdmath.Abs(c.uMax-c.uMin-2*stdmath.Pi) > 1e-6 { // tol:numeric — 24 samples of a full turn

@@ -25,7 +25,8 @@ import (
 // path rather than to a second special case.
 // refused, when it declines, names WHY if a mesher recognised the face and gave it up on its own
 // conditioning — so the reporter at the end of the router says more than "nothing recognised it".
-func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) (m *Mesh, ok bool, refused string) {
+func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3,
+	q Quality, log *chartDeclineLog) (m *Mesh, ok bool, refused string) {
 	t := classifyCurvedTrim(f, s, outer3D, holes3D, q)
 	switch t.kind {
 	case kindConeApexFan:
@@ -38,21 +39,33 @@ func specialCurvedMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, hole
 		return withNoRefusal(SpherePatchMesh(t.patch, outer3D, holes3D, q))
 	case kindRuledBandLoft:
 		return withNoRefusal(saddleBandLoftMesh(f, s, q))
-	case kindSpiricBand:
-		return spiricBandMesh(f, t.tube, q)
-	case kindTwoRimHoledBand:
-		return withNoRefusal(twoRimHoledBandMesh(f.Chart(), s, outer3D, t.holed, q))
 	case kindWedgeBand:
 		return wedgeBandLoftMesh(t.wedge), true, ""
+	case kindChart:
+		return withNoRefusal(chartFaceMesh(f, s, q, log))
 	default:
-		// kindChart meshes the region the face itself records; kindUncharted records none, so the
-		// same call declines and the face falls through to the generic (u,v) trim path.
-		return withNoRefusal(chartFaceMesh(f, s, q))
+		// kindUncharted: no special mesher, so the face falls through to the generic (u,v) trim path.
+		// This case is NAMED rather than sharing kindChart's branch, and that is a fix (#3517 review 3
+		// C1). It used to share it, on the premise that an uncharted face carries no chart and so the
+		// same call declines — which was true only while "uncharted" MEANT "records no chart". Since
+		// the classification began asking whether the trim DEVELOPS, a face that carries a chart AND
+		// develops into one (u,v) branch is kindUncharted, and for such a face chartFaceMesh does not
+		// decline: it meshes from the covering anyway, which is the path the classification has just
+		// said the face does not need. Measured on occtparity W8 face 2, a quarter cylinder of radius
+		// exactly 10: routed to the covering it read 36.87× PropertyQuality's chord tolerance with 6554
+		// triangles, against 0.75× with 128 on the structured grid its trim develops onto.
+		return nil, false, ""
 	}
 }
 
-// withNoRefusal adapts a mesher that cannot refuse on conditioning to the arm's three-value answer: it
-// either builds the face or was never the right mesher for it, and neither is a shape it gave up on.
+// withNoRefusal adapts a mesher whose false answer does not travel in this return value: it either
+// builds the face or was never the right mesher for it, and the arm's third value stays empty.
+//
+// It does NOT mean "this mesher cannot refuse on conditioning", which is what it used to say and is
+// false of chartFaceMesh (#3527): that one gives up on a shape it owns, and says which, through the
+// chartDeclineLog its caller passes in — see ChartRimOnlyTriangles, which reads exactly that
+// distinction. The log is where the refusal goes; this adapter only declines to invent a second copy of
+// it in the string.
 func withNoRefusal(m *Mesh, ok bool) (*Mesh, bool, string) { return m, ok, "" }
 
 // apexFan builds the apex→rim triangle fan for a cone (rim in path order, apex excluded), each

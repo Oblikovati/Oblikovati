@@ -29,7 +29,7 @@ func NewSphere(center math.Point3, radius float64) (Sphere, error) {
 func (s Sphere) direction(u, v float64) math.Vector3 {
 	cu, su := cosSin(u)
 	cv, sv := cosSin(v)
-	return math.V3(cv*cu, cv*su, sv)
+	return math.V3(float64(cv*cu), float64(cv*su), sv)
 }
 
 // PointAt returns the point at (u, v).
@@ -41,8 +41,8 @@ func (s Sphere) PointAt(u, v float64) math.Point3 {
 func (s Sphere) DerivativesAt(u, v float64) (du, dv math.Vector3) {
 	cu, su := cosSin(u)
 	cv, sv := cosSin(v)
-	du = math.V3(-s.Radius*cv*su, s.Radius*cv*cu, 0)
-	dv = math.V3(-s.Radius*sv*cu, -s.Radius*sv*su, s.Radius*cv)
+	du = math.V3(float64(-s.Radius*cv*su), float64(s.Radius*cv*cu), 0)
+	dv = math.V3(float64(-s.Radius*sv*cu), float64(-s.Radius*sv*su), float64(s.Radius*cv))
 	return du, dv
 }
 

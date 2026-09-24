@@ -15,21 +15,31 @@ import (
 //
 // classify decides the relation between two bodies once — disjoint, containing, or overlapping —
 // and join/cut/intersect each read that one answer. Deciding an incidence once and reusing it is
-// the point: two call sites recomputing the same containment could disagree.
+// the point: two call sites recomputing the same containment could disagree. The pair's SIZE
+// classification travels the same way and for the same reason (#3524), which is why the two arrive
+// together as one pairClassification.
+
+// pairClassification is everything the boolean decides about a pair BEFORE it builds any geometry:
+// how the two bodies sit relative to one another, and how thin each one's material is. Both are
+// decided once, at the public entry, and read wherever they are needed.
+type pairClassification struct {
+	rel   relation
+	sizes operandSizes
+}
 
 // join combines target and tool under A ∪ B. When one body strictly contains the other (classify
 // guarantees no boundary crossing — see strictlyContains, #1315), the union IS the outer body, so the
 // inner shell is discarded rather than kept as a floating interior wall — the old MergeBodies path
 // concatenated both shells and double-counted the volume (#1316). Disjoint bodies merge into one
 // multi-lump body (each a separate valid shell); intersecting bodies go to the face-splitting boolean.
-func join(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Recorder) (*topo.Body, error) {
-	switch rel {
+func join(lin topo.Lineage, target, tool *topo.Body, cls pairClassification, rec *diag.Recorder) (*topo.Body, error) {
+	switch cls.rel {
 	case targetContainsTool:
 		return target, nil // tool lies inside target → union is target alone
 	case toolContainsTarget:
 		return tool, nil
 	case intersecting:
-		return booleanGeneral(Join, target, tool, lin, rec)
+		return booleanGeneral(Join, target, tool, lin, cls.sizes, rec)
 	default: // disjoint: two separate lumps form a valid multi-shell body
 		return topo.MergeBodies(lin, true, target, tool), nil
 	}
@@ -50,19 +60,19 @@ func toBrepOp(op PartFeatureOperation) (brep.Op, bool) {
 	}
 }
 
-func cut(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Recorder) (*topo.Body, error) {
-	switch rel {
+func cut(lin topo.Lineage, target, tool *topo.Body, cls pairClassification, rec *diag.Recorder) (*topo.Body, error) {
+	switch cls.rel {
 	case disjoint:
 		return target, nil // tool removes nothing
 	case toolContainsTarget:
 		return topo.MergeBodies(lin, true), nil // target fully removed → empty
 	default: // targetContainsTool (a void/cavity) and intersecting need face splitting
-		return booleanGeneral(Cut, target, tool, lin, rec)
+		return booleanGeneral(Cut, target, tool, lin, cls.sizes, rec)
 	}
 }
 
-func intersect(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *diag.Recorder) (*topo.Body, error) {
-	switch rel {
+func intersect(lin topo.Lineage, target, tool *topo.Body, cls pairClassification, rec *diag.Recorder) (*topo.Body, error) {
+	switch cls.rel {
 	case disjoint:
 		return topo.MergeBodies(lin, true), nil // nothing in common → empty
 	case targetContainsTool:
@@ -70,7 +80,7 @@ func intersect(lin topo.Lineage, target, tool *topo.Body, rel relation, rec *dia
 	case toolContainsTarget:
 		return target, nil
 	default:
-		return booleanGeneral(Intersect, target, tool, lin, rec)
+		return booleanGeneral(Intersect, target, tool, lin, cls.sizes, rec)
 	}
 }
 

@@ -48,7 +48,7 @@ func (p Point2) IsEqualTo(o Point2, tol Scalar) bool {
 
 // Midpoint returns the point halfway between this point and o.
 func (p Point2) Midpoint(o Point2) Point2 {
-	return Point2{(p.X + o.X) / 2, (p.Y + o.Y) / 2}
+	return Point2{Scalar((p.X + o.X) / 2), Scalar((p.Y + o.Y) / 2)}
 }
 
 // Lerp interpolates this point toward q at t, one [Lerp] per coordinate — the

@@ -47,19 +47,19 @@ func angleOf2d(center, p math.Point2) float64 {
 
 // angleAt returns the absolute angle StartAngle + t·SweepAngle.
 func (a Arc2d) angleAt(t float64) float64 {
-	return a.StartAngle + t*a.SweepAngle
+	return a.StartAngle + float64(t*a.SweepAngle)
 }
 
 // PointAt returns the point at parameter t.
 func (a Arc2d) PointAt(t float64) math.Point2 {
 	cos, sin := cosSin(a.angleAt(t))
-	return math.P2(a.Center.X+a.Radius*cos, a.Center.Y+a.Radius*sin)
+	return math.P2(a.Center.X+float64(a.Radius*cos), a.Center.Y+float64(a.Radius*sin))
 }
 
 // TangentAt returns the derivative dP/dt (includes the sweep chain factor).
 func (a Arc2d) TangentAt(t float64) math.Vector2 {
 	cos, sin := cosSin(a.angleAt(t))
-	return math.V2(-a.Radius*sin*a.SweepAngle, a.Radius*cos*a.SweepAngle)
+	return math.V2(float64(-a.Radius*sin*a.SweepAngle), float64(a.Radius*cos*a.SweepAngle))
 }
 
 // Domain returns [0, 1].
@@ -67,7 +67,7 @@ func (a Arc2d) Domain() (lo, hi float64) { return 0, 1 }
 
 // Length returns the arc length |Radius · SweepAngle|.
 func (a Arc2d) Length() float64 {
-	return stdmath.Abs(a.Radius * a.SweepAngle)
+	return stdmath.Abs(float64(a.Radius * a.SweepAngle))
 }
 
 // ContainsAngle reports whether the absolute angle theta lies within the arc's swept
@@ -92,7 +92,7 @@ func (a Arc2d) ContainsPoint(p math.Point2, tol float64) bool {
 	}
 	angTol := 0.0
 	if a.Radius > 0 {
-		angTol = tol / a.Radius
+		angTol = float64(tol / a.Radius)
 	}
 	return a.ContainsAngle(angleOf2d(a.Center, p), angTol)
 }

@@ -91,13 +91,13 @@ func falloffWeight(dist, radius float64, falloff Falloff) float64 {
 	if radius <= 0 || dist >= radius {
 		return 0
 	}
-	t := dist / radius // 0 at a driver, 1 at the radius
+	t := float64(dist / radius) // 0 at a driver, 1 at the radius
 	switch falloff {
 	case FalloffConstant:
 		return 1
 	case FalloffLinear:
 		return 1 - t
 	default: // FalloffSmooth
-		return 1 - (3*t*t - 2*t*t*t) // 1 − smoothstep(t)
+		return 1 - (float64(3*t*t) - float64(2*t*t*t)) // 1 − smoothstep(t)
 	}
 }

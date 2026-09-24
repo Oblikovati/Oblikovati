@@ -336,7 +336,7 @@ func TestClipParamsMultiArmHyperbola(t *testing.T) {
 		}
 	}
 	cf := curvedFace{surface: sf.Geometry(), reversed: sf.Reversed(), loops: loopsOf(sf), lineage: sf.Lineage()}
-	curves, _ := curvedImprint(cf, curvedFace{surface: plane}, geom.ResolutionForBox(cone.RangeBox()))
+	curves, _, _ := curvedImprint(cf.surface, plane, geom.ResolutionForBox(cone.RangeBox()))
 	if len(curves) != 1 {
 		t.Fatalf("want one conic section, got %d", len(curves))
 	}

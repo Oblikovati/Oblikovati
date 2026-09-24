@@ -28,18 +28,18 @@ func Circle2dByThreePoints(a, b, c math.Point2) (Circle2d, error) {
 
 // PointAt returns the point at angle 2πt.
 func (c Circle2d) PointAt(t float64) math.Point2 {
-	cos, sin := cosSin(twoPi * t)
-	return math.P2(c.Center.X+c.Radius*cos, c.Center.Y+c.Radius*sin)
+	cos, sin := cosSin(float64(twoPi * t))
+	return math.P2(c.Center.X+float64(c.Radius*cos), c.Center.Y+float64(c.Radius*sin))
 }
 
 // TangentAt returns the derivative dP/dt at parameter t.
 func (c Circle2d) TangentAt(t float64) math.Vector2 {
-	cos, sin := cosSin(twoPi * t)
-	return math.V2(-c.Radius*sin*twoPi, c.Radius*cos*twoPi)
+	cos, sin := cosSin(float64(twoPi * t))
+	return math.V2(float64(-c.Radius*sin*twoPi), float64(c.Radius*cos*twoPi))
 }
 
 // Domain returns [0, 1].
 func (c Circle2d) Domain() (lo, hi float64) { return 0, 1 }
 
 // Circumference returns 2πr.
-func (c Circle2d) Circumference() float64 { return twoPi * c.Radius }
+func (c Circle2d) Circumference() float64 { return float64(twoPi * c.Radius) }

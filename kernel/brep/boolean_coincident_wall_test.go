@@ -107,7 +107,7 @@ func TestCoincidentWallImprintIsTheOtherBandsRims(t *testing.T) {
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	b, _ := SolidCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 2, 4)
 	pa, pb := partitionFaces(a), partitionFaces(b)
-	curves, ok := wallWallImprint(pa.wall[0], pb.wall[0])
+	curves, _, ok := wallWallImprint(pa.wall[0], pb.wall[0])
 	if !ok {
 		t.Fatal("two coincident walls are undecided; their overlap is a region, and it is decidable")
 	}
@@ -129,7 +129,7 @@ func TestDisjointCoaxialWallsImprintNothing(t *testing.T) {
 	a, _ := SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), 2, 4)
 	b, _ := SolidCylinder(math.P3(0, 0, 9), math.V3(0, 0, 1), 2, 4)
 	pa, pb := partitionFaces(a), partitionFaces(b)
-	curves, ok := wallWallImprint(pa.wall[0], pb.wall[0])
+	curves, _, ok := wallWallImprint(pa.wall[0], pb.wall[0])
 	if !ok {
 		t.Fatal("two disjoint coaxial walls are undecided; they plainly do not meet")
 	}

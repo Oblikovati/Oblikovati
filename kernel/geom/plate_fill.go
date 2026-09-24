@@ -151,9 +151,9 @@ func plateGrid(sides [4]PlateSide, d PlateDomain, coeffs []PlateCoeffs) (pts []m
 	us = make([]float64, 0, n*n)
 	vs = make([]float64, 0, n*n)
 	for i := range n {
-		xi := float64(i) / float64(n-1)
+		xi := float64(float64(i) / float64(n-1))
 		for j := range n {
-			eta := float64(j) / float64(n-1)
+			eta := float64(float64(j) / float64(n-1))
 			u, v := coonsDomainPoint(sides, d, xi, eta)
 			pts = append(pts, plateSurfacePoint(coeffs, u, v))
 			us = append(us, xi)
@@ -182,8 +182,8 @@ func coonsDomainPoint(sides [4]PlateSide, d PlateDomain, xi, eta float64) (u, v 
 // coonsBlend is the scalar bilinear-blended Coons value: the sum of the two ruled surfaces minus
 // the bilinear corner term (Farin, Curves and Surfaces for CAGD).
 func coonsBlend(bottom, top, left, right, c00, c10, c11, c01, xi, eta float64) float64 {
-	ruled := (1-eta)*bottom + eta*top + (1-xi)*left + xi*right
-	corner := (1-xi)*(1-eta)*c00 + xi*(1-eta)*c10 + xi*eta*c11 + (1-xi)*eta*c01
+	ruled := float64((1-eta)*bottom) + float64(eta*top) + float64((1-xi)*left) + float64(xi*right)
+	corner := float64((1-xi)*(1-eta)*c00) + float64(xi*(1-eta)*c10) + float64(xi*eta*c11) + float64((1-xi)*eta*c01)
 	return ruled - corner
 }
 
@@ -191,7 +191,7 @@ func coonsBlend(bottom, top, left, right, c00, c10, c11, c01, xi, eta float64) f
 // Ω, returning the domain (u,v) as a Point2.
 func railDomainAt(side PlateSide, d PlateDomain, s float64) math.Point2 {
 	lo, hi := side.Curve.Domain()
-	u, v := d.Project(side.Curve.PointAt(lo + (hi-lo)*s))
+	u, v := d.Project(side.Curve.PointAt(lo + float64((hi-lo)*s)))
 	return math.P2(u, v)
 }
 

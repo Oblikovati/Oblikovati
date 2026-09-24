@@ -42,14 +42,14 @@ func NewEllipticalCylinder(origin math.Point3, axisDir, majorAxis math.Vector3, 
 // PointAt returns the point at (u, v).
 func (c EllipticalCylinder) PointAt(u, v float64) math.Point3 {
 	cos, sin := cosSin(u)
-	radial := c.Ref.AsVector().Scale(c.MajorRadius * cos).Add(c.binormal.Scale(c.MinorRadius * sin))
+	radial := c.Ref.AsVector().Scale(float64(c.MajorRadius * cos)).Add(c.binormal.Scale(float64(c.MinorRadius * sin)))
 	return c.Origin.TranslateBy(c.AxisDir.AsVector().Scale(v)).TranslateBy(radial)
 }
 
 // DerivativesAt returns ∂P/∂u (around the ellipse) and ∂P/∂v (the axis direction).
 func (c EllipticalCylinder) DerivativesAt(u, _ float64) (du, dv math.Vector3) {
 	cos, sin := cosSin(u)
-	du = c.Ref.AsVector().Scale(-c.MajorRadius * sin).Add(c.binormal.Scale(c.MinorRadius * cos))
+	du = c.Ref.AsVector().Scale(float64(-c.MajorRadius * sin)).Add(c.binormal.Scale(float64(c.MinorRadius * cos)))
 	return du, c.AxisDir.AsVector()
 }
 
@@ -72,7 +72,7 @@ func (c EllipticalCylinder) ParamAt(q math.Point3) (u, v float64) {
 	d := c.Origin.VectorTo(q)
 	v = d.Dot(c.AxisDir.AsVector())
 	r := d.Sub(c.AxisDir.AsVector().Scale(v))
-	return wrap2pi(stdmath.Atan2(r.Dot(c.binormal)/c.MinorRadius, r.Dot(c.Ref.AsVector())/c.MajorRadius)), v
+	return wrap2pi(stdmath.Atan2(float64(r.Dot(c.binormal)/c.MinorRadius), float64(r.Dot(c.Ref.AsVector())/c.MajorRadius))), v
 }
 
 var _ Surface = EllipticalCylinder{}
@@ -115,7 +115,7 @@ func principalAxesFromConjugate(u1, u2 math.Vector3) (majorR, minorR float64, ma
 	a := u1.Dot(u1)
 	b := u1.Dot(u2)
 	c := u2.Dot(u2)
-	theta := 0.5 * stdmath.Atan2(2*b, a-c)
+	theta := float64(0.5 * stdmath.Atan2(float64(2*b), a-c))
 	cos, sin := stdmath.Cos(theta), stdmath.Sin(theta)
 	vMaj := u1.Scale(cos).Add(u2.Scale(sin))
 	vMin := u1.Scale(-sin).Add(u2.Scale(cos))

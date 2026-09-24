@@ -36,7 +36,7 @@ func windowRimIndices(t *testing.T, b *chartCover) [3]int {
 	seen := map[[3]int64]bool{}
 	n := 0
 	for i := 0; i < b.rim && n < 3; i++ {
-		if k := quantizePoint(b.pos[i], grid); b.r.inWindow(b.uu[i], b.vv[i]) && !seen[k] {
+		if k := quantizePoint(b.pos[i], grid); b.r.windowCandidate(b.uu[i], b.vv[i]) && !seen[k] {
 			seen[k], out[n], n = true, i, n+1
 		}
 	}
@@ -100,7 +100,7 @@ func TestAddEarCentreAddsASurfacePointInsideTheWindow(t *testing.T) {
 	if d := float64(b.s.PointAt(u, v).DistanceTo(p)); d > geom.ResolutionForPoints(b.pos).Weld() {
 		t.Errorf("the ear centre is %g off the surface; it must be evaluated on it", d)
 	}
-	if !b.r.inWindow(b.uu[before], b.vv[before]) {
+	if !b.r.windowCandidate(b.uu[before], b.vv[before]) {
 		t.Errorf("the ear centre (%g, %g) is outside the branch window", b.uu[before], b.vv[before])
 	}
 }

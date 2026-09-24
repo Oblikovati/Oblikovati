@@ -2,7 +2,9 @@
 
 package tessellate
 
-import "slices"
+import (
+	"slices"
+)
 
 // insert adds point index ip by connected-cavity Bowyer–Watson: find a triangle whose circumcircle
 // contains the point, delete the connected star of such triangles, and fan the cavity boundary to the
@@ -147,6 +149,7 @@ func (m *cdt) fanCavity(ip int, c cavity) {
 	bnd := m.cavityBoundary(c)
 	for _, t := range c.order {
 		m.dead[t] = true
+		m.live--
 	}
 	pending := map[int][2]int{} // shared (ip,x) edges: other-vertex x → first (tri, localIndex)
 	link := func(t, i, other int) {
@@ -188,18 +191,48 @@ func (m *cdt) cavityBoundary(c cavity) []cavityEdge {
 func (m *cdt) addTri(a, b, c int) int {
 	m.tris = append(m.tris, cdtTri{v: [3]int{a, b, c}, n: [3]int{-1, -1, -1}})
 	m.dead = append(m.dead, false)
+	m.live++
 	m.touch(len(m.tris) - 1) // keep the incidence hint current once recovery has built it (#1409)
 	return len(m.tris) - 1
 }
 
-// hasEdge reports whether edge (a,b) is present in some live triangle.
+// hasEdge reports whether edge (a,b) is present in some live triangle, by scanning every live one.
+// hasEdgeAround answers the same question in O(deg) and is what the recovery path uses (#3548); this
+// remains for the tests that assert on the mesh as a whole.
 func (m *cdt) hasEdge(a, b int) bool {
-	for t := range m.tris {
-		if !m.dead[t] && m.localEdge(t, a, b) >= 0 {
+	m.fullScans++
+	for _, t := range m.liveTriangles() {
+		if m.localEdge(t, a, b) >= 0 {
 			return true
 		}
 	}
 	return false
+}
+
+// liveTriangles is the live triangle indices in ascending order, rebuilt only when the triangulation
+// has changed since the cache was taken.
+//
+// The ALLOCATED array only grows: every insertion appends its fan and marks the cavity dead, and on a
+// covering-sized point set it runs far ahead of the mesh — measured on the J3 host chart at
+// PropertyQuality, 24 606 261 allocated against 1 575 061 live, fifteen dead for every live one. Every
+// whole-mesh scan paid for all fifteen. The cache costs one such pass to build and is then reused by
+// every scan until the next insertion: flip, which is all constraint recovery does between scans,
+// changes neither count (#3549).
+//
+// The order is ASCENDING, which is the whole reason this is a cache and not a change: a scan over it
+// visits exactly the triangles a scan of the array would visit, in the same order, so flipOneCrossing
+// still flips the same edge and the output mesh is unchanged.
+func (m *cdt) liveTriangles() []int {
+	if at := [2]int{len(m.tris), m.live}; at != m.liveAt || m.liveIdx == nil {
+		m.liveIdx = m.liveIdx[:0]
+		for t := range m.tris {
+			if !m.dead[t] {
+				m.liveIdx = append(m.liveIdx, t)
+			}
+		}
+		m.liveAt = at
+	}
+	return m.liveIdx
 }
 
 // neighborAcross returns the triangle sharing edge (a,b) with triangle s (-1 if none).
@@ -274,9 +307,11 @@ func (m *cdt) representatives() []int {
 // flipOneCrossing flips one flippable triangulation edge that properly crosses segment (a,b),
 // returning whether it flipped one.
 func (m *cdt) flipOneCrossing(a, b int) bool {
+	m.fullScans++
 	pa, pb := m.pts[a], m.pts[b]
-	for t := range m.tris {
-		if m.dead[t] {
+	box := boxOfSegment(pa, pb)
+	for _, t := range m.liveTriangles() {
+		if !m.triangleMeetsBox(t, box) {
 			continue
 		}
 		for i := range 3 {
@@ -290,6 +325,30 @@ func (m *cdt) flipOneCrossing(a, b int) bool {
 		}
 	}
 	return false
+}
+
+// aabb is an axis-aligned box as (minX, minY, maxX, maxY).
+type aabb [4]float64
+
+// boxOfSegment is the bounding box of segment (p,q).
+func boxOfSegment(p, q [2]float64) aabb {
+	return aabb{min(p[0], q[0]), min(p[1], q[1]), max(p[0], q[0]), max(p[1], q[1])}
+}
+
+// triangleMeetsBox reports whether triangle t's bounding box overlaps b. An edge that PROPERLY crosses
+// a segment shares a point with it, so that edge's box — and its triangle's, which contains it — must
+// overlap the segment's box. Skipping a triangle that fails this therefore rejects only non-crossing
+// edges: flipOneCrossing picks the same edge it would have picked scanning everything, so the output is
+// byte-identical. It exists because the scan was 36% of a PropertyQuality face's CPU, nearly all of it
+// exact orient2d on triangles nowhere near the constraint (#3548).
+func (m *cdt) triangleMeetsBox(t int, b aabb) bool {
+	lo, hi := m.pts[m.tris[t].v[0]], m.pts[m.tris[t].v[0]]
+	for _, v := range m.tris[t].v[1:] {
+		p := m.pts[v]
+		lo = [2]float64{min(lo[0], p[0]), min(lo[1], p[1])}
+		hi = [2]float64{max(hi[0], p[0]), max(hi[1], p[1])}
+	}
+	return lo[0] <= b[2] && hi[0] >= b[0] && lo[1] <= b[3] && hi[1] >= b[1]
 }
 
 // SegmentsCross reports whether open segments p1p2 and p3p4 PROPERLY intersect: each segment's

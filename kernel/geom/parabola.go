@@ -77,13 +77,13 @@ type ParabolicArc struct {
 
 // PointAt returns the point at parameter s∈[0,1].
 func (p ParabolicArc) PointAt(s float64) math.Point3 {
-	t := p.T0 + s*(p.T1-p.T0)
+	t := p.T0 + float64(s*(p.T1-p.T0))
 	return parabolaPoint(p.Vertex, p.AxisDir.AsVector(), p.CrossDir.AsVector(), p.Focal, t)
 }
 
 // TangentAt returns dP/ds (chain rule: dP/dt scaled by the t-span).
 func (p ParabolicArc) TangentAt(s float64) math.Vector3 {
-	t := p.T0 + s*(p.T1-p.T0)
+	t := p.T0 + float64(s*(p.T1-p.T0))
 	return parabolaTangent(p.AxisDir.AsVector(), p.CrossDir.AsVector(), p.Focal, t).Scale(math.Scalar(p.T1 - p.T0))
 }
 

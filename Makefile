@@ -6,6 +6,18 @@
 GO          ?= go
 MODULE      := oblikovati
 PKG         := ./...
+# TEST_PKGS is PKG with the git-IGNORED packages removed, which is what every whole-module target
+# below wants: `./...` walks the working tree, so ignored scratch under `experiments/` fails a gate
+# about the code being committed while CI, which never sees those files, passes (#3557). It is
+# recursively assigned, so the derivation runs only in the recipes that use it, and narrowing with
+# `make test PKG=./kernel/geom` still bypasses it. PKG itself stays `./...` for the nested-module
+# loop and the arm64 targets, which need a pattern relative to their own directory.
+# An EMPTY derivation is an error, not a smaller set: `go test` with no package argument tests only
+# the current directory, so an empty list is a silent green. That happened on the first CI run, where
+# macOS's bash 3.2 could not run the derivation and $(shell) swallowed the failure.
+# The message carries no `#`: make 3.81, which macOS ships, reads one inside a function call as the
+# start of a comment and fails the whole line as an unterminated `if`.
+TEST_PKGS    = $(if $(filter ./...,$(PKG)),$(or $(shell scripts/tracked-packages.sh),$(error scripts/tracked-packages.sh derived no package; refusing to run a gate over nothing, see issue 3557)),$(PKG))
 DIST        := dist
 
 # VERSION is {MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}, computed by cmd/obkversion
@@ -35,6 +47,30 @@ PLATFORMS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 # Minimum total coverage gate for `make cover` (raise as the suite grows).
 COVER_MIN ?= 0
 
+# Every nested Go module the gate must run, DERIVED from the tree and never typed: a
+# module added tomorrow is in the gate the day it lands, with no edit here (#3526). A
+# hand-kept list re-introduces the exact defect this target exists to remove — silent
+# under-coverage — on a timer. `archguard.TestGateReachesEveryTrackedModule` fails when
+# this set and CI's own module lists disagree.
+#
+# `git ls-files`, not `find`: it sees exactly what is committed, so an ignored
+# experiment or a stray agent worktree under .claude/ cannot drag a second copy of the
+# whole repo into the gate. Modules deliberately absent from this set, each because it
+# has a leg of its own:
+#   .        -> `make ci`
+#   head     -> `make test-head` (cgo module, own Makefile, native deps)
+#   head/... -> the two c-shared add-in fixtures head's own loader tests compile
+#
+# They are not in go.work either, so `./...` at the root reaches none of them and a
+# plain `go test ./...` inside one fails with "directory prefix . does not contain
+# modules listed in go.work" — hence GOWORK=off below.
+GATE_NESTED_MODULES := $(filter-out head head/%, \
+  $(patsubst %/go.mod,%,$(filter-out go.mod,$(shell git ls-files '*go.mod' 2>/dev/null))))
+
+# 30m: the inventor batch-translate package rebuilds all 77 testdata parts (527 s on CI
+# run 34280554924) and hit `go test`'s 10m per-package default once (run 33765461130).
+NESTED_MODULE_TIMEOUT ?= 30m
+
 # Revision `make test-impacted` compares against to find the change set.
 IMPACT_BASE ?= origin/develop
 
@@ -43,7 +79,7 @@ IMPACT_BASE ?= origin/develop
 .PHONY: help
 help: ## List available targets
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
-	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+	  | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: tidy
 tidy: ## Sync go.mod / go.sum
@@ -59,7 +95,7 @@ fmt-check: ## Fail if any file is not gofmt-clean
 
 .PHONY: vet
 vet: ## Run go vet on BOTH modules (root cgo-free, then the cgo head)
-	CGO_ENABLED=0 $(GO) vet $(PKG)
+	CGO_ENABLED=0 $(GO) vet $(TEST_PKGS)
 	$(MAKE) vet-head
 
 # head/ is a SEPARATE module: `go vet ./...` from the repo root does not compile a single
@@ -70,6 +106,14 @@ vet: ## Run go vet on BOTH modules (root cgo-free, then the cgo head)
 vet-head: ## go vet the cgo head module (needs the native deps; see head/Makefile)
 	CGO_ENABLED=1 $(GO) vet -C head ./...
 
+.PHONY: head-deps
+head-deps: ## Fail (naming the missing dep) when head's cgo/Vulkan deps are absent
+	$(MAKE) -C head deps-check display-check HEAD_ALLOW_NO_DISPLAY=
+
+.PHONY: test-head
+test-head: head-deps ## Run the cgo head module's tests (never skipped silently)
+	$(MAKE) -C head test HEAD_ALLOW_NO_DISPLAY=
+
 .PHONY: lint
 lint: ## Run golangci-lint (install with `make tools`)
 	golangci-lint run
@@ -77,7 +121,17 @@ lint: ## Run golangci-lint (install with `make tools`)
 
 .PHONY: docs-lint
 docs-lint: ## Lint the docs (markdownlint via npx; needs node). Link check runs in CI (lychee).
+	@command -v npx >/dev/null 2>&1 \
+	  || { echo "docs-lint: npx not found - install Node; CI enforces markdownlint as a required job"; exit 1; }
 	npx --yes markdownlint-cli2
+
+# CI enforces this as its own required job (ci.yml, job `spdx`). It was the second check
+# `make gate` claimed to be THE pre-push gate without running (#3526).
+.PHONY: spdx-check
+spdx-check: ## Fail if any .go file is missing its SPDX header (what CI's spdx job runs)
+	@command -v python3 >/dev/null 2>&1 \
+	  || { echo "spdx-check: python3 not found - it runs scripts/add-spdx-headers.py"; exit 1; }
+	python3 scripts/add-spdx-headers.py --check
 
 # The suite runs in two tiers (architecture/testing/03-test-tiers-and-selection.md).
 # TIER 1 (`make test`, -short) skips the corpus and oracle tests. TIER 2 (`make
@@ -108,11 +162,11 @@ TESTJSON ?= test-results.json
 
 .PHONY: test
 test: ## Tier 1: fast cgo-free unit tests (skips the corpus tier)
-	CGO_ENABLED=0 $(GO) test -short $(PKG)
+	CGO_ENABLED=0 $(GO) test -short $(TEST_PKGS)
 
 .PHONY: test-corpus
 test-corpus: ## Tier 2: the whole suite, corpus and oracle tests included
-	CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $(PKG)
+	CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) $(TEST_PKGS)
 
 .PHONY: test-impacted
 test-impacted: ## Tier 1 on only the packages the current change set can affect
@@ -132,7 +186,7 @@ test-impacted-corpus: ## Tier 2 on only the packages the current change set can 
 # command in a pipeline, so `go test | testslowest` would go green on a red suite.
 .PHONY: test-budget
 test-budget: ## Tier 1 with the per-package time budget enforced (local, tight gate)
-	@CGO_ENABLED=0 $(GO) test -short -json $(PKG) > $(TESTJSON); status=$$?; \
+	@CGO_ENABLED=0 $(GO) test -short -json $(TEST_PKGS) > $(TESTJSON); status=$$?; \
 	  $(GO) run ./cmd/testslowest -top 15 -package-budget $(TIER1_PACKAGE_BUDGET) < $(TESTJSON) \
 	    || status=1; \
 	  rm -f $(TESTJSON); \
@@ -141,7 +195,7 @@ test-budget: ## Tier 1 with the per-package time budget enforced (local, tight g
 # What CI enforces, and it costs no extra run: one tier-2 pass gates itself.
 .PHONY: test-guards
 test-guards: ## Tier 2 with the tier-1 guard gate enforced (what CI runs)
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(TEST_PKGS) > $(TESTJSON); status=$$?; \
 	  $(GO) run ./cmd/testslowest -top 25 -unguarded-budget $(UNGUARDED_BUDGET) -module-root . \
 	    < $(TESTJSON) || status=1; \
 	  rm -f $(TESTJSON); \
@@ -149,21 +203,120 @@ test-guards: ## Tier 2 with the tier-1 guard gate enforced (what CI runs)
 
 .PHONY: test-slowest
 test-slowest: ## Rank the whole suite by test time (what to guard next)
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(PKG) > $(TESTJSON); status=$$?; \
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -json $(TEST_PKGS) > $(TESTJSON); status=$$?; \
 	  $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
 
 .PHONY: test-slowest-serial
 test-slowest-serial: ## Rank tier 2 with NO parallelism — the measurement the 2s guard rule uses
-	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(PKG) > $(TESTJSON); \
+	@CGO_ENABLED=0 $(GO) test -timeout $(CORPUS_TIMEOUT) -p 1 -parallel 1 -json $(TEST_PKGS) > $(TESTJSON); \
 	  status=$$?; $(GO) run ./cmd/testslowest -top 40 < $(TESTJSON); rm -f $(TESTJSON); exit $$status
+
+# No CGO_ENABLED pin: CI runs these modules with cgo at its default (ci.yml, step
+# "Translator-module coverage"), and the gate must never cover LESS than CI. The root
+# targets pin CGO_ENABLED=0 for ADR-0008 reasons that do not apply to a nested module.
+.PHONY: test-nested-modules
+test-nested-modules: ## Tier 2 on every nested module (the exchange translators today)
+	@if [ -z "$(GATE_NESTED_MODULES)" ]; then \
+	  echo "gate: derived NO nested modules - git ls-files '*go.mod' returned nothing"; \
+	  echo "gate: (not a git checkout? git missing?). Refusing to report green over a"; \
+	  echo "gate: module set it could not measure."; \
+	  exit 1; \
+	fi; \
+	for m in $(GATE_NESTED_MODULES); do \
+	  echo "→ $$m"; \
+	  (cd $$m && GOWORK=off $(GO) test -timeout $(NESTED_MODULE_TIMEOUT) $(PKG)) || exit 1; \
+	done
+
+# The gate-coverage guard reads this instead of re-deriving the set, so the test measures
+# what the gate will actually run rather than a copy of the same expression (#3526).
+.PHONY: print-gate-modules
+print-gate-modules: ## Print the derived nested-module set, one per line
+	@for m in $(GATE_NESTED_MODULES); do echo $$m; done
+
+# The package-set guard reads this for the same reason (#3557): the test must measure the set the
+# gate will run, not a second copy of the expression that derives it.
+.PHONY: print-test-packages
+print-test-packages: ## Print the derived root-module package set, one per line
+	@for p in $(TEST_PKGS); do echo $$p; done
 
 .PHONY: test-race
 test-race: ## Run the suite under the race detector (needs cgo)
-	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(PKG)
+	CGO_ENABLED=1 $(GO) test -race -timeout $(CORPUS_TIMEOUT) $(TEST_PKGS)
+
+# ---------------------------------------------------------------------------
+# arm64: what the macOS CI leg runs on, without a macOS machine (ADR-0061 §Platform
+# stability, ADR-0064). The Go compiler CONTRACTS x*y+z into one unrounded FMA on
+# arm64 and never on amd64, so a package whose last bits matter must be run there
+# before it is pushed. Cross-compile the test binary natively (~40x faster than
+# compiling inside the container) and run only the binary under binfmt emulation.
+#
+# TWO things about the run, both of which cost a wasted run to learn, and both of
+# which fail the same way — the fixtures go missing and the rows SKIP or fail on a
+# file, so the run is green (or red) about nothing:
+#
+#   - the workspace is mounted at its OWN absolute path, not at /ws, because fixture
+#     lookups compiled into the test binary carry host paths;
+#   - the container's working directory is the PACKAGE's, not the repo root, because
+#     the other half of the fixture lookups are relative ("../../exchange/step/...").
+#
+# PKG names ONE package for this reason; ./... has no working directory.
+#
+#   make arm64 PKG=./kernel/geom
+#   make arm64 PKG=./model/feature/occtparity RUN='TestByteIdentityFingerprints'
+# ---------------------------------------------------------------------------
+ARM64_IMAGE   ?= golang:1.27
+ARM64_TIMEOUT ?= 4h
+ARM64_BIN     ?= .armbin
+WORKSPACE     := $(abspath $(CURDIR)/..)
+RUN           ?=
+
+.PHONY: arm64
+arm64: ## Run PKG's tests under arm64 emulation (PKG=./kernel/geom [RUN=TestName])
+	@command -v docker >/dev/null || { echo "docker is required; see ADR-0064"; exit 1; }
+	@mkdir -p $(ARM64_BIN)
+	@name=$$(echo "$(PKG)" | tr '/.' '__'); \
+	  CGO_ENABLED=0 GOARCH=arm64 $(GO) test -c -o $(ARM64_BIN)/$$name.test $(PKG); \
+	  docker run --rm --platform linux/arm64 -v $(WORKSPACE):$(WORKSPACE) -w $(CURDIR)/$(PKG) \
+	    $(ARM64_IMAGE) $(CURDIR)/$(ARM64_BIN)/$$name.test \
+	    $(if $(RUN),-test.run '$(RUN)') -test.count=1 -test.timeout $(ARM64_TIMEOUT) -test.v
+
+# The completeness oracle for ADR-0064: a package that obeys the policy emits NO
+# fused-multiply-add instruction when compiled for arm64. The archguard walk checks
+# the source; this checks what the compiler actually did with it.
+.PHONY: arm64-fma
+arm64-fma: ## Count the FMA instructions the arm64 build of PKG still emits (should be 0)
+	@GOARCH=arm64 $(GO) build -a -gcflags=-S $(PKG) 2>&1 \
+	  | grep -E '\b(FMADDD|FMSUBD|FNMADDD|FNMSUBD|FMADDS|FMSUBS|FNMADDS|FNMSUBS)\b' \
+	  > $(ARM64_BIN).fma || true
+	@sed 's|.*$(notdir $(CURDIR))/||; s|).*||' < $(ARM64_BIN).fma | sort | uniq -c | sort -rn
+	@echo "$(PKG): $$(wc -l < $(ARM64_BIN).fma) fused multiply-add instruction(s) on arm64"
+	@rm -f $(ARM64_BIN).fma
+
+# The declared residual of ADR-0064: five complex128 sites in Ferrari's quartic factoring, which
+# no conversion can round (a complex conversion does not round its operand) and which therefore
+# still emit ten fused instructions. Everything else in the covered packages must be zero.
+FMA_RESIDUAL ?= 10
+
+# fma-gate is the ADR-0064 completeness check, and it is the only thing that sees what the
+# compiler actually DID. The archguard walk reads the source; a shape the walk cannot see (a
+# compound assignment did not used to be one) still shows up here. Run it before a push that
+# touches math/, kernel/geom/ or kernel/predicates/.
+.PHONY: fma-gate
+fma-gate: ## Fail if the arm64 build of the FMA-policy packages emits more than FMA_RESIDUAL fused ops
+	@total=0; for p in ./math ./kernel/geom ./kernel/predicates; do \
+	  n=$$(GOARCH=arm64 $(GO) build -a -gcflags=-S $$p 2>&1 \
+	    | grep -cE '\b(FMADDD|FMSUBD|FNMADDD|FNMSUBD|FMADDS|FMSUBS|FNMADDS|FNMSUBS)\b'); \
+	  echo "  $$p: $$n"; total=$$((total+n)); done; \
+	  echo "total $$total, declared residual $(FMA_RESIDUAL) (ADR-0064)"; \
+	  if [ "$$total" -gt "$(FMA_RESIDUAL)" ]; then \
+	    echo "FAIL: a product the policy binds is still fused; run 'make arm64-fma PKG=<pkg>' to locate it"; exit 1; \
+	  elif [ "$$total" -lt "$(FMA_RESIDUAL)" ]; then \
+	    echo "FAIL: the residual FELL to $$total — lower FMA_RESIDUAL so the ratchet holds the new floor"; exit 1; \
+	  fi
 
 .PHONY: cover
 cover: ## Run tests with coverage and enforce COVER_MIN
-	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(PKG)
+	CGO_ENABLED=0 $(GO) test -covermode=count -coverprofile=coverage.out -timeout $(CORPUS_TIMEOUT) $(TEST_PKGS)
 	@total=$$($(GO) tool cover -func=coverage.out | awk '/total:/ {print $$3}' | tr -d '%'); \
 	  echo "total coverage: $$total% (min $(COVER_MIN)%)"; \
 	  awk "BEGIN{exit !($$total >= $(COVER_MIN))}" \
@@ -193,6 +346,20 @@ run-cli: ## Run the headless CLI
 .PHONY: ci
 ci: fmt-check vet lint cover ## Everything a PR must pass, locally (both modules)
 
+# THE pre-push gate (#3526). `make ci` covers the root module and lints/vets head, but
+# nothing ran the head module's TESTS or the nested modules at all, and neither the SPDX
+# nor the markdownlint job CI requires — so "this wave did not touch head" was an
+# assertion about a diff rather than a measurement.
+#
+# Leg order is cheapest-and-most-likely-to-be-forgotten first, so a missing SPDX header
+# or a markdownlint error surfaces in seconds rather than 26 minutes in; then the ground
+# this issue newly covers (head, the nested modules); then `ci`, the longest and
+# best-known leg, last. head-deps is leg 1 for the same reason: a machine that cannot
+# build head is told which dependency is missing in 0.2 s, and exits non-zero, because a
+# gate that quietly covers some of the modules is worse than no gate.
+.PHONY: gate
+gate: head-deps spdx-check docs-lint test-head test-nested-modules ci ## Pre-push: EVERY module + every check CI requires
+
 .PHONY: ci-race
 ci-race: ci test-race ## `make ci` plus the race detector (the pre-release gate)
 
@@ -200,6 +367,26 @@ ci-race: ci test-race ## `make ci` plus the race detector (the pre-release gate)
 tools: ## Install pinned dev tools into $GOBIN
 	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_VERSION)
 	$(GO) install gotest.tools/gotestsum@$(GOTESTSUM_VERSION)
+
+.PHONY: sonar
+sonar: ## Local SonarQube with CI's settings — regenerates coverage first (~40 min)
+	scripts/sonar-local.sh --coverage
+
+.PHONY: sonar-impacted
+sonar-impacted: ## Local SonarQube, coverage on the CHANGED packages only (~1 min); what the hook runs
+	scripts/sonar-local.sh --impacted
+
+.PHONY: sonar-fast
+sonar-fast: ## Local SonarQube reusing whatever coverage.out is on disk
+	scripts/sonar-local.sh
+
+.PHONY: sonar-nocover
+sonar-nocover: ## Local SonarQube, issues + duplication only (no coverage needed)
+	scripts/sonar-local.sh --no-coverage
+
+.PHONY: sonar-stop
+sonar-stop: ## Stop the local SonarQube server (its data volume is kept)
+	scripts/sonar-local.sh --stop
 
 .PHONY: hooks
 hooks: ## Point git at the repo's pre-commit hook

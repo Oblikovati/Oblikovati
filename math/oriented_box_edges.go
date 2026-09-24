@@ -28,7 +28,7 @@ func orientedFrame(edges [3]Vector3) ([3]UnitVector3, [3]Scalar) {
 	var axes [3]UnitVector3
 	var half [3]Scalar
 	for i, e := range edges {
-		half[i] = e.Length() * 0.5
+		half[i] = Scalar(e.Length() * 0.5)
 		if u, err := UnitVector3FromVector(e); err == nil {
 			axes[i] = u
 		}

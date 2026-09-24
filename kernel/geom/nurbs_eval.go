@@ -33,7 +33,7 @@ func (h homog) point() math.Point3 {
 	if !weightUsable(h.w) {
 		return math.Point3{}
 	}
-	return h.a.Scale(1 / h.w).AsPoint()
+	return h.a.Scale(float64(1 / h.w)).AsPoint()
 }
 
 // deriv applies the rational quotient rule: given the value accumulator (this)
@@ -45,7 +45,7 @@ func (h homog) deriv(d homog) math.Vector3 {
 		return math.Vector3{}
 	}
 	point := h.point()
-	return d.a.Sub(point.AsVector().Scale(d.w)).Scale(1 / h.w)
+	return d.a.Sub(point.AsVector().Scale(d.w)).Scale(float64(1 / h.w))
 }
 
 // weightFloor is the smallest accumulated basis weight treated as usable. It is far

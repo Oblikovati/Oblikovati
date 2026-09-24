@@ -29,8 +29,9 @@ import (
 type chartChain struct {
 	p3                     []math.Point3
 	uv                     []math.Point2
-	uMin, uMax, vMin, vMax float64 // the chain's own (u,v) box, so a clearance query rejects it cheaply
-	chord                  float64 // its mean 3D chord — the scale of its own discretisation
+	uMin, uMax, vMin, vMax float64     // the chain's own (u,v) box, so a clearance query rejects it cheaply
+	chord                  float64     // its mean 3D chord — the scale of its own discretisation
+	spans                  []chainSpan // its segments in ordered runs, so a query skips far runs whole
 }
 
 // chartBoundaryChains lifts every boundary loop of a face onto the chart's branch, outer loop first.
@@ -59,6 +60,7 @@ func liftLoopOntoChart(s geom.Surface, r chartRegion, loop []math.Point3) (chart
 		c.uv[i] = math.P2(cu[i]+du, cv[i]+dv)
 	}
 	c.uMin, c.uMax, c.vMin, c.vMax = uvBBox(c.uv)
+	c.spans = chainSpans(c.uv)
 	c.chord = meanChainChord(c.p3)
 	return c, true
 }

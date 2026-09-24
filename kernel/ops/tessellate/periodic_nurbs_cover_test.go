@@ -93,25 +93,81 @@ func TestSurfaceClosedInUNotV(t *testing.T) {
 // selection and the seam weld. It asserts the mesh is fold-free and spans the FULL angular period (the
 // #1510 bug was a half-strip), and that its only open edges are the band's own rim/mouth boundaries (no
 // interior crack) — an isolated tube band is legitimately open top and bottom.
+//
+// The mouth is placed BOTH away from the seam and straddling it (#3518 review 2). The straddling case
+// is the one the covering exists for and it was un-meshed by any test: with the mouth at u = 0.5 the
+// replica selection never has to choose between two images of a mouth triangle, so the defect
+// keepOneReplicaEach fixed was invisible here. Measured at the wave base fff94140, the straddling
+// mouth at PropertyQuality came back with 103 free edges against a boundary of 100 — a three-edge
+// crack that the old ceiling of "> 110" admitted.
 func TestCoveringPeriodicMeshCoversFullPeriod(t *testing.T) {
 	t.Parallel()
 	s := closedBSplineCylinder(t, 10, 8)
 	rims := []cylLoop{sampleRim(s, 0, 40), sampleRim(s, 1, 40)}
-	mouths := []cylLoop{sampleMouth(s, 0.5, 0.5, 0.08, 20)}
-	for _, gq := range gateQualities() {
-		assertCoveringMeshSpansThePeriod(t, gq.name, coveringPeriodicMesh(s, gq.q, 0, 1, rims, mouths))
+	for _, row := range []struct {
+		name  string
+		uc    float64
+		folds map[string]int
+	}{
+		{"mouth away from the seam", 0.5, nil},
+		// One fold edge at the DISPLAY faceting, and it is PRE-EXISTING: measured in a clean detached
+		// worktree at the wave base fff94140, that row comes back byte-identical (822 triangles, 100
+		// free edges, 514.7122 mm², one fold). It is pinned rather than asserted away so a rise is
+		// caught and a fall says the covering stopped folding there.
+		{"mouth straddling the seam", 0, map[string]int{"default": 1}},
+	} {
+		mouths := []cylLoop{sampleMouth(s, row.uc, 0.5, 0.08, 20)}
+		for _, gq := range gateQualities() {
+			m := coveringPeriodicMesh(s, gq.q, 0, 1, rims, mouths)
+			assertCoveringMeshSpansThePeriod(t, row.name+", "+gq.name, m, 100, row.folds[gq.name])
+		}
+	}
+}
+
+// TestAMouthRemovesAreaFromTheCoveringBand is the covering mesher's only AREA gate, and it is a
+// two-sided ratchet rather than an oracle, because one of the two rows it pins is WRONG.
+//
+// The invariant is arithmetic: cutting a mouth out of a band removes surface, so the band with a mouth
+// must mesh to LESS than the same band without one. The mouth away from the seam obeys it — 465.3728
+// without, 457.3523 with, at PropertyQuality. The mouth STRADDLING the seam does not: 508.2418, some
+// 43 mm² MORE than the band it was cut from. That is the covering over-reporting the seam, and it is
+// PRE-EXISTING: measured in a clean detached worktree at the wave base fff94140, the same six numbers
+// come back, byte-identical at DefaultQuality (514.7122) and 507.7612 at PropertyQuality — the 0.48 mm²
+// difference there is #3518's own three-edge crack closing, not the 43 mm².
+//
+// So the row pins what is, names what is wrong with it, and fails in BOTH directions: a drift means
+// something moved, and the straddling number falling to below the mouthless band means the defect is
+// fixed and this row should become the plain invariant for both placements.
+func TestAMouthRemovesAreaFromTheCoveringBand(t *testing.T) {
+	t.Parallel()
+	s := closedBSplineCylinder(t, 10, 8)
+	rims := []cylLoop{sampleRim(s, 0, 40), sampleRim(s, 1, 40)}
+	bare := coveringPeriodicMesh(s, PropertyQuality(), 0, 1, rims, nil).Area()
+	away := coveringPeriodicMesh(s, PropertyQuality(), 0, 1, rims,
+		[]cylLoop{sampleMouth(s, 0.5, 0.5, 0.08, 20)}).Area()
+	seam := coveringPeriodicMesh(s, PropertyQuality(), 0, 1, rims,
+		[]cylLoop{sampleMouth(s, 0, 0.5, 0.08, 20)}).Area()
+	if away >= bare {
+		t.Errorf("a mouth away from the seam meshes %.4f mm² against a mouthless band of %.4f; cutting a "+
+			"hole may not add area", away, bare)
+	}
+	if stdmath.Abs(seam-508.2418) > 0.01 {
+		t.Errorf("a mouth STRADDLING the seam meshes %.4f mm²; the pinned measurement is 508.2418. A rise "+
+			"is a regression; a fall below the mouthless %.4f means the covering has stopped over-reporting "+
+			"the seam (pre-existing at fff94140, ~43 mm²) — delete this pin and gate both placements on the "+
+			"invariant above", seam, bare)
 	}
 }
 
 // assertCoveringMeshSpansThePeriod checks one covering mesh: non-empty, fold-free, reaching ±R in both
-// x and y (the #1510 bug was a half-strip), and open only along its own rim/mouth boundaries.
-func assertCoveringMeshSpansThePeriod(t *testing.T, quality string, m *Mesh) {
+// x and y (the #1510 bug was a half-strip), and open along EXACTLY its own rim/mouth boundaries.
+func assertCoveringMeshSpansThePeriod(t *testing.T, quality string, m *Mesh, wantFree, wantFolds int) {
 	t.Helper()
 	if m == nil || m.TriangleCount() == 0 {
-		t.Fatalf("%s quality: covering mesh is empty", quality)
+		t.Fatalf("%s: covering mesh is empty", quality)
 	}
-	if folds := validate.FoldEdgeCount(m); folds != 0 {
-		t.Errorf("%s quality: covering mesh has %d fold edges; want 0", quality, folds)
+	if folds := validate.FoldEdgeCount(m); folds != wantFolds {
+		t.Errorf("%s: covering mesh has %d fold edges; want %d", quality, folds, wantFolds)
 	}
 	var xmin, xmax, ymin, ymax float64
 	for _, p := range m.Positions {
@@ -120,12 +176,15 @@ func assertCoveringMeshSpansThePeriod(t *testing.T, quality string, m *Mesh) {
 	}
 	// The whole period must be present: reach near +R and −R in BOTH x and y, not just a strip.
 	if xmax < 9 || xmin > -9 || ymax < 9 || ymin > -9 {
-		t.Errorf("%s quality: mesh does not span the full cylinder: x[%.1f,%.1f] y[%.1f,%.1f], want ±~10",
+		t.Errorf("%s: mesh does not span the full cylinder: x[%.1f,%.1f] y[%.1f,%.1f], want ±~10",
 			quality, xmin, xmax, ymin, ymax)
 	}
-	if free := freeEdgeCount(m); free > 110 {
-		t.Errorf("%s quality: mesh has %d free edges; want ≈100 (the rim+mouth boundaries only, no interior crack)",
-			quality, free)
+	// EXACTLY the boundary it was given — two 40-point rims and a 20-point mouth — the way the chart
+	// mesher's own rim gate is exact. The old ceiling of "> 110" was 10 % above the truth and admitted
+	// a three-edge crack on the seam-straddling mouth for as long as it stood (#3518 review 2).
+	if free := freeEdgeCount(m); free != wantFree {
+		t.Errorf("%s: mesh has %d free edges; want exactly %d (the rim+mouth boundaries, no interior crack)",
+			quality, free, wantFree)
 	}
 }
 

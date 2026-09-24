@@ -309,27 +309,42 @@ func curvedWeldPins() []fingerprintPin {
 		// rim band assembly so any later slice that touches fillet_rim.go/sphere_zone_mesh.go's shared
 		// isClosedCircularEdge predicate fails loud if it perturbs the I9 body. Same cross-platform-risk
 		// caveat as above applies. See .superpowers/sdd/rim-arc3d-widen-report.md.
-		{"I9", 1171624.810038584052, 67580, 0xab1686e36b3b9396, ""},
+		// REBASELINED 2026-09-15 (#3517): the rim rebuild now carries the chart onto the face it re-winds,
+		// so this body's periodic host reaches the GENERAL chart-driven mesher. Every per-face DRAWEXE
+		// oracle, watertight gate and the scoreboard stay green; ADR-0061 carries the table.
+		// RE-measured 2026-09-22 (review 3 C1): the classification now selects exactly ONE path, so a
+		// charted face whose trim DEVELOPS keeps the structured grid — W8 and K4 are bit-identical to
+		// their pre-#3517 pins again — and the boundary clearance reads a chord capped at the
+		// covering's own cell. Every moved face's worst chord sagitta falls; ADR-0061 §R4.6 has it.
+		{"I9", 1171624.810037838062, 131966, 0x366ab0e8329b56c4, ""},
 		// Wave-E torus-rim greens (torus_rim_spiric_gate_test.go carries their DRAWEXE per-face tables):
 		// J5/A5/A6 = the concave closed-rim cove band on a TORUS host with a latitude cap
 		// (fillet_torusarm_concave.go — external a+r for J5/A5, internal a−r for A6); J3/A4 = the
 		// SPIRIC closed-rim canal on a meridian cap (fillet_spiric_spine.go / fillet_spiric_rim.go +
-		// the torusTubeBandLoftMesh tube-wrapping host loft). Captured on THIS HEAD; they lock the
-		// concave torus arm, the spiric station loft, the closed-rim weld routing, and the tube-band
-		// mesher, so any later slice touching those fails loud. Same cross-platform-risk caveat.
-		{"J5", 6757909.464672484435, 1181692, 0x21f4472585f96261, ""},
+		// the tessellator's kindSpiricBand arm, which meshes the tube-wrapping host torus). Captured on
+		// THIS HEAD; they lock the concave torus arm, the spiric station loft, the closed-rim weld
+		// routing, and the tube-band mesher, so any later slice touching those fails loud. Same
+		// cross-platform-risk caveat. (This used to name torusTubeBandLoftMesh; measured at #3517 that
+		// function took zero calls on either body, and it is deleted.)
+		{"J5", 6757871.731410679407, 972902, 0xa49f12e77e9ebd38, ""},
 		// J3/A4 REBASELINED 2026-09-08 (ADR-0061 stage 5): the tube-wrapping band loft was generalised
 		// from "two spiric ovals" to "two edges that each go the whole way round the tube", and it now
-		// claims these two hosts' torus faces before the denser CDT downstream of it does. Same geometry
+		// claims these two hosts' torus faces. (This used to say "before the denser CDT downstream of it
+		// does"; measured at #3517, what claimed them before was torusTubeBandLoftMesh, a second loft in
+		// the seam-crossing router, and these two pins ARE what catches an attempt to delete the arm —
+		// they move to 1115132 and 1180684 triangles. That second loft is now deleted.) Same geometry
 		// to five decimals — J3 7395243.913 against the old 7395592.452 (rel 4.7e-5), A4 15408786.198
 		// against 15409136.953 (rel 2.3e-5), both still watertight — at a THIRD of the triangles
 		// (1115132 → 340988, 1180684 → 406540). A loft that carries each boundary's exact edge
 		// discretisation and fills between them needs far fewer than a triangulation that re-covers the
 		// whole trim, and the volume says it loses nothing.
-		{"J3", 7395243.913186325692, 340988, 0xb3fcd06089a56c0c, ""},
-		{"A4", 15408786.198051279411, 406540, 0xc77a3a360368ed8d, "bfuseblend"},
+		// RE-measured on the rebase onto m48/csg-leftovers: #3551's covering merges two records of one
+		// LOCATION into one vertex, which takes tens of triangles off the five bodies whose charted
+		// faces carry a coincident pair. Volumes move 6.5e-12 to 1.5e-8 — merge noise, not geometry.
+		{"J3", 7395606.450651307590, 1621114, 0xc0b3697d32490bbf, ""},
+		{"A4", 15409151.086006233469, 1686212, 0xc63c1ea6af770e55, "bfuseblend"},
 		{"A5", 117038179.720218241215, 788492, 0xcd9879937ec3c456, "bfuseblend"},
-		{"A6", 113037851.868033841252, 526348, 0xb5bf46a9e57af953, "bfuseblend"},
+		{"A6", 113037832.342674732208, 1015708, 0x1bf42f05e381a79e, "bfuseblend"},
 		// M5 (simple): the notch-wall concave cove sign (W-DH capability wave). A box − quarter-cylinder
 		// notch filleted r5 on three ALL-CONCAVE edges at one trihedral vertex: the concave circle-edge
 		// cove arm (concaveTorusArmSurface) hardcoded major = R+r (the boss convention), but a notch's
@@ -354,7 +369,7 @@ func curvedWeldPins() []fingerprintPin {
 		// HISTORIC reference's drift: our body reads 78062.6 vs local DRAWEXE 8.0's own 78062.8
 		// (−0.0003%). Captured on THIS HEAD; locks the sequential-rim composition so a later rim or
 		// key-continuity slice fails loud if it perturbs the B3 body. Same cross-platform caveat.
-		{"B3", 1284834.848345890874, 135180, 0xac0646576d972b5d, "bfuseblend"},
+		{"B3", 1284834.848345860140, 199566, 0xe9bc28db19bde1d9, "bfuseblend"},
 		// I1 (simple, W-K capability wave): the CONCAVE-BORE Cone∧Plane cap arm. A conical bore rim
 		// (material outside the cone) is a genuinely CONVEX edge — the ball rolls in the material exactly
 		// like the boss (s=+1) case, do-no-harm comment above coneArmFillet — so coneArmFilletConcave

@@ -35,7 +35,7 @@ func ClosestPointOnSegment(s LineSegment, p math.Point3) math.Point3 {
 	if len2 == 0 {
 		return s.StartPoint
 	}
-	return s.PointAt(math.Clamp01(s.StartPoint.VectorTo(p).Dot(d) / len2))
+	return s.PointAt(math.Clamp01(float64(s.StartPoint.VectorTo(p).Dot(d) / len2)))
 }
 
 // DistancePointToSegment returns the distance from p to the nearest point of
@@ -64,7 +64,7 @@ func LinePlaneIntersection(l Line, pl Plane, tol float64) (math.Point3, bool) {
 	if math.IsNearZero(denom, tol) {
 		return math.Point3{}, false
 	}
-	t := l.Origin.VectorTo(pl.Origin).Dot(n) / denom
+	t := float64(l.Origin.VectorTo(pl.Origin).Dot(n) / denom)
 	return l.PointAt(t), true
 }
 
@@ -75,13 +75,13 @@ func LineLineClosest(a, b Line, tol float64) (onA, onB math.Point3, ok bool) {
 	d1, d2 := a.Dir.AsVector(), b.Dir.AsVector()
 	w0 := b.Origin.VectorTo(a.Origin)
 	bb := d1.Dot(d2)
-	denom := 1 - bb*bb // d1·d1 = d2·d2 = 1 (unit directions)
+	denom := 1 - float64(bb*bb) // d1·d1 = d2·d2 = 1 (unit directions)
 	if math.IsNearZero(denom, tol) {
 		return math.Point3{}, math.Point3{}, false
 	}
 	d, e := d1.Dot(w0), d2.Dot(w0)
-	sc := (bb*e - d) / denom
-	tc := (e - bb*d) / denom
+	sc := float64((float64(bb*e) - d) / denom)
+	tc := float64((e - float64(bb*d)) / denom)
 	return a.PointAt(sc), b.PointAt(tc), true
 }
 
@@ -105,6 +105,6 @@ func Line2dIntersection(a, b Line2d, tol float64) (math.Point2, bool) {
 	if math.IsNearZero(cross, tol) {
 		return math.Point2{}, false
 	}
-	s := a.Origin.VectorTo(b.Origin).Cross(db) / cross
+	s := float64(a.Origin.VectorTo(b.Origin).Cross(db) / cross)
 	return a.PointAt(s), true
 }

@@ -1,0 +1,307 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package geom
+
+import stdmath "math"
+
+// The BRANCH PAIRING of the second-harmonic torus section (ADR-0061 stage 5, third slice).
+//
+// The one-harmonic station has exactly two azimuths and they are ordered by construction: phase ±
+// arccos, one on each side of the harmonic's own peak. A second-harmonic station has up to FOUR, and
+// which two of them are one closed branch pair is a real question. A rod driven ACROSS a ring answers
+// it plainly: the infinite rod pierces the tube TWICE at every tube angle it reaches — once near the
+// ring's +x flank and once near its −x — so four azimuths, in two pairs that never meet each other.
+//
+// A pair is named by the EXTREMUM it straddles. df/du is itself a degree-two trigonometric polynomial,
+// so a station has two or four extrema alternating round the circle, and between two neighbouring
+// extrema f is monotone and carries at most one root. A LANE is one extremum together with the root on
+// each side of it: the arc it bounds is where f keeps one sign, and the pair merges — the FOLD — where
+// that arc collapses onto the extremum itself. That is exactly what the one-harmonic form does with
+// arccos → 0, so the two forms fold the same way and share periodicRootWindows.
+//
+// The lane's discriminant generalises the harmonic's reach² − level² term for term: with c the lane's
+// extremum and c⁻, c⁺ its neighbours, min(−f(c)·f(c⁻), −f(c)·f(c⁺)) is positive exactly while the two
+// roots exist, and for a one-harmonic station (whose only extrema are its peak and its trough) it IS
+// reach² − level².
+//
+// Two things are certified rather than assumed. A lane is a lane only if its pair merges at its OWN
+// extremum: every extremum has flanks of the opposite sign when four roots are present, so the
+// COMPLEMENTARY pairing (the arcs of the other sign) reports the same windows, and it is rejected
+// because its own extremum does not vanish at the fold. And the extremum tracks must stay separable
+// across the tube's whole turn, or naming a lane by a fixed anchor azimuth would be a guess.
+
+// torusLane is one branch pair of a second-harmonic station: the extremum it straddles and the root on
+// each side of it.
+type torusLane struct {
+	center       float64    // the extremum the pair straddles — the lane's label, and its merged azimuth at a fold
+	value        float64    // f at the centre
+	flanks       [2]float64 // f at the neighbouring extrema, the decreasing-u side first
+	lower, upper float64    // the two azimuths; both the centre at and beyond a fold
+}
+
+// torusLaneAt returns the lane of h whose extremum is nearest anchor. Every azimuth it reports is a
+// CERTIFIED root of the station polynomial (or, at a fold, the station's OWN extremum, which both
+// branches share there) — nothing here picks a root by index or by a hard-coded branch.
+//
+// ok=false is a station with fewer than two extrema, which is a station polynomial with no azimuth
+// dependence at all. There is no lane to read there, and the anchor is a seed from ANOTHER station: it
+// is not a root of this one, so returning it would put a point on the torus that is not on the quadric
+// and say nothing. The caller declines instead.
+func torusLaneAt(h torusSecondHarmonic, anchor float64) (torusLane, bool) {
+	return torusLaneFrom(h, h.extrema(), h.azimuths(), anchor)
+}
+
+// torusLaneFrom is [torusLaneAt] with the station's extrema and roots supplied. A caller that reads
+// SEVERAL lanes off one station — the azimuth census reads one per curve — must not solve the same two
+// quartics again for each of them ("decide each incidence once and reuse the result"). The roots must
+// be the station's own certified azimuths.
+//
+// ok=false is a station no lane can be named on: fewer than two extrema, or a root the sign pattern
+// insists on that the solve did not produce. The second is the post-condition on the locator, and it is here
+// rather than in the caller because EVERY reader of a lane depends on it — the arc's own evaluator most
+// of all (Oblikovati/Oblikovati#3515, review round 2).
+func torusLaneFrom(h torusSecondHarmonic, ex, roots []float64, anchor float64) (torusLane, bool) {
+	if len(ex) < 2 || !torusStationRootsAreComplete(h, ex, roots) {
+		return torusLane{}, false
+	}
+	i, n := nearestAngleIndex(ex, anchor), len(ex)
+	prev, next := ex[(i+n-1)%n], ex[(i+1)%n]
+	return torusLane{
+		center: ex[i],
+		value:  h.valueAt(ex[i]),
+		flanks: [2]float64{h.valueAt(prev), h.valueAt(next)},
+		lower:  arcRootFrom(roots, ex[i], prev, false),
+		upper:  arcRootFrom(roots, ex[i], next, true),
+	}, true
+}
+
+// discriminant is positive exactly where the lane's two azimuths exist and distinct, and crosses zero
+// at each fold — the same contract [torusHarmonic.discriminant] has, so periodicRootWindows reads both.
+// The pair exists exactly while BOTH its branches do, which is why it is the smaller of the two tracks.
+func (l torusLane) discriminant() float64 {
+	return stdmath.Min(l.trackDiscriminant(false), l.trackDiscriminant(true))
+}
+
+// trackDiscriminant is positive exactly while ONE of the lane's two azimuths exists: f takes opposite
+// signs at the two extrema bounding that side's arc, so the arc between them carries a root, and it
+// crosses zero where the root merges into an extremum.
+//
+// A track is what a full-period branch is made of. Consecutive lanes SHARE the track between them — a
+// lane is one extremum with the root on each side — so a lane names its upper track and its predecessor
+// names the same one as its lower, and reading each lane's UPPER track once names every azimuth the
+// station carries exactly once, however many there are (Oblikovati/Oblikovati#3515).
+func (l torusLane) trackDiscriminant(upper bool) float64 {
+	if upper {
+		return float64(-l.value * l.flanks[1])
+	}
+	return float64(-l.value * l.flanks[0])
+}
+
+// upperTrackIsCertified reports the lane's upper track existing not merely AT this station but through
+// the half-step of tube angle either side of it — which is what a SWEEP over samples has to know, and
+// what a bare sign test cannot say.
+//
+// Two things must hold. The extrema bounding the track take opposite signs, so a root lies between them;
+// and each of those two values stands further from zero than the station value can travel in half a
+// sampling step, so neither can vanish unseen between this sample and the next. floor is that travel
+// (see [TorusCoForm.stationValueLipschitz]).
+//
+// A sweep that finds this true at every sample has PROVED the track runs the whole turn. A sweep that
+// only found the discriminant positive at every sample had proved nothing about the gaps, and built
+// arcs over tube angles where the branch does not exist (Oblikovati/Oblikovati#3515, review round 2).
+func (l torusLane) upperTrackIsCertified(floor float64) bool {
+	return l.trackDiscriminant(true) > 0 &&
+		stdmath.Abs(l.value) > floor && stdmath.Abs(l.flanks[1]) > floor
+}
+
+// root returns the lane's upper (increasing-u) or lower azimuth.
+func (l torusLane) root(upper bool) float64 {
+	if upper {
+		return l.upper
+	}
+	return l.lower
+}
+
+// separation is the azimuth the pair spans through its own extremum — zero at the fold where the two
+// have merged, and the counterpart of the harmonic form's 2·arccos.
+func (l torusLane) separation() float64 {
+	return turnBetween(l.center, l.upper, true) + turnBetween(l.center, l.lower, false)
+}
+
+// mergesAtItsCenter reports that the pair meets at the lane's OWN extremum rather than at a flanking
+// one. At a fold the vanishing quantity is whichever of the three the discriminant's zero came from,
+// so this is a comparison of computed values against each other — no absolute floor. A lane whose fold
+// belongs to a flank is the COMPLEMENTARY arc of its neighbours' lanes, already carried by them.
+func (l torusLane) mergesAtItsCenter() bool {
+	return stdmath.Abs(l.value) < stdmath.Min(stdmath.Abs(l.flanks[0]), stdmath.Abs(l.flanks[1]))
+}
+
+// torusStationRootsAreComplete is the POST-CONDITION on the station solve: every arc between neighbouring
+// extrema whose ends differ in sign holds one of the certified azimuths. f is monotone between two of its
+// own critical points, so which arcs hold a root is decided by two signs — a combinatorial fact no chart
+// can lose — while the azimuths themselves come from a quartic in tan(u/2) that can. Where the two
+// disagree the solver has returned a partial station, and everything downstream that reads it, the arc's
+// own evaluator most of all, is reading a station that is not there.
+//
+// It does not ask the converse: a station with MORE azimuths than sign changes carries a double root,
+// which is a tangency and has its own name.
+//
+// It is a post-condition and not a repair. [torusSecondHarmonic.chartShift] turns the chart away from its
+// pole, which is where the loss came from, and after that this never fires: measured at 0 over 1 920 000
+// stations drawn from 4000 random ring × rod pairs, station polynomial and derivative alike. A bisection
+// that recovered the missing root was written first and DELETED when that measurement came in — a repair
+// nothing reaches is a second engine beside the first (Oblikovati/Oblikovati#3515, review round 2).
+//
+// The check itself stays, and it is not the dead parity branch this branch also deleted. That one was
+// unreachable by proof — a cyclic walk over two classes has equally many transitions each way — and this
+// one is not: the chart family is finite, and a station whose roots block all four poles would reach it.
+// It is what makes the chart shift's correctness checkable rather than assumed.
+func torusStationRootsAreComplete(h torusSecondHarmonic, ex, roots []float64) bool {
+	for i := range ex {
+		if stationArcIsMissingItsRoot(h, roots, ex[i], ex[(i+1)%len(ex)]) {
+			return false
+		}
+	}
+	return true
+}
+
+// stationArcIsMissingItsRoot reports an arc between neighbouring extrema whose ends differ in sign — so
+// a root lies between them, f being monotone there — and which holds none of the certified azimuths.
+//
+// An arc whose root has merged ONTO one of its ends is not missing anything: that is the fold, arcRootFrom
+// answers the extremum itself there by design, and the arc's interior legitimately holds nothing. The end
+// is judged a root by the certificate azimuths() applies to any candidate — its residual against the
+// polynomial's own coefficient scale — so no new tolerance enters.
+func stationArcIsMissingItsRoot(h torusSecondHarmonic, roots []float64, lo, hi float64) bool {
+	limit := float64(torusRootResidualTol * h.scale())
+	at, to := h.valueAt(lo), h.valueAt(hi)
+	if stdmath.Abs(at) <= limit || stdmath.Abs(to) <= limit {
+		return false
+	}
+	return (at > 0) != (to > 0) && arcRootFrom(roots, lo, hi, true) == lo
+}
+
+// arcRootFrom returns the root nearest `from` inside the open arc running from `from` toward `to` in
+// the given direction, or `from` itself when that arc holds none. The empty case IS the fold: the two
+// roots have merged onto the extremum, both branches read the same azimuth, and a loop built on the
+// window closes exactly on its ends.
+func arcRootFrom(roots []float64, from, to float64, forward bool) float64 {
+	span, best, out := turnBetween(from, to, forward), stdmath.Inf(1), from
+	for _, r := range roots {
+		d := turnBetween(from, r, forward)
+		if d <= 0 || d >= span || d >= best {
+			continue
+		}
+		best, out = d, r
+	}
+	return out
+}
+
+// turnBetween is the angle from a to b travelling in the named direction, in [0, 2π). Azimuths carry
+// an arbitrary whole turn, so every comparison between two of them folds onto one period first.
+func turnBetween(a, b float64, forward bool) float64 {
+	if forward {
+		return wrapAngle(b - a)
+	}
+	return wrapAngle(a - b)
+}
+
+// nearestAngleIndex returns the index of the angle closest to a the short way round.
+func nearestAngleIndex(xs []float64, a float64) int {
+	best, at := stdmath.Inf(1), 0
+	for i, x := range xs {
+		if d := stdmath.Abs(shortestTurnDelta(a, x)); d < best {
+			best, at = d, i
+		}
+	}
+	return at
+}
+
+// minimumAngleGap is the smallest shortest-turn separation between any two of the angles, which is the
+// spacing a track has to stay well inside to keep its identity.
+func minimumAngleGap(xs []float64) float64 {
+	least := twoPi
+	for i, a := range xs {
+		for _, b := range xs[i+1:] {
+			least = stdmath.Min(least, stdmath.Abs(shortestTurnDelta(a, b)))
+		}
+	}
+	return least
+}
+
+// torusLaneAnchors returns one azimuth per extremum TRACK of the station polynomial — the labels that
+// keep a branch pair on the same lane across the tube's turn. ok=false when the tracks are not
+// separable over the turn: the extremum count changes, a track drifts past half the spacing, two tracks
+// claim the same extremum, or a new extremum PAIR could be born between two stations. Any of those makes
+// the pairing a guess, and the pair demotes to the general marcher rather than being named wrongly.
+func torusLaneAnchors(t Torus, co TorusCoForm) ([]float64, bool) {
+	seed := torusSecondHarmonicAt(t, co, 0).extrema()
+	if len(seed) < 2 {
+		return nil, false // a station with no extremum to name a lane by
+	}
+	reach := float64(minimumAngleGap(seed) / 2)
+	for i := 1; i < torusStationProbes; i++ {
+		ex := torusSecondHarmonicAt(t, co, float64(twoPi*float64(i)/torusStationProbes)).extrema()
+		if !anglesTrackSeeds(seed, ex, reach) {
+			return nil, false
+		}
+	}
+	return seed, true
+}
+
+// torusStationKeepsItsExtrema certifies that no extremum of this station can be BORN OR DIE before the
+// next one is read — what a FULL-PERIOD ARC needs and a folded loop does not.
+//
+// An arc's claim is "this branch exists at EVERY tube angle", which rests on the lane's own extremum
+// still being that lane's extremum everywhere in between; a loop claims only what its window says, and
+// its ends are folds the discriminant sampler bracketed. So this is read by torusUpperTrackSweep, at the
+// station it is about, rather than by torusLaneAnchors — not because a loop is exempt from arithmetic
+// but because the arc is the curve whose claim reaches past the samples.
+//
+// A new extremum pair appears exactly where df/du gains a double root, which is where one of df/du's own
+// humps touches zero. So the quantity that must stay clear of zero is |df/du| AT THE EXTREMA OF df/du,
+// and a hump whose height exceeds what df/du can travel in half a station step cannot reach zero before
+// the next station reads it. It is the same substitution the wrap certificate makes on f
+// ([TorusCoForm.stationSlopeLipschitz]), applied one derivative down, and for the same reason: a count
+// is a topological fact and a grid cannot establish one.
+//
+// It is a proof over TRACKED branches, and the distinction is worth stating because the code cannot. The
+// envelope argument follows each critical point of df/du continuously from this station and bounds how
+// far its value travels; it does not by itself exclude a brand-new critical point appearing between two
+// stations away from every existing one. Measured instead: over 274 corpus rows that build a full-period
+// arc, the extremum count read on a grid 20× finer than the construction's (3 945 600 stations) moves on
+// 0 rows, and 0 of 288 000 stations have an empty derivative-extremum set, so the gate is never vacuous
+// (Oblikovati/Oblikovati#3515, review round 4).
+//
+// It is the gate that was missing. Measured on the 4000-pair corpus, two rows the wave newly admitted
+// built a full-period arc whose reader landed on a lane's own EXTREMUM rather than on a root — the fold
+// answer, at a station that has no fold — and put the arc 1.48 and 0.91 units off the rod, inside a band
+// one sample wide in 5761 that neither the 257-sample post-condition nor a finer grid would see. Both
+// stations carried FOUR extrema, three of them within 0.13 rad, at a tube angle BETWEEN two construction
+// stations that each carried two (Oblikovati/Oblikovati#3515, review round 4).
+func torusStationKeepsItsExtrema(h torusSecondHarmonic, floor float64) bool {
+	g := h.derivative()
+	for _, u := range g.extrema() {
+		if stdmath.Abs(g.valueAt(u)) <= floor {
+			return false
+		}
+	}
+	return true
+}
+
+// anglesTrackSeeds reports each seed claiming exactly one of this station's extrema, within reach and
+// one to one.
+func anglesTrackSeeds(seed, ex []float64, reach float64) bool {
+	if len(ex) != len(seed) {
+		return false
+	}
+	claimed := make([]bool, len(ex))
+	for _, a := range seed {
+		i := nearestAngleIndex(ex, a)
+		if claimed[i] || stdmath.Abs(shortestTurnDelta(a, ex[i])) > reach {
+			return false
+		}
+		claimed[i] = true
+	}
+	return true
+}

@@ -5,7 +5,6 @@ package occtparity
 import (
 	stdmath "math"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -109,20 +108,16 @@ func TestClusterACornerGreensPinnedAndWatertight(t *testing.T) {
 		t.Run(tc.grid+"/"+tc.name, func(t *testing.T) {
 			body := clusterAResultBody(t, tc.grid, tc.name)
 			fp := bodyMeshFingerprint(body)
-			// Triangle COUNT is architecture-stable and always checked; the HASH is not. It digests
-			// quantized coordinates, and arm64 contracts x*y+z into FMA where amd64 does not, so the same
-			// mesh hashes differently (tolblend_simple/A1 and D4 drifted on macOS with IDENTICAL counts —
-			// 10438 and 276 — proving the mesh is the same and only the rounding differs). Pinned on amd64,
-			// where both CI legs still run it. The volume and watertight/fold gates below run everywhere:
-			// those are the structural claims, and they must never be architecture-gated.
-			if fp.Triangles != tc.tris {
-				t.Fatalf("triangle count drifted: tris=%d, want %d", fp.Triangles, tc.tris)
-			}
-			if runtime.GOARCH == "amd64" && fp.Hash != tc.hash {
-				t.Fatalf("fingerprint drifted: hash=%#x tris=%d, want hash=%#x tris=%d", fp.Hash, fp.Triangles, tc.hash, tc.tris)
-			}
-			if rel := relErr(fp.Volume, tc.vol); rel > 1e-9 {
-				t.Fatalf("volume %.12f != pinned %.12f (rel %.3g)", fp.Volume, tc.vol, rel)
+			// The HASH used to be checked on amd64 only: it digests quantized coordinates, and arm64
+			// contracted x*y+z into an FMA where amd64 did not, so the same mesh hashed differently
+			// (tolblend_simple/A1 and D4 drifted on macOS with IDENTICAL counts — 10438 and 276 —
+			// proving the mesh was the same and only the rounding differed). ADR-0064 (#3528) removes
+			// that for the arithmetic floor and A1 now matches on arm64; D4 does not yet, and says so
+			// by name in crossArchHashDrift instead of by an architecture gate here.
+			assertPinnedFingerprint(t, tc, fp)
+			if tol := pinnedVolumeTolerance(tc.grid, tc.name); relErr(fp.Volume, tc.vol) > tol {
+				t.Fatalf("volume %.12f != pinned %.12f (rel %.3g, tol %.1g)",
+					fp.Volume, tc.vol, relErr(fp.Volume, tc.vol), tol)
 			}
 			assertClusterAWatertight(t, body)
 		})

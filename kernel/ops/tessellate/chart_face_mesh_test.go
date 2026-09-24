@@ -39,8 +39,9 @@ type chartCorpusRow struct {
 	pinWindow float64
 }
 
-// ringMinus builds `ring − tool` for the corpus rows that bore a torus.
-func ringMinus(t *testing.T, tool *topo.Body) *topo.Body {
+// ringMinus builds `ring − tool` for the corpus rows that bore a torus. It takes a testing.TB so the
+// benchmarks in tessellate_bench_test.go can build the same fixture rather than a second copy of it.
+func ringMinus(t testing.TB, tool *topo.Body) *topo.Body {
 	t.Helper()
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
@@ -54,7 +55,7 @@ func ringMinus(t *testing.T, tool *topo.Body) *topo.Body {
 }
 
 // mustCylinder builds a cylindrical tool, failing the test rather than returning an error.
-func mustCylinder(t *testing.T, base math.Point3, axis math.Vector3, radius, height float64) *topo.Body {
+func mustCylinder(t testing.TB, base math.Point3, axis math.Vector3, radius, height float64) *topo.Body {
 	t.Helper()
 	b, err := brep.SolidCylinder(base, axis, radius, height)
 	if err != nil {
@@ -64,7 +65,7 @@ func mustCylinder(t *testing.T, base math.Point3, axis math.Vector3, radius, hei
 }
 
 // mustSphere builds a spherical tool, failing the test rather than returning an error.
-func mustSphere(t *testing.T, centre math.Point3, radius float64) *topo.Body {
+func mustSphere(t testing.TB, centre math.Point3, radius float64) *topo.Body {
 	t.Helper()
 	b, err := brep.SolidSphere(centre, radius, "ball")
 	if err != nil {
@@ -84,7 +85,7 @@ func mustBlock(t *testing.T, lo, hi math.Point3) *topo.Body {
 }
 
 // rodAndBall are the folded-window pair: a rod with a ball set into its side.
-func rodAndBall(t *testing.T) (*topo.Body, *topo.Body) {
+func rodAndBall(t testing.TB) (*topo.Body, *topo.Body) {
 	t.Helper()
 	rod := mustCylinder(t, math.P3(0, 0, -2), math.V3(0, 0, 1), 1, 4)
 	ball := mustSphere(t, math.P3(1.4, 0, 0), 0.5)
@@ -92,7 +93,7 @@ func rodAndBall(t *testing.T) (*topo.Body, *topo.Body) {
 }
 
 // rodBall builds one operation of the folded-window pair.
-func rodBall(t *testing.T, op ops.PartFeatureOperation) *topo.Body {
+func rodBall(t testing.TB, op ops.PartFeatureOperation) *topo.Body {
 	t.Helper()
 	rod, ball := rodAndBall(t)
 	body, err := ops.Boolean(op, rod, ball)
@@ -107,13 +108,19 @@ func chartCorpus() []chartCorpusRow {
 	return []chartCorpusRow{
 		// The representative face: a coaxial shaft bored through a ring leaves a torus band that wraps
 		// the ring's AZIMUTH. Before: the whole torus, 144.78 against 203.59 with 64 free edges.
-		{name: "RS− ring − coaxial shaft", want: 203.59, maxRel: 0.05, body: func(t *testing.T) *topo.Body {
+		//
+		// 0.05 → 0.02 (#3527): the bound was never measured against, and these two rows read 1.3199 %
+		// and 1.2889 % (200.902780 and 213.472722 at DefaultQuality, measured on this tree). A bound
+		// four times the reading sits green through a drift most of the way to a wrong body, which is
+		// the same defect the complement row below was filed for. 0.02 is ~1.5× each reading: enough
+		// room for a faceting improvement, not enough to hide one.
+		{name: "RS− ring − coaxial shaft", want: 203.59, maxRel: 0.02, body: func(t *testing.T) *topo.Body {
 			return ringMinus(t, mustCylinder(t, math.P3(0, 0, -4), math.V3(0, 0, 1), 4, 8))
 		}},
 		// A torus carrying TWO drill windows and no outer loop. Before: the whole torus grid, SILENTLY
 		// (the one-window complement mesher declined a second window and fell through without a word),
 		// 64 free edges.
-		{name: "RD− ring − axial drill", want: 216.26, maxRel: 0.05, body: func(t *testing.T) *topo.Body {
+		{name: "RD− ring − axial drill", want: 216.26, maxRel: 0.02, body: func(t *testing.T) *topo.Body {
 			return ringMinus(t, mustCylinder(t, math.P3(5, 0, -4), math.V3(0, 0, 1), 0.8, 8))
 		}},
 		// The folded-window family. Both faces are the chart mesher's now: the ball's bulge (a sphere
@@ -122,14 +129,19 @@ func chartCorpus() []chartCorpusRow {
 		// to the axis, so the wall integrated 7.19 where 8.26 is right, and the two rows sat PINNED at
 		// 0.0872 and 0.0902 with that number written down as what would move them.
 		//
-		// It moved. The unroll now keeps only the bands the general covering cannot serve — an
-		// uncharted one, or one whose lens windows nearly pinch (twoRimHoledTrimOf) — and these two
-		// measure 0.0144 and 0.0143, exactly the 1.44 %/1.43 % the pin predicted. They are bounded
-		// rows again, at 0.02: a chord deficit is all that is left, and pinning one would fail the day
-		// the faceting improves.
-		{name: "RODB∪ rod ∪ ball", want: 13.077910, maxRel: 0.02,
+		// It moved. Both faces are the general covering's now — the unroll and the arms that kept it
+		// (twoRimHoledTrimOf, kindSpiricBand) are deleted, #3517 — and when that happened these two
+		// measured 0.0144 and 0.0143, exactly the 1.44 %/1.43 % the pin predicted. They are bounded
+		// rows again: a chord deficit is all that is left, and pinning one would fail the day the
+		// faceting improves.
+		//
+		// 0.02 → 0.01 (#3527): the day came. Re-MEASURED on this tree they read 0.006576 and 0.006117
+		// (12.991908 and 12.479096 against the analytic values beside them) — the covering's own
+		// refinements over this wave more than halved both deficits, and the bound written for a 1.44 %
+		// reading is three times a 0.66 % one. 0.01 is ~1.5× the readings.
+		{name: "RODB∪ rod ∪ ball", want: 13.077910, maxRel: 0.01,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Join) }},
-		{name: "RODB− rod − ball", want: 12.555898, maxRel: 0.02,
+		{name: "RODB− rod − ball", want: 12.555898, maxRel: 0.01,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Cut) }},
 		// RODB∩'s two faces are small single-loop patches chorded flat across a lens 0.1 deep. The rod
 		// WALL's carries a chart and no special shape claims it, so the classification names it
@@ -143,7 +155,17 @@ func chartCorpus() []chartCorpusRow {
 		// size the other axis's chord asks for (balancedCoverGrid) refines the rod wall's lens patch,
 		// and a finer faceting of a lens 0.1 mm deep on a body of 0.012 mm³ takes a little more volume
 		// out of it. The body it belongs to is unchanged everywhere else.
-		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.2810, pinWindow: 0.005,
+		//
+		// 0.2810 → 0.3020 (#3517 review 3 C1): re-measured again, and this one is a small LOSS taken
+		// for a rule. The rod wall's lens patch DEVELOPS into one (u,v) branch, so the classification
+		// names it kindUncharted — and specialCurvedMesh now honours that instead of handing every
+		// charted face to the covering regardless (tessellate_trim_special.go). The covering read
+		// 0.2810 here and the generic path reads 0.3020, a 2.1-point loss on a patch whose deficit is
+		// 28-30 % either way because the BALL's face chords flat across the same lens. The same rule
+		// takes occtparity W8 face 2 — a quarter cylinder with an oracle of exactly 500π — from 36.87×
+		// PropertyQuality's chord tolerance back to 0.75×. A classification that selects exactly one
+		// path is the ground rule; this row is what it costs.
+		{name: "RODB∩ rod ∩ ball", want: 0.012187, pinnedRel: 0.3020, pinWindow: 0.005,
 			body: func(t *testing.T) *topo.Body { return rodBall(t, ops.Intersect) }},
 	}
 }
@@ -194,9 +216,17 @@ func assertCorpusVolume(t *testing.T, row chartCorpusRow, got float64) {
 // Its section under x = R is a single smooth OVAL — one loop of two spiric arcs, (5,0,−1.5) → (5,0,+1.5);
 // it is NOT the lemniscate this comment once claimed (that is the figure-eight fixture, d = R − r), and
 // the boundary passes through no 3D point twice. The rim's chord is coarsest in u at the oval's apex,
-// and this row is what the boundary clearance is swept on (chartBoundaryClearance). Re-measured there:
-// 201.258 against an analytic 203.905 at DefaultQuality, 1.30 % — the comment said 1.11 % from before the
-// sweep, and the number moved with the constant. At PropertyQuality it is 203.869, 0.017 %.
+// and this row is what the boundary clearance is swept on (chartBoundaryClearance). It reads 201.642061
+// against an analytic 203.904871 at DefaultQuality, 1.1097 %, and 203.869771 at PropertyQuality,
+// 0.0172 % — both measured on this tree.
+//
+// The DefaultQuality figure moves with the clearance every time the clearance moves, and this comment has
+// carried each reading in turn: 1.11 % before the first sweep, 1.30 % after it, 1.414 % at the round that
+// centred the clearance, 1.350 % at k = 0.90 uncapped (#3519). It is 1.1097 % now because #3517 caps the
+// chord the clearance is read from and the cap binds on this face. The 1.350 % spelling survived HERE
+// through the edit that corrected it forty lines below, so the function contradicted itself in its own
+// doc for one commit (#3527 review 1, Important 1) — the PropertyQuality half of that sentence had
+// already been updated, which is the tell.
 //
 // The torus FACE's own area is pinned two-sided beside the body volume, because the clearance trades
 // interior density for the boundary and only a per-face reading shows what it costs.
@@ -219,35 +249,86 @@ func TestTheGenusOneComplementIsChartedNotWindowed(t *testing.T) {
 	if free := tessellate.FreeEdgeCount(mesh); free != 0 {
 		t.Errorf("the genus-1 complement meshed with %d free edges, want a watertight mesh", free)
 	}
-	if hasIgnoredTrim(t, body) {
+	if meshReportsIgnoredTrim(mesh) {
 		t.Error("the genus-1 complement reported a discarded trim")
 	}
 	got := tessellate.MeshGeometryProperties(mesh).Volume
-	// 0.02, not the 0.05 the other rows carry: this row is MEASURED at 1.30% (201.258 against 203.905),
-	// and a bound four times looser than the reading would sit green through the window mesher's own
-	// 1.39% — the very number this row exists to have beaten.
-	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > 0.02 {
-		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f > 0.02)", got, an.Volume, rel)
+	// The bound is the 1.39 % CEILING itself, and that is the only number it can honestly be.
+	//
+	// This deficit is what SETS the boundary clearance (#3519, chart_face_clearance.go). The clearance's
+	// only remaining failure edge is above — the corpus tears from k = 1.25 and nowhere below 0.1 — and
+	// its cost is this deficit, monotone in k. So the constant is the largest swept value whose cost
+	// stays under the 1.39 % the deleted window mesher achieved on this body, which is the number this
+	// row exists to have beaten. Writing the ceiling here is what makes the row gate that claim: a
+	// clearance change that spends more than the deleted mesher did fails HERE, which is where the
+	// argument for the constant lives.
+	//
+	// 0.02 → 0.0139 (#3527). The comment this replaces said "MEASURED at 1.350% (201.153 against an
+	// analytic 203.904871)" and that reading is two rewrites old: #3517 caps the chord the clearance is
+	// read from (chartClearanceCellCap), and on this face the cap binds, so k = 0.90 no longer reaches
+	// what it asks for. Re-measured on this tree: 201.642061 against the analytic 203.904871, rel
+	// 0.011097 — 1.1097 %, which is what the pin block below already records and what the sweep table's
+	// k = 0.3 row reads. At PropertyQuality the same body reads 203.869771, 0.0172 %.
+	if rel := stdmath.Abs(got-an.Volume) / an.Volume; rel > complementDeficitCeiling {
+		t.Errorf("the genus-1 complement meshes to %.5f against the analytic %.5f (rel %.4f > %.4f)",
+			got, an.Volume, rel, complementDeficitCeiling)
 	}
 	assertComplementFaceArea(t, body)
 }
+
+// complementDeficitCeiling is the DefaultQuality volume deficit the deleted window mesher achieved on
+// this body (1.388 %, commit 95cdd21e, recorded in chart_face_clearance.go with its raw operands), and
+// so the most the chart mesher's boundary clearance may spend. The shipped clearance reads 1.1097 %
+// against it (measured), which is the margin the constant is chosen under.
+const complementDeficitCeiling = 0.0139
 
 // complementTorusFaceArea is the torus face's own meshed area at DefaultQuality, pinned TWO-SIDED: the
 // boundary clearance buys the oval's watertightness at its apex with interior density next to a coarse
 // boundary, and this is the only place that price is visible.
 //
-// The window is 0.05 mm², not the 0.5 a first attempt used, because 0.5 pinned nothing: it admitted BOTH
-// values the clearance moved between (263.42317 at k = 1.0 and 263.72994 at k = 0.5), so a row meant to
-// catch the constant drifting would have sat green through exactly that. Tessellation is byte-identical
-// run to run by ground rule, so the reading is exact; the window absorbs only the five decimals this
-// literal is written to (1e-5) and the last-place spread an FMA-contracting toolchain gives an area sum.
-// 0.05 is four decades above that and a factor of 2.6 below the nearest reading it has to exclude.
+// The window was 0.5, then 0.05, and is 0.005 now (#3519) — each time because a FINER sweep of the
+// clearance found a value the previous window admitted. 0.5 admitted both ends of the coarse sweep
+// (263.42317 at k = 1.0 and 263.72994 at k = 0.5). 0.05 was claimed to sit "a factor of 2.6 below the
+// nearest reading it has to exclude", true of a sweep whose neighbours were 0.7 and 1.0; refining the
+// sweep put k = 0.8 and k = 0.85 at 263.56345, 0.0086 from the then-pin and INSIDE a window of 0.05, so
+// the pin could not tell the clearance of the day from two values below it.
 //
-// Measured at the shipped k = 0.875. Across the sweep the same face reads 263.72994 (k ≤ 0.55),
-// 263.68219 (0.6), 263.60871 (0.7–0.75), 263.55487 (0.875), 263.45103 (0.925), 263.42317 (1.0),
-// 263.15360 (1.5), 260.51898 (3.0) — monotone in k, which is what a clearance that only ever REMOVES
-// interior nodes must be.
-const complementTorusFaceArea, complementTorusFaceWindow = 263.55487, 0.05
+// Tessellation is byte-identical run to run by ground rule, so the reading is exact; the window absorbs
+// only the five decimals this literal is written to (1e-5) and the last-place spread an FMA-contracting
+// toolchain gives an area sum. That guarantee was CHECKED for this pin rather than assumed, at the
+// clearance shipped today: the same face reads the same bits from the same triangle count on amd64 and
+// under arm64 emulation (ADR-0064's `make arm64`) — bit-identical, so the tightened window is not a
+// platform trap. ADR-0064 does not BIND kernel/ops, so that is an empirical
+// result rather than a structural guarantee; the drift it would newly fail on is between 1.9e-5 and
+// 1.9e-4 relative, which is one or two nodes' worth. 0.005 is 500× the literal's own precision and 5.6×
+// below the nearest reading it must exclude.
+//
+// Measured at the shipped k = 0.90. Across the 33-value re-sweep (chart_face_clearance.go) the same face
+// reads 263.76393 (0.1), 263.75923 (0.2), 263.73402 (0.3), 263.72994 (0.5), 263.60871 (0.70), 263.55487
+// (0.875), 263.49469 (0.89–0.91), 263.45103 (0.92), 263.33288 (1.2), 263.28202 (1.24–1.25), 263.18783
+// (1.3), 263.15360 (1.5), 260.51898 (3.0) — monotone in k, which is what a clearance that only ever
+// REMOVES interior nodes must be. It no longer DECLINES at any swept k: the 294.42794 the low end used
+// to read was the whole domain, and the tear behind it was #3551 rather than this constant. The window
+// separates this reading from every swept k whose mesh differs (the nearest is 263.45103 at 0.92, 0.0437
+// away); it cannot separate 0.90 from 0.89 or 0.91, which build the same mesh.
+//
+// 263.49469 → 263.73402 (#3517's rebase onto this branch): re-MEASURED, and WHAT THIS PIN GATES HAS
+// CHANGED. #3517 caps the chord the clearance is read from at chartClearanceCellCap of the covering's
+// own cell, and this face's oval apex is exactly where an uncapped chord is many cells long — so on
+// this face the CAP binds and k = 0.90 no longer reaches it. The reading is the same 263.73402 the
+// re-sweep above records at k = 0.3, which is what a cap that holds the clearance below what k asks
+// for must produce.
+//
+// It moves the face TOWARD its oracle (analytic 264.88981: deficit 0.50 % → 0.44 %) and it moves the
+// number the clearance is PAID IN the same way: the body's DefaultQuality volume deficit reads 1.1097 %
+// against 1.3497 % at k = 0.90, so the 1.39 % ceiling the constant above is chosen under is met with
+// more room than before, not less. Both re-measured on the merged tree.
+//
+// The window stays 0.005 and still separates this reading from every cap value whose mesh differs (the
+// nearest is 263.60871, 0.125 away; 0.75, 0.875 and 1.0 cells all build this mesh). What it no longer
+// gates is chartBoundaryClearance on THIS face — that constant is gated by its own corpus-tear rows and
+// by the deficit ceiling, which is where its own receipt puts it.
+const complementTorusFaceArea, complementTorusFaceWindow = 263.73402, 0.005
 
 // assertComplementFaceArea holds the complement's torus face to its measured area, both ways.
 func assertComplementFaceArea(t *testing.T, body *topo.Body) {
@@ -292,6 +373,45 @@ func TestTheAzimuthBandMeshesOneTurnNotTwo(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("the bored ring has no torus face; the corpus row no longer tests what it says")
+	}
+}
+
+// TestNoChartedCoveringLaysTwoVerticesAtOneLocation is the corpus half of the covering's
+// one-location-one-vertex invariant (Oblikovati/Oblikovati#3551, coverVertices.MergeCoincidentLocations).
+//
+// It is the invariant, not the fixture. The figure eight found it — its single loop passes the pinch
+// twice and, because the loop also wraps a whole period, the shift carrying the far pass back landed a
+// third copy on the same spot, so three rim vertices sat at (2π, π) — but any boundary that touches
+// itself does the same, and a constrained triangulation cannot recover a constraint incident to a
+// vertex another vertex sits on. That is why the symptom was a rim segment the mesh did not bound and
+// a face declined to the whole domain, and why it moved with the platform and with the model's last
+// bit rather than with anything geometric.
+//
+// Driven over every charted face of the classification corpus at both facetings, counting the covering
+// as the triangulation would see it — boundary chains and interior nodes together.
+func TestNoChartedCoveringLaysTwoVerticesAtOneLocation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("corpus tier (~40s): `make test-corpus`")
+	}
+	t.Parallel()
+	coarse, fine := refinementQualities()
+	covered := 0
+	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
+		for _, q := range []ops.Quality{coarse, fine} {
+			dup, n, ok := tessellate.ChartCoveringLocationCount(f, q)
+			if !ok {
+				continue
+			}
+			covered++
+			if dup != 0 {
+				t.Errorf("%s face %d (%T) at chord %g: the covering lays %d of its %d vertices on top of "+
+					"another; a constraint incident to either may never be recovered",
+					body, i, f.Geometry(), q.ChordTolerance, dup, n)
+			}
+		}
+	})
+	if covered == 0 {
+		t.Error("no corpus face reached the chart covering — the one-location invariant covers nothing")
 	}
 }
 

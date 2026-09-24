@@ -132,12 +132,12 @@ func footPerpendicular(du, dv, r math.Vector3) bool {
 func (s *canalMarchHostState) dampFootStep(q math.Point3, u, v, su, sv, d2 float64) (nu, nv float64, moved bool) {
 	alpha := 1.0
 	for range 8 {
-		cu, cv := u+alpha*su, v+alpha*sv
+		cu, cv := u+float64(alpha*su), v+float64(alpha*sv)
 		r := s.host.pointAtLifted(cu, cv).VectorTo(q)
 		if float64(r.LengthSquared()) < d2 {
 			return cu, cv, true
 		}
-		alpha *= 0.5
+		alpha = float64(alpha * 0.5)
 	}
 	return u, v, false
 }
@@ -174,14 +174,14 @@ func SurfaceFootNear(host CanalMarchHost, u0, v0 float64, q math.Point3) (u, v f
 // the u-domain span otherwise.
 func (s *canalMarchHostState) uJumpGuard() float64 {
 	if s.host.PeriodU > 0 {
-		return s.host.PeriodU / 4
+		return float64(s.host.PeriodU / 4)
 	}
 	lo, hi := s.host.Surf.UDomain()
-	return (hi - lo) / 2
+	return float64((hi - lo) / 2)
 }
 
 // vJumpGuard bounds one inversion's v-motion: half the v-domain span.
 func (s *canalMarchHostState) vJumpGuard() float64 {
 	lo, hi := s.host.Surf.VDomain()
-	return (hi - lo) / 2
+	return float64((hi - lo) / 2)
 }

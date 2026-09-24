@@ -76,6 +76,13 @@ jobs:
             head/go.sum
       # Check out the latest api release and wire the build against it (ADR-0018).
       - uses: ./.github/actions/api-contract
+      # ADR-0064's completeness oracle: cross-compile the FMA-policy packages for arm64 and count
+      # the fused multiply-add instructions the compiler actually emitted. The archguard walk reads
+      # the source and can be blind to a shape (a compound assignment was, once); this reads the
+      # output, so it cannot be. It needs no container and no arm64 machine — only a cross-compile —
+      # so it belongs on every PR rather than in a nightly (Oblikovati#3528).
+      - name: FMA policy — no fused multiply-add on arm64
+        run: make fma-gate
       - uses: golangci/golangci-lint-action@9fae48acfc02a90574d7c304a1758ef9895495fa # v7
         with:
           version: v2.13.1

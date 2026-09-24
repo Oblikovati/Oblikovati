@@ -21,8 +21,10 @@ import (
 //     fillet_spiric_rim.go): a MERIDIAN cap (plane containing the torus axis) has no exact-torus arm;
 //     the ball-centre spine is the closed spiric loop (offset plane ∩ offset torus), stationed in
 //     closed form, lofted with geom.LoftCanalStations, welded through the same host-agnostic rim
-//     rebuild as the elliptic band, and its host torus meshes through torusTubeBandLoftMesh (the
-//     tube-wrapping transpose of the axis-wrapping closed band loft).
+//     rebuild as the elliptic band, and its host torus meshes through the tessellator's kindSpiricBand
+//     arm (spiricBandMesh, the tube-wrapping transpose of the axis-wrapping closed band loft). It used
+//     to say torusTubeBandLoftMesh; measured at #3517, that function took zero calls on either body —
+//     the classification arm has claimed these faces since ADR-0061 stage 5 — and it is deleted.
 //
 // Each green is gated on DRAWEXE 8.0.0 PER-FACE areas (sprops result_i 1e-12; fixtures run verbatim
 // with their own explode variant — all five use plain `explode`), never on the whole-body area alone

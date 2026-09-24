@@ -65,7 +65,7 @@ func (c *ssiSeedField) at(i, j int) ssiSample {
 	if s, ok := c.cache[key]; ok {
 		return s
 	}
-	u, v := c.u0+float64(i)*c.du, c.v0+float64(j)*c.dv
+	u, v := c.u0+float64(float64(i)*c.du), c.v0+float64(float64(j)*c.dv)
 	du, dv := c.base.DerivativesAt(u, v)
 	s := ssiSample{
 		f:  SignedDistanceToSurface(c.other, c.base.PointAt(u, v)),
@@ -79,7 +79,7 @@ func (c *ssiSeedField) at(i, j int) ssiSample {
 
 // point returns the base surface point at lattice node (i, j).
 func (c *ssiSeedField) point(i, j int) math.Point3 {
-	return c.base.PointAt(c.u0+float64(i)*c.du, c.v0+float64(j)*c.dv)
+	return c.base.PointAt(c.u0+float64(float64(i)*c.du), c.v0+float64(float64(j)*c.dv))
 }
 
 // newSSISeedField builds the cached dyadic-lattice field over the base parameter window. The finest
@@ -91,8 +91,8 @@ func newSSISeedField(base, other Surface, g SurfaceGrid) *ssiSeedField {
 	return &ssiSeedField{
 		base: base, other: other, bounder: bounder,
 		u0: g.UMin, v0: g.VMin,
-		du:      (g.UMax - g.UMin) / (float64(coarseU) * res),
-		dv:      (g.VMax - g.VMin) / (float64(coarseV) * res),
+		du:      float64((g.UMax - g.UMin) / (float64(coarseU) * res)),
+		dv:      float64((g.VMax - g.VMin) / (float64(coarseV) * res)),
 		coarseU: coarseU, coarseV: coarseV,
 		cache: map[[2]int]ssiSample{},
 	}
@@ -162,9 +162,9 @@ func (c *ssiSeedField) seeds(leaf float64) []math.Point3 {
 func (c *ssiSeedField) refine(i0, j0, i1, j1 int, leaf float64, sink *ssiSeedSink) {
 	s00, s10, s01, s11 := c.at(i0, j0), c.at(i1, j0), c.at(i0, j1), c.at(i1, j1)
 	minAbs := min(stdmath.Abs(s00.f), stdmath.Abs(s10.f), stdmath.Abs(s01.f), stdmath.Abs(s11.f))
-	su, sv := float64(i1-i0)*c.du, float64(j1-j0)*c.dv
+	su, sv := float64(float64(i1-i0)*c.du), float64(float64(j1-j0)*c.dv)
 	tu, tv := c.cellTangentBound(i0, i1, j0, j1, s00, s10, s01, s11)
-	variation := tu*su + tv*sv // certified upper bound on |Δf| across the cell (|∇f| ≤ 1)
+	variation := float64(tu*su) + float64(tv*sv) // certified upper bound on |Δf| across the cell (|∇f| ≤ 1)
 	if minAbs > variation {
 		return // every interior point keeps a corner's sign: no crossing here
 	}
@@ -187,8 +187,8 @@ func (c *ssiSeedField) refine(i0, j0, i1, j1 int, leaf float64, sink *ssiSeedSin
 // tangents inflated by ssiSeedSafety — a guess, so the field records the decline (#1608 pt5).
 func (c *ssiSeedField) cellTangentBound(i0, i1, j0, j1 int, s00, s10, s01, s11 ssiSample) (float64, float64) {
 	if c.bounder != nil {
-		u0, u1 := c.u0+float64(i0)*c.du, c.u0+float64(i1)*c.du
-		v0, v1 := c.v0+float64(j0)*c.dv, c.v0+float64(j1)*c.dv
+		u0, u1 := c.u0+float64(float64(i0)*c.du), c.u0+float64(float64(i1)*c.du)
+		v0, v1 := c.v0+float64(float64(j0)*c.dv), c.v0+float64(float64(j1)*c.dv)
 		if tu, tv, ok := c.bounder.tangentBoundOverBox(u0, u1, v0, v1); ok {
 			return tu, tv
 		}
@@ -196,7 +196,7 @@ func (c *ssiSeedField) cellTangentBound(i0, i1, j0, j1 int, s00, s10, s01, s11 s
 	c.declined = true
 	tu := max(s00.tu, s10.tu, s01.tu, s11.tu)
 	tv := max(s00.tv, s10.tv, s01.tv, s11.tv)
-	return ssiSeedSafety * tu, ssiSeedSafety * tv
+	return float64(ssiSeedSafety * tu), float64(ssiSeedSafety * tv)
 }
 
 // ssiCrossings counts how many of the cell's four edges change sign — 2 for a simple transversal curve
@@ -216,8 +216,8 @@ func ssiCrossings(s00, s10, s01, s11 ssiSample) int {
 // straddles an edge. Duplicate seeds along a shared curve are harmless: the tracer dedups them.
 func (c *ssiSeedField) emitLeaf(i0, j0, i1, j1 int, s00, s10, s01, s11 ssiSample, sink *ssiSeedSink) {
 	field := func(u, v float64) float64 { return SignedDistanceToSurface(c.other, c.base.PointAt(u, v)) }
-	u0, v0 := c.u0+float64(i0)*c.du, c.v0+float64(j0)*c.dv
-	u1, v1 := c.u0+float64(i1)*c.du, c.v0+float64(j1)*c.dv
+	u0, v0 := c.u0+float64(float64(i0)*c.du), c.v0+float64(float64(j0)*c.dv)
+	u1, v1 := c.u0+float64(float64(i1)*c.du), c.v0+float64(float64(j1)*c.dv)
 	crossed := false
 	emit := func(b math.Point3) { sink.crossings = append(sink.crossings, b); crossed = true }
 	if straddlesZero(s00.f, s10.f) {

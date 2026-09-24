@@ -22,19 +22,19 @@ func QuaternionIdentity() Quaternion { return Quaternion{W: 1} }
 //
 //	q := QuaternionFromAxisAngle(zAxis, math.Pi/2) // 90° about +Z
 func QuaternionFromAxisAngle(axis UnitVector3, angle Scalar) Quaternion {
-	half := angle / 2
+	half := Scalar(angle / 2)
 	s := stdmath.Sin(half)
 	return Quaternion{
 		W: stdmath.Cos(half),
-		X: axis.X() * s,
-		Y: axis.Y() * s,
-		Z: axis.Z() * s,
+		X: Scalar(axis.X() * s),
+		Y: Scalar(axis.Y() * s),
+		Z: Scalar(axis.Z() * s),
 	}
 }
 
 // LengthSquared returns w²+x²+y²+z².
 func (q Quaternion) LengthSquared() Scalar {
-	return q.W*q.W + q.X*q.X + q.Y*q.Y + q.Z*q.Z
+	return Scalar(q.W*q.W) + Scalar(q.X*q.X) + Scalar(q.Y*q.Y) + Scalar(q.Z*q.Z)
 }
 
 // Length returns the quaternion's magnitude.
@@ -47,16 +47,16 @@ func (q Quaternion) Normalize() Quaternion {
 	if n < 1e-12 {
 		return QuaternionIdentity()
 	}
-	return Quaternion{q.W / n, q.X / n, q.Y / n, q.Z / n}
+	return Quaternion{Scalar(q.W / n), Scalar(q.X / n), Scalar(q.Y / n), Scalar(q.Z / n)}
 }
 
 // Mul returns the Hamilton product q·o: the rotation that applies o first, then q.
 func (q Quaternion) Mul(o Quaternion) Quaternion {
 	return Quaternion{
-		W: q.W*o.W - q.X*o.X - q.Y*o.Y - q.Z*o.Z,
-		X: q.W*o.X + q.X*o.W + q.Y*o.Z - q.Z*o.Y,
-		Y: q.W*o.Y - q.X*o.Z + q.Y*o.W + q.Z*o.X,
-		Z: q.W*o.Z + q.X*o.Y - q.Y*o.X + q.Z*o.W,
+		W: Scalar(q.W*o.W) - Scalar(q.X*o.X) - Scalar(q.Y*o.Y) - Scalar(q.Z*o.Z),
+		X: Scalar(q.W*o.X) + Scalar(q.X*o.W) + Scalar(q.Y*o.Z) - Scalar(q.Z*o.Y),
+		Y: Scalar(q.W*o.Y) - Scalar(q.X*o.Z) + Scalar(q.Y*o.W) + Scalar(q.Z*o.X),
+		Z: Scalar(q.W*o.Z) + Scalar(q.X*o.Y) - Scalar(q.Y*o.X) + Scalar(q.Z*o.W),
 	}
 }
 
@@ -66,9 +66,9 @@ func (q Quaternion) Matrix4() Matrix4 {
 	n := q.Normalize()
 	w, x, y, z := n.W, n.X, n.Y, n.Z
 	return Matrix4FromCells([16]Scalar{
-		1 - 2*(y*y+z*z), 2 * (x*y - w*z), 2 * (x*z + w*y), 0,
-		2 * (x*y + w*z), 1 - 2*(x*x+z*z), 2 * (y*z - w*x), 0,
-		2 * (x*z - w*y), 2 * (y*z + w*x), 1 - 2*(x*x+y*y), 0,
+		1 - Scalar(2*(Scalar(y*y)+Scalar(z*z))), Scalar(2 * (Scalar(x*y) - Scalar(w*z))), Scalar(2 * (Scalar(x*z) + Scalar(w*y))), 0,
+		Scalar(2 * (Scalar(x*y) + Scalar(w*z))), 1 - Scalar(2*(Scalar(x*x)+Scalar(z*z))), Scalar(2 * (Scalar(y*z) - Scalar(w*x))), 0,
+		Scalar(2 * (Scalar(x*z) - Scalar(w*y))), Scalar(2 * (Scalar(y*z) + Scalar(w*x))), 1 - Scalar(2*(Scalar(x*x)+Scalar(y*y))), 0,
 		0, 0, 0, 1,
 	})
 }
@@ -81,12 +81,12 @@ func (q Quaternion) Matrix4() Matrix4 {
 func QuaternionFromMatrix(m Matrix4) Quaternion {
 	trace := m.At(0, 0) + m.At(1, 1) + m.At(2, 2)
 	if trace > 0 {
-		s := 0.5 / stdmath.Sqrt(trace+1)
+		s := Scalar(0.5 / stdmath.Sqrt(trace+1))
 		return Quaternion{
-			W: 0.25 / s,
-			X: (m.At(2, 1) - m.At(1, 2)) * s,
-			Y: (m.At(0, 2) - m.At(2, 0)) * s,
-			Z: (m.At(1, 0) - m.At(0, 1)) * s,
+			W: Scalar(0.25 / s),
+			X: Scalar((m.At(2, 1) - m.At(1, 2)) * s),
+			Y: Scalar((m.At(0, 2) - m.At(2, 0)) * s),
+			Z: Scalar((m.At(1, 0) - m.At(0, 1)) * s),
 		}.Normalize()
 	}
 	return quatFromLargestDiagonal(m).Normalize()
@@ -97,22 +97,22 @@ func QuaternionFromMatrix(m Matrix4) Quaternion {
 func quatFromLargestDiagonal(m Matrix4) Quaternion {
 	switch {
 	case m.At(0, 0) > m.At(1, 1) && m.At(0, 0) > m.At(2, 2):
-		s := 2 * stdmath.Sqrt(1+m.At(0, 0)-m.At(1, 1)-m.At(2, 2))
+		s := Scalar(2 * stdmath.Sqrt(1+m.At(0, 0)-m.At(1, 1)-m.At(2, 2)))
 		return Quaternion{
-			W: (m.At(2, 1) - m.At(1, 2)) / s, X: 0.25 * s,
-			Y: (m.At(0, 1) + m.At(1, 0)) / s, Z: (m.At(0, 2) + m.At(2, 0)) / s,
+			W: Scalar((m.At(2, 1) - m.At(1, 2)) / s), X: Scalar(0.25 * s),
+			Y: Scalar((m.At(0, 1) + m.At(1, 0)) / s), Z: Scalar((m.At(0, 2) + m.At(2, 0)) / s),
 		}
 	case m.At(1, 1) > m.At(2, 2):
-		s := 2 * stdmath.Sqrt(1+m.At(1, 1)-m.At(0, 0)-m.At(2, 2))
+		s := Scalar(2 * stdmath.Sqrt(1+m.At(1, 1)-m.At(0, 0)-m.At(2, 2)))
 		return Quaternion{
-			W: (m.At(0, 2) - m.At(2, 0)) / s, X: (m.At(0, 1) + m.At(1, 0)) / s,
-			Y: 0.25 * s, Z: (m.At(1, 2) + m.At(2, 1)) / s,
+			W: Scalar((m.At(0, 2) - m.At(2, 0)) / s), X: Scalar((m.At(0, 1) + m.At(1, 0)) / s),
+			Y: Scalar(0.25 * s), Z: Scalar((m.At(1, 2) + m.At(2, 1)) / s),
 		}
 	default:
-		s := 2 * stdmath.Sqrt(1+m.At(2, 2)-m.At(0, 0)-m.At(1, 1))
+		s := Scalar(2 * stdmath.Sqrt(1+m.At(2, 2)-m.At(0, 0)-m.At(1, 1)))
 		return Quaternion{
-			W: (m.At(1, 0) - m.At(0, 1)) / s, X: (m.At(0, 2) + m.At(2, 0)) / s,
-			Y: (m.At(1, 2) + m.At(2, 1)) / s, Z: 0.25 * s,
+			W: Scalar((m.At(1, 0) - m.At(0, 1)) / s), X: Scalar((m.At(0, 2) + m.At(2, 0)) / s),
+			Y: Scalar((m.At(1, 2) + m.At(2, 1)) / s), Z: Scalar(0.25 * s),
 		}
 	}
 }

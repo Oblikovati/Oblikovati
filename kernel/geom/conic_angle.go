@@ -14,7 +14,7 @@ func conicParamOfAngle(c Curve3, theta, t0, t1 float64) (float64, bool) {
 	inside := func(t float64) bool { return t > lo && t < hi }
 	switch x := c.(type) {
 	case Circle, EllipseFull:
-		return periodicParamInside(theta/(2*stdmath.Pi), 1, inside)
+		return periodicParamInside(float64(theta/(2*stdmath.Pi)), 1, inside)
 	case Arc3d:
 		return sweepParamInside(theta, x.StartAngle, x.SweepAngle, inside)
 	case EllipticalArc:
@@ -27,7 +27,7 @@ func conicParamOfAngle(c Curve3, theta, t0, t1 float64) (float64, bool) {
 		if x.Theta1 == x.Theta0 {
 			return 0, false
 		}
-		if t := (theta - x.Theta0) / (x.Theta1 - x.Theta0); inside(t) {
+		if t := float64((theta - x.Theta0) / (x.Theta1 - x.Theta0)); inside(t) {
 			return t, true
 		}
 	}
@@ -36,7 +36,7 @@ func conicParamOfAngle(c Curve3, theta, t0, t1 float64) (float64, bool) {
 
 // periodicParamInside tries a periodic parameter's branches t + k·period against the span predicate.
 func periodicParamInside(t, period float64, inside func(float64) bool) (float64, bool) {
-	base := t - period*stdmath.Floor(t/period)
+	base := t - float64(period*stdmath.Floor(float64(t/period)))
 	for _, cand := range []float64{base - period, base, base + period} {
 		if inside(cand) {
 			return cand, true
@@ -51,10 +51,10 @@ func sweepParamInside(theta, start, sweep float64, inside func(float64) bool) (f
 	if sweep == 0 {
 		return 0, false
 	}
-	base := (theta - start) / sweep
-	period := 2 * stdmath.Pi / stdmath.Abs(sweep)
+	base := float64((theta - start) / sweep)
+	period := float64(2 * stdmath.Pi / stdmath.Abs(sweep))
 	for k := -2.0; k <= 2; k++ {
-		if cand := base + k*period; inside(cand) {
+		if cand := base + float64(k*period); inside(cand) {
 			return cand, true
 		}
 	}
@@ -67,7 +67,7 @@ func arcParamAt(theta, start, sweep float64) float64 {
 	if sweep == 0 {
 		return 0
 	}
-	mid := start + sweep/2
-	theta += 2 * stdmath.Pi * stdmath.Round((mid-theta)/(2*stdmath.Pi))
-	return (theta - start) / sweep
+	mid := start + float64(sweep/2)
+	theta += float64(2 * stdmath.Pi * stdmath.Round(float64((mid-theta)/(2*stdmath.Pi))))
+	return float64((theta - start) / sweep)
 }

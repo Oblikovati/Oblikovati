@@ -35,19 +35,22 @@ type boundaryDissolve struct {
 // dissolveSharedEdges is the merged face's boundary: both faces' loops fused across every edge they
 // share, with the seam the fusion orphans removed. It names its reason when it does not complete, so
 // every exit but the ordinary "they share no boundary" reaches the result as a diagnostic.
-func dissolveSharedEdges(a, b curvedFace, res geom.Resolution) ([]curvedLoop, mergeDecline) {
+// It also returns how many orphaned seam edges it dropped, so the merge can record a removal that
+// leaves no other trace in the result (Oblikovati#3521).
+func dissolveSharedEdges(a, b curvedFace, res geom.Resolution) ([]curvedLoop, int, mergeDecline) {
 	a, b = splitAtSharedRunEnds(a, b, res)
 	twin, why := sharedEdgeTwins(a, b, res)
 	if why != mergeJoined {
-		return nil, why
+		return nil, 0, why
 	}
 	d := &boundaryDissolve{loops: [2][]curvedLoop{a.loops, b.loops}, twin: twin,
 		seen: map[edgeAddr]bool{}, total: countLoopEdges(a) + countLoopEdges(b)}
 	loops, closed := d.mergedLoops()
 	if !closed {
-		return nil, declineOpenWalk
+		return nil, 0, declineOpenWalk
 	}
-	return dropSeamSlits(loops), mergeJoined
+	kept, dropped := dropSeamSlits(loops)
+	return kept, dropped, mergeJoined
 }
 
 // countLoopEdges is how many directed boundary edges a face has, which bounds every walk here.

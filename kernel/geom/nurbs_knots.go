@@ -40,7 +40,7 @@ func normalizeKnots(knots []float64) []float64 {
 		return out
 	}
 	for i, k := range knots {
-		out[i] = (k - lo) / span
+		out[i] = float64((k - lo) / span)
 	}
 	return out
 }

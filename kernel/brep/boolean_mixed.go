@@ -278,20 +278,20 @@ func mixedKeptFragments(pa, pb facePartition, impA, impB [][][2]math.Point3, pra
 // exact-frame faces against the OTHER operand's ruled walls: that pairing writes the same section curve
 // into both the uv face's and the wall's list, so the two sides split on identical coordinates (#3460).
 func mixedCurvedImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, pra, prb insideOracle, rec *diag.Recorder) (uvA, uvB, wallA, wallB, sphA, sphB [][]geom.Curve3, ok bool) {
-	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB)
-	wallA, okWA := wallImprints(pa, pb, impB)
-	wallB, okWB := wallImprints(pb, pa, impA)
-	sphA, okSA := closedSurfaceImprints(pa, pb, uvB)
-	sphB, okSB := closedSurfaceImprints(pb, pa, uvA)
+	uvA, uvB, okU := bothUVImprints(pa, pb, impA, impB, rec)
+	wallA, okWA := wallImprints(pa, pb, impB, rec)
+	wallB, okWB := wallImprints(pb, pa, impA, rec)
+	sphA, okSA := closedSurfaceImprints(pa, pb, uvB, rec)
+	sphB, okSB := closedSurfaceImprints(pb, pa, uvA, rec)
 	if !okU || !okWA || !okWB || !okSA || !okSB {
 		return nil, nil, nil, nil, nil, nil, false
 	}
-	okXA := pairUVWallImprints(pa, pb, uvA, wallB, prb)
-	okXB := pairUVWallImprints(pb, pa, uvB, wallA, pra)
-	okXX := pairUVUVImprints(pa, pb, uvA, uvB)
+	okXA := pairUVWallImprints(pa, pb, uvA, wallB, prb, rec)
+	okXB := pairUVWallImprints(pb, pa, uvB, wallA, pra, rec)
+	okXX := pairUVUVImprints(pa, pb, uvA, uvB, rec)
 	okSW := pairClosedSurfaceWallImprints(pa, pb, sphA, wallB, rec)
 	okWS := pairClosedSurfaceWallImprints(pb, pa, sphB, wallA, rec)
-	okWW := pairWallWallImprints(pa, pb, wallA, wallB)
+	okWW := pairWallWallImprints(pa, pb, wallA, wallB, rec)
 	okSS := pairClosedSurfaceImprints(pa, pb, sphA, sphB, rec)
 	return uvA, uvB, wallA, wallB, sphA, sphB, okXA && okXB && okXX && okSW && okWS && okWW && okSS
 }
@@ -448,7 +448,7 @@ func polygonHoleContains(holes [][]math.Point3, q math.Point2, pl geom.Plane) bo
 // other.planar), so both sides split on identical coordinates. The uv×WALL pairs are imprinted
 // separately (pairUVWallImprints, #3460); only uv×uv still declines here. ok=false declines: a uv face
 // overlapping another uv face, a coplanar contact on a uv face, or a trim clip without a closed form.
-func planUVImprints(p, other *facePartition, otherImp [][][2]math.Point3, _ bool) ([][]geom.Curve3, bool) {
+func planUVImprints(p, other *facePartition, otherImp [][][2]math.Point3, rec *diag.Recorder) ([][]geom.Curve3, bool) {
 	out := make([][]geom.Curve3, len(p.uv))
 	for i, uf := range p.uv {
 		box := inflateBox(p.uvBox[i])
@@ -458,6 +458,9 @@ func planUVImprints(p, other *facePartition, otherImp [][][2]math.Point3, _ bool
 			}
 			curves, segs, ok := uvPairSegments(uf, other.planarFull[j])
 			if !ok {
+				recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
+					"the exact-frame face's imprint against this polygonal face could not be clipped to its %d-loop trim",
+					len(other.planarFull[j].loops)), uf, other.planarFull[j])
 				return nil, false
 			}
 			out[i] = append(out[i], curves...)
@@ -529,33 +532,56 @@ func lineIntervalSegments(p0 math.Point3, dir math.Vector3, ivs [][2]float64) []
 // pairUVUVImprints imprints every overlapping (exact-frame face of a, exact-frame face of b) pair,
 // appending the SAME segment to both faces' lists — the shared-coordinate invariant the weld relies on.
 // ok=false declines with the pair's named reason (uvUVPairSegments).
-func pairUVUVImprints(pa, pb *facePartition, uvA, uvB [][]geom.Curve3) bool {
+func pairUVUVImprints(pa, pb *facePartition, uvA, uvB [][]geom.Curve3, rec *diag.Recorder) bool {
 	for i, ua := range pa.uv {
 		box := inflateBox(pa.uvBox[i])
 		for k, ub := range pb.uv {
 			if !box.Intersects(inflateBox(pb.uvBox[k])) {
 				continue
 			}
-			if coplanar(ua, ub) {
-				onA, okA := coplanarFaceImprints(ua, ub)
-				onB, okB := coplanarFaceImprints(ub, ua)
-				if !okA || !okB {
-					return false
-				}
-				uvA[i], uvB[k] = append(uvA[i], onA...), append(uvB[k], onB...)
-				continue
-			}
-			segs, ok := uvUVPairSegments(ua, ub)
+			onA, onB, ok := uvUVSharedImprint(ua, ub, rec)
 			if !ok {
 				return false
 			}
-			for _, s := range segs {
-				uvA[i] = append(uvA[i], geom.NewLineSegment(s[0], s[1]))
-				uvB[k] = append(uvB[k], geom.NewLineSegment(s[0], s[1]))
-			}
+			uvA[i], uvB[k] = append(uvA[i], onA...), append(uvB[k], onB...)
 		}
 	}
 	return true
+}
+
+// uvUVSharedImprint is the shared imprint of one exact-frame pair: exchanged OUTLINES when the two are
+// coplanar (the flush contact, ADR-0060), and the shared plane∩plane section otherwise. ok=false
+// declines the boolean, and the gate that refused is recorded before it does (#3525).
+func uvUVSharedImprint(ua, ub curvedFace, rec *diag.Recorder) (onA, onB []geom.Curve3, ok bool) {
+	if coplanar(ua, ub) {
+		return coplanarOutlineExchange(ua, ub, rec)
+	}
+	segs, ok := uvUVPairSegments(ua, ub)
+	if !ok {
+		recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
+			"the two exact-frame faces' shared section could not be clipped to both trims (%d and %d loops)",
+			len(ua.loops), len(ub.loops)), ua, ub)
+		return nil, nil, false
+	}
+	shared := make([]geom.Curve3, 0, len(segs))
+	for _, s := range segs {
+		shared = append(shared, geom.NewLineSegment(s[0], s[1]))
+	}
+	return shared, shared, true
+}
+
+// coplanarOutlineExchange is the flush-contact half of the pair (ADR-0060): each face takes the other's
+// outline clipped to its own material, rather than a section line the two do not have.
+func coplanarOutlineExchange(ua, ub curvedFace, rec *diag.Recorder) (onA, onB []geom.Curve3, ok bool) {
+	outlineA, okA := coplanarFaceImprints(ua, ub)
+	outlineB, okB := coplanarFaceImprints(ub, ua)
+	if !okA || !okB {
+		recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
+			"the two coplanar exact-frame faces could not exchange outlines (%d and %d loops; %d and %d outlines clipped)",
+			len(ua.loops), len(ub.loops), len(outlineA), len(outlineB)), ua, ub)
+		return nil, nil, false
+	}
+	return outlineA, outlineB, true
 }
 
 // uvSplitFaces trims each exact-frame face by its imprints through the shared (u,v) trimmer,
@@ -611,8 +637,8 @@ func uvSplitOne(uf curvedFace, box math.Box, imprint []geom.Curve3, keepAt func(
 }
 
 // bothUVImprints plans both operands' exact-frame imprints (planUVImprints each way).
-func bothUVImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3) (uvImpA, uvImpB [][]geom.Curve3, ok bool) {
-	uvImpA, okA := planUVImprints(pa, pb, impB, false)
-	uvImpB, okB := planUVImprints(pb, pa, impA, true)
+func bothUVImprints(pa, pb *facePartition, impA, impB [][][2]math.Point3, rec *diag.Recorder) (uvImpA, uvImpB [][]geom.Curve3, ok bool) {
+	uvImpA, okA := planUVImprints(pa, pb, impB, rec)
+	uvImpB, okB := planUVImprints(pb, pa, impA, rec)
 	return uvImpA, uvImpB, okA && okB
 }

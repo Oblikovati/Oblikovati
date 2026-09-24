@@ -12,7 +12,7 @@ import (
 // Uniform-grid spatial hashing for the 2D arrangement (Ericson, Real-Time Collision
 // Detection §7.1) — the broad phase that retires planarize's O(S²) segment-pair scan and
 // splitTJunctions' O(E·V) vertex-on-edge scan (#1607). Only candidacy moves here: the narrow
-// phase (Segment2dIntersection at arrTol, the tjTol distance test) is untouched, and every
+// phase (Segment2dIntersection at arrTol, the tjOnEdgeTol distance test) is untouched, and every
 // pair it can accept lies within its tolerance of both participants — far inside the padded
 // boxes hashed below — so the culled arrangement finds identical intersections and
 // T-junctions (pinned by the randomized equivalence tests in arrange2d_cull_test.go).
@@ -21,10 +21,6 @@ import (
 // arrangement tolerance under which the narrow phase can still accept a crossing between
 // near-touching segments.
 const segCullPad = 10 * arrTol // tol:calibrated — box-cull slack over the arrangement tolerance (see arrTol)
-
-// tjCullPad inflates an edge's query box in the T-junction pass: 10× the on-edge distance
-// tolerance, so every vertex within tjTol of the edge is guaranteed to be visited.
-const tjCullPad = 10 * tjTol // tol:calibrated — box-cull slack over the T-junction tolerance (see tjTol)
 
 // segmentCullGrid hashes padded segment AABBs into square cells.
 type segmentCullGrid struct {

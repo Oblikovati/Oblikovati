@@ -60,24 +60,28 @@ func TestAQueryIsCarriedOntoTheChartsBranch(t *testing.T) {
 	}
 }
 
-// TestTheBranchWindowKeepsExactlyOneReplica: the window is half-open, so of a point and its whole-period
-// translates exactly one is in it. That is what de-duplicates a seam-spanning triangle.
-func TestTheBranchWindowKeepsExactlyOneReplica(t *testing.T) {
+// TestTheBranchWindowOffersAtLeastOneReplica: the candidate window is CLOSED, so of a point and its
+// whole-period translates at least one is in it — one strictly inside, two when the point sits on the
+// window's own edge. Which of those two ships is not this predicate's job: keepOneReplicaEach picks it,
+// off the welded 3D triangle, because a centroid recomputed per replica is not exactly periodic
+// (#3518).
+func TestTheBranchWindowOffersAtLeastOneReplica(t *testing.T) {
 	t.Parallel()
 	r := doublyPeriodicRegion()
 	for _, u := range []float64{stdmath.Pi, 4.0, 3*stdmath.Pi - 1e-9} {
 		in := 0
 		for k := -2; k <= 2; k++ {
-			if r.inWindow(u+float64(k)*2*stdmath.Pi, 1.0) {
+			if r.windowCandidate(u+float64(k)*2*stdmath.Pi, 1.0) {
 				in++
 			}
 		}
-		if in != 1 {
-			t.Errorf("u=%g: %d of its five replicas are in the window, want exactly 1", u, in)
+		if in < 1 || in > 2 {
+			t.Errorf("u=%g: %d of its five replicas are candidates, want 1 (interior) or 2 (on the edge)", u, in)
 		}
 	}
-	if r.inWindow(3*stdmath.Pi, 1.0) {
-		t.Error("the window's upper end is closed; it must be half-open or the seam triangle is meshed twice")
+	if !r.windowCandidate(3*stdmath.Pi, 1.0) {
+		t.Error("the window's upper end must be a candidate: a triangle whose centroid lands there is " +
+			"otherwise kept nowhere and the mesh cracks at the seam")
 	}
 }
 

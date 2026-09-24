@@ -42,12 +42,12 @@ func openConicParamAtPoint3(c Curve3, p math.Point3) (float64, SolutionNature) {
 		return hyperbolaThetaAtPoint3(g.Center, g.ConjugateAxis.AsVector(), g.B, p), UniqueSolution
 	case HyperbolicArc:
 		theta := hyperbolaThetaAtPoint3(g.Center, g.ConjugateAxis.AsVector(), g.B, p)
-		return (theta - g.Theta0) / (g.Theta1 - g.Theta0), UniqueSolution
+		return float64((theta - g.Theta0) / (g.Theta1 - g.Theta0)), UniqueSolution
 	case Parabola:
 		return parabolaTAtPoint3(g.Vertex, g.CrossDir.AsVector(), p), UniqueSolution
 	case ParabolicArc:
 		t := parabolaTAtPoint3(g.Vertex, g.CrossDir.AsVector(), p)
-		return (t - g.T0) / (g.T1 - g.T0), UniqueSolution
+		return float64((t - g.T0) / (g.T1 - g.T0)), UniqueSolution
 	default:
 		return 0, UniqueSolution
 	}
@@ -64,7 +64,7 @@ func parabolaTAtPoint3(vertex math.Point3, cross math.Vector3, p math.Point3) fl
 // the conjugate component alone fixes θ — no sign ambiguity).
 func hyperbolaThetaAtPoint3(center math.Point3, conjugate math.Vector3, b float64, p math.Point3) float64 {
 	y := float64(center.VectorTo(p).Dot(conjugate))
-	return stdmath.Asinh(y / b)
+	return stdmath.Asinh(float64(y / b))
 }
 
 // segmentParamAtPoint3 projects p onto the segment's chord and clamps.
@@ -74,7 +74,7 @@ func segmentParamAtPoint3(g LineSegment, p math.Point3) float64 {
 	if den == 0 {
 		return 0
 	}
-	return math.Clamp01(float64(g.StartPoint.VectorTo(p).Dot(chord)) / den)
+	return math.Clamp01(float64(float64(g.StartPoint.VectorTo(p).Dot(chord)) / den))
 }
 
 // circleParamAtPoint3 inverts the circle angle of p's in-plane direction; a
@@ -84,7 +84,7 @@ func circleParamAtPoint3(g Circle, p math.Point3) (float64, SolutionNature) {
 	if !ok {
 		return 0, InfinitelyManySolutions
 	}
-	return wrap2pi(angle) / twoPi, UniqueSolution
+	return float64(wrap2pi(angle) / twoPi), UniqueSolution
 }
 
 // arcParamAtPoint3 inverts the angle and resolves it against the sweep: inside
@@ -120,9 +120,9 @@ func resolveSweep(rel, sweep float64, distAt func(float64) float64) (float64, So
 	}
 	rel = wrap2pi(rel)
 	if rel <= span {
-		return rel / span, UniqueSolution
+		return float64(rel / span), UniqueSolution
 	}
-	gapMid := span + (twoPi-span)/2
+	gapMid := span + float64((twoPi-span)/2)
 	d0, d1 := distAt(0), distAt(1)
 	if stdmath.Abs(rel-gapMid) <= 1e-12 || stdmath.Abs(d0-d1) <= 1e-12*stdmath.Max(1, d0) { // tol:numeric — antipodal/equal-distance degeneracy guard
 		return closerEnd(d0, d1), DistinctlyManySolutions
@@ -149,10 +149,10 @@ func polylineParamAtPoint3(g Polyline, p math.Point3) (float64, SolutionNature) 
 		local := segmentParamAtPoint3(seg, p)
 		foot := seg.PointAt(local)
 		d := foot.DistanceTo(p)
-		tol := 1e-12 * stdmath.Max(1, best) // tol:numeric — first-segment acceptance, relative to best distance
+		tol := float64(1e-12 * stdmath.Max(1, best)) // tol:numeric — first-segment acceptance, relative to best distance
 		switch {
 		case d < best-tol:
-			best, bestT, ties, bestFoot = d, (float64(i)+local)/float64(segs), 0, foot
+			best, bestT, ties, bestFoot = d, float64((float64(i)+local)/float64(segs)), 0, foot
 		case d <= best+tol && foot.DistanceTo(bestFoot) > math.DefaultTolerance:
 			ties++
 		}
@@ -176,7 +176,7 @@ func genericParamAtPoint3(c Curve3, p math.Point3) (float64, SolutionNature) {
 	for _, d := range ds {
 		best = stdmath.Min(best, d)
 	}
-	tol := 1e-9 * stdmath.Max(1, best) // tol:numeric — near-minimum clustering, relative to best distance
+	tol := float64(1e-9 * stdmath.Max(1, best)) // tol:numeric — near-minimum clustering, relative to best distance
 	if count := nearCount(ds, best, tol); count > closestSamples/2 {
 		return ts[0], InfinitelyManySolutions
 	}
@@ -188,7 +188,7 @@ func sampleDistances3(c Curve3, p math.Point3, lo, hi float64) (ts, ds []float64
 	ts = make([]float64, closestSamples+1)
 	ds = make([]float64, closestSamples+1)
 	for i := range ts {
-		ts[i] = lo + (hi-lo)*float64(i)/float64(closestSamples)
+		ts[i] = lo + float64((hi-lo)*float64(i)/float64(closestSamples))
 		ds[i] = c.PointAt(ts[i]).DistanceTo(p)
 	}
 	return ts, ds
@@ -222,7 +222,7 @@ func clusterMinima3(c Curve3, p math.Point3, ts, ds []float64, best, tol float64
 			refinedBest, bestT, clusters = rd, t, clusters[:0]
 		}
 		if rd <= refinedBest+tol {
-			clusters = appendCluster(clusters, t, (hi-lo)/closestSamples)
+			clusters = appendCluster(clusters, t, float64((hi-lo)/closestSamples))
 		}
 	}
 	if len(clusters) > 1 {
@@ -252,7 +252,7 @@ func refineClosest3(c Curve3, p math.Point3, t, lo, hi float64) float64 {
 		if dg == 0 || stdmath.Abs(g) < 1e-14 { // tol:numeric — Newton denominator near-zero guard
 			return t
 		}
-		t = math.Clamp(t-g/dg, lo, hi)
+		t = math.Clamp(t-float64(g/dg), lo, hi)
 	}
 	return t
 }
@@ -291,14 +291,14 @@ func sinusoidBox(center math.Point3, major, minor math.Vector3, a, b, start, swe
 	angles := []float64{start, start + sweep}
 	for axis := range 3 {
 		mj, mn := vectorComponent(major, axis), vectorComponent(minor, axis)
-		extremum := stdmath.Atan2(b*mn, a*mj)
+		extremum := stdmath.Atan2(float64(b*mn), float64(a*mj))
 		angles = append(angles, anglesInSweep(extremum, start, sweep)...)
 		angles = append(angles, anglesInSweep(extremum+stdmath.Pi, start, sweep)...)
 	}
 	pts := make([]math.Point3, len(angles))
 	for i, ang := range angles {
 		cos, sin := cosSin(ang)
-		pts[i] = center.TranslateBy(major.Scale(a * cos).Add(minor.Scale(b * sin)))
+		pts[i] = center.TranslateBy(major.Scale(float64(a * cos)).Add(minor.Scale(float64(b * sin))))
 	}
 	return math.BoxFromPoints(pts...)
 }
@@ -338,7 +338,7 @@ func sampledBox3(c Curve3) math.Box {
 	lo, hi := c.Domain()
 	pts := make([]math.Point3, 257)
 	for i := range pts {
-		pts[i] = c.PointAt(lo + (hi-lo)*float64(i)/256)
+		pts[i] = c.PointAt(lo + float64((hi-lo)*float64(i)/256))
 	}
 	return padBox(math.BoxFromPoints(pts...), sampledBoxPadding(c, lo, hi))
 }
@@ -348,10 +348,10 @@ func sampledBox3(c Curve3) math.Box {
 func sampledBoxPadding(c Curve3, lo, hi float64) float64 {
 	maxSpeed := 0.0
 	for i := 0; i <= 64; i++ {
-		d1, _, _ := CurveDerivatives3(c, lo+(hi-lo)*float64(i)/64)
+		d1, _, _ := CurveDerivatives3(c, lo+float64((hi-lo)*float64(i)/64))
 		maxSpeed = stdmath.Max(maxSpeed, float64(d1.Length()))
 	}
-	return maxSpeed * (hi - lo) / 512
+	return float64(maxSpeed * (hi - lo) / 512)
 }
 
 // padBox grows the box by pad on every face.

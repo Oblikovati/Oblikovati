@@ -23,11 +23,11 @@ const firstFormRelTol = 1e-12
 //	firstFormParallelity(1, 0, 1) // 1.0 — orthogonal unit tangents
 //	firstFormParallelity(1, 1, 1) // 0.0 — identical tangents, degenerate
 func firstFormParallelity(a, b, c float64) float64 {
-	ac := a * c
+	ac := float64(a * c)
 	if ac <= 0 {
 		return 0
 	}
-	s := 1 - b*b/ac
+	s := 1 - float64(b*b/ac)
 	if s < 0 {
 		return 0
 	}

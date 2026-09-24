@@ -111,32 +111,34 @@ func TestMarchedDeviationOfDegenerateInputIsZero(t *testing.T) {
 	}
 }
 
-// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: two interlocked TORI have no closed form in
-// any bucket. A torus is quartic, so neither is an implicit quadric: the ruled bucket cannot reach
-// either, and the torus bucket's own reduction substitutes ONE torus chart into the other surface's
-// quadratic form, which the second torus does not have (ADR-0061 stage 5). So SurfaceIntersect marches
-// the pair — and every curve it returns must carry the achieved deviation of that march, not a silent
-// claim of exactness. The magnitude is checked against the sagitta of the marched loops' own chord
-// spacing, so the test measures the pipeline rather than freezing a constant (#3489).
+// TestSurfaceIntersectMarchedPairReportsAchievedTolerance: two crossing ELLIPTICAL CYLINDERS have no
+// closed form in any bucket. Neither is an implicit quadric — the kernel's Quadric covers the plane,
+// sphere, cylinder and cone, and an elliptical cylinder is none of them — so the ruled bucket has
+// nothing to substitute a ruling into, and the torus bucket has no torus chart to run on. So
+// SurfaceIntersect marches the pair, and every curve it returns must carry the achieved deviation of
+// that march rather than a silent claim of exactness. The magnitude is checked against the sagitta of
+// the marched loops' own chord spacing, so the test measures the pipeline rather than freezing a
+// constant (#3489).
 //
-// The fixture has moved twice, each time because the pair it used stopped marching: first an AXIAL
+// The fixture has moved three times, each time because the pair it used stopped marching: an AXIAL
 // drill through a ring (the axis-invariant reduction), then a SKEW rod across one (the second-harmonic
-// lanes, ADR-0061 stage 5 third slice). What it pins is unchanged — a pair with no closed form still
-// reports how exact it is.
+// lanes, ADR-0061 stage 5 third slice), then two interlocked TORI (ADR-0066, #3514 — a torus is an
+// implicit form for this reduction even though it is not a quadric). What it pins is unchanged: a pair
+// with no closed form still reports how exact it is.
 func TestSurfaceIntersectMarchedPairReportsAchievedTolerance(t *testing.T) {
 	t.Parallel()
-	tor, err := NewTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 4, 1)
+	first, err := NewEllipticalCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), math.V3(1, 0, 0), 4, 2)
 	if err != nil {
-		t.Fatalf("torus: %v", err)
+		t.Fatalf("elliptical cylinder: %v", err)
 	}
-	linked, err := NewTorus(math.P3(4, 0, 0), math.V3(1, 0, 0), 4, 1)
+	second, err := NewEllipticalCylinder(math.P3(0, 0, 0), math.V3(1, 0, 0), math.V3(0, 1, 0), 4, 2)
 	if err != nil {
-		t.Fatalf("linked torus: %v", err)
+		t.Fatalf("crossing elliptical cylinder: %v", err)
 	}
-	box := math.NewBox(math.P3(-8, -8, -8), math.P3(10, 8, 8))
-	curves, handled := SurfaceIntersect(tor, linked, box, ResolutionForBox(box))
+	box := math.NewBox(math.P3(-8, -8, -8), math.P3(8, 8, 8))
+	curves, handled := SurfaceIntersect(first, second, box, ResolutionForBox(box))
 	if !handled || len(curves) == 0 {
-		t.Fatalf("torus ∩ torus: handled=%v, %d curves; want a marched result", handled, len(curves))
+		t.Fatalf("elliptical cylinder pair: handled=%v, %d curves; want a marched result", handled, len(curves))
 	}
 	for i, c := range curves {
 		pl, ok := c.(Polyline)

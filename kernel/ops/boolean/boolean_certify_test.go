@@ -133,3 +133,114 @@ func wholeSphereBody(t *testing.T, radius float64) *topo.Body {
 	bld.AddFace(sphere, topo.NewLineage(topo.Tok("certifyball", "face", 0)))
 	return bld.Build()
 }
+
+// TestAResultShowingMoreBoundaryThanItsOperandsIsRefused is the per-face AREA gate the ground rules
+// name ("result gates are per-face — area, surface type, loop count — against the oracle"), and its
+// proof that it can fire. The oracle is the operands: every face of A op B lies on ∂A or ∂B and a
+// boolean only trims them, so the result cannot show more boundary than the two have between them.
+//
+// The probe hands the certificate a real result with a tool too small to account for it: the exact
+// 0.8 bore through the RING, certified against a drill of the same radius but half a unit long
+// instead of 8. Membership still passes — the bore wall's interior point does lie on that stub, and
+// the operation keeps it there — so this row exercises the AREA gate and nothing else. The result
+// then shows 305.850 of boundary where ring + stub hold 302.622 between them, 1.07e-2 over, against
+// a slack of 1e-6 and a corpus whose largest accepted ratio is 1 + 1e-15.
+//
+// The stub spans z ∈ [−0.75, −0.25] rather than straddling z = 0, and its placement is part of the
+// fixture rather than an arbitrary offset: membership is read at the bore wall's own interior point,
+// which the band probe places a third of the way across the wall's span (#3553) — measured, z ≈ −0.5,
+// where it used to be the mid-band z = 0. The stub is centred on that with 0.25 of margin either way,
+// and it is the same half-unit cylinder as before, so both numbers this row asserts are unchanged:
+// measured, claimed 305.8500 against available 302.6226, ratio 1.01066470.
+func TestAResultShowingMoreBoundaryThanItsOperandsIsRefused(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 0.8)
+	body, err := Boolean(Cut, ring, drill)
+	if err != nil {
+		t.Fatalf("the RD- row must build: %v", err)
+	}
+	stub, err := brep.SolidCylinder(math.P3(5, 0, -0.75), math.V3(0, 0, 1), 0.8, 0.5)
+	if err != nil {
+		t.Fatalf("stub: %v", err)
+	}
+	if ev := certifyBooleanFaces(Cut, ring, drill, body, pairExtentResolution(ring, drill)); !ev.kept {
+		t.Fatalf("the genuine operands must certify; the probe below is meaningless otherwise")
+	} else if _, over := ev.overclaimsItsOperands(ring, drill); over {
+		t.Fatalf("the genuine pair overclaims: %g of boundary", ev.claimed)
+	}
+	ev := certifyBooleanFaces(Cut, ring, stub, body, pairExtentResolution(ring, stub))
+	if !ev.kept {
+		t.Fatalf("membership must still pass against the stub, or this row is not measuring the area gate")
+	}
+	available, over := ev.overclaimsItsOperands(ring, stub)
+	if !over {
+		t.Errorf("a result showing %g of boundary certified against operands holding %g between them",
+			ev.claimed, available)
+	}
+}
+
+// TestTheCertificateLeavesExactlyTheKnownFacesUnprobed is the RATCHET on probe coverage, at the level
+// the certificate itself works: how many faces of a built result it could not classify.
+//
+// It exists because the count had been prose in two comments and nothing held it. #3516 round 0 took
+// the whole package from 26 unprobed faces to 4; round 1 gave 22 of them back in a comment-level
+// change and shipped three statements that had become false. A number stated in a docstring is not a
+// ratchet.
+//
+// The pairs are the ones that OWNED the residue, identified by instrumenting the package: the bored
+// ring (this issue's own family, 0 unprobed) and the two-oval torus−box cut, whose 2-loop torus face
+// used to be one of the four the package could not probe. Their totals are pinned, so a coverage loss
+// on either fails here instead of reading oddly in a comment. A RISE is a regression; a FALL means the
+// probe improved and the pin should come down with the change that earned it.
+//
+// 1 → 0 on the two-oval cut (Oblikovati/Oblikovati#3553): a face whose loops wrap the seam is probed by
+// the band rule, which placed its probe at the MIDDLE of the boundary's span — the one fraction a
+// charted region's artificial slit occupies at every station, where the classifier answers by which
+// side its ray was cast from. The probes sit at thirds and quarters now and must agree, so this face
+// is classified rather than skipped. All three rows read 0.
+func TestTheCertificateLeavesExactlyTheKnownFacesUnprobed(t *testing.T) {
+	t.Parallel()
+	ring, drill := ringAndDrill(t, 0.8)
+	for _, tc := range []struct {
+		name         string
+		op           PartFeatureOperation
+		target, tool *topo.Body
+		wantUnprobed int
+	}{
+		{"a bored ring", Cut, ring, drill, 0},
+		{"a two-oval torus − box", Cut, ratchetTorus(t), ratchetBlock(t), 0},
+		{"a two-oval torus ∩ box", Intersect, ratchetTorus(t), ratchetBlock(t), 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body, err := Boolean(tc.op, tc.target, tc.tool)
+			if err != nil {
+				t.Fatalf("the pair must build for its coverage to be measured: %v", err)
+			}
+			ev := certifyBooleanFaces(tc.op, tc.target, tc.tool, body, pairExtentResolution(tc.target, tc.tool))
+			if ev.unprobed != tc.wantUnprobed {
+				t.Errorf("%d of %d faces unprobed, want %d — a rise is lost coverage, a fall is an "+
+					"improvement whose pin should come down with it", ev.unprobed, len(body.Faces()), tc.wantUnprobed)
+			}
+		})
+	}
+}
+
+// ratchetTorus and ratchetBlock are the two-oval torus−box pair (boolean_csg_demotion_test.go's
+// torusTwoOvalBox), rebuilt here so the ratchet above owns its own operands.
+func ratchetTorus(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 2, "torus")
+	if err != nil {
+		t.Fatalf("SolidTorus: %v", err)
+	}
+	return b
+}
+
+func ratchetBlock(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidBlock(math.P3(-20, 2, -20), math.P3(20, 20, 20), "block")
+	if err != nil {
+		t.Fatalf("SolidBlock: %v", err)
+	}
+	return b
+}

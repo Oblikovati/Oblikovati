@@ -104,13 +104,13 @@ func (a Arc3d) binormal() math.Vector3 {
 
 // PointAt returns the point at parameter t.
 func (a Arc3d) PointAt(t float64) math.Point3 {
-	angle := a.StartAngle + t*a.SweepAngle
+	angle := a.StartAngle + float64(t*a.SweepAngle)
 	return pointOnCircle(a.Center, a.RefDir.AsVector(), a.binormal(), a.Radius, angle)
 }
 
 // TangentAt returns the derivative dP/dt (includes the sweep chain factor).
 func (a Arc3d) TangentAt(t float64) math.Vector3 {
-	angle := a.StartAngle + t*a.SweepAngle
+	angle := a.StartAngle + float64(t*a.SweepAngle)
 	return circleTangent(a.RefDir.AsVector(), a.binormal(), a.Radius, angle).Scale(a.SweepAngle)
 }
 
@@ -119,5 +119,5 @@ func (a Arc3d) Domain() (lo, hi float64) { return 0, 1 }
 
 // Length returns |Radius · SweepAngle|.
 func (a Arc3d) Length() float64 {
-	return stdmath.Abs(a.Radius * a.SweepAngle)
+	return stdmath.Abs(float64(a.Radius * a.SweepAngle))
 }

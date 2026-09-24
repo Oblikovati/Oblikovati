@@ -53,6 +53,14 @@ var payloadGatedChains = map[string]string{
 	// uncharted faces fall to chartedTrimMesh's REPORTED full domain, and 4 charted singly-periodic
 	// cylinder bands reach singlyPeriodicWrapMesh, where the chart mesher ACCEPTS them. The rungs go
 	// when the chart mesher can take the 185. #3411.
+	//
+	// A SIXTH rung stood in it and is DELETED at #3517: torusTubeBandLoftMesh, a second loft for the
+	// tube-wrapping torus band. It is not in the five counted above because it never reached a face —
+	// the curved-trim classification's kindSpiricBand claimed that shape first, and the rung built
+	// nothing over ./kernel/... or ./model/.... kindSpiricBand itself went in the same issue, so the shape
+	// reaches the general chart-driven mesher now (#3527 review 1, Minor 1: this sentence was the eighth
+	// site still saying a deleted arm claims a shape today). The five measured rungs are unchanged; what
+	// fell is a shadowed duplicate, not one of the 185.
 	"kernel/ops/tessellate/tessellate_trim.go:meshSeamCrossingFace": "#3411",
 }
 
@@ -168,21 +176,32 @@ func allDistinct(run []string) bool {
 
 // payloadGatedCallName returns the callee of `if <payload…>, ok := call(…); ok { … return }`.
 func payloadGatedCallName(st ast.Stmt) (string, bool) {
+	call, gated := payloadGatedCall(st)
+	if !gated {
+		return "", false
+	}
+	return calleeName(call.Fun)
+}
+
+// payloadGatedCall is the CALL a payload gate reads, before any name is put to it. The recognizer
+// derivation needs the call itself, because it resolves a callee through the classification's index
+// rather than by its bare selector (#3522).
+func payloadGatedCall(st ast.Stmt) (*ast.CallExpr, bool) {
 	ifs, ok := st.(*ast.IfStmt)
 	if !ok || ifs.Init == nil || !endsInReturn(ifs.Body) {
-		return "", false
+		return nil, false
 	}
 	as, isAssign := ifs.Init.(*ast.AssignStmt)
 	if !isAssign || len(as.Rhs) != 1 || len(as.Lhs) < 2 {
-		return "", false
+		return nil, false
 	}
 	call, isCall := as.Rhs[0].(*ast.CallExpr)
 	last, isIdent := as.Lhs[len(as.Lhs)-1].(*ast.Ident)
 	cond, isCond := ifs.Cond.(*ast.Ident)
 	if !isCall || !isIdent || !isCond || cond.Name != last.Name {
-		return "", false
+		return nil, false
 	}
-	return calleeName(call.Fun)
+	return call, true
 }
 
 // endsInReturn reports whether the block's last statement is a return — what makes the gate an EXIT

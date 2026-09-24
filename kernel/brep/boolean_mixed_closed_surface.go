@@ -25,25 +25,38 @@ import (
 // same reason a wall's conic section promotes its receiver.
 //
 // ok=false declines the boolean when a sphere meets a face this pairing does not cover.
-func closedSurfaceImprints(p, other *facePartition, otherUV [][]geom.Curve3) ([][]geom.Curve3, bool) {
+func closedSurfaceImprints(p, other *facePartition, otherUV [][]geom.Curve3, rec *diag.Recorder) ([][]geom.Curve3, bool) {
 	faces, boxes := p.closedSurfaces()
 	out := make([][]geom.Curve3, len(faces))
 	for i, sf := range faces {
 		box := inflateBox(boxes[i])
-		if closedSurfaceUncovered(sf, box, other) {
+		if closedSurfaceUncovered(sf, box, other, rec) {
 			return nil, false
 		}
-		for j, uf := range other.uv {
-			if !box.Intersects(inflateBox(other.uvBox[j])) {
-				continue
-			}
-			curves, ok := closedSurfaceUVImprint(sf, uf)
-			if !ok {
-				return nil, false
-			}
-			out[i] = append(out[i], curves...)
-			otherUV[j] = append(otherUV[j], curves...)
+		curves, ok := closedSurfaceUVImprints(sf, box, other, otherUV, rec)
+		if !ok {
+			return nil, false
 		}
+		out[i] = curves
+	}
+	return out, true
+}
+
+// closedSurfaceUVImprints is one closed-surface face's imprints against every overlapping exact-frame
+// face of other, written into both sides' lists so the two split on identical coordinates.
+func closedSurfaceUVImprints(sf curvedFace, box math.Box, other *facePartition, otherUV [][]geom.Curve3, rec *diag.Recorder) ([]geom.Curve3, bool) {
+	var out []geom.Curve3
+	for j, uf := range other.uv {
+		if !box.Intersects(inflateBox(other.uvBox[j])) {
+			continue
+		}
+		curves, why, ok := closedSurfaceUVImprint(sf, uf)
+		if !ok {
+			recordSectionDecline(rec, why, sf, uf)
+			return nil, false
+		}
+		out = append(out, curves...)
+		otherUV[j] = append(otherUV[j], curves...)
 	}
 	return out, true
 }
@@ -57,24 +70,69 @@ func closedSurfaceImprints(p, other *facePartition, otherUV [][]geom.Curve3) ([]
 //
 // Another closed surface is carried when its crossing with this one is DECIDED (closedSurfacePairCarried);
 // a pass face still declines on box overlap, its surface being one no chart frames.
-func closedSurfaceUncovered(sf curvedFace, box math.Box, other *facePartition) bool {
-	for i := range other.planar {
-		if box.Intersects(paddedFaceBox(other.planar[i])) && sphereSectionEnters(sf, other.planarFull[i]) {
-			return true
-		}
+func closedSurfaceUncovered(sf curvedFace, box math.Box, other *facePartition, rec *diag.Recorder) bool {
+	// Each branch is a different question, and each RECORDS: all three decline the whole boolean, so a
+	// silent one is #3525 again with a different gate (review round 1, finding 3).
+	if of, found := planarFaceTheSectionEnters(sf, box, other); found {
+		recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
+			"this face's section enters a polygonal face's %d-loop trim; that face was not promoted to a chart "+
+				"that can split it", len(of.loops)), sf, of)
+		return true
 	}
-	faces, boxes := other.closedSurfaces()
-	for i, b := range boxes {
-		if box.Intersects(inflateBox(b)) && !closedSurfacePairCarried(sf, faces[i]) {
-			return true
-		}
+	if of, why, carried := everyClosedSurfacePairCarried(sf, box, other); !carried {
+		recordSectionDecline(rec, why, sf, of)
+		return true
 	}
-	for _, b := range other.passBox {
-		if box.Intersects(inflateBox(b)) {
-			return true
-		}
+	if of, found := passFaceOverlapping(box, other); found {
+		recordSectionDecline(rec, refusalf(geom.DeclineNoClosedForm,
+			"this face's box overlaps a pass-through face (%T), whose surface no chart frames", of.surface), sf, of)
+		return true
 	}
 	return false
+}
+
+// planarFaceTheSectionEnters finds a POLYGONAL face of other whose plane cuts sf in a section that
+// enters that face's own trim. Such a face should have been promoted to the exact-frame bucket; one
+// that was not (it carries detached holes, or its frame declined) is a genuine gap.
+func planarFaceTheSectionEnters(sf curvedFace, box math.Box, other *facePartition) (curvedFace, bool) {
+	for i := range other.planar {
+		if box.Intersects(paddedFaceBox(other.planar[i])) && sphereSectionEnters(sf, other.planarFull[i]) {
+			return other.planarFull[i], true
+		}
+	}
+	return curvedFace{}, false
+}
+
+// everyClosedSurfacePairCarried reports whether sf's crossing with every overlapping closed-surface
+// face of other is DECIDED, and on the first that is not, returns that face and the named reason. A
+// torus against a torus refuses HERE, before any pairing asks for a section, and reporting nothing is
+// what made it read to the user exactly like an ill-conditioned lane: one generic "no exact curved
+// path" (Oblikovati/Oblikovati#3525).
+func everyClosedSurfacePairCarried(sf curvedFace, box math.Box, other *facePartition) (curvedFace, sectionRefusal, bool) {
+	faces, boxes := other.closedSurfaces()
+	for i, b := range boxes {
+		if !box.Intersects(inflateBox(b)) {
+			continue
+		}
+		if why, carried := closedSurfacePairCarried(sf, faces[i]); !carried {
+			return faces[i], why, false
+		}
+	}
+	return curvedFace{}, solved(), true
+}
+
+// passFaceOverlapping finds a PASS face of other whose box overlaps: its surface is one no chart
+// frames, so a box overlap is as much contact as this pairing can prove and it declines.
+func passFaceOverlapping(box math.Box, other *facePartition) (curvedFace, bool) {
+	// pass and passBox are index-aligned by construction (facePartition.bucket appends to both in one
+	// statement pair). A length guard here would turn a DECLINE into a skip on a desynchronised list —
+	// a wrong body where a panic would have been a bug report (review round 2, N6).
+	for i, b := range other.passBox {
+		if box.Intersects(inflateBox(b)) {
+			return other.pass[i], true
+		}
+	}
+	return curvedFace{}, false
 }
 
 // sphereSectionEnters reports whether the plane of of cuts the sphere in a section that enters of's own
@@ -86,7 +144,7 @@ func closedSurfaceUncovered(sf curvedFace, box math.Box, other *facePartition) b
 // and the sphere passed through WHOLE — a valid solid of entirely the wrong shape, which is worse than
 // any decline (ADR-0061 stage 4).
 func sphereSectionEnters(sf, of curvedFace) bool {
-	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(of), sf.surface, closedSurfaceRes(sf))
+	curves, _, handled := curvedImprint(facePlane(of), sf.surface, closedSurfaceRes(sf)) // a PREDICATE: see curvedImprint
 	if !handled {
 		return true
 	}
@@ -120,29 +178,41 @@ func sectionMeetsFace(cv geom.Curve3, uf curvedFace) bool {
 // pair: the plane∩surface section — a circle on a sphere, a spiric on a torus — kept whole when it lies
 // inside the planar face's trim, CLIPPED to that trim when it crosses it, and dropped when it stays
 // clear.
-func closedSurfaceUVImprint(sf, uf curvedFace) ([]geom.Curve3, bool) {
-	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(uf), sf.surface, closedSurfaceRes(sf))
+func closedSurfaceUVImprint(sf, uf curvedFace) ([]geom.Curve3, sectionRefusal, bool) {
+	curves, why, handled := curvedImprint(facePlane(uf), sf.surface, closedSurfaceRes(sf))
 	if !handled {
-		return nil, false
+		return nil, refusal(why), false
 	}
 	var out []geom.Curve3
 	for _, cv := range curves {
-		switch {
-		case !sectionMeetsFace(cv, uf): // clear of this face: no imprint
-		case sectionInsideFace(cv, uf):
-			out = append(out, cv)
-		default:
-			// It CROSSES the face's trim. Clip it here, once, and hand the bounded arcs to both sides —
-			// the same rule wallSectionIsland follows, and the reason a sphere can be intersected with a
-			// box at all: every section circle leaves through a box face's own edge (ADR-0061 stage 4).
-			pieces, ok := clipSectionToFace(cv, uf)
-			if !ok {
-				return nil, false
-			}
-			out = append(out, pieces...)
+		kept, why, ok := closedSurfaceUVCurve(cv, uf)
+		if !ok {
+			return nil, why, false
 		}
+		out = append(out, kept...)
 	}
-	return out, true
+	return out, solved(), true
+}
+
+// closedSurfaceUVCurve keeps one section curve for the planar face: nothing when it is clear of the
+// trim, the whole curve when it lies inside, and the CLIPPED arcs when it crosses. Clipping is the
+// same rule wallSectionIsland follows, and the reason a sphere can be intersected with a box at all:
+// every section circle leaves through a box face's own edge (ADR-0061 stage 4).
+func closedSurfaceUVCurve(cv geom.Curve3, uf curvedFace) ([]geom.Curve3, sectionRefusal, bool) {
+	if !sectionMeetsFace(cv, uf) {
+		return nil, solved(), true // clear of this face: no imprint
+	}
+	if sectionInsideFace(cv, uf) {
+		return []geom.Curve3{cv}, solved(), true
+	}
+	pieces, ok := clipSectionToFace(cv, uf)
+	if !ok {
+		// The clip's own scope, not the section's: the section crosses the trim and the clip could not
+		// bound the arcs it leaves through.
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"the trim clip could not bound the %T section crossing this face", cv), false
+	}
+	return pieces, solved(), true
 }
 
 // closedSurfaceSplitFaces trims each closed-surface face by its imprints through its loop-framed chart,
@@ -281,9 +351,9 @@ func pairClosedSurfaceImprints(p, other *facePartition, impP, impOther [][]geom.
 // closedSurfacePairCarried reports whether the crossing of two closed-surface faces is decided — the
 // same reading the wall pairing takes, where an empty decided answer is a proof of clearness and not an
 // inability.
-func closedSurfacePairCarried(sf, of curvedFace) bool {
-	_, _, ok := closedSurfacePairImprint(sf, of)
-	return ok
+func closedSurfacePairCarried(sf, of curvedFace) (sectionRefusal, bool) {
+	_, why, ok := closedSurfacePairImprint(sf, of)
+	return why, ok
 }
 
 // closedSurfacePairImprint is the exact shared imprint of two closed-surface faces, under the scope the
@@ -291,17 +361,16 @@ func closedSurfacePairCarried(sf, of curvedFace) bool {
 // both trims by construction, and every crossing CLOSED, so each side splits by even-odd containment
 // alone. Two faces on ONE surface overlap in a region rather than a curve and carry no imprint; their
 // shared material is settled by the ON/ON table (boolean_mixed_coincident.go).
-func closedSurfacePairImprint(sf, of curvedFace) ([]geom.Curve3, geom.SectionDecline, bool) {
+func closedSurfacePairImprint(sf, of curvedFace) ([]geom.Curve3, sectionRefusal, bool) {
 	if len(sf.loops) > 0 || len(of.loops) > 0 {
-		return nil, geom.DeclineNoClosedForm, false
+		return nil, refusalf(geom.DeclineNoClosedForm,
+			"this pairing needs two boundary-less faces; they carry %d and %d loops", len(sf.loops), len(of.loops)), false
 	}
 	res := closedSurfaceRes(sf)
 	if geom.SurfacesCoincide(sf.surface, of.surface, res) {
-		return nil, geom.DeclineNone, true
+		return nil, solved(), true
 	}
-	curves, why, handled := geom.IntersectSurfacesAnalyticDeclining(sf.surface, of.surface, res)
-	if !handled || !crossingsClose(curves, res) {
-		return nil, why, false
-	}
-	return curves, geom.DeclineNone, true
+	// The closed form may SOLVE this pair and still hand back a section that does not close, which is
+	// its own named refusal and not the anonymous DeclineNone a solved answer carries (#3525).
+	return islandSection(sf.surface, of.surface, res)
 }

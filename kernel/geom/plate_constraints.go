@@ -113,7 +113,7 @@ func curveParams(c Curve3, samples int) []float64 {
 	lo, hi := c.Domain()
 	ts := make([]float64, samples)
 	for k := range ts {
-		ts[k] = lo + (hi-lo)*float64(k)/float64(samples-1)
+		ts[k] = lo + float64((hi-lo)*float64(k)/float64(samples-1))
 	}
 	return ts
 }
@@ -185,7 +185,7 @@ func g1TangentTargets(side PlateSide, d PlateDomain, res Resolution, centroid, f
 	if err != nil {
 		return math.Vector3{}, math.Vector3{}, err
 	}
-	a := tangent.Scale(1 / rho) // along-rail world tangent A = t/ρ (auto-consistent with G0)
+	a := tangent.Scale(float64(1 / rho)) // along-rail world tangent A = t/ρ (auto-consistent with G0)
 	normal, err := footNormal(side.Adjacent, foot)
 	if err != nil {
 		return math.Vector3{}, math.Vector3{}, err
@@ -216,7 +216,7 @@ func railDomainFrame(tangent math.Vector3, d PlateDomain, res Resolution, foot m
 			"geom: DiscretizeSides G1 rail near-perpendicular to the average plane at foot %v "+
 				"(domain speed %.6g <= weld %.6g); a G1 rail needs in-plane extent", foot, rho, res.Weld())
 	}
-	return du / rho, dv / rho, rho, nil
+	return float64(du / rho), float64(dv / rho), rho, nil
 }
 
 // footNormal returns Adjacent's unit normal at the rail foot, inverting the point onto the

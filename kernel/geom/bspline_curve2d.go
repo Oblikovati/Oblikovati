@@ -45,7 +45,7 @@ func (c BSplineCurve2d) PointAt(t float64) math.Point2 {
 	var h homog2
 	for k := 0; k <= c.Degree; k++ {
 		i := span - c.Degree + k
-		h.add(c.Ctrl[i], c.Weights[i]*n[k])
+		h.add(c.Ctrl[i], float64(c.Weights[i]*n[k]))
 	}
 	return h.point()
 }
@@ -57,8 +57,8 @@ func (c BSplineCurve2d) TangentAt(t float64) math.Vector2 {
 	var value, deriv homog2
 	for k := 0; k <= c.Degree; k++ {
 		i := span - c.Degree + k
-		value.add(c.Ctrl[i], c.Weights[i]*n[k])
-		deriv.add(c.Ctrl[i], c.Weights[i]*dn[k])
+		value.add(c.Ctrl[i], float64(c.Weights[i]*n[k]))
+		deriv.add(c.Ctrl[i], float64(c.Weights[i]*dn[k]))
 	}
 	return value.deriv(deriv)
 }

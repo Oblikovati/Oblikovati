@@ -9,9 +9,9 @@ import stdmath "math"
 
 // det3 returns the determinant of a row-major 3×3 matrix.
 func det3(m [9]Scalar) Scalar {
-	return m[0]*(m[4]*m[8]-m[5]*m[7]) -
-		m[1]*(m[3]*m[8]-m[5]*m[6]) +
-		m[2]*(m[3]*m[7]-m[4]*m[6])
+	return Scalar(m[0]*(Scalar(m[4]*m[8])-Scalar(m[5]*m[7]))) -
+		Scalar(m[1]*(Scalar(m[3]*m[8])-Scalar(m[5]*m[6]))) +
+		Scalar(m[2]*(Scalar(m[3]*m[7])-Scalar(m[4]*m[6])))
 }
 
 // invert3x3 returns the inverse of a row-major 3×3 matrix and true, or the zero matrix and
@@ -28,7 +28,7 @@ func invert3x3(m [9]Scalar) ([9]Scalar, bool) {
 	}
 	inv := adjugate3(m)
 	for i := range inv {
-		inv[i] /= det
+		inv[i] = Scalar(inv[i] / det)
 	}
 	return inv, true
 }
@@ -36,9 +36,9 @@ func invert3x3(m [9]Scalar) ([9]Scalar, bool) {
 // adjugate3 returns the adjugate (transposed cofactor matrix) of a 3×3 matrix.
 func adjugate3(m [9]Scalar) [9]Scalar {
 	return [9]Scalar{
-		m[4]*m[8] - m[5]*m[7], m[2]*m[7] - m[1]*m[8], m[1]*m[5] - m[2]*m[4],
-		m[5]*m[6] - m[3]*m[8], m[0]*m[8] - m[2]*m[6], m[2]*m[3] - m[0]*m[5],
-		m[3]*m[7] - m[4]*m[6], m[1]*m[6] - m[0]*m[7], m[0]*m[4] - m[1]*m[3],
+		Scalar(m[4]*m[8]) - Scalar(m[5]*m[7]), Scalar(m[2]*m[7]) - Scalar(m[1]*m[8]), Scalar(m[1]*m[5]) - Scalar(m[2]*m[4]),
+		Scalar(m[5]*m[6]) - Scalar(m[3]*m[8]), Scalar(m[0]*m[8]) - Scalar(m[2]*m[6]), Scalar(m[2]*m[3]) - Scalar(m[0]*m[5]),
+		Scalar(m[3]*m[7]) - Scalar(m[4]*m[6]), Scalar(m[1]*m[6]) - Scalar(m[0]*m[7]), Scalar(m[0]*m[4]) - Scalar(m[1]*m[3]),
 	}
 }
 
@@ -47,7 +47,7 @@ func mul3x3(a, b [9]Scalar) [9]Scalar {
 	var out [9]Scalar
 	for r := range 3 {
 		for c := range 3 {
-			out[r*3+c] = a[r*3]*b[c] + a[r*3+1]*b[3+c] + a[r*3+2]*b[6+c]
+			out[r*3+c] = Scalar(a[r*3]*b[c]) + Scalar(a[r*3+1]*b[3+c]) + Scalar(a[r*3+2]*b[6+c])
 		}
 	}
 	return out
@@ -57,7 +57,7 @@ func mul3x3(a, b [9]Scalar) [9]Scalar {
 // normalize the singularity test so it is invariant under uniform scaling.
 func hadamardBound(m [9]Scalar) Scalar {
 	row := func(i int) float64 {
-		return stdmath.Sqrt(float64(m[3*i]*m[3*i] + m[3*i+1]*m[3*i+1] + m[3*i+2]*m[3*i+2]))
+		return stdmath.Sqrt(float64(Scalar(m[3*i]*m[3*i]) + Scalar(m[3*i+1]*m[3*i+1]) + Scalar(m[3*i+2]*m[3*i+2])))
 	}
 	return Scalar(row(0) * row(1) * row(2))
 }

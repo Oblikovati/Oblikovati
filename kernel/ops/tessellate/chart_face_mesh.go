@@ -3,6 +3,7 @@
 package tessellate
 
 import (
+	"fmt"
 	stdmath "math"
 
 	"oblikovati.org/kernel/geom"
@@ -30,33 +31,51 @@ import (
 // the kept triangles closes every seam; a sphere pole's whole row welds to one vertex and the
 // degenerate triangles around it drop out.
 
-// chartFaceMesh meshes a trimmed curved face from the parametric trim it carries. ok=false when the
-// face carries no chart, when its surface wraps in neither direction, or when the mesh that comes out
-// is not bounded by its own boundary — the caller then reports the discarded trim rather than shipping
-// a mesh nobody certified.
+// chartFaceMesh meshes a trimmed curved face from the parametric trim it carries. ok=false in two
+// different situations, and the log is what tells them apart: the face was never this mesher's (it
+// carries no chart, or its surface wraps in neither direction), which is the ordinary route onto the
+// generic (u,v) trim path; or the mesher OWNED the face and gave it up, which is a degradation and is
+// recorded into log unconditionally, HERE rather than at any caller, so a caller holding the router's
+// log can neither forget the report nor condition it (#3520, chart_decline.go). That the log a caller
+// holds IS the router's is a convention archguard enforces, not the compiler — see
+// TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog.
 //
-// Example: if m, ok := chartFaceMesh(f, f.Geometry(), q); ok { return m }
-func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
+// Example: if m, ok := chartFaceMesh(f, f.Geometry(), q, log); ok { return m }
+func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality, log *chartDeclineLog) (*Mesh, bool) {
 	r, ok := newChartRegion(f, s)
 	if !ok {
+		return nil, false // never this mesher's face: no chart recorded, or an aperiodic surface
+	}
+	m, why := chartRegionMesh(f, s, r, q)
+	if why != "" {
+		log.declined(why)
 		return nil, false
 	}
+	return m, true
+}
+
+// chartRegionMesh builds the covering mesh for a region this mesher owns, or names WHY it gave up — the
+// reason the router reports, so a reader can act on it rather than being told only that something fell
+// back.
+func chartRegionMesh(f *topo.Face, s geom.Surface, r chartRegion, q Quality) (*Mesh, string) {
 	chains := chartBoundaryChains(f, s, r, q)
 	b := newChartCover(s, r, q)
 	loops := b.addChains(chains)
 	b.addInterior(chains)
-	kept, ok := b.keptWithoutRimEars(loops)
-	if !ok || len(kept) == 0 {
-		return nil, false
+	kept, why := b.meshOrRefusal(b.keptWithoutRimEars(loops))
+	if why != "" {
+		return nil, why
 	}
-	pos, nrm, idx := weldCoverTriangles(b.pos, b.nrm, kept)
-	m := patchMeshFrom(pos, nrm, idx)
-	validate.RepairFolds(m, 8)
-	return m, chartMeshIsBoundedByItsRim(m, chains)
+	return weldAndCertifyChartMesh(b, kept, chains)
 }
 
-// chartMeshIsBoundedByItsRim accepts the mesh only when its unpaired edges are EXACTLY the boundary
-// segments it was given — the same SET, not merely the same count.
+// weldAndCertifyChartMesh does the three steps that turn kept covering triangles into a shippable
+// face: it WELDS them (period-shifted replicas of a boundary point are one 3D point, which is what
+// closes the seam), REPAIRS folds, and then GATES the result. The gate is the part with the receipt
+// below; the weld and the fold repair are here because the gate is only meaningful on the welded mesh.
+//
+// The gate accepts the mesh only when its unpaired edges are EXACTLY the boundary segments it was
+// given — the same SET, not merely the same count.
 //
 // The set, because a count cancels. It was a count, and on the merged cocylindrical wall at
 // PropertyQuality it read 578 against a rim of 578 while FIVE of those free edges were no rim segment
@@ -70,25 +89,42 @@ func chartFaceMesh(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) {
 // surface has no free edges at all, and that is precisely the full-domain degradation this mesher exists
 // to remove. Either way the face is DECLINED and the router's defect reporter speaks, rather than the
 // wrong mesh shipping quietly.
-func chartMeshIsBoundedByItsRim(m *Mesh, chains []chartChain) bool {
-	extra, missing := chartRimMismatch(m, chains)
-	return m != nil && m.TriangleCount() > 0 && extra == 0 && missing == 0
+func weldAndCertifyChartMesh(b *chartCover, kept [][3]int, chains []chartChain) (*Mesh, string) {
+	pos, nrm, idx := weldCoverTriangles(b.pos, b.nrm, kept)
+	m := patchMeshFrom(pos, nrm, idx)
+	validate.RepairFolds(m, 8)
+	// The weld can take every triangle away even though the covering kept some — a sphere pole's whole
+	// row welds to ONE vertex and the triangles around it become degenerate. chartRimMismatch answers
+	// (-1, -1) for a mesh there is nothing to compare, and -1 unpaired edges is not an offending value
+	// a reader can act on, so the empty case is named rather than formatted (#3520 review M2).
+	if m == nil || m.TriangleCount() == 0 {
+		return nil, fmt.Sprintf("welding its %d kept covering triangle(s) left no triangle at all", len(kept))
+	}
+	extra, missing := chartRimMismatch(m, chains, b.weld)
+	if extra != 0 || missing != 0 {
+		return nil, fmt.Sprintf("the mesh it built is not bounded by its own rim: %d unpaired edge(s) "+
+			"are no rim segment and %d rim segment(s) it does not bound", extra, missing)
+	}
+	return m, ""
 }
 
 // chartRimMismatch is the gate's own comparison, in the two numbers it decides on: how many of the
 // mesh's unpaired edges are no rim segment, and how many rim segments the mesh does not bound. (0, 0) is
 // a patch bounded by exactly its rim.
 //
-// It is the ONE place a rim is keyed. The tests read the gate through it rather than counting segments
-// their own way: a count taken on a different weld grid, or per chain instead of per face, is a
-// different question, and a corpus row that asks a different question from the gate is not asserting the
-// gate. (−1, −1) for a mesh there is nothing to compare.
-func chartRimMismatch(m *Mesh, chains []chartChain) (extra, missing int) {
+// It is the ONE place a rim is keyed, and it is handed the covering's OWN weld resolution rather than
+// deriving one: the rule that binds triangles to the rim (chart_face_rim_side.go) keys the same set,
+// and two derivations that agree only while the covering and the welded mesh share a bounding box are
+// an agreement by luck (#3518 review M9). The tests read the gate through it rather than counting
+// segments their own way: a count taken on a different weld grid, or per chain instead of per face, is
+// a different question, and a corpus row that asks a different question from the gate is not asserting
+// the gate. (−1, −1) for a mesh there is nothing to compare.
+func chartRimMismatch(m *Mesh, chains []chartChain, grid float64) (extra, missing int) {
 	if m == nil || m.TriangleCount() == 0 {
 		return -1, -1
 	}
-	rim := chainSegmentKeys(chains, geom.ResolutionForPoints(m.Positions).Weld())
-	for _, e := range weldedFreeEdgeKeys(m) {
+	rim := chainSegmentKeys(chains, grid)
+	for _, e := range weldedFreeEdgeKeys(m, grid) {
 		if !rim[e] {
 			extra++
 			continue
@@ -100,8 +136,7 @@ func chartRimMismatch(m *Mesh, chains []chartChain) (extra, missing int) {
 
 // weldedFreeEdgeKeys is the mesh's unpaired edges, keyed the way a boundary segment is — so the two can
 // be compared as SETS and not merely counted.
-func weldedFreeEdgeKeys(m *Mesh) [][2][3]int64 {
-	grid := geom.ResolutionForPoints(m.Positions).Weld()
+func weldedFreeEdgeKeys(m *Mesh, grid float64) [][2][3]int64 {
 	torn := tornMeshEdges(m)
 	out := make([][2][3]int64, 0, len(torn))
 	for _, t := range torn {
@@ -115,12 +150,28 @@ func weldedFreeEdgeKeys(m *Mesh) [][2][3]int64 {
 // branch window within which a replica is worth carrying.
 type chartCover struct {
 	coverVertices
-	s      geom.Surface
-	r      chartRegion
-	us, vs []float64 // the interior grid's parameter lines
-	padU   float64   // how far past the branch window a replica is kept
-	padV   float64
-	rim    int // vertices [0, rim) are the boundary chains', laid before any interior node
+	s        geom.Surface
+	r        chartRegion
+	us, vs   []float64 // the interior grid's parameter lines
+	padU     float64   // how far past the branch window a replica is kept
+	padV     float64
+	rim      int            // vertices [0, rim) are the boundary chains', laid before any interior node
+	rimChain map[[2]int]int // each boundary segment's own chain, directed (chart_face_rim_side.go)
+	// node is the interior grid's lattice: which covering vertex each (shift, station pair) was laid
+	// at. It is what lets the structured interior be emitted as a quad mesh instead of triangulated
+	// (chart_structured_interior.go).
+	node   *gridNodeIndex
+	chains int // how many boundary chains the face has
+	// weld is the ONE resolution this covering welds and keys a rim at, so the rule that binds
+	// triangles to the rim and the gate that judges the result cannot key it differently (#3518
+	// review M9).
+	weld float64
+	// rimSideConflict is a chain whose own segments named two material sides — a refusal, not a mesh.
+	// It is deliberately STICKY across the ear-splitting rounds: a contradiction is a statement about
+	// the CHART, and splitting an ear adds interior points without changing what the chart says, so a
+	// later round that happened to read unanimous would be luck rather than a repair. Refusing the
+	// face is the conservative direction and the router reports it (#3518 review N3).
+	rimSideConflict string
 }
 
 // newChartCover sizes the covering: the trim-local (u,v) metric, the interior grid's parameter lines
@@ -278,39 +329,71 @@ func atLeastMinimumCells(ps []float64, lo, hi float64) []float64 {
 // pairs the triangulation is aligned to.
 func (b *chartCover) addChains(chains []chartChain) [][]int {
 	var loops [][]int
-	for _, sh := range b.r.shifts() {
-		for _, c := range chains {
-			loops = append(loops, b.addChain(c.p3, c.uv, sh[0], sh[1])...)
+	var segs []rimSegment
+	// One covering LOCATION is one vertex, and the resolution that decides it is the boundary's own.
+	// A face whose boundary touches itself hands the same (u,v) to addChain more than once, and a CDT
+	// cannot recover a constraint incident to a vertex another vertex sits on (#3551,
+	// coverVertices.MergeCoincidentLocations). The grid is taken from the chains rather than from
+	// b.pos, because b.pos is empty here and the replicas about to be laid carry no 3D point the
+	// chains do not already have — so it is the same number weldGrid gives afterwards.
+	b.weld = weldGrid(chainPoints(chains))
+	b.MergeCoincidentLocations(b.weld)
+	for si, sh := range b.r.shifts() {
+		for ci, c := range chains {
+			pairs := b.addChain(c.p3, c.uv, sh[0], sh[1], si)
+			for _, p := range pairs {
+				segs = append(segs, rimSegment{a: p[0], b: p[1], chain: ci})
+			}
+			loops = append(loops, pairs...)
 		}
 	}
-	b.rim = len(b.pos)
+	b.rim, b.chains = len(b.pos), len(chains)
+	b.rimChain = b.directedRimSegments(segs, chains, b.weld)
 	return loops
+}
+
+// chainPoints is every chain's 3D points, grouped, for the one weld resolution this covering uses.
+func chainPoints(chains []chartChain) [][]math.Point3 {
+	out := make([][]math.Point3, 0, len(chains))
+	for _, c := range chains {
+		out = append(out, c.p3)
+	}
+	return out
 }
 
 // addInterior lays the covering's grid nodes: every station pair the chart covers and which stands
 // clear of the boundary, replicated at each period shift. One 3D point per node, shared by its
 // replicas, so the seam welds exactly.
 func (b *chartCover) addInterior(chains []chartChain) {
+	b.node = newGridNodeIndex(len(b.r.shifts()), len(b.us), len(b.vs))
 	margin := b.nodeMargin()
 	for i, u := range b.us {
 		for j, v := range b.vs {
-			if !b.stationIsMaterial(i, j) || !b.clearOfChains(chains, u, v, margin) {
+			if !b.stationIsMaterial(i, j) {
+				continue
+			}
+			clear, keep := b.nodeClearance(chains, i, j, u, v, margin)
+			if !keep {
 				continue
 			}
 			fu, fv := b.r.fold(u, v)
-			p := b.s.PointAt(fu, fv)
-			b.addReplicas(p, u, v)
+			b.node.record(i, j, b.addReplicas(b.s.PointAt(fu, fv), u, v), clear)
 		}
 	}
 }
 
-// addReplicas adds one interior node at every period shift that lands inside the pad.
-func (b *chartCover) addReplicas(p math.Point3, u, v float64) {
-	for _, sh := range b.r.shifts() {
+// addReplicas adds one interior node at every period shift that lands inside the pad, returning the
+// covering vertex it laid at each shift (-1 where the pad declined it) so the grid node index can hold
+// the lattice the structured interior is emitted from (chart_structured_interior.go).
+func (b *chartCover) addReplicas(p math.Point3, u, v float64) []int {
+	at := make([]int, len(b.r.shifts()))
+	for si, sh := range b.r.shifts() {
+		at[si] = -1
 		if b.inPad(u+sh[0], v+sh[1]) {
-			b.add(p, u+sh[0], v+sh[1])
+			at[si] = b.add(p, u+sh[0], v+sh[1], si)
 		}
 	}
+	return at
 }
 
 // stationIsMaterial reports whether the grid node at station (i, j) is material.
@@ -342,45 +425,22 @@ func inwardProbe(stations []float64, i int, periodic bool) float64 {
 	return 0
 }
 
-// keepChartTriangles keeps each triangle whose centroid lies in the chart's branch window AND on its
-// material side — the region's own two-part definition.
+// keepChartTriangles is the covering's classification, in the three steps it takes: the CHART's own
+// verdict at each candidate translate's centroid, then the BOUNDARY's (a triangle carrying a rim
+// segment lies on that chain's material side, chart_face_rim_side.go), then one translate per 3D
+// triangle (chart_face_replica.go). The chart decides the interior, the boundary decides what it
+// bounds, and the replica selection decides which copy ships.
+//
+// The chart's verdict is ONE call to covers at the centroid. A second opinion for a centroid sitting on
+// a contour edge used to follow it; it decided nothing anywhere in the corpus over six decades of band
+// width and is deleted (#3519, see covers in chart_face_region.go for the sweep).
 func (b *chartCover) keepChartTriangles(tris [][3]int) [][3]int {
-	out := make([][3]int, 0, len(tris))
-	for _, t := range tris {
-		if u, v := b.centroid(t); b.r.inWindow(u, v) && b.triangleIsMaterial(t, u, v) {
-			out = append(out, t)
-		}
+	keep := make([]bool, len(tris))
+	for i, t := range tris {
+		u, v := b.centroid(t)
+		keep[i] = b.r.windowCandidate(u, v) && b.r.covers(u, v)
 	}
-	return out
-}
-
-// triangleIsMaterial answers the region for one triangle: at its centroid, and — only when that answers
-// NO — by the majority of three points halfway from the centroid to each vertex.
-//
-// The retry is for a centroid that lands ON a contour edge, where an even-odd count answers by which
-// side the ray was cast from rather than by the geometry. That is not a measure-zero curiosity here: a
-// band's artificial seam can be SLANTED (the merged cocylindrical wall's runs from (0,0) to (−0.1963,10)),
-// and a slope of exactly eight u-stations over the whole v range puts grid-built centroids EXACTLY on it
-// — measured on that face at PropertyQuality, the centroid (−0.008181231, 0.416666667) and the seam agree
-// to 1e-11, both branches read "outside", and the triangle vanished from both. Forty such holes tore the
-// wall (615 unpaired edges against a rim of 578).
-//
-// The retry can only ADD a triangle the point test refused, never duplicate one: covers is periodic, so a
-// triangle it accepts anywhere is accepted on exactly the one translate inWindow keeps. A majority, not
-// "any", so a triangle that genuinely lies outside a real boundary — where at most one sub-point can fall
-// the other side of the chart-versus-chord band — is still refused.
-func (b *chartCover) triangleIsMaterial(t [3]int, u, v float64) bool {
-	if b.r.covers(u, v) {
-		return true
-	}
-	if fu, fv := b.r.fold(u, v); !b.r.onContour(fu, fv) {
-		return false // a decided NO: the centroid is nowhere near a contour edge
-	}
-	votes := 0
-	for _, i := range t {
-		if b.r.covers((u+b.uu[i])/2, (v+b.vv[i])/2) {
-			votes++
-		}
-	}
-	return votes >= 2
+	b.bindToTheRim(tris, keep)
+	b.keepOneReplicaEach(tris, keep)
+	return selectTriangles(tris, keep)
 }

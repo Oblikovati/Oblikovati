@@ -35,7 +35,7 @@ func knotSpanSeedParams(knots []float64, degree int) []float64 {
 	for i := range spans {
 		a, b := breaks[i], breaks[i+1]
 		for k := 1; k <= per; k++ {
-			out = append(out, a+(b-a)*float64(k)/float64(per))
+			out = append(out, a+float64((b-a)*float64(k)/float64(per)))
 		}
 	}
 	return out

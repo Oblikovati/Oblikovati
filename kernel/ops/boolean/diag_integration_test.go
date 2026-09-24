@@ -28,20 +28,24 @@ func TestBooleanRefusesAnUnmodelledConfigurationByName(t *testing.T) {
 		t.Skip("corpus tier (~3s): `make test-corpus`")
 	}
 	t.Parallel()
-	// Two INTERLOCKED rings. This fixture has moved three times, each time because the pipeline grew
-	// past it: it was a sphere PAIR, which now lands analytically, then a ball joined to a torus, which
-	// the torus reduction took (ADR-0061 stage 5), then a rod driven ACROSS a ring, which its second
-	// harmonic's lanes took (stage 5's third slice). What is left with genuinely no closed form is a
-	// pair where NEITHER side supplies an implicit quadric to substitute a chart into. The positive
-	// forms of the three retired fixtures are TestSpherePairVolumesAreExact,
-	// TestRingAndBallBooleansAgreeWithRequicha and TestASkewToolThroughARingIsExact.
+	// Two CO-CENTRED PERPENDICULAR rings. This fixture has moved four times, each time because the
+	// pipeline grew past it: a sphere PAIR, which now lands analytically; a ball joined to a torus, which
+	// the torus reduction took (ADR-0061 stage 5); a rod driven ACROSS a ring, which its second
+	// harmonic's lanes took (stage 5's third slice); and two INTERLOCKED rings, which ADR-0066 (#3514)
+	// took when the reduction stopped needing a quadric on the other side. The positive forms of the
+	// four are TestSpherePairVolumesAreExact, TestRingAndBallBooleansAgreeWithRequicha,
+	// TestASkewToolThroughARingIsExact and TestATorusPairBuildsAndItsFacesAreTheRightPatches.
+	//
+	// What refuses here is the reduction's own POST-CONDITION: this pair's branch pair is tangent at two
+	// stations, the window folds then read a lane extremum that is not the merged root, and the section's
+	// own points come back 1.4e-5 off the surface they claim to be on.
 	ring, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(0, 0, 1), 5, 1.5, "ring")
 	if err != nil {
 		t.Fatalf("ring: %v", err)
 	}
-	linked, err := brep.SolidTorus(math.P3(5, 0, 0), math.V3(1, 0, 0), 5, 1.5, "linked")
+	linked, err := brep.SolidTorus(math.P3(0, 0, 0), math.V3(1, 0, 0), 5, 1.5, "crossed")
 	if err != nil {
-		t.Fatalf("linked ring: %v", err)
+		t.Fatalf("crossed ring: %v", err)
 	}
 
 	var rec diag.Recorder

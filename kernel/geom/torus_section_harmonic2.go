@@ -1,0 +1,310 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package geom
+
+import (
+	stdmath "math"
+
+	"oblikovati.org/math"
+)
+
+// The SECOND harmonic of the torus∩quadric reduction (ADR-0061 stage 5, third slice) — the half of the
+// family torus_section_arc.go's one-harmonic closed form cannot reach.
+//
+// A point on the torus is
+//
+//	P(u, v) = C + ρ(v)·e(u) + r·sin v·â,   ρ(v) = R + r·cos v,   e(u) = cos u·ê₁ + sin u·ê₂
+//
+// and a quadric is Q(X) = W·(M W) + 2 G·W + K with W = X − Anchor. Writing W = W₀ + ρ·e(u), with
+// W₀ = (C − Anchor) + r·sin v·â the station's own offset, and expanding,
+//
+//	Q = (W₀·MW₀ + 2 G·W₀ + K) + ρ·(e·T) + ρ²·(e·Me),   T = 2(M W₀ + G)
+//
+// so at a fixed tube angle v the whole azimuth dependence sits in two terms. The term LINEAR in e is
+// e·T = x·cos u + y·sin u, with x = T·ê₁ and y = T·ê₂ — one harmonic. The term QUADRATIC in e is
+//
+//	e·Me = m₁₁·cos²u + 2·m₁₂·cos u·sin u + m₂₂·sin²u
+//	     = (m₁₁+m₂₂)/2 + ((m₁₁−m₂₂)/2)·cos 2u + m₁₂·sin 2u
+//
+// with m₁₁ = ê₁·Mê₁, m₂₂ = ê₂·Mê₂ and m₁₂ = ê₁·Mê₂ — a SECOND harmonic plus a constant. So every torus
+// against every quadric reduces, station by station, to
+//
+//	f(u) = Level + Cos1·cos u + Sin1·sin u + Cos2·cos 2u + Sin2·sin 2u = 0
+//
+//	Cos2 = ρ²(m₁₁−m₂₂)/2   Sin2 = ρ²·m₁₂   Cos1 = ρ·x   Sin1 = ρ·y
+//	Level = W₀·MW₀ + 2 G·W₀ + K + ρ²(m₁₁+m₂₂)/2
+//
+// When M is INVARIANT about the torus axis, m₁₁ = m₂₂ and m₁₂ = 0: Cos2 and Sin2 vanish, Level falls
+// back to the one-harmonic form's level, and (Cos1, Sin1) is its reach and phase in polar form. That
+// closed form stays — an arccos is exact, cheap, and already certified where it applies. Everything
+// else — a rod ACROSS a ring, a tilted drill, an off-axis cone — lands here, where f is a degree-two
+// trigonometric polynomial with up to FOUR azimuths per station rather than two.
+//
+// Those azimuths are the same Weierstrass quartic the conic×conic bucket already solves
+// (trigQuadraticRoots, conic2d_intersect.go): with t = tan(u/2), clearing (1+t²)² gives
+//
+//	(Cos2−Cos1+Level)·t⁴ + (2Sin1−4Sin2)·t³ + (2Level−6Cos2)·t² + (2Sin1+4Sin2)·t + (Cos2+Cos1+Level)
+//
+// whose leading coefficient is f(π) — so the half-turn the substitution cannot reach is a root exactly
+// when the quartic drops to a cubic, which is how that solver recovers it. ONE quartic solver, at the
+// layer both callers reach; this file adds no second one.
+
+// torusStation is the OTHER surface's constraint on ONE tube circle of the torus, before the azimuth
+// is resolved: the five coefficients of f, the one-harmonic reading of f when its second harmonic
+// vanishes, and the classification that says whether it does.
+//
+// WHICH form produced it is not recorded, because nothing downstream needs to know. A quadric and a
+// second torus reduce to the same five numbers (torus_torus_harmonic.go derives the second, and says
+// why a quartic cannot make a station any richer than a quadric does), and every step past this one —
+// the lanes, the windows, the folds, the certificate — reads only them.
+type torusStation struct {
+	rho       float64             // R + r·cos v, the tube circle's distance from the axis
+	poly      torusSecondHarmonic // the five coefficients of f
+	reach     float64             // |the first harmonic|, in the spelling the producing form gives it
+	phase     float64             // and its phase, likewise
+	invariant bool                // the second harmonic vanishes: one harmonic describes f exactly
+}
+
+// stationOn reduces the QUADRIC's constraint on the torus to one tube circle. It is the quadric half
+// of [TorusCoForm]; torus_torus_harmonic.go is the other.
+func (q Quadric) stationOn(t Torus, v float64) torusStation {
+	axis, e1, e2 := torusAxisFrame(t)
+	cv, sv := cosSin(v)
+	w0 := q.Anchor.VectorTo(t.Center).Add(axis.Scale(math.Scalar(t.MinorRadius * sv)))
+	mw0 := q.M.Apply(w0)
+	reachVec := mw0.Scale(2).Add(q.G.Scale(2))
+	m11, m22, m12 := inPlaneTensorEntries(q, e1, e2)
+	rho := t.MajorRadius + float64(t.MinorRadius*cv)
+	x, y := float64(reachVec.Dot(e1)), float64(reachVec.Dot(e2))
+	constant := float64(w0.Dot(mw0)) + float64(2*float64(q.G.Dot(w0))) + q.K
+	return torusStation{
+		rho:       rho,
+		poly:      quadricTubeHarmonics(rho, constant, x, y, m11, m22, m12),
+		reach:     float64(rho * stdmath.Hypot(x, y)),
+		phase:     stdmath.Atan2(y, x),
+		invariant: axisInvariantEntries(q, m11, m22, m12),
+	}
+}
+
+// quadricTubeHarmonics writes the quadric's station out as the five coefficients of f (see the file
+// comment's half-angle identities).
+//
+// Every expression here is the one that stood before the station carried its coefficients rather than
+// deriving them on demand, spelled character for character, so the quadric family's sections reproduce
+// bit for bit. In particular the LEVEL keeps this spelling and not the closed form's equivalent
+// `constant + m11·ρ²`: the two parted by an ulp on arm64 (CI run 34280554924 macos-latest), and
+// [torusStation.harmonic] reads this one for that reason.
+//
+// ★ The float64() around `rr*(m11+m22)/2` is a live FMA site, not decoration. gc strength-reduces a
+// divide by two into a multiply before its contraction pass, so `a + b/2` compiles to FMADDD on arm64
+// while `a + b/3` does not (ADR-0064 §4, measured by disassembly). Do not remove it.
+func quadricTubeHarmonics(rho, constant, x, y, m11, m22, m12 float64) torusSecondHarmonic {
+	rr := float64(rho * rho)
+	return torusSecondHarmonic{
+		Cos2:  float64(rr * (m11 - m22) / 2),
+		Sin2:  float64(rr * m12),
+		Cos1:  float64(rho * x),
+		Sin1:  float64(rho * y),
+		Level: constant + float64(rr*(m11+m22)/2),
+	}
+}
+
+// inPlaneTensorEntries returns ê₁·Mê₁, ê₂·Mê₂ and ê₁·Mê₂ — how the quadric's quadratic form acts on
+// the plane the torus's azimuth sweeps, which is the only part of M the reduction ever reads.
+func inPlaneTensorEntries(q Quadric, e1, e2 math.Vector3) (m11, m22, m12 float64) {
+	return float64(e1.Dot(q.M.Apply(e1))), float64(e2.Dot(q.M.Apply(e2))), float64(e1.Dot(q.M.Apply(e2)))
+}
+
+// axisInvariantEntries reports that the in-plane entries make M act the same way on every direction
+// perpendicular to the torus axis — the condition that collapses the azimuth dependence to ONE
+// harmonic. The departure is measured RELATIVE to the tensor's own entries, so it carries no model
+// scale: the same pair written in metres and in millimetres classifies identically.
+//
+// It is a statement about the TENSOR, which is stronger than the same statement about the station
+// polynomial the tensor produces: a tensor that is axis-invariant is so at every tube angle at once.
+// The torus co-form has no tensor to read and asks the polynomial instead
+// ([torusSecondHarmonic.isOneHarmonic]); the two are the same predicate on the two representations,
+// and each is read where the information is.
+func axisInvariantEntries(q Quadric, m11, m22, m12 float64) bool {
+	scale := stdmath.Max(q.M.Norm(), stdmath.Abs(m11))
+	if scale <= 0 {
+		return false // a degenerate (planar) quadric: torus∩plane is the spiric closed form
+	}
+	return stdmath.Abs(m11-m22) <= axisInvarianceTol*scale && stdmath.Abs(m12) <= axisInvarianceTol*scale
+}
+
+// harmonic reads the station as the ONE-harmonic form level + reach·cos(u − phase), which describes it
+// exactly while [torusStation.invariant] holds.
+func (st torusStation) harmonic() torusHarmonic {
+	return torusHarmonic{level: st.poly.Level, reach: st.reach, phase: st.phase}
+}
+
+// secondHarmonic returns the station's five coefficients.
+func (st torusStation) secondHarmonic() torusSecondHarmonic { return st.poly }
+
+// torusSecondHarmonic is the quadric's constraint on one tube circle written in full:
+//
+//	f(u) = Level + Cos1·cos u + Sin1·sin u + Cos2·cos 2u + Sin2·sin 2u
+//
+// It is zero exactly at the azimuths where the tube circle meets the quadric, and carries the sign of
+// the quadric's own inside/outside sense between them.
+type torusSecondHarmonic struct {
+	Cos2, Sin2 float64 // the second harmonic — zero exactly when M is invariant about the torus axis
+	Cos1, Sin1 float64 // the first harmonic, the one-harmonic form's reach and phase in cartesian form
+	Level      float64 // the azimuth-independent term
+}
+
+// torusSecondHarmonicAt returns the five coefficients of the quadric's constraint on the torus at tube
+// angle v. It is exact for EVERY quadric, axis-invariant or not.
+//
+//	h := torusSecondHarmonicAt(ring, rod.QuadricForm(), v) // h.valueAt(u) == rod.QuadricForm().ValueAt(ring.PointAt(u, v))
+func torusSecondHarmonicAt(t Torus, co TorusCoForm, v float64) torusSecondHarmonic {
+	return co.stationOn(t, v).secondHarmonic()
+}
+
+// valueAt evaluates f at one azimuth.
+func (h torusSecondHarmonic) valueAt(u float64) float64 {
+	cu, su := cosSin(u)
+	c2, s2 := cosSin(float64(2 * u))
+	return h.Level + float64(h.Cos1*cu) + float64(h.Sin1*su) + float64(h.Cos2*c2) + float64(h.Sin2*s2)
+}
+
+// slopeAt evaluates df/du at one azimuth.
+func (h torusSecondHarmonic) slopeAt(u float64) float64 {
+	cu, su := cosSin(u)
+	c2, s2 := cosSin(float64(2 * u))
+	return float64(-h.Cos1*su) + float64(h.Sin1*cu) + float64(2*(float64(h.Sin2*c2)-float64(h.Cos2*s2)))
+}
+
+// derivative returns df/du as a station polynomial of the SAME shape, so the extrema that name the
+// lanes are found by the same solver the roots are — no second machinery for the critical points.
+func (h torusSecondHarmonic) derivative() torusSecondHarmonic {
+	return torusSecondHarmonic{Cos2: float64(2 * h.Sin2), Sin2: float64(-2 * h.Cos2), Cos1: h.Sin1, Sin1: -h.Cos1}
+}
+
+// scale is the polynomial's own coefficient magnitude, what a residual is judged against. It carries
+// the station's units, so a residual ratio against it is dimensionless.
+func (h torusSecondHarmonic) scale() float64 {
+	return polyScale(h.Cos2, h.Sin2, h.Cos1, h.Sin1, h.Level)
+}
+
+// isOneHarmonic reports the station's SECOND harmonic vanishing at the polynomial's own coefficient
+// scale, so that level + reach·cos(u − phase) describes f exactly. It is the same predicate
+// [axisInvariantEntries] makes about a quadric's tensor, read off the polynomial instead — which is
+// the only place a form without a tensor (a second torus) carries it.
+//
+// Reading it here is weaker in one way and stronger in another. Weaker: it is a statement about ONE
+// tube angle, and a form could be one-harmonic at one station and not at the next, so a caller that
+// needs the property over the whole turn asks at every station (coaxialOnTheTorus does). Stronger: it
+// is the property the reduction actually uses, rather than a sufficient condition for it.
+func (h torusSecondHarmonic) isOneHarmonic() bool {
+	return largestMagnitude(h.Cos2, h.Sin2) <= axisInvarianceTol*h.scale()
+}
+
+// azimuths returns the CERTIFIED azimuths where f vanishes, in ascending order. Each candidate the
+// quartic produces is Newton-polished in the ANGLE — better conditioned than the tan(u/2) chart near
+// the half-turn, where a root sits at a nearly infinite t — and then kept only if its residual on f
+// itself is at the solve's own rounding. Nothing here decides which root is physical: every root that
+// certifies is returned, and the caller's lane structure says which pair bounds which arc.
+func (h torusSecondHarmonic) azimuths() []float64 {
+	shift, scale := h.chartShift(), h.scale()
+	g := h.rotated(shift)
+	out := make([]float64, 0, 4)
+	for _, w := range trigQuadraticRoots(float64(2*g.Cos2), g.Sin2, g.Cos1, g.Sin1, g.Level-g.Cos2) {
+		u := h.polish(wrapAngle(w + shift))
+		if stdmath.Abs(h.valueAt(u)) <= torusRootResidualTol*scale {
+			out = append(out, u)
+		}
+	}
+	return sortedDedupedAngles(out)
+}
+
+// chartShift is the azimuth the tan(u/2) substitution is taken ABOUT, and it exists because that chart
+// has a pole at the half-turn. The quartic's leading coefficient is f(π): as a root approaches π the
+// quartic drops toward a cubic, and the cancellation costs the OTHER roots their residual certificate
+// too, so the solver silently returns a partial set.
+//
+// Measured: on a random ring × rod pair at tube angle v = 2.953097 the station has four sign changes and
+// the unshifted solve certified two; one level down, the same collapse in the DERIVATIVE's solve left a
+// station reporting one extremum instead of four, which is a station no lane can be read on
+// (Oblikovati/Oblikovati#3515, review round 2).
+//
+// Shifting is exact — [torusSecondHarmonic.rotated] is a rotation of the coefficients, not an
+// approximation — and it is a CONDITIONING choice, not a topological one: whichever chart is used, the
+// roots come back through the same Newton polish and the same residual certificate on the ORIGINAL
+// polynomial. The shifts are tried in a fixed order and the first that clears the floor wins, so the
+// choice is deterministic and the output byte-identical across runs and platforms.
+func (h torusSecondHarmonic) chartShift() float64 {
+	floor := float64(torusChartPoleFloor * h.scale())
+	for _, d := range torusChartShifts {
+		if stdmath.Abs(h.valueAt(stdmath.Pi+d)) > floor {
+			return d
+		}
+	}
+	return 0 // every chart has a near-root at its pole: solve in the plain one and let the caller certify
+}
+
+// rotated returns the same polynomial written about a shifted azimuth: rotated(δ).valueAt(w) is
+// h.valueAt(w + δ). A trigonometric polynomial's harmonics rotate independently, the first by δ and the
+// second by 2δ, so this is a pair of plane rotations on the coefficients and nothing is lost.
+func (h torusSecondHarmonic) rotated(delta float64) torusSecondHarmonic {
+	c1, s1 := cosSin(delta)
+	c2, s2 := cosSin(float64(2 * delta))
+	return torusSecondHarmonic{
+		Cos2:  float64(h.Cos2*c2) + float64(h.Sin2*s2),
+		Sin2:  float64(h.Sin2*c2) - float64(h.Cos2*s2),
+		Cos1:  float64(h.Cos1*c1) + float64(h.Sin1*s1),
+		Sin1:  float64(h.Sin1*c1) - float64(h.Cos1*s1),
+		Level: h.Level,
+	}
+}
+
+// polish takes a candidate azimuth to the root itself by Newton on f. It stops at a stalled slope,
+// which is a double root — a fold, where the caller reads the extremum rather than the root.
+func (h torusSecondHarmonic) polish(u float64) float64 {
+	for range torusRootPolishSteps {
+		d := h.slopeAt(u)
+		if d == 0 {
+			break
+		}
+		u -= float64(h.valueAt(u) / d)
+	}
+	return wrapAngle(u)
+}
+
+// extrema returns the certified azimuths where df/du vanishes, in ascending order — the station's
+// maxima and minima alternating round the circle. There are always at least two (f is continuous and
+// periodic) and at most four (df/du is itself a degree-two trigonometric polynomial).
+func (h torusSecondHarmonic) extrema() []float64 { return h.derivative().azimuths() }
+
+// torusRootResidualTol is how large a candidate azimuth's residual on the station polynomial may be,
+// relative to that polynomial's own largest coefficient, and still count as a root. It compares a
+// value with the coefficients it was formed from, so it carries no model scale.
+const torusRootResidualTol = 1e-9 // tol:numeric — relative residual of a certified station root
+
+// torusRootPolishSteps is how many Newton steps in the angle a quartic root gets. The quartic solver
+// already polishes in t; two more steps in u remove what the tan(u/2) chart's conditioning left.
+const torusRootPolishSteps = 3
+
+// torusChartPoleFloor is how far the station polynomial must stand from zero AT A CHART'S POLE, relative
+// to its own largest coefficient, for that chart to be well conditioned. It compares a value with the
+// coefficients it was formed from, so it carries no model scale. Below it the quartic in tan(u/2) is
+// solved by cancellation and loses roots — the ill-conditioned regime a fast path must leave, which here
+// means turning the chart rather than abandoning it.
+//
+// SWEPT, not chosen. 55 000 stations drawn from random ring × rod pairs, each hunted to a tube angle
+// where the station or its derivative has a root at the pole and then sampled on a geometric ladder away
+// from it, comparing the plain chart's certified roots with the union over all four charts:
+//
+//	|f(π)|/scale     ≥1e-4   1e-5   1e-6   1e-7   1e-8  …  1e-11   ≤1e-13
+//	plain loses one  0.000%  1.47%  24.3%  65.6%  82.4%    99.5%   0.000%
+//
+// Zero losses over the 12 255 stations at or above 1e-4, and the band below 1e-13 recovers because there
+// the pole IS a root and the quartic drops to the cubic the solver handles. One decade of margin above
+// the top of the damaged band puts the floor here.
+const torusChartPoleFloor = 1e-3 // tol:conditioning — relative value of a station at its chart's pole
+
+// torusChartShifts are the azimuths the substitution may be taken about, tried in this order. Zero is
+// first so a well-conditioned station keeps exactly the chart, and the bits, it always had. The rest are
+// spread over the half-turn, because two shifts that differ by π share a pole.
+var torusChartShifts = [4]float64{0, stdmath.Pi / 2, stdmath.Pi / 4, 3 * stdmath.Pi / 4}

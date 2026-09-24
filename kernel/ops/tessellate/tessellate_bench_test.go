@@ -14,8 +14,10 @@ import (
 
 	"oblikovati.org/kernel/exchange"
 	"oblikovati.org/kernel/exchange/step"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops/tessellate"
 	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
 )
 
 // Performance accountability for tessellation — the import→render hot path. boolean.TessellateBody runs in the
@@ -59,6 +61,90 @@ func BenchmarkTessellateBody(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, body := range bodies {
 					tessellate.TessellateBody(body, ops.DefaultQuality())
+				}
+			}
+		})
+	}
+}
+
+// BenchmarkChartFaceCovering measures the chart-driven mesher on ONE face at each covering size a chart
+// region can have. A torus face wraps in BOTH parameters, so the covering replicates its points over
+// 3 × 3 = 9 period shifts; a cylinder wall wraps in one, over 3. Every interior grid node's membership
+// runs chartRegion.covers, which walks |shifts| × |contours| point-in-polygon tests, and nothing
+// measured what the wrapping costs (#3527).
+//
+// The two faces are picked out of the corpus bodies the chart rows already build, so this measures the
+// same geometry those rows gate rather than a fixture of its own.
+//
+// Measured, amd64, -benchtime 200x. It found something on its first run, so both readings are here:
+//
+//	                           torus band (9 shifts)            cylinder wall (3 shifts)
+//	shifts() built per call    7.26 ms  11.18 MB  69 655 allocs  5.00 ms  5.31 MB  26 676 allocs
+//	shifts() a shared table    6.64 ms   8.21 MB  49 705 allocs  4.75 ms  4.99 MB  21 564 allocs
+//
+// The second row ships (chartShiftTables, chart_face_region.go): covers asked for a freshly built slice
+// on every membership query, which is once per covering grid node, and that was 29 % of the torus band's
+// allocations. Doubly periodic still costs about 1.4× singly periodic on 1.6× the allocation, which is
+// the shape of a 9-shift covering against a 3-shift one. Neither row is a budget — nothing fails on
+// these — they are what a later change is read against.
+func BenchmarkChartFaceCovering(b *testing.B) {
+	for _, c := range []struct {
+		name string
+		face func(b *testing.B) *topo.Face
+	}{
+		{"torus band, 9 shifts", func(b *testing.B) *topo.Face {
+			return faceOnSurfaceKind[geom.Torus](b, ringMinus(b, mustCylinder(b, math.P3(0, 0, -4), math.V3(0, 0, 1), 4, 8)))
+		}},
+		{"cylinder wall, 3 shifts", func(b *testing.B) *topo.Face {
+			return faceOnSurfaceKind[geom.Cylinder](b, rodBall(b, ops.Join))
+		}},
+	} {
+		f := c.face(b)
+		b.Run(c.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				tessellate.TessellateFace(f, ops.DefaultQuality())
+			}
+		})
+	}
+}
+
+// faceOnSurfaceKind returns the body's first face on a surface of kind S, failing the benchmark when the
+// body has none — so a fixture that stops producing the face measures nothing rather than something else.
+func faceOnSurfaceKind[S geom.Surface](b *testing.B, body *topo.Body) *topo.Face {
+	b.Helper()
+	for _, f := range body.Faces() {
+		if _, ok := f.Geometry().(S); ok {
+			return f
+		}
+	}
+	b.Fatalf("the fixture body has no face on a %T surface", *new(S))
+	return nil
+}
+
+// BenchmarkWholeBodyWeld measures the weld the tessellation post-condition runs over a body's whole
+// vertex set (WeldedFreeEdgeCount → tornAcrossMeshes → weldAcrossMeshes), with allocations, because that
+// weld concatenates every mesh's positions into ONE transient slice before gridding them: O(V) memory on
+// top of the O(V) index it has to build anyway. It ran on every tessellated body and nothing measured it
+// (#3527). A change that removes the transient — a two-pass extent then a per-mesh walk — shows here as
+// bytes per operation, which is the only way to tell it apart from noise.
+//
+// Baseline, amd64, -benchtime 200x: torus 981 µs/op and 1.69 MB/op, filleted_box 336 µs/op and
+// 666 kB/op, drilled_box 133 µs/op and 213 kB/op. The transient copy is one of the two O(V) allocations
+// inside those figures; how much of them it is has not been attributed, and this row is where a change
+// that removes it would show.
+func BenchmarkWholeBodyWeld(b *testing.B) {
+	for _, name := range []string{"torus", "filleted_box", "drilled_box"} {
+		var meshes []*tessellate.Mesh
+		for _, body := range occBodies(b, name) {
+			m, _ := tessellate.TessellateBody(body, ops.DefaultQuality())
+			meshes = append(meshes, m)
+		}
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				for _, m := range meshes {
+					tessellate.WeldedFreeEdgeCount(m)
 				}
 			}
 		})
@@ -124,7 +210,17 @@ func TestTessellationBudget(t *testing.T) {
 
 // TestHeavyModelBudget guards the heavy REAL model named by OBK_PERF_STEP (e.g. an imported EDF duct:
 // trimmed cones + freeform NURBS) — the case the committed fixtures don't reach, and exactly where the
-// O(n²) CDT regression bit (50 ms → 3.5 s). Skipped when OBK_PERF_STEP is unset, so set it locally:
+// O(n²) CDT regression bit (50 ms → 3.5 s).
+//
+// It is therefore the ONLY row that gates the NURBS path's cost, and it is opt-in, so anything that
+// makes a freeform face more expensive is invisible to the gate. The achieved-chord report of #3517
+// (face_chord_achieved.go) is one such thing: it costs one surface point inversion per mesh edge, which
+// on an analytic face is a few Gauss-Newton steps and on a NURBS face is the expensive one — measured
+// per face, occtparity J3 face 3 went 13 ms → 808 ms and K2 face 4 26 ms → 2.46 s, 50–95×. Here, on the
+// EDF duct, the same change reads 0.34 s → 0.41 s against this 700 ms budget. If a future change moves
+// that per-face figure again, THIS is the row that sees it, and the committed fixtures will not.
+//
+// Skipped when OBK_PERF_STEP is unset, so set it locally:
 //
 //	OBK_PERF_STEP=/path/EDF.STEP go test -run TestHeavyModelBudget ./kernel/ops
 func TestHeavyModelBudget(t *testing.T) {

@@ -3,11 +3,21 @@
 package feature
 
 import (
+	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	stdmath "math"
+	"sort"
 	"strings"
 	"testing"
 
 	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
 	"oblikovati.org/kernel/ops"
+	"oblikovati.org/kernel/topo"
 	"oblikovati.org/math"
 	"oblikovati.org/model/health"
 )
@@ -83,4 +93,213 @@ func TestAnOrdinaryBoreIsNotRefusedOnSize(t *testing.T) {
 	if hasDiagCode(cut.Diagnostics(), ops.CodeBooleanSubResolutionTool) {
 		t.Errorf("an ordinary bore must not meet the size classification; got %v", cut.Diagnostics())
 	}
+}
+
+// TestAPlanarRetryCannotOverturnASizeRefusal is the feature-layer half of "decide each incidence
+// once" (#3524). combine has TWO kernel entries — the exact curved attempt and, when that declines,
+// a planar retry on FACETED copies of both operands — and each classified the pair's size for
+// itself. Measured on a 1e-10-radius cylinder cutting a 10-cube, the two disagreed: the curved entry
+// refused by name and the planar retry then built on the faceted stand-in, returning the cube
+// untouched with no diagnostic. The user saw a healthy feature that had removed nothing.
+//
+// Faceting cannot make an operand thicker, so the size verdict is final: the retry never runs, and
+// the pair is classified exactly once per feature boolean.
+func TestAPlanarRetryCannotOverturnASizeRefusal(t *testing.T) {
+	t.Parallel()
+	cube, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "cube")
+	if err != nil {
+		t.Fatalf("cube: %v", err)
+	}
+	drill, err := brep.SolidCylinder(math.P3(5, 5, -1), math.V3(0, 0, 1), 1e-10, 12)
+	if err != nil {
+		t.Fatalf("drill: %v", err)
+	}
+	fs := NewPartFeatures(nil)
+	NewBaseFeatures(fs).AddBase(cube, drill)
+	cut := NewModifyFeatures(fs).AddCombine(0, 1, ops.Cut)
+	fs.Recompute()
+
+	if cut.Health().Status != health.Sick {
+		t.Fatalf("a sub-resolution cut must sicken its feature, not build silently; got %+v", cut.Health())
+	}
+	if !strings.Contains(cut.Health().Reason, "below this model's resolution") {
+		t.Errorf("the refusal must survive to health; got %q", cut.Health().Reason)
+	}
+	if got := countDiagCode(cut.Diagnostics(), ops.CodeBooleanSubResolutionTool); got != 1 {
+		t.Errorf("the pair must be classified exactly ONCE per feature boolean; got %d size defects in %v",
+			got, cut.Diagnostics())
+	}
+}
+
+// countDiagCode counts how many diagnostics carry a code — one classification, one record.
+func countDiagCode(ds []diag.Diagnostic, code diag.Code) int {
+	n := 0
+	for _, d := range ds {
+		if d.Code == code {
+			n++
+		}
+	}
+	return n
+}
+
+// TestThePlanarizedToolIsMeasuredToo is the corpus row for the operand this engine builds ITSELF.
+// combine facets a curved tool before the planar boolean, and planarized() turns a 1e-10-radius
+// cylinder into a 26-face prism whose side normals have partly collapsed toward the cap normal. A
+// width that needed a pair of opposed planar faces read that prism's LENGTH — 12 — so the planar
+// retry built on it and handed the target back untouched with nothing recorded (#3524 review C1).
+//
+// Measured: the 26 faces carry TWO distinct plane normals, (0,-0,1) x25 and (0,0,1) x1, which are
+// parallel — so the body names ONE direction and is 12 long in it. This is therefore the row that
+// exercises the principal-frame backstop (boolean.principalWidth), the only path that can measure a
+// body whose own boundary names fewer than three independent directions.
+//
+// The row drives the planarized body directly rather than through combine, because combine now
+// refuses at the curved attempt and never reaches the retry: this is the measurement itself.
+func TestThePlanarizedToolIsMeasuredToo(t *testing.T) {
+	t.Parallel()
+	cube, err := brep.SolidBlock(math.P3(0, 0, 0), math.P3(10, 10, 10), "cube")
+	if err != nil {
+		t.Fatalf("cube: %v", err)
+	}
+	drill, err := brep.SolidCylinder(math.P3(5, 5, -1), math.V3(0, 0, 1), 1e-10, 12)
+	if err != nil {
+		t.Fatalf("drill: %v", err)
+	}
+	flat := planarized(drill, "sub-resolution-tool")
+	if got := len(flat.Faces()); got < 3 {
+		t.Fatalf("planarized() must have faceted the cylinder; got %d faces", got)
+	}
+	rec := &diag.Recorder{}
+	body, err := ops.BooleanWithDiagnostics(ops.Cut, cube, flat, rec)
+	if !errors.Is(err, ops.ErrSubResolutionOperand) {
+		faces := 0
+		if body != nil {
+			faces = len(body.Faces())
+		}
+		t.Fatalf("the faceted 1e-10 tool must be refused by name; got err=%v, %d faces, %d diagnostics",
+			err, faces, len(rec.Records()))
+	}
+	if !hasDiagCode(rec.Records(), ops.CodeBooleanSubResolutionTool) {
+		t.Errorf("the refusal must reach the diagnostic channel; got %v", rec.Records())
+	}
+	assertFacetingCannotUnrefuse(t, cube, drill, flat)
+}
+
+// assertFacetingCannotUnrefuse pins the two legs that make combine's size verdict FINAL — the reason
+// the planar retry is allowed not to run after a curved refusal (#3524 review N3).
+//
+// Leg 1, the tool: planarizeSimpleCylinder INSCRIBES. Every vertex of the prism lies ON the cylinder,
+// never outside it, so the prism's width is at most the cylinder's diameter — faceting can only make
+// an operand thinner. Nothing pinned that before; a circumscribing facetter would invert the whole
+// argument.
+//
+// Leg 2, the floor: the pair's weld comes from the union of the two RANGE BOXES, and an inscribed
+// polygon with a vertex on each axis has the same range box as its circle — so the floor does not
+// move at all. Measured over target 10 and 1e-3 against tool radius 1e-10 and 10 (tool-dominant and
+// target-dominant): the weld ratio is 1.000000 in every one.
+//
+// Thickness falls, the floor stands still: a refusal cannot become a build.
+func assertFacetingCannotUnrefuse(t *testing.T, target, curved, faceted *topo.Body) {
+	t.Helper()
+	assertPlanarizeInscribes(t)
+	curvedWeld := geom.ResolutionForBox(target.RangeBox().Union(curved.RangeBox())).Weld()
+	facetedWeld := geom.ResolutionForBox(target.RangeBox().Union(faceted.RangeBox())).Weld()
+	if facetedWeld != curvedWeld {
+		t.Errorf("faceting moved the pair's floor: weld %g curved, %g faceted — the size verdict is only "+
+			"final while the floor stands still", curvedWeld, facetedWeld)
+	}
+}
+
+// assertPlanarizeInscribes checks leg 1 on a WELL-CONDITIONED cylinder rather than on the
+// sub-resolution one: inscribing is a property of the facetter, and asserting it at r=1e-10 on
+// coordinates of size 5 would be asserting against cancellation (the vertices there come out
+// 2.6e-16 outside r, which is a quarter of an ULP of the 5, not a circumscribing facetter).
+func assertPlanarizeInscribes(t *testing.T) {
+	t.Helper()
+	const radius = 1.0
+	rod, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), radius, 4)
+	if err != nil {
+		t.Fatalf("rod: %v", err)
+	}
+	prism := planarized(rod, "inscribe-probe")
+	if len(prism.Vertices()) < 6 {
+		t.Fatalf("planarized() must have faceted the rod; got %d vertices", len(prism.Vertices()))
+	}
+	for _, v := range prism.Vertices() {
+		p := v.Point()
+		if r := stdmath.Hypot(float64(p.X), float64(p.Y)); r > radius+1e-12 { // tol:numeric — an exact unit radius
+			t.Fatalf("planarizeSimpleCylinder must INSCRIBE: a vertex sits %.17g from the axis, radius is %g", r, radius)
+		}
+	}
+}
+
+// TestTheCurvedEntryIsReachedOnlyThroughCurvedCombine is the feature layer's half of the
+// one-call-site guard, and the answer to the kernel guard's own limit: that one parses "." and cannot
+// see this package (#3524 review M5).
+//
+// The invariant is not "the size predicate runs once" — that lives in the kernel — but the thing that
+// makes combine's verdict final: every call into the exact curved boolean goes through curvedCombine,
+// which reads what the kernel decided about the operands' size and turns a refusal into an error. A
+// second, direct call would bypass that and let the planar retry answer differently, which is exactly
+// what round 0 did.
+func TestTheCurvedEntryIsReachedOnlyThroughCurvedCombine(t *testing.T) {
+	t.Parallel()
+	callers := callersOfSelector(t, "ops", "CurvedBooleanWithDiagnostics")
+	if len(callers) != 1 || callers[0] != "curvedCombine" {
+		t.Errorf("ops.CurvedBooleanWithDiagnostics is called from %v; the only caller must be "+
+			"curvedCombine, which consumes the size verdict the kernel recorded", callers)
+	}
+}
+
+// callersOfSelector returns the enclosing function of every call to pkg.name in this package's
+// non-test sources, one entry per call site, in a stable order.
+func callersOfSelector(t *testing.T, pkg, name string) []string {
+	t.Helper()
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, ".", func(fi fs.FileInfo) bool {
+		return !strings.HasSuffix(fi.Name(), "_test.go")
+	}, 0)
+	if err != nil {
+		t.Fatalf("parse the feature package: %v", err)
+	}
+	var callers []string
+	for _, p := range pkgs {
+		for _, file := range p.Files {
+			callers = append(callers, selectorCallersInFile(file, pkg, name)...)
+		}
+	}
+	sort.Strings(callers)
+	return callers
+}
+
+// selectorCallersInFile collects the enclosing function of every pkg.name call in one file.
+func selectorCallersInFile(file *ast.File, pkg, name string) []string {
+	var callers []string
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Body == nil {
+			continue
+		}
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			if callsSelector(n, pkg, name) {
+				callers = append(callers, fn.Name.Name)
+			}
+			return true
+		})
+	}
+	return callers
+}
+
+// callsSelector reports whether n is a call to pkg.name.
+func callsSelector(n ast.Node, pkg, name string) bool {
+	call, ok := n.(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != name {
+		return false
+	}
+	id, ok := sel.X.(*ast.Ident)
+	return ok && id.Name == pkg
 }

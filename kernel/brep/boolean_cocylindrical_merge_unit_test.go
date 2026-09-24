@@ -34,7 +34,7 @@ func TestDissolveJoinsTwoAbuttingBandsIntoOneLoop(t *testing.T) {
 	t.Parallel()
 	a, b := wallFaceOf(t, math.P3(0, 0, 0), 2, 4), wallFaceOf(t, math.P3(0, 0, 4), 2, 3)
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	loops, why := dissolveSharedEdges(a, b, res)
+	loops, _, why := dissolveSharedEdges(a, b, res)
 	if why != mergeJoined {
 		t.Fatalf("two bands meeting at a rim share that rim; the dissolve declined: %s", why)
 	}
@@ -50,11 +50,11 @@ func TestDissolveJoinsTwoAbuttingBandsIntoOneLoop(t *testing.T) {
 func TestDissolveDeclinesTwoBandsThatShareNoEdge(t *testing.T) {
 	t.Parallel()
 	a, b := wallFaceOf(t, math.P3(0, 0, 0), 2, 4), wallFaceOf(t, math.P3(0, 0, 9), 2, 4)
-	if !onOneSurface(a, b) {
+	if !onOneSurface(a, b, faceLoopBox(a)) {
 		t.Fatal("two coaxial walls of one radius are not reported on one surface; the negative row is vacuous")
 	}
 	res := geom.ResolutionForBox(faceLoopBox(a).Union(faceLoopBox(b)))
-	_, why := dissolveSharedEdges(a, b, res)
+	_, _, why := dissolveSharedEdges(a, b, res)
 	if why != declineUnshared {
 		t.Errorf("two separated bands gave %q, want the ordinary unshared exit — and it must stay the "+
 			"one reason that records nothing, since nothing was given up", why)
@@ -118,12 +118,15 @@ func TestDropSeamSlitsRemovesAnEdgeWalkedBothWays(t *testing.T) {
 	t.Parallel()
 	edges := seamWalkedWall(t, straightSeam, false) // rim, up, rim, down
 	rim, up, down := edges[0], edges[1], edges[3]
-	got := dropSeamSlits([]curvedLoop{{edges: []loopEdge{up, down, rim}}, {edges: []loopEdge{up, down}}})
+	got, dropped := dropSeamSlits([]curvedLoop{{edges: []loopEdge{up, down, rim}}, {edges: []loopEdge{up, down}}})
 	if len(got) != 1 || len(got[0].edges) != 1 {
 		t.Fatalf("dropSeamSlits gave %v, want one loop of one edge (the rim)", got)
 	}
 	if got[0].edges[0].source != rim.source {
 		t.Error("dropSeamSlits kept the wrong edge")
+	}
+	if dropped != 4 { // the slit in the first loop, and the whole second loop
+		t.Errorf("dropSeamSlits reported %d dropped edges, want 4 — the count is what the merge records", dropped)
 	}
 }
 

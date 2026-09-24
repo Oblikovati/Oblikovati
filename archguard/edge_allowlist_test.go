@@ -104,7 +104,14 @@ var allowedTreeImports = map[string][]string{
 	// from an operation package. The kernel/ops/tessellate edge is deliberate and is the rule's
 	// own doing: the ground rules place the tessellator in that family, and a mesh exporter and
 	// an image-space hidden-line engine cannot do their job without it.
-	"kernel/exchange": {"api", "kernel/geom", "kernel/mesh", "kernel/ops/query",
+	// kernel/exchange -> kernel/brep is the IMPORTED FACE'S CHART (#3550, ADR-0063). A face on a
+	// periodic surface is not determined by its 3-D loops, and the general chart-driven mesher needs
+	// the contours the producer wound; brep is where that derivation lives (ChartOfFace, beside the
+	// one the arrangement records), and an importer that re-derived it would be a second mechanism for
+	// the datum ADR-0063 exists to make single. brep already sits below every ops family here, so the
+	// edge adds no cycle and no layer inversion: exchange was already above ops/tessellate, which is
+	// above brep.
+	"kernel/exchange": {"api", "kernel/brep", "kernel/geom", "kernel/mesh", "kernel/ops/query",
 		"kernel/ops/tessellate", "kernel/ops/validate", "kernel/subd", "kernel/topo", "math"},
 	"kernel/hlr": {"kernel/mesh", "kernel/ops/tessellate", "kernel/topo", "math"},
 	// model -> yamlcodec: the domain serializes recipes/materials through the neutral YAML

@@ -37,8 +37,8 @@ func sphereSphereSection(a, b Surface, res Resolution) (curves []Curve3, handled
 		return nil, true, true // apart, or one strictly inside the other: decided, and empty
 	}
 	// The radical plane sits at signed distance h from a's centre along the line of centres.
-	h := (d*d + sa.Radius*sa.Radius - sb.Radius*sb.Radius) / (2 * d)
-	rSq := sa.Radius*sa.Radius - h*h
+	h := float64((float64(d*d) + float64(sa.Radius*sa.Radius) - float64(sb.Radius*sb.Radius)) / (2 * d))
+	rSq := float64(sa.Radius*sa.Radius) - float64(h*h)
 	if rSq <= 0 || stdmath.Sqrt(rSq) <= res.Weld() {
 		return nil, false, true // a tangent touch: a point, not a curve
 	}

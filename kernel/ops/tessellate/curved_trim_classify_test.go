@@ -3,6 +3,7 @@
 package tessellate_test
 
 import (
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -68,16 +69,20 @@ func classificationCorpus() []struct {
 			return cutWith(t, mustBlock(t, math.P3(-5, -5, 0), math.P3(5, 5, 3.5)), mustConeDrill(t))
 		}},
 		// The corner junction (#1738): a notched cylinder drilled by a rod that crosses the notch. Its
-		// wall is a two-rim band carrying a lens hole AND a chart whose two windows are far apart, so the
-		// corridor gate gives it to the chart-driven mesher (curved_trim_recognize.go). It is here for
-		// the exclusivity proof and for the refinement gate, which caught the fine-quality crack.
+		// wall is a two-rim band carrying a lens hole AND a chart, so no special recognizer claims it and
+		// the chart-driven mesher takes it (measured: kind=chart, and the shape the deleted two-rim arm
+		// recognised still holds on it — IsTwoRimHoledBandShape=true). The corridor gate that used to
+		// choose between the two went with the arm (#3517). It is here for the exclusivity proof and for
+		// the refinement gate, which caught the fine-quality crack.
 		{"notched cylinder − crossing rod", func(t *testing.T) *topo.Body {
 			return cutWith(t, notchedRod(t), mustCylinder(t, math.P3(-6, 0, 7), math.V3(1, 0, 0), 1, 12))
 		}},
 		// The #1818 near-pinch crossing: two cylinders of ALMOST the same radius joined, whose merged
 		// wall carries two lens windows whose corridor is narrower than the boundary's own chords. That
-		// corridor is what the general covering cannot resolve and the unroll's bent seam is built for,
-		// so this is the trim kindTwoRimHoledBand is left with (curved_trim_recognize.go).
+		// corridor was what the general covering could not resolve, and the unroll's bent seam was built
+		// for it; the covering's sheared triangulation frame resolves it now (coverShear, #3542), so this
+		// trim is the chart mesher's like every other and kindTwoRimHoledBand is deleted (#3517).
+		// Measured on the merged wall here: kind=chart, IsTwoRimHoledBandShape=true.
 		{"near-pinch crossing rods ∪", func(t *testing.T) *topo.Body {
 			return joinWith(t, mustCylinder(t, math.P3(-6, 0, 0), math.V3(1, 0, 0), 3, 12),
 				mustCylinder(t, math.P3(0, 0, -6), math.V3(0, 0, 1), 3.00004, 12))
@@ -150,73 +155,42 @@ func forEachCurvedCorpusFace(t *testing.T, visit func(body string, i int, f *top
 }
 
 // TestTheClassificationCorpusReachesEveryArm keeps the exclusivity proof from going vacuous: an
-// overlap test over faces that never reach an arm proves nothing. Every arm below is measured on this
-// corpus. TWO arms are named exceptions and say why:
+// overlap test over faces that never reach an arm proves nothing. Every arm the classification can
+// select is measured on this corpus, and the roster is DERIVED from the enum (CurvedTrimKindNames)
+// rather than written out here — a hand-written list is a list a new arm never has to join (#3527).
+//
+// ONE arm is a named exception:
 //
 //   - kindWedgeBand: no primitive boolean produces an oblique-ended cylinder wedge; it comes off the
 //     blend engine (A1/D4), and model/feature/occtparity carries its rows.
-//   - kindSpiricBand: it keeps only the band that records NO chart, and every torus a primitive boolean
-//     cuts here records one — measured, all ten of them, and the chart-driven mesher accepts every one.
-//     The uncharted band is occtparity's J3 and A4 host tori (measured: chart=0, chartFaceMesh
-//     declines), which the loft meshes in a third of the triangles the generic CDT needs.
 //
-// A new arm has to appear here or say why not.
+// kindSpiricBand was the second, and it is deleted (#3517) — its arm existed for the UNCHARTED
+// tube-wrapping torus band, and the general mesher serves that now. A new arm has to appear in the
+// corpus or be named above.
 func TestTheClassificationCorpusReachesEveryArm(t *testing.T) {
 	t.Parallel()
-	want := []string{"chart", "cone-apex-fan", "ruled-band-loft", "sphere-cap-fan", "sphere-patch",
-		"sphere-zone-band", "two-rim-holed-band", "uncharted"}
-	seen := classifiedCurvedFaces(t)
-	for _, kind := range want {
+	unreachedByDesign := map[string]string{
+		"wedge-band": "no primitive boolean makes an oblique-ended wedge; model/feature/occtparity has its rows",
+	}
+	seen, roster := classifiedCurvedFaces(t), tessellate.CurvedTrimKindNames()
+	// The roster is derived, so it can also go SHORT — and a short roster would make every loop below
+	// pass over nothing. Every kind the corpus actually classified as must be in it.
+	for kind := range seen {
+		if !slices.Contains(roster, kind) {
+			t.Errorf("the corpus classifies a face as %q, which the derived roster %v does not name", kind, roster)
+		}
+	}
+	for _, kind := range roster {
+		if _, excepted := unreachedByDesign[kind]; excepted {
+			if seen[kind] != 0 {
+				t.Errorf("%s is listed as unreachable here and %d corpus face(s) classify as it — drop the exception", kind, seen[kind])
+			}
+			continue
+		}
 		if seen[kind] == 0 {
 			t.Errorf("no corpus face classifies as %s — the exclusivity proof does not cover that arm", kind)
 		}
 	}
-}
-
-// nearPinchCorpusBody is the one corpus body whose two-rim band the arm still keeps: its two lens
-// windows pass 0.031 mm apart on a boundary sampled every 0.588 mm, and no covering laid at that
-// sampling separates them. Every other two-rim band in the corpus goes to the general chart-driven
-// mesher (curved_trim_recognize.go's corridor gate).
-const nearPinchCorpusBody = "near-pinch crossing rods ∪"
-
-// TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe is the conditioning gate's own proof over the
-// corpus: the arm must keep exactly the bands the general chart-driven mesher cannot serve — one that
-// records no chart, and the near-pinch body's, whose two windows pass closer than the boundary is
-// sampled — and give up every other two-rim holed band there is. Both directions are asserted and the
-// test fails if the corpus stops covering either, so a gate that let go of everything — or of
-// nothing — is caught.
-func TestTheTwoRimArmKeepsOnlyWhatTheChartCannotServe(t *testing.T) {
-	t.Parallel()
-	q := ops.DefaultQuality()
-	kept, given := 0, 0
-	forEachCurvedCorpusFace(t, func(body string, i int, f *topo.Face) {
-		isShape, charted, toArm := tessellate.TwoRimHoledBandVerdict(f, q)
-		if !isShape {
-			return
-		}
-		wantArm := !charted || body == nearPinchCorpusBody
-		if toArm {
-			kept++
-		} else {
-			given++
-		}
-		if toArm != wantArm {
-			t.Errorf("%s face %d (charted=%v): the corridor gate sends this two-rim band to the %s; want the %s",
-				body, i, charted, armOrChart(toArm), armOrChart(wantArm))
-		}
-	})
-	if kept == 0 || given == 0 {
-		t.Errorf("the corpus presents %d bands the arm keeps and %d it gives up; it must cover both or "+
-			"the gate is proved in one direction only", kept, given)
-	}
-}
-
-// armOrChart names which mesher a verdict selects, for the failure message.
-func armOrChart(toArm bool) string {
-	if toArm {
-		return "unrolled arm"
-	}
-	return "chart-driven mesher"
 }
 
 // classifiedCurvedFaces counts the curved faces of the whole corpus by the kind they classify as.

@@ -4539,3 +4539,818 @@ ring's own (u, v) sampling), `unitLeftOf` (the quarter turn) and `medianOf` are 
   lowest face index rather than by discovery order, and `anchorOnClosedSurface` takes the lowest-index
   closed-surface face rather than the first the BFS reached — which is what its own comment already
   claimed. Both orders are total and deterministic; neither was before.
+
+### G9 closed — the T-junction tolerance is one class per comparison (2026-09-09, #3513)
+
+`tjTol` was an absolute `1e-7` read in two tolerance classes: as the perpendicular OFFSET from a welded
+vertex to an arrangement edge — an extent in the arrangement's own frame, metric for a projected face
+and parametric for a `(u,v)` band — and as a bound on the dimensionless parameter `t` ALONG that edge.
+A fixed `t`-pad is an extent only on a unit-length edge, so on a shorter edge it excluded nothing real
+near the ends, and a vertex a hair inside an end re-qualified on every shorter half the split produced.
+That is the churn `tjSplitBudget` had to bound, and the reason the T-junction pass shipped BOUNDED
+rather than fixed.
+
+Split into the two classes it was serving:
+
+- the distance reads `geom.Resolution.Plane()` — the member whose definition is "how far a point may
+  sit from a segment and still count as on it" — taken from the arrangement's OWN 2D extent
+  (`ResolutionForPoints2D`), which is the frame the points live in whether it is a projected face or a
+  `(u,v)` band;
+- it is FLOORED at `tjTol`, now written `100 * arrTol`. `arrTol` stays an absolute under #1399, so on a
+  sub-unit arrangement a purely relative distance would drop below the welder grid that generates the
+  offsets it has to absorb. At size 1 the floor and `Plane()` coincide exactly (`tjTol / arrTol` and
+  `Plane / Weld` are both 100), so the OFFSET test is bit-identical below one database unit. The
+  parameter pad changes at every scale — that is the fix, and the #3513 input is itself a sub-unit case
+  whose behaviour changed completely;
+- the parameter converts through the edge's `|dP/dt|`, which for the segment a→b is the constant `|ab|`
+  (`vertexOnEdgeInterior`).
+
+**Measured** with
+
+```text
+go test -count=1 -v ./kernel/brep/ ./kernel/ops/... -timeout 3000s
+```
+
+on two CLEAN trees — base `67938a5d` in its own worktree, head as committed, no probe or throwaway
+file in either package — with one `fmt.Fprintf` of `used`/`total`/`splits` per `splitTJunctions` call
+as the only edit. `-v` is required: `go test` discards a PASSING package's output.
+
+| | before | after |
+| --- | ---: | ---: |
+| arrangements run | 24694 | 24694 |
+| runs that exhausted `tjSplitBudget` and declined | 42 | **0** |
+| runs making at least one T-junction split | 52 | 9 |
+| T-junction splits made, all runs | 5100 | 29 |
+| splits inside the 42 declining runs | 5082 | — |
+| splits across the CONVERGING runs | 18 | **29** |
+| largest split count in one run | 121 | 4 |
+| — of which `kernel/brep` | 9 | 5 |
+| — of which `kernel/ops/boolean` | 9 | 24 |
+
+The churn is gone: 5082 of the 5100 splits were made inside runs that then declined. The RING
+axial-drill sweep confirms that end to end — the four rows at r = 1.585e-7 … 6.31e-7 which recorded
+`arrangement.unconverged` now record the same `boolean.no-exact-curved-path` as their neighbours. Sweep
+wall time is essentially unchanged (7.70 s → 7.21 s over 50 bores): the churning rows were already
+sub-second.
+
+**The converging path moves too, 18 → 29, and in both directions.** It is not "untouched", and the two
+directions are different facts. Every split was measured at the incidence: `L` the host edge length,
+`dNear` = `min(t, 1−t)·L` the distance to the NEARER endpoint, `perp` the perpendicular offset:
+
+| | base | head | L | dNear | perp | tol |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| oblique figure-eight torus ∩/− box (n = 516), incidence A | 6 | 0 | 0.100197 | **5.36e-8** | 9.85e-10 | 1e-7 |
+| the same body, incidence B | 6 | 0 | 0.100197 | **2.87e-8** | 4.52e-8 | 1e-7 |
+| partial-rim grazing cut (n = 1288) | 1 | 0 | 0.0135829 | **1.56e-8** | 3.18e-10 | 1e-7 |
+| sphere through three box faces (n = 742), edge P at t = 0.28 | 0 | 6 | 9.51894e-5 | 2.68189e-5 | 4.66833e-7 (80 % of tol) | 5.82378e-7 |
+| the same, edge P at t = 0.72 | 0 | 6 | 9.51894e-5 | 2.68189e-5 | 4.66833e-7 (80 %) | 5.82378e-7 |
+| the same body, edge Q at t = 0.28 | 0 | 6 | 1.11795e-4 | 3.15616e-5 | 5.48950e-7 (**94 %**) | 5.82378e-7 |
+| the same, edge Q at t = 0.72 | 0 | 6 | 1.11795e-4 | 3.15616e-5 | 5.48950e-7 (**94 %**) | 5.82378e-7 |
+| `TestPlanarizeGridMatchesBrute` randomized fixtures | 5 | 5 | 0.41–0.88 | 0.05–0.19 | 0 | — |
+
+- **The 13 lost splits are three incidences in two corpus bodies, replayed by six rows** (the
+  figure-eight pair appears in `kernel/brep`'s `TestFaceChartCoversTheKeptSide` and in
+  `TestCurvedBooleanVolumesMatchOCC` / `TestCurvedBooleansStayExact`; the grazing cut in
+  `TestPartialRimGrazingCutTakesTheGeneralPath`). **None of them was a weld.** Each split vertex sits
+  1.6e-8…5.4e-8 from an endpoint of an edge 0.014–0.10 long — INSIDE the 1e-7 on-edge tolerance of that
+  endpoint, so by the pass's own distance test it *is* that endpoint. The base split there only because
+  the fixed `t`-pad of 1e-7 excludes just `L × 1e-7` = 1.4e-9…1.0e-8 of length, and each split left a
+  stub edge shorter than the tolerance — which the very next degeneracy check (`lenSq < tol²`) then
+  refuses to look at again. Removing them removes sub-tolerance slivers from the cell complex.
+
+  Two further checks say the same thing. The EUCLIDEAN distance from the host endpoint,
+  `sqrt(dNear² + perp²)`, is 5.358e-8 / 5.358e-8 / 1.560e-8 — inside the 1e-7 tolerance on all three, so
+  the vertex is that endpoint however the distance is decomposed. And `t` = 2.9e-7, 5.3e-7, 1.1e-6: the
+  vertex sits a few ten-millionths along the edge, so none of them is remotely interior and none is a
+  genuine T-junction the new tolerance now misses. The re-review (round 2) fingerprinted the bodies
+  these rows build — faces / edges / verts / Euler and a SHA over the per-face edge-endpoint list at
+  `%.17g` — and found them BIT-IDENTICAL on both sides, along with the other six `chartHalfSpaceCases`
+  bodies. Removing 13 splits changes nothing in what gets built.
+- **The 24 gained splits are genuine interior crossings, and they change no body we can measure.** Four
+  incidences, each replayed six times: `t` = 0.28 / 0.72, i.e. 2.68e-5 and 3.16e-5 from the nearer end —
+  two orders outside the exclusion, so these are interior, not endpoints. Their perpendicular offsets
+  are 4.67e-7 and 5.49e-7 against a tolerance of 5.82378e-7, which is **80 % and 94 % of it**: that
+  arrangement's own extent is 5.82 database units, so the old absolute 1e-7 could not see them, and a
+  modestly tighter `planeCoef` would lose them again. Worth recording, because it means these welds sit
+  near the edge of the new tolerance rather than comfortably inside it.
+
+  What they do NOT do is fix anything. Measured on both sides with `Validate` and the diagnostic
+  recorder, on the body that produces all 24 (`SolidBlock(-2..2) ∪ / ∩ SolidSphere((1,1,1), 1.5)`):
+
+  | | base `67938a5d` | head |
+  | --- | --- | --- |
+  | Join | vol = 66.995895069351704, faces 10 / edges 213 / verts 206, valid closed manifold, `diag=[]` | **bit-identical** — same volume to 17 digits, same counts, same per-face edge-endpoint hash |
+  | Intersect | vol = 11.007267933143288, faces 5 / edges 151 / verts 148, valid closed manifold, `diag=[]` | vol = 11.00726796251398 (2.7e-9 relative), faces 5 / edges **161** / verts **158** |
+
+  So: **nothing dangled.** Both base bodies are already valid, closed, manifold solids with zero
+  recorded diagnostics and the right volume — a dangling chain is a face that fails to partition, and
+  the base partition is sound. Twelve of the 24 splits (the Join side) are pure no-ops on the result;
+  the other twelve make the Intersect complex finer by ten vertices and ten edges and move its volume by
+  2.7e-9, which is tessellation noise. No defect was fixed and no oracle moved —
+  `TestSpherePokingThroughThreeBoxFacesUnionsToTheRightVolume` gates on a 2 % TESSELLATED bracket, which
+  cannot tell these two bodies apart and is therefore not evidence for either.
+
+  The case for the `Plane()` half is accordingly the RULE, not a body that got better: see the next
+  bullet.
+- **Each half of the change is independently sufficient for the #3513 input** (verified on the base: the
+  parameter conversion alone, and the `Plane()` relativisation alone, each clear all four drill rows). So
+  the `Plane()` half is justified on RULE grounds — one class per comparison, and an on-line test whose
+  operands are model extents must scale with the model (ADR-0042) — not by any body it repairs. What the
+  change as a whole buys is measured and is enough on its own: **42 declines and 5071 thrash splits
+  removed**, a hang turned into a prompt named refusal, and the two readings separated so the next reader
+  cannot re-merge them. What it costs on the converging path is 13 sub-tolerance splits that were never
+  welds and 24 new welds that alter one body by ten vertices. That is the whole of the trade, and it is
+  a rule argument, not an outcome argument.
+
+**G8 is unchanged.** The band edges do not move: `boolean.analytic-volume-reject` still spans bore
+6.31e-4 … 0.0631 (thickness/extent 6.294e-5 … 6.294e-3) and the exact plateau still starts at bore 0.1.
+G9 was a conditioning failure INSIDE G8's lower reach, not its cause; what remains is the capability gap
+in the torus-cylinder section, which is where a follow-up has to look.
+
+**The bound stays.** It is the pass's termination argument — "until stable" is a fixpoint loop over a
+set the pass itself grows — not that input's patch, and without it the next conditioning failure is a
+hang again, the one outcome the ground rules do not admit. Because no live input reaches it any more,
+its mechanism is pinned by unit rows instead (`kernel/brep/arrange2d_tjtol_test.go`:
+`TestOnlyAPairAddingSplitIsChargedToTheBudget`, `TestTheSplitBudgetRefusesWhenExhausted`,
+`TestTheDeclineNamesTheSplitThatMadeIt`), and
+`TestTheNonConvergentDrillTerminatesAndIsNamed` is INVERTED: the drill must terminate, be refused by
+name, and NOT record an unconverged arrangement.
+
+**What the tolerance ratchet could not see.** `tjTol` carried `// tol:calibrated`, which is exactly
+what clears a line out of `toleranceDebt`, and `arrange2d.go` was never in that map. The annotation is
+per LINE and this defect was per USE — one constant, two classes — so no wording of the guard would
+have pointed at it. `toleranceDebt`'s doc comment now says so.
+
+**Residue: the same cross-class read is still LIVE elsewhere in `kernel/brep`** (#3530). The value of
+`tjTol` is unchanged (`100 * arrTol` is bit-identical to `1e-7`), so none of its other readers moved —
+but four of them compare it against a normalised curve parameter, which is this same defect:
+`curved_plane_face_uv.go:276,278` (`cr.sImp`, an imprint segment's parameter in [0,1]);
+`curved_plane_uv_frame.go:110,119` (the `sPad` of `conicSegmentHits`, whose window is `[sPad, 1−sPad]`
+in the edge's normalised parameter); `curved_plane_face_uv.go:182,185` and `curved_face_line.go:179`
+(a curve DOMAIN span and the curve's own parameter). It already has a recorded field failure:
+`curved_face_line.go:201-203` — "a fixed pad shrinks in that parameter as the part grows — a 3 m cap's
+rim landed 1.7e-9 from its window's end and its own boundary read as outside". Two further readers,
+`uv_seg_index.go` and `curved_uv_trace.go:264`, are genuine same-frame `(u,v)` offsets and are NOT the
+same defect.
+
+### G13 stays open — the arm stays, its DUPLICATE goes (2026-09-15, #3517)
+
+Issue #3517 asks for three things: a chart on the J3/A4 spiric hosts so `kindSpiricBand` can be deleted, the
+near-pinch corridor so `kindTwoRimHoledBand` can be deleted, and the `recognizers` ratchet falling from
+12 toward 0. #3518 already measured the second one blocked. This section measures the first and records
+it blocked as well. **`recognizers` stays at 12** — what this task deletes is the second, shadowed loft
+behind the arm, not the arm.
+
+#### The whole customer list is two faces, and removing the arm does not reach the general pipeline
+
+`kindSpiricBand` keeps only the band that records NO chart — `spiricTubeTrimOf` hands a charted one to
+the chart-driven mesher — and the only faces either corpus has for it are the host tori of
+`simple/J3` and `bfuseblend/A4`, the spiric closed-rim canal hosts (torus R = 200, r = 50; one loop of
+two tube-wrapping closed rims and one `v`-seam arc walked twice). No body a primitive boolean builds
+reaches it, which is why `TestTheClassificationCorpusReachesEveryArm` names it an exception; and
+deleting the arm moves exactly two of the byte-identity pins, which is the other half of that claim.
+
+Deleting the arm was carried out in full and measured. `kernel/ops/tessellate` and `archguard` pass
+whole; `kernel/ops/boolean`'s figure-eight rows pass once one assertion is dropped (below);
+`TestWaveETorusRimPerFaceAgainstDrawexe` and `TestWaveETorusRimWatertight` pass at BOTH gate facetings;
+and of the whole byte-identity pin set exactly two pins move — to the values this ADR already records as
+the "before" of the 2026-09-08 generalisation:
+
+| pin | with the arm | without it |
+| --- | --- | --- |
+| J3 | 7 395 243.913186325692 / 340 988 tris / `0xb3fcd06089a56c0c` | 7 395 592.451696694829 / 1 115 132 / `0x60907356101f946a` |
+| A4 | 15 408 786.198051279411 / 406 540 tris / `0xc77a3a360368ed8d` | 15 409 136.952526209876 / 1 180 684 / `0xee50b6c93f5cf261` |
+
+The ratchets would fall — `recognizers` 12 → 11, `type-assertions` 684 → 682,
+`geomSwitchDebt["kernel/ops/tessellate"]` 45 → 43 — and that fall would be a lie.
+
+**Instrumented, the faces do not reach the general pipeline at all.** A counter inside
+`torusTubeBandLoftMesh`, driven over the two bodies with the arm removed, fires twice per body — and
+that function opens by asserting `geom.Torus`, while each body has exactly ONE torus face, so the calls
+are that host face, once per tessellation the run takes. `torusTubeBandLoftMesh` is
+the OTHER bespoke loft for the same shape: a rung of `meshSeamCrossingFace`'s first-fit ladder, written
+for exactly these two hosts, which stage 5 put a second loft in FRONT of rather than replacing. So
+removing `kindSpiricBand` lowers the registered recognizer count by one and leaves the shape
+special-cased under another name, at 2.9–3.3× the triangles. That is precisely what #3522's review said the
+pin cannot tell apart from a deletion, so the arm stays and the pin stays — and the DUPLICATE goes
+instead (below), which is what makes the next attempt answerable.
+
+One assertion is a real cost of the deletion and is named here rather than discovered later.
+`TestAnUnchartedPinchedBandIsRefusedAndSaidSo` requires the uncharted figure-eight's decline to NAME the
+pinch ("boundaries MEET"), and that sentence belongs to `bandPinches`, inside the deleted loft. Without
+it the face still reaches the full-domain report at `Defect` severity — the degradation is still
+reported — but the report reads "no mesher recognised its boundary on this surface". The report's
+SPECIFICITY falls; its existence does not.
+
+(Round 1 of this work planted the duplication as "both recognizers claim one band". A review broke that
+plant a third way — leave both recognizers alone and reroute the ARM's builder in one line, the purest
+relocation, and all three rows stayed green. The plant is replaced by
+`kernel/ops/tessellate/tube_wrapping_band_test.go`, which asserts the MESHERS' behaviour instead: the
+arm meshes the band's own region (2946.76 of 2960.88), the router behind it meshes the WHOLE torus
+(3937.55 of 3947.84), and that fall-back is a reported `diag.Defect`. All five assertions were probed
+red — the load-bearing one by putting the deleted rung back into the router, which takes the row from
+the whole torus to 2954.46 mm², the band, silently and with no defect. That is the relocation, caught.)
+
+FIVE sentences in the tree described that hand-over wrongly, and the first round of this work corrected
+two of them and said "both" — the wave's most-repeated defect, committed inside the section that names
+it. The full list, all now correct: `spiricTubeTrimOf`'s docstring and `nearPinchCorridorChords`' (round
+1); `model/feature/occtparity/fingerprint_pins_curved_test.go` lines 317 and 323, and
+`model/feature/occtparity/torus_rim_spiric_gate_test.go` line 24 (round 2), the last three of which
+named `torusTubeBandLoftMesh` as the mesher of J3's and A4's host torus — measured, it took zero calls on
+either body. *The tube-wrapping band, generalised* above is left as written; it is the record of what
+stage 5 believed, and this section is its correction.
+
+#### The chart route the issue asks for is blocked twice over
+
+The acceptance criterion is "the boolean records a chart on the J3/A4 spiric hosts (the fillet canal
+builder)". Three measurements say that route is not available today.
+
+**Nothing produces a chart for these bodies.** They are a STEP import plus a fillet, not a boolean:
+`brep` records a chart on every face its `(u, v)` arrangement builds (ADR-0063), the importers record
+none, and the rim rebuild that retrims the host (`rimBuild.copyFace`, `fillet_rim_build.go`) copies a
+face whose chart was never written. Measured on both result bodies: **every** face records chart = 0 —
+the four of J3 and the nine of A4, not only the tori. That is **#3550**, and it is the prerequisite for
+deleting the remaining arms rather than a note about two hosts.
+
+**Supplied by hand, the chart does not carry J3.** The face's region in the covering space is the
+rectangle `u ∈ [4.7124, 9.3831] × v ∈ [0, 2π]`, and building that contour from the face's own two rims
+and driving the router at DefaultQuality:
+
+| face | loft (`kindSpiricBand`) | with a chart | DRAWEXE |
+| --- | --- | --- | --- |
+| J3 host torus | 292 014.192861 / 6 912 tris (rel −3.232e-3) | **declined** → 292 891.051700 / 32 768 (rel −2.388e-4) | 292 961 |
+| A4 host torus | 291 968.087273 / 6 912 tris (rel −3.250e-3) | 292 849.879125 / 46 882 (rel −2.394e-4) | 292 920 |
+
+A4 meshes; J3 is refused by the boundary-side classification (#3518) with *"its boundary chain 0 names
+both sides as material (127 segments say left, 126 say right)"*. The cause is in the lift, not in the
+chart: `liftLoopOntoChart`'s `continuousTrace` carries each sample onto the branch of the one before it,
+and this loop walks the torus's artificial `v`-seam TWICE — so the second traversal is snapped onto the
+first's branch, the keyhole collapses, and the chain's material side reads as contradictory. That is the
+same family as #3542: a covering whose two branch ends are not reconciled.
+
+**At the faceting the gate reads, the chart mesher does not finish.** The per-face oracle runs at
+PropertyQuality (`shippedFaceAreasDesc`). Driving the same hand-built chart there, the J3 host face did
+not complete in **880 s**, holding ~2.9 GB, and the timeout stack puts it inside `cdt.insertConstraint`
+under `constrainedTriangulationAll` ← `chartCover.keptWithoutRimEars`. The loft meshes the whole body in
+seconds.
+
+The SIZE is the first half of the answer, and it was measured directly — a print of `len(pts)`,
+`len(loops)` and Σ`len(loop)` at the head of `constrainedTriangulationAll`, on the same chart (the face's
+own `u` window, 74 % of the period):
+
+| faceting | points | constraint loops | constraint segments | result |
+| --- | --- | --- | --- | --- |
+| Default | 26 025 | 934 | 1 868 | 32 768 triangles in 4.16 s |
+| Property | **788 250** | **5 660** | **11 320** | did not return |
+
+Thirty times the points and it does not finish in two hundred times the time. (An independent run with a
+chart over the FULL period reads 1 063 726 / 5 148 / 10 296 — same order, same outcome.)
+
+**Two defects sit under that, and they hide each other.** The covering is ~10⁶ samples for ONE periodic
+torus face, against the ground rule "one facet-count policy derived from tolerance" (**#3549**); and the
+stall itself is not the corridor walk but `recoverByFlips`, whose budgeted loop calls an O(T) `hasEdge`
+on every step — O(n·T), which puts back the freeze `cdt.go`'s own comment says #1409 removed (**#3548**).
+Fix either and the other still bites. So the honest reading is not "a small triangulation that hangs":
+it is a covering far larger than the tolerance asks for, fed to a recovery path whose cost is quadratic
+in it.
+
+#### `kindTwoRimHoledBand` does not move either, and #3542 is the ticket
+
+Issue #3518 measured it and the brief for this task carries the result: with the arm removed, 10 of the 16
+near-pinch rows come back watertight and `cap-saturated` disappears, and **6 TEAR**, with 196 to 1196
+free edges. The cause is neither the arm nor the corridor gate: the two ends of the covering-space
+branch window are triangulated independently and flip a near-cocircular quad's diagonal. It needs
+fixed-point CDT coordinates — a prototype on binary-grid parameters reached 14 of 16 and could go no
+further while the triangulation runs on `u·su`. That is **#3542**, and it is the ticket that unblocks
+both arms: the same defect refuses J3's chart above.
+
+#### What #3517 needs next
+
+1. **#3550** — a producer for an imported face's chart. ADR-0063 puts the chart on the producer that
+   wound the face; no importer and no rim rebuild writes one, so every imported periodic face reaches
+   the tessellator uncharted and the general mesher declines it outright.
+2. **#3549 and #3548** — the covering's facet count, and the O(n·T) constraint recovery under it. Either
+   alone leaves the other biting; together they are why a charted J3 host does not mesh at the faceting
+   the gate reads.
+3. **#3542** — exact covering seams. It unblocks `kindTwoRimHoledBand` directly, and it is what lets a
+   loop that walks a seam twice be lifted onto a chart at all.
+
+#### What this task DID delete: the second loft
+
+`torusTubeBandLoftMesh` — 182 lines plus a 73-line unit test — is **deleted**. It meshed the same shape
+as `kindSpiricBand` from a rung of `meshSeamCrossingFace`, and the classification has claimed that shape
+ahead of it since stage 5: zero builds over `./kernel/...` and `./model/...`, so the deletion is
+byte-identical by construction, and it is what the delete-first rule asks for ("remove the duplicate,
+the dead engine, or the unused seam"). `type-assertions` 684 → 683 and
+`geomSwitchDebt["kernel/ops/tessellate"]` 45 → 44 go with it; `recognizers` does not move, because a
+router rung was never a registered recognizer.
+
+The defence round 1 gave for keeping it — that a CHARTED band could leave the arm and fall to it — does
+not survive the router: `chartFaceMesh` ACCEPTS a charted tube-wrapping band, `specialCurvedMesh` returns
+`special = true`, and `meshSeamCrossingFace` is never reached. For the rung to run, the chart mesher
+would first have to decline a charted doubly-periodic band, which no corpus face does — a speculative
+fallback, and "a new engine shipped beside the old one as a fallback is not complete". If the chart is
+ever declined, `chartedTrimMesh` REPORTS the degradation, which is better than a silent second loft.
+
+What it buys is the next attempt at `kindSpiricBand`. With the duplicate gone, deleting the arm is no
+longer a quiet hand-over that moves two pins: the band falls to the surface's whole domain — 2 097 152
+triangles, 394 781.31 mm² against 292 951, one `diag.Defect` — which is the loud corpus failure the gate
+exists for. `kernel/ops/tessellate/tube_wrapping_band_test.go` plants the invariant behind it: the arm
+meshes the band's own region and the router BEHIND the arm does not, proved red by putting the deleted
+rung back.
+
+### The chart reaches an imported face, and what it costs to let it (2026-09-15, #3548/#3549/#3550)
+
+The G13 section above ends with three things #3517 needs. Two are now built and the third is measured
+into a gate. What is NOT yet true is that `kindSpiricBand` can go; the pin stays at 12.
+
+#### #3548 — a constraint is recovered without scanning the whole mesh
+
+`recoverByFlips` asked `hasEdge`, a scan of the whole ALLOCATED triangle array, ONCE PER ITERATION of a
+loop whose own bound was also `O(len(tris))`. That is the shape `cdt.go`'s #1409 note says was removed,
+moved from the body into the guard, and `hasEdgeAround` — written for this call site and documented as
+its local replacement — was never used at it. The cap read the allocated array too, which only grows:
+on the J3 host chart at PropertyQuality, **23 606 516 allocated against 1 574 591 live**.
+
+Measured on the 264-vertex self-crossing band that drives the recovery budget: whole-mesh scans
+**1186 → 592**, and 592 is exactly the flip count. End to end, the charted J3 host face at
+PropertyQuality went from *not finishing in 880 s* to **finishing in 19 m 40 s**.
+
+#### #3550 — an imported face can derive its own chart, and the lift is the new part
+
+`brep.ChartOfFace` derives the contours from a face's own loops. `unwrapLoopRing` carries each sample
+onto the branch of the one before it, which is right INSIDE an edge and wrong ACROSS one: a face on a
+periodic surface bridges its rims with an artificial seam the loop walks TWICE, and a point-to-point
+unwrap snaps the second traversal onto the first's branch. Each edge USE is now lifted on its own and
+the uses are placed by whole-period junction shifts taken at the shared vertex.
+
+With it, `bfuseblend/A4`'s host torus meshes through the GENERAL chart-driven mesher at
+**292 849.879 mm² against DRAWEXE's 292 920 (rel −2.4e-4, zero diagnostics)**, where the bespoke
+`kindSpiricBand` loft reads 291 968.087 (rel −3.3e-3). That is the first time the general pipeline has
+beaten the arm on one of its own two customers.
+
+`simple/J3` is refused, and the refusal is right. Its host loop walks BOTH tube-wrapping rims the same
+way and travels **−4π in v**. Its IMPORTED face closes and charts; the fillet's rim rebuild is what
+breaks it — `fillet_rim_build.go`'s `Reversed: !g.concave` takes the replacement rim's flag from the
+blend's convexity, chosen to mirror the band face under Validate's 2-incidence rule, rather than from
+the rim it replaces. Flipping that flag alone stops the weld certifying ("assembled weld did not
+certify as a valid solid"); re-sensing a rim inside the lift closes the ring and gives the right region
+but the tessellator's boundary-side classification then refuses the same face for the same reason
+("its boundary chain 0 names both sides as material, 127 left, 126 right"). Both were built and
+removed. The invariant that broke is the loop's winding and the fix belongs there.
+
+#### #3549 — the producer is OFF, and this is the gate
+
+A chart does not only describe a face, it ROUTES it: `chartFaceMesh` declines an uncharted face and
+accepts a charted one. Recording charts at import therefore sends every seam-crossing imported face to
+the covering mesher. Measured by `TestTessellationBudget` on the OCC fixtures: **0.08 s off, 6.37 s on,
+against a 2.15 s budget**. Those faces were previously degraded — the flat patch CDT, or the surface's
+whole domain, reported — so the covering is doing the right thing and the price is its own cost.
+
+The ticket's premise does not survive measurement. The sample count IS derived from tolerance: 26 025
+covering points at DefaultQuality and 788 250 at PropertyQuality is 30× for a 50× tighter chord, LESS
+than √50 per axis asks for, and the generic (u, v) path that ships today produces 1 115 132 triangles
+for the same body. The anomaly is next to it: the insertion allocates **thirty triangles per point**
+(23 606 516 for 788 250) where Bowyer–Watson should allocate about three — and does, on a jittered grid
+of 319 229 points, at two per point in 917 ms. Whatever the covering's point set does to the insertion
+is the real #3549, and it is not the facet-count policy.
+
+### A rectangular lattice is the worst input Delaunay can be given (2026-09-15, #3542/#3549/#3517)
+
+The section above left #3549 as "the insertion allocates thirty triangles per point, not isolated". It
+is isolated, and it is not the cavity. On a 90 000-point grid, by allocated-triangles-per-point / walk
+steps / insert time:
+
+| input | alloc/pt | walkSteps | time |
+| --- | --- | --- | --- |
+| regular, row-major | 70.12 | 6 196 600 | **2.197 s** |
+| jittered 3e-3, row-major | 8.30 | 519 096 | 151 ms |
+| regular, shuffled | 5.24 | 18 355 776 | 2.364 s |
+| regular, Morton-ordered | 10.44 | 496 257 | 1.933 s |
+
+Insertion order fixes the cavity and the walk and does NOT fix the time. The decisive row changes
+neither: the same Morton-ordered grid displaced by **1e-12** — cavities within 8 %, walk within 8 % —
+runs in **208 ms** against 2.144 s. The four corners of an axis-aligned rectangle are EXACTLY
+concyclic, so every cell of a covering's grid asks the in-circle predicate a question whose answer is a
+tie, and an exact predicate answers a tie by running every stage of its escalation before it can say
+"zero".
+
+`coverShear` tilts the frame the covering TRIANGULATES in so a cell is a parallelogram. No vertex
+moves: each keeps its exact (u, v) and its exact 3-D point, and the output is still a valid constrained
+triangulation of the same points under the same constraints. What it gives up is Delaunay-ness in the
+metric frame, which for a tied quad means the diagonal is chosen by a cheap deterministic rule rather
+than by a predicate that must run to the end to find there was nothing to choose.
+
+**It closes #3542.** A covering's premise is that its two branch-window ends are the same
+triangulation; near-cocircular quads at the seam flipped their diagonal differently at each end. Over
+the whole sixteen-row near-pinch corpus (rows with seam edges / seam edges / rows with an unbound rim
+segment): 6 / 38 / 0 at shear 0, and **0 / 0 / 0** at every value from 1/65536 to 1/64 — a plateau four
+decades wide, with 1/1024 in the middle. `kindTwoRimHoledBand`, `nearPinchCorridorChords` and
+`twoRimHoledBandMesh` are DELETED; `recognizers` 12 → 11.
+
+#### The spiric arm: deleted, measured, reverted — and what is left
+
+Three things made it deletable and all three stand: the chart producer (#3550), the rim rebuild's
+winding, and the cost above. With them, at DefaultQuality against DRAWEXE, the GENERAL chart-driven
+mesher reads **292 891.71 on simple/J3 (rel −2.4e-4) and 292 849.88 on bfuseblend/A4 (rel −2.4e-4),
+both with zero diagnostics**, where the arm's loft reads −3.2e-3 and −3.3e-3 — an order of magnitude
+closer to the oracle.
+
+It does not ship. At PropertyQuality, the faceting the mass-property and fingerprint tiers read, J3's
+host face takes 5.0 s at DefaultQuality and **does not finish in 875 s**, and the `occtparity` tier
+stopped completing inside 2400 s. The shear removed the TIE cost; what remains is the covering's SIZE —
+~788 000 points through an incremental CDT for ONE face. An arm whose replacement cannot mesh the
+corpus is not absorbed, so `kindSpiricBand` stands and `recognizers` stays at 11.
+
+**The remaining blocker is one sentence**: the covering triangulates its whole interior grid with a
+CDT, and a grid is not a point cloud. Its interior cells are a structured quad mesh and only the
+boundary band needs a triangulator — the ground rule's own "one tessellator per problem". That is the
+last thing between `kindSpiricBand` and deletion.
+
+#### Two things fell out that were not aimed at
+
+**The winding fix closed #3491.** `cylE`'s use on the host face was a fixed function of the blend's
+convexity, chosen to mirror `addBandFace` under Validate's 2-incidence rule — and 2-incidence is WEAKER
+than a consistently wound loop. The convex case wound the host's replacement rim against the rim it
+replaced, which is why J3's host could not carry a chart (its (u, v) ring travelled −4π) and why
+`simple/J5`'s result SELF-INTERSECTED. It now keeps that rim's own flag, as `capE` always has. J5 is
+the last of #3491's five self-intersecting results; `pendingCapabilityCount` 105 → 104, the simple-grid
+green ratchet 131 → 132, the all-grid one 147 → 148.
+
+**A chart is a DATUM, not a mesher selection.** `chartedKind` read "has a chart" as "must be meshed from
+the chart", so recording charts on imported and rebuilt faces (#3550) sent every such face through the
+covering: `TestTessellationBudget` went 0.08 s → 6.37 s against its 2.15 s ceiling. A chart says which
+of two complementary regions a face is, and that decides nothing where the loops develop into one
+(u, v) branch. The classification now asks whether the trim DEVELOPS — a property of the trim, computed
+once, selecting exactly one path — and the budget reads **0.47 s with the producer ON**.
+
+### Round 4 — the covering's interior is a structured quad mesh, and the arm goes
+
+The sentence round 3 ended on was the whole of round 4: *the covering triangulates its whole interior
+grid with a CDT, and a grid is not a point cloud.* It is now emitted as one, and with it
+`kindSpiricBand` is DELETED. `recognizers` **11 → 10**.
+
+#### 1. Two whole-mesh scans, bounded by what they can possibly touch
+
+Before the structured interior, the J3 host's PropertyQuality cost was profiled rather than guessed.
+`recoverByFlips`'s fallback `flipOneCrossing` was **36 % of the whole face's CPU**: it scanned every
+ALLOCATED triangle and asked an exact `SegmentsCross` of each of its three edges — 1741 calls over
+1.5 M live triangles of a 24.6 M-entry array, nearly all of it `orient2d` escalating to `big.Rat` on
+triangles nowhere near the constraint. Three bounds, none of which can change an answer:
+
+* a live-triangle index in **ascending** order, so a scan visits exactly the triangles a scan of the
+  whole array would visit, in the same order, and skips the fifteen dead entries per live one;
+* a bounding-box rejection per triangle: an edge that PROPERLY crosses a segment shares a point with
+  it, so its triangle's box must overlap the segment's;
+* the box test BEFORE the exact predicate in `verticesOnSegment` — the same conjunction in the other
+  order, and a lattice row is exactly collinear with an axis-aligned constraint, so the predicate it
+  asked first ran its whole escalation before it could say zero.
+
+| J3 host, PropertyQuality | before | after |
+| --- | --- | --- |
+| `constrain` | 333 962 ms | 97 997 ms |
+| whole face | 932 s | 468 s |
+| `./kernel/ops/tessellate` suite | 87 s | 16 s |
+| triangles / area | 1 546 916 / 292 959.152 | unchanged |
+
+#### 2. The structured interior
+
+Every interior node of a covering sits at a station pair whose four neighbours are known before
+anything is computed. The triangulator now gets the boundary BAND only; the block's outline goes in as
+a constraint, the emptied block's spanning fillers are discarded by their centroid (a triangle cannot
+cross a recovered constraint, so it lies wholly inside the block or wholly outside it), and the block
+is emitted directly as quads.
+
+**The diagonal is a rule, not an iteration order.** Every cell splits from (i+1, j) to (i, j+1), and
+that is the diagonal the triangulator picks anyway. The covering triangulates in the sheared frame
+`x = u·su + coverShear·v·sv`, in which a grid cell is a PARALLELOGRAM with edge vectors `a` and `b`,
+and `|a+b|² − |a−b|² = 4·coverShear·Δu·Δv·su·sv` is strictly positive for every cell of an ascending
+station grid. `a−b` is the shorter diagonal, uniformly, for any cell sizes. The shear that removed the
+in-circle TIE (#3542) is what makes the tie's resolution nameable here.
+
+**AND THAT IS WHY `coverShear` IS LOAD-BEARING FOR DETERMINISM, not for a cost.** At `coverShear = 0` a
+cell is a RECTANGLE, its two diagonals are exactly equal — measured on the near-pinch corpus,
+0.6444989408828234 against itself — and the rule above has nothing left to break the tie with. "Output
+is byte-identical across runs and platforms: explicit total orders for every tie-break" is a ground
+rule, so an unbroken tie is not a worse number, it is **nondeterminism**: a correctness failure, which
+does not trade against a free-edge count at all. This is written here because §R8 below prices the shear
+in free edges, and a future worker looking to remove a tolerance constant will find that price first and
+could mistake it for the whole argument. It is not. The prices are real and secondary — shear = 0 also
+gives back #3542's closure (5 of the near-pinch corpus's 16 rows, 32 seam edges) and tears near-pinch
+crossing rods ∪ by 992 free edges at the fine faceting, with its face 6 area falling under refinement —
+but the reason the constant stays is the tie.
+
+**The band's width is a distance, not a count of lattice steps.** A lattice-ring erosion was built
+first and swept at 0, 1, 2, 3, 4 and 6 rings: every width byte-identical on the occtparity
+fingerprints and green on the whole tessellate suite, with cost rising monotonically (16 859 to 44 644
+band points). A plateau over the ENTIRE swept range is not a plateau — it is the corpus saying it
+cannot choose. So the choice was removed instead: a cell is structural only when its four corners
+stand a WHOLE CELL clear of every boundary chain. The clearance that decides whether a node exists at
+all is measured in the boundary's CHORDS (`chartBoundaryClearance`), and a chord can be far shorter
+than a cell, so four surviving corners are not by themselves a statement about the cell between them.
+No constant was added.
+
+| J3 host, PropertyQuality | round 3 | + scan bounds | + structured interior |
+| --- | --- | --- | --- |
+| points to the triangulator | 788 255 | 788 255 | **16 905** |
+| `insert` | 127 513 ms | 127 513 ms | **10 597 ms** |
+| `constrain` | 333 962 ms | 97 997 ms | **456 ms** |
+| whole face | 932 s | 468 s | **60 s** |
+| triangles / area | 1 546 916 / 292 959.152 | unchanged | unchanged |
+
+Byte-identity is asserted three ways: the occtparity fingerprint pins are unmoved by items 1 and 2; a
+unit row compares the kept triangle SETS of the banded and the whole-covering paths on the same
+covering; two more pin the diagonal rule and the block's premise that no rim segment crosses a
+structured cell.
+
+#### 3. The imported chart ships, and the rim rebuild carries it
+
+`chartImportedFaces` is ON (#3550). The two gates that held it off read
+`TestImportedAnalyticPrimitivesWatertight` **6.37 s** against a 60 s tier-1 budget (73 s before) and
+`TestTessellationBudget` **0.18 s** against its 2.15 s ceiling.
+
+That was only half the gap. ADR-0063 puts the chart on the producer that WOUND the face, and the
+fillet's rim rebuild re-winds every face of the body against the new rim circles while recording
+none — so a filleted torus host reached the tessellator with `chart = nil` even though the imported
+face it was rebuilt from carried one. `carryChart` re-derives it from the rebuilt loops, and only
+where the source had one.
+
+That guard is there for a reason of PRINCIPLE, not of cost: a rebuild preserves the datums its input
+carried, and a producer that INVENTS a datum for a face that never had one is a different decision,
+taken somewhere else. The first draft of this section justified it by cost instead — "recording a
+chart on every face every blend assembly winds moved dozens of pins and made five per-face oracles
+worse" — and that claim does not survive being measured at the guard it defends. Removing the
+`src.Chart()` guard costs ONE extra fingerprint pin (`bfuseblend/B3`) and ZERO per-face oracles
+(#3517 review 3 I3). The five-oracle reading came from the wider `brep.RecordCharts`-on-every-body
+form that was tried first, which is a different change; it is withdrawn here.
+
+#### 4. The arm goes, and the exit condition was the faceting that ships
+
+Round 3's comparison of arm and general path was run at DefaultQuality on both sides, and the control
+row reverses it: at PropertyQuality, the faceting the per-face oracle reads, the arm is six times
+closer to DRAWEXE than the general path is at Default. The bar is therefore the arm's own Property
+number. Measured per face against DRAWEXE 292 961 on J3's host torus:
+
+| | area | rel | triangles |
+| --- | --- | --- | --- |
+| the arm, PropertyQuality | 292 950.19 | −3.688e-5 | 274 432 |
+| the chart mesher, PropertyQuality | **292 959.152** | **−6.31e-6** | 1 546 916 |
+| the chart mesher, DefaultQuality | 292 891.71 | −2.365e-4 | 46 878 |
+
+Six times closer, zero diagnostics. **And it costs 289× the time**: the arm meshed that face in
+**0.202 s**, the chart mesher takes **58.4 s**. "932 s → 60 s" is a true comparison against round 3
+and the wrong control for a DELETION, which is against the thing deleted; both halves belong here.
+Nothing breaks — the face is tier-2, the tier completes in 631 s against a 2400 s budget and the
+`CORPUS_TIMEOUT` is 60 min — and a 5.85× accuracy gain is worth it on a face read for mass
+properties. A reader should be able to see the price without re-deriving it. `kindSpiricBand`,
+`spiricTubeTrimOf` and `spiric_band_mesh.go` are deleted: `recognizers` 11 → 10, `type-assertions`
+683 → 681, `geomSwitchDebt["kernel/ops/tessellate"]` 44 → 42.
+
+**Thirteen byte-identity pins are rebaselined** and nothing else moved: every per-face DRAWEXE oracle,
+both wave-E watertight gates, `TestEveryShippedMeshIsWatertight` and the blend scoreboard's green
+counts stay green. The volume deltas run 5e-16 to 8e-4 and the large movers RISE — a faceted volume
+under-reports, so a volume moving up is a mesh moving toward the analytic truth.
+
+#### 5. The facet count is still 1.9× what the tolerance demands, and that is not this mesher's
+
+The general path emits 1 546 916 triangles for the face where the arm emitted 274 432, and the two
+numbers are not comparable: the arm does not meet the chord tolerance it was handed. Its u-sampling is
+4× coarser than PropertyQuality asks for, which is exactly what its area error shows.
+
+The general path's own count is nonetheless ~1.9× more than the tolerance strictly demands, measured
+on that face: at the 2048 u-cells `adaptiveParams` returns, the worst sagitta over the covering's five
+isoparms is 2.94e-4 mm against the 1e-3 tolerance; at 1024 it is 1.177e-3 — over. The exact minimum is
+≈1111 cells, so the overshoot is 1.84× in u and 1.03× in v (512 cells, worst sagitta 9.41e-4).
+
+The cause is **dyadic quantisation in `adaptiveParams`**, which subdivides by halving and so can only
+land on a power of two: up to 2× per axis, 4× in triangles. `unionIsoparmParams` is NOT the cause —
+measured, a SINGLE isoparm already returns 2049 breakpoints on this face, so the union over five
+inflates nothing. This is a property of the one curve discretizer every curved face in the repo
+shares, not of the chart mesher, and changing it moves every curved-face pin there is. It is named
+here with its measurement rather than fixed inside a mesher, because fixing it inside one would be a
+second facet-count policy — the thing the ground rule forbids.
+
+#### 6. The classification selects ONE path, and the clearance is read from a chord it can act on
+
+Round 4 shipped with seven corpus faces that had been MEETING `PropertyQuality`'s chord tolerance and
+were now missing it, silently — `W8` face 2, a quarter cylinder of radius exactly 10 with an oracle of
+exactly 500π, by **36.87×**, with 51× the triangles for 49× the error and no diagnostic, behind a
+whole-body area sum that cancelled it. §R4.4's "0 diagnostics" and "the large movers RISE" were the
+wrong measurement for that question; the right one is per face, against the chord the quality asked
+for. Two defects, one in the ROUTING and one in the CLEARANCE.
+
+**The routing.** Round 3 made the classification ask whether a trim DEVELOPS into one (u,v) branch, so
+that a charted face whose loops carry into one branch keeps the structured grid. The classification
+said so — and the dispatch did not listen: `kindChart` and `kindUncharted` shared one branch, on the
+premise that an uncharted face carries no chart and so the same call declines. That was true only
+while "uncharted" MEANT "records no chart". Since round 3 it also means "charted, but develops", and
+for such a face `chartFaceMesh` does not decline — it meshes from the covering anyway. `W8` f02 and
+`K4` f01 are exactly those faces. Naming the two cases separately restores both to bit-identical
+meshes with their pre-#3517 fingerprints, `W8` at **0.753×** the tolerance with 128 triangles against
+36.87× with 6554, and returns the `diag.Defect` `K4` f01 had been carrying.
+
+**The clearance.** The remaining faces genuinely do not develop, so the covering is theirs — and there
+the boundary clearance was read from the chain's MEAN chord, which is not a property of any of its
+segments. The band it culls is then bridged by the triangulation with edges that span it, which IS the
+chord error the clearance exists to prevent. The chord is now capped at `chartClearanceCellCap` of the
+covering's own cell: past about a cell a clearance stops protecting the mesh and starts deleting it.
+Swept 0.125…2.0 and bounded on BOTH sides — at 0.625 and below the genus-1 complement is DECLINED and
+falls to the surface's whole domain (294.428 mm², 28 free edges on the body), at 1.25 and above every
+chord ratio reverts to the uncapped reading. The window is [0.75, 1.0]; 0.875 is its midpoint.
+
+Worst chord sagitta ÷ `PropertyQuality`'s 1e-3 mm, per face, on every charted face of the pinned
+corpus — the arm's own column, round 4 as first shipped, and now:
+
+| face | surface | arm | R4 as shipped | fixed | |
+| --- | --- | --- | --- | --- | --- |
+| `W8` f02 | Cylinder | 0.75 | **36.87** | **0.753** | met → missed by 37× → **met** |
+| `K4` f01 | Cylinder | 1.14 · diag 1 | 2.41 · diag 0 | **1.136 · diag 1** | restored, diagnostic back |
+| `I9` f00 | Cylinder | 0.94 | 3.765 | **0.941** | met → missed → **met** |
+| `K1` f05 | Cylinder | 0.56 | 2.259 | **0.565** | met → missed → **met** |
+| `B3` f07 | Cylinder | 0.56 | 2.259 | **0.565** | met → missed → **met** |
+| `A6` f06 | Torus | 0.97 | 1.882 | **0.971** | met → missed → **met** |
+| `J5` f00 | Torus | 0.90 | 4.059 | **1.465** | still over, 2.8× better |
+| `K2` f03 | Cylinder | 0.86 | 4.964 | **3.632** | still over, 1.4× better |
+| `J3` f00 | Torus | 10.43 | 4.221 | **1.530** | the arm's own face, 6.8× better |
+| `A4` f05 | Torus | 10.45 | 4.221 | **1.569** | the arm's own face, 6.7× better |
+| `B5` f01 | Cylinder | 68.26 · diag 1 | 6.347 | 6.347 | 10.7× better than the arm, still over |
+| `B4` f00 | Cylinder | 60.23 · diag 1 | 5.222 | 5.222 | 11.5× better than the arm, still over |
+| `K2` f00 | Cylinder | 54.77 · diag 1 | 5.706 | 5.706 | 9.6× better than the arm, still over |
+| `K3` f00 | Cylinder | 54.77 · diag 1 | 5.706 | 5.706 | 9.6× better than the arm, still over |
+
+Five of the seven regressions return inside the tolerance, and the arm's own two hosts improve a
+further 6.8×. **THREE FACES END UP WORSE THAN THE MESHER THAT WAS DELETED**, and this paragraph said
+the opposite of that for two rounds while the table directly above it carried the numbers:
+
+| face | arm | now | |
+| --- | --- | --- | --- |
+| `J5` f00 | 0.8992 | **1.4649** | worse; no admissible cap recovers it |
+| `K2` f03 | 0.8563 | **3.6320** | worse; recoverable only where the complement dies |
+| `RODB∩` f01 | 0.1225 | **1.3747** | worse at PropertyQuality; 0.1614 at Default |
+
+The sentence was written from what the change intended and the table from what it did; the table was
+right. `RODB∩` f01 is the third and was disclosed only at DefaultQuality, which is the faceting where
+it is fine — the PropertyQuality half is the half mass properties read, and the body's volume deficit
+doubles with it, 0.654 % → 1.447 %. All three are now pinned per face and TWO-SIDED, so they cannot
+drift further and the pin retires itself when someone fixes them
+(`TestTheFacesLeftOverToleranceNameIt`, `TestRodBallIntersectionWallIsOverToleranceAndSaysSo`), and all
+three NAME their own limit — see below. `W8` f02 carries the same kind of row
+(`TestW8CylinderWallHoldsItsChord`), asserting BOTH the chord ratio and the area against 500π, because
+a whole-body area sum is precisely what hid all of this.
+
+**What is still open and is NOT this change's**: four cylcyl seam walls sit at 5.2×–6.3× (they were
+54×–68× WITH a reported degradation before #3517, so they improve either way), and `J5`/`K2` f03 sit at
+1.5×–3.6×. Missing `q.Tol()` silently is endemic and pre-existing — untouched faces do it on both
+sides of every change here, `K4` f00 at 12.32× throughout — and belongs to the facet-count policy §R4.5
+names, not to this mesher.
+
+One more thing moved with it, and it is worth recording because it is a capability retiring rather
+than a guard loosening. #3520's corpus pinned that a chart-mesher decline is the ONLY thing reported
+on some body, so the new code could not be a restatement of the two older ones for a lost trim. Every
+body with that property was a charted face whose trim DEVELOPS, and those no longer reach the covering
+at all: swept after the fix over ring ∩ drill (tube 1.2…2.0 × drill radius 0.8…1.8 × offset 0…1.5) and
+crossing rods (radius 1.5…3.5 × offset 0…2), at both facetings, **no body declines silently any more**,
+and the body that used to — `ringMeetingADrill` — no longer DECLINES at either. (It does not ship
+silent, and an earlier draft of this paragraph said it did: §7's achieved-chord report shows its two
+torus faces at 1.332× and 1.129× the display tolerance and 1.408× and 1.342× the property one, so it
+harvests one Defect at both facetings. They sit within 3.2e-4 of their exact analytic areas — a correct
+body with a rim coarser than it asked for, which is a different statement from a lost trim.) The row it
+anchored becomes the stronger statement: a body that needed the DECLINE and no longer does, asserted in
+both directions so a routing regression brings that code back.
+
+Two pins move with the fix and both are re-measured rather than widened. The complement's torus face
+area 263.55487 → **263.73402** against an analytic 264.88981 — it moves TOWARD the oracle. `RODB∩`'s
+volume deficit 0.2810 → **0.3020**: a real 2.1-point LOSS on a lens patch whose deficit is 28-30 %
+either way, taken because the classification must select exactly one path and that patch's trim
+develops. Thirteen byte-identity pins move; `W8` and `K4` move back to their pre-#3517 values exactly.
+
+#### 7. A curved face that misses its chord now says so, and the residual is on the record
+
+The three faces §6 leaves over tolerance were **silent**, and so were eighty-three others. Measured over
+**all 88 rows** of `occtparity`'s `byteIdentityPins` corpus — 793 faces, of which 318 are non-planar:
+
+| faceting | curved faces | over tolerance | of those, carrying no OTHER diagnostic | bodies | worst |
+| --- | --- | --- | --- | --- | --- |
+| `PropertyQuality` (1e-3 mm) | 318 | **135** | **86** | 61 | **3250.12×** (`C2` f01) |
+| `DefaultQuality` (0.05 mm) | 318 | **99** | **98** | 54 | 62.93× (`C2` f01) |
+
+Every gate in the repo was blind to all of them, because a whole-body area or volume sum absorbs one
+face's chord deficit. That is exactly how this issue's own round-5 regressions shipped: the three faces
+were measurable by anyone who wrote a probe and invisible to everything that runs.
+
+**NINETY-NINE curved faces across 54 bodies now raise a Defect at `DefaultQuality`, and that is the
+faceting feature health harvests** (`model/feature/result_diagnostics.go`) — so roughly a third of the
+corpus's curved faces will light up in the UI where nothing did before. Ninety-eight of the ninety-nine
+carried no other diagnostic at all, so for almost all of them this is the first report of any kind. They
+ARE over the tolerance they were handed and the reports are true; what is new is that a user can see it.
+Anyone who meets that in the UI should read §R4.5: the cause is a facet count, not a broken face, and
+the mesh is a valid approximation that is coarser than requested rather than wrong.
+
+So `CodeFaceChordNotMet` is raised by the curved-face router on every face whose mesh misses the chord
+tolerance it was handed (`face_chord_achieved.go`). It is the ground rules' own two sentences —
+"achieved tolerance is a measured output of an operation" and "never degrade silently" — applied where
+they were not. It REPORTS and does not refuse: a coarse face beats a missing one in a viewport, the
+chord is an approximation tolerance rather than a modelling one, and what would close the gap is the
+facet count, which belongs to the shared curve discretizer (§R4.5). `diag-codes` 43 → 44, a rise that
+is a reported degradation with a fallback-site delta of zero.
+
+**The measure is the METRIC distance, through `geom.ClosestPointOnSurface`, not through `ParamAt`.**
+`geom.Surface`'s own contract says `ParamAt` off-surface is the frame projection, "which equals the
+metric nearest point for the plane, cylinder and sphere but not exactly for the cone or torus". The
+first version of this report used `ParamAt` and asserted the opposite of that contract, and it
+over-fired exactly where the contract says it would: four faces at each faceting reported over tolerance
+while genuinely inside it (`T7` f07 1.0519 against a true 0.9929, `A7` f06 1.2239 against 0.9994, `J6`
+f00 1.2098 against 0.9986, `J8` f01 1.0145 against 0.9724), and thirteen rows that did belong over the
+line carried a figure inflated by up to 1.41× — which would have propagated into the facet-count
+decision this corpus exists to size. The error is one-sided, so there were no false NEGATIVES: zero
+faces were over-and-silent at either faceting. With the metric distance the census falls 139 → 135 and
+those four faces are the only rows that move; every committed pin is unchanged.
+
+**Cost.** Per face it is one point inversion per mesh edge, and on a NURBS face that is the expensive
+one: `J3` face 3 goes **13 ms → 808 ms** and `K2` face 4 **26 ms → 2.46 s**, 50–95×. In aggregate it
+does not signify — `TestTessellationBudget` unmoved at **0.24 s** of its 2.15 s ceiling,
+`TestHeavyModelBudget` on EDF.STEP **0.34 s → 0.41 s** of its 700 ms budget, the `occtparity` tier
+**648 s** of 2400 s. The committed fixtures do not reach NURBS, so the only row that gates this cost is
+`TestHeavyModelBudget`, which is opt-in behind `OBK_PERF_STEP`; that is where a future NURBS-heavy model
+will be caught, and it is named in that test rather than left implicit. Beyond the budget, exactly
+**two** rows
+across `./kernel/...` and `./model/...` had to stop asserting a silence that was never true —
+`TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport`, which counted total harvested entries where it
+meant one entry per code, and this issue's own `ringMeetingADrill` row, which claimed that body was
+quiet. It is not: its two torus faces read 1.332× and 1.129× at the display tolerance and 1.408× and
+1.342× at the property one, while sitting within 3.2e-4 of their exact analytic areas. Correct body,
+coarser rim than asked — which is the distinction the report exists to draw, and which round 5 could
+not draw because nothing measured it.
+
+**The residual, with its numbers.** Of the three faces over tolerance, the clearance cap that recovered
+the other five cannot recover two of them, and the sweep says why:
+
+* `K2` f03 is a TRADE, not a gap. At `chartClearanceCellCap` 0.25 it returns to the arm's **0.8563** —
+  and 0.25 is inside the band where the genus-1 complement is DECLINED and falls to the surface's whole
+  domain (294.428 mm², 28 free edges on the body). The constant is buying the complement's existence
+  with this face's rim, and no value in the admissible window [0.75, 1.0] buys both.
+* `J5` f00 reads **1.4649 at every admissible cap**. Nothing in the window recovers it at all, so it is
+  not a trade — it is the facet count.
+* `RODB∩` f01 is the one-path dispatch's own price, paid knowingly: the face's trim develops, so the
+  structured grid is correctly its mesher, and that grid chords flat across a lens 0.1 mm deep.
+
+All three therefore belong under §R4.5's heading: the general path samples ~1.9× more than the tolerance
+strictly demands because `adaptiveParams` can only land on a power of two, and it is the SAME constant
+that leaves these faces short where the grading is wrong for them. A facet-count policy derived from
+tolerance — one discretizer, non-dyadic, per-axis — is what closes all three, and it moves every
+curved-face pin in the repo. It is not this mesher's to fix, and now that every such face reports
+itself, the next worker can size it from the corpus instead of from a probe.
+
+#### 8. Rebasing onto #3519/#3551, and the one pin the shear costs
+
+This task was based at `4b3b1819` and landed on `2d7328e3`, 22 commits later. Four of those commits
+touch the same chart mesher, and the reconciliations are recorded here because two of them change what an existing
+pin gates.
+
+**#3551's one-location invariant composes with `coverShear` through ONE frame function.** #3551 makes two
+records of one covering LOCATION into one vertex — a weld, not a nudge — by bucketing laid vertices on a
+quantised grid. It buckets in the frame the triangulation runs in, and `coverShear` changes that frame, so
+the index built in one frame and queried in another would find nothing. `frameXY` is now the single place
+that says what the frame is, and both `add` and the location index read it. The shear cannot move a
+location — identical `(u, v)` maps to identical `(x, y)` under any linear frame — so the pairs the merge
+joins are exactly the pairs it joined before, and the invariant holds on every torus face of every aspect
+ratio of #3551's own sweep (`dup = 0`).
+
+**Two clearance constants now govern the boundary, and they have different jobs.** #3519's
+`chartBoundaryClearance` (0.90) says how much of a boundary CHORD an interior node must keep clear of
+it, and #3517's `chartClearanceCellCap` (0.875) caps the chord that is read from at the covering's own
+CELL. On
+the genus-1 complement's torus face they meet and the cap binds, because that face's oval apex is exactly
+where an uncapped chord is many cells long. Both numbers the clearance is judged on improve — face
+deficit against the analytic 264.88981 falls 0.50 % → 0.44 %, and the body's `DefaultQuality` volume
+deficit 1.3497 % → 1.1097 %, so #3519's own 1.39 % ceiling is met with more room. What the complement's
+pin gates has changed with it: it gates the CAP now, and `chartBoundaryClearance` stays gated by its own
+corpus-tear rows and by that ceiling.
+
+**The shear costs #3551's tangent-plane family one aspect ratio**, and the pin rises 368 → 728 free edges,
+6 → 7 torn rows. Bisected to `coverShear`: exactly one row of the 76, `R=50 r=1 intersect` at
+`PropertyQuality`, 0 → 360, with every other row bit-identical either way. It is the same residue one
+ratio along rather than a new defect — the family's own split calls `R=100 r=1` a covering DENSITY limit
+that recovers at a fine enough chord, and `R=50 r=1` does exactly that (360 free edges at chord 1e-3, 0 at
+5e-4, with the triangle count FALLING 262 500 → 30 504 where it recovers, because the decline and its
+whole-domain fall-through both stop). A defect that disappears under refinement while getting cheaper is a
+sampling limit, and what closes both rows is the facet count §R4.5 names: `adaptiveParams` can only land
+on a power of two, and one dyadic ladder cannot be right for a cell 25 : 1 anisotropic.
+
+The rise was ruled on rather than settled by the change that caused it, and the deciding reason is the
+determinism argument in §R4.2 — not the free-edge comparison, which pits totals from different families
+against each other. No value inside `coverShear`'s four-decade plateau avoids the row (1/65536, 1/16384,
+1/4096 and 1/1024 all read 728), because breaking an exact tie is a discrete choice rather than a
+magnitude.
+
+**Two of this branch's decline rows lost their fixture to a CURE**, which is worth recording as a shape.
+`TestAChartMesherDeclineReachesTheBodysMeshDiagnostics` read `ringMeetingADrill` until §6's one-path
+dispatch sent that body's developing face to the structured grid, then `wideCrossingRods` until #3551's
+merge cured that one too — swept over crossing rods (radius 1.5…4.0 × offset 0…2) at both facetings, no
+body of that family declines any more. It reads #3551's tangent-plane family at the thin-tube end now,
+which still refuses. And #3519's `TestTheCuredDisplayDeclineStaysCured` asserted no diagnostic AT ALL,
+which was the only reading of "cured" available before §7 gave a coarse face a voice: that body now
+reports 1.283× its chord and a saturated 64-cell refinement floor at `PropertyQuality` while staying
+silent at `DefaultQuality` and holding its per-face areas to 1e-4. It is narrowed to the codes it is
+ABOUT — decline, unmeshed wrap, ignored trim, tear, patch coverage — because a row that refuses every
+report has to be loosened by the next honest one, and a row that refuses the codes it names does not.

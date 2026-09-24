@@ -45,16 +45,12 @@ func curvedTrimRecognizers(f *topo.Face, s geom.Surface, outer3D []math.Point3, 
 	_, isCone := coneApexTrimOf(f, s, outer3D, holes3D)
 	_, isCap := sphereCapTrimOf(f, sph, outer3D, holes3D, q)
 	_, isBelt := sphereBeltTrimOf(f, sph, q)
-	_, isTube := spiricTubeTrimOf(f, s, q)
-	_, isHoled := twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D)
 	_, isWedge := wedgeBandTrimOf(f, s, q)
 	return []curvedTrimVerdict{
 		{kindConeApexFan, isCone},
 		{kindSphereCapFan, isSphere && isCap},
 		{kindSphereZoneBand, isSphere && isBelt},
 		{kindRuledBandLoft, ruledTwoRimBandHolds(f, s, q)},
-		{kindSpiricBand, isTube},
-		{kindTwoRimHoledBand, isHoled},
 		{kindWedgeBand, isWedge},
 	}
 }
@@ -128,6 +124,17 @@ func SphereZoneBandFanOf(f *topo.Face, s geom.Surface, q Quality) (*Mesh, bool) 
 	return SphereZoneBandFan(b, q), true
 }
 
+// CurvedTrimKindNames is EVERY kind the classification can select, in kind order, derived from the enum
+// itself. The corpus test builds its roster from this instead of listing the kinds by hand, so an arm
+// added to classifyCurvedTrim fails that test until the corpus reaches it or it is named an exception.
+func CurvedTrimKindNames() []string {
+	out := make([]string, 0, int(curvedTrimKindCount))
+	for k := curvedTrimKind(0); k < curvedTrimKindCount; k++ {
+		out = append(out, k.String())
+	}
+	return out
+}
+
 // ClassifyCurvedTrimName is the name of the kind the classification itself selects for a face.
 func ClassifyCurvedTrimName(f *topo.Face, q Quality) string {
 	s := f.Geometry()
@@ -144,48 +151,20 @@ func ChartedTrimKindName() string { return kindChart.String() }
 // SpherePatchTrimKindName names the sphere family's residual arm.
 func SpherePatchTrimKindName() string { return kindSpherePatch.String() }
 
-// TwoRimHoledBandVerdict reports, for one face, whether it has the two-rim HOLED band shape at all,
-// whether it records a chart to mesh from, and whether the classification sends it to that arm. The
-// three together are what says the conditioning gate sorts the corpus the way it claims to.
-func TwoRimHoledBandVerdict(f *topo.Face, q Quality) (isShape, charted, toArm bool) {
-	s := f.Geometry()
-	outer3D, holes3D := FaceOuterBoundary(f, q), faceHoleBoundaries(f, q)
-	_, isShape = twoRimHoledTrimOf(nil, s, outer3D, holes3D) // nil chart: the SHAPE, ungated
-	_, toArm = twoRimHoledTrimOf(f.Chart(), s, outer3D, holes3D)
-	return isShape, len(f.Chart()) > 0, toArm
-}
-
-// ChartMeshVerdict drives the chart-driven mesher directly and reports whether it accepted the face and
-// the two numbers its acceptance gate decides on — free edges that are no rim segment, and rim segments
-// the mesh does not bound. It reads the gate's OWN comparison, so a row built on it cannot drift from
-// what ships.
-func ChartMeshVerdict(f *topo.Face, q Quality) (ok bool, extra, missing int, area float64) {
-	s := f.Geometry()
-	m, ok := chartFaceMesh(f, s, q)
-	r, _ := newChartRegion(f, s)
-	extra, missing = chartRimMismatch(m, chartBoundaryChains(f, s, r, q))
-	if m != nil {
-		area = m.Area()
-	}
-	return ok, extra, missing, area
-}
-
-// TwoRimCorridorProbe reports the closest approach between two lens windows and the boundary chord the
-// gate compares it against.
-func TwoRimCorridorProbe(f *topo.Face, q Quality) (gap, chord float64) {
-	_, lenses := splitWrappingHoles(f.Geometry(), faceHoleBoundaries(f, q))
-	return closestLensApproach(lenses), meanChainChord(FaceOuterBoundary(f, q))
-}
-
 // ChartRimOnlyTriangles drives the chart-driven mesher and counts the OUTPUT triangles whose three
 // vertices are all boundary points — the ear keptWithoutRimEars exists to refuse. It keys the rim the
-// way the mesh welds, so the count is over what ships, not over covering indices. ok=false when the
-// mesher declined the face.
-func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, ok bool) {
+// way the mesh welds, so the count is over what ships, not over covering indices.
+//
+// It separates the mesher's two false answers, which the corpus row cannot conflate (#3520): meshed is
+// false either because the mesher never owned the face — no chart, or an aperiodic surface, and then
+// declined is "" — or because it OWNED the face and gave it up, and then declined names why. A row that
+// only sees "false" cannot tell "this face has no ears" from "this face was refused".
+func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, meshed bool, declined string) {
 	s := f.Geometry()
-	m, ok := chartFaceMesh(f, s, q)
+	log := &chartDeclineLog{}
+	m, ok := chartFaceMesh(f, s, q, log)
 	if !ok {
-		return 0, false
+		return 0, false, log.why
 	}
 	r, _ := newChartRegion(f, s)
 	grid := geom.ResolutionForPoints(m.Positions).Weld()
@@ -201,5 +180,18 @@ func ChartRimOnlyTriangles(f *topo.Face, q Quality) (n int, ok bool) {
 			n++
 		}
 	}
-	return n, true
+	return n, true, ""
+}
+
+// IsTwoRimHoledBandShape reports whether a face has the SHAPE the deleted kindTwoRimHoledBand arm
+// recognised: a singly-periodic developable side whose hole loops are one full-wrap rim plus at least
+// one lens window. The arm is gone (#3517, once #3542's covering seam closed), but the shape is still
+// what the near-pinch corpus selects its bands by.
+func IsTwoRimHoledBandShape(f *topo.Face, q Quality) bool {
+	s := f.Geometry()
+	if !isDevelopableSide(s) || IsPeriodic(s.UDomain()) == IsPeriodic(s.VDomain()) {
+		return false
+	}
+	rims, lenses := splitWrappingHoles(s, faceHoleBoundaries(f, q))
+	return len(rims) == 1 && len(lenses) > 0
 }

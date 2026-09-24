@@ -28,7 +28,7 @@ func (v Vector3) Sub(o Vector3) Vector3 {
 
 // Scale returns v multiplied by the scalar s.
 func (v Vector3) Scale(s Scalar) Vector3 {
-	return Vector3{v.X * s, v.Y * s, v.Z * s}
+	return Vector3{Scalar(v.X * s), Scalar(v.Y * s), Scalar(v.Z * s)}
 }
 
 // Negate returns -v.
@@ -38,15 +38,15 @@ func (v Vector3) Negate() Vector3 {
 
 // Dot returns the dot product v·o.
 func (v Vector3) Dot(o Vector3) Scalar {
-	return v.X*o.X + v.Y*o.Y + v.Z*o.Z
+	return Scalar(v.X*o.X) + Scalar(v.Y*o.Y) + Scalar(v.Z*o.Z)
 }
 
 // Cross returns the cross product v×o.
 func (v Vector3) Cross(o Vector3) Vector3 {
 	return Vector3{
-		v.Y*o.Z - v.Z*o.Y,
-		v.Z*o.X - v.X*o.Z,
-		v.X*o.Y - v.Y*o.X,
+		Scalar(v.Y*o.Z) - Scalar(v.Z*o.Y),
+		Scalar(v.Z*o.X) - Scalar(v.X*o.Z),
+		Scalar(v.X*o.Y) - Scalar(v.Y*o.X),
 	}
 }
 
@@ -90,7 +90,7 @@ func (v Vector3) IsEqualTo(o Vector3, tol Scalar) bool {
 // opposite direction) within the angular tolerance tol (radians). Pass tol <= 0
 // to use [AngleTolerance].
 func (v Vector3) IsParallelTo(o Vector3, tol Scalar) bool {
-	denom := v.LengthSquared() * o.LengthSquared()
+	denom := Scalar(v.LengthSquared() * o.LengthSquared())
 	if denom == 0 {
 		return false
 	}
@@ -102,7 +102,7 @@ func (v Vector3) IsParallelTo(o Vector3, tol Scalar) bool {
 // IsPerpendicularTo reports whether v and o are at right angles within the
 // angular tolerance tol (radians). Pass tol <= 0 to use [AngleTolerance].
 func (v Vector3) IsPerpendicularTo(o Vector3, tol Scalar) bool {
-	denom := v.Length() * o.Length()
+	denom := Scalar(v.Length() * o.Length())
 	if denom == 0 {
 		return false
 	}

@@ -78,12 +78,12 @@ func unitOrZero(v math.Vector3) math.Vector3 {
 // true, or the zero point and false when the points are collinear (no finite
 // circle exists).
 func circumcenter2d(a, b, c math.Point2) (math.Point2, bool) {
-	d := 2 * signedArea2(a, b, c)
+	d := float64(2 * signedArea2(a, b, c))
 	if d <= math.DefaultTolerance && d >= -math.DefaultTolerance {
 		return math.Point2{}, false
 	}
 	a2, b2, c2 := a.AsVector().LengthSquared(), b.AsVector().LengthSquared(), c.AsVector().LengthSquared()
-	ux := (a2*(b.Y-c.Y) + b2*(c.Y-a.Y) + c2*(a.Y-b.Y)) / d
-	uy := (a2*(c.X-b.X) + b2*(a.X-c.X) + c2*(b.X-a.X)) / d
+	ux := float64((float64(a2*(b.Y-c.Y)) + float64(b2*(c.Y-a.Y)) + float64(c2*(a.Y-b.Y))) / d)
+	uy := float64((float64(a2*(c.X-b.X)) + float64(b2*(a.X-c.X)) + float64(c2*(b.X-a.X))) / d)
 	return math.P2(ux, uy), true
 }

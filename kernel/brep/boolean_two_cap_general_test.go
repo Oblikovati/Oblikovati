@@ -52,14 +52,14 @@ func TestClearWallPairIsCarried(t *testing.T) {
 	if len(pa.wall) != 1 || len(pb.wall) != 1 {
 		t.Fatalf("fixture: target has %d walls, tool %d; want one each", len(pa.wall), len(pb.wall))
 	}
-	curves, ok := wallWallImprint(pa.wall[0], pb.wall[0])
+	curves, _, ok := wallWallImprint(pa.wall[0], pb.wall[0])
 	if !ok {
 		t.Fatal("the wall pair is undecided; the two-cap crossing needs it decided")
 	}
 	if len(curves) != 0 {
 		t.Errorf("the wall pair produced %d imprint curves; the tool never touches the target's wall", len(curves))
 	}
-	if overlapsUncarriedWall(pa.wall[0], inflateBox(pa.wallBox[0]), &pb) {
+	if _, uncarried := overlapsUncarriedWall(pa.wall[0], inflateBox(pa.wallBox[0]), &pb); uncarried {
 		t.Error("a decided-clear wall pair still reads as uncovered")
 	}
 }

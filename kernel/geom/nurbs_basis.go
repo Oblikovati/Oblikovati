@@ -39,9 +39,9 @@ func basisFuns(span, p int, u float64, knots []float64) []float64 {
 		left[j], right[j] = u-knots[span+1-j], knots[span+j]-u
 		saved := 0.0
 		for r := 0; r < j; r++ {
-			temp := n[r] / (right[r+1] + left[j-r])
-			n[r] = saved + right[r+1]*temp
-			saved = left[j-r] * temp
+			temp := float64(n[r] / (right[r+1] + left[j-r]))
+			n[r] = saved + float64(right[r+1]*temp)
+			saved = float64(left[j-r] * temp)
 		}
 		n[j] = saved
 	}
@@ -61,7 +61,7 @@ func basisAndFirstDerivs(span, p int, u float64, knots []float64) (values, deriv
 	derivs = make([]float64, p+1)
 	for k := 0; k <= p; k++ {
 		i := span - p + k
-		derivs[k] = float64(p) * (lowBasis(low, knots, span, p, i) - lowBasis(low, knots, span, p, i+1))
+		derivs[k] = float64(float64(p) * (lowBasis(low, knots, span, p, i) - lowBasis(low, knots, span, p, i+1)))
 	}
 	return values, derivs
 }
@@ -78,5 +78,5 @@ func lowBasis(low, knots []float64, span, p, i int) float64 {
 	if den == 0 {
 		return 0
 	}
-	return low[idx] / den
+	return float64(low[idx] / den)
 }

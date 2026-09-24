@@ -1,0 +1,271 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+package brep_test
+
+import (
+	"fmt"
+	stdmath "math"
+	"strings"
+	"testing"
+
+	"oblikovati.org/kernel/brep"
+	"oblikovati.org/kernel/diag"
+	"oblikovati.org/kernel/geom"
+	"oblikovati.org/kernel/ops/query"
+	"oblikovati.org/kernel/topo"
+	"oblikovati.org/math"
+	"oblikovati.org/test-utilities/brepfixture"
+)
+
+// The end-to-end row for the seam a cocylindrical merge orphans (Oblikovati#3521).
+//
+// Every other statement about dropSeamSlits drives it through a hand-built fixture, and a unit fixture
+// is not the corpus: "a bug fix adds the failing input to the operation's corpus and makes the general
+// pipeline pass it". This row drives a REAL boolean and asserts the RESULT — the merged wall's loops,
+// both parents' keys on it, and the body's volume — never the internal call sequence, so a restructured
+// merge (Oblikovati#3523) is measured against the same body.
+
+// The boss standing on a host band of ONE radius, with a flat planed onto the boss.
+const (
+	seamSlitRadius  = 3.0  // host and boss share this radius, so their walls are one surface
+	seamSlitHostTop = 6.0  // the host band is z ∈ [0, 6]
+	seamSlitBossTop = 10.0 // the boss stands on it, z ∈ [6, 10]
+	seamSlitPlaneX  = 2.4  // planed off at x = 2.4, so the boss shares only an ARC of the z = 6 rim
+)
+
+// TestBossOnACocylindricalHostDropsTheOrphanedSeam is the corpus body whose merge orphans a seam, and
+// the one that shows the identity narrowing of isReverseTwin is LIVE rather than a no-op.
+//
+// The host wraps its cylinder, so its wall walks its seam twice; the boss shares only an arc of the
+// z = 6 rim, so splitAtSharedRunEnds cuts the host's rim and dissolving the shared arc leaves the
+// host's two seam traversals adjacent. Nothing else in the corpus does that — two bands that share a
+// WHOLE rim (rod on rod, a bore continuing a bore) keep the other band's edges between the two
+// traversals, and their scans find no twin at all.
+//
+// With the slit left in, the merged wall's outer loop is the bottom rim PLUS that ruling walked up and
+// straight back down: a slit dangling into the face's interior, which a user can select and a fillet
+// would try to round.
+func TestBossOnACocylindricalHostDropsTheOrphanedSeam(t *testing.T) {
+	t.Parallel()
+	rec := &diag.Recorder{}
+	host, boss := cocylindricalHost(t), planedCocylindricalBoss(t)
+	hostKey, bossKey := cylinderWallKey(t, host), cylinderWallKey(t, boss)
+	body, err := brep.BooleanDiag(brep.Union, host, boss, rec)
+	if err != nil {
+		t.Fatalf("union of the host and the boss standing on it: %v", err)
+	}
+	checkSolid(t, "boss on a cocylindrical host", body, bossOnHostVolume())
+	assertBodyHasFiveFaces(t, body)
+	wall := theMergedCylinderWall(t, body)
+	assertOuterLoopIsTheBareRim(t, wall)
+	assertTopBoundaryIsTheBossOutline(t, wall)
+	assertNoLoopWalksAnEdgeStraightBack(t, wall)
+	assertMergedWallArea(t, wall)
+	assertMergedWallResolves(t, body, hostKey, bossKey)
+	assertSeamSlitDropWasRecorded(t, rec)
+}
+
+// cocylindricalHost is the wrapping band the seam belongs to: z ∈ [0, 6] at the shared radius.
+func cocylindricalHost(t *testing.T) *topo.Body {
+	t.Helper()
+	b, err := brep.SolidCylinder(math.P3(0, 0, 0), math.V3(0, 0, 1), seamSlitRadius, seamSlitHostTop)
+	if err != nil {
+		t.Fatalf("host cylinder: %v", err)
+	}
+	return b
+}
+
+// planedCocylindricalBoss is the boss standing on the host, planed off at x = seamSlitPlaneX so it
+// shares only an ARC of the rim it stands on — which is what orphans the host's seam.
+func planedCocylindricalBoss(t *testing.T) *topo.Body {
+	t.Helper()
+	stock, err := brep.SolidCylinder(math.P3(0, 0, seamSlitHostTop), math.V3(0, 0, 1),
+		seamSlitRadius, seamSlitBossTop-seamSlitHostTop)
+	if err != nil {
+		t.Fatalf("boss cylinder: %v", err)
+	}
+	planer, err := brep.SolidBlock(math.P3(seamSlitPlaneX, -4, seamSlitHostTop-1),
+		math.P3(5, 4, seamSlitBossTop+1), "planer")
+	if err != nil {
+		t.Fatalf("planer block: %v", err)
+	}
+	boss, err := brep.Boolean(brep.Difference, stock, planer)
+	if err != nil {
+		t.Fatalf("planing the boss: %v", err)
+	}
+	return boss
+}
+
+// assertBodyHasFiveFaces pins the face count: a merge that joined too much or too little changes it,
+// and neither the volume nor the wall's own loops would say so.
+func assertBodyHasFiveFaces(t *testing.T, b *topo.Body) {
+	t.Helper()
+	if n := len(b.Faces()); n != 5 {
+		t.Errorf("the body has %d faces, want 5 (the merged wall, the host's floor, the boss's roof, "+
+			"the planed flat, and the shoulder the boss leaves on the host's top)", n)
+	}
+}
+
+// theMergedCylinderWall is the body's single cylinder face. That there is exactly ONE is the merge's
+// own post-condition, and the seam-slit assertions rest on it.
+func theMergedCylinderWall(t *testing.T, b *topo.Body) *topo.Face {
+	t.Helper()
+	var walls []*topo.Face
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			walls = append(walls, f)
+		}
+	}
+	if len(walls) != 1 {
+		t.Fatalf("the body has %d cylinder walls, want 1: the host band and the boss standing on it lie "+
+			"on ONE cylinder and share the arc of rim between them", len(walls))
+	}
+	return walls[0]
+}
+
+// assertOuterLoopIsTheBareRim: the merged wall's outer loop is the bottom rim circle and NOTHING else.
+// This is the assertion the orphaned seam breaks — left in, the loop is that circle plus the host's
+// seam ruling walked up and straight back down, three edges instead of one.
+func assertOuterLoopIsTheBareRim(t *testing.T, f *topo.Face) {
+	t.Helper()
+	if n := len(f.Loops()); n != 2 {
+		t.Fatalf("the merged wall has %d loops, want 2 — a band that wraps its cylinder has two boundary "+
+			"components: the bottom rim, and the planed boss's top boundary", n)
+	}
+	uses := f.Loops()[0].EdgeUses()
+	if len(uses) != 1 {
+		t.Fatalf("the merged wall's outer loop walks %d edges, want 1 (the whole bottom rim circle); a "+
+			"second and third are the orphaned seam walked both ways", len(uses))
+	}
+	if _, ok := uses[0].Edge().Geometry().(geom.Circle); !ok {
+		t.Errorf("the merged wall's outer loop walks a %T, want the bottom rim circle",
+			uses[0].Edge().Geometry())
+	}
+}
+
+// assertTopBoundaryIsTheBossOutline pins the SECOND boundary component edge for edge. The outer-loop
+// assertion above only says the slit left the loop it was in; this says the loop that survived is the
+// planed boss's outline and not a re-chained approximation of it — the rim arc kept whole, both
+// rulings of the plane, and the boss's own top arc, each walked the way the merged wall walks them.
+// A restructure (Oblikovati#3523) that splits the kept rim arc, drops a ruling or flips a use keeps
+// one wall, two loops, a bare outer rim and the body's volume, and would pass without this.
+func assertTopBoundaryIsTheBossOutline(t *testing.T, f *topo.Face) {
+	t.Helper()
+	uses := f.Loops()[1].EdgeUses()
+	if len(uses) != 4 {
+		t.Fatalf("the merged wall's top boundary walks %d edges, want 4 (the kept rim arc, two rulings "+
+			"of the planed flat, and the boss's top arc)", len(uses))
+	}
+	want := []string{"geom.Arc3d", "geom.LineSegment", "geom.Arc3d", "geom.LineSegment"}
+	for i, u := range uses {
+		assertUseIsReversedKind(t, i, u, want[i])
+	}
+}
+
+// assertUseIsReversedKind checks one use's curve kind and sense; every use of this loop is reversed,
+// because the merged wall's material is below its top boundary.
+func assertUseIsReversedKind(t *testing.T, i int, u *topo.EdgeUse, want string) {
+	t.Helper()
+	if got := fmt.Sprintf("%T", u.Edge().Geometry()); got != want {
+		t.Errorf("the top boundary's edge %d is a %s, want a %s", i, got, want)
+	}
+	if !u.Reversed() {
+		t.Errorf("the top boundary's edge %d is walked forward, want reversed", i)
+	}
+}
+
+// assertMergedWallArea is the per-face gate the ground rules ask for: "Result gates are per-face
+// (area, surface type, loop count) against the oracle. A whole-body volume or area match is a smoke
+// test, never a proof." The wall is the whole host cylinder plus the boss's surviving azimuth.
+func assertMergedWallArea(t *testing.T, f *topo.Face) {
+	t.Helper()
+	got, ok := query.AnalyticFaceArea(f)
+	if !ok {
+		t.Fatal("the merged wall has no analytic area; the per-face gate would be a tessellated one")
+	}
+	if want := mergedWallArea(); stdmath.Abs(got-want) > 1e-9 {
+		t.Errorf("the merged wall's area is %.9f, want %.9f", got, want)
+	}
+}
+
+// mergedWallArea is the analytic oracle for that area: the host band's whole circumference over its
+// height, plus the boss's band over the azimuth the planer left it.
+func mergedWallArea() float64 {
+	r, d := seamSlitRadius, seamSlitPlaneX
+	kept := 2*stdmath.Pi - 2*stdmath.Acos(d/r) // the azimuth the planed flat does NOT cut away
+	return 2*stdmath.Pi*r*seamSlitHostTop + kept*r*(seamSlitBossTop-seamSlitHostTop)
+}
+
+// assertNoLoopWalksAnEdgeStraightBack states the slit invariant on the RESULT: no loop may walk a
+// stretch of space and immediately walk it back, because such a boundary bounds nothing. It gates
+// BOTH kinds — ONE edge used twice (the slit dropSeamSlits removes) and TWO different edges tracing
+// one stretch (the pair the identity narrowing gives up) — so the body this whole row is built
+// around is covered by the same two arms as the merge corpus, through the same query.
+func assertNoLoopWalksAnEdgeStraightBack(t *testing.T, f *topo.Face) {
+	t.Helper()
+	tol := geom.ResolutionForBox(f.RangeBox()).Weld()
+	if p, found := brepfixture.FirstReversedRun(f, tol); found {
+		t.Errorf("the merged wall keeps a boundary pair that walks one stretch and straight back, which "+
+			"bounds nothing: %+v (OneEdge true is a slit dropSeamSlits missed, false is a pair the "+
+			"identity narrowing gave up — re-open Oblikovati#3521)", p)
+	}
+}
+
+// assertMergedWallResolves: dropping the seam must not drop an identity. Both parents' wall keys still
+// resolve to the merged wall (ADR-0043 — a pick must survive the operation that consumed it).
+func assertMergedWallResolves(t *testing.T, b *topo.Body, keys ...[]byte) {
+	t.Helper()
+	for _, k := range keys {
+		f, ok := b.FindFaceByKey(k)
+		if !ok {
+			t.Fatalf("the merged wall does not resolve parent key %q", string(k))
+		}
+		if _, isCyl := f.Geometry().(geom.Cylinder); !isCyl {
+			t.Errorf("parent key %q resolved to a %T, not the merged cylinder wall", string(k), f.Geometry())
+		}
+	}
+}
+
+// cylinderWallKey is the reference key of a body's single cylinder wall.
+func cylinderWallKey(t *testing.T, b *topo.Body) []byte {
+	t.Helper()
+	for _, f := range b.Faces() {
+		if _, ok := f.Geometry().(geom.Cylinder); ok {
+			return f.ReferenceKey()
+		}
+	}
+	t.Fatal("the body has no cylinder wall")
+	return nil
+}
+
+// assertSeamSlitDropWasRecorded: the census says the merge ran and how much of what reached it the slit
+// test could pair at all, and the drop note says the removal FIRED. They are the pair of positive
+// markers that separate "no slit was there" from "the slit test could not have seen one" — the gap
+// Oblikovati#3521 is about, since a source-less edge is nobody's twin.
+func assertSeamSlitDropWasRecorded(t *testing.T, rec *diag.Recorder) {
+	t.Helper()
+	if !recordedDetail(rec, brep.CodeMergeEdgeSources, "reaching the cocylindrical merge") {
+		t.Error("no merge-edge-source census on the recorder: the merge did not run, or stopped counting")
+	}
+	if !recordedDetail(rec, brep.CodeSeamSlitDropped, "dropped 2 orphaned seam edge") {
+		t.Errorf("the merge did not report dropping the host's two seam traversals; got %v", rec.Records())
+	}
+}
+
+// recordedDetail reports whether the recorder carries an Info of the given code naming the fragment.
+func recordedDetail(rec *diag.Recorder, code diag.Code, fragment string) bool {
+	for _, d := range rec.Records() {
+		if d.Code == code && d.Severity == diag.Info && strings.Contains(d.Detail, fragment) {
+			return true
+		}
+	}
+	return false
+}
+
+// bossOnHostVolume is the analytic volume: the host band, plus the boss band less the circular segment
+// the planer cut off it.
+func bossOnHostVolume() float64 {
+	r, d := seamSlitRadius, seamSlitPlaneX
+	segment := r*r*stdmath.Acos(d/r) - d*stdmath.Sqrt(r*r-d*d)
+	return stdmath.Pi*r*r*seamSlitHostTop + (stdmath.Pi*r*r-segment)*(seamSlitBossTop-seamSlitHostTop)
+}

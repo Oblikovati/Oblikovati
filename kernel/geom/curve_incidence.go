@@ -55,14 +55,14 @@ func sectionIncidence(cv Curve3) ([]func(math.Point3) float64, bool) {
 		return ruledQuadricIncidence(x.Base, x.Quad), true
 	case *RuledQuadricLoop:
 		return ruledQuadricIncidence(x.Base, x.Quad), true
-	case TorusQuadricArc:
-		return torusQuadricIncidence(x.Torus, x.Quad), true
-	case *TorusQuadricArc:
-		return torusQuadricIncidence(x.Torus, x.Quad), true
-	case TorusQuadricLoop:
-		return torusQuadricIncidence(x.Torus, x.Quad), true
-	case *TorusQuadricLoop:
-		return torusQuadricIncidence(x.Torus, x.Quad), true
+	case TorusSectionArc:
+		return torusSectionIncidence(x.Torus, x.Co), true
+	case *TorusSectionArc:
+		return torusSectionIncidence(x.Torus, x.Co), true
+	case TorusSectionLoop:
+		return torusSectionIncidence(x.Torus, x.Co), true
+	case *TorusSectionLoop:
+		return torusSectionIncidence(x.Torus, x.Co), true
 	}
 	return nil, false
 }
@@ -80,21 +80,18 @@ func ruledQuadricIncidence(base Surface, quad Quadric) []func(math.Point3) float
 	return out
 }
 
-// torusQuadricIncidence is a torus∩quadric section's two conditions: the quadric it carries, and the
-// TORUS it runs on. A torus is quartic and has no quadric form, so its condition is its own signed
+// torusSectionIncidence is a torus section's two conditions: the OTHER surface's implicit form, and the
+// torus it runs on. A torus is quartic and has no quadric form, so its own condition is its signed
 // distance — an exact implicit function like any other, and the one thing a caller solving against this
-// curve needs.
+// curve needs. A torus×torus section answers a signed distance on BOTH sides for the same reason.
 //
 // A section curve WITHOUT its conditions is not merely slower to intersect: it cannot be intersected at
 // all. curvePairMeets needs roots on BOTH curves and pairs them by distance, so a curve that reports no
 // incidence yields no crossing — silently. That is how an axial drill through a ring lost the crossings
 // between its bore seams and the wall chart's own seam, and came back as half a tube bridged by two
 // rulings (ADR-0061 stage 5).
-func torusQuadricIncidence(t Torus, quad Quadric) []func(math.Point3) float64 {
-	return []func(math.Point3) float64{
-		quad.ValueAt,
-		func(p math.Point3) float64 { return float64(SignedDistanceToSurface(t, p)) },
-	}
+func torusSectionIncidence(t Torus, co TorusCoForm) []func(math.Point3) float64 {
+	return []func(math.Point3) float64{co.incidence(), t.incidence()}
 }
 
 // straightIncidence is a line's two conditions: the distances to two perpendicular planes through it.

@@ -23,7 +23,7 @@ import (
 // arcNurbsSegments returns the number of ≤90° rational-quadratic segments an arc of the given
 // sweep needs (P&T A7.1's quadrant split).
 func arcNurbsSegments(sweep float64) int {
-	return int(stdmath.Ceil(sweep/(stdmath.Pi/2) - 1e-12)) // tol:parametric — quadrant count rounding
+	return int(stdmath.Ceil(float64(sweep/(stdmath.Pi/2)) - 1e-12)) // tol:parametric — quadrant count rounding
 }
 
 // arcNurbsBasis returns the unit-circle control directions and weights of a rational quadratic
@@ -32,8 +32,8 @@ func arcNurbsSegments(sweep float64) int {
 // two arcs sharing one sweep share this basis — the key to an exact ruled blend.
 func arcNurbsBasis(xdir, ydir math.Vector3, sweep float64) (dirs []math.Vector3, weights []float64, knots []float64) {
 	segs := arcNurbsSegments(sweep)
-	d := sweep / float64(segs)
-	w := stdmath.Cos(d / 2)
+	d := float64(sweep / float64(segs))
+	w := stdmath.Cos(float64(d / 2))
 	at := func(theta float64) math.Vector3 {
 		return xdir.Scale(stdmath.Cos(theta)).Add(ydir.Scale(stdmath.Sin(theta)))
 	}
@@ -41,11 +41,11 @@ func arcNurbsBasis(xdir, ydir math.Vector3, sweep float64) (dirs []math.Vector3,
 	weights = append(weights, 1)
 	knots = []float64{0, 0, 0}
 	for s := range segs {
-		mid := float64(s)*d + d/2
+		mid := float64(float64(s)*d) + float64(d/2)
 		// The interior control direction sits on the tangent intersection: dir(mid)/cos(d/2).
-		dirs = append(dirs, at(mid).Scale(1/w), at(float64(s+1)*d))
+		dirs = append(dirs, at(mid).Scale(float64(1/w)), at(float64(float64(s+1)*d)))
 		weights = append(weights, w, 1)
-		u := float64(s+1) / float64(segs)
+		u := float64(float64(s+1) / float64(segs))
 		if s+1 < segs {
 			knots = append(knots, u, u)
 		} else {

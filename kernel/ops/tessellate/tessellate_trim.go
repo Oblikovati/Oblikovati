@@ -29,8 +29,26 @@ import (
 // chart_face_mesh.go (the chart-driven covering-space mesher this router ends at).
 
 // tessellateCurvedFace meshes a curved face's trimmed region (see file doc).
+//
+// It is also the ONE place a chart-driven mesher decline is reported (#3520, chart_decline.go). Every
+// route below reaches chartFaceMesh, which records into the log this function owns, and the log is
+// stamped onto whatever mesh the face ships instead — so a face the chart mesher gave up cannot fall
+// back silently, and a route added or uncovered later (the arm deletions of #3517/#3518 send their
+// faces here) inherits the report by taking the log as a parameter.
+//
+// This is the file archguard names as the log's owner. A production file that constructs its own
+// chartDeclineLog compiles fine and reports into a slot nobody stamps, so
+// TestOnlyTheCurvedFaceRouterOwnsAChartDeclineLog fails on the second one — and on this file dropping
+// the recordOn call below, which would leave the log built and never read.
 func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
+	log := &chartDeclineLog{}
 	s := f.Geometry()
+	return recordAchievedChord(log.recordOn(curvedFaceMesh(f, s, q, log), s), s, q)
+}
+
+// curvedFaceMesh is the router's own dispatch: the mesher a curved face's trim selects, with the
+// decline log threaded to every route that can reach the chart-driven mesher.
+func curvedFaceMesh(f *topo.Face, s geom.Surface, q Quality, log *chartDeclineLog) *Mesh {
 	if m := splineFaceMesh(f, s, q); m != nil {
 		return m // M25: a B-spline face via the metric-aware (u,v) triangulation
 	}
@@ -40,15 +58,15 @@ func tessellateCurvedFace(f *topo.Face, q Quality) *Mesh {
 		// A face with hole loops but NO outer loop wraps the whole closed surface minus those windows —
 		// the genus-1 complement of a cap (a torus minus an oval, a sphere minus a lens). Its region is
 		// exactly what the chart records, so it is meshed from the chart (ADR-0061/ADR-0063).
-		return chartedTrimMesh(f, s, q, "")
+		return chartedTrimMesh(f, s, q, "", log)
 	}
-	m, special, refused := specialCurvedMesh(f, s, outer3D, holes3D, q)
+	m, special, refused := specialCurvedMesh(f, s, outer3D, holes3D, q, log)
 	if special {
 		return m // a cone-apex/sphere fan or cap, sphere box-cut patch, or notched-rim band
 	}
 	outerUV, holesUV, ok := ToUVLoops(s, outer3D, holes3D)
 	if !ok {
-		return meshSeamCrossingFace(f, s, outer3D, holes3D, q, refused) // a loop wrapping the seam: band/cap fallbacks
+		return meshSeamCrossingFace(f, s, outer3D, holes3D, q, refused, log) // a loop wrapping the seam: band/cap fallbacks
 	}
 	if us, vs, isRect := isoRectangleGrid(outerUV); len(holesUV) == 0 && isRect {
 		return structuredGridMesh(s, us, vs) // cylinder/cone wall, fillet face: exact area
@@ -100,7 +118,8 @@ func splineFaceMesh(f *topo.Face, s geom.Surface, q Quality) *Mesh {
 // CDT, which flattens a wrapping band: measured on the merged cocylindrical wall a D-prism leaves on a
 // cylinder of its own radius, 61 free edges. A charted band is meshed from its chart like every other
 // charted face; the best-fit-plane CDT stays for the sphere cap straddling the pole, which records none.
-func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality, refused string) *Mesh {
+func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3,
+	q Quality, refused string, log *chartDeclineLog) *Mesh {
 	if us, vs, isBand := periodicBandGrid(s, outer3D, holes3D); isBand {
 		if m, ok := unequalRimBandMesh(f, s, bandGridStations(s, us, vs), q); ok {
 			return m // rims at DIFFERENT station counts: loft rim-to-rim so each keeps its own shared-edge
@@ -118,26 +137,38 @@ func meshSeamCrossingFace(f *topo.Face, s geom.Surface, outer3D []math.Point3, h
 		if m, ok := closedBandLoftMesh(f, s, q); ok {
 			return m // torus rim-fillet band: loft so each edge ring keeps its own (differing) tessellation
 		}
-		if m, ok := torusTubeBandLoftMesh(f, s, q); ok {
-			return m // spiric closed-rim HOST (J3/A4): a TUBE-wrapping band (meridian circle + canal rail + seam)
-		}
+		// A SIXTH rung stood here — torusTubeBandLoftMesh, a second loft for the tube-wrapping torus band
+		// (a meridian circle + a canal rail + a seam). It is DELETED at #3517: the curved-trim
+		// classification's kindSpiricBand claimed that shape first, so this rung built nothing over
+		// ./kernel/... and ./model/..., and a shadowed second engine for one shape is what the delete-first
+		// rule removes. kindSpiricBand itself is gone in the same issue, so the shape reaches
+		// chartedTrimMesh below either way — and that REPORTS the degradation instead of meshing it
+		// silently a second way.
+		//
 		// A doubly-periodic band that isn't two circles + a seam: the chart says which region it is.
-		return chartedTrimMesh(f, s, q, refused)
+		return chartedTrimMesh(f, s, q, refused, log)
 	}
 	if IsPeriodic(s.UDomain()) != IsPeriodic(s.VDomain()) {
-		return singlyPeriodicWrapMesh(f, s, outer3D, holes3D, q)
+		return singlyPeriodicWrapMesh(f, s, outer3D, holes3D, q, log)
 	}
 	// A seam-wrapping face no wrapping mesher reduced: the chart carries its region (ADR-0063), so the
 	// chart-driven mesher takes it; only a face that carries NO chart falls through to the defect.
-	return chartedTrimMesh(f, s, q, refused)
+	return chartedTrimMesh(f, s, q, refused, log)
 }
 
 // singlyPeriodicWrapMesh meshes a seam-wrapping face on a cylinder, cone or sphere that no wrapping
 // mesher reduced: from the region it RECORDS when it carries one, else through the best-fit-plane CDT,
-// which is the sphere cap straddling the pole (the full-domain grid tears there) and which reports the
-// wall wrap it could not mesh.
-func singlyPeriodicWrapMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3, q Quality) *Mesh {
-	if m, ok := chartFaceMesh(f, s, q); ok {
+// which is the sphere cap straddling the pole (the full-domain grid tears there).
+//
+// This is the site #3520 is about, and it now reports TWICE over, for two different facts.
+// recordUnmeshedWallWrap says the flat CDT cannot cover a FULL WRAP — gated on the surface being a
+// developable side, because a sphere cap over its pole legitimately lands here. The chart decline the
+// log carries says the general mesher gave the face up, and that one is unconditional, because the
+// gated report was blind to a developable whose loop does not wrap AND to every sphere.
+// TestTheNamedSiteReportsADeclineItUsedToSwallow drives exactly that blind spot.
+func singlyPeriodicWrapMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3, holes3D [][]math.Point3,
+	q Quality, log *chartDeclineLog) *Mesh {
+	if m, ok := chartFaceMesh(f, s, q, log); ok {
 		return m
 	}
 	m := trimmedPatchMesh(s, outer3D, holes3D)
@@ -149,9 +180,24 @@ func singlyPeriodicWrapMesh(f *topo.Face, s geom.Surface, outer3D []math.Point3,
 // that CARRIES a parametric trim is meshed from it (region from the chart, points from the shared
 // edges); one that carries none — or whose chart the mesher cannot take — falls to the surface's whole
 // parametric domain, and that degradation is reported, never silent (ADR-0061 stage 5).
-func chartedTrimMesh(f *topo.Face, s geom.Surface, q Quality, refused string) *Mesh {
-	if m, ok := chartFaceMesh(f, s, q); ok {
+func chartedTrimMesh(f *topo.Face, s geom.Surface, q Quality, refused string, log *chartDeclineLog) *Mesh {
+	if m, ok := chartFaceMesh(f, s, q, log); ok {
 		return m
 	}
-	return recordIgnoredTrim(fullDomainGridMesh(s, q), s, len(f.Loops()), refused)
+	// The chart-driven mesher may have recognised this face and given it up, and when it did, ITS reason
+	// is the honest cause. Without this the full-domain report said "no mesher recognised its boundary
+	// on this surface" while one had — a sentence a user can read, on every body carrying both codes
+	// (#3520 review I5).
+	return recordIgnoredTrim(fullDomainGridMesh(s, q), s, len(f.Loops()), namedRefusal(refused, log.reason()))
+}
+
+// namedRefusal is the refusal to report: the SPECIAL mesher's when the classification picked one and
+// its builder gave the shape up, else the chart-driven mesher's. Either is a mesher naming a shape it
+// could not describe; "" only when no mesher claimed the face at all, which is the one case the
+// full-domain report may call unrecognised.
+func namedRefusal(special, chart string) string {
+	if special != "" {
+		return special
+	}
+	return chart
 }

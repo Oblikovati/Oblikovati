@@ -3,6 +3,7 @@
 package brep
 
 import (
+	"oblikovati.org/kernel/diag"
 	"oblikovati.org/kernel/geom"
 	"oblikovati.org/math"
 )
@@ -78,7 +79,7 @@ func closedSurfaceSectionEntersFace(f curvedFace, other *facePartition) bool {
 		if !box.Intersects(inflateBox(boxes[k])) {
 			continue
 		}
-		curves, handled := geom.IntersectSurfacesAnalytic(facePlane(f), sf.surface, closedSurfaceRes(sf))
+		curves, _, handled := curvedImprint(facePlane(f), sf.surface, closedSurfaceRes(sf)) // a PREDICATE: see curvedImprint
 		if !handled {
 			continue
 		}
@@ -111,7 +112,7 @@ func wallSectionConicsTouch(f, wf curvedFace) bool {
 	if !ok {
 		return false
 	}
-	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(f), rs.surface, geom.ResolutionForSize(rs.size()))
+	curves, _, handled := curvedImprint(facePlane(f), rs.surface, geom.ResolutionForSize(rs.size())) // a PREDICATE: see curvedImprint
 	if !handled {
 		return false
 	}
@@ -126,24 +127,21 @@ func wallSectionConicsTouch(f, wf curvedFace) bool {
 // pairUVWallImprints imprints every (exact-frame face of p, ruled wall of other) pair, appending the SAME
 // section curve to the uv face's list and to the wall's list — the shared-coordinate invariant that makes
 // the two sides' fragments weld. ok=false declines the boolean with a named reason (see uvWallSharedImprint).
-func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3, otherIn insideOracle) bool {
+func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3, otherIn insideOracle, rec *diag.Recorder) bool {
 	for i, uf := range p.uv {
 		box := inflateBox(p.uvBox[i])
 		for k, wf := range other.wall {
 			if !box.Intersects(inflateBox(other.wallBox[k])) {
 				continue
 			}
-			onFace, onWall, ok := uvWallSharedImprint(uf, wf, otherIn)
+			onFace, onWall, why, ok := uvWallSharedImprint(uf, wf, otherIn)
 			if !ok {
+				recordSectionDecline(rec, why, uf, wf)
 				return false
 			}
 			res := geom.ResolutionForBox(box)
-			for _, cv := range onFace {
-				uvImp[i] = appendDistinctSection(uvImp[i], cv, res)
-			}
-			for _, cv := range onWall {
-				wallImp[k] = appendDistinctSection(wallImp[k], cv, res)
-			}
+			uvImp[i] = appendDistinctSections(uvImp[i], onFace, res)
+			wallImp[k] = appendDistinctSections(wallImp[k], onWall, res)
 		}
 	}
 	return true
@@ -154,16 +152,22 @@ func pairUVWallImprints(p, other *facePartition, uvImp, wallImp [][]geom.Curve3,
 // unhandled surface pair, a section that clips either trim, or a boundary edge whose crossings cannot
 // be decided in closed form. A conic-framed receiver is no longer among them: conicEdgeCrossings
 // meets an arc boundary with the conic×conic substitution (#3503).
-func uvWallSharedImprint(uf, wf curvedFace, otherIn insideOracle) (onFace, onWall []geom.Curve3, ok bool) {
+func uvWallSharedImprint(uf, wf curvedFace, otherIn insideOracle) (onFace, onWall []geom.Curve3, why sectionRefusal, ok bool) {
 	rs, ruled := ruledFaceOf(wf)
 	if !ruled {
-		return nil, nil, false
+		return nil, nil, refusalf(geom.DeclineNoClosedForm,
+			"this pairing needs a ruled wall; got %T", wf.surface), false
 	}
-	curves, handled := geom.IntersectSurfacesAnalytic(facePlane(uf), rs.surface, geom.ResolutionForSize(rs.size()))
+	curves, reason, handled := curvedImprint(facePlane(uf), rs.surface, geom.ResolutionForSize(rs.size()))
 	if !handled {
-		return nil, nil, false
+		return nil, nil, refusal(reason), false
 	}
-	return collectWallIslands(curves, uf, wf, rs, otherIn)
+	onFace, onWall, ok = collectWallIslands(curves, uf, wf, rs, otherIn)
+	if !ok {
+		return nil, nil, refusalf(geom.DeclineNoClosedForm,
+			"none of the %d plane∩wall section curve(s) is a closed island inside both trims", len(curves)), false
+	}
+	return onFace, onWall, solved(), true
 }
 
 // collectWallIslands keeps the section curves that are imprints (closed islands in both trims) and drops
@@ -411,4 +415,12 @@ func sectionOnWallEdge(cv geom.Curve3, wf curvedFace) bool {
 		}
 	}
 	return false
+}
+
+// appendDistinctSections appends every curve that is not already in the list at this resolution.
+func appendDistinctSections(list, add []geom.Curve3, res geom.Resolution) []geom.Curve3 {
+	for _, cv := range add {
+		list = appendDistinctSection(list, cv, res)
+	}
+	return list
 }

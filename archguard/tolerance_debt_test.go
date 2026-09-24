@@ -15,6 +15,20 @@ package archguard
 // genuinely dimensionless. Both are real work — do not annotate a length tolerance to clear a
 // row.
 //
+// THE TRAP THIS RATCHET CANNOT SEE (#3513, ADR-0061 G9). An annotation is taken at its word: a
+// LENGTH tolerance wearing `// tol:calibrated` is invisible here for as long as it carries the
+// comment, and `tol:calibrated` is the one kind that admits a length. brep's tjTol was an absolute
+// 1e-7 read BOTH as a perpendicular distance to an arrangement edge and as a bound on the
+// dimensionless parameter along it — a comparison across two tolerance classes, in a file this map
+// has never listed, wearing the annotation that says "deliberate". It cost a hang on the RING drill
+// (fixed under #3513) and no line of this guard would ever have pointed at it.
+//
+// So: this map counts UNANNOTATED literals; it does not audit annotated ones, and the ratchet
+// standing at zero for a file says only that nobody added a bare literal to it. Reading a single
+// constant in two classes — a length here and a parameter there — is a defect the annotation
+// vocabulary cannot express at all, because the annotation is per LINE and the defect is per USE.
+// Finding those is a reading task; the guard is a floor under it, never a substitute for it.
+//
 // Baseline taken 2026-09-01: 147 files, 233 lines, against 861 kernel files. The 91 paths the
 // old allowlist named are absent from this map because they are already clean; that is the
 // whole point of inverting it.

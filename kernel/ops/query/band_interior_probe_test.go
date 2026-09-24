@@ -42,20 +42,49 @@ func bandProbeRim(v float64, n int) faceLoop {
 	return faceLoop{edges: []loopEdge{{samples: samples}}, netU: 2 * stdmath.Pi}
 }
 
-// TestWrappingBandProbeSitsMidBand: the probe must land halfway between the two rims, which is the
-// deepest point of the band at its station — not a fraction of a sampling chord off one rim, where the
-// depth shrinks with every extra sample the discretizer takes.
-func TestWrappingBandProbeSitsMidBand(t *testing.T) {
+// bandProbeMinDepthFraction is how far from either rim, as a fraction of the band's own height, the
+// probe must sit. It is the invariant #2247 left behind — a probe a sampling chord off a rim is one
+// two classifiers may legitimately disagree about — stated as a fraction of the BAND rather than as
+// the exact midpoint, which is what #3553 had to give up. 0.25 is the measurement (1/3) with room.
+const bandProbeMinDepthFraction = 0.25
+
+// TestWrappingBandProbeSitsDeepInsideTheBand: the probe must land a fixed fraction of the band's own
+// height from either rim, so its depth is a property of the geometry and not of the discretization.
+//
+// It was "exactly halfway", and that is no longer the construction (#3553). The midpoint is the one
+// fraction a chart's artificial slit can occupy at EVERY station at once — a slit is a
+// constant-parameter line and a region symmetric about it puts it at 1/2 of every span — so a probe
+// there reads a classifier that cannot answer. The rule that replaced it places probes at thirds and
+// quarters of the span, which no single line can all be, and requires them to agree. Depth is what
+// #2247 asked for, and a third of the band is depth.
+func TestWrappingBandProbeSitsDeepInsideTheBand(t *testing.T) {
 	t.Parallel()
 	loops := bandProbeLoops(bandProbeTestVLo, bandProbeTestVHi, 64)
 	_, v, ok := bandInteriorUV(loops)
 	if !ok {
 		t.Fatal("bandInteriorUV declined a plain two-rim bore wall")
 	}
-	want := (bandProbeTestVLo + bandProbeTestVHi) / 2
-	if stdmath.Abs(v-want) > 1e-9 {
-		t.Errorf("probe v=%.9f, want the mid-band %.9f — a probe near a rim is one the trim and the "+
-			"sampled polygon may disagree about (#2247)", v, want)
+	height := bandProbeTestVHi - bandProbeTestVLo
+	depth := stdmath.Min(v-bandProbeTestVLo, bandProbeTestVHi-v)
+	if depth < bandProbeMinDepthFraction*height {
+		t.Errorf("probe v=%.9f sits %.9f from the nearest rim, %.4f of the band's %.9f height; want at "+
+			"least %.2f — a probe near a rim is one the trim and the sampled polygon may disagree about "+
+			"(#2247)", v, depth, depth/height, height, bandProbeMinDepthFraction)
+	}
+}
+
+// TestWrappingBandProbeIsNotTheMidpoint is the other half of #3553, and it is a row rather than a
+// comment because the midpoint is the natural thing for a later reader to restore. A plain two-rim band
+// is symmetric, so its midpoint is exactly where a slit would sit on a charted region of the same
+// shape; the construction must not choose it.
+func TestWrappingBandProbeIsNotTheMidpoint(t *testing.T) {
+	t.Parallel()
+	_, v, ok := bandInteriorUV(bandProbeLoops(bandProbeTestVLo, bandProbeTestVHi, 64))
+	if !ok {
+		t.Fatal("bandInteriorUV declined a plain two-rim bore wall")
+	}
+	if mid := (bandProbeTestVLo + bandProbeTestVHi) / 2; stdmath.Abs(v-mid) < 1e-9 {
+		t.Errorf("probe v=%.9f is the span's midpoint; a chart's slit sits there at every station (#3553)", v)
 	}
 }
 

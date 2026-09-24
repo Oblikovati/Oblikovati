@@ -45,7 +45,7 @@ func RuledFrameOf(s Surface) (RuledFrame, bool) {
 }
 
 // Radius is the surface radius at axial distance v.
-func (f RuledFrame) Radius(v float64) float64 { return f.RadSlope*v + f.RadConst }
+func (f RuledFrame) Radius(v float64) float64 { return float64(f.RadSlope*v) + f.RadConst }
 
 // Ruling returns the straight generator of the surface at absolute azimuth u, parameterised by v
 // (its point at parameter v is the surface point (u, v)).
@@ -87,7 +87,7 @@ func CurveParamAt(c Curve3, p math.Point3) (float64, bool) {
 		if l2 == 0 {
 			return 0, false
 		}
-		return float64(x.StartPoint.VectorTo(p).Dot(d)) / l2, true
+		return float64(float64(x.StartPoint.VectorTo(p).Dot(d)) / l2), true
 	case Line:
 		return float64(x.Origin.VectorTo(p).Dot(x.Dir.AsVector())), true
 	}
@@ -148,7 +148,7 @@ func linePlanePierce(straight, planar Curve3) ([]math.Point3, bool) {
 	if denom == 0 {
 		return nil, false
 	}
-	t := float64(pl.Normal().Dot(o.VectorTo(pl.Origin))) / denom
+	t := float64(float64(pl.Normal().Dot(o.VectorTo(pl.Origin))) / denom)
 	return []math.Point3{o.TranslateBy(dir.Scale(math.Scalar(t)))}, false
 }
 
@@ -206,12 +206,12 @@ func AxialExtent(c Curve3, t0, t1 float64, origin math.Point3, axis math.Vector3
 // axial coordinate is stationary. Along axis the elliptic form reads vc + α·cosθ + β·sinθ, stationary at
 // θ* = atan2(β, α) and θ*+π; the hyperbolic form vc + α·coshθ + β·sinhθ is stationary at tanhθ = −β/α.
 func conicAxialStationaryParams(c Curve3, cf ConicForm, t0, t1 float64, axis math.Vector3) []float64 {
-	alpha := cf.A * float64(cf.Major.AsVector().Dot(axis))
-	beta := cf.B * float64(cf.Minor.AsVector().Dot(axis))
+	alpha := float64(cf.A * float64(cf.Major.AsVector().Dot(axis)))
+	beta := float64(cf.B * float64(cf.Minor.AsVector().Dot(axis)))
 	var thetas []float64
 	if cf.Hyperbolic {
-		if alpha != 0 && stdmath.Abs(beta/alpha) < 1 {
-			thetas = append(thetas, stdmath.Atanh(-beta/alpha))
+		if alpha != 0 && stdmath.Abs(float64(beta/alpha)) < 1 {
+			thetas = append(thetas, stdmath.Atanh(float64(-beta/alpha)))
 		}
 	} else {
 		th := stdmath.Atan2(beta, alpha)
@@ -275,7 +275,7 @@ func axialSearchRange(c Curve3, origin math.Point3, axis math.Vector3, vMin, vMa
 		if ok && covLo <= vMin && covHi >= vMax {
 			return -span, span, true
 		}
-		span *= 2
+		span = float64(span * 2)
 	}
 	return 0, 0, false
 }
@@ -318,7 +318,7 @@ func axialCross(v func(float64) float64, lo, hi, target float64) float64 {
 		return hi
 	}
 	for range axialBisectionCap {
-		mid := (lo + hi) / 2
+		mid := float64((lo + hi) / 2)
 		if stdmath.Abs(v(mid)-target) <= axialValueEps*(1+stdmath.Abs(target)) {
 			return mid
 		}
@@ -331,7 +331,7 @@ func axialCross(v func(float64) float64, lo, hi, target float64) float64 {
 		}
 		lo = mid
 	}
-	return (lo + hi) / 2
+	return float64((lo + hi) / 2)
 }
 
 // axialValueEps is the inversion's accuracy in the AXIAL COORDINATE, relative to the target: the answer

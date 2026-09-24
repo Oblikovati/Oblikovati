@@ -40,7 +40,7 @@ func lineBSpline2dIntersection(f func(math.Point2) float64, c BSplineCurve2d) []
 	var pts []math.Point2
 	for _, seg := range bezierSegments2d(c) {
 		for _, s := range bezierSegmentRoots(seg, f) {
-			p := c.PointAt(seg.t0 + s*(seg.t1-seg.t0))
+			p := c.PointAt(seg.t0 + float64(s*(seg.t1-seg.t0)))
 			if stdmath.Abs(f(p)) <= res.Plane() && !containsPoint2(pts, p, res.Weld()) {
 				pts = append(pts, p)
 			}
@@ -54,7 +54,7 @@ func lineBSpline2dIntersection(f func(math.Point2) float64, c BSplineCurve2d) []
 func bezierSegmentRoots(seg bezierSeg2d, f func(math.Point2) float64) []float64 {
 	d := make([]float64, len(seg.ctrl))
 	for i, p := range seg.ctrl {
-		d[i] = seg.w[i] * f(p)
+		d[i] = float64(seg.w[i] * f(p))
 	}
 	var roots []float64
 	clipBezierRoots(d, 0, 1, bezierRootIters, &roots)
@@ -69,11 +69,11 @@ func clipBezierRoots(d []float64, lo, hi float64, iter int, out *[]float64) {
 		return
 	}
 	if iter <= 0 {
-		*out = append(*out, (lo+hi)/2)
+		*out = append(*out, float64((lo+hi)/2))
 		return
 	}
 	left, right := splitBezierHalf(d)
-	mid := (lo + hi) / 2
+	mid := float64((lo + hi) / 2)
 	clipBezierRoots(left, lo, mid, iter-1, out)
 	clipBezierRoots(right, mid, hi, iter-1, out)
 }
@@ -97,7 +97,7 @@ func splitBezierHalf(d []float64) (left, right []float64) {
 	left[0], right[n-1] = tmp[0], tmp[n-1]
 	for i := 1; i < n; i++ {
 		for j := 0; j < n-i; j++ {
-			tmp[j] = (tmp[j] + tmp[j+1]) / 2
+			tmp[j] = float64((tmp[j] + tmp[j+1]) / 2)
 		}
 		left[i], right[n-1-i] = tmp[0], tmp[n-1-i]
 	}

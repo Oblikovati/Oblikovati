@@ -21,32 +21,32 @@ type hpoint4 struct {
 
 // hpoint4FromCurve maps a 3D control point and its weight to homogeneous form.
 func hpoint4FromCurve(p math.Point3, w float64) hpoint4 {
-	return hpoint4{p.X * w, p.Y * w, p.Z * w, w}
+	return hpoint4{float64(p.X * w), float64(p.Y * w), float64(p.Z * w), w}
 }
 
 // hpoint4FromCurve2d maps a 2D control point and its weight to homogeneous form (z = 0).
 func hpoint4FromCurve2d(p math.Point2, w float64) hpoint4 {
-	return hpoint4{p.X * w, p.Y * w, 0, w}
+	return hpoint4{float64(p.X * w), float64(p.Y * w), 0, w}
 }
 
 // point3 recovers the rational 3D position (A/w) and the weight w.
 func (h hpoint4) point3() (math.Point3, float64) {
-	return math.P3(h.x/h.w, h.y/h.w, h.z/h.w), h.w
+	return math.P3(float64(h.x/h.w), float64(h.y/h.w), float64(h.z/h.w)), h.w
 }
 
 // point2 recovers the rational 2D position (A/w) and the weight w.
 func (h hpoint4) point2() (math.Point2, float64) {
-	return math.P2(h.x/h.w, h.y/h.w), h.w
+	return math.P2(float64(h.x/h.w), float64(h.y/h.w)), h.w
 }
 
 // lerp returns (1−a)·h + a·o, the affine blend used by knot insertion (A5.1):
 // lerp(Rw[i], Rw[i+1], α) = α·Rw[i+1] + (1−α)·Rw[i].
 func (h hpoint4) lerp(o hpoint4, a float64) hpoint4 {
 	return hpoint4{
-		h.x + a*(o.x-h.x),
-		h.y + a*(o.y-h.y),
-		h.z + a*(o.z-h.z),
-		h.w + a*(o.w-h.w),
+		h.x + float64(a*(o.x-h.x)),
+		h.y + float64(a*(o.y-h.y)),
+		h.z + float64(a*(o.z-h.z)),
+		h.w + float64(a*(o.w-h.w)),
 	}
 }
 
@@ -62,14 +62,14 @@ func (h hpoint4) sub(o hpoint4) hpoint4 {
 
 // scale returns h scaled by s.
 func (h hpoint4) scale(s float64) hpoint4 {
-	return hpoint4{h.x * s, h.y * s, h.z * s, h.w * s}
+	return hpoint4{float64(h.x * s), float64(h.y * s), float64(h.z * s), float64(h.w * s)}
 }
 
 // dist returns the Euclidean distance in homogeneous 4-space, the deviation
 // measure knot removal and degree reduction compare against a tolerance (A5.8/A5.11).
 func (h hpoint4) dist(o hpoint4) float64 {
 	dx, dy, dz, dw := h.x-o.x, h.y-o.y, h.z-o.z, h.w-o.w
-	return stdmath.Sqrt(dx*dx + dy*dy + dz*dz + dw*dw)
+	return stdmath.Sqrt(float64(dx*dx) + float64(dy*dy) + float64(dz*dz) + float64(dw*dw))
 }
 
 // curveToHomog converts a rational curve's (ctrl, weights) to homogeneous points.

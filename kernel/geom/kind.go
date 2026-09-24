@@ -74,6 +74,19 @@ type KindedSurface interface {
 	Kind() SurfaceKind
 }
 
+// SurfaceKindOf names s's analytic kind, and reports false for a surface that names none. It is the
+// form a consumer needs when it holds a bare Surface: the assertion stays HERE, where the rules put
+// geometry-kind tests (#2188), instead of being written out at every call site.
+//
+// Example: if k, ok := geom.SurfaceKindOf(s); ok && k == geom.SurfaceCylinder { /* ... */ }
+func SurfaceKindOf(s Surface) (SurfaceKind, bool) {
+	kinded, ok := s.(KindedSurface)
+	if !ok {
+		return 0, false
+	}
+	return kinded.Kind(), true
+}
+
 func (p Plane) Kind() SurfaceKind              { return SurfacePlane }
 func (c Cylinder) Kind() SurfaceKind           { return SurfaceCylinder }
 func (s Sphere) Kind() SurfaceKind             { return SurfaceSphere }
@@ -118,7 +131,7 @@ const (
 	CurveSpiric
 	CurveTorusCyl
 	CurveRuledQuadric
-	CurveTorusQuadric
+	CurveTorusSection
 	// curveKindCount is the sentinel one past the last real kind.
 	curveKindCount
 )
@@ -147,7 +160,7 @@ var curveKindNames = [...]string{
 	CurveSpiric:        "SpiricArc",
 	CurveTorusCyl:      "TorusCylinderArc",
 	CurveRuledQuadric:  "RuledQuadricArc",
-	CurveTorusQuadric:  "TorusQuadricArc",
+	CurveTorusSection:  "TorusSectionArc",
 }
 
 // CurveKinds returns every CurveKind in declaration order (see SurfaceKinds).
@@ -198,6 +211,6 @@ var (
 	_ KindedCurve = TorusCylinderArc{}
 	_ KindedCurve = RuledQuadricArc{}
 	_ KindedCurve = RuledQuadricLoop{}
-	_ KindedCurve = TorusQuadricArc{}
-	_ KindedCurve = TorusQuadricLoop{}
+	_ KindedCurve = TorusSectionArc{}
+	_ KindedCurve = TorusSectionLoop{}
 )

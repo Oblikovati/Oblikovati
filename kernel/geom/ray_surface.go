@@ -59,15 +59,15 @@ func planeRayHits(p Plane, ray Line, tMax float64) []RayHit {
 	if stdmath.Abs(denom) < rayCoeffTol {
 		return nil
 	}
-	t := float64(ray.Origin.VectorTo(p.Origin).Dot(n)) / denom
+	t := float64(float64(ray.Origin.VectorTo(p.Origin).Dot(n)) / denom)
 	return rayHitsFromRoots(p, ray, tMax, t)
 }
 
 // sphereRayHits solves |O + T·D − C|² = R² (monic in T because D is unit).
 func sphereRayHits(sp Sphere, ray Line, tMax float64) []RayHit {
 	m := sp.Center.VectorTo(ray.Origin) // O − C
-	b := 2 * float64(m.Dot(ray.Dir.AsVector()))
-	c := float64(m.Dot(m)) - sp.Radius*sp.Radius
+	b := float64(2 * float64(m.Dot(ray.Dir.AsVector())))
+	c := float64(m.Dot(m)) - float64(sp.Radius*sp.Radius)
 	return rayHitsFromRoots(sp, ray, tMax, rayQuadraticRoots(1, b, c)...)
 }
 
@@ -78,8 +78,8 @@ func cylinderRayHits(cy Cylinder, ray Line, tMax float64) []RayHit {
 	dPerp := perpTo(ray.Dir.AsVector(), axis)
 	wPerp := perpTo(cy.Origin.VectorTo(ray.Origin), axis) // (O − Pa)⊥
 	a := float64(dPerp.Dot(dPerp))
-	b := 2 * float64(wPerp.Dot(dPerp))
-	c := float64(wPerp.Dot(wPerp)) - cy.Radius*cy.Radius
+	b := float64(2 * float64(wPerp.Dot(dPerp)))
+	c := float64(wPerp.Dot(wPerp)) - float64(cy.Radius*cy.Radius)
 	return rayHitsFromRoots(cy, ray, tMax, rayQuadraticRoots(a, b, c)...)
 }
 
@@ -90,10 +90,10 @@ func coneRayHits(co Cone, ray Line, tMax float64) []RayHit {
 	w := co.Apex.VectorTo(ray.Origin) // O − V
 	d := ray.Dir.AsVector()
 	dv, wv := float64(d.Dot(axis)), float64(w.Dot(axis))
-	cos2 := stdmath.Cos(co.HalfAngle) * stdmath.Cos(co.HalfAngle)
-	a := dv*dv - cos2
-	b := 2 * (wv*dv - cos2*float64(d.Dot(w)))
-	c := wv*wv - cos2*float64(w.Dot(w))
+	cos2 := float64(stdmath.Cos(co.HalfAngle) * stdmath.Cos(co.HalfAngle))
+	a := float64(dv*dv) - cos2
+	b := float64(2 * (float64(wv*dv) - float64(cos2*float64(d.Dot(w)))))
+	c := float64(wv*wv) - float64(cos2*float64(w.Dot(w)))
 	return coneNappeHits(co, ray, tMax, wv, dv, rayQuadraticRoots(a, b, c))
 }
 
@@ -102,7 +102,7 @@ func coneRayHits(co Cone, ray Line, tMax float64) []RayHit {
 func coneNappeHits(co Cone, ray Line, tMax, wv, dv float64, roots []float64) []RayHit {
 	kept := roots[:0]
 	for _, t := range roots {
-		if wv+t*dv >= 0 {
+		if wv+float64(t*dv) >= 0 {
 			kept = append(kept, t)
 		}
 	}
@@ -139,18 +139,18 @@ func rayQuadraticRoots(a, b, c float64) []float64 {
 		if stdmath.Abs(b) < rayCoeffTol {
 			return nil
 		}
-		return []float64{-c / b}
+		return []float64{float64(-c / b)}
 	}
-	disc := b*b - 4*a*c
+	disc := float64(b*b) - float64(4*a*c)
 	if disc < 0 {
 		return nil
 	}
 	sq := stdmath.Sqrt(disc)
-	q := -0.5 * (b + stdmath.Copysign(sq, b))
+	q := float64(-0.5 * (b + stdmath.Copysign(sq, b)))
 	if stdmath.Abs(q) < rayCoeffTol {
-		return []float64{q / a}
+		return []float64{float64(q / a)}
 	}
-	return []float64{q / a, c / q}
+	return []float64{float64(q / a), float64(c / q)}
 }
 
 // rayHitsFromRoots turns solved ray parameters into forward hits within [0, tMax], sorted.

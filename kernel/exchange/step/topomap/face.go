@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"oblikovati.org/kernel/brep"
 	"oblikovati.org/kernel/exchange/step/geommap"
 	"oblikovati.org/kernel/exchange/step/part21"
 	"oblikovati.org/kernel/geom"
@@ -251,13 +252,55 @@ func loopBoxDiagonal(uses []topo.Use) float64 {
 	return float64(loopBox(uses).Diagonal().Length())
 }
 
-// addBuiltFace adds the face forward or reversed, with a stable imported lineage.
+// addBuiltFace adds the face forward or reversed, with a stable imported lineage, and records the
+// face's parametric trim when its surface is periodic (ADR-0063, #3550).
+//
+// An imported face used to arrive with chart = nil, always. On a PERIODIC surface the 3-D loops alone
+// do not say which of two complementary regions the face is — a torus band's two rims bound the strip
+// between them and the strip the other way round the seam — so the general chart-driven mesher
+// declines such a face outright and it falls to whatever bespoke arm recognises its shape. Measured on
+// occtparity simple/J3 and bfuseblend/A4: every face of both bodies recorded chart = 0, not only the
+// tori. brep.ChartOfFace derives the contours from the loops this assembler has just wound, which is
+// the producer ADR-0063 asks for, and DECLINES rather than guessing where they do not determine one.
 func (a *assembler) addBuiltFace(surface geom.Surface, sameSense bool, loops []topo.LoopSpec) {
 	lineage := topo.NewLineage(topo.Tok(a.feat, "face", a.nextF))
 	a.nextF++
+	recordImportedChart(a.addOrientedFace(surface, sameSense, lineage, loops))
+}
+
+// addOrientedFace adds the face in the sense STEP declared and returns it.
+func (a *assembler) addOrientedFace(surface geom.Surface, sameSense bool, lineage topo.Lineage,
+	loops []topo.LoopSpec) *topo.Face {
 	if sameSense {
-		a.builder.AddFace(surface, lineage, loops...)
+		return a.builder.AddFace(surface, lineage, loops...)
+	}
+	return a.builder.AddReversedFace(surface, lineage, loops...)
+}
+
+// recordImportedChart derives and stores a periodic face's chart, or leaves it nil.
+//
+// ADR-0063 made the chart part of a face's definition, because the 3-D loops of a face on a periodic
+// surface do not say which of two complementary regions it is. kernel/brep records one on every face
+// its (u, v) arrangement builds; nothing else did, so an imported body reached the tessellator with
+// chart = nil on every face and the general chart-driven mesher declined it outright — which is what
+// kept the bespoke arms of the curved-trim classification alive (#3550).
+//
+// IT WAS OFF, and what held it off was a tier-1 BUDGET rather than any doubt about the chart. A face
+// whose trim does not DEVELOP reaches the covering, and the covering used to triangulate its whole
+// interior grid: kernel/ops/tessellate's TestImportedAnalyticPrimitivesWatertight read 73 s with this
+// on against 0.95 s with it off, on a 60 s guard budget. The covering now emits that grid as a
+// structured quad mesh and triangulates only its boundary band (chart_structured_interior.go), and
+// the same gate reads 6.37 s. TestTessellationBudget reads 0.18 s against its 2.15 s ceiling.
+func recordImportedChart(f *topo.Face) {
+	if !chartImportedFaces {
 		return
 	}
-	a.builder.AddReversedFace(surface, lineage, loops...)
+	if chart, ok := brep.ChartOfFace(f); ok {
+		f.SetChart(chart)
+	}
 }
+
+// chartImportedFaces is what an imported face's chart used to be gated on. It is kept as ONE named
+// constant, now true, so the switch this file's history turns on is still a thing a reader can find
+// and a bisect can flip. See recordImportedChart for the budgets that decided it.
+const chartImportedFaces = true

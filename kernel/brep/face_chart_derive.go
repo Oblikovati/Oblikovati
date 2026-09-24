@@ -171,6 +171,13 @@ func ringOverOnePeriod(ring []math.Point2, coord func(math.Point2) float64, at, 
 
 // crossingSegment is the segment of a one-period ring that `at` falls in — the first whose far end is
 // strictly past it, so the crossing never lands on the segment's own end and duplicates a vertex.
+//
+// The ok=false cannot fire on a ring ringOverOnePeriod produced, and that is a statement about the
+// caller rather than a hope (#3527). Write d = (at − coord(ring[0]))·sign. That function shifts by
+// base·sign = 2π·floor(d/2π) and appends the first point again a whole turn on, so the LAST point sits
+// at (coord − at)·sign = 2π(floor(d/2π) + 1) − d, which is strictly positive for every d — the final
+// segment always satisfies the test. It is kept because the signature is the honest one for a search,
+// and because recutRing's decline is the same shape either way.
 func crossingSegment(turn []math.Point2, coord func(math.Point2) float64, at, sign float64) (int, bool) {
 	for k := 0; k+1 < len(turn); k++ {
 		if (coord(turn[k+1])-at)*sign > 0 {
@@ -193,6 +200,13 @@ func rotatedAtCrossing(turn []math.Point2, coord func(math.Point2) float64, at f
 }
 
 // crossingPoint interpolates the ring's own polyline where it reaches `at`.
+//
+// The span==0 guard cannot fire from rotatedAtCrossing either. crossingSegment returns the FIRST segment
+// whose far end is strictly past `at` in the travel direction, so coord(q) is strictly past it; and
+// ringOverOnePeriod puts coord(turn[0]) at or before it ((at − coord)·sign lands in [0, 2π) by
+// construction), while for k ≥ 1 every earlier segment failed the same strict test. So coord(p) ≤ at <
+// coord(q) in the travel direction and the span is nonzero. The guard stays because a zero span would
+// otherwise be a divide, and returning p is the only answer that is on the ring (#3527).
 func crossingPoint(p, q math.Point2, coord func(math.Point2) float64, at float64) math.Point2 {
 	span := coord(q) - coord(p)
 	if span == 0 {

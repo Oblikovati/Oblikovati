@@ -39,7 +39,7 @@ func TestCurvedVolumeBracketRejectsGrossError(t *testing.T) {
 		{"intersect too big", Intersect, 55, true},         // 55 > 30+10: wrong lobe kept
 	}
 	for _, c := range cases {
-		if got := volumeOutOfBracket(c.op, va, vb, c.bodyVol, tol); got != c.bad {
+		if got := volumeOutOfBracket(c.op, volumeTriple{va, vb, c.bodyVol}, tol); got != c.bad {
 			t.Errorf("%s: volumeOutOfBracket(%v, body=%g) = %v, want %v", c.name, c.op, c.bodyVol, got, c.bad)
 		}
 	}

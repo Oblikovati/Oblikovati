@@ -78,12 +78,12 @@ type gridSeg struct{ a, b math.Point3 }
 
 // marchSquares samples f on the grid and emits the zero-contour segment(s) of each cell.
 func marchSquares(s Surface, f scalarField, g SurfaceGrid) []gridSeg {
-	du := (g.UMax - g.UMin) / float64(g.USteps)
-	dv := (g.VMax - g.VMin) / float64(g.VSteps)
+	du := float64((g.UMax - g.UMin) / float64(g.USteps))
+	dv := float64((g.VMax - g.VMin) / float64(g.VSteps))
 	var segs []gridSeg
 	for i := 0; i < g.USteps; i++ {
 		for j := 0; j < g.VSteps; j++ {
-			u0, v0 := g.UMin+float64(i)*du, g.VMin+float64(j)*dv
+			u0, v0 := g.UMin+float64(float64(i)*du), g.VMin+float64(float64(j)*dv)
 			segs = appendCellSegments(segs, s, f, u0, v0, u0+du, v0+dv)
 		}
 	}
@@ -147,7 +147,7 @@ func snapTinyToZero(v float64) float64 {
 func bisectEdge(s Surface, f scalarField, ua, va, fa, ub, vb float64) math.Point3 {
 	lo, hi := 0.0, 1.0
 	for range traceBisectIter {
-		mid := (lo + hi) / 2
+		mid := float64((lo + hi) / 2)
 		um, vm := math.Lerp(ua, ub, mid), math.Lerp(va, vb, mid)
 		fm := f(um, vm)
 		if fm == 0 {
@@ -159,7 +159,7 @@ func bisectEdge(s Surface, f scalarField, ua, va, fa, ub, vb float64) math.Point
 			lo, fa = mid, fm
 		}
 	}
-	m := (lo + hi) / 2
+	m := float64((lo + hi) / 2)
 	return s.PointAt(math.Lerp(ua, ub, m), math.Lerp(va, vb, m))
 }
 

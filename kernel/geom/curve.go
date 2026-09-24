@@ -29,12 +29,12 @@ type Curve2 interface {
 // on a circle with the orthonormal in-plane basis (u, v).
 func pointOnCircle(center math.Point3, u, v math.Vector3, r, a float64) math.Point3 {
 	cos, sin := cosSin(a)
-	return center.TranslateBy(u.Scale(r * cos).Add(v.Scale(r * sin)))
+	return center.TranslateBy(u.Scale(float64(r * cos)).Add(v.Scale(float64(r * sin))))
 }
 
 // circleTangent returns the unnormalized derivative of [pointOnCircle] with
 // respect to a: r·(−sin(a)·u + cos(a)·v).
 func circleTangent(u, v math.Vector3, r, a float64) math.Vector3 {
 	cos, sin := cosSin(a)
-	return u.Scale(-r * sin).Add(v.Scale(r * cos))
+	return u.Scale(float64(-r * sin)).Add(v.Scale(float64(r * cos)))
 }

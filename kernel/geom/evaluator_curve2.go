@@ -27,11 +27,11 @@ func CurveLength2(c Curve2, from, to float64) float64 {
 	case Line2d:
 		return hi - lo
 	case LineSegment2d:
-		return (hi - lo) * g.Length()
+		return float64((hi - lo) * g.Length())
 	case Circle2d:
-		return (hi - lo) * g.Circumference()
+		return float64((hi - lo) * g.Circumference())
 	case Arc2d:
-		return (hi - lo) * g.Length()
+		return float64((hi - lo) * g.Length())
 	case Polyline2d:
 		return polylineLengthBetween2(g, lo, hi)
 	default:
@@ -60,10 +60,10 @@ func polylineLengthBetween2(p Polyline2d, lo, hi float64) float64 {
 	segs := len(p.Vertices) - 1
 	total := 0.0
 	for i := range segs {
-		s0, s1 := float64(i)/float64(segs), float64(i+1)/float64(segs)
+		s0, s1 := float64(float64(i)/float64(segs)), float64(float64(i+1)/float64(segs))
 		overlap := stdmath.Min(hi, s1) - stdmath.Max(lo, s0)
 		if overlap > 0 {
-			total += overlap * float64(segs) * p.Vertices[i].DistanceTo(p.Vertices[i+1])
+			total += float64(overlap * float64(segs) * p.Vertices[i].DistanceTo(p.Vertices[i+1]))
 		}
 	}
 	return total
@@ -97,11 +97,11 @@ func constantSpeedParam2(c Curve2, from, length float64) (float64, bool) {
 	case Line2d:
 		return from + length, true
 	case LineSegment2d:
-		return math.Clamp01(from + length/g.Length()), true
+		return math.Clamp01(from + float64(length/g.Length())), true
 	case Circle2d:
-		return from + length/g.Circumference(), true
+		return from + float64(length/g.Circumference()), true
 	case Arc2d:
-		return math.Clamp01(from + length/g.Length()), true
+		return math.Clamp01(from + float64(length/g.Length())), true
 	default:
 		return 0, false
 	}
@@ -117,9 +117,9 @@ func CurveStrokes2(c Curve2, from, to, tolerance float64) []math.Point2 {
 	if lo == hi {
 		return pts
 	}
-	quarter := (hi - lo) / 4 // see CurveStrokes3: break closed-curve symmetry
+	quarter := float64((hi - lo) / 4) // see CurveStrokes3: break closed-curve symmetry
 	for i := range 4 {
-		a, b := lo+float64(i)*quarter, lo+float64(i+1)*quarter
+		a, b := lo+float64(float64(i)*quarter), lo+float64(float64(i+1)*quarter)
 		strokeRecurse2(c, a, b, c.PointAt(a), c.PointAt(b), tolerance, strokeMaxDepth, &pts)
 	}
 	return pts
@@ -130,7 +130,7 @@ func polylineStrokeVertices2(p Polyline2d, lo, hi float64) []math.Point2 {
 	segs := len(p.Vertices) - 1
 	pts := []math.Point2{p.PointAt(lo)}
 	for i := 1; i <= segs; i++ {
-		t := float64(i) / float64(segs)
+		t := float64(float64(i) / float64(segs))
 		if t > lo && t < hi {
 			pts = append(pts, p.Vertices[i])
 		}
@@ -141,7 +141,7 @@ func polylineStrokeVertices2(p Polyline2d, lo, hi float64) []math.Point2 {
 // strokeRecurse2 subdivides until the curve midpoint is within tolerance of
 // the chord.
 func strokeRecurse2(c Curve2, a, b float64, pa, pb math.Point2, tol float64, depth int, pts *[]math.Point2) {
-	m := (a + b) / 2
+	m := float64((a + b) / 2)
 	pm := c.PointAt(m)
 	if depth <= 0 || chordDeviation2(pa, pb, pm) <= tol {
 		*pts = append(*pts, pb)
@@ -158,7 +158,7 @@ func chordDeviation2(a, b, p math.Point2) float64 {
 	if den == 0 {
 		return a.DistanceTo(p)
 	}
-	t := math.Clamp01(float64(a.VectorTo(p).Dot(chord)) / den)
+	t := math.Clamp01(float64(float64(a.VectorTo(p).Dot(chord)) / den))
 	return a.TranslateBy(chord.Scale(t)).DistanceTo(p)
 }
 

@@ -73,7 +73,7 @@ func offsetHostToward(host Surface, radius float64, ends [2]math.Point3) (Offset
 		return OffsetSurface{}, fmt.Errorf(
 			"offsetHostToward: ends %v straddle host %T — cavity side ambiguous, expected both on one side", ends, host)
 	}
-	return NewOffsetSurface(host, s*radius)
+	return NewOffsetSurface(host, float64(s*radius))
 }
 
 // cavitySide returns +1 or -1: the sign of the host normal that points toward the ball-center
@@ -173,7 +173,7 @@ func spineTraceWindow(base Surface, ends [2]math.Point3) SurfaceGrid {
 // padRange returns [min-pad, max+pad] over a and b.
 func padRange(a, b float64) (lo, hi float64) {
 	lo, hi = stdmath.Min(a, b), stdmath.Max(a, b)
-	pad := stdmath.Max(spineWindowPadFrac*(hi-lo), spineWindowPadFloor)
+	pad := stdmath.Max(float64(spineWindowPadFrac*(hi-lo)), spineWindowPadFloor)
 	return lo - pad, hi + pad
 }
 
@@ -214,7 +214,7 @@ const endSnapGapFactor = 2.0 // tol:parametric — max end-snap gap as a multipl
 // failure the error carries the measured gap and the tolerance it exceeded, per the error-message rule.
 func assertTraceReachesEnd(poly []math.Point3, idx int, end math.Point3, weld float64) error {
 	gap, chord := nearestVertexGap(poly, idx, end)
-	tol := stdmath.Max(endSnapGapFactor*chord, weld)
+	tol := stdmath.Max(float64(endSnapGapFactor*chord), weld)
 	if gap > tol {
 		return fmt.Errorf(
 			"assertTraceReachesEnd: raw traced vertex %v is %g from family-center end %v, want <= %g "+
@@ -247,7 +247,7 @@ func nearestVertexGap(poly []math.Point3, idx int, target math.Point3) (gap, loc
 // smallest AND within a gate of each end (a quarter of the end separation) — the correct SSI branch
 // is the one carrying both family centers; other branches carry at most one. nil when none qualify.
 func polylineThroughEnds(curves [][]math.Point3, ends [2]math.Point3) []math.Point3 {
-	gate := 0.25 * float64(ends[0].DistanceTo(ends[1]))
+	gate := float64(0.25 * float64(ends[0].DistanceTo(ends[1])))
 	var best []math.Point3
 	bestScore := stdmath.Inf(1)
 	for _, c := range curves {

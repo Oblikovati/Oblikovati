@@ -38,8 +38,8 @@ func Scale3(sx, sy Scalar) Matrix3 {
 func Rotation3(angle Scalar, center Point2) Matrix3 {
 	c, s := stdmath.Cos(angle), stdmath.Sin(angle)
 	// translation keeps center fixed: center − R·center.
-	tx := center.X - (c*center.X - s*center.Y)
-	ty := center.Y - (s*center.X + c*center.Y)
+	tx := center.X - (Scalar(c*center.X) - Scalar(s*center.Y))
+	ty := center.Y - (Scalar(s*center.X) + Scalar(c*center.Y))
 	return Matrix3{[9]Scalar{
 		c, -s, tx,
 		s, c, ty,
@@ -80,16 +80,16 @@ func Matrix3FromCells(cells [9]Scalar) Matrix3 { return Matrix3{m: cells} }
 // TransformPoint applies the full affine transform to p (translation included).
 func (t Matrix3) TransformPoint(p Point2) Point2 {
 	return Point2{
-		t.m[0]*p.X + t.m[1]*p.Y + t.m[2],
-		t.m[3]*p.X + t.m[4]*p.Y + t.m[5],
+		Scalar(t.m[0]*p.X) + Scalar(t.m[1]*p.Y) + t.m[2],
+		Scalar(t.m[3]*p.X) + Scalar(t.m[4]*p.Y) + t.m[5],
 	}
 }
 
 // TransformVector applies only the linear part to v (translation ignored).
 func (t Matrix3) TransformVector(v Vector2) Vector2 {
 	return Vector2{
-		t.m[0]*v.X + t.m[1]*v.Y,
-		t.m[3]*v.X + t.m[4]*v.Y,
+		Scalar(t.m[0]*v.X) + Scalar(t.m[1]*v.Y),
+		Scalar(t.m[3]*v.X) + Scalar(t.m[4]*v.Y),
 	}
 }
 

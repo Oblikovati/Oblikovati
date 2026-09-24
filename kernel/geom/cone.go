@@ -65,7 +65,7 @@ func (c Cone) radial(u float64) math.Vector3 {
 
 // PointAt returns the point at (u, v).
 func (c Cone) PointAt(u, v float64) math.Point3 {
-	r := v * stdmath.Tan(c.HalfAngle)
+	r := float64(v * stdmath.Tan(c.HalfAngle))
 	return c.Apex.TranslateBy(c.AxisDir.AsVector().Scale(v)).TranslateBy(c.radial(u).Scale(r))
 }
 
@@ -73,7 +73,7 @@ func (c Cone) PointAt(u, v float64) math.Point3 {
 func (c Cone) DerivativesAt(u, v float64) (du, dv math.Vector3) {
 	t := stdmath.Tan(c.HalfAngle)
 	cos, sin := cosSin(u)
-	du = c.Ref.AsVector().Scale(-v * t * sin).Add(c.binormal.Scale(v * t * cos))
+	du = c.Ref.AsVector().Scale(float64(-v * t * sin)).Add(c.binormal.Scale(float64(v * t * cos)))
 	dv = c.AxisDir.AsVector().Add(c.radial(u).Scale(t))
 	return du, dv
 }

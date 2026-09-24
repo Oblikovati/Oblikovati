@@ -37,7 +37,7 @@ func segmentParamAtPoint2(g LineSegment2d, p math.Point2) float64 {
 	if den == 0 {
 		return 0
 	}
-	return math.Clamp01(float64(g.StartPoint.VectorTo(p).Dot(chord)) / den)
+	return math.Clamp01(float64(float64(g.StartPoint.VectorTo(p).Dot(chord)) / den))
 }
 
 // circleParamAtPoint2 inverts the angle of p about the center; the center
@@ -47,7 +47,7 @@ func circleParamAtPoint2(g Circle2d, p math.Point2) (float64, SolutionNature) {
 	if float64(d.Length()) <= 1e-12*stdmath.Max(1, g.Radius) { // tol:numeric — point AT the circle/arc centre: param undefined (relative to radius)
 		return 0, InfinitelyManySolutions
 	}
-	return wrap2pi(stdmath.Atan2(d.Y, d.X)) / twoPi, UniqueSolution
+	return float64(wrap2pi(stdmath.Atan2(d.Y, d.X)) / twoPi), UniqueSolution
 }
 
 // arcParamAtPoint2 inverts the angle and resolves it against the sweep.
@@ -77,10 +77,10 @@ func polylineParamAtPoint2(g Polyline2d, p math.Point2) (float64, SolutionNature
 		// FINITE reference: seeding best with +Inf made 1e-12*best = +Inf, so best-tol was NaN and
 		// the "strictly closer" guard was always false — every point on a polyline resolved to the
 		// start (param 0). Base it on the candidate distance, and always accept the first segment.
-		tol := 1e-12 * stdmath.Max(1, d) // tol:numeric — first-segment acceptance, relative to candidate distance
+		tol := float64(1e-12 * stdmath.Max(1, d)) // tol:numeric — first-segment acceptance, relative to candidate distance
 		switch {
 		case stdmath.IsInf(best, 1) || d < best-tol:
-			best, bestT, ties, bestFoot = d, (float64(i)+local)/float64(segs), 0, foot
+			best, bestT, ties, bestFoot = d, float64((float64(i)+local)/float64(segs)), 0, foot
 		case d <= best+tol && foot.DistanceTo(bestFoot) > math.DefaultTolerance:
 			ties++
 		}
@@ -103,7 +103,7 @@ func genericParamAtPoint2(c Curve2, p math.Point2) (float64, SolutionNature) {
 	for _, d := range ds {
 		best = stdmath.Min(best, d)
 	}
-	tol := 1e-9 * stdmath.Max(1, best) // tol:numeric — near-minimum clustering, relative to best distance
+	tol := float64(1e-9 * stdmath.Max(1, best)) // tol:numeric — near-minimum clustering, relative to best distance
 	if count := nearCount(ds, best, tol); count > closestSamples/2 {
 		return ts[0], InfinitelyManySolutions
 	}
@@ -115,7 +115,7 @@ func sampleDistances2(c Curve2, p math.Point2, lo, hi float64) (ts, ds []float64
 	ts = make([]float64, closestSamples+1)
 	ds = make([]float64, closestSamples+1)
 	for i := range ts {
-		ts[i] = lo + (hi-lo)*float64(i)/float64(closestSamples)
+		ts[i] = lo + float64((hi-lo)*float64(i)/float64(closestSamples))
 		ds[i] = c.PointAt(ts[i]).DistanceTo(p)
 	}
 	return ts, ds
@@ -137,7 +137,7 @@ func clusterMinima2(c Curve2, p math.Point2, ts, ds []float64, best, tol float64
 			refinedBest, bestT, clusters = rd, t, clusters[:0]
 		}
 		if rd <= refinedBest+tol {
-			clusters = appendCluster(clusters, t, (hi-lo)/closestSamples)
+			clusters = appendCluster(clusters, t, float64((hi-lo)/closestSamples))
 		}
 	}
 	if len(clusters) > 1 {
@@ -157,7 +157,7 @@ func refineClosest2(c Curve2, p math.Point2, t, lo, hi float64) float64 {
 		if dg == 0 || stdmath.Abs(g) < 1e-14 { // tol:numeric — Newton denominator near-zero guard
 			return t
 		}
-		t = math.Clamp(t-g/dg, lo, hi)
+		t = math.Clamp(t-float64(g/dg), lo, hi)
 	}
 	return t
 }
@@ -196,14 +196,14 @@ func sinusoidBox2(center math.Point2, major, minor math.Vector2, a, b, start, sw
 	angles := []float64{start, start + sweep}
 	for axis := range 2 {
 		mj, mn := vectorComponent2(major, axis), vectorComponent2(minor, axis)
-		extremum := stdmath.Atan2(b*mn, a*mj)
+		extremum := stdmath.Atan2(float64(b*mn), float64(a*mj))
 		angles = append(angles, anglesInSweep(extremum, start, sweep)...)
 		angles = append(angles, anglesInSweep(extremum+stdmath.Pi, start, sweep)...)
 	}
 	pts := make([]math.Point2, len(angles))
 	for i, ang := range angles {
 		cos, sin := cosSin(ang)
-		pts[i] = center.TranslateBy(major.Scale(a * cos).Add(minor.Scale(b * sin)))
+		pts[i] = center.TranslateBy(major.Scale(float64(a * cos)).Add(minor.Scale(float64(b * sin))))
 	}
 	return math.Box2dFromPoints(pts...)
 }
@@ -221,7 +221,7 @@ func sampledBox2(c Curve2) math.Box2d {
 	lo, hi := c.Domain()
 	pts := make([]math.Point2, 257)
 	for i := range pts {
-		pts[i] = c.PointAt(lo + (hi-lo)*float64(i)/256)
+		pts[i] = c.PointAt(lo + float64((hi-lo)*float64(i)/256))
 	}
 	b := math.Box2dFromPoints(pts...)
 	pad := sampledBoxPadding2(c, lo, hi)
@@ -235,8 +235,8 @@ func sampledBox2(c Curve2) math.Box2d {
 func sampledBoxPadding2(c Curve2, lo, hi float64) float64 {
 	maxSpeed := 0.0
 	for i := 0; i <= 64; i++ {
-		d1, _, _ := CurveDerivatives2(c, lo+(hi-lo)*float64(i)/64)
+		d1, _, _ := CurveDerivatives2(c, lo+float64((hi-lo)*float64(i)/64))
 		maxSpeed = stdmath.Max(maxSpeed, float64(d1.Length()))
 	}
-	return maxSpeed * (hi - lo) / 512
+	return float64(maxSpeed * (hi - lo) / 512)
 }

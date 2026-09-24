@@ -20,16 +20,31 @@ import (
 func TestBodyMeshDiagnosticsHarvestsTheTessellatorsReport(t *testing.T) {
 	t.Parallel()
 	got := query.BodyMeshDiagnostics(degenerate.CrossedTrimBody(), tessellate.DefaultQuality())
-	if len(got) != 1 {
-		t.Fatalf("harvested %d diagnostics from a two-face self-crossing trim, want 1 collapsed entry: %v",
-			len(got), got)
+	// The harvest collapses PER CODE, so the row reads the code it is about rather than the total. It
+	// used to assert a total of 1, which was the same thing while this body raised one code; it now
+	// also misses its chord tolerance and says so (CodeFaceChordNotMet), and a count would have made
+	// that honest new report look like a harvesting bug.
+	d, found := harvestedCode(got, tessellate.CodePatchCoverage)
+	if !found {
+		t.Fatalf("harvested %v from a two-face self-crossing trim, want a %s entry",
+			got, tessellate.CodePatchCoverage)
 	}
-	if got[0].Code != tessellate.CodePatchCoverage || got[0].Severity != diag.Defect {
-		t.Errorf("harvested %v, want a %s Defect", got[0], tessellate.CodePatchCoverage)
+	if d.Severity != diag.Defect {
+		t.Errorf("harvested %v, want a %s Defect", d, tessellate.CodePatchCoverage)
 	}
 	// Both faces carry the flaw, so the collapsed entry must say so rather than imply a single face.
-	if !strings.Contains(got[0].Detail, "meshing 2 of the body's faces") {
-		t.Errorf("collapsed detail %q does not report the 2 affected faces", got[0].Detail)
+	if !strings.Contains(d.Detail, "meshing 2 of the body's faces") {
+		t.Errorf("collapsed detail %q does not report the 2 affected faces", d.Detail)
+	}
+	// One entry per code is what "collapsed" means, and that is what the row actually guards.
+	seen := map[diag.Code]int{}
+	for _, e := range got {
+		seen[e.Code]++
+	}
+	for code, n := range seen {
+		if n != 1 {
+			t.Errorf("the harvest carries %s %d times; per-face reports must collapse to one entry", code, n)
+		}
 	}
 }
 
@@ -70,4 +85,14 @@ func TestBodyMeshDiagnosticsOnNilBodyIsEmpty(t *testing.T) {
 	if got := query.BodyMeshDiagnostics(nil, tessellate.DefaultQuality()); got != nil {
 		t.Errorf("nil body reported %v, want nil", got)
 	}
+}
+
+// harvestedCode is the harvested entry for one code, if the body raised it.
+func harvestedCode(ds []diag.Diagnostic, code diag.Code) (diag.Diagnostic, bool) {
+	for _, d := range ds {
+		if d.Code == code {
+			return d, true
+		}
+	}
+	return diag.Diagnostic{}, false
 }

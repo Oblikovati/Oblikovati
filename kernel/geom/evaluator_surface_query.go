@@ -67,7 +67,7 @@ func coneIso(g Cone, uDirection bool, param float64) (Curve3, error) {
 		return nil, fmt.Errorf("geom: cone iso-curve at v = %g is degenerate (apex at v = 0)", param)
 	}
 	center := g.Apex.TranslateBy(g.AxisDir.AsVector().Scale(param))
-	return Circle{Center: center, Normal: g.AxisDir, RefDir: g.Ref, Radius: param * stdmath.Tan(g.HalfAngle)}, nil
+	return Circle{Center: center, Normal: g.AxisDir, RefDir: g.Ref, Radius: float64(param * stdmath.Tan(g.HalfAngle))}, nil
 }
 
 // sphereIso returns the meridian arc at fixed longitude or the latitude circle
@@ -80,10 +80,10 @@ func sphereIso(g Sphere, uDirection bool, param float64) (Curve3, error) {
 	if stdmath.Abs(cv) <= 1e-12 {
 		return nil, fmt.Errorf("geom: sphere iso-curve at latitude %g is a pole point", param)
 	}
-	center := g.Center.TranslateBy(math.V3(0, 0, g.Radius*sv))
+	center := g.Center.TranslateBy(math.V3(0, 0, float64(g.Radius*sv)))
 	xRef, _ := math.NewUnitVector3(1, 0, 0)
 	zAxis, _ := math.NewUnitVector3(0, 0, 1)
-	return Circle{Center: center, Normal: zAxis, RefDir: xRef, Radius: g.Radius * cv}, nil
+	return Circle{Center: center, Normal: zAxis, RefDir: xRef, Radius: float64(g.Radius * cv)}, nil
 }
 
 // sphereMeridian builds the half-circle from south to north pole at longitude u
@@ -108,11 +108,11 @@ func torusIso(g Torus, uDirection bool, param float64) (Curve3, error) {
 			RefDir: radial.AsUnit(), Radius: g.MinorRadius}, nil
 	}
 	cv, sv := cosSin(param)
-	radius := g.MajorRadius + g.MinorRadius*cv
+	radius := g.MajorRadius + float64(g.MinorRadius*cv)
 	if radius <= 0 {
 		return nil, fmt.Errorf("geom: torus iso-curve at tube angle %g has radius %g <= 0", param, radius)
 	}
-	center := g.Center.TranslateBy(g.AxisDir.AsVector().Scale(g.MinorRadius * sv))
+	center := g.Center.TranslateBy(g.AxisDir.AsVector().Scale(float64(g.MinorRadius * sv)))
 	return Circle{Center: center, Normal: g.AxisDir, RefDir: g.Ref, Radius: radius}, nil
 }
 
@@ -137,7 +137,7 @@ func ellipticalConeIso(g EllipticalCone, uDirection bool, param float64) (Curve3
 	}
 	center := g.Apex.TranslateBy(g.AxisDir.AsVector().Scale(param))
 	return EllipseFull{Center: center, Normal: g.AxisDir, MajorAxis: g.Ref,
-		MajorRadius: param * stdmath.Tan(g.MajorAngle), MinorRadius: param * stdmath.Tan(g.MinorAngle)}, nil
+		MajorRadius: float64(param * stdmath.Tan(g.MajorAngle)), MinorRadius: float64(param * stdmath.Tan(g.MinorAngle))}, nil
 }
 
 // bsplineIso collapses one parametric direction of the control net at the
@@ -163,7 +163,7 @@ func collapseU(g BSplineSurface, u float64) (ctrl []math.Point3, weights []float
 		var h homog
 		for k := 0; k <= g.UDegree; k++ {
 			i := span - g.UDegree + k
-			h.add(g.Ctrl[i][j], basis[k]*g.Weights[i][j])
+			h.add(g.Ctrl[i][j], float64(basis[k]*g.Weights[i][j]))
 		}
 		ctrl[j], weights[j] = h.point(), h.w
 	}
@@ -181,7 +181,7 @@ func collapseV(g BSplineSurface, v float64) (ctrl []math.Point3, weights []float
 		var h homog
 		for k := 0; k <= g.VDegree; k++ {
 			j := span - g.VDegree + k
-			h.add(g.Ctrl[i][j], basis[k]*g.Weights[i][j])
+			h.add(g.Ctrl[i][j], float64(basis[k]*g.Weights[i][j]))
 		}
 		ctrl[i], weights[i] = h.point(), h.w
 	}
@@ -267,7 +267,7 @@ func bsplineParamAtPoint(g BSplineSurface, p math.Point3) (float64, float64, Sol
 // refineSeedClusters polishes every seed within tol of the best coarse distance and
 // returns the closest foot plus the distinct feet it clustered into (uW, vW: merge radii).
 func refineSeedClusters(g BSplineSurface, p math.Point3, us, vs, ds []float64, best, uW, vW float64) (float64, float64, []surfaceSeed) {
-	tol := 1e-9 * stdmath.Max(1, best)
+	tol := float64(1e-9 * stdmath.Max(1, best))
 	var clusters []surfaceSeed
 	bestU, bestV, refinedBest := us[0], vs[0], stdmath.Inf(1)
 	for i, d := range ds {

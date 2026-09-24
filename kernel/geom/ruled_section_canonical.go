@@ -26,7 +26,7 @@ const ruledSectionCircleProbes = 24
 func canonicalSection(a RuledQuadricArc, res Resolution) Curve3 {
 	pts := make([]math.Point3, ruledSectionCircleProbes)
 	for i := range pts {
-		pts[i] = a.PointAt(float64(i) / ruledSectionCircleProbes)
+		pts[i] = a.PointAt(float64(float64(i) / ruledSectionCircleProbes))
 	}
 	if c, ok := circleThrough(pts, res.Weld()); ok {
 		return c

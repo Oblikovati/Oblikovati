@@ -75,7 +75,7 @@ func cumulativeHeights(rows []HelixStation) []float64 {
 	out := make([]float64, len(rows))
 	for i := 1; i < len(rows); i++ {
 		dTurn := rows[i].Turn - rows[i-1].Turn
-		out[i] = out[i-1] + (rows[i-1].Pitch+rows[i].Pitch)/2*dTurn
+		out[i] = out[i-1] + float64((rows[i-1].Pitch+rows[i].Pitch)/2*dTurn)
 	}
 	return out
 }
@@ -98,16 +98,16 @@ func (h VariableHelix3d) segmentAt(turn float64) int {
 func (h VariableHelix3d) radiusAt(turn float64) float64 {
 	i := h.segmentAt(turn)
 	a, b := h.stations[i], h.stations[i+1]
-	f := (turn - a.Turn) / (b.Turn - a.Turn)
-	return a.Radius + (b.Radius-a.Radius)*f
+	f := float64((turn - a.Turn) / (b.Turn - a.Turn))
+	return a.Radius + float64((b.Radius-a.Radius)*f)
 }
 
 // pitchAt linearly interpolates the pitch at the turn coordinate.
 func (h VariableHelix3d) pitchAt(turn float64) float64 {
 	i := h.segmentAt(turn)
 	a, b := h.stations[i], h.stations[i+1]
-	f := (turn - a.Turn) / (b.Turn - a.Turn)
-	return a.Pitch + (b.Pitch-a.Pitch)*f
+	f := float64((turn - a.Turn) / (b.Turn - a.Turn))
+	return a.Pitch + float64((b.Pitch-a.Pitch)*f)
 }
 
 // heightAt returns the closed-form axial advance at the turn coordinate: the
@@ -116,12 +116,12 @@ func (h VariableHelix3d) heightAt(turn float64) float64 {
 	i := h.segmentAt(turn)
 	a := h.stations[i]
 	d := turn - a.Turn
-	return h.heights[i] + (a.Pitch+h.pitchAt(turn))/2*d
+	return h.heights[i] + float64((a.Pitch+h.pitchAt(turn))/2*d)
 }
 
 // angleAt returns the signed winding angle at parameter t.
 func (h VariableHelix3d) angleAt(t float64) float64 {
-	a := twoPi * h.TotalTurns() * t
+	a := float64(twoPi * h.TotalTurns() * t)
 	if h.Clockwise {
 		return -a
 	}
@@ -130,7 +130,7 @@ func (h VariableHelix3d) angleAt(t float64) float64 {
 
 // PointAt returns the position at parameter t ∈ [0, 1].
 func (h VariableHelix3d) PointAt(t float64) math.Point3 {
-	turn := h.TotalTurns() * t
+	turn := float64(h.TotalTurns() * t)
 	p := pointOnCircle(h.Origin, h.RefDir.AsVector(), h.Axis.Cross(h.RefDir), h.radiusAt(turn), h.angleAt(t))
 	return p.TranslateBy(h.Axis.AsVector().Scale(math.Scalar(h.heightAt(turn))))
 }
@@ -139,12 +139,12 @@ func (h VariableHelix3d) PointAt(t float64) math.Point3 {
 // rates read from the station table at t.
 func (h VariableHelix3d) TangentAt(t float64) math.Vector3 {
 	total := h.TotalTurns()
-	turn := total * t
+	turn := float64(total * t)
 	i := h.segmentAt(turn)
 	a, b := h.stations[i], h.stations[i+1]
-	dRadius := (b.Radius - a.Radius) / (b.Turn - a.Turn) * total
-	dHeight := h.pitchAt(turn) * total
-	dAngle := twoPi * total
+	dRadius := float64((b.Radius - a.Radius) / (b.Turn - a.Turn) * total)
+	dHeight := float64(h.pitchAt(turn) * total)
+	dAngle := float64(twoPi * total)
 	if h.Clockwise {
 		dAngle = -dAngle
 	}

@@ -66,7 +66,7 @@ func CurveSpanBox(c Curve3, t0, t1 float64) math.Box {
 func sampledSpanBox(c Curve3, t0, t1 float64) math.Box {
 	box, pad, prev := math.EmptyBox(), 0.0, 0.0
 	for i := 0; i <= curveSpanSamples; i++ {
-		t := t0 + (t1-t0)*float64(i)/curveSpanSamples
+		t := t0 + float64((t1-t0)*float64(i)/curveSpanSamples)
 		box = box.ExtendPoint(c.PointAt(t))
 		speed := float64(c.TangentAt(t).Length())
 		if i > 0 {
@@ -82,7 +82,7 @@ func sampledSpanBox(c Curve3, t0, t1 float64) math.Box {
 // of a station, so the hull grown by this covers the step. The pad is the curve's OWN derivative, so
 // it carries the curve's units and its scale — there is no constant here to be wrong at another size.
 func stepReach(span, speed float64) float64 {
-	return stdmath.Abs(span) / curveSpanSamples / 2 * speed
+	return float64(stdmath.Abs(span) / curveSpanSamples / 2 * speed)
 }
 
 // grownBox returns box with every face moved out by d.

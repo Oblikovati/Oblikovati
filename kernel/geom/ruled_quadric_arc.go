@@ -49,7 +49,7 @@ type RuledQuadricArc struct {
 func (a RuledQuadricArc) Domain() (lo, hi float64) { return 0, 1 }
 
 // uAt maps the curve parameter to the base azimuth.
-func (a RuledQuadricArc) uAt(t float64) float64 { return a.U0 + t*(a.U1-a.U0) }
+func (a RuledQuadricArc) uAt(t float64) float64 { return a.U0 + float64(t*(a.U1-a.U0)) }
 
 // SubArc restricts the arc to the sub-interval [t0, t1] of its own [0,1] domain, re-presented over
 // [0,1] so the returned arc's WHOLE domain is the piece asked for. Orientation is baked in: t0 > t1
@@ -125,16 +125,16 @@ func (q Quadric) alongRuling(r straightRuling) ruledQuadricCoeffs {
 	dot := func(x, y math.Vector3) float64 { return float64(x.Dot(y)) }
 	return ruledQuadricCoeffs{
 		a:  dot(r.Dir, md),
-		b:  2 * (dot(w, md) + dot(q.G, r.Dir)),
-		c:  dot(w, mw) + 2*dot(q.G, w) + q.K,
-		da: 2 * dot(r.DDir, md),
-		db: 2 * (dot(r.DOrigin, md) + dot(w, mdd) + dot(q.G, r.DDir)),
-		dc: 2 * (dot(r.DOrigin, mw) + dot(q.G, r.DOrigin)),
+		b:  float64(2 * (dot(w, md) + dot(q.G, r.Dir))),
+		c:  dot(w, mw) + float64(2*dot(q.G, w)) + q.K,
+		da: float64(2 * dot(r.DDir, md)),
+		db: float64(2 * (dot(r.DOrigin, md) + dot(w, mdd) + dot(q.G, r.DDir))),
+		dc: float64(2 * (dot(r.DOrigin, mw) + dot(q.G, r.DOrigin))),
 	}
 }
 
 // discriminant returns b² − 4ac — positive exactly where the ruling crosses the quadric twice.
-func (c ruledQuadricCoeffs) discriminant() float64 { return c.b*c.b - 4*c.a*c.c }
+func (c ruledQuadricCoeffs) discriminant() float64 { return float64(c.b*c.b) - float64(4*c.a*c.c) }
 
 // root returns the upper or lower root of a·v² + b·v + c = 0, computed by the cancellation-free form
 // (q = −(b + sign(b)·√Δ)/2, roots q/a and c/q) and then ORDERED by value, so "upper" names the same
@@ -145,8 +145,8 @@ func (c ruledQuadricCoeffs) root(upper bool) float64 {
 	if disc <= 0 || c.a == 0 {
 		return stdmath.NaN()
 	}
-	q := -0.5 * (c.b + stdmath.Copysign(stdmath.Sqrt(disc), nonZeroSign(c.b)))
-	lo, hi := q/c.a, c.c/q
+	q := float64(-0.5 * (c.b + stdmath.Copysign(stdmath.Sqrt(disc), nonZeroSign(c.b))))
+	lo, hi := float64(q/c.a), float64(c.c/q)
 	if lo > hi {
 		lo, hi = hi, lo
 	}
@@ -160,7 +160,7 @@ func (c ruledQuadricCoeffs) root(upper bool) float64 {
 // azimuth leaves a fold. At a fold Δ itself has cancelled to zero, so this is the only quantity there
 // that still carries full precision, and [RuledQuadricLoop] reads its tangent from it.
 func (c ruledQuadricCoeffs) discriminantSlope() float64 {
-	return 2*c.b*c.db - 4*(c.da*c.c+c.a*c.dc)
+	return float64(2*c.b*c.db) - float64(4*(float64(c.da*c.c)+float64(c.a*c.dc)))
 }
 
 // foldRoot is [ruledQuadricCoeffs.root] with the fold admitted: where Δ has fallen to zero the two
@@ -172,7 +172,7 @@ func (c ruledQuadricCoeffs) foldRoot(upper bool) float64 {
 		return stdmath.NaN()
 	}
 	if c.discriminant() <= 0 {
-		return -c.b / (2 * c.a)
+		return float64(-c.b / (2 * c.a))
 	}
 	return c.root(upper)
 }
@@ -180,7 +180,7 @@ func (c ruledQuadricCoeffs) foldRoot(upper bool) float64 {
 // regularDvDu is dv/du with the branch term removed: the part of the derivative that stays finite at a
 // fold. The full derivative is this plus ±(Δ′/4a)/√Δ, which [RuledQuadricLoop.branchRatio] carries.
 func (c ruledQuadricCoeffs) regularDvDu(v float64) float64 {
-	return -c.db/(2*c.a) - v*c.da/c.a
+	return float64(-c.db/(2*c.a)) - float64(v*c.da/c.a)
 }
 
 // separation returns |v₊ − v₋| = √Δ/|a|, the two branches' gap along the ruling — the length the
@@ -190,17 +190,17 @@ func (c ruledQuadricCoeffs) separation() float64 {
 	if disc <= 0 || c.a == 0 {
 		return 0
 	}
-	return stdmath.Sqrt(disc) / stdmath.Abs(c.a)
+	return float64(stdmath.Sqrt(disc) / stdmath.Abs(c.a))
 }
 
 // dvdu returns dv/du on the branch passing through v, by implicit differentiation of the ruling
 // quadratic: (a′v² + b′v + c′) + (2av + b)·dv/du = 0.
 func (c ruledQuadricCoeffs) dvdu(v float64) float64 {
-	den := 2*c.a*v + c.b
+	den := float64(2*c.a*v) + c.b
 	if den == 0 {
 		return 0 // a fold; the conditioning gate keeps a built arc away from one
 	}
-	return -(c.da*v*v + c.db*v + c.dc) / den
+	return float64(-(float64(c.da*v*v) + float64(c.db*v) + c.dc) / den)
 }
 
 // nonZeroSign returns x when x ≠ 0 and +1 when it is, so Copysign never picks the sign of a zero

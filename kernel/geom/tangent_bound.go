@@ -44,7 +44,7 @@ func (c Cylinder) tangentBoundOverBox(_, _, _, _ float64) (float64, float64, boo
 func (c Cone) tangentBoundOverBox(_, _, v0, v1 float64) (float64, float64, bool) {
 	t := stdmath.Abs(stdmath.Tan(c.HalfAngle))
 	vMax := stdmath.Max(stdmath.Abs(v0), stdmath.Abs(v1))
-	return vMax * t, stdmath.Sqrt(1 + t*t), true
+	return float64(vMax * t), stdmath.Sqrt(1 + float64(t*t)), true
 }
 
 // tangentBoundOverBox: |S_u| = R·cos v ≤ R, |S_v| = R (P&T sphere parameterisation).
@@ -102,7 +102,7 @@ func hodographCoeff(ctrl [][]math.Point3, i, j, degree int, knots []float64, alo
 	if span <= knotEps {
 		return 0
 	}
-	return float64(degree) * float64(diff.Length()) / span
+	return float64(float64(degree) * float64(diff.Length()) / span)
 }
 
 // hasUnitWeights reports whether every control weight is 1 (within knotEps), i.e. the

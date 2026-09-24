@@ -27,7 +27,7 @@ func SignedSolidAngle(p, a, b, c math.Point3) float64 {
 		return 0
 	}
 	num := float64(va.Dot(vb.Cross(vc)))
-	den := float64(la*lb*lc) + float64(va.Dot(vb))*float64(lc) +
-		float64(vb.Dot(vc))*float64(la) + float64(vc.Dot(va))*float64(lb)
-	return 2 * stdmath.Atan2(num, den)
+	den := float64(la*lb*lc) + float64(float64(va.Dot(vb))*float64(lc)) +
+		float64(float64(vb.Dot(vc))*float64(la)) + float64(float64(vc.Dot(va))*float64(lb))
+	return float64(2 * stdmath.Atan2(num, den))
 }

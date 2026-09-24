@@ -30,22 +30,11 @@ func cylinderWalls(b *topo.Body) int {
 // TestBoreContinuingABoreIsOneWall: a blind bore drilled from the top, then continued to the bottom by
 // a second coaxial drill of the SAME radius. The two tools' walls lie on one surface and meet at the
 // circle where the first ended, which bounds nothing — the bore is one hole.
+// The body is continuedBoreBody (chart_matches_edges_test.go), which built the same block and the same
+// two drills a second time until #3527 — one fixture, two spellings, in one package.
 func TestBoreContinuingABoreIsOneWall(t *testing.T) {
 	t.Parallel()
-	blk, err := SolidBlock(math.P3(-3, -3, 0), math.P3(3, 3, 6), "blk")
-	if err != nil {
-		t.Fatalf("block: %v", err)
-	}
-	upper, _ := SolidCylinder(math.P3(0, 0, 3), math.V3(0, 0, 1), 1, 4)
-	lower, _ := SolidCylinder(math.P3(0, 0, -1), math.V3(0, 0, 1), 1, 4)
-	step, err := Boolean(Difference, blk, upper)
-	if err != nil {
-		t.Fatalf("first bore: %v", err)
-	}
-	through, err := Boolean(Difference, step, lower)
-	if err != nil {
-		t.Fatalf("continuing bore: %v", err)
-	}
+	through := continuedBoreBody(t)
 	assertWatertight(t, through)
 	if n := cylinderWalls(through); n != 1 {
 		t.Errorf("the continued bore has %d cylinder walls, want 1", n)
@@ -175,10 +164,22 @@ func TestAmbiguousPairingIsRefusedByName(t *testing.T) {
 	t.Parallel()
 	wall := wallFaceOf(t, math.P3(0, 0, 0), 2, 4)
 	rec := &diag.Recorder{}
-	if _, ok := mergeOnSharedBoundary(wall, faceOnSeamOf(t, wall), rec); ok {
+	if _, ok := mergeOnePairReporting(wall, faceOnSeamOf(t, wall), rec); ok {
 		t.Fatal("a pair whose shared boundary cannot be paired one-to-one was merged anyway")
 	}
 	assertMergeDeclineRecorded(t, rec, "an edge of one runs with two of the other")
+}
+
+// mergeOnePairReporting is mergePairOnOneSurface with its refusal reported at once — what the scan does
+// for a pair it rejects, done for ONE pair so a row can drive a single refusal to the recorder.
+//
+// It lives here and not in the production file. It stood there as mergeOnSharedBoundary, with this test
+// as its only caller anywhere in the tree, which is a production seam kept alive by a test (#3527); the
+// delete-first rule puts it on the caller's side of the line.
+func mergeOnePairReporting(a, b curvedFace, rec *diag.Recorder) (curvedFace, bool) {
+	merged, why := mergePairOnOneSurface(a, b, faceLoopBox(a), faceLoopBox(b), rec)
+	recordMergeDecline(rec, a, why)
+	return merged, why == mergeJoined
 }
 
 // faceOnSeamOf builds a face on the SAME surface whose only boundary is the given wall's seam edge,

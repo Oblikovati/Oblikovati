@@ -61,9 +61,9 @@ func TorusSectionCoeffs(t Torus, pl Plane) (phi, m, k, c float64) {
 // stay finite rather than producing NaN from floating-point overshoot.
 func (s SpiricArc) uOfV(v float64) float64 {
 	cv, sv := cosSin(v)
-	denom := s.M * (s.Torus.MajorRadius + s.Torus.MinorRadius*cv)
-	w := (s.K - s.C*s.Torus.MinorRadius*sv) / denom
-	return s.Phi + s.Branch*stdmath.Acos(spiricCosineAtLimit(w))
+	denom := float64(s.M * (s.Torus.MajorRadius + float64(s.Torus.MinorRadius*cv)))
+	w := float64((s.K - float64(s.C*s.Torus.MinorRadius*sv)) / denom)
+	return s.Phi + float64(s.Branch*stdmath.Acos(spiricCosineAtLimit(w)))
 }
 
 // spiricCosineAtLimit resolves w for the arccos, snapping it to ±1 where it is within rounding of them.
@@ -95,7 +95,7 @@ func (s SpiricArc) UAt(v float64) float64 { return s.uOfV(v) }
 
 // PointAt returns the point at parameter t∈[0,1], evaluated on the torus at (u(v), v).
 func (s SpiricArc) PointAt(t float64) math.Point3 {
-	v := s.V0 + t*(s.V1-s.V0)
+	v := s.V0 + float64(t*(s.V1-s.V0))
 	return s.Torus.PointAt(s.uOfV(v), v)
 }
 
@@ -103,7 +103,7 @@ func (s SpiricArc) PointAt(t float64) math.Point3 {
 // v-extremes du/dv diverges (the parameterization has a vertical tangent there); the chord-and-angle
 // edge sampler drives off PointAt alone, so a large-but-finite tangent there is harmless.
 func (s SpiricArc) TangentAt(t float64) math.Vector3 {
-	v := s.V0 + t*(s.V1-s.V0)
+	v := s.V0 + float64(t*(s.V1-s.V0))
 	u := s.uOfV(v)
 	du, dv := s.Torus.DerivativesAt(u, v)
 	return du.Scale(math.Scalar(s.dUdV(v))).Add(dv).Scale(math.Scalar(s.V1 - s.V0))
@@ -114,13 +114,13 @@ func (s SpiricArc) TangentAt(t float64) math.Vector3 {
 func (s SpiricArc) dUdV(v float64) float64 {
 	cv, sv := cosSin(v)
 	R, r := s.Torus.MajorRadius, s.Torus.MinorRadius
-	den := s.M * (R + r*cv)
-	w := (s.K - s.C*r*sv) / den
+	den := float64(s.M * (R + float64(r*cv)))
+	w := float64((s.K - float64(s.C*r*sv)) / den)
 	// w′ = [(−C·r·cos v)·(R+r·cos v) − (K − C·r·sin v)·(−r·sin v)] / (M·(R+r·cos v)²)
-	num := (-s.C*r*cv)*(R+r*cv) + (s.K-s.C*r*sv)*r*sv
-	wPrime := num / (s.M * (R + r*cv) * (R + r*cv))
-	root := stdmath.Sqrt(stdmath.Max(1-w*w, 1e-12))
-	return s.Branch * (-wPrime / root)
+	num := float64((-s.C*r*cv)*(R+float64(r*cv))) + float64((s.K-float64(s.C*r*sv))*r*sv)
+	wPrime := float64(num / (s.M * (R + float64(r*cv)) * (R + float64(r*cv))))
+	root := stdmath.Sqrt(stdmath.Max(1-float64(w*w), 1e-12))
+	return float64(s.Branch * (-wPrime / root))
 }
 
 // Domain returns [0, 1].
@@ -186,7 +186,7 @@ func arcSpansLength(cv Curve3, tol float64) bool {
 	lo, hi := cv.Domain()
 	start := cv.PointAt(lo)
 	for i := 1; i <= arcExtentProbe; i++ {
-		if float64(start.DistanceTo(cv.PointAt(lo+(hi-lo)*float64(i)/arcExtentProbe))) > tol {
+		if float64(start.DistanceTo(cv.PointAt(lo+float64((hi-lo)*float64(i)/arcExtentProbe)))) > tol {
 			return true
 		}
 	}
@@ -202,11 +202,11 @@ const arcExtentProbe = 8
 func spiricTubeSpans(t Torus, m, k, c float64) (spans [][2]float64, whole bool) {
 	r, rr := t.MinorRadius, t.MajorRadius
 	roots := append(
-		harmonicRoots(m*r, c*r, k-m*rr),
-		harmonicRoots(-m*r, c*r, k+m*rr)...)
+		harmonicRoots(float64(m*r), float64(c*r), k-float64(m*rr)),
+		harmonicRoots(float64(-m*r), float64(c*r), k+float64(m*rr))...)
 	inside := func(v float64) bool {
 		cv, sv := cosSin(v)
-		return stdmath.Abs((k-c*r*sv)/(m*(rr+r*cv))) <= 1
+		return stdmath.Abs(float64((k-float64(c*r*sv))/(m*(rr+float64(r*cv))))) <= 1
 	}
 	if len(roots) == 0 {
 		return nil, inside(0) // no boundary: the plane reaches the tube at every angle, or at none
@@ -214,7 +214,7 @@ func spiricTubeSpans(t Torus, m, k, c float64) (spans [][2]float64, whole bool) 
 	sort.Float64s(roots)
 	roots = append(roots, roots[0]+2*stdmath.Pi) // close the period
 	for i := 0; i+1 < len(roots); i++ {
-		if inside((roots[i] + roots[i+1]) / 2) {
+		if inside(float64((roots[i] + roots[i+1]) / 2)) {
 			spans = append(spans, [2]float64{roots[i], roots[i+1]})
 		}
 	}
@@ -237,7 +237,7 @@ func harmonicRoots(a, b, d float64) []float64 {
 		return nil
 	}
 	base := stdmath.Atan2(b, a)
-	off := stdmath.Acos(spiricCosineAtLimit(d / amp))
+	off := stdmath.Acos(spiricCosineAtLimit(float64(d / amp)))
 	return []float64{wrapToPi(base + off), wrapToPi(base - off)}
 }
 
