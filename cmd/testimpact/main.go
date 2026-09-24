@@ -19,9 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"oblikovati.org/test-utilities/testimpact"
 )
@@ -63,38 +61,12 @@ func printImpacted(w io.Writer, root, base string) error {
 	if err != nil {
 		return err
 	}
-	for _, p := range tracked(abs, paths) {
+	kept, err := testimpact.DropIgnored(abs, modulePath, paths)
+	if err != nil {
+		return err
+	}
+	for _, p := range kept {
 		fmt.Fprintln(w, p)
 	}
 	return nil
-}
-
-// tracked drops the import paths whose directory git ignores. It asks git once, rather than
-// matching .gitignore here, so the answer is whatever git itself would say.
-func tracked(root string, paths []string) []string {
-	dirs := make([]string, 0, len(paths))
-	for _, p := range paths {
-		dirs = append(dirs, "."+strings.TrimPrefix(p, modulePath))
-	}
-	// check-ignore exits 1 when nothing matches, which is the common case and not an error.
-	cmd := exec.Command("git", append([]string{"check-ignore", "--stdin"}, nil...)...)
-	cmd.Dir = root
-	cmd.Stdin = strings.NewReader(strings.Join(dirs, "\n"))
-	out, err := cmd.Output()
-	if err != nil && len(out) == 0 {
-		return paths // git unavailable or nothing ignored: keep every package
-	}
-	ignored := make(map[string]bool, 8)
-	for _, d := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		if d != "" {
-			ignored[strings.TrimSuffix(d, "/")] = true
-		}
-	}
-	kept := paths[:0:0]
-	for i, p := range paths {
-		if !ignored[strings.TrimSuffix(dirs[i], "/")] {
-			kept = append(kept, p)
-		}
-	}
-	return kept
 }
