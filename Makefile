@@ -15,7 +15,9 @@ PKG         := ./...
 # An EMPTY derivation is an error, not a smaller set: `go test` with no package argument tests only
 # the current directory, so an empty list is a silent green. That happened on the first CI run, where
 # macOS's bash 3.2 could not run the derivation and $(shell) swallowed the failure.
-TEST_PKGS    = $(if $(filter ./...,$(PKG)),$(or $(shell scripts/tracked-packages.sh),$(error scripts/tracked-packages.sh derived no package; refusing to run a gate over nothing (#3557))),$(PKG))
+# The message carries no `#`: make 3.81, which macOS ships, reads one inside a function call as the
+# start of a comment and fails the whole line as an unterminated `if`.
+TEST_PKGS    = $(if $(filter ./...,$(PKG)),$(or $(shell scripts/tracked-packages.sh),$(error scripts/tracked-packages.sh derived no package; refusing to run a gate over nothing, see issue 3557)),$(PKG))
 DIST        := dist
 
 # VERSION is {MANUAL_MAJOR}.{API_VERSION}.{MINOR}.{PATCH}, computed by cmd/obkversion

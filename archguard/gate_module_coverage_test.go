@@ -3,6 +3,7 @@
 package archguard
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -48,6 +49,13 @@ func runInRepoRoot(t *testing.T, name string, args ...string) string {
 	cmd.Dir = ".."
 	out, err := cmd.Output()
 	if err != nil {
+		// Output() keeps the failing command's stderr on the ExitError; printing it is the difference
+		// between "exit status 2" and the reason. Without it, make 3.81 reading a `#` inside a function
+		// call as a comment cost PR #3558 a whole CI round to diagnose.
+		var exit *exec.ExitError
+		if errors.As(err, &exit) {
+			t.Fatalf("running %s %v in the repo root: %v\n%s", name, args, err, exit.Stderr)
+		}
 		t.Fatalf("running %s %v in the repo root: %v", name, args, err)
 	}
 	return string(out)
