@@ -49,8 +49,7 @@ func ignoredDirs(root string, dirs []string) (map[string]bool, error) {
 	cmd.Dir = root
 	cmd.Stdin = strings.NewReader(strings.Join(dirs, "\n"))
 	out, err := cmd.Output()
-	var exit *exec.ExitError
-	if err != nil && !(errors.As(err, &exit) && exit.ExitCode() == 1) {
+	if err != nil && !nothingIgnored(err) {
 		return nil, fmt.Errorf("git check-ignore in %s: %w", root, err)
 	}
 	ignored := make(map[string]bool)
@@ -60,4 +59,11 @@ func ignoredDirs(root string, dirs []string) (map[string]bool, error) {
 		}
 	}
 	return ignored, nil
+}
+
+// nothingIgnored reports whether a `git check-ignore` failure is its exit 1, "no path matched" — an
+// answer, unlike 128, which is git failing.
+func nothingIgnored(err error) bool {
+	var exit *exec.ExitError
+	return errors.As(err, &exit) && exit.ExitCode() == 1
 }
