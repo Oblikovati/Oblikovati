@@ -12,7 +12,14 @@ coverage and duplication — and this computes the three gates that need a branc
 server's OWN issue and duplication data and the SAME exclusions sonar-project.properties declares.
 Nothing here re-implements a Sonar rule; it intersects Sonar's answers with `git diff`.
 
-    scripts/sonar-newcode.py <base-ref> <sonar-host> <user:password> <project-key> [coverage.out]
+    scripts/sonar-newcode.py <base-ref> <local-port> <user:password> [--coverage]
+
+The arguments are deliberately narrow, because each one reaches a command, a file or a URL and
+SonarCloud's taint rules (pythonsecurity:S8703/S8705/S8707) rightly asked where they could lead:
+the server is always the LOCAL one, so only a port is taken and the host is fixed; the profile is
+always coverage.out in the repo root, so only a flag is taken; the project key is read from
+sonar-project.properties like every other setting; and the base ref is refused unless it is a plain
+ref name, then resolved to a commit id before git sees it as an argument.
 """
 from __future__ import annotations
 
@@ -23,6 +30,7 @@ import re
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 COVERAGE_GATE = 80.0  # CLAUDE.md: coverage >80%
@@ -58,6 +66,28 @@ def git(*args: str) -> str:
     return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout
 
 
+# A ref name as a person types one: origin/develop, v1.2.3, HEAD~1. It cannot start with '-', so it
+# cannot be read as an option, and it carries no whitespace or shell metacharacter.
+REF_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/~^@{}-]*")
+COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
+
+
+def resolve_commit(ref: str) -> str:
+    """The commit id a ref names, refusing anything that is not a plain ref name.
+
+    Example: resolve_commit("origin/develop") -> "4f1c…" (40 hex digits)
+    """
+    if not REF_PATTERN.fullmatch(ref):
+        raise SystemExit(f"base ref {ref!r} is not a plain ref name (expected e.g. origin/develop)")
+    try:
+        sha = git("rev-parse", "--verify", "--end-of-options", f"{ref}^{{commit}}").strip()
+    except subprocess.CalledProcessError:
+        raise SystemExit(f"base ref {ref!r} names no commit here (expected e.g. origin/develop; fetch first?)")
+    if not COMMIT_PATTERN.fullmatch(sha):
+        raise SystemExit(f"git resolved {ref!r} to {sha!r}, which is not a commit id")
+    return sha
+
+
 def added_lines(base: str) -> dict[str, set[int]]:
     """path -> the line numbers this branch adds, counting the WORKING TREE, not only HEAD.
 
@@ -67,7 +97,10 @@ def added_lines(base: str) -> dict[str, set[int]]:
     would pass the very change being committed, which is the one thing it exists to judge.
     `-U0` keeps the added lines themselves and no context.
     """
-    fork = git("merge-base", base, "HEAD").strip() or base
+    commit = resolve_commit(base)
+    fork = git("merge-base", "--end-of-options", commit, "HEAD").strip()
+    if not COMMIT_PATTERN.fullmatch(fork):
+        raise SystemExit(f"no merge base between {base!r} and HEAD (git said {fork!r})")
     added: dict[str, set[int]] = collections.defaultdict(set)
     path, line = None, 0
     for raw in git("diff", "-U0", fork).splitlines():
@@ -102,6 +135,21 @@ def coverage_by_line(profile: str, module: str) -> dict[str, dict[int, bool]]:
             for ln in range(int(start.split(".")[0]), int(end.split(".")[0]) + 1):
                 ran[path][ln] = ran[path].get(ln, False) or hit
     return ran
+
+
+def local_host(port: str) -> str:
+    """The local server's base URL. Only the port is taken from the caller; int() refuses anything
+    that is not a number, so no argument can point this script at another host.
+
+    Example: local_host("9000") -> "http://localhost:9000"
+    """
+    try:
+        number = int(port)
+    except ValueError:
+        raise SystemExit(f"port {port!r} is not a number (expected the local server's port, e.g. 9000)")
+    if not 0 < number < 65536:
+        raise SystemExit(f"port {port!r} is outside 1-65535")
+    return f"http://localhost:{number}"
 
 
 def api(host: str, auth: str, path: str) -> dict:
@@ -235,10 +283,14 @@ def report_issues(go_added: dict[str, set[int]], host: str, auth: str, key: str)
 
 
 def main() -> int:
-    base, host, auth, key = sys.argv[1:5]
-    profile = sys.argv[5] if len(sys.argv) > 5 else None
+    base, port, auth = sys.argv[1:4]
+    host = local_host(port)
+    # Always the repo root's coverage.out, never a caller-chosen path: that is the file every
+    # coverage recipe here writes, and sonar-project.properties points the scanner at it.
+    profile = "coverage.out" if "--coverage" in sys.argv[4:] else None
 
     props = properties()
+    key = urllib.parse.quote(props["sonar.projectKey"], safe="")
     module = "oblikovati.org/"
     cov_excl = globs(props.get("sonar.coverage.exclusions", "") + ",**/*_test.go")
     cpd_excl = globs(props.get("sonar.cpd.exclusions", ""))

@@ -212,8 +212,8 @@ if [ "$COVERAGE_MODE" = "--impacted" ]; then
 	log "  note: coverage below is a tier-1 FLOOR — corpus tests skip under -short"
 fi
 COV_ARG=""
-[ "$COVERAGE_MODE" != "--no-coverage" ] && [ -f coverage.out ] && COV_ARG="coverage.out"
-if scripts/sonar-newcode.py "$NEW_CODE_REF" "$HOST" "$AUTH_LOCAL" "$PROJECT_KEY" $COV_ARG; then
+[ "$COVERAGE_MODE" != "--no-coverage" ] && [ -f coverage.out ] && COV_ARG="--coverage"
+if scripts/sonar-newcode.py "$NEW_CODE_REF" "$PORT" "$AUTH_LOCAL" $COV_ARG; then
 	:
 elif [ "$COVERAGE_MODE" = "--impacted" ]; then
 	log "a gate is below its threshold on a tier-1 floor — confirm with \`make sonar\` before a PR"
