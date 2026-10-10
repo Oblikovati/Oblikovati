@@ -187,3 +187,38 @@ fn tolerance_edits_are_noops_when_unchanged_and_bands_follow_nominal_edits() {
     parameters.set_limits(1, 21.0, 19.0).unwrap();
     assert!(parameters.drain_changed().is_empty());
 }
+
+#[test]
+fn saved_tolerance_validation_is_atomic_and_does_not_resolve_fit_labels() {
+    let mut parameters = parameter(10.0, Dimension::Length);
+    let saved = Tolerance {
+        type_: TOLERANCE_LIMITS_FITS_SHOW_SIZE,
+        upper: 0.5,
+        lower: -0.25,
+        hole_tolerance: "external fit class".into(),
+        shaft_tolerance: "retained label".into(),
+    };
+    parameters.set_tolerance(1, saved.clone()).unwrap();
+    parameters.drain_changed();
+    parameters.set_tolerance(1, saved.clone()).unwrap();
+    assert!(parameters.drain_changed().is_empty());
+    let invalid = Tolerance {
+        type_: ToleranceType(-1),
+        ..saved.clone()
+    };
+    assert!(parameters.set_tolerance(1, invalid).is_err());
+    assert!(
+        parameters
+            .set_tolerance(
+                1,
+                Tolerance {
+                    upper: f64::NAN,
+                    ..saved.clone()
+                }
+            )
+            .is_err()
+    );
+    assert!(parameters.set_tolerance(99, saved.clone()).is_err());
+    assert_eq!(parameters.get(1).unwrap().tolerance, saved);
+    assert!(parameters.drain_changed().is_empty());
+}

@@ -128,6 +128,23 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         )
     }
 
+    /// Restore saved deviations without resolving fit tables again.
+    /// Example: `parameters.set_tolerance(id, saved_tolerance)?;`.
+    pub fn set_tolerance(
+        &mut self,
+        id: Id,
+        tolerance: Tolerance,
+    ) -> Result<(), ParameterError<Id>> {
+        if !(TOLERANCE_DEFAULT.0..=TOLERANCE_REFERENCE.0).contains(&tolerance.type_.0) {
+            return Err(numeric_error(
+                id,
+                format!("{:?}", tolerance.type_),
+                "a known API tolerance type",
+            ));
+        }
+        self.store_tolerance(id, tolerance)
+    }
+
     pub(super) fn store_tolerance(
         &mut self,
         id: Id,

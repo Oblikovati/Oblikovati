@@ -34,6 +34,8 @@ pub(super) struct ParameterRecipe {
     allow_custom_value: bool,
     sorted_value_list: bool,
     custom_property: Option<PropertyRecipe>,
+    pub(super) tolerance: Option<super::tolerance::ToleranceRecipe>,
+    pub(super) model_value_type: String,
 }
 
 impl ParameterRecipe {

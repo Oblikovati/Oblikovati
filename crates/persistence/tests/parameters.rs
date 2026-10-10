@@ -104,7 +104,7 @@ fn malformed_unsupported_or_unhealthy_recipes_are_refused() {
         "{name: a, kind: reference, value: .inf, unit: length}",
         "{name: a, kind: user, expression: 'missing + 1'}",
         "{name: a, kind: user, expression: '1 / 0'}",
-        "{name: a, kind: user, expression: '1', tolerance: {type: symmetric, upper: 1}}",
+        "{name: a, kind: user, expression: '1', tolerance: {type: unknown, upper: 1}}",
         "{name: a, kind: user, expression: '1', disabledActions: [unknown]}",
         "{name: a, kind: user, expression: '1', displayFormat: unknown}",
     ];

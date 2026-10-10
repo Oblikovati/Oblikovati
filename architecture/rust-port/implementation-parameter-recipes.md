@@ -59,10 +59,9 @@ matching the legacy name-based format; this does not add persistent parameter
 IDs to the file schema.
 
 Unknown fields and inconsistent value-flavor fields are refused. Linked
-derived tables, tolerance, and model-value selection remain explicit unsupported
-cases. Their source
-YAML stays retained in the package, and reconstruction cannot silently discard
-them. This is an intermediate decoder, not completion of the parameter recipe
+derived tables remain explicitly unsupported. Their source YAML stays retained
+in the package, and reconstruction cannot silently discard them. Tolerance and
+model-value selection are covered below. This is an intermediate decoder, not completion of the parameter recipe
 port or permission to execute unported features elsewhere in the model.
 
 Eight tests cover live edit/recompute after loading, all kinds and literal
@@ -84,8 +83,8 @@ idempotent. An omitted display name defaults to the internal name.
 Four tests cover order and metadata, multi-membership, repeated names,
 empty/null/memberless groups, unknown fields, duplicate group keys, and missing
 members. Invalid groups discard only the separate reconstruction candidate.
-The existing live table is not an input to this operation. Tolerance/selection
-and linked tables remain pending.
+The existing live table is not an input to this operation. Linked tables remain
+pending; tolerance/selection reconstruction is covered below.
 
 ## Collection settings reconstruction — partial R2
 
@@ -118,3 +117,23 @@ Unknown fields, property types, precisions, and incorrect shapes are refused.
 Five tests include a 24-row precision-name/ID capture from the Go API plus the
 metadata, sparse-record, literal/read-only, and failure cases. Actual formatted
 property output and recipe export remain separate work.
+
+## Tolerance reconstruction — partial R2
+
+Tracking: [#3602](https://github.com/Oblikovati/Oblikovati/issues/3602).
+All 14 Go tolerance names and four model-value selections now restore through
+canonical API types. Saved working-unit deviations and hole/shaft labels are
+retained exactly. Fit tables are not resolved again, and saved limit deviations
+are not interpreted as absolute limits. Later nominal edits keep the saved band.
+
+Numeric metadata is applied after all expression drivers resolve. This permits
+forward references and read-only numeric parameters. Unknown types, malformed
+fields, nonfinite or reversed bands, nonnumeric targets, and overflowing selected
+values refuse the separate candidate. Unlike Go's unchecked raw tolerance setter,
+the Rust model validates the numeric band before it stores it. Absent/null
+records retain default tolerance and nominal selection.
+
+Tests cover all types/selections, retained fit labels/bands, forward references,
+read-only values, default records, atomic rejection, and unchanged dirty state.
+The Go fit, parameter-field, and introspection round-trip tests are the baseline.
+Full live-model recipe export remains pending.

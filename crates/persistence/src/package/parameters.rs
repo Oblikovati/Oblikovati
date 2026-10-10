@@ -11,6 +11,7 @@ mod groups;
 mod property;
 mod record;
 mod settings;
+mod tolerance;
 use record::ParameterRecipe;
 
 /// A reconstructed table and its document-owned identity allocator.
@@ -33,11 +34,12 @@ impl DocumentPackage {
             parameters: ParameterCollection::new(units),
             ids: RecipeIdAllocator::default(),
         };
-        for record in records {
+        for record in &records {
             let id = restored.ids.allocate().map_err(parameter_error)?;
             record.restore(id, &mut restored.parameters)?;
         }
         validate_health(&restored.parameters)?;
+        tolerance::restore_tolerances(&records, &mut restored.parameters)?;
         groups::restore_groups(self.root.get("model"), &mut restored.parameters)?;
         settings::restore_settings(self.root.get("model"), &mut restored.parameters)?;
         restored.parameters.drain_changed();
