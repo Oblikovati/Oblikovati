@@ -18,6 +18,7 @@ mod error;
 mod geometry;
 mod line_residual;
 mod offset_dimension;
+mod plane;
 mod recipe;
 mod residual;
 mod shared_contact;
@@ -37,6 +38,7 @@ pub use constraint::{
 };
 pub use error::SketchError;
 pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
+pub use plane::{SketchPlane, SketchPlaneOptions, SketchPlaneRecipe};
 pub use recipe::{SKETCH_RECIPE_VERSION, SketchRecipe};
 pub use solve::SketchSolveOutcome;
 pub use source::SketchRelationId;

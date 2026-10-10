@@ -53,3 +53,29 @@ An empty sketch and editable degenerate draft also round-trip.
 Document snapshot/history ownership, document-level sketch identity/placement,
 package encoding, legacy import, save/reopen session tests and UI/API commands
 remain open. The new recipe alone does not add sketches to a document file.
+
+## Placement frames
+
+Tracking: [#3717](https://github.com/Oblikovati/Oblikovati/issues/3717).
+`SketchPlane` now supplies the static placement prerequisite for a document-owned
+sketch. It retains a finite origin and authored unit in-plane axes, checks their
+unit and angular deviations with explicit versioned metric options, and derives
+a right-handed unit normal. The default metric bounds come from Go's
+`math.DefaultTolerance` at the fixed migration baseline; they are not kernel
+modelling or approximation tolerances. Zero bounds permit strict checks.
+
+XY, XZ and YZ frames use their exact standard basis. `to_model` preserves Go's
+ordered origin/axis translations, and `to_sketch` projects the model displacement
+onto the saved axes. Input, displacement and result coordinates must be finite.
+No saved axis is normalized, rotated or repaired. The angular check measures the
+normalized axis dot so loose unit-deviation bounds cannot accept parallel axes
+as perpendicular. An undefined normal is always refused.
+
+`SketchPlaneRecipe` stores only origin and axes; restoration repeats validation
+under the supplied frame options. Four Go fixtures cover standard and rotated/
+translated placement, projection and normal. Independent model coordinates,
+out-of-plane projection, exact saved-axis bits, malformed recipes and invalid
+options/frames have tests. Coordinate scale checks cover `1e-200` through `1e200`;
+nonfinite queries and arithmetic overflow are named failures. This does not yet
+implement parameter-driven work planes, face hosting, document sketch collections,
+or a saved document placement section.
