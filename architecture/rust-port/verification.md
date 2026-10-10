@@ -5,6 +5,11 @@ build-tool workspace and the [local/CI gate](../../RELEASING.md). The GUI and CL
 are not yet ported. Tool tests and package-plan checks do not provide native
 application acceptance or R9 release evidence.
 
+Current work is focused on local Linux, as requested by the user. Windows and
+macOS testing and fixes are deferred. Their pipeline definitions remain enabled
+and failures stay visible; do not skip failing jobs or mark them successful.
+The broader platform acceptance requirements below remain outstanding.
+
 ## Behavior ledger
 
 R0 creates a checked-in, machine-readable ledger. Each behavior row records:

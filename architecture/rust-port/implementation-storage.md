@@ -158,3 +158,30 @@ native cycle checks saved identity, changed value, and retained add-in bytes.
 This entry point reconstructs parameters and, after #3610, typed properties. Other model sections are
 not executed or certified as feature geometry. Full host opening must include
 all required model-domain validation before it exposes a document to the user.
+
+## Project reference and template lookup — partial R2
+
+Tracking: [#3624](https://github.com/Oblikovati/Oblikovati/issues/3624).
+`ProjectFileLookup` owns validated absolute workspace, library, and template roots.
+It searches the workspace before libraries in configured order and stops at the
+first regular file. Absolute references bypass search roots. Missing references
+return no match; inaccessible candidates return a path-specific error instead of
+silently choosing a different file from a later root. The regular-file probe is
+injected; its native implementation follows symlinks and rejects directories.
+
+Templates use the canonical API document kinds and file extensions. Missing
+template roots and unknown document kinds return no match without consulting the
+process working directory. Relative configured roots are refused; project-file
+loading must first resolve them against the project's location.
+
+Relative references are computed by normalized path components. Parent segments
+that leave the workspace are refused, while names such as `..cache` remain valid
+inside it. This corrects the Go prefix check, which treats every `..`-prefixed
+name as outside. Relativization is lexical, not a symlink containment or security
+check. Opening a result still uses the file coordinator's canonical-path rules.
+
+Eight tests cover search priority, missing/absolute names, access errors, all
+four template names, root validation, relative references, and native Linux
+regular-file/directory lookup. Six corresponding Go reference tests pass at the
+fixed baseline. Project catalog ownership, configuration persistence, reference
+graph loading, and automatic host template selection remain pending.
