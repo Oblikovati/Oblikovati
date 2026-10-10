@@ -7,6 +7,7 @@ use std::fmt;
 #[derive(Clone, Debug, PartialEq)]
 pub enum UnitError {
     UnknownUnit(String),
+    Display(String),
     WrongCategory {
         name: String,
         expected: Dimension,
@@ -24,6 +25,10 @@ pub enum UnitError {
 impl fmt::Display for UnitError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Display(found) => write!(
+                formatter,
+                "unit display: found {found}; expected a finite numeric value within the selected format limits"
+            ),
             Self::UnknownUnit(name) => {
                 write!(formatter, "unit {name:?}: expected a registered unit name")
             }

@@ -474,3 +474,8 @@ Five regression tests cover conversion, dependent recomputation, reference edits
 invalid targets, built-in copies, name collisions, and atomic insertion failures.
 Five matching Go conversion/built-in tests passed at the fixed baseline. Feature
 creation, action-mask enforcement, persistence, and API routing remain open.
+
+## Unit display formatting — partial R2
+
+The precise/display formatter, Go capture, supported limits, and scale correction
+are recorded in [display implementation evidence](implementation-display.md).
