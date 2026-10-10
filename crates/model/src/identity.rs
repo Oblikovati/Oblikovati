@@ -6,10 +6,12 @@ use std::{error::Error, fmt, str::FromStr};
 use uuid::Uuid;
 
 mod allocation;
+mod envelope;
 mod file;
 mod record;
 mod source;
 pub use allocation::{RecipeIdAllocator, RecipeIdError};
+pub use envelope::{ReferenceEnvelope, ReferenceEnvelopeError, ReferenceScheme};
 pub use file::{FileIdentity, RecipeDigest};
 pub use record::{FileIdentityRecord, IdentityRecordError};
 pub use source::{GuidSource, IdentityTransitionError, SystemGuidSource};

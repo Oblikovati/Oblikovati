@@ -111,3 +111,34 @@ stable sketch UUID derivation after restoration. The storage owner must persist
 the mark, and future sketch/parameter owners must use this allocator. Existing
 parameter collections still accept caller-owned IDs. This component does not
 yet establish an application-wide allocation or undo integration gate.
+
+## Reference envelope codec — partial R2
+
+Tracking: [#3589](https://github.com/Oblikovati/Oblikovati/issues/3589).
+`ReferenceEnvelope` reads the legacy 16-byte header and scheme-1 `OKRK`
+21-byte header. Context (`u64`), entity kind (`u32`), and payload length (`u32`)
+are little-endian. Payload bytes are borrowed without interpretation or copying.
+The decoder requires the declared length to equal all remaining bytes. It
+rejects short headers, trailing bytes, and unsupported schemes before binding.
+Unknown entity-kind numbers remain opaque, as in Go; decoding is not permission
+to resolve an unsupported entity.
+
+Encoding writes scheme 1 and preserves the identity triple exactly. It checks
+the payload width and the allocation limit before constructing the envelope.
+This upgrades the container only; it cannot migrate Go lineage meaning into
+Martensite. That requires the explicit semantic mapping in ADR-0005.
+
+Normal decode classifies by the magic prefix and never retries malformed
+versioned input as legacy. Go's comment claimed a legacy context could not
+collide with that prefix, but the full `u64` range permits it. An explicit
+`decode_legacy` entry point handles bytes whose legacy origin the storage owner
+can establish. It must not be used as a fallback after a failed normal decode.
+An ambiguous file without reliable format context still needs a migration rule.
+
+Fifteen fixtures captured from Go `DecodeKey` and `Encode` at the fixed baseline
+cover zero/full-width contexts and kinds plus binary payloads. Tests compare
+both decoded schemes and exact re-encoded bytes, every truncation of a sample,
+extra bytes, false lengths, unknown schemes, and the magic/context collision.
+An allocation-size unit test uses lengths without allocating huge buffers.
+Key binding, supported-kind classification, provenance, and malformed package
+import remain separate integration gates.
