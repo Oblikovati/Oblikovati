@@ -62,3 +62,30 @@ variable spatial cross product against independent central differences, constant
 and seeded scaling, immutable inputs, dimension mismatches, zero vectors, and
 norm scale sweeps from `1e-200` to `1e200`. The nonlinear solver and model residual
 libraries remain pending; vector primitives alone do not establish sketch DOF.
+
+## Residual evaluation and Jacobian assembly — partial R2
+
+Tracking: [#3700](https://github.com/Oblikovati/Oblikovati/issues/3700).
+`ResidualSource` evaluates equations over immutable dual-number inputs.
+`ResidualBlock` declares local variable references and a stable equation count.
+The evaluator validates every reference before calling any source, seeds the
+global input once, and passes owned local views in each source's declared order.
+Repeated references share the same seeded column, so their contributions combine
+through automatic differentiation without pointer identities or live mutation.
+
+Values and Jacobian rows come from the same evaluation. Rows follow source and
+local equation order; columns follow the caller's global variable order. Constant
+rows expand to zero partials. The result retains source row ranges for later
+conflict/redundancy diagnostics, and a variable count even when there are no rows.
+
+Invalid/non-finite input, wrong equation counts, incompatible gradient widths,
+and source domain/arithmetic failures return named errors. No partial evaluation
+is published. Production evaluation requires derivative-aware sources; there is
+no implicit finite-difference fallback. Non-differentiable legacy sources still
+need adaptation before they can use this boundary.
+
+Tests cover the Go gap and repeated-variable cases, multiple equations per
+source, reordered/shared columns, constants, empty systems, deterministic repeat
+evaluation, exactly one call per source, input preservation, validation before
+callbacks, and error provenance. This is a dense derivative representation;
+nonlinear iteration, numerical rank, and model residual definitions remain pending.
