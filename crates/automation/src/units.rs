@@ -68,7 +68,7 @@ pub(super) fn formatted(
         .map_err(|error| Error(error.to_string()))
 }
 
-fn require_category(name: &str) -> Result<Dimension, Error> {
+pub(super) fn require_category(name: &str) -> Result<Dimension, Error> {
     parse_category(name).ok_or_else(|| {
         Error(format!(
             "unit category {name:?}: expected a supported quantity category"

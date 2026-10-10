@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed query dispatch; edits and native add-in transport are separate host responsibilities.
+mod expressions;
 mod units;
 use oblikovati_api::{Error, client::Caller, wire::*};
-use oblikovati_model::units::UnitsOfMeasure;
+use oblikovati_model::{parameter::ParameterCollection, units::UnitsOfMeasure};
 use oblikovati_session::{
     TransactionObserver,
     workspace::{WorkspaceObserver, WorkspaceSession},
@@ -11,8 +12,14 @@ use oblikovati_session::{
 use serde::{Serialize, de::DeserializeOwned};
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 6] = [
+pub const QUERY_METHODS: [&str; 12] = [
     METHOD_DOCUMENTS_GET_UNITS,
+    METHOD_UNITS_GET_VALUE_FROM_EXPRESSION,
+    METHOD_UNITS_GET_DATABASE_UNITS_FROM_EXPRESSION,
+    METHOD_UNITS_IS_EXPRESSION_VALID,
+    METHOD_UNITS_COMPATIBLE_UNITS,
+    METHOD_UNITS_GET_DRIVING_PARAMETERS,
+    METHOD_UNITS_GET_LOCALE_CORRECTED_EXPRESSION,
     METHOD_UNITS_CONVERT,
     METHOD_UNITS_GET_TYPE_FROM_STRING,
     METHOD_UNITS_GET_STRING_FROM_TYPE,
@@ -32,6 +39,10 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
     }
 
     fn active_units(&self) -> Result<&UnitsOfMeasure, Error> {
+        Ok(self.active_parameters()?.units())
+    }
+
+    fn active_parameters(&self) -> Result<&ParameterCollection<u64>, Error> {
         let id = self
             .workspace
             .active_document()
@@ -40,13 +51,35 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
             .workspace
             .session(id)
             .map_err(|error| Error(error.to_string()))?;
-        Ok(session.snapshot().parameters.units())
+        Ok(&session.snapshot().parameters)
     }
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_UNITS_GET_VALUE_FROM_EXPRESSION => encode(&expressions::value(
+                self.active_parameters()?,
+                decode(method, request)?,
+            )?),
+            METHOD_UNITS_GET_DATABASE_UNITS_FROM_EXPRESSION => encode(&expressions::database(
+                self.active_parameters()?,
+                decode(method, request)?,
+            )?),
+            METHOD_UNITS_IS_EXPRESSION_VALID => encode(&expressions::valid(
+                self.active_parameters()?,
+                decode(method, request)?,
+            )?),
+            METHOD_UNITS_COMPATIBLE_UNITS => encode(&expressions::compatible(
+                self.active_parameters()?,
+                decode(method, request)?,
+            )?),
+            METHOD_UNITS_GET_DRIVING_PARAMETERS => {
+                encode(&expressions::references(decode(method, request)?)?)
+            }
+            METHOD_UNITS_GET_LOCALE_CORRECTED_EXPRESSION => {
+                encode(&expressions::canonical(decode(method, request)?)?)
+            }
             METHOD_DOCUMENTS_GET_UNITS => encode(&units::document_units(self.active_units()?)),
             METHOD_UNITS_CONVERT => encode(&units::convert(decode(method, request)?)?),
             METHOD_UNITS_GET_TYPE_FROM_STRING => {
