@@ -65,11 +65,12 @@ The owner release tooling derives the complete crate set from Cargo metadata and
 includes `martensite-vulkan`; keep its sibling crates, lockfile, license, and
 native runtime requirements together under the existing release contract.
 
-At this check, the remote kernel `main` was
-`e4144c4c3ac1bad8487367d3c51595f048a8fc5d`, and the repository had no published
-GitHub releases. The new rendering revision was local only. Do not replace the
+On a subsequent fetch on 2026-10-10, remote kernel `main` reached
+`ead13bcb5d2313236e61b15a22a127a23cd8bdd7`, matching the checked rendering
+revision. The repository still had no published GitHub releases. Source
+publication is confirmed; release-package verification remains open. Do not replace the
 application's released-dependency checks with a sibling path or a machine-local
-Git URL. Once the kernel owner publishes the revision and packages, pin that
+Git URL. Once the kernel owner publishes the packages, pin that
 immutable source in the viewport crate and verify the extracted package set.
 The application release pins remain unset; publication is still blocked.
 
