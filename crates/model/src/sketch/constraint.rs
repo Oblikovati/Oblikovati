@@ -38,6 +38,10 @@ pub enum PlanarConstraint {
         point: SketchEntityId,
         position: [f64; 2],
     },
+    ArcMidpoint {
+        point: SketchEntityId,
+        arc: SketchEntityId,
+    },
     Midpoint {
         point: SketchEntityId,
         line: SketchEntityId,
@@ -122,6 +126,10 @@ impl Sketch2D {
             | PlanarConstraint::Vertical { points }
             | PlanarConstraint::Distance { points, .. } => points.to_vec(),
             PlanarConstraint::Fix { point, .. } => vec![*point],
+            PlanarConstraint::ArcMidpoint { point, arc } => {
+                let arc = self.arc(*arc)?;
+                vec![*point, arc.center, arc.start, arc.end]
+            }
             PlanarConstraint::Midpoint { point, line }
             | PlanarConstraint::PointOnLine { point, line } => {
                 let endpoints = self.line(*line)?.endpoints;

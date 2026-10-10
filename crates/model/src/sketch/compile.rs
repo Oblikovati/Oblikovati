@@ -85,11 +85,12 @@ fn prepared_source(
     constraint: &SketchConstraint,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PreparedConstraint, SketchError> {
-    let equation = equation(constraint, parameters)?;
+    let equation = equation(sketch, constraint, parameters)?;
     super::circular_compile::prepare_relation(sketch, &constraint.relation, equation)
 }
 
 fn equation(
+    sketch: &Sketch2D,
     constraint: &SketchConstraint,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PlanarEquation, SketchError> {
@@ -107,6 +108,9 @@ fn equation(
         PlanarConstraint::Horizontal { .. } => PlanarEquation::Coordinate(1),
         PlanarConstraint::Vertical { .. } => PlanarEquation::Coordinate(0),
         PlanarConstraint::Fix { position, .. } => PlanarEquation::Fix(position),
+        PlanarConstraint::ArcMidpoint { arc, .. } => {
+            PlanarEquation::ArcMidpoint(sketch.arc(arc)?.counter_clockwise)
+        }
         PlanarConstraint::Midpoint { .. } => PlanarEquation::Midpoint,
         PlanarConstraint::PointOnLine { .. } => PlanarEquation::PointOnLine,
         PlanarConstraint::Lines { relation, .. } => PlanarEquation::Lines(relation),

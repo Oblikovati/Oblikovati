@@ -21,6 +21,10 @@ pub enum SketchError {
         constraint: SketchConstraintId,
         cause: ResidualError,
     },
+    ArcMidpoint {
+        arc: SketchEntityId,
+        cause: ResidualError,
+    },
     ArcCircularity {
         arc: SketchEntityId,
         cause: EvaluationError,
@@ -47,6 +51,9 @@ impl fmt::Display for SketchError {
                 output,
                 "sketch constraint {constraint:?} contact selection: {cause}"
             ),
+            Self::ArcMidpoint { arc, cause } => {
+                write!(output, "sketch arc {arc:?} midpoint: {cause}")
+            }
             Self::ArcCircularity { arc, cause } => {
                 write!(output, "sketch arc {arc:?} circularity: {cause}")
             }
@@ -62,7 +69,7 @@ impl Error for SketchError {
             Self::Definition(_) => None,
             Self::Parameter { cause, .. } => Some(cause),
             Self::Numerical(cause) => Some(cause),
-            Self::ContactSelection { cause, .. } => Some(cause),
+            Self::ContactSelection { cause, .. } | Self::ArcMidpoint { cause, .. } => Some(cause),
             Self::Residual { cause, .. } | Self::ArcCircularity { cause, .. } => Some(cause),
         }
     }

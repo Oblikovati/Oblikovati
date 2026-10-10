@@ -334,3 +334,46 @@ Arc midpoint and diameter relations, sketch persistence, API/UI integration,
 finite sweep/profile validity, feature evaluation, and kernel acceptance remain
 open. These contact equations describe sketch geometry and do not certify a
 valid B-rep contact, blend, or profile.
+
+## Directed arc midpoint queries and constraints
+
+Tracking: [#3711](https://github.com/Oblikovati/Oblikovati/issues/3711).
+`arc_midpoint` and `ArcMidpoint { point, arc }` use one AD construction. The
+start and end radial directions determine a relative angle by normalized
+cross/dot and `atan2`. The authored sweep direction selects the directed angle;
+rotating the start radial vector by half that angle gives the midpoint. This
+handles minor and major sweeps and avoids a discontinuity when an absolute
+polar angle crosses its wrap boundary. Radius remains derived from center/start.
+The query is read-only and uses the same construction on constant AD values.
+
+The constraint has two direct coordinate residuals: point minus midpoint. Go's
+`constraints_arc_midpoint.go` instead constrains circle incidence and the
+perpendicular bisector, then seeds the point to select one of the two roots.
+The Rust equations exclude the complementary root explicitly and do not move
+an authored point when a relation is added. They still associate the point with
+the arc as radius, endpoint directions, and sweep change. These are different
+residual coordinates, so matching Go's midpoint positions is meaningful;
+claiming identical Go residuals or Jacobians would not be meaningful.
+
+Collapsed radial directions are named declines. Identical endpoint directions
+are also refused: they do not distinguish zero sweep from full sweep. The Go
+query and seed helpers disagree on this case, choosing full and zero sweeps
+respectively. A full circle remains a separate entity. No epsilon perturbation,
+implicit branch retry, or alternate midpoint engine resolves the ambiguity.
+The query follows endpoint directions on a draft; it does not prove circularity
+or finite-sweep profile validity. Solving still includes the arc's structural
+circularity equation.
+
+Six fixed-baseline Go query fixtures cover quarter, major, both half-circle
+orientations, polar wrap, and a translated center. Go's midpoint seed/solve and
+clockwise regressions pass. Independent polar-angle formulas and central finite
+differences check both Rust residual rows and all eight coordinate partials.
+Tests cover both wrap boundaries, near-zero/near-full sweeps, collapsed and
+ambiguous domains, and residual/derivative scales from `1e-200` to `1e200`.
+
+Model tests solve both sweep directions from the complementary side with zero
+DOF, edit radius and endpoint direction, and preserve entity and constraint
+identities. They check read-only queries, atomic reference errors, typed query
+and authored-constraint failures, overflow, cancellation, and full solve/rank
+scales from `1e-100` through `1e100`. Diameter dimensions, sketch persistence,
+API/UI integration, profile stitching and kernel feature acceptance remain open.

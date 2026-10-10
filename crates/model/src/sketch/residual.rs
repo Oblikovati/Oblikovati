@@ -11,6 +11,7 @@ use oblikovati_solve::{
 #[derive(Clone, Copy)]
 pub(super) enum PlanarEquation {
     ArcCircularity,
+    ArcMidpoint(bool),
     Coincident,
     Coordinate(usize),
     Fix([f64; 2]),
@@ -40,7 +41,8 @@ pub(super) struct PreparedConstraint {
 impl PreparedConstraint {
     pub fn equations(&self) -> usize {
         match self.equation {
-            PlanarEquation::Coincident
+            PlanarEquation::ArcMidpoint(_)
+            | PlanarEquation::Coincident
             | PlanarEquation::Fix(_)
             | PlanarEquation::Midpoint
             | PlanarEquation::Lines(LineRelation::Collinear) => 2,
@@ -53,7 +55,7 @@ impl PreparedConstraint {
             PlanarEquation::Radius(_) => 1,
             PlanarEquation::PointOnCircle => 5,
             PlanarEquation::LineTangent(_) | PlanarEquation::PinnedLineTangent { .. } => 7,
-            PlanarEquation::PinnedCircularTangent(_) => 8,
+            PlanarEquation::PinnedCircularTangent(_) | PlanarEquation::ArcMidpoint(_) => 8,
             PlanarEquation::CircleTangent(_) | PlanarEquation::ArcCircularity => 6,
             PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
             PlanarEquation::Lines(_) => 8,
@@ -86,6 +88,9 @@ impl ResidualSource for PreparedConstraint {
             }
             PlanarEquation::PinnedCircularTangent(contact) => {
                 tangent_residual::pinned_circular_tangent(variables, contact)
+            }
+            PlanarEquation::ArcMidpoint(counter_clockwise) => {
+                super::arc_midpoint::midpoint_residual(variables, counter_clockwise)
             }
             PlanarEquation::ArcCircularity => arc_residual::circularity(variables),
             PlanarEquation::Coincident => Ok(point(variables, 0)?
