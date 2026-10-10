@@ -346,3 +346,28 @@ factors, category names, signed zero, overflow, live nominal reads, micro-units
 at three scales, unusable references, and unchanged collection state. Four Go
 unit/expression service tests passed at the fixed baseline with Go 1.27.0.
 Display formatting, precision preferences, and API router integration remain open.
+
+## Custom parameter groups — partial R2
+
+Tracking: [issue #3578](https://github.com/Oblikovati/Oblikovati/issues/3578).
+The collection owns custom groups with canonical API `ParameterGroupKey` values,
+immutable internal identity, editable nonempty display names, and add-in client
+attribution. Groups enumerate in creation order; members enumerate in parameter
+insertion order. Membership is by stable ID, supports multiple groups, and survives
+parameter rename. Removing a parameter detaches every membership. Reusing a caller
+ID does not inherit those memberships.
+
+Plain group deletion preserves member parameters. Explicit member deletion first
+checks the complete set against the same removal rule used for single parameters.
+Outside readers and surviving feature dimensions refuse the cascade before any
+mutation. Dependencies wholly inside the removed set are permitted. Deletion also
+cleans membership in surviving groups. Missing parameter/group queries return named
+errors rather than silently pretending the group or parameter is empty.
+
+Eight tests cover lifecycle, attribution, ordering, typed literal membership,
+atomic rejection, rename/removal cleanup, and feature-dimension protection. The
+cascade test enumerates all 64 ordered four-node DAGs and all 16 member subsets;
+it checks survivor state and atomic rejection against the graph's edge definition.
+Eight legacy group tests passed at the fixed Go baseline. Group metadata edits do
+not mark nominal parameter values changed. Session metadata events, persistence,
+API routing, and the separate copy-to-user operation remain to be ported.

@@ -6,6 +6,9 @@ mod edit;
 mod error;
 mod evaluate;
 mod fits;
+mod groups;
+mod membership;
+pub use groups::ParameterGroup;
 mod literal;
 mod reads;
 mod record;
@@ -42,6 +45,7 @@ pub struct ParameterCollection<Id> {
     graph: DependencyGraph<Id>,
     changed: BTreeSet<Id>,
     units: UnitsOfMeasure,
+    groups: Vec<ParameterGroup<Id>>,
 }
 
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
@@ -54,6 +58,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             graph: DependencyGraph::default(),
             changed: BTreeSet::new(),
             units,
+            groups: Vec::new(),
         }
     }
 

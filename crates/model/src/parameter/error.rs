@@ -26,6 +26,11 @@ pub enum ParameterError<Id> {
         id: Id,
         name: String,
     },
+    Group {
+        key: String,
+        found: String,
+        expected: &'static str,
+    },
     InUse {
         id: Id,
         readers: Vec<String>,
@@ -54,6 +59,14 @@ impl<Id: fmt::Debug> fmt::Display for ParameterError<Id> {
             Self::ReadOnly { id, name } => write!(
                 formatter,
                 "parameter {name:?} ({id:?}): expected an editable parameter"
+            ),
+            Self::Group {
+                key,
+                found,
+                expected,
+            } => write!(
+                formatter,
+                "group {key:?}: found {found:?}; expected {expected}"
             ),
             Self::InUse { id, readers } => write!(
                 formatter,

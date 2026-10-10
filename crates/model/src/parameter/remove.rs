@@ -5,16 +5,7 @@ use super::*;
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     /// Delete only an unused parameter; for example `parameters.remove(id)`.
     pub fn remove(&mut self, id: Id) -> Result<(), ParameterError<Id>> {
-        let record = self.require_record(id)?;
-        let mut readers: Vec<String> = self
-            .graph
-            .readers(id)?
-            .iter()
-            .map(|reader| self.records[reader].state.name.clone())
-            .collect();
-        if record.state.kind == MODEL_PARAM {
-            readers.push("owning feature dimension".into());
-        }
+        let readers = self.removal_blockers(id, &BTreeSet::new())?;
         if !readers.is_empty() {
             return Err(ParameterError::InUse { id, readers });
         }
@@ -30,6 +21,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         }
         self.graph.remove(id)?;
         self.records.remove(&id);
+        self.detach_group_memberships(id);
         self.names.remove(&name);
         self.order.retain(|candidate| *candidate != id);
         self.changed.remove(&id);
@@ -41,6 +33,25 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             self.recompute(reader)?;
         }
         Ok(())
+    }
+
+    pub(super) fn removal_blockers(
+        &self,
+        id: Id,
+        removed: &BTreeSet<Id>,
+    ) -> Result<Vec<String>, ParameterError<Id>> {
+        let record = self.require_record(id)?;
+        let mut readers: Vec<String> = self
+            .graph
+            .readers(id)?
+            .iter()
+            .filter(|reader| !removed.contains(reader))
+            .map(|reader| self.records[reader].state.name.clone())
+            .collect();
+        if record.state.kind == MODEL_PARAM {
+            readers.push("owning feature dimension".into());
+        }
+        Ok(readers)
     }
 
     fn detach_removed_driver(&mut self, reader: Id, removed: Id) -> Result<(), ParameterError<Id>> {
