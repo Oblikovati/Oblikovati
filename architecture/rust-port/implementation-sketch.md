@@ -463,3 +463,5 @@ through `1e100`. Tangent-distance and other dimension forms, sketch persistence,
 API/UI integration, finite-sweep profile and kernel feature acceptance remain open.
 
 Tangent-distance dimensions now have separate [implementation evidence](implementation-sketch-offsets.md).
+
+Versioned planar recipes now have separate [implementation evidence](implementation-sketch-recipes.md).

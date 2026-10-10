@@ -6,7 +6,8 @@ use super::{
 use oblikovati_solve::{ad::DualNumber, residual::ResidualError};
 use std::f64::consts::{PI, TAU};
 /// Authored angle direction from the first ray to the second; retained after edits.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum AngleTurn {
     CounterClockwise,
     Clockwise,

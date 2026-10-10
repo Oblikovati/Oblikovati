@@ -5,17 +5,19 @@ use super::{
 };
 
 /// Stable constraint identity, separate from the point/curve identity namespace.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SketchConstraintId(pub u64);
 /// Application distance measure; this is not a wire DTO or API enum replacement.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum DistanceMeasure {
     Aligned,
     Horizontal,
     Vertical,
 }
 /// Application-owned relation between two analytic planar lines.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum LineRelation {
     Parallel,
     Perpendicular,
@@ -23,7 +25,8 @@ pub enum LineRelation {
     EqualLength,
 }
 /// Authored references remain intact when numerical values change.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum PlanarConstraint {
     Coincident {
         points: [SketchEntityId; 2],
@@ -117,7 +120,8 @@ pub enum PlanarConstraint {
     },
 }
 /// One ordered constraint with identity for diagnostics and later persistence.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SketchConstraint {
     pub id: SketchConstraintId,
     pub relation: PlanarConstraint,

@@ -2,7 +2,8 @@
 use super::{Sketch2D, SketchEntityId, SketchError};
 
 /// Analytic circle with a shared center identity and one positive radius variable.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SketchCircle2D {
     pub id: SketchEntityId,
     pub center: SketchEntityId,

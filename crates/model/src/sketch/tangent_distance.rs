@@ -4,19 +4,22 @@ use super::{
 };
 use super::{tangent, tangent_residual::radial_projection};
 /// Offset convention; near distance is signed when the line crosses the circle.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TangentDistanceOptions {
     pub far_side: bool,
     pub linear_diameter: bool,
 }
 /// Retained direction of the radius along the oriented line at a shared point.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum TangentLean {
     Positive,
     Negative,
 }
 /// Authored branch identity; lean exists exactly for a shared defining endpoint.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TangentDistanceContact {
     pub side: LineContactSide,
     pub lean: Option<TangentLean>,

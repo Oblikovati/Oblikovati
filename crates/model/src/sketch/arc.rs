@@ -2,7 +2,8 @@
 use super::{Sketch2D, SketchEntityId, SketchError, variables::SketchVariable};
 
 /// Circular arc with shared defining points and a retained authored sweep direction.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SketchArc2D {
     pub id: SketchEntityId,
     pub center: SketchEntityId,

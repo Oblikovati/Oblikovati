@@ -18,6 +18,7 @@ mod error;
 mod geometry;
 mod line_residual;
 mod offset_dimension;
+mod recipe;
 mod residual;
 mod shared_contact;
 mod solve;
@@ -36,6 +37,7 @@ pub use constraint::{
 };
 pub use error::SketchError;
 pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
+pub use recipe::{SKETCH_RECIPE_VERSION, SketchRecipe};
 pub use solve::SketchSolveOutcome;
 pub use source::SketchRelationId;
 pub use tangent::{CircleContact, LineContactSide};

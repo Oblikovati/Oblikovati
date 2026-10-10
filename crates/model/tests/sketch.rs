@@ -476,3 +476,6 @@ mod tangent_distances;
 
 #[path = "sketch/offset_dimensions.rs"]
 mod offset_dimensions;
+
+#[path = "sketch/recipes.rs"]
+mod recipes;

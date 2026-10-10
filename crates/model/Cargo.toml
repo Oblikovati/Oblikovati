@@ -16,6 +16,6 @@ oblikovati-solve = { path = "../solve" }
 getrandom = "=0.4.3"
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "9b5da090a9260892f54b4762d1225b5f892cbeb4", version = "=0.154.0" }
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"
 uuid = { version = "=1.27.0", features = ["v5"] }

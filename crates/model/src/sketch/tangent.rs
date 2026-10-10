@@ -5,13 +5,15 @@ use super::{
 use oblikovati_solve::{ad::DualNumber, residual::ResidualError};
 
 /// Retained side of the oriented line A→B, never reselected during iteration.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum LineContactSide {
     Left,
     Right,
 }
 /// Retained external contact or explicit enclosing circular-curve identity by pair order.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum CircleContact {
     External,
     FirstContainsSecond,

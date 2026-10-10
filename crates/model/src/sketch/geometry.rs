@@ -2,16 +2,20 @@
 use super::{Sketch2D, SketchError};
 
 /// Persistent local entity identity supplied by the owning document, never by solver order.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub struct SketchEntityId(pub u64);
 /// Planar coordinates in the owning document's working length unit.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SketchPoint2D {
     pub id: SketchEntityId,
     pub position: [f64; 2],
 }
 /// A line references owned points; shared identity is structural coincidence.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SketchLine2D {
     pub id: SketchEntityId,
     pub endpoints: [SketchEntityId; 2],
