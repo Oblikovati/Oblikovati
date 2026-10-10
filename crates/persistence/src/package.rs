@@ -14,6 +14,8 @@ mod interests;
 mod parameters;
 mod properties;
 mod resource_edit;
+mod resource_read;
+pub use resource_read::{ApplicationResources, ResourceReadError};
 mod resources;
 mod streams;
 mod units;

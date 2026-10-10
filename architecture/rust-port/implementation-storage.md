@@ -313,3 +313,24 @@ committed Go resource fixture. The Go resource codec tests provide reference
 evidence. Model ownership, reference validation, and application resource
 resolution remain separate work; callers must coordinate recipe references
 when replacing or removing an imported resource.
+
+## Exact resource byte access — partial R2
+
+Tracking: [#3686](https://github.com/Oblikovati/Oblikovati/issues/3686).
+`DocumentPackage::resource_bytes` resolves an exact resource ID. UTF-8 and binary
+resources return borrowed stored bytes, including valid empty payloads. Their
+origin remains display metadata; no filesystem read or application lookup occurs.
+
+Only `embedded` resources call the injected `ApplicationResources` provider with
+the exact type and origin key. Its result owns the returned bytes. Missing IDs
+and provider failures are explicit `ResourceReadError` values. Provider failures
+retain the resource ID, type, origin, and original I/O cause. No path lookup,
+installed-font substitution, retry, or alternate family selection occurs here,
+as required by ADR-0014. The provider must serve exact application bundle content.
+
+Four tests verify stored byte access after encode/decode, empty payloads,
+provider call isolation, exact key forwarding, result ownership, missing IDs,
+and missing/denied/invalid bundle errors. This ports the byte-access boundary of
+Go `ResourceBytes` and the explicit bundle lookup in font resolution. It does
+not port Go's family-name fallback. Bundled asset catalog ownership, font parsing,
+and feature-engine use of this boundary remain pending.
