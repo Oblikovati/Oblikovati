@@ -453,3 +453,24 @@ independent collection clones, and unchanged nominal/model values and dirty flag
 The Go default-settings test passed at the fixed baseline. Standard-tolerance
 strings remain authored metadata, as in Go; applying them to new dimensions,
 rendering them, persistence, and session/API integration remain open.
+
+## Parameter kind conversion and built-in dimensions — partial R2
+
+Tracking: [issue #3583](https://github.com/Oblikovati/Oblikovati/issues/3583).
+Kind conversion preserves parameter identity, source, metadata, health, and graph
+edges. User, Model, and Reference are the only targets. Built-in and Derived
+sources are refused, including same-kind attempts, as in Go. Reference conversion
+activates existing read-only edit rules; conversion back restores editability.
+No nominal recomputation occurs solely because a kind changes.
+
+Automatic model insertion uses a caller-supplied ID and the first unused `dN`
+name, then marks the parameter built-in. Rename retains that guard. User copies
+start without it. Name allocation shares collision handling with user copies;
+malformed input and direct self-reference consume no name or ID. The caller still
+owns lifetime identity allocation; reusing a removed display name does not imply
+permission to reuse a persistent entity ID.
+
+Five regression tests cover conversion, dependent recomputation, reference edits,
+invalid targets, built-in copies, name collisions, and atomic insertion failures.
+Five matching Go conversion/built-in tests passed at the fixed baseline. Feature
+creation, action-mask enforcement, persistence, and API routing remain open.

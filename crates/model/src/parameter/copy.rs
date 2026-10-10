@@ -48,17 +48,13 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     }
 
     fn unique_copy_name(&self, source: &str) -> String {
-        // With N occupied names, one of N+1 candidates must be free.
-        (0..=self.names.len())
-            .map(|index| {
-                if index == 0 {
-                    format!("{source}_copy")
-                } else {
-                    format!("{source}_copy{}", index + 1)
-                }
-            })
-            .find(|name| self.find(name).is_none())
-            .expect("more candidates than occupied names")
+        self.first_available_name((0..).map(|index: usize| {
+            if index == 0 {
+                format!("{source}_copy")
+            } else {
+                format!("{source}_copy{}", index + 1)
+            }
+        }))
     }
 }
 
