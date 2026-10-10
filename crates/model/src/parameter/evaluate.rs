@@ -27,11 +27,18 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             self.fail(id, ParameterFailure::Cycle(error.clone()));
             return Err(error.into());
         }
-        self.records
+        let state = &mut self
+            .records
             .get_mut(&id)
             .expect("registered parameter")
-            .state
-            .health = ParameterHealth::Healthy;
+            .state;
+        // Rebinding a renamed reader cannot repair an unavailable external source (#3603).
+        if !matches!(
+            state.health,
+            ParameterHealth::Failed(ParameterFailure::ExternalLink { .. })
+        ) {
+            state.health = ParameterHealth::Healthy;
+        }
         Ok(())
     }
 
@@ -40,7 +47,9 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             self.changed.insert(id);
             if matches!(
                 self.records[&id].state.health,
-                ParameterHealth::Failed(ParameterFailure::Cycle(_))
+                ParameterHealth::Failed(
+                    ParameterFailure::Cycle(_) | ParameterFailure::ExternalLink { .. }
+                )
             ) {
                 continue;
             }

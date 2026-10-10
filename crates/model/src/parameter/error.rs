@@ -10,6 +10,11 @@ pub enum ParameterError<Id> {
     Dependency(DependencyError<Id>),
     Syntax(ExpressionError),
     Selection(ModelValueType),
+    DerivedTable {
+        id: i64,
+        found: String,
+        expected: &'static str,
+    },
     Settings {
         found: String,
         expected: &'static str,
@@ -46,6 +51,14 @@ impl<Id: fmt::Debug> fmt::Display for ParameterError<Id> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Dependency(error) => error.fmt(formatter),
+            Self::DerivedTable {
+                id,
+                found,
+                expected,
+            } => write!(
+                formatter,
+                "derived table {id}: found {found}; expected {expected}"
+            ),
             Self::Syntax(error) => error.fmt(formatter),
             Self::Settings { found, expected } => write!(
                 formatter,

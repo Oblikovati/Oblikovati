@@ -7,6 +7,7 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 
+mod derived;
 mod groups;
 mod property;
 mod record;
@@ -42,6 +43,7 @@ impl DocumentPackage {
         tolerance::restore_tolerances(&records, &mut restored.parameters)?;
         groups::restore_groups(self.root.get("model"), &mut restored.parameters)?;
         settings::restore_settings(self.root.get("model"), &mut restored.parameters)?;
+        derived::restore_tables(self.root.get("model"), &mut restored.parameters)?;
         restored.parameters.drain_changed();
         Ok(restored)
     }
@@ -50,12 +52,6 @@ impl DocumentPackage {
         let Some(model) = self.root.get("model").and_then(Value::as_mapping) else {
             return Ok(Vec::new());
         };
-        if model
-            .get("derivedParameterTables")
-            .is_some_and(|value| !value.is_null())
-        {
-            return Err(PackageCodecError("parameter section derivedParameterTables: expected an implemented recipe decoder; support is pending".into()));
-        }
         match model.get("parameters") {
             None | Some(Value::Null) => Ok(Vec::new()),
             Some(records) => serde_yaml_ng::from_value(records.clone()).map_err(codec_error),

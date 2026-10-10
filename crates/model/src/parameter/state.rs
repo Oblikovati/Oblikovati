@@ -15,6 +15,10 @@ pub enum ParameterValue {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParameterFailure<Id> {
     Unresolved(Vec<String>),
+    ExternalLink {
+        source_document: String,
+        source_parameter: String,
+    },
     Cycle(DependencyError<Id>),
     Evaluation(ExpressionError),
     BlockedBy(Vec<Id>),

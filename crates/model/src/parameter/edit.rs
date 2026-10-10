@@ -115,6 +115,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     ) -> Result<(), ParameterError<Id>> {
         let record = self.records.get_mut(&id).expect("validated parameter");
         record.state.source = expression.source().into();
+        record.state.health = ParameterHealth::Healthy;
         record
             .formula
             .as_mut()

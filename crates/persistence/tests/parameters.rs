@@ -142,7 +142,7 @@ fn duplicates_and_cycles_cannot_replace_an_existing_live_table() {
 }
 
 #[test]
-fn absent_parameters_are_empty_but_unimplemented_related_state_is_not_dropped() {
+fn absent_parameters_and_empty_link_tables_are_supported() {
     for suffix in ["", "model: null", "model: {}", "model: {parameters: null}"] {
         let input = format!("schemaVersion: 2\ndocumentType: 1\n{suffix}");
         let package = DocumentPackage::decode(input.as_bytes()).unwrap();
@@ -163,7 +163,7 @@ fn absent_parameters_are_empty_but_unimplemented_related_state_is_not_dropped() 
         assert!(
             package
                 .restore_parameters(UnitsOfMeasure::default())
-                .is_err()
+                .is_ok()
         );
     }
 }

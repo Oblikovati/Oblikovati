@@ -9,6 +9,8 @@ mod property;
 pub use annotations::ParameterAnnotations;
 pub use property::CustomPropertyFormat;
 mod choices;
+mod derived;
+pub use derived::{DerivedTable, DerivedTableHealth};
 mod edit;
 mod error;
 mod evaluate;
@@ -57,6 +59,7 @@ pub struct ParameterCollection<Id> {
     units: UnitsOfMeasure,
     settings: CollectionSettings,
     groups: Vec<ParameterGroup<Id>>,
+    derived_tables: Vec<DerivedTable<Id>>,
 }
 
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
@@ -71,6 +74,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             units,
             settings: CollectionSettings::default(),
             groups: Vec::new(),
+            derived_tables: Vec::new(),
         }
     }
 

@@ -59,9 +59,7 @@ matching the legacy name-based format; this does not add persistent parameter
 IDs to the file schema.
 
 Unknown fields and inconsistent value-flavor fields are refused. Linked
-derived tables remain explicitly unsupported. Their source YAML stays retained
-in the package, and reconstruction cannot silently discard them. Tolerance and
-model-value selection are covered below. This is an intermediate decoder, not completion of the parameter recipe
+derived tables, tolerance, and model-value selection are covered below. This is an intermediate decoder, not completion of the parameter recipe
 port or permission to execute unported features elsewhere in the model.
 
 Eight tests cover live edit/recompute after loading, all kinds and literal
@@ -83,8 +81,8 @@ idempotent. An omitted display name defaults to the internal name.
 Four tests cover order and metadata, multi-membership, repeated names,
 empty/null/memberless groups, unknown fields, duplicate group keys, and missing
 members. Invalid groups discard only the separate reconstruction candidate.
-The existing live table is not an input to this operation. Linked tables remain
-pending; tolerance/selection reconstruction is covered below.
+The existing live table is not an input to this operation. Linked tables and
+tolerance/selection reconstruction are covered below.
 
 ## Collection settings reconstruction — partial R2
 
@@ -137,3 +135,30 @@ Tests cover all types/selections, retained fit labels/bands, forward references,
 read-only values, default records, atomic rejection, and unchanged dirty state.
 The Go fit, parameter-field, and introspection round-trip tests are the baseline.
 Full live-model recipe export remains pending.
+
+## Derived-table reconstruction and refresh — partial R2
+
+Tracking: [#3603](https://github.com/Oblikovati/Oblikovati/issues/3603).
+`derivedParameterTables` restores table IDs, source document names, linked-name
+order, and feature ownership after the parameter list. Existing derived values
+reconnect by name. Missing local names stay in the linked subset without a
+produced reference. Canonical API references use the actual current local name,
+so local renaming does not change the source name. Removing a local parameter
+removes its produced reference and marks the table unresolved.
+
+Restoration does not read another document or claim the source is healthy.
+Tables start unresolved. The caller can supply resolved numeric values or an
+unavailable-source indication. Refresh is atomic on invalid source quantities;
+missing source values fail their links, keep last-good values, and block their
+readers. Missing drivers fail before updated drivers recompute, so readers do
+not retain a partial source snapshot as their last valid value. A later complete
+refresh restores evaluation. This intentionally tightens Go's missing-source
+behavior, which retained stale reader health. Identity, source, duplicate link,
+kind, and multiple-owner checks also reject malformed or ambiguous records.
+
+Six model tests and three persistence tests cover restoration, canonical
+references, refresh/recovery, missing values, rename/removal, malformed input,
+atomic rollback, and last-good preservation. The Go sync and derived-table
+round-trip tests pass at the fixed baseline. Table creation, subset editing,
+owner-mediated deletion, source-document resolution, and recipe export still
+need host integration; this does not complete the cross-document feature.

@@ -22,6 +22,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         self.graph.remove(id)?;
         self.records.remove(&id);
         self.detach_group_memberships(id);
+        self.detach_derived_parameter(id);
         self.names.remove(&name);
         self.order.retain(|candidate| *candidate != id);
         self.changed.remove(&id);
