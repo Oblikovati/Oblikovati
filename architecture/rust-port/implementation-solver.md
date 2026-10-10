@@ -40,3 +40,25 @@ This proves the scalar derivative layer only. It does not prove convergence,
 constraint classification, fully constrained sketches, or kernel integration.
 The normal workspace gate discovers and checks the solver crate with all other
 Rust crates; no separate or skipped solver test path was introduced.
+
+## Derivative vectors — partial R2
+
+Tracking: [#3699](https://github.com/Oblikovati/Oblikovati/issues/3699).
+`DualVector<N>` owns fixed-size components with one compatible seeded dimension;
+constants may mix with seeded components. One implementation supplies component
+addition/subtraction, fixed and varying scaling, dot products, and lengths for
+both planar and spatial residuals. Specialized cross products return a scalar
+in 2D and a vector in 3D. These floating residual operations are not exact
+predicates for kernel topology.
+
+Lengths use chained `hypot` rather than squared components. This retains
+representable norms and their partials at very small and very large coordinate
+scales. The zero-vector convention remains zero partials. Operations return new
+owned values; incompatible dimensions or non-finite results fail without input
+mutation. The previous Go vector layer's unchecked dimension mixing is refused.
+
+Tests cover Go reference values, analytic dot/cross/length derivatives, a six-
+variable spatial cross product against independent central differences, constant
+and seeded scaling, immutable inputs, dimension mismatches, zero vectors, and
+norm scale sweeps from `1e-200` to `1e200`. The nonlinear solver and model residual
+libraries remain pending; vector primitives alone do not establish sketch DOF.

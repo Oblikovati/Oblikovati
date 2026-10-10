@@ -3,7 +3,9 @@
 //! Forward-mode residual derivatives; inputs and gradients are owned and immutable.
 mod arithmetic;
 mod nonlinear;
+mod vector;
 use std::{error::Error, fmt};
+pub use vector::DualVector;
 
 /// A scalar and its partial derivatives; an empty gradient denotes a constant.
 #[derive(Clone, Debug, PartialEq)]
