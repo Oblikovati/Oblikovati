@@ -115,3 +115,37 @@ its dimension through zero and back, retains zero DOF, then maps the solved poin
 into the saved XZ placement. Document snapshot/history integration, permanent
 reservation storage, package encoding, legacy import and session save/reopen
 remain the next integration work; this collection does not itself write files.
+
+## Package codec and reservation storage
+
+Tracking: [#3719](https://github.com/Oblikovati/Oblikovati/issues/3719).
+The persistence boundary now stores `model.planarSketches` in document schema 3.
+The section contains the versioned collection `recipe`, `sketchHighWater`, and
+`entityHighWater`. `restore_sketches()` restores the complete validated collection
+and two separate permanent `RecipeIdAllocator` owners. A saved mark must cover
+every live ID; a later capture cannot decrease either previously stored mark.
+Deleting every sketch still writes the reservation marks so a reopened allocator
+does not reuse deleted identities. Maximum `u64` marks restore and report
+exhaustion on the next allocation.
+
+`with_sketches()` produces a candidate package, preserving other model and root
+sections. The added sketch recipe participates in the existing model digest.
+Missing Rust sketch sections mean an empty collection with zero reservations;
+a new empty document does not gain an unnecessary section. An explicit Rust
+section must use schema 3 and its exact supported shape. Unknown fields, invalid
+recipe versions, bad references/identities and malformed marks are refused.
+
+Nonempty legacy Go `model.sketches` requires an explicit importer before this
+codec can restore or replace sketch state. The raw package envelope still retains
+that section, but it is not interpreted as an empty Rust collection. Empty/null
+legacy collections are accepted as empty. This prevents a future snapshot save
+from silently replacing unported legacy geometry.
+
+Eight codec tests cover native YAML round trips, an independent fixed schema
+fixture, circular dimensions and retained shared contacts, custom placement
+options, exact coordinate bits, unrelated section retention, digest changes,
+permanent deleted-ID reservations, mark underflow/decrease/exhaustion, malformed
+sections and legacy refusal. Capture and restore errors leave the original
+package unchanged. The codec has no filesystem I/O. Document snapshot/history
+ownership and session atomic save/reopen remain the next integration layer;
+this change does not yet attach these recipes to a live file workspace.
