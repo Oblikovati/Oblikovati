@@ -15,25 +15,26 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<RegisteredDocument, FileWorkspaceError> {
-        let (destination, template) = self.template_paths(metadata)?;
-        let package = read_package(&template, &mut self.files)
-            .map_err(FileWorkspaceError::Load)?
-            .with_copy_metadata(metadata);
+        let template = required_metadata_path("templateFile", &metadata.template_file)?;
+        let (destination, package) = self.prepare_template(metadata, template)?;
         self.create(&destination, package, observer, version, source)
     }
 
-    fn template_paths(
+    pub(super) fn prepare_template(
         &mut self,
         metadata: &NewFileMetadata,
-    ) -> Result<(PathBuf, PathBuf), FileWorkspaceError> {
+        template: &Path,
+    ) -> Result<(PathBuf, DocumentPackage), FileWorkspaceError> {
         let requested = required_metadata_path("fileName", &metadata.file_name)?;
-        let template = required_metadata_path("templateFile", &metadata.template_file)?;
         let destination = self.unowned_destination(requested)?;
         let template = checked_path(template, self.files.canonical_path(template))?;
         if destination == template {
             return Err(FileWorkspaceError::TemplateDestination(destination));
         }
-        Ok((destination, template))
+        let package = read_package(&template, &mut self.files)
+            .map_err(FileWorkspaceError::Load)?
+            .with_copy_metadata(metadata);
+        Ok((destination, package))
     }
 }
 

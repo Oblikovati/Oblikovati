@@ -481,3 +481,6 @@ mod create;
 
 #[path = "files/template.rs"]
 mod template;
+
+#[path = "files/project.rs"]
+mod project;

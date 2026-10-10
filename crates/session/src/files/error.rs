@@ -11,6 +11,12 @@ use std::{error::Error, fmt, io, path::PathBuf};
 /// A failed file operation; no new binding or successful save was adopted.
 #[derive(Debug)]
 pub enum FileWorkspaceError {
+    Project(oblikovati_persistence::project::ProjectLookupError),
+    MissingTemplate(u32),
+    TemplateKind {
+        expected: u32,
+        actual: u32,
+    },
     CreationMetadata {
         field: &'static str,
         value: String,
@@ -42,6 +48,15 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Project(error) => error.fmt(output),
+            Self::MissingTemplate(kind) => write!(
+                output,
+                "project template for document type {kind}: expected an existing regular template file"
+            ),
+            Self::TemplateKind { expected, actual } => write!(
+                output,
+                "template document type {actual}: expected requested document type {expected}"
+            ),
             Self::CreationMetadata { field, value } => write!(
                 output,
                 "new-file {field} {value:?}: expected a nonempty explicit file path"
@@ -89,6 +104,7 @@ impl fmt::Display for FileWorkspaceError {
 impl Error for FileWorkspaceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Project(error) => Some(error),
             Self::Package(error) => Some(error),
             Self::Identity(error) => Some(error),
             Self::Path { cause, .. } => Some(cause),
@@ -96,7 +112,9 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::CreationMetadata { .. }
+            Self::MissingTemplate(_)
+            | Self::TemplateKind { .. }
+            | Self::CreationMetadata { .. }
             | Self::TemplateDestination(_)
             | Self::DocumentType(_)
             | Self::TemplateIdentity(_)

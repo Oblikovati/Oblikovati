@@ -7,6 +7,7 @@ mod copy;
 mod create;
 mod error;
 mod open;
+mod project;
 mod save_as;
 mod template;
 use crate::{

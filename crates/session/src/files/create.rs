@@ -34,13 +34,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
 }
 
 fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, FileWorkspaceError> {
-    let kind = package.manifest().document_type;
-    if !matches!(
-        DocumentType(kind),
-        DOCUMENT_PART | DOCUMENT_ASSEMBLY | DOCUMENT_DRAWING | DOCUMENT_PRESENTATION
-    ) {
-        return Err(FileWorkspaceError::DocumentType(kind));
-    }
+    require_document_kind(package.manifest().document_type)?;
     let restored = package
         .restore_document_parameters()
         .map_err(FileWorkspaceError::Package)?;
@@ -52,6 +46,16 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         properties,
     };
     DocumentEditHistory::new(snapshot, restored.ids).map_err(FileWorkspaceError::History)
+}
+
+pub(super) fn require_document_kind(kind: u32) -> Result<(), FileWorkspaceError> {
+    if !matches!(
+        DocumentType(kind),
+        DOCUMENT_PART | DOCUMENT_ASSEMBLY | DOCUMENT_DRAWING | DOCUMENT_PRESENTATION
+    ) {
+        return Err(FileWorkspaceError::DocumentType(kind));
+    }
+    Ok(())
 }
 
 fn new_package_identity(

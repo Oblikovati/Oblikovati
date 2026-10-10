@@ -3,6 +3,7 @@
 use crate::{
     atomic::{AtomicFiles, NativeAtomicFiles},
     load::{NativePackageReader, PackageFileReader},
+    project::{NativeProjectFileProbe, ProjectFileProbe},
 };
 use std::{
     io,
@@ -21,6 +22,11 @@ pub trait DocumentFiles: AtomicFiles + PackageFileReader {
 
 /// Native access through the existing package reader and atomic writer.
 pub struct NativeDocumentFiles;
+impl ProjectFileProbe for NativeDocumentFiles {
+    fn is_regular_file(&mut self, path: &Path) -> io::Result<bool> {
+        NativeProjectFileProbe.is_regular_file(path)
+    }
+}
 impl PackageFileReader for NativeDocumentFiles {
     fn read(&mut self, path: &Path) -> io::Result<Vec<u8>> {
         NativePackageReader.read(path)

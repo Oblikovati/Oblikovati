@@ -261,5 +261,26 @@ Six tests cover metadata inheritance and overrides, open-template isolation,
 missing metadata paths, canonical aliases, read/codec failures, and native
 template/create/first-save/reopen with unchanged template bytes. Path identity
 uses canonical paths, as elsewhere in this coordinator; it is not an inode
-index. Project template search, built-in content factories, subtype registration
+index. Project configuration loading, built-in content factories, subtype registration
 and initialization, and remote `documents.create` dispatch remain pending.
+
+## Project-selected template creation — partial R2
+
+Tracking: [#3625](https://github.com/Oblikovati/Oblikovati/issues/3625).
+`FileWorkspace::create_from_project_template` connects the project lookup service
+to the unsaved-document lifecycle. An explicit metadata template takes priority;
+otherwise the project supplies the standard template for the requested canonical
+API document kind. The selected path stays a native path through loading, with no
+lossy conversion into a metadata string.
+
+Unknown requested kinds, missing project templates, lookup errors, and mismatched
+template kinds are refused before identity creation. An invalid explicit template
+does not trigger a retry with the project default. Shared template preparation
+still checks open destinations and source/destination aliases and applies the
+metadata overrides. No built-in empty document substitutes for a missing file.
+
+Six tests cover project defaults, explicit priority without fallback, missing and
+unknown kinds, type mismatch, probe failure, and native Linux project-template
+create/save/reopen. The native test checks the new document's clean saved state,
+restored parameters, and unchanged template bytes. Project selection/configuration
+ownership, built-in content factories, and remote/UI dispatch remain pending.

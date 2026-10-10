@@ -183,5 +183,7 @@ check. Opening a result still uses the file coordinator's canonical-path rules.
 Eight tests cover search priority, missing/absolute names, access errors, all
 four template names, root validation, relative references, and native Linux
 regular-file/directory lookup. Six corresponding Go reference tests pass at the
-fixed baseline. Project catalog ownership, configuration persistence, reference
-graph loading, and automatic host template selection remain pending.
+fixed baseline. Project catalog ownership, configuration persistence, and reference
+graph loading remain pending. Host template selection is connected in
+[#3625](https://github.com/Oblikovati/Oblikovati/issues/3625), with evidence in the
+[workspace implementation record](implementation-workspace.md).
