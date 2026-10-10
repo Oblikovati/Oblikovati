@@ -24,7 +24,14 @@ fn update_annotations(
     id: u64,
     request: &ParameterUpdateArgs,
 ) -> Result<(), Error> {
-    let mut annotations = parameters::state(parameters, id)?.annotations.clone();
+    let state = parameters::state(parameters, id)?;
+    if request.exposed_as_property.as_deref() == Some(&true) && state.current().is_none() {
+        return Err(Error(format!(
+            "parameter {:?} is unhealthy: expected a current value before explicit property exposure",
+            state.name
+        )));
+    }
+    let mut annotations = state.annotations.clone();
     assign(&mut annotations.comment, request.comment.clone());
     assign(&mut annotations.is_key, request.is_key.clone());
     assign(&mut annotations.visible, request.visible.clone());

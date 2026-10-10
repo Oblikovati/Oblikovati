@@ -259,3 +259,36 @@ fn typed_exposure_and_deleted_parameter_cleanup_preserve_authored_properties() {
     assert!(properties.get(USER_DEFINED, "label").is_none());
     assert!(properties.get(USER_DEFINED, "manual").is_some());
 }
+
+#[test]
+fn unhealthy_projections_are_removed_and_rebuilt_on_recovery() {
+    let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
+    parameters
+        .insert_expression(1, "width", USER_PARAM, "2 cm")
+        .unwrap();
+    let mut annotations = parameters.get(1).unwrap().annotations.clone();
+    annotations.exposed_as_property = true;
+    parameters.set_annotations(1, annotations).unwrap();
+    let mut properties = DocumentProperties::default();
+    properties
+        .put(USER_DEFINED, "manual", VariantValue::Integer(7))
+        .unwrap();
+    properties.sync_exposed_parameters(&parameters).unwrap();
+    parameters.set_expression(1, "missing").unwrap();
+    properties.sync_exposed_parameters(&parameters).unwrap();
+    assert!(properties.get(USER_DEFINED, "width").is_none());
+    assert!(properties.get(USER_DEFINED, "manual").is_some());
+    parameters.set_expression(1, "3 cm").unwrap();
+    properties.sync_exposed_parameters(&parameters).unwrap();
+    assert_eq!(
+        properties.get(USER_DEFINED, "width").unwrap().value,
+        VariantValue::Double(3.0)
+    );
+    assert_eq!(
+        properties
+            .get(USER_DEFINED, "width")
+            .unwrap()
+            .from_parameter,
+        "width"
+    );
+}

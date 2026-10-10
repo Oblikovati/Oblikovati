@@ -70,6 +70,12 @@ impl DocumentProperties {
             });
         }
         for id in selected {
+            let parameter = parameters.get(id).expect("selected parameter");
+            if parameter.current().is_none() {
+                // #3659: a stale property must not block publication of failed parameter health.
+                candidate.remove(USER_DEFINED, &parameter.name);
+                continue;
+            }
             candidate.expose_parameter(parameters, id)?;
         }
         *self = candidate;

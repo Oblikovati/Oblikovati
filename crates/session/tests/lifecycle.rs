@@ -293,7 +293,7 @@ fn invalid_navigation_emits_no_events_and_invalid_edit_never_calls_command() {
 }
 
 #[test]
-fn failed_command_and_projection_refresh_discard_candidate() {
+fn failed_command_is_atomic_and_unhealthy_projection_can_be_published() {
     let mut session = session(None);
     session.begin("failed").unwrap();
     let error = session
@@ -304,16 +304,35 @@ fn failed_command_and_projection_refresh_discard_candidate() {
         CommandError::Edit(EditError::Mutation(MutationError::Command(_)))
     ));
     assert!(!error.to_string().is_empty());
-    let error = session
-        .edit(|snapshot, _| snapshot.parameters.set_expression(1, "missing"))
-        .unwrap_err();
-    assert!(matches!(
-        error,
-        CommandError::Edit(EditError::Mutation(MutationError::Property(_)))
-    ));
-    assert!(!error.to_string().is_empty());
     assert_eq!(session.generation(), 0);
+    session
+        .edit(|snapshot, _| snapshot.parameters.set_expression(1, "missing"))
+        .unwrap();
+    assert!(
+        session
+            .snapshot()
+            .parameters
+            .get(1)
+            .unwrap()
+            .current_value()
+            .is_none()
+    );
+    assert!(
+        session
+            .snapshot()
+            .properties
+            .get(USER_DEFINED, "width")
+            .is_none()
+    );
+    session.abort().unwrap();
     assert_eq!(width(session.snapshot()), 1.0);
+    assert!(
+        session
+            .snapshot()
+            .properties
+            .get(USER_DEFINED, "width")
+            .is_some()
+    );
 }
 
 #[test]

@@ -61,8 +61,9 @@ assembly, and value-type property round-trip tests provide the baseline.
 Tracking: [#3611](https://github.com/Oblikovati/Oblikovati/issues/3611).
 `sync_exposed_parameters` now refreshes all parameters with the export flag in a
 separate candidate. Numeric values use the selected tolerance-band value; text
-and Boolean parameters retain their API types. A failed parameter discards the
-whole refresh. Known owned projections are removed after rename, unexport, or
+and Boolean parameters retain their API types. An unhealthy parameter has no
+current property projection; its diagnostic health remains on the parameter.
+Known owned projections are removed after rename, unexport, or
 parameter deletion. Unrelated authored properties remain. An export flag claims
 the same-named user-defined property, matching the existing single-parameter
 exposure operation's replacement behavior.
@@ -80,6 +81,18 @@ has no parameter context. Session save commands must use the coupled path when
 parameters are exposed. This resolves numeric/text/Boolean provenance persistence;
 custom-property string formatting and empty custom-set persistence remain pending.
 
-Five persistence tests and added model/load tests cover typed values, stale and
+Persistence and model/load tests cover typed values, stale and
 missing saved projections, provenance, selected-value updates, rename/unexport/
-delete cleanup, retained authored content, and atomic refresh/export failure.
+delete cleanup, retained authored content, and atomic export failure.
+
+[#3659](https://github.com/Oblikovati/Oblikovati/issues/3659) removes stale current
+projections when exposed parameters become unhealthy, without blocking publication
+of their failure state. Recovery recreates the typed value and provenance. The
+export flag continues to reserve its property name; the API refuses a manual
+replacement and reports unhealthy parameter diagnostics on a direct property read.
+Explicit exposure of an already unhealthy parameter remains an error.
+
+This changes automatic projection refresh, including the live session and derived
+refresh paths. Package validation still refuses unresolved parameter recipes;
+saving and reopening sick recipes requires further port work. The property change
+does not bypass that validation or claim sick-package support.

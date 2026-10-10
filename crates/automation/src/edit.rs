@@ -117,7 +117,11 @@ impl PreparedEdit {
         match self {
             Self::DerivedDelete(request) => crate::derived_edit::delete(parameters, request),
             Self::Units(request) => encode(&crate::units_edit::apply(parameters, request)?),
-            Self::Property(request) => encode(&properties::set(&mut snapshot.properties, request)?),
+            Self::Property(request) => encode(&properties::set(
+                &mut snapshot.properties,
+                parameters,
+                request,
+            )?),
             Self::Update(request) => encode(&parameter_update::apply(parameters, request)?),
             Self::Tolerance(request) => encode(&parameter_tolerance::apply(parameters, request)?),
             Self::Choices(request) => encode(&parameter_choices::replace(parameters, request)?),

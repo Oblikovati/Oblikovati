@@ -99,11 +99,10 @@ fn rename_unexport_and_removal_prune_only_owned_projections() {
 }
 
 #[test]
-fn one_invalid_exposure_rolls_back_the_entire_refresh_and_export() {
+fn unhealthy_exposure_does_not_block_healthy_properties_but_package_validation_remains() {
     let mut parameters = exposed();
     let mut properties = DocumentProperties::default();
     properties.sync_exposed_parameters(&parameters).unwrap();
-    let before = properties.clone();
     parameters.set_expression(1, "30 mm").unwrap();
     parameters
         .insert_expression(2, "label", USER_PARAM, "missing")
@@ -111,8 +110,12 @@ fn one_invalid_exposure_rolls_back_the_entire_refresh_and_export() {
     let mut annotations = parameters.get(2).unwrap().annotations.clone();
     annotations.exposed_as_property = true;
     parameters.set_annotations(2, annotations).unwrap();
-    assert!(properties.sync_exposed_parameters(&parameters).is_err());
-    assert_eq!(properties, before);
+    properties.sync_exposed_parameters(&parameters).unwrap();
+    assert_eq!(
+        properties.get(USER_DEFINED, "width").unwrap().value,
+        VariantValue::Double(3.0)
+    );
+    assert!(properties.get(USER_DEFINED, "label").is_none());
     let original = package();
     assert!(
         original
@@ -182,4 +185,14 @@ fn text_and_boolean_exposures_round_trip_as_their_api_value_types() {
             .from_parameter,
         "approved"
     );
+}
+
+#[test]
+fn failed_saved_parameter_does_not_restore_a_stale_property_as_current() {
+    let original = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  parameters: [{name: width, kind: user, expression: missing, export: true}]\n  properties: [{set: User Defined Properties, name: width, type: double, value: '999'}]\n").unwrap();
+    assert!(original.restore_document_parameters().is_err());
+    let mut parameters = exposed();
+    parameters.set_expression(1, "missing").unwrap();
+    let properties = original.restore_parameter_properties(&parameters).unwrap();
+    assert!(properties.get(USER_DEFINED, "width").is_none());
 }

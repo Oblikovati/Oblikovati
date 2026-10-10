@@ -140,8 +140,8 @@ fn self_source_is_refused_without_changes() {
 }
 
 #[test]
-fn refresh_updates_exposed_properties_and_rolls_back_projection_failure() {
-    let (mut files, source_id, target, _) = linked_files();
+fn refresh_updates_exposed_properties_and_publishes_source_failure() {
+    let (mut files, source_id, target, mut source) = linked_files();
     files
         .commands(target)
         .unwrap()
@@ -168,18 +168,54 @@ fn refresh_updates_exposed_properties_and_rolls_back_projection_failure() {
             .value,
         VariantValue::Double(9.0)
     );
-    let before = snapshot.clone();
     let generation = files.workspace().session(target).unwrap().generation();
     files.close_discarding_changes(source_id).unwrap();
-    assert!(files.refresh_derived_table(target, 7).is_err());
+    assert!(files.refresh_derived_table(target, 7).unwrap());
     let session = files.workspace().session(target).unwrap();
     assert!(
         session
             .snapshot()
             .parameters
-            .same_evaluated_state(&before.parameters)
+            .get(1)
+            .unwrap()
+            .current_value()
+            .is_none()
     );
-    assert_eq!(session.snapshot().properties, before.properties);
-    assert_eq!(session.generation(), generation);
+    assert!(
+        session
+            .snapshot()
+            .properties
+            .get(oblikovati_model::property::USER_DEFINED, "width")
+            .is_none()
+    );
+    assert_eq!(session.generation(), generation + 1);
     assert_eq!(session.undo_labels(), ["Expose"]);
+    let error = Client::new(FileQueryHost::new(&files))
+        .documents()
+        .get_property(&GetPropertyArgs {
+            document: target,
+            set: oblikovati_model::property::USER_DEFINED.into(),
+            name: "width".into(),
+        })
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("unhealthy") && error.contains("width"));
+    let error = Client::new(oblikovati_automation::FileHost::new(
+        &mut files,
+        &mut source,
+        "test",
+    ))
+    .documents()
+    .set_property(&SetPropertyArgs {
+        document: target,
+        set: oblikovati_model::property::USER_DEFINED.into(),
+        name: "width".into(),
+        value: Variant {
+            value: VariantValue::Double(12.0),
+            ..Default::default()
+        },
+    })
+    .unwrap_err()
+    .to_string();
+    assert!(error.contains("owned by an exposed parameter"));
 }

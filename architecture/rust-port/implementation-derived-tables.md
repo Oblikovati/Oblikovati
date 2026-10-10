@@ -62,12 +62,13 @@ consequence of the source edit rather than a new target edit.
 
 Exposed property refresh is part of the same candidate. Any model or property
 projection error leaves recipe, generation, and history unchanged and reaches the
-caller. In particular, an unavailable exported parameter currently causes an
-explicit property-projection failure; no successful refresh is claimed in that
-case. Automatic propagation must surface this failure in document health.
+caller. [#3659](https://github.com/Oblikovati/Oblikovati/issues/3659) makes an
+unavailable exported parameter remove its stale property projection while retaining
+its failed health. This allows a missing-source refresh to publish the failure.
+Direct property reads report the unhealthy parameter; recovery rebuilds its value.
 
 Tests cover health-only changes, value changes, no-ops, property updates and
-projection rollback, open groups, missing tables/owners, unavailable sources,
+unhealthy projection removal, open groups, missing tables/owners, unavailable sources,
 self-sources, unchanged identity reservations, and preserved redo/save markers.
 Navigating target history restores its recorded snapshot; the scheduler must run
 refresh afterward to update its derived values from current sources. A test
