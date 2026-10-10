@@ -19,6 +19,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
                 &snapshot,
                 self.entries[&id].session.history.derived_high_water(),
                 self.entries[&id].session.high_water(),
+                self.entries[&id].session.history.sketch_reservations(),
             )
             .map_err(WorkspaceSaveError::Preparation)?;
         self.identities

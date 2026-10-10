@@ -41,6 +41,8 @@ impl DocumentEditHistory {
         self.require_closed().map_err(EditError::History)?;
         let mut candidate = self.current.clone();
         refresh(&mut candidate).map_err(EditError::Mutation)?;
+        self.validate_sketch_ids(&candidate, self.sketch_reservations())
+            .map_err(EditError::History)?;
         self.validate_derived_ids(&candidate, self.derived_high_water)
             .map_err(EditError::History)?;
         self.validate_candidate_ids(&candidate, self.ids.high_water())
@@ -49,6 +51,7 @@ impl DocumentEditHistory {
             .parameters
             .same_evaluated_state(&self.current.parameters)
             && candidate.properties.same_recipe(&self.current.properties)
+            && candidate.sketches.same_recipe(&self.current.sketches)
             && candidate.attachments == self.current.attachments
             && candidate.resources == self.current.resources
             && candidate.interests == self.current.interests

@@ -62,6 +62,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         let prepared = self.prepare_open(&path, version, source)?;
         let snapshot = DocumentSnapshot {
+            sketches: prepared.sketches.sketches,
             attributes: prepared.attributes,
             attachments: prepared.attachments,
             interests: prepared.interests,
@@ -69,7 +70,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             parameters: prepared.restored.parameters,
             properties: prepared.properties,
         };
+        let sketch_marks = oblikovati_model::history::SketchReservationMarks {
+            sketch: prepared.sketches.sketch_ids.high_water(),
+            entity: prepared.sketches.entity_ids.high_water(),
+        };
         let history = DocumentEditHistory::new(snapshot, prepared.restored.ids)
+            .and_then(|history| history.with_sketch_reservations(sketch_marks))
             .and_then(|history| {
                 history.with_derived_reservations(prepared.restored.derived_high_water)
             })

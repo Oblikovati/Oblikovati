@@ -280,3 +280,42 @@ fn saved_document_reference_keys_survive_restore_and_keep_kind_and_document_name
         assert_ne!(doc.sketch_entity_key(id), copy.sketch_entity_key(id));
     }
 }
+#[test]
+fn exact_recipe_comparison_tracks_signed_zero_geometry_fix_targets_and_collection_shape() {
+    let original = document();
+    assert!(original.same_recipe(&original.clone()));
+    let mut changed = original.clone();
+    let mut geometry = geometry(0);
+    geometry
+        .set_position(SketchEntityId(1), [-0.0, 0.0])
+        .unwrap();
+    changed
+        .replace_geometry(DocumentSketchId(1), geometry)
+        .unwrap();
+    assert!(!original.same_recipe(&changed));
+    let mut fixed = Sketch2D::default();
+    fixed.add_point(SketchEntityId(1), [0.0, 0.0]).unwrap();
+    fixed
+        .add_constraint(
+            SketchConstraintId(1),
+            PlanarConstraint::Fix {
+                point: SketchEntityId(1),
+                position: [0.0, 0.0],
+            },
+        )
+        .unwrap();
+    let mut recipe = fixed.recipe();
+    recipe.constraints[0].relation = PlanarConstraint::Fix {
+        point: SketchEntityId(1),
+        position: [-0.0, 0.0],
+    };
+    let other = Sketch2D::from_recipe(&recipe).unwrap();
+    assert!(!fixed.same_recipe(&other));
+    let mut changed = original.clone();
+    changed.remove(DocumentSketchId(2)).unwrap();
+    assert!(!original.same_recipe(&changed));
+    let mut changed = original.clone();
+    changed.rename(DocumentSketchId(1), "Different").unwrap();
+    assert!(!original.same_recipe(&changed));
+    assert!(!SketchPlane::xy().same_recipe(SketchPlane::xz()));
+}

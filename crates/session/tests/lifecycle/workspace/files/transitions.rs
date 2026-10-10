@@ -10,7 +10,7 @@ fn edit(host: &mut Host, id: u64) {
         })
         .unwrap();
 }
-fn refusing_host(observer: RecordingWorkspace) -> Host {
+pub(super) fn refusing_host(observer: RecordingWorkspace) -> Host {
     let files = WorkspaceFiles {
         fail_write: true,
         ..Default::default()

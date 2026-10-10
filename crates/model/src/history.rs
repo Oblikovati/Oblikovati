@@ -8,6 +8,8 @@ use crate::{
 };
 mod checkpoints;
 mod derived_ids;
+mod sketch_ids;
+pub use sketch_ids::SketchReservationMarks;
 mod error;
 mod navigation;
 mod refresh;
@@ -18,6 +20,7 @@ use std::sync::Arc;
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
+    pub sketches: crate::document_sketch::DocumentSketches,
     pub attributes: crate::attribute::DocumentAttributes,
     pub attachments: crate::attachment::DocumentAttachments,
     pub interests: crate::interest::DocumentInterests,
@@ -29,18 +32,21 @@ pub struct DocumentSnapshot {
 /// Bind an immutable recipe to storage before its save identity is prepared.
 pub trait DocumentSnapshotTarget: crate::identity::DocumentSaveTarget {
     /// Prepare without replacing storage; return the exact candidate recipe digest.
-    /// Example: `let digest = target.prepare(&snapshot, table_mark, parameter_mark)?;` before identity preparation.
+    /// Example: `let digest = target.prepare(&snapshot, table_mark, parameter_mark, sketch_marks)?;` before identity preparation.
     fn prepare(
         &mut self,
         snapshot: &DocumentSnapshot,
         derived_high_water: i64,
         parameter_high_water: u64,
+        sketch_marks: SketchReservationMarks,
     ) -> Result<Option<crate::identity::RecipeDigest>, Self::Failure>;
 }
 
 /// A command can reserve identities but cannot replace or rewind the document allocator.
 pub struct RecipeReservations<'a> {
     ids: &'a mut RecipeIdAllocator,
+    sketch_ids: &'a mut RecipeIdAllocator,
+    sketch_entity_ids: &'a mut RecipeIdAllocator,
     derived_high_water: &'a mut i64,
 }
 impl RecipeReservations<'_> {
@@ -83,6 +89,8 @@ struct HistoryStep {
 pub struct DocumentEditHistory {
     current: DocumentSnapshot,
     ids: RecipeIdAllocator,
+    sketch_ids: RecipeIdAllocator,
+    sketch_entity_ids: RecipeIdAllocator,
     derived_high_water: i64,
     open: Vec<OpenTransaction>,
     done: Vec<HistoryStep>,
@@ -103,7 +111,11 @@ impl DocumentEditHistory {
             .map(|table| table.id)
             .max()
             .unwrap_or(0);
+        let sketch_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.sketch_ids())?;
+        let sketch_entity_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.entity_ids())?;
         Ok(Self {
+            sketch_ids,
+            sketch_entity_ids,
             current: snapshot,
             derived_high_water,
             ids,
@@ -162,15 +174,20 @@ impl DocumentEditHistory {
         let mut candidate = self.current.clone();
         let reserved_before = self.ids.high_water();
         let tables_before = self.derived_high_water;
+        let sketches_before = self.sketch_reservations();
         let result = edit(
             &mut candidate,
             &mut RecipeReservations {
                 ids: &mut self.ids,
+                sketch_ids: &mut self.sketch_ids,
+                sketch_entity_ids: &mut self.sketch_entity_ids,
                 derived_high_water: &mut self.derived_high_water,
             },
         )
         .map_err(EditError::Mutation)?;
         self.validate_candidate_ids(&candidate, reserved_before)
+            .map_err(EditError::History)?;
+        self.validate_sketch_ids(&candidate, sketches_before)
             .map_err(EditError::History)?;
         self.validate_derived_ids(&candidate, tables_before)
             .map_err(EditError::History)?;
@@ -227,7 +244,8 @@ impl DocumentEditHistory {
     pub fn discard_unchanged(&mut self, token: &TransactionToken) -> Result<bool, HistoryError> {
         self.require_top(token)?;
         let before = &self.open.last().expect("validated frame").before;
-        if !before.parameters.same_recipe(&self.current.parameters)
+        if !before.sketches.same_recipe(&self.current.sketches)
+            || !before.parameters.same_recipe(&self.current.parameters)
             || !before.properties.same_recipe(&self.current.properties)
             || before.attachments != self.current.attachments
             || before.resources != self.current.resources

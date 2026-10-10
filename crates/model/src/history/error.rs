@@ -7,6 +7,8 @@ use std::{error::Error, fmt};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HistoryError {
     UnreservedIdentity(u64),
+    UnreservedSketchId(u64),
+    UnreservedSketchEntityId(u64),
     UnreservedDerivedIdentity(i64),
     DerivedIdentityExhausted,
     ForeignTransaction,
@@ -22,6 +24,14 @@ pub enum HistoryError {
 impl fmt::Display for HistoryError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::UnreservedSketchId(id) => write!(
+                output,
+                "sketch ID {id}: expected an existing identity or one reserved by this edit"
+            ),
+            Self::UnreservedSketchEntityId(id) => write!(
+                output,
+                "sketch entity ID {id}: expected an existing identity or one reserved by this edit"
+            ),
             Self::UnreservedDerivedIdentity(id) => write!(
                 output,
                 "derived table ID {id}: expected an existing identity or one reserved by this edit"

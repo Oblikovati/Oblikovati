@@ -439,6 +439,7 @@ dependencies = [
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-persistence",
+ "oblikovati-solve",
  "tempfile",
 ]
 

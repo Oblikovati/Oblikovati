@@ -34,6 +34,22 @@ pub struct SketchPlane {
     normal: [f64; 3],
 }
 impl SketchPlane {
+    /// Compare saved frame bits and validation policy; example: `old.same_recipe(candidate)`.
+    pub fn same_recipe(self, other: Self) -> bool {
+        use super::recipe_compare::same_components;
+        same_components(self.recipe.origin, other.recipe.origin)
+            && same_components(self.recipe.x_axis, other.recipe.x_axis)
+            && same_components(self.recipe.y_axis, other.recipe.y_axis)
+            && self.options.version == other.options.version
+            && same_components(
+                [self.options.unit_deviation, self.options.angular_deviation],
+                [
+                    other.options.unit_deviation,
+                    other.options.angular_deviation,
+                ],
+            )
+    }
+
     /// Validate saved axes without altering them; example: `SketchPlane::new([0.0; 3], [1.0,0.0,0.0], [0.0,1.0,0.0], Default::default())?`.
     pub fn new(
         origin: [f64; 3],

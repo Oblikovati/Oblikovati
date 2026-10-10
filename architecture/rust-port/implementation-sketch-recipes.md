@@ -146,6 +146,34 @@ fixture, circular dimensions and retained shared contacts, custom placement
 options, exact coordinate bits, unrelated section retention, digest changes,
 permanent deleted-ID reservations, mark underflow/decrease/exhaustion, malformed
 sections and legacy refusal. Capture and restore errors leave the original
-package unchanged. The codec has no filesystem I/O. Document snapshot/history
-ownership and session atomic save/reopen remain the next integration layer;
-this change does not yet attach these recipes to a live file workspace.
+package unchanged. The codec has no filesystem I/O. The following integration attaches these recipes to document history and the file workspace.
+
+## Document history and file workspace
+
+Tracking: [#3720](https://github.com/Oblikovati/Oblikovati/issues/3720).
+`DocumentSnapshot` now owns the placed sketch collection. Commands, grouped
+rollback, undo, redo and refresh use the same collection. Recipe comparisons
+preserve authored floating-point bits, including signed zero in coordinates,
+fixed positions and plane axes. A sketch-only edit therefore changes history
+and the dirty state, even when ordinary numeric equality would hide the edit.
+
+The history owner keeps separate sketch and entity allocators outside undo
+snapshots. A command must reserve each new ID through `RecipeReservations`.
+Failed commands, aborted groups and deletion do not release IDs. Reservation
+changes alone require a save. Refresh cannot introduce unreserved IDs, and a
+saved high-water mark cannot decrease or fall below any live ID.
+
+Open, create and template creation restore the collection and both permanent
+marks before document registration. The snapshot package target captures them
+for normal saves and copies. Only successful atomic storage updates the saved
+baseline; failed storage preserves the file, dirty state and reservations.
+A copy retains the recipe and marks under its new document identity without
+clearing the source document's dirty state. Invalid Rust recipes and nonempty
+legacy Go sketches are refused before registration.
+
+Tests cover a parameter-driven sketch with zero degrees of freedom through
+save/reopen, parameter edits, undo/redo and copy. They also cover reservation-only
+saves, deleted and aborted IDs, refused storage, exact signed-zero edits,
+template restoration and legacy-load refusal. These are model and file workspace
+tests. Kernel features, automatic sketch recomputation and the native viewport
+remain separate port work.

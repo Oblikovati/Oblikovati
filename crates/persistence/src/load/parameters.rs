@@ -3,13 +3,14 @@
 use super::*;
 use crate::package::RestoredParameters;
 
-/// A registered package with parameters in stored units and typed document properties.
+/// A registered package with typed parameters, placed sketches and document properties.
 /// Other retained model domains are not executed by this loader.
 #[must_use]
 #[derive(Debug)]
 pub struct LoadedParameterPackage {
     pub loaded: LoadedPackage,
     pub restored: RestoredParameters,
+    pub sketches: crate::package::RestoredDocumentSketches,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
@@ -17,7 +18,7 @@ pub struct LoadedParameterPackage {
     pub properties: oblikovati_model::property::DocumentProperties,
 }
 
-/// Reconstruct parameters and properties before claiming an open-document identity.
+/// Reconstruct typed recipe state before claiming an open-document identity.
 /// Example: `load_parameter_package(path, 1, "alpha", &mut index, &mut source, &mut reader)?;`.
 pub fn load_parameter_package(
     path: &Path,
@@ -37,6 +38,7 @@ pub fn load_parameter_package(
             registration,
         },
         restored: prepared.restored,
+        sketches: prepared.sketches,
         properties: prepared.properties,
         attributes: prepared.attributes,
         attachments: prepared.attachments,
@@ -51,6 +53,7 @@ pub fn load_parameter_package(
 pub struct PreparedParameterPackage {
     pub package: DocumentPackage,
     pub restored: RestoredParameters,
+    pub sketches: crate::package::RestoredDocumentSketches,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
@@ -68,6 +71,9 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
+    let sketches = package
+        .restore_sketches()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let attachments = package
         .restore_attachments()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
@@ -89,6 +95,7 @@ pub fn read_parameter_package(
     Ok(PreparedParameterPackage {
         package,
         restored,
+        sketches,
         attributes,
         attachments,
         interests,

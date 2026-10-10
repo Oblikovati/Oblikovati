@@ -17,4 +17,5 @@ oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev
 oblikovati-persistence = { path = "../persistence" }
 
 [dev-dependencies]
+oblikovati-solve = { path = "../solve" }
 tempfile = "=3.27.0"

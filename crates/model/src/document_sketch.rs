@@ -65,6 +65,21 @@ impl PlacedSketch {
     }
 }
 impl DocumentSketches {
+    /// Compare exact authored contents for dirty/history decisions; example: `baseline.same_recipe(&candidate)`.
+    pub fn same_recipe(&self, other: &Self) -> bool {
+        self.sketches.len() == other.sketches.len()
+            && self
+                .sketches
+                .iter()
+                .zip(&other.sketches)
+                .all(|(first, second)| {
+                    first.id == second.id
+                        && first.name == second.name
+                        && first.plane.same_recipe(second.plane)
+                        && first.geometry.same_recipe(&second.geometry)
+                })
+    }
+
     /// Inspect records in creation order; example: `document.sketches()`.
     pub fn sketches(&self) -> &[PlacedSketch] {
         &self.sketches

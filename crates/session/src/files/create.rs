@@ -73,7 +73,15 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
     let properties = package
         .restore_parameter_properties(&restored.parameters)
         .map_err(FileWorkspaceError::Package)?;
+    let sketches = package
+        .restore_sketches()
+        .map_err(FileWorkspaceError::Package)?;
+    let sketch_marks = oblikovati_model::history::SketchReservationMarks {
+        sketch: sketches.sketch_ids.high_water(),
+        entity: sketches.entity_ids.high_water(),
+    };
     let snapshot = DocumentSnapshot {
+        sketches: sketches.sketches,
         attachments: package
             .restore_attachments()
             .map_err(FileWorkspaceError::Package)?,
@@ -88,6 +96,7 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         properties,
     };
     DocumentEditHistory::new(snapshot, restored.ids)
+        .and_then(|history| history.with_sketch_reservations(sketch_marks))
         .and_then(|history| history.with_derived_reservations(restored.derived_high_water))
         .map_err(FileWorkspaceError::History)
 }

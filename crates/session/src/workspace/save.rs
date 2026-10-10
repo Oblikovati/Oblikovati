@@ -36,6 +36,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
                 &snapshot,
                 self.entries[&id].session.history.derived_high_water(),
                 self.entries[&id].session.high_water(),
+                self.entries[&id].session.history.sketch_reservations(),
             )
             .map_err(WorkspaceSaveError::Preparation)?;
         self.identities
@@ -50,6 +51,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .expect("validated closed history");
         entry.baseline = snapshot;
         entry.baseline_parameter_high_water = entry.session.high_water();
+        entry.baseline_sketch_marks = entry.session.history.sketch_reservations();
         entry.baseline_derived_high_water = entry.session.history.derived_high_water();
         entry.identity_dirty = false;
         self.observer.saved(id);

@@ -397,6 +397,7 @@ impl oblikovati_model::history::DocumentSnapshotTarget for MemoryHistorySave {
         snapshot: &DocumentSnapshot,
         _derived_high_water: i64,
         _parameter_high_water: u64,
+        _sketch_marks: oblikovati_model::history::SketchReservationMarks,
     ) -> Result<Option<oblikovati_model::identity::RecipeDigest>, Self::Failure> {
         self.prepared = Some(snapshot.clone());
         Ok(None)

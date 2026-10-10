@@ -23,6 +23,7 @@ impl TransactionObserver for RejectUnexpectedObservation {
 #[test]
 fn nesting_overflow_preserves_group_and_is_visible() {
     let snapshot = DocumentSnapshot {
+        sketches: Default::default(),
         attributes: Default::default(),
         attachments: Default::default(),
         interests: Default::default(),

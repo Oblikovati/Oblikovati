@@ -79,6 +79,7 @@ struct WorkspaceEntry<O> {
     baseline: DocumentSnapshot,
     baseline_derived_high_water: i64,
     baseline_parameter_high_water: u64,
+    baseline_sketch_marks: oblikovati_model::history::SketchReservationMarks,
     identity_dirty: bool,
     display_name: String,
 }
@@ -176,6 +177,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             baseline: history.snapshot().clone(),
             baseline_derived_high_water: history.derived_high_water(),
             baseline_parameter_high_water: history.high_water(),
+            baseline_sketch_marks: history.sketch_reservations(),
             display_name: String::new(),
             session: DocumentSession::new(id, history, observer),
             identity_dirty: identity != IdentityRegistration::Preserved,
@@ -245,6 +247,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let entry = self.entries.get(&id).ok_or(WorkspaceError::Missing(id))?;
         let current = entry.session.snapshot();
         Ok(entry.identity_dirty
+            || entry.baseline_sketch_marks != entry.session.history.sketch_reservations()
+            || !entry.baseline.sketches.same_recipe(&current.sketches)
             || entry.baseline_parameter_high_water != entry.session.high_water()
             || entry.baseline_derived_high_water != entry.session.history.derived_high_water()
             || !entry.baseline.parameters.same_recipe(&current.parameters)

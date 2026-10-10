@@ -20,6 +20,7 @@ mod line_residual;
 mod offset_dimension;
 mod plane;
 mod recipe;
+mod recipe_compare;
 mod residual;
 mod shared_contact;
 mod solve;

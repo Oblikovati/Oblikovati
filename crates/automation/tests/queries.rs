@@ -91,6 +91,7 @@ impl GuidSource for QueryGuids {
 type Workspace = WorkspaceSession<QueryObserver, QueryObserver>;
 fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut QueryGuids) -> u64 {
     let snapshot = DocumentSnapshot {
+        sketches: Default::default(),
         attributes: Default::default(),
         attachments: Default::default(),
         interests: Default::default(),
