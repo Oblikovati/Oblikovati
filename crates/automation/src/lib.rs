@@ -5,6 +5,7 @@ mod attributes;
 mod command_owner;
 mod edit;
 mod file_host;
+mod interests;
 pub use file_host::{
     DERIVED_COMMAND_METHODS, DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
 };
@@ -38,7 +39,9 @@ use serde::{Serialize, de::DeserializeOwned};
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 27] = [
+pub const QUERY_METHODS: [&str; 29] = [
+    METHOD_DOCUMENTS_LIST_INTERESTS,
+    METHOD_DOCUMENTS_HAS_INTEREST,
     METHOD_ATTRIBUTES_GET,
     METHOD_ATTRIBUTES_LIST,
     METHOD_ATTRIBUTES_LIST_SETS,
@@ -99,6 +102,12 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_DOCUMENTS_LIST_INTERESTS => {
+                encode(&interests::list(self.workspace, decode(method, request)?)?)
+            }
+            METHOD_DOCUMENTS_HAS_INTEREST => {
+                encode(&interests::has(self.workspace, decode(method, request)?)?)
+            }
             METHOD_ATTRIBUTES_GET
             | METHOD_ATTRIBUTES_LIST
             | METHOD_ATTRIBUTES_LIST_SETS

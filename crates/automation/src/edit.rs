@@ -9,7 +9,9 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 20] = [
+pub const EDIT_METHODS: [&str; 22] = [
+    METHOD_DOCUMENTS_ADD_INTEREST,
+    METHOD_DOCUMENTS_REMOVE_INTEREST,
     METHOD_ATTRIBUTES_SET,
     METHOD_ATTRIBUTES_DELETE,
     METHOD_PARAMETERS_SET_SETTINGS,
@@ -33,6 +35,8 @@ pub const EDIT_METHODS: [&str; 20] = [
 ];
 
 pub(super) enum PreparedEdit {
+    InterestAdd(AddDocumentInterestArgs),
+    InterestRemove(RemoveDocumentInterestArgs),
     AttributeSet(SetAttributeArgs),
     AttributeDelete(DeleteAttributeArgs),
     Settings(ParameterSettingsUpdateArgs),
@@ -57,6 +61,8 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_DOCUMENTS_ADD_INTEREST => Ok(Self::InterestAdd(decode(method, request)?)),
+            METHOD_DOCUMENTS_REMOVE_INTEREST => Ok(Self::InterestRemove(decode(method, request)?)),
             METHOD_ATTRIBUTES_SET => Ok(Self::AttributeSet(decode(method, request)?)),
             METHOD_ATTRIBUTES_DELETE => Ok(Self::AttributeDelete(decode(method, request)?)),
             METHOD_PARAMETERS_DERIVED_TABLES_DELETE => {
@@ -93,6 +99,8 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::InterestAdd(_) => "Register Interest",
+            Self::InterestRemove(_) => "Remove Interest",
             Self::AttributeSet(_) => "Set Attribute",
             Self::AttributeDelete(_) => "Delete Attribute",
             Self::DerivedDelete(_) => "Edit Derived Parameters",
@@ -123,6 +131,12 @@ impl PreparedEdit {
     ) -> Result<Vec<u8>, Error> {
         let parameters = &mut snapshot.parameters;
         match self {
+            Self::InterestAdd(request) => {
+                encode(&crate::interests::add(&mut snapshot.interests, request)?)
+            }
+            Self::InterestRemove(request) => {
+                encode(&crate::interests::remove(&mut snapshot.interests, request)?)
+            }
             Self::AttributeSet(request) => {
                 encode(&crate::attributes::set(&mut snapshot.attributes, request)?)
             }
@@ -163,6 +177,8 @@ impl PreparedEdit {
 impl PreparedEdit {
     pub(super) fn document(&self, active: Option<u64>) -> Result<u64, Error> {
         match self {
+            Self::InterestAdd(request) => return Ok(request.document),
+            Self::InterestRemove(request) => return Ok(request.document),
             Self::AttributeSet(request) => return Ok(request.document),
             Self::AttributeDelete(request) => return Ok(request.document),
             _ => {}

@@ -271,3 +271,23 @@ refresh generation, and rejection before identity allocation.
 
 This completes the session and file lifecycle work identified above. The four
 public interest methods and unavailable-client notices remain to be connected.
+
+## Document interest API — partial R2
+
+Tracking: [#3684](https://github.com/Oblikovati/Oblikovati/issues/3684).
+The typed host now implements `documents.listInterests`, `hasInterest`,
+`addInterest`, and `removeInterest` with canonical API requests and responses.
+Queries use immutable access. Commands select the explicit document ID and pass
+through transaction validation, veto, response encoding, and commit. They do not
+change the active document. Zero or unknown IDs are refused.
+
+List preserves insertion order and returns an empty array when no records exist,
+matching Go. Discovery matches the exact client ID or interest name, including
+withdrawn records. Add updates an existing pair in place. Removing a missing pair
+is an error. Validation and observer veto leave state and history unchanged.
+
+Four typed-client tests cover all methods, explicit document selection, invalid
+and malformed requests, observer veto, undo, save, and reopen. The corresponding
+Go router test supplies reference evidence. The shared inventory now contains
+29 queries, 22 edits, and six transaction methods. Native transport and
+unavailable-client notices are still pending.
