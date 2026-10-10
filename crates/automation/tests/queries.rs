@@ -288,7 +288,7 @@ fn unregistered_methods_and_malformed_arguments_are_refused_before_model_work() 
             .iter()
             .collect::<std::collections::BTreeSet<_>>()
             .len(),
-        12
+        16
     );
     assert!(
         host.call(METHOD_PARAMETERS_SET, b"{}")
@@ -337,3 +337,6 @@ fn unregistered_methods_and_malformed_arguments_are_refused_before_model_work() 
 
 #[path = "queries/expressions.rs"]
 mod expressions;
+
+#[path = "queries/parameters.rs"]
+mod parameters;

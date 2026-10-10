@@ -68,16 +68,11 @@ fn verify_parameter_capture(
 }
 
 pub(super) fn kind_name(kind: ParameterKind) -> Result<&'static str, PackageCodecError> {
-    match kind {
-        USER_PARAM => Ok("user"),
-        MODEL_PARAM => Ok("model"),
-        TABLE_PARAM => Ok("table"),
-        REFERENCE_PARAM => Ok("reference"),
-        DERIVED_PARAM => Ok("derived"),
-        found => Err(PackageCodecError(format!(
-            "parameter kind {found:?}: expected a supported API kind"
-        ))),
-    }
+    oblikovati_model::parameter::kind_name(kind).ok_or_else(|| {
+        PackageCodecError(format!(
+            "parameter kind {kind:?}: expected a supported API kind"
+        ))
+    })
 }
 
 pub(super) fn display_name(

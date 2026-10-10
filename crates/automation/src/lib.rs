@@ -2,6 +2,7 @@
 
 //! Typed query dispatch; edits and native add-in transport are separate host responsibilities.
 mod expressions;
+mod parameters;
 mod units;
 use oblikovati_api::{Error, client::Caller, wire::*};
 use oblikovati_model::{parameter::ParameterCollection, units::UnitsOfMeasure};
@@ -12,8 +13,12 @@ use oblikovati_session::{
 use serde::{Serialize, de::DeserializeOwned};
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 12] = [
+pub const QUERY_METHODS: [&str; 16] = [
     METHOD_DOCUMENTS_GET_UNITS,
+    METHOD_PARAMETERS_LIST,
+    METHOD_PARAMETERS_GET,
+    METHOD_PARAMETERS_DRIVEN_BY,
+    METHOD_PARAMETERS_DEPENDENTS,
     METHOD_UNITS_GET_VALUE_FROM_EXPRESSION,
     METHOD_UNITS_GET_DATABASE_UNITS_FROM_EXPRESSION,
     METHOD_UNITS_IS_EXPRESSION_VALID,
@@ -58,6 +63,21 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_PARAMETERS_LIST => encode(&parameters::list(self.active_parameters()?)?),
+            METHOD_PARAMETERS_GET => encode(&parameters::get(
+                self.active_parameters()?,
+                decode(method, request)?,
+            )?),
+            METHOD_PARAMETERS_DRIVEN_BY => encode(&parameters::neighbors(
+                self.active_parameters()?,
+                decode(method, request)?,
+                true,
+            )?),
+            METHOD_PARAMETERS_DEPENDENTS => encode(&parameters::neighbors(
+                self.active_parameters()?,
+                decode(method, request)?,
+                false,
+            )?),
             METHOD_UNITS_GET_VALUE_FROM_EXPRESSION => encode(&expressions::value(
                 self.active_parameters()?,
                 decode(method, request)?,

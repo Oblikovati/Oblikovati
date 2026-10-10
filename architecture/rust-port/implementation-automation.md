@@ -1,7 +1,8 @@
 # Typed automation queries — partial R2
 
 Tracking: [#3627](https://github.com/Oblikovati/Oblikovati/issues/3627) and
-[#3628](https://github.com/Oblikovati/Oblikovati/issues/3628).
+[#3628](https://github.com/Oblikovati/Oblikovati/issues/3628), plus parameter
+inspection in [#3629](https://github.com/Oblikovati/Oblikovati/issues/3629).
 The `oblikovati-automation` crate provides `SessionQueryHost`, an implementation
 of the canonical API client `Caller` transport over an immutable workspace
 borrow. All method names, argument types, and result DTOs are imported from the
@@ -11,6 +12,10 @@ API crate. `QUERY_METHODS` publishes the exact implemented inventory.
 
 | Method | Context and behavior |
 | --- | --- |
+| `parameters.list` | Inspect parameters in insertion order, including failed parameters. |
+| `parameters.get` | Inspect a named parameter's expression, kind, value, and health. |
+| `parameters.drivenBy` | Read direct driver names in parameter insertion order. |
+| `parameters.dependents` | Read direct reader names in parameter insertion order. |
 | `documents.getUnits` | Read active document preferences, display precision/format, and working scale. |
 | `units.convert` | Convert compatible physical unit names; no document is required. |
 | `units.getTypeFromString` | Resolve a registered unit name to its category without a document. |
@@ -31,8 +36,8 @@ to the argument type's default, matching Go decoding; malformed JSON is refused.
 Physical conversion and formatting preserve the model's finite-value and
 dimension checks. No DTO or numeric-unit implementation is duplicated here.
 
-Ten integration tests call the host through the real Rust API `Client`. They
-cover all twelve methods, active-document changes, display formats, non-default
+Fourteen integration tests call the host through the real Rust API `Client`. They
+cover all sixteen methods, active-document changes, display formats, non-default
 working scale, missing document context, dimensional failures, malformed calls,
 and unsupported mutation methods. They assert unchanged dirty state, generation,
 notification counts, and undo history. The API transport is exercised directly;
@@ -56,3 +61,13 @@ nominal parameter references, mismatched dimensions, unresolved names, parse
 failures, nonfinite results, and division by zero. The existing Go router unit
 service tests also pass on Linux. Native transport and mutation dispatch remain
 unimplemented.
+
+Parameter inspection returns precise nominal values, literal text, and Boolean
+values. Failed parameters retain their last-good value and report the failure;
+a numeric parameter that never evaluated has the Go-compatible unitless zero
+value. Health messages identify unresolved names, unavailable external links,
+cycles, evaluation failures, blocked dependencies, nonfinite values, or nonnumeric
+dependencies. Parameter-kind spellings are shared with package export.
+The canonical DTO omits empty neighbor lists; an empty parameter list is an array.
+The query tests check order, values, errors, direct links, and unchanged session
+state. Parameter detail, settings, and mutations remain to be wired.
