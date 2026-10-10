@@ -1,5 +1,6 @@
 [alias]
-xtask = "run --locked --package oblikovati-build --"
+# #3574: Windows cannot replace the running tool during workspace builds.
+xtask = "run --locked --target-dir target/xtask --package oblikovati-build --"
 
 # Installed Linux CLI archives locate bundled libraries without a source checkout.
 [target.'cfg(target_os = "linux")']

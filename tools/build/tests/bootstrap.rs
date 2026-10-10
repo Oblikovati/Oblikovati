@@ -49,3 +49,33 @@ fn downloads_check_hashes_before_extraction() {
         .is_err()
     );
 }
+
+#[derive(serde::Deserialize)]
+struct CargoAliases {
+    alias: std::collections::BTreeMap<String, String>,
+}
+
+#[test]
+fn xtask_output_is_separate_from_the_workspace_it_builds() {
+    let config: CargoAliases = toml::from_str(include_str!("../../../.cargo/config.toml")).unwrap();
+    let arguments: Vec<&str> = config.alias["xtask"].split_whitespace().collect();
+    let output = arguments
+        .windows(2)
+        .find(|pair| pair[0] == "--target-dir")
+        .unwrap()[1];
+    let output = std::path::Path::new(output);
+    assert!(
+        output.starts_with("target"),
+        "bootstrap artifacts must remain ignored"
+    );
+    assert_ne!(
+        output,
+        std::path::Path::new("target"),
+        "Windows locks the running executable"
+    );
+    assert!(
+        arguments
+            .windows(2)
+            .any(|pair| pair == ["--package", "oblikovati-build"])
+    );
+}

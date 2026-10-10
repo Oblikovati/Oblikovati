@@ -254,3 +254,13 @@ capture comes from unmodified `iso286.go` and `iso286_table.go` at the fixed
 baseline, run with Go 1.27.0 on Linux/amd64. The Rust tables avoid platform-dependent
 power evaluation. Fit bands remain fixed deviations after a later nominal edit,
 as in Go; automatic fit recomputation, persistence, and UI display are not claimed.
+
+## Windows build-tool isolation
+
+Tracking: [issue #3574](https://github.com/Oblikovati/Oblikovati/issues/3574).
+[Run 38056840105](https://github.com/Oblikovati/Oblikovati/actions/runs/38056840105)
+passed the Linux gate and both Linux/macOS architectures, but both Windows jobs
+failed when Cargo tried to replace the running `oblikovati-build.exe`. The Cargo
+alias now builds its executable under `target/xtask`; workspace commands retain
+their normal output directory. A regression check requires separate output paths.
+All workspace crates remain in build, test, lint, and coverage discovery.
