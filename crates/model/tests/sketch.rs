@@ -452,3 +452,6 @@ mod circles;
 
 #[path = "sketch/tangency.rs"]
 mod tangency;
+
+#[path = "sketch/arcs.rs"]
+mod arcs;

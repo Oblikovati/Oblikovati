@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{Sketch2D, SketchConstraintId, SketchError, compile};
+use super::{
+    Sketch2D, SketchConstraintId, SketchError, SketchRelationId, compile, source::source_failure,
+};
 use crate::parameter::ParameterCollection;
 use oblikovati_solve::{
     diagnostics::{ConstraintStructure, analyze_structure, redundant_sources},
     nonlinear::{NonlinearResult, SolveError, SolveOptions, solve_constraints},
-    residual::{EvaluationError, evaluate_residuals},
+    residual::evaluate_residuals,
 };
 
 /// Immutable solve candidate; callers decide how document health permits adoption.
@@ -12,6 +14,7 @@ use oblikovati_solve::{
 pub struct SketchSolveOutcome {
     candidate: Sketch2D,
     numerical: NonlinearResult,
+    origins: Vec<SketchRelationId>,
     parameter_dependencies: Vec<u64>,
 }
 impl SketchSolveOutcome {
@@ -27,23 +30,41 @@ impl SketchSolveOutcome {
     pub fn parameter_dependencies(&self) -> &[u64] {
         &self.parameter_dependencies
     }
-    /// Resolve unsatisfied source indices to authored identities; example: `outcome.conflicting_constraints()`.
+    /// Inspect only authored conflicts; use `conflicting_relations()` for structural sources; example: `outcome.conflicting_constraints()`.
     pub fn conflicting_constraints(&self) -> Vec<SketchConstraintId> {
-        self.numerical
-            .conflicts
-            .iter()
-            .map(|&index| self.candidate.constraints[index].id)
+        self.conflicting_relations()
+            .into_iter()
+            .filter_map(SketchRelationId::authored)
             .collect()
     }
-    /// Inspect alternative individual removals using the captured Jacobian; example: `outcome.redundant_constraints(1e-9)?`.
+    /// Inspect only authored redundancies; use `redundant_relations()` for structural sources; example: `outcome.redundant_constraints(1e-9)?`.
     pub fn redundant_constraints(
         &self,
         tolerance: f64,
     ) -> Result<Vec<SketchConstraintId>, SketchError> {
+        Ok(self
+            .redundant_relations(tolerance)?
+            .into_iter()
+            .filter_map(SketchRelationId::authored)
+            .collect())
+    }
+    /// Inspect all unsatisfied authored and structural relations; example: `outcome.conflicting_relations()`.
+    pub fn conflicting_relations(&self) -> Vec<SketchRelationId> {
+        self.numerical
+            .conflicts
+            .iter()
+            .map(|&index| self.origins[index])
+            .collect()
+    }
+    /// Inspect all individually redundant sources, including structural equations; example: `outcome.redundant_relations(1e-9)?`.
+    pub fn redundant_relations(
+        &self,
+        tolerance: f64,
+    ) -> Result<Vec<SketchRelationId>, SketchError> {
         Ok(redundant_sources(&self.numerical.evaluation, tolerance)
             .map_err(SolveError::from)?
             .into_iter()
-            .map(|index| self.candidate.constraints[index].id)
+            .map(|index| self.origins[index])
             .collect())
     }
     /// Take the candidate for an explicit document edit; example: `let candidate = outcome.into_candidate()`.
@@ -61,9 +82,10 @@ impl Sketch2D {
     ) -> Result<SketchSolveOutcome, SketchError> {
         let prepared = compile::prepare(self, parameters)?;
         let numerical = solve_constraints(&prepared.values, &prepared.blocks(), options, cancelled)
-            .map_err(|cause| self.constraint_failure(cause))?;
+            .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&numerical.values)?;
         Ok(SketchSolveOutcome {
+            origins: prepared.origins,
             candidate,
             numerical,
             parameter_dependencies: prepared.parameter_dependencies,
@@ -77,19 +99,7 @@ impl Sketch2D {
     ) -> Result<ConstraintStructure, SketchError> {
         let prepared = compile::prepare(self, parameters)?;
         let evaluation = evaluate_residuals(&prepared.values, &prepared.blocks())
-            .map_err(|cause| self.constraint_failure(cause.into()))?;
+            .map_err(|cause| source_failure(&prepared.origins, cause.into()))?;
         Ok(analyze_structure(&evaluation, rank_tolerance).map_err(SolveError::from)?)
-    }
-    fn constraint_failure(&self, cause: SolveError) -> SketchError {
-        if let SolveError::Evaluation(EvaluationError::Source { block, .. }) = &cause
-            && let Some(constraint) = self.constraints.get(*block)
-            && let SolveError::Evaluation(cause) = cause
-        {
-            return SketchError::Residual {
-                constraint: constraint.id,
-                cause,
-            };
-        }
-        cause.into()
     }
 }

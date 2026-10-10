@@ -219,3 +219,49 @@ and free-touch-point rank tests pass at the recorded baseline.
 Arc tangency and the shared defining-touch-point formulations require the arc
 model and remain pending. These full-circle results do not establish profile
 stitching, contact naming, persistence, API/UI integration or kernel acceptance.
+
+## Circular arc ownership and structural circularity
+
+Tracking: [#3709](https://github.com/Oblikovati/Oblikovati/issues/3709).
+`SketchArc2D` owns a stable arc identity and references the sketch's center,
+start, and end point identities. It retains the authored clockwise or
+counterclockwise direction. Radius is derived from center/start; there is no
+independent radius variable. `ArcRadius` reads a healthy, strictly positive
+length parameter and reuses the aligned-distance equation. A noncircular draft
+is allowed so that the solver can restore circularity.
+
+Every owned arc contributes one structural equation:
+`distance(center, end) - distance(center, start) = 0`. This ports Go's
+`arc_circularity.go`, including the endpoint-following requirement of #1419.
+Structural equations are compiled after authored constraints in stable arc
+insertion order. They are derived from ownership and cannot be deleted through
+the authored constraint collection. They share the existing AD evaluation,
+variable mapping, nonlinear iteration, and diagnostics. Both endpoint radii
+must be positive during evaluation; collapsed trial geometry is rejected rather
+than moved or repaired. A collapsed draft can be edited but cannot be solved
+as a valid arc.
+
+`SketchRelationId` identifies either an authored constraint or an arc-owned
+circularity equation. Complete conflict and individual redundancy reports use
+these identities; the existing authored-only views explicitly exclude structural
+sources. Evaluation failures name the owning arc and retain their typed cause.
+A structural redundancy report is evidence about rank, not permission to delete
+an arc invariant. Shared endpoint occurrences seed the same global variables;
+coincident start/end references cancel their circularity row without adding
+coordinates. Such draft geometry does not prove a valid profile sweep.
+
+Tests drive both sweep directions from unequal endpoint radii to parameterized
+DOF-zero arcs, edit radius again, and verify both endpoints, identities,
+constraints, and parameter dependencies. Tests cover ownership validation,
+cancellation, zero-radius parameters, collapsed radii, overflow, repeated
+columns, two arcs sharing points, structural conflicts and redundancy, and
+solve/rank scales from `1e-100` through `1e100`. Independent analytic and central
+finite-difference derivatives cover every defining coordinate; residual unit
+sweeps cover `1e-200` through `1e200`. Three residual/full-Jacobian fixtures match
+Go at the fixed source baseline. Selected Go arc creation, circularity repair,
+and radius-dimension regressions pass there.
+
+Arc contact and midpoint relations, diameter dimensions, sketch persistence,
+API/UI integration, sweep validity, profile stitching, and kernel acceptance
+remain open. A converged sketch is numerical evidence and does not close any
+analytic B-rep or feature validation gate.

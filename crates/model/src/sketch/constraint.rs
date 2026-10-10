@@ -60,6 +60,10 @@ pub enum PlanarConstraint {
     EqualRadius {
         circles: [SketchEntityId; 2],
     },
+    ArcRadius {
+        arc: SketchEntityId,
+        parameter: u64,
+    },
     Radius {
         circle: SketchEntityId,
         parameter: u64,
@@ -138,6 +142,10 @@ impl Sketch2D {
             PlanarConstraint::LineTangent { line, circle, .. } => {
                 let endpoints = self.line(*line)?.endpoints;
                 vec![endpoints[0], endpoints[1], self.circle(*circle)?.center]
+            }
+            PlanarConstraint::ArcRadius { arc, .. } => {
+                let arc = self.arc(*arc)?;
+                vec![arc.center, arc.start]
             }
             PlanarConstraint::Radius { circle, .. } => vec![self.circle(*circle)?.center],
             PlanarConstraint::Lines { lines, .. } => {

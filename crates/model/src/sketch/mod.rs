@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Application-owned planar geometry and constraints, independent from kernel topology.
+mod arc;
+mod arc_residual;
 mod circle;
 mod circle_residual;
 mod compile;
@@ -10,9 +12,11 @@ mod geometry;
 mod line_residual;
 mod residual;
 mod solve;
+mod source;
 mod tangent;
 mod tangent_residual;
 mod variables;
+pub use arc::SketchArc2D;
 pub use circle::SketchCircle2D;
 pub use constraint::{
     DistanceMeasure, LineRelation, PlanarConstraint, SketchConstraint, SketchConstraintId,
@@ -20,6 +24,7 @@ pub use constraint::{
 pub use error::SketchError;
 pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
 pub use solve::SketchSolveOutcome;
+pub use source::SketchRelationId;
 pub use tangent::{CircleContact, LineContactSide};
 
 /// Ordered sketch ownership; shared endpoints use the same local point identity.
@@ -28,6 +33,7 @@ pub struct Sketch2D {
     points: Vec<SketchPoint2D>,
     lines: Vec<SketchLine2D>,
     circles: Vec<SketchCircle2D>,
+    arcs: Vec<SketchArc2D>,
     constraints: Vec<SketchConstraint>,
 }
 impl Sketch2D {

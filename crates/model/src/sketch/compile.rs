@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    PlanarConstraint, Sketch2D, SketchConstraint, SketchError,
+    DistanceMeasure, PlanarConstraint, Sketch2D, SketchConstraint, SketchError, SketchRelationId,
     residual::{PlanarEquation, PreparedConstraint},
 };
 use crate::{parameter::ParameterCollection, quantity::Dimension};
@@ -8,6 +8,7 @@ use oblikovati_solve::residual::ResidualBlock;
 
 pub(super) struct PreparedSketch {
     pub values: Vec<f64>,
+    pub origins: Vec<SketchRelationId>,
     pub sources: Vec<PreparedConstraint>,
     pub parameter_dependencies: Vec<u64>,
 }
@@ -27,28 +28,53 @@ pub(super) fn prepare(
     sketch: &Sketch2D,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PreparedSketch, SketchError> {
-    let values = sketch.variable_values();
-    let sources = sketch
+    let (sources, origins) = authored_sources(sketch, parameters)?;
+    let mut prepared = PreparedSketch {
+        origins,
+        sources,
+        values: sketch.variable_values(),
+        parameter_dependencies: parameter_dependencies(sketch),
+    };
+    append_arc_sources(sketch, &mut prepared)?;
+    Ok(prepared)
+}
+fn authored_sources(
+    sketch: &Sketch2D,
+    parameters: &ParameterCollection<u64>,
+) -> Result<(Vec<PreparedConstraint>, Vec<SketchRelationId>), SketchError> {
+    sketch
         .constraints
         .iter()
         .map(|constraint| {
-            Ok(PreparedConstraint {
-                equation: equation(constraint, parameters)?,
-                variables: map_variables(sketch, &constraint.relation)?,
-            })
+            Ok((
+                PreparedConstraint {
+                    equation: equation(constraint, parameters)?,
+                    variables: map_variables(sketch, &constraint.relation)?,
+                },
+                SketchRelationId::Authored(constraint.id),
+            ))
         })
-        .collect::<Result<Vec<_>, SketchError>>()?;
-    Ok(PreparedSketch {
-        values,
-        sources,
-        parameter_dependencies: parameter_dependencies(sketch),
-    })
+        .collect::<Result<Vec<_>, SketchError>>()
+        .map(|sources| sources.into_iter().unzip())
+}
+fn append_arc_sources(sketch: &Sketch2D, prepared: &mut PreparedSketch) -> Result<(), SketchError> {
+    for arc in &sketch.arcs {
+        prepared.sources.push(PreparedConstraint {
+            equation: PlanarEquation::ArcCircularity,
+            variables: sketch.arc_columns(arc)?,
+        });
+        prepared
+            .origins
+            .push(SketchRelationId::ArcCircularity(arc.id));
+    }
+    Ok(())
 }
 fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
     let mut dependencies = Vec::new();
     for constraint in &sketch.constraints {
         if let PlanarConstraint::Distance { parameter, .. }
-        | PlanarConstraint::Radius { parameter, .. } = constraint.relation
+        | PlanarConstraint::Radius { parameter, .. }
+        | PlanarConstraint::ArcRadius { parameter, .. } = constraint.relation
             && !dependencies.contains(&parameter)
         {
             dependencies.push(parameter);
@@ -80,6 +106,10 @@ fn equation(
         PlanarConstraint::LineTangent { side, .. } => PlanarEquation::LineTangent(side),
         PlanarConstraint::CircleTangent { contact, .. } => PlanarEquation::CircleTangent(contact),
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
+        PlanarConstraint::ArcRadius { parameter, .. } => PlanarEquation::Distance {
+            measure: DistanceMeasure::Aligned,
+            target: radius_target(constraint, parameter, parameters)?,
+        },
         PlanarConstraint::Radius { parameter, .. } => {
             PlanarEquation::Radius(radius_target(constraint, parameter, parameters)?)
         }

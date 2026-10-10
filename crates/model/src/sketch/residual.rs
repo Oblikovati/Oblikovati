@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    CircleContact, DistanceMeasure, LineContactSide, LineRelation, circle_residual, line_residual,
-    tangent_residual,
+    CircleContact, DistanceMeasure, LineContactSide, LineRelation, arc_residual, circle_residual,
+    line_residual, tangent_residual,
 };
 use oblikovati_solve::{
     ad::{DualNumber, DualVector},
@@ -9,6 +9,7 @@ use oblikovati_solve::{
 };
 
 pub(super) enum PlanarEquation {
+    ArcCircularity,
     Coincident,
     Coordinate(usize),
     Fix([f64; 2]),
@@ -45,7 +46,7 @@ impl PreparedConstraint {
             PlanarEquation::Radius(_) => 1,
             PlanarEquation::PointOnCircle => 5,
             PlanarEquation::LineTangent(_) => 7,
-            PlanarEquation::CircleTangent(_) => 6,
+            PlanarEquation::CircleTangent(_) | PlanarEquation::ArcCircularity => 6,
             PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
             PlanarEquation::Lines(_) => 8,
             _ => 4,
@@ -62,6 +63,7 @@ impl ResidualSource for PreparedConstraint {
             )));
         }
         match self.equation {
+            PlanarEquation::ArcCircularity => arc_residual::circularity(variables),
             PlanarEquation::Coincident => Ok(point(variables, 0)?
                 .minus(&point(variables, 2)?)?
                 .components()

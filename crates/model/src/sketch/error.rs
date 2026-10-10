@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::SketchConstraintId;
+use super::{SketchConstraintId, SketchEntityId};
 use crate::parameter::ParameterError;
 use oblikovati_solve::{
     nonlinear::SolveError,
@@ -20,6 +20,10 @@ pub enum SketchError {
     ContactSelection {
         constraint: SketchConstraintId,
         cause: ResidualError,
+    },
+    ArcCircularity {
+        arc: SketchEntityId,
+        cause: EvaluationError,
     },
     Residual {
         constraint: SketchConstraintId,
@@ -43,6 +47,9 @@ impl fmt::Display for SketchError {
                 output,
                 "sketch constraint {constraint:?} contact selection: {cause}"
             ),
+            Self::ArcCircularity { arc, cause } => {
+                write!(output, "sketch arc {arc:?} circularity: {cause}")
+            }
             Self::Residual { constraint, cause } => {
                 write!(output, "sketch constraint {constraint:?}: {cause}")
             }
@@ -56,7 +63,7 @@ impl Error for SketchError {
             Self::Parameter { cause, .. } => Some(cause),
             Self::Numerical(cause) => Some(cause),
             Self::ContactSelection { cause, .. } => Some(cause),
-            Self::Residual { cause, .. } => Some(cause),
+            Self::Residual { cause, .. } | Self::ArcCircularity { cause, .. } => Some(cause),
         }
     }
 }
