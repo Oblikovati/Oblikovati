@@ -11,8 +11,9 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::cell::RefCell;
 
 /// Implemented lifecycle calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 5] = [
+pub const FILE_COMMAND_METHODS: [&str; 6] = [
     METHOD_DOCUMENTS_ACTIVATE,
+    METHOD_DOCUMENTS_BATCH_SAVE,
     METHOD_DOCUMENTS_SAVE,
     METHOD_DOCUMENTS_SAVE_AS,
     METHOD_DOCUMENTS_SAVE_COPY_AS,
@@ -65,6 +66,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
     fn command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
             METHOD_DOCUMENTS_ACTIVATE => self.activate(decode(method, request)?),
+            METHOD_DOCUMENTS_BATCH_SAVE => self.batch_save(decode(method, request)?),
             METHOD_DOCUMENTS_SAVE => self.save(decode(method, request)?),
             METHOD_DOCUMENTS_SAVE_AS => self.save_as(decode(method, request)?),
             METHOD_DOCUMENTS_SAVE_COPY_AS => self.save_copy(decode(method, request)?),
@@ -73,6 +75,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 "file command {method:?}: expected one of {FILE_COMMAND_METHODS:?}"
             ))),
         }
+    }
+
+    fn batch_save(&mut self, request: BatchSaveArgs) -> Result<Vec<u8>, Error> {
+        let response = self
+            .files
+            .batch_save(request, self.version, self.source)
+            .map_err(|error| Error(error.to_string()))?;
+        encode(&response)
     }
 
     fn activate(&mut self, request: ActivateDocumentArgs) -> Result<Vec<u8>, Error> {

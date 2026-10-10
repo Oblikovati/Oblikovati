@@ -265,3 +265,6 @@ fn non_utf8_response_path_is_refused_before_saving() {
 
 #[path = "file_copies.rs"]
 mod copies;
+
+#[path = "file_batch.rs"]
+mod batch;

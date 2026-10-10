@@ -412,3 +412,19 @@ destination. Tests cover resolved aliases, retained old files, persisted edits,
 copy metadata and identity, storage failures, occupied destinations, and a
 non-UTF-8 resolved Save As path refused before writing. Open/create and batch-save
 API routing remain pending.
+
+## Batch-save API routing
+
+[#3648](https://github.com/Oblikovati/Oblikovati/issues/3648) exposes
+`documents.batchSave` through `FileHost` using the existing file-owner batch
+operation. Save, Save As, and Save Copy As retain ordered per-item results and
+success counts. An item failure does not prevent later items from running.
+Invalid operations, missing source documents, and duplicate resolved destinations
+refuse the whole batch before writing. Empty batches return an empty result array.
+
+API tests cover an open-transaction failure followed by a successful save,
+request-order preservation, all three operations, binding and identity behavior,
+whole-batch refusal, and empty requests. Underlying persistence remains the same
+atomic per-file writer; a batch is not an all-or-nothing multi-file transaction.
+Open/create routing, native transport, and full geometry reconstruction remain
+pending.
