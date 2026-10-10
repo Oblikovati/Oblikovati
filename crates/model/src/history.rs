@@ -7,6 +7,7 @@ use crate::{
     property::DocumentProperties,
 };
 mod checkpoints;
+mod derived_ids;
 mod error;
 mod navigation;
 mod refresh;
@@ -33,6 +34,7 @@ pub trait DocumentSnapshotTarget: crate::identity::DocumentSaveTarget {
 /// A command can reserve identities but cannot replace or rewind the document allocator.
 pub struct RecipeReservations<'a> {
     ids: &'a mut RecipeIdAllocator,
+    derived_high_water: &'a mut i64,
 }
 impl RecipeReservations<'_> {
     /// Permanently reserve an identity; example: `let id = reservations.allocate()?;`.
@@ -74,6 +76,7 @@ struct HistoryStep {
 pub struct DocumentEditHistory {
     current: DocumentSnapshot,
     ids: RecipeIdAllocator,
+    derived_high_water: i64,
     open: Vec<OpenTransaction>,
     done: Vec<HistoryStep>,
     undone: Vec<HistoryStep>,
@@ -86,8 +89,16 @@ impl DocumentEditHistory {
     /// Take ownership of loaded state and its allocator; example: `DocumentEditHistory::new(snapshot, ids)?`.
     pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, RecipeIdError> {
         RecipeIdAllocator::restore(Some(ids.high_water()), snapshot.parameters.ids())?;
+        let derived_high_water = snapshot
+            .parameters
+            .derived_tables()
+            .iter()
+            .map(|table| table.id)
+            .max()
+            .unwrap_or(0);
         Ok(Self {
             current: snapshot,
+            derived_high_water,
             ids,
             open: Vec::new(),
             done: Vec::new(),
@@ -143,12 +154,18 @@ impl DocumentEditHistory {
         let generation = self.next_generation().map_err(EditError::History)?;
         let mut candidate = self.current.clone();
         let reserved_before = self.ids.high_water();
+        let tables_before = self.derived_high_water;
         let result = edit(
             &mut candidate,
-            &mut RecipeReservations { ids: &mut self.ids },
+            &mut RecipeReservations {
+                ids: &mut self.ids,
+                derived_high_water: &mut self.derived_high_water,
+            },
         )
         .map_err(EditError::Mutation)?;
         self.validate_candidate_ids(&candidate, reserved_before)
+            .map_err(EditError::History)?;
+        self.validate_derived_ids(&candidate, tables_before)
             .map_err(EditError::History)?;
         self.current = candidate;
         self.generation = generation;

@@ -12,6 +12,8 @@ impl DocumentEditHistory {
         self.require_closed().map_err(EditError::History)?;
         let mut candidate = self.current.clone();
         refresh(&mut candidate).map_err(EditError::Mutation)?;
+        self.validate_derived_ids(&candidate, self.derived_high_water)
+            .map_err(EditError::History)?;
         self.validate_candidate_ids(&candidate, self.ids.high_water())
             .map_err(EditError::History)?;
         if candidate

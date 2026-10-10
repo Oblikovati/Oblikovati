@@ -355,3 +355,6 @@ fn merged_edits_invalidate_save_markers_and_open_groups_cannot_be_marked() {
 
 #[path = "history/refresh.rs"]
 mod refresh;
+
+#[path = "history/derived_ids.rs"]
+mod derived_ids;

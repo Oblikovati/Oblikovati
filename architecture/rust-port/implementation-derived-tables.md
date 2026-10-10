@@ -131,6 +131,24 @@ graph traversal; missing sources do not require keeping a closed owner alive.
 Tests cover close/reopen, source rebinding, unchanged history, failed refresh after
 successful creation, and partial close-all with successful or failed refresh.
 
+## Derived-table identity reservations
+
+[#3663](https://github.com/Oblikovati/Oblikovati/issues/3663) adds
+`RecipeReservations::allocate_derived_table` to the document history owner.
+Table IDs use their own positive signed namespace, matching the API and imported
+Go table records. The counter starts at the largest retained table ID. Parameter
+IDs can have the same numeric value because they belong to a different namespace.
+
+Reservations live outside undo snapshots and survive failed edits, abort, and
+undo. New table insertion must use an ID reserved by that edit; evaluation refresh
+cannot introduce table identities. Redo restores the original IDs. Exhaustion at
+`i64::MAX` returns a named error without changing the counter or recipe.
+
+Tests cover imported IDs, namespace overlap, rejected insertion, refresh refusal,
+undo/redo, abort, failed edits, and signed exhaustion. This guarantee currently
+covers a live history owner. The legacy package stores live table IDs only;
+persisting deleted-ID reservation marks across close/reopen remains pending.
+
 ## Remaining work
 
 Connect table creation and link editing to source resolution, stable ID

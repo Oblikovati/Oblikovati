@@ -7,6 +7,8 @@ use std::{error::Error, fmt};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HistoryError {
     UnreservedIdentity(u64),
+    UnreservedDerivedIdentity(i64),
+    DerivedIdentityExhausted,
     ForeignTransaction,
     Inactive {
         supplied: TransactionToken,
@@ -20,6 +22,15 @@ pub enum HistoryError {
 impl fmt::Display for HistoryError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::UnreservedDerivedIdentity(id) => write!(
+                output,
+                "derived table ID {id}: expected an existing identity or one reserved by this edit"
+            ),
+            Self::DerivedIdentityExhausted => write!(
+                output,
+                "derived table high-water mark {}: expected a value below i64::MAX",
+                i64::MAX
+            ),
             Self::UnreservedIdentity(id) => write!(
                 output,
                 "recipe ID {id}: expected an existing identity or one reserved by this edit"
