@@ -56,7 +56,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         self.refresh_order(&graph, order)
     }
 
-    fn derived_graph(&self) -> Result<DependencyGraph<u64>, FileWorkspaceError> {
+    pub(super) fn derived_graph(&self) -> Result<DependencyGraph<u64>, FileWorkspaceError> {
         let mut graph = DependencyGraph::default();
         for &id in self.workspace.documents() {
             graph.insert(id).map_err(graph_error)?;

@@ -58,3 +58,21 @@ fn failed_refresh_and_unreserved_identity_are_atomic_and_open_groups_are_refused
     assert!(history.refresh(|_| Ok::<(), String>(())).is_err());
     history.abort(&token).unwrap();
 }
+
+#[test]
+fn prepared_refresh_can_be_discarded_before_infallible_publication() {
+    let mut history = history();
+    let generation = history.generation();
+    let prepared = history
+        .prepare_refresh(|snapshot| snapshot.parameters.set_expression(1, "7 cm"))
+        .unwrap();
+    drop(prepared);
+    assert_eq!(history.generation(), generation);
+    assert_eq!(width(&history), 1.0);
+    let prepared = history
+        .prepare_refresh(|snapshot| snapshot.parameters.set_expression(1, "7 cm"))
+        .unwrap();
+    assert!(prepared.publish());
+    assert_eq!(width(&history), 7.0);
+    assert!(history.undo_labels().is_empty());
+}

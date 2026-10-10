@@ -8,7 +8,7 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 /// Additional queries that require a file owner, rather than bare recipe sessions.
 pub const FILE_QUERY_METHODS: [&str; 2] =
     [METHOD_DOCUMENTS_LIST, METHOD_PARAMETERS_DERIVED_TABLES_LIST];
-mod derived;
+pub(crate) mod derived;
 
 /// Immutable API access to file-owned documents and their session state.
 pub struct FileQueryHost<'a, O, W, F> {

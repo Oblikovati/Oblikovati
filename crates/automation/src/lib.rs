@@ -4,7 +4,9 @@
 mod command_owner;
 mod edit;
 mod file_host;
-pub use file_host::{DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost};
+pub use file_host::{
+    DERIVED_COMMAND_METHODS, DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
+};
 mod file_queries;
 mod groups_edit;
 mod host;

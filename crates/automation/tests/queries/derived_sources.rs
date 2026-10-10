@@ -280,3 +280,6 @@ mod automatic;
 
 #[path = "derived_lifecycle.rs"]
 mod lifecycle;
+
+#[path = "derived_link_edit.rs"]
+mod link_edit;

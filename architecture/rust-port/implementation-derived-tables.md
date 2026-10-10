@@ -149,11 +149,39 @@ undo/redo, abort, failed edits, and signed exhaustion. This guarantee currently
 covers a live history owner. The legacy package stores live table IDs only;
 persisting deleted-ID reservation marks across close/reopen remains pending.
 
+## Table creation and link editing
+
+[#3664](https://github.com/Oblikovati/Oblikovati/issues/3664) implements the canonical
+`parameters.derivedTables.add` and `parameters.derivedTables.setLinked` commands in
+`FileHost`, listed separately in `DERIVED_COMMAND_METHODS`. The bare session host
+cannot resolve other documents. File-owner operations resolve an open part or
+assembly, transfer source quantities, and validate the proposed graph before edits.
+Self-links and cycles are refused even when the linked subset is empty.
+
+Creation reserves a table ID and parameter IDs through the target history owner.
+Relinking retains kept parameter identities, local names, and annotations; removed
+links lose their produced parameters. Duplicate, missing, nonnumeric, or unhealthy
+source names are refused. Both commands return the shared table-info projection.
+Successful commands feed the automatic refresh scheduler.
+
+Linking also marks selected source parameters as exposed properties, following Go
+`app/derived_tables.go` at `aa8297d1`. Source projection is prepared first through
+an exclusively borrowed history candidate. Target failure or observer veto drops
+that candidate; target success publishes it with no remaining validation failure
+point. Source export changes advance its generation and notify its observer but
+create no source undo entry. As in Go, later target undo or bounded-group abort does
+not unexport the source. An open source transaction refuses linking.
+
+Tests cover typed creation/relinking, kept IDs, source property projection, value
+propagation, empty subsets, duplicate and missing names, source transactions,
+cycles, target veto, target undo, reservation reuse refusal, and bounded-group
+abort. The Go router lifecycle, bad-argument, source-value, and provenance tests
+also pass locally as reference evidence. Native UI acceptance remains pending.
+
 ## Remaining work
 
-Connect table creation and link editing to source resolution, stable ID
-reservation, source parameter export, and the document reference graph. Use the
-checked source-value boundary for those operations. Direct low-level file
-owner calls still require explicit refresh; the automatic hooks are at the API
-command boundary. Geometry integration and native live application acceptance
-remain pending.
+Persist reservation counters and local/source name mappings in the package, and
+complete the general document reference graph beyond parameter-table links.
+Direct low-level file owner calls still require explicit refresh; automatic hooks
+are at the API command boundary. Geometry integration and native live application
+acceptance remain pending.

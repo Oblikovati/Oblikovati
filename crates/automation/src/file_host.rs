@@ -10,6 +10,8 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
 mod close;
+mod derived_links;
+pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
 mod lifecycle;
 mod open;
@@ -65,6 +67,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         }
         if TRANSACTION_METHODS.contains(&method) {
             return transactions::apply(context.files, method, request);
+        }
+        if DERIVED_COMMAND_METHODS.contains(&method) {
+            return context.derived_command(method, request);
         }
         if FILE_COMMAND_METHODS.contains(&method) {
             return context.lifecycle_command(method, request);

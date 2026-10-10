@@ -41,7 +41,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         Ok(())
     }
 
-    fn derived_table_source(&self, target: u64, table: i64) -> Result<String, FileWorkspaceError> {
+    pub(super) fn derived_table_source(
+        &self,
+        target: u64,
+        table: i64,
+    ) -> Result<String, FileWorkspaceError> {
         let session = self
             .workspace
             .session(target)

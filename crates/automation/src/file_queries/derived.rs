@@ -45,7 +45,7 @@ fn active_parameters<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     Ok(parameters)
 }
 
-fn describe<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(crate) fn describe<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     parameters: &ParameterCollection<u64>,
     table: &DerivedTable<u64>,

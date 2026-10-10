@@ -2,6 +2,7 @@
 
 //! Ordered open-document ownership without file I/O or UI dependencies.
 mod commands;
+mod derived_edit;
 pub use commands::SessionCommands;
 mod copy;
 mod error;

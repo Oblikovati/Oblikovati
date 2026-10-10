@@ -12,6 +12,7 @@ mod error;
 mod navigation;
 mod refresh;
 pub use error::{EditError, HistoryError};
+pub use refresh::PreparedRefresh;
 use std::sync::Arc;
 
 /// Owned parameter/property state; identity allocation and file identity are outside history.
