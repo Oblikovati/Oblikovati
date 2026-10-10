@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Go baseline aa8297d1b0ac33c024f19e54821536d76e8a447a; yamlcodec.MarshalDocument.
+schemaVersion: 2
+documentType: 1
+subType: custom
+displayName: fixture Ω
+identity:
+    internalName: 11111111-2222-3333-4444-555555555555
+    saveCounter: 2
+attributes:
+    - 0
+    - 255
+    - 1
+bodyNames:
+    face:key: name
+resources:
+    font:
+        type: TrueTypeFont
+        encoding: base64
+        value: AP8B
+    mesh:
+        type: ObjFile
+        encoding: utf8
+        value: |
+            v 0 0 0
+            v 1 0 0
+model:
+    parameters:
+        width: 25.4
+        enabled: true
+        label: '001'
+    features: []
+data:
+    addin/state: AP+ACg==

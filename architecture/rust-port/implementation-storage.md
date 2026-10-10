@@ -32,3 +32,32 @@ File contents are synchronized before replacement; directory metadata is not
 synchronized after it. Power-loss durability and failures after a committed
 directory update need separate outcome/reconciliation design. No full document
 save/load or crash-durability claim is made by these tests.
+
+## Schema-2 YAML envelope — partial R2
+
+Tracking: [#3593](https://github.com/Oblikovati/Oblikovati/issues/3593).
+`DocumentPackage` retains the manifest and all 17 known root fields from Go
+`yamlcodec.onDisk`. Model and resource content stays native YAML. The codec
+privately wraps [serde_yaml_ng](https://github.com/acatton/serde-yaml-ng) 0.10.0;
+no library node type escapes the persistence interface.
+
+The reader requires one mapping with schema version 2 and an unsigned document
+kind. It refuses ZIP, missing/unsupported schemas, duplicate keys, multiple YAML
+documents, unknown root fields, and incorrect root section shapes. Nested
+section values remain intact for their domain decoders. Their retention does
+not certify feature support, resource encoding validity, or permission to edit
+the recipe. Manifest-free DataIO containers are not supported by this reader.
+
+The Go fixture was produced by `yamlcodec.MarshalDocument` at baseline
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`. It contains a native model with typed
+numbers/booleans/quoted strings, UTF-8 and base64 resources, binary add-in data,
+identity, byte attributes, and body names. A local Go → Rust → Go check compared
+all decoded metadata and byte sections plus the parsed model with Go
+`reflect.DeepEqual`; all matched. Six Rust tests cover the fixture, all section
+paths, malformed input, alias values, and repeated encoding stability.
+
+Preservation is semantic: comments, alias spelling, scalar style, and whitespace
+can change on encoding. Input mapping order is retained; repeated encoding is
+stable. The public package is read-only at this stage. Identity replacement,
+typed resource/data validation, recipe restoration, and the concrete atomic
+save target remain open work.
