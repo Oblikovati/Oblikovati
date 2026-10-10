@@ -159,6 +159,30 @@ kind, and multiple-owner checks also reject malformed or ambiguous records.
 Six model tests and three persistence tests cover restoration, canonical
 references, refresh/recovery, missing values, rename/removal, malformed input,
 atomic rollback, and last-good preservation. The Go sync and derived-table
-round-trip tests pass at the fixed baseline. Table creation, subset editing,
-owner-mediated deletion, source-document resolution, and recipe export still
-need host integration; this does not complete the cross-document feature.
+round-trip tests pass at the fixed baseline. Model-side table edits are covered
+below. Source-document resolution and recipe export still need host integration;
+this does not complete the cross-document feature.
+
+## Derived-table editing — partial R2
+
+Tracking: [#3604](https://github.com/Oblikovati/Oblikovati/issues/3604).
+The model now creates tables, replaces linked subsets, marks feature ownership,
+and deletes tables through user or owner paths. Table IDs and new parameter IDs
+come from the document. A subset edit takes exactly the IDs required for new or
+previously unproduced links. Kept links retain identity, local names, annotations,
+and tolerance state. Their measured values refresh from the caller's snapshot.
+
+The complete edit is prepared in a separate collection. Missing source names,
+invalid quantities, duplicate links/IDs, occupied names, and incorrect allocation
+sets leave the original collection untouched. Removed links invalidate readers
+and remove group memberships. A new link may reuse a removed local name with a
+new identity. Feature-owned tables reject user deletion; deleting the owning
+component can remove them explicitly. External ID allocators remain responsible
+for preventing lifetime ID reuse; failed edits do not rewind those allocators.
+
+Ten model tests cover creation, retained state, subset replacement, pending-link
+production, malformed input, name reuse, ownership, and deletion. A persistence
+integration test loads a pending link and supplies its new ID from the restored
+document allocator. Go's corresponding add/subset/delete tests are the baseline.
+Document source resolution, session commands/events, and recipe export remain
+pending.

@@ -96,3 +96,32 @@ fn null_or_empty_tables_are_empty() {
         );
     }
 }
+
+#[test]
+fn pending_loaded_links_use_the_document_allocator_when_selected() {
+    let mut restored =
+        restore("[{id: 7, sourceDocument: gears.obk, linked: [module, teeth]}]").unwrap();
+    let allocated = restored.ids.allocate().unwrap();
+    assert_eq!(allocated, 3);
+    let source = BTreeMap::from([
+        ("module".into(), Quantity::new(0.25, Dimension::Length)),
+        ("teeth".into(), Quantity::new(30.0, Dimension::Unitless)),
+    ]);
+    let ids = BTreeMap::from([("teeth".into(), allocated)]);
+    restored
+        .parameters
+        .set_derived_table_linked(7, &["module".into(), "teeth".into()], &source, &ids)
+        .unwrap();
+    assert_eq!(restored.parameters.find("module"), Some(1));
+    assert_eq!(restored.parameters.find("teeth"), Some(allocated));
+    assert_eq!(
+        restored
+            .parameters
+            .get(2)
+            .unwrap()
+            .current_value()
+            .unwrap()
+            .value,
+        6.0
+    );
+}

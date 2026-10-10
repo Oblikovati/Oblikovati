@@ -2,6 +2,8 @@
 
 use super::*;
 use oblikovati_api::wire::DerivedParameterReference;
+mod delete;
+mod edit;
 mod sync;
 
 /// Cross-document resolution is separate from the stored numeric snapshot.
@@ -31,9 +33,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         &self,
         id: i64,
     ) -> Result<Vec<DerivedParameterReference>, ParameterError<Id>> {
-        let table = self
-            .derived_table(id)
-            .ok_or_else(|| table_error(id, "missing", "an existing table ID"))?;
+        let table = self.require_derived_table(id)?;
         Ok(table
             .linked
             .iter()
@@ -129,6 +129,11 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         Ok(())
     }
 
+    fn require_derived_table(&self, id: i64) -> Result<&DerivedTable<Id>, ParameterError<Id>> {
+        self.derived_table(id)
+            .ok_or_else(|| table_error(id, "missing", "an existing table ID"))
+    }
+
     pub(super) fn detach_derived_parameter(&mut self, id: Id) {
         for table in &mut self.derived_tables {
             if table.produced.values().any(|produced| *produced == id) {
@@ -145,4 +150,19 @@ fn table_error<Id>(id: i64, found: impl ToString, expected: &'static str) -> Par
         found: found.to_string(),
         expected,
     }
+}
+
+fn validate_source_quantity<Id>(
+    table: i64,
+    name: &str,
+    quantity: crate::quantity::Quantity,
+) -> Result<(), ParameterError<Id>> {
+    if !quantity.value.is_finite() || !quantity.dimension.is_arithmetic() {
+        return Err(table_error(
+            table,
+            format!("{name}={quantity:?}"),
+            "a finite numeric source quantity",
+        ));
+    }
+    Ok(())
 }

@@ -22,10 +22,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         id: i64,
         source: Option<&BTreeMap<String, Quantity>>,
     ) -> Result<(), ParameterError<Id>> {
-        let table = self
-            .derived_table(id)
-            .cloned()
-            .ok_or_else(|| table_error(id, "missing", "an existing table ID"))?;
+        let table = self.require_derived_table(id)?.clone();
         self.fail_missing_links(&table, source)?;
         let missing = self.refresh_available_links(&table, source)?;
         self.derived_tables
@@ -79,13 +76,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             return Ok(false);
         };
         if let Some(value) = value {
-            if !value.value.is_finite() {
-                return Err(table_error(
-                    table.id,
-                    format!("{name}={value:?}"),
-                    "a finite numeric source quantity",
-                ));
-            }
+            validate_source_quantity(table.id, name, *value)?;
             self.update_measured(id, *value)?;
             return Ok(true);
         }
