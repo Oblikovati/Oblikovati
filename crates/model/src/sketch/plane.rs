@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SketchError;
 /// Versioned metric checks for authored sketch frame axes, separate from modelling tolerance.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SketchPlaneOptions {
     pub version: u32,
     pub unit_deviation: f64,
@@ -29,6 +30,7 @@ pub struct SketchPlaneRecipe {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SketchPlane {
     recipe: SketchPlaneRecipe,
+    options: SketchPlaneOptions,
     normal: [f64; 3],
 }
 impl SketchPlane {
@@ -51,6 +53,7 @@ impl SketchPlane {
                 x_axis,
                 y_axis,
             },
+            options,
             normal,
         })
     }
@@ -64,6 +67,10 @@ impl SketchPlane {
     /// Capture authored axes without the derived normal; example: `plane.recipe()`.
     pub fn recipe(self) -> SketchPlaneRecipe {
         self.recipe
+    }
+    /// Capture the frame validation policy for restore; example: `plane.options()`.
+    pub fn options(self) -> SketchPlaneOptions {
+        self.options
     }
     /// Inspect the derived right-handed unit normal; example: `plane.normal()`.
     pub fn normal(self) -> [f64; 3] {
@@ -111,6 +118,7 @@ fn basis_plane(x_axis: [f64; 3], y_axis: [f64; 3], normal: [f64; 3]) -> SketchPl
             x_axis,
             y_axis,
         },
+        options: SketchPlaneOptions::default(),
         normal,
     }
 }

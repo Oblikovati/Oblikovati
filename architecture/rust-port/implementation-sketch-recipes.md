@@ -79,3 +79,39 @@ options/frames have tests. Coordinate scale checks cover `1e-200` through `1e200
 nonfinite queries and arithmetic overflow are named failures. This does not yet
 implement parameter-driven work planes, face hosting, document sketch collections,
 or a saved document placement section.
+
+## Document-owned placed collections
+
+Tracking: [#3718](https://github.com/Oblikovati/Oblikovati/issues/3718).
+`DocumentSketches` now owns ordered `PlacedSketch` records with a typed saved
+sketch ID, authored name, validated static placement and planar geometry. Add,
+remove, rename, geometry replacement and plane replacement are explicit edit
+boundaries. A failed edit does not partly change the collection. Duplicate
+explicit names remain allowed, matching Go's `AddNamed`; automatic names are
+not implemented by this collection.
+
+Entity IDs must have one owner across the document's sketches. The existing
+UUIDv5 `sketchEntity:<id>` name has no sketch ID, so accepting the same entity ID
+in another sketch would create an ambiguous persistent reference. Shared
+endpoints inside one sketch still reference one owned point. Sketch IDs retain
+their separate `sketch:<id>` namespace, and authored constraint IDs remain local
+to their sketch. The collection allocates no identity; a permanent external
+allocator supplies reservations. Live sketch/entity ID lists support those
+separate allocation owners. Neither removing a record nor a failed add changes
+an allocator supplied by the caller.
+
+Collection recipe version 1 stores placement options as well as axes, names,
+IDs and the geometry recipe. `SketchPlane` now retains its validated option
+values for that capture. Restore validates the complete collection into a fresh
+owner and refuses schema, geometry, frame and global entity-identity errors.
+No solver result, normal cache or shared parameter table is duplicated in these
+records; solves receive the document's parameter table explicitly.
+
+Tests cover deterministic recipe round trips, original order, names, shared and
+separate identity namespaces, custom frame options, whole-collection atomic
+failure, geometry and placement edits, removal, external reservation behavior,
+malformed restore and UUID continuity/separation. A restored placed sketch edits
+its dimension through zero and back, retains zero DOF, then maps the solved point
+into the saved XZ placement. Document snapshot/history integration, permanent
+reservation storage, package encoding, legacy import and session save/reopen
+remain the next integration work; this collection does not itself write files.

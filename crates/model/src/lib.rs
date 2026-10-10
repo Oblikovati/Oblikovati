@@ -18,4 +18,5 @@ pub mod units;
 
 pub mod interest;
 
+pub mod document_sketch;
 pub mod sketch;
