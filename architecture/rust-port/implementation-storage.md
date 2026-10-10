@@ -136,3 +136,25 @@ These establish the package/identity lifecycle only. Document path indexing,
 already-open-file reuse, feature support checks, live recipe reconstruction,
 reference loading, dirty state, and event delivery remain open. If later recipe
 restoration fails, its host owner must close the provisional registration.
+
+## Parameter reconstruction before registration — partial R2
+
+Tracking: [#3608](https://github.com/Oblikovati/Oblikovati/issues/3608).
+`load_parameter_package` reads a file snapshot and reconstructs the implemented
+parameter domain using stored units before it registers the document identity.
+It returns the retained package, explicit identity-registration outcome, live
+parameter collection, and recipe ID allocator. Raw envelope loading and typed
+parameter loading share the same read, identity validation, and registration
+implementation.
+
+A recipe error leaves both identity indexes untouched and consumes no identity
+entropy. A later identity/registration error discards the reconstructed candidate.
+Copied-file collisions still return the reassignment outcome for the host to
+report and mark dirty. Four integration tests cover invalid domain records,
+identity failures, collisions and duplicate session IDs, plus a native
+load/edit/export/save/close/reopen cycle at a non-default working scale. The
+native cycle checks saved identity, changed value, and retained add-in bytes.
+
+This entry point reconstructs parameters only. Other retained model sections are
+not executed or certified as feature geometry. Full host opening must include
+all required model-domain validation before it exposes a document to the user.

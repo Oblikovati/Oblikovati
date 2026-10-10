@@ -11,6 +11,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+mod parameters;
+pub use parameters::{LoadedParameterPackage, load_parameter_package};
+
 /// Injected whole-file input; the package codec owns validation after reading.
 pub trait PackageFileReader {
     /// Read a snapshot without retaining a file handle. Example: `reader.read(path)?`.
@@ -69,23 +72,44 @@ pub fn load_registered(
     source: &mut dyn GuidSource,
     reader: &mut dyn PackageFileReader,
 ) -> Result<LoadedPackage, PackageLoadError> {
-    let failure = |cause| PackageLoadError {
-        path: path.to_owned(),
-        cause,
-    };
+    let package = read_snapshot(path, reader)?;
+    register_package(path, session_id, version, index, source, package)
+}
+
+fn read_snapshot(
+    path: &Path,
+    reader: &mut dyn PackageFileReader,
+) -> Result<DocumentPackage, PackageLoadError> {
     let encoded = reader
         .read(path)
-        .map_err(|error| failure(LoadFailure::Read(error)))?;
-    let package =
-        DocumentPackage::decode(&encoded).map_err(|error| failure(LoadFailure::Codec(error)))?;
-    let identity = restore_identity(&package, version, source).map_err(failure)?;
+        .map_err(|error| load_error(path, LoadFailure::Read(error)))?;
+    DocumentPackage::decode(&encoded).map_err(|error| load_error(path, LoadFailure::Codec(error)))
+}
+
+fn register_package(
+    path: &Path,
+    session_id: u64,
+    version: &str,
+    index: &mut DocumentIdentityIndex,
+    source: &mut dyn GuidSource,
+    package: DocumentPackage,
+) -> Result<LoadedPackage, PackageLoadError> {
+    let identity =
+        restore_identity(&package, version, source).map_err(|cause| load_error(path, cause))?;
     let registration = index
         .register(session_id, identity, source)
-        .map_err(|error| failure(LoadFailure::Registration(error)))?;
+        .map_err(|error| load_error(path, LoadFailure::Registration(error)))?;
     Ok(LoadedPackage {
         package,
         registration,
     })
+}
+
+fn load_error(path: &Path, cause: LoadFailure) -> PackageLoadError {
+    PackageLoadError {
+        path: path.to_owned(),
+        cause,
+    }
 }
 
 fn restore_identity(

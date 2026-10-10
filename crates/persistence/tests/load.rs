@@ -233,3 +233,167 @@ fn missing_native_file_returns_its_requested_path() {
     assert_eq!(error.path, path);
     assert!(index.identity(1).is_none());
 }
+
+#[test]
+fn parameter_reconstruction_errors_never_claim_identity_or_consume_entropy() {
+    use oblikovati_persistence::load::load_parameter_package;
+    let mut index = DocumentIdentityIndex::default();
+    let mut generator = source();
+    for model in [
+        "{units: {workingScale: '0'}}",
+        "{parameters: [{name: p, kind: user, expression: missing}]}",
+        "{parameters: [{name: p, kind: user, expression: '1', tolerance: {type: bad}}]}",
+        "{parameterGroups: [{internalName: group, members: [missing]}]}",
+        "{derivedParameterTables: [{id: 0, sourceDocument: part.opd}]}",
+        "{parameterSettings: {dimensionDisplayType: bad}}",
+    ] {
+        let encoded = format!("schemaVersion: 2\ndocumentType: 1\nmodel: {model}\n");
+        let error = load_parameter_package(
+            Path::new("bad.opd"),
+            1,
+            "alpha",
+            &mut index,
+            &mut generator,
+            &mut reader(encoded.as_bytes()),
+        )
+        .unwrap_err();
+        assert_eq!(error.path, Path::new("bad.opd"));
+        assert!(error.to_string().contains("bad.opd"));
+        assert!(std::error::Error::source(&error).is_some());
+        assert!(index.identity(1).is_none());
+        assert_eq!(generator.next, 0, "{model}");
+    }
+}
+
+#[test]
+fn validated_parameter_packages_keep_collision_outcomes_and_existing_claims() {
+    use oblikovati_persistence::load::load_parameter_package;
+    let encoded = b"schemaVersion: 2\ndocumentType: 1\nidentity: {internalName: '11111111-2222-3333-4444-555555555555'}\nmodel:\n  units: {workingScale: '0.0001'}\n  parameters: [{name: width, kind: user, expression: '1 mm'}]\n";
+    let mut index = DocumentIdentityIndex::default();
+    let mut generator = source();
+    let first = load_parameter_package(
+        Path::new("part.opd"),
+        1,
+        "alpha",
+        &mut index,
+        &mut generator,
+        &mut reader(encoded),
+    )
+    .unwrap();
+    let identity = index.identity(1).unwrap().clone();
+    assert_eq!(
+        first
+            .restored
+            .parameters
+            .get(1)
+            .unwrap()
+            .current_value()
+            .unwrap()
+            .value,
+        1000.0
+    );
+    assert_eq!(first.loaded.registration, IdentityRegistration::Preserved);
+    let second = load_parameter_package(
+        Path::new("copy.opd"),
+        2,
+        "alpha",
+        &mut index,
+        &mut generator,
+        &mut reader(encoded),
+    )
+    .unwrap();
+    assert!(matches!(
+        second.loaded.registration,
+        IdentityRegistration::Reassigned { .. }
+    ));
+    assert_eq!(index.identity(1).unwrap(), &identity);
+    assert!(
+        load_parameter_package(
+            Path::new("part.opd"),
+            1,
+            "alpha",
+            &mut index,
+            &mut generator,
+            &mut reader(encoded)
+        )
+        .is_err()
+    );
+    assert_eq!(index.identity(1).unwrap(), &identity);
+}
+
+#[test]
+fn native_parameter_load_edit_save_and_reopen_preserves_stored_scale() {
+    use oblikovati_persistence::load::load_parameter_package;
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("part.opd");
+    std::fs::write(&path, b"schemaVersion: 2\ndocumentType: 1\ndata: {addin: YWJj}\nmodel:\n  units: {workingScale: '0.0001'}\n  parameters: [{name: width, kind: user, expression: '1 mm'}]\n").unwrap();
+    let mut index = DocumentIdentityIndex::default();
+    let mut generator = source();
+    let mut loaded = load_parameter_package(
+        &path,
+        1,
+        "alpha",
+        &mut index,
+        &mut generator,
+        &mut NativePackageReader,
+    )
+    .unwrap();
+    loaded
+        .restored
+        .parameters
+        .set_expression(1, "2 mm")
+        .unwrap();
+    let units = loaded.loaded.package.document_units().unwrap();
+    let mut updated = loaded
+        .loaded
+        .package
+        .with_parameters(&loaded.restored.parameters, units)
+        .unwrap();
+    let digest = updated.recipe_digest().unwrap();
+    let mut files = NativeAtomicFiles;
+    let mut target = PackageSaveTarget::new(&mut updated, &path, &mut files);
+    index
+        .save(1, digest, "alpha", &mut generator, &mut target)
+        .unwrap();
+    let saved_identity = index.close(1).unwrap();
+    let reopened = load_parameter_package(
+        &path,
+        2,
+        "alpha",
+        &mut index,
+        &mut generator,
+        &mut NativePackageReader,
+    )
+    .unwrap();
+    assert_eq!(index.identity(2).unwrap(), &saved_identity);
+    assert_eq!(
+        reopened
+            .restored
+            .parameters
+            .get(1)
+            .unwrap()
+            .current_value()
+            .unwrap()
+            .value,
+        2000.0
+    );
+    assert_eq!(reopened.loaded.package.streams()["addin"], b"abc");
+}
+
+#[test]
+fn parameter_package_identity_errors_do_not_register_a_reconstructed_candidate() {
+    use oblikovati_persistence::load::load_parameter_package;
+    let encoded = b"schemaVersion: 2\ndocumentType: 1\nidentity: {internalName: malformed}\nmodel: {parameters: [{name: p, kind: user, expression: '1'}]}\n";
+    let mut index = DocumentIdentityIndex::default();
+    let error = load_parameter_package(
+        Path::new("bad.opd"),
+        1,
+        "alpha",
+        &mut index,
+        &mut source(),
+        &mut reader(encoded),
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("malformed"));
+    assert!(index.identity(1).is_none());
+}
