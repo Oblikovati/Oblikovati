@@ -84,3 +84,32 @@ empty values, base64 compatibility, malformed resources, and preservation of
 nested extension fields. The corresponding Go resource/data tests pass at the
 fixed baseline. Host validation of resource type support, embedded-resource
 resolution, recipe content, and save-target integration remain open.
+
+## Complete-package atomic save target — partial R2
+
+Tracking: [#3595](https://github.com/Oblikovati/Oblikovati/issues/3595).
+`PackageSaveTarget` connects the package encoder, model-owned save protocol, and
+injected atomic filesystem. It borrows the complete package snapshot exclusively,
+computes its recipe digest, refuses mismatched candidate identity digests, and
+replaces only the identity node in a temporary encoding. Existing identity
+records are parsed and restored for validation before replacement; unknown
+identity fields cannot be discarded by saving.
+
+Atomic replacement writes all retained sections. Only after success does the
+target adopt the identity node in the in-memory package, followed by the model
+index's adoption of the same candidate. An encoding, validation, or filesystem
+error leaves both owners unchanged. Typed identity-record access is available
+for host restoration; absent and null identity sections return no record.
+
+Seven integration tests cover native save/reopen and repeated saves, exact identity
+agreement, nonidentity section preservation, fake storage failure, mismatched
+digests before I/O, unknown/malformed identity fields, and absent/null recipes. Repeated
+saves keep the model revision when the serialized recipe is unchanged, while
+advancing the file revision and counter.
+
+The digest uses this codec's extracted recipe serialization. Go and Rust YAML
+formatting can differ, so the first Rust save may mint a model revision even
+when recipe values are unchanged. Subsequent Rust round trips are stable.
+This saves an existing package snapshot; live model-to-recipe export, supported
+feature validation, dirty state, user events, and document path ownership are
+not yet integrated. Atomic rename still has the durability limits noted above.

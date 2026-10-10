@@ -12,6 +12,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+oblikovati-model = { path = "../model" }
 base64 = "=0.22.1"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_yaml_ng = "=0.10.0"

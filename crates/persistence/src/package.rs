@@ -6,8 +6,10 @@ use std::collections::BTreeMap;
 use std::{error::Error, fmt};
 
 mod resources;
+mod save;
 mod validation;
 pub use resources::{PackageResource, ResourceContents};
+pub use save::{PackageSaveError, PackageSaveTarget};
 
 /// File-level metadata. Document kind remains a numeric wire value until host validation.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
