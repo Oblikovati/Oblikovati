@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed parameter ownership, evaluation health, and deterministic dependency edits.
+mod annotations;
 mod authored;
+mod copy;
+pub use annotations::ParameterAnnotations;
 mod choices;
 mod edit;
 mod error;

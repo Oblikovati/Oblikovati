@@ -33,6 +33,7 @@ pub enum ParameterHealth<Id> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct ParameterState<Id> {
     pub name: String,
+    pub annotations: super::ParameterAnnotations,
     pub kind: ParameterKind,
     pub renamed: bool,
     pub tolerance: Tolerance,

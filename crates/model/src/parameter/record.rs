@@ -18,6 +18,7 @@ impl<Id> ParameterRecord<Id> {
     pub fn new(name: &str, kind: ParameterKind, source: String) -> Self {
         let state = ParameterState {
             name: name.into(),
+            annotations: ParameterAnnotations::default(),
             kind,
             source,
             last_good_value: None,

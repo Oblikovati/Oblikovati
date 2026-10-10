@@ -395,3 +395,28 @@ live formulas, typed selection, and rejected edits. Five legacy expression-list
 tests passed at the fixed Go baseline. Choice strings are stored as authored
 options and parsed when selected; this does not eagerly evaluate every option.
 Session metadata events, persistence, UI dropdowns, and API routing remain open.
+
+## Parameter annotations and user copies — partial R2
+
+Tracking: [issue #3580](https://github.com/Oblikovati/Oblikovati/issues/3580).
+Parameters now hold comment, key/export flags, visibility, precision, and the
+canonical API display-format enum. Annotation edits validate nonnegative precision
+and supported formats without changing nominal values or their change drain.
+Read-only numeric parameters can still receive presentation annotations, as in Go.
+Custom-property formatting and actual property export remain open.
+
+Copy-to-user accepts a fresh ID from the future document allocator and chooses
+`name_copy`, then `name_copy2`, and so on without overwriting existing names.
+Numeric copies clone the compiled expression and rebind it through the collection;
+measured constants therefore do not depend on reparsing diagnostic source text.
+Text and Boolean copies use their typed constructors. Formula copies retain their
+drivers but can be edited independently; they are not frozen-value snapshots.
+
+Copies carry comment, key/export flags, precision, tolerance, and list choices.
+As in Go, visibility and display format reset to defaults, model selection resets
+to nominal, and copied lists use authored-order mode. Memberships and the model
+renamed flag do not transfer. Failed formulas are evaluated for the new parameter
+without inventing a last-good value. Seven tests cover these rules, generated-name
+collisions, read-only measurements, typed copies, and atomic refusal. The legacy
+`TestCopyToUser` passed at the fixed baseline with Go 1.27.0. Persistence, property
+rendering, and UI/API mutation entry points remain open.

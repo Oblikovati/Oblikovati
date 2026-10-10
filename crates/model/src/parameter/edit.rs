@@ -70,7 +70,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         self.replace_compiled(id, Expression::constant(quantity))
     }
 
-    fn insert_compiled(
+    pub(super) fn insert_compiled(
         &mut self,
         id: Id,
         name: &str,
