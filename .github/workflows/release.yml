@@ -1,0 +1,54 @@
+name: Rust stable release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rust-publication
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      revision: ${{ steps.request.outputs.revision }}
+      version: ${{ steps.request.outputs.version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - id: request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENABLED: ${{ vars.RUST_STABLE_ENABLED }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/rust || { echo 'Expected the rust branch'; exit 1; }
+          test "$ENABLED" = true || { echo 'Rust stable publication is disabled until R9'; exit 1; }
+          cargo xtask release-request stable
+          echo "revision=$(jq -r .commit target/release-request.json)" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r .version target/release-request.json)" >> "$GITHUB_OUTPUT"
+  build:
+    needs: prepare
+    uses: ./.github/workflows/build.yml
+    with:
+      revision: ${{ needs.prepare.outputs.revision }}
+      version: ${{ needs.prepare.outputs.version }}
+      signed: true
+    secrets:
+      MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+      MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+      MACOS_AC_APPLE_ID: ${{ secrets.MACOS_AC_APPLE_ID }}
+      MACOS_AC_PASSWORD: ${{ secrets.MACOS_AC_PASSWORD }}
+      MACOS_AC_TEAM_ID: ${{ secrets.MACOS_AC_TEAM_ID }}
+  publish:
+    needs: [prepare, build]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      revision: ${{ needs.prepare.outputs.revision }}
+      version: ${{ needs.prepare.outputs.version }}
+      channel: stable

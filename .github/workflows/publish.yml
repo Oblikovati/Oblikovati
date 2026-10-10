@@ -1,0 +1,60 @@
+name: Publish verified Rust packages
+on:
+  workflow_call:
+    inputs:
+      revision:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      channel:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment: rust-release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: package-*
+          path: artifacts
+      - name: Require every artifact and produce the release manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$REVISION"
+          git merge-base --is-ancestor HEAD origin/rust
+          cargo xtask collect "$VERSION" artifacts dist
+          cargo xtask verify-release "$VERSION" dist
+      - name: Publish an immutable Rust release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          REVISION: ${{ inputs.revision }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          set -euo pipefail
+          case "$CHANNEL" in
+            nightly) tag="rust-nightly-${VERSION}-${REVISION:0:12}"; flags=(--prerelease) ;;
+            stable) tag="rust-v${VERSION}"; flags=() ;;
+            *) echo "Expected nightly or stable, got: $CHANNEL"; exit 1 ;;
+          esac
+          # Never move a Go tag, overwrite an earlier preview, or select this as Go's latest stable.
+          gh release create "$tag" dist/* --draft --latest=false "${flags[@]}" \
+            --target "$REVISION" --title "Oblikovati Rust $VERSION" --generate-notes
+          gh release edit "$tag" --draft=false --latest=false

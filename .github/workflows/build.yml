@@ -1,0 +1,159 @@
+name: Rust build and package
+on:
+  workflow_call:
+    inputs:
+      revision:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      signed:
+        default: false
+        type: boolean
+    secrets:
+      MACOS_CERT_P12_BASE64:
+        required: false
+      MACOS_CERT_PASSWORD:
+        required: false
+      MACOS_AC_APPLE_ID:
+        required: false
+      MACOS_AC_PASSWORD:
+        required: false
+      MACOS_AC_TEAM_ID:
+        required: false
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full commit on rust to build
+        required: true
+      version:
+        description: Four-field development product version
+        required: true
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      platforms: ${{ steps.matrix.outputs.platforms }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Check exact source and released dependencies
+        env:
+          REVISION: ${{ inputs.revision }}
+          GH_TOKEN: ${{ github.token }}
+          SIGNED: ${{ inputs.signed }}
+        run: |
+          [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo 'Expected a full commit SHA'; exit 1; }
+          test "$(git rev-parse HEAD)" = "$REVISION"
+          git merge-base --is-ancestor HEAD origin/rust
+          mode=build
+          if [ "$SIGNED" = true ]; then mode=publish; fi
+          cargo xtask preflight "$mode"
+      - id: matrix
+        run: echo "platforms=$(cargo xtask matrix)" >> "$GITHUB_OUTPUT"
+  check:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+    with:
+      revision: ${{ inputs.revision }}
+  package:
+    needs: [prepare, check]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.platforms) }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.revision }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/macos-signing
+        if: runner.os == 'macOS' && inputs.signed
+        with:
+          certificate: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          password: ${{ secrets.MACOS_CERT_PASSWORD }}
+          apple-id: ${{ secrets.MACOS_AC_APPLE_ID }}
+          apple-password: ${{ secrets.MACOS_AC_PASSWORD }}
+          team-id: ${{ secrets.MACOS_AC_TEAM_ID }}
+      - name: Build, stage, test, and package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ matrix.target }}
+          VERSION: ${{ inputs.version }}
+          SIGNED: ${{ inputs.signed }}
+        run: |
+          args=(package "$TARGET" "$VERSION")
+          if [ "$SIGNED" = true ]; then args+=(--signed); fi
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a cargo xtask "${args[@]}"
+          else
+            cargo xtask "${args[@]}"
+          fi
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: package-${{ matrix.suffix }}
+          path: dist/*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: runner.os == 'macOS'
+        with:
+          name: macos-stage-${{ matrix.suffix }}
+          path: target/macos-stage-*.tar.gz
+          if-no-files-found: error
+      - name: Remove temporary signing keychain
+        if: always() && runner.os == 'macOS' && inputs.signed
+        run: security delete-keychain "$RUNNER_TEMP/oblikovati-rust.keychain-db"
+  macos-universal:
+    needs: package
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.revision }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: macos-stage-*
+          path: stage-archives
+          merge-multiple: true
+      - run: |
+          mkdir -p stage/macos-amd64 stage/macos-arm64
+          tar -xzf stage-archives/macos-stage-macos-amd64.tar.gz -C stage/macos-amd64
+          tar -xzf stage-archives/macos-stage-macos-arm64.tar.gz -C stage/macos-arm64
+      - uses: ./.github/actions/macos-signing
+        if: inputs.signed
+        with:
+          certificate: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          password: ${{ secrets.MACOS_CERT_PASSWORD }}
+          apple-id: ${{ secrets.MACOS_AC_APPLE_ID }}
+          apple-password: ${{ secrets.MACOS_AC_PASSWORD }}
+          team-id: ${{ secrets.MACOS_AC_TEAM_ID }}
+      - name: Merge architectures and package the app
+        env:
+          VERSION: ${{ inputs.version }}
+          SIGNED: ${{ inputs.signed }}
+        run: |
+          args=(mac-bundle "$VERSION")
+          if [ "$SIGNED" = true ]; then args+=(--signed); fi
+          cargo xtask "${args[@]}"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: package-macos-universal
+          path: dist/*-macos-universal.zip
+          if-no-files-found: error
+      - name: Remove temporary signing keychain
+        if: always() && inputs.signed
+        run: security delete-keychain "$RUNNER_TEMP/oblikovati-rust.keychain-db"

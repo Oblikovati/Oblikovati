@@ -1,0 +1,31 @@
+name: Rust build tools
+description: Install the pinned application toolchain and optional quality tools
+inputs:
+  quality:
+    description: Install tools for the full local gate
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
+      with:
+        toolchain: 1.98.1
+        components: rustfmt, clippy, llvm-tools-preview
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      if: inputs.quality == 'true'
+      with:
+        node-version: 24.15.0
+        cache: npm
+    - if: inputs.quality == 'true'
+      shell: bash
+      run: |
+        make tools
+        echo "$GITHUB_WORKSPACE/.tools" >> "$GITHUB_PATH"
+    - if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config xvfb mesa-vulkan-drivers vulkan-validationlayers glslc
+    - if: runner.os == 'macOS'
+      shell: bash
+      run: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config

@@ -1,0 +1,48 @@
+# Cargo output from the root workspace and independent nested test crates.
+**/target/
+**/*.rs.bk
+
+# Native packages, downloaded CI artifacts, and temporary release staging.
+/dist/
+/artifacts/
+/stage/
+/stage-archives/
+/.tools/
+
+# Installed development tools and local test/coverage output.
+**/node_modules/
+*.profraw
+*.profdata
+*.gcda
+*.gcno
+*.lcov
+/coverage/
+/test-results/
+npm-debug.log*
+
+# Machine-specific overrides. Shared Cargo configuration and all lockfiles stay tracked.
+/.cargo/config.local.toml
+/.env
+/.env.*
+!/.env.example
+!/.env.*.example
+/.vscode/*.local.json
+/.idea/
+
+# Signing material must never be committed with a package.
+*.p12
+*.pfx
+*.keychain
+*.keychain-db
+*.private-key
+
+# Operating-system and editor files.
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
+/core
+/core.[0-9]*

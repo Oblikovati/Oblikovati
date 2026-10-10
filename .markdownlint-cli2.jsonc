@@ -1,0 +1,5 @@
+{
+  "config": { "default": true, "MD013": false, "MD040": false, "MD060": false, "MD004": false, "MD032": false },
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules/**", "target/**", ".tools/**", "dist/**", "stage/**", "artifacts/**"]
+}

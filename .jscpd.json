@@ -1,0 +1,10 @@
+{
+  "threshold": 2.99,
+  "minTokens": 50,
+  "minLines": 5,
+  "format": ["rust"],
+  "reporters": ["console", "json"],
+  "output": "target/quality/duplication",
+  "ignore": ["**/target/**", "**/tests/**", "**/node_modules/**"],
+  "ignorePattern": ["#\\[cfg\\(test\\)\\][\\s\\S]*$"]
+}

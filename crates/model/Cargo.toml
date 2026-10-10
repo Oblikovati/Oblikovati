@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-model"
+description = "Document model and dependency rules for Oblikovati"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
