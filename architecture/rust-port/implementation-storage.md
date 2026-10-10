@@ -204,3 +204,25 @@ Tests cover owned bytes, replacement/deletion, empty payloads, unusual names,
 YAML round trips, prefix boundaries, and unchanged model digests. Go DataIO and
 compaction tests provide reference evidence. Standalone manifest-free DataIO
 files and host access to these mutations remain separate work.
+
+## Standalone stream files — partial R2
+
+Tracking: [#3681](https://github.com/Oblikovati/Oblikovati/issues/3681).
+`stream_file::read_stream_file` and `write_stream_file` port Go DataIO file
+operations through the existing injected package reader and atomic writer.
+A missing destination creates a manifest-free container. Other read failures
+and invalid YAML stop before staging. Writes preserve unrelated sections and
+streams; a failed commit leaves the previous file intact. Missing streams return
+an error that names the file and stream. Stream names remain opaque keys.
+
+The manifest-free exception is private to these operations. Normal document
+loading still requires a supported manifest. No document identity is registered,
+and these operations do not coordinate writes with open session documents.
+Host DataIO access must use the session's ownership rules when it is ported.
+
+The committed `go-stream-container.yml` fixture was produced through Go
+`WriteDataToFile` at `aa8297d1b0ac33c024f19e54821536d76e8a447a` with binary
+`[0, 255]` and empty streams. Tests cover this fixture, native Linux round trips,
+creation, replacement, section preservation, missing streams, read failures,
+malformed input, and failed commit. The atomic writer's existing tests cover
+staging, write, synchronization, and commit failure independently.

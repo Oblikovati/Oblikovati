@@ -7,6 +7,7 @@ use std::{error::Error, fmt};
 
 mod attributes;
 mod binary_text;
+mod container;
 mod copy_metadata;
 mod empty;
 mod parameters;
@@ -73,6 +74,11 @@ impl DocumentPackage {
                 manifest.schema_version
             )));
         }
+        Self::from_root(root, manifest)
+    }
+
+    fn from_root(root: Mapping, manifest: PackageManifest) -> Result<Self, PackageCodecError> {
+        validation::validate_root(&root)?;
         let streams = resources::decode_streams(&root)?;
         let resources = resources::decode_resources(&root)?;
         Ok(Self {

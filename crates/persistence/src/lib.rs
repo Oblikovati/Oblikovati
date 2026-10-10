@@ -9,3 +9,5 @@ pub mod package;
 
 pub mod file_access;
 pub mod project;
+
+pub mod stream_file;
