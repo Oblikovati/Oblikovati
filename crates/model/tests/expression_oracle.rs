@@ -7,7 +7,7 @@ use oblikovati_model::{
 };
 
 #[test]
-fn expressions_match_the_fixed_go_source_capture() {
+fn expressions_match_go_except_the_documented_powered_unit_extension() {
     let corpus = include_str!("fixtures/go-expressions.tsv");
     let mut checked = 0;
     for row in corpus.lines().filter(|row| !row.starts_with('#')) {
@@ -21,6 +21,15 @@ fn check_oracle_row(row: &str) {
     let columns: Vec<&str> = row.split('\t').collect();
     let source = columns[3];
     let parsed = Expression::parse(source, &UnitsOfMeasure::default());
+    // #3576: the Go lexer rejected registered powered units. Keep its capture intact.
+    if source == "1 cm^2" {
+        assert_eq!(columns[0], "parse");
+        assert_eq!(
+            parsed.unwrap().evaluate().unwrap(),
+            Quantity::new(1.0, Dimension::Area)
+        );
+        return;
+    }
     if columns[0] == "parse" {
         assert!(parsed.is_err(), "{source}");
         return;

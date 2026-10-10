@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed parameter ownership, evaluation health, and deterministic dependency edits.
+mod authored;
 mod edit;
 mod error;
 mod evaluate;

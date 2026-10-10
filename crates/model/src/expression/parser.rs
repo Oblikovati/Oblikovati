@@ -5,7 +5,7 @@ use super::{
     node::{BinaryOperator, Node},
     token::{Token, TokenKind, tokenize},
 };
-use crate::{quantity::Dimension, units::UnitsOfMeasure};
+use crate::{quantity::Dimension, quantity::Quantity, units::UnitsOfMeasure};
 use std::collections::BTreeMap;
 
 // Limit recursive syntax, not a left-associative formula's length. Evaluation
@@ -101,12 +101,7 @@ impl Parser<'_> {
     fn number(&mut self) -> Result<usize, ExpressionError> {
         let token = self.tokens[self.position];
         self.advance();
-        let next = self.tokens[self.position];
-        let literal = format!("{} {}", token.text, next.text);
-        if next.kind == TokenKind::Name
-            && let Ok(quantity) = self.units.parse(&literal, Dimension::Unitless)
-        {
-            self.advance();
+        if let Some(quantity) = self.named_literal(token.text) {
             return Ok(self.append(Node::Literal(quantity)));
         }
         let quantity = self
@@ -114,6 +109,33 @@ impl Parser<'_> {
             .parse(token.text, Dimension::Unitless)
             .map_err(|_| token.expected("a finite decimal literal"))?;
         Ok(self.append(Node::Literal(quantity)))
+    }
+
+    fn named_literal(&mut self, number: &str) -> Option<Quantity> {
+        let unit = self.tokens[self.position];
+        if unit.kind != TokenKind::Name {
+            return None;
+        }
+        let (suffix, consumed) = self.unit_suffix(unit);
+        let quantity = self
+            .units
+            .parse(&format!("{number} {suffix}"), Dimension::Unitless)
+            .ok()?;
+        self.position += consumed;
+        Some(quantity)
+    }
+
+    fn unit_suffix(&self, unit: Token<'_>) -> (String, usize) {
+        let following = self.tokens.get(self.position + 1..self.position + 3);
+        if let Some([caret, exponent]) = following
+            && caret.kind == TokenKind::Caret
+            && exponent.kind == TokenKind::Number
+            && caret.position == unit.position + unit.text.len()
+            && exponent.position == caret.position + 1
+        {
+            return (format!("{}^{}", unit.text, exponent.text), 3);
+        }
+        (unit.text.into(), 1)
     }
 
     fn identifier(&mut self, nesting: usize) -> Result<usize, ExpressionError> {

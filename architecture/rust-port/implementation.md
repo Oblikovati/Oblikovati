@@ -117,8 +117,9 @@ numerically different primitive behavior.
 Node storage, evaluation, and destruction are flat. A 20,000-reference formula
 runs without recursive evaluation. Recursive syntax has an explicit 128-level
 limit and a positioned error. Like the baseline, the grammar does not accept
-unary plus, caret powers, or area/volume suffixes containing `^`; those quantities
-can be built from products. It accepts Go's identifier vocabulary and byte offsets.
+unary plus or general caret powers. Registered area/volume suffixes were added
+with authored-input qualification below. It accepts Go's identifier vocabulary
+and byte offsets.
 
 Unlike the Go expression parser's fixed centimetre literal conversion, the Rust
 parser receives the document units. Explicit literals use that working scale;
@@ -298,3 +299,27 @@ external temporary workspace that maps the relocated API `go/` module. The full
 Rust gate passed with model line coverage 98.99%, build-tool coverage 90.70%,
 and duplication 0.12%. These checks cover the current crates; they do not certify
 an application UI or persistence implementation.
+
+## User-authored expressions — partial R2
+
+Tracking: [issue #3576](https://github.com/Oblikovati/Oblikovati/issues/3576).
+User-input insertion and edit methods qualify unitless expressions with the
+requested category's document display unit. Bare `7` becomes `7 mm` in the default
+length context; `3*2` becomes `(3*2) * 1 mm`. Dimensioned, unresolved, and failed
+expressions retain their source. Bound unitless formulas are wrapped without
+replacing their references with current values, so edits and renames remain live.
+The category is a qualification hint, not a permanent dimension constraint.
+
+The expression parser now accepts registered area/volume suffixes, including
+`mm^2` and `mm^3`. The unit registry remains the source of valid spellings and
+conversion factors. General exponentiation and unregistered powered units are
+refused. This corrects the Go grammar gap that made its own area/volume display
+preferences generate invalid expressions. The original Go corpus remains intact;
+its `1 cm^2` row is explicitly checked as an intentional behavior change.
+
+Eight new tests cover Go source examples, every numeric display category, four
+working scales, live references, malformed/unresolved/nonnumeric source, atomic
+and read-only edits, powered-unit rejection, and rename token boundaries. The
+three Go `TestQualifyAuthored` tests passed at the fixed baseline with Go 1.27.0.
+Future UI, commands, and API user-input paths must call these authored entry
+points; raw expression edits remain available for already qualified source.
