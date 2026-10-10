@@ -2,6 +2,7 @@
 
 mod engineering;
 mod number;
+mod property;
 use super::{UnitError, UnitsOfMeasure};
 use crate::quantity::{Dimension, Quantity};
 use oblikovati_api::types::{

@@ -145,3 +145,21 @@ cycle refusal, and live-source recovery. Typed-client tests cover source close,
 target save/close/reopen with an exposed failed parameter, and source reopen that
 restores the parameter and property. All tests use owned Rust sessions and file
 adapters; native UI acceptance remains pending.
+
+## Numeric custom-property formatter — partial R2
+
+Tracking: [#3671](https://github.com/Oblikovati/Oblikovati/issues/3671).
+`CustomPropertyFormat::format_numeric` converts a working-unit quantity into
+text or an unrounded numeric property. Text supports the 24 canonical precision
+choices, explicit or document units, decimal zero flags, and unit labels.
+Fractional lengths share the document fraction formatter. Angular text rounds
+once to integer ticks and carries seconds/minutes into degrees. Angular precision
+selects sexagesimal degrees even when the document angle unit is radians.
+
+Tests cover every precision, dimensional rejection, invalid settings, overflow,
+working-scale powers, signed numeric zero, and unchanged source values. These
+are contract and analytic tests; the Go exposure helper ignores its stored format
+settings and cannot act as a formatter oracle. Property export still uses its
+existing typed projection. Connecting this formatter to export and checking
+save/reopen compatibility is tracked in
+[#3672](https://github.com/Oblikovati/Oblikovati/issues/3672).
