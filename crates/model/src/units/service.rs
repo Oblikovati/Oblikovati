@@ -25,19 +25,33 @@ pub fn convert_value(value: f64, from: &str, to: &str) -> Result<f64, UnitError>
 
 /// Resolve a diagnostic category name; for example `parse_category("length")` gives `Some(Length)`.
 pub fn parse_category(name: &str) -> Option<Dimension> {
-    match name {
-        "unitless" => Some(Dimension::Unitless),
-        "length" => Some(Dimension::Length),
-        "angle" => Some(Dimension::Angle),
-        "area" => Some(Dimension::Area),
-        "volume" => Some(Dimension::Volume),
-        "mass" => Some(Dimension::Mass),
-        "time" => Some(Dimension::Time),
-        "boolean" => Some(Dimension::Boolean),
-        "text" => Some(Dimension::Text),
-        _ => None,
-    }
+    CATEGORY_NAMES
+        .iter()
+        .find(|(spelling, _)| *spelling == name)
+        .map(|(_, dimension)| *dimension)
 }
+
+/// Return the stable quantity category spelling used by document recipes.
+/// Example: `assert_eq!(category_name(Dimension::Length), "length");`.
+pub fn category_name(dimension: Dimension) -> &'static str {
+    CATEGORY_NAMES
+        .iter()
+        .find(|(_, category)| *category == dimension)
+        .expect("every dimension has a category name")
+        .0
+}
+
+const CATEGORY_NAMES: [(&str, Dimension); 9] = [
+    ("unitless", Dimension::Unitless),
+    ("length", Dimension::Length),
+    ("angle", Dimension::Angle),
+    ("area", Dimension::Area),
+    ("volume", Dimension::Volume),
+    ("mass", Dimension::Mass),
+    ("time", Dimension::Time),
+    ("boolean", Dimension::Boolean),
+    ("text", Dimension::Text),
+];
 
 fn conversion_error(value: f64, from: &str, to: &str, expected: &'static str) -> UnitError {
     UnitError::Conversion {

@@ -201,10 +201,9 @@ Before returning, export restores the candidate and compares each parameter's
 state in recipe order. A changed working scale, unhealthy value, or state the
 current recipe cannot represent refuses the candidate without changing the
 original package. The legacy format stores derived source/local names as one
-name, so renamed local links are explicitly refused. Editable measured constants
-currently have diagnostic expression source and are also refused, as are built-in
-ownership flags that require the future feature recipe decoder. These are
-remaining export work, not silently dropped state. Parameter IDs still follow
+name, so renamed local links are explicitly refused, as are built-in ownership
+flags that require the future feature recipe decoder. These are remaining export
+work, not silently dropped state. Measured-constant export is covered below. Parameter IDs still follow
 the legacy load-order allocation; this does not add persisted parameter IDs.
 
 Eight export tests cover every numeric kind, literals, all tolerance/selection
@@ -220,3 +219,33 @@ The Go check asserted the dependency value, tolerance selection, text, Boolean,
 and group. Rust restores and re-exports the same fixture in its local gate.
 This completes a parameter-only save path; full feature/model export, document
 source resolution, and session integration remain incomplete.
+
+## Measured-constant recipe support — partial R2
+
+Tracking: [#3606](https://github.com/Oblikovati/Oblikovati/issues/3606).
+Go `constantExpr` stores a number followed by a quantity category, such as
+`1.25 length`. This is not an authored expression or a display-unit literal.
+The recipe decoder now classifies this exact two-token shape and restores a
+measured constant directly in working units. It does not convert through a named
+unit or approximate an equivalent expression. Normal authored expressions still
+use the expression parser; that parser's accepted syntax is unchanged.
+
+One explicit category table supplies stable names and their inverse. Rust debug
+type names no longer enter saved quantities or constant sources. Earlier Rust
+capitalized diagnostic categories are accepted and normalized. Nonfinite values,
+Boolean/text categories, and malformed records are refused.
+
+The committed Go-generated measured-parameter fixture covers all seven numeric
+categories. The fixed Go baseline writes this fixture but its `ApplyRecipe`
+rejects the first `1.25 unitless` expression. Rust now reads it. This is a repair
+of the legacy reader/writer mismatch, not a new schema or a promise that the old
+Go reader can load measured-constant recipes written by either implementation.
+
+Tests cover all three editable kinds, seven numeric categories, three working
+scales, and seven floating-point values including signed zero, the smallest
+subnormal, and the largest finite number. Every saved value reloads bit-for-bit.
+A copied read-only area measurement exports, reopens as an editable user
+parameter, and recomputes its reader after an authored edit. Additional tests
+cover category-name references, named-unit literals, malformed input, and old
+Rust diagnostic capitalization. Renamed derived links, built-in feature
+ownership, and full feature/model export remain pending.

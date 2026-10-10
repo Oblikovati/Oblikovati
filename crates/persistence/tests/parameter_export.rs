@@ -213,7 +213,7 @@ fn unrepresentable_or_unhealthy_state_refuses_export_without_changing_the_packag
     assert!(
         original
             .with_parameters(&measured, UnitsOfMeasure::default())
-            .is_err()
+            .is_ok()
     );
     let mut builtin = ParameterCollection::new(UnitsOfMeasure::default());
     builtin.insert_auto_model(1, "10 mm").unwrap();

@@ -37,7 +37,11 @@ impl Expression {
     /// Store an already measured quantity without parsing it; for example `Expression::constant(area)`.
     pub fn constant(quantity: Quantity) -> Self {
         Self {
-            source: format!("{} {:?}", quantity.value, quantity.dimension),
+            source: format!(
+                "{} {}",
+                quantity.value,
+                crate::units::category_name(quantity.dimension)
+            ),
             nodes: vec![Node::Literal(quantity)],
             references: Vec::new(),
             spans: Vec::new(),

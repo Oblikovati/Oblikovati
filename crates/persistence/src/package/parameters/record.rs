@@ -105,7 +105,10 @@ impl ParameterRecipe {
                 parameters.insert_boolean(id, &self.name, self.boolean)
             }
             "" if matches!(kind, USER_PARAM | MODEL_PARAM | TABLE_PARAM) => {
-                parameters.insert_expression(id, &self.name, kind, &self.expression)
+                match super::measured::parse_saved_constant(&self.expression)? {
+                    Some(value) => parameters.insert_value(id, &self.name, kind, value),
+                    None => parameters.insert_expression(id, &self.name, kind, &self.expression),
+                }
             }
             "" => parameters.insert_value(id, &self.name, kind, self.measured_value()?),
             value_type => {
@@ -228,7 +231,7 @@ impl ParameterRecipe {
                 if matches!(state.kind, REFERENCE_PARAM | DERIVED_PARAM) =>
             {
                 self.value = value.value;
-                self.unit = format!("{:?}", value.dimension).to_lowercase();
+                self.unit = oblikovati_model::units::category_name(value.dimension).into();
             }
             Some(ParameterValue::Numeric(_)) => self.expression = state.source.clone(),
             None => {

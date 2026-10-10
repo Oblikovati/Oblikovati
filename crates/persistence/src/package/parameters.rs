@@ -10,6 +10,7 @@ use oblikovati_model::{
 mod derived;
 mod export;
 mod groups;
+mod measured;
 mod property;
 mod record;
 mod settings;
