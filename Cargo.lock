@@ -368,6 +368,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "oblikovati-automation"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-api",
+ "oblikovati-model",
+ "oblikovati-session",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "oblikovati-build"
 version = "0.1.0"
 dependencies = [

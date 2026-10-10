@@ -496,4 +496,4 @@ See [parameter recipe implementation evidence](implementation-parameter-recipes.
 
 ## Document properties — partial R2
 
-See [properties](implementation-properties.md), [history](implementation-history.md), and [CLI](implementation-cli.md) evidence.
+See [properties](implementation-properties.md), [history](implementation-history.md), [CLI](implementation-cli.md), and [automation](implementation-automation.md) evidence.

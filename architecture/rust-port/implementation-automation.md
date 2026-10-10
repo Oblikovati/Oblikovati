@@ -1,0 +1,36 @@
+# Typed automation queries — partial R2
+
+Tracking: [#3627](https://github.com/Oblikovati/Oblikovati/issues/3627).
+The `oblikovati-automation` crate provides `SessionQueryHost`, an implementation
+of the canonical API client `Caller` transport over an immutable workspace
+borrow. All method names, argument types, and result DTOs are imported from the
+API crate. `QUERY_METHODS` publishes the exact implemented inventory.
+
+## Implemented inventory
+
+| Method | Context and behavior |
+| --- | --- |
+| `documents.getUnits` | Read active document preferences, display precision/format, and working scale. |
+| `units.convert` | Convert compatible physical unit names; no document is required. |
+| `units.getTypeFromString` | Resolve a registered unit name to its category without a document. |
+| `units.getStringFromType` | Read the active document's preferred unit for a category. |
+| `units.getStringFromValue` | Format a stored working-unit value using active document display rules. |
+| `units.getPreciseStringFromValue` | Format a stored working-unit value at full precision. |
+
+Dispatch selects a supported read-only method before executing it. Other methods,
+including edits, are refused explicitly. Request/response serialization uses the
+canonical types, including their nullable field behavior. A root JSON null maps
+to the argument type's default, matching Go decoding; malformed JSON is refused.
+Physical conversion and formatting preserve the model's finite-value and
+dimension checks. No DTO or numeric-unit implementation is duplicated here.
+
+Five integration tests call the host through the real Rust API `Client`. They
+cover all six methods, active-document changes, display formats, non-default
+working scale, missing document context, dimensional failures, malformed calls,
+and unsupported mutation methods. They assert unchanged dirty state, generation,
+notification counts, and undo history. The API transport is exercised directly;
+these are local Linux tests, not C ABI or native add-in tests.
+
+The host currently has no mutation dispatch, session queue, C callback registry,
+remote transport, or add-in lifecycle. Those remain R2/R4 work. The limited method
+inventory is not evidence that all operations in the API version are implemented.
