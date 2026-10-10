@@ -19,6 +19,7 @@ use std::path::Path;
 
 #[derive(Default)]
 struct QueryObserver {
+    interest_notices: Vec<(u64, String, Vec<String>)>,
     notifications: usize,
     veto: bool,
 }
@@ -38,6 +39,15 @@ impl TransactionObserver for QueryObserver {
     }
 }
 impl WorkspaceObserver for QueryObserver {
+    fn interest_client_present(&self, _: &str) -> bool {
+        false
+    }
+    fn unavailable_interest_clients(&mut self, id: u64, name: &str, clients: &[String]) {
+        self.notifications += 1;
+        self.interest_notices
+            .push((id, name.into(), clients.to_vec()));
+    }
+
     fn created(&mut self, _: u64, _: IdentityRegistration) {
         self.notifications += 1;
     }

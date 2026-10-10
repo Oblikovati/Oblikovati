@@ -118,6 +118,10 @@ fn typed_interest_commands_preserve_order_and_survive_undo_save_and_reopen() {
             .unwrap(),
         records
     );
+    assert_eq!(
+        files.workspace().observer().interest_notices,
+        [(reopened.id, "part".into(), vec!["cam".into(), "cam".into()])]
+    );
 }
 
 #[test]

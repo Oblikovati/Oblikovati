@@ -439,3 +439,19 @@ attachment API remain pending.
 
 Attachment session and API evidence continues in
 [attachment implementation](implementation-attachments.md).
+
+## Unavailable interest clients on open — partial R2
+
+Tracking: [#3694](https://github.com/Oblikovati/Oblikovati/issues/3694).
+A successful new file open now checks active document interests against the
+injected workspace observer's client availability. The host contract requires
+exact matching against registered add-in IDs or connected client names.
+The observer receives the document ID, bound display name, and absent client
+IDs as a nonfatal notice after registration and path/display-name binding.
+
+The check preserves Go record order, including repeated clients with separate
+interests. Withdrawn interests are ignored. Failed and reused opens emit no new
+notice. The check does not change stored records, dirty state, or file contents.
+Tests cover missing/present clients, case-sensitive matching, repeated clients,
+withdrawn records, failed/reused opens, and the typed API save/reopen path.
+Native client registries and status-bar display remain pending with host startup.

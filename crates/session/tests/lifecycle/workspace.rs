@@ -20,12 +20,22 @@ enum WorkspaceNotice {
 }
 #[derive(Default)]
 struct RecordingWorkspace {
+    present_clients: Vec<String>,
+    interest_notices: Vec<(u64, String, Vec<String>)>,
     deny_open: bool,
     notices: Vec<WorkspaceNotice>,
     deny_close: Option<u64>,
     deny_save: Option<u64>,
 }
 impl WorkspaceObserver for RecordingWorkspace {
+    fn interest_client_present(&self, client: &str) -> bool {
+        self.present_clients.iter().any(|present| present == client)
+    }
+    fn unavailable_interest_clients(&mut self, document: u64, name: &str, clients: &[String]) {
+        self.interest_notices
+            .push((document, name.into(), clients.to_vec()));
+    }
+
     fn created(&mut self, id: u64, registration: IdentityRegistration) {
         self.notices
             .push(WorkspaceNotice::Created(id, registration));

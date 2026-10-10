@@ -487,3 +487,6 @@ mod project;
 
 #[path = "files/unbound.rs"]
 mod unbound;
+
+#[path = "files/interest_notices.rs"]
+mod interest_notices;

@@ -6,6 +6,7 @@ mod derived_edit;
 pub use commands::SessionCommands;
 mod copy;
 mod error;
+mod interests;
 mod lifecycle;
 mod save;
 use crate::{DocumentSession, TransactionObserver};
@@ -22,6 +23,17 @@ use std::collections::BTreeMap;
 
 /// Policy and observations at the workspace boundary; callbacks cannot mutate it.
 pub trait WorkspaceObserver {
+    /// Match an exact registered add-in ID or connected client name.
+    /// Example: return whether the live host registry contains `client`.
+    fn interest_client_present(&self, client: &str) -> bool;
+    /// Report unavailable clients after an open completes; this cannot veto the open.
+    /// Example: show `clients` in the status bar for `display_name`.
+    fn unavailable_interest_clients(
+        &mut self,
+        document: u64,
+        display_name: &str,
+        clients: &[String],
+    );
     /// Observe a new unsaved document; example: add a tab with its dirty marker set.
     fn created(&mut self, document: u64, registration: IdentityRegistration);
     /// Observe a successful Save As binding; example: update the document's tab path.

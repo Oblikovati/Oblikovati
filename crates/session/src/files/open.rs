@@ -78,7 +78,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .workspace
             .register(history, prepared.identity, observer, source, activation)
             .map_err(FileWorkspaceError::Workspace)?;
-        Ok(self.install_file(path, prepared.package, registration))
+        let outcome = self.install_file(path, prepared.package, registration);
+        self.workspace
+            .notify_unavailable_interest_clients(registration.session_id);
+        Ok(outcome)
     }
 
     fn prepare_open(

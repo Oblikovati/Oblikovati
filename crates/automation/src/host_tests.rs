@@ -18,6 +18,13 @@ impl TransactionObserver for RejectUnexpectedCalls {
     }
 }
 impl WorkspaceObserver for RejectUnexpectedCalls {
+    fn interest_client_present(&self, _: &str) -> bool {
+        panic!("unexpected client lookup")
+    }
+    fn unavailable_interest_clients(&mut self, _: u64, _: &str, _: &[String]) {
+        panic!("unexpected interest notice")
+    }
+
     fn created(&mut self, _: u64, _: IdentityRegistration) {
         panic!("unexpected document")
     }
