@@ -18,3 +18,4 @@ base64 = "=0.22.1"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_yaml_ng = "=0.10.0"
 tempfile = "=3.27.0"
+time = { version = "=0.3.55", default-features = false, features = ["std", "parsing", "formatting"] }

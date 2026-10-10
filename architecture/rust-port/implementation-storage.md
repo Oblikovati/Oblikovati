@@ -408,3 +408,31 @@ Two native Linux tests capture a real file, delete its source, verify embedded
 payload retention and linked absence, and retain invalid-path errors. The Go
 attachment model tests supply reference evidence. YAML attachment records,
 session history, API methods, and project-path resolution remain pending.
+
+## Attachment YAML persistence — partial R2
+
+Tracking: [#3690](https://github.com/Oblikovati/Oblikovati/issues/3690).
+`restore_attachments` and `with_attachments` preserve ordered names, source
+paths, visibility, embedded resource GUIDs and base64 payloads, and linked
+modification times. Restore uses a validated model operation without file probes
+or GUID allocation. Capture validates the existing section before replacement
+and leaves unrelated package sections and model digest intact.
+
+A private timestamp wrapper uses pinned `time` 0.3.55, already in the lockfile.
+It converts RFC 3339 timestamps to checked `SystemTime` values and emits UTC with
+nanosecond precision. Go's zero-time sentinel becomes unknown time. Supplying
+that sentinel as an explicit model time is refused to prevent a lossy round trip.
+Leap seconds, excess fractional precision, malformed dates, and timestamps
+outside the output format's range are refused rather than normalized silently.
+
+Unknown fields/kinds, incompatible kind-specific fields, duplicate names or
+embedded GUIDs, empty names/paths, invalid GUIDs, and malformed base64 are also
+refused. This tightens Go's permissive restoration, which defaults unknown kinds
+and invalid timestamps. Null/absent/empty sections and empty embedded payloads
+remain valid. The committed fixture comes from Go `Package.Save` at baseline
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`.
+
+Six tests cover fixture round trips, timestamp offsets and nanoseconds on both
+sides of the epoch, the zero-time sentinel, visibility, payloads, section
+preservation, empty states, and refused input/output. Session history and the
+attachment API remain pending.

@@ -28,12 +28,24 @@ impl DocumentAttachments {
     ) -> Result<(), AttachmentError> {
         self.validate_name(name, path)?;
         let contents = capture::capture(kind, path, files, source)?;
+        self.restore(name, path, contents, true)
+    }
+    /// Restore owned captured state without probing files or allocating an identity.
+    /// Example: `attachments.restore("loads", "loads.csv", contents, false)?;`.
+    pub fn restore(
+        &mut self,
+        name: &str,
+        path: &str,
+        contents: AttachmentContents,
+        visible: bool,
+    ) -> Result<(), AttachmentError> {
+        self.validate_name(name, path)?;
         self.validate_resource_id(&contents)?;
         self.entries.push(FileAttachment {
             name: name.into(),
             full_file_name: path.into(),
             contents,
-            browser_visible: true,
+            browser_visible: visible,
         });
         Ok(())
     }
