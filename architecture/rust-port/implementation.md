@@ -479,3 +479,8 @@ creation, action-mask enforcement, persistence, and API routing remain open.
 
 The precise/display formatter, Go capture, supported limits, and scale correction
 are recorded in [display implementation evidence](implementation-display.md).
+
+## Persistent sketch identity — partial R2
+
+Document namespaces and exact Go reference UUID compatibility are recorded in
+[identity implementation evidence](implementation-identity.md).

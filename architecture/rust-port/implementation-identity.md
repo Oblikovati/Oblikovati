@@ -1,0 +1,35 @@
+# Document and sketch identity implementation
+
+Tracking: [#3585](https://github.com/Oblikovati/Oblikovati/issues/3585).
+Branch: `rust-port`; no PR is requested.
+
+## Persistent sketch namespaces — partial R2
+
+The model owns `DocumentGuid` and `SketchReferenceUuid`; the `uuid` dependency
+is private to that boundary. A saved document GUID plus a persisted local `u64`
+ID derives a UUIDv5 with the exact Go `sketch:<id>` or `sketchEntity:<id>` name.
+This preserves existing sketch reference bytes across language migration.
+The kind tags, decimal ID spelling, and UUID algorithm are compatibility rules.
+SHA-1 serves UUIDv5 compatibility, not authentication. Hash-derived names do not
+provide a mathematical guarantee against all possible collisions.
+
+Canonical 8-4-4-4-12 and compact 32-hex GUIDs are accepted, including uppercase
+hexadecimal input. Output is canonical lowercase. Legacy namespace bytes are
+preserved without imposing a new UUID version or variant restriction. Invalid
+input returns an error with its value and expected shape. Misplaced separators,
+braces, URNs, and whitespace are refused. Go previously removed hyphens at any
+position; that accidental acceptance is not part of the file format contract.
+
+The fixture contains 15 rows captured from Go `model/identity` at fixed revision
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`: three namespaces, five IDs, and both
+reference kinds. IDs include zero, values beyond 32 bits, and `u64::MAX`.
+Tests compare all 30 reference values exactly, check canonical formatting and
+input rejection, and check separation over 1,024 document/kind/local-ID samples.
+The corresponding Go identity tests also pass at that baseline.
+
+This component does not allocate local IDs, generate document GUIDs, save files,
+or resolve geometry. Those owners must supply the saved identity, not a session
+ID or build counter. File revision transitions, storage round trips, topology
+provenance, key binding, and collision/ambiguity rejection on model insertion
+remain open. ADR-0005's complete identity acceptance gate is not met by this
+UUID derivation test.
