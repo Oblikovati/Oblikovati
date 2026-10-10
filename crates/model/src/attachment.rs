@@ -10,11 +10,18 @@ pub use collection::DocumentAttachments;
 
 /// Injected foreign-file access; absence is distinct from an access or decoding error.
 pub trait ExternalAttachmentFiles {
-    /// Return a regular file's modification time, or None when it is absent.
-    /// Example: `let modified = files.modified("loads.csv")?;`.
-    fn modified(&mut self, path: &str) -> io::Result<Option<SystemTime>>;
+    /// Resolve a regular file and its modification time in one observation.
+    /// Example: `let source = files.inspect_source("loads.csv")?;`.
+    fn inspect_source(&mut self, path: &str) -> io::Result<Option<ResolvedAttachmentSource>>;
     /// Read an owned payload for embedding. Example: `let bytes = files.read("table.csv")?;`.
     fn read(&mut self, path: &str) -> io::Result<Vec<u8>>;
+}
+
+/// One resolved foreign file; the stored reference can differ from this path.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResolvedAttachmentSource {
+    pub resolved_file_name: String,
+    pub modified: SystemTime,
 }
 
 /// The attachment kind determines which captured state is meaningful.
@@ -92,20 +99,20 @@ impl FileAttachment {
         let Some(files) = files else {
             return Ok(status(REFERENCE_UNKNOWN, None));
         };
-        let modified = files
-            .modified(&self.full_file_name)
+        let source = files
+            .inspect_source(&self.full_file_name)
             .map_err(|cause| file_error(&self.full_file_name, cause))?;
-        let Some(modified) = modified else {
+        let Some(source) = source else {
             return Ok(status(REFERENCE_MISSING, None));
         };
-        let stale = matches!(self.contents, AttachmentContents::Linked { last_known: Some(previous) } if modified > previous);
+        let stale = matches!(self.contents, AttachmentContents::Linked { last_known: Some(previous) } if source.modified > previous);
         Ok(status(
             if stale {
                 REFERENCE_OUT_OF_DATE
             } else {
                 REFERENCE_UP_TO_DATE
             },
-            Some(self.full_file_name.clone()),
+            Some(source.resolved_file_name),
         ))
     }
 }

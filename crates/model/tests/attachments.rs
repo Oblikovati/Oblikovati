@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_api::types::*;
 use oblikovati_model::{
-    attachment::{AttachmentContents, DocumentAttachments, ExternalAttachmentFiles},
+    attachment::{
+        AttachmentContents, DocumentAttachments, ExternalAttachmentFiles, ResolvedAttachmentSource,
+    },
     identity::{DocumentGuid, GuidSource, IdentityTransitionError},
 };
 use std::{
@@ -18,7 +20,7 @@ struct AttachmentFiles {
     reads: usize,
 }
 impl ExternalAttachmentFiles for AttachmentFiles {
-    fn modified(&mut self, _: &str) -> io::Result<Option<SystemTime>> {
+    fn inspect_source(&mut self, path: &str) -> io::Result<Option<ResolvedAttachmentSource>> {
         self.stats += 1;
         if self.fail {
             return Err(io::Error::new(
@@ -26,7 +28,10 @@ impl ExternalAttachmentFiles for AttachmentFiles {
                 "fixture denied",
             ));
         }
-        Ok(self.modified)
+        Ok(self.modified.map(|modified| ResolvedAttachmentSource {
+            resolved_file_name: path.into(),
+            modified,
+        }))
     }
     fn read(&mut self, _: &str) -> io::Result<Vec<u8>> {
         self.reads += 1;

@@ -3,7 +3,9 @@
 //! Ordered project reference and template lookup, independent of workspace ownership.
 use oblikovati_api::types::*;
 use std::path::{Component, Path, PathBuf};
+mod attachments;
 mod probe;
+pub use attachments::ProjectAttachmentFiles;
 pub use probe::{NativeProjectFileProbe, ProjectFileProbe, ProjectLookupError};
 
 /// Validated absolute project roots. Lookup never depends on the process working directory.

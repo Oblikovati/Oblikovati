@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::attachment::ExternalAttachmentFiles;
+use oblikovati_model::attachment::{ExternalAttachmentFiles, ResolvedAttachmentSource};
 use std::{
     cell::RefCell,
     io,
@@ -19,7 +19,7 @@ struct ForeignState {
 }
 struct ForeignFiles(Rc<RefCell<ForeignState>>);
 impl ExternalAttachmentFiles for ForeignFiles {
-    fn modified(&mut self, _: &str) -> io::Result<Option<SystemTime>> {
+    fn inspect_source(&mut self, path: &str) -> io::Result<Option<ResolvedAttachmentSource>> {
         let mut state = self.0.borrow_mut();
         state.stats += 1;
         if state.stats == state.fail_stat_at {
@@ -28,9 +28,11 @@ impl ExternalAttachmentFiles for ForeignFiles {
                 "foreign metadata denied",
             ));
         }
-        Ok((!state.missing).then_some(
-            SystemTime::UNIX_EPOCH + Duration::new(if state.changed { 101 } else { 100 }, 1),
-        ))
+        Ok((!state.missing).then_some(ResolvedAttachmentSource {
+            resolved_file_name: path.into(),
+            modified: SystemTime::UNIX_EPOCH
+                + Duration::new(if state.changed { 101 } else { 100 }, 1),
+        }))
     }
     fn read(&mut self, _: &str) -> io::Result<Vec<u8>> {
         let mut state = self.0.borrow_mut();
@@ -334,4 +336,29 @@ fn vetoed_attachment_command_discards_the_captured_candidate() {
             .undo_labels()
             .is_empty()
     );
+}
+
+#[test]
+fn project_attachment_api_preserves_reference_and_reports_resolved_source() {
+    use oblikovati_persistence::project::{ProjectAttachmentFiles, ProjectFileLookup};
+    let (mut files, id, mut guids) = created_files(false);
+    let lookup = ProjectFileLookup::new(Some("/project".into()), vec![], None).unwrap();
+    let mut external = ForeignFiles(Rc::new(RefCell::new(ForeignState::default())));
+    let mut project_files = ProjectAttachmentFiles::new(&lookup, &mut external);
+    let client = Client::new(
+        FileHost::new(&mut files, &mut guids, "test").with_attachment_files(&mut project_files),
+    );
+    let result = client
+        .documents()
+        .add_attachment(&add(id, "linked", ATTACHMENT_LINKED))
+        .unwrap();
+    assert_eq!(result.full_file_name, "source.bin");
+    assert_eq!(result.resolved_file_name, "/project/source.bin");
+    let listed = client
+        .documents()
+        .attachments(&ListAttachmentsArgs { document: id })
+        .unwrap()
+        .attachments
+        .unwrap();
+    assert_eq!(listed, [result]);
 }

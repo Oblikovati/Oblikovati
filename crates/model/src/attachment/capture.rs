@@ -12,7 +12,8 @@ pub(super) fn capture(
         ATTACHMENT_LINKED => Ok(AttachmentContents::Linked {
             last_known: match files {
                 Some(files) => files
-                    .modified(path)
+                    .inspect_source(path)
+                    .map(|source| source.map(|source| source.modified))
                     .map_err(|cause| file_error(path, cause))?,
                 None => None,
             },
