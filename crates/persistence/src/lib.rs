@@ -4,6 +4,7 @@
 
 pub mod atomic;
 pub mod load;
+pub mod metadata;
 pub mod package;
 
 pub mod file_access;

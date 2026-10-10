@@ -29,7 +29,8 @@ kind, signed zero, 64-bit integer boundaries, byte ownership, validation rollbac
 canonical DTO projection, and parameter exposure/re-exposure. Go standard-set,
 property access/removal, and numeric-exposure tests at the fixed baseline provide
 the comparison. YAML property recipes and document-load integration are covered
-below. Binary attribute/property codecs remain separate work.
+below. The shared binary value codec is covered below; binary collection
+codecs and document integration remain separate work.
 
 ## Authored property recipes — partial R2
 
@@ -181,3 +182,23 @@ its authored expression and evaluated model value do not change. No legacy
 numeric fallback is retained. Non-exposed authored properties are unchanged.
 Decimal flags, fractional text, angular precision, and parameter provenance
 survive save/reopen tests.
+
+## Binary metadata value codec — partial R2
+
+Tracking: [#3673](https://github.com/Oblikovati/Oblikovati/issues/3673).
+The persistence `metadata` module reads and writes the Go attribute/property
+value layout. Compact tags 0 through 4 encode Boolean, signed 64-bit integer,
+binary64 double, UTF-8 string, and bytes. These tags are independent of the
+public API enum numbers. String and byte lengths are little-endian u32 values.
+The decoder checks the available input before allocating and returns the unread
+suffix for the future collection decoder.
+
+Eleven fixtures were captured through Go `PropertySets.EncodeProperties` at
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`, using Go 1.27.0 on Linux. Tests
+compare exact output bytes, retain signed zero and subnormal doubles, and
+check every truncation boundary. Invalid tags, Boolean bytes other than 0 or 1,
+invalid UTF-8, nonfinite doubles, and oversized declared blobs are refused.
+These strict failures replace Go's permissive Boolean/string decoding and match
+the Rust model's finite-value and UTF-8 requirements. Empty byte arrays normalize
+to the Go nil-slice representation. Attribute/property collection encoding,
+reference-key binding, and document integration are still required.
