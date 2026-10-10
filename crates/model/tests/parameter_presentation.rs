@@ -80,3 +80,52 @@ fn dimension_display_names_cover_supported_modes_and_reject_unknown_ids() {
     }
     assert_eq!(dimension_display_name(DimensionDisplayType(255)), None);
 }
+
+#[test]
+fn member_vocabulary_preserves_display_selection_and_action_spellings() {
+    use oblikovati_model::parameter::vocabulary::*;
+    for (mode, name) in [
+        (DISPLAY_FORMAT_DECIMAL, "decimal"),
+        (DISPLAY_FORMAT_FRACTIONAL, "fractional"),
+        (DISPLAY_FORMAT_ARCHITECTURAL, "architectural"),
+    ] {
+        assert_eq!(display_name(mode), Some(name));
+    }
+    for (mode, name) in [
+        (MODEL_VALUE_NOMINAL, "nominal"),
+        (MODEL_VALUE_LOWER, "lower"),
+        (MODEL_VALUE_UPPER, "upper"),
+        (MODEL_VALUE_MEDIAN, "median"),
+    ] {
+        assert_eq!(selection_name(mode), Some(name));
+    }
+    assert_eq!(display_name(ParameterDisplayFormat(255)), None);
+    assert_eq!(selection_name(ModelValueType(255)), None);
+    assert_eq!(action_names(ACTION_NONE), Vec::<String>::new());
+    assert_eq!(
+        action_names(ActionType(
+            ACTION_EDIT.0 | ACTION_RENAME.0 | ACTION_DELETE.0
+        )),
+        ["edit", "rename", "delete"]
+    );
+}
+
+#[test]
+fn inspection_does_not_make_failed_parameters_usable_for_feature_evaluation() {
+    use oblikovati_model::{parameter::ParameterCollection, units::UnitsOfMeasure};
+    let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
+    parameters
+        .insert_expression(1, "width", USER_PARAM, "4 cm")
+        .unwrap();
+    parameters.set_deviation(1, 0.2, -0.1).unwrap();
+    parameters
+        .set_model_value_type(1, MODEL_VALUE_MEDIAN)
+        .unwrap();
+    let expected = parameters.model_value(1).unwrap();
+    parameters.set_expression(1, "missing").unwrap();
+    assert_eq!(parameters.inspection_value(1).unwrap(), Some(expected));
+    assert!(parameters.model_value(1).is_err());
+    assert!(parameters.inspection_value(99).is_err());
+    parameters.insert_text(2, "material", "steel").unwrap();
+    assert_eq!(parameters.inspection_value(2).unwrap(), None);
+}

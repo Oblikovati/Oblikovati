@@ -78,24 +78,19 @@ pub(super) fn kind_name(kind: ParameterKind) -> Result<&'static str, PackageCode
 pub(super) fn display_name(
     display: ParameterDisplayFormat,
 ) -> Result<&'static str, PackageCodecError> {
-    match display {
-        DISPLAY_FORMAT_DECIMAL => Ok("decimal"),
-        DISPLAY_FORMAT_FRACTIONAL => Ok("fractional"),
-        DISPLAY_FORMAT_ARCHITECTURAL => Ok("architectural"),
-        found => Err(PackageCodecError(format!(
-            "parameter display {found:?}: expected a supported API format"
-        ))),
-    }
+    oblikovati_model::parameter::vocabulary::display_name(display).ok_or_else(|| {
+        PackageCodecError(format!(
+            "parameter display {display:?}: expected a supported API format"
+        ))
+    })
 }
 
 pub(super) fn selection_name(selection: ModelValueType) -> Result<&'static str, PackageCodecError> {
-    match selection {
-        MODEL_VALUE_NOMINAL => Ok(""),
-        MODEL_VALUE_LOWER => Ok("lower"),
-        MODEL_VALUE_UPPER => Ok("upper"),
-        MODEL_VALUE_MEDIAN => Ok("median"),
-        found => Err(PackageCodecError(format!(
-            "model selection {found:?}: expected nominal, lower, upper, or median"
-        ))),
-    }
+    let name =
+        oblikovati_model::parameter::vocabulary::selection_name(selection).ok_or_else(|| {
+            PackageCodecError(format!(
+                "model selection {selection:?}: expected nominal, lower, upper, or median"
+            ))
+        })?;
+    Ok(if name == "nominal" { "" } else { name })
 }

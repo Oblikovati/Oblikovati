@@ -44,7 +44,7 @@ pub(super) fn neighbors(
     Ok(ParameterNamesResult { names: Some(names) })
 }
 
-fn resolve(parameters: &Parameters, name: &str) -> Result<u64, Error> {
+pub(super) fn resolve(parameters: &Parameters, name: &str) -> Result<u64, Error> {
     parameters.find(name).ok_or_else(|| {
         Error(format!(
             "parameter name {name:?}: expected a parameter in the active document"
@@ -52,7 +52,7 @@ fn resolve(parameters: &Parameters, name: &str) -> Result<u64, Error> {
     })
 }
 
-fn state(parameters: &Parameters, id: u64) -> Result<&ParameterState<u64>, Error> {
+pub(super) fn state(parameters: &Parameters, id: u64) -> Result<&ParameterState<u64>, Error> {
     parameters.get(id).ok_or_else(|| {
         Error(format!(
             "parameter ID {id}: expected a registered parameter"
@@ -60,7 +60,7 @@ fn state(parameters: &Parameters, id: u64) -> Result<&ParameterState<u64>, Error
     })
 }
 
-fn information(parameters: &Parameters, id: u64) -> Result<ParameterInfo, Error> {
+pub(super) fn information(parameters: &Parameters, id: u64) -> Result<ParameterInfo, Error> {
     let record = state(parameters, id)?;
     let kind = kind_name(record.kind).ok_or_else(|| {
         Error(format!(

@@ -3,7 +3,8 @@
 Tracking: [#3627](https://github.com/Oblikovati/Oblikovati/issues/3627) and
 [#3628](https://github.com/Oblikovati/Oblikovati/issues/3628), plus parameter
 inspection in [#3629](https://github.com/Oblikovati/Oblikovati/issues/3629) and
-collection queries in [#3631](https://github.com/Oblikovati/Oblikovati/issues/3631).
+collection queries in [#3631](https://github.com/Oblikovati/Oblikovati/issues/3631),
+and member detail in [#3632](https://github.com/Oblikovati/Oblikovati/issues/3632).
 The `oblikovati-automation` crate provides `SessionQueryHost`, an implementation
 of the canonical API client `Caller` transport over an immutable workspace
 borrow. All method names, argument types, and result DTOs are imported from the
@@ -13,6 +14,7 @@ API crate. `QUERY_METHODS` publishes the exact implemented inventory.
 
 | Method | Context and behavior |
 | --- | --- |
+| `parameters.getDetail` | Inspect member presentation, engineering value, tolerance, choices, and dependencies. |
 | `parameters.getSettings` | Read all document parameter settings and the canonical display mode. |
 | `parameters.groups.list` | Read groups in creation order and members in parameter order. |
 | `parameters.list` | Inspect parameters in insertion order, including failed parameters. |
@@ -39,8 +41,8 @@ to the argument type's default, matching Go decoding; malformed JSON is refused.
 Physical conversion and formatting preserve the model's finite-value and
 dimension checks. No DTO or numeric-unit implementation is duplicated here.
 
-Seventeen integration tests call the host through the real Rust API `Client`. They
-cover all eighteen methods, active-document changes, display formats, non-default
+Twenty integration tests call the host through the real Rust API `Client`. They
+cover all nineteen methods, active-document changes, display formats, non-default
 working scale, missing document context, dimensional failures, malformed calls,
 and unsupported mutation methods. They assert unchanged dirty state, generation,
 notification counts, and undo history. The API transport is exercised directly;
@@ -73,7 +75,7 @@ cycles, evaluation failures, blocked dependencies, nonfinite values, or nonnumer
 dependencies. Parameter-kind spellings are shared with package export.
 The canonical DTO omits empty neighbor lists; an empty parameter list is an array.
 The query tests check order, values, errors, direct links, and unchanged session
-state. Parameter detail and mutations remain to be wired.
+state. Parameter mutations remain to be wired.
 
 Collection queries preserve all eight parameter settings fields, including empty
 standard-tolerance strings, false flags, and zero angular precision. Display-mode
@@ -82,3 +84,14 @@ stable internal names, display names, add-in client IDs, and ordered member name
 the canonical API omits empty group/member lists. Tests cover all five display
 modes, all settings fields, empty collections, missing document context, creation
 and membership order, and unchanged session state.
+
+Member detail includes annotations, action restrictions, built-in/renamed flags,
+custom-property formatting, optional expression choices, and graph neighbors.
+Numeric parameters include their selected engineering value and tolerance band;
+text and Boolean parameters omit the numeric tolerance. The stored zero tolerance
+has the canonical default type. Displayed values remain precise nominal values.
+Inspection retains the last-good engineering value of a failed parameter with its
+health diagnostic; the model's feature-value read continues to reject that state.
+Precision and tolerance vocabularies are shared with persistence. Tests cover
+numeric defaults, tolerance offsets, failed values, typed literals, presentation,
+choices, graph links, missing context/names, and unchanged session state.

@@ -15,15 +15,19 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     pub fn model_value(&self, id: Id) -> Result<Quantity, ParameterError<Id>> {
         let nominal = self.require_numeric_value(id)?;
         let state = &self.records[&id].state;
-        if state.model_value_type == MODEL_VALUE_NOMINAL {
-            return Ok(nominal);
-        }
-        let offset = selected_offset(&state.tolerance, state.model_value_type);
-        let value = nominal.value + offset;
-        if !value.is_finite() {
-            return Err(numeric_error(id, value, "a finite selected model value"));
-        }
-        Ok(Quantity::new(value, nominal.dimension))
+        selected_quantity(id, state, nominal)
+    }
+
+    /// Inspect the last-good engineering value without making a failed parameter usable by features.
+    /// Example: `parameters.inspection_value(id)` retains a failed parameter's tolerance offset.
+    pub fn inspection_value(&self, id: Id) -> Result<Option<Quantity>, ParameterError<Id>> {
+        let state = &self.require_record(id)?.state;
+        let nominal = match &state.last_good_value {
+            Some(ParameterValue::Numeric(value)) => *value,
+            Some(_) => return Ok(None),
+            None => Quantity::new(0.0, crate::quantity::Dimension::Unitless),
+        };
+        selected_quantity(id, state, nominal).map(Some)
     }
 
     /// Select a tolerance-band value; for example `parameters.set_model_value_type(id, MODEL_VALUE_UPPER)`.
@@ -223,4 +227,19 @@ pub(super) fn require_selection<Id>(selection: ModelValueType) -> Result<(), Par
         return Err(ParameterError::Selection(selection));
     }
     Ok(())
+}
+
+fn selected_quantity<Id: Copy>(
+    id: Id,
+    state: &ParameterState<Id>,
+    nominal: Quantity,
+) -> Result<Quantity, ParameterError<Id>> {
+    if state.model_value_type == MODEL_VALUE_NOMINAL {
+        return Ok(nominal);
+    }
+    let value = nominal.value + selected_offset(&state.tolerance, state.model_value_type);
+    if !value.is_finite() {
+        return Err(numeric_error(id, value, "a finite selected model value"));
+    }
+    Ok(Quantity::new(value, nominal.dimension))
 }

@@ -7,6 +7,7 @@ mod conversion;
 mod copy;
 mod presentation;
 mod property;
+pub mod vocabulary;
 pub use annotations::ParameterAnnotations;
 pub use presentation::{dimension_display_name, kind_name};
 pub use property::CustomPropertyFormat;

@@ -254,15 +254,8 @@ impl ParameterRecipe {
             )?);
         }
         self.model_value_type = super::export::selection_name(state.model_value_type)?.into();
-        self.disabled_actions = [
-            ("edit", ACTION_EDIT),
-            ("rename", ACTION_RENAME),
-            ("delete", ACTION_DELETE),
-        ]
-        .into_iter()
-        .filter(|(_, action)| state.disabled_actions.0 & action.0 != 0)
-        .map(|(name, _)| name.into())
-        .collect();
+        self.disabled_actions =
+            oblikovati_model::parameter::vocabulary::action_names(state.disabled_actions);
         if let Some(choices) = &state.choices.expressions {
             self.expression_list = choices.clone();
             self.allow_custom_value = state.choices.allow_custom_values;

@@ -3,6 +3,7 @@
 use super::{PackageCodecError, ParameterRecipe, parameter_error};
 use oblikovati_api::types::*;
 use oblikovati_model::parameter::ParameterCollection;
+use oblikovati_model::parameter::vocabulary::TOLERANCE_NAMES;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Deserialize, Serialize)]
@@ -49,26 +50,6 @@ pub(super) fn restore_tolerances(
     }
     Ok(())
 }
-
-const TOLERANCE_NAMES: [(&str, ToleranceType); 14] = [
-    ("default", TOLERANCE_DEFAULT),
-    ("override", TOLERANCE_OVERRIDE),
-    ("symmetric", TOLERANCE_SYMMETRIC),
-    ("deviation", TOLERANCE_DEVIATION),
-    ("limitsStacked", TOLERANCE_LIMITS_STACKED),
-    ("limitLinear", TOLERANCE_LIMIT_LINEAR),
-    ("max", TOLERANCE_MAX),
-    ("min", TOLERANCE_MIN),
-    ("limitsFitsStacked", TOLERANCE_LIMITS_FITS_STACKED),
-    ("limitsFitsLinear", TOLERANCE_LIMITS_FITS_LINEAR),
-    ("limitsFitsShowSize", TOLERANCE_LIMITS_FITS_SHOW_SIZE),
-    (
-        "limitsFitsShowTolerance",
-        TOLERANCE_LIMITS_FITS_SHOW_TOLERANCE,
-    ),
-    ("basic", TOLERANCE_BASIC),
-    ("reference", TOLERANCE_REFERENCE),
-];
 
 fn tolerance_kind(name: &str) -> Result<ToleranceType, PackageCodecError> {
     TOLERANCE_NAMES
