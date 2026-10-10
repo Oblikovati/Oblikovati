@@ -24,14 +24,26 @@ The [source map](source-map.md) records the starting revisions. The
 | --- | --- | --- |
 | `oblikovati-rust`, branch `rust` | GPL application, feature recipes, documents, session, GUI, CLI, host | Implement the application in Rust. |
 | `Oblikovati.API` | Apache public types, traits, wire declarations, clients, C ABI | Consume the Rust crate. Change the shared contract here first when required. |
-| `RustyCADKernel` | Martensite geometry, topology, algorithms, and visualization | Integrate tested capabilities. Fix missing kernel behavior in this repository. |
+| `RustyCADKernel` | Martensite geometry, topology, algorithms, and visualization | Integrate tested capabilities, complete missing OCCT behavior, and port required Go-kernel capabilities outside OCCT as Martensite extensions. |
 | `Oblikovati.AddIns.*` | Separate add-ins | Keep the C ABI. Test existing Go add-ins against the Rust host. |
 | `Oblikovati` | Go reference application | Read source and run comparison tests at the recorded revision. |
 
-Do not translate `Oblikovati/kernel` into another production Rust kernel.
-Keep its tests and useful fixtures as application acceptance inputs. Do not
-ship the Go kernel, call it over FFI, or link native OCCT to supply a missing
-Martensite operation. Native OCCT and SolveSpace remain test oracles.
+**Required scope: Go-kernel capabilities that support application features
+and are not part of OCCT must be ported and adapted into Martensite.** OCCT
+parity alone does not satisfy the application port. Absence from OCCT is a
+reason to extend Martensite, not a reason to remove the application feature.
+
+Use the Go implementation, tests, and fixtures as the starting point for these
+extensions. Adapt them to Martensite's geometry, topology, ownership, numeric,
+and operation-history interfaces. Implement them in `RustyCADKernel`; the
+application adapter consumes them through the same tested kernel interface.
+The [extension process](martensite.md#required-extensions-from-the-go-kernel)
+defines classification, provenance, and acceptance.
+
+Keep one production Rust kernel in Martensite. Do not create a separate copy
+of the Go kernel inside the application, call the Go kernel over FFI, or link
+native OCCT to supply a missing operation. Native OCCT and SolveSpace remain
+test oracles where they cover the required behavior.
 
 All application features found in the baseline remain in the port inventory,
 including incomplete features. An unfinished Go roadmap item remains separate
@@ -181,7 +193,7 @@ Use a Rust-specific ADR namespace to avoid collisions with ongoing Go work.
 
 | Decision | Due | Required evidence |
 | --- | --- | --- |
-| Rust application and Martensite ownership | R0 | Supersede Go-language and Go-kernel decisions; list the old production modules that this port replaces. |
+| Rust application and Martensite ownership | R0 | Supersede Go-language and Go-kernel decisions; map Go capabilities to OCCT ports or required Martensite extensions and list the old modules they replace. |
 | Kernel ownership, units, naming, and evaluation interface | R1 | Shape mutation tests, operation history, reference-key replay, and tolerance policy. |
 | Native UI binding and Martensite presentation | R1V | Working native window, renderer composition design, OS requirements, and retained native dependency list. |
 | Document and key migration | R3 | Old fixtures replayed through the new kernel without incorrect rebinding. |

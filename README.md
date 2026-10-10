@@ -4,6 +4,9 @@ This branch will contain the Rust port of the Oblikovati application. It will
 use the Rust contract in **Oblikovati.API** and the **Martensite** kernel in
 **RustyCADKernel**.
 
+Go-kernel capabilities that support application features and are outside OCCT
+must be ported and adapted into Martensite as required kernel extensions.
+
 The branch currently contains the port plan. Application implementation has not
 started.
 

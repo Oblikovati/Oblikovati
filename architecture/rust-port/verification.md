@@ -13,6 +13,10 @@ R0 creates a checked-in, machine-readable ledger. Each behavior row records:
 - Existing Go tests and fixtures, plus whether their premises are valid.
 - Target Rust module, milestone, API revision, kernel capability IDs, and
   required operating-system and device profiles.
+- Kernel integration path: reusable Martensite capability, missing OCCT port,
+  or required extension from the Go kernel. For extensions, record Go source
+  and test provenance, consuming features, the Martensite work item, and its
+  integrated revision.
 - Rust test IDs, comparison/oracle inputs, expected results, and evidence files.
 - Status: inventoried, blocked, implemented, verified, or explicitly excluded.
   Exclusions need a reason and the scope decision that permits them.
@@ -21,6 +25,12 @@ Fail CI when a new baseline item is unclassified or a claimed verified item
 lacks evidence for the current relevant revision. Report behavioral coverage
 separately from source coverage. A passing test suite with half the commands
 missing is not a completed port.
+
+Track required Go-kernel extensions outside OCCT separately from the OCCT
+parity inventory. Each dependent feature needs passing extension evidence.
+Absence from OCCT cannot justify an exclusion or a completed feature with a
+missing kernel capability. The R9 cutover requires both inventories to pass
+for all required application behavior.
 
 Keep Go and Rust API generation in the API repository. In this application,
 check that each required API method has the expected host implementation,
@@ -33,6 +43,13 @@ Use the Go application for observed application behavior and the canonical
 API contract for public serialization and method shapes. Use pinned OCCT or
 SolveSpace evidence for geometry and solver results. A known Go defect is a
 regression input, not the expected geometric answer.
+
+For a Go-kernel extension outside OCCT, port its Go tests and fixtures and
+compare behavior with the fixed Go revision. Add independent analytic results,
+invariants, or another suitable oracle to detect defects shared by both
+implementations. Use OCCT/SolveSpace comparisons for the suboperations they
+cover; record the independent checks for the extension behavior they do not
+provide. Never report a nonexistent OCCT equivalent as a parity pass.
 
 Compare exact values where the contract requires them: IDs, key bytes,
 enumerations, field presence, command effects, event ordering, and recipe
@@ -61,6 +78,7 @@ their pixels are not topology evidence.
 | Contract | Applicable Rust trait implementations, Go/Rust typed client calls into the real host, absent/null/empty values, enums, raw JSON, errors, and all registered method effects. |
 | Model | Parameter dependencies, solver rank/DOF, cycles, feature health, suppression, clean-prefix reuse, partial failures, and property/attribute retention. |
 | Kernel | Validity levels, analytic per-face oracle checks, operation history, generated degenerate inputs, exact predicates, tolerances, and deterministic results. |
+| Kernel extensions | Go-source and test traceability, adaptation to Martensite, independent correctness checks where OCCT has no equivalent, and end-to-end tests of each consuming application feature. |
 | Persistence | Go-produced fixtures read by Rust; Rust writes read by Go when using the unchanged schema; semantic round trips for all document kinds, projects, resources, and keys. |
 | Concurrency | Queue saturation, request timeout, cancellation, out-of-order worker completion, stale generations, close/undo during recompute, and shutdown with active add-ins. |
 | FFI | C layout/signatures, allocation ownership, error buffers, invalid lengths, missing/versioned exports, callback lifetime, reentrancy, notification and automation calls. |

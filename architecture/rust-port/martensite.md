@@ -1,7 +1,8 @@
 # Martensite integration and readiness
 
 This plan consumes Martensite from `RustyCADKernel`. It does not assume that
-all OCCT capabilities are already usable. The
+all OCCT capabilities are already usable. It also requires Martensite to gain
+the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
 [source baseline](source-map.md) fixes the inspected revision.
 
 ## Observed integration limits
@@ -35,6 +36,54 @@ length, area, and volume exponents, including tolerance conversion. Do not
 assume millimetres at the Martensite seam or apply a hidden factor of ten.
 Test non-default working scales and exchange units before accepting K01.
 
+## Required extensions from the Go kernel
+
+User requirement, 2026-10-10: **port and adapt into Martensite every Go-kernel
+capability that supports an application feature and is outside OCCT.** These
+extensions are part of the application port's required scope.
+
+R0 traces feature-to-kernel dependencies and assigns each required capability
+an integration path:
+
+| Capability state | Required action |
+| --- | --- |
+| Equivalent behavior is available in Martensite | Reuse it and verify the full application contract. Do not port a duplicate algorithm. |
+| OCCT supplies the behavior, but Martensite does not yet supply it | Complete the Martensite OCCT port and test it against the OCCT oracle and application cases. |
+| The Go kernel supplies required behavior that is outside OCCT | Port and adapt the Go implementation into Martensite as an extension. Retain its application consumers and acceptance requirements. |
+
+Classify behavior, including options, failure modes, provenance, and numerical
+requirements. Do not infer absence from a missing API name. Uncertain mappings
+stay open until source and tests establish the correct path.
+
+Each required extension must:
+
+1. Record the Go source files and commit, consuming application features,
+   existing tests and fixtures, and evidence that OCCT lacks the required
+   behavior. Reuse the existing Go logic where valid; record corrections to
+   known defects with regression tests.
+2. Have a Martensite work item and ADR that define its interface, dependencies,
+   acceptance cases, and the application milestone it blocks. Record the
+   extension in Martensite's scope and design documents.
+3. Adapt to Martensite's geometry and topology representation, ownership,
+   tolerances, validation, diagnostics, and generated/modified/deleted history.
+   Integrate with its general operation pipelines and shared algorithms.
+4. Port the relevant Go tests and add independent correctness checks, generated
+   degenerate inputs, and application-level tests. Differential agreement with
+   the Go implementation alone cannot prove correctness.
+5. Be integrated and tested in `RustyCADKernel` before the application feature
+   can count as ported. Keep kernel algorithms out of the application adapter.
+
+Track extension acceptance separately from OCCT parity. These capabilities
+have no OCCT equivalent to count as mapped; do not inflate or reduce the OCCT
+coverage denominator. Both tracks are required where an application feature
+depends on them. The application inventory must link to their kernel evidence.
+
+Use OCCT or SolveSpace for suboperations they can verify. For behavior neither
+provides, define an independent oracle, analytic expected result, or proved
+invariant with explicit hard assertions. Preserve the Go baseline as a
+behavior reference. An unavailable OCCT comparison is not permission to omit
+the extension or weaken its acceptance checks.
+
 ## Kernel capability checks
 
 Every row starts as **unverified for Oblikovati**. Close a row only with an
@@ -54,11 +103,13 @@ kernel evidence can support a row, but cannot replace the application test.
 | K08 | Assembly instances and HLR | TKBRep location, TKV3d, TKHLR | Shared part presentations with separate occurrence paths; exact HLR and drawing references after edits. R6. |
 | K09 | Materials and full application display | TKService/TKV3d/Vulkan plus agreed extensions | Complete Oblikovati's display, appearance, point-cloud, lighting, and OpenPBR inventory. Separate app requirements from the kernel's legacy-renderer scope. R7. |
 | K10 | File exchange | TKDE, TKXSBase, format toolkits as available | Verify each required reader/writer, units, assembly graph, metadata, and curved geometry. A format registry alone is insufficient. R8. |
+| K11 | Required Go-kernel capabilities outside OCCT | Martensite extension modules identified by the R0 inventory | Port and adapt each required capability, preserve source/test provenance, and pass independent correctness and application tests before closing its dependent milestone. Applies across R1-R8 and the R9 cutover. |
 
 Kernel gaps get a Martensite work item or porting-ledger entry with the source
 case, operation, expected result, and dependent application milestone. Keep the
 application feature pending until its required rows pass. Continue independent
 model, storage, or UI work while the dependency is repaired.
+Absence from OCCT cannot classify a required Go capability as excluded work.
 
 ## Operation result interface
 

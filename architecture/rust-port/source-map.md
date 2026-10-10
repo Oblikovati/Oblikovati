@@ -51,7 +51,7 @@ Milestone IDs are defined in [milestones](milestones.md).
 
 | Go source | Rust destination | Action and required behavior | Stage |
 | --- | --- | --- | --- |
-| `kernel/`, geometric parts of `math/` | Martensite through `oblikovati-martensite` | Replace production algorithms; retain relevant regression inputs and oracle checks. Do not copy the Go topology model. | R1, R3, R5 |
+| `kernel/`, geometric parts of `math/` | `RustyCADKernel`, consumed through `oblikovati-martensite` | Reuse equivalent Martensite capabilities, complete missing OCCT ports, and port/adapt required Go capabilities outside OCCT into Martensite. Adapt to its topology model; retain Go source provenance, tests, and fixtures. | R0 inventory; R1-R8 as required |
 | `solve/`, `solve/ad/` | `oblikovati-solve` | Port the shared numerical solver, rank/DOF results, derivative path, scaling, and failure behavior. Martensite is not assumed to supply an Inventor-style sketch solver. | R2, R6 |
 | `model/param`, `model/depend` | `oblikovati-model` | Units, formulas, dependency invalidation, cycle errors, stable parameter IDs, and incremental recompute. | R2 |
 | `model/doc`, `model/attr`, `model/identity` | `oblikovati-model` | Document lifecycle, properties, attributes, identity, key codecs, and binding. Resolve cycles with IDs and owned collections. | R2, R3 |
@@ -78,6 +78,13 @@ R0 expands this module map into individual behavior rows. The map is a starting
 inventory, not a claim that every exported function was audited in this task.
 Assets, templates, fonts, shaders, material libraries, and document fixtures
 also need entries and retained provenance.
+
+For each application feature, trace the Go-kernel operations it calls and
+classify the complete behavior against OCCT and Martensite. Record required
+behavior outside OCCT as a Martensite extension, with its Go source revision,
+tests, consumers, target kernel module, and owning work item. The inventory
+must cover these extensions as well as the OCCT-derived kernel. A missing
+same-named OCCT method alone does not establish a missing capability.
 
 ## Nested Go modules
 

@@ -25,6 +25,11 @@ pass; it need not wait for unrelated part features. R7 can port base shell
 work before every R6 panel exists. Keep Martensite's visualization priority
 ahead of broad new exchange work.
 
+Every milestone also depends on its required K11 extensions from the Go
+kernel. Capabilities outside OCCT must be ported and adapted into Martensite
+before the application features that use them can pass acceptance. Schedule
+each extension with its first consumer; do not defer all extensions to R9.
+
 ## R0 — Fix the scope and establish the workspace
 
 **Inputs:** the revisions in [source-map](source-map.md), the current issue
@@ -39,6 +44,9 @@ Work:
    methods, feature definitions, persistence codecs, script entry points,
    assets, and all nested modules. Classify implemented behavior, unverified
    source, known failures, and future roadmap items separately.
+   Trace feature-to-kernel dependencies. Separate reusable Martensite behavior,
+   missing OCCT ports, and required Go capabilities outside OCCT. Create
+   Martensite extension work items for the last group, with source and tests.
 3. Record comparison fixtures and Go baseline receipts from `make gate`. Check
    premises against OCCT/SolveSpace where geometry is involved. Record failures
    honestly; do not label them pre-existing without the required baseline proof.
@@ -59,7 +67,8 @@ make the full gate fail. Workspace creation is not feature completion.
 
 ## R1 — Prove the Martensite evaluation interface
 
-**Depends on:** R0; K01-K04 from [kernel readiness](martensite.md).
+**Depends on:** R0; K01-K04 and the relevant K11 extensions from
+[kernel readiness](martensite.md).
 
 Work:
 
@@ -72,6 +81,8 @@ Work:
    builders. Return provenance and analytic properties with the result.
 4. Prove an initial persistent face mapping from maker history and semantic
    feature roles. Identify missing history or validation in upstream work items.
+   Port and adapt any required Go-only kernel behavior into Martensite before
+   accepting this interface; OCCT coverage cannot replace this work.
 5. Record tolerance and ownership decisions in a new ADR. Compare general,
    degenerate, and near-degenerate cases with OCCT, including per-face checks.
 
@@ -185,7 +196,8 @@ This is the first integrated preview, with its supported scope stated.
 
 ## R5 — Complete part modeling by feature family
 
-**Depends on:** R3 and each operation family's Martensite readiness.
+**Depends on:** R3 and each operation family's Martensite readiness, including
+K11 extensions from the Go kernel where OCCT has no equivalent capability.
 
 Port each family as a separate issue and PR:
 
@@ -205,6 +217,8 @@ valid solids first, then broaden inputs and options.
 
 **Exit:** every baseline part-feature row has passing tests or a separately
 approved scope decision. Required unsupported operations remain open work.
+Required Go-kernel extensions must be integrated in Martensite and tested
+through their application features. Absence from OCCT is not an exclusion.
 Report kernel rule checks and regressions with each dependency update.
 
 ## R6 — Port assemblies, sheet metal, drawings, and presentations
@@ -270,7 +284,8 @@ Work:
 1. Split the exchange inventory by format, direction, document kind, metadata,
    assembly handling, platform, and required external tools.
 2. Prefer Martensite readers/writers for geometry formats that it supplies.
-   Integrate missing general kernel formats upstream. Port application-owned
+   Integrate missing general kernel formats upstream, including required
+   Go-kernel capabilities outside OCCT. Port application-owned
    recipe or domain translators here; do not create a second STEP geometry
    engine or hide a native OCCT fallback in an adapter.
 3. Cover the separate Inventor, OLE, and SolidWorks module behavior found in
@@ -293,6 +308,8 @@ Work:
 1. Reconcile all behavior rows, Go test mappings, public traits, wire methods,
    command inventory, document/key fixtures, and add-in workflows. Resolve
    every unclassified difference and required missing feature.
+   Require passing evidence for every Go-kernel extension outside OCCT as
+   well as every OCCT-derived capability used by the application.
 2. Run the full platform, coverage, duplication, numeric, performance, live,
    and packaging gates in [verification](verification.md). Repeat required
    checks against the exact dependency revisions to be released.
