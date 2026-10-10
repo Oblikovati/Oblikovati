@@ -10,6 +10,7 @@ pub use host::SessionHost;
 mod collection;
 mod detail;
 mod expressions;
+mod parameter_edit;
 mod parameters;
 mod units;
 use oblikovati_api::{Error, client::Caller, wire::*};

@@ -12,9 +12,11 @@ pub(super) fn parameter_workspace_observer(
 ) -> (Workspace, u64) {
     let ids = parameters.ids().to_vec();
     let high = ids.iter().max().copied().unwrap_or(0);
+    let mut properties = DocumentProperties::default();
+    properties.sync_exposed_parameters(&parameters).unwrap();
     let snapshot = DocumentSnapshot {
         parameters,
-        properties: DocumentProperties::default(),
+        properties,
     };
     let history = DocumentEditHistory::new(
         snapshot,

@@ -356,3 +356,6 @@ mod settings_edit;
 
 #[path = "queries/groups_edit.rs"]
 mod groups_edit;
+
+#[path = "queries/parameter_edit.rs"]
+mod parameter_edit;

@@ -41,8 +41,8 @@ to the argument type's default, matching Go decoding; malformed JSON is refused.
 Physical conversion and formatting preserve the model's finite-value and
 dimension checks. No DTO or numeric-unit implementation is duplicated here.
 
-Thirty-one integration tests call the host through the real Rust API `Client`. They
-cover all nineteen query methods and six edits, active-document changes, display formats, non-default
+Thirty-seven integration tests call the host through the real Rust API `Client`. They
+cover all nineteen query methods and nine edits, active-document changes, display formats, non-default
 working scale, missing document context, dimensional failures, malformed calls,
 and unsupported mutation methods. They assert unchanged dirty state, generation,
 notification counts, and undo history. The API transport is exercised directly;
@@ -142,3 +142,26 @@ cascade is one undo step. The canonical void reply is `{}`. Tests cover the type
 lifecycle, order, independent membership, strict lookup, validation errors,
 cascade refusal/success with undo/redo, grouped abort, and observer veto. Existing
 settings and reentry tests also run against the shared edit path.
+
+## Parameter identity and lifecycle edits
+
+[#3635](https://github.com/Oblikovati/Oblikovati/issues/3635) adds
+`parameters.rename`, `parameters.convert`, and `parameters.delete`. Rename uses
+the model's stable-ID rewrite so dependent expressions and group projections
+follow the new name. Conversion accepts trimmed, case-insensitive user/model/
+reference names, preserves identity and graph links, and refuses built-in or
+derived parameters through the model. Deletion uses the dependency-aware public
+remove operation, never the owner-only forced removal path.
+
+All three calls use the shared candidate transaction, including exposed-property
+synchronization and response encoding. Undo restores parameter names, category,
+expressions, group membership, and exposed properties together. No-op rename and
+conversion add no undo entry. Tests cover typed responses, dependency rewrites,
+stable IDs, conversion rules, invalid names, deletion refusal, undo/redo, veto,
+and exposed-property rename/deletion. The selected Go rename/conversion tests
+also pass on Linux.
+
+Session transaction observations are active. The Go host's `parameter.changed`
+push notifications are not yet delivered to add-ins; that requires the pending
+outbound event and native add-in transport boundary. These edit implementations
+do not claim full event-surface parity.
