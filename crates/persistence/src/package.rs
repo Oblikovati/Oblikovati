@@ -12,6 +12,7 @@ mod empty;
 mod parameters;
 mod properties;
 mod resources;
+mod streams;
 mod units;
 pub use parameters::RestoredParameters;
 mod save;

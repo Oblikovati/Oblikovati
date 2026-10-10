@@ -187,3 +187,20 @@ fixed baseline. Project catalog ownership, configuration persistence, and refere
 graph loading remain pending. Host template selection is connected in
 [#3625](https://github.com/Oblikovati/Oblikovati/issues/3625), with evidence in the
 [workspace implementation record](implementation-workspace.md).
+
+## Named stream edits and cache compaction — partial R2
+
+Tracking: [#3680](https://github.com/Oblikovati/Oblikovati/issues/3680).
+`DocumentPackage::with_stream` copies a byte payload into one named stream.
+`without_stream` removes it; an absent name is a no-op. Both keep the typed
+stream view and YAML section consistent. Unmodified streams retain their stored
+encoding. Stream names are opaque keys, including empty names and path-like
+strings; no filesystem interpretation occurs here.
+
+`without_caches` removes only the case-sensitive `cache/` prefix and reports
+uncompressed bytes reclaimed, matching Go `Compact`. It edits one candidate
+package and keeps model, attributes, identity, resources, and other streams.
+Tests cover owned bytes, replacement/deletion, empty payloads, unusual names,
+YAML round trips, prefix boundaries, and unchanged model digests. Go DataIO and
+compaction tests provide reference evidence. Standalone manifest-free DataIO
+files and host access to these mutations remain separate work.
