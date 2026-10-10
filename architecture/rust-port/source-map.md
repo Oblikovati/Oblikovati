@@ -39,9 +39,12 @@ file at the revision above when recreating this plan's evidence.
 | `RustyCADKernel` | `README.md`, `Cargo.toml`, `rust-toolchain.toml`, `crates/kernel/src/lib.rs`, `docs/porting-plan.md`, `docs/vulkan-renderer.md` |
 | `RustyCADKernel` | `porting/api-inventory/completeness.json`, `porting/renderer/capabilities.json`, toolkit tests, `crates/tkbrep/src/topods/shape.rs`, `crates/tkernel/src/standard/handle.rs` |
 
-The Go architecture notes are useful intent records, but some contain old
-paths, gRPC plans, or behavior that later rules changed. The current router,
-C ABI header, tests, accepted ADRs, and user requirements take precedence.
+The Go architecture notes and preexisting ADRs are legacy references. Some
+contain old paths, gRPC plans, or behavior that later rules changed. Use the
+router, canonical C ABI, and validated tests as behavior evidence. Current
+user requirements and the new accepted Rust ADRs govern the Rust design;
+legacy accepted status does not carry forward. Adapt applicable decisions
+and consolidate them by boundary under the [Rust ADR policy](../decisions/README.md).
 The Go README's early status also understates the source now present in
 assemblies, drawings, and other modules. Inventory code and tests directly.
 

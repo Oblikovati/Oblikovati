@@ -188,14 +188,23 @@ agree their ownership and acceptance before claiming visual parity. See the
 
 ## Decisions to record before dependent implementation
 
-Create new Rust ADRs; link the Go ADRs they supersede and keep the old records.
-Use a Rust-specific ADR namespace to avoid collisions with ongoing Go work.
+Start with a clean Rust ADR set under `architecture/decisions`, numbered from
+`ADR-0001`. Preexisting Go ADRs are legacy references; their accepted status
+does not make them binding on the Rust design. Port applicable decisions,
+update them for Rust and Martensite, and consolidate decisions about the same
+architectural boundary into one current Rust ADR.
+
+Follow the [ADR policy and index](../decisions/README.md). R0 records which
+legacy decisions are adapted, combined, retained only as references, or not
+applicable. Preserve source links and rationale. The new ADR must describe
+the complete current decision without requiring a chain of legacy amendments.
 
 | Decision | Due | Required evidence |
 | --- | --- | --- |
-| Rust application and Martensite ownership | R0 | Supersede Go-language and Go-kernel decisions; map Go capabilities to OCCT ports or required Martensite extensions and list the old modules they replace. |
+| Rust application and Martensite ownership | R0 | Reassess legacy language/kernel decisions for Rust; map Go capabilities to OCCT ports or required Martensite extensions and list the old modules they replace. |
 | Kernel ownership, units, naming, and evaluation interface | R1 | Shape mutation tests, operation history, reference-key replay, and tolerance policy. |
-| Native UI binding and Martensite presentation | R1V | Working native window, renderer composition design, OS requirements, and retained native dependency list. |
+| Vulkan renderer | R1V; complete capability evidence through R7 | Consolidate legacy renderer decisions into one Rust record covering the Martensite interface, presentation, resources, synchronization, platform capabilities, display modes, and validation. |
+| Native UI and platform interface | R1V | Rust/native binding, input, OS thread rules, and native dependency evidence; reference the Vulkan ADR for shared presentation ownership. |
 | Document and key migration | R3 | Old fixtures replayed through the new kernel without incorrect rebinding. |
 | Lua runtime | R7 | Lua 5.1 behavior, instruction/time/memory limits, cancellation, and host containment tests. |
 | Rust packaging and release transition | R9 | Reproducible platform packages, dependency pins, upgrade and rollback tests. |

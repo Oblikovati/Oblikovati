@@ -11,6 +11,8 @@ The branch currently contains the port plan. Application implementation has not
 started.
 
 - [Port plan](architecture/rust-port/plan.md): scope, architecture, and decisions.
+- [Rust ADR policy and index](architecture/decisions/README.md): a fresh decision
+  set, with applicable legacy decisions adapted and consolidated by boundary.
 - [Source map](architecture/rust-port/source-map.md): inspected revisions and
   the Go modules that must move or be replaced.
 - [Martensite integration](architecture/rust-port/martensite.md): required

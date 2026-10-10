@@ -61,9 +61,11 @@ Each required extension must:
    existing tests and fixtures, and evidence that OCCT lacks the required
    behavior. Reuse the existing Go logic where valid; record corrections to
    known defects with regression tests.
-2. Have a Martensite work item and ADR that define its interface, dependencies,
-   acceptance cases, and the application milestone it blocks. Record the
-   extension in Martensite's scope and design documents.
+2. Have a Martensite work item linked to the ADR for its kernel boundary, with
+   its interface, dependencies, acceptance cases, and blocked application
+   milestone. Consolidate decisions for the same boundary in one current
+   record. Record the extension in Martensite's scope and design documents;
+   link its application integration under the [Rust ADR policy](../decisions/README.md).
 3. Adapt to Martensite's geometry and topology representation, ownership,
    tolerances, validation, diagnostics, and generated/modified/deleted history.
    Integrate with its general operation pipelines and shared algorithms.
@@ -137,8 +139,9 @@ another application-side geometry engine.
 Martensite preserves OCCT behavior, while Oblikovati has additional exactness,
 determinism, and provenance requirements. Native OCCT agreement alone does not
 prove those stronger requirements. Audit them explicitly. If a required kernel
-path violates them, record and fix the general path in Martensite, with its own
-ADR and oracle cases. Do not loosen an application check to conceal the gap.
+path violates them, record and fix the general path in Martensite, with the
+decision in the owning kernel-boundary ADR and supporting oracle cases. Do not
+loosen an application check to conceal the gap.
 
 ## Persistent naming
 

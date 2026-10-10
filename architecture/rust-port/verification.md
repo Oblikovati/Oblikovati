@@ -37,6 +37,20 @@ check that each required API method has the expected host implementation,
 mutation policy, contract tests, and script exposure. Do not create a competing
 schema or declare missing methods implemented by returning a generic error.
 
+## ADR migration review
+
+Apply the [fresh Rust ADR policy](../decisions/README.md) before dependent
+implementation. Check that legacy ADRs have a recorded disposition, applicable
+decisions are adapted to Rust, and overlapping decisions are consolidated by
+architectural boundary. Source references must identify the legacy repository
+and revision; old accepted labels do not establish a current Rust decision.
+
+The index must identify one current accepted ADR per boundary. Review links
+between application, API, and Martensite records for conflicting or duplicated
+authority. For the Vulkan renderer, check that platform, display-mode,
+lighting, and resource decisions form one coherent record. Keep capability
+implementation status and evidence separate from ADR acceptance.
+
 ## Comparison rules
 
 Use the Go application for observed application behavior and the canonical

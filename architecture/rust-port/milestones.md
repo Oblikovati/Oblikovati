@@ -57,13 +57,19 @@ Work:
    fact that the initial kernel checkpoint may not be fetchable remotely.
    Allow ignored local path overrides for development; verify CI from clean
    published revisions or a checksummed source artifact.
-6. Write the Rust architecture decision and configure PRs and checks to target
-   `rust`. Keep release publication disabled for the new branch until R9.
+6. Start the fresh Rust ADR sequence at `ADR-0001` under the
+   [ADR policy](../decisions/README.md). Map legacy ADRs and their sections to
+   architectural boundaries, record their disposition, and consolidate
+   applicable decisions into Rust records. Write the application/kernel
+   ownership decision with Rust-specific evidence. Configure PRs and checks
+   to target `rust`; keep release publication disabled until R9.
 
 **Exit:** clean-checkout build and tests work without sibling working-tree
 assumptions. Every inventory row has a stable ID, source location, target
 module, milestone, and acceptance test requirement. Missing tools or tests
 make the full gate fail. Workspace creation is not feature completion.
+The legacy decision map identifies applicable content and its consolidated
+Rust destination; old accepted status grants no Rust acceptance.
 
 ## R1 — Prove the Martensite evaluation interface
 
@@ -83,8 +89,9 @@ Work:
    feature roles. Identify missing history or validation in upstream work items.
    Port and adapt any required Go-only kernel behavior into Martensite before
    accepting this interface; OCCT coverage cannot replace this work.
-5. Record tolerance and ownership decisions in a new ADR. Compare general,
-   degenerate, and near-degenerate cases with OCCT, including per-face checks.
+5. Record tolerance and ownership in the consolidated kernel-interface ADR,
+   adapting relevant legacy decisions to Rust. Compare general, degenerate,
+   and near-degenerate cases with OCCT, including per-face checks.
 
 **Exit:** the headless kernel proof passes with valid topology, analytic
 properties, provenance, and unchanged inputs. A missing capability blocks the
@@ -107,6 +114,10 @@ Work:
    after an edit.
 5. Record Linux, Windows, and macOS presentation requirements. The Linux proof
    can unblock development; unsupported target profiles remain open gates.
+   Consolidate applicable legacy renderer decisions into the single Rust
+   Vulkan renderer ADR. Cover current and required future capabilities,
+   with implementation status recorded separately. Link UI/platform decisions
+   at their shared interface instead of repeating rendering decisions.
 
 **Exit:** a real native window can display, pick, resize, overlay, and capture
 the modeled shape. The renderer reports failures; it cannot return a stale
