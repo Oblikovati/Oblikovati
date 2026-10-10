@@ -118,3 +118,29 @@ are distinct results. These checks do not certify arbitrary conditioning.
 
 Residual row normalization, DOF policy, damping, nonlinear iteration, and conflict
 attribution still need integration with the evaluation boundary.
+
+## Constraint structure and redundancy — partial R2
+
+Tracking: [#3702](https://github.com/Oblikovati/Oblikovati/issues/3702).
+`analyze_structure` consumes one captured residual evaluation and reports variable
+and equation counts, numerical rank, DOF, dependent equation count, and the Go
+structural status. Dependent rows take precedence over free variables when naming
+an over-constrained system. These are local Jacobian results, independent from
+residual satisfaction and nonlinear convergence.
+
+Each nonzero row is normalized through its largest component and a scaled norm.
+There is no absolute small-row cutoff. This handles rows at `1e-300`, `1e300`, and
+`f64::MAX` without overflowing a norm or reciprocal. Zero rows remain zero.
+The caller supplies the relative QR tolerance; even empty systems validate it.
+
+`redundant_sources` removes each nonempty source's complete row range in turn and
+compares rank against the full system. Results retain source order and represent
+alternative individual removals, not a batch deletion instruction. A source with
+both essential and dependent equations is not removable if its removal loses
+rank. Empty sources are omitted rather than reported as useful repairs.
+The same stored Jacobian is used throughout; source callbacks never rerun.
+
+Tests cover Go status precedence, duplicate and multi-equation sources, row-scale
+sweeps, zero/empty systems, near-dependency tolerance, unchanged evaluations, and
+single-pass source calls. Convergence metrics, conflict severity, and nonlinear
+iteration remain separate work.
