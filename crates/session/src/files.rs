@@ -11,6 +11,8 @@ mod error;
 mod name;
 mod open;
 mod project;
+mod projects;
+pub use projects::LoadedProject;
 mod propagation;
 mod refresh;
 pub use propagation::{BlockedDerivedDocument, DerivedRefreshFailure, DerivedRefreshReport};
@@ -65,6 +67,8 @@ pub struct FileWorkspace<O, W, F> {
     retained: BTreeMap<u64, RetainedFile>,
     paths: BTreeMap<PathBuf, u64>,
     files: F,
+    projects: Vec<LoadedProject>,
+    active_project: Option<usize>,
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
@@ -75,6 +79,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             retained: BTreeMap::new(),
             paths: BTreeMap::new(),
             files,
+            projects: Vec::new(),
+            active_project: None,
         }
     }
 

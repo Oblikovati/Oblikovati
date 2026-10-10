@@ -362,3 +362,49 @@ fn project_attachment_api_preserves_reference_and_reports_resolved_source() {
         .unwrap();
     assert_eq!(listed, [result]);
 }
+
+#[test]
+fn active_project_selection_changes_attachment_resolution_without_rewriting_reference() {
+    use oblikovati_persistence::project_file::ProjectConfiguration;
+    let (mut files, id, mut guids) = created_files(false);
+    for name in ["alpha", "beta"] {
+        let configuration = ProjectConfiguration {
+            workspace: name.into(),
+            ..Default::default()
+        };
+        files.files().packages.borrow_mut().insert(
+            Path::new(&format!("/fixtures/{name}.opj")).into(),
+            configuration.encode().unwrap(),
+        );
+        files
+            .load_project(Path::new(&format!("/fixtures/{name}.opj")))
+            .unwrap();
+    }
+    let mut external = ForeignFiles(Rc::new(RefCell::new(ForeignState::default())));
+    let client = Client::new(
+        FileHost::new(&mut files, &mut guids, "test").with_attachment_files(&mut external),
+    );
+    let captured = client
+        .documents()
+        .add_attachment(&add(id, "linked", ATTACHMENT_LINKED))
+        .unwrap();
+    assert_eq!(captured.resolved_file_name, "/fixtures/alpha/source.bin");
+    files
+        .select_project(Path::new("/fixtures/beta.opj"))
+        .unwrap();
+    let client = Client::new(
+        FileHost::new(&mut files, &mut guids, "test").with_attachment_files(&mut external),
+    );
+    let listed = client
+        .documents()
+        .attachments(&ListAttachmentsArgs { document: id })
+        .unwrap()
+        .attachments
+        .unwrap();
+    assert_eq!(listed[0].resolved_file_name, "/fixtures/beta/source.bin");
+    assert_eq!(listed[0].full_file_name, "source.bin");
+    assert_eq!(
+        listed[0].last_known_file_time,
+        captured.last_known_file_time
+    );
+}

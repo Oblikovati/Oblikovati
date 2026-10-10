@@ -12,6 +12,9 @@ use std::{error::Error, fmt, io, path::PathBuf};
 #[derive(Debug)]
 pub enum FileWorkspaceError {
     ObserverFactory(String),
+    ProjectConfiguration(io::Error),
+    UnknownProject(PathBuf),
+    MissingProject,
     AmbiguousSource(String),
     DerivedRefresh(String),
     SourceValue {
@@ -79,6 +82,15 @@ impl fmt::Display for FileWorkspaceError {
                 output,
                 "save destination {path:?}: expected UTF-8 for the canonical API response"
             ),
+            Self::ProjectConfiguration(error) => error.fmt(output),
+            Self::UnknownProject(path) => write!(
+                output,
+                "project {path:?}: expected a registered canonical project path"
+            ),
+            Self::MissingProject => write!(
+                output,
+                "active project is absent: expected a loaded project"
+            ),
             Self::Project(error) => error.fmt(output),
             Self::MissingTemplate(kind) => write!(
                 output,
@@ -139,6 +151,7 @@ impl fmt::Display for FileWorkspaceError {
 impl Error for FileWorkspaceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::ProjectConfiguration(error) => Some(error),
             Self::Project(error) => Some(error),
             Self::Package(error) => Some(error),
             Self::Identity(error) => Some(error),
@@ -147,7 +160,9 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::DerivedRefresh(_)
+            Self::UnknownProject(_)
+            | Self::MissingProject
+            | Self::DerivedRefresh(_)
             | Self::SourceValue { .. }
             | Self::AmbiguousSource(_)
             | Self::ObserverFactory(_)
