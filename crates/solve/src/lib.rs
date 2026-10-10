@@ -4,4 +4,6 @@
 pub mod ad;
 pub mod diagnostics;
 pub mod linalg;
+pub mod nonlinear;
 pub mod residual;
+mod row_scaling;

@@ -3,9 +3,9 @@
 Tracking: [#3698](https://github.com/Oblikovati/Oblikovati/issues/3698).
 The new `oblikovati-solve` crate starts the shared numerical core required by
 [ADR-0006](../decisions/ADR-0006-parameters-and-constraints.md). It has no runtime
-dependencies and owns no model, kernel, file, or window state. Nonlinear iteration,
-rank/DOF analysis, scaling, residual vectors, sketches, and assembly placement
-remain unimplemented.
+dependencies and owns no model, kernel, file, or window state. The derivative,
+evaluation, QR, structure, and bounded nonlinear layers are now ported. Model
+residual libraries, sketches, and assembly placement remain unimplemented.
 
 ## Scalar automatic differentiation
 
@@ -144,3 +144,56 @@ Tests cover Go status precedence, duplicate and multi-equation sources, row-scal
 sweeps, zero/empty systems, near-dependency tolerance, unchanged evaluations, and
 single-pass source calls. Convergence metrics, conflict severity, and nonlinear
 iteration remain separate work.
+
+## Bounded nonlinear iteration — partial R2
+
+Tracking: [#3703](https://github.com/Oblikovati/Oblikovati/issues/3703).
+`solve_constraints` accepts a warm start, residual blocks, explicit numerical
+options, and an injected cancellation callback. It returns owned final accepted
+values, their captured evaluation, local structure, relative residual severity,
+unsatisfied source indices, and a separate termination reason. It never writes
+caller values or publishes rejected trial state. Iterations count accepted steps;
+trial steps include rejected attempts. Both limits and the damping ceiling bound
+work. Cancellation is polled before iterations and trials; it does not interrupt
+an individual source callback or QR factorization.
+
+One Levenberg–Marquardt path augments the scaled Jacobian with column-norm damping
+and solves through the shared pivoted Householder QR. No normal equations or
+finite differences are formed. Initial damping, the finite trust budget, and the
+Moré/Nielsen acceptance schedule follow the Go solver. Norms and gain ratios avoid
+squaring large residuals. Trial merit uses the current point's fixed row weights,
+so changes in derivatives cannot manufacture an apparent residual decrease.
+
+Iteration now uses the same unit-row policy as rank analysis. Nonzero residuals
+are divided by their Jacobian row norm and the initial maximum absolute variable
+value (one for an all-zero warm start). Variables step in these normalized units.
+This extends the Go convergence weighting into the numerical step and merit;
+Go used raw residuals there. Opposite row/coordinate units are combined before
+division to avoid intermediate overflow or underflow. Zero rows retain their
+raw residual scaled by the initial variable magnitude. A zero-variable system
+must satisfy its equations; it is not automatically converged as in legacy Go.
+These are local numerical criteria, not a kernel geometric tolerance certificate.
+Callers remain responsible for meaningful variable units and residual domains.
+
+Convergence, iteration limit, stall, and cancellation retain a valid final
+accepted evaluation. Initial evaluation failures and malformed residual
+contracts return errors. Numerical/domain failures during trials are rejected
+within the same bounded damping path and retain the last such error for
+inspection. Unsatisfied sources use final stored rows without callback replay,
+ordered by descending severity and then source index. Structural redundancy is
+independent from convergence: a consistent redundant system can converge.
+
+Tests compare roots and DOF with `go-nonlinear.tsv`, generated at Go baseline
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`. Analytic checks include a squared root,
+a free gap, duplicate and inconsistent constraints, constant/empty systems,
+a stationary singular failure, rejected square-root domains, bounded trials,
+iteration limits, cancellation, shape violations, immutable inputs and repeated
+results. The Go mixed-length regression (1000 and 0.01 in one system) passes the
+general path. Coordinate scales `1e-100` through `1e100` and equation coefficients
+`1e-200` through `1e200` retain roots. Direct arithmetic tests cover opposite units,
+nonrepresentable trial coordinates and the damping gain schedule. The complete
+Go `./solve` test suite also passes as reference evidence.
+
+This establishes the shared numerical iteration boundary. Fully constrained
+sketches, assembly pose normalization, mobility, feature health integration,
+SolveSpace model parity and interactive rendering remain migration work.

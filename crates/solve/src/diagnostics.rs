@@ -86,23 +86,9 @@ fn normalized_jacobian(evaluation: &ResidualEvaluation) -> Result<DenseMatrix, L
     let rows = evaluation
         .jacobian()
         .iter()
-        .map(|row| normalized_row(row))
+        .map(|row| crate::row_scaling::RowScale::new(row).row(row))
         .collect();
     DenseMatrix::new(evaluation.variable_count(), rows)
-}
-
-fn normalized_row(row: &[f64]) -> Vec<f64> {
-    let scale = row
-        .iter()
-        .fold(0.0_f64, |largest, value| largest.max(value.abs()));
-    if scale == 0.0 {
-        return row.to_vec();
-    }
-    // Normalize scaled coordinates, not an overflowing norm or reciprocal (#3702).
-    let norm = row
-        .iter()
-        .fold(0.0_f64, |norm, value| norm.hypot(value / scale));
-    row.iter().map(|value| (value / scale) / norm).collect()
 }
 
 fn structure(variables: usize, equations: usize, rank: usize) -> ConstraintStructure {
