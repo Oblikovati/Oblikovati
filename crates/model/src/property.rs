@@ -76,6 +76,21 @@ impl DocumentProperties {
         &self.sets
     }
 
+    /// Create a named empty set, retaining the position of any existing set.
+    /// Example: `properties.ensure_set("Manufacturing")?;` before defining its properties.
+    pub fn ensure_set(&mut self, name: &str) -> Result<bool, PropertyError> {
+        if name.is_empty() {
+            return Err(PropertyError(format!(
+                "property set {name:?}: expected a nonempty name"
+            )));
+        }
+        if self.set(name).is_some() {
+            return Ok(false);
+        }
+        self.set_index_or_insert(name);
+        Ok(true)
+    }
+
     /// Find a set without creating it; for example `properties.set(USER_DEFINED)`.
     pub fn set(&self, name: &str) -> Option<&DocumentPropertySet> {
         self.sets.iter().find(|set| set.name == name)

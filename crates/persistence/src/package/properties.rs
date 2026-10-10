@@ -7,6 +7,7 @@ use oblikovati_model::property::{
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 mod exposure;
+mod sets;
 mod value;
 
 #[derive(Deserialize, Serialize)]
@@ -29,12 +30,19 @@ impl DocumentPackage {
             .and_then(Value::as_mapping)
             .and_then(|model| model.get("properties"));
         let records: Vec<PropertyRecipe> = match section {
-            None | Some(Value::Null) => return Ok(DocumentProperties::default()),
+            None | Some(Value::Null) => Vec::new(),
             Some(section) => serde_yaml_ng::from_value(section.clone()).map_err(codec_error)?,
         };
         let mut properties = DocumentProperties::default();
+        let declared = sets::restore_sets(self, &mut properties)?;
         let mut keys = BTreeSet::new();
         for record in records {
+            if declared && properties.set(&record.set).is_none() {
+                return Err(PackageCodecError(format!(
+                    "property set {:?}: expected a declared custom set or a standard set",
+                    record.set
+                )));
+            }
             restore_property(record, &mut properties, &mut keys)?;
         }
         Ok(properties)
@@ -47,19 +55,8 @@ impl DocumentPackage {
         properties: &DocumentProperties,
     ) -> Result<Self, PackageCodecError> {
         self.restore_properties()?;
-        let records = capture_properties(properties, false)?;
         let mut candidate = self.clone();
-        let mut model = self
-            .root
-            .get("model")
-            .and_then(Value::as_mapping)
-            .cloned()
-            .unwrap_or_default();
-        model.insert(
-            "properties".into(),
-            serde_yaml_ng::to_value(records).map_err(codec_error)?,
-        );
-        candidate.root.insert("model".into(), Value::Mapping(model));
+        sets::capture_sections(&mut candidate, properties, false)?;
         if candidate.restore_properties()? != *properties {
             return Err(PackageCodecError(
                 "property export: expected an exact typed collection round trip".into(),
@@ -92,20 +89,6 @@ fn capture_properties(
 ) -> Result<Vec<PropertyRecipe>, PackageCodecError> {
     let mut records = Vec::new();
     for set in properties.sets() {
-        if set.properties().is_empty()
-            && ![
-                SUMMARY_INFORMATION,
-                DOCUMENT_SUMMARY,
-                DESIGN_TRACKING,
-                USER_DEFINED,
-            ]
-            .contains(&set.name.as_str())
-        {
-            return Err(PackageCodecError(format!(
-                "property set {:?}: expected a nonempty custom set in the legacy flat recipe",
-                set.name
-            )));
-        }
         for property in set.properties() {
             records.push(capture_property(&set.name, property, include_exposure)?);
         }

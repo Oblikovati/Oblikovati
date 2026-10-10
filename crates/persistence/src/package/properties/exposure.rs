@@ -30,17 +30,9 @@ impl DocumentPackage {
         synchronized
             .sync_exposed_parameters(parameters)
             .map_err(exposure_error)?;
-        let records = capture_properties(&synchronized, true)?;
-        let mut candidate = self.with_parameters(parameters, units)?;
-        candidate
-            .root
-            .get_mut("model")
-            .and_then(Value::as_mapping_mut)
-            .expect("exported model")
-            .insert(
-                "properties".into(),
-                serde_yaml_ng::to_value(records).map_err(codec_error)?,
-            );
+        let mut candidate = self.clone();
+        sets::capture_sections(&mut candidate, &synchronized, true)?;
+        candidate = candidate.with_parameters(parameters, units)?;
         let restored = candidate.restore_document_parameters()?;
         if candidate.restore_parameter_properties(&restored.parameters)? != synchronized {
             return Err(PackageCodecError(

@@ -163,20 +163,16 @@ fn invalid_or_duplicate_property_records_refuse_load_and_replacement() {
 }
 
 #[test]
-fn flat_recipe_refuses_empty_custom_sets_and_parameter_provenance_loss() {
+fn empty_custom_sets_promote_and_standalone_export_still_refuses_provenance_loss() {
     let mut properties = DocumentProperties::default();
     properties
         .put("Custom", "temporary", VariantValue::Boolean(true))
         .unwrap();
     properties.remove("Custom", "temporary");
-    assert!(
-        package("[]")
-            .with_properties(&properties)
-            .unwrap_err()
-            .to_string()
-            .contains("nonempty custom set")
-    );
-    let mut properties = DocumentProperties::default();
+    let saved = package("[]").with_properties(&properties).unwrap();
+    assert_eq!(saved.manifest().schema_version, 3);
+    assert_eq!(saved.restore_properties().unwrap(), properties);
+
     let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
     parameters
         .insert_expression(1, "width", USER_PARAM, "1")

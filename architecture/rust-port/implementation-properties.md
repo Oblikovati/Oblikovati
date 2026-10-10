@@ -43,9 +43,14 @@ Malformed, nonfinite, duplicate, and unknown-field records refuse reconstruction
 This intentionally replaces Go's skipped-invalid-record behavior with a visible
 error. Export validates existing property records before replacing them, preserves
 unrelated package/model sections, and verifies the reconstructed collection.
-The flat legacy shape has no record for an empty custom set or parameter source
-provenance. Standalone property export refuses those states rather than dropping them. The
-coupled parameter/property export described below reconstructs provenance.
+The flat legacy shape has no record for an empty custom set. Schema 3 stores
+ordered custom-set names in `model.customPropertySets`, including empty sets
+([#3670](https://github.com/Oblikovati/Oblikovati/issues/3670)). Declarations
+must be unique, nonempty custom names; records must belong to declared or
+standard sets. Schema 2 retains its implicit set reconstruction. Ordinary and
+coupled exports share this capture path. File save/reopen tests cover a set
+whose last property was removed. Standalone property export still refuses
+parameter provenance; the coupled export below reconstructs it.
 
 Typed file loading now reconstructs properties before identity registration and
 returns them alongside parameters. Tests cover all five payload kinds, signed
@@ -79,7 +84,7 @@ property snapshots together, then restores both and checks the reconstructed
 collection. Standalone `with_properties` still refuses exposed state because it
 has no parameter context. Session save commands must use the coupled path when
 parameters are exposed. This resolves numeric/text/Boolean provenance persistence;
-custom-property string formatting and empty custom-set persistence remain pending.
+custom-property string formatting remains pending.
 
 Persistence and model/load tests cover typed values, stale and
 missing saved projections, provenance, selected-value updates, rename/unexport/

@@ -292,3 +292,16 @@ fn unhealthy_projections_are_removed_and_rebuilt_on_recovery() {
         "width"
     );
 }
+
+#[test]
+fn empty_set_creation_is_idempotent_ordered_and_validated() {
+    let mut properties = DocumentProperties::default();
+    assert!(properties.ensure_set("Custom").unwrap());
+    assert!(!properties.ensure_set("Custom").unwrap());
+    assert!(!properties.ensure_set(USER_DEFINED).unwrap());
+    let before = properties.clone();
+    assert!(properties.ensure_set("").is_err());
+    assert_eq!(properties, before);
+    assert_eq!(properties.sets().last().unwrap().name, "Custom");
+    assert!(properties.set("Custom").unwrap().properties().is_empty());
+}
