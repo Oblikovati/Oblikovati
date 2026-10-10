@@ -30,9 +30,9 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionHost<'a, O, W> {
         workspace
             .commands(id)
             .map_err(|error| Error(error.to_string()))?
-            .run(edit.label(), |snapshot, _| {
+            .run(edit.label(), |snapshot, reservations| {
                 // Encode before committing, so a response failure cannot leave an unreported edit.
-                edit.apply(&mut snapshot.parameters)
+                edit.apply(&mut snapshot.parameters, reservations)
             })
             .map_err(|error| Error(error.to_string()))
     }

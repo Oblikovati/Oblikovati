@@ -359,3 +359,6 @@ mod groups_edit;
 
 #[path = "queries/parameter_edit.rs"]
 mod parameter_edit;
+
+#[path = "queries/parameter_value.rs"]
+mod parameter_value;

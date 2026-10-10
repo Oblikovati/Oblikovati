@@ -18,7 +18,7 @@ pub(super) fn read(
     let drivers = parameters.drivers(id).map_err(|e| Error(e.to_string()))?;
     let mut detail = presentation(state)?;
     detail.parameter_info = parameters::information(parameters, id)?;
-    detail.in_use = !readers.is_empty();
+    detail.in_use = !readers.is_empty() || state.kind == MODEL_PARAM;
     detail.dependents = Some(parameters::names(parameters, &readers)?);
     detail.driven_by = Some(parameters::names(parameters, &drivers)?);
     numeric(parameters, id, state, &mut detail)?;

@@ -11,6 +11,7 @@ mod collection;
 mod detail;
 mod expressions;
 mod parameter_edit;
+mod parameter_value;
 mod parameters;
 mod units;
 use oblikovati_api::{Error, client::Caller, wire::*};

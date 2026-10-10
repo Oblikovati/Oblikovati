@@ -41,8 +41,8 @@ to the argument type's default, matching Go decoding; malformed JSON is refused.
 Physical conversion and formatting preserve the model's finite-value and
 dimension checks. No DTO or numeric-unit implementation is duplicated here.
 
-Thirty-seven integration tests call the host through the real Rust API `Client`. They
-cover all nineteen query methods and nine edits, active-document changes, display formats, non-default
+Forty-two integration tests call the host through the real Rust API `Client`. They
+cover all nineteen query methods and eleven edits, active-document changes, display formats, non-default
 working scale, missing document context, dimensional failures, malformed calls,
 and unsupported mutation methods. They assert unchanged dirty state, generation,
 notification counts, and undo history. The API transport is exercised directly;
@@ -165,3 +165,28 @@ Session transaction observations are active. The Go host's `parameter.changed`
 push notifications are not yet delivered to add-ins; that requires the pending
 outbound event and native add-in transport boundary. These edit implementations
 do not claim full event-surface parity.
+
+## Parameter creation and numeric expression edits
+
+[#3636](https://github.com/Oblikovati/Oblikovati/issues/3636) adds `parameters.add`
+and `parameters.set`. Creation reserves identities through the document's
+`RecipeReservations`, outside undo snapshots. A failed or undone creation never
+makes its reserved ID reusable in the live document. Numeric creation uses the
+user category unless the trimmed kind is model, matching the Go router. Text
+creation permits empty strings; Boolean creation preserves Go `ParseBool`
+spellings. Literal creation always creates user parameters.
+
+Numeric edits qualify bare values with the existing parameter's preferred unit,
+including the last-good category of a failed parameter. They use the model graph
+to rebind and recompute dependent parameters, and report health when evaluation
+fails. Syntax, cyclic edits, read-only edits, invalid creation types, and name
+collisions are refused through the candidate transaction. The current model
+keeps text/Boolean values typed; numeric expression edits cannot replace those
+literal kinds. Their separate typed setter surface remains to be connected.
+
+Tests cover allocation after undo, typed creation, Boolean spellings, model
+creation, dependency recomputation, failed-value recovery, invalid input, group
+abort, and veto. Model parameters also report `inUse` without parameter readers,
+matching the Go model contract. Numeric parameter recomputation is implemented;
+feature/geometry recomputation after an edit still requires the pending feature
+engine. This does not claim feature or outbound notification completion.
