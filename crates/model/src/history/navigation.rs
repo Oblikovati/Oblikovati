@@ -61,7 +61,7 @@ impl DocumentEditHistory {
             .ok_or(HistoryError::Empty("redo"))
     }
 
-    fn require_closed(&self) -> Result<(), HistoryError> {
+    pub(super) fn require_closed(&self) -> Result<(), HistoryError> {
         if let Some(frame) = self.open.last() {
             return Err(HistoryError::Open(frame.token.clone()));
         }

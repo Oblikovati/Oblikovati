@@ -271,3 +271,22 @@ begin requests, empty context/history, failed edits followed by abort, redo
 preservation, veto, reentry refusal, and isolation between documents. History
 browsing, saved checkpoints, absolute cursor jumps, and native transaction-event
 delivery remain separate work.
+
+## Save checkpoints for history browsing
+
+[#3641](https://github.com/Oblikovati/Oblikovati/issues/3641) adds per-step save
+markers to the owned history. The session exposes the full chronological stream,
+including redo steps, through canonical history-entry values. A successful
+workspace save marks the current committed step after file replacement and
+identity adoption. A failed replacement creates no marker. Saving the initial
+state creates no synthetic entry.
+
+Markers follow their steps through undo/redo. A new branch discards the old redo
+steps and their markers; merging new edits into a saved step clears its marker.
+This avoids assigning a discarded branch's save evidence to a new step at the
+same cursor depth. Marking is refused while a transaction is open. The markers
+are session history evidence, separate from the dirty-state recipe comparison.
+Tests cover navigation, branch replacement, merged edits, repeated marks, open
+transactions, and successful/failed saves through the persistence target.
+The wire history query still needs document display-name ownership before it can
+return the complete canonical response.

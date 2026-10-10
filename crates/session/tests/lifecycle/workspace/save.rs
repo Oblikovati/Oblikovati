@@ -75,6 +75,7 @@ fn failed_final_replacement_preserves_old_file_and_registered_identity() {
     assert_eq!(package, before);
     assert_eq!(workspace.identity(id).unwrap(), &original);
     assert!(workspace.needs_save(id).unwrap());
+    assert!(!workspace.session(id).unwrap().history_entries()[0].saved);
 }
 struct SaveGuidSource {
     next: u64,
@@ -136,6 +137,7 @@ fn successful_save_adopts_same_recipe_identity_and_baseline_as_written() {
     save_package(&mut workspace, id, &mut package, &mut source, &mut files).unwrap();
     let loaded = DocumentPackage::decode(&files.contents.borrow()).unwrap();
     assert_eq!(loaded, package);
+    assert!(workspace.session(id).unwrap().history_entries()[0].saved);
     assert_eq!(loaded.section_yaml("data").unwrap(), retained);
     let parameters = loaded.restore_document_parameters().unwrap().parameters;
     assert_eq!(

@@ -303,3 +303,52 @@ fn unchanged_frame_discard_checks_ownership_and_keeps_changed_frames_open() {
     assert!(history.commit(&token, false).is_err());
     assert!(history.undo_labels().is_empty());
 }
+
+#[test]
+fn save_markers_follow_steps_across_navigation_and_branch_replacement() {
+    let mut history = history();
+    history.mark_saved().unwrap();
+    assert!(history.entries().is_empty());
+    for (label, source) in [("first", "2 cm"), ("second", "3 cm")] {
+        let token = history.begin(label).unwrap();
+        set_width(&mut history, &token, source);
+        history.commit(&token, false).unwrap();
+        history.mark_saved().unwrap();
+    }
+    history.undo().unwrap();
+    let entries = history.entries();
+    assert_eq!(
+        entries
+            .iter()
+            .map(|entry| entry.label.as_str())
+            .collect::<Vec<_>>(),
+        ["first", "second"]
+    );
+    assert!(entries.iter().all(|entry| entry.saved));
+    history.redo().unwrap();
+    assert_eq!(history.entries(), entries);
+    history.undo().unwrap();
+    let token = history.begin("replacement").unwrap();
+    set_width(&mut history, &token, "4 cm");
+    history.commit(&token, false).unwrap();
+    let entries = history.entries();
+    assert_eq!(entries[1].label, "replacement");
+    assert!(entries[0].saved && !entries[1].saved);
+}
+
+#[test]
+fn merged_edits_invalidate_save_markers_and_open_groups_cannot_be_marked() {
+    let mut history = history();
+    let token = history.begin("first").unwrap();
+    set_width(&mut history, &token, "2 cm");
+    history.commit(&token, false).unwrap();
+    history.mark_saved().unwrap();
+    history.mark_saved().unwrap();
+    let token = history.begin("merge").unwrap();
+    set_width(&mut history, &token, "3 cm");
+    assert!(history.mark_saved().is_err());
+    assert!(history.entries()[0].saved);
+    history.commit(&token, true).unwrap();
+    assert_eq!(history.entries().len(), 1);
+    assert!(!history.entries()[0].saved);
+}

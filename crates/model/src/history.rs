@@ -6,6 +6,7 @@ use crate::{
     parameter::ParameterCollection,
     property::DocumentProperties,
 };
+mod checkpoints;
 mod error;
 mod navigation;
 pub use error::{EditError, HistoryError};
@@ -62,6 +63,7 @@ struct OpenTransaction {
 #[derive(Debug)]
 struct HistoryStep {
     label: String,
+    saved: bool,
     before: DocumentSnapshot,
     after: DocumentSnapshot,
 }
@@ -166,9 +168,11 @@ impl DocumentEditHistory {
         }
         if merge_previous && let Some(previous) = self.done.last_mut() {
             previous.after = self.current.clone();
+            previous.saved = false;
         } else {
             self.done.push(HistoryStep {
                 label: frame.label,
+                saved: false,
                 before: frame.before,
                 after: self.current.clone(),
             });

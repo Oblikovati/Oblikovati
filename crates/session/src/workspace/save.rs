@@ -38,6 +38,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .save(id, digest, version, source, target)
             .map_err(WorkspaceSaveError::Save)?;
         let entry = self.entries.get_mut(&id).expect("validated document");
+        // Save preparation requires a closed history; the synchronous save cannot open it.
+        entry
+            .session
+            .history
+            .mark_saved()
+            .expect("validated closed history");
         entry.baseline = snapshot;
         entry.identity_dirty = false;
         self.observer.saved(id);

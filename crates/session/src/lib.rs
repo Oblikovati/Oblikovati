@@ -74,3 +74,11 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.history.redo_labels()
     }
 }
+
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Read the whole committed timeline, including redo and save markers.
+    /// Example: `session.history_entries()` for a history browser.
+    pub fn history_entries(&self) -> Vec<oblikovati_api::wire::TransactionHistoryEntry> {
+        self.history.entries()
+    }
+}
