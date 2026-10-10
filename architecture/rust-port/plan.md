@@ -1,6 +1,7 @@
 # Port the Oblikovati application to Rust
 
-Date: 2026-10-10. Status: implementation plan; no application code is ported yet.
+Date: 2026-10-10. Status: implementation started.
+See the [implementation evidence](implementation.md) for tested behavior and limits.
 
 ## Outcome
 
@@ -233,7 +234,8 @@ Fetch and merge the current `rust` integration branch before
 each feature PR. Keep granular commits. Kernel changes follow the separate
 Martensite integration workflow; API changes follow the API workflow.
 
-R0 creates the application tracking epic and milestone issues from this plan.
+The [port epic #3563](https://github.com/Oblikovati/Oblikovati/issues/3563)
+tracks the full application port. R0 creates the remaining milestone issues.
 Use R0-R9 as stable planning IDs until real issue numbers exist. These IDs are
 not claims that GitHub milestones or implementation issues already exist.
 The tracker owns work status; these documents own design and acceptance.

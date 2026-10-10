@@ -26,3 +26,24 @@ Owner-cascade deletion and its health propagation also remain unimplemented.
 
 This is partial R2 evidence. It is not evidence for document compatibility,
 sketch solving, API conformance, geometry, GUI operation, or a completed milestone.
+
+## Kernel package ownership — R0 dependency
+
+Tracking: [kernel issue #3](https://github.com/Oblikovati/RustyCADKernel/issues/3).
+The kernel release tooling is integrated into its local `main` branch. It creates
+one versioned `.crate` archive per workspace package, plus the lockfile, toolchain,
+license, shared test support, manifest, and checksums. It requires owner CI and
+extracted-package tests in default and all-feature configurations before it can
+publish an immutable stable `vX.Y.Z` release.
+
+The owner verification record is
+`RustyCADKernel/porting/integration/2026-10-10/release-packages.json`.
+It records 31 packages at version 0.1.0, 16,748 tests and 1,478 doctests passed in
+each feature configuration, with 106 documentation tests explicitly ignored.
+It names the checked source revision and package hashes. Concurrent later kernel
+work is not covered by that receipt. Release CI must check the final tagged tree.
+
+No kernel release was published by this work. Keep the application kernel pin
+empty until the published release, tag commit, and all consumed crate assets
+pass the application preflight. The application does not take ownership of the
+kernel's unit tests, oracle tests, or package publication.

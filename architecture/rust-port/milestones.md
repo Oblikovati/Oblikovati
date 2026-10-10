@@ -1,9 +1,11 @@
 # Implementation milestones
 
-All implementation milestones below remain **planned**. None is complete.
+All milestone exits below remain **open**. Rust tooling and the first model
+dependency graph are implemented; see [implementation evidence](implementation.md).
 The ADR migration portion of R0 is complete; its
 [map and records](../decisions/README.md) do not certify runtime behavior.
-R0 creates tracker items with these IDs and links the detailed checks to them.
+The [port epic #3563](https://github.com/Oblikovati/Oblikovati/issues/3563)
+tracks these milestones. R0 creates the remaining detailed work items.
 Do not estimate the full port from source file counts; measure representative
 work first.
 
