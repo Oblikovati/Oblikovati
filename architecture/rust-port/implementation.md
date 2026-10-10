@@ -68,3 +68,32 @@ An independent product table checks multiplication and inverse division for all
 zero, diagnostic operands, negation, and IEEE arithmetic. Parsing, named-unit
 conversion, working-scale selection, persistence, and parameter health remain
 open. This component does not complete R2 or provide an editable part.
+
+## Named units and working-scale conversion — partial R2
+
+Tracking: [issue #3566](https://github.com/Oblikovati/Oblikovati/issues/3566).
+`crates/model/src/units` ports the 26 named-unit spellings, preferred-unit
+conversion, literal scanner, scale exponents, and new-document recommendation
+from Go `model/param/units_of_measure.go` at the fixed migration baseline.
+Default storage remains centimetres; display preferences are independent owned
+copies and cannot modify stored quantities. A suffix overrides the default
+category; a bare number uses its category's preferred unit. Flag/text categories
+retain the Go bare-number behavior until the expression owner validates them.
+
+Scale construction rejects non-finite values and unrepresentable squared/cubed
+scales, as well as non-positive values. This intentionally closes a Go validation
+gap: its `<= 0` test admits NaN/infinity. Literal input rejects invalid or
+non-finite numeric values. Arithmetic conversion order remains multiply then
+divide, with explicit scale multiplication for area and volume.
+
+Tests check every unit against physical values in metres, square metres, or cubic
+metres across centimetre, picometre, micrometre, and kilometre working scales.
+They also check preference conversion, clone isolation, unchanged stored values,
+conditioning policy, malformed UTF-8-safe scanning, signed zero, and invalid
+configuration. The numerical checks allow only eight machine epsilons of relative
+rounding error; they are not geometric tolerances.
+
+Display string rendering and precision/format preferences are not implemented.
+The document owner must still freeze scale after geometry exists and restore
+legacy missing-scale fields to the centimetre default. Expression parsing,
+parameter health, document persistence, and the API boundary remain open.
