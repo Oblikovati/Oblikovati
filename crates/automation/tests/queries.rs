@@ -365,3 +365,6 @@ mod parameter_value;
 
 #[path = "queries/parameter_choices.rs"]
 mod parameter_choices;
+
+#[path = "queries/parameter_tolerance.rs"]
+mod parameter_tolerance;

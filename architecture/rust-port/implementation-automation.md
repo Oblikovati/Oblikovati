@@ -211,3 +211,21 @@ and value-list engines remain the single implementations used by the host.
 Tests cover list order/flags/clearing, every sweep selection, eligible counts,
 nominal-value preservation, failed inputs, read-only lists, no-op history, undo,
 and veto. Feature geometry recomputation remains pending with the feature engine.
+
+## Parameter tolerance edits
+
+[#3638](https://github.com/Oblikovati/Oblikovati/issues/3638) connects
+`parameters.setTolerance` to the existing model tolerance and ISO fit operations.
+All nine modes return canonical member detail. Expressions resolve against
+nominal parameter values; bare literals use document display units. Absolute
+limits become deviations from the nominal value. Bandless modes clear fit
+annotations and deviations. The selected engineering value follows the new band
+without changing nominal expressions.
+
+The adapter explicitly checks operand dimensions after literal parsing. A suffix
+can override the parser's default category, but an angle must not become a length
+tolerance. This is a stricter validation than the Go resolver's literal fallback.
+Malformed values, reversed bands, unsupported fits, and observer veto leave the
+snapshot and undo history unchanged. Tests cover all modes, expression and unit
+resolution, returned detail, undo/redo, rollback, and veto. Feature recomputation
+and outbound parameter notifications remain pending.

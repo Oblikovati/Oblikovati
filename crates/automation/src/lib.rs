@@ -12,6 +12,7 @@ mod detail;
 mod expressions;
 mod parameter_choices;
 mod parameter_edit;
+mod parameter_tolerance;
 mod parameter_value;
 mod parameters;
 mod units;
