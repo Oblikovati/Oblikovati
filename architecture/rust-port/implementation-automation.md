@@ -394,3 +394,21 @@ save-on-close and discard, write failures, bad IDs, activation, path-response
 validation, and reentry. The existing file owner still reconstructs only the
 ported recipe sections. Open/create/Save As/copy/batch API calls, native transport,
 and full feature reconstruction remain pending.
+
+## Save As and Save Copy As
+
+[#3647](https://github.com/Oblikovati/Oblikovati/issues/3647) connects
+`documents.saveAs` and `documents.saveCopyAs` to `FileHost`. Save As resolves and
+checks its destination once inside the file owner, validates the canonical UTF-8
+response path, and uses the shared save operation before rebinding. Its response
+names the resolved destination. A storage or response-path failure preserves the
+old binding, identity, and dirty state.
+
+Save Copy As uses the existing independent-copy operation. It applies optional
+name/subtype metadata only to the new package, mints a separate file identity,
+and preserves the source owner and dirty state. Its response retains the supplied
+target filename, matching Go. Copies cannot overwrite an open document's owned
+destination. Tests cover resolved aliases, retained old files, persisted edits,
+copy metadata and identity, storage failures, occupied destinations, and a
+non-UTF-8 resolved Save As path refused before writing. Open/create and batch-save
+API routing remain pending.

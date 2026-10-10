@@ -15,6 +15,7 @@ type MemoryPackages = Rc<RefCell<BTreeMap<PathBuf, Vec<u8>>>>;
 #[derive(Default)]
 struct DiscoveryFiles {
     refuse_write: bool,
+    save_aliases: RefCell<BTreeMap<PathBuf, PathBuf>>,
     packages: MemoryPackages,
 }
 struct DiscoveryStage {
@@ -32,7 +33,12 @@ impl PackageFileReader for DiscoveryFiles {
 }
 impl DocumentFiles for DiscoveryFiles {
     fn save_path(&mut self, requested: &Path) -> io::Result<PathBuf> {
-        Ok(requested.into())
+        Ok(self
+            .save_aliases
+            .borrow()
+            .get(requested)
+            .cloned()
+            .unwrap_or_else(|| requested.into()))
     }
     fn canonical_path(&mut self, requested: &Path) -> io::Result<PathBuf> {
         Ok(requested.into())

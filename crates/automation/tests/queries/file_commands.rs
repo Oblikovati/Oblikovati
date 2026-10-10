@@ -262,3 +262,6 @@ fn non_utf8_response_path_is_refused_before_saving() {
         counter
     );
 }
+
+#[path = "file_copies.rs"]
+mod copies;

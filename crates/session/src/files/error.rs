@@ -32,6 +32,7 @@ pub enum FileWorkspaceError {
     },
     MissingFile(u64),
     RelativeCanonical(PathBuf),
+    NonUtf8ResponsePath(PathBuf),
     Path {
         requested: PathBuf,
         cause: io::Error,
@@ -48,6 +49,10 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::NonUtf8ResponsePath(path) => write!(
+                output,
+                "save destination {path:?}: expected UTF-8 for the canonical API response"
+            ),
             Self::Project(error) => error.fmt(output),
             Self::MissingTemplate(kind) => write!(
                 output,
@@ -119,6 +124,7 @@ impl Error for FileWorkspaceError {
             | Self::DocumentType(_)
             | Self::TemplateIdentity(_)
             | Self::MissingFile(_)
+            | Self::NonUtf8ResponsePath(_)
             | Self::RelativeCanonical(_)
             | Self::OpenVeto { .. }
             | Self::DestinationInUse { .. } => None,

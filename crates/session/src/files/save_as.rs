@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
+use oblikovati_api::wire::{SaveDocumentAsArgs, SaveDocumentResult};
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
     /// Save to a new bound path without deleting the old file; failed saves keep the old binding.
@@ -12,9 +13,46 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<(), FileWorkspaceError> {
+        let destination = self.prepare_save_as(id, requested)?;
+        self.save_as_to(id, destination, version, source)
+    }
+
+    /// Save As with a canonical response validated before storage changes.
+    /// Example: `host.save_as_report(request, "alpha", source)?` for an API call.
+    pub fn save_as_report(
+        &mut self,
+        request: SaveDocumentAsArgs,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<SaveDocumentResult, FileWorkspaceError> {
+        let destination =
+            self.prepare_save_as(request.document, Path::new(&request.new_full_document_name))?;
+        let full_document_name = destination
+            .to_str()
+            .ok_or_else(|| FileWorkspaceError::NonUtf8ResponsePath(destination.clone()))?
+            .into();
+        self.save_as_to(request.document, destination, version, source)?;
+        Ok(SaveDocumentResult { full_document_name })
+    }
+
+    fn prepare_save_as(
+        &mut self,
+        id: u64,
+        requested: &Path,
+    ) -> Result<PathBuf, FileWorkspaceError> {
         self.path(id)?;
         let destination = checked_path(requested, self.files.save_path(requested))?;
         self.require_available_destination(id, &destination)?;
+        Ok(destination)
+    }
+
+    fn save_as_to(
+        &mut self,
+        id: u64,
+        destination: PathBuf,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<(), FileWorkspaceError> {
         let file = self.retained.get_mut(&id).expect("validated binding");
         let mut target =
             ParameterPackageTarget::new(&mut file.package, &destination, &mut self.files);

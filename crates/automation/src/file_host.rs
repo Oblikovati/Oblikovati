@@ -11,9 +11,11 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::cell::RefCell;
 
 /// Implemented lifecycle calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 3] = [
+pub const FILE_COMMAND_METHODS: [&str; 5] = [
     METHOD_DOCUMENTS_ACTIVATE,
     METHOD_DOCUMENTS_SAVE,
+    METHOD_DOCUMENTS_SAVE_AS,
+    METHOD_DOCUMENTS_SAVE_COPY_AS,
     METHOD_DOCUMENTS_CLOSE,
 ];
 
@@ -64,6 +66,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         match method {
             METHOD_DOCUMENTS_ACTIVATE => self.activate(decode(method, request)?),
             METHOD_DOCUMENTS_SAVE => self.save(decode(method, request)?),
+            METHOD_DOCUMENTS_SAVE_AS => self.save_as(decode(method, request)?),
+            METHOD_DOCUMENTS_SAVE_COPY_AS => self.save_copy(decode(method, request)?),
             METHOD_DOCUMENTS_CLOSE => self.close(decode(method, request)?),
             _ => Err(Error(format!(
                 "file command {method:?}: expected one of {FILE_COMMAND_METHODS:?}"
@@ -94,6 +98,30 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         })?;
         self.files
             .save(request.document, self.version, self.source)
+            .map_err(|error| Error(error.to_string()))?;
+        Ok(response)
+    }
+
+    fn save_as(&mut self, request: SaveDocumentAsArgs) -> Result<Vec<u8>, Error> {
+        let response = self
+            .files
+            .save_as_report(request, self.version, self.source)
+            .map_err(|error| Error(error.to_string()))?;
+        encode(&response)
+    }
+
+    fn save_copy(&mut self, request: SaveCopyAsArgs) -> Result<Vec<u8>, Error> {
+        let response = encode(&SaveDocumentResult {
+            full_document_name: request.target_file_name.clone(),
+        })?;
+        self.files
+            .save_copy(
+                request.document,
+                std::path::Path::new(&request.target_file_name),
+                request.metadata.as_deref(),
+                self.version,
+                self.source,
+            )
             .map_err(|error| Error(error.to_string()))?;
         Ok(response)
     }
