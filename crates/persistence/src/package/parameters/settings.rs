@@ -66,18 +66,13 @@ fn display_mode(name: &str) -> Result<DimensionDisplayType, PackageCodecError> {
 }
 
 pub(super) fn capture_settings(settings: &CollectionSettings) -> Result<Value, PackageCodecError> {
-    let mode = match settings.dimension_display_type {
-        DIMENSION_DISPLAY_VALUE => "value",
-        DIMENSION_DISPLAY_NAME => "name",
-        DIMENSION_DISPLAY_EXPRESSION => "expression",
-        DIMENSION_DISPLAY_TOLERANCE => "tolerance",
-        DIMENSION_DISPLAY_PRECISE_VALUE => "preciseValue",
-        found => {
-            return Err(PackageCodecError(format!(
-                "dimension display {found:?}: expected a known API display mode"
-            )));
-        }
-    };
+    let mode = oblikovati_model::parameter::dimension_display_name(settings.dimension_display_type)
+        .ok_or_else(|| {
+            PackageCodecError(format!(
+                "dimension display {:?}: expected a known API display mode",
+                settings.dimension_display_type
+            ))
+        })?;
     serde_yaml_ng::to_value(SettingsRecipe {
         linear_standard_tolerance: settings.linear_standard_tolerance.clone(),
         angular_standard_tolerance: settings.angular_standard_tolerance.clone(),

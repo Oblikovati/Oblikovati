@@ -45,3 +45,18 @@ impl<Id: Debug> std::fmt::Display for ParameterFailure<Id> {
         }
     }
 }
+
+/// Read a dimension display spelling; for example `dimension_display_name(DIMENSION_DISPLAY_VALUE)`.
+pub fn dimension_display_name(
+    mode: oblikovati_api::types::DimensionDisplayType,
+) -> Option<&'static str> {
+    use oblikovati_api::types::*;
+    match mode {
+        DIMENSION_DISPLAY_VALUE => Some("value"),
+        DIMENSION_DISPLAY_NAME => Some("name"),
+        DIMENSION_DISPLAY_EXPRESSION => Some("expression"),
+        DIMENSION_DISPLAY_TOLERANCE => Some("tolerance"),
+        DIMENSION_DISPLAY_PRECISE_VALUE => Some("preciseValue"),
+        _ => None,
+    }
+}

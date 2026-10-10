@@ -65,3 +65,18 @@ fn parameter_failure_messages_identify_the_fault_and_expected_state() {
         assert!(message.contains(expected), "{message}");
     }
 }
+
+#[test]
+fn dimension_display_names_cover_supported_modes_and_reject_unknown_ids() {
+    use oblikovati_model::parameter::dimension_display_name;
+    for (mode, name) in [
+        (DIMENSION_DISPLAY_VALUE, "value"),
+        (DIMENSION_DISPLAY_NAME, "name"),
+        (DIMENSION_DISPLAY_EXPRESSION, "expression"),
+        (DIMENSION_DISPLAY_TOLERANCE, "tolerance"),
+        (DIMENSION_DISPLAY_PRECISE_VALUE, "preciseValue"),
+    ] {
+        assert_eq!(dimension_display_name(mode), Some(name));
+    }
+    assert_eq!(dimension_display_name(DimensionDisplayType(255)), None);
+}

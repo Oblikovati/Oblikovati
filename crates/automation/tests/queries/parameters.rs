@@ -2,7 +2,7 @@
 
 use super::*;
 
-fn parameter_workspace(parameters: ParameterCollection<u64>) -> (Workspace, u64) {
+pub(super) fn parameter_workspace(parameters: ParameterCollection<u64>) -> (Workspace, u64) {
     let ids = parameters.ids().to_vec();
     let high = ids.iter().max().copied().unwrap_or(0);
     let snapshot = DocumentSnapshot {

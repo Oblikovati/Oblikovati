@@ -37,11 +37,10 @@ pub(super) fn neighbors(
     } else {
         parameters.readers(id)
     };
-    let names = links
-        .map_err(|error| Error(error.to_string()))?
-        .iter()
-        .map(|id| state(parameters, *id).map(|record| record.name.clone()))
-        .collect::<Result<_, _>>()?;
+    let names = names(
+        parameters,
+        &links.map_err(|error| Error(error.to_string()))?,
+    )?;
     Ok(ParameterNamesResult { names: Some(names) })
 }
 
@@ -94,4 +93,10 @@ fn formatted(parameters: &Parameters, record: &ParameterState<u64>) -> Result<St
         .units()
         .format_precise(quantity)
         .map_err(|error| Error(error.to_string()))
+}
+
+pub(super) fn names(parameters: &Parameters, ids: &[u64]) -> Result<Vec<String>, Error> {
+    ids.iter()
+        .map(|id| state(parameters, *id).map(|record| record.name.clone()))
+        .collect()
 }

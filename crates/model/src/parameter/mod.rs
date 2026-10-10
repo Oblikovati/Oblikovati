@@ -8,7 +8,7 @@ mod copy;
 mod presentation;
 mod property;
 pub use annotations::ParameterAnnotations;
-pub use presentation::kind_name;
+pub use presentation::{dimension_display_name, kind_name};
 pub use property::CustomPropertyFormat;
 mod choices;
 mod comparison;

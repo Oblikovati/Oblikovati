@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed query dispatch; edits and native add-in transport are separate host responsibilities.
+mod collection;
 mod expressions;
 mod parameters;
 mod units;
@@ -13,9 +14,11 @@ use oblikovati_session::{
 use serde::{Serialize, de::DeserializeOwned};
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 16] = [
+pub const QUERY_METHODS: [&str; 18] = [
     METHOD_DOCUMENTS_GET_UNITS,
     METHOD_PARAMETERS_LIST,
+    METHOD_PARAMETERS_GET_SETTINGS,
+    METHOD_PARAMETERS_GROUPS_LIST,
     METHOD_PARAMETERS_GET,
     METHOD_PARAMETERS_DRIVEN_BY,
     METHOD_PARAMETERS_DEPENDENTS,
@@ -63,6 +66,12 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_PARAMETERS_GET_SETTINGS => {
+                encode(&collection::settings(self.active_parameters()?)?)
+            }
+            METHOD_PARAMETERS_GROUPS_LIST => {
+                encode(&collection::groups(self.active_parameters()?)?)
+            }
             METHOD_PARAMETERS_LIST => encode(&parameters::list(self.active_parameters()?)?),
             METHOD_PARAMETERS_GET => encode(&parameters::get(
                 self.active_parameters()?,
