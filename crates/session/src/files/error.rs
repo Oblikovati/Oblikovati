@@ -12,6 +12,7 @@ use std::{error::Error, fmt, io, path::PathBuf};
 #[derive(Debug)]
 pub enum FileWorkspaceError {
     ObserverFactory(String),
+    AmbiguousSource(String),
     Project(oblikovati_persistence::project::ProjectLookupError),
     MissingTemplate(u32),
     TemplateKind {
@@ -51,6 +52,10 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::AmbiguousSource(name) => write!(
+                output,
+                "source document {name:?}: expected one unique open document"
+            ),
             Self::ObserverFactory(reason) => write!(
                 output,
                 "document observer {reason:?}: expected an available observer factory"
@@ -127,7 +132,8 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::ObserverFactory(_)
+            Self::AmbiguousSource(_)
+            | Self::ObserverFactory(_)
             | Self::MissingTemplate(_)
             | Self::TemplateKind { .. }
             | Self::CreationMetadata { .. }

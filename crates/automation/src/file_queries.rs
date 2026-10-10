@@ -6,7 +6,9 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 1] = [METHOD_DOCUMENTS_LIST];
+pub const FILE_QUERY_METHODS: [&str; 2] =
+    [METHOD_DOCUMENTS_LIST, METHOD_PARAMETERS_DERIVED_TABLES_LIST];
+mod derived;
 
 /// Immutable API access to file-owned documents and their session state.
 pub struct FileQueryHost<'a, O, W, F> {
@@ -24,6 +26,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
     for FileQueryHost<'_, O, W, F>
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == METHOD_PARAMETERS_DERIVED_TABLES_LIST {
+            return encode(&derived::list(self.files)?);
+        }
         if method != METHOD_DOCUMENTS_LIST {
             return SessionQueryHost::new(self.files.workspace()).call(method, request);
         }

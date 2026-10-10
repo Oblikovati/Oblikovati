@@ -11,6 +11,7 @@ mod name;
 mod open;
 mod project;
 mod save_as;
+mod source;
 mod template;
 use crate::{
     TransactionObserver,

@@ -199,3 +199,6 @@ fn discovery_tracks_save_undo_focus_and_reopened_names() {
 
 #[path = "file_commands.rs"]
 mod commands;
+
+#[path = "derived_sources.rs"]
+mod derived_sources;
