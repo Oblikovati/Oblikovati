@@ -56,6 +56,10 @@ impl<'bytes> ValueReader<'bytes> {
     }
 
     fn string(&mut self) -> Result<VariantValue, MetadataCodecError> {
+        Ok(VariantValue::String(self.text()?))
+    }
+
+    pub(super) fn text(&mut self) -> Result<String, MetadataCodecError> {
         let bytes = self.blob()?;
         let text = std::str::from_utf8(bytes).map_err(|error| {
             MetadataCodecError(format!(
@@ -63,7 +67,18 @@ impl<'bytes> ValueReader<'bytes> {
                 error.valid_up_to()
             ))
         })?;
-        Ok(VariantValue::String(text.into()))
+        Ok(text.into())
+    }
+
+    pub(super) fn count(&mut self, minimum_bytes: usize) -> Result<u32, MetadataCodecError> {
+        let count = u32::from_le_bytes(self.fixed()?);
+        if count as usize > self.remaining.len() / minimum_bytes {
+            return Err(MetadataCodecError(format!(
+                "metadata count {count} with {} remaining bytes: expected at least {minimum_bytes} bytes per entry",
+                self.remaining.len()
+            )));
+        }
+        Ok(count)
     }
 
     fn blob(&mut self) -> Result<&'bytes [u8], MetadataCodecError> {

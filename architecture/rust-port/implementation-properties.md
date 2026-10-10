@@ -29,8 +29,8 @@ kind, signed zero, 64-bit integer boundaries, byte ownership, validation rollbac
 canonical DTO projection, and parameter exposure/re-exposure. Go standard-set,
 property access/removal, and numeric-exposure tests at the fixed baseline provide
 the comparison. YAML property recipes and document-load integration are covered
-below. The shared binary value codec is covered below; binary collection
-codecs and document integration remain separate work.
+below. The shared binary value and property collection codecs are covered below;
+attribute collections and document integration remain separate work.
 
 ## Authored property recipes — partial R2
 
@@ -200,5 +200,29 @@ check every truncation boundary. Invalid tags, Boolean bytes other than 0 or 1,
 invalid UTF-8, nonfinite doubles, and oversized declared blobs are refused.
 These strict failures replace Go's permissive Boolean/string decoding and match
 the Rust model's finite-value and UTF-8 requirements. Empty byte arrays normalize
-to the Go nil-slice representation. Attribute/property collection encoding,
+to the Go nil-slice representation. Property collection encoding is covered below. Attribute collections,
 reference-key binding, and document integration are still required.
+
+## Binary property collections — partial R2
+
+Tracking: [#3674](https://github.com/Oblikovati/Oblikovati/issues/3674).
+`metadata::encode_properties` and `decode_properties` implement the Go binary
+collection layout: set count, ordered set names, property counts, and each
+property's name, source-parameter name, and typed value. Empty custom sets and
+stored provenance survive without parameter evaluation. A model restoration
+method validates a stored property before replacing its value and source name.
+
+The `go-binary-properties.bin` fixture was generated through
+`PropertySets.EncodeProperties` at Go baseline `aa8297d1`, using Go 1.27.0.
+It includes the four standard sets, an empty custom set, all five value types,
+signed zero, UTF-8 with a NUL, empty bytes, and an exposed `width` parameter.
+Rust encoding matches those bytes; decoding and re-encoding are byte-identical.
+Tests also reject every truncated prefix, excess bytes, impossible counts, and
+duplicate names. The decoder requires all four standard sets in their canonical
+order before custom sets, matching collections created by `NewPropertySets`.
+Unlike the Go decoder, it refuses incomplete or reordered standard-set lists
+instead of creating a collection that violates the Rust model's invariant.
+
+This codec is not yet connected to document containers. The current YAML
+parameter/property save path remains authoritative for live Rust documents.
+Binary attribute collections and reference-key ownership are separate port work.

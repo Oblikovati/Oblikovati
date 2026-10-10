@@ -305,3 +305,41 @@ fn empty_set_creation_is_idempotent_ordered_and_validated() {
     assert_eq!(properties.sets().last().unwrap().name, "Custom");
     assert!(properties.set("Custom").unwrap().properties().is_empty());
 }
+
+#[test]
+fn property_restore_retains_source_names_and_rejects_invalid_values_atomically() {
+    use oblikovati_model::property::DocumentProperty;
+    let mut properties = DocumentProperties::default();
+    let stored = DocumentProperty {
+        name: "cached".into(),
+        value: VariantValue::Integer(3),
+        from_parameter: "source".into(),
+    };
+    properties
+        .restore_property(USER_DEFINED, stored.clone())
+        .unwrap();
+    assert_eq!(properties.get(USER_DEFINED, "cached"), Some(&stored));
+    let before = properties.clone();
+    let invalid = DocumentProperty {
+        value: VariantValue::Double(f64::NAN),
+        ..stored.clone()
+    };
+    assert!(properties.restore_property(USER_DEFINED, invalid).is_err());
+    assert_eq!(properties, before);
+    properties
+        .restore_property(
+            USER_DEFINED,
+            DocumentProperty {
+                from_parameter: String::new(),
+                ..stored
+            },
+        )
+        .unwrap();
+    assert!(
+        properties
+            .get(USER_DEFINED, "cached")
+            .unwrap()
+            .from_parameter
+            .is_empty()
+    );
+}

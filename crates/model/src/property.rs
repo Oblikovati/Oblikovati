@@ -7,6 +7,7 @@ use oblikovati_api::{
 };
 mod comparison;
 mod exposure;
+mod restore;
 use std::{error::Error, fmt};
 
 pub const SUMMARY_INFORMATION: &str = "Summary Information";
