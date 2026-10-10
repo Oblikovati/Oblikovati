@@ -5,8 +5,9 @@ The workflows replace the Go build, test, package, and publish commands on the
 and [ADR-0013](architecture/decisions/ADR-0013-packaging-and-release.md).
 [Issue #3560](https://github.com/Oblikovati/Oblikovati/issues/3560) tracks this port.
 
-The application is not yet ported. The current Cargo workspace contains the
-build tool, not the GUI or CLI. A passing gate tests the code that exists.
+The application port is incomplete. The Cargo workspace contains the build tool,
+model/storage/session foundations, and a CLI with manifest inspection and version
+commands. The GUI is absent. A passing gate tests the code that exists.
 Application package and publication preflight checks must fail until the real
 application, released dependencies, resources, and native acceptance tests exist.
 
@@ -118,8 +119,9 @@ projects, as required by ADR-0013. Package names alone do not prove that behavio
 
 ## Application integration contract
 
-Create the real `oblikovati-cli` and `oblikovati-head` packages with binaries of
-the same names in the root workspace. The packaging build passes
+The `oblikovati-cli` package now provides manifest inspection and version/help.
+Finish its remaining commands and add the real `oblikovati-head` package with a
+binary of the same name in the root workspace. The packaging build passes
 `OBLIKOVATI_BUILD_MANIFEST` and `SOURCE_DATE_EPOCH`. The application build script
 must embed that manifest, declare it as a rebuild input, and make `--version`
 report the product version. Do not stamp only the Cargo tool version.

@@ -385,6 +385,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "oblikovati-cli"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-api",
+ "oblikovati-persistence",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "oblikovati-model"
 version = "0.1.0"
 dependencies = [

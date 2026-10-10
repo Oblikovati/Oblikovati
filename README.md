@@ -9,8 +9,12 @@ must be ported and adapted into Martensite as required kernel extensions.
 
 The branch contains the port plan and 13 consolidated Rust ADRs. All 66 legacy
 Go ADRs have a recorded disposition. The Rust build and release tools are present;
-the first model dependency graph is ported. The application GUI and CLI are not
-yet ported. Publication remains blocked.
+model, parameter, file lifecycle, and storage foundations are present. The first
+headless CLI supports `info`, `version`, and `help`; the GUI and remaining CLI
+commands are not yet ported. Publication remains blocked.
+
+Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
+package manifest without reconstructing geometry or changing the file.
 
 - [Implementation evidence](architecture/rust-port/implementation.md): tested
   behavior, source mapping, and remaining work.
@@ -34,8 +38,8 @@ yet ported. Publication remains blocked.
   live tests, platform checks, and cutover.
 
 `rust` is the repository's default and integration branch. It has an independent
-root commit. Rust feature branches start from `rust` and target it for pull
-requests.
+root commit. Port work continues on the single `rust-port` working branch.
+Create a pull request only when the user explicitly requests one.
 
 `go-legacy` preserves the Go application history. It was the `develop` default
 branch before the branch change on 2026-10-10; the repository had no `main`

@@ -1,8 +1,8 @@
 # Verification, compatibility, and release
 
 This document defines application acceptance gates. The branch now has a Rust
-build-tool workspace and the [local/CI gate](../../RELEASING.md). The GUI and CLI
-are not yet ported. Tool tests and package-plan checks do not provide native
+build-tool workspace and the [local/CI gate](../../RELEASING.md). The CLI supports
+manifest inspection and version/help; the GUI is not yet ported. Tool tests and package-plan checks do not provide native
 application acceptance or R9 release evidence.
 
 Current work is focused on local Linux, as requested by the user. Windows and
