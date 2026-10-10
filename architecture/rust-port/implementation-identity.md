@@ -166,4 +166,26 @@ matching Go collision and close/reopen tests provide the source behavior.
 This component does not load files, own recipe content, or dispatch host events.
 The host must inspect the reassignment result, mark the incoming document dirty,
 notify the user, and account for its changed sketch namespace before exposing
-the document. Save adoption and full workspace lifecycle remain open.
+the document. Full workspace lifecycle remains open.
+
+## Registered save adoption — partial R2
+
+Tracking: [#3591](https://github.com/Oblikovati/Oblikovati/issues/3591).
+The identity index now prepares a save candidate, passes it to an injected
+`DocumentSaveTarget`, and adopts it only after that target returns success.
+Preparation and storage errors leave both identity indexes unchanged. The
+exclusive mutable borrow serializes this synchronous operation. Ordinary saves
+preserve the document GUID, so adoption cannot invalidate the reverse lookup.
+
+The target owns the recipe snapshot and must atomically persist it with the
+candidate identity. Its caller supplies the digest for that same snapshot.
+Six tests with a named fake target cover exact adoption, failed writes and
+retry, unchanged and changed recipe revisions, unknown session IDs, and counter
+overflow before storage. Failed writes consume generated revision IDs but do
+not increment the registered save counter; retry uses fresh stamps.
+
+This tests the storage boundary, not filesystem durability. The actual target,
+package encoding, snapshot/digest agreement, and dirty/event state remain host
+and persistence integration work. A storage implementation that writes a file
+and then reports failure needs an explicit reconciliation policy; this layer
+cannot infer whether an external write took effect.

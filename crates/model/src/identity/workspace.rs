@@ -3,6 +3,9 @@
 use super::{DocumentGuid, FileIdentity, GuidSource, IdentityTransitionError};
 use std::{collections::BTreeMap, error::Error, fmt};
 
+mod save;
+pub use save::{DocumentSaveError, DocumentSaveTarget};
+
 /// Owns the identity claims of live documents, independently of file I/O.
 #[derive(Debug, Default)]
 pub struct DocumentIdentityIndex {
