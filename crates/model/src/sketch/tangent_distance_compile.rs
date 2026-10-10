@@ -82,19 +82,17 @@ fn linear_target(
             },
         )?
     };
-    let target = if options.linear_diameter {
-        value / 2.0
-    } else {
-        value
-    };
-    if value != 0.0 && target == 0.0 {
-        return Err(SketchError::Definition(format!(
-            "sketch constraint {:?} offset parameter {parameter} value {value:?}: expected a representable half-dimension",
-            constraint.id
-        )));
+    if !options.linear_diameter {
+        return Ok(value);
     }
-    Ok(target)
+    compile::half_dimension(
+        constraint,
+        parameter,
+        value,
+        "a representable half-dimension",
+    )
 }
+
 fn driving_radius(
     sketch: &Sketch2D,
     curve: SketchEntityId,

@@ -473,3 +473,6 @@ mod circular_dimensions;
 
 #[path = "sketch/tangent_distances.rs"]
 mod tangent_distances;
+
+#[path = "sketch/offset_dimensions.rs"]
+mod offset_dimensions;

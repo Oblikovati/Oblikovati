@@ -17,6 +17,7 @@ mod constraint;
 mod error;
 mod geometry;
 mod line_residual;
+mod offset_dimension;
 mod residual;
 mod shared_contact;
 mod solve;

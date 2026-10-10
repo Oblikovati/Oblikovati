@@ -6,10 +6,16 @@ use oblikovati_solve::{
 };
 
 pub(super) fn point_on_line(variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
-    let anchor = point(variables, 2)?;
-    let direction = unit_direction(&point(variables, 4)?.minus(&anchor)?)?;
-    let offset = point(variables, 0)?.minus(&anchor)?;
-    Ok(vec![direction.cross(&offset)?])
+    Ok(vec![signed_offset(variables, 2, 0)?])
+}
+pub(super) fn signed_offset(
+    variables: &[DualNumber],
+    line_start: usize,
+    query_start: usize,
+) -> Result<DualNumber, ResidualError> {
+    let anchor = point(variables, line_start)?;
+    let direction = unit_direction(&point(variables, line_start + 2)?.minus(&anchor)?)?;
+    Ok(direction.cross(&point(variables, query_start)?.minus(&anchor)?)?)
 }
 pub(super) fn line_relation(
     variables: &[DualNumber],

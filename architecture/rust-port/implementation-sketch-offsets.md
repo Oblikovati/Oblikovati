@@ -1,4 +1,4 @@
-# Rust tangent-distance dimensions
+# Rust sketch offset dimensions
 
 Tracking: [#3714](https://github.com/Oblikovati/Oblikovati/issues/3714).
 This extends the application-owned sketch solver in ADR-0006. It does not add
@@ -54,3 +54,36 @@ contradictory radius dimensions and the singular seed described above. Metric
 AD scale checks cover `1e-200` through `1e200`; complete arc solve/rank checks
 cover `1e-100` through `1e100`. These checks do not certify a finite arc profile,
 B-rep validity, kernel tolerances or application feature acceptance.
+
+## Point-to-line offsets
+
+Tracking: [#3715](https://github.com/Oblikovati/Oblikovati/issues/3715).
+`Offset` references an owned point, line, length parameter, retained line side,
+and diameter-display option. It uses the signed analytic point-on-line measure
+minus its target. Diameter display uses half the authored length. Zero is a valid
+target; the signed row retains its derivative there. Go's absolute-value row
+has a stationary zero and can prevent a later parameter edit from moving the
+point. An explicit side permits creation at zero offset; the factory requires
+a nonzero seed side. Geometry is not moved during creation.
+
+Point-on-line, circular tangency and both offset forms now share the same
+normalized signed-distance calculation. Its operand order is unchanged, and
+existing residual fixtures still pass. Diameter and both offset forms share one
+half-dimension validator, which refuses nonzero values whose half underflows.
+A collapsed line is a named orientation error. Go's offset dimension changes
+such a line into a point-distance measure; Rust retains the authored meaning
+and refuses it instead. A point that shares a line endpoint remains the same
+variable: the dimension adds no artificial independent coordinate or rank.
+
+Four fixtures from the same Go baseline cover both sides and diameter display,
+with residual/derivative comparison after the explicit factor of two. Independent
+scalar metrics and central finite differences check every coordinate. A zero
+row has explicit derivative assertions. Fully constrained model tests edit
+formula-backed targets through zero and back to nonzero values, preserve
+identities, and verify rank six and zero DOF. They check retained-side warm
+starts, wrong dimensions, unhealthy/negative targets, half-dimension underflow,
+bad references, atomic creation failures, shared endpoint health, collapsed-line
+source identity and cancellation. Metric AD scale checks cover `1e-200` through
+`1e200`; complete solve/rank checks cover `1e-100` through `1e100`.
+This does not implement offset-curve construction, sketch persistence or UI/API
+commands.

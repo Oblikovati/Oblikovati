@@ -76,6 +76,7 @@ fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
         if let PlanarConstraint::Distance { parameter, .. }
         | PlanarConstraint::Radius { parameter, .. }
         | PlanarConstraint::Diameter { parameter, .. }
+        | PlanarConstraint::Offset { parameter, .. }
         | PlanarConstraint::TangentDistance { parameter, .. }
         | PlanarConstraint::ArcLength { parameter, .. }
         | PlanarConstraint::Angle { parameter, .. }
@@ -112,6 +113,15 @@ fn equation(
         PlanarConstraint::TangentDistance { .. } => {
             super::tangent_distance_compile::prepare_distance(sketch, constraint, parameters)?
         }
+        PlanarConstraint::Offset {
+            parameter,
+            side,
+            linear_diameter,
+            ..
+        } => PlanarEquation::Offset {
+            target: offset_target(constraint, parameter, parameters, linear_diameter)?,
+            side,
+        },
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
         PlanarConstraint::Diameter { parameter, .. } => {
             PlanarEquation::Radius(diameter_radius(constraint, parameter, parameters)?)
@@ -248,12 +258,42 @@ pub(super) fn diameter_radius(
     parameters: &ParameterCollection<u64>,
 ) -> Result<f64, SketchError> {
     let diameter = positive_length_target(constraint, parameter, parameters, "diameter")?;
-    let radius = diameter / 2.0;
-    if radius == 0.0 {
+    half_dimension(
+        constraint,
+        parameter,
+        diameter,
+        "a representable positive half-diameter",
+    )
+}
+fn offset_target(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+    linear_diameter: bool,
+) -> Result<f64, SketchError> {
+    let value = length_target(constraint, parameter, parameters)?;
+    if !linear_diameter {
+        return Ok(value);
+    }
+    half_dimension(
+        constraint,
+        parameter,
+        value,
+        "a representable half-dimension",
+    )
+}
+pub(super) fn half_dimension(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    value: f64,
+    expected: &str,
+) -> Result<f64, SketchError> {
+    let half = value / 2.0;
+    if value != 0.0 && half == 0.0 {
         return Err(SketchError::Definition(format!(
-            "sketch constraint {:?} diameter parameter {parameter} value {diameter:?}: expected a representable positive half-diameter",
+            "sketch constraint {:?} dimension parameter {parameter} value {value:?}: expected {expected}",
             constraint.id
         )));
     }
-    Ok(radius)
+    Ok(half)
 }

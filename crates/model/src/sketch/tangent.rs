@@ -80,6 +80,9 @@ pub(super) fn constants(values: &[f64]) -> Result<Vec<DualNumber>, ResidualError
 pub(super) fn select_line_side(values: &[f64]) -> Result<LineContactSide, ResidualError> {
     let variables = constants(values)?;
     let signed = tangent_residual::signed_line_distance(&variables)?.value();
+    select_signed_side(signed)
+}
+pub(super) fn select_signed_side(signed: f64) -> Result<LineContactSide, ResidualError> {
     if signed == 0.0 {
         return Err(ResidualError::Domain("line contact signed distance 0.0: expected a nonzero seed side or an explicit Left/Right constraint".into()));
     }

@@ -50,6 +50,13 @@ pub enum PlanarConstraint {
         point: SketchEntityId,
         line: SketchEntityId,
     },
+    Offset {
+        point: SketchEntityId,
+        line: SketchEntityId,
+        parameter: u64,
+        side: LineContactSide,
+        linear_diameter: bool,
+    },
     Angle {
         lines: [SketchEntityId; 2],
         parameter: u64,
@@ -157,7 +164,8 @@ impl Sketch2D {
                 vec![*point, arc.center, arc.start, arc.end]
             }
             PlanarConstraint::Midpoint { point, line }
-            | PlanarConstraint::PointOnLine { point, line } => {
+            | PlanarConstraint::PointOnLine { point, line }
+            | PlanarConstraint::Offset { point, line, .. } => {
                 let endpoints = self.line(*line)?.endpoints;
                 vec![*point, endpoints[0], endpoints[1]]
             }

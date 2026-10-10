@@ -25,6 +25,10 @@ pub(super) enum PlanarEquation {
     Fix([f64; 2]),
     Midpoint,
     PointOnLine,
+    Offset {
+        target: f64,
+        side: LineContactSide,
+    },
     Lines(LineRelation),
     PointOnCircle,
     PinnedLineTangent {
@@ -81,7 +85,9 @@ impl PreparedConstraint {
             PlanarEquation::CircleTangent(_)
             | PlanarEquation::ArcCircularity
             | PlanarEquation::ArcLength { .. } => 6,
-            PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
+            PlanarEquation::Midpoint
+            | PlanarEquation::PointOnLine
+            | PlanarEquation::Offset { .. } => 6,
             PlanarEquation::Lines(_) | PlanarEquation::Angle { .. } => 8,
             _ => 4,
         }
@@ -148,6 +154,9 @@ impl ResidualSource for PreparedConstraint {
             ]),
             PlanarEquation::Midpoint => midpoint(variables),
             PlanarEquation::PointOnLine => line_residual::point_on_line(variables),
+            PlanarEquation::Offset { target, side } => {
+                super::offset_dimension::offset_residual(variables, target, side)
+            }
             PlanarEquation::PointOnCircle => circle_residual::point_on_circle(variables),
             PlanarEquation::LineTangent(side) => tangent_residual::line_tangent(variables, side),
             PlanarEquation::CircleTangent(contact) => {

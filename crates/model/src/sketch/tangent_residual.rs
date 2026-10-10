@@ -18,9 +18,7 @@ pub(super) fn line_tangent(
     Ok(vec![signed_distance.scaled(sign)?.minus(&variables[6])?])
 }
 pub(super) fn signed_line_distance(variables: &[DualNumber]) -> Result<DualNumber, ResidualError> {
-    let anchor = point(variables, 0)?;
-    let direction = unit_direction(&point(variables, 2)?.minus(&anchor)?)?;
-    Ok(direction.cross(&point(variables, 4)?.minus(&anchor)?)?)
+    super::line_residual::signed_offset(variables, 0, 4)
 }
 
 pub(super) fn circle_tangent(
