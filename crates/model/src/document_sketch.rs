@@ -4,7 +4,11 @@ use crate::sketch::{
     Sketch2D, SketchError, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe, SketchRecipe,
 };
 use std::collections::BTreeSet;
+mod health;
+mod readiness;
 mod recompute;
+pub use health::{PlacedSketchHealth, SketchEvaluation, SketchSolveDiagnostics};
+pub use readiness::{SketchReadinessCause, SketchReadinessError};
 pub use recompute::{
     DocumentSketchRecompute, DocumentSketchSolveOutcome, DocumentSketchSolveReport,
 };
@@ -12,12 +16,13 @@ pub use recompute::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentSketchId(pub u64);
 /// A placed planar sketch with private edit boundaries.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PlacedSketch {
     id: DocumentSketchId,
     name: String,
     plane: SketchPlane,
     geometry: Sketch2D,
+    evaluation: Option<health::SketchEvaluationStamp>,
 }
 /// Ordered document state; permanent ID allocators must remain outside this snapshot.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -42,6 +47,15 @@ pub struct DocumentSketchRecipe {
     pub sketches: Vec<PlacedSketchRecipe>,
 }
 impl PlacedSketch {
+    fn new(id: DocumentSketchId, name: &str, plane: SketchPlane, geometry: Sketch2D) -> Self {
+        Self {
+            id,
+            name: name.into(),
+            plane,
+            geometry,
+            evaluation: None,
+        }
+    }
     /// Inspect the saved local sketch ID; example: `sketch.id()`.
     pub fn id(&self) -> DocumentSketchId {
         self.id
@@ -109,12 +123,8 @@ impl DocumentSketches {
             )));
         }
         self.require_unique_entities(None, &geometry)?;
-        self.sketches.push(PlacedSketch {
-            id,
-            name: name.into(),
-            plane,
-            geometry,
-        });
+        self.sketches
+            .push(PlacedSketch::new(id, name, plane, geometry));
         Ok(())
     }
     /// Remove a sketch without changing other identities; example: `document.remove(id)?`.
@@ -137,6 +147,7 @@ impl DocumentSketches {
         let index = self.index(id)?;
         self.require_unique_entities(Some(id), &geometry)?;
         self.sketches[index].geometry = geometry;
+        self.sketches[index].evaluation = None;
         Ok(())
     }
     /// Replace static placement without reauthoring 2D values; example: `document.replace_plane(id, SketchPlane::xz())?`.
@@ -225,4 +236,14 @@ fn missing_sketch(id: DocumentSketchId) -> SketchError {
     SketchError::Definition(format!(
         "document sketch ID {id:?}: expected an existing sketch"
     ))
+}
+
+impl PartialEq for PlacedSketch {
+    fn eq(&self, other: &Self) -> bool {
+        // Derived verification is not authored content and is rebuilt after loading (#3722).
+        self.id == other.id
+            && self.name == other.name
+            && self.plane == other.plane
+            && self.geometry == other.geometry
+    }
 }

@@ -36,7 +36,7 @@ pub(super) fn prepare(
         origins,
         sources,
         values: sketch.variable_values(),
-        parameter_dependencies: parameter_dependencies(sketch),
+        parameter_dependencies: sketch.parameter_dependencies(),
     };
     append_arc_sources(sketch, &mut prepared)?;
     Ok(prepared)
@@ -69,24 +69,6 @@ fn append_arc_sources(sketch: &Sketch2D, prepared: &mut PreparedSketch) -> Resul
             .push(SketchRelationId::ArcCircularity(arc.id));
     }
     Ok(())
-}
-fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
-    let mut dependencies = Vec::new();
-    for constraint in &sketch.constraints {
-        if let PlanarConstraint::Distance { parameter, .. }
-        | PlanarConstraint::Radius { parameter, .. }
-        | PlanarConstraint::Diameter { parameter, .. }
-        | PlanarConstraint::Offset { parameter, .. }
-        | PlanarConstraint::TangentDistance { parameter, .. }
-        | PlanarConstraint::ArcLength { parameter, .. }
-        | PlanarConstraint::Angle { parameter, .. }
-        | PlanarConstraint::ThreePointAngle { parameter, .. } = constraint.relation
-            && !dependencies.contains(&parameter)
-        {
-            dependencies.push(parameter);
-        }
-    }
-    dependencies
 }
 
 fn prepared_source(

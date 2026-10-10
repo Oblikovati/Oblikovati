@@ -322,3 +322,6 @@ fn exact_recipe_comparison_tracks_signed_zero_geometry_fix_targets_and_collectio
 
 #[path = "document_sketch/recompute.rs"]
 mod recompute;
+
+#[path = "document_sketch/health.rs"]
+mod health;

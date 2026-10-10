@@ -52,7 +52,7 @@ fn edit_and_recompute(host: &mut Host, id: u64, sketch: DocumentSketchId) {
     host.commands(id).unwrap().end().unwrap();
 }
 
-fn saved_driven_sketch() -> (Host, SequenceGuids, u64, DocumentSketchId) {
+pub(super) fn saved_driven_sketch() -> (Host, SequenceGuids, u64, DocumentSketchId) {
     let mut host = host(RecordingWorkspace::default());
     let mut source = SequenceGuids(1000);
     let id = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);

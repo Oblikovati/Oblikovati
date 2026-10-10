@@ -403,3 +403,6 @@ fn legacy_sketch_load_refuses_before_document_registration_or_identity_entropy()
 
 #[path = "sketches/recompute.rs"]
 mod recompute;
+
+#[path = "sketches/health.rs"]
+mod health;

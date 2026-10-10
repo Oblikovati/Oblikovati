@@ -64,6 +64,7 @@ fn solve_ordered(
         }
         let result = placed.geometry.solve(parameters, options, &mut *poll);
         adopt_converged(placed, &result);
+        placed.record_evaluation(parameters, &result);
         reports.push(DocumentSketchSolveReport {
             sketch: placed.id,
             result,

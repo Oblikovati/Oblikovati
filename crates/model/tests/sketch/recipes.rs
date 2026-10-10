@@ -322,3 +322,16 @@ fn fixed_schema_fixture_preserves_the_documented_names_and_field_order() {
     );
     assert_eq!(serde_json::to_string(&restored.recipe()).unwrap(), fixture);
 }
+
+#[test]
+fn dimension_dependencies_include_all_eight_kinds_and_deduplicate_in_first_use_order() {
+    let mut sketch = rich_sketch();
+    for (index, value) in constraints().into_iter().enumerate() {
+        relation(&mut sketch, index as u64 + 1, value);
+    }
+    assert_eq!(sketch.parameter_dependencies(), [91, 92]);
+    let mut recipe = sketch.recipe();
+    recipe.constraints.remove(7);
+    let reordered = Sketch2D::from_recipe(&recipe).unwrap();
+    assert_eq!(reordered.parameter_dependencies(), [92, 91]);
+}

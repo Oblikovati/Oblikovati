@@ -208,3 +208,43 @@ diagnostics rather than certifying every converged result as fully constrained.
 This operation is explicit. Automatic parameter-reader scheduling, persistent
 sketch health, dependent feature quarantine and API/UI exposure remain open port
 work. Local failure reports must reach those consumers when they are added.
+
+## Derived sketch health and checked consumption
+
+Tracking: [#3722](https://github.com/Oblikovati/Oblikovati/issues/3722).
+Each live placed sketch now retains the last attempted solve diagnostics:
+termination, Jacobian structure, conflict relation IDs, relative residual or a
+typed failure. These are derived state. Recipe serialization and authored
+comparison exclude them, and restoration starts unverified. A fresh solve must
+verify loaded geometry before a fully constrained feature can consume it.
+
+`Sketch2D::parameter_dependencies()` lists every authored dimension ID in first
+use order, without duplicates. It includes missing targets and all eight current
+dimension forms. Solver preparation uses the same dependency definition.
+Evaluation stamps capture each parameter's actual selected model value, including
+its dimension and exact floating-point bits, or its read error. Health reads
+compare those inputs against the current parameter collection. A changed target,
+selected tolerance value, upstream formula result, failed parameter or recovered
+missing reference makes the old evaluation stale. Unrelated edits and expressions
+with the same model value do not invalidate the result. Returning to the exact
+previous targets permits reuse of their original verified geometry.
+
+`PlacedSketch::require_fully_constrained()` refuses unverified, stale, failed,
+unconverged or nonzero-DOF sketches with the sketch ID and a named decline.
+Converged redundant constraints retain their warning in the returned structure;
+they are not relabeled as a clean constraint system. Geometry replacement clears
+the stamp. Name and validated placement edits retain the planar solve evidence:
+placement does not change the 2D constraint equations.
+
+Batch cancellation keeps the original stamps as well as the original geometry.
+Snapshots retain stamps across command groups and undo/redo, and freshness is
+checked against each snapshot's parameters. Health-only recomputation creates no
+extra authored history step or dirty state. Session tests verify parameter edits,
+recompute navigation, cancellation, failed-parameter observations and file reopen.
+Model tests verify target equality, signed zero, tolerance selection, upstream
+changes, failure/recovery, missing targets, DOF declines and redundant warnings.
+
+Feature consumers must use the checked read before building from a sketch.
+Automatic scheduling, dependent feature quarantine, API health DTO projection
+and native UI presentation remain open integration work. This cache alone does
+not provide those consumers or certify a closed profile.

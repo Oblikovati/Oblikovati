@@ -4,7 +4,7 @@ use oblikovati_model::{
     document_sketch::DocumentSketchSolveOutcome,
     sketch::{SketchError, SketchSolveOutcome},
 };
-fn parameters() -> ParameterCollection<u64> {
+pub(super) fn parameters() -> ParameterCollection<u64> {
     let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
     parameters
         .insert_expression(1, "width", USER_PARAM, "5 cm")
@@ -74,7 +74,7 @@ fn missing_dimension() -> Sketch2D {
     };
     Sketch2D::from_recipe(&recipe).unwrap()
 }
-fn duplicate_fix(position: [f64; 2]) -> Sketch2D {
+pub(super) fn duplicate_fix(position: [f64; 2]) -> Sketch2D {
     let mut first = geometry(0);
     let relation = PlanarConstraint::Fix {
         point: SketchEntityId(1),

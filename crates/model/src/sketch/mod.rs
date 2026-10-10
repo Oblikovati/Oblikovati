@@ -14,6 +14,7 @@ mod circular_frame;
 mod circular_projection;
 mod compile;
 mod constraint;
+mod dependencies;
 mod error;
 mod geometry;
 mod line_residual;
