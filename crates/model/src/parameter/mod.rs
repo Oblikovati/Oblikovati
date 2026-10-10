@@ -72,6 +72,22 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         &self.units
     }
 
+    /// Replace display preferences without rescaling existing quantities.
+    /// Example: `parameters.set_unit_preferences(preferences)?` after editing a clone of `units()`.
+    pub fn set_unit_preferences(
+        &mut self,
+        units: UnitsOfMeasure,
+    ) -> Result<(), ParameterError<Id>> {
+        if units.working_scale() != self.units.working_scale() {
+            return Err(ParameterError::Settings {
+                found: format!("working scale {}", units.working_scale()),
+                expected: "the unchanged document working scale",
+            });
+        }
+        self.units = units;
+        Ok(())
+    }
+
     /// Create a collection with fixed working units; for example `ParameterCollection::<u64>::new(units)`.
     pub fn new(units: UnitsOfMeasure) -> Self {
         Self {

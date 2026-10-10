@@ -9,8 +9,9 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 16] = [
+pub const EDIT_METHODS: [&str; 17] = [
     METHOD_PARAMETERS_SET_SETTINGS,
+    METHOD_DOCUMENTS_SET_UNITS,
     METHOD_DOCUMENTS_SET_PROPERTY,
     METHOD_PARAMETERS_SET_TOLERANCE,
     METHOD_PARAMETERS_UPDATE,
@@ -30,6 +31,7 @@ pub const EDIT_METHODS: [&str; 16] = [
 
 pub(super) enum PreparedEdit {
     Settings(ParameterSettingsUpdateArgs),
+    Units(SetDocumentUnitsArgs),
     Property(SetPropertyArgs),
     Tolerance(ParameterToleranceArgs),
     Update(ParameterUpdateArgs),
@@ -49,6 +51,7 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_DOCUMENTS_SET_UNITS => Ok(Self::Units(decode(method, request)?)),
             METHOD_DOCUMENTS_SET_PROPERTY => Ok(Self::Property(decode(method, request)?)),
             METHOD_PARAMETERS_UPDATE => Ok(Self::Update(decode(method, request)?)),
             METHOD_PARAMETERS_SET_TOLERANCE => Ok(Self::Tolerance(decode(method, request)?)),
@@ -79,6 +82,7 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::Units(_) => "Set Units",
             Self::Property(_) => "Set Property",
             Self::Update(_) => "Edit Parameter",
             Self::Tolerance(_) => "Edit Tolerance",
@@ -105,6 +109,7 @@ impl PreparedEdit {
     ) -> Result<Vec<u8>, Error> {
         let parameters = &mut snapshot.parameters;
         match self {
+            Self::Units(request) => encode(&crate::units_edit::apply(parameters, request)?),
             Self::Property(request) => encode(&properties::set(&mut snapshot.properties, request)?),
             Self::Update(request) => encode(&parameter_update::apply(parameters, request)?),
             Self::Tolerance(request) => encode(&parameter_tolerance::apply(parameters, request)?),

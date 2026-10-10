@@ -51,3 +51,23 @@ do not accept a subtype without its required behavior. Parameter and property
 recipes exist, but component definitions, sketches, features, and kernel-backed
 geometry still require implementation. This file-owner change does not establish
 full document creation parity or a graphical application.
+
+## Document unit preference edits
+
+[#3653](https://github.com/Oblikovati/Oblikovati/issues/3653) connects
+`documents.setUnits` to the shared document transaction owner. Supplied fields
+update display units, precision, or length format; omitted fields retain their
+values. Validation completes on a cloned unit context before installation.
+Updates use the `Set Units` history label and support undo/redo, saved-state
+comparison, and existing package unit persistence. A no-op adds no history.
+
+The parameter owner refuses a working-scale change through this preference
+operation. Existing parameter records, expressions, and stored values remain
+unchanged, while formatted API values use the new display units. Tests check
+atomic refusal, partial updates, history, and save/close/reopen.
+
+Rust display precision currently uses `u8`. Negative values and values above 255
+are refused with an explicit diagnostic; they are never wrapped. Go accepts a
+larger nonnegative range. [#3654](https://github.com/Oblikovati/Oblikovati/issues/3654)
+tracks the model, formatting, and persistence changes needed to remove this
+compatibility gap.

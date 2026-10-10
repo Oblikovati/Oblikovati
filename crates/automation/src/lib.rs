@@ -24,6 +24,7 @@ mod parameters;
 mod properties;
 mod transactions;
 mod units;
+mod units_edit;
 use oblikovati_api::{Error, client::Caller, wire::*};
 use oblikovati_model::{parameter::ParameterCollection, units::UnitsOfMeasure};
 use oblikovati_session::{

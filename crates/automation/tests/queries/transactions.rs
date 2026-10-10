@@ -277,7 +277,7 @@ fn history_commands_only_change_the_active_document() {
         .chain(oblikovati_automation::EDIT_METHODS)
         .chain(TRANSACTION_METHODS)
         .collect();
-    assert_eq!(inventory.len(), 45);
+    assert_eq!(inventory.len(), 46);
 }
 
 #[test]
