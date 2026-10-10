@@ -125,3 +125,96 @@ fn pending_loaded_links_use_the_document_allocator_when_selected() {
         6.0
     );
 }
+
+fn mapped_recipe(schema: u32, links: &str, aliases: &str) -> DocumentPackage {
+    let recipe = format!(
+        "schemaVersion: {schema}\ndocumentType: 1\nmodel:\n  parameters: [{{name: local_module, kind: derived, value: 0.2, unit: length}}, {{name: pitch, kind: user, expression: 'local_module * 24'}}]\n  derivedParameterTables: [{{id: 7, sourceDocument: gears.opd, linked: {links}, localNames: {aliases}}}]\n"
+    );
+    DocumentPackage::decode(recipe.as_bytes()).unwrap()
+}
+
+#[test]
+fn schema_three_alias_survives_repeated_saves_and_refreshes_dependents() {
+    let mut package = mapped_recipe(3, "[module]", "{module: local_module}");
+    for _ in 0..3 {
+        let mut restored = package.restore_document_parameters().unwrap();
+        let references = restored.parameters.derived_references(7).unwrap();
+        assert_eq!(references[0].parameter, "local_module");
+        assert_eq!(references[0].source_parameter, "module");
+        restored
+            .parameters
+            .sync_derived_table(
+                7,
+                Some(&BTreeMap::from([(
+                    "module".into(),
+                    Quantity::new(0.5, Dimension::Length),
+                )])),
+            )
+            .unwrap();
+        assert_eq!(
+            restored
+                .parameters
+                .get(2)
+                .unwrap()
+                .current_value()
+                .unwrap()
+                .value,
+            12.0
+        );
+        package = package
+            .with_parameters(&restored.parameters, UnitsOfMeasure::default())
+            .unwrap();
+        assert_eq!(package.manifest().schema_version, 3);
+        package = DocumentPackage::decode(&package.encode().unwrap()).unwrap();
+    }
+}
+
+#[test]
+fn explicit_local_names_require_versioned_unique_derived_ownership() {
+    for (schema, links, aliases) in [
+        (2, "[module]", "{module: local_module}"),
+        (3, "[module]", "{unknown: local_module}"),
+        (3, "[module]", "{module: absent}"),
+        (3, "[module]", "{module: pitch}"),
+        (
+            3,
+            "[module, other]",
+            "{module: local_module, other: local_module}",
+        ),
+        (3, "[local_module, module]", "{module: local_module}"),
+        (3, "[module]", "{module: ''}"),
+    ] {
+        let error = mapped_recipe(schema, links, aliases)
+            .restore_document_parameters()
+            .unwrap_err();
+        assert!(error.to_string().contains("expected"), "{error}");
+    }
+}
+
+#[test]
+fn baseline_tables_keep_schema_two_and_promoted_recipes_do_not_downgrade() {
+    let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  parameters: [{name: module, kind: derived, value: 0.2, unit: length}]\n  derivedParameterTables: [{id: 7, sourceDocument: gears.opd, linked: [module]}]\n").unwrap();
+    let mut parameters = package.restore_document_parameters().unwrap().parameters;
+    assert_eq!(
+        package
+            .with_parameters(&parameters, UnitsOfMeasure::default())
+            .unwrap()
+            .manifest()
+            .schema_version,
+        2
+    );
+    parameters.rename(1, "local_module").unwrap();
+    let promoted = package
+        .with_parameters(&parameters, UnitsOfMeasure::default())
+        .unwrap();
+    parameters.rename(1, "module").unwrap();
+    assert_eq!(
+        promoted
+            .with_parameters(&parameters, UnitsOfMeasure::default())
+            .unwrap()
+            .manifest()
+            .schema_version,
+        3
+    );
+    assert_eq!(package.manifest().schema_version, 2);
+}

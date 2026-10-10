@@ -67,6 +67,26 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         linked: &[String],
         owned: bool,
     ) -> Result<(), ParameterError<Id>> {
+        self.restore_derived_table_names(id, source, linked, owned, &BTreeMap::new())
+    }
+
+    /// Restore explicit local names while retaining the source link names.
+    /// Example: `parameters.restore_derived_table_names(7, "gear.opd", &names, false, &aliases)?;`.
+    pub fn restore_derived_table_names(
+        &mut self,
+        id: i64,
+        source: &str,
+        linked: &[String],
+        owned: bool,
+        local_names: &BTreeMap<String, String>,
+    ) -> Result<(), ParameterError<Id>> {
+        if let Some(name) = local_names.keys().find(|name| !linked.contains(name)) {
+            return Err(table_error(
+                id,
+                name,
+                "a local-name mapping for a selected source link",
+            ));
+        }
         if id <= 0 || source.is_empty() || self.derived_table(id).is_some() {
             return Err(table_error(
                 id,
@@ -74,7 +94,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
                 "a unique positive ID and nonempty source document",
             ));
         }
-        let produced = self.reconnect_derived_links(id, linked)?;
+        let produced = self.reconnect_derived_links(id, linked, local_names)?;
         self.derived_tables.push(DerivedTable {
             id,
             source_document: source.into(),
@@ -90,6 +110,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         &self,
         table: i64,
         linked: &[String],
+        local_names: &BTreeMap<String, String>,
     ) -> Result<BTreeMap<String, Id>, ParameterError<Id>> {
         let mut seen = BTreeSet::new();
         let mut produced = BTreeMap::new();
@@ -101,7 +122,23 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
                     "unique nonempty linked parameter names",
                 ));
             }
-            if let Some(id) = self.find(name) {
+            let local = local_names.get(name).unwrap_or(name);
+            let resolved = self.find(local);
+            if local_names.contains_key(name) && resolved.is_none() {
+                return Err(table_error(
+                    table,
+                    local,
+                    "an existing derived parameter for an explicit local name",
+                ));
+            }
+            if let Some(id) = resolved {
+                if produced.values().any(|other| *other == id) {
+                    return Err(table_error(
+                        table,
+                        local,
+                        "one source link per local derived parameter",
+                    ));
+                }
                 self.require_unowned_derived(table, name, id)?;
                 produced.insert(name.clone(), id);
             }

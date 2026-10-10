@@ -32,7 +32,7 @@ pub struct PackageManifest {
     pub display_name: String,
 }
 
-/// A schema-2 package with native YAML sections retained behind this boundary.
+/// A versioned YAML package with native YAML sections retained behind this boundary.
 /// Reading an envelope does not authorize executing or editing its recipe.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DocumentPackage {
@@ -47,7 +47,7 @@ pub struct DocumentPackage {
 pub struct PackageCodecError(String);
 
 impl DocumentPackage {
-    /// Decode exactly one schema-2 YAML mapping without dropping known sections.
+    /// Decode exactly one supported YAML mapping without dropping known sections.
     ///
     /// ```
     /// use oblikovati_persistence::package::DocumentPackage;
@@ -65,9 +65,9 @@ impl DocumentPackage {
         validation::validate_root(&root)?;
         let manifest: PackageManifest =
             serde_yaml_ng::from_value(Value::Mapping(root.clone())).map_err(codec_error)?;
-        if manifest.schema_version != 2 {
+        if !matches!(manifest.schema_version, 2 | 3) {
             return Err(PackageCodecError(format!(
-                "schemaVersion {}: expected supported schema 2",
+                "schemaVersion {}: expected supported schema 2 or 3",
                 manifest.schema_version
             )));
         }

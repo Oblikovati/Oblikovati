@@ -4,7 +4,7 @@
 major = 0
 resources = "packaging/resources"
 publication-ready = false
-document-schema = "2"
+document-schema = "3"
 reference-key = "pending"
 c-abi = "pending"
 

@@ -48,7 +48,7 @@ fn unsupported_schemas_zip_and_malformed_roots_are_refused() {
     for source in [
         "PK\u{3}\u{4}legacy",
         "schemaVersion: 1\ndocumentType: 1",
-        "schemaVersion: 3\ndocumentType: 1",
+        "schemaVersion: 4\ndocumentType: 1",
         "schemaVersion: 2",
         "schemaVersion: 2\ndocumentType: -1",
         "[]",

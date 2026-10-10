@@ -100,7 +100,7 @@ All records below are **Accepted for the Rust target design**, dated
 | --- | --- | --- |
 | [ADR-0001](ADR-0001-rust-application-architecture.md) | Rust application composition and repository ownership | R0/R1 |
 | [ADR-0002](ADR-0002-api-and-addin-host.md) | Public automation and native add-in lifecycle | R2/R4 |
-| [ADR-0003](ADR-0003-documents-and-storage.md) | Document recipes, resources, projects, configuration | R2/R3/R6/R8 |
+| [ADR-0003](ADR-0003-documents-and-storage.md) (superseded by ADR-0014) | Document recipes, resources, projects, configuration | R2/R3/R6/R8 |
 | [ADR-0004](ADR-0004-session-and-feature-evaluation.md) | Session transactions, invalidation, feature evaluation | R2-R6 |
 | [ADR-0005](ADR-0005-identity-and-references.md) | Persistent identity and external references | R1/R3/R5/R6/R8 |
 | [ADR-0006](ADR-0006-parameters-and-constraints.md) | Parameters, units, shared constraint solver | R2/R3/R6 |
@@ -111,6 +111,7 @@ All records below are **Accepted for the Rust target design**, dated
 | [ADR-0011](ADR-0011-scripting.md) | Lua runtime contract and rule execution | R7 |
 | [ADR-0012](ADR-0012-build-and-validation.md) | Build and integration evidence | R0 onward |
 | [ADR-0013](ADR-0013-packaging-and-release.md) | Packages, updates, release transition | R9 |
+| [ADR-0014](ADR-0014-documents-and-storage.md) | Documents, storage, schema-3 derived links | R2/R3/R6/R8 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

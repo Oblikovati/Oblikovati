@@ -51,7 +51,11 @@ impl DocumentPackage {
         tolerance::restore_tolerances(&records, &mut restored.parameters)?;
         groups::restore_groups(self.root.get("model"), &mut restored.parameters)?;
         settings::restore_settings(self.root.get("model"), &mut restored.parameters)?;
-        derived::restore_tables(self.root.get("model"), &mut restored.parameters)?;
+        derived::restore_tables(
+            self.root.get("model"),
+            self.manifest.schema_version,
+            &mut restored.parameters,
+        )?;
         restored.parameters.drain_changed();
         Ok(restored)
     }

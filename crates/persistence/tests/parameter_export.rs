@@ -226,7 +226,7 @@ fn unrepresentable_or_unhealthy_state_refuses_export_without_changing_the_packag
 }
 
 #[test]
-fn renamed_derived_links_refuse_the_legacy_name_only_recipe() {
+fn renamed_derived_links_promote_the_recipe_and_preserve_source_mapping() {
     let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
     parameters
         .insert_value(
@@ -240,10 +240,18 @@ fn renamed_derived_links_refuse_the_legacy_name_only_recipe() {
         .restore_derived_table(7, "source", &["module".into()], false)
         .unwrap();
     parameters.rename(1, "local_module").unwrap();
-    let error = package()
+    let encoded = package()
         .with_parameters(&parameters, UnitsOfMeasure::default())
-        .unwrap_err();
-    assert!(error.to_string().contains("matching local/source names"));
+        .unwrap();
+    assert_eq!(encoded.manifest().schema_version, 3);
+    let restored = DocumentPackage::decode(&encoded.encode().unwrap())
+        .unwrap()
+        .restore_document_parameters()
+        .unwrap();
+    assert_eq!(
+        restored.parameters.derived_references(7).unwrap(),
+        parameters.derived_references(7).unwrap()
+    );
 }
 
 #[test]

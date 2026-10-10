@@ -152,3 +152,67 @@ fn partial_close_all_refreshes_remaining_readers_and_preserves_save_error() {
     assert!(files.workspace().session(source).is_err());
     assert_eq!(current_width(&files, target), None);
 }
+
+#[test]
+fn renamed_link_survives_file_save_close_reopen_and_source_edit() {
+    let (mut files, source, target, mut guids) = linked_files();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .parameters()
+        .rename(&ParameterRenameArgs {
+            name: "width".into(),
+            new_name: "local_width".into(),
+        })
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document: target,
+            new_full_document_name: "/renamed-link.opd".into(),
+        })
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: target,
+            force: true,
+        })
+        .unwrap();
+    let reopened = Client::new(
+        FileHost::new(&mut files, &mut guids, "test").with_observer_factory(&mut ReopenedObserver),
+    )
+    .documents()
+    .open(&OpenDocumentArgs {
+        full_document_name: "/renamed-link.opd".into(),
+        ..Default::default()
+    })
+    .unwrap();
+    files.activate(source).unwrap();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .parameters()
+        .set(&ParameterSetArgs {
+            name: "width".into(),
+            expression: "18 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let parameters = &files
+        .workspace()
+        .session(reopened.id)
+        .unwrap()
+        .snapshot()
+        .parameters;
+    let local = parameters.find("local_width").unwrap();
+    assert_eq!(
+        parameters
+            .get(local)
+            .unwrap()
+            .current_value()
+            .unwrap()
+            .value,
+        18.0
+    );
+    assert_eq!(
+        parameters.derived_references(7).unwrap()[0].source_parameter,
+        "width"
+    );
+}

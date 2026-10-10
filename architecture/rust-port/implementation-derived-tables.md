@@ -178,9 +178,24 @@ cycles, target veto, target undo, reservation reuse refusal, and bounded-group
 abort. The Go router lifecycle, bad-argument, source-value, and provenance tests
 also pass locally as reference evidence. Native UI acceptance remains pending.
 
+## Renamed-link package round trips
+
+[#3665](https://github.com/Oblikovati/Oblikovati/issues/3665) implements
+[ADR-0014](../decisions/ADR-0014-documents-and-storage.md). A renamed local derived
+parameter stores its source-to-local mapping in `localNames`, under schema 3.
+Schema-2 recipes still use implicit same-name links and remain schema 2 when no
+extension is needed. A promoted recipe remains schema 3 after later edits.
+
+Restore rejects mappings outside the selected source names, absent explicit local
+names, non-derived targets, duplicate ownership, and schema-2 extension use.
+Mappings are built before table adoption. Tests cover promotion, repeated encoded
+round trips, source refresh after reopen, dependent expressions, invalid mappings,
+and unchanged schema-2 behavior. The baseline Go reader rejects future schemas in
+`persistence/migration.go`; extended recipes cannot be opened there.
+
 ## Remaining work
 
-Persist reservation counters and local/source name mappings in the package, and
+Persist reservation counters in the package, and
 complete the general document reference graph beyond parameter-table links.
 Direct low-level file owner calls still require explicit refresh; automatic hooks
 are at the API command boundary. Geometry integration and native live application

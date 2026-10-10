@@ -38,10 +38,12 @@ impl DocumentPackage {
             "parameterSettings".into(),
             settings::capture_settings(parameters.settings())?,
         );
-        model.insert(
-            "derivedParameterTables".into(),
-            derived::capture_tables(parameters)?,
-        );
+        let (tables, extended) = derived::capture_tables(parameters)?;
+        model.insert("derivedParameterTables".into(), tables);
+        if extended {
+            candidate.manifest.schema_version = 3;
+            candidate.root.insert("schemaVersion".into(), 3u32.into());
+        }
         candidate.root.insert("model".into(), Value::Mapping(model));
         verify_parameter_capture(
             parameters,

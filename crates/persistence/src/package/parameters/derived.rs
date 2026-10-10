@@ -3,6 +3,7 @@
 use super::{PackageCodecError, Value, codec_error, parameter_error};
 use oblikovati_model::parameter::ParameterCollection;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
@@ -11,10 +12,13 @@ struct DerivedTableRecipe {
     source_document: String,
     linked: Vec<String>,
     owned_by_feature: bool,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    local_names: BTreeMap<String, String>,
 }
 
 pub(super) fn restore_tables(
     model: Option<&Value>,
+    schema: u32,
     parameters: &mut ParameterCollection<u64>,
 ) -> Result<(), PackageCodecError> {
     let section = model
@@ -25,12 +29,19 @@ pub(super) fn restore_tables(
         Some(section) => serde_yaml_ng::from_value(section.clone()).map_err(codec_error)?,
     };
     for record in records {
+        if schema < 3 && !record.local_names.is_empty() {
+            return Err(PackageCodecError(format!(
+                "derived table {} localNames in schema {schema}: expected schema 3",
+                record.id
+            )));
+        }
         parameters
-            .restore_derived_table(
+            .restore_derived_table_names(
                 record.id,
                 &record.source_document,
                 &record.linked,
                 record.owned_by_feature,
+                &record.local_names,
             )
             .map_err(parameter_error)?;
     }
@@ -39,27 +50,28 @@ pub(super) fn restore_tables(
 
 pub(super) fn capture_tables(
     parameters: &ParameterCollection<u64>,
-) -> Result<Value, PackageCodecError> {
+) -> Result<(Value, bool), PackageCodecError> {
     let mut records = Vec::new();
     for table in parameters.derived_tables() {
         let references = parameters
             .derived_references(table.id)
             .map_err(parameter_error)?;
-        if references
-            .iter()
-            .any(|reference| reference.parameter != reference.source_parameter)
-        {
-            return Err(PackageCodecError(format!(
-                "derived table {}: expected matching local/source names in the legacy recipe",
-                table.id
-            )));
-        }
+        let local_names = references
+            .into_iter()
+            .filter(|reference| reference.parameter != reference.source_parameter)
+            .map(|reference| (reference.source_parameter, reference.parameter))
+            .collect();
         records.push(DerivedTableRecipe {
             id: table.id,
             source_document: table.source_document.clone(),
             linked: table.linked.clone(),
             owned_by_feature: table.owned_by_feature,
+            local_names,
         });
     }
-    serde_yaml_ng::to_value(records).map_err(codec_error)
+    let extended = records.iter().any(|record| !record.local_names.is_empty());
+    Ok((
+        serde_yaml_ng::to_value(records).map_err(codec_error)?,
+        extended,
+    ))
 }
