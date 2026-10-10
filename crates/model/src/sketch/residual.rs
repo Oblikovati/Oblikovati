@@ -14,6 +14,10 @@ pub(super) enum PlanarEquation {
         target: f64,
         turn: super::AngleTurn,
     },
+    ArcLength {
+        target: f64,
+        counter_clockwise: bool,
+    },
     ArcCircularity,
     ArcMidpoint(bool),
     Coincident,
@@ -60,7 +64,9 @@ impl PreparedConstraint {
             PlanarEquation::PointOnCircle => 5,
             PlanarEquation::LineTangent(_) | PlanarEquation::PinnedLineTangent { .. } => 7,
             PlanarEquation::PinnedCircularTangent(_) | PlanarEquation::ArcMidpoint(_) => 8,
-            PlanarEquation::CircleTangent(_) | PlanarEquation::ArcCircularity => 6,
+            PlanarEquation::CircleTangent(_)
+            | PlanarEquation::ArcCircularity
+            | PlanarEquation::ArcLength { .. } => 6,
             PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
             PlanarEquation::Lines(_) | PlanarEquation::Angle { .. } => 8,
             _ => 4,
@@ -99,6 +105,10 @@ impl ResidualSource for PreparedConstraint {
             PlanarEquation::Angle { target, turn } => {
                 super::angle::angle_residual(variables, target, turn)
             }
+            PlanarEquation::ArcLength {
+                target,
+                counter_clockwise,
+            } => super::arc_length::length_residual(variables, target, counter_clockwise),
             PlanarEquation::ArcCircularity => arc_residual::circularity(variables),
             PlanarEquation::Coincident => Ok(point(variables, 0)?
                 .minus(&point(variables, 2)?)?

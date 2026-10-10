@@ -12,6 +12,7 @@ impl Sketch2D {
     ) -> Result<Vec<CircularFrame>, SketchError> {
         let curves = match relation {
             PlanarConstraint::Radius { curve, .. }
+            | PlanarConstraint::Diameter { curve, .. }
             | PlanarConstraint::PointOnCircularCurve { curve, .. }
             | PlanarConstraint::LineTangent { curve, .. } => vec![*curve],
             PlanarConstraint::Concentric { curves }
@@ -66,9 +67,9 @@ fn frame_columns(
 }
 fn frame_output(relation: &PlanarConstraint) -> FrameOutput {
     match relation {
-        PlanarConstraint::Radius { .. } | PlanarConstraint::EqualRadius { .. } => {
-            FrameOutput::Radii
-        }
+        PlanarConstraint::Radius { .. }
+        | PlanarConstraint::Diameter { .. }
+        | PlanarConstraint::EqualRadius { .. } => FrameOutput::Radii,
         PlanarConstraint::Concentric { .. } => FrameOutput::Centers,
         _ => FrameOutput::Frames,
     }

@@ -420,3 +420,44 @@ opposite-side seeds, reference errors, collapsed rays, parameter health/domain
 failures, cancellation, and complete solve/rank scales from `1e-100` to `1e100`.
 Diameter, arc-length, tangent-distance and other dimension forms, sketch
 persistence, API/UI integration, profile and kernel acceptance remain open.
+
+## Diameter and directed arc-length dimensions
+
+Tracking: [#3713](https://github.com/Oblikovati/Oblikovati/issues/3713).
+`Diameter` references a circle or arc through the existing circular frame and
+uses the existing radius equation with half the length target. It adds no
+second radius variable or diameter solver. Both residual and Jacobian are half
+of Go's diameter row; source normalization keeps the same geometric equation.
+A positive diameter whose half cannot be represented is refused with its
+parameter identity and offending value.
+
+`ArcLength` references the owned arc and measures derived radius times authored
+sweep magnitude. Midpoint and arc-length construction now share one directed
+sweep function with unchanged normalization and angle-wrap arithmetic. Clockwise
+and counterclockwise sweeps retain their minor or major meaning. Go's
+`AddArcLength` uses the absolute minor angle and loses a major sweep; the Rust
+port preserves the application arc's direction instead. The existing structural
+circularity equation keeps the independent end point on the circle.
+
+Radius, diameter and arc-length dimensions share positive length-target
+validation. Their parameter references, expressions, units and selected values
+remain authored model inputs. Collapsed radii and ambiguous zero/full sweeps
+are named evaluation declines. A complete circle remains a separate entity.
+No geometric nudge or complementary-sweep retry changes the intended arc.
+
+Four fixed-baseline Go fixtures cover circle/arc diameter rows and clockwise/
+counterclockwise minor arc-length rows. Diameter residuals and all derivatives
+match after the known factor of two. Minor arc lengths and all derivatives match
+directly. Go's arc-diameter and combined circular-dimension regressions pass.
+Independent polar formulas and central finite differences check every arc-length
+coordinate. Major-sweep values are checked analytically, and complementary
+sweep values and gradients sum to the full circumference and its derivative.
+Residual/derivative unit sweeps cover `1e-200` through `1e200`.
+
+Model tests solve circle and arc diameters and both directed arc-length sweeps
+with zero DOF, then edit their upstream width parameter through dimension
+formulas. They verify endpoints, curve/constraint identities and direct parameter
+dependencies, target domains, unrepresentable half-diameters, bad references,
+source errors and cancellation. Complete solve/rank sweeps cover `1e-100`
+through `1e100`. Tangent-distance and other dimension forms, sketch persistence,
+API/UI integration, finite-sweep profile and kernel feature acceptance remain open.

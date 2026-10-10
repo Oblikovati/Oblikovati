@@ -75,6 +75,14 @@ pub enum PlanarConstraint {
     EqualRadius {
         curves: [SketchEntityId; 2],
     },
+    Diameter {
+        curve: SketchEntityId,
+        parameter: u64,
+    },
+    ArcLength {
+        arc: SketchEntityId,
+        parameter: u64,
+    },
     Radius {
         curve: SketchEntityId,
         parameter: u64,
@@ -162,7 +170,11 @@ impl Sketch2D {
                 self.circular_frame(*curve)?;
                 self.line(*line)?.endpoints.to_vec()
             }
-            PlanarConstraint::Radius { curve, .. } => {
+            PlanarConstraint::ArcLength { arc, .. } => {
+                let arc = self.arc(*arc)?;
+                vec![arc.center, arc.start, arc.end]
+            }
+            PlanarConstraint::Radius { curve, .. } | PlanarConstraint::Diameter { curve, .. } => {
                 self.circular_frame(*curve)?;
                 Vec::new()
             }

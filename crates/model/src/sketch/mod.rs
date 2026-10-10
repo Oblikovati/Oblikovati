@@ -3,8 +3,10 @@
 //! Application-owned planar geometry and constraints, independent from kernel topology.
 mod angle;
 mod arc;
+mod arc_length;
 mod arc_midpoint;
 mod arc_residual;
+mod arc_sweep;
 mod circle;
 mod circle_residual;
 mod circular_compile;

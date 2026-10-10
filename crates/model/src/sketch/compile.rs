@@ -75,6 +75,8 @@ fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
     for constraint in &sketch.constraints {
         if let PlanarConstraint::Distance { parameter, .. }
         | PlanarConstraint::Radius { parameter, .. }
+        | PlanarConstraint::Diameter { parameter, .. }
+        | PlanarConstraint::ArcLength { parameter, .. }
         | PlanarConstraint::Angle { parameter, .. }
         | PlanarConstraint::ThreePointAngle { parameter, .. } = constraint.relation
             && !dependencies.contains(&parameter)
@@ -107,9 +109,16 @@ fn equation(
         PlanarConstraint::LineTangent { side, .. } => PlanarEquation::LineTangent(side),
         PlanarConstraint::CircularTangent { contact, .. } => PlanarEquation::CircleTangent(contact),
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
-        PlanarConstraint::Radius { parameter, .. } => {
-            PlanarEquation::Radius(radius_target(constraint, parameter, parameters)?)
+        PlanarConstraint::Diameter { parameter, .. } => {
+            PlanarEquation::Radius(diameter_radius(constraint, parameter, parameters)?)
         }
+        PlanarConstraint::ArcLength { arc, parameter } => PlanarEquation::ArcLength {
+            target: positive_length_target(constraint, parameter, parameters, "arc length")?,
+            counter_clockwise: sketch.arc(arc)?.counter_clockwise,
+        },
+        PlanarConstraint::Radius { parameter, .. } => PlanarEquation::Radius(
+            positive_length_target(constraint, parameter, parameters, "radius")?,
+        ),
         PlanarConstraint::Horizontal { .. } => PlanarEquation::Coordinate(1),
         PlanarConstraint::Vertical { .. } => PlanarEquation::Coordinate(0),
         PlanarConstraint::Fix { position, .. } => PlanarEquation::Fix(position),
@@ -154,15 +163,16 @@ fn length_target(
     )
 }
 
-fn radius_target(
+fn positive_length_target(
     constraint: &SketchConstraint,
     parameter: u64,
     parameters: &ParameterCollection<u64>,
+    measure: &str,
 ) -> Result<f64, SketchError> {
     let value = length_target(constraint, parameter, parameters)?;
     if value == 0.0 {
         return Err(SketchError::Definition(format!(
-            "sketch constraint {:?} radius parameter {parameter} value {value}: expected a strictly positive working-unit length",
+            "sketch constraint {:?} {measure} parameter {parameter} value {value}: expected a strictly positive working-unit length",
             constraint.id
         )));
     }
@@ -223,4 +233,20 @@ fn dimensional_target(
         )));
     }
     Ok(quantity.value)
+}
+
+fn diameter_radius(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+) -> Result<f64, SketchError> {
+    let diameter = positive_length_target(constraint, parameter, parameters, "diameter")?;
+    let radius = diameter / 2.0;
+    if radius == 0.0 {
+        return Err(SketchError::Definition(format!(
+            "sketch constraint {:?} diameter parameter {parameter} value {diameter:?}: expected a representable positive half-diameter",
+            constraint.id
+        )));
+    }
+    Ok(radius)
 }

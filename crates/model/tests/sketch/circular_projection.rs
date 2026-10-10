@@ -316,3 +316,42 @@ fn independent_circle_values_and_global_partials_are_bit_identical_to_the_origin
         }
     }
 }
+
+#[test]
+fn diameter_rows_use_the_existing_radius_equation_with_half_the_go_residual_scale() {
+    for fixture in include_str!("../fixtures/go-circular-dimensions.tsv").lines() {
+        let fields: Vec<&str> = fixture.split('\t').collect();
+        if !fields[0].starts_with("diameter-") {
+            continue;
+        }
+        let input: Vec<f64> = fields[1]
+            .split(',')
+            .map(|value| value.parse().unwrap())
+            .collect();
+        let radius = if fields[0] == "diameter-circle" {
+            CircularRadius::Independent(SketchEntityId(1))
+        } else {
+            CircularRadius::Derived(SketchEntityId(1))
+        };
+        let source = PreparedConstraint {
+            equation: PlanarEquation::Radius(2.0),
+            variables: (0..input.len()).collect(),
+            projection: Some(CircularProjection {
+                prefix: 0,
+                frames: vec![radius],
+                output: FrameOutput::Radii,
+                touch: false,
+            }),
+        };
+        let actual = source.evaluate(&DualNumber::seed(&input).unwrap()).unwrap();
+        assert!((actual[0].value() * 2.0 - fields[2].parse::<f64>().unwrap()).abs() < 1e-12);
+        let expected: Vec<f64> = fields[3]
+            .split(',')
+            .map(|value| value.parse().unwrap())
+            .collect();
+        assert_eq!(actual[0].gradient().len(), expected.len());
+        for (&actual, expected) in actual[0].gradient().iter().zip(expected) {
+            assert!((actual * 2.0 - expected).abs() < 1e-12);
+        }
+    }
+}

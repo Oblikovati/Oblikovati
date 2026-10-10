@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{
-    Sketch2D, SketchEntityId, SketchError, line_residual::unit_direction, residual::point,
-};
+use super::{Sketch2D, SketchEntityId, SketchError, residual::point};
 use oblikovati_solve::{
     ad::{DualNumber, DualVector},
     residual::ResidualError,
 };
-use std::f64::consts::TAU;
 impl Sketch2D {
     /// Locate half the authored sweep without solving or changing points; example: `sketch.arc_midpoint(id)?`.
     pub fn arc_midpoint(&self, id: SketchEntityId) -> Result<[f64; 2], SketchError> {
@@ -34,26 +31,8 @@ fn midpoint_target(
     let center = point(variables, 0)?;
     let start = point(variables, 2)?.minus(&center)?;
     let end = point(variables, 4)?.minus(&center)?;
-    let first = unit_direction(&start)?;
-    let second = unit_direction(&end)?;
-    let angle = first.cross(&second)?.atan2(&first.dot(&second)?)?;
-    let half = directed_sweep(angle, counter_clockwise)?.scaled(0.5)?;
+    let half = super::arc_sweep::radial_sweep(&start, &end, counter_clockwise)?.scaled(0.5)?;
     Ok(center.plus(&rotate_radial(&start, &half)?)?)
-}
-fn directed_sweep(angle: DualNumber, counter_clockwise: bool) -> Result<DualNumber, ResidualError> {
-    if angle.value() == 0.0 {
-        return Err(ResidualError::Domain(format!(
-            "arc directed angle {:?}: expected distinct endpoint directions; zero and full sweeps are ambiguous",
-            angle.value()
-        )));
-    }
-    if counter_clockwise && angle.value() < 0.0 {
-        return Ok(angle.shifted(TAU)?);
-    }
-    if !counter_clockwise && angle.value() > 0.0 {
-        return Ok(angle.shifted(-TAU)?);
-    }
-    Ok(angle)
 }
 fn rotate_radial(
     radial: &DualVector<2>,

@@ -467,3 +467,6 @@ mod arc_midpoints;
 
 #[path = "sketch/angles.rs"]
 mod angles;
+
+#[path = "sketch/circular_dimensions.rs"]
+mod circular_dimensions;

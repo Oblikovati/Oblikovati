@@ -2,6 +2,7 @@
 use super::*;
 use crate::sketch::residual::{PlanarEquation, PreparedConstraint};
 use oblikovati_solve::residual::ResidualSource;
+use std::f64::consts::TAU;
 fn evaluated(input: &[f64], counter_clockwise: bool) -> Vec<DualNumber> {
     let source = PreparedConstraint {
         equation: PlanarEquation::ArcMidpoint(counter_clockwise),
