@@ -169,7 +169,7 @@ fn missing_context_and_unported_edits_are_explicit_errors() {
             .contains("active document")
     );
     assert!(
-        host.call(METHOD_PARAMETERS_UPDATE, b"{}")
+        host.call(METHOD_DOCUMENTS_SAVE, b"{}")
             .unwrap_err()
             .to_string()
             .contains("supported query")

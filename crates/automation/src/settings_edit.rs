@@ -45,7 +45,7 @@ pub(super) fn apply(
         .map_err(|error| Error(error.to_string()))
 }
 
-fn assign<T>(target: &mut T, value: Option<Box<T>>) {
+pub(super) fn assign<T>(target: &mut T, value: Option<Box<T>>) {
     if let Some(value) = value {
         *target = *value;
     }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use crate::{detail, parameters};
-use oblikovati_api::{Error, types::*, wire::*};
-use oblikovati_model::parameter::{ParameterCollection, vocabulary::selection_name};
+use oblikovati_api::{Error, wire::*};
+use oblikovati_model::parameter::ParameterCollection;
 
 pub(super) fn replace(
     parameters: &mut ParameterCollection<u64>,
@@ -23,20 +23,7 @@ pub(super) fn sweep(
     parameters: &mut ParameterCollection<u64>,
     request: ParameterSweepArgs,
 ) -> Result<ParameterSweepResult, Error> {
-    let selection = [
-        MODEL_VALUE_NOMINAL,
-        MODEL_VALUE_LOWER,
-        MODEL_VALUE_UPPER,
-        MODEL_VALUE_MEDIAN,
-    ]
-    .into_iter()
-    .find(|value| selection_name(*value) == Some(request.model_value_type.as_str()))
-    .ok_or_else(|| {
-        Error(format!(
-            "modelValueType {:?}: expected nominal, lower, upper, or median",
-            request.model_value_type
-        ))
-    })?;
+    let selection = crate::parameter_update::parse_selection(&request.model_value_type)?;
     let count = parameters
         .set_all_model_value_type(selection)
         .map_err(|error| Error(error.to_string()))?;

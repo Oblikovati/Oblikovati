@@ -229,3 +229,24 @@ Malformed values, reversed bands, unsupported fits, and observer veto leave the
 snapshot and undo history unchanged. Tests cover all modes, expression and unit
 resolution, returned detail, undo/redo, rollback, and veto. Feature recomputation
 and outbound parameter notifications remain pending.
+
+## Parameter presentation and exposure updates
+
+[#3639](https://github.com/Oblikovati/Oblikovati/issues/3639) adds
+`parameters.update`. Optional fields preserve existing state when omitted or
+null; explicit empty strings, false values, zero precision, and empty action
+lists reset their fields. Display formats, model-value selections, action masks,
+and custom-property enum names use the model's shared vocabulary. A supplied
+custom-property format replaces the whole stored format, as in Go.
+
+The session applies annotations, selected tolerance value, and exposure projection
+in one transaction. A late invalid field, failed parameter exposure, or observer
+veto rolls back the whole update. Undo and redo include the owned document
+property. Identical updates do not add history. Custom-property formatting
+preferences are stored and returned; the exposure projection currently uses typed
+parameter values, not formatted text. This call does not complete downstream
+export formatting, feature recomputation, or outbound parameter notifications.
+
+Tests cover optional-field semantics, all display and selection modes, every
+custom precision name, action ordering and clearing, property exposure,
+undo/redo, invalid late fields, failed exposure, and veto.
