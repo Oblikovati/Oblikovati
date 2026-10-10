@@ -109,7 +109,7 @@ impl DocumentProperties {
     /// Example: `properties.put(USER_DEFINED, "Approved", VariantValue::Boolean(true))?;`.
     pub fn put(&mut self, set: &str, name: &str, value: VariantValue) -> Result<(), PropertyError> {
         validate_property(set, name, &value)?;
-        let value = normalize_property_bytes(value);
+        let value = crate::metadata_value::normalize(value);
         if let Some(property) = self.find_mut(set, name) {
             property.value = value;
             return Ok(());
@@ -180,20 +180,9 @@ fn validate_property(set: &str, name: &str, value: &VariantValue) -> Result<(), 
             "property {set:?}/{name:?}: expected nonempty set and property names"
         )));
     }
-    if matches!(value, VariantValue::Uninitialized)
-        || matches!(value, VariantValue::Double(number) if !number.is_finite())
-    {
-        return Err(PropertyError(format!(
-            "property {set:?}/{name:?} value {value:?}: expected a Boolean, integer, finite number, string, or byte array"
-        )));
-    }
-    Ok(())
-}
-
-fn normalize_property_bytes(value: VariantValue) -> VariantValue {
-    // Go BytesValue copies onto a nil slice; empty input therefore has one canonical form.
-    match value {
-        VariantValue::Bytes(bytes) if bytes.is_empty() => VariantValue::Bytes(Default::default()),
-        value => value,
-    }
+    crate::metadata_value::validate(value).map_err(|expected| {
+        PropertyError(format!(
+            "property {set:?}/{name:?} value {value:?}: expected {expected}"
+        ))
+    })
 }

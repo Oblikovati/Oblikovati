@@ -226,3 +226,26 @@ instead of creating a collection that violates the Rust model's invariant.
 This codec is not yet connected to document containers. The current YAML
 parameter/property save path remains authoritative for live Rust documents.
 Binary attribute collections and reference-key ownership are separate port work.
+
+## Reference-key anchored attributes — partial R2
+
+Tracking: [#3675](https://github.com/Oblikovati/Oblikovati/issues/3675).
+The model `attribute` module stores ordered targets, namespaces, and canonical
+API values. Replacement retains position; removal retains empty owners until
+explicit namespace or target removal. Searches return matches in anchor and
+attribute insertion order. Clones own independent value storage. Attributes
+and properties now share finite-value validation, byte normalization, and
+signed-zero-aware value comparison.
+
+`AttributeTarget` validates the reference envelope and normalizes it to the
+current encoding. This matches Go `RefKey.Encode`: envelope scheme is provenance,
+not identity. Equal context/kind/payload triples therefore share metadata across
+legacy/current envelope forms. This validates identity bytes only; it does not
+resolve an entity or claim kernel naming support. Malformed keys are refused
+before they can enter the collection.
+
+Tests cover insertion order, replacement, empty namespace/anchor retention,
+missing-target operations, filtered searches, all payload kinds, clone isolation,
+signed zero, malformed envelopes, and invalid-edit atomicity. The Go
+`model/attr` suite passes at baseline `aa8297d1`. Binary attribute collection
+storage, session snapshots, API dispatch, and live entity binding remain open.

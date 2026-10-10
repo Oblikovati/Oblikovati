@@ -11,12 +11,7 @@ impl DocumentProperties {
                 left.properties
                     .iter()
                     .zip(&right.properties)
-                    .all(|(left, right)| match (&left.value, &right.value) {
-                        (VariantValue::Double(left), VariantValue::Double(right)) => {
-                            left.to_bits() == right.to_bits()
-                        }
-                        _ => true,
-                    })
+                    .all(|(left, right)| crate::metadata_value::same(&left.value, &right.value))
             })
     }
 }
