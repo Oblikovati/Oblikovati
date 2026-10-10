@@ -489,3 +489,7 @@ Document namespaces and exact Go reference UUID compatibility are recorded in
 
 The new persistence crate and atomic replacement tests are recorded in
 [storage implementation evidence](implementation-storage.md).
+
+## Parameter recipe restoration — partial R2
+
+See [parameter recipe implementation evidence](implementation-parameter-recipes.md).

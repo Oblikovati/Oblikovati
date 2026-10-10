@@ -37,6 +37,8 @@ pub struct ParameterState<Id> {
     pub kind: ParameterKind,
     pub renamed: bool,
     pub built_in: bool,
+    pub disabled_actions: oblikovati_api::types::ActionType,
+    pub custom_property: super::CustomPropertyFormat,
     pub tolerance: Tolerance,
     pub choices: oblikovati_api::wire::ExpressionListInfo,
     pub model_value_type: ModelValueType,
