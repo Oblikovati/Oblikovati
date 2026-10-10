@@ -7,6 +7,7 @@ fn empty_history() -> DocumentEditHistory {
     DocumentEditHistory::new(
         DocumentSnapshot {
             attributes: Default::default(),
+            attachments: Default::default(),
             interests: Default::default(),
             resources: Default::default(),
             parameters: ParameterCollection::new(UnitsOfMeasure::default()),

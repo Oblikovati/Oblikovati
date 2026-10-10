@@ -11,6 +11,7 @@ pub struct LoadedParameterPackage {
     pub loaded: LoadedPackage,
     pub restored: RestoredParameters,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
+    pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -38,6 +39,7 @@ pub fn load_parameter_package(
         restored: prepared.restored,
         properties: prepared.properties,
         attributes: prepared.attributes,
+        attachments: prepared.attachments,
         interests: prepared.interests,
         resources: prepared.resources,
     })
@@ -50,6 +52,7 @@ pub struct PreparedParameterPackage {
     pub package: DocumentPackage,
     pub restored: RestoredParameters,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
+    pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -65,6 +68,9 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
+    let attachments = package
+        .restore_attachments()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let interests = package
         .restore_interests()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
@@ -84,6 +90,7 @@ pub fn read_parameter_package(
         package,
         restored,
         attributes,
+        attachments,
         interests,
         resources,
         properties,

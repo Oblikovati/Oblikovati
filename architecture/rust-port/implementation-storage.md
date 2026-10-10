@@ -436,3 +436,22 @@ Six tests cover fixture round trips, timestamp offsets and nanoseconds on both
 sides of the epoch, the zero-time sentinel, visibility, payloads, section
 preservation, empty states, and refused input/output. Session history and the
 attachment API remain pending.
+
+## Session ownership of attachments — partial R2
+
+Tracking: [#3691](https://github.com/Oblikovati/Oblikovati/issues/3691).
+`DocumentSnapshot` now owns the attachment collection. Collection and visibility
+changes participate in transaction/no-op detection, undo/redo, abort, refresh,
+and save baselines. Open and template creation install validated attachments;
+malformed records fail before GUID allocation or identity registration.
+
+Save and save-copy capture live attachment records through the validated codec.
+A failed write preserves live state and identity; copy leaves the source dirty.
+Reopen restores embedded bytes and IDs, linked nanosecond timestamps, order, and
+visibility without consulting the original external files. Attachment metadata
+remains outside the existing model-only digest.
+
+Tests cover visibility-only history, no-op updates, commit veto, refresh,
+attachment-only dirty state, normal/copy save and reopen, failed save, template
+independence, and malformed input with no identity claim. The attachment API and
+project-path resolution remain pending.

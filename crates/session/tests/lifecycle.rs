@@ -72,6 +72,7 @@ fn recipe() -> DocumentSnapshot {
     properties.sync_exposed_parameters(&parameters).unwrap();
     DocumentSnapshot {
         attributes: Default::default(),
+        attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
         parameters,
@@ -382,3 +383,6 @@ mod interests;
 
 #[path = "lifecycle/resources.rs"]
 mod resources;
+
+#[path = "lifecycle/attachments.rs"]
+mod attachments;

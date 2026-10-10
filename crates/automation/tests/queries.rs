@@ -82,6 +82,7 @@ type Workspace = WorkspaceSession<QueryObserver, QueryObserver>;
 fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut QueryGuids) -> u64 {
     let snapshot = DocumentSnapshot {
         attributes: Default::default(),
+        attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
         parameters: ParameterCollection::new(units),

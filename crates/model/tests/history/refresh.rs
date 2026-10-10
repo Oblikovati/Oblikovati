@@ -160,3 +160,27 @@ fn resource_refresh_changes_generation_only_for_changed_content() {
     }
     assert!(history.entries().is_empty());
 }
+
+#[test]
+fn attachment_refresh_publishes_changed_state_without_an_undo_step() {
+    use oblikovati_model::attachment::{AttachmentContents, DocumentAttachments};
+    let mut expected = DocumentAttachments::default();
+    expected
+        .restore("file", "source", AttachmentContents::Generic, false)
+        .unwrap();
+    let mut history = history();
+    let generation = history.generation();
+    for changed in [true, false] {
+        assert_eq!(
+            history
+                .refresh(|snapshot| {
+                    snapshot.attachments = expected.clone();
+                    Ok::<(), String>(())
+                })
+                .unwrap(),
+            changed
+        );
+        assert_eq!(history.generation(), generation + 1);
+    }
+    assert!(history.entries().is_empty());
+}

@@ -74,6 +74,9 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         .restore_parameter_properties(&restored.parameters)
         .map_err(FileWorkspaceError::Package)?;
     let snapshot = DocumentSnapshot {
+        attachments: package
+            .restore_attachments()
+            .map_err(FileWorkspaceError::Package)?,
         resources: package.resources().clone(),
         interests: package
             .restore_interests()

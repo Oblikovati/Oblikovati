@@ -19,6 +19,7 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
     pub attributes: crate::attribute::DocumentAttributes,
+    pub attachments: crate::attachment::DocumentAttachments,
     pub interests: crate::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, crate::resource::DocumentResource>,
     pub parameters: ParameterCollection<u64>,
@@ -228,6 +229,7 @@ impl DocumentEditHistory {
         let before = &self.open.last().expect("validated frame").before;
         if !before.parameters.same_recipe(&self.current.parameters)
             || !before.properties.same_recipe(&self.current.properties)
+            || before.attachments != self.current.attachments
             || before.resources != self.current.resources
             || before.interests != self.current.interests
             || !before.attributes.same_recipe(&self.current.attributes)

@@ -320,3 +320,6 @@ mod interest_api;
 
 #[path = "file_resources.rs"]
 mod resources;
+
+#[path = "file_attachments.rs"]
+mod attachments;

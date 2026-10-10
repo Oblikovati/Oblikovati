@@ -476,3 +476,6 @@ fn malformed_attributes_claim_no_document_identity() {
 
 #[path = "load/interests.rs"]
 mod interests;
+
+#[path = "load/attachments.rs"]
+mod attachments;

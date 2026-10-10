@@ -63,6 +63,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let prepared = self.prepare_open(&path, version, source)?;
         let snapshot = DocumentSnapshot {
             attributes: prepared.attributes,
+            attachments: prepared.attachments,
             interests: prepared.interests,
             resources: prepared.resources,
             parameters: prepared.restored.parameters,
