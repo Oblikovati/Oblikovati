@@ -9,13 +9,15 @@ use oblikovati_model::identity::GuidSource;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
+mod create;
 mod open;
 pub use open::DocumentObserverFactory;
 
 /// Implemented lifecycle calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 7] = [
+pub const FILE_COMMAND_METHODS: [&str; 8] = [
     METHOD_DOCUMENTS_ACTIVATE,
     METHOD_DOCUMENTS_OPEN,
+    METHOD_DOCUMENTS_CREATE,
     METHOD_DOCUMENTS_BATCH_SAVE,
     METHOD_DOCUMENTS_SAVE,
     METHOD_DOCUMENTS_SAVE_AS,
@@ -70,6 +72,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_DOCUMENTS_CREATE => self.create(decode(method, request)?),
             METHOD_DOCUMENTS_OPEN => self.open(decode(method, request)?),
             METHOD_DOCUMENTS_ACTIVATE => self.activate(decode(method, request)?),
             METHOD_DOCUMENTS_BATCH_SAVE => self.batch_save(decode(method, request)?),

@@ -23,10 +23,30 @@ failed first Save As, saved recipe reopening, copy identity, and batch binding.
 The full Linux gate covers the existing Rust crates. Windows and macOS testing
 remain deferred, with their pipelines unchanged.
 
+## Typed API creation
+
+[#3651](https://github.com/Oblikovati/Oblikovati/issues/3651) routes
+`documents.create` through `FileHost` and the canonical Rust API DTOs. The
+injected observer factory is shared with document open. Names must be nonempty;
+kind names accept case changes and surrounding whitespace, as in the Go parser.
+Part, assembly, drawing, and presentation requests create unbound recipe owners
+with fresh identities and the exact supplied title. New owners become active,
+visible, and dirty. Duplicate titles do not merge documents or claim paths.
+
+The persistence owner builds an empty schema-2 envelope with typed metadata.
+Titles containing YAML punctuation, Unicode, or newlines remain values. Creation
+does not synthesize serialized YAML from user input. The envelope has no saved
+identity; registration supplies the new identity through the existing owner.
+
+Typed-client tests cover all four kinds, duplicate titles, active-document
+selection, refusal before registration, and a part creation followed by parameter
+editing, first Save As, close, and reopen. The Go
+`TestDocumentsCreateListActivate` reference test also passes locally. These checks
+cover recipe lifecycle behavior, not component-definition or geometry parity.
+
 ## Remaining creation work
 
-Connect the canonical `documents.create` request to document-kind construction
-and an injected observer factory. Port subtype registration and flavor setup;
+Port subtype registration and flavor setup;
 do not accept a subtype without its required behavior. Parameter and property
 recipes exist, but component definitions, sketches, features, and kernel-backed
 geometry still require implementation. This file-owner change does not establish

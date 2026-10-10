@@ -1,23 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
-use oblikovati_automation::DocumentObserverFactory;
-
-struct QueryObserverFactory {
-    created: usize,
-    limit: usize,
-}
-impl DocumentObserverFactory for QueryObserverFactory {
-    type Observer = QueryObserver;
-    fn create(&mut self) -> Result<QueryObserver, String> {
-        if self.created == self.limit {
-            return Err("observer limit reached".into());
-        }
-        self.created += 1;
-        Ok(QueryObserver::default())
-    }
-}
-
 #[test]
 fn open_reuses_unsaved_state_and_constructs_observers_only_for_new_owners() {
     let (mut files, original, mut source) = created_files(false);

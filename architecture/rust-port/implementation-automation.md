@@ -426,8 +426,8 @@ API tests cover an open-transaction failure followed by a successful save,
 request-order preservation, all three operations, binding and identity behavior,
 whole-batch refusal, and empty requests. Underlying persistence remains the same
 atomic per-file writer; a batch is not an all-or-nothing multi-file transaction.
-Create routing, native transport, and full geometry reconstruction remain
-pending.
+Native transport and full geometry reconstruction remain pending. Creation
+routing is recorded in [document creation](implementation-document-creation.md).
 
 ## Document open API
 

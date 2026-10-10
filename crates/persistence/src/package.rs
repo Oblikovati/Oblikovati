@@ -7,6 +7,7 @@ use std::{error::Error, fmt};
 
 mod binary_text;
 mod copy_metadata;
+mod empty;
 mod parameters;
 mod properties;
 mod resources;

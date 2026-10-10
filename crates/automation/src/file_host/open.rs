@@ -4,7 +4,7 @@ use super::*;
 use oblikovati_session::workspace::OpenActivation;
 use std::path::Path;
 
-/// Application-owned observer construction for newly opened document sessions.
+/// Application-owned observer construction for new document sessions.
 pub trait DocumentObserverFactory {
     type Observer: TransactionObserver;
     /// Build one observer; cached document opens do not call this method.
@@ -13,7 +13,7 @@ pub trait DocumentObserverFactory {
 }
 
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
-    /// Enable new document opens with an injected observer factory.
+    /// Enable document creation and new opens with an injected observer factory.
     /// Example: `FileHost::new(files, guids, "alpha").with_observer_factory(factory)`.
     pub fn with_observer_factory(
         mut self,
@@ -32,12 +32,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             .files
             .open_with_factory(
                 Path::new(&request.full_document_name),
-                || {
-                    observers
-                        .as_mut()
-                        .ok_or_else(|| "new document requires an injected factory".to_owned())?
-                        .create()
-                },
+                || create_observer(observers),
                 self.version,
                 self.source,
                 OpenActivation::Activate,
@@ -66,4 +61,13 @@ fn validate_open(request: &OpenDocumentArgs) -> Result<(), Error> {
         return Err(Error("documents.open deferContent=true: expected false; reference-stub loading is not yet ported".into()));
     }
     Ok(())
+}
+
+pub(super) fn create_observer<O: TransactionObserver>(
+    observers: &mut Option<&mut dyn DocumentObserverFactory<Observer = O>>,
+) -> Result<O, String> {
+    observers
+        .as_mut()
+        .ok_or_else(|| "new document requires an injected factory".to_owned())?
+        .create()
 }

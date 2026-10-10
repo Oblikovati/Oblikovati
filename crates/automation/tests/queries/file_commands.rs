@@ -1,7 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
+use oblikovati_automation::DocumentObserverFactory;
 use oblikovati_automation::FileHost;
+
+struct QueryObserverFactory {
+    created: usize,
+    limit: usize,
+}
+impl DocumentObserverFactory for QueryObserverFactory {
+    type Observer = QueryObserver;
+    fn create(&mut self) -> Result<QueryObserver, String> {
+        if self.created == self.limit {
+            return Err("observer limit reached".into());
+        }
+        self.created += 1;
+        Ok(QueryObserver::default())
+    }
+}
 
 fn created_files(refuse_write: bool) -> (DiscoveryWorkspace, u64, QueryGuids) {
     let mut files = DiscoveryWorkspace::new(
@@ -271,3 +287,6 @@ mod batch;
 
 #[path = "file_open.rs"]
 mod opening;
+
+#[path = "file_create.rs"]
+mod create;
