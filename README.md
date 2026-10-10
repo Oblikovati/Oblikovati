@@ -9,7 +9,11 @@ must be ported and adapted into Martensite as required kernel extensions.
 
 The branch contains the port plan and 13 consolidated Rust ADRs. All 66 legacy
 Go ADRs have a recorded disposition. The Rust build and release tools are present;
-the application GUI and CLI are not yet ported. Publication remains blocked.
+the first model dependency graph is ported. The application GUI and CLI are not
+yet ported. Publication remains blocked.
+
+- [Implementation evidence](architecture/rust-port/implementation.md): tested
+  behavior, source mapping, and remaining work.
 
 - [Build and release commands](RELEASING.md): local gate, CI, native packaging,
   released API/kernel dependencies, versioning, and publication requirements.
