@@ -74,10 +74,32 @@ Navigating target history restores its recorded snapshot; the scheduler must run
 refresh afterward to update its derived values from current sources. A test
 exercises that explicit navigation-then-refresh sequence.
 
+## Ordered workspace refresh
+
+[#3660](https://github.com/Oblikovati/Oblikovati/issues/3660) adds
+`FileWorkspace::refresh_derived_from`. It builds a dependency graph from retained
+links and uses the existing model graph to order the changed document and its
+readers, with sources before readers and document insertion order for ties.
+The changed document is included so refresh can follow target history navigation.
+Missing sources have no graph edge but still produce unavailable table health.
+
+The whole workspace graph is checked for cycles and ambiguous source names before
+any table changes. Each table refresh is atomic. A failed table is reported with
+its document, table ID, and reason; other tables in that document can still refresh.
+Readers of a failed document are skipped and report their blocking sources.
+Independent branches continue. Thus a document can occur in both the changed and
+failed results. Open source transactions cannot supply preview values, including
+sources outside the affected graph. Refresh retains target undo/redo and focus.
+
+Tests cover chains, independent branches, source undo, repeated no-op refresh,
+cycles, unknown sources, open source and target transactions, failure isolation,
+and recovery. This scheduler is explicit; automatic API and lifecycle hooks are
+still pending.
+
 ## Remaining work
 
 Connect table creation and link editing to source resolution, stable ID
 reservation, source parameter export, and the document reference graph. Propagate
-source edits, close/reopen, and undo/redo through that graph with cycle handling.
+source edits, close/reopen, and undo/redo through the scheduler automatically.
 Use the checked source-value boundary for those operations. No live
 cross-document recompute or geometry integration is claimed by these read paths.

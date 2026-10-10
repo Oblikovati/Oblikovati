@@ -16,12 +16,29 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 "source {source:?} resolves to target {target}: expected a different document"
             )));
         }
+        self.require_committed_source(&source)?;
         let values = self.derived_source_values(&source, target)?;
         self.workspace
             .commands(target)
             .map_err(FileWorkspaceError::Workspace)?
             .refresh_derived_table(table, values.as_ref())
             .map_err(|error| FileWorkspaceError::DerivedRefresh(error.to_string()))
+    }
+
+    fn require_committed_source(&self, name: &str) -> Result<(), FileWorkspaceError> {
+        let Some(id) = self.resolve_parameter_source(name)? else {
+            return Ok(());
+        };
+        let session = self
+            .workspace
+            .session(id)
+            .map_err(FileWorkspaceError::Workspace)?;
+        if session.in_transaction() {
+            return Err(FileWorkspaceError::DerivedRefresh(format!(
+                "source {name:?} in document {id}: expected a closed transaction before refresh"
+            )));
+        }
+        Ok(())
     }
 
     fn derived_table_source(&self, target: u64, table: i64) -> Result<String, FileWorkspaceError> {

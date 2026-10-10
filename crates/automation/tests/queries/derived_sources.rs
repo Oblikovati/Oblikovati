@@ -271,3 +271,6 @@ fn source_transfer_failure_names_the_parameter_and_does_not_change_target() {
 
 #[path = "derived_refresh.rs"]
 mod refresh;
+
+#[path = "derived_propagation.rs"]
+mod propagation;
