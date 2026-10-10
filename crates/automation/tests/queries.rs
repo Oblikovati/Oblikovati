@@ -362,3 +362,6 @@ mod parameter_edit;
 
 #[path = "queries/parameter_value.rs"]
 mod parameter_value;
+
+#[path = "queries/parameter_choices.rs"]
+mod parameter_choices;

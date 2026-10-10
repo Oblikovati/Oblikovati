@@ -10,6 +10,7 @@ pub use host::SessionHost;
 mod collection;
 mod detail;
 mod expressions;
+mod parameter_choices;
 mod parameter_edit;
 mod parameter_value;
 mod parameters;

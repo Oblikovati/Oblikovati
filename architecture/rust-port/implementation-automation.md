@@ -41,8 +41,8 @@ to the argument type's default, matching Go decoding; malformed JSON is refused.
 Physical conversion and formatting preserve the model's finite-value and
 dimension checks. No DTO or numeric-unit implementation is duplicated here.
 
-Forty-two integration tests call the host through the real Rust API `Client`. They
-cover all nineteen query methods and eleven edits, active-document changes, display formats, non-default
+Forty-six integration tests call the host through the real Rust API `Client`. They
+cover all nineteen query methods and thirteen edits, active-document changes, display formats, non-default
 working scale, missing document context, dimensional failures, malformed calls,
 and unsupported mutation methods. They assert unchanged dirty state, generation,
 notification counts, and undo history. The API transport is exercised directly;
@@ -190,3 +190,24 @@ abort, and veto. Model parameters also report `inUse` without parameter readers,
 matching the Go model contract. Numeric parameter recomputation is implemented;
 feature/geometry recomputation after an edit still requires the pending feature
 engine. This does not claim feature or outbound notification completion.
+
+## Value lists and tolerance sweeps
+
+[#3637](https://github.com/Oblikovati/Oblikovati/issues/3637) adds
+`parameters.setExpressionList` and `parameters.setAllModelValueType`. List edits
+return canonical member detail, retain authored order when requested, sort through
+the model otherwise, and clear the list for null/empty expressions. They do not
+change the current parameter value. Model editability checks apply to both list
+replacement and clearing.
+
+Sweeps accept the canonical nominal/lower/upper/median names and validate every
+eligible toleranced parameter before changing any selection. The returned count
+includes eligible parameters already at that selection, matching Go. Untoleranced
+parameters and nominal expression values remain unchanged; engineering model
+values reflect the chosen tolerance bound. Failed sweeps and observer veto leave
+all selections unchanged. Identical updates add no undo record. The model sweep
+and value-list engines remain the single implementations used by the host.
+
+Tests cover list order/flags/clearing, every sweep selection, eligible counts,
+nominal-value preservation, failed inputs, read-only lists, no-op history, undo,
+and veto. Feature geometry recomputation remains pending with the feature engine.

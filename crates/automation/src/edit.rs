@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use crate::{
-    collection, decode, encode, groups_edit, parameter_edit, parameter_value, settings_edit,
+    collection, decode, encode, groups_edit, parameter_choices, parameter_edit, parameter_value,
+    settings_edit,
 };
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::{history::RecipeReservations, parameter::ParameterCollection};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 11] = [
+pub const EDIT_METHODS: [&str; 13] = [
     METHOD_PARAMETERS_SET_SETTINGS,
+    METHOD_PARAMETERS_SET_EXPRESSION_LIST,
+    METHOD_PARAMETERS_SET_ALL_MODEL_VALUE_TYPE,
     METHOD_PARAMETERS_ADD,
     METHOD_PARAMETERS_SET,
     METHOD_PARAMETERS_RENAME,
@@ -23,6 +26,8 @@ pub const EDIT_METHODS: [&str; 11] = [
 
 pub(super) enum PreparedEdit {
     Settings(ParameterSettingsUpdateArgs),
+    Choices(ParameterExpressionListArgs),
+    Sweep(ParameterSweepArgs),
     Add(ParameterSetArgs),
     Set(ParameterSetArgs),
     Rename(ParameterRenameArgs),
@@ -37,6 +42,8 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_PARAMETERS_SET_EXPRESSION_LIST => Ok(Self::Choices(decode(method, request)?)),
+            METHOD_PARAMETERS_SET_ALL_MODEL_VALUE_TYPE => Ok(Self::Sweep(decode(method, request)?)),
             METHOD_PARAMETERS_ADD => Ok(Self::Add(decode(method, request)?)),
             METHOD_PARAMETERS_SET => Ok(Self::Set(decode(method, request)?)),
             METHOD_PARAMETERS_RENAME => Ok(Self::Rename(decode(method, request)?)),
@@ -62,6 +69,8 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::Choices(_) => "Edit Value List",
+            Self::Sweep(_) => "Sweep Tolerances",
             Self::Add(_) => "Add Parameter",
             Self::Set(_) => "Edit Parameter",
             Self::Rename(_) => "Rename Parameter",
@@ -82,6 +91,8 @@ impl PreparedEdit {
         reservations: &mut RecipeReservations<'_>,
     ) -> Result<Vec<u8>, Error> {
         match self {
+            Self::Choices(request) => encode(&parameter_choices::replace(parameters, request)?),
+            Self::Sweep(request) => encode(&parameter_choices::sweep(parameters, request)?),
             Self::Add(request) => encode(&parameter_value::add(parameters, reservations, request)?),
             Self::Set(request) => encode(&parameter_value::set(parameters, request)?),
             Self::Rename(request) => encode(&parameter_edit::rename(parameters, request)?),
