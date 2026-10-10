@@ -415,6 +415,7 @@ dependencies = [
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-persistence",
+ "tempfile",
 ]
 
 [[package]]

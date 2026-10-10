@@ -4,6 +4,7 @@
 mod command;
 mod error;
 mod events;
+pub mod files;
 mod navigation;
 #[cfg(test)]
 mod tests;

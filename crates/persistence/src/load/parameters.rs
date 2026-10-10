@@ -23,6 +23,38 @@ pub fn load_parameter_package(
     source: &mut dyn GuidSource,
     reader: &mut dyn PackageFileReader,
 ) -> Result<LoadedParameterPackage, PackageLoadError> {
+    let prepared = read_parameter_package(path, version, source, reader)?;
+    let registration = index
+        .register(session_id, prepared.identity, source)
+        .map_err(|error| load_error(path, LoadFailure::Registration(error)))?;
+    Ok(LoadedParameterPackage {
+        loaded: LoadedPackage {
+            package: prepared.package,
+            registration,
+        },
+        restored: prepared.restored,
+        properties: prepared.properties,
+    })
+}
+
+/// Reconstructed state without an open-document identity claim.
+#[must_use]
+#[derive(Debug)]
+pub struct PreparedParameterPackage {
+    pub package: DocumentPackage,
+    pub restored: RestoredParameters,
+    pub properties: oblikovati_model::property::DocumentProperties,
+    pub identity: FileIdentity,
+}
+
+/// Validate typed recipe state before a workspace takes ownership.
+/// Example: `let prepared = read_parameter_package(path, "alpha", source, reader)?;`.
+pub fn read_parameter_package(
+    path: &Path,
+    version: &str,
+    source: &mut dyn GuidSource,
+    reader: &mut dyn PackageFileReader,
+) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_snapshot(path, reader)?;
     let restored = package
         .restore_document_parameters()
@@ -30,10 +62,12 @@ pub fn load_parameter_package(
     let properties = package
         .restore_parameter_properties(&restored.parameters)
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
-    let loaded = register_package(path, session_id, version, index, source, package)?;
-    Ok(LoadedParameterPackage {
-        loaded,
+    let identity =
+        restore_identity(&package, version, source).map_err(|cause| load_error(path, cause))?;
+    Ok(PreparedParameterPackage {
+        package,
         restored,
         properties,
+        identity,
     })
 }

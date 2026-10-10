@@ -8,6 +8,7 @@ use oblikovati_session::workspace::*;
 
 #[derive(Debug, PartialEq)]
 enum WorkspaceNotice {
+    BeforeOpen(std::path::PathBuf),
     BeforeSave(u64),
     Saved(u64),
     Opened(u64, IdentityRegistration),
@@ -17,11 +18,19 @@ enum WorkspaceNotice {
 }
 #[derive(Default)]
 struct RecordingWorkspace {
+    deny_open: bool,
     notices: Vec<WorkspaceNotice>,
     deny_close: Option<u64>,
     deny_save: Option<u64>,
 }
 impl WorkspaceObserver for RecordingWorkspace {
+    fn before_open(&mut self, path: &std::path::Path) -> Result<(), String> {
+        self.notices.push(WorkspaceNotice::BeforeOpen(path.into()));
+        if self.deny_open {
+            return Err("project locked".into());
+        }
+        Ok(())
+    }
     fn before_save(&mut self, id: u64, _: &DocumentSnapshot) -> Result<(), String> {
         self.notices.push(WorkspaceNotice::BeforeSave(id));
         if self.deny_save == Some(id) {
@@ -319,3 +328,6 @@ fn missing_document_errors_never_emit_lifecycle_notices() {
 
 #[path = "workspace/save.rs"]
 mod save;
+
+#[path = "workspace/files.rs"]
+mod files;

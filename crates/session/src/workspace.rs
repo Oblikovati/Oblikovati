@@ -19,6 +19,8 @@ use std::collections::BTreeMap;
 
 /// Policy and observations at the workspace boundary; callbacks cannot mutate it.
 pub trait WorkspaceObserver {
+    /// Refuse a new file open before reading it; example: return `Err("project is locked".into())`.
+    fn before_open(&mut self, path: &std::path::Path) -> Result<(), String>;
     /// Refuse a save before preparation or I/O; example: return `Err("document is locked".into())`.
     fn before_save(&mut self, document: u64, snapshot: &DocumentSnapshot) -> Result<(), String>;
     /// Observe a completed save after identity and baseline adoption; example: clear the dirty marker.
@@ -65,6 +67,9 @@ pub struct WorkspaceSession<O, W> {
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
+    pub(crate) fn approve_open(&mut self, path: &std::path::Path) -> Result<(), String> {
+        self.observer.before_open(path)
+    }
     /// Inject workspace policy; example: `let workspace = WorkspaceSession::new(observer);`.
     pub fn new(observer: W) -> Self {
         Self {

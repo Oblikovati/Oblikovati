@@ -12,7 +12,10 @@ use std::{
 };
 
 mod parameters;
-pub use parameters::{LoadedParameterPackage, load_parameter_package};
+pub use parameters::{
+    LoadedParameterPackage, PreparedParameterPackage, load_parameter_package,
+    read_parameter_package,
+};
 
 /// Injected whole-file input; the package codec owns validation after reading.
 pub trait PackageFileReader {

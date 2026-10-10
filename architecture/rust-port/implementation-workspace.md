@@ -46,10 +46,10 @@ to zero. Go tests `TestActiveDocumentReassignedOnClose` and
 `TestBackgroundOpenKeepsActiveAndHidden` pass at the fixed baseline
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
-File path identity/cache rules, package-load orchestration, save-before-close,
-new-document templates, references between documents, and workspace event
-transport remain pending. This owner registers reconstructed state; it does not
-claim that a whole feature model can open or that a live GUI exists.
+Save-before-close, new-document templates, references between documents, and
+workspace event transport remain pending. This owner registers reconstructed
+state; it does not claim that a whole feature model can open or that a live GUI
+exists.
 
 ## Prepared snapshot saves — partial R2
 
@@ -83,7 +83,45 @@ stage and final replacement failures, stale properties, open/missing document
 guards, save veto, and collision dirtiness. Go's save revision, failed-save
 rollback, reopen, and save/open veto tests pass at the fixed baseline.
 
-The caller still binds the retained package and destination to its document.
-Owning that binding, path conflicts, Save As, and save-before-close belong to the
-pending file-workspace coordinator. Unsupported feature state remains retained
-and unexecuted; this save path does not establish full application replay.
+The lower-level save boundary accepts a prepared target. The file coordinator
+below owns that binding for file-backed sessions. Save As and save-before-close
+remain pending. Unsupported feature state remains retained and unexecuted; this
+save path does not establish full application replay.
+
+## File-backed workspace — partial R2
+
+Tracking: [#3617](https://github.com/Oblikovati/Oblikovati/issues/3617).
+`FileWorkspace` owns a retained package and canonical path for each session ID.
+Ordinary save constructs its target internally from that binding, so a caller
+cannot pair one live document with another document's retained package. The
+coordinator exposes read-only workspace state and borrowed command capabilities.
+Discard-close releases the path only after workspace policy accepts and the GUID
+claim and transaction stream have been released.
+
+New opens resolve an existing path through `DocumentFiles`, require an absolute
+result, check open policy, reconstruct parameters and properties, restore identity,
+then register ownership. Persistence's new `read_parameter_package` performs
+typed preparation without claiming an identity. The existing registered loader
+uses the same preparation path. Invalid recipes claim no path or session ID and
+consume no identity entropy before recipe validation succeeds.
+
+An already-open canonical path returns its live session without reloading or
+discarding edits. An alias that resolves to that path also reuses it. Background
+open preserves focus. A direct lookup of the stored canonical path can reuse
+the session even if the external file is no longer present. Other aliases still
+require successful filesystem resolution. Distinct canonical paths carrying one
+GUID remain separate documents and use the existing visible reassignment rule.
+
+`NativeDocumentFiles` wraps the package reader, atomic writer, and operating
+system canonicalization. The application adds no case folding or path-separator
+assumptions. This is canonical-path identity, not an inode or hard-link alias
+index. External modification detection and explicit reload remain pending.
+
+Eleven integration tests cover reuse, aliases, background focus, open veto,
+malformed recipe retry, file-specific save destinations, identity collisions,
+close/reopen, path/read/write failures, and close veto. A native temporary-file
+test executes open, edit, atomic save, close, and reopen and checks both values
+and file identity. The Go tests for already-open reuse, background reopen,
+identity collision/release, and saved-document reopen pass at the fixed baseline.
+This is file lifecycle evidence for the ported recipe domains, not a GUI or
+feature-evaluation claim.
