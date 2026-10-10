@@ -3,4 +3,5 @@
 //! Storage boundaries for complete document snapshots.
 
 pub mod atomic;
+pub mod load;
 pub mod package;

@@ -113,3 +113,26 @@ when recipe values are unchanged. Subsequent Rust round trips are stable.
 This saves an existing package snapshot; live model-to-recipe export, supported
 feature validation, dirty state, user events, and document path ownership are
 not yet integrated. Atomic rename still has the durability limits noted above.
+
+## Registered package-file loading — partial R2
+
+Tracking: [#3596](https://github.com/Oblikovati/Oblikovati/issues/3596).
+`load_registered` reads through the owned `PackageFileReader` interface. The
+native implementation buffers the file and releases its handle. The loader
+decodes the package, validates/restores its identity record, then registers the
+identity. Read, codec, entropy, identity, and registration errors retain the
+requested path and their source chain. No failed load creates a registration.
+
+Files without an identity retain a freshly generated identity, as in Go. A
+copied-file collision returns the package plus an explicit reassignment outcome;
+the retained on-disk identity is updated only on a later successful save. This
+keeps load free of file writes. The host must process the outcome before exposing
+the document, including its dirty state and changed sketch namespace.
+
+Six tests include native load → save → close → reopen with exact identity and
+package equality, copied-file collisions, absent identity, invalid identity and
+YAML, duplicate session IDs, read/entropy failure, and missing native files.
+These establish the package/identity lifecycle only. Document path indexing,
+already-open-file reuse, feature support checks, live recipe reconstruction,
+reference loading, dirty state, and event delivery remain open. If later recipe
+restoration fails, its host owner must close the provisional registration.
