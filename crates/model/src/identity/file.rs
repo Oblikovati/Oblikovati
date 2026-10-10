@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 
 /// SHA-256 fingerprint of serialized recipe bytes, not evaluated geometry.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct RecipeDigest([u8; 32]);
+pub struct RecipeDigest(pub(super) [u8; 32]);
 
 impl RecipeDigest {
     /// Fingerprint the exact recipe encoding supplied by its persistence owner.

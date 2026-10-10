@@ -64,5 +64,27 @@ Thirteen tests cover initial state, ordinary save, changed/unknown recipes,
 copy identity, SHA-256 known vectors, v4 shape, failure at each copy-generation
 step, save failure, repeated IDs, and counter overflow. Candidate preparation
 borrows the source, so failed preparation or discarding a candidate cannot
-mutate it. Actual storage failure/retry tests, legacy identity-block loading,
-and committing a candidate only after an atomic file write remain open.
+mutate it. Actual storage failure/retry tests and committing a candidate only
+after an atomic file write remain open.
+
+## Identity record restoration — partial R2
+
+Tracking: [#3587](https://github.com/Oblikovati/Oblikovati/issues/3587).
+`FileIdentityRecord` maps the seven camelCase fields from Go's
+`yamlcodec.FileIdentityRecord`. Empty fields are omitted when serialized.
+The mapping uses Serde without coupling the model to a YAML parser or storage.
+Seven tests use JSON as a mapping transport; they do not prove YAML package
+compatibility or a complete `.obk` round trip.
+
+Restoration validates GUIDs and the 64-hex SHA-256 fingerprint, preserves version
+strings and counters, and normalizes accepted uppercase/compact hexadecimal
+spellings. Absent revisions and fingerprints remain unknown. A missing
+`internalName` keeps the fresh identity, matching Go's pre-identity file rule.
+The caller owns that fresh identity; restoration does not consume randomness.
+
+Unsigned counters reject negative, fractional, and string values during decode.
+Unknown fields are refused so a newer identity meaning cannot be silently lost
+on save. The tests cover every known field, omitted defaults, malformed values,
+full-width counters, and exact model-to-record-to-model restoration. Integrating
+the record into schema-2 package loading, migrations, and atomic saving remains
+open.

@@ -6,8 +6,10 @@ use std::{error::Error, fmt, str::FromStr};
 use uuid::Uuid;
 
 mod file;
+mod record;
 mod source;
 pub use file::{FileIdentity, RecipeDigest};
+pub use record::{FileIdentityRecord, IdentityRecordError};
 pub use source::{GuidSource, IdentityTransitionError, SystemGuidSource};
 
 /// A saved document GUID used as a namespace for persistent sketch references.
