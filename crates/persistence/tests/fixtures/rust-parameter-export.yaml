@@ -1,0 +1,134 @@
+parameters:
+- name: width
+  kind: user
+  valueType: ''
+  expression: 25 mm
+  text: ''
+  bool: false
+  value: 0.0
+  unit: ''
+  comment: ''
+  key: false
+  export: false
+  precision: 0
+  hidden: false
+  displayFormat: decimal
+  renamed: false
+  disabledActions: []
+  expressionList: []
+  allowCustomValue: false
+  sortedValueList: false
+  customProperty:
+    propertyType: text
+    units: ''
+    precision: threeDecimalPlaces
+    showLeadingZeros: true
+    showTrailingZeros: false
+    showUnitsString: true
+  tolerance:
+    type: deviation
+    upper: 0.1
+    lower: -0.2
+    holeTolerance: ''
+    shaftTolerance: ''
+  modelValueType: upper
+- name: twice
+  kind: user
+  valueType: ''
+  expression: width * 2
+  text: ''
+  bool: false
+  value: 0.0
+  unit: ''
+  comment: ''
+  key: false
+  export: false
+  precision: 0
+  hidden: false
+  displayFormat: decimal
+  renamed: false
+  disabledActions: []
+  expressionList: []
+  allowCustomValue: false
+  sortedValueList: false
+  customProperty:
+    propertyType: text
+    units: ''
+    precision: threeDecimalPlaces
+    showLeadingZeros: true
+    showTrailingZeros: false
+    showUnitsString: true
+  tolerance: null
+  modelValueType: ''
+- name: label
+  kind: user
+  valueType: text
+  expression: ''
+  text: steel
+  bool: false
+  value: 0.0
+  unit: ''
+  comment: ''
+  key: false
+  export: false
+  precision: 0
+  hidden: false
+  displayFormat: decimal
+  renamed: false
+  disabledActions: []
+  expressionList: []
+  allowCustomValue: false
+  sortedValueList: false
+  customProperty:
+    propertyType: text
+    units: ''
+    precision: threeDecimalPlaces
+    showLeadingZeros: true
+    showTrailingZeros: false
+    showUnitsString: true
+  tolerance: null
+  modelValueType: ''
+- name: vented
+  kind: user
+  valueType: boolean
+  expression: ''
+  text: ''
+  bool: true
+  value: 0.0
+  unit: ''
+  comment: ''
+  key: false
+  export: false
+  precision: 0
+  hidden: false
+  displayFormat: decimal
+  renamed: false
+  disabledActions: []
+  expressionList: []
+  allowCustomValue: false
+  sortedValueList: false
+  customProperty:
+    propertyType: text
+    units: ''
+    precision: threeDecimalPlaces
+    showLeadingZeros: true
+    showTrailingZeros: false
+    showUnitsString: true
+  tolerance: null
+  modelValueType: ''
+parameterGroups:
+- internalName: sizes
+  displayName: Sizes
+  clientId: oracle
+  members:
+  - width
+parameterSettings:
+  linearStandardTolerance: ''
+  angularStandardTolerance: ''
+  useStandardTolerances: false
+  exportStandardTolerances: false
+  linearDimensionPrecision: 3
+  angularDimensionPrecision: 2
+  dimensionDisplayType: value
+  displayParameterAsExpression: false
+derivedParameterTables: []

@@ -2,9 +2,9 @@
 
 use super::{PackageCodecError, Value, codec_error, parameter_error};
 use oblikovati_model::parameter::ParameterCollection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 struct GroupRecipe {
     internal_name: String,
@@ -48,4 +48,25 @@ impl GroupRecipe {
         }
         Ok(())
     }
+}
+
+pub(super) fn capture_groups(
+    parameters: &ParameterCollection<u64>,
+) -> Result<Value, PackageCodecError> {
+    let mut records = Vec::new();
+    for group in parameters.groups() {
+        let members = parameters
+            .group_members(&group.key.0)
+            .map_err(parameter_error)?;
+        records.push(GroupRecipe {
+            internal_name: group.key.0.to_string(),
+            display_name: group.display_name.clone(),
+            client_id: group.client_id.clone(),
+            members: members
+                .iter()
+                .map(|id| parameters.get(*id).expect("group member").name.clone())
+                .collect(),
+        });
+    }
+    serde_yaml_ng::to_value(records).map_err(codec_error)
 }

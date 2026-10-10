@@ -3,9 +3,9 @@
 use super::{PackageCodecError, ParameterRecipe, parameter_error};
 use oblikovati_api::types::*;
 use oblikovati_model::parameter::ParameterCollection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct ToleranceRecipe {
     #[serde(rename = "type")]
@@ -91,5 +91,27 @@ fn model_selection(name: &str) -> Result<ModelValueType, PackageCodecError> {
         _ => Err(PackageCodecError(format!(
             "model value type {name:?}: expected nominal, lower, upper, or median"
         ))),
+    }
+}
+
+impl ToleranceRecipe {
+    pub(super) fn capture(tolerance: &Tolerance) -> Result<Self, PackageCodecError> {
+        let kind = TOLERANCE_NAMES
+            .iter()
+            .find(|(_, kind)| *kind == tolerance.type_)
+            .ok_or_else(|| {
+                PackageCodecError(format!(
+                    "tolerance {:?}: expected a known API type",
+                    tolerance.type_
+                ))
+            })?
+            .0;
+        Ok(Self {
+            kind: kind.into(),
+            upper: tolerance.upper,
+            lower: tolerance.lower,
+            hole_tolerance: tolerance.hole_tolerance.clone(),
+            shaft_tolerance: tolerance.shaft_tolerance.clone(),
+        })
     }
 }

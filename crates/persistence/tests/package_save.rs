@@ -195,3 +195,41 @@ fn malformed_existing_identity_cannot_be_silently_replaced() {
     assert!(error.to_string().contains("invalid-guid"));
     assert_eq!(files.calls, 0);
 }
+
+#[test]
+fn edited_parameter_recipe_survives_native_save_and_reopen() {
+    use oblikovati_api::types::USER_PARAM;
+    use oblikovati_model::{parameter::ParameterCollection, units::UnitsOfMeasure};
+    let (original, mut index, mut source) = open_fixture();
+    let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
+    parameters
+        .insert_expression(1, "width", USER_PARAM, "10 mm")
+        .unwrap();
+    parameters.set_expression(1, "25 mm").unwrap();
+    let mut updated = original
+        .with_parameters(&parameters, UnitsOfMeasure::default())
+        .unwrap();
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("edited.obk");
+    let digest = updated.recipe_digest().unwrap();
+    let mut files = NativeAtomicFiles;
+    let mut target = PackageSaveTarget::new(&mut updated, &path, &mut files);
+    index
+        .save(1, digest, "beta", &mut source, &mut target)
+        .unwrap();
+    let reopened = DocumentPackage::decode(&fs::read(path).unwrap()).unwrap();
+    let restored = reopened
+        .restore_parameters(UnitsOfMeasure::default())
+        .unwrap();
+    assert_eq!(
+        restored
+            .parameters
+            .get(1)
+            .unwrap()
+            .current_value()
+            .unwrap()
+            .value,
+        2.5
+    );
+    assert_eq!(reopened.streams(), original.streams());
+}

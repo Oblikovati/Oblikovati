@@ -8,9 +8,9 @@ use oblikovati_model::{
     quantity::Quantity,
     units::parse_category,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct ParameterRecipe {
     name: String,
@@ -186,4 +186,85 @@ fn action_mask(names: &[String]) -> Result<ActionType, PackageCodecError> {
         };
     }
     Ok(mask)
+}
+
+impl ParameterRecipe {
+    pub(super) fn capture(
+        state: &oblikovati_model::parameter::ParameterState<u64>,
+    ) -> Result<Self, PackageCodecError> {
+        let mut record = Self {
+            name: state.name.clone(),
+            kind: super::export::kind_name(state.kind)?.into(),
+            comment: state.annotations.comment.clone(),
+            key: state.annotations.is_key,
+            export: state.annotations.exposed_as_property,
+            precision: state.annotations.precision,
+            hidden: !state.annotations.visible,
+            renamed: state.renamed,
+            display_format: super::export::display_name(state.annotations.display_format)?.into(),
+            custom_property: Some(PropertyRecipe::capture(&state.custom_property)?),
+            ..Self::default()
+        };
+        record.capture_value(state)?;
+        record.capture_behavior(state)?;
+        Ok(record)
+    }
+
+    fn capture_value(
+        &mut self,
+        state: &oblikovati_model::parameter::ParameterState<u64>,
+    ) -> Result<(), PackageCodecError> {
+        use oblikovati_model::parameter::ParameterValue;
+        match state.current() {
+            Some(ParameterValue::Text(text)) => {
+                self.value_type = "text".into();
+                self.text = text.clone();
+            }
+            Some(ParameterValue::Boolean(value)) => {
+                self.value_type = "boolean".into();
+                self.boolean = *value;
+            }
+            Some(ParameterValue::Numeric(value))
+                if matches!(state.kind, REFERENCE_PARAM | DERIVED_PARAM) =>
+            {
+                self.value = value.value;
+                self.unit = format!("{:?}", value.dimension).to_lowercase();
+            }
+            Some(ParameterValue::Numeric(_)) => self.expression = state.source.clone(),
+            None => {
+                return Err(PackageCodecError(format!(
+                    "parameter {:?}: expected a healthy value for recipe export",
+                    state.name
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    fn capture_behavior(
+        &mut self,
+        state: &oblikovati_model::parameter::ParameterState<u64>,
+    ) -> Result<(), PackageCodecError> {
+        if state.tolerance != Tolerance::default() {
+            self.tolerance = Some(super::tolerance::ToleranceRecipe::capture(
+                &state.tolerance,
+            )?);
+        }
+        self.model_value_type = super::export::selection_name(state.model_value_type)?.into();
+        self.disabled_actions = [
+            ("edit", ACTION_EDIT),
+            ("rename", ACTION_RENAME),
+            ("delete", ACTION_DELETE),
+        ]
+        .into_iter()
+        .filter(|(_, action)| state.disabled_actions.0 & action.0 != 0)
+        .map(|(name, _)| name.into())
+        .collect();
+        if let Some(choices) = &state.choices.expressions {
+            self.expression_list = choices.clone();
+            self.allow_custom_value = state.choices.allow_custom_values;
+            self.sorted_value_list = !state.choices.custom_order;
+        }
+        Ok(())
+    }
 }

@@ -2,9 +2,9 @@
 
 use super::{PackageCodecError, Value, codec_error, parameter_error};
 use oblikovati_model::parameter::ParameterCollection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 struct DerivedTableRecipe {
     id: i64,
@@ -35,4 +35,31 @@ pub(super) fn restore_tables(
             .map_err(parameter_error)?;
     }
     Ok(())
+}
+
+pub(super) fn capture_tables(
+    parameters: &ParameterCollection<u64>,
+) -> Result<Value, PackageCodecError> {
+    let mut records = Vec::new();
+    for table in parameters.derived_tables() {
+        let references = parameters
+            .derived_references(table.id)
+            .map_err(parameter_error)?;
+        if references
+            .iter()
+            .any(|reference| reference.parameter != reference.source_parameter)
+        {
+            return Err(PackageCodecError(format!(
+                "derived table {}: expected matching local/source names in the legacy recipe",
+                table.id
+            )));
+        }
+        records.push(DerivedTableRecipe {
+            id: table.id,
+            source_document: table.source_document.clone(),
+            linked: table.linked.clone(),
+            owned_by_feature: table.owned_by_feature,
+        });
+    }
+    serde_yaml_ng::to_value(records).map_err(codec_error)
 }
