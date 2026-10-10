@@ -400,3 +400,6 @@ fn legacy_sketch_load_refuses_before_document_registration_or_identity_entropy()
     assert_eq!(source.0, 1000);
     assert_eq!(host.files().contents.borrow()[&path("a.obk")], bytes);
 }
+
+#[path = "sketches/recompute.rs"]
+mod recompute;

@@ -8,6 +8,7 @@ mod events;
 pub mod files;
 mod navigation;
 mod refresh;
+mod sketch_recompute;
 #[cfg(test)]
 mod tests;
 mod transaction;

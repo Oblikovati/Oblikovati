@@ -319,3 +319,6 @@ fn exact_recipe_comparison_tracks_signed_zero_geometry_fix_targets_and_collectio
     assert!(!original.same_recipe(&changed));
     assert!(!SketchPlane::xy().same_recipe(SketchPlane::xz()));
 }
+
+#[path = "document_sketch/recompute.rs"]
+mod recompute;

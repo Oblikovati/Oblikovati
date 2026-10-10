@@ -4,6 +4,10 @@ use crate::sketch::{
     Sketch2D, SketchError, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe, SketchRecipe,
 };
 use std::collections::BTreeSet;
+mod recompute;
+pub use recompute::{
+    DocumentSketchRecompute, DocumentSketchSolveOutcome, DocumentSketchSolveReport,
+};
 /// Saved sketch identity, in a namespace distinct from entity and constraint IDs.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentSketchId(pub u64);

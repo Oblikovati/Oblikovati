@@ -177,3 +177,34 @@ saves, deleted and aborted IDs, refused storage, exact signed-zero edits,
 template restoration and legacy-load refusal. These are model and file workspace
 tests. Kernel features, automatic sketch recomputation and the native viewport
 remain separate port work.
+
+## Explicit document recomputation
+
+Tracking: [#3721](https://github.com/Oblikovati/Oblikovati/issues/3721).
+`DocumentSketches::solve()` runs the existing planar solver in document order
+with caller-supplied numerical options and cancellation. The input collection
+is immutable. Only converged geometry enters the returned candidate. A failed
+sketch keeps its input geometry, while independent sketches continue. Each
+report names its sketch ID and retains the complete solve outcome or typed
+error: parameter failures, termination, degrees of freedom, conflicts and
+redundancy diagnostics remain available to the caller.
+
+A converged sketch with free degrees of freedom is reported with that count;
+convergence alone does not certify a fully constrained feature input. Redundant
+constraints likewise remain visible through the existing solve diagnostics.
+No failed numerical candidate is adopted as solved geometry. Cancellation is
+latched and discards every geometry change in the batch, including previously
+converged sketches. Reports cover only attempted sketches when cancelled.
+
+`DocumentSession::recompute_sketches()` and the workspace command capability
+adopt the collection through the normal transaction path. An open parameter
+edit group can include recomputation as one undo step. Unchanged or cancelled
+recomputation creates no extra history step. Save/reopen stores the solved
+geometry through the existing snapshot codec.
+
+Go reference: `model/sketch/solve_sketch.go` at the comparison baseline separates
+convergence, constraint structure and sketch health. Rust retains those source
+diagnostics rather than certifying every converged result as fully constrained.
+This operation is explicit. Automatic parameter-reader scheduling, persistent
+sketch health, dependent feature quarantine and API/UI exposure remain open port
+work. Local failure reports must reach those consumers when they are added.
