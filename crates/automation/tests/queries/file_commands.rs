@@ -290,3 +290,6 @@ mod opening;
 
 #[path = "file_create.rs"]
 mod create;
+
+#[path = "file_close_all.rs"]
+mod close_all;

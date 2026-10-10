@@ -450,3 +450,17 @@ unchanged dirty/history state for visibility, invalid options, factory failure,
 malformed files, and retry. The file owner reconstructs the ported recipe
 sections; full feature reconstruction, native transport, and reference stubs
 remain pending.
+
+## Close all documents
+
+[#3652](https://github.com/Oblikovati/Oblikovati/issues/3652) routes
+`documents.closeAll` through the same owned save/discard operation as individual
+close. It snapshots document IDs in open order and stops on the first failure,
+with the failed ID in the error. Earlier successful closes remain committed;
+this is not an atomic multi-document transaction, matching the Go router.
+An empty workspace returns a zero count.
+
+Typed-client tests cover forced discard and recreation, save-before-close for
+bound documents, and partial progress when an unbound document needs Save As.
+The later documents remain open and unwritten after that failure. The Go
+`TestCloseAllDocuments` and `TestCloseDocumentByID` reference tests pass locally.

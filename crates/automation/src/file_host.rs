@@ -9,12 +9,13 @@ use oblikovati_model::identity::GuidSource;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
+mod close;
 mod create;
 mod open;
 pub use open::DocumentObserverFactory;
 
 /// Implemented lifecycle calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 8] = [
+pub const FILE_COMMAND_METHODS: [&str; 9] = [
     METHOD_DOCUMENTS_ACTIVATE,
     METHOD_DOCUMENTS_OPEN,
     METHOD_DOCUMENTS_CREATE,
@@ -23,6 +24,7 @@ pub const FILE_COMMAND_METHODS: [&str; 8] = [
     METHOD_DOCUMENTS_SAVE_AS,
     METHOD_DOCUMENTS_SAVE_COPY_AS,
     METHOD_DOCUMENTS_CLOSE,
+    METHOD_DOCUMENTS_CLOSE_ALL,
 ];
 
 /// Synchronous API access that retains file, history, and identity ownership.
@@ -79,6 +81,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             METHOD_DOCUMENTS_SAVE => self.save(decode(method, request)?),
             METHOD_DOCUMENTS_SAVE_AS => self.save_as(decode(method, request)?),
             METHOD_DOCUMENTS_SAVE_COPY_AS => self.save_copy(decode(method, request)?),
+            METHOD_DOCUMENTS_CLOSE_ALL => self.close_all(decode(method, request)?),
             METHOD_DOCUMENTS_CLOSE => self.close(decode(method, request)?),
             _ => Err(Error(format!(
                 "file command {method:?}: expected one of {FILE_COMMAND_METHODS:?}"
@@ -142,20 +145,6 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                 self.source,
             )
             .map_err(|error| Error(error.to_string()))?;
-        Ok(response)
-    }
-
-    fn close(&mut self, request: CloseDocumentArgs) -> Result<Vec<u8>, Error> {
-        let response = encode(&CloseDocumentsResult { closed: 1 })?;
-        if request.force {
-            self.files
-                .close_discarding_changes(request.id)
-                .map_err(|error| Error(error.to_string()))?;
-        } else {
-            self.files
-                .close_saving_changes(request.id, self.version, self.source)
-                .map_err(|error| Error(error.to_string()))?;
-        }
         Ok(response)
     }
 }
