@@ -12,6 +12,8 @@ mod resources;
 mod units;
 pub use parameters::RestoredParameters;
 mod save;
+mod snapshot;
+pub use snapshot::{ParameterPackageTarget, SnapshotPackageError};
 mod validation;
 pub use resources::{PackageResource, ResourceContents};
 pub use save::{PackageSaveError, PackageSaveTarget};

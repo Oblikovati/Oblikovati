@@ -14,3 +14,6 @@ workspace = true
 [dependencies]
 oblikovati-model = { path = "../model" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "9b5da090a9260892f54b4762d1225b5f892cbeb4", version = "=0.154.0" }
+
+[dev-dependencies]
+oblikovati-persistence = { path = "../persistence" }

@@ -5,6 +5,7 @@ mod commands;
 pub use commands::SessionCommands;
 mod error;
 mod lifecycle;
+mod save;
 use crate::{DocumentSession, TransactionObserver};
 pub use error::WorkspaceError;
 use oblikovati_model::{
@@ -13,10 +14,15 @@ use oblikovati_model::{
         DocumentGuid, DocumentIdentityIndex, FileIdentity, GuidSource, IdentityRegistration,
     },
 };
+pub use save::WorkspaceSaveError;
 use std::collections::BTreeMap;
 
 /// Policy and observations at the workspace boundary; callbacks cannot mutate it.
 pub trait WorkspaceObserver {
+    /// Refuse a save before preparation or I/O; example: return `Err("document is locked".into())`.
+    fn before_save(&mut self, document: u64, snapshot: &DocumentSnapshot) -> Result<(), String>;
+    /// Observe a completed save after identity and baseline adoption; example: clear the dirty marker.
+    fn saved(&mut self, document: u64);
     /// Report an open and any required identity notice; example: display a `Reassigned` outcome.
     fn opened(&mut self, document: u64, registration: IdentityRegistration);
     /// Observe explicit activation; example: select the tab for `document`.

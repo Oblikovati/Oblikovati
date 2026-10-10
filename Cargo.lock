@@ -414,6 +414,7 @@ version = "0.1.0"
 dependencies = [
  "oblikovati-api",
  "oblikovati-model",
+ "oblikovati-persistence",
 ]
 
 [[package]]

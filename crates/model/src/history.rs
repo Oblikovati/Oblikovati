@@ -18,6 +18,16 @@ pub struct DocumentSnapshot {
     pub properties: DocumentProperties,
 }
 
+/// Bind an immutable recipe to storage before its save identity is prepared.
+pub trait DocumentSnapshotTarget: crate::identity::DocumentSaveTarget {
+    /// Prepare without replacing storage; return the exact candidate recipe digest.
+    /// Example: `let digest = target.prepare(&snapshot)?;` before identity preparation.
+    fn prepare(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+    ) -> Result<Option<crate::identity::RecipeDigest>, Self::Failure>;
+}
+
 /// A command can reserve identities but cannot replace or rewind the document allocator.
 pub struct RecipeReservations<'a> {
     ids: &'a mut RecipeIdAllocator,

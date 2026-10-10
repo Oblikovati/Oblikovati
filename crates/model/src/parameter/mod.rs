@@ -64,6 +64,11 @@ pub struct ParameterCollection<Id> {
 }
 
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
+    /// Inspect the unit context owned by this recipe; example: `parameters.units().clone()`.
+    pub fn units(&self) -> &UnitsOfMeasure {
+        &self.units
+    }
+
     /// Create a collection with fixed working units; for example `ParameterCollection::<u64>::new(units)`.
     pub fn new(units: UnitsOfMeasure) -> Self {
         Self {

@@ -8,6 +8,8 @@ use oblikovati_session::workspace::*;
 
 #[derive(Debug, PartialEq)]
 enum WorkspaceNotice {
+    BeforeSave(u64),
+    Saved(u64),
     Opened(u64, IdentityRegistration),
     Activated(u64),
     BeforeClose(u64),
@@ -17,8 +19,19 @@ enum WorkspaceNotice {
 struct RecordingWorkspace {
     notices: Vec<WorkspaceNotice>,
     deny_close: Option<u64>,
+    deny_save: Option<u64>,
 }
 impl WorkspaceObserver for RecordingWorkspace {
+    fn before_save(&mut self, id: u64, _: &DocumentSnapshot) -> Result<(), String> {
+        self.notices.push(WorkspaceNotice::BeforeSave(id));
+        if self.deny_save == Some(id) {
+            return Err("file policy locked".into());
+        }
+        Ok(())
+    }
+    fn saved(&mut self, id: u64) {
+        self.notices.push(WorkspaceNotice::Saved(id));
+    }
     fn opened(&mut self, id: u64, registration: IdentityRegistration) {
         self.notices.push(WorkspaceNotice::Opened(id, registration));
     }
@@ -303,3 +316,6 @@ fn missing_document_errors_never_emit_lifecycle_notices() {
     assert!(WorkspaceError::NoActive.to_string().contains("expected"));
     assert!(workspace.observer().notices.is_empty());
 }
+
+#[path = "workspace/save.rs"]
+mod save;

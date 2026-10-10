@@ -46,9 +46,44 @@ to zero. Go tests `TestActiveDocumentReassignedOnClose` and
 `TestBackgroundOpenKeepsActiveAndHidden` pass at the fixed baseline
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
-File path identity/cache rules, typed package load/save orchestration, save-before-
-close, new-document templates, references between documents, and workspace event
+File path identity/cache rules, package-load orchestration, save-before-close,
+new-document templates, references between documents, and workspace event
 transport remain pending. This owner registers reconstructed state; it does not
-claim that a whole feature model can open or that a live GUI exists. Save will
-need to advance both the file identity and recipe baseline only after durable
-replacement succeeds.
+claim that a whole feature model can open or that a live GUI exists.
+
+## Prepared snapshot saves — partial R2
+
+Tracking: [#3616](https://github.com/Oblikovati/Oblikovati/issues/3616).
+`WorkspaceSession::save` refuses missing documents and open transaction groups,
+then asks workspace save policy before preparation or I/O. A veto preserves
+ownership, identity, and dirty state. Accepted saves capture an owned recipe,
+prepare its exact digest, prepare the next file identity, and persist the package.
+Only successful storage permits identity adoption, replacement of the saved
+recipe baseline, clearing collision dirtiness, and a Saved observation.
+
+The model owns `DocumentSnapshotTarget`, extending its existing save boundary
+with a non-writing preparation step. Persistence implements it with
+`ParameterPackageTarget`. This adapter captures parameters and properties using
+the collection's own unit context, retains other package sections, and checks
+that exposed properties already match the snapshot. A failed preparation clears
+any earlier candidate. A failed write changes neither the original package nor
+workspace identity. Retry prepares a new candidate from the current recipe.
+
+The adapter uses the existing atomic writer: stage beside the destination,
+write the full contents, synchronize the file, then replace. No fallible step
+follows successful replacement. Directory metadata durability after power loss
+remains outside that writer's current guarantee. Undo after save compares dirty
+state against the saved recipe; redo back to it is clean. Repeated saves of the
+same recipe keep the database revision while advancing the file revision.
+
+Nine integration tests use named storage and GUID fakes through the actual
+package codec and workspace save path. They check written identity and recipe,
+retained sections, undo/redo dirty state, retry, preparation and entropy failures,
+stage and final replacement failures, stale properties, open/missing document
+guards, save veto, and collision dirtiness. Go's save revision, failed-save
+rollback, reopen, and save/open veto tests pass at the fixed baseline.
+
+The caller still binds the retained package and destination to its document.
+Owning that binding, path conflicts, Save As, and save-before-close belong to the
+pending file-workspace coordinator. Unsupported feature state remains retained
+and unexecuted; this save path does not establish full application replay.
