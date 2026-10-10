@@ -226,5 +226,31 @@ collection-wide mutable read sink is used; edits cannot occur through a read sco
 
 Eleven tests cover Go model-value examples, band storage, rejected input, nominal
 bit preservation, selection overflow, no-op edits, nested read sets, recovery, and
-minimal invalidation. ISO fits table resolution, feature-engine consumption of
-these footprints, tolerance persistence, and display rendering remain open.
+minimal invalidation. Feature-engine consumption of these footprints, tolerance
+persistence, and display rendering remain open. Fits resolution is recorded below.
+
+## Fits tolerance resolution — partial R2
+
+Tracking: [issue #3573](https://github.com/Oblikovati/Oblikovati/issues/3573).
+The Rust resolver supports nominal sizes greater than 3 mm through 500 mm,
+IT5–IT11, and d/f/g/h shaft classes with mirrored D/F/G/H hole classes and
+symmetric JS/js classes. Unsupported inputs return named errors before mutation.
+Both supplied annotations must be supported; the hole governs when both exist.
+The canonical API tolerance stores deviations in document working units.
+
+The fixed Go baseline has two calculation defects. Its rounded power formulas
+produce incorrect d/f deviations in several size steps. Its JS/js calculation
+rounds half-micrometres outward. The Rust resolver uses integer-micrometre
+fundamental deviations and preserves symmetric half-widths. The numerical source
+is [ISO 286-2:2010](https://www.iso.org/standard/54915.html), tables 1, 18, 20,
+21, and 23, checked in the
+[published standard](https://asremavad.com/wp-content/uploads/2018/12/ISO-286-2-2010-ISO-code-system-for-tolerances.pdf).
+These are bounded supported classes, not a claim of complete ISO 286 coverage.
+
+Eight tests cover 672 captured non-JS Go cases with explicit correction deltas,
+all supported symmetric widths, exact size boundaries, invalid syntax and sizes,
+hole precedence, no-op edits, atomic rejection, and four working scales. The Go
+capture comes from unmodified `iso286.go` and `iso286_table.go` at the fixed
+baseline, run with Go 1.27.0 on Linux/amd64. The Rust tables avoid platform-dependent
+power evaluation. Fit bands remain fixed deviations after a later nominal edit,
+as in Go; automatic fit recomputation, persistence, and UI display are not claimed.

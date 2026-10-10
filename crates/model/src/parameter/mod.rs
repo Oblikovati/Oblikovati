@@ -4,6 +4,7 @@
 mod edit;
 mod error;
 mod evaluate;
+mod fits;
 mod reads;
 mod remove;
 mod rename;

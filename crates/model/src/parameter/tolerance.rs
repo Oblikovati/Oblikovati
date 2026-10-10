@@ -133,7 +133,11 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         )
     }
 
-    fn store_tolerance(&mut self, id: Id, tolerance: Tolerance) -> Result<(), ParameterError<Id>> {
+    pub(super) fn store_tolerance(
+        &mut self,
+        id: Id,
+        tolerance: Tolerance,
+    ) -> Result<(), ParameterError<Id>> {
         self.require_numeric_value(id)?;
         validate_band(id, &tolerance)?;
         let state = &mut self
@@ -148,7 +152,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         Ok(())
     }
 
-    fn require_numeric_value(&self, id: Id) -> Result<Quantity, ParameterError<Id>> {
+    pub(super) fn require_numeric_value(&self, id: Id) -> Result<Quantity, ParameterError<Id>> {
         let state = &self.require_record(id)?.state;
         let value = state
             .current_value()
