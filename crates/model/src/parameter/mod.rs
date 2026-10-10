@@ -2,6 +2,7 @@
 
 //! Typed parameter ownership, evaluation health, and deterministic dependency edits.
 mod authored;
+mod choices;
 mod edit;
 mod error;
 mod evaluate;

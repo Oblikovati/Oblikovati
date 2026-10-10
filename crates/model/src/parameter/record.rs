@@ -23,6 +23,7 @@ impl<Id> ParameterRecord<Id> {
             last_good_value: None,
             renamed: false,
             tolerance: oblikovati_api::types::Tolerance::default(),
+            choices: oblikovati_api::wire::ExpressionListInfo::default(),
             model_value_type: oblikovati_api::types::MODEL_VALUE_NOMINAL,
             health: ParameterHealth::Healthy,
         };

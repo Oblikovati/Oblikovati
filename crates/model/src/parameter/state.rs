@@ -36,6 +36,7 @@ pub struct ParameterState<Id> {
     pub kind: ParameterKind,
     pub renamed: bool,
     pub tolerance: Tolerance,
+    pub choices: oblikovati_api::wire::ExpressionListInfo,
     pub model_value_type: ModelValueType,
     pub source: String,
     pub last_good_value: Option<ParameterValue>,

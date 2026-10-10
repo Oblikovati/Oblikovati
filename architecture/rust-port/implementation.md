@@ -371,3 +371,27 @@ it checks survivor state and atomic rejection against the graph's edge definitio
 Eight legacy group tests passed at the fixed Go baseline. Group metadata edits do
 not mark nominal parameter values changed. Session metadata events, persistence,
 API routing, and the separate copy-to-user operation remain to be ported.
+
+## Multi-value expression lists — partial R2
+
+Tracking: [issue #3579](https://github.com/Oblikovati/Oblikovati/issues/3579).
+Parameter choices use the API's canonical `ExpressionListInfo`. Setting a list
+keeps authored order and the current value. Clearing it resets both flags without
+changing the value. Disabling custom order sorts strings lexically, including
+Unicode and duplicates; re-enabling it keeps that current order. Metadata edits
+do not mark numeric values changed.
+
+Selection checks exact list membership unless custom values are allowed. Numeric
+choices are already-qualified expression source and pass through collection edits,
+so dependencies recompute. Text choices remain literal text. Boolean choices use
+explicit `true`/`false` literals rather than the Go path that wrongly sent them to
+the numeric expression setter. Custom values replace only the current selection;
+they never accumulate in the fixed list. Malformed numeric syntax and invalid
+Boolean selections are refused without changing the current parameter.
+
+All list edits enforce read-only kinds, including clear/sort operations that the
+Go methods did not guard. Seven tests cover lifecycle, custom replacement, sorting,
+live formulas, typed selection, and rejected edits. Five legacy expression-list
+tests passed at the fixed Go baseline. Choice strings are stored as authored
+options and parsed when selected; this does not eagerly evaluate every option.
+Session metadata events, persistence, UI dropdowns, and API routing remain open.
