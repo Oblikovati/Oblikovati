@@ -1,8 +1,9 @@
 # Verification, compatibility, and release
 
-This document defines future implementation gates. The architecture branch has
-no Rust source or Cargo workspace to build. Its own checks are Markdown lint,
-document links, source-reference checks, and `git diff --check`.
+This document defines application acceptance gates. The branch now has a Rust
+build-tool workspace and the [local/CI gate](../../RELEASING.md). The GUI and CLI
+are not yet ported. Tool tests and package-plan checks do not provide native
+application acceptance or R9 release evidence.
 
 ## Behavior ledger
 

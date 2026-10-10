@@ -1,0 +1,66 @@
+name: Rust nightly preview
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rust-publication
+  cancel-in-progress: false
+jobs:
+  prepare:
+    # Explicitly inactive during migration. Enabling the schedule does not bypass R9 preflight.
+    if: vars.RUST_PREVIEW_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    outputs:
+      proceed: ${{ steps.request.outputs.proceed }}
+      revision: ${{ steps.request.outputs.revision }}
+      version: ${{ steps.request.outputs.version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - id: request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/rust || { echo 'Expected the rust branch'; exit 1; }
+          last="$(gh release list --limit 1000 --json tagName,isDraft --jq '[.[] | select(.isDraft == false and (.tagName | startswith("rust-nightly-")))][0].tagName // ""')"
+          if [ -n "$last" ] && [ "$(git rev-parse "$last^{commit}")" = "$(git rev-parse HEAD)" ]; then
+            echo 'proceed=false' >> "$GITHUB_OUTPUT"
+            echo 'This commit already has a Rust preview.'
+            exit 0
+          fi
+          cargo xtask release-request nightly
+          echo "revision=$(jq -r .commit target/release-request.json)" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r .version target/release-request.json)" >> "$GITHUB_OUTPUT"
+          echo 'proceed=true' >> "$GITHUB_OUTPUT"
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.proceed == 'true'
+    uses: ./.github/workflows/build.yml
+    with:
+      revision: ${{ needs.prepare.outputs.revision }}
+      version: ${{ needs.prepare.outputs.version }}
+      signed: true
+    secrets:
+      MACOS_CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+      MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+      MACOS_AC_APPLE_ID: ${{ secrets.MACOS_AC_APPLE_ID }}
+      MACOS_AC_PASSWORD: ${{ secrets.MACOS_AC_PASSWORD }}
+      MACOS_AC_TEAM_ID: ${{ secrets.MACOS_AC_TEAM_ID }}
+  publish:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.proceed == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      revision: ${{ needs.prepare.outputs.revision }}
+      version: ${{ needs.prepare.outputs.version }}
+      channel: nightly

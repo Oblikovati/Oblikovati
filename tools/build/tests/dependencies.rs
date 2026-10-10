@@ -1,0 +1,95 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+use super::*;
+use crate::{process::tests::FakeRunner, release_config::tests::config, tree::tests::FixtureTree};
+
+#[test]
+fn published_archive_and_tag_must_both_match_the_pin() {
+    let tree = FixtureTree::new();
+    let mut dependency = config().api;
+    dependency.revision = "a".repeat(40);
+    let runner = FakeRunner::default();
+    runner.replies.borrow_mut().extend([Ok(r#"{"draft":false,"prerelease":false,"assets":[{"name":"oblikovati-api-0.154.0.crate"}]}"#.into()), Ok(format!("{}\trefs/tags/v0.154.0\n", dependency.revision))]);
+    verify_release(
+        tree.root(),
+        &runner,
+        &dependency,
+        &["oblikovati-api".into()],
+    )
+    .unwrap();
+    assert_eq!(
+        release_commit(
+            "tagobject\trefs/tags/v1\ncommit\trefs/tags/v1^{}",
+            "refs/tags/v1"
+        )
+        .unwrap(),
+        "commit"
+    );
+    assert!(release_commit("", "missing").is_err());
+    assert!(
+        require_assets(
+            &UpstreamRelease {
+                draft: false,
+                prerelease: false,
+                assets: vec![]
+            },
+            &dependency,
+            &["oblikovati-api".into()]
+        )
+        .is_err()
+    );
+    assert!(
+        require_assets(
+            &UpstreamRelease {
+                draft: true,
+                prerelease: false,
+                assets: vec![]
+            },
+            &dependency,
+            &[]
+        )
+        .is_err()
+    );
+    assert!(
+        verify_release(
+            tree.root(),
+            &runner,
+            &dependency,
+            &["oblikovati-api".into()]
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn lockfile_cannot_substitute_a_local_or_different_dependency() {
+    let tree = FixtureTree::new();
+    let mut dependency = config().api;
+    dependency.revision = "a".repeat(40);
+    let source = format!(
+        "git+https://github.com/{}.git?tag=v{}#{}",
+        dependency.repository, dependency.version, dependency.revision
+    );
+    tree.put(
+        "Cargo.lock",
+        &format!(
+            "[[package]]\nname = 'oblikovati-api'\nversion = '0.154.0'\nsource = '{source}'\n"
+        ),
+    );
+    assert_eq!(
+        locked_crates(&tree.root().join("Cargo.lock"), &dependency).unwrap(),
+        ["oblikovati-api"]
+    );
+    let package = LockedPackage {
+        name: "oblikovati-api".into(),
+        version: "0.154.0".into(),
+        source: None,
+    };
+    assert!(verify_locked(&package, &dependency).is_err());
+    tree.put("Cargo.lock", "package = []");
+    assert!(locked_crates(&tree.root().join("Cargo.lock"), &dependency).is_err());
+    tree.put("Cargo.lock", "malformed");
+    assert!(locked_crates(&tree.root().join("Cargo.lock"), &dependency).is_err());
+    assert!(owned_package("rustycad-tkbrep", &config().kernel));
+    assert!(!owned_package("serde", &config().kernel));
+}

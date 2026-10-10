@@ -1,0 +1,50 @@
+name: macOS signing credentials
+description: Import a Developer ID and store notarization credentials in a temporary keychain
+inputs:
+  certificate:
+    required: true
+    description: Base64 PKCS12 Developer ID certificate
+  password:
+    required: true
+    description: Certificate password
+  apple-id:
+    required: true
+    description: Apple account
+  apple-password:
+    required: true
+    description: App-specific Apple password
+  team-id:
+    required: true
+    description: Apple Developer team ID
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        CERT: ${{ inputs.certificate }}
+        CERT_PASSWORD: ${{ inputs.password }}
+        APPLE_ID: ${{ inputs.apple-id }}
+        APPLE_PASSWORD: ${{ inputs.apple-password }}
+        TEAM_ID: ${{ inputs.team-id }}
+      run: |
+        set -euo pipefail
+        for key in CERT CERT_PASSWORD APPLE_ID APPLE_PASSWORD TEAM_ID; do
+          test -n "${!key}" || { echo "::error::Missing required macOS signing credential: $key"; exit 1; }
+        done
+        keychain="$RUNNER_TEMP/oblikovati-rust.keychain-db"
+        keychain_password="$(openssl rand -hex 24)"
+        echo "::add-mask::$keychain_password"
+        security create-keychain -p "$keychain_password" "$keychain"
+        security set-keychain-settings -lut 21600 "$keychain"
+        security unlock-keychain -p "$keychain_password" "$keychain"
+        printf '%s' "$CERT" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+        security import "$RUNNER_TEMP/certificate.p12" -P "$CERT_PASSWORD" -k "$keychain" -T /usr/bin/codesign
+        rm "$RUNNER_TEMP/certificate.p12"
+        security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain" >/dev/null
+        security list-keychains -d user -s "$keychain" login.keychain-db
+        identity="$(security find-identity -v -p codesigning "$keychain" | awk -F'"' '/Developer ID Application/{print $2; exit}')"
+        test -n "$identity" || { echo '::error::Expected a Developer ID Application identity'; exit 1; }
+        xcrun notarytool store-credentials oblikovati-rust --keychain "$keychain" \
+          --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$TEAM_ID"
+        echo "DEVELOPER_ID_APP=$identity" >> "$GITHUB_ENV"
+        echo "OBLIKOVATI_SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"

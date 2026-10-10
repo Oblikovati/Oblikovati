@@ -1,0 +1,6 @@
+[alias]
+xtask = "run --locked --package oblikovati-build --"
+
+# Installed Linux CLI archives locate bundled libraries without a source checkout.
+[target.'cfg(target_os = "linux")']
+rustflags = ["-C", "link-arg=-Wl,-rpath,$ORIGIN/../lib"]
