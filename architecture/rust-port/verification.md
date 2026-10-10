@@ -236,3 +236,7 @@ The final review must state which existing Go roadmap items remain unfinished
 and which deliberate behavior changes have their own decisions. A port can
 preserve an unfinished baseline feature without falsely marking that feature
 complete. It cannot omit working baseline behavior and still claim full parity.
+
+The [viewport integration evidence](implementation-viewport.md) records the
+independent Linux native-GPU window check against the updated Martensite source,
+package availability, and the remaining R1V application/composition work.
