@@ -36,16 +36,17 @@ pub(super) fn state<O: TransactionObserver, W: WorkspaceObserver>(
     })
 }
 
-pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver>(
-    workspace: &mut WorkspaceSession<O, W>,
+pub(super) fn apply(
+    workspace: &mut impl crate::command_owner::CommandOwner,
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     if method == METHOD_TRANSACTION_JUMP_TO {
         return jump(workspace, decode(method, request)?);
     }
+    let id = target_document(workspace.workspace(), 0)?;
     let mut commands = workspace
-        .active_commands()
+        .commands(id)
         .map_err(|error| Error(error.to_string()))?;
     if method == METHOD_TRANSACTION_BEGIN {
         let request: TransactionBeginArgs = decode(method, request)?;
@@ -66,7 +67,7 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver>(
         }
     }
     .map_err(|error| Error(error.to_string()))?;
-    encode(&state(workspace)?)
+    encode(&state(workspace.workspace())?)
 }
 
 pub(super) fn history<O: TransactionObserver, W: WorkspaceObserver>(
@@ -105,18 +106,18 @@ fn target_document<O: TransactionObserver, W: WorkspaceObserver>(
         .ok_or_else(|| Error("history document 0: expected an active document".into()))
 }
 
-fn jump<O: TransactionObserver, W: WorkspaceObserver>(
-    workspace: &mut WorkspaceSession<O, W>,
+fn jump(
+    workspace: &mut impl crate::command_owner::CommandOwner,
     request: TransactionJumpToArgs,
 ) -> Result<Vec<u8>, Error> {
-    let id = target_document(workspace, request.document)?;
+    let id = target_document(workspace.workspace(), request.document)?;
     workspace
         .commands(id)
         .map_err(|error| Error(error.to_string()))?
         .jump_to(request.position)
         .map_err(|error| Error(error.to_string()))?;
     encode(&history(
-        workspace,
+        workspace.workspace(),
         TransactionHistoryArgs { document: id },
     )?)
 }

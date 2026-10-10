@@ -372,3 +372,25 @@ Tests exercise all four document kinds, custom titles/subtypes, creation order,
 empty discovery, dirty changes through save/edit/undo, close and background
 reopen, delegated parameter/history queries, and command refusal. Native GUI,
 mutating file API transport, and complete geometry reconstruction remain pending.
+
+## Mutable file API host
+
+[#3646](https://github.com/Oblikovati/Oblikovati/issues/3646) adds `FileHost`,
+borrowing the file owner, GUID source, and application version. It serves existing
+queries, parameter/property edits, and all transaction calls, plus
+`documents.activate`, `save`, and `close`. A shared private command-owner interface
+provides immutable inspection and borrowed session commands to both hosts; it
+never exposes a replaceable mutable workspace or duplicates the history engine.
+
+Save uses only the owned path and package. The canonical response is prepared
+before I/O, including a UTF-8 path check, so an unrepresentable response cannot
+follow a successful write. Close with force discards changes; otherwise the file
+owner saves dirty state before closing. Storage failure leaves ownership,
+identity, and dirty state intact. Activation changes subsequent active-document
+commands without moving recipe state. Synchronous reentry is refused.
+
+Tests exercise API edit/group/commit/save/jump/redo/close followed by file reopen,
+save-on-close and discard, write failures, bad IDs, activation, path-response
+validation, and reentry. The existing file owner still reconstructs only the
+ported recipe sections. Open/create/Save As/copy/batch API calls, native transport,
+and full feature reconstruction remain pending.

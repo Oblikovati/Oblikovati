@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
+mod command_owner;
 mod edit;
+mod file_host;
+pub use file_host::{FILE_COMMAND_METHODS, FileHost};
 mod file_queries;
 mod groups_edit;
 mod host;

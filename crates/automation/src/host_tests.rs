@@ -5,7 +5,7 @@ use oblikovati_api::wire::*;
 use oblikovati_model::{history::DocumentSnapshot, identity::IdentityRegistration};
 use std::path::Path;
 
-struct RejectUnexpectedCalls;
+pub(crate) struct RejectUnexpectedCalls;
 impl TransactionObserver for RejectUnexpectedCalls {
     fn before(&mut self, _: &TransactionEventPayload, _: &DocumentSnapshot) -> Result<(), String> {
         panic!("unexpected transaction")

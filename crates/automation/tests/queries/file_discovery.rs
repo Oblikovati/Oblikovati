@@ -14,6 +14,7 @@ use std::{cell::RefCell, collections::BTreeMap, io, path::PathBuf, rc::Rc};
 type MemoryPackages = Rc<RefCell<BTreeMap<PathBuf, Vec<u8>>>>;
 #[derive(Default)]
 struct DiscoveryFiles {
+    refuse_write: bool,
     packages: MemoryPackages,
 }
 struct DiscoveryStage {
@@ -40,6 +41,9 @@ impl DocumentFiles for DiscoveryFiles {
 impl AtomicFiles for DiscoveryFiles {
     type Stage = DiscoveryStage;
     fn stage(&mut self, _: &Path) -> io::Result<Self::Stage> {
+        if self.refuse_write {
+            return Err(io::Error::other("write refused"));
+        }
         Ok(DiscoveryStage {
             packages: Rc::clone(&self.packages),
             contents: vec![],
@@ -186,3 +190,6 @@ fn discovery_tracks_save_undo_focus_and_reopened_names() {
         [info]
     );
 }
+
+#[path = "file_commands.rs"]
+mod commands;

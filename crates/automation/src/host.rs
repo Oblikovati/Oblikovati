@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use crate::{
-    EDIT_METHODS, QUERY_METHODS, SessionQueryHost, TRANSACTION_METHODS, edit::PreparedEdit,
-    transactions,
+    EDIT_METHODS, QUERY_METHODS, SessionQueryHost, TRANSACTION_METHODS, command_owner, transactions,
 };
 use oblikovati_api::{Error, client::Caller};
 use oblikovati_session::{
@@ -26,16 +25,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionHost<'a, O, W> {
 
     fn edit(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut workspace = self.workspace.try_borrow_mut().map_err(|_| busy(method))?;
-        let edit = PreparedEdit::decode(method, request)?;
-        let id = edit.document(workspace.active_document())?;
-        workspace
-            .commands(id)
-            .map_err(|error| Error(error.to_string()))?
-            .run(edit.label(), |snapshot, reservations| {
-                // Encode before committing, so a response failure cannot leave an unreported edit.
-                edit.apply(snapshot, reservations)
-            })
-            .map_err(|error| Error(error.to_string()))
+        command_owner::edit(&mut **workspace, method, request)
     }
 }
 
@@ -47,7 +37,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionHost<'_, O,
         }
         if TRANSACTION_METHODS.contains(&method) {
             let mut workspace = self.workspace.try_borrow_mut().map_err(|_| busy(method))?;
-            return transactions::apply(&mut workspace, method, request);
+            return transactions::apply(&mut **workspace, method, request);
         }
         if EDIT_METHODS.contains(&method) {
             return self.edit(method, request);
@@ -58,7 +48,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionHost<'_, O,
     }
 }
 
-fn busy(method: &str) -> Error {
+pub(super) fn busy(method: &str) -> Error {
     Error(format!(
         "method {method:?}: expected an idle session owner; synchronous reentry is refused"
     ))
@@ -66,4 +56,4 @@ fn busy(method: &str) -> Error {
 
 #[cfg(test)]
 #[path = "host_tests.rs"]
-mod tests;
+pub(super) mod tests;
