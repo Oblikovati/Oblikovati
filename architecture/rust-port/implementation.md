@@ -484,3 +484,8 @@ are recorded in [display implementation evidence](implementation-display.md).
 
 Document namespaces and exact Go reference UUID compatibility are recorded in
 [identity implementation evidence](implementation-identity.md).
+
+## Persistence — partial R2
+
+The new persistence crate and atomic replacement tests are recorded in
+[storage implementation evidence](implementation-storage.md).
