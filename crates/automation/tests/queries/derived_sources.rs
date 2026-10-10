@@ -176,3 +176,95 @@ fn no_active_owner_is_refused_and_empty_tables_use_canonical_null() {
         None
     );
 }
+
+#[test]
+fn source_values_use_target_scale_and_exclude_failed_or_nonuser_values() {
+    let (mut files, source_id, _, mut source) = linked_files();
+    let target = files
+        .create_unbound(
+            DocumentPackage::decode(
+                b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  units: {workingScale: '0.5'}\n",
+            )
+            .unwrap(),
+            QueryObserver::default(),
+            "test",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    let values = files
+        .derived_source_values("/source.opd", target)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        values.keys().cloned().collect::<Vec<_>>(),
+        ["height", "width"]
+    );
+    assert_eq!(values["width"], Quantity::new(4.0, Dimension::Length));
+    files
+        .commands(source_id)
+        .unwrap()
+        .run("Break source", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "missing + 1 cm")
+        })
+        .unwrap();
+    let values = files
+        .derived_source_values("/source.opd", target)
+        .unwrap()
+        .unwrap();
+    assert!(!values.contains_key("width"));
+    assert_eq!(values["height"].value, 6.0);
+    assert_eq!(files.derived_source_values("absent", target).unwrap(), None);
+    assert!(files.derived_source_values("/source.opd", 999).is_err());
+    assert_eq!(files.workspace().active_document(), Some(target));
+    assert!(
+        files
+            .workspace()
+            .session(target)
+            .unwrap()
+            .undo_labels()
+            .is_empty()
+    );
+    assert!(files.files().packages.borrow().is_empty());
+}
+
+#[test]
+fn source_transfer_failure_names_the_parameter_and_does_not_change_target() {
+    let (mut files, source_id, _, mut source) = linked_files();
+    files
+        .commands(source_id)
+        .unwrap()
+        .run("Large value", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "1e300 cm")
+        })
+        .unwrap();
+    let target = files
+        .create_unbound(
+            DocumentPackage::decode(
+                b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  units: {workingScale: '1e-100'}\n",
+            )
+            .unwrap(),
+            QueryObserver::default(),
+            "test",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    let error = files
+        .derived_source_values("/source.opd", target)
+        .unwrap_err()
+        .to_string();
+    assert!(
+        error.contains("/source.opd") && error.contains("width") && error.contains("representable")
+    );
+    assert!(
+        files
+            .workspace()
+            .session(target)
+            .unwrap()
+            .snapshot()
+            .parameters
+            .ids()
+            .is_empty()
+    );
+}

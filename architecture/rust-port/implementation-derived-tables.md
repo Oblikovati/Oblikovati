@@ -24,11 +24,32 @@ drawing refusal, ambiguous names, and focus/history preservation. The existing
 model synchronization operation supplies health updates in the tests; this is
 not evidence of automatic workspace propagation.
 
+## Current source values and working scales
+
+[#3657](https://github.com/Oblikovati/Oblikovati/issues/3657) adds
+`FileWorkspace::derived_source_values`. It reads healthy numeric user parameters
+and transfers each quantity into the target document's working units. Missing
+sources return no snapshot. Failed parameters are omitted even when they retain
+a last-good value; later synchronization can diagnose those absent drivers.
+Text, boolean, and non-user parameters are not source values.
+
+`UnitsOfMeasure::transfer_quantity` applies the working-scale ratio to length,
+its square to area, and its cube to volume. Other arithmetic dimensions retain
+their values. Equal scales and signed zero retain their exact input bits. The
+conversion orders arithmetic by representability so an extreme intermediate
+ratio or product does not destroy a representable result. Nonfinite inputs,
+nonarithmetic dimensions, final overflow, and final underflow to zero are refused.
+A source conversion error names the source document and parameter.
+
+Tests cover all arithmetic dimensions, reverse transfers, exact equal-scale bits,
+extreme binary scale ratios and subnormal values, source failure exclusion,
+missing sources, target refusal, and no target mutation or I/O. This is a read
+boundary for linking and refresh; it does not itself update any table.
+
 ## Remaining work
 
 Connect table creation and link editing to source resolution, stable ID
 reservation, source parameter export, and the document reference graph. Propagate
 source edits, close/reopen, and undo/redo through that graph with cycle handling.
-Keep failed source values distinct from valid current quantities, and convert
-between document working scales at the source boundary. No live cross-document
-recompute or geometry integration is claimed by the enumeration path.
+Use the checked source-value boundary for those operations. No live
+cross-document recompute or geometry integration is claimed by these read paths.

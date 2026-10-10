@@ -13,6 +13,11 @@ use std::{error::Error, fmt, io, path::PathBuf};
 pub enum FileWorkspaceError {
     ObserverFactory(String),
     AmbiguousSource(String),
+    SourceValue {
+        source: String,
+        parameter: String,
+        reason: String,
+    },
     Project(oblikovati_persistence::project::ProjectLookupError),
     MissingTemplate(u32),
     TemplateKind {
@@ -52,6 +57,14 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::SourceValue {
+                source,
+                parameter,
+                reason,
+            } => write!(
+                output,
+                "source {source:?} parameter {parameter:?}: {reason}"
+            ),
             Self::AmbiguousSource(name) => write!(
                 output,
                 "source document {name:?}: expected one unique open document"
@@ -132,7 +145,8 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::AmbiguousSource(_)
+            Self::SourceValue { .. }
+            | Self::AmbiguousSource(_)
             | Self::ObserverFactory(_)
             | Self::MissingTemplate(_)
             | Self::TemplateKind { .. }

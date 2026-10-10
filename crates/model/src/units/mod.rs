@@ -8,6 +8,7 @@ mod literal;
 mod registry;
 mod scale;
 mod service;
+mod transfer;
 pub use service::{category_name, convert_value, parse_category, unit_category};
 
 use crate::quantity::{Dimension, Quantity};
