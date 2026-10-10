@@ -25,6 +25,11 @@ Go ADRs have a recorded disposition. Application implementation has not started.
 - [Verification and release](architecture/rust-port/verification.md): parity,
   live tests, platform checks, and cutover.
 
-`rust` is an orphan branch with an independent root commit. It is a named
-branch, not a detached HEAD. Keep the Go application history as the port
-reference. Feature branches for the Rust application will start from `rust`.
+`rust` is the repository's default and integration branch. It has an independent
+root commit. Rust feature branches start from `rust` and target it for pull
+requests.
+
+`go-legacy` preserves the Go application history. It was the `develop` default
+branch before the branch change on 2026-10-10; the repository had no `main`
+branch. Keep it as the port reference. Do not merge its unrelated history into
+`rust`.

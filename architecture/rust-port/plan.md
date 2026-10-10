@@ -222,12 +222,14 @@ choices need evidence during their assigned milestone.
 
 ## Branch and work policy
 
-Keep `rust` as the integration branch for this new application history. Fetch
-upstream for reference. Do not merge `develop` with `--allow-unrelated-histories`;
-that would restore the Go tree that this branch was created to replace.
+Use `rust`, the repository default, as the integration branch for this new
+application history. The former default `develop` is now `go-legacy`. Fetch
+upstream for reference. Do not merge `go-legacy` with
+`--allow-unrelated-histories`; that would restore the Go tree that this branch
+was created to replace.
 
-Use small feature branches from `rust` and PRs back to `rust` once the branch
-is published. Fetch and merge the current `rust` integration branch before
+Use small feature branches from `rust` and PRs back to `rust`.
+Fetch and merge the current `rust` integration branch before
 each feature PR. Keep granular commits. Kernel changes follow the separate
 Martensite integration workflow; API changes follow the API workflow.
 

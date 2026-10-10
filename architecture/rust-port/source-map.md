@@ -15,6 +15,11 @@ later baseline update needs a reviewed change and regenerated evidence.
 | Martensite's OCCT oracle | `3d097a0328e71b826377d4814ab05ec3c3d23871` | OCCT `8.1.0-dev1`, as pinned by Martensite. |
 | Initial `oblikovati-rust` | `5388046d` | Empty independent root on the named `rust` branch. |
 
+The branch names above record the state at baseline inspection. On 2026-10-10,
+the application repository's former default `develop` was renamed to
+`go-legacy`, and `rust` became the default. The Go baseline commit and its
+history are unchanged; this branch change does not update any source baseline.
+
 The Martensite checkpoint is far ahead of its local remote reference. Do not
 assume that CI can fetch it. R0 must establish a published, tested revision or
 a reproducible source artifact before making it a CI dependency. Do not copy
