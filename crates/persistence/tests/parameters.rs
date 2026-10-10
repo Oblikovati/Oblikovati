@@ -155,11 +155,7 @@ fn absent_parameters_are_empty_but_unimplemented_related_state_is_not_dropped() 
                 .is_empty()
         );
     }
-    for name in [
-        "parameterGroups",
-        "parameterSettings",
-        "derivedParameterTables",
-    ] {
+    for name in ["parameterSettings", "derivedParameterTables"] {
         let input = format!("schemaVersion: 2\ndocumentType: 1\nmodel: {{{name}: {{}}}}");
         let package = DocumentPackage::decode(input.as_bytes()).unwrap();
         assert!(

@@ -7,6 +7,7 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 
+mod groups;
 mod record;
 use record::ParameterRecipe;
 
@@ -35,6 +36,7 @@ impl DocumentPackage {
             record.restore(id, &mut restored.parameters)?;
         }
         validate_health(&restored.parameters)?;
+        groups::restore_groups(self.root.get("model"), &mut restored.parameters)?;
         restored.parameters.drain_changed();
         Ok(restored)
     }
@@ -43,11 +45,7 @@ impl DocumentPackage {
         let Some(model) = self.root.get("model").and_then(Value::as_mapping) else {
             return Ok(Vec::new());
         };
-        for name in [
-            "parameterGroups",
-            "parameterSettings",
-            "derivedParameterTables",
-        ] {
+        for name in ["parameterSettings", "derivedParameterTables"] {
             if model.get(name).is_some_and(|value| !value.is_null()) {
                 return Err(PackageCodecError(format!(
                     "parameter section {name:?}: expected an implemented recipe decoder; support is pending"

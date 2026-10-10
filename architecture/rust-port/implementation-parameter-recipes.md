@@ -58,8 +58,8 @@ allocator advanced past every reconstructed parameter. IDs follow recipe order,
 matching the legacy name-based format; this does not add persistent parameter
 IDs to the file schema.
 
-Unknown fields and inconsistent value-flavor fields are refused. Groups,
-settings, linked derived tables, tolerance, model-value selection, and
+Unknown fields and inconsistent value-flavor fields are refused. Settings,
+linked derived tables, tolerance, model-value selection, and
 custom-property recipe records remain explicit unsupported cases. Their source
 YAML stays retained in the package, and reconstruction cannot silently discard
 them. This is an intermediate decoder, not completion of the parameter recipe
@@ -70,3 +70,19 @@ flavors, metadata, choices, malformed records, cycles, duplicates, absent
 tables, and refusal of unsupported state. Four matching Go parameter recipe
 round-trip tests pass at the fixed baseline. Export and the remaining recipe
 decoders are the next integration work.
+
+## Group reconstruction — partial R2
+
+Tracking: [#3599](https://github.com/Oblikovati/Oblikovati/issues/3599).
+The loader now restores `parameterGroups` after all parameters have loaded and
+passed health checks. Group creation order, internal names, display names, and
+client IDs are preserved. Membership resolves saved parameter names to the new
+table's IDs. Members enumerate in parameter creation order, matching Go/model
+behavior; a parameter can belong to multiple groups. Repeated member names are
+idempotent. An omitted display name defaults to the internal name.
+
+Four tests cover order and metadata, multi-membership, repeated names,
+empty/null/memberless groups, unknown fields, duplicate group keys, and missing
+members. Invalid groups discard only the separate reconstruction candidate.
+The existing live table is not an input to this operation. Parameter settings,
+tolerance/selection, custom-property recipes, and linked tables remain pending.
