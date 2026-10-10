@@ -4,6 +4,13 @@ use super::*;
 use crate::metadata_value;
 
 impl DocumentAttributes {
+    /// Retain an empty anchor for storage; example: `attributes.ensure_target(&target)`.
+    pub fn ensure_target(&mut self, target: &AttributeTarget) -> bool {
+        let previous = self.anchors.len();
+        self.anchor_mut(target);
+        previous != self.anchors.len()
+    }
+
     /// Create a namespace without attributes; example: `attributes.ensure_set(&target, "AddIn")?;`.
     pub fn ensure_set(
         &mut self,

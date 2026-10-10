@@ -30,7 +30,7 @@ canonical DTO projection, and parameter exposure/re-exposure. Go standard-set,
 property access/removal, and numeric-exposure tests at the fixed baseline provide
 the comparison. YAML property recipes and document-load integration are covered
 below. The shared binary value and property collection codecs are covered below;
-attribute collections and document integration remain separate work.
+attribute collection encoding is also covered below; document integration remains open.
 
 ## Authored property recipes — partial R2
 
@@ -200,8 +200,8 @@ check every truncation boundary. Invalid tags, Boolean bytes other than 0 or 1,
 invalid UTF-8, nonfinite doubles, and oversized declared blobs are refused.
 These strict failures replace Go's permissive Boolean/string decoding and match
 the Rust model's finite-value and UTF-8 requirements. Empty byte arrays normalize
-to the Go nil-slice representation. Property collection encoding is covered below. Attribute collections,
-reference-key binding, and document integration are still required.
+to the Go nil-slice representation. Property and attribute collection encoding are covered below. Live reference-key
+binding and document integration are still required.
 
 ## Binary property collections — partial R2
 
@@ -225,7 +225,7 @@ instead of creating a collection that violates the Rust model's invariant.
 
 This codec is not yet connected to document containers. The current YAML
 parameter/property save path remains authoritative for live Rust documents.
-Binary attribute collections and reference-key ownership are separate port work.
+Binary attribute collections are covered below; live reference-key binding remains open.
 
 ## Reference-key anchored attributes — partial R2
 
@@ -247,5 +247,24 @@ before they can enter the collection.
 Tests cover insertion order, replacement, empty namespace/anchor retention,
 missing-target operations, filtered searches, all payload kinds, clone isolation,
 signed zero, malformed envelopes, and invalid-edit atomicity. The Go
-`model/attr` suite passes at baseline `aa8297d1`. Binary attribute collection
-storage, session snapshots, API dispatch, and live entity binding remain open.
+`model/attr` suite passes at baseline `aa8297d1`. Binary attribute storage is covered below. Session snapshots, API dispatch, and
+live entity binding remain open.
+
+## Binary attribute collections — partial R2
+
+Tracking: [#3676](https://github.com/Oblikovati/Oblikovati/issues/3676).
+`metadata::encode_attributes` and `decode_attributes` implement the Go layout
+for ordered reference-key anchors, namespaces, and typed attributes. Empty
+anchors and namespaces are retained. Property and attribute codecs share name
+uniqueness checks and length-prefixed string/blob writing.
+
+The Go `AttributeManager.Encode` fixture at baseline `aa8297d1` contains a
+document anchor, empty namespace, string/integer attributes, and an empty
+external-reference anchor. Rust reads and writes identical bytes. Legacy target
+envelopes normalize to current encoding; two serialized keys that normalize to
+the same identity are rejected as duplicates. Tests cover every truncated prefix,
+malformed keys/counts, duplicate namespaces/attributes, and trailing input.
+
+This completes the binary collection codecs. Attaching these collections to
+live document snapshots, persistence sections, and typed API commands remains
+open; decoding does not resolve an entity in the kernel.

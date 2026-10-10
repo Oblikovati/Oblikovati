@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Legacy binary attribute/property values, independent of collection ownership.
+mod attributes;
+mod collection;
 mod properties;
 mod reader;
+pub use attributes::{decode_attributes, encode_attributes};
 use oblikovati_api::types::VariantValue;
 pub use properties::{decode_properties, encode_properties};
 use std::{error::Error, fmt};

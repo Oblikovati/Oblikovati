@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use super::collection::{append_text, require_unique};
 use super::{MetadataCodecError, blob_length, encode_value, reader::ValueReader};
 use oblikovati_model::property::{DocumentProperties, DocumentProperty};
 use std::collections::BTreeSet;
@@ -80,25 +81,6 @@ fn validate_collection(
             reader.remaining().len()
         )));
     }
-    Ok(())
-}
-
-fn require_unique(
-    names: &mut BTreeSet<String>,
-    name: &str,
-    kind: &str,
-) -> Result<(), MetadataCodecError> {
-    if name.is_empty() || !names.insert(name.into()) {
-        return Err(MetadataCodecError(format!(
-            "metadata {kind} name {name:?}: expected a unique nonempty name"
-        )));
-    }
-    Ok(())
-}
-
-fn append_text(encoded: &mut Vec<u8>, text: &str) -> Result<(), MetadataCodecError> {
-    encoded.extend_from_slice(&blob_length(text.len())?.to_le_bytes());
-    encoded.extend_from_slice(text.as_bytes());
     Ok(())
 }
 

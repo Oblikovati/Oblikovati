@@ -81,7 +81,7 @@ impl<'bytes> ValueReader<'bytes> {
         Ok(count)
     }
 
-    fn blob(&mut self) -> Result<&'bytes [u8], MetadataCodecError> {
+    pub(super) fn blob(&mut self) -> Result<&'bytes [u8], MetadataCodecError> {
         let length = u32::from_le_bytes(self.fixed()?) as usize;
         self.take(length)
     }
