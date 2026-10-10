@@ -142,3 +142,40 @@ order, and scaled references. Arithmetic and signed-zero corpus values require
 bit equality. Transcendental comparisons permit eight machine epsilons of relative
 error; this does not prove cross-platform bit equality for transcendental results.
 The remaining model and native target gates must retain that distinction.
+
+## Numeric parameter ownership — partial R2
+
+Tracking: [issue #3570](https://github.com/Oblikovati/Oblikovati/issues/3570).
+`crates/model/src/parameter` connects expressions, unit conversion, and dependency
+tracking. It imports `ParameterKind` directly from `oblikovati-api` at exact
+revision `9b5da090a9260892f54b4762d1225b5f892cbeb4`, now merged into the API owner's
+`develop` branch. This is an integration pin, not proof of a published release;
+application publication remains blocked by the owner-release checks.
+
+The collection accepts caller-owned stable IDs, enforces unique nonempty names,
+uses canonical editability categories, and recomputes only affected readers.
+It supports measured/reference updates, forward-reference recovery, deterministic
+change draining, clone isolation, guarded deletion, and explicit owner deletion.
+Owner deletion clears every removed-ID binding before recomputing a shared tail.
+
+Parse failures change nothing. Cyclic edits retain authored source, detach the
+invalid drivers, and report a typed failure. Last-good values remain available
+for inspection, but failed or non-finite values cannot become current values.
+Readers of failed parameters become blocked and recover after a valid edit.
+This intentionally tightens the Go behavior: its cycle test leaves a reader
+healthy, and its scope can supply stale values from a failed driver. Rust
+quarantines affected readers so later features cannot consume stale results.
+
+The eight collection tests cover dependency diamonds, recovery, exact affected
+sets, failed edits, read-only kinds, non-finite results, scaled formulas, deletion
+of a driver shared by a transitive reader, and insertion validation. Parameter
+rename/source rewriting, automatic ID allocation, tolerance/model values, read
+footprints, groups, text/boolean literals, and persistence remain open.
+
+## Working branch policy
+
+The user requested a single working branch on 2026-10-10. The existing application
+PRs #3562, #3565, #3567, and #3569 were merged into `rust` with merge commits; API
+PR #296 was merged into its owner's `develop`. Their merged feature branches were
+removed. Further application work stays on `rust-port`. Any delegated worktree
+changes must merge into that branch. Create a PR only when the user requests one.

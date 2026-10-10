@@ -24,6 +24,16 @@ pub struct Expression {
 }
 
 impl Expression {
+    /// Store an already measured quantity without parsing it; for example `Expression::constant(area)`.
+    pub fn constant(quantity: Quantity) -> Self {
+        Self {
+            source: format!("{} {:?}", quantity.value, quantity.dimension),
+            nodes: vec![Node::Literal(quantity)],
+            references: Vec::new(),
+            root: 0,
+        }
+    }
+
     /// Compile in document working units; for example `Expression::parse("2 * width", &units)`.
     /// Bare expression numbers are unitless, independent of display preferences.
     pub fn parse(source: &str, units: &UnitsOfMeasure) -> Result<Self, ExpressionError> {
