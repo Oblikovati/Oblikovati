@@ -96,3 +96,21 @@ This changes automatic projection refresh, including the live session and derive
 refresh paths. Package validation still refuses unresolved parameter recipes;
 saving and reopening sick recipes requires further port work. The property change
 does not bypass that validation or claim sick-package support.
+
+## Failed numeric diagnostic restoration
+
+[#3668](https://github.com/Oblikovati/Oblikovati/issues/3668) adds a model-only
+`restore_numeric_diagnostics` boundary for future unhealthy-recipe loading.
+It restores a last-good numeric value, saved tolerance, and model-value selection
+without clearing failure health or recomputing blocked readers. Current-value
+reads still fail. Real expression recovery replaces the diagnostic value through
+the normal evaluation path.
+
+The candidate is checked before adoption: it must be a failed numeric recipe,
+with a finite arithmetic diagnostic quantity when present, a valid tolerance band,
+a known selection, and a finite selected diagnostic value. The zero-valued empty
+API tolerance remains valid as the existing no-tolerance representation. Tests
+cover atomic refusal, unknown/healthy parameters, nonnumeric/nonfinite quantities,
+invalid bands/selections, overflow, absent diagnostics, signed zero, blocked
+readers, and recovery. Package serialization of unhealthy recipes remains pending;
+this change does not weaken the current strict package validator.

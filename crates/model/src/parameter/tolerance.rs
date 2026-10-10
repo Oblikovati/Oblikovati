@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
+mod restore;
 use crate::quantity::Quantity;
 use oblikovati_api::types::{
     MODEL_VALUE_LOWER, MODEL_VALUE_MEDIAN, MODEL_VALUE_NOMINAL, MODEL_VALUE_UPPER, ModelValueType,
@@ -139,13 +140,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         id: Id,
         tolerance: Tolerance,
     ) -> Result<(), ParameterError<Id>> {
-        if !(TOLERANCE_DEFAULT.0..=TOLERANCE_REFERENCE.0).contains(&tolerance.type_.0) {
-            return Err(numeric_error(
-                id,
-                format!("{:?}", tolerance.type_),
-                "a known API tolerance type",
-            ));
-        }
+        validate_tolerance_kind(id, tolerance.type_)?;
         self.store_tolerance(id, tolerance)
     }
 
@@ -242,4 +237,15 @@ fn selected_quantity<Id: Copy>(
         return Err(numeric_error(id, value, "a finite selected model value"));
     }
     Ok(Quantity::new(value, nominal.dimension))
+}
+
+fn validate_tolerance_kind<Id>(id: Id, kind: ToleranceType) -> Result<(), ParameterError<Id>> {
+    if !(TOLERANCE_DEFAULT.0..=TOLERANCE_REFERENCE.0).contains(&kind.0) {
+        return Err(numeric_error(
+            id,
+            format!("{:?}", kind),
+            "a known API tolerance type",
+        ));
+    }
+    Ok(())
 }
