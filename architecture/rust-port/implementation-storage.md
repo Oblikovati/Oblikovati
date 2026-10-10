@@ -226,3 +226,30 @@ The committed `go-stream-container.yml` fixture was produced through Go
 creation, replacement, section preservation, missing streams, read failures,
 malformed input, and failed commit. The atomic writer's existing tests cover
 staging, write, synchronization, and commit failure independently.
+
+## Document interest registry and storage — partial R2
+
+Tracking: [#3682](https://github.com/Oblikovati/Oblikovati/issues/3682).
+`DocumentInterests` owns canonical API interest records in insertion order.
+Identity is the exact `(client_id, name)` pair. Updating a pair retains its
+position; removal preserves the other records. Discovery matches either client
+ID or name, including withdrawn interests. Zero strength defaults to interested.
+Client payload and signed 64-bit data version remain uninterpreted.
+
+`DocumentPackage::restore_interests` reads the Go YAML spelling of interest
+strengths. `with_interests` validates the old section before replacing it and
+omits an empty registry. Other sections and the model digest remain unchanged.
+The model rejects empty identities and unknown numeric strengths. Storage also
+rejects duplicate pairs, unknown fields, unknown strength spellings, and invalid
+versions. Unlike the Go loader, Rust does not silently turn an unknown strength
+into interested or retain duplicate identities. An omitted strength still defaults
+to interested for compatibility.
+
+The Go fixture was generated with `Package.Save` at baseline
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`. Tests cover both strength values,
+update order, removal, default strength, independent copies, exact payloads,
+version limits, malformed records, and preservation of model/attribute/stream
+sections. Go registry and package round-trip tests provide reference evidence.
+Session dirty state, undo, file lifecycle integration, the four API methods,
+and absent-client notices remain pending; the package envelope alone continues
+to retain interest sections without interpreting them.

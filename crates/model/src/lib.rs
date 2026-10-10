@@ -13,3 +13,5 @@ pub mod parameter;
 pub mod property;
 pub mod quantity;
 pub mod units;
+
+pub mod interest;

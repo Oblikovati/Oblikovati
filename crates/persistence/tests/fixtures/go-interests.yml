@@ -1,0 +1,20 @@
+schemaVersion: 2
+documentType: 12290
+interests:
+    - clientId: cam
+      name: paths
+      interestType: interested
+      dataVersion: 3
+    - clientId: other
+      name: paths
+      interestType: notInterested
+      clientData: "µm\0\n"
+attributes:
+    - 0
+    - 0
+    - 0
+    - 0
+model:
+    futureRecipe: {retained: [1, 2]}
+data:
+    retain: AP8=
