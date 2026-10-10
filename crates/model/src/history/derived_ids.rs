@@ -34,7 +34,7 @@ impl DocumentEditHistory {
 
 impl DocumentEditHistory {
     /// Inspect the permanent table reservation mark for storage.
-    /// Example: `target.prepare(history.snapshot(), history.derived_high_water())?;`.
+    /// Example: `target.prepare(history.snapshot(), history.derived_high_water(), history.high_water())?;`.
     pub fn derived_high_water(&self) -> i64 {
         self.derived_high_water
     }

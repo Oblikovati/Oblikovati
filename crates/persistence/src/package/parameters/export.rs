@@ -44,6 +44,9 @@ impl DocumentPackage {
             candidate.manifest.schema_version = 3;
             candidate.root.insert("schemaVersion".into(), 3u32.into());
         }
+        if candidate.manifest.schema_version >= 3 {
+            identities::capture_ids(&mut model, parameters, None)?;
+        }
         candidate.root.insert("model".into(), Value::Mapping(model));
         verify_parameter_capture(
             parameters,

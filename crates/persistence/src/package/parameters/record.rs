@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct ParameterRecipe {
-    name: String,
+    pub(super) name: String,
     kind: String,
     value_type: String,
     expression: String,

@@ -281,5 +281,6 @@ fn creation_and_updates_join_groups_and_roll_back_on_veto() {
             .ids()
             .is_empty()
     );
-    assert!(!workspace.needs_save(id).unwrap());
+    // The rejected edit still reserves an ID that storage must retain.
+    assert!(workspace.needs_save(id).unwrap());
 }

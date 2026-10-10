@@ -84,7 +84,9 @@ fn empty_overrides_inherit_template_metadata() {
     host.save(id, "beta", &mut source).unwrap();
     let package =
         DocumentPackage::decode(&host.files().contents.borrow()[&path("new.obk")]).unwrap();
-    assert_eq!(package.manifest(), template.manifest());
+    let mut expected = template.manifest().clone();
+    expected.schema_version = 3;
+    assert_eq!(package.manifest(), &expected);
 }
 
 #[test]

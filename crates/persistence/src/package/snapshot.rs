@@ -46,6 +46,7 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
         &mut self,
         snapshot: &DocumentSnapshot,
         derived_high_water: i64,
+        parameter_high_water: u64,
     ) -> Result<Option<RecipeDigest>, Self::Failure> {
         self.prepared = None;
         let candidate = self
@@ -57,6 +58,8 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
                 &snapshot.properties,
                 snapshot.parameters.units().clone(),
             )
+            .map_err(SnapshotPackageError::Codec)?
+            .with_parameter_reservations(&snapshot.parameters, parameter_high_water)
             .map_err(SnapshotPackageError::Codec)?;
         let restored = candidate
             .restore_parameter_properties(&snapshot.parameters)

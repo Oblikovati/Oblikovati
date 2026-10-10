@@ -210,8 +210,28 @@ allocation state under the identity rules of ADR-0005 without changing Go import
 
 Tests cover add/undo/close-saving/reopen, deletion/Save Copy/reopen, package-based
 creation, dirty-state handling, failed atomic replacement, mark regression,
-invalid types and ranges, and signed exhaustion. Parameter identity persistence
-remains a separate requirement because legacy parameter records reconnect by name.
+invalid types and ranges, and signed exhaustion. Parameter identity persistence is covered by the schema-3 bindings below.
+
+## Parameter identities across file lifetimes
+
+[#3667](https://github.com/Oblikovati/Oblikovati/issues/3667) adds `parameterIds`
+(name-to-ID bindings) and `parameterHighWater` to the unreleased schema-3 recipe.
+Both fields must occur together, name exactly the live parameters, and use unique
+nonzero IDs within the saved unsigned reservation mark. Legacy records without
+either field retain record-order allocation when imported. Derived tables, groups,
+expressions, and other name-based sections reconnect to those restored identities.
+
+Saving a used parameter namespace promotes the file to schema 3. Save preparation
+receives both counters from the history owner; neither is an undo-snapshot field.
+Parameter reservations also contribute to dirty state, including IDs consumed by
+rejected edits. Save Copy retains the counters without clearing the original dirty
+baseline. Schema-3 parameter capture updates renamed bindings and retains the mark.
+
+Tests cover nonsequential IDs, bindings in a different order from records, renamed
+parameters, empty live sets with deleted reservations, missing/extra/duplicate
+bindings, zero/out-of-range IDs, signed-invalid marks, unsigned exhaustion, and
+add/undo/save-or-copy/reopen through the typed API. Legacy schema-2 imports still
+work; the full Rust port and native application acceptance are not complete.
 
 ## Remaining work
 

@@ -25,11 +25,12 @@ pub struct DocumentSnapshot {
 /// Bind an immutable recipe to storage before its save identity is prepared.
 pub trait DocumentSnapshotTarget: crate::identity::DocumentSaveTarget {
     /// Prepare without replacing storage; return the exact candidate recipe digest.
-    /// Example: `let digest = target.prepare(&snapshot, table_mark)?;` before identity preparation.
+    /// Example: `let digest = target.prepare(&snapshot, table_mark, parameter_mark)?;` before identity preparation.
     fn prepare(
         &mut self,
         snapshot: &DocumentSnapshot,
         derived_high_water: i64,
+        parameter_high_water: u64,
     ) -> Result<Option<crate::identity::RecipeDigest>, Self::Failure>;
 }
 

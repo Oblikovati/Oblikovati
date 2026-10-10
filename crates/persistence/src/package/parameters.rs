@@ -10,6 +10,7 @@ use oblikovati_model::{
 mod derived;
 mod export;
 mod groups;
+mod identities;
 mod measured;
 mod property;
 mod record;
@@ -41,13 +42,13 @@ impl DocumentPackage {
         units: UnitsOfMeasure,
     ) -> Result<RestoredParameters, PackageCodecError> {
         let records = self.parameter_records()?;
+        let (live_ids, allocator) = identities::restore_ids(self, &records)?;
         let mut restored = RestoredParameters {
             parameters: ParameterCollection::new(units),
-            ids: RecipeIdAllocator::default(),
+            ids: allocator,
             derived_high_water: 0,
         };
-        for record in &records {
-            let id = restored.ids.allocate().map_err(parameter_error)?;
+        for (record, id) in records.iter().zip(live_ids) {
             record.restore(id, &mut restored.parameters)?;
         }
         validate_health(&restored.parameters)?;
