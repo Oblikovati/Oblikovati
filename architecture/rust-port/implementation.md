@@ -493,3 +493,7 @@ The new persistence crate and atomic replacement tests are recorded in
 ## Parameter recipe restoration — partial R2
 
 See [parameter recipe implementation evidence](implementation-parameter-recipes.md).
+
+## Document properties — partial R2
+
+See [document property implementation evidence](implementation-properties.md).

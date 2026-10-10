@@ -7,5 +7,6 @@ pub mod expression;
 pub mod fits;
 pub mod identity;
 pub mod parameter;
+pub mod property;
 pub mod quantity;
 pub mod units;
