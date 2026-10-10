@@ -12,9 +12,9 @@ pub struct ParameterReads<'a, Id> {
 impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     /// Capture model reads without global state; for example `parameters.track(|scope| scope.model_value(id))`.
     /// Error results retain their read footprint so recovery can invalidate the consumer.
-    pub fn track<ResultValue>(
-        &self,
-        work: impl FnOnce(&mut ParameterReads<'_, Id>) -> ResultValue,
+    pub fn track<'a, ResultValue>(
+        &'a self,
+        work: impl FnOnce(&mut ParameterReads<'a, Id>) -> ResultValue,
     ) -> (ResultValue, Vec<Id>) {
         let mut scope = ParameterReads {
             parameters: self,
@@ -33,20 +33,36 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     }
 }
 
-impl<Id: Copy + Ord + Debug> ParameterReads<'_, Id> {
+impl<'a, Id: Copy + Ord + Debug> ParameterReads<'a, Id> {
     /// Read an existing parameter and record its identity; for example `scope.model_value(depth)`.
     pub fn model_value(&mut self, id: Id) -> Result<Quantity, ParameterError<Id>> {
+        self.record_read(id);
+        self.parameters.model_value(id)
+    }
+
+    /// Read text and retain its identity; for example `scope.text_value(material)`.
+    pub fn text_value(&mut self, id: Id) -> Result<&'a str, ParameterError<Id>> {
+        self.record_read(id);
+        self.parameters.text_value(id)
+    }
+
+    /// Read a Boolean and retain its identity; for example `scope.boolean_value(vented)`.
+    pub fn boolean_value(&mut self, id: Id) -> Result<bool, ParameterError<Id>> {
+        self.record_read(id);
+        self.parameters.boolean_value(id)
+    }
+
+    fn record_read(&mut self, id: Id) {
         if self.parameters.get(id).is_some() {
             self.reads.insert(id);
         }
-        self.parameters.model_value(id)
     }
 
     /// Capture a nested consumer; for example `scope.track(|inner| inner.model_value(radius))`.
     /// Every nested read also belongs to the enclosing footprint.
     pub fn track<ResultValue>(
         &mut self,
-        work: impl FnOnce(&mut ParameterReads<'_, Id>) -> ResultValue,
+        work: impl FnOnce(&mut ParameterReads<'a, Id>) -> ResultValue,
     ) -> (ResultValue, Vec<Id>) {
         let (result, reads) = self.parameters.track(work);
         self.reads.extend(reads.iter().copied());

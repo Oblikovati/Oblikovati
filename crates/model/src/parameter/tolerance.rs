@@ -192,7 +192,7 @@ fn validate_band<Id>(id: Id, tolerance: &Tolerance) -> Result<(), ParameterError
 }
 
 fn numeric_error<Id>(id: Id, found: impl ToString, expected: &'static str) -> ParameterError<Id> {
-    ParameterError::Numeric {
+    ParameterError::Value {
         id,
         found: found.to_string(),
         expected,

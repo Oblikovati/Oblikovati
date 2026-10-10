@@ -389,6 +389,7 @@ name = "oblikovati-model"
 version = "0.1.0"
 dependencies = [
  "oblikovati-api",
+ "serde_json",
 ]
 
 [[package]]

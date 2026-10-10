@@ -3,6 +3,14 @@
 use crate::{dependency::DependencyError, expression::ExpressionError, quantity::Quantity};
 use oblikovati_api::types::{ModelValueType, ParameterKind, Tolerance};
 
+/// Application-owned values; this is not a wire DTO or persisted encoding.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ParameterValue {
+    Numeric(Quantity),
+    Text(String),
+    Boolean(bool),
+}
+
 /// A numeric parameter's evaluation failure, separate from entity health in the API.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ParameterFailure<Id> {
@@ -11,6 +19,7 @@ pub enum ParameterFailure<Id> {
     Evaluation(ExpressionError),
     BlockedBy(Vec<Id>),
     NonFinite(Quantity),
+    NonNumeric(Vec<Id>),
 }
 
 /// Evaluation status. A failed parameter may retain a last-good value for inspection.
@@ -29,15 +38,23 @@ pub struct ParameterState<Id> {
     pub tolerance: Tolerance,
     pub model_value_type: ModelValueType,
     pub source: String,
-    pub last_good_value: Option<Quantity>,
+    pub last_good_value: Option<ParameterValue>,
     pub health: ParameterHealth<Id>,
 }
 
 impl<Id> ParameterState<Id> {
     /// Read a usable value only when evaluation succeeded; for example `parameter.current_value()`.
     pub fn current_value(&self) -> Option<Quantity> {
+        match self.current() {
+            Some(ParameterValue::Numeric(quantity)) => Some(*quantity),
+            _ => None,
+        }
+    }
+
+    /// Read a healthy typed value; for example `parameter.current()`.
+    pub fn current(&self) -> Option<&ParameterValue> {
         match self.health {
-            ParameterHealth::Healthy => self.last_good_value,
+            ParameterHealth::Healthy => self.last_good_value.as_ref(),
             ParameterHealth::Failed(_) => None,
         }
     }

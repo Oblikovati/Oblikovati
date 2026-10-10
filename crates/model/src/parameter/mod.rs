@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Numeric parameter ownership, evaluation health, and deterministic dependency edits.
+//! Typed parameter ownership, evaluation health, and deterministic dependency edits.
 mod edit;
 mod error;
 mod evaluate;
 mod fits;
+mod literal;
 mod reads;
+mod record;
 mod remove;
 mod rename;
 mod state;
@@ -21,45 +23,15 @@ pub use error::ParameterError;
 use oblikovati_api::types::{
     DERIVED_PARAM, MODEL_PARAM, ParameterKind, REFERENCE_PARAM, TABLE_PARAM, USER_PARAM,
 };
-pub use state::{ParameterFailure, ParameterHealth, ParameterState};
+pub use state::{ParameterFailure, ParameterHealth, ParameterState, ParameterValue};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Debug,
 };
 
-#[derive(Clone, Debug)]
-struct ParameterRecord<Id> {
-    state: ParameterState<Id>,
-    expression: Expression,
-    binding: BoundExpression<Id>,
-}
+use record::{ParameterFormula, ParameterRecord};
 
-impl<Id> ParameterRecord<Id> {
-    fn new(
-        name: &str,
-        kind: ParameterKind,
-        expression: Expression,
-        binding: BoundExpression<Id>,
-    ) -> Self {
-        let state = ParameterState {
-            name: name.into(),
-            kind,
-            source: expression.source().into(),
-            last_good_value: None,
-            renamed: false,
-            tolerance: oblikovati_api::types::Tolerance::default(),
-            model_value_type: oblikovati_api::types::MODEL_VALUE_NOMINAL,
-            health: ParameterHealth::Healthy,
-        };
-        Self {
-            state,
-            expression,
-            binding,
-        }
-    }
-}
-
-/// Own numeric parameters under IDs supplied by the document's identity allocator.
+/// Own typed parameters under IDs supplied by the document's identity allocator.
 #[derive(Clone, Debug)]
 pub struct ParameterCollection<Id> {
     records: BTreeMap<Id, ParameterRecord<Id>>,

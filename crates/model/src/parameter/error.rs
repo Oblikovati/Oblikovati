@@ -9,7 +9,7 @@ use std::fmt;
 pub enum ParameterError<Id> {
     Dependency(DependencyError<Id>),
     Syntax(ExpressionError),
-    Numeric {
+    Value {
         id: Id,
         found: String,
         expected: &'static str,
@@ -37,7 +37,7 @@ impl<Id: fmt::Debug> fmt::Display for ParameterError<Id> {
         match self {
             Self::Dependency(error) => error.fmt(formatter),
             Self::Syntax(error) => error.fmt(formatter),
-            Self::Numeric {
+            Self::Value {
                 id,
                 found,
                 expected,

@@ -43,6 +43,8 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             .iter()
             .filter_map(|reader| {
                 self.records[reader]
+                    .formula
+                    .as_ref()?
                     .binding
                     .renamed_source(id, name)
                     .map(|source| (*reader, source))
@@ -69,7 +71,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         for (reader, expression) in replacements {
             let record = self.records.get_mut(&reader).expect("registered reader");
             record.state.source = expression.source().into();
-            record.expression = expression;
+            record.formula.as_mut().expect("numeric reader").expression = expression;
         }
     }
 
@@ -80,7 +82,6 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             .copied()
             .filter(|id| {
                 self.records[id]
-                    .expression
                     .references()
                     .iter()
                     .any(|reference| reference == name)
@@ -98,8 +99,9 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     }
 
     fn refresh_name_binding(&mut self, id: Id) -> bool {
-        let next = self.records[&id].expression.bind(|name| self.find(name));
-        let previous = &self.records[&id].binding;
+        let formula = self.records[&id].formula.as_ref().expect("numeric reader");
+        let next = formula.expression.bind(|name| self.find(name));
+        let previous = &formula.binding;
         let changed =
             previous.bound_ids() != next.bound_ids() || previous.unresolved() != next.unresolved();
         if changed {
@@ -109,6 +111,9 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         self.records
             .get_mut(&id)
             .expect("registered reader")
+            .formula
+            .as_mut()
+            .expect("numeric reader")
             .binding = next;
         false
     }

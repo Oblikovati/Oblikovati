@@ -263,4 +263,38 @@ passed the Linux gate and both Linux/macOS architectures, but both Windows jobs
 failed when Cargo tried to replace the running `oblikovati-build.exe`. The Cargo
 alias now builds its executable under `target/xtask`; workspace commands retain
 their normal output directory. A regression check requires separate output paths.
-All workspace crates remain in build, test, lint, and coverage discovery.
+All workspace crates remain in build, test, lint, and coverage discovery. Both
+Windows architectures passed in
+[run 38057558427](https://github.com/Oblikovati/Oblikovati/actions/runs/38057558427).
+
+## Text and Boolean parameters — partial R2
+
+Tracking: [issue #3575](https://github.com/Oblikovati/Oblikovati/issues/3575).
+The parameter collection now owns numeric, text, and Boolean values with an
+internal typed enum. Literal parameters have no compiled numeric formula.
+Text and Boolean insertion creates user parameters; edits cannot change their
+value kind. Numeric quantity insertion also refuses text/Boolean dimensions, so
+callers cannot create fake numeric storage for literals. The API contract remains
+the shared external interface; this internal enum is not a second wire DTO.
+
+Text source is a quoted JSON string; Boolean source is `true` or `false`.
+Printable text matches the Go examples. Control-character spelling uses JSON
+escapes (for example `\u0000`) instead of Go-specific `\x00` escapes. The literal
+value retains the original Unicode text. No text is parsed as a formula. Text and
+Boolean edits mark their parameter and existing numeric readers as changed;
+identical edits do not. Numeric readers report `NonNumeric` with the offending
+IDs and retain dependency edges for rename, removal, and later recovery.
+
+Typed read scopes retain text/Boolean identities and failed reads, including
+nested scopes. Immutable text borrows can outlive the scope, but Rust prevents
+collection edits while those borrows remain in use. Ten regression tests cover
+the Go literal examples, quoting, wrong-kind edits, atomic insertion failure,
+read-only numeric parameters, forward references, rename, removal, recovery, and
+read footprints. Persistence, UI editing, and text/Boolean expressions remain
+outside this component; the legacy literal APIs do not provide those expressions.
+
+The four legacy text/Boolean tests passed at `aa8297d1` with Go 1.27.0 using an
+external temporary workspace that maps the relocated API `go/` module. The full
+Rust gate passed with model line coverage 98.99%, build-tool coverage 90.70%,
+and duplication 0.12%. These checks cover the current crates; they do not certify
+an application UI or persistence implementation.

@@ -31,6 +31,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         quantity: Quantity,
     ) -> Result<(), ParameterError<Id>> {
         require_kind(kind)?;
+        require_numeric_quantity(id, quantity)?;
         self.insert_compiled(id, name, kind, Expression::constant(quantity))
     }
 
@@ -38,6 +39,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     /// Malformed syntax changes nothing. Cycles retain failed authored source and detach its drivers.
     pub fn set_expression(&mut self, id: Id, source: &str) -> Result<(), ParameterError<Id>> {
         self.require_editable(id)?;
+        self.require_formula(id)?;
         let expression = Expression::parse(source, &self.units)?;
         self.replace_compiled(id, expression)
     }
@@ -45,6 +47,8 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     /// Replace an editable formula with a constant; for example `parameters.set_value(id, length)`.
     pub fn set_value(&mut self, id: Id, quantity: Quantity) -> Result<(), ParameterError<Id>> {
         self.require_editable(id)?;
+        self.require_formula(id)?;
+        require_numeric_quantity(id, quantity)?;
         self.replace_compiled(id, Expression::constant(quantity))
     }
 
@@ -54,6 +58,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         id: Id,
         quantity: Quantity,
     ) -> Result<(), ParameterError<Id>> {
+        self.require_formula(id)?;
         let kind = self.require_record(id)?.state.kind;
         if !matches!(kind, REFERENCE_PARAM | DERIVED_PARAM) {
             return Err(ParameterError::Kind {
@@ -61,6 +66,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
                 expected: "a Reference or Derived measurement",
             });
         }
+        require_numeric_quantity(id, quantity)?;
         self.replace_compiled(id, Expression::constant(quantity))
     }
 
@@ -71,31 +77,34 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         kind: ParameterKind,
         expression: Expression,
     ) -> Result<(), ParameterError<Id>> {
-        self.validate_insert(id, name, &expression)?;
-        self.graph.insert(id)?;
-        self.names.insert(name.into(), id);
-        self.order.push(id);
+        if expression.references().contains(&name.to_owned()) {
+            return Err(DependencyError::Cycle { id, driver: id }.into());
+        }
         let binding = expression.bind(|name| self.find(name));
-        let record = ParameterRecord::new(name, kind, expression, binding);
-        self.records.insert(id, record);
+        let mut record = ParameterRecord::new(name, kind, expression.source().into());
+        record.formula = Some(ParameterFormula {
+            expression,
+            binding,
+        });
+        self.insert_record(id, record)?;
         self.rebind(id)?;
         self.resolve_forward_references(name, id);
         Ok(())
     }
 
-    fn validate_insert(
-        &self,
+    pub(super) fn insert_record(
+        &mut self,
         id: Id,
-        name: &str,
-        expression: &Expression,
+        record: ParameterRecord<Id>,
     ) -> Result<(), ParameterError<Id>> {
         if self.records.contains_key(&id) {
             return Err(DependencyError::Duplicate(id).into());
         }
-        self.require_available_name(name, None)?;
-        if expression.references().contains(&name.to_owned()) {
-            return Err(DependencyError::Cycle { id, driver: id }.into());
-        }
+        self.require_available_name(&record.state.name, None)?;
+        self.graph.insert(id)?;
+        self.names.insert(record.state.name.clone(), id);
+        self.order.push(id);
+        self.records.insert(id, record);
         Ok(())
     }
 
@@ -106,11 +115,15 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     ) -> Result<(), ParameterError<Id>> {
         let record = self.records.get_mut(&id).expect("validated parameter");
         record.state.source = expression.source().into();
-        record.expression = expression;
+        record
+            .formula
+            .as_mut()
+            .expect("numeric parameter")
+            .expression = expression;
         self.rebind(id)
     }
 
-    fn resolve_forward_references(&mut self, name: &str, added: Id) {
+    pub(super) fn resolve_forward_references(&mut self, name: &str, added: Id) {
         let waiting: Vec<Id> = self
             .order
             .iter()
@@ -118,7 +131,6 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             .filter(|id| *id != added)
             .filter(|id| {
                 self.records[id]
-                    .expression
                     .references()
                     .iter()
                     .any(|reference| reference == name)
@@ -128,4 +140,15 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             let _ = self.rebind(id);
         }
     }
+}
+
+fn require_numeric_quantity<Id>(id: Id, quantity: Quantity) -> Result<(), ParameterError<Id>> {
+    if !quantity.dimension.is_arithmetic() {
+        return Err(ParameterError::Value {
+            id,
+            found: format!("{quantity:?}"),
+            expected: "a numeric quantity; use typed literal insertion or editing for text and Boolean values",
+        });
+    }
+    Ok(())
 }

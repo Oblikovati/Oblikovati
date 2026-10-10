@@ -126,7 +126,12 @@ fn malformed_bands_and_unknown_selections_are_atomic() {
 #[test]
 fn nonnumeric_and_failed_parameters_cannot_supply_model_values() {
     for dimension in [Dimension::Boolean, Dimension::Text] {
-        let mut parameters = parameter(0.0, dimension);
+        let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
+        if dimension == Dimension::Text {
+            parameters.insert_text(1, "literal", "text").unwrap();
+        } else {
+            parameters.insert_boolean(1, "literal", false).unwrap();
+        }
         assert!(parameters.model_value(1).is_err());
         assert!(parameters.set_symmetric(1, 0.1).is_err());
         assert!(

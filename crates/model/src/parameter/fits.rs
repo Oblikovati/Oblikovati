@@ -11,7 +11,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         let nominal_mm = self.fit_nominal_mm(id)?;
         let scale = self.units.working_scale();
         let tolerance = resolve_tolerance(nominal_mm, hole, shaft, scale).map_err(|error| {
-            ParameterError::Numeric {
+            ParameterError::Value {
                 id,
                 found: error.to_string(),
                 expected: "supported fit classes and nominal size",
@@ -23,7 +23,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     fn fit_nominal_mm(&self, id: Id) -> Result<f64, ParameterError<Id>> {
         let nominal = self.require_numeric_value(id)?;
         if nominal.dimension != Dimension::Length {
-            return Err(ParameterError::Numeric {
+            return Err(ParameterError::Value {
                 id,
                 found: format!("{:?}", nominal.dimension),
                 expected: "a length parameter for a fit",
