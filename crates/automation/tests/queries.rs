@@ -292,7 +292,7 @@ fn unregistered_methods_and_malformed_arguments_are_refused_before_model_work() 
             .iter()
             .collect::<std::collections::BTreeSet<_>>()
             .len(),
-        21
+        23
     );
     assert!(
         host.call(METHOD_PARAMETERS_SET, b"{}")
@@ -377,3 +377,6 @@ mod transactions;
 
 #[path = "queries/transaction_jumps.rs"]
 mod transaction_jumps;
+
+#[path = "queries/properties.rs"]
+mod properties;

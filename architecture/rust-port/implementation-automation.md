@@ -328,3 +328,26 @@ generation. Even that no-op is refused while a group is open. Tests cover forwar
 and backward navigation, no-op behavior, explicit targets, invalid bounds and
 payloads, preview refusal, and a veto after one accepted undo. Native transport
 and event delivery remain pending.
+
+## Document property calls
+
+[#3644](https://github.com/Oblikovati/Oblikovati/issues/3644) adds
+`documents.listProperties`, `getProperty`, and `setProperty`. These calls require
+an explicit open document ID; zero does not select the active document. Queries
+preserve set and property order, canonical typed values, and parameter provenance.
+Empty lists retain Go's null-array representation. Writes create custom sets or
+replace values without moving them, and record one `Set Property` undo step on
+the addressed document without changing focus. Unchanged writes add no history.
+
+The edit dispatcher now passes the whole document snapshot and selects the
+request's document before running the normal session transaction. Parameter calls
+still use the active document. Validation and observer veto restore the whole
+snapshot. Direct writes to parameter-owned properties are refused with the source
+parameter named, so the normal exposure refresh cannot silently overwrite a
+successful property response. Edit that parameter instead. Empty set names are
+also refused by the Rust model. Canonical property variants discard unit metadata,
+as in Go; an omitted value follows Go's empty-string default.
+
+Tests cover all supported value kinds, explicit document isolation, ordered
+custom/standard sets, replacement, undo/redo, no-ops, invalid requests, owned
+property refusal, and veto. Native transport and outbound events remain pending.

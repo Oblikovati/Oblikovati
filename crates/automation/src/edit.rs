@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use crate::properties;
 use crate::{
     collection, decode, encode, groups_edit, parameter_choices, parameter_edit,
     parameter_tolerance, parameter_update, parameter_value, settings_edit,
 };
 use oblikovati_api::{Error, wire::*};
-use oblikovati_model::{history::RecipeReservations, parameter::ParameterCollection};
+use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 15] = [
+pub const EDIT_METHODS: [&str; 16] = [
     METHOD_PARAMETERS_SET_SETTINGS,
+    METHOD_DOCUMENTS_SET_PROPERTY,
     METHOD_PARAMETERS_SET_TOLERANCE,
     METHOD_PARAMETERS_UPDATE,
     METHOD_PARAMETERS_SET_EXPRESSION_LIST,
@@ -28,6 +30,7 @@ pub const EDIT_METHODS: [&str; 15] = [
 
 pub(super) enum PreparedEdit {
     Settings(ParameterSettingsUpdateArgs),
+    Property(SetPropertyArgs),
     Tolerance(ParameterToleranceArgs),
     Update(ParameterUpdateArgs),
     Choices(ParameterExpressionListArgs),
@@ -46,6 +49,7 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_DOCUMENTS_SET_PROPERTY => Ok(Self::Property(decode(method, request)?)),
             METHOD_PARAMETERS_UPDATE => Ok(Self::Update(decode(method, request)?)),
             METHOD_PARAMETERS_SET_TOLERANCE => Ok(Self::Tolerance(decode(method, request)?)),
             METHOD_PARAMETERS_SET_EXPRESSION_LIST => Ok(Self::Choices(decode(method, request)?)),
@@ -75,6 +79,7 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::Property(_) => "Set Property",
             Self::Update(_) => "Edit Parameter",
             Self::Tolerance(_) => "Edit Tolerance",
             Self::Choices(_) => "Edit Value List",
@@ -95,10 +100,12 @@ impl PreparedEdit {
 
     pub(super) fn apply(
         self,
-        parameters: &mut ParameterCollection<u64>,
+        snapshot: &mut DocumentSnapshot,
         reservations: &mut RecipeReservations<'_>,
     ) -> Result<Vec<u8>, Error> {
+        let parameters = &mut snapshot.parameters;
         match self {
+            Self::Property(request) => encode(&properties::set(&mut snapshot.properties, request)?),
             Self::Update(request) => encode(&parameter_update::apply(parameters, request)?),
             Self::Tolerance(request) => encode(&parameter_tolerance::apply(parameters, request)?),
             Self::Choices(request) => encode(&parameter_choices::replace(parameters, request)?),
@@ -119,5 +126,14 @@ impl PreparedEdit {
                 encode(&groups_edit::membership(parameters, request, add)?)
             }
         }
+    }
+}
+
+impl PreparedEdit {
+    pub(super) fn document(&self, active: Option<u64>) -> Result<u64, Error> {
+        if let Self::Property(request) = self {
+            return Ok(request.document);
+        }
+        active.ok_or_else(|| Error("edit: expected an active document".into()))
     }
 }

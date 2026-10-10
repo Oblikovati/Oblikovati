@@ -26,16 +26,14 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionHost<'a, O, W> {
 
     fn edit(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut workspace = self.workspace.try_borrow_mut().map_err(|_| busy(method))?;
-        let id = workspace
-            .active_document()
-            .ok_or_else(|| Error(format!("method {method:?}: expected an active document")))?;
         let edit = PreparedEdit::decode(method, request)?;
+        let id = edit.document(workspace.active_document())?;
         workspace
             .commands(id)
             .map_err(|error| Error(error.to_string()))?
             .run(edit.label(), |snapshot, reservations| {
                 // Encode before committing, so a response failure cannot leave an unreported edit.
-                edit.apply(&mut snapshot.parameters, reservations)
+                edit.apply(snapshot, reservations)
             })
             .map_err(|error| Error(error.to_string()))
     }
