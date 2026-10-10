@@ -170,7 +170,7 @@ fn parameter_exposure_uses_the_selected_value_and_retains_provenance_on_replace(
     properties.expose_parameter(&parameters, 1).unwrap();
     assert_eq!(
         properties.get(USER_DEFINED, "width").unwrap().value,
-        VariantValue::Double(2.6)
+        VariantValue::String("26 mm".into())
     );
     assert_eq!(
         properties
@@ -184,7 +184,7 @@ fn parameter_exposure_uses_the_selected_value_and_retains_provenance_on_replace(
     assert_eq!(properties.set(USER_DEFINED).unwrap().properties().len(), 1);
     assert_eq!(
         properties.get(USER_DEFINED, "width").unwrap().value,
-        VariantValue::Double(3.1)
+        VariantValue::String("31 mm".into())
     );
     properties
         .put(USER_DEFINED, "width", VariantValue::Double(4.0))
@@ -282,7 +282,7 @@ fn unhealthy_projections_are_removed_and_rebuilt_on_recovery() {
     properties.sync_exposed_parameters(&parameters).unwrap();
     assert_eq!(
         properties.get(USER_DEFINED, "width").unwrap().value,
-        VariantValue::Double(3.0)
+        VariantValue::String("30 mm".into())
     );
     assert_eq!(
         properties

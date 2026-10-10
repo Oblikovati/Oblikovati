@@ -36,8 +36,9 @@ and DMS carries; signed zero; scientific notation; category fallback; invalid
 options; and numeric-range failures. The fixture was captured from Go `aa8297d1`
 with Go 1.27.0 on Linux/amd64, using the existing public formatter methods.
 
-UI fields, API formatter routing, custom-property rendering, and persistence of
-unit preferences remain to be connected. Display-rounded source intentionally
+UI fields remain to be connected. API formatting, persisted unit preferences,
+and [custom-property rendering](implementation-properties.md) now use the Rust
+model and session paths. Display-rounded source intentionally
 changes a value to display granularity; precise formatting instead preserves the
 preferred-unit floating-point value's shortest representation. Neither is a
 promise of exact physical round-trip through every floating-point unit conversion.

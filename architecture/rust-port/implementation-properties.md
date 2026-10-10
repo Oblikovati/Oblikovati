@@ -16,11 +16,13 @@ and nonfinite numbers are refused before any set is created or property changed.
 Go's unrestricted floating-point setter can retain nonfinite values, but the
 canonical JSON API cannot represent them; Rust reports that failure at mutation.
 
-The initial parameter exposure copies the selected numeric model value, including
-tolerance selection, into the user-defined set. Typed/bulk exposure is covered below. The host must call exposure again after a
-parameter changes; this is not an automatic subscription. Invalid or failed parameters leave existing properties unchanged. Bulk refresh
-and rename cleanup are covered below. Custom-property string formatting and
-session event integration remain pending.
+Parameter exposure projects the selected numeric model value, including its
+tolerance selection, through the stored custom-property format into the
+user-defined set. Text and Boolean parameters retain their types. Session edits
+and history navigation refresh these projections. Direct model users must call
+exposure again after parameter changes. A failed direct exposure leaves the
+collection unchanged; bulk refresh removes unhealthy projections and rebuilds
+them on recovery. Rename cleanup and storage are covered below.
 
 Six tests cover standard/custom order, replacement/removal, every API payload
 kind, signed zero, 64-bit integer boundaries, byte ownership, validation rollback,
@@ -84,7 +86,8 @@ property snapshots together, then restores both and checks the reconstructed
 collection. Standalone `with_properties` still refuses exposed state because it
 has no parameter context. Session save commands must use the coupled path when
 parameters are exposed. This resolves numeric/text/Boolean provenance persistence;
-custom-property string formatting remains pending.
+numeric custom-property formatting is now applied by the shared exposure path
+([#3672](https://github.com/Oblikovati/Oblikovati/issues/3672)).
 
 Persistence and model/load tests cover typed values, stale and
 missing saved projections, provenance, selected-value updates, rename/unexport/
@@ -159,7 +162,22 @@ selects sexagesimal degrees even when the document angle unit is radians.
 Tests cover every precision, dimensional rejection, invalid settings, overflow,
 working-scale powers, signed numeric zero, and unchanged source values. These
 are contract and analytic tests; the Go exposure helper ignores its stored format
-settings and cannot act as a formatter oracle. Property export still uses its
-existing typed projection. Connecting this formatter to export and checking
-save/reopen compatibility is tracked in
-[#3672](https://github.com/Oblikovati/Oblikovati/issues/3672).
+settings and cannot act as a formatter oracle. The shared exposure path now calls this formatter for numeric parameters;
+text and Boolean parameters retain their types. It uses the tolerance-selected
+model value and the owning document's working scale and display units. There
+is no second numeric projection path.
+
+Integration evidence: [#3672](https://github.com/Oblikovati/Oblikovati/issues/3672).
+Typed API tests cover unit changes, text/number switching, undo/redo, save/reopen,
+and expression edits after reopening. Existing source-refresh tests verify the
+same formatted projection for derived parameters. Incompatible units or precision
+fail the command without changing properties, parameters, or history.
+
+For schema 2 files, the export flag and stored parameter formatting remain
+authoritative. A saved numeric property snapshot is regenerated using those
+settings, including default text formatting when no settings were stored.
+This changes the projected type of a legacy default numeric exposure to text;
+its authored expression and evaluated model value do not change. No legacy
+numeric fallback is retained. Non-exposed authored properties are unchanged.
+Decimal flags, fractional text, angular precision, and parameter provenance
+survive save/reopen tests.

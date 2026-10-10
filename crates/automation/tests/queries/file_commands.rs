@@ -302,3 +302,6 @@ mod parameter_ids;
 
 #[path = "file_property_sets.rs"]
 mod property_sets;
+
+#[path = "file_property_format.rs"]
+mod property_format;

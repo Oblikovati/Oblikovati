@@ -202,7 +202,7 @@ fn bad_properties_and_parameter_owned_writes_are_refused_without_history() {
             .unwrap()
             .property;
         assert_eq!(property.from_parameter, "width");
-        assert_eq!(property.value.value, VariantValue::Double(4.0));
+        assert_eq!(property.value.value, VariantValue::String("40 mm".into()));
     }
     assert!(workspace.session(id).unwrap().undo_labels().is_empty());
     assert!(!workspace.needs_save(id).unwrap());

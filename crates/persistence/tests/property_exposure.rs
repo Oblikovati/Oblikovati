@@ -46,7 +46,7 @@ fn coupled_export_rebuilds_provenance_and_updates_selected_values() {
         .unwrap();
     assert_eq!(
         output.get(USER_DEFINED, "width").unwrap().value,
-        VariantValue::Double(3.1)
+        VariantValue::String("31 mm".into())
     );
     assert_eq!(
         output.get(USER_DEFINED, "width").unwrap().from_parameter,
@@ -58,7 +58,7 @@ fn coupled_export_rebuilds_provenance_and_updates_selected_values() {
     );
     assert_eq!(
         properties.get(USER_DEFINED, "width").unwrap().value,
-        VariantValue::Double(2.6)
+        VariantValue::String("26 mm".into())
     );
     assert!(
         reopened
@@ -113,7 +113,7 @@ fn unhealthy_exposure_round_trips_without_stale_properties() {
     properties.sync_exposed_parameters(&parameters).unwrap();
     assert_eq!(
         properties.get(USER_DEFINED, "width").unwrap().value,
-        VariantValue::Double(3.0)
+        VariantValue::String("30 mm".into())
     );
     assert!(properties.get(USER_DEFINED, "label").is_none());
     let original = package();
@@ -148,7 +148,7 @@ fn saved_export_flag_reconstructs_a_missing_or_stale_numeric_property() {
         .unwrap();
     assert_eq!(
         properties.get(USER_DEFINED, "width").unwrap().value,
-        VariantValue::Double(2.5)
+        VariantValue::String("25 mm".into())
     );
     assert_eq!(
         properties
@@ -209,4 +209,62 @@ fn failed_saved_parameter_does_not_restore_a_stale_property_as_current() {
     parameters.set_expression(1, "missing").unwrap();
     let properties = original.restore_parameter_properties(&parameters).unwrap();
     assert!(properties.get(USER_DEFINED, "width").is_none());
+}
+
+#[test]
+fn saved_text_formats_rebuild_the_same_projection_from_parameter_preferences() {
+    use oblikovati_api::types::{
+        PRECISION_EIGHTHS_FRACTIONAL, PRECISION_SECONDS_TWO_DECIMAL_ANGLE,
+        PRECISION_TWO_DECIMAL_PLACES,
+    };
+    use oblikovati_model::parameter::CustomPropertyFormat;
+    for (expression, units, precision, expected) in [
+        ("0.5 cm", "cm", PRECISION_TWO_DECIMAL_PLACES, ".50 cm"),
+        ("1.375 in", "in", PRECISION_EIGHTHS_FRACTIONAL, "1-3/8 in"),
+        (
+            "12.5 deg",
+            "deg",
+            PRECISION_SECONDS_TWO_DECIMAL_ANGLE,
+            "12° 30' .00\"",
+        ),
+    ] {
+        let mut parameters = exposed();
+        parameters.set_expression(1, expression).unwrap();
+        parameters
+            .set_custom_property_format(
+                1,
+                CustomPropertyFormat {
+                    units: units.into(),
+                    precision,
+                    show_leading_zeros: false,
+                    show_trailing_zeros: true,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        let saved = package()
+            .with_parameter_properties(
+                &parameters,
+                &DocumentProperties::default(),
+                UnitsOfMeasure::default(),
+            )
+            .unwrap();
+        let reopened = DocumentPackage::decode(&saved.encode().unwrap()).unwrap();
+        let restored = reopened.restore_document_parameters().unwrap();
+        let projected = reopened
+            .restore_parameter_properties(&restored.parameters)
+            .unwrap();
+        assert_eq!(
+            projected.get(USER_DEFINED, "width").unwrap().value,
+            VariantValue::String(expected.into())
+        );
+        assert_eq!(
+            projected.get(USER_DEFINED, "width").unwrap().from_parameter,
+            "width"
+        );
+        assert_eq!(
+            restored.parameters.get(1).unwrap().custom_property,
+            parameters.get(1).unwrap().custom_property
+        );
+    }
 }

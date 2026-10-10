@@ -18,12 +18,17 @@ impl DocumentProperties {
         let value = match parameter.current() {
             Some(ParameterValue::Text(value)) => VariantValue::String(value.clone()),
             Some(ParameterValue::Boolean(value)) => VariantValue::Boolean(*value),
-            _ => VariantValue::Double(
-                parameters
-                    .model_value(id)
-                    .map_err(|error| PropertyError(error.to_string()))?
-                    .value,
-            ),
+            _ => parameter
+                .custom_property
+                .format_numeric(
+                    parameters
+                        .model_value(id)
+                        .map_err(|error| PropertyError(error.to_string()))?,
+                    parameters.units(),
+                )
+                .map_err(|error| {
+                    PropertyError(format!("parameter {:?}: {error}", parameter.name))
+                })?,
         };
         self.put(USER_DEFINED, &parameter.name, value)?;
         self.find_mut(USER_DEFINED, &parameter.name)

@@ -155,7 +155,7 @@ fn navigation_observes_state_before_and_after_and_refreshes_properties() {
             .get(USER_DEFINED, "width")
             .unwrap()
             .value,
-        VariantValue::Double(1.0)
+        VariantValue::String("10 mm".into())
     );
     assert_eq!(session.redo_labels(), ["Edit Parameters"]);
     session.redo().unwrap();
@@ -179,7 +179,7 @@ fn navigation_observes_state_before_and_after_and_refreshes_properties() {
             .get(USER_DEFINED, "width")
             .unwrap()
             .value,
-        VariantValue::Double(2.0)
+        VariantValue::String("20 mm".into())
     );
 }
 

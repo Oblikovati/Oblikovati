@@ -166,7 +166,7 @@ fn refresh_updates_exposed_properties_and_publishes_source_failure() {
             .get(oblikovati_model::property::USER_DEFINED, "width")
             .unwrap()
             .value,
-        VariantValue::Double(9.0)
+        VariantValue::String("90 mm".into())
     );
     let generation = files.workspace().session(target).unwrap().generation();
     files.close_discarding_changes(source_id).unwrap();
