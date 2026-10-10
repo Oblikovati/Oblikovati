@@ -16,11 +16,11 @@ pub enum AngleFormat {
     DegreesMinutesSeconds,
 }
 
-/// Bounded display precision; document/API precision limits can be narrower.
+/// Document display preferences; precision retains the signed API range.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DisplayOptions {
-    pub length_precision: u8,
-    pub angle_precision: u8,
+    pub length_precision: i64,
+    pub angle_precision: i64,
     pub length_format: ParameterDisplayFormat,
     pub angle_format: AngleFormat,
 }
@@ -44,6 +44,13 @@ impl UnitsOfMeasure {
 
     /// Replace display preferences; for example `units.set_display_options(DisplayOptions::default())`.
     pub fn set_display_options(&mut self, options: DisplayOptions) -> Result<(), UnitError> {
+        for precision in [options.length_precision, options.angle_precision] {
+            if precision < 0 {
+                return Err(UnitError::Display(format!(
+                    "negative display precision {precision}"
+                )));
+            }
+        }
         if !matches!(
             options.length_format,
             DISPLAY_FORMAT_DECIMAL | DISPLAY_FORMAT_FRACTIONAL | DISPLAY_FORMAT_ARCHITECTURAL
@@ -78,7 +85,7 @@ impl UnitsOfMeasure {
             Dimension::Angle if self.display.angle_format == AngleFormat::DegreesMinutesSeconds => {
                 engineering::dms(self.named_value(quantity, "deg")?)
             }
-            Dimension::Angle => Ok(number::fixed(value, self.display.angle_precision)),
+            Dimension::Angle => number::fixed(value, self.display.angle_precision),
             _ => Ok(number::shortest(value)),
         }
     }
@@ -124,7 +131,7 @@ impl UnitsOfMeasure {
             DISPLAY_FORMAT_ARCHITECTURAL => {
                 engineering::architectural(self.named_value(quantity, "in")?, self.denominator())
             }
-            _ => Ok(number::fixed(preferred, self.display.length_precision)),
+            _ => number::fixed(preferred, self.display.length_precision),
         }
     }
 }

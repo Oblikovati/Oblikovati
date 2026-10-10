@@ -82,14 +82,10 @@ fn apply_display(
     units.set_display_options(display).map_err(unit_error)
 }
 
-fn precision(key: &str, value: &str) -> Result<u8, PackageCodecError> {
-    value.parse().map_err(|_| {
-        invalid_unit(
-            key,
-            value,
-            "an integer display precision from 0 through 255",
-        )
-    })
+fn precision(key: &str, value: &str) -> Result<i64, PackageCodecError> {
+    value
+        .parse()
+        .map_err(|_| invalid_unit(key, value, "a nonnegative signed 64-bit display precision"))
 }
 
 fn length_format(value: &str) -> Result<ParameterDisplayFormat, PackageCodecError> {

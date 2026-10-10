@@ -62,12 +62,12 @@ fn apply_display(units: &mut UnitsOfMeasure, request: &SetDocumentUnitsArgs) -> 
         .map_err(|error| Error(error.to_string()))
 }
 
-fn precision(requested: Option<&i64>, current: u8) -> Result<u8, Error> {
-    requested.map_or(Ok(current), |value| {
-        u8::try_from(*value).map_err(|_| {
-            Error(format!(
-                "display precision {value}: expected 0..255 supported by Rust document storage"
-            ))
-        })
-    })
+fn precision(requested: Option<&i64>, current: i64) -> Result<i64, Error> {
+    let value = requested.copied().unwrap_or(current);
+    if value < 0 {
+        return Err(Error(format!(
+            "display precision {value}: expected a nonnegative signed 64-bit integer"
+        )));
+    }
+    Ok(value)
 }

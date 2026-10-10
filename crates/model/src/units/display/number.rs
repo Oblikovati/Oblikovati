@@ -23,8 +23,18 @@ pub(super) fn shortest(value: f64) -> String {
     value.to_string()
 }
 
-pub(super) fn fixed(value: f64, precision: u8) -> String {
-    format!("{value:.precision$}", precision = usize::from(precision))
+pub(super) fn fixed(value: f64, precision: i64) -> Result<String, UnitError> {
+    // Keep output work bounded independently of the persisted preference (#3654).
+    const MAX_FORMAT_DIGITS: i64 = 1_000_000;
+    if !(0..=MAX_FORMAT_DIGITS).contains(&precision) {
+        return Err(UnitError::Display(format!(
+            "display precision {precision}: expected at most {MAX_FORMAT_DIGITS} digits per formatted value"
+        )));
+    }
+    Ok(format!(
+        "{value:.precision$}",
+        precision = precision as usize
+    ))
 }
 
 pub(super) fn with_unit(value: String, unit: &str) -> String {
@@ -34,8 +44,16 @@ pub(super) fn with_unit(value: String, unit: &str) -> String {
     format!("{value} {unit}")
 }
 
-pub(super) fn round_decimal(value: f64, precision: u8) -> Result<f64, UnitError> {
-    round_scaled(value, 10_f64.powi(i32::from(precision)))
+pub(super) fn round_decimal(value: f64, precision: i64) -> Result<f64, UnitError> {
+    if precision > 308 {
+        // Formatting avoids overflowing the power-of-ten intermediate for tiny values.
+        return fixed(value, precision)?.parse().map_err(|_| {
+            UnitError::Display(format!(
+                "rounded value {value} at precision {precision}: expected a finite decimal"
+            ))
+        });
+    }
+    round_scaled(value, 10_f64.powi(precision as i32))
 }
 
 pub(super) fn round_scaled(value: f64, scale: f64) -> Result<f64, UnitError> {

@@ -98,7 +98,7 @@ fn invalid_fields_are_refused_instead_of_replaced_during_export() {
         "{unitless: mm}",
         "{length: deg}",
         "{lengthPrecision: '-1'}",
-        "{anglePrecision: '256'}",
+        "{anglePrecision: '9223372036854775808'}",
         "{lengthPrecision: bad}",
         "{lengthFormat: bad}",
         "{angleFormat: bad}",

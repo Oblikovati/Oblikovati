@@ -96,7 +96,7 @@ fn invalid_unit_updates_are_atomic_and_leave_no_undo_entries() {
         br#"{"lengthUnit":"in","angleUnit":"mm"}"#.as_slice(),
         br#"{"lengthUnit":"","massUnit":"g"}"#,
         br#"{"lengthUnit":"in","lengthDisplayPrecision":-1}"#,
-        br#"{"lengthUnit":"in","angleDisplayPrecision":256}"#,
+        br#"{"lengthUnit":"in","angleDisplayPrecision":-2}"#,
         br#"{"lengthUnit":"in","lengthDisplayFormat":"bad"}"#,
     ] {
         assert!(
@@ -132,6 +132,8 @@ fn unit_preferences_survive_save_close_and_reopen() {
         .documents()
         .set_units(&SetDocumentUnitsArgs {
             length_unit: Some(Box::new("in".into())),
+            length_display_precision: Some(Box::new(300)),
+            angle_display_precision: Some(Box::new(i64::MAX)),
             length_display_format: Some(Box::new("architectural".into())),
             ..Default::default()
         })
@@ -156,5 +158,7 @@ fn unit_preferences_survive_save_close_and_reopen() {
         })
         .unwrap();
     assert_eq!(decimal.length_unit, "in");
+    assert_eq!(decimal.length_display_precision, 300);
+    assert_eq!(decimal.angle_display_precision, i64::MAX);
     assert_eq!(decimal.length_display_format, "decimal");
 }

@@ -13,8 +13,8 @@ pub(super) fn document_units(units: &UnitsOfMeasure) -> DocumentUnitsInfo {
         angle_unit: units.preferred_name(Dimension::Angle).into(),
         mass_unit: units.preferred_name(Dimension::Mass).into(),
         time_unit: units.preferred_name(Dimension::Time).into(),
-        length_display_precision: i64::from(display.length_precision),
-        angle_display_precision: i64::from(display.angle_precision),
+        length_display_precision: display.length_precision,
+        angle_display_precision: display.angle_precision,
         length_display_format: display_name(display.length_format).into(),
         working_scale_cm: units.working_scale(),
     }

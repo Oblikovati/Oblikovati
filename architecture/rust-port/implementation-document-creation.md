@@ -66,8 +66,20 @@ operation. Existing parameter records, expressions, and stored values remain
 unchanged, while formatted API values use the new display units. Tests check
 atomic refusal, partial updates, history, and save/close/reopen.
 
-Rust display precision currently uses `u8`. Negative values and values above 255
-are refused with an explicit diagnostic; they are never wrapped. Go accepts a
-larger nonnegative range. [#3654](https://github.com/Oblikovati/Oblikovati/issues/3654)
-tracks the model, formatting, and persistence changes needed to remove this
-compatibility gap.
+[#3654](https://github.com/Oblikovati/Oblikovati/issues/3654) removes the former
+`u8` storage restriction. Model preferences, API updates, and package loading now
+retain the full nonnegative signed 64-bit range. Negative preferences are refused
+before replacing the prior settings. Save/reopen tests retain both precision 300
+and `i64::MAX` without truncation.
+
+A fixed Go capture checks decimal formatting at 256, 300, and 1,000 places for
+normal and subnormal values. Existing lower-precision captures remain unchanged.
+Rounded expressions above 308 places use decimal formatting and parsing to avoid
+an overflowing power-of-ten intermediate; this yields a finite result where the
+legacy Go multiplication can produce NaN.
+
+Formatting has a separate one-million-digit output limit per value. Requests
+above it return an explicit error naming the requested precision and limit;
+the stored preference remains unchanged. This is an output-resource limit, not
+a truncated preference or silent reduction of precision. Fractional display keeps
+its existing denominator rule, independent of the stored integer range.
