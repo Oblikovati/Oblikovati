@@ -434,3 +434,23 @@ fn document_properties_are_reconstructed_before_registration() {
         assert!(index.identity(1).is_some());
     }
 }
+
+#[test]
+fn loaded_parameter_export_flags_rebuild_property_provenance() {
+    use oblikovati_api::types::VariantValue;
+    use oblikovati_model::property::USER_DEFINED;
+    use oblikovati_persistence::load::load_parameter_package;
+    let encoded = b"schemaVersion: 2\ndocumentType: 1\nmodel: {parameters: [{name: label, kind: user, valueType: text, text: steel, export: true}]}\n";
+    let loaded = load_parameter_package(
+        Path::new("exposed.opd"),
+        1,
+        "alpha",
+        &mut DocumentIdentityIndex::default(),
+        &mut source(),
+        &mut reader(encoded),
+    )
+    .unwrap();
+    let property = loaded.properties.get(USER_DEFINED, "label").unwrap();
+    assert_eq!(property.value, VariantValue::String("steel".into()));
+    assert_eq!(property.from_parameter, "label");
+}

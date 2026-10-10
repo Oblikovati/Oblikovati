@@ -28,7 +28,7 @@ pub fn load_parameter_package(
         .restore_document_parameters()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let properties = package
-        .restore_properties()
+        .restore_parameter_properties(&restored.parameters)
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let loaded = register_package(path, session_id, version, index, source, package)?;
     Ok(LoadedParameterPackage {

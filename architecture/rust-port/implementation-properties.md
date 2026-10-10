@@ -16,11 +16,11 @@ and nonfinite numbers are refused before any set is created or property changed.
 Go's unrestricted floating-point setter can retain nonfinite values, but the
 canonical JSON API cannot represent them; Rust reports that failure at mutation.
 
-Parameter exposure copies the selected numeric model value, including tolerance
-selection, into the user-defined set. The host must call exposure again after a
-parameter changes; this is not an automatic subscription. Invalid, failed, or
-nonnumeric parameters leave existing properties unchanged. Local rename cleanup,
-custom-property string formatting, and session event integration remain pending.
+The initial parameter exposure copies the selected numeric model value, including
+tolerance selection, into the user-defined set. Typed/bulk exposure is covered below. The host must call exposure again after a
+parameter changes; this is not an automatic subscription. Invalid or failed parameters leave existing properties unchanged. Bulk refresh
+and rename cleanup are covered below. Custom-property string formatting and
+session event integration remain pending.
 
 Six tests cover standard/custom order, replacement/removal, every API payload
 kind, signed zero, 64-bit integer boundaries, byte ownership, validation rollback,
@@ -44,8 +44,8 @@ This intentionally replaces Go's skipped-invalid-record behavior with a visible
 error. Export validates existing property records before replacing them, preserves
 unrelated package/model sections, and verifies the reconstructed collection.
 The flat legacy shape has no record for an empty custom set or parameter source
-provenance. Export refuses those states until the host exposure/recipe migration
-can represent them; it does not drop them silently.
+provenance. Standalone property export refuses those states rather than dropping them. The
+coupled parameter/property export described below reconstructs provenance.
 
 Typed file loading now reconstructs properties before identity registration and
 returns them alongside parameters. Tests cover all five payload kinds, signed
@@ -55,3 +55,31 @@ state. A Go-generated fixture contains text, Boolean, integer, double, binary,
 and empty-byte properties. A load integration test proves an invalid property
 claims no identity and a valid one is returned as a typed value. Go's part,
 assembly, and value-type property round-trip tests provide the baseline.
+
+## Parameter exposure refresh and coupled export — partial R2
+
+Tracking: [#3611](https://github.com/Oblikovati/Oblikovati/issues/3611).
+`sync_exposed_parameters` now refreshes all parameters with the export flag in a
+separate candidate. Numeric values use the selected tolerance-band value; text
+and Boolean parameters retain their API types. A failed parameter discards the
+whole refresh. Known owned projections are removed after rename, unexport, or
+parameter deletion. Unrelated authored properties remain. An export flag claims
+the same-named user-defined property, matching the existing single-parameter
+exposure operation's replacement behavior.
+
+The fixed Go source contains the exposure helper but no application refresh
+call. Rust now supplies that missing connection explicitly. Typed file loading
+reconstructs exposure provenance from the saved export flags after decoding
+property records. The legacy flat file therefore needs no new provenance field.
+Stored exposed values are snapshots; the flagged parameter is authoritative.
+
+`with_parameter_properties` refreshes a candidate, captures parameters and
+property snapshots together, then restores both and checks the reconstructed
+collection. Standalone `with_properties` still refuses exposed state because it
+has no parameter context. Session save commands must use the coupled path when
+parameters are exposed. This resolves numeric/text/Boolean provenance persistence;
+custom-property string formatting and empty custom-set persistence remain pending.
+
+Five persistence tests and added model/load tests cover typed values, stale and
+missing saved projections, provenance, selected-value updates, rename/unexport/
+delete cleanup, retained authored content, and atomic refresh/export failure.

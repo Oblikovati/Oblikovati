@@ -6,6 +6,7 @@ use oblikovati_model::property::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+mod exposure;
 mod value;
 
 #[derive(Deserialize, Serialize)]
@@ -46,7 +47,7 @@ impl DocumentPackage {
         properties: &DocumentProperties,
     ) -> Result<Self, PackageCodecError> {
         self.restore_properties()?;
-        let records = capture_properties(properties)?;
+        let records = capture_properties(properties, false)?;
         let mut candidate = self.clone();
         let mut model = self
             .root
@@ -87,6 +88,7 @@ fn restore_property(
 
 fn capture_properties(
     properties: &DocumentProperties,
+    include_exposure: bool,
 ) -> Result<Vec<PropertyRecipe>, PackageCodecError> {
     let mut records = Vec::new();
     for set in properties.sets() {
@@ -105,7 +107,7 @@ fn capture_properties(
             )));
         }
         for property in set.properties() {
-            records.push(capture_property(&set.name, property)?);
+            records.push(capture_property(&set.name, property, include_exposure)?);
         }
     }
     Ok(records)
@@ -114,8 +116,9 @@ fn capture_properties(
 fn capture_property(
     set: &str,
     property: &oblikovati_model::property::DocumentProperty,
+    include_exposure: bool,
 ) -> Result<PropertyRecipe, PackageCodecError> {
-    if !property.from_parameter.is_empty() {
+    if !include_exposure && !property.from_parameter.is_empty() {
         return Err(PackageCodecError(format!(
             "property {set:?}/{:?}: expected authored provenance; parameter exposure requires host reconstruction",
             property.name

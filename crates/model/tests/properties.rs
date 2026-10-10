@@ -199,7 +199,7 @@ fn parameter_exposure_uses_the_selected_value_and_retains_provenance_on_replace(
 }
 
 #[test]
-fn unavailable_or_non_numeric_parameters_do_not_change_exposed_properties() {
+fn unavailable_parameters_do_not_change_exposed_properties() {
     let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
     parameters
         .insert_expression(1, "width", USER_PARAM, "2")
@@ -209,7 +209,7 @@ fn unavailable_or_non_numeric_parameters_do_not_change_exposed_properties() {
     properties.expose_parameter(&parameters, 1).unwrap();
     let before = properties.clone();
     parameters.set_expression(1, "missing").unwrap();
-    for id in [1, 2, 99] {
+    for id in [1, 99] {
         assert!(properties.expose_parameter(&parameters, id).is_err());
         assert_eq!(properties, before);
     }
@@ -229,4 +229,33 @@ fn empty_byte_payloads_have_the_go_owned_slice_representation() {
         properties.get(USER_DEFINED, "empty").unwrap().value,
         VariantValue::Bytes(Bytes(None))
     );
+}
+
+#[test]
+fn typed_exposure_and_deleted_parameter_cleanup_preserve_authored_properties() {
+    let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
+    parameters.insert_text(1, "label", "steel").unwrap();
+    parameters.insert_boolean(2, "approved", true).unwrap();
+    for id in [1, 2] {
+        let mut annotations = parameters.get(id).unwrap().annotations.clone();
+        annotations.exposed_as_property = true;
+        parameters.set_annotations(id, annotations).unwrap();
+    }
+    let mut properties = DocumentProperties::default();
+    properties
+        .put(USER_DEFINED, "manual", VariantValue::Integer(1))
+        .unwrap();
+    properties.sync_exposed_parameters(&parameters).unwrap();
+    assert_eq!(
+        properties.get(USER_DEFINED, "label").unwrap().value,
+        VariantValue::String("steel".into())
+    );
+    assert_eq!(
+        properties.get(USER_DEFINED, "approved").unwrap().value,
+        VariantValue::Boolean(true)
+    );
+    parameters.remove(1).unwrap();
+    properties.sync_exposed_parameters(&parameters).unwrap();
+    assert!(properties.get(USER_DEFINED, "label").is_none());
+    assert!(properties.get(USER_DEFINED, "manual").is_some());
 }
