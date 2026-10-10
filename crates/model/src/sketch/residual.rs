@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DistanceMeasure, LineRelation, line_residual};
+use super::{DistanceMeasure, LineRelation, circle_residual, line_residual};
 use oblikovati_solve::{
     ad::{DualNumber, DualVector},
     residual::{ResidualError, ResidualSource},
@@ -12,6 +12,9 @@ pub(super) enum PlanarEquation {
     Midpoint,
     PointOnLine,
     Lines(LineRelation),
+    PointOnCircle,
+    EqualRadius,
+    Radius(f64),
     Distance {
         measure: DistanceMeasure,
         target: f64,
@@ -33,7 +36,9 @@ impl PreparedConstraint {
     }
     fn variable_count(&self) -> usize {
         match self.equation {
-            PlanarEquation::Fix(_) => 2,
+            PlanarEquation::Fix(_) | PlanarEquation::EqualRadius => 2,
+            PlanarEquation::Radius(_) => 1,
+            PlanarEquation::PointOnCircle => 5,
             PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
             PlanarEquation::Lines(_) => 8,
             _ => 4,
@@ -63,6 +68,9 @@ impl ResidualSource for PreparedConstraint {
             ]),
             PlanarEquation::Midpoint => midpoint(variables),
             PlanarEquation::PointOnLine => line_residual::point_on_line(variables),
+            PlanarEquation::PointOnCircle => circle_residual::point_on_circle(variables),
+            PlanarEquation::EqualRadius => circle_residual::equal_radius(variables),
+            PlanarEquation::Radius(target) => circle_residual::radius_target(&variables[0], target),
             PlanarEquation::Lines(relation) => line_residual::line_relation(variables, relation),
             PlanarEquation::Distance { measure, target } => {
                 Ok(vec![distance(variables, measure)?.shifted(-target)?])

@@ -52,10 +52,11 @@ impl Sketch2D {
             .position = position;
         Ok(())
     }
-    fn require_new_entity(&self, id: SketchEntityId) -> Result<(), SketchError> {
+    pub(super) fn require_new_entity(&self, id: SketchEntityId) -> Result<(), SketchError> {
         if id.0 == 0
             || self.points.iter().any(|point| point.id == id)
             || self.lines.iter().any(|line| line.id == id)
+            || self.circles.iter().any(|circle| circle.id == id)
         {
             return Err(SketchError::Definition(format!(
                 "sketch entity {id:?}: expected a unique nonzero identity"

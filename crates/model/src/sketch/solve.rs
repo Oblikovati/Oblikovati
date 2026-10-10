@@ -62,14 +62,7 @@ impl Sketch2D {
         let prepared = compile::prepare(self, parameters)?;
         let numerical = solve_constraints(&prepared.values, &prepared.blocks(), options, cancelled)
             .map_err(|cause| self.constraint_failure(cause))?;
-        let mut candidate = self.clone();
-        for (point, values) in candidate
-            .points
-            .iter_mut()
-            .zip(numerical.values.as_chunks::<2>().0.iter())
-        {
-            point.position = [values[0], values[1]];
-        }
+        let candidate = self.candidate_values(&numerical.values)?;
         Ok(SketchSolveOutcome {
             candidate,
             numerical,

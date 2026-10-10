@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Application-owned planar geometry and constraints, independent from kernel topology.
+mod circle;
+mod circle_residual;
 mod compile;
 mod constraint;
 mod error;
@@ -8,6 +10,8 @@ mod geometry;
 mod line_residual;
 mod residual;
 mod solve;
+mod variables;
+pub use circle::SketchCircle2D;
 pub use constraint::{
     DistanceMeasure, LineRelation, PlanarConstraint, SketchConstraint, SketchConstraintId,
 };
@@ -20,6 +24,7 @@ pub use solve::SketchSolveOutcome;
 pub struct Sketch2D {
     points: Vec<SketchPoint2D>,
     lines: Vec<SketchLine2D>,
+    circles: Vec<SketchCircle2D>,
     constraints: Vec<SketchConstraint>,
 }
 impl Sketch2D {

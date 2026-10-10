@@ -27,11 +27,7 @@ pub(super) fn prepare(
     sketch: &Sketch2D,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PreparedSketch, SketchError> {
-    let values = sketch
-        .points
-        .iter()
-        .flat_map(|point| point.position)
-        .collect();
+    let values = sketch.variable_values();
     let sources = sketch
         .constraints
         .iter()
@@ -51,7 +47,8 @@ pub(super) fn prepare(
 fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
     let mut dependencies = Vec::new();
     for constraint in &sketch.constraints {
-        if let PlanarConstraint::Distance { parameter, .. } = constraint.relation
+        if let PlanarConstraint::Distance { parameter, .. }
+        | PlanarConstraint::Radius { parameter, .. } = constraint.relation
             && !dependencies.contains(&parameter)
         {
             dependencies.push(parameter);
@@ -65,28 +62,25 @@ fn map_variables(
     relation: &PlanarConstraint,
 ) -> Result<Vec<usize>, SketchError> {
     sketch
-        .constraint_points(relation)?
+        .constraint_variables(relation)?
         .iter()
-        .try_fold(Vec::new(), |mut columns, id| {
-            let point = sketch
-                .points
-                .iter()
-                .position(|point| point.id == *id)
-                .ok_or_else(|| {
-                    SketchError::Definition(format!(
-                        "sketch point {id:?}: expected an owned solver point"
-                    ))
-                })?;
-            columns.extend([point * 2, point * 2 + 1]);
-            Ok(columns)
-        })
+        .map(|variable| sketch.variable_column(*variable))
+        .collect()
 }
+
 fn equation(
     constraint: &SketchConstraint,
     parameters: &ParameterCollection<u64>,
 ) -> Result<PlanarEquation, SketchError> {
     Ok(match constraint.relation {
-        PlanarConstraint::Coincident { .. } => PlanarEquation::Coincident,
+        PlanarConstraint::Coincident { .. } | PlanarConstraint::Concentric { .. } => {
+            PlanarEquation::Coincident
+        }
+        PlanarConstraint::PointOnCircle { .. } => PlanarEquation::PointOnCircle,
+        PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
+        PlanarConstraint::Radius { parameter, .. } => {
+            PlanarEquation::Radius(radius_target(constraint, parameter, parameters)?)
+        }
         PlanarConstraint::Horizontal { .. } => PlanarEquation::Coordinate(1),
         PlanarConstraint::Vertical { .. } => PlanarEquation::Coordinate(0),
         PlanarConstraint::Fix { position, .. } => PlanarEquation::Fix(position),
@@ -123,4 +117,19 @@ fn length_target(
         )));
     }
     Ok(quantity.value)
+}
+
+fn radius_target(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+) -> Result<f64, SketchError> {
+    let value = length_target(constraint, parameter, parameters)?;
+    if value == 0.0 {
+        return Err(SketchError::Definition(format!(
+            "sketch constraint {:?} radius parameter {parameter} value {value}: expected a strictly positive working-unit length",
+            constraint.id
+        )));
+    }
+    Ok(value)
 }

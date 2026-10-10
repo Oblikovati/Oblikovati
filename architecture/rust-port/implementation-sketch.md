@@ -122,3 +122,57 @@ checks. The fixture baseline remains
 
 These numerical relations do not prove profile topology, sketch persistence,
 SolveSpace parity, API/session integration or kernel operation acceptance.
+
+## Analytic circles and radius variables
+
+Tracking: [#3706](https://github.com/Oblikovati/Oblikovati/issues/3706).
+`SketchCircle2D` keeps its own entity ID, an owned center point ID and a positive
+finite radius in working length units. Circles share the point/line entity
+namespace and preserve center identity across candidate solves. Each radius adds
+one independent variable after all point coordinates, including when no constraint
+uses it. Multiple circles can share one center without duplicate coordinates.
+
+Typed `SketchVariable` references now distinguish point coordinates from circle
+radii. Constraint compilation resolves both into one full variable universe;
+candidate adoption uses that same layout and checks its shape and circle radius
+postconditions. This replaces the assumption that every variable comes in a
+coordinate pair. It does not add a second numerical solver.
+
+The model supports point-on-circle, concentric centers, equal radii and a radius
+dimension backed by an existing healthy length parameter. Concentric equations
+reuse point coincidence. Equal-radius and radius equations reference only the
+radii they read. Incidence uses the analytic center distance, not sampled edges.
+Radius dimensions retain their parameter IDs and selected engineering values;
+zero radius targets are refused explicitly. Radius edits, source evaluation and
+returned candidates all preserve positive finite radii. Nonpositive trial radii
+are named domain rejections through bounded damping, never negative geometry
+silently published as a result. Zero distances retain the documented AD
+convention; failure is independent from the local DOF result.
+
+A fixed center and driving radius solve with rank 3 and DOF 0. Editing a 5 cm
+radius parameter to 8 cm recomputes that circle while preserving its IDs and
+constraints. Concentric/equal-radius circles solve a six-variable system with
+rank 6; shared centers leave each radius independent. Tests cover analytic point
+incidence, free radii, structural concentric redundancy, invalid IDs/references,
+nonpositive and failed targets, cancellation, immutable inputs and candidate
+shape/domain errors. A point forced across its center rejects a negative-radius
+trial and later converges to a valid positive-radius circle.
+
+Four Go residual/Jacobian fixtures cover incidence, concentricity, equal radii
+and a radius dimension. The radius-only equations project Go's unused center
+columns out of the comparison; the full Rust DOF universe still includes them.
+Independent scalar central differences check every derivative. Equation values
+and partials survive unit sweeps `1e-200` through `1e200`; model solve/rank tests
+cover `1e-100` through `1e100`. Selected Go circular incidence and radius tests
+pass as reference evidence at the same recorded baseline.
+
+Circular arcs, implicit arc circularity, line/circle and circle/circle tangency,
+conic and spline geometry, circle profile topology, persistence and API/UI
+integration remain to port. An in-memory analytic circle is not evidence of a
+kernel profile, a saved/reopened sketch or a rendered feature.
+
+An added free-radius invariant exposed QR roundoff in an unused variable. The
+shared [step correction](implementation-solver.md#unused-variable-step-invariant)
+eliminates zero working-Jacobian columns before factorization and preserves
+free values bit-for-bit. The circle regression and the reduced solver regression
+both pass; no circle-specific radius repair was added.

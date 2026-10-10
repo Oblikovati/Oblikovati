@@ -47,6 +47,20 @@ pub enum PlanarConstraint {
         lines: [SketchEntityId; 2],
         relation: LineRelation,
     },
+    PointOnCircle {
+        point: SketchEntityId,
+        circle: SketchEntityId,
+    },
+    Concentric {
+        circles: [SketchEntityId; 2],
+    },
+    EqualRadius {
+        circles: [SketchEntityId; 2],
+    },
+    Radius {
+        circle: SketchEntityId,
+        parameter: u64,
+    },
     Distance {
         points: [SketchEntityId; 2],
         measure: DistanceMeasure,
@@ -100,6 +114,15 @@ impl Sketch2D {
                 let endpoints = self.line(*line)?.endpoints;
                 vec![*point, endpoints[0], endpoints[1]]
             }
+            PlanarConstraint::PointOnCircle { point, circle } => {
+                vec![*point, self.circle(*circle)?.center]
+            }
+            PlanarConstraint::Concentric { circles }
+            | PlanarConstraint::EqualRadius { circles } => circles
+                .iter()
+                .map(|id| Ok(self.circle(*id)?.center))
+                .collect::<Result<Vec<_>, SketchError>>()?,
+            PlanarConstraint::Radius { circle, .. } => vec![self.circle(*circle)?.center],
             PlanarConstraint::Lines { lines, .. } => {
                 let first = self.line(lines[0])?.endpoints;
                 let second = self.line(lines[1])?.endpoints;

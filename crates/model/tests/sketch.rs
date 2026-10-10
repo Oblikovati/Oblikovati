@@ -446,3 +446,6 @@ mod dimensions;
 
 #[path = "sketch/lines.rs"]
 mod lines;
+
+#[path = "sketch/circles.rs"]
+mod circles;
