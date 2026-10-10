@@ -250,3 +250,24 @@ export formatting, feature recomputation, or outbound parameter notifications.
 Tests cover optional-field semantics, all display and selection modes, every
 custom precision name, action ordering and clearing, property exposure,
 undo/redo, invalid late fields, failed exposure, and veto.
+
+## Transaction controls
+
+[#3640](https://github.com/Oblikovati/Oblikovati/issues/3640) adds canonical
+`transaction.begin`, `end`, `abort`, `undo`, `redo`, and `state`. Commands use the
+active document's existing session history, without an additional automatic
+transaction. Nested groups retain the outer label; only the outer end commits.
+Abort cancels all nested levels. A failed edit leaves the open batch available
+for explicit abort, and a commit veto restores the pre-batch snapshot.
+
+State is also available through the immutable query host. It returns empty
+history when no document is active and reports committed undo/redo labels in
+Go order. During an open group, the state still describes committed history;
+undo/redo commands refuse navigation until the group closes. Transaction commands
+cannot run through the query-only host and do not change document focus.
+
+Tests cover nested batching, returned state, undo/redo, no-op groups, malformed
+begin requests, empty context/history, failed edits followed by abort, redo
+preservation, veto, reentry refusal, and isolation between documents. History
+browsing, saved checkpoints, absolute cursor jumps, and native transaction-event
+delivery remain separate work.

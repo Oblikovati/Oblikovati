@@ -16,6 +16,7 @@ mod parameter_tolerance;
 mod parameter_update;
 mod parameter_value;
 mod parameters;
+mod transactions;
 mod units;
 use oblikovati_api::{Error, client::Caller, wire::*};
 use oblikovati_model::{parameter::ParameterCollection, units::UnitsOfMeasure};
@@ -24,10 +25,12 @@ use oblikovati_session::{
     workspace::{WorkspaceObserver, WorkspaceSession},
 };
 use serde::{Serialize, de::DeserializeOwned};
+pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 19] = [
+pub const QUERY_METHODS: [&str; 20] = [
     METHOD_DOCUMENTS_GET_UNITS,
+    METHOD_TRANSACTION_STATE,
     METHOD_PARAMETERS_LIST,
     METHOD_PARAMETERS_GET_DETAIL,
     METHOD_PARAMETERS_GET_SETTINGS,
@@ -79,6 +82,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_TRANSACTION_STATE => encode(&transactions::state(self.workspace)?),
             METHOD_PARAMETERS_GET_DETAIL => encode(&detail::read(
                 self.active_parameters()?,
                 decode(method, request)?,

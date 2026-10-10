@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use crate::{EDIT_METHODS, QUERY_METHODS, SessionQueryHost, edit::PreparedEdit};
+use crate::{
+    EDIT_METHODS, QUERY_METHODS, SessionQueryHost, TRANSACTION_METHODS, edit::PreparedEdit,
+    transactions,
+};
 use oblikovati_api::{Error, client::Caller};
 use oblikovati_session::{
     TransactionObserver,
@@ -44,11 +47,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionHost<'_, O,
             let workspace = self.workspace.try_borrow().map_err(|_| busy(method))?;
             return SessionQueryHost::new(&workspace).call(method, request);
         }
+        if TRANSACTION_METHODS.contains(&method) {
+            let mut workspace = self.workspace.try_borrow_mut().map_err(|_| busy(method))?;
+            return transactions::apply(&mut workspace, method, request);
+        }
         if EDIT_METHODS.contains(&method) {
             return self.edit(method, request);
         }
         Err(Error(format!(
-            "method {method:?}: expected a supported query from {QUERY_METHODS:?} or edit from {EDIT_METHODS:?}"
+            "method {method:?}: expected a supported query from {QUERY_METHODS:?} or edit from {EDIT_METHODS:?} or transaction from {TRANSACTION_METHODS:?}"
         )))
     }
 }
