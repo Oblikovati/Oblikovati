@@ -1,0 +1,149 @@
+# Martensite integration and readiness
+
+This plan consumes Martensite from `RustyCADKernel`. It does not assume that
+all OCCT capabilities are already usable. The
+[source baseline](source-map.md) fixes the inspected revision.
+
+## Observed integration limits
+
+- The package `rustycad-kernel` currently re-exports only `rustycad_tkernel`
+  as `foundation`. A dependency on that facade alone will not provide modeling.
+- Modeling lives in toolkit crates, including `rustycad-tkbrep`,
+  `rustycad-tktopalgo`, `rustycad-tkprim`, `rustycad-tkbo`,
+  `rustycad-tkfillet`, `rustycad-tkoffset`, and `rustycad-tkmesh`.
+  Source and tests exist, but this planning task did not run their acceptance.
+- `Shape` contains a shared `Handle<dyn TShape>`. A cloned shape preserves
+  shared identity. Some builders can update referenced geometry while preparing
+  an operation, so `&Shape` alone does not imply immutable evaluation.
+- `martensite-vulkan` has an offscreen path through Graphic3d, V3d, and AIS.
+  At the recorded revision, native window presentation is unsupported, and
+  highlight rendering and the wider built-in presentation set remain open.
+- The kernel completeness record does not claim full behavioral equivalence
+  or a complete platform matrix. Toolkit mapping counts are not readiness
+  evidence for an application feature.
+- The kernel's current priority is visualization and Vulkan before broad
+  exchange-format work. The application schedule follows that order.
+
+Select the required toolkit dependencies in the application adapter. Keep
+their revisions identical. A later facade expansion belongs in Martensite;
+it is not a prerequisite for every initial application test. Do not invent
+a dependency named `martensite` that the repository does not provide.
+
+The Go model and API use centimetres and radians by default. Documents can
+also carry a working scale (`model/param/units_of_measure.go`). Preserve its
+length, area, and volume exponents, including tolerance conversion. Do not
+assume millimetres at the Martensite seam or apply a hidden factor of ten.
+Test non-default working scales and exchange units before accepting K01.
+
+## Kernel capability checks
+
+Every row starts as **unverified for Oblikovati**. Close a row only with an
+executable application-level test, a pinned Martensite revision, the relevant
+oracle evidence, and recorded results on its required platforms. Existing
+kernel evidence can support a row, but cannot replace the application test.
+
+| ID | Required capability | Candidate toolkit or module | Acceptance and first consumer |
+| --- | --- | --- | --- |
+| K01 | Units, transforms, tolerances, shape ownership | TKernel, TKMath, TKG2d/TKG3d, TKBRep | Establish API/model units and matrix conventions. Prove input isolation, copy behavior, orientation/location, and stable iteration. R1. |
+| K02 | Curves, wires, profiles, faces, prism/revolve | TKGeomBase, TKTopAlgo, TKPrim | Build a closed parameterized profile, including an inner loop; extrude and revolve it. Check analytic faces, loops, orientation, and operation history. R1/R3. |
+| K03 | Validation, diagnostics, analytic queries | TKTopAlgo, relevant geometry and Boolean modules | Check topology, geometric consistency, self-intersection, achieved tolerance, and analytic area/volume. An unavailable validation level is not a pass. R1/R3. |
+| K04 | Generated, modified, and deleted history | Operation makers, TKBRep/TKBO history | Track each output entity to input parents and semantic feature roles. Resolve a named face after parameter edits, undo, and replay. R1/R3. |
+| K05 | Meshing and exact pick references | TKMesh, TKV3d | Tessellate holes, seams, and curved faces deterministically. Map display picks to analytic entities without making modeling decisions from facets. R1V/R4. |
+| K06 | Native viewport and UI composition | TKService, TKV3d, `martensite-vulkan` | Native presentation, resize, DPI, selection/highlights, lines/text, overlays, screenshots, and UI composition. R1V/R4. |
+| K07 | Boolean and feature operations | TKBO, TKBool, TKFillet, TKOffset, TKHelix, related crates | Join/cut/intersect, sweep/loft, blend/draft, shell/thicken, pattern, surface and sheet-metal inputs. Check each operation family before its R5/R6 feature. |
+| K08 | Assembly instances and HLR | TKBRep location, TKV3d, TKHLR | Shared part presentations with separate occurrence paths; exact HLR and drawing references after edits. R6. |
+| K09 | Materials and full application display | TKService/TKV3d/Vulkan plus agreed extensions | Complete Oblikovati's display, appearance, point-cloud, lighting, and OpenPBR inventory. Separate app requirements from the kernel's legacy-renderer scope. R7. |
+| K10 | File exchange | TKDE, TKXSBase, format toolkits as available | Verify each required reader/writer, units, assembly graph, metadata, and curved geometry. A format registry alone is insufficient. R8. |
+
+Kernel gaps get a Martensite work item or porting-ledger entry with the source
+case, operation, expected result, and dependent application milestone. Keep the
+application feature pending until its required rows pass. Continue independent
+model, storage, or UI work while the dependency is repaired.
+
+## Operation result interface
+
+The application-owned kernel module must provide these facts together:
+
+1. A valid result shape or a typed failure that names the failed operation and
+   entities. Include partial-result information where the contract needs it;
+   never publish an invalid solid as a successful feature.
+2. Generated, modified, and deleted entities with parent sets. Preserve existing
+   identities when an operation does not change them.
+3. Achieved tolerances and validation findings. Distinguish modeling tolerance,
+   sketch solve precision, tessellation error, and display precision.
+4. Analytic query results with their quality and diagnostics. Do not substitute
+   facet-based mass properties, classification, or section curves.
+5. A presentation source that can be regenerated. A failed presentation does
+   not silently change a model result, and an old capture cannot report a new
+   operation as successful.
+
+Implement one evaluation path for each operation. Validation is its
+postcondition, not an optional UI step. Keep topology predicates, repair,
+meshing, and numeric tolerance decisions inside Martensite. The adapter maps
+units, IDs, ownership, options, and findings; it does not repair a result with
+another application-side geometry engine.
+
+Martensite preserves OCCT behavior, while Oblikovati has additional exactness,
+determinism, and provenance requirements. Native OCCT agreement alone does not
+prove those stronger requirements. Audit them explicitly. If a required kernel
+path violates them, record and fix the general path in Martensite, with its own
+ADR and oracle cases. Do not loosen an application check to conceal the gap.
+
+## Persistent naming
+
+The application owns feature IDs, occurrence paths, document reference keys,
+and their versioned encoding. Martensite owns the topology and operation
+history that establish where each entity came from. Translate that history
+once into the application's provenance records.
+
+Do not make an OCAF document graph or TNaming store a second authority for
+Oblikovati's feature history. Use a kernel facility only when the chosen
+interface and tests need it. One document history and one persistent naming
+mechanism must remain authoritative.
+
+The initial naming test uses a face produced by an extrusion and then a
+dependent sketch or feature. Change the extrusion length and upstream profile,
+recompute, save, reopen, undo, and redo. The reference must still name the
+intended entity or return a specific lost/ambiguous-reference error.
+
+Add split, merge, deletion, symmetry, and multiple-body cases before broader
+feature completion. Include the parent relation in both directions where
+needed to name lower-dimensional entities. Bound naming recursion, detect
+cycles, and define a total order for ties. Confirm each key by resolving it
+when it is written. No geometric-nearest fallback counts as exact identity.
+
+## Thread and resource checks
+
+R1 must exercise two independent documents, shared immutable recipe inputs,
+cancellation, and repeat evaluation. Check which operations mutate or cache
+state reachable from input shapes. Choose explicit deep copies or isolated
+evaluation ownership where required, and measure the cost.
+
+Keep viewer objects separate from evaluation objects. Return thread-safe
+immutable results across the seam only after their ownership is established.
+If a necessary result cannot move safely, keep it on a dedicated owner and
+send typed requests and values. This is an ownership choice, not permission
+to serialize geometry into a lower-quality substitute.
+
+For the viewport, define the owner of the Vulkan device, queues, swapchain,
+offscreen images, UI resources, and fences. Establish one submission and
+retirement protocol. Do not allow an ImGui backend to create a conflicting
+device lifecycle or keep an image alive after its owning view is removed.
+
+## First kernel and viewport proofs
+
+R1 produces a kernel-level fixture: a rectangular profile with a hole from
+explicit dimension values, an extrusion, valid face/edge topology, analytic
+properties, and provenance. The constraint-driven sketch is added in R3.
+Vary size, orientation, and units. Include failed and near-degenerate inputs.
+Compare the expected topology and analytic faces with the pinned OCCT oracle.
+
+R1V starts from Martensite's checked offscreen examples, then proves a native
+window and UI composition. After K05 is ready, replace the test presentation
+with the R1 shape. Pick a face, obtain its persistent reference, resize the
+window, edit the model, and verify selection and capture again.
+
+A native window gap stays in the kernel/platform dependency list. Do not
+create a second production renderer from the Go head to pass the milestone.
+Only the narrow UI/window binding may remain native. Preserve the existing
+application assets and UI behavior as test inputs.
