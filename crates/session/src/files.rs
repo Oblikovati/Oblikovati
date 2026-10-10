@@ -5,6 +5,7 @@ mod batch;
 pub use batch::BatchSaveError;
 mod copy;
 mod create;
+mod discovery;
 mod error;
 mod name;
 mod open;

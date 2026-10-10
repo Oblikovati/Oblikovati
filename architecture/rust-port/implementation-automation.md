@@ -351,3 +351,24 @@ as in Go; an omitted value follows Go's empty-string default.
 Tests cover all supported value kinds, explicit document isolation, ordered
 custom/standard sets, replacement, undo/redo, no-ops, invalid requests, owned
 property refusal, and veto. Native transport and outbound events remain pending.
+
+## File-owned document discovery
+
+[#3645](https://github.com/Oblikovati/Oblikovati/issues/3645) adds `FileQueryHost`
+and `documents.list`. The immutable host reads document information from the
+file workspace and delegates existing queries to `SessionQueryHost`. It does not
+expose mutable workspace ownership or permit commands through a query transport.
+Document IDs retain open order; names and subtypes come from the owned package
+and display-name policy; dirty and active flags come from current session state.
+An empty workspace returns an empty document array.
+
+The current file owner models visible documents. Background open preserves focus
+but does not hide a document. Hidden reference-document lifetimes and visibility
+commands remain pending; the visibility flag is logical document state, not proof
+of a rendered window. Bare recipe-only sessions do not invent file metadata for
+this query. The package's document-kind vocabulary is shared with CLI `info`.
+
+Tests exercise all four document kinds, custom titles/subtypes, creation order,
+empty discovery, dirty changes through save/edit/undo, close and background
+reopen, delegated parameter/history queries, and command refusal. Native GUI,
+mutating file API transport, and complete geometry reconstruction remain pending.

@@ -32,3 +32,17 @@ impl DocumentPackage {
         copy
     }
 }
+
+impl PackageManifest {
+    /// Read the canonical document kind; example: `manifest.type_name() == "part"`.
+    pub fn type_name(&self) -> &'static str {
+        use oblikovati_api::types::*;
+        match DocumentType(self.document_type) {
+            DOCUMENT_PART => "part",
+            DOCUMENT_ASSEMBLY => "assembly",
+            DOCUMENT_DRAWING => "drawing",
+            DOCUMENT_PRESENTATION => "presentation",
+            _ => "unknown",
+        }
+    }
+}

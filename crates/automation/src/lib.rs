@@ -2,8 +2,10 @@
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
 mod edit;
+mod file_queries;
 mod groups_edit;
 mod host;
+pub use file_queries::{FILE_QUERY_METHODS, FileQueryHost};
 mod settings_edit;
 pub use edit::EDIT_METHODS;
 pub use host::SessionHost;

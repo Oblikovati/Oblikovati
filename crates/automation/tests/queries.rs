@@ -380,3 +380,6 @@ mod transaction_jumps;
 
 #[path = "queries/properties.rs"]
 mod properties;
+
+#[path = "queries/file_discovery.rs"]
+mod file_discovery;
