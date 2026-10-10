@@ -179,6 +179,7 @@ PRs #3562, #3565, #3567, and #3569 were merged into `rust` with merge commits; A
 PR #296 was merged into its owner's `develop`. Their merged feature branches were
 removed. Further application work stays on `rust-port`. Any delegated worktree
 changes must merge into that branch. Create a PR only when the user requests one.
+Pushes to `rust-port` run the full gate and native target matrix without a PR.
 
 ## Parameter rename — partial R2
 

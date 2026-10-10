@@ -1,7 +1,7 @@
 name: Rust CI
 on:
   push:
-    branches: [rust]
+    branches: [rust, rust-port]
   pull_request:
     branches: [rust]
   workflow_call:
