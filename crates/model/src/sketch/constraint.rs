@@ -50,31 +50,27 @@ pub enum PlanarConstraint {
         lines: [SketchEntityId; 2],
         relation: LineRelation,
     },
-    PointOnCircle {
+    PointOnCircularCurve {
         point: SketchEntityId,
-        circle: SketchEntityId,
+        curve: SketchEntityId,
     },
     Concentric {
-        circles: [SketchEntityId; 2],
+        curves: [SketchEntityId; 2],
     },
     EqualRadius {
-        circles: [SketchEntityId; 2],
-    },
-    ArcRadius {
-        arc: SketchEntityId,
-        parameter: u64,
+        curves: [SketchEntityId; 2],
     },
     Radius {
-        circle: SketchEntityId,
+        curve: SketchEntityId,
         parameter: u64,
     },
     LineTangent {
         line: SketchEntityId,
-        circle: SketchEntityId,
+        curve: SketchEntityId,
         side: LineContactSide,
     },
-    CircleTangent {
-        circles: [SketchEntityId; 2],
+    CircularTangent {
+        curves: [SketchEntityId; 2],
         contact: CircleContact,
     },
     Distance {
@@ -109,6 +105,7 @@ impl Sketch2D {
         for point in self.constraint_points(&relation)? {
             self.point(point)?;
         }
+        self.validate_contact_ownership(&relation)?;
         if let PlanarConstraint::Fix { position, .. } = relation {
             require_position(position)?;
         }
@@ -130,24 +127,26 @@ impl Sketch2D {
                 let endpoints = self.line(*line)?.endpoints;
                 vec![*point, endpoints[0], endpoints[1]]
             }
-            PlanarConstraint::PointOnCircle { point, circle } => {
-                vec![*point, self.circle(*circle)?.center]
+            PlanarConstraint::PointOnCircularCurve { point, curve } => {
+                self.circular_frame(*curve)?;
+                vec![*point]
             }
-            PlanarConstraint::Concentric { circles }
-            | PlanarConstraint::EqualRadius { circles }
-            | PlanarConstraint::CircleTangent { circles, .. } => circles
-                .iter()
-                .map(|id| Ok(self.circle(*id)?.center))
-                .collect::<Result<Vec<_>, SketchError>>()?,
-            PlanarConstraint::LineTangent { line, circle, .. } => {
-                let endpoints = self.line(*line)?.endpoints;
-                vec![endpoints[0], endpoints[1], self.circle(*circle)?.center]
+            PlanarConstraint::Concentric { curves }
+            | PlanarConstraint::EqualRadius { curves }
+            | PlanarConstraint::CircularTangent { curves, .. } => {
+                for curve in curves {
+                    self.circular_frame(*curve)?;
+                }
+                Vec::new()
             }
-            PlanarConstraint::ArcRadius { arc, .. } => {
-                let arc = self.arc(*arc)?;
-                vec![arc.center, arc.start]
+            PlanarConstraint::LineTangent { line, curve, .. } => {
+                self.circular_frame(*curve)?;
+                self.line(*line)?.endpoints.to_vec()
             }
-            PlanarConstraint::Radius { circle, .. } => vec![self.circle(*circle)?.center],
+            PlanarConstraint::Radius { curve, .. } => {
+                self.circular_frame(*curve)?;
+                Vec::new()
+            }
             PlanarConstraint::Lines { lines, .. } => {
                 let first = self.line(lines[0])?.endpoints;
                 let second = self.line(lines[1])?.endpoints;

@@ -455,3 +455,9 @@ mod tangency;
 
 #[path = "sketch/arcs.rs"]
 mod arcs;
+
+#[path = "sketch/circular_constraints.rs"]
+mod circular_constraints;
+
+#[path = "sketch/shared_contact.rs"]
+mod shared_contact;

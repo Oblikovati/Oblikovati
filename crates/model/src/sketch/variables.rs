@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{PlanarConstraint, Sketch2D, SketchEntityId, SketchError, circle::require_radius};
+use super::{Sketch2D, SketchEntityId, SketchError, circle::require_radius};
 
 #[derive(Clone, Copy)]
 pub(super) enum SketchVariable {
@@ -14,36 +14,8 @@ impl Sketch2D {
             .chain(self.circles.iter().map(|circle| circle.radius))
             .collect()
     }
-    pub(super) fn constraint_variables(
-        &self,
-        relation: &PlanarConstraint,
-    ) -> Result<Vec<SketchVariable>, SketchError> {
-        match relation {
-            PlanarConstraint::Radius { circle, .. } => Ok(vec![SketchVariable::Radius(*circle)]),
-            PlanarConstraint::EqualRadius { circles } => Ok(circles
-                .iter()
-                .map(|id| SketchVariable::Radius(*id))
-                .collect()),
-            PlanarConstraint::PointOnCircle { circle, .. }
-            | PlanarConstraint::LineTangent { circle, .. } => {
-                let mut variables = self.point_variables(relation)?;
-                variables.push(SketchVariable::Radius(*circle));
-                Ok(variables)
-            }
-            PlanarConstraint::CircleTangent { circles, .. } => {
-                let mut variables = self.point_variables(relation)?;
-                variables.extend(circles.iter().map(|circle| SketchVariable::Radius(*circle)));
-                Ok(variables)
-            }
-            _ => self.point_variables(relation),
-        }
-    }
-    fn point_variables(
-        &self,
-        relation: &PlanarConstraint,
-    ) -> Result<Vec<SketchVariable>, SketchError> {
-        Ok(self
-            .constraint_points(relation)?
+    pub(super) fn point_variables(&self, points: &[SketchEntityId]) -> Vec<SketchVariable> {
+        points
             .iter()
             .flat_map(|point| {
                 [
@@ -57,7 +29,7 @@ impl Sketch2D {
                     },
                 ]
             })
-            .collect())
+            .collect()
     }
     pub(super) fn variable_column(&self, variable: SketchVariable) -> Result<usize, SketchError> {
         match variable {

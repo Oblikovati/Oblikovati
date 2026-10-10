@@ -265,3 +265,72 @@ Arc contact and midpoint relations, diameter dimensions, sketch persistence,
 API/UI integration, sweep validity, profile stitching, and kernel acceptance
 remain open. A converged sketch is numerical evidence and does not close any
 analytic B-rep or feature validation gate.
+
+## Shared circular frames and contact-point tangency
+
+Tracking: [#3710](https://github.com/Oblikovati/Oblikovati/issues/3710).
+The authored circular relations now reference either an owned circle or an arc
+through one frame boundary. `Radius { curve, parameter }` replaces the separate
+`ArcRadius` form. `PointOnCircularCurve`, `Concentric`, `EqualRadius`,
+`LineTangent`, and `CircularTangent` share the same boundary. Incidence means
+incidence on the supporting analytic circle; it does not restrict a point to
+an arc's finite sweep. The previous circle-only authored names and variable
+compiler are removed, rather than kept as a second implementation.
+
+A circular frame exposes center coordinates and either the circle's independent
+radius scalar or the arc's center/start-derived radius. Compilation records
+one local projection into the existing canonical AD equations. Global variable
+identity is preserved through projection, including repeated shared points.
+Circle-only equations perform the same arithmetic as before: tests compare
+residual and complete global derivative bit patterns for all six equation
+families at three coordinate scales. The projection changes no geometric
+formula and adds no numerical solver.
+
+Shared defining contact is classified by point identity, independently of
+placement or iteration. A full circle has no defining contact point. A line
+and arc can share one endpoint; two arcs can share one endpoint. Two distinct
+shared points are a named decline before a relation is added. Duplicate
+occurrences of one point count as one identity; there is no first-match policy.
+
+For a shared line/arc point, the equation is the unit line direction dotted
+with center-minus-touch. For a shared arc/arc point, it is the cross product
+of the unit first-center-to-touch direction and second-center-minus-touch.
+These port the simple-root formulations from Go #2014. The distance-minus-radius
+forms have stationary roots at structurally shared contact and would report
+zero rank despite exact tangency. The selected formulation remains fixed
+throughout solving because the defining identities remain fixed.
+
+Line contact retains the recorded center side. Shared circular contact also
+retains external/opposed or internal/aligned radial orientation and, for an
+internal contact, which curve encloses the other. Creation classifies the
+shared radial half-plane; free contact continues to select the nearer distance
+target, with external contact winning exact ties. Trial evaluations reject an
+incompatible side, radial half-plane, or enclosing-radius order. This strengthens
+Go's shared-point equation, which accepts either collinear orientation without
+certifying a retained contact branch. Collapsed directions and nonpositive
+radii are named domain errors. No geometry is nudged or repaired.
+
+Seven Go residual/full-Jacobian fixtures cover derived-radius incidence,
+equal radius and dimensions, free line/arc and mixed circle/arc contact, and
+both shared-point formulations. Independent scalar finite differences check
+every raw defining coordinate. Residual unit and derivative sweeps cover
+`1e-200` through `1e200`; complete mixed/free and shared-line solve/rank sweeps
+cover `1e-100` through `1e100`. Go's shared line/arc and arc/arc rank regressions,
+free-circle rank regression, and off-tangent solve regression pass at the fixed
+baseline.
+
+Application model tests cover mixed concentric/equal-radius/incidence equations,
+parameter edits with zero DOF for free contact, external and both internal
+orders, and every shared line/arc endpoint combination. Shared contact adds
+exactly one rank at a tangent solution and converges from off-tangent seeds.
+Equal coordinates with distinct point identities retain free contact and still
+solve with zero DOF after a radius edit. Tests retain curve, point, constraint, sweep, and contact identities, reject
+multiple shared points atomically, and refuse an incompatible edit that would
+change internal contact to external contact. Authored radius failures now name
+the authored relation; a standalone arc circularity failure still names its
+structural arc source.
+
+Arc midpoint and diameter relations, sketch persistence, API/UI integration,
+finite sweep/profile validity, feature evaluation, and kernel acceptance remain
+open. These contact equations describe sketch geometry and do not certify a
+valid B-rep contact, blend, or profile.

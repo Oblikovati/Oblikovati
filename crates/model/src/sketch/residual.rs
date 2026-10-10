@@ -8,6 +8,7 @@ use oblikovati_solve::{
     residual::{ResidualError, ResidualSource},
 };
 
+#[derive(Clone, Copy)]
 pub(super) enum PlanarEquation {
     ArcCircularity,
     Coincident,
@@ -17,6 +18,11 @@ pub(super) enum PlanarEquation {
     PointOnLine,
     Lines(LineRelation),
     PointOnCircle,
+    PinnedLineTangent {
+        at_b: bool,
+        side: LineContactSide,
+    },
+    PinnedCircularTangent(CircleContact),
     EqualRadius,
     Radius(f64),
     LineTangent(LineContactSide),
@@ -27,6 +33,7 @@ pub(super) enum PlanarEquation {
     },
 }
 pub(super) struct PreparedConstraint {
+    pub projection: Option<super::circular_projection::CircularProjection>,
     pub equation: PlanarEquation,
     pub variables: Vec<usize>,
 }
@@ -45,7 +52,8 @@ impl PreparedConstraint {
             PlanarEquation::Fix(_) | PlanarEquation::EqualRadius => 2,
             PlanarEquation::Radius(_) => 1,
             PlanarEquation::PointOnCircle => 5,
-            PlanarEquation::LineTangent(_) => 7,
+            PlanarEquation::LineTangent(_) | PlanarEquation::PinnedLineTangent { .. } => 7,
+            PlanarEquation::PinnedCircularTangent(_) => 8,
             PlanarEquation::CircleTangent(_) | PlanarEquation::ArcCircularity => 6,
             PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
             PlanarEquation::Lines(_) => 8,
@@ -55,14 +63,30 @@ impl PreparedConstraint {
 }
 impl ResidualSource for PreparedConstraint {
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
-        if variables.len() != self.variable_count() {
+        let expected = self
+            .projection
+            .as_ref()
+            .map_or(self.variable_count(), |layout| layout.input_count());
+        if variables.len() != expected {
             return Err(ResidualError::Domain(format!(
                 "planar residual received {} variables: expected {}",
                 variables.len(),
-                self.variable_count()
+                expected
             )));
         }
+        let projected = self
+            .projection
+            .as_ref()
+            .map(|layout| layout.project(variables))
+            .transpose()?;
+        let variables = projected.as_deref().unwrap_or(variables);
         match self.equation {
+            PlanarEquation::PinnedLineTangent { at_b, side } => {
+                tangent_residual::pinned_line_tangent(variables, at_b, side)
+            }
+            PlanarEquation::PinnedCircularTangent(contact) => {
+                tangent_residual::pinned_circular_tangent(variables, contact)
+            }
             PlanarEquation::ArcCircularity => arc_residual::circularity(variables),
             PlanarEquation::Coincident => Ok(point(variables, 0)?
                 .minus(&point(variables, 2)?)?

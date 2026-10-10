@@ -21,6 +21,7 @@ fn input(name: &str, scale: f64) -> Vec<f64> {
 }
 fn evaluate(name: &str, input: &[f64]) -> Vec<DualNumber> {
     let source = PreparedConstraint {
+        projection: None,
         equation: relation(name),
         variables: (0..input.len()).collect(),
     };

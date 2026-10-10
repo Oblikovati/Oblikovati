@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    DistanceMeasure, PlanarConstraint, Sketch2D, SketchConstraint, SketchError, SketchRelationId,
+    PlanarConstraint, Sketch2D, SketchConstraint, SketchError, SketchRelationId,
     residual::{PlanarEquation, PreparedConstraint},
 };
 use crate::{parameter::ParameterCollection, quantity::Dimension};
@@ -47,10 +47,7 @@ fn authored_sources(
         .iter()
         .map(|constraint| {
             Ok((
-                PreparedConstraint {
-                    equation: equation(constraint, parameters)?,
-                    variables: map_variables(sketch, &constraint.relation)?,
-                },
+                prepared_source(sketch, constraint, parameters)?,
                 SketchRelationId::Authored(constraint.id),
             ))
         })
@@ -61,6 +58,7 @@ fn append_arc_sources(sketch: &Sketch2D, prepared: &mut PreparedSketch) -> Resul
     for arc in &sketch.arcs {
         prepared.sources.push(PreparedConstraint {
             equation: PlanarEquation::ArcCircularity,
+            projection: None,
             variables: sketch.arc_columns(arc)?,
         });
         prepared
@@ -73,8 +71,7 @@ fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
     let mut dependencies = Vec::new();
     for constraint in &sketch.constraints {
         if let PlanarConstraint::Distance { parameter, .. }
-        | PlanarConstraint::Radius { parameter, .. }
-        | PlanarConstraint::ArcRadius { parameter, .. } = constraint.relation
+        | PlanarConstraint::Radius { parameter, .. } = constraint.relation
             && !dependencies.contains(&parameter)
         {
             dependencies.push(parameter);
@@ -83,15 +80,13 @@ fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
     dependencies
 }
 
-fn map_variables(
+fn prepared_source(
     sketch: &Sketch2D,
-    relation: &PlanarConstraint,
-) -> Result<Vec<usize>, SketchError> {
-    sketch
-        .constraint_variables(relation)?
-        .iter()
-        .map(|variable| sketch.variable_column(*variable))
-        .collect()
+    constraint: &SketchConstraint,
+    parameters: &ParameterCollection<u64>,
+) -> Result<PreparedConstraint, SketchError> {
+    let equation = equation(constraint, parameters)?;
+    super::circular_compile::prepare_relation(sketch, &constraint.relation, equation)
 }
 
 fn equation(
@@ -102,14 +97,10 @@ fn equation(
         PlanarConstraint::Coincident { .. } | PlanarConstraint::Concentric { .. } => {
             PlanarEquation::Coincident
         }
-        PlanarConstraint::PointOnCircle { .. } => PlanarEquation::PointOnCircle,
+        PlanarConstraint::PointOnCircularCurve { .. } => PlanarEquation::PointOnCircle,
         PlanarConstraint::LineTangent { side, .. } => PlanarEquation::LineTangent(side),
-        PlanarConstraint::CircleTangent { contact, .. } => PlanarEquation::CircleTangent(contact),
+        PlanarConstraint::CircularTangent { contact, .. } => PlanarEquation::CircleTangent(contact),
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
-        PlanarConstraint::ArcRadius { parameter, .. } => PlanarEquation::Distance {
-            measure: DistanceMeasure::Aligned,
-            target: radius_target(constraint, parameter, parameters)?,
-        },
         PlanarConstraint::Radius { parameter, .. } => {
             PlanarEquation::Radius(radius_target(constraint, parameter, parameters)?)
         }

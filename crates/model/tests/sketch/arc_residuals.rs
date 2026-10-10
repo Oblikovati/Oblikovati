@@ -4,6 +4,7 @@ use crate::sketch::residual::{PlanarEquation, PreparedConstraint};
 use oblikovati_solve::residual::{ResidualBlock, ResidualSource, evaluate_residuals};
 fn evaluated(input: &[f64]) -> DualNumber {
     let source = PreparedConstraint {
+        projection: None,
         equation: PlanarEquation::ArcCircularity,
         variables: (0..6).collect(),
     };
@@ -50,6 +51,7 @@ fn circularity_preserves_value_units_and_partials_without_squared_distance_overf
 #[test]
 fn collapsed_radius_and_wrong_variable_shapes_are_named_declines() {
     let source = PreparedConstraint {
+        projection: None,
         equation: PlanarEquation::ArcCircularity,
         variables: (0..6).collect(),
     };
@@ -76,6 +78,7 @@ fn collapsed_radius_and_wrong_variable_shapes_are_named_declines() {
 #[test]
 fn repeated_global_endpoint_columns_cancel_without_losing_the_structural_row() {
     let source = PreparedConstraint {
+        projection: None,
         equation: PlanarEquation::ArcCircularity,
         variables: vec![0, 1, 2, 3, 2, 3],
     };

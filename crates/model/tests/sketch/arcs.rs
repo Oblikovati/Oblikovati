@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::sketch::SketchRelationId;
-fn driven_arc(scale: f64, counter_clockwise: bool) -> Sketch2D {
+pub(super) fn driven_arc(scale: f64, counter_clockwise: bool) -> Sketch2D {
     let mut sketch = Sketch2D::default();
     for (id, position) in [
         (1, [0.0, 0.0]),
@@ -43,8 +43,8 @@ fn driven_arc(scale: f64, counter_clockwise: bool) -> Sketch2D {
     relation(
         &mut sketch,
         4,
-        PlanarConstraint::ArcRadius {
-            arc: entity(4),
+        PlanarConstraint::Radius {
+            curve: entity(4),
             parameter: 1,
         },
     );
@@ -119,8 +119,8 @@ fn arc_references_and_entity_namespace_are_validated_before_mutation() {
         sketch
             .add_constraint(
                 constraint(8),
-                PlanarConstraint::ArcRadius {
-                    arc: entity(999),
+                PlanarConstraint::Radius {
+                    curve: entity(999),
                     parameter: 1
                 }
             )
@@ -131,7 +131,14 @@ fn arc_references_and_entity_namespace_are_validated_before_mutation() {
 #[test]
 fn collapsed_arc_failures_name_the_structural_source_and_retain_the_input() {
     for point in [2, 3] {
-        let mut sketch = driven_arc(1.0, true);
+        let source = driven_arc(1.0, true);
+        let mut sketch = Sketch2D::default();
+        for point in source.points() {
+            sketch.add_point(point.id, point.position).unwrap();
+        }
+        sketch
+            .add_arc(entity(4), entity(1), [entity(2), entity(3)], true)
+            .unwrap();
         sketch.set_position(entity(point), [0.0, 0.0]).unwrap();
         let original = sketch.clone();
         for error in [

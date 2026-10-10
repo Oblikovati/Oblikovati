@@ -16,7 +16,7 @@ fn circle_sketch(radius: f64) -> Sketch2D {
         &mut sketch,
         2,
         PlanarConstraint::Radius {
-            circle: entity(2),
+            curve: entity(2),
             parameter: 1,
         },
     );
@@ -64,14 +64,14 @@ fn concentric_equal_radius_circles_solve_with_independent_radius_variables() {
         &mut sketch,
         3,
         PlanarConstraint::Concentric {
-            circles: [entity(2), entity(4)],
+            curves: [entity(2), entity(4)],
         },
     );
     relation(
         &mut sketch,
         4,
         PlanarConstraint::EqualRadius {
-            circles: [entity(2), entity(4)],
+            curves: [entity(2), entity(4)],
         },
     );
     let result = sketch
@@ -94,9 +94,9 @@ fn incidence_drives_a_point_to_the_analytic_circle_with_one_free_direction() {
     relation(
         &mut sketch,
         3,
-        PlanarConstraint::PointOnCircle {
+        PlanarConstraint::PointOnCircularCurve {
             point: entity(3),
-            circle: entity(2),
+            curve: entity(2),
         },
     );
     let result = sketch
@@ -124,7 +124,7 @@ fn shared_centers_and_free_radii_are_counted_without_duplicate_coordinate_variab
         &mut sketch,
         1,
         PlanarConstraint::EqualRadius {
-            circles: [entity(2), entity(3)],
+            curves: [entity(2), entity(3)],
         },
     );
     assert_eq!(
@@ -138,7 +138,7 @@ fn shared_centers_and_free_radii_are_counted_without_duplicate_coordinate_variab
         &mut sketch,
         2,
         PlanarConstraint::Concentric {
-            circles: [entity(2), entity(3)],
+            curves: [entity(2), entity(3)],
         },
     );
     let structure = sketch.analyze(&parameters(), 1e-9).unwrap();
@@ -178,7 +178,7 @@ fn circle_identity_radius_and_reference_validation_is_atomic() {
             .add_constraint(
                 constraint(9),
                 PlanarConstraint::EqualRadius {
-                    circles: [entity(2), entity(999)]
+                    curves: [entity(2), entity(999)]
                 }
             )
             .is_err()
@@ -209,9 +209,9 @@ fn radius_targets_reject_zero_and_failed_solutions_keep_positive_geometry() {
     relation(
         &mut sketch,
         3,
-        PlanarConstraint::PointOnCircle {
+        PlanarConstraint::PointOnCircularCurve {
             point: entity(1),
-            circle: entity(2),
+            curve: entity(2),
         },
     );
     let result = sketch
@@ -281,9 +281,9 @@ fn trial_steps_that_cross_the_positive_radius_domain_are_rejected() {
     relation(
         &mut sketch,
         3,
-        PlanarConstraint::PointOnCircle {
+        PlanarConstraint::PointOnCircularCurve {
             point: entity(2),
-            circle: entity(3),
+            curve: entity(3),
         },
     );
     let result = sketch

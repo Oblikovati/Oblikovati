@@ -10,7 +10,7 @@ pub enum LineContactSide {
     Left,
     Right,
 }
-/// Retained external contact or explicit enclosing-circle identity by pair order.
+/// Retained external contact or explicit enclosing circular-curve identity by pair order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CircleContact {
     External,
@@ -18,47 +18,56 @@ pub enum CircleContact {
     SecondContainsFirst,
 }
 impl Sketch2D {
-    /// Select and retain the current contact side; example: `sketch.add_line_tangent(id, line, circle)?`.
+    /// Select and retain the current contact side; example: `sketch.add_line_tangent(id, line, curve)?`.
     pub fn add_line_tangent(
         &mut self,
         id: SketchConstraintId,
         line: SketchEntityId,
-        circle: SketchEntityId,
+        curve: SketchEntityId,
     ) -> Result<(), SketchError> {
-        let values = self.line_circle_values(line, circle)?;
+        self.shared_line_contact(line, curve)?;
+        let values = self.line_curve_values(line, curve)?;
         let side = select_line_side(&values).map_err(|cause| selection_error(id, cause))?;
-        self.add_constraint(id, PlanarConstraint::LineTangent { line, circle, side })
+        self.add_constraint(id, PlanarConstraint::LineTangent { line, curve, side })
     }
-    /// Select the nearer contact branch once (external wins exact ties); example: `sketch.add_circle_tangent(id, [first, second])?`.
-    pub fn add_circle_tangent(
+    /// Retain the seed contact branch; shared points use radial orientation, otherwise the nearer target (external wins ties); example: `sketch.add_circular_tangent(id, [first, second])?`.
+    pub fn add_circular_tangent(
         &mut self,
         id: SketchConstraintId,
-        circles: [SketchEntityId; 2],
+        curves: [SketchEntityId; 2],
     ) -> Result<(), SketchError> {
-        let values = self.circle_pair_values(circles)?;
-        let contact = select_circle_contact(&values).map_err(|cause| selection_error(id, cause))?;
-        self.add_constraint(id, PlanarConstraint::CircleTangent { circles, contact })
+        let touch = self.shared_circular_contact(curves)?;
+        let values = self.circular_pair_values(curves)?;
+        let contact = if let Some(touch) = touch {
+            let point = self.point(touch)?.position;
+            select_pinned_contact(&values, point)
+        } else {
+            select_circle_contact(&values)
+        }
+        .map_err(|cause| selection_error(id, cause))?;
+        self.add_constraint(id, PlanarConstraint::CircularTangent { curves, contact })
     }
-    fn line_circle_values(
+    fn line_curve_values(
         &self,
         line: SketchEntityId,
-        circle: SketchEntityId,
+        curve: SketchEntityId,
     ) -> Result<Vec<f64>, SketchError> {
         let endpoints = self.line(line)?.endpoints;
-        let circle = self.circle(circle)?;
+        let (center, radius) = self.frame_values(self.circular_frame(curve)?)?;
         let mut values = Vec::new();
-        for point in [endpoints[0], endpoints[1], circle.center] {
+        for point in endpoints {
             values.extend(self.point(point)?.position);
         }
-        values.push(circle.radius);
+        values.extend(center);
+        values.push(radius);
         Ok(values)
     }
-    fn circle_pair_values(&self, circles: [SketchEntityId; 2]) -> Result<Vec<f64>, SketchError> {
-        let first = self.circle(circles[0])?;
-        let second = self.circle(circles[1])?;
-        let mut values = self.point(first.center)?.position.to_vec();
-        values.extend(self.point(second.center)?.position);
-        values.extend([first.radius, second.radius]);
+    fn circular_pair_values(&self, curves: [SketchEntityId; 2]) -> Result<Vec<f64>, SketchError> {
+        let first = self.frame_values(self.circular_frame(curves[0])?)?;
+        let second = self.frame_values(self.circular_frame(curves[1])?)?;
+        let mut values = first.0.to_vec();
+        values.extend(second.0);
+        values.extend([first.1, second.1]);
         Ok(values)
     }
 }
@@ -107,4 +116,20 @@ fn selection_error(id: SketchConstraintId, cause: ResidualError) -> SketchError 
         constraint: id,
         cause,
     }
+}
+
+fn select_pinned_contact(values: &[f64], touch: [f64; 2]) -> Result<CircleContact, ResidualError> {
+    let mut values = values.to_vec();
+    values.extend(touch);
+    let variables = constants(&values)?;
+    let dot = tangent_residual::radial_contact_dot(&variables)?.value();
+    let contact = if dot <= 0.0 {
+        CircleContact::External
+    } else if values[4] > values[5] {
+        CircleContact::FirstContainsSecond
+    } else {
+        CircleContact::SecondContainsFirst
+    };
+    tangent_residual::pinned_circular_tangent(&variables, contact)?;
+    Ok(contact)
 }

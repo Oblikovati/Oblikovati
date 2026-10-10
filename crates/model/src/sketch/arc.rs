@@ -44,10 +44,8 @@ impl Sketch2D {
     }
     /// Derive radius from center and start without an independent scalar; example: `sketch.arc_radius(id)?`.
     pub fn arc_radius(&self, id: SketchEntityId) -> Result<f64, SketchError> {
-        let arc = self.arc(id)?;
-        let center = self.point(arc.center)?.position;
-        let start = self.point(arc.start)?.position;
-        let radius = (start[0] - center[0]).hypot(start[1] - center[1]);
+        self.arc(id)?;
+        let (_, radius) = self.frame_values(self.circular_frame(id)?)?;
         if !radius.is_finite() || radius <= 0.0 {
             return Err(SketchError::Definition(format!(
                 "sketch arc {id:?} radius {radius:?}: expected a positive finite derived length"

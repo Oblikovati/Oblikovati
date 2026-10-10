@@ -15,6 +15,7 @@ fn equation(name: &str, scale: f64) -> (PlanarEquation, Vec<f64>) {
 fn evaluate(name: &str, scale: f64) -> Vec<DualNumber> {
     let (equation, input) = equation(name, scale);
     let source = PreparedConstraint {
+        projection: None,
         equation,
         variables: (0..input.len()).collect(),
     };

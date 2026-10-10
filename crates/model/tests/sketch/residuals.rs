@@ -48,6 +48,7 @@ fn every_planar_formula_matches_go_values_and_jacobians() {
         let fields: Vec<&str> = fixture.split('\t').collect();
         let (equation, input) = equation(fields[0]);
         let source = PreparedConstraint {
+            projection: None,
             equation,
             variables: (0..input.len()).collect(),
         };
@@ -106,6 +107,7 @@ fn check_independent_partials(name: &str, input: &[f64], evaluated: &[DualNumber
 #[test]
 fn midpoint_avoids_avoidable_overflow_and_bad_local_shapes_are_refused() {
     let source = PreparedConstraint {
+        projection: None,
         equation: PlanarEquation::Midpoint,
         variables: vec![0; 6],
     };

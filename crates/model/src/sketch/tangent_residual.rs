@@ -62,3 +62,69 @@ pub(super) fn contact_distance(
 #[cfg(test)]
 #[path = "../../tests/sketch/tangent_residuals.rs"]
 mod tests;
+
+pub(super) fn pinned_line_tangent(
+    variables: &[DualNumber],
+    at_b: bool,
+    side: LineContactSide,
+) -> Result<Vec<DualNumber>, ResidualError> {
+    require_shared_line_side(variables, side)?;
+    let anchor = point(variables, 0)?;
+    let direction = unit_direction(&point(variables, 2)?.minus(&anchor)?)?;
+    let touch = point(variables, if at_b { 2 } else { 0 })?;
+    // A distance-minus-derived-radius equation has a double root here (Go #2014).
+    Ok(vec![direction.dot(&point(variables, 4)?.minus(&touch)?)?])
+}
+pub(super) fn radial_contact_dot(variables: &[DualNumber]) -> Result<DualNumber, ResidualError> {
+    let touch = point(variables, 6)?;
+    let first = unit_direction(&touch.minus(&point(variables, 0)?)?)?;
+    let second = unit_direction(&touch.minus(&point(variables, 2)?)?)?;
+    Ok(first.dot(&second)?)
+}
+pub(super) fn pinned_circular_tangent(
+    variables: &[DualNumber],
+    contact: CircleContact,
+) -> Result<Vec<DualNumber>, ResidualError> {
+    require_shared_circular_branch(variables, contact)?;
+    let touch = point(variables, 6)?;
+    let direction = unit_direction(&touch.minus(&point(variables, 0)?)?)?;
+    // Shared-point collinearity has a simple root and contributes rank at exact contact (#2014).
+    Ok(vec![direction.cross(&point(variables, 2)?.minus(&touch)?)?])
+}
+
+fn require_shared_line_side(
+    variables: &[DualNumber],
+    side: LineContactSide,
+) -> Result<(), ResidualError> {
+    positive_radius(&variables[6])?;
+    let sign = if side == LineContactSide::Left {
+        1.0
+    } else {
+        -1.0
+    };
+    let signed = signed_line_distance(variables)?.value();
+    if signed * sign <= 0.0 {
+        return Err(ResidualError::Domain(format!(
+            "shared line contact {side:?} signed distance {signed:?}: expected the recorded nonzero center side"
+        )));
+    }
+    Ok(())
+}
+
+fn require_shared_circular_branch(
+    variables: &[DualNumber],
+    contact: CircleContact,
+) -> Result<(), ResidualError> {
+    positive_radius(&variables[4])?;
+    positive_radius(&variables[5])?;
+    contact_distance(&variables[4], &variables[5], contact)?;
+    let dot = radial_contact_dot(variables)?.value();
+    if (contact == CircleContact::External && dot > 0.0)
+        || (contact != CircleContact::External && dot < 0.0)
+    {
+        return Err(ResidualError::Domain(format!(
+            "shared circular contact {contact:?} radial dot {dot:?}: expected the recorded external/opposed or internal/aligned half-plane"
+        )));
+    }
+    Ok(())
+}

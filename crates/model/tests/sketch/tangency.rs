@@ -23,7 +23,7 @@ fn line_circle(y: f64) -> Sketch2D {
         &mut sketch,
         3,
         PlanarConstraint::Radius {
-            circle: entity(5),
+            curve: entity(5),
             parameter: 1,
         },
     );
@@ -62,7 +62,7 @@ fn circle_pair(distance: f64, radii: [f64; 2]) -> Sketch2D {
         &mut sketch,
         3,
         PlanarConstraint::Radius {
-            circle: entity(3),
+            curve: entity(3),
             parameter: 1,
         },
     );
@@ -70,7 +70,7 @@ fn circle_pair(distance: f64, radii: [f64; 2]) -> Sketch2D {
         &mut sketch,
         4,
         PlanarConstraint::Radius {
-            circle: entity(4),
+            curve: entity(4),
             parameter: 2,
         },
     );
@@ -90,7 +90,7 @@ fn line_contact_retains_both_sides_and_recomputes_after_radius_edits() {
             sketch.constraints()[4].relation,
             PlanarConstraint::LineTangent {
                 line: entity(4),
-                circle: entity(5),
+                curve: entity(5),
                 side
             }
         );
@@ -121,12 +121,12 @@ fn nearest_circle_contact_selection_retains_external_and_enclosing_modes() {
     ] {
         let mut sketch = circle_pair(distance, radii);
         sketch
-            .add_circle_tangent(constraint(5), [entity(3), entity(4)])
+            .add_circular_tangent(constraint(5), [entity(3), entity(4)])
             .unwrap();
         assert_eq!(
             sketch.constraints()[4].relation,
-            PlanarConstraint::CircleTangent {
-                circles: [entity(3), entity(4)],
+            PlanarConstraint::CircularTangent {
+                curves: [entity(3), entity(4)],
                 contact: expected_contact
             }
         );
@@ -148,11 +148,11 @@ fn nearest_circle_contact_selection_retains_external_and_enclosing_modes() {
 fn equal_distance_selection_ties_choose_external_contact() {
     let mut sketch = circle_pair(5.0, [5.0, 2.5]);
     sketch
-        .add_circle_tangent(constraint(5), [entity(3), entity(4)])
+        .add_circular_tangent(constraint(5), [entity(3), entity(4)])
         .unwrap();
     assert!(matches!(
         sketch.constraints()[4].relation,
-        PlanarConstraint::CircleTangent {
+        PlanarConstraint::CircularTangent {
             contact: CircleContact::External,
             ..
         }
@@ -185,14 +185,14 @@ fn invalid_contact_seeds_are_named_and_selection_is_atomic() {
     let mut sketch = circle_pair(0.0, [5.0, 2.5]);
     assert!(
         sketch
-            .add_circle_tangent(constraint(82), [entity(3), entity(4)])
+            .add_circular_tangent(constraint(82), [entity(3), entity(4)])
             .unwrap_err()
             .to_string()
             .contains("distinct centers")
     );
     assert!(
         sketch
-            .add_circle_tangent(constraint(82), [entity(3), entity(999)])
+            .add_circular_tangent(constraint(82), [entity(3), entity(999)])
             .is_err()
     );
 }
@@ -200,7 +200,7 @@ fn invalid_contact_seeds_are_named_and_selection_is_atomic() {
 fn internal_contact_never_silently_changes_its_enclosing_circle_after_parameter_edit() {
     let mut sketch = circle_pair(2.0, [5.0, 2.5]);
     sketch
-        .add_circle_tangent(constraint(5), [entity(3), entity(4)])
+        .add_circular_tangent(constraint(5), [entity(3), entity(4)])
         .unwrap();
     let mut parameters = parameters();
     parameters.set_expression(2, "6 cm").unwrap();
@@ -210,7 +210,7 @@ fn internal_contact_never_silently_changes_its_enclosing_circle_after_parameter_
     assert_ne!(result.numerical().termination, SolveTermination::Converged);
     assert!(matches!(
         result.candidate().constraints()[4].relation,
-        PlanarConstraint::CircleTangent {
+        PlanarConstraint::CircularTangent {
             contact: CircleContact::FirstContainsSecond,
             ..
         }
@@ -285,7 +285,7 @@ fn tangent_solve_and_rank_remain_stable_across_working_coordinate_units() {
             &mut sketch,
             3,
             PlanarConstraint::Radius {
-                circle: entity(3),
+                curve: entity(3),
                 parameter: 1,
             },
         );
@@ -293,12 +293,12 @@ fn tangent_solve_and_rank_remain_stable_across_working_coordinate_units() {
             &mut sketch,
             4,
             PlanarConstraint::Radius {
-                circle: entity(4),
+                curve: entity(4),
                 parameter: 2,
             },
         );
         sketch
-            .add_circle_tangent(constraint(5), [entity(3), entity(4)])
+            .add_circular_tangent(constraint(5), [entity(3), entity(4)])
             .unwrap();
         let mut parameters = parameters();
         parameters
