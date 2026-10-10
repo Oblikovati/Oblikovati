@@ -412,6 +412,7 @@ version = "0.1.0"
 dependencies = [
  "getrandom",
  "oblikovati-api",
+ "oblikovati-solve",
  "serde",
  "serde_json",
  "sha2",

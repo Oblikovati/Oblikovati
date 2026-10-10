@@ -17,3 +17,5 @@ pub mod resource;
 pub mod units;
 
 pub mod interest;
+
+pub mod sketch;

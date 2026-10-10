@@ -4,8 +4,9 @@ Tracking: [#3698](https://github.com/Oblikovati/Oblikovati/issues/3698).
 The new `oblikovati-solve` crate starts the shared numerical core required by
 [ADR-0006](../decisions/ADR-0006-parameters-and-constraints.md). It has no runtime
 dependencies and owns no model, kernel, file, or window state. The derivative,
-evaluation, QR, structure, and bounded nonlinear layers are now ported. Model
-residual libraries, sketches, and assembly placement remain unimplemented.
+evaluation, QR, structure, and bounded nonlinear layers are now ported. The first
+[planar sketch model](implementation-sketch.md) now consumes them. Remaining
+model residual libraries, sketch integration, and assembly placement are pending.
 
 ## Scalar automatic differentiation
 
@@ -194,6 +195,6 @@ general path. Coordinate scales `1e-100` through `1e100` and equation coefficien
 nonrepresentable trial coordinates and the damping gain schedule. The complete
 Go `./solve` test suite also passes as reference evidence.
 
-This establishes the shared numerical iteration boundary. Fully constrained
-sketches, assembly pose normalization, mobility, feature health integration,
+This establishes the shared numerical iteration boundary. Complete sketch
+integration, assembly pose normalization, mobility, feature health integration,
 SolveSpace model parity and interactive rendering remain migration work.

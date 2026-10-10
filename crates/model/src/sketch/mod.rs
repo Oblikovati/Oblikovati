@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+//! Application-owned planar geometry and constraints, independent from kernel topology.
+mod compile;
+mod constraint;
+mod error;
+mod geometry;
+mod residual;
+mod solve;
+pub use constraint::{DistanceMeasure, PlanarConstraint, SketchConstraint, SketchConstraintId};
+pub use error::SketchError;
+pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
+pub use solve::SketchSolveOutcome;
+
+/// Ordered sketch ownership; shared endpoints use the same local point identity.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Sketch2D {
+    points: Vec<SketchPoint2D>,
+    lines: Vec<SketchLine2D>,
+    constraints: Vec<SketchConstraint>,
+}
+impl Sketch2D {
+    /// Inspect all points in stable insertion order; example: `sketch.points()`.
+    pub fn points(&self) -> &[SketchPoint2D] {
+        &self.points
+    }
+    /// Inspect analytic line endpoints; example: `sketch.lines()`.
+    pub fn lines(&self) -> &[SketchLine2D] {
+        &self.lines
+    }
+    /// Inspect authored constraints without bypassing validation; example: `sketch.constraints()`.
+    pub fn constraints(&self) -> &[SketchConstraint] {
+        &self.constraints
+    }
+    /// Resolve a point by local identity; example: `sketch.point(SketchEntityId(7))`.
+    pub fn point(&self, id: SketchEntityId) -> Result<&SketchPoint2D, SketchError> {
+        self.points
+            .iter()
+            .find(|point| point.id == id)
+            .ok_or_else(|| {
+                SketchError::Definition(format!("sketch point {id:?}: expected an existing point"))
+            })
+    }
+    /// Resolve a line by local identity; example: `sketch.line(SketchEntityId(8))`.
+    pub fn line(&self, id: SketchEntityId) -> Result<&SketchLine2D, SketchError> {
+        self.lines.iter().find(|line| line.id == id).ok_or_else(|| {
+            SketchError::Definition(format!("sketch line {id:?}: expected an existing line"))
+        })
+    }
+}
