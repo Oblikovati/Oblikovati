@@ -89,3 +89,32 @@ source, reordered/shared columns, constants, empty systems, deterministic repeat
 evaluation, exactly one call per source, input preservation, validation before
 callbacks, and error provenance. This is a dense derivative representation;
 nonlinear iteration, numerical rank, and model residual definitions remain pending.
+
+## Shared column-pivoted QR — partial R2
+
+Tracking: [#3701](https://github.com/Oblikovati/Oblikovati/issues/3701).
+`DenseMatrix` validates finite rectangular input, including explicit empty axes.
+`ColumnPivotedQr` uses one Householder factorization for numerical rank and
+full-column-rank least-squares solving. This replaces the two overlapping QR
+paths in the Go port; normal equations are not formed. Column permutations map
+solutions back to caller order, and equal candidate norms retain current order.
+
+The rank threshold is an explicit finite relative tolerance strictly between
+zero and one. Global matrix scaling, hypot-based norms, normalized reflectors,
+and scaled projections avoid avoidable square/projection overflow. Reflector
+updates subtract the projection twice instead of forming a potentially
+unrepresentable doubled value. Rank-deficient or wide least-squares systems,
+invalid shapes/tolerances, and non-finite arithmetic return named errors.
+Inputs remain unchanged and the factorization can solve multiple right-hand sides.
+
+Six tests cover the Go square and overdetermined fixtures, residual orthogonality,
+original column ordering, rank deficiency, empty axes, invalid input, deterministic
+ties, scale sweeps from `1e-200` to `1e200`, and a right-hand side containing both
+`f64::MAX` and `1e-300`. Jacobian `matrix.rank.compute` independently certified
+exact ranks 2 and 3 for the rectangular and square fixtures. It also certified
+rank 2 for `[[1,1],[1,1+10^-12]]`; the floating test intentionally reports rank 1
+at tolerance `1e-9` and rank 2 at `1e-14`. Exact rank and numerical working rank
+are distinct results. These checks do not certify arbitrary conditioning.
+
+Residual row normalization, DOF policy, damping, nonlinear iteration, and conflict
+attribution still need integration with the evaluation boundary.
