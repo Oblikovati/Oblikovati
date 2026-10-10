@@ -334,3 +334,25 @@ and missing/denied/invalid bundle errors. This ports the byte-access boundary of
 Go `ResourceBytes` and the explicit bundle lookup in font resolution. It does
 not port Go's family-name fallback. Bundled asset catalog ownership, font parsing,
 and feature-engine use of this boundary remain pending.
+
+## Imported resource identity and reuse — partial R2
+
+Tracking: [#3687](https://github.com/Oblikovati/Oblikovati/issues/3687).
+`PackageResource::imported` owns the supplied bytes and chooses UTF-8 only when
+all bytes are valid UTF-8 and none is NUL, matching Go exchange import. Other
+input remains binary. The caller supplies the display-only origin; no file is
+read by this constructor.
+
+`DocumentPackage::with_imported_resource` returns a candidate package and its
+resource key. Equality includes type, encoding, origin, and bytes. An identical
+resource reuses an existing key without consuming a GUID or changing retained
+YAML fields. When legacy entries duplicate a payload, the lowest key in the
+ordered map wins; existing entries and references remain intact. This makes the
+Go map-based reuse rule deterministic.
+
+New content takes one GUID from the injected source. Entropy failures and key
+collisions return `ResourceImportError` without package mutation or retry.
+The native source already produces random version-4 GUIDs. Four tests cover
+encoding selection, owned inputs, all equality fields, reopen/reuse, duplicate
+legacy keys, collision refusal, and entropy failure. Recipe creation and session
+resource ownership remain pending; this operation does not create geometry.
