@@ -9,6 +9,7 @@ use oblikovati_model::{
 
 mod groups;
 mod record;
+mod settings;
 use record::ParameterRecipe;
 
 /// A reconstructed table and its document-owned identity allocator.
@@ -37,6 +38,7 @@ impl DocumentPackage {
         }
         validate_health(&restored.parameters)?;
         groups::restore_groups(self.root.get("model"), &mut restored.parameters)?;
+        settings::restore_settings(self.root.get("model"), &mut restored.parameters)?;
         restored.parameters.drain_changed();
         Ok(restored)
     }
@@ -45,12 +47,11 @@ impl DocumentPackage {
         let Some(model) = self.root.get("model").and_then(Value::as_mapping) else {
             return Ok(Vec::new());
         };
-        for name in ["parameterSettings", "derivedParameterTables"] {
-            if model.get(name).is_some_and(|value| !value.is_null()) {
-                return Err(PackageCodecError(format!(
-                    "parameter section {name:?}: expected an implemented recipe decoder; support is pending"
-                )));
-            }
+        if model
+            .get("derivedParameterTables")
+            .is_some_and(|value| !value.is_null())
+        {
+            return Err(PackageCodecError("parameter section derivedParameterTables: expected an implemented recipe decoder; support is pending".into()));
         }
         match model.get("parameters") {
             None | Some(Value::Null) => Ok(Vec::new()),

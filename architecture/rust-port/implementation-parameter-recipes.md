@@ -58,8 +58,8 @@ allocator advanced past every reconstructed parameter. IDs follow recipe order,
 matching the legacy name-based format; this does not add persistent parameter
 IDs to the file schema.
 
-Unknown fields and inconsistent value-flavor fields are refused. Settings,
-linked derived tables, tolerance, model-value selection, and
+Unknown fields and inconsistent value-flavor fields are refused. Linked
+derived tables, tolerance, model-value selection, and
 custom-property recipe records remain explicit unsupported cases. Their source
 YAML stays retained in the package, and reconstruction cannot silently discard
 them. This is an intermediate decoder, not completion of the parameter recipe
@@ -84,5 +84,22 @@ idempotent. An omitted display name defaults to the internal name.
 Four tests cover order and metadata, multi-membership, repeated names,
 empty/null/memberless groups, unknown fields, duplicate group keys, and missing
 members. Invalid groups discard only the separate reconstruction candidate.
-The existing live table is not an input to this operation. Parameter settings,
-tolerance/selection, custom-property recipes, and linked tables remain pending.
+The existing live table is not an input to this operation. Tolerance/selection,
+custom-property recipes, and linked tables remain pending.
+
+## Collection settings reconstruction — partial R2
+
+Tracking: [#3600](https://github.com/Oblikovati/Oblikovati/issues/3600).
+`parameterSettings` now restores standard tolerance strings, use/export flags,
+linear/angular precision, dimension display mode, and expression-display state.
+All five display spellings map to canonical API enum values. The model validates
+both precisions in `0..=8`; malformed or unsupported settings discard the
+separate candidate rather than partially adopting it.
+
+Absent/null settings retain new-document defaults. A present record follows
+Go's sparse decoding: omitted precision means zero, while an absent or unknown
+display-mode spelling is refused. Standard tolerance strings stay metadata and
+do not silently apply tolerance bands to existing parameters.
+
+Four tests cover every field and display mode, defaults versus sparse records,
+invalid precision, unknown fields, and unchanged numeric values/dirty state.
