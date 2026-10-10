@@ -13,6 +13,7 @@ pub struct RecipeIdAllocator {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum RecipeIdError {
     ZeroId,
+    DerivedMark { mark: i64, minimum: i64 },
     DuplicateId(u64),
     BeyondHighWater { id: u64, high_water: u64 },
     Exhausted,
@@ -90,6 +91,10 @@ fn validate_restored_id(
 impl fmt::Display for RecipeIdError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DerivedMark { mark, minimum } => write!(
+                formatter,
+                "derived table reservation mark {mark}: expected at least {minimum}"
+            ),
             Self::ZeroId => write!(formatter, "recipe ID 0: expected a nonzero ID"),
             Self::DuplicateId(id) => write!(
                 formatter,

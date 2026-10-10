@@ -310,3 +310,103 @@ fn nested_link_abort_keeps_source_export_as_in_go() {
             .exposed_as_property
     );
 }
+
+struct ReservationObserverFactory;
+impl oblikovati_automation::DocumentObserverFactory for ReservationObserverFactory {
+    type Observer = QueryObserver;
+    fn create(&mut self) -> Result<QueryObserver, String> {
+        Ok(QueryObserver::default())
+    }
+}
+
+#[test]
+fn undo_reservations_make_a_document_dirty_and_survive_close_saving() {
+    let (mut files, _, target, mut guids) = link_workspace(false);
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document: target,
+            new_full_document_name: "/reserved.opd".into(),
+        })
+        .unwrap();
+    assert!(!files.workspace().needs_save(target).unwrap());
+    let first = add_link(&mut files, &mut guids, &["width"]).unwrap().id;
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .transactions()
+        .undo()
+        .unwrap();
+    assert!(
+        files
+            .workspace()
+            .session(target)
+            .unwrap()
+            .snapshot()
+            .parameters
+            .derived_tables()
+            .is_empty()
+    );
+    assert!(files.workspace().needs_save(target).unwrap());
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: target,
+            force: false,
+        })
+        .unwrap();
+    let reopened = Client::new(
+        FileHost::new(&mut files, &mut guids, "test")
+            .with_observer_factory(&mut ReservationObserverFactory),
+    )
+    .documents()
+    .open(&OpenDocumentArgs {
+        full_document_name: "/reserved.opd".into(),
+        ..Default::default()
+    })
+    .unwrap();
+    assert!(!files.workspace().needs_save(reopened.id).unwrap());
+    let next = add_link(&mut files, &mut guids, &["width"]).unwrap().id;
+    assert!(next > first);
+}
+
+#[test]
+fn save_copy_preserves_deleted_table_reservations() {
+    let (mut files, _, target, mut guids) = link_workspace(false);
+    let first = add_link(&mut files, &mut guids, &["width"]).unwrap().id;
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .parameters()
+        .delete_derived_table(&DerivedParameterTableDeleteArgs { id: first })
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .save_copy_as(&SaveCopyAsArgs {
+            document: target,
+            target_file_name: "/reserved-copy.opd".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert!(files.workspace().needs_save(target).unwrap());
+    let _opened = Client::new(
+        FileHost::new(&mut files, &mut guids, "test")
+            .with_observer_factory(&mut ReservationObserverFactory),
+    )
+    .documents()
+    .open(&OpenDocumentArgs {
+        full_document_name: "/reserved-copy.opd".into(),
+        ..Default::default()
+    })
+    .unwrap();
+    assert!(add_link(&mut files, &mut guids, &["width"]).unwrap().id > first);
+}
+
+#[test]
+fn creation_from_a_package_restores_deleted_reservation_marks() {
+    let (mut files, _, _, mut guids) = link_workspace(false);
+    let package = DocumentPackage::decode(
+        b"schemaVersion: 3\ndocumentType: 1\nmodel:\n  derivedTableHighWater: 12\n",
+    )
+    .unwrap();
+    let _created = files
+        .create_unbound(package, QueryObserver::default(), "test", &mut guids)
+        .unwrap();
+    assert_eq!(add_link(&mut files, &mut guids, &[]).unwrap().id, 13);
+}

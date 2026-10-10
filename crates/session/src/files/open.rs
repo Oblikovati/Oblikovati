@@ -66,6 +66,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             properties: prepared.properties,
         };
         let history = DocumentEditHistory::new(snapshot, prepared.restored.ids)
+            .and_then(|history| {
+                history.with_derived_reservations(prepared.restored.derived_high_water)
+            })
             .map_err(FileWorkspaceError::History)?;
         let registration = self
             .workspace

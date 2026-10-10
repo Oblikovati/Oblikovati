@@ -54,6 +54,12 @@ impl StagedFile for MemoryStage {
 #[test]
 fn failed_final_replacement_preserves_old_file_and_registered_identity() {
     let (mut workspace, id) = edited_workspace();
+    let reserved = workspace
+        .commands(id)
+        .unwrap()
+        .run("Reserve table", |_, ids| ids.allocate_derived_table())
+        .unwrap();
+    assert_eq!(reserved, 1);
     let mut package = package();
     let before = package.clone();
     let original = workspace.identity(id).unwrap().clone();
@@ -76,6 +82,12 @@ fn failed_final_replacement_preserves_old_file_and_registered_identity() {
     assert_eq!(workspace.identity(id).unwrap(), &original);
     assert!(workspace.needs_save(id).unwrap());
     assert!(!workspace.session(id).unwrap().history_entries()[0].saved);
+    let next = workspace
+        .commands(id)
+        .unwrap()
+        .run("Reserve next table", |_, ids| ids.allocate_derived_table())
+        .unwrap();
+    assert_eq!(next, 2);
 }
 struct SaveGuidSource {
     next: u64,
@@ -285,10 +297,10 @@ fn stale_property_preparation_clears_prior_candidate_and_cannot_persist() {
     let mut package = package();
     let mut files = MemoryFiles::default();
     let mut target = ParameterPackageTarget::new(&mut package, Path::new("part.obk"), &mut files);
-    target.prepare(&recipe()).unwrap();
+    target.prepare(&recipe(), 0).unwrap();
     let mut stale = recipe();
     stale.properties.remove(USER_DEFINED, "width");
-    let error = target.prepare(&stale).unwrap_err();
+    let error = target.prepare(&stale, 0).unwrap_err();
     assert!(matches!(error, SnapshotPackageError::StaleProperties));
     assert!(error.to_string().contains("synchronized properties"));
     assert!(std::error::Error::source(&error).is_none());

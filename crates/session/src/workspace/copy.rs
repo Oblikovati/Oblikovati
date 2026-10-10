@@ -15,7 +15,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
     ) -> Result<FileIdentity, WorkspaceSaveError<T::Failure>> {
         let snapshot = self.save_snapshot(id)?;
         let digest = target
-            .prepare(&snapshot)
+            .prepare(
+                &snapshot,
+                self.entries[&id].session.history.derived_high_water(),
+            )
             .map_err(WorkspaceSaveError::Preparation)?;
         self.identities
             .save_copy(id, digest, version, source, target)

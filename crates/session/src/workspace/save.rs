@@ -32,7 +32,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
                 reason,
             })?;
         let digest = target
-            .prepare(&snapshot)
+            .prepare(
+                &snapshot,
+                self.entries[&id].session.history.derived_high_water(),
+            )
             .map_err(WorkspaceSaveError::Preparation)?;
         self.identities
             .save(id, digest, version, source, target)
@@ -45,6 +48,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .mark_saved()
             .expect("validated closed history");
         entry.baseline = snapshot;
+        entry.baseline_derived_high_water = entry.session.history.derived_high_water();
         entry.identity_dirty = false;
         self.observer.saved(id);
         Ok(())

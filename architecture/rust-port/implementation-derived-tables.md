@@ -145,9 +145,8 @@ cannot introduce table identities. Redo restores the original IDs. Exhaustion at
 `i64::MAX` returns a named error without changing the counter or recipe.
 
 Tests cover imported IDs, namespace overlap, rejected insertion, refresh refusal,
-undo/redo, abort, failed edits, and signed exhaustion. This guarantee currently
-covers a live history owner. The legacy package stores live table IDs only;
-persisting deleted-ID reservation marks across close/reopen remains pending.
+undo/redo, abort, failed edits, and signed exhaustion. The live-owner guarantee
+is extended across storage by the reservation capture below. Legacy packages without a saved mark infer it from their retained tables.
 
 ## Table creation and link editing
 
@@ -193,10 +192,30 @@ round trips, source refresh after reopen, dependent expressions, invalid mapping
 and unchanged schema-2 behavior. The baseline Go reader rejects future schemas in
 `persistence/migration.go`; extended recipes cannot be opened there.
 
+## Reservation marks across file lifetimes
+
+[#3666](https://github.com/Oblikovati/Oblikovati/issues/3666) stores the history-owned
+`derivedTableHighWater` in schema-3 model metadata. Save and Save Copy preparation
+receive that mark separately from the undo snapshot. Failed storage does not adopt
+the candidate mark or clear the dirty baseline. Successful save records both the
+recipe and reservation baseline; a changed mark alone requires saving.
+
+Open and creation from a package restore the counter before edits. A missing mark
+uses the largest live table ID for legacy files. Marks must be signed integers,
+nonnegative, and at least the largest live or already retained reservation. A
+schema-2 recipe cannot declare this extension. A never-used table namespace keeps
+schema 2; saving a used namespace promotes to schema 3 even after all tables were
+removed. The schema-3 recipe remains an unreleased Rust format; this adds durable
+allocation state under the identity rules of ADR-0005 without changing Go import.
+
+Tests cover add/undo/close-saving/reopen, deletion/Save Copy/reopen, package-based
+creation, dirty-state handling, failed atomic replacement, mark regression,
+invalid types and ranges, and signed exhaustion. Parameter identity persistence
+remains a separate requirement because legacy parameter records reconnect by name.
+
 ## Remaining work
 
-Persist reservation counters in the package, and
-complete the general document reference graph beyond parameter-table links.
+Complete the general document reference graph beyond parameter-table links.
 Direct low-level file owner calls still require explicit refresh; automatic hooks
 are at the API command boundary. Geometry integration and native live application
 acceptance remain pending.

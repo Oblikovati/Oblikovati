@@ -126,3 +126,15 @@ fn restored_tables_seed_reservations_and_redo_retains_existing_ids() {
     assert!(history.snapshot().parameters.derived_table(8).is_some());
     assert_eq!(add_table(&mut history), 9);
 }
+
+#[test]
+fn saved_reservations_restore_without_rewinding_live_tables() {
+    let mut history = history().with_derived_reservations(9).unwrap();
+    assert_eq!(history.derived_high_water(), 9);
+    assert_eq!(add_table(&mut history), 10);
+    let error = history
+        .with_derived_reservations(8)
+        .unwrap_err()
+        .to_string();
+    assert!(error.contains("expected at least 10"), "{error}");
+}

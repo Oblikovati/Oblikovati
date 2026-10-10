@@ -13,6 +13,7 @@ mod groups;
 mod measured;
 mod property;
 mod record;
+mod reservations;
 mod settings;
 mod tolerance;
 use record::ParameterRecipe;
@@ -22,6 +23,7 @@ use record::ParameterRecipe;
 pub struct RestoredParameters {
     pub parameters: ParameterCollection<u64>,
     pub ids: RecipeIdAllocator,
+    pub derived_high_water: i64,
 }
 
 impl DocumentPackage {
@@ -42,6 +44,7 @@ impl DocumentPackage {
         let mut restored = RestoredParameters {
             parameters: ParameterCollection::new(units),
             ids: RecipeIdAllocator::default(),
+            derived_high_water: 0,
         };
         for record in &records {
             let id = restored.ids.allocate().map_err(parameter_error)?;
@@ -56,6 +59,7 @@ impl DocumentPackage {
             self.manifest.schema_version,
             &mut restored.parameters,
         )?;
+        restored.derived_high_water = reservations::restore_mark(self, &restored.parameters)?;
         restored.parameters.drain_changed();
         Ok(restored)
     }

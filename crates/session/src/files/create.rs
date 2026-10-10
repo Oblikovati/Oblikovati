@@ -77,7 +77,9 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         parameters: restored.parameters,
         properties,
     };
-    DocumentEditHistory::new(snapshot, restored.ids).map_err(FileWorkspaceError::History)
+    DocumentEditHistory::new(snapshot, restored.ids)
+        .and_then(|history| history.with_derived_reservations(restored.derived_high_water))
+        .map_err(FileWorkspaceError::History)
 }
 
 pub(super) fn require_document_kind(kind: u32) -> Result<(), FileWorkspaceError> {

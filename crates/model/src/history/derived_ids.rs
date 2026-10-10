@@ -31,3 +31,27 @@ impl DocumentEditHistory {
         Ok(())
     }
 }
+
+impl DocumentEditHistory {
+    /// Inspect the permanent table reservation mark for storage.
+    /// Example: `target.prepare(history.snapshot(), history.derived_high_water())?;`.
+    pub fn derived_high_water(&self) -> i64 {
+        self.derived_high_water
+    }
+
+    /// Restore a saved mark without allowing live or deleted reservations to rewind.
+    /// Example: `let history = history.with_derived_reservations(saved_mark)?;` after loading.
+    pub fn with_derived_reservations(
+        mut self,
+        mark: i64,
+    ) -> Result<Self, crate::identity::RecipeIdError> {
+        if mark < self.derived_high_water {
+            return Err(crate::identity::RecipeIdError::DerivedMark {
+                mark,
+                minimum: self.derived_high_water,
+            });
+        }
+        self.derived_high_water = mark;
+        Ok(self)
+    }
+}

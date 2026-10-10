@@ -65,6 +65,7 @@ pub struct RegisteredDocument {
 struct WorkspaceEntry<O> {
     session: DocumentSession<O>,
     baseline: DocumentSnapshot,
+    baseline_derived_high_water: i64,
     identity_dirty: bool,
     display_name: String,
 }
@@ -158,6 +159,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let identity = self.identities.register(id, identity, source)?;
         let entry = WorkspaceEntry {
             baseline: history.snapshot().clone(),
+            baseline_derived_high_water: history.derived_high_water(),
             display_name: String::new(),
             session: DocumentSession::new(id, history, observer),
             identity_dirty: identity != IdentityRegistration::Preserved,
@@ -227,6 +229,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let entry = self.entries.get(&id).ok_or(WorkspaceError::Missing(id))?;
         let current = entry.session.snapshot();
         Ok(entry.identity_dirty
+            || entry.baseline_derived_high_water != entry.session.history.derived_high_water()
             || !entry.baseline.parameters.same_recipe(&current.parameters)
             || !entry.baseline.properties.same_recipe(&current.properties))
     }
