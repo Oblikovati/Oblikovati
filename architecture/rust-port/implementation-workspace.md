@@ -214,3 +214,28 @@ aliases, missing sources, invalid operations, empty batches, failed writes,
 native copy after a missing-parent failure, and Unix non-UTF-8 names. The request
 is consumed by value; a retained `contract::BatchSave` facade and remote method
 dispatch remain part of the automation host work.
+
+## New document from a recipe package — partial R2
+
+Tracking: [#3621](https://github.com/Oblikovati/Oblikovati/issues/3621).
+`FileWorkspace::create` accepts an explicit destination and an already decoded
+package. It reconstructs parameters and exposed properties, validates the
+document kind and template identity, and registers a fresh unsaved identity.
+Creation writes no file and emits Created followed by activation, rather than
+Opened. The retained package supplies initial content and metadata; its saved
+identity is replaced on the first save. The fresh identity cannot equal the
+template GUID or any live document GUID.
+
+The new document remains dirty even if edits are undone back to its initial
+recipe. Its first successful save establishes the baseline and file revisions.
+Save-before-close therefore writes an unchanged new document. A failed write
+leaves it open and dirty. Discard-close releases it without writing. Creation
+refuses an open destination, invalid recipe or identity, unsupported document
+kind, or GUID failure without publishing a session or changing focus.
+
+Eight tests cover creation events and focus, identity, undo-to-initial dirty
+state, first save, failed close-save, discard, duplicate destinations, invalid
+inputs, GUID reuse, and native create/save/reopen. The package may contain the
+four known document kinds, but only the current parameter/property domains are
+executed. Built-in content factories, template-file search, unnamed UI documents,
+and full feature/assembly/drawing reconstruction remain pending.

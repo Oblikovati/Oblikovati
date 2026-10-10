@@ -76,7 +76,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .map_err(FileWorkspaceError::Load)
     }
 
-    fn install_file(
+    pub(super) fn install_file(
         &mut self,
         path: PathBuf,
         package: DocumentPackage,

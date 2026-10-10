@@ -13,6 +13,7 @@ use oblikovati_model::{
     history::{DocumentEditHistory, DocumentSnapshot},
     identity::{
         DocumentGuid, DocumentIdentityIndex, FileIdentity, GuidSource, IdentityRegistration,
+        IdentityRegistrationError, IdentityTransitionError,
     },
 };
 pub use save::WorkspaceSaveError;
@@ -20,6 +21,8 @@ use std::collections::BTreeMap;
 
 /// Policy and observations at the workspace boundary; callbacks cannot mutate it.
 pub trait WorkspaceObserver {
+    /// Observe a new unsaved document; example: add a tab with its dirty marker set.
+    fn created(&mut self, document: u64, registration: IdentityRegistration);
     /// Observe a successful Save As binding; example: update the document's tab path.
     fn path_changed(
         &mut self,
@@ -107,6 +110,47 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         source: &mut dyn GuidSource,
         activation: OpenActivation,
     ) -> Result<RegisteredDocument, WorkspaceError> {
+        let registration = self.adopt_document(history, identity, observer, source)?;
+        self.observer
+            .opened(registration.session_id, registration.identity);
+        if activation == OpenActivation::Activate {
+            self.activate(registration.session_id)?;
+        }
+        Ok(registration)
+    }
+
+    pub(crate) fn register_created(
+        &mut self,
+        history: DocumentEditHistory,
+        identity: FileIdentity,
+        observer: O,
+        source: &mut dyn GuidSource,
+    ) -> Result<RegisteredDocument, WorkspaceError> {
+        if self.identities.owner(identity.internal_name).is_some() {
+            return Err(WorkspaceError::Identity(
+                IdentityRegistrationError::Generation(IdentityTransitionError::RepeatedGuid(
+                    identity.internal_name,
+                )),
+            ));
+        }
+        let registration = self.adopt_document(history, identity, observer, source)?;
+        self.entries
+            .get_mut(&registration.session_id)
+            .expect("adopted document")
+            .identity_dirty = true;
+        self.observer
+            .created(registration.session_id, registration.identity);
+        self.activate(registration.session_id)?;
+        Ok(registration)
+    }
+
+    fn adopt_document(
+        &mut self,
+        history: DocumentEditHistory,
+        identity: FileIdentity,
+        observer: O,
+        source: &mut dyn GuidSource,
+    ) -> Result<RegisteredDocument, WorkspaceError> {
         let id = next_session_id(self.next_id)?;
         self.next_id = id;
         let identity = self.identities.register(id, identity, source)?;
@@ -117,10 +161,6 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         };
         self.entries.insert(id, entry);
         self.order.push(id);
-        self.observer.opened(id, identity);
-        if activation == OpenActivation::Activate {
-            self.activate(id)?;
-        }
         Ok(RegisteredDocument {
             session_id: id,
             identity,

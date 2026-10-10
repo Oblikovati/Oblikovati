@@ -4,6 +4,7 @@
 mod batch;
 pub use batch::BatchSaveError;
 mod copy;
+mod create;
 mod error;
 mod open;
 mod save_as;
@@ -137,6 +138,17 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     fn release_file(&mut self, id: u64) {
         let file = self.retained.remove(&id).expect("registered file binding");
         self.paths.remove(&file.path);
+    }
+
+    fn unowned_destination(&mut self, requested: &Path) -> Result<PathBuf, FileWorkspaceError> {
+        let destination = checked_path(requested, self.files.save_path(requested))?;
+        if let Some(&owner) = self.paths.get(&destination) {
+            return Err(FileWorkspaceError::DestinationInUse {
+                path: destination,
+                owner,
+            });
+        }
+        Ok(destination)
     }
 }
 

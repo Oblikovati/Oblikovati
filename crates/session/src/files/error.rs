@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use crate::workspace::{WorkspaceError, WorkspaceSaveError};
-use oblikovati_model::identity::RecipeIdError;
-use oblikovati_persistence::{load::PackageLoadError, package::SnapshotPackageError};
+use oblikovati_model::identity::{IdentityTransitionError, RecipeIdError};
+use oblikovati_persistence::{
+    load::PackageLoadError,
+    package::{PackageCodecError, SnapshotPackageError},
+};
 use std::{error::Error, fmt, io, path::PathBuf};
 
 /// A failed file operation; no new binding or successful save was adopted.
 #[derive(Debug)]
 pub enum FileWorkspaceError {
+    DocumentType(u32),
+    Package(PackageCodecError),
+    Identity(IdentityTransitionError),
+    TemplateIdentity(String),
     DestinationInUse {
         path: PathBuf,
         owner: u64,
@@ -30,6 +37,16 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DocumentType(value) => write!(
+                output,
+                "document type {value}: expected Part, Assembly, Drawing, or Presentation"
+            ),
+            Self::Package(error) => error.fmt(output),
+            Self::Identity(error) => error.fmt(output),
+            Self::TemplateIdentity(reason) => write!(
+                output,
+                "template identity {reason}: expected a valid identity distinct from the new document"
+            ),
             Self::DestinationInUse { path, owner } => write!(
                 output,
                 "destination {path:?} belongs to document {owner}: expected a destination not owned by an open document"
@@ -59,12 +76,16 @@ impl fmt::Display for FileWorkspaceError {
 impl Error for FileWorkspaceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Package(error) => Some(error),
+            Self::Identity(error) => Some(error),
             Self::Path { cause, .. } => Some(cause),
             Self::Load(error) => Some(error),
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::MissingFile(_)
+            Self::DocumentType(_)
+            | Self::TemplateIdentity(_)
+            | Self::MissingFile(_)
             | Self::RelativeCanonical(_)
             | Self::OpenVeto { .. }
             | Self::DestinationInUse { .. } => None,

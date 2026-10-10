@@ -16,13 +16,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         source: &mut dyn GuidSource,
     ) -> Result<FileIdentity, FileWorkspaceError> {
         self.path(id)?;
-        let destination = checked_path(requested, self.files.save_path(requested))?;
-        if let Some(&owner) = self.paths.get(&destination) {
-            return Err(FileWorkspaceError::DestinationInUse {
-                path: destination,
-                owner,
-            });
-        }
+        let destination = self.unowned_destination(requested)?;
         let original = &self.retained[&id].package;
         let mut package = metadata.map_or_else(
             || original.clone(),
