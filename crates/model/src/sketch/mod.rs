@@ -5,9 +5,12 @@ mod compile;
 mod constraint;
 mod error;
 mod geometry;
+mod line_residual;
 mod residual;
 mod solve;
-pub use constraint::{DistanceMeasure, PlanarConstraint, SketchConstraint, SketchConstraintId};
+pub use constraint::{
+    DistanceMeasure, LineRelation, PlanarConstraint, SketchConstraint, SketchConstraintId,
+};
 pub use error::SketchError;
 pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
 pub use solve::SketchSolveOutcome;

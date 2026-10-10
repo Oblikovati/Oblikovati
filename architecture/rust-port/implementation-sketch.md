@@ -83,3 +83,42 @@ creation/deletion and driven dimensions, edit/drag semantics, decomposition,
 mobility, sketch persistence, profiles, feature recompute, API/session adoption
 and UI rendering remain to port. The in-memory rectangle does not prove save/
 reopen identity, SolveSpace model parity, a kernel profile, or a rendered feature.
+
+## Normalized line and incidence relations
+
+Tracking: [#3705](https://github.com/Oblikovati/Oblikovati/issues/3705).
+`PlanarConstraint::Lines` binds two existing line IDs to parallel, perpendicular,
+collinear or equal-length relations. `PointOnLine` binds a point to an infinite
+line, without segment clamping. Reference expansion preserves endpoint identity
+and repeats global columns when the lines share a point. Collinearity contributes
+both an orientation equation and a signed perpendicular-distance equation.
+
+Parallel and perpendicular residuals use cross and dot products of individually
+normalized directions. Incidence uses a unit direction crossed with the anchor
+relative offset; equal length uses hypot-based lengths. No product of two raw
+lengths is formed for normalization. The formulas share the existing derivative
+and iteration path and do not introduce a second solver or topology predicate.
+
+Unlike Go's epsilon-triggered raw cross/dot and anchor-distance fallbacks, a zero
+line direction is refused for orientation and incidence. Such a direction has
+no defined line orientation. The error retains its typed source and names the
+authored constraint ID. Initial source errors in both solve and analysis now map
+source block indices to that identity. Numerical failures in a trial remain
+bounded rejections through the shared core; they do not overwrite accepted state.
+Equal-length relations still permit zero lengths under the existing derivative
+convention, with convergence checked independently.
+
+Five committed Go fixtures compare residuals and full Jacobians on supported
+nondegenerate domains. Separate scalar formulas provide central-difference checks.
+Residual and derivative scale tests cover `1e-200` through `1e200`; complete line
+solve and rank tests cover `1e-100` through `1e100`. Model tests reach DOF zero for
+parallel/perpendicular lines with a driving length, collinear lines with two
+length parameters, and perpendicular equal-length lines. They also cover shared
+endpoints, structural self-parallelism, named conflicts, atomic missing-reference
+errors, collapsed directions and unchanged original geometry. Selected Go
+incidence, short-line, shared-vertex and near-parallel tests pass as reference
+checks. The fixture baseline remains
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`.
+
+These numerical relations do not prove profile topology, sketch persistence,
+SolveSpace parity, API/session integration or kernel operation acceptance.

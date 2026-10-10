@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SketchConstraintId;
 use crate::parameter::ParameterError;
-use oblikovati_solve::nonlinear::SolveError;
+use oblikovati_solve::{nonlinear::SolveError, residual::EvaluationError};
 use std::{error::Error, fmt};
 
 /// Invalid authored references or quantities, or a failed numerical evaluation.
@@ -14,6 +14,10 @@ pub enum SketchError {
         cause: ParameterError<u64>,
     },
     Numerical(SolveError),
+    Residual {
+        constraint: SketchConstraintId,
+        cause: EvaluationError,
+    },
 }
 impl fmt::Display for SketchError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -28,6 +32,9 @@ impl fmt::Display for SketchError {
                 "sketch constraint {constraint:?} length parameter {parameter}: {cause}"
             ),
             Self::Numerical(cause) => cause.fmt(output),
+            Self::Residual { constraint, cause } => {
+                write!(output, "sketch constraint {constraint:?}: {cause}")
+            }
         }
     }
 }
@@ -37,6 +44,7 @@ impl Error for SketchError {
             Self::Definition(_) => None,
             Self::Parameter { cause, .. } => Some(cause),
             Self::Numerical(cause) => Some(cause),
+            Self::Residual { cause, .. } => Some(cause),
         }
     }
 }

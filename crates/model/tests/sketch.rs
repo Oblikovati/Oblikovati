@@ -443,3 +443,6 @@ fn cancellation_and_degenerate_distance_do_not_mutate_authored_sketch() {
 
 #[path = "sketch/dimensions.rs"]
 mod dimensions;
+
+#[path = "sketch/lines.rs"]
+mod lines;

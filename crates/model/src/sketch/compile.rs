@@ -91,6 +91,8 @@ fn equation(
         PlanarConstraint::Vertical { .. } => PlanarEquation::Coordinate(0),
         PlanarConstraint::Fix { position, .. } => PlanarEquation::Fix(position),
         PlanarConstraint::Midpoint { .. } => PlanarEquation::Midpoint,
+        PlanarConstraint::PointOnLine { .. } => PlanarEquation::PointOnLine,
+        PlanarConstraint::Lines { relation, .. } => PlanarEquation::Lines(relation),
         PlanarConstraint::Distance {
             measure, parameter, ..
         } => PlanarEquation::Distance {

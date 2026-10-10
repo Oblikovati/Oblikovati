@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::DistanceMeasure;
+use super::{DistanceMeasure, LineRelation, line_residual};
 use oblikovati_solve::{
     ad::{DualNumber, DualVector},
     residual::{ResidualError, ResidualSource},
@@ -10,6 +10,8 @@ pub(super) enum PlanarEquation {
     Coordinate(usize),
     Fix([f64; 2]),
     Midpoint,
+    PointOnLine,
+    Lines(LineRelation),
     Distance {
         measure: DistanceMeasure,
         target: f64,
@@ -22,14 +24,18 @@ pub(super) struct PreparedConstraint {
 impl PreparedConstraint {
     pub fn equations(&self) -> usize {
         match self.equation {
-            PlanarEquation::Coincident | PlanarEquation::Fix(_) | PlanarEquation::Midpoint => 2,
+            PlanarEquation::Coincident
+            | PlanarEquation::Fix(_)
+            | PlanarEquation::Midpoint
+            | PlanarEquation::Lines(LineRelation::Collinear) => 2,
             _ => 1,
         }
     }
     fn variable_count(&self) -> usize {
         match self.equation {
             PlanarEquation::Fix(_) => 2,
-            PlanarEquation::Midpoint => 6,
+            PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
+            PlanarEquation::Lines(_) => 8,
             _ => 4,
         }
     }
@@ -56,13 +62,18 @@ impl ResidualSource for PreparedConstraint {
                 variables[1].shifted(-position[1])?,
             ]),
             PlanarEquation::Midpoint => midpoint(variables),
+            PlanarEquation::PointOnLine => line_residual::point_on_line(variables),
+            PlanarEquation::Lines(relation) => line_residual::line_relation(variables, relation),
             PlanarEquation::Distance { measure, target } => {
                 Ok(vec![distance(variables, measure)?.shifted(-target)?])
             }
         }
     }
 }
-fn point(variables: &[DualNumber], offset: usize) -> Result<DualVector<2>, ResidualError> {
+pub(super) fn point(
+    variables: &[DualNumber],
+    offset: usize,
+) -> Result<DualVector<2>, ResidualError> {
     Ok(DualVector::new([
         variables[offset].clone(),
         variables[offset + 1].clone(),

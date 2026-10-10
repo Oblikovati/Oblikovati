@@ -11,6 +11,14 @@ pub enum DistanceMeasure {
     Horizontal,
     Vertical,
 }
+/// Application-owned relation between two analytic planar lines.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LineRelation {
+    Parallel,
+    Perpendicular,
+    Collinear,
+    EqualLength,
+}
 /// Authored references remain intact when numerical values change.
 #[derive(Clone, Debug, PartialEq)]
 pub enum PlanarConstraint {
@@ -30,6 +38,14 @@ pub enum PlanarConstraint {
     Midpoint {
         point: SketchEntityId,
         line: SketchEntityId,
+    },
+    PointOnLine {
+        point: SketchEntityId,
+        line: SketchEntityId,
+    },
+    Lines {
+        lines: [SketchEntityId; 2],
+        relation: LineRelation,
     },
     Distance {
         points: [SketchEntityId; 2],
@@ -79,9 +95,15 @@ impl Sketch2D {
             | PlanarConstraint::Vertical { points }
             | PlanarConstraint::Distance { points, .. } => points.to_vec(),
             PlanarConstraint::Fix { point, .. } => vec![*point],
-            PlanarConstraint::Midpoint { point, line } => {
+            PlanarConstraint::Midpoint { point, line }
+            | PlanarConstraint::PointOnLine { point, line } => {
                 let endpoints = self.line(*line)?.endpoints;
                 vec![*point, endpoints[0], endpoints[1]]
+            }
+            PlanarConstraint::Lines { lines, .. } => {
+                let first = self.line(lines[0])?.endpoints;
+                let second = self.line(lines[1])?.endpoints;
+                [first, second].concat()
             }
         })
     }

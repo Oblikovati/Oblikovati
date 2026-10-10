@@ -4,7 +4,7 @@ use crate::parameter::ParameterCollection;
 use oblikovati_solve::{
     diagnostics::{ConstraintStructure, analyze_structure, redundant_sources},
     nonlinear::{NonlinearResult, SolveError, SolveOptions, solve_constraints},
-    residual::evaluate_residuals,
+    residual::{EvaluationError, evaluate_residuals},
 };
 
 /// Immutable solve candidate; callers decide how document health permits adoption.
@@ -60,8 +60,8 @@ impl Sketch2D {
         cancelled: impl FnMut() -> bool,
     ) -> Result<SketchSolveOutcome, SketchError> {
         let prepared = compile::prepare(self, parameters)?;
-        let numerical =
-            solve_constraints(&prepared.values, &prepared.blocks(), options, cancelled)?;
+        let numerical = solve_constraints(&prepared.values, &prepared.blocks(), options, cancelled)
+            .map_err(|cause| self.constraint_failure(cause))?;
         let mut candidate = self.clone();
         for (point, values) in candidate
             .points
@@ -83,8 +83,20 @@ impl Sketch2D {
         rank_tolerance: f64,
     ) -> Result<ConstraintStructure, SketchError> {
         let prepared = compile::prepare(self, parameters)?;
-        let evaluation =
-            evaluate_residuals(&prepared.values, &prepared.blocks()).map_err(SolveError::from)?;
+        let evaluation = evaluate_residuals(&prepared.values, &prepared.blocks())
+            .map_err(|cause| self.constraint_failure(cause.into()))?;
         Ok(analyze_structure(&evaluation, rank_tolerance).map_err(SolveError::from)?)
+    }
+    fn constraint_failure(&self, cause: SolveError) -> SketchError {
+        if let SolveError::Evaluation(EvaluationError::Source { block, .. }) = &cause
+            && let Some(constraint) = self.constraints.get(*block)
+            && let SolveError::Evaluation(cause) = cause
+        {
+            return SketchError::Residual {
+                constraint: constraint.id,
+                cause,
+            };
+        }
+        cause.into()
     }
 }
