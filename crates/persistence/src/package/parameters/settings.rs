@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{PackageCodecError, Value, codec_error, parameter_error};
-use oblikovati_api::types::{
-    DIMENSION_DISPLAY_EXPRESSION, DIMENSION_DISPLAY_NAME, DIMENSION_DISPLAY_PRECISE_VALUE,
-    DIMENSION_DISPLAY_TOLERANCE, DIMENSION_DISPLAY_VALUE, DimensionDisplayType,
-};
+use oblikovati_api::types::DimensionDisplayType;
 use oblikovati_model::parameter::{CollectionSettings, ParameterCollection};
 use serde::{Deserialize, Serialize};
 
@@ -53,16 +50,9 @@ impl SettingsRecipe {
 }
 
 fn display_mode(name: &str) -> Result<DimensionDisplayType, PackageCodecError> {
-    match name {
-        "value" => Ok(DIMENSION_DISPLAY_VALUE),
-        "name" => Ok(DIMENSION_DISPLAY_NAME),
-        "expression" => Ok(DIMENSION_DISPLAY_EXPRESSION),
-        "tolerance" => Ok(DIMENSION_DISPLAY_TOLERANCE),
-        "preciseValue" => Ok(DIMENSION_DISPLAY_PRECISE_VALUE),
-        _ => Err(PackageCodecError(format!(
-            "dimension display mode {name:?}: expected value, name, expression, tolerance, or preciseValue"
-        ))),
-    }
+    oblikovati_model::parameter::parse_dimension_display(name).ok_or_else(|| PackageCodecError(format!(
+        "dimension display mode {name:?}: expected value, name, expression, tolerance, or preciseValue"
+    )))
 }
 
 pub(super) fn capture_settings(settings: &CollectionSettings) -> Result<Value, PackageCodecError> {

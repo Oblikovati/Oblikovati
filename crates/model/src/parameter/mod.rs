@@ -9,7 +9,7 @@ mod presentation;
 mod property;
 pub mod vocabulary;
 pub use annotations::ParameterAnnotations;
-pub use presentation::{dimension_display_name, kind_name};
+pub use presentation::{dimension_display_name, kind_name, parse_dimension_display};
 pub use property::CustomPropertyFormat;
 mod choices;
 mod comparison;

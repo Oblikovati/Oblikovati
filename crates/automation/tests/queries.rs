@@ -20,10 +20,14 @@ use std::path::Path;
 #[derive(Default)]
 struct QueryObserver {
     notifications: usize,
+    veto: bool,
 }
 impl TransactionObserver for QueryObserver {
     fn before(&mut self, _: &TransactionEventPayload, _: &DocumentSnapshot) -> Result<(), String> {
         self.notifications += 1;
+        if self.veto {
+            return Err("settings are locked".into());
+        }
         Ok(())
     }
     fn after(&mut self, _: &TransactionEventPayload, _: &DocumentSnapshot) {
@@ -346,3 +350,6 @@ mod collection;
 
 #[path = "queries/detail.rs"]
 mod detail;
+
+#[path = "queries/settings_edit.rs"]
+mod settings_edit;

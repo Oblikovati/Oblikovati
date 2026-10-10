@@ -60,3 +60,17 @@ pub fn dimension_display_name(
         _ => None,
     }
 }
+
+/// Parse a canonical dimension display name; example: `parse_dimension_display("value")`.
+pub fn parse_dimension_display(name: &str) -> Option<oblikovati_api::types::DimensionDisplayType> {
+    use oblikovati_api::types::*;
+    [
+        DIMENSION_DISPLAY_VALUE,
+        DIMENSION_DISPLAY_NAME,
+        DIMENSION_DISPLAY_EXPRESSION,
+        DIMENSION_DISPLAY_TOLERANCE,
+        DIMENSION_DISPLAY_PRECISE_VALUE,
+    ]
+    .into_iter()
+    .find(|mode| dimension_display_name(*mode) == Some(name))
+}

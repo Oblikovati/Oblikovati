@@ -1,4 +1,4 @@
-# Typed automation queries — partial R2
+# Typed automation host — partial R2
 
 Tracking: [#3627](https://github.com/Oblikovati/Oblikovati/issues/3627) and
 [#3628](https://github.com/Oblikovati/Oblikovati/issues/3628), plus parameter
@@ -34,22 +34,22 @@ API crate. `QUERY_METHODS` publishes the exact implemented inventory.
 | `units.getDrivingParameters` | Return distinct names in source order without resolving them. |
 | `units.getLocaleCorrectedExpression` | Validate canonical syntax and preserve the source text. |
 
-Dispatch selects a supported read-only method before executing it. Other methods,
+`SessionQueryHost` selects a supported read-only method before executing it. Other methods,
 including edits, are refused explicitly. Request/response serialization uses the
 canonical types, including their nullable field behavior. A root JSON null maps
 to the argument type's default, matching Go decoding; malformed JSON is refused.
 Physical conversion and formatting preserve the model's finite-value and
 dimension checks. No DTO or numeric-unit implementation is duplicated here.
 
-Twenty integration tests call the host through the real Rust API `Client`. They
-cover all nineteen methods, active-document changes, display formats, non-default
+Twenty-six integration tests call the host through the real Rust API `Client`. They
+cover all nineteen query methods and the settings edit, active-document changes, display formats, non-default
 working scale, missing document context, dimensional failures, malformed calls,
 and unsupported mutation methods. They assert unchanged dirty state, generation,
 notification counts, and undo history. The API transport is exercised directly;
 these are local Linux tests, not C ABI or native add-in tests.
 
-The host currently has no mutation dispatch, session queue, C callback registry,
-remote transport, or add-in lifecycle. Those remain R2/R4 work. The limited method
+The host has no session queue, C callback registry, remote transport, or add-in
+lifecycle. Those remain R2/R4 work. The limited method
 inventory is not evidence that all operations in the API version are implemented.
 
 Expression evaluation uses the existing model evaluator and reads healthy nominal
@@ -75,7 +75,7 @@ cycles, evaluation failures, blocked dependencies, nonfinite values, or nonnumer
 dependencies. Parameter-kind spellings are shared with package export.
 The canonical DTO omits empty neighbor lists; an empty parameter list is an array.
 The query tests check order, values, errors, direct links, and unchanged session
-state. Parameter mutations remain to be wired.
+state. Parameter value/member mutations remain to be wired.
 
 Collection queries preserve all eight parameter settings fields, including empty
 standard-tolerance strings, false flags, and zero angular precision. Display-mode
@@ -95,3 +95,28 @@ health diagnostic; the model's feature-value read continues to reject that state
 Precision and tolerance vocabularies are shared with persistence. Tests cover
 numeric defaults, tolerance offsets, failed values, typed literals, presentation,
 choices, graph links, missing context/names, and unchanged session state.
+
+## Transactional settings edits
+
+[#3633](https://github.com/Oblikovati/Oblikovati/issues/3633) adds `SessionHost`, a
+synchronous canonical `Caller` over exclusive workspace command access. It routes
+known queries to `SessionQueryHost` and publishes supported edits separately in
+`EDIT_METHODS`. The first edit is `parameters.setSettings`. An unsupported method
+is refused before document mutation. Overlapping synchronous calls return an
+explicit busy/reentry error instead of a borrow panic.
+
+Settings updates clone and validate the collection settings, then run through
+`SessionCommands::run` with the label `Edit Parameter Settings`. The response is
+encoded inside the candidate edit before commit. Session policy controls veto,
+property synchronization, notifications, grouped edits, no-op detection, and
+undo/redo. No separate host undo log exists. Omitted and null fields preserve
+values; explicit false, zero, and empty strings replace them. Root null means an
+empty update. Arrays and scalar request roots are refused by the shared decoder.
+
+An owner-borrow regression test checks rejection of overlapping query/edit calls
+and successful use after the borrow is released. Six additional integration tests exercise the real typed client and wire calls:
+undo/redo, live query results, atomic validation errors, optional/reset fields,
+no-op redo preservation, existing groups, missing context, unported edits, and
+observer veto rollback. The display-mode parser is shared with package restore.
+This is an owner-side transport, not a bounded queue or native callback registry;
+those boundaries must be added before native add-in use is claimed.

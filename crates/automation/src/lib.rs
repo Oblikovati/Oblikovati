@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Typed query dispatch; edits and native add-in transport are separate host responsibilities.
+//! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
+mod host;
+mod settings_edit;
+pub use host::{EDIT_METHODS, SessionHost};
 mod collection;
 mod detail;
 mod expressions;
@@ -142,7 +145,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
 }
 
 fn decode<T: DeserializeOwned + Default>(method: &str, request: &[u8]) -> Result<T, Error> {
-    serde_json::from_slice::<Option<T>>(request).map(Option::unwrap_or_default).map_err(|error| {
+    serde_json::from_slice::<serde_json::Value>(request).and_then(|value| {
+        if !value.is_object() && !value.is_null() {
+            return Err(serde::de::Error::custom("expected a JSON object or null"));
+        }
+        serde_json::from_value::<Option<T>>(value).map(Option::unwrap_or_default)
+    }).map_err(|error| {
         Error(format!("method {method:?} request {:?}: expected its canonical JSON argument object: {error}", String::from_utf8_lossy(request)))
     })
 }

@@ -3,6 +3,13 @@
 use super::*;
 
 pub(super) fn parameter_workspace(parameters: ParameterCollection<u64>) -> (Workspace, u64) {
+    parameter_workspace_observer(parameters, QueryObserver::default())
+}
+
+pub(super) fn parameter_workspace_observer(
+    parameters: ParameterCollection<u64>,
+    observer: QueryObserver,
+) -> (Workspace, u64) {
     let ids = parameters.ids().to_vec();
     let high = ids.iter().max().copied().unwrap_or(0);
     let snapshot = DocumentSnapshot {
@@ -20,7 +27,7 @@ pub(super) fn parameter_workspace(parameters: ParameterCollection<u64>) -> (Work
         .register(
             history,
             FileIdentity::new("test", &mut guids).unwrap(),
-            QueryObserver::default(),
+            observer,
             &mut guids,
             OpenActivation::Activate,
         )

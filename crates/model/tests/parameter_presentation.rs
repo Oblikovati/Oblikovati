@@ -129,3 +129,20 @@ fn inspection_does_not_make_failed_parameters_usable_for_feature_evaluation() {
     parameters.insert_text(2, "material", "steel").unwrap();
     assert_eq!(parameters.inspection_value(2).unwrap(), None);
 }
+
+#[test]
+fn dimension_display_parser_accepts_only_canonical_names() {
+    use oblikovati_model::parameter::parse_dimension_display;
+    for (name, mode) in [
+        ("value", DIMENSION_DISPLAY_VALUE),
+        ("name", DIMENSION_DISPLAY_NAME),
+        ("expression", DIMENSION_DISPLAY_EXPRESSION),
+        ("tolerance", DIMENSION_DISPLAY_TOLERANCE),
+        ("preciseValue", DIMENSION_DISPLAY_PRECISE_VALUE),
+    ] {
+        assert_eq!(parse_dimension_display(name), Some(mode));
+    }
+    for name in ["", "Value", "invalid"] {
+        assert_eq!(parse_dimension_display(name), None);
+    }
+}
