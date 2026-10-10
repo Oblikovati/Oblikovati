@@ -116,3 +116,30 @@ fn failed_open_does_not_emit_an_interest_notice() {
     );
     assert!(host.workspace().observer().interest_notices.is_empty());
 }
+
+#[test]
+fn connected_clients_suppress_missing_interest_notice_until_last_connection_leaves() {
+    let mut host = interest_host(&["fea"]);
+    let first = host.connected_clients_mut().register("cam").unwrap();
+    let second = host.connected_clients_mut().register("cam").unwrap();
+    host.connected_clients_mut().unregister(first).unwrap();
+    let id = open_file(
+        &mut host,
+        "interests.opd",
+        &mut SequenceGuids(100),
+        OpenActivation::Activate,
+    );
+    assert!(host.workspace().observer().interest_notices.is_empty());
+    host.close_discarding_changes(id).unwrap();
+    host.connected_clients_mut().unregister(second).unwrap();
+    open_file(
+        &mut host,
+        "interests.opd",
+        &mut SequenceGuids(200),
+        OpenActivation::Activate,
+    );
+    assert_eq!(
+        host.workspace().observer().interest_notices[0].2,
+        ["cam", "cam"]
+    );
+}

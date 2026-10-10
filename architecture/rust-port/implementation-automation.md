@@ -478,3 +478,6 @@ This is the deletion path for retained recipe tables. Source resolution and
 enumeration are recorded in [derived tables](implementation-derived-tables.md).
 API table creation/link edits and the workspace reference graph remain unported. The local recipe operation does not establish cross-document
 recompute or reference-graph parity.
+
+Connected client registration, discovery, and interest availability are recorded
+in [client application implementation](implementation-clients.md).

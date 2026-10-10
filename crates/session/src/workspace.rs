@@ -91,6 +91,7 @@ pub struct WorkspaceSession<O, W> {
     identities: DocumentIdentityIndex,
     next_id: u64,
     observer: W,
+    clients: crate::clients::ConnectedClients,
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
@@ -114,6 +115,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             identities: DocumentIdentityIndex::default(),
             next_id: 0,
             observer,
+            clients: crate::clients::ConnectedClients::default(),
         }
     }
 
@@ -273,6 +275,17 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .get_mut(&id)
             .expect("registered file owner")
             .display_name = name;
+    }
+}
+
+impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
+    /// Inspect external connections without changing document state; example: `workspace.connected_clients().entries()`.
+    pub fn connected_clients(&self) -> &crate::clients::ConnectedClients {
+        &self.clients
+    }
+    /// Change external connections independently from document history; example: `workspace.connected_clients_mut().register("cam")?`.
+    pub fn connected_clients_mut(&mut self) -> &mut crate::clients::ConnectedClients {
+        &mut self.clients
     }
 }
 

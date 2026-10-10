@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
+mod clients;
+pub use clients::CLIENT_COMMAND_METHODS;
 mod attachments;
 mod attributes;
 mod command_owner;
@@ -40,7 +42,8 @@ use serde::{Serialize, de::DeserializeOwned};
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 30] = [
+pub const QUERY_METHODS: [&str; 31] = [
+    METHOD_CLIENT_APPS_LIST,
     METHOD_DOCUMENTS_LIST_ATTACHMENTS,
     METHOD_DOCUMENTS_LIST_INTERESTS,
     METHOD_DOCUMENTS_HAS_INTEREST,
@@ -104,6 +107,9 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_CLIENT_APPS_LIST => encode(&ListClientApplicationsResult {
+                clients: Some(self.workspace.connected_clients().entries().to_vec()),
+            }),
             METHOD_DOCUMENTS_LIST_ATTACHMENTS => encode(&attachments::list(
                 self.workspace,
                 decode(method, request)?,

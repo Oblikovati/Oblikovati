@@ -66,6 +66,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if crate::CLIENT_COMMAND_METHODS.contains(&method) {
+            return crate::clients::apply(context.files.connected_clients_mut(), method, request);
+        }
         if method == METHOD_DOCUMENTS_LIST_ATTACHMENTS {
             return context.list_attachments(decode(method, request)?);
         }

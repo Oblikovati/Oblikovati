@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Serial document edits and transaction observations, independent of UI and I/O.
+pub mod clients;
 mod command;
 mod error;
 mod events;

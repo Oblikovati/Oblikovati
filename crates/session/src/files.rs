@@ -207,3 +207,11 @@ fn bound_target<'a, F: DocumentFiles>(
         files,
     ))
 }
+
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Update external connections without exposing mutable document ownership.
+    /// Example: `files.connected_clients_mut().register("cam")?;`.
+    pub fn connected_clients_mut(&mut self) -> &mut crate::clients::ConnectedClients {
+        self.workspace.connected_clients_mut()
+    }
+}

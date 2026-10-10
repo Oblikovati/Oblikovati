@@ -31,6 +31,10 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionHost<'a, O, W> {
 
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::CLIENT_COMMAND_METHODS.contains(&method) {
+            let mut workspace = self.workspace.try_borrow_mut().map_err(|_| busy(method))?;
+            return crate::clients::apply(workspace.connected_clients_mut(), method, request);
+        }
         if QUERY_METHODS.contains(&method) {
             let workspace = self.workspace.try_borrow().map_err(|_| busy(method))?;
             return SessionQueryHost::new(&workspace).call(method, request);

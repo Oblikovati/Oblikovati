@@ -64,6 +64,7 @@ fn overlapping_query_and_edit_calls_fail_without_poisoning_the_host() {
             METHOD_PARAMETERS_GET_SETTINGS,
             METHOD_PARAMETERS_SET_SETTINGS,
             METHOD_TRANSACTION_BEGIN,
+            METHOD_CLIENT_APPS_REGISTER,
         ] {
             let error = host.call(method, b"{}").unwrap_err().to_string();
             assert!(error.contains(method));

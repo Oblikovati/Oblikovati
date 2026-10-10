@@ -13,7 +13,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .records()
             .iter()
             .filter(|record| record.interest_type == INTERESTED)
-            .filter(|record| !self.observer.interest_client_present(&record.client_id))
+            .filter(|record| {
+                !self.clients.contains_name(&record.client_id)
+                    && !self.observer.interest_client_present(&record.client_id)
+            })
             .map(|record| record.client_id.clone())
             .collect();
         if absent.is_empty() {

@@ -326,3 +326,6 @@ mod attachments;
 
 #[path = "file_attachment_api.rs"]
 mod attachment_api;
+
+#[path = "file_clients.rs"]
+mod clients;
