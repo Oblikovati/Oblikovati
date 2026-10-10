@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+use crate::quantity::QuantityError;
+use std::fmt;
+
+/// Positioned syntax or evaluation failure, ready for parameter health reporting.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ExpressionError {
+    Syntax {
+        position: usize,
+        found: String,
+        expected: &'static str,
+    },
+    Reference {
+        name: String,
+        expected: &'static str,
+    },
+    Function {
+        name: String,
+        found: String,
+        expected: &'static str,
+    },
+    Arithmetic(QuantityError),
+}
+
+impl fmt::Display for ExpressionError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Syntax {
+                position,
+                found,
+                expected,
+            } => write!(
+                formatter,
+                "expression at byte {position}: found {found:?}; expected {expected}"
+            ),
+            Self::Reference { name, expected } => {
+                write!(formatter, "reference {name:?}: expected {expected}")
+            }
+            Self::Function {
+                name,
+                found,
+                expected,
+            } => write!(
+                formatter,
+                "function {name:?}: found {found}; expected {expected}"
+            ),
+            Self::Arithmetic(error) => error.fmt(formatter),
+        }
+    }
+}
+
+impl std::error::Error for ExpressionError {}
+
+impl From<QuantityError> for ExpressionError {
+    fn from(error: QuantityError) -> Self {
+        Self::Arithmetic(error)
+    }
+}

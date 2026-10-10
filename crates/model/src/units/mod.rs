@@ -8,6 +8,7 @@ mod scale;
 
 use crate::quantity::{Dimension, Quantity};
 pub use error::UnitError;
+pub(crate) use literal::numeric_prefix_len;
 use registry::{NamedUnit, require_category};
 
 /// Document unit preferences. Changes affect presentation, never existing quantities.

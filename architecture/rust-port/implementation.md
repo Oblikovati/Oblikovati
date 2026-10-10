@@ -97,3 +97,48 @@ Display string rendering and precision/format preferences are not implemented.
 The document owner must still freeze scale after geometry exists and restore
 legacy missing-scale fields to the centimetre default. Expression parsing,
 parameter health, document persistence, and the API boundary remain open.
+
+## Parameter expressions — partial R2
+
+Tracking: [issue #3568](https://github.com/Oblikovati/Oblikovati/issues/3568).
+`crates/model/src/expression` ports the baseline expression grammar, 17 built-ins,
+constant folding, and stable-ID reference binding. The public model interface
+uses caller-owned IDs and does not define an API identity or wire DTO.
+Binding creates an independent snapshot; evaluation reads current values by ID.
+Unresolved names and distinct bound IDs remain available to the parameter owner.
+
+Expressions retain authored source and first-seen reference order. Arithmetic is
+left-associative with the Go precedence rules. Valid constant subtrees fold;
+dimension and unresolved-reference failures retain their evaluation stage.
+Domain-generated non-finite values remain visible for later parameter health checks. Unknown functions fail before argument evaluation. Go `min`/`max` rules
+for NaN, infinities, and signed zero are explicit rather than using Rust's
+numerically different primitive behavior.
+
+Node storage, evaluation, and destruction are flat. A 20,000-reference formula
+runs without recursive evaluation. Recursive syntax has an explicit 128-level
+limit and a positioned error. Like the baseline, the grammar does not accept
+unary plus, caret powers, or area/volume suffixes containing `^`; those quantities
+can be built from products. It accepts Go's identifier vocabulary and byte offsets.
+
+Unlike the Go expression parser's fixed centimetre literal conversion, the Rust
+parser receives the document units. Explicit literals use that working scale;
+bare expression numbers remain unitless. This avoids mixing centimetre literals
+with micrometre or kilometre stored reference values. Document-scale freezing,
+parameter health, binding cascades, and rename/source rewriting remain owner work.
+
+### Expression evidence
+
+The fixture `crates/model/tests/fixtures/go-expressions.tsv` captures 50 results
+from the fixed Go revision. The isolated capture used the unmodified baseline
+`expr_ast.go`, `expr_parser.go`, `expr_token.go`, `expr_eval.go`,
+`expr_functions.go`, `quantity.go`, `unit.go`, and `units_of_measure.go` with
+Go 1.27.0 on Linux/amd64. It ran each row through `Parse`, then `Eval(nil)`,
+and recorded the error stage or dimension name and `math.Float64bits` result.
+The Apache API Go module supplied the display-format type needed by the unit file.
+
+Rust tests check the capture, all 14 unary built-ins across all nine internal
+categories, arity errors, variadic dimensions, binding isolation, source error
+order, and scaled references. Arithmetic and signed-zero corpus values require
+bit equality. Transcendental comparisons permit eight machine epsilons of relative
+error; this does not prove cross-platform bit equality for transcendental results.
+The remaining model and native target gates must retain that distinction.

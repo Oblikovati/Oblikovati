@@ -3,5 +3,6 @@
 //! Application-owned document rules, independent of storage and geometry engines.
 
 pub mod dependency;
+pub mod expression;
 pub mod quantity;
 pub mod units;
