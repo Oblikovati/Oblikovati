@@ -11,6 +11,7 @@ pub struct LoadedParameterPackage {
     pub loaded: LoadedPackage,
     pub restored: RestoredParameters,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
+    pub interests: oblikovati_model::interest::DocumentInterests,
     pub properties: oblikovati_model::property::DocumentProperties,
 }
 
@@ -36,6 +37,7 @@ pub fn load_parameter_package(
         restored: prepared.restored,
         properties: prepared.properties,
         attributes: prepared.attributes,
+        interests: prepared.interests,
     })
 }
 
@@ -46,6 +48,7 @@ pub struct PreparedParameterPackage {
     pub package: DocumentPackage,
     pub restored: RestoredParameters,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
+    pub interests: oblikovati_model::interest::DocumentInterests,
     pub properties: oblikovati_model::property::DocumentProperties,
     pub identity: FileIdentity,
 }
@@ -59,6 +62,9 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
+    let interests = package
+        .restore_interests()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let attributes = package
         .restore_attributes()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
@@ -74,6 +80,7 @@ pub fn read_parameter_package(
         package,
         restored,
         attributes,
+        interests,
         properties,
         identity,
     })

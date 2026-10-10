@@ -72,6 +72,7 @@ fn recipe() -> DocumentSnapshot {
     properties.sync_exposed_parameters(&parameters).unwrap();
     DocumentSnapshot {
         attributes: Default::default(),
+        interests: Default::default(),
         parameters,
         properties,
     }
@@ -374,3 +375,6 @@ mod jumps;
 
 #[path = "lifecycle/attributes.rs"]
 mod attributes;
+
+#[path = "lifecycle/interests.rs"]
+mod interests;

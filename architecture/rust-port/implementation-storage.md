@@ -253,3 +253,21 @@ sections. Go registry and package round-trip tests provide reference evidence.
 Session dirty state, undo, file lifecycle integration, the four API methods,
 and absent-client notices remain pending; the package envelope alone continues
 to retain interest sections without interpreting them.
+
+## Session ownership of document interests — partial R2
+
+Tracking: [#3683](https://github.com/Oblikovati/Oblikovati/issues/3683).
+`DocumentSnapshot` now owns interest records. Interest-only edits participate in
+transaction change detection, undo/redo, abort, refresh, and save baselines.
+An identical update is a no-op. A failed commit restores the previous registry.
+Interest metadata does not change the model-only geometry digest.
+
+Typed package loading validates interests before allocating or claiming identity.
+Open and template creation install owned registries. Normal save and save-copy
+capture the live registry; a failed write retains live metadata and identity.
+Copy does not clear the source's dirty state. Tests exercise clean/dirty changes
+through undo, normal/copy save and reopen, template independence, observer veto,
+refresh generation, and rejection before identity allocation.
+
+This completes the session and file lifecycle work identified above. The four
+public interest methods and unavailable-client notices remain to be connected.

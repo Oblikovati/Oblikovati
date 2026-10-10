@@ -117,3 +117,25 @@ fn attribute_refresh_detects_signed_zero_and_publishes_only_real_changes() {
     assert_eq!(history.generation(), generation + 2);
     assert!(history.entries().is_empty());
 }
+
+#[test]
+fn interest_refresh_publishes_changed_metadata_without_an_undo_step() {
+    use oblikovati_api::types::DocumentInterestRecord;
+    let mut history = history();
+    let generation = history.generation();
+    let record = DocumentInterestRecord {
+        client_id: "cam".into(),
+        name: "paths".into(),
+        ..Default::default()
+    };
+    for expected_change in [true, false] {
+        assert_eq!(
+            history
+                .refresh(|snapshot| snapshot.interests.put(record.clone()))
+                .unwrap(),
+            expected_change
+        );
+        assert_eq!(history.generation(), generation + 1);
+    }
+    assert!(history.entries().is_empty());
+}

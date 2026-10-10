@@ -473,3 +473,6 @@ fn malformed_attributes_claim_no_document_identity() {
     assert!(index.identity(1).is_none());
     assert_eq!(generator.next, 0);
 }
+
+#[path = "load/interests.rs"]
+mod interests;

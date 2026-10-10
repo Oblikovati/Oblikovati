@@ -311,3 +311,6 @@ mod attributes;
 
 #[path = "file_attribute_api.rs"]
 mod attribute_api;
+
+#[path = "file_interests.rs"]
+mod interests;

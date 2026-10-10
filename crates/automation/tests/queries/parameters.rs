@@ -16,6 +16,7 @@ pub(super) fn parameter_workspace_observer(
     properties.sync_exposed_parameters(&parameters).unwrap();
     let snapshot = DocumentSnapshot {
         attributes: Default::default(),
+        interests: Default::default(),
         parameters,
         properties,
     };

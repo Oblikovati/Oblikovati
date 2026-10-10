@@ -18,6 +18,7 @@ fn history() -> DocumentEditHistory {
     DocumentEditHistory::new(
         DocumentSnapshot {
             attributes: Default::default(),
+            interests: Default::default(),
             parameters,
             properties: DocumentProperties::default(),
         },
