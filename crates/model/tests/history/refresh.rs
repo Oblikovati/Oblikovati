@@ -76,3 +76,44 @@ fn prepared_refresh_can_be_discarded_before_infallible_publication() {
     assert_eq!(width(&history), 7.0);
     assert!(history.undo_labels().is_empty());
 }
+
+#[test]
+fn attribute_refresh_detects_signed_zero_and_publishes_only_real_changes() {
+    use oblikovati_model::attribute::AttributeTarget;
+    let mut history = history();
+    let target = AttributeTarget::from_encoded(&[0; 16]).unwrap();
+    let generation = history.generation();
+    assert!(
+        history
+            .refresh(|snapshot| snapshot.attributes.put(
+                &target,
+                "AddIn",
+                "zero",
+                VariantValue::Double(-0.0)
+            ))
+            .unwrap()
+    );
+    assert_eq!(history.generation(), generation + 1);
+    assert!(
+        !history
+            .refresh(|snapshot| snapshot.attributes.put(
+                &target,
+                "AddIn",
+                "zero",
+                VariantValue::Double(-0.0)
+            ))
+            .unwrap()
+    );
+    assert!(
+        history
+            .refresh(|snapshot| snapshot.attributes.put(
+                &target,
+                "AddIn",
+                "zero",
+                VariantValue::Double(0.0)
+            ))
+            .unwrap()
+    );
+    assert_eq!(history.generation(), generation + 2);
+    assert!(history.entries().is_empty());
+}

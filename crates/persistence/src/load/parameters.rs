@@ -10,6 +10,7 @@ use crate::package::RestoredParameters;
 pub struct LoadedParameterPackage {
     pub loaded: LoadedPackage,
     pub restored: RestoredParameters,
+    pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub properties: oblikovati_model::property::DocumentProperties,
 }
 
@@ -34,6 +35,7 @@ pub fn load_parameter_package(
         },
         restored: prepared.restored,
         properties: prepared.properties,
+        attributes: prepared.attributes,
     })
 }
 
@@ -43,6 +45,7 @@ pub fn load_parameter_package(
 pub struct PreparedParameterPackage {
     pub package: DocumentPackage,
     pub restored: RestoredParameters,
+    pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub properties: oblikovati_model::property::DocumentProperties,
     pub identity: FileIdentity,
 }
@@ -56,7 +59,7 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
-    package
+    let attributes = package
         .restore_attributes()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let restored = package
@@ -70,6 +73,7 @@ pub fn read_parameter_package(
     Ok(PreparedParameterPackage {
         package,
         restored,
+        attributes,
         properties,
         identity,
     })

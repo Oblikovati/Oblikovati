@@ -305,3 +305,6 @@ mod property_sets;
 
 #[path = "file_property_format.rs"]
 mod property_format;
+
+#[path = "file_attributes.rs"]
+mod attributes;

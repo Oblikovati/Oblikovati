@@ -18,6 +18,7 @@ use std::sync::Arc;
 /// Owned parameter/property state; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
+    pub attributes: crate::attribute::DocumentAttributes,
     pub parameters: ParameterCollection<u64>,
     pub properties: DocumentProperties,
 }
@@ -225,6 +226,7 @@ impl DocumentEditHistory {
         let before = &self.open.last().expect("validated frame").before;
         if !before.parameters.same_recipe(&self.current.parameters)
             || !before.properties.same_recipe(&self.current.properties)
+            || !before.attributes.same_recipe(&self.current.attributes)
         {
             return Ok(false);
         }

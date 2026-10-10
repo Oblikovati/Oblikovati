@@ -15,6 +15,7 @@ pub(super) fn parameter_workspace_observer(
     let mut properties = DocumentProperties::default();
     properties.sync_exposed_parameters(&parameters).unwrap();
     let snapshot = DocumentSnapshot {
+        attributes: Default::default(),
         parameters,
         properties,
     };

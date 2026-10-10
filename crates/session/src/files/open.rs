@@ -62,6 +62,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         let prepared = self.prepare_open(&path, version, source)?;
         let snapshot = DocumentSnapshot {
+            attributes: prepared.attributes,
             parameters: prepared.restored.parameters,
             properties: prepared.properties,
         };

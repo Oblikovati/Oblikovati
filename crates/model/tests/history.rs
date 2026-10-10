@@ -17,6 +17,7 @@ fn history() -> DocumentEditHistory {
         .unwrap();
     DocumentEditHistory::new(
         DocumentSnapshot {
+            attributes: Default::default(),
             parameters,
             properties: DocumentProperties::default(),
         },

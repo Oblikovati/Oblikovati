@@ -71,6 +71,7 @@ fn recipe() -> DocumentSnapshot {
     let mut properties = DocumentProperties::default();
     properties.sync_exposed_parameters(&parameters).unwrap();
     DocumentSnapshot {
+        attributes: Default::default(),
         parameters,
         properties,
     }
@@ -370,3 +371,6 @@ mod workspace;
 
 #[path = "lifecycle/jumps.rs"]
 mod jumps;
+
+#[path = "lifecycle/attributes.rs"]
+mod attributes;

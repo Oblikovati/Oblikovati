@@ -234,7 +234,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             || entry.baseline_parameter_high_water != entry.session.high_water()
             || entry.baseline_derived_high_water != entry.session.history.derived_high_water()
             || !entry.baseline.parameters.same_recipe(&current.parameters)
-            || !entry.baseline.properties.same_recipe(&current.properties))
+            || !entry.baseline.properties.same_recipe(&current.properties)
+            || !entry.baseline.attributes.same_recipe(&current.attributes))
     }
 }
 

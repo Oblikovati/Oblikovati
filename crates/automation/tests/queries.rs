@@ -81,6 +81,7 @@ impl GuidSource for QueryGuids {
 type Workspace = WorkspaceSession<QueryObserver, QueryObserver>;
 fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut QueryGuids) -> u64 {
     let snapshot = DocumentSnapshot {
+        attributes: Default::default(),
         parameters: ParameterCollection::new(units),
         properties: DocumentProperties::default(),
     };

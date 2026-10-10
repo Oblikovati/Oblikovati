@@ -51,6 +51,8 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
         self.prepared = None;
         let candidate = self
             .original
+            .with_attributes(&snapshot.attributes)
+            .map_err(SnapshotPackageError::Codec)?
             .with_derived_reservations(derived_high_water)
             .map_err(SnapshotPackageError::Codec)?
             .with_parameter_properties(

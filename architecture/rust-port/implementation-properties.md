@@ -247,8 +247,8 @@ before they can enter the collection.
 Tests cover insertion order, replacement, empty namespace/anchor retention,
 missing-target operations, filtered searches, all payload kinds, clone isolation,
 signed zero, malformed envelopes, and invalid-edit atomicity. The Go
-`model/attr` suite passes at baseline `aa8297d1`. Binary attribute storage is covered below. Session snapshots, API dispatch, and
-live entity binding remain open.
+`model/attr` suite passes at baseline `aa8297d1`. Binary attribute storage and session snapshots are covered below. API dispatch
+and live entity binding remain open.
 
 ## Binary attribute collections — partial R2
 
@@ -266,8 +266,8 @@ the same identity are rejected as duplicates. Tests cover every truncated prefix
 malformed keys/counts, duplicate namespaces/attributes, and trailing input.
 
 This completes the binary collection codecs. Attribute package sections are
-covered below. Live document snapshots and typed API commands remain open;
-decoding does not resolve an entity in the kernel.
+covered below, together with live document snapshots. Typed API commands remain
+open; decoding does not resolve an entity in the kernel.
 
 ## Attribute package section — partial R2
 
@@ -282,5 +282,20 @@ registration; invalid metadata cannot claim a live document identity.
 and checks exact recipe reconstruction. Empty collections omit the section;
 empty anchors remain represented. Tests cover the Go binary fixture inside a
 YAML package, signed zero, clearing, malformed byte sequences, and retention
-through parameter/property edits. Live attributes still need to become part
-of session snapshots and command history; this step provides the package path.
+through parameter/property edits. Session snapshot and command-history integration is covered below.
+
+## Attribute session ownership — partial R2
+
+Tracking: [#3678](https://github.com/Oblikovati/Oblikovati/issues/3678).
+`DocumentSnapshot` now owns attributes alongside parameters and properties.
+Prepared/registered loads return the decoded collection, and file open and
+new-document/template creation install it in the live snapshot. Normal and copy
+save capture that snapshot's attributes through the package codec.
+
+Attribute-only edits participate in dirty checks, no-op detection, undo/redo,
+abort, veto, and refresh-generation changes. Signed zero is compared exactly.
+Attributes remain outside the geometry recipe digest; changing add-in metadata
+does not itself create a new model geometry revision. Tests cover template
+ownership, normal/copy save/reopen, failed save state, history operations,
+unchanged edits, and refresh generation. Typed attribute API dispatch and live
+entity binding remain open.
