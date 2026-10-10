@@ -45,6 +45,9 @@ router, canonical C ABI, and validated tests as behavior evidence. Current
 user requirements and the new accepted Rust ADRs govern the Rust design;
 legacy accepted status does not carry forward. Adapt applicable decisions
 and consolidate them by boundary under the [Rust ADR policy](../decisions/README.md).
+The completed [legacy map](../decisions/legacy-map.md) records all 66
+dispositions and the supplemental Martensite renderer inspection used for the
+13 new records. That inspection does not update the baseline above.
 The Go README's early status also understates the source now present in
 assemblies, drawings, and other modules. Inventory code and tests directly.
 

@@ -5,6 +5,12 @@ all OCCT capabilities are already usable. It also requires Martensite to gain
 the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
 [source baseline](source-map.md) fixes the inspected revision.
 
+The accepted application contracts are
+[ADR-0007: Martensite integration](../decisions/ADR-0007-martensite-integration.md)
+and [ADR-0008: Vulkan renderer](../decisions/ADR-0008-vulkan-renderer.md).
+Their acceptance does not close any capability check below. Required new
+kernel-internal decisions still belong to RustyCADKernel.
+
 ## Observed integration limits
 
 - The package `rustycad-kernel` currently re-exports only `rustycad_tkernel`

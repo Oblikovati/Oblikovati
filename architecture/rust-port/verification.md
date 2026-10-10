@@ -1,6 +1,6 @@
 # Verification, compatibility, and release
 
-This document defines future implementation gates. The planning change has
+This document defines future implementation gates. The architecture branch has
 no Rust source or Cargo workspace to build. Its own checks are Markdown lint,
 document links, source-reference checks, and `git diff --check`.
 
@@ -50,6 +50,13 @@ between application, API, and Martensite records for conflicting or duplicated
 authority. For the Vulkan renderer, check that platform, display-mode,
 lighting, and resource decisions form one coherent record. Keep capability
 implementation status and evidence separate from ADR acceptance.
+
+The [migration map](../decisions/legacy-map.md) accounts for all 66 legacy
+records at the frozen Go revision and links the 13 Rust ADRs. Documentation
+checks must compare the map's source paths with that revision's tracked ADR
+set, verify every target against the current index, and reject broken relative
+links, missing required sections, duplicate numbers, or files of 500 lines or
+more. These checks do not replace runtime gates.
 
 ## Comparison rules
 

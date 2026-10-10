@@ -7,12 +7,15 @@ use the Rust contract in **Oblikovati.API** and the **Martensite** kernel in
 Go-kernel capabilities that support application features and are outside OCCT
 must be ported and adapted into Martensite as required kernel extensions.
 
-The branch currently contains the port plan. Application implementation has not
-started.
+The branch contains the port plan and 13 consolidated Rust ADRs. All 66 legacy
+Go ADRs have a recorded disposition. Application implementation has not started.
 
 - [Port plan](architecture/rust-port/plan.md): scope, architecture, and decisions.
 - [Rust ADR policy and index](architecture/decisions/README.md): a fresh decision
   set, with applicable legacy decisions adapted and consolidated by boundary.
+- [Legacy ADR map](architecture/decisions/legacy-map.md): fixed source links,
+  retained decisions, rejected implementation choices, and remaining evidence.
+- [Domain glossary](CONTEXT.md): shared document, feature, and identity terms.
 - [Source map](architecture/rust-port/source-map.md): inspected revisions and
   the Go modules that must move or be replaced.
 - [Martensite integration](architecture/rust-port/martensite.md): required

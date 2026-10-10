@@ -1,8 +1,9 @@
 # Rust architecture decision records
 
-The Rust application starts with a clean ADR set. This policy records the
-user's decision of 2026-10-10. No application ADR has been ported or accepted
-in this directory yet.
+The Rust application starts with a clean ADR set, as requested on 2026-10-10.
+The migration of all 66 legacy records is recorded in the
+[legacy map](legacy-map.md). Thirteen consolidated Rust records are accepted
+as the target design. Application implementation and runtime proof are pending.
 
 ## Authority and numbering
 
@@ -12,8 +13,9 @@ intent, requirements, alternatives, and lessons from the Go implementation.
 Keep the original records in the Go repository, with references to the fixed
 [source revision](../rust-port/source-map.md).
 
-Start the new sequence at `ADR-0001`. Use filenames such as
+The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
+The next unused number is `ADR-0014`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -22,6 +24,10 @@ Applicable legacy decisions must be rewritten for Rust ownership, lifetimes,
 threading, errors, crate dependencies, native interfaces, and Martensite.
 Carry forward relevant product requirements and tested behavior. Reassess Go
 implementation choices and unsupported claims against the current source.
+Design acceptance is separate from implementation acceptance. Each record
+states its pending milestone evidence; keep runtime receipts and capability
+status in the implementation ledgers. Do not infer that all legacy roadmap
+requirements were implemented in the Go baseline.
 
 ## One current ADR per architectural boundary
 
@@ -38,7 +44,7 @@ the appropriate new records. Record each decision once, then link to it from
 other boundaries. Keep implementation details, incident reports, and long test
 catalogues in supporting documents and issues so each ADR stays under 500 lines.
 
-The index below will name exactly one current accepted ADR per boundary.
+The index below names exactly one current accepted ADR per boundary.
 Drafts can change during review. If an accepted Rust decision later needs
 replacement, use an explicit superseding record and update the index; retain
 the historical decision. There must still be only one current authority for
@@ -46,8 +52,9 @@ that boundary.
 
 ## Migration process
 
-R0 creates a legacy-to-Rust decision map. Each row identifies a legacy ADR or
-section, its source revision, its boundary, and one disposition:
+The [legacy-to-Rust map](legacy-map.md) completes the ADR portion of R0.
+Each row identifies a legacy ADR or section, its source revision, its boundary,
+and one disposition:
 
 - **Adapt and consolidate:** applicable to Rust; name the target Rust record
   and the evidence needed to accept it.
@@ -68,45 +75,45 @@ or omitted. Acceptance depends on the new Rust design and evidence.
 Application decisions live here. Kernel-internal decisions belong to
 Martensite; API decisions belong to Oblikovati.API. A Rust application ADR
 records the integration contract and links to the owning repository's record
-instead of restating its internal design as a second authority.
+instead of restating its internal design as a second authority. If an owning
+record does not exist yet, record it as an implementation prerequisite, as
+ADR-0007 does for required Martensite extensions. Do not invent its approval.
 
-## Consolidation example: Vulkan renderer
+## Vulkan consolidation
 
-Create one Rust ADR titled **Vulkan renderer**. Its scope includes the
-application-to-Martensite rendering interface, presentation ownership, GPU
-resource lifetime and synchronization, platform capabilities, display modes,
-lighting, instancing, capture, and validation. Its sections state one coherent
-target design and identify capabilities that are still pending implementation.
+[ADR-0008: Vulkan renderer](ADR-0008-vulkan-renderer.md) consolidates the
+renderer interface, presentation, resources, synchronization, platform
+capabilities, display modes, lighting, instancing, capture, and validation.
+Its legacy inputs are assigned by section in the migration map.
 
-The following legacy inputs are candidates to review at the recorded Go
-revision. This list is a consolidation map, not automatic acceptance of their
-old decisions.
-
-| Legacy Go record | Input to the consolidated renderer ADR |
-| --- | --- |
-| ADR-0005, Vulkan 1.3 renderer | Renderer interface, device capabilities, and resource submission. |
-| ADR-0014, renderer testability | Render tests and oracle strategy. |
-| ADR-0019, macOS support | Runtime graphics portability; packaging and signing sections belong to the release boundary. |
-| ADR-0023, viewport display modes | Required display behavior, with old backend choices reassessed. |
-| ADR-0026, environment lighting | Lighting, reflections, and shadows. |
-| ADR-0038, assembly render instancing | GPU instance representation; assembly model ownership belongs to its model boundary. |
-| ADR-0053, OpenPBR Realistic mode | Realistic rendering requirements and validation; public appearance types remain owned by the API contract. |
-
-Review renderer-facing sections of legacy ADR-0004 (ImGui) and ADR-0008
-(cgo) when defining UI composition and native ownership. Keep the separate
-UI/platform decision focused on UI and OS responsibilities, and link the
-shared presentation interface to the renderer ADR.
-
-Validate these decisions against Martensite's actual Rust renderer and the
-application's requirements. The consolidated ADR must identify required
-Martensite extensions, including capabilities outside OCCT. Keep capability
-status in the linked implementation ledger. Do not create separate current
-ADRs for each display mode or platform exception within this boundary.
+UI behavior is owned by ADR-0009, asset state by ADR-0010, packaging by
+ADR-0013, and public declarations by Oblikovati.API. These records reference
+the shared rendering interface. There is no separate current renderer ADR
+for a display mode, material model, or platform exception.
 
 ## Current Rust ADR index
 
-There are no current accepted Rust application ADRs yet. R0 starts the fresh
-sequence and decision map; each later milestone supplies and verifies the
-applicable consolidated records before dependent implementation. Planned
-boundaries and evidence are listed in the
-[port plan](../rust-port/plan.md#decisions-to-record-before-dependent-implementation).
+All records below are **Accepted for the Rust target design**, dated
+2026-10-10. No application runtime acceptance is claimed.
+
+| Current record | Boundary | Implementation proof |
+| --- | --- | --- |
+| [ADR-0001](ADR-0001-rust-application-architecture.md) | Rust application composition and repository ownership | R0/R1 |
+| [ADR-0002](ADR-0002-api-and-addin-host.md) | Public automation and native add-in lifecycle | R2/R4 |
+| [ADR-0003](ADR-0003-documents-and-storage.md) | Document recipes, resources, projects, configuration | R2/R3/R6/R8 |
+| [ADR-0004](ADR-0004-session-and-feature-evaluation.md) | Session transactions, invalidation, feature evaluation | R2-R6 |
+| [ADR-0005](ADR-0005-identity-and-references.md) | Persistent identity and external references | R1/R3/R5/R6/R8 |
+| [ADR-0006](ADR-0006-parameters-and-constraints.md) | Parameters, units, shared constraint solver | R2/R3/R6 |
+| [ADR-0007](ADR-0007-martensite-integration.md) | Application requirements on Martensite operations | R1-R8; K01-K11 |
+| [ADR-0008](ADR-0008-vulkan-renderer.md) | Vulkan presentation and rendering | R1V/R4/R7 |
+| [ADR-0009](ADR-0009-ui-and-selection.md) | Desktop UI, tools, selection, themes, editor | R1V/R4/R7 |
+| [ADR-0010](ADR-0010-materials-and-appearances.md) | Materials, appearances, asset assignment | R5/R7 |
+| [ADR-0011](ADR-0011-scripting.md) | Lua runtime contract and rule execution | R7 |
+| [ADR-0012](ADR-0012-build-and-validation.md) | Build and integration evidence | R0 onward |
+| [ADR-0013](ADR-0013-packaging-and-release.md) | Packages, updates, release transition | R9 |
+
+Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
+[port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)
+assigns remaining proofs. Dependency selection and runtime evidence do not
+change an accepted decision silently; a changed decision needs a superseding
+record and an updated boundary index.

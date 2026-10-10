@@ -186,28 +186,34 @@ such as its OpenPBR workflows, may exceed the kernel's current renderer scope;
 agree their ownership and acceptance before claiming visual parity. See the
 [kernel integration plan](martensite.md).
 
-## Decisions to record before dependent implementation
+## Architecture decisions and implementation evidence
 
-Start with a clean Rust ADR set under `architecture/decisions`, numbered from
-`ADR-0001`. Preexisting Go ADRs are legacy references; their accepted status
-does not make them binding on the Rust design. Port applicable decisions,
-update them for Rust and Martensite, and consolidate decisions about the same
-architectural boundary into one current Rust ADR.
+The fresh Rust ADR set is recorded under `architecture/decisions`, numbered
+`ADR-0001` through `ADR-0013`. The [legacy map](../decisions/legacy-map.md)
+classifies all 66 Go ADRs. Applicable decisions are adapted to Rust and
+Martensite and consolidated by architectural boundary. Old accepted labels
+do not carry into this set.
 
-Follow the [ADR policy and index](../decisions/README.md). R0 records which
-legacy decisions are adapted, combined, retained only as references, or not
-applicable. Preserve source links and rationale. The new ADR must describe
-the complete current decision without requiring a chain of legacy amendments.
+Follow the [ADR policy and index](../decisions/README.md). The target designs
+are accepted; their implementation proofs remain open. Keep dependency choices,
+test receipts, and capability status in the implementation ledger. A design
+change supersedes its accepted record; it does not silently edit that decision.
 
-| Decision | Due | Required evidence |
+| Current Rust decision | Due | Required evidence |
 | --- | --- | --- |
-| Rust application and Martensite ownership | R0 | Reassess legacy language/kernel decisions for Rust; map Go capabilities to OCCT ports or required Martensite extensions and list the old modules they replace. |
-| Kernel ownership, units, naming, and evaluation interface | R1 | Shape mutation tests, operation history, reference-key replay, and tolerance policy. |
-| Vulkan renderer | R1V; complete capability evidence through R7 | Consolidate legacy renderer decisions into one Rust record covering the Martensite interface, presentation, resources, synchronization, platform capabilities, display modes, and validation. |
-| Native UI and platform interface | R1V | Rust/native binding, input, OS thread rules, and native dependency evidence; reference the Vulkan ADR for shared presentation ownership. |
-| Document and key migration | R3 | Old fixtures replayed through the new kernel without incorrect rebinding. |
-| Lua runtime | R7 | Lua 5.1 behavior, instruction/time/memory limits, cancellation, and host containment tests. |
-| Rust packaging and release transition | R9 | Reproducible platform packages, dependency pins, upgrade and rollback tests. |
+| [0001: application architecture](../decisions/ADR-0001-rust-application-architecture.md) | R0/R1 | Compile the crate boundaries, common toolchain, and fixed dependencies; verify ownership. |
+| [0002: API and add-ins](../decisions/ADR-0002-api-and-addin-host.md) | R2/R4 | Trait/wire conformance and real Go/Rust C ABI lifecycle tests. |
+| [0003: storage](../decisions/ADR-0003-documents-and-storage.md) | R2/R3/R6/R8 | Schema-2 recipes, resources, projects, and failure-safe round trips. |
+| [0004: evaluation](../decisions/ADR-0004-session-and-feature-evaluation.md) | R2-R6 | Transactions, invalidation, stale-result rejection, and independent failure. |
+| [0005: identity](../decisions/ADR-0005-identity-and-references.md) | R1/R3/R5/R6/R8 | Provenance and old-key replay without incorrect rebinding. |
+| [0006: constraints](../decisions/ADR-0006-parameters-and-constraints.md) | R2/R3/R6 | Units, expressions, rank/DOF, achieved precision, and placement. |
+| [0007: Martensite](../decisions/ADR-0007-martensite-integration.md) | R1-R8 | K01-K11, shape isolation, analytic results, and required Go-kernel extensions. |
+| [0008: Vulkan](../decisions/ADR-0008-vulkan-renderer.md) | R1V/R4/R7 | Native presentation, GPU lifetime, styles, captures, and required extensions. |
+| [0009: UI and selection](../decisions/ADR-0009-ui-and-selection.md) | R1V/R4/R7 | Native binding, input, tools, themes, editor, and visible selection. |
+| [0010: assets](../decisions/ADR-0010-materials-and-appearances.md) | R5/R7 | Typed material/appearance round trips, assignment, and analytic properties. |
+| [0011: scripting](../decisions/ADR-0011-scripting.md) | R7 | Lua 5.1, limits, cancellation, and containment with the selected engine. |
+| [0012: validation](../decisions/ADR-0012-build-and-validation.md) | R0 onward | Full discovered workspace gate, independent oracles, platform/live evidence. |
+| [0013: releases](../decisions/ADR-0013-packaging-and-release.md) | R9 | Reproducible packages, dependency pins, upgrade and rollback. |
 
 Do not select a new YAML, Lua, window, or UI wrapper only from its name. Check
 its current support, license notices, MSRV, and the required behavior in a small
