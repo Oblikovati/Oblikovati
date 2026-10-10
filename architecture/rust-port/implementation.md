@@ -47,3 +47,24 @@ No kernel release was published by this work. Keep the application kernel pin
 empty until the published release, tag commit, and all consumed crate assets
 pass the application preflight. The application does not take ownership of the
 kernel's unit tests, oracle tests, or package publication.
+
+## Parameter quantity arithmetic — partial R2
+
+Tracking: [issue #3564](https://github.com/Oblikovati/Oblikovati/issues/3564).
+`crates/model/src/quantity` ports `model/param/quantity.go` and `unit.go` from
+Go baseline `aa8297d1b0ac33c024f19e54821536d76e8a447a`. Values stay in document
+working units. Arithmetic returns a new value, checks category compatibility,
+and rejects unnamed products or quotients and zero divisors.
+
+The internal `Dimension` enum has no numeric API IDs or serialization encoding.
+The API owns wire categories; its documented host mapping remains a later task.
+For source parity, equal-category addition/subtraction and negation retain the
+Go behavior even for flag/text categories. The future expression evaluator must
+apply its own nonnumeric value restrictions. IEEE non-finite results are retained,
+not clamped; parameter health validation is not implemented by this component.
+
+An independent product table checks multiplication and inverse division for all
+81 category pairs. Tests also cover addition/subtraction for all pairs, signed
+zero, diagnostic operands, negation, and IEEE arithmetic. Parsing, named-unit
+conversion, working-scale selection, persistence, and parameter health remain
+open. This component does not complete R2 or provide an editable part.
