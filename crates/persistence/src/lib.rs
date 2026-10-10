@@ -13,3 +13,5 @@ pub mod project;
 pub mod stream_file;
 
 pub mod attachment_files;
+
+pub mod project_file;

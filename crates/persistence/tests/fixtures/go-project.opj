@@ -1,0 +1,8 @@
+schemaVersion: 1
+name: Acme Gearbox
+workspace: workspace
+libraries:
+    - ../fasteners
+    - /opt/bearings
+templates: templates
+designData: design
