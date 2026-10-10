@@ -46,7 +46,7 @@ fn collinear(
     Ok(vec![first.cross(&second)?, first.cross(&offset)?])
 }
 
-fn unit_direction(direction: &DualVector<2>) -> Result<DualVector<2>, ResidualError> {
+pub(super) fn unit_direction(direction: &DualVector<2>) -> Result<DualVector<2>, ResidualError> {
     let length = direction.length()?;
     if length.value() == 0.0 {
         let values: Vec<f64> = direction

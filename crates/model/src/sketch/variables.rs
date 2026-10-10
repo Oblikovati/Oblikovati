@@ -24,9 +24,15 @@ impl Sketch2D {
                 .iter()
                 .map(|id| SketchVariable::Radius(*id))
                 .collect()),
-            PlanarConstraint::PointOnCircle { circle, .. } => {
+            PlanarConstraint::PointOnCircle { circle, .. }
+            | PlanarConstraint::LineTangent { circle, .. } => {
                 let mut variables = self.point_variables(relation)?;
                 variables.push(SketchVariable::Radius(*circle));
+                Ok(variables)
+            }
+            PlanarConstraint::CircleTangent { circles, .. } => {
+                let mut variables = self.point_variables(relation)?;
+                variables.extend(circles.iter().map(|circle| SketchVariable::Radius(*circle)));
                 Ok(variables)
             }
             _ => self.point_variables(relation),

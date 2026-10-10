@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{Sketch2D, SketchEntityId, SketchError, geometry::require_position};
+use super::{
+    CircleContact, LineContactSide, Sketch2D, SketchEntityId, SketchError,
+    geometry::require_position,
+};
 
 /// Stable constraint identity, separate from the point/curve identity namespace.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -61,6 +64,15 @@ pub enum PlanarConstraint {
         circle: SketchEntityId,
         parameter: u64,
     },
+    LineTangent {
+        line: SketchEntityId,
+        circle: SketchEntityId,
+        side: LineContactSide,
+    },
+    CircleTangent {
+        circles: [SketchEntityId; 2],
+        contact: CircleContact,
+    },
     Distance {
         points: [SketchEntityId; 2],
         measure: DistanceMeasure,
@@ -118,10 +130,15 @@ impl Sketch2D {
                 vec![*point, self.circle(*circle)?.center]
             }
             PlanarConstraint::Concentric { circles }
-            | PlanarConstraint::EqualRadius { circles } => circles
+            | PlanarConstraint::EqualRadius { circles }
+            | PlanarConstraint::CircleTangent { circles, .. } => circles
                 .iter()
                 .map(|id| Ok(self.circle(*id)?.center))
                 .collect::<Result<Vec<_>, SketchError>>()?,
+            PlanarConstraint::LineTangent { line, circle, .. } => {
+                let endpoints = self.line(*line)?.endpoints;
+                vec![endpoints[0], endpoints[1], self.circle(*circle)?.center]
+            }
             PlanarConstraint::Radius { circle, .. } => vec![self.circle(*circle)?.center],
             PlanarConstraint::Lines { lines, .. } => {
                 let first = self.line(lines[0])?.endpoints;

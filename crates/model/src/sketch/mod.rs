@@ -10,6 +10,8 @@ mod geometry;
 mod line_residual;
 mod residual;
 mod solve;
+mod tangent;
+mod tangent_residual;
 mod variables;
 pub use circle::SketchCircle2D;
 pub use constraint::{
@@ -18,6 +20,7 @@ pub use constraint::{
 pub use error::SketchError;
 pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
 pub use solve::SketchSolveOutcome;
+pub use tangent::{CircleContact, LineContactSide};
 
 /// Ordered sketch ownership; shared endpoints use the same local point identity.
 #[derive(Clone, Debug, Default, PartialEq)]

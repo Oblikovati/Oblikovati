@@ -77,6 +77,8 @@ fn equation(
             PlanarEquation::Coincident
         }
         PlanarConstraint::PointOnCircle { .. } => PlanarEquation::PointOnCircle,
+        PlanarConstraint::LineTangent { side, .. } => PlanarEquation::LineTangent(side),
+        PlanarConstraint::CircleTangent { contact, .. } => PlanarEquation::CircleTangent(contact),
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
         PlanarConstraint::Radius { parameter, .. } => {
             PlanarEquation::Radius(radius_target(constraint, parameter, parameters)?)

@@ -21,7 +21,7 @@ pub(super) fn radius_target(
     positive_radius(radius)?;
     Ok(vec![radius.shifted(-target)?])
 }
-fn positive_radius(radius: &DualNumber) -> Result<(), ResidualError> {
+pub(super) fn positive_radius(radius: &DualNumber) -> Result<(), ResidualError> {
     if radius.value() <= 0.0 {
         return Err(ResidualError::Domain(format!(
             "circle radius {:?}: expected a strictly positive working-unit length",

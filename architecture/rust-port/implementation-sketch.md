@@ -176,3 +176,46 @@ shared [step correction](implementation-solver.md#unused-variable-step-invariant
 eliminates zero working-Jacobian columns before factorization and preserves
 free values bit-for-bit. The circle regression and the reduced solver regression
 both pass; no circle-specific radius repair was added.
+
+## Full-circle tangency with retained contact branches
+
+Tracking: [#3708](https://github.com/Oblikovati/Oblikovati/issues/3708).
+Line/circle tangency records `LineContactSide::Left` or `Right` relative to the
+line's A-to-B direction. The residual is that signed perpendicular distance,
+multiplied by the recorded side, minus the radius. It shares normalized direction
+and positive-radius checks. Circle/circle tangency records external contact or
+which circle encloses the other, then equates center distance to the radius sum
+or positive radius difference. All equations use the existing typed-variable,
+AD, candidate and bounded-iteration boundaries.
+
+`add_line_tangent` selects the seed's side once. `add_circle_tangent` selects the
+nearer radius-sum or radius-difference target, matching Go's creation-time rule;
+external contact wins exact ties. The authored constraint retains its choice
+after edits and solve. Internal contact also retains the enclosing circle, so
+crossing radius order is a domain rejection rather than a containment switch.
+Line side selection reads the signed distance directly, avoiding cancellation
+with a large radius. Explicit typed constraints permit a caller to choose a
+side or contact mode rather than infer it from a seed.
+
+Collapsed lines, coincident circle centers, ambiguous zero-offset side selection,
+and zero/negative internal gaps return typed errors naming the constraint and
+expected domain. These replace degenerate Go behaviors that can converge to
+coincident circles or lose a contact branch. Failed/cancelled solves do not adopt
+candidate geometry into the original sketch. Internal gap failures during trials
+use the shared damping rejection policy; no point nudge or alternate solver is
+introduced.
+
+Five Go fixtures compare ordinary-domain residuals and full Jacobians for left,
+right, external and both enclosing-circle contacts. Circle columns are reordered
+to the Rust coordinate-first/radius-last layout. Independent scalar central
+finite differences check every partial; value/derivative unit sweeps cover
+`1e-200` through `1e200`. Model tests solve parameter-driven DOF-zero tangencies,
+retain sides after radius edits or seed crossing, preserve enclosing choices
+after incompatible edits, exercise exact branch-selection ties, reject bad
+references/domains atomically and preserve cancellation. Complete circular tangent
+solve/rank sweeps cover `1e-100` through `1e100`. Selected Go full-circle contact
+and free-touch-point rank tests pass at the recorded baseline.
+
+Arc tangency and the shared defining-touch-point formulations require the arc
+model and remain pending. These full-circle results do not establish profile
+stitching, contact naming, persistence, API/UI integration or kernel acceptance.
