@@ -2,6 +2,7 @@
 
 //! Application-owned document rules, independent of storage and geometry engines.
 
+pub mod attachment;
 pub mod attribute;
 pub mod dependency;
 pub mod expression;

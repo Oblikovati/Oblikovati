@@ -379,3 +379,32 @@ independent template ownership. Package tests cover batch insertion/removal,
 extension retention, and unchanged base64 text. Import identity, byte-resolution,
 and Go fixture tests remain in the suite. Feature reconstruction and the
 application bundle catalog are still pending.
+
+## Attachment capture and freshness model — partial R2
+
+Tracking: [#3689](https://github.com/Oblikovati/Oblikovati/issues/3689).
+`DocumentAttachments` owns attachments in insertion order, with unique nonempty
+names and source paths. The content variant determines the canonical API kind:
+generic, linked with an optional captured modification time, or embedded with
+an owned payload and resource GUID. Visibility is editable without changing
+identity. A clone owns independent state.
+
+Capture uses injected `ExternalAttachmentFiles` and `GuidSource` interfaces.
+Validation occurs before I/O. Embedded capture reads before allocating a GUID;
+read/allocation failures and duplicate embedded GUIDs publish no attachment.
+Linked capture can retain an unknown time when the source is absent or no probe
+is available. Generic capture needs no I/O. The native persistence adapter reads
+regular-file metadata and bytes without hiding access errors.
+
+A single probe supplies both freshness and resolved source name. Embedded
+attachments stay current without consulting their source. Linked sources newer
+than their captured time are out of date; missing sources are missing, and no
+probe means unknown. Generic files do not compare timestamps. Unlike the Go
+boolean probe, Rust returns access failures separately from absence.
+
+Five model tests cover ownership, ordering, removal, visibility, freshness,
+unknown/missing sources, validation, I/O failure, and identity failure/collision.
+Two native Linux tests capture a real file, delete its source, verify embedded
+payload retention and linked absence, and retain invalid-path errors. The Go
+attachment model tests supply reference evidence. YAML attachment records,
+session history, API methods, and project-path resolution remain pending.
