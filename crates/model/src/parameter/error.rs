@@ -10,6 +10,10 @@ pub enum ParameterError<Id> {
     Dependency(DependencyError<Id>),
     Syntax(ExpressionError),
     Selection(ModelValueType),
+    Settings {
+        found: String,
+        expected: &'static str,
+    },
     Value {
         id: Id,
         found: String,
@@ -43,6 +47,10 @@ impl<Id: fmt::Debug> fmt::Display for ParameterError<Id> {
         match self {
             Self::Dependency(error) => error.fmt(formatter),
             Self::Syntax(error) => error.fmt(formatter),
+            Self::Settings { found, expected } => write!(
+                formatter,
+                "parameter settings: found {found}; expected {expected}"
+            ),
             Self::Selection(selection) => write!(
                 formatter,
                 "model value selection {selection:?}: expected Nominal, Lower, Upper, or Median"

@@ -19,7 +19,9 @@ mod record;
 mod remove;
 mod rename;
 mod service;
+mod settings;
 mod state;
+pub use settings::CollectionSettings;
 mod sweep;
 mod tolerance;
 pub use reads::ParameterReads;
@@ -50,6 +52,7 @@ pub struct ParameterCollection<Id> {
     graph: DependencyGraph<Id>,
     changed: BTreeSet<Id>,
     units: UnitsOfMeasure,
+    settings: CollectionSettings,
     groups: Vec<ParameterGroup<Id>>,
 }
 
@@ -63,6 +66,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             graph: DependencyGraph::default(),
             changed: BTreeSet::new(),
             units,
+            settings: CollectionSettings::default(),
             groups: Vec::new(),
         }
     }

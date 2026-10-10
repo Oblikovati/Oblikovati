@@ -437,3 +437,19 @@ unchanged parameters dirty. Nominal expression readers do not recompute.
 Five regression tests cover these rules, and the corresponding Go sweep test
 passed at the fixed baseline. Collection settings, session transactions, and
 feature-engine consumption of the changed model values remain open.
+
+## Document parameter settings — partial R2
+
+Tracking: [issue #3582](https://github.com/Oblikovati/Oblikovati/issues/3582).
+Collection settings retain the Go defaults: three linear and two angular decimal
+places, value display, empty standard-tolerance strings, and disabled flags.
+Dimension display uses the canonical API enum. The collection validates the Go
+router's 0–8 precision range and all five display modes before replacing settings.
+Callers edit an owned copy and submit it; mutable settings references cannot bypass
+validation. Rejected updates leave flags and tolerance strings unchanged.
+
+Four tests cover defaults, all modes, precision boundaries, atomic refusal,
+independent collection clones, and unchanged nominal/model values and dirty flags.
+The Go default-settings test passed at the fixed baseline. Standard-tolerance
+strings remain authored metadata, as in Go; applying them to new dimensions,
+rendering them, persistence, and session/API integration remain open.
