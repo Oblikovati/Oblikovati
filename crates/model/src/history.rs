@@ -183,6 +183,20 @@ impl DocumentEditHistory {
         Ok(())
     }
 
+    /// Close an unchanged frame without an undo step or redo loss.
+    /// Example: `if history.discard_unchanged(&token)? { return Ok(()); }`.
+    pub fn discard_unchanged(&mut self, token: &TransactionToken) -> Result<bool, HistoryError> {
+        self.require_top(token)?;
+        let before = &self.open.last().expect("validated frame").before;
+        if !before.parameters.same_recipe(&self.current.parameters)
+            || !before.properties.same_recipe(&self.current.properties)
+        {
+            return Ok(false);
+        }
+        self.open.pop();
+        Ok(true)
+    }
+
     fn require_top(&self, token: &TransactionToken) -> Result<(), HistoryError> {
         if !Arc::ptr_eq(&self.owner, &token.owner) {
             return Err(HistoryError::ForeignTransaction);

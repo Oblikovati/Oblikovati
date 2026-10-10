@@ -9,6 +9,7 @@ mod property;
 pub use annotations::ParameterAnnotations;
 pub use property::CustomPropertyFormat;
 mod choices;
+mod comparison;
 mod derived;
 pub use derived::{DerivedTable, DerivedTableHealth};
 mod edit;

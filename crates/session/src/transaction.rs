@@ -58,6 +58,15 @@ impl<O: TransactionObserver> DocumentSession<O> {
             group.depth -= 1;
             return Ok(());
         }
+        self.end_outer_group()
+    }
+
+    fn end_outer_group(&mut self) -> Result<(), SessionError> {
+        let group = self.group.as_ref().expect("validated group");
+        if self.history.discard_unchanged(&group.token)? {
+            self.group = None;
+            return Ok(());
+        }
         self.history.validate_abort(&group.token)?;
         let label = group.label.clone();
         let event = self.payload(

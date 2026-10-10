@@ -157,7 +157,11 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             .get_mut(&id)
             .expect("validated parameter")
             .state;
-        if state.tolerance != tolerance {
+        // Recipe comparison preserves signed zero even when numeric equality holds (#3614).
+        if state.tolerance != tolerance
+            || state.tolerance.upper.to_bits() != tolerance.upper.to_bits()
+            || state.tolerance.lower.to_bits() != tolerance.lower.to_bits()
+        {
             state.tolerance = tolerance;
             self.changed.insert(id);
         }

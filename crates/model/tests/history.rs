@@ -280,3 +280,26 @@ fn aborting_parent_discards_committed_children_and_preserves_redo_order() {
     assert_eq!(history.redo().unwrap(), "third");
     assert_eq!(width(&history), 4.0);
 }
+
+#[test]
+fn unchanged_frame_discard_checks_ownership_and_keeps_changed_frames_open() {
+    let mut history = history();
+    let snapshot = history.snapshot().clone();
+    let mut foreign =
+        DocumentEditHistory::new(snapshot, RecipeIdAllocator::restore(Some(1), &[1]).unwrap())
+            .unwrap();
+    let token = history.begin("local").unwrap();
+    let wrong = foreign.begin("foreign").unwrap();
+    assert_eq!(
+        history.discard_unchanged(&wrong),
+        Err(HistoryError::ForeignTransaction)
+    );
+    set_width(&mut history, &token, "2 cm");
+    assert!(!history.discard_unchanged(&token).unwrap());
+    set_width(&mut history, &token, "10 mm");
+    let generation = history.generation();
+    assert!(history.discard_unchanged(&token).unwrap());
+    assert_eq!(history.generation(), generation);
+    assert!(history.commit(&token, false).is_err());
+    assert!(history.undo_labels().is_empty());
+}

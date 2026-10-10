@@ -342,3 +342,6 @@ fn new_commit_replaces_redo_through_the_same_session_path() {
     assert!(session.redo_labels().is_empty());
     assert_eq!(session.undo_labels(), ["replacement"]);
 }
+
+#[path = "lifecycle/commands.rs"]
+mod commands;

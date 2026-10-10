@@ -5,6 +5,7 @@ use oblikovati_api::{
     types::{Variant, VariantValue},
     wire::PropertyInfo,
 };
+mod comparison;
 mod exposure;
 use std::{error::Error, fmt};
 

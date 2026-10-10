@@ -79,9 +79,37 @@ replacement, and close. An internal test checks nesting-counter exhaustion.
 The five Go lifecycle tests in `app/transaction_events_test.go` pass at the fixed
 baseline. These tests cover model state, not kernel evaluation or a viewport.
 
-Workspace registration/routing, automatic command groups, recipe no-op filtering,
-event subscriptions and transport delivery, checkpoint navigation, and worker
-result adoption remain pending. This low-level owner currently records explicit
-empty groups, like Go `command.History`; Go session recipe-delta filtering has
-not yet been ported. Close consumes this owner but does not yet unregister file
-identity or a workspace entry. Those belong to the workspace coordinator.
+Workspace registration/routing, event subscriptions and transport delivery,
+checkpoint navigation, and worker result adoption remain pending. Close consumes
+this owner but does not yet unregister file identity or a workspace entry. Those
+belong to the workspace coordinator.
+
+## Automatic commands and unchanged groups — partial R2
+
+Tracking: [#3614](https://github.com/Oblikovati/Oblikovati/issues/3614).
+`DocumentSession::run` joins a caller's bounded group or starts and finishes its
+own group. It returns the command result only after the automatic group ends.
+A failed command discards its candidate; an automatic frame closes, while a
+caller-owned group remains open. A commit veto returns the policy reason after
+rollback. All commands use the same property-refresh and ID-reservation rules.
+
+Session end now discards groups whose owned recipe is unchanged. It emits no
+transaction events and preserves the redo branch. This covers empty groups,
+same-source edits, edits reverted within the group, and ID reservations without
+a stored entity. IDs and evaluation generations do not rewind. The lower-level
+history `commit` still supports explicit empty steps; session filtering uses
+`discard_unchanged` before policy events.
+
+Parameter comparison includes IDs/order, authored state, measured values,
+tolerance bits, collection settings, units, groups, and derived-table metadata.
+It excludes change queues and evaluation health, which are derived state.
+Property comparison includes order, payload types, values, and exposure
+provenance. Floating-point values retain their signed-zero distinction. Tests
+also exposed a tolerance setter that dropped signed-zero-only changes because
+of numeric equality; it now preserves those stored bits.
+
+Seven command integration tests and model comparison/history tests cover the
+above behavior, metadata-only changes, signed zero, and foreign frame rejection.
+A direct Go session check at the fixed baseline confirms that an empty group
+after undo preserves redo. This completes no-op filtering for the currently
+ported recipe domains; feature/sketch state must join comparison when ported.
