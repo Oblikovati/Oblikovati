@@ -5,6 +5,7 @@ mod edit;
 mod error;
 mod evaluate;
 mod remove;
+mod rename;
 mod state;
 
 use crate::{
@@ -41,6 +42,7 @@ impl<Id> ParameterRecord<Id> {
             kind,
             source: expression.source().into(),
             last_good_value: None,
+            renamed: false,
             health: ParameterHealth::Healthy,
         };
         Self {

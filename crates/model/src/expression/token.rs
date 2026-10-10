@@ -98,3 +98,9 @@ fn punctuation(byte: u8) -> Option<TokenKind> {
         _ => None,
     }
 }
+
+pub(crate) fn reference_name(name: &str) -> bool {
+    tokenize(name).is_ok_and(|tokens| {
+        tokens.len() == 2 && tokens[0].kind == TokenKind::Name && tokens[0].text == name
+    })
+}

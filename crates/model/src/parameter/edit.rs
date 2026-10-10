@@ -92,12 +92,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         if self.records.contains_key(&id) {
             return Err(DependencyError::Duplicate(id).into());
         }
-        if name.is_empty() || self.names.contains_key(name) {
-            return Err(ParameterError::Name {
-                name: name.into(),
-                expected: "a nonempty unique name",
-            });
-        }
+        self.require_available_name(name, None)?;
         if expression.references().contains(&name.to_owned()) {
             return Err(DependencyError::Cycle { id, driver: id }.into());
         }

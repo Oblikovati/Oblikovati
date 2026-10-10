@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{
-    Expression, ExpressionError,
+    Expression, ExpressionError, ReferenceSpan,
     node::{BinaryOperator, Node},
     token::{Token, TokenKind, tokenize},
 };
@@ -17,6 +17,7 @@ struct Parser<'a> {
     position: usize,
     nodes: Vec<Node>,
     references: Vec<String>,
+    spans: Vec<ReferenceSpan>,
     reference_indices: BTreeMap<String, usize>,
     units: &'a UnitsOfMeasure,
 }
@@ -27,6 +28,7 @@ pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression
         position: 0,
         nodes: Vec::new(),
         references: Vec::new(),
+        spans: Vec::new(),
         reference_indices: BTreeMap::new(),
         units,
     };
@@ -38,6 +40,7 @@ pub(super) fn compile(source: &str, units: &UnitsOfMeasure) -> Result<Expression
         source: source.into(),
         nodes: parser.nodes,
         references: parser.references,
+        spans: parser.spans,
         root,
     })
 }
@@ -114,12 +117,19 @@ impl Parser<'_> {
     }
 
     fn identifier(&mut self, nesting: usize) -> Result<usize, ExpressionError> {
+        let start = self.peek().position;
         let name = self.advance().text.to_owned();
+        let end = start + name.len();
         if self.peek().kind == TokenKind::Open {
             let arguments = self.arguments(nesting + 1)?;
             return Ok(self.append(Node::Call(name, arguments)));
         }
         let reference = self.reference_index(name);
+        self.spans.push(ReferenceSpan {
+            start,
+            end,
+            reference,
+        });
         Ok(self.append(Node::Reference(reference)))
     }
 

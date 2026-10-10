@@ -123,8 +123,9 @@ can be built from products. It accepts Go's identifier vocabulary and byte offse
 Unlike the Go expression parser's fixed centimetre literal conversion, the Rust
 parser receives the document units. Explicit literals use that working scale;
 bare expression numbers remain unitless. This avoids mixing centimetre literals
-with micrometre or kilometre stored reference values. Document-scale freezing,
-parameter health, binding cascades, and rename/source rewriting remain owner work.
+with micrometre or kilometre stored reference values. Document-scale freezing
+remains open. The owner components below address parameter health, binding
+cascades, and rename/source rewriting.
 
 ### Expression evidence
 
@@ -168,9 +169,8 @@ quarantines affected readers so later features cannot consume stale results.
 
 The eight collection tests cover dependency diamonds, recovery, exact affected
 sets, failed edits, read-only kinds, non-finite results, scaled formulas, deletion
-of a driver shared by a transitive reader, and insertion validation. Parameter
-rename/source rewriting, automatic ID allocation, tolerance/model values, read
-footprints, groups, text/boolean literals, and persistence remain open.
+of a driver shared by a transitive reader, and insertion validation. Automatic ID allocation, tolerance/model values, read footprints, groups,
+text/boolean literals, and persistence remain open. Rename is covered below.
 
 ## Working branch policy
 
@@ -179,3 +179,25 @@ PRs #3562, #3565, #3567, and #3569 were merged into `rust` with merge commits; A
 PR #296 was merged into its owner's `develop`. Their merged feature branches were
 removed. Further application work stays on `rust-port`. Any delegated worktree
 changes must merge into that branch. Create a PR only when the user requests one.
+
+## Parameter rename — partial R2
+
+Tracking: [issue #3571](https://github.com/Oblikovati/Oblikovati/issues/3571).
+The parser records byte spans only for actual reference tokens. Parameter rename
+rewrites spans bound to the stable ID, then compiles replacements before changing
+the collection. Units, function names, whitespace, and similar identifiers remain
+unchanged. Failed cyclic formulas also track renames even when their graph edges
+were detached. Repeated Unicode renames retain valid source positions.
+
+Normal renames preserve edges, values, health, and the value-change drain. A new
+name can resolve a pending reference; that case installs all new bindings before
+recomputing affected readers. A resulting cycle becomes failed health rather than
+using stale values. Model parameters record their renamed flag; user parameters
+do not. Renaming to the same name is a no-op.
+
+Insertion and rename now reject names that the expression lexer cannot represent
+as one identifier. This tightens the Go owner's nonempty-name check, which could
+admit names that no formula can reference. Eight tests cover stable identities,
+source preservation, multiple renames, failed formulas, pending-reference recovery,
+cycle health, model flags, and atomic rejection. Names and spans remain internal;
+no wire DTO or API enum is duplicated.

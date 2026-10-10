@@ -7,12 +7,21 @@ mod evaluate;
 mod functions;
 mod node;
 mod parser;
+mod rename;
 mod token;
 
 use crate::{quantity::Quantity, units::UnitsOfMeasure};
 pub use binding::BoundExpression;
 pub use error::ExpressionError;
 use node::Node;
+pub(crate) use token::reference_name;
+
+#[derive(Clone, Debug)]
+struct ReferenceSpan {
+    start: usize,
+    end: usize,
+    reference: usize,
+}
 
 /// An owned expression snapshot. Syntax nodes are flat to keep evaluation and drop stack-safe.
 #[derive(Clone, Debug)]
@@ -20,6 +29,7 @@ pub struct Expression {
     source: String,
     nodes: Vec<Node>,
     references: Vec<String>,
+    spans: Vec<ReferenceSpan>,
     root: usize,
 }
 
@@ -30,6 +40,7 @@ impl Expression {
             source: format!("{} {:?}", quantity.value, quantity.dimension),
             nodes: vec![Node::Literal(quantity)],
             references: Vec::new(),
+            spans: Vec::new(),
             root: 0,
         }
     }

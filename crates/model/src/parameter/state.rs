@@ -25,6 +25,7 @@ pub enum ParameterHealth<Id> {
 pub struct ParameterState<Id> {
     pub name: String,
     pub kind: ParameterKind,
+    pub renamed: bool,
     pub source: String,
     pub last_good_value: Option<Quantity>,
     pub health: ParameterHealth<Id>,
