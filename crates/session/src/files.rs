@@ -3,6 +3,7 @@
 //! File bindings owned together with their document sessions.
 mod error;
 mod open;
+mod save_as;
 use crate::{
     TransactionObserver,
     workspace::{
@@ -97,12 +98,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<(), FileWorkspaceError> {
-        let file = self
-            .retained
-            .get_mut(&id)
-            .ok_or(FileWorkspaceError::MissingFile(id))?;
-        let mut target =
-            ParameterPackageTarget::new(&mut file.package, &file.path, &mut self.files);
+        let mut target = bound_target(&mut self.retained, &mut self.files, id)?;
         self.workspace
             .save(id, version, source, &mut target)
             .map_err(FileWorkspaceError::Save)
@@ -115,8 +111,57 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .workspace
             .close_discarding_changes(id)
             .map_err(FileWorkspaceError::Workspace)?;
-        let file = self.retained.remove(&id).expect("registered file binding");
-        self.paths.remove(&file.path);
+        self.release_file(id);
         Ok(observer)
     }
+
+    /// Save dirty committed state, then close; example: `host.close_saving_changes(id, "alpha", source)?;`.
+    pub fn close_saving_changes(
+        &mut self,
+        id: u64,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<O, FileWorkspaceError> {
+        let mut target = bound_target(&mut self.retained, &mut self.files, id)?;
+        let observer = self
+            .workspace
+            .close_saving_changes(id, version, source, &mut target)
+            .map_err(FileWorkspaceError::Save)?;
+        self.release_file(id);
+        Ok(observer)
+    }
+
+    fn release_file(&mut self, id: u64) {
+        let file = self.retained.remove(&id).expect("registered file binding");
+        self.paths.remove(&file.path);
+    }
+}
+
+fn checked_path(
+    requested: &Path,
+    result: std::io::Result<PathBuf>,
+) -> Result<PathBuf, FileWorkspaceError> {
+    let canonical = result.map_err(|cause| FileWorkspaceError::Path {
+        requested: requested.into(),
+        cause,
+    })?;
+    if !canonical.is_absolute() {
+        return Err(FileWorkspaceError::RelativeCanonical(canonical));
+    }
+    Ok(canonical)
+}
+
+fn bound_target<'a, F: DocumentFiles>(
+    retained: &'a mut BTreeMap<u64, RetainedFile>,
+    files: &'a mut F,
+    id: u64,
+) -> Result<ParameterPackageTarget<'a, F>, FileWorkspaceError> {
+    let file = retained
+        .get_mut(&id)
+        .ok_or(FileWorkspaceError::MissingFile(id))?;
+    Ok(ParameterPackageTarget::new(
+        &mut file.package,
+        &file.path,
+        files,
+    ))
 }

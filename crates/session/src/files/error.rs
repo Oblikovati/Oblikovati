@@ -8,6 +8,10 @@ use std::{error::Error, fmt, io, path::PathBuf};
 /// A failed file operation; no new binding or successful save was adopted.
 #[derive(Debug)]
 pub enum FileWorkspaceError {
+    DestinationInUse {
+        path: PathBuf,
+        owner: u64,
+    },
     MissingFile(u64),
     RelativeCanonical(PathBuf),
     Path {
@@ -26,6 +30,10 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DestinationInUse { path, owner } => write!(
+                output,
+                "destination {path:?} belongs to document {owner}: expected an unowned path or this document\'s current path"
+            ),
             Self::MissingFile(id) => {
                 write!(output, "document {id}: expected an owned file binding")
             }
@@ -56,7 +64,10 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::MissingFile(_) | Self::RelativeCanonical(_) | Self::OpenVeto { .. } => None,
+            Self::MissingFile(_)
+            | Self::RelativeCanonical(_)
+            | Self::OpenVeto { .. }
+            | Self::DestinationInUse { .. } => None,
         }
     }
 }

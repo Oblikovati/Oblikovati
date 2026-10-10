@@ -8,6 +8,7 @@ use oblikovati_session::workspace::*;
 
 #[derive(Debug, PartialEq)]
 enum WorkspaceNotice {
+    PathChanged(u64, std::path::PathBuf, std::path::PathBuf),
     BeforeOpen(std::path::PathBuf),
     BeforeSave(u64),
     Saved(u64),
@@ -24,6 +25,13 @@ struct RecordingWorkspace {
     deny_save: Option<u64>,
 }
 impl WorkspaceObserver for RecordingWorkspace {
+    fn path_changed(&mut self, id: u64, previous: &std::path::Path, current: &std::path::Path) {
+        self.notices.push(WorkspaceNotice::PathChanged(
+            id,
+            previous.into(),
+            current.into(),
+        ));
+    }
     fn before_open(&mut self, path: &std::path::Path) -> Result<(), String> {
         self.notices.push(WorkspaceNotice::BeforeOpen(path.into()));
         if self.deny_open {

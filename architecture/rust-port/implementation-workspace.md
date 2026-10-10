@@ -46,8 +46,8 @@ to zero. Go tests `TestActiveDocumentReassignedOnClose` and
 `TestBackgroundOpenKeepsActiveAndHidden` pass at the fixed baseline
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
-Save-before-close, new-document templates, references between documents, and
-workspace event transport remain pending. This owner registers reconstructed
+New-document templates, references between documents, and workspace event
+transport remain pending. This owner registers reconstructed
 state; it does not claim that a whole feature model can open or that a live GUI
 exists.
 
@@ -84,9 +84,9 @@ guards, save veto, and collision dirtiness. Go's save revision, failed-save
 rollback, reopen, and save/open veto tests pass at the fixed baseline.
 
 The lower-level save boundary accepts a prepared target. The file coordinator
-below owns that binding for file-backed sessions. Save As and save-before-close
-remain pending. Unsupported feature state remains retained and unexecuted; this
-save path does not establish full application replay.
+below owns that binding for file-backed sessions. Unsupported feature state
+remains retained and unexecuted; this save path does not establish full application
+replay.
 
 ## File-backed workspace — partial R2
 
@@ -125,3 +125,37 @@ and file identity. The Go tests for already-open reuse, background reopen,
 identity collision/release, and saved-document reopen pass at the fixed baseline.
 This is file lifecycle evidence for the ported recipe domains, not a GUI or
 feature-evaluation claim.
+
+## Save As and save-before-close — partial R2
+
+Tracking: [#3618](https://github.com/Oblikovati/Oblikovati/issues/3618).
+`FileWorkspace::save_as` resolves the destination before asking save policy.
+An open document cannot overwrite another open document's bound path. A save
+to the current path is an ordinary save. A different path is adopted only after
+atomic replacement succeeds: the GUID is preserved, the old file remains, and
+the workspace reports the new path after updating its indexes. Any preparation,
+policy, identity, or storage failure preserves the old binding and dirty state.
+
+Native destination resolution accepts an existing regular file or a new file
+under an existing canonical parent. It rejects directories, missing parents,
+empty names, and dangling symlinks. It does not create parent directories or
+apply case folding. Existing-file symlinks resolve to their actual target.
+
+`close_saving_changes` refuses open transaction groups, asks close policy once,
+saves only if the document is dirty, then releases identity, history, and file
+binding. Save policy still applies. Close veto, save veto, and write failure keep
+the document open. Clean close consumes no new revision and performs no write.
+Explicit discard-close remains available as a separate caller choice.
+
+Nine coordinator tests and native destination tests cover path conflicts, same-
+path save, failed Save As, old-file retention, dirty/clean close, both veto phases,
+open previews, and failed storage. A native Save As test writes a new path and
+then closes cleanly. On Unix, a regression test proves a dangling symlink is not
+overwritten as though its name were unused.
+
+Go Save As, collision, close/save, and veto tests pass at the fixed baseline.
+A direct failing-store check also confirms that Go changes its bound path before
+the failing write. Rust deliberately corrects that behavior by committing the
+path after storage, consistent with the atomic adoption rule. Save-copy identity,
+new-document creation, external modification detection, and full feature replay
+remain pending.

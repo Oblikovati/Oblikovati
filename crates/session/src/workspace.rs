@@ -19,6 +19,13 @@ use std::collections::BTreeMap;
 
 /// Policy and observations at the workspace boundary; callbacks cannot mutate it.
 pub trait WorkspaceObserver {
+    /// Observe a successful Save As binding; example: update the document's tab path.
+    fn path_changed(
+        &mut self,
+        document: u64,
+        previous: &std::path::Path,
+        current: &std::path::Path,
+    );
     /// Refuse a new file open before reading it; example: return `Err("project is locked".into())`.
     fn before_open(&mut self, path: &std::path::Path) -> Result<(), String>;
     /// Refuse a save before preparation or I/O; example: return `Err("document is locked".into())`.
@@ -67,6 +74,14 @@ pub struct WorkspaceSession<O, W> {
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
+    pub(crate) fn notify_path_changed(
+        &mut self,
+        id: u64,
+        previous: &std::path::Path,
+        current: &std::path::Path,
+    ) {
+        self.observer.path_changed(id, previous, current);
+    }
     pub(crate) fn approve_open(&mut self, path: &std::path::Path) -> Result<(), String> {
         self.observer.before_open(path)
     }

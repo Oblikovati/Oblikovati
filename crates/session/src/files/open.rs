@@ -18,16 +18,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         if let Some(&id) = self.paths.get(path) {
             return self.reuse_open(id, activation);
         }
-        let canonical =
-            self.files
-                .canonical_path(path)
-                .map_err(|cause| FileWorkspaceError::Path {
-                    requested: path.into(),
-                    cause,
-                })?;
-        if !canonical.is_absolute() {
-            return Err(FileWorkspaceError::RelativeCanonical(canonical));
-        }
+        let canonical = checked_path(path, self.files.canonical_path(path))?;
         if let Some(&id) = self.paths.get(&canonical) {
             return self.reuse_open(id, activation);
         }

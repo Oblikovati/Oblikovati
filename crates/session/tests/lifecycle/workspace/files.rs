@@ -70,6 +70,13 @@ impl StagedFile for WorkspaceStage {
     }
 }
 impl DocumentFiles for WorkspaceFiles {
+    fn save_path(&mut self, requested: &Path) -> io::Result<PathBuf> {
+        Ok(self
+            .aliases
+            .get(requested)
+            .cloned()
+            .unwrap_or_else(|| requested.into()))
+    }
     fn canonical_path(&mut self, requested: &Path) -> io::Result<PathBuf> {
         if let Some(path) = self.aliases.get(requested) {
             return Ok(path.clone());
@@ -459,3 +466,6 @@ fn distinct_paths_with_one_guid_get_distinct_dirty_identity_owners() {
     assert_eq!(host.workspace().owner(guid(1)), Some(first));
     assert_eq!(host.workspace().active_document(), Some(first));
 }
+
+#[path = "files/transitions.rs"]
+mod transitions;
