@@ -5,6 +5,7 @@
 pub mod dependency;
 pub mod expression;
 pub mod fits;
+pub mod history;
 pub mod identity;
 pub mod parameter;
 pub mod property;
