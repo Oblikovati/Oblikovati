@@ -11,6 +11,7 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::cell::RefCell;
 mod close;
 mod create;
+mod lifecycle;
 mod open;
 pub use open::DocumentObserverFactory;
 
@@ -66,7 +67,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             return transactions::apply(context.files, method, request);
         }
         if FILE_COMMAND_METHODS.contains(&method) {
-            return context.command(method, request);
+            return context.lifecycle_command(method, request);
         }
         FileQueryHost::new(context.files).call(method, request)
     }

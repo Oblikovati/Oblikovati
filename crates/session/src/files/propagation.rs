@@ -48,6 +48,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         self.refresh_order(&graph, order)
     }
 
+    /// Refresh all open links after sources are opened, closed, or rebound.
+    /// Example: `let report = host.refresh_all_derived()?;` after closing a source.
+    pub fn refresh_all_derived(&mut self) -> Result<DerivedRefreshReport, FileWorkspaceError> {
+        let graph = self.derived_graph()?;
+        let order = graph.recompute_all();
+        self.refresh_order(&graph, order)
+    }
+
     fn derived_graph(&self) -> Result<DependencyGraph<u64>, FileWorkspaceError> {
         let mut graph = DependencyGraph::default();
         for &id in self.workspace.documents() {

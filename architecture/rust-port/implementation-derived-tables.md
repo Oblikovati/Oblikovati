@@ -111,10 +111,31 @@ host has no file ownership or source resolution and retains its local behavior.
 Typed-client tests cover edits, nested end, abort, undo/redo, jumps, target history,
 busy-target recovery, ambiguous-source failures, and focus preservation.
 
+## File lifecycle refresh
+
+[#3662](https://github.com/Oblikovati/Oblikovati/issues/3662) connects file-owned
+API commands to a full ordered refresh when the set of open document IDs or bound
+paths changes. This includes open/create, close/close-all, Save As, and batch file
+operations. Unchanged bindings do not trigger lifecycle refresh. Source links
+remain path/title based: moving a source makes its old path unavailable; binding
+it back restores values. Closing a source publishes unavailable parameter health;
+reopening that path refreshes readers from the newly owned document.
+
+A partial close-all or batch operation still refreshes the remaining workspace.
+Its original command error is retained. If refresh also fails, the response
+includes both errors and states that ownership already changed. A successful
+command followed by refresh failure is also reported as partial completion.
+No target undo entry is created. All documents are ordered through the same model
+graph traversal; missing sources do not require keeping a closed owner alive.
+
+Tests cover close/reopen, source rebinding, unchanged history, failed refresh after
+successful creation, and partial close-all with successful or failed refresh.
+
 ## Remaining work
 
 Connect table creation and link editing to source resolution, stable ID
-reservation, source parameter export, and the document reference graph. Propagate
-document close/reopen and file rebinding through the scheduler automatically.
-Use the checked source-value boundary for those operations. No live
-cross-document recompute or geometry integration is claimed by these read paths.
+reservation, source parameter export, and the document reference graph. Use the
+checked source-value boundary for those operations. Direct low-level file
+owner calls still require explicit refresh; the automatic hooks are at the API
+command boundary. Geometry integration and native live application acceptance
+remain pending.

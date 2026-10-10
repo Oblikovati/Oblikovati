@@ -52,16 +52,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> CommandOwne
         let report = self
             .refresh_derived_from(id)
             .map_err(|error| refresh_error(id, error))?;
-        if report.failures.is_empty() && report.blocked.is_empty() {
-            return Ok(());
-        }
-        Err(refresh_error(
-            id,
-            format!(
-                "failed tables {:?}; blocked readers {:?}",
-                report.failures, report.blocked
-            ),
-        ))
+        check_refresh_report(report).map_err(|reason| refresh_error(id, reason))
     }
 }
 
@@ -87,5 +78,17 @@ pub(super) fn edit(
 fn refresh_error(id: u64, reason: impl std::fmt::Display) -> Error {
     Error(format!(
         "command completed for document {id}, but derived refresh is incomplete: {reason}"
+    ))
+}
+
+pub(super) fn check_refresh_report(
+    report: oblikovati_session::files::DerivedRefreshReport,
+) -> Result<(), String> {
+    if report.failures.is_empty() && report.blocked.is_empty() {
+        return Ok(());
+    }
+    Err(format!(
+        "failed tables {:?}; blocked readers {:?}",
+        report.failures, report.blocked
     ))
 }

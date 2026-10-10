@@ -277,3 +277,6 @@ mod propagation;
 
 #[path = "derived_automatic.rs"]
 mod automatic;
+
+#[path = "derived_lifecycle.rs"]
+mod lifecycle;
