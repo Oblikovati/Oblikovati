@@ -8,8 +8,9 @@ use oblikovati_session::{
 };
 
 /// Transaction commands use the session history directly, without opening an automatic edit.
-pub const TRANSACTION_METHODS: [&str; 5] = [
+pub const TRANSACTION_METHODS: [&str; 6] = [
     METHOD_TRANSACTION_BEGIN,
+    METHOD_TRANSACTION_JUMP_TO,
     METHOD_TRANSACTION_END,
     METHOD_TRANSACTION_ABORT,
     METHOD_TRANSACTION_UNDO,
@@ -40,6 +41,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver>(
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_TRANSACTION_JUMP_TO {
+        return jump(workspace, decode(method, request)?);
+    }
     let mut commands = workspace
         .active_commands()
         .map_err(|error| Error(error.to_string()))?;
@@ -69,13 +73,7 @@ pub(super) fn history<O: TransactionObserver, W: WorkspaceObserver>(
     workspace: &WorkspaceSession<O, W>,
     request: TransactionHistoryArgs,
 ) -> Result<TransactionHistory, Error> {
-    let id = if request.document == 0 {
-        workspace.active_document().ok_or_else(|| {
-            Error("transaction.history document 0: expected an active document".into())
-        })?
-    } else {
-        request.document
-    };
+    let id = target_document(workspace, request.document)?;
     let session = workspace
         .session(id)
         .map_err(|error| Error(error.to_string()))?;
@@ -93,4 +91,32 @@ pub(super) fn history<O: TransactionObserver, W: WorkspaceObserver>(
         position,
         entries: Some(session.history_entries()),
     })
+}
+
+fn target_document<O: TransactionObserver, W: WorkspaceObserver>(
+    workspace: &WorkspaceSession<O, W>,
+    requested: u64,
+) -> Result<u64, Error> {
+    if requested != 0 {
+        return Ok(requested);
+    }
+    workspace
+        .active_document()
+        .ok_or_else(|| Error("history document 0: expected an active document".into()))
+}
+
+fn jump<O: TransactionObserver, W: WorkspaceObserver>(
+    workspace: &mut WorkspaceSession<O, W>,
+    request: TransactionJumpToArgs,
+) -> Result<Vec<u8>, Error> {
+    let id = target_document(workspace, request.document)?;
+    workspace
+        .commands(id)
+        .map_err(|error| Error(error.to_string()))?
+        .jump_to(request.position)
+        .map_err(|error| Error(error.to_string()))?;
+    encode(&history(
+        workspace,
+        TransactionHistoryArgs { document: id },
+    )?)
 }

@@ -11,6 +11,8 @@ use std::{error::Error, fmt};
 pub enum SessionError {
     History(HistoryError),
     NoGroup,
+    NavigationGroupOpen,
+    HistoryPosition { supplied: i64, total: usize },
     DepthExhausted,
     Veto(String),
 }
@@ -23,6 +25,14 @@ impl fmt::Display for SessionError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::History(error) => error.fmt(output),
+            Self::NavigationGroupOpen => write!(
+                output,
+                "history jump with an open group: expected all transactions closed"
+            ),
+            Self::HistoryPosition { supplied, total } => write!(
+                output,
+                "history position {supplied}: expected a cursor in 0..={total}"
+            ),
             Self::NoGroup => write!(
                 output,
                 "transaction group is absent: expected an open bounded group"

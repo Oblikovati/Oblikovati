@@ -34,3 +34,35 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.observer
     }
 }
+
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Move through ordinary undo/redo steps; a veto stops at the last accepted step.
+    /// Example: `session.jump_to(0)?` restores the initial recipe without dropping redo.
+    pub fn jump_to(&mut self, position: i64) -> Result<(), SessionError> {
+        let destination = self.validate_jump(position)?;
+        let mut cursor = self.undo_labels().len();
+        while cursor > destination {
+            self.undo()?;
+            cursor -= 1;
+        }
+        while cursor < destination {
+            self.redo()?;
+            cursor += 1;
+        }
+        Ok(())
+    }
+
+    fn validate_jump(&self, position: i64) -> Result<usize, SessionError> {
+        if self.in_transaction() {
+            return Err(SessionError::NavigationGroupOpen);
+        }
+        let total = self.undo_labels().len() + self.redo_labels().len();
+        usize::try_from(position)
+            .ok()
+            .filter(|cursor| *cursor <= total)
+            .ok_or(SessionError::HistoryPosition {
+                supplied: position,
+                total,
+            })
+    }
+}

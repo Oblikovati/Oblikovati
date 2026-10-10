@@ -348,3 +348,6 @@ mod commands;
 
 #[path = "lifecycle/workspace.rs"]
 mod workspace;
+
+#[path = "lifecycle/jumps.rs"]
+mod jumps;

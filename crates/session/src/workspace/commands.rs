@@ -44,3 +44,11 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session.run(label, command)
     }
 }
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Move this document's cursor without activating it; each step can be vetoed.
+    /// Example: `commands.jump_to(0)?` navigates to the opened recipe.
+    pub fn jump_to(&mut self, position: i64) -> Result<(), SessionError> {
+        self.session.jump_to(position)
+    }
+}

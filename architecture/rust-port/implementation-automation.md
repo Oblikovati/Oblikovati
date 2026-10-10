@@ -311,3 +311,20 @@ registrations without file metadata have an empty title.
 Tests cover multiple documents, missing context, previews, saved redo entries,
 Unicode custom titles, template creation, repeated Save As, close/reopen, and
 stale-ID refusal. Absolute cursor jumps and native event delivery remain pending.
+
+## Absolute transaction cursor jumps
+
+[#3643](https://github.com/Oblikovati/Oblikovati/issues/3643) adds
+`transaction.jumpTo`. The session checks that no transaction group is open and
+that the requested cursor is in the full stream's range before moving. Explicit
+document IDs do not change focus; zero targets the active document. Each move
+uses the normal undo/redo operation, including observer events, veto, generation
+updates, and property snapshots. The reply is the resulting canonical history.
+
+A veto stops at the last accepted step, matching Go; the operation does not hide
+partial progress by silently restoring earlier steps. Callers can query history
+after an error. A jump to the current cursor is a no-op with no new events or
+generation. Even that no-op is refused while a group is open. Tests cover forward
+and backward navigation, no-op behavior, explicit targets, invalid bounds and
+payloads, preview refusal, and a veto after one accepted undo. Native transport
+and event delivery remain pending.
