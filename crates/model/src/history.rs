@@ -9,6 +9,7 @@ use crate::{
 mod checkpoints;
 mod error;
 mod navigation;
+mod refresh;
 pub use error::{EditError, HistoryError};
 use std::sync::Arc;
 

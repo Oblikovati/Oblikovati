@@ -46,6 +46,33 @@ extreme binary scale ratios and subnormal values, source failure exclusion,
 missing sources, target refusal, and no target mutation or I/O. This is a read
 boundary for linking and refresh; it does not itself update any table.
 
+## Owned refresh without a target undo step
+
+[#3658](https://github.com/Oblikovati/Oblikovati/issues/3658) adds
+`FileWorkspace::refresh_derived_table`. It resolves the source, transfers current
+values, and refreshes the target through its session owner. Missing sources feed
+the model's unavailable-link state. Direct self-sources are refused.
+
+The history owner adopts a validated candidate without changing undo/redo entries,
+saved checkpoints, or identity reservations. Changed values or evaluation health
+advance the evaluation generation and notify the observer once; no synthetic
+transaction event is emitted. Identical refreshes do neither. Open transactions
+refuse refresh. This follows Go's rule that a derived refresh is a computed
+consequence of the source edit rather than a new target edit.
+
+Exposed property refresh is part of the same candidate. Any model or property
+projection error leaves recipe, generation, and history unchanged and reaches the
+caller. In particular, an unavailable exported parameter currently causes an
+explicit property-projection failure; no successful refresh is claimed in that
+case. Automatic propagation must surface this failure in document health.
+
+Tests cover health-only changes, value changes, no-ops, property updates and
+projection rollback, open groups, missing tables/owners, unavailable sources,
+self-sources, unchanged identity reservations, and preserved redo/save markers.
+Navigating target history restores its recorded snapshot; the scheduler must run
+refresh afterward to update its derived values from current sources. A test
+exercises that explicit navigation-then-refresh sequence.
+
 ## Remaining work
 
 Connect table creation and link editing to source resolution, stable ID

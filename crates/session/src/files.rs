@@ -10,6 +10,7 @@ mod error;
 mod name;
 mod open;
 mod project;
+mod refresh;
 mod save_as;
 mod source;
 mod template;

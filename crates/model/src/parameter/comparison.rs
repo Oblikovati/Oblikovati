@@ -18,6 +18,23 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
                 })
             })
     }
+
+    /// Compare recipe values and evaluation health, excluding transient change queues.
+    /// Example: `before.same_evaluated_state(&after)` before publishing refreshed values.
+    pub fn same_evaluated_state(&self, other: &Self) -> bool {
+        self.same_recipe(other)
+            && self.records.iter().all(|(id, record)| {
+                other
+                    .records
+                    .get(id)
+                    .is_some_and(|right| record.state.health == right.state.health)
+            })
+            && self
+                .derived_tables
+                .iter()
+                .zip(&other.derived_tables)
+                .all(|(left, right)| left.health == right.health)
+    }
 }
 
 fn comparison_state<Id: Clone>(source: &ParameterState<Id>) -> (ParameterState<Id>, [u64; 3]) {
@@ -73,5 +90,7 @@ mod tests {
         after.derived_tables[0].health = DerivedTableHealth::Unavailable;
         assert!(before.same_recipe(&after));
         assert!(after.same_recipe(&before));
+        assert!(!before.same_evaluated_state(&after));
+        assert!(before.same_evaluated_state(&before.clone()));
     }
 }

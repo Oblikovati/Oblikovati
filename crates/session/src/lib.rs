@@ -6,6 +6,7 @@ mod error;
 mod events;
 pub mod files;
 mod navigation;
+mod refresh;
 #[cfg(test)]
 mod tests;
 mod transaction;

@@ -268,3 +268,6 @@ fn source_transfer_failure_names_the_parameter_and_does_not_change_target() {
             .is_empty()
     );
 }
+
+#[path = "derived_refresh.rs"]
+mod refresh;

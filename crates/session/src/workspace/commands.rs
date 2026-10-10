@@ -52,3 +52,15 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session.jump_to(position)
     }
 }
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Publish a source consequence without an authored transaction.
+    /// Example: `commands.refresh_derived_table(7, source.as_ref())?`.
+    pub fn refresh_derived_table(
+        &mut self,
+        table: i64,
+        source: Option<&std::collections::BTreeMap<String, oblikovati_model::quantity::Quantity>>,
+    ) -> Result<bool, CommandError<oblikovati_model::parameter::ParameterError<u64>>> {
+        self.session.refresh_derived_table(table, source)
+    }
+}

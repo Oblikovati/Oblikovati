@@ -352,3 +352,6 @@ fn merged_edits_invalidate_save_markers_and_open_groups_cannot_be_marked() {
     assert_eq!(history.entries().len(), 1);
     assert!(!history.entries()[0].saved);
 }
+
+#[path = "history/refresh.rs"]
+mod refresh;

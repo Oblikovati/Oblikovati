@@ -14,7 +14,7 @@ pub trait TransactionObserver {
     ) -> Result<(), String>;
     /// Observe completed movement; example: append `event.clone()` to an outbound queue.
     fn after(&mut self, event: &TransactionEventPayload, snapshot: &DocumentSnapshot);
-    /// Observe one committed cursor change; example: schedule evaluation of `generation`.
+    /// Observe a published evaluation generation; example: schedule evaluation of `generation`.
     fn changed(&mut self, document: u64, generation: u64);
 }
 

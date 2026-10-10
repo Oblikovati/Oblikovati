@@ -13,6 +13,7 @@ use std::{error::Error, fmt, io, path::PathBuf};
 pub enum FileWorkspaceError {
     ObserverFactory(String),
     AmbiguousSource(String),
+    DerivedRefresh(String),
     SourceValue {
         source: String,
         parameter: String,
@@ -57,6 +58,7 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DerivedRefresh(reason) => write!(output, "derived refresh: {reason}"),
             Self::SourceValue {
                 source,
                 parameter,
@@ -145,7 +147,8 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::SourceValue { .. }
+            Self::DerivedRefresh(_)
+            | Self::SourceValue { .. }
             | Self::AmbiguousSource(_)
             | Self::ObserverFactory(_)
             | Self::MissingTemplate(_)
