@@ -6,6 +6,7 @@ pub use batch::BatchSaveError;
 mod copy;
 mod create;
 mod error;
+mod name;
 mod open;
 mod project;
 mod save_as;
@@ -29,6 +30,7 @@ use std::{
 };
 
 struct RetainedFile {
+    display_override: Option<String>,
     path: PathBuf,
     package: DocumentPackage,
 }

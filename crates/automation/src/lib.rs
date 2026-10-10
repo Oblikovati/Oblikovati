@@ -28,9 +28,10 @@ use serde::{Serialize, de::DeserializeOwned};
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 20] = [
+pub const QUERY_METHODS: [&str; 21] = [
     METHOD_DOCUMENTS_GET_UNITS,
     METHOD_TRANSACTION_STATE,
+    METHOD_TRANSACTION_HISTORY,
     METHOD_PARAMETERS_LIST,
     METHOD_PARAMETERS_GET_DETAIL,
     METHOD_PARAMETERS_GET_SETTINGS,
@@ -82,6 +83,10 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_TRANSACTION_HISTORY => encode(&transactions::history(
+                self.workspace,
+                decode(method, request)?,
+            )?),
             METHOD_TRANSACTION_STATE => encode(&transactions::state(self.workspace)?),
             METHOD_PARAMETERS_GET_DETAIL => encode(&detail::read(
                 self.active_parameters()?,

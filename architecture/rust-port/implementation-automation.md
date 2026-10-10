@@ -290,3 +290,24 @@ Tests cover navigation, branch replacement, merged edits, repeated marks, open
 transactions, and successful/failed saves through the persistence target.
 The wire history query still needs document display-name ownership before it can
 return the complete canonical response.
+
+## Named transaction history query
+
+[#3642](https://github.com/Oblikovati/Oblikovati/issues/3642) adds
+`transaction.history` to both hosts. Document zero selects the active document;
+an explicit ID reads that owner's stream without activation or observer events.
+The reply includes chronological committed entries, saved markers, and the
+current cursor position. Preview edits are excluded. Empty streams encode an
+empty array; missing documents are errors.
+
+The workspace retains the file owner's display name. Open and template creation
+use custom package titles when present, otherwise the file basename without its
+extension. A persisted title equal to that derived name remains derived, as in
+Go. Save As updates derived titles after successful persistence and preserves
+custom titles. Derived overrides are cleared in the retained package so saving
+and reopening cannot turn an old filename into a custom name. Bare workspace
+registrations without file metadata have an empty title.
+
+Tests cover multiple documents, missing context, previews, saved redo entries,
+Unicode custom titles, template creation, repeated Save As, close/reopen, and
+stale-ID refusal. Absolute cursor jumps and native event delivery remain pending.

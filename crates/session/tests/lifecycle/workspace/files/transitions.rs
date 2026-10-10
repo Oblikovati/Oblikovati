@@ -238,3 +238,41 @@ fn native_save_as_creates_new_destination_then_clean_close_keeps_old_file() {
     host.close_saving_changes(id, "beta", &mut source).unwrap();
     assert!(renamed.is_file());
 }
+
+#[test]
+fn derived_names_follow_repeated_save_as_but_custom_names_survive() {
+    for persisted in ["a", "Custom Ω"] {
+        let mut host = host(RecordingWorkspace::default());
+        let mut bytes = fixture(1);
+        bytes.extend_from_slice(format!("displayName: '{persisted}'\n").as_bytes());
+        host.files()
+            .contents
+            .borrow_mut()
+            .insert(path("a.obk"), bytes);
+        let mut source = SequenceGuids(1000);
+        let id = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+        assert_eq!(host.workspace().display_name(id).unwrap(), persisted);
+        for destination in ["new.obk", "final.obk"] {
+            host.save_as(id, &path(destination), "beta", &mut source)
+                .unwrap();
+            let expected = if persisted == "a" {
+                destination.trim_end_matches(".obk")
+            } else {
+                persisted
+            };
+            assert_eq!(host.workspace().display_name(id).unwrap(), expected);
+        }
+        host.close_discarding_changes(id).unwrap();
+        assert!(host.workspace().display_name(id).is_err());
+        let reopened = open_file(
+            &mut host,
+            "final.obk",
+            &mut source,
+            OpenActivation::Activate,
+        );
+        assert_eq!(
+            host.workspace().display_name(reopened).unwrap(),
+            if persisted == "a" { "final" } else { persisted }
+        );
+    }
+}

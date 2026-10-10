@@ -64,3 +64,33 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver>(
     .map_err(|error| Error(error.to_string()))?;
     encode(&state(workspace)?)
 }
+
+pub(super) fn history<O: TransactionObserver, W: WorkspaceObserver>(
+    workspace: &WorkspaceSession<O, W>,
+    request: TransactionHistoryArgs,
+) -> Result<TransactionHistory, Error> {
+    let id = if request.document == 0 {
+        workspace.active_document().ok_or_else(|| {
+            Error("transaction.history document 0: expected an active document".into())
+        })?
+    } else {
+        request.document
+    };
+    let session = workspace
+        .session(id)
+        .map_err(|error| Error(error.to_string()))?;
+    let position = i64::try_from(session.undo_labels().len()).map_err(|error| {
+        Error(format!(
+            "history position: expected a signed 64-bit count: {error}"
+        ))
+    })?;
+    Ok(TransactionHistory {
+        document: id,
+        name: workspace
+            .display_name(id)
+            .map_err(|error| Error(error.to_string()))?
+            .into(),
+        position,
+        entries: Some(session.history_entries()),
+    })
+}

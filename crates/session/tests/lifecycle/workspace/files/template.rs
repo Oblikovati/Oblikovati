@@ -34,6 +34,7 @@ fn template_creation_applies_metadata_and_preserves_disk_and_open_template() {
         .unwrap()
         .session_id;
     assert_eq!(host.files().reads, reads + 1);
+    assert_eq!(host.workspace().display_name(created).unwrap(), "New Ω");
     assert_eq!(host.workspace().identity(template_id).unwrap(), &identity);
     assert!(host.workspace().needs_save(template_id).unwrap());
     assert!(host.workspace().needs_save(created).unwrap());

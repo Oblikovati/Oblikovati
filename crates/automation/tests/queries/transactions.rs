@@ -277,5 +277,154 @@ fn history_commands_only_change_the_active_document() {
         .chain(oblikovati_automation::EDIT_METHODS)
         .chain(TRANSACTION_METHODS)
         .collect();
-    assert_eq!(inventory.len(), 40);
+    assert_eq!(inventory.len(), 41);
+}
+
+#[test]
+fn history_query_reads_full_stream_without_activating_another_document() {
+    let mut workspace = Workspace::new(QueryObserver::default());
+    let mut guids = QueryGuids(0);
+    let first = register(&mut workspace, UnitsOfMeasure::default(), &mut guids);
+    {
+        let client = Client::new(SessionHost::new(&mut workspace));
+        client
+            .parameters()
+            .add(&ParameterSetArgs {
+                name: "width".into(),
+                expression: "1 cm".into(),
+                ..Default::default()
+            })
+            .unwrap();
+        client
+            .parameters()
+            .set(&ParameterSetArgs {
+                name: "width".into(),
+                expression: "2 cm".into(),
+                ..Default::default()
+            })
+            .unwrap();
+        client.transactions().undo().unwrap();
+    }
+    let second = register(&mut workspace, UnitsOfMeasure::default(), &mut guids);
+    let before = workspace.observer().notifications;
+    let history = Client::new(SessionQueryHost::new(&workspace))
+        .transactions()
+        .history(&TransactionHistoryArgs { document: first })
+        .unwrap();
+    assert_eq!(history.document, first);
+    assert_eq!(history.position, 1);
+    let entries = history.entries.unwrap();
+    assert_eq!(
+        entries
+            .iter()
+            .map(|entry| entry.label.as_str())
+            .collect::<Vec<_>>(),
+        ["Add Parameter", "Edit Parameter"]
+    );
+    assert!(entries.iter().all(|entry| !entry.saved));
+    let history = Client::new(SessionQueryHost::new(&workspace))
+        .transactions()
+        .history(&TransactionHistoryArgs::default())
+        .unwrap();
+    assert_eq!(history.document, second);
+    assert_eq!(history.position, 0);
+    assert_eq!(history.entries, Some(vec![]));
+    assert_eq!(workspace.active_document(), Some(second));
+    assert_eq!(workspace.observer().notifications, before);
+}
+
+#[test]
+fn history_excludes_preview_and_refuses_missing_documents() {
+    let mut workspace = Workspace::new(QueryObserver::default());
+    assert!(
+        Client::new(SessionQueryHost::new(&workspace))
+            .transactions()
+            .history(&TransactionHistoryArgs::default())
+            .is_err()
+    );
+    let _id = register(
+        &mut workspace,
+        UnitsOfMeasure::default(),
+        &mut QueryGuids(0),
+    );
+    let client = Client::new(SessionHost::new(&mut workspace));
+    client
+        .transactions()
+        .begin(&TransactionBeginArgs {
+            label: "Preview".into(),
+        })
+        .unwrap();
+    client
+        .parameters()
+        .add(&ParameterSetArgs {
+            name: "width".into(),
+            expression: "1 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let history = client
+        .transactions()
+        .history(&TransactionHistoryArgs::default())
+        .unwrap();
+    assert_eq!(history.position, 0);
+    assert_eq!(history.entries, Some(vec![]));
+    assert!(
+        client
+            .transactions()
+            .history(&TransactionHistoryArgs { document: 999 })
+            .is_err()
+    );
+    client.transactions().abort().unwrap();
+}
+
+#[derive(Default)]
+struct MemoryHistorySave {
+    prepared: Option<DocumentSnapshot>,
+    persisted: bool,
+}
+impl oblikovati_model::identity::DocumentSaveTarget for MemoryHistorySave {
+    type Failure = std::io::Error;
+    fn persist(&mut self, _: &FileIdentity) -> Result<(), Self::Failure> {
+        assert!(self.prepared.is_some());
+        self.persisted = true;
+        Ok(())
+    }
+}
+impl oblikovati_model::history::DocumentSnapshotTarget for MemoryHistorySave {
+    fn prepare(
+        &mut self,
+        snapshot: &DocumentSnapshot,
+    ) -> Result<Option<oblikovati_model::identity::RecipeDigest>, Self::Failure> {
+        self.prepared = Some(snapshot.clone());
+        Ok(None)
+    }
+}
+
+#[test]
+fn history_wire_retains_save_markers_in_the_redo_suffix() {
+    let (mut workspace, id) = super::parameters::parameter_workspace(transaction_parameters());
+    Client::new(SessionHost::new(&mut workspace))
+        .parameters()
+        .set(&ParameterSetArgs {
+            name: "width".into(),
+            expression: "5 cm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let mut target = MemoryHistorySave::default();
+    workspace
+        .save(id, "test", &mut QueryGuids(100), &mut target)
+        .unwrap();
+    assert!(target.persisted);
+    let client = Client::new(SessionHost::new(&mut workspace));
+    client.transactions().undo().unwrap();
+    let history = client
+        .transactions()
+        .history(&TransactionHistoryArgs::default())
+        .unwrap();
+    assert_eq!(history.position, 0);
+    let entries = history.entries.unwrap();
+    assert_eq!(entries.len(), 1);
+    assert!(entries[0].saved);
+    assert_eq!(entries[0].label, "Edit Parameter");
 }

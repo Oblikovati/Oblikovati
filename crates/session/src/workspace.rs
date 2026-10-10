@@ -65,6 +65,7 @@ struct WorkspaceEntry<O> {
     session: DocumentSession<O>,
     baseline: DocumentSnapshot,
     identity_dirty: bool,
+    display_name: String,
 }
 
 /// Own all open sessions and their GUID claims. IDs are never reused within this workspace.
@@ -156,6 +157,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let identity = self.identities.register(id, identity, source)?;
         let entry = WorkspaceEntry {
             baseline: history.snapshot().clone(),
+            display_name: String::new(),
             session: DocumentSession::new(id, history, observer),
             identity_dirty: identity != IdentityRegistration::Preserved,
         };
@@ -231,6 +233,24 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
 
 fn next_session_id(previous: u64) -> Result<u64, WorkspaceError> {
     previous.checked_add(1).ok_or(WorkspaceError::Exhausted)
+}
+
+impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
+    /// Read the file owner's display name without changing focus.
+    /// Example: `workspace.display_name(id)?` for a history browser title.
+    pub fn display_name(&self, id: u64) -> Result<&str, WorkspaceError> {
+        self.entries
+            .get(&id)
+            .map(|entry| entry.display_name.as_str())
+            .ok_or(WorkspaceError::Missing(id))
+    }
+
+    pub(crate) fn set_file_display_name(&mut self, id: u64, name: String) {
+        self.entries
+            .get_mut(&id)
+            .expect("registered file owner")
+            .display_name = name;
+    }
 }
 
 #[cfg(test)]

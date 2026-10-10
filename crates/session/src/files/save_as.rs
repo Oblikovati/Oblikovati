@@ -49,6 +49,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let previous = std::mem::replace(&mut file.path, destination.clone());
         self.paths.remove(&previous);
         self.paths.insert(destination.clone(), id);
+        self.refresh_display_name(id);
         self.workspace
             .notify_path_changed(id, &previous, &destination);
     }

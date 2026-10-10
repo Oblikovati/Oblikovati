@@ -82,9 +82,22 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         package: DocumentPackage,
         registration: RegisteredDocument,
     ) -> FileOpenOutcome {
+        let display_override = name::display_override(&path, &package.manifest().display_name);
+        let package = if display_override.is_none() {
+            package.with_display_name("")
+        } else {
+            package
+        };
         self.paths.insert(path.clone(), registration.session_id);
-        self.retained
-            .insert(registration.session_id, RetainedFile { path, package });
+        self.retained.insert(
+            registration.session_id,
+            RetainedFile {
+                path,
+                package,
+                display_override,
+            },
+        );
+        self.refresh_display_name(registration.session_id);
         FileOpenOutcome::Opened(registration)
     }
 }

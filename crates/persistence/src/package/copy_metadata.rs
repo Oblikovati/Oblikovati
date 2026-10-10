@@ -8,17 +8,27 @@ impl DocumentPackage {
     /// Explicit copy destinations take precedence over metadata file/template fields, as in Go.
     /// Example: `let copy = package.with_copy_metadata(&metadata);`.
     pub fn with_copy_metadata(&self, metadata: &NewFileMetadata) -> Self {
-        let mut copy = self.clone();
-        if !metadata.display_name.is_empty() {
-            copy.manifest.display_name = metadata.display_name.clone();
-            copy.root
-                .insert("displayName".into(), metadata.display_name.clone().into());
-        }
+        let mut copy = if metadata.display_name.is_empty() {
+            self.clone()
+        } else {
+            self.with_display_name(&metadata.display_name)
+        };
         if !metadata.sub_type.is_empty() {
             copy.manifest.sub_type = metadata.sub_type.clone();
             copy.root
                 .insert("subType".into(), metadata.sub_type.clone().into());
         }
+        copy
+    }
+}
+
+impl DocumentPackage {
+    /// Replace the title override; an empty name permits a file-derived display name.
+    /// Example: `let derived = package.with_display_name("");`.
+    pub fn with_display_name(&self, name: &str) -> Self {
+        let mut copy = self.clone();
+        copy.manifest.display_name = name.into();
+        copy.root.insert("displayName".into(), name.into());
         copy
     }
 }
