@@ -73,6 +73,7 @@ fn recipe() -> DocumentSnapshot {
     DocumentSnapshot {
         attributes: Default::default(),
         interests: Default::default(),
+        resources: Default::default(),
         parameters,
         properties,
     }
@@ -378,3 +379,6 @@ mod attributes;
 
 #[path = "lifecycle/interests.rs"]
 mod interests;
+
+#[path = "lifecycle/resources.rs"]
+mod resources;

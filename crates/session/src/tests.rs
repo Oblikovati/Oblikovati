@@ -25,6 +25,7 @@ fn nesting_overflow_preserves_group_and_is_visible() {
     let snapshot = DocumentSnapshot {
         attributes: Default::default(),
         interests: Default::default(),
+        resources: Default::default(),
         parameters: ParameterCollection::new(UnitsOfMeasure::default()),
         properties: DocumentProperties::default(),
     };

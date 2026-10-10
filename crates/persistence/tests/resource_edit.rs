@@ -112,3 +112,47 @@ fn captured_resources_match_the_go_fixture_yaml_values() {
     assert_eq!(values(&captured), values(&reference));
     assert_eq!(captured.resources(), reference.resources());
 }
+
+#[test]
+fn snapshot_capture_updates_only_changed_records_and_preserves_extensions() {
+    let original = package();
+    assert_eq!(original.with_resources(original.resources()), original);
+    let mut resources = original.resources().clone();
+    resources.get_mut("asset").unwrap().contents = ResourceContents::Embedded;
+    resources.insert(
+        "new".into(),
+        PackageResource::imported("Custom", "source", &[0, 255]),
+    );
+    let captured = original.with_resources(&resources);
+    let decoded = DocumentPackage::decode(&captured.encode().unwrap()).unwrap();
+    assert_eq!(decoded.resources(), &resources);
+    let section: serde_yaml_ng::Value =
+        serde_yaml_ng::from_slice(&decoded.section_yaml("resources").unwrap().unwrap()).unwrap();
+    assert_eq!(section["asset"]["extension"]["revision"].as_i64(), Some(7));
+    resources.remove("keep");
+    assert!(
+        !captured
+            .with_resources(&resources)
+            .resources()
+            .contains_key("keep")
+    );
+    let cleared = captured.with_resources(&Default::default());
+    assert!(cleared.section_yaml("resources").unwrap().is_none());
+    assert_eq!(
+        cleared.recipe_digest().unwrap(),
+        original.recipe_digest().unwrap()
+    );
+    assert_eq!(cleared.streams(), original.streams());
+}
+
+#[test]
+fn changing_other_resources_keeps_an_unchanged_record_representation() {
+    let original = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\nresources: {keep: {encoding: base64, value: \"Zg==\\n\", extension: keep}}\n").unwrap();
+    let mut resources = original.resources().clone();
+    resources.insert("new".into(), PackageResource::imported("File", "", b"new"));
+    let captured = original.with_resources(&resources);
+    let section: serde_yaml_ng::Value =
+        serde_yaml_ng::from_slice(&captured.section_yaml("resources").unwrap().unwrap()).unwrap();
+    assert_eq!(section["keep"]["value"].as_str(), Some("Zg==\n"));
+    assert!(section["keep"].get("type").is_none());
+}

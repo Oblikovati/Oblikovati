@@ -356,3 +356,26 @@ The native source already produces random version-4 GUIDs. Four tests cover
 encoding selection, owned inputs, all equality fields, reopen/reuse, duplicate
 legacy keys, collision refusal, and entropy failure. Recipe creation and session
 resource ownership remain pending; this operation does not create geometry.
+
+## Session ownership of imported resources — partial R2
+
+Tracking: [#3688](https://github.com/Oblikovati/Oblikovati/issues/3688).
+Resource value types now live in `oblikovati_model::resource`; persistence
+re-exports its existing `PackageResource` and `ResourceContents` names. The
+model owns content without depending on the YAML codec. `DocumentSnapshot`
+contains an owned resource table, included in edit/no-op detection, refresh,
+undo/redo, abort, and dirty-state comparison.
+
+Open and template creation install the decoded table. Normal save and copy
+capture the live table through `with_resources`. Unchanged records retain their
+stored representation. Changed records retain extension fields, removed IDs
+leave the table, and an empty table is omitted. Capture preserves other package
+sections and the current model-only digest contract. Feature operations must
+coordinate resource changes with recipe references when that layer is ported.
+
+Tests cover transaction veto, undo/redo/abort, no-op updates, refresh generation,
+resource-only dirty state, normal/copy save and reopen, failed writes, and
+independent template ownership. Package tests cover batch insertion/removal,
+extension retention, and unchanged base64 text. Import identity, byte-resolution,
+and Go fixture tests remain in the suite. Feature reconstruction and the
+application bundle catalog are still pending.

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use super::{DocumentPackage, PackageResource, ResourceContents};
+use super::{DocumentPackage, PackageResource};
 use oblikovati_model::identity::{GuidSource, IdentityTransitionError};
 use std::{error::Error, fmt};
 
@@ -9,23 +9,6 @@ use std::{error::Error, fmt};
 pub enum ResourceImportError {
     Identity(IdentityTransitionError),
     Collision(String),
-}
-
-impl PackageResource {
-    /// Capture imported bytes without reading the display-only origin path.
-    /// Valid NUL-free UTF-8 remains text; all other input stays binary.
-    /// Example: `PackageResource::imported("ObjFile", "mesh.obj", b"v 0 0 0\n")`.
-    pub fn imported(kind: &str, origin: &str, bytes: &[u8]) -> Self {
-        let contents = match std::str::from_utf8(bytes) {
-            Ok(text) if !bytes.contains(&0) => ResourceContents::Utf8(text.into()),
-            _ => ResourceContents::Binary(bytes.to_vec()),
-        };
-        Self {
-            kind: kind.into(),
-            origin: origin.into(),
-            contents,
-        }
-    }
 }
 
 impl DocumentPackage {

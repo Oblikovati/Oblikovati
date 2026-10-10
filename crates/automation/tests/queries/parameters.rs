@@ -17,6 +17,7 @@ pub(super) fn parameter_workspace_observer(
     let snapshot = DocumentSnapshot {
         attributes: Default::default(),
         interests: Default::default(),
+        resources: Default::default(),
         parameters,
         properties,
     };

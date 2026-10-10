@@ -1,25 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::binary_text::decode_base64;
-use super::{Mapping, PackageCodecError, Value, codec_error};
+use super::{Mapping, PackageCodecError, PackageResource, ResourceContents, Value, codec_error};
 use serde::{Deserialize, de::DeserializeOwned};
 use std::collections::BTreeMap;
-
-/// Resource classification follows its encoding, never its extensible type tag.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum ResourceContents {
-    Utf8(String),
-    Binary(Vec<u8>),
-    Embedded,
-}
-
-/// A self-contained imported resource or a reference to an application resource.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct PackageResource {
-    pub kind: String,
-    pub origin: String,
-    pub contents: ResourceContents,
-}
 
 #[derive(Default, Deserialize)]
 #[serde(default)]

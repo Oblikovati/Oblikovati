@@ -317,3 +317,6 @@ mod interests;
 
 #[path = "file_interest_api.rs"]
 mod interest_api;
+
+#[path = "file_resources.rs"]
+mod resources;

@@ -51,6 +51,7 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
         self.prepared = None;
         let candidate = self
             .original
+            .with_resources(&snapshot.resources)
             .with_interests(&snapshot.interests)
             .map_err(SnapshotPackageError::Codec)?
             .with_attributes(&snapshot.attributes)

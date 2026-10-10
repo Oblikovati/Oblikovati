@@ -179,6 +179,7 @@ fn expression_queries_resolve_live_parameter_nominals_without_model_offsets() {
     let snapshot = DocumentSnapshot {
         attributes: Default::default(),
         interests: Default::default(),
+        resources: Default::default(),
         parameters,
         properties: DocumentProperties::default(),
     };

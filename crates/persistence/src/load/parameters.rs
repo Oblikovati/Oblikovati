@@ -12,6 +12,7 @@ pub struct LoadedParameterPackage {
     pub restored: RestoredParameters,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub interests: oblikovati_model::interest::DocumentInterests,
+    pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub properties: oblikovati_model::property::DocumentProperties,
 }
 
@@ -38,6 +39,7 @@ pub fn load_parameter_package(
         properties: prepared.properties,
         attributes: prepared.attributes,
         interests: prepared.interests,
+        resources: prepared.resources,
     })
 }
 
@@ -49,6 +51,7 @@ pub struct PreparedParameterPackage {
     pub restored: RestoredParameters,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub interests: oblikovati_model::interest::DocumentInterests,
+    pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub properties: oblikovati_model::property::DocumentProperties,
     pub identity: FileIdentity,
 }
@@ -76,11 +79,13 @@ pub fn read_parameter_package(
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let identity =
         restore_identity(&package, version, source).map_err(|cause| load_error(path, cause))?;
+    let resources = package.resources().clone();
     Ok(PreparedParameterPackage {
         package,
         restored,
         attributes,
         interests,
+        resources,
         properties,
         identity,
     })

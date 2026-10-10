@@ -139,3 +139,24 @@ fn interest_refresh_publishes_changed_metadata_without_an_undo_step() {
     }
     assert!(history.entries().is_empty());
 }
+
+#[test]
+fn resource_refresh_changes_generation_only_for_changed_content() {
+    use oblikovati_model::resource::DocumentResource;
+    let mut history = history();
+    let generation = history.generation();
+    for expected in [true, false] {
+        let changed = history
+            .refresh(|snapshot| {
+                snapshot.resources.insert(
+                    "mesh".into(),
+                    DocumentResource::imported("ObjFile", "mesh.obj", b"v 0 0 0\n"),
+                );
+                Ok::<(), String>(())
+            })
+            .unwrap();
+        assert_eq!(changed, expected);
+        assert_eq!(history.generation(), generation + 1);
+    }
+    assert!(history.entries().is_empty());
+}

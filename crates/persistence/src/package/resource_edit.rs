@@ -2,6 +2,7 @@
 
 use super::{DocumentPackage, Mapping, PackageResource, ResourceContents, Value};
 use base64::{Engine, engine::general_purpose::STANDARD};
+use std::collections::BTreeMap;
 
 impl DocumentPackage {
     /// Replace one resource with owned content while retaining extension metadata.
@@ -9,24 +10,54 @@ impl DocumentPackage {
     /// Example: `let updated = package.with_resource("font", &resource);`.
     pub fn with_resource(&self, id: &str, resource: &PackageResource) -> Self {
         let mut candidate = self.clone();
-        let mut section = self
-            .root
-            .get("resources")
-            .and_then(Value::as_mapping)
-            .cloned()
-            .unwrap_or_default();
-        let mut entry = section
-            .get(id)
-            .and_then(Value::as_mapping)
-            .cloned()
-            .unwrap_or_default();
-        capture_resource(&mut entry, resource);
-        section.insert(id.into(), Value::Mapping(entry));
+        let mut section = self.resource_section();
+        capture_entry(&mut section, id, resource);
         candidate
             .root
             .insert("resources".into(), Value::Mapping(section));
         candidate.resources.insert(id.into(), resource.clone());
         candidate
+    }
+
+    /// Capture an owned snapshot table while preserving unchanged entries and extensions.
+    /// Example: `let saved = package.with_resources(&snapshot.resources);`.
+    pub fn with_resources(&self, resources: &BTreeMap<String, PackageResource>) -> Self {
+        if &self.resources == resources {
+            return self.clone();
+        }
+        let mut candidate = self.clone();
+        let section = self.updated_resources(resources);
+        if section.is_empty() {
+            candidate.root.remove("resources");
+        } else {
+            candidate
+                .root
+                .insert("resources".into(), Value::Mapping(section));
+        }
+        candidate.resources.clone_from(resources);
+        candidate
+    }
+
+    fn updated_resources(&self, resources: &BTreeMap<String, PackageResource>) -> Mapping {
+        let original = self.resource_section();
+        let mut section = Mapping::new();
+        for (id, resource) in resources {
+            if let Some(entry) = original.get(id) {
+                section.insert(id.clone().into(), entry.clone());
+            }
+            if self.resources.get(id) != Some(resource) {
+                capture_entry(&mut section, id, resource);
+            }
+        }
+        section
+    }
+
+    fn resource_section(&self) -> Mapping {
+        self.root
+            .get("resources")
+            .and_then(Value::as_mapping)
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Remove one resource; recipe reference validation remains the caller's responsibility.
@@ -47,6 +78,16 @@ impl DocumentPackage {
         }
         candidate
     }
+}
+
+fn capture_entry(section: &mut Mapping, id: &str, resource: &PackageResource) {
+    let mut entry = section
+        .get(id)
+        .and_then(Value::as_mapping)
+        .cloned()
+        .unwrap_or_default();
+    capture_resource(&mut entry, resource);
+    section.insert(id.into(), Value::Mapping(entry));
 }
 
 fn capture_resource(entry: &mut Mapping, resource: &PackageResource) {

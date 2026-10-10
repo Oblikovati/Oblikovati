@@ -83,6 +83,7 @@ fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut Query
     let snapshot = DocumentSnapshot {
         attributes: Default::default(),
         interests: Default::default(),
+        resources: Default::default(),
         parameters: ParameterCollection::new(units),
         properties: DocumentProperties::default(),
     };

@@ -64,6 +64,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let snapshot = DocumentSnapshot {
             attributes: prepared.attributes,
             interests: prepared.interests,
+            resources: prepared.resources,
             parameters: prepared.restored.parameters,
             properties: prepared.properties,
         };

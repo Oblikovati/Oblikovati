@@ -49,6 +49,7 @@ impl DocumentEditHistory {
             .parameters
             .same_evaluated_state(&self.current.parameters)
             && candidate.properties.same_recipe(&self.current.properties)
+            && candidate.resources == self.current.resources
             && candidate.interests == self.current.interests
             && candidate.attributes.same_recipe(&self.current.attributes)
         {

@@ -26,7 +26,7 @@ mod save;
 mod snapshot;
 pub use snapshot::{ParameterPackageTarget, SnapshotPackageError};
 mod validation;
-pub use resources::{PackageResource, ResourceContents};
+pub use oblikovati_model::resource::{DocumentResource as PackageResource, ResourceContents};
 pub use save::{PackageSaveError, PackageSaveTarget};
 
 /// File-level metadata. Document kind remains a numeric wire value until host validation.
