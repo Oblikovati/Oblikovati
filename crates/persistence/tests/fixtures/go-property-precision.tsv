@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Captured from oblikovati.org/api/types CustomPropertyPrecision.String.
+zeroDecimalPlace	85505
+oneDecimalPlace	85506
+twoDecimalPlaces	85507
+threeDecimalPlaces	85508
+fourDecimalPlaces	85509
+fiveDecimalPlaces	85510
+sixDecimalPlaces	85511
+sevenDecimalPlaces	85512
+eightDecimalPlaces	85513
+zeroFractional	85514
+halfFractional	85515
+quarterFractional	85516
+eighthsFractional	85517
+sixteenthsFractional	85518
+thirtySecondsFractional	85519
+sixtyFourthsFractional	85520
+oneTwentyEighthsFractional	85521
+degrees	85522
+minutes	85523
+seconds	85524
+secondsOneDecimalPlace	85525
+secondsTwoDecimalPlaces	85526
+secondsThreeDecimalPlaces	85527
+secondsFourDecimalPlaces	85528

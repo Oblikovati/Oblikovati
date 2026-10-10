@@ -59,8 +59,8 @@ matching the legacy name-based format; this does not add persistent parameter
 IDs to the file schema.
 
 Unknown fields and inconsistent value-flavor fields are refused. Linked
-derived tables, tolerance, model-value selection, and
-custom-property recipe records remain explicit unsupported cases. Their source
+derived tables, tolerance, and model-value selection remain explicit unsupported
+cases. Their source
 YAML stays retained in the package, and reconstruction cannot silently discard
 them. This is an intermediate decoder, not completion of the parameter recipe
 port or permission to execute unported features elsewhere in the model.
@@ -84,8 +84,8 @@ idempotent. An omitted display name defaults to the internal name.
 Four tests cover order and metadata, multi-membership, repeated names,
 empty/null/memberless groups, unknown fields, duplicate group keys, and missing
 members. Invalid groups discard only the separate reconstruction candidate.
-The existing live table is not an input to this operation. Tolerance/selection,
-custom-property recipes, and linked tables remain pending.
+The existing live table is not an input to this operation. Tolerance/selection
+and linked tables remain pending.
 
 ## Collection settings reconstruction — partial R2
 
@@ -103,3 +103,18 @@ do not silently apply tolerance bands to existing parameters.
 
 Four tests cover every field and display mode, defaults versus sparse records,
 invalid precision, unknown fields, and unchanged numeric values/dirty state.
+
+## Custom-property formatting reconstruction — partial R2
+
+Tracking: [#3601](https://github.com/Oblikovati/Oblikovati/issues/3601).
+`customProperty` now restores text/number property type, unit preference, all
+24 precision spellings, and leading/trailing-zero and unit-string flags. The
+values map to canonical API types and use the existing model setter. Numeric,
+literal, and read-only parameters all retain this metadata.
+
+Absent/null records keep the model's defaults. A present empty record uses
+default type/precision but false display flags, matching Go's recipe decoder.
+Unknown fields, property types, precisions, and incorrect shapes are refused.
+Five tests include a 24-row precision-name/ID capture from the Go API plus the
+metadata, sparse-record, literal/read-only, and failure cases. Actual formatted
+property output and recipe export remain separate work.

@@ -8,6 +8,7 @@ use oblikovati_model::{
 };
 
 mod groups;
+mod property;
 mod record;
 mod settings;
 use record::ParameterRecipe;

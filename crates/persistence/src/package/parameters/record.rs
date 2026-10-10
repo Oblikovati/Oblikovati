@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use super::property::PropertyRecipe;
 use super::{PackageCodecError, parameter_error};
 use oblikovati_api::types::*;
 use oblikovati_model::{
@@ -32,6 +33,7 @@ pub(super) struct ParameterRecipe {
     expression_list: Vec<String>,
     allow_custom_value: bool,
     sorted_value_list: bool,
+    custom_property: Option<PropertyRecipe>,
 }
 
 impl ParameterRecipe {
@@ -43,6 +45,11 @@ impl ParameterRecipe {
         self.validate_value_fields()?;
         self.restore_value(id, parameters)?;
         self.restore_annotations(id, parameters)?;
+        if let Some(property) = &self.custom_property {
+            parameters
+                .set_custom_property_format(id, property.restore()?)
+                .map_err(parameter_error)?;
+        }
         parameters
             .set_renamed(id, self.renamed)
             .map_err(parameter_error)?;
