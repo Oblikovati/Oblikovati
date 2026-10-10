@@ -142,3 +142,28 @@ extra bytes, false lengths, unknown schemes, and the magic/context collision.
 An allocation-size unit test uses lengths without allocating huge buffers.
 Key binding, supported-kind classification, provenance, and malformed package
 import remain separate integration gates.
+
+## Open-document identity index — partial R2
+
+Tracking: [#3590](https://github.com/Oblikovati/Oblikovati/issues/3590).
+`DocumentIdentityIndex` owns identity records keyed by nonzero session IDs and
+indexes their persistent GUIDs. Unique registrations preserve every field and
+consume no randomness. Opening a copied file with a live GUID collision mints
+one new document GUID, preserves the revision metadata, and returns an explicit
+`IdentityRegistration::Reassigned` result. This matches the Go workspace rule
+without hiding the identity change inside an index operation.
+
+Generated GUIDs are checked against all live document GUIDs and the incoming
+document's revision stamps. A repeated GUID or entropy error refuses the new
+registration without changing either index. Duplicate session IDs are refused
+before generation. Closing releases both claims, allowing the original file to
+reopen with its saved GUID. Identity records are exposed read-only so callers
+cannot change a GUID without maintaining the index.
+
+Six tests cover unique registration, collision metadata preservation, atomic
+failure, duplicate/zero session IDs, close/reopen, and error diagnostics. The
+matching Go collision and close/reopen tests provide the source behavior.
+This component does not load files, own recipe content, or dispatch host events.
+The host must inspect the reassignment result, mark the incoming document dirty,
+notify the user, and account for its changed sketch namespace before exposing
+the document. Save adoption and full workspace lifecycle remain open.

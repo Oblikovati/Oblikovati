@@ -10,11 +10,13 @@ mod envelope;
 mod file;
 mod record;
 mod source;
+mod workspace;
 pub use allocation::{RecipeIdAllocator, RecipeIdError};
 pub use envelope::{ReferenceEnvelope, ReferenceEnvelopeError, ReferenceScheme};
 pub use file::{FileIdentity, RecipeDigest};
 pub use record::{FileIdentityRecord, IdentityRecordError};
 pub use source::{GuidSource, IdentityTransitionError, SystemGuidSource};
+pub use workspace::{DocumentIdentityIndex, IdentityRegistration, IdentityRegistrationError};
 
 /// A saved document GUID used as a namespace for persistent sketch references.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
