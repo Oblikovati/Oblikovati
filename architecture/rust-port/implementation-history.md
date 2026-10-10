@@ -79,10 +79,9 @@ replacement, and close. An internal test checks nesting-counter exhaustion.
 The five Go lifecycle tests in `app/transaction_events_test.go` pass at the fixed
 baseline. These tests cover model state, not kernel evaluation or a viewport.
 
-Workspace registration/routing, event subscriptions and transport delivery,
-checkpoint navigation, and worker result adoption remain pending. Close consumes
-this owner but does not yet unregister file identity or a workspace entry. Those
-belong to the workspace coordinator.
+Event subscriptions and transport delivery, checkpoint navigation, and worker
+result adoption remain pending. The [workspace owner](implementation-workspace.md)
+now coordinates registration, named routing, and discard-close with GUID release.
 
 ## Automatic commands and unchanged groups — partial R2
 

@@ -8,6 +8,7 @@ mod navigation;
 #[cfg(test)]
 mod tests;
 mod transaction;
+pub mod workspace;
 pub use error::{CommandError, MutationError, SessionError};
 pub use events::TransactionObserver;
 use oblikovati_model::history::{DocumentEditHistory, DocumentSnapshot, TransactionToken};

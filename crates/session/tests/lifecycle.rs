@@ -345,3 +345,6 @@ fn new_commit_replaces_redo_through_the_same_session_path() {
 
 #[path = "lifecycle/commands.rs"]
 mod commands;
+
+#[path = "lifecycle/workspace.rs"]
+mod workspace;

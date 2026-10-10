@@ -1,0 +1,181 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+//! Ordered open-document ownership without file I/O or UI dependencies.
+mod commands;
+pub use commands::SessionCommands;
+mod error;
+mod lifecycle;
+use crate::{DocumentSession, TransactionObserver};
+pub use error::WorkspaceError;
+use oblikovati_model::{
+    history::{DocumentEditHistory, DocumentSnapshot},
+    identity::{
+        DocumentGuid, DocumentIdentityIndex, FileIdentity, GuidSource, IdentityRegistration,
+    },
+};
+use std::collections::BTreeMap;
+
+/// Policy and observations at the workspace boundary; callbacks cannot mutate it.
+pub trait WorkspaceObserver {
+    /// Report an open and any required identity notice; example: display a `Reassigned` outcome.
+    fn opened(&mut self, document: u64, registration: IdentityRegistration);
+    /// Observe explicit activation; example: select the tab for `document`.
+    fn activated(&mut self, document: u64);
+    /// Refuse explicit discard-close before state changes; example: return `Err("tool is busy".into())`.
+    fn before_close(&mut self, document: u64, snapshot: &DocumentSnapshot) -> Result<(), String>;
+    /// Observe removal and its remaining active document; example: remove the closed tab.
+    fn closed(&mut self, document: u64, active: Option<u64>);
+}
+
+/// Whether registration changes focus; background loads preserve the existing focus.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OpenActivation {
+    Activate,
+    Background,
+}
+
+/// Both the session ID and identity reassignment must reach the caller.
+#[must_use]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RegisteredDocument {
+    pub session_id: u64,
+    pub identity: IdentityRegistration,
+}
+
+struct WorkspaceEntry<O> {
+    session: DocumentSession<O>,
+    baseline: DocumentSnapshot,
+    identity_dirty: bool,
+}
+
+/// Own all open sessions and their GUID claims. IDs are never reused within this workspace.
+pub struct WorkspaceSession<O, W> {
+    entries: BTreeMap<u64, WorkspaceEntry<O>>,
+    order: Vec<u64>,
+    active: Option<u64>,
+    identities: DocumentIdentityIndex,
+    next_id: u64,
+    observer: W,
+}
+
+impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
+    /// Inject workspace policy; example: `let workspace = WorkspaceSession::new(observer);`.
+    pub fn new(observer: W) -> Self {
+        Self {
+            entries: BTreeMap::new(),
+            order: Vec::new(),
+            active: None,
+            identities: DocumentIdentityIndex::default(),
+            next_id: 0,
+            observer,
+        }
+    }
+
+    /// Register validated loaded state; example: `workspace.register(history, identity, observer, source, OpenActivation::Activate)?`.
+    pub fn register(
+        &mut self,
+        history: DocumentEditHistory,
+        identity: FileIdentity,
+        observer: O,
+        source: &mut dyn GuidSource,
+        activation: OpenActivation,
+    ) -> Result<RegisteredDocument, WorkspaceError> {
+        let id = next_session_id(self.next_id)?;
+        self.next_id = id;
+        let identity = self.identities.register(id, identity, source)?;
+        let entry = WorkspaceEntry {
+            baseline: history.snapshot().clone(),
+            session: DocumentSession::new(id, history, observer),
+            identity_dirty: identity != IdentityRegistration::Preserved,
+        };
+        self.entries.insert(id, entry);
+        self.order.push(id);
+        self.observer.opened(id, identity);
+        if activation == OpenActivation::Activate {
+            self.activate(id)?;
+        }
+        Ok(RegisteredDocument {
+            session_id: id,
+            identity,
+        })
+    }
+
+    /// Inspect documents in open order; example: `workspace.documents()`.
+    pub fn documents(&self) -> &[u64] {
+        &self.order
+    }
+
+    /// Read the current focus; example: `workspace.active_document()`.
+    pub fn active_document(&self) -> Option<u64> {
+        self.active
+    }
+
+    /// Inspect workspace observations; example: `workspace.observer().events()`.
+    pub fn observer(&self) -> &W {
+        &self.observer
+    }
+
+    /// Inspect one named document; example: `workspace.session(id)?.snapshot()`.
+    pub fn session(&self, id: u64) -> Result<&DocumentSession<O>, WorkspaceError> {
+        self.entries
+            .get(&id)
+            .map(|entry| &entry.session)
+            .ok_or(WorkspaceError::Missing(id))
+    }
+
+    /// Route commands to a fixed document across focus changes; example: `workspace.commands(id)?.end()?`.
+    pub fn commands(&mut self, id: u64) -> Result<SessionCommands<'_, O>, WorkspaceError> {
+        self.entries
+            .get_mut(&id)
+            .map(|entry| SessionCommands {
+                session: &mut entry.session,
+            })
+            .ok_or(WorkspaceError::Missing(id))
+    }
+
+    /// Resolve focus for a new command; example: `workspace.active_commands()?.undo()?`.
+    pub fn active_commands(&mut self) -> Result<SessionCommands<'_, O>, WorkspaceError> {
+        let id = self.active.ok_or(WorkspaceError::NoActive)?;
+        self.commands(id)
+    }
+
+    /// Inspect persistent identity without changing its index; example: `workspace.identity(id)?`.
+    pub fn identity(&self, id: u64) -> Result<&FileIdentity, WorkspaceError> {
+        self.identities
+            .identity(id)
+            .ok_or(WorkspaceError::Missing(id))
+    }
+
+    /// Find an open GUID owner; example: `workspace.owner(guid)`.
+    pub fn owner(&self, guid: DocumentGuid) -> Option<u64> {
+        self.identities.owner(guid)
+    }
+
+    /// Compare current recipe with loaded state; identity reassignment remains dirty across undo.
+    /// Example: `workspace.needs_save(id)?` before prompting to close.
+    pub fn needs_save(&self, id: u64) -> Result<bool, WorkspaceError> {
+        let entry = self.entries.get(&id).ok_or(WorkspaceError::Missing(id))?;
+        let current = entry.session.snapshot();
+        Ok(entry.identity_dirty
+            || !entry.baseline.parameters.same_recipe(&current.parameters)
+            || !entry.baseline.properties.same_recipe(&current.properties))
+    }
+}
+
+fn next_session_id(previous: u64) -> Result<u64, WorkspaceError> {
+    previous.checked_add(1).ok_or(WorkspaceError::Exhausted)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn session_ids_never_wrap_to_zero() {
+        assert_eq!(next_session_id(0), Ok(1));
+        assert_eq!(next_session_id(u64::MAX - 1), Ok(u64::MAX));
+        let error = next_session_id(u64::MAX).unwrap_err();
+        assert_eq!(error, WorkspaceError::Exhausted);
+        assert!(error.to_string().contains("u64::MAX"));
+    }
+}
