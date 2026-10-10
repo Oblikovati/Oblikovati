@@ -5,9 +5,11 @@
 use std::{error::Error, fmt, str::FromStr};
 use uuid::Uuid;
 
+mod allocation;
 mod file;
 mod record;
 mod source;
+pub use allocation::{RecipeIdAllocator, RecipeIdError};
 pub use file::{FileIdentity, RecipeDigest};
 pub use record::{FileIdentityRecord, IdentityRecordError};
 pub use source::{GuidSource, IdentityTransitionError, SystemGuidSource};

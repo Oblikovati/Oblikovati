@@ -88,3 +88,26 @@ on save. The tests cover every known field, omitted defaults, malformed values,
 full-width counters, and exact model-to-record-to-model restoration. Integrating
 the record into schema-2 package loading, migrations, and atomic saving remains
 open.
+
+## Recipe ID allocation — partial R2
+
+Tracking: [#3588](https://github.com/Oblikovati/Oblikovati/issues/3588).
+`RecipeIdAllocator` owns a monotonic nonzero `u64` namespace in a document.
+It replaces reliance on a process-global wrapping counter for new Rust model
+owners. One owner must serve all entities sharing that namespace. Allocation
+reserves an ID even if a subsequent edit fails; deletion and undo must not
+rewind the owner. It is deliberately not cloneable as an undo snapshot.
+
+Restoration checks zero IDs, duplicates, and IDs above the saved reservation
+mark. A saved mark keeps deleted IDs reserved even when no entities remain.
+Legacy records without that mark derive it from the largest live ID, matching
+the intent of Go sketch `raiseIDSeq`. This cannot recover IDs deleted before
+the legacy file was saved; the source format did not retain that history.
+Exhaustion is an explicit error and does not wrap or change the mark.
+
+Six tests cover independent document namespaces, abandoned/deleted reservations,
+legacy order independence, malformed restored IDs, full-width exhaustion, and
+stable sketch UUID derivation after restoration. The storage owner must persist
+the mark, and future sketch/parameter owners must use this allocator. Existing
+parameter collections still accept caller-owned IDs. This component does not
+yet establish an application-wide allocation or undo integration gate.
