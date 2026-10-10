@@ -93,13 +93,28 @@ sources outside the affected graph. Refresh retains target undo/redo and focus.
 
 Tests cover chains, independent branches, source undo, repeated no-op refresh,
 cycles, unknown sources, open source and target transactions, failure isolation,
-and recovery. This scheduler is explicit; automatic API and lifecycle hooks are
-still pending.
+and recovery. The scheduler is also used by the API command boundary below.
+
+## Automatic API command refresh
+
+[#3661](https://github.com/Oblikovati/Oblikovati/issues/3661) connects file-owned
+API edits, transaction end/abort, undo/redo, and history jumps to the scheduler.
+Refresh waits while a nested transaction remains open. The source command finishes
+before propagation; a refresh failure explicitly reports that the command completed
+and names failed tables or blocked readers. It does not imply source rollback.
+Graph preflight failures use the same partial-success context. A rejected source
+command does not trigger refresh.
+
+Target history navigation also refreshes its restored recipe from current source
+values, without adding target undo entries or discarding redo. The bare session
+host has no file ownership or source resolution and retains its local behavior.
+Typed-client tests cover edits, nested end, abort, undo/redo, jumps, target history,
+busy-target recovery, ambiguous-source failures, and focus preservation.
 
 ## Remaining work
 
 Connect table creation and link editing to source resolution, stable ID
 reservation, source parameter export, and the document reference graph. Propagate
-source edits, close/reopen, and undo/redo through the scheduler automatically.
+document close/reopen and file rebinding through the scheduler automatically.
 Use the checked source-value boundary for those operations. No live
 cross-document recompute or geometry integration is claimed by these read paths.

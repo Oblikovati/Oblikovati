@@ -274,3 +274,6 @@ mod refresh;
 
 #[path = "derived_propagation.rs"]
 mod propagation;
+
+#[path = "derived_automatic.rs"]
+mod automatic;

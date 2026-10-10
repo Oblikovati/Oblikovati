@@ -67,6 +67,7 @@ pub(super) fn apply(
         }
     }
     .map_err(|error| Error(error.to_string()))?;
+    workspace.refresh_after_command(id)?;
     encode(&state(workspace.workspace())?)
 }
 
@@ -116,6 +117,7 @@ fn jump(
         .map_err(|error| Error(error.to_string()))?
         .jump_to(request.position)
         .map_err(|error| Error(error.to_string()))?;
+    workspace.refresh_after_command(id)?;
     encode(&history(
         workspace.workspace(),
         TransactionHistoryArgs { document: id },
