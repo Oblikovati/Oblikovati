@@ -41,8 +41,8 @@ to the argument type's default, matching Go decoding; malformed JSON is refused.
 Physical conversion and formatting preserve the model's finite-value and
 dimension checks. No DTO or numeric-unit implementation is duplicated here.
 
-Twenty-six integration tests call the host through the real Rust API `Client`. They
-cover all nineteen query methods and the settings edit, active-document changes, display formats, non-default
+Thirty-one integration tests call the host through the real Rust API `Client`. They
+cover all nineteen query methods and six edits, active-document changes, display formats, non-default
 working scale, missing document context, dimensional failures, malformed calls,
 and unsupported mutation methods. They assert unchanged dirty state, generation,
 notification counts, and undo history. The API transport is exercised directly;
@@ -120,3 +120,25 @@ no-op redo preservation, existing groups, missing context, unported edits, and
 observer veto rollback. The display-mode parser is shared with package restore.
 This is an owner-side transport, not a bounded queue or native callback registry;
 those boundaries must be added before native add-in use is claimed.
+
+## Transactional group edits
+
+[#3634](https://github.com/Oblikovati/Oblikovati/issues/3634) adds the five group
+edits: `parameters.groups.add`, `delete`, `setDisplayName`, `addMember`, and
+`removeMember`. The host decodes each call into a prepared edit before opening its
+transaction. Settings and group edits share the same session command and response
+encoding path. Labels preserve the Go session's group-operation names.
+
+Group creation preserves add-in provenance and defaults an empty display name to
+the internal name. Display renaming keeps the internal key unchanged. Membership
+requires both an existing group and parameter; it cannot use the UI's automatic
+group-creation path. Removing one membership preserves other groups. Repeated
+membership operations are no-ops and do not add undo records.
+
+Deletion preserves parameters unless `deleteParameters` is true. A cascade uses
+the model aggregate's dependency checks and refuses deletion that would sicken a
+surviving reader. The candidate transaction prevents partial deletion; a successful
+cascade is one undo step. The canonical void reply is `{}`. Tests cover the typed
+lifecycle, order, independent membership, strict lookup, validation errors,
+cascade refusal/success with undo/redo, grouped abort, and observer veto. Existing
+settings and reentry tests also run against the shared edit path.

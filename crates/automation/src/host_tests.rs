@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
+use oblikovati_api::wire::*;
 use oblikovati_model::{history::DocumentSnapshot, identity::IdentityRegistration};
 use std::path::Path;
 

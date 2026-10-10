@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
+mod edit;
+mod groups_edit;
 mod host;
 mod settings_edit;
-pub use host::{EDIT_METHODS, SessionHost};
+pub use edit::EDIT_METHODS;
+pub use host::SessionHost;
 mod collection;
 mod detail;
 mod expressions;

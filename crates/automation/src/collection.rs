@@ -38,7 +38,7 @@ pub(super) fn groups(
     })
 }
 
-fn group_info(
+pub(super) fn group_info(
     parameters: &ParameterCollection<u64>,
     group: &ParameterGroup<u64>,
 ) -> Result<ParameterGroupInfo, Error> {
