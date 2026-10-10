@@ -33,16 +33,12 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         selection: ModelValueType,
     ) -> Result<(), ParameterError<Id>> {
         self.require_numeric_value(id)?;
-        if !matches!(
-            selection,
-            MODEL_VALUE_NOMINAL | MODEL_VALUE_LOWER | MODEL_VALUE_UPPER | MODEL_VALUE_MEDIAN
-        ) {
-            return Err(numeric_error(
-                id,
-                format!("{selection:?}"),
-                "Nominal, Lower, Upper, or Median",
-            ));
-        }
+        require_selection(selection)?;
+        self.store_model_selection(id, selection);
+        Ok(())
+    }
+
+    pub(super) fn store_model_selection(&mut self, id: Id, selection: ModelValueType) {
         let state = &mut self
             .records
             .get_mut(&id)
@@ -52,7 +48,6 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             state.model_value_type = selection;
             self.changed.insert(id);
         }
-        Ok(())
     }
 
     /// Store working-unit deviations; for example `parameters.set_deviation(id, 0.2, -0.1)`.
@@ -197,4 +192,14 @@ fn numeric_error<Id>(id: Id, found: impl ToString, expected: &'static str) -> Pa
         found: found.to_string(),
         expected,
     }
+}
+
+pub(super) fn require_selection<Id>(selection: ModelValueType) -> Result<(), ParameterError<Id>> {
+    if !matches!(
+        selection,
+        MODEL_VALUE_NOMINAL | MODEL_VALUE_LOWER | MODEL_VALUE_UPPER | MODEL_VALUE_MEDIAN
+    ) {
+        return Err(ParameterError::Selection(selection));
+    }
+    Ok(())
 }

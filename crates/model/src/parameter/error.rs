@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use crate::{dependency::DependencyError, expression::ExpressionError};
-use oblikovati_api::types::ParameterKind;
+use oblikovati_api::types::{ModelValueType, ParameterKind};
 use std::fmt;
 
 /// Rejected collection edit. Evaluation failures instead live on parameter health.
@@ -9,6 +9,7 @@ use std::fmt;
 pub enum ParameterError<Id> {
     Dependency(DependencyError<Id>),
     Syntax(ExpressionError),
+    Selection(ModelValueType),
     Value {
         id: Id,
         found: String,
@@ -42,6 +43,10 @@ impl<Id: fmt::Debug> fmt::Display for ParameterError<Id> {
         match self {
             Self::Dependency(error) => error.fmt(formatter),
             Self::Syntax(error) => error.fmt(formatter),
+            Self::Selection(selection) => write!(
+                formatter,
+                "model value selection {selection:?}: expected Nominal, Lower, Upper, or Median"
+            ),
             Self::Value {
                 id,
                 found,

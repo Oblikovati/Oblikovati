@@ -420,3 +420,20 @@ without inventing a last-good value. Seven tests cover these rules, generated-na
 collisions, read-only measurements, typed copies, and atomic refusal. The legacy
 `TestCopyToUser` passed at the fixed baseline with Go 1.27.0. Persistence, property
 rendering, and UI/API mutation entry points remain open.
+
+## Collection-wide tolerance selection — partial R2
+
+Tracking: [issue #3581](https://github.com/Oblikovati/Oblikovati/issues/3581).
+The collection can select nominal, lower, upper, or median model values across
+all parameters with a nondefault tolerance record. Eligibility and the returned
+count match Go, including zero-width and bandless annotation records and members
+already at the requested selection. Plain parameters and literals remain untouched.
+Individual and collection selection share validation and mutation rules.
+
+The Rust sweep validates every eligible parameter before mutation. An unhealthy
+member therefore refuses the whole operation without partial selection changes
+or new dirty flags. Repeated selections retain the eligible count but do not mark
+unchanged parameters dirty. Nominal expression readers do not recompute.
+Five regression tests cover these rules, and the corresponding Go sweep test
+passed at the fixed baseline. Collection settings, session transactions, and
+feature-engine consumption of the changed model values remain open.

@@ -20,6 +20,7 @@ mod remove;
 mod rename;
 mod service;
 mod state;
+mod sweep;
 mod tolerance;
 pub use reads::ParameterReads;
 
