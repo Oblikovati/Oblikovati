@@ -169,10 +169,17 @@ impl DocumentEditHistory {
 
     /// Revert the active frame without releasing IDs; example: `history.abort(&token)?;`.
     pub fn abort(&mut self, token: &TransactionToken) -> Result<(), HistoryError> {
-        self.require_top(token)?;
+        self.validate_abort(token)?;
         let generation = self.next_generation()?;
         self.current = self.open.pop().expect("validated frame").before;
         self.generation = generation;
+        Ok(())
+    }
+
+    /// Check rollback before a vetoable event; example: `history.validate_abort(&token)?;`.
+    pub fn validate_abort(&self, token: &TransactionToken) -> Result<(), HistoryError> {
+        self.require_top(token)?;
+        self.next_generation()?;
         Ok(())
     }
 

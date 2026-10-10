@@ -43,9 +43,45 @@ The fixed Go baseline is `aa8297d1b0ac33c024f19e54821536d76e8a447a`;
 its complete `go test ./command` suite passes. The source comparison uses
 `command/transaction.go` and `command/undo.go`.
 
-Session command dispatch, lifecycle events and veto, checkpoint navigation,
-history retention, property refresh policy, and worker result adoption remain
+Checkpoint navigation, history retention, and worker result adoption remain
 unimplemented. Snapshot scope must grow with the feature and sketch model.
 This evidence does not prove geometry isolation, event parity, or a live GUI.
 The current snapshots prioritize owned state; history memory scaling still
 needs the planned retention and delta work.
+
+## Session transaction lifecycle — partial R2
+
+Tracking: [#3613](https://github.com/Oblikovati/Oblikovati/issues/3613).
+`oblikovati-session` adds one `DocumentSession` owner per document. Bounded
+groups share one model transaction: nested end closes one level, while abort
+cancels the whole group, as in Go `app/undo.go`. Callers explicitly begin, edit,
+and end a group. The edit path refreshes exposed properties in the same candidate
+as parameter changes. A command error or failed refresh adopts neither change.
+
+The injected `TransactionObserver` sees read-only snapshots. Commit, undo, and
+redo have a Before phase that can refuse the move with a reason. A vetoed commit
+aborts the group and reports Aborted after rollback; vetoed navigation preserves
+the current state and cursor. Successful cursor movement produces one change
+notification followed by its After observation. Explicit abort has only an
+After observation. Close consumes the owner and reports Deleted without veto.
+Invalid navigation is refused before any observer is called. Commit checks
+rollback capacity before asking policy, so a veto can restore the group.
+
+Payloads, event strings, and transaction-point enums come directly from the
+pinned Rust API. No transport DTO is declared in the session crate. The payload
+mapping matches Go `addin/events/lifecycle_relay.go`: current for commit/abort,
+previous for undo, next for redo, and unknown for a deleted stream. Before is an
+in-process policy call; this does not claim remote add-in veto support.
+
+Ten integration tests use a named recording observer to check payloads, order,
+visible state, nesting, rollback, veto, failed command/property refresh, redo
+replacement, and close. An internal test checks nesting-counter exhaustion.
+The five Go lifecycle tests in `app/transaction_events_test.go` pass at the fixed
+baseline. These tests cover model state, not kernel evaluation or a viewport.
+
+Workspace registration/routing, automatic command groups, recipe no-op filtering,
+event subscriptions and transport delivery, checkpoint navigation, and worker
+result adoption remain pending. This low-level owner currently records explicit
+empty groups, like Go `command.History`; Go session recipe-delta filtering has
+not yet been ported. Close consumes this owner but does not yet unregister file
+identity or a workspace entry. Those belong to the workspace coordinator.
