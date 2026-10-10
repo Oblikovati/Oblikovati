@@ -454,3 +454,22 @@ fn loaded_parameter_export_flags_rebuild_property_provenance() {
     assert_eq!(property.value, VariantValue::String("steel".into()));
     assert_eq!(property.from_parameter, "label");
 }
+
+#[test]
+fn malformed_attributes_claim_no_document_identity() {
+    use oblikovati_persistence::load::load_parameter_package;
+    let mut index = DocumentIdentityIndex::default();
+    let mut generator = source();
+    let encoded = b"schemaVersion: 2\ndocumentType: 1\nattributes: [1, 0, 0, 0]\n";
+    let result = load_parameter_package(
+        Path::new("attributes.opd"),
+        1,
+        "alpha",
+        &mut index,
+        &mut generator,
+        &mut reader(encoded),
+    );
+    assert!(result.unwrap_err().to_string().contains("attributes"));
+    assert!(index.identity(1).is_none());
+    assert_eq!(generator.next, 0);
+}

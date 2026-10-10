@@ -265,6 +265,22 @@ envelopes normalize to current encoding; two serialized keys that normalize to
 the same identity are rejected as duplicates. Tests cover every truncated prefix,
 malformed keys/counts, duplicate namespaces/attributes, and trailing input.
 
-This completes the binary collection codecs. Attaching these collections to
-live document snapshots, persistence sections, and typed API commands remains
-open; decoding does not resolve an entity in the kernel.
+This completes the binary collection codecs. Attribute package sections are
+covered below. Live document snapshots and typed API commands remain open;
+decoding does not resolve an entity in the kernel.
+
+## Attribute package section — partial R2
+
+Tracking: [#3677](https://github.com/Oblikovati/Oblikovati/issues/3677).
+`DocumentPackage::restore_attributes` decodes the Go `attributes` YAML byte
+sequence through the binary collection codec. Absent, null, and empty sections
+mean no attributes. Non-byte entries and malformed collections are rejected.
+Typed document loading performs this check before identity generation and
+registration; invalid metadata cannot claim a live document identity.
+
+`with_attributes` replaces only this section, validates the retained input first,
+and checks exact recipe reconstruction. Empty collections omit the section;
+empty anchors remain represented. Tests cover the Go binary fixture inside a
+YAML package, signed zero, clearing, malformed byte sequences, and retention
+through parameter/property edits. Live attributes still need to become part
+of session snapshots and command history; this step provides the package path.
