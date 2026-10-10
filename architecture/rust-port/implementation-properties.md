@@ -247,8 +247,8 @@ before they can enter the collection.
 Tests cover insertion order, replacement, empty namespace/anchor retention,
 missing-target operations, filtered searches, all payload kinds, clone isolation,
 signed zero, malformed envelopes, and invalid-edit atomicity. The Go
-`model/attr` suite passes at baseline `aa8297d1`. Binary attribute storage and session snapshots are covered below. API dispatch
-and live entity binding remain open.
+`model/attr` suite passes at baseline `aa8297d1`. Binary storage, session snapshots, and typed API dispatch are covered below.
+Live entity binding remains open.
 
 ## Binary attribute collections — partial R2
 
@@ -266,8 +266,8 @@ the same identity are rejected as duplicates. Tests cover every truncated prefix
 malformed keys/counts, duplicate namespaces/attributes, and trailing input.
 
 This completes the binary collection codecs. Attribute package sections are
-covered below, together with live document snapshots. Typed API commands remain
-open; decoding does not resolve an entity in the kernel.
+covered below, together with live document snapshots and typed API commands.
+Decoding does not resolve an entity in the kernel.
 
 ## Attribute package section — partial R2
 
@@ -297,5 +297,25 @@ abort, veto, and refresh-generation changes. Signed zero is compared exactly.
 Attributes remain outside the geometry recipe digest; changing add-in metadata
 does not itself create a new model geometry revision. Tests cover template
 ownership, normal/copy save/reopen, failed save state, history operations,
-unchanged edits, and refresh generation. Typed attribute API dispatch and live
-entity binding remain open.
+unchanged edits, and refresh generation. Typed API dispatch is covered below;
+live entity binding remains open.
+
+## Typed attribute API — partial R2
+
+Tracking: [#3679](https://github.com/Oblikovati/Oblikovati/issues/3679).
+The owned Rust hosts now route the canonical `attributes.get`, `list`,
+`listSets`, `find`, `set`, and `delete` methods. Reads do not create anchors.
+Set/delete use session commands, so edits participate in veto, history, dirty
+state, and file save. Missing gets echo the requested address with `found=false`
+and an empty string value. Set names are sorted; attribute enumeration and
+cross-document search retain workspace/anchor insertion order. Empty set-name
+lists serialize as `[]`; empty attribute/search lists serialize as `null`.
+
+Like the Go router, an empty target selects the document reference (kind 20).
+Other target strings are stored verbatim in external-reference envelopes
+(kind 21); they are not parsed as base64 or bound to geometry. Unsupported
+UTF-8 in a stored external target is reported as an error rather than silently
+replaced. Tests cover typed-client queries/edits, target isolation, cross-document
+search, deletion counts, missing values, veto, undo, and file save/reopen.
+The shared inventory is now 27 queries, 20 edits, and 6 transaction methods.
+Native transport and entity binding remain separate work.

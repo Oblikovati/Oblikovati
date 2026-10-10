@@ -330,6 +330,6 @@ fn group_edits_obey_veto_and_inventory_contains_no_duplicates() {
             .iter()
             .collect::<std::collections::BTreeSet<_>>()
             .len(),
-        18
+        20
     );
 }

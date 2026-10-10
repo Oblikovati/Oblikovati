@@ -9,7 +9,9 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 18] = [
+pub const EDIT_METHODS: [&str; 20] = [
+    METHOD_ATTRIBUTES_SET,
+    METHOD_ATTRIBUTES_DELETE,
     METHOD_PARAMETERS_SET_SETTINGS,
     METHOD_PARAMETERS_DERIVED_TABLES_DELETE,
     METHOD_DOCUMENTS_SET_UNITS,
@@ -31,6 +33,8 @@ pub const EDIT_METHODS: [&str; 18] = [
 ];
 
 pub(super) enum PreparedEdit {
+    AttributeSet(SetAttributeArgs),
+    AttributeDelete(DeleteAttributeArgs),
     Settings(ParameterSettingsUpdateArgs),
     DerivedDelete(DerivedParameterTableDeleteArgs),
     Units(SetDocumentUnitsArgs),
@@ -53,6 +57,8 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_ATTRIBUTES_SET => Ok(Self::AttributeSet(decode(method, request)?)),
+            METHOD_ATTRIBUTES_DELETE => Ok(Self::AttributeDelete(decode(method, request)?)),
             METHOD_PARAMETERS_DERIVED_TABLES_DELETE => {
                 Ok(Self::DerivedDelete(decode(method, request)?))
             }
@@ -87,6 +93,8 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::AttributeSet(_) => "Set Attribute",
+            Self::AttributeDelete(_) => "Delete Attribute",
             Self::DerivedDelete(_) => "Edit Derived Parameters",
             Self::Units(_) => "Set Units",
             Self::Property(_) => "Set Property",
@@ -115,6 +123,13 @@ impl PreparedEdit {
     ) -> Result<Vec<u8>, Error> {
         let parameters = &mut snapshot.parameters;
         match self {
+            Self::AttributeSet(request) => {
+                encode(&crate::attributes::set(&mut snapshot.attributes, request)?)
+            }
+            Self::AttributeDelete(request) => encode(&crate::attributes::delete(
+                &mut snapshot.attributes,
+                request,
+            )?),
             Self::DerivedDelete(request) => crate::derived_edit::delete(parameters, request),
             Self::Units(request) => encode(&crate::units_edit::apply(parameters, request)?),
             Self::Property(request) => encode(&properties::set(
@@ -147,6 +162,11 @@ impl PreparedEdit {
 
 impl PreparedEdit {
     pub(super) fn document(&self, active: Option<u64>) -> Result<u64, Error> {
+        match self {
+            Self::AttributeSet(request) => return Ok(request.document),
+            Self::AttributeDelete(request) => return Ok(request.document),
+            _ => {}
+        }
         if let Self::Property(request) = self {
             return Ok(request.document);
         }

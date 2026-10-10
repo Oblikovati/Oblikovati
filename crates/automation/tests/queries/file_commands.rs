@@ -308,3 +308,6 @@ mod property_format;
 
 #[path = "file_attributes.rs"]
 mod attributes;
+
+#[path = "file_attribute_api.rs"]
+mod attribute_api;

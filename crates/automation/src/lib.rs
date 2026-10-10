@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
+mod attributes;
 mod command_owner;
 mod edit;
 mod file_host;
@@ -37,7 +38,11 @@ use serde::{Serialize, de::DeserializeOwned};
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 23] = [
+pub const QUERY_METHODS: [&str; 27] = [
+    METHOD_ATTRIBUTES_GET,
+    METHOD_ATTRIBUTES_LIST,
+    METHOD_ATTRIBUTES_LIST_SETS,
+    METHOD_ATTRIBUTES_FIND,
     METHOD_DOCUMENTS_GET_UNITS,
     METHOD_DOCUMENTS_LIST_PROPERTIES,
     METHOD_DOCUMENTS_GET_PROPERTY,
@@ -94,6 +99,10 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_ATTRIBUTES_GET
+            | METHOD_ATTRIBUTES_LIST
+            | METHOD_ATTRIBUTES_LIST_SETS
+            | METHOD_ATTRIBUTES_FIND => attributes::dispatch(self.workspace, method, request),
             METHOD_DOCUMENTS_LIST_PROPERTIES => {
                 encode(&properties::list(self.workspace, decode(method, request)?)?)
             }
