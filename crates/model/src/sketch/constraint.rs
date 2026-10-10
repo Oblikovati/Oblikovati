@@ -92,6 +92,13 @@ pub enum PlanarConstraint {
         curve: SketchEntityId,
         side: LineContactSide,
     },
+    TangentDistance {
+        line: SketchEntityId,
+        curve: SketchEntityId,
+        parameter: u64,
+        options: super::TangentDistanceOptions,
+        contact: super::TangentDistanceContact,
+    },
     CircularTangent {
         curves: [SketchEntityId; 2],
         contact: CircleContact,
@@ -166,7 +173,8 @@ impl Sketch2D {
                 }
                 Vec::new()
             }
-            PlanarConstraint::LineTangent { line, curve, .. } => {
+            PlanarConstraint::LineTangent { line, curve, .. }
+            | PlanarConstraint::TangentDistance { line, curve, .. } => {
                 self.circular_frame(*curve)?;
                 self.line(*line)?.endpoints.to_vec()
             }

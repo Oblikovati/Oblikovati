@@ -76,6 +76,7 @@ fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
         if let PlanarConstraint::Distance { parameter, .. }
         | PlanarConstraint::Radius { parameter, .. }
         | PlanarConstraint::Diameter { parameter, .. }
+        | PlanarConstraint::TangentDistance { parameter, .. }
         | PlanarConstraint::ArcLength { parameter, .. }
         | PlanarConstraint::Angle { parameter, .. }
         | PlanarConstraint::ThreePointAngle { parameter, .. } = constraint.relation
@@ -108,6 +109,9 @@ fn equation(
         PlanarConstraint::PointOnCircularCurve { .. } => PlanarEquation::PointOnCircle,
         PlanarConstraint::LineTangent { side, .. } => PlanarEquation::LineTangent(side),
         PlanarConstraint::CircularTangent { contact, .. } => PlanarEquation::CircleTangent(contact),
+        PlanarConstraint::TangentDistance { .. } => {
+            super::tangent_distance_compile::prepare_distance(sketch, constraint, parameters)?
+        }
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
         PlanarConstraint::Diameter { parameter, .. } => {
             PlanarEquation::Radius(diameter_radius(constraint, parameter, parameters)?)
@@ -156,6 +160,7 @@ fn length_target(
         parameters,
         DimensionDomain {
             kind: Dimension::Length,
+            minimum: 0.0,
             maximum: f64::INFINITY,
             label: "length",
             expected: "a healthy finite nonnegative working-unit length",
@@ -163,7 +168,7 @@ fn length_target(
     )
 }
 
-fn positive_length_target(
+pub(super) fn positive_length_target(
     constraint: &SketchConstraint,
     parameter: u64,
     parameters: &ParameterCollection<u64>,
@@ -204,19 +209,21 @@ fn angle_target(
         parameters,
         DimensionDomain {
             kind: Dimension::Angle,
+            minimum: 0.0,
             maximum: std::f64::consts::PI,
             label: "angle",
             expected: "a healthy finite angular quantity in [0, pi] radians",
         },
     )
 }
-struct DimensionDomain {
-    kind: Dimension,
-    maximum: f64,
-    label: &'static str,
-    expected: &'static str,
+pub(super) struct DimensionDomain {
+    pub kind: Dimension,
+    pub minimum: f64,
+    pub maximum: f64,
+    pub label: &'static str,
+    pub expected: &'static str,
 }
-fn dimensional_target(
+pub(super) fn dimensional_target(
     constraint: &SketchConstraint,
     parameter: u64,
     parameters: &ParameterCollection<u64>,
@@ -225,7 +232,7 @@ fn dimensional_target(
     let quantity = parameter_quantity(constraint, parameter, parameters)?;
     if quantity.dimension != domain.kind
         || !quantity.value.is_finite()
-        || !(0.0..=domain.maximum).contains(&quantity.value)
+        || !(domain.minimum..=domain.maximum).contains(&quantity.value)
     {
         return Err(SketchError::Definition(format!(
             "sketch constraint {:?} {} parameter {parameter} value {quantity:?}: expected {}",
@@ -235,7 +242,7 @@ fn dimensional_target(
     Ok(quantity.value)
 }
 
-fn diameter_radius(
+pub(super) fn diameter_radius(
     constraint: &SketchConstraint,
     parameter: u64,
     parameters: &ParameterCollection<u64>,

@@ -22,6 +22,9 @@ mod shared_contact;
 mod solve;
 mod source;
 mod tangent;
+mod tangent_distance;
+mod tangent_distance_compile;
+mod tangent_distance_residual;
 mod tangent_residual;
 mod variables;
 pub use angle::AngleTurn;
@@ -35,6 +38,7 @@ pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
 pub use solve::SketchSolveOutcome;
 pub use source::SketchRelationId;
 pub use tangent::{CircleContact, LineContactSide};
+pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, TangentLean};
 
 /// Ordered sketch ownership; shared endpoints use the same local point identity.
 #[derive(Clone, Debug, Default, PartialEq)]

@@ -33,6 +33,19 @@ impl Sketch2D {
             PlanarConstraint::LineTangent { line, curve, .. } => {
                 self.shared_line_contact(*line, *curve)?;
             }
+            PlanarConstraint::TangentDistance {
+                line,
+                curve,
+                contact,
+                ..
+            } => {
+                let shared = self.shared_line_contact(*line, *curve)?.is_some();
+                if shared != contact.lean.is_some() {
+                    return Err(SketchError::Definition(format!(
+                        "tangent-distance contact {contact:?}, shared endpoint {shared}: expected a lean exactly when a contact identity is shared"
+                    )));
+                }
+            }
             PlanarConstraint::CircularTangent { curves, .. } => {
                 self.shared_circular_contact(*curves)?;
             }

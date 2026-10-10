@@ -14,7 +14,8 @@ impl Sketch2D {
             PlanarConstraint::Radius { curve, .. }
             | PlanarConstraint::Diameter { curve, .. }
             | PlanarConstraint::PointOnCircularCurve { curve, .. }
-            | PlanarConstraint::LineTangent { curve, .. } => vec![*curve],
+            | PlanarConstraint::LineTangent { curve, .. }
+            | PlanarConstraint::TangentDistance { curve, .. } => vec![*curve],
             PlanarConstraint::Concentric { curves }
             | PlanarConstraint::EqualRadius { curves }
             | PlanarConstraint::CircularTangent { curves, .. } => curves.to_vec(),

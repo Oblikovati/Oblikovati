@@ -32,6 +32,17 @@ pub(super) enum PlanarEquation {
         side: LineContactSide,
     },
     PinnedCircularTangent(CircleContact),
+    TangentDistance {
+        target: f64,
+        far_side: bool,
+        contact: super::TangentDistanceContact,
+        at_b: Option<bool>,
+    },
+    PinnedTangentDistance {
+        target: f64,
+        at_b: bool,
+        side: LineContactSide,
+    },
     EqualRadius,
     Radius(f64),
     LineTangent(LineContactSide),
@@ -62,7 +73,10 @@ impl PreparedConstraint {
             PlanarEquation::Fix(_) | PlanarEquation::EqualRadius => 2,
             PlanarEquation::Radius(_) => 1,
             PlanarEquation::PointOnCircle => 5,
-            PlanarEquation::LineTangent(_) | PlanarEquation::PinnedLineTangent { .. } => 7,
+            PlanarEquation::LineTangent(_)
+            | PlanarEquation::PinnedLineTangent { .. }
+            | PlanarEquation::TangentDistance { .. }
+            | PlanarEquation::PinnedTangentDistance { .. } => 7,
             PlanarEquation::PinnedCircularTangent(_) | PlanarEquation::ArcMidpoint(_) => 8,
             PlanarEquation::CircleTangent(_)
             | PlanarEquation::ArcCircularity
@@ -95,6 +109,17 @@ impl ResidualSource for PreparedConstraint {
         match self.equation {
             PlanarEquation::PinnedLineTangent { at_b, side } => {
                 tangent_residual::pinned_line_tangent(variables, at_b, side)
+            }
+            PlanarEquation::TangentDistance {
+                target,
+                far_side,
+                contact,
+                at_b,
+            } => super::tangent_distance_residual::distance_residual(
+                variables, target, far_side, contact, at_b,
+            ),
+            PlanarEquation::PinnedTangentDistance { target, at_b, side } => {
+                super::tangent_distance_residual::angular_residual(variables, target, at_b, side)
             }
             PlanarEquation::PinnedCircularTangent(contact) => {
                 tangent_residual::pinned_circular_tangent(variables, contact)

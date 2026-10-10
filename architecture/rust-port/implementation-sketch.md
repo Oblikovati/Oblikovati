@@ -461,3 +461,5 @@ dependencies, target domains, unrepresentable half-diameters, bad references,
 source errors and cancellation. Complete solve/rank sweeps cover `1e-100`
 through `1e100`. Tangent-distance and other dimension forms, sketch persistence,
 API/UI integration, finite-sweep profile and kernel feature acceptance remain open.
+
+Tangent-distance dimensions now have separate [implementation evidence](implementation-sketch-offsets.md).

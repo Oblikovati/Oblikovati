@@ -69,11 +69,17 @@ pub(super) fn pinned_line_tangent(
     side: LineContactSide,
 ) -> Result<Vec<DualNumber>, ResidualError> {
     require_shared_line_side(variables, side)?;
+    // A distance-minus-derived-radius equation has a double root here (Go #2014).
+    Ok(vec![radial_projection(variables, at_b)?])
+}
+pub(super) fn radial_projection(
+    variables: &[DualNumber],
+    at_b: bool,
+) -> Result<DualNumber, ResidualError> {
     let anchor = point(variables, 0)?;
     let direction = unit_direction(&point(variables, 2)?.minus(&anchor)?)?;
     let touch = point(variables, if at_b { 2 } else { 0 })?;
-    // A distance-minus-derived-radius equation has a double root here (Go #2014).
-    Ok(vec![direction.dot(&point(variables, 4)?.minus(&touch)?)?])
+    Ok(direction.dot(&point(variables, 4)?.minus(&touch)?)?)
 }
 pub(super) fn radial_contact_dot(variables: &[DualNumber]) -> Result<DualNumber, ResidualError> {
     let touch = point(variables, 6)?;

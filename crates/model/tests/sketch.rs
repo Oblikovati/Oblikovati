@@ -470,3 +470,6 @@ mod angles;
 
 #[path = "sketch/circular_dimensions.rs"]
 mod circular_dimensions;
+
+#[path = "sketch/tangent_distances.rs"]
+mod tangent_distances;

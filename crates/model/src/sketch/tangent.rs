@@ -47,7 +47,7 @@ impl Sketch2D {
         .map_err(|cause| selection_error(id, cause))?;
         self.add_constraint(id, PlanarConstraint::CircularTangent { curves, contact })
     }
-    fn line_curve_values(
+    pub(super) fn line_curve_values(
         &self,
         line: SketchEntityId,
         curve: SketchEntityId,
@@ -71,13 +71,13 @@ impl Sketch2D {
         Ok(values)
     }
 }
-fn constants(values: &[f64]) -> Result<Vec<DualNumber>, ResidualError> {
+pub(super) fn constants(values: &[f64]) -> Result<Vec<DualNumber>, ResidualError> {
     Ok(values
         .iter()
         .map(|value| DualNumber::constant(*value))
         .collect::<Result<_, _>>()?)
 }
-fn select_line_side(values: &[f64]) -> Result<LineContactSide, ResidualError> {
+pub(super) fn select_line_side(values: &[f64]) -> Result<LineContactSide, ResidualError> {
     let variables = constants(values)?;
     let signed = tangent_residual::signed_line_distance(&variables)?.value();
     if signed == 0.0 {
