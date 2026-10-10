@@ -7,9 +7,18 @@ use std::fmt;
 #[derive(Clone, Debug, PartialEq)]
 pub enum UnitError {
     UnknownUnit(String),
-    WrongCategory { name: String, expected: Dimension },
+    WrongCategory {
+        name: String,
+        expected: Dimension,
+    },
     InvalidNumber(String),
     InvalidScale(f64),
+    Conversion {
+        value: f64,
+        from: String,
+        to: String,
+        expected: &'static str,
+    },
 }
 
 impl fmt::Display for UnitError {
@@ -25,6 +34,15 @@ impl fmt::Display for UnitError {
             Self::InvalidNumber(input) => write!(
                 formatter,
                 "quantity {input:?}: expected a finite decimal number followed by an optional unit"
+            ),
+            Self::Conversion {
+                value,
+                from,
+                to,
+                expected,
+            } => write!(
+                formatter,
+                "conversion of {value} from {from:?} to {to:?}: expected {expected}"
             ),
             Self::InvalidScale(scale) => write!(
                 formatter,

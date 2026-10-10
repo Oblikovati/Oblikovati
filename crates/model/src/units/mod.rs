@@ -5,6 +5,8 @@ mod error;
 mod literal;
 mod registry;
 mod scale;
+mod service;
+pub use service::{convert_value, parse_category, unit_category};
 
 use crate::quantity::{Dimension, Quantity};
 pub use error::UnitError;

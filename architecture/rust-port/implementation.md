@@ -323,3 +323,26 @@ and read-only edits, powered-unit rejection, and rename token boundaries. The
 three Go `TestQualifyAuthored` tests passed at the fixed baseline with Go 1.27.0.
 Future UI, commands, and API user-input paths must call these authored entry
 points; raw expression edits remain available for already qualified source.
+
+## Unit and expression services — partial R2
+
+Tracking: [issue #3577](https://github.com/Oblikovati/Oblikovati/issues/3577).
+Named-unit conversion and category lookup reuse the existing registry. Category
+names retain the Go lowercase vocabulary. Conversion is independent of document
+preferences and working scale, and keeps the Go multiply-then-divide arithmetic
+order. Unknown units, category mismatches, and non-finite input/output return
+errors. Mismatch diagnostics include both unit names and the supplied value.
+
+Document expression evaluation uses healthy current nominal values and the
+existing scale-aware parser. It does not use tolerance-selected model values,
+create parameters, or mark parameters changed. Unresolved, failed, and literal
+references are refused. Non-finite results carry the original expression and
+result in a named error. Authored qualification reuses this service, so a
+non-finite expression retains its original source for downstream diagnostics.
+The expression engine's lower-level IEEE arithmetic remains unchanged.
+
+Eight new tests cover all 676 registered-unit pairs against independent physical
+factors, category names, signed zero, overflow, live nominal reads, micro-units
+at three scales, unusable references, and unchanged collection state. Four Go
+unit/expression service tests passed at the fixed baseline with Go 1.27.0.
+Display formatting, precision preferences, and API router integration remain open.

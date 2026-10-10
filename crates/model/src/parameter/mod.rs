@@ -11,6 +11,7 @@ mod reads;
 mod record;
 mod remove;
 mod rename;
+mod service;
 mod state;
 mod tolerance;
 pub use reads::ParameterReads;

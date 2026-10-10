@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use crate::quantity::QuantityError;
+use crate::quantity::{Quantity, QuantityError};
 use std::fmt;
 
 /// Positioned syntax or evaluation failure, ready for parameter health reporting.
@@ -21,6 +21,10 @@ pub enum ExpressionError {
         expected: &'static str,
     },
     Arithmetic(QuantityError),
+    NonFinite {
+        source: String,
+        value: Quantity,
+    },
 }
 
 impl fmt::Display for ExpressionError {
@@ -46,6 +50,10 @@ impl fmt::Display for ExpressionError {
                 "function {name:?}: found {found}; expected {expected}"
             ),
             Self::Arithmetic(error) => error.fmt(formatter),
+            Self::NonFinite { source, value } => write!(
+                formatter,
+                "expression {source:?} produced {value:?}: expected a finite numeric result"
+            ),
         }
     }
 }

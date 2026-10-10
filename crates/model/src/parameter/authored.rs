@@ -44,12 +44,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     }
 
     fn authored_is_unitless(&self, source: &str) -> bool {
-        let Ok(expression) = Expression::parse(source, &self.units) else {
-            return false;
-        };
-        expression
-            .bind(|name| self.find(name))
-            .evaluate(|id| self.records[&id].state.current_value())
+        self.evaluate_expression(source)
             .is_ok_and(|quantity| quantity.dimension == Dimension::Unitless)
     }
 }
