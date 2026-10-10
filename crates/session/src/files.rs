@@ -8,6 +8,7 @@ mod create;
 mod error;
 mod open;
 mod save_as;
+mod template;
 use crate::{
     TransactionObserver,
     workspace::{

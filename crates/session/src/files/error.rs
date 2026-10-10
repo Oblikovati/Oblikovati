@@ -11,6 +11,11 @@ use std::{error::Error, fmt, io, path::PathBuf};
 /// A failed file operation; no new binding or successful save was adopted.
 #[derive(Debug)]
 pub enum FileWorkspaceError {
+    CreationMetadata {
+        field: &'static str,
+        value: String,
+    },
+    TemplateDestination(PathBuf),
     DocumentType(u32),
     Package(PackageCodecError),
     Identity(IdentityTransitionError),
@@ -37,6 +42,14 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::CreationMetadata { field, value } => write!(
+                output,
+                "new-file {field} {value:?}: expected a nonempty explicit file path"
+            ),
+            Self::TemplateDestination(path) => write!(
+                output,
+                "template destination {path:?}: expected a different file from the source template"
+            ),
             Self::DocumentType(value) => write!(
                 output,
                 "document type {value}: expected Part, Assembly, Drawing, or Presentation"
@@ -83,7 +96,9 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::DocumentType(_)
+            Self::CreationMetadata { .. }
+            | Self::TemplateDestination(_)
+            | Self::DocumentType(_)
             | Self::TemplateIdentity(_)
             | Self::MissingFile(_)
             | Self::RelativeCanonical(_)

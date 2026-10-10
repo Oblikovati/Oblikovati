@@ -478,3 +478,6 @@ mod batch;
 
 #[path = "files/create.rs"]
 mod create;
+
+#[path = "files/template.rs"]
+mod template;

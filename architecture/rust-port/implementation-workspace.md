@@ -239,3 +239,27 @@ inputs, GUID reuse, and native create/save/reopen. The package may contain the
 four known document kinds, but only the current parameter/property domains are
 executed. Built-in content factories, template-file search, unnamed UI documents,
 and full feature/assembly/drawing reconstruction remain pending.
+
+## Explicit template files — partial R2
+
+Tracking: [#3622](https://github.com/Oblikovati/Oblikovati/issues/3622).
+`FileWorkspace::create_from_template` consumes canonical API `NewFileMetadata`.
+It requires explicit `fileName` and `templateFile` paths, resolves both, and
+refuses any destination that is open or resolves to the template itself. It
+reads the saved template envelope through the injected file interface, applies
+nonempty display-name/subtype overrides, then uses the validated creation path.
+Empty overrides inherit the template's values. Creation writes neither file.
+
+The template is not opened or registered as a document. An already-open template
+keeps its identity and unsaved edits; those edits do not replace its saved file
+as the source of the new recipe. The new document gets a fresh identity and stays
+dirty until saved. Read, decode, recipe, path, or identity failures do not publish
+a session. `read_package` exposes the persistence envelope reader without
+claiming a document identity, so this path shares the ordinary loader's codec.
+
+Six tests cover metadata inheritance and overrides, open-template isolation,
+missing metadata paths, canonical aliases, read/codec failures, and native
+template/create/first-save/reopen with unchanged template bytes. Path identity
+uses canonical paths, as elsewhere in this coordinator; it is not an inode
+index. Project template search, built-in content factories, subtype registration
+and initialization, and remote `documents.create` dispatch remain pending.

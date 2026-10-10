@@ -55,7 +55,7 @@ pub fn read_parameter_package(
     source: &mut dyn GuidSource,
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
-    let package = read_snapshot(path, reader)?;
+    let package = read_package(path, reader)?;
     let restored = package
         .restore_document_parameters()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;

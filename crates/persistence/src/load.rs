@@ -75,11 +75,13 @@ pub fn load_registered(
     source: &mut dyn GuidSource,
     reader: &mut dyn PackageFileReader,
 ) -> Result<LoadedPackage, PackageLoadError> {
-    let package = read_snapshot(path, reader)?;
+    let package = read_package(path, reader)?;
     register_package(path, session_id, version, index, source, package)
 }
 
-fn read_snapshot(
+/// Read and validate a package envelope without registering or restoring its document identity.
+/// Example: `let template = read_package(path, &mut reader)?;`.
+pub fn read_package(
     path: &Path,
     reader: &mut dyn PackageFileReader,
 ) -> Result<DocumentPackage, PackageLoadError> {
