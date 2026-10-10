@@ -464,3 +464,17 @@ Typed-client tests cover forced discard and recreation, save-before-close for
 bound documents, and partial progress when an unbound document needs Save As.
 The later documents remain open and unwritten after that failure. The Go
 `TestCloseAllDocuments` and `TestCloseDocumentByID` reference tests pass locally.
+
+## Derived parameter table deletion
+
+[#3655](https://github.com/Oblikovati/Oblikovati/issues/3655) connects
+`parameters.derivedTables.delete` to the existing model operation through the
+shared edit owner. The `Edit Derived Parameters` transaction removes produced
+parameters, updates dependent health, and can be undone or redone. Missing tables,
+feature-owned tables, and observer vetoes refuse the edit without changing the
+recipe or undo history. Typed-client tests verify these cases.
+
+This is the deletion path for retained recipe tables. Live source resolution,
+API table enumeration/creation/link edits, and the workspace reference graph
+remain unported. The local recipe operation does not establish cross-document
+recompute or reference-graph parity.

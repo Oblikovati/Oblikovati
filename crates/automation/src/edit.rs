@@ -9,8 +9,9 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 17] = [
+pub const EDIT_METHODS: [&str; 18] = [
     METHOD_PARAMETERS_SET_SETTINGS,
+    METHOD_PARAMETERS_DERIVED_TABLES_DELETE,
     METHOD_DOCUMENTS_SET_UNITS,
     METHOD_DOCUMENTS_SET_PROPERTY,
     METHOD_PARAMETERS_SET_TOLERANCE,
@@ -31,6 +32,7 @@ pub const EDIT_METHODS: [&str; 17] = [
 
 pub(super) enum PreparedEdit {
     Settings(ParameterSettingsUpdateArgs),
+    DerivedDelete(DerivedParameterTableDeleteArgs),
     Units(SetDocumentUnitsArgs),
     Property(SetPropertyArgs),
     Tolerance(ParameterToleranceArgs),
@@ -51,6 +53,9 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_PARAMETERS_DERIVED_TABLES_DELETE => {
+                Ok(Self::DerivedDelete(decode(method, request)?))
+            }
             METHOD_DOCUMENTS_SET_UNITS => Ok(Self::Units(decode(method, request)?)),
             METHOD_DOCUMENTS_SET_PROPERTY => Ok(Self::Property(decode(method, request)?)),
             METHOD_PARAMETERS_UPDATE => Ok(Self::Update(decode(method, request)?)),
@@ -82,6 +87,7 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::DerivedDelete(_) => "Edit Derived Parameters",
             Self::Units(_) => "Set Units",
             Self::Property(_) => "Set Property",
             Self::Update(_) => "Edit Parameter",
@@ -109,6 +115,7 @@ impl PreparedEdit {
     ) -> Result<Vec<u8>, Error> {
         let parameters = &mut snapshot.parameters;
         match self {
+            Self::DerivedDelete(request) => crate::derived_edit::delete(parameters, request),
             Self::Units(request) => encode(&crate::units_edit::apply(parameters, request)?),
             Self::Property(request) => encode(&properties::set(&mut snapshot.properties, request)?),
             Self::Update(request) => encode(&parameter_update::apply(parameters, request)?),

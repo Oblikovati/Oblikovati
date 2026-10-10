@@ -194,3 +194,5 @@ fn encode<T: Serialize>(response: &T) -> Result<Vec<u8>, Error> {
         ))
     })
 }
+
+mod derived_edit;

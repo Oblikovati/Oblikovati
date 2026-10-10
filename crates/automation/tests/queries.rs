@@ -383,3 +383,6 @@ mod properties;
 
 #[path = "queries/file_discovery.rs"]
 mod file_discovery;
+
+#[path = "queries/derived_delete.rs"]
+mod derived_delete;
