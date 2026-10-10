@@ -400,6 +400,7 @@ dependencies = [
 name = "oblikovati-persistence"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "serde",
  "serde_yaml_ng",
  "tempfile",

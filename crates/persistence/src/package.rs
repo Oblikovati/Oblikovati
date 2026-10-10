@@ -2,9 +2,12 @@
 
 use serde::Deserialize;
 use serde_yaml_ng::{Mapping, Value};
+use std::collections::BTreeMap;
 use std::{error::Error, fmt};
 
+mod resources;
 mod validation;
+pub use resources::{PackageResource, ResourceContents};
 
 /// File-level metadata. Document kind remains a numeric wire value until host validation.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -24,6 +27,8 @@ pub struct PackageManifest {
 pub struct DocumentPackage {
     manifest: PackageManifest,
     root: Mapping,
+    streams: BTreeMap<String, Vec<u8>>,
+    resources: BTreeMap<String, PackageResource>,
 }
 
 /// A refused package with an input-specific diagnostic.
@@ -55,7 +60,14 @@ impl DocumentPackage {
                 manifest.schema_version
             )));
         }
-        Ok(Self { manifest, root })
+        let streams = resources::decode_streams(&root)?;
+        let resources = resources::decode_resources(&root)?;
+        Ok(Self {
+            manifest,
+            root,
+            streams,
+            resources,
+        })
     }
 
     /// Encode retained section values as native YAML, without interpreting geometry.
@@ -76,6 +88,18 @@ impl DocumentPackage {
     /// Example: `let name = &package.manifest().display_name;`.
     pub fn manifest(&self) -> &PackageManifest {
         &self.manifest
+    }
+
+    /// Read decoded add-in data without changing the preserved file representation.
+    /// Example: `let payload = package.streams().get("addin/state");`.
+    pub fn streams(&self) -> &BTreeMap<String, Vec<u8>> {
+        &self.streams
+    }
+
+    /// Inspect imported resources with encoding already classified and validated.
+    /// Example: `let mesh = package.resources().get("mesh");`.
+    pub fn resources(&self) -> &BTreeMap<String, PackageResource> {
+        &self.resources
     }
 
     /// Extract a section for its domain decoder, retaining its native YAML shape.

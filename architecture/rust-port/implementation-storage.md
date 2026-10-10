@@ -59,5 +59,28 @@ paths, malformed input, alias values, and repeated encoding stability.
 Preservation is semantic: comments, alias spelling, scalar style, and whitespace
 can change on encoding. Input mapping order is retained; repeated encoding is
 stable. The public package is read-only at this stage. Identity replacement,
-typed resource/data validation, recipe restoration, and the concrete atomic
-save target remain open work.
+recipe restoration, and the concrete atomic save target remain open work.
+
+## Typed resources and data streams — partial R2
+
+Tracking: [#3594](https://github.com/Oblikovati/Oblikovati/issues/3594).
+Package decoding now validates and decodes resource and data tables before
+returning a package. Read-only typed views expose exact stream bytes and resource
+type, origin, and one classified content form: UTF-8 text, binary bytes, or an
+application-provided embedded resource. Classification follows encoding, not
+the extensible type tag. Empty, absent, and null tables remain empty.
+
+Base64 decoding matches Go `StdEncoding`: standard alphabet, required padding
+where needed, ignored CR/LF, and accepted nonzero unused padding bits. Spaces,
+URL-safe alphabet substitutions, bad padding, and malformed input are refused
+with the section name and value. Unknown resource encodings and malformed entry
+shapes are refused. An embedded entry with a nonempty stored value is also
+refused: Go discarded that value, which conflicts with lossless storage.
+
+The original YAML nodes remain authoritative for re-encoding, so extension
+metadata is retained even where the typed resource view does not interpret it.
+Six new tests cover exact Go fixture bytes, metadata, encoding classification,
+empty values, base64 compatibility, malformed resources, and preservation of
+nested extension fields. The corresponding Go resource/data tests pass at the
+fixed baseline. Host validation of resource type support, embedded-resource
+resolution, recipe content, and save-target integration remain open.
