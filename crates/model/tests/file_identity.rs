@@ -220,3 +220,21 @@ fn repeated_new_revision_is_refused_within_the_same_save() {
         Err(IdentityTransitionError::RepeatedGuid(_))
     ));
 }
+
+#[test]
+fn snapshot_copy_preserves_model_stamp_only_for_a_known_matching_digest() {
+    let (original, mut source) = saved();
+    let same = original
+        .prepare_copy_for_recipe(original.model_digest, "copy", &mut source)
+        .unwrap();
+    assert_eq!(same.database_revision_id, original.database_revision_id);
+    for digest in [Some(RecipeDigest::of_recipe(b"edited")), None] {
+        let copy = original
+            .prepare_copy_for_recipe(digest, "copy", &mut source)
+            .unwrap();
+        assert_ne!(copy.database_revision_id, original.database_revision_id);
+        assert_eq!(copy.model_digest, digest);
+        assert_ne!(copy.internal_name, original.internal_name);
+        assert_eq!(copy.save_counter, 1);
+    }
+}

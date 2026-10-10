@@ -156,6 +156,33 @@ overwritten as though its name were unused.
 Go Save As, collision, close/save, and veto tests pass at the fixed baseline.
 A direct failing-store check also confirms that Go changes its bound path before
 the failing write. Rust deliberately corrects that behavior by committing the
-path after storage, consistent with the atomic adoption rule. Save-copy identity,
-new-document creation, external modification detection, and full feature replay
-remain pending.
+path after storage, consistent with the atomic adoption rule.
+
+## Save Copy — partial R2
+
+Tracking: [#3619](https://github.com/Oblikovati/Oblikovati/issues/3619).
+`FileWorkspace::save_copy` writes the current committed parameter/property recipe
+with a fresh document GUID, fresh file revision, and save counter one. It retains
+the database revision only when the prepared recipe has a known digest equal to
+the source digest. Changed or unknown recipe digests require a fresh database
+revision. The copy identity is not registered until the copy is opened.
+
+Copy preparation, successful storage, and failed storage leave the source path,
+identity, dirty baseline, retained package, and undo history unchanged. Open
+transaction groups, destinations owned by any open document (including the
+source), and generated GUIDs owned by another live document are refused.
+The copy uses the same canonical destination resolution and atomic file writer
+as Save As. No source-save or path-change event is emitted.
+
+Optional canonical API `NewFileMetadata` supplies display-name and subtype
+overrides. Empty fields inherit the original values. Explicit destinations take
+precedence over metadata file/template fields, matching the Go router mapping.
+Overrides affect only the copy package and do not change its recipe digest.
+
+Seven coordinator tests cover clean and dirty copies, metadata isolation,
+destination conflicts, open groups, identity failure, failed writes, and native
+copy/open. Model tests cover matching, changed, and unknown digests and live GUID
+collisions. The Go copy storage and identity tests pass at the fixed baseline.
+Native copy/open confirms independent registration and unchanged source bytes.
+This evidence covers the ported recipe domains; full feature replay,
+new-document creation, and external modification detection remain pending.

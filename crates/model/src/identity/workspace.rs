@@ -3,6 +3,7 @@
 use super::{DocumentGuid, FileIdentity, GuidSource, IdentityTransitionError};
 use std::{collections::BTreeMap, error::Error, fmt};
 
+mod copy;
 mod save;
 pub use save::{DocumentSaveError, DocumentSaveTarget};
 

@@ -32,7 +32,7 @@ impl fmt::Display for FileWorkspaceError {
         match self {
             Self::DestinationInUse { path, owner } => write!(
                 output,
-                "destination {path:?} belongs to document {owner}: expected an unowned path or this document\'s current path"
+                "destination {path:?} belongs to document {owner}: expected a destination not owned by an open document"
             ),
             Self::MissingFile(id) => {
                 write!(output, "document {id}: expected an owned file binding")

@@ -110,6 +110,28 @@ impl FileIdentity {
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<Self, IdentityTransitionError> {
+        self.copy_identity(self.model_digest, true, version, source)
+    }
+
+    /// Copy an exact prepared recipe, preserving its model revision only when the digest matches.
+    /// Example: `let copy = identity.prepare_copy_for_recipe(digest, "alpha", source)?;`.
+    pub fn prepare_copy_for_recipe(
+        &self,
+        digest: Option<RecipeDigest>,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<Self, IdentityTransitionError> {
+        let preserve_model = digest.is_some() && digest == self.model_digest;
+        self.copy_identity(digest, preserve_model, version, source)
+    }
+
+    fn copy_identity(
+        &self,
+        digest: Option<RecipeDigest>,
+        preserve_model: bool,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<Self, IdentityTransitionError> {
         let mut issuer = self.issuer(source);
         let mut copy = self.clone();
         copy.internal_name = issuer.issue()?;
@@ -117,9 +139,10 @@ impl FileIdentity {
         copy.save_counter = 1;
         copy.version_created = version.to_owned();
         copy.version_saved = version.to_owned();
-        if copy.database_revision_id.is_none() {
+        if !preserve_model || copy.database_revision_id.is_none() {
             copy.database_revision_id = Some(issuer.issue()?);
         }
+        copy.model_digest = digest;
         Ok(copy)
     }
 

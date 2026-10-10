@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use std::{error::Error, fmt};
 
 mod binary_text;
+mod copy_metadata;
 mod parameters;
 mod properties;
 mod resources;

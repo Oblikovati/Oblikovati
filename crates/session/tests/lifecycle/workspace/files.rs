@@ -469,3 +469,6 @@ fn distinct_paths_with_one_guid_get_distinct_dirty_identity_owners() {
 
 #[path = "files/transitions.rs"]
 mod transitions;
+
+#[path = "files/copies.rs"]
+mod copies;

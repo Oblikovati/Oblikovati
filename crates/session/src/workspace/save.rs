@@ -44,7 +44,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         Ok(())
     }
 
-    fn save_snapshot<F>(&self, id: u64) -> Result<DocumentSnapshot, WorkspaceSaveError<F>> {
+    pub(super) fn save_snapshot<F>(
+        &self,
+        id: u64,
+    ) -> Result<DocumentSnapshot, WorkspaceSaveError<F>> {
         let session = self.session(id).map_err(WorkspaceSaveError::Workspace)?;
         if session.in_transaction() {
             return Err(WorkspaceSaveError::OpenTransaction(id));

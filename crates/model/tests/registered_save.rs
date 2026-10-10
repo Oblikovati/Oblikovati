@@ -160,3 +160,25 @@ fn changed_recipe_commits_a_new_model_revision() {
     );
     assert_eq!(index.identity(1), target.committed.as_ref());
 }
+
+#[test]
+fn copy_rejects_missing_source_and_another_live_document_guid_before_storage() {
+    let (mut index, mut source) = open_document(0);
+    let other = FileIdentity::new("alpha", &mut source).unwrap();
+    let other_guid = other.internal_name;
+    let _registration = index.register(2, other, &mut source).unwrap();
+    let mut target = FakeAtomicSaveTarget::default();
+    assert!(matches!(
+        index.save_copy(99, None, "beta", &mut source, &mut target),
+        Err(DocumentSaveError::MissingDocument(99))
+    ));
+    source.next = 1;
+    let error = index
+        .save_copy(1, None, "beta", &mut source, &mut target)
+        .unwrap_err();
+    assert!(
+        matches!(error, DocumentSaveError::Preparation(IdentityTransitionError::RepeatedGuid(found)) if found == other_guid)
+    );
+    assert!(target.attempts.is_empty());
+    assert_eq!(index.owner(other_guid), Some(2));
+}

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! File bindings owned together with their document sessions.
+mod copy;
 mod error;
 mod open;
 mod save_as;

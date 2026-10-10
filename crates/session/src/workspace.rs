@@ -3,6 +3,7 @@
 //! Ordered open-document ownership without file I/O or UI dependencies.
 mod commands;
 pub use commands::SessionCommands;
+mod copy;
 mod error;
 mod lifecycle;
 mod save;
