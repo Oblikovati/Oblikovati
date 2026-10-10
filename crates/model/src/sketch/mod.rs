@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Application-owned planar geometry and constraints, independent from kernel topology.
+mod angle;
 mod arc;
 mod arc_midpoint;
 mod arc_residual;
@@ -21,6 +22,7 @@ mod source;
 mod tangent;
 mod tangent_residual;
 mod variables;
+pub use angle::AngleTurn;
 pub use arc::SketchArc2D;
 pub use circle::SketchCircle2D;
 pub use constraint::{

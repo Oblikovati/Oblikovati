@@ -464,3 +464,6 @@ mod shared_contact;
 
 #[path = "sketch/arc_midpoints.rs"]
 mod arc_midpoints;
+
+#[path = "sketch/angles.rs"]
+mod angles;

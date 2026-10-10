@@ -17,6 +17,10 @@ pub enum SketchError {
         cause: ParameterError<u64>,
     },
     Numerical(SolveError),
+    AngleSelection {
+        constraint: SketchConstraintId,
+        cause: ResidualError,
+    },
     ContactSelection {
         constraint: SketchConstraintId,
         cause: ResidualError,
@@ -44,9 +48,13 @@ impl fmt::Display for SketchError {
                 cause,
             } => write!(
                 output,
-                "sketch constraint {constraint:?} length parameter {parameter}: {cause}"
+                "sketch constraint {constraint:?} dimension parameter {parameter}: {cause}"
             ),
             Self::Numerical(cause) => cause.fmt(output),
+            Self::AngleSelection { constraint, cause } => write!(
+                output,
+                "sketch constraint {constraint:?} angle selection: {cause}"
+            ),
             Self::ContactSelection { constraint, cause } => write!(
                 output,
                 "sketch constraint {constraint:?} contact selection: {cause}"
@@ -69,7 +77,9 @@ impl Error for SketchError {
             Self::Definition(_) => None,
             Self::Parameter { cause, .. } => Some(cause),
             Self::Numerical(cause) => Some(cause),
-            Self::ContactSelection { cause, .. } | Self::ArcMidpoint { cause, .. } => Some(cause),
+            Self::AngleSelection { cause, .. }
+            | Self::ContactSelection { cause, .. }
+            | Self::ArcMidpoint { cause, .. } => Some(cause),
             Self::Residual { cause, .. } | Self::ArcCircularity { cause, .. } => Some(cause),
         }
     }

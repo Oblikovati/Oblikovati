@@ -3,7 +3,10 @@ use super::{
     PlanarConstraint, Sketch2D, SketchConstraint, SketchError, SketchRelationId,
     residual::{PlanarEquation, PreparedConstraint},
 };
-use crate::{parameter::ParameterCollection, quantity::Dimension};
+use crate::{
+    parameter::ParameterCollection,
+    quantity::{Dimension, Quantity},
+};
 use oblikovati_solve::residual::ResidualBlock;
 
 pub(super) struct PreparedSketch {
@@ -71,7 +74,9 @@ fn parameter_dependencies(sketch: &Sketch2D) -> Vec<u64> {
     let mut dependencies = Vec::new();
     for constraint in &sketch.constraints {
         if let PlanarConstraint::Distance { parameter, .. }
-        | PlanarConstraint::Radius { parameter, .. } = constraint.relation
+        | PlanarConstraint::Radius { parameter, .. }
+        | PlanarConstraint::Angle { parameter, .. }
+        | PlanarConstraint::ThreePointAngle { parameter, .. } = constraint.relation
             && !dependencies.contains(&parameter)
         {
             dependencies.push(parameter);
@@ -113,6 +118,15 @@ fn equation(
         }
         PlanarConstraint::Midpoint { .. } => PlanarEquation::Midpoint,
         PlanarConstraint::PointOnLine { .. } => PlanarEquation::PointOnLine,
+        PlanarConstraint::Angle {
+            parameter, turn, ..
+        }
+        | PlanarConstraint::ThreePointAngle {
+            parameter, turn, ..
+        } => PlanarEquation::Angle {
+            target: angle_target(constraint, parameter, parameters)?,
+            turn,
+        },
         PlanarConstraint::Lines { relation, .. } => PlanarEquation::Lines(relation),
         PlanarConstraint::Distance {
             measure, parameter, ..
@@ -127,23 +141,17 @@ fn length_target(
     parameter: u64,
     parameters: &ParameterCollection<u64>,
 ) -> Result<f64, SketchError> {
-    let quantity = parameters
-        .model_value(parameter)
-        .map_err(|cause| SketchError::Parameter {
-            constraint: constraint.id,
-            parameter,
-            cause,
-        })?;
-    if quantity.dimension != Dimension::Length
-        || !quantity.value.is_finite()
-        || quantity.value < 0.0
-    {
-        return Err(SketchError::Definition(format!(
-            "sketch constraint {:?} parameter {parameter} value {quantity:?}: expected a healthy finite nonnegative working-unit length",
-            constraint.id
-        )));
-    }
-    Ok(quantity.value)
+    dimensional_target(
+        constraint,
+        parameter,
+        parameters,
+        DimensionDomain {
+            kind: Dimension::Length,
+            maximum: f64::INFINITY,
+            label: "length",
+            expected: "a healthy finite nonnegative working-unit length",
+        },
+    )
 }
 
 fn radius_target(
@@ -159,4 +167,60 @@ fn radius_target(
         )));
     }
     Ok(value)
+}
+
+fn parameter_quantity(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+) -> Result<Quantity, SketchError> {
+    parameters
+        .model_value(parameter)
+        .map_err(|cause| SketchError::Parameter {
+            constraint: constraint.id,
+            parameter,
+            cause,
+        })
+}
+
+fn angle_target(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+) -> Result<f64, SketchError> {
+    dimensional_target(
+        constraint,
+        parameter,
+        parameters,
+        DimensionDomain {
+            kind: Dimension::Angle,
+            maximum: std::f64::consts::PI,
+            label: "angle",
+            expected: "a healthy finite angular quantity in [0, pi] radians",
+        },
+    )
+}
+struct DimensionDomain {
+    kind: Dimension,
+    maximum: f64,
+    label: &'static str,
+    expected: &'static str,
+}
+fn dimensional_target(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+    domain: DimensionDomain,
+) -> Result<f64, SketchError> {
+    let quantity = parameter_quantity(constraint, parameter, parameters)?;
+    if quantity.dimension != domain.kind
+        || !quantity.value.is_finite()
+        || !(0.0..=domain.maximum).contains(&quantity.value)
+    {
+        return Err(SketchError::Definition(format!(
+            "sketch constraint {:?} {} parameter {parameter} value {quantity:?}: expected {}",
+            constraint.id, domain.label, domain.expected
+        )));
+    }
+    Ok(quantity.value)
 }

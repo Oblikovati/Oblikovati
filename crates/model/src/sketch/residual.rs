@@ -10,6 +10,10 @@ use oblikovati_solve::{
 
 #[derive(Clone, Copy)]
 pub(super) enum PlanarEquation {
+    Angle {
+        target: f64,
+        turn: super::AngleTurn,
+    },
     ArcCircularity,
     ArcMidpoint(bool),
     Coincident,
@@ -58,7 +62,7 @@ impl PreparedConstraint {
             PlanarEquation::PinnedCircularTangent(_) | PlanarEquation::ArcMidpoint(_) => 8,
             PlanarEquation::CircleTangent(_) | PlanarEquation::ArcCircularity => 6,
             PlanarEquation::Midpoint | PlanarEquation::PointOnLine => 6,
-            PlanarEquation::Lines(_) => 8,
+            PlanarEquation::Lines(_) | PlanarEquation::Angle { .. } => 8,
             _ => 4,
         }
     }
@@ -91,6 +95,9 @@ impl ResidualSource for PreparedConstraint {
             }
             PlanarEquation::ArcMidpoint(counter_clockwise) => {
                 super::arc_midpoint::midpoint_residual(variables, counter_clockwise)
+            }
+            PlanarEquation::Angle { target, turn } => {
+                super::angle::angle_residual(variables, target, turn)
             }
             PlanarEquation::ArcCircularity => arc_residual::circularity(variables),
             PlanarEquation::Coincident => Ok(point(variables, 0)?

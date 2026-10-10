@@ -377,3 +377,46 @@ identities. They check read-only queries, atomic reference errors, typed query
 and authored-constraint failures, overflow, cancellation, and full solve/rank
 scales from `1e-100` through `1e100`. Diameter dimensions, sketch persistence,
 API/UI integration, profile stitching and kernel feature acceptance remain open.
+
+## Retained angular dimensions
+
+Tracking: [#3712](https://github.com/Oblikovati/Oblikovati/issues/3712).
+`Angle` references two oriented lines; `ThreePointAngle` references a vertex
+and two ray endpoints. Both compile to the same normalized line-direction AD
+measurement and one signed angular residual. A three-point angle maps the
+vertex twice to the same global coordinate columns, so it creates no duplicate
+variables. Targets are healthy angular parameter values in radians in `[0, pi]`.
+The shared parameter reader now serves length and angle dimensions and preserves
+constraint/parameter identities and typed health failures.
+
+`AngleTurn` retains clockwise or counterclockwise orientation. Creation reads
+this choice from the seed; collinear zero/straight ties choose counterclockwise.
+Explicit authored relations can select either turn. The residual measures the
+signed `atan2(cross, dot)` angle, subtracts the signed target, and wraps a
+half-turn difference to the nearest equivalent angle. This keeps a simple root
+and nonzero rank at zero and straight angles. Go's absolute-cross measurement
+is stationary there. At ordinary clockwise inputs, the Rust row is the negative
+of Go's unsigned row; this changes no satisfying geometry and makes the retained
+turn explicit. Endpoints can cross the `atan2` wrap boundary without creating a
+spurious full-turn error near a straight-angle target.
+
+Collapsed rays are named declines. Creation failures name the new constraint;
+evaluation failures name its authored source. Wrong units, negative targets,
+angles greater than pi, and unhealthy parameters are refused before iteration.
+All dimensions retain their original references and parameter expressions.
+A solve from the opposite seed side still targets the authored turn.
+
+Two fixed-baseline Go fixtures compare ordinary angle residuals and all partials
+with the turn sign applied. Go's combined angular-dimension and three-point
+right-angle tests pass. Independent scalar polar-angle differences and central
+finite differences check every coordinate partial. Scale sweeps from `1e-200`
+through `1e200` confirm dimensionless residuals and inverse-length derivatives.
+Boundary tests verify nonzero derivatives at zero/pi and both wrap directions.
+
+Model tests solve line and three-point dimensions with zero DOF for both turns,
+edit through 30, 120, zero, and 180 degrees, preserve authored branch and parameter
+identities, and verify shared-vertex variable counts. Tests cover collinear ties,
+opposite-side seeds, reference errors, collapsed rays, parameter health/domain
+failures, cancellation, and complete solve/rank scales from `1e-100` to `1e100`.
+Diameter, arc-length, tangent-distance and other dimension forms, sketch
+persistence, API/UI integration, profile and kernel acceptance remain open.

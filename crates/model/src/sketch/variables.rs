@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{Sketch2D, SketchEntityId, SketchError, circle::require_radius};
+use oblikovati_solve::{ad::DualNumber, residual::ResidualError};
 
 #[derive(Clone, Copy)]
 pub(super) enum SketchVariable {
@@ -7,6 +8,23 @@ pub(super) enum SketchVariable {
     Radius(SketchEntityId),
 }
 impl Sketch2D {
+    pub(super) fn point_constants(
+        &self,
+        points: &[SketchEntityId],
+        failure: impl FnOnce(ResidualError) -> SketchError,
+    ) -> Result<Vec<DualNumber>, SketchError> {
+        let values = points
+            .iter()
+            .map(|id| Ok(self.point(*id)?.position))
+            .collect::<Result<Vec<_>, SketchError>>()?;
+        values
+            .into_iter()
+            .flatten()
+            .map(DualNumber::constant)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(ResidualError::from)
+            .map_err(failure)
+    }
     pub(super) fn variable_values(&self) -> Vec<f64> {
         self.points
             .iter()

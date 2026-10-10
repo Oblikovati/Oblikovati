@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    CircleContact, LineContactSide, Sketch2D, SketchEntityId, SketchError,
+    AngleTurn, CircleContact, LineContactSide, Sketch2D, SketchEntityId, SketchError,
     geometry::require_position,
 };
 
@@ -49,6 +49,17 @@ pub enum PlanarConstraint {
     PointOnLine {
         point: SketchEntityId,
         line: SketchEntityId,
+    },
+    Angle {
+        lines: [SketchEntityId; 2],
+        parameter: u64,
+        turn: AngleTurn,
+    },
+    ThreePointAngle {
+        vertex: SketchEntityId,
+        points: [SketchEntityId; 2],
+        parameter: u64,
+        turn: AngleTurn,
     },
     Lines {
         lines: [SketchEntityId; 2],
@@ -155,7 +166,10 @@ impl Sketch2D {
                 self.circular_frame(*curve)?;
                 Vec::new()
             }
-            PlanarConstraint::Lines { lines, .. } => {
+            PlanarConstraint::ThreePointAngle { vertex, points, .. } => {
+                vec![*vertex, points[0], *vertex, points[1]]
+            }
+            PlanarConstraint::Lines { lines, .. } | PlanarConstraint::Angle { lines, .. } => {
                 let first = self.line(lines[0])?.endpoints;
                 let second = self.line(lines[1])?.endpoints;
                 [first, second].concat()

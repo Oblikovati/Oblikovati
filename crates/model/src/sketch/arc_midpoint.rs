@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    Sketch2D, SketchArc2D, SketchEntityId, SketchError, line_residual::unit_direction,
-    residual::point,
+    Sketch2D, SketchEntityId, SketchError, line_residual::unit_direction, residual::point,
 };
 use oblikovati_solve::{
     ad::{DualNumber, DualVector},
@@ -12,24 +11,12 @@ impl Sketch2D {
     /// Locate half the authored sweep without solving or changing points; example: `sketch.arc_midpoint(id)?`.
     pub fn arc_midpoint(&self, id: SketchEntityId) -> Result<[f64; 2], SketchError> {
         let arc = self.arc(id)?;
-        let variables = self.midpoint_constants(arc)?;
+        let variables = self.point_constants(&[arc.center, arc.start, arc.end], |cause| {
+            SketchError::ArcMidpoint { arc: id, cause }
+        })?;
         let midpoint = midpoint_target(&variables, arc.counter_clockwise)
             .map_err(|cause| SketchError::ArcMidpoint { arc: id, cause })?;
         Ok(midpoint.components().each_ref().map(DualNumber::value))
-    }
-    fn midpoint_constants(&self, arc: &SketchArc2D) -> Result<Vec<DualNumber>, SketchError> {
-        let values = [arc.center, arc.start, arc.end]
-            .into_iter()
-            .map(|point| Ok(self.point(point)?.position))
-            .collect::<Result<Vec<_>, SketchError>>()?;
-        let variables = values
-            .into_iter()
-            .flatten()
-            .map(DualNumber::constant)
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(ResidualError::from)
-            .map_err(|cause| SketchError::ArcMidpoint { arc: arc.id, cause })?;
-        Ok(variables)
     }
 }
 pub(super) fn midpoint_residual(
