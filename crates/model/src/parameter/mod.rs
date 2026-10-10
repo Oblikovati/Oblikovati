@@ -4,9 +4,12 @@
 mod edit;
 mod error;
 mod evaluate;
+mod reads;
 mod remove;
 mod rename;
 mod state;
+mod tolerance;
+pub use reads::ParameterReads;
 
 use crate::{
     dependency::{DependencyError, DependencyGraph},
@@ -43,6 +46,8 @@ impl<Id> ParameterRecord<Id> {
             source: expression.source().into(),
             last_good_value: None,
             renamed: false,
+            tolerance: oblikovati_api::types::Tolerance::default(),
+            model_value_type: oblikovati_api::types::MODEL_VALUE_NOMINAL,
             health: ParameterHealth::Healthy,
         };
         Self {

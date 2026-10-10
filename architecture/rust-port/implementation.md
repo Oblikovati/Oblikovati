@@ -169,8 +169,8 @@ quarantines affected readers so later features cannot consume stale results.
 
 The eight collection tests cover dependency diamonds, recovery, exact affected
 sets, failed edits, read-only kinds, non-finite results, scaled formulas, deletion
-of a driver shared by a transitive reader, and insertion validation. Automatic ID allocation, tolerance/model values, read footprints, groups,
-text/boolean literals, and persistence remain open. Rename is covered below.
+of a driver shared by a transitive reader, and insertion validation. Automatic ID allocation, groups, text/boolean literals, and persistence remain
+open. Rename, tolerance-selected values, and read footprints are covered below.
 
 ## Working branch policy
 
@@ -201,3 +201,29 @@ admit names that no formula can reference. Eight tests cover stable identities,
 source preservation, multiple renames, failed formulas, pending-reference recovery,
 cycle health, model flags, and atomic rejection. Names and spans remain internal;
 no wire DTO or API enum is duplicated.
+
+## Tolerance-selected values and read footprints — partial R2
+
+Tracking: [issue #3572](https://github.com/Oblikovati/Oblikovati/issues/3572).
+Parameters store the canonical API `Tolerance` and `ModelValueType` directly.
+Default, asymmetric deviation, symmetric, absolute limits, basic, reference,
+minimum, and maximum edits are implemented. The bands use document working units;
+absolute limits become deviations from the current nominal, as in Go.
+
+Features can select nominal, upper, lower, or median values. Expression references
+continue to read nominal values. The nominal path preserves signed zero without
+adding a zero offset. Invalid or non-finite bands are refused before mutation;
+failed/nonnumeric parameters and overflowing selected values produce named errors.
+Tolerance and selection edits add only that parameter to the change drain, because
+nominal expression readers do not change. Identical edits are no-ops.
+
+`ParameterCollection::track` supplies an immutable model-value read scope with an
+explicit footprint. Nested scopes also add their reads to the parent. An error
+result retains reads of existing parameters, so later recovery can invalidate its
+consumer. Footprints are deduplicated in parameter insertion order. No global or
+collection-wide mutable read sink is used; edits cannot occur through a read scope.
+
+Eleven tests cover Go model-value examples, band storage, rejected input, nominal
+bit preservation, selection overflow, no-op edits, nested read sets, recovery, and
+minimal invalidation. ISO fits table resolution, feature-engine consumption of
+these footprints, tolerance persistence, and display rendering remain open.

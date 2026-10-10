@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use crate::{dependency::DependencyError, expression::ExpressionError, quantity::Quantity};
-use oblikovati_api::types::ParameterKind;
+use oblikovati_api::types::{ModelValueType, ParameterKind, Tolerance};
 
 /// A numeric parameter's evaluation failure, separate from entity health in the API.
 #[derive(Clone, Debug, PartialEq)]
@@ -26,6 +26,8 @@ pub struct ParameterState<Id> {
     pub name: String,
     pub kind: ParameterKind,
     pub renamed: bool,
+    pub tolerance: Tolerance,
+    pub model_value_type: ModelValueType,
     pub source: String,
     pub last_good_value: Option<Quantity>,
     pub health: ParameterHealth<Id>,
