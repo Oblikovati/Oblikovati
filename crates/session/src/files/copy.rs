@@ -15,7 +15,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         version: &str,
         source: &mut dyn GuidSource,
     ) -> Result<FileIdentity, FileWorkspaceError> {
-        self.path(id)?;
+        self.retained_file(id)?;
         let destination = self.unowned_destination(requested)?;
         let original = &self.retained[&id].package;
         let mut package = metadata.map_or_else(

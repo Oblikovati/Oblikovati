@@ -40,7 +40,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         id: u64,
         requested: &Path,
     ) -> Result<PathBuf, FileWorkspaceError> {
-        self.path(id)?;
+        self.retained_file(id)?;
         let destination = checked_path(requested, self.files.save_path(requested))?;
         self.require_available_destination(id, &destination)?;
         Ok(destination)
@@ -81,14 +81,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
 
     fn rebind_path(&mut self, id: u64, destination: PathBuf) {
         let file = self.retained.get_mut(&id).expect("validated binding");
-        if file.path == destination {
+        if file.path.as_ref() == Some(&destination) {
             return;
         }
-        let previous = std::mem::replace(&mut file.path, destination.clone());
-        self.paths.remove(&previous);
+        let previous = file.path.replace(destination.clone());
+        if let Some(path) = &previous {
+            self.paths.remove(path);
+        }
         self.paths.insert(destination.clone(), id);
         self.refresh_display_name(id);
-        self.workspace
-            .notify_path_changed(id, &previous, &destination);
+        // The observer contract uses an empty prior path for the first storage binding.
+        self.workspace.notify_path_changed(
+            id,
+            previous.as_deref().unwrap_or_else(|| Path::new("")),
+            &destination,
+        );
     }
 }

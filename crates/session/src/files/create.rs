@@ -22,14 +22,46 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         source: &mut dyn GuidSource,
     ) -> Result<RegisteredDocument, FileWorkspaceError> {
         let destination = self.unowned_destination(requested)?;
-        let history = initial_history(&package)?;
-        let identity = new_package_identity(&package, version, source)?;
-        let registration = self
-            .workspace
-            .register_created(history, identity, observer, source)
-            .map_err(FileWorkspaceError::Workspace)?;
+        let registration = self.register_package(&package, observer, version, source)?;
         let _outcome = self.install_file(destination, package, registration);
         Ok(registration)
+    }
+
+    /// Retain a new document without inventing a save destination.
+    /// Example: `host.create_unbound(package, observer, "alpha", source)?`.
+    pub fn create_unbound(
+        &mut self,
+        package: DocumentPackage,
+        observer: O,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<RegisteredDocument, FileWorkspaceError> {
+        let registration = self.register_package(&package, observer, version, source)?;
+        self.retained.insert(
+            registration.session_id,
+            RetainedFile {
+                visible: true,
+                display_override: Some(package.manifest().display_name.clone()),
+                path: None,
+                package,
+            },
+        );
+        self.refresh_display_name(registration.session_id);
+        Ok(registration)
+    }
+
+    fn register_package(
+        &mut self,
+        package: &DocumentPackage,
+        observer: O,
+        version: &str,
+        source: &mut dyn GuidSource,
+    ) -> Result<RegisteredDocument, FileWorkspaceError> {
+        let history = initial_history(package)?;
+        let identity = new_package_identity(package, version, source)?;
+        self.workspace
+            .register_created(history, identity, observer, source)
+            .map_err(FileWorkspaceError::Workspace)
     }
 }
 

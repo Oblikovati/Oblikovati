@@ -20,7 +20,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let name = file
             .display_override
             .clone()
-            .unwrap_or_else(|| derived_name(&file.path));
+            .unwrap_or_else(|| file.path.as_deref().map(derived_name).unwrap_or_default());
         self.workspace.set_file_display_name(id, name);
     }
 }

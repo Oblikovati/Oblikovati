@@ -32,6 +32,7 @@ pub enum FileWorkspaceError {
         owner: u64,
     },
     MissingFile(u64),
+    UnboundDocument(u64),
     RelativeCanonical(PathBuf),
     NonUtf8ResponsePath(PathBuf),
     Path {
@@ -89,6 +90,10 @@ impl fmt::Display for FileWorkspaceError {
                 output,
                 "destination {path:?} belongs to document {owner}: expected a destination not owned by an open document"
             ),
+            Self::UnboundDocument(id) => write!(
+                output,
+                "document {id}: expected a storage path; use Save As first"
+            ),
             Self::MissingFile(id) => {
                 write!(output, "document {id}: expected an owned file binding")
             }
@@ -129,6 +134,7 @@ impl Error for FileWorkspaceError {
             | Self::TemplateDestination(_)
             | Self::DocumentType(_)
             | Self::TemplateIdentity(_)
+            | Self::UnboundDocument(_)
             | Self::MissingFile(_)
             | Self::NonUtf8ResponsePath(_)
             | Self::RelativeCanonical(_)

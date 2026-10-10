@@ -33,7 +33,7 @@ use std::{
 struct RetainedFile {
     visible: bool,
     display_override: Option<String>,
-    path: PathBuf,
+    path: Option<PathBuf>,
     package: DocumentPackage,
 }
 
@@ -85,10 +85,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
 
     /// Inspect a document's bound destination; example: `host.path(id)?`.
     pub fn path(&self, id: u64) -> Result<&Path, FileWorkspaceError> {
-        self.retained
-            .get(&id)
-            .map(|file| file.path.as_path())
-            .ok_or(FileWorkspaceError::MissingFile(id))
+        self.retained_file(id)?
+            .path
+            .as_deref()
+            .ok_or(FileWorkspaceError::UnboundDocument(id))
     }
 
     /// Route edits without allowing replacement of the document owner; example: `host.commands(id)?.undo()?`.
@@ -141,9 +141,17 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         Ok(observer)
     }
 
+    fn retained_file(&self, id: u64) -> Result<&RetainedFile, FileWorkspaceError> {
+        self.retained
+            .get(&id)
+            .ok_or(FileWorkspaceError::MissingFile(id))
+    }
+
     fn release_file(&mut self, id: u64) {
         let file = self.retained.remove(&id).expect("registered file binding");
-        self.paths.remove(&file.path);
+        if let Some(path) = file.path {
+            self.paths.remove(&path);
+        }
     }
 
     fn unowned_destination(&mut self, requested: &Path) -> Result<PathBuf, FileWorkspaceError> {
@@ -182,7 +190,9 @@ fn bound_target<'a, F: DocumentFiles>(
         .ok_or(FileWorkspaceError::MissingFile(id))?;
     Ok(ParameterPackageTarget::new(
         &mut file.package,
-        &file.path,
+        file.path
+            .as_deref()
+            .ok_or(FileWorkspaceError::UnboundDocument(id))?,
         files,
     ))
 }

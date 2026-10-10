@@ -107,7 +107,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             registration.session_id,
             RetainedFile {
                 visible: true,
-                path,
+                path: Some(path),
                 package,
                 display_override,
             },

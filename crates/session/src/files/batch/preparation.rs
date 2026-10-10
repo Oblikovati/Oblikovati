@@ -10,7 +10,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         items: Vec<BatchSaveItem>,
     ) -> Result<Vec<PreparedSave>, BatchSaveError> {
         for item in &items {
-            self.path(item.document).map_err(BatchSaveError::Source)?;
+            self.retained_file(item.document)
+                .map_err(BatchSaveError::Source)?;
         }
         let prepared: Vec<_> = items
             .into_iter()
@@ -26,7 +27,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         item: BatchSaveItem,
     ) -> PreparedSave {
         let (full_document_name, destination) = match operation {
-            SaveOperation::Save => bound_batch_destination(self.path(item.document).unwrap()),
+            SaveOperation::Save => match self.path(item.document) {
+                Ok(path) => bound_batch_destination(path),
+                Err(error) => (String::new(), Err(error.to_string())),
+            },
             SaveOperation::SaveAs | SaveOperation::SaveCopyAs => {
                 let requested = Path::new(&item.target_file_name);
                 let resolved = checked_path(requested, self.files.save_path(requested))
