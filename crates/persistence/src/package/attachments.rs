@@ -5,6 +5,7 @@ use oblikovati_model::attachment::{AttachmentContents, DocumentAttachments, File
 use serde::{Deserialize, Serialize};
 mod record;
 mod timestamp;
+pub use timestamp::format_attachment_time;
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields, rename_all = "camelCase")]

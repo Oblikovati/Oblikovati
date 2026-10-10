@@ -48,7 +48,9 @@ fn reject_lossy_time(text: &str) -> Result<(), PackageCodecError> {
     Ok(())
 }
 
-pub(super) fn encode(stamp: Option<SystemTime>) -> Result<String, PackageCodecError> {
+/// Format captured file time for storage and API output without losing nanoseconds.
+/// Example: `format_attachment_time(None)` returns an empty string.
+pub fn format_attachment_time(stamp: Option<SystemTime>) -> Result<String, PackageCodecError> {
     let Some(stamp) = stamp else {
         return Ok(String::new());
     };

@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use std::{error::Error, fmt};
 
 mod attachments;
+pub use attachments::format_attachment_time;
 mod attributes;
 mod binary_text;
 mod container;

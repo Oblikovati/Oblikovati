@@ -323,3 +323,6 @@ mod resources;
 
 #[path = "file_attachments.rs"]
 mod attachments;
+
+#[path = "file_attachment_api.rs"]
+mod attachment_api;

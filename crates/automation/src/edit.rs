@@ -9,7 +9,8 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 22] = [
+pub const EDIT_METHODS: [&str; 23] = [
+    METHOD_DOCUMENTS_REMOVE_ATTACHMENT,
     METHOD_DOCUMENTS_ADD_INTEREST,
     METHOD_DOCUMENTS_REMOVE_INTEREST,
     METHOD_ATTRIBUTES_SET,
@@ -35,6 +36,7 @@ pub const EDIT_METHODS: [&str; 22] = [
 ];
 
 pub(super) enum PreparedEdit {
+    AttachmentRemove(RemoveAttachmentArgs),
     InterestAdd(AddDocumentInterestArgs),
     InterestRemove(RemoveDocumentInterestArgs),
     AttributeSet(SetAttributeArgs),
@@ -61,6 +63,9 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_DOCUMENTS_REMOVE_ATTACHMENT => {
+                Ok(Self::AttachmentRemove(decode(method, request)?))
+            }
             METHOD_DOCUMENTS_ADD_INTEREST => Ok(Self::InterestAdd(decode(method, request)?)),
             METHOD_DOCUMENTS_REMOVE_INTEREST => Ok(Self::InterestRemove(decode(method, request)?)),
             METHOD_ATTRIBUTES_SET => Ok(Self::AttributeSet(decode(method, request)?)),
@@ -99,6 +104,7 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::AttachmentRemove(_) => "Remove Attachment",
             Self::InterestAdd(_) => "Register Interest",
             Self::InterestRemove(_) => "Remove Interest",
             Self::AttributeSet(_) => "Set Attribute",
@@ -131,6 +137,10 @@ impl PreparedEdit {
     ) -> Result<Vec<u8>, Error> {
         let parameters = &mut snapshot.parameters;
         match self {
+            Self::AttachmentRemove(request) => encode(&crate::attachments::remove(
+                &mut snapshot.attachments,
+                request,
+            )?),
             Self::InterestAdd(request) => {
                 encode(&crate::interests::add(&mut snapshot.interests, request)?)
             }
@@ -177,6 +187,7 @@ impl PreparedEdit {
 impl PreparedEdit {
     pub(super) fn document(&self, active: Option<u64>) -> Result<u64, Error> {
         match self {
+            Self::AttachmentRemove(request) => return Ok(request.document),
             Self::InterestAdd(request) => return Ok(request.document),
             Self::InterestRemove(request) => return Ok(request.document),
             Self::AttributeSet(request) => return Ok(request.document),

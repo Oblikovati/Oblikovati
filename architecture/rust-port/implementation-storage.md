@@ -455,3 +455,27 @@ Tests cover visibility-only history, no-op updates, commit veto, refresh,
 attachment-only dirty state, normal/copy save and reopen, failed save, template
 independence, and malformed input with no identity claim. The attachment API and
 project-path resolution remain pending.
+
+## Attachment API — partial R2
+
+Tracking: [#3692](https://github.com/Oblikovati/Oblikovati/issues/3692).
+The typed host now implements `documents.listAttachments`, `addAttachment`, and
+`removeAttachment`. All select an explicit document ID. File-host capture uses
+`with_attachment_files` to inject foreign-file access; embedded capture requires
+that provider. Linked/generic discovery without a provider reports unknown.
+Each listed attachment uses one probe for both status and resolved filename.
+The timestamp formatter is shared with persistence, preserving nanoseconds.
+
+Add and remove use transaction ownership and encode their response before commit.
+A read, status, or encoding failure discards the candidate. Commit veto also
+restores model state and history, though source reads and GUID allocation may
+already have occurred during candidate construction. Removal works through the
+shared edit host; capture remains a file-owner command.
+
+Four typed-client tests cover all kinds, source changes and absence, metadata
+errors, embedded ownership, required providers, invalid requests, duplicate names,
+commit veto, undo, and save/reopen. They also verify immutable-session discovery
+and that these calls do not change focus. Go router tests provide reference
+evidence. The shared inventory has 30 queries, 23 edits, and six transaction
+methods; the file owner adds ten commands. Project-path resolution and native
+transport remain pending.

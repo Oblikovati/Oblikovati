@@ -5,10 +5,11 @@ use crate::{
     transactions,
 };
 use oblikovati_api::{Error, client::Caller, wire::*};
-use oblikovati_model::identity::GuidSource;
+use oblikovati_model::{attachment::ExternalAttachmentFiles, identity::GuidSource};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
+mod attachments;
 mod close;
 mod derived_links;
 pub use derived_links::DERIVED_COMMAND_METHODS;
@@ -17,8 +18,9 @@ mod lifecycle;
 mod open;
 pub use open::DocumentObserverFactory;
 
-/// Implemented lifecycle calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 9] = [
+/// Implemented calls that require the file owner.
+pub const FILE_COMMAND_METHODS: [&str; 10] = [
+    METHOD_DOCUMENTS_ADD_ATTACHMENT,
     METHOD_DOCUMENTS_ACTIVATE,
     METHOD_DOCUMENTS_OPEN,
     METHOD_DOCUMENTS_CREATE,
@@ -38,6 +40,7 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     files: &'a mut FileWorkspace<O, W, F>,
     source: &'a mut dyn GuidSource,
     version: &'a str,
+    external: Option<&'a mut dyn ExternalAttachmentFiles>,
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
@@ -53,6 +56,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 source,
                 version,
                 observers: None,
+                external: None,
             }),
         }
     }
@@ -62,6 +66,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if method == METHOD_DOCUMENTS_LIST_ATTACHMENTS {
+            return context.list_attachments(decode(method, request)?);
+        }
         if EDIT_METHODS.contains(&method) {
             return command_owner::edit(context.files, method, request);
         }
@@ -80,6 +87,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_DOCUMENTS_ADD_ATTACHMENT => self.add_attachment(decode(method, request)?),
             METHOD_DOCUMENTS_CREATE => self.create(decode(method, request)?),
             METHOD_DOCUMENTS_OPEN => self.open(decode(method, request)?),
             METHOD_DOCUMENTS_ACTIVATE => self.activate(decode(method, request)?),
@@ -181,6 +189,8 @@ mod tests {
             let _active = host.context.borrow_mut();
             for method in [
                 METHOD_DOCUMENTS_LIST,
+                METHOD_DOCUMENTS_LIST_ATTACHMENTS,
+                METHOD_DOCUMENTS_ADD_ATTACHMENT,
                 METHOD_DOCUMENTS_SAVE,
                 METHOD_PARAMETERS_SET,
                 METHOD_TRANSACTION_BEGIN,

@@ -52,7 +52,7 @@ impl StoredAttachment {
             AttachmentContents::Generic => self.kind = "generic".into(),
             AttachmentContents::Linked { last_known } => {
                 self.kind = "linked".into();
-                self.last_known_file_time = timestamp::encode(*last_known)?;
+                self.last_known_file_time = timestamp::format_attachment_time(*last_known)?;
             }
             AttachmentContents::Embedded { resource_id, bytes } => {
                 self.kind = "embedded".into();
