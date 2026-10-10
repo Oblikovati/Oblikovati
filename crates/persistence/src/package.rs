@@ -5,7 +5,9 @@ use serde_yaml_ng::{Mapping, Value};
 use std::collections::BTreeMap;
 use std::{error::Error, fmt};
 
+mod binary_text;
 mod parameters;
+mod properties;
 mod resources;
 mod units;
 pub use parameters::RestoredParameters;

@@ -397,3 +397,40 @@ fn parameter_package_identity_errors_do_not_register_a_reconstructed_candidate()
     assert!(error.to_string().contains("malformed"));
     assert!(index.identity(1).is_none());
 }
+
+#[test]
+fn document_properties_are_reconstructed_before_registration() {
+    use oblikovati_api::types::VariantValue;
+    use oblikovati_persistence::load::load_parameter_package;
+    let mut index = DocumentIdentityIndex::default();
+    let mut generator = source();
+    for (property_type, expected_ok) in [("unknown", false), ("integer", true)] {
+        let encoded = format!(
+            "schemaVersion: 2\ndocumentType: 1\nmodel: {{properties: [{{set: Custom, name: Count, type: {property_type}, value: '4'}}]}}\n"
+        );
+        let result = load_parameter_package(
+            Path::new("properties.opd"),
+            1,
+            "alpha",
+            &mut index,
+            &mut generator,
+            &mut reader(encoded.as_bytes()),
+        );
+        if !expected_ok {
+            assert!(result.is_err());
+            assert!(index.identity(1).is_none());
+            assert_eq!(generator.next, 0);
+            continue;
+        }
+        assert_eq!(
+            result
+                .unwrap()
+                .properties
+                .get("Custom", "Count")
+                .unwrap()
+                .value,
+            VariantValue::Integer(4)
+        );
+        assert!(index.identity(1).is_some());
+    }
+}

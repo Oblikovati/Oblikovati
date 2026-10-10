@@ -1,0 +1,36 @@
+units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: "2"
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: "3"
+    mass: kg
+    time: s
+    volume: mm^3
+properties:
+    - set: Summary Information
+      name: Title
+      type: string
+      value: 'Steel: 日本語'
+    - set: User Defined Properties
+      name: Approved
+      type: boolean
+      value: "true"
+    - set: User Defined Properties
+      name: Count
+      type: integer
+      value: "9223372036854775807"
+    - set: User Defined Properties
+      name: Cost
+      type: double
+      value: "12.125"
+    - set: User Defined Properties
+      name: Payload
+      type: bytes
+      value: AP8B
+    - set: User Defined Properties
+      name: Empty
+      type: bytes
+      value: ""

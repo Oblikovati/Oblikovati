@@ -3,16 +3,17 @@
 use super::*;
 use crate::package::RestoredParameters;
 
-/// A registered package with its parameter domain reconstructed in stored working units.
+/// A registered package with parameters in stored units and typed document properties.
 /// Other retained model domains are not executed by this loader.
 #[must_use]
 #[derive(Debug)]
 pub struct LoadedParameterPackage {
     pub loaded: LoadedPackage,
     pub restored: RestoredParameters,
+    pub properties: oblikovati_model::property::DocumentProperties,
 }
 
-/// Load the implemented parameter domain before claiming an open-document identity.
+/// Reconstruct parameters and properties before claiming an open-document identity.
 /// Example: `load_parameter_package(path, 1, "alpha", &mut index, &mut source, &mut reader)?;`.
 pub fn load_parameter_package(
     path: &Path,
@@ -26,6 +27,13 @@ pub fn load_parameter_package(
     let restored = package
         .restore_document_parameters()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
+    let properties = package
+        .restore_properties()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let loaded = register_package(path, session_id, version, index, source, package)?;
-    Ok(LoadedParameterPackage { loaded, restored })
+    Ok(LoadedParameterPackage {
+        loaded,
+        restored,
+        properties,
+    })
 }

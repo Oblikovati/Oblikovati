@@ -155,6 +155,6 @@ identity failures, collisions and duplicate session IDs, plus a native
 load/edit/export/save/close/reopen cycle at a non-default working scale. The
 native cycle checks saved identity, changed value, and retained add-in bytes.
 
-This entry point reconstructs parameters only. Other retained model sections are
+This entry point reconstructs parameters and, after #3610, typed properties. Other model sections are
 not executed or certified as feature geometry. Full host opening must include
 all required model-domain validation before it exposes a document to the user.

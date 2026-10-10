@@ -214,3 +214,19 @@ fn unavailable_or_non_numeric_parameters_do_not_change_exposed_properties() {
         assert_eq!(properties, before);
     }
 }
+
+#[test]
+fn empty_byte_payloads_have_the_go_owned_slice_representation() {
+    let mut properties = DocumentProperties::default();
+    properties
+        .put(
+            USER_DEFINED,
+            "empty",
+            VariantValue::Bytes(Bytes(Some(Vec::new()))),
+        )
+        .unwrap();
+    assert_eq!(
+        properties.get(USER_DEFINED, "empty").unwrap().value,
+        VariantValue::Bytes(Bytes(None))
+    );
+}

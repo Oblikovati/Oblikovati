@@ -92,6 +92,7 @@ impl DocumentProperties {
     /// Example: `properties.put(USER_DEFINED, "Approved", VariantValue::Boolean(true))?;`.
     pub fn put(&mut self, set: &str, name: &str, value: VariantValue) -> Result<(), PropertyError> {
         validate_property(set, name, &value)?;
+        let value = normalize_property_bytes(value);
         if let Some(property) = self.find_mut(set, name) {
             property.value = value;
             return Ok(());
@@ -170,4 +171,12 @@ fn validate_property(set: &str, name: &str, value: &VariantValue) -> Result<(), 
         )));
     }
     Ok(())
+}
+
+fn normalize_property_bytes(value: VariantValue) -> VariantValue {
+    // Go BytesValue copies onto a nil slice; empty input therefore has one canonical form.
+    match value {
+        VariantValue::Bytes(bytes) if bytes.is_empty() => VariantValue::Bytes(Default::default()),
+        value => value,
+    }
 }
