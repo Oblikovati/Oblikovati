@@ -66,7 +66,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         Ok(missing)
     }
 
-    fn refresh_derived_link(
+    pub(super) fn refresh_derived_link(
         &mut self,
         table: &DerivedTable<Id>,
         name: &str,

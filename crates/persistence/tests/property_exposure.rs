@@ -99,7 +99,7 @@ fn rename_unexport_and_removal_prune_only_owned_projections() {
 }
 
 #[test]
-fn unhealthy_exposure_does_not_block_healthy_properties_but_package_validation_remains() {
+fn unhealthy_exposure_round_trips_without_stale_properties() {
     let mut parameters = exposed();
     let mut properties = DocumentProperties::default();
     properties.sync_exposed_parameters(&parameters).unwrap();
@@ -117,10 +117,24 @@ fn unhealthy_exposure_does_not_block_healthy_properties_but_package_validation_r
     );
     assert!(properties.get(USER_DEFINED, "label").is_none());
     let original = package();
+    let saved = original
+        .with_parameter_properties(&parameters, &properties, UnitsOfMeasure::default())
+        .unwrap();
+    let restored = saved.restore_document_parameters().unwrap();
     assert!(
-        original
-            .with_parameter_properties(&parameters, &properties, UnitsOfMeasure::default())
-            .is_err()
+        restored
+            .parameters
+            .get(2)
+            .unwrap()
+            .current_value()
+            .is_none()
+    );
+    assert!(
+        saved
+            .restore_parameter_properties(&restored.parameters)
+            .unwrap()
+            .get(USER_DEFINED, "label")
+            .is_none()
     );
     assert_eq!(original, package());
 }

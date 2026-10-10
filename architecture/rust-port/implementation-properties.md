@@ -93,14 +93,13 @@ replacement and reports unhealthy parameter diagnostics on a direct property rea
 Explicit exposure of an already unhealthy parameter remains an error.
 
 This changes automatic projection refresh, including the live session and derived
-refresh paths. Package validation still refuses unresolved parameter recipes;
-saving and reopening sick recipes requires further port work. The property change
-does not bypass that validation or claim sick-package support.
+refresh paths. The schema-3 save/load support below extends this behavior across
+file lifetimes; schema-2 import retains its original healthy-recipe validation.
 
 ## Failed numeric diagnostic restoration
 
 [#3668](https://github.com/Oblikovati/Oblikovati/issues/3668) adds a model-only
-`restore_numeric_diagnostics` boundary for future unhealthy-recipe loading.
+`restore_numeric_diagnostics` boundary for unhealthy-recipe loading.
 It restores a last-good numeric value, saved tolerance, and model-value selection
 without clearing failure health or recomputing blocked readers. Current-value
 reads still fail. Real expression recovery replaces the diagnostic value through
@@ -112,5 +111,32 @@ a known selection, and a finite selected diagnostic value. The zero-valued empty
 API tolerance remains valid as the existing no-tolerance representation. Tests
 cover atomic refusal, unknown/healthy parameters, nonnumeric/nonfinite quantities,
 invalid bands/selections, overflow, absent diagnostics, signed zero, blocked
-readers, and recovery. Package serialization of unhealthy recipes remains pending;
-this change does not weaken the current strict package validator.
+readers, and recovery. Package serialization uses this boundary as described below.
+
+## Unhealthy recipe save and reopen
+
+[#3669](https://github.com/Oblikovati/Oblikovati/issues/3669) persists recoverable
+parameter failures in the unreleased schema-3 recipe. Expression text remains the
+source of truth: restore evaluates it again rather than trusting serialized error
+messages. Optional `lastGood` numeric diagnostics carry finite working quantities
+and are accepted only for failed numeric parameters. They never become current
+feature inputs. Tolerance and selection metadata use the checked model restorer.
+
+Derived-table `failure` metadata records an unavailable source or a selected
+missing-name subset. Restore validates the subset and applies link failure before
+restoring diagnostics and exposed properties. Blocked readers retain their own
+last-good values. Current source resolution on API open can repair these failures;
+otherwise direct value access still fails and stale property projections stay absent.
+
+Schema-2 input remains subject to its existing healthy-recipe validation. Syntax
+errors, cycles, malformed types, nonfinite diagnostic values, invalid tolerance
+metadata, and ambiguous link ownership remain errors. Saving a recoverable failure
+promotes the candidate to schema 3 and verifies its reconstructed parameter state
+before storage. Unsupported recipe state still produces a named save error.
+
+Tests cover unresolved and evaluation failures, blocked readers, tolerance offsets,
+signed zero, unavailable/partly missing sources, malformed diagnostics and subsets,
+cycle refusal, and live-source recovery. Typed-client tests cover source close,
+target save/close/reopen with an exposed failed parameter, and source reopen that
+restores the parameter and property. All tests use owned Rust sessions and file
+adapters; native UI acceptance remains pending.

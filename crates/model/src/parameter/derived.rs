@@ -2,6 +2,7 @@
 
 use super::*;
 use oblikovati_api::wire::DerivedParameterReference;
+mod availability;
 mod delete;
 mod edit;
 mod sync;

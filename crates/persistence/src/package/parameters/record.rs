@@ -14,6 +14,8 @@ use serde::{Deserialize, Serialize};
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct ParameterRecipe {
     pub(super) name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) last_good: Option<super::diagnostics::NumericDiagnostic>,
     kind: String,
     value_type: String,
     expression: String,
@@ -208,6 +210,7 @@ impl ParameterRecipe {
             custom_property: Some(PropertyRecipe::capture(&state.custom_property)?),
             ..Self::default()
         };
+        record.last_good = super::diagnostics::NumericDiagnostic::capture(state)?;
         record.capture_value(state)?;
         record.capture_behavior(state)?;
         Ok(record)
@@ -218,7 +221,12 @@ impl ParameterRecipe {
         state: &oblikovati_model::parameter::ParameterState<u64>,
     ) -> Result<(), PackageCodecError> {
         use oblikovati_model::parameter::ParameterValue;
-        match state.current() {
+        if state.current().is_none() && matches!(state.kind, USER_PARAM | MODEL_PARAM | TABLE_PARAM)
+        {
+            self.expression = state.source.clone();
+            return Ok(());
+        }
+        match state.current().or(state.last_good_value.as_ref()) {
             Some(ParameterValue::Text(text)) => {
                 self.value_type = "text".into();
                 self.text = text.clone();

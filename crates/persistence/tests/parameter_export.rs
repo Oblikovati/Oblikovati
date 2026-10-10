@@ -187,7 +187,7 @@ fn each_custom_property_precision_round_trips() {
 }
 
 #[test]
-fn unrepresentable_or_unhealthy_state_refuses_export_without_changing_the_package() {
+fn unrepresentable_state_refuses_export_and_failed_recipes_promote_without_mutation() {
     let original = package();
     let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
     parameters
@@ -196,10 +196,19 @@ fn unrepresentable_or_unhealthy_state_refuses_export_without_changing_the_packag
     let other_scale = UnitsOfMeasure::default().with_working_scale(2.0).unwrap();
     assert!(original.with_parameters(&parameters, other_scale).is_err());
     parameters.set_expression(1, "missing").unwrap();
+    let failed = original
+        .with_parameters(&parameters, UnitsOfMeasure::default())
+        .unwrap();
+    assert_eq!(failed.manifest().schema_version, 3);
     assert!(
-        original
-            .with_parameters(&parameters, UnitsOfMeasure::default())
-            .is_err()
+        failed
+            .restore_document_parameters()
+            .unwrap()
+            .parameters
+            .get(1)
+            .unwrap()
+            .current_value()
+            .is_none()
     );
     let mut measured = ParameterCollection::new(UnitsOfMeasure::default());
     measured

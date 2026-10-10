@@ -11,9 +11,19 @@ impl DocumentPackage {
         parameters: &ParameterCollection<u64>,
         units: UnitsOfMeasure,
     ) -> Result<Self, PackageCodecError> {
-        validate_health(parameters)?;
+        validate_health(parameters, true)?;
         super::super::units::require_preserved_scale(self, &units)?;
         let mut candidate = self.clone();
+        let unhealthy = parameters.ids().iter().any(|id| {
+            !matches!(
+                parameters.get(*id).expect("owned ID").health,
+                ParameterHealth::Healthy
+            )
+        });
+        if unhealthy {
+            candidate.manifest.schema_version = 3;
+            candidate.root.insert("schemaVersion".into(), 3u32.into());
+        }
         let mut model = self
             .root
             .get("model")

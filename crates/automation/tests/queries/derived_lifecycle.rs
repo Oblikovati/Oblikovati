@@ -133,13 +133,10 @@ fn partial_close_all_refreshes_remaining_readers_and_preserves_save_error() {
     files
         .commands(target)
         .unwrap()
-        .run("Unresolved", |snapshot, ids| {
-            snapshot.parameters.insert_expression(
-                ids.allocate().unwrap(),
-                "output",
-                USER_PARAM,
-                "missing + 1 cm",
-            )
+        .run("Unsupported storage", |snapshot, ids| {
+            snapshot
+                .parameters
+                .insert_auto_model(ids.allocate().unwrap(), "1 cm")
         })
         .unwrap();
     let error = Client::new(FileHost::new(&mut files, &mut guids, "test"))
@@ -214,5 +211,100 @@ fn renamed_link_survives_file_save_close_reopen_and_source_edit() {
     assert_eq!(
         parameters.derived_references(7).unwrap()[0].source_parameter,
         "width"
+    );
+}
+
+#[test]
+fn unavailable_exposed_link_saves_reopens_and_recovers_without_stale_properties() {
+    let (mut files, source, target, mut guids) = linked_files();
+    files.save(source, "test", &mut guids).unwrap();
+    files
+        .commands(target)
+        .unwrap()
+        .run("Expose", |snapshot, _| {
+            let mut annotation = snapshot.parameters.get(1).unwrap().annotations.clone();
+            annotation.exposed_as_property = true;
+            snapshot.parameters.set_annotations(1, annotation)
+        })
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: source,
+            force: true,
+        })
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document: target,
+            new_full_document_name: "/sick.opd".into(),
+        })
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut guids, "test"))
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: target,
+            force: true,
+        })
+        .unwrap();
+    let reopened = Client::new(
+        FileHost::new(&mut files, &mut guids, "test").with_observer_factory(&mut ReopenedObserver),
+    )
+    .documents()
+    .open(&OpenDocumentArgs {
+        full_document_name: "/sick.opd".into(),
+        ..Default::default()
+    })
+    .unwrap();
+    let snapshot = files.workspace().session(reopened.id).unwrap().snapshot();
+    assert!(
+        snapshot
+            .parameters
+            .get(1)
+            .unwrap()
+            .current_value()
+            .is_none()
+    );
+    assert!(
+        snapshot
+            .properties
+            .get(oblikovati_model::property::USER_DEFINED, "width")
+            .is_none()
+    );
+    assert_eq!(
+        snapshot
+            .parameters
+            .inspection_value(1)
+            .unwrap()
+            .unwrap()
+            .value,
+        2.0
+    );
+    let _source = Client::new(
+        FileHost::new(&mut files, &mut guids, "test").with_observer_factory(&mut ReopenedObserver),
+    )
+    .documents()
+    .open(&OpenDocumentArgs {
+        full_document_name: "/source.opd".into(),
+        ..Default::default()
+    })
+    .unwrap();
+    let snapshot = files.workspace().session(reopened.id).unwrap().snapshot();
+    assert_eq!(
+        snapshot
+            .parameters
+            .get(1)
+            .unwrap()
+            .current_value()
+            .unwrap()
+            .value,
+        2.0
+    );
+    assert!(
+        snapshot
+            .properties
+            .get(oblikovati_model::property::USER_DEFINED, "width")
+            .is_some()
     );
 }

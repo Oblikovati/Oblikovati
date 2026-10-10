@@ -8,6 +8,7 @@ use oblikovati_model::{
 };
 
 mod derived;
+mod diagnostics;
 mod export;
 mod groups;
 mod identities;
@@ -51,14 +52,19 @@ impl DocumentPackage {
         for (record, id) in records.iter().zip(live_ids) {
             record.restore(id, &mut restored.parameters)?;
         }
-        validate_health(&restored.parameters)?;
-        tolerance::restore_tolerances(&records, &mut restored.parameters)?;
+
         groups::restore_groups(self.root.get("model"), &mut restored.parameters)?;
         settings::restore_settings(self.root.get("model"), &mut restored.parameters)?;
         derived::restore_tables(
             self.root.get("model"),
             self.manifest.schema_version,
             &mut restored.parameters,
+        )?;
+        validate_health(&restored.parameters, self.manifest.schema_version >= 3)?;
+        tolerance::restore_tolerances(
+            &records,
+            &mut restored.parameters,
+            self.manifest.schema_version,
         )?;
         restored.derived_high_water = reservations::restore_mark(self, &restored.parameters)?;
         restored.parameters.drain_changed();
@@ -76,10 +82,17 @@ impl DocumentPackage {
     }
 }
 
-fn validate_health(parameters: &ParameterCollection<u64>) -> Result<(), PackageCodecError> {
+fn validate_health(
+    parameters: &ParameterCollection<u64>,
+    allow_failure: bool,
+) -> Result<(), PackageCodecError> {
     for id in parameters.ids() {
         let state = parameters.get(*id).expect("owned parameter ID");
-        if !matches!(state.health, ParameterHealth::Healthy) {
+        let cycle = matches!(
+            state.health,
+            ParameterHealth::Failed(oblikovati_model::parameter::ParameterFailure::Cycle(_))
+        );
+        if cycle || (!allow_failure && !matches!(state.health, ParameterHealth::Healthy)) {
             return Err(PackageCodecError(format!(
                 "restored parameter {:?} has {:?}: expected resolved, finite, acyclic values",
                 state.name, state.health

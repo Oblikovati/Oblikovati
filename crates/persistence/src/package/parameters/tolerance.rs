@@ -18,7 +18,7 @@ pub(super) struct ToleranceRecipe {
 }
 
 impl ToleranceRecipe {
-    fn restore(&self) -> Result<Tolerance, PackageCodecError> {
+    pub(super) fn restore(&self) -> Result<Tolerance, PackageCodecError> {
         Ok(Tolerance {
             type_: tolerance_kind(&self.kind)?,
             upper: self.upper,
@@ -32,10 +32,14 @@ impl ToleranceRecipe {
 pub(super) fn restore_tolerances(
     records: &[ParameterRecipe],
     parameters: &mut ParameterCollection<u64>,
+    schema: u32,
 ) -> Result<(), PackageCodecError> {
     // Forward drivers must be resolved before numeric metadata can be validated (#3602).
     let ids = parameters.ids().to_vec();
     for (id, record) in ids.into_iter().zip(records) {
+        if super::diagnostics::restore_diagnostic(id, record, parameters, schema)? {
+            continue;
+        }
         if let Some(tolerance) = &record.tolerance {
             parameters
                 .set_tolerance(id, tolerance.restore()?)
@@ -63,7 +67,7 @@ fn tolerance_kind(name: &str) -> Result<ToleranceType, PackageCodecError> {
         })
 }
 
-fn model_selection(name: &str) -> Result<ModelValueType, PackageCodecError> {
+pub(super) fn model_selection(name: &str) -> Result<ModelValueType, PackageCodecError> {
     match name {
         "nominal" => Ok(MODEL_VALUE_NOMINAL),
         "lower" => Ok(MODEL_VALUE_LOWER),
