@@ -362,10 +362,10 @@ Document IDs retain open order; names and subtypes come from the owned package
 and display-name policy; dirty and active flags come from current session state.
 An empty workspace returns an empty document array.
 
-The current file owner models visible documents. Background open preserves focus
-but does not hide a document. Hidden reference-document lifetimes and visibility
-commands remain pending; the visibility flag is logical document state, not proof
-of a rendered window. Bare recipe-only sessions do not invent file metadata for
+Background open preserves focus independently of logical document visibility.
+The open API added below supports visible and hidden loaded documents. Deferred
+reference-document lifetimes remain pending; visibility is logical state, not
+proof of a rendered window. Bare recipe-only sessions do not invent file metadata for
 this query. The package's document-kind vocabulary is shared with CLI `info`.
 
 Tests exercise all four document kinds, custom titles/subtypes, creation order,
@@ -426,5 +426,27 @@ API tests cover an open-transaction failure followed by a successful save,
 request-order preservation, all three operations, binding and identity behavior,
 whole-batch refusal, and empty requests. Underlying persistence remains the same
 atomic per-file writer; a batch is not an all-or-nothing multi-file transaction.
-Open/create routing, native transport, and full geometry reconstruction remain
+Create routing, native transport, and full geometry reconstruction remain
 pending.
+
+## Document open API
+
+[#3649](https://github.com/Oblikovati/Oblikovati/issues/3649) connects
+`documents.open` to `FileHost`. A new owner obtains its observer from an injected
+`DocumentObserverFactory`. The file owner invokes that factory lazily after
+canonical cached-path checks. Cached opens preserve unsaved recipe state and do
+not reread the package or create another observer. New opens use the existing
+validation and identity-registration path.
+
+The API activates the loaded document and applies the requested logical
+visibility, matching Go's ordinary open path. Visibility changes do not edit the
+recipe or add history. Empty paths and `deferContent=true` are refused before
+observer creation; deferred reference stubs are not yet implemented. Missing or
+failed factories and malformed packages leave no registered document/path owner.
+
+Tests cover open/edit/cached-open/save-close/reopen, observer creation counts,
+cached access without a factory or disk contents, hidden loaded documents,
+unchanged dirty/history state for visibility, invalid options, factory failure,
+malformed files, and retry. The file owner reconstructs the ported recipe
+sections; full feature reconstruction, native transport, and reference stubs
+remain pending.

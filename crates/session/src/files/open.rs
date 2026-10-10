@@ -15,6 +15,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         source: &mut dyn GuidSource,
         activation: OpenActivation,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
+        self.open_with_factory(path, || Ok(observer), version, source, activation)
+    }
+
+    /// Create an observer only for a new canonical document owner.
+    /// Example: `host.open_with_factory(path, || factory.create(), "alpha", source, activation)?`.
+    pub fn open_with_factory(
+        &mut self,
+        path: &Path,
+        factory: impl FnOnce() -> Result<O, String>,
+        version: &str,
+        source: &mut dyn GuidSource,
+        activation: OpenActivation,
+    ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         if let Some(&id) = self.paths.get(path) {
             return self.reuse_open(id, activation);
         }
@@ -22,6 +35,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         if let Some(&id) = self.paths.get(&canonical) {
             return self.reuse_open(id, activation);
         }
+        let observer = factory().map_err(FileWorkspaceError::ObserverFactory)?;
         self.open_new(canonical, observer, version, source, activation)
     }
 
@@ -92,6 +106,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         self.retained.insert(
             registration.session_id,
             RetainedFile {
+                visible: true,
                 path,
                 package,
                 display_override,

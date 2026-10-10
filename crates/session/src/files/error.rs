@@ -11,6 +11,7 @@ use std::{error::Error, fmt, io, path::PathBuf};
 /// A failed file operation; no new binding or successful save was adopted.
 #[derive(Debug)]
 pub enum FileWorkspaceError {
+    ObserverFactory(String),
     Project(oblikovati_persistence::project::ProjectLookupError),
     MissingTemplate(u32),
     TemplateKind {
@@ -49,6 +50,10 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ObserverFactory(reason) => write!(
+                output,
+                "document observer {reason:?}: expected an available observer factory"
+            ),
             Self::NonUtf8ResponsePath(path) => write!(
                 output,
                 "save destination {path:?}: expected UTF-8 for the canonical API response"
@@ -117,7 +122,8 @@ impl Error for FileWorkspaceError {
             Self::History(error) => Some(error),
             Self::Workspace(error) => Some(error),
             Self::Save(error) => Some(error),
-            Self::MissingTemplate(_)
+            Self::ObserverFactory(_)
+            | Self::MissingTemplate(_)
             | Self::TemplateKind { .. }
             | Self::CreationMetadata { .. }
             | Self::TemplateDestination(_)

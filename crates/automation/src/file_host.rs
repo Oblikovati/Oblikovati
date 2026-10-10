@@ -9,10 +9,13 @@ use oblikovati_model::identity::GuidSource;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
+mod open;
+pub use open::DocumentObserverFactory;
 
 /// Implemented lifecycle calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 6] = [
+pub const FILE_COMMAND_METHODS: [&str; 7] = [
     METHOD_DOCUMENTS_ACTIVATE,
+    METHOD_DOCUMENTS_OPEN,
     METHOD_DOCUMENTS_BATCH_SAVE,
     METHOD_DOCUMENTS_SAVE,
     METHOD_DOCUMENTS_SAVE_AS,
@@ -21,13 +24,14 @@ pub const FILE_COMMAND_METHODS: [&str; 6] = [
 ];
 
 /// Synchronous API access that retains file, history, and identity ownership.
-pub struct FileHost<'a, O, W, F> {
+pub struct FileHost<'a, O: TransactionObserver, W, F> {
     context: RefCell<FileContext<'a, O, W, F>>,
 }
-struct FileContext<'a, O, W, F> {
+struct FileContext<'a, O: TransactionObserver, W, F> {
     files: &'a mut FileWorkspace<O, W, F>,
     source: &'a mut dyn GuidSource,
     version: &'a str,
+    observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
     /// Borrow owned files and identity generation; example: `FileHost::new(&mut files, &mut guids, "alpha")`.
@@ -41,6 +45,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 files,
                 source,
                 version,
+                observers: None,
             }),
         }
     }
@@ -65,6 +70,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_DOCUMENTS_OPEN => self.open(decode(method, request)?),
             METHOD_DOCUMENTS_ACTIVATE => self.activate(decode(method, request)?),
             METHOD_DOCUMENTS_BATCH_SAVE => self.batch_save(decode(method, request)?),
             METHOD_DOCUMENTS_SAVE => self.save(decode(method, request)?),

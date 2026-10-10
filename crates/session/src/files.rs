@@ -31,6 +31,7 @@ use std::{
 };
 
 struct RetainedFile {
+    visible: bool,
     display_override: Option<String>,
     path: PathBuf,
     package: DocumentPackage,

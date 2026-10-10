@@ -25,9 +25,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 .workspace
                 .needs_save(id)
                 .map_err(FileWorkspaceError::Workspace)?,
-            // FileWorkspace currently owns visible documents only; background open preserves focus.
-            visible: true,
+            visible: file.visible,
             active: self.workspace.active_document() == Some(id),
         })
+    }
+}
+
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Change logical visibility without changing focus or the saved recipe.
+    /// Example: `host.set_visible(id, false)?` hides a fully loaded document.
+    pub fn set_visible(&mut self, id: u64, visible: bool) -> Result<(), FileWorkspaceError> {
+        self.retained
+            .get_mut(&id)
+            .ok_or(FileWorkspaceError::MissingFile(id))?
+            .visible = visible;
+        Ok(())
     }
 }

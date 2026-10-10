@@ -268,3 +268,6 @@ mod copies;
 
 #[path = "file_batch.rs"]
 mod batch;
+
+#[path = "file_open.rs"]
+mod opening;
