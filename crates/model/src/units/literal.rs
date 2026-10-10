@@ -23,13 +23,17 @@ impl UnitsOfMeasure {
 
 fn split_literal(input: &str) -> (&str, &str) {
     let trimmed = input.trim();
-    let end = trimmed
-        .bytes()
-        .enumerate()
-        .take_while(|&(index, byte)| number_byte(trimmed.as_bytes(), index, byte))
-        .count();
+    let end = numeric_prefix_len(trimmed);
     let (number, suffix) = trimmed.split_at(end);
     (number, suffix.trim())
+}
+
+pub(crate) fn numeric_prefix_len(input: &str) -> usize {
+    input
+        .bytes()
+        .enumerate()
+        .take_while(|&(index, byte)| number_byte(input.as_bytes(), index, byte))
+        .count()
 }
 
 fn number_byte(input: &[u8], index: usize, byte: u8) -> bool {
