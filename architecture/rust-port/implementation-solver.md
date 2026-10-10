@@ -198,3 +198,25 @@ Go `./solve` test suite also passes as reference evidence.
 This establishes the shared numerical iteration boundary. Complete sketch
 integration, assembly pose normalization, mobility, feature health integration,
 SolveSpace model parity and interactive rendering remain migration work.
+
+## Unused-variable step invariant
+
+Tracking: [#3707](https://github.com/Oblikovati/Oblikovati/issues/3707), discovered
+by the [circle model](implementation-sketch.md). The original augmented QR path
+returned a step of `-8.777083671441755e-16` for an exact zero working-Jacobian
+column. Moving a center then changed a free radius of `1e-200` into a negative
+value. A minimal one-equation/two-variable solver regression reproduced the
+same problem independently from sketch storage or variable mapping.
+
+The regularized step now eliminates zero working-Jacobian columns before QR.
+Their damping-only equations have the unique minimizer zero; solved active
+columns scatter back to original positions and excluded columns get exact zero
+steps. The complete variable universe remains in evaluation and DOF analysis.
+Applying a zero step preserves the original value, including the sign of zero.
+No epsilon, radius-specific repair, alternate solver or geometric nudge is used.
+When every column is observed, matrix entries and their order remain unchanged.
+
+Regression tests cover the direct linear step, unused variables before/after an
+active variable, tiny positive/negative values and signed zero, plus unconstrained
+radii while their centers move. The correct seam was available; exact invariance
+checks for free variables would have prevented this regression.

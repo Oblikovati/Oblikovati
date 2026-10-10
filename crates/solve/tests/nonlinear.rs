@@ -373,3 +373,25 @@ fn trial_contract_violations_are_errors_instead_of_damping_fallbacks() {
             .contains("returned 0 equations: expected 1")
     );
 }
+
+#[test]
+fn structurally_unused_variables_remain_bit_identical_during_other_updates() {
+    let source = Target {
+        target: 0.0,
+        coefficient: 1.0,
+    };
+    for observed in [0, 1] {
+        let mapping = [observed];
+        let blocks = [block(&source, &mapping)];
+        for unused in [1e-200, -1e-200, -0.0, 0.0, 1.0] {
+            let mut values = [unused, unused];
+            values[observed] = 3.0;
+            let result = solve(&values, &blocks);
+            assert_eq!(result.termination, SolveTermination::Converged);
+            assert_eq!(
+                result.values[1 - observed].to_bits(),
+                values[1 - observed].to_bits()
+            );
+        }
+    }
+}

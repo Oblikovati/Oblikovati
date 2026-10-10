@@ -16,11 +16,38 @@ pub(super) fn damped_delta(
     columns: usize,
     damping: f64,
 ) -> Result<Vec<f64>, SolveError> {
-    let mut rows = scaled.jacobian.clone();
+    let observed: Vec<usize> = (0..columns)
+        .filter(|&column| scaled.jacobian.iter().any(|row| row[column] != 0.0))
+        .collect();
+    let mut delta = vec![0.0; columns];
+    if observed.is_empty() {
+        return Ok(delta);
+    }
+    for (&column, value) in observed
+        .iter()
+        .zip(observed_step(scaled, &observed, damping)?)
+    {
+        delta[column] = value;
+    }
+    Ok(delta)
+}
+
+fn observed_step(
+    scaled: &ScaledEvaluation,
+    columns: &[usize],
+    damping: f64,
+) -> Result<Vec<f64>, SolveError> {
+    // A zero working-Jacobian column has only its damping equation, whose unique step is zero.
+    // Eliminate it before QR so roundoff cannot move a free coordinate or radius (#3707).
+    let mut rows: Vec<Vec<f64>> = scaled
+        .jacobian
+        .iter()
+        .map(|row| columns.iter().map(|&column| row[column]).collect())
+        .collect();
     let mut rhs: Vec<f64> = scaled.residuals.iter().map(|value| -value).collect();
-    append_damping(&mut rows, columns, damping)?;
+    append_damping(&mut rows, columns.len(), damping)?;
     rhs.resize(rows.len(), 0.0);
-    let matrix = DenseMatrix::new(columns, rows)?;
+    let matrix = DenseMatrix::new(columns.len(), rows)?;
     Ok(ColumnPivotedQr::factor(&matrix, STEP_RANK_TOLERANCE)?.least_squares(&rhs)?)
 }
 
@@ -51,6 +78,9 @@ pub(super) fn trial_values(
         .iter()
         .zip(delta)
         .map(|(&value, &change)| {
+            if change == 0.0 {
+                return Ok(value);
+            }
             checked(
                 value + checked(change * scale, "variable step")?,
                 "trial variable",
@@ -112,5 +142,16 @@ mod tests {
         assert!(trial_values(&[f64::MAX], &[1.0], f64::MAX).is_err());
         assert!(trial_values(&[0.0], &[f64::MAX], 2.0).is_err());
         assert_eq!(trial_values(&[3.0], &[-0.5], 2.0).unwrap(), [2.0]);
+    }
+    #[test]
+    fn unused_column_has_an_exact_zero_regularized_step() {
+        let scaled = ScaledEvaluation {
+            residuals: vec![3.0],
+            jacobian: vec![vec![1.0, 0.0]],
+            weights: vec![],
+            model_scale: 1.0,
+        };
+        let delta = damped_delta(&scaled, 2, INITIAL_DAMPING).unwrap();
+        assert_eq!(delta[1], 0.0, "unused column delta {:?}", delta[1]);
     }
 }
