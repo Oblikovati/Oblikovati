@@ -249,3 +249,27 @@ parameter, and recomputes its reader after an authored edit. Additional tests
 cover category-name references, named-unit literals, malformed input, and old
 Rust diagnostic capitalization. Renamed derived links, built-in feature
 ownership, and full feature/model export remain pending.
+
+## Document unit context — partial R2
+
+Tracking: [#3607](https://github.com/Oblikovati/Oblikovati/issues/3607).
+`document_units` decodes the six unit preferences, working scale, length/angle
+precision, and length/angle formats. Absent keys use the legacy defaults,
+including centimetres as the working length unit. `restore_document_parameters`
+uses this stored context before it evaluates expressions. The lower-level
+`restore_parameters(units)` remains available for an explicitly supplied context.
+
+Parameter export now includes the unit context and validates the candidate by
+loading that context back from the file. Unknown or invalid stored unit settings
+refuse export rather than disappearing during replacement. An existing nonempty
+model cannot acquire a different working scale through a parameter-only export;
+that would reinterpret retained geometry. A new empty document can select its
+initial scale. Decimal, fractional, architectural, and DMS display preferences
+remain presentation only; measured constants do not undergo display conversion.
+
+Five tests cover sparse/default maps, every setting, format and precision
+boundaries, invalid keys/values, non-default-scale export/reload, and refusal of
+scale changes on retained models. Go's reserved-key and working-scale recipe
+tests are the baseline. Rust's current display precision representation is
+bounded to `0..=255`; larger Go values are explicitly refused rather than clamped.
+Full document reconstruction and feature-owned units remain host integration work.

@@ -25,6 +25,12 @@ pub struct RestoredParameters {
 }
 
 impl DocumentPackage {
+    /// Restore parameters with the working scale and preferences saved in this document.
+    /// Example: `let restored = package.restore_document_parameters()?;`.
+    pub fn restore_document_parameters(&self) -> Result<RestoredParameters, PackageCodecError> {
+        self.restore_parameters(self.document_units()?)
+    }
+
     /// Build a new parameter table; errors never modify an existing live table.
     /// The caller supplies working units from the enclosing document recipe.
     /// Example: `let restored = package.restore_parameters(document_units)?;`.

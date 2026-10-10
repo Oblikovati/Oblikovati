@@ -12,6 +12,7 @@ impl DocumentPackage {
         units: UnitsOfMeasure,
     ) -> Result<Self, PackageCodecError> {
         validate_health(parameters)?;
+        super::super::units::require_preserved_scale(self, &units)?;
         let mut candidate = self.clone();
         let mut model = self
             .root
@@ -19,6 +20,7 @@ impl DocumentPackage {
             .and_then(Value::as_mapping)
             .cloned()
             .unwrap_or_default();
+        model.insert("units".into(), super::super::units::capture_units(&units)?);
         let records = parameters
             .ids()
             .iter()
@@ -41,7 +43,10 @@ impl DocumentPackage {
             derived::capture_tables(parameters)?,
         );
         candidate.root.insert("model".into(), Value::Mapping(model));
-        verify_parameter_capture(parameters, &candidate.restore_parameters(units)?.parameters)?;
+        verify_parameter_capture(
+            parameters,
+            &candidate.restore_document_parameters()?.parameters,
+        )?;
         Ok(candidate)
     }
 }
