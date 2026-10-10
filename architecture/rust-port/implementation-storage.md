@@ -291,3 +291,25 @@ and malformed requests, observer veto, undo, save, and reopen. The corresponding
 Go router test supplies reference evidence. The shared inventory now contains
 29 queries, 22 edits, and six transaction methods. Native transport and
 unavailable-client notices are still pending.
+
+## Imported resource edits — partial R2
+
+Tracking: [#3685](https://github.com/Oblikovati/Oblikovati/issues/3685).
+`DocumentPackage::with_resource` stores an owned typed resource and updates its
+YAML entry. Encoding follows `ResourceContents`, independent of the extensible
+resource type tag. Text stays UTF-8, binary bytes use standard padded base64,
+and application-provided resources carry no payload. Changing encoding removes
+obsolete payload fields. Clearing an origin removes the old origin field.
+
+Replacement retains unknown extension fields on that resource and all other
+resource entries. `without_resource` deletes one entry and removes an empty
+resource table. An absent ID leaves the original representation unchanged.
+Both operations preserve other sections and the model-only digest. IDs are
+opaque keys; no file lookup or recipe reference rewrite occurs at this layer.
+
+Four tests cover all encoding transitions, extension retention, owned inputs,
+empty payloads, unusual IDs, removal, YAML round trips, and values matching the
+committed Go resource fixture. The Go resource codec tests provide reference
+evidence. Model ownership, reference validation, and application resource
+resolution remain separate work; callers must coordinate recipe references
+when replacing or removing an imported resource.

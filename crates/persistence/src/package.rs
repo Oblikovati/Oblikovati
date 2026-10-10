@@ -13,6 +13,7 @@ mod empty;
 mod interests;
 mod parameters;
 mod properties;
+mod resource_edit;
 mod resources;
 mod streams;
 mod units;
