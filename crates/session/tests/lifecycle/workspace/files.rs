@@ -472,3 +472,6 @@ mod transitions;
 
 #[path = "files/copies.rs"]
 mod copies;
+
+#[path = "files/batch.rs"]
+mod batch;

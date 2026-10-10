@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! File bindings owned together with their document sessions.
+mod batch;
+pub use batch::BatchSaveError;
 mod copy;
 mod error;
 mod open;

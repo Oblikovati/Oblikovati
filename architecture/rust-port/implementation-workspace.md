@@ -186,3 +186,31 @@ collisions. The Go copy storage and identity tests pass at the fixed baseline.
 Native copy/open confirms independent registration and unchanged source bytes.
 This evidence covers the ported recipe domains; full feature replay,
 new-document creation, and external modification detection remain pending.
+
+## Batch save — partial R2
+
+Tracking: [#3620](https://github.com/Oblikovati/Oblikovati/issues/3620).
+`FileWorkspace::batch_save` consumes the canonical API `BatchSaveArgs` and returns
+`BatchSaveResult`. It selects `save`, `saveAs`, or `saveCopyAs` once, validates all
+source IDs, and resolves destinations before execution. Invalid operations,
+missing sources, and duplicate resolved destinations refuse the whole batch
+before writes. Distinct aliases of one canonical destination count as duplicates.
+
+Each accepted item uses the existing atomic save transition. Results retain
+request order, document IDs, destination names, and individual error messages.
+One path, policy, identity, or storage failure does not stop later items. Success
+counts include only completed writes. The batch is not an all-or-nothing disk
+transaction: earlier successful files remain saved if a later item fails.
+
+Ordinary save ignores requested target names and uses bound paths. A duplicate
+source in that mode is refused because it would write the same destination twice.
+This follows the API's ignored-target rule and tightens Go's literal-string
+duplicate check. Native paths are never converted with lossy UTF-8 conversion;
+an unrepresentable bound name is a per-item error before storage. An empty batch
+returns an empty result array and zero successes.
+
+Ten tests cover all three operations, order, policy and path failures, duplicate
+aliases, missing sources, invalid operations, empty batches, failed writes,
+native copy after a missing-parent failure, and Unix non-UTF-8 names. The request
+is consumed by value; a retained `contract::BatchSave` facade and remote method
+dispatch remain part of the automation host work.
