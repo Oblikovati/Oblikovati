@@ -29,7 +29,40 @@ The corresponding Go identity tests also pass at that baseline.
 
 This component does not allocate local IDs, generate document GUIDs, save files,
 or resolve geometry. Those owners must supply the saved identity, not a session
-ID or build counter. File revision transitions, storage round trips, topology
-provenance, key binding, and collision/ambiguity rejection on model insertion
-remain open. ADR-0005's complete identity acceptance gate is not met by this
-UUID derivation test.
+ID or build counter. Storage round trips, topology provenance, key binding,
+and collision/ambiguity rejection on model insertion remain open. ADR-0005's
+complete identity acceptance gate is not met by this UUID derivation test.
+
+## File revision transitions — partial R2
+
+Tracking: [#3586](https://github.com/Oblikovati/Oblikovati/issues/3586).
+`FileIdentity` ports Go `model/doc/file_identity.go`. Creation supplies a stable
+document GUID and software version. Save preparation returns a new identity
+with a checked `u64` counter and a fresh file revision. A known, unchanged
+SHA-256 recipe digest retains the database revision. A changed digest replaces
+it. Version stamps are caller supplied, so model code does not read build state.
+
+An unknown digest always replaces the model revision. This corrects the Go
+implementation, whose empty-string comparison could retain the revision on
+successive unknown digests despite its conservative-invalidation comment.
+The digest covers the exact serialized recipe bytes; canonical recipe encoding
+is the persistence owner's responsibility.
+
+Copy preparation supplies a new document GUID, file revision, counter of one,
+and current creation/save versions. It preserves the source model revision and
+digest, minting a database revision if absent. A storage owner must first ensure
+that these describe the recipe being copied; this function does not inspect a
+live document or its pending edits.
+
+`GuidSource` is injected. `SystemGuidSource` wraps operating-system randomness
+and UUIDv4 construction. Generation errors and repeated GUIDs are explicit
+errors. New stamps cannot equal the source document/revision stamps or another
+stamp issued during the same transition. This is a local guard, not a global
+UUID uniqueness proof. Counter overflow is refused before consuming randomness.
+
+Thirteen tests cover initial state, ordinary save, changed/unknown recipes,
+copy identity, SHA-256 known vectors, v4 shape, failure at each copy-generation
+step, save failure, repeated IDs, and counter overflow. Candidate preparation
+borrows the source, so failed preparation or discarding a candidate cannot
+mutate it. Actual storage failure/retry tests, legacy identity-block loading,
+and committing a candidate only after an atomic file write remain open.

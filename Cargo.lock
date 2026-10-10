@@ -388,8 +388,10 @@ dependencies = [
 name = "oblikovati-model"
 version = "0.1.0"
 dependencies = [
+ "getrandom",
  "oblikovati-api",
  "serde_json",
+ "sha2",
  "uuid",
 ]
 
