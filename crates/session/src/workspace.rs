@@ -10,6 +10,7 @@ mod error;
 mod interests;
 mod lifecycle;
 mod save;
+mod sketch_create;
 mod sketch_delete;
 mod sketch_recompute;
 use crate::{DocumentSession, TransactionObserver};

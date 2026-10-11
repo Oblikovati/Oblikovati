@@ -12,6 +12,8 @@ mod datum_metadata;
 mod derived_ids;
 mod feature_ids;
 mod scalar_ownership;
+mod sketch_create;
+pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
 mod sketch_delete;
 pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};
 mod sketch_ids;

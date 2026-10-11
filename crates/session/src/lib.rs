@@ -8,6 +8,8 @@ mod events;
 pub mod files;
 mod navigation;
 mod refresh;
+mod sketch_create;
+pub use sketch_create::SketchCreationProjectionInput;
 mod sketch_delete;
 mod sketch_recompute;
 pub use sketch_delete::SketchDeleteProjectionInput;
