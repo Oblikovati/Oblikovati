@@ -5,6 +5,9 @@ use crate::sketch::{
 };
 use std::collections::BTreeSet;
 mod health;
+mod orientation;
+pub(crate) use orientation::UnavailableSketchAxes;
+pub use orientation::{SketchAxisReference, SketchAxisResolver, SketchOrientationDefinition};
 mod placement;
 pub use placement::SketchPlacement;
 mod readiness;
@@ -23,6 +26,7 @@ pub struct PlacedSketch {
     id: DocumentSketchId,
     name: String,
     placement: SketchPlacement,
+    orientation: Option<SketchOrientationDefinition>,
     geometry: Sketch2D,
     evaluation: Option<health::SketchEvaluationStamp>,
 }
@@ -43,6 +47,8 @@ pub struct PlacedSketchRecipe {
     pub plane_options: Option<SketchPlaneOptions>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plane_feature: Option<crate::feature::FeatureId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub orientation: Option<SketchOrientationDefinition>,
     pub geometry: SketchRecipe,
 }
 /// Collection schema and records; the enclosing document owns reservation marks.
@@ -63,6 +69,7 @@ impl PlacedSketch {
             id,
             name: name.into(),
             placement,
+            orientation: None,
             geometry,
             evaluation: None,
         }
@@ -90,6 +97,7 @@ impl PlacedSketch {
             plane,
             plane_options,
             plane_feature,
+            orientation: self.orientation,
             geometry: self.geometry.recipe(),
         }
     }
@@ -106,6 +114,7 @@ impl DocumentSketches {
                     first.id == second.id
                         && first.name == second.name
                         && first.placement.same_recipe(second.placement)
+                        && orientation::same_orientation(first.orientation, second.orientation)
                         && first.geometry.same_recipe(&second.geometry)
                 })
     }
@@ -202,6 +211,13 @@ impl DocumentSketches {
         if self
             .sketches
             .iter()
+            .any(|placed| placed.orientation.is_some())
+        {
+            return 3;
+        }
+        if self
+            .sketches
+            .iter()
             .any(|placed| matches!(placed.placement, SketchPlacement::WorkPlane(_)))
         {
             return 2;
@@ -210,9 +226,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1 | 2) {
+        if !matches!(recipe.version, 1..=3) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 or 2",
+                "document sketch recipe version {}: expected 1, 2, or 3",
                 recipe.version
             )));
         }
@@ -221,6 +237,7 @@ impl DocumentSketches {
             let placement = SketchPlacement::from_recipe(sketch, recipe.version)?;
             let geometry = Sketch2D::from_recipe(&sketch.geometry)?;
             restored.insert_placed(sketch.id, &sketch.name, placement, geometry)?;
+            orientation::restore_orientation(&mut restored, sketch, recipe.version)?;
         }
         Ok(restored)
     }
@@ -285,6 +302,7 @@ impl PartialEq for PlacedSketch {
         self.id == other.id
             && self.name == other.name
             && self.placement == other.placement
+            && self.orientation == other.orientation
             && self.geometry == other.geometry
     }
 }

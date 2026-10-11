@@ -2,7 +2,7 @@
 use super::DocumentSnapshot;
 use crate::{
     document_sketch::{
-        DocumentSketchId, PlacedSketch, SketchPlacement, SketchReadinessError,
+        DocumentSketchId, PlacedSketch, SketchAxisResolver, SketchPlacement, SketchReadinessError,
         SketchSolveDiagnostics,
     },
     feature::{
@@ -37,6 +37,14 @@ impl DocumentSnapshot {
         &self,
         id: DocumentSketchId,
     ) -> Result<SketchPlane, DocumentSketchPlacementError> {
+        self.resolve_sketch_plane_with_axes(id, &crate::document_sketch::UnavailableSketchAxes)
+    }
+    /// Resolve placement with the current injected axis catalogue; example: `snapshot.resolve_sketch_plane_with_axes(id, &axes)?`.
+    pub fn resolve_sketch_plane_with_axes(
+        &self,
+        id: DocumentSketchId,
+        axes: &dyn SketchAxisResolver,
+    ) -> Result<SketchPlane, DocumentSketchPlacementError> {
         let placed = self
             .sketches
             .get(id)
@@ -46,7 +54,7 @@ impl DocumentSnapshot {
             .as_ref()
             .map(|planes| planes as &dyn WorkPlaneResolver);
         placed
-            .plane(resolver)
+            .plane_with_axes(resolver, axes)
             .map_err(|cause| DocumentSketchPlacementError::Plane { sketch: id, cause })
     }
     fn placement_frames(

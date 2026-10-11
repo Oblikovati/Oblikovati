@@ -26,9 +26,30 @@ and coordinate round trips. An independent calculation in the original local
 basis checks 256 generated oblique orientation cases. The four Go router orientation
 tests pass on Linux at the fixed baseline.
 
-This is the numerical frame operation. Live axis/edge reference resolution,
-persisted associative orientation, and shared `sketch.create` routing are still
-required. The future resolver must call this same operation with current inputs
-on each recompute and report invalid references through feature health. It must
-not freeze the first resolved direction or fall back to the base plane. Native
-and kernel acceptance remain open.
+The numerical frame operation is now used by the owned orientation state below.
+The production axis/edge catalogue and shared `sketch.create` routing are still
+required. Native and kernel acceptance remain open.
+
+## Owned orientation recipes and current resolution
+
+Tracking: [#3737](https://github.com/Oblikovati/Oblikovati/issues/3737).
+Placed sketches retain the selected origin axis or a stable feature-axis ID,
+X/Y selection, reversal, and optional origin. The model definition is internal;
+it does not redeclare the public API DTO or method names. Origin axes resolve
+directly. Feature axes require an injected `SketchAxisResolver` that supplies
+their current direction. The default owner declines unavailable feature axes.
+The production work-axis and edge catalogue is not implemented by this change.
+
+Every query resolves the current base plane and axis, then calls the same checked
+frame operation. Neither the initial direction nor a derived frame is stored.
+A moved base or invalid axis produces the current result or a named placement
+error. Local geometry and its solver verification remain independent of this
+model-space placement. Axis feature IDs join the sketch's exact read footprint.
+
+Sketch recipe version 3 supports orientation. Versions 1 and 2 keep their previous
+layout when orientation is absent and refuse orientation content when present.
+Zero feature IDs and non-finite origins are refused before state adoption.
+Exact authored comparison includes origin bits, so signed zero is an edit.
+Tests cover changed directions, current base-plane degeneracy, unavailable axes,
+all origin axes, invalid/versioned recipes, read attribution, option changes,
+undo/redo, saved baselines, reopen, and independent file copies.

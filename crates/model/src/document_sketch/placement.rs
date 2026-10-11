@@ -30,11 +30,11 @@ impl SketchPlacement {
             (Some(frame), Some(options), None) => {
                 SketchPlane::from_recipe(frame, options).map(Self::Fixed)
             }
-            (None, None, Some(feature)) if version == 2 && feature.0 != 0 => {
+            (None, None, Some(feature)) if version >= 2 && feature.0 != 0 => {
                 Ok(Self::WorkPlane(feature))
             }
             shape => Err(SketchError::Definition(format!(
-                "sketch {:?} placement {shape:?} in recipe version {version}: expected a fixed frame with options, or one nonzero feature ID in version 2",
+                "sketch {:?} placement {shape:?} in recipe version {version}: expected a fixed frame with options, or one nonzero feature ID in version 2 or 3",
                 recipe.id
             ))),
         }
@@ -56,10 +56,29 @@ impl PlacedSketch {
         if let SketchPlacement::WorkPlane(feature) = self.placement {
             keys.push(FeatureReadKey::Feature(feature));
         }
+        if let Some(orientation) = self.orientation {
+            keys.extend(orientation.read_keys());
+        }
         FeatureReadFootprint::new(keys, false)
     }
     /// Resolve the frame without a stale fallback; example: `placed.plane(Some(&current_planes))?`.
     pub fn plane(
+        &self,
+        planes: Option<&dyn WorkPlaneResolver>,
+    ) -> Result<SketchPlane, WorkPlaneError> {
+        self.plane_with_axes(planes, &super::orientation::UnavailableSketchAxes)
+    }
+    /// Resolve the current base and axis before orientation; example: `placed.plane_with_axes(Some(&planes), &axes)?`.
+    pub fn plane_with_axes(
+        &self,
+        planes: Option<&dyn WorkPlaneResolver>,
+        axes: &dyn super::SketchAxisResolver,
+    ) -> Result<SketchPlane, WorkPlaneError> {
+        let base = self.base_plane(planes)?;
+        super::orientation::orient_current(base, self.orientation, axes)
+            .map_err(WorkPlaneError::Frame)
+    }
+    fn base_plane(
         &self,
         planes: Option<&dyn WorkPlaneResolver>,
     ) -> Result<SketchPlane, WorkPlaneError> {

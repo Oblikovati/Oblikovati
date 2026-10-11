@@ -2,7 +2,7 @@
 use super::{SketchError, SketchPlane, cross_product, require_finite, vector_length};
 
 /// Select the sketch axis fixed by a resolved reference direction; example: `SketchFrameAxis::Y`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum SketchFrameAxis {
     X,
     Y,
