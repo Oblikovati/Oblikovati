@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::encode;
 mod add_entity;
+mod constraints;
 mod coordinates;
 pub(crate) mod create;
 mod delete;
 mod entities;
+mod indices;
 mod owner;
 mod references;
 mod transform;
@@ -33,7 +35,8 @@ pub const SKETCH_COMMAND_METHODS: [&str; 6] = [
     METHOD_SKETCH_ADD_ENTITY,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 4] = [
+pub const SKETCH_QUERY_METHODS: [&str; 5] = [
+    METHOD_SKETCH_CONSTRAINTS,
     METHOD_SKETCH_CONSTRAINT_STATUS,
     METHOD_SKETCH_ENTITIES,
     METHOD_SKETCH_REFERENCE_KEY,
@@ -44,6 +47,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_CONSTRAINTS {
+        return constraints::query(files, crate::decode(method, request)?);
+    }
     if method == METHOD_SKETCH_CONSTRAINT_STATUS {
         return constraint_status(files, crate::decode(method, request)?);
     }

@@ -66,7 +66,8 @@ The pinned Go `TestAddEntityReportsAppliedInference` and
 
 The full Linux gate covers every Rust workspace member, lint, documentation,
 SPDX, coverage, and duplication. The generated and degenerate command corpus
-remains covered by #3779. Constraint-list API queries, remaining constructors,
+remains covered by #3779. The [constraint-list query](implementation-constraint-list.md)
+now makes returned geometric indices inspectable. Remaining constructors,
 interactive drawing tools, profiles, native viewport acceptance, and kernel
 integration remain separate port work. This step does not close R3 or the full
 application port. Windows and macOS remain deferred.

@@ -28,12 +28,7 @@ fn direction_record(
     line: u64,
     applied: SketchAppliedLineDirection,
 ) -> Result<AppliedConstraintInference, Error> {
-    let index = i64::try_from(applied.geometric_index).map_err(|_| {
-        Error(format!(
-            "line inference geometric index {}: expected a nonnegative i64 wire index",
-            applied.geometric_index
-        ))
-    })?;
+    let index = crate::sketches::indices::geometric_wire_index(applied.geometric_index)?;
     let mut entities = vec![line];
     entities.extend(applied.inference.target.map(|target| target.0));
     Ok(AppliedConstraintInference {
