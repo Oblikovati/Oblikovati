@@ -61,12 +61,18 @@ fn all_primitives_reserve_ordered_owned_entities_and_current_solver_evidence() {
     }
     assert_eq!(
         geometry(&session, sketch).entity_ids(),
-        (1..=10).map(SketchEntityId).collect::<Vec<_>>()
+        [1, 4, 6, 10].map(SketchEntityId)
     );
+    assert_all_primitive_ids_are_reserved(geometry(&session, sketch));
     assert_eq!(
         session.undo_labels().last().copied().unwrap(),
         "Create sketch primitive"
     );
+}
+fn assert_all_primitive_ids_are_reserved(geometry: &Sketch2D) {
+    let mut ids = geometry.owned_entity_ids();
+    ids.sort();
+    assert_eq!(ids, (1..=10).map(SketchEntityId).collect::<Vec<_>>());
 }
 #[test]
 fn shared_points_keep_identity_and_the_associative_anchor_remains_grounded() {

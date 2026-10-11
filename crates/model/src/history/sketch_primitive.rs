@@ -52,11 +52,8 @@ pub(super) fn append_primitive(
     input: &SketchPrimitiveCreation,
     reservations: &mut RecipeReservations<'_>,
 ) -> Result<SketchPrimitiveCreationReport, SketchPrimitiveCreationError> {
-    let mut points = Vec::new();
     let mut created = Vec::new();
-    for point in input.defining_points() {
-        points.push(append_point(geometry, point, reservations, &mut created)?);
-    }
+    let points = append_defining_points(geometry, input, reservations, &mut created)?;
     let entity = primitive_identity(input, &points, reservations, &mut created)?;
     input
         .append_curve(geometry, entity, &points)
@@ -67,6 +64,24 @@ pub(super) fn append_primitive(
         points,
         created,
     })
+}
+type PrimitivePointAdoption =
+    fn(&mut Sketch2D, SketchEntityId, [f64; 2]) -> Result<(), SketchError>;
+fn append_defining_points(
+    geometry: &mut Sketch2D,
+    input: &SketchPrimitiveCreation,
+    reservations: &mut RecipeReservations<'_>,
+    created: &mut Vec<SketchEntityId>,
+) -> Result<Vec<SketchEntityId>, SketchPrimitiveCreationError> {
+    let adopt: PrimitivePointAdoption = match input {
+        SketchPrimitiveCreation::Point { .. } => Sketch2D::add_point,
+        _ => Sketch2D::add_defining_point,
+    };
+    input
+        .defining_points()
+        .into_iter()
+        .map(|point| append_point(geometry, point, reservations, created, adopt))
+        .collect()
 }
 fn primitive_identity(
     input: &SketchPrimitiveCreation,
@@ -84,14 +99,13 @@ fn append_point(
     point: SketchPointInput,
     reservations: &mut RecipeReservations<'_>,
     created: &mut Vec<SketchEntityId>,
+    adopt: PrimitivePointAdoption,
 ) -> Result<SketchEntityId, SketchPrimitiveCreationError> {
     match point {
         SketchPointInput::Owned(id) => Ok(id),
         SketchPointInput::New(position) => {
             let id = reserve_created(reservations, created)?;
-            geometry
-                .add_point(id, position)
-                .map_err(SketchPrimitiveCreationError::Sketch)?;
+            adopt(geometry, id, position).map_err(SketchPrimitiveCreationError::Sketch)?;
             Ok(id)
         }
     }

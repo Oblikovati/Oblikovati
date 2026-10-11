@@ -424,3 +424,5 @@ mod line;
 
 #[path = "add_entity/ellipse.rs"]
 mod ellipse;
+#[path = "add_entity/point_ownership.rs"]
+mod point_ownership;

@@ -46,6 +46,20 @@ no-op. Survivors keep their identities, authored order and coordinate bits.
 
 ## Evidence and remaining work
 
+The shared primitive factory now adopts new line, circle, ellipse and arc points
+as defining points. Explicit point creation remains a standalone marker. Reused
+owned points keep their existing role and identity. The existing reservation
+report still includes every created point and curve, while public entity rows
+include one row per primitive. The part's optional projected origin retains its
+existing marker; assembly creation keeps its existing no-origin behavior.
+
+Typed public-client acceptance checks all five primitive kinds in both document
+owners, authored row indices, exact reserved IDs, hidden-point key resolution,
+schema 12, save/reopen and copy namespaces. Existing session tests check shared
+point reuse, successful solve evidence, source/identity retention, rejected replies,
+veto, abort, undo and redo. The earlier test that equated entity enumeration with
+every owned coordinate record now checks the two namespaces separately.
+
 Model tests cover every native curve kind, shared points, standalone markers,
 dependent offsets, orphan points and bound relations, dimension metadata cleanup,
 invalid/empty/duplicate selections, reversed numeric dependency order, three
@@ -54,8 +68,9 @@ checks and reference-key retirement. Package tests cover both document owners,
 hidden high-water IDs and byte-identical re-encoding. Run `make gate` for the full
 Linux workspace suite.
 
-This is the native model boundary. Public curve factories still need adoption
-of defining-point construction. Canonical entity deletion, document model-parameter
+This covers the native model boundary and the five current public primitive
+factories. Spline and other pending curve factories still need defining-point
+construction. Canonical entity deletion, document model-parameter
 cascade, annotations, history/veto/abort, copy/reopen/live editor acceptance and
 feature-consumer guards are incomplete. Do not close #3789 or infer general
 application deletion acceptance from these native tests.
