@@ -182,3 +182,6 @@ fn empty_annotation_is_optional_and_ignored_flags_do_not_change_radial_creation(
         assert_eq!(row.value, 1.0);
     }
 }
+
+#[path = "add_dimension/acceptance.rs"]
+mod acceptance;

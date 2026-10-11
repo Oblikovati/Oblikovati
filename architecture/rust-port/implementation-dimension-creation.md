@@ -93,6 +93,9 @@ candidate adoption.
 
 Client tests cover the native constructor vocabulary, reference metadata,
 optional annotations, ignored options, invalid operands, live driving formulas,
-and undo/redo. Further API acceptance must cover working scales, failed-source
-health, veto, save/reopen, and copied documents. Ellipse-radius and offset-spline
+and undo/redo. Additional acceptance covers three working scales, failed-source
+health and repair, veto, group abort, save/reopen, and copied documents. A finite
+working radius with overflowing centimetre conversion proves that a rejected
+wire reply consumes names and identities without publishing a partial recipe.
+Veto keeps the document dirty when reservations need to be saved. Ellipse-radius and offset-spline
 dimensions still need native geometry support; they remain required R3 work.
