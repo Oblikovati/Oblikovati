@@ -53,20 +53,20 @@ impl DocumentPackage {
         program: &FeatureSequence<WorkPlaneDefinition>,
         mark: u64,
     ) -> Result<Self, PackageCodecError> {
-        let retained = self.restore_work_planes()?.ids.high_water();
+        let previous = self.restore_work_planes()?;
+        let retained = previous.ids.high_water();
         super::sketches::require_monotonic_mark("feature", mark, retained)?;
-        let restored = restore_program(program.clone(), mark)?;
-        if program.features().is_empty() && program.end_of_part().is_none() && mark == 0 {
+        restore_program(program.clone(), mark)?;
+        if mark == retained && previous.program.same_work_plane_recipe(program) {
             return Ok(self.clone());
         }
-        let stored = StoredWorkPlanes {
-            recipe: restored
-                .program
-                .work_plane_recipe()
-                .map_err(work_plane_codec_error)?,
+        let recipe = program
+            .work_plane_recipe()
+            .map_err(work_plane_codec_error)?;
+        self.capture_work_planes(StoredWorkPlanes {
+            recipe,
             feature_high_water: mark,
-        };
-        self.capture_work_planes(stored)
+        })
     }
     fn capture_work_planes(&self, stored: StoredWorkPlanes) -> Result<Self, PackageCodecError> {
         let encoded = serde_yaml_ng::to_value(stored).map_err(work_plane_codec_error)?;

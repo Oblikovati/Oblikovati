@@ -292,6 +292,9 @@ unreserved IDs, undo/redo, deleted reservations after reopen, independent copy
 allocation, package-based creation, legacy refusal, and signed-zero changes.
 Reopened parameter-driven planes evaluate with the restored parameter owner.
 Tests use the named in-memory file boundary; no native window is claimed.
+The empty-program cutoff regression fails against `65103ab2`: clearing `Some(0)`
+must save `None`. Unchanged storage now compares the complete authored program
+and reservation mark, so an empty collection cannot hide a cutoff change.
 
 This step supplies actual recipe save/reopen support for fixed and offset
 planes. It does not complete R2 or R3: live sketch attachment to feature planes,

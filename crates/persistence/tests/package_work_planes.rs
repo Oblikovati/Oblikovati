@@ -206,3 +206,22 @@ fn assert_zero_id_refused() {
             .contains("nonzero ID")
     );
 }
+#[test]
+fn clearing_an_empty_program_cutoff_replaces_the_saved_authored_state() {
+    let mut planes = FeatureSequence::default();
+    planes.set_end_of_part(Some(0)).unwrap();
+    let rolled_back = package().with_work_planes(&planes, 0).unwrap();
+    planes.set_end_of_part(None).unwrap();
+    let restored_all = rolled_back.with_work_planes(&planes, 0).unwrap();
+    let decoded = DocumentPackage::decode(&restored_all.encode().unwrap()).unwrap();
+    let restored = decoded.restore_work_planes().unwrap();
+    assert_eq!(restored.program.end_of_part(), None);
+    assert_ne!(
+        restored_all.recipe_digest().unwrap(),
+        rolled_back.recipe_digest().unwrap()
+    );
+    assert_eq!(
+        restored_all.with_work_planes(&planes, 0).unwrap(),
+        restored_all
+    );
+}
