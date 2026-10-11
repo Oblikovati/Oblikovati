@@ -5,24 +5,26 @@ pub(super) struct ProbeExports {
     pub(super) manifest: ffi::ObkAddInManifest,
     major: Option<ffi::ObkAddInApiMajor>,
     minor: Option<ffi::ObkAddInApiMinor>,
-    pub(super) has_automation: bool,
+    pub(super) activate: ffi::ObkAddInActivate,
+    pub(super) deactivate: ffi::ObkAddInDeactivate,
+    pub(super) notify: ffi::ObkAddInNotify,
+    pub(super) free: ffi::ObkFree,
+    pub(super) automation: Option<ffi::ObkAddInAutomation>,
 }
 impl ProbeExports {
     pub(super) unsafe fn resolve(library: &ResidentLibrary) -> Result<Self, Error> {
         // SAFETY: all symbol types are imported canonical ABI prototypes; the trusted mapping stays resident.
         unsafe {
-            require::<ffi::ObkAddInActivate>(library, c"ObkAddInActivate")?;
-            require::<ffi::ObkAddInDeactivate>(library, c"ObkAddInDeactivate")?;
-            require::<ffi::ObkAddInNotify>(library, c"ObkAddInNotify")?;
-            require::<ffi::ObkFree>(library, c"ObkFree")?;
             Ok(Self {
                 id: require(library, c"ObkAddInId")?,
                 manifest: require(library, c"ObkAddInManifest")?,
                 major: library.symbol(c"ObkAddInApiMajor")?,
                 minor: library.symbol(c"ObkAddInApiMinor")?,
-                has_automation: library
-                    .symbol::<ffi::ObkAddInAutomation>(c"ObkAddInAutomation")?
-                    .is_some(),
+                activate: require(library, c"ObkAddInActivate")?,
+                deactivate: require(library, c"ObkAddInDeactivate")?,
+                notify: require(library, c"ObkAddInNotify")?,
+                free: require(library, c"ObkFree")?,
+                automation: library.symbol(c"ObkAddInAutomation")?,
             })
         }
     }

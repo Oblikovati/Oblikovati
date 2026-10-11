@@ -31,9 +31,7 @@ impl FixtureCompiler {
         let library = self.directory.path().join(format!("{name}.so"));
         let template =
             include_str!("fixture.rs.txt").replace("SDK_PATH", &format!("{:?}", self.sdk));
-        let source_text = template
-            .replace("API_MAJOR_VALUE", &major.to_string())
-            .replace("API_MINOR_VALUE", &minor.to_string());
+        let source_text = fixture_source(template, flags, major, minor);
         std::fs::write(&source, source_text).unwrap();
         let mut compile = rust_compiler();
         for flag in flags {
@@ -110,4 +108,22 @@ fn ffi_from_metadata(metadata: CargoPackages) -> PathBuf {
         .find(|entry| entry.name == "oblikovati-api")
         .unwrap();
     package.manifest_path.parent().unwrap().join("src/ffi.rs")
+}
+
+fn fixture_source(template: String, flags: &[&str], major: i32, minor: i32) -> String {
+    let template = if flags.contains(&"lifecycle") {
+        let start = template
+            .find("#[unsafe(no_mangle)]\npub extern \"C\" fn ObkAddInActivate")
+            .unwrap();
+        format!(
+            "{}{}",
+            &template[..start],
+            include_str!("fixture_lifecycle.rs.txt")
+        )
+    } else {
+        template
+    };
+    template
+        .replace("API_MAJOR_VALUE", &major.to_string())
+        .replace("API_MINOR_VALUE", &minor.to_string())
 }

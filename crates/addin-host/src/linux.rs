@@ -8,6 +8,9 @@ use std::{
     ptr::NonNull,
 };
 mod exports;
+mod lifecycle;
+mod response;
+pub use lifecycle::{AddInState, LoadedAddIn};
 
 struct ResidentLibrary {
     handle: NonNull<c_void>,
@@ -69,9 +72,24 @@ fn last_loader_error() -> String {
 /// The library and its constructors/exports must be trusted and obey the exact API C ABI.
 /// String exports must return valid NUL-terminated storage throughout each read. Foreign faults are not contained.
 pub unsafe fn probe_library(path: &Path) -> Result<AddInProbe, Error> {
-    // SAFETY: propagated trust and ABI obligations; the mapping outlives every resolved export.
+    // SAFETY: delegated unchanged to the trusted opener; no lifecycle call occurs during admission.
+    Ok(unsafe { open_addin(path)? }.metadata().clone())
+}
+/// Admit a trusted library and retain its callable ABI exports, initially inactive.
+/// Example: `let mut addin = unsafe { open_addin(path) }?;`.
+/// # Safety
+/// The obligations of `probe_library` apply. Lifecycle callers must obey foreign thread affinity
+/// and exclude other wrappers or foreign callers from the same library state during each call.
+/// Repeated dlopen does not prove separate library state.
+pub unsafe fn open_addin(path: &Path) -> Result<LoadedAddIn, Error> {
+    // SAFETY: caller supplies a trusted ABI implementation; mappings remain resident.
     let library = unsafe { ResidentLibrary::open(path)? };
     let exports = unsafe { exports::ProbeExports::resolve(&library)? };
+    let metadata = unsafe { copy_metadata(&exports)? };
+    Ok(LoadedAddIn::new(exports, metadata))
+}
+unsafe fn copy_metadata(exports: &exports::ProbeExports) -> Result<AddInProbe, Error> {
+    // SAFETY: resolved canonical exports stay resident; trusted strings are copied immediately.
     let (major, minor) = check_api_version(unsafe { exports.version() }, (API_MAJOR, API_MINOR))?;
     let id = unsafe { exports::copy_string(exports.id, "ObkAddInId")? };
     let manifest = unsafe { exports::copy_string(exports.manifest, "ObkAddInManifest")? };
@@ -80,6 +98,6 @@ pub unsafe fn probe_library(path: &Path) -> Result<AddInProbe, Error> {
         manifest,
         major,
         minor,
-        has_automation: exports.has_automation,
+        has_automation: exports.automation.is_some(),
     })
 }

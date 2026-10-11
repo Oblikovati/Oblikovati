@@ -63,3 +63,7 @@ host callback registry, queue attachment, signed lengths, response/free ownershi
 notifications, optional automation calls, safe reload policy and real typed-client
 Go/Rust lifecycle tests remain required. Metadata admission alone does not prove
 C callback transport, live add-in compatibility, or foreground application use.
+
+The [native lifecycle adapter](implementation-native-addin-lifecycle.md) now
+implements explicit lifecycle calls and copied/free-managed automation replies.
+The managed host and queued callback transport remain open.
