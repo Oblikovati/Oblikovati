@@ -121,3 +121,43 @@ partial bodies. The controller does not prove those geometry postconditions.
 Kernel body isolation, generation checks, coherent session adoption, concrete
 feature definitions, history and persistence remain open. No R3 exit or full
 application feature is declared complete by these state tests.
+
+## Conditional suppression with real parameter inputs — partial R3
+
+Tracking: [#3726](https://github.com/Oblikovati/Oblikovati/issues/3726).
+Implementation: `crates/model/src/feature/suppression` and the replay controller.
+Go source: `model/feature/suppression.go` at the same baseline above.
+
+Each authored condition stores a stable parameter ID, one of six comparisons,
+and a finite numeric threshold in document working units. Both input and
+threshold must have the same dimension. The six comparisons preserve the Go
+exact scalar boundaries; they are numeric authoring rules, not topological
+predicates. Parameter rename does not change the reference. Tolerance model
+selection affects the compared value; display units do not convert it.
+
+The condition read joins the definition footprint, including a missing input
+that may later recover. Replacing or clearing a condition removes only its own
+read, preserving a shared definition read. Definition replacement retains the
+condition. Condition equality preserves exact threshold bits, including signed
+zero, for authored edit decisions. Identity reservations and serialization
+still belong to the future concrete feature recipe and session owners.
+
+Replay receives an immutable parameter collection through
+`new_with_parameters`. Blocked dependencies are checked first, then explicit
+suppression, then the conditional read. A true condition skips execution; a
+false condition permits it. A missing, failed, text, Boolean, or dimensionally
+incompatible input becomes `ConditionFailed` with its typed cause. Readers
+are quarantined while independent entries continue. The Go missing-input
+behavior silently enables the feature; Rust refuses that degradation under
+ADR-0004. Failed reads never use the last-good inspection value.
+
+An active conditional entry without parameter inputs returns a protocol error
+without advancing replay. A reused prefix must match the current condition
+outcome and the current typed failure. The session must still prove prefix
+freshness for all other definition inputs and invalidate old generations.
+
+Tests cover all six comparison boundaries, dimension errors, invalid thresholds,
+selected tolerance values, rename, nonnumeric and failed inputs, stable missing
+input recovery, shared footprints, condition clearing, exact threshold edits,
+real replay toggles, local failure quarantine, and rejected stale prefix health.
+Kernel bodies, feature package persistence, and session adoption remain open.

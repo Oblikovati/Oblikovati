@@ -34,6 +34,7 @@ pub enum FeatureReplayError {
         drivers: FeatureReplayMismatch<Vec<FeatureId>>,
     },
     Pending(FeatureId),
+    ParametersRequired(FeatureId),
     ResultIdentity {
         feature: FeatureId,
         expected: Option<FeatureId>,
@@ -54,6 +55,10 @@ impl Display for FeatureReplayError {
             Self::PrefixStatus { feature, statuses } => status_message(f, *feature, statuses),
             Self::PrefixDrivers { feature, drivers } => drivers_message(f, *feature, drivers),
             Self::Pending(feature) => pending_message(f, *feature),
+            Self::ParametersRequired(feature) => write!(
+                f,
+                "conditional feature {feature:?}: expected immutable parameter model inputs"
+            ),
             Self::ResultIdentity { feature, expected } => result_message(f, *feature, *expected),
             Self::Incomplete { next, end, pending } => {
                 incomplete_message(f, (*next, *end, *pending))

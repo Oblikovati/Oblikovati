@@ -15,7 +15,7 @@ impl<Definition, Failure> FeatureReplayController<'_, Definition, Failure> {
         if self.is_complete() {
             return Ok(None);
         }
-        let action = self.action_for(&self.sequence.features()[self.next]);
+        let action = self.action_for(&self.sequence.features()[self.next])?;
         self.accept_action(&action);
         Ok(Some(action))
     }
@@ -43,6 +43,9 @@ impl<Definition, Failure> FeatureReplayController<'_, Definition, Failure> {
 
     fn accept_action(&mut self, action: &FeatureReplayStep) {
         match action {
+            FeatureReplayStep::ConditionFailed { feature, error } => {
+                self.record_condition_failure(*feature, error.clone())
+            }
             FeatureReplayStep::Evaluate(feature) => self.pending = Some(*feature),
             FeatureReplayStep::Suppressed(feature) => self.register(FeatureHealthRecord {
                 feature: *feature,
@@ -55,5 +58,14 @@ impl<Definition, Failure> FeatureReplayController<'_, Definition, Failure> {
                 },
             }),
         }
+    }
+
+    fn record_condition_failure(
+        &mut self,
+        feature: FeatureId,
+        error: crate::feature::FeatureSuppressionError,
+    ) {
+        let status = FeatureEvaluationStatus::ConditionFailed(error);
+        self.register(FeatureHealthRecord { feature, status });
     }
 }

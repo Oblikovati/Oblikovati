@@ -14,7 +14,7 @@ pub enum FeatureReadKey {
 /// Explicit reads and conservative attribution status; empty is not unknown.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct FeatureReadFootprint {
-    keys: BTreeSet<FeatureReadKey>,
+    pub(super) keys: BTreeSet<FeatureReadKey>,
     unattributed: bool,
 }
 

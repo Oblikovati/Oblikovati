@@ -39,13 +39,30 @@ impl<Definition, Failure> FeatureReplayController<'_, Definition, Failure> {
                 },
             });
         }
-        let expected = self.action_for(feature);
+        let expected = self.action_for(feature)?;
         Self::validate_prefix_status(&record, expected)?;
         self.register(record);
         Ok(())
     }
 
     fn validate_prefix_status(
+        record: &FeatureHealthRecord<Failure>,
+        expected: FeatureReplayStep,
+    ) -> Result<(), FeatureReplayError> {
+        if let (
+            FeatureEvaluationStatus::ConditionFailed(actual),
+            FeatureReplayStep::ConditionFailed { error, .. },
+        ) = (&record.status, &expected)
+        {
+            if actual == error {
+                return Ok(());
+            }
+            return Err(Self::prefix_status_error(record, &expected));
+        }
+        Self::validate_regular_prefix_status(record, expected)
+    }
+
+    fn validate_regular_prefix_status(
         record: &FeatureHealthRecord<Failure>,
         expected: FeatureReplayStep,
     ) -> Result<(), FeatureReplayError> {
@@ -100,6 +117,7 @@ impl<Definition, Failure> FeatureReplayController<'_, Definition, Failure> {
             FeatureEvaluationStatus::Healthy => "healthy",
             FeatureEvaluationStatus::Suppressed => "suppressed",
             FeatureEvaluationStatus::Failed(_) => "failed",
+            FeatureEvaluationStatus::ConditionFailed(_) => "failed suppression condition",
             FeatureEvaluationStatus::Blocked { .. } => "blocked",
         }
     }
@@ -107,6 +125,7 @@ impl<Definition, Failure> FeatureReplayController<'_, Definition, Failure> {
     fn action_label(action: &FeatureReplayStep) -> &'static str {
         match action {
             FeatureReplayStep::Evaluate(_) => "healthy or failed",
+            FeatureReplayStep::ConditionFailed { .. } => "the current suppression read failure",
             FeatureReplayStep::Suppressed(_) => "suppressed",
             FeatureReplayStep::Blocked { .. } => "blocked by unavailable drivers",
         }

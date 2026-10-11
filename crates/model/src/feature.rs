@@ -7,6 +7,7 @@ mod error;
 mod evaluation;
 mod footprint;
 mod replay;
+mod suppression;
 mod validation;
 
 use crate::dependency::DependencyGraph;
@@ -17,6 +18,9 @@ pub use evaluation::{
 };
 pub use footprint::{FeatureReadFootprint, FeatureReadKey};
 pub use replay::FeatureReplayRange;
+pub use suppression::{
+    FeatureSuppressionComparison, FeatureSuppressionCondition, FeatureSuppressionError,
+};
 
 /// Permanent document-local identity; reservation belongs outside undo snapshots.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -30,6 +34,8 @@ pub struct AuthoredFeature<Definition> {
     definition: Definition,
     suppressed: bool,
     reads: FeatureReadFootprint,
+    definition_reads: FeatureReadFootprint,
+    condition: Option<FeatureSuppressionCondition>,
 }
 
 /// Recipe order shared by future concrete feature definitions and the evaluator.
@@ -63,7 +69,9 @@ impl<Definition> AuthoredFeature<Definition> {
             name: name.into(),
             definition,
             suppressed: false,
+            definition_reads: reads.clone(),
             reads,
+            condition: None,
         }
     }
 
@@ -90,6 +98,11 @@ impl<Definition> AuthoredFeature<Definition> {
     /// Inspect attributed reads; example: `feature.reads().keys()` for dependency queries.
     pub fn reads(&self) -> &FeatureReadFootprint {
         &self.reads
+    }
+
+    /// Inspect an authored parameter condition; example: `feature.suppression_condition()`.
+    pub fn suppression_condition(&self) -> Option<FeatureSuppressionCondition> {
+        self.condition
     }
 }
 
