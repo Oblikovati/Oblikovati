@@ -72,7 +72,7 @@ impl Sketch2D {
         Ok(())
     }
 }
-pub(super) fn require_position(position: [f64; 2]) -> Result<(), SketchError> {
+pub(crate) fn require_position(position: [f64; 2]) -> Result<(), SketchError> {
     if position.iter().any(|coordinate| !coordinate.is_finite()) {
         return Err(SketchError::Definition(format!(
             "sketch position {position:?}: expected two finite working-unit coordinates"

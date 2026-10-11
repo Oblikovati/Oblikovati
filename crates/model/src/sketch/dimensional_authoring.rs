@@ -41,7 +41,22 @@ pub enum SeededDimensionOperands {
         options: TangentDistanceOptions,
     },
 }
+mod validation;
 impl SketchDimensionalConstraintCreation {
+    /// Identify the scalar category before creating its owned source.
+    /// Example: `parameters.insert_scalar_expression(id, name, source, input.dimension())?`.
+    pub fn dimension(&self) -> crate::quantity::Dimension {
+        if matches!(
+            self,
+            Self::Seeded(
+                SeededDimensionOperands::Angle(_) | SeededDimensionOperands::ThreePointAngle(_)
+            )
+        ) {
+            return crate::quantity::Dimension::Angle;
+        }
+        crate::quantity::Dimension::Length
+    }
+
     /// Require current owner coordinates before retaining a branch.
     /// Example: `if input.requires_current_seed() { /* verify the owner geometry */ }`.
     pub fn requires_current_seed(&self) -> bool {

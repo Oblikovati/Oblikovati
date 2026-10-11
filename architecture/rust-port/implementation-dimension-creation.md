@@ -49,13 +49,44 @@ Tests cover independent namespaces, collisions, renamed numeric names,
 exhaustion, legacy bootstrap, malformed storage, retired marks, failed commands,
 abort, undo/redo, save/reopen, copies, and refusal before document registration.
 
+## Owner creation and health
+
+The document owner creates a fresh Model scalar and permanent constraint on an
+isolated candidate. `insert_scalar_expression` retains the source, dependencies,
+and original bare-input unit. Creation does not freeze the formula. A source
+change later recomputes the dimension through normal parameter propagation.
+Length inputs use document display units and working scale; angles use the
+captured angular unit. Current geometry supplies retained angle, offset, and
+contact branches. Tests cover an angle whose stored coordinates have the wrong
+turn for its current driving source.
+
+Ownership and finite annotation validation happen before reservations. Malformed
+source, self-reference, invalid healthy metric domains, or identity exhaustion
+publish neither the parameter nor the relation. Attempted reservations remain
+permanent. Reference role and annotation apply before the first solve. A reference
+dimension can keep a failed unused formula without constraining its geometry.
+
+Unresolved, incompatible, and failed arithmetic formulas remain authored with
+failed parameter health. Strict sketch verification still records failure. DOF
+inspection classifies unavailable driving targets and omits those rows only on an
+isolated analysis copy, through the existing structural analyzer. Every omitted
+row retains its constraint ID, parameter ID, and cause in the owner report. This
+inspection neither solves nor changes recipe state; it never substitutes zero
+or reports convergence. Healthy invalid geometry or metric domains remain errors.
+Later parameter binding repairs the source and triggers normal verification.
+
+Session and workspace commands prepare a projected reply before adoption. Their
+normal event, veto, group, recompute, and history boundaries apply. Tests cover all
+24 native forms with healthy and unresolved sources, formula propagation,
+reference creation without transient conflict, three working scales, angular
+units, malformed inputs, source errors, exhaustion, rejected replies, veto,
+abort, undo/redo, deletion/recreation, save/reopen, and copied formulas/annotations.
+
 ## Remaining creation work
 
-The native inputs and name owner are foundations. The application does not yet
-implement `client.dimension().add` or its creation reply. The next changes must
-create a fresh owned Model scalar and permanent constraint on one isolated
-candidate, retain the authored formula, apply reference and annotation options
-before the first solve, and prepare measured value and DOF before adoption.
-Both part and assembly hosts must use the released API-owned DTOs and constants.
-Ellipse-radius and offset-spline dimensions still need native geometry support;
-they remain required R3 work.
+The public automation host does not yet implement `client.dimension().add`.
+Both part and assembly hosts must route the released API-owned request, method
+constant, and result through these owner commands, with correct reference
+classification and centimetre/radian conversions. Ellipse-radius and
+offset-spline dimensions still need native geometry support; they remain required
+R3 work.

@@ -14,7 +14,11 @@ mod feature_ids;
 mod scalar_ownership;
 mod sketch_create;
 mod sketch_current_geometry;
+mod sketch_dimension_create;
 mod sketch_dimension_delete;
+pub use sketch_dimension_create::{
+    SketchDimensionCreation, SketchDimensionCreationError, SketchDimensionCreationReport,
+};
 mod sketch_dimension_edit;
 pub use sketch_dimension_edit::SketchDimensionEdit;
 mod sketch_line;

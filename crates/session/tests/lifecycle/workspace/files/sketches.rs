@@ -444,3 +444,6 @@ mod inferred_line;
 
 #[path = "sketches/dimension_names.rs"]
 mod dimension_names;
+
+#[path = "sketches/dimension_create.rs"]
+mod dimension_create;

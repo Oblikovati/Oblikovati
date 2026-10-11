@@ -403,3 +403,6 @@ mod sketch_relation_delete;
 
 #[path = "lifecycle/sketch_dimension_delete.rs"]
 mod sketch_dimension_delete;
+
+#[path = "lifecycle/dimension_create.rs"]
+mod dimension_create;

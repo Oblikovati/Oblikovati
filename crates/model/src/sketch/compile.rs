@@ -168,7 +168,7 @@ pub(super) fn positive_length_target(
     Ok(value)
 }
 
-fn parameter_quantity(
+pub(super) fn parameter_quantity(
     constraint: &SketchConstraint,
     parameter: u64,
     parameters: &ParameterCollection<u64>,

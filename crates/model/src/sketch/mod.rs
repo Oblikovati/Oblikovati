@@ -2,6 +2,8 @@
 
 //! Application-owned planar geometry and constraints, independent from kernel topology.
 mod angle;
+mod available_targets;
+pub use available_targets::SketchAvailableTargetAnalysis;
 mod arc;
 mod arc_length;
 mod arc_midpoint;
@@ -35,6 +37,7 @@ mod entity_geometry;
 mod entity_order;
 mod error;
 mod geometry;
+pub(crate) use geometry::require_position;
 mod inference;
 mod inspection;
 pub use inference::{

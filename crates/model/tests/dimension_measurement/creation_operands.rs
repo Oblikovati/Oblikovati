@@ -29,7 +29,7 @@ fn assert_created_input(input: SketchDimensionalConstraintCreation, expected: Qu
         assert_eq!(geometry.recipe(), before);
     }
 }
-fn input(relation: PlanarConstraint) -> SketchDimensionalConstraintCreation {
+pub(super) fn input(relation: PlanarConstraint) -> SketchDimensionalConstraintCreation {
     match relation {
         PlanarConstraint::Distance {
             points, measure, ..
