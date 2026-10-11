@@ -89,21 +89,19 @@ pub(super) fn owner_revision(
         files.workspace().needs_save(document).unwrap(),
     )
 }
-fn point_geometry(point: SketchEntityId, redundant: bool) -> Sketch2D {
+fn point_geometry(point: SketchEntityId, constraints: Vec<SketchConstraintId>) -> Sketch2D {
     let mut geometry = Sketch2D::default();
     geometry.add_point(point, [2.0, 3.0]).unwrap();
-    if redundant {
-        for id in [1, 2] {
-            geometry
-                .add_constraint(
-                    SketchConstraintId(id),
-                    PlanarConstraint::Fix {
-                        point,
-                        position: [2.0, 3.0],
-                    },
-                )
-                .unwrap();
-        }
+    for id in constraints {
+        geometry
+            .add_constraint(
+                id,
+                PlanarConstraint::Fix {
+                    point,
+                    position: [2.0, 3.0],
+                },
+            )
+            .unwrap();
     }
     geometry
 }
@@ -120,9 +118,12 @@ fn replace_with_point(
             let point = ids
                 .allocate_sketch_entity()
                 .map_err(|cause| cause.to_string())?;
+            let constraints = (0..if redundant { 2 } else { 0 })
+                .map(|_| ids.allocate_sketch_constraint(sketch).unwrap())
+                .collect();
             snapshot
                 .sketches
-                .replace_geometry(sketch, point_geometry(point, redundant))
+                .replace_geometry(sketch, point_geometry(point, constraints))
                 .map_err(|cause| cause.to_string())
         })
         .unwrap();

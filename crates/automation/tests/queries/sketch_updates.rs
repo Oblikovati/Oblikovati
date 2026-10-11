@@ -18,21 +18,27 @@ pub(super) fn create_circle(
     let circle = ids
         .allocate_sketch_entity()
         .map_err(|cause| cause.to_string())?;
-    let geometry = dimensioned_circle(center, circle);
+    let constraints = std::array::from_fn(|_| ids.allocate_sketch_constraint(sketch).unwrap());
+    let geometry = dimensioned_circle(center, circle, constraints);
     snapshot
         .sketches
         .add(sketch, "Driven circle", SketchPlane::xy(), geometry)
         .map_err(|cause| cause.to_string())?;
     Ok(sketch)
 }
-fn dimensioned_circle(center: SketchEntityId, circle: SketchEntityId) -> Sketch2D {
+fn dimensioned_circle(
+    center: SketchEntityId,
+    circle: SketchEntityId,
+    constraints: [SketchConstraintId; 2],
+) -> Sketch2D {
     let mut geometry = Sketch2D::default();
     geometry.add_point(center, [0.0, 0.0]).unwrap();
     geometry.add_circle(circle, center, 1.0).unwrap();
-    for (index, relation) in circle_relations(center, circle).into_iter().enumerate() {
-        geometry
-            .add_constraint(SketchConstraintId(index as u64 + 1), relation)
-            .unwrap();
+    for (constraint, relation) in constraints
+        .into_iter()
+        .zip(circle_relations(center, circle))
+    {
+        geometry.add_constraint(constraint, relation).unwrap();
     }
     geometry
 }

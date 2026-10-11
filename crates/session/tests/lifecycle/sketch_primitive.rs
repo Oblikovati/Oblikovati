@@ -365,6 +365,7 @@ fn prepared_session(veto: Option<&'static str>, mark: u64) -> DocumentSession<Re
     .with_sketch_reservations(SketchReservationMarks {
         sketch: 1,
         entity: mark,
+        constraints: Default::default(),
     })
     .unwrap();
     DocumentSession::new(
@@ -437,12 +438,12 @@ fn bind_radius(
     sketch: DocumentSketchId,
     curve: SketchEntityId,
 ) {
-    use oblikovati_model::sketch::{PlanarConstraint, SketchConstraintId};
+    use oblikovati_model::sketch::PlanarConstraint;
     session
-        .run("Bind radius", |snapshot, _| {
+        .run("Bind radius", |snapshot, ids| {
             let mut geometry = snapshot.sketches.get(sketch)?.geometry().clone();
             geometry.add_constraint(
-                SketchConstraintId(17),
+                ids.allocate_sketch_constraint(sketch).unwrap(),
                 PlanarConstraint::Radius {
                     curve,
                     parameter: 1,

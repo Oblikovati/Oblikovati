@@ -79,6 +79,7 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
     let sketch_marks = oblikovati_model::history::SketchReservationMarks {
         sketch: sketches.sketch_ids.high_water(),
         entity: sketches.entity_ids.high_water(),
+        constraints: sketches.constraint_ids.marks(),
     };
     let work_planes = package
         .restore_work_planes()

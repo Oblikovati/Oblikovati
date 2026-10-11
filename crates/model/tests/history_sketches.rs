@@ -40,7 +40,8 @@ fn undo_redo_abort_and_failed_edits_never_release_sketch_or_entity_ids() {
         history.sketch_reservations(),
         SketchReservationMarks {
             sketch: 1,
-            entity: 1
+            entity: 1,
+            constraints: Default::default(),
         }
     );
     history.redo().unwrap();
@@ -58,7 +59,8 @@ fn undo_redo_abort_and_failed_edits_never_release_sketch_or_entity_ids() {
         history.sketch_reservations(),
         SketchReservationMarks {
             sketch: 2,
-            entity: 2
+            entity: 2,
+            constraints: Default::default(),
         }
     );
 }
@@ -68,6 +70,7 @@ fn unreserved_identities_and_reuse_of_deleted_reservations_are_refused() {
         .with_sketch_reservations(SketchReservationMarks {
             sketch: 5,
             entity: 8,
+            constraints: Default::default(),
         })
         .unwrap();
     let token = history.begin("invalid").unwrap();
@@ -104,7 +107,8 @@ fn unreserved_identities_and_reuse_of_deleted_reservations_are_refused() {
         history
             .with_sketch_reservations(SketchReservationMarks {
                 sketch: 5,
-                entity: 8
+                entity: 8,
+                constraints: Default::default(),
             })
             .is_err()
     );
@@ -158,6 +162,7 @@ fn saved_marks_cover_live_ids_and_maximum_namespaces_refuse_allocation() {
         .with_sketch_reservations(SketchReservationMarks {
             sketch: u64::MAX,
             entity: u64::MAX,
+            constraints: Default::default(),
         })
         .unwrap();
     let token = history.begin("exhausted").unwrap();

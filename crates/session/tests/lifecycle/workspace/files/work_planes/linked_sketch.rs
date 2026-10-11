@@ -4,12 +4,12 @@ use oblikovati_model::{
     document_sketch::{DocumentSketchId, SketchPlacement},
     sketch::{PlanarConstraint, Sketch2D, SketchConstraintId, SketchEntityId},
 };
-fn fixed_point(point: SketchEntityId) -> Sketch2D {
+fn fixed_point(point: SketchEntityId, constraint: SketchConstraintId) -> Sketch2D {
     let mut geometry = Sketch2D::default();
     geometry.add_point(point, [2.0, 3.0]).unwrap();
     geometry
         .add_constraint(
-            SketchConstraintId(1),
+            constraint,
             PlanarConstraint::Fix {
                 point,
                 position: [2.0, 3.0],
@@ -26,9 +26,10 @@ fn create_hosted(host: &mut Host, id: u64, plane: FeatureId) -> DocumentSketchId
             let point = ids
                 .allocate_sketch_entity()
                 .map_err(|error| error.to_string())?;
+            let constraint = ids.allocate_sketch_constraint(sketch).unwrap();
             snapshot
                 .sketches
-                .add_on_work_plane(sketch, "Hosted", plane, fixed_point(point))
+                .add_on_work_plane(sketch, "Hosted", plane, fixed_point(point, constraint))
                 .map_err(|error| error.to_string())?;
             Ok::<_, String>(sketch)
         })

@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::RecipeReservations,
-    sketch::{LineContactSide, PlanarConstraint, Sketch2D, SketchConstraintId, SketchPlane},
+    sketch::{LineContactSide, PlanarConstraint, Sketch2D, SketchPlane},
 };
 use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
 fn add_sketch(
@@ -20,7 +20,7 @@ fn add_sketch(
         geometry.add_point(point, xy).unwrap();
     }
     geometry.add_line(line, [a, b]).unwrap();
-    for (id, relation) in [
+    for (expected, relation) in [
         (
             1,
             PlanarConstraint::Fix {
@@ -47,9 +47,9 @@ fn add_sketch(
             },
         ),
     ] {
-        geometry
-            .add_constraint(SketchConstraintId(id), relation)
-            .unwrap();
+        let id = ids.allocate_sketch_constraint(sketch).unwrap();
+        assert_eq!(id.0, expected);
+        geometry.add_constraint(id, relation).unwrap();
     }
     snapshot
         .sketches
@@ -429,3 +429,6 @@ mod point_projection;
 
 #[path = "sketches/create.rs"]
 mod create;
+
+#[path = "sketches/constraints.rs"]
+mod constraints;

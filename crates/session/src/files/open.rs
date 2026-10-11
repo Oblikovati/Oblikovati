@@ -76,6 +76,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let sketch_marks = oblikovati_model::history::SketchReservationMarks {
             sketch: prepared.sketches.sketch_ids.high_water(),
             entity: prepared.sketches.entity_ids.high_water(),
+            constraints: prepared.sketches.constraint_ids.marks(),
         };
         let history = super::history_restore::restore_history(
             snapshot,

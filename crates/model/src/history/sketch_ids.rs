@@ -6,11 +6,12 @@ use crate::{
     sketch::SketchEntityId,
 };
 use std::collections::BTreeSet;
-/// Permanent sketch and entity namespace marks; never part of an undo snapshot.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// Permanent sketch, entity and sketch-local constraint marks; never part of an undo snapshot.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SketchReservationMarks {
     pub sketch: u64,
     pub entity: u64,
+    pub constraints: std::collections::BTreeMap<u64, u64>,
 }
 impl RecipeReservations<'_> {
     /// Reserve a sketch ID even if the edit later fails; example: `let id = ids.allocate_sketch()?;`.
@@ -28,6 +29,7 @@ impl DocumentEditHistory {
         SketchReservationMarks {
             sketch: self.sketch_ids.high_water(),
             entity: self.sketch_entity_ids.high_water(),
+            constraints: self.sketch_constraint_ids.marks(),
         }
     }
     /// Restore saved marks without losing deleted reservations; example: `history.with_sketch_reservations(saved)?`.
@@ -45,6 +47,7 @@ impl DocumentEditHistory {
             self.current.sketches.entity_ids(),
             self.sketch_entity_ids.high_water(),
         )?;
+        self.restore_constraint_marks(&marks.constraints)?;
         Ok(self)
     }
     pub(super) fn validate_sketch_ids(
@@ -65,7 +68,8 @@ impl DocumentEditHistory {
             before.entity,
             self.sketch_entity_ids.high_water(),
             HistoryError::UnreservedSketchEntityId,
-        )
+        )?;
+        self.validate_sketch_constraint_ids(candidate, &before.constraints)
     }
 }
 pub(super) fn restore_mark(
@@ -83,7 +87,7 @@ pub(super) fn require_reserved(
     current: Vec<u64>,
     before: u64,
     after: u64,
-    failure: fn(u64) -> HistoryError,
+    failure: impl Fn(u64) -> HistoryError,
 ) -> Result<(), HistoryError> {
     let current: BTreeSet<u64> = current.into_iter().collect();
     for id in candidate {

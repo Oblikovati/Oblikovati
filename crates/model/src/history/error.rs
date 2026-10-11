@@ -14,6 +14,10 @@ pub enum HistoryError {
     UnreservedFeatureId(u64),
     UnreservedSketchId(u64),
     UnreservedSketchEntityId(u64),
+    UnreservedSketchConstraintId {
+        sketch: u64,
+        constraint: u64,
+    },
     UnreservedDerivedIdentity(i64),
     DerivedIdentityExhausted,
     ForeignTransaction,
@@ -44,6 +48,10 @@ impl fmt::Display for HistoryError {
             Self::UnreservedSketchEntityId(id) => write!(
                 output,
                 "sketch entity ID {id}: expected an existing identity or one reserved by this edit"
+            ),
+            Self::UnreservedSketchConstraintId { sketch, constraint } => write!(
+                output,
+                "sketch {sketch} constraint ID {constraint}: expected an existing local identity or one reserved by this edit"
             ),
             Self::UnreservedDerivedIdentity(id) => write!(
                 output,

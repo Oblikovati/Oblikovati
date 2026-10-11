@@ -18,7 +18,9 @@ pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
 pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
 mod sketch_delete;
 pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};
+mod sketch_constraints;
 mod sketch_ids;
+pub use sketch_constraints::{SketchConstraintReservationError, SketchConstraintReservations};
 pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
 mod sketch_placement;
 mod sketch_projection;
@@ -68,6 +70,7 @@ pub struct RecipeReservations<'a> {
     sketch_ids: &'a mut RecipeIdAllocator,
     feature_ids: &'a mut RecipeIdAllocator,
     sketch_entity_ids: &'a mut RecipeIdAllocator,
+    sketch_constraint_ids: &'a mut SketchConstraintReservations,
     derived_high_water: &'a mut i64,
 }
 impl RecipeReservations<'_> {
@@ -113,6 +116,7 @@ pub struct DocumentEditHistory {
     sketch_ids: RecipeIdAllocator,
     feature_ids: RecipeIdAllocator,
     sketch_entity_ids: RecipeIdAllocator,
+    sketch_constraint_ids: SketchConstraintReservations,
     derived_high_water: i64,
     open: Vec<OpenTransaction>,
     done: Vec<HistoryStep>,
@@ -139,12 +143,18 @@ impl DocumentEditHistory {
             .unwrap_or(0);
         let sketch_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.sketch_ids())?;
         let sketch_entity_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.entity_ids())?;
+        let sketch_constraint_ids = SketchConstraintReservations::restore(
+            &snapshot.sketches,
+            sketch_ids.high_water(),
+            None,
+        )?;
         let feature_ids =
             RecipeIdAllocator::restore(None, &feature_ids::datum_feature_ids(&snapshot))?;
         Ok(Self {
             feature_ids,
             sketch_ids,
             sketch_entity_ids,
+            sketch_constraint_ids,
             current: snapshot,
             derived_high_water,
             ids,
@@ -212,6 +222,7 @@ impl DocumentEditHistory {
                 ids: &mut self.ids,
                 sketch_ids: &mut self.sketch_ids,
                 sketch_entity_ids: &mut self.sketch_entity_ids,
+                sketch_constraint_ids: &mut self.sketch_constraint_ids,
                 derived_high_water: &mut self.derived_high_water,
             },
         )

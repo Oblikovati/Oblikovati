@@ -265,10 +265,10 @@ fn install_endpoint_constraints(files: &mut DiscoveryWorkspace, document: u64) {
     files
         .commands(document)
         .unwrap()
-        .run("Constrain endpoint", |snapshot, _| {
+        .run("Constrain endpoint", |snapshot, ids| {
             let sketch = snapshot.sketches.sketches()[0].id();
             let mut geometry = snapshot.sketches.get(sketch).unwrap().geometry().clone();
-            constrain_endpoint(&mut geometry);
+            constrain_endpoint(&mut geometry, sketch, ids);
             snapshot
                 .sketches
                 .replace_geometry(sketch, geometry)
@@ -276,11 +276,15 @@ fn install_endpoint_constraints(files: &mut DiscoveryWorkspace, document: u64) {
         })
         .unwrap();
 }
-fn constrain_endpoint(geometry: &mut Sketch2D) {
+fn constrain_endpoint(
+    geometry: &mut Sketch2D,
+    sketch: DocumentSketchId,
+    ids: &mut RecipeReservations<'_>,
+) {
     let points = geometry.lines()[0].endpoints;
-    for (index, relation) in endpoint_relations(points).into_iter().enumerate() {
+    for relation in endpoint_relations(points) {
         geometry
-            .add_constraint(SketchConstraintId(index as u64 + 1), relation)
+            .add_constraint(ids.allocate_sketch_constraint(sketch).unwrap(), relation)
             .unwrap();
     }
 }

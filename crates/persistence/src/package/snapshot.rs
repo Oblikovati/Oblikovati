@@ -157,7 +157,7 @@ fn capture_nonparameter_sections(
     original
         .with_work_geometry(&snapshot.work_geometry, feature_high_water)
         .map_err(SnapshotPackageError::Codec)?
-        .with_sketches(&snapshot.sketches, sketch_marks.sketch, sketch_marks.entity)
+        .with_sketch_reservations(&snapshot.sketches, sketch_marks)
         .map_err(SnapshotPackageError::Codec)?
         .with_sketch_settings(snapshot.sketch_settings.as_ref())
         .map_err(SnapshotPackageError::Codec)?
