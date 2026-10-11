@@ -22,6 +22,7 @@ pub struct SketchEntityInspection {
     pub points: Vec<[f64; 2]>,
     pub radius: f64,
     pub movement: GeometryMoveableStatus,
+    pub construction: bool,
 }
 /// Separate rank conditioning and squared local-freedom policy.
 #[derive(Clone, Copy, Debug)]
@@ -110,6 +111,7 @@ fn inspect_shape(
         points,
         radius: shape.radius(sketch)?,
         movement: movement(&columns, &point_ids, free, fixed),
+        construction: sketch.is_construction(shape.id())?,
     })
 }
 fn movement(

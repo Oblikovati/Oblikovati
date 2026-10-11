@@ -82,3 +82,6 @@ fn legacy_geometry_recipes_stay_version_one_inside_current_native_packages() {
     let order: Vec<u64> = geometry.entity_ids().iter().map(|id| id.0).collect();
     assert_eq!(order, [5, 9, 3, 1]);
 }
+
+#[path = "package_entity_order/construction.rs"]
+mod construction;

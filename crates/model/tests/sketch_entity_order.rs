@@ -243,3 +243,6 @@ fn catalogue_sketch_keys_match_the_saved_go_baseline() {
         })
     );
 }
+
+#[path = "sketch_entity_order/construction.rs"]
+mod construction;

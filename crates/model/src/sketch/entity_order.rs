@@ -8,7 +8,8 @@ impl Sketch2D {
         &self.entity_order
     }
     pub(super) fn saved_entity_order(&self) -> Option<Vec<SketchEntityId>> {
-        (self.entity_order != self.grouped_entity_order()).then(|| self.entity_order.clone())
+        (self.entity_order != self.grouped_entity_order() || !self.construction_curves.is_empty())
+            .then(|| self.entity_order.clone())
     }
     fn grouped_entity_order(&self) -> Vec<SketchEntityId> {
         self.points
@@ -25,9 +26,9 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.entity_order) {
             (1, None) => Ok(()),
-            (2, Some(order)) => self.adopt_entity_order(order),
+            (2 | 3, Some(order)) => self.adopt_entity_order(order),
             shape => Err(SketchError::Definition(format!(
-                "sketch entity order {shape:?}: expected no order in version 1 or an exact permutation in version 2"
+                "sketch entity order {shape:?}: expected no order in version 1 or an exact permutation in version 2 or version 3"
             ))),
         }
     }

@@ -4,7 +4,9 @@ use crate::sketch::{
     Sketch2D, SketchError, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe, SketchRecipe,
 };
 use std::collections::BTreeSet;
+mod construction;
 mod health;
+pub use construction::SketchConstructionReport;
 mod orientation;
 pub(crate) use orientation::UnavailableSketchAxes;
 pub use orientation::{SketchAxisReference, SketchAxisResolver, SketchOrientationDefinition};

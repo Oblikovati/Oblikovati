@@ -14,6 +14,7 @@ mod circular_frame;
 mod circular_projection;
 mod compile;
 mod constraint;
+mod construction;
 mod dependencies;
 mod entity_order;
 mod error;
@@ -57,6 +58,7 @@ pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, Tange
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Sketch2D {
     entity_order: Vec<SketchEntityId>,
+    construction_curves: std::collections::BTreeSet<SketchEntityId>,
     points: Vec<SketchPoint2D>,
     lines: Vec<SketchLine2D>,
     circles: Vec<SketchCircle2D>,
