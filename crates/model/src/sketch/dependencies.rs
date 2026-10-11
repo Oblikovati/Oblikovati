@@ -16,7 +16,7 @@ impl Sketch2D {
         dependencies
     }
 }
-fn dimension_parameter(relation: &PlanarConstraint) -> Option<u64> {
+pub(super) fn dimension_parameter(relation: &PlanarConstraint) -> Option<u64> {
     match *relation {
         PlanarConstraint::Distance { parameter, .. }
         | PlanarConstraint::Radius { parameter, .. }

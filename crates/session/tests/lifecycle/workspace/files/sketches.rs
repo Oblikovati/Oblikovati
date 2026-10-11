@@ -435,3 +435,6 @@ mod constraints;
 
 #[path = "sketches/centerlines.rs"]
 mod centerlines;
+
+#[path = "sketches/line_constraints.rs"]
+mod line_constraints;

@@ -17,6 +17,7 @@ mod circular_projection;
 mod compile;
 mod constraint;
 mod construction;
+mod geometric_constraints;
 pub use authoring::{SketchPointInput, SketchPrimitiveCreation};
 mod dependencies;
 mod entity_geometry;

@@ -102,8 +102,12 @@ fn equation(
         PlanarConstraint::Radius { parameter, .. } => PlanarEquation::Radius(
             positive_length_target(constraint, parameter, parameters, "radius")?,
         ),
-        PlanarConstraint::Horizontal { .. } => PlanarEquation::Coordinate(1),
-        PlanarConstraint::Vertical { .. } => PlanarEquation::Coordinate(0),
+        PlanarConstraint::Horizontal { .. } | PlanarConstraint::LineHorizontal { .. } => {
+            PlanarEquation::Coordinate(1)
+        }
+        PlanarConstraint::Vertical { .. } | PlanarConstraint::LineVertical { .. } => {
+            PlanarEquation::Coordinate(0)
+        }
         PlanarConstraint::Fix { position, .. } => PlanarEquation::Fix(position),
         PlanarConstraint::ArcMidpoint { arc, .. } => {
             PlanarEquation::ArcMidpoint(sketch.arc(arc)?.counter_clockwise)

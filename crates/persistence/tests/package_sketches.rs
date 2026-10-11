@@ -309,3 +309,6 @@ fn fixed_native_schema_fixture_loads_and_invalid_recipe_versions_and_ids_are_ref
 
 #[path = "package_sketches/centerlines.rs"]
 mod centerlines;
+
+#[path = "package_sketches/line_constraints.rs"]
+mod line_constraints;
