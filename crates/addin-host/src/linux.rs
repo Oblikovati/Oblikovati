@@ -13,8 +13,10 @@ pub use callbacks::{HostBufferCounts, HostCallbackBinding};
 mod lifecycle;
 mod registry;
 mod response;
+mod runtime;
 pub use lifecycle::{AddInState, LoadedAddIn};
 pub use registry::NativeAddInRegistry;
+pub use runtime::{NativeAddInRuntime, NativeCompletion};
 
 struct ResidentLibrary {
     handle: NonNull<c_void>,

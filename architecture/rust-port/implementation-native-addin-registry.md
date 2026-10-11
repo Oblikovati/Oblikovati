@@ -78,3 +78,8 @@ wire routing through the live application owner, event attachment, native/CLI
 application startup and shutdown loops, and foreground MCPBridge acceptance.
 The registry's unsafe lifecycle methods still require foreign affinity and a live
 drain loop. Windows and macOS remain deferred.
+
+The [native owner runtime](implementation-native-owner-runtime.md) now assigns a
+persistent foreign-call thread, drains owner requests during native work and
+serves canonical registry query snapshots. Executable frontends and remaining
+native lifecycle wire routes still need integration.

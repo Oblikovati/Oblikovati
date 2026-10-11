@@ -7,7 +7,7 @@ mod linux;
 #[cfg(target_os = "linux")]
 pub use linux::{
     AddInState, HostBufferCounts, HostCallbackBinding, LoadedAddIn, NativeAddInRegistry,
-    open_addin, probe_library,
+    NativeAddInRuntime, NativeCompletion, open_addin, probe_library,
 };
 mod compatibility;
 pub use compatibility::check_api_version;

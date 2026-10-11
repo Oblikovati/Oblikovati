@@ -11,7 +11,7 @@ static HOST_BUFFERS: Mutex<BufferArena> = Mutex::new(BufferArena {
     refused: 0,
 });
 /// Native transport diagnostics, not a public API wire DTO.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct HostBufferCounts {
     pub outstanding: usize,
     pub refused_frees: usize,

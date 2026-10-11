@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl NativeAddInRegistry {
+    /// Inspect current owned reply allocations; example: `registry.buffer_counts().outstanding`.
+    pub fn buffer_counts(&self) -> super::super::HostBufferCounts {
+        self.binding.buffer_counts()
+    }
     /// Copy canonical identity and current runtime state; example: `host.describe(id)?;`.
     pub fn describe(&self, id: &str) -> Result<AddInInfo, Error> {
         let entry = &self.entries[self.entry_index(id)?];
