@@ -53,3 +53,6 @@ before admission beyond deadlines, callback registry lifetime, library activatio
 and deactivation, event backpressure, and actual native-loop integration remain
 required. This queue is a tested transport boundary, not a live add-in host or
 proof of Go/Rust shared-library compatibility.
+
+The [native library admission probe](implementation-native-addin-probe.md) now
+provides the Linux symbol and version checks for the later lifecycle adapter.

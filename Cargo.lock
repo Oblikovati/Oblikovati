@@ -384,6 +384,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "oblikovati-addin-host"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "oblikovati-api",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "oblikovati-api"
 version = "0.158.0"
 source = "git+https://github.com/Oblikovati/Oblikovati.API.git?rev=32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd#32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd"

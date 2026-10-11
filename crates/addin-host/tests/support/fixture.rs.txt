@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0-only
+#[path = SDK_PATH]
+mod ffi;
+use std::ffi::{c_char, c_int};
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInId() -> *const c_char {
+    if cfg!(null_id) { return std::ptr::null(); }
+    if cfg!(invalid_utf8) { return b"\xff\0".as_ptr().cast(); }
+    c"rust-fixture".as_ptr()
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInManifest() -> *const c_char { c"{\"id\":\"rust-fixture\"}".as_ptr() }
+#[cfg(not(missing_major))]
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInApiMajor() -> c_int { API_MAJOR_VALUE }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInApiMinor() -> c_int { API_MINOR_VALUE }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInActivate(_: Option<ffi::ObkHostCall>, _: Option<ffi::ObkHostFree>) -> c_int { ffi::OBK_OK }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInDeactivate() -> c_int { ffi::OBK_OK }
+#[cfg(not(missing_notify))]
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInNotify(_: *const u8, _: c_int) -> c_int { ffi::OBK_OK }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkFree(_: *mut u8) {}
+#[cfg(automation)]
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInAutomation(_: *const c_char, _: *const u8, _: c_int, _: *mut *mut u8, _: *mut c_int) -> c_int { ffi::OBK_ERR }
+const _: ffi::ObkAddInActivate = ObkAddInActivate;
