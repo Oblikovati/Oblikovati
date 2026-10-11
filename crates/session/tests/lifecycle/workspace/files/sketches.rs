@@ -83,7 +83,8 @@ fn point_height(host: &Host, id: u64, sketch: DocumentSketchId) -> f64 {
         .get(sketch)
         .unwrap();
     placed
-        .plane()
+        .plane(None)
+        .unwrap()
         .to_model(placed.geometry().points()[2].position)
         .unwrap()[2]
 }
@@ -301,7 +302,8 @@ fn changing_an_authored_signed_zero_is_dirty_and_restorable_through_history() {
         .sketches
         .get(sketch)
         .unwrap()
-        .plane()
+        .plane(None)
+        .unwrap()
         .recipe()
         .origin;
     assert_eq!(origin[0].to_bits(), (-0.0_f64).to_bits());

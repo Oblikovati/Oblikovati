@@ -82,7 +82,11 @@ fn document_recipes_preserve_order_names_frames_global_entities_and_local_constr
     assert_eq!(restored.entity_ids(), [1, 2, 3, 4, 11, 12, 13, 14]);
     assert_eq!(restored.get(DocumentSketchId(2)).unwrap().name(), "Sketch2");
     assert_eq!(
-        restored.get(DocumentSketchId(2)).unwrap().plane(),
+        restored
+            .get(DocumentSketchId(2))
+            .unwrap()
+            .plane(None)
+            .unwrap(),
         SketchPlane::xz()
     );
     assert_eq!(
@@ -200,7 +204,7 @@ fn restored_sketch_solves_with_zero_dof_and_keeps_document_placement() {
             .unwrap()
             .position;
         assert!((xy[1] - width).abs() < 1e-8);
-        let model = placed.plane().to_model(xy).unwrap();
+        let model = placed.plane(None).unwrap().to_model(xy).unwrap();
         assert!((model[2] - width).abs() < 1e-8);
         assert_eq!(sketches.sketch_ids(), [1, 2]);
     }
@@ -222,7 +226,7 @@ fn restoring_refuses_invalid_collection_version_global_ids_geometry_and_frame_op
     recipe.sketches[1].geometry.points[0].position[0] = f64::NAN;
     candidates.push(recipe);
     let mut recipe = original.clone();
-    recipe.sketches[1].plane_options.version = 99;
+    recipe.sketches[1].plane_options.as_mut().unwrap().version = 99;
     candidates.push(recipe);
     for recipe in candidates {
         assert!(DocumentSketches::from_recipe(&recipe).is_err());
@@ -246,9 +250,18 @@ fn custom_frame_options_round_trip_and_identity_allocators_do_not_rewind_on_fail
     let first = DocumentSketchId(ids.allocate().unwrap());
     sketches.add(first, "Custom", plane, geometry(0)).unwrap();
     let restored = DocumentSketches::from_recipe(&sketches.recipe()).unwrap();
-    assert_eq!(restored.get(first).unwrap().plane().options(), options);
     assert_eq!(
-        restored.get(first).unwrap().plane().recipe().x_axis,
+        restored.get(first).unwrap().plane(None).unwrap().options(),
+        options
+    );
+    assert_eq!(
+        restored
+            .get(first)
+            .unwrap()
+            .plane(None)
+            .unwrap()
+            .recipe()
+            .x_axis,
         [1.001, 0.0, 0.0]
     );
     let refused = DocumentSketchId(ids.allocate().unwrap());

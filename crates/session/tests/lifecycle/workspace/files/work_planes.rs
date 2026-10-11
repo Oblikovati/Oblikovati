@@ -227,3 +227,6 @@ fn unsupported_legacy_feature_content_is_refused_before_document_registration() 
     assert!(host.workspace().documents().is_empty());
     assert_eq!(host.files().contents.borrow()[&path("a.obk")], input);
 }
+
+#[path = "work_planes/linked_sketch.rs"]
+mod linked_sketch;

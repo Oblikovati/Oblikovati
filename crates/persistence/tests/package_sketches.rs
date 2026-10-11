@@ -186,7 +186,7 @@ fn yaml_restores_exact_finite_coordinate_bits_and_custom_placement_options() {
         .restore_sketches()
         .unwrap();
     let placed = restored.sketches.get(DocumentSketchId(1)).unwrap();
-    assert_eq!(placed.plane().options(), options);
+    assert_eq!(placed.plane(None).unwrap().options(), options);
     for (point, expected) in placed.geometry().points().iter().zip(coordinates) {
         assert_eq!(point.position[0].to_bits(), expected.to_bits());
     }

@@ -301,3 +301,40 @@ planes. It does not complete R2 or R3: live sketch attachment to feature planes,
 clean-prefix geometry reuse, kernel-backed feature definitions, native host
 commands, and viewport acceptance remain open. The stored program contains no
 Martensite handles or B-rep body results.
+
+## Work-plane hosted sketches: partial R3
+
+Issue #3730 replaces copied placement as the only sketch representation with an
+owned fixed frame or a stable work-plane feature reference. A linked recipe
+contains no last-good frame. `PlacedSketch::plane` needs a current resolver for
+linked placement and refuses an absent frame. Fixed sketches need no resolver.
+`DocumentSnapshot::resolve_sketch_plane` evaluates the current immutable plane
+program with that document's parameters. `require_resolved_sketch` checks both
+available placement and current, fully constrained 2D verification before
+returning a borrowed view for feature consumption.
+
+The attributed sketch footprint includes local dimension parameters and its
+host feature key. Placement changes do not reauthor local 2D coordinates or
+invalidate an otherwise current 2D solve. Failed, suppressed, excluded, and
+missing host features have no usable current frame. Fixed placement stays
+independent of unrelated work-plane failures. Replacing a linked placement with
+a fixed frame removes the host reference.
+
+The placed-sketch recipe keeps version 1 for fixed-only collections. Version 2
+adds `plane_feature`; a linked record omits `plane` and `plane_options`. Restore
+refuses zero IDs, ambiguous or incomplete placement records, and feature
+references in version 1. The existing package owner preserves references
+through history, file save/reopen, and independent copies. Solve evidence is
+not stored: reopened sketches use the existing recompute command before the
+checked consumer accepts them. Automatic verification on file open remains a
+separate host lifecycle requirement.
+
+Tests cover parameter-driven model-space projection, failure and recovery,
+fixed detachment, exact reference dirty checks, numerical readiness, malformed
+recipes and read declarations, direct linked creation, undo/redo, save/reopen,
+and copy. The Go oracle tests
+`TestWorkPlaneOffsetParameterEditTargetsHostedSketch` and
+`TestWorkPlaneOffsetTargetedMatchesFullRebuild` pass at `aa8297d1`.
+Those Go tests also cover solids and targeted body replay, which this Rust step
+does not yet implement or claim. Native host commands, associative face
+placement, kernel-backed sketch consumers, and viewport acceptance remain open.

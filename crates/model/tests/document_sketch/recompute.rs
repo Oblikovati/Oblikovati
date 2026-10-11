@@ -47,7 +47,7 @@ fn assert_solved_geometry(sketches: &DocumentSketches, width: f64) {
     assert!((height(sketches, 1, 3) - width).abs() < 1e-8);
     assert!((height(sketches, 2, 13) - width).abs() < 1e-8);
     let placed = sketches.get(DocumentSketchId(2)).unwrap();
-    assert!(placed.plane().same_recipe(SketchPlane::xz()));
+    assert!(placed.plane(None).unwrap().same_recipe(SketchPlane::xz()));
     assert_eq!(sketches.entity_ids(), document().entity_ids());
 }
 #[test]
