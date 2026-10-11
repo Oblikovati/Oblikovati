@@ -12,6 +12,7 @@ mod sketch_inference;
 pub use sketch_inference::SketchInferenceProjectionInput;
 mod sketch_construction;
 mod sketch_create;
+mod sketch_dimension_delete;
 mod sketch_line;
 mod sketch_relation_create;
 mod sketch_relation_delete;
@@ -116,3 +117,5 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.history.entries()
     }
 }
+
+pub use sketch_dimension_delete::SketchDimensionDeleteProjectionInput;

@@ -400,3 +400,6 @@ mod sketch_inference;
 
 #[path = "lifecycle/sketch_relation_delete.rs"]
 mod sketch_relation_delete;
+
+#[path = "lifecycle/sketch_dimension_delete.rs"]
+mod sketch_dimension_delete;

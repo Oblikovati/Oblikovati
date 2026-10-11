@@ -308,3 +308,47 @@ fn arc_contact(shared: bool) -> TangentDistanceContact {
         lean: shared.then_some(TangentLean::Positive),
     }
 }
+
+#[test]
+fn every_dimension_form_can_be_removed_without_changing_surviving_identity_order() {
+    for (relation, _) in base_cases()
+        .into_iter()
+        .chain(angle_cases())
+        .chain(offset_cases())
+    {
+        assert_dimension_removal(relation);
+    }
+}
+fn assert_dimension_removal(relation: PlanarConstraint) {
+    let mut geometry = fixture();
+    geometry
+        .add_constraint(
+            SketchConstraintId(1),
+            PlanarConstraint::LineHorizontal { line: entity(9) },
+        )
+        .unwrap();
+    geometry
+        .add_constraint(SketchConstraintId(7), relation.clone())
+        .unwrap();
+    geometry
+        .add_constraint(SketchConstraintId(9), relation)
+        .unwrap();
+    verify_dimension_removal(geometry);
+}
+fn verify_dimension_removal(mut geometry: Sketch2D) {
+    let removed = geometry
+        .remove_dimensional_constraint(SketchConstraintId(7))
+        .unwrap();
+    assert_eq!(removed.id, SketchConstraintId(7));
+    let survivor_ids: Vec<_> = geometry.constraints().iter().map(|row| row.id.0).collect();
+    assert_eq!(survivor_ids, [1, 9]);
+    let before = geometry.recipe();
+    for id in [1, 7, 99] {
+        assert!(
+            geometry
+                .remove_dimensional_constraint(SketchConstraintId(id))
+                .is_err()
+        );
+    }
+    assert_eq!(geometry.recipe(), before);
+}

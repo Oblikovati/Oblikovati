@@ -14,6 +14,7 @@ mod feature_ids;
 mod scalar_ownership;
 mod sketch_create;
 mod sketch_current_geometry;
+mod sketch_dimension_delete;
 mod sketch_line;
 mod sketch_primitive;
 mod sketch_relation_create;

@@ -23,12 +23,25 @@ impl Sketch2D {
         &mut self,
         id: SketchConstraintId,
     ) -> Result<SketchConstraint, SketchError> {
+        self.remove_authored_relation(id, false)
+    }
+    pub(super) fn remove_authored_relation(
+        &mut self,
+        id: SketchConstraintId,
+        dimensional: bool,
+    ) -> Result<SketchConstraint, SketchError> {
         let position = self.constraints.iter().position(|constraint| {
-            constraint.id == id && dimension_parameter(&constraint.relation).is_none()
+            constraint.id == id
+                && dimension_parameter(&constraint.relation).is_some() == dimensional
         });
+        let kind = if dimensional {
+            "dimensional"
+        } else {
+            "geometric"
+        };
         let position = position.ok_or_else(|| {
             SketchError::Definition(format!(
-                "sketch constraint {id:?}: expected an owned geometric relation for deletion"
+                "sketch constraint {id:?}: expected an owned {kind} relation for deletion"
             ))
         })?;
         Ok(self.constraints.remove(position))

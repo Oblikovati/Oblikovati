@@ -15,6 +15,7 @@ pub use sketch_inference::SketchInferenceCommandError;
 mod sketch_construction;
 mod sketch_create;
 mod sketch_delete;
+mod sketch_dimension_delete;
 mod sketch_line;
 mod sketch_primitive;
 mod sketch_recompute;

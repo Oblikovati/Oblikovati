@@ -7,6 +7,7 @@ mod coordinates;
 pub(crate) mod create;
 mod delete;
 mod delete_constraint;
+mod delete_dimension;
 mod dimensions;
 mod entities;
 mod indices;
@@ -29,7 +30,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 8] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 9] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
@@ -38,6 +39,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 8] = [
     METHOD_SKETCH_ADD_ENTITY,
     METHOD_SKETCH_ADD_CONSTRAINT,
     METHOD_SKETCH_DELETE_CONSTRAINT,
+    METHOD_SKETCH_DELETE_DIMENSION,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 6] = [
@@ -89,18 +91,25 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     match method {
-        METHOD_SKETCH_TRANSFORM => return transform::apply(files, crate::decode(method, request)?),
-        METHOD_SKETCH_ADD_ENTITY => {
-            return add_entity::apply(files, crate::decode(method, request)?);
-        }
+        METHOD_SKETCH_TRANSFORM => transform::apply(files, crate::decode(method, request)?),
+        METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_CONSTRAINT => {
-            return add_constraint::apply(files, crate::decode(method, request)?);
+            add_constraint::apply(files, crate::decode(method, request)?)
+        }
+        METHOD_SKETCH_DELETE_DIMENSION => {
+            delete_dimension::apply(files, crate::decode(method, request)?)
         }
         METHOD_SKETCH_DELETE_CONSTRAINT => {
-            return delete_constraint::apply(files, crate::decode(method, request)?);
+            delete_constraint::apply(files, crate::decode(method, request)?)
         }
-        _ => {}
+        _ => apply_sketch_owner_command(files, method, request),
     }
+}
+fn apply_sketch_owner_command<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    method: &str,
+    request: &[u8],
+) -> Result<Vec<u8>, Error> {
     let request: SketchArgs = crate::decode(method, request)?;
     let (document, sketch) = active_sketch(files, request.sketch_index)?;
     let mut commands = files.commands(document).map_err(api_error)?;

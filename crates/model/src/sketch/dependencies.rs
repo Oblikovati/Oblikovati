@@ -8,6 +8,14 @@ impl Sketch2D {
             dimension_parameter(&constraint.relation).map(|parameter| (constraint, parameter))
         })
     }
+    /// Remove a dimensional relation while retaining its parameter for the document owner cascade.
+    /// Example: `sketch.remove_dimensional_constraint(selected.id)?;` on an isolated candidate.
+    pub fn remove_dimensional_constraint(
+        &mut self,
+        id: super::SketchConstraintId,
+    ) -> Result<super::SketchConstraint, super::SketchError> {
+        self.remove_authored_relation(id, true)
+    }
     /// Inspect authored dimension IDs even when resolution fails; example: `sketch.parameter_dependencies()`.
     pub fn parameter_dependencies(&self) -> Vec<u64> {
         let mut dependencies = Vec::new();

@@ -78,7 +78,7 @@ impl DocumentSnapshot {
         let mut candidate = self.clone();
         candidate.sketches.replace_geometry(sketch, geometry)?;
         let solved = candidate.solve_one_document_sketch(sketch, options, || false)?;
-        let degrees_of_freedom = created_structure(&solved, sketch)?;
+        let degrees_of_freedom = solved_sketch_dof(&solved, sketch)?;
         let report = SketchGeometricCreationReport {
             constraint,
             geometric_index,
@@ -87,7 +87,7 @@ impl DocumentSnapshot {
         Ok((solved.candidate, report))
     }
 }
-fn created_structure(
+pub(super) fn solved_sketch_dof(
     solved: &DocumentSketchSolveOutcome,
     sketch: DocumentSketchId,
 ) -> Result<usize, SketchError> {
@@ -98,7 +98,7 @@ fn created_structure(
         .find(|report| report.sketch == sketch)
         .ok_or_else(|| {
             SketchError::Definition(format!(
-                "created constraint owner {}: expected its current solve report",
+                "solved sketch owner {}: expected its current solve report",
                 sketch.0
             ))
         })?;

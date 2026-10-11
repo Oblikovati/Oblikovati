@@ -219,3 +219,6 @@ mod lifecycle;
 
 #[path = "create/dimensions.rs"]
 mod dimensions;
+
+#[path = "create/delete_dimension.rs"]
+mod delete_dimension;
