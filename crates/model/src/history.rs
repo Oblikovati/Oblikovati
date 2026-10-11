@@ -16,6 +16,7 @@ mod sketch_create;
 mod sketch_current_geometry;
 mod sketch_dimension_create;
 mod sketch_dimension_delete;
+mod sketch_dimension_sources;
 mod sketch_entity_delete;
 pub use sketch_dimension_create::{
     SketchDimensionCreation, SketchDimensionCreationError, SketchDimensionCreationReport,

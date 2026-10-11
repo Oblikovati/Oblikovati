@@ -407,5 +407,7 @@ mod sketch_dimension_delete;
 #[path = "lifecycle/dimension_create.rs"]
 mod dimension_create;
 
+#[path = "lifecycle/sketch_deletion_selection.rs"]
+mod sketch_deletion_selection;
 #[path = "lifecycle/sketch_entity_delete.rs"]
 mod sketch_entity_delete;

@@ -6,7 +6,7 @@ use crate::{
 };
 use oblikovati_solve::nonlinear::SolveOptions;
 impl DocumentSnapshot {
-    /// Remove an owned dimension and parameter on an isolated candidate, then measure resulting DOF.
+    /// Remove an owned dimension and its unshared source atomically, then measure resulting DOF.
     /// Example: `snapshot.delete_sketch_dimension(sketch, constraint, Default::default())?;`.
     pub fn delete_sketch_dimension(
         &mut self,
@@ -19,10 +19,7 @@ impl DocumentSnapshot {
         let mut geometry = candidate.sketches.get(sketch)?.geometry().clone();
         geometry.remove_dimensional_constraint(constraint)?;
         candidate.sketches.replace_geometry(sketch, geometry)?;
-        candidate
-            .parameters
-            .remove_for_owner(parameter)
-            .map_err(|cause| source_error(parameter, cause))?;
+        candidate.remove_retired_dimension_sources([parameter].into())?;
         let solved = candidate.solve_one_document_sketch(sketch, options, || false)?;
         let dof = solved_sketch_dof(&solved, sketch)?;
         self.parameters = candidate.parameters;

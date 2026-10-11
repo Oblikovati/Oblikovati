@@ -93,13 +93,23 @@ fn invalid_constraint_owner_is_refused_before_the_cascade() {
     assert_eq!(before.parameters.get(1), snapshot.parameters.get(1));
 }
 #[test]
-fn another_relation_with_a_deleted_driver_cannot_publish_a_partial_candidate() {
+fn another_relation_keeps_its_shared_driver_when_a_dimension_is_deleted() {
     let mut snapshot = snapshot(MODEL_PARAM, "1 cm");
     add_shared_dimension(&mut snapshot);
     let before = snapshot.clone();
-    assert!(delete(&mut snapshot).is_err());
-    assert!(before.sketches.same_evaluated_state(&snapshot.sketches));
+    assert_eq!(delete(&mut snapshot).unwrap(), 2);
     assert_eq!(before.parameters.get(1), snapshot.parameters.get(1));
+    let geometry = snapshot
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    assert_eq!(geometry.constraints().len(), 1);
+    assert!(geometry.dimension_source(SketchConstraintId(1)).is_err());
+    assert_eq!(
+        geometry.dimension_source(SketchConstraintId(2)).unwrap().0,
+        1
+    );
 }
 
 fn add_shared_dimension(snapshot: &mut DocumentSnapshot) {

@@ -69,7 +69,7 @@ mod shared_contact;
 mod solve;
 mod source;
 mod spline;
-pub use entity_delete::SketchEntityDeletion;
+pub use entity_delete::{SketchDeletionSelection, SketchEntityDeletion};
 pub use spline::{SketchOffsetSpline2D, SketchSpline2D, SketchSplineKind};
 mod tangent;
 mod tangent_distance;

@@ -138,6 +138,37 @@ on a retired target, can be undone independently of geometry, and persists
 through save/reopen. These checks use the existing public API definitions and
 hosts; they add no API surface or geometry-binding claim to attribute queries.
 
+## Mixed editor selection
+
+The Go editor's `app/sketch_delete.go::DeleteSelectedSketchEntities` (#1232 and #2017)
+removes entities, dimensions and geometric constraints in one undoable
+edit. Rust now has a typed `SketchDeletionSelection` and one document/session/
+borrowed-workspace command for that intent. It does not yet bind a Delete key,
+clear viewport selection or introduce a new wire method.
+
+Entity ownership and relation categories are checked against the original
+sketch before removal. Unknown IDs and a dimensional ID in a geometric selection
+(or the reverse) refuse the complete candidate. Duplicate selections retire an
+identity once. A dimension or geometric relation selected along with its deleted
+entity is removed once; the report preserves original authored relation order,
+independently of numeric ID order. The existing general geometry dependency
+closure and relation metadata cleanup remain the only entity deletion path.
+
+Single-dimension and mixed/entity deletion now share one Model source cleanup
+rule. Deleting a dimension preserves a Model source still owned by any surviving
+dimension or feature scalar. This removes the single-dimension path's
+unconditional parameter deletion. Its regression deletes two dimensions sharing
+one source in separate commands and verifies that only the last deletion retires
+the source, with undo restoring ownership.
+
+Ten new model, session and file tests cover mixed overlap, duplicates, authored
+order, category/ownership refusal, empty and relation-only selections, source
+retirement, one undo step, undo/redo, abort, commit veto and rejected replies.
+Both part and assembly file owners save/reopen/copy a mixed-deletion candidate
+with its exact surviving recipe. Removing dimension and grounding selections
+leaves five free variables; the consumer reports that named local readiness
+decline rather than claiming the surviving geometry is fully constrained.
+
 This covers the native model/document/session/file boundaries and the five current
 public primitive factories. The Go 2D transform API has no delete operation;
 this work does not add a new public API contract. Spline and other pending curve

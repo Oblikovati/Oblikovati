@@ -22,6 +22,8 @@ struct DeletionScene {
 #[path = "entity_delete/authoring.rs"]
 mod authoring;
 use authoring::{create_circle, create_radius, deletion_owner, dimension_bounds};
+#[path = "entity_delete/selection.rs"]
+mod selection;
 
 fn delete_first_circle(host: &mut Host, document: u64, scene: &DeletionScene) {
     let report = host

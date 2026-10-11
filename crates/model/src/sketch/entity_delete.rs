@@ -2,6 +2,8 @@
 use super::{Sketch2D, SketchConstraint, SketchEntityId, SketchError, entity_geometry};
 use std::collections::{BTreeMap, BTreeSet};
 mod retain;
+mod selection;
+pub use selection::SketchDeletionSelection;
 /// Retired identities and complete relations for the document's parameter/history cascade.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SketchEntityDeletion {
