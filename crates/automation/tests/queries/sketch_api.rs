@@ -473,3 +473,6 @@ mod construction;
 
 #[path = "sketch_api/primitive.rs"]
 mod primitive;
+
+#[path = "sketch_api/translation.rs"]
+mod translation;

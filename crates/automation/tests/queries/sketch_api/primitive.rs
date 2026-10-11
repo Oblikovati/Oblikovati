@@ -6,7 +6,7 @@ use oblikovati_model::{
     history::{DocumentSketchCreation, SketchPrimitiveCreationReport},
     sketch::{SketchPlane, SketchPointInput, SketchPrimitiveCreation},
 };
-fn create_owner(files: &mut DiscoveryWorkspace, document: u64) -> DocumentSketchId {
+pub(super) fn create_owner(files: &mut DiscoveryWorkspace, document: u64) -> DocumentSketchId {
     files
         .commands(document)
         .unwrap()
@@ -25,7 +25,7 @@ fn circle_input(anchor: SketchEntityId) -> SketchPrimitiveCreation {
         construction: true,
     }
 }
-fn create_circle(
+pub(super) fn create_circle(
     files: &mut DiscoveryWorkspace,
     document: u64,
     sketch: DocumentSketchId,

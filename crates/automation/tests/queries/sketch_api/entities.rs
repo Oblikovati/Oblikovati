@@ -46,7 +46,7 @@ fn mixed_geometry(ids: [SketchEntityId; 6]) -> Sketch2D {
         .unwrap();
     geometry
 }
-fn configured_scaled(scale: f64) -> (DiscoveryWorkspace, u64, QueryGuids) {
+pub(super) fn configured_scaled(scale: f64) -> (DiscoveryWorkspace, u64, QueryGuids) {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);
     let document = files
@@ -356,7 +356,7 @@ fn centimetre_overflow_declines_without_mutating_the_owned_sketch() {
     );
     assert_eq!(before, owner_revision(&files, document));
 }
-fn author_large_point(
+pub(super) fn author_large_point(
     snapshot: &mut DocumentSnapshot,
     ids: &mut RecipeReservations<'_>,
 ) -> Result<(), String> {

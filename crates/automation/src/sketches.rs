@@ -5,6 +5,7 @@ mod delete;
 mod entities;
 mod owner;
 mod references;
+mod transform;
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::{
     document_sketch::{DocumentSketchId, DocumentSketchRecompute},
@@ -21,10 +22,11 @@ use oblikovati_solve::{
 };
 
 /// Sketch commands require a retained part or assembly document kind.
-pub const SKETCH_COMMAND_METHODS: [&str; 3] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 4] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
+    METHOD_SKETCH_TRANSFORM,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 4] = [
@@ -52,6 +54,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_TRANSFORM {
+        return transform::apply(files, crate::decode(method, request)?);
+    }
     let request: SketchArgs = crate::decode(method, request)?;
     let (document, sketch) = active_sketch(files, request.sketch_index)?;
     let mut commands = files.commands(document).map_err(api_error)?;
