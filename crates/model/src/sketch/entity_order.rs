@@ -46,9 +46,9 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.entity_order) {
             (1, None) => Ok(()),
-            (2..=10, Some(order)) => self.adopt_entity_order(order),
+            (2..=11, Some(order)) => self.adopt_entity_order(order),
             shape => Err(SketchError::Definition(format!(
-                "sketch entity order {shape:?}: expected no order in version 1 or an exact permutation in version 2, version 3, version 4, version 5, version 6, version 7, version 8, version 9, or version 10"
+                "sketch entity order {shape:?}: expected no order in version 1 or an exact permutation in version 2, version 3, version 4, version 5, version 6, version 7, version 8, version 9, version 10, or version 11"
             ))),
         }
     }

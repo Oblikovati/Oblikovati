@@ -92,19 +92,27 @@ fn equation(
             target: offset_target(constraint, parameter, parameters, linear_diameter)?,
             side,
         },
+        PlanarConstraint::OffsetSplineDistance {
+            parameter, side, ..
+        } => PlanarEquation::ScalarLength {
+            target: length_target(constraint, parameter, parameters)?,
+            domain: super::scalar_length::LengthVariableDomain::Signed(side),
+        },
         PlanarConstraint::EqualRadius { .. } => PlanarEquation::EqualRadius,
-        PlanarConstraint::Diameter { parameter, .. } => {
-            PlanarEquation::Radius(diameter_radius(constraint, parameter, parameters)?)
-        }
+        PlanarConstraint::Diameter { parameter, .. } => PlanarEquation::ScalarLength {
+            target: diameter_radius(constraint, parameter, parameters)?,
+            domain: super::scalar_length::LengthVariableDomain::Positive,
+        },
         PlanarConstraint::ArcLength { arc, parameter } => PlanarEquation::ArcLength {
             target: positive_length_target(constraint, parameter, parameters, "arc length")?,
             counter_clockwise: sketch.arc(arc)?.counter_clockwise,
         },
         PlanarConstraint::Radius { parameter, .. }
         | PlanarConstraint::EllipseRadius { parameter, .. }
-        | PlanarConstraint::EllipseMinorRadius { parameter, .. } => PlanarEquation::Radius(
-            positive_length_target(constraint, parameter, parameters, "radius")?,
-        ),
+        | PlanarConstraint::EllipseMinorRadius { parameter, .. } => PlanarEquation::ScalarLength {
+            target: positive_length_target(constraint, parameter, parameters, "radius")?,
+            domain: super::scalar_length::LengthVariableDomain::Positive,
+        },
         PlanarConstraint::Horizontal { .. } | PlanarConstraint::LineHorizontal { .. } => {
             PlanarEquation::Coordinate(1)
         }

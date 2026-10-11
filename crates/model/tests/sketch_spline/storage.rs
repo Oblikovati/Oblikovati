@@ -40,7 +40,7 @@ fn older_schemas_refuse_spline_fields_and_schema_ten_requires_explicit_lists() {
             Sketch2D::from_recipe(&legacy)
                 .unwrap_err()
                 .to_string()
-                .contains("version 10")
+                .contains("versions 10-11")
         );
     }
     assert_missing_spline_lists(recipe);

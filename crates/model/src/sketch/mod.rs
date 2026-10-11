@@ -62,6 +62,7 @@ pub(crate) use recipe_compare::same_components;
 mod recipe;
 mod recipe_compare;
 mod residual;
+mod scalar_length;
 mod shared_contact;
 mod solve;
 mod source;

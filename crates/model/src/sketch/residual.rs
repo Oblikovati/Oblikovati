@@ -59,7 +59,10 @@ pub(super) enum PlanarEquation {
         side: LineContactSide,
     },
     EqualRadius,
-    Radius(f64),
+    ScalarLength {
+        target: f64,
+        domain: super::scalar_length::LengthVariableDomain,
+    },
     LineTangent(LineContactSide),
     CircleTangent(CircleContact),
     Distance {
@@ -100,7 +103,7 @@ impl PreparedConstraint {
     fn fixed_variable_count(&self) -> usize {
         match self.equation {
             PlanarEquation::Fix(_) | PlanarEquation::EqualRadius => 2,
-            PlanarEquation::Radius(_) | PlanarEquation::AxisAlignment { .. } => 1,
+            PlanarEquation::ScalarLength { .. } | PlanarEquation::AxisAlignment { .. } => 1,
             PlanarEquation::PointOnCircle => 5,
             PlanarEquation::LineTangent(_)
             | PlanarEquation::PinnedLineTangent { .. }
@@ -220,7 +223,9 @@ impl ResidualSource for PreparedConstraint {
                 tangent_residual::circle_tangent(variables, contact)
             }
             PlanarEquation::EqualRadius => circle_residual::equal_radius(variables),
-            PlanarEquation::Radius(target) => circle_residual::radius_target(&variables[0], target),
+            PlanarEquation::ScalarLength { target, domain } => {
+                super::scalar_length::scalar_length_target(&variables[0], target, domain)
+            }
             PlanarEquation::Lines(relation) => line_residual::line_relation(variables, relation),
             PlanarEquation::Distance { measure, target } => {
                 Ok(vec![distance(variables, measure)?.shifted(-target)?])

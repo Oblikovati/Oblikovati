@@ -5,7 +5,11 @@ impl Sketch2D {
         if self.splines.is_empty() && self.offset_splines.is_empty() {
             return;
         }
-        recipe.version = 10;
+        recipe.version = if super::dimension::has_offset_dimension(recipe) {
+            11
+        } else {
+            10
+        };
         self.capture_complete_schema_metadata(recipe);
         recipe.splines = Some(self.splines.clone());
         recipe.offset_splines = Some(self.offset_splines.clone());
@@ -35,9 +39,9 @@ pub(super) fn spline_records(
 ) -> Result<Option<SplineRecords<'_>>, SketchError> {
     match (recipe.version, &recipe.splines, &recipe.offset_splines) {
         (1..=9, None, None) => Ok(None),
-        (10, Some(parents), Some(offsets)) => Ok(Some((parents, offsets))),
+        (10..=11, Some(parents), Some(offsets)) => Ok(Some((parents, offsets))),
         shape => Err(SketchError::Definition(format!(
-            "spline recipe {shape:?}: expected no spline fields in versions 1-9 or explicit parent/offset lists in version 10"
+            "spline recipe {shape:?}: expected no spline fields in versions 1-9 or explicit parent/offset lists in versions 10-11"
         ))),
     }
 }

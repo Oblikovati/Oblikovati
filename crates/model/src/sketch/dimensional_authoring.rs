@@ -35,6 +35,9 @@ pub enum MeasuredDimensionOperands {
 /// Branch-sensitive operands; arrays name their role and retain the API operand order.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SeededDimensionOperands {
+    OffsetSpline {
+        offset: SketchEntityId,
+    },
     Angle([SketchEntityId; 2]),
     /// Vertex, first ray point, second ray point.
     ThreePointAngle([SketchEntityId; 3]),
@@ -110,6 +113,9 @@ impl SeededDimensionOperands {
         parameter: u64,
     ) -> Result<(), SketchError> {
         match self {
+            Self::OffsetSpline { offset } => {
+                geometry.add_offset_spline_dimension(id, *offset, parameter)
+            }
             Self::Angle(lines) => geometry.add_angle(id, *lines, parameter),
             Self::ThreePointAngle([vertex, first, second]) => {
                 geometry.add_three_point_angle(id, *vertex, [*first, *second], parameter)

@@ -45,6 +45,9 @@ pub(super) fn relation_projection(
     relation: &PlanarConstraint,
     touch: Option<SketchEntityId>,
 ) -> Result<(Option<CircularProjection>, Vec<usize>), SketchError> {
+    if let PlanarConstraint::OffsetSplineDistance { offset, .. } = relation {
+        return Ok((None, vec![sketch.offset_spline_column(*offset)?]));
+    }
     if let Some(columns) = analytic_axis_columns(sketch, relation)? {
         return Ok((None, columns));
     }

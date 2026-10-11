@@ -26,7 +26,10 @@ fn source(name: &str, scale: f64) -> (PreparedConstraint, Vec<f64>) {
             vec![1.0, 2.0, 3.0, 1.0, 2.0, 4.0, 6.0],
         ),
         "radius" => (
-            PlanarEquation::Radius(2.0 * scale),
+            PlanarEquation::ScalarLength {
+                target: 2.0 * scale,
+                domain: crate::sketch::scalar_length::LengthVariableDomain::Positive,
+            },
             0,
             vec![arc],
             FrameOutput::Radii,
@@ -211,7 +214,10 @@ fn circle_case(name: &str, scale: f64) -> (PreparedConstraint, PreparedConstrain
     let circle = CircularRadius::Independent(SketchEntityId(1));
     let (equation, prefix, frames, output, raw, canonical) = match name {
         "radius" => (
-            PlanarEquation::Radius(2.0 * scale),
+            PlanarEquation::ScalarLength {
+                target: 2.0 * scale,
+                domain: crate::sketch::scalar_length::LengthVariableDomain::Positive,
+            },
             0,
             vec![circle],
             FrameOutput::Radii,
@@ -334,7 +340,10 @@ fn diameter_rows_use_the_existing_radius_equation_with_half_the_go_residual_scal
             CircularRadius::Derived(SketchEntityId(1))
         };
         let source = PreparedConstraint {
-            equation: PlanarEquation::Radius(2.0),
+            equation: PlanarEquation::ScalarLength {
+                target: 2.0,
+                domain: crate::sketch::scalar_length::LengthVariableDomain::Positive,
+            },
             variables: (0..input.len()).collect(),
             projection: Some(CircularProjection {
                 prefix: 0,

@@ -7,7 +7,13 @@ fn equation(name: &str, scale: f64) -> (PlanarEquation, Vec<f64>) {
         "incidence" => (PlanarEquation::PointOnCircle, vec![4.0, 6.0, 1.0, 2.0, 3.0]),
         "concentric" => (PlanarEquation::Coincident, vec![1.0, 2.0, 4.0, 6.0]),
         "equal-radius" => (PlanarEquation::EqualRadius, vec![3.0, 2.0]),
-        "radius" => (PlanarEquation::Radius(2.0 * scale), vec![3.0]),
+        "radius" => (
+            PlanarEquation::ScalarLength {
+                target: 2.0 * scale,
+                domain: crate::sketch::scalar_length::LengthVariableDomain::Positive,
+            },
+            vec![3.0],
+        ),
         _ => panic!("unknown fixture {name}"),
     };
     (equation, values.iter().map(|value| value * scale).collect())
@@ -103,10 +109,14 @@ fn nonpositive_radius_trials_report_domains_and_do_not_publish_invalid_geometry(
     for radius in [0.0, -1.0] {
         let number = DualNumber::variable(radius, 0, 1).unwrap();
         assert!(
-            radius_target(&number, 2.0)
-                .unwrap_err()
-                .to_string()
-                .contains("strictly positive")
+            crate::sketch::scalar_length::scalar_length_target(
+                &number,
+                2.0,
+                crate::sketch::scalar_length::LengthVariableDomain::Positive
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("strictly positive")
         );
         let positive = DualNumber::constant(2.0).unwrap();
         assert!(equal_radius(&[number.clone(), positive.clone()]).is_err());

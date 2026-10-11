@@ -63,12 +63,42 @@ roles and distance in part and assembly packages and refuse identity marks below
 any parent, offset or defining point. No API creation constructor or general
 fit/handle evaluation is claimed by these ownership tests.
 
+## Native distance dimensions
+
+The typed seeded constructor now binds one offset entity to a length source and
+captures its nonzero left/right side. Ownership checks consume no IDs and do not
+select the branch. A zero seed requires an explicit side relation; automatic
+selection refuses it before appending. An existing retained relation can drive
+to zero and back without losing its side or numerical rank.
+
+One scalar length residual replaces the previous radius-only equation. Its
+positive domain retains the original radius checks and residual/gradient bits;
+its signed domain maps the retained side to the magnitude row. The offset row
+has one derivative, +1 on the left or -1 on the right. It matches the pinned Go
+absolute-value residual on nonzero seeds, with a nonstationary signed derivative
+at zero. Radius and offset constraints use this same scalar implementation.
+
+Model tests ground parent points and drive both sides to DOF = 0. They cover
+source edits through zero, current reference measurement with an unhealthy
+excluded source, rejected driving formulas and units, deletion, explicit zero
+side, generated working-distance scales, and independent parent preservation.
+The scaled tests request an explicit numerical tolerance for small offsets.
+Planar schema 11 retains the offset relation and side; earlier versions cannot
+contain it. Parent-only recipes remain schema 10. Native package tests restore
+source expressions, IDs and side in both part and assembly documents, then solve
+the restored negative-side offset to its independently checked magnitude.
+
+This proves native dimension behavior. Canonical API dimension creation remains
+at its explicit decline until public entity creation and fitting acceptance are
+available. No end-to-end add-in, application window or B-rep claim follows from
+these native tests.
+
 ## Remaining port
 
 Preserve the Go fit/control distinction, periodic closure, public fit methods and
 active handle rules. The Go parent recipe stores shared defining points. Required
-construction/fitting extensions belong in Martensite. The next sketch step must bind the owned signed-distance column to the existing
-scalar magnitude dimension path and preserve the selected side during driving.
+construction/fitting extensions belong in Martensite. The native distance relation is in place. Public creation and fit/handle
+evaluation must use the owner-published kernel construction capabilities.
 
 Keep #3789 open until typed ownership, solver/Jacobian and degenerates, canonical
 API creation/edit/deletion, both document owners, live/reference formulas and

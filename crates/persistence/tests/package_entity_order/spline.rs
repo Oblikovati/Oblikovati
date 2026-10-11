@@ -74,3 +74,6 @@ fn add_package_spline_pair(geometry: &mut Sketch2D) {
         )
         .unwrap();
 }
+
+#[path = "spline/dimension.rs"]
+mod dimension;

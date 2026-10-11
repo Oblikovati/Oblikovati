@@ -14,6 +14,7 @@ impl SketchDimensionalConstraintCreation {
 impl SeededDimensionOperands {
     fn ownership_relation(&self, geometry: &Sketch2D) -> Result<PlanarConstraint, SketchError> {
         Ok(match *self {
+            Self::OffsetSpline { offset } => offset_spline_ownership_relation(offset),
             Self::Angle(lines) => angle_ownership_relation(lines),
             Self::ThreePointAngle([vertex, first, second]) => {
                 three_point_ownership_relation(vertex, [first, second])
@@ -80,5 +81,13 @@ fn offset_ownership_relation(
         parameter: 0,
         side: LineContactSide::Left,
         linear_diameter,
+    }
+}
+
+fn offset_spline_ownership_relation(offset: SketchEntityId) -> PlanarConstraint {
+    PlanarConstraint::OffsetSplineDistance {
+        offset,
+        parameter: 0,
+        side: LineContactSide::Left,
     }
 }

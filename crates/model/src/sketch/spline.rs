@@ -3,6 +3,7 @@ use super::{SketchEntityId, SketchError};
 use oblikovati_api::types::{
     SPLINE_FIT_CHORD, SPLINE_FIT_SMOOTH, SPLINE_FIT_SWEET, SplineFitMethod,
 };
+mod dimension;
 mod owner;
 mod storage;
 mod variables;
@@ -115,5 +116,6 @@ impl SketchOffsetSpline2D {
 }
 
 pub(super) fn require_spline_schema(recipe: &super::SketchRecipe) -> Result<(), SketchError> {
+    dimension::require_offset_dimension_schema(recipe)?;
     storage::spline_records(recipe).map(|_| ())
 }

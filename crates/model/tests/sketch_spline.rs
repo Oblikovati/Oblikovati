@@ -167,3 +167,6 @@ fn assert_missing_owners(sketch: &mut Sketch2D) {
         assert!(sketch.add_offset_spline(offset).is_err());
     }
 }
+
+#[path = "sketch_spline/dimension.rs"]
+mod dimension;

@@ -49,7 +49,8 @@ impl Sketch2D {
 }
 pub(super) fn dimension_parameter(relation: &PlanarConstraint) -> Option<u64> {
     match *relation {
-        PlanarConstraint::Distance { parameter, .. }
+        PlanarConstraint::OffsetSplineDistance { parameter, .. }
+        | PlanarConstraint::Distance { parameter, .. }
         | PlanarConstraint::Radius { parameter, .. }
         | PlanarConstraint::EllipseRadius { parameter, .. }
         | PlanarConstraint::EllipseMinorRadius { parameter, .. }

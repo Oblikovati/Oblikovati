@@ -120,6 +120,11 @@ pub enum PlanarConstraint {
         ellipse: SketchEntityId,
         parameter: u64,
     },
+    OffsetSplineDistance {
+        offset: SketchEntityId,
+        parameter: u64,
+        side: super::LineContactSide,
+    },
     EllipseMinorRadius {
         ellipse: SketchEntityId,
         parameter: u64,
@@ -240,6 +245,10 @@ impl Sketch2D {
                 for axis in axes {
                     axis.columns(self)?;
                 }
+                Vec::new()
+            }
+            PlanarConstraint::OffsetSplineDistance { offset, .. } => {
+                self.offset_spline(*offset)?;
                 Vec::new()
             }
             PlanarConstraint::EllipseRadius { ellipse, .. }

@@ -14,13 +14,6 @@ pub(super) fn equal_radius(variables: &[DualNumber]) -> Result<Vec<DualNumber>, 
     positive_radius(&variables[1])?;
     Ok(vec![variables[0].minus(&variables[1])?])
 }
-pub(super) fn radius_target(
-    radius: &DualNumber,
-    target: f64,
-) -> Result<Vec<DualNumber>, ResidualError> {
-    positive_radius(radius)?;
-    Ok(vec![radius.shifted(-target)?])
-}
 pub(super) fn positive_radius(radius: &DualNumber) -> Result<(), ResidualError> {
     if radius.value() <= 0.0 {
         return Err(ResidualError::Domain(format!(

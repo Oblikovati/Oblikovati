@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines.
-pub const SKETCH_RECIPE_VERSION: u32 = 10;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions.
+pub const SKETCH_RECIPE_VERSION: u32 = 11;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
