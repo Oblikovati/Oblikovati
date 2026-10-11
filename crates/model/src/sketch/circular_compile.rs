@@ -45,11 +45,7 @@ pub(super) fn relation_projection(
     relation: &PlanarConstraint,
     touch: Option<SketchEntityId>,
 ) -> Result<(Option<CircularProjection>, Vec<usize>), SketchError> {
-    if let PlanarConstraint::EllipseRadius { ellipse, .. } = relation {
-        let column = sketch.ellipse_column(
-            *ellipse,
-            super::ellipse::variables::EllipseComponent::MajorRadius,
-        )?;
+    if let Some(column) = ellipse_relation_column(sketch, relation)? {
         return Ok((None, vec![column]));
     }
     let points = sketch.constraint_points(relation)?;
@@ -114,4 +110,21 @@ fn contact_equation(
         }
         _ => Ok((equation, None)),
     }
+}
+
+fn ellipse_relation_column(
+    sketch: &Sketch2D,
+    relation: &PlanarConstraint,
+) -> Result<Option<usize>, SketchError> {
+    use super::ellipse::variables::EllipseComponent;
+    let (ellipse, component) = match relation {
+        PlanarConstraint::EllipseRadius { ellipse, .. } => {
+            (*ellipse, EllipseComponent::MajorRadius)
+        }
+        PlanarConstraint::EllipseAxisAlignment { ellipse, .. } => {
+            (*ellipse, EllipseComponent::Orientation)
+        }
+        _ => return Ok(None),
+    };
+    sketch.ellipse_column(ellipse, component).map(Some)
 }

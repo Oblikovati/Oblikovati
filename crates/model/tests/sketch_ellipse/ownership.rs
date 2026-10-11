@@ -144,3 +144,6 @@ fn grounding_shared_center_removes_only_coordinate_freedoms_and_solve_keeps_fram
 
 #[path = "dimension.rs"]
 mod dimension;
+
+#[path = "axis.rs"]
+mod axis;

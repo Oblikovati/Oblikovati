@@ -113,6 +113,10 @@ impl GroundedResidual {
     }
 }
 impl ResidualSource for GroundedResidual {
+    fn tolerance_kind(&self) -> oblikovati_solve::residual::ResidualTolerance {
+        self.original.tolerance_kind()
+    }
+
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
         let Some(slots) = &self.slots else {
             return self.original.evaluate(variables);

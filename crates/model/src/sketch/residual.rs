@@ -18,6 +18,9 @@ pub(super) enum PlanarEquation {
         target: f64,
         counter_clockwise: bool,
     },
+    AxisAlignment {
+        quarter_turn: bool,
+    },
     ArcCircularity,
     ArcMidpoint(bool),
     Coincident,
@@ -75,7 +78,7 @@ impl PreparedConstraint {
     fn variable_count(&self) -> usize {
         match self.equation {
             PlanarEquation::Fix(_) | PlanarEquation::EqualRadius => 2,
-            PlanarEquation::Radius(_) => 1,
+            PlanarEquation::Radius(_) | PlanarEquation::AxisAlignment { .. } => 1,
             PlanarEquation::PointOnCircle => 5,
             PlanarEquation::LineTangent(_)
             | PlanarEquation::PinnedLineTangent { .. }
@@ -94,6 +97,13 @@ impl PreparedConstraint {
     }
 }
 impl ResidualSource for PreparedConstraint {
+    fn tolerance_kind(&self) -> oblikovati_solve::residual::ResidualTolerance {
+        if matches!(self.equation, PlanarEquation::AxisAlignment { .. }) {
+            return oblikovati_solve::residual::ResidualTolerance::Unitless;
+        }
+        oblikovati_solve::residual::ResidualTolerance::ModelRelative
+    }
+
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
         let expected = self
             .projection
@@ -140,6 +150,9 @@ impl ResidualSource for PreparedConstraint {
                 target,
                 counter_clockwise,
             } => super::arc_length::length_residual(variables, target, counter_clockwise),
+            PlanarEquation::AxisAlignment { quarter_turn } => {
+                super::ellipse_axis::alignment_residual(&variables[0], quarter_turn)
+            }
             PlanarEquation::ArcCircularity => arc_residual::circularity(variables),
             PlanarEquation::Coincident => Ok(point(variables, 0)?
                 .minus(&point(variables, 2)?)?

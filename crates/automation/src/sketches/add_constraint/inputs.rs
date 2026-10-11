@@ -19,7 +19,7 @@ pub(super) fn prepare(geometry: &Sketch2D, request: &AddConstraintArgs) -> Resul
         .collect::<Result<Vec<_>, _>>()?;
     let kind = GeometricConstraintKind(request.kind.clone().into());
     let input = match operands.as_slice() {
-        [single] => single_input(&kind, single),
+        [single] => single_input(&kind, single, request),
         [first, second] => pairs::classify(&kind, first, second),
         _ => None,
     };
@@ -34,7 +34,22 @@ fn operand(geometry: &Sketch2D, id: u64) -> Result<Operand, Error> {
         .map_err(|cause| Error(cause.to_string()))?;
     Ok(Operand { id, kind })
 }
-fn single_input(kind: &GeometricConstraintKind, operand: &Operand) -> Option<Creation> {
+fn single_input(
+    kind: &GeometricConstraintKind,
+    operand: &Operand,
+    request: &AddConstraintArgs,
+) -> Option<Creation> {
+    if operand.kind == SKETCH_ENTITY_ELLIPSE {
+        let major_axis = request
+            .use_ellipse_major_axis
+            .as_deref()
+            .copied()
+            .unwrap_or(true);
+        return ellipse_alignment(kind, operand.id, major_axis);
+    }
+    point_line_input(kind, operand)
+}
+fn point_line_input(kind: &GeometricConstraintKind, operand: &Operand) -> Option<Creation> {
     match (&operand.kind, kind) {
         (shape, kind) if *shape == SKETCH_ENTITY_POINT && *kind == GEO_CONSTRAINT_FIX => {
             Some(Creation::Fix { point: operand.id })
@@ -53,4 +68,21 @@ fn relation(relation: PlanarConstraint) -> Option<Creation> {
 }
 fn circular(kind: &SketchEntityKind) -> bool {
     *kind == SKETCH_ENTITY_CIRCLE || *kind == SKETCH_ENTITY_ARC
+}
+
+fn ellipse_alignment(
+    kind: &GeometricConstraintKind,
+    ellipse: SketchEntityId,
+    major_axis: bool,
+) -> Option<Creation> {
+    let vertical = match kind {
+        kind if *kind == GEO_CONSTRAINT_HORIZONTAL => false,
+        kind if *kind == GEO_CONSTRAINT_VERTICAL => true,
+        _ => return None,
+    };
+    relation(EllipseAxisAlignment {
+        ellipse,
+        major_axis,
+        vertical,
+    })
 }

@@ -138,3 +138,6 @@ fn check_reseeded_ellipse(files: &DiscoveryWorkspace, document: u64, id: u64) {
     );
     assert_eq!(row(files, id).points, expected_points(&[[2.0, 4.0]]));
 }
+
+#[path = "ellipse/axis.rs"]
+mod axis;

@@ -110,6 +110,13 @@ fn equation(
         PlanarConstraint::Vertical { .. } | PlanarConstraint::LineVertical { .. } => {
             PlanarEquation::Coordinate(0)
         }
+        PlanarConstraint::EllipseAxisAlignment {
+            major_axis,
+            vertical,
+            ..
+        } => PlanarEquation::AxisAlignment {
+            quarter_turn: major_axis == vertical,
+        },
         PlanarConstraint::Fix { position, .. } => PlanarEquation::Fix(position),
         PlanarConstraint::ArcMidpoint { arc, .. } => {
             PlanarEquation::ArcMidpoint(sketch.arc(arc)?.counter_clockwise)

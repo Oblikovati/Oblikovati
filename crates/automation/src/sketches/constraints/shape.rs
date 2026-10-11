@@ -24,6 +24,14 @@ pub(in crate::sketches) fn require(relation: &PlanarConstraint) -> Result<Constr
 }
 fn classify(relation: &PlanarConstraint) -> Option<ConstraintShape> {
     match relation {
+        EllipseAxisAlignment {
+            ellipse, vertical, ..
+        } => single(axis_kind(*vertical), *ellipse),
+        _ => standard_shape(relation),
+    }
+}
+fn standard_shape(relation: &PlanarConstraint) -> Option<ConstraintShape> {
+    match relation {
         Coincident { points } => pair(COINCIDENT, *points),
         Horizontal { points } => pair(HORIZONTAL_ALIGN, *points),
         Vertical { points } => pair(VERTICAL_ALIGN, *points),
@@ -56,6 +64,11 @@ fn single(kind: GeometricConstraintKind, entity: SketchEntityId) -> Option<Const
 fn pair(kind: GeometricConstraintKind, entities: [SketchEntityId; 2]) -> Option<ConstraintShape> {
     Some((kind, entities.to_vec()))
 }
+
+fn axis_kind(vertical: bool) -> GeometricConstraintKind {
+    if vertical { VERTICAL } else { HORIZONTAL }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

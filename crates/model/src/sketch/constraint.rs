@@ -39,6 +39,11 @@ pub enum PlanarConstraint {
     Vertical {
         points: [SketchEntityId; 2],
     },
+    EllipseAxisAlignment {
+        ellipse: SketchEntityId,
+        major_axis: bool,
+        vertical: bool,
+    },
     LineHorizontal {
         line: SketchEntityId,
     },
@@ -212,7 +217,8 @@ impl Sketch2D {
                 self.circular_frame(*curve)?;
                 self.line(*line)?.endpoints.to_vec()
             }
-            PlanarConstraint::EllipseRadius { ellipse, .. } => {
+            PlanarConstraint::EllipseRadius { ellipse, .. }
+            | PlanarConstraint::EllipseAxisAlignment { ellipse, .. } => {
                 self.ellipse(*ellipse)?;
                 Vec::new()
             }

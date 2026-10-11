@@ -84,6 +84,26 @@ unchanged state on refusal, rejected replies with retired IDs, undo/redo,
 save/reopen, and copy with new reference keys. A publicly created ellipse accepts
 the major-radius dimension below.
 
+## Axis alignment
+
+Horizontal and vertical geometric constraints select the major axis by default,
+or the minor axis through the released `useEllipseMajorAxis` field. Each relation
+uses the existing orientation variable and removes one freedom without changing
+the center or radii. A periodic angular error respects the unoriented axis and
+has a nonzero derivative at perpendicular starts. Thin and equal-radius ellipses
+retain the same frame identity and use the same equation.
+
+The shared solver separates step conditioning from convergence domains. Sources
+can declare a unitless error, so a large model length cannot relax its acceptance.
+Grounded wrappers preserve this declaration. Convergence, final residual, and
+conflict reporting use the same domain. Existing model-relative sources retain
+their prior numerical policy. Regression tests cover early convergence beside a
+large length and unsatisfied angular sources at an iteration limit.
+
+Tests also cover both API document kinds, omitted/explicit axis flags, constraint
+enumeration, undo/redo, save/reopen, and copy. Parallel/perpendicular relations
+between lines and ellipse axes remain to be ported.
+
 ## Major-radius dimension
 
 The native `EllipseRadius` relation uses the existing scalar radius equation
@@ -99,7 +119,8 @@ undo/redo, save/reopen/copy, edit, deletion/recreation, and malformed operands.
 Radius crossings fail without adopting a partial recipe or reusing names.
 The former missing-native-ellipse constructor decline is removed.
 
-Remaining #3788 work includes minor-radius and orientation/axis constraints, fully constrained and degenerate
+Remaining #3788 work includes minor-radius and pairwise axis constraints, fully
+constrained and degenerate
 cases, ellipse-specific failed formula and transaction acceptance, and edited
 save/reopen/copy. This step does not establish profile-kernel acceptance. B-rep
 ellipse operations stay in Martensite; the sketch value does not replace kernel
