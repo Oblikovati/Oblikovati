@@ -34,6 +34,39 @@ Run `cargo test --locked -p oblikovati-martensite --test planar_spline` or the f
 `make gate`. This proves the analytic adapter for these representations; it does
 not prove sketch spline ownership or profile-to-B-rep evaluation.
 
+## Go construction corpus and kernel extension
+
+The retained `crates/martensite/tests/planar_spline/go_oracle.go` generator calls
+the Go constructors at `aa8297d1b0ac33c024f19e54821536d76e8a447a`. Its
+`go-fit-oracle.json` contains six five-point recipes: Smooth/centripetal,
+Chord/chord-length and Sweet/uniform, each open and closed. These have 135
+analytic position/derivative samples, including all returned fit stations.
+The Rust `go_spline_recipe` test evaluates their explicit poles and knots in the
+published kernel, checks independent authored point coordinates at stations,
+and checks closed endpoint tangent agreement. Input definitions remain unchanged.
+These checks prove recipe evaluation. They do not prove native construction,
+curvature continuity, handles, control curves or degenerate fitting inputs.
+
+To regenerate, use Go 1.27.0 with a `go.work` that uses the pinned Go application
+and replaces `oblikovati.org/api` with the API repository's `go` module. From this
+Rust repository, run with that work file selected in `GOWORK`:
+
+```sh
+go run ./crates/martensite/tests/planar_spline/go_oracle.go > /tmp/go-fit-oracle.json
+cmp /tmp/go-fit-oracle.json crates/martensite/tests/planar_spline/go-fit-oracle.json
+cargo test --locked -p oblikovati-martensite --test go_spline_recipe
+```
+
+The generated file was reproduced byte-for-byte locally. Kernel extension
+[#9](https://github.com/Oblikovati/RustyCADKernel/issues/9) records the exact Go
+construction and active handle rules, source references, corpus and acceptance
+requirements. Published `Geom2dAPIInterpolate` uses two extra poles for cubic open
+interpolation without tangent requests; Go uses one pole per station with averaged
+knots. Equal input parameters alone do not prove construction equivalence.
+`PointsToBSpline` approximation does not replace interpolation. This extension
+belongs in Martensite and must pass the owner's tests and release workflow before
+the application adopts it.
+
 ## Native ownership and storage
 
 The sketch now owns `SketchSpline2D` parent records with shared defining-point

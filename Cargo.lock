@@ -448,6 +448,8 @@ dependencies = [
  "rustycad-tkmath",
  "rustycad-tkprim",
  "rustycad-tktopalgo",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

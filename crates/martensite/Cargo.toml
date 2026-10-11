@@ -19,3 +19,7 @@ rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = 
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
