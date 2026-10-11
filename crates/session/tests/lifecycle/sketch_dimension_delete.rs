@@ -140,3 +140,6 @@ fn deletion_does_not_reuse_parameter_or_constraint_ids() {
 
 #[path = "dimension_placement.rs"]
 mod placement;
+
+#[path = "dimension_edit.rs"]
+mod edit;

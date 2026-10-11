@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{PlanarConstraint, Sketch2D, SketchConstraint, SketchConstraintId, SketchError};
-use crate::quantity::{Dimension, Quantity};
+use crate::quantity::Quantity;
 use oblikovati_solve::{ad::DualNumber, residual::ResidualError};
 impl Sketch2D {
     /// Measure an owned dimension from current stored geometry, independently of its parameter target.
@@ -13,14 +13,7 @@ impl Sketch2D {
         let variables = self.dimension_measurement_variables(constraint)?;
         let value = measurement(self, &constraint.relation, &variables)
             .map_err(|cause| measurement_error(id, cause))?;
-        let dimension = if matches!(
-            constraint.relation,
-            PlanarConstraint::Angle { .. } | PlanarConstraint::ThreePointAngle { .. }
-        ) {
-            Dimension::Angle
-        } else {
-            Dimension::Length
-        };
+        let dimension = super::dependencies::dimension_category(&constraint.relation);
         Ok(Quantity::new(value.value(), dimension))
     }
     fn dimension_measurement_variables(

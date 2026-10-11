@@ -35,6 +35,7 @@ fn authored_sources(
     sketch
         .constraints
         .iter()
+        .filter(|constraint| !sketch.reference_dimensions.contains(&constraint.id))
         .map(|constraint| {
             Ok((
                 prepared_source(sketch, constraint, parameters)?,

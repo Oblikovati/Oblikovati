@@ -6,6 +6,14 @@ pub(super) fn working_pair(vector: &[f64], scale: f64, label: &str) -> Result<[f
             "{label} {vector:?}: expected two finite centimetre components"
         ))
     })?;
+    finite_metric_pair(pair, scale, label, "centimetres")
+}
+pub(super) fn finite_metric_pair(
+    pair: [f64; 2],
+    scale: f64,
+    label: &str,
+    units: &str,
+) -> Result<[f64; 2], Error> {
     let converted = pair.map(|value| value / scale);
     if pair
         .iter()
@@ -13,7 +21,7 @@ pub(super) fn working_pair(vector: &[f64], scale: f64, label: &str) -> Result<[f
         .any(|value| !value.is_finite())
     {
         return Err(Error(format!(
-            "{label} {vector:?} scale {scale:?}: expected finite centimetres representable in working units"
+            "{label} {pair:?} scale {scale:?}: expected finite {units} representable in working units"
         )));
     }
     Ok(converted)

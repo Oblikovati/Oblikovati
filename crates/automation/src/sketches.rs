@@ -9,6 +9,7 @@ mod delete;
 mod delete_constraint;
 mod delete_dimension;
 mod dimensions;
+mod drive_dimension;
 mod entities;
 mod indices;
 mod move_dimension;
@@ -31,7 +32,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 10] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 11] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
@@ -42,6 +43,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 10] = [
     METHOD_SKETCH_DELETE_CONSTRAINT,
     METHOD_SKETCH_DELETE_DIMENSION,
     METHOD_SKETCH_MOVE_DIMENSION,
+    METHOD_SKETCH_DRIVE_DIMENSION,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 6] = [
@@ -98,14 +100,26 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
         METHOD_SKETCH_ADD_CONSTRAINT => {
             add_constraint::apply(files, crate::decode(method, request)?)
         }
+        METHOD_SKETCH_DELETE_CONSTRAINT => {
+            delete_constraint::apply(files, crate::decode(method, request)?)
+        }
+        _ => apply_dimension_command(files, method, request),
+    }
+}
+fn apply_dimension_command<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    method: &str,
+    request: &[u8],
+) -> Result<Vec<u8>, Error> {
+    match method {
+        METHOD_SKETCH_DRIVE_DIMENSION => {
+            drive_dimension::apply(files, crate::decode(method, request)?)
+        }
         METHOD_SKETCH_MOVE_DIMENSION => {
             move_dimension::apply(files, crate::decode(method, request)?)
         }
         METHOD_SKETCH_DELETE_DIMENSION => {
             delete_dimension::apply(files, crate::decode(method, request)?)
-        }
-        METHOD_SKETCH_DELETE_CONSTRAINT => {
-            delete_constraint::apply(files, crate::decode(method, request)?)
         }
         _ => apply_sketch_owner_command(files, method, request),
     }

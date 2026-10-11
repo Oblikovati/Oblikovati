@@ -16,6 +16,7 @@ mod sketch_construction;
 mod sketch_create;
 mod sketch_delete;
 mod sketch_dimension_delete;
+mod sketch_dimension_edit;
 mod sketch_dimension_placement;
 mod sketch_line;
 mod sketch_primitive;

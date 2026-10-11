@@ -352,3 +352,6 @@ fn verify_dimension_removal(mut geometry: Sketch2D) {
     }
     assert_eq!(geometry.recipe(), before);
 }
+
+#[path = "dimension_measurement/reference_modes.rs"]
+mod reference_modes;

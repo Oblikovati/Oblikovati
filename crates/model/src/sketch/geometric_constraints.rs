@@ -45,6 +45,8 @@ impl Sketch2D {
             ))
         })?;
         self.dimension_text_points.remove(&id);
+        self.reference_dimensions.remove(&id);
+        self.dimension_drive_limits.remove(&id);
         Ok(self.constraints.remove(position))
     }
 }

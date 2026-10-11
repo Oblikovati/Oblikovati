@@ -176,3 +176,6 @@ fn legacy_recipe(version: u32) -> SketchRecipe {
     }
     recipe
 }
+
+#[path = "dimension_placement/drive_settings.rs"]
+mod drive_settings;

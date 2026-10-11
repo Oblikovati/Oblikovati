@@ -24,7 +24,9 @@ pub use geometric_authoring::SketchGeometricConstraintCreation;
 mod dependencies;
 mod dimension_measurement;
 mod dimension_placement;
+mod dimension_settings;
 pub use dimension_placement::SketchDimensionPlacement;
+pub use dimension_settings::{SketchDimensionLimitRecipe, SketchDimensionLimits};
 mod entity_geometry;
 mod entity_order;
 mod error;
@@ -81,6 +83,8 @@ pub struct Sketch2D {
     circles: Vec<SketchCircle2D>,
     arcs: Vec<SketchArc2D>,
     constraints: Vec<SketchConstraint>,
+    reference_dimensions: std::collections::BTreeSet<SketchConstraintId>,
+    dimension_drive_limits: std::collections::BTreeMap<SketchConstraintId, SketchDimensionLimits>,
     dimension_text_points: std::collections::BTreeMap<SketchConstraintId, [f64; 2]>,
 }
 impl Sketch2D {

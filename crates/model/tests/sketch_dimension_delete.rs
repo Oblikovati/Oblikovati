@@ -121,3 +121,6 @@ fn add_shared_dimension(snapshot: &mut DocumentSnapshot) {
         .replace_geometry(DocumentSketchId(1), geometry)
         .unwrap();
 }
+
+#[path = "sketch_dimension_delete/dimension_edit.rs"]
+mod dimension_edit;

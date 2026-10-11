@@ -35,10 +35,10 @@ fn dimension_row(
     constraint: &SketchConstraint,
     parameter: u64,
 ) -> Result<DimensionInfo, Error> {
-    let measured = geometry
-        .measure_dimension(constraint.id)
-        .map_err(api_error)?;
-    let state = require_parameter(snapshot, parameter, measured.dimension)?;
+    let id = constraint.id;
+    let measured = geometry.measure_dimension(id).map_err(api_error)?;
+    let reference = geometry.dimension_is_reference(id).map_err(api_error)?;
+    let state = dimension_parameter_state(snapshot, parameter, measured.dimension, reference)?;
     let scale = snapshot.parameters.units().working_scale();
     let (kind, orientation, linear_diameter) = shape::require(&constraint.relation)?;
     Ok(DimensionInfo {
@@ -50,8 +50,7 @@ fn dimension_row(
         orientation: orientation.into(),
         linear_diameter,
         text_point: canonical_text_point(geometry, constraint.id, scale)?,
-        // Current authored dimensions constrain geometry; reference modes remain separate port work (#3782).
-        ..Default::default()
+        driven: reference,
     })
 }
 fn require_parameter(
@@ -189,4 +188,18 @@ mod placement_tests {
             .unwrap();
         geometry
     }
+}
+
+fn dimension_parameter_state(
+    snapshot: &DocumentSnapshot,
+    parameter: u64,
+    category: Dimension,
+    reference: bool,
+) -> Result<&ParameterState<u64>, Error> {
+    if !reference {
+        return require_parameter(snapshot, parameter, category);
+    }
+    snapshot.parameters.get(parameter).ok_or_else(|| Error(format!(
+        "reference dimension parameter {parameter}: expected an owned source for name and expression inspection"
+    )))
 }

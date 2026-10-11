@@ -4,7 +4,7 @@ use oblikovati_api::{
     client::Caller,
     wire::{DeleteSketchDimensionArgs, DeleteSketchDimensionResult},
 };
-fn populated(kind: DocumentType) -> (DiscoveryWorkspace, u64, QueryGuids) {
+pub(super) fn populated(kind: DocumentType) -> (DiscoveryWorkspace, u64, QueryGuids) {
     let (mut files, document, source) = fresh(kind);
     files
         .commands(document)

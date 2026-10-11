@@ -257,3 +257,6 @@ fn expected_tangent_rows() -> Vec<(&'static str, f64, &'static str, bool)> {
 
 #[path = "dimensions/placement.rs"]
 mod placement;
+
+#[path = "dimensions/drive.rs"]
+mod drive;
