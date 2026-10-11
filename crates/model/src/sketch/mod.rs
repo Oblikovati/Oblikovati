@@ -20,7 +20,7 @@ mod geometry;
 mod line_residual;
 mod offset_dimension;
 mod plane;
-pub(crate) use plane::{normalize_direction, require_unit};
+pub(crate) use plane::{normalize_direction, point_difference, require_unit};
 pub(crate) use recipe_compare::same_components;
 mod recipe;
 mod recipe_compare;

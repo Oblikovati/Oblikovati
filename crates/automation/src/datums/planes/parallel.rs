@@ -25,14 +25,8 @@ pub(in crate::datums) fn revise(
     mut source: WorkPlaneThroughPoint,
     args: &RedefineWorkPlaneArgs,
 ) -> Result<WorkGeometryDefinition, Error> {
-    let scalars = args.scalars.as_deref().unwrap_or_default();
-    if !scalars.is_empty() {
-        return Err(Error(format!(
-            "plane-point scalar edits {scalars:?}: expected no scalar slots"
-        )));
-    }
+    reference_only::validate(args, "plane-point", 2)?;
     let repicks = args.repick.as_deref().unwrap_or_default();
-    validate_slots(repicks)?;
     for edit in repicks {
         if edit.slot == 0 {
             source.base = plane_reference(snapshot, &edit.ref_)?;
@@ -41,17 +35,6 @@ pub(in crate::datums) fn revise(
         }
     }
     Ok(WorkGeometryDefinition::ParallelThroughPoint(source))
-}
-fn validate_slots(edits: &[SlotRepick]) -> Result<(), Error> {
-    if edits.iter().any(|edit| !matches!(edit.slot, 0 | 1))
-        || edits.len() > 2
-        || (edits.len() == 2 && edits[0].slot == edits[1].slot)
-    {
-        return Err(Error(format!(
-            "plane-point reference edits {edits:?}: expected unique base-plane slot 0 and through-point slot 1"
-        )));
-    }
-    Ok(())
 }
 pub(super) fn slots() -> Vec<WorkPlaneRefSlot> {
     vec![

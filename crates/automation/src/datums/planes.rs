@@ -6,6 +6,8 @@ mod inputs;
 mod metadata;
 mod origins;
 pub(in crate::datums) mod parallel;
+mod reference_only;
+pub(in crate::datums) mod three_points;
 pub(super) use inputs::plane_reference;
 pub(super) use inputs::prepare;
 type PlaneEntry = AuthoredFeature<WorkGeometryDefinition>;

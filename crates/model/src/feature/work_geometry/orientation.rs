@@ -8,7 +8,10 @@ impl WorkGeometryDefinition {
     pub(crate) fn require_plane(self) -> Result<(), WorkGeometryError> {
         if matches!(
             self,
-            Self::Fixed(_) | Self::Offset { .. } | Self::ParallelThroughPoint(_)
+            Self::Fixed(_)
+                | Self::Offset { .. }
+                | Self::ParallelThroughPoint(_)
+                | Self::ThroughThreePoints(_)
         ) {
             return Ok(());
         }

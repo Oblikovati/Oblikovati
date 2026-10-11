@@ -9,6 +9,7 @@ impl WorkGeometryDefinition {
         let keys = match self {
             Self::Offset { base, distance } => offset_keys(base, distance),
             Self::ParallelThroughPoint(source) => parallel_keys(source),
+            Self::ThroughThreePoints(points) => points.into_iter().filter_map(point_key).collect(),
             Self::PointAtReference(reference) => point_key(reference).into_iter().collect(),
             Self::Point(coordinates) => coordinates.into_iter().filter_map(length_key).collect(),
             Self::AxisThroughPoints(points) => [points.first, points.second]

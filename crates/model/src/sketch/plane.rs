@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SketchError;
 mod direction;
-pub(crate) use direction::normalize_direction;
+mod through_points;
+pub(crate) use direction::{normalize_direction, point_difference};
 mod orientation;
 pub use orientation::SketchFrameAxis;
 /// Versioned metric checks for authored sketch frame axes, separate from modelling tolerance.

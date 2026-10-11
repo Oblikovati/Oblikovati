@@ -44,6 +44,7 @@ pub enum WorkGeometryDefinition {
         distance: WorkPlaneDistance,
     },
     ParallelThroughPoint(WorkPlaneThroughPoint),
+    ThroughThreePoints([WorkPointReference; 3]),
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),
     PointAtReference(WorkPointReference),

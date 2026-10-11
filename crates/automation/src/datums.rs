@@ -120,7 +120,8 @@ impl DatumCollection {
             }
             WorkGeometryDefinition::Fixed(_)
             | WorkGeometryDefinition::Offset { .. }
-            | WorkGeometryDefinition::ParallelThroughPoint(_) => Self::Planes,
+            | WorkGeometryDefinition::ParallelThroughPoint(_)
+            | WorkGeometryDefinition::ThroughThreePoints(_) => Self::Planes,
         };
         self == kind
     }

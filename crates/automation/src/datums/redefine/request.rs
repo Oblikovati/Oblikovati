@@ -34,6 +34,11 @@ fn geometry_revision(
     if scalars.is_empty() && repicks.is_empty() {
         return Ok(None);
     }
+    if let WorkGeometryDefinition::ThroughThreePoints(points) = *feature.definition() {
+        return planes::three_points::revise(snapshot, points, args)
+            .map(PlaneGeometryRevision::Definition)
+            .map(Some);
+    }
     if let WorkGeometryDefinition::ParallelThroughPoint(source) = *feature.definition() {
         return planes::parallel::revise(snapshot, source, args)
             .map(PlaneGeometryRevision::Definition)

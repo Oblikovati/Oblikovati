@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Checked datum line values from Go work_axis_point.go, aa8297d1; ownership stays in the feature program.
 mod error;
-use crate::sketch::{SketchPlaneOptions, normalize_direction, require_unit, same_components};
+use crate::sketch::{
+    SketchPlaneOptions, normalize_direction, point_difference, require_unit, same_components,
+};
 pub use error::WorkAxisError;
 
 /// An immutable finite datum line; its direction is dimensionless and normalized.
@@ -81,39 +83,4 @@ fn require_axis_origin(origin: [f64; 3]) -> Result<(), WorkAxisError> {
         return Err(WorkAxisError::Origin(origin));
     }
     Ok(())
-}
-
-fn point_difference(first: [f64; 3], second: [f64; 3]) -> [f64; 3] {
-    let difference = std::array::from_fn(|component| second[component] - first[component]);
-    if difference.iter().all(|value| value.is_finite()) {
-        return difference;
-    }
-    overflowing_point_difference(first, second, difference)
-}
-fn overflowing_point_difference(
-    first: [f64; 3],
-    second: [f64; 3],
-    difference: [f64; 3],
-) -> [f64; 3] {
-    // Normalize before subtraction only when the finite-point difference overflows (#3740).
-    let scale = first
-        .into_iter()
-        .chain(second)
-        .map(f64::abs)
-        .fold(0.0, f64::max);
-    std::array::from_fn(|component| {
-        scaled_difference(
-            first[component],
-            second[component],
-            difference[component],
-            scale,
-        )
-    })
-}
-
-fn scaled_difference(first: f64, second: f64, difference: f64, scale: f64) -> f64 {
-    if difference.is_finite() {
-        return difference / scale;
-    }
-    second / scale - first / scale
 }

@@ -281,3 +281,6 @@ mod planes;
 
 #[path = "datums_api/parallel.rs"]
 mod parallel;
+
+#[path = "datums_api/three_points.rs"]
+mod three_points;

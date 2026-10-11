@@ -60,6 +60,7 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
+            Self::ThroughThreePoints(points) => three_point_frame(points, resolver),
             Self::Offset { base, distance } => shifted_frame(
                 base.frame(resolver)?,
                 plane_offset_value(distance, parameters)?,
@@ -124,4 +125,17 @@ fn repositioned_frame(
     let mut recipe = plane.recipe();
     recipe.origin = position;
     SketchPlane::from_recipe(recipe, plane.options()).map_err(WorkPlaneError::Frame)
+}
+
+fn three_point_frame(
+    points: [super::work_geometry::WorkPointReference; 3],
+    resolver: &impl WorkPlaneResolver,
+) -> Result<SketchPlane, WorkPlaneError> {
+    SketchPlane::through_points(
+        points[0].position(resolver)?,
+        points[1].position(resolver)?,
+        points[2].position(resolver)?,
+        Default::default(),
+    )
+    .map_err(WorkPlaneError::Frame)
 }

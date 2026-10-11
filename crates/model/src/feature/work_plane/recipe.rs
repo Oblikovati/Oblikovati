@@ -15,6 +15,7 @@ pub struct WorkPlaneRecipe {
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    ThroughThreePoints([crate::feature::work_geometry::WorkPointReference; 3]),
     ParallelThroughPoint(crate::feature::work_geometry::WorkPlaneThroughPoint),
     Axis(crate::feature::work_axis::WorkAxisLineRecipe),
     Point([crate::feature::work_geometry::DatumLength; 3]),
@@ -42,6 +43,9 @@ impl WorkPlaneDefinition {
 
     fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
         match self {
+            Self::ThroughThreePoints(points) => {
+                WorkPlaneDefinitionRecipe::ThroughThreePoints(points)
+            }
             Self::ParallelThroughPoint(source) => {
                 WorkPlaneDefinitionRecipe::ParallelThroughPoint(source)
             }
@@ -70,6 +74,9 @@ fn restore_definition(
     definition: WorkPlaneDefinitionRecipe,
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     match definition {
+        WorkPlaneDefinitionRecipe::ThroughThreePoints(points) => {
+            Ok(WorkPlaneDefinition::ThroughThreePoints(points))
+        }
         WorkPlaneDefinitionRecipe::ParallelThroughPoint(source) => {
             Ok(WorkPlaneDefinition::ParallelThroughPoint(source))
         }
@@ -104,6 +111,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(self) -> u32 {
         match self {
+            Self::ThroughThreePoints(_) => 6,
             Self::ParallelThroughPoint(_) => 5,
             Self::PointAtReference(_) => 4,
             Self::Axis(_) => 2,
@@ -113,6 +121,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(self) -> u32 {
         match self {
+            Self::ThroughThreePoints(_) => 11,
             Self::ParallelThroughPoint(_) => 10,
             Self::PointAtReference(_) => 6,
             Self::Axis(_) => 3,

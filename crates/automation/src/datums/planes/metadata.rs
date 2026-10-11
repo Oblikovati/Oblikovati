@@ -3,6 +3,7 @@ use super::*;
 use oblikovati_model::quantity::{Dimension, Quantity};
 pub(super) fn constructor(definition: WorkGeometryDefinition) -> Result<String, Error> {
     match definition {
+        WorkGeometryDefinition::ThroughThreePoints(_) => Ok(WORK_PLANE_THREE_POINTS.0.into_owned()),
         WorkGeometryDefinition::Fixed(_) => Ok(WORK_PLANE_FIXED.0.into_owned()),
         WorkGeometryDefinition::ParallelThroughPoint(_) => {
             Ok(WORK_PLANE_PLANE_AND_POINT.0.into_owned())
@@ -18,6 +19,9 @@ pub(super) fn append_inputs(
     snapshot: &DocumentSnapshot,
     definition: WorkGeometryDefinition,
 ) -> Result<(), Error> {
+    if let WorkGeometryDefinition::ThroughThreePoints(_) = definition {
+        info.slots = Some(super::three_points::slots());
+    }
     if let WorkGeometryDefinition::ParallelThroughPoint(_) = definition {
         info.slots = Some(super::parallel::slots());
     }
