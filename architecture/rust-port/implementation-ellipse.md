@@ -101,8 +101,18 @@ their prior numerical policy. Regression tests cover early convergence beside a
 large length and unsatisfied angular sources at an iteration limit.
 
 Tests also cover both API document kinds, omitted/explicit axis flags, constraint
-enumeration, undo/redo, save/reopen, and copy. Parallel/perpendicular relations
-between lines and ellipse axes remain to be ported.
+enumeration, undo/redo, save/reopen, and copy. Parallel/perpendicular relations now accept either operand order for line/ellipse
+pairs and accept ellipse/ellipse pairs. Each ellipse has its own persisted axis
+selector. Typed `SketchAxisOperand` ownership chooses a line's endpoint columns
+or an ellipse's rotation column before the shared angular residual is prepared.
+A grounded line can rotate the ellipse; a pinned ellipse can rotate the line.
+Zero line directions are named domain errors. Collinear axis relations remain
+unported and are refused at classification.
+
+Pair tests cover both document kinds, default/explicit operand selectors,
+ordered enumeration, independent derivative checks, DOF, scale sweeps, equal
+radii, named ownership errors, undo/redo, and save/reopen/copy. Existing line-only
+relations retain their prior equations and Go value/Jacobian parity fixtures.
 
 ## Major-radius dimension
 
@@ -119,7 +129,7 @@ undo/redo, save/reopen/copy, edit, deletion/recreation, and malformed operands.
 Radius crossings fail without adopting a partial recipe or reusing names.
 The former missing-native-ellipse constructor decline is removed.
 
-Remaining #3788 work includes minor-radius and pairwise axis constraints, fully
+Remaining #3788 work includes minor-radius and collinear axis constraints, fully
 constrained and degenerate
 cases, ellipse-specific failed formula and transaction acceptance, and edited
 save/reopen/copy. This step does not establish profile-kernel acceptance. B-rep

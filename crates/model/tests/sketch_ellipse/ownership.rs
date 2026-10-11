@@ -147,3 +147,6 @@ mod dimension;
 
 #[path = "axis.rs"]
 mod axis;
+
+#[path = "pairs.rs"]
+mod pairs;

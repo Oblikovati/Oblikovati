@@ -4,6 +4,17 @@ pub(super) fn classify(
     kind: &GeometricConstraintKind,
     first: &Operand,
     second: &Operand,
+    request: &AddConstraintArgs,
+) -> Option<Creation> {
+    if first.kind == SKETCH_ENTITY_ELLIPSE || second.kind == SKETCH_ENTITY_ELLIPSE {
+        return super::axes::pair(kind, first, second, request);
+    }
+    ordinary_pair(kind, first, second)
+}
+fn ordinary_pair(
+    kind: &GeometricConstraintKind,
+    first: &Operand,
+    second: &Operand,
 ) -> Option<Creation> {
     let refs = [first.id, second.id];
     match (&first.kind, &second.kind) {

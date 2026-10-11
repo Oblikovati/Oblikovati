@@ -97,3 +97,6 @@ fn check_reopened_alignment(
     let copied = files.workspace().active_document().unwrap();
     assert_aligned(files, copied, id, false);
 }
+
+#[path = "axis/pairs.rs"]
+mod pairs;

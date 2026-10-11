@@ -27,6 +27,17 @@ fn classify(relation: &PlanarConstraint) -> Option<ConstraintShape> {
         EllipseAxisAlignment {
             ellipse, vertical, ..
         } => single(axis_kind(*vertical), *ellipse),
+        AxisRelation {
+            axes,
+            perpendicular,
+        } => pair(
+            if *perpendicular {
+                PERPENDICULAR
+            } else {
+                PARALLEL
+            },
+            axes.map(|axis| axis.entity()),
+        ),
         _ => standard_shape(relation),
     }
 }

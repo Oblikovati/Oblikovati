@@ -18,6 +18,10 @@ pub(super) enum PlanarEquation {
         target: f64,
         counter_clockwise: bool,
     },
+    AxisRelation {
+        layouts: [super::axis_operand::AxisLayout; 2],
+        perpendicular: bool,
+    },
     AxisAlignment {
         quarter_turn: bool,
     },
@@ -77,6 +81,14 @@ impl PreparedConstraint {
     }
     fn variable_count(&self) -> usize {
         match self.equation {
+            PlanarEquation::AxisRelation { layouts, .. } => {
+                layouts.iter().map(|layout| layout.width()).sum()
+            }
+            _ => self.fixed_variable_count(),
+        }
+    }
+    fn fixed_variable_count(&self) -> usize {
+        match self.equation {
             PlanarEquation::Fix(_) | PlanarEquation::EqualRadius => 2,
             PlanarEquation::Radius(_) | PlanarEquation::AxisAlignment { .. } => 1,
             PlanarEquation::PointOnCircle => 5,
@@ -98,7 +110,10 @@ impl PreparedConstraint {
 }
 impl ResidualSource for PreparedConstraint {
     fn tolerance_kind(&self) -> oblikovati_solve::residual::ResidualTolerance {
-        if matches!(self.equation, PlanarEquation::AxisAlignment { .. }) {
+        if matches!(
+            self.equation,
+            PlanarEquation::AxisAlignment { .. } | PlanarEquation::AxisRelation { .. }
+        ) {
             return oblikovati_solve::residual::ResidualTolerance::Unitless;
         }
         oblikovati_solve::residual::ResidualTolerance::ModelRelative
@@ -150,6 +165,10 @@ impl ResidualSource for PreparedConstraint {
                 target,
                 counter_clockwise,
             } => super::arc_length::length_residual(variables, target, counter_clockwise),
+            PlanarEquation::AxisRelation {
+                layouts,
+                perpendicular,
+            } => super::ellipse_axis::pair_residual(variables, layouts, perpendicular),
             PlanarEquation::AxisAlignment { quarter_turn } => {
                 super::ellipse_axis::alignment_residual(&variables[0], quarter_turn)
             }

@@ -132,6 +132,13 @@ fn equation(
             target: angle_target(constraint, parameter, parameters)?,
             turn,
         },
+        PlanarConstraint::AxisRelation {
+            axes,
+            perpendicular,
+        } => PlanarEquation::AxisRelation {
+            layouts: axes.map(super::axis_operand::SketchAxisOperand::layout),
+            perpendicular,
+        },
         PlanarConstraint::Lines { relation, .. } => PlanarEquation::Lines(relation),
         PlanarConstraint::Distance {
             measure, parameter, ..

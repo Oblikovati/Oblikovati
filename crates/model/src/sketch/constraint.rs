@@ -84,6 +84,10 @@ pub enum PlanarConstraint {
         parameter: u64,
         turn: AngleTurn,
     },
+    AxisRelation {
+        axes: [super::SketchAxisOperand; 2],
+        perpendicular: bool,
+    },
     Lines {
         lines: [SketchEntityId; 2],
         relation: LineRelation,
@@ -216,6 +220,12 @@ impl Sketch2D {
             | PlanarConstraint::TangentDistance { line, curve, .. } => {
                 self.circular_frame(*curve)?;
                 self.line(*line)?.endpoints.to_vec()
+            }
+            PlanarConstraint::AxisRelation { axes, .. } => {
+                for axis in axes {
+                    axis.columns(self)?;
+                }
+                Vec::new()
             }
             PlanarConstraint::EllipseRadius { ellipse, .. }
             | PlanarConstraint::EllipseAxisAlignment { ellipse, .. } => {

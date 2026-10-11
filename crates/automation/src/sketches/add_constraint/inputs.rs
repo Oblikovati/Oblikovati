@@ -5,6 +5,7 @@ use oblikovati_model::sketch::{
     LineRelation, PlanarConstraint, Sketch2D, SketchEntityId, SketchGeometricConstraintCreation,
 };
 type Creation = SketchGeometricConstraintCreation;
+mod axes;
 mod pairs;
 #[derive(Clone)]
 struct Operand {
@@ -20,7 +21,7 @@ pub(super) fn prepare(geometry: &Sketch2D, request: &AddConstraintArgs) -> Resul
     let kind = GeometricConstraintKind(request.kind.clone().into());
     let input = match operands.as_slice() {
         [single] => single_input(&kind, single, request),
-        [first, second] => pairs::classify(&kind, first, second),
+        [first, second] => pairs::classify(&kind, first, second, request),
         _ => None,
     };
     input.ok_or_else(|| Error(format!(
@@ -40,11 +41,7 @@ fn single_input(
     request: &AddConstraintArgs,
 ) -> Option<Creation> {
     if operand.kind == SKETCH_ENTITY_ELLIPSE {
-        let major_axis = request
-            .use_ellipse_major_axis
-            .as_deref()
-            .copied()
-            .unwrap_or(true);
+        let major_axis = selected_major_axis(&request.use_ellipse_major_axis);
         return ellipse_alignment(kind, operand.id, major_axis);
     }
     point_line_input(kind, operand)
@@ -85,4 +82,8 @@ fn ellipse_alignment(
         major_axis,
         vertical,
     })
+}
+
+fn selected_major_axis(flag: &Option<std::boxed::Box<bool>>) -> bool {
+    flag.as_deref().copied().unwrap_or(true)
 }
