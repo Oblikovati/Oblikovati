@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! One ordered datum program; kind-specific views do not own a second graph or ID allocator.
+mod display;
 mod error;
 mod evaluate;
 mod length;
+mod metadata;
 mod orientation;
+pub use display::WorkPlaneDisplaySettings;
 mod point;
 mod reads;
 mod result;

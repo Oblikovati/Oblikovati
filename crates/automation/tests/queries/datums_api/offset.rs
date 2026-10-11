@@ -25,7 +25,7 @@ pub(super) fn create_offset(
         .create(&offset_request(expression, WORK_REF_XY_PLANE))
         .unwrap()
 }
-fn revision(index: i64, expression: &str, base: &str) -> RedefineWorkPlaneArgs {
+pub(super) fn revision(index: i64, expression: &str, base: &str) -> RedefineWorkPlaneArgs {
     RedefineWorkPlaneArgs {
         index,
         scalars: Some(vec![ScalarEdit {
@@ -39,7 +39,7 @@ fn revision(index: i64, expression: &str, base: &str) -> RedefineWorkPlaneArgs {
         ..Default::default()
     }
 }
-fn redefine(
+pub(super) fn redefine(
     files: &mut DiscoveryWorkspace,
     source: &mut QueryGuids,
     args: &RedefineWorkPlaneArgs,

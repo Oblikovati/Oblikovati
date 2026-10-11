@@ -22,7 +22,7 @@ fn invalid_plane_indices_and_scalar_slots_leave_the_owner_unchanged() {
 }
 
 #[test]
-fn duplicate_slots_and_unported_display_fields_are_explicit_refusals() {
+fn duplicate_slots_and_malformed_display_fields_are_explicit_refusals() {
     let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
     create_offset(&mut files, &mut source, "10 mm");
     let before = owner_revision(&files, document);
@@ -39,24 +39,22 @@ fn unsupported_edits() -> Vec<RedefineWorkPlaneArgs> {
     let mut reference = original.clone();
     let repick = reference.repick.as_ref().unwrap()[0].clone();
     reference.repick.as_mut().unwrap().push(repick);
-    let mut edits = unsupported_flags(&original);
+    let mut edits = malformed_rectangles(&original);
     edits.extend([scalar, reference]);
     edits
 }
-fn unsupported_flags(original: &RedefineWorkPlaneArgs) -> Vec<RedefineWorkPlaneArgs> {
-    let resize = RedefineWorkPlaneArgs {
-        auto_resize: Some(std::boxed::Box::new(false)),
+fn malformed_rectangles(original: &RedefineWorkPlaneArgs) -> Vec<RedefineWorkPlaneArgs> {
+    [
+        vec![Some(vec![0.0; 3])],
+        vec![None, None],
+        vec![Some(vec![0.0; 2]), Some(vec![0.0; 3])],
+    ]
+    .into_iter()
+    .map(|size| RedefineWorkPlaneArgs {
+        size: Some(size),
         ..original.clone()
-    };
-    let grounded = RedefineWorkPlaneArgs {
-        grounded: Some(std::boxed::Box::new(false)),
-        ..original.clone()
-    };
-    let size = RedefineWorkPlaneArgs {
-        size: Some(vec![Some(vec![0.0; 3]); 2]),
-        ..original.clone()
-    };
-    vec![resize, grounded, size]
+    })
+    .collect()
 }
 
 #[test]

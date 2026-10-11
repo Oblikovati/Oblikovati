@@ -48,5 +48,6 @@ and orientation and reject flip metadata under an older program version.
 The Go `TestFlipNormalReversesAndPersists` and `TestFlipNormalRoundTrips` tests
 pass at the fixed source baseline. Acceptance also requires the full local Linux
 `make gate` before commit and push. Windows/macOS pipelines, kernel pins, and
-publication readiness are unchanged. Other work-plane constructors and display
-rectangle/associativity edits remain separate porting work.
+publication readiness are unchanged. Other work-plane constructors remain open.
+[Display rectangle and associativity edits](implementation-plane-display.md) now
+use the same metadata validation boundary.

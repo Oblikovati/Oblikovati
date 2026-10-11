@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::{feature::work_plane::WorkPlaneResolver, sketch::SketchPlane};
+mod display;
 mod inputs;
 mod metadata;
 mod origins;
@@ -26,7 +27,7 @@ pub(super) fn list(
         snapshot,
         DatumCollection::Planes,
         request.include_construction,
-        origins::planes(),
+        origins::planes()?,
         plane_info,
     )?;
     encode(&ListWorkPlanesResult {
@@ -43,6 +44,12 @@ pub(super) fn plane_info(
     let geometry = evaluation.plane(feature.id());
     info.healthy = geometry.is_ok();
     info.reason = health::reason(evaluation, feature.id(), geometry.as_ref().err())?;
+    display::append(
+        &mut info,
+        snapshot,
+        feature,
+        geometry.as_ref().ok().copied(),
+    )?;
     info.origin = geometry
         .as_ref()
         .ok()
@@ -63,6 +70,8 @@ fn identity(
         kind: metadata::constructor(*feature.definition())?,
         visible: feature.is_visible(),
         construction: feature.is_construction_datum(),
+        auto_resize: feature.plane_display_settings().auto_resize(),
+        grounded: feature.plane_display_settings().grounded(),
         ..Default::default()
     })
 }

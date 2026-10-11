@@ -41,11 +41,4 @@ impl FeatureSequence<WorkGeometryDefinition> {
             !self.features[position].plane_normal_flipped;
         Ok(self.replay_from(position))
     }
-    /// Reject plane-only metadata on other datum kinds; example: `datums.validate_plane_orientations()?` before adoption.
-    pub fn validate_plane_orientations(&self) -> Result<(), WorkGeometryError> {
-        for feature in self.features() {
-            feature.validate_plane_orientation()?;
-        }
-        Ok(())
-    }
 }

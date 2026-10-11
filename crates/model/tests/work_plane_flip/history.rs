@@ -29,7 +29,7 @@ fn history_construction_rejects_plane_flags_on_another_datum_kind() {
     let mut invalid = snapshot();
     replace_with_point(&mut invalid).unwrap();
     let error = DocumentEditHistory::new(invalid, RecipeIdAllocator::default()).unwrap_err();
-    assert!(matches!(error, HistoryError::DatumOrientation(_)));
+    assert!(matches!(error, HistoryError::DatumMetadata(_)));
     assert!(error.to_string().contains("expected a plane frame"));
     assert!(std::error::Error::source(&error).is_some());
 }
@@ -43,7 +43,7 @@ fn candidate_edit_cannot_turn_a_flipped_plane_into_a_non_plane() {
         .unwrap_err();
     assert!(matches!(
         error,
-        EditError::History(HistoryError::DatumOrientation(_))
+        EditError::History(HistoryError::DatumMetadata(_))
     ));
     let current = &history.snapshot().work_geometry;
     assert!(current.same_work_plane_recipe(&before));
@@ -56,7 +56,7 @@ fn refresh_and_save_cannot_bypass_orientation_validation() {
     let error = history.refresh(replace_with_point).unwrap_err();
     assert!(matches!(
         error,
-        EditError::History(HistoryError::DatumOrientation(_))
+        EditError::History(HistoryError::DatumMetadata(_))
     ));
     let current = &history.snapshot().work_geometry;
     assert!(current.same_work_plane_recipe(&before));

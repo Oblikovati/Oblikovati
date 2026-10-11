@@ -116,6 +116,7 @@ impl<Definition> FeatureSequence<Definition> {
         replacement.construction_datum = previous.construction_datum;
         replacement.datum_visible = previous.datum_visible;
         replacement.plane_normal_flipped = previous.plane_normal_flipped;
+        replacement.plane_display = previous.plane_display.clone();
         replacement.owned_scalars = previous.owned_scalars.clone();
         replacement.store_condition(previous.condition);
         self.install_replacement(index, replacement)

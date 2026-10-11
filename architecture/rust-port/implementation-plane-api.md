@@ -48,7 +48,8 @@ Creation accepts fixed frames and
 [owned offset expressions](implementation-offset-expressions.md). Offset redefine
 retains expressions and applies scalar/reference edits atomically.
 [Normal flip](implementation-plane-flip.md) preserves authored orientation through
-replay and storage. Other plane definitions, assembly occurrence contexts, and
-display rectangle metadata remain open. Unsupported constructors and occurrence
+replay and storage. [Display settings](implementation-plane-display.md) retain
+flags and rectangle metadata. Other plane definitions and assembly occurrence
+contexts remain open. Unsupported constructors and occurrence
 scopes have named declines. The geometry and native viewport acceptance checks
 remain open.

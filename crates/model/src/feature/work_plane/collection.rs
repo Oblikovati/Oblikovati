@@ -33,6 +33,11 @@ pub struct WorkPlaneFeatureRecipe {
     pub owned_scalars: Vec<crate::feature::FeatureScalarBinding>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub normal_flipped: bool,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::feature::work_geometry::WorkPlaneDisplaySettings::is_default"
+    )]
+    pub plane_display: crate::feature::work_geometry::WorkPlaneDisplaySettings,
 }
 
 /// Ordered collection schema; permanent feature reservations belong to the document owner.
@@ -46,7 +51,7 @@ pub struct WorkPlaneProgramRecipe {
 
 impl AuthoredFeature<WorkPlaneDefinition> {
     fn work_plane_record(&self) -> Result<WorkPlaneFeatureRecipe, WorkPlaneProgramRecipeError> {
-        self.validate_plane_orientation()
+        self.validate_plane_metadata()
             .map_err(WorkPlaneProgramRecipeError::Plane)?;
         let definition = self.definition.recipe();
         WorkPlaneDefinition::from_recipe(definition).map_err(WorkPlaneProgramRecipeError::Plane)?;
@@ -61,6 +66,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
             definition_reads: self.definition_reads.clone(),
             owned_scalars: self.owned_scalars.clone(),
             normal_flipped: self.plane_normal_flipped,
+            plane_display: self.plane_display.clone(),
         })
     }
 
@@ -89,7 +95,8 @@ impl AuthoredFeature<WorkPlaneDefinition> {
         self.datum_visible = recipe.visible;
         self.owned_scalars = recipe.owned_scalars.clone();
         self.plane_normal_flipped = recipe.normal_flipped;
-        self.validate_plane_orientation()
+        self.plane_display = recipe.plane_display.clone();
+        self.validate_plane_metadata()
             .map_err(WorkPlaneProgramRecipeError::Plane)
     }
 }

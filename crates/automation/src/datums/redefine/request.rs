@@ -5,17 +5,12 @@ pub(super) fn prepare(
     snapshot: &DocumentSnapshot,
     args: RedefineWorkPlaneArgs,
 ) -> Result<PlaneRevision, Error> {
-    refuse_display_edits(&args)?;
     let feature = placed_plane(snapshot, args.index)?;
-    let (base, distance) = offset_definition(*feature.definition())?;
-    let expression = scalar_source(snapshot, args.scalars.as_deref().unwrap_or_default())?;
-    let base = revised_base(snapshot, base, args.repick.as_deref().unwrap_or_default())?;
     Ok(PlaneRevision {
         owner: feature.id(),
         index: args.index,
-        base,
-        distance,
-        expression,
+        geometry: geometry_revision(snapshot, feature, &args)?,
+        display: display::prepare(feature.plane_display_settings(), &args)?,
     })
 }
 fn offset_definition(
@@ -29,13 +24,24 @@ fn offset_definition(
     Ok((base, distance))
 }
 
-fn refuse_display_edits(args: &RedefineWorkPlaneArgs) -> Result<(), Error> {
-    if args.auto_resize.is_some() || args.grounded.is_some() || args.size.is_some() {
-        return Err(Error(format!(
-            "plane edit {args:?}: expected scalar/reference edits; display rectangle and associativity flags are not yet supported"
-        )));
+fn geometry_revision(
+    snapshot: &DocumentSnapshot,
+    feature: &AuthoredFeature<WorkGeometryDefinition>,
+    args: &RedefineWorkPlaneArgs,
+) -> Result<Option<OffsetRevision>, Error> {
+    let scalars = args.scalars.as_deref().unwrap_or_default();
+    let repicks = args.repick.as_deref().unwrap_or_default();
+    if scalars.is_empty() && repicks.is_empty() {
+        return Ok(None);
     }
-    Ok(())
+    let (base, distance) = offset_definition(*feature.definition())?;
+    let expression = scalar_source(snapshot, scalars)?;
+    let base = revised_base(snapshot, base, repicks)?;
+    Ok(Some(OffsetRevision {
+        base,
+        distance,
+        expression,
+    }))
 }
 
 pub(in crate::datums) fn placed_plane(

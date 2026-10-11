@@ -12,13 +12,14 @@ pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32
 pub(super) fn validate_program_version(
     recipe: &WorkPlaneProgramRecipe,
 ) -> Result<(), WorkPlaneProgramRecipeError> {
-    if !matches!(recipe.version, 1..=8) {
+    if !matches!(recipe.version, 1..=9) {
         return Err(WorkPlaneProgramRecipeError::Version(recipe.version));
     }
     validate_definition_versions(recipe)?;
     validate_visibility_version(recipe)?;
     validate_ownership_version(recipe)?;
     validate_orientation_version(recipe)?;
+    validate_display_version(recipe)?;
     if recipe.version == 1
         && let Some(feature) = recipe.features.iter().find(|feature| feature.construction)
     {
@@ -42,8 +43,9 @@ fn validate_definition_versions(
 }
 
 fn metadata_program_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
-    if features.iter().any(|feature| feature.normal_flipped) {
-        return 8;
+    let plane_version = plane_metadata_version(features);
+    if plane_version > 1 {
+        return plane_version;
     }
     if features
         .iter()
@@ -101,4 +103,34 @@ fn validate_ownership_version(
         });
     }
     Ok(())
+}
+
+fn validate_display_version(
+    recipe: &WorkPlaneProgramRecipe,
+) -> Result<(), WorkPlaneProgramRecipeError> {
+    if recipe.version < 9
+        && let Some(feature) = recipe
+            .features
+            .iter()
+            .find(|feature| !feature.plane_display.is_default())
+    {
+        return Err(WorkPlaneProgramRecipeError::LegacyDefinition {
+            feature: feature.id,
+            minimum: 9,
+        });
+    }
+    Ok(())
+}
+
+fn plane_metadata_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
+    if features
+        .iter()
+        .any(|feature| !feature.plane_display.is_default())
+    {
+        return 9;
+    }
+    if features.iter().any(|feature| feature.normal_flipped) {
+        return 8;
+    }
+    1
 }

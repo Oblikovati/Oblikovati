@@ -29,7 +29,7 @@ keeps the feature key and existing owned parameter ID. Scalar and base-reference
 edits are applied together. A rejected candidate cannot publish its reply or
 leave partial source changes. Origins are immutable; placed-plane indices include
 construction planes even when a list hides them. Duplicate or invalid slots,
-wrong reference kinds, self/forward dependencies, and unsupported display edits
+wrong reference kinds, self/forward dependencies, and malformed display edits
 produce explicit errors. An empty edit reads the current result without a new
 document generation.
 
@@ -53,6 +53,6 @@ The local Linux `make gate` passes with each crate above 80% line coverage and
 0.31% duplication. The gate derives the workspace inventory from Cargo metadata
 and includes formatting, Clippy, build, tests/coverage, doctests, documentation,
 workflow lint, and SPDX checks. No native viewport or B-rep acceptance is
-claimed. Fixed-plane scalar edits and display rectangle/associativity flags remain
-explicitly unsupported. Kernel release pins and Windows/macOS workflows are
-unchanged.
+claimed. Fixed-plane scalar edits remain explicitly unsupported.
+[Display rectangle and associativity flags](implementation-plane-display.md) are
+now supported. Kernel release pins and Windows/macOS workflows are unchanged.

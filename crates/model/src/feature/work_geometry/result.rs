@@ -18,7 +18,7 @@ impl WorkGeometryResult {
         self,
         feature: &super::AuthoredFeature<WorkGeometryDefinition>,
     ) -> Result<Self, WorkGeometryError> {
-        feature.validate_plane_orientation()?;
+        // The replay boundary validates plane-only metadata before evaluating the source (#3748).
         if let (Self::Plane(plane), true) = (self, feature.is_normal_flipped()) {
             return plane
                 .flipped_normal()

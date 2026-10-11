@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_model::feature::work_geometry::WorkPlaneDisplaySettings;
 use oblikovati_model::feature::{work_geometry::DatumLength, work_plane::WorkPlaneReference};
 use oblikovati_model::quantity::Dimension;
+mod display;
 mod request;
 pub(super) use request::placed_plane;
 
 struct PlaneRevision {
     owner: FeatureId,
     index: i64,
+    geometry: Option<OffsetRevision>,
+    display: WorkPlaneDisplaySettings,
+}
+struct OffsetRevision {
     base: WorkPlaneReference,
     distance: DatumLength,
     expression: Option<String>,
@@ -19,7 +25,7 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 ) -> Result<Vec<u8>, Error> {
     let (document, snapshot) = datum_snapshot(files)?;
     let revision = request::prepare(snapshot, args)?;
-    if reference_only_unchanged(snapshot, &revision)? {
+    if revision_unchanged(snapshot, &revision)? {
         return current_reply(snapshot, revision.owner, revision.index);
     }
     files
@@ -30,17 +36,21 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         })
         .map_err(api_error)
 }
-fn reference_only_unchanged(
+fn revision_unchanged(
     snapshot: &DocumentSnapshot,
     revision: &PlaneRevision,
 ) -> Result<bool, Error> {
-    let definition = snapshot
+    let feature = snapshot
         .work_geometry
         .get(revision.owner)
-        .map_err(api_error)?
-        .definition();
-    Ok(revision.expression.is_none()
-        && matches!(definition, WorkGeometryDefinition::Offset { base, .. } if *base == revision.base))
+        .map_err(api_error)?;
+    let definition = feature.definition();
+    let geometry_unchanged = revision.geometry.as_ref().is_none_or(|geometry| geometry.expression.is_none()
+        && matches!(definition, WorkGeometryDefinition::Offset { base, .. } if *base == geometry.base));
+    Ok(geometry_unchanged
+        && feature
+            .plane_display_settings()
+            .same_recipe(&revision.display))
 }
 
 fn install(
@@ -48,19 +58,34 @@ fn install(
     ids: &mut RecipeReservations<'_>,
     revision: PlaneRevision,
 ) -> Result<Vec<u8>, Error> {
-    let (distance, added) = revise_distance(snapshot, ids, &revision)?;
+    if let Some(geometry) = &revision.geometry {
+        install_offset(snapshot, ids, revision.owner, geometry)?;
+    }
+    snapshot
+        .work_geometry
+        .set_plane_display(revision.owner, revision.display)
+        .map_err(api_error)?;
+    current_reply(snapshot, revision.owner, revision.index)
+}
+fn install_offset(
+    snapshot: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+    owner: FeatureId,
+    revision: &OffsetRevision,
+) -> Result<(), Error> {
+    let (distance, added) = revise_distance(snapshot, ids, owner, revision)?;
     let definition = WorkGeometryDefinition::Offset {
         base: revision.base,
         distance,
     };
     snapshot
         .work_geometry
-        .replace(revision.owner, definition, definition.reads())
+        .replace(owner, definition, definition.reads())
         .map_err(api_error)?;
     if let Some(parameter) = added {
-        assign_offset_owner(snapshot, revision.owner, parameter)?;
+        assign_offset_owner(snapshot, owner, parameter)?;
     }
-    current_reply(snapshot, revision.owner, revision.index)
+    Ok(())
 }
 fn assign_offset_owner(
     snapshot: &mut DocumentSnapshot,
@@ -77,12 +102,13 @@ fn assign_offset_owner(
 fn revise_distance(
     snapshot: &mut DocumentSnapshot,
     ids: &mut RecipeReservations<'_>,
-    revision: &PlaneRevision,
+    owner: FeatureId,
+    revision: &OffsetRevision,
 ) -> Result<(DatumLength, Option<u64>), Error> {
     let Some(source) = &revision.expression else {
         return Ok((revision.distance, None));
     };
-    if let Some(parameter) = owned_offset(snapshot, revision.owner)? {
+    if let Some(parameter) = owned_offset(snapshot, owner)? {
         snapshot
             .parameters
             .set_scalar_expression(parameter, source, Dimension::Length)
@@ -90,7 +116,7 @@ fn revise_distance(
         return Ok((DatumLength::Parameter(parameter), None));
     }
     // Legacy unowned drivers remain untouched when a feature first acquires an authored scalar (#3745).
-    let parameter = scalars::insert_offset(snapshot, ids, revision.owner, source)?;
+    let parameter = scalars::insert_offset(snapshot, ids, owner, source)?;
     Ok((DatumLength::Parameter(parameter), Some(parameter)))
 }
 

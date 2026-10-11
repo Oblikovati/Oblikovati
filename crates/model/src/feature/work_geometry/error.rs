@@ -8,6 +8,7 @@ use std::fmt::{Display, Formatter};
 /// A failed construction frame has no usable current geometry.
 #[derive(Clone, Debug, PartialEq)]
 pub enum WorkGeometryError {
+    DisplayCorners([[f64; 3]; 2]),
     Frame(SketchError),
     Kind(WorkGeometryKindMismatch),
     Coordinate(super::point::WorkPointCoordinateError),
@@ -28,6 +29,7 @@ pub enum WorkGeometryError {
 impl Display for WorkGeometryError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::DisplayCorners(corners) => write_display_corners(*corners, formatter),
             Self::Frame(error) => Display::fmt(error, formatter),
             Self::Kind(error) => Display::fmt(error, formatter),
             Self::Coordinate(error) => Display::fmt(error, formatter),
@@ -111,4 +113,14 @@ impl std::error::Error for WorkGeometryError {
             _ => None,
         }
     }
+}
+
+fn write_display_corners(
+    corners: [[f64; 3]; 2],
+    formatter: &mut Formatter<'_>,
+) -> std::fmt::Result {
+    write!(
+        formatter,
+        "plane display corners {corners:?}: expected two finite three-component points in centimetres"
+    )
 }
