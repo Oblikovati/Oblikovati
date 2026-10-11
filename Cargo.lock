@@ -375,6 +375,7 @@ dependencies = [
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-session",
+ "oblikovati-solve",
  "serde",
  "serde_json",
 ]

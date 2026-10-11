@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{CommandError, DocumentSession, MutationError, TransactionObserver};
-use oblikovati_model::document_sketch::{DocumentSketchId, DocumentSketchRecompute};
+use oblikovati_model::document_sketch::{
+    DocumentSketchId, DocumentSketchRecompute, DocumentSketchSolveOutcome,
+};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 use oblikovati_model::sketch::SketchError;
+use oblikovati_solve::diagnostics::ConstraintStructure;
 use oblikovati_solve::nonlinear::SolveOptions;
 use std::convert::Infallible;
+
+/// Borrow a selected report or inspect its lookup decline before adoption; example: `let reply: SketchSolveProjectionInput<'_> = Ok(&report);`.
+pub type SketchSolveProjectionInput<'report> =
+    Result<&'report DocumentSketchRecompute, SketchError>;
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Solve one sketch with this owner's policy and history; example: `session.solve_sketch(id, || false)?`.
     pub fn solve_sketch(
@@ -12,12 +19,33 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         cancelled: impl FnMut() -> bool,
     ) -> Result<DocumentSketchRecompute, CommandError<SketchError>> {
+        self.solve_sketch_projected(sketch, cancelled, |report| report.cloned())
+    }
+    /// Prepare a response before candidate adoption; example: `session.solve_sketch_projected(id, || false, |report| report.cloned())?`.
+    pub fn solve_sketch_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        cancelled: impl FnMut() -> bool,
+        project: impl FnOnce(SketchSolveProjectionInput<'_>) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
         let options = self.sketch_options;
         self.run_with_recompute(
             "Solve sketch",
-            |snapshot, _| solve_selected(snapshot, sketch, options, cancelled),
+            |snapshot, _| solve_selected(snapshot, sketch, options, cancelled, project),
             SketchUpdateMode::Explicit,
         )
+    }
+    /// Inspect local structure with this owner's rank policy and no mutation; example: `session.analyze_sketch(id)?`.
+    pub fn analyze_sketch(
+        &self,
+        sketch: DocumentSketchId,
+    ) -> Result<ConstraintStructure, SketchError> {
+        let snapshot = self.snapshot();
+        snapshot
+            .sketches
+            .get(sketch)?
+            .geometry()
+            .analyze(&snapshot.parameters, self.sketch_options.rank_tolerance)
     }
     /// Recompute within normal history, joining an open edit group; example: `session.recompute_sketches(options, || false)?`.
     pub fn recompute_sketches(
@@ -39,17 +67,34 @@ impl<O: TransactionObserver> DocumentSession<O> {
     }
 }
 
-fn solve_selected(
+fn solve_selected<R, E>(
     snapshot: &mut DocumentSnapshot,
     sketch: DocumentSketchId,
     options: SolveOptions,
     cancelled: impl FnMut() -> bool,
-) -> Result<DocumentSketchRecompute, SketchError> {
+    project: impl FnOnce(SketchSolveProjectionInput<'_>) -> Result<R, E>,
+) -> Result<R, E> {
     let outcome = snapshot
         .sketches
-        .solve_one(sketch, &snapshot.parameters, options, cancelled)?;
-    snapshot.sketches = outcome.candidate;
-    Ok(outcome.report)
+        .solve_one(sketch, &snapshot.parameters, options, cancelled);
+    project_selected(snapshot, outcome, project)
+}
+
+fn project_selected<R, E>(
+    snapshot: &mut DocumentSnapshot,
+    outcome: Result<DocumentSketchSolveOutcome, SketchError>,
+    project: impl FnOnce(SketchSolveProjectionInput<'_>) -> Result<R, E>,
+) -> Result<R, E> {
+    let response = project(
+        outcome
+            .as_ref()
+            .map(|solved| &solved.report)
+            .map_err(Clone::clone),
+    )?;
+    if let Ok(outcome) = outcome {
+        snapshot.sketches = outcome.candidate;
+    }
+    Ok(response)
 }
 
 #[derive(Clone, Copy)]

@@ -6,8 +6,11 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 2] =
-    [METHOD_DOCUMENTS_LIST, METHOD_PARAMETERS_DERIVED_TABLES_LIST];
+pub const FILE_QUERY_METHODS: [&str; 3] = [
+    METHOD_DOCUMENTS_LIST,
+    METHOD_PARAMETERS_DERIVED_TABLES_LIST,
+    METHOD_SKETCH_CONSTRAINT_STATUS,
+];
 pub(crate) mod derived;
 
 /// Immutable API access to file-owned documents and their session state.
@@ -26,14 +29,23 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
     for FileQueryHost<'_, O, W, F>
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == METHOD_SKETCH_CONSTRAINT_STATUS {
+            return crate::sketches::constraint_status(self.files, crate::decode(method, request)?);
+        }
         if method == METHOD_PARAMETERS_DERIVED_TABLES_LIST {
             return encode(&derived::list(self.files)?);
         }
         if method != METHOD_DOCUMENTS_LIST {
             return SessionQueryHost::new(self.files.workspace()).call(method, request);
         }
-        let documents = self
-            .files
+        encode(&ListDocumentsResult {
+            documents: Some(self.documents()?),
+        })
+    }
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileQueryHost<'_, O, W, F> {
+    fn documents(&self) -> Result<Vec<DocumentInfo>, Error> {
+        self.files
             .workspace()
             .documents()
             .iter()
@@ -42,9 +54,6 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
                     .document_info(*id)
                     .map_err(|error| Error(error.to_string()))
             })
-            .collect::<Result<Vec<_>, _>>()?;
-        encode(&ListDocumentsResult {
-            documents: Some(documents),
-        })
+            .collect()
     }
 }

@@ -105,6 +105,7 @@ fn file_query_host_discovers_types_names_subtypes_and_creation_order() {
             files.workspace().active_document(),
             Some(registered.session_id)
         );
+        assert_eq!(files.document_type(registered.session_id).unwrap(), kind);
     }
     let before = files.workspace().observer().notifications;
     let documents = Client::new(FileQueryHost::new(&files))
@@ -128,6 +129,7 @@ fn file_query_host_discovers_types_names_subtypes_and_creation_order() {
     }
     assert_eq!(files.workspace().observer().notifications, before);
     assert!(files.document_info(999).is_err());
+    assert!(files.document_type(999).is_err());
 }
 
 #[test]
@@ -199,6 +201,9 @@ fn discovery_tracks_save_undo_focus_and_reopened_names() {
 
 #[path = "file_commands.rs"]
 mod commands;
+
+#[path = "sketch_api.rs"]
+mod sketch_api;
 
 #[path = "derived_sources.rs"]
 mod derived_sources;

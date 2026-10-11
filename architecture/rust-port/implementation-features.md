@@ -389,5 +389,36 @@ start an automatic solve of unrelated pending readers.
 Tests cover missing identities before solver work, selected geometry and health,
 cancellation, failure and retry, injected iteration limits, an unrelated pending
 reader, unchanged saved state, group abort, undo/redo, and file save/reopen.
-The typed API dispatch and read-only constraint-status query remain to be wired
-to this owner. This does not complete R3 or certify kernel/native behavior.
+Issue #3733 below connects the typed API dispatch and read-only constraint-status
+query to this owner. This does not complete R3 or certify kernel/native behavior.
+
+## Sketch diagnostic API: partial R3
+
+Issue #3733 connects the shared `sketch.solve` and `sketch.constraintStatus`
+methods and DTOs to the file owner. The active document must have the retained
+package kind `DOCUMENT_PART`, matching the Go router. Ordered API indices resolve
+to stable sketch identities on each call. Negative, absent, and out-of-range
+indices are refused before commands start. Bare recipe sessions do not infer a
+part-document kind or advertise these calls.
+
+Solves use the document's injected numerical policy and the existing selected
+owner command. Response projection happens before candidate adoption. A failed
+response projection discards the candidate; a local solver error records failed
+health and reaches the client as an error. Health-only solves do not add an undo
+step, but evaluation generations remain monotonic. Geometry changes join the
+current transaction, including abort and commit-veto behavior. The solve changes
+no parameter outputs and starts no unrelated linked-document refresh.
+
+The constraint query uses the same owner's rank policy without iteration,
+geometry changes, history movement, or a generation update. Counts are checked
+before conversion to the API's signed integer fields. Go's `well`, `under`, and
+`over` wire status values remain unchanged. Convergence with free variables is
+locally healthy; redundant constraints are a warning and report `healthy=false`.
+This local health does not approve a sketch for feature consumption, which still
+requires resolved placement and zero free variables.
+
+Typed-client tests cover statuses and health, ordered removal, malformed inputs,
+empty parts, absent focus, wrong kinds, read-only ownership, numerical declines,
+local failure health, unchanged queries, grouping, veto, undo/redo, and save/reopen.
+The Go solver and sketch oracle tests also pass. Native transport, the remaining
+sketch commands, associative placement, and kernel-backed consumers remain open.

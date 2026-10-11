@@ -72,19 +72,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         if method == METHOD_DOCUMENTS_LIST_ATTACHMENTS {
             return context.list_attachments(decode(method, request)?);
         }
+        if crate::SKETCH_COMMAND_METHODS.contains(&method) {
+            return crate::sketches::solve(context.files, decode(method, request)?);
+        }
+        context.owned_command(method, request)
+    }
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
+    fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         if EDIT_METHODS.contains(&method) {
-            return command_owner::edit(context.files, method, request);
+            return command_owner::edit(self.files, method, request);
         }
         if TRANSACTION_METHODS.contains(&method) {
-            return transactions::apply(context.files, method, request);
+            return transactions::apply(self.files, method, request);
         }
         if DERIVED_COMMAND_METHODS.contains(&method) {
-            return context.derived_command(method, request);
+            return self.derived_command(method, request);
         }
         if FILE_COMMAND_METHODS.contains(&method) {
-            return context.lifecycle_command(method, request);
+            return self.lifecycle_command(method, request);
         }
-        FileQueryHost::new(context.files).call(method, request)
+        FileQueryHost::new(self.files).call(method, request)
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {

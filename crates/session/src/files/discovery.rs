@@ -4,6 +4,19 @@ use super::*;
 use oblikovati_api::wire::DocumentInfo;
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Read the retained package's API kind without assuming recipe contents; example: `host.document_type(id)?`.
+    pub fn document_type(
+        &self,
+        id: u64,
+    ) -> Result<oblikovati_api::types::DocumentType, FileWorkspaceError> {
+        let file = self
+            .retained
+            .get(&id)
+            .ok_or(FileWorkspaceError::MissingFile(id))?;
+        Ok(oblikovati_api::types::DocumentType(
+            file.package.manifest().document_type,
+        ))
+    }
     /// Inspect a file-owned document without activating or loading it again.
     /// Example: `host.document_info(id)?` supplies an API document-list entry.
     pub fn document_info(&self, id: u64) -> Result<DocumentInfo, FileWorkspaceError> {

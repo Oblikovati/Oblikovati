@@ -12,6 +12,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+oblikovati-solve = { path = "../solve" }
 oblikovati-persistence = { path = "../persistence" }
 oblikovati-model = { path = "../model" }
 oblikovati-session = { path = "../session" }

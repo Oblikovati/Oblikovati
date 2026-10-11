@@ -118,3 +118,47 @@ fn group_abort_discards_selected_geometry_and_verification() {
     assert!(before.same_evaluated_state(&session.snapshot().sketches));
     assert!(session.undo_labels().is_empty());
 }
+
+#[test]
+fn rejected_response_discards_solved_geometry_and_verification_before_commit() {
+    let (mut session, sketch) = stale_session(Default::default());
+    let before = session.snapshot().sketches.clone();
+    let result = session.solve_sketch_projected(
+        sketch,
+        || false,
+        |report| {
+            assert!(report.unwrap().reports[0].result.is_ok());
+            Err::<(), _>("reply refused")
+        },
+    );
+    assert!(result.unwrap_err().to_string().contains("reply refused"));
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert!(session.undo_labels().is_empty());
+}
+
+#[test]
+fn projection_can_inspect_missing_identity_without_adopting_a_candidate() {
+    let (mut session, _) = stale_session(Default::default());
+    let before = session.snapshot().sketches.clone();
+    let result = session
+        .solve_sketch_projected(
+            DocumentSketchId(99),
+            || false,
+            |report| Ok::<_, String>(report.unwrap_err().to_string()),
+        )
+        .unwrap();
+    assert!(result.contains("99"));
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert!(session.undo_labels().is_empty());
+}
+
+#[test]
+fn owned_structure_analysis_does_not_solve_stale_geometry_or_change_history() {
+    let (session, sketch) = stale_session(Default::default());
+    let before = session.snapshot().sketches.clone();
+    let structure = session.analyze_sketch(sketch).unwrap();
+    assert_eq!(structure.degrees_of_freedom, 0);
+    assert!(session.analyze_sketch(DocumentSketchId(99)).is_err());
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    assert!(session.undo_labels().is_empty());
+}
