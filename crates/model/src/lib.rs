@@ -6,6 +6,7 @@ pub mod attachment;
 pub mod attribute;
 pub mod dependency;
 pub mod expression;
+pub mod feature;
 pub mod fits;
 pub mod history;
 pub mod identity;

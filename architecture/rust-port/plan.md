@@ -2,6 +2,8 @@
 
 Date: 2026-10-10. Status: implementation started.
 See the [implementation evidence](implementation.md) for tested behavior and limits.
+The [feature sequence evidence](implementation-features.md) records the ordered
+recipe foundation and the remaining replay integration work.
 
 ## Outcome
 
