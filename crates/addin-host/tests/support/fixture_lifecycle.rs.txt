@@ -8,8 +8,9 @@ fn fixture_buffers() -> &'static Mutex<FixtureBuffers> {
     BUFFERS.get_or_init(|| Mutex::new(FixtureBuffers::default()))
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn ObkAddInActivate(_: Option<ffi::ObkHostCall>, _: Option<ffi::ObkHostFree>) -> c_int {
+pub extern "C" fn ObkAddInActivate(call: Option<ffi::ObkHostCall>, free: Option<ffi::ObkHostFree>) -> c_int {
     if cfg!(activate_error) { return ffi::OBK_ERR; }
+    if cfg!(callback_echo) { return unsafe { fixture_host_echo(call, free) }; }
     ffi::OBK_OK
 }
 #[unsafe(no_mangle)]
@@ -57,3 +58,14 @@ fn fixture_reply(name: &[u8], request: *const u8, length: c_int) -> Vec<u8> {
     }
 }
 const _: ffi::ObkAddInActivate = ObkAddInActivate;
+
+unsafe fn fixture_host_echo(call: Option<ffi::ObkHostCall>, free: Option<ffi::ObkHostFree>) -> c_int {
+    let (Some(call), Some(free)) = (call, free) else { return ffi::OBK_ERR; };
+    let mut response = std::ptr::null_mut();
+    let mut length = 0;
+    let status = unsafe { call(c"echo".as_ptr(), b"ping".as_ptr(), 4, &mut response, &mut length) };
+    let copied = if !response.is_null() && length > 0 { unsafe { std::slice::from_raw_parts(response, length as usize) }.to_vec() } else { Vec::new() };
+    if !response.is_null() { unsafe { free(response) }; }
+    if status == ffi::OBK_OK && copied == b"ping" { return ffi::OBK_OK; }
+    ffi::OBK_ERR
+}

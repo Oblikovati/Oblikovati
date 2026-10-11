@@ -389,6 +389,7 @@ version = "0.1.0"
 dependencies = [
  "libc",
  "oblikovati-api",
+ "oblikovati-automation",
  "serde",
  "serde_json",
  "tempfile",

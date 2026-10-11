@@ -59,3 +59,7 @@ callback retirement, host error-buffer ownership, event transport, automation
 reentry, worker activation coordination, typed Go/Rust document workflows, and
 foreground MCPBridge acceptance remain required. The unsafe low-level wrapper
 is not yet a managed application add-in host.
+
+The [native host callback binding](implementation-native-host-callbacks.md) now
+connects the C signatures to queued transport and tracks host-owned replies.
+Managed lifecycle and typed document workflow acceptance remain open.

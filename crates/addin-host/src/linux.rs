@@ -7,7 +7,9 @@ use std::{
     path::Path,
     ptr::NonNull,
 };
+mod callbacks;
 mod exports;
+pub use callbacks::{HostBufferCounts, HostCallbackBinding};
 mod lifecycle;
 mod response;
 pub use lifecycle::{AddInState, LoadedAddIn};
