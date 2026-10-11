@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::*};
-fn dimension_session(veto: Option<&'static str>) -> DocumentSession<RecordingObserver> {
+pub(super) fn dimension_session(veto: Option<&'static str>) -> DocumentSession<RecordingObserver> {
     let mut snapshot = recipe();
     snapshot
         .parameters
@@ -18,7 +18,7 @@ fn dimension_session(veto: Option<&'static str>) -> DocumentSession<RecordingObs
         .unwrap();
     dimension_session_from_snapshot(snapshot, veto)
 }
-fn dimension_session_from_snapshot(
+pub(super) fn dimension_session_from_snapshot(
     snapshot: DocumentSnapshot,
     veto: Option<&'static str>,
 ) -> DocumentSession<RecordingObserver> {
@@ -36,7 +36,7 @@ fn dimension_session_from_snapshot(
         },
     )
 }
-fn assert_owned_dimension(session: &DocumentSession<RecordingObserver>, present: bool) {
+pub(super) fn assert_owned_dimension(session: &DocumentSession<RecordingObserver>, present: bool) {
     assert_eq!(session.snapshot().parameters.get(2).is_some(), present);
     let geometry = session
         .snapshot()

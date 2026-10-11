@@ -68,9 +68,35 @@ checks and reference-key retirement. Package tests cover both document owners,
 hidden high-water IDs and byte-identical re-encoding. Run `make gate` for the full
 Linux workspace suite.
 
-This covers the native model boundary and the five current public primitive
-factories. Spline and other pending curve factories still need defining-point
-construction. Canonical entity deletion, document model-parameter
-cascade, annotations, history/veto/abort, copy/reopen/live editor acceptance and
-feature-consumer guards are incomplete. Do not close #3789 or infer general
-application deletion acceptance from these native tests.
+## Document command and source ownership
+
+`DocumentSnapshot::delete_sketch_entities` applies the native closure on an
+isolated document candidate. It detaches projection associations whose anchors
+were retired before replacing geometry, so no dangling projection is stored.
+The command removes Model scalar sources formerly bound to removed dimensions
+only when no surviving dimension in any sketch and no feature scalar owner
+retains them. Reference dimensions count as owners even though they do not
+drive solver rows. User and other non-Model sources remain. An unrelated,
+unbound Model source is not collected merely because an entity was deleted.
+
+Retiring a Model source uses the normal parameter-owner removal path: authored
+formula readers remain and report missing-source health. Failed dimension
+sources can be removed without requiring their pre-edit solve to be healthy.
+`DocumentSession` carries this edit through automatic recompute and undo history.
+Its reply projection runs before adoption, so a rejected reply or commit veto
+discards geometry, relations, projection associations and parameter removal.
+
+Eleven regression tests cover the source policies, shared driving/reference
+sources across and within sketches, feature scalar ownership, failed sources,
+formula-reader health, unknown IDs, empty selection, projection-anchor cascade,
+undo, redo, abort, commit veto and rejected replies. The tests reuse the existing
+named transaction observer and dimension fixture. The pinned Go deletion
+tests also pass: `go test ./model/sketch -run '^TestDeleteEntities' -count=1`.
+
+This covers the native model/document/session boundaries and the five current
+public primitive factories. The Go 2D transform API has no delete operation;
+this work does not add a new public API contract. Spline and other pending curve
+factories still need defining-point construction. Editor integration, annotation
+policy, copy/reopen acceptance of the deletion command and general feature
+consumer behavior remain incomplete. Do not close #3789 or infer general
+application deletion acceptance from these tests.

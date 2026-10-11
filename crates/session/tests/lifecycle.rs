@@ -406,3 +406,6 @@ mod sketch_dimension_delete;
 
 #[path = "lifecycle/dimension_create.rs"]
 mod dimension_create;
+
+#[path = "lifecycle/sketch_entity_delete.rs"]
+mod sketch_entity_delete;
