@@ -137,3 +137,6 @@ fn deletion_does_not_reuse_parameter_or_constraint_ids() {
     assert_eq!(parameter, 3);
     assert_eq!(constraint, SketchConstraintId(2));
 }
+
+#[path = "dimension_placement.rs"]
+mod placement;

@@ -5,7 +5,9 @@ use super::{
 };
 
 /// Stable constraint identity, separate from the point/curve identity namespace.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub struct SketchConstraintId(pub u64);
 /// Application distance measure; this is not a wire DTO or API enum replacement.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

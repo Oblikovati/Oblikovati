@@ -5,6 +5,7 @@ use crate::sketch::{
 };
 use std::collections::BTreeSet;
 mod construction;
+mod dimension_placement;
 mod health;
 mod translation;
 pub use construction::SketchConstructionReport;

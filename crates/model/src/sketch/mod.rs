@@ -23,6 +23,8 @@ pub use authoring::{SketchPointInput, SketchPrimitiveCreation};
 pub use geometric_authoring::SketchGeometricConstraintCreation;
 mod dependencies;
 mod dimension_measurement;
+mod dimension_placement;
+pub use dimension_placement::SketchDimensionPlacement;
 mod entity_geometry;
 mod entity_order;
 mod error;
@@ -79,6 +81,7 @@ pub struct Sketch2D {
     circles: Vec<SketchCircle2D>,
     arcs: Vec<SketchArc2D>,
     constraints: Vec<SketchConstraint>,
+    dimension_text_points: std::collections::BTreeMap<SketchConstraintId, [f64; 2]>,
 }
 impl Sketch2D {
     /// Inspect all points in stable insertion order; example: `sketch.points()`.

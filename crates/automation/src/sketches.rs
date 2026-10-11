@@ -11,6 +11,7 @@ mod delete_dimension;
 mod dimensions;
 mod entities;
 mod indices;
+mod move_dimension;
 mod owner;
 mod references;
 mod transform;
@@ -30,7 +31,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 9] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 10] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
@@ -40,6 +41,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 9] = [
     METHOD_SKETCH_ADD_CONSTRAINT,
     METHOD_SKETCH_DELETE_CONSTRAINT,
     METHOD_SKETCH_DELETE_DIMENSION,
+    METHOD_SKETCH_MOVE_DIMENSION,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 6] = [
@@ -95,6 +97,9 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
         METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_CONSTRAINT => {
             add_constraint::apply(files, crate::decode(method, request)?)
+        }
+        METHOD_SKETCH_MOVE_DIMENSION => {
+            move_dimension::apply(files, crate::decode(method, request)?)
         }
         METHOD_SKETCH_DELETE_DIMENSION => {
             delete_dimension::apply(files, crate::decode(method, request)?)

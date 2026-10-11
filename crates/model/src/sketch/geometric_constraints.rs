@@ -44,6 +44,7 @@ impl Sketch2D {
                 "sketch constraint {id:?}: expected an owned {kind} relation for deletion"
             ))
         })?;
+        self.dimension_text_points.remove(&id);
         Ok(self.constraints.remove(position))
     }
 }

@@ -90,9 +90,9 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.construction_curves) {
             (1 | 2, None) => Ok(()),
-            (3 | 4, Some(curves)) => self.adopt_construction_curves(curves),
+            (3..=5, Some(curves)) => self.adopt_construction_curves(curves),
             shape => Err(SketchError::Definition(format!(
-                "construction recipe {shape:?}: expected no metadata in versions 1/2 or explicit curve metadata in versions 3/4"
+                "construction recipe {shape:?}: expected no metadata in versions 1/2 or explicit curve metadata in versions 3-5"
             ))),
         }
     }

@@ -173,3 +173,30 @@ fn different_point_identities_at_the_same_position_do_not_define_an_axis() {
             .contains("distinct axis positions")
     );
 }
+
+#[test]
+fn version_five_annotations_preserve_centerline_construction_and_entity_order() {
+    let mut sketch = marked_centerlines();
+    let circle = SketchEntityId(5);
+    let dimension = SketchConstraintId(7);
+    sketch.set_curve_construction(&[circle], true).unwrap();
+    let relation = PlanarConstraint::Radius {
+        curve: circle,
+        parameter: 1,
+    };
+    sketch.add_constraint(dimension, relation).unwrap();
+    let before = sketch.recipe();
+    sketch
+        .set_dimension_text_point(dimension, [2.0, 3.0])
+        .unwrap();
+    assert_annotation_keeps_curve_metadata(&sketch, &before);
+}
+fn assert_annotation_keeps_curve_metadata(sketch: &Sketch2D, before: &SketchRecipe) {
+    let recipe = sketch.recipe();
+    assert_eq!(recipe.version, 5);
+    assert_eq!(recipe.entity_order, before.entity_order);
+    assert_eq!(recipe.centerlines, before.centerlines);
+    assert_eq!(recipe.construction_curves, before.construction_curves);
+    let restored = Sketch2D::from_recipe(&recipe).unwrap();
+    assert!(sketch.same_recipe(&restored));
+}

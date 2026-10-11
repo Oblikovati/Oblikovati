@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_model::{
     parameter::ParameterState,
     quantity::{Dimension, Quantity},
-    sketch::{Sketch2D, SketchConstraint},
+    sketch::{Sketch2D, SketchConstraint, SketchConstraintId},
 };
 mod shape;
 pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -39,16 +39,18 @@ fn dimension_row(
         .measure_dimension(constraint.id)
         .map_err(api_error)?;
     let state = require_parameter(snapshot, parameter, measured.dimension)?;
+    let scale = snapshot.parameters.units().working_scale();
     let (kind, orientation, linear_diameter) = shape::require(&constraint.relation)?;
     Ok(DimensionInfo {
         index: super::indices::constraint_wire_index(index, "dimensional constraint")?,
         kind: kind.0.to_string(),
         name: state.name.clone(),
         expression: state.source.clone(),
-        value: canonical_measurement(measured, snapshot.parameters.units().working_scale())?,
+        value: canonical_measurement(measured, scale)?,
         orientation: orientation.into(),
         linear_diameter,
-        // Current authored dimensions constrain geometry; reference modes and text placement are separate port work (#3782).
+        text_point: canonical_text_point(geometry, constraint.id, scale)?,
+        // Current authored dimensions constrain geometry; reference modes remain separate port work (#3782).
         ..Default::default()
     })
 }
@@ -121,5 +123,70 @@ mod category_tests {
         let measured = Quantity::new(2.0, Dimension::Area);
         let cause = canonical_measurement(measured, 1.0).unwrap_err().0;
         assert!(cause.contains("Area") && cause.contains("length or angular"));
+    }
+}
+
+pub(super) fn selected_constraint(
+    geometry: &Sketch2D,
+    index: i64,
+) -> Result<SketchConstraintId, Error> {
+    usize::try_from(index)
+        .ok()
+        .and_then(|position| geometry.dimensional_constraints().nth(position))
+        .map(|(constraint, _)| constraint.id)
+        .ok_or_else(|| {
+            Error(format!(
+                "dimension index {index}: expected an owned row in 0..{}",
+                geometry.dimensional_constraints().count()
+            ))
+        })
+}
+
+fn canonical_text_point(
+    geometry: &Sketch2D,
+    dimension: SketchConstraintId,
+    scale: f64,
+) -> Result<Option<Vec<f64>>, Error> {
+    geometry
+        .dimension_text_point(dimension)
+        .map_err(api_error)?
+        .map(|position| {
+            position
+                .into_iter()
+                .map(|value| canonical_measurement(Quantity::new(value, Dimension::Length), scale))
+                .collect()
+        })
+        .transpose()
+}
+
+#[cfg(test)]
+mod placement_tests {
+    use super::*;
+    #[test]
+    fn annotation_conversion_cannot_report_infinite_centimetre_coordinates() {
+        let mut geometry = positioned_dimension();
+        geometry
+            .set_dimension_text_point(SketchConstraintId(1), [f64::MAX, 0.0])
+            .unwrap();
+        let cause = canonical_text_point(&geometry, SketchConstraintId(1), 2.0)
+            .unwrap_err()
+            .0;
+        assert!(cause.contains("scale 2") && cause.contains("finite centimetre"));
+    }
+    fn positioned_dimension() -> Sketch2D {
+        use oblikovati_model::sketch::{PlanarConstraint, SketchEntityId};
+        let mut geometry = Sketch2D::default();
+        geometry.add_point(SketchEntityId(1), [0.0, 0.0]).unwrap();
+        geometry
+            .add_circle(SketchEntityId(2), SketchEntityId(1), 1.0)
+            .unwrap();
+        let relation = PlanarConstraint::Radius {
+            curve: SketchEntityId(2),
+            parameter: 1,
+        };
+        geometry
+            .add_constraint(SketchConstraintId(1), relation)
+            .unwrap();
+        geometry
     }
 }

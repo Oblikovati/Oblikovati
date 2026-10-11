@@ -3,7 +3,8 @@ use super::{PlanarConstraint, Sketch2D, SketchConstraint, SketchPoint2D};
 impl Sketch2D {
     /// Compare authored recipe bits for history and storage; example: `old.same_recipe(&candidate)`.
     pub fn same_recipe(&self, other: &Self) -> bool {
-        self.centerlines == other.centerlines
+        self.same_dimension_placements(other)
+            && self.centerlines == other.centerlines
             && self.construction_curves == other.construction_curves
             && self.entity_order == other.entity_order
             && self.lines == other.lines

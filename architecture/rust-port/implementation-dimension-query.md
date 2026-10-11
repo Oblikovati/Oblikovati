@@ -27,8 +27,9 @@ unrepresentable results are errors, with no zero substitute.
 The existing Rust arc model retains the full authored sweep for major arcs,
 including its previously recorded difference from Go's minor-arc measurement
 (#3713). The query uses that same model measurement. Current dimensions constrain
-geometry, so `driven` is false. No reference mode or annotation placement is
-fabricated; those behaviors require separate implementation work.
+geometry, so `driven` is false. No reference mode is fabricated; that behavior requires separate implementation
+work. Annotation placement is now stored and returned; see
+[dimension placement](implementation-dimension-placement.md).
 
 Tests cover every form and metadata field, independent analytic values, measured
 values that differ from targets, rotated/scaled and reversed geometry, zero point
@@ -38,5 +39,5 @@ failed sources, wrong owners and payloads, history, save/reopen, and copy. The
 pinned Go model and router tests supply independent reference evidence.
 
 The full local gate covers the Rust workspace present in this tree. Native
-application rendering, dimension authoring, reference dimensions, annotations,
+application rendering, dimension authoring, reference dimensions,
 and released kernel acceptance remain open.

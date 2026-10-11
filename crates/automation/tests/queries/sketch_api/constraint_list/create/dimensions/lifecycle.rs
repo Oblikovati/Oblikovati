@@ -141,7 +141,7 @@ fn assert_malformed_query(files: &DiscoveryWorkspace) {
     }
 }
 
-fn populated_scaled(scale: f64) -> DiscoveryWorkspace {
+pub(super) fn populated_scaled(scale: f64) -> DiscoveryWorkspace {
     let (mut files, document, _) = entities::configured_scaled(scale);
     files
         .commands(document)
