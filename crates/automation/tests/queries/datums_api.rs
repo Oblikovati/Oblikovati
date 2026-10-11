@@ -284,3 +284,6 @@ mod parallel;
 
 #[path = "datums_api/three_points.rs"]
 mod three_points;
+
+#[path = "datums_api/line_point.rs"]
+mod line_point;

@@ -37,16 +37,5 @@ pub(in crate::datums) fn revise(
     Ok(WorkGeometryDefinition::ParallelThroughPoint(source))
 }
 pub(super) fn slots() -> Vec<WorkPlaneRefSlot> {
-    vec![
-        WorkPlaneRefSlot {
-            index: 0,
-            label: "Base plane".into(),
-            kind: "plane".into(),
-        },
-        WorkPlaneRefSlot {
-            index: 1,
-            label: "Through point".into(),
-            kind: "point".into(),
-        },
-    ]
+    reference_only::slots(&[("Base plane", "plane"), ("Through point", "point")])
 }

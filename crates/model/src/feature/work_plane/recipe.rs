@@ -15,6 +15,7 @@ pub struct WorkPlaneRecipe {
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    LineThroughPoint(crate::feature::work_geometry::WorkPlaneLinePoint),
     ThroughThreePoints([crate::feature::work_geometry::WorkPointReference; 3]),
     ParallelThroughPoint(crate::feature::work_geometry::WorkPlaneThroughPoint),
     Axis(crate::feature::work_axis::WorkAxisLineRecipe),
@@ -43,6 +44,7 @@ impl WorkPlaneDefinition {
 
     fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
         match self {
+            Self::LineThroughPoint(source) => WorkPlaneDefinitionRecipe::LineThroughPoint(source),
             Self::ThroughThreePoints(points) => {
                 WorkPlaneDefinitionRecipe::ThroughThreePoints(points)
             }
@@ -73,23 +75,17 @@ impl WorkPlaneDefinition {
 fn restore_definition(
     definition: WorkPlaneDefinitionRecipe,
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
+    use WorkPlaneDefinitionRecipe::*;
     match definition {
-        WorkPlaneDefinitionRecipe::ThroughThreePoints(points) => {
-            Ok(WorkPlaneDefinition::ThroughThreePoints(points))
-        }
-        WorkPlaneDefinitionRecipe::ParallelThroughPoint(source) => {
-            Ok(WorkPlaneDefinition::ParallelThroughPoint(source))
-        }
-        WorkPlaneDefinitionRecipe::Axis(axis) => restore_line_axis(axis),
-        WorkPlaneDefinitionRecipe::Fixed { frame, options } => restore_frame(frame, options),
-        WorkPlaneDefinitionRecipe::Offset { base, distance } => validate_offset(base, distance),
-        WorkPlaneDefinitionRecipe::Point(coordinates) => restore_point(coordinates),
-        WorkPlaneDefinitionRecipe::PointAtReference(reference) => {
-            Ok(WorkPlaneDefinition::PointAtReference(reference))
-        }
-        WorkPlaneDefinitionRecipe::AxisThroughPoints(points) => {
-            Ok(WorkPlaneDefinition::AxisThroughPoints(points))
-        }
+        LineThroughPoint(source) => Ok(WorkPlaneDefinition::LineThroughPoint(source)),
+        ThroughThreePoints(points) => Ok(WorkPlaneDefinition::ThroughThreePoints(points)),
+        ParallelThroughPoint(source) => Ok(WorkPlaneDefinition::ParallelThroughPoint(source)),
+        Axis(axis) => restore_line_axis(axis),
+        Fixed { frame, options } => restore_frame(frame, options),
+        Offset { base, distance } => validate_offset(base, distance),
+        Point(coordinates) => restore_point(coordinates),
+        PointAtReference(reference) => Ok(WorkPlaneDefinition::PointAtReference(reference)),
+        AxisThroughPoints(points) => Ok(WorkPlaneDefinition::AxisThroughPoints(points)),
     }
 }
 
@@ -111,6 +107,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(self) -> u32 {
         match self {
+            Self::LineThroughPoint(_) => 7,
             Self::ThroughThreePoints(_) => 6,
             Self::ParallelThroughPoint(_) => 5,
             Self::PointAtReference(_) => 4,
@@ -121,6 +118,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(self) -> u32 {
         match self {
+            Self::LineThroughPoint(_) => 12,
             Self::ThroughThreePoints(_) => 11,
             Self::ParallelThroughPoint(_) => 10,
             Self::PointAtReference(_) => 6,

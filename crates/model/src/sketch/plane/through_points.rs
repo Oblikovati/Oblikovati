@@ -15,8 +15,31 @@ impl SketchPlane {
         // #3754: normalize displacements before cross products to retain extreme finite scales.
         let x = normalize_direction(point_difference(first, second))?;
         let toward_third = normalize_direction(point_difference(first, third))?;
-        let normal = normalize_direction(cross_product(x, toward_third))?;
-        let y = normalize_direction(cross_product(normal, x))?;
-        Self::new(first, x, y, options)
+        frame_from_axis_and_displacement(first, x, toward_third, options)
     }
+    /// Contain a checked unit line and one off-line point; example: `SketchPlane::through_line_and_point([0.0;3], [1.0,0.0,0.0], [0.0,1.0,0.0], Default::default())?`.
+    pub fn through_line_and_point(
+        origin: [f64; 3],
+        direction: [f64; 3],
+        point: [f64; 3],
+        options: SketchPlaneOptions,
+    ) -> Result<Self, SketchError> {
+        require_options(options)?;
+        require_finite(&origin, "line origin")?;
+        require_finite(&point, "through point")?;
+        require_unit(direction, options.unit_deviation)?;
+        let toward = normalize_direction(point_difference(origin, point))?;
+        frame_from_axis_and_displacement(origin, direction, toward, options)
+    }
+}
+
+fn frame_from_axis_and_displacement(
+    origin: [f64; 3],
+    x: [f64; 3],
+    toward: [f64; 3],
+    options: SketchPlaneOptions,
+) -> Result<SketchPlane, SketchError> {
+    let normal = normalize_direction(cross_product(x, toward))?;
+    let y = normalize_direction(cross_product(normal, x))?;
+    SketchPlane::new(origin, x, y, options)
 }

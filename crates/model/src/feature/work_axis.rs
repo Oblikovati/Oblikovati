@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Checked datum line values from Go work_axis_point.go, aa8297d1; ownership stays in the feature program.
 mod error;
+mod reference;
 use crate::sketch::{
     SketchPlaneOptions, normalize_direction, point_difference, require_unit, same_components,
 };
 pub use error::WorkAxisError;
+pub use reference::WorkAxisReference;
 
 /// An immutable finite datum line; its direction is dimensionless and normalized.
 #[derive(Clone, Copy, Debug, PartialEq)]

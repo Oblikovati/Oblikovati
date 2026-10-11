@@ -24,3 +24,15 @@ pub(super) fn validate(
     }
     Ok(())
 }
+
+pub(super) fn slots(labels: &[(&str, &str)]) -> Vec<WorkPlaneRefSlot> {
+    labels
+        .iter()
+        .enumerate()
+        .map(|(index, (label, kind))| WorkPlaneRefSlot {
+            index: index as i64,
+            label: (*label).into(),
+            kind: (*kind).into(),
+        })
+        .collect()
+}

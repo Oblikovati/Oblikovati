@@ -32,8 +32,10 @@ pub use super::work_geometry::DatumLength as WorkPlaneDistance;
 /// Source-compatible name for the single ordered datum definition.
 pub use super::work_geometry::WorkGeometryDefinition as WorkPlaneDefinition;
 
-/// Project-owned seam for current plane and point inputs to construction frames.
+/// Project-owned seam for current plane, axis, and point inputs to construction frames.
 pub trait WorkPlaneResolver {
+    /// Resolve one available current line; example: `resolver.axis(FeatureId(1))?`.
+    fn axis(&self, feature: FeatureId) -> Result<super::work_axis::WorkAxisLine, WorkPlaneError>;
     /// Resolve one available current frame; example: `resolver.plane(FeatureId(1))?`.
     fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError>;
     /// Resolve one available current position; example: `resolver.point(FeatureId(2))?`.
@@ -60,6 +62,7 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
+            Self::LineThroughPoint(source) => line_point_frame(source, resolver),
             Self::ThroughThreePoints(points) => three_point_frame(points, resolver),
             Self::Offset { base, distance } => shifted_frame(
                 base.frame(resolver)?,
@@ -135,6 +138,20 @@ fn three_point_frame(
         points[0].position(resolver)?,
         points[1].position(resolver)?,
         points[2].position(resolver)?,
+        Default::default(),
+    )
+    .map_err(WorkPlaneError::Frame)
+}
+
+fn line_point_frame(
+    source: super::work_geometry::WorkPlaneLinePoint,
+    resolver: &impl WorkPlaneResolver,
+) -> Result<SketchPlane, WorkPlaneError> {
+    let line = source.line.line(resolver)?;
+    SketchPlane::through_line_and_point(
+        line.origin(),
+        line.direction(),
+        source.point.position(resolver)?,
         Default::default(),
     )
     .map_err(WorkPlaneError::Frame)

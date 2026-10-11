@@ -33,13 +33,9 @@ pub(in crate::datums) fn revise(
     Ok(WorkGeometryDefinition::ThroughThreePoints(points))
 }
 pub(super) fn slots() -> Vec<WorkPlaneRefSlot> {
-    ["Point 1", "Point 2", "Point 3"]
-        .into_iter()
-        .enumerate()
-        .map(|(index, label)| WorkPlaneRefSlot {
-            index: index as i64,
-            label: label.into(),
-            kind: "point".into(),
-        })
-        .collect()
+    reference_only::slots(&[
+        ("Point 1", "point"),
+        ("Point 2", "point"),
+        ("Point 3", "point"),
+    ])
 }

@@ -137,3 +137,25 @@ fn associated_point(
         collection: DatumCollection::Points,
     })
 }
+
+pub(in crate::datums) fn axis_reference(
+    snapshot: &DocumentSnapshot,
+    reference: &str,
+) -> Result<oblikovati_model::feature::work_axis::WorkAxisReference, Error> {
+    use oblikovati_model::feature::work_axis::WorkAxisReference;
+    match reference {
+        WORK_REF_X_AXIS => return Ok(WorkAxisReference::OriginX),
+        WORK_REF_Y_AXIS => return Ok(WorkAxisReference::OriginY),
+        WORK_REF_Z_AXIS => return Ok(WorkAxisReference::OriginZ),
+        _ => {}
+    }
+    let id = reference::decode_reference(snapshot, reference)?;
+    let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
+    if !DatumCollection::Axes.contains(*feature.definition()) {
+        return Err(Error(format!(
+            "datum {reference:?} definition {:?}: expected a current axis definition",
+            feature.definition()
+        )));
+    }
+    Ok(WorkAxisReference::Feature(id))
+}

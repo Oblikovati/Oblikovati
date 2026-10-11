@@ -35,6 +35,14 @@ pub struct WorkPlaneThroughPoint {
     pub point: WorkPointReference,
 }
 
+/// A plane contains the current line and passes through the current point.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorkPlaneLinePoint {
+    pub line: super::work_axis::WorkAxisReference,
+    pub point: WorkPointReference,
+}
+
 /// One authored datum selected by kind inside the common feature program.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum WorkGeometryDefinition {
@@ -45,6 +53,7 @@ pub enum WorkGeometryDefinition {
     },
     ParallelThroughPoint(WorkPlaneThroughPoint),
     ThroughThreePoints([WorkPointReference; 3]),
+    LineThroughPoint(WorkPlaneLinePoint),
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),
     PointAtReference(WorkPointReference),

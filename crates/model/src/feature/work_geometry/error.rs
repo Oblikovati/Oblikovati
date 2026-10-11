@@ -99,7 +99,7 @@ fn write_offset(
 fn write_recipe_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane recipe version {version}: expected 1 for planes, 2 for line axes, 3 for positions and two-point axes, 4 for associative points, 5 for plane-and-point definitions, or 6 for three-point definitions"
+        "work plane recipe version {version}: expected 1 for planes, 2 for line axes, 3 for positions and two-point axes, 4 for associative points, 5 for plane-and-point definitions, 6 for three-point definitions, or 7 for line-and-point definitions"
     )
 }
 

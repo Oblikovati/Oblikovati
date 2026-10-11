@@ -18,6 +18,15 @@ mod work_planes {
 
 struct UnavailablePlanes;
 impl WorkPlaneResolver for UnavailablePlanes {
+    fn axis(
+        &self,
+        feature: FeatureId,
+    ) -> Result<oblikovati_model::feature::work_axis::WorkAxisLine, WorkPlaneError> {
+        Err(WorkPlaneError::Unavailable {
+            feature,
+            expected: "axis",
+        })
+    }
     fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkPlaneError> {
         Err(WorkPlaneError::Unavailable {
             feature,
@@ -30,6 +39,24 @@ impl WorkPlaneResolver for UnavailablePlanes {
             expected: "plane",
         })
     }
+}
+
+#[test]
+fn line_point_definition_refuses_an_unavailable_axis_resolver() {
+    use oblikovati_model::feature::{
+        work_axis::WorkAxisReference,
+        work_geometry::{WorkPlaneLinePoint, WorkPointReference},
+    };
+    let definition = WorkPlaneDefinition::LineThroughPoint(WorkPlaneLinePoint {
+        line: WorkAxisReference::Feature(FeatureId(41)),
+        point: WorkPointReference::Origin,
+    });
+    let error = definition
+        .evaluate(&parameters(1.0, Dimension::Length), &UnavailablePlanes)
+        .unwrap_err();
+    assert!(
+        error.to_string().contains("41") && error.to_string().contains("available current axis")
+    );
 }
 
 fn parameters(value: f64, dimension: Dimension) -> ParameterCollection<u64> {

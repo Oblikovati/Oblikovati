@@ -34,18 +34,32 @@ fn geometry_revision(
     if scalars.is_empty() && repicks.is_empty() {
         return Ok(None);
     }
-    if let WorkGeometryDefinition::ThroughThreePoints(points) = *feature.definition() {
-        return planes::three_points::revise(snapshot, points, args)
-            .map(PlaneGeometryRevision::Definition)
-            .map(Some);
-    }
-    if let WorkGeometryDefinition::ParallelThroughPoint(source) = *feature.definition() {
-        return planes::parallel::revise(snapshot, source, args)
-            .map(PlaneGeometryRevision::Definition)
-            .map(Some);
-    }
-    prepare_offset(snapshot, *feature.definition(), scalars, repicks).map(Some)
+    revise_geometry(snapshot, *feature.definition(), args).map(Some)
 }
+fn revise_geometry(
+    snapshot: &DocumentSnapshot,
+    definition: WorkGeometryDefinition,
+    args: &RedefineWorkPlaneArgs,
+) -> Result<PlaneGeometryRevision, Error> {
+    let scalars = args.scalars.as_deref().unwrap_or_default();
+    let repicks = args.repick.as_deref().unwrap_or_default();
+    let revised = match definition {
+        WorkGeometryDefinition::LineThroughPoint(source) => {
+            planes::line_point::revise(snapshot, source, args)
+        }
+        WorkGeometryDefinition::ThroughThreePoints(points) => {
+            planes::three_points::revise(snapshot, points, args)
+        }
+        WorkGeometryDefinition::ParallelThroughPoint(source) => {
+            planes::parallel::revise(snapshot, source, args)
+        }
+        _ => {
+            return prepare_offset(snapshot, definition, scalars, repicks);
+        }
+    }?;
+    Ok(PlaneGeometryRevision::Definition(revised))
+}
+
 fn prepare_offset(
     snapshot: &DocumentSnapshot,
     definition: WorkGeometryDefinition,

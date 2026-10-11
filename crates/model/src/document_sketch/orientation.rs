@@ -6,13 +6,8 @@ use crate::{
 };
 
 /// A saved reference retains identity rather than its first resolved direction.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-pub enum SketchAxisReference {
-    OriginX,
-    OriginY,
-    OriginZ,
-    Feature(FeatureId),
-}
+/// Keep existing sketch call sites and saved variant names while sharing the datum reference owner.
+pub use crate::feature::work_axis::WorkAxisReference as SketchAxisReference;
 /// Authored model inputs; the public wire DTO remains owned by Oblikovati.API.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]

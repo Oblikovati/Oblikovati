@@ -9,6 +9,7 @@ impl WorkGeometryDefinition {
         let keys = match self {
             Self::Offset { base, distance } => offset_keys(base, distance),
             Self::ParallelThroughPoint(source) => parallel_keys(source),
+            Self::LineThroughPoint(source) => line_point_keys(source),
             Self::ThroughThreePoints(points) => points.into_iter().filter_map(point_key).collect(),
             Self::PointAtReference(reference) => point_key(reference).into_iter().collect(),
             Self::Point(coordinates) => coordinates.into_iter().filter_map(length_key).collect(),
@@ -47,4 +48,14 @@ fn parallel_keys(source: super::WorkPlaneThroughPoint) -> Vec<FeatureReadKey> {
         .into_iter()
         .chain(point_key(source.point))
         .collect()
+}
+
+fn line_point_keys(source: super::WorkPlaneLinePoint) -> Vec<FeatureReadKey> {
+    let axis = match source.line {
+        crate::feature::work_axis::WorkAxisReference::Feature(id) => {
+            Some(FeatureReadKey::Feature(id))
+        }
+        _ => None,
+    };
+    axis.into_iter().chain(point_key(source.point)).collect()
 }

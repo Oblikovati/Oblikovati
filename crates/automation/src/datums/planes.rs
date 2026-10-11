@@ -3,6 +3,7 @@ use super::*;
 use oblikovati_model::{feature::work_plane::WorkPlaneResolver, sketch::SketchPlane};
 mod display;
 mod inputs;
+pub(in crate::datums) mod line_point;
 mod metadata;
 mod origins;
 pub(in crate::datums) mod parallel;

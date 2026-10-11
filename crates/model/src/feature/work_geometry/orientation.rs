@@ -12,6 +12,7 @@ impl WorkGeometryDefinition {
                 | Self::Offset { .. }
                 | Self::ParallelThroughPoint(_)
                 | Self::ThroughThreePoints(_)
+                | Self::LineThroughPoint(_)
         ) {
             return Ok(());
         }

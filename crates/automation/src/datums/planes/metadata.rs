@@ -3,6 +3,7 @@ use super::*;
 use oblikovati_model::quantity::{Dimension, Quantity};
 pub(super) fn constructor(definition: WorkGeometryDefinition) -> Result<String, Error> {
     match definition {
+        WorkGeometryDefinition::LineThroughPoint(_) => Ok(WORK_PLANE_LINE_AND_POINT.0.into_owned()),
         WorkGeometryDefinition::ThroughThreePoints(_) => Ok(WORK_PLANE_THREE_POINTS.0.into_owned()),
         WorkGeometryDefinition::Fixed(_) => Ok(WORK_PLANE_FIXED.0.into_owned()),
         WorkGeometryDefinition::ParallelThroughPoint(_) => {
@@ -19,24 +20,26 @@ pub(super) fn append_inputs(
     snapshot: &DocumentSnapshot,
     definition: WorkGeometryDefinition,
 ) -> Result<(), Error> {
-    if let WorkGeometryDefinition::ThroughThreePoints(_) = definition {
-        info.slots = Some(super::three_points::slots());
-    }
-    if let WorkGeometryDefinition::ParallelThroughPoint(_) = definition {
-        info.slots = Some(super::parallel::slots());
-    }
-    if let WorkGeometryDefinition::Offset { distance, .. } = definition {
-        info.slots = Some(vec![WorkPlaneRefSlot {
-            index: 0,
-            label: "Base plane".into(),
-            kind: "plane".into(),
-        }]);
-        if let Ok(value) = distance.resolve(&snapshot.parameters) {
-            info.scalars = Some(vec![offset_scalar(snapshot, value)?]);
-        }
+    info.slots = reference_slots(definition);
+    if let WorkGeometryDefinition::Offset { distance, .. } = definition
+        && let Ok(value) = distance.resolve(&snapshot.parameters)
+    {
+        info.scalars = Some(vec![offset_scalar(snapshot, value)?]);
     }
     Ok(())
 }
+fn reference_slots(definition: WorkGeometryDefinition) -> Option<Vec<WorkPlaneRefSlot>> {
+    match definition {
+        WorkGeometryDefinition::LineThroughPoint(_) => Some(super::line_point::slots()),
+        WorkGeometryDefinition::ThroughThreePoints(_) => Some(super::three_points::slots()),
+        WorkGeometryDefinition::ParallelThroughPoint(_) => Some(super::parallel::slots()),
+        WorkGeometryDefinition::Offset { .. } => {
+            Some(super::reference_only::slots(&[("Base plane", "plane")]))
+        }
+        _ => None,
+    }
+}
+
 fn offset_scalar(snapshot: &DocumentSnapshot, value: f64) -> Result<WorkPlaneScalar, Error> {
     let units = snapshot.parameters.units();
     let displayed = units.to_preferred(Quantity::new(value, Dimension::Length));
