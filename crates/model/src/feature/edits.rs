@@ -96,6 +96,7 @@ impl<Definition> FeatureSequence<Definition> {
         // Definitions own exact authored equality; generic PartialEq can lose signed-zero edits.
         let mut replacement = AuthoredFeature::new(id, &previous.name, definition, reads);
         replacement.suppressed = previous.suppressed;
+        replacement.construction_datum = previous.construction_datum;
         replacement.store_condition(previous.condition);
         self.install_replacement(index, replacement)
     }

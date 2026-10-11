@@ -422,3 +422,28 @@ empty parts, absent focus, wrong kinds, read-only ownership, numerical declines,
 local failure health, unchanged queries, grouping, veto, undo/redo, and save/reopen.
 The Go solver and sketch oracle tests also pass. Native transport, the remaining
 sketch commands, associative placement, and kernel-backed consumers remain open.
+
+## Construction-plane lifecycle state: partial R3
+
+Issue #3734 ports the authored construction flag required by Go sketch deletion
+and construction-orphan cleanup. The flag is attached to a stable work-plane
+feature identity. It is a consumer-tied lifecycle property, separate from its
+frame, suppression, and future visibility state. Ordinary planes default to
+false. Definition replacement, rename, reorder, and recipe restore retain it.
+
+Work-plane program version 2 carries construction state. Ordinary programs keep
+version 1 and omit the new false field. The loader accepts both versions, treats
+a missing flag as false, and refuses `construction=true` in a version-1 program
+with the offending feature identity. Individual definition recipes remain at
+version 1 because their geometric meaning has not changed.
+
+Exact authored comparisons include the flag. Owner commands therefore preserve
+dirty state, undo/redo, group abort, and the saved-file baseline. Save, reopen,
+and copy retain the flag and permanent feature identity. Tests also check unknown
+identity refusal, unchanged flags, and byte-identical evaluated frames. The Go
+construction-default and lifecycle tests pass as reference evidence; the Rust
+cleanup operation is not yet ported.
+
+No plane is automatically deleted by this change. Consumed-sketch refusal,
+construction-orphan pruning, and the shared deletion command remain the next
+lifecycle work. Native/kernel acceptance remains open.

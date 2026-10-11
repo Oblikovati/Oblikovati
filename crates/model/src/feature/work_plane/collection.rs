@@ -2,12 +2,14 @@
 
 mod comparison;
 mod error;
+mod version;
 use super::{WorkPlaneDefinition, WorkPlaneRecipe};
 use crate::feature::{
     AuthoredFeature, FeatureId, FeatureReadFootprint, FeatureSequence, FeatureSuppressionCondition,
     FeatureSuppressionRecipe,
 };
 pub use error::WorkPlaneProgramRecipeError;
+use version::{program_recipe_version, validate_program_version};
 
 /// One authored feature; evaluated frames and health are not recipe contents.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -17,6 +19,9 @@ pub struct WorkPlaneFeatureRecipe {
     pub name: String,
     pub definition: WorkPlaneRecipe,
     pub suppressed: bool,
+    // Older strict readers must still accept ordinary version-1 records (#3734).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub construction: bool,
     pub condition: Option<FeatureSuppressionRecipe>,
     pub definition_reads: FeatureReadFootprint,
 }
@@ -39,6 +44,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
             name: self.name.clone(),
             definition,
             suppressed: self.suppressed,
+            construction: self.construction_datum,
             condition: self.condition.map(FeatureSuppressionCondition::recipe),
             definition_reads: self.definition_reads.clone(),
         })
@@ -56,6 +62,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
             recipe.definition_reads.clone(),
         );
         feature.suppressed = recipe.suppressed;
+        feature.construction_datum = recipe.construction;
         let condition = restore_condition(recipe.condition.as_ref())?;
         feature.store_condition(condition);
         Ok(feature)
@@ -76,13 +83,14 @@ impl FeatureSequence<WorkPlaneDefinition> {
     pub fn work_plane_recipe(&self) -> Result<WorkPlaneProgramRecipe, WorkPlaneProgramRecipeError> {
         self.validate_work_plane_reads()
             .map_err(WorkPlaneProgramRecipeError::Reads)?;
-        let features = self
+        let features: Vec<WorkPlaneFeatureRecipe> = self
             .features
             .iter()
             .map(AuthoredFeature::work_plane_record)
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<_, _>>()?;
+        let version = program_recipe_version(&features);
         Ok(WorkPlaneProgramRecipe {
-            version: 1,
+            version,
             features,
             end_of_part: self.end_of_part,
         })
@@ -92,9 +100,7 @@ impl FeatureSequence<WorkPlaneDefinition> {
     pub fn from_work_plane_recipe(
         recipe: &WorkPlaneProgramRecipe,
     ) -> Result<Self, WorkPlaneProgramRecipeError> {
-        if recipe.version != 1 {
-            return Err(WorkPlaneProgramRecipeError::Version(recipe.version));
-        }
+        validate_program_version(recipe)?;
         let mut sequence = Self::default();
         for record in &recipe.features {
             sequence

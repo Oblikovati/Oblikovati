@@ -230,3 +230,6 @@ fn unsupported_legacy_feature_content_is_refused_before_document_registration() 
 
 #[path = "work_planes/linked_sketch.rs"]
 mod linked_sketch;
+
+#[path = "work_planes/construction.rs"]
+mod construction;

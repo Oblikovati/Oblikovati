@@ -166,14 +166,32 @@ fn invalid_versions_marks_and_unknown_fields_fail_before_restore() {
 }
 fn assert_invalid_recipe_version(captured: &DocumentPackage) {
     let mut model = section(captured);
-    model["workPlanes"]["recipe"]["version"] = 2u64.into();
+    model["workPlanes"]["recipe"]["version"] = 3u64.into();
     assert!(
         from_section(&model, 3)
             .restore_work_planes()
             .unwrap_err()
             .to_string()
-            .contains("version 2")
+            .contains("version 3")
     );
+}
+
+#[test]
+fn construction_in_a_legacy_program_is_refused_without_repairing_package_bytes() {
+    let (captured, program) = constructed_program_package();
+    let mut model = section(&captured);
+    model["workPlanes"]["recipe"]["version"] = 1u64.into();
+    let invalid = from_section(&model, 3);
+    let before = invalid.encode().unwrap();
+    assert!(
+        invalid
+            .restore_work_planes()
+            .unwrap_err()
+            .to_string()
+            .contains("work plane 3")
+    );
+    assert!(invalid.with_work_planes(&program, 12).is_err());
+    assert_eq!(invalid.encode().unwrap(), before);
 }
 #[test]
 fn empty_program_retains_an_authored_cutoff_and_zero_ids_are_refused() {
@@ -224,4 +242,21 @@ fn clearing_an_empty_program_cutoff_replaces_the_saved_authored_state() {
         restored_all.with_work_planes(&planes, 0).unwrap(),
         restored_all
     );
+}
+
+fn constructed_program_package() -> (DocumentPackage, FeatureSequence<WorkPlaneDefinition>) {
+    let mut program = program();
+    program
+        .set_work_plane_construction(FeatureId(3), true)
+        .unwrap();
+    let captured = package().with_work_planes(&program, 12).unwrap();
+    let restored = captured.restore_work_planes().unwrap();
+    assert!(
+        restored
+            .program
+            .get(FeatureId(3))
+            .unwrap()
+            .is_construction_datum()
+    );
+    (captured, program)
 }

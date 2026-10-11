@@ -2,6 +2,7 @@
 
 use super::*;
 mod comparison;
+mod construction;
 
 fn authored_program() -> FeatureSequence<WorkPlaneDefinition> {
     let mut sequence = chain();
@@ -131,12 +132,12 @@ fn duplicate_and_forward_ids_cannot_restore_over_a_valid_recipe() {
 #[test]
 fn versions_and_invalid_definitions_are_named_restore_failures() {
     let mut recipe = authored_program().work_plane_recipe().unwrap();
-    recipe.version = 2;
+    recipe.version = 3;
     let error = FeatureSequence::from_work_plane_recipe(&recipe).unwrap_err();
-    assert_eq!(error, WorkPlaneProgramRecipeError::Version(2));
+    assert_eq!(error, WorkPlaneProgramRecipeError::Version(3));
     assert_eq!(
         error.to_string(),
-        "work plane program version 2: expected 1"
+        "work plane program version 3: expected 1 or 2"
     );
     assert!(error.source().is_none());
     recipe.version = 1;
