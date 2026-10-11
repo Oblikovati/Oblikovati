@@ -47,6 +47,7 @@ allocation, dirty state, no-op history, undo/redo, abort, veto, save/reopen, cop
 independent documents, part/assembly/drawing owners, and refresh comparison.
 
 The [inference API step](implementation-sketch-inference-api.md) adds canonical
-get/set dispatch and the shared no-document fallback. The inference engine, line
-creation, interactive tools, and profile construction remain open. This step does
-not close R3 or any kernel integration check.
+get/set dispatch and the shared no-document fallback. The
+[line integration](implementation-line-api.md) now supplies the inference engine
+and line creation. Interactive tools and profile construction remain open. This
+step does not close R3 or any kernel integration check.

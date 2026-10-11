@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::types::{SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_POINT};
+use oblikovati_api::types::{
+    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_LINE, SKETCH_ENTITY_POINT,
+};
 use oblikovati_model::{
+    history::SketchLineCreation,
     quantity::Dimension,
     sketch::{SketchPointInput, SketchPrimitiveCreation},
 };
 mod points;
+pub(super) enum PreparedEntity {
+    Primitive(SketchPrimitiveCreation, &'static str),
+    InferredLine(SketchLineCreation),
+}
 #[derive(Clone, Copy)]
 enum PrimitiveConstructor {
+    FreshTwoPointLine,
     StandalonePoint,
     CenterRadiusCircle,
     CenterStartEndArc,
@@ -15,25 +23,29 @@ enum PrimitiveConstructor {
 pub(super) fn prepare(
     snapshot: &DocumentSnapshot,
     request: &AddSketchEntityArgs,
-) -> Result<(SketchPrimitiveCreation, &'static str), Error> {
+) -> Result<PreparedEntity, Error> {
     let constructor = classify_kind(&request.kind)?;
     require_variant(constructor, &request.variant)?;
     let points = points::resolve(snapshot, request)?;
     require_point_count(constructor, &points)?;
-    let input = construct_input(constructor, snapshot, &points, request)?;
-    Ok((input, constructor.kind()))
+    construct_input(constructor, snapshot, &points, request)
 }
 fn classify_kind(kind: &str) -> Result<PrimitiveConstructor, Error> {
     match kind {
+        kind if kind == SKETCH_ENTITY_LINE.0 => Ok(PrimitiveConstructor::FreshTwoPointLine),
         kind if kind == SKETCH_ENTITY_POINT.0 => Ok(PrimitiveConstructor::StandalonePoint),
         kind if kind == SKETCH_ENTITY_CIRCLE.0 => Ok(PrimitiveConstructor::CenterRadiusCircle),
         kind if kind == SKETCH_ENTITY_ARC.0 => Ok(PrimitiveConstructor::CenterStartEndArc),
         _ => Err(Error(format!(
-            "sketch.addEntity kind {kind:?}: expected a ported point, circle, or arc constructor; line inference and other kinds are not ported"
+            "sketch.addEntity kind {kind:?}: expected a ported line, point, circle, or arc constructor; other kinds are not ported"
         ))),
     }
 }
 fn require_variant(constructor: PrimitiveConstructor, variant: &str) -> Result<(), Error> {
+    // The Go two-point line constructor ignores variant (aa8297d1, #3775).
+    if matches!(constructor, PrimitiveConstructor::FreshTwoPointLine) {
+        return Ok(());
+    }
     let expected = constructor.variant();
     if !variant.is_empty() && variant != expected {
         return Err(Error(format!(
@@ -47,10 +59,10 @@ fn require_point_count(
     constructor: PrimitiveConstructor,
     points: &[[f64; 2]],
 ) -> Result<(), Error> {
-    let expected = if matches!(constructor, PrimitiveConstructor::CenterStartEndArc) {
-        3
-    } else {
-        1
+    let expected = match constructor {
+        PrimitiveConstructor::FreshTwoPointLine => 2,
+        PrimitiveConstructor::CenterStartEndArc => 3,
+        _ => 1,
     };
     if points.len() != expected {
         return Err(Error(format!(
@@ -66,6 +78,7 @@ fn length_expression(snapshot: &DocumentSnapshot, source: &str) -> Result<f64, E
 impl PrimitiveConstructor {
     fn kind(self) -> &'static str {
         match self {
+            Self::FreshTwoPointLine => SKETCH_ENTITY_LINE.0.as_ref(),
             Self::StandalonePoint => SKETCH_ENTITY_POINT.0.as_ref(),
             Self::CenterRadiusCircle => SKETCH_ENTITY_CIRCLE.0.as_ref(),
             Self::CenterStartEndArc => SKETCH_ENTITY_ARC.0.as_ref(),
@@ -73,6 +86,7 @@ impl PrimitiveConstructor {
     }
     fn variant(self) -> &'static str {
         match self {
+            Self::FreshTwoPointLine => "",
             Self::StandalonePoint => "",
             Self::CenterRadiusCircle => "centerRadius",
             Self::CenterStartEndArc => "centerStartEnd",
@@ -85,17 +99,33 @@ fn construct_input(
     snapshot: &DocumentSnapshot,
     points: &[[f64; 2]],
     request: &AddSketchEntityArgs,
-) -> Result<SketchPrimitiveCreation, Error> {
-    Ok(match constructor {
+) -> Result<PreparedEntity, Error> {
+    let input = match constructor {
+        PrimitiveConstructor::FreshTwoPointLine => return Ok(inferred_line_input(points, request)),
         PrimitiveConstructor::StandalonePoint => SketchPrimitiveCreation::Point {
             position: points[0],
         },
-        PrimitiveConstructor::CenterRadiusCircle => SketchPrimitiveCreation::Circle {
-            center: SketchPointInput::New(points[0]),
-            radius: length_expression(snapshot, &request.radius)?,
-            construction: request.construction,
-        },
+        PrimitiveConstructor::CenterRadiusCircle => circle_input(snapshot, points[0], request)?,
         PrimitiveConstructor::CenterStartEndArc => arc_input(points, request),
+    };
+    Ok(PreparedEntity::Primitive(input, constructor.kind()))
+}
+fn inferred_line_input(points: &[[f64; 2]], request: &AddSketchEntityArgs) -> PreparedEntity {
+    PreparedEntity::InferredLine(SketchLineCreation {
+        endpoints: [points[0], points[1]],
+        construction: request.construction,
+        centerline: request.centerline,
+    })
+}
+fn circle_input(
+    snapshot: &DocumentSnapshot,
+    center: [f64; 2],
+    request: &AddSketchEntityArgs,
+) -> Result<SketchPrimitiveCreation, Error> {
+    Ok(SketchPrimitiveCreation::Circle {
+        center: SketchPointInput::New(center),
+        radius: length_expression(snapshot, &request.radius)?,
+        construction: request.construction,
     })
 }
 fn arc_input(points: &[[f64; 2]], request: &AddSketchEntityArgs) -> SketchPrimitiveCreation {

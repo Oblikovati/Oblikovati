@@ -58,6 +58,7 @@ file hosts, read-only refusal, shared fallback lifetime, history, response
 failures, ignored declines, solver-state retention, veto, save/reopen, and copy.
 The matching Go preference and router tests provide behavioral reference checks.
 
-Line inference, line API creation, automatic relation reporting, interactive
-snapping, and profile construction remain required work. This preference API
-does not close R3 or a Martensite capability check.
+The [line integration](implementation-line-api.md) now supplies line inference,
+API creation, and automatic relation reporting. Interactive snapping and profile
+construction remain required. This preference API does not close R3 or a
+Martensite capability check.

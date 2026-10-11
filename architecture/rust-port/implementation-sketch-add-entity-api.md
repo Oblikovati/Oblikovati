@@ -52,9 +52,10 @@ copy namespaces, and document ownership. Independent pinned Go expression,
 point-expression, and constructor-refusal tests pass at
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
-Go applies inference to new lines by default. That path remains required, so the
-wire line constructor declines by name. Three-point circle/arc overloads, other
-geometry kinds, centerline formatting, dimensions, native tools, profiles, and
-kernel consumers also remain required. Unknown kinds and unported variants
+Go applies inference to new lines by default. At this step the wire line
+constructor declined by name. The [line integration](implementation-line-api.md)
+now provides that constructor, inference records, and centerline formatting.
+Three-point circle/arc overloads, other geometry kinds, dimensions, native tools,
+profiles, and kernel consumers remain required. Unknown kinds and unported variants
 decline before allocation. This step does not claim a fully constrained sketch,
 the full constructor family, or native rendering acceptance.

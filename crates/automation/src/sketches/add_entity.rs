@@ -2,6 +2,8 @@
 use super::*;
 use oblikovati_session::SketchPrimitiveProjectionInput;
 mod inputs;
+mod line_reply;
+use inputs::PreparedEntity;
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     request: AddSketchEntityArgs,
@@ -12,12 +14,26 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .session(document)
         .map_err(api_error)?
         .snapshot();
-    let (input, kind) = inputs::prepare(snapshot, &request)?;
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .create_sketch_primitive_projected(sketch, &input, |result| creation_reply(result, kind))
-        .map_err(api_error)
+    let input = inputs::prepare(snapshot, &request)?;
+    create_prepared(files, document, sketch, input)
+}
+fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    input: PreparedEntity,
+) -> Result<Vec<u8>, Error> {
+    let mut commands = files.commands(document).map_err(api_error)?;
+    match input {
+        PreparedEntity::Primitive(input, kind) => commands
+            .create_sketch_primitive_projected(sketch, &input, |result| {
+                creation_reply(result, kind)
+            })
+            .map_err(api_error),
+        PreparedEntity::InferredLine(input) => commands
+            .create_inferred_sketch_line_projected(sketch, &input, line_reply::encode_created)
+            .map_err(api_error),
+    }
 }
 fn creation_reply(
     result: SketchPrimitiveProjectionInput,
