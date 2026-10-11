@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::encode;
+mod add_entity;
+mod coordinates;
 pub(crate) mod create;
 mod delete;
 mod entities;
@@ -22,11 +24,12 @@ use oblikovati_solve::{
 };
 
 /// Sketch commands require a retained part or assembly document kind.
-pub const SKETCH_COMMAND_METHODS: [&str; 4] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 5] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
     METHOD_SKETCH_TRANSFORM,
+    METHOD_SKETCH_ADD_ENTITY,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 4] = [
@@ -56,6 +59,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 ) -> Result<Vec<u8>, Error> {
     if method == METHOD_SKETCH_TRANSFORM {
         return transform::apply(files, crate::decode(method, request)?);
+    }
+    if method == METHOD_SKETCH_ADD_ENTITY {
+        return add_entity::apply(files, crate::decode(method, request)?);
     }
     let request: SketchArgs = crate::decode(method, request)?;
     let (document, sketch) = active_sketch(files, request.sketch_index)?;

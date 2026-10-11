@@ -476,3 +476,6 @@ mod primitive;
 
 #[path = "sketch_api/translation.rs"]
 mod translation;
+
+#[path = "sketch_api/add_entity.rs"]
+mod add_entity;
