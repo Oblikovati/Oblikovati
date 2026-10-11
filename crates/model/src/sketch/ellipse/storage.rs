@@ -13,7 +13,7 @@ impl TryFrom<EllipseDefinition> for SketchEllipse2D {
     type Error = SketchError;
     fn try_from(definition: EllipseDefinition) -> Result<Self, SketchError> {
         require_ellipse_identities(definition.id, definition.center)?;
-        require_ellipse_radii(definition.id, definition.radii)?;
+        require_ellipse_radii(definition.radii)?;
         require_saved_axis(definition.id, definition.major_axis)?;
         Ok(Self {
             id: definition.id,

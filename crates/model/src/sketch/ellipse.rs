@@ -29,11 +29,11 @@ impl SketchEllipse2D {
         radii: [f64; 2],
     ) -> Result<Self, SketchError> {
         require_ellipse_identities(id, center)?;
-        require_ellipse_radii(id, radii)?;
+        require_ellipse_radii(radii)?;
         Ok(Self {
             id,
             center,
-            major_axis: normalized_ellipse_axis(id, major_axis)?,
+            major_axis: normalized_ellipse_axis(major_axis)?,
             radii,
         })
     }
@@ -59,7 +59,7 @@ impl SketchEllipse2D {
     }
     /// Prepare radii without changing the analytic frame; example: `ellipse.with_radii([4.0, 1.0])?`.
     pub fn with_radii(self, radii: [f64; 2]) -> Result<Self, SketchError> {
-        require_ellipse_radii(self.id, radii)?;
+        require_ellipse_radii(radii)?;
         Ok(Self { radii, ..self })
     }
     /// Prepare a rotation without introducing an axis-magnitude freedom; example: `ellipse.with_orientation(angle)?`.
@@ -104,23 +104,23 @@ fn require_ellipse_identities(
     }
     Ok(())
 }
-fn require_ellipse_radii(id: SketchEntityId, radii: [f64; 2]) -> Result<(), SketchError> {
+fn require_ellipse_radii(radii: [f64; 2]) -> Result<(), SketchError> {
     if radii
         .iter()
         .any(|radius| !radius.is_finite() || *radius <= 0.0)
         || radii[0] < radii[1]
     {
         return Err(SketchError::Definition(format!(
-            "ellipse {id:?} radii {radii:?}: expected finite major >= minor > 0 in working units"
+            "ellipse radii {radii:?}: expected finite major >= minor > 0 in working units"
         )));
     }
     Ok(())
 }
-fn normalized_ellipse_axis(id: SketchEntityId, axis: [f64; 2]) -> Result<[f64; 2], SketchError> {
+fn normalized_ellipse_axis(axis: [f64; 2]) -> Result<[f64; 2], SketchError> {
     let scale = axis[0].abs().max(axis[1].abs());
     if axis.iter().any(|value| !value.is_finite()) || scale == 0.0 {
         return Err(SketchError::Definition(format!(
-            "ellipse {id:?} major axis {axis:?}: expected two finite components with nonzero length"
+            "ellipse major axis {axis:?}: expected two finite components with nonzero length"
         )));
     }
     // Scale before normalization so both subnormal and maximum finite directions keep their angle.
@@ -157,5 +157,11 @@ fn require_ellipse_evaluation(
             "ellipse {id:?} parameter {parameter:?} position {position:?} tangent {tangent:?}: expected finite analytic coordinates and derivative"
         )));
     }
+    Ok(())
+}
+
+pub(super) fn require_ellipse_frame(axis: [f64; 2], radii: [f64; 2]) -> Result<(), SketchError> {
+    require_ellipse_radii(radii)?;
+    normalized_ellipse_axis(axis)?;
     Ok(())
 }

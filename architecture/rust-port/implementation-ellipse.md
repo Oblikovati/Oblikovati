@@ -68,6 +68,22 @@ roles, and identity marks through encode/decode/restore and refuse lower marks.
 Generic inspection reports zero for the circular-only radius field, as required
 by the released API; major-radius measurement has its own dimension path.
 
+## Public entity creation
+
+The released `sketch.addEntity` contract creates an ellipse from one center,
+a two-component axis direction, and major/minor length expressions. Literal
+centers use centimetres; expression centers and radii use the document quantity
+context. The axis is unitless. Expressions seed geometry without inventing live
+dimension bindings. The constructor ignores `variant`, as the pinned Go route
+does. Construction roles use the normal primitive command.
+
+Frame and point validation precede identity reservation. Typed creation supports
+an existing owned center, including the grounded origin. Tests cover part and
+assembly owners, scaled working units, malformed frames and expressions,
+unchanged state on refusal, rejected replies with retired IDs, undo/redo,
+save/reopen, and copy with new reference keys. A publicly created ellipse accepts
+the major-radius dimension below.
+
 ## Major-radius dimension
 
 The native `EllipseRadius` relation uses the existing scalar radius equation
@@ -83,8 +99,7 @@ undo/redo, save/reopen/copy, edit, deletion/recreation, and malformed operands.
 Radius crossings fail without adopting a partial recipe or reusing names.
 The former missing-native-ellipse constructor decline is removed.
 
-Remaining #3788 work includes ellipse entity creation through the public API,
-minor-radius and orientation/axis constraints, fully constrained and degenerate
+Remaining #3788 work includes minor-radius and orientation/axis constraints, fully constrained and degenerate
 cases, ellipse-specific failed formula and transaction acceptance, and edited
 save/reopen/copy. This step does not establish profile-kernel acceptance. B-rep
 ellipse operations stay in Martensite; the sketch value does not replace kernel

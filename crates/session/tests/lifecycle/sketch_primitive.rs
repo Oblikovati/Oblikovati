@@ -462,3 +462,6 @@ mod failures;
 
 #[path = "sketch_primitive/inferred_line.rs"]
 mod inferred_line;
+
+#[path = "sketch_primitive/ellipse.rs"]
+mod ellipse;

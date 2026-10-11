@@ -25,6 +25,12 @@ pub enum SketchPrimitiveCreation {
         radius: f64,
         construction: bool,
     },
+    Ellipse {
+        center: SketchPointInput,
+        major_axis: [f64; 2],
+        radii: [f64; 2],
+        construction: bool,
+    },
     Arc {
         center: SketchPointInput,
         endpoints: [SketchPointInput; 2],
@@ -37,7 +43,7 @@ impl SketchPrimitiveCreation {
         match self {
             Self::Point { position } => vec![SketchPointInput::New(*position)],
             Self::Line { endpoints, .. } => endpoints.to_vec(),
-            Self::Circle { center, .. } => vec![*center],
+            Self::Circle { center, .. } | Self::Ellipse { center, .. } => vec![*center],
             Self::Arc {
                 center, endpoints, ..
             } => vec![*center, endpoints[0], endpoints[1]],
@@ -55,6 +61,12 @@ impl SketchPrimitiveCreation {
         if let Self::Circle { radius, .. } = self {
             require_radius_value(*radius)?;
         }
+        if let Self::Ellipse {
+            major_axis, radii, ..
+        } = self
+        {
+            super::ellipse::require_ellipse_frame(*major_axis, *radii)?;
+        }
         Ok(())
     }
     pub(crate) fn append_curve(
@@ -63,17 +75,37 @@ impl SketchPrimitiveCreation {
         id: SketchEntityId,
         points: &[SketchEntityId],
     ) -> Result<(), SketchError> {
+        if matches!(self, Self::Point { .. }) {
+            return Ok(());
+        }
+        self.append_geometry(geometry, id, points)?;
+        geometry.set_curve_construction(&[id], self.construction())?;
+        if let Self::Line { centerline, .. } = self {
+            geometry.set_line_centerline(id, *centerline)?;
+        }
+        Ok(())
+    }
+    fn append_geometry(
+        &self,
+        geometry: &mut Sketch2D,
+        id: SketchEntityId,
+        points: &[SketchEntityId],
+    ) -> Result<(), SketchError> {
         match self {
             Self::Point { .. } => return Ok(()),
             Self::Line { .. } => geometry.add_line(id, [points[0], points[1]])?,
+            Self::Ellipse {
+                major_axis, radii, ..
+            } => geometry.add_ellipse(super::SketchEllipse2D::new(
+                id,
+                points[0],
+                *major_axis,
+                *radii,
+            )?)?,
             Self::Circle { radius, .. } => geometry.add_circle(id, points[0], *radius)?,
             Self::Arc {
                 counter_clockwise, ..
             } => geometry.add_arc(id, points[0], [points[1], points[2]], *counter_clockwise)?,
-        }
-        geometry.set_curve_construction(&[id], self.construction())?;
-        if let Self::Line { centerline, .. } = self {
-            geometry.set_line_centerline(id, *centerline)?;
         }
         Ok(())
     }
@@ -82,6 +114,7 @@ impl SketchPrimitiveCreation {
             Self::Point { .. } => false,
             Self::Line { construction, .. }
             | Self::Circle { construction, .. }
+            | Self::Ellipse { construction, .. }
             | Self::Arc { construction, .. } => *construction,
         }
     }

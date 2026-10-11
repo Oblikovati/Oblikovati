@@ -179,7 +179,7 @@ fn bad_shapes_counts_and_null_coordinates_are_atomic_and_do_not_reserve_ids() {
 #[test]
 fn unknown_kinds_and_constructor_overloads_decline_by_name() {
     let (mut files, document, mut source) = fresh();
-    for kind in ["bogus", "ellipse", "spline", "rectangle"] {
+    for kind in ["bogus", "ellipticalArc", "spline", "rectangle"] {
         assert_refused(
             &mut files,
             document,
@@ -421,3 +421,6 @@ fn invalid_sketch_indices_and_document_kinds_cannot_adopt_geometry() {
 
 #[path = "add_entity/line.rs"]
 mod line;
+
+#[path = "add_entity/ellipse.rs"]
+mod ellipse;
