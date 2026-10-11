@@ -6,6 +6,7 @@ use crate::sketch::{
 use std::collections::BTreeSet;
 mod construction;
 mod health;
+mod translation;
 pub use construction::SketchConstructionReport;
 mod orientation;
 pub(crate) use orientation::UnavailableSketchAxes;

@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::*;
+use super::{Sketch2D, SketchEntityId, SketchError, SketchPoint2D};
 use crate::sketch::{SketchArc2D, SketchCircle2D, SketchLine2D, variables::SketchVariable};
+use oblikovati_api::types::{
+    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_LINE, SKETCH_ENTITY_POINT,
+    SketchEntityKind,
+};
+use std::collections::BTreeMap;
 #[derive(Clone, Copy)]
-pub(super) enum InspectionGeometry {
+pub(super) enum OwnedSketchGeometry {
     Point(SketchPoint2D),
     Line(SketchLine2D),
     Circle(SketchCircle2D),
     Arc(SketchArc2D),
 }
-impl InspectionGeometry {
+impl OwnedSketchGeometry {
     pub fn id(self) -> SketchEntityId {
         match self {
             Self::Point(shape) => shape.id,
@@ -51,21 +56,32 @@ impl InspectionGeometry {
             .collect()
     }
 }
-pub(super) fn catalogue(sketch: &Sketch2D) -> BTreeMap<SketchEntityId, InspectionGeometry> {
+
+pub(super) fn catalogue(sketch: &Sketch2D) -> BTreeMap<SketchEntityId, OwnedSketchGeometry> {
+    linear_shapes(sketch)
+        .chain(circular_shapes(sketch))
+        .map(|shape| (shape.id(), shape))
+        .collect()
+}
+fn linear_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry> + '_ {
     sketch
         .points()
         .iter()
         .copied()
-        .map(InspectionGeometry::Point)
-        .chain(sketch.lines().iter().copied().map(InspectionGeometry::Line))
+        .map(OwnedSketchGeometry::Point)
         .chain(
             sketch
-                .circles()
+                .lines()
                 .iter()
                 .copied()
-                .map(InspectionGeometry::Circle),
+                .map(OwnedSketchGeometry::Line),
         )
-        .chain(sketch.arcs().iter().copied().map(InspectionGeometry::Arc))
-        .map(|shape| (shape.id(), shape))
-        .collect()
+}
+fn circular_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry> + '_ {
+    sketch
+        .circles()
+        .iter()
+        .copied()
+        .map(OwnedSketchGeometry::Circle)
+        .chain(sketch.arcs().iter().copied().map(OwnedSketchGeometry::Arc))
 }

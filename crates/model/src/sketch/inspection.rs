@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::entity_geometry::{self, OwnedSketchGeometry};
 use super::{PlanarConstraint, Sketch2D, SketchEntityId, SketchError, SketchPoint2D, grounded};
 use crate::parameter::ParameterCollection;
 use oblikovati_api::types::{
     GeometryMoveableStatus, MOVEABLE_BY_DIMENSION_CHANGE, MOVEABLE_FIXED, MOVEABLE_FREE,
-    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_LINE, SKETCH_ENTITY_POINT,
     SketchEntityKind,
 };
 use oblikovati_solve::{
@@ -11,9 +11,7 @@ use oblikovati_solve::{
     nonlinear::{SolveError, SolveOptions},
     residual::evaluate_residuals,
 };
-use std::collections::{BTreeMap, BTreeSet};
-mod geometry;
-use geometry::InspectionGeometry;
+use std::collections::BTreeSet;
 /// Current analytic shape and movement classification in document working units.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchEntityInspection {
@@ -68,7 +66,7 @@ fn inspect_in_order(
     free: &[bool],
     fixed: &BTreeSet<SketchEntityId>,
 ) -> Result<Vec<SketchEntityInspection>, SketchError> {
-    let shapes = geometry::catalogue(sketch);
+    let shapes = entity_geometry::catalogue(sketch);
     sketch
         .entity_ids()
         .iter()
@@ -95,7 +93,7 @@ fn fixed_points(sketch: &Sketch2D, anchors: &[SketchPoint2D]) -> BTreeSet<Sketch
 }
 fn inspect_shape(
     sketch: &Sketch2D,
-    shape: InspectionGeometry,
+    shape: OwnedSketchGeometry,
     free: &[bool],
     fixed: &BTreeSet<SketchEntityId>,
 ) -> Result<SketchEntityInspection, SketchError> {

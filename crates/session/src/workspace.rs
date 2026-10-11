@@ -15,6 +15,7 @@ mod sketch_create;
 mod sketch_delete;
 mod sketch_primitive;
 mod sketch_recompute;
+mod sketch_translation;
 use crate::{DocumentSession, TransactionObserver};
 pub use error::WorkspaceError;
 use oblikovati_model::{
