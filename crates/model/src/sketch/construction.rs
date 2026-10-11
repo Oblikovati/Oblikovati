@@ -10,7 +10,7 @@ impl Sketch2D {
                 "sketch entity {entity:?}: expected an owned entity for construction inspection"
             )));
         }
-        Ok(self.construction_curves.contains(&entity))
+        Ok(self.construction_curves.contains(&entity) || self.centerlines.contains(&entity))
     }
     /// Set one checked curve selection atomically; return changed IDs in authored order.
     /// Example: `let changed = sketch.set_curve_construction(&[line, arc], true)?;`.
@@ -44,7 +44,11 @@ impl Sketch2D {
         self.entity_order
             .iter()
             .copied()
-            .filter(|id| curves.contains(id) && !self.construction_curves.contains(id))
+            .filter(|id| {
+                curves.contains(id)
+                    && !self.construction_curves.contains(id)
+                    && !self.centerlines.contains(id)
+            })
             .collect()
     }
     fn curve_identity_set(&self) -> BTreeSet<SketchEntityId> {
@@ -69,7 +73,7 @@ impl Sketch2D {
         Ok(selected)
     }
     pub(super) fn saved_construction_curves(&self) -> Option<Vec<SketchEntityId>> {
-        if self.construction_curves.is_empty() {
+        if self.construction_curves.is_empty() && self.centerlines.is_empty() {
             return None;
         }
         Some(
@@ -86,9 +90,9 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.construction_curves) {
             (1 | 2, None) => Ok(()),
-            (3, Some(curves)) => self.adopt_construction_curves(curves),
+            (3 | 4, Some(curves)) => self.adopt_construction_curves(curves),
             shape => Err(SketchError::Definition(format!(
-                "construction recipe {shape:?}: expected no metadata in versions 1/2 or explicit curve metadata in version 3"
+                "construction recipe {shape:?}: expected no metadata in versions 1/2 or explicit curve metadata in versions 3/4"
             ))),
         }
     }

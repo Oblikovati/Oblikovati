@@ -8,6 +8,7 @@ mod arc_midpoint;
 mod arc_residual;
 mod arc_sweep;
 mod authoring;
+mod centerline;
 mod circle;
 mod circle_residual;
 mod circular_compile;
@@ -68,6 +69,7 @@ pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, Tange
 pub struct Sketch2D {
     entity_order: Vec<SketchEntityId>,
     construction_curves: std::collections::BTreeSet<SketchEntityId>,
+    centerlines: std::collections::BTreeSet<SketchEntityId>,
     points: Vec<SketchPoint2D>,
     lines: Vec<SketchLine2D>,
     circles: Vec<SketchCircle2D>,

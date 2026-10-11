@@ -18,6 +18,7 @@ pub enum SketchPrimitiveCreation {
     Line {
         endpoints: [SketchPointInput; 2],
         construction: bool,
+        centerline: bool,
     },
     Circle {
         center: SketchPointInput,
@@ -71,6 +72,9 @@ impl SketchPrimitiveCreation {
             } => geometry.add_arc(id, points[0], [points[1], points[2]], *counter_clockwise)?,
         }
         geometry.set_curve_construction(&[id], self.construction())?;
+        if let Self::Line { centerline, .. } = self {
+            geometry.set_line_centerline(id, *centerline)?;
+        }
         Ok(())
     }
     fn construction(&self) -> bool {

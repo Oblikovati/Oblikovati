@@ -26,6 +26,7 @@ fn line(start: SketchPointInput) -> SketchPrimitiveCreation {
     SketchPrimitiveCreation::Line {
         endpoints: [start, SketchPointInput::New([3.0, 4.0])],
         construction: false,
+        centerline: false,
     }
 }
 fn circle(radius: f64, construction: bool) -> SketchPrimitiveCreation {
@@ -101,6 +102,7 @@ fn fully_shared_curves_allocate_only_their_own_identity() {
             SketchPointInput::Owned(SketchEntityId(3)),
         ],
         construction: true,
+        centerline: false,
     };
     let report = session.create_sketch_primitive(sketch, &request).unwrap();
     assert_shared_report(&report);

@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest Rust planar schema; version 2 records order and version 3 adds construction roles.
-pub const SKETCH_RECIPE_VERSION: u32 = 3;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles.
+pub const SKETCH_RECIPE_VERSION: u32 = 4;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -19,14 +19,21 @@ pub struct SketchRecipe {
     pub entity_order: Option<Vec<super::SketchEntityId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub construction_curves: Option<Vec<super::SketchEntityId>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub centerlines: Option<Vec<super::SketchEntityId>>,
 }
 impl Sketch2D {
     /// Capture authored values in stable order; example: `let recipe = sketch.recipe();`.
     pub fn recipe(&self) -> SketchRecipe {
         let entity_order = self.saved_entity_order();
         let construction_curves = self.saved_construction_curves();
+        let centerlines = self.saved_centerlines();
         SketchRecipe {
-            version: planar_recipe_version(entity_order.is_some(), construction_curves.is_some()),
+            version: planar_recipe_version(
+                entity_order.is_some(),
+                construction_curves.is_some(),
+                centerlines.is_some(),
+            ),
             points: self.points.clone(),
             lines: self.lines.clone(),
             circles: self.circles.clone(),
@@ -34,6 +41,7 @@ impl Sketch2D {
             constraints: self.constraints.clone(),
             entity_order,
             construction_curves,
+            centerlines,
         }
     }
     /// Restore into a fresh owner after validation; example: `let sketch = Sketch2D::from_recipe(&recipe)?;`.
@@ -48,6 +56,7 @@ impl Sketch2D {
         sketch.restore_geometry(recipe)?;
         sketch.restore_entity_order(recipe)?;
         sketch.restore_construction_curves(recipe)?;
+        sketch.restore_centerlines(recipe)?;
         for constraint in &recipe.constraints {
             sketch.add_constraint(constraint.id, constraint.relation.clone())?;
         }
@@ -78,10 +87,11 @@ impl Sketch2D {
     }
 }
 
-fn planar_recipe_version(ordered: bool, construction: bool) -> u32 {
-    match (ordered, construction) {
-        (_, true) => SKETCH_RECIPE_VERSION,
-        (true, false) => 2,
-        (false, false) => 1,
+fn planar_recipe_version(ordered: bool, construction: bool, centerline: bool) -> u32 {
+    match (ordered, construction, centerline) {
+        (_, _, true) => SKETCH_RECIPE_VERSION,
+        (_, true, false) => 3,
+        (true, false, false) => 2,
+        (false, false, false) => 1,
     }
 }
