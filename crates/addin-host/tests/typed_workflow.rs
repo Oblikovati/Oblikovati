@@ -30,6 +30,8 @@ use observations::{WorkflowFactory, WorkflowObserver};
 #[path = "typed_workflow/transport.rs"]
 mod transport;
 use transport::NativeCallbackCaller;
+#[path = "typed_workflow/compiler.rs"]
+mod compiler;
 #[path = "typed_workflow/client.rs"]
 mod workflow;
 struct WorkflowWake(Sender<()>);
@@ -52,6 +54,7 @@ fn typed_client_creates_constrained_part_edits_undoes_and_reopens_via_native_cal
     runtime.drive(&worker, &awake, &mut owner);
     let report = worker.join().unwrap();
     assert_saved_workflow(&runtime.files, &path, &report);
+    verify_loaded_workflow(&binding, &awake, &mut owner, &mut runtime, directory.path());
     assert_eq!(binding.buffer_counts().outstanding, 0);
     binding.close();
     owner.close();
@@ -107,9 +110,9 @@ impl WorkflowOwner {
             factory: WorkflowFactory,
         }
     }
-    fn drive(
+    fn drive<T>(
         &mut self,
-        worker: &thread::JoinHandle<workflow::WorkflowReport>,
+        worker: &thread::JoinHandle<T>,
         awake: &mpsc::Receiver<()>,
         owner: &mut OwnerDispatch<WorkflowWake>,
     ) {
@@ -130,4 +133,33 @@ impl WorkflowOwner {
             .with_observer_factory(&mut self.factory);
         assert!(owner.drain(8, &host).unwrap() > 0);
     }
+}
+
+fn verify_loaded_workflow(
+    binding: &HostCallbackBinding,
+    awake: &mpsc::Receiver<()>,
+    owner: &mut OwnerDispatch<WorkflowWake>,
+    runtime: &mut WorkflowOwner,
+    directory: &Path,
+) {
+    let compiler = compiler::WorkflowCompiler::new();
+    let path = directory.join("rust-addin.opd");
+    let library = compiler.rust_workflow(&path);
+    // SAFETY: API-only fixture uses the same canonical prototypes and supports this worker affinity.
+    let mut addin = unsafe { oblikovati_addin_host::open_addin(&library) }.unwrap();
+    let (call, free) = binding.callbacks();
+    let activation = thread::spawn(move || {
+        unsafe { addin.activate(call, free) }.unwrap();
+        addin
+    });
+    runtime.drive(&activation, awake, owner);
+    let mut addin = activation.join().unwrap();
+    let report = loaded_report(&mut addin);
+    assert_saved_workflow(&runtime.files, &path, &report);
+    unsafe { addin.deactivate() }.unwrap();
+}
+fn loaded_report(addin: &mut oblikovati_addin_host::LoadedAddIn) -> workflow::WorkflowReport {
+    // SAFETY: fixture reports only its copied workflow observations; returned bytes use its matching ObkFree.
+    let bytes = unsafe { addin.automation("report", &[]) }.unwrap();
+    serde_json::from_slice(&bytes).unwrap()
 }

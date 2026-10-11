@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use oblikovati_api::{Error, client::{Caller, Client}, ffi, wire::*};
+use std::{path::Path, ffi::{c_char, c_int}, sync::Mutex, collections::BTreeMap};
+#[path = "transport.rs"]
+mod transport;
+#[path = "client.rs"]
+mod workflow;
+static REPORT: Mutex<Option<workflow::WorkflowReport>> = Mutex::new(None);
+static REPLIES: Mutex<BTreeMap<usize, Box<[u8]>>> = Mutex::new(BTreeMap::new());
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInId() -> *const c_char { c"typed-rust-fixture".as_ptr() }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInManifest() -> *const c_char { c"{\"id\":\"typed-rust-fixture\"}".as_ptr() }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInApiMajor() -> c_int { oblikovati_api::API_MAJOR }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInApiMinor() -> c_int { oblikovati_api::API_MINOR }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInActivate(call: Option<ffi::ObkHostCall>, free: Option<ffi::ObkHostFree>) -> c_int {
+    let (Some(call), Some(free)) = (call, free) else { return ffi::OBK_ERR; };
+    let result = std::panic::catch_unwind(|| {
+        let transport = transport::NativeCallbackCaller::new((call, free));
+        workflow::execute(Client::new(transport), Path::new(OUTPUT_PATH))
+    });
+    let Ok(report) = result else { return ffi::OBK_ERR; };
+    *REPORT.lock().unwrap() = Some(report);
+    ffi::OBK_OK
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInDeactivate() -> c_int { ffi::OBK_OK }
+#[unsafe(no_mangle)]
+pub extern "C" fn ObkAddInNotify(_: *const u8, _: c_int) -> c_int { ffi::OBK_OK }
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ObkFree(pointer: *mut u8) { REPLIES.lock().unwrap().remove(&(pointer as usize)); }
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ObkAddInAutomation(_: *const c_char, _: *const u8, _: c_int, reply: *mut *mut u8, length: *mut c_int) -> c_int {
+    let stored = REPORT.lock().unwrap();
+    let Some(report) = stored.as_ref() else { return ffi::OBK_ERR; };
+    let bytes = serde_json::to_vec(&serde_json::json!({"created":report.created,"reopened":report.reopened,"radiusBits":report.radius_bits,"parameter":report.parameter})).unwrap();
+    let mut bytes = bytes.into_boxed_slice();
+    unsafe { *reply = bytes.as_mut_ptr(); *length = bytes.len() as c_int; }
+    REPLIES.lock().unwrap().insert(bytes.as_mut_ptr() as usize, bytes);
+    ffi::OBK_OK
+}
+const _: ffi::ObkAddInActivate = ObkAddInActivate;
+const _: ffi::ObkAddInAutomation = ObkAddInAutomation;

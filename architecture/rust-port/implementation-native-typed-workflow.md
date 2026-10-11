@@ -39,3 +39,32 @@ add-in document scenarios, managed host lifetime, native window/CLI drain loops,
 queued event delivery and foreground MCPBridge acceptance remain required. The
 part has a fully constrained sketch recipe; no solid feature or rendered result
 is claimed. Windows and macOS remain deferred.
+
+## Loaded Rust add-in workflow
+
+The same typed scenario now also runs inside an actual Rust cdylib. Its isolated
+fixture Cargo project links the exact pinned API source plus serialization crates;
+it imports no GPL application crate. The scenario and C transport source are
+shared with the direct-client test so the library case cannot silently use a
+smaller workflow. Native activation runs on a worker while the owner drains the
+same FileHost and callback binding.
+
+The add-in performs create, constrain, parameter edit, undo/redo, save, close and
+reopen during activation. Its optional automation export returns only a copied
+report afterward; it makes no synchronous host calls from that automation entry.
+The report is copied and released through the library's ObkFree, then the host
+independently checks the actual saved path, current resolved sketch, radius bits,
+parameter presence, distinct reopened session ID and clean state. Deactivation
+completes before callback retirement. Host response allocations return to zero.
+
+The fixture compiler separates common SDK/resource discovery from the metadata
+stub compiler and the full-client fixture compiler. Cargo uses a temporary project
+and separate target directory, so nested fixture builds cannot contend for the
+application's target lock or modify the API checkout. Fixture failures fail the
+same focused test and full gate; they are not skip conditions.
+
+The loaded Rust scenario closes the library-boundary gap for this workflow.
+A loaded Go add-in performing the same typed document operations remains required,
+as do managed registration/shutdown, event attachment and native presentation.
+The existing Go echo fixture is still ownership/queue evidence, not this document
+workflow. No solid feature or rendered part acceptance is claimed.
