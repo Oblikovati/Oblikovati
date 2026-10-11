@@ -26,7 +26,7 @@ fn invalid_offset_display_and_wrong_definition_kinds_are_named_declines() {
         metadata::constructor(wrong)
             .unwrap_err()
             .to_string()
-            .contains("fixed or offset")
+            .contains("supported plane definition")
     );
 }
 #[test]

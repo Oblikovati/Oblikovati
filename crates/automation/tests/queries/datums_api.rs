@@ -278,3 +278,6 @@ mod flip;
 mod offset;
 #[path = "datums_api/planes.rs"]
 mod planes;
+
+#[path = "datums_api/parallel.rs"]
+mod parallel;

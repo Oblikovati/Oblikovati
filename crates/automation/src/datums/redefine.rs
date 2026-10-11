@@ -10,8 +10,12 @@ pub(super) use request::placed_plane;
 struct PlaneRevision {
     owner: FeatureId,
     index: i64,
-    geometry: Option<OffsetRevision>,
+    geometry: Option<PlaneGeometryRevision>,
     display: WorkPlaneDisplaySettings,
+}
+enum PlaneGeometryRevision {
+    Offset(OffsetRevision),
+    Definition(WorkGeometryDefinition),
 }
 struct OffsetRevision {
     base: WorkPlaneReference,
@@ -45,8 +49,11 @@ fn revision_unchanged(
         .get(revision.owner)
         .map_err(api_error)?;
     let definition = feature.definition();
-    let geometry_unchanged = revision.geometry.as_ref().is_none_or(|geometry| geometry.expression.is_none()
-        && matches!(definition, WorkGeometryDefinition::Offset { base, .. } if *base == geometry.base));
+    let geometry_unchanged = revision.geometry.as_ref().is_none_or(|geometry| match geometry {
+        PlaneGeometryRevision::Offset(geometry) => geometry.expression.is_none()
+            && matches!(definition, WorkGeometryDefinition::Offset { base, .. } if *base == geometry.base),
+        PlaneGeometryRevision::Definition(next) => definition.same_recipe(*next),
+    });
     Ok(geometry_unchanged
         && feature
             .plane_display_settings()
@@ -59,7 +66,7 @@ fn install(
     revision: PlaneRevision,
 ) -> Result<Vec<u8>, Error> {
     if let Some(geometry) = &revision.geometry {
-        install_offset(snapshot, ids, revision.owner, geometry)?;
+        install_geometry(snapshot, ids, revision.owner, geometry)?;
     }
     snapshot
         .work_geometry
@@ -138,4 +145,20 @@ fn current_reply(
 ) -> Result<Vec<u8>, Error> {
     let plane = planes::current_info(snapshot, owner, index)?;
     encode(&RedefineWorkPlaneResult { plane })
+}
+
+fn install_geometry(
+    snapshot: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+    owner: FeatureId,
+    revision: &PlaneGeometryRevision,
+) -> Result<(), Error> {
+    match revision {
+        PlaneGeometryRevision::Offset(offset) => install_offset(snapshot, ids, owner, offset),
+        PlaneGeometryRevision::Definition(definition) => snapshot
+            .work_geometry
+            .replace(owner, *definition, definition.reads())
+            .map(|_| ())
+            .map_err(api_error),
+    }
 }

@@ -118,9 +118,9 @@ impl DatumCollection {
             WorkGeometryDefinition::Point(_) | WorkGeometryDefinition::PointAtReference(_) => {
                 Self::Points
             }
-            WorkGeometryDefinition::Fixed(_) | WorkGeometryDefinition::Offset { .. } => {
-                Self::Planes
-            }
+            WorkGeometryDefinition::Fixed(_)
+            | WorkGeometryDefinition::Offset { .. }
+            | WorkGeometryDefinition::ParallelThroughPoint(_) => Self::Planes,
         };
         self == kind
     }

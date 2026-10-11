@@ -4,9 +4,12 @@ use oblikovati_model::quantity::{Dimension, Quantity};
 pub(super) fn constructor(definition: WorkGeometryDefinition) -> Result<String, Error> {
     match definition {
         WorkGeometryDefinition::Fixed(_) => Ok(WORK_PLANE_FIXED.0.into_owned()),
+        WorkGeometryDefinition::ParallelThroughPoint(_) => {
+            Ok(WORK_PLANE_PLANE_AND_POINT.0.into_owned())
+        }
         WorkGeometryDefinition::Offset { .. } => Ok(WORK_PLANE_OFFSET.0.into_owned()),
         _ => Err(Error(format!(
-            "plane definition {definition:?}: expected a fixed or offset plane"
+            "plane definition {definition:?}: expected a supported plane definition"
         ))),
     }
 }
@@ -15,6 +18,9 @@ pub(super) fn append_inputs(
     snapshot: &DocumentSnapshot,
     definition: WorkGeometryDefinition,
 ) -> Result<(), Error> {
+    if let WorkGeometryDefinition::ParallelThroughPoint(_) = definition {
+        info.slots = Some(super::parallel::slots());
+    }
     if let WorkGeometryDefinition::Offset { distance, .. } = definition {
         info.slots = Some(vec![WorkPlaneRefSlot {
             index: 0,

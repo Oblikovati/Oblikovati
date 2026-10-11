@@ -27,6 +27,14 @@ pub use length::{DatumLength, DatumLengthError};
 pub(crate) use point::validate_position;
 pub use point::{WorkAxisPoints, WorkPointCoordinateError, WorkPointReference};
 
+/// A plane inherits the current base axes and the current point position.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorkPlaneThroughPoint {
+    pub base: WorkPlaneReference,
+    pub point: WorkPointReference,
+}
+
 /// One authored datum selected by kind inside the common feature program.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum WorkGeometryDefinition {
@@ -35,6 +43,7 @@ pub enum WorkGeometryDefinition {
         base: WorkPlaneReference,
         distance: WorkPlaneDistance,
     },
+    ParallelThroughPoint(WorkPlaneThroughPoint),
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),
     PointAtReference(WorkPointReference),

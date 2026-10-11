@@ -15,6 +15,7 @@ pub struct WorkPlaneRecipe {
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    ParallelThroughPoint(crate::feature::work_geometry::WorkPlaneThroughPoint),
     Axis(crate::feature::work_axis::WorkAxisLineRecipe),
     Point([crate::feature::work_geometry::DatumLength; 3]),
     AxisThroughPoints(crate::feature::work_geometry::WorkAxisPoints),
@@ -41,6 +42,9 @@ impl WorkPlaneDefinition {
 
     fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
         match self {
+            Self::ParallelThroughPoint(source) => {
+                WorkPlaneDefinitionRecipe::ParallelThroughPoint(source)
+            }
             Self::Axis(axis) => WorkPlaneDefinitionRecipe::Axis(axis.recipe()),
             Self::Point(coordinates) => WorkPlaneDefinitionRecipe::Point(coordinates),
             Self::PointAtReference(reference) => {
@@ -66,6 +70,9 @@ fn restore_definition(
     definition: WorkPlaneDefinitionRecipe,
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     match definition {
+        WorkPlaneDefinitionRecipe::ParallelThroughPoint(source) => {
+            Ok(WorkPlaneDefinition::ParallelThroughPoint(source))
+        }
         WorkPlaneDefinitionRecipe::Axis(axis) => restore_line_axis(axis),
         WorkPlaneDefinitionRecipe::Fixed { frame, options } => restore_frame(frame, options),
         WorkPlaneDefinitionRecipe::Offset { base, distance } => validate_offset(base, distance),
@@ -97,6 +104,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(self) -> u32 {
         match self {
+            Self::ParallelThroughPoint(_) => 5,
             Self::PointAtReference(_) => 4,
             Self::Axis(_) => 2,
             Self::Point(_) | Self::AxisThroughPoints(_) => 3,
@@ -105,6 +113,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(self) -> u32 {
         match self {
+            Self::ParallelThroughPoint(_) => 10,
             Self::PointAtReference(_) => 6,
             Self::Axis(_) => 3,
             Self::Point(_) | Self::AxisThroughPoints(_) => 4,

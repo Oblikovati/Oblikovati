@@ -8,6 +8,7 @@ impl WorkGeometryDefinition {
     pub fn reads(self) -> FeatureReadFootprint {
         let keys = match self {
             Self::Offset { base, distance } => offset_keys(base, distance),
+            Self::ParallelThroughPoint(source) => parallel_keys(source),
             Self::PointAtReference(reference) => point_key(reference).into_iter().collect(),
             Self::Point(coordinates) => coordinates.into_iter().filter_map(length_key).collect(),
             Self::AxisThroughPoints(points) => [points.first, points.second]
@@ -28,11 +29,21 @@ fn point_key(reference: WorkPointReference) -> Option<FeatureReadKey> {
         WorkPointReference::Feature(id) => Some(FeatureReadKey::Feature(id)),
     }
 }
-fn offset_keys(base: WorkPlaneReference, distance: DatumLength) -> Vec<FeatureReadKey> {
-    let mut keys = Vec::new();
-    if let WorkPlaneReference::Feature(id) = base {
-        keys.push(FeatureReadKey::Feature(id));
+fn plane_key(base: WorkPlaneReference) -> Option<FeatureReadKey> {
+    match base {
+        WorkPlaneReference::Origin(_) => None,
+        WorkPlaneReference::Feature(id) => Some(FeatureReadKey::Feature(id)),
     }
-    keys.extend(length_key(distance));
-    keys
+}
+fn offset_keys(base: WorkPlaneReference, distance: DatumLength) -> Vec<FeatureReadKey> {
+    plane_key(base)
+        .into_iter()
+        .chain(length_key(distance))
+        .collect()
+}
+fn parallel_keys(source: super::WorkPlaneThroughPoint) -> Vec<FeatureReadKey> {
+    plane_key(source.base)
+        .into_iter()
+        .chain(point_key(source.point))
+        .collect()
 }

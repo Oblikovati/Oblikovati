@@ -6,7 +6,10 @@ use crate::feature::FeatureReplayRange;
 
 impl WorkGeometryDefinition {
     pub(crate) fn require_plane(self) -> Result<(), WorkGeometryError> {
-        if matches!(self, Self::Fixed(_) | Self::Offset { .. }) {
+        if matches!(
+            self,
+            Self::Fixed(_) | Self::Offset { .. } | Self::ParallelThroughPoint(_)
+        ) {
             return Ok(());
         }
         Err(WorkGeometryError::NonPlane(Box::new(self)))

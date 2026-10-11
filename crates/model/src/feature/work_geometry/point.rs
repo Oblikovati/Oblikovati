@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DatumLength, DatumLengthError, WorkGeometryError, WorkGeometryEvaluation};
+use super::{DatumLength, DatumLengthError, WorkGeometryError};
 use crate::{feature::FeatureId, parameter::ParameterCollection};
 use std::{error::Error, fmt};
 
@@ -26,7 +26,7 @@ impl WorkPointReference {
     /// Resolve the current point or the document origin; example: `reference.position(&evaluation)?`.
     pub fn position(
         self,
-        evaluation: &WorkGeometryEvaluation,
+        evaluation: &impl crate::feature::work_plane::WorkPlaneResolver,
     ) -> Result<[f64; 3], WorkGeometryError> {
         match self {
             Self::Origin => Ok([0.0; 3]),

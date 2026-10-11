@@ -6,6 +6,9 @@ impl WorkPlaneDefinition {
     /// Compare exact authored definition bits; example: `old.same_recipe(candidate)` before editing.
     pub fn same_recipe(self, other: Self) -> bool {
         match (self, other) {
+            (Self::ParallelThroughPoint(first), Self::ParallelThroughPoint(second)) => {
+                first == second
+            }
             (Self::Axis(first), Self::Axis(second)) => first.same_recipe(second),
             (Self::Point(first), Self::Point(second)) => same_coordinates(first, second),
             (Self::AxisThroughPoints(first), Self::AxisThroughPoints(second)) => first == second,

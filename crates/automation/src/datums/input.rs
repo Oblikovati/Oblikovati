@@ -97,7 +97,7 @@ fn two_points(
         second: point_reference(snapshot, second)?,
     }))
 }
-fn point_reference(
+pub(in crate::datums) fn point_reference(
     snapshot: &DocumentSnapshot,
     reference: &str,
 ) -> Result<WorkPointReference, Error> {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Fixed and offset construction frames from Go work_plane.go/work_plane_defs.go, aa8297d1.
+//! Associative construction frames from Go work_plane.go/work_plane_defs.go, aa8297d1.
 
 mod collection;
 mod construction;
@@ -32,10 +32,12 @@ pub use super::work_geometry::DatumLength as WorkPlaneDistance;
 /// Source-compatible name for the single ordered datum definition.
 pub use super::work_geometry::WorkGeometryDefinition as WorkPlaneDefinition;
 
-/// Project-owned seam for resolving current work-plane results.
+/// Project-owned seam for current plane and point inputs to construction frames.
 pub trait WorkPlaneResolver {
     /// Resolve one available current frame; example: `resolver.plane(FeatureId(1))?`.
     fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError>;
+    /// Resolve one available current position; example: `resolver.point(FeatureId(2))?`.
+    fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkPlaneError>;
 }
 
 impl WorkPlaneOrigin {
@@ -58,17 +60,15 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
-            Self::Axis(_)
-            | Self::Point(_)
-            | Self::PointAtReference(_)
-            | Self::AxisThroughPoints(_) => Err(WorkPlaneError::NonPlane(Box::new(self))),
-            Self::Offset { base, distance } => {
-                let plane = match base {
-                    WorkPlaneReference::Origin(origin) => origin.plane(),
-                    WorkPlaneReference::Feature(id) => resolver.plane(id)?,
-                };
-                shifted_frame(plane, plane_offset_value(distance, parameters)?)
-            }
+            Self::Offset { base, distance } => shifted_frame(
+                base.frame(resolver)?,
+                plane_offset_value(distance, parameters)?,
+            ),
+            Self::ParallelThroughPoint(source) => repositioned_frame(
+                source.base.frame(resolver)?,
+                source.point.position(resolver)?,
+            ),
+            _ => Err(WorkPlaneError::NonPlane(Box::new(self))),
         }
     }
 }
@@ -106,4 +106,22 @@ fn plane_length_error(error: super::work_geometry::DatumLengthError) -> WorkPlan
             quantity,
         },
     }
+}
+
+impl WorkPlaneReference {
+    /// Resolve the current base frame; example: `reference.frame(&evaluation)?`.
+    pub fn frame(self, resolver: &impl WorkPlaneResolver) -> Result<SketchPlane, WorkPlaneError> {
+        match self {
+            Self::Origin(origin) => Ok(origin.plane()),
+            Self::Feature(id) => resolver.plane(id),
+        }
+    }
+}
+fn repositioned_frame(
+    plane: SketchPlane,
+    position: [f64; 3],
+) -> Result<SketchPlane, WorkPlaneError> {
+    let mut recipe = plane.recipe();
+    recipe.origin = position;
+    SketchPlane::from_recipe(recipe, plane.options()).map_err(WorkPlaneError::Frame)
 }

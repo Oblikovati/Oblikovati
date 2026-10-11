@@ -28,16 +28,29 @@ fn geometry_revision(
     snapshot: &DocumentSnapshot,
     feature: &AuthoredFeature<WorkGeometryDefinition>,
     args: &RedefineWorkPlaneArgs,
-) -> Result<Option<OffsetRevision>, Error> {
+) -> Result<Option<PlaneGeometryRevision>, Error> {
     let scalars = args.scalars.as_deref().unwrap_or_default();
     let repicks = args.repick.as_deref().unwrap_or_default();
     if scalars.is_empty() && repicks.is_empty() {
         return Ok(None);
     }
-    let (base, distance) = offset_definition(*feature.definition())?;
+    if let WorkGeometryDefinition::ParallelThroughPoint(source) = *feature.definition() {
+        return planes::parallel::revise(snapshot, source, args)
+            .map(PlaneGeometryRevision::Definition)
+            .map(Some);
+    }
+    prepare_offset(snapshot, *feature.definition(), scalars, repicks).map(Some)
+}
+fn prepare_offset(
+    snapshot: &DocumentSnapshot,
+    definition: WorkGeometryDefinition,
+    scalars: &[ScalarEdit],
+    repicks: &[SlotRepick],
+) -> Result<PlaneGeometryRevision, Error> {
+    let (base, distance) = offset_definition(definition)?;
     let expression = scalar_source(snapshot, scalars)?;
     let base = revised_base(snapshot, base, repicks)?;
-    Ok(Some(OffsetRevision {
+    Ok(PlaneGeometryRevision::Offset(OffsetRevision {
         base,
         distance,
         expression,

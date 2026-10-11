@@ -18,6 +18,12 @@ mod work_planes {
 
 struct UnavailablePlanes;
 impl WorkPlaneResolver for UnavailablePlanes {
+    fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkPlaneError> {
+        Err(WorkPlaneError::Unavailable {
+            feature,
+            expected: "point",
+        })
+    }
     fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError> {
         Err(WorkPlaneError::Unavailable {
             feature,
@@ -365,4 +371,23 @@ fn failed_conditional_frame_is_not_adopted_and_quarantines_plane_readers() {
     assert!(report.plane(FeatureId(1)).is_err());
     assert!(report.plane(FeatureId(2)).is_err());
     assert!(report.plane(FeatureId(3)).is_ok());
+}
+
+#[test]
+fn a_parallel_plane_refuses_an_unavailable_point_with_its_identity() {
+    use oblikovati_model::feature::work_geometry::{WorkPlaneThroughPoint, WorkPointReference};
+    let definition = WorkPlaneDefinition::ParallelThroughPoint(WorkPlaneThroughPoint {
+        base: WorkPlaneReference::Origin(WorkPlaneOrigin::XY),
+        point: WorkPointReference::Feature(FeatureId(99)),
+    });
+    let error = definition
+        .evaluate(&parameters(1.0, Dimension::Length), &UnavailablePlanes)
+        .unwrap_err();
+    assert_eq!(
+        error,
+        WorkPlaneError::Unavailable {
+            feature: FeatureId(99),
+            expected: "point"
+        }
+    );
 }

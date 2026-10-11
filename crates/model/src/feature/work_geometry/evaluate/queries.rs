@@ -5,6 +5,9 @@ use crate::feature::{FeatureId, work_axis::WorkAxisLine, work_plane::WorkPlaneRe
 use crate::sketch::SketchPlane;
 
 impl WorkPlaneResolver for WorkGeometryEvaluation {
+    fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkPlaneError> {
+        WorkGeometryEvaluation::point(self, feature)
+    }
     fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError> {
         self.resolve_kind(feature, "plane", project_plane)
     }
