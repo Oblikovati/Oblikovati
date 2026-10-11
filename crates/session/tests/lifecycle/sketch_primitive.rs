@@ -458,3 +458,6 @@ fn bind_radius(
 
 #[path = "sketch_primitive/failures.rs"]
 mod failures;
+
+#[path = "sketch_primitive/inferred_line.rs"]
+mod inferred_line;

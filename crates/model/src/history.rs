@@ -13,8 +13,13 @@ mod derived_ids;
 mod feature_ids;
 mod scalar_ownership;
 mod sketch_create;
+mod sketch_line;
 mod sketch_primitive;
 pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
+pub use sketch_line::{
+    SketchAppliedLineDirection, SketchLineCreation, SketchLineCreationError,
+    SketchLineCreationReport,
+};
 pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
 mod sketch_delete;
 pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};

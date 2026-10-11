@@ -438,3 +438,6 @@ mod centerlines;
 
 #[path = "sketches/line_constraints.rs"]
 mod line_constraints;
+
+#[path = "sketches/inferred_line.rs"]
+mod inferred_line;

@@ -46,7 +46,7 @@ impl DocumentSnapshot {
         Ok(report)
     }
 }
-fn append_primitive(
+pub(super) fn append_primitive(
     geometry: &mut Sketch2D,
     sketch: DocumentSketchId,
     input: &SketchPrimitiveCreation,
