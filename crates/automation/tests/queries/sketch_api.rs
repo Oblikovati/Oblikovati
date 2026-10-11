@@ -467,3 +467,6 @@ mod references;
 
 #[path = "sketch_api/entities.rs"]
 mod entities;
+
+#[path = "sketch_api/construction.rs"]
+mod construction;

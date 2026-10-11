@@ -51,6 +51,7 @@ fn wire_entity(
     Ok(SketchEntityInfo {
         index: wire_count(index)?,
         id: shape.id.0,
+        construction: shape.construction,
         kind: shape.kind.0.into_owned(),
         points: Some(points),
         radius: centimetres(shape.radius, scale)?,

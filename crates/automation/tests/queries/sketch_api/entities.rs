@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_api::types::{WORK_PLANE_OFFSET, WORK_REF_XY_PLANE};
 use oblikovati_api::wire::{ResolveSketchReferenceArgs, SketchEntityInfo};
 use oblikovati_model::{feature::FeatureId, history::RecipeReservations, sketch::SketchPlane};
-fn rows(files: &DiscoveryWorkspace) -> Vec<SketchEntityInfo> {
+pub(super) fn rows(files: &DiscoveryWorkspace) -> Vec<SketchEntityInfo> {
     Client::new(FileQueryHost::new(files))
         .sketch()
         .entities(&SketchArgs::default())
@@ -11,7 +11,7 @@ fn rows(files: &DiscoveryWorkspace) -> Vec<SketchEntityInfo> {
         .entities
         .unwrap()
 }
-fn install_mixed(files: &mut DiscoveryWorkspace, document: u64) {
+pub(super) fn install_mixed(files: &mut DiscoveryWorkspace, document: u64) {
     files
         .commands(document)
         .unwrap()
@@ -67,7 +67,7 @@ fn scaled_package(scale: f64) -> DocumentPackage {
     );
     DocumentPackage::decode(contents.as_bytes()).unwrap()
 }
-fn verify_keys(files: &DiscoveryWorkspace, entities: &[SketchEntityInfo]) {
+pub(super) fn verify_keys(files: &DiscoveryWorkspace, entities: &[SketchEntityInfo]) {
     let client = Client::new(FileQueryHost::new(files));
     for entity in entities {
         let found = client
@@ -157,7 +157,7 @@ fn save_reopen_and_copy_retain_shapes_and_local_ids_with_the_right_namespace() {
     }
     verify_keys(&files, &copied);
 }
-fn activate_copy(
+pub(super) fn activate_copy(
     files: &mut DiscoveryWorkspace,
     document: u64,
     source: &mut QueryGuids,

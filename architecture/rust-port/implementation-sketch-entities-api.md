@@ -38,8 +38,9 @@ parameter values.
 The read-only file host and mutable automation host use the same query path and
 canonical API DTOs, method constants, and typed client. Part and assembly sketches
 are supported; other document kinds and absent owners decline. Empty sketches
-return an empty entity array. The currently owned primitives have no construction
-or reference-curve metadata, so those flags are false. Point associations retain
+return an empty entity array. Owned curves report their saved construction role;
+plain points have no construction flag. Reference-curve metadata remains absent,
+so that flag is false. Point associations retain
 their exact grounded behavior; the reference flag does not invent a projected
 curve representation. Formatting and spline fit metadata remain absent for these
 primitive kinds, as in the Go response.
@@ -52,6 +53,6 @@ history/geometry/dirty immutability. Corresponding pinned Go movement and router
 reference tests pass independently at
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
-Construction editing, included curves and their metadata, additional geometry
+Native construction selection and armed modes, included curves and their metadata, additional geometry
 kinds, interactive drag, native pick/render acceptance, and feature consumers
 remain required for the complete application port.
