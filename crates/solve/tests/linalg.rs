@@ -158,3 +158,6 @@ fn malformed_matrices_tolerances_rhs_and_nonfinite_solutions_are_refused() {
     let tiny = ColumnPivotedQr::factor(&matrix(&[&[1e-300]]), RANK_TOLERANCE).unwrap();
     assert!(tiny.least_squares(&[1e300]).is_err());
 }
+
+#[path = "linalg/projection.rs"]
+mod projection;

@@ -206,3 +206,6 @@ fn numerical_tolerance_is_applied_and_invalid_tolerance_is_not_skipped_for_empty
     assert!(analyze_structure(&empty, 0.0).is_err());
     assert!(redundant_sources(&empty, f64::NAN).is_err());
 }
+
+#[path = "diagnostics/freedom.rs"]
+mod freedom;

@@ -6,6 +6,8 @@ use crate::{
     residual::ResidualEvaluation,
 };
 use std::fmt;
+mod freedom;
+pub use freedom::coordinate_freedoms;
 
 /// Go-compatible structural status; redundant rows take precedence over free variables.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

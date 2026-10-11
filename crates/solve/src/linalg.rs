@@ -2,6 +2,7 @@
 
 //! Checked dense numerical linear algebra; rank is relative to an explicit tolerance.
 mod factor;
+mod projection;
 mod reflector;
 mod solve;
 use std::{error::Error, fmt};
@@ -28,6 +29,17 @@ impl DenseMatrix {
         }
         Ok(Self { columns, rows })
     }
+    /// Exchange the axes without losing a declared empty dimension.
+    /// Example: `let constraint_columns = jacobian.transpose();`.
+    pub fn transpose(&self) -> Self {
+        let rows = (0..self.columns)
+            .map(|column| self.rows.iter().map(|row| row[column]).collect())
+            .collect();
+        Self {
+            columns: self.rows.len(),
+            rows,
+        }
+    }
     /// Inspect rows without changing the matrix; example: `matrix.rows()`.
     pub fn rows(&self) -> &[Vec<f64>] {
         &self.rows
@@ -40,7 +52,7 @@ impl DenseMatrix {
 
 /// Invalid matrix, tolerance, rank, right-hand side, or non-finite arithmetic.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct LinearAlgebraError(String);
+pub struct LinearAlgebraError(pub(crate) String);
 impl fmt::Display for LinearAlgebraError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(output)
