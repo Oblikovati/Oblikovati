@@ -20,6 +20,14 @@ pub(super) enum OwnedSketchGeometry<'a> {
     OffsetSpline(super::SketchOffsetSpline2D),
 }
 impl OwnedSketchGeometry<'_> {
+    pub fn fit_method(self) -> Option<oblikovati_api::types::SplineFitMethod> {
+        if let Self::Spline(parent) = self
+            && let super::SketchSplineKind::Fit { method } = parent.kind()
+        {
+            return Some(method);
+        }
+        None
+    }
     pub fn id(self) -> SketchEntityId {
         match self {
             Self::Point(shape) => shape.id,

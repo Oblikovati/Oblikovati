@@ -3,6 +3,8 @@ use super::*;
 use oblikovati_api::types::{WORK_PLANE_OFFSET, WORK_REF_XY_PLANE};
 use oblikovati_api::wire::{ResolveSketchReferenceArgs, SketchEntityInfo};
 use oblikovati_model::{feature::FeatureId, history::RecipeReservations, sketch::SketchPlane};
+#[path = "entities/spline.rs"]
+mod spline;
 pub(super) fn rows(files: &DiscoveryWorkspace) -> Vec<SketchEntityInfo> {
     Client::new(FileQueryHost::new(files))
         .sketch()

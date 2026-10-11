@@ -21,6 +21,7 @@ pub struct SketchEntityInspection {
     pub radius: f64,
     pub movement: GeometryMoveableStatus,
     pub construction: bool,
+    pub fit_method: Option<oblikovati_api::types::SplineFitMethod>,
 }
 /// Separate rank conditioning and squared local-freedom policy.
 #[derive(Clone, Copy, Debug)]
@@ -113,6 +114,7 @@ fn inspect_shape(
         radius: shape.radius(sketch)?,
         movement: movement(&columns, &point_ids, free, fixed),
         construction: sketch.is_construction(shape.id())?,
+        fit_method: shape.fit_method(),
     })
 }
 fn movement(

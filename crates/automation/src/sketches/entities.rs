@@ -57,6 +57,7 @@ fn wire_entity(
         radius: centimetres(shape.radius, scale)?,
         reference_key: key,
         moveable_status: movement_name(shape.movement)?.into(),
+        fit_method: fit_method_name(shape.fit_method)?.into(),
         ..Default::default()
     })
 }
@@ -71,6 +72,20 @@ fn wire_points(points: &[[f64; 2]], scale: f64) -> Result<Vec<Option<Vec<f64>>>,
             Ok(Some(coordinates))
         })
         .collect()
+}
+fn fit_method_name(
+    method: Option<oblikovati_api::types::SplineFitMethod>,
+) -> Result<&'static str, Error> {
+    use oblikovati_api::types::{SPLINE_FIT_CHORD, SPLINE_FIT_SMOOTH, SPLINE_FIT_SWEET};
+    match method {
+        None => Ok(""),
+        Some(SPLINE_FIT_SMOOTH) => Ok("smooth"),
+        Some(SPLINE_FIT_CHORD) => Ok("chord"),
+        Some(SPLINE_FIT_SWEET) => Ok("sweet"),
+        Some(value) => Err(Error(format!(
+            "spline fit method {value:?}: expected smooth, chord, or sweet"
+        ))),
+    }
 }
 fn centimetres(value: f64, scale: f64) -> Result<f64, Error> {
     let converted = value * scale;
@@ -94,6 +109,12 @@ fn movement_name(status: GeometryMoveableStatus) -> Result<&'static str, Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn invalid_fit_method_cannot_be_reported_as_a_valid_recipe() {
+        let error = fit_method_name(Some(oblikovati_api::types::SplineFitMethod(0))).unwrap_err();
+        assert!(error.0.contains("SplineFitMethod(0)"));
+        assert!(error.0.contains("expected smooth, chord, or sweet"));
+    }
     #[test]
     fn unclassified_movement_and_nonrepresentable_centimetres_are_refused() {
         assert!(

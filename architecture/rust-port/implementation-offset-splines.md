@@ -96,6 +96,23 @@ roles and distance in part and assembly packages and refuse identity marks below
 any parent, offset or defining point. No API creation constructor or general
 fit/handle evaluation is claimed by these ownership tests.
 
+## Public spline inspection
+
+The canonical typed `sketch.entities` query now reports the stored fit method as
+`smooth`, `chord`, or `sweet` for fit parents. It uses the released API enum and
+existing `SketchEntityInfo.fit_method` contract. Control parents, offsets and
+other geometry retain the Go API's empty fit-method field. Unknown enum values
+are refused rather than reported as a valid method. This ports the Go
+`splineFitSpelling` behavior without adding a second curve evaluator.
+
+API acceptance tests install native recipes through the document command owner,
+then use the typed public client to query part and assembly documents. They check
+all three fit methods, distinct control/offset kinds, shared defining points,
+authored order and persistent key resolution. Save/reopen retains the full rows;
+copy retains local identities and methods while changing the document key
+namespace. These tests cover public inspection of stored recipes, not public
+entity creation, spline edits or deletion.
+
 ## Native distance dimensions
 
 The typed seeded constructor now binds one offset entity to a length source and
