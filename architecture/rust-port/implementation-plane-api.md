@@ -47,7 +47,8 @@ Go origin and fixed-frame router tests provide the migration comparison.
 Creation accepts fixed frames, [owned offset expressions](implementation-offset-expressions.md),
 and [associative plane-and-point sources](implementation-plane-point.md), plus
 [three-point planes](implementation-three-point-planes.md) and
-[line-and-point planes](implementation-line-point-planes.md). Offset redefine
+[line-and-point planes](implementation-line-point-planes.md), and
+[normal-to-curve planes from axes](implementation-normal-axis-planes.md). Offset redefine
 retains expressions and applies scalar/reference edits atomically.
 [Normal flip](implementation-plane-flip.md) preserves authored orientation through
 replay and storage. [Display settings](implementation-plane-display.md) retain

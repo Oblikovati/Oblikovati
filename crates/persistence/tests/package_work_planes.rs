@@ -166,13 +166,13 @@ fn invalid_versions_marks_and_unknown_fields_fail_before_restore() {
 }
 fn assert_invalid_recipe_version(captured: &DocumentPackage) {
     let mut model = section(captured);
-    model["workPlanes"]["recipe"]["version"] = 13u64.into();
+    model["workPlanes"]["recipe"]["version"] = 14u64.into();
     assert!(
         from_section(&model, 3)
             .restore_work_planes()
             .unwrap_err()
             .to_string()
-            .contains("version 13")
+            .contains("version 14")
     );
 }
 

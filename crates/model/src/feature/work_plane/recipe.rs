@@ -15,6 +15,7 @@ pub struct WorkPlaneRecipe {
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    NormalToAxis(crate::feature::work_geometry::WorkPlaneLinePoint),
     LineThroughPoint(crate::feature::work_geometry::WorkPlaneLinePoint),
     ThroughThreePoints([crate::feature::work_geometry::WorkPointReference; 3]),
     ParallelThroughPoint(crate::feature::work_geometry::WorkPlaneThroughPoint),
@@ -44,6 +45,7 @@ impl WorkPlaneDefinition {
 
     fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
         match self {
+            Self::NormalToAxis(source) => WorkPlaneDefinitionRecipe::NormalToAxis(source),
             Self::LineThroughPoint(source) => WorkPlaneDefinitionRecipe::LineThroughPoint(source),
             Self::ThroughThreePoints(points) => {
                 WorkPlaneDefinitionRecipe::ThroughThreePoints(points)
@@ -77,6 +79,7 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        NormalToAxis(source) => Ok(WorkPlaneDefinition::NormalToAxis(source)),
         LineThroughPoint(source) => Ok(WorkPlaneDefinition::LineThroughPoint(source)),
         ThroughThreePoints(points) => Ok(WorkPlaneDefinition::ThroughThreePoints(points)),
         ParallelThroughPoint(source) => Ok(WorkPlaneDefinition::ParallelThroughPoint(source)),
@@ -107,6 +110,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(self) -> u32 {
         match self {
+            Self::NormalToAxis(_) => 8,
             Self::LineThroughPoint(_) => 7,
             Self::ThroughThreePoints(_) => 6,
             Self::ParallelThroughPoint(_) => 5,
@@ -118,6 +122,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(self) -> u32 {
         match self {
+            Self::NormalToAxis(_) => 13,
             Self::LineThroughPoint(_) => 12,
             Self::ThroughThreePoints(_) => 11,
             Self::ParallelThroughPoint(_) => 10,

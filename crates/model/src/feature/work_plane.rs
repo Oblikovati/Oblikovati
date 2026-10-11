@@ -62,6 +62,7 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
+            Self::NormalToAxis(source) => normal_axis_frame(source, resolver),
             Self::LineThroughPoint(source) => line_point_frame(source, resolver),
             Self::ThroughThreePoints(points) => three_point_frame(points, resolver),
             Self::Offset { base, distance } => shifted_frame(
@@ -155,4 +156,14 @@ fn line_point_frame(
         Default::default(),
     )
     .map_err(WorkPlaneError::Frame)
+}
+
+fn normal_axis_frame(
+    source: super::work_geometry::WorkPlaneLinePoint,
+    resolver: &impl WorkPlaneResolver,
+) -> Result<SketchPlane, WorkPlaneError> {
+    let normal = source.line.line(resolver)?.direction();
+    let origin = source.point.position(resolver)?;
+    SketchPlane::from_origin_normal(origin, normal, Default::default())
+        .map_err(WorkPlaneError::Frame)
 }

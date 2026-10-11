@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::axis_point::AxisPointPlaneConstructor;
 use super::*;
 use oblikovati_model::quantity::{Dimension, Quantity};
 pub(super) fn constructor(definition: WorkGeometryDefinition) -> Result<String, Error> {
     match definition {
+        WorkGeometryDefinition::NormalToAxis(_) => Ok(WORK_PLANE_NORMAL_TO_CURVE.0.into_owned()),
         WorkGeometryDefinition::LineThroughPoint(_) => Ok(WORK_PLANE_LINE_AND_POINT.0.into_owned()),
         WorkGeometryDefinition::ThroughThreePoints(_) => Ok(WORK_PLANE_THREE_POINTS.0.into_owned()),
         WorkGeometryDefinition::Fixed(_) => Ok(WORK_PLANE_FIXED.0.into_owned()),
@@ -30,7 +32,12 @@ pub(super) fn append_inputs(
 }
 fn reference_slots(definition: WorkGeometryDefinition) -> Option<Vec<WorkPlaneRefSlot>> {
     match definition {
-        WorkGeometryDefinition::LineThroughPoint(_) => Some(super::line_point::slots()),
+        WorkGeometryDefinition::NormalToAxis(_) => {
+            Some(AxisPointPlaneConstructor::NormalToAxis.slots())
+        }
+        WorkGeometryDefinition::LineThroughPoint(_) => {
+            Some(AxisPointPlaneConstructor::ContainsLine.slots())
+        }
         WorkGeometryDefinition::ThroughThreePoints(_) => Some(super::three_points::slots()),
         WorkGeometryDefinition::ParallelThroughPoint(_) => Some(super::parallel::slots()),
         WorkGeometryDefinition::Offset { .. } => {

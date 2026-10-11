@@ -13,6 +13,7 @@ impl WorkGeometryDefinition {
                 | Self::ParallelThroughPoint(_)
                 | Self::ThroughThreePoints(_)
                 | Self::LineThroughPoint(_)
+                | Self::NormalToAxis(_)
         ) {
             return Ok(());
         }

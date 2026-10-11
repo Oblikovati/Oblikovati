@@ -287,3 +287,6 @@ mod three_points;
 
 #[path = "datums_api/line_point.rs"]
 mod line_point;
+
+#[path = "datums_api/normal_axis.rs"]
+mod normal_axis;

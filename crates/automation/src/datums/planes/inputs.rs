@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::axis_point::AxisPointPlaneConstructor;
 use super::*;
 use oblikovati_model::feature::work_plane::{WorkPlaneOrigin, WorkPlaneReference};
 pub(in crate::datums) fn prepare(
@@ -19,11 +20,16 @@ fn plane_geometry(
     match request.kind.as_str() {
         kind if kind == WORK_PLANE_FIXED.0 => fixed_frame(request),
         kind if kind == WORK_PLANE_OFFSET.0 => offset(request, snapshot),
-        kind if kind == WORK_PLANE_LINE_AND_POINT.0 => line_point::create(request, snapshot),
+        kind if kind == WORK_PLANE_NORMAL_TO_CURVE.0 => {
+            axis_point::create(request, snapshot, AxisPointPlaneConstructor::NormalToAxis)
+        }
+        kind if kind == WORK_PLANE_LINE_AND_POINT.0 => {
+            axis_point::create(request, snapshot, AxisPointPlaneConstructor::ContainsLine)
+        }
         kind if kind == WORK_PLANE_THREE_POINTS.0 => three_points::create(request, snapshot),
         kind if kind == WORK_PLANE_PLANE_AND_POINT.0 => parallel::create(request, snapshot),
         _ => Err(Error(format!(
-            "plane constructor {:?}: expected supported {WORK_PLANE_FIXED:?}, {WORK_PLANE_OFFSET:?}, {WORK_PLANE_PLANE_AND_POINT:?}, {WORK_PLANE_THREE_POINTS:?}, or {WORK_PLANE_LINE_AND_POINT:?}",
+            "plane constructor {:?}: expected supported {WORK_PLANE_FIXED:?}, {WORK_PLANE_OFFSET:?}, {WORK_PLANE_PLANE_AND_POINT:?}, {WORK_PLANE_THREE_POINTS:?}, {WORK_PLANE_LINE_AND_POINT:?}, or {WORK_PLANE_NORMAL_TO_CURVE:?}",
             request.kind
         ))),
     }

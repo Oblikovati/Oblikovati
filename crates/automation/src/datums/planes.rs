@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::{feature::work_plane::WorkPlaneResolver, sketch::SketchPlane};
+pub(in crate::datums) mod axis_point;
 mod display;
 mod inputs;
-pub(in crate::datums) mod line_point;
 mod metadata;
 mod origins;
 pub(in crate::datums) mod parallel;

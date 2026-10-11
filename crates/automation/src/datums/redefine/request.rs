@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::planes::axis_point::{self, AxisPointPlaneConstructor as Constructor};
 use super::*;
 
 pub(super) fn prepare(
@@ -41,18 +42,18 @@ fn revise_geometry(
     definition: WorkGeometryDefinition,
     args: &RedefineWorkPlaneArgs,
 ) -> Result<PlaneGeometryRevision, Error> {
+    use WorkGeometryDefinition::*;
     let scalars = args.scalars.as_deref().unwrap_or_default();
     let repicks = args.repick.as_deref().unwrap_or_default();
     let revised = match definition {
-        WorkGeometryDefinition::LineThroughPoint(source) => {
-            planes::line_point::revise(snapshot, source, args)
+        NormalToAxis(source) => {
+            axis_point::revise(snapshot, source, args, Constructor::NormalToAxis)
         }
-        WorkGeometryDefinition::ThroughThreePoints(points) => {
-            planes::three_points::revise(snapshot, points, args)
+        LineThroughPoint(source) => {
+            axis_point::revise(snapshot, source, args, Constructor::ContainsLine)
         }
-        WorkGeometryDefinition::ParallelThroughPoint(source) => {
-            planes::parallel::revise(snapshot, source, args)
-        }
+        ThroughThreePoints(points) => planes::three_points::revise(snapshot, points, args),
+        ParallelThroughPoint(source) => planes::parallel::revise(snapshot, source, args),
         _ => {
             return prepare_offset(snapshot, definition, scalars, repicks);
         }
