@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DocumentSketchId, DocumentSketches, PlacedSketch, PlacedSketchHealth};
+use super::{
+    DocumentSketchId, DocumentSketches, PlacedSketch, PlacedSketchHealth, SketchProjectionInputs,
+    point_projection::UnavailableProjectionInputs,
+};
 use crate::{
     parameter::ParameterCollection,
-    sketch::{SketchError, SketchSolveOutcome},
+    sketch::{SketchError, SketchPoint2D, SketchSolveOutcome},
 };
 use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
 
@@ -39,6 +42,7 @@ impl DocumentSketches {
             options,
             cancelled,
             SketchSolveScope::One(sketch),
+            &UnavailableProjectionInputs,
         ))
     }
     /// Recompute independent sketches without changing the input; example: `sketches.solve(&parameters, options, || false)`.
@@ -48,7 +52,13 @@ impl DocumentSketches {
         options: SolveOptions,
         cancelled: impl FnMut() -> bool,
     ) -> DocumentSketchSolveOutcome {
-        self.solve_scope(parameters, options, cancelled, SketchSolveScope::All)
+        self.solve_scope(
+            parameters,
+            options,
+            cancelled,
+            SketchSolveScope::All,
+            &UnavailableProjectionInputs,
+        )
     }
     /// Solve only unverified or changed readers; example: `sketches.solve_pending(&parameters, options, || false)`.
     pub fn solve_pending(
@@ -57,14 +67,21 @@ impl DocumentSketches {
         options: SolveOptions,
         cancelled: impl FnMut() -> bool,
     ) -> DocumentSketchSolveOutcome {
-        self.solve_scope(parameters, options, cancelled, SketchSolveScope::Pending)
+        self.solve_scope(
+            parameters,
+            options,
+            cancelled,
+            SketchSolveScope::Pending,
+            &UnavailableProjectionInputs,
+        )
     }
-    fn solve_scope(
+    pub(crate) fn solve_scope(
         &self,
         parameters: &ParameterCollection<u64>,
         options: SolveOptions,
         mut cancelled: impl FnMut() -> bool,
         scope: SketchSolveScope,
+        inputs: &dyn SketchProjectionInputs,
     ) -> DocumentSketchSolveOutcome {
         let mut candidate = self.clone();
         let mut stopped = false;
@@ -72,7 +89,14 @@ impl DocumentSketches {
             stopped |= cancelled();
             stopped
         };
-        let reports = solve_ordered(&mut candidate, parameters, options, &mut poll, scope);
+        let reports = solve_ordered(
+            &mut candidate,
+            parameters,
+            options,
+            &mut poll,
+            scope,
+            inputs,
+        );
         let cancelled = poll();
         finish_batch(self, candidate, reports, cancelled)
     }
@@ -91,29 +115,55 @@ fn solve_ordered(
     options: SolveOptions,
     poll: &mut impl FnMut() -> bool,
     scope: SketchSolveScope,
+    inputs: &dyn SketchProjectionInputs,
 ) -> Vec<DocumentSketchSolveReport> {
     let mut reports = Vec::new();
     for placed in &mut candidate.sketches {
         if poll() {
             break;
         }
-        if !scope.requires(placed, parameters) {
-            continue;
+        if let Some(report) = solve_in_scope(placed, parameters, options, &mut *poll, scope, inputs)
+        {
+            reports.push(report);
         }
-        reports.push(solve_placed(placed, parameters, options, &mut *poll));
     }
     reports
+}
+fn solve_in_scope(
+    placed: &mut PlacedSketch,
+    parameters: &ParameterCollection<u64>,
+    options: SolveOptions,
+    poll: &mut impl FnMut() -> bool,
+    scope: SketchSolveScope,
+    inputs: &dyn SketchProjectionInputs,
+) -> Option<DocumentSketchSolveReport> {
+    if !scope.includes(placed.id) {
+        return None;
+    }
+    let projections = placed.projection_inputs(inputs);
+    if !scope.requires(placed, parameters, &projections) {
+        return None;
+    }
+    Some(solve_placed(placed, parameters, projections, options, poll))
 }
 
 fn solve_placed(
     placed: &mut PlacedSketch,
     parameters: &ParameterCollection<u64>,
+    projections: Result<Vec<SketchPoint2D>, SketchError>,
     options: SolveOptions,
     poll: &mut impl FnMut() -> bool,
 ) -> DocumentSketchSolveReport {
-    let result = placed.geometry.solve(parameters, options, poll);
+    let result = projections
+        .as_ref()
+        .map_err(Clone::clone)
+        .and_then(|anchors| {
+            placed
+                .geometry
+                .solve_with_grounded_points(parameters, anchors, options, poll)
+        });
     adopt_converged(placed, &result);
-    placed.record_evaluation(parameters, &result);
+    placed.record_evaluation(parameters, projections, &result);
     DocumentSketchSolveReport {
         sketch: placed.id,
         result,
@@ -139,17 +189,28 @@ fn finish_batch(
 }
 
 #[derive(Clone, Copy)]
-enum SketchSolveScope {
+pub(crate) enum SketchSolveScope {
     All,
     Pending,
     One(DocumentSketchId),
 }
 impl SketchSolveScope {
-    fn requires(self, placed: &PlacedSketch, parameters: &ParameterCollection<u64>) -> bool {
+    fn includes(self, sketch: DocumentSketchId) -> bool {
+        !matches!(self, Self::One(selected) if selected != sketch)
+    }
+    fn requires(
+        self,
+        placed: &PlacedSketch,
+        parameters: &ParameterCollection<u64>,
+        projections: &Result<Vec<SketchPoint2D>, SketchError>,
+    ) -> bool {
         match self {
             Self::All => true,
-            Self::One(sketch) => placed.id == sketch,
-            Self::Pending => !matches!(placed.health(parameters), PlacedSketchHealth::Current(_)),
+            Self::One(_) => true,
+            Self::Pending => !matches!(
+                placed.health_with_projection_inputs(parameters, projections),
+                PlacedSketchHealth::Current(_)
+            ),
         }
     }
 }

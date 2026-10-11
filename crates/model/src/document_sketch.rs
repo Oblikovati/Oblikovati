@@ -10,10 +10,13 @@ pub(crate) use orientation::UnavailableSketchAxes;
 pub use orientation::{SketchAxisReference, SketchAxisResolver, SketchOrientationDefinition};
 mod placement;
 pub use placement::SketchPlacement;
+mod point_projection;
+pub use point_projection::{SketchPointProjection, SketchProjectionInputs};
 mod readiness;
 mod recompute;
 pub use health::{PlacedSketchHealth, SketchEvaluation, SketchSolveDiagnostics};
 pub use readiness::{SketchReadinessCause, SketchReadinessError};
+pub(crate) use recompute::SketchSolveScope;
 pub use recompute::{
     DocumentSketchRecompute, DocumentSketchSolveOutcome, DocumentSketchSolveReport,
 };
@@ -27,6 +30,7 @@ pub struct PlacedSketch {
     name: String,
     placement: SketchPlacement,
     orientation: Option<SketchOrientationDefinition>,
+    point_projections: Vec<SketchPointProjection>,
     geometry: Sketch2D,
     evaluation: Option<health::SketchEvaluationStamp>,
 }
@@ -49,6 +53,8 @@ pub struct PlacedSketchRecipe {
     pub plane_feature: Option<crate::feature::FeatureId>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub orientation: Option<SketchOrientationDefinition>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub point_projections: Vec<SketchPointProjection>,
     pub geometry: SketchRecipe,
 }
 /// Collection schema and records; the enclosing document owns reservation marks.
@@ -70,6 +76,7 @@ impl PlacedSketch {
             name: name.into(),
             placement,
             orientation: None,
+            point_projections: Vec::new(),
             geometry,
             evaluation: None,
         }
@@ -98,8 +105,21 @@ impl PlacedSketch {
             plane_options,
             plane_feature,
             orientation: self.orientation,
+            point_projections: self.point_projections.clone(),
             geometry: self.geometry.recipe(),
         }
+    }
+    fn recipe_version(&self) -> u32 {
+        if !self.point_projections.is_empty() {
+            return 4;
+        }
+        if self.orientation.is_some() {
+            return 3;
+        }
+        if matches!(self.placement, SketchPlacement::WorkPlane(_)) {
+            return 2;
+        }
+        1
     }
 }
 impl DocumentSketches {
@@ -115,6 +135,7 @@ impl DocumentSketches {
                         && first.name == second.name
                         && first.placement.same_recipe(second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
+                        && first.point_projections == second.point_projections
                         && first.geometry.same_recipe(&second.geometry)
                 })
     }
@@ -186,6 +207,7 @@ impl DocumentSketches {
     ) -> Result<(), SketchError> {
         let index = self.index(id)?;
         self.require_unique_entities(Some(id), &geometry)?;
+        point_projection::validate_bindings(&geometry, &self.sketches[index].point_projections)?;
         self.sketches[index].geometry = geometry;
         self.sketches[index].evaluation = None;
         Ok(())
@@ -208,27 +230,17 @@ impl DocumentSketches {
         }
     }
     fn placement_recipe_version(&self) -> u32 {
-        if self
-            .sketches
+        self.sketches
             .iter()
-            .any(|placed| placed.orientation.is_some())
-        {
-            return 3;
-        }
-        if self
-            .sketches
-            .iter()
-            .any(|placed| matches!(placed.placement, SketchPlacement::WorkPlane(_)))
-        {
-            return 2;
-        }
-        1
+            .map(PlacedSketch::recipe_version)
+            .max()
+            .unwrap_or(1)
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=3) {
+        if !matches!(recipe.version, 1..=4) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1, 2, or 3",
+                "document sketch recipe version {}: expected 1, 2, 3, or 4",
                 recipe.version
             )));
         }
@@ -238,6 +250,7 @@ impl DocumentSketches {
             let geometry = Sketch2D::from_recipe(&sketch.geometry)?;
             restored.insert_placed(sketch.id, &sketch.name, placement, geometry)?;
             orientation::restore_orientation(&mut restored, sketch, recipe.version)?;
+            point_projection::restore_bindings(&mut restored, sketch, recipe.version)?;
         }
         Ok(restored)
     }
@@ -303,6 +316,7 @@ impl PartialEq for PlacedSketch {
             && self.name == other.name
             && self.placement == other.placement
             && self.orientation == other.orientation
+            && self.point_projections == other.point_projections
             && self.geometry == other.geometry
     }
 }

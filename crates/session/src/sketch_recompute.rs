@@ -40,12 +40,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         &self,
         sketch: DocumentSketchId,
     ) -> Result<ConstraintStructure, SketchError> {
-        let snapshot = self.snapshot();
-        snapshot
-            .sketches
-            .get(sketch)?
-            .geometry()
-            .analyze(&snapshot.parameters, self.sketch_options.rank_tolerance)
+        self.snapshot()
+            .analyze_document_sketch(sketch, self.sketch_options.rank_tolerance)
     }
     /// Recompute within normal history, joining an open edit group; example: `session.recompute_sketches(options, || false)?`.
     pub fn recompute_sketches(
@@ -56,9 +52,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.run_with_recompute(
             "Recompute sketches",
             |snapshot, _| {
-                let outcome = snapshot
-                    .sketches
-                    .solve(&snapshot.parameters, options, cancelled);
+                let outcome = snapshot.solve_document_sketches(options, cancelled);
                 snapshot.sketches = outcome.candidate;
                 Ok(outcome.report)
             },
@@ -74,9 +68,7 @@ fn solve_selected<R, E>(
     cancelled: impl FnMut() -> bool,
     project: impl FnOnce(SketchSolveProjectionInput<'_>) -> Result<R, E>,
 ) -> Result<R, E> {
-    let outcome = snapshot
-        .sketches
-        .solve_one(sketch, &snapshot.parameters, options, cancelled);
+    let outcome = snapshot.solve_one_document_sketch(sketch, options, cancelled);
     project_selected(snapshot, outcome, project)
 }
 
@@ -111,9 +103,7 @@ impl SketchUpdateMode {
     }
 }
 pub(crate) fn update_pending_sketches(snapshot: &mut DocumentSnapshot, options: SolveOptions) {
-    let outcome = snapshot
-        .sketches
-        .solve_pending(&snapshot.parameters, options, || false);
+    let outcome = snapshot.solve_pending_document_sketches(options, || false);
     snapshot.sketches = outcome.candidate;
 }
 pub(crate) fn apply_recipe_edit<R, E>(

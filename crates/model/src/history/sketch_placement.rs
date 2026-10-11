@@ -105,7 +105,12 @@ impl DocumentSnapshot {
             .get(id)
             .map_err(DocumentSketchPlacementError::Sketch)?;
         let verification = sketch
-            .require_fully_constrained(&self.parameters)
+            .require_fully_constrained_with_projection_inputs(
+                &self.parameters,
+                &Ok(self
+                    .resolve_sketch_projected_points(id)
+                    .map_err(DocumentSketchPlacementError::Sketch)?),
+            )
             .map_err(DocumentSketchPlacementError::Verification)?;
         Ok(ResolvedDocumentSketch {
             sketch,

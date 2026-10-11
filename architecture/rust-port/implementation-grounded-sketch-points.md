@@ -38,6 +38,6 @@ ordinary-sketch corpus tests also exercise the shared path.
 
 This numerical input seam is ready for the
 [current datum projection query](implementation-sketch-point-projection.md).
-Persisted source bindings, source freshness, session recompute and analysis,
-automatic origin projection, and `sketch.create` routing remain to port.
+It now serves [owned bindings and session recompute](implementation-associative-point-projections.md).
+Automatic origin projection preferences and `sketch.create` routing remain to port.
 This step does not establish native application or kernel acceptance.

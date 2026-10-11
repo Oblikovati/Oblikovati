@@ -423,3 +423,6 @@ mod delete;
 
 #[path = "sketches/orientation.rs"]
 mod orientation;
+
+#[path = "sketches/point_projection.rs"]
+mod point_projection;

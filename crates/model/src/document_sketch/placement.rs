@@ -34,7 +34,7 @@ impl SketchPlacement {
                 Ok(Self::WorkPlane(feature))
             }
             shape => Err(SketchError::Definition(format!(
-                "sketch {:?} placement {shape:?} in recipe version {version}: expected a fixed frame with options, or one nonzero feature ID in version 2 or 3",
+                "sketch {:?} placement {shape:?} in recipe version {version}: expected a fixed frame with options, or one nonzero feature ID in version 2, 3, or 4",
                 recipe.id
             ))),
         }
@@ -54,6 +54,11 @@ impl PlacedSketch {
             .map(FeatureReadKey::Parameter)
             .collect();
         keys.extend(self.placement_read_keys());
+        keys.extend(
+            self.point_projections
+                .iter()
+                .filter_map(|binding| binding.read_key()),
+        );
         FeatureReadFootprint::new(keys, false)
     }
     pub(crate) fn placement_read_keys(&self) -> Vec<FeatureReadKey> {
