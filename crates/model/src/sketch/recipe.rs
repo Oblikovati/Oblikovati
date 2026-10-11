@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses.
-pub const SKETCH_RECIPE_VERSION: u32 = 7;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors.
+pub const SKETCH_RECIPE_VERSION: u32 = 8;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -37,6 +37,7 @@ impl Sketch2D {
         self.capture_recipe_schema(&mut recipe);
         self.capture_dimension_settings_schema(&mut recipe);
         self.capture_ellipse_schema(&mut recipe);
+        self.capture_ground_schema(&mut recipe);
         recipe
     }
     fn geometry_recipe(&self) -> SketchRecipe {
@@ -80,13 +81,9 @@ impl Sketch2D {
     }
     /// Restore into a fresh owner after validation; example: `let sketch = Sketch2D::from_recipe(&recipe)?;`.
     pub fn from_recipe(recipe: &SketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=SKETCH_RECIPE_VERSION) {
-            return Err(SketchError::Definition(format!(
-                "sketch recipe version {}: expected 1 through {SKETCH_RECIPE_VERSION}",
-                recipe.version
-            )));
-        }
+        require_recipe_version(recipe.version)?;
         let mut sketch = Self::default();
+        super::ground_constraint::require_ground_schema(recipe)?;
         sketch.restore_geometry(recipe)?;
         sketch.restore_ellipses(recipe)?;
         sketch.restore_entity_order(recipe)?;
@@ -122,6 +119,15 @@ impl Sketch2D {
         }
         Ok(())
     }
+}
+
+fn require_recipe_version(version: u32) -> Result<(), SketchError> {
+    if !matches!(version, 1..=SKETCH_RECIPE_VERSION) {
+        return Err(SketchError::Definition(format!(
+            "sketch recipe version {version}: expected 1 through {SKETCH_RECIPE_VERSION}"
+        )));
+    }
+    Ok(())
 }
 
 fn planar_recipe_version(ordered: bool, construction: bool, centerline: bool) -> u32 {

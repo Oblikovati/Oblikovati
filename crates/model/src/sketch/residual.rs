@@ -8,7 +8,7 @@ use oblikovati_solve::{
     residual::{ResidualError, ResidualSource},
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(super) enum PlanarEquation {
     Angle {
         target: f64,
@@ -33,6 +33,7 @@ pub(super) enum PlanarEquation {
     Coincident,
     Coordinate(usize),
     Fix([f64; 2]),
+    Ground(Vec<[f64; 2]>),
     Midpoint,
     PointOnLine,
     Offset {
@@ -74,6 +75,7 @@ pub(super) struct PreparedConstraint {
 impl PreparedConstraint {
     pub fn equations(&self) -> usize {
         match self.equation {
+            PlanarEquation::Ground(ref positions) => positions.len() * 2,
             PlanarEquation::AxisCollinear { .. }
             | PlanarEquation::ArcMidpoint(_)
             | PlanarEquation::Coincident
@@ -85,6 +87,7 @@ impl PreparedConstraint {
     }
     fn variable_count(&self) -> usize {
         match self.equation {
+            PlanarEquation::Ground(ref positions) => positions.len() * 2,
             PlanarEquation::AxisRelation { layouts, .. } => {
                 layouts.iter().map(|layout| layout.width()).sum()
             }
@@ -200,10 +203,12 @@ impl ResidualSource for PreparedConstraint {
             PlanarEquation::Coordinate(axis) => {
                 Ok(vec![variables[axis].minus(&variables[axis + 2])?])
             }
-            PlanarEquation::Fix(position) => Ok(vec![
-                variables[0].shifted(-position[0])?,
-                variables[1].shifted(-position[1])?,
-            ]),
+            PlanarEquation::Fix(position) => {
+                super::ground_constraint::coordinate_residuals(variables, &[position])
+            }
+            PlanarEquation::Ground(ref positions) => {
+                super::ground_constraint::coordinate_residuals(variables, positions)
+            }
             PlanarEquation::Midpoint => midpoint(variables),
             PlanarEquation::PointOnLine => line_residual::point_on_line(variables),
             PlanarEquation::Offset { target, side } => {

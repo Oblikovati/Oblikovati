@@ -118,6 +118,9 @@ fn equation(
             quarter_turn: major_axis == vertical,
         },
         PlanarConstraint::Fix { position, .. } => PlanarEquation::Fix(position),
+        PlanarConstraint::Ground { ref points } => {
+            PlanarEquation::Ground(points.iter().map(|point| point.position).collect())
+        }
         PlanarConstraint::ArcMidpoint { arc, .. } => {
             PlanarEquation::ArcMidpoint(sketch.arc(arc)?.counter_clockwise)
         }

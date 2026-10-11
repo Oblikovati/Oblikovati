@@ -24,6 +24,10 @@ pub(in crate::sketches) fn require(relation: &PlanarConstraint) -> Result<Constr
 }
 fn classify(relation: &PlanarConstraint) -> Option<ConstraintShape> {
     match relation {
+        Ground { points } => Some((
+            oblikovati_api::types::GEO_CONSTRAINT_GROUND,
+            points.iter().map(|point| point.id).collect(),
+        )),
         EllipseAxisAlignment {
             ellipse, vertical, ..
         } => single(axis_kind(*vertical), *ellipse),
@@ -31,16 +35,20 @@ fn classify(relation: &PlanarConstraint) -> Option<ConstraintShape> {
         AxisRelation {
             axes,
             perpendicular,
-        } => pair(
-            if *perpendicular {
-                PERPENDICULAR
-            } else {
-                PARALLEL
-            },
-            axes.map(|axis| axis.entity()),
-        ),
+        } => paired_axis_shape(axes, *perpendicular),
         _ => standard_shape(relation),
     }
+}
+fn paired_axis_shape(
+    axes: &[oblikovati_model::sketch::SketchAxisOperand; 2],
+    perpendicular: bool,
+) -> Option<ConstraintShape> {
+    let kind = if perpendicular {
+        PERPENDICULAR
+    } else {
+        PARALLEL
+    };
+    pair(kind, axes.map(|axis| axis.entity()))
 }
 fn standard_shape(relation: &PlanarConstraint) -> Option<ConstraintShape> {
     match relation {

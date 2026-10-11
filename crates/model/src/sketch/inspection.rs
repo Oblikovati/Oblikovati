@@ -84,9 +84,12 @@ fn fixed_points(sketch: &Sketch2D, anchors: &[SketchPoint2D]) -> BTreeSet<Sketch
     sketch
         .constraints()
         .iter()
-        .filter_map(|constraint| match constraint.relation {
-            PlanarConstraint::Fix { point, .. } => Some(point),
-            _ => None,
+        .flat_map(|constraint| match constraint.relation {
+            PlanarConstraint::Fix { point, .. } => vec![point],
+            PlanarConstraint::Ground { ref points } => {
+                points.iter().map(|point| point.id).collect()
+            }
+            _ => Vec::new(),
         })
         .chain(anchors.iter().map(|point| point.id))
         .collect()

@@ -261,7 +261,7 @@ fn circle_case(name: &str, scale: f64) -> (PreparedConstraint, PreparedConstrain
         _ => panic!("unexpected circle fixture {name}"),
     };
     let projected = PreparedConstraint {
-        equation,
+        equation: equation.clone(),
         projection: Some(CircularProjection {
             prefix,
             frames,

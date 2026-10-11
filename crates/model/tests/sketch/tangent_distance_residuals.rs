@@ -195,7 +195,7 @@ fn shared_metric_without_radius_driver_retains_lean_and_uses_simple_tangent_root
         projection: None,
         variables: (0..7).collect(),
     };
-    let row = source(equation)
+    let row = source(equation.clone())
         .evaluate(&DualNumber::seed(&input).unwrap())
         .unwrap();
     assert_eq!(row[0].gradient()[4], 1.0);

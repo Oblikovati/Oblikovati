@@ -37,6 +37,10 @@ fn same_constraints(first: &[SketchConstraint], second: &[SketchConstraint]) -> 
 fn same_relation(first: &PlanarConstraint, second: &PlanarConstraint) -> bool {
     match (first, second) {
         (
+            PlanarConstraint::Ground { points: first },
+            PlanarConstraint::Ground { points: second },
+        ) => same_points(first, second),
+        (
             PlanarConstraint::Fix {
                 point: first_point,
                 position: first,

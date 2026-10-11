@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
     CircleContact, LineContactSide, PlanarConstraint, Sketch2D, SketchConstraintId, SketchEntityId,
-    SketchError, dependencies::dimension_parameter,
+    SketchError, dependencies::dimension_parameter, ground_constraint::capture_entity_ground,
 };
 /// Typed geometric intent; seed-dependent relations capture current owner coordinates.
 #[derive(Clone, Debug, PartialEq)]
@@ -9,6 +9,9 @@ pub enum SketchGeometricConstraintCreation {
     Relation(PlanarConstraint),
     Fix {
         point: SketchEntityId,
+    },
+    Ground {
+        entity: SketchEntityId,
     },
     LineTangent {
         line: SketchEntityId,
@@ -33,6 +36,7 @@ impl SketchGeometricConstraintCreation {
         // These temporary records validate ownership only; append selects and retains the real seed branch.
         Ok(match self {
             Self::Relation(relation) => relation.clone(),
+            Self::Ground { entity } => capture_entity_ground(geometry, *entity)?,
             Self::Fix { point } => PlanarConstraint::Fix {
                 point: *point,
                 position: geometry.point(*point)?.position,
@@ -58,6 +62,9 @@ impl SketchGeometricConstraintCreation {
     ) -> Result<(), SketchError> {
         match self {
             Self::Relation(relation) => geometry.add_constraint(id, relation.clone()),
+            Self::Ground { entity } => {
+                geometry.add_constraint(id, capture_entity_ground(geometry, *entity)?)
+            }
             Self::Fix { point } => {
                 let position = geometry.point(*point)?.position;
                 geometry.add_constraint(
@@ -78,12 +85,13 @@ fn require_direct_relation(relation: &PlanarConstraint) -> Result<(), SketchErro
         || matches!(
             relation,
             PlanarConstraint::Fix { .. }
+                | PlanarConstraint::Ground { .. }
                 | PlanarConstraint::LineTangent { .. }
                 | PlanarConstraint::CircularTangent { .. }
         )
     {
         return Err(SketchError::Definition(format!(
-            "geometric creation {relation:?}: expected a seed-independent geometric relation; fix and tangent require typed current-seed inputs"
+            "geometric creation {relation:?}: expected a seed-independent geometric relation; fix, ground, and tangent require typed current-seed inputs"
         )));
     }
     Ok(())

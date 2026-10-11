@@ -45,9 +45,9 @@ impl Sketch2D {
     pub(crate) fn restore_ellipses(&mut self, recipe: &SketchRecipe) -> Result<(), SketchError> {
         match (recipe.version, &recipe.ellipses) {
             (1..=6, None) => Ok(()),
-            (7, Some(shapes)) => shapes.iter().try_for_each(|shape| self.add_ellipse(*shape)),
+            (7..=8, Some(shapes)) => shapes.iter().try_for_each(|shape| self.add_ellipse(*shape)),
             shape => Err(SketchError::Definition(format!(
-                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in version 7"
+                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in versions 7-8"
             ))),
         }
     }

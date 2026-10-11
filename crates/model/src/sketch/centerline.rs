@@ -57,9 +57,9 @@ impl Sketch2D {
     pub(super) fn restore_centerlines(&mut self, recipe: &SketchRecipe) -> Result<(), SketchError> {
         match (recipe.version, &recipe.centerlines) {
             (1..=3, None) => Ok(()),
-            (4..=7, Some(ids)) => self.adopt_centerlines(ids),
+            (4..=8, Some(ids)) => self.adopt_centerlines(ids),
             shape => Err(SketchError::Definition(format!(
-                "centerline recipe {shape:?}: expected no metadata in versions 1-3 or explicit line IDs in versions 4-7"
+                "centerline recipe {shape:?}: expected no metadata in versions 1-3 or explicit line IDs in versions 4-8"
             ))),
         }
     }

@@ -40,6 +40,9 @@ fn single_input(
     operand: &Operand,
     request: &AddConstraintArgs,
 ) -> Option<Creation> {
+    if *kind == GEO_CONSTRAINT_GROUND {
+        return Some(Creation::Ground { entity: operand.id });
+    }
     if operand.kind == SKETCH_ENTITY_ELLIPSE {
         let major_axis = selected_major_axis(&request.use_ellipse_major_axis);
         return ellipse_alignment(kind, operand.id, major_axis);

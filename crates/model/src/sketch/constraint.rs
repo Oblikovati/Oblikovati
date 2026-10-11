@@ -54,6 +54,9 @@ pub enum PlanarConstraint {
         point: SketchEntityId,
         position: [f64; 2],
     },
+    Ground {
+        points: Vec<super::SketchPoint2D>,
+    },
     ArcMidpoint {
         point: SketchEntityId,
         arc: SketchEntityId,
@@ -179,6 +182,9 @@ impl Sketch2D {
             self.point(point)?;
         }
         self.validate_contact_ownership(relation)?;
+        if let PlanarConstraint::Ground { points } = relation {
+            super::ground_constraint::validate_anchors(points)?;
+        }
         if let PlanarConstraint::Fix { position, .. } = relation {
             require_position(*position)?;
         }
@@ -194,6 +200,7 @@ impl Sketch2D {
             | PlanarConstraint::Vertical { points }
             | PlanarConstraint::Distance { points, .. } => points.to_vec(),
             PlanarConstraint::Fix { point, .. } => vec![*point],
+            PlanarConstraint::Ground { points } => points.iter().map(|point| point.id).collect(),
             PlanarConstraint::LineHorizontal { line } | PlanarConstraint::LineVertical { line } => {
                 self.line(*line)?.endpoints.to_vec()
             }

@@ -46,3 +46,7 @@ not determine its physical material properties.
 **Datum**: A reference plane, axis, or point used to locate design geometry.
 A construction datum is tied to its consumers and can be removed when its last
 consumer is removed.
+
+**Ground constraint**: A sketch relation that holds each defining point of an
+entity at its current position. Grounding an ellipse holds its center, while
+its radii and orientation remain free.
