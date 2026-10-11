@@ -31,7 +31,7 @@ impl Sketch2D {
         for id in entities {
             let shape = catalogue.get(id).ok_or_else(|| {
                 SketchError::Definition(format!(
-                    "translation entity {id:?}: expected an owned point, line, circle, arc, or ellipse"
+                    "translation entity {id:?}: expected an owned sketch entity with defining points"
                 ))
             })?;
             selected.extend(shape.points());

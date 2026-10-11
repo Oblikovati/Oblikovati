@@ -4,19 +4,22 @@ use crate::sketch::{
     SketchArc2D, SketchCircle2D, SketchEllipse2D, SketchLine2D, variables::SketchVariable,
 };
 use oblikovati_api::types::{
-    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_ELLIPSE, SKETCH_ENTITY_LINE,
-    SKETCH_ENTITY_POINT, SketchEntityKind,
+    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_CONTROL_POINT_SPLINE,
+    SKETCH_ENTITY_ELLIPSE, SKETCH_ENTITY_LINE, SKETCH_ENTITY_OFFSET_SPLINE, SKETCH_ENTITY_POINT,
+    SKETCH_ENTITY_SPLINE, SketchEntityKind,
 };
 use std::collections::BTreeMap;
 #[derive(Clone, Copy)]
-pub(super) enum OwnedSketchGeometry {
+pub(super) enum OwnedSketchGeometry<'a> {
     Point(SketchPoint2D),
     Line(SketchLine2D),
     Circle(SketchCircle2D),
     Arc(SketchArc2D),
     Ellipse(SketchEllipse2D),
+    Spline(&'a super::SketchSpline2D),
+    OffsetSpline(super::SketchOffsetSpline2D),
 }
-impl OwnedSketchGeometry {
+impl OwnedSketchGeometry<'_> {
     pub fn id(self) -> SketchEntityId {
         match self {
             Self::Point(shape) => shape.id,
@@ -24,6 +27,8 @@ impl OwnedSketchGeometry {
             Self::Circle(shape) => shape.id,
             Self::Arc(shape) => shape.id,
             Self::Ellipse(shape) => shape.id(),
+            Self::Spline(shape) => shape.id(),
+            Self::OffsetSpline(shape) => shape.id(),
         }
     }
     pub fn kind(self) -> SketchEntityKind {
@@ -33,6 +38,8 @@ impl OwnedSketchGeometry {
             Self::Circle(_) => SKETCH_ENTITY_CIRCLE,
             Self::Arc(_) => SKETCH_ENTITY_ARC,
             Self::Ellipse(_) => SKETCH_ENTITY_ELLIPSE,
+            Self::Spline(shape) => spline_entity_kind(shape.kind()),
+            Self::OffsetSpline(_) => SKETCH_ENTITY_OFFSET_SPLINE,
         }
     }
     pub fn points(self) -> Vec<SketchEntityId> {
@@ -42,6 +49,8 @@ impl OwnedSketchGeometry {
             Self::Circle(shape) => vec![shape.center],
             Self::Arc(shape) => vec![shape.center, shape.start, shape.end],
             Self::Ellipse(shape) => vec![shape.center()],
+            Self::Spline(shape) => shape.points().to_vec(),
+            Self::OffsetSpline(_) => Vec::new(),
         }
     }
     pub fn radius(self, sketch: &Sketch2D) -> Result<f64, SketchError> {
@@ -59,6 +68,9 @@ impl OwnedSketchGeometry {
         if let Self::Ellipse(shape) = self {
             variables.extend(super::ellipse::variables::ellipse_variables(shape.id()));
         }
+        if let Self::OffsetSpline(shape) = self {
+            variables.push(SketchVariable::OffsetSpline(shape.id()));
+        }
         variables
             .into_iter()
             .map(|variable| sketch.variable_column(variable))
@@ -66,7 +78,7 @@ impl OwnedSketchGeometry {
     }
 }
 
-pub(super) fn catalogue(sketch: &Sketch2D) -> BTreeMap<SketchEntityId, OwnedSketchGeometry> {
+pub(super) fn catalogue(sketch: &Sketch2D) -> BTreeMap<SketchEntityId, OwnedSketchGeometry<'_>> {
     linear_shapes(sketch)
         .chain(circular_shapes(sketch))
         .chain(
@@ -76,10 +88,11 @@ pub(super) fn catalogue(sketch: &Sketch2D) -> BTreeMap<SketchEntityId, OwnedSket
                 .copied()
                 .map(OwnedSketchGeometry::Ellipse),
         )
+        .chain(spline_shapes(sketch))
         .map(|shape| (shape.id(), shape))
         .collect()
 }
-fn linear_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry> + '_ {
+fn linear_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry<'_>> + '_ {
     sketch
         .points()
         .iter()
@@ -93,11 +106,32 @@ fn linear_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry>
                 .map(OwnedSketchGeometry::Line),
         )
 }
-fn circular_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry> + '_ {
+fn circular_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry<'_>> + '_ {
     sketch
         .circles()
         .iter()
         .copied()
         .map(OwnedSketchGeometry::Circle)
         .chain(sketch.arcs().iter().copied().map(OwnedSketchGeometry::Arc))
+}
+
+fn spline_shapes(sketch: &Sketch2D) -> impl Iterator<Item = OwnedSketchGeometry<'_>> + '_ {
+    sketch
+        .splines()
+        .iter()
+        .map(OwnedSketchGeometry::Spline)
+        .chain(
+            sketch
+                .offset_splines()
+                .iter()
+                .copied()
+                .map(OwnedSketchGeometry::OffsetSpline),
+        )
+}
+
+fn spline_entity_kind(kind: super::SketchSplineKind) -> SketchEntityKind {
+    match kind {
+        super::SketchSplineKind::Control => SKETCH_ENTITY_CONTROL_POINT_SPLINE,
+        super::SketchSplineKind::Fit { .. } => SKETCH_ENTITY_SPLINE,
+    }
 }

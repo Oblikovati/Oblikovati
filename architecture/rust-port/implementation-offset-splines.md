@@ -1,4 +1,4 @@
-# Native offset-spline port — initial R3 analytic adapter
+# Native offset-spline port — partial R3
 
 Tracking: [#3789](https://github.com/Oblikovati/Oblikovati/issues/3789).
 Decision: [ADR-0016](../decisions/ADR-0016-derived-sketch-curves.md).
@@ -34,13 +34,41 @@ Run `cargo test --locked -p oblikovati-martensite --test planar_spline` or the f
 `make gate`. This proves the analytic adapter for these representations; it does
 not prove sketch spline ownership or profile-to-B-rep evaluation.
 
+## Native ownership and storage
+
+The sketch now owns `SketchSpline2D` parent records with shared defining-point
+references, fit/control intent, fit method, and closure. Offset records resolve
+one exact owned spline parent and retain a finite signed working distance.
+Adoption validates all references and cross-kind identity collisions before
+changing the owner. Control and fit parents use their distinct released API
+kinds; offsets have no defining points of their own, matching Go `ShapePoints`.
+
+Defining points use the existing coordinate variables. Another parent with
+those same point references adds no duplicate coordinates. Each offset adds one
+signed-distance column after existing ellipse columns. Candidate writeback
+validates a finite distance and preserves the input owner on failure. Grounding
+parent defining points leaves the offset's one freedom. This is ownership/DOF
+acceptance, not offset-distance driving or curve fitting acceptance.
+
+Ordered inspection, construction/profile candidate selection, and translation
+include parents and offsets. Translation changes each selected defining point
+once; selecting an offset does not translate its parent implicitly. Planar
+schema 10 records explicit parent and offset lists and the existing metadata.
+Older schemas cannot carry these new fields. Save/restore resolves parents
+before offsets. History compares signed-distance bits, including signed zero.
+
+Model tests cover sharing, DOF, grounding, kinds, translation, invalid ownership,
+writeback and schema refusal/round-trip. Native package tests preserve IDs,
+roles and distance in part and assembly packages and refuse identity marks below
+any parent, offset or defining point. No API creation constructor or general
+fit/handle evaluation is claimed by these ownership tests.
+
 ## Remaining port
 
 Preserve the Go fit/control distinction, periodic closure, public fit methods and
 active handle rules. The Go parent recipe stores shared defining points. Required
-construction/fitting extensions belong in Martensite. The Rust sketch must own
-those points and parent IDs, capture the signed offset as one additional DOF,
-use the existing scalar magnitude dimension path, and preserve the selected side.
+construction/fitting extensions belong in Martensite. The next sketch step must bind the owned signed-distance column to the existing
+scalar magnitude dimension path and preserve the selected side during driving.
 
 Keep #3789 open until typed ownership, solver/Jacobian and degenerates, canonical
 API creation/edit/deletion, both document owners, live/reference formulas and

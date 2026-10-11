@@ -9,6 +9,7 @@ pub(super) enum SketchVariable {
         axis: usize,
     },
     Radius(SketchEntityId),
+    OffsetSpline(SketchEntityId),
     Ellipse {
         ellipse: SketchEntityId,
         component: super::ellipse::variables::EllipseComponent,
@@ -38,6 +39,7 @@ impl Sketch2D {
             .flat_map(|point| point.position)
             .chain(self.circles.iter().map(|circle| circle.radius))
             .chain(self.ellipse_values())
+            .chain(self.offset_splines.iter().map(|offset| offset.distance()))
             .collect()
     }
     pub(super) fn point_variables(&self, points: &[SketchEntityId]) -> Vec<SketchVariable> {
@@ -64,6 +66,7 @@ impl Sketch2D {
             }
             SketchVariable::Coordinate { point, axis } => self.point_column(point, axis),
             SketchVariable::Radius(circle) => self.circle_column(circle),
+            SketchVariable::OffsetSpline(offset) => self.offset_spline_column(offset),
         }
     }
     fn point_column(&self, point: SketchEntityId, axis: usize) -> Result<usize, SketchError> {
@@ -92,7 +95,8 @@ impl Sketch2D {
     pub(super) fn candidate_values(&self, values: &[f64]) -> Result<Self, SketchError> {
         let point_count = self.points.len() * 2;
         let ellipse_start = point_count + self.circles.len();
-        let expected = ellipse_start + self.ellipses.len() * 3;
+        let offset_start = self.offset_spline_start();
+        let expected = offset_start + self.offset_splines.len();
         if values.len() != expected {
             return Err(SketchError::Definition(format!(
                 "sketch candidate has {} variables: expected {expected} coordinate/radius values",
@@ -102,7 +106,8 @@ impl Sketch2D {
         let mut candidate = self.clone();
         candidate.apply_point_candidates(&values[..point_count]);
         candidate.apply_circle_candidates(&values[point_count..ellipse_start])?;
-        candidate.apply_ellipse_values(&values[ellipse_start..])?;
+        candidate.apply_ellipse_values(&values[ellipse_start..offset_start])?;
+        candidate.apply_offset_values(&values[offset_start..])?;
         Ok(candidate)
     }
     fn apply_point_candidates(&mut self, values: &[f64]) {

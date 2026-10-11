@@ -88,3 +88,6 @@ mod construction;
 
 #[path = "package_entity_order/ellipse.rs"]
 mod ellipse;
+
+#[path = "package_entity_order/spline.rs"]
+mod spline;

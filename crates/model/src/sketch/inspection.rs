@@ -73,7 +73,7 @@ fn inspect_in_order(
         .map(|id| {
             let shape = shapes.get(id).ok_or_else(|| {
                 SketchError::Definition(format!(
-                    "sketch entity {id:?}: expected an owned point, line, circle, or arc"
+                    "sketch entity {id:?}: expected an owned sketch geometry value"
                 ))
             })?;
             inspect_shape(sketch, *shape, free, fixed)
@@ -96,7 +96,7 @@ fn fixed_points(sketch: &Sketch2D, anchors: &[SketchPoint2D]) -> BTreeSet<Sketch
 }
 fn inspect_shape(
     sketch: &Sketch2D,
-    shape: OwnedSketchGeometry,
+    shape: OwnedSketchGeometry<'_>,
     free: &[bool],
     fixed: &BTreeSet<SketchEntityId>,
 ) -> Result<SketchEntityInspection, SketchError> {
