@@ -47,3 +47,6 @@ fn free_count(addin: &mut LoadedAddIn) -> usize {
         .parse()
         .unwrap()
 }
+
+#[path = "support/resources.rs"]
+mod resources;

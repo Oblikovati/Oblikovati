@@ -2,6 +2,7 @@
 use std::{collections::BTreeMap, ffi::CStr, sync::{Mutex, OnceLock, atomic::{AtomicUsize, Ordering}}};
 static CLEANUP_CALLBACKS: Mutex<Option<(ffi::ObkHostCall, ffi::ObkHostFree)>> = Mutex::new(None);
 static CLEANUPS: AtomicUsize = AtomicUsize::new(0);
+static AFFINITY: Mutex<Option<std::thread::ThreadId>> = Mutex::new(None);
 static RELEASES: AtomicUsize = AtomicUsize::new(0);
 #[derive(Default)]
 struct FixtureBuffers { live: BTreeMap<usize, Box<[u8]>>, retired: Vec<Box<[u8]>> }
@@ -11,6 +12,7 @@ fn fixture_buffers() -> &'static Mutex<FixtureBuffers> {
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn ObkAddInActivate(call: Option<ffi::ObkHostCall>, free: Option<ffi::ObkHostFree>) -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
     if cfg!(deactivate_echo) {
         let (Some(call), Some(free)) = (call, free) else { return ffi::OBK_ERR; };
         *CLEANUP_CALLBACKS.lock().unwrap() = Some((call, free));
@@ -21,6 +23,7 @@ pub extern "C" fn ObkAddInActivate(call: Option<ffi::ObkHostCall>, free: Option<
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn ObkAddInDeactivate() -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
     if cfg!(deactivate_echo) {
         let callbacks = *CLEANUP_CALLBACKS.lock().unwrap();
         let Some((call, free)) = callbacks else { return ffi::OBK_ERR; };
@@ -33,6 +36,7 @@ pub extern "C" fn ObkAddInDeactivate() -> c_int {
 #[cfg(not(missing_notify))]
 #[unsafe(no_mangle)]
 pub extern "C" fn ObkAddInNotify(pointer: *const u8, length: c_int) -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
     if cfg!(notify_error) || length < 0 { return ffi::OBK_ERR; }
     if (length == 0) != pointer.is_null() { return ffi::OBK_ERR; }
     ffi::OBK_OK
@@ -48,6 +52,7 @@ pub unsafe extern "C" fn ObkFree(pointer: *mut u8) {
 #[cfg(automation)]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ObkAddInAutomation(method: *const c_char, request: *const u8, length: c_int, reply: *mut *mut u8, reply_length: *mut c_int) -> c_int {
+    if cfg!(check_affinity) && !fixture_thread_matches() { return ffi::OBK_ERR; }
     let name = unsafe { CStr::from_ptr(method) }.to_bytes();
     if name == b"null_nonzero" { unsafe { *reply = std::ptr::null_mut(); *reply_length = 3; } return ffi::OBK_OK; }
     if name == b"empty" { unsafe { *reply = std::ptr::null_mut(); *reply_length = 0; } return ffi::OBK_OK; }
@@ -80,4 +85,10 @@ unsafe fn fixture_host_echo(call: Option<ffi::ObkHostCall>, free: Option<ffi::Ob
     if !response.is_null() { unsafe { free(response) }; }
     if status == ffi::OBK_OK && copied == b"ping" { return ffi::OBK_OK; }
     ffi::OBK_ERR
+}
+
+fn fixture_thread_matches() -> bool {
+    let current = std::thread::current().id();
+    let mut expected = AFFINITY.lock().unwrap();
+    *expected.get_or_insert(current) == current
 }

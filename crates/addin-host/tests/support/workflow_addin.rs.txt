@@ -5,6 +5,8 @@ use std::{path::Path, ffi::{c_char, c_int}, sync::Mutex, collections::BTreeMap};
 mod transport;
 #[path = "client.rs"]
 mod workflow;
+#[path = "report.rs"]
+mod report;
 static REPORT: Mutex<Option<workflow::WorkflowReport>> = Mutex::new(None);
 static REPLIES: Mutex<BTreeMap<usize, Box<[u8]>>> = Mutex::new(BTreeMap::new());
 #[unsafe(no_mangle)]
@@ -20,7 +22,9 @@ pub extern "C" fn ObkAddInActivate(call: Option<ffi::ObkHostCall>, free: Option<
     let (Some(call), Some(free)) = (call, free) else { return ffi::OBK_ERR; };
     let result = std::panic::catch_unwind(|| {
         let transport = transport::NativeCallbackCaller::new((call, free));
-        workflow::execute(Client::new(transport), Path::new(OUTPUT_PATH))
+        let client = Client::new(transport);
+        if VERIFY_CATALOG { verify_catalog(&client); }
+        workflow::execute(client, Path::new(OUTPUT_PATH))
     });
     let Ok(report) = result else { return ffi::OBK_ERR; };
     *REPORT.lock().unwrap() = Some(report);
@@ -44,3 +48,11 @@ pub unsafe extern "C" fn ObkAddInAutomation(_: *const c_char, _: *const u8, _: c
 }
 const _: ffi::ObkAddInActivate = ObkAddInActivate;
 const _: ffi::ObkAddInAutomation = ObkAddInAutomation;
+
+fn verify_catalog<T: Caller>(client: &Client<T>) {
+    let entries = client.add_ins().list().unwrap().add_ins.unwrap();
+    let own = entries.iter().find(|entry| entry.id == "typed-rust-fixture").unwrap();
+    assert!(!own.activated);
+    let fetched = client.add_ins().get(&AddInRefArgs { id: own.id.clone() }).unwrap();
+    assert_eq!(*own, fetched);
+}

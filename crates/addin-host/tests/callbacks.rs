@@ -3,7 +3,7 @@
 #![allow(unsafe_code)]
 use oblikovati_addin_host::HostCallbackBinding;
 use oblikovati_api::{Error, client::Caller, ffi};
-use std::{ffi::CStr, process::Command, sync::Arc};
+use std::{ffi::CStr, sync::Arc};
 #[path = "callbacks/cases.rs"]
 mod cases;
 #[path = "support/compiler.rs"]
@@ -11,21 +11,7 @@ mod compiler;
 #[path = "callbacks/queue.rs"]
 mod queue;
 fn isolated_case(test: &str) -> bool {
-    if std::env::var("OBK_CALLBACK_CASE").as_deref() == Ok(test) {
-        return false;
-    }
-    let output = Command::new(std::env::current_exe().unwrap())
-        .args(["--exact", test, "--nocapture"])
-        .env("OBK_CALLBACK_CASE", test)
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "callback child {test}: {} {}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-    true
+    isolation::case("OBK_CALLBACK_CASE", test)
 }
 fn callback(
     call: ffi::ObkHostCall,
@@ -60,3 +46,9 @@ impl Caller for EchoCaller {
 fn binding() -> HostCallbackBinding {
     HostCallbackBinding::install(Arc::new(EchoCaller)).unwrap()
 }
+
+#[path = "support/isolation.rs"]
+mod isolation;
+
+#[path = "support/resources.rs"]
+mod resources;

@@ -100,3 +100,6 @@ fn nonexistent_library_and_embedded_nul_paths_are_named_loader_declines() {
         assert!(error.contains("expected"));
     }
 }
+
+#[path = "support/resources.rs"]
+mod resources;

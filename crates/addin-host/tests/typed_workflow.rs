@@ -12,7 +12,6 @@ use oblikovati_automation::{
     DocumentObserverFactory, FileHost,
     dispatch::{DispatchWakeup, OwnerDispatch, owner_dispatch},
 };
-use oblikovati_model::identity::{DocumentGuid, GuidSource, IdentityTransitionError};
 use oblikovati_persistence::file_access::NativeDocumentFiles;
 use oblikovati_session::files::FileWorkspace;
 use std::{
@@ -30,17 +29,26 @@ use observations::{WorkflowFactory, WorkflowObserver};
 #[path = "typed_workflow/transport.rs"]
 mod transport;
 use transport::NativeCallbackCaller;
+#[path = "typed_workflow/assertions.rs"]
+mod assertions;
 #[path = "typed_workflow/compiler.rs"]
 mod compiler;
+#[path = "typed_workflow/report.rs"]
+mod report;
 #[path = "typed_workflow/client.rs"]
 mod workflow;
+use assertions::{WorkflowFiles, assert_saved_workflow};
+use workflow::WorkflowReport;
+#[path = "typed_workflow/identity.rs"]
+mod identity;
+use identity::WorkflowGuids;
 struct WorkflowWake(Sender<()>);
 impl DispatchWakeup for WorkflowWake {
     fn wake(&self) -> Result<(), String> {
         self.0.send(()).map_err(|error| error.to_string())
     }
 }
-type WorkflowFiles = FileWorkspace<WorkflowObserver, WorkflowObserver, NativeDocumentFiles>;
+
 #[test]
 fn typed_client_creates_constrained_part_edits_undoes_and_reopens_via_native_callbacks() {
     let directory = tempfile::tempdir().unwrap();
@@ -59,36 +67,7 @@ fn typed_client_creates_constrained_part_edits_undoes_and_reopens_via_native_cal
     binding.close();
     owner.close();
 }
-fn assert_saved_workflow(files: &WorkflowFiles, path: &Path, report: &workflow::WorkflowReport) {
-    assert!(path.is_file());
-    let owner = files.workspace().session(report.reopened).unwrap();
-    assert!(!files.workspace().needs_save(report.reopened).unwrap());
-    let placed = &owner.snapshot().sketches.sketches()[0];
-    owner
-        .snapshot()
-        .require_resolved_sketch(placed.id())
-        .unwrap();
-    let circle = placed.geometry().circles()[0];
-    assert_eq!(circle.radius.to_bits(), report.radius_bits);
-    assert_ne!(report.created, report.reopened);
-    assert!(
-        owner
-            .snapshot()
-            .parameters
-            .find(&report.parameter)
-            .is_some()
-    );
-}
 
-struct WorkflowGuids(u64);
-impl GuidSource for WorkflowGuids {
-    fn generate(&mut self) -> Result<DocumentGuid, IdentityTransitionError> {
-        self.0 += 1;
-        Ok(format!("00000000-0000-4000-8000-{:012x}", self.0)
-            .parse()
-            .unwrap())
-    }
-}
 fn start_workflow(
     transport: NativeCallbackCaller,
     path: &Path,
@@ -147,8 +126,8 @@ fn verify_loaded_workflow(
     for language in ["rust", "go"] {
         let path = directory.join(format!("{language}-addin.opd"));
         let library = match language {
-            "rust" => compiler.rust_workflow(&path),
-            _ => compiler.go_workflow(&path),
+            "rust" => compiler.rust_workflow(&path, false),
+            _ => compiler.go_workflow(&path, false),
         };
         let report = verify_loaded_library(binding, awake, owner, runtime, &library, &path);
         assert_eq!(
@@ -188,3 +167,6 @@ fn loaded_report(addin: &mut oblikovati_addin_host::LoadedAddIn) -> workflow::Wo
     let bytes = unsafe { addin.automation("report", &[]) }.unwrap();
     serde_json::from_slice(&bytes).unwrap()
 }
+
+#[path = "support/resources.rs"]
+mod resources;

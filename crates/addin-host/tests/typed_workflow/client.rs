@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
+pub(super) use super::report::WorkflowReport;
 use super::*;
-#[derive(serde::Deserialize)]
-pub(super) struct WorkflowReport {
-    pub(super) created: u64,
-    pub(super) reopened: u64,
-    #[serde(rename = "radiusBits")]
-    pub(super) radius_bits: u64,
-    pub(super) parameter: String,
-}
 pub(super) fn execute<T: Caller>(client: Client<T>, path: &Path) -> WorkflowReport {
     let created = create_part(&client);
     let circle = create_constrained_circle(&client);

@@ -107,3 +107,19 @@ func reopenWorkflowPart(c *client.Client, document uint64, path string) uint64 {
 	}
 	return reopened.ID
 }
+
+func verifyWorkflowCatalog(c *client.Client) {
+	listed, err := c.AddIns().List()
+	requireWorkflowSuccess(err)
+	fetched, err := c.AddIns().Get("typed-go-fixture")
+	requireWorkflowSuccess(err)
+	if fetched.Activated {
+		panic("activating Go add-in: expected inactive catalog state until completion")
+	}
+	for _, entry := range listed.AddIns {
+		if entry.ID == fetched.ID {
+			return
+		}
+	}
+	panic("typed Go fixture: expected its ID in the registry catalog")
+}

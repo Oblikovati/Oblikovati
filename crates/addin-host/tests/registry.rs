@@ -6,7 +6,6 @@ use oblikovati_api::{Error, client::Caller, contract::AddInRegistry, ffi, types:
 use oblikovati_automation::dispatch::{DispatchWakeup, OwnerDispatch, owner_dispatch};
 use std::{
     path::{Path, PathBuf},
-    process::Command,
     sync::{
         Arc,
         mpsc::{self, Receiver, Sender},
@@ -73,21 +72,7 @@ fn activate_with_owner(
 }
 
 fn isolated(test: &str) -> bool {
-    if std::env::var("OBK_REGISTRY_CASE").as_deref() == Ok(test) {
-        return false;
-    }
-    let output = Command::new(std::env::current_exe().unwrap())
-        .args(["--exact", test, "--nocapture"])
-        .env("OBK_REGISTRY_CASE", test)
-        .output()
-        .unwrap();
-    assert!(
-        output.status.success(),
-        "registry child {test}: {} {}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-    true
+    isolation::case("OBK_REGISTRY_CASE", test)
 }
 fn rust_library(compiler: &compiler::FixtureCompiler, name: &str, flags: &[&str]) -> PathBuf {
     compiler.rust_library(
@@ -114,3 +99,9 @@ fn finish_harness(harness: &mut RegistryHarness) {
 fn assert_lifecycle(registry: &NativeAddInRegistry, id: &str, expected: AddInState) {
     assert_eq!(registry.lifecycle_state(id).unwrap(), expected);
 }
+
+#[path = "support/isolation.rs"]
+mod isolation;
+
+#[path = "support/resources.rs"]
+mod resources;

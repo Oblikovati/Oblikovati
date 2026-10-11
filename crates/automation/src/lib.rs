@@ -52,7 +52,6 @@ use oblikovati_session::{
     TransactionObserver,
     workspace::{WorkspaceObserver, WorkspaceSession},
 };
-use serde::{Serialize, de::DeserializeOwned};
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
@@ -227,23 +226,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
     }
 }
 
-fn decode<T: DeserializeOwned + Default>(method: &str, request: &[u8]) -> Result<T, Error> {
-    serde_json::from_slice::<serde_json::Value>(request).and_then(|value| {
-        if !value.is_object() && !value.is_null() {
-            return Err(serde::de::Error::custom("expected a JSON object or null"));
-        }
-        serde_json::from_value::<Option<T>>(value).map(Option::unwrap_or_default)
-    }).map_err(|error| {
-        Error(format!("method {method:?} request {:?}: expected its canonical JSON argument object: {error}", String::from_utf8_lossy(request)))
-    })
-}
-
-fn encode<T: Serialize>(response: &T) -> Result<Vec<u8>, Error> {
-    serde_json::to_vec(response).map_err(|error| {
-        Error(format!(
-            "query response: expected canonical serializable JSON: {error}"
-        ))
-    })
-}
-
 mod derived_edit;
+
+mod wire_json;
+pub use wire_json::{decode_wire_arguments, encode_wire_reply};
+pub(crate) use wire_json::{decode_wire_arguments as decode, encode_wire_reply as encode};

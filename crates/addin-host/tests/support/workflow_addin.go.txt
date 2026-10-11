@@ -81,7 +81,11 @@ func ObkAddInActivate(call C.ObkHostCall, release C.ObkHostFree) (status C.int) 
 	if call == nil || release == nil {
 		return
 	}
-	workflowObservation = executeWorkflow(client.New(workflowCaller{call, release}), OUTPUT_PATH)
+	typed := client.New(workflowCaller{call, release})
+	if VERIFY_CATALOG {
+		verifyWorkflowCatalog(typed)
+	}
+	workflowObservation = executeWorkflow(typed, OUTPUT_PATH)
 	return C.OBK_OK
 }
 

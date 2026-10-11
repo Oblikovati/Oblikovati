@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::resources::{FixtureResources, run};
 use std::{
     path::{Path, PathBuf},
     process::Command,
 };
-#[path = "resources.rs"]
-mod resources;
-use resources::{FixtureResources, run};
 pub struct FixtureCompiler {
     resources: FixtureResources,
 }
