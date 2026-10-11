@@ -157,3 +157,6 @@ The sink remains an injected transport seam. Native add-in subscription and
 buffer lifetimes, queued dispatch, Go/Rust C ABI lifecycle, backpressure and
 shutdown, all other event families, native window input, and foreground capture
 remain required. These receipts do not prove live add-in event delivery.
+
+The [owner-thread dispatch queue](implementation-dispatch.md) now provides bounded
+worker admission, wakeup and shutdown for the later native callback transport.

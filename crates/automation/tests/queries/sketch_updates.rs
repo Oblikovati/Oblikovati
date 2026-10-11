@@ -115,3 +115,6 @@ fn observer_veto_discards_both_the_parameter_edit_and_automatic_geometry_candida
     assert!((circle_radius(&vetoed, id, sketch) - 1.0).abs() < 1e-8);
     assert!(vetoed.session(id).unwrap().undo_labels().is_empty());
 }
+
+#[path = "sketch_updates/dispatch.rs"]
+mod dispatch;
