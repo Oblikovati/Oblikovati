@@ -6,8 +6,20 @@ use crate::ad::DualNumber;
 pub use error::{EvaluationError, ResidualError};
 use std::ops::Range;
 
+/// The physical domain used for satisfaction, separate from numerical step conditioning.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResidualTolerance {
+    ModelRelative,
+    Unitless,
+}
+
 /// A constraint's equations, expressed with the shared derivative primitives.
 pub trait ResidualSource {
+    /// Declare the convergence domain; example: a radian error returns `ResidualTolerance::Unitless`.
+    fn tolerance_kind(&self) -> ResidualTolerance {
+        ResidualTolerance::ModelRelative
+    }
+
     /// Evaluate local variables in declared order, returning the declared number of equations.
     /// Example: `Ok(vec![variables[1].minus(&variables[0])?.shifted(-2.0)?])`.
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError>;

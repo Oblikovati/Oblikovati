@@ -90,3 +90,17 @@ pub(super) fn conflicts(
     sources.sort_by(|left, right| right.1.total_cmp(&left.1).then(left.0.cmp(&right.0)));
     sources.into_iter().map(|(source, _)| source).collect()
 }
+
+pub(super) fn convergence_residuals(
+    evaluation: &ResidualEvaluation,
+    blocks: &[crate::residual::ResidualBlock<'_>],
+    scaled: &ScaledEvaluation,
+) -> Vec<f64> {
+    let mut residuals = scaled.residuals.clone();
+    for (block, rows) in blocks.iter().zip(evaluation.source_rows()) {
+        if block.source.tolerance_kind() == crate::residual::ResidualTolerance::Unitless {
+            residuals[rows.clone()].copy_from_slice(&evaluation.values()[rows.clone()]);
+        }
+    }
+    residuals
+}

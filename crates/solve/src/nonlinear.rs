@@ -47,6 +47,7 @@ pub struct NonlinearResult {
     pub termination: SolveTermination,
     pub iterations: usize,
     pub trial_steps: usize,
+    /// Maximum convergence error: model-relative displacement or declared unitless residual.
     pub relative_residual: f64,
     /// Unsatisfied sources, descending severity, with input index as a tie break.
     pub conflicts: Vec<usize>,

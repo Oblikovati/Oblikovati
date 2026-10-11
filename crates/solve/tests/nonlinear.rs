@@ -395,3 +395,6 @@ fn structurally_unused_variables_remain_bit_identical_during_other_updates() {
         }
     }
 }
+
+#[path = "nonlinear/tolerance.rs"]
+mod tolerance;

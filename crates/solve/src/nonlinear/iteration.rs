@@ -25,7 +25,7 @@ pub(super) fn run(
     validate_options(options)?;
     let mut state = initial_state(values, blocks)?;
     let termination = iterate(&mut state, blocks, options, cancelled)?;
-    finish(state, options, termination)
+    finish(state, blocks, options, termination)
 }
 
 fn initial_state(values: &[f64], blocks: &[ResidualBlock<'_>]) -> Result<Iterate, SolveError> {
@@ -77,7 +77,8 @@ fn iterate(
         if cancelled() {
             return Ok(SolveTermination::Cancelled);
         }
-        if metrics::infinity_norm(&state.scaled.residuals) <= options.relative_tolerance {
+        let residuals = metrics::convergence_residuals(&state.evaluation, blocks, &state.scaled);
+        if metrics::infinity_norm(&residuals) <= options.relative_tolerance {
             return Ok(SolveTermination::Converged);
         }
         if state.iterations == options.max_iterations {
@@ -183,15 +184,13 @@ fn retryable(cause: &SolveError) -> bool {
 
 fn finish(
     state: Iterate,
+    blocks: &[ResidualBlock<'_>],
     options: SolveOptions,
     termination: SolveTermination,
 ) -> Result<NonlinearResult, SolveError> {
     let structure = analyze_structure(&state.evaluation, options.rank_tolerance)?;
-    let conflicts = metrics::conflicts(
-        &state.evaluation,
-        &state.scaled.residuals,
-        options.relative_tolerance,
-    );
+    let residuals = metrics::convergence_residuals(&state.evaluation, blocks, &state.scaled);
+    let conflicts = metrics::conflicts(&state.evaluation, &residuals, options.relative_tolerance);
     Ok(NonlinearResult {
         values: state.values,
         evaluation: state.evaluation,
@@ -199,7 +198,7 @@ fn finish(
         termination,
         iterations: state.iterations,
         trial_steps: state.trials,
-        relative_residual: metrics::infinity_norm(&state.scaled.residuals),
+        relative_residual: metrics::infinity_norm(&residuals),
         conflicts,
         rejected_trial: state.rejected,
     })
