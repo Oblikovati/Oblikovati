@@ -12,11 +12,12 @@ pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32
 pub(super) fn validate_program_version(
     recipe: &WorkPlaneProgramRecipe,
 ) -> Result<(), WorkPlaneProgramRecipeError> {
-    if !matches!(recipe.version, 1..=6) {
+    if !matches!(recipe.version, 1..=7) {
         return Err(WorkPlaneProgramRecipeError::Version(recipe.version));
     }
     validate_definition_versions(recipe)?;
     validate_visibility_version(recipe)?;
+    validate_ownership_version(recipe)?;
     if recipe.version == 1
         && let Some(feature) = recipe.features.iter().find(|feature| feature.construction)
     {
@@ -40,6 +41,12 @@ fn validate_definition_versions(
 }
 
 fn metadata_program_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
+    if features
+        .iter()
+        .any(|feature| !feature.owned_scalars.is_empty())
+    {
+        return 7;
+    }
     if features.iter().any(|feature| !feature.visible) {
         return 5;
     }
@@ -55,6 +62,23 @@ fn validate_visibility_version(
         && let Some(feature) = recipe.features.iter().find(|feature| !feature.visible)
     {
         return Err(WorkPlaneProgramRecipeError::LegacyVisibility(feature.id));
+    }
+    Ok(())
+}
+
+fn validate_ownership_version(
+    recipe: &WorkPlaneProgramRecipe,
+) -> Result<(), WorkPlaneProgramRecipeError> {
+    if recipe.version < 7
+        && let Some(feature) = recipe
+            .features
+            .iter()
+            .find(|feature| !feature.owned_scalars.is_empty())
+    {
+        return Err(WorkPlaneProgramRecipeError::LegacyDefinition {
+            feature: feature.id,
+            minimum: 7,
+        });
     }
     Ok(())
 }

@@ -3,6 +3,8 @@
 //! Go provenance: `model/feature/{engine,reorder,engine_graph}.go`, aa8297d1.
 
 mod edits;
+mod scalar_ownership;
+pub use scalar_ownership::{FeatureScalarBinding, FeatureScalarOwnershipError};
 mod error;
 mod evaluation;
 mod footprint;
@@ -43,6 +45,7 @@ pub struct AuthoredFeature<Definition> {
     datum_visible: bool,
     reads: FeatureReadFootprint,
     definition_reads: FeatureReadFootprint,
+    owned_scalars: Vec<FeatureScalarBinding>,
     condition: Option<FeatureSuppressionCondition>,
 }
 
@@ -80,6 +83,7 @@ impl<Definition> AuthoredFeature<Definition> {
             construction_datum: false,
             datum_visible: true,
             definition_reads: reads.clone(),
+            owned_scalars: Vec::new(),
             reads,
             condition: None,
         }

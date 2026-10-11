@@ -43,6 +43,7 @@ fn same_feature(
         && first.datum_visible == second.datum_visible
         && first.definition.same_recipe(second.definition)
         && first.definition_reads == second.definition_reads
+        && first.owned_scalars == second.owned_scalars
         && match (first.condition, second.condition) {
             (Some(left), Some(right)) => left.same_recipe(right),
             (None, None) => true,

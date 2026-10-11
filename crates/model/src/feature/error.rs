@@ -8,6 +8,7 @@ use std::fmt::{Display, Formatter};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FeatureSequenceError {
     Dependency(DependencyError<FeatureId>),
+    ScalarOwnership(super::FeatureScalarOwnershipError),
     Index {
         index: usize,
         length: usize,
@@ -26,6 +27,7 @@ impl Display for FeatureSequenceError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Dependency(error) => Display::fmt(error, formatter),
+            Self::ScalarOwnership(error) => Display::fmt(error, formatter),
             Self::Index { index, length } => {
                 write!(formatter, "feature index {index}: expected [0,{length})")
             }
@@ -45,6 +47,7 @@ impl std::error::Error for FeatureSequenceError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Dependency(error) => Some(error),
+            Self::ScalarOwnership(error) => Some(error),
             _ => None,
         }
     }

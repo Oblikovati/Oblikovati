@@ -29,6 +29,8 @@ pub struct WorkPlaneFeatureRecipe {
     pub visible: bool,
     pub condition: Option<FeatureSuppressionRecipe>,
     pub definition_reads: FeatureReadFootprint,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub owned_scalars: Vec<crate::feature::FeatureScalarBinding>,
 }
 
 /// Ordered collection schema; permanent feature reservations belong to the document owner.
@@ -53,6 +55,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
             visible: self.datum_visible,
             condition: self.condition.map(FeatureSuppressionCondition::recipe),
             definition_reads: self.definition_reads.clone(),
+            owned_scalars: self.owned_scalars.clone(),
         })
     }
 
@@ -70,6 +73,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
         feature.suppressed = recipe.suppressed;
         feature.construction_datum = recipe.construction;
         feature.datum_visible = recipe.visible;
+        feature.owned_scalars = recipe.owned_scalars.clone();
         let condition = restore_condition(recipe.condition.as_ref())?;
         feature.store_condition(condition);
         Ok(feature)

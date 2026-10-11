@@ -50,6 +50,7 @@ impl<Definition> FeatureSequence<Definition> {
         feature: &AuthoredFeature<Definition>,
         added: bool,
     ) -> Result<DependencyGraph<FeatureId>, FeatureSequenceError> {
+        self.validate_scalar_claims(feature)?;
         let mut dependencies = self.dependencies.clone();
         if added {
             dependencies.insert(feature.id)?;

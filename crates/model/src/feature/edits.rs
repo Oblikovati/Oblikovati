@@ -98,6 +98,7 @@ impl<Definition> FeatureSequence<Definition> {
         replacement.suppressed = previous.suppressed;
         replacement.construction_datum = previous.construction_datum;
         replacement.datum_visible = previous.datum_visible;
+        replacement.owned_scalars = previous.owned_scalars.clone();
         replacement.store_condition(previous.condition);
         self.install_replacement(index, replacement)
     }

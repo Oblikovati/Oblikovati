@@ -53,3 +53,6 @@ Listing an existing offset source does not establish its create/edit API.
 
 [Owned scalar expressions](https://github.com/Oblikovati/Oblikovati/issues/3745)
 track offset creation and edit prerequisites for this same datum owner.
+
+[Stored scalar ownership](implementation-scalar-ownership.md) records the first
+completed prerequisite; offset create/redefine acceptance remains open.
