@@ -3,6 +3,7 @@
 //! Ordered open-document ownership without file I/O or UI dependencies.
 mod commands;
 mod derived_edit;
+mod open_verification;
 pub use commands::SessionCommands;
 mod copy;
 mod error;
@@ -95,6 +96,7 @@ pub struct WorkspaceSession<O, W> {
     next_id: u64,
     observer: W,
     clients: crate::clients::ConnectedClients,
+    sketch_options: oblikovati_solve::nonlinear::SolveOptions,
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
@@ -111,7 +113,16 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
     }
     /// Inject workspace policy; example: `let workspace = WorkspaceSession::new(observer);`.
     pub fn new(observer: W) -> Self {
+        Self::new_with_sketch_options(observer, Default::default())
+    }
+    /// Inject one numerical policy for initial verification and later edits.
+    /// Example: `WorkspaceSession::new_with_sketch_options(observer, options)`.
+    pub fn new_with_sketch_options(
+        observer: W,
+        sketch_options: oblikovati_solve::nonlinear::SolveOptions,
+    ) -> Self {
         Self {
+            sketch_options,
             entries: BTreeMap::new(),
             order: Vec::new(),
             active: None,
@@ -173,24 +184,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         source: &mut dyn GuidSource,
     ) -> Result<RegisteredDocument, WorkspaceError> {
         let id = next_session_id(self.next_id)?;
+        let entry = self.prepare_entry(id, history, observer)?;
+        // Once an identity claim is attempted, never reuse its session ID after failure (#3731).
         self.next_id = id;
         let identity = self.identities.register(id, identity, source)?;
-        let entry = WorkspaceEntry {
-            baseline: history.snapshot().clone(),
-            baseline_derived_high_water: history.derived_high_water(),
-            baseline_parameter_high_water: history.high_water(),
-            baseline_feature_high_water: history.feature_high_water(),
-            baseline_sketch_marks: history.sketch_reservations(),
-            display_name: String::new(),
-            session: DocumentSession::new(id, history, observer),
-            identity_dirty: identity != IdentityRegistration::Preserved,
-        };
-        self.entries.insert(id, entry);
-        self.order.push(id);
-        Ok(RegisteredDocument {
-            session_id: id,
-            identity,
-        })
+        Ok(self.install_entry(id, entry, identity))
     }
 
     /// Inspect documents in open order; example: `workspace.documents()`.

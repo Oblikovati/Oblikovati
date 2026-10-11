@@ -325,9 +325,8 @@ adds `plane_feature`; a linked record omits `plane` and `plane_options`. Restore
 refuses zero IDs, ambiguous or incomplete placement records, and feature
 references in version 1. The existing package owner preserves references
 through history, file save/reopen, and independent copies. Solve evidence is
-not stored: reopened sketches use the existing recompute command before the
-checked consumer accepts them. Automatic verification on file open remains a
-separate host lifecycle requirement.
+not stored. The initial tests used the existing recompute command after reopen;
+issue #3731 below supplies automatic verification during workspace registration.
 
 Tests cover parameter-driven model-space projection, failure and recovery,
 fixed detachment, exact reference dirty checks, numerical readiness, malformed
@@ -338,3 +337,37 @@ and copy. The Go oracle tests
 Those Go tests also cover solids and targeted body replay, which this Rust step
 does not yet implement or claim. Native host commands, associative face
 placement, kernel-backed sketch consumers, and viewport acceptance remain open.
+
+## Initial workspace verification: partial R3
+
+Issue #3731 verifies pending 2D sketch readers before a loaded or created
+history is registered. The workspace and file workspace accept an injected
+`SolveOptions` policy, which also reaches later automatic reader edits. Default
+constructors retain the existing bounded numerical defaults.
+
+Initial verification uses the existing owned refresh path. It changes no undo
+cursor, reserves no recipe identities, emits no transaction events, and records
+local solver failures instead of refusing independent document contents. A
+history with an open transaction is refused before identity claim or session-ID
+reservation. After a claim is attempted, its session ID remains reserved even
+when identity collision resolution fails, as before this change.
+
+The clean baseline is the original authored input, captured before verification.
+A health-only solve leaves a loaded file clean. If convergence repairs its
+coordinates to match current parameter targets, those coordinates remain dirty
+until save. Failed and iteration-limited results retain coordinates and expose
+their decline to checked consumers. Convergence with free variables still does
+not qualify a sketch for feature consumption.
+
+Tests exercise fixed and linked reopen without explicit recompute, saved stale
+coordinates, local parameter failure, zero-iteration and invalid numerical
+policies, free variables, package and template creation, unchanged file bytes,
+empty undo/redo and transaction observations, and preparation failure with an
+existing active document. The saved-file baseline survives initial verification,
+and a subsequent save/reopen retains both corrected coordinates and clean state.
+
+This completes the initial 2D verification path for the current workspace. It
+does not complete R3: associative face placement, native host commands,
+kernel-backed sketch consumers, incremental body replay, and viewport acceptance
+remain open. Work-plane frames still resolve from immutable current state and
+are not copied into history or stored in the file.

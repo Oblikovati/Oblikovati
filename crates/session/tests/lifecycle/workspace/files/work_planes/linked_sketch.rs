@@ -66,19 +66,18 @@ fn hosted_sketch_follows_parameter_edits_undo_save_reopen_and_copy() {
     let sketch = create_hosted(&mut host, id, plane);
     assert_projection(&host, id, sketch, 1.0);
     host.save(id, "alpha", &mut source).unwrap();
-    let id = reopen_hosted(&mut host, id, &mut source);
+    let id = reopen(&mut host, id, &mut source);
     assert_projection(&host, id, sketch, 1.0);
     change_height(&mut host, id, sketch);
     copy_hosted(&mut host, id, sketch, &mut source);
     host.save(id, "alpha", &mut source).unwrap();
-    let id = reopen_hosted(&mut host, id, &mut source);
+    let id = reopen(&mut host, id, &mut source);
     assert_projection(&host, id, sketch, 6.0);
 }
 fn copy_hosted(host: &mut Host, id: u64, sketch: DocumentSketchId, source: &mut SequenceGuids) {
     host.save_copy(id, &path("hosted-copy.obk"), None, "alpha", source)
         .unwrap();
     let copy = open_file(host, "hosted-copy.obk", source, OpenActivation::Background);
-    verify_geometry(host, copy);
     assert_projection(host, copy, sketch, 6.0);
     assert!(host.workspace().needs_save(id).unwrap());
     assert!(!host.workspace().needs_save(copy).unwrap());
@@ -101,7 +100,7 @@ fn suppressed_placement_stays_unavailable_after_reopen_and_recovers_on_unsuppres
     suppress(&mut host, id, plane, true);
     assert!(snapshot(&host, id).require_resolved_sketch(sketch).is_err());
     host.save(id, "alpha", &mut source).unwrap();
-    let id = reopen_hosted(&mut host, id, &mut source);
+    let id = reopen(&mut host, id, &mut source);
     assert!(snapshot(&host, id).require_resolved_sketch(sketch).is_err());
     suppress(&mut host, id, plane, false);
     assert_projection(&host, id, sketch, 1.0);
@@ -125,19 +124,4 @@ fn changing_only_the_reference_is_an_undo_step_and_file_change() {
     host.commands(id).unwrap().undo().unwrap();
     assert!(!host.workspace().needs_save(id).unwrap());
     assert_projection(&host, id, sketch, 1.0);
-}
-
-fn verify_geometry(host: &mut Host, id: u64) {
-    let report = host
-        .commands(id)
-        .unwrap()
-        .recompute_sketches(Default::default(), || false)
-        .unwrap();
-    assert!(!report.cancelled);
-    assert!(report.reports.iter().all(|report| report.result.is_ok()));
-}
-fn reopen_hosted(host: &mut Host, id: u64, source: &mut SequenceGuids) -> u64 {
-    let id = reopen(host, id, source);
-    verify_geometry(host, id);
-    id
 }

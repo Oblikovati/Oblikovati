@@ -411,3 +411,6 @@ mod health;
 
 #[path = "sketches/automatic.rs"]
 mod automatic;
+
+#[path = "sketches/open_verification.rs"]
+mod open_verification;

@@ -10,6 +10,7 @@ pub enum WorkspaceError {
     NoActive,
     Exhausted,
     Identity(IdentityRegistrationError),
+    InitialVerification(oblikovati_model::history::HistoryError),
     CloseVeto { document: u64, reason: String },
 }
 impl From<IdentityRegistrationError> for WorkspaceError {
@@ -27,6 +28,9 @@ impl fmt::Display for WorkspaceError {
             ),
             Self::Exhausted => write!(output, "session ID u64::MAX: expected an unused ID"),
             Self::Identity(error) => error.fmt(output),
+            Self::InitialVerification(error) => {
+                write!(output, "initial sketch verification: {error}")
+            }
             Self::CloseVeto { document, reason } => write!(
                 output,
                 "close document {document} veto {reason:?}: expected policy approval"
@@ -38,6 +42,7 @@ impl Error for WorkspaceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Identity(error) => Some(error),
+            Self::InitialVerification(error) => Some(error),
             _ => None,
         }
     }

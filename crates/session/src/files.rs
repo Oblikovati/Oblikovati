@@ -74,8 +74,17 @@ pub struct FileWorkspace<O, W, F> {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
     /// Inject file access and workspace policy; example: `FileWorkspace::new(observer, files)`.
     pub fn new(observer: W, files: F) -> Self {
+        Self::new_with_sketch_options(observer, files, Default::default())
+    }
+    /// Inject bounded sketch policy for open, creation, and subsequent edits.
+    /// Example: `FileWorkspace::new_with_sketch_options(observer, files, options)`.
+    pub fn new_with_sketch_options(
+        observer: W,
+        files: F,
+        options: oblikovati_solve::nonlinear::SolveOptions,
+    ) -> Self {
         Self {
-            workspace: WorkspaceSession::new(observer),
+            workspace: WorkspaceSession::new_with_sketch_options(observer, options),
             retained: BTreeMap::new(),
             paths: BTreeMap::new(),
             files,

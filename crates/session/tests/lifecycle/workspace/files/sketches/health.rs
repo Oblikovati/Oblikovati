@@ -52,16 +52,13 @@ fn undo_redo_and_recompute_preserve_health_against_each_snapshots_parameter_targ
     );
 }
 #[test]
-fn reopening_requires_verification_but_health_only_recompute_keeps_the_saved_recipe_clean() {
+fn reopening_verifies_readers_and_health_only_recompute_keeps_the_saved_recipe_clean() {
     let (mut host, mut source, id, sketch) = saved_driven_sketch();
     recompute(&mut host, id);
     assert!(!host.workspace().needs_save(id).unwrap());
     host.close_discarding_changes(id).unwrap();
     let reopened = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
-    assert_eq!(
-        decline(&host, reopened, sketch),
-        Some(SketchReadinessCause::Unevaluated)
-    );
+    assert_fresh(&host, reopened, sketch);
     recompute(&mut host, reopened);
     assert_fresh(&host, reopened, sketch);
     assert!(!host.workspace().needs_save(reopened).unwrap());

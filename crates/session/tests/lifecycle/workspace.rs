@@ -354,3 +354,6 @@ mod save;
 
 #[path = "workspace/files.rs"]
 mod files;
+
+#[path = "workspace/open_verification.rs"]
+mod open_verification;
