@@ -55,6 +55,7 @@ pub enum WorkGeometryDefinition {
     ThroughThreePoints([WorkPointReference; 3]),
     LineThroughPoint(WorkPlaneLinePoint),
     NormalToAxis(WorkPlaneLinePoint),
+    ThroughTwoAxes([super::work_axis::WorkAxisReference; 2]),
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),
     PointAtReference(WorkPointReference),

@@ -6,12 +6,7 @@ pub(in crate::datums) fn create(
     request: &CreateWorkPlaneArgs,
     snapshot: &DocumentSnapshot,
 ) -> Result<PreparedGeometry, Error> {
-    let refs = request.refs.as_deref().unwrap_or_default();
-    let [first, second, third] = refs else {
-        return Err(Error(format!(
-            "three-point references {refs:?}: expected exactly three point references"
-        )));
-    };
+    let [first, second, third] = reference_only::references(request)?;
     let points = [
         input::point_reference(snapshot, first)?,
         input::point_reference(snapshot, second)?,

@@ -17,6 +17,19 @@ impl SketchPlane {
         let toward_third = normalize_direction(point_difference(first, third))?;
         frame_from_axis_and_displacement(first, x, toward_third, options)
     }
+    /// Use ordered checked axis directions; example: `SketchPlane::from_axis_directions([0.0;3], [1.0,0.0,0.0], [0.0,1.0,0.0], Default::default())?`.
+    pub fn from_axis_directions(
+        origin: [f64; 3],
+        first: [f64; 3],
+        second: [f64; 3],
+        options: SketchPlaneOptions,
+    ) -> Result<Self, SketchError> {
+        require_options(options)?;
+        require_unit(first, options.unit_deviation)?;
+        require_unit(second, options.unit_deviation)?;
+        // #3757: Go aa8297d1 defines roll from directions; the second origin has no placement role.
+        frame_from_axis_and_displacement(origin, first, second, options)
+    }
     /// Contain a checked unit line and one off-line point; example: `SketchPlane::through_line_and_point([0.0;3], [1.0,0.0,0.0], [0.0,1.0,0.0], Default::default())?`.
     pub fn through_line_and_point(
         origin: [f64; 3],

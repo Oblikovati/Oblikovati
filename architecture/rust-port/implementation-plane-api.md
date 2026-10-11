@@ -56,3 +56,6 @@ flags and rectangle metadata. Other plane definitions and assembly occurrence
 contexts remain open. Unsupported constructors and occurrence
 scopes have named declines. The geometry and native viewport acceptance checks
 remain open.
+
+The [two-axis constructor](implementation-two-axis-planes.md) retains ordered
+live axis drivers and supports atomic reference edits through the released API.

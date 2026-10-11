@@ -14,6 +14,7 @@ impl WorkGeometryDefinition {
                 | Self::ThroughThreePoints(_)
                 | Self::LineThroughPoint(_)
                 | Self::NormalToAxis(_)
+                | Self::ThroughTwoAxes(_)
         ) {
             return Ok(());
         }

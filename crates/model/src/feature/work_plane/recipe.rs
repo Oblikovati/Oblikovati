@@ -15,6 +15,7 @@ pub struct WorkPlaneRecipe {
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
     NormalToAxis(crate::feature::work_geometry::WorkPlaneLinePoint),
     LineThroughPoint(crate::feature::work_geometry::WorkPlaneLinePoint),
     ThroughThreePoints([crate::feature::work_geometry::WorkPointReference; 3]),
@@ -44,23 +45,19 @@ impl WorkPlaneDefinition {
     }
 
     fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
+        use WorkPlaneDefinitionRecipe as Source;
         match self {
-            Self::NormalToAxis(source) => WorkPlaneDefinitionRecipe::NormalToAxis(source),
-            Self::LineThroughPoint(source) => WorkPlaneDefinitionRecipe::LineThroughPoint(source),
-            Self::ThroughThreePoints(points) => {
-                WorkPlaneDefinitionRecipe::ThroughThreePoints(points)
-            }
-            Self::ParallelThroughPoint(source) => {
-                WorkPlaneDefinitionRecipe::ParallelThroughPoint(source)
-            }
-            Self::Axis(axis) => WorkPlaneDefinitionRecipe::Axis(axis.recipe()),
-            Self::Point(coordinates) => WorkPlaneDefinitionRecipe::Point(coordinates),
-            Self::PointAtReference(reference) => {
-                WorkPlaneDefinitionRecipe::PointAtReference(reference)
-            }
-            Self::AxisThroughPoints(points) => WorkPlaneDefinitionRecipe::AxisThroughPoints(points),
+            Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(axes),
+            Self::NormalToAxis(source) => Source::NormalToAxis(source),
+            Self::LineThroughPoint(source) => Source::LineThroughPoint(source),
+            Self::ThroughThreePoints(points) => Source::ThroughThreePoints(points),
+            Self::ParallelThroughPoint(source) => Source::ParallelThroughPoint(source),
+            Self::Axis(axis) => Source::Axis(axis.recipe()),
+            Self::Point(coordinates) => Source::Point(coordinates),
+            Self::PointAtReference(reference) => Source::PointAtReference(reference),
+            Self::AxisThroughPoints(points) => Source::AxisThroughPoints(points),
             Self::Fixed(plane) => fixed_frame_recipe(plane),
-            Self::Offset { base, distance } => WorkPlaneDefinitionRecipe::Offset { base, distance },
+            Self::Offset { base, distance } => Source::Offset { base, distance },
         }
     }
 
@@ -79,6 +76,7 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        ThroughTwoAxes(axes) => Ok(WorkPlaneDefinition::ThroughTwoAxes(axes)),
         NormalToAxis(source) => Ok(WorkPlaneDefinition::NormalToAxis(source)),
         LineThroughPoint(source) => Ok(WorkPlaneDefinition::LineThroughPoint(source)),
         ThroughThreePoints(points) => Ok(WorkPlaneDefinition::ThroughThreePoints(points)),
@@ -110,6 +108,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(self) -> u32 {
         match self {
+            Self::ThroughTwoAxes(_) => 9,
             Self::NormalToAxis(_) => 8,
             Self::LineThroughPoint(_) => 7,
             Self::ThroughThreePoints(_) => 6,
@@ -122,6 +121,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(self) -> u32 {
         match self {
+            Self::ThroughTwoAxes(_) => 14,
             Self::NormalToAxis(_) => 13,
             Self::LineThroughPoint(_) => 12,
             Self::ThroughThreePoints(_) => 11,

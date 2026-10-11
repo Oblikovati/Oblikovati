@@ -52,6 +52,7 @@ fn revise_geometry(
         LineThroughPoint(source) => {
             axis_point::revise(snapshot, source, args, Constructor::ContainsLine)
         }
+        ThroughTwoAxes(axes) => planes::two_axes::revise(snapshot, axes, args),
         ThroughThreePoints(points) => planes::three_points::revise(snapshot, points, args),
         ParallelThroughPoint(source) => planes::parallel::revise(snapshot, source, args),
         _ => {

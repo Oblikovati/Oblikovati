@@ -36,3 +36,13 @@ pub(super) fn slots(labels: &[(&str, &str)]) -> Vec<WorkPlaneRefSlot> {
         })
         .collect()
 }
+
+pub(super) fn references<const COUNT: usize>(
+    request: &CreateWorkPlaneArgs,
+) -> Result<&[String; COUNT], Error> {
+    let references = request.refs.as_deref().unwrap_or_default();
+    references.try_into().map_err(|_| Error(format!(
+        "plane {:?} references {references:?}: expected exactly {COUNT} ordered constructor references",
+        request.kind
+    )))
+}

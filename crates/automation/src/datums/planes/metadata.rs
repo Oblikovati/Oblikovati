@@ -4,6 +4,7 @@ use super::*;
 use oblikovati_model::quantity::{Dimension, Quantity};
 pub(super) fn constructor(definition: WorkGeometryDefinition) -> Result<String, Error> {
     match definition {
+        WorkGeometryDefinition::ThroughTwoAxes(_) => Ok(WORK_PLANE_TWO_LINES.0.into_owned()),
         WorkGeometryDefinition::NormalToAxis(_) => Ok(WORK_PLANE_NORMAL_TO_CURVE.0.into_owned()),
         WorkGeometryDefinition::LineThroughPoint(_) => Ok(WORK_PLANE_LINE_AND_POINT.0.into_owned()),
         WorkGeometryDefinition::ThroughThreePoints(_) => Ok(WORK_PLANE_THREE_POINTS.0.into_owned()),
@@ -32,6 +33,7 @@ pub(super) fn append_inputs(
 }
 fn reference_slots(definition: WorkGeometryDefinition) -> Option<Vec<WorkPlaneRefSlot>> {
     match definition {
+        WorkGeometryDefinition::ThroughTwoAxes(_) => Some(super::two_axes::slots()),
         WorkGeometryDefinition::NormalToAxis(_) => {
             Some(AxisPointPlaneConstructor::NormalToAxis.slots())
         }

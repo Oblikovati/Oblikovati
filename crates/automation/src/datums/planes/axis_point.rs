@@ -6,13 +6,7 @@ fn source(
     request: &CreateWorkPlaneArgs,
     snapshot: &DocumentSnapshot,
 ) -> Result<WorkPlaneLinePoint, Error> {
-    let refs = request.refs.as_deref().unwrap_or_default();
-    let [line, point] = refs else {
-        return Err(Error(format!(
-            "plane {:?} references {refs:?}: expected exactly two references: axis, point",
-            request.kind
-        )));
-    };
+    let [line, point] = reference_only::references(request)?;
     Ok(WorkPlaneLinePoint {
         line: input::axis_reference(snapshot, line)?,
         point: input::point_reference(snapshot, point)?,
