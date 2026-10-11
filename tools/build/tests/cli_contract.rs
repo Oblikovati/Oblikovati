@@ -12,7 +12,7 @@ impl GitFixture {
         let fixture = Self(tempfile::tempdir().unwrap());
         std::fs::write(
             fixture.root().join("release.toml"),
-            include_str!("../../../release.toml"),
+            include_str!("fixtures/release.toml"),
         )
         .unwrap();
         fixture.git(&["init", "--quiet"]);

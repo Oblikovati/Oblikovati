@@ -42,19 +42,23 @@ omit the new field and restore it as true, preserving earlier record layouts;
 a downgraded program containing hidden metadata is rejected. There is no new
 public visibility setter in this change.
 
-## Validation and SDK gap
+## Validation and released SDK
 
-Tests use the canonical Rust typed client for default lists and creation. They
-cover origin rows, shared permanent IDs, construction indices, current driver
-changes, unhealthy replies, malformed requests, local part scope, aborted groups,
-veto, undo/redo, save/reopen, copies, and hidden metadata storage. Host protocol
-tests use the existing API list DTOs for construction and occurrence options.
+Tests use the canonical Rust typed client for default lists, creation, and list
+options. They cover origin rows, shared permanent IDs, construction indices,
+current driver changes, unhealthy replies, malformed requests, local part scope,
+aborted groups, veto, undo/redo, save/reopen, copies, and hidden metadata storage.
+Compatibility tests retain empty bytes, JSON null, and object requests.
 
-Both generated Rust and Go typed list clients currently send an empty default
-request and provide no list-with-options method. The host accepts empty bytes,
-JSON null, and object requests. [API #297](https://github.com/Oblikovati/Oblikovati.API/issues/297)
-tracks additive typed options in both languages, regeneration, examples, and an
-owner-tested release. Add-ins must continue to use the typed API client.
+[API #297](https://github.com/Oblikovati/Oblikovati.API/issues/297) added typed list
+options in both languages, generated Rust parity tests, and tested wiki examples.
+The owner published [v0.156.0](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.156.0)
+at `1d8c5ea4441873d2851273a880a90de5d68e0b24` after its CI, wiki, and release
+checks passed. The application dependency declarations, lockfile, and release
+manifest pin that exact source. The downloaded crate SHA-256 matches GitHub's
+asset digest: `ccfdc2ce0add38c865580015c29a4b04f69276fb9e65419008e8fd70b0de17bf`.
+[Application #3742](https://github.com/Oblikovati/Oblikovati/issues/3742) records
+this adoption. No add-in or host test needs a raw JSON workaround for list options.
 
 These model, file, and API tests do not establish kernel or viewport acceptance.
 The application kernel pin remains empty until published packages are verified.

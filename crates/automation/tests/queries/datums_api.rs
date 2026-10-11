@@ -59,7 +59,7 @@ fn point_rows(files: &DiscoveryWorkspace, include: bool) -> Vec<WorkPointInfo> {
             .points
             .unwrap();
     }
-    wire_points(
+    typed_point_options(
         files,
         ListWorkPointsArgs {
             include_construction: true,
@@ -70,13 +70,13 @@ fn point_rows(files: &DiscoveryWorkspace, include: bool) -> Vec<WorkPointInfo> {
     .points
     .unwrap()
 }
-fn wire_points(
+fn typed_point_options(
     files: &DiscoveryWorkspace,
     request: ListWorkPointsArgs,
 ) -> Result<ListWorkPointsResult, oblikovati_api::Error> {
-    let bytes = serde_json::to_vec(&request).unwrap();
-    let reply = FileQueryHost::new(files).call(METHOD_WORK_POINTS_LIST, &bytes)?;
-    Ok(serde_json::from_slice(&reply).unwrap())
+    Client::new(FileQueryHost::new(files))
+        .work_points()
+        .list_with_options(&request)
 }
 fn axis_rows(files: &DiscoveryWorkspace, include: bool) -> Vec<WorkAxisInfo> {
     if !include {
@@ -87,7 +87,7 @@ fn axis_rows(files: &DiscoveryWorkspace, include: bool) -> Vec<WorkAxisInfo> {
             .axes
             .unwrap();
     }
-    wire_axes(
+    typed_axis_options(
         files,
         ListWorkAxesArgs {
             include_construction: true,
@@ -98,13 +98,13 @@ fn axis_rows(files: &DiscoveryWorkspace, include: bool) -> Vec<WorkAxisInfo> {
     .axes
     .unwrap()
 }
-fn wire_axes(
+fn typed_axis_options(
     files: &DiscoveryWorkspace,
     request: ListWorkAxesArgs,
 ) -> Result<ListWorkAxesResult, oblikovati_api::Error> {
-    let bytes = serde_json::to_vec(&request).unwrap();
-    let reply = FileQueryHost::new(files).call(METHOD_WORK_AXES_LIST, &bytes)?;
-    Ok(serde_json::from_slice(&reply).unwrap())
+    Client::new(FileQueryHost::new(files))
+        .work_axes()
+        .list_with_options(&request)
 }
 
 #[test]
@@ -247,7 +247,7 @@ fn local_part_scope_is_checked_before_datum_queries_or_commands() {
 fn assert_occurrence_declined() {
     let (files, _, _) = configured_files(DOCUMENT_PART, Default::default());
     assert_datum_decline(
-        wire_points(
+        typed_point_options(
             &files,
             ListWorkPointsArgs {
                 occurrence: Some(vec!["placement".into()]),
