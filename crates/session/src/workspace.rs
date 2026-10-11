@@ -19,6 +19,7 @@ mod sketch_dimension_create;
 mod sketch_dimension_delete;
 mod sketch_dimension_edit;
 mod sketch_dimension_placement;
+mod sketch_entity_delete;
 mod sketch_line;
 mod sketch_primitive;
 mod sketch_recompute;

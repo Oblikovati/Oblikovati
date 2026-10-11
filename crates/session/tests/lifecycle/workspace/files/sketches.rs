@@ -447,3 +447,6 @@ mod dimension_names;
 
 #[path = "sketches/dimension_create.rs"]
 mod dimension_create;
+
+#[path = "sketches/entity_delete.rs"]
+mod entity_delete;

@@ -93,10 +93,32 @@ undo, redo, abort, commit veto and rejected replies. The tests reuse the existin
 named transaction observer and dimension fixture. The pinned Go deletion
 tests also pass: `go test ./model/sketch -run '^TestDeleteEntities' -count=1`.
 
-This covers the native model/document/session boundaries and the five current
+## File workspace acceptance
+
+The borrowed `SessionCommands` capability now exposes entity deletion and reply
+projection without replacing the document owner or changing workspace focus.
+Six file workspace tests exercise both part and assembly packages through real
+native encoding and decoding with the existing named file fake.
+
+The scene contains two circles sharing one defining center, an independent
+marker, one reference radius and one driving radius. Center and marker grounding
+leave the surviving scene at DOF=0. Deletion preserves the shared center, surviving
+source formula, text placement, drive limits and parameter annotations. The
+deleted dimension's exported property is removed with its source; undo restores
+the reference role, geometry and saved baseline, and redo retires them again.
+
+Save/reopen retains the exact post-deletion sketch recipe and surviving reference
+keys. Copies retain local entity IDs but use a separate document namespace and
+do not change the dirty source owner. Removing every entity also saves and copies
+an empty sketch while retaining entity, constraint, parameter and dimension-name
+reservation marks. The next creation cannot reuse the retired identities.
+Rejected replies preserve the saved owner, generation and file bytes. A failed
+write keeps the deleted candidate dirty and preserves the prior file and identity.
+
+This covers the native model/document/session/file boundaries and the five current
 public primitive factories. The Go 2D transform API has no delete operation;
 this work does not add a new public API contract. Spline and other pending curve
-factories still need defining-point construction. Editor integration, annotation
-policy, copy/reopen acceptance of the deletion command and general feature
-consumer behavior remain incomplete. Do not close #3789 or infer general
+factories still need defining-point construction. Editor integration, add-in
+attribute policy and general feature consumer behavior remain incomplete.
+Do not close #3789 or infer general
 application deletion acceptance from these tests.
