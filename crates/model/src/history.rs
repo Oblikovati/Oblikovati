@@ -15,6 +15,7 @@ mod scalar_ownership;
 mod sketch_create;
 mod sketch_line;
 mod sketch_primitive;
+mod sketch_relation_delete;
 pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
 pub use sketch_line::{
     SketchAppliedLineDirection, SketchLineCreation, SketchLineCreationError,

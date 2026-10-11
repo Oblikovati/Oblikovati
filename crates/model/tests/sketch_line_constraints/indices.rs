@@ -107,15 +107,16 @@ fn removing_geometric_records_reindexes_without_reusing_constraint_identities() 
     append(&mut sketch, 9, line_relation(false));
     append_indexed_radius(&mut sketch);
     append(&mut sketch, 7, line_relation(true));
-    let mut recipe = sketch.recipe();
-    recipe.constraints.remove(0);
-    let restored = Sketch2D::from_recipe(&recipe).unwrap();
-    let index = restored
+    let removed = sketch
+        .remove_geometric_constraint(SketchConstraintId(9))
+        .unwrap();
+    assert_eq!(removed.id, SketchConstraintId(9));
+    let index = sketch
         .geometric_constraint_index(SketchConstraintId(7))
         .unwrap();
     assert_eq!(index, 0);
     assert!(
-        restored
+        sketch
             .geometric_constraint_index(SketchConstraintId(9))
             .is_err()
     );
@@ -158,4 +159,21 @@ fn append_indexed_radius(sketch: &mut Sketch2D) {
         parameter: 1,
     };
     append(sketch, 2, radius);
+}
+
+#[test]
+fn deletion_refuses_every_dimensional_family_and_missing_identity_without_mutation() {
+    let mut sketch = indexed_geometry();
+    for (offset, relation) in dimensional_relations().into_iter().enumerate() {
+        append(&mut sketch, offset as u64 + 1, relation);
+    }
+    append_tangent_dimension(&mut sketch);
+    let before = sketch.recipe();
+    for id in (1..=8).chain([0, 99]) {
+        let cause = sketch
+            .remove_geometric_constraint(SketchConstraintId(id))
+            .unwrap_err();
+        assert!(cause.to_string().contains(&id.to_string()));
+        assert_eq!(sketch.recipe(), before);
+    }
 }

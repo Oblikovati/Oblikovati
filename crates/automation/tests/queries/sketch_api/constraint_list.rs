@@ -236,3 +236,6 @@ fn append_points(geometry: &mut Sketch2D) {
         geometry.add_point(entity(index as u64 + 1), point).unwrap();
     }
 }
+
+#[path = "constraint_list/delete.rs"]
+mod delete;

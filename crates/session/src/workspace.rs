@@ -18,6 +18,7 @@ mod sketch_delete;
 mod sketch_line;
 mod sketch_primitive;
 mod sketch_recompute;
+mod sketch_relation_delete;
 mod sketch_translation;
 use crate::{DocumentSession, TransactionObserver};
 pub use error::WorkspaceError;

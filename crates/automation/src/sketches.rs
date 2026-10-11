@@ -5,6 +5,7 @@ mod constraints;
 mod coordinates;
 pub(crate) mod create;
 mod delete;
+mod delete_constraint;
 mod entities;
 mod indices;
 mod owner;
@@ -26,13 +27,14 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 6] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 7] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
     METHOD_SKETCH_TRANSFORM,
     METHOD_SKETCH_ADD_ENTITY,
+    METHOD_SKETCH_DELETE_CONSTRAINT,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 5] = [
@@ -72,11 +74,22 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             )
             .map_err(api_error);
     }
-    if method == METHOD_SKETCH_TRANSFORM {
-        return transform::apply(files, crate::decode(method, request)?);
-    }
-    if method == METHOD_SKETCH_ADD_ENTITY {
-        return add_entity::apply(files, crate::decode(method, request)?);
+    apply_geometry_command(files, method, request)
+}
+fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    method: &str,
+    request: &[u8],
+) -> Result<Vec<u8>, Error> {
+    match method {
+        METHOD_SKETCH_TRANSFORM => return transform::apply(files, crate::decode(method, request)?),
+        METHOD_SKETCH_ADD_ENTITY => {
+            return add_entity::apply(files, crate::decode(method, request)?);
+        }
+        METHOD_SKETCH_DELETE_CONSTRAINT => {
+            return delete_constraint::apply(files, crate::decode(method, request)?);
+        }
+        _ => {}
     }
     let request: SketchArgs = crate::decode(method, request)?;
     let (document, sketch) = active_sketch(files, request.sketch_index)?;

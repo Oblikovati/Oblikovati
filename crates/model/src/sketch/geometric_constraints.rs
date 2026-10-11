@@ -17,4 +17,20 @@ impl Sketch2D {
             SketchError::Definition(format!("sketch constraint {id:?}: expected an owned geometric relation for geometric enumeration"))
         })
     }
+    /// Delete one owned geometric relation without changing surviving identities or dimensions.
+    /// Example: `sketch.remove_geometric_constraint(selected.id)?;` after resolving a wire index.
+    pub fn remove_geometric_constraint(
+        &mut self,
+        id: SketchConstraintId,
+    ) -> Result<SketchConstraint, SketchError> {
+        let position = self.constraints.iter().position(|constraint| {
+            constraint.id == id && dimension_parameter(&constraint.relation).is_none()
+        });
+        let position = position.ok_or_else(|| {
+            SketchError::Definition(format!(
+                "sketch constraint {id:?}: expected an owned geometric relation for deletion"
+            ))
+        })?;
+        Ok(self.constraints.remove(position))
+    }
 }

@@ -13,6 +13,8 @@ pub use sketch_inference::SketchInferenceProjectionInput;
 mod sketch_construction;
 mod sketch_create;
 mod sketch_line;
+mod sketch_relation_delete;
+pub use sketch_relation_delete::SketchRelationDeleteProjectionInput;
 mod sketch_primitive;
 pub use sketch_line::SketchLineProjectionInput;
 mod sketch_translation;
