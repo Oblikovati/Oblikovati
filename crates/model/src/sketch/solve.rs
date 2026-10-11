@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    Sketch2D, SketchConstraintId, SketchError, SketchRelationId, compile, source::source_failure,
+    Sketch2D, SketchConstraintId, SketchError, SketchPoint2D, SketchRelationId, grounded,
+    source::source_failure,
 };
 use crate::parameter::ParameterCollection;
 use oblikovati_solve::{
@@ -80,10 +81,21 @@ impl Sketch2D {
         options: SolveOptions,
         cancelled: impl FnMut() -> bool,
     ) -> Result<SketchSolveOutcome, SketchError> {
-        let prepared = compile::prepare(self, parameters)?;
+        self.solve_with_grounded_points(parameters, &[], options, cancelled)
+    }
+    /// Treat current reference coordinates as constants through the shared solver.
+    /// Example: `sketch.solve_with_grounded_points(&parameters, &anchors, options, || false)?`.
+    pub fn solve_with_grounded_points(
+        &self,
+        parameters: &ParameterCollection<u64>,
+        anchors: &[SketchPoint2D],
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> Result<SketchSolveOutcome, SketchError> {
+        let prepared = grounded::prepare(self, parameters, anchors)?;
         let numerical = solve_constraints(&prepared.values, &prepared.blocks(), options, cancelled)
             .map_err(|cause| source_failure(&prepared.origins, cause))?;
-        let candidate = self.candidate_values(&numerical.values)?;
+        let candidate = self.candidate_values(&prepared.restore(&numerical.values)?)?;
         Ok(SketchSolveOutcome {
             origins: prepared.origins,
             candidate,
@@ -97,7 +109,17 @@ impl Sketch2D {
         parameters: &ParameterCollection<u64>,
         rank_tolerance: f64,
     ) -> Result<ConstraintStructure, SketchError> {
-        let prepared = compile::prepare(self, parameters)?;
+        self.analyze_with_grounded_points(parameters, &[], rank_tolerance)
+    }
+    /// Inspect active DOF while keeping current reference coordinates exact.
+    /// Example: `sketch.analyze_with_grounded_points(&parameters, &anchors, 1e-9)?`.
+    pub fn analyze_with_grounded_points(
+        &self,
+        parameters: &ParameterCollection<u64>,
+        anchors: &[SketchPoint2D],
+        rank_tolerance: f64,
+    ) -> Result<ConstraintStructure, SketchError> {
+        let prepared = grounded::prepare(self, parameters, anchors)?;
         let evaluation = evaluate_residuals(&prepared.values, &prepared.blocks())
             .map_err(|cause| source_failure(&prepared.origins, cause.into()))?;
         Ok(analyze_structure(&evaluation, rank_tolerance).map_err(SolveError::from)?)

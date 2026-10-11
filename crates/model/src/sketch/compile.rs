@@ -7,25 +7,12 @@ use crate::{
     parameter::ParameterCollection,
     quantity::{Dimension, Quantity},
 };
-use oblikovati_solve::residual::ResidualBlock;
 
 pub(super) struct PreparedSketch {
     pub values: Vec<f64>,
     pub origins: Vec<SketchRelationId>,
     pub sources: Vec<PreparedConstraint>,
     pub parameter_dependencies: Vec<u64>,
-}
-impl PreparedSketch {
-    pub fn blocks(&self) -> Vec<ResidualBlock<'_>> {
-        self.sources
-            .iter()
-            .map(|source| ResidualBlock {
-                source,
-                variables: &source.variables,
-                equations: source.equations(),
-            })
-            .collect()
-    }
 }
 pub(super) fn prepare(
     sketch: &Sketch2D,
