@@ -161,3 +161,56 @@ selected tolerance values, rename, nonnumeric and failed inputs, stable missing
 input recovery, shared footprints, condition clearing, exact threshold edits,
 real replay toggles, local failure quarantine, and rejected stale prefix health.
 Kernel bodies, feature package persistence, and session adoption remain open.
+
+## Fixed and offset work planes — partial R3
+
+Tracking: [#3727](https://github.com/Oblikovati/Oblikovati/issues/3727).
+Implementation: `crates/model/src/feature/work_plane` and `work_plane.rs`.
+Go sources: fixed-frame definitions in `work_plane_defs.go`, offset definitions
+in `work_plane.go`, and origin frames in `work_geometry.go`, at the baseline above.
+
+Concrete work-plane definitions now evaluate real validated construction frames.
+A fixed definition owns a `SketchPlane`. An offset definition names an origin
+plane or a stable feature ID and reads a constant working length or a parameter's
+selected model value. Its origin is `base.origin + base.normal * distance`;
+its authored axes and validation policy remain those of the base. Negative
+offsets retain the same normal. No tessellation, proximity search, hidden unit
+factor, or coordinate repair is involved.
+
+`AuthoredFeature::work_plane` derives the definition footprint. Replay rejects
+an entry that omits a declared input before it evaluates any frames. Origin
+frames have no driver feature; referenced planes and parameter offsets enter
+the existing typed footprint. Source features must precede readers in the
+existing sequence graph. The resolver is a project-owned interface.
+
+`evaluate_work_planes` evaluates an immutable recipe into a fresh map of current
+frames plus ordered replay health. This is concrete construction-geometry
+execution, using the same suppression and quarantine controller. Only valid
+successful frames enter the map. A suppressed source produces no frame, so a
+reader reports an unavailable reference. Failed reads and invalid frames block
+dependents while independent frames continue. Rolled-back planes have no
+current result. A later valid parameter input can restore the frame chain.
+
+The evaluator currently starts from an empty construction result. It does not
+reuse geometric prefix caches or serve as the full part-body engine. The next
+owner integration must connect permanent feature reservations, exact recipe
+comparison, parameter invalidation, clean-prefix reuse, session generations,
+undo, and document package persistence. Body replay still requires Martensite
+isolation, validation, and provenance.
+
+Definition recipes have their own version 1, retain stable references and
+parameter IDs, and contain no evaluated caches or scalar closures. Fixed
+frames are validated again on restore; unsupported versions, unknown fields
+and variants, invalid axes, and nonfinite constant offsets are refused. The
+external Rust enum representation preserves floating-point values through the
+workspace's JSON configuration; tests retain signed-zero frame and offset bits.
+These records are not a legacy Go work-feature importer or a complete document
+feature-list codec.
+
+Tests cover all origin offset directions, oblique fixed frames, axis and policy
+preservation, parameter edits and tolerance selection, missing references,
+failed input recovery, suppression, conditional failure, cutoff exclusion,
+overflow rejection, derived footprints, and strict recipe restore. The Go
+offset and parameter-footprint tests pass with `CGO_ENABLED=0`. Other work-plane
+constructors, points, axes, coordinate systems, live sketch attachment, and
+native presentation remain open. No R3 milestone is closed by this evidence.

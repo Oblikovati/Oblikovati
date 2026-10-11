@@ -9,6 +9,7 @@ mod footprint;
 mod replay;
 mod suppression;
 mod validation;
+pub mod work_plane;
 
 use crate::dependency::DependencyGraph;
 pub use error::FeatureSequenceError;
@@ -23,7 +24,9 @@ pub use suppression::{
 };
 
 /// Permanent document-local identity; reservation belongs outside undo snapshots.
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(
+    Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize,
+)]
 pub struct FeatureId(pub u64);
 
 /// Owned definition and its authored edit boundaries, without geometry caches.

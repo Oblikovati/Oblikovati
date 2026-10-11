@@ -35,6 +35,10 @@ pub enum FeatureReplayError {
     },
     Pending(FeatureId),
     ParametersRequired(FeatureId),
+    Footprint {
+        feature: FeatureId,
+        missing: Vec<crate::feature::FeatureReadKey>,
+    },
     ResultIdentity {
         feature: FeatureId,
         expected: Option<FeatureId>,
@@ -59,6 +63,7 @@ impl Display for FeatureReplayError {
                 f,
                 "conditional feature {feature:?}: expected immutable parameter model inputs"
             ),
+            Self::Footprint { feature, missing } => footprint_message(f, *feature, missing),
             Self::ResultIdentity { feature, expected } => result_message(f, *feature, *expected),
             Self::Incomplete { next, end, pending } => {
                 incomplete_message(f, (*next, *end, *pending))
@@ -159,3 +164,14 @@ fn incomplete_message(
 }
 
 impl std::error::Error for FeatureReplayError {}
+
+fn footprint_message(
+    f: &mut Formatter<'_>,
+    feature: FeatureId,
+    missing: &[crate::feature::FeatureReadKey],
+) -> std::fmt::Result {
+    write!(
+        f,
+        "feature {feature:?} missing reads {missing:?}: expected every definition read in its footprint"
+    )
+}
