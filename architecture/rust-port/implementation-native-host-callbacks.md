@@ -56,3 +56,7 @@ component. Managed registry/shutdown ordering, native event sink attachment,
 typed Go/Rust document edits, CLI/window drain integration and foreground
 MCPBridge acceptance remain required. Windows/macOS tests remain deferred and
 their explicit failing pipeline definitions are unchanged.
+
+A [typed Rust document workflow](implementation-native-typed-workflow.md) now
+verifies create/edit/undo/save/reopen through these C callbacks and the file owner.
+Loaded Go/Rust add-in document workflows remain separate required evidence.

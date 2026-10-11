@@ -11,6 +11,9 @@ oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "=0.2.190"
 [dev-dependencies]
+oblikovati-model = { path = "../model" }
+oblikovati-session = { path = "../session" }
+oblikovati-persistence = { path = "../persistence" }
 oblikovati-automation = { path = "../automation" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
