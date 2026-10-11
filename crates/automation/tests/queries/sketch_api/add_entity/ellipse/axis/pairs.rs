@@ -152,7 +152,7 @@ fn ellipse_axis_pairs_refuse_unsupported_kinds_and_nonaxis_or_unknown_operands_a
             .is_err()
         );
     }
-    refuse_collinear(&mut files, &mut source, line, ellipse);
+    refuse_unsupported_pair(&mut files, &mut source, line, ellipse);
     assert_eq!(owner_revision(&files, document), before);
     assert!(geometry.same_evaluated_state(owned_geometry(&files, document)));
 }
@@ -168,14 +168,14 @@ fn disable_inference(files: &mut DiscoveryWorkspace, source: &mut QueryGuids) {
         .unwrap();
 }
 
-fn refuse_collinear(
+fn refuse_unsupported_pair(
     files: &mut DiscoveryWorkspace,
     source: &mut QueryGuids,
     line: u64,
     ellipse: u64,
 ) {
     let mut request = pair_request([line, ellipse], false, None, false);
-    request.kind = "collinear".into();
+    request.kind = "equalLength".into();
     assert!(
         add_pair(files, source, &request)
             .unwrap_err()
@@ -211,3 +211,6 @@ fn check_ellipse_pair(first_major: bool, second_major: bool, perpendicular: bool
     );
     check_pair_row(&files, &request.kind, [first, second]);
 }
+
+#[path = "collinear.rs"]
+mod collinear;

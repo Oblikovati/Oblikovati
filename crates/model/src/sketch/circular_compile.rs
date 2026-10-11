@@ -124,14 +124,38 @@ fn analytic_axis_columns(
         PlanarConstraint::EllipseAxisAlignment { ellipse, .. } => {
             (*ellipse, EllipseComponent::Orientation)
         }
-        PlanarConstraint::AxisRelation { axes, .. } => {
-            let mut columns = axes[0].columns(sketch)?;
-            columns.extend(axes[1].columns(sketch)?);
-            return Ok(Some(columns));
+        PlanarConstraint::AxisCollinear { axes } | PlanarConstraint::AxisRelation { axes, .. } => {
+            return columns_for_axis_relation(sketch, relation, *axes).map(Some);
         }
         _ => return Ok(None),
     };
     sketch
         .ellipse_column(ellipse, component)
         .map(|column| Some(vec![column]))
+}
+
+fn axis_pair_columns(
+    sketch: &Sketch2D,
+    axes: [super::SketchAxisOperand; 2],
+    anchored: bool,
+) -> Result<Vec<usize>, SketchError> {
+    let mut columns = Vec::new();
+    if anchored {
+        for axis in axes {
+            columns.extend(axis.anchor_columns(sketch)?);
+        }
+    }
+    for axis in axes {
+        columns.extend(axis.columns(sketch)?);
+    }
+    Ok(columns)
+}
+
+fn columns_for_axis_relation(
+    sketch: &Sketch2D,
+    relation: &PlanarConstraint,
+    axes: [super::SketchAxisOperand; 2],
+) -> Result<Vec<usize>, SketchError> {
+    let anchored = matches!(relation, PlanarConstraint::AxisCollinear { .. });
+    axis_pair_columns(sketch, axes, anchored)
 }

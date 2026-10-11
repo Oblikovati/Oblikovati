@@ -84,6 +84,9 @@ pub enum PlanarConstraint {
         parameter: u64,
         turn: AngleTurn,
     },
+    AxisCollinear {
+        axes: [super::SketchAxisOperand; 2],
+    },
     AxisRelation {
         axes: [super::SketchAxisOperand; 2],
         perpendicular: bool,
@@ -221,7 +224,8 @@ impl Sketch2D {
                 self.circular_frame(*curve)?;
                 self.line(*line)?.endpoints.to_vec()
             }
-            PlanarConstraint::AxisRelation { axes, .. } => {
+            PlanarConstraint::AxisRelation { axes, .. }
+            | PlanarConstraint::AxisCollinear { axes } => {
                 for axis in axes {
                     axis.columns(self)?;
                 }

@@ -33,6 +33,7 @@ mod dimension_placement;
 mod dimension_settings;
 pub use dimension_placement::SketchDimensionPlacement;
 pub use dimension_settings::{SketchDimensionLimitRecipe, SketchDimensionLimits};
+mod axis_collinear;
 mod axis_operand;
 mod ellipse;
 mod ellipse_axis;

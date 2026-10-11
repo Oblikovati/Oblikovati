@@ -167,3 +167,6 @@ fn perpendicular_start_has_a_live_gradient_and_rotates_to_parallel() {
     let sketch = Sketch2D::from_recipe(&recipe).unwrap();
     check_grounded_pair(&sketch, false);
 }
+
+#[path = "collinear.rs"]
+mod collinear;

@@ -18,6 +18,9 @@ pub(super) enum PlanarEquation {
         target: f64,
         counter_clockwise: bool,
     },
+    AxisCollinear {
+        layouts: [super::axis_operand::AxisLayout; 2],
+    },
     AxisRelation {
         layouts: [super::axis_operand::AxisLayout; 2],
         perpendicular: bool,
@@ -71,7 +74,8 @@ pub(super) struct PreparedConstraint {
 impl PreparedConstraint {
     pub fn equations(&self) -> usize {
         match self.equation {
-            PlanarEquation::ArcMidpoint(_)
+            PlanarEquation::AxisCollinear { .. }
+            | PlanarEquation::ArcMidpoint(_)
             | PlanarEquation::Coincident
             | PlanarEquation::Fix(_)
             | PlanarEquation::Midpoint
@@ -83,6 +87,9 @@ impl PreparedConstraint {
         match self.equation {
             PlanarEquation::AxisRelation { layouts, .. } => {
                 layouts.iter().map(|layout| layout.width()).sum()
+            }
+            PlanarEquation::AxisCollinear { layouts } => {
+                4 + layouts.iter().map(|layout| layout.width()).sum::<usize>()
             }
             _ => self.fixed_variable_count(),
         }
@@ -119,6 +126,16 @@ impl ResidualSource for PreparedConstraint {
         oblikovati_solve::residual::ResidualTolerance::ModelRelative
     }
 
+    fn equation_tolerance(&self, row: usize) -> oblikovati_solve::residual::ResidualTolerance {
+        if matches!(self.equation, PlanarEquation::AxisCollinear { .. }) {
+            return if row == 0 {
+                oblikovati_solve::residual::ResidualTolerance::Unitless
+            } else {
+                oblikovati_solve::residual::ResidualTolerance::ModelLength
+            };
+        }
+        self.tolerance_kind()
+    }
     fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
         let expected = self
             .projection
@@ -138,6 +155,9 @@ impl ResidualSource for PreparedConstraint {
             .transpose()?;
         let variables = projected.as_deref().unwrap_or(variables);
         match self.equation {
+            PlanarEquation::AxisCollinear { layouts } => {
+                super::axis_collinear::collinear_residual(variables, layouts)
+            }
             PlanarEquation::PinnedLineTangent { at_b, side } => {
                 tangent_residual::pinned_line_tangent(variables, at_b, side)
             }

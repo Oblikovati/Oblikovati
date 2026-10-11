@@ -22,7 +22,7 @@ pub(super) fn pair_residual(
     let second = operand_angle(&variables[layouts[0].width()..], layouts[1])?;
     alignment_residual(&second.minus(&first)?, perpendicular)
 }
-fn operand_angle(
+pub(super) fn operand_angle(
     variables: &[DualNumber],
     layout: super::axis_operand::AxisLayout,
 ) -> Result<DualNumber, ResidualError> {

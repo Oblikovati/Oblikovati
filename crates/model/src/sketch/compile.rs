@@ -132,6 +132,9 @@ fn equation(
             target: angle_target(constraint, parameter, parameters)?,
             turn,
         },
+        PlanarConstraint::AxisCollinear { axes } => PlanarEquation::AxisCollinear {
+            layouts: axes.map(super::axis_operand::SketchAxisOperand::layout),
+        },
         PlanarConstraint::AxisRelation {
             axes,
             perpendicular,

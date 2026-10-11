@@ -32,6 +32,17 @@ impl SketchAxisOperand {
             ]),
         }
     }
+    pub(super) fn anchor_columns(self, sketch: &Sketch2D) -> Result<Vec<usize>, SketchError> {
+        let anchor = match self {
+            Self::Line { line } => sketch.line(line)?.endpoints[0],
+            Self::Ellipse { ellipse, .. } => sketch.ellipse(ellipse)?.center(),
+        };
+        sketch
+            .point_variables(&[anchor])
+            .into_iter()
+            .map(|variable| sketch.variable_column(variable))
+            .collect()
+    }
     pub(super) fn layout(self) -> AxisLayout {
         match self {
             Self::Line { .. } => AxisLayout::Line,

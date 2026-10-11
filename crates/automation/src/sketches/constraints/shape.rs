@@ -27,6 +27,7 @@ fn classify(relation: &PlanarConstraint) -> Option<ConstraintShape> {
         EllipseAxisAlignment {
             ellipse, vertical, ..
         } => single(axis_kind(*vertical), *ellipse),
+        AxisCollinear { axes } => pair(COLLINEAR, axes.map(|axis| axis.entity())),
         AxisRelation {
             axes,
             perpendicular,

@@ -93,11 +93,14 @@ the center or radii. A periodic angular error respects the unoriented axis and
 has a nonzero derivative at perpendicular starts. Thin and equal-radius ellipses
 retain the same frame identity and use the same equation.
 
-The shared solver separates step conditioning from convergence domains. Sources
-can declare a unitless error, so a large model length cannot relax its acceptance.
-Grounded wrappers preserve this declaration. Convergence, final residual, and
-conflict reporting use the same domain. Existing model-relative sources retain
-their prior numerical policy. Regression tests cover early convergence beside a
+The shared solver records an equation domain for each residual row. Direct
+unitless values and working-length values use their declared units in both the
+trial objective and convergence. Their working Jacobian applies the same frozen
+coordinate scale as the trial step. This prevents a large length from relaxing
+an angular error or damping away endpoint motion. Grounded wrappers preserve
+the row declarations. Convergence, final residual, and conflict reporting use
+the same domain. Existing gradient-normalized sources retain their prior
+numerical policy and Go regression fixtures. Regression tests cover early convergence beside a
 large length and unsatisfied angular sources at an iteration limit.
 
 Tests also cover both API document kinds, omitted/explicit axis flags, constraint
@@ -106,8 +109,16 @@ pairs and accept ellipse/ellipse pairs. Each ellipse has its own persisted axis
 selector. Typed `SketchAxisOperand` ownership chooses a line's endpoint columns
 or an ellipse's rotation column before the shared angular residual is prepared.
 A grounded line can rotate the ellipse; a pinned ellipse can rotate the line.
-Zero line directions are named domain errors. Collinear axis relations remain
-unported and are refused at classification.
+Zero line directions are named domain errors.
+
+Collinear adds the parallel angular equation and a signed anchor offset. A line
+anchor is its first endpoint; an ellipse anchor is its owned center. The offset
+uses an available direct rotation frame, so a short line does not amplify the
+offset Jacobian. Authored operand order and each axis selector remain unchanged.
+The angular row is unitless; the offset row is a direct working-length metric.
+Tests cover grounded centers, both orders and axes, unequal length scales,
+ellipse pairs, independent derivatives, and saved history/copy. The pinned Go
+`TestEllipseCollinearThroughCentre` passes.
 
 Pair tests cover both document kinds, default/explicit operand selectors,
 ordered enumeration, independent derivative checks, DOF, scale sweeps, equal
@@ -129,7 +140,7 @@ undo/redo, save/reopen/copy, edit, deletion/recreation, and malformed operands.
 Radius crossings fail without adopting a partial recipe or reusing names.
 The former missing-native-ellipse constructor decline is removed.
 
-Remaining #3788 work includes minor-radius and collinear axis constraints, fully
+Remaining #3788 work includes minor-radius support, fully
 constrained and degenerate
 cases, ellipse-specific failed formula and transaction acceptance, and edited
 save/reopen/copy. This step does not establish profile-kernel acceptance. B-rep

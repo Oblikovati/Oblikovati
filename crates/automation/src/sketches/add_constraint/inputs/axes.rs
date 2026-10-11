@@ -7,22 +7,29 @@ pub(super) fn pair(
     second: &Operand,
     request: &AddConstraintArgs,
 ) -> Option<Creation> {
+    let axes = [
+        axis(
+            first,
+            selected_major_axis(&request.use_ellipse_one_major_axis),
+        )?,
+        axis(
+            second,
+            selected_major_axis(&request.use_ellipse_two_major_axis),
+        )?,
+    ];
+    pair_relation(kind, axes)
+}
+fn pair_relation(kind: &GeometricConstraintKind, axes: [SketchAxisOperand; 2]) -> Option<Creation> {
+    if *kind == GEO_CONSTRAINT_COLLINEAR {
+        return relation(AxisCollinear { axes });
+    }
     let perpendicular = match kind {
         kind if *kind == GEO_CONSTRAINT_PARALLEL => false,
         kind if *kind == GEO_CONSTRAINT_PERPENDICULAR => true,
         _ => return None,
     };
     relation(AxisRelation {
-        axes: [
-            axis(
-                first,
-                selected_major_axis(&request.use_ellipse_one_major_axis),
-            )?,
-            axis(
-                second,
-                selected_major_axis(&request.use_ellipse_two_major_axis),
-            )?,
-        ],
+        axes,
         perpendicular,
     })
 }
