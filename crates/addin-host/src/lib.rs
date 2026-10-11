@@ -6,7 +6,8 @@ use oblikovati_api::Error;
 mod linux;
 #[cfg(target_os = "linux")]
 pub use linux::{
-    AddInState, HostBufferCounts, HostCallbackBinding, LoadedAddIn, open_addin, probe_library,
+    AddInState, HostBufferCounts, HostCallbackBinding, LoadedAddIn, NativeAddInRegistry,
+    open_addin, probe_library,
 };
 mod compatibility;
 pub use compatibility::check_api_version;

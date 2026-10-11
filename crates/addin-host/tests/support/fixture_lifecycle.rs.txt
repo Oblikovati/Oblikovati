@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use std::{collections::BTreeMap, ffi::CStr, sync::{Mutex, OnceLock, atomic::{AtomicUsize, Ordering}}};
+static CLEANUP_CALLBACKS: Mutex<Option<(ffi::ObkHostCall, ffi::ObkHostFree)>> = Mutex::new(None);
+static CLEANUPS: AtomicUsize = AtomicUsize::new(0);
 static RELEASES: AtomicUsize = AtomicUsize::new(0);
 #[derive(Default)]
 struct FixtureBuffers { live: BTreeMap<usize, Box<[u8]>>, retired: Vec<Box<[u8]>> }
@@ -9,13 +11,23 @@ fn fixture_buffers() -> &'static Mutex<FixtureBuffers> {
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn ObkAddInActivate(call: Option<ffi::ObkHostCall>, free: Option<ffi::ObkHostFree>) -> c_int {
+    if cfg!(deactivate_echo) {
+        let (Some(call), Some(free)) = (call, free) else { return ffi::OBK_ERR; };
+        *CLEANUP_CALLBACKS.lock().unwrap() = Some((call, free));
+    }
     if cfg!(activate_error) { return ffi::OBK_ERR; }
     if cfg!(callback_echo) { return unsafe { fixture_host_echo(call, free) }; }
     ffi::OBK_OK
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn ObkAddInDeactivate() -> c_int {
+    if cfg!(deactivate_echo) {
+        let callbacks = *CLEANUP_CALLBACKS.lock().unwrap();
+        let Some((call, free)) = callbacks else { return ffi::OBK_ERR; };
+        return unsafe { fixture_host_echo(Some(call), Some(free)) };
+    }
     if cfg!(deactivate_error) { return ffi::OBK_ERR; }
+    if cfg!(deactivate_once_error) && CLEANUPS.fetch_add(1, Ordering::SeqCst) == 0 { return ffi::OBK_ERR; }
     ffi::OBK_OK
 }
 #[cfg(not(missing_notify))]

@@ -63,3 +63,7 @@ is not yet a managed application add-in host.
 The [native host callback binding](implementation-native-host-callbacks.md) now
 connects the C signatures to queued transport and tracks host-owned replies.
 Managed lifecycle and typed document workflow acceptance remain open.
+
+The native registry now owns registration policy and explicit cleanup orchestration;
+see [registry implementation evidence](implementation-native-addin-registry.md).
+Application startup, discovery, wire routing and foreground acceptance remain open.
