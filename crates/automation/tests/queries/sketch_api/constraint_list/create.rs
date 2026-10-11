@@ -222,3 +222,6 @@ mod dimensions;
 
 #[path = "create/delete_dimension.rs"]
 mod delete_dimension;
+
+#[path = "create/add_dimension.rs"]
+mod add_dimension;

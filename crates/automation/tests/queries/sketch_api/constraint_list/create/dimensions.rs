@@ -4,7 +4,7 @@ use oblikovati_api::wire::DimensionInfo;
 use oblikovati_model::sketch::{
     AngleTurn, DistanceMeasure, TangentDistanceContact, TangentDistanceOptions,
 };
-fn dimensions(files: &DiscoveryWorkspace) -> Vec<DimensionInfo> {
+pub(super) fn dimensions(files: &DiscoveryWorkspace) -> Vec<DimensionInfo> {
     Client::new(FileQueryHost::new(files))
         .sketch()
         .dimensions(&Default::default())

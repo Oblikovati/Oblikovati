@@ -84,9 +84,15 @@ abort, undo/redo, deletion/recreation, save/reopen, and copied formulas/annotati
 
 ## Remaining creation work
 
-The public automation host does not yet implement `client.dimension().add`.
-Both part and assembly hosts must route the released API-owned request, method
-constant, and result through these owner commands, with correct reference
-classification and centimetre/radian conversions. Ellipse-radius and
-offset-spline dimensions still need native geometry support; they remain required
-R3 work.
+The public automation host now routes `client.dimension().add` through the owner
+command for part and assembly documents. It uses the released request, method
+constant, and result. Operand ownership and shape, orientation, and annotation
+validation precede reservation. Replies convert working lengths to centimetres
+and preserve radians, with checked finite values and integer indices before
+candidate adoption.
+
+Client tests cover the native constructor vocabulary, reference metadata,
+optional annotations, ignored options, invalid operands, live driving formulas,
+and undo/redo. Further API acceptance must cover working scales, failed-source
+health, veto, save/reopen, and copied documents. Ellipse-radius and offset-spline
+dimensions still need native geometry support; they remain required R3 work.

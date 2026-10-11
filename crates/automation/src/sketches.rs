@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::encode;
 mod add_constraint;
+mod add_dimension;
 mod add_entity;
 mod constraints;
 mod coordinates;
@@ -32,7 +33,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 11] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 12] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
@@ -44,6 +45,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 11] = [
     METHOD_SKETCH_DELETE_DIMENSION,
     METHOD_SKETCH_MOVE_DIMENSION,
     METHOD_SKETCH_DRIVE_DIMENSION,
+    METHOD_SKETCH_ADD_DIMENSION,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 6] = [
@@ -112,6 +114,7 @@ fn apply_dimension_command<O: TransactionObserver, W: WorkspaceObserver, F: Docu
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     match method {
+        METHOD_SKETCH_ADD_DIMENSION => add_dimension::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_DRIVE_DIMENSION => {
             drive_dimension::apply(files, crate::decode(method, request)?)
         }

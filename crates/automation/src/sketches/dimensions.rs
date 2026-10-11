@@ -85,7 +85,7 @@ fn healthy_source_value(
         ))
     })
 }
-fn canonical_measurement(measured: Quantity, scale: f64) -> Result<f64, Error> {
+pub(super) fn canonical_measurement(measured: Quantity, scale: f64) -> Result<f64, Error> {
     let value = match measured.dimension {
         Dimension::Length => measured.value * scale,
         Dimension::Angle => measured.value,
