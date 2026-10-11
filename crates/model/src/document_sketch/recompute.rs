@@ -25,6 +25,22 @@ pub struct DocumentSketchSolveOutcome {
     pub report: DocumentSketchRecompute,
 }
 impl DocumentSketches {
+    /// Solve one stable identity without updating unrelated readers; example: `sketches.solve_one(id, &parameters, options, || false)?`.
+    pub fn solve_one(
+        &self,
+        sketch: DocumentSketchId,
+        parameters: &ParameterCollection<u64>,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> Result<DocumentSketchSolveOutcome, SketchError> {
+        self.get(sketch)?;
+        Ok(self.solve_scope(
+            parameters,
+            options,
+            cancelled,
+            SketchSolveScope::One(sketch),
+        ))
+    }
     /// Recompute independent sketches without changing the input; example: `sketches.solve(&parameters, options, || false)`.
     pub fn solve(
         &self,
@@ -126,11 +142,13 @@ fn finish_batch(
 enum SketchSolveScope {
     All,
     Pending,
+    One(DocumentSketchId),
 }
 impl SketchSolveScope {
     fn requires(self, placed: &PlacedSketch, parameters: &ParameterCollection<u64>) -> bool {
         match self {
             Self::All => true,
+            Self::One(sketch) => placed.id == sketch,
             Self::Pending => !matches!(placed.health(parameters), PlacedSketchHealth::Current(_)),
         }
     }

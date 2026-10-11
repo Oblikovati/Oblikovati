@@ -1,10 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{CommandError, DocumentSession, MutationError, TransactionObserver};
-use oblikovati_model::document_sketch::DocumentSketchRecompute;
+use oblikovati_model::document_sketch::{DocumentSketchId, DocumentSketchRecompute};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
+use oblikovati_model::sketch::SketchError;
 use oblikovati_solve::nonlinear::SolveOptions;
 use std::convert::Infallible;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Solve one sketch with this owner's policy and history; example: `session.solve_sketch(id, || false)?`.
+    pub fn solve_sketch(
+        &mut self,
+        sketch: DocumentSketchId,
+        cancelled: impl FnMut() -> bool,
+    ) -> Result<DocumentSketchRecompute, CommandError<SketchError>> {
+        let options = self.sketch_options;
+        self.run_with_recompute(
+            "Solve sketch",
+            |snapshot, _| solve_selected(snapshot, sketch, options, cancelled),
+            SketchUpdateMode::Explicit,
+        )
+    }
     /// Recompute within normal history, joining an open edit group; example: `session.recompute_sketches(options, || false)?`.
     pub fn recompute_sketches(
         &mut self,
@@ -23,6 +37,19 @@ impl<O: TransactionObserver> DocumentSession<O> {
             SketchUpdateMode::Explicit,
         )
     }
+}
+
+fn solve_selected(
+    snapshot: &mut DocumentSnapshot,
+    sketch: DocumentSketchId,
+    options: SolveOptions,
+    cancelled: impl FnMut() -> bool,
+) -> Result<DocumentSketchRecompute, SketchError> {
+    let outcome = snapshot
+        .sketches
+        .solve_one(sketch, &snapshot.parameters, options, cancelled)?;
+    snapshot.sketches = outcome.candidate;
+    Ok(outcome.report)
 }
 
 #[derive(Clone, Copy)]

@@ -2,7 +2,9 @@
 use super::recompute::saved_driven_sketch;
 use super::*;
 use oblikovati_model::{document_sketch::SketchReadinessCause, history::DocumentEditHistory};
-fn stale_session(options: SolveOptions) -> (DocumentSession<RecordingObserver>, DocumentSketchId) {
+pub(super) fn stale_session(
+    options: SolveOptions,
+) -> (DocumentSession<RecordingObserver>, DocumentSketchId) {
     let (host, _, id, sketch) = saved_driven_sketch();
     let mut snapshot = host.workspace().session(id).unwrap().snapshot().clone();
     snapshot.parameters.set_expression(1, "6 cm").unwrap();

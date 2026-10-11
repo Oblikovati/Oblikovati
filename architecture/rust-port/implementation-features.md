@@ -371,3 +371,23 @@ does not complete R3: associative face placement, native host commands,
 kernel-backed sketch consumers, incremental body replay, and viewport acceptance
 remain open. Work-plane frames still resolve from immutable current state and
 are not copied into history or stored in the file.
+
+## Selected sketch solve: partial R3
+
+Issue #3732 adds the owner command needed by the shared `sketch.solve` API.
+`DocumentSketches::solve_one` validates a stable sketch identity before polling
+or numerical work. Selection is a scope of the existing solver; it does not add
+a second solve engine. Explicit selection retries a current failed sketch and
+leaves all unrelated geometry and verification stamps unchanged.
+
+Document and workspace commands use the document's injected `SolveOptions`
+policy. The command joins an open transaction or creates one bounded history
+step. Cancellation retains the complete input, and local numerical failures
+retain coordinates while recording diagnostics. The explicit command does not
+start an automatic solve of unrelated pending readers.
+
+Tests cover missing identities before solver work, selected geometry and health,
+cancellation, failure and retry, injected iteration limits, an unrelated pending
+reader, unchanged saved state, group abort, undo/redo, and file save/reopen.
+The typed API dispatch and read-only constraint-status query remain to be wired
+to this owner. This does not complete R3 or certify kernel/native behavior.

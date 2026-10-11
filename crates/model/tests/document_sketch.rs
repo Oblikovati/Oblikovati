@@ -341,3 +341,6 @@ mod health;
 
 #[path = "document_sketch/pending.rs"]
 mod pending;
+
+#[path = "document_sketch/selected.rs"]
+mod selected;
