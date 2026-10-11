@@ -23,6 +23,7 @@ fn history() -> DocumentEditHistory {
             attachments: Default::default(),
             interests: Default::default(),
             resources: Default::default(),
+            sketch_settings: None,
             parameters,
             properties: DocumentProperties::default(),
         },

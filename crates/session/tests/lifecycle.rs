@@ -77,6 +77,7 @@ fn recipe() -> DocumentSnapshot {
         attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
+        sketch_settings: None,
         parameters,
         properties,
     }

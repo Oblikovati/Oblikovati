@@ -479,3 +479,6 @@ mod translation;
 
 #[path = "sketch_api/add_entity.rs"]
 mod add_entity;
+
+#[path = "sketch_api/settings.rs"]
+mod settings;

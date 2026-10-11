@@ -22,3 +22,5 @@ pub mod interest;
 
 pub mod document_sketch;
 pub mod sketch;
+
+pub mod sketch_settings;

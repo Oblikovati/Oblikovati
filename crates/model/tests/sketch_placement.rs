@@ -40,6 +40,7 @@ fn authored_snapshot() -> DocumentSnapshot {
         attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
+        sketch_settings: None,
     }
 }
 fn parameters() -> ParameterCollection<u64> {

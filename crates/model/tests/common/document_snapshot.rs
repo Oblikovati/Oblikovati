@@ -12,6 +12,7 @@ pub fn empty_snapshot() -> DocumentSnapshot {
         attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
+        sketch_settings: None,
         parameters: ParameterCollection::new(UnitsOfMeasure::default()),
         properties: Default::default(),
     }

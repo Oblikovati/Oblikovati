@@ -12,6 +12,7 @@ fn empty_history() -> DocumentEditHistory {
             attachments: Default::default(),
             interests: Default::default(),
             resources: Default::default(),
+            sketch_settings: None,
             parameters: ParameterCollection::new(UnitsOfMeasure::default()),
             properties: DocumentProperties::default(),
         },

@@ -38,6 +38,7 @@ use std::sync::Arc;
 pub struct DocumentSnapshot {
     pub work_geometry:
         crate::feature::FeatureSequence<crate::feature::work_geometry::WorkGeometryDefinition>,
+    pub sketch_settings: Option<crate::sketch_settings::SketchSettings>,
     pub sketches: crate::document_sketch::DocumentSketches,
     pub attributes: crate::attribute::DocumentAttributes,
     pub attachments: crate::attachment::DocumentAttachments,
@@ -286,6 +287,7 @@ impl DocumentEditHistory {
             || !before.parameters.same_recipe(&self.current.parameters)
             || !before.properties.same_recipe(&self.current.properties)
             || before.attachments != self.current.attachments
+            || before.sketch_settings != self.current.sketch_settings
             || before.resources != self.current.resources
             || before.interests != self.current.interests
             || !before.attributes.same_recipe(&self.current.attributes)

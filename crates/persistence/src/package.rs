@@ -28,6 +28,7 @@ mod save;
 mod sketches;
 mod work_planes;
 pub use work_planes::{RestoredWorkGeometry, RestoredWorkGeometry as RestoredWorkPlanes};
+mod sketch_settings;
 mod snapshot;
 pub use sketches::RestoredDocumentSketches;
 pub use snapshot::{ParameterPackageTarget, SnapshotPackageError};

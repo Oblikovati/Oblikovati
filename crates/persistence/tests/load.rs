@@ -482,3 +482,6 @@ mod attachments;
 
 #[path = "load/scalar_ownership.rs"]
 mod scalar_ownership;
+
+#[path = "load/sketch_settings.rs"]
+mod sketch_settings;

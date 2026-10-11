@@ -16,6 +16,7 @@ fn snapshot() -> DocumentSnapshot {
         attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
+        sketch_settings: None,
         properties: Default::default(),
     }
 }

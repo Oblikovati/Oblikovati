@@ -69,6 +69,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             attachments: prepared.attachments,
             interests: prepared.interests,
             resources: prepared.resources,
+            sketch_settings: prepared.sketch_settings,
             parameters: prepared.restored.parameters,
             properties: prepared.properties,
         };

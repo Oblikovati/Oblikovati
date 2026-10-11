@@ -16,6 +16,7 @@ pub struct LoadedParameterPackage {
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
+    pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
 }
 
@@ -46,6 +47,7 @@ pub fn load_parameter_package(
         attachments: prepared.attachments,
         interests: prepared.interests,
         resources: prepared.resources,
+        sketch_settings: prepared.sketch_settings,
     })
 }
 
@@ -61,6 +63,7 @@ pub struct PreparedParameterPackage {
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
+    pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
     pub identity: FileIdentity,
 }
@@ -99,6 +102,9 @@ pub fn read_parameter_package(
     let properties = package
         .restore_parameter_properties(&restored.parameters)
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
+    let sketch_settings = package
+        .restore_sketch_settings()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let identity =
         restore_identity(&package, version, source).map_err(|cause| load_error(path, cause))?;
     let resources = package.resources().clone();
@@ -111,6 +117,7 @@ pub fn read_parameter_package(
         attachments,
         interests,
         resources,
+        sketch_settings,
         properties,
         identity,
     })

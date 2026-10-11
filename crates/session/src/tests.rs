@@ -29,6 +29,7 @@ fn nesting_overflow_preserves_group_and_is_visible() {
         attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
+        sketch_settings: None,
         parameters: ParameterCollection::new(UnitsOfMeasure::default()),
         properties: DocumentProperties::default(),
     };
