@@ -8,7 +8,9 @@ mod events;
 pub mod files;
 mod navigation;
 mod refresh;
+mod sketch_delete;
 mod sketch_recompute;
+pub use sketch_delete::SketchDeleteProjectionInput;
 pub use sketch_recompute::SketchSolveProjectionInput;
 #[cfg(test)]
 mod tests;

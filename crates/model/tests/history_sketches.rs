@@ -1,26 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#[path = "common/document_snapshot.rs"]
+mod document_snapshot;
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{
         DocumentEditHistory, DocumentSnapshot, EditError, HistoryError, SketchReservationMarks,
     },
     identity::RecipeIdAllocator,
-    parameter::ParameterCollection,
     sketch::{Sketch2D, SketchEntityId, SketchPlane},
-    units::UnitsOfMeasure,
 };
 fn history() -> DocumentEditHistory {
     DocumentEditHistory::new(
-        DocumentSnapshot {
-            work_planes: Default::default(),
-            sketches: Default::default(),
-            attributes: Default::default(),
-            attachments: Default::default(),
-            interests: Default::default(),
-            resources: Default::default(),
-            parameters: ParameterCollection::new(UnitsOfMeasure::default()),
-            properties: Default::default(),
-        },
+        document_snapshot::empty_snapshot(),
         RecipeIdAllocator::default(),
     )
     .unwrap()

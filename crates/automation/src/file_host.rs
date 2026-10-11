@@ -73,7 +73,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             return context.list_attachments(decode(method, request)?);
         }
         if crate::SKETCH_COMMAND_METHODS.contains(&method) {
-            return crate::sketches::solve(context.files, decode(method, request)?);
+            return crate::sketches::apply(context.files, method, request);
         }
         context.owned_command(method, request)
     }

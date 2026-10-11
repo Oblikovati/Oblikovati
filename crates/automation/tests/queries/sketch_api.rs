@@ -270,6 +270,9 @@ fn an_existing_empty_sketch_is_well_constrained_and_healthy() {
 #[path = "sketch_api/history.rs"]
 mod history;
 
+#[path = "sketch_api/delete.rs"]
+mod delete;
+
 fn owned_geometry(
     files: &DiscoveryWorkspace,
     document: u64,

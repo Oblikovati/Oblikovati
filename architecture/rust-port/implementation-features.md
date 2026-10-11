@@ -442,8 +442,37 @@ dirty state, undo/redo, group abort, and the saved-file baseline. Save, reopen,
 and copy retain the flag and permanent feature identity. Tests also check unknown
 identity refusal, unchanged flags, and byte-identical evaluated frames. The Go
 construction-default and lifecycle tests pass as reference evidence; the Rust
-cleanup operation is not yet ported.
+cleanup operation is covered by the follow-up below.
 
-No plane is automatically deleted by this change. Consumed-sketch refusal,
-construction-orphan pruning, and the shared deletion command remain the next
-lifecycle work. Native/kernel acceptance remains open.
+The construction-state change itself does not delete planes. The follow-up below
+adds consumed-sketch refusal, orphan pruning, and the shared deletion command.
+Native/kernel acceptance remains open.
+
+## Sketch deletion and construction cleanup — partial R3
+
+Tracking: [#3735](https://github.com/Oblikovati/Oblikovati/issues/3735).
+The file host now routes the shared typed `sketch.delete` command through the
+document owner. It selects the stable sketch identity from the active part's
+ordered index. Invalid indices, document kinds, and malformed requests fail
+before mutation. Reply preparation, deletion, and plane cleanup share one
+transaction and one undo step; a rejected reply or observer veto restores the
+candidate. Deletion does not numerically solve unrelated sketches.
+
+Deletion derives an incidence index from authored read footprints. Known sketch
+consumers and unknown read attribution cause a named decline before mutation.
+Only construction planes that had consumers before deletion can be pruned.
+Reverse validated feature order removes the orphan chain in one pass. Ordinary
+planes, initially unused construction planes, other sketches, and suppressed or
+cutoff consumers retain their references. Entity namespaces remain distinct.
+
+Tests cover exact consumers, chain cleanup, stable IDs, local frame preservation,
+undo/redo, group abort, response rejection, veto, saved baselines, and save/reopen
+with permanent reservation marks. The Go construction tests pass at migration
+baseline `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
+Reference: `model/compdef/work_construction_cleanup.go` and
+`addin/router/sketch_dependents.go`.
+
+This covers the current work-plane and sketch catalogue. Future body-feature
+recipes must supply their exact consumed-sketch keys to this same incidence
+source. Legacy body feature import is still refused. Native selection,
+kernel-backed consumers, and viewport acceptance remain open.

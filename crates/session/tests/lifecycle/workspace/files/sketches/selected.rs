@@ -80,7 +80,8 @@ fn owner_sketches(host: &Host, document: u64) -> &DocumentSketches {
         .sketches
 }
 
-fn session_with_unverified_neighbor() -> (DocumentSession<RecordingObserver>, DocumentSketchId) {
+pub(super) fn session_with_unverified_neighbor()
+-> (DocumentSession<RecordingObserver>, DocumentSketchId) {
     let (session, sketch) = stale_session(Default::default());
     let mut snapshot = session.snapshot().clone();
     let mut geometry = Sketch2D::default();

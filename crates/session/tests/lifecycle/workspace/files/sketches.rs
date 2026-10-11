@@ -417,3 +417,6 @@ mod open_verification;
 
 #[path = "sketches/selected.rs"]
 mod selected;
+
+#[path = "sketches/delete.rs"]
+mod delete;

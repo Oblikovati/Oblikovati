@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::encode;
+mod delete;
 use oblikovati_api::{Error, types::DOCUMENT_PART, wire::*};
 use oblikovati_model::{
     document_sketch::{DocumentSketchId, DocumentSketchRecompute},
@@ -8,7 +9,7 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{
     SketchSolveProjectionInput, TransactionObserver, files::FileWorkspace,
-    workspace::WorkspaceObserver,
+    workspace::SessionCommands, workspace::WorkspaceObserver,
 };
 use oblikovati_solve::{
     diagnostics::{ConstraintStatus, ConstraintStructure},
@@ -16,21 +17,39 @@ use oblikovati_solve::{
 };
 
 /// Selected sketch commands require a retained part-document kind.
-pub const SKETCH_COMMAND_METHODS: [&str; 1] = [METHOD_SKETCH_SOLVE];
+pub const SKETCH_COMMAND_METHODS: [&str; 2] = [METHOD_SKETCH_SOLVE, METHOD_SKETCH_DELETE];
 
-pub(super) fn solve<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
-    request: SketchArgs,
+    method: &str,
+    request: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    let request: SketchArgs = crate::decode(method, request)?;
     let (document, sketch) = active_sketch(files, request.sketch_index)?;
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .solve_sketch_projected(
-            sketch,
-            || false,
-            |report| solve_reply(report, request.sketch_index),
-        )
+    let mut commands = files.commands(document).map_err(api_error)?;
+    dispatch_sketch(&mut commands, method, sketch, request.sketch_index)
+}
+fn dispatch_sketch<O: TransactionObserver>(
+    commands: &mut SessionCommands<'_, O>,
+    method: &str,
+    sketch: DocumentSketchId,
+    index: i64,
+) -> Result<Vec<u8>, Error> {
+    match method {
+        METHOD_SKETCH_SOLVE => solve(commands, sketch, index),
+        METHOD_SKETCH_DELETE => delete::apply(commands, sketch),
+        _ => Err(Error(format!(
+            "sketch command {method:?}: expected one of {SKETCH_COMMAND_METHODS:?}"
+        ))),
+    }
+}
+fn solve<O: TransactionObserver>(
+    commands: &mut SessionCommands<'_, O>,
+    sketch: DocumentSketchId,
+    index: i64,
+) -> Result<Vec<u8>, Error> {
+    commands
+        .solve_sketch_projected(sketch, || false, |report| solve_reply(report, index))
         .map_err(api_error)?
 }
 pub(super) fn constraint_status<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -67,7 +86,7 @@ fn active_part<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     let kind = files.document_type(document).map_err(api_error)?;
     if kind != DOCUMENT_PART {
         return Err(Error(format!(
-            "document {document} kind {kind:?}: expected {DOCUMENT_PART:?} for a sketch query or solve"
+            "document {document} kind {kind:?}: expected {DOCUMENT_PART:?} for a sketch query or command"
         )));
     }
     Ok(document)

@@ -9,7 +9,9 @@ use crate::{
 mod checkpoints;
 mod derived_ids;
 mod feature_ids;
+mod sketch_delete;
 mod sketch_ids;
+pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
 mod sketch_placement;
 pub use sketch_ids::SketchReservationMarks;
 pub use sketch_placement::{DocumentSketchPlacementError, ResolvedDocumentSketch};
