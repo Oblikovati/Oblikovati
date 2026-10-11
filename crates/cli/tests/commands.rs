@@ -169,10 +169,7 @@ fn help_and_version_match_the_embedded_build_identity_without_reading_packages()
                 )
             );
         } else {
-            assert!(
-                output
-                    .contains("Geometry reconstruction, edits, and scripts are not yet available")
-            );
+            assert!(output.contains("Seeded geometry, edits, and scripts are not yet available"));
         }
     }
 }

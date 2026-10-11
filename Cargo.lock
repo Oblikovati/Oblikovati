@@ -401,7 +401,10 @@ dependencies = [
 name = "oblikovati-cli"
 version = "0.1.0"
 dependencies = [
+ "oblikovati-api",
+ "oblikovati-model",
  "oblikovati-persistence",
+ "oblikovati-session",
  "serde",
  "serde_json",
  "tempfile",

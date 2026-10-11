@@ -32,7 +32,7 @@ error. No display mesh is used for model geometry.
 list options to both SDKs and extends the generated checks and tested wiki
 examples. [API v0.157.0](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.157.0)
 passed owner CI, wiki, release, and archive checks. The application pins version
-`0.157.0` and commit `8a23d7aee54e018821ce942054649d8e5b8bdb68` in all four
+`0.157.0` and commit `8a23d7aee54e018821ce942054649d8e5b8bdb68` in all
 consumer declarations, Cargo.lock, and release.toml. The downloaded crate hash
 matches GitHub's asset digest:
 `a968656690192cf285e3e47aeadd9882da8302d94c3d7182ed7957d5520cd6f1`.

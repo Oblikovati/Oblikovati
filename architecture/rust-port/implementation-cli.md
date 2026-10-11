@@ -9,6 +9,7 @@ the executable uses native files and reports failures on stderr with exit code 1
 
 | Command | Behavior |
 | --- | --- |
+| `new <type> <path> [--seed]` | Create and atomically save an unseeded document through the file owner; see [creation evidence](implementation-cli-new.md). |
 | `info <path> [--json]` | Decode a schema-2 envelope and report schema version, document kind, and display name without executing its recipe or writing the file. |
 | `version`, `--version` | Report embedded product version and application commit. |
 | `help`, `-h`, `--help` | Report available commands and the current implementation scope. |
@@ -18,7 +19,7 @@ JSON flag can appear before or after the path. Document kinds come from the API
 crate. Native path operands stay OS strings. Read, decode, usage, and output-stream
 failures propagate to the caller rather than producing success output.
 
-`new`, `open`, `save-as`, `import`, `export`, `export-flat`, `script`,
+`open`, `save-as`, `import`, `export`, `export-flat`, `script`,
 `generate-assembly`, and `check-updates` report that they are not yet ported.
 They do not pretend to execute the available partial model as a complete CAD
 document. Typed automation routing, full recipe reconstruction, command edits,
