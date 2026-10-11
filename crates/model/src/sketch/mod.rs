@@ -18,6 +18,8 @@ mod dependencies;
 mod entity_order;
 mod error;
 mod geometry;
+mod inspection;
+pub use inspection::{SketchEntityInspection, SketchMovementOptions};
 mod grounded;
 mod line_residual;
 mod offset_dimension;

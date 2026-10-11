@@ -42,13 +42,7 @@ impl GroundedLayout {
         columns.iter().map(|column| self.slots[*column]).collect()
     }
     pub fn restore(&self, values: &[f64]) -> Result<Vec<f64>, SketchError> {
-        if values.len() != self.active_count {
-            return Err(SketchError::Definition(format!(
-                "grounded candidate has {} variables: expected {} active values",
-                values.len(),
-                self.active_count
-            )));
-        }
+        self.require_active_count(values.len(), "grounded candidate")?;
         Ok(self
             .slots
             .iter()
@@ -57,5 +51,42 @@ impl GroundedLayout {
                 GroundedSlot::Active(index) => values[*index],
             })
             .collect())
+    }
+    pub fn restore_freedoms(&self, values: &[bool]) -> Result<Vec<bool>, SketchError> {
+        self.require_active_count(values.len(), "grounded coordinate freedom")?;
+        Ok(self
+            .slots
+            .iter()
+            .map(|slot| match slot {
+                GroundedSlot::Constant(_) => false,
+                GroundedSlot::Active(index) => values[*index],
+            })
+            .collect())
+    }
+    fn require_active_count(&self, actual: usize, context: &str) -> Result<(), SketchError> {
+        if actual != self.active_count {
+            return Err(SketchError::Definition(format!(
+                "{context} has {actual} variables: expected {} active values",
+                self.active_count
+            )));
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn freedom_restore_maps_constants_and_checks_reduced_shape() {
+        let layout = GroundedLayout::new(&[1.0, 2.0, 3.0], &BTreeSet::from([1]));
+        assert_eq!(
+            layout.restore_freedoms(&[true, false]).unwrap(),
+            [true, false, false]
+        );
+        let cause = layout.restore_freedoms(&[]).unwrap_err().to_string();
+        assert!(cause.contains("grounded coordinate freedom has 0"));
+        assert!(cause.contains("expected 2 active values"));
+        assert!(layout.restore(&[]).is_err());
     }
 }

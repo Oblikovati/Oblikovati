@@ -29,6 +29,9 @@ impl GroundedSketch {
             })
             .collect()
     }
+    pub fn restore_freedoms(&self, values: &[bool]) -> Result<Vec<bool>, SketchError> {
+        self.layout.restore_freedoms(values)
+    }
     pub fn restore(&self, values: &[f64]) -> Result<Vec<f64>, SketchError> {
         self.layout.restore(values)
     }

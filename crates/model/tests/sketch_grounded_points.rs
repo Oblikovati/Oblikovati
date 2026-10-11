@@ -145,3 +145,6 @@ fn fully_grounded_conflict_keeps_authored_source_identity_and_both_anchors() {
 mod circular;
 #[path = "sketch_grounded_points/guards.rs"]
 mod guards;
+
+#[path = "sketch_grounded_points/inspection.rs"]
+mod inspection;

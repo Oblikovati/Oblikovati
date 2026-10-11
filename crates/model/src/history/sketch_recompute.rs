@@ -56,4 +56,17 @@ impl DocumentSnapshot {
             .geometry()
             .analyze_with_grounded_points(&self.parameters, &anchors, rank_tolerance)
     }
+    /// Read current shapes and movement without solving or changing the document.
+    /// Example: `snapshot.inspect_document_sketch(id, Default::default())?;`.
+    pub fn inspect_document_sketch(
+        &self,
+        id: DocumentSketchId,
+        options: crate::sketch::SketchMovementOptions,
+    ) -> Result<Vec<crate::sketch::SketchEntityInspection>, SketchError> {
+        let placed = self.sketches.get(id)?;
+        let anchors = self.resolve_sketch_projected_points(id)?;
+        placed
+            .geometry()
+            .inspect_entities(&self.parameters, &anchors, options)
+    }
 }
