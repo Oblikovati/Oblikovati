@@ -50,9 +50,13 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
                     .map(|source| (*reader, source))
             })
             .map(|(reader, source)| {
-                Expression::parse(&source, &self.units)
-                    .map(|expression| (reader, expression))
-                    .map_err(Into::into)
+                super::expression_context::compile_context_source(
+                    &source,
+                    &self.units,
+                    self.records[&reader].state.expression_context.as_ref(),
+                )
+                .map(|expression| (reader, expression))
+                .map_err(Into::into)
             })
             .collect()
     }

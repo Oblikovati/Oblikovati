@@ -47,6 +47,7 @@ pub struct ParameterState<Id> {
     pub choices: oblikovati_api::wire::ExpressionListInfo,
     pub model_value_type: ModelValueType,
     pub source: String,
+    pub expression_context: Option<super::DimensionExpressionContext>,
     pub last_good_value: Option<ParameterValue>,
     pub health: ParameterHealth<Id>,
 }

@@ -71,6 +71,11 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         let value = binding
             .evaluate(|driver| self.records[&driver].state.current_value())
             .map_err(ParameterFailure::Evaluation)?;
+        if let Some(context) = &record.state.expression_context {
+            context
+                .validate_quantity(value)
+                .map_err(ParameterFailure::Evaluation)?;
+        }
         if !value.value.is_finite() {
             return Err(ParameterFailure::NonFinite(value));
         }

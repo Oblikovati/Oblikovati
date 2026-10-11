@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use super::expression_context::compile_context_source;
 use super::*;
 use crate::quantity::Quantity;
 
@@ -19,7 +20,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
             });
         }
         let expression = Expression::parse(source, &self.units)?;
-        self.insert_compiled(id, name, kind, expression)
+        self.insert_compiled(id, name, kind, expression, None)
     }
 
     /// Add a constant, including read-only measurements; for example `parameters.insert_value(id, "span", REFERENCE_PARAM, measured)`.
@@ -32,7 +33,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     ) -> Result<(), ParameterError<Id>> {
         require_kind(kind)?;
         require_numeric_quantity(id, quantity)?;
-        self.insert_compiled(id, name, kind, Expression::constant(quantity))
+        self.insert_compiled(id, name, kind, Expression::constant(quantity), None)
     }
 
     /// Edit a formula and recompute its readers; for example `parameters.set_expression(id, "2 * width")`.
@@ -40,7 +41,13 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     pub fn set_expression(&mut self, id: Id, source: &str) -> Result<(), ParameterError<Id>> {
         self.require_editable(id)?;
         self.require_formula(id)?;
-        let expression = Expression::parse(source, &self.units)?;
+        let context = self.current_expression_context(id)?;
+        let expression = compile_context_source(source, &self.units, context.as_ref())?;
+        self.records
+            .get_mut(&id)
+            .expect("validated parameter")
+            .state
+            .expression_context = context;
         self.replace_compiled(id, expression)
     }
 
@@ -76,12 +83,14 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         name: &str,
         kind: ParameterKind,
         expression: Expression,
+        context: Option<DimensionExpressionContext>,
     ) -> Result<(), ParameterError<Id>> {
         if expression.references().contains(&name.to_owned()) {
             return Err(DependencyError::Cycle { id, driver: id }.into());
         }
         let binding = expression.bind(|name| self.find(name));
         let mut record = ParameterRecord::new(name, kind, expression.source().into());
+        record.state.expression_context = context;
         record.formula = Some(ParameterFormula {
             expression,
             binding,
@@ -108,7 +117,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
         Ok(())
     }
 
-    fn replace_compiled(
+    pub(super) fn replace_compiled(
         &mut self,
         id: Id,
         expression: Expression,

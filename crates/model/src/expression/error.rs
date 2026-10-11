@@ -6,6 +6,10 @@ use std::fmt;
 /// Positioned syntax or evaluation failure, ready for parameter health reporting.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExpressionError {
+    InputContext {
+        found: String,
+        expected: &'static str,
+    },
     Syntax {
         position: usize,
         found: String,
@@ -30,6 +34,10 @@ pub enum ExpressionError {
 impl fmt::Display for ExpressionError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InputContext { found, expected } => write!(
+                formatter,
+                "scalar expression context {found}: expected {expected}"
+            ),
             Self::Syntax {
                 position,
                 found,

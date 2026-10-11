@@ -17,6 +17,8 @@ pub(super) struct ParameterRecipe {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) last_good: Option<super::diagnostics::NumericDiagnostic>,
     kind: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) expression_context: Option<oblikovati_model::parameter::DimensionExpressionContext>,
     value_type: String,
     expression: String,
     text: String,
@@ -83,7 +85,10 @@ impl ParameterRecipe {
             "" => literals_clear && measured_clear,
             _ => false,
         };
-        if !valid
+        if (self.expression_context.is_some()
+            && (!self.value_type.is_empty()
+                || !matches!(self.kind.as_str(), "model" | "user" | "table")))
+            || !valid
             || (self.expression_list.is_empty()
                 && (self.allow_custom_value || self.sorted_value_list))
         {
@@ -101,6 +106,9 @@ impl ParameterRecipe {
         parameters: &mut ParameterCollection<u64>,
     ) -> Result<(), PackageCodecError> {
         let kind = parameter_kind(&self.kind)?;
+        if let Some(context) = &self.expression_context {
+            return self.restore_context(id, parameters, kind, context.clone());
+        }
         let result = match self.value_type.as_str() {
             "text" if kind == USER_PARAM => parameters.insert_text(id, &self.name, &self.text),
             "boolean" if kind == USER_PARAM => {
@@ -119,6 +127,26 @@ impl ParameterRecipe {
                     self.name, self.kind
                 )));
             }
+        };
+        result.map_err(parameter_error)
+    }
+
+    fn restore_context(
+        &self,
+        id: u64,
+        parameters: &mut ParameterCollection<u64>,
+        kind: ParameterKind,
+        context: oblikovati_model::parameter::DimensionExpressionContext,
+    ) -> Result<(), PackageCodecError> {
+        let result = match super::measured::parse_saved_constant(&self.expression)? {
+            Some(value) => parameters.restore_context_value(id, &self.name, kind, value, context),
+            None => parameters.restore_context_expression(
+                id,
+                &self.name,
+                kind,
+                &self.expression,
+                context,
+            ),
         };
         result.map_err(parameter_error)
     }
@@ -199,6 +227,7 @@ impl ParameterRecipe {
     ) -> Result<Self, PackageCodecError> {
         let mut record = Self {
             name: state.name.clone(),
+            expression_context: state.expression_context.clone(),
             kind: super::export::kind_name(state.kind)?.into(),
             comment: state.annotations.comment.clone(),
             key: state.annotations.is_key,

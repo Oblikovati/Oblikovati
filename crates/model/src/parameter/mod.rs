@@ -16,6 +16,8 @@ mod comparison;
 mod derived;
 pub use derived::{DerivedTable, DerivedTableHealth};
 mod edit;
+mod expression_context;
+pub use expression_context::DimensionExpressionContext;
 mod error;
 mod evaluate;
 mod fits;

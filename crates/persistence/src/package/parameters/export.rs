@@ -14,13 +14,17 @@ impl DocumentPackage {
         validate_health(parameters, true)?;
         super::super::units::require_preserved_scale(self, &units)?;
         let mut candidate = self.clone();
-        let unhealthy = parameters.ids().iter().any(|id| {
+        let extended_records = parameters.ids().iter().any(|id| {
             !matches!(
                 parameters.get(*id).expect("owned ID").health,
                 ParameterHealth::Healthy
-            )
+            ) || parameters
+                .get(*id)
+                .expect("owned ID")
+                .expression_context
+                .is_some()
         });
-        if unhealthy {
+        if extended_records {
             candidate.manifest.schema_version = 3;
             candidate.root.insert("schemaVersion".into(), 3u32.into());
         }

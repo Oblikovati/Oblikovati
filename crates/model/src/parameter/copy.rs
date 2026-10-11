@@ -34,7 +34,13 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     ) -> Result<(), ParameterError<Id>> {
         if let Some(formula) = &original.formula {
             // #3580: measured constants have diagnostic source, not parser input.
-            return self.insert_compiled(id, name, USER_PARAM, formula.expression.clone());
+            return self.insert_compiled(
+                id,
+                name,
+                USER_PARAM,
+                formula.expression.clone(),
+                original.state.expression_context.clone(),
+            );
         }
         match original.state.current() {
             Some(ParameterValue::Text(text)) => self.insert_text(id, name, text),

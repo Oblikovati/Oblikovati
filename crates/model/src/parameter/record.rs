@@ -21,6 +21,7 @@ impl<Id> ParameterRecord<Id> {
             annotations: ParameterAnnotations::default(),
             kind,
             source,
+            expression_context: None,
             last_good_value: None,
             renamed: false,
             built_in: false,

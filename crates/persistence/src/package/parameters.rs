@@ -43,6 +43,16 @@ impl DocumentPackage {
         units: UnitsOfMeasure,
     ) -> Result<RestoredParameters, PackageCodecError> {
         let records = self.parameter_records()?;
+        if self.manifest.schema_version < 3
+            && records
+                .iter()
+                .any(|record| record.expression_context.is_some())
+        {
+            return Err(PackageCodecError(format!(
+                "scalar expressionContext in document schema {}: expected document schema 3",
+                self.manifest.schema_version
+            )));
+        }
         let (live_ids, allocator) = identities::restore_ids(self, &records)?;
         let mut restored = RestoredParameters {
             parameters: ParameterCollection::new(units),
