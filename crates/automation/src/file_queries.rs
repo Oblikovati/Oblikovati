@@ -6,10 +6,12 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 3] = [
+pub const FILE_QUERY_METHODS: [&str; 5] = [
     METHOD_DOCUMENTS_LIST,
     METHOD_PARAMETERS_DERIVED_TABLES_LIST,
     METHOD_SKETCH_CONSTRAINT_STATUS,
+    METHOD_WORK_AXES_LIST,
+    METHOD_WORK_POINTS_LIST,
 ];
 pub(crate) mod derived;
 
@@ -29,6 +31,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
     for FileQueryHost<'_, O, W, F>
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::DATUM_QUERY_METHODS.contains(&method) {
+            return crate::datums::query(self.files, method, request);
+        }
         if method == METHOD_SKETCH_CONSTRAINT_STATUS {
             return crate::sketches::constraint_status(self.files, crate::decode(method, request)?);
         }

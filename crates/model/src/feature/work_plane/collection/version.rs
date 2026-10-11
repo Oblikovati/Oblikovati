@@ -7,20 +7,16 @@ pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32
         .map(|feature| feature.definition.definition.minimum_program_version())
         .max()
         .unwrap_or(1);
-    let construction = if features.iter().any(|feature| feature.construction) {
-        2
-    } else {
-        1
-    };
-    definitions.max(construction)
+    definitions.max(metadata_program_version(features))
 }
 pub(super) fn validate_program_version(
     recipe: &WorkPlaneProgramRecipe,
 ) -> Result<(), WorkPlaneProgramRecipeError> {
-    if !matches!(recipe.version, 1..=4) {
+    if !matches!(recipe.version, 1..=5) {
         return Err(WorkPlaneProgramRecipeError::Version(recipe.version));
     }
     validate_definition_versions(recipe)?;
+    validate_visibility_version(recipe)?;
     if recipe.version == 1
         && let Some(feature) = recipe.features.iter().find(|feature| feature.construction)
     {
@@ -39,6 +35,26 @@ fn validate_definition_versions(
                 minimum,
             });
         }
+    }
+    Ok(())
+}
+
+fn metadata_program_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
+    if features.iter().any(|feature| !feature.visible) {
+        return 5;
+    }
+    if features.iter().any(|feature| feature.construction) {
+        return 2;
+    }
+    1
+}
+fn validate_visibility_version(
+    recipe: &WorkPlaneProgramRecipe,
+) -> Result<(), WorkPlaneProgramRecipeError> {
+    if recipe.version < 5
+        && let Some(feature) = recipe.features.iter().find(|feature| !feature.visible)
+    {
+        return Err(WorkPlaneProgramRecipeError::LegacyVisibility(feature.id));
     }
     Ok(())
 }

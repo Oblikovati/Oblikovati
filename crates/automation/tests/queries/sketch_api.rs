@@ -26,7 +26,7 @@ fn create_kind(files: &mut DiscoveryWorkspace, kind: DocumentType, source: &mut 
         .unwrap()
         .session_id
 }
-fn configured_files(
+pub(super) fn configured_files(
     kind: DocumentType,
     options: SolveOptions,
 ) -> (DiscoveryWorkspace, u64, QueryGuids) {
@@ -74,7 +74,10 @@ fn status_call(
             sketch_index: index,
         })
 }
-fn owner_revision(files: &DiscoveryWorkspace, document: u64) -> (u64, Vec<String>, bool) {
+pub(super) fn owner_revision(
+    files: &DiscoveryWorkspace,
+    document: u64,
+) -> (u64, Vec<String>, bool) {
     let session = files.workspace().session(document).unwrap();
     (
         session.generation(),
@@ -385,7 +388,7 @@ fn remove_sketch(files: &mut DiscoveryWorkspace, document: u64, sketch: Document
         })
         .unwrap();
 }
-fn reopen_with_observer(
+pub(super) fn reopen_with_observer(
     files: &mut DiscoveryWorkspace,
     document: u64,
     source: &mut QueryGuids,

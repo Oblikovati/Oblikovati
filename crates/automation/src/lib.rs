@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
+mod datums;
+mod part_owner;
+pub use datums::{DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS};
 mod clients;
 pub use clients::CLIENT_COMMAND_METHODS;
 mod attachments;

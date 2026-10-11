@@ -22,6 +22,11 @@ pub struct WorkPlaneFeatureRecipe {
     // Older strict readers must still accept ordinary version-1 records (#3734).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub construction: bool,
+    #[serde(
+        default = "default_datum_visibility",
+        skip_serializing_if = "is_default_datum_visibility"
+    )]
+    pub visible: bool,
     pub condition: Option<FeatureSuppressionRecipe>,
     pub definition_reads: FeatureReadFootprint,
 }
@@ -45,6 +50,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
             definition,
             suppressed: self.suppressed,
             construction: self.construction_datum,
+            visible: self.datum_visible,
             condition: self.condition.map(FeatureSuppressionCondition::recipe),
             definition_reads: self.definition_reads.clone(),
         })
@@ -63,6 +69,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
         );
         feature.suppressed = recipe.suppressed;
         feature.construction_datum = recipe.construction;
+        feature.datum_visible = recipe.visible;
         let condition = restore_condition(recipe.condition.as_ref())?;
         feature.store_condition(condition);
         Ok(feature)
@@ -114,4 +121,11 @@ impl FeatureSequence<WorkPlaneDefinition> {
         sequence.end_of_part = recipe.end_of_part;
         Ok(sequence)
     }
+}
+
+fn default_datum_visibility() -> bool {
+    true
+}
+fn is_default_datum_visibility(visible: &bool) -> bool {
+    *visible
 }

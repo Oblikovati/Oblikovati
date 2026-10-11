@@ -46,6 +46,7 @@ fn same_feature(
         && first.name == second.name
         && first.suppressed == second.suppressed
         && first.construction_datum == second.construction_datum
+        && first.datum_visible == second.datum_visible
         && first.definition.same_recipe(second.definition)
         && first.definition_reads == second.definition_reads
         && match (first.condition, second.condition) {

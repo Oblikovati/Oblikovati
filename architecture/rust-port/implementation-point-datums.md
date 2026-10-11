@@ -44,5 +44,6 @@ File-session tests cover undo/redo, save, reopen, copies, dependent sketch
 placement and construction-chain deletion without reuse of permanent IDs.
 
 Plane-intersection axes, relational point definitions, coordinate systems,
-edge references and public datum creation routing remain open. Native rendering
-and kernel acceptance are not established by these model and file tests.
+and edge references remain open. Public creation/list routing and hidden metadata
+version 5 are recorded in [API evidence](implementation-datum-api.md). Native
+rendering and kernel acceptance are not established by these model and file tests.

@@ -6,6 +6,7 @@ mod length;
 mod point;
 mod reads;
 mod result;
+mod visibility;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as WorkGeometryProgramRecipe,
     WorkPlaneProgramRecipeError as WorkGeometryProgramRecipeError,

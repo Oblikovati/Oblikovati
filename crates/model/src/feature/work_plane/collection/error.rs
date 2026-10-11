@@ -11,6 +11,7 @@ use std::fmt::{Display, Formatter};
 pub enum WorkPlaneProgramRecipeError {
     Version(u32),
     LegacyConstruction(FeatureId),
+    LegacyVisibility(FeatureId),
     LegacyDefinition { feature: FeatureId, minimum: u32 },
     Plane(WorkPlaneError),
     Condition(FeatureSuppressionError),
@@ -26,6 +27,7 @@ impl Display for WorkPlaneProgramRecipeError {
                 "datum feature {feature:?}: expected program version {minimum}"
             ),
             Self::Version(version) => unsupported_version(*version, formatter),
+            Self::LegacyVisibility(id) => write_visibility(*id, formatter),
             Self::LegacyConstruction(id) => write!(
                 formatter,
                 "work plane {} construction=true in program version 1: expected version 2",
@@ -42,7 +44,10 @@ impl Display for WorkPlaneProgramRecipeError {
 impl std::error::Error for WorkPlaneProgramRecipeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Version(_) | Self::LegacyConstruction(_) | Self::LegacyDefinition { .. } => None,
+            Self::Version(_)
+            | Self::LegacyConstruction(_)
+            | Self::LegacyVisibility(_)
+            | Self::LegacyDefinition { .. } => None,
             Self::Plane(error) => Some(error),
             Self::Condition(error) => Some(error),
             Self::Sequence(error) => Some(error),
@@ -54,6 +59,13 @@ impl std::error::Error for WorkPlaneProgramRecipeError {
 fn unsupported_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane program version {version}: expected 1, 2, 3, or 4"
+        "work plane program version {version}: expected 1, 2, 3, 4, or 5"
+    )
+}
+
+fn write_visibility(id: FeatureId, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(
+        formatter,
+        "datum {id:?} visible=false: expected program version 5"
     )
 }

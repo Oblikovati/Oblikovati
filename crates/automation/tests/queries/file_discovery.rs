@@ -207,3 +207,6 @@ mod sketch_api;
 
 #[path = "derived_sources.rs"]
 mod derived_sources;
+
+#[path = "datums_api.rs"]
+mod datums_api;
