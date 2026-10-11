@@ -12,6 +12,7 @@ use std::error::Error;
 
 mod work_planes {
     use super::*;
+    mod collection;
     mod recipe;
 }
 

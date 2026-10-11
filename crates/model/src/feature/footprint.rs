@@ -4,7 +4,9 @@ use super::FeatureId;
 use std::collections::BTreeSet;
 
 /// Document-local read identities, separate namespaces even when numbers match.
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(
+    Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize,
+)]
 pub enum FeatureReadKey {
     Feature(FeatureId),
     Parameter(u64),
@@ -12,7 +14,8 @@ pub enum FeatureReadKey {
 }
 
 /// Explicit reads and conservative attribution status; empty is not unknown.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FeatureReadFootprint {
     pub(super) keys: BTreeSet<FeatureReadKey>,
     unattributed: bool,

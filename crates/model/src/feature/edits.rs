@@ -20,7 +20,13 @@ impl<Definition> FeatureSequence<Definition> {
     /// Remove only an unused identity, preserving the dirty tail; example: `sequence.remove(id)?`.
     pub fn remove(&mut self, id: FeatureId) -> Result<FeatureReplayRange, FeatureSequenceError> {
         let start = self.position(id)?;
-        self.dependencies.remove(id)?;
+        self.dependencies.remove(id).map_err(|mut error| {
+            // Stable ID order keeps refusal diagnostics unchanged after recipe restore (#3728).
+            if let crate::dependency::DependencyError::InUse { readers, .. } = &mut error {
+                readers.sort_unstable();
+            }
+            FeatureSequenceError::Dependency(error)
+        })?;
         self.features.remove(start);
         Ok(self.replay_from(start))
     }

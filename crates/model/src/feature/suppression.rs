@@ -2,15 +2,17 @@
 //! Conditional suppression from Go `model/feature/suppression.go`, aa8297d1.
 
 mod error;
+mod recipe;
 use super::{
     AuthoredFeature, FeatureId, FeatureReadKey, FeatureReplayRange, FeatureSequence,
     FeatureSequenceError,
 };
 use crate::{parameter::ParameterCollection, quantity::Quantity};
 pub use error::FeatureSuppressionError;
+pub use recipe::FeatureSuppressionRecipe;
 
 /// Internal comparison semantics, independent of public numeric API constants.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum FeatureSuppressionComparison {
     Equal,
     NotEqual,
@@ -93,7 +95,7 @@ impl FeatureSuppressionCondition {
         }
     }
 
-    fn same_recipe(self, other: Self) -> bool {
+    pub(super) fn same_recipe(self, other: Self) -> bool {
         self.parameter == other.parameter
             && self.comparison == other.comparison
             && self.threshold.dimension == other.threshold.dimension

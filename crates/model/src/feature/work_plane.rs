@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Fixed and offset construction frames from Go work_plane.go/work_plane_defs.go, aa8297d1.
 
+mod collection;
 mod error;
 mod evaluate;
 mod recipe;
@@ -10,6 +11,7 @@ use crate::{
     quantity::{Dimension, Quantity},
     sketch::SketchPlane,
 };
+pub use collection::{WorkPlaneFeatureRecipe, WorkPlaneProgramRecipe, WorkPlaneProgramRecipeError};
 pub use error::WorkPlaneError;
 pub use evaluate::WorkPlaneEvaluation;
 pub use recipe::{WorkPlaneDefinitionRecipe, WorkPlaneRecipe};

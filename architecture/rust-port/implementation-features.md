@@ -214,3 +214,50 @@ overflow rejection, derived footprints, and strict recipe restore. The Go
 offset and parameter-footprint tests pass with `CGO_ENABLED=0`. Other work-plane
 constructors, points, axes, coordinate systems, live sketch attachment, and
 native presentation remain open. No R3 milestone is closed by this evidence.
+
+## Ordered work-plane program recipes — partial R2
+
+Tracking: [#3728](https://github.com/Oblikovati/Oblikovati/issues/3728).
+Implementation: `feature/work_plane/collection` and `feature/suppression/recipe`.
+Go reference: feature metadata in `serialize.go`, work-plane records in
+`serialize_work_plane.go`, and the ordered replay sources at the baseline above.
+This is a Rust collection schema, not an implicit importer for those Go records.
+
+Program schema 1 preserves stable IDs, display names, order, definitions,
+explicit suppression, conditional suppression, declared definition reads,
+unattributed-read status, and the authored end-of-part marker. It stores no
+evaluated frames or health. A condition stores its stable parameter input,
+comparison, exact working-unit threshold, and the canonical quantity category
+from the existing unit service. Named display units such as `mm` are refused
+as categories. Known nonnumeric categories and nonfinite thresholds are also
+refused by the shared condition constructor.
+
+Restore builds a fresh collection through the existing dependency graph and
+definition validators. Condition reads join their declared definition reads.
+Additional conservative reads remain intact. Export and restore reject a
+missing mandatory definition read; export also validates constant offsets
+before JSON can turn a nonfinite value into a null. Duplicate or forward
+feature identities, unsupported versions, unknown fields and variants, invalid
+definitions, and invalid conditions are named failures. A rejected candidate
+cannot replace the caller's collection.
+
+The authored cutoff is retained even when deletion left it beyond the current
+tail. Effective evaluation clamps it, as the existing Go and Rust sequence
+rules do. Appending a later entry therefore has the same meaning before and
+after restore. Protected-removal diagnostics sort reader IDs so rebuilding a
+graph after reorder does not change the refusal's reader order.
+
+`same_work_plane_recipe` compares complete authored state with exact floating
+bits, including frame axes, validation policy, constant offsets, and condition
+thresholds. It also compares identity, labels, order, suppression, declared
+reads, and cutoff. It does not compare derived health or construction frames.
+This supplies the equality rule required by the future history and save owner.
+
+Tests compare restored programs against original real frame results, ordered
+health, read invalidation, and full authored equality. They cover empty and
+clamped programs, independent ownership, exact signed-zero values, invalid
+versions and dependencies, invalid categories and thresholds, strict schema
+fields, retained extra reads, condition clearing, and stable refusal diagnostics.
+Document snapshot ownership, permanent feature reservations, undo/redo,
+package fields and live sketch attachment remain open. Collection JSON
+round-trip does not establish application save/reopen or close R2.

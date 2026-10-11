@@ -46,7 +46,7 @@ impl FeatureSequence<WorkPlaneDefinition> {
         Ok(evaluation)
     }
 
-    fn validate_work_plane_reads(&self) -> Result<(), FeatureReplayError> {
+    pub(super) fn validate_work_plane_reads(&self) -> Result<(), FeatureReplayError> {
         for feature in self.features() {
             let reads = feature.definition().reads();
             let missing: Vec<_> = reads

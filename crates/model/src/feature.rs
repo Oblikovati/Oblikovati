@@ -21,6 +21,7 @@ pub use footprint::{FeatureReadFootprint, FeatureReadKey};
 pub use replay::FeatureReplayRange;
 pub use suppression::{
     FeatureSuppressionComparison, FeatureSuppressionCondition, FeatureSuppressionError,
+    FeatureSuppressionRecipe,
 };
 
 /// Permanent document-local identity; reservation belongs outside undo snapshots.

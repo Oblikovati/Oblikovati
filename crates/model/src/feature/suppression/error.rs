@@ -10,6 +10,10 @@ use std::fmt::{Display, Formatter};
 #[derive(Clone, Debug, PartialEq)]
 pub enum FeatureSuppressionError {
     Parameter(ParameterError<u64>),
+    Category {
+        parameter: u64,
+        category: String,
+    },
     Threshold {
         parameter: u64,
         threshold: Quantity,
@@ -22,26 +26,56 @@ pub enum FeatureSuppressionError {
 }
 
 impl Display for FeatureSuppressionError {
-    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, out: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Parameter(error) => Display::fmt(error, formatter),
+            Self::Parameter(error) => Display::fmt(error, out),
+            Self::Category {
+                parameter,
+                category,
+            } => suppression_category(out, *parameter, category),
             Self::Threshold {
                 parameter,
                 threshold,
-            } => write!(
-                formatter,
-                "suppression parameter {parameter} threshold {threshold:?}: expected a finite numeric working-unit quantity"
-            ),
+            } => suppression_threshold(out, *parameter, *threshold),
             Self::Dimension {
                 parameter,
                 found,
                 expected,
-            } => write!(
-                formatter,
-                "suppression parameter {parameter} dimension {found:?}: expected {expected:?}"
-            ),
+            } => suppression_dimension(out, (*parameter, *found, *expected)),
         }
     }
+}
+
+fn suppression_category(
+    out: &mut Formatter<'_>,
+    parameter: u64,
+    category: &str,
+) -> std::fmt::Result {
+    write!(
+        out,
+        "suppression parameter {parameter} category {category:?}: expected a canonical quantity category"
+    )
+}
+
+fn suppression_threshold(
+    out: &mut Formatter<'_>,
+    parameter: u64,
+    threshold: Quantity,
+) -> std::fmt::Result {
+    write!(
+        out,
+        "suppression parameter {parameter} threshold {threshold:?}: expected a finite numeric working-unit quantity"
+    )
+}
+
+fn suppression_dimension(
+    out: &mut Formatter<'_>,
+    (parameter, found, expected): (u64, Dimension, Dimension),
+) -> std::fmt::Result {
+    write!(
+        out,
+        "suppression parameter {parameter} dimension {found:?}: expected {expected:?}"
+    )
 }
 
 impl std::error::Error for FeatureSuppressionError {
