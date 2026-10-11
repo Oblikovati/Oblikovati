@@ -317,5 +317,11 @@ Other target strings are stored verbatim in external-reference envelopes
 UTF-8 in a stored external target is reported as an error rather than silently
 replaced. Tests cover typed-client queries/edits, target isolation, cross-document
 search, deletion counts, missing values, veto, undo, and file save/reopen.
+Entity deletion now has typed-client acceptance for retired curve/defining-point
+targets, independent explicit attribute deletion, native save/reopen and copy
+namespace isolation; see [entity deletion evidence](implementation-entity-deletion.md).
+Opaque external targets remain readable after their geometry retires and are
+not rewritten on copy. A successful metadata query does not prove that its
+target resolves to geometry.
 The shared inventory is now 27 queries, 20 edits, and 6 transaction methods.
 Native transport and entity binding remain separate work.

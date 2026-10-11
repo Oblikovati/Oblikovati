@@ -422,6 +422,8 @@ fn invalid_sketch_indices_and_document_kinds_cannot_adopt_geometry() {
 #[path = "add_entity/line.rs"]
 mod line;
 
+#[path = "add_entity/deletion_attributes.rs"]
+mod deletion_attributes;
 #[path = "add_entity/ellipse.rs"]
 mod ellipse;
 #[path = "add_entity/point_ownership.rs"]

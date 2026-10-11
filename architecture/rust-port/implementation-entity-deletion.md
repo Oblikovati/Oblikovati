@@ -115,10 +115,33 @@ reservation marks. The next creation cannot reuse the retired identities.
 Rejected replies preserve the saved owner, generation and file bytes. A failed
 write keeps the deleted candidate dirty and preserves the prior file and identity.
 
+## Add-in attributes and retired references
+
+Go `model/sketch/edit_delete.go` and `sketch_entities.go::deleteEntity` do not
+remove document attributes. The document owns an independent reference-key
+attribute collection (`model/attr/manager.go`); the canonical router stores
+nonempty target strings as opaque external keys (`addin/router/attributes.go`).
+Geometry retirement therefore does not authorize erasing add-in metadata.
+
+Three typed-client regression tests exercise both part and assembly owners.
+Deleting a circle also retires its defining point. Their reference keys no
+longer resolve, while attribute get/list still return their original targets,
+insertion order and signed-zero values. Undo restores geometry binding without
+reauthoring metadata; redo retires binding again. Native save/reopen retains
+the exact attribute recipe.
+
+Copy preserves opaque external target bytes rather than interpreting or
+rewriting them. The copied geometry receives its own document reference names;
+the original external strings do not bind in that namespace, and metadata is
+not silently reassigned to new names. Explicit attribute deletion still works
+on a retired target, can be undone independently of geometry, and persists
+through save/reopen. These checks use the existing public API definitions and
+hosts; they add no API surface or geometry-binding claim to attribute queries.
+
 This covers the native model/document/session/file boundaries and the five current
 public primitive factories. The Go 2D transform API has no delete operation;
 this work does not add a new public API contract. Spline and other pending curve
-factories still need defining-point construction. Editor integration, add-in
-attribute policy and general feature consumer behavior remain incomplete.
+factories still need defining-point construction. Editor integration and
+general feature consumer behavior remain incomplete.
 Do not close #3789 or infer general
 application deletion acceptance from these tests.
