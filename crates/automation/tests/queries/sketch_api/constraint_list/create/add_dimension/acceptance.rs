@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_api::client::Caller;
 use oblikovati_model::parameter::ParameterHealth;
 
-fn scaled_operands(scale: f64) -> (DiscoveryWorkspace, u64, QueryGuids) {
+pub(super) fn scaled_operands(scale: f64) -> (DiscoveryWorkspace, u64, QueryGuids) {
     let (mut files, document, source) =
         super::super::super::super::entities::configured_scaled(scale);
     files
@@ -102,7 +102,7 @@ fn veto_publishes_no_owned_pair_but_keeps_reservations_dirty() {
     // A veto must keep consumed identities, so saving is needed even without an adopted recipe.
     assert!(after.2);
 }
-fn assert_absent_pair(files: &DiscoveryWorkspace, document: u64) {
+pub(super) fn assert_absent_pair(files: &DiscoveryWorkspace, document: u64) {
     let snapshot = files.workspace().session(document).unwrap().snapshot();
     assert!(snapshot.parameters.get(2).is_none());
     assert!(dimensions::dimensions(files).is_empty());
@@ -137,7 +137,7 @@ fn unavailable_driving_source_keeps_explicit_health_and_repairs_after_binding() 
     assert_eq!(row.expression, input.expression);
     assert!((row.value - 3.0).abs() < 1e-8);
 }
-fn assert_unavailable_driver(files: &DiscoveryWorkspace, document: u64) {
+pub(super) fn assert_unavailable_driver(files: &DiscoveryWorkspace, document: u64) {
     let snapshot = files.workspace().session(document).unwrap().snapshot();
     assert!(!matches!(
         snapshot.parameters.get(2).unwrap().health,
@@ -151,7 +151,7 @@ fn assert_unavailable_driver(files: &DiscoveryWorkspace, document: u64) {
     );
 }
 
-fn bind_missing(files: &mut DiscoveryWorkspace, document: u64) {
+pub(super) fn bind_missing(files: &mut DiscoveryWorkspace, document: u64) {
     files
         .commands(document)
         .unwrap()
@@ -250,7 +250,7 @@ fn install_large_radius(files: &mut DiscoveryWorkspace, document: u64) {
         })
         .unwrap();
 }
-fn assert_retired_ids(files: &DiscoveryWorkspace, document: u64) {
+pub(super) fn assert_retired_ids(files: &DiscoveryWorkspace, document: u64) {
     let snapshot = files.workspace().session(document).unwrap().snapshot();
     let relation = snapshot
         .sketches

@@ -140,9 +140,21 @@ undo/redo, save/reopen/copy, edit, deletion/recreation, and malformed operands.
 Radius crossings fail without adopting a partial recipe or reusing names.
 The former missing-native-ellipse constructor decline is removed.
 
-Remaining #3788 work includes minor-radius support, fully
-constrained and degenerate
-cases, ellipse-specific failed formula and transaction acceptance, and edited
-save/reopen/copy. This step does not establish profile-kernel acceptance. B-rep
+Ellipse-specific acceptance now covers unresolved, angular, and arithmetic-failed
+driving sources with explicit health and unchanged radii, followed by repair.
+Commit vetoes, aborted groups, and nonrepresentable wire measurements preserve
+the original geometry and retire consumed names and identities. Edited dimensions
+retain their frame, annotations, and parameter state through reopen and copy in
+both document kinds. The Go `driveDimension` route resolves an expression once
+and calls `Drive`; it does not retain the source formula. Tests distinguish that
+fixed drive from a live `parameters.set` edit and check later source propagation.
+
+The pinned Go `AddEllipseRadius` binds only `MajorRadius`. The released API has
+no minor-radius dimension selector. Minor-radius support therefore requires a
+contract extension before implementation; it is not an existing dimension to
+port under the major-radius kind. A freely owned ellipse still has a minor-radius
+freedom after its center, orientation, and major radius are constrained. Full
+ellipse constraint acceptance remains open in #3788, together with the remaining
+degenerate solving cases. This step does not establish profile-kernel acceptance. B-rep
 ellipse operations stay in Martensite; the sketch value does not replace kernel
 geometry or establish kernel operation validity.

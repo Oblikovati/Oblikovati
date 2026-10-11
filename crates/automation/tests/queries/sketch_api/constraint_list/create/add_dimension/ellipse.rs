@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::sketch::SketchEllipse2D;
+#[path = "ellipse/acceptance.rs"]
+mod acceptance;
 fn ellipse_owner(owner: DocumentType) -> (DiscoveryWorkspace, u64, QueryGuids) {
     let (mut files, document, source) = fresh(owner);
     files
