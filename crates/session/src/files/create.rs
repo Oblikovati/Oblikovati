@@ -80,6 +80,7 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         sketch: sketches.sketch_ids.high_water(),
         entity: sketches.entity_ids.high_water(),
         constraints: sketches.constraint_ids.marks(),
+        dimension_names: sketches.dimension_names.marks(),
     };
     let work_planes = package
         .restore_work_planes()

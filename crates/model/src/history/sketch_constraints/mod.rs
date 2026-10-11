@@ -93,7 +93,7 @@ impl SketchConstraintReservations {
         Ok(())
     }
 }
-fn require_sketch_namespace(sketch: u64, mark: u64) -> Result<(), RecipeIdError> {
+pub(super) fn require_sketch_namespace(sketch: u64, mark: u64) -> Result<(), RecipeIdError> {
     if sketch == 0 {
         return Err(RecipeIdError::ZeroId);
     }

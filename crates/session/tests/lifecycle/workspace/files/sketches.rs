@@ -441,3 +441,6 @@ mod line_constraints;
 
 #[path = "sketches/inferred_line.rs"]
 mod inferred_line;
+
+#[path = "sketches/dimension_names.rs"]
+mod dimension_names;

@@ -240,11 +240,13 @@ fn exhausted_sketch_or_anchor_namespace_never_publishes_a_partial_sketch() {
             sketch: u64::MAX,
             entity: 0,
             constraints: Default::default(),
+            dimension_names: Default::default(),
         },
         SketchReservationMarks {
             sketch: 0,
             entity: u64::MAX,
             constraints: Default::default(),
+            dimension_names: Default::default(),
         },
     ] {
         let mut session = exhausted_session(marks);

@@ -368,6 +368,7 @@ fn prepared_session(veto: Option<&'static str>, mark: u64) -> DocumentSession<Re
         sketch: 1,
         entity: mark,
         constraints: Default::default(),
+        dimension_names: Default::default(),
     })
     .unwrap();
     DocumentSession::new(

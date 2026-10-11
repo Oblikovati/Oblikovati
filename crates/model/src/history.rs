@@ -30,7 +30,9 @@ pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreation
 pub use sketch_relation_create::{SketchGeometricCreationError, SketchGeometricCreationReport};
 mod sketch_delete;
 pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};
+mod dimension_names;
 mod sketch_constraints;
+pub use dimension_names::SketchDimensionNameReservations;
 mod sketch_ids;
 pub use sketch_constraints::{SketchConstraintReservationError, SketchConstraintReservations};
 pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
@@ -83,6 +85,7 @@ pub struct RecipeReservations<'a> {
     feature_ids: &'a mut RecipeIdAllocator,
     sketch_entity_ids: &'a mut RecipeIdAllocator,
     sketch_constraint_ids: &'a mut SketchConstraintReservations,
+    dimension_names: &'a mut SketchDimensionNameReservations,
     derived_high_water: &'a mut i64,
 }
 impl RecipeReservations<'_> {
@@ -129,6 +132,7 @@ pub struct DocumentEditHistory {
     feature_ids: RecipeIdAllocator,
     sketch_entity_ids: RecipeIdAllocator,
     sketch_constraint_ids: SketchConstraintReservations,
+    dimension_names: SketchDimensionNameReservations,
     derived_high_water: i64,
     open: Vec<OpenTransaction>,
     done: Vec<HistoryStep>,
@@ -162,7 +166,14 @@ impl DocumentEditHistory {
         )?;
         let feature_ids =
             RecipeIdAllocator::restore(None, &feature_ids::datum_feature_ids(&snapshot))?;
+        let dimension_names = SketchDimensionNameReservations::restore(
+            &snapshot.sketches,
+            &snapshot.parameters,
+            sketch_ids.high_water(),
+            None,
+        )?;
         Ok(Self {
+            dimension_names,
             feature_ids,
             sketch_ids,
             sketch_entity_ids,
@@ -235,6 +246,7 @@ impl DocumentEditHistory {
                 sketch_ids: &mut self.sketch_ids,
                 sketch_entity_ids: &mut self.sketch_entity_ids,
                 sketch_constraint_ids: &mut self.sketch_constraint_ids,
+                dimension_names: &mut self.dimension_names,
                 derived_high_water: &mut self.derived_high_water,
             },
         )

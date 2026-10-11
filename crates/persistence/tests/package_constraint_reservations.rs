@@ -33,6 +33,7 @@ fn marks(constraints: &[(u64, u64)]) -> SketchReservationMarks {
         sketch: 3,
         entity: 2,
         constraints: constraints.iter().copied().collect(),
+        dimension_names: BTreeMap::new(),
     }
 }
 fn replace_map(package: &DocumentPackage, mapping: Option<&str>) -> DocumentPackage {

@@ -6,12 +6,14 @@ use crate::{
     sketch::SketchEntityId,
 };
 use std::collections::BTreeSet;
-/// Permanent sketch, entity and sketch-local constraint marks; never part of an undo snapshot.
+/// Permanent sketch, entity, local constraint and dimension-name marks; never part of an undo snapshot.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SketchReservationMarks {
     pub sketch: u64,
     pub entity: u64,
     pub constraints: std::collections::BTreeMap<u64, u64>,
+    /// Next generated dN ordinal per sketch; unlike IDs, the first ordinal is zero.
+    pub dimension_names: std::collections::BTreeMap<u64, u64>,
 }
 impl RecipeReservations<'_> {
     /// Reserve a sketch ID even if the edit later fails; example: `let id = ids.allocate_sketch()?;`.
@@ -30,6 +32,7 @@ impl DocumentEditHistory {
             sketch: self.sketch_ids.high_water(),
             entity: self.sketch_entity_ids.high_water(),
             constraints: self.sketch_constraint_ids.marks(),
+            dimension_names: self.dimension_names.marks(),
         }
     }
     /// Restore saved marks without losing deleted reservations; example: `history.with_sketch_reservations(saved)?`.
@@ -48,6 +51,7 @@ impl DocumentEditHistory {
             self.sketch_entity_ids.high_water(),
         )?;
         self.restore_constraint_marks(&marks.constraints)?;
+        self.restore_dimension_name_marks(&marks.dimension_names)?;
         Ok(self)
     }
     pub(super) fn validate_sketch_ids(

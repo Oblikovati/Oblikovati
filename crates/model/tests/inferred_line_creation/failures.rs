@@ -62,6 +62,7 @@ fn exhausted_curve_identity_keeps_consumed_points_without_publishing_them() {
         sketch: 1,
         entity: u64::MAX - 2,
         constraints: Default::default(),
+        dimension_names: Default::default(),
     };
     let mut history = owner(reference()).with_sketch_reservations(marks).unwrap();
     let before = history.snapshot().sketches.clone();
@@ -76,6 +77,7 @@ fn second_snap_exhaustion_retains_first_constraint_reservation_without_partial_g
         sketch: 1,
         entity: 3,
         constraints: [(1, u64::MAX - 1)].into(),
+        dimension_names: Default::default(),
     };
     let mut history = owner(reference()).with_sketch_reservations(marks).unwrap();
     let before = history.snapshot().sketches.clone();

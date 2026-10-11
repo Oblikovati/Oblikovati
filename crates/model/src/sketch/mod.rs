@@ -17,7 +17,11 @@ mod circular_projection;
 mod compile;
 mod constraint;
 mod construction;
+mod dimensional_authoring;
 mod geometric_authoring;
+pub use dimensional_authoring::{
+    MeasuredDimensionOperands, SeededDimensionOperands, SketchDimensionalConstraintCreation,
+};
 mod geometric_constraints;
 pub use authoring::{SketchPointInput, SketchPrimitiveCreation};
 pub use geometric_authoring::SketchGeometricConstraintCreation;

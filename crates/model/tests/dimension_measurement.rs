@@ -355,3 +355,6 @@ fn verify_dimension_removal(mut geometry: Sketch2D) {
 
 #[path = "dimension_measurement/reference_modes.rs"]
 mod reference_modes;
+
+#[path = "dimension_measurement/creation_operands.rs"]
+mod creation_operands;

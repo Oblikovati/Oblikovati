@@ -13,9 +13,20 @@ pub struct RecipeIdAllocator {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum RecipeIdError {
     ZeroId,
-    DerivedMark { mark: i64, minimum: i64 },
+    DerivedMark {
+        mark: i64,
+        minimum: i64,
+    },
+    DimensionNameMark {
+        sketch: u64,
+        mark: u64,
+        minimum: u64,
+    },
     DuplicateId(u64),
-    BeyondHighWater { id: u64, high_water: u64 },
+    BeyondHighWater {
+        id: u64,
+        high_water: u64,
+    },
     Exhausted,
 }
 
@@ -91,6 +102,14 @@ fn validate_restored_id(
 impl fmt::Display for RecipeIdError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DimensionNameMark {
+                sketch,
+                mark,
+                minimum,
+            } => write!(
+                formatter,
+                "sketch {sketch} dimension name ordinal {mark}: expected at least {minimum}"
+            ),
             Self::DerivedMark { mark, minimum } => write!(
                 formatter,
                 "derived table reservation mark {mark}: expected at least {minimum}"

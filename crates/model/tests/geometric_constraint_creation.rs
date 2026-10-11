@@ -353,6 +353,7 @@ fn exhausted_constraint_namespace_does_not_publish_a_relation() {
         sketch: 1,
         entity: 11,
         constraints: std::collections::BTreeMap::from([(1, u64::MAX)]),
+        dimension_names: Default::default(),
     };
     let mut history = owner(fixture())
         .with_sketch_reservations(marks.clone())

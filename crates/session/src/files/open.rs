@@ -77,6 +77,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             sketch: prepared.sketches.sketch_ids.high_water(),
             entity: prepared.sketches.entity_ids.high_water(),
             constraints: prepared.sketches.constraint_ids.marks(),
+            dimension_names: prepared.sketches.dimension_names.marks(),
         };
         let history = super::history_restore::restore_history(
             snapshot,

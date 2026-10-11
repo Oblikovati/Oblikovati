@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{DocumentPackage, PackageCodecError};
-use oblikovati_model::history::{SketchConstraintReservations, SketchReservationMarks};
+use oblikovati_model::history::{
+    SketchConstraintReservations, SketchDimensionNameReservations, SketchReservationMarks,
+};
 use oblikovati_model::{
     document_sketch::{DocumentSketchRecipe, DocumentSketches},
     identity::RecipeIdAllocator,
@@ -15,6 +17,7 @@ pub struct RestoredDocumentSketches {
     pub sketch_ids: RecipeIdAllocator,
     pub entity_ids: RecipeIdAllocator,
     pub constraint_ids: SketchConstraintReservations,
+    pub dimension_names: SketchDimensionNameReservations,
 }
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
@@ -28,6 +31,12 @@ struct StoredSketchCollection {
         deserialize_with = "restore_optional_constraint_marks"
     )]
     constraint_high_water: Option<BTreeMap<u64, u64>>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "restore_optional_dimension_names"
+    )]
+    dimension_name_ordinals: Option<BTreeMap<u64, u64>>,
 }
 impl DocumentPackage {
     /// Restore schema-3 placed sketches and ID reservations; example: `let restored = package.restore_sketches()?;`.
@@ -38,7 +47,7 @@ impl DocumentPackage {
             .get("model")
             .and_then(|model| model.get("planarSketches"))
         else {
-            return restore_collection(DocumentSketches::default(), 0, 0, None);
+            return restore_collection(self, DocumentSketches::default(), 0, 0, None, None);
         };
         if self.manifest.schema_version != 3 {
             return Err(PackageCodecError(format!(
@@ -50,10 +59,12 @@ impl DocumentPackage {
             serde_yaml_ng::from_value(section.clone()).map_err(sketch_codec_error)?;
         let sketches = DocumentSketches::from_recipe(&stored.recipe).map_err(sketch_codec_error)?;
         restore_collection(
+            self,
             sketches,
             stored.sketch_high_water,
             stored.entity_high_water,
             stored.constraint_high_water.as_ref(),
+            stored.dimension_name_ordinals.as_ref(),
         )
     }
     /// Capture sketches without dropping other model sections; example: `package.with_sketches(&sketches, sketch_mark, entity_mark)?`.
@@ -74,10 +85,12 @@ impl DocumentPackage {
     }
 }
 fn restore_collection(
+    package: &DocumentPackage,
     sketches: DocumentSketches,
     sketch_mark: u64,
     entity_mark: u64,
     constraint_marks: Option<&BTreeMap<u64, u64>>,
+    dimension_names: Option<&BTreeMap<u64, u64>>,
 ) -> Result<RestoredDocumentSketches, PackageCodecError> {
     let sketch_ids = RecipeIdAllocator::restore(Some(sketch_mark), &sketches.sketch_ids())
         .map_err(sketch_codec_error)?;
@@ -86,11 +99,14 @@ fn restore_collection(
     let constraint_ids =
         SketchConstraintReservations::restore(&sketches, sketch_mark, constraint_marks)
             .map_err(sketch_codec_error)?;
+    let dimension_names =
+        restore_dimension_names(package, &sketches, sketch_mark, dimension_names)?;
     Ok(RestoredDocumentSketches {
         sketches,
         sketch_ids,
         entity_ids,
         constraint_ids,
+        dimension_names,
     })
 }
 pub(super) fn require_monotonic_mark(
@@ -129,13 +145,35 @@ fn sketch_codec_error(error: impl std::fmt::Display) -> PackageCodecError {
 fn restore_optional_constraint_marks<'de, D: serde::Deserializer<'de>>(
     source: D,
 ) -> Result<Option<BTreeMap<u64, u64>>, D::Error> {
+    restore_optional_marks(source, "constraintHighWater")
+}
+fn restore_optional_dimension_names<'de, D: serde::Deserializer<'de>>(
+    source: D,
+) -> Result<Option<BTreeMap<u64, u64>>, D::Error> {
+    restore_optional_marks(source, "dimensionNameOrdinals")
+}
+fn restore_optional_marks<'de, D: serde::Deserializer<'de>>(
+    source: D,
+    field: &str,
+) -> Result<Option<BTreeMap<u64, u64>>, D::Error> {
     let value = serde_yaml_ng::Value::deserialize(source)?;
     if !value.is_mapping() {
         return Err(serde::de::Error::custom(format!(
-            "constraintHighWater {value:?}: expected a mapping of sketch IDs to constraint marks"
+            "{field} {value:?}: expected a mapping of sketch IDs to permanent marks"
         )));
     }
     serde_yaml_ng::from_value(value)
         .map(Some)
         .map_err(serde::de::Error::custom)
+}
+
+fn restore_dimension_names(
+    package: &DocumentPackage,
+    sketches: &DocumentSketches,
+    sketch_mark: u64,
+    marks: Option<&BTreeMap<u64, u64>>,
+) -> Result<SketchDimensionNameReservations, PackageCodecError> {
+    let parameters = package.restore_document_parameters()?.parameters;
+    SketchDimensionNameReservations::restore(sketches, &parameters, sketch_mark, marks)
+        .map_err(sketch_codec_error)
 }
