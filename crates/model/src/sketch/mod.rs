@@ -22,6 +22,7 @@ mod geometric_constraints;
 pub use authoring::{SketchPointInput, SketchPrimitiveCreation};
 pub use geometric_authoring::SketchGeometricConstraintCreation;
 mod dependencies;
+mod dimension_measurement;
 mod entity_geometry;
 mod entity_order;
 mod error;

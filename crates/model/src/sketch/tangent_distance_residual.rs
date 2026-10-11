@@ -39,11 +39,7 @@ pub(super) fn distance_residual(
         // The metric row has a double root at a shared tangent point (Go #2014).
         return super::tangent_residual::pinned_line_tangent(variables, at_b, contact.side);
     }
-    let offset = if far_side {
-        distance.plus(&variables[6])?
-    } else {
-        distance.minus(&variables[6])?
-    };
+    let offset = circular_offset(&distance, &variables[6], far_side)?;
     Ok(vec![offset.shifted(-target)?])
 }
 fn require_lean(
@@ -89,3 +85,14 @@ pub(super) fn angular_residual(
 #[cfg(test)]
 #[path = "../../tests/sketch/tangent_distance_residuals.rs"]
 mod tests;
+
+pub(super) fn circular_offset(
+    distance: &DualNumber,
+    radius: &DualNumber,
+    far_side: bool,
+) -> Result<DualNumber, ResidualError> {
+    if far_side {
+        return Ok(distance.plus(radius)?);
+    }
+    Ok(distance.minus(radius)?)
+}

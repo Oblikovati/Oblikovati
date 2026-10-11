@@ -216,3 +216,6 @@ fn invalid_curve_constructors() -> Vec<(&'static str, Vec<u64>)> {
 
 #[path = "create/lifecycle.rs"]
 mod lifecycle;
+
+#[path = "create/dimensions.rs"]
+mod dimensions;

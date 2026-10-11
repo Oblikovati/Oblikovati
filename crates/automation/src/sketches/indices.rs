@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_api::Error;
 pub(super) fn geometric_wire_index(index: usize) -> Result<i64, Error> {
+    constraint_wire_index(index, "geometric constraint")
+}
+pub(super) fn constraint_wire_index(index: usize, kind: &str) -> Result<i64, Error> {
     i64::try_from(index).map_err(|_| {
         Error(format!(
-            "geometric constraint index {index}: expected a nonnegative i64 wire index"
+            "{kind} index {index}: expected a nonnegative i64 wire index"
         ))
     })
 }

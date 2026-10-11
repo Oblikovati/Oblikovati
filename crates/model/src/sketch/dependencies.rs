@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{PlanarConstraint, Sketch2D};
 impl Sketch2D {
+    /// Enumerate owned dimensional relations with their backing parameter IDs in authored order.
+    /// Example: `sketch.dimensional_constraints().map(|(constraint, parameter)| (constraint.id, parameter))`.
+    pub fn dimensional_constraints(&self) -> impl Iterator<Item = (&super::SketchConstraint, u64)> {
+        self.constraints.iter().filter_map(|constraint| {
+            dimension_parameter(&constraint.relation).map(|parameter| (constraint, parameter))
+        })
+    }
     /// Inspect authored dimension IDs even when resolution fails; example: `sketch.parameter_dependencies()`.
     pub fn parameter_dependencies(&self) -> Vec<u64> {
         let mut dependencies = Vec::new();
-        for parameter in self
-            .constraints
-            .iter()
-            .filter_map(|constraint| dimension_parameter(&constraint.relation))
-        {
+        for (_, parameter) in self.dimensional_constraints() {
             if !dependencies.contains(&parameter) {
                 dependencies.push(parameter);
             }

@@ -187,7 +187,7 @@ fn midpoint(variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> 
         .plus(&point(variables, 4)?.scaled(0.5)?)?;
     Ok(point(variables, 0)?.minus(&middle)?.components().to_vec())
 }
-fn distance(
+pub(super) fn distance(
     variables: &[DualNumber],
     measure: DistanceMeasure,
 ) -> Result<DualNumber, ResidualError> {

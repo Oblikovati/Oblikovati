@@ -6,6 +6,14 @@ pub(super) fn length_residual(
     target: f64,
     counter_clockwise: bool,
 ) -> Result<Vec<DualNumber>, ResidualError> {
+    Ok(vec![
+        length_measure(variables, counter_clockwise)?.shifted(-target)?,
+    ])
+}
+pub(super) fn length_measure(
+    variables: &[DualNumber],
+    counter_clockwise: bool,
+) -> Result<DualNumber, ResidualError> {
     let center = point(variables, 0)?;
     let start = point(variables, 2)?.minus(&center)?;
     let end = point(variables, 4)?.minus(&center)?;
@@ -16,7 +24,7 @@ pub(super) fn length_residual(
         sweep.negated()?
     };
     // Go AddArcLength takes the minor unsigned angle; authored major sweeps must retain their full length (#3713).
-    Ok(vec![start.length()?.product(&magnitude)?.shifted(-target)?])
+    Ok(start.length()?.product(&magnitude)?)
 }
 #[cfg(test)]
 #[path = "../../tests/sketch/arc_length_residuals.rs"]

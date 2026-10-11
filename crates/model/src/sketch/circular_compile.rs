@@ -32,9 +32,21 @@ pub(super) fn prepare_relation(
     relation: &PlanarConstraint,
     equation: PlanarEquation,
 ) -> Result<PreparedConstraint, SketchError> {
+    let (equation, touch) = contact_equation(sketch, relation, equation)?;
+    let (projection, variables) = relation_projection(sketch, relation, touch)?;
+    Ok(PreparedConstraint {
+        equation,
+        projection,
+        variables,
+    })
+}
+pub(super) fn relation_projection(
+    sketch: &Sketch2D,
+    relation: &PlanarConstraint,
+    touch: Option<SketchEntityId>,
+) -> Result<(Option<CircularProjection>, Vec<usize>), SketchError> {
     let points = sketch.constraint_points(relation)?;
     let frames = sketch.relation_frames(relation)?;
-    let (equation, touch) = contact_equation(sketch, relation, equation)?;
     let variables = frame_columns(sketch, &points, &frames, touch)?;
     let projection = (!frames.is_empty()).then(|| CircularProjection {
         prefix: points.len() * 2,
@@ -42,12 +54,9 @@ pub(super) fn prepare_relation(
         output: frame_output(relation),
         touch: touch.is_some(),
     });
-    Ok(PreparedConstraint {
-        equation,
-        projection,
-        variables,
-    })
+    Ok((projection, variables))
 }
+
 fn frame_columns(
     sketch: &Sketch2D,
     points: &[SketchEntityId],

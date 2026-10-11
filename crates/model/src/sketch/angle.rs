@@ -81,7 +81,7 @@ pub(super) fn angle_residual(
     // A signed row keeps rank at parallel/straight angles where Go's abs(cross) is stationary.
     Ok(vec![wrap_angle_difference(difference)?])
 }
-fn angle_measure(variables: &[DualNumber]) -> Result<DualNumber, ResidualError> {
+pub(super) fn angle_measure(variables: &[DualNumber]) -> Result<DualNumber, ResidualError> {
     let first = unit_direction(&point(variables, 2)?.minus(&point(variables, 0)?)?)?;
     let second = unit_direction(&point(variables, 6)?.minus(&point(variables, 4)?)?)?;
     Ok(first.cross(&second)?.atan2(&first.dot(&second)?)?)

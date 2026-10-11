@@ -7,6 +7,7 @@ mod coordinates;
 pub(crate) mod create;
 mod delete;
 mod delete_constraint;
+mod dimensions;
 mod entities;
 mod indices;
 mod owner;
@@ -39,8 +40,9 @@ pub const SKETCH_COMMAND_METHODS: [&str; 8] = [
     METHOD_SKETCH_DELETE_CONSTRAINT,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 5] = [
+pub const SKETCH_QUERY_METHODS: [&str; 6] = [
     METHOD_SKETCH_CONSTRAINTS,
+    METHOD_SKETCH_DIMENSIONS,
     METHOD_SKETCH_CONSTRAINT_STATUS,
     METHOD_SKETCH_ENTITIES,
     METHOD_SKETCH_REFERENCE_KEY,
@@ -51,6 +53,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_DIMENSIONS {
+        return dimensions::query(files, crate::decode(method, request)?);
+    }
     if method == METHOD_SKETCH_CONSTRAINTS {
         return constraints::query(files, crate::decode(method, request)?);
     }
