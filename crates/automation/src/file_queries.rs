@@ -6,12 +6,13 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 5] = [
+pub const FILE_QUERY_METHODS: [&str; 6] = [
     METHOD_DOCUMENTS_LIST,
     METHOD_PARAMETERS_DERIVED_TABLES_LIST,
     METHOD_SKETCH_CONSTRAINT_STATUS,
     METHOD_WORK_AXES_LIST,
     METHOD_WORK_POINTS_LIST,
+    METHOD_WORK_PLANES_LIST,
 ];
 pub(crate) mod derived;
 

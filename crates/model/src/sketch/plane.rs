@@ -77,6 +77,21 @@ impl SketchPlane {
             normal,
         })
     }
+    /// Normalize API directions before validating a right-handed frame; example: `SketchPlane::from_directions(origin, x, y, Default::default())?`.
+    pub fn from_directions(
+        origin: [f64; 3],
+        x_axis: [f64; 3],
+        y_axis: [f64; 3],
+        options: SketchPlaneOptions,
+    ) -> Result<Self, SketchError> {
+        Self::new(
+            origin,
+            normalize_direction(x_axis)?,
+            normalize_direction(y_axis)?,
+            options,
+        )
+    }
+
     /// Restore saved placement using the same frame checks; example: `SketchPlane::from_recipe(recipe, Default::default())?`.
     pub fn from_recipe(
         recipe: SketchPlaneRecipe,

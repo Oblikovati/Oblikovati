@@ -13,7 +13,7 @@ workspace = true
 
 [dependencies]
 oblikovati-model = { path = "../model" }
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "1d8c5ea4441873d2851273a880a90de5d68e0b24", version = "=0.156.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "8a23d7aee54e018821ce942054649d8e5b8bdb68", version = "=0.157.0" }
 base64 = "=0.22.1"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_yaml_ng = "=0.10.0"

@@ -13,21 +13,32 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 mod health;
 mod input;
 mod origins;
+mod planes;
 mod reference;
 mod rows;
 
 /// Methods use the existing API contract and the one file-owned datum program.
-pub const DATUM_COMMAND_METHODS: [&str; 2] = [METHOD_WORK_POINTS_CREATE, METHOD_WORK_AXES_CREATE];
-pub const DATUM_QUERY_METHODS: [&str; 2] = [METHOD_WORK_POINTS_LIST, METHOD_WORK_AXES_LIST];
+pub const DATUM_COMMAND_METHODS: [&str; 3] = [
+    METHOD_WORK_POINTS_CREATE,
+    METHOD_WORK_AXES_CREATE,
+    METHOD_WORK_PLANES_CREATE,
+];
+pub const DATUM_QUERY_METHODS: [&str; 3] = [
+    METHOD_WORK_POINTS_LIST,
+    METHOD_WORK_AXES_LIST,
+    METHOD_WORK_PLANES_LIST,
+];
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DatumCollection {
     Axes,
     Points,
+    Planes,
 }
 #[derive(Debug)]
 pub(super) struct PreparedDatum {
     definition: WorkGeometryDefinition,
     construction: bool,
+    visible: bool,
     collection: DatumCollection,
 }
 pub(super) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -35,12 +46,7 @@ pub(super) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let document = active_part(files)?;
-    let snapshot = files
-        .workspace()
-        .session(document)
-        .map_err(api_error)?
-        .snapshot();
+    let (document, snapshot) = datum_snapshot(files)?;
     let prepared = input::definition(method, request, snapshot)?;
     files
         .commands(document)
@@ -58,10 +64,7 @@ fn insert(
     let id = ids.allocate_feature().map_err(api_error)?;
     let feature = AuthoredFeature::datum(id, prepared.collection.label(), prepared.definition);
     snapshot.work_geometry.append(feature).map_err(api_error)?;
-    snapshot
-        .work_geometry
-        .set_work_plane_construction(id, prepared.construction)
-        .map_err(api_error)?;
+    assign_metadata(snapshot, id, prepared.construction, prepared.visible)?;
     rows::creation_reply(snapshot, id, prepared.collection)
 }
 pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -69,15 +72,11 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let document = active_part(files)?;
-    let snapshot = files
-        .workspace()
-        .session(document)
-        .map_err(api_error)?
-        .snapshot();
+    let (_, snapshot) = datum_snapshot(files)?;
     match method {
         METHOD_WORK_AXES_LIST => rows::axes(snapshot, query_args(method, request)?),
         METHOD_WORK_POINTS_LIST => rows::points(snapshot, query_args(method, request)?),
+        METHOD_WORK_PLANES_LIST => planes::list(snapshot, query_args(method, request)?),
         _ => Err(Error(format!(
             "datum query {method:?}: expected {DATUM_QUERY_METHODS:?}"
         ))),
@@ -85,20 +84,22 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 }
 impl DatumCollection {
     fn contains(self, definition: WorkGeometryDefinition) -> bool {
-        match self {
-            Self::Axes => matches!(
-                definition,
-                WorkGeometryDefinition::Axis(_) | WorkGeometryDefinition::AxisThroughPoints(_)
-            ),
-            Self::Points => matches!(
-                definition,
-                WorkGeometryDefinition::Point(_) | WorkGeometryDefinition::PointAtReference(_)
-            ),
-        }
+        let kind = match definition {
+            WorkGeometryDefinition::Axis(_) | WorkGeometryDefinition::AxisThroughPoints(_) => {
+                Self::Axes
+            }
+            WorkGeometryDefinition::Point(_) | WorkGeometryDefinition::PointAtReference(_) => {
+                Self::Points
+            }
+            WorkGeometryDefinition::Fixed(_) | WorkGeometryDefinition::Offset { .. } => {
+                Self::Planes
+            }
+        };
+        self == kind
     }
     fn origin_count(self) -> usize {
         match self {
-            Self::Axes => 3,
+            Self::Axes | Self::Planes => 3,
             Self::Points => 1,
         }
     }
@@ -106,6 +107,7 @@ impl DatumCollection {
         match self {
             Self::Axes => "WorkAxis",
             Self::Points => "WorkPoint",
+            Self::Planes => "WorkPlane",
         }
     }
 }
@@ -124,4 +126,32 @@ fn query_args<T: serde::de::DeserializeOwned + Default>(
         return Ok(T::default());
     }
     decode::<Option<T>>(method, request).map(Option::unwrap_or_default)
+}
+
+fn datum_snapshot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+) -> Result<(u64, &DocumentSnapshot), Error> {
+    let document = active_part(files)?;
+    let snapshot = files
+        .workspace()
+        .session(document)
+        .map_err(api_error)?
+        .snapshot();
+    Ok((document, snapshot))
+}
+
+fn assign_metadata(
+    snapshot: &mut DocumentSnapshot,
+    id: FeatureId,
+    construction: bool,
+    visible: bool,
+) -> Result<(), Error> {
+    snapshot
+        .work_geometry
+        .set_work_plane_construction(id, construction)
+        .map_err(api_error)?;
+    snapshot
+        .work_geometry
+        .set_datum_visible(id, visible)
+        .map_err(api_error)
 }

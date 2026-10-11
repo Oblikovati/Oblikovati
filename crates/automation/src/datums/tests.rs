@@ -11,7 +11,7 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 
-fn snapshot() -> DocumentSnapshot {
+pub(super) fn snapshot() -> DocumentSnapshot {
     DocumentSnapshot {
         work_geometry: Default::default(),
         sketches: Default::default(),

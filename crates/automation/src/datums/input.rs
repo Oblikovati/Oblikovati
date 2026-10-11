@@ -13,6 +13,7 @@ pub(super) fn definition(
     match method {
         METHOD_WORK_POINTS_CREATE => point(decode(method, request)?, snapshot),
         METHOD_WORK_AXES_CREATE => axis(decode(method, request)?, snapshot),
+        METHOD_WORK_PLANES_CREATE => super::planes::prepare(decode(method, request)?),
         _ => Err(Error(format!(
             "datum command {method:?}: expected {DATUM_COMMAND_METHODS:?}"
         ))),
@@ -37,6 +38,7 @@ fn position_point(request: CreateWorkPointArgs) -> Result<PreparedDatum, Error> 
     Ok(PreparedDatum {
         definition: WorkGeometryDefinition::Point(position.map(DatumLength::Constant)),
         construction: request.construction,
+        visible: true,
         collection: DatumCollection::Points,
     })
 }
@@ -54,6 +56,7 @@ fn axis(request: CreateWorkAxisArgs, snapshot: &DocumentSnapshot) -> Result<Prep
     Ok(PreparedDatum {
         definition,
         construction: request.construction,
+        visible: true,
         collection: DatumCollection::Axes,
     })
 }
@@ -64,7 +67,7 @@ fn line(request: &CreateWorkAxisArgs) -> Result<WorkGeometryDefinition, Error> {
         .map(WorkGeometryDefinition::Axis)
         .map_err(api_error)
 }
-fn coordinates(values: Option<&[f64]>, label: &str) -> Result<[f64; 3], Error> {
+pub(super) fn coordinates(values: Option<&[f64]>, label: &str) -> Result<[f64; 3], Error> {
     let values = values.unwrap_or_default();
     let components = <[f64; 3]>::try_from(values).map_err(|_| coordinate_error(label, values))?;
     if components.iter().any(|value| !value.is_finite()) {
@@ -126,6 +129,7 @@ fn associated_point(
     Ok(PreparedDatum {
         definition: WorkGeometryDefinition::PointAtReference(point_reference(snapshot, reference)?),
         construction: request.construction,
+        visible: true,
         collection: DatumCollection::Points,
     })
 }

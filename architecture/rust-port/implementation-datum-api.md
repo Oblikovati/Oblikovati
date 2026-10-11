@@ -57,11 +57,14 @@ Compatibility tests retain empty bytes, JSON null, and object requests.
 options in both languages, generated Rust parity tests, and tested wiki examples.
 The owner published [v0.156.0](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.156.0)
 at `1d8c5ea4441873d2851273a880a90de5d68e0b24` after its CI, wiki, and release
-checks passed. The application dependency declarations, lockfile, and release
-manifest pin that exact source. The downloaded crate SHA-256 matches GitHub's
+checks passed. This was the point/axis client adoption source. The later
+[work-plane adoption](implementation-plane-api.md) records the current pin. The downloaded crate SHA-256 matches GitHub's
 asset digest: `ccfdc2ce0add38c865580015c29a4b04f69276fb9e65419008e8fd70b0de17bf`.
 [Application #3742](https://github.com/Oblikovati/Oblikovati/issues/3742) records
 this adoption. No add-in or host test needs a raw JSON workaround for list options.
 
 These model, file, and API tests do not establish kernel or viewport acceptance.
 The application kernel pin remains empty until published packages are verified.
+
+Work-plane routing and its remaining capabilities are recorded in
+[plane API evidence](implementation-plane-api.md).

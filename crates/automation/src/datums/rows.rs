@@ -7,40 +7,50 @@ pub(super) fn axes(
     request: ListWorkAxesArgs,
 ) -> Result<Vec<u8>, Error> {
     require_local_occurrence(request.occurrence.as_deref())?;
-    let evaluation = evaluate(snapshot)?;
-    let mut rows = origins::axes();
-    for (index, feature) in entries(snapshot, DatumCollection::Axes).enumerate() {
-        if feature.is_construction_datum() && !request.include_construction {
-            continue;
-        }
-        rows.push(axis_info(
-            snapshot,
-            feature,
-            wire_index(index, 3)?,
-            &evaluation,
-        )?);
-    }
-    encode(&ListWorkAxesResult { axes: Some(rows) })
+    let axes = current_rows(
+        snapshot,
+        DatumCollection::Axes,
+        request.include_construction,
+        origins::axes(),
+        axis_info,
+    )?;
+    encode(&ListWorkAxesResult { axes: Some(axes) })
 }
 pub(super) fn points(
     snapshot: &DocumentSnapshot,
     request: ListWorkPointsArgs,
 ) -> Result<Vec<u8>, Error> {
     require_local_occurrence(request.occurrence.as_deref())?;
+    let points = current_rows(
+        snapshot,
+        DatumCollection::Points,
+        request.include_construction,
+        vec![origins::point()],
+        point_info,
+    )?;
+    encode(&ListWorkPointsResult {
+        points: Some(points),
+    })
+}
+type DatumProjection<T> =
+    fn(&DocumentSnapshot, &DatumEntry, i64, &WorkGeometryEvaluation) -> Result<T, Error>;
+pub(super) fn current_rows<T>(
+    snapshot: &DocumentSnapshot,
+    collection: DatumCollection,
+    include: bool,
+    mut rows: Vec<T>,
+    project: DatumProjection<T>,
+) -> Result<Vec<T>, Error> {
     let evaluation = evaluate(snapshot)?;
-    let mut rows = vec![origins::point()];
-    for (index, feature) in entries(snapshot, DatumCollection::Points).enumerate() {
-        if feature.is_construction_datum() && !request.include_construction {
+    let prefix = rows.len();
+    for (index, feature) in entries(snapshot, collection).enumerate() {
+        if feature.is_construction_datum() && !include {
             continue;
         }
-        rows.push(point_info(
-            snapshot,
-            feature,
-            wire_index(index, 1)?,
-            &evaluation,
-        )?);
+        let position = wire_index(index, prefix)?;
+        rows.push(project(snapshot, feature, position, &evaluation)?);
     }
-    encode(&ListWorkPointsResult { points: Some(rows) })
+    Ok(rows)
 }
 fn entries(
     snapshot: &DocumentSnapshot,
@@ -52,7 +62,7 @@ fn entries(
         .iter()
         .filter(move |feature| collection.contains(*feature.definition()))
 }
-fn evaluate(snapshot: &DocumentSnapshot) -> Result<WorkGeometryEvaluation, Error> {
+pub(super) fn evaluate(snapshot: &DocumentSnapshot) -> Result<WorkGeometryEvaluation, Error> {
     snapshot
         .work_geometry
         .evaluate_work_geometry(&snapshot.parameters)
@@ -137,6 +147,9 @@ pub(super) fn creation_reply(
     let index = wire_index(position, collection.origin_count())?;
     let evaluation = evaluate(snapshot)?;
     match collection {
+        DatumCollection::Planes => {
+            super::planes::creation_reply(snapshot, feature, index, &evaluation)
+        }
         DatumCollection::Axes => axis_reply(axis_info(snapshot, feature, index, &evaluation)?),
         DatumCollection::Points => point_reply(point_info(snapshot, feature, index, &evaluation)?),
     }
@@ -165,7 +178,7 @@ pub(super) fn wire_index(position: usize, origins: usize) -> Result<i64, Error> 
         .and_then(|count| i64::try_from(count).ok());
     count.ok_or_else(|| Error(format!("datum position {position} with {origins} origins: expected a nonnegative i64 collection index")))
 }
-fn require_local_occurrence(occurrence: Option<&[String]>) -> Result<(), Error> {
+pub(super) fn require_local_occurrence(occurrence: Option<&[String]>) -> Result<(), Error> {
     if !occurrence.unwrap_or_default().is_empty() {
         return Err(Error(format!(
             "datum occurrence {occurrence:?}: expected the supported local part scope"
