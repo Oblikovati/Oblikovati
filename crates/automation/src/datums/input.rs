@@ -138,7 +138,7 @@ fn associated_point(
     })
 }
 
-pub(in crate::datums) fn axis_reference(
+pub(crate) fn axis_reference(
     snapshot: &DocumentSnapshot,
     reference: &str,
 ) -> Result<oblikovati_model::feature::work_axis::WorkAxisReference, Error> {

@@ -16,6 +16,7 @@ pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
 mod lifecycle;
 mod open;
+mod sketch_preferences;
 pub use open::DocumentObserverFactory;
 
 /// Implemented calls that require the file owner.
@@ -42,6 +43,8 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     version: &'a str,
     external: Option<&'a mut dyn ExternalAttachmentFiles>,
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
+    sketch_preferences:
+        Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
     /// Borrow owned files and identity generation; example: `FileHost::new(&mut files, &mut guids, "alpha")`.
@@ -57,6 +60,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 version,
                 observers: None,
                 external: None,
+                sketch_preferences: None,
             }),
         }
     }
@@ -76,13 +80,16 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             return crate::datums::apply(context.files, method, request);
         }
         if crate::SKETCH_COMMAND_METHODS.contains(&method) {
-            return crate::sketches::apply(context.files, method, request);
+            return context.sketch_command(method, request);
         }
         context.owned_command(method, request)
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::SKETCH_OPTION_METHODS.contains(&method) {
+            return self.sketch_option_command(method, request);
+        }
         if EDIT_METHODS.contains(&method) {
             return command_owner::edit(self.files, method, request);
         }

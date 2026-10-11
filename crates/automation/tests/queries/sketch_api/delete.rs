@@ -50,11 +50,11 @@ fn typed_deletion_declines_invalid_indices_and_malformed_requests_before_mutatio
 }
 
 #[test]
-fn typed_deletion_requires_an_active_part_and_a_writable_host() {
+fn typed_deletion_requires_an_active_sketch_host_and_a_writable_host() {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);
     expect_api_decline(delete_call(&mut files, &mut source, 0), "active part");
-    for kind in [DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PRESENTATION] {
+    for kind in [DOCUMENT_DRAWING, DOCUMENT_PRESENTATION] {
         let (mut files, document, mut source) = configured_files(kind, Default::default());
         let before = owner_revision(&files, document);
         expect_api_decline(delete_call(&mut files, &mut source, 0), "kind");

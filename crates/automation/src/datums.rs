@@ -19,6 +19,9 @@ mod redefine;
 mod reference;
 mod rows;
 mod scalars;
+mod sketch_inputs;
+pub(crate) use input::axis_reference;
+pub(crate) use sketch_inputs::sketch_plane_at_index;
 
 /// Methods use the existing API contract and the one file-owned datum program.
 pub const DATUM_COMMAND_METHODS: [&str; 5] = [

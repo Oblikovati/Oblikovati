@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{encode, part_owner::active_part};
+use crate::encode;
+pub(crate) mod create;
 mod delete;
+mod owner;
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::{
     document_sketch::{DocumentSketchId, DocumentSketchRecompute},
@@ -16,8 +18,12 @@ use oblikovati_solve::{
     nonlinear::{NonlinearResult, SolveTermination},
 };
 
-/// Selected sketch commands require a retained part-document kind.
-pub const SKETCH_COMMAND_METHODS: [&str; 2] = [METHOD_SKETCH_SOLVE, METHOD_SKETCH_DELETE];
+/// Sketch commands require a retained part or assembly document kind.
+pub const SKETCH_COMMAND_METHODS: [&str; 3] = [
+    METHOD_SKETCH_CREATE,
+    METHOD_SKETCH_SOLVE,
+    METHOD_SKETCH_DELETE,
+];
 
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -69,7 +75,7 @@ fn active_sketch<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
     files: &FileWorkspace<O, W, F>,
     index: i64,
 ) -> Result<(u64, DocumentSketchId), Error> {
-    let document = active_part(files)?;
+    let document = owner::active_sketch_host(files)?;
     let snapshot = files
         .workspace()
         .session(document)

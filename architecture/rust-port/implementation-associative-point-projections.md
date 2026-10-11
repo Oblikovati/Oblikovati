@@ -54,7 +54,7 @@ save/reopen with reservation marks. Changing a stored driver refreshes anchors
 on open without adding undo steps, and the changed warm seed remains dirty until
 saved. An extreme stored seed cannot override the current source.
 
-Automatic origin projection preferences and `sketch.create` routing remain to
-port. Kernel vertex/edge projections need the released reference catalogue.
+[Creation and origin preferences](implementation-sketch-creation-api.md) now use
+these bindings. Kernel vertex/edge projections need the released reference catalogue.
 Explicit break-link policy and projected curves remain separate work. This
 step does not establish native application, rendering, or kernel acceptance.

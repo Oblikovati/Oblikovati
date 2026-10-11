@@ -36,6 +36,6 @@ projection, read attribution, source and placement failures, numeric overflow,
 unchanged recipe/verification state, and 64 generated translated/rotated frames
 with off-plane sources. It now serves
 [persisted bindings and source-driven solver refresh](implementation-associative-point-projections.md).
-The auto-project-origin option and `sketch.create` routing remain required.
+The [creation API and origin preferences](implementation-sketch-creation-api.md) now use this seam.
 Vertex/edge projection needs the released kernel reference catalogue. Native
 application and rendering acceptance remain open.

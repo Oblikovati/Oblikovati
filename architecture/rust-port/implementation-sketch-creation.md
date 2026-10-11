@@ -35,8 +35,8 @@ degenerate and non-finite orientations, both exhausted namespaces, typed causes,
 repeated creation, rejected replies, aborted groups, undo/redo, and native
 save/reopen. Workspace tests use the existing named file and observer fakes.
 
-The wire `sketch.create` route, application option storage and default-on
-preference, assembly policy, interactive edit environment, face/edge reference
-catalogue, and native head still require ports. This command supplies their
-shared document mutation boundary. It does not establish native rendering or
-kernel acceptance.
+The wire route, application sketch preference storage and default-on policy, and
+assembly policy now use this command through the
+[creation API](implementation-sketch-creation-api.md). The interactive edit
+environment, face/edge reference catalogue, and native head still require ports.
+This command does not establish native rendering or kernel acceptance.

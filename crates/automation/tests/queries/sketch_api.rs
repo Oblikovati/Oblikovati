@@ -177,7 +177,7 @@ fn absent_active_document_and_wrong_kinds_are_refused() {
     let mut source = QueryGuids(0);
     expect_api_decline(status_call(&files, 0), "active part");
     expect_api_decline(solve_call(&mut files, &mut source, 0), "active part");
-    for kind in [DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PRESENTATION] {
+    for kind in [DOCUMENT_DRAWING, DOCUMENT_PRESENTATION] {
         let (mut files, document, mut source) = configured_files(kind, Default::default());
         let before = owner_revision(&files, document);
         expect_api_decline(status_call(&files, 0), "kind");
@@ -458,3 +458,6 @@ fn vetoed_api_group(files: &mut DiscoveryWorkspace, source: &mut QueryGuids) {
     );
     expect_api_decline(client.transactions().end(), "locked");
 }
+
+#[path = "sketch_api/create.rs"]
+mod create;

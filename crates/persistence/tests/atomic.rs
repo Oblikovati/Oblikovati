@@ -1,62 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
-
-use oblikovati_persistence::atomic::{AtomicFiles, StagedFile, replace_file};
-use std::{cell::RefCell, io, path::Path, rc::Rc};
-
-#[derive(Default)]
-struct FakeDisk {
-    committed: Vec<u8>,
-    calls: Vec<&'static str>,
-    fail_at: Option<&'static str>,
-}
-
-struct FakeAtomicFiles(Rc<RefCell<FakeDisk>>);
-struct FakeStage {
-    disk: Rc<RefCell<FakeDisk>>,
-    staged: Vec<u8>,
-}
-
-fn attempt(disk: &Rc<RefCell<FakeDisk>>, phase: &'static str) -> io::Result<()> {
-    let mut disk = disk.borrow_mut();
-    disk.calls.push(phase);
-    if disk.fail_at == Some(phase) {
-        return Err(io::Error::other(format!("injected {phase} failure")));
-    }
-    Ok(())
-}
-
-impl AtomicFiles for FakeAtomicFiles {
-    type Stage = FakeStage;
-    fn stage(&mut self, _destination: &Path) -> io::Result<Self::Stage> {
-        attempt(&self.0, "stage")?;
-        Ok(FakeStage {
-            disk: self.0.clone(),
-            staged: Vec::new(),
-        })
-    }
-}
-
-impl StagedFile for FakeStage {
-    fn write_contents(&mut self, contents: &[u8]) -> io::Result<()> {
-        self.staged.extend_from_slice(contents);
-        attempt(&self.disk, "write")
-    }
-    fn synchronize(&mut self) -> io::Result<()> {
-        attempt(&self.disk, "sync")
-    }
-    fn commit(self, _destination: &Path) -> io::Result<()> {
-        attempt(&self.disk, "commit")?;
-        self.disk.borrow_mut().committed = self.staged.clone();
-        Ok(())
-    }
-}
-
-impl Drop for FakeStage {
-    fn drop(&mut self) {
-        self.disk.borrow_mut().calls.push("drop");
-    }
-}
-
+use oblikovati_persistence::atomic::replace_file;
+use std::{cell::RefCell, path::Path, rc::Rc};
+#[path = "common/fake_atomic_files.rs"]
+mod fake_files;
+use fake_files::{FakeAtomicFiles, FakeDisk};
 #[test]
 fn replacement_orders_write_and_sync_before_commit() {
     let disk = Rc::new(RefCell::new(FakeDisk::default()));
