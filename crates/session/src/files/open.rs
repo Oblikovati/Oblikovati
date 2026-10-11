@@ -105,8 +105,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 path: path.into(),
                 reason,
             })?;
-        read_parameter_package(path, version, source, &mut self.files)
-            .map_err(FileWorkspaceError::Load)
+        let prepared = read_parameter_package(path, version, source, &mut self.files)
+            .map_err(FileWorkspaceError::Load)?;
+        super::create::require_document_kind(prepared.package.manifest().document_type)?;
+        Ok(prepared)
     }
 
     pub(super) fn install_file(

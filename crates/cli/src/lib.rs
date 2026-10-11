@@ -5,15 +5,17 @@
 mod build_identity;
 pub use build_identity::BuildIdentity;
 mod create;
+mod documents;
 mod info;
 mod observations;
+mod paths;
 use oblikovati_persistence::load::PackageFileReader;
 use std::{ffi::OsString, io::Write};
 
 /// Complete packaged provenance, or an explicitly unstamped development identity.
 pub const BUILD_MANIFEST: &str = include_str!(concat!(env!("OUT_DIR"), "/build-manifest.json"));
 
-const USAGE: &str = "oblikovati-cli — headless document tool\n\nusage:\n  oblikovati-cli new <type> <path> [--seed]\n  oblikovati-cli info <path> [--json]\n  oblikovati-cli version\n  oblikovati-cli help\n\nRust port: info reads the package manifest only. Unseeded creation is available. Seeded geometry, edits, and scripts are not yet available.";
+const USAGE: &str = "oblikovati-cli — headless document tool\n\nusage:\n  oblikovati-cli new <type> <path> [--seed]\n  oblikovati-cli info <path> [--json]\n  oblikovati-cli open <path>\n  oblikovati-cli save-as <src> <dst>\n  oblikovati-cli version\n  oblikovati-cli help\n\nRust port: info reads the package manifest only. Unseeded creation and recipe open/save-as are available. Kernel geometry replay, edits, and scripts are not yet available.";
 
 /// Execute one command without exiting the process; native paths stay as OS strings.
 /// Example: `run(&["info".into(), path.into()], reader, output)?;`.
@@ -26,20 +28,23 @@ pub fn run(
         return Err(format!("oblikovati-cli: no command\n{USAGE}"));
     };
     match command.to_str() {
-        Some("new") => Err("new: expected writable document access".into()),
+        Some("new" | "open" | "save-as") => owned_access_required(command),
         Some("info") => info::inspect(operands, reader, output),
         Some("version" | "--version") => version(operands, output),
         Some("help" | "-h" | "--help") => write_line(output, USAGE),
         Some(
-            "open" | "save-as" | "import" | "export" | "export-flat" | "script"
-            | "generate-assembly" | "check-updates",
+            "import" | "export" | "export-flat" | "script" | "generate-assembly" | "check-updates",
         ) => Err(format!(
-            "oblikovati-cli: command {command:?} is not yet ported; available commands: new, info, version, help"
+            "oblikovati-cli: command {command:?} is not yet ported; available commands: new, open, save-as, info, version, help"
         )),
         _ => Err(format!(
-            "oblikovati-cli: unknown command {command:?}; expected new, info, version, or help"
+            "oblikovati-cli: unknown command {command:?}; expected new, open, save-as, info, version, or help"
         )),
     }
+}
+
+fn owned_access_required(command: &OsString) -> Result<(), String> {
+    Err(format!("{command:?}: expected file-owned document access"))
 }
 
 fn version(operands: &[OsString], output: &mut dyn Write) -> Result<(), String> {
@@ -69,10 +74,14 @@ pub fn run_with_files<F: oblikovati_persistence::file_access::DocumentFiles>(
     source: &mut dyn oblikovati_model::identity::GuidSource,
     output: &mut dyn Write,
 ) -> Result<(), String> {
-    if let Some((command, operands)) = arguments.split_first()
-        && command == "new"
-    {
-        return create::execute(operands, files, source, output);
+    if let Some((command, operands)) = arguments.split_first() {
+        match command.to_str() {
+            Some("new") => return create::execute(operands, files, source, output),
+            Some(command @ ("open" | "save-as")) => {
+                return documents::execute(command, operands, files, source, output);
+            }
+            _ => {}
+        }
     }
     run(arguments, &mut files, output)
 }

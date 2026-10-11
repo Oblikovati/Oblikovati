@@ -13,14 +13,14 @@ fn build_request(
     requested: &OsString,
     seed: bool,
 ) -> Result<CreationRequest, String> {
-    let (kind, kind_name, extension) = document_kind(kind)?;
+    let (kind, kind_name) = document_kind(kind)?;
     if seed && kind == DOCUMENT_PART {
         return Err(
             "new: --seed requires Martensite extrusion; seeded part creation is not yet ported"
                 .into(),
         );
     }
-    let path = with_extension(requested, extension);
+    let path = paths::with_extension(requested, paths::kind_extension(kind)?);
     let name = oblikovati_session::files::derive_document_title(&path);
     Ok(CreationRequest {
         kind,
@@ -47,39 +47,18 @@ fn partition(args: &[OsString]) -> Result<(Vec<&OsString>, bool), String> {
     }
     Ok((operands, seed))
 }
-fn document_kind(name: &OsString) -> Result<(DocumentType, &'static str, &'static str), String> {
+fn document_kind(name: &OsString) -> Result<(DocumentType, &'static str), String> {
     match name
         .to_str()
         .map(|value| value.trim().to_lowercase())
         .as_deref()
     {
-        Some("part") => Ok((DOCUMENT_PART, "part", PART_FILE_EXTENSION)),
-        Some("assembly") => Ok((DOCUMENT_ASSEMBLY, "assembly", ASSEMBLY_FILE_EXTENSION)),
-        Some("drawing") => Ok((DOCUMENT_DRAWING, "drawing", DRAWING_FILE_EXTENSION)),
-        Some("presentation") => Ok((
-            DOCUMENT_PRESENTATION,
-            "presentation",
-            PRESENTATION_FILE_EXTENSION,
-        )),
+        Some("part") => Ok((DOCUMENT_PART, "part")),
+        Some("assembly") => Ok((DOCUMENT_ASSEMBLY, "assembly")),
+        Some("drawing") => Ok((DOCUMENT_DRAWING, "drawing")),
+        Some("presentation") => Ok((DOCUMENT_PRESENTATION, "presentation")),
         _ => Err(format!(
             "new: type {name:?}: expected part, assembly, drawing, or presentation"
         )),
     }
-}
-fn with_extension(path: &OsString, extension: &str) -> PathBuf {
-    let current = PathBuf::from(path);
-    if matching_extension(&current, extension) {
-        return current;
-    }
-    let mut stamped = path.clone();
-    stamped.push(extension);
-    PathBuf::from(stamped)
-}
-fn matching_extension(path: &std::path::Path, extension: &str) -> bool {
-    // Go filepath.Ext includes a leading dot; Path::extension omits dotfile extensions.
-    let name = path.file_name().unwrap_or_default().as_encoded_bytes();
-    let Some(dot) = name.iter().rposition(|byte| *byte == b'.') else {
-        return false;
-    };
-    name[dot..].eq_ignore_ascii_case(extension.as_bytes())
 }
