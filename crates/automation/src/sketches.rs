@@ -2,6 +2,7 @@
 use crate::encode;
 pub(crate) mod create;
 mod delete;
+mod entities;
 mod owner;
 mod references;
 use oblikovati_api::{Error, wire::*};
@@ -26,8 +27,9 @@ pub const SKETCH_COMMAND_METHODS: [&str; 3] = [
     METHOD_SKETCH_DELETE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 3] = [
+pub const SKETCH_QUERY_METHODS: [&str; 4] = [
     METHOD_SKETCH_CONSTRAINT_STATUS,
+    METHOD_SKETCH_ENTITIES,
     METHOD_SKETCH_REFERENCE_KEY,
     METHOD_SKETCH_RESOLVE_REFERENCE,
 ];
@@ -38,6 +40,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 ) -> Result<Vec<u8>, Error> {
     if method == METHOD_SKETCH_CONSTRAINT_STATUS {
         return constraint_status(files, crate::decode(method, request)?);
+    }
+    if method == METHOD_SKETCH_ENTITIES {
+        return entities::query(files, crate::decode(method, request)?);
     }
     references::query(files, method, request)
 }

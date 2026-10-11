@@ -464,3 +464,6 @@ mod create;
 
 #[path = "sketch_api/references.rs"]
 mod references;
+
+#[path = "sketch_api/entities.rs"]
+mod entities;

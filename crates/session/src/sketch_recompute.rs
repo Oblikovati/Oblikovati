@@ -35,6 +35,21 @@ impl<O: TransactionObserver> DocumentSession<O> {
             SketchUpdateMode::Explicit,
         )
     }
+
+    /// Inspect entity geometry and movement under this owner's rank policy.
+    /// Example: `session.inspect_sketch_entities(id)?;`.
+    pub fn inspect_sketch_entities(
+        &self,
+        id: DocumentSketchId,
+    ) -> Result<Vec<oblikovati_model::sketch::SketchEntityInspection>, SketchError> {
+        self.snapshot().inspect_document_sketch(
+            id,
+            oblikovati_model::sketch::SketchMovementOptions {
+                rank_tolerance: self.sketch_options.rank_tolerance,
+                ..Default::default()
+            },
+        )
+    }
     /// Inspect local structure with this owner's rank policy and no mutation; example: `session.analyze_sketch(id)?`.
     pub fn analyze_sketch(
         &self,
