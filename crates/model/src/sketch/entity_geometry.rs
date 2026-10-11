@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{Sketch2D, SketchEntityId, SketchError, SketchPoint2D};
-use crate::sketch::{SketchArc2D, SketchCircle2D, SketchLine2D, variables::SketchVariable};
+use crate::sketch::{
+    SketchArc2D, SketchCircle2D, SketchEllipse2D, SketchLine2D, variables::SketchVariable,
+};
 use oblikovati_api::types::{
-    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_LINE, SKETCH_ENTITY_POINT,
-    SketchEntityKind,
+    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_ELLIPSE, SKETCH_ENTITY_LINE,
+    SKETCH_ENTITY_POINT, SketchEntityKind,
 };
 use std::collections::BTreeMap;
 #[derive(Clone, Copy)]
@@ -12,6 +14,7 @@ pub(super) enum OwnedSketchGeometry {
     Line(SketchLine2D),
     Circle(SketchCircle2D),
     Arc(SketchArc2D),
+    Ellipse(SketchEllipse2D),
 }
 impl OwnedSketchGeometry {
     pub fn id(self) -> SketchEntityId {
@@ -20,6 +23,7 @@ impl OwnedSketchGeometry {
             Self::Line(shape) => shape.id,
             Self::Circle(shape) => shape.id,
             Self::Arc(shape) => shape.id,
+            Self::Ellipse(shape) => shape.id(),
         }
     }
     pub fn kind(self) -> SketchEntityKind {
@@ -28,6 +32,7 @@ impl OwnedSketchGeometry {
             Self::Line(_) => SKETCH_ENTITY_LINE,
             Self::Circle(_) => SKETCH_ENTITY_CIRCLE,
             Self::Arc(_) => SKETCH_ENTITY_ARC,
+            Self::Ellipse(_) => SKETCH_ENTITY_ELLIPSE,
         }
     }
     pub fn points(self) -> Vec<SketchEntityId> {
@@ -36,6 +41,7 @@ impl OwnedSketchGeometry {
             Self::Line(shape) => shape.endpoints.to_vec(),
             Self::Circle(shape) => vec![shape.center],
             Self::Arc(shape) => vec![shape.center, shape.start, shape.end],
+            Self::Ellipse(shape) => vec![shape.center()],
         }
     }
     pub fn radius(self, sketch: &Sketch2D) -> Result<f64, SketchError> {
@@ -50,6 +56,9 @@ impl OwnedSketchGeometry {
         if let Self::Circle(shape) = self {
             variables.push(SketchVariable::Radius(shape.id));
         }
+        if let Self::Ellipse(shape) = self {
+            variables.extend(super::ellipse::variables::ellipse_variables(shape.id()));
+        }
         variables
             .into_iter()
             .map(|variable| sketch.variable_column(variable))
@@ -60,6 +69,13 @@ impl OwnedSketchGeometry {
 pub(super) fn catalogue(sketch: &Sketch2D) -> BTreeMap<SketchEntityId, OwnedSketchGeometry> {
     linear_shapes(sketch)
         .chain(circular_shapes(sketch))
+        .chain(
+            sketch
+                .ellipses()
+                .iter()
+                .copied()
+                .map(OwnedSketchGeometry::Ellipse),
+        )
         .map(|shape| (shape.id(), shape))
         .collect()
 }

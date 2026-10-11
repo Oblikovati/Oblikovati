@@ -151,3 +151,6 @@ fn axis_normalization_preserves_directions_at_finite_extremes() {
         assert_eq!(value.orientation(), std::f64::consts::FRAC_PI_4);
     }
 }
+
+#[path = "sketch_ellipse/ownership.rs"]
+mod ownership;

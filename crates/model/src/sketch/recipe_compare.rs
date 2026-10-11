@@ -11,6 +11,7 @@ impl Sketch2D {
             && self.lines == other.lines
             && self.arcs == other.arcs
             && self.circles == other.circles
+            && same_ellipses(&self.ellipses, &other.ellipses)
             && same_points(&self.points, &other.points)
             && same_constraints(&self.constraints, &other.constraints)
     }
@@ -47,4 +48,14 @@ fn same_relation(first: &PlanarConstraint, second: &PlanarConstraint) -> bool {
         ) => first_point == second_point && same_components(*first, *second),
         _ => first == second,
     }
+}
+
+fn same_ellipses(first: &[super::SketchEllipse2D], second: &[super::SketchEllipse2D]) -> bool {
+    first.len() == second.len()
+        && first.iter().zip(second).all(|(first, second)| {
+            first.id() == second.id()
+                && first.center() == second.center()
+                && same_components(first.major_axis(), second.major_axis())
+                && same_components(first.radii(), second.radii())
+        })
 }

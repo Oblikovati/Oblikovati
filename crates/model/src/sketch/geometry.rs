@@ -64,6 +64,7 @@ impl Sketch2D {
             || self.lines.iter().any(|line| line.id == id)
             || self.circles.iter().any(|circle| circle.id == id)
             || self.arcs.iter().any(|arc| arc.id == id)
+            || self.ellipses.iter().any(|ellipse| ellipse.id() == id)
         {
             return Err(SketchError::Definition(format!(
                 "sketch entity {id:?}: expected a unique nonzero identity"

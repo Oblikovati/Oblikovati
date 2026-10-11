@@ -57,6 +57,7 @@ impl Sketch2D {
             .map(|shape| shape.id)
             .chain(self.circles.iter().map(|shape| shape.id))
             .chain(self.arcs.iter().map(|shape| shape.id))
+            .chain(self.ellipses.iter().map(|shape| shape.id()))
             .collect()
     }
     fn validate_curve_selection(
@@ -67,7 +68,7 @@ impl Sketch2D {
         let owned = self.curve_identity_set();
         if selected.len() != entities.len() || !selected.is_subset(&owned) {
             return Err(SketchError::Definition(format!(
-                "construction selection {entities:?}: expected unique owned line/circle/arc IDs from {owned:?}"
+                "construction selection {entities:?}: expected unique owned line/circle/arc/ellipse IDs from {owned:?}"
             )));
         }
         Ok(selected)
@@ -90,9 +91,9 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.construction_curves) {
             (1 | 2, None) => Ok(()),
-            (3..=6, Some(curves)) => self.adopt_construction_curves(curves),
+            (3..=7, Some(curves)) => self.adopt_construction_curves(curves),
             shape => Err(SketchError::Definition(format!(
-                "construction recipe {shape:?}: expected no metadata in versions 1/2 or explicit curve metadata in versions 3-6"
+                "construction recipe {shape:?}: expected no metadata in versions 1/2 or explicit curve metadata in versions 3-7"
             ))),
         }
     }

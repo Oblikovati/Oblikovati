@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings.
-pub const SKETCH_RECIPE_VERSION: u32 = 6;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses.
+pub const SKETCH_RECIPE_VERSION: u32 = 7;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -14,6 +14,8 @@ pub struct SketchRecipe {
     pub lines: Vec<SketchLine2D>,
     pub circles: Vec<SketchCircle2D>,
     pub arcs: Vec<SketchArc2D>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ellipses: Option<Vec<super::SketchEllipse2D>>,
     pub constraints: Vec<SketchConstraint>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub entity_order: Option<Vec<super::SketchEntityId>>,
@@ -31,12 +33,20 @@ pub struct SketchRecipe {
 impl Sketch2D {
     /// Capture authored values in stable order; example: `let recipe = sketch.recipe();`.
     pub fn recipe(&self) -> SketchRecipe {
-        let mut recipe = SketchRecipe {
+        let mut recipe = self.geometry_recipe();
+        self.capture_recipe_schema(&mut recipe);
+        self.capture_dimension_settings_schema(&mut recipe);
+        self.capture_ellipse_schema(&mut recipe);
+        recipe
+    }
+    fn geometry_recipe(&self) -> SketchRecipe {
+        SketchRecipe {
             version: 1,
             points: self.points.clone(),
             lines: self.lines.clone(),
             circles: self.circles.clone(),
             arcs: self.arcs.clone(),
+            ellipses: None,
             constraints: self.constraints.clone(),
             entity_order: self.saved_entity_order(),
             construction_curves: self.saved_construction_curves(),
@@ -44,10 +54,15 @@ impl Sketch2D {
             dimension_placements: self.saved_dimension_placements(),
             reference_dimensions: self.saved_reference_dimensions(),
             dimension_limits: self.saved_dimension_limits(),
-        };
-        self.capture_recipe_schema(&mut recipe);
-        self.capture_dimension_settings_schema(&mut recipe);
-        recipe
+        }
+    }
+    pub(super) fn capture_dimension_schema_metadata(&self, recipe: &mut SketchRecipe) {
+        recipe.entity_order = Some(self.entity_order.clone());
+        recipe.construction_curves = Some(self.saved_construction_curves().unwrap_or_default());
+        recipe.centerlines = Some(self.centerline_ids());
+        recipe.dimension_placements = Some(recipe.dimension_placements.take().unwrap_or_default());
+        recipe.reference_dimensions = Some(recipe.reference_dimensions.take().unwrap_or_default());
+        recipe.dimension_limits = Some(recipe.dimension_limits.take().unwrap_or_default());
     }
     fn capture_recipe_schema(&self, recipe: &mut SketchRecipe) {
         recipe.version = planar_recipe_version(
@@ -73,6 +88,7 @@ impl Sketch2D {
         }
         let mut sketch = Self::default();
         sketch.restore_geometry(recipe)?;
+        sketch.restore_ellipses(recipe)?;
         sketch.restore_entity_order(recipe)?;
         sketch.restore_construction_curves(recipe)?;
         sketch.restore_centerlines(recipe)?;

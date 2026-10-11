@@ -50,11 +50,26 @@ need to load external OCCT libraries.
 
 ## Remaining ownership and solving work
 
-The value does not yet enter `Sketch2D`, solver variables, inspection, profiles,
-or persistence. The canonical `ellipseRadius` route still declines with its
-named missing capability. Next steps are shared-center ownership, schema
-migration, stable entity order, two radius variables plus one orientation,
-analytic residuals and dimensional measurement, and the owner/session/API path.
+The value now enters `Sketch2D` through atomic shared-center adoption. Cross-kind
+identity collisions are refused. Ordered inspection, construction filtering,
+and shared-center translation include ellipses. The solver layout adds two
+radii and one orientation after the existing point/circle columns; a fresh
+ellipse has five freedoms, and grounding its center leaves three. Candidate
+radius/rotation edits validate before publication, while unchanged orientation
+keeps frame bits.
+
+Planar schema 7 records validated ellipse values and explicit role/order/settings
+metadata. Schemas 1-6 remain readable and cannot contain ellipse values. Saved
+axes must be unit directions within a normalization roundoff bound and retain
+their exact bits. Invalid radii, axes, missing schema fields, centers, and
+cross-kind identities are refused. History comparison sees axis signed-zero
+changes. Native-package tests preserve frames, insertion order, construction
+roles, and identity marks through encode/decode/restore and refuse lower marks. This is owned geometry and variable-layout acceptance, not ellipse
+constraint or profile-kernel acceptance. The canonical `ellipseRadius` route still declines with its
+named missing capability. Next steps are native analytic residuals and dimensional measurement,
+then the owner/session/API dimension path and edited-document save/reopen/copy
+acceptance. Generic inspection reports zero for the circular-only radius field,
+as required by the released API; major-radius measurement has its own path.
 The complete issue also requires fully constrained and degenerate cases,
 history, failed formula health, naming, save/reopen/copy, and Linux acceptance.
 B-rep ellipse operations stay in Martensite; this sketch value does not replace

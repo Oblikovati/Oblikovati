@@ -85,3 +85,6 @@ fn legacy_geometry_recipes_stay_version_one_inside_current_native_packages() {
 
 #[path = "package_entity_order/construction.rs"]
 mod construction;
+
+#[path = "package_entity_order/ellipse.rs"]
+mod ellipse;

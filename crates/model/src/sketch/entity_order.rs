@@ -18,7 +18,7 @@ impl Sketch2D {
             .map(|shape| shape.kind())
             .ok_or_else(|| {
                 SketchError::Definition(format!(
-                    "sketch entity {id:?}: expected one owned point, line, circle, or arc"
+                    "sketch entity {id:?}: expected one owned point, line, circle, arc, or ellipse"
                 ))
             })
     }
@@ -35,6 +35,7 @@ impl Sketch2D {
             .chain(self.lines.iter().map(|line| line.id))
             .chain(self.circles.iter().map(|circle| circle.id))
             .chain(self.arcs.iter().map(|arc| arc.id))
+            .chain(self.ellipses.iter().map(|ellipse| ellipse.id()))
             .collect()
     }
     pub(super) fn restore_entity_order(
@@ -43,9 +44,9 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.entity_order) {
             (1, None) => Ok(()),
-            (2..=6, Some(order)) => self.adopt_entity_order(order),
+            (2..=7, Some(order)) => self.adopt_entity_order(order),
             shape => Err(SketchError::Definition(format!(
-                "sketch entity order {shape:?}: expected no order in version 1 or an exact permutation in version 2, version 3, version 4, version 5, or version 6"
+                "sketch entity order {shape:?}: expected no order in version 1 or an exact permutation in version 2, version 3, version 4, version 5, version 6, or version 7"
             ))),
         }
     }

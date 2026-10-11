@@ -91,6 +91,7 @@ pub struct Sketch2D {
     lines: Vec<SketchLine2D>,
     circles: Vec<SketchCircle2D>,
     arcs: Vec<SketchArc2D>,
+    ellipses: Vec<SketchEllipse2D>,
     constraints: Vec<SketchConstraint>,
     reference_dimensions: std::collections::BTreeSet<SketchConstraintId>,
     dimension_drive_limits: std::collections::BTreeMap<SketchConstraintId, SketchDimensionLimits>,

@@ -4,8 +4,15 @@ use oblikovati_solve::{ad::DualNumber, residual::ResidualError};
 
 #[derive(Clone, Copy)]
 pub(super) enum SketchVariable {
-    Coordinate { point: SketchEntityId, axis: usize },
+    Coordinate {
+        point: SketchEntityId,
+        axis: usize,
+    },
     Radius(SketchEntityId),
+    Ellipse {
+        ellipse: SketchEntityId,
+        component: super::ellipse::variables::EllipseComponent,
+    },
 }
 impl Sketch2D {
     pub(super) fn point_constants(
@@ -30,6 +37,7 @@ impl Sketch2D {
             .iter()
             .flat_map(|point| point.position)
             .chain(self.circles.iter().map(|circle| circle.radius))
+            .chain(self.ellipse_values())
             .collect()
     }
     pub(super) fn point_variables(&self, points: &[SketchEntityId]) -> Vec<SketchVariable> {
@@ -51,31 +59,40 @@ impl Sketch2D {
     }
     pub(super) fn variable_column(&self, variable: SketchVariable) -> Result<usize, SketchError> {
         match variable {
-            SketchVariable::Coordinate { point, axis } => self
-                .points
-                .iter()
-                .position(|entry| entry.id == point)
-                .map(|index| index * 2 + axis)
-                .ok_or_else(|| {
-                    SketchError::Definition(format!(
-                        "sketch point {point:?}: expected an owned solver point"
-                    ))
-                }),
-            SketchVariable::Radius(circle) => self
-                .circles
-                .iter()
-                .position(|entry| entry.id == circle)
-                .map(|index| self.points.len() * 2 + index)
-                .ok_or_else(|| {
-                    SketchError::Definition(format!(
-                        "sketch circle {circle:?}: expected an owned solver radius"
-                    ))
-                }),
+            SketchVariable::Ellipse { ellipse, component } => {
+                self.ellipse_column(ellipse, component)
+            }
+            SketchVariable::Coordinate { point, axis } => self.point_column(point, axis),
+            SketchVariable::Radius(circle) => self.circle_column(circle),
         }
     }
+    fn point_column(&self, point: SketchEntityId, axis: usize) -> Result<usize, SketchError> {
+        self.points
+            .iter()
+            .position(|entry| entry.id == point)
+            .map(|index| index * 2 + axis)
+            .ok_or_else(|| {
+                SketchError::Definition(format!(
+                    "sketch point {point:?}: expected an owned solver point"
+                ))
+            })
+    }
+    fn circle_column(&self, circle: SketchEntityId) -> Result<usize, SketchError> {
+        self.circles
+            .iter()
+            .position(|entry| entry.id == circle)
+            .map(|index| self.points.len() * 2 + index)
+            .ok_or_else(|| {
+                SketchError::Definition(format!(
+                    "sketch circle {circle:?}: expected an owned solver radius"
+                ))
+            })
+    }
+
     pub(super) fn candidate_values(&self, values: &[f64]) -> Result<Self, SketchError> {
         let point_count = self.points.len() * 2;
-        let expected = point_count + self.circles.len();
+        let ellipse_start = point_count + self.circles.len();
+        let expected = ellipse_start + self.ellipses.len() * 3;
         if values.len() != expected {
             return Err(SketchError::Definition(format!(
                 "sketch candidate has {} variables: expected {expected} coordinate/radius values",
@@ -83,18 +100,22 @@ impl Sketch2D {
             )));
         }
         let mut candidate = self.clone();
-        for (point, coordinates) in candidate
-            .points
-            .iter_mut()
-            .zip(values[..point_count].as_chunks::<2>().0)
-        {
+        candidate.apply_point_candidates(&values[..point_count]);
+        candidate.apply_circle_candidates(&values[point_count..ellipse_start])?;
+        candidate.apply_ellipse_values(&values[ellipse_start..])?;
+        Ok(candidate)
+    }
+    fn apply_point_candidates(&mut self, values: &[f64]) {
+        for (point, coordinates) in self.points.iter_mut().zip(values.as_chunks::<2>().0) {
             point.position = *coordinates;
         }
-        for (circle, radius) in candidate.circles.iter_mut().zip(&values[point_count..]) {
+    }
+    fn apply_circle_candidates(&mut self, values: &[f64]) -> Result<(), SketchError> {
+        for (circle, radius) in self.circles.iter_mut().zip(values) {
             require_radius(circle.id, *radius)?;
             circle.radius = *radius;
         }
-        Ok(candidate)
+        Ok(())
     }
 }
 

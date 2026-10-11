@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod owned;
+mod storage;
+pub(super) mod variables;
 use super::{SketchEntityId, SketchError, geometry::require_position};
+use storage::EllipseDefinition;
 
 /// Validated analytic ellipse value; sketch ownership is checked separately on adoption.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(try_from = "EllipseDefinition")]
 pub struct SketchEllipse2D {
     id: SketchEntityId,
     center: SketchEntityId,

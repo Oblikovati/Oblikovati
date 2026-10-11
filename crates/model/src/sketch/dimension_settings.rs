@@ -129,9 +129,9 @@ impl Sketch2D {
             &recipe.dimension_limits,
         ) {
             (1..=5, None, None) => Ok(()),
-            (6, Some(ids), Some(limits)) => self.adopt_dimension_settings(ids, limits),
+            (6..=7, Some(ids), Some(limits)) => self.adopt_dimension_settings(ids, limits),
             shape => Err(SketchError::Definition(format!(
-                "dimension settings recipe {shape:?}: expected no settings in versions 1-5 or explicit owned reference IDs and limits in version 6"
+                "dimension settings recipe {shape:?}: expected no settings in versions 1-5 or explicit owned reference IDs and limits in versions 6-7"
             ))),
         }
     }
@@ -163,11 +163,6 @@ impl Sketch2D {
             return;
         }
         recipe.version = 6;
-        recipe.entity_order = Some(self.entity_order.clone());
-        recipe.construction_curves = Some(self.saved_construction_curves().unwrap_or_default());
-        recipe.centerlines = Some(self.centerline_ids());
-        recipe.dimension_placements = Some(recipe.dimension_placements.take().unwrap_or_default());
-        recipe.reference_dimensions = Some(recipe.reference_dimensions.take().unwrap_or_default());
-        recipe.dimension_limits = Some(recipe.dimension_limits.take().unwrap_or_default());
+        self.capture_dimension_schema_metadata(recipe);
     }
 }
