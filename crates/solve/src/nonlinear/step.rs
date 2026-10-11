@@ -150,6 +150,7 @@ mod tests {
             jacobian: vec![vec![1.0, 0.0]],
             weights: vec![],
             model_scale: 1.0,
+            domains: vec![],
         };
         let delta = damped_delta(&scaled, 2, INITIAL_DAMPING).unwrap();
         assert_eq!(delta[1], 0.0, "unused column delta {:?}", delta[1]);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{SolveError, checked};
-use crate::residual::ResidualEvaluation;
+use crate::residual::{ResidualBlock, ResidualEvaluation, ResidualTolerance};
 
 use crate::row_scaling::RowScale;
 pub(super) struct ScaledEvaluation {
@@ -9,6 +9,7 @@ pub(super) struct ScaledEvaluation {
     pub jacobian: Vec<Vec<f64>>,
     pub weights: Vec<RowScale>,
     pub model_scale: f64,
+    pub domains: Vec<ResidualTolerance>,
 }
 
 pub(super) fn model_scale(values: &[f64]) -> f64 {
@@ -21,24 +22,22 @@ pub(super) fn model_scale(values: &[f64]) -> f64 {
 pub(super) fn scale_evaluation(
     evaluation: &ResidualEvaluation,
     model_scale: f64,
+    blocks: &[ResidualBlock<'_>],
 ) -> Result<ScaledEvaluation, SolveError> {
     let weights: Vec<RowScale> = evaluation
         .jacobian()
         .iter()
         .map(|row| RowScale::new(row))
         .collect();
-    let residuals = scaled_residuals(evaluation, &weights, model_scale)?;
-    let jacobian = evaluation
-        .jacobian()
-        .iter()
-        .zip(&weights)
-        .map(|(row, weight)| weight.row(row))
-        .collect();
+    let domains = equation_domains(evaluation, blocks);
+    let residuals = scaled_residuals(evaluation, &weights, model_scale, &domains)?;
+    let jacobian = working_jacobian(evaluation, &weights, model_scale, &domains)?;
     Ok(ScaledEvaluation {
         residuals,
         jacobian,
         weights,
         model_scale,
+        domains,
     })
 }
 
@@ -46,14 +45,20 @@ pub(super) fn scaled_residuals(
     evaluation: &ResidualEvaluation,
     weights: &[RowScale],
     model_scale: f64,
+    domains: &[ResidualTolerance],
 ) -> Result<Vec<f64>, SolveError> {
     evaluation
         .values()
         .iter()
         .zip(weights)
-        .map(|(&value, weight)| {
+        .zip(domains)
+        .map(|((&value, weight), domain)| {
             checked(
-                weight.displacement(value, model_scale),
+                match domain {
+                    ResidualTolerance::ModelRelative => weight.displacement(value, model_scale),
+                    ResidualTolerance::ModelLength => value / model_scale,
+                    ResidualTolerance::Unitless => value,
+                },
                 "normalized residual",
             )
         })
@@ -91,16 +96,34 @@ pub(super) fn conflicts(
     sources.into_iter().map(|(source, _)| source).collect()
 }
 
-pub(super) fn convergence_residuals(
+fn equation_domains(
     evaluation: &ResidualEvaluation,
-    blocks: &[crate::residual::ResidualBlock<'_>],
-    scaled: &ScaledEvaluation,
-) -> Vec<f64> {
-    let mut residuals = scaled.residuals.clone();
-    for (block, rows) in blocks.iter().zip(evaluation.source_rows()) {
-        if block.source.tolerance_kind() == crate::residual::ResidualTolerance::Unitless {
-            residuals[rows.clone()].copy_from_slice(&evaluation.values()[rows.clone()]);
-        }
-    }
-    residuals
+    blocks: &[ResidualBlock<'_>],
+) -> Vec<ResidualTolerance> {
+    blocks
+        .iter()
+        .zip(evaluation.source_rows())
+        .flat_map(|(block, rows)| (0..rows.len()).map(|row| block.source.equation_tolerance(row)))
+        .collect()
+}
+fn working_jacobian(
+    evaluation: &ResidualEvaluation,
+    weights: &[RowScale],
+    model_scale: f64,
+    domains: &[ResidualTolerance],
+) -> Result<Vec<Vec<f64>>, SolveError> {
+    evaluation
+        .jacobian()
+        .iter()
+        .zip(weights)
+        .zip(domains)
+        .map(|((row, weight), domain)| match domain {
+            ResidualTolerance::ModelRelative => Ok(weight.row(row)),
+            ResidualTolerance::ModelLength => Ok(row.clone()),
+            ResidualTolerance::Unitless => row
+                .iter()
+                .map(|value| checked(value * model_scale, "unitless working derivative"))
+                .collect(),
+        })
+        .collect()
 }

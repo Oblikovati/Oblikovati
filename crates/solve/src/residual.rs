@@ -9,7 +9,11 @@ use std::ops::Range;
 /// The physical domain used for satisfaction, separate from numerical step conditioning.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResidualTolerance {
+    /// Gradient-normalized displacement retained for existing sources.
     ModelRelative,
+    /// A working-unit length divided by the frozen model scale.
+    ModelLength,
+    /// A direct angular or dimensionless equation value.
     Unitless,
 }
 
@@ -18,6 +22,11 @@ pub trait ResidualSource {
     /// Declare the convergence domain; example: a radian error returns `ResidualTolerance::Unitless`.
     fn tolerance_kind(&self) -> ResidualTolerance {
         ResidualTolerance::ModelRelative
+    }
+
+    /// Select a row's convergence domain; example: a mixed source declares row 0 unitless and row 1 model-relative.
+    fn equation_tolerance(&self, _row: usize) -> ResidualTolerance {
+        self.tolerance_kind()
     }
 
     /// Evaluate local variables in declared order, returning the declared number of equations.
