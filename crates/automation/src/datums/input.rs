@@ -11,20 +11,28 @@ pub(super) fn definition(
     snapshot: &DocumentSnapshot,
 ) -> Result<PreparedDatum, Error> {
     match method {
-        METHOD_WORK_POINTS_CREATE => point(decode(method, request)?),
+        METHOD_WORK_POINTS_CREATE => point(decode(method, request)?, snapshot),
         METHOD_WORK_AXES_CREATE => axis(decode(method, request)?, snapshot),
         _ => Err(Error(format!(
             "datum command {method:?}: expected {DATUM_COMMAND_METHODS:?}"
         ))),
     }
 }
-fn point(request: CreateWorkPointArgs) -> Result<PreparedDatum, Error> {
-    if !request.kind.is_empty() && request.kind != WORK_POINT_POSITION.0 {
-        return Err(Error(format!(
-            "point constructor {:?}: expected supported {:?}",
-            request.kind, WORK_POINT_POSITION
-        )));
+fn point(
+    request: CreateWorkPointArgs,
+    snapshot: &DocumentSnapshot,
+) -> Result<PreparedDatum, Error> {
+    match request.kind.as_str() {
+        "" => position_point(request),
+        kind if kind == WORK_POINT_POSITION.0 => position_point(request),
+        kind if kind == WORK_POINT_ON_POINT.0 => associated_point(request, snapshot),
+        _ => Err(Error(format!(
+            "point constructor {:?}: expected supported {:?} or {:?}",
+            request.kind, WORK_POINT_POSITION, WORK_POINT_ON_POINT
+        ))),
     }
+}
+fn position_point(request: CreateWorkPointArgs) -> Result<PreparedDatum, Error> {
     let position = coordinates(request.at.as_deref(), "point position")?;
     Ok(PreparedDatum {
         definition: WorkGeometryDefinition::Point(position.map(DatumLength::Constant)),
@@ -104,3 +112,20 @@ fn point_reference(
 
 #[cfg(test)]
 mod tests;
+
+fn associated_point(
+    request: CreateWorkPointArgs,
+    snapshot: &DocumentSnapshot,
+) -> Result<PreparedDatum, Error> {
+    let refs = request.refs.as_deref().unwrap_or_default();
+    let [reference] = refs else {
+        return Err(Error(format!(
+            "OnPoint references {refs:?}: expected exactly one current point reference"
+        )));
+    };
+    Ok(PreparedDatum {
+        definition: WorkGeometryDefinition::PointAtReference(point_reference(snapshot, reference)?),
+        construction: request.construction,
+        collection: DatumCollection::Points,
+    })
+}

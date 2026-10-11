@@ -18,6 +18,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Axis(crate::feature::work_axis::WorkAxisLineRecipe),
     Point([crate::feature::work_geometry::DatumLength; 3]),
     AxisThroughPoints(crate::feature::work_geometry::WorkAxisPoints),
+    PointAtReference(crate::feature::work_geometry::WorkPointReference),
     Fixed {
         frame: SketchPlaneRecipe,
         options: SketchPlaneOptions,
@@ -31,19 +32,23 @@ pub enum WorkPlaneDefinitionRecipe {
 impl WorkPlaneDefinition {
     /// Capture authored source without evaluated output; example: `definition.recipe()`.
     pub fn recipe(self) -> WorkPlaneRecipe {
-        let definition = match self {
-            Self::Axis(axis) => WorkPlaneDefinitionRecipe::Axis(axis.recipe()),
-            Self::Point(coordinates) => WorkPlaneDefinitionRecipe::Point(coordinates),
-            Self::AxisThroughPoints(points) => WorkPlaneDefinitionRecipe::AxisThroughPoints(points),
-            Self::Fixed(plane) => WorkPlaneDefinitionRecipe::Fixed {
-                frame: plane.recipe(),
-                options: plane.options(),
-            },
-            Self::Offset { base, distance } => WorkPlaneDefinitionRecipe::Offset { base, distance },
-        };
+        let definition = self.source_recipe();
         WorkPlaneRecipe {
             version: definition.source_version(),
             definition,
+        }
+    }
+
+    fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
+        match self {
+            Self::Axis(axis) => WorkPlaneDefinitionRecipe::Axis(axis.recipe()),
+            Self::Point(coordinates) => WorkPlaneDefinitionRecipe::Point(coordinates),
+            Self::PointAtReference(reference) => {
+                WorkPlaneDefinitionRecipe::PointAtReference(reference)
+            }
+            Self::AxisThroughPoints(points) => WorkPlaneDefinitionRecipe::AxisThroughPoints(points),
+            Self::Fixed(plane) => fixed_frame_recipe(plane),
+            Self::Offset { base, distance } => WorkPlaneDefinitionRecipe::Offset { base, distance },
         }
     }
 
@@ -62,13 +67,12 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     match definition {
         WorkPlaneDefinitionRecipe::Axis(axis) => restore_line_axis(axis),
-        WorkPlaneDefinitionRecipe::Fixed { frame, options } => {
-            SketchPlane::from_recipe(frame, options)
-                .map(WorkPlaneDefinition::Fixed)
-                .map_err(WorkPlaneError::Frame)
-        }
+        WorkPlaneDefinitionRecipe::Fixed { frame, options } => restore_frame(frame, options),
         WorkPlaneDefinitionRecipe::Offset { base, distance } => validate_offset(base, distance),
         WorkPlaneDefinitionRecipe::Point(coordinates) => restore_point(coordinates),
+        WorkPlaneDefinitionRecipe::PointAtReference(reference) => {
+            Ok(WorkPlaneDefinition::PointAtReference(reference))
+        }
         WorkPlaneDefinitionRecipe::AxisThroughPoints(points) => {
             Ok(WorkPlaneDefinition::AxisThroughPoints(points))
         }
@@ -93,6 +97,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(self) -> u32 {
         match self {
+            Self::PointAtReference(_) => 4,
             Self::Axis(_) => 2,
             Self::Point(_) | Self::AxisThroughPoints(_) => 3,
             _ => 1,
@@ -100,6 +105,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(self) -> u32 {
         match self {
+            Self::PointAtReference(_) => 6,
             Self::Axis(_) => 3,
             Self::Point(_) | Self::AxisThroughPoints(_) => 4,
             _ => 1,
@@ -113,4 +119,20 @@ fn restore_line_axis(
     crate::feature::work_axis::WorkAxisLine::from_recipe(recipe)
         .map(WorkPlaneDefinition::Axis)
         .map_err(WorkPlaneError::Axis)
+}
+
+fn fixed_frame_recipe(plane: SketchPlane) -> WorkPlaneDefinitionRecipe {
+    WorkPlaneDefinitionRecipe::Fixed {
+        frame: plane.recipe(),
+        options: plane.options(),
+    }
+}
+
+fn restore_frame(
+    frame: SketchPlaneRecipe,
+    options: SketchPlaneOptions,
+) -> Result<WorkPlaneDefinition, WorkPlaneError> {
+    SketchPlane::from_recipe(frame, options)
+        .map(WorkPlaneDefinition::Fixed)
+        .map_err(WorkPlaneError::Frame)
 }

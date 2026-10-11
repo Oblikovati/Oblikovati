@@ -119,6 +119,7 @@ pub(super) fn constructor_kind(definition: WorkGeometryDefinition) -> Result<Str
         WorkGeometryDefinition::Axis(_) => Ok(WORK_AXIS_LINE.0.into_owned()),
         WorkGeometryDefinition::AxisThroughPoints(_) => Ok(WORK_AXIS_TWO_POINTS.0.into_owned()),
         WorkGeometryDefinition::Point(_) => Ok(WORK_POINT_POSITION.0.into_owned()),
+        WorkGeometryDefinition::PointAtReference(_) => Ok(WORK_POINT_ON_POINT.0.into_owned()),
         _ => Err(Error(format!(
             "datum definition {definition:?}: expected a listed point or axis constructor"
         ))),

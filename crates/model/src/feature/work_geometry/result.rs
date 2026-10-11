@@ -21,15 +21,13 @@ impl WorkGeometryResult {
     ) -> Result<Self, WorkGeometryError> {
         match definition {
             WorkGeometryDefinition::Axis(axis) => Ok(Self::Axis(axis)),
+            WorkGeometryDefinition::PointAtReference(reference) => {
+                reference.position(current).map(Self::Point)
+            }
             WorkGeometryDefinition::Point(coordinates) => {
                 resolve_position(coordinates, parameters).map(Self::Point)
             }
-            WorkGeometryDefinition::AxisThroughPoints(points) => WorkAxisLine::through_points(
-                points.first.position(current)?,
-                points.second.position(current)?,
-            )
-            .map(Self::Axis)
-            .map_err(WorkGeometryError::Axis),
+            WorkGeometryDefinition::AxisThroughPoints(points) => axis_between(points, current),
             plane => plane.evaluate(parameters, current).map(Self::Plane),
         }
     }
@@ -40,4 +38,16 @@ impl WorkGeometryResult {
             Self::Point(_) => "point",
         }
     }
+}
+
+fn axis_between(
+    points: super::WorkAxisPoints,
+    current: &WorkGeometryEvaluation,
+) -> Result<WorkGeometryResult, WorkGeometryError> {
+    WorkAxisLine::through_points(
+        points.first.position(current)?,
+        points.second.position(current)?,
+    )
+    .map(WorkGeometryResult::Axis)
+    .map_err(WorkGeometryError::Axis)
 }

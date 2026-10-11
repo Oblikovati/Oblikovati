@@ -33,6 +33,7 @@ pub enum WorkGeometryDefinition {
     },
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),
+    PointAtReference(WorkPointReference),
     AxisThroughPoints(WorkAxisPoints),
 }
 impl AuthoredFeature<WorkGeometryDefinition> {

@@ -266,3 +266,6 @@ fn unsupported_axis_request() -> CreateWorkAxisArgs {
         ..Default::default()
     }
 }
+
+#[path = "datums_api/on_point.rs"]
+mod on_point;

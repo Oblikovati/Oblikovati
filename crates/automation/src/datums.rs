@@ -90,7 +90,10 @@ impl DatumCollection {
                 definition,
                 WorkGeometryDefinition::Axis(_) | WorkGeometryDefinition::AxisThroughPoints(_)
             ),
-            Self::Points => matches!(definition, WorkGeometryDefinition::Point(_)),
+            Self::Points => matches!(
+                definition,
+                WorkGeometryDefinition::Point(_) | WorkGeometryDefinition::PointAtReference(_)
+            ),
         }
     }
     fn origin_count(self) -> usize {

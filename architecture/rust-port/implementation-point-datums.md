@@ -43,7 +43,8 @@ axis fixture is retained as a hard assertion, and its baseline test runs on Linu
 File-session tests cover undo/redo, save, reopen, copies, dependent sketch
 placement and construction-chain deletion without reuse of permanent IDs.
 
-Plane-intersection axes, relational point definitions, coordinate systems,
+[Associative point definitions](implementation-associated-points.md) now use the
+same program. Plane-intersection axes, other relational points, coordinate systems,
 and edge references remain open. Public creation/list routing and hidden metadata
 version 5 are recorded in [API evidence](implementation-datum-api.md). Native
 rendering and kernel acceptance are not established by these model and file tests.

@@ -8,7 +8,7 @@ This document records implementation evidence, not a replacement ADR.
 
 The file-owned Rust host implements the existing API point and axis create/list
 methods. It imports all method constants, DTOs, and constructor kinds from
-Oblikovati.API. Position points, checked line axes, and directed axes through
+Oblikovati.API. Position and associative points, checked line axes, and directed axes through
 current point references use the same ordered datum program as work planes.
 Each command prepares its definition before ID allocation and encodes its reply
 inside the candidate edit, before the session adopts that edit. Command groups,
@@ -23,7 +23,7 @@ feature. Invalid coordinate shapes, zero line directions, missing references,
 and unsupported constructors decline before an edit is adopted.
 
 The current scope is an active part document. Nonempty occurrence paths and
-unported constructor kinds produce named capability declines. Relational points,
+unported constructor kinds produce named capability declines. Other relational points,
 plane-intersection axes, assembly occurrence geometry, and native rendering
 remain open.
 
@@ -41,6 +41,9 @@ retains visibility. A hidden datum requires program version 5. Visible records
 omit the new field and restore it as true, preserving earlier record layouts;
 a downgraded program containing hidden metadata is rejected. There is no new
 public visibility setter in this change.
+
+Associative point sources require program version 6 and source wrapper version 4.
+See [association evidence](implementation-associated-points.md).
 
 ## Validation and released SDK
 

@@ -9,17 +9,11 @@ impl WorkPlaneDefinition {
             (Self::Axis(first), Self::Axis(second)) => first.same_recipe(second),
             (Self::Point(first), Self::Point(second)) => same_coordinates(first, second),
             (Self::AxisThroughPoints(first), Self::AxisThroughPoints(second)) => first == second,
+            (Self::PointAtReference(first), Self::PointAtReference(second)) => first == second,
             (Self::Fixed(first), Self::Fixed(second)) => first.same_recipe(second),
-            (
-                Self::Offset {
-                    base: first,
-                    distance: left,
-                },
-                Self::Offset {
-                    base: second,
-                    distance: right,
-                },
-            ) => first == second && left.same_recipe(right),
+            (first @ Self::Offset { .. }, second @ Self::Offset { .. }) => {
+                same_offset(first, second)
+            }
             _ => false,
         }
     }
@@ -64,4 +58,20 @@ fn same_coordinates(
         .into_iter()
         .zip(second)
         .all(|(left, right)| left.same_recipe(right))
+}
+
+fn same_offset(first: WorkPlaneDefinition, second: WorkPlaneDefinition) -> bool {
+    match (first, second) {
+        (
+            WorkPlaneDefinition::Offset {
+                base: first,
+                distance: left,
+            },
+            WorkPlaneDefinition::Offset {
+                base: second,
+                distance: right,
+            },
+        ) => first == second && left.same_recipe(right),
+        _ => false,
+    }
 }

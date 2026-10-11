@@ -58,9 +58,10 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
-            Self::Axis(_) | Self::Point(_) | Self::AxisThroughPoints(_) => {
-                Err(WorkPlaneError::NonPlane(Box::new(self)))
-            }
+            Self::Axis(_)
+            | Self::Point(_)
+            | Self::PointAtReference(_)
+            | Self::AxisThroughPoints(_) => Err(WorkPlaneError::NonPlane(Box::new(self))),
             Self::Offset { base, distance } => {
                 let plane = match base {
                     WorkPlaneReference::Origin(origin) => origin.plane(),

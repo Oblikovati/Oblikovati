@@ -21,7 +21,7 @@ fn aborted_creation_retires_its_key_and_new_creation_survives_undo_storage_and_c
     assert_eq!(point_rows(&files, false)[1].ref_, kept.ref_);
     verify_stored_key(&mut files, document, &mut source, &kept.ref_);
 }
-fn verify_stored_key(
+pub(super) fn verify_stored_key(
     files: &mut DiscoveryWorkspace,
     document: u64,
     source: &mut QueryGuids,
