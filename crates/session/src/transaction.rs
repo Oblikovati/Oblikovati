@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use crate::{
-    BoundedGroup, CommandError, DocumentSession, SessionError, TransactionObserver,
-    error::MutationError,
-};
+use crate::sketch_recompute::{SketchUpdateMode, apply_recipe_edit};
+use crate::{BoundedGroup, CommandError, DocumentSession, SessionError, TransactionObserver};
 use oblikovati_api::{
     types::TRANSACTION_POINT_CURRENT,
     wire::{EVENT_TRANSACTION_ABORTED, EVENT_TRANSACTION_COMMITTED},
@@ -34,18 +32,21 @@ impl<O: TransactionObserver> DocumentSession<O> {
         &mut self,
         command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
     ) -> Result<R, CommandError<E>> {
+        self.edit_with_recompute(command, SketchUpdateMode::Automatic)
+    }
+    pub(crate) fn edit_with_recompute<R, E>(
+        &mut self,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        mode: SketchUpdateMode,
+    ) -> Result<R, CommandError<E>> {
         let group = self
             .group
             .as_ref()
             .ok_or(CommandError::Session(SessionError::NoGroup))?;
+        let options = mode.options(self.sketch_options);
         self.history
             .edit(&group.token, |snapshot, ids| {
-                let result = command(snapshot, ids).map_err(MutationError::Command)?;
-                snapshot
-                    .properties
-                    .sync_exposed_parameters(&snapshot.parameters)
-                    .map_err(MutationError::Property)?;
-                Ok(result)
+                apply_recipe_edit(snapshot, ids, command, options)
             })
             .map_err(CommandError::Edit)
     }

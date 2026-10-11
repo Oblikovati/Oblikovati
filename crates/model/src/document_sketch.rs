@@ -98,6 +98,16 @@ impl DocumentSketches {
                 })
     }
 
+    /// Compare recipes and retained verification for source consequences; example: `old.same_evaluated_state(&new)`.
+    pub fn same_evaluated_state(&self, other: &Self) -> bool {
+        self.same_recipe(other)
+            && self
+                .sketches
+                .iter()
+                .zip(&other.sketches)
+                .all(|(first, second)| first.evaluation == second.evaluation)
+    }
+
     /// Inspect records in creation order; example: `document.sketches()`.
     pub fn sketches(&self) -> &[PlacedSketch] {
         &self.sketches

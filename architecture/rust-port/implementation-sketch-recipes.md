@@ -112,9 +112,9 @@ separate identity namespaces, custom frame options, whole-collection atomic
 failure, geometry and placement edits, removal, external reservation behavior,
 malformed restore and UUID continuity/separation. A restored placed sketch edits
 its dimension through zero and back, retains zero DOF, then maps the solved point
-into the saved XZ placement. Document snapshot/history integration, permanent
-reservation storage, package encoding, legacy import and session save/reopen
-remain the next integration work; this collection does not itself write files.
+into the saved XZ placement. The sections below add document snapshot/history,
+permanent reservation storage, package encoding and session save/reopen.
+Legacy import remains open. The collection itself has no filesystem I/O.
 
 ## Package codec and reservation storage
 
@@ -175,8 +175,8 @@ Tests cover a parameter-driven sketch with zero degrees of freedom through
 save/reopen, parameter edits, undo/redo and copy. They also cover reservation-only
 saves, deleted and aborted IDs, refused storage, exact signed-zero edits,
 template restoration and legacy-load refusal. These are model and file workspace
-tests. Kernel features, automatic sketch recomputation and the native viewport
-remain separate port work.
+tests. Kernel features and the native viewport remain separate port work; automatic
+sketch recomputation is described below.
 
 ## Explicit document recomputation
 
@@ -205,9 +205,9 @@ geometry through the existing snapshot codec.
 Go reference: `model/sketch/solve_sketch.go` at the comparison baseline separates
 convergence, constraint structure and sketch health. Rust retains those source
 diagnostics rather than certifying every converged result as fully constrained.
-This operation is explicit. Automatic parameter-reader scheduling, persistent
-sketch health, dependent feature quarantine and API/UI exposure remain open port
-work. Local failure reports must reach those consumers when they are added.
+This operation remains an explicit full solve. The sections below add retained
+health and automatic parameter-reader scheduling. Dependent feature quarantine
+and API/UI health exposure remain open port work. Local failure reports must reach those consumers when they are added.
 
 ## Derived sketch health and checked consumption
 
@@ -245,6 +245,42 @@ Model tests verify target equality, signed zero, tolerance selection, upstream
 changes, failure/recovery, missing targets, DOF declines and redundant warnings.
 
 Feature consumers must use the checked read before building from a sketch.
-Automatic scheduling, dependent feature quarantine, API health DTO projection
-and native UI presentation remain open integration work. This cache alone does
+Dependent feature quarantine, API health DTO projection and native UI
+presentation remain open integration work. Automatic scheduling is described
+below. This cache alone does
 not provide those consumers or certify a closed profile.
+
+## Automatic sketch readers in session edits
+
+Tracking: [#3723](https://github.com/Oblikovati/Oblikovati/issues/3723).
+Normal session edits now update pending sketch readers after the command and
+property projection succeed, before the history candidate is published.
+Unevaluated sketches and changed model-value readers use the same solver as a
+full recompute. Current evaluations, including known failures with unchanged
+inputs, are skipped. Recovery or changed dimension inputs make a failed reader
+pending again. Failure remains local in its retained diagnostics; independent
+changed sketches continue. Only converged geometry is adopted.
+
+Parameter edits and resulting coordinates belong to one transaction candidate
+and one undo step. Rejected commands, observer veto and grouped abort retain the
+original parameters, geometry and evaluation stamps. The typed parameter client
+uses this path through the existing session owner. A normal parameter edit now
+saves and reopens its solved geometry without an extra explicit solve command.
+
+The automatic numerical policy belongs to the session owner. `new()` uses the
+stable solver defaults; `new_with_sketch_options()` injects another bounded policy
+at construction. An explicit full recompute owns its supplied policy and
+cancellation. Its command bypasses automatic recomputation so cancellation does
+not trigger an implicit retry of the old geometry.
+
+Derived-source refresh also updates pending readers before publishing a source
+consequence. Geometry and retained verification are compared as evaluated state,
+so health-only consequences are adopted even when authored coordinates do not
+change. They do not create a target undo step or make derived health part of the
+saved recipe. Unchanged source values cause no repeated solve or notification.
+
+Tests cover initial verification, changed-reader selection, equal values,
+independent failure/recovery, cached failures, complete cancellation, injected
+limits, rollback/abort, typed API edits and veto, derived-source geometry, and
+normal save/reopen. Feature graph quarantine, asynchronous native workers and
+API/UI health projection remain open port work.

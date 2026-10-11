@@ -283,3 +283,6 @@ mod lifecycle;
 
 #[path = "derived_link_edit.rs"]
 mod link_edit;
+
+#[path = "sketch_source_updates.rs"]
+mod sketch_source_updates;

@@ -4,7 +4,7 @@ use super::parameters::parameter_workspace;
 use super::*;
 use oblikovati_automation::SessionHost;
 
-fn numeric(name: &str, expression: &str) -> ParameterSetArgs {
+pub(super) fn numeric(name: &str, expression: &str) -> ParameterSetArgs {
     ParameterSetArgs {
         name: name.into(),
         expression: expression.into(),

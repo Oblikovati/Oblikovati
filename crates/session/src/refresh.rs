@@ -12,22 +12,32 @@ impl<O: TransactionObserver> DocumentSession<O> {
         table: i64,
         source: Option<&BTreeMap<String, Quantity>>,
     ) -> Result<bool, CommandError<ParameterError<u64>>> {
+        let options = self.sketch_options;
         let changed = self
             .history
-            .refresh(|snapshot| {
-                snapshot
-                    .parameters
-                    .sync_derived_table(table, source)
-                    .map_err(MutationError::Command)?;
-                snapshot
-                    .properties
-                    .sync_exposed_parameters(&snapshot.parameters)
-                    .map_err(MutationError::Property)
-            })
+            .refresh(|snapshot| refresh_source_snapshot(snapshot, table, source, options))
             .map_err(CommandError::Edit)?;
         if changed {
             self.observer.changed(self.document, self.generation());
         }
         Ok(changed)
     }
+}
+
+fn refresh_source_snapshot(
+    snapshot: &mut oblikovati_model::history::DocumentSnapshot,
+    table: i64,
+    source: Option<&BTreeMap<String, Quantity>>,
+    options: oblikovati_solve::nonlinear::SolveOptions,
+) -> Result<(), MutationError<ParameterError<u64>>> {
+    snapshot
+        .parameters
+        .sync_derived_table(table, source)
+        .map_err(MutationError::Command)?;
+    snapshot
+        .properties
+        .sync_exposed_parameters(&snapshot.parameters)
+        .map_err(MutationError::Property)?;
+    crate::sketch_recompute::update_pending_sketches(snapshot, options);
+    Ok(())
 }

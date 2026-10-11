@@ -10,12 +10,18 @@ pub(super) fn parameter_workspace_observer(
     parameters: ParameterCollection<u64>,
     observer: QueryObserver,
 ) -> (Workspace, u64) {
-    let ids = parameters.ids().to_vec();
-    let high = ids.iter().max().copied().unwrap_or(0);
+    parameter_workspace_sketches(parameters, Default::default(), observer)
+}
+
+pub(super) fn parameter_workspace_sketches(
+    parameters: ParameterCollection<u64>,
+    sketches: oblikovati_model::document_sketch::DocumentSketches,
+    observer: QueryObserver,
+) -> (Workspace, u64) {
     let mut properties = DocumentProperties::default();
     properties.sync_exposed_parameters(&parameters).unwrap();
     let snapshot = DocumentSnapshot {
-        sketches: Default::default(),
+        sketches,
         attributes: Default::default(),
         attachments: Default::default(),
         interests: Default::default(),
@@ -23,11 +29,22 @@ pub(super) fn parameter_workspace_observer(
         parameters,
         properties,
     };
+    snapshot_workspace(snapshot, observer)
+}
+fn snapshot_workspace(snapshot: DocumentSnapshot, observer: QueryObserver) -> (Workspace, u64) {
+    let ids = snapshot.parameters.ids().to_vec();
+    let high = ids.iter().max().copied().unwrap_or(0);
     let history = DocumentEditHistory::new(
         snapshot,
         RecipeIdAllocator::restore(Some(high), &ids).unwrap(),
     )
     .unwrap();
+    register_parameter_history(history, observer)
+}
+fn register_parameter_history(
+    history: DocumentEditHistory,
+    observer: QueryObserver,
+) -> (Workspace, u64) {
     let mut workspace = Workspace::new(QueryObserver::default());
     let mut guids = QueryGuids(0);
     let id = workspace

@@ -179,3 +179,32 @@ fn saved_marks_cover_live_ids_and_maximum_namespaces_refuse_allocation() {
     history.abort(&token).unwrap();
     assert_eq!(history.sketch_reservations().entity, u64::MAX);
 }
+
+#[test]
+fn source_refresh_adopts_health_only_verification_without_an_authored_recipe_change() {
+    let mut history = history();
+    let token = history.begin("Sketch").unwrap();
+    history
+        .edit(&token, |snapshot, ids| {
+            snapshot.sketches.add(
+                ids.allocate_sketch().unwrap(),
+                "Empty",
+                SketchPlane::xy(),
+                Sketch2D::default(),
+            )
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let before = history.snapshot().sketches.clone();
+    assert!(history.refresh(verify_sketches).unwrap());
+    assert!(history.snapshot().sketches.same_recipe(&before));
+    assert!(!history.snapshot().sketches.same_evaluated_state(&before));
+    assert!(!history.refresh(verify_sketches).unwrap());
+}
+fn verify_sketches(snapshot: &mut DocumentSnapshot) -> Result<(), String> {
+    snapshot.sketches = snapshot
+        .sketches
+        .solve_pending(&snapshot.parameters, Default::default(), || false)
+        .candidate;
+    Ok(())
+}

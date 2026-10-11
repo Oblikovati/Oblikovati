@@ -28,7 +28,7 @@ pub enum PlacedSketchHealth<'a> {
     Stale(Vec<u64>),
     Current(&'a SketchEvaluation),
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(super) struct SketchEvaluationStamp {
     inputs: Vec<(u64, SketchParameterInput)>,
     evaluation: SketchEvaluation,

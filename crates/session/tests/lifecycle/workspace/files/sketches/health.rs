@@ -13,11 +13,9 @@ fn decline(host: &Host, id: u64, sketch: DocumentSketchId) -> Option<SketchReadi
 fn assert_fresh(host: &Host, id: u64, sketch: DocumentSketchId) {
     assert_eq!(decline(host, id, sketch), None);
 }
-fn assert_stale(host: &Host, id: u64, sketch: DocumentSketchId) {
-    assert_eq!(
-        decline(host, id, sketch),
-        Some(SketchReadinessCause::Stale(vec![1]))
-    );
+fn assert_height(host: &Host, id: u64, sketch: DocumentSketchId) {
+    assert_fresh(host, id, sketch);
+    assert!((point_height(host, id, sketch) - 6.0).abs() < 1e-8);
 }
 fn recompute(host: &mut Host, id: u64) {
     let report = host
@@ -41,20 +39,17 @@ fn undo_redo_and_recompute_preserve_health_against_each_snapshots_parameter_targ
     recompute(&mut host, id);
     assert_fresh(&host, id, sketch);
     set_width(&mut host, id, "6 cm");
-    assert_stale(&host, id, sketch);
+    assert_height(&host, id, sketch);
     host.commands(id).unwrap().undo().unwrap();
     assert_fresh(&host, id, sketch);
     host.commands(id).unwrap().redo().unwrap();
-    assert_stale(&host, id, sketch);
-    assert_recompute_navigation(&mut host, id, sketch);
-}
-fn assert_recompute_navigation(host: &mut Host, id: u64, sketch: DocumentSketchId) {
-    recompute(host, id);
-    assert_fresh(host, id, sketch);
-    host.commands(id).unwrap().undo().unwrap();
-    assert_stale(host, id, sketch);
-    host.commands(id).unwrap().redo().unwrap();
-    assert_fresh(host, id, sketch);
+    assert_height(&host, id, sketch);
+    let before = host.workspace().session(id).unwrap().undo_labels().len();
+    recompute(&mut host, id);
+    assert_eq!(
+        host.workspace().session(id).unwrap().undo_labels().len(),
+        before
+    );
 }
 #[test]
 fn reopening_requires_verification_but_health_only_recompute_keeps_the_saved_recipe_clean() {
@@ -74,7 +69,7 @@ fn reopening_requires_verification_but_health_only_recompute_keeps_the_saved_rec
     assert!(history.is_empty());
 }
 #[test]
-fn cancelled_recompute_keeps_stale_health_and_prior_coordinates() {
+fn explicit_cancelled_recompute_keeps_the_current_automatic_result() {
     let (mut host, _, id, sketch) = saved_driven_sketch();
     recompute(&mut host, id);
     set_width(&mut host, id, "6 cm");
@@ -84,8 +79,8 @@ fn cancelled_recompute_keeps_stale_health_and_prior_coordinates() {
         .recompute_sketches(SolveOptions::default(), || true)
         .unwrap();
     assert!(report.cancelled);
-    assert_stale(&host, id, sketch);
-    assert!((point_height(&host, id, sketch) - 1.0).abs() < 1e-8);
+    assert_height(&host, id, sketch);
+    assert!((point_height(&host, id, sketch) - 6.0).abs() < 1e-8);
 }
 #[path = "health/failure.rs"]
 mod failure;

@@ -325,3 +325,6 @@ mod recompute;
 
 #[path = "document_sketch/health.rs"]
 mod health;
+
+#[path = "document_sketch/pending.rs"]
+mod pending;

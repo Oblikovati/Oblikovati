@@ -406,3 +406,6 @@ mod recompute;
 
 #[path = "sketches/health.rs"]
 mod health;
+
+#[path = "sketches/automatic.rs"]
+mod automatic;

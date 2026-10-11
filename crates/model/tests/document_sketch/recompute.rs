@@ -14,10 +14,13 @@ pub(super) fn parameters() -> ParameterCollection<u64> {
 fn sketch_geometry(sketches: &DocumentSketches, sketch: u64) -> &Sketch2D {
     sketches.get(DocumentSketchId(sketch)).unwrap().geometry()
 }
-fn solved_report(outcome: &DocumentSketchSolveOutcome, index: usize) -> &SketchSolveOutcome {
+pub(super) fn solved_report(
+    outcome: &DocumentSketchSolveOutcome,
+    index: usize,
+) -> &SketchSolveOutcome {
     outcome.report.reports[index].result.as_ref().unwrap()
 }
-fn height(sketches: &DocumentSketches, sketch: u64, point: u64) -> f64 {
+pub(super) fn height(sketches: &DocumentSketches, sketch: u64, point: u64) -> f64 {
     sketch_geometry(sketches, sketch)
         .point(SketchEntityId(point))
         .unwrap()

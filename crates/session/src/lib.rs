@@ -29,16 +29,28 @@ pub struct DocumentSession<O> {
     history: DocumentEditHistory,
     observer: O,
     group: Option<BoundedGroup>,
+    sketch_options: oblikovati_solve::nonlinear::SolveOptions,
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Attach a document's history and observer; example: `DocumentSession::new(id, history, observer)`.
     pub fn new(document: u64, history: DocumentEditHistory, observer: O) -> Self {
+        Self::new_with_sketch_options(document, history, observer, Default::default())
+    }
+
+    /// Inject bounded numerical policy for automatic readers; example: `DocumentSession::new_with_sketch_options(id, history, observer, options)`.
+    pub fn new_with_sketch_options(
+        document: u64,
+        history: DocumentEditHistory,
+        observer: O,
+        sketch_options: oblikovati_solve::nonlinear::SolveOptions,
+    ) -> Self {
         Self {
             document,
             history,
             observer,
             group: None,
+            sketch_options,
         }
     }
 

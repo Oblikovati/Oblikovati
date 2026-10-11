@@ -51,7 +51,9 @@ impl DocumentEditHistory {
             .parameters
             .same_evaluated_state(&self.current.parameters)
             && candidate.properties.same_recipe(&self.current.properties)
-            && candidate.sketches.same_recipe(&self.current.sketches)
+            && candidate
+                .sketches
+                .same_evaluated_state(&self.current.sketches)
             && candidate.attachments == self.current.attachments
             && candidate.resources == self.current.resources
             && candidate.interests == self.current.interests
