@@ -489,3 +489,6 @@ mod inference;
 
 #[path = "sketch_api/constraint_list.rs"]
 mod constraint_list;
+
+#[path = "sketch_api/selection_events.rs"]
+mod selection_events;

@@ -71,7 +71,7 @@ fn api_width(
     let client = Client::new(SessionHost::new(workspace));
     client.parameters().set(&numeric("width", expression))
 }
-fn circle_workspace() -> (Workspace, u64, DocumentSketchId) {
+pub(crate) fn circle_workspace() -> (Workspace, u64, DocumentSketchId) {
     let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());
     parameters
         .insert_expression(1, "width", USER_PARAM, "1 cm")
@@ -84,7 +84,7 @@ fn circle_workspace() -> (Workspace, u64, DocumentSketchId) {
         .unwrap();
     (workspace, id, sketch)
 }
-fn veto_workspace(snapshot: DocumentSnapshot) -> (Workspace, u64) {
+pub(crate) fn veto_workspace(snapshot: DocumentSnapshot) -> (Workspace, u64) {
     let observer = QueryObserver {
         veto: true,
         ..Default::default()

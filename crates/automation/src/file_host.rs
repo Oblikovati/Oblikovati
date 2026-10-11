@@ -12,6 +12,7 @@ use std::cell::RefCell;
 mod attachments;
 mod close;
 mod derived_links;
+mod selection;
 pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
 mod lifecycle;

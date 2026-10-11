@@ -18,7 +18,12 @@ pub use file_host::{
 mod file_queries;
 mod groups_edit;
 mod host;
+mod selection_events;
 pub use file_queries::{FILE_QUERY_METHODS, FileQueryHost};
+pub use selection_events::{
+    EventRelay, EventSink, SelectionClick, SelectionDelete, SelectionDeletionDispatch,
+    SelectionDispatch,
+};
 mod options;
 mod settings_edit;
 mod sketch_inference;

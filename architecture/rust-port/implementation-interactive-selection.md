@@ -95,8 +95,8 @@ An accepted repeated plain click still requests a selection refresh, as in Go.
 The return value is `Some(count)` when the caller must refresh selection, or
 `None` for a no-op. A filtered replacement that removes old membership returns
 `Some(0)` rather than hiding that change. This is an internal notification intent;
-it does not redeclare an API event or emit a transaction. The host must use the
-existing API selection event when its event transport is connected.
+it does not redeclare an API event or emit a transaction. The automation relay below uses the existing API selection event. A native
+transport must still attach its sink.
 
 `DocumentSession::apply_sketch_click` checks the active owner and candidate stamp
 before replacement. A stale or foreign candidate cannot clear current picks.
@@ -121,3 +121,39 @@ The viewport must supply candidates resolved with the shared pick filter and
 priority policy. Pixel hit testing, native modifier mapping, tool advancement,
 focus routing, event publication, and visible highlights remain required. These
 headless input tests do not establish native window or renderer acceptance.
+
+## Selection event relay through the host
+
+`EventRelay<S>` injects an application-owned `EventSink` and serializes the
+released API's `SelectionChangedEvent` with `EVENT_SELECTION_CHANGED`. The
+contract remains `type` plus signed 64-bit `count`, including zero. Count
+conversion is checked before I/O. The relay uses the project's common encoder;
+there is no copied DTO, method name, raw-JSON client call, or new API revision.
+
+`SessionHost` and `FileHost` now expose typed desktop `selection_click` and
+`selection_delete` entry points. These are application interfaces, not new RPC
+methods. They borrow the requested owner, use the common session commands, and
+retain the host's synchronous reentry guard during event delivery. Click changes
+notify only when the selection engine requests a refresh. A successful editor
+Delete notifies count zero after history adoption and selection clearing. No-op
+inputs, stale/foreign refusal, and observer veto emit no notification.
+
+A click receipt separates its accepted count from an optional delivery error.
+A deletion receipt likewise carries complete retirement plus delivery status.
+Transport failure cannot veto or replay an accepted model edit. The caller must
+inspect the delivery error and can retry `selection_changed(count)` separately.
+There is no automatic retry or exactly-once delivery claim. A callback that
+reenters the borrowed host receives its normal busy decline; the host remains
+usable when delivery returns.
+
+Fourteen new tests cover literal and typed API payloads, zero/large counts,
+out-of-range refusal before I/O, transport failure and explicit retry, accepted
+and repeated clicks, empty changes, tool/no-op suppression, stale or unknown
+owners, focus/history preservation, callback reentry and recovery, and accepted
+or vetoed Delete actions. Both part and assembly file owners use the same relay.
+The pinned Go `addin/events` suite passes. Full local acceptance is `make gate`.
+
+The sink remains an injected transport seam. Native add-in subscription and
+buffer lifetimes, queued dispatch, Go/Rust C ABI lifecycle, backpressure and
+shutdown, all other event families, native window input, and foreground capture
+remain required. These receipts do not prove live add-in event delivery.

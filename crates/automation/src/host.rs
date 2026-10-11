@@ -9,6 +9,7 @@ use oblikovati_session::{
     workspace::{WorkspaceObserver, WorkspaceSession},
 };
 use std::cell::RefCell;
+mod selection;
 
 /// Synchronous transport used on the session owner, before a native/queued transport is attached.
 pub struct SessionHost<'a, O, W> {
