@@ -78,3 +78,6 @@ fn analytic_probe_properties(
 #[cfg(test)]
 #[path = "../tests/unit/validity_errors.rs"]
 mod validity_errors;
+
+mod planar_spline;
+pub use planar_spline::{PlanarSplineDefinition, PlanarSplineSample, evaluate_planar_spline};

@@ -50,3 +50,7 @@ consumer is removed.
 **Ground constraint**: A sketch relation that holds each defining point of an
 entity at its current position. Grounding an ellipse holds its center, while
 its radii and orientation remain free.
+
+**Offset spline**: A derived curve at a signed distance from a named parent spline.
+A positive distance is to the left of the parent's forward direction; its
+geometric distance dimension measures the magnitude while retaining the side.

@@ -15,7 +15,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0016`.
+The next unused number is `ADR-0017`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -93,8 +93,8 @@ for a display mode, material model, or platform exception.
 
 ## Current Rust ADR index
 
-All records below are **Accepted for the Rust target design**, dated
-2026-10-10. No application runtime acceptance is claimed.
+All current records below are **Accepted for the Rust target design**.
+Each record states its decision date. No application runtime acceptance is claimed.
 
 | Current record | Boundary | Implementation proof |
 | --- | --- | --- |
@@ -105,6 +105,7 @@ All records below are **Accepted for the Rust target design**, dated
 | [ADR-0005](ADR-0005-identity-and-references.md) | Persistent identity and external references | R1/R3/R5/R6/R8 |
 | [ADR-0006](ADR-0006-parameters-and-constraints.md) (superseded by ADR-0015) | Parameters, units, shared constraint solver | R2/R3/R6 |
 | [ADR-0015](ADR-0015-parameters-and-constraints.md) | Parameters, units, solver, analytic ellipse variables | R2/R3/R6 |
+| [ADR-0016](ADR-0016-derived-sketch-curves.md) | Derived spline ownership and analytic offset evaluation | R3; #3789 |
 | [ADR-0007](ADR-0007-martensite-integration.md) | Application requirements on Martensite operations | R1-R8; K01-K11 |
 | [ADR-0008](ADR-0008-vulkan-renderer.md) | Vulkan presentation and rendering | R1V/R4/R7 |
 | [ADR-0009](ADR-0009-ui-and-selection.md) | Desktop UI, tools, selection, themes, editor | R1V/R4/R7 |

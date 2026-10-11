@@ -442,7 +442,10 @@ name = "oblikovati-martensite"
 version = "0.1.0"
 dependencies = [
  "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
  "rustycad-tkgeombase",
+ "rustycad-tkmath",
  "rustycad-tkprim",
  "rustycad-tktopalgo",
 ]
