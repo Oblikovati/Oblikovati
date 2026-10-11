@@ -4,12 +4,17 @@
 
 mod edits;
 mod error;
+mod evaluation;
 mod footprint;
 mod replay;
 mod validation;
 
 use crate::dependency::DependencyGraph;
 pub use error::FeatureSequenceError;
+pub use evaluation::{
+    FeatureEvaluationStatus, FeatureHealthRecord, FeatureReplayController, FeatureReplayError,
+    FeatureReplayMismatch, FeatureReplayStep,
+};
 pub use footprint::{FeatureReadFootprint, FeatureReadKey};
 pub use replay::FeatureReplayRange;
 

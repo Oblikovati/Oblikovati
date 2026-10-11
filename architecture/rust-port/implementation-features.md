@@ -69,3 +69,55 @@ suppression, and the exclusive end-of-part marker pass with `CGO_ENABLED=0`.
 They test real Go feature behavior; Rust state tests do not claim solid parity.
 Run `make gate` for all present Rust workspace crates on local Linux.
 Kernel and native UI acceptance are separate required checks.
+
+## Ordered health and quarantine controller — partial R3
+
+Tracking: [#3725](https://github.com/Oblikovati/Oblikovati/issues/3725).
+Implementation: `crates/model/src/feature/evaluation` and `evaluation.rs`.
+Go sources: `model/feature/engine_recompute.go` and `engine_graph.go` at the
+same baseline above. The controller implements the health protocol around
+execution; it does not implement kernel operations or store geometry.
+
+The caller supplies the immutable sequence, exact replay range, and ordered
+health records for its proven unchanged prefix. Prefix length and identities
+must match the recipe. Prefix health must agree with explicit suppression and
+known unavailable drivers; blocked causes must name the exact immediate
+drivers in stable ID order. A healthy prefix cannot hide a failed dependency.
+These checks establish structural consistency, not freshness: the session
+owner must prove that the prefix belongs to the current recipe and generation.
+
+Each active tail entry is classified once as evaluate, suppressed, or blocked.
+An evaluation must receive one result for its exact feature ID before replay
+can advance. Failed and blocked entries quarantine their dependency readers.
+Independent entries continue. Typed backend failures stay on their feature
+records; blocked entries retain their immediate causes, so callers can walk
+the ordered report to the original failure. Skipped entries pass the running
+body state through without calling the kernel. A new replay does not retain
+old quarantine when the failed feature succeeds.
+
+Blocked dependencies take precedence over explicit suppression. The Go loop
+checks suppression first, which can hide an upstream failure through a
+suppressed intermediary. Rust retains the authored suppression flag and
+reports the intermediary as blocked, preserving the full quarantine required
+by ADR-0004. A regression test covers this difference. Suppression on a healthy
+dependency path retains the Go pass-through behavior.
+
+Out-of-order results, duplicate results, advancing with a pending evaluation,
+and incomplete completion are named protocol errors. Rejection leaves health
+and replay position unchanged. Zero-length replay tails still return complete
+prefix health. Cancellation can discard the controller without editing the
+recipe; it must not publish an incomplete report.
+
+Tests cover failure diamonds, independent branches, prefix failures and blocked
+causes, suppression, recovery, recipe isolation, cutoff exclusion, empty tails,
+and protocol rejection. An independent reachability calculation checks every
+failure root on all 64 forward dependency graphs with four features. The Go
+baseline's local failure, dependent quarantine, clean-prefix reuse, and explicit
+suppression tests also pass with `CGO_ENABLED=0`.
+
+The eventual executor must validate kernel output before reporting success,
+retain bodies from the last valid prefix after failure, and discard invalid
+partial bodies. The controller does not prove those geometry postconditions.
+Kernel body isolation, generation checks, coherent session adoption, concrete
+feature definitions, history and persistence remain open. No R3 exit or full
+application feature is declared complete by these state tests.
