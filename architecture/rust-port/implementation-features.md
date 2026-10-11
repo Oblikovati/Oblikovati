@@ -481,3 +481,8 @@ kernel-backed consumers, and viewport acceptance remain open.
 
 The numerical frame operation and Go reference tests are recorded in
 [orientation evidence](implementation-sketch-orientation.md).
+
+## Checked work-axis line values — partial R3
+
+The shared metric validation and lossless source recipe are recorded in
+[work-axis evidence](implementation-work-axis.md).

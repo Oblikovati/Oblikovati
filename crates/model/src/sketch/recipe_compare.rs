@@ -10,7 +10,7 @@ impl Sketch2D {
             && same_constraints(&self.constraints, &other.constraints)
     }
 }
-pub(super) fn same_components<const N: usize>(first: [f64; N], second: [f64; N]) -> bool {
+pub(crate) fn same_components<const N: usize>(first: [f64; N], second: [f64; N]) -> bool {
     first
         .into_iter()
         .zip(second)

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SketchError;
+mod direction;
+pub(crate) use direction::normalize_direction;
 mod orientation;
 pub use orientation::SketchFrameAxis;
 /// Versioned metric checks for authored sketch frame axes, separate from modelling tolerance.
@@ -160,7 +162,7 @@ fn require_finite<const N: usize>(values: &[f64; N], field: &str) -> Result<(), 
     }
     Ok(())
 }
-fn require_unit(axis: [f64; 3], tolerance: f64) -> Result<(), SketchError> {
+pub(crate) fn require_unit(axis: [f64; 3], tolerance: f64) -> Result<(), SketchError> {
     require_finite(&axis, "axis")?;
     let length = vector_length(axis);
     if (length - 1.0).abs() > tolerance {

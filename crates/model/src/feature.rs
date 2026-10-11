@@ -9,6 +9,7 @@ mod footprint;
 mod replay;
 mod suppression;
 mod validation;
+pub mod work_axis;
 pub mod work_plane;
 
 use crate::dependency::DependencyGraph;
