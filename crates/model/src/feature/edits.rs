@@ -83,6 +83,23 @@ impl<Definition> FeatureSequence<Definition> {
     }
 }
 
+impl<Definition: Clone> FeatureSequence<Definition> {
+    /// Bind a declared scalar read to its feature; example: `sequence.assign_scalar_owner(id, "offset", parameter)?`.
+    pub fn assign_scalar_owner(
+        &mut self,
+        id: FeatureId,
+        role: &str,
+        parameter: u64,
+    ) -> Result<FeatureReplayRange, FeatureSequenceError> {
+        let index = self.position(id)?;
+        let replacement = self.features[index]
+            .clone()
+            .with_owned_scalar(role, parameter)
+            .map_err(FeatureSequenceError::ScalarOwnership)?;
+        self.install_replacement(index, replacement)
+    }
+}
+
 impl<Definition> FeatureSequence<Definition> {
     /// Replace a typed definition and reads atomically; example: `sequence.replace(id, revised_plane, reads)?`.
     pub fn replace(

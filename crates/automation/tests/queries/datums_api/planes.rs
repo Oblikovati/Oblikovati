@@ -15,7 +15,7 @@ fn fixed_request(construction: bool, visible: bool) -> CreateWorkPlaneArgs {
         ..Default::default()
     }
 }
-fn fixed(
+pub(super) fn fixed(
     files: &mut DiscoveryWorkspace,
     source: &mut QueryGuids,
     construction: bool,
@@ -26,7 +26,7 @@ fn fixed(
         .create(&fixed_request(construction, visible))
         .unwrap()
 }
-fn plane_rows(files: &DiscoveryWorkspace, include: bool) -> Vec<WorkPlaneInfo> {
+pub(super) fn plane_rows(files: &DiscoveryWorkspace, include: bool) -> Vec<WorkPlaneInfo> {
     Client::new(FileQueryHost::new(files))
         .work_planes()
         .list_with_options(&ListWorkPlanesArgs {
@@ -73,7 +73,7 @@ fn fixed_planes_share_ids_and_preserve_full_indices_and_visibility() {
     assert_eq!(rows[3].normal, Some(vec![0.0, 0.0, 1.0]));
     assert_eq!(rows[3].kind, WORK_PLANE_FIXED.0);
 }
-fn insert_offset(files: &mut DiscoveryWorkspace, document: u64) {
+pub(super) fn insert_offset(files: &mut DiscoveryWorkspace, document: u64) {
     files
         .commands(document)
         .unwrap()

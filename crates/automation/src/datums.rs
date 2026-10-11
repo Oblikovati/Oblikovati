@@ -14,14 +14,17 @@ mod health;
 mod input;
 mod origins;
 mod planes;
+mod redefine;
 mod reference;
 mod rows;
+mod scalars;
 
 /// Methods use the existing API contract and the one file-owned datum program.
-pub const DATUM_COMMAND_METHODS: [&str; 3] = [
+pub const DATUM_COMMAND_METHODS: [&str; 4] = [
     METHOD_WORK_POINTS_CREATE,
     METHOD_WORK_AXES_CREATE,
     METHOD_WORK_PLANES_CREATE,
+    METHOD_WORK_PLANES_REDEFINE,
 ];
 pub const DATUM_QUERY_METHODS: [&str; 3] = [
     METHOD_WORK_POINTS_LIST,
@@ -36,12 +39,30 @@ pub(super) enum DatumCollection {
 }
 #[derive(Debug)]
 pub(super) struct PreparedDatum {
-    definition: WorkGeometryDefinition,
+    definition: PreparedGeometry,
     construction: bool,
     visible: bool,
     collection: DatumCollection,
 }
-pub(super) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+#[derive(Debug)]
+pub(super) enum PreparedGeometry {
+    Definition(WorkGeometryDefinition),
+    Offset {
+        base: oblikovati_model::feature::work_plane::WorkPlaneReference,
+        expression: String,
+    },
+}
+pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    method: &str,
+    request: &[u8],
+) -> Result<Vec<u8>, Error> {
+    if method == METHOD_WORK_PLANES_REDEFINE {
+        return redefine::apply(files, decode(method, request)?);
+    }
+    create(files, method, request)
+}
+fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     method: &str,
     request: &[u8],
@@ -62,7 +83,8 @@ fn insert(
     prepared: PreparedDatum,
 ) -> Result<Vec<u8>, Error> {
     let id = ids.allocate_feature().map_err(api_error)?;
-    let feature = AuthoredFeature::datum(id, prepared.collection.label(), prepared.definition);
+    let feature =
+        scalars::authored_feature(snapshot, ids, id, prepared.collection, prepared.definition)?;
     snapshot.work_geometry.append(feature).map_err(api_error)?;
     assign_metadata(snapshot, id, prepared.construction, prepared.visible)?;
     rows::creation_reply(snapshot, id, prepared.collection)

@@ -52,7 +52,7 @@ pub(super) fn current_rows<T>(
     }
     Ok(rows)
 }
-fn entries(
+pub(super) fn entries(
     snapshot: &DocumentSnapshot,
     collection: DatumCollection,
 ) -> impl Iterator<Item = &DatumEntry> {

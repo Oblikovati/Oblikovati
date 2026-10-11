@@ -23,6 +23,38 @@ fn program() -> FeatureSequence<WorkGeometryDefinition> {
 }
 
 #[test]
+fn existing_feature_can_acquire_ownership_of_a_declared_read() {
+    let mut sequence = FeatureSequence::default();
+    sequence
+        .append(AuthoredFeature::datum(FeatureId(1), "Offset", offset(9)))
+        .unwrap();
+    sequence
+        .assign_scalar_owner(FeatureId(1), "offset", 9)
+        .unwrap();
+    assert_eq!(
+        sequence.get(FeatureId(1)).unwrap().owned_scalars(),
+        owner(1, 9).owned_scalars()
+    );
+}
+
+#[test]
+fn assigning_ambiguous_ownership_is_atomic() {
+    let mut sequence = program();
+    for id in [FeatureId(1), FeatureId(99)] {
+        assert!(sequence.assign_scalar_owner(id, "offset", 9).is_err());
+    }
+    let reader = AuthoredFeature::datum(FeatureId(2), "Reader", offset(9));
+    sequence.append(reader).unwrap();
+    assert!(
+        sequence
+            .assign_scalar_owner(FeatureId(2), "offset", 9)
+            .is_err()
+    );
+    let feature = sequence.get(FeatureId(2)).unwrap();
+    assert!(feature.owned_scalars().is_empty());
+}
+
+#[test]
 fn scalar_roles_are_stable_unique_attributed_identities() {
     let feature = owner(1, 9);
     assert_eq!(feature.owned_scalars()[0].role, "offset");

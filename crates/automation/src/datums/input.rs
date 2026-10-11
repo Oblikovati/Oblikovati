@@ -13,7 +13,7 @@ pub(super) fn definition(
     match method {
         METHOD_WORK_POINTS_CREATE => point(decode(method, request)?, snapshot),
         METHOD_WORK_AXES_CREATE => axis(decode(method, request)?, snapshot),
-        METHOD_WORK_PLANES_CREATE => super::planes::prepare(decode(method, request)?),
+        METHOD_WORK_PLANES_CREATE => super::planes::prepare(decode(method, request)?, snapshot),
         _ => Err(Error(format!(
             "datum command {method:?}: expected {DATUM_COMMAND_METHODS:?}"
         ))),
@@ -36,7 +36,9 @@ fn point(
 fn position_point(request: CreateWorkPointArgs) -> Result<PreparedDatum, Error> {
     let position = coordinates(request.at.as_deref(), "point position")?;
     Ok(PreparedDatum {
-        definition: WorkGeometryDefinition::Point(position.map(DatumLength::Constant)),
+        definition: PreparedGeometry::Definition(WorkGeometryDefinition::Point(
+            position.map(DatumLength::Constant),
+        )),
         construction: request.construction,
         visible: true,
         collection: DatumCollection::Points,
@@ -54,7 +56,7 @@ fn axis(request: CreateWorkAxisArgs, snapshot: &DocumentSnapshot) -> Result<Prep
         }
     };
     Ok(PreparedDatum {
-        definition,
+        definition: PreparedGeometry::Definition(definition),
         construction: request.construction,
         visible: true,
         collection: DatumCollection::Axes,
@@ -127,7 +129,9 @@ fn associated_point(
         )));
     };
     Ok(PreparedDatum {
-        definition: WorkGeometryDefinition::PointAtReference(point_reference(snapshot, reference)?),
+        definition: PreparedGeometry::Definition(WorkGeometryDefinition::PointAtReference(
+            point_reference(snapshot, reference)?,
+        )),
         construction: request.construction,
         visible: true,
         collection: DatumCollection::Points,

@@ -96,7 +96,11 @@ fn assert_visibility(files: &DiscoveryWorkspace) {
     assert_eq!(point.position, Some(vec![1.0, 2.0, 3.0]));
 }
 
-fn open_copied_datum(files: &mut DiscoveryWorkspace, source: &mut QueryGuids, copy: &Path) -> u64 {
+pub(super) fn open_copied_datum(
+    files: &mut DiscoveryWorkspace,
+    source: &mut QueryGuids,
+    copy: &Path,
+) -> u64 {
     files
         .open(
             copy,

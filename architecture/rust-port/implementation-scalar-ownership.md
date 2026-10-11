@@ -38,10 +38,9 @@ driver identity, then edits `width` and checks the current plane origin.
 The program alone does not prove that a bound ID exists in the document parameter
 collection or has model-parameter kind. The
 [document ownership checks](implementation-document-scalars.md) now enforce that
-boundary and atomic deletion. Scalar creation and editing, host group/veto tests,
-and canonical offset create/redefine methods remain in #3745. The current API
-still declines offset creation. Do not treat stored ownership metadata as
-completion of offset authoring or the application port.
+boundary and atomic deletion. [Offset authoring](implementation-offset-expressions.md)
+now uses that boundary for canonical create/redefine methods and host group/veto
+tests. Stored ownership metadata alone does not prove completion of the application port.
 
 Validation is local Linux only. This work changes no kernel checkout, renderer,
 Windows/macOS workflow, release pin, or publication claim.

@@ -4,6 +4,7 @@ use oblikovati_model::{feature::work_plane::WorkPlaneResolver, sketch::SketchPla
 mod inputs;
 mod metadata;
 mod origins;
+pub(super) use inputs::plane_reference;
 pub(super) use inputs::prepare;
 type PlaneEntry = AuthoredFeature<WorkGeometryDefinition>;
 

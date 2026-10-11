@@ -54,8 +54,7 @@ detached cycle edges, sketch consumers, unknown attribution, construction cleanu
 direct candidate bypass attempts, undo/redo, permanent reservations, load before
 registration/entropy, and save before storage change.
 
-Canonical offset creation and redefine still decline pending their authored
-expression commands. Their wire contracts already exist. Host group/abort/veto,
-source-copy/reopen, unit conversion, and current-health acceptance remain in
-[#3745](https://github.com/Oblikovati/Oblikovati/issues/3745). Other feature dimensions will use the same document ownership boundary.
+Canonical offset creation and redefine now use this boundary through
+[authored expression commands](implementation-offset-expressions.md). Other
+feature dimensions will use the same document ownership boundary.
 This is Linux validation only and does not certify kernel or viewport completion.
