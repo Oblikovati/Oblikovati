@@ -100,7 +100,8 @@ fn equation(
             target: positive_length_target(constraint, parameter, parameters, "arc length")?,
             counter_clockwise: sketch.arc(arc)?.counter_clockwise,
         },
-        PlanarConstraint::Radius { parameter, .. } => PlanarEquation::Radius(
+        PlanarConstraint::Radius { parameter, .. }
+        | PlanarConstraint::EllipseRadius { parameter, .. } => PlanarEquation::Radius(
             positive_length_target(constraint, parameter, parameters, "radius")?,
         ),
         PlanarConstraint::Horizontal { .. } | PlanarConstraint::LineHorizontal { .. } => {

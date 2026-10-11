@@ -6,6 +6,7 @@ pub(super) fn require(relation: &PlanarConstraint) -> Result<DimensionShape, Err
     use PlanarConstraint::*;
     let shape = match relation {
         Distance { measure, .. } => (DIM_CONSTRAINT_DISTANCE, orientation(*measure), false),
+        EllipseRadius { .. } => (DIM_CONSTRAINT_ELLIPSE_RADIUS, "", false),
         Radius { .. } => (DIM_CONSTRAINT_RADIUS, "", false),
         Diameter { .. } => (DIM_CONSTRAINT_DIAMETER, "", false),
         ArcLength { .. } => (DIM_CONSTRAINT_ARC_LENGTH, "", false),

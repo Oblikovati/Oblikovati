@@ -101,6 +101,10 @@ pub enum PlanarConstraint {
         arc: SketchEntityId,
         parameter: u64,
     },
+    EllipseRadius {
+        ellipse: SketchEntityId,
+        parameter: u64,
+    },
     Radius {
         curve: SketchEntityId,
         parameter: u64,
@@ -207,6 +211,10 @@ impl Sketch2D {
             | PlanarConstraint::TangentDistance { line, curve, .. } => {
                 self.circular_frame(*curve)?;
                 self.line(*line)?.endpoints.to_vec()
+            }
+            PlanarConstraint::EllipseRadius { ellipse, .. } => {
+                self.ellipse(*ellipse)?;
+                Vec::new()
             }
             PlanarConstraint::ArcLength { arc, .. } => {
                 let arc = self.arc(*arc)?;

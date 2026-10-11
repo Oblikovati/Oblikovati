@@ -141,3 +141,6 @@ fn grounding_shared_center_removes_only_coordinate_freedoms_and_solve_keeps_fram
         .unwrap();
     assert!(sketch.same_recipe(outcome.candidate()));
 }
+
+#[path = "dimension.rs"]
+mod dimension;

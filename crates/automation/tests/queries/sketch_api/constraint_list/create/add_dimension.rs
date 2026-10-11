@@ -188,3 +188,6 @@ mod acceptance;
 
 #[path = "add_dimension/driving.rs"]
 mod driving;
+
+#[path = "add_dimension/ellipse.rs"]
+mod ellipse;

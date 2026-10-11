@@ -53,6 +53,7 @@ fn constructor(
         kind if kind == DIM_CONSTRAINT_RADIUS || kind == DIM_CONSTRAINT_DIAMETER => {
             radial(geometry, request, kind == DIM_CONSTRAINT_DIAMETER)
         }
+        kind if kind == DIM_CONSTRAINT_ELLIPSE_RADIUS => ellipse_radius(geometry, request),
         kind if kind == DIM_CONSTRAINT_ARC_LENGTH => arc_length(geometry, request),
         kind if kind == DIM_CONSTRAINT_ANGLE => angle(geometry, request),
         kind if kind == DIM_CONSTRAINT_THREE_POINT_ANGLE => three_point_angle(geometry, request),
@@ -64,12 +65,11 @@ fn constructor(
 fn unsupported_kind(
     kind: &DimensionConstraintKind,
 ) -> Result<SketchDimensionalConstraintCreation, Error> {
-    let expected =
-        if *kind == DIM_CONSTRAINT_ELLIPSE_RADIUS || *kind == DIM_CONSTRAINT_OFFSET_SPLINE {
-            "native ellipse or offset-spline geometry; this R3 capability is not ported"
-        } else {
-            "a supported canonical dimension kind"
-        };
+    let expected = if *kind == DIM_CONSTRAINT_OFFSET_SPLINE {
+        "native offset-spline geometry; this R3 capability is not ported"
+    } else {
+        "a supported canonical dimension kind"
+    };
     Err(Error(format!(
         "dimension constructor {kind:?}: expected {expected}"
     )))
@@ -142,5 +142,15 @@ fn tangent(
     Ok(Seeded(SeededDimensionOperands::TangentDistance {
         line_curve,
         options,
+    }))
+}
+
+fn ellipse_radius(
+    geometry: &Sketch2D,
+    request: &AddDimensionArgs,
+) -> Result<SketchDimensionalConstraintCreation, Error> {
+    let [ellipse] = require(geometry, request, [Shape::Ellipse])?;
+    Ok(Measured(MeasuredDimensionOperands::EllipseRadius {
+        ellipse,
     }))
 }

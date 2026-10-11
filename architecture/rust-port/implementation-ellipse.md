@@ -64,13 +64,28 @@ axes must be unit directions within a normalization roundoff bound and retain
 their exact bits. Invalid radii, axes, missing schema fields, centers, and
 cross-kind identities are refused. History comparison sees axis signed-zero
 changes. Native-package tests preserve frames, insertion order, construction
-roles, and identity marks through encode/decode/restore and refuse lower marks. This is owned geometry and variable-layout acceptance, not ellipse
-constraint or profile-kernel acceptance. The canonical `ellipseRadius` route still declines with its
-named missing capability. Next steps are native analytic residuals and dimensional measurement,
-then the owner/session/API dimension path and edited-document save/reopen/copy
-acceptance. Generic inspection reports zero for the circular-only radius field,
-as required by the released API; major-radius measurement has its own path.
-The complete issue also requires fully constrained and degenerate cases,
-history, failed formula health, naming, save/reopen/copy, and Linux acceptance.
-B-rep ellipse operations stay in Martensite; this sketch value does not replace
-kernel geometry or establish kernel operation validity.
+roles, and identity marks through encode/decode/restore and refuse lower marks.
+Generic inspection reports zero for the circular-only radius field, as required
+by the released API; major-radius measurement has its own dimension path.
+
+## Major-radius dimension
+
+The native `EllipseRadius` relation uses the existing scalar radius equation
+with the ellipse's major-radius variable. It does not project the ellipse to a
+circle. Its exact derivative is one for the major radius and zero for the other
+four variables; the rank test removes one freedom. Reference mode excludes its
+target and still measures current geometry. The relation survives planar storage.
+
+The canonical `ellipseRadius` API route now accepts one owned ellipse and creates
+a fresh live Model formula through the existing atomic owner/session path. Tests
+cover part and assembly creation, source propagation, reference metadata,
+undo/redo, save/reopen/copy, edit, deletion/recreation, and malformed operands.
+Radius crossings fail without adopting a partial recipe or reusing names.
+The former missing-native-ellipse constructor decline is removed.
+
+Remaining #3788 work includes ellipse entity creation through the public API,
+minor-radius and orientation/axis constraints, fully constrained and degenerate
+cases, ellipse-specific failed formula and transaction acceptance, and edited
+save/reopen/copy. This step does not establish profile-kernel acceptance. B-rep
+ellipse operations stay in Martensite; the sketch value does not replace kernel
+geometry or establish kernel operation validity.

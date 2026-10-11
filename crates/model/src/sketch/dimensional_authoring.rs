@@ -16,6 +16,9 @@ pub enum MeasuredDimensionOperands {
         points: [SketchEntityId; 2],
         measure: DistanceMeasure,
     },
+    EllipseRadius {
+        ellipse: SketchEntityId,
+    },
     Radius {
         curve: SketchEntityId,
     },
@@ -84,6 +87,9 @@ impl MeasuredDimensionOperands {
                 measure,
                 parameter,
             },
+            Self::EllipseRadius { ellipse } => {
+                PlanarConstraint::EllipseRadius { ellipse, parameter }
+            }
             Self::Radius { curve } => PlanarConstraint::Radius { curve, parameter },
             Self::Diameter { curve } => PlanarConstraint::Diameter { curve, parameter },
             Self::ArcLength { arc } => PlanarConstraint::ArcLength { arc, parameter },

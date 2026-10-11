@@ -45,6 +45,13 @@ pub(super) fn relation_projection(
     relation: &PlanarConstraint,
     touch: Option<SketchEntityId>,
 ) -> Result<(Option<CircularProjection>, Vec<usize>), SketchError> {
+    if let PlanarConstraint::EllipseRadius { ellipse, .. } = relation {
+        let column = sketch.ellipse_column(
+            *ellipse,
+            super::ellipse::variables::EllipseComponent::MajorRadius,
+        )?;
+        return Ok((None, vec![column]));
+    }
     let points = sketch.constraint_points(relation)?;
     let frames = sketch.relation_frames(relation)?;
     let variables = frame_columns(sketch, &points, &frames, touch)?;
