@@ -176,3 +176,7 @@ factories still need defining-point construction. Editor integration and
 general feature consumer behavior remain incomplete.
 Do not close #3789 or infer general
 application deletion acceptance from these tests.
+
+The [interactive selection engine](implementation-interactive-selection.md#checked-sketch-picks-and-editor-deletion)
+now connects checked, generation-bound sketch picks to this command path. Native
+input, selection-change events, and viewport acceptance remain open.

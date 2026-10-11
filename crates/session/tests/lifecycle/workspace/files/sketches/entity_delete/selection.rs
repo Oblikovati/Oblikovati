@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "selection/editor.rs"]
+mod editor;
 use oblikovati_model::{document_sketch::SketchReadinessCause, sketch::SketchDeletionSelection};
 fn selected_scene(host: &Host, document: u64, scene: &DeletionScene) -> SketchDeletionSelection {
     let geometry = owner_snapshot(host, document)

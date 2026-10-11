@@ -3,7 +3,7 @@ use super::sketch_dimension_delete::{dimension_session, dimension_session_from_s
 use super::*;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::*};
 
-fn selection_session(veto: Option<&'static str>) -> DocumentSession<RecordingObserver> {
+pub(super) fn selection_session(veto: Option<&'static str>) -> DocumentSession<RecordingObserver> {
     let mut snapshot = dimension_session(None).snapshot().clone();
     let mut geometry = snapshot
         .sketches
@@ -40,7 +40,7 @@ fn mixed_selection() -> SketchDeletionSelection {
         geometric_constraints: vec![SketchConstraintId(2)],
     }
 }
-fn assert_mixed_cascade(session: &DocumentSession<RecordingObserver>) {
+pub(super) fn assert_mixed_cascade(session: &DocumentSession<RecordingObserver>) {
     let snapshot = session.snapshot();
     let geometry = snapshot
         .sketches

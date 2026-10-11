@@ -16,6 +16,7 @@ mod sketch_create;
 mod sketch_dimension_create;
 mod sketch_dimension_delete;
 mod sketch_entity_delete;
+mod sketch_selection;
 pub use sketch_dimension_create::SketchDimensionCreationProjectionInput;
 pub use sketch_entity_delete::SketchEntityDeleteProjectionInput;
 mod sketch_dimension_edit;
