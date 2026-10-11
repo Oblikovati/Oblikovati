@@ -10,6 +10,7 @@ mod discovery;
 mod error;
 mod history_restore;
 mod name;
+pub use name::derive_document_title;
 mod open;
 mod project;
 mod projects;
@@ -209,13 +210,12 @@ fn bound_target<'a, F: DocumentFiles>(
     let file = retained
         .get_mut(&id)
         .ok_or(FileWorkspaceError::MissingFile(id))?;
-    Ok(ParameterPackageTarget::new(
-        &mut file.package,
-        file.path
-            .as_deref()
-            .ok_or(FileWorkspaceError::UnboundDocument(id))?,
-        files,
-    ))
+    let path = file
+        .path
+        .as_deref()
+        .ok_or(FileWorkspaceError::UnboundDocument(id))?;
+    let name = name::saved_name(file, path);
+    Ok(ParameterPackageTarget::new(&mut file.package, path, files).with_display_name(name))
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {

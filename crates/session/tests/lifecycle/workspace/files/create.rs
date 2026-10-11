@@ -258,3 +258,6 @@ fn creation_accepts_an_identity_free_package_and_reports_generator_failure() {
         .unwrap();
     assert_eq!(created.session_id, 1);
 }
+
+#[path = "save_names.rs"]
+mod save_names;

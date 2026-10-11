@@ -233,3 +233,6 @@ fn edited_parameter_recipe_survives_native_save_and_reopen() {
     );
     assert_eq!(reopened.streams(), original.streams());
 }
+
+#[path = "package_save/names.rs"]
+mod names;

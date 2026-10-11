@@ -54,8 +54,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         source: &mut dyn GuidSource,
     ) -> Result<(), FileWorkspaceError> {
         let file = self.retained.get_mut(&id).expect("validated binding");
+        let name = name::saved_name(file, &destination);
         let mut target =
-            ParameterPackageTarget::new(&mut file.package, &destination, &mut self.files);
+            ParameterPackageTarget::new(&mut file.package, &destination, &mut self.files)
+                .with_display_name(name);
         self.workspace
             .save(id, version, source, &mut target)
             .map_err(FileWorkspaceError::Save)?;

@@ -103,7 +103,7 @@ fn copy_metadata_changes_only_copy_manifest_and_inherits_empty_fields() {
     host.save(id, "beta", &mut source).unwrap();
     let original =
         DocumentPackage::decode(&host.files().contents.borrow()[&path("a.obk")]).unwrap();
-    assert!(original.manifest().display_name.is_empty());
+    assert_eq!(original.manifest().display_name, "a");
     let inherited = copy_package(&host).with_copy_metadata(&NewFileMetadata::default());
     assert_eq!(inherited.manifest(), copy_package(&host).manifest());
     assert_eq!(

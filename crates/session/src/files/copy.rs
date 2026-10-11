@@ -17,14 +17,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     ) -> Result<FileIdentity, FileWorkspaceError> {
         self.retained_file(id)?;
         let destination = self.unowned_destination(requested)?;
-        let original = &self.retained[&id].package;
-        let mut package = metadata.map_or_else(
-            || original.clone(),
-            |metadata| original.with_copy_metadata(metadata),
-        );
+        let original = &self.retained[&id];
+        let mut package = copy_package(original, metadata);
         let mut target = ParameterPackageTarget::new(&mut package, &destination, &mut self.files);
         self.workspace
             .save_copy(id, version, source, &mut target)
             .map_err(FileWorkspaceError::Save)
     }
+}
+
+fn copy_package(file: &RetainedFile, metadata: Option<&NewFileMetadata>) -> DocumentPackage {
+    let name = name::saved_name(file, file.path.as_deref().unwrap_or(Path::new("")));
+    let package = file.package.with_display_name(&name);
+    metadata.map_or_else(
+        || package.clone(),
+        |metadata| package.with_copy_metadata(metadata),
+    )
 }
