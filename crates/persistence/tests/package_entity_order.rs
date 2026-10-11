@@ -5,6 +5,8 @@ use oblikovati_model::{
     sketch::{Sketch2D, SketchEntityId, SketchPlane},
 };
 use oblikovati_persistence::package::DocumentPackage;
+#[path = "package_entity_order/point_ownership.rs"]
+mod point_ownership;
 fn geometry() -> Sketch2D {
     let mut sketch = Sketch2D::default();
     sketch.add_point(SketchEntityId(5), [0.0; 2]).unwrap();

@@ -302,8 +302,8 @@ impl DocumentSketches {
 }
 fn geometry_ids(geometry: &Sketch2D) -> Vec<u64> {
     geometry
-        .entity_ids()
-        .iter()
+        .owned_entity_ids()
+        .into_iter()
         .map(|entity| entity.0)
         .collect()
 }

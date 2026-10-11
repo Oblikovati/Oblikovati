@@ -39,9 +39,9 @@ pub(super) fn spline_records(
 ) -> Result<Option<SplineRecords<'_>>, SketchError> {
     match (recipe.version, &recipe.splines, &recipe.offset_splines) {
         (1..=9, None, None) => Ok(None),
-        (10..=11, Some(parents), Some(offsets)) => Ok(Some((parents, offsets))),
+        (10..=12, Some(parents), Some(offsets)) => Ok(Some((parents, offsets))),
         shape => Err(SketchError::Definition(format!(
-            "spline recipe {shape:?}: expected no spline fields in versions 1-9 or explicit parent/offset lists in versions 10-11"
+            "spline recipe {shape:?}: expected no spline fields in versions 1-9 or explicit parent/offset lists in versions 10-12"
         ))),
     }
 }

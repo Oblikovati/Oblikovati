@@ -40,10 +40,12 @@ mod ellipse;
 mod ellipse_axis;
 pub use axis_operand::SketchAxisOperand;
 pub use ellipse::{SketchEllipse2D, SketchEllipseEvaluation};
+mod entity_delete;
 mod entity_geometry;
 mod entity_order;
 mod error;
 mod geometry;
+mod point_ownership;
 pub(crate) use geometry::require_position;
 mod inference;
 mod inspection;
@@ -67,6 +69,7 @@ mod shared_contact;
 mod solve;
 mod source;
 mod spline;
+pub use entity_delete::SketchEntityDeletion;
 pub use spline::{SketchOffsetSpline2D, SketchSpline2D, SketchSplineKind};
 mod tangent;
 mod tangent_distance;
@@ -93,6 +96,7 @@ pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, Tange
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Sketch2D {
     entity_order: Vec<SketchEntityId>,
+    defining_points: std::collections::BTreeSet<SketchEntityId>,
     construction_curves: std::collections::BTreeSet<SketchEntityId>,
     centerlines: std::collections::BTreeSet<SketchEntityId>,
     points: Vec<SketchPoint2D>,

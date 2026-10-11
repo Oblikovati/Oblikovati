@@ -54,3 +54,12 @@ its radii and orientation remain free.
 **Offset spline**: A derived curve at a signed distance from a named parent spline.
 A positive distance is to the left of the parent's forward direction; its
 geometric distance dimension measures the magnitude while retaining the side.
+
+**Defining point**: An owned sketch point that locates one or more curves.
+It does not have a standalone point marker of its own.
+
+**Standalone point marker**: An independently authored sketch point entity.
+It can also define curves, and remains when its last curve is removed.
+
+**Orphan defining point**: A defining point that no surviving curve requires.
+It is removed with its bound relations when geometry is deleted.

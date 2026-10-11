@@ -2,7 +2,7 @@
 
 The Rust application starts with a clean ADR set, as requested on 2026-10-10.
 The migration of all 66 legacy records is recorded in the
-[legacy map](legacy-map.md). Thirteen consolidated Rust records are accepted
+[legacy map](legacy-map.md). The consolidated Rust records are accepted
 as the target design. Application implementation and runtime proof are pending.
 
 ## Authority and numbering
@@ -15,7 +15,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0017`.
+The next unused number is `ADR-0018`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -106,6 +106,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0006](ADR-0006-parameters-and-constraints.md) (superseded by ADR-0015) | Parameters, units, shared constraint solver | R2/R3/R6 |
 | [ADR-0015](ADR-0015-parameters-and-constraints.md) | Parameters, units, solver, analytic ellipse variables | R2/R3/R6 |
 | [ADR-0016](ADR-0016-derived-sketch-curves.md) | Derived spline ownership and analytic offset evaluation | R3; #3789 |
+| [ADR-0017](ADR-0017-sketch-point-ownership.md) | Standalone entities, defining points, deletion closure | R3; #3789 |
 | [ADR-0007](ADR-0007-martensite-integration.md) | Application requirements on Martensite operations | R1-R8; K01-K11 |
 | [ADR-0008](ADR-0008-vulkan-renderer.md) | Vulkan presentation and rendering | R1V/R4/R7 |
 | [ADR-0009](ADR-0009-ui-and-selection.md) | Desktop UI, tools, selection, themes, editor | R1V/R4/R7 |

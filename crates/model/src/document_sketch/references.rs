@@ -38,12 +38,12 @@ impl DocumentSketchReferenceIndex {
                 entity: None,
             },
         )?;
-        for entity in placed.geometry().entity_ids() {
+        for entity in placed.geometry().owned_entity_ids() {
             self.insert(
                 self.guid.sketch_entity_key(entity.0).to_string(),
                 SketchReferenceTarget {
                     sketch,
-                    entity: Some(*entity),
+                    entity: Some(entity),
                 },
             )?;
         }

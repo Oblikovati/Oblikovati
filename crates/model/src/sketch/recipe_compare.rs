@@ -8,6 +8,7 @@ impl Sketch2D {
             && self.centerlines == other.centerlines
             && self.construction_curves == other.construction_curves
             && self.entity_order == other.entity_order
+            && self.defining_points == other.defining_points
             && self.lines == other.lines
             && self.arcs == other.arcs
             && self.circles == other.circles
