@@ -8,6 +8,7 @@ mod events;
 pub mod files;
 mod navigation;
 mod refresh;
+pub mod selection;
 mod sketch_inference;
 pub use sketch_inference::SketchInferenceProjectionInput;
 mod sketch_construction;

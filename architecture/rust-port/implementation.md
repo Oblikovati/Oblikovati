@@ -1,11 +1,11 @@
 # Rust implementation evidence
 
+[Interactive selection engine evidence](implementation-interactive-selection.md).
+
 ## Parameter dependency graph — R2
 
-Tracking: [#3561](https://github.com/Oblikovati/Oblikovati/issues/3561).
-Implementation: `crates/model/src/dependency`.
-Go source: `model/param/graph.go` and `graph_test.go`, revision
-`aa8297d1b0ac33c024f19e54821536d76e8a447a`.
+Tracking: [#3561](https://github.com/Oblikovati/Oblikovati/issues/3561). Implementation: `crates/model/src/dependency`.
+Go source: `model/param/graph.go` and `graph_test.go`, revision `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
 The model crate now supports caller-owned stable IDs, insertion-order edge
 queries, atomic edge replacement, cycle rejection, protected removal, and
