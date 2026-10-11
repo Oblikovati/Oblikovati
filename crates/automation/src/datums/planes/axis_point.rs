@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::reference_only::repick;
 use super::*;
 use oblikovati_model::feature::work_geometry::WorkPlaneLinePoint;
 
@@ -20,13 +21,8 @@ pub(in crate::datums) fn revise(
 ) -> Result<WorkGeometryDefinition, Error> {
     let kind = constructor.api_kind();
     reference_only::validate(args, kind.0.as_ref(), 2)?;
-    for edit in args.repick.as_deref().unwrap_or_default() {
-        if edit.slot == 0 {
-            source.line = input::axis_reference(snapshot, &edit.ref_)?;
-        } else {
-            source.point = input::point_reference(snapshot, &edit.ref_)?;
-        }
-    }
+    source.line = repick(snapshot, args, (0, source.line), input::axis_reference)?;
+    source.point = repick(snapshot, args, (1, source.point), input::point_reference)?;
     Ok(constructor.definition(source))
 }
 

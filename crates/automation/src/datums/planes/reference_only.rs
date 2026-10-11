@@ -12,6 +12,13 @@ pub(super) fn validate(
             "{constructor} scalar edits {scalars:?}: expected no scalar slots"
         )));
     }
+    validate_repicks(args, constructor, count)
+}
+pub(in crate::datums) fn validate_repicks(
+    args: &RedefineWorkPlaneArgs,
+    constructor: &str,
+    count: i64,
+) -> Result<(), Error> {
     let edits = args.repick.as_deref().unwrap_or_default();
     let slots = edits
         .iter()
@@ -45,4 +52,19 @@ pub(super) fn references<const COUNT: usize>(
         "plane {:?} references {references:?}: expected exactly {COUNT} ordered constructor references",
         request.kind
     )))
+}
+
+/// Resolve one slot after the caller validates unique repicks; example: `repick(snapshot, args, (0, source.line), input::axis_reference)?`.
+pub(in crate::datums) fn repick<Reference: Copy>(
+    snapshot: &DocumentSnapshot,
+    args: &RedefineWorkPlaneArgs,
+    slot: (i64, Reference),
+    parse: fn(&DocumentSnapshot, &str) -> Result<Reference, Error>,
+) -> Result<Reference, Error> {
+    args.repick
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .find(|edit| edit.slot == slot.0)
+        .map_or(Ok(slot.1), |edit| parse(snapshot, &edit.ref_))
 }

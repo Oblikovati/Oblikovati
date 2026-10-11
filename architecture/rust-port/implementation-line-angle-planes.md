@@ -1,4 +1,4 @@
-# Parameter-driven line-angle plane model
+# Parameter-driven line-angle planes
 
 Tracking: [#3758](https://github.com/Oblikovati/Oblikovati/issues/3758).
 API integration: [#3759](https://github.com/Oblikovati/Oblikovati/issues/3759).
@@ -56,7 +56,38 @@ Go `TestLinePlaneAndAngle`, `TestWorkPlaneRedefineSlotsPerKind`, and
 `TestWorkPlaneRedefineClosureOverEveryKind` pass at the fixed source revision.
 The full acceptance command is local Linux `make gate`.
 
-This item supplies model recipes, replay, and storage. Public API creation,
-scalar ownership, listing, and redefine remain tracked by #3759. Unsupported
-commands retain named declines. Assembly occurrences, kernel B-rep consumers,
-and native display acceptance remain open.
+## Released API and expression ownership
+
+The file-owned host implements `WORK_PLANE_LINE_PLANE_ANGLE` from the pinned
+API release. Creation takes an axis and a plane reference in that order, with
+an angular expression. It owns one model parameter under the `angle` role.
+The same scalar path supplies offsets: dimension, role, validation, current
+value checks, insertion, and revision are selected explicitly by scalar kind.
+The old offset-specific insertion and revision paths are removed.
+
+Listing reports `Line` and `Plane` reference slots and an `Angle` scalar in
+current preferred angular units. Scalar failures omit current values rather
+than exposing a last-good number. Display overflow is refused before adoption.
+A geometric failure can retain an authored scalar while providing no frame.
+
+Redefine accepts either or both unique reference slots and scalar slot zero.
+It applies formula, reference, and display edits in one candidate and history
+step. Owned scalar IDs remain stable. A first scalar edit of a legacy constant
+or unowned driver creates one owned parameter without changing the old user
+parameter. Creation, undo, abort, and rejected adoption preserve permanent ID
+reservations. Nonfinite or cyclic scalar results cannot publish.
+
+No-op comparison checks both source text and dimension expression context.
+Identical text in unchanged units creates no generation. Identical bare text
+in changed units is an edit. The shared offset path uses the same rule.
+The creation context survives preferred-unit changes, save, reopen, and copies.
+
+Typed API tests cover live formulas, metadata and display units, user axes,
+atomic edits and declines, undo/redo, abort, commit veto, no-op semantics,
+legacy promotion, dependency failures, local geometry recovery, normal flips,
+file replay, and copies. These command and model tests do not certify native
+rendering or kernel B-rep consumers. Assembly occurrence inputs remain open.
+
+Go router tests also pass for combined scalar/repick edits, invalid edits,
+constructor/list round trips, and rollback on error. Repicks share a typed
+reference reader after unique-slot validation with the axis-point constructors.

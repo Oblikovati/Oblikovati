@@ -43,8 +43,6 @@ fn revise_geometry(
     args: &RedefineWorkPlaneArgs,
 ) -> Result<PlaneGeometryRevision, Error> {
     use WorkGeometryDefinition::*;
-    let scalars = args.scalars.as_deref().unwrap_or_default();
-    let repicks = args.repick.as_deref().unwrap_or_default();
     let revised = match definition {
         NormalToAxis(source) => {
             axis_point::revise(snapshot, source, args, Constructor::NormalToAxis)
@@ -52,11 +50,12 @@ fn revise_geometry(
         LineThroughPoint(source) => {
             axis_point::revise(snapshot, source, args, Constructor::ContainsLine)
         }
+        AtAngleAboutAxis(source) => return line_angle::prepare(snapshot, source, args),
         ThroughTwoAxes(axes) => planes::two_axes::revise(snapshot, axes, args),
         ThroughThreePoints(points) => planes::three_points::revise(snapshot, points, args),
         ParallelThroughPoint(source) => planes::parallel::revise(snapshot, source, args),
         _ => {
-            return prepare_offset(snapshot, definition, scalars, repicks);
+            return prepare_offset(snapshot, definition, args);
         }
     }?;
     Ok(PlaneGeometryRevision::Definition(revised))
@@ -65,11 +64,12 @@ fn revise_geometry(
 fn prepare_offset(
     snapshot: &DocumentSnapshot,
     definition: WorkGeometryDefinition,
-    scalars: &[ScalarEdit],
-    repicks: &[SlotRepick],
+    args: &RedefineWorkPlaneArgs,
 ) -> Result<PlaneGeometryRevision, Error> {
+    let scalars = args.scalars.as_deref().unwrap_or_default();
+    let repicks = args.repick.as_deref().unwrap_or_default();
     let (base, distance) = offset_definition(definition)?;
-    let expression = scalar_source(snapshot, scalars)?;
+    let expression = scalar_source(snapshot, scalars, OwnedDatumScalar::Offset)?;
     let base = revised_base(snapshot, base, repicks)?;
     Ok(PlaneGeometryRevision::Offset(OffsetRevision {
         base,
@@ -89,20 +89,22 @@ pub(in crate::datums) fn placed_plane(
         .ok_or_else(|| Error(format!("plane index {index}: expected a current placed plane index >= 3; origin planes are immutable")))
 }
 
-fn scalar_source(
+pub(super) fn scalar_source(
     snapshot: &DocumentSnapshot,
     edits: &[ScalarEdit],
+    kind: OwnedDatumScalar,
 ) -> Result<Option<String>, Error> {
-    let Some(edit) = single_slot_edit(edits, "offset scalar slot 0")? else {
+    let Some(edit) = single_slot_edit(edits, "scalar slot 0")? else {
         return Ok(None);
     };
     if edit.index != 0 {
+        let role = kind.role();
         return Err(Error(format!(
-            "scalar slot {}: expected offset scalar slot 0",
+            "scalar slot {}: expected {role} scalar slot 0",
             edit.index
         )));
     }
-    scalars::validate_offset(snapshot, &edit.value)?;
+    kind.validate(snapshot, &edit.value)?;
     Ok(Some(edit.value.clone()))
 }
 

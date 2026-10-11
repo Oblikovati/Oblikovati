@@ -20,6 +20,7 @@ fn plane_geometry(
     match request.kind.as_str() {
         kind if kind == WORK_PLANE_FIXED.0 => fixed_frame(request),
         kind if kind == WORK_PLANE_OFFSET.0 => offset(request, snapshot),
+        kind if kind == WORK_PLANE_LINE_PLANE_ANGLE.0 => line_angle::create(request, snapshot),
         kind if kind == WORK_PLANE_NORMAL_TO_CURVE.0 => {
             axis_point::create(request, snapshot, AxisPointPlaneConstructor::NormalToAxis)
         }
@@ -30,7 +31,7 @@ fn plane_geometry(
         kind if kind == WORK_PLANE_THREE_POINTS.0 => three_points::create(request, snapshot),
         kind if kind == WORK_PLANE_PLANE_AND_POINT.0 => parallel::create(request, snapshot),
         _ => Err(Error(format!(
-            "plane constructor {:?}: expected supported {WORK_PLANE_FIXED:?}, {WORK_PLANE_OFFSET:?}, {WORK_PLANE_PLANE_AND_POINT:?}, {WORK_PLANE_THREE_POINTS:?}, {WORK_PLANE_LINE_AND_POINT:?}, {WORK_PLANE_NORMAL_TO_CURVE:?}, or {WORK_PLANE_TWO_LINES:?}",
+            "plane constructor {:?}: expected supported {WORK_PLANE_FIXED:?}, {WORK_PLANE_OFFSET:?}, {WORK_PLANE_PLANE_AND_POINT:?}, {WORK_PLANE_THREE_POINTS:?}, {WORK_PLANE_LINE_AND_POINT:?}, {WORK_PLANE_NORMAL_TO_CURVE:?}, {WORK_PLANE_TWO_LINES:?}, or {WORK_PLANE_LINE_PLANE_ANGLE:?}",
             request.kind
         ))),
     }
@@ -77,7 +78,7 @@ pub(in crate::datums) fn plane_reference(
         .definition();
     if !DatumCollection::Planes.contains(*definition) {
         return Err(Error(format!(
-            "offset base {reference:?}: expected a current plane definition"
+            "plane reference {reference:?}: expected a current plane definition"
         )));
     }
     Ok(WorkPlaneReference::Feature(id))

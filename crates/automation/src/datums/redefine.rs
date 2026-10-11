@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::scalars::OwnedDatumScalar;
 use super::*;
 use oblikovati_model::feature::work_geometry::WorkPlaneDisplaySettings;
 use oblikovati_model::feature::{work_geometry::DatumLength, work_plane::WorkPlaneReference};
-use oblikovati_model::quantity::Dimension;
 mod display;
+mod line_angle;
 mod request;
 pub(super) use request::placed_plane;
 
@@ -15,6 +16,7 @@ struct PlaneRevision {
 }
 enum PlaneGeometryRevision {
     Offset(OffsetRevision),
+    LineAngle(line_angle::LineAngleRevision),
     Definition(WorkGeometryDefinition),
 }
 struct OffsetRevision {
@@ -49,11 +51,10 @@ fn revision_unchanged(
         .get(revision.owner)
         .map_err(api_error)?;
     let definition = feature.definition();
-    let geometry_unchanged = revision.geometry.as_ref().is_none_or(|geometry| match geometry {
-        PlaneGeometryRevision::Offset(geometry) => geometry.expression.is_none()
-            && matches!(definition, WorkGeometryDefinition::Offset { base, .. } if *base == geometry.base),
-        PlaneGeometryRevision::Definition(next) => definition.same_recipe(*next),
-    });
+    let geometry_unchanged = match &revision.geometry {
+        Some(geometry) => same_geometry(snapshot, revision.owner, *definition, geometry)?,
+        None => true,
+    };
     Ok(geometry_unchanged
         && feature
             .plane_display_settings()
@@ -90,18 +91,19 @@ fn install_offset(
         .replace(owner, definition, definition.reads())
         .map_err(api_error)?;
     if let Some(parameter) = added {
-        assign_offset_owner(snapshot, owner, parameter)?;
+        assign_scalar_owner(snapshot, owner, OwnedDatumScalar::Offset, parameter)?;
     }
     Ok(())
 }
-fn assign_offset_owner(
+fn assign_scalar_owner(
     snapshot: &mut DocumentSnapshot,
     owner: FeatureId,
+    kind: OwnedDatumScalar,
     parameter: u64,
 ) -> Result<(), Error> {
     snapshot
         .work_geometry
-        .assign_scalar_owner(owner, "offset", parameter)
+        .assign_scalar_owner(owner, kind.role(), parameter)
         .map(|_| ())
         .map_err(api_error)
 }
@@ -115,27 +117,11 @@ fn revise_distance(
     let Some(source) = &revision.expression else {
         return Ok((revision.distance, None));
     };
-    if let Some(parameter) = owned_offset(snapshot, owner)? {
-        snapshot
-            .parameters
-            .set_scalar_expression(parameter, source, Dimension::Length)
-            .map_err(api_error)?;
-        return Ok((DatumLength::Parameter(parameter), None));
-    }
-    // Legacy unowned drivers remain untouched when a feature first acquires an authored scalar (#3745).
-    let parameter = scalars::insert_offset(snapshot, ids, owner, source)?;
-    Ok((DatumLength::Parameter(parameter), Some(parameter)))
-}
-
-fn owned_offset(snapshot: &DocumentSnapshot, owner: FeatureId) -> Result<Option<u64>, Error> {
-    Ok(snapshot
-        .work_geometry
-        .get(owner)
-        .map_err(api_error)?
-        .owned_scalars()
-        .iter()
-        .find(|binding| binding.role == "offset")
-        .map(|binding| binding.parameter))
+    let (parameter, added) = OwnedDatumScalar::Offset.revise(snapshot, ids, owner, source)?;
+    Ok((
+        DatumLength::Parameter(parameter),
+        added.then_some(parameter),
+    ))
 }
 
 fn current_reply(
@@ -154,11 +140,44 @@ fn install_geometry(
     revision: &PlaneGeometryRevision,
 ) -> Result<(), Error> {
     match revision {
+        PlaneGeometryRevision::LineAngle(angle) => line_angle::install(snapshot, ids, owner, angle),
         PlaneGeometryRevision::Offset(offset) => install_offset(snapshot, ids, owner, offset),
         PlaneGeometryRevision::Definition(definition) => snapshot
             .work_geometry
             .replace(owner, *definition, definition.reads())
             .map(|_| ())
             .map_err(api_error),
+    }
+}
+
+fn same_geometry(
+    snapshot: &DocumentSnapshot,
+    owner: FeatureId,
+    definition: WorkGeometryDefinition,
+    revision: &PlaneGeometryRevision,
+) -> Result<bool, Error> {
+    use OwnedDatumScalar as Scalar;
+    use PlaneGeometryRevision::*;
+    Ok(match revision {
+        LineAngle(geometry) => {
+            same_scalar(snapshot, owner, Scalar::Angle, &geometry.expression)?
+                && definition.same_recipe(WorkGeometryDefinition::AtAngleAboutAxis(geometry.source))
+        }
+        Offset(geometry) => {
+            same_scalar(snapshot, owner, Scalar::Offset, &geometry.expression)?
+                && matches!(definition, WorkGeometryDefinition::Offset {base,..} if base == geometry.base)
+        }
+        Definition(next) => definition.same_recipe(*next),
+    })
+}
+fn same_scalar(
+    snapshot: &DocumentSnapshot,
+    owner: FeatureId,
+    kind: OwnedDatumScalar,
+    expression: &Option<String>,
+) -> Result<bool, Error> {
+    match expression {
+        Some(expression) => kind.source_unchanged(snapshot, owner, expression),
+        None => Ok(true),
     }
 }

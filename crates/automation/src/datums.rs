@@ -48,6 +48,11 @@ pub(super) struct PreparedDatum {
 }
 #[derive(Debug)]
 pub(super) enum PreparedGeometry {
+    LineAngle {
+        line: oblikovati_model::feature::work_axis::WorkAxisReference,
+        base: oblikovati_model::feature::work_plane::WorkPlaneReference,
+        expression: String,
+    },
     Definition(WorkGeometryDefinition),
     Offset {
         base: oblikovati_model::feature::work_plane::WorkPlaneReference,

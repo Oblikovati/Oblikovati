@@ -293,3 +293,6 @@ mod normal_axis;
 
 #[path = "datums_api/two_axes.rs"]
 mod two_axes;
+
+#[path = "datums_api/line_angle.rs"]
+mod line_angle;

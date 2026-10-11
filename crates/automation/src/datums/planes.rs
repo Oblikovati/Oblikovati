@@ -4,10 +4,11 @@ use oblikovati_model::{feature::work_plane::WorkPlaneResolver, sketch::SketchPla
 pub(in crate::datums) mod axis_point;
 mod display;
 mod inputs;
+pub(in crate::datums) mod line_angle;
 mod metadata;
 mod origins;
 pub(in crate::datums) mod parallel;
-mod reference_only;
+pub(in crate::datums) mod reference_only;
 pub(in crate::datums) mod three_points;
 pub(in crate::datums) mod two_axes;
 pub(super) use inputs::plane_reference;
