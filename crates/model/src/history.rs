@@ -7,9 +7,12 @@ use crate::{
     property::DocumentProperties,
 };
 mod checkpoints;
+mod datum_delete;
 mod derived_ids;
 mod feature_ids;
+mod scalar_ownership;
 mod sketch_delete;
+pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};
 mod sketch_ids;
 pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
 mod sketch_placement;
@@ -112,7 +115,10 @@ pub struct DocumentEditHistory {
 
 impl DocumentEditHistory {
     /// Take ownership of loaded state and its allocator; example: `DocumentEditHistory::new(snapshot, ids)?`.
-    pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, RecipeIdError> {
+    pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, HistoryError> {
+        snapshot
+            .validate_scalar_ownership()
+            .map_err(HistoryError::ScalarOwnership)?;
         RecipeIdAllocator::restore(Some(ids.high_water()), snapshot.parameters.ids())?;
         let derived_high_water = snapshot
             .parameters
@@ -200,6 +206,9 @@ impl DocumentEditHistory {
             },
         )
         .map_err(EditError::Mutation)?;
+        candidate
+            .validate_scalar_transition(&self.current)
+            .map_err(EditError::History)?;
         self.validate_feature_ids(&candidate, features_before)
             .map_err(EditError::History)?;
         self.validate_candidate_ids(&candidate, reserved_before)

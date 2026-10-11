@@ -4,7 +4,7 @@ use oblikovati_model::identity::IdentityRegistrationError;
 use std::{error::Error, fmt};
 
 /// A refused workspace operation, leaving existing ownership and focus intact.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum WorkspaceError {
     Missing(u64),
     NoActive,

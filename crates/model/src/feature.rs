@@ -4,6 +4,7 @@
 
 mod edits;
 mod scalar_ownership;
+mod scalar_parameters;
 pub use scalar_ownership::{FeatureScalarBinding, FeatureScalarOwnershipError};
 mod error;
 mod evaluation;

@@ -4,7 +4,7 @@ use crate::{
     document_sketch::DocumentSketchId,
     feature::{FeatureId, FeatureReadKey},
 };
-mod consumers;
+pub(super) mod consumers;
 mod error;
 use consumers::DeletionIncidences;
 pub use error::DocumentSketchDeleteError;
@@ -98,8 +98,7 @@ fn prune_one(
     id: FeatureId,
 ) -> Result<(), DocumentSketchDeleteError> {
     snapshot
-        .work_geometry
-        .remove(id)
-        .map_err(DocumentSketchDeleteError::Datum)?;
+        .delete_datum(id)
+        .map_err(DocumentSketchDeleteError::OwnedDatum)?;
     incidences.remove_consumer(FeatureReadKey::Feature(id))
 }

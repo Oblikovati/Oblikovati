@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use crate::workspace::{WorkspaceError, WorkspaceSaveError};
-use oblikovati_model::identity::{IdentityTransitionError, RecipeIdError};
+use oblikovati_model::identity::IdentityTransitionError;
 use oblikovati_persistence::{
     load::PackageLoadError,
     package::{PackageCodecError, SnapshotPackageError},
@@ -54,7 +54,7 @@ pub enum FileWorkspaceError {
         reason: String,
     },
     Load(PackageLoadError),
-    History(RecipeIdError),
+    History(oblikovati_model::history::HistoryError),
     Workspace(WorkspaceError),
     Save(WorkspaceSaveError<SnapshotPackageError>),
 }

@@ -8,6 +8,7 @@ mod create;
 mod derived_edit;
 mod discovery;
 mod error;
+mod history_restore;
 mod name;
 mod open;
 mod project;

@@ -41,6 +41,9 @@ impl DocumentEditHistory {
         self.require_closed().map_err(EditError::History)?;
         let mut candidate = self.current.clone();
         refresh(&mut candidate).map_err(EditError::Mutation)?;
+        candidate
+            .validate_scalar_transition(&self.current)
+            .map_err(EditError::History)?;
         self.validate_feature_ids(&candidate, self.feature_high_water())
             .map_err(EditError::History)?;
         self.validate_sketch_ids(&candidate, self.sketch_reservations())

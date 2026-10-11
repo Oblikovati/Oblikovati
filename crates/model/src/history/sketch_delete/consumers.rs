@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 /// A derived incidence index shares authored read keys with replay; no geometry or cache is queried.
 #[derive(Default)]
-pub(super) struct DeletionIncidences {
+pub(in crate::history) struct DeletionIncidences {
     readers: BTreeMap<FeatureReadKey, BTreeSet<FeatureReadKey>>,
     targets: BTreeMap<FeatureReadKey, BTreeSet<FeatureReadKey>>,
     unattributed: BTreeSet<FeatureReadKey>,
@@ -18,7 +18,7 @@ pub(super) struct DeletionIncidences {
 #[path = "consumer_tests.rs"]
 mod tests;
 impl DeletionIncidences {
-    pub(super) fn from_snapshot(snapshot: &DocumentSnapshot) -> Self {
+    pub(in crate::history) fn from_snapshot(snapshot: &DocumentSnapshot) -> Self {
         let mut incidences = Self::default();
         for feature in snapshot.work_geometry.features() {
             incidences.record(FeatureReadKey::Feature(feature.id()), feature.reads());
@@ -41,7 +41,7 @@ impl DeletionIncidences {
         }
         self.targets.insert(reader, targets);
     }
-    pub(super) fn require_unused(
+    pub(in crate::history) fn require_unused(
         &self,
         sketch: DocumentSketchId,
     ) -> Result<(), DocumentSketchDeleteError> {
@@ -58,12 +58,12 @@ impl DeletionIncidences {
         }
         Err(DocumentSketchDeleteError::Consumed { sketch, readers })
     }
-    pub(super) fn has_consumers(&self, key: FeatureReadKey) -> bool {
+    pub(in crate::history) fn has_consumers(&self, key: FeatureReadKey) -> bool {
         self.readers
             .get(&key)
             .is_some_and(|readers| !readers.is_empty())
     }
-    pub(super) fn remove_consumer(
+    pub(in crate::history) fn remove_consumer(
         &mut self,
         reader: FeatureReadKey,
     ) -> Result<(), DocumentSketchDeleteError> {
@@ -75,6 +75,18 @@ impl DeletionIncidences {
             self.remove_edge(reader, target)?;
         }
         Ok(())
+    }
+    pub(in crate::history) fn external_consumers(
+        &self,
+        target: FeatureReadKey,
+        removed: &BTreeSet<FeatureReadKey>,
+    ) -> Vec<FeatureReadKey> {
+        let readers: BTreeSet<FeatureReadKey> = self
+            .consumer_keys(target)
+            .into_iter()
+            .chain(self.unattributed.iter().copied())
+            .collect();
+        readers.difference(removed).copied().collect()
     }
     fn consumer_keys(&self, key: FeatureReadKey) -> Vec<FeatureReadKey> {
         self.readers

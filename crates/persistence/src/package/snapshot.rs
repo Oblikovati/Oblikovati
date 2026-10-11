@@ -51,6 +51,9 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
         feature_high_water: u64,
     ) -> Result<Option<RecipeDigest>, Self::Failure> {
         self.prepared = None;
+        snapshot
+            .validate_scalar_ownership()
+            .map_err(|error| SnapshotPackageError::Codec(PackageCodecError(error.to_string())))?;
         let candidate = self
             .original
             .with_work_geometry(&snapshot.work_geometry, feature_high_water)

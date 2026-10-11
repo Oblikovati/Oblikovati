@@ -112,7 +112,7 @@ fn restore_validates_live_ids_and_cannot_rewind_reservations() {
     insert(&mut invalid, FeatureId(0)).unwrap();
     assert!(matches!(
         DocumentEditHistory::new(invalid, RecipeIdAllocator::default()),
-        Err(RecipeIdError::ZeroId)
+        Err(HistoryError::Identity(RecipeIdError::ZeroId))
     ));
 }
 #[test]

@@ -81,7 +81,7 @@ impl<Definition> AuthoredFeature<Definition> {
         }
         Ok(())
     }
-    fn scalar_error(
+    pub(super) fn scalar_error(
         &self,
         binding: &FeatureScalarBinding,
         expected: &'static str,

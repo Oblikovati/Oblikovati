@@ -479,3 +479,6 @@ mod interests;
 
 #[path = "load/attachments.rs"]
 mod attachments;
+
+#[path = "load/scalar_ownership.rs"]
+mod scalar_ownership;

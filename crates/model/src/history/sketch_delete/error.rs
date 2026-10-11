@@ -11,6 +11,7 @@ use std::{error::Error, fmt};
 pub enum DocumentSketchDeleteError {
     Sketch(SketchError),
     Datum(FeatureSequenceError),
+    OwnedDatum(crate::history::DocumentDatumDeleteError),
     Consumed {
         sketch: DocumentSketchId,
         readers: Vec<FeatureReadKey>,
@@ -26,6 +27,7 @@ impl fmt::Display for DocumentSketchDeleteError {
         match self {
             Self::Sketch(cause) => cause.fmt(output),
             Self::Datum(cause) => cause.fmt(output),
+            Self::OwnedDatum(cause) => cause.fmt(output),
             Self::Consumed { sketch, readers } => {
                 dependent_decline(output, *sketch, readers, "consumed")
             }
@@ -44,6 +46,7 @@ impl Error for DocumentSketchDeleteError {
         match self {
             Self::Sketch(cause) => Some(cause),
             Self::Datum(cause) => Some(cause),
+            Self::OwnedDatum(cause) => Some(cause),
             _ => None,
         }
     }

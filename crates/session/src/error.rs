@@ -7,7 +7,7 @@ use oblikovati_model::{
 use std::{error::Error, fmt};
 
 /// A rejected session transition, including the observer's veto reason.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 pub enum SessionError {
     History(HistoryError),
     NoGroup,

@@ -100,11 +100,13 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         parameters: restored.parameters,
         properties,
     };
-    DocumentEditHistory::new(snapshot, restored.ids)
-        .and_then(|history| history.with_feature_reservations(feature_mark))
-        .and_then(|history| history.with_sketch_reservations(sketch_marks))
-        .and_then(|history| history.with_derived_reservations(restored.derived_high_water))
-        .map_err(FileWorkspaceError::History)
+    super::history_restore::restore_history(
+        snapshot,
+        restored.ids,
+        feature_mark,
+        sketch_marks,
+        restored.derived_high_water,
+    )
 }
 
 pub(super) fn require_document_kind(kind: u32) -> Result<(), FileWorkspaceError> {

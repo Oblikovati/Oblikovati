@@ -51,6 +51,7 @@ pub struct PackageLoadError {
 enum LoadFailure {
     Read(io::Error),
     Codec(PackageCodecError),
+    ScalarOwnership(oblikovati_model::feature::FeatureScalarOwnershipError),
     Generation(IdentityTransitionError),
     Identity(IdentityRecordError),
     Registration(IdentityRegistrationError),
@@ -151,6 +152,7 @@ impl fmt::Display for LoadFailure {
         match self {
             Self::Read(error) => error.fmt(formatter),
             Self::Codec(error) => error.fmt(formatter),
+            Self::ScalarOwnership(error) => error.fmt(formatter),
             Self::Generation(error) => error.fmt(formatter),
             Self::Identity(error) => error.fmt(formatter),
             Self::Registration(error) => error.fmt(formatter),
@@ -163,6 +165,7 @@ impl Error for LoadFailure {
         match self {
             Self::Read(error) => Some(error),
             Self::Codec(error) => Some(error),
+            Self::ScalarOwnership(error) => Some(error),
             Self::Generation(error) => Some(error),
             Self::Identity(error) => Some(error),
             Self::Registration(error) => Some(error),

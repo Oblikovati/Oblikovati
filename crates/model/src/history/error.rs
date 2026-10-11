@@ -4,8 +4,11 @@ use super::TransactionToken;
 use std::{error::Error, fmt};
 
 /// A refused lifecycle operation leaves history and recipe state unchanged.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum HistoryError {
+    DatumDeletion(super::DocumentDatumDeleteError),
+    Identity(crate::identity::RecipeIdError),
+    ScalarOwnership(crate::feature::FeatureScalarOwnershipError),
     UnreservedIdentity(u64),
     UnreservedFeatureId(u64),
     UnreservedSketchId(u64),
@@ -25,6 +28,9 @@ pub enum HistoryError {
 impl fmt::Display for HistoryError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DatumDeletion(error) => error.fmt(output),
+            Self::Identity(error) => error.fmt(output),
+            Self::ScalarOwnership(error) => error.fmt(output),
             Self::UnreservedFeatureId(id) => write!(
                 output,
                 "feature ID {id}: expected an existing identity or one reserved by this edit"
@@ -73,7 +79,21 @@ impl fmt::Display for HistoryError {
         }
     }
 }
-impl Error for HistoryError {}
+impl Error for HistoryError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::DatumDeletion(error) => Some(error),
+            Self::Identity(error) => Some(error),
+            Self::ScalarOwnership(error) => Some(error),
+            _ => None,
+        }
+    }
+}
+impl From<crate::identity::RecipeIdError> for HistoryError {
+    fn from(error: crate::identity::RecipeIdError) -> Self {
+        Self::Identity(error)
+    }
+}
 
 /// Distinguish ownership errors from a rejected command's own typed error.
 #[derive(Debug)]

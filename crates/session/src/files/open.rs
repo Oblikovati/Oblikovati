@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
-use oblikovati_model::history::{DocumentEditHistory, DocumentSnapshot};
+use oblikovati_model::history::DocumentSnapshot;
 use oblikovati_persistence::load::{PreparedParameterPackage, read_parameter_package};
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
@@ -76,13 +76,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             sketch: prepared.sketches.sketch_ids.high_water(),
             entity: prepared.sketches.entity_ids.high_water(),
         };
-        let history = DocumentEditHistory::new(snapshot, prepared.restored.ids)
-            .and_then(|history| history.with_feature_reservations(feature_mark))
-            .and_then(|history| history.with_sketch_reservations(sketch_marks))
-            .and_then(|history| {
-                history.with_derived_reservations(prepared.restored.derived_high_water)
-            })
-            .map_err(FileWorkspaceError::History)?;
+        let history = super::history_restore::restore_history(
+            snapshot,
+            prepared.restored.ids,
+            feature_mark,
+            sketch_marks,
+            prepared.restored.derived_high_water,
+        )?;
         let registration = self
             .workspace
             .register(history, prepared.identity, observer, source, activation)

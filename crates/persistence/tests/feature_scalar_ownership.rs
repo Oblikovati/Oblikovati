@@ -10,6 +10,8 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 use oblikovati_persistence::package::DocumentPackage;
+#[path = "feature_scalar_ownership/save_guard.rs"]
+mod save_guard;
 
 fn parameters() -> ParameterCollection<u64> {
     let mut parameters = ParameterCollection::new(UnitsOfMeasure::default());

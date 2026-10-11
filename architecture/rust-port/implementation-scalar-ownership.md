@@ -36,10 +36,11 @@ whose owned model parameter is `width / 2`, verifies the stored formula and
 driver identity, then edits `width` and checks the current plane origin.
 
 The program alone does not prove that a bound ID exists in the document parameter
-collection or has model-parameter kind. Document-level validation, scalar creation
-and editing, deletion and external-consumer rules, transaction/group/veto tests,
-and canonical offset create/redefine host methods remain in #3745. The current
-API still declines offset creation. Do not treat stored ownership metadata as
+collection or has model-parameter kind. The
+[document ownership checks](implementation-document-scalars.md) now enforce that
+boundary and atomic deletion. Scalar creation and editing, host group/veto tests,
+and canonical offset create/redefine methods remain in #3745. The current API
+still declines offset creation. Do not treat stored ownership metadata as
 completion of offset authoring or the application port.
 
 Validation is local Linux only. This work changes no kernel checkout, renderer,

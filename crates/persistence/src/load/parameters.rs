@@ -92,6 +92,10 @@ pub fn read_parameter_package(
     let restored = package
         .restore_document_parameters()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
+    work_geometry
+        .program
+        .validate_scalar_parameters(&restored.parameters)
+        .map_err(|error| load_error(path, LoadFailure::ScalarOwnership(error)))?;
     let properties = package
         .restore_parameter_properties(&restored.parameters)
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
