@@ -52,6 +52,7 @@ pub(super) fn dimension_parameter(relation: &PlanarConstraint) -> Option<u64> {
         PlanarConstraint::Distance { parameter, .. }
         | PlanarConstraint::Radius { parameter, .. }
         | PlanarConstraint::EllipseRadius { parameter, .. }
+        | PlanarConstraint::EllipseMinorRadius { parameter, .. }
         | PlanarConstraint::Diameter { parameter, .. }
         | PlanarConstraint::Offset { parameter, .. }
         | PlanarConstraint::TangentDistance { parameter, .. }

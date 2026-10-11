@@ -43,12 +43,38 @@ impl Sketch2D {
         self.capture_dimension_schema_metadata(recipe);
     }
     pub(crate) fn restore_ellipses(&mut self, recipe: &SketchRecipe) -> Result<(), SketchError> {
+        require_minor_dimension_schema(recipe)?;
         match (recipe.version, &recipe.ellipses) {
             (1..=6, None) => Ok(()),
-            (7..=8, Some(shapes)) => shapes.iter().try_for_each(|shape| self.add_ellipse(*shape)),
+            (7..=9, Some(shapes)) => shapes.iter().try_for_each(|shape| self.add_ellipse(*shape)),
             shape => Err(SketchError::Definition(format!(
-                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in versions 7-8"
+                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in versions 7-9"
             ))),
         }
     }
+    pub(crate) fn capture_ellipse_dimension_schema(&self, recipe: &mut SketchRecipe) {
+        if !has_minor_dimension(recipe) {
+            return;
+        }
+        recipe.version = 9;
+        self.capture_complete_schema_metadata(recipe);
+    }
+}
+
+fn has_minor_dimension(recipe: &SketchRecipe) -> bool {
+    recipe.constraints.iter().any(|constraint| {
+        matches!(
+            constraint.relation,
+            crate::sketch::PlanarConstraint::EllipseMinorRadius { .. }
+        )
+    })
+}
+fn require_minor_dimension_schema(recipe: &SketchRecipe) -> Result<(), SketchError> {
+    if recipe.version < 9 && has_minor_dimension(recipe) {
+        return Err(SketchError::Definition(format!(
+            "ellipse minor-radius recipe version {}: expected version 9",
+            recipe.version
+        )));
+    }
+    Ok(())
 }

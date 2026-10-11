@@ -149,12 +149,25 @@ both document kinds. The Go `driveDimension` route resolves an expression once
 and calls `Drive`; it does not retain the source formula. Tests distinguish that
 fixed drive from a live `parameters.set` edit and check later source propagation.
 
-The pinned Go `AddEllipseRadius` binds only `MajorRadius`. The released API has
-no minor-radius dimension selector. Minor-radius support therefore requires a
-contract extension before implementation; it is not an existing dimension to
-port under the major-radius kind. A freely owned ellipse still has a minor-radius
-freedom after its center, orientation, and major radius are constrained. Full
-ellipse constraint acceptance remains open in #3788, together with the remaining
-degenerate solving cases. This step does not establish profile-kernel acceptance. B-rep
+The pinned Go `AddEllipseRadius` binds only `MajorRadius`. The separate
+[API v0.158.0 release](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.158.0)
+adds the explicit `ellipseMinorRadius` kind. The app pins its tag commit
+`32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd`; both API tags select this commit.
+The downloaded crate matches the GitHub asset SHA-256 and includes the new kind.
+This is a contract extension, rather than a claimed port of a missing Go dimension.
+
+The minor relation uses the same scalar equation with the minor-radius column.
+Its unit derivative leaves the major radius, center, and frame unchanged. The
+canonical route retains owned Model formulas, reference mode, annotation, history,
+retired identities, and copy/reopen. Nonpositive targets and radius crossings
+cannot publish partial recipes. Planar schema 9 records the minor relation and
+refuses that record under an older version; ground and dimension metadata remain
+explicit. Existing schemas remain readable.
+
+Model and API tests now reach DOF = 0 with center ground, major-axis alignment,
+and independent major/minor live dimensions. Both part and assembly routes retain
+that result after source edits and save/copy. Reference mode leaves one radius
+freedom. Remaining #3788 work includes further degenerate solving and minor-specific
+failed-formula/transaction acceptance. This step does not establish profile-kernel acceptance. B-rep
 ellipse operations stay in Martensite; the sketch value does not replace kernel
 geometry or establish kernel operation validity.

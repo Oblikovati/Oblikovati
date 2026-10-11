@@ -7,6 +7,7 @@ pub(super) fn require(relation: &PlanarConstraint) -> Result<DimensionShape, Err
     let shape = match relation {
         Distance { measure, .. } => (DIM_CONSTRAINT_DISTANCE, orientation(*measure), false),
         EllipseRadius { .. } => (DIM_CONSTRAINT_ELLIPSE_RADIUS, "", false),
+        EllipseMinorRadius { .. } => (DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS, "", false),
         Radius { .. } => (DIM_CONSTRAINT_RADIUS, "", false),
         Diameter { .. } => (DIM_CONSTRAINT_DIAMETER, "", false),
         ArcLength { .. } => (DIM_CONSTRAINT_ARC_LENGTH, "", false),
@@ -15,12 +16,16 @@ pub(super) fn require(relation: &PlanarConstraint) -> Result<DimensionShape, Err
         } => (DIM_CONSTRAINT_OFFSET, "", *linear_diameter),
         Angle { .. } => (DIM_CONSTRAINT_ANGLE, "", false),
         ThreePointAngle { .. } => (DIM_CONSTRAINT_THREE_POINT_ANGLE, "", false),
-        TangentDistance { options, .. } => {
-            (DIM_CONSTRAINT_TANGENT_DISTANCE, "", options.linear_diameter)
-        }
+        TangentDistance { options, .. } => tangent_dimension_shape(options),
         _ => return unsupported(relation),
     };
     Ok(shape)
+}
+fn tangent_dimension_shape(
+    options: &oblikovati_model::sketch::TangentDistanceOptions,
+) -> DimensionShape {
+    let kind = DIM_CONSTRAINT_TANGENT_DISTANCE;
+    (kind, "", options.linear_diameter)
 }
 fn orientation(measure: DistanceMeasure) -> &'static str {
     match measure {

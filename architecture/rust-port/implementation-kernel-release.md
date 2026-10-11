@@ -12,7 +12,8 @@ The application uses exact version and Git revision dependencies in
 recorded in `Cargo.lock`. No sibling checkout supplies source or binaries.
 The adapter imports the modeling toolkits, rather than the foundation-only facade.
 Application builds, local gates, and CI setup use the owner's tested Rust 1.99.0.
-The API remains pinned to its separate v0.157.0 release.
+The API now uses its separate v0.158.0 release for independent ellipse radius
+dimensions; see [ellipse implementation evidence](implementation-ellipse.md).
 
 ## Application acceptance probe
 

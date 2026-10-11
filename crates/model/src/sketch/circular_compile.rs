@@ -116,22 +116,34 @@ fn analytic_axis_columns(
     sketch: &Sketch2D,
     relation: &PlanarConstraint,
 ) -> Result<Option<Vec<usize>>, SketchError> {
-    use super::ellipse::variables::EllipseComponent;
-    let (ellipse, component) = match relation {
-        PlanarConstraint::EllipseRadius { ellipse, .. } => {
-            (*ellipse, EllipseComponent::MajorRadius)
-        }
-        PlanarConstraint::EllipseAxisAlignment { ellipse, .. } => {
-            (*ellipse, EllipseComponent::Orientation)
-        }
-        PlanarConstraint::AxisCollinear { axes } | PlanarConstraint::AxisRelation { axes, .. } => {
-            return columns_for_axis_relation(sketch, relation, *axes).map(Some);
-        }
-        _ => return Ok(None),
+    if let PlanarConstraint::AxisCollinear { axes } | PlanarConstraint::AxisRelation { axes, .. } =
+        relation
+    {
+        return columns_for_axis_relation(sketch, relation, *axes).map(Some);
+    }
+    let Some((ellipse, component)) = ellipse_relation_component(relation) else {
+        return Ok(None);
     };
     sketch
         .ellipse_column(ellipse, component)
         .map(|column| Some(vec![column]))
+}
+fn ellipse_relation_component(
+    relation: &PlanarConstraint,
+) -> Option<(SketchEntityId, super::ellipse::variables::EllipseComponent)> {
+    use super::ellipse::variables::EllipseComponent;
+    Some(match relation {
+        PlanarConstraint::EllipseRadius { ellipse, .. } => {
+            (*ellipse, EllipseComponent::MajorRadius)
+        }
+        PlanarConstraint::EllipseMinorRadius { ellipse, .. } => {
+            (*ellipse, EllipseComponent::MinorRadius)
+        }
+        PlanarConstraint::EllipseAxisAlignment { ellipse, .. } => {
+            (*ellipse, EllipseComponent::Orientation)
+        }
+        _ => return None,
+    })
 }
 
 fn axis_pair_columns(

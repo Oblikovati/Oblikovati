@@ -53,7 +53,7 @@ fn constructor(
         kind if kind == DIM_CONSTRAINT_RADIUS || kind == DIM_CONSTRAINT_DIAMETER => {
             radial(geometry, request, kind == DIM_CONSTRAINT_DIAMETER)
         }
-        kind if kind == DIM_CONSTRAINT_ELLIPSE_RADIUS => ellipse_radius(geometry, request),
+        kind if is_ellipse_radius(&kind) => ellipse_radius(geometry, request, kind),
         kind if kind == DIM_CONSTRAINT_ARC_LENGTH => arc_length(geometry, request),
         kind if kind == DIM_CONSTRAINT_ANGLE => angle(geometry, request),
         kind if kind == DIM_CONSTRAINT_THREE_POINT_ANGLE => three_point_angle(geometry, request),
@@ -61,6 +61,9 @@ fn constructor(
         kind if kind == DIM_CONSTRAINT_TANGENT_DISTANCE => tangent(geometry, request),
         _ => unsupported_kind(&kind),
     }
+}
+fn is_ellipse_radius(kind: &DimensionConstraintKind) -> bool {
+    *kind == DIM_CONSTRAINT_ELLIPSE_RADIUS || *kind == DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS
 }
 fn unsupported_kind(
     kind: &DimensionConstraintKind,
@@ -148,9 +151,13 @@ fn tangent(
 fn ellipse_radius(
     geometry: &Sketch2D,
     request: &AddDimensionArgs,
+    kind: DimensionConstraintKind,
 ) -> Result<SketchDimensionalConstraintCreation, Error> {
     let [ellipse] = require(geometry, request, [Shape::Ellipse])?;
-    Ok(Measured(MeasuredDimensionOperands::EllipseRadius {
-        ellipse,
-    }))
+    let operands = if kind == DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS {
+        MeasuredDimensionOperands::EllipseMinorRadius { ellipse }
+    } else {
+        MeasuredDimensionOperands::EllipseRadius { ellipse }
+    };
+    Ok(Measured(operands))
 }

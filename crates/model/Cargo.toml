@@ -14,7 +14,7 @@ workspace = true
 [dependencies]
 oblikovati-solve = { path = "../solve" }
 getrandom = "=0.4.3"
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "8a23d7aee54e018821ce942054649d8e5b8bdb68", version = "=0.157.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"

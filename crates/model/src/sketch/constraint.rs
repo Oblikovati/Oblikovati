@@ -120,6 +120,10 @@ pub enum PlanarConstraint {
         ellipse: SketchEntityId,
         parameter: u64,
     },
+    EllipseMinorRadius {
+        ellipse: SketchEntityId,
+        parameter: u64,
+    },
     Radius {
         curve: SketchEntityId,
         parameter: u64,
@@ -239,6 +243,7 @@ impl Sketch2D {
                 Vec::new()
             }
             PlanarConstraint::EllipseRadius { ellipse, .. }
+            | PlanarConstraint::EllipseMinorRadius { ellipse, .. }
             | PlanarConstraint::EllipseAxisAlignment { ellipse, .. } => {
                 self.ellipse(*ellipse)?;
                 Vec::new()

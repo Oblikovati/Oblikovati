@@ -74,3 +74,6 @@ fn reference_major_radius_excludes_the_target_and_keeps_measured_geometry() {
     let restored = Sketch2D::from_recipe(&sketch.recipe()).unwrap();
     assert!(restored.same_recipe(&sketch));
 }
+
+#[path = "dimension/minor.rs"]
+mod minor;

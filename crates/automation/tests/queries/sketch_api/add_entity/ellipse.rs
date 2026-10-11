@@ -141,3 +141,6 @@ fn check_reseeded_ellipse(files: &DiscoveryWorkspace, document: u64, id: u64) {
 
 #[path = "ellipse/axis.rs"]
 mod axis;
+
+#[path = "ellipse/minor_dimension.rs"]
+mod minor_dimension;

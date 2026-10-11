@@ -11,10 +11,7 @@ impl Sketch2D {
             return;
         }
         recipe.version = 8;
-        recipe.ellipses = Some(self.ellipses.clone());
-        self.capture_dimension_schema_metadata(recipe);
-        recipe.reference_dimensions = Some(recipe.reference_dimensions.take().unwrap_or_default());
-        recipe.dimension_limits = Some(recipe.dimension_limits.take().unwrap_or_default());
+        self.capture_complete_schema_metadata(recipe);
     }
 }
 pub(super) fn require_ground_schema(recipe: &super::SketchRecipe) -> Result<(), SketchError> {

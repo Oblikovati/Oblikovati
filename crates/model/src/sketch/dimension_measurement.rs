@@ -87,7 +87,9 @@ fn linear_measurement(
     use PlanarConstraint::*;
     match relation {
         Distance { measure, .. } => super::residual::distance(variables, *measure),
-        Radius { .. } | EllipseRadius { .. } => Ok(variables[0].clone()),
+        Radius { .. } | EllipseRadius { .. } | EllipseMinorRadius { .. } => {
+            Ok(variables[0].clone())
+        }
         Diameter { .. } => Ok(variables[0].scaled(2.0)?),
         Offset {
             linear_diameter, ..
