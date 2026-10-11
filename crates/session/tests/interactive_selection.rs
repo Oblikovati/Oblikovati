@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use SelectionKind::*;
+#[path = "interactive_selection/click.rs"]
+mod click;
 use oblikovati_session::selection::{
     AmbientSelectionFilter, Selectable, SelectionFilter, SelectionKind, SelectionPriority,
     SelectionSet,

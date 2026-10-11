@@ -26,6 +26,7 @@ mod sketch_recompute;
 mod sketch_relation_create;
 mod sketch_relation_delete;
 mod sketch_selection;
+mod sketch_selection_click;
 mod sketch_translation;
 use crate::{DocumentSession, TransactionObserver};
 pub use error::WorkspaceError;

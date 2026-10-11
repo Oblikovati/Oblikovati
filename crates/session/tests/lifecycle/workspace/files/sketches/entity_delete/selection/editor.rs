@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_session::selection::{SelectionSet, SketchPick, SketchPickTarget};
+use oblikovati_session::selection::{
+    SelectionClickMode, SelectionSet, SketchPick, SketchPickTarget,
+};
 fn scene_picks(host: &mut Host, document: u64, scene: &DeletionScene) -> SelectionSet<SketchPick> {
     let intent = selected_scene(host, document, scene);
     let entities = intent.entities.into_iter().map(SketchPickTarget::Entity);
@@ -16,7 +18,7 @@ fn scene_picks(host: &mut Host, document: u64, scene: &DeletionScene) -> Selecti
     let commands = host.commands(document).unwrap();
     let mut picks = SelectionSet::default();
     for target in targets {
-        picks.add(commands.sketch_pick(scene.sketch, target).unwrap());
+        select_scene_target(&commands, scene.sketch, target, &mut picks);
     }
     picks
 }
@@ -77,4 +79,23 @@ fn delete_cloned_picks(
         .delete_selected_sketch_picks(Some(sketch), false, &mut selected)
         .unwrap();
     assert!(selected.items().is_empty());
+}
+
+fn select_scene_target(
+    commands: &oblikovati_session::workspace::SessionCommands<'_, RecordingObserver>,
+    sketch: DocumentSketchId,
+    target: SketchPickTarget,
+    picks: &mut SelectionSet<SketchPick>,
+) {
+    let picked = commands.sketch_pick(sketch, target).unwrap();
+    let count = commands
+        .apply_sketch_click(
+            sketch,
+            Some(picked),
+            SelectionClickMode::Toggle,
+            false,
+            picks,
+        )
+        .unwrap();
+    assert_eq!(count, Some(picks.items().len()));
 }

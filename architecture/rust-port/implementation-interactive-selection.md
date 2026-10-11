@@ -78,7 +78,46 @@ save/reopen surviving geometry and underconstraint health, and refuse stale
 picks after undo without dirtying the restored saved recipe. The pinned Go
 Delete-key and selected-sketch deletion tests pass; full validation is `make gate`.
 
-This implements the headless editor action. Native hit testing, modifier input,
+This implements the headless editor action. Native hit testing, device input,
 selection-change notification, shell lifetime, and the foreground Delete-key
 binding remain required. Generation checks on these handles do not establish
 stale-renderer mapping or visible highlight acceptance.
+
+## Resolved click input
+
+`SelectionClickMode` normalizes Shift or Ctrl to Toggle; neither means Replace.
+`SelectionSet::apply_click` applies a resolved candidate through the same set and
+its declared filter. A plain click replaces membership, a modified click toggles
+one identity, and a plain empty click clears it. A modified empty click does
+nothing. A running tool owns its hits and misses and leaves selection untouched.
+An accepted repeated plain click still requests a selection refresh, as in Go.
+
+The return value is `Some(count)` when the caller must refresh selection, or
+`None` for a no-op. A filtered replacement that removes old membership returns
+`Some(0)` rather than hiding that change. This is an internal notification intent;
+it does not redeclare an API event or emit a transaction. The host must use the
+existing API selection event when its event transport is connected.
+
+`DocumentSession::apply_sketch_click` checks the active owner and candidate stamp
+before replacement. A stale or foreign candidate cannot clear current picks.
+Additive input also validates existing membership, so it cannot merge generations.
+A fresh plain click can replace stale membership, and an unmodified empty click
+can clear it. Tools bypass this selection path and must validate their own picks.
+Scope validation is shared with editor deletion and does not allocate a deletion
+recipe for each click. No model mutation, undo step, or generation change occurs.
+Borrowed workspace commands use the same path.
+
+Fourteen new tests cover the modifier matrix, replace/toggle order, repeated
+clicks, filtered rejection, empty clicks, active tools, stale candidate refusal,
+foreign documents, mixed-generation refusal and recovery, missing active owners,
+and click-to-delete integration. The existing part and assembly save/reopen tests
+now build their mixed selections through borrowed click input. The pinned Go
+sketch-click test proves plain-hit and empty-click behavior despite its name;
+modifier packing and unrestricted tool-filter tests also pass. Toggle behavior
+is compared with the fixed Go `session_input.go` implementation and the Rust
+modifier matrix. Full local validation is `make gate`.
+
+The viewport must supply candidates resolved with the shared pick filter and
+priority policy. Pixel hit testing, native modifier mapping, tool advancement,
+focus routing, event publication, and visible highlights remain required. These
+headless input tests do not establish native window or renderer acceptance.

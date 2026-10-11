@@ -39,7 +39,7 @@ impl SketchPick {
     pub fn target(&self) -> SketchPickTarget {
         self.target
     }
-    fn validate_owner(
+    pub(crate) fn validate_owner(
         &self,
         document: u64,
         generation: u64,
@@ -65,6 +65,17 @@ impl Selectable for SketchPick {
     }
 }
 impl SelectionSet<SketchPick> {
+    pub(crate) fn validate_scope(
+        &self,
+        document: u64,
+        generation: u64,
+        sketch: DocumentSketchId,
+    ) -> Result<(), SketchError> {
+        for pick in self.items() {
+            pick.validate_owner(document, generation, sketch)?;
+        }
+        Ok(())
+    }
     pub(crate) fn deletion_label(&self) -> &'static str {
         let entities = self
             .items()
@@ -91,9 +102,9 @@ impl SelectionSet<SketchPick> {
         generation: u64,
         sketch: DocumentSketchId,
     ) -> Result<SketchDeletionSelection, SketchError> {
+        self.validate_scope(document, generation, sketch)?;
         let mut intent = SketchDeletionSelection::default();
         for pick in self.items() {
-            pick.validate_owner(document, generation, sketch)?;
             match pick.target {
                 SketchPickTarget::Entity(id) => intent.entities.push(id),
                 SketchPickTarget::Dimension(id) => intent.dimensions.push(id),
