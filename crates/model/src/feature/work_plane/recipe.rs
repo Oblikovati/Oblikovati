@@ -15,6 +15,7 @@ pub struct WorkPlaneRecipe {
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
     NormalToAxis(crate::feature::work_geometry::WorkPlaneLinePoint),
     LineThroughPoint(crate::feature::work_geometry::WorkPlaneLinePoint),
@@ -47,6 +48,7 @@ impl WorkPlaneDefinition {
     fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
         use WorkPlaneDefinitionRecipe as Source;
         match self {
+            Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(axes),
             Self::NormalToAxis(source) => Source::NormalToAxis(source),
             Self::LineThroughPoint(source) => Source::LineThroughPoint(source),
@@ -76,6 +78,7 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        AtAngleAboutAxis(source) => restore_line_angle(source),
         ThroughTwoAxes(axes) => Ok(WorkPlaneDefinition::ThroughTwoAxes(axes)),
         NormalToAxis(source) => Ok(WorkPlaneDefinition::NormalToAxis(source)),
         LineThroughPoint(source) => Ok(WorkPlaneDefinition::LineThroughPoint(source)),
@@ -108,6 +111,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(self) -> u32 {
         match self {
+            Self::AtAngleAboutAxis(_) => 10,
             Self::ThroughTwoAxes(_) => 9,
             Self::NormalToAxis(_) => 8,
             Self::LineThroughPoint(_) => 7,
@@ -121,6 +125,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(self) -> u32 {
         match self {
+            Self::AtAngleAboutAxis(_) => 15,
             Self::ThroughTwoAxes(_) => 14,
             Self::NormalToAxis(_) => 13,
             Self::LineThroughPoint(_) => 12,
@@ -156,4 +161,11 @@ fn restore_frame(
     SketchPlane::from_recipe(frame, options)
         .map(WorkPlaneDefinition::Fixed)
         .map_err(WorkPlaneError::Frame)
+}
+
+fn restore_line_angle(
+    source: crate::feature::work_geometry::WorkPlaneLineAngle,
+) -> Result<WorkPlaneDefinition, WorkPlaneError> {
+    source.angle.validate_source()?;
+    Ok(WorkPlaneDefinition::AtAngleAboutAxis(source))
 }

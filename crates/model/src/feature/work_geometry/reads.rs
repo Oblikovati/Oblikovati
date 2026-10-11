@@ -10,6 +10,7 @@ impl WorkGeometryDefinition {
             Self::Offset { base, distance } => offset_keys(base, distance),
             Self::ParallelThroughPoint(source) => parallel_keys(source),
             Self::LineThroughPoint(source) | Self::NormalToAxis(source) => line_point_keys(source),
+            Self::AtAngleAboutAxis(source) => line_angle_keys(source),
             Self::ThroughTwoAxes(axes) => axes.into_iter().filter_map(axis_key).collect(),
             Self::ThroughThreePoints(points) => points.into_iter().filter_map(point_key).collect(),
             Self::PointAtReference(reference) => point_key(reference).into_iter().collect(),
@@ -64,4 +65,12 @@ fn axis_key(reference: crate::feature::work_axis::WorkAxisReference) -> Option<F
         }
         _ => None,
     }
+}
+
+fn line_angle_keys(source: super::WorkPlaneLineAngle) -> Vec<FeatureReadKey> {
+    axis_key(source.line)
+        .into_iter()
+        .chain(plane_key(source.base))
+        .chain(source.angle.parameter_id().map(FeatureReadKey::Parameter))
+        .collect()
 }

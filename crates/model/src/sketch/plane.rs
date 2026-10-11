@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SketchError;
+mod angle;
 mod direction;
 mod normal;
 mod through_points;

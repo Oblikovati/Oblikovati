@@ -15,15 +15,10 @@ pub enum DatumLength {
 impl DatumLength {
     /// Resolve current length without a stored callback; example: `DatumLength::Parameter(1).resolve(&parameters)?`.
     pub fn resolve(self, parameters: &ParameterCollection<u64>) -> Result<f64, DatumLengthError> {
-        let (parameter, quantity) = match self {
-            Self::Constant(value) => (None, Quantity::new(value, Dimension::Length)),
-            Self::Parameter(id) => (
-                Some(id),
-                parameters
-                    .model_value(id)
-                    .map_err(DatumLengthError::Parameter)?,
-            ),
-        };
+        let parameter = self.parameter();
+        let quantity = self
+            .source_quantity(parameters, Dimension::Length)
+            .map_err(DatumLengthError::Parameter)?;
         if quantity.dimension != Dimension::Length || !quantity.value.is_finite() {
             return Err(DatumLengthError::Quantity {
                 parameter,
@@ -57,6 +52,19 @@ impl DatumLength {
             (Self::Constant(first), Self::Constant(second)) => first.to_bits() == second.to_bits(),
             (Self::Parameter(first), Self::Parameter(second)) => first == second,
             _ => false,
+        }
+    }
+}
+
+impl DatumLength {
+    pub(super) fn source_quantity(
+        self,
+        parameters: &ParameterCollection<u64>,
+        dimension: Dimension,
+    ) -> Result<Quantity, crate::parameter::ParameterError<u64>> {
+        match self {
+            Self::Constant(value) => Ok(Quantity::new(value, dimension)),
+            Self::Parameter(id) => parameters.model_value(id),
         }
     }
 }

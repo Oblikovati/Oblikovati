@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! One ordered datum program; kind-specific views do not own a second graph or ID allocator.
+mod angle;
+pub use angle::{DatumAngle, DatumAngleError};
 mod display;
 mod error;
 mod evaluate;
@@ -43,6 +45,15 @@ pub struct WorkPlaneLinePoint {
     pub point: WorkPointReference,
 }
 
+/// Current axis and base-plane references with one authored angular source.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorkPlaneLineAngle {
+    pub line: super::work_axis::WorkAxisReference,
+    pub base: WorkPlaneReference,
+    pub angle: DatumAngle,
+}
+
 /// One authored datum selected by kind inside the common feature program.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum WorkGeometryDefinition {
@@ -55,6 +66,7 @@ pub enum WorkGeometryDefinition {
     ThroughThreePoints([WorkPointReference; 3]),
     LineThroughPoint(WorkPlaneLinePoint),
     NormalToAxis(WorkPlaneLinePoint),
+    AtAngleAboutAxis(WorkPlaneLineAngle),
     ThroughTwoAxes([super::work_axis::WorkAxisReference; 2]),
     Axis(WorkAxisLine),
     Point([DatumLength; 3]),

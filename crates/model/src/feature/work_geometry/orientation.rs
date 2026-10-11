@@ -15,6 +15,7 @@ impl WorkGeometryDefinition {
                 | Self::LineThroughPoint(_)
                 | Self::NormalToAxis(_)
                 | Self::ThroughTwoAxes(_)
+                | Self::AtAngleAboutAxis(_)
         ) {
             return Ok(());
         }

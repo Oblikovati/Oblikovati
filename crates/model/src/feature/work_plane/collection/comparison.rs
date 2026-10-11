@@ -5,22 +5,20 @@ use super::{AuthoredFeature, FeatureSequence, WorkPlaneDefinition};
 impl WorkPlaneDefinition {
     /// Compare exact authored definition bits; example: `old.same_recipe(candidate)` before editing.
     pub fn same_recipe(self, other: Self) -> bool {
+        use WorkPlaneDefinition::*;
         match (self, other) {
-            (Self::ThroughTwoAxes(first), Self::ThroughTwoAxes(second)) => first == second,
-            (Self::NormalToAxis(first), Self::NormalToAxis(second)) => first == second,
-            (Self::LineThroughPoint(first), Self::LineThroughPoint(second)) => first == second,
-            (Self::ThroughThreePoints(first), Self::ThroughThreePoints(second)) => first == second,
-            (Self::ParallelThroughPoint(first), Self::ParallelThroughPoint(second)) => {
-                first == second
-            }
-            (Self::Axis(first), Self::Axis(second)) => first.same_recipe(second),
-            (Self::Point(first), Self::Point(second)) => same_coordinates(first, second),
-            (Self::AxisThroughPoints(first), Self::AxisThroughPoints(second)) => first == second,
-            (Self::PointAtReference(first), Self::PointAtReference(second)) => first == second,
-            (Self::Fixed(first), Self::Fixed(second)) => first.same_recipe(second),
-            (first @ Self::Offset { .. }, second @ Self::Offset { .. }) => {
-                same_offset(first, second)
-            }
+            (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => same_line_angle(first, second),
+            (ThroughTwoAxes(first), ThroughTwoAxes(second)) => first == second,
+            (NormalToAxis(first), NormalToAxis(second)) => first == second,
+            (LineThroughPoint(first), LineThroughPoint(second)) => first == second,
+            (ThroughThreePoints(first), ThroughThreePoints(second)) => first == second,
+            (ParallelThroughPoint(first), ParallelThroughPoint(second)) => first == second,
+            (Axis(first), Axis(second)) => first.same_recipe(second),
+            (Point(first), Point(second)) => same_coordinates(first, second),
+            (AxisThroughPoints(first), AxisThroughPoints(second)) => first == second,
+            (PointAtReference(first), PointAtReference(second)) => first == second,
+            (Fixed(first), Fixed(second)) => first.same_recipe(second),
+            (first @ Offset { .. }, second @ Offset { .. }) => same_offset(first, second),
             _ => false,
         }
     }
@@ -84,4 +82,11 @@ fn same_offset(first: WorkPlaneDefinition, second: WorkPlaneDefinition) -> bool 
         ) => first == second && left.same_recipe(right),
         _ => false,
     }
+}
+
+fn same_line_angle(
+    first: crate::feature::work_geometry::WorkPlaneLineAngle,
+    second: crate::feature::work_geometry::WorkPlaneLineAngle,
+) -> bool {
+    first.line == second.line && first.base == second.base && first.angle.same_recipe(second.angle)
 }

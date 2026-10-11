@@ -62,6 +62,7 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
+            Self::AtAngleAboutAxis(source) => line_angle_frame(source, parameters, resolver),
             Self::ThroughTwoAxes(axes) => two_axis_frame(axes, resolver),
             Self::NormalToAxis(source) => normal_axis_frame(source, resolver),
             Self::LineThroughPoint(source) => line_point_frame(source, resolver),
@@ -182,4 +183,16 @@ fn two_axis_frame(
         Default::default(),
     )
     .map_err(WorkPlaneError::Frame)
+}
+
+fn line_angle_frame(
+    source: super::work_geometry::WorkPlaneLineAngle,
+    parameters: &ParameterCollection<u64>,
+    resolver: &impl WorkPlaneResolver,
+) -> Result<SketchPlane, WorkPlaneError> {
+    let line = source.line.line(resolver)?;
+    let base = source.base.frame(resolver)?;
+    let radians = source.angle.resolve(parameters)?;
+    base.at_angle_about_axis(line.origin(), line.direction(), radians)
+        .map_err(WorkPlaneError::Frame)
 }

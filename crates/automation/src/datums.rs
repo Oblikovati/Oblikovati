@@ -124,7 +124,8 @@ impl DatumCollection {
             | WorkGeometryDefinition::ThroughThreePoints(_)
             | WorkGeometryDefinition::LineThroughPoint(_)
             | WorkGeometryDefinition::NormalToAxis(_)
-            | WorkGeometryDefinition::ThroughTwoAxes(_) => Self::Planes,
+            | WorkGeometryDefinition::ThroughTwoAxes(_)
+            | WorkGeometryDefinition::AtAngleAboutAxis(_) => Self::Planes,
         };
         self == kind
     }
