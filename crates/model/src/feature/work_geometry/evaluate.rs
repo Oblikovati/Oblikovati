@@ -83,6 +83,7 @@ impl WorkGeometryEvaluation {
             expected: "datum",
         })?;
         let datum = WorkGeometryResult::evaluate(*feature.definition(), parameters, self)?;
+        let datum = datum.with_plane_orientation(feature)?;
         self.datums.insert(id, datum);
         Ok(())
     }

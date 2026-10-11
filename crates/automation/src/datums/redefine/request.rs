@@ -38,7 +38,7 @@ fn refuse_display_edits(args: &RedefineWorkPlaneArgs) -> Result<(), Error> {
     Ok(())
 }
 
-fn placed_plane(
+pub(in crate::datums) fn placed_plane(
     snapshot: &DocumentSnapshot,
     index: i64,
 ) -> Result<&AuthoredFeature<WorkGeometryDefinition>, Error> {

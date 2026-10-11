@@ -10,6 +10,8 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 use oblikovati_persistence::package::DocumentPackage;
+#[path = "feature_scalar_ownership/flip.rs"]
+mod flip;
 #[path = "feature_scalar_ownership/save_guard.rs"]
 mod save_guard;
 

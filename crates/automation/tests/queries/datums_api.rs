@@ -270,6 +270,8 @@ fn unsupported_axis_request() -> CreateWorkAxisArgs {
 #[path = "datums_api/on_point.rs"]
 mod on_point;
 
+#[path = "datums_api/flip.rs"]
+mod flip;
 #[path = "datums_api/offset.rs"]
 mod offset;
 #[path = "datums_api/planes.rs"]

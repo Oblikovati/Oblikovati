@@ -14,6 +14,19 @@ pub(super) enum WorkGeometryResult {
     Point([f64; 3]),
 }
 impl WorkGeometryResult {
+    pub(super) fn with_plane_orientation(
+        self,
+        feature: &super::AuthoredFeature<WorkGeometryDefinition>,
+    ) -> Result<Self, WorkGeometryError> {
+        feature.validate_plane_orientation()?;
+        if let (Self::Plane(plane), true) = (self, feature.is_normal_flipped()) {
+            return plane
+                .flipped_normal()
+                .map(Self::Plane)
+                .map_err(WorkGeometryError::Frame);
+        }
+        Ok(self)
+    }
     pub(super) fn evaluate(
         definition: WorkGeometryDefinition,
         parameters: &ParameterCollection<u64>,

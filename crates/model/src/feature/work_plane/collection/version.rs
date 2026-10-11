@@ -12,12 +12,13 @@ pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32
 pub(super) fn validate_program_version(
     recipe: &WorkPlaneProgramRecipe,
 ) -> Result<(), WorkPlaneProgramRecipeError> {
-    if !matches!(recipe.version, 1..=7) {
+    if !matches!(recipe.version, 1..=8) {
         return Err(WorkPlaneProgramRecipeError::Version(recipe.version));
     }
     validate_definition_versions(recipe)?;
     validate_visibility_version(recipe)?;
     validate_ownership_version(recipe)?;
+    validate_orientation_version(recipe)?;
     if recipe.version == 1
         && let Some(feature) = recipe.features.iter().find(|feature| feature.construction)
     {
@@ -41,6 +42,9 @@ fn validate_definition_versions(
 }
 
 fn metadata_program_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
+    if features.iter().any(|feature| feature.normal_flipped) {
+        return 8;
+    }
     if features
         .iter()
         .any(|feature| !feature.owned_scalars.is_empty())
@@ -54,6 +58,22 @@ fn metadata_program_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
         return 2;
     }
     1
+}
+fn validate_orientation_version(
+    recipe: &WorkPlaneProgramRecipe,
+) -> Result<(), WorkPlaneProgramRecipeError> {
+    if recipe.version < 8
+        && let Some(feature) = recipe
+            .features
+            .iter()
+            .find(|feature| feature.normal_flipped)
+    {
+        return Err(WorkPlaneProgramRecipeError::LegacyDefinition {
+            feature: feature.id,
+            minimum: 8,
+        });
+    }
+    Ok(())
 }
 fn validate_visibility_version(
     recipe: &WorkPlaneProgramRecipe,

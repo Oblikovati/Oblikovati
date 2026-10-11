@@ -3,6 +3,7 @@ use super::*;
 use oblikovati_model::feature::{work_geometry::DatumLength, work_plane::WorkPlaneReference};
 use oblikovati_model::quantity::Dimension;
 mod request;
+pub(super) use request::placed_plane;
 
 struct PlaneRevision {
     owner: FeatureId,
@@ -109,8 +110,6 @@ fn current_reply(
     owner: FeatureId,
     index: i64,
 ) -> Result<Vec<u8>, Error> {
-    let evaluation = rows::evaluate(snapshot)?;
-    let feature = snapshot.work_geometry.get(owner).map_err(api_error)?;
-    let plane = planes::plane_info(snapshot, feature, index, &evaluation)?;
+    let plane = planes::current_info(snapshot, owner, index)?;
     encode(&RedefineWorkPlaneResult { plane })
 }

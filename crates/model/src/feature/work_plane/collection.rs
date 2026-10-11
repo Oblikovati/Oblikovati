@@ -31,6 +31,8 @@ pub struct WorkPlaneFeatureRecipe {
     pub definition_reads: FeatureReadFootprint,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub owned_scalars: Vec<crate::feature::FeatureScalarBinding>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub normal_flipped: bool,
 }
 
 /// Ordered collection schema; permanent feature reservations belong to the document owner.
@@ -44,6 +46,8 @@ pub struct WorkPlaneProgramRecipe {
 
 impl AuthoredFeature<WorkPlaneDefinition> {
     fn work_plane_record(&self) -> Result<WorkPlaneFeatureRecipe, WorkPlaneProgramRecipeError> {
+        self.validate_plane_orientation()
+            .map_err(WorkPlaneProgramRecipeError::Plane)?;
         let definition = self.definition.recipe();
         WorkPlaneDefinition::from_recipe(definition).map_err(WorkPlaneProgramRecipeError::Plane)?;
         Ok(WorkPlaneFeatureRecipe {
@@ -56,6 +60,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
             condition: self.condition.map(FeatureSuppressionCondition::recipe),
             definition_reads: self.definition_reads.clone(),
             owned_scalars: self.owned_scalars.clone(),
+            normal_flipped: self.plane_normal_flipped,
         })
     }
 
@@ -70,13 +75,22 @@ impl AuthoredFeature<WorkPlaneDefinition> {
             definition,
             recipe.definition_reads.clone(),
         );
-        feature.suppressed = recipe.suppressed;
-        feature.construction_datum = recipe.construction;
-        feature.datum_visible = recipe.visible;
-        feature.owned_scalars = recipe.owned_scalars.clone();
+        feature.restore_datum_metadata(recipe)?;
         let condition = restore_condition(recipe.condition.as_ref())?;
         feature.store_condition(condition);
         Ok(feature)
+    }
+    fn restore_datum_metadata(
+        &mut self,
+        recipe: &WorkPlaneFeatureRecipe,
+    ) -> Result<(), WorkPlaneProgramRecipeError> {
+        self.suppressed = recipe.suppressed;
+        self.construction_datum = recipe.construction;
+        self.datum_visible = recipe.visible;
+        self.owned_scalars = recipe.owned_scalars.clone();
+        self.plane_normal_flipped = recipe.normal_flipped;
+        self.validate_plane_orientation()
+            .map_err(WorkPlaneProgramRecipeError::Plane)
     }
 }
 

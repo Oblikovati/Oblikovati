@@ -41,6 +41,7 @@ fn same_feature(
         && first.suppressed == second.suppressed
         && first.construction_datum == second.construction_datum
         && first.datum_visible == second.datum_visible
+        && first.plane_normal_flipped == second.plane_normal_flipped
         && first.definition.same_recipe(second.definition)
         && first.definition_reads == second.definition_reads
         && first.owned_scalars == second.owned_scalars

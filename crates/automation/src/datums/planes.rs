@@ -7,6 +7,15 @@ mod origins;
 pub(super) use inputs::plane_reference;
 pub(super) use inputs::prepare;
 type PlaneEntry = AuthoredFeature<WorkGeometryDefinition>;
+pub(super) fn current_info(
+    snapshot: &DocumentSnapshot,
+    id: FeatureId,
+    index: i64,
+) -> Result<WorkPlaneInfo, Error> {
+    let evaluation = rows::evaluate(snapshot)?;
+    let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
+    plane_info(snapshot, feature, index, &evaluation)
+}
 
 pub(super) fn list(
     snapshot: &DocumentSnapshot,

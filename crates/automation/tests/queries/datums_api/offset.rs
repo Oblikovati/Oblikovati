@@ -15,7 +15,7 @@ fn offset_request(source: &str, base: &str) -> CreateWorkPlaneArgs {
         ..Default::default()
     }
 }
-fn create_offset(
+pub(super) fn create_offset(
     files: &mut DiscoveryWorkspace,
     source: &mut QueryGuids,
     expression: &str,
@@ -48,7 +48,7 @@ fn redefine(
         .work_planes()
         .redefine(args)
 }
-fn scalar_id(files: &DiscoveryWorkspace, document: u64) -> u64 {
+pub(super) fn scalar_id(files: &DiscoveryWorkspace, document: u64) -> u64 {
     files
         .workspace()
         .session(document)
@@ -59,7 +59,7 @@ fn scalar_id(files: &DiscoveryWorkspace, document: u64) -> u64 {
         .owned_scalars()[0]
         .parameter
 }
-fn edit_driver(files: &mut DiscoveryWorkspace, document: u64, expression: &str) {
+pub(super) fn edit_driver(files: &mut DiscoveryWorkspace, document: u64, expression: &str) {
     files
         .commands(document)
         .unwrap()

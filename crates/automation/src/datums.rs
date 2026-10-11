@@ -10,6 +10,7 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+mod flip;
 mod health;
 mod input;
 mod origins;
@@ -20,11 +21,12 @@ mod rows;
 mod scalars;
 
 /// Methods use the existing API contract and the one file-owned datum program.
-pub const DATUM_COMMAND_METHODS: [&str; 4] = [
+pub const DATUM_COMMAND_METHODS: [&str; 5] = [
     METHOD_WORK_POINTS_CREATE,
     METHOD_WORK_AXES_CREATE,
     METHOD_WORK_PLANES_CREATE,
     METHOD_WORK_PLANES_REDEFINE,
+    METHOD_WORK_PLANES_FLIP_NORMAL,
 ];
 pub const DATUM_QUERY_METHODS: [&str; 3] = [
     METHOD_WORK_POINTS_LIST,
@@ -59,6 +61,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 ) -> Result<Vec<u8>, Error> {
     if method == METHOD_WORK_PLANES_REDEFINE {
         return redefine::apply(files, decode(method, request)?);
+    }
+    if method == METHOD_WORK_PLANES_FLIP_NORMAL {
+        return flip::apply(files, decode(method, request)?);
     }
     create(files, method, request)
 }

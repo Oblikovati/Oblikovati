@@ -8,6 +8,7 @@ use crate::{
 };
 mod checkpoints;
 mod datum_delete;
+mod datum_orientation;
 mod derived_ids;
 mod feature_ids;
 mod scalar_ownership;
@@ -116,6 +117,7 @@ pub struct DocumentEditHistory {
 impl DocumentEditHistory {
     /// Take ownership of loaded state and its allocator; example: `DocumentEditHistory::new(snapshot, ids)?`.
     pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, HistoryError> {
+        snapshot.validate_datum_orientation()?;
         snapshot
             .validate_scalar_ownership()
             .map_err(HistoryError::ScalarOwnership)?;
@@ -207,7 +209,7 @@ impl DocumentEditHistory {
         )
         .map_err(EditError::Mutation)?;
         candidate
-            .validate_scalar_transition(&self.current)
+            .validate_snapshot_transition(&self.current)
             .map_err(EditError::History)?;
         self.validate_feature_ids(&candidate, features_before)
             .map_err(EditError::History)?;

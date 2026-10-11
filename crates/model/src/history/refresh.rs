@@ -42,7 +42,7 @@ impl DocumentEditHistory {
         let mut candidate = self.current.clone();
         refresh(&mut candidate).map_err(EditError::Mutation)?;
         candidate
-            .validate_scalar_transition(&self.current)
+            .validate_snapshot_transition(&self.current)
             .map_err(EditError::History)?;
         self.validate_feature_ids(&candidate, self.feature_high_water())
             .map_err(EditError::History)?;

@@ -106,6 +106,20 @@ fn linked_placement_uses_current_parameters_without_reauthoring_local_geometry()
             .is_err()
     );
 }
+
+#[test]
+fn normal_flip_changes_hosted_projection_without_changing_sketch_source() {
+    let mut snapshot = snapshot();
+    let source = snapshot.sketches.recipe();
+    snapshot
+        .work_geometry
+        .flip_plane_normal(FeatureId(2))
+        .unwrap();
+    assert_eq!(projected(&snapshot), [2.0, -3.0, 4.0]);
+    assert_eq!(snapshot.sketches.recipe(), source);
+    snapshot.parameters.set_expression(1, "7 cm").unwrap();
+    assert_eq!(projected(&snapshot), [2.0, -3.0, 7.0]);
+}
 fn assert_unavailable(snapshot: &DocumentSnapshot) {
     let error = snapshot
         .require_resolved_sketch(DocumentSketchId(1))

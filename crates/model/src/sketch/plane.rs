@@ -111,6 +111,16 @@ impl SketchPlane {
     pub fn normal(self) -> [f64; 3] {
         self.normal
     }
+    /// Reverse the normal without moving the origin or X axis; example: `plane.flipped_normal()?`.
+    pub fn flipped_normal(self) -> Result<Self, SketchError> {
+        // Go #1851 preserves a right-handed frame by reversing Y, not only its cached normal.
+        Self::new(
+            self.recipe.origin,
+            self.recipe.x_axis,
+            self.recipe.y_axis.map(|value| -value),
+            self.options,
+        )
+    }
     /// Use the origin XY work plane; example: `let plane = SketchPlane::xy();`.
     pub fn xy() -> Self {
         basis_plane([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0])

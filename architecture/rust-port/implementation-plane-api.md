@@ -44,15 +44,11 @@ Go origin and fixed-frame router tests provide the migration comparison.
 
 ## Remaining work
 
-Creation currently accepts the fixed-frame constructor. Offset expression
-creation must retain an owned expression and its parameter dependencies; it must
-not evaluate once and store a constant. Other plane definitions, redefine,
-normal flip, assembly occurrence contexts, and display rectangle metadata remain
-open. Unsupported constructors and occurrence scopes have named declines.
-Listing an existing offset source does not establish its create/edit API.
-
-[Owned scalar expressions](https://github.com/Oblikovati/Oblikovati/issues/3745)
-track offset creation and edit prerequisites for this same datum owner.
-
-[Stored scalar ownership](implementation-scalar-ownership.md) records the first
-completed prerequisite; offset create/redefine acceptance remains open.
+Creation accepts fixed frames and
+[owned offset expressions](implementation-offset-expressions.md). Offset redefine
+retains expressions and applies scalar/reference edits atomically.
+[Normal flip](implementation-plane-flip.md) preserves authored orientation through
+replay and storage. Other plane definitions, assembly occurrence contexts, and
+display rectangle metadata remain open. Unsupported constructors and occurrence
+scopes have named declines. The geometry and native viewport acceptance checks
+remain open.
