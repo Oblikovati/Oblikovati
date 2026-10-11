@@ -52,9 +52,13 @@ impl Sketch2D {
     }
 }
 pub(super) fn require_radius(id: SketchEntityId, radius: f64) -> Result<(), SketchError> {
+    require_radius_value(radius)
+        .map_err(|cause| SketchError::Definition(format!("sketch circle {id:?}: {cause}")))
+}
+pub(super) fn require_radius_value(radius: f64) -> Result<(), SketchError> {
     if !radius.is_finite() || radius <= 0.0 {
         return Err(SketchError::Definition(format!(
-            "sketch circle {id:?} radius {radius:?}: expected a positive finite working-unit length"
+            "sketch radius {radius:?}: expected a positive finite working-unit length"
         )));
     }
     Ok(())

@@ -13,6 +13,7 @@ mod save;
 mod sketch_construction;
 mod sketch_create;
 mod sketch_delete;
+mod sketch_primitive;
 mod sketch_recompute;
 use crate::{DocumentSession, TransactionObserver};
 pub use error::WorkspaceError;
