@@ -470,3 +470,6 @@ mod entities;
 
 #[path = "sketch_api/construction.rs"]
 mod construction;
+
+#[path = "sketch_api/primitive.rs"]
+mod primitive;
