@@ -22,7 +22,12 @@ mod entity_geometry;
 mod entity_order;
 mod error;
 mod geometry;
+mod inference;
 mod inspection;
+pub use inference::{
+    SketchDirectionInference, SketchEndpointInference, SketchInferencePolicy,
+    SketchLinePlacementInference,
+};
 mod translation;
 pub use inspection::{SketchEntityInspection, SketchMovementOptions};
 mod grounded;
