@@ -3,9 +3,9 @@
 
 mod collection;
 mod construction;
-mod error;
-mod evaluate;
 mod recipe;
+pub use super::work_geometry::WorkGeometryError as WorkPlaneError;
+pub use super::work_geometry::WorkGeometryEvaluation as WorkPlaneEvaluation;
 use super::{AuthoredFeature, FeatureId, FeatureReadFootprint, FeatureReadKey};
 use crate::{
     parameter::ParameterCollection,
@@ -13,8 +13,6 @@ use crate::{
     sketch::SketchPlane,
 };
 pub use collection::{WorkPlaneFeatureRecipe, WorkPlaneProgramRecipe, WorkPlaneProgramRecipeError};
-pub use error::WorkPlaneError;
-pub use evaluate::WorkPlaneEvaluation;
 pub use recipe::{WorkPlaneDefinitionRecipe, WorkPlaneRecipe};
 
 /// Origin construction frames, independent of collection positions or wire strings.
@@ -39,15 +37,8 @@ pub enum WorkPlaneDistance {
     Parameter(u64),
 }
 
-/// Concrete construction definitions; geometry consumers receive validated frames.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum WorkPlaneDefinition {
-    Fixed(SketchPlane),
-    Offset {
-        base: WorkPlaneReference,
-        distance: WorkPlaneDistance,
-    },
-}
+/// Source-compatible name for the single ordered datum definition.
+pub use super::work_geometry::WorkGeometryDefinition as WorkPlaneDefinition;
 
 /// Project-owned seam for resolving current work-plane results.
 pub trait WorkPlaneResolver {
@@ -111,6 +102,7 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
+            Self::Axis(axis) => Err(WorkPlaneError::AxisInsteadOfPlane(axis)),
             Self::Offset { base, distance } => {
                 let plane = match base {
                     WorkPlaneReference::Origin(origin) => origin.plane(),

@@ -27,8 +27,8 @@ basis checks 256 generated oblique orientation cases. The four Go router orienta
 tests pass on Linux at the fixed baseline.
 
 The numerical frame operation is now used by the owned orientation state below.
-The production axis/edge catalogue and shared `sketch.create` routing are still
-required. Native and kernel acceptance remain open.
+The owned line-axis catalogue is implemented in [mixed datums](implementation-work-geometry.md).
+The edge catalogue and shared `sketch.create` routing are still required. Native and kernel acceptance remain open.
 
 ## Owned orientation recipes and current resolution
 
@@ -36,9 +36,9 @@ Tracking: [#3737](https://github.com/Oblikovati/Oblikovati/issues/3737).
 Placed sketches retain the selected origin axis or a stable feature-axis ID,
 X/Y selection, reversal, and optional origin. The model definition is internal;
 it does not redeclare the public API DTO or method names. Origin axes resolve
-directly. Feature axes require an injected `SketchAxisResolver` that supplies
-their current direction. The default owner declines unavailable feature axes.
-The production work-axis and edge catalogue is not implemented by this change.
+directly. Feature axes now use the current owned mixed datum evaluation. An
+injected `SketchAxisResolver` remains available for explicit callers. Neither
+route returns last-good geometry. The edge catalogue remains open.
 
 Every query resolves the current base plane and axis, then calls the same checked
 frame operation. Neither the initial direction nor a derived frame is stored.

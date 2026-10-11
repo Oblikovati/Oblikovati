@@ -53,8 +53,8 @@ impl DocumentEditHistory {
             .parameters
             .same_evaluated_state(&self.current.parameters)
             && candidate
-                .work_planes
-                .same_work_plane_recipe(&self.current.work_planes)
+                .work_geometry
+                .same_work_plane_recipe(&self.current.work_geometry)
             && candidate.properties.same_recipe(&self.current.properties)
             && candidate
                 .sketches

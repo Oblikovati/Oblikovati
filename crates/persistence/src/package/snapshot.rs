@@ -53,7 +53,7 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
         self.prepared = None;
         let candidate = self
             .original
-            .with_work_planes(&snapshot.work_planes, feature_high_water)
+            .with_work_geometry(&snapshot.work_geometry, feature_high_water)
             .map_err(SnapshotPackageError::Codec)?
             .with_sketches(&snapshot.sketches, sketch_marks.sketch, sketch_marks.entity)
             .map_err(SnapshotPackageError::Codec)?

@@ -19,9 +19,9 @@ fn add_datum(
     construction: bool,
 ) {
     let feature = AuthoredFeature::work_plane(FeatureId(id), &format!("Plane{id}"), definition);
-    snapshot.work_planes.append(feature).unwrap();
+    snapshot.work_geometry.append(feature).unwrap();
     snapshot
-        .work_planes
+        .work_geometry
         .set_work_plane_construction(FeatureId(id), construction)
         .unwrap();
 }
@@ -66,19 +66,19 @@ fn chain(flags: [bool; 3]) -> DocumentSnapshot {
 }
 fn declare_sketch_reader(snapshot: &mut DocumentSnapshot, feature: u64, unknown: bool) {
     let id = FeatureId(feature);
-    let definition = *snapshot.work_planes.get(id).unwrap().definition();
+    let definition = *snapshot.work_geometry.get(id).unwrap().definition();
     let mut keys = definition.reads().keys().clone();
     keys.insert(FeatureReadKey::Sketch(1));
     snapshot
-        .work_planes
+        .work_geometry
         .replace(id, definition, FeatureReadFootprint::new(keys, unknown))
         .unwrap();
 }
 fn assert_authored_unchanged(before: &DocumentSnapshot, after: &DocumentSnapshot) {
     assert!(
         before
-            .work_planes
-            .same_work_plane_recipe(&after.work_planes)
+            .work_geometry
+            .same_work_plane_recipe(&after.work_geometry)
     );
     assert!(before.sketches.same_evaluated_state(&after.sketches));
 }
@@ -89,8 +89,8 @@ fn deletion_prunes_the_complete_construction_chain_but_keeps_initially_unused_pl
     let unused = snapshot.resolve_sketch_plane(DocumentSketchId(1)).unwrap();
     let report = snapshot.delete_sketch(DocumentSketchId(1)).unwrap();
     assert_eq!(report.sketch, DocumentSketchId(1));
-    assert_eq!(report.construction_planes, [FeatureId(2), FeatureId(1)]);
-    assert_eq!(snapshot.work_planes.features()[0].id(), FeatureId(3));
+    assert_eq!(report.construction_datums, [FeatureId(2), FeatureId(1)]);
+    assert_eq!(snapshot.work_geometry.features()[0].id(), FeatureId(3));
     assert!(snapshot.sketches.sketches().is_empty());
     assert_eq!(unused.recipe().origin, [0.0, 0.0, 2.0]);
 }
@@ -98,20 +98,20 @@ fn deletion_prunes_the_complete_construction_chain_but_keeps_initially_unused_pl
 #[test]
 fn ordinary_child_planes_protect_construction_ancestors() {
     let mut snapshot = chain([true, false, true]);
-    let before = snapshot.work_planes.clone();
+    let before = snapshot.work_geometry.clone();
     let report = snapshot.delete_sketch(DocumentSketchId(1)).unwrap();
-    assert!(report.construction_planes.is_empty());
-    assert!(snapshot.work_planes.same_work_plane_recipe(&before));
+    assert!(report.construction_datums.is_empty());
+    assert!(snapshot.work_geometry.same_work_plane_recipe(&before));
 }
 
 #[test]
 fn ordinary_ancestors_survive_construction_child_deletion() {
     let mut snapshot = chain([false, true, false]);
     let report = snapshot.delete_sketch(DocumentSketchId(1)).unwrap();
-    assert_eq!(report.construction_planes, [FeatureId(2)]);
+    assert_eq!(report.construction_datums, [FeatureId(2)]);
     assert_eq!(
         snapshot
-            .work_planes
+            .work_geometry
             .features()
             .iter()
             .map(|plane| plane.id())
@@ -127,14 +127,14 @@ fn the_last_of_multiple_sketch_consumers_unlocks_cleanup_without_changing_other_
     let other = snapshot.sketches.get(DocumentSketchId(2)).unwrap().clone();
     let frame = snapshot.resolve_sketch_plane(DocumentSketchId(2)).unwrap();
     let first = snapshot.delete_sketch(DocumentSketchId(1)).unwrap();
-    assert!(first.construction_planes.is_empty());
+    assert!(first.construction_datums.is_empty());
     assert_eq!(&other, snapshot.sketches.get(DocumentSketchId(2)).unwrap());
     assert!(frame.same_recipe(snapshot.resolve_sketch_plane(DocumentSketchId(2)).unwrap()));
     assert_eq!(
         snapshot
             .delete_sketch(DocumentSketchId(2))
             .unwrap()
-            .construction_planes,
+            .construction_datums,
         [FeatureId(2), FeatureId(1)]
     );
 }
@@ -144,19 +144,25 @@ fn suppressed_and_cutoff_feature_consumers_still_protect_authored_references() {
     let mut snapshot = chain([true, true, false]);
     let definition = offset_of(1);
     snapshot
-        .work_planes
+        .work_geometry
         .replace(FeatureId(3), definition, definition.reads())
         .unwrap();
     snapshot
-        .work_planes
+        .work_geometry
         .set_suppressed(FeatureId(3), true)
         .unwrap();
-    snapshot.work_planes.set_end_of_part(Some(0)).unwrap();
+    snapshot.work_geometry.set_end_of_part(Some(0)).unwrap();
     let report = snapshot.delete_sketch(DocumentSketchId(1)).unwrap();
-    assert_eq!(report.construction_planes, [FeatureId(2)]);
-    assert_eq!(snapshot.work_planes.end_of_part(), Some(0));
-    assert!(snapshot.work_planes.get(FeatureId(1)).is_ok());
-    assert!(snapshot.work_planes.get(FeatureId(3)).unwrap().suppressed());
+    assert_eq!(report.construction_datums, [FeatureId(2)]);
+    assert_eq!(snapshot.work_geometry.end_of_part(), Some(0));
+    assert!(snapshot.work_geometry.get(FeatureId(1)).is_ok());
+    assert!(
+        snapshot
+            .work_geometry
+            .get(FeatureId(3))
+            .unwrap()
+            .suppressed()
+    );
 }
 
 #[test]

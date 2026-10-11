@@ -86,7 +86,7 @@ fn suppress(host: &mut Host, id: u64, plane: FeatureId, suppressed: bool) {
     host.commands(id)
         .unwrap()
         .run("Suppress plane", |snapshot, _| {
-            snapshot.work_planes.set_suppressed(plane, suppressed)
+            snapshot.work_geometry.set_suppressed(plane, suppressed)
         })
         .unwrap();
 }

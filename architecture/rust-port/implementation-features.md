@@ -486,3 +486,8 @@ The numerical frame operation and Go reference tests are recorded in
 
 The shared metric validation and lossless source recipe are recorded in
 [work-axis evidence](implementation-work-axis.md).
+
+## Mixed datum program — partial R3
+
+Planes and line axes now share ordering, replay and permanent IDs. See
+[mixed datum evidence](implementation-work-geometry.md).

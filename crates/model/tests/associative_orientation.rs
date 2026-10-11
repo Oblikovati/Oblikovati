@@ -92,7 +92,7 @@ fn missing_axes_decline_without_returning_a_previous_frame() {
     let error = snapshot
         .resolve_sketch_plane(DocumentSketchId(1))
         .unwrap_err();
-    assert!(error.to_string().contains("resolver"));
+    assert!(error.to_string().contains("current axis"));
 }
 #[test]
 fn parallel_axes_and_unknown_sketches_are_refused() {
@@ -144,7 +144,7 @@ fn origin_axes_resolve_without_an_external_catalogue() {
 
 fn add_base_plane(snapshot: &mut DocumentSnapshot, plane: SketchPlane) {
     snapshot
-        .work_planes
+        .work_geometry
         .append(AuthoredFeature::work_plane(
             FeatureId(1),
             "Base",
@@ -168,7 +168,7 @@ fn oriented_work_plane_recipes_follow_current_base_facing_and_fail_on_degeneracy
     assert_eq!(plane.recipe().y_axis, [0.0, 0.0, 1.0]);
     let changed = WorkPlaneDefinition::Fixed(SketchPlane::xy());
     snapshot
-        .work_planes
+        .work_geometry
         .replace(FeatureId(1), changed, changed.reads())
         .unwrap();
     assert!(snapshot.resolve_sketch_plane(DocumentSketchId(1)).is_err());

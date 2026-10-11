@@ -17,7 +17,7 @@ fn history() -> DocumentEditHistory {
         .unwrap();
     DocumentEditHistory::new(
         DocumentSnapshot {
-            work_planes: Default::default(),
+            work_geometry: Default::default(),
             sketches: Default::default(),
             attributes: Default::default(),
             attachments: Default::default(),

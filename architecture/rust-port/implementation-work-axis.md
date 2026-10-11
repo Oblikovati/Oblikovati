@@ -23,10 +23,8 @@ causes, repeated serialization/restore without bit drift, signed origins, unit
 policy limits, and consumption by sketch orientation. The Go line-axis and line
 serialization tests pass on Linux at the fixed migration baseline.
 
-This value has no feature ID allocator, collection, replay engine, or I/O. Axis
-definitions, the mixed datum catalogue, and document-package integration remain
-required. Axes must join the existing ordered feature program and permanent
-feature namespace. Do not create an independent axis owner. Two-point and
-plane-intersection definitions, current feature-axis resolution, construction
-cleanup, and public axis/sketch creation commands are still open. Native and
-kernel acceptance are not established by these tests.
+This value has no feature ID allocator, collection, replay engine, or I/O. Line
+axes now join the existing ordered datum program and permanent feature namespace;
+see [mixed datum evidence](implementation-work-geometry.md). Two-point and
+plane-intersection definitions and public axis/sketch creation commands remain
+open. Native and kernel acceptance are not established by these tests.

@@ -6,7 +6,7 @@ use crate::units::UnitsOfMeasure;
 fn empty_history() -> DocumentEditHistory {
     DocumentEditHistory::new(
         DocumentSnapshot {
-            work_planes: Default::default(),
+            work_geometry: Default::default(),
             sketches: Default::default(),
             attributes: Default::default(),
             attachments: Default::default(),

@@ -37,7 +37,7 @@ impl DocumentSnapshot {
         &self,
         id: DocumentSketchId,
     ) -> Result<SketchPlane, DocumentSketchPlacementError> {
-        self.resolve_sketch_plane_with_axes(id, &crate::document_sketch::UnavailableSketchAxes)
+        self.resolve_axis_inputs(id, None)
     }
     /// Resolve placement with the current injected axis catalogue; example: `snapshot.resolve_sketch_plane_with_axes(id, &axes)?`.
     pub fn resolve_sketch_plane_with_axes(
@@ -45,27 +45,45 @@ impl DocumentSnapshot {
         id: DocumentSketchId,
         axes: &dyn SketchAxisResolver,
     ) -> Result<SketchPlane, DocumentSketchPlacementError> {
+        self.resolve_axis_inputs(id, Some(axes))
+    }
+    fn resolve_axis_inputs(
+        &self,
+        id: DocumentSketchId,
+        injected: Option<&dyn SketchAxisResolver>,
+    ) -> Result<SketchPlane, DocumentSketchPlacementError> {
         let placed = self
             .sketches
             .get(id)
             .map_err(DocumentSketchPlacementError::Sketch)?;
-        let planes = self.placement_frames(placed.placement())?;
-        let resolver = planes
+        let datums = self.placement_frames(placed, injected.is_none())?;
+        let planes = datums.as_ref().map(|datum| datum as &dyn WorkPlaneResolver);
+        let owned = datums
             .as_ref()
-            .map(|planes| planes as &dyn WorkPlaneResolver);
-        placed
-            .plane_with_axes(resolver, axes)
-            .map_err(|cause| DocumentSketchPlacementError::Plane { sketch: id, cause })
+            .map(|datum| datum as &dyn SketchAxisResolver);
+        let axes = injected
+            .or(owned)
+            .unwrap_or(&crate::document_sketch::UnavailableSketchAxes);
+        let result = placed.plane_with_axes(planes, axes);
+        result.map_err(|cause| DocumentSketchPlacementError::Plane { sketch: id, cause })
     }
     fn placement_frames(
         &self,
-        placement: SketchPlacement,
+        placed: &PlacedSketch,
+        owned_axes: bool,
     ) -> Result<Option<WorkPlaneEvaluation>, DocumentSketchPlacementError> {
-        if matches!(placement, SketchPlacement::Fixed(_)) {
+        let needs_axis = owned_axes
+            && placed.orientation().is_some_and(|definition| {
+                matches!(
+                    definition.reference,
+                    crate::document_sketch::SketchAxisReference::Feature(_)
+                )
+            });
+        if matches!(placed.placement(), SketchPlacement::Fixed(_)) && !needs_axis {
             return Ok(None);
         }
-        self.work_planes
-            .evaluate_work_planes(&self.parameters)
+        self.work_geometry
+            .evaluate_work_geometry(&self.parameters)
             .map(Some)
             .map_err(DocumentSketchPlacementError::Replay)
     }

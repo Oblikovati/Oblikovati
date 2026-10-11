@@ -20,7 +20,7 @@ mod tests;
 impl DeletionIncidences {
     pub(super) fn from_snapshot(snapshot: &DocumentSnapshot) -> Self {
         let mut incidences = Self::default();
-        for feature in snapshot.work_planes.features() {
+        for feature in snapshot.work_geometry.features() {
             incidences.record(FeatureReadKey::Feature(feature.id()), feature.reads());
         }
         for sketch in snapshot.sketches.sketches() {

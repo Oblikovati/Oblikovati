@@ -10,7 +10,7 @@ use crate::package::RestoredParameters;
 pub struct LoadedParameterPackage {
     pub loaded: LoadedPackage,
     pub restored: RestoredParameters,
-    pub work_planes: crate::package::RestoredWorkPlanes,
+    pub work_geometry: crate::package::RestoredWorkGeometry,
     pub sketches: crate::package::RestoredDocumentSketches,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
@@ -39,7 +39,7 @@ pub fn load_parameter_package(
             registration,
         },
         restored: prepared.restored,
-        work_planes: prepared.work_planes,
+        work_geometry: prepared.work_geometry,
         sketches: prepared.sketches,
         properties: prepared.properties,
         attributes: prepared.attributes,
@@ -55,7 +55,7 @@ pub fn load_parameter_package(
 pub struct PreparedParameterPackage {
     pub package: DocumentPackage,
     pub restored: RestoredParameters,
-    pub work_planes: crate::package::RestoredWorkPlanes,
+    pub work_geometry: crate::package::RestoredWorkGeometry,
     pub sketches: crate::package::RestoredDocumentSketches,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
@@ -74,8 +74,8 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
-    let work_planes = package
-        .restore_work_planes()
+    let work_geometry = package
+        .restore_work_geometry()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let sketches = package
         .restore_sketches()
@@ -101,7 +101,7 @@ pub fn read_parameter_package(
     Ok(PreparedParameterPackage {
         package,
         restored,
-        work_planes,
+        work_geometry,
         sketches,
         attributes,
         attachments,

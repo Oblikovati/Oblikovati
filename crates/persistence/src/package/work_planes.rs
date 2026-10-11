@@ -9,9 +9,9 @@ use oblikovati_model::{
 };
 use serde::{Deserialize, Serialize};
 
-/// Authored work planes and their permanent document-local allocation owner.
+/// Authored datums and their permanent document-local allocation owner.
 #[derive(Debug)]
-pub struct RestoredWorkPlanes {
+pub struct RestoredWorkGeometry {
     pub program: FeatureSequence<WorkPlaneDefinition>,
     pub ids: RecipeIdAllocator,
 }
@@ -22,9 +22,22 @@ struct StoredWorkPlanes {
     feature_high_water: u64,
 }
 impl DocumentPackage {
-    /// Restore validated recipes without cached frames; example: `package.restore_work_planes()?`.
-    pub fn restore_work_planes(&self) -> Result<RestoredWorkPlanes, PackageCodecError> {
+    /// Restore the mixed datum owner through the legacy entry point; example: `package.restore_work_planes()?`.
+    pub fn restore_work_planes(&self) -> Result<RestoredWorkGeometry, PackageCodecError> {
+        self.restore_work_geometry()
+    }
+    /// Preserve legacy call sites without a second storage path; example: `package.with_work_planes(&program, mark)?`.
+    pub fn with_work_planes(
+        &self,
+        program: &FeatureSequence<WorkPlaneDefinition>,
+        mark: u64,
+    ) -> Result<Self, PackageCodecError> {
+        self.with_work_geometry(program, mark)
+    }
+    /// Restore validated recipes without cached frames; example: `package.restore_work_geometry()?`.
+    pub fn restore_work_geometry(&self) -> Result<RestoredWorkGeometry, PackageCodecError> {
         require_legacy_features(self)?;
+        // Keep this versioned key: old readers must reject mixed recipes, not silently drop axes (#3739).
         let section = self
             .root
             .get("model")
@@ -34,7 +47,10 @@ impl DocumentPackage {
         };
         self.decode_work_planes(section)
     }
-    fn decode_work_planes(&self, section: &Value) -> Result<RestoredWorkPlanes, PackageCodecError> {
+    fn decode_work_planes(
+        &self,
+        section: &Value,
+    ) -> Result<RestoredWorkGeometry, PackageCodecError> {
         if self.manifest.schema_version != 3 {
             return Err(work_plane_codec_error(format!(
                 "schema {}: expected schema 3",
@@ -47,13 +63,13 @@ impl DocumentPackage {
             .map_err(work_plane_codec_error)?;
         restore_program(program, stored.feature_high_water)
     }
-    /// Preserve complete authored programs and deleted ID reservations; example: `package.with_work_planes(&planes, mark)?`.
-    pub fn with_work_planes(
+    /// Preserve complete authored programs and deleted ID reservations; example: `package.with_work_geometry(&datums, mark)?`.
+    pub fn with_work_geometry(
         &self,
         program: &FeatureSequence<WorkPlaneDefinition>,
         mark: u64,
     ) -> Result<Self, PackageCodecError> {
-        let previous = self.restore_work_planes()?;
+        let previous = self.restore_work_geometry()?;
         let retained = previous.ids.high_water();
         super::sketches::require_monotonic_mark("feature", mark, retained)?;
         restore_program(program.clone(), mark)?;
@@ -71,7 +87,7 @@ impl DocumentPackage {
     fn capture_work_planes(&self, stored: StoredWorkPlanes) -> Result<Self, PackageCodecError> {
         let encoded = serde_yaml_ng::to_value(stored).map_err(work_plane_codec_error)?;
         let candidate = self.with_model_section("workPlanes", encoded);
-        candidate.restore_work_planes()?;
+        candidate.restore_work_geometry()?;
         Ok(candidate)
     }
     pub(super) fn with_model_section(&self, name: &str, contents: Value) -> Self {
@@ -92,14 +108,14 @@ impl DocumentPackage {
 fn restore_program(
     program: FeatureSequence<WorkPlaneDefinition>,
     mark: u64,
-) -> Result<RestoredWorkPlanes, PackageCodecError> {
+) -> Result<RestoredWorkGeometry, PackageCodecError> {
     let live: Vec<u64> = program
         .features()
         .iter()
         .map(|feature| feature.id().0)
         .collect();
     let ids = RecipeIdAllocator::restore(Some(mark), &live).map_err(work_plane_codec_error)?;
-    Ok(RestoredWorkPlanes { program, ids })
+    Ok(RestoredWorkGeometry { program, ids })
 }
 fn require_legacy_features(package: &DocumentPackage) -> Result<(), PackageCodecError> {
     let Some(legacy) = package

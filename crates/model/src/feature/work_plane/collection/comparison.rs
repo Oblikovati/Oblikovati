@@ -7,6 +7,7 @@ impl WorkPlaneDefinition {
     /// Compare exact authored definition bits; example: `old.same_recipe(candidate)` before editing.
     pub fn same_recipe(self, other: Self) -> bool {
         match (self, other) {
+            (Self::Axis(first), Self::Axis(second)) => first.same_recipe(second),
             (Self::Fixed(first), Self::Fixed(second)) => first.same_recipe(second),
             (
                 Self::Offset {

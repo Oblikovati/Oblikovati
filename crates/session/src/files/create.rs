@@ -85,7 +85,7 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         .map_err(FileWorkspaceError::Package)?;
     let feature_mark = work_planes.ids.high_water();
     let snapshot = DocumentSnapshot {
-        work_planes: work_planes.program,
+        work_geometry: work_planes.program,
         sketches: sketches.sketches,
         attachments: package
             .restore_attachments()

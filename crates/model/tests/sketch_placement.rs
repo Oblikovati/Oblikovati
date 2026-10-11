@@ -32,7 +32,7 @@ fn geometry() -> Sketch2D {
 }
 fn authored_snapshot() -> DocumentSnapshot {
     DocumentSnapshot {
-        work_planes: Default::default(),
+        work_geometry: Default::default(),
         sketches: placed_sketches(),
         parameters: parameters(),
         properties: Default::default(),
@@ -72,7 +72,7 @@ fn define_plane(snapshot: &mut DocumentSnapshot) {
         distance: WorkPlaneDistance::Parameter(1),
     };
     snapshot
-        .work_planes
+        .work_geometry
         .append(AuthoredFeature::work_plane(
             FeatureId(2),
             "Height",
@@ -129,15 +129,15 @@ fn failure_suppression_cutoff_and_missing_features_have_no_last_good_frame() {
     assert_unavailable(&failed);
     let mut suppressed = original.clone();
     suppressed
-        .work_planes
+        .work_geometry
         .set_suppressed(FeatureId(2), true)
         .unwrap();
     assert_unavailable(&suppressed);
     let mut rolled_back = original.clone();
-    rolled_back.work_planes.set_end_of_part(Some(0)).unwrap();
+    rolled_back.work_geometry.set_end_of_part(Some(0)).unwrap();
     assert_unavailable(&rolled_back);
     let mut removed = original.clone();
-    removed.work_planes.remove(FeatureId(2)).unwrap();
+    removed.work_geometry.remove(FeatureId(2)).unwrap();
     assert_unavailable(&removed);
     assert_eq!(projected(&original), [2.0, 3.0, 4.0]);
 }
@@ -304,9 +304,9 @@ fn assert_free_geometry_refused(snapshot: &DocumentSnapshot) {
 #[test]
 fn malformed_work_plane_reads_are_reported_and_fixed_sketches_stay_independent() {
     let mut snapshot = snapshot();
-    let definition = *snapshot.work_planes.features()[0].definition();
+    let definition = *snapshot.work_geometry.features()[0].definition();
     snapshot
-        .work_planes
+        .work_geometry
         .replace(FeatureId(2), definition, Default::default())
         .unwrap();
     let error = snapshot

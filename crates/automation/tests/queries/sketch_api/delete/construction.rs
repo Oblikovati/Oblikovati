@@ -17,11 +17,11 @@ fn append_plane(
     let id = ids.allocate_feature().map_err(|error| error.to_string())?;
     let definition = chain_definition(base);
     snapshot
-        .work_planes
+        .work_geometry
         .append(AuthoredFeature::work_plane(id, "Construction", definition))
         .map_err(|error| error.to_string())?;
     snapshot
-        .work_planes
+        .work_geometry
         .set_work_plane_construction(id, true)
         .map_err(|error| error.to_string())?;
     Ok(id)
@@ -53,7 +53,7 @@ fn plane_count(files: &DiscoveryWorkspace, document: u64) -> usize {
         .session(document)
         .unwrap()
         .snapshot()
-        .work_planes
+        .work_geometry
         .features()
         .len()
 }
@@ -89,11 +89,11 @@ fn set_attribution(
         .commands(document)
         .unwrap()
         .run("Consumer", |snapshot, _| {
-            let definition = *snapshot.work_planes.get(plane).unwrap().definition();
+            let definition = *snapshot.work_geometry.get(plane).unwrap().definition();
             let mut keys = BTreeSet::from([FeatureReadKey::Sketch(sketch.0)]);
             keys.extend(definition.reads().keys());
             let reads = FeatureReadFootprint::new(keys, unknown);
-            snapshot.work_planes.replace(plane, definition, reads)
+            snapshot.work_geometry.replace(plane, definition, reads)
         })
         .unwrap();
 }

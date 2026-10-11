@@ -45,7 +45,7 @@ fn work_plane_declines_keep_their_cause_and_diagnostic() {
         index: 8,
         length: 0,
     };
-    let error = DocumentSketchDeleteError::Plane(cause.clone());
+    let error = DocumentSketchDeleteError::Datum(cause.clone());
     assert_eq!(error.to_string(), cause.to_string());
     assert_eq!(error.source().unwrap().to_string(), cause.to_string());
 }

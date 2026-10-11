@@ -11,7 +11,7 @@ fn saved_plane() -> (Host, SequenceGuids, u64, FeatureId) {
 }
 fn flag(host: &Host, document: u64, plane: FeatureId) -> bool {
     snapshot(host, document)
-        .work_planes
+        .work_geometry
         .get(plane)
         .unwrap()
         .is_construction_datum()
@@ -21,7 +21,7 @@ fn change_flag(host: &mut Host, document: u64, plane: FeatureId, construction: b
         .unwrap()
         .run("Construction plane", |snapshot, _| {
             snapshot
-                .work_planes
+                .work_geometry
                 .set_work_plane_construction(plane, construction)
         })
         .unwrap();
@@ -64,7 +64,7 @@ fn unchanged_flag_and_missing_identity_do_not_dirty_or_add_history() {
     let mut commands = host.commands(document).unwrap();
     let error = commands.run("Missing", |snapshot, _| {
         snapshot
-            .work_planes
+            .work_geometry
             .set_work_plane_construction(FeatureId(999), true)
     });
     assert!(error.unwrap_err().to_string().contains("999"));

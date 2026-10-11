@@ -20,7 +20,7 @@ fn add_plane(
         distance: WorkPlaneDistance::Parameter(1),
     };
     snapshot
-        .work_planes
+        .work_geometry
         .append(AuthoredFeature::work_plane(id, "Driven", definition))
         .map_err(|error| error.to_string())?;
     Ok(id)
@@ -31,7 +31,7 @@ fn snapshot(host: &Host, id: u64) -> &DocumentSnapshot {
 fn assert_plane_height(host: &Host, id: u64, plane: FeatureId, expected: f64) {
     let snapshot = snapshot(host, id);
     let evaluated = snapshot
-        .work_planes
+        .work_geometry
         .evaluate_work_planes(&snapshot.parameters)
         .unwrap();
     assert_eq!(evaluated.plane(plane).unwrap().recipe().origin[2], expected);
@@ -54,11 +54,11 @@ fn saved_program_reopens_and_parameter_edits_follow_undo_and_redo() {
     let plane = create_plane(&mut host, id);
     assert_plane_height(&host, id, plane, 1.0);
     host.save(id, "alpha", &mut source).unwrap();
-    let before = snapshot(&host, id).work_planes.clone();
+    let before = snapshot(&host, id).work_geometry.clone();
     let id = reopen(&mut host, id, &mut source);
     assert!(
         snapshot(&host, id)
-            .work_planes
+            .work_geometry
             .same_work_plane_recipe(&before)
     );
     assert!(!host.workspace().needs_save(id).unwrap());
@@ -96,7 +96,7 @@ fn reject_reserved_plane(host: &mut Host, id: u64) {
         Err::<(), _>("Rejected")
     });
     assert!(result.is_err());
-    assert!(snapshot(host, id).work_planes.features().is_empty());
+    assert!(snapshot(host, id).work_geometry.features().is_empty());
     assert!(
         host.workspace()
             .session(id)
@@ -120,7 +120,7 @@ fn failed_and_deleted_reservations_remain_dirty_and_survive_save_reopen() {
     host.commands(id)
         .unwrap()
         .run("Delete plane", |snapshot, _| {
-            snapshot.work_planes.remove(plane)
+            snapshot.work_geometry.remove(plane)
         })
         .unwrap();
     host.save(id, "alpha", &mut source).unwrap();
@@ -141,11 +141,11 @@ fn created_document_keeps_template_program_and_deleted_reservations() {
         .session_id;
     assert!(
         snapshot(&host, created)
-            .work_planes
-            .same_work_plane_recipe(&snapshot(&host, id).work_planes)
+            .work_geometry
+            .same_work_plane_recipe(&snapshot(&host, id).work_geometry)
     );
     assert_eq!(create_plane(&mut host, created), FeatureId(2));
-    assert_eq!(snapshot(&host, id).work_planes.features().len(), 1);
+    assert_eq!(snapshot(&host, id).work_geometry.features().len(), 1);
 }
 #[test]
 fn failed_storage_keeps_source_baseline_and_current_program() {
@@ -171,7 +171,7 @@ fn failed_storage_keeps_source_baseline_and_current_program() {
 fn assert_failed_save_state(host: &Host, id: u64, identity: &FileIdentity) {
     assert_eq!(host.workspace().identity(id).unwrap(), identity);
     assert!(host.workspace().needs_save(id).unwrap());
-    assert_eq!(snapshot(host, id).work_planes.features().len(), 1);
+    assert_eq!(snapshot(host, id).work_geometry.features().len(), 1);
 }
 fn replace_distance(host: &mut Host, id: u64, plane: FeatureId, distance: f64) {
     let definition = WorkPlaneDefinition::Offset {
@@ -182,7 +182,7 @@ fn replace_distance(host: &mut Host, id: u64, plane: FeatureId, distance: f64) {
         .unwrap()
         .run("Distance", |snapshot, _| {
             snapshot
-                .work_planes
+                .work_geometry
                 .replace(plane, definition, definition.reads())
         })
         .unwrap();
@@ -202,9 +202,9 @@ fn signed_zero_edit_is_an_undo_step_and_changes_the_saved_baseline() {
     host.commands(id).unwrap().redo().unwrap();
     assert!(host.workspace().needs_save(id).unwrap());
     host.save(id, "alpha", &mut source).unwrap();
-    let before = snapshot(&host, id).work_planes.clone();
+    let before = snapshot(&host, id).work_geometry.clone();
     let id = reopen(&mut host, id, &mut source);
-    assert!(before.same_work_plane_recipe(&snapshot(&host, id).work_planes));
+    assert!(before.same_work_plane_recipe(&snapshot(&host, id).work_geometry));
 }
 #[test]
 fn unsupported_legacy_feature_content_is_refused_before_document_registration() {
@@ -233,3 +233,6 @@ mod linked_sketch;
 
 #[path = "work_planes/construction.rs"]
 mod construction;
+
+#[path = "work_planes/mixed_datums.rs"]
+mod mixed_datums;

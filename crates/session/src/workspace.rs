@@ -252,8 +252,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             || entry.baseline_feature_high_water != entry.session.history.feature_high_water()
             || !entry
                 .baseline
-                .work_planes
-                .same_work_plane_recipe(&current.work_planes)
+                .work_geometry
+                .same_work_plane_recipe(&current.work_geometry)
             || entry.baseline_sketch_marks != entry.session.history.sketch_reservations()
             || !entry.baseline.sketches.same_recipe(&current.sketches)
             || entry.baseline_parameter_high_water != entry.session.high_water()

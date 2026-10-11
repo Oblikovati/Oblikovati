@@ -15,8 +15,11 @@ impl DocumentEditHistory {
     }
     /// Restore reservations without rewinding deleted IDs; example: `history.with_feature_reservations(mark)?`.
     pub fn with_feature_reservations(mut self, mark: u64) -> Result<Self, RecipeIdError> {
-        self.feature_ids =
-            sketch_ids::restore_mark(mark, plane_ids(&self.current), self.feature_high_water())?;
+        self.feature_ids = sketch_ids::restore_mark(
+            mark,
+            datum_feature_ids(&self.current),
+            self.feature_high_water(),
+        )?;
         Ok(self)
     }
     pub(super) fn validate_feature_ids(
@@ -25,17 +28,17 @@ impl DocumentEditHistory {
         before: u64,
     ) -> Result<(), HistoryError> {
         sketch_ids::require_reserved(
-            plane_ids(candidate),
-            plane_ids(&self.current),
+            datum_feature_ids(candidate),
+            datum_feature_ids(&self.current),
             before,
             self.feature_high_water(),
             HistoryError::UnreservedFeatureId,
         )
     }
 }
-pub(super) fn plane_ids(snapshot: &DocumentSnapshot) -> Vec<u64> {
+pub(super) fn datum_feature_ids(snapshot: &DocumentSnapshot) -> Vec<u64> {
     snapshot
-        .work_planes
+        .work_geometry
         .features()
         .iter()
         .map(|feature| feature.id().0)

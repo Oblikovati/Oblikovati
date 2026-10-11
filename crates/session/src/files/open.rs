@@ -61,9 +61,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         activation: OpenActivation,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         let prepared = self.prepare_open(&path, version, source)?;
-        let feature_mark = prepared.work_planes.ids.high_water();
+        let feature_mark = prepared.work_geometry.ids.high_water();
         let snapshot = DocumentSnapshot {
-            work_planes: prepared.work_planes.program,
+            work_geometry: prepared.work_geometry.program,
             sketches: prepared.sketches.sketches,
             attributes: prepared.attributes,
             attachments: prepared.attachments,

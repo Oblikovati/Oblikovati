@@ -13,7 +13,7 @@ pub use error::DocumentSketchDeleteError;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DocumentSketchDeleteReport {
     pub sketch: DocumentSketchId,
-    pub construction_planes: Vec<FeatureId>,
+    pub construction_datums: Vec<FeatureId>,
 }
 impl DocumentSnapshot {
     /// Delete an unused sketch and the construction chain it orphans atomically; example: `snapshot.delete_sketch(id)?`.
@@ -34,15 +34,15 @@ fn construction_candidates(
 ) -> Vec<FeatureId> {
     // The validated feature order is topological; reverse order permits one cascade pass (#3735).
     snapshot
-        .work_planes
+        .work_geometry
         .features()
         .iter()
         .rev()
-        .filter(|plane| {
-            plane.is_construction_datum()
-                && incidences.has_consumers(FeatureReadKey::Feature(plane.id()))
+        .filter(|datum| {
+            datum.is_construction_datum()
+                && incidences.has_consumers(FeatureReadKey::Feature(datum.id()))
         })
-        .map(|plane| plane.id())
+        .map(|datum| datum.id())
         .collect()
 }
 fn prune_construction(
@@ -86,10 +86,10 @@ fn apply_deletion(
         .remove(sketch)
         .map_err(DocumentSketchDeleteError::Sketch)?;
     incidences.remove_consumer(FeatureReadKey::Sketch(sketch.0))?;
-    let construction_planes = prune_construction(snapshot, &mut incidences, candidates)?;
+    let construction_datums = prune_construction(snapshot, &mut incidences, candidates)?;
     Ok(DocumentSketchDeleteReport {
         sketch,
-        construction_planes,
+        construction_datums,
     })
 }
 fn prune_one(
@@ -98,8 +98,8 @@ fn prune_one(
     id: FeatureId,
 ) -> Result<(), DocumentSketchDeleteError> {
     snapshot
-        .work_planes
+        .work_geometry
         .remove(id)
-        .map_err(DocumentSketchDeleteError::Plane)?;
+        .map_err(DocumentSketchDeleteError::Datum)?;
     incidences.remove_consumer(FeatureReadKey::Feature(id))
 }

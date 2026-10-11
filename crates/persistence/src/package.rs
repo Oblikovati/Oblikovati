@@ -27,7 +27,7 @@ pub use parameters::RestoredParameters;
 mod save;
 mod sketches;
 mod work_planes;
-pub use work_planes::RestoredWorkPlanes;
+pub use work_planes::{RestoredWorkGeometry, RestoredWorkGeometry as RestoredWorkPlanes};
 mod snapshot;
 pub use sketches::RestoredDocumentSketches;
 pub use snapshot::{ParameterPackageTarget, SnapshotPackageError};

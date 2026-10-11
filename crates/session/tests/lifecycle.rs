@@ -71,7 +71,7 @@ fn recipe() -> DocumentSnapshot {
     let mut properties = DocumentProperties::default();
     properties.sync_exposed_parameters(&parameters).unwrap();
     DocumentSnapshot {
-        work_planes: Default::default(),
+        work_geometry: Default::default(),
         sketches: Default::default(),
         attributes: Default::default(),
         attachments: Default::default(),

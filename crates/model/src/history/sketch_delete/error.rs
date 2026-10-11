@@ -10,7 +10,7 @@ use std::{error::Error, fmt};
 #[derive(Clone, Debug, PartialEq)]
 pub enum DocumentSketchDeleteError {
     Sketch(SketchError),
-    Plane(FeatureSequenceError),
+    Datum(FeatureSequenceError),
     Consumed {
         sketch: DocumentSketchId,
         readers: Vec<FeatureReadKey>,
@@ -25,7 +25,7 @@ impl fmt::Display for DocumentSketchDeleteError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Sketch(cause) => cause.fmt(output),
-            Self::Plane(cause) => cause.fmt(output),
+            Self::Datum(cause) => cause.fmt(output),
             Self::Consumed { sketch, readers } => {
                 dependent_decline(output, *sketch, readers, "consumed")
             }
@@ -43,7 +43,7 @@ impl Error for DocumentSketchDeleteError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Sketch(cause) => Some(cause),
-            Self::Plane(cause) => Some(cause),
+            Self::Datum(cause) => Some(cause),
             _ => None,
         }
     }

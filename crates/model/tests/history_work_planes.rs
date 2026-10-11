@@ -9,7 +9,7 @@ use oblikovati_model::{
 };
 fn snapshot() -> DocumentSnapshot {
     DocumentSnapshot {
-        work_planes: Default::default(),
+        work_geometry: Default::default(),
         sketches: Default::default(),
         attributes: Default::default(),
         attachments: Default::default(),
@@ -24,7 +24,7 @@ fn history() -> DocumentEditHistory {
 }
 fn insert(snapshot: &mut DocumentSnapshot, id: FeatureId) -> Result<(), String> {
     snapshot
-        .work_planes
+        .work_geometry
         .append(AuthoredFeature::work_plane(
             id,
             "Reference",
@@ -51,15 +51,15 @@ fn add(history: &mut DocumentEditHistory) -> FeatureId {
 fn undo_redo_and_abort_keep_planes_owned_and_marks_permanent() {
     let mut owner = history();
     add(&mut owner);
-    let original = owner.snapshot().work_planes.clone();
+    let original = owner.snapshot().work_geometry.clone();
     owner.undo().unwrap();
-    assert!(owner.snapshot().work_planes.features().is_empty());
+    assert!(owner.snapshot().work_geometry.features().is_empty());
     assert_eq!(owner.feature_high_water(), 1);
     owner.redo().unwrap();
     assert!(
         owner
             .snapshot()
-            .work_planes
+            .work_geometry
             .same_work_plane_recipe(&original)
     );
     let token = owner.begin("Aborted plane").unwrap();
@@ -78,7 +78,7 @@ fn rejected_commands_reserve_ids_without_adopting_recipe_or_generation() {
         Err::<(), _>("Rejected".to_string())
     });
     assert!(matches!(result, Err(EditError::Mutation(_))));
-    assert!(owner.snapshot().work_planes.features().is_empty());
+    assert!(owner.snapshot().work_geometry.features().is_empty());
     assert_eq!(owner.generation(), generation);
     assert_eq!(owner.feature_high_water(), 1);
     owner.abort(&token).unwrap();
@@ -93,7 +93,7 @@ fn old_and_unreserved_ids_are_refused_atomically() {
         let expected = HistoryError::UnreservedFeatureId(id);
         assert!(expected.to_string().contains(&format!("feature ID {id}")));
         assert!(matches!(result, Err(EditError::History(error)) if error == expected));
-        assert!(owner.snapshot().work_planes.features().is_empty());
+        assert!(owner.snapshot().work_geometry.features().is_empty());
     }
     owner.abort(&token).unwrap();
     assert_eq!(add(&mut owner), FeatureId(6));
@@ -121,7 +121,7 @@ fn exhausted_feature_namespace_does_not_publish_a_candidate() {
     let token = owner.begin("Overflow").unwrap();
     let result = owner.edit(&token, create);
     assert!(matches!(result, Err(EditError::Mutation(message)) if message.contains("u64::MAX")));
-    assert!(owner.snapshot().work_planes.features().is_empty());
+    assert!(owner.snapshot().work_geometry.features().is_empty());
     assert_eq!(owner.feature_high_water(), u64::MAX);
     owner.abort(&token).unwrap();
 }
@@ -132,7 +132,7 @@ fn plane_edits_prevent_discard_and_refresh_observes_recipe_changes() {
     let token = owner.begin("Name").unwrap();
     owner
         .edit(&token, |snapshot, _| {
-            snapshot.work_planes.rename(id, "Changed")
+            snapshot.work_geometry.rename(id, "Changed")
         })
         .unwrap();
     assert!(!owner.discard_unchanged(&token).unwrap());
@@ -142,13 +142,13 @@ fn plane_edits_prevent_discard_and_refresh_observes_recipe_changes() {
 fn check_refresh(owner: &mut DocumentEditHistory, id: FeatureId) {
     assert!(
         owner
-            .refresh(|snapshot| snapshot.work_planes.rename(id, "Changed"))
+            .refresh(|snapshot| snapshot.work_geometry.rename(id, "Changed"))
             .unwrap()
     );
     let generation = owner.generation();
     assert!(
         !owner
-            .refresh(|snapshot| snapshot.work_planes.rename(id, "Changed"))
+            .refresh(|snapshot| snapshot.work_geometry.rename(id, "Changed"))
             .unwrap()
     );
     assert_eq!(owner.generation(), generation);

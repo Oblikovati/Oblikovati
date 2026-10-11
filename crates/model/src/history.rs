@@ -25,8 +25,8 @@ use std::sync::Arc;
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
-    pub work_planes:
-        crate::feature::FeatureSequence<crate::feature::work_plane::WorkPlaneDefinition>,
+    pub work_geometry:
+        crate::feature::FeatureSequence<crate::feature::work_geometry::WorkGeometryDefinition>,
     pub sketches: crate::document_sketch::DocumentSketches,
     pub attributes: crate::attribute::DocumentAttributes,
     pub attachments: crate::attachment::DocumentAttachments,
@@ -123,7 +123,8 @@ impl DocumentEditHistory {
             .unwrap_or(0);
         let sketch_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.sketch_ids())?;
         let sketch_entity_ids = RecipeIdAllocator::restore(None, &snapshot.sketches.entity_ids())?;
-        let feature_ids = RecipeIdAllocator::restore(None, &feature_ids::plane_ids(&snapshot))?;
+        let feature_ids =
+            RecipeIdAllocator::restore(None, &feature_ids::datum_feature_ids(&snapshot))?;
         Ok(Self {
             feature_ids,
             sketch_ids,
@@ -261,8 +262,8 @@ impl DocumentEditHistory {
         self.require_top(token)?;
         let before = &self.open.last().expect("validated frame").before;
         if !before
-            .work_planes
-            .same_work_plane_recipe(&self.current.work_planes)
+            .work_geometry
+            .same_work_plane_recipe(&self.current.work_geometry)
             || !before.sketches.same_recipe(&self.current.sketches)
             || !before.parameters.same_recipe(&self.current.parameters)
             || !before.properties.same_recipe(&self.current.properties)
