@@ -61,7 +61,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         activation: OpenActivation,
     ) -> Result<FileOpenOutcome, FileWorkspaceError> {
         let prepared = self.prepare_open(&path, version, source)?;
+        let feature_mark = prepared.work_planes.ids.high_water();
         let snapshot = DocumentSnapshot {
+            work_planes: prepared.work_planes.program,
             sketches: prepared.sketches.sketches,
             attributes: prepared.attributes,
             attachments: prepared.attachments,
@@ -75,6 +77,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             entity: prepared.sketches.entity_ids.high_water(),
         };
         let history = DocumentEditHistory::new(snapshot, prepared.restored.ids)
+            .and_then(|history| history.with_feature_reservations(feature_mark))
             .and_then(|history| history.with_sketch_reservations(sketch_marks))
             .and_then(|history| {
                 history.with_derived_reservations(prepared.restored.derived_high_water)

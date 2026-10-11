@@ -48,10 +48,13 @@ impl<Files: AtomicFiles> DocumentSnapshotTarget for ParameterPackageTarget<'_, F
         derived_high_water: i64,
         parameter_high_water: u64,
         sketch_marks: oblikovati_model::history::SketchReservationMarks,
+        feature_high_water: u64,
     ) -> Result<Option<RecipeDigest>, Self::Failure> {
         self.prepared = None;
         let candidate = self
             .original
+            .with_work_planes(&snapshot.work_planes, feature_high_water)
+            .map_err(SnapshotPackageError::Codec)?
             .with_sketches(&snapshot.sketches, sketch_marks.sketch, sketch_marks.entity)
             .map_err(SnapshotPackageError::Codec)?
             .with_attachments(&snapshot.attachments)

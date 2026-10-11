@@ -21,6 +21,7 @@ pub(super) fn parameter_workspace_sketches(
     let mut properties = DocumentProperties::default();
     properties.sync_exposed_parameters(&parameters).unwrap();
     let snapshot = DocumentSnapshot {
+        work_planes: Default::default(),
         sketches,
         attributes: Default::default(),
         attachments: Default::default(),

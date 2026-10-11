@@ -80,7 +80,12 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         sketch: sketches.sketch_ids.high_water(),
         entity: sketches.entity_ids.high_water(),
     };
+    let work_planes = package
+        .restore_work_planes()
+        .map_err(FileWorkspaceError::Package)?;
+    let feature_mark = work_planes.ids.high_water();
     let snapshot = DocumentSnapshot {
+        work_planes: work_planes.program,
         sketches: sketches.sketches,
         attachments: package
             .restore_attachments()
@@ -96,6 +101,7 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         properties,
     };
     DocumentEditHistory::new(snapshot, restored.ids)
+        .and_then(|history| history.with_feature_reservations(feature_mark))
         .and_then(|history| history.with_sketch_reservations(sketch_marks))
         .and_then(|history| history.with_derived_reservations(restored.derived_high_water))
         .map_err(FileWorkspaceError::History)

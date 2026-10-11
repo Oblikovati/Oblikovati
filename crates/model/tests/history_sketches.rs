@@ -12,6 +12,7 @@ use oblikovati_model::{
 fn history() -> DocumentEditHistory {
     DocumentEditHistory::new(
         DocumentSnapshot {
+            work_planes: Default::default(),
             sketches: Default::default(),
             attributes: Default::default(),
             attachments: Default::default(),

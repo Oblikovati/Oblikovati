@@ -10,6 +10,7 @@ use crate::package::RestoredParameters;
 pub struct LoadedParameterPackage {
     pub loaded: LoadedPackage,
     pub restored: RestoredParameters,
+    pub work_planes: crate::package::RestoredWorkPlanes,
     pub sketches: crate::package::RestoredDocumentSketches,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
@@ -38,6 +39,7 @@ pub fn load_parameter_package(
             registration,
         },
         restored: prepared.restored,
+        work_planes: prepared.work_planes,
         sketches: prepared.sketches,
         properties: prepared.properties,
         attributes: prepared.attributes,
@@ -53,6 +55,7 @@ pub fn load_parameter_package(
 pub struct PreparedParameterPackage {
     pub package: DocumentPackage,
     pub restored: RestoredParameters,
+    pub work_planes: crate::package::RestoredWorkPlanes,
     pub sketches: crate::package::RestoredDocumentSketches,
     pub attributes: oblikovati_model::attribute::DocumentAttributes,
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
@@ -71,6 +74,9 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
+    let work_planes = package
+        .restore_work_planes()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let sketches = package
         .restore_sketches()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
@@ -95,6 +101,7 @@ pub fn read_parameter_package(
     Ok(PreparedParameterPackage {
         package,
         restored,
+        work_planes,
         sketches,
         attributes,
         attachments,

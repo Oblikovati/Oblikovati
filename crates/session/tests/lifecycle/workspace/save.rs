@@ -297,11 +297,13 @@ fn stale_property_preparation_clears_prior_candidate_and_cannot_persist() {
     let mut package = package();
     let mut files = MemoryFiles::default();
     let mut target = ParameterPackageTarget::new(&mut package, Path::new("part.obk"), &mut files);
-    target.prepare(&recipe(), 0, 1, Default::default()).unwrap();
+    target
+        .prepare(&recipe(), 0, 1, Default::default(), 0)
+        .unwrap();
     let mut stale = recipe();
     stale.properties.remove(USER_DEFINED, "width");
     let error = target
-        .prepare(&stale, 0, 1, Default::default())
+        .prepare(&stale, 0, 1, Default::default(), 0)
         .unwrap_err();
     assert!(matches!(error, SnapshotPackageError::StaleProperties));
     assert!(error.to_string().contains("synchronized properties"));

@@ -261,3 +261,40 @@ fields, retained extra reads, condition clearing, and stable refusal diagnostics
 Document snapshot ownership, permanent feature reservations, undo/redo,
 package fields and live sketch attachment remain open. Collection JSON
 round-trip does not establish application save/reopen or close R2.
+
+## Work-plane document history and storage: partial R2
+
+Issue #3729 connects the ordered work-plane program to the document owner:
+
+- `DocumentSnapshot.work_planes` owns authored state. Undo, redo, abort, nested
+  transactions, unchanged-frame detection, and refresh use the same owner and
+  exact recipe comparison. Derived frames and health are not saved or cloned
+  into history.
+- A separate feature ID allocator lives outside snapshots. Failed commands,
+  deletion, abort, and undo never rewind its mark. A candidate cannot introduce
+  an ID that this edit did not reserve. The namespace remains separate from
+  parameter, sketch, sketch entity, and derived table namespaces.
+- Schema-3 `model.workPlanes` stores the strict version-1 program recipe and
+  `featureHighWater`. Restore validates recipes, read dependencies, program
+  order, and live IDs before document registration. Save and copy reject a
+  lower retained mark, preserve unrelated package sections, and retain marks
+  when every plane is deleted.
+- Workspace dirty checks include both exact authored plane state and permanent
+  reservations. Save preparation passes the mark to the storage owner. Open,
+  create from package, template creation, and copy restore that same mark.
+  Failed storage does not adopt a clean baseline or change file identity.
+- Nonempty legacy `model.features` records require an explicit importer. The
+  loader refuses them before claiming a document identity. Raw package decode
+  still retains these records for inspection and future import.
+
+Model, package, and workspace tests cover failed edits and saves, exhausted and
+unreserved IDs, undo/redo, deleted reservations after reopen, independent copy
+allocation, package-based creation, legacy refusal, and signed-zero changes.
+Reopened parameter-driven planes evaluate with the restored parameter owner.
+Tests use the named in-memory file boundary; no native window is claimed.
+
+This step supplies actual recipe save/reopen support for fixed and offset
+planes. It does not complete R2 or R3: live sketch attachment to feature planes,
+clean-prefix geometry reuse, kernel-backed feature definitions, native host
+commands, and viewport acceptance remain open. The stored program contains no
+Martensite handles or B-rep body results.

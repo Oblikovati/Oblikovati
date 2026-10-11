@@ -7,6 +7,7 @@ use std::{error::Error, fmt};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum HistoryError {
     UnreservedIdentity(u64),
+    UnreservedFeatureId(u64),
     UnreservedSketchId(u64),
     UnreservedSketchEntityId(u64),
     UnreservedDerivedIdentity(i64),
@@ -24,6 +25,10 @@ pub enum HistoryError {
 impl fmt::Display for HistoryError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::UnreservedFeatureId(id) => write!(
+                output,
+                "feature ID {id}: expected an existing identity or one reserved by this edit"
+            ),
             Self::UnreservedSketchId(id) => write!(
                 output,
                 "sketch ID {id}: expected an existing identity or one reserved by this edit"

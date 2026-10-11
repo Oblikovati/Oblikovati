@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DocumentPackage, PackageCodecError, Value};
+use super::{DocumentPackage, PackageCodecError};
 use oblikovati_model::{
     document_sketch::{DocumentSketchRecipe, DocumentSketches},
     identity::RecipeIdAllocator,
@@ -73,20 +73,8 @@ impl DocumentPackage {
         })
     }
     fn capture_sketches(&self, stored: StoredSketchCollection) -> Result<Self, PackageCodecError> {
-        let mut candidate = self.clone();
-        let mut model = self
-            .root
-            .get("model")
-            .and_then(Value::as_mapping)
-            .cloned()
-            .unwrap_or_default();
-        model.insert(
-            "planarSketches".into(),
-            serde_yaml_ng::to_value(stored).map_err(sketch_codec_error)?,
-        );
-        candidate.root.insert("model".into(), Value::Mapping(model));
-        candidate.root.insert("schemaVersion".into(), 3u32.into());
-        candidate.manifest.schema_version = 3;
+        let encoded = serde_yaml_ng::to_value(stored).map_err(sketch_codec_error)?;
+        let candidate = self.with_model_section("planarSketches", encoded);
         candidate.restore_sketches()?;
         Ok(candidate)
     }
@@ -106,7 +94,7 @@ fn restore_collection(
         entity_ids,
     })
 }
-fn require_monotonic_mark(
+pub(super) fn require_monotonic_mark(
     kind: &str,
     supplied: u64,
     retained: u64,

@@ -68,7 +68,7 @@ impl DocumentEditHistory {
         )
     }
 }
-fn restore_mark(
+pub(super) fn restore_mark(
     mark: u64,
     mut live: Vec<u64>,
     previous: u64,
@@ -78,7 +78,7 @@ fn restore_mark(
     }
     RecipeIdAllocator::restore(Some(mark), &live)
 }
-fn require_reserved(
+pub(super) fn require_reserved(
     candidate: Vec<u64>,
     current: Vec<u64>,
     before: u64,
