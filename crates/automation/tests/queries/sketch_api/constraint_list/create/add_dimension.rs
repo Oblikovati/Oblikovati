@@ -185,3 +185,6 @@ fn empty_annotation_is_optional_and_ignored_flags_do_not_change_radial_creation(
 
 #[path = "add_dimension/acceptance.rs"]
 mod acceptance;
+
+#[path = "add_dimension/driving.rs"]
+mod driving;

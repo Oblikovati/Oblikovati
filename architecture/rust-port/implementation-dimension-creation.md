@@ -82,7 +82,7 @@ reference creation without transient conflict, three working scales, angular
 units, malformed inputs, source errors, exhaustion, rejected replies, veto,
 abort, undo/redo, deletion/recreation, save/reopen, and copied formulas/annotations.
 
-## Remaining creation work
+## Public API acceptance
 
 The public automation host now routes `client.dimension().add` through the owner
 command for part and assembly documents. It uses the released request, method
@@ -97,5 +97,33 @@ and undo/redo. Additional acceptance covers three working scales, failed-source
 health and repair, veto, group abort, save/reopen, and copied documents. A finite
 working radius with overflowing centimetre conversion proves that a rejected
 wire reply consumes names and identities without publishing a partial recipe.
-Veto keeps the document dirty when reservations need to be saved. Ellipse-radius and offset-spline
-dimensions still need native geometry support; they remain required R3 work.
+Driving client tests now cover every represented constructor in part and assembly
+owners, using measured canonical targets. Malformed sources retain consumed
+identities without publishing an owned pair; delete/recreate keeps permanent
+names. Veto keeps the document dirty when reservations need to be saved.
+
+## Requirement evidence
+
+| Requirement | Direct test evidence |
+| --- | --- |
+| Typed native forms and ownership | `tests/dimension_measurement/creation_operands.rs` |
+| Owned live Model source and relation | `tests/dimension_measurement/owner_creation.rs` |
+| Bare units and working scales | `owner_creation/units.rs`; API `add_dimension/acceptance.rs` |
+| Failed sources and named target health | `owner_creation/failures.rs`; `owner_creation/analysis.rs` |
+| Current angle/contact seed | `owner_creation/seeds.rs`; native contact corpus |
+| History, veto, abort, rejected replies | `tests/lifecycle/dimension_create.rs` |
+| Persistent formulas, IDs and names | `tests/lifecycle/workspace/files/sketches/dimension_create.rs` |
+| Canonical part/assembly routing | `tests/queries/sketch_api/constraint_list/create/add_dimension.rs` |
+| Client storage and conversion failure | API `add_dimension/acceptance.rs` |
+| Driving forms and delete/recreate | API `add_dimension/driving.rs` |
+
+The model paths are relative to `crates/model`, session paths to `crates/session`,
+and automation paths to `crates/automation`. The final local gate runs all these
+layers together. Passing this scope does not complete R3 or the application port.
+
+## Required native geometry work
+
+Ellipse-radius and offset-spline dimensions still need native geometry support.
+Their named declines remain tested. Required R3 work is tracked in
+[#3788](https://github.com/Oblikovati/Oblikovati/issues/3788) and
+[#3789](https://github.com/Oblikovati/Oblikovati/issues/3789).
