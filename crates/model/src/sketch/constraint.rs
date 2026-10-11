@@ -149,14 +149,21 @@ impl Sketch2D {
                 "sketch constraint {id:?}: expected a unique nonzero identity"
             )));
         }
-        for point in self.constraint_points(&relation)? {
+        self.validate_constraint_relation(&relation)?;
+        self.constraints.push(SketchConstraint { id, relation });
+        Ok(())
+    }
+    pub(crate) fn validate_constraint_relation(
+        &self,
+        relation: &PlanarConstraint,
+    ) -> Result<(), SketchError> {
+        for point in self.constraint_points(relation)? {
             self.point(point)?;
         }
-        self.validate_contact_ownership(&relation)?;
+        self.validate_contact_ownership(relation)?;
         if let PlanarConstraint::Fix { position, .. } = relation {
-            require_position(position)?;
+            require_position(*position)?;
         }
-        self.constraints.push(SketchConstraint { id, relation });
         Ok(())
     }
     pub(super) fn constraint_points(

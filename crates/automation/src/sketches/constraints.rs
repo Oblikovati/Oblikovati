@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::sketch::{Sketch2D, SketchConstraint};
-mod shape;
+pub(super) mod shape;
 use super::indices::geometric_wire_index;
 pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,

@@ -10,7 +10,7 @@ use crate::{
         SketchLinePlacementInference, SketchPointInput, SketchPrimitiveCreation,
     },
 };
-use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
+use oblikovati_solve::nonlinear::SolveOptions;
 mod error;
 mod relations;
 pub use error::SketchLineCreationError;
@@ -67,30 +67,12 @@ impl DocumentSnapshot {
     ) -> Result<(Sketch2D, SketchLinePlacementInference, bool), SketchLineCreationError> {
         let settings = self.effective_sketch_settings();
         let geometry = self
-            .current_line_geometry(sketch, solve_options)
+            .current_sketch_authoring_geometry(sketch, solve_options)
             .map_err(SketchLineCreationError::Sketch)?;
         let inference = geometry
             .infer_line_placement(input.endpoints, &settings, policy)
             .map_err(SketchLineCreationError::Sketch)?;
         Ok((geometry, inference, settings.auto_apply_constraints))
-    }
-    fn current_line_geometry(
-        &self,
-        sketch: DocumentSketchId,
-        options: SolveOptions,
-    ) -> Result<Sketch2D, crate::sketch::SketchError> {
-        let geometry = self.sketches.get(sketch)?.geometry();
-        let anchors = self.resolve_sketch_projected_points(sketch)?;
-        let solved =
-            geometry.solve_with_grounded_points(&self.parameters, &anchors, options, || false)?;
-        let termination = solved.numerical().termination;
-        if termination != SolveTermination::Converged {
-            return Err(crate::sketch::SketchError::Definition(format!(
-                "sketch {} inference source solve {termination:?}: expected converged current coordinates; free variables are permitted",
-                sketch.0
-            )));
-        }
-        Ok(solved.into_candidate())
     }
 }
 impl SketchLineCreation {

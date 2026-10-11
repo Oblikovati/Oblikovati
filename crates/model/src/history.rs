@@ -13,8 +13,10 @@ mod derived_ids;
 mod feature_ids;
 mod scalar_ownership;
 mod sketch_create;
+mod sketch_current_geometry;
 mod sketch_line;
 mod sketch_primitive;
+mod sketch_relation_create;
 mod sketch_relation_delete;
 pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
 pub use sketch_line::{
@@ -22,6 +24,7 @@ pub use sketch_line::{
     SketchLineCreationReport,
 };
 pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
+pub use sketch_relation_create::{SketchGeometricCreationError, SketchGeometricCreationReport};
 mod sketch_delete;
 pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};
 mod sketch_constraints;

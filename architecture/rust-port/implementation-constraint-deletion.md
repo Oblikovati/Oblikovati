@@ -1,7 +1,8 @@
 # Geometric constraint deletion
 
 Tracking: [#3781](https://github.com/Oblikovati/Oblikovati/issues/3781).
-This step implements deletion. Constraint creation remains open in the same issue.
+This step implements deletion. Creation is recorded in
+[the creation evidence](implementation-constraint-creation.md).
 
 The released API already defines `DeleteConstraintArgs`, `OKResult`, the method
 constant, and the typed `client.constrain().delete(&args)` call. The Rust host

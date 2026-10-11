@@ -7,6 +7,21 @@ impl Sketch2D {
     pub fn entity_ids(&self) -> &[SketchEntityId] {
         &self.entity_order
     }
+    /// Classify an owned entity without a solve or derived movement analysis.
+    /// Example: `let kind = sketch.entity_kind(selected_id)?;` before preparing a constructor.
+    pub fn entity_kind(
+        &self,
+        id: SketchEntityId,
+    ) -> Result<oblikovati_api::types::SketchEntityKind, SketchError> {
+        super::entity_geometry::catalogue(self)
+            .get(&id)
+            .map(|shape| shape.kind())
+            .ok_or_else(|| {
+                SketchError::Definition(format!(
+                    "sketch entity {id:?}: expected one owned point, line, circle, or arc"
+                ))
+            })
+    }
     pub(super) fn saved_entity_order(&self) -> Option<Vec<SketchEntityId>> {
         (self.entity_order != self.grouped_entity_order()
             || !self.construction_curves.is_empty()

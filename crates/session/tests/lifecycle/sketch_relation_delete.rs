@@ -153,3 +153,6 @@ fn assert_restored_relation(session: &DocumentSession<RecordingObserver>) {
     assert_eq!(geometry.constraints().len(), 1);
     assert_eq!(geometry.constraints()[0].id, SketchConstraintId(1));
 }
+
+#[path = "sketch_relation_delete/create.rs"]
+mod create;

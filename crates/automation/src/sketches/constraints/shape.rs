@@ -17,7 +17,7 @@ use oblikovati_api::{
 };
 use oblikovati_model::sketch::{LineRelation, PlanarConstraint, SketchEntityId};
 type ConstraintShape = (GeometricConstraintKind, Vec<SketchEntityId>);
-pub(super) fn require(relation: &PlanarConstraint) -> Result<ConstraintShape, Error> {
+pub(in crate::sketches) fn require(relation: &PlanarConstraint) -> Result<ConstraintShape, Error> {
     classify(relation).ok_or_else(|| Error(format!(
         "geometric constraint representation {relation:?}: expected a supported authored geometric relation; dimensions and structural sources cannot be enumerated"
     )))

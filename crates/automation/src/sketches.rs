@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::encode;
+mod add_constraint;
 mod add_entity;
 mod constraints;
 mod coordinates;
@@ -27,13 +28,14 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 7] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 8] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
     METHOD_SKETCH_TRANSFORM,
     METHOD_SKETCH_ADD_ENTITY,
+    METHOD_SKETCH_ADD_CONSTRAINT,
     METHOD_SKETCH_DELETE_CONSTRAINT,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
@@ -85,6 +87,9 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
         METHOD_SKETCH_TRANSFORM => return transform::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_ENTITY => {
             return add_entity::apply(files, crate::decode(method, request)?);
+        }
+        METHOD_SKETCH_ADD_CONSTRAINT => {
+            return add_constraint::apply(files, crate::decode(method, request)?);
         }
         METHOD_SKETCH_DELETE_CONSTRAINT => {
             return delete_constraint::apply(files, crate::decode(method, request)?);
