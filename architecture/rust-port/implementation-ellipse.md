@@ -1,0 +1,61 @@
+# Native ellipse port — partial R3
+
+Tracking: [#3788](https://github.com/Oblikovati/Oblikovati/issues/3788).
+Decision: [ADR-0015](../decisions/ADR-0015-parameters-and-constraints.md),
+which supersedes the shared parameter/solver boundary in ADR-0006.
+Go reference: `model/sketch/entities.go`, `ellipse_orientation.go` (#1879),
+`dimension_advanced.go`, and `dimension_advanced_test.go` at
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`.
+
+## Analytic value
+
+`SketchEllipse2D` is an immutable validated value with distinct curve and shared
+center identities, two radii, and a normalized major-axis direction. It owns no
+B-rep or document. Preparation does not prove that its center exists in a sketch;
+that check belongs to adoption. Radius edits preserve the frame, and unchanged
+rotation preserves axis bits. One orientation angle is intended for solver
+integration; two free axis components would introduce a false magnitude freedom.
+
+The radii must be finite with major >= minor > 0. Equal radii are valid and retain
+the ellipse identity. A radius crossing is an error; it does not swap the radii
+or change the axis. `Geom_Ellipse` in the local OCCT source checks the same radius
+order, while allowing a zero minor radius that the sketch value refuses.
+Finite axis directions use scaled normalization to avoid underflow and overflow.
+Analytic evaluation returns position and tangent in working units; non-finite
+inputs or nonrepresentable outputs return named errors. No polyline or circle
+approximation enters this computation.
+
+## Oracle and regression evidence
+
+The Linux OCCT 8.0.0 installation at `occt-install` supplied 108 position and
+first-derivative samples through `Geom_Ellipse::EvalD1`. They cover three working
+scales, three axis directions, unequal/equal/thin radii, and four parameters.
+The current source checkout used to inspect radius rules is
+`3d097a0328e71b826377d4814ab05ec3c3d23871`; this is not proof that the installed
+libraries were built at that commit. The fixture records the installed version.
+
+The generator is `crates/model/tests/sketch_ellipse/occt_oracle.cpp`.
+Its output is `occt-8.0.0.csv` in the same directory. Each row contains center x/y,
+input axis x/y, major/minor radius, parameter, position x/y, and tangent x/y.
+The recorded generator was compiled against the installed OCCT headers and
+linked to TKG3d, TKMath, and TKernel, with the installation's library directory
+on `LD_LIBRARY_PATH`. Its version output was `8.0.0`.
+
+`cargo test --locked -p oblikovati-model --test sketch_ellipse` checks these
+samples with a scale-relative floating arithmetic bound. Separate tests check
+symmetric-difference derivatives, invalid identities/radii/axes/angles, output
+overflow, unchanged orientation bits, equal radii, and subnormal/maximum finite
+axis directions. The CSV is compiled into the tests; the normal gate does not
+need to load external OCCT libraries.
+
+## Remaining ownership and solving work
+
+The value does not yet enter `Sketch2D`, solver variables, inspection, profiles,
+or persistence. The canonical `ellipseRadius` route still declines with its
+named missing capability. Next steps are shared-center ownership, schema
+migration, stable entity order, two radius variables plus one orientation,
+analytic residuals and dimensional measurement, and the owner/session/API path.
+The complete issue also requires fully constrained and degenerate cases,
+history, failed formula health, naming, save/reopen/copy, and Linux acceptance.
+B-rep ellipse operations stay in Martensite; this sketch value does not replace
+kernel geometry or establish kernel operation validity.

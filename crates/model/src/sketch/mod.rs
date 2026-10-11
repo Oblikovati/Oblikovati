@@ -33,6 +33,8 @@ mod dimension_placement;
 mod dimension_settings;
 pub use dimension_placement::SketchDimensionPlacement;
 pub use dimension_settings::{SketchDimensionLimitRecipe, SketchDimensionLimits};
+mod ellipse;
+pub use ellipse::{SketchEllipse2D, SketchEllipseEvaluation};
 mod entity_geometry;
 mod entity_order;
 mod error;
