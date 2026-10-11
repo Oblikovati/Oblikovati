@@ -14,7 +14,7 @@ application, released dependencies, resources, and native acceptance tests exist
 ## Local commands
 
 Install Rust with rustup, Node.js 24.15.0, npm, Git, Make, curl, and tar. The
-repository pins Rust 1.98.1, including rustfmt, Clippy, and LLVM tools.
+repository pins Rust 1.99.0, including rustfmt, Clippy, and LLVM tools.
 `make tools` installs the locked npm tools, cargo-llvm-cov 0.9.1, and actionlint
 1.7.7. The actionlint archive has a checked-in SHA-256 pin for each host.
 
@@ -69,8 +69,10 @@ must resolve to the same owner release and commit.
 The API repository owns Go/Rust contract synchronization, examples, and wiki
 gates. The kernel repository owns geometry, oracle, and kernel-package gates.
 The application still owns its API/host inventory, kernel integration, feature,
-live GUI, and installation tests. The current empty release commit pins are
-explicit blockers; an unpublished local kernel revision is not a release pin.
+live GUI, and installation tests. The application now pins the stable kernel
+v0.1.2 release; an unpublished local kernel revision is not a release pin. See
+[kernel intake evidence](architecture/rust-port/implementation-kernel-release.md).
+Product publication remains blocked by the R9 readiness fields.
 
 ## Product version
 

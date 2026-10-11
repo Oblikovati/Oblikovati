@@ -67,12 +67,12 @@ native runtime requirements together under the existing release contract.
 
 On a subsequent fetch on 2026-10-10, remote kernel `main` reached
 `ead13bcb5d2313236e61b15a22a127a23cd8bdd7`, matching the checked rendering
-revision. The repository still had no published GitHub releases. Source
-publication is confirmed; release-package verification remains open. Do not replace the
-application's released-dependency checks with a sibling path or a machine-local
-Git URL. Once the kernel owner publishes the packages, pin that
-immutable source in the viewport crate and verify the extracted package set.
-The application release pins remain unset; publication is still blocked.
+revision. There was no published GitHub release at that time. The later
+[v0.1.2 intake](implementation-kernel-release.md) verifies the owner packages and
+pins the application kernel revision. The viewport must consume that same release
+through its adapter. Do not replace the released-dependency checks with a sibling
+path or machine-local Git URL. Application publication remains blocked; the
+modeling package probe does not establish native viewport acceptance.
 
 ## Remaining acceptance
 

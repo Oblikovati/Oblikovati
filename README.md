@@ -11,7 +11,9 @@ The branch contains the port plan and 13 consolidated Rust ADRs. All 66 legacy
 Go ADRs have a recorded disposition. The Rust build and release tools are present;
 model, parameter, file lifecycle, and storage foundations are present. The first
 headless CLI supports `info`, `version`, and `help`; the GUI and remaining CLI
-commands are not yet ported. Publication remains blocked.
+commands are not yet ported. Publication remains blocked. The
+[kernel release intake](architecture/rust-port/implementation-kernel-release.md)
+pins Martensite v0.1.2 and adds Linux package acceptance at the adapter boundary.
 
 Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
 package manifest without reconstructing geometry or changing the file.

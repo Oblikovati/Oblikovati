@@ -43,9 +43,9 @@ each feature configuration, with 106 documentation tests explicitly ignored.
 It names the checked source revision and package hashes. Concurrent later kernel
 work is not covered by that receipt. Release CI must check the final tagged tree.
 
-No kernel release was published by this work. Keep the application kernel pin
-empty until the published release, tag commit, and all consumed crate assets
-pass the application preflight. The application does not take ownership of the
+The owner subsequently published v0.1.2. The application intake is recorded in
+[kernel release evidence](implementation-kernel-release.md), including the tested
+revision and the scope of application checks. The application does not take ownership of the
 kernel's unit tests, oracle tests, or package publication.
 
 ## Parameter quantity arithmetic — partial R2

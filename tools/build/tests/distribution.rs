@@ -11,7 +11,7 @@ fn collection_requires_all_platforms_and_detects_tampering() {
     runner
         .replies
         .borrow_mut()
-        .extend([Ok("a".repeat(40)), Ok("rustc 1.98.1".into())]);
+        .extend([Ok("a".repeat(40)), Ok("rustc 1.99.0".into())]);
     let manifest = new_manifest(tree.root(), &runner, config(), version).unwrap();
     for name in artifact_names(version).unwrap() {
         tree.put(&format!("input/{name}"), "test package bytes");

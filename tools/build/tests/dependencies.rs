@@ -4,6 +4,25 @@ use super::*;
 use crate::{process::tests::FakeRunner, release_config::tests::config, tree::tests::FixtureTree};
 
 #[test]
+fn application_lock_consumes_the_pinned_kernel_modeling_release() {
+    let tree = FixtureTree::new();
+    tree.put("release.toml", include_str!("../../../release.toml"));
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    let pin = crate::release_config::load(tree.root()).unwrap().kernel;
+    let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
+    assert_eq!(pin.version, "0.1.2");
+    assert_eq!(pin.revision, "19108f6650cdfca7050febc759d91bdfec001769");
+    for name in [
+        "rustycad-tkprim",
+        "rustycad-tkbrep",
+        "rustycad-tkgeombase",
+        "rustycad-tktopalgo",
+    ] {
+        assert!(names.iter().any(|locked| locked == name), "missing {name}");
+    }
+}
+
+#[test]
 fn published_archive_and_tag_must_both_match_the_pin() {
     let tree = FixtureTree::new();
     let mut dependency = config().api;

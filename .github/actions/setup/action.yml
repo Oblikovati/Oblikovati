@@ -9,7 +9,7 @@ runs:
   steps:
     - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
       with:
-        toolchain: 1.98.1
+        toolchain: 1.99.0
         components: rustfmt, clippy, llvm-tools-preview
     - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
       if: inputs.quality == 'true'

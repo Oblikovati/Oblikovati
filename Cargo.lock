@@ -18,6 +18,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "allocator-api2"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c880a97d28a3681c0267bd29cff89621202715b065127cd445fa0f0fe0aa2880"
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -67,6 +73,12 @@ name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
+
+[[package]]
+name = "bytemuck"
+version = "1.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797"
 
 [[package]]
 name = "cc"
@@ -326,6 +338,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
+name = "mach2"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
+
+[[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -339,6 +357,15 @@ checksum = "b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c"
 dependencies = [
  "adler2",
  "simd-adler32",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -408,6 +435,16 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "oblikovati-martensite"
+version = "0.1.0"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkgeombase",
+ "rustycad-tkprim",
+ "rustycad-tktopalgo",
 ]
 
 [[package]]
@@ -523,6 +560,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "rustc_apfloat"
+version = "0.2.3+llvm-462a31f5a5ab"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "486c2179b4796f65bfe2ee33679acf0927ac83ecf583ad6c91c3b4570911b9ad"
+dependencies = [
+ "bitflags",
+ "smallvec",
+]
+
+[[package]]
 name = "rustix"
 version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -540,6 +587,123 @@ name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
+
+[[package]]
+name = "rustycad-cmath"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+
+[[package]]
+name = "rustycad-tkbrep"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkernel"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "allocator-api2",
+ "bytemuck",
+ "libc",
+ "mach2",
+ "rustycad-cmath",
+ "smallvec",
+ "windows-sys",
+]
+
+[[package]]
+name = "rustycad-tkg2d"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-cmath",
+ "rustycad-tkernel",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkg3d"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-cmath",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkgeomalgo"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkgeombase"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-cmath",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkmath"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "num-complex",
+ "rustc_apfloat",
+ "rustycad-cmath",
+ "rustycad-tkernel",
+]
+
+[[package]]
+name = "rustycad-tkprim"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tktopalgo",
+]
+
+[[package]]
+name = "rustycad-tktopalgo"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+]
 
 [[package]]
 name = "ryu"
@@ -655,6 +819,12 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
+
+[[package]]
+name = "smallvec"
+version = "1.16.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b3dc8af474f516a851ff4bd12db780f948b9250ad37211e4eec0bccea54e01b"
 
 [[package]]
 name = "syn"

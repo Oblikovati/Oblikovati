@@ -64,7 +64,8 @@ asset digest: `ccfdc2ce0add38c865580015c29a4b04f69276fb9e65419008e8fd70b0de17bf`
 this adoption. No add-in or host test needs a raw JSON workaround for list options.
 
 These model, file, and API tests do not establish kernel or viewport acceptance.
-The application kernel pin remains empty until published packages are verified.
+The later [kernel release intake](implementation-kernel-release.md) pins the
+owner-published packages; feature and viewport acceptance remain separate.
 
 Work-plane routing and its remaining capabilities are recorded in
 [plane API evidence](implementation-plane-api.md).

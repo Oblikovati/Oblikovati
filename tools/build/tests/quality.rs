@@ -60,7 +60,7 @@ fn missing_required_display_and_wrong_tools_fail_by_name() {
             .contains("DISPLAY")
     );
     let runner = FakeRunner::default();
-    assert!(require_tool(&runner, tree.root(), "rustc", &["--version"], "1.98.1").is_err());
+    assert!(require_tool(&runner, tree.root(), "rustc", &["--version"], "1.99.0").is_err());
 }
 
 struct GateRunner {
@@ -75,7 +75,7 @@ impl Runner for GateRunner {
             .push(format!("{program} {}", arguments.join(" ")));
         match (program, arguments) {
             ("cargo", ["metadata", ..]) => Ok(serde_json::json!({"workspace_root": self.tree.root(), "workspace_members":["fixture"], "packages":[{"id":"fixture","name":"fixture","manifest_path":self.tree.root().join("Cargo.toml"),"license":"GPL-2.0-only","targets":[],"dependencies":[]}]}).to_string()),
-            ("rustc", _) => Ok("rustc 1.98.1 (fixture)".into()),
+            ("rustc", _) => Ok("rustc 1.99.0 (fixture)".into()),
             ("cargo", ["llvm-cov", "--version"]) => Ok("cargo-llvm-cov 0.9.1".into()),
             ("cargo", ["llvm-cov", ..]) => {
                 let index = arguments.iter().position(|value| *value == "--output-path").unwrap();

@@ -140,7 +140,7 @@ pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         cfg!(target_os = "linux"),
         std::env::var_os("DISPLAY").is_some() || std::env::var_os("WAYLAND_DISPLAY").is_some(),
     )?;
-    require_tool(runner, root, "rustc", &["--version"], "rustc 1.98.1 ")?;
+    require_tool(runner, root, "rustc", &["--version"], "rustc 1.99.0 ")?;
     require_tool(
         runner,
         root,

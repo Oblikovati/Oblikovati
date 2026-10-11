@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-martensite"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+
+[lints]
+workspace = true

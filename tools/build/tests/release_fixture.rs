@@ -141,7 +141,7 @@ impl Runner for ReleaseFixture {
             ("git", arguments) => Ok(self.git_output(arguments)),
             ("gh", ["api", endpoint]) => Ok(self.release_output(endpoint)),
             ("rustc", ["-vV"]) => Ok(format!("host: {}", self.platform.target)),
-            ("rustc", _) => Ok("rustc 1.98.1 (fixture)".into()),
+            ("rustc", _) => Ok("rustc 1.99.0 (fixture)".into()),
             ("brew", ["--prefix", formula]) => Ok(self
                 .tree
                 .root()
