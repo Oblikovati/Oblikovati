@@ -476,3 +476,8 @@ This covers the current work-plane and sketch catalogue. Future body-feature
 recipes must supply their exact consumed-sketch keys to this same incidence
 source. Legacy body feature import is still refused. Native selection,
 kernel-backed consumers, and viewport acceptance remain open.
+
+## Sketch frame orientation — partial R3
+
+The numerical frame operation and Go reference tests are recorded in
+[orientation evidence](implementation-sketch-orientation.md).

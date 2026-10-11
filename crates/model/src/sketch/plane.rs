@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SketchError;
+mod orientation;
+pub use orientation::SketchFrameAxis;
 /// Versioned metric checks for authored sketch frame axes, separate from modelling tolerance.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
