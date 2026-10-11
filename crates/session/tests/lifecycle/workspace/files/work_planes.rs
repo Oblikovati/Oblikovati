@@ -236,3 +236,6 @@ mod construction;
 
 #[path = "work_planes/mixed_datums.rs"]
 mod mixed_datums;
+
+#[path = "work_planes/point_datums.rs"]
+mod point_datums;

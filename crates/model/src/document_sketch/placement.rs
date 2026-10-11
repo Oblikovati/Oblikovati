@@ -84,9 +84,12 @@ impl PlacedSketch {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self.placement {
             SketchPlacement::Fixed(plane) => Ok(plane),
-            SketchPlacement::WorkPlane(id) => {
-                planes.ok_or(WorkPlaneError::Unavailable(id))?.plane(id)
-            }
+            SketchPlacement::WorkPlane(id) => planes
+                .ok_or(WorkPlaneError::Unavailable {
+                    feature: id,
+                    expected: "plane",
+                })?
+                .plane(id),
         }
     }
 }

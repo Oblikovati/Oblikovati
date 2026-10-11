@@ -1,39 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use super::result::WorkGeometryResult;
 use super::{WorkGeometryDefinition as WorkPlaneDefinition, WorkGeometryError as WorkPlaneError};
-use crate::feature::work_plane::WorkPlaneResolver;
+mod queries;
 use crate::{
     feature::{
         FeatureHealthRecord, FeatureId, FeatureReplayController, FeatureReplayError,
         FeatureReplayRange, FeatureReplayStep, FeatureSequence,
     },
     parameter::ParameterCollection,
-    sketch::SketchPlane,
 };
 use std::collections::BTreeMap;
 
 /// Current validated construction frames plus complete replay health, without stale fallback.
 #[derive(Debug, Default)]
 pub struct WorkGeometryEvaluation {
-    planes: BTreeMap<FeatureId, SketchPlane>,
-    axes: BTreeMap<FeatureId, crate::feature::work_axis::WorkAxisLine>,
+    datums: BTreeMap<FeatureId, WorkGeometryResult>,
     pub health: Vec<FeatureHealthRecord<WorkPlaneError>>,
-}
-
-impl WorkPlaneResolver for WorkGeometryEvaluation {
-    fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError> {
-        if self.axes.contains_key(&feature) {
-            return Err(WorkPlaneError::Kind {
-                feature,
-                expected: "plane",
-                actual: "axis",
-            });
-        }
-        self.planes
-            .get(&feature)
-            .copied()
-            .ok_or(WorkPlaneError::Unavailable(feature))
-    }
 }
 
 impl FeatureSequence<WorkPlaneDefinition> {
@@ -95,39 +78,12 @@ impl WorkGeometryEvaluation {
         id: FeatureId,
         parameters: &ParameterCollection<u64>,
     ) -> Result<(), WorkPlaneError> {
-        let feature = sequence
-            .get(id)
-            .map_err(|_| WorkPlaneError::Unavailable(id))?;
-        match *feature.definition() {
-            WorkPlaneDefinition::Axis(axis) => {
-                self.axes.insert(id, axis);
-            }
-            definition => {
-                let plane = definition.evaluate(parameters, self)?;
-                self.planes.insert(id, plane);
-            }
-        }
+        let feature = sequence.get(id).map_err(|_| WorkPlaneError::Unavailable {
+            feature: id,
+            expected: "datum",
+        })?;
+        let datum = WorkGeometryResult::evaluate(*feature.definition(), parameters, self)?;
+        self.datums.insert(id, datum);
         Ok(())
-    }
-}
-
-impl WorkGeometryEvaluation {
-    /// Resolve one available current axis by stable ID; example: `evaluation.axis(FeatureId(3))?`.
-    pub fn axis(
-        &self,
-        feature: FeatureId,
-    ) -> Result<crate::feature::work_axis::WorkAxisLine, WorkPlaneError> {
-        if self.planes.contains_key(&feature) {
-            return Err(WorkPlaneError::Kind {
-                feature,
-                expected: "axis",
-                actual: "plane",
-            });
-        }
-        self.axes.get(&feature).copied().ok_or_else(|| {
-            WorkPlaneError::Frame(crate::sketch::SketchError::Definition(format!(
-                "datum {feature:?}: expected an available current axis"
-            )))
-        })
     }
 }

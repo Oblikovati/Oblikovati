@@ -15,7 +15,7 @@ fn an_axis_cannot_be_used_as_the_plane_driver_of_an_offset() {
     let evaluation = evaluate(&snapshot);
     assert!(matches!(
         evaluation.health[2].status,
-        FeatureEvaluationStatus::Failed(WorkGeometryError::Kind { .. })
+        FeatureEvaluationStatus::Failed(WorkGeometryError::Kind(_))
     ));
     assert!(evaluation.axis(FeatureId(2)).is_ok());
     assert!(evaluation.plane(FeatureId(3)).is_err());
@@ -31,7 +31,7 @@ fn direct_axis_plane_query_and_invalid_saved_axis_keep_typed_causes() {
     let error = definition
         .evaluate(&snapshot.parameters, &evaluate(&snapshot))
         .unwrap_err();
-    assert!(matches!(error, WorkGeometryError::AxisInsteadOfPlane(_)));
+    assert!(matches!(error, WorkGeometryError::NonPlane(_)));
     assert!(error.to_string().contains("expected a plane"));
     assert!(error.source().is_none());
     assert_invalid_saved_axis(definition);

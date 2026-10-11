@@ -25,6 +25,6 @@ serialization tests pass on Linux at the fixed migration baseline.
 
 This value has no feature ID allocator, collection, replay engine, or I/O. Line
 axes now join the existing ordered datum program and permanent feature namespace;
-see [mixed datum evidence](implementation-work-geometry.md). Two-point and
-plane-intersection definitions and public axis/sketch creation commands remain
-open. Native and kernel acceptance are not established by these tests.
+see [mixed datum evidence](implementation-work-geometry.md). Directed two-point
+axes are now supported; see [point datum evidence](implementation-point-datums.md).
+Plane-intersection definitions and public axis/sketch creation commands remain open. Native and kernel acceptance are not established by these tests.

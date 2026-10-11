@@ -9,15 +9,15 @@ use std::fmt::{Display, Formatter};
 #[derive(Clone, Debug, PartialEq)]
 pub enum WorkGeometryError {
     Frame(SketchError),
-    Kind {
+    Kind(WorkGeometryKindMismatch),
+    Coordinate(super::point::WorkPointCoordinateError),
+    Axis(crate::feature::work_axis::WorkAxisError),
+    NonPlane(Box<super::WorkGeometryDefinition>),
+    Parameter(ParameterError<u64>),
+    Unavailable {
         feature: FeatureId,
         expected: &'static str,
-        actual: &'static str,
     },
-    Axis(crate::feature::work_axis::WorkAxisError),
-    AxisInsteadOfPlane(crate::feature::work_axis::WorkAxisLine),
-    Parameter(ParameterError<u64>),
-    Unavailable(FeatureId),
     Offset {
         parameter: Option<u64>,
         quantity: Quantity,
@@ -29,15 +29,14 @@ impl Display for WorkGeometryError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Frame(error) => Display::fmt(error, formatter),
-            Self::Kind {
-                feature,
-                expected,
-                actual,
-            } => write_kind(*feature, expected, actual, formatter),
+            Self::Kind(error) => Display::fmt(error, formatter),
+            Self::Coordinate(error) => Display::fmt(error, formatter),
             Self::Axis(error) => Display::fmt(error, formatter),
-            Self::AxisInsteadOfPlane(axis) => write_axis(*axis, formatter),
+            Self::NonPlane(definition) => write_non_plane(**definition, formatter),
             Self::Parameter(error) => Display::fmt(error, formatter),
-            Self::Unavailable(id) => write_unavailable(*id, formatter),
+            Self::Unavailable { feature, expected } => {
+                write_unavailable(*feature, expected, formatter)
+            }
             Self::Offset {
                 parameter,
                 quantity,
@@ -46,27 +45,43 @@ impl Display for WorkGeometryError {
         }
     }
 }
-fn write_kind(
-    feature: FeatureId,
-    expected: &str,
-    actual: &str,
+/// A typed kind decline names the selected feature and the expected current view.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WorkGeometryKindMismatch {
+    pub feature: FeatureId,
+    pub expected: &'static str,
+    pub actual: &'static str,
+}
+impl Display for WorkGeometryKindMismatch {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        let Self {
+            feature,
+            expected,
+            actual,
+        } = self;
+        write!(
+            formatter,
+            "datum {feature:?} kind {actual}: expected an available current {expected}"
+        )
+    }
+}
+fn write_non_plane(
+    definition: super::WorkGeometryDefinition,
     formatter: &mut Formatter<'_>,
 ) -> std::fmt::Result {
     write!(
         formatter,
-        "datum {feature:?} kind {actual}: expected an available current {expected}"
+        "datum definition {definition:?}: expected a plane frame"
     )
 }
-fn write_axis(
-    axis: crate::feature::work_axis::WorkAxisLine,
+fn write_unavailable(
+    id: FeatureId,
+    expected: &str,
     formatter: &mut Formatter<'_>,
 ) -> std::fmt::Result {
-    write!(formatter, "datum axis {axis:?}: expected a plane frame")
-}
-fn write_unavailable(id: FeatureId, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane {id:?}: expected an available current frame"
+        "datum {id:?}: expected an available current {expected}"
     )
 }
 fn write_offset(
@@ -82,7 +97,7 @@ fn write_offset(
 fn write_recipe_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane recipe version {version}: expected 1 for planes or 2 for axes"
+        "work plane recipe version {version}: expected 1 for planes, 2 for line axes, or 3 for points and two-point axes"
     )
 }
 
@@ -91,6 +106,7 @@ impl std::error::Error for WorkGeometryError {
         match self {
             Self::Frame(error) => Some(error),
             Self::Axis(error) => Some(error),
+            Self::Coordinate(error) => Some(error),
             Self::Parameter(error) => Some(error),
             _ => None,
         }

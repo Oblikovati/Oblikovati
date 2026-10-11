@@ -2,6 +2,10 @@
 //! One ordered datum program; kind-specific views do not own a second graph or ID allocator.
 mod error;
 mod evaluate;
+mod length;
+mod point;
+mod reads;
+mod result;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as WorkGeometryProgramRecipe,
     WorkPlaneProgramRecipeError as WorkGeometryProgramRecipeError,
@@ -12,8 +16,11 @@ use super::{
     work_plane::{WorkPlaneDistance, WorkPlaneReference},
 };
 use crate::{parameter::ParameterCollection, sketch::SketchPlane};
-pub use error::WorkGeometryError;
+pub use error::{WorkGeometryError, WorkGeometryKindMismatch};
 pub use evaluate::WorkGeometryEvaluation;
+pub use length::{DatumLength, DatumLengthError};
+pub(crate) use point::validate_position;
+pub use point::{WorkAxisPoints, WorkPointCoordinateError, WorkPointReference};
 
 /// One authored datum selected by kind inside the common feature program.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -24,11 +31,17 @@ pub enum WorkGeometryDefinition {
         distance: WorkPlaneDistance,
     },
     Axis(WorkAxisLine),
+    Point([DatumLength; 3]),
+    AxisThroughPoints(WorkAxisPoints),
 }
 impl AuthoredFeature<WorkGeometryDefinition> {
+    /// Attribute one authored datum in the common program; example: `AuthoredFeature::datum(id, "Point", definition)`.
+    pub fn datum(id: FeatureId, name: &str, definition: WorkGeometryDefinition) -> Self {
+        Self::new(id, name, definition, definition.reads())
+    }
     /// Add a checked line axis to the same permanent namespace; example: `AuthoredFeature::work_axis(id, "Spindle", axis)`.
     pub fn work_axis(id: FeatureId, name: &str, axis: WorkAxisLine) -> Self {
-        Self::work_plane(id, name, WorkGeometryDefinition::Axis(axis))
+        Self::datum(id, name, WorkGeometryDefinition::Axis(axis))
     }
 }
 impl FeatureSequence<WorkGeometryDefinition> {

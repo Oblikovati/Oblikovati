@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::{AuthoredFeature, FeatureSequence, WorkPlaneDefinition};
-use crate::feature::work_plane::WorkPlaneDistance;
 
 impl WorkPlaneDefinition {
     /// Compare exact authored definition bits; example: `old.same_recipe(candidate)` before editing.
     pub fn same_recipe(self, other: Self) -> bool {
         match (self, other) {
             (Self::Axis(first), Self::Axis(second)) => first.same_recipe(second),
+            (Self::Point(first), Self::Point(second)) => same_coordinates(first, second),
+            (Self::AxisThroughPoints(first), Self::AxisThroughPoints(second)) => first == second,
             (Self::Fixed(first), Self::Fixed(second)) => first.same_recipe(second),
             (
                 Self::Offset {
@@ -18,7 +19,7 @@ impl WorkPlaneDefinition {
                     base: second,
                     distance: right,
                 },
-            ) => first == second && same_distance(left, right),
+            ) => first == second && left.same_recipe(right),
             _ => false,
         }
     }
@@ -54,12 +55,12 @@ fn same_feature(
         }
 }
 
-fn same_distance(first: WorkPlaneDistance, second: WorkPlaneDistance) -> bool {
-    match (first, second) {
-        (WorkPlaneDistance::Constant(left), WorkPlaneDistance::Constant(right)) => {
-            left.to_bits() == right.to_bits()
-        }
-        (WorkPlaneDistance::Parameter(left), WorkPlaneDistance::Parameter(right)) => left == right,
-        _ => false,
-    }
+fn same_coordinates(
+    first: [crate::feature::work_geometry::DatumLength; 3],
+    second: [crate::feature::work_geometry::DatumLength; 3],
+) -> bool {
+    first
+        .into_iter()
+        .zip(second)
+        .all(|(left, right)| left.same_recipe(right))
 }

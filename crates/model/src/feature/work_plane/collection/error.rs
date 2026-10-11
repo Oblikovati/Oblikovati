@@ -11,7 +11,7 @@ use std::fmt::{Display, Formatter};
 pub enum WorkPlaneProgramRecipeError {
     Version(u32),
     LegacyConstruction(FeatureId),
-    LegacyAxis(FeatureId),
+    LegacyDefinition { feature: FeatureId, minimum: u32 },
     Plane(WorkPlaneError),
     Condition(FeatureSuppressionError),
     Sequence(FeatureSequenceError),
@@ -21,9 +21,10 @@ pub enum WorkPlaneProgramRecipeError {
 impl Display for WorkPlaneProgramRecipeError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LegacyAxis(id) => {
-                write!(formatter, "datum axis {id:?}: expected program version 3")
-            }
+            Self::LegacyDefinition { feature, minimum } => write!(
+                formatter,
+                "datum feature {feature:?}: expected program version {minimum}"
+            ),
             Self::Version(version) => unsupported_version(*version, formatter),
             Self::LegacyConstruction(id) => write!(
                 formatter,
@@ -41,7 +42,7 @@ impl Display for WorkPlaneProgramRecipeError {
 impl std::error::Error for WorkPlaneProgramRecipeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Version(_) | Self::LegacyConstruction(_) | Self::LegacyAxis(_) => None,
+            Self::Version(_) | Self::LegacyConstruction(_) | Self::LegacyDefinition { .. } => None,
             Self::Plane(error) => Some(error),
             Self::Condition(error) => Some(error),
             Self::Sequence(error) => Some(error),
@@ -53,6 +54,6 @@ impl std::error::Error for WorkPlaneProgramRecipeError {
 fn unsupported_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane program version {version}: expected 1, 2, or 3"
+        "work plane program version {version}: expected 1, 2, 3, or 4"
     )
 }

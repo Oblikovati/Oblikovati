@@ -45,7 +45,7 @@ fn axes_in_old_program_versions_are_refused_without_changing_bytes() {
         let invalid = from_section(&model, 3);
         let before = invalid.encode().unwrap();
         let error = invalid.restore_work_geometry().unwrap_err();
-        assert!(error.to_string().contains("axis FeatureId(9)"));
+        assert!(error.to_string().contains("datum feature FeatureId(9)"));
         assert!(error.to_string().contains("expected program version 3"));
         assert_eq!(invalid.encode().unwrap(), before);
     }

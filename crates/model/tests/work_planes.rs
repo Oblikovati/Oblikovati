@@ -19,7 +19,10 @@ mod work_planes {
 struct UnavailablePlanes;
 impl WorkPlaneResolver for UnavailablePlanes {
     fn plane(&self, feature: FeatureId) -> Result<SketchPlane, WorkPlaneError> {
-        Err(WorkPlaneError::Unavailable(feature))
+        Err(WorkPlaneError::Unavailable {
+            feature,
+            expected: "plane",
+        })
     }
 }
 
@@ -206,7 +209,10 @@ fn suppressed_source_planes_have_no_current_geometry_for_readers() {
     assert_eq!(report.health[0].status, FeatureEvaluationStatus::Suppressed);
     assert_eq!(
         report.health[1].status,
-        FeatureEvaluationStatus::Failed(WorkPlaneError::Unavailable(FeatureId(1)))
+        FeatureEvaluationStatus::Failed(WorkPlaneError::Unavailable {
+            feature: FeatureId(1),
+            expected: "plane"
+        })
     );
     assert!(report.plane(FeatureId(2)).is_err());
     assert!(report.plane(FeatureId(3)).is_ok());
@@ -224,7 +230,7 @@ fn rolled_back_planes_are_unavailable() {
     assert!(
         error
             .to_string()
-            .contains("FeatureId(2): expected an available current frame")
+            .contains("FeatureId(2): expected an available current plane")
     );
     assert!(error.source().is_none());
 }
@@ -258,7 +264,10 @@ fn unknown_plane_sources_are_refused_and_unavailable_resolution_is_named() {
     );
     assert_eq!(
         definition.evaluate(&parameters(1.0, Dimension::Length), &UnavailablePlanes),
-        Err(WorkPlaneError::Unavailable(FeatureId(9)))
+        Err(WorkPlaneError::Unavailable {
+            feature: FeatureId(9),
+            expected: "plane"
+        })
     );
 }
 

@@ -29,6 +29,12 @@ impl WorkAxisLine {
             direction: unit,
         })
     }
+    /// Resolve a directed line through two current points; example: `WorkAxisLine::through_points([0.0;3], [0.0,0.0,4.0])?`.
+    pub fn through_points(first: [f64; 3], second: [f64; 3]) -> Result<Self, WorkAxisError> {
+        require_axis_origin(first)?;
+        require_axis_origin(second)?;
+        Self::new(first, point_difference(first, second))
+    }
     /// Inspect the origin in document working units; example: `axis.origin()`.
     pub fn origin(self) -> [f64; 3] {
         self.origin
@@ -75,4 +81,39 @@ fn require_axis_origin(origin: [f64; 3]) -> Result<(), WorkAxisError> {
         return Err(WorkAxisError::Origin(origin));
     }
     Ok(())
+}
+
+fn point_difference(first: [f64; 3], second: [f64; 3]) -> [f64; 3] {
+    let difference = std::array::from_fn(|component| second[component] - first[component]);
+    if difference.iter().all(|value| value.is_finite()) {
+        return difference;
+    }
+    overflowing_point_difference(first, second, difference)
+}
+fn overflowing_point_difference(
+    first: [f64; 3],
+    second: [f64; 3],
+    difference: [f64; 3],
+) -> [f64; 3] {
+    // Normalize before subtraction only when the finite-point difference overflows (#3740).
+    let scale = first
+        .into_iter()
+        .chain(second)
+        .map(f64::abs)
+        .fold(0.0, f64::max);
+    std::array::from_fn(|component| {
+        scaled_difference(
+            first[component],
+            second[component],
+            difference[component],
+            scale,
+        )
+    })
+}
+
+fn scaled_difference(first: f64, second: f64, difference: f64, scale: f64) -> f64 {
+    if difference.is_finite() {
+        return difference / scale;
+    }
+    second / scale - first / scale
 }

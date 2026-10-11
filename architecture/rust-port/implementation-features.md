@@ -491,3 +491,5 @@ The shared metric validation and lossless source recipe are recorded in
 
 Planes and line axes now share ordering, replay and permanent IDs. See
 [mixed datum evidence](implementation-work-geometry.md).
+
+Position points and two-point axes are documented in [point datum evidence](implementation-point-datums.md).

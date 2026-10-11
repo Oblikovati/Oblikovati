@@ -6,12 +6,8 @@ mod construction;
 mod recipe;
 pub use super::work_geometry::WorkGeometryError as WorkPlaneError;
 pub use super::work_geometry::WorkGeometryEvaluation as WorkPlaneEvaluation;
-use super::{AuthoredFeature, FeatureId, FeatureReadFootprint, FeatureReadKey};
-use crate::{
-    parameter::ParameterCollection,
-    quantity::{Dimension, Quantity},
-    sketch::SketchPlane,
-};
+use super::{AuthoredFeature, FeatureId};
+use crate::{parameter::ParameterCollection, sketch::SketchPlane};
 pub use collection::{WorkPlaneFeatureRecipe, WorkPlaneProgramRecipe, WorkPlaneProgramRecipeError};
 pub use recipe::{WorkPlaneDefinitionRecipe, WorkPlaneRecipe};
 
@@ -30,12 +26,8 @@ pub enum WorkPlaneReference {
     Feature(FeatureId),
 }
 
-/// Offset length in document working units, or a selected parameter model value.
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum WorkPlaneDistance {
-    Constant(f64),
-    Parameter(u64),
-}
+/// Source-compatible length used by plane offsets and datum point coordinates.
+pub use super::work_geometry::DatumLength as WorkPlaneDistance;
 
 /// Source-compatible name for the single ordered datum definition.
 pub use super::work_geometry::WorkGeometryDefinition as WorkPlaneDefinition;
@@ -57,43 +49,7 @@ impl WorkPlaneOrigin {
     }
 }
 
-impl WorkPlaneDistance {
-    fn value(self, parameters: &ParameterCollection<u64>) -> Result<f64, WorkPlaneError> {
-        let (parameter, quantity) = match self {
-            Self::Constant(value) => (None, Quantity::new(value, Dimension::Length)),
-            Self::Parameter(id) => (
-                Some(id),
-                parameters
-                    .model_value(id)
-                    .map_err(WorkPlaneError::Parameter)?,
-            ),
-        };
-        if quantity.dimension != Dimension::Length || !quantity.value.is_finite() {
-            return Err(WorkPlaneError::Offset {
-                parameter,
-                quantity,
-            });
-        }
-        Ok(quantity.value)
-    }
-}
-
 impl WorkPlaneDefinition {
-    /// Derive all declared input reads; example: `definition.reads()` before adding it to the program.
-    pub fn reads(self) -> FeatureReadFootprint {
-        let Self::Offset { base, distance } = self else {
-            return FeatureReadFootprint::default();
-        };
-        let mut keys = Vec::new();
-        if let WorkPlaneReference::Feature(id) = base {
-            keys.push(FeatureReadKey::Feature(id));
-        }
-        if let WorkPlaneDistance::Parameter(id) = distance {
-            keys.push(FeatureReadKey::Parameter(id));
-        }
-        FeatureReadFootprint::new(keys, false)
-    }
-
     /// Evaluate exact construction coordinates without consulting display geometry; example: `definition.evaluate(&parameters, &resolver)?`.
     pub fn evaluate(
         self,
@@ -102,13 +58,15 @@ impl WorkPlaneDefinition {
     ) -> Result<SketchPlane, WorkPlaneError> {
         match self {
             Self::Fixed(plane) => Ok(plane),
-            Self::Axis(axis) => Err(WorkPlaneError::AxisInsteadOfPlane(axis)),
+            Self::Axis(_) | Self::Point(_) | Self::AxisThroughPoints(_) => {
+                Err(WorkPlaneError::NonPlane(Box::new(self)))
+            }
             Self::Offset { base, distance } => {
                 let plane = match base {
                     WorkPlaneReference::Origin(origin) => origin.plane(),
                     WorkPlaneReference::Feature(id) => resolver.plane(id)?,
                 };
-                shifted_frame(plane, distance.value(parameters)?)
+                shifted_frame(plane, plane_offset_value(distance, parameters)?)
             }
         }
     }
@@ -117,8 +75,7 @@ impl WorkPlaneDefinition {
 impl AuthoredFeature<WorkPlaneDefinition> {
     /// Build an entry with definition-derived footprints; example: `AuthoredFeature::work_plane(id, "Offset", definition)`.
     pub fn work_plane(id: FeatureId, name: &str, definition: WorkPlaneDefinition) -> Self {
-        let reads = definition.reads();
-        Self::new(id, name, definition, reads)
+        Self::datum(id, name, definition)
     }
 }
 
@@ -127,4 +84,25 @@ fn shifted_frame(plane: SketchPlane, distance: f64) -> Result<SketchPlane, WorkP
     let normal = plane.normal();
     recipe.origin = std::array::from_fn(|axis| recipe.origin[axis] + normal[axis] * distance);
     SketchPlane::from_recipe(recipe, plane.options()).map_err(WorkPlaneError::Frame)
+}
+
+fn plane_offset_value(
+    distance: WorkPlaneDistance,
+    parameters: &ParameterCollection<u64>,
+) -> Result<f64, WorkPlaneError> {
+    distance.resolve(parameters).map_err(plane_length_error)
+}
+fn plane_length_error(error: super::work_geometry::DatumLengthError) -> WorkPlaneError {
+    match error {
+        super::work_geometry::DatumLengthError::Parameter(cause) => {
+            WorkPlaneError::Parameter(cause)
+        }
+        super::work_geometry::DatumLengthError::Quantity {
+            parameter,
+            quantity,
+        } => WorkPlaneError::Offset {
+            parameter,
+            quantity,
+        },
+    }
 }

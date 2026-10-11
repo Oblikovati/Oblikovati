@@ -120,7 +120,7 @@ fn kind_mismatches_and_unavailable_datums_are_named_declines() {
         ("plane", "axis", evaluation.plane(FeatureId(2)).unwrap_err()),
         ("axis", "plane", evaluation.axis(FeatureId(1)).unwrap_err()),
     ] {
-        assert!(matches!(error, WorkGeometryError::Kind { .. }));
+        assert!(matches!(error, WorkGeometryError::Kind(_)));
         assert!(error.to_string().contains(expected));
         assert!(error.to_string().contains(actual));
         assert!(error.source().is_none());

@@ -2,26 +2,25 @@
 use super::{WorkPlaneFeatureRecipe, WorkPlaneProgramRecipe, WorkPlaneProgramRecipeError};
 
 pub(super) fn program_recipe_version(features: &[WorkPlaneFeatureRecipe]) -> u32 {
-    if features.iter().any(|feature| {
-        matches!(
-            feature.definition.definition,
-            super::super::WorkPlaneDefinitionRecipe::Axis(_)
-        )
-    }) {
-        return 3;
-    }
-    if features.iter().any(|feature| feature.construction) {
-        return 2;
-    }
-    1
+    let definitions = features
+        .iter()
+        .map(|feature| feature.definition.definition.minimum_program_version())
+        .max()
+        .unwrap_or(1);
+    let construction = if features.iter().any(|feature| feature.construction) {
+        2
+    } else {
+        1
+    };
+    definitions.max(construction)
 }
 pub(super) fn validate_program_version(
     recipe: &WorkPlaneProgramRecipe,
 ) -> Result<(), WorkPlaneProgramRecipeError> {
-    if !matches!(recipe.version, 1..=3) {
+    if !matches!(recipe.version, 1..=4) {
         return Err(WorkPlaneProgramRecipeError::Version(recipe.version));
     }
-    validate_axis_version(recipe)?;
+    validate_definition_versions(recipe)?;
     if recipe.version == 1
         && let Some(feature) = recipe.features.iter().find(|feature| feature.construction)
     {
@@ -29,19 +28,17 @@ pub(super) fn validate_program_version(
     }
     Ok(())
 }
-
-fn validate_axis_version(
+fn validate_definition_versions(
     recipe: &WorkPlaneProgramRecipe,
 ) -> Result<(), WorkPlaneProgramRecipeError> {
-    if recipe.version < 3
-        && let Some(feature) = recipe.features.iter().find(|feature| {
-            matches!(
-                feature.definition.definition,
-                super::super::WorkPlaneDefinitionRecipe::Axis(_)
-            )
-        })
-    {
-        return Err(WorkPlaneProgramRecipeError::LegacyAxis(feature.id));
+    for feature in &recipe.features {
+        let minimum = feature.definition.definition.minimum_program_version();
+        if recipe.version < minimum {
+            return Err(WorkPlaneProgramRecipeError::LegacyDefinition {
+                feature: feature.id,
+                minimum,
+            });
+        }
     }
     Ok(())
 }
