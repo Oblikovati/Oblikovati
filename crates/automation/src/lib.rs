@@ -21,6 +21,7 @@ mod host;
 pub use file_queries::{FILE_QUERY_METHODS, FileQueryHost};
 mod options;
 mod settings_edit;
+mod sketch_inference;
 mod sketches;
 pub use edit::EDIT_METHODS;
 pub use host::SessionHost;
@@ -49,8 +50,9 @@ use serde::{Serialize, de::DeserializeOwned};
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 31] = [
+pub const QUERY_METHODS: [&str; 32] = [
     METHOD_CLIENT_APPS_LIST,
+    METHOD_SKETCH_GET_INFERENCE_OPTIONS,
     METHOD_DOCUMENTS_LIST_ATTACHMENTS,
     METHOD_DOCUMENTS_LIST_INTERESTS,
     METHOD_DOCUMENTS_HAS_INTEREST,
@@ -114,6 +116,9 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_SKETCH_GET_INFERENCE_OPTIONS => {
+                sketch_inference::query_inference_preferences(self.workspace)
+            }
             METHOD_CLIENT_APPS_LIST => encode(&ListClientApplicationsResult {
                 clients: Some(self.workspace.connected_clients().entries().to_vec()),
             }),

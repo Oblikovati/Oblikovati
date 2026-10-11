@@ -32,3 +32,6 @@ impl DocumentSnapshot {
             .unwrap_or_else(default_sketch_settings)
     }
 }
+
+mod inference;
+pub use inference::{SketchInferenceError, inference_options_view, with_inference_options};

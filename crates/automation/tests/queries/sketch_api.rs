@@ -482,3 +482,6 @@ mod add_entity;
 
 #[path = "sketch_api/settings.rs"]
 mod settings;
+
+#[path = "sketch_api/inference.rs"]
+mod inference;

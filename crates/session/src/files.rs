@@ -19,6 +19,7 @@ mod propagation;
 mod refresh;
 pub use propagation::{BlockedDerivedDocument, DerivedRefreshFailure, DerivedRefreshReport};
 mod save_as;
+mod sketch_inference;
 mod source;
 mod template;
 use crate::{

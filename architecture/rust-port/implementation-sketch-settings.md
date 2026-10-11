@@ -46,6 +46,7 @@ and partial legacy records, extension retention, malformed load before identity
 allocation, dirty state, no-op history, undo/redo, abort, veto, save/reopen, copy,
 independent documents, part/assembly/drawing owners, and refresh comparison.
 
-The canonical inference get/set dispatch, shared no-document fallback, inference
-engine, line creation, interactive tools, and profile construction remain open.
-This step does not close R3 or any kernel integration check.
+The [inference API step](implementation-sketch-inference-api.md) adds canonical
+get/set dispatch and the shared no-document fallback. The inference engine, line
+creation, interactive tools, and profile construction remain open. This step does
+not close R3 or any kernel integration check.

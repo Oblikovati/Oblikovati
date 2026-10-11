@@ -10,6 +10,8 @@ mod error;
 mod interests;
 mod lifecycle;
 mod save;
+mod sketch_inference;
+pub use sketch_inference::SketchInferenceCommandError;
 mod sketch_construction;
 mod sketch_create;
 mod sketch_delete;
@@ -101,6 +103,7 @@ pub struct WorkspaceSession<O, W> {
     next_id: u64,
     observer: W,
     clients: crate::clients::ConnectedClients,
+    fallback_sketch_settings: oblikovati_model::sketch_settings::SketchSettings,
     sketch_options: oblikovati_solve::nonlinear::SolveOptions,
 }
 
@@ -128,6 +131,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
     ) -> Self {
         Self {
             sketch_options,
+            fallback_sketch_settings: oblikovati_model::sketch_settings::default_sketch_settings(),
             entries: BTreeMap::new(),
             order: Vec::new(),
             active: None,

@@ -394,3 +394,6 @@ mod attachments;
 mod sketch_create;
 #[path = "lifecycle/sketch_primitive.rs"]
 mod sketch_primitive;
+
+#[path = "lifecycle/sketch_inference.rs"]
+mod sketch_inference;

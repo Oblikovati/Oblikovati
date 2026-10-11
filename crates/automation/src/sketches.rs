@@ -23,9 +23,10 @@ use oblikovati_solve::{
     nonlinear::{NonlinearResult, SolveTermination},
 };
 
-/// Sketch commands require a retained part or assembly document kind.
-pub const SKETCH_COMMAND_METHODS: [&str; 5] = [
+/// Geometry commands require a part or assembly; inference preferences use the workspace owner.
+pub const SKETCH_COMMAND_METHODS: [&str; 6] = [
     METHOD_SKETCH_CREATE,
+    METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
     METHOD_SKETCH_TRANSFORM,
@@ -57,6 +58,14 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_SET_INFERENCE_OPTIONS {
+        return files
+            .set_sketch_inference_options_projected(
+                &crate::decode(method, request)?,
+                crate::sketch_inference::inference_reply,
+            )
+            .map_err(api_error);
+    }
     if method == METHOD_SKETCH_TRANSFORM {
         return transform::apply(files, crate::decode(method, request)?);
     }
