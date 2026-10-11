@@ -1,0 +1,113 @@
+// SPDX-License-Identifier: GPL-2.0-only
+package main
+
+/*
+#cgo CFLAGS: -DOBK_BUILDING_ADDIN
+#include "oblikovati_addin.h"
+#include <stdlib.h>
+static int workflow_call(ObkHostCall call, const char *method,
+    const uint8_t *req, int length, uint8_t **reply, int *reply_length) {
+    return call(method, req, length, reply, reply_length);
+}
+static void workflow_free(ObkHostFree release, uint8_t *reply) { release(reply); }
+*/
+import "C"
+
+import (
+	"encoding/json"
+	"fmt"
+	api "oblikovati.org/api"
+	"oblikovati.org/api/client"
+	"os"
+	"unsafe"
+)
+
+type workflowCaller struct {
+	call    C.ObkHostCall
+	release C.ObkHostFree
+}
+
+var workflowObservation workflowReport
+var workflowFailure string
+var workflowID = C.CString("typed-go-fixture")
+var workflowManifest = C.CString(`{"id":"typed-go-fixture","displayName":"Typed Go fixture"}`)
+
+// Call transfers one request to the queued Rust host; example: caller.Call(method, request).
+func (caller workflowCaller) Call(method string, request []byte) ([]byte, error) {
+	methodPtr := C.CString(method)
+	requestPtr := C.CBytes(request)
+	defer C.free(unsafe.Pointer(methodPtr))
+	defer C.free(requestPtr)
+	var reply *C.uint8_t
+	var length C.int
+	status := C.workflow_call(caller.call, methodPtr, (*C.uint8_t)(requestPtr), C.int(len(request)), &reply, &length)
+	if reply != nil {
+		defer C.workflow_free(caller.release, reply)
+	}
+	return copyWorkflowReply(method, status, reply, length)
+}
+func copyWorkflowReply(method string, status C.int, reply *C.uint8_t, length C.int) ([]byte, error) {
+	if length < 0 || (reply == nil && length != 0) {
+		return nil, fmt.Errorf("reply pointer %p with length %d: expected nonnegative readable extent", reply, length)
+	}
+	copied := C.GoBytes(unsafe.Pointer(reply), length)
+	if status != C.OBK_OK {
+		return nil, fmt.Errorf("host method %q failed: %s", method, copied)
+	}
+	return copied, nil
+}
+
+//export ObkAddInId
+func ObkAddInId() *C.char { return workflowID }
+
+//export ObkAddInManifest
+func ObkAddInManifest() *C.char { return workflowManifest }
+
+//export ObkAddInApiMajor
+func ObkAddInApiMajor() C.int { return C.int(api.Major()) }
+
+//export ObkAddInApiMinor
+func ObkAddInApiMinor() C.int { return C.int(api.Minor()) }
+
+//export ObkAddInActivate
+func ObkAddInActivate(call C.ObkHostCall, release C.ObkHostFree) (status C.int) {
+	status = C.OBK_ERR
+	defer func() {
+		if failure := recover(); failure != nil {
+			workflowFailure = fmt.Sprint(failure)
+			fmt.Fprintln(os.Stderr, workflowFailure)
+		}
+	}()
+	if call == nil || release == nil {
+		return
+	}
+	workflowObservation = executeWorkflow(client.New(workflowCaller{call, release}), OUTPUT_PATH)
+	return C.OBK_OK
+}
+
+//export ObkAddInDeactivate
+func ObkAddInDeactivate() C.int { return C.OBK_OK }
+
+//export ObkAddInNotify
+func ObkAddInNotify(payload *C.uint8_t, length C.int) C.int { return C.OBK_OK }
+
+//export ObkAddInAutomation
+func ObkAddInAutomation(method *C.char, request *C.uint8_t, length C.int, reply **C.uint8_t, replyLength *C.int) C.int {
+	encoded, err := json.Marshal(workflowObservation)
+	if err != nil {
+		return C.OBK_ERR
+	}
+	if workflowFailure != "" {
+		encoded = []byte(workflowFailure)
+	}
+	*reply = (*C.uint8_t)(C.CBytes(encoded))
+	*replyLength = C.int(len(encoded))
+	if workflowFailure != "" {
+		return C.OBK_ERR
+	}
+	return C.OBK_OK
+}
+
+//export ObkFree
+func ObkFree(reply *C.uint8_t) { C.free(unsafe.Pointer(reply)) }
+func main()                    {}

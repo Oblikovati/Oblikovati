@@ -1,0 +1,109 @@
+// SPDX-License-Identifier: GPL-2.0-only
+package main
+
+import (
+	"fmt"
+	"math"
+	"oblikovati.org/api/client"
+	"oblikovati.org/api/wire"
+)
+
+type workflowReport struct {
+	Created    uint64 `json:"created"`
+	Reopened   uint64 `json:"reopened"`
+	RadiusBits uint64 `json:"radiusBits"`
+	Parameter  string `json:"parameter"`
+}
+
+func executeWorkflow(c *client.Client, path string) workflowReport {
+	created := createWorkflowPart(c)
+	circle := createWorkflowCircle(c)
+	edited := editWorkflowHistory(c, circle)
+	key := workflowCircleInfo(c, circle).ReferenceKey
+	reopened := reopenWorkflowPart(c, created, path)
+	assertWorkflowBits(workflowCircleInfo(c, circle).Radius, edited)
+	if workflowCircleInfo(c, circle).ReferenceKey != key {
+		panic("reopened circle: expected preserved reference key")
+	}
+	width, err := c.Parameters().Get("width")
+	requireWorkflowSuccess(err)
+	if width.Expression != "35 mm" {
+		panic(fmt.Sprintf("expression %q: expected 35 mm", width.Expression))
+	}
+	return workflowReport{created, reopened, math.Float64bits(edited), "width"}
+}
+
+func requireWorkflowSuccess(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+func assertWorkflowBits(actual, expected float64) {
+	if math.Float64bits(actual) != math.Float64bits(expected) {
+		panic(fmt.Sprintf("radius bits %x: expected %x", math.Float64bits(actual), math.Float64bits(expected)))
+	}
+}
+func createWorkflowPart(c *client.Client) uint64 {
+	document, err := c.Documents().Create(wire.CreateDocumentArgs{Type: "part", Name: "Go native part"})
+	requireWorkflowSuccess(err)
+	_, err = c.Parameters().Add(wire.ParameterSetArgs{Name: "width", Expression: "20 mm"})
+	requireWorkflowSuccess(err)
+	_, err = c.Sketch().Create(wire.CreateSketchArgs{})
+	requireWorkflowSuccess(err)
+	return document.ID
+}
+func createWorkflowCircle(c *client.Client) uint64 {
+	circle, err := c.Sketch().AddEntity(wire.AddSketchEntityArgs{Kind: "circle", Points: [][]float64{{0, 0}}, Radius: "width"})
+	requireWorkflowSuccess(err)
+	_, err = c.Sketch().Constrain(0).Ground(circle.EntityID)
+	requireWorkflowSuccess(err)
+	dimension, err := c.Sketch().Dimension(0).Radius(circle.EntityID, "width")
+	requireWorkflowSuccess(err)
+	if dimension.DOF != 0 {
+		panic(fmt.Sprintf("dimension DOF %d: expected zero", dimension.DOF))
+	}
+	return circle.EntityID
+}
+func workflowCircleInfo(c *client.Client, circle uint64) wire.SketchEntityInfo {
+	status, err := c.Sketch().ConstraintStatus(0)
+	requireWorkflowSuccess(err)
+	if status.DOF != 0 {
+		panic(fmt.Sprintf("sketch DOF %d: expected zero", status.DOF))
+	}
+	entities, err := c.Sketch().Entities(0)
+	requireWorkflowSuccess(err)
+	for _, entity := range entities.Entities {
+		if entity.ID == circle {
+			return entity
+		}
+	}
+	panic(fmt.Sprintf("circle ID %d: expected an enumerated entity", circle))
+}
+func editWorkflowHistory(c *client.Client, circle uint64) float64 {
+	before := workflowCircleInfo(c, circle).Radius
+	_, err := c.Parameters().Set(wire.ParameterSetArgs{Name: "width", Expression: "35 mm"})
+	requireWorkflowSuccess(err)
+	after := workflowCircleInfo(c, circle).Radius
+	if after <= before {
+		panic(fmt.Sprintf("edited radius %g: expected greater than %g", after, before))
+	}
+	_, err = c.Transactions().Undo()
+	requireWorkflowSuccess(err)
+	assertWorkflowBits(workflowCircleInfo(c, circle).Radius, before)
+	_, err = c.Transactions().Redo()
+	requireWorkflowSuccess(err)
+	assertWorkflowBits(workflowCircleInfo(c, circle).Radius, after)
+	return after
+}
+func reopenWorkflowPart(c *client.Client, document uint64, path string) uint64 {
+	_, err := c.Documents().SaveAs(document, path)
+	requireWorkflowSuccess(err)
+	_, err = c.Documents().Close(document, false)
+	requireWorkflowSuccess(err)
+	reopened, err := c.Documents().Open(wire.OpenDocumentArgs{FullDocumentName: path, Visible: true})
+	requireWorkflowSuccess(err)
+	if reopened.Dirty {
+		panic(fmt.Sprintf("reopened document %d: expected clean state", reopened.ID))
+	}
+	return reopened.ID
+}

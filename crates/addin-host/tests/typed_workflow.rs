@@ -143,10 +143,30 @@ fn verify_loaded_workflow(
     directory: &Path,
 ) {
     let compiler = compiler::WorkflowCompiler::new();
-    let path = directory.join("rust-addin.opd");
-    let library = compiler.rust_workflow(&path);
+    let mut radius_bits = None;
+    for language in ["rust", "go"] {
+        let path = directory.join(format!("{language}-addin.opd"));
+        let library = match language {
+            "rust" => compiler.rust_workflow(&path),
+            _ => compiler.go_workflow(&path),
+        };
+        let report = verify_loaded_library(binding, awake, owner, runtime, &library, &path);
+        assert_eq!(
+            *radius_bits.get_or_insert(report.radius_bits),
+            report.radius_bits
+        );
+    }
+}
+fn verify_loaded_library(
+    binding: &HostCallbackBinding,
+    awake: &mpsc::Receiver<()>,
+    owner: &mut OwnerDispatch<WorkflowWake>,
+    runtime: &mut WorkflowOwner,
+    library: &Path,
+    path: &Path,
+) -> workflow::WorkflowReport {
     // SAFETY: API-only fixture uses the same canonical prototypes and supports this worker affinity.
-    let mut addin = unsafe { oblikovati_addin_host::open_addin(&library) }.unwrap();
+    let mut addin = unsafe { oblikovati_addin_host::open_addin(library) }.unwrap();
     let (call, free) = binding.callbacks();
     let activation = thread::spawn(move || {
         unsafe { addin.activate(call, free) }.unwrap();
@@ -155,10 +175,15 @@ fn verify_loaded_workflow(
     runtime.drive(&activation, awake, owner);
     let mut addin = activation.join().unwrap();
     let report = loaded_report(&mut addin);
-    assert_saved_workflow(&runtime.files, &path, &report);
+    assert_saved_workflow(&runtime.files, path, &report);
     unsafe { addin.deactivate() }.unwrap();
+    report
 }
 fn loaded_report(addin: &mut oblikovati_addin_host::LoadedAddIn) -> workflow::WorkflowReport {
+    assert_eq!(addin.metadata().major, oblikovati_api::API_MAJOR);
+    assert_eq!(addin.metadata().minor, oblikovati_api::API_MINOR);
+    // SAFETY: fixture notification reads no payload and makes no host calls.
+    unsafe { addin.notify(b"{}") }.unwrap();
     // SAFETY: fixture reports only its copied workflow observations; returned bytes use its matching ObkFree.
     let bytes = unsafe { addin.automation("report", &[]) }.unwrap();
     serde_json::from_slice(&bytes).unwrap()

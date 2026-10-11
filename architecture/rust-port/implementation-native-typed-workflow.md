@@ -1,4 +1,4 @@
-# Typed Rust document workflow over C callbacks — partial R4
+# Typed Go and Rust document workflows over C callbacks — partial R4
 
 Tracking: [port epic #3563](https://github.com/Oblikovati/Oblikovati/issues/3563).
 This verifies the composition of the native callback binding, owner queue,
@@ -34,8 +34,8 @@ an explicit completion deadline and uses wake signals rather than fixed sleeps.
 
 This is a typed Rust client calling the C ABI in the test worker. It is separate
 from the real Go/Rust shared-library echo/lifecycle tests. Those two evidence sets
-do not jointly prove a loaded add-in's typed document workflow. Real Go and Rust
-add-in document scenarios, managed host lifetime, native window/CLI drain loops,
+do not jointly prove a loaded add-in's typed document workflow. The loaded scenarios below extend this evidence. Managed host lifetime,
+native window/CLI drain loops,
 queued event delivery and foreground MCPBridge acceptance remain required. The
 part has a fully constrained sketch recipe; no solid feature or rendered result
 is claimed. Windows and macOS remain deferred.
@@ -63,8 +63,32 @@ and separate target directory, so nested fixture builds cannot contend for the
 application's target lock or modify the API checkout. Fixture failures fail the
 same focused test and full gate; they are not skip conditions.
 
-The loaded Rust scenario closes the library-boundary gap for this workflow.
-A loaded Go add-in performing the same typed document operations remains required,
-as do managed registration/shutdown, event attachment and native presentation.
-The existing Go echo fixture is still ownership/queue evidence, not this document
-workflow. No solid feature or rendered part acceptance is claimed.
+## Loaded Go add-in workflow
+
+An actual Go C-shared library now performs the same typed document scenario. Its
+isolated Go module imports only the exact pinned API checkout. It uses the owner's
+C header with `OBK_BUILDING_ADDIN`, including the canonical two-argument notification
+export. Its caller receives the injected C callbacks, copies replies before
+HostFree, and releases error replies through the same owner. No copied wire DTOs,
+method names, GPL application dependency or sibling kernel checkout is used.
+
+The Go typed client creates the part and parameter, grounds and dimensions the
+circle to DOF zero, edits width, checks undo/redo radius bits, and saves, closes
+and reopens a real native document. It checks the retained reference key and
+parameter expression. The Rust owner independently checks the reopened model
+with the same strict document resolution guard as the loaded Rust case. Both
+libraries advertise the compiled API version and produce identical final radius
+bits. The Go automation export only reports copied observations after activation;
+it does not call back into the owner. Both libraries deactivate before retirement,
+and all host reply allocations are released.
+
+The fixture compiler builds both libraries outside the application tree. The Go
+build uses `GOWORK=off`, `CGO_ENABLED=1`, and `GOPROXY=off`, so a missing pinned SDK
+or local toolchain fails this test rather than using a workspace or network substitute.
+The focused test exercises the notification export as well as activation,
+automation report ownership and deactivation.
+
+These loaded scenarios close the library-boundary gap for this document workflow.
+Managed registration/shutdown, event attachment, native presentation and foreground
+MCPBridge acceptance remain required. No solid feature or rendered part acceptance
+is claimed. Windows and macOS remain deferred.
