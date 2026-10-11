@@ -29,6 +29,11 @@ pub enum DocumentSketchPlacementError {
         sketch: DocumentSketchId,
         cause: WorkPlaneError,
     },
+    Point {
+        sketch: DocumentSketchId,
+        reference: crate::feature::work_geometry::WorkPointReference,
+        cause: Box<WorkPlaneError>,
+    },
     Verification(SketchReadinessError),
 }
 impl DocumentSnapshot {
@@ -118,6 +123,16 @@ impl fmt::Display for DocumentSketchPlacementError {
                 write!(output, "document sketch {sketch:?} placement: {cause}")
             }
             Self::Verification(cause) => cause.fmt(output),
+            Self::Point {
+                sketch,
+                reference,
+                cause,
+            } => {
+                write!(
+                    output,
+                    "document sketch {sketch:?} projected point {reference:?}: {cause}"
+                )
+            }
         }
     }
 }
@@ -127,6 +142,7 @@ impl Error for DocumentSketchPlacementError {
             Self::Sketch(cause) => Some(cause),
             Self::Replay(cause) => Some(cause),
             Self::Plane { cause, .. } => Some(cause),
+            Self::Point { cause, .. } => Some(cause.as_ref()),
             Self::Verification(cause) => Some(cause),
         }
     }

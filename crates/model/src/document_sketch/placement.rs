@@ -53,13 +53,18 @@ impl PlacedSketch {
             .into_iter()
             .map(FeatureReadKey::Parameter)
             .collect();
+        keys.extend(self.placement_read_keys());
+        FeatureReadFootprint::new(keys, false)
+    }
+    pub(crate) fn placement_read_keys(&self) -> Vec<FeatureReadKey> {
+        let mut keys = Vec::new();
         if let SketchPlacement::WorkPlane(feature) = self.placement {
             keys.push(FeatureReadKey::Feature(feature));
         }
         if let Some(orientation) = self.orientation {
             keys.extend(orientation.read_keys());
         }
-        FeatureReadFootprint::new(keys, false)
+        keys
     }
     /// Resolve the frame without a stale fallback; example: `placed.plane(Some(&current_planes))?`.
     pub fn plane(
