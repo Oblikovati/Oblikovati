@@ -131,3 +131,6 @@ fn minor_radius_refuses_invalid_targets_without_changing_the_input_owner() {
         assert!(sketch.same_recipe(&before));
     }
 }
+
+#[path = "minor/degenerate.rs"]
+mod degenerate;

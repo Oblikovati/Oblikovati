@@ -1,4 +1,4 @@
-# Native ellipse port — partial R3
+# Native ellipse port — R3 acceptance
 
 Tracking: [#3788](https://github.com/Oblikovati/Oblikovati/issues/3788).
 Decision: [ADR-0015](../decisions/ADR-0015-parameters-and-constraints.md),
@@ -167,7 +167,21 @@ explicit. Existing schemas remain readable.
 Model and API tests now reach DOF = 0 with center ground, major-axis alignment,
 and independent major/minor live dimensions. Both part and assembly routes retain
 that result after source edits and save/copy. Reference mode leaves one radius
-freedom. Remaining #3788 work includes further degenerate solving and minor-specific
-failed-formula/transaction acceptance. This step does not establish profile-kernel acceptance. B-rep
+freedom. Minor-specific checks now cover unresolved, angular, and arithmetic-failed
+sources with explicit health, unchanged geometry, and repair to zero DOF. Aborted
+groups and commit vetoes preserve the major dimension and retire the attempted
+minor name through save/reopen in both document kinds.
+
+Generated simultaneous radius solves cover radii at scales 1e-6, 1, and 1e6,
+with equal, near-equal, thin, and very thin target ratios. They check convergence,
+zero DOF, each radius against its independent expression, unchanged center,
+frame direction and identity, immutable input, and schema round-trip. These
+checks explicitly tighten the numerical tolerance for the smallest radius;
+they do not prove that the default model-scale policy resolves all thin shapes.
+The applicable Go radius/DOF/axis constraint tests pass at the pinned oracle
+revision. The 108 installed-OCCT analytic samples remain in the Linux gate.
+
+This completes the native ownership/dimension acceptance in #3788. It does not
+establish profile-kernel acceptance. B-rep
 ellipse operations stay in Martensite; the sketch value does not replace kernel
 geometry or establish kernel operation validity.

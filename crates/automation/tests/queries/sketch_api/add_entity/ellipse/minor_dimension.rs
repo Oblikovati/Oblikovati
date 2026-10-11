@@ -189,3 +189,6 @@ fn ellipse_minor_crossings_and_nonpositive_targets_do_not_publish_partial_recipe
     let next = minor(&mut files, &mut source, ellipse, "width / 2", false).unwrap();
     assert_eq!(next.parameter, "d4");
 }
+
+#[path = "minor_dimension/acceptance.rs"]
+mod acceptance;
