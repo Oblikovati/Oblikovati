@@ -26,6 +26,7 @@ impl Sketch2D {
         self.require_new_entity(id)?;
         require_position(position)?;
         self.points.push(SketchPoint2D { id, position });
+        self.entity_order.push(id);
         Ok(())
     }
     /// Add a line with shared endpoints; example: `sketch.add_line(SketchEntityId(3), [a, b])?`.
@@ -39,6 +40,7 @@ impl Sketch2D {
             self.point(point)?;
         }
         self.lines.push(SketchLine2D { id, endpoints });
+        self.entity_order.push(id);
         Ok(())
     }
     /// Move an authored point atomically; example: `sketch.set_position(a, [2.0, 3.0])?`.

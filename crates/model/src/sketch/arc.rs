@@ -41,6 +41,7 @@ impl Sketch2D {
             end: endpoints[1],
             counter_clockwise,
         });
+        self.entity_order.push(id);
         Ok(())
     }
     /// Derive radius from center and start without an independent scalar; example: `sketch.arc_radius(id)?`.

@@ -36,6 +36,7 @@ impl Sketch2D {
         self.point(center)?;
         require_radius(id, radius)?;
         self.circles.push(SketchCircle2D { id, center, radius });
+        self.entity_order.push(id);
         Ok(())
     }
     /// Change a radius after validation; example: `sketch.set_radius(id, 3.0)?`.

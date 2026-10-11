@@ -461,3 +461,6 @@ fn vetoed_api_group(files: &mut DiscoveryWorkspace, source: &mut QueryGuids) {
 
 #[path = "sketch_api/create.rs"]
 mod create;
+
+#[path = "sketch_api/references.rs"]
+mod references;

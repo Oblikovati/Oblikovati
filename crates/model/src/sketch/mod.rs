@@ -15,6 +15,7 @@ mod circular_projection;
 mod compile;
 mod constraint;
 mod dependencies;
+mod entity_order;
 mod error;
 mod geometry;
 mod grounded;
@@ -53,6 +54,7 @@ pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, Tange
 /// Ordered sketch ownership; shared endpoints use the same local point identity.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Sketch2D {
+    entity_order: Vec<SketchEntityId>,
     points: Vec<SketchPoint2D>,
     lines: Vec<SketchLine2D>,
     circles: Vec<SketchCircle2D>,

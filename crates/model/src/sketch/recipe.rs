@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// First Rust planar recipe schema; this is independent of the enclosing document schema.
-pub const SKETCH_RECIPE_VERSION: u32 = 1;
+/// Latest Rust planar recipe schema; explicit mixed entity order was added in version 2.
+pub const SKETCH_RECIPE_VERSION: u32 = 2;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -15,29 +15,38 @@ pub struct SketchRecipe {
     pub circles: Vec<SketchCircle2D>,
     pub arcs: Vec<SketchArc2D>,
     pub constraints: Vec<SketchConstraint>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_order: Option<Vec<super::SketchEntityId>>,
 }
 impl Sketch2D {
     /// Capture authored values in stable order; example: `let recipe = sketch.recipe();`.
     pub fn recipe(&self) -> SketchRecipe {
+        let entity_order = self.saved_entity_order();
         SketchRecipe {
-            version: SKETCH_RECIPE_VERSION,
+            version: if entity_order.is_some() {
+                SKETCH_RECIPE_VERSION
+            } else {
+                1
+            },
             points: self.points.clone(),
             lines: self.lines.clone(),
             circles: self.circles.clone(),
             arcs: self.arcs.clone(),
             constraints: self.constraints.clone(),
+            entity_order,
         }
     }
     /// Restore into a fresh owner after validation; example: `let sketch = Sketch2D::from_recipe(&recipe)?;`.
     pub fn from_recipe(recipe: &SketchRecipe) -> Result<Self, SketchError> {
-        if recipe.version != SKETCH_RECIPE_VERSION {
+        if !matches!(recipe.version, 1..=SKETCH_RECIPE_VERSION) {
             return Err(SketchError::Definition(format!(
-                "sketch recipe version {}: expected {SKETCH_RECIPE_VERSION}",
+                "sketch recipe version {}: expected 1 through {SKETCH_RECIPE_VERSION}",
                 recipe.version
             )));
         }
         let mut sketch = Self::default();
         sketch.restore_geometry(recipe)?;
+        sketch.restore_entity_order(recipe)?;
         for constraint in &recipe.constraints {
             sketch.add_constraint(constraint.id, constraint.relation.clone())?;
         }

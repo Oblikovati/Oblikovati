@@ -25,7 +25,7 @@ mod sketches;
 pub use edit::EDIT_METHODS;
 pub use host::SessionHost;
 pub use options::SKETCH_OPTION_METHODS;
-pub use sketches::SKETCH_COMMAND_METHODS;
+pub use sketches::{SKETCH_COMMAND_METHODS, SKETCH_QUERY_METHODS};
 mod collection;
 mod detail;
 mod expressions;

@@ -13,6 +13,8 @@ pub use placement::SketchPlacement;
 mod point_projection;
 pub use point_projection::{SketchPointProjection, SketchProjectionInputs};
 mod readiness;
+mod references;
+pub use references::{DocumentSketchReferenceIndex, SketchReferenceTarget};
 mod recompute;
 pub use health::{PlacedSketchHealth, SketchEvaluation, SketchSolveDiagnostics};
 pub use readiness::{SketchReadinessCause, SketchReadinessError};
@@ -295,12 +297,9 @@ impl DocumentSketches {
 }
 fn geometry_ids(geometry: &Sketch2D) -> Vec<u64> {
     geometry
-        .points()
+        .entity_ids()
         .iter()
-        .map(|point| point.id.0)
-        .chain(geometry.lines().iter().map(|line| line.id.0))
-        .chain(geometry.circles().iter().map(|circle| circle.id.0))
-        .chain(geometry.arcs().iter().map(|arc| arc.id.0))
+        .map(|entity| entity.0)
         .collect()
 }
 fn missing_sketch(id: DocumentSketchId) -> SketchError {
