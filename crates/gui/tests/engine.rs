@@ -24,6 +24,8 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     let saved = snapshot.clone();
     exercise_gui_inputs(&mut engine);
     drop(engine);
+    let next_owner = GuiFrameEngine::new().unwrap();
+    drop(next_owner);
     assert_eq!(snapshot, saved);
     assert_eq!(snapshot.batches[0].vertices, vertices);
     assert!(
@@ -84,15 +86,12 @@ fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
     );
 }
 fn verify_exclusive_context(engine: &mut GuiFrameEngine) {
-    let occupied = imgui::Context::create();
     assert!(
-        engine
-            .frame(&request())
-            .unwrap_err()
+        GuiFrameEngine::new()
+            .err()
+            .unwrap()
             .contains("exclusive owner activation")
     );
-    assert!(GuiFrameEngine::new().is_err());
-    drop(occupied);
     engine.frame(&request()).unwrap();
 }
 

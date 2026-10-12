@@ -3,8 +3,9 @@
 `oblikovati-gui` wraps Dear ImGui 0.12.0 behind an owner-thread engine. A frame
 returns owned positions, UVs, sRGB color bytes, indices, clip rectangles, and
 selected Save/Undo/Redo/Home actions. The font atlas is owned independently.
-The engine disables automatic ini/log file I/O and suspends its context between
-calls. Invalid frame input and conflicting context activation are named errors.
+The engine disables automatic ini/log file I/O and retains one active context
+on the GUI owner thread until it closes. Invalid frame input and occupied context
+creation are named errors.
 
 The input supplies elapsed time, ordered input events, framebuffer extent, and
 scale. Events carry physical pointer positions, left/middle/right button changes,
@@ -21,7 +22,7 @@ next frame and destruction of the context.
 
 ## Input ownership
 
-Every event is validated before context activation or queue mutation. A refused
+Every event is validated before queue mutation. A refused
 batch cannot leave an earlier click queued. Pointer positions are converted to
 logical coordinates once; key identifiers are mapped by name inside the wrapper.
 Aggregate Control/Shift/Alt/Super state is separate from the physical left/right
@@ -44,6 +45,27 @@ state. Two queued clicks survive four frames. An invalid batch leaves no click
 behind. Automatic clipboard integration, native Unicode/IME decoding, focus
 loss, and complete Go panels still need their platform and shell consumers.
 
+## Context lifetime regression
+
+The pinned imgui-rs revision `e246a334` calls `igEndFrame` on the current context
+when dropping any context with a nonzero current frame count. The previous
+suspended-context constructor allocated another context, failed activation, then
+dropped that inactive allocation. This ended a different owner's live frame.
+
+An isolated regression runs both a baseline frame and the conflicting constructor
+case. Before the fix, baseline passed and refusal aborted the next widget with
+`g.WithinFrameScope`. A debugger stopped at `ImGui::EndFrame`, called through
+`Context::drop`, `SuspendedContext::drop`, and the constructor's `map_err`.
+
+The owner now retains an active context for its whole lifetime. A private
+read-only FFI check refuses occupied creation before allocation. The raw address
+is not exposed or changed. The rest of the GUI crate denies unsafe code. All
+context work stays on the single GUI thread; interleaved engines are not the
+application ownership model. The suspended activation and retirement path was
+removed, rather than retained as another strategy. Tests confirm live-frame
+refusal, repeated frames, owner release, and packets surviving context destruction.
+The dependency source and released kernel checkout were not modified.
+
 ## Kernel lowering
 
 The GUI producer imports the viewport-owned packet types and has no direct
@@ -58,7 +80,7 @@ four intersected singleton plane chains; one four-plane union would be incorrect
 GPU tests check interior color against independent byte values, all four clipping
 boundaries, and ordered alpha blending over a known background. They run with
 Vulkan validation enabled. Dear ImGui tests select all four buttons through
-press/release input, check framebuffer scaling, context failure/recovery, and
+press/release input, check framebuffer scaling, context refusal/release, and
 owned snapshots after context destruction. This is the initial control and draw
 boundary; the full Go ribbon, browser, dialogs, themes, assets, shortcut routing,
 native input attachment, focus/IME/clipboard, and document-based enablement remain
@@ -101,8 +123,8 @@ kernel owner; its active source and released checkout were not modified.
 
 The latest full local gate passed with the software Vulkan driver selected by
 `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json`, using the same command
-above. It covered all thirteen crates. Production line coverage was 98.78% for
-GUI and 93.65% for viewport; duplication was 0.61%. All six GUI packet rendering
+above. It covered all thirteen crates. Production line coverage was 98.74% for
+GUI and 93.72% for viewport; duplication was 0.61%. All six GUI packet rendering
 tests also passed on the AMD device with validation enabled.
 
 The default RADV gate failed the native history pixel comparison. The same

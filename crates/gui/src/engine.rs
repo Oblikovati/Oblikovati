@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
     GuiAtlas, GuiFrame, GuiInputCapture, GuiInputEvent,
+    context_owner::require_vacant_context,
     input::{apply_input, input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
-use imgui::{Condition, ConfigFlags, Context, SuspendedContext, TextureId};
+use imgui::{Condition, ConfigFlags, Context, TextureId};
 use std::sync::Arc;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiShellAction {
@@ -26,27 +27,22 @@ pub struct GuiFrameOutput {
     pub actions: Vec<GuiShellAction>,
     pub capture: GuiInputCapture,
 }
-/// One owner retains the context; packets contain no borrowed FFI pointers.
+/// One GUI thread retains the active context for its lifetime; packets contain no borrowed FFI pointers.
 /// ```compile_fail
 /// fn require_send<T: Send>() {}
 /// require_send::<oblikovati_gui::GuiFrameEngine>();
 /// ```
 pub struct GuiFrameEngine {
-    context: Option<SuspendedContext>,
+    context: Context,
     atlas: GuiAtlas,
 }
 impl GuiFrameEngine {
-    /// Create an isolated UI context without automatic file I/O; example: `GuiFrameEngine::new()?`.
+    /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
     pub fn new() -> Result<Self, String> {
-        let suspended = SuspendedContext::create();
-        let mut context = suspended
-            .activate()
-            .map_err(|_| "GUI context: expected exclusive owner activation".to_string())?;
+        require_vacant_context()?;
+        let mut context = Context::create();
         let atlas = configure_owner_context(&mut context);
-        Ok(Self {
-            context: Some(context.suspend()),
-            atlas,
-        })
+        Ok(Self { context, atlas })
     }
     /// Retain the atlas independently of the next UI frame; example: `engine.atlas().clone()` for submission.
     pub fn atlas(&self) -> &GuiAtlas {
@@ -56,25 +52,10 @@ impl GuiFrameEngine {
     /// Example: `engine.frame(&request)?` returns draws, actions, and channel capture requests.
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
-        let mut context = self.activate_owner_context()?;
-        let result = draw_controls(&mut context, request);
-        self.context = Some(context.suspend());
-        result
-    }
-    fn activate_owner_context(&mut self) -> Result<Context, String> {
-        let suspended = self
-            .context
-            .take()
-            .ok_or("GUI context: expected retained suspended state")?;
-        match suspended.activate() {
-            Ok(context) => Ok(context),
-            Err(suspended) => {
-                self.context = Some(suspended);
-                Err("GUI context: expected exclusive owner activation".into())
-            }
-        }
+        draw_controls(&mut self.context, request)
     }
 }
+
 fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.set_ini_filename(None);
     context.set_log_filename(None);
