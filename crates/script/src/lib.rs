@@ -13,3 +13,5 @@ pub use worker::worker_stdio;
 pub const WORKER_ARGUMENT: &str = "--internal-lua-worker";
 
 pub mod console;
+
+pub mod editor;

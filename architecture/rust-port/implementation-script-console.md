@@ -45,3 +45,7 @@ checks, and `make gate` for full local Linux acceptance. The pinned Go console t
 remain the behavior oracle. Native panel bindings, editor buffer/input, completion
 and help, document rules and responsive foreground MCPBridge tests remain open.
 Windows and macOS remain deferred.
+
+The [editor source core](implementation-script-editor.md) now owns Unicode source,
+selection, reversible edits and basic caret movement. Remaining editor operations
+and native input/render bindings are still open.
