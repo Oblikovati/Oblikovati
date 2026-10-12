@@ -1,6 +1,6 @@
 # Rust implementation evidence
 
-[Interactive selection engine evidence](implementation-interactive-selection.md).
+[Interactive selection engine evidence](implementation-interactive-selection.md). [Kernel region evidence](implementation-profile-regions.md).
 
 ## Parameter dependency graph — R2
 

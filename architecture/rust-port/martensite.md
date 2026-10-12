@@ -201,6 +201,16 @@ offscreen images, UI resources, and fences. Establish one submission and
 retirement protocol. Do not allow an ImGui backend to create a conflicting
 device lifecycle or keep an image alive after its owning view is removed.
 
+## Current sketch-region integration evidence
+
+The [released region probe](implementation-profile-regions.md) checks eleven
+bounded faces and their source-edge history against local OCCT 8.0.0. It also
+reproduces the general-fuse rejection of a single closed circle or ellipse.
+K02 remains open. A kernel-owned general sketch-region contract must cover
+these valid inputs and the required exact/filtered predicates, tolerances, and
+provenance. Its owning work item/ADR and release acceptance remain pending;
+the application must not add a separate region algorithm to pass this gate.
+
 ## First kernel and viewport proofs
 
 R1 produces a kernel-level fixture: a rectangular profile with a hole from
