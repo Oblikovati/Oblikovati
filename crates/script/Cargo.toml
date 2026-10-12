@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-script"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+[lints]
+workspace = true
+[dependencies]
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+[target.'cfg(target_os = "linux")'.dependencies]
+mlua = { version = "=0.12.2", features = ["lua51", "vendored"] }
+rustix = { version = "=1.1.4", features = ["process"] }
