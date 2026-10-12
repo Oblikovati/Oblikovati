@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Unicode editor state; native input and drawing do not own the source or edit history.
+mod blocks;
 mod buffer;
 mod history;
 mod movement;
+mod words;
 use buffer::{SourceBuffer, advance};
 use history::{SourceChange, SourceHistory};
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -123,6 +125,9 @@ impl ScriptEditor {
     }
     fn replace(&mut self, first: EditorPosition, last: EditorPosition, source: &str) {
         let removed = self.buffer.range(first, last);
+        if removed.is_empty() && source.is_empty() {
+            return;
+        }
         let caret = self.buffer.replace(first, last, source);
         self.history.record(SourceChange {
             at: first,
