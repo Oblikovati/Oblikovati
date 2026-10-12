@@ -109,3 +109,59 @@ fn executable_lua_reads_physical_and_visual_catalogs_without_a_document() {
     );
     assert!(String::from_utf8_lossy(&output.stdout).contains("catalog-ready"));
 }
+
+#[test]
+fn executable_lua_reads_embedded_assets_after_document_load_without_the_project() {
+    let directory = tempfile::tempdir().unwrap();
+    let document = directory.path().join("portable.opd");
+    std::fs::write(&document, portable_asset_package().encode().unwrap()).unwrap();
+    let script = write_source(
+        directory.path(),
+        "assert(#oblikovati.materials.list().materials==127);local p=oblikovati.materials.get{id='portable'};assert(p.source=='document');assert(p.displayName=='Portable');local a=oblikovati.appearances.get{id='portable-look'};assert(a.source=='document');print('portable-assets')",
+    );
+    let output = cli(&[
+        "script",
+        "run",
+        script.to_str().unwrap(),
+        "--doc",
+        document.to_str().unwrap(),
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("portable-assets"));
+}
+fn portable_asset_package() -> oblikovati_persistence::package::DocumentPackage {
+    use oblikovati_api::types::ASSET_PROJECT;
+    use oblikovati_model::assets::DocumentAssets;
+    let catalog = oblikovati_persistence::assets::load_builtin_catalog().unwrap();
+    let mut assets = DocumentAssets::default();
+    assets
+        .embed_material(
+            &catalog
+                .materials()
+                .get("steel")
+                .unwrap()
+                .duplicate("portable", "Portable", ASSET_PROJECT)
+                .unwrap(),
+        )
+        .unwrap();
+    assets
+        .embed_appearance(
+            &catalog
+                .appearances()
+                .get("steel")
+                .unwrap()
+                .duplicate("portable-look", "Portable look", ASSET_PROJECT)
+                .unwrap(),
+        )
+        .unwrap();
+    oblikovati_persistence::package::DocumentPackage::empty(
+        oblikovati_api::types::DOCUMENT_PART,
+        "Portable part",
+    )
+    .with_assets(&assets)
+    .unwrap()
+}

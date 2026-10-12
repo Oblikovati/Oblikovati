@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{decode, encode};
 use oblikovati_api::{Error, wire::*};
-use oblikovati_model::assets::{BuiltinAssetCatalog, MaterialAsset};
+use oblikovati_model::assets::{
+    AppearanceAsset, AssetCollection, BuiltinAssetCatalog, DocumentAssets, MaterialAsset,
+    ScopedAssets,
+};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 /// Implemented session catalog reads; creation, update, and assignment are separate capabilities.
@@ -28,11 +31,32 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             "asset query {method:?}: expected an admitted catalog: {cause}"
         ))
     })?;
+    let empty_document = DocumentAssets::default();
+    let document = active_document_assets(files)?.unwrap_or(&empty_document);
+    query_document_catalog(catalog, document, query)
+}
+fn query_document_catalog(
+    catalog: &BuiltinAssetCatalog,
+    document: &DocumentAssets,
+    query: AssetQuery,
+) -> Result<Vec<u8>, Error> {
+    let no_project_materials = AssetCollection::default();
+    let no_project_appearances = AssetCollection::default();
+    let materials = ScopedAssets {
+        document: document.materials(),
+        project: &no_project_materials,
+        builtin: catalog.materials(),
+    };
+    let appearances = ScopedAssets {
+        document: document.appearances(),
+        project: &no_project_appearances,
+        builtin: catalog.appearances(),
+    };
     match query {
-        AssetQuery::Materials => list_materials(catalog),
-        AssetQuery::Appearances => list_appearances(catalog),
-        AssetQuery::Material(reference) => get_material(catalog, reference),
-        AssetQuery::Appearance(reference) => get_appearance(catalog, reference),
+        AssetQuery::Materials => list_materials(&materials),
+        AssetQuery::Appearances => list_appearances(&appearances),
+        AssetQuery::Material(reference) => get_material(&materials, reference),
+        AssetQuery::Appearance(reference) => get_appearance(&appearances, reference),
     }
 }
 fn classify_asset_query(method: &str, request: &[u8]) -> Result<AssetQuery, Error> {
@@ -46,47 +70,42 @@ fn classify_asset_query(method: &str, request: &[u8]) -> Result<AssetQuery, Erro
         ))),
     }
 }
-fn list_materials(catalog: &BuiltinAssetCatalog) -> Result<Vec<u8>, Error> {
+fn list_materials(materials: &ScopedAssets<'_, MaterialAsset>) -> Result<Vec<u8>, Error> {
     encode(&ListMaterialsResult {
         materials: Some(
-            catalog
-                .materials()
-                .insertion_order()
+            materials
+                .display_order()
+                .map_err(Error)?
+                .into_iter()
                 .map(material_info)
                 .collect(),
         ),
     })
 }
-fn list_appearances(catalog: &BuiltinAssetCatalog) -> Result<Vec<u8>, Error> {
+fn list_appearances(appearances: &ScopedAssets<'_, AppearanceAsset>) -> Result<Vec<u8>, Error> {
     encode(&ListAppearancesResult {
         appearances: Some(
-            catalog
-                .appearances()
-                .insertion_order()
+            appearances
+                .display_order()
+                .map_err(Error)?
+                .into_iter()
                 .map(|asset| asset.info())
                 .collect(),
         ),
     })
 }
-fn get_material(catalog: &BuiltinAssetCatalog, reference: AssetRefArgs) -> Result<Vec<u8>, Error> {
-    let asset = catalog.materials().get(&reference.id).ok_or_else(|| {
-        Error(format!(
-            "materials.get id {:?}: expected a registered catalog material",
-            reference.id
-        ))
-    })?;
+fn get_material(
+    materials: &ScopedAssets<'_, MaterialAsset>,
+    reference: AssetRefArgs,
+) -> Result<Vec<u8>, Error> {
+    let asset = materials.resolve(&reference.id).map_err(Error)?;
     encode(&material_info(asset))
 }
 fn get_appearance(
-    catalog: &BuiltinAssetCatalog,
+    appearances: &ScopedAssets<'_, AppearanceAsset>,
     reference: AssetRefArgs,
 ) -> Result<Vec<u8>, Error> {
-    let asset = catalog.appearances().get(&reference.id).ok_or_else(|| {
-        Error(format!(
-            "appearances.get id {:?}: expected a registered catalog appearance",
-            reference.id
-        ))
-    })?;
+    let asset = appearances.resolve(&reference.id).map_err(Error)?;
     encode(&asset.info())
 }
 fn material_info(asset: &MaterialAsset) -> MaterialInfo {
@@ -95,6 +114,23 @@ fn material_info(asset: &MaterialAsset) -> MaterialInfo {
     info.isotropy_class = asset.isotropy_class().0.into_owned();
     info
 }
+
+fn active_document_assets<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+) -> Result<Option<&DocumentAssets>, Error> {
+    files
+        .workspace()
+        .active_document()
+        .map(|id| {
+            files
+                .workspace()
+                .session(id)
+                .map(|session| &session.snapshot().assets)
+                .map_err(|cause| Error(cause.to_string()))
+        })
+        .transpose()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

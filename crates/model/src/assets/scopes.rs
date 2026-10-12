@@ -49,6 +49,22 @@ pub struct ScopedAssets<'a, T> {
     pub builtin: &'a AssetCollection<T>,
 }
 impl<T: AssetIdentity> ScopedAssets<'_, T> {
+    /// List visible definitions in catalog order, then new project/document IDs; example: `scopes.display_order()?`.
+    pub fn display_order(&self) -> Result<Vec<&T>, String> {
+        let mut seen = std::collections::BTreeSet::new();
+        let mut visible = Vec::new();
+        let candidates = self
+            .builtin
+            .insertion_order()
+            .chain(self.project.insertion_order())
+            .chain(self.document.ordered());
+        for asset in candidates {
+            if seen.insert(asset.asset_id()) {
+                visible.push(self.resolve(asset.asset_id())?);
+            }
+        }
+        Ok(visible)
+    }
     /// Resolve the exact ID without rebinding missing assets; example: `scopes.resolve("steel")?`.
     pub fn resolve(&self, id: &str) -> Result<&T, String> {
         [self.document, self.project, self.builtin]

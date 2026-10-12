@@ -117,3 +117,36 @@ fn prepared_physical_scopes() -> [AssetCollection<MaterialAsset>; 3] {
     document.insert(shared);
     [builtin, project, document]
 }
+
+#[test]
+fn visible_display_order_preserves_catalog_positions_with_scoped_overrides() {
+    let base = AppearanceAsset::from_info(appearance_record(ASSET_BUILTIN)).unwrap();
+    let mut builtin = AssetCollection::default();
+    let mut project = AssetCollection::default();
+    let mut document = AssetCollection::default();
+    for id in ["z", "a"] {
+        builtin.insert(base.duplicate(id, id, ASSET_BUILTIN).unwrap());
+    }
+    project.insert(base.duplicate("z", "Project z", ASSET_PROJECT).unwrap());
+    project.insert(
+        base.duplicate("new-project", "Project", ASSET_PROJECT)
+            .unwrap(),
+    );
+    document.insert(base.duplicate("a", "Document a", ASSET_DOCUMENT).unwrap());
+    document.insert(
+        base.duplicate("new-document", "Document", ASSET_DOCUMENT)
+            .unwrap(),
+    );
+    let scopes = ScopedAssets {
+        document: &document,
+        project: &project,
+        builtin: &builtin,
+    };
+    let visible = scopes.display_order().unwrap();
+    assert_eq!(
+        visible.iter().map(|asset| asset.id()).collect::<Vec<_>>(),
+        ["z", "a", "new-project", "new-document"]
+    );
+    assert_eq!(visible[0].display_name(), "Project z");
+    assert_eq!(visible[1].display_name(), "Document a");
+}
