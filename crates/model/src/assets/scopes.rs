@@ -9,22 +9,33 @@ pub trait AssetIdentity {
 #[derive(Clone, Debug)]
 pub struct AssetCollection<T> {
     entries: BTreeMap<String, T>,
+    insertion_ids: Vec<String>,
 }
 impl<T> Default for AssetCollection<T> {
     fn default() -> Self {
         Self {
             entries: BTreeMap::new(),
+            insertion_ids: Vec::new(),
         }
     }
 }
 impl<T: AssetIdentity> AssetCollection<T> {
     /// Insert an owned asset, returning the old snapshot; example: `scope.insert(asset)`.
     pub fn insert(&mut self, asset: T) -> Option<T> {
-        self.entries.insert(asset.asset_id().into(), asset)
+        let id = asset.asset_id().to_owned();
+        if !self.entries.contains_key(&id) {
+            self.insertion_ids.push(id.clone());
+        }
+        self.entries.insert(id, asset)
     }
     /// Borrow one asset by exact identity; example: `scope.get("steel")`.
     pub fn get(&self, id: &str) -> Option<&T> {
         self.entries.get(id)
+    }
+    /// Keep category display order across replacement; example: `scope.insertion_order()`.
+    pub fn insertion_order(&self) -> impl Iterator<Item = &T> {
+        // Only insert owns these IDs; entries cannot be removed or mutated through this interface.
+        self.insertion_ids.iter().map(|id| &self.entries[id])
     }
     /// Read snapshots in stable ID order; example: `scope.ordered().collect::<Vec<_>>()`.
     pub fn ordered(&self) -> impl Iterator<Item = &T> {

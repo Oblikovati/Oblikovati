@@ -61,6 +61,13 @@ fn scope_iteration_and_replacement_are_deterministic() {
     let old = collection
         .insert(base.duplicate("m", "Replacement", ASSET_DOCUMENT).unwrap())
         .unwrap();
+    assert_eq!(
+        collection
+            .insertion_order()
+            .map(Appearance::id)
+            .collect::<Vec<_>>(),
+        ["z", "a", "m"]
+    );
     assert_eq!(old.display_name(), "m");
     assert_eq!(collection.get("m").unwrap().display_name(), "Replacement");
 }

@@ -3,6 +3,7 @@
 //! Storage boundaries for complete document snapshots.
 
 pub mod application_options;
+pub mod assets;
 pub mod atomic;
 pub mod load;
 pub mod metadata;
