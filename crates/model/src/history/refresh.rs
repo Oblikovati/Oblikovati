@@ -17,7 +17,7 @@ impl PreparedRefresh<'_> {
             return false;
         };
         self.owner.current = snapshot;
-        self.owner.generation = generation;
+        self.owner.generation.store(generation, Ordering::Release);
         true
     }
 }

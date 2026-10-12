@@ -7,6 +7,8 @@ use crate::{
     property::DocumentProperties,
 };
 mod checkpoints;
+mod evaluation;
+pub use evaluation::{EvaluationScope, HistoryEvaluationSnapshot};
 mod datum_delete;
 mod datum_metadata;
 mod derived_ids;
@@ -54,7 +56,10 @@ mod navigation;
 mod refresh;
 pub use error::{EditError, HistoryError};
 pub use refresh::PreparedRefresh;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicU64, Ordering},
+};
 
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
@@ -146,7 +151,7 @@ pub struct DocumentEditHistory {
     undone: Vec<HistoryStep>,
     owner: Arc<()>,
     next_token: u64,
-    generation: u64,
+    generation: Arc<AtomicU64>,
 }
 
 impl DocumentEditHistory {
@@ -193,7 +198,7 @@ impl DocumentEditHistory {
             undone: Vec::new(),
             owner: Arc::new(()),
             next_token: 0,
-            generation: 0,
+            generation: Arc::new(AtomicU64::new(0)),
         })
     }
 
@@ -204,7 +209,7 @@ impl DocumentEditHistory {
 
     /// Read the generation used to reject stale evaluation results; example: `history.generation()`.
     pub fn generation(&self) -> u64 {
-        self.generation
+        self.generation.load(Ordering::Acquire)
     }
 
     /// Inspect permanent ID reservations; example: `history.high_water()` after undo.
@@ -270,7 +275,7 @@ impl DocumentEditHistory {
         self.validate_derived_ids(&candidate, tables_before)
             .map_err(EditError::History)?;
         self.current = candidate;
-        self.generation = generation;
+        self.generation.store(generation, Ordering::Release);
         Ok(result)
     }
 
@@ -306,7 +311,7 @@ impl DocumentEditHistory {
         self.validate_abort(token)?;
         let generation = self.next_generation()?;
         self.current = self.open.pop().expect("validated frame").before;
-        self.generation = generation;
+        self.generation.store(generation, Ordering::Release);
         Ok(())
     }
 
@@ -355,7 +360,7 @@ impl DocumentEditHistory {
     }
 
     fn next_generation(&self) -> Result<u64, HistoryError> {
-        self.generation
+        self.generation()
             .checked_add(1)
             .ok_or(HistoryError::Exhausted("evaluation generations"))
     }

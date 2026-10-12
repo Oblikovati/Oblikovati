@@ -467,33 +467,27 @@ fn distinct_paths_with_one_guid_get_distinct_dirty_identity_owners() {
     assert_eq!(host.workspace().active_document(), Some(first));
 }
 
-#[path = "files/transitions.rs"]
-mod transitions;
-
-#[path = "files/copies.rs"]
-mod copies;
-
-#[path = "files/batch.rs"]
-mod batch;
-
-#[path = "files/create.rs"]
-mod create;
-
-#[path = "files/template.rs"]
-mod template;
-
-#[path = "files/project.rs"]
-mod project;
-
-#[path = "files/unbound.rs"]
-mod unbound;
-
-#[path = "files/interest_notices.rs"]
-mod interest_notices;
-
 #[path = "files/active_project.rs"]
 mod active_project;
+#[path = "files/batch.rs"]
+mod batch;
+#[path = "files/copies.rs"]
+mod copies;
+#[path = "files/create.rs"]
+mod create;
+#[path = "files/interest_notices.rs"]
+mod interest_notices;
+#[path = "files/part_evaluation.rs"]
+mod part_evaluation;
+#[path = "files/project.rs"]
+mod project;
 #[path = "files/sketches.rs"]
 mod sketches;
+#[path = "files/template.rs"]
+mod template;
+#[path = "files/transitions.rs"]
+mod transitions;
+#[path = "files/unbound.rs"]
+mod unbound;
 #[path = "files/work_planes.rs"]
 mod work_planes;

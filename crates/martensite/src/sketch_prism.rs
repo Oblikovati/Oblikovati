@@ -66,6 +66,13 @@ fn selected_definition(
 }
 
 /// Released kernel implementation of the model's selected-prism replay interface.
+/// Completed session receipts retain the kernel's owner-thread restriction.
+/// ```compile_fail
+/// use oblikovati_martensite::PrismProbeSnapshot;
+/// use oblikovati_session::part_evaluation::CompletedPartEvaluation;
+/// fn require_send<T: Send>() {}
+/// require_send::<CompletedPartEvaluation<PrismProbeSnapshot, String>>();
+/// ```
 #[derive(Default)]
 pub struct MartensitePrismEvaluator;
 impl oblikovati_model::feature::part::SketchPrismEvaluator for MartensitePrismEvaluator {

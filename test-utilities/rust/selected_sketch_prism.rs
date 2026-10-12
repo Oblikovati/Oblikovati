@@ -179,3 +179,39 @@ fn dimension_constraints() -> [PlanarConstraint; 2] {
         },
     ]
 }
+
+/// Capture a fully constrained stored prism recipe; example: `selected_prism_document()` for session tests.
+pub fn selected_prism_document() -> DocumentSnapshot {
+    use oblikovati_model::feature::{AuthoredFeature, FeatureId};
+    let mut document = selected_sketch_document();
+    document
+        .parameters
+        .insert_expression(3, "depth", oblikovati_api::types::USER_PARAM, "2 cm")
+        .unwrap();
+    let feature = AuthoredFeature::sketch_prism(
+        FeatureId(1),
+        "Prism",
+        selected_prism_definition(),
+        &document,
+    )
+    .unwrap();
+    document.work_geometry.append(feature).unwrap();
+    document
+}
+/// Share the parameter-backed stored source without evaluated coordinates; example: `selected_prism_definition().recipe()`.
+pub fn selected_prism_definition() -> oblikovati_model::feature::sketch_prism::SketchPrismDefinition
+{
+    use oblikovati_model::feature::{
+        sketch_prism::SketchPrismDefinition, work_geometry::DatumLength,
+    };
+    SketchPrismDefinition::new(
+        SKETCH,
+        selected_sketch_boundary(),
+        [
+            DatumLength::Constant(0.),
+            DatumLength::Constant(0.),
+            DatumLength::Parameter(3),
+        ],
+    )
+    .unwrap()
+}

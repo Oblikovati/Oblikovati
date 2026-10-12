@@ -141,3 +141,6 @@ fn stored_datum_is_declined_as_a_non_body_definition() {
 
 #[path = "stored/replay.rs"]
 mod replay;
+
+#[path = "stored/session.rs"]
+mod session;

@@ -25,6 +25,7 @@ rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = 
 workspace = true
 
 [dev-dependencies]
+oblikovati-session = { path = "../session" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

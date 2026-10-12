@@ -7,6 +7,7 @@ mod error;
 mod events;
 pub mod files;
 mod navigation;
+pub mod part_evaluation;
 mod refresh;
 pub mod selection;
 mod sketch_inference;

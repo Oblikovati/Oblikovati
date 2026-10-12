@@ -37,7 +37,7 @@ fn exhausted_tokens_do_not_open_another_frame() {
 fn exhausted_generation_refuses_edit_and_abort_without_calling_mutation() {
     let mut history = empty_history();
     let token = history.begin("open").unwrap();
-    history.generation = u64::MAX;
+    history.generation.store(u64::MAX, Ordering::Release);
     let result = history.edit(&token, |_, _| -> Result<(), ()> {
         panic!("exhausted generation must not invoke command")
     });
@@ -60,10 +60,10 @@ fn exhausted_generation_preserves_both_navigation_stacks() {
     let mut history = empty_history();
     let token = history.begin("step").unwrap();
     history.commit(&token, true).unwrap();
-    history.generation = u64::MAX;
+    history.generation.store(u64::MAX, Ordering::Release);
     assert!(matches!(history.undo(), Err(HistoryError::Exhausted(_))));
     assert_eq!(history.undo_labels(), ["step"]);
-    history.generation = u64::MAX - 1;
+    history.generation.store(u64::MAX - 1, Ordering::Release);
     history.undo().unwrap();
     assert!(matches!(history.redo(), Err(HistoryError::Exhausted(_))));
     assert_eq!(history.redo_labels(), ["step"]);

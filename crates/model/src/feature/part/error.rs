@@ -5,6 +5,9 @@ use crate::feature::{
 use std::{error::Error, fmt};
 #[derive(Clone, Debug, PartialEq)]
 pub enum PartFeatureProgramError {
+    Cancelled {
+        completed: usize,
+    },
     Prism {
         feature: FeatureId,
         cause: SketchPrismError,
@@ -15,6 +18,10 @@ pub enum PartFeatureProgramError {
 impl fmt::Display for PartFeatureProgramError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Cancelled { completed } => write!(
+                output,
+                "part replay cancelled after {completed} entries: expected a complete current generation"
+            ),
             Self::Prism { feature, cause } => write!(output, "part feature {feature:?}: {cause}"),
             Self::Sequence(cause) => cause.fmt(output),
             Self::Reads(cause) => cause.fmt(output),
@@ -24,6 +31,7 @@ impl fmt::Display for PartFeatureProgramError {
 impl Error for PartFeatureProgramError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Cancelled { .. } => None,
             Self::Prism { cause, .. } => Some(cause),
             Self::Sequence(cause) => Some(cause),
             Self::Reads(cause) => Some(cause),

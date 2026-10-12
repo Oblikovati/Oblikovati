@@ -23,7 +23,7 @@ impl DocumentEditHistory {
         let generation = self.next_generation()?;
         let step = self.done.pop().ok_or(HistoryError::Empty("undo"))?;
         self.current = step.before.clone();
-        self.generation = generation;
+        self.generation.store(generation, Ordering::Release);
         let label = step.label.clone();
         self.undone.push(step);
         Ok(label)
@@ -35,7 +35,7 @@ impl DocumentEditHistory {
         let generation = self.next_generation()?;
         let step = self.undone.pop().ok_or(HistoryError::Empty("redo"))?;
         self.current = step.after.clone();
-        self.generation = generation;
+        self.generation.store(generation, Ordering::Release);
         let label = step.label.clone();
         self.done.push(step);
         Ok(label)

@@ -62,6 +62,15 @@ impl DocumentSnapshot {
         &self,
         backend: &mut B,
     ) -> Result<PartFeatureEvaluation<B::Body, B::Failure>, PartFeatureProgramError> {
+        self.evaluate_part_features_cancellable(backend, || false)
+    }
+    /// Poll cancellation between entries and discard an incomplete report.
+    /// Example: `snapshot.evaluate_part_features_cancellable(&mut backend, || scope.is_superseded())?`.
+    pub fn evaluate_part_features_cancellable<B: SketchPrismEvaluator>(
+        &self,
+        backend: &mut B,
+        mut cancelled: impl FnMut() -> bool,
+    ) -> Result<PartFeatureEvaluation<B::Body, B::Failure>, PartFeatureProgramError> {
         let range = self.part_replay_range()?;
         let mut controller = FeatureReplayController::new_with_parameters(
             &self.work_geometry,
@@ -71,7 +80,7 @@ impl DocumentSnapshot {
         )
         .map_err(PartFeatureProgramError::Reads)?;
         let mut evaluation = PartFeatureEvaluation::empty();
-        evaluation.replay(self, backend, &mut controller)?;
+        evaluation.replay(self, backend, &mut controller, &mut cancelled)?;
         evaluation.health = controller
             .finish()
             .map_err(PartFeatureProgramError::Reads)?;
@@ -88,11 +97,16 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition,
             PartFeatureFailure<Failure>,
         >,
+        cancelled: &mut impl FnMut() -> bool,
     ) -> Result<(), PartFeatureProgramError> {
-        while let Some(step) = controller
-            .advance()
-            .map_err(PartFeatureProgramError::Reads)?
-        {
+        loop {
+            require_replay_current(cancelled(), controller.records().len())?;
+            let Some(step) = controller
+                .advance()
+                .map_err(PartFeatureProgramError::Reads)?
+            else {
+                return Ok(());
+            };
             if let FeatureReplayStep::Evaluate(id) = step {
                 let outcome = self.evaluate_entry(snapshot, backend, id);
                 controller
@@ -100,7 +114,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                     .map_err(PartFeatureProgramError::Reads)?;
             }
         }
-        Ok(())
     }
     fn evaluate_entry<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
@@ -170,4 +183,14 @@ impl<Body, Failure> crate::feature::work_plane::WorkPlaneResolver
     fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkGeometryError> {
         self.datums.point(feature)
     }
+}
+
+fn require_replay_current(
+    cancelled: bool,
+    completed: usize,
+) -> Result<(), PartFeatureProgramError> {
+    if cancelled {
+        return Err(PartFeatureProgramError::Cancelled { completed });
+    }
+    Ok(())
 }
