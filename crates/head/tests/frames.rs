@@ -210,7 +210,7 @@ fn focus_exposure_and_resize_each_request_presentation() {
         ViewportEvent::Resized([800, 600]),
     ] {
         control.pending = false;
-        control.events(&[event]);
+        control.events(&[event], true);
         assert!(control.pending);
     }
     control.summary.attempts = u64::MAX;
@@ -220,4 +220,83 @@ fn focus_exposure_and_resize_each_request_presentation() {
             .unwrap_err()
             .contains("unused u64")
     );
+}
+#[derive(Default)]
+struct FakeHeadWork {
+    statuses: VecDeque<Result<crate::HeadWorkStatus, String>>,
+    close_answers: VecDeque<bool>,
+    calls: Vec<&'static str>,
+    fail_finish: bool,
+}
+impl crate::HeadWork for FakeHeadWork {
+    fn poll(&mut self, budget: usize) -> Result<crate::HeadWorkStatus, String> {
+        assert_eq!(budget, 32);
+        self.calls.push("poll");
+        self.statuses
+            .pop_front()
+            .unwrap_or(Ok(crate::HeadWorkStatus::default()))
+    }
+    fn close_allowed(&mut self) -> Result<bool, String> {
+        self.calls.push("close");
+        Ok(self.close_answers.pop_front().unwrap_or(true))
+    }
+    fn finish(&mut self) -> Result<(), String> {
+        self.calls.push("finish");
+        if self.fail_finish {
+            return Err("fake owner retirement fault".into());
+        }
+        Ok(())
+    }
+}
+#[test]
+fn refused_close_keeps_the_window_alive_until_the_owner_approves_another_request() {
+    let mut window = FakeHeadWindow {
+        inputs: [
+            vec![ViewportEvent::CloseRequested],
+            vec![ViewportEvent::CloseRequested],
+        ]
+        .into(),
+        wakes: [Ok(false)].into(),
+        ..Default::default()
+    };
+    let mut owner = FakeHeadWork {
+        close_answers: [false, true].into(),
+        ..Default::default()
+    };
+    let summary = run_window_with_owner(&mut window, HeadOptions::default(), &mut owner).unwrap();
+    assert_eq!(summary.completed, 1);
+    assert_eq!(owner.calls, ["poll", "close", "poll", "close", "finish"]);
+    let expected = ["events", "present", "wait", "events", "finish"];
+    assert_eq!(window.calls, expected);
+}
+#[test]
+fn queued_work_prevents_idle_wait_between_bounded_owner_batches() {
+    let mut window = FakeHeadWindow {
+        inputs: [vec![], vec![ViewportEvent::CloseRequested]].into(),
+        ..Default::default()
+    };
+    let mut owner = FakeHeadWork {
+        statuses: [Ok(crate::HeadWorkStatus {
+            changed: true,
+            pending: true,
+        })]
+        .into(),
+        ..Default::default()
+    };
+    let summary = run_window_with_owner(&mut window, HeadOptions::default(), &mut owner).unwrap();
+    assert_eq!(summary.completed, 1);
+    assert!(!window.calls.contains(&"wait"));
+}
+#[test]
+fn owner_poll_and_retirement_errors_preserve_window_retirement() {
+    let mut window = FakeHeadWindow::default();
+    let mut owner = FakeHeadWork {
+        statuses: [Err("fake owner drain fault".into())].into(),
+        fail_finish: true,
+        ..Default::default()
+    };
+    let error = run_window_with_owner(&mut window, HeadOptions::default(), &mut owner).unwrap_err();
+    assert!(error.contains("drain fault") && error.contains("retirement fault"));
+    assert_eq!(window.calls, ["events", "finish"]);
+    assert_eq!(owner.calls, ["poll", "finish"]);
 }

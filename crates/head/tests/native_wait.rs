@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::run_window;
 #[test]
 fn native_owner_wait_receives_model_free_worker_wakes_and_visibility_inputs() {
     let mut window = NativeHeadWindow::open().unwrap();

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::HeadOptions;
+use crate::{HeadOptions, HeadWork, work::IdleHeadWork};
 use oblikovati_viewport::ViewportEvent;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HeadPresentation {
@@ -47,10 +47,13 @@ impl FrameControl {
                 .frames
                 .is_some_and(|count| self.summary.attempts >= count)
     }
-    fn events(&mut self, events: &[ViewportEvent]) {
+    fn events(&mut self, events: &[ViewportEvent], close_allowed: bool) {
         for event in events {
             match event {
-                ViewportEvent::CloseRequested => self.closed = true,
+                ViewportEvent::CloseRequested => {
+                    self.closed = close_allowed;
+                    self.pending |= !close_allowed;
+                }
                 ViewportEvent::Mapped(mapped) => {
                     self.mapped = *mapped;
                     self.pending = *mapped;
@@ -93,24 +96,45 @@ pub fn run_window(
     window: &mut dyn HeadWindow,
     options: HeadOptions,
 ) -> Result<HeadSummary, String> {
-    let outcome = run_frames(window, options);
-    match (outcome, window.finish()) {
+    run_window_with_owner(window, options, &mut IdleHeadWork)
+}
+/// Run the same native loop with document-owned services; example: `run_window_with_owner(window, options, owner)?`.
+pub fn run_window_with_owner(
+    window: &mut dyn HeadWindow,
+    options: HeadOptions,
+    owner: &mut dyn HeadWork,
+) -> Result<HeadSummary, String> {
+    let outcome = run_frames(window, options, owner);
+    let outcome = combine_retirement(outcome, owner.finish());
+    combine_retirement(outcome, window.finish())
+}
+fn combine_retirement(
+    outcome: Result<HeadSummary, String>,
+    retirement: Result<(), String>,
+) -> Result<HeadSummary, String> {
+    match (outcome, retirement) {
         (Ok(summary), Ok(())) => Ok(summary),
         (Err(error), Ok(())) | (Ok(_), Err(error)) => Err(error),
-        (Err(error), Err(cleanup)) => {
-            Err(format!("head run: {error}; window retirement: {cleanup}"))
-        }
+        (Err(error), Err(cleanup)) => Err(format!("head run: {error}; retirement: {cleanup}")),
     }
 }
-fn run_frames(window: &mut dyn HeadWindow, options: HeadOptions) -> Result<HeadSummary, String> {
+fn run_frames(
+    window: &mut dyn HeadWindow,
+    options: HeadOptions,
+    owner: &mut dyn HeadWork,
+) -> Result<HeadSummary, String> {
     let mut control = FrameControl::new(options);
     while !control.stopped() {
-        control.events(&window.events(64)?);
+        let inputs = window.events(64)?;
+        let activity = owner.poll(32)?;
+        control.pending |= activity.changed;
+        let closing = inputs.contains(&ViewportEvent::CloseRequested);
+        control.events(&inputs, !closing || owner.close_allowed()?);
         if control.stopped() {
             break;
         }
         control.frame(window)?;
-        if control.should_wait() {
+        if control.should_wait() && !activity.pending {
             control.pending |= window.wait()?;
         }
     }

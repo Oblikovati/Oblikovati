@@ -564,8 +564,14 @@ dependencies = [
 name = "oblikovati-head"
 version = "0.1.0"
 dependencies = [
+ "oblikovati-api",
+ "oblikovati-automation",
  "oblikovati-cli",
+ "oblikovati-model",
+ "oblikovati-persistence",
+ "oblikovati-session",
  "oblikovati-viewport",
+ "tempfile",
 ]
 
 [[package]]

@@ -53,9 +53,11 @@ run forms part of this evidence.
 
 ## Remaining integration
 
-The executable currently shows a clear viewport. Binding document/session
-ownership, queued add-in calls, scripts, saved window state, icons, and model
-presentations remains open. Shared Dear ImGui composition requires the
+The executable currently shows a clear viewport. The
+[desktop document owner](implementation-desktop-owner.md) now binds document
+ownership and typed worker requests to this loop. Native add-in registry and C
+callback attachment, scripts, saved window state, icons, and model presentations
+remain open. Shared Dear ImGui composition requires the
 kernel-owned interface in [viewport evidence](implementation-viewport.md).
 Picking, UI controls, and foreground MCPBridge acceptance remain required.
 This step does not establish a usable CAD desktop or complete R1V/R4/R7.

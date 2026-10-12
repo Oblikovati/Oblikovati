@@ -1,15 +1,27 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Desktop window lifetime and event-driven presentation. Model and UI binding remain separate port work.
+//! Desktop window lifetime and document-owned frame dispatch. Native UI and model display remain open.
 mod arguments;
 pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 #[cfg(target_os = "linux")]
 mod frames;
 #[cfg(target_os = "linux")]
-pub use frames::{HeadPresentation, HeadSummary, HeadWindow, run_window};
+pub use frames::{HeadPresentation, HeadSummary, HeadWindow, run_window, run_window_with_owner};
 #[cfg(target_os = "linux")]
 mod native;
 #[cfg(target_os = "linux")]
 pub use native::run_native;
+#[cfg(target_os = "linux")]
+mod work;
+#[cfg(target_os = "linux")]
+pub use work::{HeadInvalidation, HeadWork, HeadWorkStatus};
+#[cfg(target_os = "linux")]
+mod owner;
+#[cfg(target_os = "linux")]
+pub use owner::{DesktopDispatchOptions, DesktopOwner};
+#[cfg(target_os = "linux")]
+mod observations;
+#[cfg(target_os = "linux")]
+pub use observations::{DesktopObservations, MissingInterestNotice};
 use std::{ffi::OsString, io::Write};
 const USAGE: &str = "usage: oblikovati-head [--frames N]\n       oblikovati-head --help\n       oblikovati-head --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
 /// Execute the desktop entry point with injected output; example: `run(&["--help".into()], output)?;`.

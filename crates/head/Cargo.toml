@@ -15,6 +15,11 @@ workspace = true
 [dependencies]
 oblikovati-cli = { path = "../cli" }
 oblikovati-viewport = { path = "../viewport" }
+oblikovati-automation = { path = "../automation" }
+oblikovati-model = { path = "../model" }
+oblikovati-session = { path = "../session" }
+oblikovati-persistence = { path = "../persistence" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 
 [[test]]
 name = "arguments"
@@ -22,3 +27,6 @@ path = "tests/arguments.rs"
 [[test]]
 name = "native"
 path = "tests/native.rs"
+
+[dev-dependencies]
+tempfile = "=3.27.0"
