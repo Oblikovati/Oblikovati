@@ -231,3 +231,6 @@ mod derived_edit;
 mod wire_json;
 pub use wire_json::{decode_wire_arguments, encode_wire_reply};
 pub(crate) use wire_json::{decode_wire_arguments as decode, encode_wire_reply as encode};
+
+mod inventory;
+pub use inventory::file_host_methods;

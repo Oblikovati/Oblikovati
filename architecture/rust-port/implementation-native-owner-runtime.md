@@ -91,3 +91,8 @@ installed bundle discovery, persisted user policy, native lifecycle wire routing
 queued event delivery and foreground MCPBridge acceptance. The frame/wait runtime
 is available for these integrations; no rendered part or solid feature acceptance
 is claimed. Windows and macOS remain deferred.
+
+The [CLI Lua port](implementation-cli-lua.md) now executes scripts in an isolated
+worker while the parent services the canonical file owner. It uses structural
+script IPC rather than loading the VM into the native add-in worker. Executable
+native-window integration and remaining lifecycle wire routes remain open.

@@ -170,7 +170,7 @@ fn help_and_version_match_the_embedded_build_identity_without_reading_packages()
             );
         } else {
             assert!(
-                output.contains("Kernel geometry replay, edits, and scripts are not yet available")
+                output.contains("Kernel geometry replay and import/export are not yet available")
             );
         }
     }

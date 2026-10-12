@@ -34,3 +34,11 @@ impl WorkspaceObserver for CliObservations {
     }
     fn closed(&mut self, _: u64, _: Option<u64>) {}
 }
+
+pub(super) struct CliObservationFactory;
+impl oblikovati_automation::DocumentObserverFactory for CliObservationFactory {
+    type Observer = CliObservations;
+    fn create(&mut self) -> Result<Self::Observer, String> {
+        Ok(CliObservations)
+    }
+}
