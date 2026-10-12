@@ -39,12 +39,14 @@ macro_rules! asset_snapshot_methods {
     };
 }
 mod appearance;
+mod assignment;
 mod catalog;
 mod catalog_validation;
 mod material;
 mod scopes;
 mod validation;
 pub use appearance::AppearanceAsset;
+pub use assignment::{AssetAssignments, AssignmentReference};
 pub use catalog::{BuiltinAssetCatalog, DEFAULT_APPEARANCE_ID};
 pub use material::MaterialAsset;
 pub use scopes::{AssetCollection, AssetIdentity, ScopedAssets};
