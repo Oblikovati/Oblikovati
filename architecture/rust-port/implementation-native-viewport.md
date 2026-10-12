@@ -105,3 +105,19 @@ The [desktop owner loop](implementation-desktop-loop.md) now consumes this
 adapter from `oblikovati-head`. Native map/unmap events invalidate the completed
 surface generation and tell the head when presentation is available. Document
 and UI integration remain separate open work.
+
+## Drawable aspect-ratio oracle
+
+The placed-prism camera fixes a six-unit vertical span. Its horizontal span
+changes with the drawable aspect ratio. The previous solid-material sample at
+30% of image width can therefore leave the part in a wide window. A fixed
+960-by-240 offscreen drawable reproduced the failure independently of the window
+manager. This was an invalid pixel expectation, not a geometry or renderer fix.
+
+The material sample now uses center X and 30% of image height: sketch Y is 2.7,
+inside the three-unit-high part and above the hole's Y range from 1 to 2. The
+center hole and corner background samples remain blue. The regression verifies
+both 320-by-240 and 960-by-240 drawables with the same exact color oracle. It
+passes with validation enabled on software Vulkan and the AMD device. The native
+suite retains placed, flipped, edited, Undo, and Redo cases and its independent
+X11 pixel comparison. No production geometry or rendering behavior was changed.

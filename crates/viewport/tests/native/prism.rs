@@ -100,11 +100,28 @@ fn prism_camera(plane: SketchPlane) -> ViewportCamera {
 fn verify_hole_pixels(capture: &ViewportCapture) {
     let [width, height] = capture.extent;
     assert_eq!(sample(capture, width / 2, height / 2), [0, 0, 255, 255]);
+    // The camera fixes vertical span; a horizontal fraction can leave the body on wide windows.
     assert_eq!(
-        sample(capture, width * 3 / 10, height / 2),
+        sample(capture, width / 2, height * 3 / 10),
         [0, 255, 0, 255]
     );
     assert_eq!(sample(capture, 0, 0), [0, 0, 255, 255]);
+}
+#[test]
+fn prism_hole_pixels_remain_valid_when_the_drawable_is_wide() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let plane = SketchPlane::xy();
+    let owner = native_prism_owner(plane);
+    let snapshot = retain_stored_sketch_prism(owner.snapshot(), FeatureId(1)).unwrap();
+    for extent in [[320, 240], [960, 240]] {
+        let mut view = runtime.open_offscreen(extent).unwrap();
+        view.set_camera(prism_camera(plane)).unwrap();
+        view.submit(&prism_scene(&snapshot)).unwrap();
+        let capture = view.redraw().unwrap();
+        assert_eq!(capture.extent, extent);
+        verify_hole_pixels(&capture);
+    }
+    assert!(runtime.validation_errors().is_empty());
 }
 fn sample(capture: &ViewportCapture, x: u32, y: u32) -> [u8; 4] {
     let offset = ((y * capture.extent[0] + x) * 4) as usize;
