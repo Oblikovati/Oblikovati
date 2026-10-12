@@ -47,3 +47,7 @@ path = "tests/scripts.rs"
 [[test]]
 name = "scripts_native"
 path = "tests/scripts_native.rs"
+
+[[test]]
+name = "addin_startup"
+path = "tests/addin_startup.rs"

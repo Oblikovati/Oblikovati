@@ -373,3 +373,31 @@ fn a_window_without_command_feedback_refuses_to_hide_a_notice() {
     assert!(cause.contains("NoActiveDocument"));
     assert!(cause.contains("expected a window with command feedback"));
 }
+
+struct StartupHeadWork {
+    polls: usize,
+}
+impl HeadWork for StartupHeadWork {
+    fn startup_ready(&self) -> bool {
+        self.polls >= 3
+    }
+    fn poll(&mut self, _: usize) -> Result<crate::HeadWorkStatus, String> {
+        self.polls += 1;
+        Ok(Default::default())
+    }
+    fn close_allowed(&mut self) -> Result<bool, String> {
+        Ok(true)
+    }
+    fn finish(&mut self) -> Result<(), String> {
+        Ok(())
+    }
+}
+#[test]
+fn bounded_frames_start_counting_after_owner_startup() {
+    let mut window = FakeHeadWindow::default();
+    let mut owner = StartupHeadWork { polls: 0 };
+    let summary =
+        run_window_with_owner(&mut window, HeadOptions { frames: Some(2) }, &mut owner).unwrap();
+    assert_eq!(summary.attempts, 4);
+    assert_eq!(owner.polls, 4);
+}

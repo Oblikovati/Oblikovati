@@ -14,7 +14,7 @@ pub fn run_window_with_documents<D: ScriptDocumentOwner>(
         .and_then(|()| crate::frames::run_frames(window, options, owner));
     crate::frames::retire_head_run(outcome, owner, window)
 }
-fn open_startup_documents<D: ScriptDocumentOwner>(
+pub(crate) fn open_startup_documents<D: ScriptDocumentOwner>(
     owner: &mut D,
     documents: &[PathBuf],
 ) -> Result<(), String> {

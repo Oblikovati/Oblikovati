@@ -2,13 +2,16 @@
 use crate::{DesktopDispatchOptions, HeadWork, HeadWorkStatus, ScriptDocumentOwner};
 use oblikovati_addin_host::{NativeAddInRuntime, NativeCompletion};
 use oblikovati_automation::dispatch::DispatchWakeup;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+mod startup;
+use startup::NativeStartupPlan;
 /// Native services borrow the desktop owner; the foreign thread contains no model or window.
 pub struct NativeAddInDesktop<'a, D: ScriptDocumentOwner, W: DispatchWakeup> {
     owner: &'a mut D,
     runtime: NativeAddInRuntime<W>,
     completion: Option<Result<NativeCompletion, String>>,
     stopped: bool,
+    startup: Option<NativeStartupPlan>,
 }
 impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop<'a, D, W> {
     /// Install one process binding with injected wake; example: `NativeAddInDesktop::new(&mut owner, options, wake)?`.
@@ -20,7 +23,21 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
             runtime,
             completion: None,
             stopped: false,
+            startup: None,
         })
+    }
+    /// Queue trusted startup libraries; example: `unsafe { desktop.begin_startup(paths) }?`.
+    /// # Safety
+    /// Every library must satisfy the same trust, affinity, and retirement obligations as `start_load`.
+    pub unsafe fn begin_startup(&mut self, paths: Vec<PathBuf>) -> Result<(), String> {
+        self.require_consumed_completion()?;
+        if self.startup.is_some() {
+            return Err("native startup already selected: expected one startup plan".into());
+        }
+        let mut plan = NativeStartupPlan::new(paths);
+        plan.next(&mut self.runtime)?;
+        self.startup = Some(plan);
+        Ok(())
     }
     /// Consume one worker result before starting another control; example: `desktop.take_native_completion()` after poll.
     pub fn take_native_completion(&mut self) -> Option<Result<NativeCompletion, String>> {
@@ -42,7 +59,7 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
         unsafe { self.runtime.start_activate(id) }.map_err(|cause| cause.to_string())
     }
     fn require_consumed_completion(&self) -> Result<(), String> {
-        if self.stopped || self.completion.is_some() {
+        if self.stopped || self.completion.is_some() || !self.startup_ready() {
             return Err(format!(
                 "native desktop stopped={}, completion={:?}: expected a live desktop and consumed control result",
                 self.stopped, self.completion
@@ -59,7 +76,14 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
         let Some(outcome) = outcome else {
             return Ok(false);
         };
-        self.completion = Some(outcome.map_err(|cause| cause.to_string()));
+        let outcome = outcome.map_err(|cause| cause.to_string());
+        if let Some(plan) = &mut self.startup
+            && !plan.ready()
+        {
+            plan.completed(&mut self.runtime, outcome)?;
+        } else {
+            self.completion = Some(outcome);
+        }
         Ok(true)
     }
     fn pending_failure(&mut self) -> Option<String> {
@@ -103,6 +127,9 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
 impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     for NativeAddInDesktop<'_, D, W>
 {
+    fn startup_ready(&self) -> bool {
+        self.owner.startup_ready() && self.startup.as_ref().is_none_or(NativeStartupPlan::ready)
+    }
     fn complete_save_path(
         &mut self,
         document: u64,
@@ -120,7 +147,10 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
         self.owner.process_inputs(inputs)
     }
     fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
-        self.owner.take_command_notice()
+        self.startup
+            .as_mut()
+            .and_then(|plan| plan.notices.pop_front())
+            .or_else(|| self.owner.take_command_notice())
     }
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         self.owner.take_scene()
@@ -144,7 +174,7 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
         Ok(activity)
     }
     fn close_allowed(&mut self) -> Result<bool, String> {
-        if self.runtime.control_pending() {
+        if !self.startup_ready() || self.runtime.control_pending() {
             return Ok(false);
         }
         self.owner.close_allowed()

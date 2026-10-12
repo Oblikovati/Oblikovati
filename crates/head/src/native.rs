@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{HeadOptions, HeadPresentation, HeadSummary, HeadWindow};
+#[allow(unsafe_code)]
+#[path = "native/addin_launch.rs"]
+mod addin_launch;
 use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene,
     ViewportWake,
@@ -161,7 +164,7 @@ pub fn run_native_documents(
         Ok(owner) => owner,
         Err(cause) => return crate::frames::combine_retirement(Err(cause), window.finish()),
     };
-    crate::run_window_with_documents(&mut window, options, &mut owner, documents)
+    addin_launch::run_startup(&mut window, &mut owner, options, documents)
 }
 #[cfg(test)]
 #[path = "../tests/native_wait.rs"]

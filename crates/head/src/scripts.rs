@@ -48,6 +48,9 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
+    fn startup_ready(&self) -> bool {
+        self.owner.startup_ready()
+    }
     fn complete_save_path(
         &mut self,
         document: u64,

@@ -16,6 +16,10 @@ enum NativeDocumentCommand {
 /// Command feedback stays on the owner until the native window consumes it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DesktopCommandNotice {
+    AddInStartupFailed {
+        library: std::path::PathBuf,
+        cause: String,
+    },
     NoActiveDocument,
     HistoryCompleted {
         document: u64,
@@ -41,6 +45,7 @@ impl DesktopCommandNotice {
     /// Explain the result for native feedback; example: `notice.message()` in a title or status panel.
     pub fn message(&self) -> String {
         match self {
+            Self::AddInStartupFailed { library, cause } => format!("Add-in {library:?}: {cause}"),
             Self::HistoryCompleted { document, action } => {
                 format!("{} document {document}: complete", action.label())
             }

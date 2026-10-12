@@ -44,6 +44,8 @@ struct FrameControl {
     pending: bool,
     mapped: bool,
     closed: bool,
+    startup_ready: bool,
+    bounded_attempts: u64,
 }
 impl FrameControl {
     fn new(options: HeadOptions) -> Self {
@@ -53,6 +55,8 @@ impl FrameControl {
             pending: true,
             mapped: true,
             closed: false,
+            startup_ready: true,
+            bounded_attempts: 0,
         }
     }
     fn stopped(&self) -> bool {
@@ -60,7 +64,7 @@ impl FrameControl {
             || self
                 .options
                 .frames
-                .is_some_and(|count| self.summary.attempts >= count)
+                .is_some_and(|count| self.bounded_attempts >= count)
     }
     fn events(&mut self, events: &[ViewportEvent], close_allowed: bool) {
         for event in events {
@@ -99,6 +103,9 @@ impl FrameControl {
                 self.summary.attempts
             )
         })?;
+        if self.startup_ready {
+            self.bounded_attempts += 1;
+        }
         self.pending = outcome == HeadPresentation::SurfaceChanged;
         if outcome == HeadPresentation::Completed {
             self.summary.completed += 1;
@@ -163,6 +170,7 @@ fn run_owner_frame(
     let inputs = window.events(64)?;
     control.pending |= owner.process_inputs(&inputs)?;
     let activity = owner.poll(32)?;
+    control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;
     control.pending |= publish_owner_scene(window, owner)?;
     publish_command_notice(window, owner)?;

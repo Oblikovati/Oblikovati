@@ -12,6 +12,11 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Count bounded frames only after startup is complete; example: `work.startup_ready()` before smoke accounting.
+    fn startup_ready(&self) -> bool {
+        true
+    }
+
     /// Complete the requesting document's path choice; example: `work.complete_save_path(id, Some(path))?`.
     fn complete_save_path(
         &mut self,

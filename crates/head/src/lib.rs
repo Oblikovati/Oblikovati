@@ -5,6 +5,8 @@
 mod native_services;
 #[cfg(target_os = "linux")]
 pub use native_services::NativeAddInDesktop;
+#[cfg(target_os = "linux")]
+mod addin_discovery;
 mod arguments;
 pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 #[cfg(target_os = "linux")]
