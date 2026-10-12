@@ -4,9 +4,12 @@ mod blocks;
 mod buffer;
 mod history;
 mod movement;
+mod search;
 mod words;
 use buffer::{SourceBuffer, advance};
 use history::{SourceChange, SourceHistory};
+pub use search::{EditorMatch, EditorSearch};
+use std::rc::Rc;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EditorPosition {
     pub line: usize,
@@ -32,6 +35,7 @@ pub struct ScriptEditor {
     selection: EditorSelection,
     history: SourceHistory,
     goal_column: usize,
+    source_epoch: Rc<()>,
 }
 impl ScriptEditor {
     /// Load LF/CRLF text with a start caret; example: `ScriptEditor::new("local x=1")`.
@@ -41,6 +45,7 @@ impl ScriptEditor {
             selection: EditorSelection::default(),
             history: SourceHistory::default(),
             goal_column: 0,
+            source_epoch: Rc::new(()),
         }
     }
     /// Copy source for Run or persistence; example: `console.run(&editor.text())?;`.
@@ -128,6 +133,7 @@ impl ScriptEditor {
         if removed.is_empty() && source.is_empty() {
             return;
         }
+        self.source_epoch = Rc::new(());
         let caret = self.buffer.replace(first, last, source);
         self.history.record(SourceChange {
             at: first,
@@ -139,12 +145,14 @@ impl ScriptEditor {
     /// Reverse the latest coalesced edit; example: `editor.undo()`.
     pub fn undo(&mut self) {
         if let Some(caret) = self.history.undo(&mut self.buffer) {
+            self.source_epoch = Rc::new(());
             self.collapse(caret);
         }
     }
     /// Reapply the latest undone edit; example: `editor.redo()`.
     pub fn redo(&mut self) {
         if let Some(caret) = self.history.redo(&mut self.buffer) {
+            self.source_epoch = Rc::new(());
             self.collapse(caret);
         }
     }
