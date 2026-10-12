@@ -58,15 +58,10 @@ impl DocumentEditHistory {
             && candidate
                 .work_geometry
                 .same_work_plane_recipe(&self.current.work_geometry)
-            && candidate.properties.same_recipe(&self.current.properties)
             && candidate
                 .sketches
                 .same_evaluated_state(&self.current.sketches)
-            && candidate.attachments == self.current.attachments
-            && candidate.sketch_settings == self.current.sketch_settings
-            && candidate.resources == self.current.resources
-            && candidate.interests == self.current.interests
-            && candidate.attributes.same_recipe(&self.current.attributes)
+            && candidate.same_metadata_recipe(&self.current)
         {
             return Ok(PreparedRefresh {
                 owner: self,

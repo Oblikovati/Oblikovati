@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Catalog decoding stays in storage; admitted typed assets and their rules stay in the model.
 mod decode;
+pub(crate) use decode::stored_asset_record;
 mod embedded;
 use oblikovati_model::assets::{AppearanceAsset, BuiltinAssetCatalog, MaterialAsset};
 use serde::Deserialize;

@@ -159,6 +159,8 @@ fn capture_nonparameter_sections(
         .map_err(SnapshotPackageError::Codec)?
         .with_sketch_reservations(&snapshot.sketches, sketch_marks)
         .map_err(SnapshotPackageError::Codec)?
+        .with_assets(&snapshot.assets)
+        .map_err(SnapshotPackageError::Codec)?
         .with_sketch_settings(snapshot.sketch_settings.as_ref())
         .map_err(SnapshotPackageError::Codec)?
         .with_attachments(&snapshot.attachments)

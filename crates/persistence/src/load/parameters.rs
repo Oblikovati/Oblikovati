@@ -16,6 +16,7 @@ pub struct LoadedParameterPackage {
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
+    pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
 }
@@ -47,6 +48,7 @@ pub fn load_parameter_package(
         attachments: prepared.attachments,
         interests: prepared.interests,
         resources: prepared.resources,
+        assets: prepared.assets,
         sketch_settings: prepared.sketch_settings,
     })
 }
@@ -63,6 +65,7 @@ pub struct PreparedParameterPackage {
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
+    pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
     pub identity: FileIdentity,
@@ -77,6 +80,9 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
+    let assets = package
+        .restore_assets()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let work_geometry = package
         .restore_work_geometry()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
@@ -117,6 +123,7 @@ pub fn read_parameter_package(
         attachments,
         interests,
         resources,
+        assets,
         sketch_settings,
         properties,
         identity,

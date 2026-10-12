@@ -19,6 +19,7 @@ pub(super) fn snapshot() -> DocumentSnapshot {
         attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
+        assets: Default::default(),
         sketch_settings: None,
         parameters: ParameterCollection::new(UnitsOfMeasure::default()),
         properties: Default::default(),

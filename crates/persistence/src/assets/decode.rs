@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_api::types::ASSET_BUILTIN;
+use oblikovati_api::types::{ASSET_BUILTIN, AssetSource};
 use serde::de::DeserializeOwned;
 use serde_yaml_ng::{Mapping, Value};
 pub(super) fn api_catalog_record<T: DeserializeOwned>(
     name: &str,
     record: Value,
     aliases: &[(&str, &str)],
+) -> Result<T, String> {
+    stored_asset_record(name, record, aliases, ASSET_BUILTIN)
+}
+pub(crate) fn stored_asset_record<T: DeserializeOwned>(
+    name: &str,
+    record: Value,
+    aliases: &[(&str, &str)],
+    source: AssetSource,
 ) -> Result<T, String> {
     let mut mapping = require_catalog_mapping(name, record)?;
     for (stored, api) in aliases {
@@ -16,7 +24,7 @@ pub(super) fn api_catalog_record<T: DeserializeOwned>(
             "catalog {name:?} source {source:?}: expected scope owned by the catalog, without a source override"
         ));
     }
-    mapping.insert(key("source"), key(ASSET_BUILTIN.0.as_ref()));
+    mapping.insert(key("source"), key(source.0.as_ref()));
     let identity = mapping.get(key("id")).cloned().unwrap_or(Value::Null);
     serde_yaml_ng::from_value(Value::Mapping(mapping)).map_err(|cause| {
         format!(

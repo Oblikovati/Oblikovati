@@ -47,6 +47,32 @@ impl AssetAssignments {
     ) -> Result<(), String> {
         set_entity_asset(&mut self.face_appearance, target, id)
     }
+    /// Borrow raw part physical intent; example: `assignments.part_material_id()` for storage.
+    pub fn part_material_id(&self) -> Option<&str> {
+        self.part_material.as_deref()
+    }
+    /// Borrow raw part visual intent; example: `assignments.part_appearance_id()` for storage.
+    pub fn part_appearance_id(&self) -> Option<&str> {
+        self.part_appearance.as_deref()
+    }
+    /// Read body physical overrides in reference order; example: `assignments.body_materials()` for storage.
+    pub fn body_materials(&self) -> impl Iterator<Item = (&AssignmentReference, &str)> {
+        self.body_material
+            .iter()
+            .map(|(key, id)| (key, id.as_str()))
+    }
+    /// Read body visual overrides in reference order; example: `assignments.body_appearances()` for storage.
+    pub fn body_appearances(&self) -> impl Iterator<Item = (&AssignmentReference, &str)> {
+        self.body_appearance
+            .iter()
+            .map(|(key, id)| (key, id.as_str()))
+    }
+    /// Read face visual overrides in reference order; example: `assignments.face_appearances()` for storage.
+    pub fn face_appearances(&self) -> impl Iterator<Item = (&AssignmentReference, &str)> {
+        self.face_appearance
+            .iter()
+            .map(|(key, id)| (key, id.as_str()))
+    }
     /// Read effective physical intent without resolving properties; example: `assignments.effective_material_id(&body)`.
     pub fn effective_material_id(&self, body: &AssignmentReference) -> Option<&str> {
         self.body_material

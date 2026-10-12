@@ -183,6 +183,7 @@ fn expression_queries_resolve_live_parameter_nominals_without_model_offsets() {
         attachments: Default::default(),
         interests: Default::default(),
         resources: Default::default(),
+        assets: Default::default(),
         sketch_settings: None,
         parameters,
         properties: DocumentProperties::default(),

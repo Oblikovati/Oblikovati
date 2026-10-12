@@ -93,6 +93,9 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
             .restore_attachments()
             .map_err(FileWorkspaceError::Package)?,
         resources: package.resources().clone(),
+        assets: package
+            .restore_assets()
+            .map_err(FileWorkspaceError::Package)?,
         sketch_settings: package
             .restore_sketch_settings()
             .map_err(FileWorkspaceError::Package)?,

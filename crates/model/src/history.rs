@@ -66,6 +66,7 @@ use std::sync::{
 pub struct DocumentSnapshot {
     pub work_geometry:
         crate::feature::FeatureSequence<crate::feature::work_geometry::WorkGeometryDefinition>,
+    pub assets: crate::assets::DocumentAssets,
     pub sketch_settings: Option<crate::sketch_settings::SketchSettings>,
     pub sketches: crate::document_sketch::DocumentSketches,
     pub attributes: crate::attribute::DocumentAttributes,
@@ -332,12 +333,7 @@ impl DocumentEditHistory {
             .same_work_plane_recipe(&self.current.work_geometry)
             || !before.sketches.same_recipe(&self.current.sketches)
             || !before.parameters.same_recipe(&self.current.parameters)
-            || !before.properties.same_recipe(&self.current.properties)
-            || before.attachments != self.current.attachments
-            || before.sketch_settings != self.current.sketch_settings
-            || before.resources != self.current.resources
-            || before.interests != self.current.interests
-            || !before.attributes.same_recipe(&self.current.attributes)
+            || !before.same_metadata_recipe(&self.current)
         {
             return Ok(false);
         }
@@ -383,3 +379,5 @@ impl DocumentEditHistory {
 
 #[cfg(test)]
 mod tests;
+
+mod metadata_recipe;

@@ -23,6 +23,7 @@ struct WorkspaceFiles {
     reads: usize,
     fail_read: bool,
     fail_write: bool,
+    write_control: Rc<std::cell::Cell<bool>>,
 }
 struct WorkspaceStage {
     path: PathBuf,
@@ -45,7 +46,7 @@ impl PackageFileReader for WorkspaceFiles {
 impl AtomicFiles for WorkspaceFiles {
     type Stage = WorkspaceStage;
     fn stage(&mut self, path: &Path) -> io::Result<Self::Stage> {
-        if self.fail_write {
+        if self.fail_write || self.write_control.get() {
             return Err(io::Error::other("write denied"));
         }
         Ok(WorkspaceStage {
@@ -491,3 +492,6 @@ mod transitions;
 mod unbound;
 #[path = "files/work_planes.rs"]
 mod work_planes;
+
+#[path = "files/assets.rs"]
+mod assets;
