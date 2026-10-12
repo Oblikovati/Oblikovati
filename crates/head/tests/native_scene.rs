@@ -35,7 +35,8 @@ pub(super) fn open_native_part(owner: &mut NativeDesktopOwner, path: &std::path:
         .unwrap()
         .id
 }
-fn native_set(owner: &mut NativeDesktopOwner, name: &str, expression: &str) {
+/// Edit a retained part parameter; example: `native_set(owner, "width", "6 cm")`.
+pub(super) fn native_set(owner: &mut NativeDesktopOwner, name: &str, expression: &str) {
     Client::new(owner.document_host())
         .parameters()
         .set(&ParameterSetArgs {

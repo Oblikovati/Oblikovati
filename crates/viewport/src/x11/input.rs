@@ -54,18 +54,8 @@ fn button_input(pointer: xlib::XButtonEvent) -> Option<ViewportInput> {
     })
 }
 fn key_input(api: &xlib::Xlib, mut event: xlib::XKeyEvent) -> Option<ViewportInput> {
-    use x11_dl::keysym;
     let symbol = unsafe { (api.XLookupKeysym)(&mut event, 0) };
-    let key = match symbol as u32 {
-        keysym::XK_s | keysym::XK_S if save_chord(event.state) => ViewportKey::Save,
-        keysym::XK_F2 => ViewportKey::Pan,
-        keysym::XK_F3 => ViewportKey::Zoom,
-        keysym::XK_F4 => ViewportKey::Orbit,
-        keysym::XK_F6 => ViewportKey::Home,
-        keysym::XK_F5 => ViewportKey::Previous,
-        keysym::XK_Escape => ViewportKey::Cancel,
-        _ => return None,
-    };
+    let key = copied_key(symbol as u32, event.state)?;
     Some(ViewportInput::Key {
         key,
         pressed: event.type_ == xlib::KeyPress,
@@ -75,6 +65,29 @@ fn key_input(api: &xlib::Xlib, mut event: xlib::XKeyEvent) -> Option<ViewportInp
 #[path = "../../tests/x11_input.rs"]
 mod tests;
 
-fn save_chord(state: u32) -> bool {
+fn control_only_chord(state: u32) -> bool {
     state & xlib::ControlMask != 0 && state & (xlib::ShiftMask | xlib::Mod1Mask) == 0
+}
+
+fn redo_shift_chord(state: u32) -> bool {
+    state & (xlib::ControlMask | xlib::ShiftMask) == xlib::ControlMask | xlib::ShiftMask
+        && state & xlib::Mod1Mask == 0
+}
+
+fn copied_key(symbol: u32, state: u32) -> Option<ViewportKey> {
+    use x11_dl::keysym;
+    let key = match symbol {
+        keysym::XK_s | keysym::XK_S if control_only_chord(state) => ViewportKey::Save,
+        keysym::XK_z | keysym::XK_Z if control_only_chord(state) => ViewportKey::Undo,
+        keysym::XK_y | keysym::XK_Y if control_only_chord(state) => ViewportKey::Redo,
+        keysym::XK_z | keysym::XK_Z if redo_shift_chord(state) => ViewportKey::Redo,
+        keysym::XK_F2 => ViewportKey::Pan,
+        keysym::XK_F3 => ViewportKey::Zoom,
+        keysym::XK_F4 => ViewportKey::Orbit,
+        keysym::XK_F6 => ViewportKey::Home,
+        keysym::XK_F5 => ViewportKey::Previous,
+        keysym::XK_Escape => ViewportKey::Cancel,
+        _ => return None,
+    };
+    Some(key)
 }

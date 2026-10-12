@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::run_window_with_owner;
-use oblikovati_api::{client::Client, wire::*};
 use oblikovati_viewport::{ViewportInput, ViewportKey};
 struct SaveOnceWindow {
     native: NativeHeadWindow,
@@ -44,7 +43,7 @@ fn native_frame_saves_an_edited_prism_and_displays_the_destination() {
     let native = NativeHeadWindow::open().unwrap();
     let mut owner = native_script_owner(native.wake.clone()).unwrap();
     let document = super::scene_tests::open_native_part(owner.document_owner_mut(), &path);
-    edit_native_width(owner.document_owner_mut());
+    super::scene_tests::native_set(owner.document_owner_mut(), "width", "6 cm");
     let mut window = SaveOnceWindow {
         native,
         saved_title: None,
@@ -58,16 +57,6 @@ fn native_frame_saves_an_edited_prism_and_displays_the_destination() {
         &path,
         window.saved_title.as_deref().unwrap(),
     );
-}
-fn edit_native_width(owner: &mut NativeDesktopOwner) {
-    Client::new(owner.document_host())
-        .parameters()
-        .set(&ParameterSetArgs {
-            name: "width".into(),
-            expression: "6 cm".into(),
-            ..Default::default()
-        })
-        .unwrap();
 }
 fn verify_saved_width(path: &std::path::Path) {
     let package =

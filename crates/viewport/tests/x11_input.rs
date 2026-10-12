@@ -194,7 +194,7 @@ fn native_save_chord_requires_control_without_shift_or_alt() {
         (xlib::ControlMask | xlib::Mod1Mask, false),
     ];
     for (state, accepted) in cases {
-        assert_eq!(save_chord(state), accepted);
+        assert_eq!(control_only_chord(state), accepted);
         check_native_save_key(&fixture, state, accepted);
     }
 }
@@ -206,6 +206,37 @@ fn check_native_save_key(fixture: &NativeInputFixture, state: u32, accepted: boo
             key: ViewportKey::Save,
             pressed,
         }));
+        assert_eq!(fixture.window.translate(event), expected);
+    }
+}
+
+#[test]
+fn native_history_chords_use_control_z_control_y_and_control_shift_z() {
+    use x11_dl::keysym::{XK_y, XK_z};
+    let fixture = NativeInputFixture::new();
+    let control = xlib::ControlMask;
+    let cases = [
+        (XK_z, control, Some(ViewportKey::Undo)),
+        (XK_y, control, Some(ViewportKey::Redo)),
+        (XK_z, control | xlib::ShiftMask, Some(ViewportKey::Redo)),
+        (XK_y, control | xlib::ShiftMask, None),
+        (XK_z, 0, None),
+        (XK_z, control | xlib::ShiftMask | xlib::Mod1Mask, None),
+    ];
+    for (symbol, state, key) in cases {
+        verify_native_history_key(&fixture, symbol, state, key);
+    }
+}
+fn verify_native_history_key(
+    fixture: &NativeInputFixture,
+    symbol: u32,
+    state: u32,
+    key: Option<ViewportKey>,
+) {
+    for pressed in [true, false] {
+        let mut event = fixture.key(symbol, pressed);
+        event.key.state = state;
+        let expected = key.map(|key| ViewportEvent::Input(ViewportInput::Key { key, pressed }));
         assert_eq!(fixture.window.translate(event), expected);
     }
 }

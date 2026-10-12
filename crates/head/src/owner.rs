@@ -10,7 +10,7 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
-pub use commands::DesktopCommandNotice;
+pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
 #[derive(Clone, Copy, Debug)]
 pub struct DesktopDispatchOptions {
     pub capacity: usize,

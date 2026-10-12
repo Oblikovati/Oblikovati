@@ -2,18 +2,46 @@
 use super::*;
 use oblikovati_api::{client::Client, wire::SaveDocumentArgs};
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey};
+#[path = "owner_history.rs"]
+mod history;
+pub use history::DesktopHistoryAction;
+#[derive(Clone, Copy)]
+enum NativeDocumentCommand {
+    Save,
+    History(DesktopHistoryAction),
+}
 /// Command feedback stays on the owner until the native window consumes it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DesktopCommandNotice {
     NoActiveDocument,
-    SavePathRequired { document: u64 },
-    Saved { document: u64, path: String },
-    SaveFailed { document: u64, cause: String },
+    HistoryCompleted {
+        document: u64,
+        action: DesktopHistoryAction,
+    },
+    HistoryFailed {
+        action: DesktopHistoryAction,
+        cause: String,
+    },
+    SavePathRequired {
+        document: u64,
+    },
+    Saved {
+        document: u64,
+        path: String,
+    },
+    SaveFailed {
+        document: u64,
+        cause: String,
+    },
 }
 impl DesktopCommandNotice {
     /// Explain the result for native feedback; example: `notice.message()` in a title or status panel.
     pub fn message(&self) -> String {
         match self {
+            Self::HistoryCompleted { document, action } => {
+                format!("{} document {document}: complete", action.label())
+            }
+            Self::HistoryFailed { action, cause } => format!("{}: {cause}", action.label()),
             Self::NoActiveDocument => "Save: no active document".into(),
             Self::SavePathRequired { document } => {
                 format!("Save document {document}: a save path is required")
@@ -38,8 +66,15 @@ impl<
     ) -> Result<bool, String> {
         let mut changed = false;
         for input in inputs {
-            if save_pressed(input) {
-                self.command_notice = Some(self.save_active_document());
+            let Some(command) = document_command(input) else {
+                continue;
+            };
+            let notice = match command {
+                NativeDocumentCommand::Save => Some(self.save_active_document()),
+                NativeDocumentCommand::History(action) => self.restore_document_history(action),
+            };
+            if notice.is_some() {
+                self.command_notice = notice;
                 changed = true;
             }
         }
@@ -71,12 +106,14 @@ impl<
     }
 }
 
-fn save_pressed(input: &ViewportEvent) -> bool {
-    matches!(
-        input,
-        ViewportEvent::Input(ViewportInput::Key {
-            key: ViewportKey::Save,
-            pressed: true
-        })
-    )
+fn document_command(input: &ViewportEvent) -> Option<NativeDocumentCommand> {
+    let ViewportEvent::Input(ViewportInput::Key { key, pressed: true }) = input else {
+        return None;
+    };
+    match key {
+        ViewportKey::Save => Some(NativeDocumentCommand::Save),
+        ViewportKey::Undo => Some(NativeDocumentCommand::History(DesktopHistoryAction::Undo)),
+        ViewportKey::Redo => Some(NativeDocumentCommand::History(DesktopHistoryAction::Redo)),
+        _ => None,
+    }
 }

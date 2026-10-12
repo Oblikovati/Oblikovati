@@ -208,3 +208,7 @@ impl NativeHeadWindow {
 #[cfg(test)]
 #[path = "../tests/native_save.rs"]
 mod save_tests;
+
+#[cfg(test)]
+#[path = "../tests/native_history.rs"]
+mod history_tests;

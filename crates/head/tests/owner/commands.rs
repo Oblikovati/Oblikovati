@@ -136,3 +136,6 @@ fn saving_an_active_bound_document_keeps_another_unsaved_document_dirty() {
     assert!(workspace.needs_save(unsaved).unwrap());
     assert!(owner.documents().path(unsaved).is_err());
 }
+
+#[path = "history.rs"]
+mod history;
