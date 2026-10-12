@@ -15,7 +15,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0019`.
+The next unused number is `ADR-0020`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -86,7 +86,7 @@ renderer interface, presentation, resources, synchronization, platform
 capabilities, display modes, lighting, instancing, capture, and validation.
 Its legacy inputs are assigned by section in the migration map.
 
-UI behavior is owned by ADR-0009, asset state by ADR-0010, packaging by
+UI behavior is owned by ADR-0009, asset state by ADR-0019, packaging by
 ADR-0013, and public declarations by Oblikovati.API. These records reference
 the shared rendering interface. There is no separate current renderer ADR
 for a display mode, material model, or platform exception.
@@ -110,7 +110,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0007](ADR-0007-martensite-integration.md) | Application requirements on Martensite operations | R1-R8; K01-K11 |
 | [ADR-0008](ADR-0008-vulkan-renderer.md) | Vulkan presentation and rendering | R1V/R4/R7 |
 | [ADR-0009](ADR-0009-ui-and-selection.md) | Desktop UI, tools, selection, themes, editor | R1V/R4/R7 |
-| [ADR-0010](ADR-0010-materials-and-appearances.md) | Materials, appearances, asset assignment | R5/R7 |
+| [ADR-0019](ADR-0019-materials-and-appearances.md) | Materials, appearances, asset assignment; supersedes ADR-0010 | R5/R7 |
 | [ADR-0011](ADR-0011-scripting.md) | Lua runtime contract and rule execution | R7 |
 | [ADR-0012](ADR-0012-build-and-validation.md) | Build and integration evidence | R0 onward |
 | [ADR-0013](ADR-0013-packaging-and-release.md) | Packages, updates, release transition | R9 |

@@ -220,7 +220,7 @@ change supersedes its accepted record; it does not silently edit that decision.
 | [0007: Martensite](../decisions/ADR-0007-martensite-integration.md) | R1-R8 | K01-K11, shape isolation, analytic results, and required Go-kernel extensions. |
 | [0008: Vulkan](../decisions/ADR-0008-vulkan-renderer.md) | R1V/R4/R7 | Native presentation, GPU lifetime, styles, captures, and required extensions. |
 | [0009: UI and selection](../decisions/ADR-0009-ui-and-selection.md) | R1V/R4/R7 | Native binding, input, tools, themes, editor, and visible selection. |
-| [0010: assets](../decisions/ADR-0010-materials-and-appearances.md) | R5/R7 | Typed material/appearance round trips, assignment, and analytic properties. |
+| [0019: assets](../decisions/ADR-0019-materials-and-appearances.md) | R5/R7 | Typed material/appearance round trips, assignment, and analytic properties. |
 | [0011: scripting](../decisions/ADR-0011-scripting.md) | R7 | Lua 5.1, limits, cancellation, and containment with the selected engine. |
 | [0012: validation](../decisions/ADR-0012-build-and-validation.md) | R0 onward | Full discovered workspace gate, independent oracles, platform/live evidence. |
 | [0018: exchange](../decisions/ADR-0018-exchange-format-ownership.md) | K10/R8 | Released kernel exchange contract; application routing, transactions, resources, and diagnostics. |

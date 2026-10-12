@@ -43,6 +43,12 @@ and directional properties where applicable.
 **Appearance**: The visual properties assigned to a model. An appearance does
 not determine its physical material properties.
 
+**Asset assignment**: An explicit choice of a material or appearance for a part,
+body, or face, within the relevant occurrence context.
+
+**Appearance override**: An explicit visual choice that takes precedence over
+the appearance associated with a physical material.
+
 **Datum**: A reference plane, axis, or point used to locate design geometry.
 A construction datum is tied to its consumers and can be removed when its last
 consumer is removed.
