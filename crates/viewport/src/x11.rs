@@ -10,6 +10,7 @@ use rustycad_tkservice::{
 use std::{
     ffi::{CStr, CString},
     rc::Rc,
+    sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
 use x11_dl::xlib;
@@ -25,18 +26,31 @@ impl Drop for NativeImage<'_> {
     }
 }
 pub(crate) struct NativeX11 {
-    api: xlib::Xlib,
+    api: Arc<xlib::Xlib>,
 }
 impl NativeX11 {
     pub fn open() -> Result<Rc<Self>, String> {
-        let api = xlib::Xlib::open()
-            .map_err(|error| format!("X11 runtime: expected loadable Xlib: {error}"))?;
         // Runtime creation precedes all application X11 connections and add-in activation.
-        if unsafe { (api.XInitThreads)() } == 0 {
-            return Err("XInitThreads returned 0: expected thread-safe Xlib initialization".into());
-        }
+        // Keep the initialized library loaded: XInitThreads state belongs to that library.
+        static API: OnceLock<Result<Arc<xlib::Xlib>, String>> = OnceLock::new();
+        let api = API.get_or_init(load_threaded_xlib).clone()?;
         Ok(Rc::new(Self { api }))
     }
+}
+fn load_threaded_xlib() -> Result<Arc<xlib::Xlib>, String> {
+    let api = xlib::Xlib::open()
+        .map_err(|cause| format!("X11 runtime: expected loadable Xlib: {cause}"))?;
+    // Xlib's thread contract: https://www.x.org/releases/current/doc/libX11/libX11/libX11.html
+    require_threaded_xlib(unsafe { (api.XInitThreads)() })?;
+    Ok(Arc::new(api))
+}
+fn require_threaded_xlib(status: i32) -> Result<(), String> {
+    if status == 0 {
+        return Err(format!(
+            "XInitThreads returned {status}: expected thread-safe Xlib initialization"
+        ));
+    }
+    Ok(())
 }
 pub(crate) struct NativeWindow {
     pub window: Handle<XwWindow>,

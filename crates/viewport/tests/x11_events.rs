@@ -140,3 +140,20 @@ fn native_wait_preserves_pending_events_and_consumes_worker_wakes() {
         .unwrap();
     assert!(ready.worker_wake);
 }
+
+#[test]
+fn concurrent_native_runtimes_share_one_initialized_xlib_library() {
+    let initial = NativeX11::open().unwrap().api.clone();
+    let threads: Vec<_> = (0..8)
+        .map(|_| std::thread::spawn(|| NativeX11::open().unwrap().api.clone()))
+        .collect();
+    for thread in threads {
+        assert!(Arc::ptr_eq(&initial, &thread.join().unwrap()));
+    }
+    assert!(
+        require_threaded_xlib(0)
+            .unwrap_err()
+            .contains("XInitThreads returned 0")
+    );
+    require_threaded_xlib(1).unwrap();
+}
