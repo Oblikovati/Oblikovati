@@ -102,7 +102,7 @@ fn stored_condition_selects_enabled_or_suppressed_inputs() {
     let enabled = conditioned_snapshot(3.);
     let body = retain_stored_sketch_prism(&enabled, FeatureId(1)).unwrap();
     assert_volume(body.report().properties.volume, 24.);
-    assert_stored_decline(&conditioned_snapshot(1.), "conditional suppression=true");
+    assert_stored_decline(&conditioned_snapshot(1.), "Suppressed");
 }
 #[test]
 fn stored_condition_failure_has_no_last_good_result_and_manual_suppression_wins() {
@@ -111,12 +111,12 @@ fn stored_condition_failure_has_no_last_good_result_and_manual_suppression_wins(
         .parameters
         .set_expression(3, "missing_depth")
         .unwrap();
-    assert_stored_decline(&failed, "suppression");
+    assert_stored_decline(&failed, "ConditionFailed");
     failed
         .work_geometry
         .set_suppressed(FeatureId(1), true)
         .unwrap();
-    assert_stored_decline(&failed, "suppressed=true");
+    assert_stored_decline(&failed, "Suppressed");
 }
 #[test]
 fn stored_datum_is_declined_as_a_non_body_definition() {
@@ -138,3 +138,6 @@ fn stored_datum_is_declined_as_a_non_body_definition() {
         .unwrap();
     assert!(error.contains("expected stored sketch prism inputs"));
 }
+
+#[path = "stored/replay.rs"]
+mod replay;

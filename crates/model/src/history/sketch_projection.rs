@@ -33,6 +33,17 @@ impl CurrentSketchProjectionInputs {
 }
 impl SketchProjectionInputs for CurrentSketchProjectionInputs {
     fn points(&self, placed: &PlacedSketch) -> Result<Vec<SketchPoint2D>, SketchError> {
+        BorrowedSketchProjectionInputs {
+            datums: self.datums.as_ref(),
+        }
+        .points(placed)
+    }
+}
+struct BorrowedSketchProjectionInputs<'a> {
+    datums: Result<&'a WorkGeometryEvaluation, &'a FeatureReplayError>,
+}
+impl SketchProjectionInputs for BorrowedSketchProjectionInputs<'_> {
+    fn points(&self, placed: &PlacedSketch) -> Result<Vec<SketchPoint2D>, SketchError> {
         placed
             .point_projections()
             .iter()
@@ -40,24 +51,17 @@ impl SketchProjectionInputs for CurrentSketchProjectionInputs {
             .collect()
     }
 }
-impl CurrentSketchProjectionInputs {
+impl BorrowedSketchProjectionInputs<'_> {
     fn binding_point(
         &self,
         placed: &PlacedSketch,
         binding: SketchPointProjection,
     ) -> Result<SketchPoint2D, SketchError> {
-        self.datums
-            .as_ref()
-            .map_err(|cause| DocumentSketchPlacementError::Replay(cause.clone()))
-            .and_then(|datums| project_current_point(placed, datums, binding.reference))
-            .map(|projection| SketchPoint2D {
-                id: binding.anchor,
-                position: projection.local_position,
-            })
-            .map_err(|cause| SketchError::ProjectionSource {
-                point: binding.anchor,
-                cause: Box::new(cause),
-            })
+        let datums = self.datums.map_err(|cause| SketchError::ProjectionSource {
+            point: binding.anchor,
+            cause: Box::new(DocumentSketchPlacementError::Replay(cause.clone())),
+        })?;
+        projection_anchor(placed, datums, binding)
     }
 }
 
@@ -132,4 +136,30 @@ fn projection_reads(placed: &PlacedSketch, reference: WorkPointReference) -> Fea
         keys.push(FeatureReadKey::Feature(feature));
     }
     FeatureReadFootprint::new(keys, false)
+}
+
+fn projection_anchor(
+    placed: &PlacedSketch,
+    datums: &WorkGeometryEvaluation,
+    binding: SketchPointProjection,
+) -> Result<SketchPoint2D, SketchError> {
+    project_current_point(placed, datums, binding.reference)
+        .map(|projection| SketchPoint2D {
+            id: binding.anchor,
+            position: projection.local_position,
+        })
+        .map_err(|cause| SketchError::ProjectionSource {
+            point: binding.anchor,
+            cause: Box::new(cause),
+        })
+}
+impl DocumentSnapshot {
+    pub(crate) fn projected_points_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<Vec<SketchPoint2D>, SketchError> {
+        let placed = self.sketches.get(id)?;
+        placed.projection_inputs(&BorrowedSketchProjectionInputs { datums: Ok(datums) })
+    }
 }

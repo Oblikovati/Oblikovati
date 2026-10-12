@@ -72,7 +72,7 @@ impl WorkGeometryEvaluation {
         }
         Ok(())
     }
-    fn evaluate_entry(
+    pub(crate) fn evaluate_entry(
         &mut self,
         sequence: &FeatureSequence<WorkPlaneDefinition>,
         id: FeatureId,

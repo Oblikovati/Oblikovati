@@ -9,6 +9,8 @@ use super::{
 };
 use crate::sketch::SketchPlane;
 mod error;
+mod evaluate;
+pub use evaluate::{PartFeatureEvaluation, PartFeatureFailure, SketchPrismEvaluator};
 mod reads;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,

@@ -21,6 +21,23 @@ impl SketchPrismDefinition {
         let sketch = snapshot
             .require_resolved_sketch(self.sketch)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
+        self.resolve_current_sketch(snapshot, sketch)
+    }
+    pub(crate) fn resolve_with_datums<'a>(
+        &'a self,
+        snapshot: &'a DocumentSnapshot,
+        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+    ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
+        let sketch = snapshot
+            .require_sketch_with_datums(self.sketch, datums)
+            .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
+        self.resolve_current_sketch(snapshot, sketch)
+    }
+    fn resolve_current_sketch<'a>(
+        &'a self,
+        snapshot: &'a DocumentSnapshot,
+        sketch: ResolvedDocumentSketch<'a>,
+    ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let displacement = self.resolve_displacement(snapshot)?;
         validation::require_normal_displacement(displacement[2])
             .map_err(|cause| self.decline(cause))?;

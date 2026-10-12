@@ -137,3 +137,6 @@ fn datum_projection_keeps_independent_frames_and_names_body_scope() {
 mod reads;
 #[path = "part_features/refusals.rs"]
 mod refusals;
+
+#[path = "part_features/replay.rs"]
+mod replay;

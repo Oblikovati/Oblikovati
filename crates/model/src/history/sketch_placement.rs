@@ -100,17 +100,40 @@ impl DocumentSnapshot {
         id: DocumentSketchId,
     ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
         let plane = self.resolve_sketch_plane(id)?;
+        let points = self
+            .resolve_sketch_projected_points(id)
+            .map_err(DocumentSketchPlacementError::Sketch)?;
+        self.verified_sketch(id, plane, points)
+    }
+    pub(crate) fn require_sketch_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkPlaneEvaluation,
+    ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
+        let placed = self
+            .sketches
+            .get(id)
+            .map_err(DocumentSketchPlacementError::Sketch)?;
+        let plane = placed
+            .plane_with_axes(Some(datums), datums)
+            .map_err(|cause| DocumentSketchPlacementError::Plane { sketch: id, cause })?;
+        let points = self
+            .projected_points_with_datums(id, datums)
+            .map_err(DocumentSketchPlacementError::Sketch)?;
+        self.verified_sketch(id, plane, points)
+    }
+    fn verified_sketch(
+        &self,
+        id: DocumentSketchId,
+        plane: SketchPlane,
+        points: Vec<crate::sketch::SketchPoint2D>,
+    ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
         let sketch = self
             .sketches
             .get(id)
             .map_err(DocumentSketchPlacementError::Sketch)?;
         let verification = sketch
-            .require_fully_constrained_with_projection_inputs(
-                &self.parameters,
-                &Ok(self
-                    .resolve_sketch_projected_points(id)
-                    .map_err(DocumentSketchPlacementError::Sketch)?),
-            )
+            .require_fully_constrained_with_projection_inputs(&self.parameters, &Ok(points))
             .map_err(DocumentSketchPlacementError::Verification)?;
         Ok(ResolvedDocumentSketch {
             sketch,
