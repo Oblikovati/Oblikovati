@@ -9,6 +9,9 @@ license.workspace = true
 publish.workspace = true
 [package.metadata.oblikovati]
 requires-display = true
+[dependencies]
+oblikovati-martensite = { path = "../martensite" }
+
 [target.'cfg(target_os = "linux")'.dependencies]
 martensite-vulkan = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
 rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }

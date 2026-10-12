@@ -6,11 +6,11 @@ use rustycad_tkg3d::top_abs::ShapeEnum;
 use rustycad_tkgeombase::gprop::GProps;
 use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeSweep;
 use rustycad_tktopalgo::brep_gprop::BRepGProp;
-pub(super) fn prism_report(
+pub(super) fn construction_lineage(
     maker: &mut BRepPrimAPIMakePrism,
     profile: &BuiltProfile,
     shape: &Shape,
-) -> Result<PrismProbeReport, String> {
+) -> Result<Vec<(PrismFaceRole, Shape)>, String> {
     let mut lineage = cap_lineage(maker)?;
     for (key, edge) in &profile.edges {
         lineage.push((
@@ -19,6 +19,13 @@ pub(super) fn prism_report(
         ));
     }
     require_face_coverage(shape, &lineage)?;
+    Ok(lineage)
+}
+pub(super) fn checked_report(
+    shape: &Shape,
+    lineage: &[(PrismFaceRole, Shape)],
+) -> Result<PrismProbeReport, String> {
+    require_face_coverage(shape, lineage)?;
     let faces = lineage
         .iter()
         .map(|(role, shape)| face_report(*role, shape))

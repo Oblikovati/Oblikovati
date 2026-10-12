@@ -5,6 +5,8 @@ use oblikovati_viewport::{
     ViewportRuntime, ViewportScene, ViewportTriangle,
 };
 use std::time::{Duration, Instant};
+#[path = "native/prism.rs"]
+mod prism;
 fn scene() -> ViewportScene {
     ViewportScene {
         background: [0., 0., 1.],
@@ -82,6 +84,7 @@ fn application_owned_linux_windows_present_resize_capture_and_remove() {
     view.close();
     verify_native(&mut second);
     second.close();
+    prism::verify_meshed_prism(&runtime);
     assert!(
         runtime.validation_errors().is_empty(),
         "{:?}",

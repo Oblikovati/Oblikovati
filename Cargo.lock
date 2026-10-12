@@ -585,6 +585,7 @@ dependencies = [
  "rustycad-tkg3d",
  "rustycad-tkgeombase",
  "rustycad-tkmath",
+ "rustycad-tkmesh",
  "rustycad-tkprim",
  "rustycad-tktopalgo",
  "serde",
@@ -648,6 +649,7 @@ name = "oblikovati-viewport"
 version = "0.1.0"
 dependencies = [
  "martensite-vulkan",
+ "oblikovati-martensite",
  "rustix",
  "rustycad-tkernel",
  "rustycad-tkmath",

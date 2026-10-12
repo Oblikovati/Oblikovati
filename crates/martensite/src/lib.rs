@@ -8,7 +8,7 @@ use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
 use rustycad_tktopalgo::{brep_check::BRepCheckAnalyzer, brep_gprop::BRepGProp};
 
 /// Analytic values from a release probe, in the supplied working units.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ReleaseProbeProperties {
     pub volume: f64,
     pub centroid: [f64; 3],
@@ -104,6 +104,7 @@ pub use planar_spline::{PlanarSplineDefinition, PlanarSplineSample, evaluate_pla
 
 mod prism;
 pub use prism::{
-    PrismFaceProbe, PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
-    probe_planar_prism,
+    PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismMeshOptions, PrismPresentation,
+    PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, probe_planar_prism,
+    retain_planar_prism,
 };

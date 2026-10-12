@@ -147,3 +147,5 @@ fn separate_prism_evaluations_leave_the_owned_profile_unchanged() {
     assert_eq!(definition, before);
     assert_eq!(probe_planar_prism(&definition).unwrap(), first);
 }
+#[path = "prism/mesh.rs"]
+mod mesh;

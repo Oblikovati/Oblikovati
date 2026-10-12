@@ -27,7 +27,7 @@ pub struct PrismFaceProbe {
     pub loops: usize,
 }
 /// Diagnostic acceptance report; full feature validity, tolerance budgets, and persistent keys remain open.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PrismProbeReport {
     pub properties: crate::ReleaseProbeProperties,
     pub faces: Vec<PrismFaceProbe>,

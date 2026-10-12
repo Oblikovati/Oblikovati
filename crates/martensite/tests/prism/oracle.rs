@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_martensite::PrismProbeReport;
-fn oracle_definition(row: &[f64; 16]) -> PrismProbeDefinition {
+pub(super) fn oracle_definition(row: &[f64; 16]) -> PrismProbeDefinition {
     let mut definition = match row[0] as usize {
         0 => rectangle(),
         1 => with_hole(),
@@ -87,7 +87,7 @@ fn every_generated_prism_face_matches_the_independent_occt_corpus() {
     assert_eq!(cases, 27);
 }
 
-fn parse_oracle_row(line: &str) -> [f64; 16] {
+pub(super) fn parse_oracle_row(line: &str) -> [f64; 16] {
     line.split(',')
         .map(|value| value.parse().unwrap())
         .collect::<Vec<_>>()
