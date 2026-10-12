@@ -10,8 +10,8 @@ c-abi = "pending"
 
 [api]
 repository = "Oblikovati/Oblikovati.API"
-version = "0.157.0"
-revision = "8a23d7aee54e018821ce942054649d8e5b8bdb68"
+version = "0.158.0"
+revision = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd"
 
 [kernel]
 repository = "Oblikovati/RustyCADKernel"

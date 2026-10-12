@@ -39,3 +39,19 @@ remain [#3630](https://github.com/Oblikovati/Oblikovati/issues/3630).
 The kernel owner retains kernel testing and package publication. Application
 publication remains blocked by its product-readiness fields. Windows and macOS
 jobs retain their explicit deferred failures; this work checks Linux only.
+
+## Local pin consistency
+
+The local gate now validates both API and kernel entries in `release.toml`
+against every consumed owner crate in `Cargo.lock`, before external commands.
+This reuses the release preflight's version, source-owner and commit checks.
+A stale pin fails even while product publication is still disabled. The check
+uses local files and does not rerun owner tests or query release services.
+
+A regression test first reproduced the stale API v0.157.0 packaging entry against
+an application lock using v0.158.0. The corrected API pin is v0.158.0 at
+`32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd`, verified against its published tag.
+Tests check the real repository lock for both owners, and prove that stale API
+or kernel commits stop the gate before any external check starts. The successful
+gate fixture still schedules workspace checks, documentation, workflow lint and
+duplication in their original order. Publication readiness remains a separate gate.

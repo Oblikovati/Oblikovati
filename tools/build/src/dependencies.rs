@@ -29,6 +29,14 @@ struct LockedPackage {
     source: Option<String>,
 }
 
+pub(crate) fn check_pins(root: &Path) -> BuildResult<()> {
+    let config = crate::release_config::load(root)?;
+    for dependency in [&config.api, &config.kernel] {
+        locked_crates(&root.join("Cargo.lock"), dependency)?;
+    }
+    Ok(())
+}
+
 pub(crate) fn verify_release(
     root: &Path,
     runner: &dyn Runner,

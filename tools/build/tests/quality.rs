@@ -100,14 +100,7 @@ impl Runner for GateRunner {
 
 #[test]
 fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips() {
-    let runner = GateRunner {
-        tree: FixtureTree::new(),
-        calls: std::cell::RefCell::new(Vec::new()),
-    };
-    for name in ["Cargo.toml", "Cargo.lock", "LICENSE"] {
-        runner.tree.put(name, "fixture");
-    }
-    runner.tree.put("Cargo.toml", "[package]\nname = 'fixture'");
+    let runner = gate_fixture();
     gate(runner.tree.root(), &runner).unwrap();
     run(runner.tree.root(), &runner, "test").unwrap();
     let calls = runner.calls.borrow();
@@ -124,4 +117,52 @@ fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips
             "{fragment}"
         );
     }
+}
+
+#[test]
+fn local_gate_refuses_stale_api_and_kernel_pins_before_external_checks() {
+    let tree = FixtureTree::new();
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    let runner = FakeRunner::default();
+    for owner in ["api", "kernel"] {
+        write_stale_pin(&tree, owner);
+        let error = gate(tree.root(), &runner).unwrap_err();
+        assert!(
+            error.contains("locked") && error.contains(&"0".repeat(40)),
+            "{error}"
+        );
+        assert!(runner.calls.borrow().is_empty());
+    }
+}
+
+fn gate_fixture() -> GateRunner {
+    let runner = GateRunner {
+        tree: FixtureTree::new(),
+        calls: std::cell::RefCell::new(Vec::new()),
+    };
+    for name in ["Cargo.toml", "LICENSE"] {
+        runner.tree.put(name, "fixture");
+    }
+    runner.tree.put("Cargo.toml", "[package]\nname = 'fixture'");
+    runner
+        .tree
+        .put("release.toml", include_str!("../../../release.toml"));
+    runner
+        .tree
+        .put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    runner
+}
+
+fn write_stale_pin(tree: &FixtureTree, owner: &str) {
+    let mut config = toml::from_str::<crate::release_config::ReleaseConfig>(include_str!(
+        "../../../release.toml"
+    ))
+    .unwrap();
+    let pin = if owner == "api" {
+        &mut config.api
+    } else {
+        &mut config.kernel
+    };
+    pin.revision = "0".repeat(40);
+    tree.put("release.toml", &toml::to_string(&config).unwrap());
 }
