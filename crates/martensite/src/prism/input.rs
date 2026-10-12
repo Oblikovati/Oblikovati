@@ -5,7 +5,7 @@ pub(super) fn validate_definition(definition: &PrismProbeDefinition) -> Result<(
     let vector = definition.displacement;
     if vector.iter().any(|value| !value.is_finite()) || vector[2] == 0. {
         return Err(format!(
-            "prism displacement {vector:?}: expected finite components with nonzero XY-normal displacement"
+            "prism displacement {vector:?}: expected finite components with nonzero profile-normal displacement"
         ));
     }
     let mut keys = BTreeSet::new();

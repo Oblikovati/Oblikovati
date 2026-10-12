@@ -149,3 +149,5 @@ fn separate_prism_evaluations_leave_the_owned_profile_unchanged() {
 }
 #[path = "prism/mesh.rs"]
 mod mesh;
+#[path = "prism/placement.rs"]
+mod placement;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod input;
 mod mesh;
+mod placement;
 mod profile;
 mod report;
 mod snapshot;
@@ -9,10 +10,10 @@ mod snapshot;
 mod snapshot_tests;
 mod types;
 pub use mesh::{PrismFaceMesh, PrismMeshOptions, PrismPresentation};
-use rustycad_tkmath::gp::Vector3;
+use oblikovati_model::sketch::SketchPlane;
 use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakePrism;
 use rustycad_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
-pub use snapshot::{PrismProbeSnapshot, retain_planar_prism};
+pub use snapshot::{PrismProbeSnapshot, retain_planar_prism, retain_prism_on_plane};
 pub use types::{
     PrismFaceProbe, PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
 };
@@ -21,12 +22,15 @@ pub use types::{
 pub fn probe_planar_prism(definition: &PrismProbeDefinition) -> Result<PrismProbeReport, String> {
     Ok(retain_planar_prism(definition)?.report().clone())
 }
-fn build_prism(definition: &PrismProbeDefinition) -> Result<PrismProbeSnapshot, String> {
+fn build_prism(
+    definition: &PrismProbeDefinition,
+    plane: SketchPlane,
+) -> Result<PrismProbeSnapshot, String> {
     input::validate_definition(definition)?;
-    let profile = profile::build_profile(definition)?;
-    let [x, y, z] = definition.displacement;
-    let mut maker = BRepPrimAPIMakePrism::new(&profile.face, Vector3::new(x, y, z), true, true)
-        .map_err(|error| {
+    let vector = placement::model_displacement(plane, definition.displacement)?;
+    let profile = profile::build_profile(definition, plane)?;
+    let mut maker =
+        BRepPrimAPIMakePrism::new(&profile.face, vector, true, true).map_err(|error| {
             format!(
                 "prism displacement {:?}: expected constructed solid: {error}",
                 definition.displacement

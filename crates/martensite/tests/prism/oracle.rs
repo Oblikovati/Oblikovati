@@ -38,7 +38,7 @@ fn expected_role(row: &[f64; 16]) -> PrismFaceRole {
         _ => panic!("expected known oracle face role"),
     }
 }
-fn verify_face(row: &[f64; 16], report: &PrismProbeReport) {
+pub(super) fn verify_face(row: &[f64; 16], report: &PrismProbeReport) {
     let role = expected_role(row);
     let matches: Vec<_> = report
         .faces

@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use rustycad_tkbrep::topods::{Edge, Face, Wire};
-use rustycad_tkmath::gp::Point3;
 use rustycad_tktopalgo::brep_builder_api::{BRepBuilderAPIMakeFace, BRepBuilderAPIMakePolygon};
 pub(super) struct BuiltProfile {
     pub face: Face,
     pub edges: Vec<(u64, Edge)>,
 }
-pub(super) fn build_profile(definition: &PrismProbeDefinition) -> Result<BuiltProfile, String> {
-    let (outer, mut edges) = build_loop(&definition.outer)?;
+pub(super) fn build_profile(
+    definition: &PrismProbeDefinition,
+    plane: SketchPlane,
+) -> Result<BuiltProfile, String> {
+    let (outer, mut edges) = build_loop(&definition.outer, plane)?;
     let mut maker = BRepBuilderAPIMakeFace::from_wire(&outer, true)
         .map_err(|error| format!("prism outer face: expected planar construction: {error}"))?;
     for hole in &definition.holes {
-        let (wire, inner_edges) = build_loop(hole)?;
+        let (wire, inner_edges) = build_loop(hole, plane)?;
         maker.add(&wire).map_err(|error| {
             format!(
                 "prism inner loop {:?}: expected accepted wire: {error}",
@@ -27,15 +29,18 @@ pub(super) fn build_profile(definition: &PrismProbeDefinition) -> Result<BuiltPr
     crate::require_geometric_shape(&face, "prism profile")?;
     Ok(BuiltProfile { face, edges })
 }
-fn build_loop(profile: &PrismProbeLoop) -> Result<(Wire, Vec<(u64, Edge)>), String> {
+fn build_loop(
+    profile: &PrismProbeLoop,
+    plane: SketchPlane,
+) -> Result<(Wire, Vec<(u64, Edge)>), String> {
     let mut maker = BRepBuilderAPIMakePolygon::new();
     let [x, y] = profile.vertices[0];
     maker
-        .add_point(Point3::new(x, y, 0.))
+        .add_point(placement::model_point(plane, [x, y])?)
         .map_err(|error| error.to_string())?;
     let mut edges = Vec::new();
     for (index, [x, y]) in profile.vertices.iter().copied().enumerate().skip(1) {
-        add_segment_point(&mut maker, [x, y], profile.edge_keys[index - 1])?;
+        add_segment_point(&mut maker, [x, y], profile.edge_keys[index - 1], plane)?;
         append_edge(&maker, profile.edge_keys[index - 1], &mut edges)?;
     }
     close_loop(&mut maker, profile)?;
@@ -51,9 +56,10 @@ fn add_segment_point(
     maker: &mut BRepBuilderAPIMakePolygon,
     point: [f64; 2],
     key: u64,
+    plane: SketchPlane,
 ) -> Result<(), String> {
     maker
-        .add_point(Point3::new(point[0], point[1], 0.))
+        .add_point(placement::model_point(plane, point)?)
         .map_err(|error| {
             format!("prism edge {key}, point {point:?}: expected connected point: {error}")
         })

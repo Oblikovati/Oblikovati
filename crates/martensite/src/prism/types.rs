@@ -5,7 +5,8 @@ pub struct PrismProbeLoop {
     pub edge_keys: Vec<u64>,
     pub vertices: Vec<[f64; 2]>,
 }
-/// A planar XY profile with an outer loop and oriented inner loops in working units.
+/// A local planar profile with an outer loop and oriented inner loops in working units.
+/// Displacement components follow local X, Y and normal; the default entry point places it on XY.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrismProbeDefinition {
     pub outer: PrismProbeLoop,

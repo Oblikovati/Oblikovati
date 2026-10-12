@@ -68,11 +68,14 @@ is not a source-commit certification of the installed binaries.
 
 ## Remaining requirements
 
-This step checks straight-segment planar profiles. Curved profiles, arbitrary
-sketch frames, general revolve, complete immutable operation results, complete
-validity levels, measured tolerance budgets, partial-result diagnostics,
-persistent naming, model feature recipes, edit/replay, and model-driven viewport publication
-remain open. The retained diagnostic prism and derived display mesh are checked
-in [prism presentation evidence](implementation-prism-presentation.md). Required Go-kernel behavior outside OCCT still must be ported and
-adapted in Martensite before its dependent features pass. No alternate
+This step checks straight-segment planar profiles. Curved profiles,
+sketch-driven profile extraction, general revolve, complete immutable operation
+results, full validity levels, measured tolerance budgets, partial-result
+diagnostics, persistent naming, model feature recipes, edit/replay, and
+model-driven viewport publication remain open. The retained diagnostic prism and derived display mesh are checked
+in [prism presentation evidence](implementation-prism-presentation.md). Required
+Go-kernel behavior outside OCCT still must be ported and adapted in Martensite before its dependent features pass. No alternate
 application geometry engine fills these gaps.
+
+Placed profiles on validated model planes are checked in
+[sketch-plane prism evidence](implementation-prism-placement.md).

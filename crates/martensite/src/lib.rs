@@ -106,5 +106,5 @@ mod prism;
 pub use prism::{
     PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismMeshOptions, PrismPresentation,
     PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, probe_planar_prism,
-    retain_planar_prism,
+    retain_planar_prism, retain_prism_on_plane,
 };

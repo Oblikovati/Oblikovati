@@ -17,7 +17,15 @@ pub struct PrismProbeSnapshot {
 pub fn retain_planar_prism(
     definition: &PrismProbeDefinition,
 ) -> Result<PrismProbeSnapshot, String> {
-    build_prism(definition)
+    retain_prism_on_plane(definition, SketchPlane::xy())
+}
+/// Retain a prism on a validated model plane; displacement components follow its X, Y and normal axes.
+/// Example: `retain_prism_on_plane(&definition, SketchPlane::xz())?`.
+pub fn retain_prism_on_plane(
+    definition: &PrismProbeDefinition,
+    plane: SketchPlane,
+) -> Result<PrismProbeSnapshot, String> {
+    build_prism(definition, plane)
 }
 pub(super) fn copied_prism(
     shape: &Shape,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_martensite::{PrismMeshOptions, retain_planar_prism};
-fn options() -> PrismMeshOptions {
+pub(super) fn options() -> PrismMeshOptions {
     PrismMeshOptions {
         chord_error: 0.05,
         angular_error: 0.5,
@@ -46,7 +46,7 @@ fn malformed_mesh_approximation_limits_are_named_refusals() {
     }
 }
 
-fn verify_mesh_areas(
+pub(super) fn verify_mesh_areas(
     presentation: &oblikovati_martensite::PrismPresentation,
     before: &oblikovati_martensite::PrismProbeReport,
 ) {

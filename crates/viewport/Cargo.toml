@@ -20,6 +20,9 @@ rustycad-tkservice = { git = "https://github.com/Oblikovati/RustyCADKernel", rev
 rustycad-tkv3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
 x11-dl = "=2.21.0"
 rustix = { version = "=1.1.4", features = ["event"] }
+[dev-dependencies]
+oblikovati-model = { path = "../model" }
+
 [lints.rust]
 unsafe_code = "deny"
 [lints.clippy]

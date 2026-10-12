@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_martensite::{
-    PrismMeshOptions, PrismProbeDefinition, PrismProbeLoop, retain_planar_prism,
+    PrismMeshOptions, PrismProbeDefinition, PrismProbeLoop, retain_prism_on_plane,
 };
+use oblikovati_model::sketch::SketchPlane;
 fn holed_profile() -> PrismProbeDefinition {
     PrismProbeDefinition {
         outer: PrismProbeLoop {
@@ -17,24 +18,38 @@ fn holed_profile() -> PrismProbeDefinition {
     }
 }
 pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
-    let snapshot = retain_planar_prism(&holed_profile()).unwrap();
-    let analytic = snapshot.report().clone();
-    let scene = prism_scene(&snapshot);
+    let tilted = tilted_frame();
     let mut view = runtime
-        .open_window("Oblikovati kernel prism presentation", [320, 240])
+        .open_window("Oblikovati placed kernel prism presentation", [320, 240])
         .unwrap();
-    view.set_camera(prism_camera()).unwrap();
-    view.submit(&scene).unwrap();
-    let capture = complete_surface_frame(&mut view);
-    await_presented_pixels(&view, &capture);
-    verify_hole_pixels(&capture);
-    assert_eq!(snapshot.report(), &analytic);
+    for plane in [
+        SketchPlane::xy(),
+        SketchPlane::xz(),
+        SketchPlane::yz(),
+        tilted,
+        tilted.flipped_normal().unwrap(),
+    ] {
+        verify_placed_frame(&mut view, plane);
+    }
     view.close();
 }
-fn prism_camera() -> ViewportCamera {
+fn verify_placed_frame(view: &mut Viewport, plane: SketchPlane) {
+    let snapshot = retain_prism_on_plane(&holed_profile(), plane).unwrap();
+    let analytic = snapshot.report().clone();
+    view.set_camera(prism_camera(plane)).unwrap();
+    view.submit(&prism_scene(&snapshot)).unwrap();
+    let capture = complete_surface_frame(view);
+    await_presented_pixels(view, &capture);
+    verify_hole_pixels(&capture);
+    assert_eq!(snapshot.report(), &analytic);
+}
+fn prism_camera(plane: SketchPlane) -> ViewportCamera {
+    let center = plane.to_model([2., 1.5]).unwrap();
+    let normal = plane.normal();
     ViewportCamera {
-        eye: [2., 1.5, 20.],
-        target: [2., 1.5, 1.],
+        eye: std::array::from_fn(|i| center[i] + normal[i] * 20.),
+        target: std::array::from_fn(|i| center[i] + normal[i]),
+        up: plane.recipe().y_axis,
         scale: 6.,
         ..ViewportCamera::default()
     }
@@ -61,4 +76,14 @@ fn prism_scene(snapshot: &oblikovati_martensite::PrismProbeSnapshot) -> Viewport
         })
         .unwrap();
     ViewportScene::from_prism(&mesh, [0., 0., 1.], [0., 1., 0., 1.]).unwrap()
+}
+
+fn tilted_frame() -> SketchPlane {
+    SketchPlane::new(
+        [10., -20., 30.],
+        [0.6, 0.8, 0.],
+        [0., 0., 1.],
+        Default::default(),
+    )
+    .unwrap()
 }
