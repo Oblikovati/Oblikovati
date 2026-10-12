@@ -125,3 +125,19 @@ The native suite had one pan assertion failure during the first combined run
 eight further concurrent native-suite runs passed (40 tests). Those repeats
 do not prove the cause of that one result. The existing assertion remains
 active; no test serialization or weakened acceptance was added.
+
+## Native size oracle correction
+
+A later repeat trace identified a failed numeric assertion's input: the
+zoom window requested `128×96`, but its completed capture reported `320×240`.
+At pointer `[96,24]`, scale 20, and zoom factor 0.9, the target shift was
+`[-0.5333333333333332, 0.7999999999999998, 0]`, which is the expected projection
+for that drawable. The fixed `128×96` expectation was an invalid premise.
+This evidence does not identify the source of the native size change.
+
+Native tests now check their own X11 title and use the completed drawable's
+dimensions in the independent world-coordinate oracle. Exact fixed-size pan
+and anchored-zoom assertions remain on an offscreen target, where no window
+manager can change those dimensions. Native image round trips, scene and
+camera generations, and X11 presented-pixel checks remain active. No renderer
+code, validation setting, or test concurrency was changed for this correction.

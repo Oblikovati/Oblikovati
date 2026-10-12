@@ -18,7 +18,15 @@ fn native_pan_and_orbit_preserve_camera_invariants_and_reach_presented_pixels() 
     view.submit(&scene()).unwrap();
     let before = verify_native(&mut view);
     view.navigate(ViewportNavigation::Pan([12, 6])).unwrap();
-    close_vector(view.camera_state().unwrap().target, [-2.5, 1.25, 0.]);
+    assert_eq!(
+        view.native_title().unwrap(),
+        "Oblikovati navigation acceptance"
+    );
+    let units = 20. / f64::from(before.extent[0].min(before.extent[1]));
+    close_vector(
+        view.camera_state().unwrap().target,
+        [-12. * units, 6. * units, 0.],
+    );
     let after = verify_native(&mut view);
     assert_eq!(after.scene_generation, before.scene_generation);
     assert_eq!(after.camera_generation, before.camera_generation + 1);
@@ -66,7 +74,8 @@ fn anchored_zoom_round_trips_and_invalid_changes_preserve_completed_frames() {
     anchored_navigation(&mut view, 0.9);
     let zoomed = view.camera_state().unwrap();
     assert!((zoomed.scale - 18.).abs() < 1e-10);
-    close_vector(zoomed.target, [2. / 3., 0.5, 0.]);
+    assert_eq!(view.native_title().unwrap(), "Oblikovati zoom acceptance");
+    close_vector(zoomed.target, expected_anchor_shift(before.extent));
     verify_native(&mut view);
     anchored_navigation(&mut view, 0.9_f64.recip());
     let restored = verify_native(&mut view);
@@ -159,4 +168,15 @@ fn previous_view_keeps_the_new_native_extent_after_resize() {
     assert!(!view.previous_view().unwrap());
     view.close();
     assert!(runtime.validation_errors().is_empty());
+}
+
+fn expected_anchor_shift([width, height]: [u32; 2]) -> [f64; 3] {
+    // X11 may change the requested window size before the first frame. Derive the
+    // independent orthographic projection oracle from the captured drawable.
+    let units = 20. / f64::from(width.min(height));
+    [
+        (96. - f64::from(width) / 2.) * units * 0.1,
+        (f64::from(height) / 2. - 24.) * units * 0.1,
+        0.,
+    ]
 }

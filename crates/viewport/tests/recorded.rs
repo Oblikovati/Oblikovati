@@ -450,3 +450,26 @@ fn continuous_camera_gestures_never_record_previous_views() {
     }
     assert!(!view.previous_view().unwrap());
 }
+
+#[test]
+fn fixed_offscreen_pan_has_the_exact_expected_world_displacement() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([128, 96]).unwrap();
+    view.navigate(crate::ViewportNavigation::Pan([12, 6]))
+        .unwrap();
+    assert_eq!(view.camera_state().unwrap().target, [-2.5, 1.25, 0.]);
+}
+#[test]
+fn fixed_offscreen_zoom_has_the_expected_world_anchor_displacement() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([128, 96]).unwrap();
+    let zoom = crate::ViewportNavigation::Zoom {
+        factor: 0.9,
+        anchor: Some([96, 24]),
+    };
+    view.navigate(zoom).unwrap();
+    let actual = view.camera_state().unwrap().target;
+    for (observed, expected) in actual.into_iter().zip([2. / 3., 0.5, 0.]) {
+        assert!((observed - expected).abs() < 1e-10);
+    }
+}
