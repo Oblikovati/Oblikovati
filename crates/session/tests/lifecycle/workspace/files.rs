@@ -40,7 +40,7 @@ impl PackageFileReader for WorkspaceFiles {
             .borrow()
             .get(path)
             .cloned()
-            .ok_or_else(|| io::Error::other("file absent"))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "file absent"))
     }
 }
 impl AtomicFiles for WorkspaceFiles {

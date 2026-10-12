@@ -11,6 +11,7 @@ use std::{error::Error, fmt, io, path::PathBuf};
 /// A failed file operation; no new binding or successful save was adopted.
 #[derive(Debug)]
 pub enum FileWorkspaceError {
+    ProjectAssets(String),
     ObserverFactory(String),
     ProjectConfiguration(io::Error),
     UnknownProject(PathBuf),
@@ -61,6 +62,7 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::ProjectAssets(cause) => write!(output, "project assets: {cause}"),
             Self::DerivedRefresh(reason) => write!(output, "derived refresh: {reason}"),
             Self::SourceValue {
                 source,
@@ -151,6 +153,7 @@ impl fmt::Display for FileWorkspaceError {
 impl Error for FileWorkspaceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::ProjectAssets(_) => None,
             Self::ProjectConfiguration(error) => Some(error),
             Self::Project(error) => Some(error),
             Self::Package(error) => Some(error),

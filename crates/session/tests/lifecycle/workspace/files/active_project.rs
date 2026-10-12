@@ -155,3 +155,35 @@ fn aliases_share_one_canonical_project_and_do_not_reload_configuration() {
     assert_eq!(host.projects().len(), 1);
     assert_eq!(host.files().reads, 1);
 }
+
+#[test]
+fn missing_asset_files_are_empty_and_asset_parse_failure_does_not_register_a_project() {
+    let mut host = host(RecordingWorkspace::default());
+    let configuration = ProjectConfiguration {
+        name: "asset project".into(),
+        design_data: "assets".into(),
+        ..Default::default()
+    };
+    host.files()
+        .contents
+        .borrow_mut()
+        .insert(path("assets.opj"), configuration.encode().unwrap());
+    let project = host.load_project(&path("assets.opj")).unwrap();
+    assert!(project.assets.materials().ordered().next().is_none());
+    host.files()
+        .contents
+        .borrow_mut()
+        .insert(path("bad-assets.opj"), configuration.encode().unwrap());
+    host.files()
+        .contents
+        .borrow_mut()
+        .insert(path("assets/materials.yaml"), b"materials: [".to_vec());
+    assert!(
+        host.load_project(&path("bad-assets.opj"))
+            .unwrap_err()
+            .to_string()
+            .contains("materials.yaml")
+    );
+    assert_eq!(host.projects().len(), 1);
+    assert_eq!(host.active_project().unwrap().path, path("assets.opj"));
+}

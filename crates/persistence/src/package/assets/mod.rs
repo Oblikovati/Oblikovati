@@ -5,6 +5,7 @@ mod records;
 use super::{DocumentPackage, Mapping, PackageCodecError, Value};
 use oblikovati_model::assets::DocumentAssets;
 use records::AssetRecipe;
+pub(crate) use records::{decode_appearance_definitions, decode_material_definitions};
 impl DocumentPackage {
     /// Restore portable definitions and exact assignment intent; example: `package.restore_assets()?`.
     pub fn restore_assets(&self) -> Result<DocumentAssets, PackageCodecError> {

@@ -196,3 +196,6 @@ fn script_inventory_advertises_catalog_reads_without_unported_asset_mutations() 
 
 #[path = "document_assets.rs"]
 mod document_assets;
+
+#[path = "project_assets.rs"]
+mod project_assets;

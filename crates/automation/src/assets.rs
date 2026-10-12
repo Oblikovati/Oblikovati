@@ -33,23 +33,25 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     })?;
     let empty_document = DocumentAssets::default();
     let document = active_document_assets(files)?.unwrap_or(&empty_document);
-    query_document_catalog(catalog, document, query)
+    let project = files.active_project().map(|project| &project.assets);
+    query_document_catalog(catalog, document, project, query)
 }
 fn query_document_catalog(
     catalog: &BuiltinAssetCatalog,
     document: &DocumentAssets,
+    project: Option<&oblikovati_model::assets::ProjectAssetLibrary>,
     query: AssetQuery,
 ) -> Result<Vec<u8>, Error> {
     let no_project_materials = AssetCollection::default();
     let no_project_appearances = AssetCollection::default();
     let materials = ScopedAssets {
         document: document.materials(),
-        project: &no_project_materials,
+        project: project.map_or(&no_project_materials, |assets| assets.materials()),
         builtin: catalog.materials(),
     };
     let appearances = ScopedAssets {
         document: document.appearances(),
-        project: &no_project_appearances,
+        project: project.map_or(&no_project_appearances, |assets| assets.appearances()),
         builtin: catalog.appearances(),
     };
     match query {

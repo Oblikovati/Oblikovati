@@ -20,8 +20,12 @@ pub(super) struct AssetRecipe {
 impl AssetRecipe {
     pub fn restore(&self, schema: u32) -> Result<DocumentAssets, String> {
         let mut assets = DocumentAssets::default();
-        restore_materials(&self.materials, &mut assets)?;
-        restore_appearances(&self.appearances, &mut assets)?;
+        for asset in decode_material_definitions(&self.materials, ASSET_DOCUMENT)? {
+            assets.embed_material(&asset)?;
+        }
+        for asset in decode_appearance_definitions(&self.appearances, ASSET_DOCUMENT)? {
+            assets.embed_appearance(&asset)?;
+        }
         if let Some(assignments) = &self.assignments {
             assets.assignments = assignments.restore(schema)?;
         }
@@ -43,7 +47,11 @@ impl AssetRecipe {
         })
     }
 }
-fn restore_materials(records: &[Value], assets: &mut DocumentAssets) -> Result<(), String> {
+pub(crate) fn decode_material_definitions(
+    records: &[Value],
+    source: oblikovati_api::types::AssetSource,
+) -> Result<Vec<MaterialAsset>, String> {
+    let mut decoded = Vec::new();
     let mut seen = BTreeSet::new();
     for record in records {
         let info: MaterialInfo = crate::assets::stored_asset_record(
@@ -55,25 +63,29 @@ fn restore_materials(records: &[Value], assets: &mut DocumentAssets) -> Result<(
                 ("isotropy", "isotropyClass"),
                 ("orthotropic", "anisotropic"),
             ],
-            ASSET_DOCUMENT,
+            source.clone(),
         )?;
         require_unique_asset(&mut seen, &info.id)?;
-        assets.embed_material(&MaterialAsset::from_info(info)?)?;
+        decoded.push(MaterialAsset::from_info(info)?);
     }
-    Ok(())
+    Ok(decoded)
 }
-fn restore_appearances(records: &[Value], assets: &mut DocumentAssets) -> Result<(), String> {
+pub(crate) fn decode_appearance_definitions(
+    records: &[Value],
+    source: oblikovati_api::types::AssetSource,
+) -> Result<Vec<AppearanceAsset>, String> {
+    let mut decoded = Vec::new();
     let mut seen = BTreeSet::new();
     for record in records {
         let info: AppearanceInfo = crate::assets::stored_appearance_record(
             "document appearances",
             record.clone(),
-            ASSET_DOCUMENT,
+            source.clone(),
         )?;
         require_unique_asset(&mut seen, &info.id)?;
-        assets.embed_appearance(&AppearanceAsset::from_info(info)?)?;
+        decoded.push(AppearanceAsset::from_info(info)?);
     }
-    Ok(())
+    Ok(decoded)
 }
 fn require_unique_asset(seen: &mut BTreeSet<String>, id: &str) -> Result<(), String> {
     if !seen.insert(id.into()) {

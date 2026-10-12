@@ -24,11 +24,9 @@ struct DiscoveryStage {
 }
 impl PackageFileReader for DiscoveryFiles {
     fn read(&mut self, path: &Path) -> io::Result<Vec<u8>> {
-        self.packages
-            .borrow()
-            .get(path)
-            .cloned()
-            .ok_or_else(|| io::Error::other(format!("missing fixture {path:?}")))
+        self.packages.borrow().get(path).cloned().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::NotFound, format!("missing fixture {path:?}"))
+        })
     }
 }
 impl DocumentFiles for DiscoveryFiles {

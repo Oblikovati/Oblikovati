@@ -7,11 +7,12 @@ use oblikovati_persistence::{
 };
 
 /// Validated project ownership; its canonical path is its session identity.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LoadedProject {
     pub path: PathBuf,
     pub configuration: ProjectConfiguration,
     pub bound: BoundProject,
+    pub assets: oblikovati_model::assets::ProjectAssetLibrary,
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
@@ -36,19 +37,33 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         {
             return Ok(&self.projects[index]);
         }
+        let candidate = self.read_project_candidate(canonical)?;
+        let index = self.projects.len();
+        self.projects.push(candidate);
+        self.active_project.get_or_insert(index);
+        Ok(&self.projects[index])
+    }
+
+    fn read_project_candidate(
+        &mut self,
+        canonical: PathBuf,
+    ) -> Result<LoadedProject, FileWorkspaceError> {
         let configuration = read_project_file(&canonical, &mut self.files)
             .map_err(FileWorkspaceError::ProjectConfiguration)?;
         let bound = configuration
             .bind(&canonical)
             .map_err(FileWorkspaceError::ProjectConfiguration)?;
-        let index = self.projects.len();
-        self.projects.push(LoadedProject {
+        let assets = oblikovati_persistence::assets::load_project_asset_library(
+            bound.design_data.as_deref(),
+            &mut self.files,
+        )
+        .map_err(FileWorkspaceError::ProjectAssets)?;
+        Ok(LoadedProject {
             path: canonical,
             configuration,
             bound,
-        });
-        self.active_project.get_or_insert(index);
-        Ok(&self.projects[index])
+            assets,
+        })
     }
 
     /// Select an already loaded canonical project without I/O or document mutation.

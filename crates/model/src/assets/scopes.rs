@@ -20,6 +20,20 @@ impl<T> Default for AssetCollection<T> {
     }
 }
 impl<T: AssetIdentity> AssetCollection<T> {
+    /// Admit a unique identity set before exposing a scope; example: `AssetCollection::from_unique(records)?`.
+    pub fn from_unique(records: Vec<T>) -> Result<Self, String> {
+        let mut collection = Self::default();
+        for record in records {
+            if collection.get(record.asset_id()).is_some() {
+                return Err(format!(
+                    "asset {:?}: expected a unique identity within its asset family",
+                    record.asset_id()
+                ));
+            }
+            collection.insert(record);
+        }
+        Ok(collection)
+    }
     /// Insert an owned asset, returning the old snapshot; example: `scope.insert(asset)`.
     pub fn insert(&mut self, asset: T) -> Option<T> {
         let id = asset.asset_id().to_owned();

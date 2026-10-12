@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::catalog_validation::{validate_builtin_appearance, validate_builtin_material};
-use super::{AppearanceAsset, AssetCollection, AssetIdentity, MaterialAsset};
+use super::{AppearanceAsset, AssetCollection, MaterialAsset};
 /// Stable neutral ID from the Go material subsystem; not a renderer's guessed color.
 pub const DEFAULT_APPEARANCE_ID: &str = "default";
 /// Complete immutable shipped assets, admitted together so missing links never escape.
@@ -22,8 +22,8 @@ impl BuiltinAssetCatalog {
             validate_builtin_appearance(asset)?;
         }
         let result = Self {
-            materials: unique_builtin_records(materials)?,
-            appearances: unique_builtin_records(appearances)?,
+            materials: AssetCollection::from_unique(materials)?,
+            appearances: AssetCollection::from_unique(appearances)?,
         };
         result.require_catalog_links()?;
         Ok(result)
@@ -47,19 +47,6 @@ impl BuiltinAssetCatalog {
         }
         Ok(())
     }
-}
-fn unique_builtin_records<T: AssetIdentity>(records: Vec<T>) -> Result<AssetCollection<T>, String> {
-    let mut scope = AssetCollection::default();
-    for record in records {
-        if scope.get(record.asset_id()).is_some() {
-            return Err(format!(
-                "catalog asset {:?}: expected a unique identity within its asset family",
-                record.asset_id()
-            ));
-        }
-        scope.insert(record);
-    }
-    Ok(scope)
 }
 fn require_material_appearance(
     asset: &MaterialAsset,
