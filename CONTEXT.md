@@ -63,3 +63,7 @@ It can also define curves, and remains when its last curve is removed.
 
 **Orphan defining point**: A defining point that no surviving curve requires.
 It is removed with its bound relations when geometry is deleted.
+
+**Exchange format**: An external CAD file representation used to transfer
+geometry and related design content. It is distinct from an Oblikovati native
+document that retains the editable recipe.

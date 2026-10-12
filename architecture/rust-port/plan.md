@@ -27,9 +27,16 @@ The [source map](source-map.md) records the starting revisions. The
 | --- | --- | --- |
 | `oblikovati-rust`, branch `rust` | GPL application, feature recipes, documents, session, GUI, CLI, host | Implement the application in Rust. |
 | `Oblikovati.API` | Apache public types, traits, wire declarations, clients, C ABI | Consume the Rust crate. Change the shared contract here first when required. |
-| `RustyCADKernel` | Martensite geometry, topology, algorithms, and visualization | Integrate tested capabilities, complete missing OCCT behavior, and port required Go-kernel capabilities outside OCCT as Martensite extensions. |
+| `RustyCADKernel` | Martensite geometry, topology, algorithms, visualization, and exchange formats | Integrate tested capabilities, complete missing OCCT behavior, and port required Go-kernel capabilities outside OCCT as Martensite extensions. |
 | `Oblikovati.AddIns.*` | Separate add-ins | Keep the C ABI. Test existing Go add-ins against the Rust host. |
 | `Oblikovati` | Go reference application | Read source and run comparison tests at the recorded revision. |
+
+All exchange format implementations belong to `RustyCADKernel`. DWG uses
+[acadrust](https://github.com/hakanaktt/acadrust) inside the kernel. The
+application port covers exchange commands, dialogs, API routing, storage, and
+kernel result integration. It does not port format parsers, writers, or
+translators. See [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md).
+Native Oblikovati recipe persistence remains application-owned.
 
 **Required scope: Go-kernel capabilities that support application features
 and are not part of OCCT must be ported and adapted into Martensite.** OCCT
@@ -216,6 +223,7 @@ change supersedes its accepted record; it does not silently edit that decision.
 | [0010: assets](../decisions/ADR-0010-materials-and-appearances.md) | R5/R7 | Typed material/appearance round trips, assignment, and analytic properties. |
 | [0011: scripting](../decisions/ADR-0011-scripting.md) | R7 | Lua 5.1, limits, cancellation, and containment with the selected engine. |
 | [0012: validation](../decisions/ADR-0012-build-and-validation.md) | R0 onward | Full discovered workspace gate, independent oracles, platform/live evidence. |
+| [0018: exchange](../decisions/ADR-0018-exchange-format-ownership.md) | K10/R8 | Released kernel exchange contract; application routing, transactions, resources, and diagnostics. |
 | [0013: releases](../decisions/ADR-0013-packaging-and-release.md) | R9 | Reproducible packages, dependency pins, upgrade and rollback. |
 
 Do not select a new YAML, Lua, window, or UI wrapper only from its name. Check

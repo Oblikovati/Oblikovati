@@ -15,7 +15,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0018`.
+The next unused number is `ADR-0019`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -115,6 +115,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0012](ADR-0012-build-and-validation.md) | Build and integration evidence | R0 onward |
 | [ADR-0013](ADR-0013-packaging-and-release.md) | Packages, updates, release transition | R9 |
 | [ADR-0014](ADR-0014-documents-and-storage.md) | Documents, storage, schema-3 derived links | R2/R3/R6/R8 |
+| [ADR-0018](ADR-0018-exchange-format-ownership.md) | Kernel-owned exchange formats and application workflows | K10/R8 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

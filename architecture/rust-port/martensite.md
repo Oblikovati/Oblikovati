@@ -92,6 +92,17 @@ invariant with explicit hard assertions. Preserve the Go baseline as a
 behavior reference. An unavailable OCCT comparison is not permission to omit
 the extension or weaken its acceptance checks.
 
+## Exchange ownership
+
+[ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md) assigns every
+exchange format implementation to RustyCADKernel. DWG uses
+[acadrust](https://github.com/hakanaktt/acadrust) in the kernel. This includes
+legacy recipe/domain translators; they are not application port tasks.
+The kernel owner provides the exchange contract, dependency pins, format tests,
+and released package. The application consumes that release and tests its
+commands, typed API, document transactions, resources, and diagnostics.
+K10 remains open until both kernel evidence and application integration pass.
+
 ## Kernel capability checks
 
 Every row starts as **unverified for Oblikovati**. Close a row only with an
@@ -110,7 +121,7 @@ kernel evidence can support a row, but cannot replace the application test.
 | K07 | Boolean and feature operations | TKBO, TKBool, TKFillet, TKOffset, TKHelix, related crates | Join/cut/intersect, sweep/loft, blend/draft, shell/thicken, pattern, surface and sheet-metal inputs. Check each operation family before its R5/R6 feature. |
 | K08 | Assembly instances and HLR | TKBRep location, TKV3d, TKHLR | Shared part presentations with separate occurrence paths; exact HLR and drawing references after edits. R6. |
 | K09 | Materials and full application display | TKService/TKV3d/Vulkan plus agreed extensions | Complete Oblikovati's display, appearance, point-cloud, lighting, and OpenPBR inventory. Separate app requirements from the kernel's legacy-renderer scope. R7. |
-| K10 | File exchange | TKDE, TKXSBase, format toolkits as available | Verify each required reader/writer, units, assembly graph, metadata, and curved geometry. A format registry alone is insufficient. R8. |
+| K10 | Kernel-owned file exchange | acadrust for DWG; TKDE, TKXSBase, and kernel-owned format modules | Kernel tests/releases each reader and writer. Application verifies routing, units, assembly/metadata adoption, resources, and diagnostics against that release. ADR-0018; R8. |
 | K11 | Required Go-kernel capabilities outside OCCT | Martensite extension modules identified by the R0 inventory | Port and adapt each required capability, preserve source/test provenance, and pass independent correctness and application tests before closing its dependent milestone. Applies across R1-R8 and the R9 cutover. |
 
 Kernel gaps get a Martensite work item or porting-ledger entry with the source
