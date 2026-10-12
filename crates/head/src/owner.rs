@@ -136,6 +136,21 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+        let Some(document) = self.files.workspace().active_document() else {
+            return Ok(Default::default());
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        Ok(oblikovati_gui::GuiCommandState {
+            undo_label: session.undo_label().map(str::to_owned),
+            redo_label: session.redo_label().map(str::to_owned),
+            transaction_open: session.in_transaction(),
+        })
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],

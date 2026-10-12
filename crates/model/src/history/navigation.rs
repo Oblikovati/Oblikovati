@@ -17,6 +17,15 @@ impl DocumentEditHistory {
             .collect()
     }
 
+    /// Inspect the committed cursor even during an edit; example: `history.committed_undo_label()` for controls.
+    pub fn committed_undo_label(&self) -> Option<&str> {
+        self.done.last().map(|step| step.label.as_str())
+    }
+    /// Inspect the next committed redo even during an edit; example: `history.committed_redo_label()` for controls.
+    pub fn committed_redo_label(&self) -> Option<&str> {
+        self.undone.last().map(|step| step.label.as_str())
+    }
+
     /// Restore the latest committed snapshot; example: `let label = history.undo()?;`.
     pub fn undo(&mut self) -> Result<String, HistoryError> {
         self.undo_label()?;
@@ -45,9 +54,7 @@ impl DocumentEditHistory {
     pub fn undo_label(&self) -> Result<&str, HistoryError> {
         self.require_closed()?;
         self.next_generation()?;
-        self.done
-            .last()
-            .map(|step| step.label.as_str())
+        self.committed_undo_label()
             .ok_or(HistoryError::Empty("undo"))
     }
 
@@ -55,9 +62,7 @@ impl DocumentEditHistory {
     pub fn redo_label(&self) -> Result<&str, HistoryError> {
         self.require_closed()?;
         self.next_generation()?;
-        self.undone
-            .last()
-            .map(|step| step.label.as_str())
+        self.committed_redo_label()
             .ok_or(HistoryError::Empty("redo"))
     }
 

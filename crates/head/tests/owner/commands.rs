@@ -22,7 +22,7 @@ fn bind_saved_document(owner: &mut TestOwner, document: u64) {
         })
         .unwrap();
 }
-fn dirty_property(owner: &mut TestOwner, document: u64) {
+pub(super) fn dirty_property(owner: &mut TestOwner, document: u64) {
     use oblikovati_api::types::{Variant, VariantValue};
     Client::new(owner.document_host())
         .documents()

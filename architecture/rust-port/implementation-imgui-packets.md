@@ -45,6 +45,29 @@ state. Two queued clicks survive four frames. An invalid batch leaves no click
 behind. Automatic clipboard integration, native Unicode/IME decoding, focus
 loss, and complete Go panels still need their platform and shell consumers.
 
+## Owner command metadata
+
+`HeadWork::gui_command_state` copies the next committed Undo/Redo labels and the
+open-transaction flag from the active document. The script owner forwards the
+same snapshot. Model/session accessors inspect the committed cursor without
+validating execution, copying a recipe, or allocating the full label list.
+Validated history execution still rejects an open transaction.
+
+The initial buttons preserve Go `head/ui/qat.go` at revision `aa8297d1`:
+empty history disables Undo/Redo; available history remains enabled but emits no
+action during a transaction. Save remains available to request a path or report
+missing ownership. Home is a viewport action. The next history label is available
+in the button tooltip. Labels containing NUL are refused before widget creation.
+The GUI owns no history and cannot mutate a document through this snapshot.
+
+The three Go QAT dispatch tests passed at the fixed baseline. Rust tests cover
+all eight history/transaction combinations, real disabled and inert button clicks,
+Save/Home actions, edits, Undo/Redo, transactions, document focus changes, close,
+and script-owner forwarding. The updated offscreen preview was rendered on AMD
+with validation enabled and visually checked with empty-history controls disabled. Full Save dialog/transaction policy, configurable
+commands, and native attachment remain open. The native executable does not yet
+consume this GUI state or these draw packets.
+
 ## Context lifetime regression
 
 The pinned imgui-rs revision `e246a334` calls `igEndFrame` on the current context
@@ -83,7 +106,7 @@ Vulkan validation enabled. Dear ImGui tests select all four buttons through
 press/release input, check framebuffer scaling, context refusal/release, and
 owned snapshots after context destruction. This is the initial control and draw
 boundary; the full Go ribbon, browser, dialogs, themes, assets, shortcut routing,
-native input attachment, focus/IME/clipboard, and document-based enablement remain
+native input attachment, focus/IME/clipboard, and wider command enablement remain
 open.
 
 ## Required native kernel composition contract
@@ -123,7 +146,7 @@ kernel owner; its active source and released checkout were not modified.
 
 The latest full local gate passed with the software Vulkan driver selected by
 `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json`, using the same command
-above. It covered all thirteen crates. Production line coverage was 98.74% for
+above. It covered all thirteen crates. Production line coverage was 98.89% for
 GUI and 93.72% for viewport; duplication was 0.61%. All six GUI packet rendering
 tests also passed on the AMD device with validation enabled.
 

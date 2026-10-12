@@ -214,3 +214,6 @@ mod part_scene;
 
 #[path = "owner/commands.rs"]
 mod commands;
+
+#[path = "owner/gui_commands.rs"]
+mod gui_commands;

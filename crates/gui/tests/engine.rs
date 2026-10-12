@@ -5,6 +5,11 @@ fn request() -> GuiFrameRequest {
     GuiFrameRequest {
         extent: [640, 360],
         events: vec![GuiInputEvent::PointerMoved([0., 0.])],
+        commands: GuiCommandState {
+            undo_label: Some("Edit".into()),
+            redo_label: Some("Edit".into()),
+            transaction_open: false,
+        },
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],
     }
@@ -41,14 +46,21 @@ fn verify_gui_click(
     x: f32,
     expected: GuiShellAction,
 ) {
+    let output = click_control(engine, input, x);
+    assert_eq!(output.actions, [expected]);
+    assert!(output.capture.pointer);
+}
+fn click_control(
+    engine: &mut GuiFrameEngine,
+    input: &mut GuiFrameRequest,
+    x: f32,
+) -> GuiFrameOutput {
     input.events = vec![GuiInputEvent::PointerMoved([x, 45.])];
     engine.frame(input).unwrap();
     input.events = vec![left_button_event(true)];
     engine.frame(input).unwrap();
     input.events = vec![left_button_event(false)];
-    let output = engine.frame(input).unwrap();
-    assert_eq!(output.actions, [expected]);
-    assert!(output.capture.pointer);
+    engine.frame(input).unwrap()
 }
 fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
     let mut input = request();
@@ -119,6 +131,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     verify_scaled_input_overflow(engine);
     verify_invalid_event_batch_is_atomic(engine);
     verify_queued_clicks_survive_frame_boundaries(engine);
+    verify_owner_command_enabling(engine);
 }
 
 fn verify_scaled_input_overflow(engine: &mut GuiFrameEngine) {
@@ -169,4 +182,28 @@ fn verify_queued_clicks_survive_frame_boundaries(engine: &mut GuiFrameEngine) {
         actions.extend(engine.frame(&input).unwrap().actions);
     }
     assert_eq!(actions, [GuiShellAction::Save, GuiShellAction::Save]);
+}
+
+fn verify_owner_command_enabling(engine: &mut GuiFrameEngine) {
+    let mut input = request();
+    for state in [
+        GuiCommandState::default(),
+        GuiCommandState {
+            transaction_open: true,
+            ..input.commands.clone()
+        },
+    ] {
+        input.commands = state;
+        for x in [75., 120.] {
+            assert!(click_control(engine, &mut input, x).actions.is_empty());
+        }
+        assert_eq!(
+            click_control(engine, &mut input, 30.).actions,
+            [GuiShellAction::Save]
+        );
+        assert_eq!(
+            click_control(engine, &mut input, 165.).actions,
+            [GuiShellAction::Home]
+        );
+    }
 }

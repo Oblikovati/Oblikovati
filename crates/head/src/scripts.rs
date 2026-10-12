@@ -48,6 +48,9 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
+    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+        self.owner.gui_command_state()
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],

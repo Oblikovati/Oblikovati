@@ -1,23 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
-    GuiAtlas, GuiFrame, GuiInputCapture, GuiInputEvent,
+    GuiAtlas, GuiCommandState, GuiFrame, GuiInputCapture, GuiInputEvent, GuiShellAction,
     context_owner::require_vacant_context,
     input::{apply_input, input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
 use imgui::{Condition, ConfigFlags, Context, TextureId};
 use std::sync::Arc;
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GuiShellAction {
-    Save,
-    Undo,
-    Redo,
-    Home,
-}
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
     pub extent: [u32; 2],
     pub events: Vec<GuiInputEvent>,
+    pub commands: GuiCommandState,
     pub delta_seconds: f32,
     pub framebuffer_scale: [f32; 2],
 }
@@ -83,6 +77,7 @@ fn validate_request(request: &GuiFrameRequest) -> Result<(), String> {
         ));
     }
     validate_logical_inputs(request)?;
+    request.commands.validate()?;
     for event in &request.events {
         validate_input(event, request.framebuffer_scale)?;
     }
@@ -116,7 +111,7 @@ fn draw_controls(
     prepare_frame_inputs(context, request);
     let ui = context.frame();
     let mut selected = Vec::new();
-    shell_panel(ui, &mut selected);
+    shell_panel(ui, &request.commands, &mut selected);
     let snapshot = capture_frame(context.render(), request.extent)?;
     Ok(GuiFrameOutput {
         draws: snapshot,
@@ -124,22 +119,22 @@ fn draw_controls(
         capture: input_capture(context.io()),
     })
 }
-fn shell_panel(ui: &imgui::Ui, selected: &mut Vec<GuiShellAction>) {
+fn shell_panel(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
         .size([300., 110.], Condition::Always)
         .movable(false)
         .resizable(false)
-        .build(|| shell_buttons(ui, selected));
+        .build(|| shell_buttons(ui, state, selected));
 }
-fn shell_buttons(ui: &imgui::Ui, selected: &mut Vec<GuiShellAction>) {
+fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
     for (label, action) in [
         ("Save", GuiShellAction::Save),
         ("Undo", GuiShellAction::Undo),
         ("Redo", GuiShellAction::Redo),
         ("Home", GuiShellAction::Home),
     ] {
-        if ui.button(label) {
+        if shell_button(ui, label, action, state) {
             selected.push(action);
         }
         ui.same_line();
@@ -157,4 +152,21 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
     for event in &request.events {
         apply_input(io, event, request.framebuffer_scale);
     }
+}
+
+fn shell_button(
+    ui: &imgui::Ui,
+    label: &str,
+    action: GuiShellAction,
+    state: &GuiCommandState,
+) -> bool {
+    let disabled = ui.begin_disabled(!action.enabled(state));
+    let clicked = ui.button(label);
+    drop(disabled);
+    if ui.is_item_hovered()
+        && let Some(next) = action.next_label(state)
+    {
+        ui.tooltip_text(format!("{label} {next}"));
+    }
+    clicked && action.dispatchable(state)
 }

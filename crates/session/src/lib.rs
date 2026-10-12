@@ -109,6 +109,15 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.group.is_some()
     }
 
+    /// Inspect the next committed undo without validating execution; example: `session.undo_label()` in UI state.
+    pub fn undo_label(&self) -> Option<&str> {
+        self.history.committed_undo_label()
+    }
+    /// Inspect the next committed redo without validating execution; example: `session.redo_label()` in UI state.
+    pub fn redo_label(&self) -> Option<&str> {
+        self.history.committed_redo_label()
+    }
+
     /// Read committed labels in order; example: `session.undo_labels()`.
     pub fn undo_labels(&self) -> Vec<&str> {
         self.history.undo_labels()

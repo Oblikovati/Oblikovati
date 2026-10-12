@@ -12,6 +12,11 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Copy bounded command metadata on the owner; example: `work.gui_command_state()?` after polling.
+    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+        Ok(Default::default())
+    }
+
     /// Apply native commands on the document owner; example: `work.process_inputs(&events)?` before polling.
     fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
         Ok(false)
