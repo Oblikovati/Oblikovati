@@ -100,3 +100,7 @@ Run `cargo test -p oblikovati-script -p oblikovati-cli` for these modules and
 The remaining R7 work includes console/editor integration, API completion/help,
 document rules, trigger ordering, responsive foreground UI tests and full legacy
 script corpus parity. No rendered or solid-feature acceptance is claimed here.
+
+The [Script Console controller](implementation-script-console.md) now supplies
+nonblocking Run/Check, Stop, owner-frame polling and copied output/outcome state.
+The native panel and editor still need integration.

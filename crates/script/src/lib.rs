@@ -11,3 +11,5 @@ pub use process::{IsolatedLuaEngine, ScriptExecution, ScriptStop};
 pub use worker::worker_stdio;
 /// Private executable entry; this is not part of the Lua or public wire contract.
 pub const WORKER_ARGUMENT: &str = "--internal-lua-worker";
+
+pub mod console;

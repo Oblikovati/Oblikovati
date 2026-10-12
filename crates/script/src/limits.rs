@@ -24,6 +24,17 @@ impl Default for ScriptLimits {
     }
 }
 impl ScriptLimits {
+    /// Interactive limits retain Go's five-second/128 MiB defaults with bounded interpreter work.
+    /// Example: `ScriptConsoleController::new(engine, ScriptLimits::gui(), methods)`.
+    pub fn gui() -> Self {
+        Self {
+            wall_millis: 5_000,
+            memory_bytes: 128 << 20,
+            instructions: 5_000_000,
+            ..Self::default()
+        }
+    }
+
     /// Refuse unbounded production runs; example: `limits.validate(source)?;`.
     pub fn validate(&self, source: &str) -> Result<(), String> {
         self.require_bounds()?;
