@@ -36,5 +36,5 @@ block selection and undo/redo. The existing editor suite also passes.
 
 Run `cargo test -p oblikovati-script --test editor --test editor_blocks` and the
 full local Linux `make gate`. Go editor/textbuf/history tests remain the behavior
-oracle. Completion/help, signed native mouse input
+oracle. Native completion/help, signed native mouse input
 and native panel bindings remain open. Windows and macOS remain deferred.

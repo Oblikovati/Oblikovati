@@ -28,3 +28,7 @@ package:
 
 release-check:
 	cargo xtask preflight publish
+
+.PHONY: script-docs
+script-docs:
+	cargo run --locked -p oblikovati-build -- script-docs

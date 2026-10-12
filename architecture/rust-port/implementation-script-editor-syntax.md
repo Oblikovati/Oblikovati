@@ -42,5 +42,6 @@ ranges and source edits affecting later lines. Generated bracket levels and
 character pairs check progress and ordered in-bounds spans. Go lexer/completion
 oracle tests and the Rust editor/completion regression suites pass.
 Run `cargo test -p oblikovati-script --test syntax` and full Linux `make gate`.
-The native syntax palette/drawing, popup controls and generated method-help
-catalog remain open. Windows and macOS remain deferred.
+The native syntax palette/drawing, popup controls and tooltip drawing
+remain open. The generated method-help catalog now has
+[implementation evidence](implementation-script-editor-help.md). Windows and macOS remain deferred.

@@ -37,5 +37,5 @@ matches, stale tokens after edit/undo/reload, query refresh, Next/Previous wrapp
 post-edit highlight invalidation and replacement text containing the query.
 
 Run `cargo test -p oblikovati-script --test editor_search` and full local Linux
-`make gate`. Go editor search tests remain the behavior oracle. Completion/help and native editor/Find-bar bindings remain open.
+`make gate`. Go editor search tests remain the behavior oracle. Native completion/help and editor/Find-bar bindings remain open.
 Windows and macOS remain deferred; no foreground panel acceptance is claimed.

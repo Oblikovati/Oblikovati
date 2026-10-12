@@ -41,6 +41,7 @@ Run `cargo test -p oblikovati-script --test editor_completion` and Linux
 `make gate` for the full workspace checks.
 
 The native popup still requires input routing, visibility, selection navigation,
-drawing and integration with the shared Linux window. Method help still requires
-a contract-generated documentation catalog and the bracket/call query bindings.
+drawing and integration with the shared Linux window. The contract-generated catalog and bracket/call help queries now have
+[implementation evidence](implementation-script-editor-help.md). Native tooltip
+drawing and input bindings remain open.
 No native UI acceptance is claimed. Windows and macOS remain deferred.

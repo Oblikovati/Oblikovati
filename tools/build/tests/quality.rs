@@ -65,6 +65,7 @@ fn missing_required_display_and_wrong_tools_fail_by_name() {
 
 struct GateRunner {
     tree: FixtureTree,
+    help: crate::script_docs::tests::HelpSourceFixture,
     calls: std::cell::RefCell<Vec<String>>,
 }
 
@@ -74,6 +75,7 @@ impl Runner for GateRunner {
             .borrow_mut()
             .push(format!("{program} {}", arguments.join(" ")));
         match (program, arguments) {
+            ("cargo", ["metadata", "--locked", "--format-version", "1"]) => Ok(self.help.metadata()),
             ("cargo", ["metadata", ..]) => Ok(serde_json::json!({"workspace_root": self.tree.root(), "workspace_members":["fixture"], "packages":[{"id":"fixture","name":"fixture","manifest_path":self.tree.root().join("Cargo.toml"),"license":"GPL-2.0-only","targets":[],"dependencies":[]}]}).to_string()),
             ("rustc", _) => Ok("rustc 1.99.0 (fixture)".into()),
             ("cargo", ["llvm-cov", "--version"]) => Ok("cargo-llvm-cov 0.9.1".into()),
@@ -136,8 +138,11 @@ fn local_gate_refuses_stale_api_and_kernel_pins_before_external_checks() {
 }
 
 fn gate_fixture() -> GateRunner {
+    let tree = FixtureTree::new();
+    let help = crate::script_docs::tests::HelpSourceFixture::new(&tree);
     let runner = GateRunner {
-        tree: FixtureTree::new(),
+        tree,
+        help,
         calls: std::cell::RefCell::new(Vec::new()),
     };
     for name in ["Cargo.toml", "LICENSE"] {

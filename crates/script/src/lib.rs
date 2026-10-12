@@ -18,3 +18,5 @@ pub mod editor;
 
 pub mod syntax;
 mod vocabulary;
+
+pub mod help;

@@ -172,6 +172,7 @@ fn gate_repository_checks(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         &["npm", "exec", "--offline", "--", "markdownlint-cli2"],
     )?;
     docs::check(root)?;
+    crate::script_docs::check(root, runner)?;
     execute(runner, root, &["actionlint", "-shellcheck=", "-pyflakes="])?;
     gate_duplication_check(root, runner)?;
     execute(runner, root, &["git", "diff", "--check"])?;

@@ -35,5 +35,5 @@ lexical string/comment and mixed-kind behavior, table and nested calls, closed a
 anonymous groups, intermediate hover segments, invalid hits, and edit/undo/redo/
 reload behavior. The corresponding Go bracket and call tests pass as the oracle.
 Run `cargo test -p oblikovati-script --test editor_analysis` and full Linux
-`make gate`. Completion/help catalogs and native editor bindings remain open;
+`make gate`. Native completion/help and editor bindings remain open;
 Windows and macOS remain deferred.

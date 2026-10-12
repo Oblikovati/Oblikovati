@@ -43,7 +43,7 @@ Separate-position edits and replacements prove unrelated history entries remain
 separate. The pinned Go editor/textbuf/history suites are the behavior references.
 
 Run `cargo test -p oblikovati-script --test editor` for these checks and `make gate`
-for full local Linux acceptance. Completion/help and native input/drawing integration
+for full local Linux acceptance. Native completion/help and input/drawing integration
 remain open. Signed mouse-coordinate translation belongs to the native input
 adapter; core positions use nonnegative character indexes. No foreground UI or
 rendered-editor acceptance is claimed. Windows and macOS remain deferred.
@@ -58,6 +58,8 @@ whole-source Replace All through this same history path.
 
 Bracket matching and call/hover chains now have [implementation evidence](implementation-script-editor-analysis.md).
 
-The completion engine and checked prefix acceptance now have [implementation evidence](implementation-script-editor-completion.md). Native popup controls and method help remain open.
+The completion engine and checked prefix acceptance now have [implementation evidence](implementation-script-editor-completion.md). Native popup controls and tooltip drawing remain open.
 
 The Lua lexer and visible-line context now have [implementation evidence](implementation-script-editor-syntax.md). Native color drawing remains open.
+
+Contract-generated signature and hover help now have [implementation evidence](implementation-script-editor-help.md). Native tooltip and popup bindings remain open.
