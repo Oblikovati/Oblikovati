@@ -17,6 +17,7 @@ mod controls;
 mod queries;
 mod worker;
 use queries::CatalogCaller;
+pub use queries::NativeCatalogCaller;
 use worker::{NativeAction, NativeReply, NativeRequest};
 /// One completed native control; these are host implementation results, not new wire DTOs.
 #[derive(Debug, PartialEq)]

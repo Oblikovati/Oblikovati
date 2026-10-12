@@ -16,7 +16,7 @@ mod response;
 mod runtime;
 pub use lifecycle::{AddInState, LoadedAddIn};
 pub use registry::NativeAddInRegistry;
-pub use runtime::{NativeAddInRuntime, NativeCompletion};
+pub use runtime::{NativeAddInRuntime, NativeCatalogCaller, NativeCompletion};
 
 struct ResidentLibrary {
     handle: NonNull<c_void>,

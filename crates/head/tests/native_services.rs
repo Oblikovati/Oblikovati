@@ -40,6 +40,7 @@ impl FixtureStartup<'_> {
     fn completion(&mut self, outcome: NativeCompletion) -> Result<(), String> {
         match (self.step, outcome) {
             (StartupStep::Loading, NativeCompletion::Loaded(id)) => {
+                verify_native_catalog(&mut self.services, &id);
                 self.step = StartupStep::Activating;
                 unsafe { self.services.start_activate(&id) }
             }
@@ -191,4 +192,16 @@ fn verify_service_delegation(services: &mut TestNativeServices<'_>) {
         .list()
         .unwrap();
     assert!(documents.documents.unwrap().is_empty());
+}
+
+fn verify_native_catalog(services: &mut TestNativeServices<'_>, id: &str) {
+    let client = oblikovati_api::client::Client::new(services.script_host());
+    let entries = client.add_ins().list().unwrap().add_ins.unwrap();
+    let listed = entries.iter().find(|entry| entry.id == id).unwrap();
+    let described = client
+        .add_ins()
+        .get(&oblikovati_api::wire::AddInRefArgs { id: id.into() })
+        .unwrap();
+    assert_eq!(*listed, described);
+    assert!(!described.activated);
 }

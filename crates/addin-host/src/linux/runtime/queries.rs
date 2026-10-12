@@ -5,24 +5,48 @@ use oblikovati_api::{
     types::{AddInLoadBehavior, LOAD_ON_STARTUP},
 };
 use oblikovati_automation::{decode_wire_arguments, encode_wire_reply};
+/// A completed catalog snapshot over an injected model caller; it contains no native exports.
+pub struct NativeCatalogCaller<C> {
+    catalog: Vec<AddInInfo>,
+    model: C,
+}
+impl<C: Caller> Caller for NativeCatalogCaller<C> {
+    fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        call_with_catalog(&self.catalog, &self.model, method, request)
+    }
+}
+impl<C: Caller> Caller for &NativeCatalogCaller<C> {
+    fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        NativeCatalogCaller::call(self, method, request)
+    }
+}
 pub(super) struct CatalogCaller<'a, C> {
     pub catalog: &'a [AddInInfo],
     pub model: &'a C,
 }
 impl<C: Caller> Caller for CatalogCaller<'_, C> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
-        match method {
-            METHOD_ADD_INS_LIST => encode_wire_reply(&ListAddInsResult {
-                add_ins: Some(self.catalog.to_vec()),
-            }),
-            METHOD_ADD_INS_GET => {
-                let arguments: AddInRefArgs = decode_wire_arguments(method, request)?;
-                encode_wire_reply(&describe(self.catalog, &arguments.id)?)
-            }
-            _ => self.model.call(method, request),
-        }
+        call_with_catalog(self.catalog, self.model, method, request)
     }
 }
+fn call_with_catalog<C: Caller>(
+    catalog: &[AddInInfo],
+    model: &C,
+    method: &str,
+    request: &[u8],
+) -> Result<Vec<u8>, Error> {
+    match method {
+        METHOD_ADD_INS_LIST => encode_wire_reply(&ListAddInsResult {
+            add_ins: Some(catalog.to_vec()),
+        }),
+        METHOD_ADD_INS_GET => {
+            let arguments: AddInRefArgs = decode_wire_arguments(method, request)?;
+            encode_wire_reply(&describe(catalog, &arguments.id)?)
+        }
+        _ => model.call(method, request),
+    }
+}
+
 pub(super) fn describe(catalog: &[AddInInfo], id: &str) -> Result<AddInInfo, Error> {
     catalog
         .iter()
@@ -31,6 +55,13 @@ pub(super) fn describe(catalog: &[AddInInfo], id: &str) -> Result<AddInInfo, Err
         .ok_or_else(|| Error(format!("add-in {id:?}: expected a registered ID")))
 }
 impl<W: DispatchWakeup + 'static> NativeAddInRuntime<W> {
+    /// Copy the latest completed catalog for an owner-side caller; example: `Client::new(runtime.catalog_caller(host))`.
+    pub fn catalog_caller<C: Caller>(&self, model: C) -> NativeCatalogCaller<C> {
+        NativeCatalogCaller {
+            catalog: self.catalog.clone(),
+            model,
+        }
+    }
     /// Inspect an in-flight foreign control; example: `runtime.control_pending()` before close.
     pub fn control_pending(&self) -> bool {
         self.pending.is_some()
@@ -74,3 +105,7 @@ impl<W: DispatchWakeup + 'static> AddInRegistry for NativeAddInRuntime<W> {
         Some(self.catalog.iter().map(|entry| entry.id.clone()).collect())
     }
 }
+
+#[cfg(test)]
+#[path = "../../../tests/runtime/catalog.rs"]
+mod tests;

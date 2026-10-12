@@ -195,10 +195,10 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> ScriptDocumentOwner
     for NativeAddInDesktop<'_, D, W>
 {
     type Host<'a>
-        = D::Host<'a>
+        = oblikovati_addin_host::NativeCatalogCaller<D::Host<'a>>
     where
         Self: 'a;
     fn script_host(&mut self) -> Self::Host<'_> {
-        self.owner.script_host()
+        self.runtime.catalog_caller(self.owner.script_host())
     }
 }
