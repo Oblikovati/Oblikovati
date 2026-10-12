@@ -10,16 +10,16 @@ autotests = false
 
 [dependencies]
 oblikovati-model = { path = "../model" }
-rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
-rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
-rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
-rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
-rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
-rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
 
-rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
-rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
-rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
 
 [lints]
 workspace = true

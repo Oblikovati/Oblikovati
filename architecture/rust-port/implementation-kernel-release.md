@@ -59,3 +59,24 @@ duplication in their original order. Publication readiness remains a separate ga
 The [retained shape isolation probe](implementation-shape-snapshot.md) now keeps
 an opaque detached box snapshot. It adds ownership and OCCT comparison evidence;
 it does not establish the full R1 feature-result or validity contract.
+
+## v0.2.1 local intake
+
+The application now pins [kernel v0.2.1](https://github.com/Oblikovati/RustyCADKernel/releases/tag/v0.2.1)
+at `193572dc3665598c4948777c87375bad7dc8114a`. The annotated tag resolves
+to this commit and agrees with the published manifest. All 35 payloads and
+`martensite-release.json` passed the published SHA-256 checks. The manifest
+records `extracted-workspace-tests-and-doctests`. The 31 crate archives also
+identify this exact commit with clean source metadata. Kernel tests and publication
+remain the kernel owner's work.
+
+All 15 consumed kernel packages use this exact version and revision.
+`release.toml`, both consumer manifests, and `Cargo.lock` agree. Other dependency
+versions remain unchanged. The Rust toolchain remains 1.99.0. Local builds use
+the released Cargo source checkout and do not use the active sibling repository.
+The `set_center` equal-distance behavior still exists in this release; the
+application keeps its existing camera update path and its original comment.
+
+Acceptance is local Linux only. No push, PR, remote test, or workflow run is
+part of this intake. Windows and macOS remain deferred with explicit failing
+workflow paths. This release does not close the remaining R1 feature scope.

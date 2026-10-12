@@ -10,8 +10,8 @@ fn application_lock_consumes_the_pinned_kernel_modeling_release() {
     tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
     let pin = crate::release_config::load(tree.root()).unwrap().kernel;
     let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
-    assert_eq!(pin.version, "0.1.2");
-    assert_eq!(pin.revision, "19108f6650cdfca7050febc759d91bdfec001769");
+    assert_eq!(pin.version, "0.2.1");
+    assert_eq!(pin.revision, "193572dc3665598c4948777c87375bad7dc8114a");
     for name in [
         "rustycad-tkprim",
         "rustycad-tkbrep",
