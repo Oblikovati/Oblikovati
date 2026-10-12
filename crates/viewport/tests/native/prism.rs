@@ -1,22 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::{
-    PrismMeshOptions, PrismProbeDefinition, PrismProbeLoop, retain_prism_on_plane,
-};
+use oblikovati_martensite::{PrismMeshOptions, retain_selected_sketch_prism};
 use oblikovati_model::sketch::SketchPlane;
-fn holed_profile() -> PrismProbeDefinition {
-    PrismProbeDefinition {
-        outer: PrismProbeLoop {
-            edge_keys: vec![1, 2, 3, 4],
-            vertices: vec![[0., 0.], [4., 0.], [4., 3.], [0., 3.]],
-        },
-        holes: vec![PrismProbeLoop {
-            edge_keys: vec![11, 12, 13, 14],
-            vertices: vec![[1., 1.], [1., 2.], [3., 2.], [3., 1.]],
-        }],
-        displacement: [0., 0., 2.],
-    }
-}
 pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
     let tilted = tilted_frame();
     let mut view = runtime
@@ -34,7 +19,32 @@ pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
     view.close();
 }
 fn verify_placed_frame(view: &mut Viewport, plane: SketchPlane) {
-    let snapshot = retain_prism_on_plane(&holed_profile(), plane).unwrap();
+    let mut document = sketch_fixture::selected_sketch_document();
+    sketch_fixture::add_fixed_sketch_hole(&mut document);
+    sketch_fixture::solve_selected_sketches(&mut document);
+    document
+        .sketches
+        .replace_plane(sketch_fixture::SKETCH, plane)
+        .unwrap();
+    let first = present_document_prism(view, &document, plane);
+    document.parameters.set_expression(1, "6 cm").unwrap();
+    sketch_fixture::solve_selected_sketches(&mut document);
+    let edited = present_document_prism(view, &document, plane);
+    assert!(edited.scene_generation > first.scene_generation);
+    assert!(green_pixels(&edited) > green_pixels(&first));
+}
+fn present_document_prism(
+    view: &mut Viewport,
+    document: &oblikovati_model::history::DocumentSnapshot,
+    plane: SketchPlane,
+) -> ViewportCapture {
+    let mut selection = sketch_fixture::selected_sketch_boundary();
+    selection
+        .holes
+        .push(sketch_fixture::selected_sketch_line_ring(111));
+    let snapshot =
+        retain_selected_sketch_prism(document, sketch_fixture::SKETCH, &selection, [0., 0., 2.])
+            .unwrap();
     let analytic = snapshot.report().clone();
     view.set_camera(prism_camera(plane)).unwrap();
     view.submit(&prism_scene(&snapshot)).unwrap();
@@ -42,6 +52,16 @@ fn verify_placed_frame(view: &mut Viewport, plane: SketchPlane) {
     await_presented_pixels(view, &capture);
     verify_hole_pixels(&capture);
     assert_eq!(snapshot.report(), &analytic);
+    capture
+}
+fn green_pixels(capture: &ViewportCapture) -> usize {
+    capture
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .filter(|pixel| **pixel == [0, 255, 0, 255])
+        .count()
 }
 fn prism_camera(plane: SketchPlane) -> ViewportCamera {
     let center = plane.to_model([2., 1.5]).unwrap();

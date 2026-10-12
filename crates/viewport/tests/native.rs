@@ -7,6 +7,10 @@ use oblikovati_viewport::{
 use std::time::{Duration, Instant};
 #[path = "native/prism.rs"]
 mod prism;
+// The native suite shares the authored kernel-consumer corpus without running every fixture helper.
+#[allow(dead_code)]
+#[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
+mod sketch_fixture;
 fn scene() -> ViewportScene {
     ViewportScene {
         background: [0., 0., 1.],

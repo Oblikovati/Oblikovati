@@ -71,3 +71,7 @@ All checks stay on this Linux host. This adds no application geometry fallback,
 no kernel source change, and no Windows or macOS test. R1, R1V and R3 remain
 open for curved profiles, general feature evaluation, persistent references,
 full validity and tolerance contracts, editable parts, and native selection.
+
+The next [checked sketch consumer](implementation-sketch-prism-consumer.md)
+connects selected authored line boundaries and numerical readiness to this path.
+It also extends the native diagnostic scene to a parameter edit and recompute.

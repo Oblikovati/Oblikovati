@@ -579,6 +579,7 @@ dependencies = [
 name = "oblikovati-martensite"
 version = "0.1.0"
 dependencies = [
+ "oblikovati-api",
  "oblikovati-model",
  "rustycad-tkbrep",
  "rustycad-tkernel",
@@ -650,6 +651,7 @@ name = "oblikovati-viewport"
 version = "0.1.0"
 dependencies = [
  "martensite-vulkan",
+ "oblikovati-api",
  "oblikovati-martensite",
  "oblikovati-model",
  "rustix",
