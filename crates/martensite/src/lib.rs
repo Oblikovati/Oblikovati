@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Release acceptance at the application-owned Martensite boundary.
-//! Shapes remain local until immutable evaluation and provenance are established.
+//! Diagnostic snapshots retain isolated geometry; full evaluation and provenance remain open.
 use rustycad_tkbrep::topods::Shape;
 use rustycad_tkgeombase::gprop::GProps;
 use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
@@ -17,11 +17,11 @@ pub struct ReleaseProbeProperties {
 /// Check the released modeling packages without sharing their mutable shape handles.
 /// Example: `let properties = probe_box_release([2.0, 3.0, 4.0])?;`.
 pub fn probe_box_release(extents: [f64; 3]) -> Result<ReleaseProbeProperties, String> {
-    require_extents(extents)?;
-    let shape = build_probe(extents)?;
-    require_valid_probe(&shape, extents)?;
-    analytic_probe_properties(&shape, extents)
+    retain_box_release(extents)?.properties()
 }
+
+mod snapshot;
+pub use snapshot::{ReleaseProbeSnapshot, retain_box_release};
 
 fn require_extents(extents: [f64; 3]) -> Result<(), String> {
     if extents
@@ -69,10 +69,29 @@ fn analytic_probe_properties(
         format!("probe extents {extents:?}: expected analytic properties: {error}")
     })?;
     let centroid = properties.centre_of_mass();
-    Ok(ReleaseProbeProperties {
+    let result = ReleaseProbeProperties {
         volume: properties.mass(),
         centroid: [centroid.x(), centroid.y(), centroid.z()],
-    })
+    };
+    require_finite_properties(&result, extents)?;
+    Ok(result)
+}
+
+fn require_finite_properties(
+    properties: &ReleaseProbeProperties,
+    extents: [f64; 3],
+) -> Result<(), String> {
+    if !properties.volume.is_finite()
+        || properties
+            .centroid
+            .iter()
+            .any(|coordinate| !coordinate.is_finite())
+    {
+        return Err(format!(
+            "probe extents {extents:?}, properties {properties:?}: expected finite analytic volume and centroid"
+        ));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

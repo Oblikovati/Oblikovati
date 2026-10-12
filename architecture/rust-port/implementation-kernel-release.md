@@ -55,3 +55,7 @@ Tests check the real repository lock for both owners, and prove that stale API
 or kernel commits stop the gate before any external check starts. The successful
 gate fixture still schedules workspace checks, documentation, workflow lint and
 duplication in their original order. Publication readiness remains a separate gate.
+
+The [retained shape isolation probe](implementation-shape-snapshot.md) now keeps
+an opaque detached box snapshot. It adds ownership and OCCT comparison evidence;
+it does not establish the full R1 feature-result or validity contract.

@@ -582,6 +582,7 @@ dependencies = [
  "rustycad-tkbrep",
  "rustycad-tkernel",
  "rustycad-tkg2d",
+ "rustycad-tkg3d",
  "rustycad-tkgeombase",
  "rustycad-tkmath",
  "rustycad-tkprim",
