@@ -19,7 +19,20 @@ pub struct DesktopScripts<D> {
 impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     /// Inject the owner and trusted child entry; example: `DesktopScripts::new(owner, engine, ScriptLimits::gui())`.
     pub fn new(owner: D, engine: IsolatedLuaEngine, limits: ScriptLimits) -> Self {
-        let methods = oblikovati_automation::file_host_methods();
+        Self::with_methods(
+            owner,
+            engine,
+            limits,
+            oblikovati_automation::file_host_methods(),
+        )
+    }
+    /// Inject the configured host inventory; example: `DesktopScripts::with_methods(owner, engine, limits, methods)`.
+    pub fn with_methods(
+        owner: D,
+        engine: IsolatedLuaEngine,
+        limits: ScriptLimits,
+        methods: Vec<String>,
+    ) -> Self {
         Self {
             owner,
             console: ScriptConsoleController::new(engine, limits, methods),

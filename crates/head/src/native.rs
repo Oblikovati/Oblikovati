@@ -135,19 +135,23 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         crate::DesktopDispatchOptions::default(),
     ))
 }
+#[cfg(test)]
 type NativeScriptDesktop = crate::DesktopScripts<NativeDesktopOwner>;
+#[cfg(test)]
 fn native_script_owner(wake: ViewportWake) -> Result<NativeScriptDesktop, String> {
-    let executable = std::env::current_exe()
-        .map_err(|cause| format!("desktop script worker: expected current executable: {cause}"))?;
     let owner = native_owner(wake)?;
-    let engine = oblikovati_script::IsolatedLuaEngine::new(
-        &executable,
-        vec![oblikovati_script::WORKER_ARGUMENT.into()],
-    );
     Ok(crate::DesktopScripts::new(
         owner,
-        engine,
+        native_script_engine()?,
         oblikovati_script::ScriptLimits::gui(),
+    ))
+}
+fn native_script_engine() -> Result<oblikovati_script::IsolatedLuaEngine, String> {
+    let executable = std::env::current_exe()
+        .map_err(|cause| format!("desktop script worker: expected current executable: {cause}"))?;
+    Ok(oblikovati_script::IsolatedLuaEngine::new(
+        &executable,
+        vec![oblikovati_script::WORKER_ARGUMENT.into()],
     ))
 }
 /// Open the Linux head on its owner thread; example: `run_native(HeadOptions { frames: Some(3) })?`.
@@ -160,11 +164,11 @@ pub fn run_native_documents(
     documents: &[std::path::PathBuf],
 ) -> Result<HeadSummary, String> {
     let mut window = NativeHeadWindow::open()?;
-    let mut owner = match native_script_owner(window.wake.clone()) {
+    let owner = match native_owner(window.wake.clone()) {
         Ok(owner) => owner,
         Err(cause) => return crate::frames::combine_retirement(Err(cause), window.finish()),
     };
-    addin_launch::run_startup(&mut window, &mut owner, options, documents)
+    addin_launch::run_startup(&mut window, owner, options, documents)
 }
 #[cfg(test)]
 #[path = "../tests/native_wait.rs"]

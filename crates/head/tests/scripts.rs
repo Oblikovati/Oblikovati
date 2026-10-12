@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #![cfg(target_os = "linux")]
+#![allow(unsafe_code)]
 use oblikovati_automation::dispatch::PollingDispatchWakeup;
 use oblikovati_head::{
     DesktopDispatchOptions, DesktopObservations, DesktopOwner, DesktopScripts, HeadWork,
@@ -46,7 +47,7 @@ fn head_worker() -> IsolatedLuaEngine {
         ],
     )
 }
-fn finish(desktop: &mut NativeScripts) {
+fn finish<D: ScriptDocumentOwner>(desktop: &mut DesktopScripts<D>) {
     let deadline = Instant::now() + Duration::from_secs(3);
     while desktop.console().is_active() {
         assert!(
@@ -178,4 +179,54 @@ fn direct_ui_host_access_remains_available_around_console_execution() {
     let reply = oblikovati_api::client::Client::new(host).documents().list();
     assert!(reply.is_ok());
     assert!(!desktop.console().is_active());
+}
+
+#[allow(dead_code)]
+#[path = "../../addin-host/tests/support/resources.rs"]
+mod resources;
+#[allow(dead_code)]
+#[path = "../../addin-host/tests/typed_workflow/compiler.rs"]
+mod workflow_compiler;
+#[test]
+fn real_script_console_reads_the_native_catalog_and_model_owner() {
+    let mut owner = desktop().into_document_owner();
+    let directory = tempfile::tempdir().unwrap();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../addin-host/tests/typed_workflow");
+    let compiler = workflow_compiler::WorkflowCompiler::from_fixture_root(&root);
+    let library = compiler.rust_workflow(&directory.path().join("script-catalog.opd"), true);
+    let mut services = oblikovati_head::NativeAddInDesktop::new(
+        &mut owner,
+        Default::default(),
+        PollingDispatchWakeup,
+    )
+    .unwrap();
+    // This fixture is built from the pinned API-only source; its native lifecycle is trusted.
+    unsafe { services.begin_startup(vec![library]) }.unwrap();
+    run_catalog_console(services);
+}
+fn run_catalog_console<D: ScriptDocumentOwner>(services: D) {
+    let mut methods = oblikovati_automation::file_host_methods();
+    methods.extend([
+        oblikovati_api::wire::METHOD_ADD_INS_LIST.into(),
+        oblikovati_api::wire::METHOD_ADD_INS_GET.into(),
+    ]);
+    let mut scripts =
+        DesktopScripts::with_methods(services, head_worker(), ScriptLimits::gui(), methods);
+    await_native_startup(&mut scripts);
+    scripts.console_mut().run("local entries=oblikovati.addins.list().addIns;assert(#entries==1);local found=oblikovati.addins.get{id=entries[1].id};assert(found.id==entries[1].id);assert(found.activated);assert(#oblikovati.documents.list().documents==1)").unwrap();
+    finish(&mut scripts);
+    let completed = scripts.console().snapshot().last_run.unwrap();
+    assert!(completed.result.is_ok(), "{:?}", completed.result);
+    scripts.finish().unwrap();
+}
+fn await_native_startup<D: ScriptDocumentOwner>(scripts: &mut DesktopScripts<D>) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !scripts.startup_ready() {
+        assert!(
+            Instant::now() < deadline,
+            "native console startup: expected readiness within five seconds"
+        );
+        scripts.poll(32).unwrap();
+        std::thread::yield_now();
+    }
 }
