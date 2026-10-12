@@ -34,7 +34,7 @@ pub(super) fn install(
     let definition = WorkGeometryDefinition::AtAngleAboutAxis(source);
     snapshot
         .work_geometry
-        .replace(owner, definition, definition.reads())
+        .replace(owner, definition.clone(), definition.reads())
         .map_err(api_error)?;
     if let Some(parameter) = added {
         assign_scalar_owner(snapshot, owner, OwnedDatumScalar::Angle, parameter)?;

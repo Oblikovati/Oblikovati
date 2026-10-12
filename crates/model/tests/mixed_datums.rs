@@ -106,7 +106,7 @@ fn owned_orientation_changes_when_its_axis_source_is_replaced() {
     let definition = WorkGeometryDefinition::Axis(axis);
     snapshot
         .work_geometry
-        .replace(FeatureId(2), definition, definition.reads())
+        .replace(FeatureId(2), definition.clone(), definition.reads())
         .unwrap();
     let next = snapshot.resolve_sketch_plane(DocumentSketchId(1)).unwrap();
     assert_eq!(next.recipe().y_axis, [0.0, 1.0, 0.0]);

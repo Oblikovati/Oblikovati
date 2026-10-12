@@ -184,7 +184,7 @@ fn change_point_x(host: &mut Host, document: u64, value: f64) {
         .run("Point X", |snapshot, _| {
             snapshot
                 .work_geometry
-                .replace(FeatureId(2), definition, definition.reads())
+                .replace(FeatureId(2), definition.clone(), definition.reads())
         })
         .unwrap();
 }

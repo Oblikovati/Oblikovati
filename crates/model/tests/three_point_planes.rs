@@ -116,7 +116,7 @@ fn source_reads_are_exact_and_invalid_dependencies_cannot_replace_the_recipe() {
         );
         assert!(
             program
-                .replace(FeatureId(3), definition, definition.reads())
+                .replace(FeatureId(3), definition.clone(), definition.reads())
                 .is_err()
         );
         assert!(program.same_work_geometry_recipe(&before));
@@ -127,7 +127,7 @@ fn wrong_kind_driver_is_a_named_local_decline() {
     let mut program = program();
     let definition = WorkGeometryDefinition::Fixed(SketchPlane::xy());
     program
-        .replace(FeatureId(2), definition, definition.reads())
+        .replace(FeatureId(2), definition.clone(), definition.reads())
         .unwrap();
     let evaluation = program.evaluate_work_geometry(&parameters("2 cm")).unwrap();
     assert!(evaluation.plane(FeatureId(3)).is_err());
@@ -146,7 +146,7 @@ fn source_order_and_versioned_storage_survive_exact_round_trips() {
     legacy.version = 10;
     assert!(FeatureSequence::from_work_geometry_recipe(&legacy).is_err());
     assert!(
-        !source().same_recipe(WorkGeometryDefinition::ThroughThreePoints(
+        !source().same_recipe(&WorkGeometryDefinition::ThroughThreePoints(
             [WorkPointReference::Origin; 3]
         ))
     );

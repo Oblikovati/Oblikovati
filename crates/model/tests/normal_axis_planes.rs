@@ -68,7 +68,7 @@ fn current_point_sets_origin_and_current_axis_sets_normal_independently() {
     let axis = WorkAxisLine::new([0.0; 3], [1.0, 0.0, 0.0]).unwrap();
     let replacement = WorkGeometryDefinition::Axis(axis);
     program
-        .replace(FeatureId(1), replacement, replacement.reads())
+        .replace(FeatureId(1), replacement.clone(), replacement.reads())
         .unwrap();
     assert_eq!(frame(&program, "11 cm").normal(), [1.0, 0.0, 0.0]);
 }
@@ -78,7 +78,7 @@ fn point_does_not_need_to_lie_on_the_axis_and_origin_references_need_no_reads() 
     let definition = source(WorkAxisReference::OriginX, WorkPointReference::Origin);
     assert!(definition.reads().keys().is_empty());
     program
-        .replace(FeatureId(3), definition, definition.reads())
+        .replace(FeatureId(3), definition.clone(), definition.reads())
         .unwrap();
     assert_eq!(frame(&program, "0 cm").normal(), [1.0, 0.0, 0.0]);
     assert_eq!(frame(&program, "0 cm").recipe().origin, [0.0; 3]);
@@ -101,7 +101,9 @@ fn wrong_driver_kind_is_a_named_local_decline() {
         WorkAxisReference::Feature(FeatureId(2)),
         WorkPointReference::Origin,
     );
-    program.replace(FeatureId(3), wrong, wrong.reads()).unwrap();
+    program
+        .replace(FeatureId(3), wrong.clone(), wrong.reads())
+        .unwrap();
     let failed = program.evaluate_work_geometry(&parameters("7 cm")).unwrap();
     assert!(failed.plane(FeatureId(3)).is_err());
     assert!(format!("{:?}", failed.health[2]).contains("axis"));
@@ -120,7 +122,7 @@ fn attributed_dependencies_refuse_self_and_forward_source_changes() {
         );
         assert!(
             program
-                .replace(FeatureId(3), invalid, invalid.reads())
+                .replace(FeatureId(3), invalid.clone(), invalid.reads())
                 .is_err()
         );
         assert!(program.same_work_geometry_recipe(&before));
@@ -138,7 +140,7 @@ fn versioned_source_round_trips_exactly_and_older_programs_refuse_it() {
     legacy.version = 12;
     assert!(FeatureSequence::from_work_geometry_recipe(&legacy).is_err());
     assert!(
-        !source(WorkAxisReference::OriginX, WorkPointReference::Origin).same_recipe(source(
+        !source(WorkAxisReference::OriginX, WorkPointReference::Origin).same_recipe(&source(
             WorkAxisReference::OriginY,
             WorkPointReference::Origin
         ))

@@ -183,7 +183,7 @@ fn replace_distance(host: &mut Host, id: u64, plane: FeatureId, distance: f64) {
         .run("Distance", |snapshot, _| {
             snapshot
                 .work_geometry
-                .replace(plane, definition, definition.reads())
+                .replace(plane, definition.clone(), definition.reads())
         })
         .unwrap();
 }

@@ -81,7 +81,7 @@ fn declined_program() -> DocumentSnapshot {
     let failed = WorkGeometryDefinition::Point([DatumLength::Parameter(99); 3]);
     snapshot
         .work_geometry
-        .replace(FeatureId(1), failed, failed.reads())
+        .replace(FeatureId(1), failed.clone(), failed.reads())
         .unwrap();
     let axis = WorkGeometryDefinition::AxisThroughPoints(WorkAxisPoints {
         first: WorkPointReference::Origin,
@@ -185,3 +185,6 @@ fn list_requests_accept_sdk_defaults_and_null_but_refuse_malformed_shapes() {
         assert!(query_args::<ListWorkPointsArgs>(METHOD_WORK_POINTS_LIST, bytes).is_err());
     }
 }
+
+#[path = "tests/part_inputs.rs"]
+mod part_inputs;

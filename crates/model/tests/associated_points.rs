@@ -54,7 +54,7 @@ fn chained_associations_retain_exact_current_coordinates_and_direct_dependencies
     let replacement = coordinates([1.0, 2.0, 3.0]);
     snapshot
         .work_geometry
-        .replace(FeatureId(1), replacement, replacement.reads())
+        .replace(FeatureId(1), replacement.clone(), replacement.reads())
         .unwrap();
     assert_eq!(current(&snapshot, 3), [1.0, 2.0, 3.0]);
     assert_reference_identity();
@@ -124,7 +124,7 @@ fn evaluation(snapshot: &DocumentSnapshot) -> WorkGeometryEvaluation {
 }
 
 fn assert_reference_identity() {
-    assert!(!associated(1).same_recipe(associated(2)));
-    assert!(associated(1).same_recipe(associated(1)));
-    assert!(!associated(1).same_recipe(coordinates([1.0, 2.0, 3.0])));
+    assert!(!associated(1).same_recipe(&associated(2)));
+    assert!(associated(1).same_recipe(&associated(1)));
+    assert!(!associated(1).same_recipe(&coordinates([1.0, 2.0, 3.0])));
 }

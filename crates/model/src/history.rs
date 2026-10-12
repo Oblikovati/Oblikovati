@@ -11,6 +11,7 @@ mod datum_delete;
 mod datum_metadata;
 mod derived_ids;
 mod feature_ids;
+mod prism_create;
 mod scalar_ownership;
 mod sketch_create;
 mod sketch_current_geometry;

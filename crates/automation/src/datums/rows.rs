@@ -60,7 +60,7 @@ pub(super) fn entries(
         .work_geometry
         .features()
         .iter()
-        .filter(move |feature| collection.contains(*feature.definition()))
+        .filter(move |feature| collection.contains(feature.definition()))
 }
 pub(super) fn evaluate(snapshot: &DocumentSnapshot) -> Result<WorkGeometryEvaluation, Error> {
     snapshot
@@ -91,7 +91,7 @@ fn axis_identity(
         index,
         ref_: reference::encode_reference(snapshot, feature.id())?,
         name: feature.name().into(),
-        kind: constructor_kind(*feature.definition())?,
+        kind: constructor_kind(feature.definition().clone())?,
         construction: feature.is_construction_datum(),
         ..Default::default()
     })
@@ -118,7 +118,7 @@ fn point_identity(
         index,
         ref_: reference::encode_reference(snapshot, feature.id())?,
         name: feature.name().into(),
-        kind: constructor_kind(*feature.definition())?,
+        kind: constructor_kind(feature.definition().clone())?,
         visible: feature.is_visible(),
         construction: feature.is_construction_datum(),
         ..Default::default()

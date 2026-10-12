@@ -18,7 +18,7 @@ fn replace_with_point(snapshot: &mut DocumentSnapshot) -> Result<(), String> {
     let point = WorkGeometryDefinition::Point([DatumLength::Constant(0.0); 3]);
     snapshot
         .work_geometry
-        .replace(FeatureId(1), point, point.reads())
+        .replace(FeatureId(1), point.clone(), point.reads())
         .map(|_| ())
         .map_err(|error| error.to_string())
 }

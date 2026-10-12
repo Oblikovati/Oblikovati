@@ -66,7 +66,7 @@ fn chain(flags: [bool; 3]) -> DocumentSnapshot {
 }
 fn declare_sketch_reader(snapshot: &mut DocumentSnapshot, feature: u64, unknown: bool) {
     let id = FeatureId(feature);
-    let definition = *snapshot.work_geometry.get(id).unwrap().definition();
+    let definition = snapshot.work_geometry.get(id).unwrap().definition().clone();
     let mut keys = definition.reads().keys().clone();
     keys.insert(FeatureReadKey::Sketch(1));
     snapshot
@@ -145,7 +145,7 @@ fn suppressed_and_cutoff_feature_consumers_still_protect_authored_references() {
     let definition = offset_of(1);
     snapshot
         .work_geometry
-        .replace(FeatureId(3), definition, definition.reads())
+        .replace(FeatureId(3), definition.clone(), definition.reads())
         .unwrap();
     snapshot
         .work_geometry

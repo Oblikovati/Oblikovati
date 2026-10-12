@@ -76,7 +76,7 @@ fn move_spindle(host: &mut Host, document: u64) {
         .run("Move spindle", |snapshot, _| {
             snapshot
                 .work_geometry
-                .replace(FeatureId(2), definition, definition.reads())
+                .replace(FeatureId(2), definition.clone(), definition.reads())
         })
         .unwrap();
 }

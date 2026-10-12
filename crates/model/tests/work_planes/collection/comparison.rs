@@ -6,13 +6,13 @@ use super::*;
 fn definition_comparison_retains_signed_zero_source_bits() {
     let plus = origin_offset(WorkPlaneOrigin::XY, WorkPlaneDistance::Constant(0.0));
     let minus = origin_offset(WorkPlaneOrigin::XY, WorkPlaneDistance::Constant(-0.0));
-    assert!(!plus.same_recipe(minus));
-    assert!(plus.same_recipe(plus));
+    assert!(!plus.same_recipe(&minus));
+    assert!(plus.same_recipe(&plus));
     let first = WorkPlaneDefinition::Fixed(SketchPlane::xy());
-    assert!(first.same_recipe(first));
-    assert!(!first.same_recipe(WorkPlaneDefinition::Fixed(SketchPlane::yz())));
-    assert!(!first.same_recipe(plus));
-    assert!(!plus.same_recipe(origin_offset(
+    assert!(first.same_recipe(&first));
+    assert!(!first.same_recipe(&WorkPlaneDefinition::Fixed(SketchPlane::yz())));
+    assert!(!first.same_recipe(&plus));
+    assert!(!plus.same_recipe(&origin_offset(
         WorkPlaneOrigin::XY,
         WorkPlaneDistance::Parameter(1)
     )));
@@ -21,12 +21,12 @@ fn definition_comparison_retains_signed_zero_source_bits() {
 #[test]
 fn parameter_distances_compare_by_stable_identity() {
     let first = origin_offset(WorkPlaneOrigin::XY, WorkPlaneDistance::Parameter(1));
-    assert!(first.same_recipe(first));
-    assert!(!first.same_recipe(origin_offset(
+    assert!(first.same_recipe(&first));
+    assert!(!first.same_recipe(&origin_offset(
         WorkPlaneOrigin::XY,
         WorkPlaneDistance::Parameter(2)
     )));
-    assert!(!first.same_recipe(origin_offset(
+    assert!(!first.same_recipe(&origin_offset(
         WorkPlaneOrigin::XZ,
         WorkPlaneDistance::Parameter(1)
     )));

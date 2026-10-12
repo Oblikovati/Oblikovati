@@ -291,7 +291,7 @@ fn unknown_plane_sources_are_refused_and_unavailable_resolution_is_named() {
             .append(AuthoredFeature::work_plane(
                 FeatureId(1),
                 "Lost",
-                definition
+                definition.clone()
             ))
             .is_err()
     );

@@ -133,7 +133,7 @@ fn change_host(session: &mut DocumentSession<RecordingObserver>, host: FeatureId
             let definition = WorkGeometryDefinition::Fixed(frame);
             snapshot
                 .work_geometry
-                .replace(host, definition, definition.reads())
+                .replace(host, definition.clone(), definition.reads())
         })
         .unwrap();
 }

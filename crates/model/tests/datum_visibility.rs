@@ -54,7 +54,7 @@ fn replacing_a_hidden_definition_retains_the_visibility_metadata() {
     program.set_datum_visible(FeatureId(1), false).unwrap();
     let replacement = WorkGeometryDefinition::Point([DatumLength::Constant(3.0); 3]);
     program
-        .replace(FeatureId(1), replacement, replacement.reads())
+        .replace(FeatureId(1), replacement.clone(), replacement.reads())
         .unwrap();
     assert!(!program.get(FeatureId(1)).unwrap().is_visible());
 }

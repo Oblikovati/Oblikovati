@@ -155,7 +155,7 @@ fn change_point(files: &mut DiscoveryWorkspace, document: u64, id: u64, position
         .run("Move point", |snapshot, _| {
             snapshot
                 .work_geometry
-                .replace(FeatureId(id), definition, definition.reads())
+                .replace(FeatureId(id), definition.clone(), definition.reads())
         })
         .unwrap();
 }

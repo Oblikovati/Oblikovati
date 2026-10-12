@@ -75,3 +75,9 @@ impl SketchPrismDefinition {
         }
     }
 }
+
+impl PartialEq for SketchPrismDefinition {
+    fn eq(&self, other: &Self) -> bool {
+        self.same_recipe(other)
+    }
+}

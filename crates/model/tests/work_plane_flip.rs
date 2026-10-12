@@ -146,7 +146,7 @@ fn definition_replacement_retains_authored_orientation() {
         distance: DatumLength::Parameter(1),
     };
     sequence
-        .replace(FeatureId(2), definition, definition.reads())
+        .replace(FeatureId(2), definition.clone(), definition.reads())
         .unwrap();
     assert!(sequence.get(FeatureId(2)).unwrap().is_normal_flipped());
     assert_eq!(

@@ -26,7 +26,7 @@ pub(super) fn append_inputs(
     snapshot: &DocumentSnapshot,
     definition: WorkGeometryDefinition,
 ) -> Result<(), Error> {
-    info.slots = reference_slots(definition);
+    info.slots = reference_slots(&definition);
     let scalar = match definition {
         WorkGeometryDefinition::Offset { distance, .. } => distance
             .resolve(&snapshot.parameters)
@@ -44,7 +44,7 @@ pub(super) fn append_inputs(
     }
     Ok(())
 }
-fn reference_slots(definition: WorkGeometryDefinition) -> Option<Vec<WorkPlaneRefSlot>> {
+fn reference_slots(definition: &WorkGeometryDefinition) -> Option<Vec<WorkPlaneRefSlot>> {
     match definition {
         WorkGeometryDefinition::AtAngleAboutAxis(_) => Some(super::line_angle::slots()),
         WorkGeometryDefinition::ThroughTwoAxes(_) => Some(super::two_axes::slots()),

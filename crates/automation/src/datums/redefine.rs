@@ -52,7 +52,7 @@ fn revision_unchanged(
         .map_err(api_error)?;
     let definition = feature.definition();
     let geometry_unchanged = match &revision.geometry {
-        Some(geometry) => same_geometry(snapshot, revision.owner, *definition, geometry)?,
+        Some(geometry) => same_geometry(snapshot, revision.owner, definition.clone(), geometry)?,
         None => true,
     };
     Ok(geometry_unchanged
@@ -88,7 +88,7 @@ fn install_offset(
     };
     snapshot
         .work_geometry
-        .replace(owner, definition, definition.reads())
+        .replace(owner, definition.clone(), definition.reads())
         .map_err(api_error)?;
     if let Some(parameter) = added {
         assign_scalar_owner(snapshot, owner, OwnedDatumScalar::Offset, parameter)?;
@@ -144,7 +144,7 @@ fn install_geometry(
         PlaneGeometryRevision::Offset(offset) => install_offset(snapshot, ids, owner, offset),
         PlaneGeometryRevision::Definition(definition) => snapshot
             .work_geometry
-            .replace(owner, *definition, definition.reads())
+            .replace(owner, definition.clone(), definition.reads())
             .map(|_| ())
             .map_err(api_error),
     }
@@ -161,13 +161,14 @@ fn same_geometry(
     Ok(match revision {
         LineAngle(geometry) => {
             same_scalar(snapshot, owner, Scalar::Angle, &geometry.expression)?
-                && definition.same_recipe(WorkGeometryDefinition::AtAngleAboutAxis(geometry.source))
+                && definition
+                    .same_recipe(&WorkGeometryDefinition::AtAngleAboutAxis(geometry.source))
         }
         Offset(geometry) => {
             same_scalar(snapshot, owner, Scalar::Offset, &geometry.expression)?
                 && matches!(definition, WorkGeometryDefinition::Offset {base,..} if base == geometry.base)
         }
-        Definition(next) => definition.same_recipe(*next),
+        Definition(next) => definition.same_recipe(next),
     })
 }
 fn same_scalar(

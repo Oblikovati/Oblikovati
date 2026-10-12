@@ -109,7 +109,9 @@ pub use prism::{
     retain_planar_prism, retain_prism_on_plane,
 };
 mod sketch_prism;
+mod stored_prism;
 pub use sketch_prism::{
     SketchDirectedLine, SketchPrismSelection, retain_selected_sketch_prism,
     retain_sketch_prism_definition,
 };
+pub use stored_prism::retain_stored_sketch_prism;

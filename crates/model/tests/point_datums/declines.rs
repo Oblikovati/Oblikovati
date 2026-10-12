@@ -89,7 +89,7 @@ fn coordinate_scalars_share_length_checks_and_exact_source_comparison() {
     assert!(error.to_string().contains("finite Length"));
     assert!(error.source().is_none());
     assert!(DatumLength::Constant(f64::NAN).validate_source().is_err());
-    assert!(!point([0.0; 3]).same_recipe(point([-0.0, 0.0, 0.0])));
+    assert!(!point([0.0; 3]).same_recipe(&point([-0.0, 0.0, 0.0])));
     assert!(!DatumLength::Constant(1.0).same_recipe(DatumLength::Parameter(1)));
     assert!(DatumLength::Parameter(1).same_recipe(DatumLength::Parameter(1)));
     assert!(!DatumLength::Parameter(1).same_recipe(DatumLength::Parameter(2)));

@@ -38,7 +38,7 @@ fn owned_recipe_accessors_and_names_do_not_change_identity() {
     sequence.rename(FeatureId(2), "Base").unwrap();
     let feature = sequence.get(FeatureId(2)).unwrap();
     assert_eq!(feature.name(), "Base");
-    assert_eq!(*feature.definition(), 2);
+    assert_eq!(feature.definition().clone(), 2);
     assert!(!feature.suppressed());
     assert!(feature.reads().keys().is_empty());
     assert_eq!(ids(&sequence), vec![1, 2, 3]);
@@ -247,7 +247,7 @@ fn replacement_keeps_identity_name_and_suppression() {
     let feature = sequence.get(FeatureId(2)).unwrap();
     assert_eq!(feature.name(), "Offset");
     assert!(feature.suppressed());
-    assert_eq!(*feature.definition(), 99);
+    assert_eq!(feature.definition().clone(), 99);
     sequence.remove(FeatureId(1)).unwrap();
 }
 

@@ -83,7 +83,14 @@ impl WorkGeometryEvaluation {
             expected: "datum",
         })?;
         feature.validate_plane_metadata()?;
-        let datum = WorkGeometryResult::evaluate(*feature.definition(), parameters, self)?;
+        if matches!(feature.definition(), WorkPlaneDefinition::SketchPrism(_)) {
+            return Err(WorkPlaneError::Kind(super::WorkGeometryKindMismatch {
+                feature: id,
+                expected: "datum",
+                actual: "sketch prism input",
+            }));
+        }
+        let datum = WorkGeometryResult::evaluate(feature.definition().clone(), parameters, self)?;
         let datum = datum.with_plane_orientation(feature)?;
         self.datums.insert(id, datum);
         Ok(())

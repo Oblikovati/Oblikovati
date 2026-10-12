@@ -319,7 +319,7 @@ fn assert_free_geometry_refused(snapshot: &DocumentSnapshot) {
 #[test]
 fn malformed_work_plane_reads_are_reported_and_fixed_sketches_stay_independent() {
     let mut snapshot = snapshot();
-    let definition = *snapshot.work_geometry.features()[0].definition();
+    let definition = snapshot.work_geometry.features()[0].definition().clone();
     snapshot
         .work_geometry
         .replace(FeatureId(2), definition, Default::default())

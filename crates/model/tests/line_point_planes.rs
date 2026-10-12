@@ -69,7 +69,7 @@ fn current_axis_origin_direction_and_point_parameters_drive_the_frame() {
     let axis = WorkAxisLine::new([0.0; 3], [0.0, 0.0, 1.0]).unwrap();
     let replacement = WorkGeometryDefinition::Axis(axis);
     program
-        .replace(FeatureId(1), replacement, replacement.reads())
+        .replace(FeatureId(1), replacement.clone(), replacement.reads())
         .unwrap();
     assert_eq!(frame(&program, "0 cm").normal(), [0.0, 1.0, 0.0]);
     assert_eq!(frame(&program, "0 cm").recipe().origin, [0.0; 3]);
@@ -115,7 +115,9 @@ fn wrong_driver_kinds_and_suppression_do_not_provide_last_good_frames() {
         WorkAxisReference::Feature(FeatureId(2)),
         WorkPointReference::Origin,
     );
-    program.replace(FeatureId(3), wrong, wrong.reads()).unwrap();
+    program
+        .replace(FeatureId(3), wrong.clone(), wrong.reads())
+        .unwrap();
     let evaluation = program.evaluate_work_geometry(&parameters("5 cm")).unwrap();
     assert!(evaluation.plane(FeatureId(3)).is_err());
     assert!(format!("{:?}", evaluation.health[2]).contains("axis"));
@@ -143,7 +145,7 @@ fn permanent_driver_reads_and_source_order_survive_versioned_round_trips() {
     assert_eq!(recipe.features[2].definition.version, 7);
     let restored = FeatureSequence::from_work_geometry_recipe(&recipe).unwrap();
     assert!(program.same_work_geometry_recipe(&restored));
-    let actual = recipe.features[2].definition.definition;
+    let actual = &recipe.features[2].definition.definition;
     let reads = program.get(FeatureId(3)).unwrap().definition().reads();
     let expected = [1, 2].map(|id| FeatureReadKey::Feature(FeatureId(id)));
     assert_eq!(reads.keys().iter().copied().collect::<Vec<_>>(), expected);
@@ -166,7 +168,7 @@ fn invalid_dependencies_cannot_replace_the_authored_definition() {
         );
         assert!(
             program
-                .replace(FeatureId(3), invalid, invalid.reads())
+                .replace(FeatureId(3), invalid.clone(), invalid.reads())
                 .is_err()
         );
         assert!(program.same_work_geometry_recipe(&before));
@@ -184,7 +186,7 @@ fn unknown_source_fields_and_wrong_source_versions_are_refused() {
     let mut recipe = definition.recipe();
     recipe.version = 6;
     assert!(WorkGeometryDefinition::from_recipe(recipe).is_err());
-    assert!(!definition.same_recipe(source(
+    assert!(!definition.same_recipe(&source(
         WorkAxisReference::OriginY,
         WorkPointReference::Origin
     )));

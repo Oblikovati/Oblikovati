@@ -239,7 +239,7 @@ fn make_constant(files: &mut DiscoveryWorkspace, document: u64) {
         .run("Legacy constant", |snapshot, _| {
             snapshot
                 .work_geometry
-                .replace(FeatureId(1), definition, definition.reads())
+                .replace(FeatureId(1), definition.clone(), definition.reads())
         })
         .unwrap();
 }

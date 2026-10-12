@@ -90,7 +90,7 @@ fn replacement_order_and_suppression_preserve_the_flag_on_its_identity() {
     sequence.set_work_plane_construction(id, true).unwrap();
     let definition = WorkPlaneDefinition::Fixed(SketchPlane::xz());
     sequence
-        .replace(id, definition, definition.reads())
+        .replace(id, definition.clone(), definition.reads())
         .unwrap();
     sequence.rename(id, "Construction base").unwrap();
     sequence.set_suppressed(id, true).unwrap();

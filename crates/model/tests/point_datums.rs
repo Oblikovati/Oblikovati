@@ -72,7 +72,7 @@ fn point(position: [f64; 3]) -> WorkGeometryDefinition {
 fn replace(snapshot: &mut DocumentSnapshot, id: u64, definition: WorkGeometryDefinition) {
     snapshot
         .work_geometry
-        .replace(FeatureId(id), definition, definition.reads())
+        .replace(FeatureId(id), definition.clone(), definition.reads())
         .unwrap();
 }
 fn assert_axis_direction(evaluation: &WorkGeometryEvaluation, height: f64) {

@@ -54,7 +54,8 @@ impl AuthoredFeature<WorkPlaneDefinition> {
         self.validate_plane_metadata()
             .map_err(WorkPlaneProgramRecipeError::Plane)?;
         let definition = self.definition.recipe();
-        WorkPlaneDefinition::from_recipe(definition).map_err(WorkPlaneProgramRecipeError::Plane)?;
+        WorkPlaneDefinition::from_recipe(definition.clone())
+            .map_err(WorkPlaneProgramRecipeError::Plane)?;
         Ok(WorkPlaneFeatureRecipe {
             id: self.id,
             name: self.name.clone(),
@@ -73,7 +74,7 @@ impl AuthoredFeature<WorkPlaneDefinition> {
     fn from_work_plane_record(
         recipe: &WorkPlaneFeatureRecipe,
     ) -> Result<Self, WorkPlaneProgramRecipeError> {
-        let definition = WorkPlaneDefinition::from_recipe(recipe.definition)
+        let definition = WorkPlaneDefinition::from_recipe(recipe.definition.clone())
             .map_err(WorkPlaneProgramRecipeError::Plane)?;
         let mut feature = Self::new(
             recipe.id,

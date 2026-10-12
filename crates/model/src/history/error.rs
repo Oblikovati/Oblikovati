@@ -6,6 +6,7 @@ use std::{error::Error, fmt};
 /// A refused lifecycle operation leaves history and recipe state unchanged.
 #[derive(Clone, Debug, PartialEq)]
 pub enum HistoryError {
+    PartProgram(crate::feature::part::PartFeatureProgramError),
     DatumDeletion(super::DocumentDatumDeleteError),
     Identity(crate::identity::RecipeIdError),
     ScalarOwnership(crate::feature::FeatureScalarOwnershipError),
@@ -33,6 +34,7 @@ pub enum HistoryError {
 impl fmt::Display for HistoryError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::PartProgram(error) => error.fmt(output),
             Self::DatumDeletion(error) => error.fmt(output),
             Self::Identity(error) => error.fmt(output),
             Self::ScalarOwnership(error) => error.fmt(output),
@@ -92,6 +94,7 @@ impl fmt::Display for HistoryError {
 impl Error for HistoryError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::PartProgram(error) => Some(error),
             Self::DatumDeletion(error) => Some(error),
             Self::Identity(error) => Some(error),
             Self::ScalarOwnership(error) => Some(error),

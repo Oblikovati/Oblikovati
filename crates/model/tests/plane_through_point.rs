@@ -74,7 +74,7 @@ fn all_origin_orientations_place_the_plane_at_the_current_point() {
             WorkPointReference::Feature(FeatureId(2)),
         );
         program
-            .replace(FeatureId(3), definition, definition.reads())
+            .replace(FeatureId(3), definition.clone(), definition.reads())
             .unwrap();
         let recipe = frame(&program, &parameters()).recipe();
         assert_eq!(recipe.origin, [5.0, 6.0, 7.0]);
@@ -159,13 +159,13 @@ fn new_source_requires_definition_five_and_program_ten() {
 }
 #[test]
 fn changing_either_reference_changes_the_authored_recipe() {
-    let definition = *program().get(FeatureId(3)).unwrap().definition();
-    assert!(definition.same_recipe(definition));
-    assert!(!definition.same_recipe(source(
+    let definition = program().get(FeatureId(3)).unwrap().definition().clone();
+    assert!(definition.same_recipe(&definition));
+    assert!(!definition.same_recipe(&source(
         WorkPlaneReference::Origin(WorkPlaneOrigin::XY),
         WorkPointReference::Feature(FeatureId(2))
     )));
-    assert!(!definition.same_recipe(source(
+    assert!(!definition.same_recipe(&source(
         WorkPlaneReference::Feature(FeatureId(1)),
         WorkPointReference::Origin
     )));
@@ -175,7 +175,7 @@ fn wrong_driver_kinds_are_named_declines() {
     let mut program = program();
     for (invalid, expected) in wrong_driver_sources() {
         program
-            .replace(FeatureId(3), invalid, invalid.reads())
+            .replace(FeatureId(3), invalid.clone(), invalid.reads())
             .unwrap();
         assert!(decline_reason(&program).contains(expected));
     }
@@ -205,7 +205,7 @@ fn self_and_forward_dependencies_cannot_replace_the_authored_source() {
         );
         assert!(
             program
-                .replace(FeatureId(3), invalid, invalid.reads())
+                .replace(FeatureId(3), invalid.clone(), invalid.reads())
                 .is_err()
         );
         assert!(program.same_work_geometry_recipe(&before));
@@ -221,7 +221,7 @@ fn decline_reason(program: &FeatureSequence<WorkGeometryDefinition>) -> String {
 }
 #[test]
 fn unknown_stored_source_fields_are_refused() {
-    let definition = *program().get(FeatureId(3)).unwrap().definition();
+    let definition = program().get(FeatureId(3)).unwrap().definition().clone();
     let mut value = serde_json::to_value(definition.recipe()).unwrap();
     value["definition"]["ParallelThroughPoint"]["unknown"] = true.into();
     assert!(

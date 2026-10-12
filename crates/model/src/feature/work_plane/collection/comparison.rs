@@ -4,20 +4,21 @@ use super::{AuthoredFeature, FeatureSequence, WorkPlaneDefinition};
 
 impl WorkPlaneDefinition {
     /// Compare exact authored definition bits; example: `old.same_recipe(candidate)` before editing.
-    pub fn same_recipe(self, other: Self) -> bool {
+    pub fn same_recipe(&self, other: &Self) -> bool {
         use WorkPlaneDefinition::*;
         match (self, other) {
-            (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => same_line_angle(first, second),
+            (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
+            (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => same_line_angle(*first, *second),
             (ThroughTwoAxes(first), ThroughTwoAxes(second)) => first == second,
             (NormalToAxis(first), NormalToAxis(second)) => first == second,
             (LineThroughPoint(first), LineThroughPoint(second)) => first == second,
             (ThroughThreePoints(first), ThroughThreePoints(second)) => first == second,
             (ParallelThroughPoint(first), ParallelThroughPoint(second)) => first == second,
-            (Axis(first), Axis(second)) => first.same_recipe(second),
-            (Point(first), Point(second)) => same_coordinates(first, second),
+            (Axis(first), Axis(second)) => first.same_recipe(*second),
+            (Point(first), Point(second)) => same_coordinates(*first, *second),
             (AxisThroughPoints(first), AxisThroughPoints(second)) => first == second,
             (PointAtReference(first), PointAtReference(second)) => first == second,
-            (Fixed(first), Fixed(second)) => first.same_recipe(second),
+            (Fixed(first), Fixed(second)) => first.same_recipe(*second),
             (first @ Offset { .. }, second @ Offset { .. }) => same_offset(first, second),
             _ => false,
         }
@@ -48,7 +49,7 @@ fn same_feature(
         && first.datum_visible == second.datum_visible
         && first.plane_normal_flipped == second.plane_normal_flipped
         && first.plane_display.same_recipe(&second.plane_display)
-        && first.definition.same_recipe(second.definition)
+        && first.definition.same_recipe(&second.definition)
         && first.definition_reads == second.definition_reads
         && first.owned_scalars == second.owned_scalars
         && match (first.condition, second.condition) {
@@ -68,7 +69,7 @@ fn same_coordinates(
         .all(|(left, right)| left.same_recipe(right))
 }
 
-fn same_offset(first: WorkPlaneDefinition, second: WorkPlaneDefinition) -> bool {
+fn same_offset(first: &WorkPlaneDefinition, second: &WorkPlaneDefinition) -> bool {
     match (first, second) {
         (
             WorkPlaneDefinition::Offset {
@@ -79,7 +80,7 @@ fn same_offset(first: WorkPlaneDefinition, second: WorkPlaneDefinition) -> bool 
                 base: second,
                 distance: right,
             },
-        ) => first == second && left.same_recipe(right),
+        ) => first == second && left.same_recipe(*right),
         _ => false,
     }
 }

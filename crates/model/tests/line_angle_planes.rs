@@ -70,7 +70,7 @@ fn assert_normal(actual: SketchPlane, expected: [f64; 3]) {
 }
 fn replace(program: &mut AngleProgram, id: u64, definition: WorkGeometryDefinition) {
     program
-        .replace(FeatureId(id), definition, definition.reads())
+        .replace(FeatureId(id), definition.clone(), definition.reads())
         .unwrap();
 }
 #[test]
@@ -184,7 +184,7 @@ fn self_forward_and_wrong_kind_drivers_are_refused() {
         let invalid = WorkGeometryDefinition::AtAngleAboutAxis(angle);
         assert!(
             program
-                .replace(FeatureId(3), invalid, invalid.reads())
+                .replace(FeatureId(3), invalid.clone(), invalid.reads())
                 .is_err()
         );
         assert!(program.same_work_geometry_recipe(&before));
@@ -208,18 +208,18 @@ fn source_wrappers_and_program_versions_round_trip_with_orientation() {
     let mut old = recipe.clone();
     old.version = 14;
     assert!(AngleProgram::from_work_geometry_recipe(&old).is_err());
-    let mut definition = recipe.features[2].definition;
+    let mut definition = recipe.features[2].definition.clone();
     definition.version = 9;
-    assert!(WorkGeometryDefinition::from_recipe(definition).is_err());
+    assert!(WorkGeometryDefinition::from_recipe(definition.clone()).is_err());
 }
 #[test]
 fn scalar_source_equality_preserves_signed_zero_and_parameter_identity() {
     let positive = DatumAngle::constant(0.0).unwrap();
     let negative = DatumAngle::constant(-0.0).unwrap();
     assert!(!positive.same_recipe(negative));
-    assert!(!source(positive).same_recipe(source(negative)));
-    assert!(source(DatumAngle::parameter(1)).same_recipe(source(DatumAngle::parameter(1))));
-    assert!(!source(DatumAngle::parameter(1)).same_recipe(source(DatumAngle::parameter(2))));
+    assert!(!source(positive).same_recipe(&source(negative)));
+    assert!(source(DatumAngle::parameter(1)).same_recipe(&source(DatumAngle::parameter(1))));
+    assert!(!source(DatumAngle::parameter(1)).same_recipe(&source(DatumAngle::parameter(2))));
     assert_eq!(positive.parameter_id(), None);
     assert_eq!(DatumAngle::parameter(3).parameter_id(), Some(3));
     assert_eq!(

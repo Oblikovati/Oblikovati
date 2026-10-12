@@ -106,7 +106,7 @@ pub(in crate::datums) fn point_reference(
     }
     let id = reference::decode_reference(snapshot, reference)?;
     let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
-    if !DatumCollection::Points.contains(*feature.definition()) {
+    if !DatumCollection::Points.contains(feature.definition()) {
         return Err(Error(format!(
             "datum {reference:?} definition {:?}: expected a current point definition",
             feature.definition()
@@ -151,7 +151,7 @@ pub(crate) fn axis_reference(
     }
     let id = reference::decode_reference(snapshot, reference)?;
     let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
-    if !DatumCollection::Axes.contains(*feature.definition()) {
+    if !DatumCollection::Axes.contains(feature.definition()) {
         return Err(Error(format!(
             "datum {reference:?} definition {:?}: expected a current axis definition",
             feature.definition()

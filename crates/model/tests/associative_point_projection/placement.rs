@@ -48,7 +48,7 @@ fn current_owned_host_axis_and_source_share_live_binding_resolution_and_reads() 
     let definition = WorkGeometryDefinition::Axis(axis);
     snapshot
         .work_geometry
-        .replace(FeatureId(3), definition, definition.reads())
+        .replace(FeatureId(3), definition.clone(), definition.reads())
         .unwrap();
     assert_projection_changed(&snapshot);
     recompute(&mut snapshot);

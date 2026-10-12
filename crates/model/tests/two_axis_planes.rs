@@ -44,7 +44,7 @@ fn frame(program: &DatumProgram) -> SketchPlane {
 }
 fn replace(program: &mut DatumProgram, id: u64, definition: WorkGeometryDefinition) {
     program
-        .replace(FeatureId(id), definition, definition.reads())
+        .replace(FeatureId(id), definition.clone(), definition.reads())
         .unwrap();
 }
 #[test]
@@ -142,15 +142,15 @@ fn exact_sources_round_trip_and_require_new_program_and_wrapper_versions() {
     let mut old = recipe.clone();
     old.version = 13;
     assert!(DatumProgram::from_work_geometry_recipe(&old).is_err());
-    let mut source = recipe.features[2].definition;
+    let mut source = recipe.features[2].definition.clone();
     source.version = 8;
-    assert!(WorkGeometryDefinition::from_recipe(source).is_err());
+    assert!(WorkGeometryDefinition::from_recipe(source.clone()).is_err());
 }
 #[test]
 fn ordered_source_equality_and_unknown_variant_fields_are_checked() {
     let first = definition(WorkAxisReference::OriginX, WorkAxisReference::OriginY);
     let reverse = definition(WorkAxisReference::OriginY, WorkAxisReference::OriginX);
-    assert!(!first.same_recipe(reverse));
+    assert!(!first.same_recipe(&reverse));
     let mut value = serde_json::to_value(first.recipe()).unwrap();
     value["definition"]["ThroughTwoAxes"] = serde_json::json!(["OriginX", "OriginY", "OriginZ"]);
     assert!(serde_json::from_value::<WorkPlaneRecipe>(value).is_err());
@@ -205,7 +205,7 @@ fn assert_invalid_dependencies(program: &mut DatumProgram) {
         );
         assert!(
             program
-                .replace(FeatureId(3), source, source.reads())
+                .replace(FeatureId(3), source.clone(), source.reads())
                 .is_err()
         );
         assert!(program.same_work_geometry_recipe(&baseline));

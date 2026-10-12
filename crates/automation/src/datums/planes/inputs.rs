@@ -76,7 +76,7 @@ pub(in crate::datums) fn plane_reference(
         .get(id)
         .map_err(api_error)?
         .definition();
-    if !DatumCollection::Planes.contains(*definition) {
+    if !DatumCollection::Planes.contains(definition) {
         return Err(Error(format!(
             "plane reference {reference:?}: expected a current plane definition"
         )));

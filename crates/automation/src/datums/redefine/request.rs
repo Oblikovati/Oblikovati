@@ -35,7 +35,7 @@ fn geometry_revision(
     if scalars.is_empty() && repicks.is_empty() {
         return Ok(None);
     }
-    revise_geometry(snapshot, *feature.definition(), args).map(Some)
+    revise_geometry(snapshot, feature.definition().clone(), args).map(Some)
 }
 fn revise_geometry(
     snapshot: &DocumentSnapshot,

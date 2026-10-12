@@ -8,6 +8,7 @@ use std::fmt::{Display, Formatter};
 /// A failed construction frame has no usable current geometry.
 #[derive(Clone, Debug, PartialEq)]
 pub enum WorkGeometryError {
+    Prism(crate::feature::sketch_prism::SketchPrismError),
     Angle(super::DatumAngleError),
     DisplayCorners([[f64; 3]; 2]),
     Frame(SketchError),
@@ -37,7 +38,8 @@ impl Display for WorkGeometryError {
             Kind(error) => Display::fmt(error, f),
             Coordinate(error) => Display::fmt(error, f),
             Axis(error) => Display::fmt(error, f),
-            NonPlane(definition) => write_non_plane(**definition, f),
+            NonPlane(definition) => write_non_plane(definition, f),
+            Prism(cause) => Display::fmt(cause, f),
             Parameter(error) => Display::fmt(error, f),
             Unavailable { feature, expected } => write_unavailable(*feature, expected, f),
             Offset {
@@ -69,7 +71,7 @@ impl Display for WorkGeometryKindMismatch {
     }
 }
 fn write_non_plane(
-    definition: super::WorkGeometryDefinition,
+    definition: &super::WorkGeometryDefinition,
     formatter: &mut Formatter<'_>,
 ) -> std::fmt::Result {
     write!(
@@ -100,13 +102,14 @@ fn write_offset(
 fn write_recipe_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane recipe version {version}: expected 1 for planes, 2 for line axes, 3 for positions and two-point axes, 4 for associative points, 5 for plane-and-point definitions, 6 for three-point definitions, 7 for line-and-point definitions, 8 for normal-to-axis definitions, 9 for two-axis definitions, or 10 for line-angle definitions"
+        "work plane recipe version {version}: expected 1 for planes, 2 for line axes, 3 for positions and two-point axes, 4 for associative points, 5 for plane-and-point definitions, 6 for three-point definitions, 7 for line-and-point definitions, 8 for normal-to-axis definitions, 9 for two-axis definitions, 10 for line-angle definitions, or 11 for sketch prism inputs"
     )
 }
 
 impl std::error::Error for WorkGeometryError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
+            Self::Prism(error) => Some(error),
             Self::Angle(error) => Some(error),
             Self::Frame(error) => Some(error),
             Self::Axis(error) => Some(error),

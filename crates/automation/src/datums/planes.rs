@@ -61,7 +61,7 @@ pub(super) fn plane_info(
         .ok()
         .map(|frame| frame.recipe().origin.to_vec());
     info.normal = geometry.ok().map(|frame| frame.normal().to_vec());
-    metadata::append_inputs(&mut info, snapshot, *feature.definition())?;
+    metadata::append_inputs(&mut info, snapshot, feature.definition().clone())?;
     Ok(info)
 }
 fn identity(
@@ -73,7 +73,7 @@ fn identity(
         index,
         ref_: reference::encode_reference(snapshot, feature.id())?,
         name: feature.name().into(),
-        kind: metadata::constructor(*feature.definition())?,
+        kind: metadata::constructor(feature.definition().clone())?,
         visible: feature.is_visible(),
         construction: feature.is_construction_datum(),
         auto_resize: feature.plane_display_settings().auto_resize(),

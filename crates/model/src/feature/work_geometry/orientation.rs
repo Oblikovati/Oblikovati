@@ -5,7 +5,7 @@ use super::{
 use crate::feature::FeatureReplayRange;
 
 impl WorkGeometryDefinition {
-    pub(crate) fn require_plane(self) -> Result<(), WorkGeometryError> {
+    pub(crate) fn require_plane(&self) -> Result<(), WorkGeometryError> {
         if matches!(
             self,
             Self::Fixed(_)
@@ -19,7 +19,7 @@ impl WorkGeometryDefinition {
         ) {
             return Ok(());
         }
-        Err(WorkGeometryError::NonPlane(Box::new(self)))
+        Err(WorkGeometryError::NonPlane(Box::new(self.clone())))
     }
 }
 impl AuthoredFeature<WorkGeometryDefinition> {

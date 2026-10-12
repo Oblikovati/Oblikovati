@@ -93,13 +93,13 @@ fn fixed_recipe_refuses_invalid_authored_axes() {
 #[test]
 fn serialized_recipes_refuse_unknown_fields_and_definition_kinds() {
     let recipe = WorkPlaneDefinition::Fixed(SketchPlane::xy()).recipe();
-    let mut json = serde_json::to_value(recipe).unwrap();
+    let mut json = serde_json::to_value(&recipe).unwrap();
     json["extra"] = true.into();
     assert!(serde_json::from_value::<WorkPlaneRecipe>(json).is_err());
-    let mut json = serde_json::to_value(recipe).unwrap();
+    let mut json = serde_json::to_value(&recipe).unwrap();
     json["definition"]["Fixed"]["extra"] = true.into();
     assert!(serde_json::from_value::<WorkPlaneRecipe>(json).is_err());
-    let mut json = serde_json::to_value(recipe).unwrap();
+    let mut json = serde_json::to_value(&recipe).unwrap();
     json["definition"] = serde_json::json!({"Unsupported": {}});
     assert!(serde_json::from_value::<WorkPlaneRecipe>(json).is_err());
 }

@@ -73,6 +73,8 @@ mod placement;
 mod recipe;
 #[path = "sketch_prism/refusals.rs"]
 mod refusals;
+#[path = "sketch_prism/stored.rs"]
+mod stored;
 
 fn assert_source_roles(report: &oblikovati_martensite::PrismProbeReport) {
     for key in 101..=104 {

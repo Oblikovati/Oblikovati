@@ -18,11 +18,10 @@ pub use super::work_plane::{
     WorkPlaneProgramRecipeError as WorkGeometryProgramRecipeError,
 };
 use super::{
-    AuthoredFeature, FeatureId, FeatureReplayError, FeatureSequence,
-    work_axis::WorkAxisLine,
-    work_plane::{WorkPlaneDistance, WorkPlaneReference},
+    AuthoredFeature, FeatureId, FeatureReplayError, FeatureSequence, work_axis::WorkAxisLine,
+    work_plane::WorkPlaneReference,
 };
-use crate::{parameter::ParameterCollection, sketch::SketchPlane};
+use crate::parameter::ParameterCollection;
 pub use error::{WorkGeometryError, WorkGeometryKindMismatch};
 pub use evaluate::WorkGeometryEvaluation;
 pub use length::{DatumLength, DatumLengthError};
@@ -54,29 +53,13 @@ pub struct WorkPlaneLineAngle {
     pub angle: DatumAngle,
 }
 
-/// One authored datum selected by kind inside the common feature program.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum WorkGeometryDefinition {
-    Fixed(SketchPlane),
-    Offset {
-        base: WorkPlaneReference,
-        distance: WorkPlaneDistance,
-    },
-    ParallelThroughPoint(WorkPlaneThroughPoint),
-    ThroughThreePoints([WorkPointReference; 3]),
-    LineThroughPoint(WorkPlaneLinePoint),
-    NormalToAxis(WorkPlaneLinePoint),
-    AtAngleAboutAxis(WorkPlaneLineAngle),
-    ThroughTwoAxes([super::work_axis::WorkAxisReference; 2]),
-    Axis(WorkAxisLine),
-    Point([DatumLength; 3]),
-    PointAtReference(WorkPointReference),
-    AxisThroughPoints(WorkAxisPoints),
-}
+/// Legacy source name for the common part feature definition.
+pub use super::part::PartFeatureDefinition as WorkGeometryDefinition;
 impl AuthoredFeature<WorkGeometryDefinition> {
     /// Attribute one authored datum in the common program; example: `AuthoredFeature::datum(id, "Point", definition)`.
     pub fn datum(id: FeatureId, name: &str, definition: WorkGeometryDefinition) -> Self {
-        Self::new(id, name, definition, definition.reads())
+        let reads = definition.reads();
+        Self::new(id, name, definition, reads)
     }
     /// Add a checked line axis to the same permanent namespace; example: `AuthoredFeature::work_axis(id, "Spindle", axis)`.
     pub fn work_axis(id: FeatureId, name: &str, axis: WorkAxisLine) -> Self {

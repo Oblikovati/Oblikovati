@@ -5,20 +5,22 @@ use crate::feature::{FeatureReadFootprint, FeatureReadKey};
 
 impl WorkGeometryDefinition {
     /// Attribute every authored datum input; example: `definition.reads()` before program insertion.
-    pub fn reads(self) -> FeatureReadFootprint {
+    pub fn reads(&self) -> FeatureReadFootprint {
         let keys = match self {
-            Self::Offset { base, distance } => offset_keys(base, distance),
-            Self::ParallelThroughPoint(source) => parallel_keys(source),
-            Self::LineThroughPoint(source) | Self::NormalToAxis(source) => line_point_keys(source),
-            Self::AtAngleAboutAxis(source) => line_angle_keys(source),
-            Self::ThroughTwoAxes(axes) => axes.into_iter().filter_map(axis_key).collect(),
-            Self::ThroughThreePoints(points) => points.into_iter().filter_map(point_key).collect(),
-            Self::PointAtReference(reference) => point_key(reference).into_iter().collect(),
-            Self::Point(coordinates) => coordinates.into_iter().filter_map(length_key).collect(),
-            Self::AxisThroughPoints(points) => [points.first, points.second]
-                .into_iter()
-                .filter_map(point_key)
-                .collect(),
+            Self::SketchPrism(definition) => {
+                definition.source_reads().keys().iter().copied().collect()
+            }
+            Self::Offset { base, distance } => offset_keys(*base, *distance),
+            Self::ParallelThroughPoint(source) => parallel_keys(*source),
+            Self::LineThroughPoint(source) | Self::NormalToAxis(source) => line_point_keys(*source),
+            Self::AtAngleAboutAxis(source) => line_angle_keys(*source),
+            Self::ThroughTwoAxes(axes) => axes.iter().copied().filter_map(axis_key).collect(),
+            Self::ThroughThreePoints(points) => {
+                points.iter().copied().filter_map(point_key).collect()
+            }
+            Self::PointAtReference(reference) => point_key(*reference).into_iter().collect(),
+            Self::Point(coordinates) => coordinate_keys(coordinates),
+            Self::AxisThroughPoints(points) => point_pair_keys(*points),
             _ => Vec::new(),
         };
         FeatureReadFootprint::new(keys, false)
@@ -72,5 +74,15 @@ fn line_angle_keys(source: super::WorkPlaneLineAngle) -> Vec<FeatureReadKey> {
         .into_iter()
         .chain(plane_key(source.base))
         .chain(source.angle.parameter_id().map(FeatureReadKey::Parameter))
+        .collect()
+}
+
+fn coordinate_keys(coordinates: &[DatumLength; 3]) -> Vec<FeatureReadKey> {
+    coordinates.iter().copied().filter_map(length_key).collect()
+}
+fn point_pair_keys(points: super::WorkAxisPoints) -> Vec<FeatureReadKey> {
+    [points.first, points.second]
+        .into_iter()
+        .filter_map(point_key)
         .collect()
 }

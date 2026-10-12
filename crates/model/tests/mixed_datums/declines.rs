@@ -10,7 +10,7 @@ fn an_axis_cannot_be_used_as_the_plane_driver_of_an_offset() {
     };
     snapshot
         .work_geometry
-        .replace(FeatureId(3), definition, definition.reads())
+        .replace(FeatureId(3), definition.clone(), definition.reads())
         .unwrap();
     let evaluation = evaluate(&snapshot);
     assert!(matches!(
@@ -23,12 +23,14 @@ fn an_axis_cannot_be_used_as_the_plane_driver_of_an_offset() {
 #[test]
 fn direct_axis_plane_query_and_invalid_saved_axis_keep_typed_causes() {
     let snapshot = mixed_snapshot();
-    let definition = *snapshot
+    let definition = snapshot
         .work_geometry
         .get(FeatureId(2))
         .unwrap()
-        .definition();
+        .definition()
+        .clone();
     let error = definition
+        .clone()
         .evaluate(&snapshot.parameters, &evaluate(&snapshot))
         .unwrap_err();
     assert!(matches!(error, WorkGeometryError::NonPlane(_)));
@@ -58,7 +60,7 @@ fn origin_plane_drivers_still_resolve_in_a_mixed_program() {
     };
     snapshot
         .work_geometry
-        .replace(FeatureId(3), definition, definition.reads())
+        .replace(FeatureId(3), definition.clone(), definition.reads())
         .unwrap();
     assert_eq!(
         evaluate(&snapshot)

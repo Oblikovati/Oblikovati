@@ -169,7 +169,7 @@ fn oriented_work_plane_recipes_follow_current_base_facing_and_fail_on_degeneracy
     let changed = WorkPlaneDefinition::Fixed(SketchPlane::xy());
     snapshot
         .work_geometry
-        .replace(FeatureId(1), changed, changed.reads())
+        .replace(FeatureId(1), changed.clone(), changed.reads())
         .unwrap();
     assert!(snapshot.resolve_sketch_plane(DocumentSketchId(1)).is_err());
     assert_eq!(snapshot.sketches.recipe(), recipe);

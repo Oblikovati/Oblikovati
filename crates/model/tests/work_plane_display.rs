@@ -158,14 +158,14 @@ fn points_and_unknown_ids_cannot_receive_plane_display_metadata() {
 #[test]
 fn display_changes_preserve_definition_reads_and_replacement_retains_settings() {
     let mut program = program();
-    let before = *program.get(FeatureId(1)).unwrap().definition();
+    let before = program.get(FeatureId(1)).unwrap().definition().clone();
     let reads = program.get(FeatureId(1)).unwrap().reads().clone();
     program.set_plane_display(FeatureId(1), settings()).unwrap();
     program
-        .replace(FeatureId(1), before, reads.clone())
+        .replace(FeatureId(1), before.clone(), reads.clone())
         .unwrap();
     let feature = program.get(FeatureId(1)).unwrap();
-    assert!(feature.definition().same_recipe(before));
+    assert!(feature.definition().same_recipe(&before));
     assert_eq!(feature.reads(), &reads);
     assert!(feature.plane_display_settings().same_recipe(&settings()));
 }

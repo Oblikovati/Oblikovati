@@ -4,7 +4,7 @@ use super::{WorkPlaneDefinition, WorkPlaneDistance, WorkPlaneError, WorkPlaneRef
 use crate::sketch::{SketchPlane, SketchPlaneOptions, SketchPlaneRecipe};
 
 /// Versioned authored construction data; no evaluated caches are stored.
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct WorkPlaneRecipe {
     pub version: u32,
@@ -12,9 +12,10 @@ pub struct WorkPlaneRecipe {
 }
 
 /// One serialized definition selected by variant; scalar closures are not saved.
-#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
     NormalToAxis(crate::feature::work_geometry::WorkPlaneLinePoint),
@@ -37,7 +38,7 @@ pub enum WorkPlaneDefinitionRecipe {
 
 impl WorkPlaneDefinition {
     /// Capture authored source without evaluated output; example: `definition.recipe()`.
-    pub fn recipe(self) -> WorkPlaneRecipe {
+    pub fn recipe(&self) -> WorkPlaneRecipe {
         let definition = self.source_recipe();
         WorkPlaneRecipe {
             version: definition.source_version(),
@@ -45,21 +46,22 @@ impl WorkPlaneDefinition {
         }
     }
 
-    fn source_recipe(self) -> WorkPlaneDefinitionRecipe {
+    fn source_recipe(&self) -> WorkPlaneDefinitionRecipe {
         use WorkPlaneDefinitionRecipe as Source;
         match self {
-            Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source),
-            Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(axes),
-            Self::NormalToAxis(source) => Source::NormalToAxis(source),
-            Self::LineThroughPoint(source) => Source::LineThroughPoint(source),
-            Self::ThroughThreePoints(points) => Source::ThroughThreePoints(points),
-            Self::ParallelThroughPoint(source) => Source::ParallelThroughPoint(source),
+            Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
+            Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(*source),
+            Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
+            Self::NormalToAxis(source) => Source::NormalToAxis(*source),
+            Self::LineThroughPoint(source) => Source::LineThroughPoint(*source),
+            Self::ThroughThreePoints(points) => Source::ThroughThreePoints(*points),
+            Self::ParallelThroughPoint(source) => Source::ParallelThroughPoint(*source),
             Self::Axis(axis) => Source::Axis(axis.recipe()),
-            Self::Point(coordinates) => Source::Point(coordinates),
-            Self::PointAtReference(reference) => Source::PointAtReference(reference),
-            Self::AxisThroughPoints(points) => Source::AxisThroughPoints(points),
-            Self::Fixed(plane) => fixed_frame_recipe(plane),
-            Self::Offset { base, distance } => Source::Offset { base, distance },
+            Self::Point(coordinates) => Source::Point(*coordinates),
+            Self::PointAtReference(reference) => Source::PointAtReference(*reference),
+            Self::AxisThroughPoints(points) => Source::AxisThroughPoints(*points),
+            Self::Fixed(plane) => fixed_frame_recipe(*plane),
+            Self::Offset { base, distance } => offset_source_recipe(*base, *distance),
         }
     }
 
@@ -78,6 +80,7 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        SketchPrism(recipe) => restore_prism_inputs(recipe),
         AtAngleAboutAxis(source) => restore_line_angle(source),
         ThroughTwoAxes(axes) => Ok(WorkPlaneDefinition::ThroughTwoAxes(axes)),
         NormalToAxis(source) => Ok(WorkPlaneDefinition::NormalToAxis(source)),
@@ -109,8 +112,9 @@ fn restore_point(
     Ok(WorkPlaneDefinition::Point(coordinates))
 }
 impl WorkPlaneDefinitionRecipe {
-    pub(super) fn source_version(self) -> u32 {
+    pub(super) fn source_version(&self) -> u32 {
         match self {
+            Self::SketchPrism(_) => 11,
             Self::AtAngleAboutAxis(_) => 10,
             Self::ThroughTwoAxes(_) => 9,
             Self::NormalToAxis(_) => 8,
@@ -123,8 +127,9 @@ impl WorkPlaneDefinitionRecipe {
             _ => 1,
         }
     }
-    pub(super) fn minimum_program_version(self) -> u32 {
+    pub(super) fn minimum_program_version(&self) -> u32 {
         match self {
+            Self::SketchPrism(_) => 16,
             Self::AtAngleAboutAxis(_) => 15,
             Self::ThroughTwoAxes(_) => 14,
             Self::NormalToAxis(_) => 13,
@@ -168,4 +173,21 @@ fn restore_line_angle(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     source.angle.validate_source()?;
     Ok(WorkPlaneDefinition::AtAngleAboutAxis(source))
+}
+
+fn restore_prism_inputs(
+    recipe: crate::feature::sketch_prism::SketchPrismRecipe,
+) -> Result<WorkPlaneDefinition, WorkPlaneError> {
+    {
+        crate::feature::sketch_prism::SketchPrismDefinition::from_recipe(&recipe)
+            .map(|definition| WorkPlaneDefinition::SketchPrism(Box::new(definition)))
+            .map_err(WorkPlaneError::Prism)
+    }
+}
+
+fn offset_source_recipe(
+    base: WorkPlaneReference,
+    distance: WorkPlaneDistance,
+) -> WorkPlaneDefinitionRecipe {
+    WorkPlaneDefinitionRecipe::Offset { base, distance }
 }

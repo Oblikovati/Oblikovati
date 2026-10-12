@@ -60,7 +60,7 @@ fn insert_axis(snapshot: &mut DocumentSnapshot, direction: [f64; 3]) {
 fn replace(snapshot: &mut DocumentSnapshot, id: u64, definition: WorkGeometryDefinition) {
     snapshot
         .work_geometry
-        .replace(FeatureId(id), definition, definition.reads())
+        .replace(FeatureId(id), definition.clone(), definition.reads())
         .unwrap();
 }
 fn project(

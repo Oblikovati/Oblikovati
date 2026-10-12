@@ -58,16 +58,23 @@ impl SketchPrismDefinition {
             .map_err(|cause| self.decline(SketchPrismCause::Sketch(cause)))?;
         let reads = sketch.read_footprint();
         let mut keys = reads.keys().clone();
-        keys.insert(FeatureReadKey::Sketch(self.sketch.0));
-        keys.extend(
+        keys.extend(self.source_reads().keys());
+        Ok(FeatureReadFootprint::new(
+            keys,
+            reads.has_unattributed_reads(),
+        ))
+    }
+}
+
+impl SketchPrismDefinition {
+    /// Attribute direct authored sources without requiring evaluated geometry; example: `definition.source_reads()` before program restore.
+    pub fn source_reads(&self) -> FeatureReadFootprint {
+        let keys = std::iter::once(FeatureReadKey::Sketch(self.sketch.0)).chain(
             self.displacement
                 .into_iter()
                 .filter_map(DatumLength::parameter)
                 .map(FeatureReadKey::Parameter),
         );
-        Ok(FeatureReadFootprint::new(
-            keys,
-            reads.has_unattributed_reads(),
-        ))
+        FeatureReadFootprint::new(keys, false)
     }
 }

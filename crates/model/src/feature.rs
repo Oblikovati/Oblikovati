@@ -9,6 +9,7 @@ pub use scalar_ownership::{FeatureScalarBinding, FeatureScalarOwnershipError};
 mod error;
 mod evaluation;
 mod footprint;
+pub mod part;
 mod replay;
 pub mod sketch_prism;
 mod suppression;

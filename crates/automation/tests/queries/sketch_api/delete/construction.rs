@@ -89,7 +89,12 @@ fn set_attribution(
         .commands(document)
         .unwrap()
         .run("Consumer", |snapshot, _| {
-            let definition = *snapshot.work_geometry.get(plane).unwrap().definition();
+            let definition = snapshot
+                .work_geometry
+                .get(plane)
+                .unwrap()
+                .definition()
+                .clone();
             let mut keys = BTreeSet::from([FeatureReadKey::Sketch(sketch.0)]);
             keys.extend(definition.reads().keys());
             let reads = FeatureReadFootprint::new(keys, unknown);
