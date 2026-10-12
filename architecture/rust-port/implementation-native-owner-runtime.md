@@ -96,3 +96,7 @@ The [CLI Lua port](implementation-cli-lua.md) now executes scripts in an isolate
 worker while the parent services the canonical file owner. It uses structural
 script IPC rather than loading the VM into the native add-in worker. Executable
 native-window integration and remaining lifecycle wire routes remain open.
+
+The [desktop native service adapter](implementation-desktop-native-addins.md) now
+services real Go/Rust document add-ins through the production native frame loop.
+Executable startup selection and foreground MCPBridge acceptance remain open.

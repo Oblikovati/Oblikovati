@@ -131,10 +131,10 @@ pub(crate) fn retire_head_run(
     let outcome = combine_retirement(outcome, owner.finish());
     combine_retirement(outcome, window.finish())
 }
-pub(crate) fn combine_retirement(
-    outcome: Result<HeadSummary, String>,
+pub(crate) fn combine_retirement<T>(
+    outcome: Result<T, String>,
     retirement: Result<(), String>,
-) -> Result<HeadSummary, String> {
+) -> Result<T, String> {
     match (outcome, retirement) {
         (Ok(summary), Ok(())) => Ok(summary),
         (Err(error), Ok(())) | (Ok(_), Err(error)) => Err(error),

@@ -31,6 +31,14 @@ pub(super) fn describe(catalog: &[AddInInfo], id: &str) -> Result<AddInInfo, Err
         .ok_or_else(|| Error(format!("add-in {id:?}: expected a registered ID")))
 }
 impl<W: DispatchWakeup + 'static> NativeAddInRuntime<W> {
+    /// Inspect an in-flight foreign control; example: `runtime.control_pending()` before close.
+    pub fn control_pending(&self) -> bool {
+        self.pending.is_some()
+    }
+    /// Inspect ready owner calls separately from a busy foreign worker; example: `runtime.queued_calls_pending()?` before sleeping.
+    pub fn queued_calls_pending(&self) -> Result<bool, Error> {
+        self.owner.pending().map(|count| count != 0)
+    }
     /// Read the last completed registration snapshot; example: `runtime.describe(id)?;`.
     pub fn describe(&self, id: &str) -> Result<AddInInfo, Error> {
         describe(&self.catalog, id)

@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Desktop window lifetime and document-owned frame dispatch. Native UI and model display remain open.
+#[cfg(target_os = "linux")]
+#[allow(unsafe_code)]
+mod native_services;
+#[cfg(target_os = "linux")]
+pub use native_services::NativeAddInDesktop;
 mod arguments;
 pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 #[cfg(target_os = "linux")]

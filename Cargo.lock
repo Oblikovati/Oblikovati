@@ -615,6 +615,7 @@ dependencies = [
 name = "oblikovati-head"
 version = "0.1.0"
 dependencies = [
+ "oblikovati-addin-host",
  "oblikovati-api",
  "oblikovati-automation",
  "oblikovati-cli",
@@ -624,7 +625,9 @@ dependencies = [
  "oblikovati-persistence",
  "oblikovati-script",
  "oblikovati-session",
+ "oblikovati-solve",
  "oblikovati-viewport",
+ "serde",
  "serde_json",
  "tempfile",
 ]

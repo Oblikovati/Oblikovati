@@ -213,3 +213,8 @@ mod save_tests;
 #[cfg(test)]
 #[path = "../tests/native_history.rs"]
 mod history_tests;
+
+#[cfg(test)]
+#[allow(unsafe_code)]
+#[path = "../tests/native_services.rs"]
+mod addin_services_tests;

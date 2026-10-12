@@ -6,18 +6,30 @@ use std::{
 };
 pub struct WorkflowCompiler {
     resources: FixtureResources,
+    fixtures: PathBuf,
 }
 impl WorkflowCompiler {
     /// Prepare an API-only fixture project; example: `WorkflowCompiler::new()`.
     pub fn new() -> Self {
+        Self::from_fixture_root(&Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/typed_workflow"))
+    }
+    /// Share the same typed corpus with another application consumer; example: `WorkflowCompiler::from_fixture_root(root)`.
+    pub fn from_fixture_root(root: &Path) -> Self {
         Self {
             resources: FixtureResources::new(),
+            fixtures: root.into(),
         }
     }
     /// Build an API-only Rust document add-in; example: `compiler.rust_workflow(path, false)`.
     pub fn rust_workflow(&self, output: &Path, catalog: bool) -> PathBuf {
         let project = self.resources.directory.path().join("typed-rust");
-        prepare_workflow_project(&project, &self.resources.sdk, output, catalog);
+        prepare_workflow_project(
+            &project,
+            &self.resources.sdk,
+            output,
+            catalog,
+            &self.fixtures,
+        );
         run(Command::new("cargo")
             .args(["build", "--offline", "--manifest-path"])
             .arg(project.join("Cargo.toml"))
@@ -68,7 +80,13 @@ fn write_go_workflow_sources(project: &Path, output: &Path, catalog: bool) {
     )
     .unwrap();
 }
-fn prepare_workflow_project(project: &Path, sdk: &Path, output: &Path, catalog: bool) {
+fn prepare_workflow_project(
+    project: &Path,
+    sdk: &Path,
+    output: &Path,
+    catalog: bool,
+    fixtures: &Path,
+) {
     let source = project.join("src");
     std::fs::create_dir_all(&source).unwrap();
     let api = sdk.parent().unwrap().parent().unwrap();
@@ -80,10 +98,9 @@ fn prepare_workflow_project(project: &Path, sdk: &Path, output: &Path, catalog: 
         .replace("OUTPUT_PATH", &format!("{output:?}"))
         .replace("VERIFY_CATALOG", if catalog { "true" } else { "false" });
     std::fs::write(source.join("lib.rs"), library).unwrap();
-    copy_workflow_sources(&source);
+    copy_workflow_sources(&source, fixtures);
 }
-fn copy_workflow_sources(source: &Path) {
-    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/typed_workflow");
+fn copy_workflow_sources(source: &Path, fixtures: &Path) {
     for name in ["client.rs", "transport.rs", "report.rs"] {
         std::fs::copy(fixtures.join(name), source.join(name)).unwrap();
     }
