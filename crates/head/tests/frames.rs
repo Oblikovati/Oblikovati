@@ -9,6 +9,7 @@ struct FakeHeadWindow {
     calls: Vec<&'static str>,
     event_failure: bool,
     cleanup_failure: bool,
+    timeouts: Vec<Option<std::time::Duration>>,
 }
 impl HeadWindow for FakeHeadWindow {
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
@@ -25,7 +26,8 @@ impl HeadWindow for FakeHeadWindow {
             .pop_front()
             .unwrap_or(Ok(HeadPresentation::Completed))
     }
-    fn wait(&mut self) -> Result<bool, String> {
+    fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
+        self.timeouts.push(timeout);
         self.calls.push("wait");
         self.wakes
             .pop_front()
@@ -279,6 +281,7 @@ fn queued_work_prevents_idle_wait_between_bounded_owner_batches() {
         statuses: [Ok(crate::HeadWorkStatus {
             changed: true,
             pending: true,
+            wake_after: None,
         })]
         .into(),
         ..Default::default()
@@ -299,4 +302,24 @@ fn owner_poll_and_retirement_errors_preserve_window_retirement() {
     assert!(error.contains("drain fault") && error.contains("retirement fault"));
     assert_eq!(window.calls, ["events", "finish"]);
     assert_eq!(owner.calls, ["poll", "finish"]);
+}
+#[test]
+fn timed_owner_service_wait_does_not_force_an_unchanged_second_frame() {
+    let timeout = std::time::Duration::from_secs(1) / 60;
+    let mut owner = FakeHeadWork {
+        statuses: [Ok(crate::HeadWorkStatus {
+            wake_after: Some(timeout),
+            ..Default::default()
+        })]
+        .into(),
+        ..Default::default()
+    };
+    let mut window = FakeHeadWindow {
+        inputs: [vec![], vec![], vec![ViewportEvent::CloseRequested]].into(),
+        wakes: [Ok(false), Ok(false)].into(),
+        ..Default::default()
+    };
+    let summary = run_window_with_owner(&mut window, HeadOptions::default(), &mut owner).unwrap();
+    assert_eq!(summary.completed, 1);
+    assert_eq!(window.timeouts, [Some(timeout), None]);
 }

@@ -9,7 +9,7 @@ fn native_owner_wait_receives_model_free_worker_wakes_and_visibility_inputs() {
     std::thread::spawn(move || wake.wake().unwrap())
         .join()
         .unwrap();
-    assert!(window.wait().unwrap());
+    assert!(window.wait(None).unwrap());
     verify_visibility_and_retirement(&mut window);
 }
 fn verify_visibility_and_retirement(window: &mut NativeHeadWindow) {

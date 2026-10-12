@@ -136,7 +136,11 @@ impl<
         let serviced = self.drain_calls(budget)?;
         let changed = self.factory.take_changed() || serviced != 0;
         let pending = self.dispatch.pending().map_err(|error| error.to_string())? != 0;
-        Ok(HeadWorkStatus { changed, pending })
+        Ok(HeadWorkStatus {
+            changed,
+            pending,
+            wake_after: None,
+        })
     }
     fn close_allowed(&mut self) -> Result<bool, String> {
         self.refused_close = self.close_blockers()?;
@@ -146,6 +150,23 @@ impl<
     fn finish(&mut self) -> Result<(), String> {
         self.dispatch.close();
         Ok(())
+    }
+}
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> crate::ScriptDocumentOwner for DesktopOwner<O, W, F, G, R, S>
+{
+    type Host<'a>
+        = FileHost<'a, O, W, F>
+    where
+        Self: 'a;
+    fn script_host(&mut self) -> Self::Host<'_> {
+        self.document_host()
     }
 }
 fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

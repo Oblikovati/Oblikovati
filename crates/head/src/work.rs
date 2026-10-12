@@ -3,6 +3,7 @@
 pub struct HeadWorkStatus {
     pub changed: bool,
     pub pending: bool,
+    pub wake_after: Option<std::time::Duration>,
 }
 /// Coalesced model changes from the injected document observers.
 pub trait HeadInvalidation {

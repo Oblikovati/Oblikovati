@@ -3,11 +3,15 @@
 use crate::{IsolatedLuaEngine, ScriptExecution, ScriptLimits, ScriptProgram, ScriptReport};
 use oblikovati_api::client::Caller;
 use std::{
+    cell::Cell,
     marker::PhantomData,
     rc::Rc,
     time::{Duration, Instant},
 };
+mod activity;
 mod output;
+use activity::ActivityCaller;
+pub use activity::ConsolePoll;
 use output::ConsoleOutput;
 /// Check compiles source only; Run executes its declared host capabilities.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,6 +55,7 @@ pub struct ScriptConsoleController {
     last_run: Option<ConsoleOutcome>,
     last_check: Option<ConsoleOutcome>,
     owner: PhantomData<Rc<()>>,
+    changed: Cell<bool>,
 }
 impl ScriptConsoleController {
     /// Inject the selected worker and host inventory; example: `ScriptConsoleController::new(engine, limits, methods)`.
@@ -66,6 +71,7 @@ impl ScriptConsoleController {
             last_run: None,
             last_check: None,
             owner: PhantomData,
+            changed: Cell::new(false),
         }
     }
     /// Begin a run without executing Lua on the owner; example: `console.run(source)?;`.
@@ -82,13 +88,9 @@ impl ScriptConsoleController {
                 "console {mode:?}: expected idle; another run or check is active"
             ));
         }
-        let program = ScriptProgram {
-            source: source.into(),
-            methods: self.methods.clone(),
-            limits: self.limits.clone(),
-            parse_only: mode == ConsoleMode::Check,
-        };
+        let program = self.program(source, mode);
         let execution = self.engine.start(program)?;
+        self.changed.set(true);
         self.job = Some(ConsoleJob {
             execution,
             mode,
@@ -96,9 +98,39 @@ impl ScriptConsoleController {
         });
         Ok(())
     }
+    fn program(&self, source: &str, mode: ConsoleMode) -> ScriptProgram {
+        ScriptProgram {
+            source: source.into(),
+            methods: self.methods.clone(),
+            limits: self.limits.clone(),
+            parse_only: mode == ConsoleMode::Check,
+        }
+    }
     /// Process at most one stream event per native frame; example: `console.poll(&host)`.
     /// Returns the completed mode once; ordinary run/check errors are recorded in the copied snapshot.
     pub fn poll<C: Caller>(&mut self, host: &C) -> Option<ConsoleMode> {
+        self.poll_activity(host).completed
+    }
+    /// Process one event and report UI invalidation without copying retained output.
+    /// Example: `console.poll_activity(&host)` lets an idle native loop avoid unnecessary redraws.
+    pub fn poll_activity<C: Caller>(&mut self, host: &C) -> ConsolePoll {
+        let caller = ActivityCaller {
+            host,
+            called: Cell::new(false),
+        };
+        let completed = self.poll_job(&caller);
+        let output_changed = self.output.take_changed();
+        let changed = self.changed.replace(false)
+            || caller.called.get()
+            || output_changed
+            || completed.is_some();
+        ConsolePoll {
+            changed,
+            active: self.is_active(),
+            completed,
+        }
+    }
+    fn poll_job<C: Caller>(&mut self, host: &C) -> Option<ConsoleMode> {
         let job = self.job.as_mut()?;
         let outcome = match job.execution.poll(host, &mut self.output) {
             Ok(None) => return None,
@@ -122,8 +154,24 @@ impl ScriptConsoleController {
     /// Stop an active run/check; idle Stop is harmless. Example: `console.stop()`.
     pub fn stop(&self) {
         if let Some(job) = &self.job {
+            self.changed.set(true);
             job.execution.stop_handle().cancel();
         }
+    }
+    /// Inspect execution without cloning the console snapshot; example: `console.is_active()` before close.
+    pub fn is_active(&self) -> bool {
+        self.job.is_some()
+    }
+    /// Cancel and retire the isolated child before returning; committed edits remain owned by the parent.
+    /// Example: `console.shutdown()` before retiring the native window.
+    pub fn shutdown(&mut self) {
+        if self.job.is_none() {
+            return;
+        }
+        self.stop();
+        self.finish(Err(
+            "console shutdown: execution cancelled; committed edits are retained".into(),
+        ));
     }
     /// Clear retained output while preserving execution and outcome state; example: `console.clear_output()`.
     pub fn clear_output(&mut self) {

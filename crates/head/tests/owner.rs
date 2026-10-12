@@ -165,19 +165,15 @@ fn verify_two_frame_drain(
     first: thread::JoinHandle<Result<ListDocumentsResult, oblikovati_api::Error>>,
     second: thread::JoinHandle<Result<ListDocumentsResult, oblikovati_api::Error>>,
 ) {
-    assert_eq!(
-        owner.poll(1).unwrap(),
-        HeadWorkStatus {
-            changed: true,
-            pending: true
-        }
-    );
+    let activity = owner.poll(1).unwrap();
+    assert!(activity.changed && activity.pending && activity.wake_after.is_none());
     assert!(first.join().unwrap().is_ok());
     assert_eq!(
         owner.poll(1).unwrap(),
         HeadWorkStatus {
             changed: true,
-            pending: false
+            pending: false,
+            wake_after: None
         }
     );
     assert!(second.join().unwrap().is_ok());

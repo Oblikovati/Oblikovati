@@ -14,6 +14,7 @@ requires-display = true
 workspace = true
 [dependencies]
 oblikovati-cli = { path = "../cli" }
+oblikovati-script = { path = "../script" }
 oblikovati-viewport = { path = "../viewport" }
 oblikovati-automation = { path = "../automation" }
 oblikovati-model = { path = "../model" }
@@ -30,3 +31,11 @@ path = "tests/native.rs"
 
 [dev-dependencies]
 tempfile = "=3.27.0"
+
+[[test]]
+name = "scripts"
+path = "tests/scripts.rs"
+
+[[test]]
+name = "scripts_native"
+path = "tests/scripts_native.rs"

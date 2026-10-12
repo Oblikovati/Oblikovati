@@ -145,3 +145,42 @@ fn assert_run_error(console: &ScriptConsoleController, expected: &str) {
         "failure {failure}: expected {expected:?}"
     );
 }
+#[test]
+fn empty_active_poll_is_not_ui_invalidation_and_shutdown_releases_the_engine() {
+    let mut console = console();
+    let host = ConsoleHost::default();
+    assert!(!console.poll_activity(&host).changed);
+    console.run("while true do end").unwrap();
+    let started = console.poll_activity(&host);
+    assert!(started.changed && started.active);
+    let empty = console.poll_activity(&host);
+    assert!(!empty.changed && empty.active);
+    console.shutdown();
+    assert!(!console.is_active());
+    assert!(console.poll_activity(&host).changed);
+    console.run("print('restarted')").unwrap();
+    finish(&mut console, &host);
+    assert!(console.snapshot().last_run.unwrap().result.is_ok());
+}
+#[test]
+fn output_and_host_calls_invalidate_console_frames() {
+    let mut console = console();
+    let host = ConsoleHost::default();
+    console
+        .run("print('record');oblikovati.test.echo{value=1}")
+        .unwrap();
+    verify_activity_until_complete(&mut console, &host);
+    console.clear_output();
+    assert!(console.poll_activity(&host).changed);
+}
+fn verify_activity_until_complete(console: &mut ScriptConsoleController, host: &ConsoleHost) {
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let mut changes = 0;
+    while console.is_active() {
+        assert!(Instant::now() < deadline);
+        changes += usize::from(console.poll_activity(host).changed);
+        std::thread::yield_now();
+    }
+    assert!(changes >= 3); // Start/output, host call, and completion must all invalidate.
+    assert_eq!(host.calls.borrow().as_slice(), ["test.echo"]);
+}

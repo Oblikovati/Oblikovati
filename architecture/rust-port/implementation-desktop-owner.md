@@ -69,7 +69,11 @@ window-manager close message; native protocol translation has separate tests.
 ## Remaining work
 
 The executable still shows a clear viewport. Model presentations, shared Dear
-ImGui composition, UI commands and save prompts, scripts, native add-in registry
+ImGui composition, UI commands and save prompts, native add-in registry
 attachment and C callbacks, event subscriptions, and foreground MCPBridge tests
 remain open. This work does not establish a usable CAD desktop or complete
 R1V/R4/R7. Tests remain local to Linux; no remote push or CI run is included.
+
+The [desktop script composition](implementation-desktop-scripts.md) now shares
+this owner and frame loop with isolated execution. Native script widgets remain
+open work.

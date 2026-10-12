@@ -9,7 +9,7 @@ pub use frames::{HeadPresentation, HeadSummary, HeadWindow, run_window, run_wind
 #[cfg(target_os = "linux")]
 mod native;
 #[cfg(target_os = "linux")]
-pub use native::run_native;
+pub use native::{NativeHeadWindow, run_native};
 #[cfg(target_os = "linux")]
 mod work;
 #[cfg(target_os = "linux")]
@@ -22,6 +22,10 @@ pub use owner::{DesktopDispatchOptions, DesktopOwner};
 mod observations;
 #[cfg(target_os = "linux")]
 pub use observations::{DesktopObservations, MissingInterestNotice};
+#[cfg(target_os = "linux")]
+mod scripts;
+#[cfg(target_os = "linux")]
+pub use scripts::{DesktopScripts, ScriptDocumentOwner};
 use std::{ffi::OsString, io::Write};
 const USAGE: &str = "usage: oblikovati-head [--frames N]\n       oblikovati-head --help\n       oblikovati-head --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
 /// Execute the desktop entry point with injected output; example: `run(&["--help".into()], output)?;`.

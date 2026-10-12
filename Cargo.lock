@@ -569,6 +569,7 @@ dependencies = [
  "oblikovati-cli",
  "oblikovati-model",
  "oblikovati-persistence",
+ "oblikovati-script",
  "oblikovati-session",
  "oblikovati-viewport",
  "tempfile",

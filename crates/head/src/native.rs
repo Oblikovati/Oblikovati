@@ -4,13 +4,14 @@ use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene,
     ViewportWake,
 };
-struct NativeHeadWindow {
+pub struct NativeHeadWindow {
     runtime: ViewportRuntime,
     view: Viewport,
     wake: ViewportWake,
 }
 impl NativeHeadWindow {
-    fn open() -> Result<Self, String> {
+    /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
+    pub fn open() -> Result<Self, String> {
         let runtime = ViewportRuntime::new(ViewportOptions::default())?;
         let mut view = runtime.open_window("Oblikovati", [1440, 900])?;
         view.submit(&ViewportScene {
@@ -34,9 +35,9 @@ impl HeadWindow for NativeHeadWindow {
             ViewportPresentation::SurfaceChanged(_) => HeadPresentation::SurfaceChanged,
         })
     }
-    fn wait(&mut self) -> Result<bool, String> {
+    fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
         self.view
-            .wait_events(&self.wake, None)
+            .wait_events(&self.wake, timeout)
             .map(|ready| ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
@@ -84,7 +85,15 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
 /// Open the Linux head on its owner thread; example: `run_native(HeadOptions { frames: Some(3) })?`.
 pub fn run_native(options: HeadOptions) -> Result<HeadSummary, String> {
     let mut window = NativeHeadWindow::open()?;
-    let mut owner = native_owner(window.wake.clone())?;
+    let owner = native_owner(window.wake.clone())?;
+    let executable = std::env::current_exe()
+        .map_err(|error| format!("desktop script worker: expected current executable: {error}"))?;
+    let engine = oblikovati_script::IsolatedLuaEngine::new(
+        &executable,
+        vec![oblikovati_script::WORKER_ARGUMENT.into()],
+    );
+    let mut owner =
+        crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
     run_window_with_owner(&mut window, options, &mut owner)
 }
 #[cfg(test)]

@@ -18,8 +18,8 @@ pub trait HeadWindow {
     /// Present once without returning a stale image; example: `window.present()?`.
     fn present(&mut self) -> Result<HeadPresentation, String>;
     /// Wait for native input or a worker wake; return true for a requested redraw.
-    /// Example: `let requested = window.wait()?;` while idle.
-    fn wait(&mut self) -> Result<bool, String>;
+    /// Example: `let requested = window.wait(activity.wake_after)?;` while idle.
+    fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String>;
     /// Retire the view and check renderer diagnostics; example: `window.finish()?` before process exit.
     fn finish(&mut self) -> Result<(), String>;
 }
@@ -135,7 +135,7 @@ fn run_frames(
         }
         control.frame(window)?;
         if control.should_wait() && !activity.pending {
-            control.pending |= window.wait()?;
+            control.pending |= window.wait(activity.wake_after)?;
         }
     }
     checked_summary(control.summary, options)

@@ -11,8 +11,12 @@ pub(super) struct ConsoleOutput {
     lines: VecDeque<String>,
     bytes: usize,
     dropped: u64,
+    changed: bool,
 }
 impl ConsoleOutput {
+    pub(super) fn take_changed(&mut self) -> bool {
+        std::mem::take(&mut self.changed)
+    }
     pub(super) fn lines(&self) -> Vec<String> {
         self.lines.iter().cloned().collect()
     }
@@ -20,12 +24,14 @@ impl ConsoleOutput {
         self.dropped
     }
     pub(super) fn clear(&mut self) {
+        self.changed = true;
         self.lines.clear();
         self.bytes = 0;
         self.dropped = 0;
     }
     fn append(&mut self, record: String) {
         let record = record.strip_suffix('\n').unwrap_or(&record).to_owned();
+        self.changed = true;
         self.bytes = self.bytes.saturating_add(record.len());
         self.lines.push_back(record);
         self.trim_retained();
@@ -67,6 +73,8 @@ mod tests {
         assert_eq!(output.lines().len(), RETAINED_LINES);
         assert_eq!(output.lines().last().unwrap(), "last");
         assert_eq!(output.dropped(), 1_001);
+        assert!(output.take_changed());
+        assert!(!output.take_changed());
     }
     #[test]
     fn bytes_are_bounded_across_runs_and_clear_resets_retention_only() {

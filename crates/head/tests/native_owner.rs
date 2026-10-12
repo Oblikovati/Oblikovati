@@ -26,8 +26,8 @@ impl HeadWindow for WorkflowWindow {
     fn present(&mut self) -> Result<HeadPresentation, String> {
         self.native.present()
     }
-    fn wait(&mut self) -> Result<bool, String> {
-        self.native.wait()
+    fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
+        self.native.wait(timeout)
     }
     fn finish(&mut self) -> Result<(), String> {
         self.native.finish()
