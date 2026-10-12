@@ -89,3 +89,34 @@ fn idle_pointer_inputs_do_not_request_a_frame() {
     assert_eq!(window.navigation_events(inputs.clone()).unwrap(), inputs);
     window.finish().unwrap();
 }
+
+#[test]
+fn native_home_key_recovers_the_part_without_recompute() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    open_native_part(&mut owner, &directory.path().join("home.opd"));
+    let before = publish_native_scene(&mut owner, &mut window);
+    recover_native_home(&mut window);
+    let restored = capture_native_scene(&mut window);
+    assert!(restored.rgba.as_chunks::<4>().0.contains(&[0, 255, 0, 255]));
+    assert_eq!(restored.scene_generation, before.scene_generation);
+    assert!(owner.take_scene().unwrap().is_none());
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+fn recover_native_home(window: &mut NativeHeadWindow) {
+    window
+        .view
+        .navigate(oblikovati_viewport::ViewportNavigation::Pan([4000, 4000]))
+        .unwrap();
+    let home = ViewportEvent::Input(ViewportInput::Key {
+        key: oblikovati_viewport::ViewportKey::Home,
+        pressed: true,
+    });
+    assert_eq!(
+        window.navigation_events(vec![home]).unwrap().last(),
+        Some(&ViewportEvent::Expose)
+    );
+}

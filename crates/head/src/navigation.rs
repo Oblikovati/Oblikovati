@@ -53,6 +53,13 @@ impl DesktopNavigation {
                 position,
                 ..
             } => self.button_command(button, pressed, position),
+            ViewportInput::Key {
+                key: ViewportKey::Home,
+                pressed: true,
+            } => {
+                self.clear_gesture();
+                return Ok(Some(ViewportNavigation::Home { margin: 0.1 }));
+            }
             ViewportInput::Key { key, pressed } => self.key_mode(key, pressed),
         }
         Ok(None)

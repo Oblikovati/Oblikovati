@@ -141,6 +141,7 @@ fn navigation_keys_use_the_native_keymap_and_preserve_press_release_state() {
         (keysym::XK_F2, ViewportKey::Pan),
         (keysym::XK_F3, ViewportKey::Zoom),
         (keysym::XK_F4, ViewportKey::Orbit),
+        (keysym::XK_F6, ViewportKey::Home),
         (keysym::XK_Escape, ViewportKey::Cancel),
     ] {
         check_mapped_key(&fixture, symbol, key);

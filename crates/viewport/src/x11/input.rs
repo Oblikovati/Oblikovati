@@ -60,6 +60,7 @@ fn key_input(api: &xlib::Xlib, mut event: xlib::XKeyEvent) -> Option<ViewportInp
         keysym::XK_F2 => ViewportKey::Pan,
         keysym::XK_F3 => ViewportKey::Zoom,
         keysym::XK_F4 => ViewportKey::Orbit,
+        keysym::XK_F6 => ViewportKey::Home,
         keysym::XK_Escape => ViewportKey::Cancel,
         _ => return None,
     };

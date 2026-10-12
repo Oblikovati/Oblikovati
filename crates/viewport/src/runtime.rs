@@ -151,10 +151,18 @@ impl Viewport {
             return Ok(false);
         }
         let next = next_generation(self.camera)?;
-        self.live()?.navigate(command)?;
+        if !self.apply_camera_navigation(command)? {
+            return Ok(false);
+        }
         self.camera = next;
         self.completed = None;
         Ok(true)
+    }
+    fn apply_camera_navigation(&self, command: crate::ViewportNavigation) -> Result<bool, String> {
+        let renderer = self.live()?;
+        let previous = renderer.camera_state();
+        renderer.navigate(command)?;
+        Ok(renderer.camera_state() != previous)
     }
     /// Resize and report actual drawable size; example: `viewport.resize([800,600])?`.
     pub fn resize(&mut self, extent: [u32; 2]) -> Result<[u32; 2], String> {

@@ -179,3 +179,21 @@ fn pointer_overflow_is_refused_without_changing_the_drag_anchor() {
         Some(ViewportNavigation::Pan([1, 0]))
     );
 }
+
+#[test]
+fn home_press_clears_the_drag_and_release_does_not_repeat_the_command() {
+    let mut navigation = start_middle_drag();
+    assert_eq!(
+        navigation
+            .command(&held_key(ViewportKey::Home, true))
+            .unwrap(),
+        Some(ViewportNavigation::Home { margin: 0.1 })
+    );
+    assert_eq!(
+        navigation
+            .command(&held_key(ViewportKey::Home, false))
+            .unwrap(),
+        None
+    );
+    assert_eq!(advance_middle_drag(&mut navigation, [20, 30]), None);
+}

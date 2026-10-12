@@ -60,3 +60,20 @@ fn valid_zoom_anchors_include_captured_pointer_positions_outside_the_window() {
     .validate([64, 48])
     .unwrap();
 }
+
+#[test]
+fn framing_margins_require_a_finite_fraction_less_than_one() {
+    for margin in [-0.1, 1., f64::INFINITY, f64::NAN] {
+        require_navigation_decline(ViewportNavigation::Fit { margin });
+        require_navigation_decline(ViewportNavigation::Home { margin });
+    }
+    for margin in [0., 0.1, 0.99] {
+        for command in [
+            ViewportNavigation::Fit { margin },
+            ViewportNavigation::Home { margin },
+        ] {
+            command.validate([64, 48]).unwrap();
+            assert!(!command.is_stationary());
+        }
+    }
+}

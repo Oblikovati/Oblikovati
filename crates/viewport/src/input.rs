@@ -17,6 +17,7 @@ pub enum ViewportKey {
     Zoom,
     Orbit,
     Cancel,
+    Home,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewportInput {
@@ -42,6 +43,14 @@ pub enum ViewportInput {
 /// Camera-only requests to the kernel adapter; they cannot change document geometry.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ViewportNavigation {
+    /// Fit displayed geometry with a fractional border; example: `Fit { margin: 0.1 }`.
+    Fit {
+        margin: f64,
+    },
+    /// Restore the Y-up isometric view and fit; example: `Home { margin: 0.1 }`.
+    Home {
+        margin: f64,
+    },
     Pan([i32; 2]),
     Orbit {
         yaw: f64,
@@ -55,6 +64,7 @@ pub enum ViewportNavigation {
 impl ViewportNavigation {
     pub(crate) fn validate(self, extent: [u32; 2]) -> Result<(), String> {
         let valid = match self {
+            Self::Fit { margin } | Self::Home { margin } => (0.0..1.0).contains(&margin),
             Self::Pan([_, y]) => y.checked_neg().is_some(),
             Self::Orbit { yaw, pitch } => yaw.is_finite() && pitch.is_finite(),
             Self::Zoom { factor, anchor } => {
@@ -73,6 +83,7 @@ impl ViewportNavigation {
     }
     pub(crate) fn is_stationary(self) -> bool {
         match self {
+            Self::Fit { .. } | Self::Home { .. } => false,
             Self::Pan(delta) => delta == [0; 2],
             Self::Orbit { yaw, pitch } => yaw == 0. && pitch == 0.,
             Self::Zoom { factor, .. } => factor == 1.,

@@ -327,3 +327,28 @@ fn visibility_event_invalidates_previous_capture_even_when_extent_is_unchanged()
     );
     assert!(view.capture().is_err());
 }
+
+#[test]
+fn empty_fit_preserves_the_completed_frame_and_home_preserves_its_pivot() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([64, 48]).unwrap();
+    let before = view.redraw().unwrap();
+    let camera = view.camera_state().unwrap();
+    assert!(
+        !view
+            .navigate(crate::ViewportNavigation::Fit { margin: 0.1 })
+            .unwrap()
+    );
+    assert_eq!(view.capture().unwrap(), before);
+    verify_empty_home(&mut view, camera);
+}
+fn verify_empty_home(view: &mut Viewport, camera: ViewportCamera) {
+    let home_command = crate::ViewportNavigation::Home { margin: 0.1 };
+    assert!(view.navigate(home_command).unwrap());
+    let home = view.camera_state().unwrap();
+    assert_eq!(home.target, camera.target);
+    assert_eq!(home.scale, camera.scale);
+    assert_eq!([home.near, home.far], [camera.near, camera.far]);
+    assert_eq!(home.up, [0., 1., 0.]);
+    assert!(!view.navigate(home_command).unwrap());
+}

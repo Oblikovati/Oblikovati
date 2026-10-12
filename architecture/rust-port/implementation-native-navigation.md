@@ -68,7 +68,34 @@ was 0.58%. No remote test, push, or PR was performed.
 This implements core navigation for the current orthographic native view. It
 does not close R4/R7 or claim the full Go camera/UI surface. Configurable
 bindings, wheel inversion, constrained orbit, the orbit ring and ViewCube,
-fit/window zoom tools, navigation bars, animation, perspective views, saved
+window zoom tools, navigation bars, animation, perspective views, saved
 per-document views, and public camera automation remain open. Input capture
 by ImGui panels and active modeling tools must be integrated before complete
 UI acceptance. Windows and macOS remain deferred.
+
+## Home and fit continuation
+
+`F6` now runs Home View on the native owner thread. It clears an active drag,
+restores the Go Y-up isometric direction (eye offset `+X,+Y,+Z`), and fits
+displayed geometry through released Martensite `V3dView`. Key release does
+not repeat the command. The viewport also accepts `Fit { margin }` for future
+Zoom All controls, retaining the current orientation. No ribbon control is
+claimed. Both commands require a finite margin in `[0,1)`.
+
+The current view is orthographic. Fit preserves its eye-to-target distance
+for all inputs while the kernel computes the center and scale, then computes
+the clipping range with `ZFitAll`. This is a camera invariant, not a geometry
+repair: released revision `193572dc` sets fit distance to displayed box depth,
+which becomes zero for a flat shape viewed straight on. The regression first
+failed with coincident eye/target and now restores visible native pixels.
+No kernel source or document geometry is changed. Perspective fit remains
+open and cannot assume this orthographic distance rule.
+
+Empty Fit preserves its completed capture. Empty Home changes orientation
+around the current target and retains scale and clipping range, as Go
+`scene.Camera.Home` does. A command that leaves the camera unchanged does
+not increment camera generation or discard a completed capture. Invalid
+framing input is refused before any camera change. Native tests recover a
+panned-away triangle and a stored prism, verify direction and rendered pixels,
+and prove that the scene generation and retained document evaluation do not
+change. Native X11 tests also translate the actual F6 keymap.

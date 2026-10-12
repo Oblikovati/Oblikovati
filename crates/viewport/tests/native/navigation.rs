@@ -93,3 +93,50 @@ fn verify_camera_rejection(view: &mut Viewport, completed: &ViewportCapture) {
     assert!(view.capture().is_err());
     verify_native(view);
 }
+
+#[test]
+fn fit_restores_offscreen_geometry_and_home_sets_the_go_isometric_direction() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime
+        .open_window("Oblikovati Home acceptance", [128, 96])
+        .unwrap();
+    view.submit(&scene()).unwrap();
+    let fitted = recover_panned_geometry(&mut view);
+    verify_home_direction(&mut view);
+    let home = verify_native(&mut view);
+    assert_eq!(home.scene_generation, fitted.scene_generation);
+    assert!(home.camera_generation > fitted.camera_generation);
+    view.close();
+    assert!(runtime.validation_errors().is_empty());
+}
+fn verify_home_direction(view: &mut Viewport) {
+    assert!(
+        view.navigate(ViewportNavigation::Home { margin: 0.1 })
+            .unwrap()
+    );
+    let camera = view.camera_state().unwrap();
+    close_vector(camera.target, [0.; 3]);
+    close_vector(camera.up, [0., 1., 0.]);
+    let offset = std::array::from_fn::<_, 3, _>(|axis| camera.eye[axis] - camera.target[axis]);
+    assert!(offset[0] > 0.);
+    close_vector(offset, [offset[0]; 3]);
+    assert!(
+        view.navigate(ViewportNavigation::Home { margin: f64::NAN })
+            .is_err()
+    );
+    assert_eq!(view.camera_state().unwrap(), camera);
+}
+
+fn recover_panned_geometry(view: &mut Viewport) -> ViewportCapture {
+    let original = view.camera_state().unwrap();
+    view.navigate(ViewportNavigation::Pan([2000, 2000]))
+        .unwrap();
+    assert!(
+        view.navigate(ViewportNavigation::Fit { margin: 0.1 })
+            .unwrap()
+    );
+    let fitted = verify_native(view);
+    close_vector(view.camera_state().unwrap().target, [0.; 3]);
+    close_vector(view.camera_state().unwrap().up, original.up);
+    fitted
+}

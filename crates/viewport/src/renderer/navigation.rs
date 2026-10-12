@@ -37,11 +37,32 @@ impl RenderView {
     }
     fn apply_navigation(&self, command: ViewportNavigation) -> Result<(), String> {
         let result = match command {
+            ViewportNavigation::Fit { margin } => self.fit_displayed(margin),
+            ViewportNavigation::Home { margin } => self.home_displayed(margin),
             ViewportNavigation::Pan([x, y]) => self.view.pan(x, -y, 1., true),
             ViewportNavigation::Orbit { yaw, pitch } => self.orbit_screen_axes(yaw, pitch),
             ViewportNavigation::Zoom { factor, anchor } => self.zoom_anchor(factor, anchor),
         };
         result.map_err(|cause| cause.to_string())
+    }
+    fn fit_displayed(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
+        if self.structures.is_empty() {
+            return Ok(());
+        }
+        let camera = self.view.camera();
+        let distance = camera.distance();
+        self.view.fit_all(margin, false)?;
+        // Orthographic framing changes scale, not standoff. Preserve a valid pivot
+        // distance for every input; kernel 193572dc FitMinMax sets it to box depth.
+        camera.set_distance(distance);
+        self.view.z_fit_all(1.)
+    }
+    fn home_displayed(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
+        let camera = self.view.camera();
+        // Preserve Go scene/camera.go Home: eye offset (+X,+Y,+Z), Y-up.
+        camera.set_direction(&Direction3::new(-1., -1., -1.)?);
+        camera.set_up(&Direction3::new(0., 1., 0.)?);
+        self.fit_displayed(margin)
     }
     fn orbit_screen_axes(
         &self,
