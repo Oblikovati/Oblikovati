@@ -1,0 +1,482 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: solid woods most used in furniture, construction and joinery.
+#
+# Wood is ORTHOTROPIC; entries carry both a scalar summary and the full orthotropic
+# elastic group (ADR-0025) so they are ready for FEA without re-sourcing.
+#
+# Scalar fields (mechanical/thermal/electrical) are the standard engineering values
+# measured PARALLEL TO THE GRAIN at 12% moisture content, from the USDA Forest Products
+# Laboratory "Wood Handbook" (FPL-GTR-282) and the Wood Database (wood-database.com):
+#   - youngsModulus: modulus of elasticity along the grain (= orthotropic E1).
+#   - yieldStrength: maximum crushing strength in compression parallel to grain (wood has
+#     no metallic yield; conventional design-strength proxy). UTS = modulus of rupture.
+#   - thermal.expansionCoeff: longitudinal thermal expansion (= orthotropic alpha1).
+#
+# The `orthotropic` block gives the direction-dependent constants in the material axes
+# 1=longitudinal, 2=radial, 3=tangential. They are derived from E1 using the FPL Wood
+# Handbook average elastic RATIOS (Table 5-1) for hardwoods / softwoods:
+#   hardwood: E2/E1=0.10 E3/E1=0.05 G12/E1=0.066 G13/E1=0.060 G23/E1=0.013
+#             nu12(LR)=0.37 nu13(LT)=0.42 nu23(RT)=0.47
+#   softwood: E2/E1=0.075 E3/E1=0.043 G12/E1=0.061 G13/E1=0.069 G23/E1=0.007
+#             nu12(LR)=0.32 nu13(LT)=0.42 nu23(RT)=0.40
+# Transverse thermal expansion (alpha2 radial, alpha3 tangential) is representative for
+# timber (Wood Handbook ch.4: transverse CTE is ~6-10x longitudinal).
+#
+# Appearances are dielectric (metallic = 0.0), high roughness, representative finished
+# sRGB body colour (no grain texture map yet).
+#
+# Units: density g/cm3 | E & G GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
+
+appearances:
+    - id: walnut
+      name: Walnut
+      base:
+        weight: 1
+        color:
+            r: 0.10615607
+            g: 0.052841634
+            b: 0.016067702
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: mahogany
+      name: Mahogany
+      base:
+        weight: 1
+        color:
+            r: 0.25902736
+            g: 0.06772459
+            b: 0.027755281
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: cherry
+      name: Cherry
+      base:
+        weight: 1
+        color:
+            r: 0.33922336
+            g: 0.10114517
+            b: 0.041451894
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.6
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: teak
+      name: Teak
+      base:
+        weight: 1
+        color:
+            r: 0.44787088
+            g: 0.22331044
+            b: 0.065753885
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: pine
+      name: Pine
+      base:
+        weight: 1
+        color:
+            r: 0.69408053
+            g: 0.44232297
+            b: 0.17677432
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: pine-white
+      name: Pine (White)
+      base:
+        weight: 1
+        color:
+            r: 0.7742273
+            g: 0.63204265
+            b: 0.35865393
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false

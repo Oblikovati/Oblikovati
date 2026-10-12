@@ -1,0 +1,407 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: solid woods most used in furniture, construction and joinery.
+#
+# Wood is ORTHOTROPIC; entries carry both a scalar summary and the full orthotropic
+# elastic group (ADR-0025) so they are ready for FEA without re-sourcing.
+#
+# Scalar fields (mechanical/thermal/electrical) are the standard engineering values
+# measured PARALLEL TO THE GRAIN at 12% moisture content, from the USDA Forest Products
+# Laboratory "Wood Handbook" (FPL-GTR-282) and the Wood Database (wood-database.com):
+#   - youngsModulus: modulus of elasticity along the grain (= orthotropic E1).
+#   - yieldStrength: maximum crushing strength in compression parallel to grain (wood has
+#     no metallic yield; conventional design-strength proxy). UTS = modulus of rupture.
+#   - thermal.expansionCoeff: longitudinal thermal expansion (= orthotropic alpha1).
+#
+# The `orthotropic` block gives the direction-dependent constants in the material axes
+# 1=longitudinal, 2=radial, 3=tangential. They are derived from E1 using the FPL Wood
+# Handbook average elastic RATIOS (Table 5-1) for hardwoods / softwoods:
+#   hardwood: E2/E1=0.10 E3/E1=0.05 G12/E1=0.066 G13/E1=0.060 G23/E1=0.013
+#             nu12(LR)=0.37 nu13(LT)=0.42 nu23(RT)=0.47
+#   softwood: E2/E1=0.075 E3/E1=0.043 G12/E1=0.061 G13/E1=0.069 G23/E1=0.007
+#             nu12(LR)=0.32 nu13(LT)=0.42 nu23(RT)=0.40
+# Transverse thermal expansion (alpha2 radial, alpha3 tangential) is representative for
+# timber (Wood Handbook ch.4: transverse CTE is ~6-10x longitudinal).
+#
+# Appearances are dielectric (metallic = 0.0), high roughness, representative finished
+# sRGB body colour (no grain texture map yet).
+#
+# Units: density g/cm3 | E & G GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
+
+appearances:
+    - id: douglas-fir
+      name: Douglas Fir
+      base:
+        weight: 1
+        color:
+            r: 0.57954663
+            g: 0.32972905
+            b: 0.11129942
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.7
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: spruce
+      name: Spruce
+      base:
+        weight: 1
+        color:
+            r: 0.75189507
+            g: 0.6054843
+            b: 0.35865393
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.72
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: cedar
+      name: Cedar (Red)
+      base:
+        weight: 1
+        color:
+            r: 0.44232297
+            g: 0.19751643
+            b: 0.08241421
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.72
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: balsa
+      name: Balsa
+      base:
+        weight: 1
+        color:
+            r: 0.8122415
+            g: 0.72267246
+            b: 0.5356416
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.75
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: bamboo
+      name: Bamboo
+      base:
+        weight: 1
+        color:
+            r: 0.68002033
+            g: 0.48776522
+            b: 0.19751643
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.65
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false

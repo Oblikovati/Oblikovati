@@ -1,0 +1,472 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: thermoplastics, thermoset resins and one elastomer — the polymers
+# most used in mechanical design, 3D printing and tooling.
+#
+# Property sources (room temperature, typical injection-moulded / cast grade):
+#   - Mechanical (modulus, yield/tensile): MatWeb generic-grade datasheets; manufacturer
+#     data (e.g. Victrex PEEK, SABIC Ultem); Granta CES EduPack polymer records; AZoM.
+#     Polymer strength is grade- and rate-dependent; values are representative, not a
+#     design minimum. For elastomers/soft grades yield ~ tensile (no sharp yield).
+#   - Thermal (conductivity, expansion, specific heat) & electrical (volume resistivity,
+#     dielectric constant at ~1 MHz): MatWeb; manufacturer data; engineeringtoolbox.com.
+#
+# Appearances are dielectric (metallic = 0.0). Roughness encodes finish (glossy cast vs
+# matte printed); opacity < 1.0 marks the optically clear/translucent grades (acrylic,
+# polycarbonate, PETG, PS) so they read as transparent in Realistic mode. Albedo is the
+# resin's representative sRGB body colour.
+#
+# Units: density g/cm3 | youngsModulus GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
+
+appearances:
+    - id: abs-black
+      name: ABS (Black)
+      base:
+        weight: 1
+        color:
+            r: 0.0065849577
+            g: 0.0065849577
+            b: 0.0065849577
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: abs-white
+      name: ABS (White)
+      base:
+        weight: 1
+        color:
+            r: 0.8122415
+            g: 0.8122415
+            b: 0.8122415
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.45
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: pla
+      name: PLA
+      base:
+        weight: 1
+        color:
+            r: 0.8433697
+            g: 0.8433697
+            b: 0.7445302
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.4
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 1
+        thinWalled: false
+    - id: petg
+      name: PETG
+      base:
+        weight: 1
+        color:
+            r: 0.63204265
+            g: 0.75189507
+            b: 0.7817507
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.18
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.85
+        thinWalled: false
+    - id: pet
+      name: PET
+      base:
+        weight: 1
+        color:
+            r: 0.7445302
+            g: 0.8045591
+            b: 0.79691654
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.2
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.9
+        thinWalled: false
+    - id: polycarbonate
+      name: Polycarbonate
+      base:
+        weight: 1
+        color:
+            r: 0.68703085
+            g: 0.75189507
+            b: 0.7667436
+        metalness: 0
+        diffuseRoughness: 0
+      specular:
+        weight: 1
+        color:
+            r: 1
+            g: 1
+            b: 1
+        roughness: 0.12
+        roughnessAnisotropy: 0
+        ior: 1.5
+      transmission:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        depth: 0
+        scatter:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+        dispersionScale: 0
+        dispersionAbbeNumber: 0
+      subsurface:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        radius: 0
+        radiusScale:
+            r: 0
+            g: 0
+            b: 0
+        scatterAnisotropy: 0
+      coat:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+        roughnessAnisotropy: 0
+        ior: 0
+        darkening: 0
+      fuzz:
+        weight: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+        roughness: 0
+      thinFilm:
+        weight: 0
+        thickness: 0
+        ior: 0
+      emission:
+        luminance: 0
+        color:
+            r: 0
+            g: 0
+            b: 0
+      geometry:
+        opacity: 0.8
+        thinWalled: false
