@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Unicode editor state; native input and drawing do not own the source or edit history.
 mod blocks;
+mod brackets;
 mod buffer;
+mod calls;
 mod history;
 mod movement;
 mod search;

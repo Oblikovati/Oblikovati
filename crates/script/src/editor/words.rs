@@ -9,9 +9,7 @@ enum SourceCharacter {
 fn character_class(character: char) -> SourceCharacter {
     match character {
         ' ' | '\t' => SourceCharacter::Blank,
-        character if character.is_ascii_alphanumeric() || character == '_' => {
-            SourceCharacter::Identifier
-        }
+        character if is_identifier(character) => SourceCharacter::Identifier,
         _ => SourceCharacter::Other,
     }
 }
@@ -103,4 +101,8 @@ fn identifier_span(line: &[char], column: usize) -> (usize, usize) {
         last += 1;
     }
     (first, last)
+}
+
+pub(super) fn is_identifier(character: char) -> bool {
+    character.is_ascii_alphanumeric() || character == '_'
 }

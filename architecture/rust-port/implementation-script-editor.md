@@ -43,7 +43,7 @@ Separate-position edits and replacements prove unrelated history entries remain
 separate. The pinned Go editor/textbuf/history suites are the behavior references.
 
 Run `cargo test -p oblikovati-script --test editor` for these checks and `make gate`
-for full local Linux acceptance. Bracket/call analysis, completion/help and native input/drawing integration
+for full local Linux acceptance. Completion/help and native input/drawing integration
 remain open. Signed mouse-coordinate translation belongs to the native input
 adapter; core positions use nonnegative character indexes. No foreground UI or
 rendered-editor acceptance is claimed. Windows and macOS remain deferred.
@@ -55,3 +55,5 @@ operations. Native panel and remaining analysis/search operations are still open
 [Literal search and Find-bar state](implementation-script-editor-search.md) now
 provide ordered hits, generation-checked selection, wrapping navigation and
 whole-source Replace All through this same history path.
+
+Bracket matching and call/hover chains now have [implementation evidence](implementation-script-editor-analysis.md).
