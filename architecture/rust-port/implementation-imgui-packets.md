@@ -6,8 +6,10 @@ selected Save/Undo/Redo/Home actions. The font atlas is owned independently.
 The engine disables automatic ini/log file I/O and suspends its context between
 calls. Invalid frame input and conflicting context activation are named errors.
 
-The input supplies elapsed time, physical pointer coordinates, framebuffer
-extent, and scale. Logical coordinates must remain finite after scale conversion;
+The input supplies elapsed time, ordered input events, framebuffer extent, and
+scale. Events carry physical pointer positions, left/middle/right button changes,
+horizontal/vertical wheel amounts, named physical keys, aggregate modifiers, and
+Unicode text. Logical coordinates must remain finite after scale conversion;
 a positive scale alone cannot ensure this. Copying subtracts display origin and applies framebuffer
 scale. Index offsets are checked before access; each command retains only the
 vertices it uses. Texture IDs are checked against the font binding. Custom raw
@@ -16,6 +18,31 @@ mutable renderer state because each compiled draw specifies its complete state.
 The [upstream draw-data contract](https://github.com/imgui-rs/imgui-rs/blob/v0.12.0/imgui/src/render/draw_data.rs)
 limits borrowed data to the current frame; the application packets survive the
 next frame and destruction of the context.
+
+## Input ownership
+
+Every event is validated before context activation or queue mutation. A refused
+batch cannot leave an earlier click queued. Pointer positions are converted to
+logical coordinates once; key identifiers are mapped by name inside the wrapper.
+Aggregate Control/Shift/Alt/Super state is separate from the physical left/right
+modifier keys. The native backend must provide both. Text is UTF-8; embedded NUL
+is refused instead of passing a truncated string to the C interface.
+
+`GuiFrameOutput` owns draws, selected actions, and pointer/keyboard/text capture
+requests from that same frame. All events still go to Dear ImGui. The native
+owner must use the capture requests and the Go command-chord rules to decide
+which events also reach tools, global commands, and the viewport. This attachment
+is not yet implemented. The engine preserves Dear ImGui's ordered event queue;
+fast press/release pairs can span later frames without losing clicks. Native
+frame scheduling must continue while queued input and active UI work remain.
+
+The pinned binding uses its docking build and enables docking under ADR-0009.
+Panel layout and native composition remain open. Tests use a real text widget to
+check Unicode outside the basic multilingual plane, full-character deletion,
+capture flags, pointer scaling, all three buttons, wheel values, and modifier
+state. Two queued clicks survive four frames. An invalid batch leaves no click
+behind. Automatic clipboard integration, native Unicode/IME decoding, focus
+loss, and complete Go panels still need their platform and shell consumers.
 
 ## Kernel lowering
 
@@ -33,8 +60,9 @@ boundaries, and ordered alpha blending over a known background. They run with
 Vulkan validation enabled. Dear ImGui tests select all four buttons through
 press/release input, check framebuffer scaling, context failure/recovery, and
 owned snapshots after context destruction. This is the initial control and draw
-boundary; the full Go ribbon, browser, dialogs, themes, assets, keyboard/clipboard,
-input capture, and document-based enablement remain open.
+boundary; the full Go ribbon, browser, dialogs, themes, assets, shortcut routing,
+native input attachment, focus/IME/clipboard, and document-based enablement remain
+open.
 
 ## Required native kernel composition contract
 
@@ -73,7 +101,7 @@ kernel owner; its active source and released checkout were not modified.
 
 The latest full local gate passed with the software Vulkan driver selected by
 `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json`, using the same command
-above. It covered all thirteen crates. Production line coverage was 98.83% for
+above. It covered all thirteen crates. Production line coverage was 98.78% for
 GUI and 93.65% for viewport; duplication was 0.61%. All six GUI packet rendering
 tests also passed on the AMD device with validation enabled.
 

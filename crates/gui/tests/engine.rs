@@ -4,8 +4,7 @@ use oblikovati_viewport::compile_gui_frame;
 fn request() -> GuiFrameRequest {
     GuiFrameRequest {
         extent: [640, 360],
-        pointer: [0., 0.],
-        left_pressed: false,
+        events: vec![GuiInputEvent::PointerMoved([0., 0.])],
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],
     }
@@ -16,7 +15,9 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     let atlas = engine.atlas().clone();
     let input = request();
     engine.frame(&input).unwrap();
-    let (snapshot, actions) = engine.frame(&input).unwrap();
+    let output = engine.frame(&input).unwrap();
+    let snapshot = output.draws;
+    let actions = output.actions;
     assert!(!snapshot.batches.is_empty());
     assert!(actions.is_empty());
     let vertices = snapshot.batches[0].vertices.clone();
@@ -38,13 +39,14 @@ fn verify_gui_click(
     x: f32,
     expected: GuiShellAction,
 ) {
-    input.pointer = [x, 45.];
+    input.events = vec![GuiInputEvent::PointerMoved([x, 45.])];
     engine.frame(input).unwrap();
-    input.left_pressed = true;
+    input.events = vec![left_button_event(true)];
     engine.frame(input).unwrap();
-    input.left_pressed = false;
-    let (_, actions) = engine.frame(input).unwrap();
-    assert_eq!(actions, [expected]);
+    input.events = vec![left_button_event(false)];
+    let output = engine.frame(input).unwrap();
+    assert_eq!(output.actions, [expected]);
+    assert!(output.capture.pointer);
 }
 fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
     let mut input = request();
@@ -59,16 +61,16 @@ fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
     input.extent[0] = 0;
     assert!(engine.frame(&input).is_err());
     input = request();
-    input.pointer[0] = f32::INFINITY;
+    input.events = vec![GuiInputEvent::PointerMoved([f32::INFINITY, 0.])];
     assert!(engine.frame(&input).is_err());
     engine.frame(&request()).unwrap();
 }
 
 fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
-    let (baseline, _) = engine.frame(&request()).unwrap();
+    let baseline = engine.frame(&request()).unwrap().draws;
     let mut input = request();
     input.framebuffer_scale = [2.; 2];
-    let (snapshot, _) = engine.frame(&input).unwrap();
+    let snapshot = engine.frame(&input).unwrap().draws;
     assert_eq!(snapshot.extent, input.extent);
     assert!(!snapshot.batches.is_empty());
     let original = vertex_positions(&baseline);
@@ -116,6 +118,8 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     verify_exclusive_context(engine);
     verify_invalid_requests(engine);
     verify_scaled_input_overflow(engine);
+    verify_invalid_event_batch_is_atomic(engine);
+    verify_queued_clicks_survive_frame_boundaries(engine);
 }
 
 fn verify_scaled_input_overflow(engine: &mut GuiFrameEngine) {
@@ -123,8 +127,47 @@ fn verify_scaled_input_overflow(engine: &mut GuiFrameEngine) {
     input.framebuffer_scale[0] = f32::from_bits(1);
     assert!(engine.frame(&input).is_err());
     input = request();
-    input.pointer[0] = f32::MAX;
+    input.events = vec![GuiInputEvent::PointerMoved([f32::MAX, 0.])];
     input.framebuffer_scale[0] = 0.5;
     assert!(engine.frame(&input).is_err());
     engine.frame(&request()).unwrap();
+}
+
+fn left_button_event(pressed: bool) -> GuiInputEvent {
+    GuiInputEvent::PointerButton {
+        button: GuiPointerButton::Left,
+        pressed,
+    }
+}
+
+fn verify_invalid_event_batch_is_atomic(engine: &mut GuiFrameEngine) {
+    let mut input = request();
+    input.events = vec![
+        GuiInputEvent::PointerMoved([30., 45.]),
+        left_button_event(true),
+        GuiInputEvent::Text("bad\0text".into()),
+    ];
+    assert!(engine.frame(&input).is_err());
+    input.events = vec![GuiInputEvent::PointerMoved([30., 45.])];
+    engine.frame(&input).unwrap();
+    input.events = vec![left_button_event(false)];
+    assert!(engine.frame(&input).unwrap().actions.is_empty());
+    let output = engine.frame(&request()).unwrap();
+    assert!(!output.capture.pointer);
+}
+
+fn verify_queued_clicks_survive_frame_boundaries(engine: &mut GuiFrameEngine) {
+    let mut input = request();
+    input.events = vec![GuiInputEvent::PointerMoved([30., 45.])];
+    engine.frame(&input).unwrap();
+    input.events = [true, false, true, false]
+        .into_iter()
+        .map(left_button_event)
+        .collect();
+    let mut actions = engine.frame(&input).unwrap().actions;
+    input.events.clear();
+    for _ in 0..3 {
+        actions.extend(engine.frame(&input).unwrap().actions);
+    }
+    assert_eq!(actions, [GuiShellAction::Save, GuiShellAction::Save]);
 }

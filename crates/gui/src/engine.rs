@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
-    GuiAtlas, GuiFrame,
+    GuiAtlas, GuiFrame, GuiInputCapture, GuiInputEvent,
+    input::{apply_input, input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
-use imgui::{Condition, Context, SuspendedContext, TextureId};
+use imgui::{Condition, ConfigFlags, Context, SuspendedContext, TextureId};
 use std::sync::Arc;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiShellAction {
@@ -15,10 +16,15 @@ pub enum GuiShellAction {
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
     pub extent: [u32; 2],
-    pub pointer: [f32; 2],
-    pub left_pressed: bool,
+    pub events: Vec<GuiInputEvent>,
     pub delta_seconds: f32,
     pub framebuffer_scale: [f32; 2],
+}
+#[derive(Clone, Debug)]
+pub struct GuiFrameOutput {
+    pub draws: GuiFrame,
+    pub actions: Vec<GuiShellAction>,
+    pub capture: GuiInputCapture,
 }
 /// One owner retains the context; packets contain no borrowed FFI pointers.
 /// ```compile_fail
@@ -36,11 +42,7 @@ impl GuiFrameEngine {
         let mut context = suspended
             .activate()
             .map_err(|_| "GUI context: expected exclusive owner activation".to_string())?;
-        context.set_ini_filename(None);
-        context.set_log_filename(None);
-        let atlas = copy_atlas(&mut context);
-        // imgui-rs e246a334 rebuilds and clears TexID; bind after the atlas is built.
-        context.fonts().tex_id = TextureId::new(FONT_TEXTURE_ID);
+        let atlas = configure_owner_context(&mut context);
         Ok(Self {
             context: Some(context.suspend()),
             atlas,
@@ -51,11 +53,8 @@ impl GuiFrameEngine {
         &self.atlas
     }
     /// Build controls and copy every draw before returning to the owner.
-    /// Example: `engine.frame(&request)?` returns a packet and selected actions.
-    pub fn frame(
-        &mut self,
-        request: &GuiFrameRequest,
-    ) -> Result<(GuiFrame, Vec<GuiShellAction>), String> {
+    /// Example: `engine.frame(&request)?` returns draws, actions, and channel capture requests.
+    pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
         let mut context = self.activate_owner_context()?;
         let result = draw_controls(&mut context, request);
@@ -76,6 +75,18 @@ impl GuiFrameEngine {
         }
     }
 }
+fn configure_owner_context(context: &mut Context) -> GuiAtlas {
+    context.set_ini_filename(None);
+    context.set_log_filename(None);
+    context
+        .io_mut()
+        .config_flags
+        .insert(ConfigFlags::DOCKING_ENABLE);
+    let atlas = copy_atlas(context);
+    // imgui-rs e246a334 rebuilds and clears TexID; bind after the atlas is built.
+    context.fonts().tex_id = TextureId::new(FONT_TEXTURE_ID);
+    atlas
+}
 fn copy_atlas(context: &mut Context) -> GuiAtlas {
     let atlas = context.fonts().build_rgba32_texture();
     let rgba = atlas.data.as_chunks::<4>().0.to_vec();
@@ -87,14 +98,17 @@ fn copy_atlas(context: &mut Context) -> GuiAtlas {
 fn validate_request(request: &GuiFrameRequest) -> Result<(), String> {
     if !valid_frame_scalars(request) {
         return Err(format!(
-            "GUI request {request:?}: expected positive extent, scale, elapsed time, and finite pointer"
+            "GUI request {request:?}: expected positive finite extent, scale, and elapsed time"
         ));
     }
-    validate_logical_inputs(request)
+    validate_logical_inputs(request)?;
+    for event in &request.events {
+        validate_input(event, request.framebuffer_scale)?;
+    }
+    Ok(())
 }
 fn valid_frame_scalars(request: &GuiFrameRequest) -> bool {
     !request.extent.contains(&0)
-        && request.pointer.iter().all(|value| value.is_finite())
         && request.delta_seconds.is_finite()
         && request.delta_seconds > 0.
         && request
@@ -106,10 +120,9 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
     for axis in 0..2 {
         let scale = request.framebuffer_scale[axis];
         let size = request.extent[axis] as f32 / scale;
-        let pointer = request.pointer[axis] / scale;
-        if !size.is_finite() || size <= 0. || !pointer.is_finite() {
+        if !size.is_finite() || size <= 0. {
             return Err(format!(
-                "GUI request {request:?}: expected finite logical pointer and positive finite logical extent"
+                "GUI request {request:?}: expected positive finite logical extent"
             ));
         }
     }
@@ -118,18 +131,25 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 fn draw_controls(
     context: &mut Context,
     request: &GuiFrameRequest,
-) -> Result<(GuiFrame, Vec<GuiShellAction>), String> {
+) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
     let ui = context.frame();
     let mut selected = Vec::new();
+    shell_panel(ui, &mut selected);
+    let snapshot = capture_frame(context.render(), request.extent)?;
+    Ok(GuiFrameOutput {
+        draws: snapshot,
+        actions: selected,
+        capture: input_capture(context.io()),
+    })
+}
+fn shell_panel(ui: &imgui::Ui, selected: &mut Vec<GuiShellAction>) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
         .size([300., 110.], Condition::Always)
         .movable(false)
         .resizable(false)
-        .build(|| shell_buttons(ui, &mut selected));
-    let snapshot = capture_frame(context.render(), request.extent)?;
-    Ok((snapshot, selected))
+        .build(|| shell_buttons(ui, selected));
 }
 fn shell_buttons(ui: &imgui::Ui, selected: &mut Vec<GuiShellAction>) {
     for (label, action) in [
@@ -153,8 +173,7 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
         std::array::from_fn(|axis| request.extent[axis] as f32 / request.framebuffer_scale[axis]);
     io.display_framebuffer_scale = request.framebuffer_scale;
     io.delta_time = request.delta_seconds;
-    io.add_mouse_pos_event(std::array::from_fn(|axis| {
-        request.pointer[axis] / request.framebuffer_scale[axis]
-    }));
-    io.add_mouse_button_event(imgui::MouseButton::Left, request.left_pressed);
+    for event in &request.events {
+        apply_input(io, event, request.framebuffer_scale);
+    }
 }
