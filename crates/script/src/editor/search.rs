@@ -89,7 +89,7 @@ fn append_matches(
         }
     }
 }
-fn current_epoch(saved: &Weak<()>, current: &Rc<()>) -> bool {
+pub(super) fn current_epoch(saved: &Weak<()>, current: &Rc<()>) -> bool {
     saved
         .upgrade()
         .is_some_and(|epoch| Rc::ptr_eq(&epoch, current))

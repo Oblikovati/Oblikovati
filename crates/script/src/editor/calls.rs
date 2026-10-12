@@ -55,7 +55,7 @@ fn dotted_chain(line: &[char], mut end: usize) -> Option<Vec<String>> {
     chain.reverse();
     (!chain.is_empty()).then_some(chain)
 }
-fn identifier_start(line: &[char], mut end: usize) -> usize {
+pub(super) fn identifier_start(line: &[char], mut end: usize) -> usize {
     while end > 0 && is_identifier(line[end - 1]) {
         end -= 1;
     }
