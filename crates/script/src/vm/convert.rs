@@ -120,7 +120,8 @@ fn json_number(number: Number) -> mlua::Result<Value> {
     let floating = number
         .as_f64()
         .ok_or_else(|| failure(format!("JSON number {number}: expected finite Lua number")))?;
-    if floating.fract() == 0.0 && floating.abs() > MAX_SAFE_INTEGER as f64 {
+    // #3563: typed API doubles can be whole-valued (for example resistivity 1e16); only integer JSON tokens carry exact IDs.
+    if !number.is_f64() && floating.abs() > MAX_SAFE_INTEGER as f64 {
         return Err(failure(format!(
             "JSON integer {number}: expected exact Lua identifier within ±{MAX_SAFE_INTEGER}"
         )));

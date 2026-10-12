@@ -16,19 +16,15 @@ struct EchoScriptHost {
 impl Caller for EchoScriptHost {
     fn call(&self, method: &str, arguments: &[u8]) -> Result<Vec<u8>, Error> {
         self.calls.borrow_mut().push(method.into());
-        if method == "error" {
-            return Err(Error("named host decline".into()));
+        match method {
+            "error" => Err(Error("named host decline".into())),
+            "large" => Ok(br#"{"id":9007199254740993}"#.to_vec()),
+            "negative-large" => Ok(br#"{"id":-9007199254740993}"#.to_vec()),
+            "scalars" => Ok(br#"{"resistivity":1e16,"negative":-1e16,"fractional":1.25}"#.to_vec()),
+            "empty" => Ok(Vec::new()),
+            "null" => Ok(b"null".to_vec()),
+            _ => Ok(arguments.to_vec()),
         }
-        if method == "large" {
-            return Ok(br#"{"id":9007199254740993}"#.to_vec());
-        }
-        if method == "empty" {
-            return Ok(Vec::new());
-        }
-        if method == "null" {
-            return Ok(b"null".to_vec());
-        }
-        Ok(arguments.to_vec())
     }
 }
 fn engine() -> IsolatedLuaEngine {
@@ -94,6 +90,7 @@ fn conversion_refuses_cycles_invalid_numbers_ambiguous_keys_and_unsupported_valu
         r#"local x={};x.self=x;oblikovati.call("echo",x)"#,
         r#"oblikovati.call("echo",{id=9007199254740993})"#,
         r#"oblikovati.call("large",{})"#,
+        r#"oblikovati.call("negative-large",{})"#,
         r#"oblikovati.call("echo",{value=0/0})"#,
         r#"oblikovati.call("echo",{[1]="a",["1"]="b"})"#,
         r#"oblikovati.call("echo",{value=function() end})"#,
@@ -155,4 +152,11 @@ fn execution_lease_rejects_concurrent_runs_and_releases_after_stop_and_completio
             .is_ok()
     );
     assert!(engine.start(program("", ScriptLimits::default())).is_ok());
+}
+
+#[test]
+fn integral_api_doubles_remain_scalars_without_weakening_integer_id_checks() {
+    let source = r#"local x=oblikovati.call("scalars",{});assert(x.resistivity==1e16);assert(x.negative==-1e16);assert(x.fractional==1.25);print('physical-scalars')"#;
+    let (output, _) = run(source, ScriptLimits::default()).unwrap();
+    assert_eq!(output, "physical-scalars\n");
 }
