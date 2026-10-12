@@ -44,7 +44,12 @@ impl RenderBackend for RecordingDevice {
 }
 fn runtime() -> (ViewportRuntime, RecordingDevice) {
     let recorder = RecordingDevice::default();
-    let driver = Graphic3dRenderDriver::with_backend(recorder.clone(), 1024).unwrap();
+    let driver = Graphic3dRenderDriver::with_backend_and_fonts(
+        recorder.clone(),
+        1024,
+        Arc::new(overlay_tests::FixedOverlayFont),
+    )
+    .unwrap();
     (
         ViewportRuntime {
             state: Rc::new(RuntimeState {
@@ -473,3 +478,6 @@ fn fixed_offscreen_zoom_has_the_expected_world_anchor_displacement() {
         assert!((observed - expected).abs() < 1e-10);
     }
 }
+
+#[path = "overlay_recorded.rs"]
+mod overlay_tests;

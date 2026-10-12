@@ -137,6 +137,7 @@ pub struct ViewportCapture {
     pub scene_generation: u64,
     pub camera_generation: u64,
     pub surface_generation: u64,
+    pub overlay_generation: u64,
     pub extent: [u32; 2],
     pub rgba: Vec<u8>,
 }

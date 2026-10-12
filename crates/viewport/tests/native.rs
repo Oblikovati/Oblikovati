@@ -9,6 +9,8 @@ use std::time::{Duration, Instant};
 mod navigation;
 #[path = "native/prism.rs"]
 mod prism;
+#[path = "native/status_text.rs"]
+mod status_text;
 // The native suite shares the authored kernel-consumer corpus without running every fixture helper.
 #[allow(dead_code)]
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]

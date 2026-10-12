@@ -16,6 +16,8 @@ use rustycad_tkservice::{
 use rustycad_tkv3d::v3d::{V3dView, V3dViewer};
 #[path = "renderer/navigation.rs"]
 mod navigation;
+#[path = "renderer/status_text.rs"]
+mod status_text;
 pub(crate) struct SavedViewCamera {
     pub state: ViewportCamera,
     members: Graphic3dCamera,
@@ -25,6 +27,7 @@ pub(crate) struct RenderView {
     pub view: Handle<V3dView>,
     pub renderer: Handle<Graphic3dRenderView>,
     structures: Vec<Handle<Graphic3dStructure>>,
+    status: status_text::StatusTextOverlay,
 }
 impl RenderView {
     pub fn new(
@@ -45,6 +48,7 @@ impl RenderView {
             view,
             renderer,
             structures: Vec::new(),
+            status: Default::default(),
         };
         result.configure(window)?;
         result.camera(ViewportCamera::default(), extent)?;
@@ -117,6 +121,7 @@ impl Drop for RenderView {
         for structure in self.structures.drain(..) {
             structure.remove();
         }
+        self.status.clear();
         self.view.remove();
     }
 }
@@ -163,4 +168,10 @@ fn configure_projection(
     camera
         .set_z_range(input.near, input.far)
         .map_err(|error| error.to_string())
+}
+
+impl RenderView {
+    pub(crate) fn status_text(&mut self, text: &str) -> Result<bool, String> {
+        self.status.submit(&self.viewer, text)
+    }
 }

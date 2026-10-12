@@ -64,6 +64,7 @@ impl NativeHeadWindow {
 }
 impl HeadWindow for NativeHeadWindow {
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
+        self.view.set_status_text(&notice.message())?;
         self.command_notice = Some(notice);
         self.refresh_title()
     }

@@ -76,6 +76,7 @@ impl ViewportRuntime {
             surface: 0,
             extent,
             completed: None,
+            overlay: 0,
             view_history: VecDeque::new(),
         })
     }
@@ -103,7 +104,8 @@ pub struct Viewport {
     camera: u64,
     surface: u64,
     extent: [u32; 2],
-    completed: Option<[u64; 3]>,
+    completed: Option<[u64; 4]>,
+    overlay: u64,
     view_history: VecDeque<crate::renderer::SavedViewCamera>,
 }
 impl Viewport {
@@ -116,8 +118,8 @@ impl Viewport {
             .as_ref()
             .ok_or_else(|| format!("viewport {}: expected a live view", self.id))
     }
-    fn generations(&self) -> [u64; 3] {
-        [self.scene, self.camera, self.surface]
+    fn generations(&self) -> [u64; 4] {
+        [self.scene, self.camera, self.surface, self.overlay]
     }
     /// Replace validated presentation inputs; example: `viewport.submit(&scene)?`.
     pub fn submit(&mut self, scene: &ViewportScene) -> Result<(), String> {
@@ -286,6 +288,7 @@ impl Viewport {
             scene_generation: self.scene,
             camera_generation: self.camera,
             surface_generation: self.surface,
+            overlay_generation: self.overlay,
             extent: self.extent,
             rgba: frame.rgba,
         }
@@ -383,5 +386,20 @@ impl Viewport {
             ));
         };
         native.title()
+    }
+}
+
+impl Viewport {
+    /// Show screen-space command feedback through the existing kernel view.
+    /// Example: `viewport.set_status_text("Saved part.opd")?`; an empty string clears it.
+    pub fn set_status_text(&mut self, text: &str) -> Result<bool, String> {
+        self.live()?;
+        let next = next_generation(self.overlay)?;
+        if !self.render.as_mut().expect("live view").status_text(text)? {
+            return Ok(false);
+        }
+        self.overlay = next;
+        self.completed = None;
+        Ok(true)
     }
 }

@@ -33,6 +33,16 @@ fn verify_history_pixels(
     let input = ViewportEvent::Input(ViewportInput::Key { key, pressed: true });
     assert!(owner.process_inputs(&[input]).unwrap());
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
+    let status_frame = capture_native_scene(window);
+    assert!(
+        status_frame
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .contains(&[255, 255, 255, 255])
+    );
+    // Validate the overlay first, then retire it to retain the exact whole-model image oracle.
+    window.view.set_status_text("").unwrap();
     let capture = capture_native_scene(window);
     assert_eq!(capture.rgba, expected.rgba);
     assert_eq!(window.view.camera_state().unwrap(), camera);
