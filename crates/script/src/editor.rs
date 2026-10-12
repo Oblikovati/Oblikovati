@@ -5,7 +5,10 @@ mod brackets;
 mod buffer;
 mod calls;
 mod completion;
-pub use completion::{CompletionCandidate, CompletionEngine, CompletionKind, EditorCompletion};
+pub use completion::{
+    CompletionCandidate, CompletionEngine, CompletionKey, CompletionKind, CompletionPopup,
+    CompletionView, EditorCompletion,
+};
 mod highlighting;
 mod history;
 mod movement;

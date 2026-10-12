@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{EditorPosition, ScriptEditor, calls::identifier_start, search::current_epoch};
 use crate::vocabulary;
+mod popup;
+pub use popup::{CompletionKey, CompletionPopup, CompletionView};
 use std::{
     collections::BTreeMap,
     rc::{Rc, Weak},
@@ -136,6 +138,9 @@ pub struct EditorCompletion {
     epoch: Weak<()>,
 }
 impl EditorCompletion {
+    fn is_current(&self, editor: &ScriptEditor) -> bool {
+        current_epoch(&self.epoch, &editor.source_epoch) && self.caret == editor.selection.caret
+    }
     /// Borrow the sorted popup choices; example: `popup.candidates()[0].text`.
     pub fn candidates(&self) -> &[CompletionCandidate] {
         &self.candidates
@@ -164,7 +169,7 @@ impl ScriptEditor {
         popup: &EditorCompletion,
         index: usize,
     ) -> Result<(), String> {
-        if !current_epoch(&popup.epoch, &self.source_epoch) || popup.caret != self.selection.caret {
+        if !popup.is_current(self) {
             return Err(format!(
                 "completion {:?}..{:?}: expected current source and caret",
                 popup.start, popup.caret
@@ -178,5 +183,17 @@ impl ScriptEditor {
         })?;
         self.replace(popup.start, popup.caret, &candidate.text);
         Ok(())
+    }
+}
+
+impl CompletionKind {
+    /// Read the legacy popup kind glyph; example: `CompletionKind::Method.tag()` is `"f"`.
+    pub fn tag(self) -> &'static str {
+        match self {
+            Self::Keyword => "k",
+            Self::Builtin => "b",
+            Self::Module => "m",
+            Self::Method => "f",
+        }
     }
 }

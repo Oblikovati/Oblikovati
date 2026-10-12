@@ -63,3 +63,5 @@ The completion engine and checked prefix acceptance now have [implementation evi
 The Lua lexer and visible-line context now have [implementation evidence](implementation-script-editor-syntax.md). Native color drawing remains open.
 
 Contract-generated signature and hover help now have [implementation evidence](implementation-script-editor-help.md). Native tooltip and popup bindings remain open.
+
+Completion popup controls and tooltip priority now have [implementation evidence](implementation-script-editor-popup.md). Native key mapping and drawing remain open.
