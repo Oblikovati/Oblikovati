@@ -13,6 +13,7 @@ requires-display = true
 [lints]
 workspace = true
 [dependencies]
+oblikovati-martensite = { path = "../martensite" }
 oblikovati-cli = { path = "../cli" }
 oblikovati-script = { path = "../script" }
 oblikovati-viewport = { path = "../viewport" }

@@ -17,7 +17,11 @@ pub use work::{HeadInvalidation, HeadWork, HeadWorkStatus};
 #[cfg(target_os = "linux")]
 mod owner;
 #[cfg(target_os = "linux")]
+mod part_scene;
+#[cfg(target_os = "linux")]
 pub use owner::{DesktopDispatchOptions, DesktopOwner};
+#[cfg(target_os = "linux")]
+pub use part_scene::{HeadSceneStatus, HeadSceneUpdate};
 #[cfg(target_os = "linux")]
 mod observations;
 #[cfg(target_os = "linux")]
@@ -57,3 +61,8 @@ fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {
     writeln!(output, "{text}")
         .map_err(|error| format!("head output: expected a writable stream: {error}"))
 }
+
+#[cfg(test)]
+#[allow(dead_code)]
+#[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
+mod scene_fixture;

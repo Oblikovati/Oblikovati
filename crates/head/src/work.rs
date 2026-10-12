@@ -12,6 +12,11 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Consume a complete scene update after all owner services; example: `work.take_scene()?` before presentation.
+    fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
+        Ok(None)
+    }
+
     /// Drain one bounded request batch; example: `work.poll(32)?` before presentation.
     fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String>;
     /// Check close without discarding documents; example: `work.close_allowed()?` after a native close request.

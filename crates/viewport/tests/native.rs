@@ -82,6 +82,7 @@ fn application_owned_linux_windows_present_resize_capture_and_remove() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
     println!("OBLIKOVATI_VIEWPORT_DEVICE={}", runtime.device_name());
     let mut view = open_fixture(&runtime, "Oblikovati Rust viewport acceptance");
+    verify_title_metadata(&mut view);
     verify_resize_and_mapping(&mut view);
     let mut second = open_fixture(&runtime, "Oblikovati Rust second viewport");
     verify_native(&mut second);
@@ -94,4 +95,11 @@ fn application_owned_linux_windows_present_resize_capture_and_remove() {
         "{:?}",
         runtime.validation_errors()
     );
+}
+
+fn verify_title_metadata(view: &mut Viewport) {
+    view.set_title("Oblikovati - current part").unwrap();
+    assert_eq!(view.native_title().unwrap(), "Oblikovati - current part");
+    assert!(view.set_title("").is_err());
+    assert!(view.set_title("invalid\0title").is_err());
 }

@@ -323,3 +323,43 @@ fn timed_owner_service_wait_does_not_force_an_unchanged_second_frame() {
     assert_eq!(summary.completed, 1);
     assert_eq!(window.timeouts, [Some(timeout), None]);
 }
+
+struct FakeSceneWork;
+impl HeadWork for FakeSceneWork {
+    fn poll(&mut self, _: usize) -> Result<crate::HeadWorkStatus, String> {
+        Ok(Default::default())
+    }
+    fn close_allowed(&mut self) -> Result<bool, String> {
+        Ok(true)
+    }
+    fn finish(&mut self) -> Result<(), String> {
+        Ok(())
+    }
+    fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
+        Ok(Some(crate::HeadSceneUpdate {
+            scene: oblikovati_viewport::ViewportScene {
+                background: [0.; 3],
+                triangles: Vec::new(),
+            },
+            status: crate::HeadSceneStatus {
+                source: Some((1, 0)),
+                visible_bodies: 0,
+                health: Vec::new(),
+                presentation_declines: Vec::new(),
+            },
+        }))
+    }
+}
+#[test]
+fn an_unsupported_scene_window_refuses_publication_and_retires() {
+    let mut window = FakeHeadWindow::default();
+    let error = run_window_with_owner(
+        &mut window,
+        HeadOptions { frames: Some(1) },
+        &mut FakeSceneWork,
+    )
+    .unwrap_err();
+    assert!(error.contains("expected a window with model presentation"));
+    assert!(!window.calls.contains(&"present"));
+    assert_eq!(window.calls.last(), Some(&"finish"));
+}

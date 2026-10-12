@@ -208,3 +208,6 @@ fn ui_commands_borrow_the_same_canonical_owner_without_worker_admission() {
     assert_eq!(owner.poll(32).unwrap(), HeadWorkStatus::default());
     assert!(!owner.close_allowed().unwrap());
 }
+
+#[path = "owner/part_scene.rs"]
+mod part_scene;

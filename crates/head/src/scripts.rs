@@ -65,6 +65,9 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
         }
         Ok(activity)
     }
+    fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
+        self.owner.take_scene()
+    }
     fn close_allowed(&mut self) -> Result<bool, String> {
         if self.console.is_active() {
             return Ok(false);

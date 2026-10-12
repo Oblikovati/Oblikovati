@@ -38,3 +38,72 @@ fn display_triangle(positions: [[f64; 3]; 3], color: [f32; 4]) -> Result<Viewpor
 #[cfg(test)]
 #[path = "../tests/presentation.rs"]
 mod tests;
+
+/// A local display decline never changes the retained analytic body.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PartPresentationDecline {
+    pub feature: oblikovati_model::feature::FeatureId,
+    pub cause: String,
+}
+/// Derived display geometry and all local conversion declines.
+pub struct PartPresentation {
+    pub scene: ViewportScene,
+    pub visible_bodies: usize,
+    pub declines: Vec<PartPresentationDecline>,
+}
+impl ViewportScene {
+    /// Convert successful current bodies and retain local display failures.
+    /// Example: `ViewportScene::from_part_evaluation(&evaluated, mesh_options, background, color)`.
+    pub fn from_part_evaluation(
+        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<
+            oblikovati_martensite::PrismProbeSnapshot,
+            String,
+        >,
+        options: oblikovati_martensite::PrismMeshOptions,
+        background: [f64; 3],
+        color: [f32; 4],
+    ) -> Result<PartPresentation, String> {
+        let mut result = PartPresentation {
+            scene: Self {
+                background,
+                triangles: Vec::new(),
+            },
+            visible_bodies: 0,
+            declines: Vec::new(),
+        };
+        result.scene.validate()?;
+        for record in evaluation.health() {
+            let Some(body) = evaluation.body(record.feature) else {
+                continue;
+            };
+            result.append_body(record.feature, body, options, color);
+        }
+        Ok(result)
+    }
+}
+impl PartPresentation {
+    fn append_body(
+        &mut self,
+        feature: oblikovati_model::feature::FeatureId,
+        body: &oblikovati_martensite::PrismProbeSnapshot,
+        options: oblikovati_martensite::PrismMeshOptions,
+        color: [f32; 4],
+    ) {
+        let scene = body
+            .presentation(options)
+            .and_then(|mesh| ViewportScene::from_prism(&mesh, self.scene.background, color));
+        match scene {
+            Ok(mut scene) => {
+                self.scene.triangles.append(&mut scene.triangles);
+                self.visible_bodies += 1;
+            }
+            Err(cause) => self
+                .declines
+                .push(PartPresentationDecline { feature, cause }),
+        }
+    }
+}
+
+#[cfg(test)]
+#[path = "../tests/part_presentation.rs"]
+mod part_tests;

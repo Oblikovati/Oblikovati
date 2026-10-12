@@ -13,6 +13,14 @@ pub struct HeadSummary {
 }
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Replace the current scene before presenting; example: `window.submit_scene(update)?`.
+    fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
+        Err(format!(
+            "head scene {:?}: expected a window with model presentation",
+            update.status.source
+        ))
+    }
+
     /// Poll bounded lifecycle inputs; example: `window.events(64)?`.
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String>;
     /// Present once without returning a stale image; example: `window.present()?`.
@@ -128,6 +136,7 @@ fn run_frames(
         let inputs = window.events(64)?;
         let activity = owner.poll(32)?;
         control.pending |= activity.changed;
+        control.pending |= publish_owner_scene(window, owner)?;
         let closing = inputs.contains(&ViewportEvent::CloseRequested);
         control.events(&inputs, !closing || owner.close_allowed()?);
         if control.stopped() {
@@ -152,3 +161,14 @@ fn checked_summary(summary: HeadSummary, options: HeadOptions) -> Result<HeadSum
 #[cfg(test)]
 #[path = "../tests/frames.rs"]
 mod tests;
+
+fn publish_owner_scene(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+) -> Result<bool, String> {
+    let Some(update) = owner.take_scene()? else {
+        return Ok(false);
+    };
+    window.submit_scene(update)?;
+    Ok(true)
+}

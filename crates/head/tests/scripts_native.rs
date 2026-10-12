@@ -28,6 +28,10 @@ struct ScriptWindow {
     timed_waits: usize,
 }
 impl HeadWindow for ScriptWindow {
+    fn submit_scene(&mut self, update: oblikovati_head::HeadSceneUpdate) -> Result<(), String> {
+        self.native.submit_scene(update)
+    }
+
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         let mut events = self.native.events(limit)?;
         if self.finished.get() {

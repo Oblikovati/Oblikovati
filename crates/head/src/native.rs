@@ -8,6 +8,7 @@ pub struct NativeHeadWindow {
     runtime: ViewportRuntime,
     view: Viewport,
     wake: ViewportWake,
+    scene_status: Option<crate::HeadSceneStatus>,
 }
 impl NativeHeadWindow {
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
@@ -22,10 +23,24 @@ impl NativeHeadWindow {
             runtime,
             view,
             wake: ViewportWake::new()?,
+            scene_status: None,
         })
     }
 }
+impl NativeHeadWindow {
+    /// Inspect the current displayed generation and detailed declines; example: `window.scene_status()` for a health panel.
+    pub fn scene_status(&self) -> Option<&crate::HeadSceneStatus> {
+        self.scene_status.as_ref()
+    }
+}
 impl HeadWindow for NativeHeadWindow {
+    fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
+        self.view.submit(&update.scene)?;
+        self.view.set_title(&update.status.title())?;
+        self.scene_status = Some(update.status);
+        Ok(())
+    }
+
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.view.poll_events(limit)
     }
@@ -103,3 +118,7 @@ mod tests;
 #[cfg(test)]
 #[path = "../tests/native_owner.rs"]
 mod owner_tests;
+
+#[cfg(test)]
+#[path = "../tests/native_scene.rs"]
+mod scene_tests;

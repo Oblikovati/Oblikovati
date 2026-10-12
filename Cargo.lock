@@ -567,6 +567,7 @@ dependencies = [
  "oblikovati-api",
  "oblikovati-automation",
  "oblikovati-cli",
+ "oblikovati-martensite",
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-script",

@@ -37,6 +37,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     dispatch: OwnerDispatch<S>,
     caller: QueuedCaller<S>,
     refused_close: Vec<u64>,
+    part_scenes: crate::part_scene::DesktopPartScenes,
 }
 impl<
     O: TransactionObserver,
@@ -65,6 +66,7 @@ impl<
             dispatch,
             caller,
             refused_close: Vec::new(),
+            part_scenes: Default::default(),
         }
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -142,12 +144,16 @@ impl<
             wake_after: None,
         })
     }
+    fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
+        self.part_scenes.refresh(&mut self.files)
+    }
     fn close_allowed(&mut self) -> Result<bool, String> {
         self.refused_close = self.close_blockers()?;
         let pending = self.dispatch.pending().map_err(|error| error.to_string())?;
         Ok(self.refused_close.is_empty() && pending == 0)
     }
     fn finish(&mut self) -> Result<(), String> {
+        self.part_scenes.clear();
         self.dispatch.close();
         Ok(())
     }

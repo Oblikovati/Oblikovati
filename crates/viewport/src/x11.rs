@@ -6,6 +6,7 @@ use rustycad_tkservice::{
     xw::XwWindow,
 };
 use std::{
+    ffi::{CStr, CString},
     rc::Rc,
     time::{Duration, Instant},
 };
@@ -315,3 +316,48 @@ fn validate_title(title: &str) -> Result<(), String> {
 #[cfg(test)]
 #[path = "../tests/x11_events.rs"]
 mod tests;
+
+impl NativeWindow {
+    pub fn set_title(&self, title: &str) -> Result<(), String> {
+        validate_title(title)?;
+        let title = CString::new(title).map_err(|cause| {
+            format!("viewport title {title:?}: expected NUL-free text: {cause}")
+        })?;
+        unsafe {
+            (self.x11.api.XStoreName)(
+                self.pointer(),
+                self.window.native_handle() as xlib::Window,
+                title.as_ptr(),
+            );
+            (self.x11.api.XFlush)(self.pointer());
+        }
+        Ok(())
+    }
+    pub fn title(&self) -> Result<String, String> {
+        let pointer = self.title_pointer()?;
+        let bytes = unsafe { CStr::from_ptr(pointer) }.to_bytes().to_vec();
+        unsafe {
+            (self.x11.api.XFree)(pointer.cast());
+        }
+        String::from_utf8(bytes).map_err(|cause| {
+            format!(
+                "native title bytes {:?}: expected UTF-8 text: {cause}",
+                cause.as_bytes()
+            )
+        })
+    }
+    fn title_pointer(&self) -> Result<*mut std::ffi::c_char, String> {
+        let mut pointer = std::ptr::null_mut();
+        let found = unsafe {
+            (self.x11.api.XFetchName)(
+                self.pointer(),
+                self.window.native_handle() as xlib::Window,
+                &mut pointer,
+            )
+        };
+        if found == 0 || pointer.is_null() {
+            return Err("native title is absent: expected a stored window name".into());
+        }
+        Ok(pointer)
+    }
+}
