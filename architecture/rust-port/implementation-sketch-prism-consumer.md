@@ -72,3 +72,7 @@ CARGO_NET_OFFLINE=true make gate
 All checks stay on this Linux host. This is not a production feature replay or
 foreground MCPBridge acceptance run. Native tools, persistent picks, complete
 body validity, body history, and general profile extraction remain open.
+
+The next [authored input recipe](implementation-sketch-prism-recipe.md) moves
+the selection to the model and adds versioned parameter-backed displacement.
+The adapter keeps one checked consumption path.

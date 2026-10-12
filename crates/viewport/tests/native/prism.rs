@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::{PrismMeshOptions, retain_selected_sketch_prism};
-use oblikovati_model::sketch::SketchPlane;
+use oblikovati_martensite::{PrismMeshOptions, retain_sketch_prism_definition};
+use oblikovati_model::{
+    feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength},
+    sketch::SketchPlane,
+};
 pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
     let tilted = tilted_frame();
     let mut view = runtime
@@ -19,32 +22,22 @@ pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
     view.close();
 }
 fn verify_placed_frame(view: &mut Viewport, plane: SketchPlane) {
-    let mut document = sketch_fixture::selected_sketch_document();
-    sketch_fixture::add_fixed_sketch_hole(&mut document);
-    sketch_fixture::solve_selected_sketches(&mut document);
-    document
-        .sketches
-        .replace_plane(sketch_fixture::SKETCH, plane)
-        .unwrap();
-    let first = present_document_prism(view, &document, plane);
+    let mut document = native_prism_document(plane);
+    let definition = native_prism_definition();
+    let first = present_document_prism(view, &document, &definition, plane);
     document.parameters.set_expression(1, "6 cm").unwrap();
     sketch_fixture::solve_selected_sketches(&mut document);
-    let edited = present_document_prism(view, &document, plane);
+    let edited = present_document_prism(view, &document, &definition, plane);
     assert!(edited.scene_generation > first.scene_generation);
     assert!(green_pixels(&edited) > green_pixels(&first));
 }
 fn present_document_prism(
     view: &mut Viewport,
     document: &oblikovati_model::history::DocumentSnapshot,
+    definition: &SketchPrismDefinition,
     plane: SketchPlane,
 ) -> ViewportCapture {
-    let mut selection = sketch_fixture::selected_sketch_boundary();
-    selection
-        .holes
-        .push(sketch_fixture::selected_sketch_line_ring(111));
-    let snapshot =
-        retain_selected_sketch_prism(document, sketch_fixture::SKETCH, &selection, [0., 0., 2.])
-            .unwrap();
+    let snapshot = retain_sketch_prism_definition(document, definition).unwrap();
     let analytic = snapshot.report().clone();
     view.set_camera(prism_camera(plane)).unwrap();
     view.submit(&prism_scene(&snapshot)).unwrap();
@@ -104,6 +97,38 @@ fn tilted_frame() -> SketchPlane {
         [0.6, 0.8, 0.],
         [0., 0., 1.],
         Default::default(),
+    )
+    .unwrap()
+}
+
+fn native_prism_document(plane: SketchPlane) -> oblikovati_model::history::DocumentSnapshot {
+    let mut document = sketch_fixture::selected_sketch_document();
+    sketch_fixture::add_fixed_sketch_hole(&mut document);
+    sketch_fixture::solve_selected_sketches(&mut document);
+    document
+        .sketches
+        .replace_plane(sketch_fixture::SKETCH, plane)
+        .unwrap();
+    document
+        .parameters
+        .insert_expression(3, "depth", oblikovati_api::types::USER_PARAM, "2 cm")
+        .unwrap();
+    document
+}
+
+fn native_prism_definition() -> SketchPrismDefinition {
+    let mut selection = sketch_fixture::selected_sketch_boundary();
+    selection
+        .holes
+        .push(sketch_fixture::selected_sketch_line_ring(111));
+    SketchPrismDefinition::new(
+        sketch_fixture::SKETCH,
+        selection,
+        [
+            DatumLength::Constant(0.),
+            DatumLength::Constant(0.),
+            DatumLength::Parameter(3),
+        ],
     )
     .unwrap()
 }

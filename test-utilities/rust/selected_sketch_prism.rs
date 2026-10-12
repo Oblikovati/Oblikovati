@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_martensite::{SketchDirectedLine, SketchPrismSelection};
+use oblikovati_model::feature::sketch_prism::{SketchDirectedLine, SketchPrismSelection};
 use oblikovati_model::{
     document_sketch::{DocumentSketchId, DocumentSketches},
     history::DocumentSnapshot,

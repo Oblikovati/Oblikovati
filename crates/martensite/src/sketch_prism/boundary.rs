@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::PrismProbeLoop;
-use oblikovati_model::sketch::Sketch2D;
+use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
 struct DirectedEndpoints {
     line: SketchEntityId,
     start: SketchEntityId,
@@ -11,19 +11,11 @@ struct DirectedEndpoints {
 pub(super) fn selected_loop(
     geometry: &Sketch2D,
     lines: &[SketchDirectedLine],
-    used: &mut BTreeSet<SketchEntityId>,
 ) -> Result<PrismProbeLoop, String> {
-    require_boundary_length(lines)?;
-    let mut resolved = Vec::new();
-    for directed in lines {
-        if !used.insert(directed.line) {
-            return Err(format!(
-                "sketch prism line {:?}: expected one occurrence across all boundaries",
-                directed.line
-            ));
-        }
-        resolved.push(resolve_endpoints(geometry, *directed)?);
-    }
+    let resolved = lines
+        .iter()
+        .map(|directed| resolve_endpoints(geometry, *directed))
+        .collect::<Result<Vec<_>, _>>()?;
     require_shared_closed_boundary(&resolved)?;
     Ok(PrismProbeLoop {
         edge_keys: resolved.iter().map(|edge| edge.line.0).collect(),
@@ -56,15 +48,6 @@ fn require_shared_closed_boundary(edges: &[DirectedEndpoints]) -> Result<(), Str
                 edge.line, next.line, edge.end, next.start
             ));
         }
-    }
-    Ok(())
-}
-
-fn require_boundary_length(lines: &[SketchDirectedLine]) -> Result<(), String> {
-    if lines.len() < 3 {
-        return Err(format!(
-            "sketch prism boundary {lines:?}: expected at least three directed lines"
-        ));
     }
     Ok(())
 }

@@ -69,6 +69,8 @@ fn assert_volume(actual: f64, expected: f64) {
 }
 #[path = "sketch_prism/placement.rs"]
 mod placement;
+#[path = "sketch_prism/recipe.rs"]
+mod recipe;
 #[path = "sketch_prism/refusals.rs"]
 mod refusals;
 

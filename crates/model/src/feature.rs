@@ -10,6 +10,7 @@ mod error;
 mod evaluation;
 mod footprint;
 mod replay;
+pub mod sketch_prism;
 mod suppression;
 mod validation;
 pub mod work_axis;
