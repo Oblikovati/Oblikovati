@@ -3,6 +3,7 @@
 mod decode;
 pub(crate) use decode::stored_asset_record;
 mod embedded;
+mod legacy;
 use oblikovati_model::assets::{AppearanceAsset, BuiltinAssetCatalog, MaterialAsset};
 use serde::Deserialize;
 use serde_yaml_ng::Value;
@@ -71,4 +72,18 @@ fn catalog_material(name: &str, record: Value) -> Result<MaterialAsset, String> 
         ],
     )?;
     MaterialAsset::from_info(info).map_err(|cause| format!("catalog {name:?}: {cause}"))
+}
+
+pub(crate) fn stored_appearance_record(
+    name: &str,
+    record: Value,
+    source: oblikovati_api::types::AssetSource,
+) -> Result<oblikovati_api::wire::AppearanceInfo, String> {
+    if ["albedo", "metallic", "roughness", "emissive", "opacity"]
+        .iter()
+        .any(|field| record.get(*field).is_some())
+    {
+        return legacy::decode_legacy_appearance(name, record, source);
+    }
+    stored_asset_record(name, record, &[("name", "displayName")], source)
 }

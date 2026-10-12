@@ -165,3 +165,42 @@ fn portable_asset_package() -> oblikovati_persistence::package::DocumentPackage 
     .with_assets(&assets)
     .unwrap()
 }
+
+#[test]
+fn executable_lua_loads_and_saves_a_legacy_appearance_as_grouped_data() {
+    let directory = tempfile::tempdir().unwrap();
+    let original = directory.path().join("legacy.opd");
+    let saved = directory.path().join("upgraded.opd");
+    std::fs::write(&original,b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  materials:\n    appearances:\n      - id: old-look\n        name: Old look\n        albedo: '#804020'\n        metallic: 0.3\n        roughness: 0.6\n        opacity: 0.75\n").unwrap();
+    let source = write_source(
+        directory.path(),
+        "local a=oblikovati.appearances.get{id='old-look'};assert(a.base.metalness>0.29 and a.base.metalness<0.31);assert(a.geometry.opacity==0.75);assert(a.emission.luminance==0);print('legacy-loaded')",
+    );
+    let output = cli(&[
+        "script",
+        "run",
+        source.to_str().unwrap(),
+        "--doc",
+        original.to_str().unwrap(),
+        "--save",
+        saved.to_str().unwrap(),
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let bytes = std::fs::read(&saved).unwrap();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(&bytes).unwrap();
+    let appearance = package
+        .restore_assets()
+        .unwrap()
+        .appearances()
+        .get("old-look")
+        .unwrap()
+        .info();
+    assert_eq!(appearance.geometry.opacity, 0.75);
+    let yaml = String::from_utf8(bytes).unwrap();
+    assert!(!yaml.contains("albedo:"));
+    assert!(yaml.contains("base:"));
+}

@@ -17,7 +17,7 @@ impl DocumentPackage {
     /// Capture asset intent without dropping other recipe content; example: `package.with_assets(&snapshot.assets)?`.
     pub fn with_assets(&self, assets: &DocumentAssets) -> Result<Self, PackageCodecError> {
         let before = self.restore_assets()?;
-        if &before == assets {
+        if &before == assets && !contains_legacy_appearances(self) {
             return Ok(self.clone());
         }
         let recipe = AssetRecipe::capture(assets).map_err(asset_error)?;
@@ -94,4 +94,11 @@ fn updated_asset_section(
         &known,
         &replacement,
     ))
+}
+
+fn contains_legacy_appearances(package: &DocumentPackage) -> bool {
+    asset_section(package)
+        .get("appearances")
+        .and_then(Value::as_sequence)
+        .is_some_and(|records| records.iter().any(|record| record.get("albedo").is_some()))
 }

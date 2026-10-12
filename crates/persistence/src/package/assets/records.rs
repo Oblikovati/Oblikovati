@@ -65,11 +65,9 @@ fn restore_materials(records: &[Value], assets: &mut DocumentAssets) -> Result<(
 fn restore_appearances(records: &[Value], assets: &mut DocumentAssets) -> Result<(), String> {
     let mut seen = BTreeSet::new();
     for record in records {
-        require_grouped_appearance(record)?;
-        let info: AppearanceInfo = crate::assets::stored_asset_record(
+        let info: AppearanceInfo = crate::assets::stored_appearance_record(
             "document appearances",
             record.clone(),
-            &[("name", "displayName")],
             ASSET_DOCUMENT,
         )?;
         require_unique_asset(&mut seen, &info.id)?;
@@ -81,17 +79,6 @@ fn require_unique_asset(seen: &mut BTreeSet<String>, id: &str) -> Result<(), Str
     if !seen.insert(id.into()) {
         return Err(format!(
             "embedded asset {id:?}: expected a unique identity within its asset family"
-        ));
-    }
-    Ok(())
-}
-fn require_grouped_appearance(record: &Value) -> Result<(), String> {
-    if ["albedo", "metallic", "roughness", "emissive", "opacity"]
-        .iter()
-        .any(|key| record.get(*key).is_some())
-    {
-        return Err(format!(
-            "appearance {record:?}: expected grouped OpenPBR values, legacy scalar appearance requires explicit conversion"
         ));
     }
     Ok(())

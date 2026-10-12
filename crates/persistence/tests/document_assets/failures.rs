@@ -5,7 +5,7 @@ fn malformed_assets_and_assignment_references_are_refused_before_adoption() {
     for section in [
         "materials: [4]",
         "materials: [{id: x, name: X, density: .nan}]",
-        "appearances: [{id: old, albedo: '#ffffff'}]",
+        "appearances: [{id: old, albedo: '#zzzzzz'}]",
         "assignments: {bodyMaterial: {body: 4}}",
         "assignments: {bodyMaterial: {'': steel}}",
         "assignments: {bodyMaterial: {? {referenceKey: body, occurrencePath: [left]}: steel}}",

@@ -33,7 +33,9 @@ pub(super) fn merge_asset_entries(original: &Value, before: &Value, after: &Valu
                     find_record(original, identity),
                     find_record(before, identity),
                 ) {
-                    (Some(original), Some(before)) => merge_known_values(original, before, record),
+                    (Some(original), Some(before)) => {
+                        merge_migrated_entry(original, before, record)
+                    }
                     _ => record.clone(),
                 }
             })
@@ -78,4 +80,16 @@ fn remove_old_owned_fields(
         }
         merged.remove(key);
     }
+}
+
+fn merge_migrated_entry(original: &Value, before: &Value, after: &Value) -> Value {
+    let mut original = original.clone();
+    if original.get("albedo").is_some()
+        && let Some(fields) = original.as_mapping_mut()
+    {
+        for field in ["albedo", "metallic", "roughness", "emissive", "opacity"] {
+            fields.remove(field);
+        }
+    }
+    merge_known_values(&original, before, after)
 }
