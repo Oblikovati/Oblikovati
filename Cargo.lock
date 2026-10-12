@@ -632,6 +632,7 @@ name = "oblikovati-viewport"
 version = "0.1.0"
 dependencies = [
  "martensite-vulkan",
+ "rustix",
  "rustycad-tkernel",
  "rustycad-tkmath",
  "rustycad-tkservice",

@@ -140,6 +140,12 @@ pub struct ViewportCapture {
     pub extent: [u32; 2],
     pub rgba: Vec<u8>,
 }
+/// A frame completes only for its observed surface; a resize requires a new presentation input.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ViewportPresentation {
+    Completed(ViewportCapture),
+    SurfaceChanged([u32; 2]),
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewportEvent {
     Expose,

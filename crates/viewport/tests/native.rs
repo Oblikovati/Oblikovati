@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #![cfg(target_os = "linux")]
 use oblikovati_viewport::{
-    Viewport, ViewportCamera, ViewportCapture, ViewportOptions, ViewportRuntime, ViewportScene,
-    ViewportTriangle,
+    Viewport, ViewportCamera, ViewportCapture, ViewportOptions, ViewportPresentation,
+    ViewportRuntime, ViewportScene, ViewportTriangle,
 };
 use std::time::{Duration, Instant};
 fn scene() -> ViewportScene {
@@ -15,12 +15,28 @@ fn scene() -> ViewportScene {
     }
 }
 fn verify_native(view: &mut Viewport) -> ViewportCapture {
-    let capture = view.redraw().unwrap();
+    let capture = complete_surface_frame(view);
     await_presented_pixels(view, &capture);
     for expected in [[255, 0, 0, 255], [0, 0, 255, 255]] {
         assert!(capture.rgba.as_chunks::<4>().0.contains(&expected));
     }
     capture
+}
+fn complete_surface_frame(view: &mut Viewport) -> ViewportCapture {
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        match view.present().unwrap() {
+            ViewportPresentation::Completed(capture) => return capture,
+            ViewportPresentation::SurfaceChanged(_) => {
+                assert!(view.capture().is_err());
+                assert!(
+                    Instant::now() < deadline,
+                    "expected a stable native surface within three seconds"
+                );
+                view.poll_events(64).unwrap();
+            }
+        }
+    }
 }
 fn await_presented_pixels(view: &Viewport, capture: &ViewportCapture) {
     let deadline = Instant::now() + Duration::from_secs(3);

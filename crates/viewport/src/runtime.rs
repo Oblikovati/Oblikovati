@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
-    ViewportCamera, ViewportCapture, ViewportEvent, ViewportOptions, ViewportScene,
+    ViewportCamera, ViewportCapture, ViewportEvent, ViewportOptions, ViewportPresentation,
+    ViewportScene,
     renderer::RenderView,
     target::ViewTarget,
     x11::{NativeWindow, NativeX11},
@@ -190,6 +191,31 @@ impl Viewport {
     }
     /// Present and return only a fresh completed frame; example: `let capture=viewport.redraw()?;`.
     pub fn redraw(&mut self) -> Result<ViewportCapture, String> {
+        match self.present()? {
+            ViewportPresentation::Completed(capture) => Ok(capture),
+            ViewportPresentation::SurfaceChanged(extent) => Err(format!(
+                "viewport {} changed extent to {extent:?} during redraw: expected a new frame",
+                self.id
+            )),
+        }
+    }
+    /// Present once and distinguish an observed resize from a renderer fault.
+    /// Example: schedule a new frame after `ViewportPresentation::SurfaceChanged(extent)`.
+    pub fn present(&mut self) -> Result<ViewportPresentation, String> {
+        self.draw()?;
+        let frame = self
+            .live()?
+            .renderer
+            .capture()
+            .map_err(|error| format!("viewport {} capture: {error}", self.id))?;
+        if let Some(extent) = self.observe_draw_extent()? {
+            return Ok(ViewportPresentation::SurfaceChanged(extent));
+        }
+        self.require_frame_extent([frame.width, frame.height])?;
+        self.completed = Some(self.generations());
+        Ok(ViewportPresentation::Completed(self.capture_from(frame)))
+    }
+    fn draw(&mut self) -> Result<(), String> {
         self.completed = None;
         self.live()?;
         self.refresh_extent()?;
@@ -200,20 +226,14 @@ impl Viewport {
         self.live()?
             .renderer
             .try_redraw()
-            .map_err(|error| format!("viewport {} redraw: {error}", self.id))?;
-        self.require_draw_extent()?;
-        self.completed = Some(self.generations());
-        self.capture()
+            .map_err(|error| format!("viewport {} redraw: {error}", self.id))
     }
-    fn require_draw_extent(&mut self) -> Result<(), String> {
+    fn observe_draw_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         if self.target.as_ref().expect("live target").extent() == self.extent {
-            return Ok(());
+            return Ok(None);
         }
         self.refresh_extent()?;
-        Err(format!(
-            "viewport {} changed extent during redraw: expected a new frame",
-            self.id
-        ))
+        Ok(Some(self.extent))
     }
     /// Read only a current successful frame; example: `viewport.capture()?` refuses stale source/camera/size.
     pub fn capture(&self) -> Result<ViewportCapture, String> {
@@ -224,14 +244,17 @@ impl Viewport {
             .capture()
             .map_err(|error| format!("viewport {} capture: {error}", self.id))?;
         self.require_frame_extent([frame.width, frame.height])?;
-        Ok(ViewportCapture {
+        Ok(self.capture_from(frame))
+    }
+    fn capture_from(&self, frame: martensite_vulkan::FrameCapture) -> ViewportCapture {
+        ViewportCapture {
             view_id: self.id,
             scene_generation: self.scene,
             camera_generation: self.camera,
             surface_generation: self.surface,
             extent: self.extent,
             rgba: frame.rgba,
-        })
+        }
     }
     fn require_frame_extent(&self, extent: [u32; 2]) -> Result<(), String> {
         if extent == self.extent {
@@ -256,6 +279,21 @@ impl Viewport {
             ));
         }
         Ok(())
+    }
+    /// Wait without rendering, preserving queued native events; example: `view.wait_events(&wake, None)?;`.
+    pub fn wait_events(
+        &self,
+        wake: &crate::ViewportWake,
+        timeout: Option<std::time::Duration>,
+    ) -> Result<crate::ViewportReady, String> {
+        self.live()?;
+        match self.target.as_ref().expect("live target") {
+            ViewTarget::Native(native) => native.wait_events(wake, timeout),
+            ViewTarget::Offscreen(_) => Err(format!(
+                "viewport {}: expected a native event source",
+                self.id
+            )),
+        }
     }
     /// Capture the actual X11 drawable independently of GPU readback; example: `viewport.native_pixels()?`.
     pub fn native_pixels(&self) -> Result<Vec<u8>, String> {

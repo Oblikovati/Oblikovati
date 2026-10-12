@@ -25,7 +25,7 @@ Scene and camera replacement validate inputs before replacing the current
 presentation. A failed draw invalidates capture. Capture metadata identifies
 the view and completed scene, camera, and surface generations. Capture checks
 the current drawable size, including a size change that the owner has not yet
-polled. A size change during redraw is an error and requires a new frame.
+polled. A size change during redraw invalidates the frame and requires new surface input.
 Generation exhaustion is checked before an explicit resize changes the window.
 Hide and remap invalidate completed frames and advance the surface generation.
 
@@ -71,3 +71,30 @@ in [the prior viewport evidence](implementation-viewport.md). Application
 integration must consume that interface without adding a second Vulkan renderer.
 These remaining checks prevent a claim of complete R1V or complete application
 parity. Windows and macOS work remains deferred.
+
+## Idle event wait
+
+The native target can now wait on its X11 connection and a `ViewportWake` event
+counter together. Worker clones contain no model or window handles. Wakes are
+nonblocking and coalesced; a wake sent before the owner starts waiting remains
+pending. Events already buffered by Xlib return immediately and remain available
+for bounded polling. Interrupted waits return to the owner loop. Broken event
+sources and invalid durations produce named errors. An offscreen or closed target
+cannot masquerade as a native event source. This supplies the legacy #1493 idle
+wake behavior without a second renderer or a periodic idle GPU redraw.
+
+## Resize during presentation
+
+A full local gate exposed a window size change during rendering. The old native
+test assumed that every presentation would complete without a concurrent size
+change. A recording backend now changes its target during `render`, reproducing
+the same public-call failure deterministically without window-manager timing.
+
+`Viewport::present` returns either a completed current capture or the measured
+`SurfaceChanged` extent. The owner can schedule a new frame for that new input;
+it cannot return the old image as current. The strict `redraw` convenience still
+refuses an interrupted frame. Renderer faults and incorrect backend capture
+sizes remain errors. They cannot enter the surface-change path. The native test
+uses a bounded surface-event loop and still requires exact displayed pixels for
+every completed frame. This is handling new window input, not retrying a failed
+renderer operation with unchanged inputs.

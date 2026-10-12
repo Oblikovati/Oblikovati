@@ -3,11 +3,18 @@ use super::*;
 use crate::ViewportTriangle;
 use martensite_vulkan::{FrameCapture, RenderBackend, RenderError, RenderFrame};
 use rustycad_tkmath::gp::Point3;
+use rustycad_tkservice::aspect::AspectNeutralWindow;
 use std::sync::{Arc, Mutex};
 #[derive(Default)]
 struct RecordedDevice {
     frames: Vec<RenderFrame>,
     fail: bool,
+    resize_once: Option<ResizeDuringDraw>,
+    reported_extent: Option<[u32; 2]>,
+}
+struct ResizeDuringDraw {
+    window: Handle<AspectNeutralWindow>,
+    extent: [i32; 2],
 }
 #[derive(Clone, Default)]
 struct RecordingDevice {
@@ -23,7 +30,10 @@ impl RenderBackend for RecordingDevice {
                 "a successful draw",
             ));
         }
-        let [width, height] = frame.extent();
+        if let Some(resize) = state.resize_once.take() {
+            resize.window.set_size(resize.extent[0], resize.extent[1]);
+        }
+        let [width, height] = state.reported_extent.unwrap_or(frame.extent());
         Ok(FrameCapture {
             width,
             height,
@@ -203,11 +213,7 @@ fn changed_extent_during_draw_is_a_decline_and_never_a_current_capture() {
     let mut view = runtime.open_offscreen([8, 8]).unwrap();
     view.redraw().unwrap();
     view.target.as_ref().unwrap().resize([16, 12]).unwrap();
-    assert!(
-        view.require_draw_extent()
-            .unwrap_err()
-            .contains("changed extent")
-    );
+    assert_eq!(view.observe_draw_extent().unwrap(), Some([16, 12]));
     assert!(view.capture().is_err());
     assert_eq!(view.redraw().unwrap().extent, [16, 12]);
 }
@@ -248,4 +254,60 @@ fn verify_parallel_camera_decline(view: &mut Viewport, camera: ViewportCamera) {
         .is_err()
     );
     assert_eq!(view.capture().unwrap(), before);
+}
+#[test]
+fn native_wait_declines_offscreen_and_retired_targets() {
+    let (runtime, _) = runtime();
+    let wake = crate::ViewportWake::new().unwrap();
+    let mut view = runtime.open_offscreen([8, 8]).unwrap();
+    assert!(
+        view.wait_events(&wake, None)
+            .unwrap_err()
+            .contains("native event source")
+    );
+    view.close();
+    assert!(
+        view.wait_events(&wake, None)
+            .unwrap_err()
+            .contains("live view")
+    );
+}
+
+#[test]
+fn changing_surface_during_backend_draw_reaches_the_public_call_boundary() {
+    let (runtime, recorder) = runtime();
+    let mut view = runtime.open_offscreen([8, 8]).unwrap();
+    let Some(ViewTarget::Offscreen(window)) = &view.target else {
+        panic!("expected offscreen fixture");
+    };
+    recorder.state.lock().unwrap().resize_once = Some(ResizeDuringDraw {
+        window: window.clone(),
+        extent: [16, 12],
+    });
+    assert_eq!(
+        view.present().unwrap(),
+        ViewportPresentation::SurfaceChanged([16, 12])
+    );
+    assert!(view.capture().is_err());
+    verify_new_surface_capture(&mut view, &recorder);
+}
+fn verify_new_surface_capture(view: &mut Viewport, recorder: &RecordingDevice) {
+    let ViewportPresentation::Completed(capture) = view.present().unwrap() else {
+        panic!("expected new surface frame");
+    };
+    assert_eq!(capture.extent, [16, 12]);
+    assert_eq!(capture.surface_generation, 1);
+    assert_eq!(recorder.state.lock().unwrap().frames.len(), 2);
+}
+
+#[test]
+fn wrong_backend_capture_extent_is_an_error_not_a_surface_change() {
+    let (runtime, recorder) = runtime();
+    let mut view = runtime.open_offscreen([8, 8]).unwrap();
+    recorder.state.lock().unwrap().reported_extent = Some([9, 8]);
+    assert!(view.present().unwrap_err().contains("expected extent"));
+    assert!(view.capture().is_err());
+    assert_eq!(view.surface, 0);
+    recorder.state.lock().unwrap().reported_extent = None;
+    assert_eq!(view.redraw().unwrap().extent, [8, 8]);
 }

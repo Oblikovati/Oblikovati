@@ -133,6 +133,27 @@ impl NativeWindow {
         }
         Ok(())
     }
+    pub fn wait_events(
+        &self,
+        wake: &crate::ViewportWake,
+        timeout: Option<Duration>,
+    ) -> Result<crate::ViewportReady, String> {
+        if unsafe { (self.x11.api.XPending)(self.pointer()) } != 0 {
+            return Ok(crate::ViewportReady {
+                native_events: true,
+                worker_wake: wake.consume()?,
+            });
+        }
+        let descriptor = unsafe { (self.x11.api.XConnectionNumber)(self.pointer()) };
+        if descriptor < 0 {
+            return Err(format!(
+                "X11 descriptor {descriptor}: expected a live connection"
+            ));
+        }
+        // The borrowed connection stays owned by this native target throughout the wait.
+        let native = unsafe { rustix::fd::BorrowedFd::borrow_raw(descriptor) };
+        wake.wait(native, timeout)
+    }
     pub fn poll(&self, limit: usize) -> Vec<ViewportEvent> {
         let mut events = Vec::new();
         for _ in 0..limit {
