@@ -33,3 +33,16 @@ frames available. General profiles, feature result provenance, persistent naming
 complete validity, and the remaining extent and operation modes remain open.
 
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local application checks.
+
+## Native owner-to-scene acceptance
+
+The native Linux prism test now reads the stored feature ID from the document
+owner. It creates the input in a transaction and changes the driving width in a
+second transaction. The current solved document feeds the released kernel and
+its derived mesh feeds the viewport. Five plane frames use this same path.
+
+Undo reproduces the original GPU pixel bytes; redo reproduces the edited pixel
+bytes. Each submission advances the scene generation. Every completed capture
+also matches the actual X11 drawable, including the blue pixels through the hole.
+This extends the diagnostic acceptance path. The desktop's general model-to-scene
+publication, feature result contract, and interactive feature commands remain open.

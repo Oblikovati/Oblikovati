@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::{PrismMeshOptions, retain_sketch_prism_definition};
+use oblikovati_martensite::{PrismMeshOptions, retain_stored_sketch_prism};
 use oblikovati_model::{
-    feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength},
+    feature::{FeatureId, sketch_prism::SketchPrismDefinition, work_geometry::DatumLength},
+    history::{DocumentEditHistory, DocumentSnapshot},
+    identity::RecipeIdAllocator,
     sketch::SketchPlane,
 };
 pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
@@ -22,22 +24,27 @@ pub(super) fn verify_meshed_prism(runtime: &ViewportRuntime) {
     view.close();
 }
 fn verify_placed_frame(view: &mut Viewport, plane: SketchPlane) {
-    let mut document = native_prism_document(plane);
-    let definition = native_prism_definition();
-    let first = present_document_prism(view, &document, &definition, plane);
-    document.parameters.set_expression(1, "6 cm").unwrap();
-    sketch_fixture::solve_selected_sketches(&mut document);
-    let edited = present_document_prism(view, &document, &definition, plane);
+    let mut owner = native_prism_owner(plane);
+    let first = present_document_prism(view, owner.snapshot(), plane);
+    edit_prism_width(&mut owner);
+    let edited = present_document_prism(view, owner.snapshot(), plane);
     assert!(edited.scene_generation > first.scene_generation);
     assert!(green_pixels(&edited) > green_pixels(&first));
+    owner.undo().unwrap();
+    let undone = present_document_prism(view, owner.snapshot(), plane);
+    assert!(undone.scene_generation > edited.scene_generation);
+    assert_eq!(undone.rgba, first.rgba);
+    owner.redo().unwrap();
+    let redone = present_document_prism(view, owner.snapshot(), plane);
+    assert!(redone.scene_generation > undone.scene_generation);
+    assert_eq!(redone.rgba, edited.rgba);
 }
 fn present_document_prism(
     view: &mut Viewport,
-    document: &oblikovati_model::history::DocumentSnapshot,
-    definition: &SketchPrismDefinition,
+    document: &DocumentSnapshot,
     plane: SketchPlane,
 ) -> ViewportCapture {
-    let snapshot = retain_sketch_prism_definition(document, definition).unwrap();
+    let snapshot = retain_stored_sketch_prism(document, FeatureId(1)).unwrap();
     let analytic = snapshot.report().clone();
     view.set_camera(prism_camera(plane)).unwrap();
     view.submit(&prism_scene(&snapshot)).unwrap();
@@ -46,6 +53,29 @@ fn present_document_prism(
     verify_hole_pixels(&capture);
     assert_eq!(snapshot.report(), &analytic);
     capture
+}
+fn edit_prism_width(owner: &mut DocumentEditHistory) {
+    let token = owner.begin("Width").unwrap();
+    owner
+        .edit(&token, |document, _| {
+            document.parameters.set_expression(1, "6 cm")?;
+            sketch_fixture::solve_selected_sketches(document);
+            Ok::<_, oblikovati_model::parameter::ParameterError<u64>>(())
+        })
+        .unwrap();
+    owner.commit(&token, false).unwrap();
+}
+fn native_prism_owner(plane: SketchPlane) -> DocumentEditHistory {
+    let document = native_prism_document(plane);
+    let ids = RecipeIdAllocator::restore(None, document.parameters.ids()).unwrap();
+    let mut owner = DocumentEditHistory::new(document, ids).unwrap();
+    let token = owner.begin("Prism inputs").unwrap();
+    let id = owner
+        .create_sketch_prism(&token, "Prism", native_prism_definition())
+        .unwrap();
+    assert_eq!(id, FeatureId(1));
+    owner.commit(&token, false).unwrap();
+    owner
 }
 fn green_pixels(capture: &ViewportCapture) -> usize {
     capture
