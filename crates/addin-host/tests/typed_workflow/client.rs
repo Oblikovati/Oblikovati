@@ -2,6 +2,7 @@
 pub(super) use super::report::WorkflowReport;
 use super::*;
 pub(super) fn execute<T: Caller>(client: Client<T>, path: &Path) -> WorkflowReport {
+    verify_asset_catalog(&client);
     let created = create_part(&client);
     let circle = create_constrained_circle(&client);
     let after = edit_with_history(&client, circle);
@@ -150,4 +151,34 @@ fn assert_width_expression<T: Caller>(client: &Client<T>) {
         })
         .unwrap();
     assert_eq!(width.expression, "35 mm");
+}
+
+fn verify_asset_catalog<T: Caller>(client: &Client<T>) {
+    assert_eq!(
+        client.materials().list().unwrap().materials.unwrap().len(),
+        126
+    );
+    assert_eq!(
+        client
+            .appearances()
+            .list()
+            .unwrap()
+            .appearances
+            .unwrap()
+            .len(),
+        94
+    );
+    let physical = client
+        .materials()
+        .get(&AssetRefArgs { id: "steel".into() })
+        .unwrap();
+    assert_eq!(physical.isotropy_class, "isotropic");
+    assert_eq!(physical.density, 7.87);
+    let visual = client
+        .appearances()
+        .get(&AssetRefArgs {
+            id: physical.appearance_id,
+        })
+        .unwrap();
+    assert!(visual.geometry.opacity > 0.);
 }

@@ -93,3 +93,19 @@ fn verify_source_decline(path: &Path) {
             .success()
     );
 }
+
+#[test]
+fn executable_lua_reads_physical_and_visual_catalogs_without_a_document() {
+    let directory = tempfile::tempdir().unwrap();
+    let script = write_source(
+        directory.path(),
+        r#"local m=oblikovati.materials.list().materials;assert(#m==126);local a=oblikovati.appearances.list().appearances;assert(#a==94);local s=oblikovati.materials.get{id='steel'};assert(s.isotropyClass=='isotropic');assert(s.density==7.87);local v=oblikovati.appearances.get{id=s.appearanceId};assert(v.id==s.appearanceId);assert(#oblikovati.documents.list().documents==0);print('catalog-ready')"#,
+    );
+    let output = cli(&["script", "run", script.to_str().unwrap()]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("catalog-ready"));
+}

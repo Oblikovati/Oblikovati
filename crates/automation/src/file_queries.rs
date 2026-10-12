@@ -37,6 +37,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
     for FileQueryHost<'_, O, W, F>
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::ASSET_QUERY_METHODS.contains(&method) {
+            return crate::assets::query(self.files, method, request);
+        }
         if crate::DATUM_QUERY_METHODS.contains(&method) {
             return crate::datums::query(self.files, method, request);
         }

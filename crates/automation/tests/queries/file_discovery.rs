@@ -210,3 +210,6 @@ mod derived_sources;
 
 #[path = "datums_api.rs"]
 mod datums_api;
+
+#[path = "asset_catalog.rs"]
+mod asset_catalog;

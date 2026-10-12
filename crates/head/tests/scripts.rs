@@ -230,3 +230,13 @@ fn await_native_startup<D: ScriptDocumentOwner>(scripts: &mut DesktopScripts<D>)
         std::thread::yield_now();
     }
 }
+
+#[test]
+fn desktop_console_reads_the_owned_material_catalog_without_a_document() {
+    let mut desktop = desktop();
+    desktop.console_mut().run("assert(#oblikovati.materials.list().materials==126);local p=oblikovati.materials.get{id='steel'};assert(p.isotropyClass=='isotropic');local a=oblikovati.appearances.get{id=p.appearanceId};assert(a.id==p.appearanceId);assert(#oblikovati.documents.list().documents==0)").unwrap();
+    finish(&mut desktop);
+    let result = desktop.console().snapshot().last_run.unwrap().result;
+    assert!(result.is_ok(), "{result:?}");
+    desktop.finish().unwrap();
+}

@@ -234,3 +234,6 @@ pub(crate) use wire_json::{decode_wire_arguments as decode, encode_wire_reply as
 
 mod inventory;
 pub use inventory::file_host_methods;
+
+mod assets;
+pub use assets::ASSET_QUERY_METHODS;

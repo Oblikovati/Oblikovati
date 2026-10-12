@@ -16,6 +16,7 @@ type workflowReport struct {
 }
 
 func executeWorkflow(c *client.Client, path string) workflowReport {
+	verifyWorkflowAssetCatalog(c)
 	created := createWorkflowPart(c)
 	circle := createWorkflowCircle(c)
 	edited := editWorkflowHistory(c, circle)
@@ -122,4 +123,24 @@ func verifyWorkflowCatalog(c *client.Client) {
 		}
 	}
 	panic("typed Go fixture: expected its ID in the registry catalog")
+}
+
+func verifyWorkflowAssetCatalog(c *client.Client) {
+	physicals, err := c.Materials().List()
+	requireWorkflowSuccess(err)
+	visuals, err := c.Appearances().List()
+	requireWorkflowSuccess(err)
+	if len(physicals.Materials) != 126 || len(visuals.Appearances) != 94 {
+		panic("asset catalog: expected 126 physical and 94 visual assets")
+	}
+	steel, err := c.Materials().Get("steel")
+	requireWorkflowSuccess(err)
+	if steel.IsotropyClass != "isotropic" || steel.Density != 7.87 {
+		panic("steel: expected Go catalog properties")
+	}
+	visual, err := c.Appearances().Get(steel.AppearanceID)
+	requireWorkflowSuccess(err)
+	if visual.Geometry.Opacity <= 0 {
+		panic("steel appearance: expected positive opacity")
+	}
 }

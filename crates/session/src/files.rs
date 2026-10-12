@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! File bindings owned together with their document sessions.
+mod asset_catalog;
+pub use asset_catalog::WorkspaceAssetCatalogSource;
 mod batch;
 pub use batch::BatchSaveError;
 mod copy;
@@ -72,6 +74,9 @@ pub struct FileWorkspace<O, W, F> {
     files: F,
     projects: Vec<LoadedProject>,
     active_project: Option<usize>,
+    asset_catalog_source: Box<dyn WorkspaceAssetCatalogSource>,
+    asset_catalog:
+        std::cell::OnceCell<Result<oblikovati_model::assets::BuiltinAssetCatalog, String>>,
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
@@ -86,6 +91,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         files: F,
         options: oblikovati_solve::nonlinear::SolveOptions,
     ) -> Self {
+        Self::new_with_asset_catalog_source(
+            observer,
+            files,
+            options,
+            Box::new(asset_catalog::EmbeddedWorkspaceCatalog),
+        )
+    }
+    /// Inject an immutable catalog source without loading it; example: `FileWorkspace::new_with_asset_catalog_source(observer, files, options, source)`.
+    pub fn new_with_asset_catalog_source(
+        observer: W,
+        files: F,
+        options: oblikovati_solve::nonlinear::SolveOptions,
+        source: Box<dyn WorkspaceAssetCatalogSource>,
+    ) -> Self {
         Self {
             workspace: WorkspaceSession::new_with_sketch_options(observer, options),
             retained: BTreeMap::new(),
@@ -93,6 +112,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             files,
             projects: Vec::new(),
             active_project: None,
+            asset_catalog_source: source,
+            asset_catalog: std::cell::OnceCell::new(),
         }
     }
 
