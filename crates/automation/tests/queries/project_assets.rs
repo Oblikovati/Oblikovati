@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_persistence::project_file::ProjectConfiguration;
+#[path = "project_assets_reload.rs"]
+mod reload;
 fn project_files(files: &DiscoveryWorkspace, name: &str, steel_name: &str) -> std::path::PathBuf {
     let root = std::path::PathBuf::from(format!("/fixtures/{name}"));
     let project = root.join("design.opj");
@@ -102,6 +104,23 @@ fn document_definition_stays_authoritative_over_selected_project_changes() {
         )
         .unwrap()
         .session_id;
+    let before_reload = files.workspace().session(id).unwrap().snapshot().clone();
+    let dirty_before_reload = files.workspace().needs_save(id).unwrap();
+    project_files(&files, "one", "Reloaded");
+    files.reload_project_assets(&first).unwrap();
+    assert!(
+        files
+            .workspace()
+            .session(id)
+            .unwrap()
+            .snapshot()
+            .same_metadata_recipe(&before_reload)
+    );
+    assert_eq!(
+        files.workspace().needs_save(id).unwrap(),
+        dirty_before_reload
+    );
+    assert_eq!(material_name(&files, "steel"), "First");
     let second = project_files(&files, "two", "Second");
     files.load_project(&second).unwrap();
     files.select_project(&second).unwrap();

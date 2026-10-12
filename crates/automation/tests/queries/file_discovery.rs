@@ -14,6 +14,7 @@ use std::{cell::RefCell, collections::BTreeMap, io, path::PathBuf, rc::Rc};
 type MemoryPackages = Rc<RefCell<BTreeMap<PathBuf, Vec<u8>>>>;
 #[derive(Default)]
 struct DiscoveryFiles {
+    reads: usize,
     refuse_write: bool,
     save_aliases: RefCell<BTreeMap<PathBuf, PathBuf>>,
     packages: MemoryPackages,
@@ -24,6 +25,7 @@ struct DiscoveryStage {
 }
 impl PackageFileReader for DiscoveryFiles {
     fn read(&mut self, path: &Path) -> io::Result<Vec<u8>> {
+        self.reads += 1;
         self.packages.borrow().get(path).cloned().ok_or_else(|| {
             io::Error::new(io::ErrorKind::NotFound, format!("missing fixture {path:?}"))
         })

@@ -78,6 +78,23 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         Ok(())
     }
 
+    /// Reload a registered project's libraries without changing selection or documents.
+    /// Example: `host.reload_project_assets(&canonical)?;` after an external library edit.
+    pub fn reload_project_assets(&mut self, canonical: &Path) -> Result<(), FileWorkspaceError> {
+        let index = self
+            .projects
+            .iter()
+            .position(|project| project.path == canonical)
+            .ok_or_else(|| FileWorkspaceError::UnknownProject(canonical.into()))?;
+        let candidate = oblikovati_persistence::assets::load_project_asset_library(
+            self.projects[index].bound.design_data.as_deref(),
+            &mut self.files,
+        )
+        .map_err(FileWorkspaceError::ProjectAssets)?;
+        self.projects[index].assets = candidate;
+        Ok(())
+    }
+
     pub(super) fn active_lookup(&self) -> Result<&ProjectFileLookup, FileWorkspaceError> {
         self.active_project()
             .map(|project| &project.bound.lookup)
