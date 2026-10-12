@@ -22,7 +22,8 @@ fn native_scene_package() -> Vec<u8> {
         .encode()
         .unwrap()
 }
-fn open_native_part(owner: &mut NativeDesktopOwner, path: &std::path::Path) -> u64 {
+/// Open a real stored part through the typed API; example: `open_native_part(owner, path)` for foreground acceptance.
+pub(super) fn open_native_part(owner: &mut NativeDesktopOwner, path: &std::path::Path) -> u64 {
     std::fs::write(path, native_scene_package()).unwrap();
     Client::new(owner.document_host())
         .documents()
@@ -43,7 +44,8 @@ fn native_set(owner: &mut NativeDesktopOwner, name: &str, expression: &str) {
         })
         .unwrap();
 }
-fn publish_native_scene(
+/// Publish the current owner result and verify its native title; example: `publish_native_scene(owner, window)`.
+pub(super) fn publish_native_scene(
     owner: &mut NativeDesktopOwner,
     window: &mut NativeHeadWindow,
 ) -> ViewportCapture {
@@ -56,7 +58,8 @@ fn publish_native_scene(
     );
     capture_native_scene(window)
 }
-fn capture_native_scene(window: &mut NativeHeadWindow) -> ViewportCapture {
+/// Capture a completed scene and check its X11 pixels; example: `capture_native_scene(window)`.
+pub(super) fn capture_native_scene(window: &mut NativeHeadWindow) -> ViewportCapture {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     loop {
         match window.view.present().unwrap() {

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{ViewportEvent, types::valid_extent};
+#[path = "x11/input.rs"]
+mod input;
 use rustycad_tkernel::standard::Handle;
 use rustycad_tkservice::{
     aspect::{AspectDisplayConnection, AspectWindow, AspectXAtom},
@@ -86,7 +88,14 @@ impl NativeWindow {
             (self.x11.api.XSelectInput)(
                 self.pointer(),
                 self.window.native_handle(),
-                xlib::ExposureMask | xlib::StructureNotifyMask | xlib::FocusChangeMask,
+                xlib::ExposureMask
+                    | xlib::StructureNotifyMask
+                    | xlib::FocusChangeMask
+                    | xlib::ButtonPressMask
+                    | xlib::ButtonReleaseMask
+                    | xlib::PointerMotionMask
+                    | xlib::KeyPressMask
+                    | xlib::KeyReleaseMask,
             );
         }
     }
@@ -185,7 +194,8 @@ impl NativeWindow {
                 Some(ViewportEvent::Mapped(event.get_type() == xlib::MapNotify))
             }
             xlib::ClientMessage => self.close_event(event),
-            _ => None,
+            _ => input::translate_pointer_key(&self.x11.api, self.pointer(), event)
+                .map(ViewportEvent::Input),
         }
     }
     fn resize_event(&self) -> ViewportEvent {

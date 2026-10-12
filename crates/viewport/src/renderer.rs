@@ -14,6 +14,8 @@ use rustycad_tkservice::{
     },
 };
 use rustycad_tkv3d::v3d::{V3dView, V3dViewer};
+#[path = "renderer/navigation.rs"]
+mod navigation;
 pub(crate) struct RenderView {
     pub viewer: Handle<V3dViewer>,
     pub view: Handle<V3dView>,

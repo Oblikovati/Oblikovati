@@ -9,6 +9,8 @@ pub use frames::{HeadPresentation, HeadSummary, HeadWindow, run_window, run_wind
 #[cfg(target_os = "linux")]
 mod native;
 #[cfg(target_os = "linux")]
+mod navigation;
+#[cfg(target_os = "linux")]
 pub use native::{NativeHeadWindow, run_native};
 #[cfg(target_os = "linux")]
 mod work;

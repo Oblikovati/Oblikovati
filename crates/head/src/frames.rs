@@ -58,6 +58,7 @@ impl FrameControl {
     fn events(&mut self, events: &[ViewportEvent], close_allowed: bool) {
         for event in events {
             match event {
+                ViewportEvent::Input(_) => {}
                 ViewportEvent::CloseRequested => {
                     self.closed = close_allowed;
                     self.pending |= !close_allowed;

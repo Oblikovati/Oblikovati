@@ -69,7 +69,7 @@ impl ViewportTriangle {
         Ok(())
     }
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ViewportCamera {
     pub eye: [f64; 3],
     pub target: [f64; 3],
@@ -148,6 +148,7 @@ pub enum ViewportPresentation {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewportEvent {
+    Input(crate::ViewportInput),
     Expose,
     Resized([u32; 2]),
     Focus(bool),

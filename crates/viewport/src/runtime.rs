@@ -138,6 +138,24 @@ impl Viewport {
         self.completed = None;
         Ok(())
     }
+    /// Read the current kernel camera without exposing a mutable handle; example: `viewport.camera_state()?`.
+    pub fn camera_state(&self) -> Result<ViewportCamera, String> {
+        self.live().map(RenderView::camera_state)
+    }
+    /// Apply camera input and invalidate only a changed frame; example: `viewport.navigate(ViewportNavigation::Pan([10, 0]))?`.
+    pub fn navigate(&mut self, command: crate::ViewportNavigation) -> Result<bool, String> {
+        self.live()?;
+        self.refresh_extent()?;
+        command.validate(self.extent)?;
+        if command.is_stationary() {
+            return Ok(false);
+        }
+        let next = next_generation(self.camera)?;
+        self.live()?.navigate(command)?;
+        self.camera = next;
+        self.completed = None;
+        Ok(true)
+    }
     /// Resize and report actual drawable size; example: `viewport.resize([800,600])?`.
     pub fn resize(&mut self, extent: [u32; 2]) -> Result<[u32; 2], String> {
         self.live()?;

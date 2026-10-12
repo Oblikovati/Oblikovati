@@ -5,6 +5,8 @@ use oblikovati_viewport::{
     ViewportRuntime, ViewportScene, ViewportTriangle,
 };
 use std::time::{Duration, Instant};
+#[path = "native/navigation.rs"]
+mod navigation;
 #[path = "native/prism.rs"]
 mod prism;
 // The native suite shares the authored kernel-consumer corpus without running every fixture helper.

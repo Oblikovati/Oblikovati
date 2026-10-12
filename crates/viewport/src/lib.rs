@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned Linux viewports over the published Martensite device and presentation path.
+mod input;
+pub use input::{
+    ViewportButton, ViewportInput, ViewportKey, ViewportModifiers, ViewportNavigation,
+};
 mod presentation;
 pub use presentation::{PartPresentation, PartPresentationDecline};
 mod types;

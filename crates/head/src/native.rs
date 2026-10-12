@@ -9,6 +9,7 @@ pub struct NativeHeadWindow {
     view: Viewport,
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
+    navigation: crate::navigation::DesktopNavigation,
 }
 impl NativeHeadWindow {
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
@@ -24,6 +25,7 @@ impl NativeHeadWindow {
             view,
             wake: ViewportWake::new()?,
             scene_status: None,
+            navigation: Default::default(),
         })
     }
 }
@@ -31,6 +33,26 @@ impl NativeHeadWindow {
     /// Inspect the current displayed generation and detailed declines; example: `window.scene_status()` for a health panel.
     pub fn scene_status(&self) -> Option<&crate::HeadSceneStatus> {
         self.scene_status.as_ref()
+    }
+}
+impl NativeHeadWindow {
+    fn navigation_events(
+        &mut self,
+        mut inputs: Vec<ViewportEvent>,
+    ) -> Result<Vec<ViewportEvent>, String> {
+        if self.apply_navigation_inputs(&inputs)? {
+            inputs.push(ViewportEvent::Expose);
+        }
+        Ok(inputs)
+    }
+    fn apply_navigation_inputs(&mut self, inputs: &[ViewportEvent]) -> Result<bool, String> {
+        let mut changed = false;
+        for event in inputs {
+            if let Some(command) = self.navigation.command(event)? {
+                changed |= self.view.navigate(command)?;
+            }
+        }
+        Ok(changed)
     }
 }
 impl HeadWindow for NativeHeadWindow {
@@ -42,7 +64,8 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
-        self.view.poll_events(limit)
+        let inputs = self.view.poll_events(limit)?;
+        self.navigation_events(inputs)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
         Ok(match self.view.present()? {
@@ -122,3 +145,7 @@ mod owner_tests;
 #[cfg(test)]
 #[path = "../tests/native_scene.rs"]
 mod scene_tests;
+
+#[cfg(test)]
+#[path = "../tests/navigation/native.rs"]
+mod navigation_tests;
