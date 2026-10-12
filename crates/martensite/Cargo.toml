@@ -9,6 +9,7 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
+rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
 rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
 rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
 rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
@@ -22,7 +23,6 @@ rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = 
 workspace = true
 
 [dev-dependencies]
-rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 
@@ -35,3 +35,6 @@ path = "tests/planar_spline.rs"
 [[test]]
 name = "go_spline_recipe"
 path = "tests/go_spline_recipe.rs"
+[[test]]
+name = "prism"
+path = "tests/prism.rs"

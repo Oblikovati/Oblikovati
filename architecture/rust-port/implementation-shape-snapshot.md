@@ -43,7 +43,7 @@ The local generator command is:
 ```sh
 g++ -std=c++17 -I../occt-install/include/opencascade \
   crates/martensite/tests/snapshot/occt_oracle.cpp \
-  -L../occt-install/lib -lTKPrim -lTKTopAlgo -lTKBRep \
+  -L../occt-install/lib -Wl,-rpath-link,../occt-install/lib -lTKPrim -lTKTopAlgo -lTKBRep \
   -lTKGeomBase -lTKG3d -lTKMath -lTKernel \
   -o /tmp/oblikovati-snapshot-occt-oracle
 LD_LIBRARY_PATH=../occt-install/lib /tmp/oblikovati-snapshot-occt-oracle

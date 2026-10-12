@@ -18,5 +18,5 @@ fn invalid_geometry_is_refused_before_reading_properties() {
     let extents = [2.0, 3.0, 4.0];
     let message = require_valid_probe(&face.into(), extents).unwrap_err();
     assert!(message.contains(&format!("{extents:?}")));
-    assert!(message.contains("expected a geometrically valid solid"));
+    assert!(message.contains("expected a geometrically valid B-rep"));
 }

@@ -79,7 +79,7 @@ fn verify_nonfinite_properties_declined() {
         },
     ] {
         assert!(
-            crate::require_finite_properties(&properties, [1.; 3])
+            crate::require_finite_result(&properties, "snapshot synthetic properties")
                 .unwrap_err()
                 .contains("expected finite analytic")
         );

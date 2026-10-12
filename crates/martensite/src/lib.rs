@@ -46,15 +46,14 @@ fn build_probe(extents: [f64; 3]) -> Result<Shape, String> {
 }
 
 fn require_valid_probe(shape: &Shape, extents: [f64; 3]) -> Result<(), String> {
+    require_geometric_shape(shape, &format!("probe extents {extents:?}"))
+}
+fn require_geometric_shape(shape: &Shape, context: &str) -> Result<(), String> {
     let valid = BRepCheckAnalyzer::new(shape, true, false, true)
         .and_then(|checker| checker.is_valid())
-        .map_err(|error| {
-            format!("probe extents {extents:?}: expected geometric validity: {error}")
-        })?;
+        .map_err(|error| format!("{context}: expected geometric validity: {error}"))?;
     if !valid {
-        return Err(format!(
-            "probe extents {extents:?}: expected a geometrically valid solid"
-        ));
+        return Err(format!("{context}: expected a geometrically valid B-rep"));
     }
     Ok(())
 }
@@ -63,24 +62,26 @@ fn analytic_probe_properties(
     shape: &Shape,
     extents: [f64; 3],
 ) -> Result<ReleaseProbeProperties, String> {
+    analytic_shape_properties(shape, &format!("probe extents {extents:?}"))
+}
+fn analytic_shape_properties(
+    shape: &Shape,
+    context: &str,
+) -> Result<ReleaseProbeProperties, String> {
     let mut properties = GProps::new();
-    // This probe has analytic surfaces and no mesh; it cannot take the kernel's mesh path.
-    BRepGProp::volume_properties(shape, &mut properties, true, false, false).map_err(|error| {
-        format!("probe extents {extents:?}: expected analytic properties: {error}")
-    })?;
+    // Analytic integration explicitly disables the kernel's triangulation path.
+    BRepGProp::volume_properties(shape, &mut properties, true, false, false)
+        .map_err(|error| format!("{context}: expected analytic properties: {error}"))?;
     let centroid = properties.centre_of_mass();
     let result = ReleaseProbeProperties {
         volume: properties.mass(),
         centroid: [centroid.x(), centroid.y(), centroid.z()],
     };
-    require_finite_properties(&result, extents)?;
+    require_finite_result(&result, context)?;
     Ok(result)
 }
 
-fn require_finite_properties(
-    properties: &ReleaseProbeProperties,
-    extents: [f64; 3],
-) -> Result<(), String> {
+fn require_finite_result(properties: &ReleaseProbeProperties, context: &str) -> Result<(), String> {
     if !properties.volume.is_finite()
         || properties
             .centroid
@@ -88,7 +89,7 @@ fn require_finite_properties(
             .any(|coordinate| !coordinate.is_finite())
     {
         return Err(format!(
-            "probe extents {extents:?}, properties {properties:?}: expected finite analytic volume and centroid"
+            "{context}, properties {properties:?}: expected finite analytic volume and centroid"
         ));
     }
     Ok(())
@@ -100,3 +101,9 @@ mod validity_errors;
 
 mod planar_spline;
 pub use planar_spline::{PlanarSplineDefinition, PlanarSplineSample, evaluate_planar_spline};
+
+mod prism;
+pub use prism::{
+    PrismFaceProbe, PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
+    probe_planar_prism,
+};
