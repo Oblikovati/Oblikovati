@@ -36,3 +36,25 @@ fn non_window_commands_and_argument_errors_need_no_display() {
     assert!(!failed.status.success());
     assert!(!failed.stderr.is_empty());
 }
+
+#[test]
+fn executable_opens_startup_paths_with_spaces_and_reports_missing_files() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("startup part.opd");
+    let bytes = b"schemaVersion: 2\ndocumentType: 1\n";
+    std::fs::write(&path, bytes).unwrap();
+    let output = invoke(&["--frames", "1", path.to_str().unwrap()], None);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(std::fs::read(path).unwrap(), bytes);
+    verify_missing_startup_path(directory.path());
+}
+fn verify_missing_startup_path(directory: &std::path::Path) {
+    let missing = directory.join("missing.opd");
+    let output = invoke(&["--frames=1", missing.to_str().unwrap()], None);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("missing.opd"));
+}

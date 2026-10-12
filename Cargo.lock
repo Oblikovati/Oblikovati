@@ -573,6 +573,7 @@ dependencies = [
  "oblikovati-script",
  "oblikovati-session",
  "oblikovati-viewport",
+ "serde_json",
  "tempfile",
 ]
 

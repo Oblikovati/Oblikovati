@@ -68,8 +68,9 @@ window-manager close message; native protocol translation has separate tests.
 
 ## Remaining work
 
-The executable still shows a clear viewport. Model presentations, shared Dear
-ImGui composition, UI commands and save prompts, native add-in registry
+Stored prism presentations and camera navigation now use this owner. Native
+files also open through [executable startup](implementation-desktop-startup.md).
+Shared Dear ImGui composition, UI commands and save prompts, native add-in registry
 attachment and C callbacks, event subscriptions, and foreground MCPBridge tests
 remain open. This work does not establish a usable CAD desktop or complete
 R1V/R4/R7. Tests remain local to Linux; no remote push or CI run is included.

@@ -4,7 +4,8 @@ use crate::HeadWork;
 use crate::scene_fixture as fixture;
 use oblikovati_api::{client::Client, wire::*};
 use oblikovati_viewport::ViewportCapture;
-fn native_scene_package() -> Vec<u8> {
+/// Encode the shared stored-prism fixture; example: `native_scene_package()` for live file-open tests.
+pub(super) fn native_scene_package() -> Vec<u8> {
     let snapshot = fixture::selected_prism_document();
     let package = oblikovati_persistence::package::DocumentPackage::decode(
         b"schemaVersion: 2\ndocumentType: 1\n",
@@ -84,7 +85,8 @@ fn verify_native_pixels(
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
 }
-fn solid_pixels(capture: &ViewportCapture) -> usize {
+/// Count the visible fixture body pixels; example: `solid_pixels(&capture)` after native presentation.
+pub(super) fn solid_pixels(capture: &ViewportCapture) -> usize {
     capture
         .rgba
         .as_chunks::<4>()

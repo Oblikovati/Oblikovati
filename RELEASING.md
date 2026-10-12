@@ -6,8 +6,9 @@ and [ADR-0013](architecture/decisions/ADR-0013-packaging-and-release.md).
 [Issue #3560](https://github.com/Oblikovati/Oblikovati/issues/3560) tracks this port.
 
 The application port is incomplete. The Cargo workspace contains the build tool,
-model/storage/session foundations, and a CLI with manifest inspection and version
-commands. The GUI is absent. A passing gate tests the code that exists.
+model/storage/session foundations, a CLI, and a native head with saved prism
+display and camera navigation. Dear ImGui chrome and editing controls remain
+open work. A passing gate tests the code that exists.
 Application package and publication preflight checks must fail until the real
 application, released dependencies, resources, and native acceptance tests exist.
 
@@ -50,6 +51,21 @@ display. `oblikovati-head` always requires one on Linux. Run `xvfb-run -a make
 gate` when no physical display is available. A missing required display is an
 error. Native CI checks every target below; a local Linux pass is not a macOS
 or Windows runtime result.
+
+This host's installed Vulkan validation layer 1.3.275 crashes during concurrent
+device use. Local acceptance uses the official Ubuntu layer 1.4.321.0-1, kept
+under ignored `.tools/vulkan-validation-1.4.321/`, with its manifest naming the
+absolute library path. Validation stays enabled and tests stay concurrent:
+
+```sh
+VK_LAYER_PATH="$PWD/.tools/vulkan-validation-1.4.321/layers" \
+  CARGO_NET_OFFLINE=true make gate
+```
+
+The [native stress report](architecture/rust-port/diagnostic-startup-native-crash.md)
+records package provenance, the failing stack, and the comparison. This is a
+local test-tool selection; it does not change system libraries or the released
+Martensite pin. Windows and macOS tests remain deferred by user instruction.
 
 ## Dependency ownership
 

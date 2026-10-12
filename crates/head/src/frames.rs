@@ -114,10 +114,17 @@ pub fn run_window_with_owner(
     owner: &mut dyn HeadWork,
 ) -> Result<HeadSummary, String> {
     let outcome = run_frames(window, options, owner);
+    retire_head_run(outcome, owner, window)
+}
+pub(crate) fn retire_head_run(
+    outcome: Result<HeadSummary, String>,
+    owner: &mut dyn HeadWork,
+    window: &mut dyn HeadWindow,
+) -> Result<HeadSummary, String> {
     let outcome = combine_retirement(outcome, owner.finish());
     combine_retirement(outcome, window.finish())
 }
-fn combine_retirement(
+pub(crate) fn combine_retirement(
     outcome: Result<HeadSummary, String>,
     retirement: Result<(), String>,
 ) -> Result<HeadSummary, String> {
@@ -127,7 +134,7 @@ fn combine_retirement(
         (Err(error), Err(cleanup)) => Err(format!("head run: {error}; retirement: {cleanup}")),
     }
 }
-fn run_frames(
+pub(crate) fn run_frames(
     window: &mut dyn HeadWindow,
     options: HeadOptions,
     owner: &mut dyn HeadWork,

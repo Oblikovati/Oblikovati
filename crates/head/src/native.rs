@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{HeadOptions, HeadPresentation, HeadSummary, HeadWindow, run_window_with_owner};
+use crate::{HeadOptions, HeadPresentation, HeadSummary, HeadWindow};
 use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene,
     ViewportWake,
@@ -120,19 +120,36 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         crate::DesktopDispatchOptions::default(),
     ))
 }
-/// Open the Linux head on its owner thread; example: `run_native(HeadOptions { frames: Some(3) })?`.
-pub fn run_native(options: HeadOptions) -> Result<HeadSummary, String> {
-    let mut window = NativeHeadWindow::open()?;
-    let owner = native_owner(window.wake.clone())?;
+type NativeScriptDesktop = crate::DesktopScripts<NativeDesktopOwner>;
+fn native_script_owner(wake: ViewportWake) -> Result<NativeScriptDesktop, String> {
     let executable = std::env::current_exe()
-        .map_err(|error| format!("desktop script worker: expected current executable: {error}"))?;
+        .map_err(|cause| format!("desktop script worker: expected current executable: {cause}"))?;
+    let owner = native_owner(wake)?;
     let engine = oblikovati_script::IsolatedLuaEngine::new(
         &executable,
         vec![oblikovati_script::WORKER_ARGUMENT.into()],
     );
-    let mut owner =
-        crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
-    run_window_with_owner(&mut window, options, &mut owner)
+    Ok(crate::DesktopScripts::new(
+        owner,
+        engine,
+        oblikovati_script::ScriptLimits::gui(),
+    ))
+}
+/// Open the Linux head on its owner thread; example: `run_native(HeadOptions { frames: Some(3) })?`.
+pub fn run_native(options: HeadOptions) -> Result<HeadSummary, String> {
+    run_native_documents(options, &[])
+}
+/// Open native documents before the first frame; example: `run_native_documents(options, &["part.opd".into()])?`.
+pub fn run_native_documents(
+    options: HeadOptions,
+    documents: &[std::path::PathBuf],
+) -> Result<HeadSummary, String> {
+    let mut window = NativeHeadWindow::open()?;
+    let mut owner = match native_script_owner(window.wake.clone()) {
+        Ok(owner) => owner,
+        Err(cause) => return crate::frames::combine_retirement(Err(cause), window.finish()),
+    };
+    crate::run_window_with_documents(&mut window, options, &mut owner, documents)
 }
 #[cfg(test)]
 #[path = "../tests/native_wait.rs"]
@@ -149,3 +166,7 @@ mod scene_tests;
 #[cfg(test)]
 #[path = "../tests/navigation/native.rs"]
 mod navigation_tests;
+
+#[cfg(test)]
+#[path = "../tests/native_startup.rs"]
+mod startup_tests;

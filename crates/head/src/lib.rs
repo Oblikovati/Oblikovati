@@ -11,7 +11,11 @@ mod native;
 #[cfg(target_os = "linux")]
 mod navigation;
 #[cfg(target_os = "linux")]
-pub use native::{NativeHeadWindow, run_native};
+pub use native::{NativeHeadWindow, run_native, run_native_documents};
+#[cfg(target_os = "linux")]
+mod startup;
+#[cfg(target_os = "linux")]
+pub use startup::run_window_with_documents;
 #[cfg(target_os = "linux")]
 mod work;
 #[cfg(target_os = "linux")]
@@ -33,7 +37,7 @@ mod scripts;
 #[cfg(target_os = "linux")]
 pub use scripts::{DesktopScripts, ScriptDocumentOwner};
 use std::{ffi::OsString, io::Write};
-const USAGE: &str = "usage: oblikovati-head [--frames N]\n       oblikovati-head --help\n       oblikovati-head --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
+const USAGE: &str = "usage: oblikovati-head [--frames N] [--] [DOCUMENT ...]\n       oblikovati-head --help\n       oblikovati-head --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
 /// Execute the desktop entry point with injected output; example: `run(&["--help".into()], output)?;`.
 pub fn run(arguments: &[OsString], output: &mut dyn Write) -> Result<(), String> {
     match parse_arguments(arguments)? {
@@ -48,15 +52,16 @@ pub fn run(arguments: &[OsString], output: &mut dyn Write) -> Result<(), String>
                 ),
             )
         }
-        HeadCommand::Window(options) => launch(options),
+        HeadCommand::Window(options) => launch_documents(options, &[]),
+        HeadCommand::OpenDocuments { options, documents } => launch_documents(options, &documents),
     }
 }
 #[cfg(target_os = "linux")]
-fn launch(options: HeadOptions) -> Result<(), String> {
-    run_native(options).map(|_| ())
+fn launch_documents(options: HeadOptions, documents: &[std::path::PathBuf]) -> Result<(), String> {
+    run_native_documents(options, documents).map(|_| ())
 }
 #[cfg(not(target_os = "linux"))]
-fn launch(_: HeadOptions) -> Result<(), String> {
+fn launch_documents(_: HeadOptions, _: &[std::path::PathBuf]) -> Result<(), String> {
     Err("desktop target: expected the supported local Linux profile; other platforms remain deferred".into())
 }
 fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {

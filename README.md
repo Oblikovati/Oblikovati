@@ -7,21 +7,25 @@ use the Rust contract in **Oblikovati.API** and the **Martensite** kernel in
 Go-kernel capabilities that support application features and are outside OCCT
 must be ported and adapted into Martensite as required kernel extensions.
 
-The branch contains the port plan and 13 consolidated Rust ADRs. All 66 legacy
+The branch contains the port plan and consolidated Rust ADRs. All 66 legacy
 Go ADRs have a recorded disposition. The Rust build and release tools are present;
 model, parameter, file lifecycle, and storage foundations are present. The headless CLI supports document creation, recipe open/save-as, script execution,
 manifest inspection, version, and help. The first desktop executable supplies
-native window lifetime and event-driven presentation. Model display, Dear ImGui
-chrome, and remaining CLI commands are not yet ported. Publication remains blocked. The
+native window lifetime, saved prism display, camera navigation, and document
+startup. Dear ImGui chrome and remaining CLI commands are not yet ported.
+Publication remains blocked. The
 [kernel release intake](architecture/rust-port/implementation-kernel-release.md)
-pins Martensite v0.1.2 and adds Linux package acceptance at the adapter boundary.
+pins Martensite v0.2.1 and adds Linux package acceptance at the adapter boundary.
 
 Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
 package manifest without reconstructing geometry or changing the file.
 
 Run `cargo run -p oblikovati-head -- --frames 3` on the local Linux display for a
-bounded native window smoke run. The current head shows an empty viewport; it
-does not yet show document geometry or editing controls.
+bounded native window smoke run. Add a native document path to display its
+supported stored geometry, for example
+`cargo run -p oblikovati-head -- --frames 3 "path/to/part.opd"`.
+Editing controls remain open work.
+See [startup behavior and checks](architecture/rust-port/implementation-desktop-startup.md).
 
 - [Implementation evidence](architecture/rust-port/implementation.md): tested
   behavior, source mapping, and remaining work.

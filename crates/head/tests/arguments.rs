@@ -35,7 +35,7 @@ fn malformed_smoke_counts_and_unknown_operands_are_refused_before_window_creatio
                 .contains("unsigned 64-bit")
         );
     }
-    for operands in [vec!["--frames"], vec!["file.opd"], vec!["--help", "extra"]] {
+    for operands in [vec!["--frames"], vec!["--unknown"], vec!["--help", "extra"]] {
         let arguments: Vec<OsString> = operands.into_iter().map(OsString::from).collect();
         assert!(
             parse_arguments(&arguments)
@@ -78,4 +78,58 @@ fn output_failures_are_named() {
             .unwrap_err()
             .contains("writable stream")
     );
+}
+
+#[test]
+fn startup_paths_and_frame_options_preserve_order_and_spaces() {
+    let arguments = ["first part.opd", "--frames=3", "second.opd"].map(OsString::from);
+    let expected = HeadCommand::OpenDocuments {
+        options: HeadOptions { frames: Some(3) },
+        documents: ["first part.opd", "second.opd"]
+            .map(std::path::PathBuf::from)
+            .into(),
+    };
+    assert_eq!(parse_arguments(&arguments).unwrap(), expected);
+    assert_eq!(
+        parse_arguments(&["-frames=3".into()]).unwrap(),
+        HeadCommand::Window(HeadOptions { frames: Some(3) })
+    );
+}
+#[test]
+fn literal_separator_accepts_leading_dash_names_without_interpreting_flags() {
+    let arguments = ["--frames", "1", "--", "--help", "-part.opd"].map(OsString::from);
+    let command = parse_arguments(&arguments).unwrap();
+    let HeadCommand::OpenDocuments { options, documents } = command else {
+        panic!("expected startup documents")
+    };
+    assert_eq!(options.frames, Some(1));
+    assert_eq!(
+        documents,
+        [
+            std::path::PathBuf::from("--help"),
+            std::path::PathBuf::from("-part.opd")
+        ]
+    );
+    assert_eq!(
+        parse_arguments(&["--".into()]).unwrap(),
+        HeadCommand::Window(HeadOptions::default())
+    );
+}
+#[cfg(unix)]
+#[test]
+fn duplicate_options_and_invalid_document_operands_are_refused_without_io() {
+    use std::os::unix::ffi::OsStringExt;
+    let duplicate = ["--frames", "1", "--frames=2"].map(OsString::from);
+    assert!(
+        parse_arguments(&duplicate)
+            .unwrap_err()
+            .contains("only one --frames")
+    );
+    for operand in [OsString::new(), OsString::from_vec(vec![0xff])] {
+        assert!(
+            parse_arguments(&[operand])
+                .unwrap_err()
+                .contains("nonempty UTF-8")
+        );
+    }
 }

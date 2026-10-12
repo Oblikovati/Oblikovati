@@ -80,6 +80,15 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     }
 }
 
+impl<D: ScriptDocumentOwner> ScriptDocumentOwner for DesktopScripts<D> {
+    type Host<'a>
+        = D::Host<'a>
+    where
+        Self: 'a;
+    fn script_host(&mut self) -> Self::Host<'_> {
+        self.owner.script_host()
+    }
+}
 fn owner_batch_budget(budget: usize, active: bool) -> Result<usize, String> {
     let reserved = usize::from(active);
     budget.checked_sub(reserved).filter(|remaining| *remaining > 0)
