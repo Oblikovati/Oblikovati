@@ -35,3 +35,24 @@ package. X11 tests translate the native keymap with each modifier combination.
 The title is current command feedback, not a GUI notification panel. The full
 application port, foreground MCPBridge workflow, and complete shell controls
 remain open. Tests are limited to this Linux host; no push or PR is included.
+
+## Selected Save As path completion
+
+`HeadWork::complete_save_path` accepts the requesting document ID and an optional
+path from a platform picker or dialog hook. The owner sends the existing typed
+`documents.saveAs` request for that ID. It does not substitute whichever document
+became active while the choice was pending. The script wrapper delegates to the
+same owner. The native chooser and hook attachment remain open.
+
+Cancellation changes neither history nor feedback. A closed requested document
+is refused before file I/O. A non-UTF-8 Linux path is refused with the offending
+value and the required API string shape. Save failure becomes command feedback;
+the window can continue and retry. The canonical workspace retains its existing
+open-transaction refusal: choosing a path does not end an edit or save it silently.
+
+Named memory-file tests cover active-document changes, cancellation, stale closed
+requests, staging failure/retry, transaction refusal, path encoding, and script
+forwarding. A successful choice binds only its requested document and preserves
+its history. Other unsaved documents remain dirty and unbound. This is the owner
+completion path; it does not claim a native file picker, overwrite prompt, add-in
+dialog hook, thumbnail policy, or complete Go save-policy parity.

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::{client::Client, wire::SaveDocumentArgs};
+use oblikovati_api::{
+    client::Client,
+    wire::{SaveDocumentArgs, SaveDocumentAsArgs},
+};
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey};
 #[path = "owner_history.rs"]
 mod history;
@@ -79,6 +82,42 @@ impl<
             }
         }
         Ok(changed)
+    }
+    pub(super) fn complete_document_save_path(
+        &mut self,
+        document: u64,
+        selected: Option<&std::path::Path>,
+    ) -> bool {
+        let Some(path) = selected else {
+            return false;
+        };
+        let result = self.save_selected_document(document, path);
+        self.command_notice = Some(match result {
+            Ok(path) => DesktopCommandNotice::Saved { document, path },
+            Err(cause) => DesktopCommandNotice::SaveFailed { document, cause },
+        });
+        true
+    }
+    fn save_selected_document(
+        &mut self,
+        document: u64,
+        path: &std::path::Path,
+    ) -> Result<String, String> {
+        self.files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let name = path
+            .to_str()
+            .ok_or_else(|| format!("save path {path:?}: expected a UTF-8 document name"))?;
+        Client::new(self.document_host())
+            .documents()
+            .save_as(&SaveDocumentAsArgs {
+                document,
+                new_full_document_name: name.into(),
+            })
+            .map(|saved| saved.full_document_name)
+            .map_err(|cause| cause.to_string())
     }
     fn save_active_document(&mut self) -> DesktopCommandNotice {
         let Some(document) = self.files.workspace().active_document() else {

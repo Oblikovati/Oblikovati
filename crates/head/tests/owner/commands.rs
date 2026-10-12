@@ -7,7 +7,7 @@ fn save_input(pressed: bool) -> ViewportEvent {
         pressed,
     })
 }
-fn command_save(owner: &mut TestOwner) -> DesktopCommandNotice {
+pub(super) fn command_save(owner: &mut TestOwner) -> DesktopCommandNotice {
     assert!(owner.process_inputs(&[save_input(true)]).unwrap());
     let notice = owner.take_command_notice().unwrap();
     assert!(owner.take_command_notice().is_none());
@@ -139,3 +139,6 @@ fn saving_an_active_bound_document_keeps_another_unsaved_document_dirty() {
 
 #[path = "history.rs"]
 mod history;
+
+#[path = "save_path.rs"]
+mod save_path;

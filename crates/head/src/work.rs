@@ -12,6 +12,20 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Complete the requesting document's path choice; example: `work.complete_save_path(id, Some(path))?`.
+    fn complete_save_path(
+        &mut self,
+        document: u64,
+        selected: Option<&std::path::Path>,
+    ) -> Result<bool, String> {
+        if selected.is_none() {
+            return Ok(false);
+        }
+        Err(format!(
+            "save path for document {document}, selection {selected:?}: expected a document-save owner"
+        ))
+    }
+
     /// Copy bounded command metadata on the owner; example: `work.gui_command_state()?` after polling.
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         Ok(Default::default())

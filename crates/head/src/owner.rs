@@ -136,6 +136,13 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn complete_save_path(
+        &mut self,
+        document: u64,
+        selected: Option<&std::path::Path>,
+    ) -> Result<bool, String> {
+        Ok(self.complete_document_save_path(document, selected))
+    }
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(Default::default());

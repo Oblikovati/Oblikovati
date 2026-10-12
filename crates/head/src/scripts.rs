@@ -48,6 +48,13 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
+    fn complete_save_path(
+        &mut self,
+        document: u64,
+        selected: Option<&std::path::Path>,
+    ) -> Result<bool, String> {
+        self.owner.complete_save_path(document, selected)
+    }
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.owner.gui_command_state()
     }
