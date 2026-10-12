@@ -13,6 +13,13 @@ pub struct HeadSummary {
 }
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Show an owner command result without terminating the window; example: `window.show_command_notice(notice)?`.
+    fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
+        Err(format!(
+            "head command {notice:?}: expected a window with command feedback"
+        ))
+    }
+
     /// Replace the current scene before presenting; example: `window.submit_scene(update)?`.
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
         Err(format!(
@@ -141,21 +148,31 @@ pub(crate) fn run_frames(
 ) -> Result<HeadSummary, String> {
     let mut control = FrameControl::new(options);
     while !control.stopped() {
-        let inputs = window.events(64)?;
-        let activity = owner.poll(32)?;
-        control.pending |= activity.changed;
-        control.pending |= publish_owner_scene(window, owner)?;
-        let closing = inputs.contains(&ViewportEvent::CloseRequested);
-        control.events(&inputs, !closing || owner.close_allowed()?);
-        if control.stopped() {
-            break;
-        }
-        control.frame(window)?;
+        let activity = run_owner_frame(window, owner, &mut control)?;
         if control.should_wait() && !activity.pending {
             control.pending |= window.wait(activity.wake_after)?;
         }
     }
     checked_summary(control.summary, options)
+}
+fn run_owner_frame(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    control: &mut FrameControl,
+) -> Result<crate::HeadWorkStatus, String> {
+    let inputs = window.events(64)?;
+    control.pending |= owner.process_inputs(&inputs)?;
+    let activity = owner.poll(32)?;
+    control.pending |= activity.changed;
+    control.pending |= publish_owner_scene(window, owner)?;
+    publish_command_notice(window, owner)?;
+    let closing = inputs.contains(&ViewportEvent::CloseRequested);
+    control.events(&inputs, !closing || owner.close_allowed()?);
+    if control.stopped() {
+        return Ok(activity);
+    }
+    control.frame(window)?;
+    Ok(activity)
 }
 fn checked_summary(summary: HeadSummary, options: HeadOptions) -> Result<HeadSummary, String> {
     if options.frames.is_some() && summary.completed == 0 {
@@ -179,4 +196,14 @@ fn publish_owner_scene(
     };
     window.submit_scene(update)?;
     Ok(true)
+}
+
+fn publish_command_notice(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+) -> Result<(), String> {
+    if let Some(notice) = owner.take_command_notice() {
+        window.show_command_notice(notice)?;
+    }
+    Ok(())
 }

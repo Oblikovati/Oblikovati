@@ -211,3 +211,6 @@ fn ui_commands_borrow_the_same_canonical_owner_without_worker_admission() {
 
 #[path = "owner/part_scene.rs"]
 mod part_scene;
+
+#[path = "owner/commands.rs"]
+mod commands;

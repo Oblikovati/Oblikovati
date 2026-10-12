@@ -8,6 +8,9 @@ use oblikovati_model::identity::GuidSource;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::time::Duration;
+#[path = "owner_commands.rs"]
+mod commands;
+pub use commands::DesktopCommandNotice;
 #[derive(Clone, Copy, Debug)]
 pub struct DesktopDispatchOptions {
     pub capacity: usize,
@@ -38,6 +41,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     caller: QueuedCaller<S>,
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
+    command_notice: Option<DesktopCommandNotice>,
 }
 impl<
     O: TransactionObserver,
@@ -67,6 +71,7 @@ impl<
             caller,
             refused_close: Vec::new(),
             part_scenes: Default::default(),
+            command_notice: None,
         }
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -131,6 +136,15 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn process_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+    ) -> Result<bool, String> {
+        self.process_document_inputs(inputs)
+    }
+    fn take_command_notice(&mut self) -> Option<DesktopCommandNotice> {
+        self.command_notice.take()
+    }
     fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String> {
         if budget == 0 {
             return Err("desktop drain budget 0: expected a positive bounded batch".into());

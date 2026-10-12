@@ -183,3 +183,29 @@ fn missing_and_foreign_display_pointers_are_declined_before_key_lookup() {
     assert!(fixture.window.translate(event).is_none());
     assert!(translate_pointer_key(&fixture.window.x11.api, std::ptr::null_mut(), event).is_none());
 }
+
+#[test]
+fn native_save_chord_requires_control_without_shift_or_alt() {
+    let fixture = NativeInputFixture::new();
+    let cases = [
+        (0, false),
+        (xlib::ControlMask, true),
+        (xlib::ControlMask | xlib::ShiftMask, false),
+        (xlib::ControlMask | xlib::Mod1Mask, false),
+    ];
+    for (state, accepted) in cases {
+        assert_eq!(save_chord(state), accepted);
+        check_native_save_key(&fixture, state, accepted);
+    }
+}
+fn check_native_save_key(fixture: &NativeInputFixture, state: u32, accepted: bool) {
+    for pressed in [true, false] {
+        let mut event = fixture.key(x11_dl::keysym::XK_s, pressed);
+        event.key.state = state;
+        let expected = accepted.then_some(ViewportEvent::Input(ViewportInput::Key {
+            key: ViewportKey::Save,
+            pressed,
+        }));
+        assert_eq!(fixture.window.translate(event), expected);
+    }
+}

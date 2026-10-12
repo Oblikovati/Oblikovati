@@ -6,7 +6,7 @@ use oblikovati_persistence::{
     load::PackageFileReader,
 };
 use std::{
-    cell::RefCell,
+    cell::{Cell, RefCell},
     collections::BTreeMap,
     io,
     path::{Path, PathBuf},
@@ -15,6 +15,7 @@ use std::{
 };
 #[derive(Clone, Default)]
 pub struct MemoryDocumentFiles {
+    pub fail_stage: Rc<Cell<bool>>,
     pub saved: Rc<RefCell<BTreeMap<PathBuf, Vec<u8>>>>,
 }
 pub struct MemoryStage {
@@ -41,7 +42,12 @@ impl DocumentFiles for MemoryDocumentFiles {
 }
 impl AtomicFiles for MemoryDocumentFiles {
     type Stage = MemoryStage;
-    fn stage(&mut self, _: &Path) -> io::Result<MemoryStage> {
+    fn stage(&mut self, path: &Path) -> io::Result<MemoryStage> {
+        if self.fail_stage.get() {
+            return Err(io::Error::other(format!(
+                "memory stage {path:?}: expected writable destination"
+            )));
+        }
         Ok(MemoryStage {
             saved: self.saved.clone(),
             bytes: Vec::new(),

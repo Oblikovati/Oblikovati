@@ -10,6 +10,7 @@ pub struct NativeHeadWindow {
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
     navigation: crate::navigation::DesktopNavigation,
+    command_notice: Option<crate::DesktopCommandNotice>,
 }
 impl NativeHeadWindow {
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
@@ -26,6 +27,7 @@ impl NativeHeadWindow {
             wake: ViewportWake::new()?,
             scene_status: None,
             navigation: Default::default(),
+            command_notice: None,
         })
     }
 }
@@ -61,11 +63,15 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
+        self.command_notice = Some(notice);
+        self.refresh_title()
+    }
+
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
         self.view.submit(&update.scene)?;
-        self.view.set_title(&update.status.title())?;
         self.scene_status = Some(update.status);
-        Ok(())
+        self.refresh_title()
     }
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
@@ -185,3 +191,20 @@ fn previous_view_pressed(event: &ViewportEvent) -> bool {
         })
     )
 }
+
+impl NativeHeadWindow {
+    fn refresh_title(&mut self) -> Result<(), String> {
+        let mut title = self
+            .scene_status
+            .as_ref()
+            .map_or_else(|| "Oblikovati".into(), crate::HeadSceneStatus::title);
+        if let Some(notice) = &self.command_notice {
+            title.push_str(&format!(" - {}", notice.message()));
+        }
+        self.view.set_title(&title)
+    }
+}
+
+#[cfg(test)]
+#[path = "../tests/native_save.rs"]
+mod save_tests;

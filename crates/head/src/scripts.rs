@@ -48,6 +48,16 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
+    fn process_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+    ) -> Result<bool, String> {
+        self.owner.process_inputs(inputs)
+    }
+    fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
+        self.owner.take_command_notice()
+    }
+
     fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String> {
         let native_budget = owner_batch_budget(budget, self.console.is_active())?;
         let mut activity = self.owner.poll(native_budget)?;

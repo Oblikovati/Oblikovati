@@ -25,7 +25,7 @@ mod owner;
 #[cfg(target_os = "linux")]
 mod part_scene;
 #[cfg(target_os = "linux")]
-pub use owner::{DesktopDispatchOptions, DesktopOwner};
+pub use owner::{DesktopCommandNotice, DesktopDispatchOptions, DesktopOwner};
 #[cfg(target_os = "linux")]
 pub use part_scene::{HeadSceneStatus, HeadSceneUpdate};
 #[cfg(target_os = "linux")]

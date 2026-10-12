@@ -57,6 +57,7 @@ fn key_input(api: &xlib::Xlib, mut event: xlib::XKeyEvent) -> Option<ViewportInp
     use x11_dl::keysym;
     let symbol = unsafe { (api.XLookupKeysym)(&mut event, 0) };
     let key = match symbol as u32 {
+        keysym::XK_s | keysym::XK_S if save_chord(event.state) => ViewportKey::Save,
         keysym::XK_F2 => ViewportKey::Pan,
         keysym::XK_F3 => ViewportKey::Zoom,
         keysym::XK_F4 => ViewportKey::Orbit,
@@ -73,3 +74,7 @@ fn key_input(api: &xlib::Xlib, mut event: xlib::XKeyEvent) -> Option<ViewportInp
 #[cfg(test)]
 #[path = "../../tests/x11_input.rs"]
 mod tests;
+
+fn save_chord(state: u32) -> bool {
+    state & xlib::ControlMask != 0 && state & (xlib::ShiftMask | xlib::Mod1Mask) == 0
+}

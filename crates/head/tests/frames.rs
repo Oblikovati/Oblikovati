@@ -363,3 +363,13 @@ fn an_unsupported_scene_window_refuses_publication_and_retires() {
     assert!(!window.calls.contains(&"present"));
     assert_eq!(window.calls.last(), Some(&"finish"));
 }
+
+#[test]
+fn a_window_without_command_feedback_refuses_to_hide_a_notice() {
+    let mut window = FakeHeadWindow::default();
+    let cause = window
+        .show_command_notice(crate::DesktopCommandNotice::NoActiveDocument)
+        .unwrap_err();
+    assert!(cause.contains("NoActiveDocument"));
+    assert!(cause.contains("expected a window with command feedback"));
+}

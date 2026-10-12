@@ -12,6 +12,15 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Apply native commands on the document owner; example: `work.process_inputs(&events)?` before polling.
+    fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
+        Ok(false)
+    }
+    /// Consume the latest command result for display; example: `work.take_command_notice()` after Save.
+    fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
+        None
+    }
+
     /// Consume a complete scene update after all owner services; example: `work.take_scene()?` before presentation.
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         Ok(None)
