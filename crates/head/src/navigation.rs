@@ -73,7 +73,7 @@ impl DesktopNavigation {
             ViewportKey::Pan => self.held_modes[0] = pressed,
             ViewportKey::Zoom => self.held_modes[1] = pressed,
             ViewportKey::Orbit => self.held_modes[2] = pressed,
-            ViewportKey::Cancel if pressed => self.clear_gesture(),
+            ViewportKey::Cancel | ViewportKey::Previous if pressed => self.clear_gesture(),
             _ => {}
         }
     }

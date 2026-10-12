@@ -120,3 +120,40 @@ fn recover_native_home(window: &mut NativeHeadWindow) {
         Some(&ViewportEvent::Expose)
     );
 }
+
+#[test]
+fn native_previous_key_restores_pixels_and_release_does_not_pop_a_view() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    open_native_part(&mut owner, &directory.path().join("previous.opd"));
+    let before = publish_native_scene(&mut owner, &mut window);
+    window
+        .view
+        .navigate(oblikovati_viewport::ViewportNavigation::Home { margin: 0.1 })
+        .unwrap();
+    verify_native_previous_key(&mut window, &before);
+    assert!(owner.take_scene().unwrap().is_none());
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn previous_key_event(pressed: bool) -> ViewportEvent {
+    ViewportEvent::Input(ViewportInput::Key {
+        key: oblikovati_viewport::ViewportKey::Previous,
+        pressed,
+    })
+}
+fn verify_native_previous_key(
+    window: &mut NativeHeadWindow,
+    before: &oblikovati_viewport::ViewportCapture,
+) {
+    let release = vec![previous_key_event(false)];
+    assert_eq!(window.navigation_events(release.clone()).unwrap(), release);
+    let press = [previous_key_event(true)];
+    assert!(window.apply_navigation_inputs(&press).unwrap());
+    let restored = capture_native_scene(window);
+    assert_eq!(restored.rgba, before.rgba);
+    assert_eq!(restored.scene_generation, before.scene_generation);
+    assert!(!window.apply_navigation_inputs(&press).unwrap());
+    assert_eq!(window.view.capture().unwrap(), restored);
+}

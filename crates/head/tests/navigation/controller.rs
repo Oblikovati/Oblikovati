@@ -197,3 +197,21 @@ fn home_press_clears_the_drag_and_release_does_not_repeat_the_command() {
     );
     assert_eq!(advance_middle_drag(&mut navigation, [20, 30]), None);
 }
+
+#[test]
+fn previous_view_cancels_a_drag_without_producing_a_continuous_camera_command() {
+    let mut navigation = start_middle_drag();
+    assert_eq!(
+        navigation
+            .command(&held_key(ViewportKey::Previous, true))
+            .unwrap(),
+        None
+    );
+    assert_eq!(advance_middle_drag(&mut navigation, [20, 30]), None);
+    assert_eq!(
+        navigation
+            .command(&held_key(ViewportKey::Previous, false))
+            .unwrap(),
+        None
+    );
+}

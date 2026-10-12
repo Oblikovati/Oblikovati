@@ -48,7 +48,12 @@ impl NativeHeadWindow {
     fn apply_navigation_inputs(&mut self, inputs: &[ViewportEvent]) -> Result<bool, String> {
         let mut changed = false;
         for event in inputs {
-            if let Some(command) = self.navigation.command(event)? {
+            let command = self.navigation.command(event)?;
+            if previous_view_pressed(event) {
+                changed |= self.view.previous_view()?;
+                continue;
+            }
+            if let Some(command) = command {
                 changed |= self.view.navigate(command)?;
             }
         }
@@ -170,3 +175,13 @@ mod navigation_tests;
 #[cfg(test)]
 #[path = "../tests/native_startup.rs"]
 mod startup_tests;
+
+fn previous_view_pressed(event: &ViewportEvent) -> bool {
+    matches!(
+        event,
+        ViewportEvent::Input(oblikovati_viewport::ViewportInput::Key {
+            key: oblikovati_viewport::ViewportKey::Previous,
+            pressed: true
+        })
+    )
+}

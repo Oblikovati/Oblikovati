@@ -352,3 +352,101 @@ fn verify_empty_home(view: &mut Viewport, camera: ViewportCamera) {
     assert_eq!(home.up, [0., 1., 0.]);
     assert!(!view.navigate(home_command).unwrap());
 }
+
+#[test]
+fn view_history_is_bounded_and_continuous_navigation_does_not_fill_it() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([64, 48]).unwrap();
+    let saved = populate_discrete_views(&mut view);
+    assert_eq!(view.view_history.len(), 64);
+    assert_eq!(
+        view.view_history.front().map(|entry| entry.state),
+        Some(saved[10])
+    );
+    for expected in saved.iter().skip(10).rev() {
+        view.previous_view().unwrap();
+        assert_eq!(view.camera_state().unwrap(), *expected);
+    }
+    assert!(!view.previous_view().unwrap());
+    assert!(view.view_history.is_empty());
+}
+fn populate_discrete_views(view: &mut Viewport) -> Vec<ViewportCamera> {
+    let mut saved = Vec::new();
+    for index in 0..74 {
+        view.navigate(crate::ViewportNavigation::Pan([index + 1, 0]))
+            .unwrap();
+        saved.push(view.camera_state().unwrap());
+        view.navigate(crate::ViewportNavigation::Home { margin: 0.1 })
+            .unwrap();
+        assert_eq!(
+            view.view_history.back().map(|entry| entry.state),
+            saved.last().copied()
+        );
+    }
+    saved
+}
+
+#[test]
+fn failed_restore_keeps_history_and_a_same_camera_restore_keeps_capture() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([64, 48]).unwrap();
+    view.navigate(crate::ViewportNavigation::Fit { margin: 0.1 })
+        .unwrap();
+    let capture = view.redraw().unwrap();
+    assert!(!view.previous_view().unwrap());
+    assert_eq!(view.capture().unwrap(), capture);
+    require_failed_history_restore(&mut view);
+}
+fn require_failed_history_restore(view: &mut Viewport) {
+    let before = view.camera_state().unwrap();
+    view.navigate(crate::ViewportNavigation::Home { margin: 0.1 })
+        .unwrap();
+    view.camera = u64::MAX;
+    assert!(view.previous_view().is_err());
+    assert_eq!(
+        view.view_history.back().map(|entry| entry.state),
+        Some(before)
+    );
+    view.camera = 1;
+    assert!(view.previous_view().unwrap());
+    assert_eq!(view.camera_state().unwrap(), before);
+}
+#[test]
+fn failed_navigation_and_other_viewports_do_not_change_view_history() {
+    let (runtime, _) = runtime();
+    let mut first = runtime.open_offscreen([64, 48]).unwrap();
+    let mut second = runtime.open_offscreen([64, 48]).unwrap();
+    let invalid = crate::ViewportNavigation::Home { margin: f64::NAN };
+    assert!(first.navigate(invalid).is_err());
+    assert!(first.view_history.is_empty());
+    first
+        .navigate(crate::ViewportNavigation::Home { margin: 0.1 })
+        .unwrap();
+    assert!(!second.previous_view().unwrap());
+    assert_eq!(first.view_history.len(), 1);
+    first.close();
+    assert!(first.previous_view().is_err());
+    assert_eq!(first.view_history.len(), 1);
+}
+
+#[test]
+fn continuous_camera_gestures_never_record_previous_views() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([64, 48]).unwrap();
+    let gestures = [
+        crate::ViewportNavigation::Pan([10, 0]),
+        crate::ViewportNavigation::Orbit {
+            yaw: 0.1,
+            pitch: 0.2,
+        },
+        crate::ViewportNavigation::Zoom {
+            factor: 0.9,
+            anchor: None,
+        },
+    ];
+    for command in gestures {
+        assert!(view.navigate(command).unwrap());
+        assert!(view.view_history.is_empty());
+    }
+    assert!(!view.previous_view().unwrap());
+}

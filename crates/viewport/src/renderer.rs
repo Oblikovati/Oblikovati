@@ -16,6 +16,10 @@ use rustycad_tkservice::{
 use rustycad_tkv3d::v3d::{V3dView, V3dViewer};
 #[path = "renderer/navigation.rs"]
 mod navigation;
+pub(crate) struct SavedViewCamera {
+    pub state: ViewportCamera,
+    members: Graphic3dCamera,
+}
 pub(crate) struct RenderView {
     pub viewer: Handle<V3dViewer>,
     pub view: Handle<V3dView>,
@@ -82,6 +86,24 @@ impl RenderView {
         }
         self.structures = structures;
         Ok(())
+    }
+    pub(crate) fn saved_camera(&self) -> SavedViewCamera {
+        SavedViewCamera {
+            state: self.camera_state(),
+            members: self.view.camera().copy_members(),
+        }
+    }
+    pub(crate) fn restore_camera(
+        &self,
+        saved: &SavedViewCamera,
+        extent: [u32; 2],
+    ) -> Result<(), String> {
+        saved.state.validate()?;
+        let camera = Handle::new(saved.members.copy_members());
+        camera.set_aspect(f64::from(extent[0]) / f64::from(extent[1]));
+        self.view
+            .set_camera(&camera)
+            .map_err(|cause| cause.to_string())
     }
     pub fn resized(&self, extent: [u32; 2]) {
         self.view

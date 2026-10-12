@@ -18,6 +18,7 @@ pub enum ViewportKey {
     Orbit,
     Cancel,
     Home,
+    Previous,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewportInput {

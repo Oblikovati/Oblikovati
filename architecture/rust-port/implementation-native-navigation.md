@@ -99,3 +99,29 @@ framing input is refused before any camera change. Native tests recover a
 panned-away triangle and a stored prism, verify direction and rendered pixels,
 and prove that the scene generation and retained document evaluation do not
 change. Native X11 tests also translate the actual F6 keymap.
+
+## Previous View continuation
+
+`F5` restores the latest camera recorded before a successful discrete Home
+or Fit command. Each viewport retains at most 64 camera values, as Go
+`app/view_history.go` requires. Continuous pan, orbit, and zoom do not add
+entries. A failed command does not add an entry; a failed restore retains
+the entry for retry. A successful restore removes it, including when the
+saved camera already equals the current camera. Empty history is a no-op.
+
+History retains owned kernel camera members without native handles or viewport
+pixel dimensions. Rebuilding from eye/target alone introduced target rounding
+in the history-order regression; copying the members restores the exact stored
+camera values. Restoration
+uses the current drawable extent. An unchanged camera preserves its completed
+capture; a changed camera invalidates only camera generation. Tests check
+retention order and the bound, independent viewports, failure recovery,
+native F5 press/release, restoration of a stored prism's exact rendered
+pixels, and restoration after native resize. The full local Linux gate is
+the acceptance command; this does not close the wider R4/R7 requirements.
+
+The native suite had one pan assertion failure during the first combined run
+(`-5` rather than the fixed expected `-2.5`). The same suite then passed and
+eight further concurrent native-suite runs passed (40 tests). Those repeats
+do not prove the cause of that one result. The existing assertion remains
+active; no test serialization or weakened acceptance was added.

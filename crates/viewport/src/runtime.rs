@@ -8,7 +8,9 @@ use crate::{
 };
 use martensite_vulkan::{Graphic3dRenderDriver, VulkanOptions};
 use rustycad_tkernel::standard::Handle;
-use std::{cell::Cell, rc::Rc};
+use std::{cell::Cell, collections::VecDeque, rc::Rc};
+#[path = "view_history.rs"]
+mod view_history;
 struct RuntimeState {
     driver: Handle<Graphic3dRenderDriver>,
     x11: Option<Rc<NativeX11>>,
@@ -74,6 +76,7 @@ impl ViewportRuntime {
             surface: 0,
             extent,
             completed: None,
+            view_history: VecDeque::new(),
         })
     }
     /// Name the selected device; example: `runtime.device_name()` for diagnostics.
@@ -101,6 +104,7 @@ pub struct Viewport {
     surface: u64,
     extent: [u32; 2],
     completed: Option<[u64; 3]>,
+    view_history: VecDeque<crate::renderer::SavedViewCamera>,
 }
 impl Viewport {
     /// Read this runtime's view identity; example: `viewport.id()` tags captures.
@@ -157,12 +161,6 @@ impl Viewport {
         self.camera = next;
         self.completed = None;
         Ok(true)
-    }
-    fn apply_camera_navigation(&self, command: crate::ViewportNavigation) -> Result<bool, String> {
-        let renderer = self.live()?;
-        let previous = renderer.camera_state();
-        renderer.navigate(command)?;
-        Ok(renderer.camera_state() != previous)
     }
     /// Resize and report actual drawable size; example: `viewport.resize([800,600])?`.
     pub fn resize(&mut self, extent: [u32; 2]) -> Result<[u32; 2], String> {
