@@ -213,7 +213,7 @@ change supersedes its accepted record; it does not silently edit that decision.
 | --- | --- | --- |
 | [0001: application architecture](../decisions/ADR-0001-rust-application-architecture.md) | R0/R1 | Compile the crate boundaries, common toolchain, and fixed dependencies; verify ownership. |
 | [0002: API and add-ins](../decisions/ADR-0002-api-and-addin-host.md) | R2/R4 | Trait/wire conformance and real Go/Rust C ABI lifecycle tests. |
-| [0003: storage](../decisions/ADR-0003-documents-and-storage.md) | R2/R3/R6/R8 | Schema-2 recipes, resources, projects, and failure-safe round trips. |
+| [0020: storage](../decisions/ADR-0020-documents-and-storage.md) | R2/R3/R6/R8 | Schema-2 recipes, resources, projects, and failure-safe round trips. |
 | [0004: evaluation](../decisions/ADR-0004-session-and-feature-evaluation.md) | R2-R6 | Transactions, invalidation, stale-result rejection, and independent failure. |
 | [0005: identity](../decisions/ADR-0005-identity-and-references.md) | R1/R3/R5/R6/R8 | Provenance and old-key replay without incorrect rebinding. |
 | [0006: constraints](../decisions/ADR-0006-parameters-and-constraints.md) | R2/R3/R6 | Units, expressions, rank/DOF, achieved precision, and placement. |
