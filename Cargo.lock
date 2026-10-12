@@ -561,6 +561,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "oblikovati-head"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-cli",
+ "oblikovati-viewport",
+]
+
+[[package]]
 name = "oblikovati-martensite"
 version = "0.1.0"
 dependencies = [

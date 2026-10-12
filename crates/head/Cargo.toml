@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-head"
+description = "Oblikovati desktop composition root"
+autotests = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+[package.metadata.oblikovati]
+requires-display = true
+[lints]
+workspace = true
+[dependencies]
+oblikovati-cli = { path = "../cli" }
+oblikovati-viewport = { path = "../viewport" }
+
+[[test]]
+name = "arguments"
+path = "tests/arguments.rs"
+[[test]]
+name = "native"
+path = "tests/native.rs"

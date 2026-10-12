@@ -166,8 +166,18 @@ impl Viewport {
             ViewTarget::Native(native) => native.poll(limit),
             ViewTarget::Offscreen(_) => Vec::new(),
         };
+        self.observe_visibility(&events)?;
         self.refresh_extent()?;
         Ok(events)
+    }
+    fn observe_visibility(&mut self, events: &[ViewportEvent]) -> Result<(), String> {
+        for event in events {
+            if matches!(event, ViewportEvent::Mapped(_)) {
+                self.completed = None;
+                self.surface = next_generation(self.surface)?;
+            }
+        }
+        Ok(())
     }
     fn refresh_extent(&mut self) -> Result<(), String> {
         let actual = self.target.as_ref().expect("live target").extent();

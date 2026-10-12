@@ -151,6 +151,7 @@ pub enum ViewportEvent {
     Expose,
     Resized([u32; 2]),
     Focus(bool),
+    Mapped(bool),
     CloseRequested,
 }
 pub(crate) fn valid_extent(extent: [u32; 2]) -> Result<[i32; 2], String> {

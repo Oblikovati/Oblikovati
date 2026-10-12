@@ -98,3 +98,10 @@ sizes remain errors. They cannot enter the surface-change path. The native test
 uses a bounded surface-event loop and still requires exact displayed pixels for
 every completed frame. This is handling new window input, not retrying a failed
 renderer operation with unchanged inputs.
+
+## Desktop consumer
+
+The [desktop owner loop](implementation-desktop-loop.md) now consumes this
+adapter from `oblikovati-head`. Native map/unmap events invalidate the completed
+surface generation and tell the head when presentation is available. Document
+and UI integration remain separate open work.

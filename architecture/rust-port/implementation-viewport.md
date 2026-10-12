@@ -76,9 +76,10 @@ modeling package probe does not establish native viewport acceptance.
 
 ## Remaining acceptance
 
-- Bind the [application-owned Linux adapter](implementation-native-viewport.md)
-  to the foreground application event loop. Its native acceptance test covers
-  window creation, lifecycle events, resize, capture, hide/remap, and removal.
+- Bind the [desktop owner loop](implementation-desktop-loop.md) to documents,
+  add-in calls, scripts, and model presentations. The
+  [Linux adapter](implementation-native-viewport.md) and head tests cover window
+  lifetime, lifecycle events, resize, capture, hide/remap, and removal.
 - Add the shared Dear ImGui composition interface in Martensite and consume it.
 - Exercise application scenes and captures through the foreground host before
   claiming R1V complete. Later R4/R7 checks cover modeled shapes, picks, styles,

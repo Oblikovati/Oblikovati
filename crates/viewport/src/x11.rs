@@ -179,14 +179,18 @@ impl NativeWindow {
             xlib::FocusIn | xlib::FocusOut => {
                 Some(ViewportEvent::Focus(event.get_type() == xlib::FocusIn))
             }
-            xlib::ConfigureNotify => {
-                self.window.do_resize();
-                let (width, height) = self.window.size();
-                Some(ViewportEvent::Resized([width as u32, height as u32]))
+            xlib::ConfigureNotify => Some(self.resize_event()),
+            xlib::MapNotify | xlib::UnmapNotify => {
+                Some(ViewportEvent::Mapped(event.get_type() == xlib::MapNotify))
             }
             xlib::ClientMessage => self.close_event(event),
             _ => None,
         }
+    }
+    fn resize_event(&self) -> ViewportEvent {
+        self.window.do_resize();
+        let (width, height) = self.window.size();
+        ViewportEvent::Resized([width as u32, height as u32])
     }
     fn close_event(&self, event: xlib::XEvent) -> Option<ViewportEvent> {
         let atom = self.display.get_atom(AspectXAtom::DeleteWindow).ok()?;

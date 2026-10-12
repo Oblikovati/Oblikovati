@@ -311,3 +311,19 @@ fn wrong_backend_capture_extent_is_an_error_not_a_surface_change() {
     recorder.state.lock().unwrap().reported_extent = None;
     assert_eq!(view.redraw().unwrap().extent, [8, 8]);
 }
+#[test]
+fn visibility_event_invalidates_previous_capture_even_when_extent_is_unchanged() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([8, 8]).unwrap();
+    view.redraw().unwrap();
+    view.observe_visibility(&[crate::ViewportEvent::Mapped(false)])
+        .unwrap();
+    assert!(view.capture().is_err());
+    assert_eq!(view.surface, 1);
+    view.surface = u64::MAX;
+    assert!(
+        view.observe_visibility(&[crate::ViewportEvent::Mapped(true)])
+            .is_err()
+    );
+    assert!(view.capture().is_err());
+}

@@ -44,6 +44,8 @@ fn native_event_translation_checks_target_and_window_protocol_shape() {
         (xlib::Expose, ViewportEvent::Expose),
         (xlib::FocusIn, ViewportEvent::Focus(true)),
         (xlib::FocusOut, ViewportEvent::Focus(false)),
+        (xlib::MapNotify, ViewportEvent::Mapped(true)),
+        (xlib::UnmapNotify, ViewportEvent::Mapped(false)),
     ] {
         assert_eq!(
             fixture.window.translate(fixture.event(kind)),
