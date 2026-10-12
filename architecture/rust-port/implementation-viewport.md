@@ -76,9 +76,9 @@ modeling package probe does not establish native viewport acceptance.
 
 ## Remaining acceptance
 
-- Add the application viewport adapter against the published kernel source.
-- Prove application-owned window creation, events, resize, capture, removal, and
-  shutdown on Linux, with explicit failure handling.
+- Bind the [application-owned Linux adapter](implementation-native-viewport.md)
+  to the foreground application event loop. Its native acceptance test covers
+  window creation, lifecycle events, resize, capture, hide/remap, and removal.
 - Add the shared Dear ImGui composition interface in Martensite and consume it.
 - Exercise application scenes and captures through the foreground host before
   claiming R1V complete. Later R4/R7 checks cover modeled shapes, picks, styles,

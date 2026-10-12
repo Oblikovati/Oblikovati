@@ -42,6 +42,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ash"
+version = "0.38.0+1.3.281"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bb44936d800fea8f016d7f2311c6a4f97aebd5dc86f09906139ec848cf3a46f"
+dependencies = [
+ "libloading",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -342,6 +351,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
 
 [[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -386,6 +405,17 @@ name = "mach2"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
+
+[[package]]
+name = "martensite-vulkan"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "ash",
+ "rustycad-tkernel",
+ "rustycad-tkmath",
+ "rustycad-tkservice",
+]
 
 [[package]]
 name = "memchr"
@@ -596,6 +626,18 @@ dependencies = [
 [[package]]
 name = "oblikovati-solve"
 version = "0.1.0"
+
+[[package]]
+name = "oblikovati-viewport"
+version = "0.1.0"
+dependencies = [
+ "martensite-vulkan",
+ "rustycad-tkernel",
+ "rustycad-tkmath",
+ "rustycad-tkservice",
+ "rustycad-tkv3d",
+ "x11-dl",
+]
 
 [[package]]
 name = "once_cell"
@@ -830,7 +872,51 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustycad-tkmesh"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "allocator-api2",
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tkshhealing",
+ "rustycad-tktopalgo",
+]
+
+[[package]]
 name = "rustycad-tkprim"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tktopalgo",
+]
+
+[[package]]
+name = "rustycad-tkservice"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "libc",
+ "rustycad-tkernel",
+ "rustycad-tkmath",
+ "windows-sys",
+ "x11-dl",
+]
+
+[[package]]
+name = "rustycad-tkshhealing"
 version = "0.1.2"
 source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
 dependencies = [
@@ -856,6 +942,22 @@ dependencies = [
  "rustycad-tkgeomalgo",
  "rustycad-tkgeombase",
  "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkv3d"
+version = "0.1.2"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=19108f6650cdfca7050febc759d91bdfec001769#19108f6650cdfca7050febc759d91bdfec001769"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tkmesh",
+ "rustycad-tkservice",
+ "rustycad-tktopalgo",
 ]
 
 [[package]]
@@ -1323,6 +1425,17 @@ name = "winnow"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
+
+[[package]]
+name = "x11-dl"
+version = "2.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38735924fedd5314a6e548792904ed8c6de6636285cb9fec04d5b1db85c1516f"
+dependencies = [
+ "libc",
+ "once_cell",
+ "pkg-config",
+]
 
 [[package]]
 name = "xattr"

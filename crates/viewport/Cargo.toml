@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-viewport"
+autotests = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+[package.metadata.oblikovati]
+requires-display = true
+[target.'cfg(target_os = "linux")'.dependencies]
+martensite-vulkan = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkservice = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+rustycad-tkv3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "19108f6650cdfca7050febc759d91bdfec001769", version = "=0.1.2" }
+x11-dl = "=2.21.0"
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
+
+[[test]]
+name = "native"
+path = "tests/native.rs"

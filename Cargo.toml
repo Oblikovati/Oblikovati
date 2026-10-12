@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 [workspace]
-members = ["tools/build", "crates/model", "crates/persistence", "crates/session", "crates/cli", "crates/automation", "crates/solve", "crates/martensite", "crates/addin-host", "crates/script"]
+members = ["tools/build", "crates/model", "crates/persistence", "crates/session", "crates/cli", "crates/automation", "crates/solve", "crates/martensite", "crates/addin-host", "crates/script", "crates/viewport"]
 resolver = "3"
 
 [workspace.package]
