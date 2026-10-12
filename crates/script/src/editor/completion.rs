@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{EditorPosition, ScriptEditor, calls::identifier_start, search::current_epoch};
+use crate::vocabulary;
 use std::{
     collections::BTreeMap,
     rc::{Rc, Weak},
 };
-mod vocabulary;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CompletionKind {
     Keyword,

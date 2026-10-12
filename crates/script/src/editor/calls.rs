@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{EditorPosition, ScriptEditor, words::is_identifier};
+use super::{EditorPosition, ScriptEditor};
+use crate::vocabulary::is_identifier;
 impl ScriptEditor {
     /// Read the nearest lexical call name on the caret's line; example: `editor.enclosing_call()`.
     /// Like Go, this is not a Lua parser and does not skip strings or comments.

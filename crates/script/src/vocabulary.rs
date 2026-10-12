@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Lua 5.1 keywords and the globals available after vm::strip_globals and host binding.
 // tests/editor_completion.rs checks every builtin against the isolated worker.
-pub(super) const KEYWORDS: &[&str] = &[
+pub(crate) const KEYWORDS: &[&str] = &[
     "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local",
     "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
 ];
-pub(super) const BUILTINS: &[&str] = &[
+pub(crate) const BUILTINS: &[&str] = &[
     "_G",
     "_VERSION",
     "assert",
@@ -35,3 +35,7 @@ pub(super) const BUILTINS: &[&str] = &[
     "unpack",
     "xpcall",
 ];
+
+pub(crate) fn is_identifier(character: char) -> bool {
+    character.is_ascii_alphanumeric() || character == '_'
+}

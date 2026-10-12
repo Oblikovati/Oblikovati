@@ -6,6 +6,7 @@ mod buffer;
 mod calls;
 mod completion;
 pub use completion::{CompletionCandidate, CompletionEngine, CompletionKind, EditorCompletion};
+mod highlighting;
 mod history;
 mod movement;
 mod search;

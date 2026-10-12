@@ -15,3 +15,6 @@ pub const WORKER_ARGUMENT: &str = "--internal-lua-worker";
 pub mod console;
 
 pub mod editor;
+
+pub mod syntax;
+mod vocabulary;

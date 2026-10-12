@@ -59,3 +59,5 @@ whole-source Replace All through this same history path.
 Bracket matching and call/hover chains now have [implementation evidence](implementation-script-editor-analysis.md).
 
 The completion engine and checked prefix acceptance now have [implementation evidence](implementation-script-editor-completion.md). Native popup controls and method help remain open.
+
+The Lua lexer and visible-line context now have [implementation evidence](implementation-script-editor-syntax.md). Native color drawing remains open.

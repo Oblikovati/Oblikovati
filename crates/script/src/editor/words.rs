@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::vocabulary::is_identifier;
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum SourceCharacter {
     Blank,
@@ -101,8 +102,4 @@ fn identifier_span(line: &[char], column: usize) -> (usize, usize) {
         last += 1;
     }
     (first, last)
-}
-
-pub(super) fn is_identifier(character: char) -> bool {
-    character.is_ascii_alphanumeric() || character == '_'
 }
