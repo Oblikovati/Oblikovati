@@ -152,3 +152,31 @@ fn profile_parameter_changes_preserve_source_names_and_change_exact_face_area() 
 
 #[path = "named/rebuild.rs"]
 mod rebuild;
+#[test]
+fn part_properties_require_every_body_to_belong_to_the_current_history() {
+    let mut history = owner(selected_prism_document());
+    let first = named(&history);
+    let other_history = owner(selected_prism_document());
+    let foreign = named(&other_history);
+    assert!(
+        oblikovati_martensite::named_part_properties(&history, document(), [&first, &foreign])
+            .is_err()
+    );
+    let key = first.body_reference_key(&history, document()).unwrap();
+    assert_eq!(
+        oblikovati_martensite::named_part_properties(&history, document(), [&first])
+            .unwrap()
+            .unwrap(),
+        first
+            .physical_properties(&history, document(), key)
+            .unwrap()
+    );
+    let token = history.begin("Depth").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot.parameters.set_expression(3, "3 cm")
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert!(oblikovati_martensite::named_part_properties(&history, document(), [&first]).is_err());
+}

@@ -168,3 +168,18 @@ impl super::PrismPresentationSource for NamedPrismSnapshot {
         self.snapshot.presentation(options)
     }
 }
+
+/// Integrate current named bodies as one unit-density system in caller order.
+/// Example: `named_part_properties(history, guid, evaluation.ordered_bodies())?`.
+pub fn named_part_properties<'a>(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: impl IntoIterator<Item = &'a NamedPrismSnapshot>,
+) -> Result<Option<crate::AnalyticBodyProperties>, String> {
+    let mut shapes = Vec::new();
+    for body in bodies {
+        body.body_reference_key(history, document)?;
+        shapes.push(&body.snapshot.shape);
+    }
+    crate::analytic_body::integrate_system(shapes)
+}

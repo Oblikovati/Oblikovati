@@ -11,7 +11,7 @@ impl DesktopPartScenes {
         &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-        index: i64,
+        index: Option<i64>,
         density: f64,
     ) -> Result<MassPropertiesResult, String> {
         let workspace = files.workspace();
@@ -24,15 +24,18 @@ impl DesktopPartScenes {
             .internal_name;
         let evaluation = self.current(session)?;
         let bodies: Vec<_> = evaluation.ordered_bodies().collect();
-        let body = usize::try_from(index)
-            .ok()
-            .and_then(|index| bodies.get(index))
-            .ok_or_else(|| format!("body index {index}: expected 0 <= index < {}", bodies.len()))?;
-        let key = body.body_reference_key(session.history(), guid)?;
-        converted_properties(
-            body.physical_properties(session.history(), guid, key)?,
-            density,
-        )
+        if let Some(index) = index {
+            let body = selected_body(&bodies, index)?;
+            let key = body.body_reference_key(session.history(), guid)?;
+            return converted_properties(
+                body.physical_properties(session.history(), guid, key)?,
+                density,
+            );
+        }
+        match oblikovati_martensite::named_part_properties(session.history(), guid, bodies)? {
+            Some(properties) => converted_properties(properties, density),
+            None => Ok(empty_properties(density)),
+        }
     }
 }
 fn converted_properties(
@@ -95,4 +98,22 @@ fn finite_conversion(result: &MassPropertiesResult) -> Result<(), String> {
         ));
     }
     Ok(())
+}
+
+fn selected_body<'a>(
+    bodies: &[&'a NamedPrismSnapshot],
+    index: i64,
+) -> Result<&'a NamedPrismSnapshot, String> {
+    usize::try_from(index)
+        .ok()
+        .and_then(|index| bodies.get(index))
+        .copied()
+        .ok_or_else(|| format!("body index {index}: expected 0 <= index < {}", bodies.len()))
+}
+fn empty_properties(density: f64) -> MassPropertiesResult {
+    MassPropertiesResult {
+        density_g_cm3: density,
+        principal_axes: [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]],
+        ..Default::default()
+    }
 }

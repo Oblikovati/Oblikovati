@@ -34,15 +34,14 @@ pub(crate) fn geometry_integrals(
     Ok(result)
 }
 pub(crate) fn integrate_body(shape: &Shape) -> Result<AnalyticBodyProperties, String> {
-    let volume = volume_integrals(shape, "body properties")?;
-    let mut surface = GProps::new();
-    BRepGProp::surface_properties(shape, &mut surface, false, false)
-        .map_err(|cause| cause.to_string())?;
-    let (principal_moments, principal_axes) = principal_integrals(&volume)?;
+    integrate_nonempty(shape, std::iter::empty())
+}
+fn completed_integrals(volume: &GProps, area: f64) -> Result<AnalyticBodyProperties, String> {
+    let (principal_moments, principal_axes) = principal_integrals(volume)?;
     let result = AnalyticBodyProperties {
-        geometry: geometry_integrals(&volume, "body properties")?,
-        area: surface.mass(),
-        inertia: inertia_integrals(&volume)?,
+        geometry: geometry_integrals(volume, "body properties")?,
+        area,
+        inertia: inertia_integrals(volume)?,
         principal_moments,
         principal_axes,
     };
@@ -172,3 +171,38 @@ fn certify_orthogonal(axes: [[f64; 3]; 3]) -> Result<(), String> {
 #[cfg(test)]
 #[path = "../tests/unit/analytic_body.rs"]
 mod tests;
+
+pub(crate) fn integrate_system<'a>(
+    shapes: impl IntoIterator<Item = &'a Shape>,
+) -> Result<Option<AnalyticBodyProperties>, String> {
+    let mut shapes = shapes.into_iter();
+    let Some(first) = shapes.next() else {
+        return Ok(None);
+    };
+    integrate_nonempty(first, shapes).map(Some)
+}
+fn integrate_nonempty<'a>(
+    first: &Shape,
+    shapes: impl Iterator<Item = &'a Shape>,
+) -> Result<AnalyticBodyProperties, String> {
+    // Seed with the first integral to preserve the single-body result bit for bit.
+    let mut volume = volume_integrals(first, "part body 0")?;
+    let mut area = surface_integral(first)?;
+    for (index, shape) in shapes.enumerate() {
+        let component = volume_integrals(shape, &format!("part body {}", index + 1))?;
+        volume.add(&component, 1.).map_err(|cause| {
+            format!(
+                "part body {}: expected composable analytic integrals: {cause}",
+                index + 1
+            )
+        })?;
+        area += surface_integral(shape)?;
+    }
+    completed_integrals(&volume, area)
+}
+fn surface_integral(shape: &Shape) -> Result<f64, String> {
+    let mut surface = GProps::new();
+    BRepGProp::surface_properties(shape, &mut surface, false, false)
+        .map_err(|cause| cause.to_string())?;
+    Ok(surface.mass())
+}

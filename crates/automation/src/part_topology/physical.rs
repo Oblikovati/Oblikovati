@@ -7,26 +7,36 @@ pub(super) fn request<O: TransactionObserver, W: WorkspaceObserver, F: DocumentF
 ) -> Result<BodyPhysicalPropertiesArgs, Error> {
     let mut request: BodyPhysicalPropertiesArgs =
         crate::decode(METHOD_BODY_PHYSICAL_PROPS, encoded)?;
-    if !["", "low", "medium", "high"].contains(&request.accuracy.as_str()) {
-        return Err(Error(format!(
-            "body property accuracy {:?}: expected low, medium, high, or empty",
-            request.accuracy
-        )));
-    }
-    if !request.density_g_cm3.is_finite() {
-        return Err(Error(format!(
-            "body density {}: expected finite g/cm³",
-            request.density_g_cm3
-        )));
-    }
-    if request.density_g_cm3 == 0. {
-        request.density_g_cm3 = part_density(files)?;
-    }
-    if request.density_g_cm3 <= 0. {
-        request.density_g_cm3 = 1.;
-    }
+    request.density_g_cm3 = resolved_density(files, request.density_g_cm3, &request.accuracy)?;
     Ok(request)
 }
+pub(super) fn mass_request<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    encoded: &[u8],
+) -> Result<MassPropertiesArgs, Error> {
+    let mut request: MassPropertiesArgs = crate::decode(METHOD_ANALYSIS_MASS_PROPERTIES, encoded)?;
+    request.density_g_cm3 = resolved_density(files, request.density_g_cm3, &request.accuracy)?;
+    Ok(request)
+}
+fn resolved_density<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    mut density: f64,
+    accuracy: &str,
+) -> Result<f64, Error> {
+    if !["", "low", "medium", "high"].contains(&accuracy) {
+        return Err(Error(format!(
+            "property accuracy {accuracy:?}: expected low, medium, high, or empty"
+        )));
+    }
+    if !density.is_finite() {
+        return Err(Error(format!("density {density}: expected finite g/cm³")));
+    }
+    if density == 0. {
+        density = part_density(files)?;
+    }
+    Ok(if density <= 0. { 1. } else { density })
+}
+
 fn part_density<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
 ) -> Result<f64, Error> {

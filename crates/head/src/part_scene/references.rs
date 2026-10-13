@@ -17,7 +17,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
-        index: i64,
+        index: Option<i64>,
         density: f64,
     ) -> Result<oblikovati_api::wire::MassPropertiesResult, String> {
         self.ensure_current(files, document)?;
