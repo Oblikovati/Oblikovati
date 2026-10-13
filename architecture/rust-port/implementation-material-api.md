@@ -21,8 +21,8 @@ errors; malformed arguments are rejected before catalog loading.
 
 The file host inventory includes the four implemented reads, so CLI Lua, the
 desktop script console, and native add-ins use the ordinary model caller.
-Unported creation, update, assignment and physical-properties methods are not
-advertised. The catalog is session-scoped; these queries create no document or
+The subsequent [asset command port](implementation-asset-commands.md) adds typed
+creation and update. Assignment and physical-properties methods remain unported. The catalog is session-scoped; these queries create no document or
 model transaction and do not call Martensite.
 
 ## Numeric response regression
@@ -33,8 +33,9 @@ identifier. Response conversion now checks the JSON numeric representation.
 API floating-point tokens remain Lua doubles, including whole-valued physical
 scalars. Integer tokens beyond Lua's exact range remain refused. The regression
 covers positive/negative integral doubles, a fractional scalar, and both signs of
-unsafe integer IDs. Lua argument conversion retains its separate exact-integer
-rules; numeric write conformance remains required before asset mutations ship.
+unsafe integer IDs. Lua arguments now retain large whole-valued physical scalars as floating JSON
+tokens. Canonical integer request fields reject these tokens, so rounded Lua
+values cannot become integer IDs. Worker and CLI mutation tests cover both paths.
 
 ## Local evidence
 
@@ -51,10 +52,10 @@ runs those libraries through the owner callback queue, native desktop services,
 and executable startup. This is C ABI integration evidence; it does not replace
 foreground MCPBridge or material-rendering acceptance.
 
-Run `make gate` on this Linux host for all workspace checks. Editable project and
-document assets, persistence attachment, assignment-order ADR resolution, UI
-editors, render appearance selection, analytic mass properties, and complete
-material API conformance remain open. No kernel or exchange implementation is
+Run `make gate` on this Linux host for all workspace checks. Project and document
+asset edits now have separate implementation evidence linked above. UI editors,
+render appearance selection, analytic mass properties, assignment commands, and
+complete material API conformance remain open. No kernel or exchange implementation is
 added. Windows/macOS remain deferred; no push or PR is included.
 
 ## Validation receipt

@@ -204,3 +204,46 @@ fn executable_lua_loads_and_saves_a_legacy_appearance_as_grouped_data() {
     assert!(!yaml.contains("albedo:"));
     assert!(yaml.contains("base:"));
 }
+
+#[test]
+fn executable_lua_edits_and_saves_large_physical_scalars_and_visual_groups() {
+    let directory = tempfile::tempdir().unwrap();
+    let original = directory.path().join("portable.opd");
+    let saved = directory.path().join("edited.opd");
+    std::fs::write(&original, portable_asset_package().encode().unwrap()).unwrap();
+    let script = write_source(
+        directory.path(),
+        "local p=oblikovati.materials.get{id='portable'};p.electrical.resistivity=1e16;p.density=4.25;local r=oblikovati.materials.update(p);assert(r.electrical.resistivity==1e16);local a=oblikovati.appearances.get{id='portable-look'};a.coat.weight=0.5;assert(oblikovati.appearances.update(a).coat.weight==0.5);assert(not pcall(oblikovati.documents.save,{document=9007199254740993}));print('edited-assets')",
+    );
+    let output = cli(&[
+        "script",
+        "run",
+        script.to_str().unwrap(),
+        "--doc",
+        original.to_str().unwrap(),
+        "--save",
+        saved.to_str().unwrap(),
+    ]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let package =
+        oblikovati_persistence::package::DocumentPackage::decode(&std::fs::read(saved).unwrap())
+            .unwrap();
+    let assets = package.restore_assets().unwrap();
+    let material = assets.materials().get("portable").unwrap().info();
+    assert_eq!(material.electrical.resistivity, 1e16);
+    assert_eq!(material.density, 4.25);
+    assert_eq!(
+        assets
+            .appearances()
+            .get("portable-look")
+            .unwrap()
+            .info()
+            .coat
+            .weight,
+        0.5
+    );
+}

@@ -175,3 +175,6 @@ fn saved_and_reopened_embedded_materials_remain_readable_through_the_file_host()
         "Portable look"
     );
 }
+
+#[path = "document_asset_commands.rs"]
+mod commands;

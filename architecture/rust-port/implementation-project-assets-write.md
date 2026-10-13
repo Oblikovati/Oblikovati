@@ -34,7 +34,6 @@ library after reload, and retention of externally added opaque record fields.
 Run `cargo test -p oblikovati-automation --test queries project_assets` and
 `cargo test -p oblikovati-model --test project_assets`.
 
-Canonical create/update API commands, document assignment, native editors and
-project UI controls remain open. This supplies their persistent owner boundary;
-it does not advertise incomplete wire methods. Kernel/exchange work remains
+[Typed asset commands](implementation-asset-commands.md) now consume this owner
+boundary. Document assignment, native editors and project UI controls remain open. Kernel/exchange work remains
 with the kernel. Validation runs on this Linux host only, without push or PR.

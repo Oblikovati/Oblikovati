@@ -88,6 +88,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::ASSET_COMMAND_METHODS.contains(&method) {
+            return crate::asset_commands::apply(self.files, method, request);
+        }
         if crate::SKETCH_OPTION_METHODS.contains(&method) {
             return self.sketch_option_command(method, request);
         }

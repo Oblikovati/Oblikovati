@@ -237,3 +237,6 @@ pub use inventory::file_host_methods;
 
 mod assets;
 pub use assets::ASSET_QUERY_METHODS;
+
+mod asset_commands;
+pub use asset_commands::ASSET_COMMAND_METHODS;

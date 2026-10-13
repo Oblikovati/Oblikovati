@@ -245,3 +245,6 @@ fn storage_refuses_missing_project_location_and_wrong_asset_ownership() {
             .is_none()
     );
 }
+
+#[path = "asset_commands.rs"]
+mod api_commands;

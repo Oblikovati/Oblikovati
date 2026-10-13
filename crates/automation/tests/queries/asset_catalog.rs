@@ -175,21 +175,15 @@ fn failed_catalog_admission_is_retained_and_does_not_block_document_queries() {
     assert_eq!(loads.load(Ordering::SeqCst), 1);
 }
 #[test]
-fn script_inventory_advertises_catalog_reads_without_unported_asset_mutations() {
+fn script_inventory_advertises_asset_commands_without_unported_assignments() {
     let methods = file_host_methods();
     assert!(
         ASSET_QUERY_METHODS
             .iter()
+            .chain(oblikovati_automation::ASSET_COMMAND_METHODS.iter())
             .all(|method| methods.iter().any(|value| value == method))
     );
-    for unported in [
-        METHOD_MATERIALS_CREATE,
-        METHOD_MATERIALS_UPDATE,
-        METHOD_APPEARANCES_CREATE,
-        METHOD_APPEARANCES_UPDATE,
-        METHOD_MODEL_ASSIGN_MATERIAL,
-        METHOD_MODEL_ASSIGN_APPEARANCE,
-    ] {
+    for unported in [METHOD_MODEL_ASSIGN_MATERIAL, METHOD_MODEL_ASSIGN_APPEARANCE] {
         assert!(!methods.iter().any(|method| method == unported));
     }
 }

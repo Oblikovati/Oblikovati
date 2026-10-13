@@ -2,8 +2,7 @@
 use crate::{decode, encode};
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::assets::{
-    AppearanceAsset, AssetCollection, BuiltinAssetCatalog, DocumentAssets, MaterialAsset,
-    ScopedAssets,
+    AppearanceAsset, AssetCollection, DocumentAssets, MaterialAsset, ScopedAssets,
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
@@ -26,41 +25,59 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let query = classify_asset_query(method, request)?;
-    let catalog = files.builtin_catalog().map_err(|cause| {
-        Error(format!(
-            "asset query {method:?}: expected an admitted catalog: {cause}"
-        ))
-    })?;
+    with_scoped_assets(files, |materials, appearances| match query {
+        AssetQuery::Materials => list_materials(materials),
+        AssetQuery::Appearances => list_appearances(appearances),
+        AssetQuery::Material(reference) => get_material(materials, reference),
+        AssetQuery::Appearance(reference) => get_appearance(appearances, reference),
+    })
+}
+pub(crate) fn with_scoped_assets<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    T,
+>(
+    files: &FileWorkspace<O, W, F>,
+    action: impl FnOnce(
+        &ScopedAssets<'_, MaterialAsset>,
+        &ScopedAssets<'_, AppearanceAsset>,
+    ) -> Result<T, Error>,
+) -> Result<T, Error> {
+    let catalog = files
+        .builtin_catalog()
+        .map_err(|cause| Error(cause.to_string()))?;
     let empty_document = DocumentAssets::default();
     let document = active_document_assets(files)?.unwrap_or(&empty_document);
-    let project = files.active_project().map(|project| &project.assets);
-    query_document_catalog(catalog, document, project, query)
+    let empty_project = oblikovati_model::assets::ProjectAssetLibrary::default();
+    let project = files
+        .active_project()
+        .map_or(&empty_project, |project| &project.assets);
+    action(
+        &scoped_family(
+            document.materials(),
+            project.materials(),
+            catalog.materials(),
+        ),
+        &scoped_family(
+            document.appearances(),
+            project.appearances(),
+            catalog.appearances(),
+        ),
+    )
 }
-fn query_document_catalog(
-    catalog: &BuiltinAssetCatalog,
-    document: &DocumentAssets,
-    project: Option<&oblikovati_model::assets::ProjectAssetLibrary>,
-    query: AssetQuery,
-) -> Result<Vec<u8>, Error> {
-    let no_project_materials = AssetCollection::default();
-    let no_project_appearances = AssetCollection::default();
-    let materials = ScopedAssets {
-        document: document.materials(),
-        project: project.map_or(&no_project_materials, |assets| assets.materials()),
-        builtin: catalog.materials(),
-    };
-    let appearances = ScopedAssets {
-        document: document.appearances(),
-        project: project.map_or(&no_project_appearances, |assets| assets.appearances()),
-        builtin: catalog.appearances(),
-    };
-    match query {
-        AssetQuery::Materials => list_materials(&materials),
-        AssetQuery::Appearances => list_appearances(&appearances),
-        AssetQuery::Material(reference) => get_material(&materials, reference),
-        AssetQuery::Appearance(reference) => get_appearance(&appearances, reference),
+fn scoped_family<'a, T>(
+    document: &'a AssetCollection<T>,
+    project: &'a AssetCollection<T>,
+    builtin: &'a AssetCollection<T>,
+) -> ScopedAssets<'a, T> {
+    ScopedAssets {
+        document,
+        project,
+        builtin,
     }
 }
+
 fn classify_asset_query(method: &str, request: &[u8]) -> Result<AssetQuery, Error> {
     match method {
         METHOD_MATERIALS_LIST => Ok(AssetQuery::Materials),
@@ -101,7 +118,7 @@ fn get_material(
     reference: AssetRefArgs,
 ) -> Result<Vec<u8>, Error> {
     let asset = materials.resolve(&reference.id).map_err(Error)?;
-    encode(&material_info(asset))
+    material_response(asset)
 }
 fn get_appearance(
     appearances: &ScopedAssets<'_, AppearanceAsset>,
@@ -131,6 +148,10 @@ fn active_document_assets<O: TransactionObserver, W: WorkspaceObserver, F: Docum
                 .map_err(|cause| Error(cause.to_string()))
         })
         .transpose()
+}
+
+pub(crate) fn material_response(asset: &MaterialAsset) -> Result<Vec<u8>, Error> {
+    encode(&material_info(asset))
 }
 
 #[cfg(test)]
