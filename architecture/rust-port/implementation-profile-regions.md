@@ -304,3 +304,32 @@ achieved tolerances, source history, and persistent split naming remain under
 issue #10. The application still pins released Martensite v0.2.1; this local
 kernel increment does not change production profiles or extrusion. The runtime
 evidence above covers the kernel, not a new application live test.
+
+## Exact winding contributions, 2026-10-13
+
+Martensite local main commit `f9164a8ad` adds exact oriented Bézier crossing
+contributions under ADR 0009, after shared-preparation refactor `caa1a07b6`.
+The query returns boundary or a complete signed contribution. Half-open endpoint
+ownership counts shared crossings once and cancels shared touches. Certified
+multiplicity handles stationary crossings and tangencies. A curve on the ray's
+supporting line uses exact longitudinal roots to decide origin incidence;
+denominator poles still decline before boundary classification.
+
+Sixteen retained algebraic curve cases provide independent global-root-order
+expectations. Reversed controls and parameter intervals negate non-boundary
+contributions. Six native OCCT cases agree, and earlier parameter/side receipts
+remain byte-identical. Tests cover closed polygon examples, holes, self-crossing
+paths, horizontal boundary cases, all finite exponent fields, cancellation, and
+input ownership. The full TKMath suite passes 2,873 tests with none skipped.
+Winding-module line coverage is 98.14%; predicate duplication is 0%. Clippy,
+strict Rustdoc, formatting, Markdown lint, and SPDX checks pass. The separate
+refactor snapshot also passes all 81 prior exact-predicate tests and Clippy.
+Kernel `docs/exact-bezier-winding.md` retains scope and measured cost.
+
+This supplies segment contributions. Production assembly must still certify
+closed-wire endpoints, orientation, analytic extraction, and source identity.
+Explicit overlap intervals, complete region validation, achieved tolerance,
+split history/naming, and the end-to-end named region/prism gate remain open
+under issue #10. The application dependency pin and production profiles/extrusion
+are unchanged. This record passes `make docs-lint`; no new application runtime
+or live-view acceptance is claimed.
