@@ -51,7 +51,7 @@ pub(crate) fn workspace_command(
             ],
         ),
         "test" => {
-            execute(
+            execute_tests(
                 runner,
                 workspace,
                 &[
@@ -93,8 +93,16 @@ pub(crate) fn workspace_command(
     }
 }
 
+// Native capture tests share the foreground display (#3563). A concurrent window
+// can obscure another test's pixels. Set the harness flag, not a caller's env var.
+fn execute_tests(runner: &dyn Runner, workspace: &Path, command: &[&str]) -> BuildResult<()> {
+    let mut serial_command = command.to_vec();
+    serial_command.extend(["--", "--test-threads=1"]);
+    execute(runner, workspace, &serial_command)
+}
+
 fn doctests(runner: &dyn Runner, workspace: &Path) -> BuildResult<()> {
-    execute(
+    execute_tests(
         runner,
         workspace,
         &[
@@ -221,7 +229,7 @@ fn gate_workspace(
     workspace_command(runner, directory, "build")?;
     let report = root.join(format!("target/quality/coverage-{index}.json"));
     write_text(&report, "")?;
-    execute(
+    execute_tests(
         runner,
         directory,
         &[

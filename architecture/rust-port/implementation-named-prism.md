@@ -67,3 +67,38 @@ native tests passed when run serially on the same server. This supports a
 shared-display test conflict but does not establish the segmentation fault's
 cause. Concurrent native acceptance remains open; no assertions, timeouts, or
 application behavior were changed to obtain the serial result.
+
+## Reproducible display test setup — 2026-10-13
+
+At application base `7f3a2bcc`, the focused command
+`cargo test -p oblikovati-head --lib native::scene_tests -- --test-threads=4`
+failed three of four tests at the native pixel deadline on an isolated
+1920×1080×24 Xvfb display. Changing only the thread count to one passed all
+four tests. No pixel assertion or timeout changed. This reproduces the display
+conflict independently of the full gate; it does not diagnose the earlier
+SIGSEGV or establish concurrent renderer correctness.
+
+The build tool now passes `-- --test-threads=1` to regular, coverage, and doc
+tests. `make test`, `make gate`, and the native CI workflow use that
+same command path. An inherited `RUST_TEST_THREADS` value cannot override the
+explicit harness argument. Workspace discovery, targets, features, coverage
+limits, and assertions stay unchanged. Tests that create their own threads
+still exercise that concurrency.
+
+Linux CI and package jobs now request `-screen 0 1920x1080x24` from Xvfb.
+The screen must contain the application's 1440×900 window for full-window
+X11 capture. The prior 1280-wide diagnostic returned XGetImage BadMatch;
+that same input also failed on the clean pre-change base. The larger screen
+is an explicit test environment, not a change to application window sizing.
+For a local run, use an exclusive display with this screen size. Direct
+`cargo test` invocations for native tests also need `-- --test-threads=1`.
+Do not run a second native test process on the same display.
+
+Command-plan regression tests cover regular, doc, and instrumented execution.
+The command-plan test was red before the fix. The full `make gate` passed with
+`RUST_TEST_THREADS=8` inherited, software Vulkan, validation layer 1.4.321, and
+the isolated screen above. All 13 crates in the discovered workspace exceeded
+80% line coverage; duplication was 0.70% (463 of 66,105 Rust lines). Build,
+Clippy, formatting, native pixel checks, documentation tests, Markdown/link/SPDX
+checks, and workflow lint all passed. Hardware display and concurrent
+native-window acceptance remain open. No kernel or public API pin changed.

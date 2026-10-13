@@ -13,6 +13,9 @@ fn command_plan_tests_all_targets_and_docs_with_locked_dependencies() {
     assert_eq!(calls.len(), 5);
     assert!(calls[0].contains(&"--all-targets".into()));
     assert!(calls[2].contains(&"--doc".into()));
+    for call in &calls[1..=2] {
+        assert!(call.ends_with(&["--".into(), "--test-threads=1".into()]));
+    }
     assert!(calls[4].contains(&"warnings".into()));
     assert!(workspace_command(&runner, Path::new("."), "skip").is_err());
 }
@@ -106,6 +109,11 @@ fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips
     gate(runner.tree.root(), &runner).unwrap();
     run(runner.tree.root(), &runner, "test").unwrap();
     let calls = runner.calls.borrow();
+    let coverage = calls
+        .iter()
+        .find(|call| call.starts_with("cargo llvm-cov --locked"))
+        .unwrap();
+    assert!(coverage.ends_with(" -- --test-threads=1"));
     for fragment in [
         "llvm-cov --locked",
         "--doc",

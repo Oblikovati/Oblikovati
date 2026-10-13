@@ -26,7 +26,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           quality: 'true'
-      - run: xvfb-run -a make gate
+      - run: xvfb-run -a -s "-screen 0 1920x1080x24" make gate
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
@@ -60,7 +60,7 @@ jobs:
       - name: Build and test every discovered Cargo workspace
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
-            xvfb-run -a cargo xtask native
+            xvfb-run -a -s "-screen 0 1920x1080x24" cargo xtask native
           else
             cargo xtask native
           fi
