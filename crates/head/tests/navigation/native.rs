@@ -71,8 +71,7 @@ fn navigation_renders_the_current_part_without_new_model_evaluation() {
         drag_input(ViewportButton::Middle, [100, 100]),
         motion_input([120, 130], false),
     ];
-    let inputs = window.navigation_events(inputs).unwrap();
-    assert_eq!(inputs.last(), Some(&ViewportEvent::Expose));
+    assert!(window.apply_navigation_inputs(&inputs).unwrap());
     let after = capture_native_scene(&mut window);
     assert_ne!(before.rgba, after.rgba);
     assert_eq!(before.scene_generation, after.scene_generation);
@@ -86,7 +85,7 @@ fn navigation_renders_the_current_part_without_new_model_evaluation() {
 fn idle_pointer_inputs_do_not_request_a_frame() {
     let mut window = NativeHeadWindow::open().unwrap();
     let inputs = vec![motion_input([100, 100], false)];
-    assert_eq!(window.navigation_events(inputs.clone()).unwrap(), inputs);
+    assert!(!window.apply_navigation_inputs(&inputs).unwrap());
     window.finish().unwrap();
 }
 
@@ -115,10 +114,7 @@ fn recover_native_home(window: &mut NativeHeadWindow) {
         key: oblikovati_viewport::ViewportKey::Home,
         pressed: true,
     });
-    assert_eq!(
-        window.navigation_events(vec![home]).unwrap().last(),
-        Some(&ViewportEvent::Expose)
-    );
+    assert!(window.process_view_input(&home).unwrap());
 }
 
 #[test]
@@ -148,7 +144,7 @@ fn verify_native_previous_key(
     before: &oblikovati_viewport::ViewportCapture,
 ) {
     let release = vec![previous_key_event(false)];
-    assert_eq!(window.navigation_events(release.clone()).unwrap(), release);
+    assert!(!window.apply_navigation_inputs(&release).unwrap());
     let press = [previous_key_event(true)];
     assert!(window.apply_navigation_inputs(&press).unwrap());
     let restored = capture_native_scene(window);

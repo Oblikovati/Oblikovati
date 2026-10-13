@@ -42,6 +42,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
     command_notice: Option<DesktopCommandNotice>,
+    slot_placement: Option<crate::placement_slot::SlotPlacement>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -74,6 +75,7 @@ impl<
             part_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),
+            slot_placement: None,
         }
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -170,6 +172,13 @@ impl<
     ) -> Result<bool, String> {
         self.process_document_inputs(inputs)
     }
+    fn process_window_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+        window: &dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        self.process_slot_inputs(inputs, window)
+    }
     fn take_command_notice(&mut self) -> Option<DesktopCommandNotice> {
         self.command_notice.take()
     }
@@ -195,6 +204,7 @@ impl<
         Ok(self.refused_close.is_empty() && pending == 0)
     }
     fn finish(&mut self) -> Result<(), String> {
+        self.slot_placement = None;
         self.part_scenes.clear();
         self.dispatch.close();
         Ok(())
@@ -235,3 +245,6 @@ mod placement;
 #[cfg(test)]
 #[path = "../tests/owner.rs"]
 mod tests;
+
+#[path = "owner_slot_input.rs"]
+mod slot_input;

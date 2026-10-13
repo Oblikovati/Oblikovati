@@ -80,3 +80,10 @@ fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {
 #[allow(dead_code)]
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
 mod scene_fixture;
+
+#[path = "placement/slot.rs"]
+mod placement_slot;
+
+#[cfg(test)]
+#[path = "../tests/placement_inputs.rs"]
+mod placement_test_inputs;

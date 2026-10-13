@@ -177,6 +177,11 @@ fn verify_pending_load_retirement(owner: &mut NativeDesktopOwner, wake: NativeOw
 
 fn verify_service_delegation(services: &mut TestNativeServices<'_>) {
     assert_eq!(services.gui_command_state().unwrap(), Default::default());
+    assert!(
+        !services
+            .process_window_inputs(&[], &crate::placement_test_inputs::ProjectionlessWindow)
+            .unwrap()
+    );
     assert!(!services.complete_save_path(0, None).unwrap());
     let save = ViewportEvent::Input(oblikovati_viewport::ViewportInput::Key {
         key: oblikovati_viewport::ViewportKey::Save,

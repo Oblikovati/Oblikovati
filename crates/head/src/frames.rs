@@ -13,6 +13,22 @@ pub struct HeadSummary {
 }
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Apply one view-only input before projecting that same event; example: `window.process_view_input(&event)?`.
+    fn process_view_input(&mut self, _: &ViewportEvent) -> Result<bool, String> {
+        Ok(false)
+    }
+
+    /// Map physical pointer coordinates through the current view; example: `window.sketch_point(pixel,plane)?`.
+    fn sketch_point(
+        &self,
+        pixel: [i32; 2],
+        plane: oblikovati_model::sketch::SketchPlane,
+    ) -> Result<Option<[f64; 2]>, String> {
+        Err(format!(
+            "sketch cursor {pixel:?} on {plane:?}: expected a window with sketch projection"
+        ))
+    }
+
     /// Show an owner command result without terminating the window; example: `window.show_command_notice(notice)?`.
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
         Err(format!(
@@ -168,7 +184,7 @@ fn run_owner_frame(
     control: &mut FrameControl,
 ) -> Result<crate::HeadWorkStatus, String> {
     let inputs = window.events(64)?;
-    control.pending |= owner.process_inputs(&inputs)?;
+    control.pending |= process_frame_inputs(window, owner, &inputs)?;
     let activity = owner.poll(32)?;
     control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;
@@ -181,6 +197,18 @@ fn run_owner_frame(
     }
     control.frame(window)?;
     Ok(activity)
+}
+fn process_frame_inputs(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    inputs: &[ViewportEvent],
+) -> Result<bool, String> {
+    let mut changed = owner.process_window_inputs(&[], window)?;
+    for event in inputs {
+        changed |= window.process_view_input(event)?;
+        changed |= owner.process_window_inputs(&[*event], window)?;
+    }
+    Ok(changed)
 }
 fn checked_summary(summary: HeadSummary, options: HeadOptions) -> Result<HeadSummary, String> {
     if options.frames.is_some() && summary.completed == 0 {

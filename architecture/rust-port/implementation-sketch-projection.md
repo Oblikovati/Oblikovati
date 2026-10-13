@@ -46,7 +46,8 @@ existing owner. It verifies the owned centers and that undo restores the origina
 viewport pixels. This establishes the coordinate path to the existing commit path;
 it does not claim that a mouse tool or preview widget is already connected.
 
-Tool activation, click/drag collection, inference, live recipe drawing and editable
+The [slot input step](implementation-slot-input.md) adds owner activation and
+click/drag collection. Menu activation, inference, live recipe drawing and editable
 field widgets remain open. General profile-to-solid construction remains a critical
 kernel blocker. Martensite stays pinned to v0.2.5 and the API to v0.158.0, with no local
 source override. Windows/macOS native runtime verification remains open.

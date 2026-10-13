@@ -40,6 +40,14 @@ pub trait HeadWork {
     fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
         Ok(false)
     }
+    /// Route owner commands with the current window projection; example: `work.process_window_inputs(&events, window)?`.
+    fn process_window_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+        _: &dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        self.process_inputs(inputs)
+    }
     /// Consume the latest command result for display; example: `work.take_command_notice()` after Save.
     fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
         None

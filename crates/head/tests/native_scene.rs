@@ -314,3 +314,6 @@ mod three_point_tests;
 
 #[path = "native_scene/projection.rs"]
 mod projection_tests;
+
+#[path = "native_scene/slot_input.rs"]
+mod slot_input_tests;

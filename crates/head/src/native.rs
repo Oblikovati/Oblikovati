@@ -41,15 +41,6 @@ impl NativeHeadWindow {
     }
 }
 impl NativeHeadWindow {
-    fn navigation_events(
-        &mut self,
-        mut inputs: Vec<ViewportEvent>,
-    ) -> Result<Vec<ViewportEvent>, String> {
-        if self.apply_navigation_inputs(&inputs)? {
-            inputs.push(ViewportEvent::Expose);
-        }
-        Ok(inputs)
-    }
     fn apply_navigation_inputs(&mut self, inputs: &[ViewportEvent]) -> Result<bool, String> {
         let mut changed = false;
         for event in inputs {
@@ -66,6 +57,18 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
+        self.apply_navigation_inputs(&[*event])
+    }
+
+    fn sketch_point(
+        &self,
+        pixel: [i32; 2],
+        plane: oblikovati_model::sketch::SketchPlane,
+    ) -> Result<Option<[f64; 2]>, String> {
+        NativeHeadWindow::sketch_point(self, pixel, plane)
+    }
+
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
         self.view.set_status_text(&notice.message())?;
         self.command_notice = Some(notice);
@@ -79,8 +82,7 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
-        let inputs = self.view.poll_events(limit)?;
-        self.navigation_events(inputs)
+        self.view.poll_events(limit)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
         Ok(match self.view.present()? {
