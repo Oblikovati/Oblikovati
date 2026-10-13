@@ -31,10 +31,31 @@ Run `cargo test -p oblikovati-model --test asset_assignment_edits` and
 `cargo test -p oblikovati-automation --test queries assignment_history`, or
 `make gate` for the full tree.
 
-The API assignment methods remain unadvertised. Body and face verification must
-use current exact topology and persistent names before host commands can accept
-these targets. The current retained prism results have construction lineage,
-but the file host has no general persistent topology-key resolver. Adding raw key
-writes here would bypass that requirement. Rendering, lost-reference health,
-remapping across feature edits, and foreground MCPBridge acceptance remain open.
-No new kernel algorithm or public wire definition is introduced.
+The existing typed API assignment methods are now advertised by the file owner.
+Part targets require an active part. Body and face targets additionally require
+an injected `AssetReferenceAccess`; a file-only host cannot accept raw entity
+keys. The desktop supplies this capability from its current named part results.
+It resolves the exact feature namespace and checks document, kind, generation,
+and the complete key before mutation. Unsupported or failed topology is a named
+decline, never an unverified assignment.
+
+The request boundary validates hexadecimal keys and canonicalizes their envelope
+and text case. The wire commands reject empty asset IDs, matching Go
+`app/material_ops.go`; the internal model setters still support clearing intent.
+Part appearance requests require the contract's empty key. All asset dependencies
+are prepared before one ordinary history edit. Failure leaves assets, assignments,
+and history unchanged. An explicit transaction can abort the complete edit.
+
+Tests drive the API-owned clients, including portable project copies, save/reopen,
+undo/redo, transaction abort, scope errors, and missing topology capability. Native
+host tests bind actual body/face names, refuse wrong kinds and foreign namespaces,
+quarantine failed features, preserve explicit appearance during material edits,
+and retain a pending first scene after rejected asset lookup. Reference validation
+and rendering share the same result cache; validation cannot consume a display
+update that the window has not received.
+
+Full appearance rendering, lost-reference health, remapping across general feature
+edits, occurrence publication, and foreground MCPBridge acceptance remain open.
+The current native verifier covers the retained sketch-prism capability and does
+not claim unsupported feature families. No kernel geometry algorithm or public
+wire definition is introduced.

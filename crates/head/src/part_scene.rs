@@ -75,11 +75,29 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<HeadSceneUpdate, String> {
-        if self.source.map(|source| source.0) != Some(document) {
+        self.ensure_current(files, document)?;
+        self.present_current(files, document)
+    }
+    fn ensure_current<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<(), String> {
+        if self
+            .slot
+            .latest()
+            .is_some_and(|view| view.document != document)
+        {
             self.slot.clear();
         }
-        self.adopt_current(files, document)?;
-        self.present_current(files, document)
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        if self.slot.current(session).is_ok() {
+            return Ok(());
+        }
+        self.adopt_current(files, document)
     }
     fn adopt_current<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
@@ -199,3 +217,5 @@ fn render_part_scene(
         },
     })
 }
+
+mod references;

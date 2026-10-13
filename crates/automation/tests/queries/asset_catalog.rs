@@ -175,7 +175,7 @@ fn failed_catalog_admission_is_retained_and_does_not_block_document_queries() {
     assert_eq!(loads.load(Ordering::SeqCst), 1);
 }
 #[test]
-fn script_inventory_advertises_asset_commands_without_unported_assignments() {
+fn script_inventory_advertises_asset_commands_and_verified_assignments() {
     let methods = file_host_methods();
     assert!(
         ASSET_QUERY_METHODS
@@ -183,8 +183,8 @@ fn script_inventory_advertises_asset_commands_without_unported_assignments() {
             .chain(oblikovati_automation::ASSET_COMMAND_METHODS.iter())
             .all(|method| methods.iter().any(|value| value == method))
     );
-    for unported in [METHOD_MODEL_ASSIGN_MATERIAL, METHOD_MODEL_ASSIGN_APPEARANCE] {
-        assert!(!methods.iter().any(|method| method == unported));
+    for assignment in [METHOD_MODEL_ASSIGN_MATERIAL, METHOD_MODEL_ASSIGN_APPEARANCE] {
+        assert!(methods.iter().any(|method| method == assignment));
     }
 }
 

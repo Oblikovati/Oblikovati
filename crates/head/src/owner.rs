@@ -99,6 +99,7 @@ impl<
             &mut self.guids,
             &self.version,
             &mut self.factory,
+            &mut self.part_scenes,
         )
     }
     fn drain_calls(&mut self, budget: usize) -> Result<usize, String> {
@@ -107,6 +108,7 @@ impl<
             &mut self.guids,
             &self.version,
             &mut self.factory,
+            &mut self.part_scenes,
         );
         self.dispatch
             .drain(budget, &host)
@@ -216,8 +218,11 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     guids: &'a mut dyn GuidSource,
     version: &'a str,
     factory: &'a mut dyn DocumentObserverFactory<Observer = O>,
+    scenes: &'a mut crate::part_scene::DesktopPartScenes,
 ) -> FileHost<'a, O, W, F> {
-    FileHost::new(files, guids, version).with_observer_factory(factory)
+    FileHost::new(files, guids, version)
+        .with_observer_factory(factory)
+        .with_asset_references(scenes)
 }
 #[cfg(test)]
 #[path = "../tests/owner.rs"]

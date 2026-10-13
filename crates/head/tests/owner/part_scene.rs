@@ -198,3 +198,6 @@ fn failed_replay_removes_exact_names_while_independent_names_remain_current() {
     );
     assert_eq!(published_keys(&owner, document, FeatureId(2)), retained);
 }
+
+#[path = "part_scene/assignments.rs"]
+mod assignments;

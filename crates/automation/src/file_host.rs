@@ -44,10 +44,19 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     version: &'a str,
     external: Option<&'a mut dyn ExternalAttachmentFiles>,
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
+    asset_references: Option<&'a mut dyn crate::AssetReferenceAccess<O, W, F>>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Share the native exact-reference owner; example: `host.with_asset_references(&mut scenes)`.
+    pub fn with_asset_references(
+        mut self,
+        references: &'a mut dyn crate::AssetReferenceAccess<O, W, F>,
+    ) -> Self {
+        self.context.get_mut().asset_references = Some(references);
+        self
+    }
     /// Borrow owned files and identity generation; example: `FileHost::new(&mut files, &mut guids, "alpha")`.
     pub fn new(
         files: &'a mut FileWorkspace<O, W, F>,
@@ -62,6 +71,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 observers: None,
                 external: None,
                 sketch_preferences: None,
+                asset_references: None,
             }),
         }
     }
@@ -88,6 +98,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::ASSET_ASSIGNMENT_METHODS.contains(&method) {
+            return crate::asset_assignments::apply(
+                self.files,
+                &mut self.asset_references,
+                method,
+                request,
+            );
+        }
         if crate::ASSET_COMMAND_METHODS.contains(&method) {
             return crate::asset_commands::apply(self.files, method, request);
         }

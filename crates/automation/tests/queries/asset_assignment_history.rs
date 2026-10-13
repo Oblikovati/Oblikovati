@@ -130,3 +130,78 @@ fn failed_assignment_and_aborted_batch_leave_saved_document_unchanged() {
     assert!(owned_assets(&files, id).is_empty());
     assert!(!files.document_info(id).unwrap().dirty);
 }
+
+#[test]
+fn typed_part_assignment_uses_portable_owner_history_and_refuses_unverified_entities() {
+    use oblikovati_automation::FileHost;
+    let (mut files, mut source, id) = assignment_workspace();
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .materials()
+        .assign(&AssignMaterialArgs {
+            material_id: "custom".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let assigned = owned_assets(&files, id);
+    assert_eq!(assigned.assignments.part_material_id(), Some("custom"));
+    assert!(assigned.appearances().get("project-look").is_some());
+    files.commands(id).unwrap().undo().unwrap();
+    assert!(owned_assets(&files, id).is_empty());
+    files.commands(id).unwrap().redo().unwrap();
+    files.save(id, "test", &mut source).unwrap();
+    reopen_without_project(&files, &assigned);
+    for key in ["bad", "éé", "00", "00000000000000000400000000000000"] {
+        let error = Client::new(FileHost::new(&mut files, &mut source, "test"))
+            .materials()
+            .assign(&AssignMaterialArgs {
+                body_key: key.into(),
+                material_id: "custom".into(),
+            })
+            .unwrap_err();
+        assert!(error.to_string().contains("expected"));
+        assert_eq!(owned_assets(&files, id), assigned);
+    }
+}
+#[test]
+fn typed_part_appearance_rejects_bad_scope_and_rolls_back_in_an_aborted_batch() {
+    use oblikovati_automation::FileHost;
+    let (mut files, mut source, id) = assignment_workspace();
+    for (scope, key, appearance) in [
+        ("unknown", "", "project-look"),
+        ("part", "unexpected", "project-look"),
+        ("face", "", "project-look"),
+        ("part", "", "missing"),
+        ("part", "", ""),
+    ] {
+        assert!(
+            Client::new(FileHost::new(&mut files, &mut source, "test"))
+                .appearances()
+                .assign(&AssignAppearanceArgs {
+                    scope: scope.into(),
+                    key: key.into(),
+                    appearance_id: appearance.into()
+                })
+                .is_err()
+        );
+        assert!(owned_assets(&files, id).is_empty());
+    }
+    files
+        .commands(id)
+        .unwrap()
+        .begin("Cancel appearance")
+        .unwrap();
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .appearances()
+        .assign(&AssignAppearanceArgs {
+            scope: "part".into(),
+            appearance_id: "project-look".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(
+        owned_assets(&files, id).assignments.part_appearance_id(),
+        Some("project-look")
+    );
+    files.commands(id).unwrap().abort().unwrap();
+    assert!(owned_assets(&files, id).is_empty());
+}

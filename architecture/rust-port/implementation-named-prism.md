@@ -41,8 +41,9 @@ oracle and degenerate-input tests remain part of the full gate.
 
 This adapter covers the existing selected-line prism capability. General edge
 and vertex naming, split/merge and healing provenance, occurrence namespaces,
-Go topology migration, picking, and assignment API wiring
-remain open. No new public wire methods are advertised. No geometry algorithm
+Go topology migration and picking remain open. The
+[assignment API](implementation-assignment-edits.md) now uses the desktop result
+cache to verify supported body and face targets before edits. No new public wire methods are advertised. No geometry algorithm
 or tolerance changes are included. Net changes in geometric recognizers,
 tolerance constants, fallback sites, and native type assertions are all zero.
 

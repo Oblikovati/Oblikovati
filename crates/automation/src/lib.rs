@@ -240,3 +240,6 @@ pub use assets::ASSET_QUERY_METHODS;
 
 mod asset_commands;
 pub use asset_commands::ASSET_COMMAND_METHODS;
+
+mod asset_assignments;
+pub use asset_assignments::{ASSET_ASSIGNMENT_METHODS, AssetEntityKind, AssetReferenceAccess};
