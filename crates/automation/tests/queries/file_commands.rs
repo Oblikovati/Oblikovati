@@ -23,7 +23,7 @@ fn created_files(refuse_write: bool) -> (DiscoveryWorkspace, u64, QueryGuids) {
     let mut files = DiscoveryWorkspace::new(
         QueryObserver::default(),
         DiscoveryFiles {
-            refuse_write,
+            refuse_write: refuse_write.into(),
             ..Default::default()
         },
     );

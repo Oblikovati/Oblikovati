@@ -3,8 +3,10 @@ mod assignments;
 mod merge;
 mod records;
 use super::{DocumentPackage, Mapping, PackageCodecError, Value};
+pub(crate) use merge::merge_asset_entries;
 use oblikovati_model::assets::DocumentAssets;
 use records::AssetRecipe;
+pub(crate) use records::stored_record;
 pub(crate) use records::{decode_appearance_definitions, decode_material_definitions};
 impl DocumentPackage {
     /// Restore portable definitions and exact assignment intent; example: `package.restore_assets()?`.

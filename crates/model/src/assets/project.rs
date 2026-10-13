@@ -35,6 +35,22 @@ impl ProjectAssetLibrary {
     pub fn appearances(&self) -> &AssetCollection<AppearanceAsset> {
         &self.appearances
     }
+
+    /// Prepare an owned physical replacement without changing this snapshot; example: `let next = project.with_material(asset)?;`.
+    pub fn with_material(&self, asset: MaterialAsset) -> Result<Self, String> {
+        require_project_source(asset.asset_id(), asset.source())?;
+        let mut candidate = self.clone();
+        candidate.materials.insert(asset);
+        Ok(candidate)
+    }
+
+    /// Prepare an owned visual replacement without changing this snapshot; example: `let next = project.with_appearance(asset)?;`.
+    pub fn with_appearance(&self, asset: AppearanceAsset) -> Result<Self, String> {
+        require_project_source(asset.asset_id(), asset.source())?;
+        let mut candidate = self.clone();
+        candidate.appearances.insert(asset);
+        Ok(candidate)
+    }
 }
 impl PartialEq for ProjectAssetLibrary {
     fn eq(&self, other: &Self) -> bool {

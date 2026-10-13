@@ -3,6 +3,8 @@ use super::*;
 use oblikovati_persistence::project_file::ProjectConfiguration;
 #[path = "project_assets_reload.rs"]
 mod reload;
+#[path = "project_assets_write.rs"]
+mod write;
 fn project_files(files: &DiscoveryWorkspace, name: &str, steel_name: &str) -> std::path::PathBuf {
     let root = std::path::PathBuf::from(format!("/fixtures/{name}"));
     let project = root.join("design.opj");

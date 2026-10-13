@@ -7,11 +7,11 @@ use serde_yaml_ng::Value;
 use std::{io, path::Path};
 #[derive(Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
-struct ProjectAssetFile {
+pub(super) struct ProjectAssetFile {
     #[serde(deserialize_with = "null_entries")]
-    materials: Vec<Value>,
+    pub materials: Vec<Value>,
     #[serde(deserialize_with = "null_entries")]
-    appearances: Vec<Value>,
+    pub appearances: Vec<Value>,
 }
 /// Load both libraries before admission; example: `load_project_asset_library(project.bound.design_data.as_deref(), files)?`.
 pub fn load_project_asset_library(
@@ -38,7 +38,7 @@ pub fn load_project_asset_library(
             .map_err(|cause| format!("project asset file {material_path:?}: {cause}"))?;
     ProjectAssetLibrary::from_records(materials, appearances)
 }
-fn read_project_assets(
+pub(super) fn read_project_assets(
     path: &Path,
     files: &mut dyn PackageFileReader,
 ) -> Result<ProjectAssetFile, String> {

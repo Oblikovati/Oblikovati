@@ -95,7 +95,7 @@ fn require_unique_asset(seen: &mut BTreeSet<String>, id: &str) -> Result<(), Str
     }
     Ok(())
 }
-fn stored_record<T: Serialize>(record: &T, material: bool) -> Result<Value, String> {
+pub(crate) fn stored_record<T: Serialize>(record: &T, material: bool) -> Result<Value, String> {
     let value = serde_yaml_ng::to_value(record).map_err(|cause| cause.to_string())?;
     let mut fields = value
         .as_mapping()

@@ -5,8 +5,10 @@ pub(crate) use decode::stored_asset_record;
 mod embedded;
 mod legacy;
 mod project;
+mod project_write;
 use oblikovati_model::assets::{AppearanceAsset, BuiltinAssetCatalog, MaterialAsset};
 pub use project::load_project_asset_library;
+pub use project_write::{ProjectAssetFamily, persist_project_asset_family};
 use serde::Deserialize;
 use serde_yaml_ng::Value;
 /// Named, injected bytes with no filesystem or process-directory dependency.

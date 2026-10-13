@@ -9,13 +9,19 @@ use oblikovati_persistence::{
     package::DocumentPackage,
 };
 use oblikovati_session::files::FileWorkspace;
-use std::{cell::RefCell, collections::BTreeMap, io, path::PathBuf, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    collections::BTreeMap,
+    io,
+    path::PathBuf,
+    rc::Rc,
+};
 
 type MemoryPackages = Rc<RefCell<BTreeMap<PathBuf, Vec<u8>>>>;
 #[derive(Default)]
 struct DiscoveryFiles {
     reads: usize,
-    refuse_write: bool,
+    refuse_write: Cell<bool>,
     save_aliases: RefCell<BTreeMap<PathBuf, PathBuf>>,
     packages: MemoryPackages,
 }
@@ -47,7 +53,7 @@ impl DocumentFiles for DiscoveryFiles {
 impl AtomicFiles for DiscoveryFiles {
     type Stage = DiscoveryStage;
     fn stage(&mut self, _: &Path) -> io::Result<Self::Stage> {
-        if self.refuse_write {
+        if self.refuse_write.get() {
             return Err(io::Error::other("write refused"));
         }
         Ok(DiscoveryStage {

@@ -46,7 +46,7 @@ fn assert_created(files: &DiscoveryWorkspace, document: u64, index: i64, project
 }
 fn persisted_preferences(refuse_write: bool) -> SketchPreferenceFile<DiscoveryFiles> {
     let files = DiscoveryFiles {
-        refuse_write,
+        refuse_write: refuse_write.into(),
         ..Default::default()
     };
     files.packages.borrow_mut().insert(Path::new("/preferences/options.yaml").into(), b"sketch: {headsUpDisplay: false, suppressFormatOverrides: true}\ngeneral: {startupAction: 9}\n".to_vec());

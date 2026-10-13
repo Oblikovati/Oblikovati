@@ -20,7 +20,7 @@ pub(super) fn merge_known_values(original: &Value, before: &Value, after: &Value
     }
     Value::Mapping(merged)
 }
-pub(super) fn merge_asset_entries(original: &Value, before: &Value, after: &Value) -> Value {
+pub(crate) fn merge_asset_entries(original: &Value, before: &Value, after: &Value) -> Value {
     let Some(after) = after.as_sequence() else {
         return after.clone();
     };

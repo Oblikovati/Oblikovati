@@ -15,6 +15,7 @@ mod name;
 pub use name::derive_document_title;
 mod open;
 mod project;
+mod project_assets;
 mod projects;
 pub use projects::LoadedProject;
 mod propagation;
