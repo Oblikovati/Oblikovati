@@ -247,3 +247,32 @@ released Martensite v0.2.1; no local kernel source or native OCCT fallback is
 added. General production profiles and extrusion remain incomplete. This
 application record passes `make docs-lint`; runtime evidence above belongs to
 the kernel change.
+
+## Exact algebraic-root sign prerequisite, 2026-10-13
+
+Martensite local main commit `488a7a4e4` adds exact signs of a query polynomial
+at every isolated source root under ADR 0007. The shared signed remainder
+sequence implements the Sturm–Tarski query; point roots use exact substitution.
+Source brackets, multiplicities, and subdivision counts remain unchanged.
+A zero query proves equality at every source root; a zero source still declines.
+Errors retain their stage and original cause, with no successful partial list.
+
+The retained independent corpus has 20 polynomial pairs, 40 root-isolation
+results, and 75 exact algebraic comparisons establishing 42 source-root signs.
+Tests include shared irrational roots, repeated roots, wrong midpoint signs,
+two query roots inside one source bracket, extreme values, cancellation, and
+input/result ownership. Four ordinary cases also compare signs against retained
+OCCT parameters away from query zeros; the six-row OCCT receipt reproduces after
+rebuilding its generator. The full TKMath suite passes 2,840 tests with none
+skipped. New sign-module coverage is 98.26%; predicate duplication is 0%.
+Lint, Rustdoc, formatting, and documentation checks pass. Kernel
+`docs/exact-root-signs.md` records the evidence and measured benchmark.
+
+This is a numerical prerequisite for directed Bézier/ray selection. That
+consumer must preserve exact projected integer coefficients and denominator
+signs, then handle origins, endpoint ownership, tangencies, and overlaps.
+Complete region validation, achieved tolerances, source history, and persistent
+split naming remain required under issue #10. The application still pins
+released Martensite v0.2.1; production profiles and extrusion are unchanged.
+This application record passes `make docs-lint`; runtime checks above cover the
+kernel change.
