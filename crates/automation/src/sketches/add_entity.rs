@@ -39,6 +39,14 @@ fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
                 )
             })
             .map_err(api_error),
+        PreparedEntity::Polygon(input) => commands
+            .run("Create sketch polygon", |snapshot, ids| {
+                let report = snapshot
+                    .create_sketch_polygon(sketch, &input, ids)
+                    .map_err(api_error)?;
+                chain_reply::encode_polygon(report)
+            })
+            .map_err(api_error),
         PreparedEntity::InferredLine(input) => commands
             .create_inferred_sketch_line_projected(sketch, &input, line_reply::encode_created)
             .map_err(api_error),

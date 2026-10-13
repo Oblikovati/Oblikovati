@@ -154,3 +154,6 @@ mod line_endpoint;
 pub use line_endpoint::{SketchLineEnd, SketchLineEndpointReport};
 mod rectangle_seed;
 pub use rectangle_seed::SketchRectangleSeed;
+
+mod polygon_seed;
+pub use polygon_seed::SketchPolygonSeed;

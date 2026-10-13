@@ -390,3 +390,8 @@ mod sketch_endpoint;
 
 mod sketch_polyline;
 pub use sketch_polyline::{SketchPolylineCreation, SketchPolylineCreationReport};
+
+mod sketch_polygon;
+pub use sketch_polygon::{
+    SketchPolygonCreation, SketchPolygonCreationError, SketchPolygonCreationReport,
+};

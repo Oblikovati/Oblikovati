@@ -14,3 +14,11 @@ pub(super) fn encode_created(
         ..Default::default()
     })
 }
+
+pub(super) fn encode_polygon(
+    report: oblikovati_model::history::SketchPolygonCreationReport,
+) -> Result<Vec<u8>, Error> {
+    let mut chain = report.chain;
+    chain.points.push(report.center);
+    encode_created(Ok(chain), "polygon")
+}

@@ -11,7 +11,9 @@ use oblikovati_model::{
 };
 mod chains;
 mod points;
+mod polygon;
 pub(super) enum PreparedEntity {
+    Polygon(oblikovati_model::history::SketchPolygonCreation),
     Primitive(SketchPrimitiveCreation, &'static str),
     InferredLine(SketchLineCreation),
     Chain {
@@ -35,6 +37,7 @@ pub(super) fn prepare(
     match request.kind.as_str() {
         "polyline" => return chains::polyline(snapshot, request),
         "rectangle" => return chains::rectangle(snapshot, request),
+        "polygon" => return polygon::prepare(snapshot, request),
         _ => {}
     }
     let constructor = classify_kind(&request.kind)?;
@@ -51,7 +54,7 @@ fn classify_kind(kind: &str) -> Result<PrimitiveConstructor, Error> {
         kind if kind == SKETCH_ENTITY_ELLIPSE.0 => Ok(PrimitiveConstructor::AnalyticEllipse),
         kind if kind == SKETCH_ENTITY_ARC.0 => Ok(PrimitiveConstructor::CenterStartEndArc),
         _ => Err(Error(format!(
-            "sketch.addEntity kind {kind:?}: expected a ported line, point, circle, arc, ellipse, polyline, or rectangle constructor; other kinds are not ported"
+            "sketch.addEntity kind {kind:?}: expected a ported line, point, circle, arc, ellipse, polyline, rectangle, or polygon constructor; other kinds are not ported"
         ))),
     }
 }

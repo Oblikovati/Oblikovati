@@ -59,7 +59,7 @@ impl DocumentSnapshot {
         Ok(report)
     }
 }
-fn append_polyline(
+pub(super) fn append_polyline(
     geometry: &mut Sketch2D,
     sketch: DocumentSketchId,
     input: &SketchPolylineCreation,
