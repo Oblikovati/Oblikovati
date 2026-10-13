@@ -33,7 +33,11 @@ struct FakePrismEvaluator {
 impl SketchPrismEvaluator for FakePrismEvaluator {
     type Body = f64;
     type Failure = &'static str;
-    fn evaluate_prism(&mut self, input: ResolvedSketchPrism<'_>) -> Result<f64, &'static str> {
+    fn evaluate_prism(
+        &mut self,
+        _feature: oblikovati_model::feature::FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<f64, &'static str> {
         self.calls += 1;
         Ok(input.displacement[2])
     }
@@ -165,7 +169,11 @@ struct EditingPrismEvaluator<'a> {
 impl SketchPrismEvaluator for EditingPrismEvaluator<'_> {
     type Body = f64;
     type Failure = &'static str;
-    fn evaluate_prism(&mut self, input: ResolvedSketchPrism<'_>) -> Result<f64, &'static str> {
+    fn evaluate_prism(
+        &mut self,
+        _feature: oblikovati_model::feature::FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<f64, &'static str> {
         self.calls += 1;
         edit_depth(self.owner, "3 cm");
         Ok(input.displacement[2])

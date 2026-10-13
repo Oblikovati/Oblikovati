@@ -54,11 +54,8 @@ pub struct PartPresentation {
 impl ViewportScene {
     /// Convert successful current bodies and retain local display failures.
     /// Example: `ViewportScene::from_part_evaluation(&evaluated, mesh_options, background, color)`.
-    pub fn from_part_evaluation(
-        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<
-            oblikovati_martensite::PrismProbeSnapshot,
-            String,
-        >,
+    pub fn from_part_evaluation<Body: oblikovati_martensite::PrismPresentationSource>(
+        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, String>,
         options: oblikovati_martensite::PrismMeshOptions,
         background: [f64; 3],
         color: [f32; 4],
@@ -82,10 +79,10 @@ impl ViewportScene {
     }
 }
 impl PartPresentation {
-    fn append_body(
+    fn append_body<Body: oblikovati_martensite::PrismPresentationSource>(
         &mut self,
         feature: oblikovati_model::feature::FeatureId,
-        body: &oblikovati_martensite::PrismProbeSnapshot,
+        body: &Body,
         options: oblikovati_martensite::PrismMeshOptions,
         color: [f32; 4],
     ) {

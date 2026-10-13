@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::{
-    feature::{FeatureId, part::PartFeatureDefinition},
-    history::{DocumentEditHistory, DocumentSnapshot, EvaluationScope},
+    feature::FeatureId,
+    history::{DocumentEditHistory, EvaluationScope},
     identity::{DocumentGuid, ExactReferenceBindings, SemanticReferenceName},
 };
 use rustycad_tkbrep::topods::Shape;
@@ -20,24 +20,15 @@ pub fn retain_named_sketch_prism(
     feature: FeatureId,
 ) -> Result<NamedPrismSnapshot, String> {
     let job = history.evaluation_snapshot();
-    let sketch = source_sketch(job.snapshot(), feature)?;
-    let snapshot = crate::retain_stored_sketch_prism(job.snapshot(), feature)?;
-    let named = attach_names(snapshot, document, feature, sketch, job.scope().clone())?;
-    named.verify_written_names(history, document, feature, sketch)?;
-    Ok(named)
-}
-fn source_sketch(snapshot: &DocumentSnapshot, feature: FeatureId) -> Result<u64, String> {
-    let authored = snapshot
-        .work_geometry
-        .get(feature)
+    let evaluation = job
+        .snapshot()
+        .evaluate_part_features(&mut NamedPrismEvaluator::new(history, document))
         .map_err(|cause| cause.to_string())?;
-    match authored.definition() {
-        PartFeatureDefinition::SketchPrism(definition) => Ok(definition.sketch().0),
-        _ => Err(format!(
-            "feature {feature:?}: expected authored sketch prism inputs"
-        )),
-    }
+    let decline = crate::stored_prism::stored_body_decline(&evaluation, feature);
+    evaluation.into_body(feature).ok_or(decline)
 }
+mod evaluate;
+pub use evaluate::NamedPrismEvaluator;
 fn attach_names(
     snapshot: PrismProbeSnapshot,
     document: DocumentGuid,
@@ -138,4 +129,10 @@ fn unique_face(snapshot: &PrismProbeSnapshot, role: PrismFaceRole) -> Result<&Sh
         ));
     }
     Ok(&first.expect("one verified role").1)
+}
+
+impl super::PrismPresentationSource for NamedPrismSnapshot {
+    fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String> {
+        self.snapshot.presentation(options)
+    }
 }

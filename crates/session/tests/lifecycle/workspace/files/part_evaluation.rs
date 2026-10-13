@@ -11,7 +11,11 @@ struct FilePrismEvaluator;
 impl SketchPrismEvaluator for FilePrismEvaluator {
     type Body = f64;
     type Failure = &'static str;
-    fn evaluate_prism(&mut self, input: ResolvedSketchPrism<'_>) -> Result<f64, &'static str> {
+    fn evaluate_prism(
+        &mut self,
+        _feature: oblikovati_model::feature::FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<f64, &'static str> {
         Ok(input.displacement[2])
     }
 }

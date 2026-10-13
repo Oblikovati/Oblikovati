@@ -17,6 +17,20 @@ privately and requires the current owning history for every query and enumeratio
 An edit, undo, close, or different history owner makes an old binding unusable.
 A rebuilt result can bind the same saved name to its current face.
 
+The desktop now uses `NamedPrismEvaluator` inside its ordinary part replay. The
+model passes the authored feature ID to the backend. Each result is named and
+verified before the completed receipt can enter `PartEvaluationSlot`. Rendering
+and exact queries borrow that same retained result; naming does not trigger a
+second kernel evaluation. The mesh-source interface exposes only display output,
+not a raw native body or an unguarded exact-query route. The unnamed diagnostic
+backend remains a test/probe adapter and is no longer the desktop backend.
+
+Host tests check separate namespaces for two features with identical geometry,
+stale-result refusal before refresh, stable names after a parameter edit and undo/redo, and
+analytic face queries against the displayed body. A failed feature removes its
+current names while independent features remain available. Scope-only capture
+retains the same generation and close checks without copying the recipe.
+
 Tests check all six rectangle faces independently, changed depth and profile
 width, undo invalidation, wrong namespaces and entity kinds, unknown sources,
 and saved package recipe reconstruction under a new history owner. A holed
@@ -27,7 +41,7 @@ oracle and degenerate-input tests remain part of the full gate.
 
 This adapter covers the existing selected-line prism capability. General edge
 and vertex naming, split/merge and healing provenance, occurrence namespaces,
-Go topology migration, session publication, picking, and assignment API wiring
+Go topology migration, picking, and assignment API wiring
 remain open. No new public wire methods are advertised. No geometry algorithm
 or tolerance changes are included. Net changes in geometric recognizers,
 tolerance constants, fallback sites, and native type assertions are all zero.

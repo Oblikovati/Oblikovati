@@ -89,6 +89,11 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.history.snapshot()
     }
 
+    /// Borrow the immutable history for exact derived queries; example: `named.reference_keys(session.history(), guid)?`.
+    pub fn history(&self) -> &DocumentEditHistory {
+        &self.history
+    }
+
     /// Read the worker generation; example: `let generation = session.generation();`.
     pub fn generation(&self) -> u64 {
         self.history.generation()

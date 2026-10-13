@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_martensite::{MartensitePrismEvaluator, PrismMeshOptions, PrismProbeSnapshot};
+use oblikovati_martensite::{NamedPrismEvaluator, NamedPrismSnapshot, PrismMeshOptions};
 use oblikovati_model::feature::{
     FeatureEvaluationStatus, FeatureHealthRecord, part::PartFeatureFailure,
 };
@@ -52,7 +52,7 @@ pub struct HeadSceneUpdate {
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
     source: Option<(u64, u64)>,
-    slot: PartEvaluationSlot<PrismProbeSnapshot, String>,
+    slot: PartEvaluationSlot<NamedPrismSnapshot, String>,
 }
 impl DesktopPartScenes {
     pub fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -86,19 +86,25 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
-        let request = files
-            .commands(document)
-            .map_err(|cause| cause.to_string())?
-            .prepare_part_evaluation();
-        let completed = request
-            .evaluate(&mut MartensitePrismEvaluator)
-            .map_err(|cause| cause.to_string())?;
+        let completed = complete_desktop_replay(files, document)?;
         files
             .commands(document)
             .map_err(|cause| cause.to_string())?
             .adopt_part_evaluation(completed, &mut self.slot)
             .map_err(|cause| cause.to_string())?;
         Ok(())
+    }
+    /// Borrow only this session's current published bodies; example: `scenes.current(session)?`.
+    pub(crate) fn current<'a, O: TransactionObserver>(
+        &'a self,
+        session: &'a oblikovati_session::DocumentSession<O>,
+    ) -> Result<
+        &'a oblikovati_model::feature::part::PartFeatureEvaluation<NamedPrismSnapshot, String>,
+        String,
+    > {
+        self.slot
+            .current(session)
+            .map_err(|cause| cause.to_string())
     }
     fn present_current<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &self,
@@ -109,10 +115,7 @@ impl DesktopPartScenes {
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let evaluated = self
-            .slot
-            .current(session)
-            .map_err(|cause| cause.to_string())?;
+        let evaluated = self.current(session)?;
         render_part_scene(evaluated, (document, session.generation()))
     }
     fn empty(&mut self) -> HeadSceneUpdate {
@@ -136,6 +139,27 @@ impl DesktopPartScenes {
     }
 }
 
+fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+) -> Result<
+    oblikovati_session::part_evaluation::CompletedPartEvaluation<NamedPrismSnapshot, String>,
+    String,
+> {
+    let workspace = files.workspace();
+    let guid = workspace
+        .identity(document)
+        .map_err(|cause| cause.to_string())?
+        .internal_name;
+    let session = workspace
+        .session(document)
+        .map_err(|cause| cause.to_string())?;
+    session
+        .prepare_part_evaluation()
+        .evaluate(&mut NamedPrismEvaluator::new(session.history(), guid))
+        .map_err(|cause| cause.to_string())
+}
+
 fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
 ) -> Result<Option<(u64, u64)>, String> {
@@ -153,7 +177,7 @@ fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
 }
 
 fn render_part_scene(
-    evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<PrismProbeSnapshot, String>,
+    evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<NamedPrismSnapshot, String>,
     source: (u64, u64),
 ) -> Result<HeadSceneUpdate, String> {
     let presentation = ViewportScene::from_part_evaluation(

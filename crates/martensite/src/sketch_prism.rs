@@ -80,6 +80,7 @@ impl oblikovati_model::feature::part::SketchPrismEvaluator for MartensitePrismEv
     type Failure = String;
     fn evaluate_prism(
         &mut self,
+        _feature: oblikovati_model::feature::FeatureId,
         input: oblikovati_model::feature::sketch_prism::ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure> {
         retain_resolved_sketch_prism(input)

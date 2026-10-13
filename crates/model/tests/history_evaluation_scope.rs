@@ -79,3 +79,20 @@ fn commit_depth_edit(owner: &mut DocumentEditHistory) {
         .unwrap();
     owner.commit(&token, false).unwrap();
 }
+
+#[test]
+fn scope_only_capture_has_the_same_owner_generation_and_close_guard_as_inputs() {
+    let mut owner = history();
+    let scope = owner.evaluation_scope();
+    assert_eq!(
+        scope.generation(),
+        owner.evaluation_snapshot().scope().generation()
+    );
+    assert!(scope.is_current(&owner));
+    assert!(!scope.is_current(&history()));
+    commit_depth_edit(&mut owner);
+    assert!(scope.is_superseded());
+    let current = owner.evaluation_scope();
+    drop(owner);
+    assert!(current.is_superseded());
+}

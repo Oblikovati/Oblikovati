@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod input;
 mod named;
-pub use named::{NamedPrismSnapshot, retain_named_sketch_prism};
+pub use named::{NamedPrismEvaluator, NamedPrismSnapshot, retain_named_sketch_prism};
 mod mesh;
 mod placement;
 mod profile;
@@ -45,4 +45,15 @@ fn build_prism(
     crate::require_geometric_shape(&shape, "prism result")?;
     let lineage = report::construction_lineage(&mut maker, &profile, &shape)?;
     snapshot::capture_prism(&shape, &lineage)
+}
+
+/// A derived display mesh source; exact reference queries remain on the guarded owner.
+pub trait PrismPresentationSource {
+    /// Discretize retained geometry for display; example: `body.presentation(options)?`.
+    fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String>;
+}
+impl PrismPresentationSource for PrismProbeSnapshot {
+    fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String> {
+        PrismProbeSnapshot::presentation(self, options)
+    }
 }

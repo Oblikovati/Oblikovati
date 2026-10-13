@@ -46,15 +46,19 @@ impl HistoryEvaluationSnapshot {
     }
 }
 impl DocumentEditHistory {
+    /// Capture a sealed ownership proof without copying recipe inputs; example: `history.evaluation_scope()` for derived names.
+    pub fn evaluation_scope(&self) -> EvaluationScope {
+        EvaluationScope {
+            owner: Arc::downgrade(&self.generation),
+            generation: self.generation(),
+        }
+    }
     /// Capture immutable recipe inputs and one authoritative generation counter.
     /// Example: `let job = history.evaluation_snapshot();` before releasing the owner borrow.
     pub fn evaluation_snapshot(&self) -> HistoryEvaluationSnapshot {
         HistoryEvaluationSnapshot {
             snapshot: self.current.clone(),
-            scope: EvaluationScope {
-                owner: Arc::downgrade(&self.generation),
-                generation: self.generation(),
-            },
+            scope: self.evaluation_scope(),
         }
     }
 }

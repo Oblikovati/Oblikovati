@@ -20,8 +20,8 @@ pub fn retain_stored_sketch_prism(
         format!("part feature {feature_id:?}: expected transfer of an available isolated body",)
     })
 }
-fn stored_body_decline(
-    evaluation: &PartFeatureEvaluation<PrismProbeSnapshot, String>,
+pub(crate) fn stored_body_decline<Body>(
+    evaluation: &PartFeatureEvaluation<Body, String>,
     feature: FeatureId,
 ) -> String {
     let status = evaluation

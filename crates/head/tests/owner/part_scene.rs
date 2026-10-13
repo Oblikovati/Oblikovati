@@ -106,3 +106,95 @@ fn verify_closed_owner_scene(owner: &mut TestOwner, document: u64) {
     assert!(closed.scene.triangles.is_empty());
     assert_eq!(closed.status.title(), "Oblikovati");
 }
+
+fn published_keys(owner: &TestOwner, document: u64, feature: FeatureId) -> Vec<Vec<u8>> {
+    let workspace = owner.documents().workspace();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let session = workspace.session(document).unwrap();
+    owner
+        .part_scenes
+        .current(session)
+        .unwrap()
+        .body(feature)
+        .unwrap()
+        .reference_keys(session.history(), guid)
+        .unwrap()
+}
+#[test]
+fn displayed_bodies_publish_current_names_in_distinct_feature_namespaces() {
+    use oblikovati_model::identity::ReferenceEnvelope;
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, true);
+    owner.take_scene().unwrap().unwrap();
+    let first = published_keys(&owner, document, FeatureId(1));
+    let second = published_keys(&owner, document, FeatureId(2));
+    assert_eq!((first.len(), second.len()), (7, 7));
+    assert!(
+        first
+            .iter()
+            .all(|key| ReferenceEnvelope::decode(key).unwrap().context == 1)
+    );
+    assert!(
+        second
+            .iter()
+            .all(|key| ReferenceEnvelope::decode(key).unwrap().context == 2)
+    );
+    assert!(!first.iter().any(|key| second.contains(key)));
+    set_parameter(&mut owner, "width", "6 cm");
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert!(owner.part_scenes.current(session).is_err());
+    owner.take_scene().unwrap().unwrap();
+    assert_eq!(published_keys(&owner, document, FeatureId(1)), first);
+    assert_eq!(published_keys(&owner, document, FeatureId(2)), second);
+    verify_published_face(&owner, document);
+    owner.files.commands(document).unwrap().undo().unwrap();
+    owner.take_scene().unwrap().unwrap();
+    assert_eq!(published_keys(&owner, document, FeatureId(1)), first);
+    owner.files.commands(document).unwrap().redo().unwrap();
+    owner.take_scene().unwrap().unwrap();
+    assert_eq!(published_keys(&owner, document, FeatureId(1)), first);
+    verify_published_face(&owner, document);
+}
+fn verify_published_face(owner: &TestOwner, document: u64) {
+    use oblikovati_model::identity::SemanticReferenceName;
+    let workspace = owner.documents().workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let key = SemanticReferenceName::new(guid, 1, 1, "sketch-prism", "start", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let evaluated = owner.part_scenes.current(session).unwrap();
+    let face = evaluated
+        .body(FeatureId(1))
+        .unwrap()
+        .face_report(session.history(), guid, &key)
+        .unwrap();
+    assert!((face.area - 18.).abs() < 1e-10);
+    assert!(
+        evaluated
+            .body(FeatureId(2))
+            .unwrap()
+            .face_report(session.history(), guid, &key)
+            .is_err()
+    );
+}
+#[test]
+fn failed_replay_removes_exact_names_while_independent_names_remain_current() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, true);
+    owner.take_scene().unwrap().unwrap();
+    let retained = published_keys(&owner, document, FeatureId(2));
+    set_parameter(&mut owner, "depth", "0 cm");
+    owner.take_scene().unwrap().unwrap();
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert!(
+        owner
+            .part_scenes
+            .current(session)
+            .unwrap()
+            .body(FeatureId(1))
+            .is_none()
+    );
+    assert_eq!(published_keys(&owner, document, FeatureId(2)), retained);
+}

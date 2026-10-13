@@ -14,9 +14,10 @@ use std::collections::BTreeMap;
 pub trait SketchPrismEvaluator {
     type Body;
     type Failure;
-    /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(input)?`.
+    /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,
+        feature: FeatureId,
         input: ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure>;
 }
@@ -149,7 +150,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             .resolve_with_datums(snapshot, &self.datums)
             .map_err(PartFeatureFailure::Inputs)?;
         let body = backend
-            .evaluate_prism(input)
+            .evaluate_prism(feature.id(), input)
             .map_err(PartFeatureFailure::Kernel)?;
         self.bodies.insert(feature.id(), body);
         Ok(())

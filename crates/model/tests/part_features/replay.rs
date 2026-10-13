@@ -20,6 +20,7 @@ impl SketchPrismEvaluator for FakePrismEvaluator {
     type Failure = &'static str;
     fn evaluate_prism(
         &mut self,
+        _feature: oblikovati_model::feature::FeatureId,
         input: ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure> {
         self.calls += 1;
