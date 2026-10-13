@@ -2,15 +2,9 @@
 
 use oblikovati_model::identity::{ReferenceEnvelope, ReferenceEnvelopeError, ReferenceScheme};
 
-fn hex_bytes(source: &str) -> Vec<u8> {
-    source
-        .as_bytes()
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
-        .collect()
-}
+#[path = "reference/support.rs"]
+mod support;
+use support::hex_bytes;
 
 #[test]
 fn legacy_upgrade_matches_go_bytes_exactly() {

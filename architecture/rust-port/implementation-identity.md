@@ -140,8 +140,9 @@ cover zero/full-width contexts and kinds plus binary payloads. Tests compare
 both decoded schemes and exact re-encoded bytes, every truncation of a sample,
 extra bytes, false lengths, unknown schemes, and the magic/context collision.
 An allocation-size unit test uses lengths without allocating huge buffers.
-Key binding, supported-kind classification, provenance, and malformed package
-import remain separate integration gates.
+[Exact reference binding](implementation-reference-binding.md) now covers
+supported-kind admission and current-history lookup. Native provenance, topology
+publication, and malformed package import remain separate integration gates.
 
 ## Open-document identity index — partial R2
 

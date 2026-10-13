@@ -6,6 +6,8 @@ use std::{error::Error, fmt, str::FromStr};
 use uuid::Uuid;
 
 mod allocation;
+mod bindings;
+pub use bindings::ExactReferenceBindings;
 mod envelope;
 mod file;
 mod record;
