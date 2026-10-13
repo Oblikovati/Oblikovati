@@ -57,13 +57,18 @@ fn build_line(origin: [f64; 2], direction: [f64; 2]) -> Result<CurveHandle, Plan
     .cast())
 }
 fn build_circle(axes: PlanarConicFrame, radius: f64) -> Result<CurveHandle, PlanarCurveFailure> {
+    Ok(Handle::new(native_circle(axes, radius)?).cast())
+}
+pub(super) fn native_circle(
+    axes: PlanarConicFrame,
+    radius: f64,
+) -> Result<Geom2dCircle, PlanarCurveFailure> {
     require_positive(&[radius])?;
-    let circle = Geom2dCircle::from_axis(
+    Ok(Geom2dCircle::from_axis(
         frame(axes.center, axes.axis)?,
         radius,
         axes.counterclockwise,
-    )?;
-    Ok(Handle::new(circle).cast())
+    )?)
 }
 fn build_ellipse(
     axes: PlanarConicFrame,

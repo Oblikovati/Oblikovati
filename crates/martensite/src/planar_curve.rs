@@ -4,6 +4,8 @@ use crate::PlanarSplineDefinition;
 mod construct;
 mod failure;
 mod report;
+/// Owned sketch curve conversion and native incidence queries.
+pub mod sketch;
 mod transition;
 pub use failure::{PlanarCurveFailure, PlanarCurveFailureKind};
 pub use transition::{CurvePosition, CurveTransition, TouchSide, TransitionKind};
