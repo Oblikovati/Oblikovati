@@ -333,3 +333,37 @@ split history/naming, and the end-to-end named region/prism gate remain open
 under issue #10. The application dependency pin and production profiles/extrusion
 are unchanged. This record passes `make docs-lint`; no new application runtime
 or live-view acceptance is claimed.
+
+## Exact closed-wire classification, 2026-10-13
+
+Martensite local main commit `359939144` adds exact closure and seed location
+for directed Bézier wires under ADR 0010, after refactor `f99d1689e`. Every
+consecutive and closing join is checked by homogeneous cross multiplication.
+Reversed occurrences retain exact trim bounds. One subdivision budget covers
+the complete query, and a boundary result includes every incident occurrence ID.
+An earlier boundary contact cannot hide a later invalid segment or open join.
+
+The 48-case corpus includes polygon loops, a quadratic lens, and a single closed
+cubic. Seventeen retained exact implicit-equation evaluations support curved
+locations; tests also vary ray direction. Native OCCT validates all 48 faces
+and agrees on 45 classifications. It reports inside at three exact curved
+vertices. The raw native values, exact vertex-coordinate evidence, and a probe
+of both native classifiers across four tolerances are retained. The new extension
+returns boundary there under its exact contract. Native classifier parity is
+partial; the mapped classifier is unchanged. No discrepancy is hidden by a
+widened tolerance or a production fallback.
+
+Regressions cover non-binary rational endpoints, a rounded 2/3 false join,
+subnormal gaps and reversed trims, complete boundary IDs, self-crossing paths,
+shared work limits, cancellation, and ownership. All 2,896 TKMath tests pass.
+Wire-module coverage is 97.18%, endpoint coverage is 100%, and predicate
+duplication is 0%. Clippy, strict Rustdoc, formatting, Markdown lint, and SPDX
+checks pass. The separate refactor passes all 95 prior exact-predicate tests
+and Clippy. Kernel `docs/exact-bezier-wire.md` records evidence and measured cost.
+
+This closes a numerical prerequisite for supplied directed paths. Multi-wire
+region assembly, analytic curve extraction, intersection/overlap arrangement,
+full B-rep validation, achieved tolerance, persistent split history/naming, and
+the named region/prism gate remain under issue #10. The application pin and
+production profiles/extrusion remain unchanged. This record passes `make docs-lint`;
+no new application live-test acceptance is claimed.
