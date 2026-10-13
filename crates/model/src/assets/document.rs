@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod assign;
 use super::{AppearanceAsset, AssetAssignments, AssetCollection, MaterialAsset};
+pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
 use oblikovati_api::{
     contract::{Appearance, Material},
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},

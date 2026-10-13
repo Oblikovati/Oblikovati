@@ -134,3 +134,6 @@ fn document_definition_stays_authoritative_over_selected_project_changes() {
     files.close_discarding_changes(id).unwrap();
     assert_eq!(material_name(&files, "steel"), "Second");
 }
+
+#[path = "asset_assignment_history.rs"]
+mod assignment_history;

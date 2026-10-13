@@ -50,7 +50,7 @@ mod validation;
 pub use appearance::AppearanceAsset;
 pub use assignment::{AssetAssignments, AssignmentReference};
 pub use catalog::{BuiltinAssetCatalog, DEFAULT_APPEARANCE_ID};
-pub use document::DocumentAssets;
+pub use document::{AppearanceAssignmentTarget, DocumentAssets, MaterialAssignmentTarget};
 pub use material::MaterialAsset;
 pub use project::ProjectAssetLibrary;
 pub use scopes::{AssetCollection, AssetIdentity, ScopedAssets};

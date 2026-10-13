@@ -39,7 +39,8 @@ missing selected assets, missing physics, absent neutral default, clearing each
 entity override, invalid references, and atomic replacement failure. Run
 `cargo test -p oblikovati-model --test assignments`, then `make gate`.
 
-Document history and package attachment, assignment API commands, body/face
+[Atomic assignment edits](implementation-assignment-edits.md) now cover document
+history and portable package attachment. Assignment API commands, body/face
 reference verification, occurrence workflow integration, renderer consumption,
 health propagation, asset editors and analytic mass properties remain open.
 This is the shared model resolver; it is not a claim of rendered-assignment or
