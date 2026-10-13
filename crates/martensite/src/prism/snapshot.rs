@@ -77,3 +77,9 @@ impl PrismProbeSnapshot {
         mesh::derive_presentation(self, options)
     }
 }
+impl PrismProbeSnapshot {
+    /// Integrate this retained diagnostic solid; example: `snapshot.physical_properties()?` uses no display mesh.
+    pub fn physical_properties(&self) -> Result<crate::AnalyticBodyProperties, String> {
+        crate::analytic_body::integrate_body(&self.shape)
+    }
+}

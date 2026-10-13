@@ -19,9 +19,7 @@ impl DesktopPartScenes {
             .internal_name;
         let evaluated = self.current(session)?;
         evaluated
-            .health()
-            .iter()
-            .filter_map(|record| evaluated.body(record.feature))
+            .ordered_bodies()
             .enumerate()
             .map(|(index, body)| {
                 let info = native_body_info(session, guid, index, body)?;

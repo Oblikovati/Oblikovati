@@ -4,6 +4,8 @@
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepGProp.hxx>
 #include <GProp_GProps.hxx>
+#include <GProp_PrincipalProps.hxx>
+#include <algorithm>
 #include <TopExp.hxx>
 #include <NCollection_IndexedMap.hxx>
 #include <TopTools_ShapeMapHasher.hxx>
@@ -68,10 +70,23 @@ static void face_row(int kind, double scale, const gp_Vec& vector, int role, int
         <<role<<','<<key<<','<<area.Mass()<<','<<point.X()<<','<<point.Y()<<','<<point.Z()<<','
         <<loops.Extent()<<','<<volume.Mass()<<','<<center.X()<<','<<center.Y()<<','<<center.Z()<<'\n';
 }
-static void sample(int kind, double scale, gp_Vec vector, int placement, bool placed) {
+static void mass_row(int kind, double scale, const gp_Vec& vector, const TopoDS_Shape& shape, const GProp_GProps& volume) {
+    GProp_GProps area; BRepGProp::SurfaceProperties(shape,area,false,false);
+    const auto center=volume.CentreOfMass(); const auto tensor=volume.MatrixOfInertia();
+    const auto principal=volume.PrincipalProperties(); std::array<double,3> moments;
+    principal.Moments(moments[0],moments[1],moments[2]); std::sort(moments.begin(),moments.end());
+    std::cout<<kind<<','<<scale<<','<<vector.X()<<','<<vector.Y()<<','<<vector.Z()<<','
+        <<volume.Mass()<<','<<area.Mass()<<','<<center.X()<<','<<center.Y()<<','<<center.Z();
+    for(auto pair:std::vector<std::array<int,2>>{{1,1},{2,2},{3,3},{1,2},{2,3},{3,1}})
+        std::cout<<','<<tensor.Value(pair[0],pair[1]);
+    for(auto moment:moments) std::cout<<','<<moment;
+    std::cout<<'\n';
+}
+static void sample(int kind, double scale, gp_Vec vector, int placement, bool placed, bool mass) {
     vector*=scale; auto input=profile(kind,scale,placement);
     BRepPrimAPI_MakePrism maker(input.face,placed_vector(vector,placement),true,true);
     GProp_GProps volume; BRepGProp::VolumeProperties(maker.Shape(),volume,true,false,false);
+    if(mass) { mass_row(kind,scale,vector,maker.Shape(),volume); return; }
     face_row(kind,scale,vector,0,0,maker.FirstShape(),volume,placement,placed);
     face_row(kind,scale,vector,1,0,maker.LastShape(),volume,placement,placed);
     for (size_t i=0; i<input.edges.size(); ++i) {
@@ -82,9 +97,10 @@ static void sample(int kind, double scale, gp_Vec vector, int placement, bool pl
 }
 int main(int argc, char** argv) {
     const bool placed=argc==2 && std::string(argv[1])=="--placed";
-    if(argc!=1 && !placed) throw std::runtime_error("expected no argument or --placed");
+    const bool mass=argc==2 && std::string(argv[1])=="--mass";
+    if(argc!=1 && !placed && !mass) throw std::runtime_error("expected no argument, --placed, or --mass");
     std::cerr<<OCC_VERSION_COMPLETE<<'\n'; std::cout<<std::setprecision(17);
     for (int placement=placed?1:0; placement<=(placed?5:0); ++placement)
     for (int kind:{0,1,2}) for (double scale:{0.01,1.,100.})
-        for (gp_Vec vector:{gp_Vec(0,0,2),gp_Vec(0,0,-2),gp_Vec(1,2,3)}) sample(kind,scale,vector,placement,placed);
+        for (gp_Vec vector:{gp_Vec(0,0,2),gp_Vec(0,0,-2),gp_Vec(1,2,3)}) sample(kind,scale,vector,placement,placed,mass);
 }

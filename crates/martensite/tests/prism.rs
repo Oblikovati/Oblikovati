@@ -186,3 +186,5 @@ fn native_topology_counts_unique_entities_including_inner_wires() {
         );
     }
 }
+#[path = "prism/physical.rs"]
+mod physical;

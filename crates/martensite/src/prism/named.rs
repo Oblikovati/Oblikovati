@@ -83,6 +83,16 @@ impl NamedPrismSnapshot {
         self.bindings.bind(history, document, key, 4)?;
         Ok(key)
     }
+    /// Integrate a verified current body without a mesh; example: `named.physical_properties(history, guid, key)?`.
+    pub fn physical_properties(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<crate::AnalyticBodyProperties, String> {
+        self.bindings.bind(history, document, key, 4)?;
+        self.snapshot.physical_properties()
+    }
     /// Read current body properties and face reports; example: `named.body_report(&history, doc, &body_key)?`.
     pub fn body_report<'a>(
         &'a self,

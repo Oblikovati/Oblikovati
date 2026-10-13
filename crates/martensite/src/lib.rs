@@ -3,9 +3,8 @@
 //! Release acceptance at the application-owned Martensite boundary.
 //! Diagnostic snapshots retain isolated geometry; full evaluation and provenance remain open.
 use rustycad_tkbrep::topods::Shape;
-use rustycad_tkgeombase::gprop::GProps;
 use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
-use rustycad_tktopalgo::{brep_check::BRepCheckAnalyzer, brep_gprop::BRepGProp};
+use rustycad_tktopalgo::brep_check::BRepCheckAnalyzer;
 
 /// Analytic values from a release probe, in the supplied working units.
 #[derive(Clone, Debug, PartialEq)]
@@ -68,17 +67,8 @@ fn analytic_shape_properties(
     shape: &Shape,
     context: &str,
 ) -> Result<ReleaseProbeProperties, String> {
-    let mut properties = GProps::new();
-    // Analytic integration explicitly disables the kernel's triangulation path.
-    BRepGProp::volume_properties(shape, &mut properties, true, false, false)
-        .map_err(|error| format!("{context}: expected analytic properties: {error}"))?;
-    let centroid = properties.centre_of_mass();
-    let result = ReleaseProbeProperties {
-        volume: properties.mass(),
-        centroid: [centroid.x(), centroid.y(), centroid.z()],
-    };
-    require_finite_result(&result, context)?;
-    Ok(result)
+    let properties = analytic_body::volume_integrals(shape, context)?;
+    analytic_body::geometry_integrals(&properties, context)
 }
 
 fn require_finite_result(properties: &ReleaseProbeProperties, context: &str) -> Result<(), String> {
@@ -116,3 +106,6 @@ pub use sketch_prism::{
     retain_resolved_sketch_prism, retain_selected_sketch_prism, retain_sketch_prism_definition,
 };
 pub use stored_prism::retain_stored_sketch_prism;
+
+mod analytic_body;
+pub use analytic_body::AnalyticBodyProperties;

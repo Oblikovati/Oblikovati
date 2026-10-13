@@ -13,6 +13,16 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         self.ensure_current(files, document)?;
         self.body_infos(files, document)
     }
+    fn physical_properties(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        index: i64,
+        density: f64,
+    ) -> Result<oblikovati_api::wire::MassPropertiesResult, String> {
+        self.ensure_current(files, document)?;
+        self.body_physical_properties(files, document, index, density)
+    }
     fn verify(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

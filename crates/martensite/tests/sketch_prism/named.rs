@@ -73,6 +73,11 @@ fn named_faces_follow_depth_edits_and_undo_without_reusing_old_handles() {
     history.commit(&token, false).unwrap();
     assert!(first.reference_keys(&history, document()).is_err());
     assert!(first.body_reference_key(&history, document()).is_err());
+    assert!(
+        first
+            .physical_properties(&history, document(), &key("body", &[1]))
+            .is_err()
+    );
     let changed = named(&history);
     assert_eq!(changed.reference_keys(&history, document()).unwrap(), keys);
     assert_faces(&changed, &history, 3.);

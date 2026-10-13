@@ -16,6 +16,14 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<Vec<BodyInfo>, String>;
+    /// Query one indexed current body at an explicit density; example: `access.physical_properties(files, document, 0, 7.85)?`.
+    fn physical_properties(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        index: i64,
+        density: f64,
+    ) -> Result<MassPropertiesResult, String>;
     /// Verify a current exact target before any edit; example: `access.verify(files, document, key, TopologyEntityKind::Face)?`.
     fn verify(
         &mut self,
@@ -27,21 +35,37 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 1] = [METHOD_BODY_LIST];
-pub(crate) fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub const BODY_QUERY_METHODS: [&str; 2] = [METHOD_BODY_LIST, METHOD_BODY_PHYSICAL_PROPS];
+mod physical;
+pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    method: &str,
     encoded: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let _: EmptyObject = crate::decode(METHOD_BODY_LIST, encoded)?;
     let document = crate::part_owner::active_part(files)?;
     let owner = access.as_deref_mut().ok_or_else(|| {
         Error(format!(
             "body query document {document}: expected an injected exact topology owner"
         ))
     })?;
-    let bodies = owner.list_bodies(files, document).map_err(Error)?;
-    crate::encode(&BodyListResult {
-        bodies: Some(bodies),
-    })
+    match method {
+        METHOD_BODY_LIST => {
+            let _: EmptyObject = crate::decode(method, encoded)?;
+            crate::encode(&BodyListResult {
+                bodies: Some(owner.list_bodies(files, document).map_err(Error)?),
+            })
+        }
+        METHOD_BODY_PHYSICAL_PROPS => {
+            let request = physical::request(files, encoded)?;
+            crate::encode(
+                &owner
+                    .physical_properties(files, document, request.body_index, request.density_g_cm3)
+                    .map_err(Error)?,
+            )
+        }
+        _ => Err(Error(format!(
+            "body query {method:?}: expected {BODY_QUERY_METHODS:?}"
+        ))),
+    }
 }

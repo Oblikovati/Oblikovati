@@ -47,6 +47,12 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn body(&self, feature: FeatureId) -> Option<&Body> {
         self.bodies.get(&feature)
     }
+    /// Borrow successful bodies in replay order; example: `evaluation.ordered_bodies().collect::<Vec<_>>()`.
+    pub fn ordered_bodies(&self) -> impl Iterator<Item = &Body> {
+        self.health
+            .iter()
+            .filter_map(|record| self.body(record.feature))
+    }
     /// Inspect complete ordered health; example: `evaluation.health()` includes failures and their blocked readers.
     pub fn health(&self) -> &[FeatureHealthRecord<PartFeatureFailure<Failure>>] {
         &self.health
