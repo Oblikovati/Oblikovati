@@ -20,6 +20,10 @@ impl<'a> NamedPrismEvaluator<'a> {
 impl SketchPrismEvaluator for NamedPrismEvaluator<'_> {
     type Body = NamedPrismSnapshot;
     type Failure = String;
+    fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String> {
+        body.body_report(self.history, self.document, key)
+            .map(|_| ())
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

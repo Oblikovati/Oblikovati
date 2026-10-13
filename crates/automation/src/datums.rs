@@ -120,7 +120,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 impl DatumCollection {
     fn contains(self, definition: &WorkGeometryDefinition) -> bool {
         let kind = match definition {
-            WorkGeometryDefinition::SketchPrism(_) => return false,
+            WorkGeometryDefinition::SketchPrism(_) | WorkGeometryDefinition::DeleteBody(_) => {
+                return false;
+            }
             WorkGeometryDefinition::Axis(_) | WorkGeometryDefinition::AxisThroughPoints(_) => {
                 Self::Axes
             }

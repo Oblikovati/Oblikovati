@@ -14,6 +14,8 @@ use std::collections::BTreeMap;
 pub trait SketchPrismEvaluator {
     type Body;
     type Failure;
+    /// Verify the complete body name before a body-set edit; example: `backend.verify_body_reference(body, key)?`.
+    fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String>;
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,
@@ -28,11 +30,13 @@ pub enum PartFeatureFailure<Failure> {
     Metadata(Box<WorkGeometryError>),
     Inputs(SketchPrismError),
     Kernel(Failure),
+    BodyReference(String),
 }
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
 pub struct PartFeatureEvaluation<Body, Failure> {
     datums: WorkGeometryEvaluation,
     bodies: BTreeMap<FeatureId, Body>,
+    deleted: BTreeMap<FeatureId, Vec<u8>>,
     health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
 }
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
@@ -40,8 +44,13 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         Self {
             datums: WorkGeometryEvaluation::default(),
             bodies: BTreeMap::new(),
+            deleted: BTreeMap::new(),
             health: Vec::new(),
         }
+    }
+    /// Inspect the exact body consumed by a successful deletion. Example: `evaluation.deleted_body(delete_id)`.
+    pub fn deleted_body(&self, feature: FeatureId) -> Option<&[u8]> {
+        self.deleted.get(&feature).map(Vec::as_slice)
     }
     /// Inspect successful current outputs only; example: `evaluation.body(feature_id)` returns none for a failed feature.
     pub fn body(&self, feature: FeatureId) -> Option<&Body> {
@@ -134,14 +143,48 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 expected: "existing part feature",
             }))
         })?;
-        let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
-            return self
+        if matches!(
+            feature.definition(),
+            PartFeatureDefinition::SketchPrism(_) | PartFeatureDefinition::DeleteBody(_)
+        ) {
+            feature
+                .validate_plane_metadata()
+                .map_err(|cause| PartFeatureFailure::Metadata(Box::new(cause)))?;
+        }
+        match feature.definition() {
+            PartFeatureDefinition::SketchPrism(definition) => {
+                self.evaluate_prism(snapshot, backend, feature, definition)
+            }
+            PartFeatureDefinition::DeleteBody(definition) => {
+                self.delete_body(backend, id, definition)
+            }
+            _ => self
                 .datums
                 .evaluate_entry(&snapshot.work_geometry, id, &snapshot.parameters)
-                .map_err(|cause| PartFeatureFailure::Datum(Box::new(cause)));
-        };
-        self.evaluate_prism(snapshot, backend, feature, definition)
+                .map_err(|cause| PartFeatureFailure::Datum(Box::new(cause))),
+        }
     }
+    fn delete_body<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
+        &mut self,
+        backend: &B,
+        feature: FeatureId,
+        definition: &super::DeleteBodyDefinition,
+    ) -> Result<(), PartFeatureFailure<Failure>> {
+        let source = definition.source();
+        let body = self.bodies.get(&source).ok_or_else(|| {
+            PartFeatureFailure::BodyReference(format!(
+                "delete-body key {:?}, source {source:?}: expected an available unconsumed body",
+                definition.key()
+            ))
+        })?;
+        backend
+            .verify_body_reference(body, definition.key())
+            .map_err(PartFeatureFailure::BodyReference)?;
+        self.bodies.remove(&source);
+        self.deleted.insert(feature, definition.key().to_vec());
+        Ok(())
+    }
+
     fn evaluate_prism<B: SketchPrismEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
@@ -149,9 +192,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         feature: &crate::feature::AuthoredFeature<PartFeatureDefinition>,
         definition: &crate::feature::sketch_prism::SketchPrismDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
-        feature
-            .validate_plane_metadata()
-            .map_err(|cause| PartFeatureFailure::Metadata(Box::new(cause)))?;
         let input = definition
             .resolve_with_datums(snapshot, &self.datums)
             .map_err(PartFeatureFailure::Inputs)?;

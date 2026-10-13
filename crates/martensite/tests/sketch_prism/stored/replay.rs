@@ -112,3 +112,30 @@ fn failed_host_plane_blocks_native_prism_until_current_datum_recovers() {
     assert_current_volume(&recovered, 1);
     assert!(failed.into_body(FeatureId(1)).is_none());
 }
+
+#[test]
+fn unnamed_diagnostic_replay_refuses_body_deletion_without_losing_geometry() {
+    use oblikovati_model::{feature::part::DeleteBodyDefinition, identity::SemanticReferenceName};
+    let mut document = stored_owner().snapshot().clone();
+    let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let key = SemanticReferenceName::new(guid, 1, 4, "sketch-prism", "body", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let definition = PartFeatureDefinition::DeleteBody(DeleteBodyDefinition::new(key).unwrap());
+    let feature = AuthoredFeature::new(
+        FeatureId(2),
+        "delete-body",
+        definition.clone(),
+        definition.reads(),
+    );
+    document.work_geometry.append(feature).unwrap();
+    let result = document
+        .evaluate_part_features(&mut MartensitePrismEvaluator)
+        .unwrap();
+    assert_current_volume(&result, 1);
+    assert!(
+        matches!(&result.health()[1].status, FeatureEvaluationStatus::Failed(PartFeatureFailure::BodyReference(cause)) if cause.contains("document-scoped NamedPrismEvaluator"))
+    );
+    assert!(result.deleted_body(FeatureId(2)).is_none());
+}

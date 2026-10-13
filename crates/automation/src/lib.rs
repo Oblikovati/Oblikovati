@@ -3,6 +3,7 @@
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
 mod datums;
 mod part_owner;
+mod reference_bytes;
 pub use datums::{DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS};
 mod clients;
 pub use clients::CLIENT_COMMAND_METHODS;

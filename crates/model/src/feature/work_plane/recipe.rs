@@ -15,6 +15,7 @@ pub struct WorkPlaneRecipe {
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub enum WorkPlaneDefinitionRecipe {
+    DeleteBody(Vec<u8>),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -49,6 +50,7 @@ impl WorkPlaneDefinition {
     fn source_recipe(&self) -> WorkPlaneDefinitionRecipe {
         use WorkPlaneDefinitionRecipe as Source;
         match self {
+            Self::DeleteBody(definition) => Source::DeleteBody(definition.key().to_vec()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(*source),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
@@ -80,6 +82,9 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        DeleteBody(key) => crate::feature::part::DeleteBodyDefinition::new(key)
+            .map(WorkPlaneDefinition::DeleteBody)
+            .map_err(WorkPlaneError::BodyReference),
         SketchPrism(recipe) => restore_prism_inputs(recipe),
         AtAngleAboutAxis(source) => restore_line_angle(source),
         ThroughTwoAxes(axes) => Ok(WorkPlaneDefinition::ThroughTwoAxes(axes)),
@@ -114,6 +119,7 @@ fn restore_point(
 impl WorkPlaneDefinitionRecipe {
     pub(super) fn source_version(&self) -> u32 {
         match self {
+            Self::DeleteBody(_) => 12,
             Self::SketchPrism(_) => 11,
             Self::AtAngleAboutAxis(_) => 10,
             Self::ThroughTwoAxes(_) => 9,
@@ -129,6 +135,7 @@ impl WorkPlaneDefinitionRecipe {
     }
     pub(super) fn minimum_program_version(&self) -> u32 {
         match self {
+            Self::DeleteBody(_) => 17,
             Self::SketchPrism(_) => 16,
             Self::AtAngleAboutAxis(_) => 15,
             Self::ThroughTwoAxes(_) => 14,

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::reference_bytes::hex_bytes;
 use oblikovati_model::identity::ReferenceEnvelope;
 pub(super) enum AssignmentChange {
     Material(MaterialAssignmentTarget, String),
@@ -48,26 +49,6 @@ fn reference(text: &str) -> Result<AssignmentReference, Error> {
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>();
     AssignmentReference::new(&encoded, vec![]).map_err(Error)
-}
-fn hex_bytes(text: &str) -> Result<Vec<u8>, Error> {
-    if text.is_empty()
-        || !text.len().is_multiple_of(2)
-        || !text.bytes().all(|byte| byte.is_ascii_hexdigit())
-    {
-        return Err(Error(format!(
-            "reference key {text:?}: expected nonempty hexadecimal byte pairs"
-        )));
-    }
-    (0..text.len())
-        .step_by(2)
-        .map(|index| {
-            u8::from_str_radix(&text[index..index + 2], 16).map_err(|cause| {
-                Error(format!(
-                    "reference key {text:?}: expected hexadecimal bytes: {cause}"
-                ))
-            })
-        })
-        .collect()
 }
 impl AssignmentChange {
     pub(super) fn entity(&self) -> Result<Option<(Vec<u8>, TopologyEntityKind)>, Error> {

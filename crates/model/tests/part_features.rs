@@ -140,3 +140,6 @@ mod refusals;
 
 #[path = "part_features/replay.rs"]
 mod replay;
+
+#[path = "part_features/delete.rs"]
+mod delete;

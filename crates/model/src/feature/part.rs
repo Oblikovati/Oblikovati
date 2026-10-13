@@ -8,7 +8,9 @@ use super::{
     work_plane::{WorkPlaneDistance, WorkPlaneReference},
 };
 use crate::sketch::SketchPlane;
+mod delete;
 mod error;
+pub use delete::DeleteBodyDefinition;
 mod evaluate;
 pub use evaluate::{PartFeatureEvaluation, PartFeatureFailure, SketchPrismEvaluator};
 mod reads;
@@ -20,6 +22,7 @@ pub use error::PartFeatureProgramError;
 /// One owned datum or body input in the common ordered feature program.
 #[derive(Clone, Debug, PartialEq)]
 pub enum PartFeatureDefinition {
+    DeleteBody(DeleteBodyDefinition),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     Fixed(SketchPlane),
     Offset {

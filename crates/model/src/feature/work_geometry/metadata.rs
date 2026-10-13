@@ -3,12 +3,15 @@ use super::{AuthoredFeature, FeatureSequence, WorkGeometryDefinition, WorkGeomet
 impl AuthoredFeature<WorkGeometryDefinition> {
     pub(crate) fn validate_plane_metadata(&self) -> Result<(), WorkGeometryError> {
         if self.construction_datum
-            && matches!(self.definition(), WorkGeometryDefinition::SketchPrism(_))
+            && matches!(
+                self.definition(),
+                WorkGeometryDefinition::SketchPrism(_) | WorkGeometryDefinition::DeleteBody(_)
+            )
         {
             return Err(WorkGeometryError::Kind(super::WorkGeometryKindMismatch {
                 feature: self.id(),
                 expected: "construction datum",
-                actual: "sketch prism input",
+                actual: "body feature",
             }));
         }
         self.validate_plane_orientation()?;

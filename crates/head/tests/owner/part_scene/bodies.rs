@@ -186,3 +186,6 @@ mod rename;
 
 #[path = "bodies/visibility.rs"]
 mod visibility;
+
+#[path = "bodies/delete.rs"]
+mod delete;

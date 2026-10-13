@@ -7,6 +7,7 @@ impl WorkPlaneDefinition {
     pub fn same_recipe(&self, other: &Self) -> bool {
         use WorkPlaneDefinition::*;
         match (self, other) {
+            (DeleteBody(first), DeleteBody(second)) => first == second,
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
             (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => same_line_angle(*first, *second),
             (ThroughTwoAxes(first), ThroughTwoAxes(second)) => first == second,

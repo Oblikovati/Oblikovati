@@ -196,3 +196,33 @@ fn native_body_visibility(owner: &mut NativeDesktopOwner, visible: bool) {
         .unwrap();
     assert_eq!(result.body.visible, visible);
 }
+
+#[test]
+fn native_body_deletion_and_undo_remove_and_restore_window_pixels() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("delete.opd"));
+    let original = publish_native_scene(&mut owner, &mut window);
+    assert!(solid_pixels(&original) > 0);
+    let reply = Client::new(owner.document_host())
+        .body()
+        .delete(&BodyIndexArgs { body_index: 0 })
+        .unwrap();
+    assert!(reply.bodies.unwrap_or_default().is_empty());
+    assert_eq!(
+        solid_pixels(&publish_native_scene(&mut owner, &mut window)),
+        0
+    );
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_eq!(
+        publish_native_scene(&mut owner, &mut window).rgba,
+        original.rgba
+    );
+    assert!(owner.documents().workspace().needs_save(document).unwrap());
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}

@@ -78,6 +78,11 @@ pub struct MartensitePrismEvaluator;
 impl oblikovati_model::feature::part::SketchPrismEvaluator for MartensitePrismEvaluator {
     type Body = PrismProbeSnapshot;
     type Failure = String;
+    fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
+        Err(format!(
+            "diagnostic prism reference {key:?}: expected a document-scoped NamedPrismEvaluator for body-set edits"
+        ))
+    }
     fn evaluate_prism(
         &mut self,
         _feature: oblikovati_model::feature::FeatureId,

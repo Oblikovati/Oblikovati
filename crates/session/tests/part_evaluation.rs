@@ -33,6 +33,11 @@ struct FakePrismEvaluator {
 impl SketchPrismEvaluator for FakePrismEvaluator {
     type Body = f64;
     type Failure = &'static str;
+    fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
+        Err(format!(
+            "unnamed fake reference {key:?}: expected a named test body"
+        ))
+    }
     fn evaluate_prism(
         &mut self,
         _feature: oblikovati_model::feature::FeatureId,
@@ -169,6 +174,11 @@ struct EditingPrismEvaluator<'a> {
 impl SketchPrismEvaluator for EditingPrismEvaluator<'_> {
     type Body = f64;
     type Failure = &'static str;
+    fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
+        Err(format!(
+            "unnamed fake reference {key:?}: expected a named test body"
+        ))
+    }
     fn evaluate_prism(
         &mut self,
         _feature: oblikovati_model::feature::FeatureId,

@@ -83,11 +83,14 @@ impl WorkGeometryEvaluation {
             expected: "datum",
         })?;
         feature.validate_plane_metadata()?;
-        if matches!(feature.definition(), WorkPlaneDefinition::SketchPrism(_)) {
+        if matches!(
+            feature.definition(),
+            WorkPlaneDefinition::SketchPrism(_) | WorkPlaneDefinition::DeleteBody(_)
+        ) {
             return Err(WorkPlaneError::Kind(super::WorkGeometryKindMismatch {
                 feature: id,
                 expected: "datum",
-                actual: "sketch prism input",
+                actual: "body feature",
             }));
         }
         let datum = WorkGeometryResult::evaluate(feature.definition().clone(), parameters, self)?;

@@ -123,3 +123,62 @@ covers all 13 crates, with native Linux display tests, formatting, lint, build,
 coverage, documentation, SPDX, and duplication checks. No modelling algorithm,
 released kernel pin, or stored document schema changes in this increment.
 No push or PR was made.
+
+## Body deletion, 2026-10-13
+
+The existing typed `body.delete` route resolves its index against current native
+results, verifies the complete body key, and appends a `delete-body` entry through
+the shared command owner. It returns the refreshed body list. No new public DTO
+or wire method is introduced. Source behavior is Go `addin/router/bodies.go`,
+`model/feature/delete_body.go`, and their tests at the comparison baseline.
+
+Deletion is part of the single ordered feature program. Its stored key declares
+a read on the producing feature; the native owner verifies the complete key,
+including document identity and semantic payload, before removal from the
+running body set. A feature context alone cannot authorize deletion. Other
+bodies keep their geometry and names. A successful deletion records the consumed
+body key under the deletion feature ID. Missing, consumed, or foreign targets
+produce local health failures without removing another body. Failed source
+features quarantine dependent deletion; suppressed sources leave no current body
+and cause a missing-target failure. Independent features continue to evaluate.
+
+Suppression and end-of-part use the existing replay controller. As in Go's
+append-only `PartFeatures.Add`, adding after an active end-of-part cutoff stores
+the feature after that cutoff; it does not move the cutoff. Undo/redo and explicit
+abort use the shared snapshot history. Allocated feature IDs remain reserved
+across undo and abort, so a restored recipe can still need saving to preserve its
+high-water mark. This follows the existing Rust identity policy.
+
+The common program serializer selects version 17 only when a deletion is
+present; its definition uses version 12. Earlier program versions cannot contain
+that definition. The outer document package stays at schema 2. Save/reopen
+retains the exact target and source dependency. Malformed, non-body, and legacy
+keys are refused by this current semantic-key definition; conversion of old Go
+body keys and legacy feature recipes remains open. The unnamed diagnostic prism
+evaluator has no document namespace and explicitly refuses reference edits.
+Production replay uses `NamedPrismEvaluator` and its exact current bindings.
+
+Tests cover consumed targets, full-key mismatch, source failure, suppression,
+end-of-part, dependency protection, metadata rejection, recipe versions, invalid
+API indices, missing owners, recompute after index changes, explicit abort,
+undo/redo, and save/reopen. Native-owner tests compare the surviving body's
+analytic mass result with the remaining whole-part result, and compare every
+retained face report and reference key before and after deletion. A real window test
+checks deletion removes all body pixels and undo restores the entire original
+frame byte-for-byte; it also compares the capture with presented X11 pixels.
+The matching Go model and router tests pass at
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`.
+
+This adds a body-set operation for the current named feature results. It does
+not claim general extrude/profile construction, legacy document migration, the
+body browser UI, or full R0–R9 acceptance. No kernel algorithm, kernel dependency
+pin, recognizer, tolerance constant, fallback site, or kernel type assertion
+changes. Foreground MCPBridge acceptance remains open. No push or PR is part of
+this increment.
+
+Local focused validation passes 24 common part-program tests, seven native-owner
+deletion tests, the unnamed diagnostic rejection test, and the native window
+pixel test. The full gate is the workspace `make gate` on Xvfb/lavapipe, including
+all discovered crates, coverage, lint, build, documentation, SPDX, and duplication.
+Cross-platform review found no new tolerance, coordinate, pointer-order, or
+platform-dependent index rule. Body keys keep their existing fixed byte format.
