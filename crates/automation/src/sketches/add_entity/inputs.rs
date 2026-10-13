@@ -13,6 +13,7 @@ mod chains;
 mod points;
 mod polygon;
 pub(super) enum PreparedEntity {
+    ThreePoint(super::three_point::ThreePointCreation),
     Polygon(oblikovati_model::history::SketchPolygonCreation),
     Primitive(SketchPrimitiveCreation, &'static str),
     InferredLine(SketchLineCreation),
@@ -38,6 +39,9 @@ pub(super) fn prepare(
         "polyline" => return chains::polyline(snapshot, request),
         "rectangle" => return chains::rectangle(snapshot, request),
         "polygon" => return polygon::prepare(snapshot, request),
+        "circle" | "arc" if request.variant == "threePoint" => {
+            return three_point_input(snapshot, request);
+        }
         _ => {}
     }
     let constructor = classify_kind(&request.kind)?;
@@ -182,4 +186,24 @@ fn ellipse_input(
         ],
         construction: request.construction,
     })
+}
+
+fn three_point_input(
+    snapshot: &DocumentSnapshot,
+    request: &AddSketchEntityArgs,
+) -> Result<PreparedEntity, Error> {
+    let positions = points::resolve(snapshot, request)?;
+    let points = <[[f64; 2]; 3]>::try_from(positions.as_slice()).map_err(|_| {
+        Error(format!(
+            "three-point {} positions {positions:?}: expected exactly 3 positions",
+            request.kind
+        ))
+    })?;
+    Ok(PreparedEntity::ThreePoint(
+        super::three_point::ThreePointCreation {
+            points,
+            arc: request.kind == "arc",
+            construction: request.construction,
+        },
+    ))
 }

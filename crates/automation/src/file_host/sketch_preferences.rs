@@ -18,6 +18,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         method: &str,
         request: &[u8],
     ) -> Result<Vec<u8>, Error> {
+        if method == METHOD_SKETCH_ADD_ENTITY {
+            return crate::sketches::add_entity::apply(
+                self.files,
+                crate::decode(method, request)?,
+                self.sketch_construction,
+            );
+        }
         if method != METHOD_SKETCH_CREATE {
             return crate::sketches::apply(self.files, method, request);
         }

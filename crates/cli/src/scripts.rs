@@ -90,9 +90,11 @@ impl<'a, F: DocumentFiles> ScriptSession<'a, F> {
         };
         let mut execution = engine.start(program)?;
         let mut factory = observations::CliObservationFactory;
+        let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
         let host =
             oblikovati_automation::FileHost::new(&mut self.documents, self.guids, &self.version)
-                .with_observer_factory(&mut factory);
+                .with_observer_factory(&mut factory)
+                .with_sketch_construction(&construction, Default::default());
         execution
             .wait(&host, output)
             .map(|_| ())

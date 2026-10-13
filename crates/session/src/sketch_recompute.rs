@@ -121,12 +121,13 @@ pub(crate) fn update_pending_sketches(snapshot: &mut DocumentSnapshot, options: 
     let outcome = snapshot.solve_pending_document_sketches(options, || false);
     snapshot.sketches = outcome.candidate;
 }
-pub(crate) fn apply_recipe_edit<R, E>(
+pub(crate) fn apply_recipe_edit<R, T, E>(
     snapshot: &mut DocumentSnapshot,
     ids: &mut RecipeReservations<'_>,
     command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
     options: Option<SolveOptions>,
-) -> Result<R, MutationError<E>> {
+    project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
+) -> Result<T, MutationError<E>> {
     let result = command(snapshot, ids).map_err(MutationError::Command)?;
     snapshot
         .properties
@@ -135,5 +136,5 @@ pub(crate) fn apply_recipe_edit<R, E>(
     if let Some(options) = options {
         update_pending_sketches(snapshot, options);
     }
-    Ok(result)
+    project(snapshot, result).map_err(MutationError::Command)
 }

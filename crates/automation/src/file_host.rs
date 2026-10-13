@@ -17,8 +17,10 @@ pub use derived_links::DERIVED_COMMAND_METHODS;
 mod create;
 mod lifecycle;
 mod open;
+mod sketch_construction;
 mod sketch_preferences;
 pub use open::DocumentObserverFactory;
+pub(crate) use sketch_construction::SketchConstructionAccess;
 
 /// Implemented calls that require the file owner.
 pub const FILE_COMMAND_METHODS: [&str; 10] = [
@@ -44,6 +46,7 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     version: &'a str,
     external: Option<&'a mut dyn ExternalAttachmentFiles>,
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
+    sketch_construction: Option<SketchConstructionAccess<'a>>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
@@ -72,6 +75,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 external: None,
                 sketch_preferences: None,
                 part_topology: None,
+                sketch_construction: None,
             }),
         }
     }

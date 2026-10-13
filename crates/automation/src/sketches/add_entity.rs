@@ -4,10 +4,12 @@ use oblikovati_session::SketchPrimitiveProjectionInput;
 mod chain_reply;
 mod inputs;
 mod line_reply;
+mod three_point;
 use inputs::PreparedEntity;
-pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     request: AddSketchEntityArgs,
+    construction: Option<crate::file_host::SketchConstructionAccess<'_>>,
 ) -> Result<Vec<u8>, Error> {
     let (document, sketch) = active_sketch(files, request.sketch_index)?;
     let snapshot = files
@@ -16,16 +18,20 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(api_error)?
         .snapshot();
     let input = inputs::prepare(snapshot, &request)?;
-    create_prepared(files, document, sketch, input)
+    create_prepared(files, document, sketch, input, construction)
 }
 fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     document: u64,
     sketch: oblikovati_model::document_sketch::DocumentSketchId,
     input: PreparedEntity,
+    construction: Option<crate::file_host::SketchConstructionAccess<'_>>,
 ) -> Result<Vec<u8>, Error> {
     let mut commands = files.commands(document).map_err(api_error)?;
     match input {
+        PreparedEntity::ThreePoint(input) => {
+            three_point::create(files, document, sketch, input, construction)
+        }
         PreparedEntity::Primitive(input, kind) => commands
             .create_sketch_primitive_projected(sketch, &input, |result| {
                 creation_reply(result, kind)

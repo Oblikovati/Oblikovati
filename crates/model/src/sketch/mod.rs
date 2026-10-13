@@ -157,3 +157,9 @@ pub use rectangle_seed::SketchRectangleSeed;
 
 mod polygon_seed;
 pub use polygon_seed::SketchPolygonSeed;
+
+mod construction_backend;
+pub use construction_backend::{
+    CircumcircleOptions, PlanarCircumcircle, SketchCircleConstruction, SketchConstructionPolicy,
+    SolvedCircularSeed,
+};

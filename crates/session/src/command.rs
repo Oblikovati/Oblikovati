@@ -20,11 +20,30 @@ impl<O: TransactionObserver> DocumentSession<O> {
         command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
         mode: SketchUpdateMode,
     ) -> Result<R, CommandError<E>> {
+        self.run_recomputed_projected(label, command, mode, |_, result| Ok(result))
+    }
+    /// Inspect the solved candidate and prepare a reply before adoption; a refusal retains reserved IDs.
+    /// Example: `session.run_projected("Create", create, |snapshot, report| verify_and_encode(snapshot,report))?`.
+    pub fn run_projected<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
+        self.run_recomputed_projected(label, command, SketchUpdateMode::Automatic, project)
+    }
+    fn run_recomputed_projected<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        mode: SketchUpdateMode,
+        project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
         let automatic = !self.in_transaction();
         if automatic {
             self.begin(label).map_err(CommandError::Session)?;
         }
-        let result = self.edit_with_recompute(command, mode);
+        let result = self.edit_projected(command, mode, project);
         if automatic {
             // A rejected candidate is unchanged, so end drops its frame without notifications.
             self.end().map_err(CommandError::Session)?;

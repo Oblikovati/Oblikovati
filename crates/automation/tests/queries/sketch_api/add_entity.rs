@@ -287,7 +287,7 @@ fn refuse_constructor_overloads(
 ) {
     for kind in ["circle", "arc", "point"] {
         let mut input = literal_input(kind, &[[1.0; 2]]);
-        input.variant = "threePoint".into();
+        input.variant = "unportedVariant".into();
         assert_refused(
             files,
             document,
@@ -434,3 +434,5 @@ mod polygon;
 mod polyline;
 #[path = "add_entity/rectangle.rs"]
 mod rectangle;
+#[path = "add_entity/three_point.rs"]
+mod three_point;

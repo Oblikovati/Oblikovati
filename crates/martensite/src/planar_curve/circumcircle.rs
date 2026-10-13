@@ -1,23 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::PlanarCurveFailure;
+pub use oblikovati_model::sketch::{CircumcircleOptions, PlanarCircumcircle};
 use rustycad_tkgeombase::gce::MakeCirc2d;
 use rustycad_tkmath::{
     gp::{Circle2, Point2},
     predicates::{OrientationSign, orient2d},
 };
-/// Caller-owned metric acceptance; no default or topology tolerance is supplied.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CircumcircleOptions {
-    pub maximum_point_residual: f64,
-}
-/// Owned native construction and measured input residuals, not a center-error certificate.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct PlanarCircumcircle {
-    pub center: [f64; 2],
-    pub radius: f64,
-    pub counter_clockwise: bool,
-    pub point_residuals: [f64; 3],
-}
 /// Construct a circular seed through three points using the released kernel.
 /// Example: `construct_planar_circumcircle(points, options)?` before authoring a circle or arc.
 pub fn construct_planar_circumcircle(
@@ -48,7 +36,7 @@ fn construct(
         point_residuals,
     })
 }
-fn require_options(options: CircumcircleOptions) -> Result<(), PlanarCurveFailure> {
+pub(super) fn require_options(options: CircumcircleOptions) -> Result<(), PlanarCurveFailure> {
     if !options.maximum_point_residual.is_finite() || options.maximum_point_residual < 0.0 {
         return Err(PlanarCurveFailure::input(format!(
             "circumcircle bound {}: expected a finite nonnegative residual bound",
@@ -57,7 +45,7 @@ fn require_options(options: CircumcircleOptions) -> Result<(), PlanarCurveFailur
     }
     Ok(())
 }
-fn classify_points(points: [[f64; 2]; 3]) -> Result<bool, PlanarCurveFailure> {
+pub(super) fn classify_points(points: [[f64; 2]; 3]) -> Result<bool, PlanarCurveFailure> {
     match orient2d(points[0], points[1], points[2])
         .map_err(|cause| PlanarCurveFailure::input(cause.to_string()))?
     {
@@ -83,7 +71,7 @@ fn require_circle(circle: Circle2) -> Result<(), PlanarCurveFailure> {
     }
     Ok(())
 }
-fn measure_residuals(
+pub(super) fn measure_residuals(
     points: [[f64; 2]; 3],
     center: [f64; 2],
     radius: f64,

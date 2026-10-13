@@ -42,6 +42,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
     command_notice: Option<DesktopCommandNotice>,
+    sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
     O: TransactionObserver,
@@ -72,6 +73,7 @@ impl<
             refused_close: Vec::new(),
             part_scenes: Default::default(),
             command_notice: None,
+            sketch_construction: Default::default(),
         }
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -100,6 +102,7 @@ impl<
             &self.version,
             &mut self.factory,
             &mut self.part_scenes,
+            &self.sketch_construction,
         )
     }
     fn drain_calls(&mut self, budget: usize) -> Result<usize, String> {
@@ -109,6 +112,7 @@ impl<
             &self.version,
             &mut self.factory,
             &mut self.part_scenes,
+            &self.sketch_construction,
         );
         self.dispatch
             .drain(budget, &host)
@@ -219,10 +223,12 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     version: &'a str,
     factory: &'a mut dyn DocumentObserverFactory<Observer = O>,
     scenes: &'a mut crate::part_scene::DesktopPartScenes,
+    construction: &'a dyn oblikovati_model::sketch::SketchCircleConstruction,
 ) -> FileHost<'a, O, W, F> {
     FileHost::new(files, guids, version)
         .with_observer_factory(factory)
         .with_part_topology(scenes)
+        .with_sketch_construction(construction, Default::default())
 }
 #[cfg(test)]
 #[path = "../tests/owner.rs"]

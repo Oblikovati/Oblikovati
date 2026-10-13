@@ -247,3 +247,36 @@ fn executable_lua_edits_and_saves_large_physical_scalars_and_visual_groups() {
         0.5
     );
 }
+
+#[test]
+fn executable_three_point_curves_use_the_injected_kernel_service() {
+    let directory = tempfile::tempdir().unwrap();
+    let script = write_source(
+        directory.path(),
+        r#"
+oblikovati.documents.create{type="part",name="Lua native"}
+oblikovati.sketch.create{}
+local c=oblikovati.sketch.addEntity{kind="circle",variant="threePoint",points={{2,0},{0,2},{-2,0}}}
+assert(#c.pointIds==1)
+local a=oblikovati.sketch.addEntity{kind="arc",variant="threePoint",points={{2,0},{0,-2},{-2,0}}}
+assert(#a.pointIds==3)
+local rows=oblikovati.sketch.entities().entities
+assert(#rows==3)
+local curves=0
+for _,e in ipairs(rows) do
+  if e.kind=="circle" or e.kind=="arc" then assert(e.radius==2); curves=curves+1 end
+end
+assert(curves==2)
+print("done")
+"#,
+    );
+    let saved = directory.path().join("three-point.opd");
+    let output = cli(&[
+        "script",
+        "run",
+        script.to_str().unwrap(),
+        "--save",
+        saved.to_str().unwrap(),
+    ]);
+    verify_native_result(&output, &saved);
+}

@@ -179,3 +179,71 @@ fn unrepresentable_tiny_center_retains_the_native_exception_as_its_source() {
     );
     assert!(error.to_string().contains("zero norm"));
 }
+#[test]
+fn injected_constructor_and_final_verifier_keep_the_same_owned_geometry_contract() {
+    use oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
+    use oblikovati_model::sketch::{SketchCircleConstruction, SolvedCircularSeed};
+    let backend = MartensiteSketchConstruction;
+    let points = [[2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]];
+    let circle = backend.circumcircle(points, options(0.0)).unwrap();
+    let solved = SolvedCircularSeed {
+        center: circle.center,
+        radius: circle.radius,
+        arc: Some(([points[0], points[2]], true)),
+    };
+    backend.verify(points, solved, options(0.0)).unwrap();
+    backend
+        .verify(
+            points,
+            SolvedCircularSeed {
+                arc: None,
+                ..solved
+            },
+            options(0.0),
+        )
+        .unwrap();
+    for bad in [
+        SolvedCircularSeed {
+            radius: 0.0,
+            ..solved
+        },
+        SolvedCircularSeed {
+            radius: f64::NAN,
+            ..solved
+        },
+        SolvedCircularSeed {
+            center: [f64::INFINITY, 0.0],
+            ..solved
+        },
+        SolvedCircularSeed {
+            radius: 3.0,
+            ..solved
+        },
+        SolvedCircularSeed {
+            arc: Some(([points[0], points[2]], false)),
+            ..solved
+        },
+        SolvedCircularSeed {
+            arc: Some(([[2.0, 0.1], points[2]], true)),
+            ..solved
+        },
+        SolvedCircularSeed {
+            arc: Some(([[f64::NAN, 0.0], points[2]], true)),
+            ..solved
+        },
+        SolvedCircularSeed {
+            arc: Some(([[0.0, -2.0], points[2]], true)),
+            ..solved
+        },
+    ] {
+        assert!(backend.verify(points, bad, options(0.0)).is_err());
+    }
+    let error = backend
+        .circumcircle([[0.0; 2]; 3], options(0.0))
+        .unwrap_err();
+    assert!(
+        error
+            .downcast_ref::<oblikovati_martensite::planar_curve::PlanarCurveFailure>()
+            .is_some()
+    );
+}

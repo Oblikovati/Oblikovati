@@ -305,3 +305,5 @@ mod polygon_tests;
 mod polyline_tests;
 #[path = "native_scene/split.rs"]
 mod split_tests;
+#[path = "native_scene/three_point.rs"]
+mod three_point_tests;

@@ -2,6 +2,8 @@
 //! Application-owned analytic inputs; no mutable kernel handle escapes a call.
 use crate::PlanarSplineDefinition;
 mod circumcircle;
+mod sketch_construction;
+pub use sketch_construction::MartensiteSketchConstruction;
 mod construct;
 pub use circumcircle::{CircumcircleOptions, PlanarCircumcircle, construct_planar_circumcircle};
 mod failure;

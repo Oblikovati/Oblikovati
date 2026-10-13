@@ -2,7 +2,7 @@
 use crate::encode;
 mod add_constraint;
 mod add_dimension;
-mod add_entity;
+pub(crate) mod add_entity;
 mod constraints;
 mod coordinates;
 pub(crate) mod create;
@@ -98,7 +98,7 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
 ) -> Result<Vec<u8>, Error> {
     match method {
         METHOD_SKETCH_TRANSFORM => transform::apply(files, crate::decode(method, request)?),
-        METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?),
+        METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?, None),
         METHOD_SKETCH_ADD_CONSTRAINT => {
             add_constraint::apply(files, crate::decode(method, request)?)
         }

@@ -39,6 +39,14 @@ impl<O: TransactionObserver> DocumentSession<O> {
         command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
         mode: SketchUpdateMode,
     ) -> Result<R, CommandError<E>> {
+        self.edit_projected(command, mode, |_, result| Ok(result))
+    }
+    pub(crate) fn edit_projected<R, T, E>(
+        &mut self,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        mode: SketchUpdateMode,
+        project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
         let group = self
             .group
             .as_ref()
@@ -46,7 +54,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         let options = mode.options(self.sketch_options);
         self.history
             .edit(&group.token, |snapshot, ids| {
-                apply_recipe_edit(snapshot, ids, command, options)
+                apply_recipe_edit(snapshot, ids, command, options, project)
             })
             .map_err(CommandError::Edit)
     }

@@ -164,3 +164,78 @@ fn endpoint_replacement_rejects_missing_document_owners_without_reserving() {
     assert!(before.same_evaluated_state(&session.snapshot().sketches));
     assert_eq!(session.history().sketch_reservations().entity, 3);
 }
+
+#[test]
+fn projected_endpoint_reply_sees_solved_coordinates_before_adoption() {
+    let mut session = endpoint_session(None);
+    let before = session.snapshot().sketches.clone();
+    let position = project_endpoint(&mut session, false).unwrap();
+    assert!(position[1].abs() < 1e-8);
+    assert_eq!(position[0], 5.0);
+    let after = session.snapshot().sketches.clone();
+    session.undo().unwrap();
+    assert!(before.same_evaluated_state(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(after.same_evaluated_state(&session.snapshot().sketches));
+}
+#[test]
+fn rejected_solved_projection_preserves_automatic_and_nested_candidates() {
+    for grouped in [false, true] {
+        let mut session = endpoint_session(None);
+        if grouped {
+            session.begin("Retained edits").unwrap();
+            replace_endpoint(&mut session).unwrap();
+        }
+        let before = session.snapshot().sketches.clone();
+        assert!(project_endpoint(&mut session, true).is_err());
+        assert!(before.same_evaluated_state(&session.snapshot().sketches));
+        assert_eq!(session.in_transaction(), grouped);
+        assert_eq!(
+            session.history().sketch_reservations().entity,
+            if grouped { 5 } else { 4 }
+        );
+        if grouped {
+            session.end().unwrap();
+            assert_eq!(session.undo_labels().len(), 1);
+        } else {
+            assert!(session.undo_labels().is_empty());
+        }
+    }
+}
+fn project_endpoint(
+    session: &mut DocumentSession<RecordingObserver>,
+    reject: bool,
+) -> Result<[f64; 2], CommandError<&'static str>> {
+    session.run_projected(
+        "Project endpoint",
+        |snapshot, ids| {
+            snapshot
+                .replace_sketch_line_endpoint(
+                    DocumentSketchId(1),
+                    SketchEntityId(3),
+                    SketchLineEnd::Last,
+                    [5.0, 7.0],
+                    ids,
+                )
+                .map_err(|_| "edit failed")
+        },
+        |snapshot, report| {
+            let position = snapshot
+                .sketches
+                .get(DocumentSketchId(1))
+                .unwrap()
+                .geometry()
+                .point(report.created)
+                .unwrap()
+                .position;
+            assert!(
+                position[1].abs() < 1e-8,
+                "expected solved endpoint, got {position:?}"
+            );
+            if reject {
+                return Err("solved reply rejected");
+            }
+            Ok(position)
+        },
+    )
+}

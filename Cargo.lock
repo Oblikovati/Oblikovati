@@ -613,6 +613,7 @@ version = "0.1.0"
 dependencies = [
  "oblikovati-api",
  "oblikovati-automation",
+ "oblikovati-martensite",
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-script",

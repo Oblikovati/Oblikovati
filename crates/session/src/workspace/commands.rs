@@ -34,6 +34,16 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session.redo()
     }
 
+    /// Verify a recomputed candidate and prepare its reply before adoption.
+    /// Example: `commands.run_projected("Create", create, verify_and_encode)?`.
+    pub fn run_projected<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
+        self.session.run_projected(label, command, project)
+    }
     /// Run through this document's normal transaction path.
     /// Example: `commands.run("width", |snapshot, _| snapshot.parameters.set_expression(1, "2 cm"))?;`.
     pub fn run<R, E>(
