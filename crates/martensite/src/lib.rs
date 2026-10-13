@@ -108,3 +108,6 @@ pub use stored_prism::retain_stored_sketch_prism;
 
 mod analytic_body;
 pub use analytic_body::AnalyticBodyProperties;
+
+/// Immutable analytic curve inputs and checked intersection reports.
+pub mod planar_curve;

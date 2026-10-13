@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{Geom2dCurve, PlanarSplineDefinition, PlanarSplineSample};
 
-pub(super) fn require_definition(definition: &PlanarSplineDefinition) -> Result<(), String> {
+pub(crate) fn require_definition(definition: &PlanarSplineDefinition) -> Result<(), String> {
     let counts = [
         definition.poles.len(),
         definition.knots.len(),

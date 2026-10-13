@@ -3,7 +3,7 @@ use rustycad_tkernel::{ncollection::Array1, standard::Handle};
 use rustycad_tkg2d::geom2d::{Geom2dBSplineCurve, Geom2dCurve, Geom2dOffsetCurve};
 use rustycad_tkmath::gp::Point2;
 
-mod validation;
+pub(crate) mod validation;
 /// Immutable inputs for analytic evaluation; no kernel handle crosses this boundary.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PlanarSplineDefinition {
@@ -29,7 +29,9 @@ pub fn evaluate_planar_spline(
 ) -> Result<PlanarSplineSample, String> {
     validation::require_definition(definition)?;
     validation::require_scalars(parameter, left_offset)?;
-    let parent = build_parent(definition)?;
+    let parent = build_parent(definition).map_err(|cause| {
+        format!("spline {definition:?}: expected a valid analytic B-spline: {cause}")
+    })?;
     validation::require_parameter(
         parent
             .get()
@@ -38,7 +40,9 @@ pub fn evaluate_planar_spline(
     )?;
     evaluate_owned_curve(&parent, parameter, left_offset)
 }
-fn build_parent(definition: &PlanarSplineDefinition) -> Result<Handle<dyn Geom2dCurve>, String> {
+pub(crate) fn build_parent(
+    definition: &PlanarSplineDefinition,
+) -> Result<Handle<dyn Geom2dCurve>, rustycad_tkernel::standard::Failure> {
     let poles: Vec<Point2> = definition
         .poles
         .iter()
@@ -51,11 +55,7 @@ fn build_parent(definition: &PlanarSplineDefinition) -> Result<Handle<dyn Geom2d
         None => build_unweighted(definition, &poles, &knots, &mults),
         Some(weights) => build_weighted(definition, &poles, &knots, &mults, weights),
     };
-    curve
-        .map(|curve| Handle::new(curve).cast())
-        .map_err(|cause| {
-            format!("spline {definition:?}: expected a valid analytic B-spline: {cause}")
-        })
+    curve.map(|curve| Handle::new(curve).cast())
 }
 fn evaluate_owned_curve(
     parent: &Handle<dyn Geom2dCurve>,
@@ -72,11 +72,17 @@ fn evaluate_owned_curve(
         return Ok(basis);
     }
     validation::require_regular_sample(basis, parameter, left_offset)?;
-    // #3789 / ADR-0016: OCCT's right normal is the inverse of the authored left side.
-    let offset = Geom2dOffsetCurve::new(parent, -left_offset, false).map_err(|cause| format!("spline offset {left_offset} at {parameter}: expected an offset-compatible parent: {cause}"))?;
+    let offset = build_left_offset(parent, left_offset).map_err(|cause| format!("spline offset {left_offset} at {parameter}: expected an offset-compatible parent: {cause}"))?;
     let sample = sample_curve(&offset, parameter)?;
     validation::require_regular_sample(sample, parameter, left_offset)?;
     Ok(sample)
+}
+pub(crate) fn build_left_offset(
+    parent: &Handle<dyn Geom2dCurve>,
+    left_offset: f64,
+) -> Result<Geom2dOffsetCurve, rustycad_tkernel::standard::Failure> {
+    // #3789 / ADR-0016: OCCT's right normal is the inverse of the authored left side.
+    Geom2dOffsetCurve::new(parent, -left_offset, false)
 }
 fn sample_curve(curve: &dyn Geom2dCurve, parameter: f64) -> Result<PlanarSplineSample, String> {
     let result = curve.eval_d1(parameter).map_err(|cause| {

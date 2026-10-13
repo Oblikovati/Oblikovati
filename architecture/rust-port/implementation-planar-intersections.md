@@ -5,9 +5,11 @@ Dependency: Martensite v0.2.1,
 `193572dc3665598c4948777c87375bad7dc8114a`.
 
 The `planar_intersections` integration target tests the released general 2D
-curve intersector. TKGeomAlgo is a test-only direct dependency with the same
-exact pin as the other kernel packages. No production kernel dependency,
-application intersection algorithm, or public API is added.
+curve intersector. TKGeomAlgo was introduced as a test-only direct dependency with the same
+exact pin as the other kernel packages. The subsequent
+[owned curve boundary](implementation-planar-curve-boundary.md) consumes this
+package in the internal adapter. These initial probes added no application
+intersection algorithm or public API.
 
 Ten tests cover crossing lines; ellipse crossings, tangency, and separation;
 a trimmed circular quadrant with interior, endpoint, and excluded crossings;

@@ -9,6 +9,7 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
+rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
 oblikovati-model = { path = "../model" }
 rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
 rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
@@ -25,7 +26,6 @@ rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = 
 workspace = true
 
 [dev-dependencies]
-rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
 oblikovati-persistence = { path = "../persistence" }
 rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
 oblikovati-session = { path = "../session" }
@@ -56,3 +56,7 @@ path = "tests/profile_regions.rs"
 [[test]]
 name = "planar_intersections"
 path = "tests/planar_intersections.rs"
+
+[[test]]
+name = "planar_curve_boundary"
+path = "tests/planar_curve_boundary.rs"
