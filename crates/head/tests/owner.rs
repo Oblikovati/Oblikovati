@@ -220,3 +220,6 @@ mod gui_commands;
 
 #[path = "owner/slot_input.rs"]
 mod slot_input;
+
+#[path = "owner/sketch_edit.rs"]
+mod sketch_edit;

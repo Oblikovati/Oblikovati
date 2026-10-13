@@ -22,17 +22,16 @@ impl<
         sketch: DocumentSketchId,
         width: f64,
     ) -> Result<(), String> {
-        self.require_slot_document(document)?;
-        let session = self
+        self.require_edit_document(document)?;
+        let plane = self.resolve_edit(document, sketch)?.plane;
+        let generation = self
             .files
             .workspace()
             .session(document)
-            .map_err(|cause| cause.to_string())?;
-        let plane = session
-            .snapshot()
-            .resolve_sketch_plane(sketch)
-            .map_err(|cause| cause.to_string())?;
-        let tool = SlotPlacement::new(document, sketch, session.generation(), plane, width)?;
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        let tool = SlotPlacement::new(document, sketch, generation, plane, width)?;
+        self.select_slot_sketch(document, sketch)?;
         self.slot_notice(tool.prompt());
         self.slot_placement = Some(tool);
         Ok(())
@@ -50,31 +49,13 @@ impl<
             .as_ref()
             .is_some_and(|tool| self.slot_context_valid(tool))
     }
-    fn require_slot_document(&self, document: u64) -> Result<(), String> {
-        if self.files.workspace().active_document() != Some(document) {
-            return Err(format!(
-                "slot document {document}: expected the active document {:?}",
-                self.files.workspace().active_document()
-            ));
-        }
-        let session = self
-            .files
-            .workspace()
-            .session(document)
-            .map_err(|cause| cause.to_string())?;
-        if session.in_transaction() {
-            return Err(format!(
-                "slot document {document}: expected no open transaction"
-            ));
-        }
-        Ok(())
-    }
     pub(super) fn process_slot_inputs(
         &mut self,
         inputs: &[ViewportEvent],
         window: &dyn HeadWindow,
     ) -> Result<bool, String> {
-        let mut changed = self.check_slot_context();
+        let mut changed = self.synchronize_sketch_edit();
+        changed |= self.check_slot_context();
         for input in inputs {
             changed |= self.process_document_inputs(&[*input])?;
             changed |= self.check_slot_context();
@@ -94,7 +75,9 @@ impl<
         true
     }
     fn slot_context_valid(&self, tool: &SlotPlacement) -> bool {
-        self.require_slot_document(tool.document).is_ok()
+        self.active_sketch_edit()
+            .is_some_and(|edit| (edit.document, edit.sketch) == (tool.document, tool.sketch))
+            && self.require_edit_document(tool.document).is_ok()
             && self
                 .files
                 .workspace()

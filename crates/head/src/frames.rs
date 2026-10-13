@@ -13,6 +13,16 @@ pub struct HeadSummary {
 }
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Apply edit-plane framing or restore the return view; example: `window.set_sketch_edit(None)?` on finish.
+    fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
+        if edit.is_none() {
+            return Ok(false);
+        }
+        Err(format!(
+            "sketch edit {edit:?}: expected a window with sketch edit framing"
+        ))
+    }
+
     /// Replace or clear the authoring outline; example: `window.set_sketch_preview(None)?` after cancellation.
     fn set_sketch_preview(
         &mut self,
@@ -203,6 +213,7 @@ fn run_owner_frame(
     control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;
     control.pending |= publish_owner_scene(window, owner)?;
+    control.pending |= synchronize_sketch_view(window, owner)?;
     publish_command_notice(window, owner)?;
     control.pending |= publish_sketch_preview(window, owner)?;
     let closing = inputs.contains(&ViewportEvent::CloseRequested);
@@ -219,9 +230,11 @@ fn process_frame_inputs(
     inputs: &[ViewportEvent],
 ) -> Result<bool, String> {
     let mut changed = owner.process_window_inputs(&[], window)?;
+    changed |= synchronize_sketch_view(window, owner)?;
     for event in inputs {
         changed |= window.process_view_input(event)?;
         changed |= owner.process_window_inputs(&[*event], window)?;
+        changed |= synchronize_sketch_view(window, owner)?;
     }
     Ok(changed)
 }
@@ -268,6 +281,20 @@ fn publish_sketch_preview(
         Err(cause) => {
             window.set_sketch_preview(None)?;
             window.show_command_notice(crate::DesktopCommandNotice::PreviewFailed { cause })?;
+            Ok(true)
+        }
+    }
+}
+
+fn synchronize_sketch_view(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+) -> Result<bool, String> {
+    match window.set_sketch_edit(owner.sketch_edit()) {
+        Ok(changed) => Ok(changed),
+        Err(cause) => {
+            owner.decline_sketch_edit(cause)?;
+            window.set_sketch_edit(None)?;
             Ok(true)
         }
     }

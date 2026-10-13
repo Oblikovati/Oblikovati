@@ -76,3 +76,6 @@ so extreme pointer values cannot overflow an integer delta. Temporary recipe
 indices never become persisted IDs. The old batch navigation wrapper was deleted
 when the ordered event path replaced it, and its native camera tests remain in
 the gate.
+
+Selected sketch ownership and camera entry/exit are covered by the later
+[sketch edit step](implementation-sketch-environment.md).

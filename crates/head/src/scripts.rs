@@ -80,6 +80,13 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.process_inputs(inputs)
     }
+    fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
+        self.owner.decline_sketch_edit(cause)
+    }
+    fn sketch_edit(&self) -> Option<crate::HeadSketchEdit> {
+        self.owner.sketch_edit()
+    }
+
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         self.owner.sketch_preview()
     }

@@ -177,6 +177,17 @@ fn verify_pending_load_retirement(owner: &mut NativeDesktopOwner, wake: NativeOw
 
 fn verify_service_delegation(services: &mut TestNativeServices<'_>) {
     assert!(services.sketch_preview().is_none());
+    assert!(services.sketch_edit().is_none());
+    services
+        .decline_sketch_edit("test camera refusal".into())
+        .unwrap();
+    assert!(
+        services
+            .take_command_notice()
+            .unwrap()
+            .message()
+            .contains("test camera refusal")
+    );
     assert_eq!(services.gui_command_state().unwrap(), Default::default());
     assert!(
         !services

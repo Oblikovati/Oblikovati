@@ -317,3 +317,6 @@ mod projection_tests;
 
 #[path = "native_scene/slot_input.rs"]
 mod slot_input_tests;
+
+#[path = "native_scene/sketch_edit.rs"]
+mod sketch_edit_tests;

@@ -43,12 +43,14 @@ impl<O: TransactionObserver> DocumentSession<O> {
     }
 
     pub(crate) fn notify_after(&mut self, event: &TransactionEventPayload) {
+        self.sketch_continuity.refresh(self.history.snapshot());
         self.observer.after(event, self.history.snapshot());
     }
 
     pub(crate) fn notify_changed(&mut self, event: &TransactionEventPayload) {
+        self.sketch_continuity.refresh(self.history.snapshot());
         self.observer
             .changed(self.document, self.history.generation());
-        self.notify_after(event);
+        self.observer.after(event, self.history.snapshot());
     }
 }

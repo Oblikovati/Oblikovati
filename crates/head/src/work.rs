@@ -12,6 +12,18 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// End an edit whose view could not be prepared; example: `work.decline_sketch_edit(cause)?` after a camera refusal.
+    fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
+        Err(format!(
+            "sketch edit framing {cause}: expected an owner that can cancel the edit"
+        ))
+    }
+
+    /// Copy the current placed sketch edit; example: `work.sketch_edit()` before camera synchronization.
+    fn sketch_edit(&self) -> Option<crate::HeadSketchEdit> {
+        None
+    }
+
     /// Copy the current transient authoring graph; example: `work.sketch_preview()` before drawing.
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         None

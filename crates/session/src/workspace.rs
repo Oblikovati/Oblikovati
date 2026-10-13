@@ -111,6 +111,7 @@ pub struct WorkspaceSession<O, W> {
     entries: BTreeMap<u64, WorkspaceEntry<O>>,
     order: Vec<u64>,
     active: Option<u64>,
+    focus_identity: std::sync::Arc<()>,
     identities: DocumentIdentityIndex,
     next_id: u64,
     observer: W,
@@ -147,6 +148,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             entries: BTreeMap::new(),
             order: Vec::new(),
             active: None,
+            focus_identity: std::sync::Arc::new(()),
             identities: DocumentIdentityIndex::default(),
             next_id: 0,
             observer,
@@ -334,3 +336,7 @@ mod sketch_split;
 
 mod sketch_placement_recipe;
 mod sketch_polyline;
+
+mod focus;
+mod sketch_continuity;
+pub use focus::WorkspaceFocusIdentity;

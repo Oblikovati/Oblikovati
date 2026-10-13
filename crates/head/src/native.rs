@@ -13,6 +13,7 @@ pub struct NativeHeadWindow {
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
     navigation: crate::navigation::DesktopNavigation,
+    sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
     command_notice: Option<crate::DesktopCommandNotice>,
 }
 impl NativeHeadWindow {
@@ -30,6 +31,7 @@ impl NativeHeadWindow {
             wake: ViewportWake::new()?,
             scene_status: None,
             navigation: Default::default(),
+            sketch_view: None,
             command_notice: None,
         })
     }
@@ -57,6 +59,10 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
+        self.synchronize_sketch_camera(edit)
+    }
+
     fn set_sketch_preview(
         &mut self,
         preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
@@ -248,3 +254,5 @@ mod history_tests;
 mod addin_services_tests;
 
 mod projection;
+
+mod sketch_edit;

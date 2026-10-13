@@ -9,6 +9,10 @@ struct PlacementEventWindow {
     scripted: VecDeque<Vec<ViewportEvent>>,
 }
 impl HeadWindow for PlacementEventWindow {
+    fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
+        self.native.set_sketch_edit(edit)
+    }
+
     fn set_sketch_preview(
         &mut self,
         preview: Option<&oblikovati_viewport::ViewportSketchPreview>,

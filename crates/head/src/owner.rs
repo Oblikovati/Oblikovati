@@ -42,6 +42,11 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
     command_notice: Option<DesktopCommandNotice>,
+    sketch_edit: Option<(
+        u64,
+        oblikovati_session::SketchContinuityWatch,
+        oblikovati_session::workspace::WorkspaceFocusIdentity,
+    )>,
     slot_placement: Option<crate::placement_slot::SlotPlacement>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
@@ -76,6 +81,7 @@ impl<
             command_notice: None,
             sketch_construction: Default::default(),
             slot_placement: None,
+            sketch_edit: None,
         }
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -172,6 +178,16 @@ impl<
     ) -> Result<bool, String> {
         self.process_document_inputs(inputs)
     }
+    fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
+        self.sketch_edit = None;
+        self.slot_placement = None;
+        self.command_notice = Some(DesktopCommandNotice::SketchEditFailed { cause });
+        Ok(())
+    }
+    fn sketch_edit(&self) -> Option<crate::HeadSketchEdit> {
+        self.active_sketch_edit()
+    }
+
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         let recipe = self.slot_placement_preview()?.clone();
         Some(oblikovati_viewport::ViewportSketchPreview {
@@ -196,6 +212,7 @@ impl<
         }
         let serviced = self.drain_calls(budget)?;
         let changed = self.factory.take_changed() || serviced != 0;
+        let changed = self.synchronize_sketch_edit() || changed;
         let pending = self.dispatch.pending().map_err(|error| error.to_string())? != 0;
         Ok(HeadWorkStatus {
             changed,
@@ -213,6 +230,7 @@ impl<
     }
     fn finish(&mut self) -> Result<(), String> {
         self.slot_placement = None;
+        self.sketch_edit = None;
         self.part_scenes.clear();
         self.dispatch.close();
         Ok(())
@@ -256,3 +274,6 @@ mod tests;
 
 #[path = "owner_slot_input.rs"]
 mod slot_input;
+
+#[path = "owner_sketch_edit.rs"]
+mod sketch_environment;

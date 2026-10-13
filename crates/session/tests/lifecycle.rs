@@ -425,3 +425,6 @@ mod sketch_fixture;
 mod sketch_polyline;
 #[path = "lifecycle/sketch_selection_click.rs"]
 mod sketch_selection_click;
+
+#[path = "lifecycle/sketch_continuity.rs"]
+mod sketch_continuity;

@@ -7,6 +7,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
     /// Activate an open document; example: `workspace.activate(id)?;`.
     pub fn activate(&mut self, id: u64) -> Result<(), WorkspaceError> {
         self.session(id)?;
+        if self.active != Some(id) {
+            self.focus_identity = std::sync::Arc::new(());
+        }
         self.active = Some(id);
         self.observer.activated(id);
         Ok(())
@@ -59,6 +62,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let entry = self.entries.remove(&id).expect("validated document");
         self.order.retain(|candidate| *candidate != id);
         if self.active == Some(id) {
+            self.focus_identity = std::sync::Arc::new(());
             self.active = self.order.first().copied();
         }
         let observer = entry.session.close();

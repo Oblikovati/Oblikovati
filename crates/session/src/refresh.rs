@@ -18,6 +18,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .refresh(|snapshot| refresh_source_snapshot(snapshot, table, source, options))
             .map_err(CommandError::Edit)?;
         if changed {
+            self.sketch_continuity.refresh(self.history.snapshot());
             self.observer.changed(self.document, self.generation());
         }
         Ok(changed)

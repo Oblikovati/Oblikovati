@@ -87,3 +87,6 @@ mod placement_slot;
 #[cfg(test)]
 #[path = "../tests/placement_inputs.rs"]
 mod placement_test_inputs;
+
+mod sketch_edit;
+pub use sketch_edit::HeadSketchEdit;

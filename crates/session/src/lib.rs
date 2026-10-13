@@ -64,6 +64,7 @@ pub struct DocumentSession<O> {
     group: Option<BoundedGroup>,
     sketch_options: oblikovati_solve::nonlinear::SolveOptions,
     body_visibility: body_visibility::BodyVisibilityState,
+    sketch_continuity: sketch_continuity::SketchContinuityWatches,
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
@@ -85,6 +86,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             observer,
             group: None,
             body_visibility: Default::default(),
+            sketch_continuity: Default::default(),
             sketch_options,
         }
     }
@@ -155,3 +157,6 @@ pub use sketch_split::SketchSplitProjectionInput;
 mod sketch_polyline;
 pub use sketch_polyline::SketchPolylineProjectionInput;
 mod sketch_placement_recipe;
+
+mod sketch_continuity;
+pub use sketch_continuity::SketchContinuityWatch;

@@ -41,3 +41,5 @@ pub use gui_render::{GuiFrameCompiler, compile_gui_frame};
 
 mod sketch_preview;
 pub use sketch_preview::ViewportSketchPreview;
+
+mod sketch_camera;

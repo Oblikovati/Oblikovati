@@ -357,3 +357,25 @@ mod files;
 
 #[path = "workspace/open_verification.rs"]
 mod open_verification;
+
+#[test]
+fn focus_identity_tracks_accepted_switches_and_active_close_only() {
+    let mut workspace = TestWorkspace::new(RecordingWorkspace::default());
+    let first = open(&mut workspace, 1, OpenActivation::Activate).session_id;
+    let focus = workspace.focus_identity();
+    let second = open(&mut workspace, 2, OpenActivation::Background).session_id;
+    assert!(workspace.retains_focus(&focus));
+    workspace.activate(first).unwrap();
+    assert!(workspace.activate(999).is_err());
+    assert!(workspace.retains_focus(&focus));
+    workspace.close_discarding_changes(second).unwrap();
+    assert!(workspace.retains_focus(&focus));
+    let second = open(&mut workspace, 3, OpenActivation::Background).session_id;
+    workspace.activate(second).unwrap();
+    workspace.activate(first).unwrap();
+    assert!(!workspace.retains_focus(&focus));
+    let current = workspace.focus_identity();
+    workspace.close_discarding_changes(first).unwrap();
+    assert!(!workspace.retains_focus(&current));
+    assert_eq!(workspace.active_document(), Some(second));
+}

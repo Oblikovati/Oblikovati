@@ -67,3 +67,6 @@ render-range refusal. Capture checks use the observed extent. Recipe indices sta
 local to the temporary graph; no platform-sized index becomes a saved identity.
 The comments record why preview structures are excluded during the complete Fit
 operation and why the allocation guard precedes the native sampler.
+
+Selected sketch ownership and camera entry/exit are covered by the later
+[sketch edit step](implementation-sketch-environment.md).
