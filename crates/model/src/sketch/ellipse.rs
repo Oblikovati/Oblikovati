@@ -75,6 +75,15 @@ impl SketchEllipse2D {
             ..self
         })
     }
+    pub(super) fn copy_identity(
+        self,
+        id: SketchEntityId,
+        center: SketchEntityId,
+    ) -> Result<Self, SketchError> {
+        require_ellipse_identities(id, center)?;
+        // Copy the validated axis bits; normalization would change unchanged geometry.
+        Ok(Self { id, center, ..self })
+    }
     pub(super) fn with_transformed_axis(self, major_axis: [f64; 2]) -> Result<Self, SketchError> {
         if super::same_components(self.major_axis, major_axis) {
             return Ok(self);

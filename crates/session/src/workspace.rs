@@ -14,6 +14,7 @@ mod save;
 mod sketch_inference;
 pub use sketch_inference::SketchInferenceCommandError;
 mod sketch_construction;
+mod sketch_copy;
 mod sketch_create;
 mod sketch_delete;
 mod sketch_dimension_create;

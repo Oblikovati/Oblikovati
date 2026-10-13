@@ -99,7 +99,7 @@ fn invalid_batches_vectors_indices_and_unported_operations_preserve_owner_state(
     input.sketch_index = -1;
     assert_move_refused(&mut files, document, &mut source, &input, "ordered index");
     input.sketch_index = 0;
-    input.op = "copy".into();
+    input.op = "mirror".into();
     assert_move_refused(&mut files, document, &mut source, &input, "not ported");
 }
 #[test]
@@ -345,3 +345,6 @@ fn unsupported_document_kinds_decline_the_canonical_edit() {
 }
 #[path = "rotation.rs"]
 mod rotation;
+
+#[path = "copy.rs"]
+mod copy;

@@ -35,7 +35,8 @@ the document's preferred angle unit. This seed edit creates no live angle driver
 Selecting an offset spline directly declines with its identity and a request to
 select its parent. Rotating the parent retains the offset relation and distance.
 This avoids the Go default branch's silent no-op for an unsupported entity kind.
-Elliptical arcs, copying, mirroring, trimming, splitting, extending, and native
+Copy is now covered by the [copy evidence](implementation-sketch-copy.md).
+Elliptical arcs, mirroring, trimming, splitting, extending, and native
 interactive rotation remain separate port work.
 
 Invalid centers, angles, selections, converted coordinates, or output coordinates
@@ -92,8 +93,8 @@ Regression coverage includes hidden line/arc endpoints, circle/ellipse centers,
 control/fit spline points, shared points, duplicate selections, mixed visible
 and hidden points, atomic overflow refusal, and unchanged visibility metadata.
 The typed API case also checks rotation, keys, undo/redo, saved reload, and another
-move after reload. Copy remains unimplemented; this fixes a prerequisite exposed
-while inspecting its identity and point-sharing requirements.
+move after reload. This fixed a prerequisite for the subsequent
+[copy implementation](implementation-sketch-copy.md).
 
 The defining-point fix passes the full local gate over all 13 crates, including
 native display tests. Model line coverage is 98.80% (17,459/17,671); every crate

@@ -5,7 +5,13 @@ use oblikovati_model::{
     quantity::{Dimension, Quantity},
     sketch::{SketchEntityId, SketchSelectionTransform},
 };
-use oblikovati_session::SketchTransformProjectionInput;
+use oblikovati_session::{
+    SketchCopyProjectionInput, SketchTransformProjectionInput, workspace::SessionCommands,
+};
+enum PreparedSketchEdit {
+    Transform(SketchSelectionTransform),
+    Copy([f64; 2]),
+}
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     request: TransformSketchArgs,
@@ -17,13 +23,10 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(api_error)?
         .snapshot()
         .parameters;
-    let transform = prepared_transform(parameters, &request)?;
+    let edit = prepared_edit(parameters, &request)?;
     let entities = selected_ids(request.entities)?;
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .transform_sketch_entities_projected(sketch, &entities, transform, transform_reply)
-        .map_err(api_error)
+    let mut commands = files.commands(document).map_err(api_error)?;
+    apply_prepared_edit(&mut commands, sketch, &entities, edit)
 }
 
 fn transform_reply(result: SketchTransformProjectionInput) -> Result<Vec<u8>, Error> {
@@ -31,18 +34,19 @@ fn transform_reply(result: SketchTransformProjectionInput) -> Result<Vec<u8>, Er
     encode(&TransformSketchResult::default())
 }
 
-fn prepared_transform(
+fn prepared_edit(
     parameters: &ParameterCollection<u64>,
     request: &TransformSketchArgs,
-) -> Result<SketchSelectionTransform, Error> {
+) -> Result<PreparedSketchEdit, Error> {
     let scale = parameters.units().working_scale();
     match request.op.as_str() {
-        "move" => Ok(SketchSelectionTransform::Move(movement_vector(
-            request, scale,
-        )?)),
-        "rotate" => rotation_transform(parameters, request),
+        "move" => Ok(PreparedSketchEdit::Transform(
+            SketchSelectionTransform::Move(movement_vector(request, scale)?),
+        )),
+        "copy" => Ok(PreparedSketchEdit::Copy(movement_vector(request, scale)?)),
+        "rotate" => rotation_transform(parameters, request).map(PreparedSketchEdit::Transform),
         _ => Err(Error(format!(
-            "sketch.transform operation {:?}: expected move or rotate; other transform operations are not ported",
+            "sketch.transform operation {:?}: expected move, rotate, or copy; other transform operations are not ported",
             request.op
         ))),
     }
@@ -98,4 +102,26 @@ fn movement_vector(request: &TransformSketchArgs, scale: f64) -> Result<[f64; 2]
         scale,
         "sketch.transform vector",
     )
+}
+
+fn apply_prepared_edit<O: TransactionObserver>(
+    commands: &mut SessionCommands<'_, O>,
+    sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    entities: &[SketchEntityId],
+    edit: PreparedSketchEdit,
+) -> Result<Vec<u8>, Error> {
+    match edit {
+        PreparedSketchEdit::Transform(transform) => commands
+            .transform_sketch_entities_projected(sketch, entities, transform, transform_reply)
+            .map_err(api_error),
+        PreparedSketchEdit::Copy(vector) => commands
+            .copy_sketch_entities_projected(sketch, entities, vector, copy_reply)
+            .map_err(api_error),
+    }
+}
+fn copy_reply(result: SketchCopyProjectionInput) -> Result<Vec<u8>, Error> {
+    let report = result.map_err(api_error)?;
+    encode(&TransformSketchResult {
+        created: Some(report.copies.into_iter().map(|id| id.0).collect()),
+    })
 }

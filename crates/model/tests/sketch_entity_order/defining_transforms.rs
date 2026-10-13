@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_model::sketch::{
     SketchEllipse2D, SketchSelectionTransform, SketchSpline2D, SketchSplineKind,
 };
-fn hidden_geometry() -> Sketch2D {
+pub(super) fn hidden_geometry() -> Sketch2D {
     let mut sketch = Sketch2D::default();
     for (id, position) in [(9, [0.0; 2]), (3, [2.0, 0.0]), (1, [0.0, 2.0])] {
         sketch

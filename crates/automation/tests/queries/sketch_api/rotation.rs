@@ -211,7 +211,7 @@ fn newly_created_line_moves_and_rotates_its_hidden_endpoints_through_the_typed_a
     verify_keys(&files, &original);
     verify_created_line_history(&mut files, document, &mut source, line, moved, rotated);
 }
-fn free_created_line() -> (DiscoveryWorkspace, u64, QueryGuids, u64) {
+pub(super) fn free_created_line() -> (DiscoveryWorkspace, u64, QueryGuids, u64) {
     use oblikovati_model::sketch::{SketchPointInput, SketchPrimitiveCreation};
     let (mut files, document, source) = configured_files(DOCUMENT_PART, Default::default());
     let sketch = create_owner(&mut files, document);
@@ -228,7 +228,7 @@ fn free_created_line() -> (DiscoveryWorkspace, u64, QueryGuids, u64) {
     assert_eq!(rows(&files).len(), 2);
     (files, document, source, report.entity.0)
 }
-fn created_line_row(files: &DiscoveryWorkspace, line: u64) -> SketchEntityInfo {
+pub(super) fn created_line_row(files: &DiscoveryWorkspace, line: u64) -> SketchEntityInfo {
     rows(files).into_iter().find(|row| row.id == line).unwrap()
 }
 fn verify_created_line_history(

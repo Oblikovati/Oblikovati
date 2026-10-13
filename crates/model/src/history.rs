@@ -26,6 +26,7 @@ pub use sketch_dimension_create::{
 };
 mod sketch_dimension_edit;
 pub use sketch_dimension_edit::SketchDimensionEdit;
+mod sketch_copy;
 mod sketch_line;
 mod sketch_primitive;
 mod sketch_relation_create;
