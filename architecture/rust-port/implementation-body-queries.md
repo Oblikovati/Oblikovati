@@ -29,10 +29,9 @@ The full gate includes the existing per-face OCCT corpus and degenerate inputs.
 Kernel recognizers, tolerance constants, fallback sites, and type assertions have
 no net increase. No geometry algorithm changes in this increment.
 
-This capability covers the retained sketch-prism results. Body visibility
-mutation, general feature families, face enumeration, legacy-key migration,
-lost-reference health, and full appearance rendering remain open. All current
-published bodies are visible, matching the present scene owner. Foreground
+This capability covers the retained sketch-prism results. General feature
+families, face enumeration, legacy-key migration, lost-reference health, and full
+appearance rendering remain open. Foreground
 MCPBridge acceptance and full R0–R9 acceptance remain open; this is not a full port.
 
 ## Body rename, 2026-10-13
@@ -61,7 +60,7 @@ owners, and save failure followed by retry. The native body key remains stable;
 no coordinate matching or index-based identity is used.
 
 This ports the rename API for current body results. It does not add a body browser
-UI, visibility edits, unsupported feature families, or legacy-key migration.
+UI, unsupported feature families, or legacy-key migration.
 General profile construction and the full port remain open.
 
 Unchanged renames follow the existing Rust session policy in
@@ -84,3 +83,43 @@ documentation, SPDX, and duplication checks. The lowest per-crate line coverage
 is 91.84%; duplication is 0.71%. The first run reached documentation checking
 and rejected an extra blank line; that was fixed before the successful run.
 No push or PR is part of this increment. Full R0–R9 acceptance remains open.
+
+## Body visibility, 2026-10-13
+
+The existing `body.setVisible` route now resolves its index against the current
+native owner and changes document-local view state. `body.list` and the command
+reply report the same flag. As in Go `app/render.go`, hidden-body keys belong to
+the open document session: they survive activation changes, recompute, and
+modelling undo, but are released on close. They are not saved in the package and
+do not create undo entries or change dirty state. Explicit transaction abort
+does not undo a visibility edit. Hidden bodies remain available to exact queries
+and whole-part mass analysis.
+
+A separate checked display revision invalidates the scene after a visibility
+change while the modelling generation stays unchanged. Repeated requests for the
+same flag do not trigger a new scene. The viewport filters bodies before mesh
+creation through one presentation pipeline; hidden bodies do not produce mesh
+failures. Feature health still reports all evaluated features. A failed visibility
+lookup is an error, not a successful empty scene. Default presentation callers
+use the same pipeline with all bodies visible.
+
+Owner tests cover hide/show replies, complete scene replacement, stable modelling
+generation, no dirty changes, invalid indices, activation, recompute and index
+changes after a failed feature, undo, save/close/reopen with the same persistent
+key, and mass queries. Session tests cover idempotence and display-revision
+exhaustion without mutation. Viewport tests prove that hidden bodies are not
+meshed and that a visibility error reaches the caller.
+
+A real native-window test on Xvfb/lavapipe opens a stored part through the typed
+API, verifies body pixels, hides the body, verifies no body pixels, then shows it
+and compares the entire captured frame byte-for-byte with the original. The
+capture is also checked against the presented X11 window pixels. This is local
+native display evidence, not foreground MCPBridge or full R0–R9 acceptance.
+
+The Go body-visibility route and document-scope tests pass at baseline
+`aa8297d1b0ac33c024f19e54821536d76e8a447a`. The Rust body-owner suite passes
+18 tests, including the rename regression tests. The final full local gate
+covers all 13 crates, with native Linux display tests, formatting, lint, build,
+coverage, documentation, SPDX, and duplication checks. No modelling algorithm,
+released kernel pin, or stored document schema changes in this increment.
+No push or PR was made.

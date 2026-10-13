@@ -36,7 +36,7 @@ fn native_body_info<O: TransactionObserver>(
 ) -> Result<BodyInfo, String> {
     let encoded = body.body_reference_key(session.history(), guid)?;
     let report = body.body_report(session.history(), guid, encoded)?;
-    let key: String = encoded.iter().map(|byte| format!("{byte:02x}")).collect();
+    let key = body_reference_text(encoded);
     let reference = AssignmentReference::new(&key, vec![])?;
     let material_id = session
         .snapshot()
@@ -48,6 +48,7 @@ fn native_body_info<O: TransactionObserver>(
     let mut info = topology_info(&report.topology)?;
     info.index = api_count("body index", index)?;
     info.name = format!("Solid{}", index + 1);
+    info.visible = session.body_visible(&key);
     info.key = key;
     info.material_id = material_id;
     Ok(info)
@@ -85,4 +86,8 @@ fn with_display_metadata<O: TransactionObserver, W: WorkspaceObserver, F: Docume
     }
     info.style = style.unwrap_or_default().into();
     Ok(info)
+}
+
+pub(super) fn body_reference_text(encoded: &[u8]) -> String {
+    encoded.iter().map(|byte| format!("{byte:02x}")).collect()
 }

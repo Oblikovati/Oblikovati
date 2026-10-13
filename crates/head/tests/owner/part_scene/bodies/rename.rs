@@ -63,7 +63,7 @@ fn body_rename_is_saved_reopened_and_cleared_by_the_typed_route() {
     assert_eq!(listed(&mut owner)[0].key, named.key);
 }
 
-fn save_reopen_body(owner: &mut TestOwner, document: u64) -> u64 {
+pub(super) fn save_reopen_body(owner: &mut TestOwner, document: u64) -> u64 {
     let path = owner
         .files
         .path(document)

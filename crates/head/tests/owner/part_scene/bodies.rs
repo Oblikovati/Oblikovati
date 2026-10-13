@@ -183,3 +183,6 @@ fn empty_part_lists_no_bodies_and_part_material_is_inherited() {
 
 #[path = "bodies/rename.rs"]
 mod rename;
+
+#[path = "bodies/visibility.rs"]
+mod visibility;

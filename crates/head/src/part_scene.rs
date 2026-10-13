@@ -51,7 +51,7 @@ pub struct HeadSceneUpdate {
 }
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
-    source: Option<(u64, u64)>,
+    source: Option<(u64, u64, u64)>,
     slot: PartEvaluationSlot<NamedPrismSnapshot, String>,
 }
 impl DesktopPartScenes {
@@ -64,7 +64,7 @@ impl DesktopPartScenes {
             return Ok(None);
         }
         let update = match source {
-            Some((id, _)) => self.evaluate(files, id)?,
+            Some((id, _, _)) => self.evaluate(files, id)?,
             None => self.empty(),
         };
         self.source = source;
@@ -134,7 +134,15 @@ impl DesktopPartScenes {
             .session(document)
             .map_err(|cause| cause.to_string())?;
         let evaluated = self.current(session)?;
-        render_part_scene(evaluated, (document, session.generation()))
+        let guid = files
+            .workspace()
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        render_part_scene(evaluated, (document, session.generation()), |body| {
+            let key = body.body_reference_key(session.history(), guid)?;
+            Ok(session.body_visible(&bodies::body_reference_text(key)))
+        })
     }
     fn empty(&mut self) -> HeadSceneUpdate {
         self.slot.clear();
@@ -180,7 +188,7 @@ fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: Docu
 
 fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
-) -> Result<Option<(u64, u64)>, String> {
+) -> Result<Option<(u64, u64, u64)>, String> {
     files
         .workspace()
         .active_document()
@@ -188,7 +196,7 @@ fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
             files
                 .workspace()
                 .session(id)
-                .map(|session| (id, session.generation()))
+                .map(|session| (id, session.generation(), session.body_visibility_revision()))
         })
         .transpose()
         .map_err(|cause| cause.to_string())
@@ -197,8 +205,9 @@ fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
 fn render_part_scene(
     evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<NamedPrismSnapshot, String>,
     source: (u64, u64),
+    visible: impl FnMut(&NamedPrismSnapshot) -> Result<bool, String>,
 ) -> Result<HeadSceneUpdate, String> {
-    let presentation = ViewportScene::from_part_evaluation(
+    let presentation = ViewportScene::from_part_evaluation_with_visibility(
         evaluated,
         PrismMeshOptions {
             chord_error: 0.05,
@@ -206,6 +215,7 @@ fn render_part_scene(
         },
         [0., 0., 1.],
         [0., 1., 0., 1.],
+        visible,
     )?;
     Ok(HeadSceneUpdate {
         scene: presentation.scene,

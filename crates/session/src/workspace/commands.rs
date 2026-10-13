@@ -64,3 +64,11 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session.refresh_derived_table(table, source)
     }
 }
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Change view state for a resolved body without editing history or saved content.
+    /// Example: `commands.set_body_visible(current_body_key, false)?;` returns whether display changed.
+    pub fn set_body_visible(&mut self, key: &str, visible: bool) -> Result<bool, String> {
+        self.session.body_visibility.set(key, visible)
+    }
+}

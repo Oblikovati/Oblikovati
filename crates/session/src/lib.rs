@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Serial document edits and transaction observations, independent of UI and I/O.
+mod body_visibility;
 pub mod clients;
 mod command;
 mod error;
@@ -60,6 +61,7 @@ pub struct DocumentSession<O> {
     observer: O,
     group: Option<BoundedGroup>,
     sketch_options: oblikovati_solve::nonlinear::SolveOptions,
+    body_visibility: body_visibility::BodyVisibilityState,
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
@@ -80,6 +82,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             history,
             observer,
             group: None,
+            body_visibility: Default::default(),
             sketch_options,
         }
     }

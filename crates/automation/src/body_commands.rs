@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{PartTopologyAccess, decode, encode};
+use crate::{PartTopologyAccess, encode};
+mod change;
 use oblikovati_api::{Error, wire::*};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-/// Body metadata edits resolve an index against the current exact topology owner.
-pub const BODY_COMMAND_METHODS: [&str; 1] = [METHOD_BODY_RENAME];
+/// Body display edits resolve an index against the current exact topology owner.
+pub const BODY_COMMAND_METHODS: [&str; 2] = [METHOD_BODY_RENAME, METHOD_BODY_SET_VISIBLE];
 
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -14,20 +15,15 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     encoded: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let document = crate::part_owner::active_part(files)?;
-    let request: BodyRenameArgs = decode(method, encoded)?;
+    let request = change::BodyDisplayEdit::parse(method, encoded)?;
     let owner = access.as_deref_mut().ok_or_else(|| {
         Error(format!(
-            "body rename document {document}: expected an injected exact topology owner"
+            "body display document {document}: expected an injected exact topology owner"
         ))
     })?;
     let bodies = owner.list_bodies(files, document).map_err(Error)?;
-    let mut body = indexed_body(&bodies, request.body_index)?;
-    store_name(files, document, &body.key, &request.name)?;
-    body.name = if request.name.is_empty() {
-        format!("Solid{}", request.body_index + 1)
-    } else {
-        request.name
-    };
+    let mut body = indexed_body(&bodies, request.index())?;
+    request.apply(files, document, &mut body)?;
     encode(&BodyInfoResult { body })
 }
 

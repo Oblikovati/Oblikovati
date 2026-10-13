@@ -32,3 +32,33 @@ fn verify_mesh_decline(presentation: &PartPresentation) {
     );
     assert!(presentation.declines[0].cause.contains("expected"));
 }
+
+#[test]
+fn hidden_bodies_are_not_meshed_and_visibility_errors_are_not_empty_success() {
+    let document = fixture::selected_prism_document();
+    let evaluated = document
+        .evaluate_part_features(&mut oblikovati_martensite::MartensitePrismEvaluator)
+        .unwrap();
+    let options = oblikovati_martensite::PrismMeshOptions {
+        chord_error: 0.,
+        angular_error: 0.5,
+    };
+    let hidden = ViewportScene::from_part_evaluation_with_visibility(
+        &evaluated,
+        options,
+        [0.; 3],
+        [0., 1., 0., 1.],
+        |_| Ok(false),
+    )
+    .unwrap();
+    assert_eq!(hidden.visible_bodies, 0);
+    assert!(hidden.scene.triangles.is_empty() && hidden.declines.is_empty());
+    let rejected = ViewportScene::from_part_evaluation_with_visibility(
+        &evaluated,
+        options,
+        [0.; 3],
+        [0., 1., 0., 1.],
+        |_| Err("stale visibility key".into()),
+    );
+    assert_eq!(rejected.err().unwrap(), "stale visibility key");
+}

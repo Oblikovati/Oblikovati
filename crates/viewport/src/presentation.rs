@@ -60,6 +60,21 @@ impl ViewportScene {
         background: [f64; 3],
         color: [f32; 4],
     ) -> Result<PartPresentation, String> {
+        Self::from_part_evaluation_with_visibility(evaluation, options, background, color, |_| {
+            Ok(true)
+        })
+    }
+    /// Filter display bodies without changing analytic results or feature health.
+    /// Example: `ViewportScene::from_part_evaluation_with_visibility(&evaluated, options, background, color, |_| Ok(false))`.
+    pub fn from_part_evaluation_with_visibility<
+        Body: oblikovati_martensite::PrismPresentationSource,
+    >(
+        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, String>,
+        options: oblikovati_martensite::PrismMeshOptions,
+        background: [f64; 3],
+        color: [f32; 4],
+        mut visible: impl FnMut(&Body) -> Result<bool, String>,
+    ) -> Result<PartPresentation, String> {
         let mut result = PartPresentation {
             scene: Self {
                 background,
@@ -73,7 +88,9 @@ impl ViewportScene {
             let Some(body) = evaluation.body(record.feature) else {
                 continue;
             };
-            result.append_body(record.feature, body, options, color);
+            if visible(body)? {
+                result.append_body(record.feature, body, options, color);
+            }
         }
         Ok(result)
     }
