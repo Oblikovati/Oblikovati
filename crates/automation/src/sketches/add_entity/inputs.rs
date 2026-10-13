@@ -9,11 +9,16 @@ use oblikovati_model::{
     quantity::Dimension,
     sketch::{SketchPointInput, SketchPrimitiveCreation},
 };
+mod chains;
 mod points;
 pub(super) enum PreparedEntity {
     Primitive(SketchPrimitiveCreation, &'static str),
     InferredLine(SketchLineCreation),
-    Polyline(oblikovati_model::history::SketchPolylineCreation),
+    Chain {
+        input: oblikovati_model::history::SketchPolylineCreation,
+        kind: &'static str,
+        label: &'static str,
+    },
 }
 #[derive(Clone, Copy)]
 enum PrimitiveConstructor {
@@ -27,14 +32,10 @@ pub(super) fn prepare(
     snapshot: &DocumentSnapshot,
     request: &AddSketchEntityArgs,
 ) -> Result<PreparedEntity, Error> {
-    if request.kind == "polyline" {
-        return Ok(PreparedEntity::Polyline(
-            oblikovati_model::history::SketchPolylineCreation {
-                points: points::resolve(snapshot, request)?,
-                closed: request.closed,
-                construction: request.construction,
-            },
-        ));
+    match request.kind.as_str() {
+        "polyline" => return chains::polyline(snapshot, request),
+        "rectangle" => return chains::rectangle(snapshot, request),
+        _ => {}
     }
     let constructor = classify_kind(&request.kind)?;
     require_variant(constructor, &request.variant)?;
@@ -50,7 +51,7 @@ fn classify_kind(kind: &str) -> Result<PrimitiveConstructor, Error> {
         kind if kind == SKETCH_ENTITY_ELLIPSE.0 => Ok(PrimitiveConstructor::AnalyticEllipse),
         kind if kind == SKETCH_ENTITY_ARC.0 => Ok(PrimitiveConstructor::CenterStartEndArc),
         _ => Err(Error(format!(
-            "sketch.addEntity kind {kind:?}: expected a ported line, point, circle, arc, ellipse, or polyline constructor; other kinds are not ported"
+            "sketch.addEntity kind {kind:?}: expected a ported line, point, circle, arc, ellipse, polyline, or rectangle constructor; other kinds are not ported"
         ))),
     }
 }

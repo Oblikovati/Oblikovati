@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_session::SketchPrimitiveProjectionInput;
+mod chain_reply;
 mod inputs;
 mod line_reply;
-mod polyline_reply;
 use inputs::PreparedEntity;
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -31,8 +31,13 @@ fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
                 creation_reply(result, kind)
             })
             .map_err(api_error),
-        PreparedEntity::Polyline(input) => commands
-            .create_sketch_polyline_projected(sketch, &input, polyline_reply::encode_created)
+        PreparedEntity::Chain { input, kind, label } => commands
+            .run(label, |snapshot, ids| {
+                chain_reply::encode_created(
+                    snapshot.create_sketch_polyline(sketch, &input, ids),
+                    kind,
+                )
+            })
             .map_err(api_error),
         PreparedEntity::InferredLine(input) => commands
             .create_inferred_sketch_line_projected(sketch, &input, line_reply::encode_created)
