@@ -9,6 +9,13 @@ struct PlacementEventWindow {
     scripted: VecDeque<Vec<ViewportEvent>>,
 }
 impl HeadWindow for PlacementEventWindow {
+    fn set_sketch_preview(
+        &mut self,
+        preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
+    ) -> Result<bool, String> {
+        self.native.set_sketch_preview(preview)
+    }
+
     fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
         self.native.process_view_input(event)
     }
@@ -88,6 +95,7 @@ fn drive_slot_preview(
     window.scripted = VecDeque::from([first, vec![motion([820, 500])]]);
     crate::frames::run_frames(window, HeadOptions { frames: Some(2) }, owner).unwrap();
     let preview = owner.slot_placement_preview().unwrap().clone();
+    verify_outline_pixels(owner, window);
     assert!(
         before.same_recipe(
             &owner
@@ -139,6 +147,7 @@ fn drive_slot_commit(
     }
     assert!(owner.slot_placement_active());
     assert!(owner.slot_placement_preview().is_none());
+    assert!(!window.native.set_sketch_preview(None).unwrap());
     assert_eq!(solid_pixels(&capture_native_scene(&mut window.native)), 0);
     sketches
 }
@@ -224,4 +233,83 @@ fn verify_ordered_slot_centers(
             assert!((a - b).abs() < 1e-8, "{actual:?} != {expected:?}");
         }
     }
+}
+
+fn verify_outline_pixels(owner: &NativeDesktopOwner, window: &mut PlacementEventWindow) {
+    let outlined = capture_native_scene(&mut window.native);
+    assert!(window.native.set_sketch_preview(None).unwrap());
+    let cleared = capture_native_scene(&mut window.native);
+    assert_ne!(outlined.rgba, cleared.rgba);
+    assert_eq!(outlined.scene_generation, cleared.scene_generation);
+    window
+        .native
+        .set_sketch_preview(owner.sketch_preview().as_ref())
+        .unwrap();
+    assert_eq!(capture_native_scene(&mut window.native).rgba, outlined.rgba);
+}
+#[test]
+fn native_escape_clears_outline_without_editing_document() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &directory.path().join("slot-cancel.opd"));
+    publish_native_scene(&mut owner, &mut native);
+    let original = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .clone();
+    owner
+        .start_slot_placement(document, fixture::SKETCH, 0.5)
+        .unwrap();
+    let mut window = PlacementEventWindow {
+        native,
+        scripted: VecDeque::new(),
+    };
+    drive_slot_preview(&mut owner, &mut window, document, false);
+    window.scripted = VecDeque::from([vec![key(ViewportKey::Cancel, true)]]);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    assert!(owner.sketch_preview().is_none());
+    assert!(!window.native.set_sketch_preview(None).unwrap());
+    assert!(
+        original.same_recipe(
+            &owner
+                .documents()
+                .workspace()
+                .session(document)
+                .unwrap()
+                .snapshot()
+                .sketches
+        )
+    );
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+#[test]
+fn native_preview_recovery_removes_only_the_preview_failure_notice() {
+    let mut window = NativeHeadWindow::open().unwrap();
+    let preview = oblikovati_viewport::ViewportSketchPreview {
+        plane: SketchPlane::xy(),
+        recipe: SketchPlacementRecipe::straight_slot([[0., 0.], [5., 0.]], 2.).unwrap(),
+    };
+    window
+        .show_command_notice(crate::DesktopCommandNotice::PreviewFailed {
+            cause: "sample budget".into(),
+        })
+        .unwrap();
+    window.set_sketch_preview(None).unwrap();
+    assert!(window.command_notice.is_some());
+    assert!(window.set_sketch_preview(Some(&preview)).unwrap());
+    assert!(window.command_notice.is_none());
+    let notice = crate::DesktopCommandNotice::PlacementPrompt {
+        message: "Choose a centre".into(),
+    };
+    window.show_command_notice(notice.clone()).unwrap();
+    assert!(!window.set_sketch_preview(Some(&preview)).unwrap());
+    assert_eq!(window.command_notice, Some(notice));
+    window.finish().unwrap();
 }

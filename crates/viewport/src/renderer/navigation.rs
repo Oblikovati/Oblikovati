@@ -46,6 +46,9 @@ impl RenderView {
         result.map_err(|cause| cause.to_string())
     }
     fn fit_displayed(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
+        self.preview.without_preview(|| self.fit_scene(margin))
+    }
+    fn fit_scene(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
         if self.structures.is_empty() {
             return Ok(());
         }

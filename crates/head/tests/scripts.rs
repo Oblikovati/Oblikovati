@@ -240,3 +240,8 @@ fn desktop_console_reads_the_owned_material_catalog_without_a_document() {
     assert!(result.is_ok(), "{result:?}");
     desktop.finish().unwrap();
 }
+
+#[test]
+fn scripts_forward_absent_sketch_preview() {
+    assert!(desktop().sketch_preview().is_none());
+}

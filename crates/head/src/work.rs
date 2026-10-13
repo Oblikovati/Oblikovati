@@ -12,6 +12,11 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Copy the current transient authoring graph; example: `work.sketch_preview()` before drawing.
+    fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        None
+    }
+
     /// Count bounded frames only after startup is complete; example: `work.startup_ready()` before smoke accounting.
     fn startup_ready(&self) -> bool {
         true

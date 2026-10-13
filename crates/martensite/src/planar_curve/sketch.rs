@@ -77,3 +77,6 @@ fn intersect_target(
         intersection,
     })
 }
+
+mod preview;
+pub use preview::{PlacementPreviewCurve, PlacementSamplingOptionsV1, sample_placement_preview};

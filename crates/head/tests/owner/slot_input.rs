@@ -311,3 +311,26 @@ fn slot_input_is_forwarded_by_script_owner_and_projectionless_windows_report_fai
     let owner = desktop.into_document_owner();
     assert_eq!(count(&owner, document, sketch), before + 6);
 }
+
+#[test]
+fn preview_packet_contains_current_plane_and_owned_recipe() {
+    let (mut owner, _, _) = slot_owner();
+    assert!(owner.sketch_preview().is_none());
+    owner
+        .process_window_inputs(
+            &[button([0, 0], true), button([0, 0], false), motion([10, 0])],
+            &PlanarInputWindow::default(),
+        )
+        .unwrap();
+    let packet = owner.sketch_preview().unwrap();
+    assert_eq!(packet.plane, SketchPlane::xy());
+    assert_eq!(&packet.recipe, owner.slot_placement_preview().unwrap());
+    owner
+        .process_window_inputs(
+            &[key(ViewportKey::Cancel, true)],
+            &PlanarInputWindow::default(),
+        )
+        .unwrap();
+    assert!(owner.sketch_preview().is_none());
+    assert!(!packet.recipe.members.is_empty());
+}

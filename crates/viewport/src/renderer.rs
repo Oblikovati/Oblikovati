@@ -16,6 +16,7 @@ use rustycad_tkservice::{
 use rustycad_tkv3d::v3d::{V3dViewSource, V3dViewer};
 #[path = "renderer/navigation.rs"]
 mod navigation;
+mod sketch_preview;
 #[path = "renderer/status_text.rs"]
 mod status_text;
 pub(crate) struct SavedViewCamera {
@@ -28,6 +29,7 @@ pub(crate) struct RenderView {
     pub renderer: Handle<Graphic3dRenderView>,
     structures: Vec<Handle<Graphic3dStructure>>,
     status: status_text::StatusTextOverlay,
+    preview: sketch_preview::SketchPreviewOverlay,
 }
 impl RenderView {
     pub fn new(
@@ -49,6 +51,7 @@ impl RenderView {
             renderer,
             structures: Vec::new(),
             status: Default::default(),
+            preview: Default::default(),
         };
         result.configure(window)?;
         result.camera(ViewportCamera::default(), extent)?;
@@ -122,6 +125,7 @@ impl Drop for RenderView {
             structure.remove();
         }
         self.status.clear();
+        self.preview.clear();
         self.view.remove();
     }
 }
@@ -173,5 +177,28 @@ fn configure_projection(
 impl RenderView {
     pub(crate) fn status_text(&mut self, text: &str) -> Result<bool, String> {
         self.status.submit(&self.viewer, text)
+    }
+}
+
+impl RenderView {
+    pub(crate) fn sketch_preview(
+        &mut self,
+        preview: Option<&crate::ViewportSketchPreview>,
+    ) -> Result<bool, String> {
+        let deflection = self
+            .view
+            .convert_pixel_to_view(1)
+            .map_err(|cause| cause.to_string())?
+            * 0.5;
+        self.preview.submit(&self.viewer, preview, deflection)
+    }
+}
+
+impl RenderView {
+    pub(crate) fn preview_source(&self) -> Option<crate::ViewportSketchPreview> {
+        self.preview
+            .source
+            .as_ref()
+            .map(|(source, _)| source.clone())
     }
 }

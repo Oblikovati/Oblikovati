@@ -72,3 +72,7 @@ path = "tests/circumcircle.rs"
 [[test]]
 name = "sketch_projection"
 path = "tests/sketch_projection.rs"
+
+[[test]]
+name = "placement_preview"
+path = "tests/placement_preview.rs"

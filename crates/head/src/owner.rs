@@ -172,6 +172,14 @@ impl<
     ) -> Result<bool, String> {
         self.process_document_inputs(inputs)
     }
+    fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        let recipe = self.slot_placement_preview()?.clone();
+        Some(oblikovati_viewport::ViewportSketchPreview {
+            plane: self.slot_placement.as_ref()?.plane,
+            recipe,
+        })
+    }
+
     fn process_window_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],

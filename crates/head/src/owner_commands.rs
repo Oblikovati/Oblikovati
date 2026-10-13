@@ -16,6 +16,9 @@ enum NativeDocumentCommand {
 /// Command feedback stays on the owner until the native window consumes it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DesktopCommandNotice {
+    PreviewFailed {
+        cause: String,
+    },
     PlacementPrompt {
         message: String,
     },
@@ -51,6 +54,7 @@ impl DesktopCommandNotice {
     /// Explain the result for native feedback; example: `notice.message()` in a title or status panel.
     pub fn message(&self) -> String {
         match self {
+            Self::PreviewFailed { cause } => format!("Preview could not be drawn: {cause}"),
             Self::PlacementPrompt { message } => message.clone(),
             Self::PlacementFailed { cause } => format!("Slot could not be created: {cause}"),
             Self::AddInStartupFailed { library, cause } => format!("Add-in {library:?}: {cause}"),

@@ -146,6 +146,10 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.process_inputs(inputs)
     }
+    fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        self.owner.sketch_preview()
+    }
+
     fn process_window_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],

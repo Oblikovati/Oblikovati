@@ -50,9 +50,9 @@ check native prompts and undo against the original viewport pixels, and compare
 click/drag document recipes. A click/zoom/click batch verifies camera event order.
 
 Activation is currently an owner entry point, not a menu or toolbar command in the
-executable. Live outline drawing, selection of the active sketch in the UI, editable
-field widgets, inference/snapping, and the other placement tools remain open. The
-current recipe is available to the next preview-rendering step; it is not yet drawn.
+executable. The [native outline step](implementation-slot-preview.md) now draws
+the current recipe. Selection of the active sketch in the UI, editable field
+widgets, inference/snapping, and the other placement tools remain open.
 These tests do not establish full interactive sketch editing or general solids.
 The kernel profile-to-solid blocker and its priority remain unchanged.
 

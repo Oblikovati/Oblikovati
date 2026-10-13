@@ -255,6 +255,8 @@ impl Viewport {
         self.completed = None;
         self.live()?;
         self.refresh_extent()?;
+        let preview = self.live()?.preview_source();
+        self.set_sketch_preview(preview.as_ref())?;
         self.target
             .as_ref()
             .expect("live target")
@@ -405,3 +407,5 @@ impl Viewport {
 }
 
 mod projection;
+
+mod sketch_preview;

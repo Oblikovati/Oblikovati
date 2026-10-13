@@ -57,6 +57,25 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn set_sketch_preview(
+        &mut self,
+        preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
+    ) -> Result<bool, String> {
+        let changed = self.view.set_sketch_preview(preview)?;
+        if preview.is_none()
+            || !matches!(
+                self.command_notice,
+                Some(crate::DesktopCommandNotice::PreviewFailed { .. })
+            )
+        {
+            return Ok(changed);
+        }
+        self.view.set_status_text("")?;
+        self.command_notice = None;
+        self.refresh_title()?;
+        Ok(true)
+    }
+
     fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
         self.apply_navigation_inputs(&[*event])
     }

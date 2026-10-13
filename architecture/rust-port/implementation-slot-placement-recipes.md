@@ -47,8 +47,10 @@ free profile still reports its unavailable solid feature. This test does not pro
 a general profile-to-solid path.
 
 The [slot input step](implementation-slot-input.md) adds mouse placement state and
-the native owner event path. Menu activation, preview rendering, editable field
-widgets, automatic annotation positions and the remaining recipe families are still open. This step provides their
+the native owner event path. The
+[native outline step](implementation-slot-preview.md) renders the recipe. Menu
+activation, editable field widgets, automatic annotation positions and the remaining
+recipe families are still open. This step provides their
 commit path; it does not complete interactive slot placement or R3. General analytic
 region-to-solid construction remains a critical kernel blocker under the existing
 kernel priority list. Kernel and API pins remain v0.2.5 and v0.158.0. No local source

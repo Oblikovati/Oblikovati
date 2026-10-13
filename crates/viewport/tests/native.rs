@@ -110,3 +110,6 @@ fn verify_title_metadata(view: &mut Viewport) {
 
 #[path = "native/projection.rs"]
 mod projection;
+
+#[path = "native/sketch_preview.rs"]
+mod sketch_preview;

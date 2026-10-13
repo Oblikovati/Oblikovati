@@ -13,6 +13,20 @@ pub struct HeadSummary {
 }
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Replace or clear the authoring outline; example: `window.set_sketch_preview(None)?` after cancellation.
+    fn set_sketch_preview(
+        &mut self,
+        preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
+    ) -> Result<bool, String> {
+        if preview.is_none() {
+            return Ok(false);
+        }
+        Err(format!(
+            "head sketch preview with {} members: expected a window with outline rendering",
+            preview.expect("present preview").recipe.members.len()
+        ))
+    }
+
     /// Apply one view-only input before projecting that same event; example: `window.process_view_input(&event)?`.
     fn process_view_input(&mut self, _: &ViewportEvent) -> Result<bool, String> {
         Ok(false)
@@ -190,6 +204,7 @@ fn run_owner_frame(
     control.pending |= activity.changed;
     control.pending |= publish_owner_scene(window, owner)?;
     publish_command_notice(window, owner)?;
+    control.pending |= publish_sketch_preview(window, owner)?;
     let closing = inputs.contains(&ViewportEvent::CloseRequested);
     control.events(&inputs, !closing || owner.close_allowed()?);
     if control.stopped() {
@@ -242,4 +257,18 @@ fn publish_command_notice(
         window.show_command_notice(notice)?;
     }
     Ok(())
+}
+
+fn publish_sketch_preview(
+    window: &mut dyn HeadWindow,
+    owner: &dyn HeadWork,
+) -> Result<bool, String> {
+    match window.set_sketch_preview(owner.sketch_preview().as_ref()) {
+        Ok(changed) => Ok(changed),
+        Err(cause) => {
+            window.set_sketch_preview(None)?;
+            window.show_command_notice(crate::DesktopCommandNotice::PreviewFailed { cause })?;
+            Ok(true)
+        }
+    }
 }
