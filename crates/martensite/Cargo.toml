@@ -9,25 +9,25 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
-rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
 oblikovati-model = { path = "../model" }
-rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
 
-rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
 
 [lints]
 workspace = true
 
 [dev-dependencies]
 oblikovati-persistence = { path = "../persistence" }
-rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
 oblikovati-session = { path = "../session" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 serde = { version = "1.0.229", features = ["derive"] }

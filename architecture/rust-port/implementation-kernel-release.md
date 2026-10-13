@@ -80,3 +80,43 @@ application keeps its existing camera update path and its original comment.
 Acceptance is local Linux only. No push, PR, remote test, or workflow run is
 part of this intake. Windows and macOS remain deferred with explicit failing
 workflow paths. This release does not close the remaining R1 feature scope.
+
+## v0.2.5 local intake
+
+The application pins [kernel v0.2.5](https://github.com/Oblikovati/RustyCADKernel/releases/tag/v0.2.5)
+at `8118c7e1fae4d28bb5bb5656cd8f86445dadef10`. The published tag and
+release manifest agree. All 35 payloads and the manifest passed the published
+SHA-256 checks. All 31 crate archives record this revision and clean source
+metadata. The manifest records `extracted-workspace-tests-and-doctests`.
+
+Both consumer manifests, the lockfile, packaging configuration, and pin regression
+test use this release. The 16 consumed kernel packages come from the exact released
+Git revision. The release adds `num-bigint` and `num-integer` as transitive
+requirements. Existing registry versions and the API v0.158.0 pin stay unchanged.
+The Rust toolchain remains 1.99.0. No sibling checkout supplies kernel code.
+
+This release does not contain the separate sketch spline constructor commit
+`bab95916c`. Kernel issue [#9](https://github.com/Oblikovati/RustyCADKernel/issues/9)
+remains open for construction, handles, release, and application acceptance.
+This dependency update does not complete that work or the full R1 scope.
+
+The viewport now retains `Handle<dyn V3dViewSource>`, as returned by the
+released viewer factory. This preserves the kernel's view interface and its
+virtual dispatch. The initial build exposed the old concrete handle type;
+no geometry or camera fallback was added. Existing native tests exercise view
+creation, camera changes, navigation, resize, presentation, and destruction.
+
+Local Linux acceptance passed `make gate` over all 13 application crates,
+all targets and features. It includes formatting, Clippy, build, tests,
+doctests, coverage, Markdown, documentation links, SPDX, workflow checks,
+and duplication. Native tests ran serially on a 1920×1080×24 Xvfb display
+with software Vulkan and validation layer 1.4.321. They check GPU captures
+against presented X11 pixels, including navigation and document edits.
+
+Every crate exceeded 80% line coverage. The kernel adapter reached 90.16%,
+the viewport 93.52%, and the native head 95.01%. Duplication was 0.75%
+(510 of 67,647 scanned lines). The compatibility change adds no numeric
+constant or platform-specific path; the view remains in the existing Linux
+renderer boundary. Existing comments and camera behavior remain intact.
+Windows and macOS acceptance remains deferred. No push, PR, or publication
+is part of this intake.

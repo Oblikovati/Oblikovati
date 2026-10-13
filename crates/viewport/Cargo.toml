@@ -14,11 +14,11 @@ oblikovati-model = { path = "../model" }
 oblikovati-martensite = { path = "../martensite" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-martensite-vulkan = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkservice = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
-rustycad-tkv3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "193572dc3665598c4948777c87375bad7dc8114a", version = "=0.2.1" }
+martensite-vulkan = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkservice = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
+rustycad-tkv3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
 x11-dl = "=2.21.0"
 rustix = { version = "=1.1.4", features = ["event"] }
 [dev-dependencies]

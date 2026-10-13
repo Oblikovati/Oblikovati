@@ -15,8 +15,8 @@ revision = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd"
 
 [kernel]
 repository = "Oblikovati/RustyCADKernel"
-version = "0.2.1"
-revision = "193572dc3665598c4948777c87375bad7dc8114a"
+version = "0.2.5"
+revision = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
 
 [linuxdeploy]
 url = ""

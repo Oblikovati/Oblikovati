@@ -13,7 +13,7 @@ use rustycad_tkservice::{
         Graphic3dStructureSource,
     },
 };
-use rustycad_tkv3d::v3d::{V3dView, V3dViewer};
+use rustycad_tkv3d::v3d::{V3dViewSource, V3dViewer};
 #[path = "renderer/navigation.rs"]
 mod navigation;
 #[path = "renderer/status_text.rs"]
@@ -24,7 +24,7 @@ pub(crate) struct SavedViewCamera {
 }
 pub(crate) struct RenderView {
     pub viewer: Handle<V3dViewer>,
-    pub view: Handle<V3dView>,
+    pub view: Handle<dyn V3dViewSource>,
     pub renderer: Handle<Graphic3dRenderView>,
     structures: Vec<Handle<Graphic3dStructure>>,
     status: status_text::StatusTextOverlay,
