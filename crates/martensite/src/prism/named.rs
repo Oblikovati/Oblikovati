@@ -61,6 +61,28 @@ fn prism_key(
     SemanticReferenceName::new(document, feature.0, kind, "sketch-prism", tag, &sources)?.encode()
 }
 impl NamedPrismSnapshot {
+    /// Borrow the sole current body name; example: `named.body_reference_key(history, guid)?` for API enumeration.
+    pub fn body_reference_key<'a>(
+        &'a self,
+        history: &'a DocumentEditHistory,
+        document: DocumentGuid,
+    ) -> Result<&'a [u8], String> {
+        let mut body_keys = self
+            .bindings
+            .encoded_keys(history, document)?
+            .filter(|key| {
+                oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                    .is_ok_and(|envelope| envelope.kind == 4)
+            });
+        let key = body_keys
+            .next()
+            .ok_or_else(|| "prism body names 0: expected exactly one".to_string())?;
+        if body_keys.next().is_some() {
+            return Err("prism body names greater than 1: expected exactly one".into());
+        }
+        self.bindings.bind(history, document, key, 4)?;
+        Ok(key)
+    }
     /// Read current body properties and face reports; example: `named.body_report(&history, doc, &body_key)?`.
     pub fn body_report<'a>(
         &'a self,

@@ -44,17 +44,17 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     version: &'a str,
     external: Option<&'a mut dyn ExternalAttachmentFiles>,
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
-    asset_references: Option<&'a mut dyn crate::AssetReferenceAccess<O, W, F>>,
+    part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
-    /// Share the native exact-reference owner; example: `host.with_asset_references(&mut scenes)`.
-    pub fn with_asset_references(
+    /// Share the native exact-reference owner; example: `host.with_part_topology(&mut scenes)`.
+    pub fn with_part_topology(
         mut self,
-        references: &'a mut dyn crate::AssetReferenceAccess<O, W, F>,
+        references: &'a mut dyn crate::PartTopologyAccess<O, W, F>,
     ) -> Self {
-        self.context.get_mut().asset_references = Some(references);
+        self.context.get_mut().part_topology = Some(references);
         self
     }
     /// Borrow owned files and identity generation; example: `FileHost::new(&mut files, &mut guids, "alpha")`.
@@ -71,7 +71,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 observers: None,
                 external: None,
                 sketch_preferences: None,
-                asset_references: None,
+                part_topology: None,
             }),
         }
     }
@@ -98,10 +98,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::BODY_QUERY_METHODS.contains(&method) {
+            return crate::part_topology::list(self.files, &mut self.part_topology, request);
+        }
         if crate::ASSET_ASSIGNMENT_METHODS.contains(&method) {
             return crate::asset_assignments::apply(
                 self.files,
-                &mut self.asset_references,
+                &mut self.part_topology,
                 method,
                 request,
             );

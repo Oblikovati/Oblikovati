@@ -151,3 +151,38 @@ fn separate_prism_evaluations_leave_the_owned_profile_unchanged() {
 mod mesh;
 #[path = "prism/placement.rs"]
 mod placement;
+#[test]
+fn native_topology_counts_unique_entities_including_inner_wires() {
+    use oblikovati_martensite::PrismTopologySummary;
+    for (definition, expected) in [
+        (
+            rectangle(),
+            PrismTopologySummary {
+                solid: true,
+                faces: 6,
+                edges: 12,
+                vertices: 8,
+                shells: 1,
+                wires: 6,
+            },
+        ),
+        (
+            with_hole(),
+            PrismTopologySummary {
+                solid: true,
+                faces: 10,
+                edges: 24,
+                vertices: 16,
+                shells: 1,
+                wires: 12,
+            },
+        ),
+    ] {
+        let report = probe_planar_prism(&definition).unwrap();
+        assert_eq!(report.topology, expected);
+        assert_eq!(
+            report.topology.wires,
+            report.faces.iter().map(|face| face.loops).sum::<usize>()
+        );
+    }
+}

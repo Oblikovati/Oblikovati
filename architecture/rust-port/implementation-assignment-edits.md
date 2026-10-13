@@ -33,7 +33,7 @@ Run `cargo test -p oblikovati-model --test asset_assignment_edits` and
 
 The existing typed API assignment methods are now advertised by the file owner.
 Part targets require an active part. Body and face targets additionally require
-an injected `AssetReferenceAccess`; a file-only host cannot accept raw entity
+an injected `PartTopologyAccess`; a file-only host cannot accept raw entity
 keys. The desktop supplies this capability from its current named part results.
 It resolves the exact feature namespace and checks document, kind, generation,
 and the complete key before mutation. Unsupported or failed topology is a named

@@ -70,14 +70,14 @@ fn hex_bytes(text: &str) -> Result<Vec<u8>, Error> {
         .collect()
 }
 impl AssignmentChange {
-    pub(super) fn entity(&self) -> Result<Option<(Vec<u8>, AssetEntityKind)>, Error> {
+    pub(super) fn entity(&self) -> Result<Option<(Vec<u8>, TopologyEntityKind)>, Error> {
         let (reference, kind) = match self {
             Self::Material(MaterialAssignmentTarget::Body(reference), _)
             | Self::Appearance(AppearanceAssignmentTarget::Body(reference), _) => {
-                (reference, AssetEntityKind::Body)
+                (reference, TopologyEntityKind::Body)
             }
             Self::Appearance(AppearanceAssignmentTarget::Face(reference), _) => {
-                (reference, AssetEntityKind::Face)
+                (reference, TopologyEntityKind::Face)
             }
             _ => return Ok(None),
         };

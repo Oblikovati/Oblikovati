@@ -18,6 +18,7 @@ use rustycad_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
 pub use snapshot::{PrismProbeSnapshot, retain_planar_prism, retain_prism_on_plane};
 pub use types::{
     PrismFaceProbe, PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
+    PrismTopologySummary,
 };
 /// Check the released planar profile/prism path and generated-face lineage in working units.
 /// Example: `probe_planar_prism(&definition)?` reports analytic geometry without publishing a feature result.

@@ -31,7 +31,11 @@ pub(super) fn checked_report(
         .map(|(role, shape)| face_report(*role, shape))
         .collect::<Result<Vec<_>, _>>()?;
     let properties = crate::analytic_shape_properties(shape, "prism result")?;
-    Ok(PrismProbeReport { properties, faces })
+    Ok(PrismProbeReport {
+        properties,
+        faces,
+        topology: topology_summary(shape)?,
+    })
 }
 fn cap_lineage(maker: &mut BRepPrimAPIMakePrism) -> Result<Vec<(PrismFaceRole, Shape)>, String> {
     Ok(vec![
@@ -128,3 +132,21 @@ fn require_finite_face(role: PrismFaceRole, area: f64, centroid: [f64; 3]) -> Re
 #[cfg(test)]
 #[path = "../../tests/prism/report.rs"]
 mod tests;
+
+fn topology_summary(shape: &Shape) -> Result<PrismTopologySummary, String> {
+    Ok(PrismTopologySummary {
+        solid: shape.shape_type().map_err(|cause| cause.to_string())? == ShapeEnum::Solid,
+        faces: entity_count(shape, ShapeEnum::Face)?,
+        edges: entity_count(shape, ShapeEnum::Edge)?,
+        vertices: entity_count(shape, ShapeEnum::Vertex)?,
+        shells: entity_count(shape, ShapeEnum::Shell)?,
+        wires: entity_count(shape, ShapeEnum::Wire)?,
+    })
+}
+fn entity_count(shape: &Shape, kind: ShapeEnum) -> Result<usize, String> {
+    let mut entities = IndexedMapOfShape::default();
+    topexp::map_shapes_of_type(shape, kind, &mut entities).map_err(|cause| {
+        format!("prism topology {kind:?}: expected unique native entities: {cause}")
+    })?;
+    Ok(entities.extent())
+}

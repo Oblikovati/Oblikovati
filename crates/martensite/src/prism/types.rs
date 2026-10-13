@@ -31,5 +31,17 @@ pub struct PrismFaceProbe {
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrismProbeReport {
     pub properties: crate::ReleaseProbeProperties,
+    pub topology: PrismTopologySummary,
     pub faces: Vec<PrismFaceProbe>,
+}
+
+/// Unique entities in the retained B-rep, independent of mesh resolution and orientation uses.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PrismTopologySummary {
+    pub solid: bool,
+    pub faces: usize,
+    pub edges: usize,
+    pub vertices: usize,
+    pub shells: usize,
+    pub wires: usize,
 }

@@ -55,3 +55,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         Ok(())
     }
 }
+
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Borrow retained body display metadata without changing file state; example: `files.body_display_metadata(document, key)?`.
+    pub fn body_display_metadata(
+        &self,
+        document: u64,
+        key: &str,
+    ) -> Result<(Option<&str>, Option<&str>), FileWorkspaceError> {
+        self.retained
+            .get(&document)
+            .ok_or(FileWorkspaceError::MissingFile(document))?
+            .package
+            .body_display_metadata(key)
+            .map_err(FileWorkspaceError::Package)
+    }
+}

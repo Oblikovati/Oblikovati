@@ -1,16 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_automation::{AssetEntityKind, AssetReferenceAccess};
+use oblikovati_automation::{PartTopologyAccess, TopologyEntityKind};
 use oblikovati_model::{feature::FeatureId, identity::ReferenceEnvelope};
-impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> AssetReferenceAccess<O, W, F>
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopologyAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn list_bodies(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Vec<oblikovati_api::wire::BodyInfo>, String> {
+        self.ensure_current(files, document)?;
+        self.body_infos(files, document)
+    }
     fn verify(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
         key: &[u8],
-        kind: AssetEntityKind,
+        kind: TopologyEntityKind,
     ) -> Result<(), String> {
         let envelope = ReferenceEnvelope::decode(key).map_err(|cause| cause.to_string())?;
         self.ensure_current(files, document)?;
@@ -27,8 +35,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> AssetRefere
             format!("assignment feature {feature:?}: expected a current successful body")
         })?;
         match kind {
-            AssetEntityKind::Body => body.body_report(session.history(), guid, key).map(|_| ()),
-            AssetEntityKind::Face => body.face_report(session.history(), guid, key).map(|_| ()),
+            TopologyEntityKind::Body => body.body_report(session.history(), guid, key).map(|_| ()),
+            TopologyEntityKind::Face => body.face_report(session.history(), guid, key).map(|_| ()),
         }
     }
 }

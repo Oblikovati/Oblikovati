@@ -59,6 +59,10 @@ fn named_faces_follow_depth_edits_and_undo_without_reusing_old_handles() {
     let first = named(&history);
     let keys = first.reference_keys(&history, document()).unwrap();
     assert_eq!(keys.len(), 7);
+    assert_eq!(
+        first.body_reference_key(&history, document()).unwrap(),
+        key("body", &[1])
+    );
     assert_faces(&first, &history, 2.);
     let token = history.begin("Depth").unwrap();
     history
@@ -68,6 +72,7 @@ fn named_faces_follow_depth_edits_and_undo_without_reusing_old_handles() {
         .unwrap();
     history.commit(&token, false).unwrap();
     assert!(first.reference_keys(&history, document()).is_err());
+    assert!(first.body_reference_key(&history, document()).is_err());
     let changed = named(&history);
     assert_eq!(changed.reference_keys(&history, document()).unwrap(), keys);
     assert_faces(&changed, &history, 3.);

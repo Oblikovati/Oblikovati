@@ -163,3 +163,5 @@ impl fmt::Display for PackageCodecError {
 impl Error for PackageCodecError {}
 
 pub(crate) mod assets;
+
+mod body_display;

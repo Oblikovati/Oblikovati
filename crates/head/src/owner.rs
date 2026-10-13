@@ -222,7 +222,7 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
 ) -> FileHost<'a, O, W, F> {
     FileHost::new(files, guids, version)
         .with_observer_factory(factory)
-        .with_asset_references(scenes)
+        .with_part_topology(scenes)
 }
 #[cfg(test)]
 #[path = "../tests/owner.rs"]
