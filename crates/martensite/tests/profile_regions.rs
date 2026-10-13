@@ -63,13 +63,13 @@ fn fuse_region_edges(sources: &IndexedMapOfShape) -> Result<BRepAlgoAPIBuilderAl
     fuse.build()?;
     Ok(fuse)
 }
-fn orient_region_edges(
-    arrangement: &Arrangement,
+fn orient_split_edges(
+    split: &IndexedMapOfShape,
     plane: &rustycad_tkbrep::topods::Face,
 ) -> Result<List<Shape>, Failure> {
     let mut inputs = List::default();
-    for index in 1..=arrangement.split.extent() {
-        let segment = edge(arrangement.split.find_key(index)?)?;
+    for index in 1..=split.extent() {
+        let segment = edge(split.find_key(index)?)?;
         brep_lib::build_pcurve_for_edge_on_plane(&segment, plane)?;
         inputs.append(segment.oriented(Orientation::Forward));
         inputs.append(segment.oriented(Orientation::Reversed));
@@ -77,10 +77,13 @@ fn orient_region_edges(
     Ok(inputs)
 }
 fn build_fixture_regions(arrangement: &Arrangement) -> Result<BuilderFace, Failure> {
+    build_regions_from_split(&arrangement.split)
+}
+fn build_regions_from_split(split: &IndexedMapOfShape) -> Result<BuilderFace, Failure> {
     let plane = BRepBuilderAPIMakeFace::from_plane(Plane3::default())?.face()?;
     let mut builder = BuilderFace::new();
     builder.set_face(&plane);
-    builder.set_shapes(&orient_region_edges(arrangement, &plane)?);
+    builder.set_shapes(&orient_split_edges(split, &plane)?);
     builder.perform()?;
     assert!(
         !builder.options().has_errors(),
@@ -92,6 +95,14 @@ fn measure_fixture_region(
     shape: &Shape,
     arrangement: &Arrangement,
 ) -> Result<RegionReport, Failure> {
+    let edges = indexed_region_shapes(shape, ShapeEnum::Edge)?;
+    let parents = history::original_region_parents(&edges, arrangement)?;
+    measure_region_geometry(shape, parents)
+}
+fn measure_region_geometry(
+    shape: &Shape,
+    original_region_parents: Vec<usize>,
+) -> Result<RegionReport, Failure> {
     assert!(BRepCheckAnalyzer::new(shape, true, false, true)?.is_valid()?);
     let props = region_surface_properties(shape)?;
     let center = props.centre_of_mass();
@@ -101,7 +112,7 @@ fn measure_fixture_region(
         centroid: [center.x(), center.y(), center.z()],
         loops: indexed_region_shapes(shape, ShapeEnum::Wire)?.extent(),
         edges: edges.extent(),
-        original_region_parents: history::original_region_parents(&edges, arrangement)?,
+        original_region_parents,
     })
 }
 fn bounded_region_reports(
@@ -284,3 +295,5 @@ fn analytic_region_seeds_distinguish_nested_regions_and_shared_boundary() {
     assert_eq!(boundary.len(), 2);
     assert!(boundary.iter().all(|(state, _)| *state == State::On));
 }
+#[path = "profile_regions/nonempty.rs"]
+mod nonempty;

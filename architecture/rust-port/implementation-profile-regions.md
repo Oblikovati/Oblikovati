@@ -82,3 +82,34 @@ tests, formatting, clippy, tests, doctests, per-crate coverage, documentation,
 workflow validation, SPDX, and duplication checks. Duplication was 0.59%.
 This receipt verifies the integration probes and existing application regression
 suite; it does not close the remaining K02/R3 requirements listed above.
+
+## Nonempty-input extension experiment, 2026-10-13
+
+Kernel work item [RustyCADKernel#10](https://github.com/Oblikovati/RustyCADKernel/issues/10)
+now owns the production sketch-region prerequisite for R3/R5. Source inspection
+of kernel main `ede3518dbd7c2ae5e49d54cfef3e5bcf9029ae9e` confirms that the
+interference stage admits one input, while default `BOPAlgoBuilder::CheckData`
+requires two. The runtime experiment still uses the application's pinned v0.2.1;
+this is not a current-main runtime receipt or a dependency update.
+
+A test-only `BuilderHooks` implementation retains the filler report and replaces
+the two-argument precondition with the filler's nonempty-input contract. Every
+case uses the same interference, image, history, and post-treatment pipeline.
+There is no circle-specific branch, bypass, perturbed geometry, or retry. An
+independent OCCT subclass changes only `CheckData` to nonempty + `CheckFiller`.
+Both produce the same 13 bounded-face reports for the original six inputs plus
+single-circle and single-ellipse inputs. Each face passes native geometric
+validity and area/centroid/wire/edge assertions. Every returned boundary edge has
+an original source parent. Empty input remains a named decline with no shape.
+
+The original mapped-builder refusal tests remain unchanged. The existing OCCT
+success and decline files reproduce byte-for-byte after extending the generator.
+Run its new `--nonempty` mode for `occt-8.0.0-nonempty.csv`, then run
+`cargo test -p oblikovati-martensite --test profile_regions` for all six tests.
+
+This establishes a viable extension hook, not a production region contract.
+Sampled bounded-face classification remains diagnostic. Exact/filtered topology
+predicates, complete validation and measured tolerance, ownership, cancellation,
+persistent split identity, seed ambiguity, and a tested owner release remain
+required by issue #10. No production application or kernel code changes in this
+experiment. Do not expose `features.add` by silently reducing these requirements.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #include <BRepAlgoAPI_BuilderAlgo.hxx>
 #include <BOPAlgo_BuilderFace.hxx>
+#include <BOPAlgo_Builder.hxx>
 #include <BOPAlgo_Alerts.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
@@ -73,20 +74,24 @@ std::vector<Row> bounded_rows(const BOPAlgo_BuilderFace& builder) {
   std::sort(rows.begin(),rows.end());
   return rows;
 }
+std::vector<Row> regions_from_shape(const TopoDS_Shape& shape,const std::string& kind) {
+  const auto plane=BRepBuilderAPI_MakeFace(gp_Pln()).Face();
+  BOPAlgo_BuilderFace builder;
+  builder.SetFace(plane);
+  builder.SetShapes(oriented_edges(shape,plane));
+  builder.Perform();
+  if (builder.HasErrors()) throw std::runtime_error(kind+": face builder failed");
+  return bounded_rows(builder);
+}
 std::vector<Row> regions(const std::string& kind) {
   BRepAlgoAPI_BuilderAlgo fuse;
   fuse.SetArguments(arguments(kind));
   fuse.SetNonDestructive(true);
   fuse.Build();
   if (fuse.HasErrors()) throw std::runtime_error(kind+": general fuse failed");
-  const auto plane=BRepBuilderAPI_MakeFace(gp_Pln()).Face();
-  BOPAlgo_BuilderFace builder;
-  builder.SetFace(plane);
-  builder.SetShapes(oriented_edges(fuse.Shape(),plane));
-  builder.Perform();
-  if (builder.HasErrors()) throw std::runtime_error(kind+": face builder failed");
-  return bounded_rows(builder);
+  return regions_from_shape(fuse.Shape(),kind);
 }
+
 void single_curve_declines() {
   for (const auto kind:{"single-circle","single-ellipse"}) {
     BRepAlgoAPI_BuilderAlgo fuse;
@@ -98,8 +103,25 @@ void single_curve_declines() {
     std::cout<<kind<<",BOPAlgo_AlertTooFewArguments\n";
   }
 }
-int main(int argc, char**) {
+// Diagnostic subclass only: retain General Fuse, change its input cardinality contract.
+class NonemptyBuilder : public BOPAlgo_Builder {
+  void CheckData() override {
+    if (Arguments().IsEmpty()) { AddError(new BOPAlgo_AlertTooFewArguments); return; }
+    CheckFiller();
+  }
+};
+void nonempty_regions() {
+  for(const auto kind:{"rectangle","nested","divider","crossing","circle","ellipse","single-circle","single-ellipse"}) {
+    NonemptyBuilder builder; builder.SetArguments(arguments(kind)); builder.SetNonDestructive(true); builder.Perform();
+    if(builder.HasErrors()) throw std::runtime_error(std::string(kind)+": nonempty General Fuse failed");
+    for(const auto& row:regions_from_shape(builder.Shape(),kind)) {
+      std::cout<<kind; for(double scalar:row) std::cout<<","<<scalar; std::cout<<"\n";
+    }
+  }
+}
+int main(int argc, char** argv) {
   std::cout<<std::setprecision(17);
+  if (argc==2 && std::string(argv[1])=="--nonempty") { nonempty_regions(); return 0; }
   if (argc>1) { single_curve_declines(); return 0; }
   for (const auto kind:{"rectangle","nested","divider","crossing","circle","ellipse"}) {
     for (const auto& row:regions(kind)) {
