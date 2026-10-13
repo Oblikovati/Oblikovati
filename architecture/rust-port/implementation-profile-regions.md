@@ -217,3 +217,33 @@ intersections. Those constructions and the region acceptance requirements remain
 open under issue #10. The application dependency pin and production extrusion
 scope are unchanged. This application record passes `make docs-lint`; the
 runtime validation above is for the kernel change.
+
+## Exact Bézier-to-line parameter prerequisite, 2026-10-13
+
+Martensite local main commit `b0ebc2cf3` adds a kernel-owned parameter query for
+planar polynomial/rational Bézier curves against an infinite line, under ADR
+0006. Coordinates and weights enter exact integer arithmetic before differences,
+determinants, and products. The existing Bernstein conversion and root solver
+then certify denominator regularity and numerator contacts. Denominator zeros
+are typed failures even when a common factor could cancel them. Coincidence
+is distinct from completed empty and isolated-contact results.
+
+The retained independent corpus contains 12 curves, 17 nonconstant Jacobian
+queries, and 13 certified contacts in [0,1]. Six ordinary cases also match
+OCCT 8.0.0 counts and parameters; the native receipt reproduces byte-for-byte.
+Generated scale checks span all finite exponent fields. Other cases cover
+projection overflow/underflow, rounded false coincidence, signed/zero weights,
+endpoint and repeated denominator zeros, cancellation, and source/result
+ownership. The complete TKMath suite passes 2,823 tests with none skipped.
+New query-module coverage is 99.43%; predicate duplication is 0%. Lint,
+Rustdoc, formatting, and documentation checks pass. Kernel
+`docs/exact-bezier-line.md` records scope, commands, and benchmark evidence.
+
+This query returns parameters, not edges or regions. Finite-line clipping,
+ray-side selection, periodic spline extraction, curve/curve intersections,
+complete region validation, achieved tolerance, source history, and persistent
+split naming remain required under issue #10. The application still consumes
+released Martensite v0.2.1; no local kernel source or native OCCT fallback is
+added. General production profiles and extrusion remain incomplete. This
+application record passes `make docs-lint`; runtime evidence above belongs to
+the kernel change.
