@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use PreparedSketchEdit::{Copy as CopyEdit, Transform as TransformEdit};
+use oblikovati_model::sketch::SketchCopyOperation::{Mirror, Translate};
 use oblikovati_model::{
     parameter::ParameterCollection,
     quantity::{Dimension, Quantity},
-    sketch::{SketchEntityId, SketchSelectionTransform},
+    sketch::{SketchCopyOperation, SketchEntityId, SketchSelectionTransform},
 };
 use oblikovati_session::{
     SketchCopyProjectionInput, SketchTransformProjectionInput, workspace::SessionCommands,
 };
 enum PreparedSketchEdit {
     Transform(SketchSelectionTransform),
-    Copy([f64; 2]),
+    Copy(SketchCopyOperation),
 }
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -40,13 +42,14 @@ fn prepared_edit(
 ) -> Result<PreparedSketchEdit, Error> {
     let scale = parameters.units().working_scale();
     match request.op.as_str() {
-        "move" => Ok(PreparedSketchEdit::Transform(
-            SketchSelectionTransform::Move(movement_vector(request, scale)?),
-        )),
-        "copy" => Ok(PreparedSketchEdit::Copy(movement_vector(request, scale)?)),
+        "move" => Ok(TransformEdit(SketchSelectionTransform::Move(
+            movement_vector(request, scale)?,
+        ))),
+        "copy" => Ok(CopyEdit(Translate(movement_vector(request, scale)?))),
+        "mirror" => Ok(CopyEdit(Mirror(SketchEntityId(request.mirror_line)))),
         "rotate" => rotation_transform(parameters, request).map(PreparedSketchEdit::Transform),
         _ => Err(Error(format!(
-            "sketch.transform operation {:?}: expected move, rotate, or copy; other transform operations are not ported",
+            "sketch.transform operation {:?}: expected move, rotate, copy, or mirror; other transform operations are not ported",
             request.op
         ))),
     }
@@ -114,8 +117,8 @@ fn apply_prepared_edit<O: TransactionObserver>(
         PreparedSketchEdit::Transform(transform) => commands
             .transform_sketch_entities_projected(sketch, entities, transform, transform_reply)
             .map_err(api_error),
-        PreparedSketchEdit::Copy(vector) => commands
-            .copy_sketch_entities_projected(sketch, entities, vector, copy_reply)
+        PreparedSketchEdit::Copy(operation) => commands
+            .copy_selected_sketch_entities_projected(sketch, entities, operation, copy_reply)
             .map_err(api_error),
     }
 }

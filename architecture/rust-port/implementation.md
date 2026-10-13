@@ -1,6 +1,6 @@
 # Rust implementation evidence
 
-[Interactive selection engine evidence](implementation-interactive-selection.md). [Kernel region evidence](implementation-profile-regions.md). [Sketch copy evidence](implementation-sketch-copy.md). [Sketch rotation evidence](implementation-sketch-rotation.md). [Typed prism failure evidence](implementation-evaluation-failures.md). [Native navigation evidence](implementation-native-navigation.md). [Owned Dear ImGui packet evidence](implementation-imgui-packets.md). [Open hardware presentation diagnostic](diagnostic-native-present-pixels.md).
+[Interactive selection engine evidence](implementation-interactive-selection.md). [Kernel region evidence](implementation-profile-regions.md). [Sketch mirror evidence](implementation-sketch-mirror.md). [Sketch copy evidence](implementation-sketch-copy.md). [Sketch rotation evidence](implementation-sketch-rotation.md). [Typed prism failure evidence](implementation-evaluation-failures.md). [Native navigation evidence](implementation-native-navigation.md). [Owned Dear ImGui packet evidence](implementation-imgui-packets.md). [Open hardware presentation diagnostic](diagnostic-native-present-pixels.md).
 
 ## Parameter dependency graph — R2
 

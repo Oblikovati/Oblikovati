@@ -28,9 +28,7 @@ impl Sketch2D {
         for point in prepared {
             candidate.set_position(point.id, point.position)?;
         }
-        if matches!(transform, SketchSelectionTransform::Rotate { .. }) {
-            candidate.rotate_selected_axes(entities, &affine)?;
-        }
+        candidate.transform_selected_frames(entities, &affine, transform)?;
         *self = candidate;
         Ok(selected)
     }
@@ -73,18 +71,41 @@ impl Sketch2D {
             })
             .collect()
     }
-    fn rotate_selected_axes(
+    fn transform_selected_frames(
         &mut self,
         entities: &[SketchEntityId],
         affine: &SelectionAffine,
+        transform: SketchSelectionTransform,
     ) -> Result<(), SketchError> {
+        if matches!(transform, SketchSelectionTransform::Move(_)) {
+            return Ok(());
+        }
         let selected: BTreeSet<_> = entities.iter().copied().collect();
+        self.transform_selected_axes(&selected, affine)?;
+        if matches!(transform, SketchSelectionTransform::Reflect { .. }) {
+            self.reverse_selected_arcs(&selected);
+        }
+        Ok(())
+    }
+    fn transform_selected_axes(
+        &mut self,
+        selected: &BTreeSet<SketchEntityId>,
+        affine: &SelectionAffine,
+    ) -> Result<(), SketchError> {
         for ellipse in &mut self.ellipses {
             if selected.contains(&ellipse.id()) {
                 *ellipse = ellipse.with_transformed_axis(affine.direction(ellipse.major_axis()))?;
             }
         }
         Ok(())
+    }
+    fn reverse_selected_arcs(&mut self, selected: &BTreeSet<SketchEntityId>) {
+        // #3563: reflection reverses orientation; retaining the source flag selects the other sweep.
+        for arc in &mut self.arcs {
+            if selected.contains(&arc.id) {
+                arc.counter_clockwise = !arc.counter_clockwise;
+            }
+        }
     }
 }
 

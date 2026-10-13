@@ -36,7 +36,8 @@ Selecting an offset spline directly declines with its identity and a request to
 select its parent. Rotating the parent retains the offset relation and distance.
 This avoids the Go default branch's silent no-op for an unsupported entity kind.
 Copy is now covered by the [copy evidence](implementation-sketch-copy.md).
-Elliptical arcs, mirroring, trimming, splitting, extending, and native
+Mirror is covered by the [mirror evidence](implementation-sketch-mirror.md).
+Elliptical arcs, trimming, splitting, extending, and native
 interactive rotation remain separate port work.
 
 Invalid centers, angles, selections, converted coordinates, or output coordinates

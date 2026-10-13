@@ -3,7 +3,7 @@ use super::SessionCommands;
 use crate::{CommandError, SketchCopyProjectionInput, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    sketch::{SketchCopyError, SketchCopyReport, SketchEntityId},
+    sketch::{SketchCopyError, SketchCopyOperation, SketchCopyReport, SketchEntityId},
 };
 impl<O: TransactionObserver> SessionCommands<'_, O> {
     /// Copy geometry in this document without changing workspace focus.
@@ -27,5 +27,16 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) -> Result<R, CommandError<E>> {
         self.session
             .copy_sketch_entities_projected(sketch, entities, vector, project)
+    }
+    /// Copy with a current owned mirror line or vector; example: `commands.copy_selected_sketch_entities_projected(sketch, &[arc], SketchCopyOperation::Mirror(line), |result| result)?;`.
+    pub fn copy_selected_sketch_entities_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        operation: SketchCopyOperation,
+        project: impl FnOnce(SketchCopyProjectionInput) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.session
+            .copy_selected_sketch_entities_projected(sketch, entities, operation, project)
     }
 }

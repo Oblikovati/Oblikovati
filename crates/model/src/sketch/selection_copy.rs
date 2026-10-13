@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod adopt;
 mod identities;
+mod operation;
 mod report;
 use super::{
     Sketch2D, SketchEntityId, SketchError,
@@ -8,6 +9,7 @@ use super::{
 };
 use crate::identity::RecipeIdError;
 use identities::CopyIdentities;
+pub use operation::SketchCopyOperation;
 pub use report::{SketchCopyError, SketchCopyReport};
 use std::collections::BTreeSet;
 struct PreparedSelectionCopy {
@@ -24,8 +26,17 @@ impl Sketch2D {
         vector: [f64; 2],
         reserve: &mut impl FnMut() -> Result<SketchEntityId, RecipeIdError>,
     ) -> Result<SketchCopyReport, SketchCopyError> {
-        let plan =
-            PreparedSelectionCopy::new(self, entities, vector).map_err(SketchCopyError::Sketch)?;
+        self.copy_selected_entities(entities, SketchCopyOperation::Translate(vector), reserve)
+    }
+    /// Copy through one checked transform and identity path; example: `sketch.copy_selected_entities(&[arc], SketchCopyOperation::Mirror(line), &mut reserve)?;`.
+    pub fn copy_selected_entities(
+        &mut self,
+        entities: &[SketchEntityId],
+        operation: SketchCopyOperation,
+        reserve: &mut impl FnMut() -> Result<SketchEntityId, RecipeIdError>,
+    ) -> Result<SketchCopyReport, SketchCopyError> {
+        let plan = PreparedSelectionCopy::new(self, entities, operation)
+            .map_err(SketchCopyError::Sketch)?;
         let identities = CopyIdentities::reserve(self, &plan.sources, reserve)?;
         let mut candidate = self.clone();
         plan.append(&mut candidate, &identities)
@@ -39,11 +50,11 @@ impl PreparedSelectionCopy {
     fn new(
         source: &Sketch2D,
         entities: &[SketchEntityId],
-        vector: [f64; 2],
+        operation: SketchCopyOperation,
     ) -> Result<Self, SketchError> {
         let selected = copy_selection(source, entities)?;
         let mut prepared = source.clone();
-        let mut sources = prepared.translate_entities(&selected, vector)?;
+        let mut sources = prepared.transform_entities(&selected, operation.resolve(source)?)?;
         sources.extend(
             selected
                 .iter()

@@ -5,6 +5,7 @@ use super::{SketchError, geometry::require_position};
 pub enum SketchSelectionTransform {
     Move([f64; 2]),
     Rotate { center: [f64; 2], radians: f64 },
+    Reflect { start: [f64; 2], end: [f64; 2] },
 }
 impl SketchSelectionTransform {
     /// Name the history step; example: `SketchSelectionTransform::Move([1.0, 0.0]).label()`.
@@ -12,6 +13,7 @@ impl SketchSelectionTransform {
         match self {
             Self::Move(_) => "Move sketch entities",
             Self::Rotate { .. } => "Rotate sketch entities",
+            Self::Reflect { .. } => "Mirror sketch entities",
         }
     }
     pub(super) fn affine(self) -> Result<SelectionAffine, SketchError> {
@@ -24,6 +26,7 @@ impl SketchSelectionTransform {
                 })
             }
             Self::Rotate { center, radians } => SelectionAffine::rotation(center, radians),
+            Self::Reflect { start, end } => SelectionAffine::reflection(start, end),
         }
     }
 }
@@ -58,5 +61,26 @@ impl SelectionAffine {
         // #3770: preserve Go affine2.point arithmetic, including signed-zero behavior.
         let directed = self.direction(position);
         [directed[0] + self.offset[0], directed[1] + self.offset[1]]
+    }
+}
+
+impl SelectionAffine {
+    fn reflection(start: [f64; 2], end: [f64; 2]) -> Result<Self, SketchError> {
+        require_position(start)?;
+        require_position(end)?;
+        let first = [start[0], start[1], 0.0];
+        let last = [end[0], end[1], 0.0];
+        let direction = super::plane::point_difference(first, last);
+        let [x, y, _] = super::plane::normalize_direction(direction)?;
+        let matrix = [
+            [2.0 * x * x - 1.0, 2.0 * x * y],
+            [2.0 * x * y, 2.0 * y * y - 1.0],
+        ];
+        let offset = [
+            start[0] - (matrix[0][0] * start[0] + matrix[0][1] * start[1]),
+            start[1] - (matrix[1][0] * start[0] + matrix[1][1] * start[1]),
+        ];
+        require_position(offset)?;
+        Ok(Self { matrix, offset })
     }
 }

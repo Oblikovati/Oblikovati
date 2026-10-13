@@ -2,7 +2,7 @@
 use crate::{CommandError, DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    sketch::{SketchCopyError, SketchCopyReport, SketchEntityId},
+    sketch::{SketchCopyError, SketchCopyOperation, SketchCopyReport, SketchEntityId},
 };
 /// A complete geometry copy or a typed decline before publication.
 /// Example: `let reply: SketchCopyProjectionInput = Ok(report);`.
@@ -27,8 +27,28 @@ impl<O: TransactionObserver> DocumentSession<O> {
         vector: [f64; 2],
         project: impl FnOnce(SketchCopyProjectionInput) -> Result<R, E>,
     ) -> Result<R, CommandError<E>> {
-        self.run("Copy sketch entities", |snapshot, reservations| {
-            project(snapshot.copy_sketch_entities(sketch, entities, vector, reservations))
+        self.copy_selected_sketch_entities_projected(
+            sketch,
+            entities,
+            SketchCopyOperation::Translate(vector),
+            project,
+        )
+    }
+    /// Prepare a transformed copy response before publication; example: `session.copy_selected_sketch_entities_projected(sketch, &[arc], SketchCopyOperation::Mirror(line), |result| result)?;`.
+    pub fn copy_selected_sketch_entities_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        operation: SketchCopyOperation,
+        project: impl FnOnce(SketchCopyProjectionInput) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run(operation.label(), |snapshot, reservations| {
+            project(snapshot.copy_selected_sketch_entities(
+                sketch,
+                entities,
+                operation,
+                reservations,
+            ))
         })
     }
 }

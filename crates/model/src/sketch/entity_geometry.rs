@@ -61,11 +61,11 @@ impl OwnedSketchGeometry<'_> {
         self,
         transform: super::SketchSelectionTransform,
     ) -> Result<Vec<SketchEntityId>, SketchError> {
-        if matches!(transform, super::SketchSelectionTransform::Rotate { .. })
+        if !matches!(transform, super::SketchSelectionTransform::Move(_))
             && matches!(self, Self::OffsetSpline(_))
         {
             return Err(SketchError::Definition(format!(
-                "rotation entity {:?}: expected an independently owned curve; rotate the offset spline parent instead",
+                "rotation or reflection entity {:?}: expected an independently owned curve; transform the offset spline parent instead",
                 self.id()
             )));
         }

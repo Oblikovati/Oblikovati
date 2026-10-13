@@ -57,7 +57,7 @@ mod selection_copy;
 mod selection_transform;
 mod translation;
 pub use inspection::{SketchEntityInspection, SketchMovementOptions};
-pub use selection_copy::{SketchCopyError, SketchCopyReport};
+pub use selection_copy::{SketchCopyError, SketchCopyOperation, SketchCopyReport};
 pub use selection_transform::SketchSelectionTransform;
 mod grounded;
 mod line_residual;

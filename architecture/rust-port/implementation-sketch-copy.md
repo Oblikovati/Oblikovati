@@ -24,8 +24,9 @@ Repeated selections yield one copy per selected entity. This differs from Go's
 repeated curve copies and avoids duplicate standalone/shared point identities.
 Selecting an offset spline directly produces a named decline before reservation;
 Go's default branch silently skips this unsupported kind. Elliptical arcs,
-per-entity style tables, mirror, trim, split, extend, and interactive native copy
-remain separate work. This is not full transform-family or R3 acceptance.
+per-entity style tables, trim, split, extend, and interactive native copy
+remain separate work. Mirror is covered by the [mirror evidence](implementation-sketch-mirror.md).
+This is not full transform-family or R3 acceptance.
 
 The command recomputes current sources and supports response rejection, observer
 veto, grouped abort, undo/redo, storage, and reopen. Consumed IDs survive rejected

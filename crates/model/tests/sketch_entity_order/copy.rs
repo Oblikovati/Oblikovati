@@ -112,7 +112,7 @@ fn copy_source_with_roles() -> Sketch2D {
     sketch.add_constraint(SketchConstraintId(1), fixed).unwrap();
     sketch
 }
-fn assert_reload(sketch: &Sketch2D) {
+pub(super) fn assert_reload(sketch: &Sketch2D) {
     let encoded = serde_json::to_vec(&sketch.recipe()).unwrap();
     let recipe: SketchRecipe = serde_json::from_slice(&encoded).unwrap();
     assert!(sketch.same_recipe(&Sketch2D::from_recipe(&recipe).unwrap()));

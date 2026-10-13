@@ -99,7 +99,7 @@ fn invalid_batches_vectors_indices_and_unported_operations_preserve_owner_state(
     input.sketch_index = -1;
     assert_move_refused(&mut files, document, &mut source, &input, "ordered index");
     input.sketch_index = 0;
-    input.op = "mirror".into();
+    input.op = "trim".into();
     assert_move_refused(&mut files, document, &mut source, &input, "not ported");
 }
 #[test]
@@ -348,3 +348,5 @@ mod rotation;
 
 #[path = "copy.rs"]
 mod copy;
+#[path = "mirror.rs"]
+mod mirror;
