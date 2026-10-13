@@ -17,12 +17,12 @@ pub struct PlanarCurveFailure {
     cause: Option<Box<Failure>>,
 }
 impl PlanarCurveFailure {
-    pub(super) fn with_input(
-        mut self,
-        operand: &str,
-        input: &super::PlanarCurveDefinition,
-    ) -> Self {
-        self.message = format!("{operand} curve {input:?}: {}", self.message);
+    pub(super) fn with_input(self, operand: &str, input: &super::PlanarCurveDefinition) -> Self {
+        self.with_context(format!("{operand} curve {input:?}"))
+    }
+
+    pub(super) fn with_context(mut self, context: String) -> Self {
+        self.message = format!("{context}: {}", self.message);
         self
     }
 

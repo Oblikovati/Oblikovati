@@ -64,3 +64,7 @@ path = "tests/planar_curve_boundary.rs"
 [[test]]
 name = "sketch_curve_incidences"
 path = "tests/sketch_curve_incidences.rs"
+
+[[test]]
+name = "circumcircle"
+path = "tests/circumcircle.rs"

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Application-owned analytic inputs; no mutable kernel handle escapes a call.
 use crate::PlanarSplineDefinition;
+mod circumcircle;
 mod construct;
+pub use circumcircle::{CircumcircleOptions, PlanarCircumcircle, construct_planar_circumcircle};
 mod failure;
 mod report;
 /// Owned sketch curve conversion and native incidence queries.
