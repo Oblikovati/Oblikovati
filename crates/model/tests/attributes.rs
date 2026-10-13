@@ -20,7 +20,7 @@ fn equivalent_envelopes_share_identity_and_malformed_keys_are_rejected() {
     assert_ne!(target(5), target(6));
     assert!(AttributeTarget::from_encoded(&[]).is_err());
     let mut unknown = original.encoded().to_vec();
-    unknown[4] = 2;
+    unknown[4] = 3;
     assert!(AttributeTarget::from_encoded(&unknown).is_err());
     unknown[4] = 1;
     unknown.push(0);
@@ -216,4 +216,22 @@ fn invalid_edits_are_rejected_before_creating_an_anchor_or_changing_a_value() {
             .is_err()
     );
     assert!(attributes.same_recipe(&before));
+}
+
+#[test]
+fn semantic_attribute_targets_preserve_their_scheme_and_do_not_alias_go_keys() {
+    use oblikovati_model::identity::SemanticReferenceName;
+    let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let encoded = SemanticReferenceName::new(guid, 1, 1, "sketch-prism", "start", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let semantic = AttributeTarget::from_encoded(&encoded).unwrap();
+    assert_eq!(semantic.encoded(), encoded);
+    let mut go_meaning = encoded;
+    go_meaning[4] = 1;
+    assert_ne!(
+        semantic,
+        AttributeTarget::from_encoded(&go_meaning).unwrap()
+    );
 }

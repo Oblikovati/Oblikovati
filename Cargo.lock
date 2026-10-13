@@ -638,6 +638,7 @@ version = "0.1.0"
 dependencies = [
  "oblikovati-api",
  "oblikovati-model",
+ "oblikovati-persistence",
  "oblikovati-session",
  "rustycad-tkbo",
  "rustycad-tkbrep",

@@ -7,7 +7,9 @@ use uuid::Uuid;
 
 mod allocation;
 mod bindings;
+mod semantic;
 pub use bindings::ExactReferenceBindings;
+pub use semantic::SemanticReferenceName;
 mod envelope;
 mod file;
 mod record;

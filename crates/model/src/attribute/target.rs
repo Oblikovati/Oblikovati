@@ -10,7 +10,8 @@ impl AttributeTarget {
     /// Normalize an encoded reference envelope, retaining context, kind, and payload.
     /// Example: `let target = AttributeTarget::from_encoded(&[0; 16])?;`.
     pub fn from_encoded(encoded: &[u8]) -> Result<Self, ReferenceEnvelopeError> {
-        // Go RefKey.Encode writes the current envelope regardless of decoded scheme (#1157).
+        // Go RefKey.Encode canonicalizes legacy Go schemes to scheme 1 (#1157).
+        // Rust semantic names retain scheme 2 so they cannot alias Go lineage (ADR-0021).
         ReferenceEnvelope::decode(encoded)?
             .encode_current()
             .map(Self)

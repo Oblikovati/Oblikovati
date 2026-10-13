@@ -97,7 +97,7 @@ fn require_single_role(
         "prism face {index} history count={parents}: expected exactly one construction role"
     ))
 }
-fn face_report(role: PrismFaceRole, shape: &Shape) -> Result<PrismFaceProbe, String> {
+pub(super) fn face_report(role: PrismFaceRole, shape: &Shape) -> Result<PrismFaceProbe, String> {
     let mut properties = GProps::new();
     BRepGProp::surface_properties(shape, &mut properties, false, false)
         .map_err(|error| format!("prism face {role:?}: expected analytic area: {error}"))?;

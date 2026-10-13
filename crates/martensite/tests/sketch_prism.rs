@@ -86,3 +86,5 @@ fn assert_source_roles(report: &oblikovati_martensite::PrismProbeReport) {
         );
     }
 }
+#[path = "sketch_prism/named.rs"]
+mod named;

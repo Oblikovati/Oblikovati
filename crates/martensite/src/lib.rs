@@ -104,9 +104,9 @@ pub use planar_spline::{PlanarSplineDefinition, PlanarSplineSample, evaluate_pla
 
 mod prism;
 pub use prism::{
-    PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismMeshOptions, PrismPresentation,
-    PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, probe_planar_prism,
-    retain_planar_prism, retain_prism_on_plane,
+    NamedPrismSnapshot, PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismMeshOptions,
+    PrismPresentation, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot,
+    probe_planar_prism, retain_named_sketch_prism, retain_planar_prism, retain_prism_on_plane,
 };
 mod sketch_prism;
 mod stored_prism;

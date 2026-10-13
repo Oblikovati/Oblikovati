@@ -179,7 +179,7 @@ fn malformed_and_unknown_kind_keys_never_enter_or_bind() {
     let owner = history();
     let index = bindings(&owner);
     let mut unknown_scheme = key(2, 1, b"cap");
-    unknown_scheme[4] = 2;
+    unknown_scheme[4] = 3;
     for invalid in [
         vec![],
         key(2, 0, b"cap"),
@@ -311,4 +311,36 @@ fn admission_checks_generation_again_after_consuming_the_producer() {
         .err()
         .unwrap();
     assert!(refusal.contains("unchanged owner"));
+}
+
+#[test]
+fn semantic_names_enforce_document_and_never_alias_legacy_meanings() {
+    use oblikovati_model::identity::SemanticReferenceName;
+    let owner = history();
+    let semantic = SemanticReferenceName::new(document(), 2, 1, "prism", "start", &[1])
+        .unwrap()
+        .encode()
+        .unwrap();
+    let index = ExactReferenceBindings::from_entries(
+        document(),
+        owner.evaluation_snapshot().scope().clone(),
+        [(semantic.clone(), ())],
+    )
+    .unwrap();
+    assert_eq!(index.bind(&owner, document(), &semantic, 1), Ok(&()));
+    let mut legacy = semantic.clone();
+    legacy[4] = 1;
+    assert!(index.bind(&owner, document(), &legacy, 1).is_err());
+    let other_doc = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee".parse().unwrap();
+    assert!(
+        ExactReferenceBindings::from_entries(
+            other_doc,
+            owner.evaluation_snapshot().scope().clone(),
+            [(semantic, ())]
+        )
+        .is_err()
+    );
+    let mut malformed = key(2, 1, b"not a semantic payload");
+    malformed[4] = 2;
+    assert!(index.bind(&owner, document(), &malformed, 1).is_err());
 }

@@ -25,6 +25,9 @@ occurrences can refer to the same component while keeping distinct identities.
 **Reference key**: A persistent name for a model entity in its document and,
 where required, occurrence context. It identifies the entity across recompute.
 
+**Construction role**: An entity’s stable function in the operation that created
+it, such as a sweep start face, end face, or side from a particular profile edge.
+
 **Provenance**: The generating, modifying, and deleting relationships between
 an operation's input and output entities.
 

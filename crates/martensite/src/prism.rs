@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod input;
+mod named;
+pub use named::{NamedPrismSnapshot, retain_named_sketch_prism};
 mod mesh;
 mod placement;
 mod profile;

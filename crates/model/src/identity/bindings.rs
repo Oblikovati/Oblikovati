@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DocumentGuid, ReferenceEnvelope};
+use super::{DocumentGuid, ReferenceEnvelope, ReferenceScheme, SemanticReferenceName};
 use crate::history::{DocumentEditHistory, EvaluationScope};
 use std::collections::{BTreeMap, btree_map::Entry};
 
@@ -20,7 +20,7 @@ impl<Entity> ExactReferenceBindings<Entity> {
         require_live_scope(&scope)?;
         let mut indexed = BTreeMap::new();
         for (encoded, entity) in entries {
-            insert_exact_entry(&mut indexed, &encoded, entity)?;
+            insert_exact_entry(&mut indexed, document, &encoded, entity)?;
         }
         require_live_scope(&scope)?;
         Ok(Self {
@@ -47,7 +47,7 @@ impl<Entity> ExactReferenceBindings<Entity> {
         expected_kind: u32,
     ) -> Result<&'a Entity, String> {
         self.require_owner(history, document)?;
-        let envelope = decoded_binding_key(encoded)?;
+        let envelope = decoded_binding_key(encoded, document)?;
         if envelope.kind != expected_kind {
             return Err(format!(
                 "reference kind {}: expected {expected_kind}",
@@ -100,7 +100,10 @@ fn require_live_scope(scope: &EvaluationScope) -> Result<(), String> {
     }
     Ok(())
 }
-fn decoded_binding_key(encoded: &[u8]) -> Result<ReferenceEnvelope<'_>, String> {
+fn decoded_binding_key(
+    encoded: &[u8],
+    document: DocumentGuid,
+) -> Result<ReferenceEnvelope<'_>, String> {
     let envelope = ReferenceEnvelope::decode(encoded).map_err(|cause| cause.to_string())?;
     // #3563: these persisted values are Go model/identity kinds, not kernel/topo kinds.
     if !matches!(envelope.kind, 1..=4 | 10 | 11 | 20 | 21) {
@@ -109,14 +112,27 @@ fn decoded_binding_key(encoded: &[u8]) -> Result<ReferenceEnvelope<'_>, String> 
             envelope.kind
         ));
     }
+    if envelope.scheme == ReferenceScheme::Semantic {
+        require_semantic_document(encoded, document)?;
+    }
     Ok(envelope)
+}
+fn require_semantic_document(encoded: &[u8], expected: DocumentGuid) -> Result<(), String> {
+    let actual = SemanticReferenceName::decode(encoded)?.document();
+    if actual != expected {
+        return Err(format!(
+            "semantic reference document {actual}: expected {expected}"
+        ));
+    }
+    Ok(())
 }
 fn insert_exact_entry<Entity>(
     entries: &mut BTreeMap<Vec<u8>, Entity>,
+    document: DocumentGuid,
     encoded: &[u8],
     entity: Entity,
 ) -> Result<(), String> {
-    let envelope = decoded_binding_key(encoded)?;
+    let envelope = decoded_binding_key(encoded, document)?;
     let canonical = envelope
         .encode_current()
         .map_err(|cause| cause.to_string())?;

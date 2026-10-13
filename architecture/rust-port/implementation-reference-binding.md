@@ -8,10 +8,10 @@ entity kind, and opaque lineage payload. This is distinct from raw Go
 The model can now admit an immutable exact-name index for a document evaluation.
 A producer supplies encoded keys and owned entities together. Admission uses the
 existing envelope codec, retains supported Go entity kinds, and refuses duplicate
-names. Legacy and current envelopes normalize to the same identity, as Go
-`RefKey.Equal` requires. Binary payload bytes are not interpreted or converted to
-text. Name enumeration has explicit byte order and is independent of producer
-order. No new lineage encoding, namespace convention, or key scheme is introduced.
+names. Legacy and scheme-1 envelopes normalize to the same identity, as Go
+`RefKey.Equal` requires. Legacy payload bytes are not interpreted or converted to text. Name enumeration has explicit byte order and is independent of producer
+order. Scheme-2 semantic names retain their version and validate their document namespace;
+see [verified prism names](implementation-named-prism.md).
 
 Binding requires the requested document, the exact owning history, its current
 evaluation generation, the requested entity kind, and an exact encoded identity.
@@ -36,8 +36,9 @@ never retries a failed current envelope as legacy.
 
 This index does not generate or certify lineage. Producers must supply names
 from verified operation history and stable feature namespaces, and preserve
-occurrence context. Native topology publication, raw Go topology-key migration,
-write-time verification against actual kernel entities, split/merge provenance,
-and body/face assignment API integration remain open. The current tests bind
-named model values; they do not prove CAD face persistence across recompute.
+occurrence context. The [native prism adapter](implementation-named-prism.md) now verifies body/face
+names against retained construction history and tests persistence across recompute.
+General topology publication, raw Go topology-key migration, split/merge provenance,
+and body/face assignment API integration remain open. The index tests alone bind
+model values; native persistence evidence belongs to the adapter tests.
 Run `cargo test -p oblikovati-model --test reference_bindings` and `make gate`.

@@ -66,7 +66,7 @@ fn unknown_schemes_are_not_reinterpreted_as_legacy() {
         payload: &[],
     };
     let mut encoded = envelope.encode_current().unwrap();
-    for scheme in [0, 2, 127, 255] {
+    for scheme in [0, 3, 127, 255] {
         encoded[4] = scheme;
         assert_eq!(
             ReferenceEnvelope::decode(&encoded),

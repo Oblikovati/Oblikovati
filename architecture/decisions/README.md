@@ -116,6 +116,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0013](ADR-0013-packaging-and-release.md) | Packages, updates, release transition | R9 |
 | [ADR-0020](ADR-0020-documents-and-storage.md) | Documents, storage, schema-3 links and occurrence assets; supersedes ADR-0014 | R2/R3/R6/R8 |
 | [ADR-0018](ADR-0018-exchange-format-ownership.md) | Kernel-owned exchange formats and application workflows | K10/R8 |
+| [ADR-0021](ADR-0021-semantic-topology-reference-keys.md) | Semantic topology names and scheme-2 identity | R1/R3/R5 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

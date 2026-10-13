@@ -115,7 +115,7 @@ yet establish an application-wide allocation or undo integration gate.
 ## Reference envelope codec — partial R2
 
 Tracking: [#3589](https://github.com/Oblikovati/Oblikovati/issues/3589).
-`ReferenceEnvelope` reads the legacy 16-byte header and scheme-1 `OKRK`
+`ReferenceEnvelope` reads the legacy 16-byte header and scheme-1/2 `OKRK`
 21-byte header. Context (`u64`), entity kind (`u32`), and payload length (`u32`)
 are little-endian. Payload bytes are borrowed without interpretation or copying.
 The decoder requires the declared length to equal all remaining bytes. It
@@ -123,7 +123,9 @@ rejects short headers, trailing bytes, and unsupported schemes before binding.
 Unknown entity-kind numbers remain opaque, as in Go; decoding is not permission
 to resolve an unsupported entity.
 
-Encoding writes scheme 1 and preserves the identity triple exactly. It checks
+Encoding upgrades legacy input to scheme 1, preserves scheme 2, and retains the
+identity triple exactly. [ADR-0021](../decisions/ADR-0021-semantic-topology-reference-keys.md)
+defines the separate scheme-2 semantic payload. It checks
 the payload width and the allocation limit before constructing the envelope.
 This upgrades the container only; it cannot migrate Go lineage meaning into
 Martensite. That requires the explicit semantic mapping in ADR-0005.
@@ -141,8 +143,10 @@ both decoded schemes and exact re-encoded bytes, every truncation of a sample,
 extra bytes, false lengths, unknown schemes, and the magic/context collision.
 An allocation-size unit test uses lengths without allocating huge buffers.
 [Exact reference binding](implementation-reference-binding.md) now covers
-supported-kind admission and current-history lookup. Native provenance, topology
-publication, and malformed package import remain separate integration gates.
+supported-kind admission and current-history lookup. The
+[named prism adapter](implementation-named-prism.md) verifies construction provenance
+for prism body and face names. General topology publication and malformed package
+import remain separate integration gates.
 
 ## Open-document identity index — partial R2
 

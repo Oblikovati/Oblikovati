@@ -11,6 +11,8 @@ const CURRENT_HEADER: usize = 21;
 pub enum ReferenceScheme {
     Legacy,
     Current,
+    /// Rust semantic topology payload, distinct from Go lineage.
+    Semantic,
 }
 
 /// Borrowed identity bytes. Decoding does not prove that a reference can bind.
@@ -46,10 +48,12 @@ impl<'payload> ReferenceEnvelope<'payload> {
             return Self::decode_legacy(encoded);
         }
         require_header(encoded, CURRENT_HEADER)?;
-        if encoded[4] != 1 {
-            return Err(ReferenceEnvelopeError::UnsupportedScheme(encoded[4]));
-        }
-        decode_triple(&encoded[5..], ReferenceScheme::Current)
+        let scheme = match encoded[4] {
+            1 => ReferenceScheme::Current,
+            2 => ReferenceScheme::Semantic,
+            other => return Err(ReferenceEnvelopeError::UnsupportedScheme(other)),
+        };
+        decode_triple(&encoded[5..], scheme)
     }
 
     /// Decode bytes known by the storage owner to use the unversioned format.
@@ -65,7 +69,7 @@ impl<'payload> ReferenceEnvelope<'payload> {
         decode_triple(encoded, ReferenceScheme::Legacy)
     }
 
-    /// Encode scheme 1 while preserving the context, kind, and payload verbatim.
+    /// Upgrade legacy to scheme 1; preserve scheme 2 and every identity byte.
     /// This upgrades only the envelope, not a kernel's naming semantics.
     ///
     /// ```
@@ -79,7 +83,11 @@ impl<'payload> ReferenceEnvelope<'payload> {
         let length = encoded_payload_length(self.payload.len())?;
         let mut encoded = Vec::with_capacity(CURRENT_HEADER + self.payload.len());
         encoded.extend_from_slice(MAGIC);
-        encoded.push(1);
+        encoded.push(if self.scheme == ReferenceScheme::Semantic {
+            2
+        } else {
+            1
+        });
         encoded.extend_from_slice(&self.context.to_le_bytes());
         encoded.extend_from_slice(&self.kind.to_le_bytes());
         encoded.extend_from_slice(&length.to_le_bytes());
@@ -136,7 +144,10 @@ impl fmt::Display for ReferenceEnvelopeError {
                 "reference header has {actual} bytes: expected at least {expected}"
             ),
             Self::UnsupportedScheme(scheme) => {
-                write!(formatter, "reference scheme {scheme}: expected scheme 1")
+                write!(
+                    formatter,
+                    "reference scheme {scheme}: expected scheme 1 or 2"
+                )
             }
             Self::PayloadLength { declared, actual } => write!(
                 formatter,
