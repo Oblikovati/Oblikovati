@@ -151,3 +151,6 @@ pub use sketch_dimension_delete::SketchDimensionDeleteProjectionInput;
 
 mod sketch_split;
 pub use sketch_split::SketchSplitProjectionInput;
+
+mod sketch_polyline;
+pub use sketch_polyline::SketchPolylineProjectionInput;

@@ -94,7 +94,7 @@ fn primitive_identity(
     }
     reserve_created(reservations, created)
 }
-fn append_point(
+pub(super) fn append_point(
     geometry: &mut Sketch2D,
     point: SketchPointInput,
     reservations: &mut RecipeReservations<'_>,

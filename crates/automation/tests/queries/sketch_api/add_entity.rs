@@ -428,3 +428,5 @@ mod deletion_attributes;
 mod ellipse;
 #[path = "add_entity/point_ownership.rs"]
 mod point_ownership;
+#[path = "add_entity/polyline.rs"]
+mod polyline;

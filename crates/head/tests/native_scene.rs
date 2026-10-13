@@ -299,5 +299,7 @@ fn rotate_native_profile(owner: &mut NativeDesktopOwner) {
 }
 #[path = "native_scene/copy.rs"]
 mod copy_tests;
+#[path = "native_scene/polyline.rs"]
+mod polyline_tests;
 #[path = "native_scene/split.rs"]
 mod split_tests;

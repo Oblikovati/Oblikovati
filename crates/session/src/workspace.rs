@@ -331,3 +331,5 @@ mod tests {
 }
 
 mod sketch_split;
+
+mod sketch_polyline;

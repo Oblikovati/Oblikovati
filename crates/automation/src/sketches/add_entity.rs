@@ -3,6 +3,7 @@ use super::*;
 use oblikovati_session::SketchPrimitiveProjectionInput;
 mod inputs;
 mod line_reply;
+mod polyline_reply;
 use inputs::PreparedEntity;
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -29,6 +30,9 @@ fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
             .create_sketch_primitive_projected(sketch, &input, |result| {
                 creation_reply(result, kind)
             })
+            .map_err(api_error),
+        PreparedEntity::Polyline(input) => commands
+            .create_sketch_polyline_projected(sketch, &input, polyline_reply::encode_created)
             .map_err(api_error),
         PreparedEntity::InferredLine(input) => commands
             .create_inferred_sketch_line_projected(sketch, &input, line_reply::encode_created)
