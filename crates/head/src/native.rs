@@ -225,3 +225,5 @@ mod history_tests;
 #[allow(unsafe_code)]
 #[path = "../tests/native_services.rs"]
 mod addin_services_tests;
+
+mod projection;

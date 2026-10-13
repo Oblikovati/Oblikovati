@@ -481,3 +481,6 @@ fn fixed_offscreen_zoom_has_the_expected_world_anchor_displacement() {
 
 #[path = "overlay_recorded.rs"]
 mod overlay_tests;
+
+#[path = "projection_resize.rs"]
+mod projection_resize_tests;

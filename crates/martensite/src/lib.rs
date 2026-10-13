@@ -111,3 +111,6 @@ pub use analytic_body::AnalyticBodyProperties;
 
 /// Immutable analytic curve inputs and checked intersection reports.
 pub mod planar_curve;
+
+mod sketch_projection;
+pub use sketch_projection::sketch_projection;

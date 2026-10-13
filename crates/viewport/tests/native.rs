@@ -107,3 +107,6 @@ fn verify_title_metadata(view: &mut Viewport) {
     assert!(view.set_title("").is_err());
     assert!(view.set_title("invalid\0title").is_err());
 }
+
+#[path = "native/projection.rs"]
+mod projection;

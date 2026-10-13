@@ -311,3 +311,6 @@ mod slot_tests;
 mod split_tests;
 #[path = "native_scene/three_point.rs"]
 mod three_point_tests;
+
+#[path = "native_scene/projection.rs"]
+mod projection_tests;

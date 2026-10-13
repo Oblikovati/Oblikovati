@@ -68,3 +68,7 @@ path = "tests/sketch_curve_incidences.rs"
 [[test]]
 name = "circumcircle"
 path = "tests/circumcircle.rs"
+
+[[test]]
+name = "sketch_projection"
+path = "tests/sketch_projection.rs"
