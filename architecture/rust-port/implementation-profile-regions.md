@@ -276,3 +276,31 @@ split naming remain required under issue #10. The application still pins
 released Martensite v0.2.1; production profiles and extrusion are unchanged.
 This application record passes `make docs-lint`; runtime checks above cover the
 kernel change.
+
+## Exact directed Bézier contacts, 2026-10-13
+
+Martensite local main commit `6b0c27bd9` connects exact curve projection to
+algebraic-root signs under ADR 0008. The ray query retains every isolated
+supporting-line contact and classifies it behind, at, or ahead of the origin.
+It certifies the sign of the exact longitudinal numerator times the regular
+denominator. Brackets, multiplicities, and shared subdivision counts remain
+unchanged. Supporting-line coincidence is a named decline; isolated roots do
+not represent continuous overlaps. Denominator failures retain precedence.
+
+The independent corpus retains 16 curves, 36 exact root-isolation results, and
+79 algebraic comparisons establishing 18 contact sides. It includes common
+irrational roots and adjacent binary64 origin offsets where a bracket midpoint
+gives the wrong side. Six ordinary cases match native OCCT 8.0.0 sides; the
+previous native parameter receipts reproduce byte-for-byte. Generated tests
+cover every finite binary64 exponent field, weight sign, direction reversal,
+cancellation, and source/result ownership. The full TKMath suite passes 2,857
+tests with none skipped. The two new ray modules have 100% line coverage;
+predicate duplication is 0%. Clippy, strict Rustdoc, formatting, documentation,
+and SPDX checks pass. Kernel `docs/exact-bezier-rays.md` records the commands,
+limits, and measured costs. This application record passes `make docs-lint`.
+
+Overlap intervals, wire endpoint ownership, winding, full region validation,
+achieved tolerances, source history, and persistent split naming remain under
+issue #10. The application still pins released Martensite v0.2.1; this local
+kernel increment does not change production profiles or extrusion. The runtime
+evidence above covers the kernel, not a new application live test.
