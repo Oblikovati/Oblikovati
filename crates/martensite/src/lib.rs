@@ -4,7 +4,7 @@
 //! Diagnostic snapshots retain isolated geometry; full evaluation and provenance remain open.
 use rustycad_tkbrep::topods::Shape;
 use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
-use rustycad_tktopalgo::brep_check::BRepCheckAnalyzer;
+mod checked_shape;
 
 /// Analytic values from a release probe, in the supplied working units.
 #[derive(Clone, Debug, PartialEq)]
@@ -48,13 +48,7 @@ fn require_valid_probe(shape: &Shape, extents: [f64; 3]) -> Result<(), String> {
     require_geometric_shape(shape, &format!("probe extents {extents:?}"))
 }
 fn require_geometric_shape(shape: &Shape, context: &str) -> Result<(), String> {
-    let valid = BRepCheckAnalyzer::new(shape, true, false, true)
-        .and_then(|checker| checker.is_valid())
-        .map_err(|error| format!("{context}: expected geometric validity: {error}"))?;
-    if !valid {
-        return Err(format!("{context}: expected a geometrically valid B-rep"));
-    }
-    Ok(())
+    checked_shape::require_geometry(shape, context).map_err(|cause| cause.to_string())
 }
 
 fn analytic_probe_properties(
@@ -92,6 +86,10 @@ mod validity_errors;
 mod planar_spline;
 pub use planar_spline::{PlanarSplineDefinition, PlanarSplineSample, evaluate_planar_spline};
 
+mod evaluation_failure;
+pub use evaluation_failure::{
+    EvaluationEntity, EvaluationFailure, EvaluationFailureKind, EvaluationPhase,
+};
 mod prism;
 pub use prism::{
     NamedPrismEvaluator, NamedPrismSnapshot, PrismFaceMesh, PrismFaceProbe, PrismFaceRole,

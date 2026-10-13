@@ -19,7 +19,7 @@ impl<'a> NamedPrismEvaluator<'a> {
 }
 impl SketchPrismEvaluator for NamedPrismEvaluator<'_> {
     type Body = NamedPrismSnapshot;
-    type Failure = String;
+    type Failure = EvaluationFailure;
     fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String> {
         body.body_report(self.history, self.document, key)
             .map(|_| ())
@@ -28,11 +28,42 @@ impl SketchPrismEvaluator for NamedPrismEvaluator<'_> {
         &mut self,
         feature: FeatureId,
         input: ResolvedSketchPrism<'_>,
-    ) -> Result<Self::Body, String> {
-        let sketch = input.sketch.sketch.id().0;
-        let snapshot = crate::retain_resolved_sketch_prism(input)?;
-        let named = attach_names(snapshot, self.document, feature, sketch, self.scope.clone())?;
-        named.verify_written_names(self.history, self.document, feature, sketch)?;
+    ) -> Result<Self::Body, EvaluationFailure> {
+        self.evaluate_named(feature, input)
+            .map_err(|cause| cause.for_feature(feature))
+    }
+}
+impl NamedPrismEvaluator<'_> {
+    fn evaluate_named(
+        &self,
+        feature: FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<NamedPrismSnapshot, EvaluationFailure> {
+        let sketch = input.sketch.sketch.id();
+        let snapshot = crate::sketch_prism::evaluate_resolved_prism(input)?;
+        let named = attach_names(
+            snapshot,
+            self.document,
+            feature,
+            sketch.0,
+            self.scope.clone(),
+        )
+        .map_err(|message| naming_decline(sketch, message))?;
+        named
+            .verify_written_names(self.history, self.document, feature, sketch.0)
+            .map_err(|message| naming_decline(sketch, message))?;
         Ok(named)
     }
 }
+fn naming_decline(
+    sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    message: String,
+) -> EvaluationFailure {
+    Phase::Naming
+        .refused(Kind::InvalidReference, Entity::Body, message)
+        .with_sketch_identity(sketch)
+}
+
+#[cfg(test)]
+#[path = "../../../tests/unit/named_evaluation_failure.rs"]
+mod tests;

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod boundary;
-use crate::{PrismProbeDefinition, PrismProbeSnapshot, retain_prism_on_plane};
+use crate::{
+    EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
+    EvaluationPhase as Phase, PrismProbeDefinition, PrismProbeSnapshot,
+};
 pub use oblikovati_model::feature::sketch_prism::{SketchDirectedLine, SketchPrismSelection};
 use oblikovati_model::feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength};
 use oblikovati_model::{document_sketch::DocumentSketchId, history::DocumentSnapshot};
@@ -36,22 +39,29 @@ pub fn retain_sketch_prism_definition(
 pub fn retain_resolved_sketch_prism(
     resolved: oblikovati_model::feature::sketch_prism::ResolvedSketchPrism<'_>,
 ) -> Result<PrismProbeSnapshot, String> {
+    evaluate_resolved_prism(resolved).map_err(|cause| cause.to_string())
+}
+/// Preserve source context through the sole native construction path; example: `evaluate_resolved_prism(resolved)?`.
+pub(crate) fn evaluate_resolved_prism(
+    resolved: oblikovati_model::feature::sketch_prism::ResolvedSketchPrism<'_>,
+) -> Result<PrismProbeSnapshot, EvaluationFailure> {
     let sketch_id = resolved.sketch.sketch.id();
     let native = selected_definition(
         resolved.sketch.sketch.geometry(),
         resolved.selection,
         resolved.displacement,
     )
-    .map_err(|error| format!("document sketch {:?}: {error}", sketch_id))?;
-    retain_prism_on_plane(&native, resolved.sketch.plane)
-        .map_err(|error| format!("document sketch {:?} prism: {error}", sketch_id))
+    .map_err(|error| error.for_sketch(sketch_id, format!("document sketch {:?}", sketch_id)))?;
+    crate::prism::build_prism(&native, resolved.sketch.plane).map_err(|error| {
+        error.for_sketch(sketch_id, format!("document sketch {:?} prism", sketch_id))
+    })
 }
 
 fn selected_definition(
     geometry: &oblikovati_model::sketch::Sketch2D,
     selection: &SketchPrismSelection,
     displacement: [f64; 3],
-) -> Result<PrismProbeDefinition, String> {
+) -> Result<PrismProbeDefinition, EvaluationFailure> {
     let outer = boundary::selected_loop(geometry, &selection.outer)?;
     let holes = selection
         .holes
@@ -71,13 +81,13 @@ fn selected_definition(
 /// use oblikovati_martensite::PrismProbeSnapshot;
 /// use oblikovati_session::part_evaluation::CompletedPartEvaluation;
 /// fn require_send<T: Send>() {}
-/// require_send::<CompletedPartEvaluation<PrismProbeSnapshot, String>>();
+/// require_send::<CompletedPartEvaluation<PrismProbeSnapshot, oblikovati_martensite::EvaluationFailure>>();
 /// ```
 #[derive(Default)]
 pub struct MartensitePrismEvaluator;
 impl oblikovati_model::feature::part::SketchPrismEvaluator for MartensitePrismEvaluator {
     type Body = PrismProbeSnapshot;
-    type Failure = String;
+    type Failure = EvaluationFailure;
     fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
         Err(format!(
             "diagnostic prism reference {key:?}: expected a document-scoped NamedPrismEvaluator for body-set edits"
@@ -85,9 +95,9 @@ impl oblikovati_model::feature::part::SketchPrismEvaluator for MartensitePrismEv
     }
     fn evaluate_prism(
         &mut self,
-        _feature: oblikovati_model::feature::FeatureId,
+        feature: oblikovati_model::feature::FeatureId,
         input: oblikovati_model::feature::sketch_prism::ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure> {
-        retain_resolved_sketch_prism(input)
+        evaluate_resolved_prism(input).map_err(|cause| cause.for_feature(feature))
     }
 }

@@ -15,11 +15,7 @@ pub struct AnalyticBodyProperties {
     pub principal_axes: [[f64; 3]; 3],
 }
 pub(crate) fn volume_integrals(shape: &Shape, context: &str) -> Result<GProps, String> {
-    let mut properties = GProps::new();
-    // Analytic integration explicitly disables the kernel's triangulation path.
-    BRepGProp::volume_properties(shape, &mut properties, true, false, false)
-        .map_err(|error| format!("{context}: expected analytic properties: {error}"))?;
-    Ok(properties)
+    crate::checked_shape::volume_properties(shape, context).map_err(|cause| cause.to_string())
 }
 pub(crate) fn geometry_integrals(
     properties: &GProps,

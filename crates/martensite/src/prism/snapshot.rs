@@ -25,35 +25,53 @@ pub fn retain_prism_on_plane(
     definition: &PrismProbeDefinition,
     plane: SketchPlane,
 ) -> Result<PrismProbeSnapshot, String> {
-    build_prism(definition, plane)
+    build_prism(definition, plane).map_err(|cause| cause.to_string())
 }
 pub(super) fn copied_prism(
     shape: &Shape,
     lineage: &[(PrismFaceRole, Shape)],
-) -> Result<(Shape, Vec<(PrismFaceRole, Shape)>), String> {
-    let mut copier = crate::snapshot::copied_kernel_shape(shape, "prism copy")?;
-    let copied = copier.shape().map_err(|error| error.to_string())?.clone();
+) -> Result<(Shape, Vec<(PrismFaceRole, Shape)>), EvaluationFailure> {
+    let mut copier = crate::checked_shape::copy_shape(shape, "prism copy")?;
+    let copied = copier
+        .shape()
+        .map_err(|error| Phase::Copy.native(Entity::Body, String::new(), error))?
+        .clone();
     let mut faces = Vec::new();
     for (role, source) in lineage {
-        let mapped = copier
-            .modified(source)
-            .map_err(|error| format!("prism {role:?}: expected copy history: {error}"))?;
-        if mapped.len() != 1 {
-            return Err(format!(
-                "prism {role:?} copied {} shapes: expected one preserved role",
-                mapped.len()
-            ));
-        }
-        faces.push((*role, mapped.first().expect("one copy").clone()));
+        faces.push((*role, copied_role(&mut copier, *role, source)?));
     }
-    crate::require_geometric_shape(&copied, "copied prism")?;
+    crate::checked_shape::require_geometry(&copied, "copied prism")?;
     report::checked_report(&copied, &faces)?;
     Ok((copied, faces))
+}
+fn copied_role(
+    copier: &mut rustycad_tktopalgo::brep_builder_api::BRepBuilderAPICopy,
+    role: PrismFaceRole,
+    source: &Shape,
+) -> Result<Shape, EvaluationFailure> {
+    let mapped = copier.modified(source).map_err(|cause| {
+        Phase::Copy.native(
+            Entity::Face(role),
+            format!("prism {role:?}: expected copy history"),
+            cause,
+        )
+    })?;
+    if mapped.len() != 1 {
+        return Err(Phase::Copy.refused(
+            Kind::IncompleteHistory,
+            Entity::Face(role),
+            format!(
+                "prism {role:?} copied {} shapes: expected one preserved role",
+                mapped.len()
+            ),
+        ));
+    }
+    Ok(mapped.first().expect("one copy").clone())
 }
 pub(super) fn capture_prism(
     shape: &Shape,
     lineage: &[(PrismFaceRole, Shape)],
-) -> Result<PrismProbeSnapshot, String> {
+) -> Result<PrismProbeSnapshot, EvaluationFailure> {
     let (shape, faces) = copied_prism(shape, lineage)?;
     let report = report::checked_report(&shape, &faces)?;
     Ok(PrismProbeSnapshot {
@@ -70,7 +88,7 @@ impl PrismProbeSnapshot {
     }
     /// Copy geometry and role lineage together; example: `snapshot.detached()?`.
     pub fn detached(&self) -> Result<Self, String> {
-        capture_prism(&self.shape, &self.faces)
+        capture_prism(&self.shape, &self.faces).map_err(|cause| cause.to_string())
     }
     /// Derive presentation from a detached B-rep copy; example: `snapshot.presentation(options)?`.
     pub fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String> {

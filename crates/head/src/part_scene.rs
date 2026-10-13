@@ -14,7 +14,8 @@ use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
 pub struct HeadSceneStatus {
     pub source: Option<(u64, u64)>,
     pub visible_bodies: usize,
-    pub health: Vec<FeatureHealthRecord<PartFeatureFailure<String>>>,
+    pub health:
+        Vec<FeatureHealthRecord<PartFeatureFailure<oblikovati_martensite::EvaluationFailure>>>,
     pub presentation_declines: Vec<PartPresentationDecline>,
 }
 impl HeadSceneStatus {
@@ -52,7 +53,7 @@ pub struct HeadSceneUpdate {
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
     source: Option<(u64, u64, u64)>,
-    slot: PartEvaluationSlot<NamedPrismSnapshot, String>,
+    slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
     pub fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -117,7 +118,10 @@ impl DesktopPartScenes {
         &'a self,
         session: &'a oblikovati_session::DocumentSession<O>,
     ) -> Result<
-        &'a oblikovati_model::feature::part::PartFeatureEvaluation<NamedPrismSnapshot, String>,
+        &'a oblikovati_model::feature::part::PartFeatureEvaluation<
+            NamedPrismSnapshot,
+            oblikovati_martensite::EvaluationFailure,
+        >,
         String,
     > {
         self.slot
@@ -169,7 +173,10 @@ fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: Docu
     files: &FileWorkspace<O, W, F>,
     document: u64,
 ) -> Result<
-    oblikovati_session::part_evaluation::CompletedPartEvaluation<NamedPrismSnapshot, String>,
+    oblikovati_session::part_evaluation::CompletedPartEvaluation<
+        NamedPrismSnapshot,
+        oblikovati_martensite::EvaluationFailure,
+    >,
     String,
 > {
     let workspace = files.workspace();
@@ -203,7 +210,10 @@ fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
 }
 
 fn render_part_scene(
-    evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<NamedPrismSnapshot, String>,
+    evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
+        NamedPrismSnapshot,
+        oblikovati_martensite::EvaluationFailure,
+    >,
     source: (u64, u64),
     visible: impl FnMut(&NamedPrismSnapshot) -> Result<bool, String>,
 ) -> Result<HeadSceneUpdate, String> {

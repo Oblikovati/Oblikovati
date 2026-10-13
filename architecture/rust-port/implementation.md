@@ -1,6 +1,6 @@
 # Rust implementation evidence
 
-[Interactive selection engine evidence](implementation-interactive-selection.md). [Kernel region evidence](implementation-profile-regions.md). [Native navigation evidence](implementation-native-navigation.md). [Owned Dear ImGui packet evidence](implementation-imgui-packets.md). [Open hardware presentation diagnostic](diagnostic-native-present-pixels.md).
+[Interactive selection engine evidence](implementation-interactive-selection.md). [Kernel region evidence](implementation-profile-regions.md). [Typed prism failure evidence](implementation-evaluation-failures.md). [Native navigation evidence](implementation-native-navigation.md). [Owned Dear ImGui packet evidence](implementation-imgui-packets.md). [Open hardware presentation diagnostic](diagnostic-native-present-pixels.md).
 
 ## Parameter dependency graph — R2
 

@@ -207,3 +207,32 @@ mod bodies;
 mod part_mass;
 #[path = "part_scene/physical.rs"]
 mod physical;
+#[test]
+fn typed_kernel_decline_reaches_desktop_status_and_recovers() {
+    use oblikovati_martensite::{EvaluationEntity, EvaluationFailureKind, EvaluationPhase};
+    use oblikovati_model::feature::{FeatureEvaluationStatus, part::PartFeatureFailure};
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    owner.take_scene().unwrap().unwrap();
+    set_parameter(&mut owner, "width", "0.000000000000001 cm");
+    let update = owner.take_scene().unwrap().unwrap();
+    let FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) =
+        &update.status.health[0].status
+    else {
+        panic!(
+            "thin profile: expected adapter failure, got {:?}",
+            update.status.health
+        );
+    };
+    assert_eq!(cause.phase(), EvaluationPhase::Profile);
+    assert_eq!(cause.kind(), EvaluationFailureKind::InvalidGeometry);
+    assert_eq!(cause.entity(), &EvaluationEntity::Edge(101));
+    assert_eq!(cause.feature(), Some(FeatureId(1)));
+    assert_eq!(update.status.visible_bodies, 0);
+    assert!(update.scene.triangles.is_empty());
+    set_parameter(&mut owner, "width", "4 cm");
+    assert_eq!(
+        owner.take_scene().unwrap().unwrap().status.visible_bodies,
+        1
+    );
+}

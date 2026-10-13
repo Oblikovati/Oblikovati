@@ -226,3 +226,47 @@ fn native_body_deletion_and_undo_remove_and_restore_window_pixels() {
     owner.finish().unwrap();
     window.finish().unwrap();
 }
+#[test]
+fn native_typed_prism_failure_clears_pixels_and_recovers_exact_scene() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    open_native_part(&mut owner, &directory.path().join("typed-failure.opd"));
+    let original = publish_native_scene(&mut owner, &mut window);
+    native_set(&mut owner, "width", "0.000000000000001 cm");
+    let failed = publish_native_scene(&mut owner, &mut window);
+    assert_eq!(solid_pixels(&failed), 0);
+    verify_typed_native_failure(window.scene_status().unwrap());
+    native_set(&mut owner, "width", "4 cm");
+    assert_eq!(
+        publish_native_scene(&mut owner, &mut window).rgba,
+        original.rgba
+    );
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn verify_typed_native_failure(status: &crate::HeadSceneStatus) {
+    use oblikovati_model::feature::{FeatureEvaluationStatus, part::PartFeatureFailure};
+    let FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) =
+        &status.health[0].status
+    else {
+        panic!(
+            "collapsed edge: expected typed adapter failure, got {:?}",
+            status.health
+        );
+    };
+    assert_eq!(
+        cause.phase(),
+        oblikovati_martensite::EvaluationPhase::Profile
+    );
+    assert_eq!(
+        cause.kind(),
+        oblikovati_martensite::EvaluationFailureKind::InvalidGeometry
+    );
+    assert_eq!(
+        cause.feature(),
+        Some(oblikovati_model::feature::FeatureId(1))
+    );
+    assert_eq!(cause.sketch(), Some(fixture::SKETCH));
+    assert!(status.title().contains("1 unavailable features"));
+}

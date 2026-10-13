@@ -19,7 +19,8 @@ impl TransactionObserver for NativeResultObserver {
     fn changed(&mut self, _: u64, _: u64) {}
 }
 type NativePartSession = DocumentSession<NativeResultObserver>;
-type NativePartSlot = PartEvaluationSlot<PrismProbeSnapshot, String>;
+type NativePartSlot =
+    PartEvaluationSlot<PrismProbeSnapshot, oblikovati_martensite::EvaluationFailure>;
 fn native_part_session() -> NativePartSession {
     let document = selected_prism_document();
     let ids = RecipeIdAllocator::restore(None, document.parameters.ids()).unwrap();

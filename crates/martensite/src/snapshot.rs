@@ -62,16 +62,7 @@ pub(crate) fn copied_kernel_shape(
     source: &Shape,
     context: &str,
 ) -> Result<BRepBuilderAPICopy, String> {
-    // copy_geom=true is required: a Shape clone retains mutable geometry handles.
-    let mut copier = BRepBuilderAPICopy::with_shape(source, true, true)
-        .map_err(|error| format!("{context}: expected detached topology/geometry/mesh: {error}"))?;
-    let shape = copier
-        .shape()
-        .map_err(|error| format!("{context}: expected a completed B-rep: {error}"))?;
-    if shape.is_partner(source) {
-        return Err(format!("{context}: expected detached root topology"));
-    }
-    Ok(copier)
+    crate::checked_shape::copy_shape(source, context).map_err(|cause| cause.to_string())
 }
 #[cfg(test)]
 #[path = "../tests/snapshot.rs"]

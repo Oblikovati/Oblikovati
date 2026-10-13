@@ -23,6 +23,7 @@ fn incomplete_or_ambiguous_generated_history_cannot_pass_face_coverage() {
     assert!(
         require_face_coverage(&body, &lineage)
             .unwrap_err()
+            .to_string()
             .contains("complete face coverage")
     );
     lineage.push(last);
@@ -30,6 +31,7 @@ fn incomplete_or_ambiguous_generated_history_cannot_pass_face_coverage() {
     assert!(
         require_face_coverage(&body, &lineage)
             .unwrap_err()
+            .to_string()
             .contains("exactly one construction role")
     );
 }
@@ -43,10 +45,27 @@ fn nonfinite_face_values_and_empty_faces_are_named_refusals() {
         assert!(
             require_finite_face(PrismFaceRole::Start, area, centroid)
                 .unwrap_err()
+                .to_string()
                 .contains("finite positive")
         );
     }
     let mut face = Face::default();
     rustycad_tkbrep::brep::BRepBuilder::default().make_face(&mut face);
     assert!(face_report(PrismFaceRole::Start, &face).is_err());
+}
+#[test]
+fn incomplete_history_retains_the_source_identity_and_failure_class() {
+    let failure = require_generated_count(73, 0).unwrap_err();
+    assert_eq!(failure.phase(), Phase::History);
+    assert_eq!(failure.kind(), Kind::IncompleteHistory);
+    assert_eq!(failure.entity(), &Entity::Edge(73));
+    assert_eq!(
+        failure.to_string(),
+        "prism edge 73 generated 0 shapes: expected exactly one side face"
+    );
+    let (body, mut lineage) = body_faces();
+    lineage[1].1 = lineage[0].1.clone();
+    let failure = require_face_coverage(&body, &lineage).unwrap_err();
+    assert_eq!(failure.kind(), Kind::IncompleteHistory);
+    assert!(matches!(failure.entity(), Entity::FaceIndex(_)));
 }

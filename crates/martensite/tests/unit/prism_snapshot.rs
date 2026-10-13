@@ -87,6 +87,10 @@ fn displacement_ignores_large_origins_and_declines_overflow() {
     let vector = placement::model_displacement(plane, [0., 0., 2.]).unwrap();
     assert_eq!([vector.x(), vector.y(), vector.z()], [0., 0., 2.]);
     let error = placement::model_displacement(plane, [f64::MAX, -f64::MAX, 1.]).unwrap_err();
-    assert!(error.contains("expected finite model-space components"));
-    assert!(error.contains("inf"));
+    assert!(
+        error
+            .to_string()
+            .contains("expected finite model-space components")
+    );
+    assert!(error.to_string().contains("inf"));
 }

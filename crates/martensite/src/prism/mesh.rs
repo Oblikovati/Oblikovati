@@ -25,7 +25,8 @@ pub(super) fn derive_presentation(
     options: PrismMeshOptions,
 ) -> Result<PrismPresentation, String> {
     validate_options(options)?;
-    let (shape, faces) = snapshot::copied_prism(&snapshot.shape, &snapshot.faces)?;
+    let (shape, faces) = snapshot::copied_prism(&snapshot.shape, &snapshot.faces)
+        .map_err(|cause| cause.to_string())?;
     mesh_shape(&shape, options)?;
     let faces = faces
         .iter()

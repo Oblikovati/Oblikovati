@@ -6,8 +6,10 @@ use oblikovati_model::feature::{
     part::{PartFeatureDefinition, PartFeatureEvaluation, PartFeatureFailure},
     work_plane::{WorkPlaneDefinition, WorkPlaneDistance, WorkPlaneOrigin, WorkPlaneReference},
 };
-type NativePartEvaluation =
-    PartFeatureEvaluation<oblikovati_martensite::PrismProbeSnapshot, String>;
+type NativePartEvaluation = PartFeatureEvaluation<
+    oblikovati_martensite::PrismProbeSnapshot,
+    oblikovati_martensite::EvaluationFailure,
+>;
 fn replace_prism_source(document: &mut DocumentSnapshot, definition: SketchPrismDefinition) {
     let reads = definition.reads(document).unwrap();
     document
@@ -52,6 +54,21 @@ fn kernel_boundary_decline_keeps_independent_current_prism_and_recovers() {
         failed.health()[0].status,
         FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(_))
     ));
+    let FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) =
+        &failed.health()[0].status
+    else {
+        panic!("first feature: expected typed kernel-adapter decline");
+    };
+    assert_eq!(cause.phase(), oblikovati_martensite::EvaluationPhase::Input);
+    assert_eq!(
+        cause.kind(),
+        oblikovati_martensite::EvaluationFailureKind::InvalidInput
+    );
+    assert_eq!(cause.feature(), Some(FeatureId(1)));
+    assert_eq!(cause.sketch(), Some(SKETCH));
+    assert!(
+        matches!(cause.entity(), oblikovati_martensite::EvaluationEntity::Edges(edges) if edges.len() == 2)
+    );
     assert_current_volume(&failed, 2);
     replace_prism_source(&mut document, stored_definition());
     let recovered = document

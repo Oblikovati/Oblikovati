@@ -20,8 +20,8 @@ pub fn retain_stored_sketch_prism(
         format!("part feature {feature_id:?}: expected transfer of an available isolated body",)
     })
 }
-pub(crate) fn stored_body_decline<Body>(
-    evaluation: &PartFeatureEvaluation<Body, String>,
+pub(crate) fn stored_body_decline<Body, Failure: std::fmt::Debug>(
+    evaluation: &PartFeatureEvaluation<Body, Failure>,
     feature: FeatureId,
 ) -> String {
     let status = evaluation

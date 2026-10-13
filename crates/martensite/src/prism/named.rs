@@ -115,6 +115,7 @@ impl NamedPrismSnapshot {
             .bind(history, document, key, 1)?
             .ok_or_else(|| "face reference: expected a face construction role".to_string())?;
         report::face_report(role, unique_face(&self.snapshot, role)?)
+            .map_err(|cause| cause.to_string())
     }
     /// Enumerate canonical names in stable byte order; example: `named.reference_keys(&history, doc)?`.
     pub fn reference_keys(

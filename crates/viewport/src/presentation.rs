@@ -54,8 +54,8 @@ pub struct PartPresentation {
 impl ViewportScene {
     /// Convert successful current bodies and retain local display failures.
     /// Example: `ViewportScene::from_part_evaluation(&evaluated, mesh_options, background, color)`.
-    pub fn from_part_evaluation<Body: oblikovati_martensite::PrismPresentationSource>(
-        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, String>,
+    pub fn from_part_evaluation<Failure, Body: oblikovati_martensite::PrismPresentationSource>(
+        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, Failure>,
         options: oblikovati_martensite::PrismMeshOptions,
         background: [f64; 3],
         color: [f32; 4],
@@ -67,9 +67,10 @@ impl ViewportScene {
     /// Filter display bodies without changing analytic results or feature health.
     /// Example: `ViewportScene::from_part_evaluation_with_visibility(&evaluated, options, background, color, |_| Ok(false))`.
     pub fn from_part_evaluation_with_visibility<
+        Failure,
         Body: oblikovati_martensite::PrismPresentationSource,
     >(
-        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, String>,
+        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, Failure>,
         options: oblikovati_martensite::PrismMeshOptions,
         background: [f64; 3],
         color: [f32; 4],
