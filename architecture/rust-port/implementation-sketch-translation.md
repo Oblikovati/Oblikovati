@@ -42,6 +42,6 @@ history, identity reservations, response failure, veto, groups, undo/redo, and
 native file lifecycle. Independent Go shared-point, selected-point, and router
 error tests pass at `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
-Rotation, copy, mirror, trim, split, extend, additional geometry kinds, and native
-drag remain required. Unported wire operations decline by name; this step does
+Rotation is now covered by the [rotation evidence](implementation-sketch-rotation.md).
+Copy, mirror, trim, split, extend, additional geometry kinds, and native drag remain required. Unported wire operations decline by name; this step does
 not claim the full transform family or native rendering acceptance.

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SessionCommands;
-use crate::{CommandError, SketchTranslationProjectionInput, TransactionObserver};
+use crate::{CommandError, SketchTransformProjectionInput, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    sketch::{SketchEntityId, SketchError},
+    sketch::{SketchEntityId, SketchError, SketchSelectionTransform},
 };
 impl<O: TransactionObserver> SessionCommands<'_, O> {
     /// Move geometry on this document without changing focus.
@@ -24,9 +24,24 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         sketch: DocumentSketchId,
         entities: &[SketchEntityId],
         vector: [f64; 2],
-        project: impl FnOnce(SketchTranslationProjectionInput) -> Result<R, E>,
+        project: impl FnOnce(SketchTransformProjectionInput) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.transform_sketch_entities_projected(
+            sketch,
+            entities,
+            SketchSelectionTransform::Move(vector),
+            project,
+        )
+    }
+    /// Prepare a rigid edit response before adoption; example: `session.transform_sketch_entities_projected(sketch, &entities, transform, |result| result)?;`.
+    pub fn transform_sketch_entities_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        transform: SketchSelectionTransform,
+        project: impl FnOnce(SketchTransformProjectionInput) -> Result<R, E>,
     ) -> Result<R, CommandError<E>> {
         self.session
-            .translate_sketch_entities_projected(sketch, entities, vector, project)
+            .transform_sketch_entities_projected(sketch, entities, transform, project)
     }
 }

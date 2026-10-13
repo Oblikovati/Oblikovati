@@ -57,6 +57,20 @@ impl OwnedSketchGeometry<'_> {
             Self::OffsetSpline(_) => SKETCH_ENTITY_OFFSET_SPLINE,
         }
     }
+    pub fn transform_points(
+        self,
+        transform: super::SketchSelectionTransform,
+    ) -> Result<Vec<SketchEntityId>, SketchError> {
+        if matches!(transform, super::SketchSelectionTransform::Rotate { .. })
+            && matches!(self, Self::OffsetSpline(_))
+        {
+            return Err(SketchError::Definition(format!(
+                "rotation entity {:?}: expected an independently owned curve; rotate the offset spline parent instead",
+                self.id()
+            )));
+        }
+        Ok(self.points())
+    }
     pub fn points(self) -> Vec<SketchEntityId> {
         match self {
             Self::Point(shape) => vec![shape.id],

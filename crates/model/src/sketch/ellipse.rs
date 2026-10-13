@@ -75,6 +75,16 @@ impl SketchEllipse2D {
             ..self
         })
     }
+    pub(super) fn with_transformed_axis(self, major_axis: [f64; 2]) -> Result<Self, SketchError> {
+        if super::same_components(self.major_axis, major_axis) {
+            return Ok(self);
+        }
+        // Keep the existing unit-axis invariant under repeated floating-point rotations.
+        Ok(Self {
+            major_axis: normalized_ellipse_axis(major_axis)?,
+            ..self
+        })
+    }
     /// Evaluate analytic position and tangent, not a tessellation; example: `ellipse.evaluate([0.0, 0.0], angle)?`.
     pub fn evaluate(
         self,

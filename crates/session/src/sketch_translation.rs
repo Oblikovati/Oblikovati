@@ -2,11 +2,11 @@
 use crate::{CommandError, DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    sketch::{SketchEntityId, SketchError},
+    sketch::{SketchEntityId, SketchError, SketchSelectionTransform},
 };
 /// Authored defining points or an input decline before adoption.
-/// Example: `let reply: SketchTranslationProjectionInput = Ok(points);`.
-pub type SketchTranslationProjectionInput = Result<Vec<SketchEntityId>, SketchError>;
+/// Example: `let reply: SketchTransformProjectionInput = Ok(points);`.
+pub type SketchTransformProjectionInput = Result<Vec<SketchEntityId>, SketchError>;
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Move selected defining points through history and current constraint/projection recompute.
     /// Example: `session.translate_sketch_entities(sketch, &[line], [2.0, 3.0])?;`.
@@ -25,13 +25,28 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         entities: &[SketchEntityId],
         vector: [f64; 2],
-        project: impl FnOnce(SketchTranslationProjectionInput) -> Result<R, E>,
+        project: impl FnOnce(SketchTransformProjectionInput) -> Result<R, E>,
     ) -> Result<R, CommandError<E>> {
-        self.run("Move sketch entities", |snapshot, _| {
+        self.transform_sketch_entities_projected(
+            sketch,
+            entities,
+            SketchSelectionTransform::Move(vector),
+            project,
+        )
+    }
+    /// Prepare a rigid edit response before adoption; example: `session.transform_sketch_entities_projected(sketch, &entities, transform, |result| result)?;`.
+    pub fn transform_sketch_entities_projected<R, E>(
+        &mut self,
+        sketch: DocumentSketchId,
+        entities: &[SketchEntityId],
+        transform: SketchSelectionTransform,
+        project: impl FnOnce(SketchTransformProjectionInput) -> Result<R, E>,
+    ) -> Result<R, CommandError<E>> {
+        self.run(transform.label(), |snapshot, _| {
             project(
                 snapshot
                     .sketches
-                    .translate_entities(sketch, entities, vector),
+                    .transform_entities(sketch, entities, transform),
             )
         })
     }

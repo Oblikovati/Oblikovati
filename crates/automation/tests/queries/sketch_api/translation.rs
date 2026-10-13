@@ -99,7 +99,7 @@ fn invalid_batches_vectors_indices_and_unported_operations_preserve_owner_state(
     input.sketch_index = -1;
     assert_move_refused(&mut files, document, &mut source, &input, "ordered index");
     input.sketch_index = 0;
-    input.op = "rotate".into();
+    input.op = "copy".into();
     assert_move_refused(&mut files, document, &mut source, &input, "not ported");
 }
 #[test]
@@ -127,7 +127,7 @@ fn output_coordinate_overflow_discards_every_selected_coordinate() {
         document,
         &mut source,
         &movement(vec![1], vec![f64::MAX, 0.0]),
-        "translation point",
+        "transform point",
     );
 }
 #[test]
@@ -343,3 +343,5 @@ fn unsupported_document_kinds_decline_the_canonical_edit() {
         "part or assembly document",
     );
 }
+#[path = "rotation.rs"]
+mod rotation;

@@ -270,3 +270,30 @@ fn verify_typed_native_failure(status: &crate::HeadSceneStatus) {
     assert_eq!(cause.sketch(), Some(fixture::SKETCH));
     assert!(status.title().contains("1 unavailable features"));
 }
+#[test]
+fn native_rotation_recomputes_constraints_and_keeps_the_visible_prism() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    open_native_part(&mut owner, &directory.path().join("rotate.opd"));
+    let before = publish_native_scene(&mut owner, &mut window);
+    assert!(solid_pixels(&before) > 0);
+    rotate_native_profile(&mut owner);
+    let after = publish_native_scene(&mut owner, &mut window);
+    assert_eq!(after.rgba, before.rgba);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn rotate_native_profile(owner: &mut NativeDesktopOwner) {
+    let result = Client::new(owner.document_host())
+        .sketch()
+        .transform(&TransformSketchArgs {
+            op: "rotate".into(),
+            entities: Some((101..105).collect()),
+            center: Some(vec![1.0, 1.0]),
+            angle: "15 deg".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert!(result.created.is_none());
+}
