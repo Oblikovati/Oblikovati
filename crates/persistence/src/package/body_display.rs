@@ -12,7 +12,7 @@ impl DocumentPackage {
         ))
     }
 }
-fn body_text<'a>(
+pub(super) fn body_text<'a>(
     root: &'a Mapping,
     section: &str,
     key: &str,

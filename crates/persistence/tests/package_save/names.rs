@@ -15,6 +15,7 @@ fn snapshot() -> DocumentSnapshot {
         interests: Default::default(),
         resources: Default::default(),
         assets: Default::default(),
+        body_names: Default::default(),
         sketch_settings: None,
         parameters: ParameterCollection::new(Default::default()),
         properties: Default::default(),

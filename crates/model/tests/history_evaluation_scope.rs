@@ -96,3 +96,26 @@ fn scope_only_capture_has_the_same_owner_generation_and_close_guard_as_inputs() 
     drop(owner);
     assert!(current.is_superseded());
 }
+
+#[test]
+fn body_names_are_owned_metadata_without_changing_captured_snapshot() {
+    let mut owner = history();
+    let before = owner.evaluation_snapshot();
+    let token = owner.begin("Rename Body").unwrap();
+    owner
+        .edit(&token, |snapshot, _| {
+            snapshot
+                .body_names
+                .insert("body-key".into(), "Bracket".into());
+            Ok::<(), String>(())
+        })
+        .unwrap();
+    owner.commit(&token, false).unwrap();
+    assert!(!before.snapshot().same_metadata_recipe(owner.snapshot()));
+    assert!(before.snapshot().body_names.is_empty());
+    assert!(!before.scope().is_current(&owner));
+    owner.undo().unwrap();
+    assert!(before.snapshot().same_metadata_recipe(owner.snapshot()));
+    owner.redo().unwrap();
+    assert_eq!(owner.snapshot().body_names["body-key"], "Bracket");
+}

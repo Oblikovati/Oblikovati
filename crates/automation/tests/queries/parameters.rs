@@ -28,6 +28,7 @@ pub(super) fn parameter_workspace_sketches(
         interests: Default::default(),
         resources: Default::default(),
         assets: Default::default(),
+        body_names: Default::default(),
         sketch_settings: None,
         parameters,
         properties,

@@ -180,3 +180,6 @@ fn empty_part_lists_no_bodies_and_part_material_is_inherited() {
             .all(|body| body.material_id == "steel")
     );
 }
+
+#[path = "bodies/rename.rs"]
+mod rename;

@@ -98,6 +98,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::BODY_COMMAND_METHODS.contains(&method) {
+            return crate::body_commands::apply(
+                self.files,
+                &mut self.part_topology,
+                method,
+                request,
+            );
+        }
         if crate::BODY_QUERY_METHODS.contains(&method) {
             return crate::part_topology::query(
                 self.files,

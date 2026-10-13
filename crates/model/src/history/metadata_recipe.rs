@@ -6,6 +6,7 @@ impl DocumentSnapshot {
     pub fn same_metadata_recipe(&self, other: &Self) -> bool {
         self.properties.same_recipe(&other.properties)
             && self.assets == other.assets
+            && self.body_names == other.body_names
             && self.attachments == other.attachments
             && self.sketch_settings == other.sketch_settings
             && self.resources == other.resources

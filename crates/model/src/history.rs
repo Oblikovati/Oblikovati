@@ -64,6 +64,7 @@ use std::sync::{
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
+    pub body_names: std::collections::BTreeMap<String, String>,
     pub work_geometry:
         crate::feature::FeatureSequence<crate::feature::work_geometry::WorkGeometryDefinition>,
     pub assets: crate::assets::DocumentAssets,

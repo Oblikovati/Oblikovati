@@ -13,6 +13,7 @@ fn empty_history() -> DocumentEditHistory {
             interests: Default::default(),
             resources: Default::default(),
             assets: Default::default(),
+            body_names: Default::default(),
             sketch_settings: None,
             parameters: ParameterCollection::new(UnitsOfMeasure::default()),
             properties: DocumentProperties::default(),

@@ -245,3 +245,6 @@ mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
 pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKind};
+
+mod body_commands;
+pub use body_commands::BODY_COMMAND_METHODS;

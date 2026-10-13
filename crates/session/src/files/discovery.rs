@@ -57,17 +57,26 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
-    /// Borrow retained body display metadata without changing file state; example: `files.body_display_metadata(document, key)?`.
+    /// Read current body names and retained legacy styles without changing file state; example: `files.body_display_metadata(document, key)?`.
     pub fn body_display_metadata(
         &self,
         document: u64,
         key: &str,
     ) -> Result<(Option<&str>, Option<&str>), FileWorkspaceError> {
-        self.retained
+        let name = self
+            .workspace
+            .session(document)
+            .map_err(FileWorkspaceError::Workspace)?
+            .snapshot()
+            .body_names
+            .get(key);
+        let (_, style) = self
+            .retained
             .get(&document)
             .ok_or(FileWorkspaceError::MissingFile(document))?
             .package
             .body_display_metadata(key)
-            .map_err(FileWorkspaceError::Package)
+            .map_err(FileWorkspaceError::Package)?;
+        Ok((name.map(String::as_str), style))
     }
 }

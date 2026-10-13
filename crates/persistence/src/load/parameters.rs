@@ -16,6 +16,7 @@ pub struct LoadedParameterPackage {
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
+    pub body_names: std::collections::BTreeMap<String, String>,
     pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -48,6 +49,7 @@ pub fn load_parameter_package(
         attachments: prepared.attachments,
         interests: prepared.interests,
         resources: prepared.resources,
+        body_names: prepared.body_names,
         assets: prepared.assets,
         sketch_settings: prepared.sketch_settings,
     })
@@ -65,6 +67,7 @@ pub struct PreparedParameterPackage {
     pub attachments: oblikovati_model::attachment::DocumentAttachments,
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
+    pub body_names: std::collections::BTreeMap<String, String>,
     pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -80,6 +83,9 @@ pub fn read_parameter_package(
     reader: &mut dyn PackageFileReader,
 ) -> Result<PreparedParameterPackage, PackageLoadError> {
     let package = read_package(path, reader)?;
+    let body_names = package
+        .restore_body_names()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let assets = package
         .restore_assets()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
@@ -124,6 +130,7 @@ pub fn read_parameter_package(
         interests,
         resources,
         assets,
+        body_names,
         sketch_settings,
         properties,
         identity,

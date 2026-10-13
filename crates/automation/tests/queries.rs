@@ -98,6 +98,7 @@ fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut Query
         interests: Default::default(),
         resources: Default::default(),
         assets: Default::default(),
+        body_names: Default::default(),
         sketch_settings: None,
         parameters: ParameterCollection::new(units),
         properties: DocumentProperties::default(),
