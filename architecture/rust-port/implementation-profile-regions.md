@@ -367,3 +367,38 @@ full B-rep validation, achieved tolerance, persistent split history/naming, and
 the named region/prism gate remain under issue #10. The application pin and
 production profiles/extrusion remain unchanged. This record passes `make docs-lint`;
 no new application live-test acceptance is claimed.
+
+## Constructed cubic prism and ownership evidence, 2026-10-13
+
+Martensite local main `20271d8e9` connects the exact wire classifier to pcurves
+read from constructed regions. One closed polynomial cubic goes through the
+existing nonempty General Fuse experiment, planar face builder, and prism
+builder. Both returned wires contain the known interior seed with opposite
+winding signs. The fixture's positive orientation identifies its bounded
+component; nonzero membership alone cannot select the correct face. This is
+representative evidence, not a general assembly or bounded-face policy.
+
+All three prism faces match native OCCT 8.0.0 area, centroid, surface kind, loop
+count, edge count, and mapped validity. Operation history covers start cap,
+end cap, and side face once each. Thirty-four scale/direction variants also
+pass construction, exact seed checks, and normalized native metrics. The
+five new tests pass within the full 720-test TKBO suite. New Rust test-code
+coverage is 99.73%; fixture duplication is zero. Clippy, strict Rustdoc,
+formatting, documentation, and source checks pass.
+
+The ownership probe exposes an application blocker: adding the pcurve after
+non-destructive General Fuse changes the caller's original edge. Rust and OCCT
+both increase its curve representation count from one to two. An explicit
+geometry/topology copy preserves the source and retains a source-to-copy
+history relation. Mutating the original curve after construction leaves the
+copied region's exact seed checks and prism checks unchanged. This proves the
+copy boundary only for this fixture; failure/cancellation isolation and all
+reachable cache/mesh ownership remain open.
+
+Kernel `docs/exact-region-prism.md` records the generator, native receipt,
+acceptance limits, and commands. The application still pins v0.2.1. No production
+application code or dependency changes here. Strict ordered validation, measured
+tolerance, complete entity history, persistent naming, arbitrary algebraic
+trim incidence, analytic extraction, and the released region contract remain
+required under kernel issue #10. The three native curved-vertex classification
+disagreements recorded above remain open.
