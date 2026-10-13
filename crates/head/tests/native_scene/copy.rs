@@ -27,7 +27,7 @@ fn verify_native_copy_case(op: &str, expected: fn(&[f64]) -> [f64; 2]) {
     let before = publish_native_scene(&mut owner, &mut window);
     assert!(solid_pixels(&before) > 0);
     verify_native_profile_copy(&mut owner, op, expected);
-    verify_copy_readiness_and_undo(&mut owner, &mut window, &before);
+    verify_copy_readiness_and_undo(&mut owner, &mut window, &before, 8);
     owner.finish().unwrap();
     window.finish().unwrap();
 }
@@ -49,7 +49,7 @@ fn verify_native_profile_copy(
         verify_native_copied_line(&client, original, copied, expected);
     }
 }
-fn native_sketch_entities<T: oblikovati_api::client::Caller>(
+pub(super) fn native_sketch_entities<T: oblikovati_api::client::Caller>(
     client: &Client<T>,
 ) -> Vec<SketchEntityInfo> {
     client
@@ -84,6 +84,12 @@ fn verify_native_copied_line<T: oblikovati_api::client::Caller>(
 ) {
     assert_ne!(original.reference_key, copied.reference_key);
     verify_native_copy_coordinates(original, copied, expected);
+    verify_native_entity_reference(client, copied);
+}
+pub(super) fn verify_native_entity_reference<T: oblikovati_api::client::Caller>(
+    client: &Client<T>,
+    copied: &SketchEntityInfo,
+) {
     let resolved = client
         .sketch()
         .resolve_reference(&ResolveSketchReferenceArgs {
@@ -107,21 +113,22 @@ fn verify_native_copy_coordinates(
     }
 }
 
-fn verify_copy_readiness_and_undo(
+pub(super) fn verify_copy_readiness_and_undo(
     owner: &mut NativeDesktopOwner,
     window: &mut NativeHeadWindow,
     before: &ViewportCapture,
+    free: usize,
 ) {
     let after = publish_native_scene(owner, window);
     assert_eq!(solid_pixels(&after), 0);
-    verify_copy_free_variables(window.scene_status().unwrap());
+    verify_copy_free_variables(window.scene_status().unwrap(), free);
     Client::new(owner.document_host())
         .transactions()
         .undo()
         .unwrap();
     assert!(publish_native_scene(owner, window).rgba == before.rgba);
 }
-fn verify_copy_free_variables(status: &crate::HeadSceneStatus) {
+fn verify_copy_free_variables(status: &crate::HeadSceneStatus, free: usize) {
     let FeatureEvaluationStatus::Failed(PartFeatureFailure::Inputs(cause)) =
         &status.health[0].status
     else {
@@ -136,6 +143,6 @@ fn verify_copy_free_variables(status: &crate::HeadSceneStatus) {
     else {
         panic!("copied free points: expected readiness decline, got {cause:?}");
     };
-    assert_eq!(readiness.cause, SketchReadinessCause::FreeVariables(8));
+    assert_eq!(readiness.cause, SketchReadinessCause::FreeVariables(free));
     assert!(status.title().contains("1 unavailable features"));
 }

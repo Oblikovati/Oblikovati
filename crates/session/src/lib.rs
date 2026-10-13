@@ -148,3 +148,6 @@ impl<O: TransactionObserver> DocumentSession<O> {
 }
 
 pub use sketch_dimension_delete::SketchDimensionDeleteProjectionInput;
+
+mod sketch_split;
+pub use sketch_split::SketchSplitProjectionInput;

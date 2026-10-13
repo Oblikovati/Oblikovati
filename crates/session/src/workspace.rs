@@ -329,3 +329,5 @@ mod tests {
         assert!(error.to_string().contains("u64::MAX"));
     }
 }
+
+mod sketch_split;

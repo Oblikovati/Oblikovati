@@ -56,7 +56,7 @@ checks verify actual presentation under isolated 1920×1080×24 Xvfb, software
 Vulkan, and validation layer 1.4.321.
 
 Elliptical arcs, independent offset-spline copies, per-entity style tables, trim,
-split, extend, interactive mirror UI, hardware presentation, and general profile
+extend, interactive mirror UI, hardware presentation, and general profile
 regions remain open. This step does not close R3 or the full-port epic.
 
 The full local `make gate` passes for all 13 crates in the discovered workspace:
@@ -69,3 +69,5 @@ wrappers, and wire transform route each have 100% line coverage. Duplication is
 0.75% (502 of 66,840 Rust lines). Cross-platform review found no new tolerance,
 platform-sized identity, map-order dependency, or changed move/rotation arithmetic.
 Kernel algorithms, recognizers, fallback sites, and assertions are unchanged.
+
+Line split is now covered by the [split evidence](implementation-sketch-split.md).

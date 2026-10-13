@@ -24,7 +24,7 @@ Repeated selections yield one copy per selected entity. This differs from Go's
 repeated curve copies and avoids duplicate standalone/shared point identities.
 Selecting an offset spline directly produces a named decline before reservation;
 Go's default branch silently skips this unsupported kind. Elliptical arcs,
-per-entity style tables, trim, split, extend, and interactive native copy
+per-entity style tables, trim, extend, and interactive native copy
 remain separate work. Mirror is covered by the [mirror evidence](implementation-sketch-mirror.md).
 This is not full transform-family or R3 acceptance.
 
@@ -65,3 +65,5 @@ coverage; copy adoption and identity validation exceed 96%. Duplication is 0.74%
 (494 of 66,710 Rust lines). Review found no new tolerance values, platform-sized
 identity values, map-order dependency, or kernel algorithm changes. This evidence
 uses the exact released API/kernel pins and does not close the full-port epic.
+
+Line split is now covered by the [split evidence](implementation-sketch-split.md).

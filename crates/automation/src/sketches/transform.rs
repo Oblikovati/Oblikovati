@@ -8,11 +8,13 @@ use oblikovati_model::{
     sketch::{SketchCopyOperation, SketchEntityId, SketchSelectionTransform},
 };
 use oblikovati_session::{
-    SketchCopyProjectionInput, SketchTransformProjectionInput, workspace::SessionCommands,
+    SketchCopyProjectionInput, SketchSplitProjectionInput, SketchTransformProjectionInput,
+    workspace::SessionCommands,
 };
 enum PreparedSketchEdit {
     Transform(SketchSelectionTransform),
     Copy(SketchCopyOperation),
+    Split([f64; 2]),
 }
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -47,9 +49,10 @@ fn prepared_edit(
         ))),
         "copy" => Ok(CopyEdit(Translate(movement_vector(request, scale)?))),
         "mirror" => Ok(CopyEdit(Mirror(SketchEntityId(request.mirror_line)))),
+        "split" => Ok(PreparedSketchEdit::Split(movement_vector(request, scale)?)),
         "rotate" => rotation_transform(parameters, request).map(PreparedSketchEdit::Transform),
         _ => Err(Error(format!(
-            "sketch.transform operation {:?}: expected move, rotate, copy, or mirror; other transform operations are not ported",
+            "sketch.transform operation {:?}: expected move, rotate, copy, mirror, or split; other transform operations are not ported",
             request.op
         ))),
     }
@@ -120,11 +123,21 @@ fn apply_prepared_edit<O: TransactionObserver>(
         PreparedSketchEdit::Copy(operation) => commands
             .copy_selected_sketch_entities_projected(sketch, entities, operation, copy_reply)
             .map_err(api_error),
+        PreparedSketchEdit::Split(pick) => commands
+            .split_sketch_line_projected(sketch, entities, pick, split_reply)
+            .map_err(api_error),
     }
 }
 fn copy_reply(result: SketchCopyProjectionInput) -> Result<Vec<u8>, Error> {
     let report = result.map_err(api_error)?;
     encode(&TransformSketchResult {
         created: Some(report.copies.into_iter().map(|id| id.0).collect()),
+    })
+}
+
+fn split_reply(result: SketchSplitProjectionInput) -> Result<Vec<u8>, Error> {
+    let report = result.map_err(api_error)?;
+    encode(&TransformSketchResult {
+        created: Some(report.parts.into_iter().map(|id| id.0).collect()),
     })
 }

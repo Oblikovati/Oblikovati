@@ -33,23 +33,10 @@ impl PreparedSelectionCopy {
             return target.add_defining_point(id, point.position);
         }
         append_curve(target, shape, ids, id)?;
-        self.append_roles(target, shape.id(), id)
-    }
-    fn append_roles(
-        &self,
-        target: &mut Sketch2D,
-        source: SketchEntityId,
-        copy: SketchEntityId,
-    ) -> Result<(), SketchError> {
-        if self.source.construction_curves.contains(&source) {
-            target.set_curve_construction(&[copy], true)?;
-        }
-        if self.source.centerlines.contains(&source) {
-            target.set_line_centerline(copy, true)?;
-        }
-        Ok(())
+        target.copy_entity_roles(&self.source, shape.id(), id)
     }
 }
+
 fn append_curve(
     target: &mut Sketch2D,
     shape: OwnedSketchGeometry<'_>,

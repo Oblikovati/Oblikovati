@@ -37,7 +37,7 @@ select its parent. Rotating the parent retains the offset relation and distance.
 This avoids the Go default branch's silent no-op for an unsupported entity kind.
 Copy is now covered by the [copy evidence](implementation-sketch-copy.md).
 Mirror is covered by the [mirror evidence](implementation-sketch-mirror.md).
-Elliptical arcs, trimming, splitting, extending, and native
+Elliptical arcs, trimming, extending, and native
 interactive rotation remain separate port work.
 
 Invalid centers, angles, selections, converted coordinates, or output coordinates
@@ -102,3 +102,5 @@ native display tests. Model line coverage is 98.80% (17,459/17,671); every crate
 exceeds 80%, and duplication remains 0.72%. The production change replaces the
 visible enumeration with the existing complete ownership enumeration. It adds no
 geometry formula, tolerance, entity allocation, wire method, or dependency pin.
+
+Line split is now covered by the [split evidence](implementation-sketch-split.md).

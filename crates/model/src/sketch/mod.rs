@@ -144,3 +144,8 @@ impl Sketch2D {
         })
     }
 }
+
+mod entity_edit;
+pub use entity_edit::SketchEntityEditError;
+mod line_split;
+pub use line_split::SketchLineSplitReport;

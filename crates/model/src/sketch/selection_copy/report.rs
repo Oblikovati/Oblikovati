@@ -1,33 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{CopyIdentities, PreparedSelectionCopy, RecipeIdError, SketchEntityId, SketchError};
-use std::{error::Error, fmt};
+use super::{CopyIdentities, PreparedSelectionCopy, SketchEntityId, SketchError};
+pub use crate::sketch::SketchEntityEditError as SketchCopyError;
 /// Selection copies in input order and complete source/copy relations, including defining points.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SketchCopyReport {
     pub copies: Vec<SketchEntityId>,
     pub relations: Vec<(SketchEntityId, SketchEntityId)>,
-}
-/// Preserve invalid geometry and exhausted permanent reservations as distinct typed causes.
-#[derive(Clone, Debug, PartialEq)]
-pub enum SketchCopyError {
-    Sketch(SketchError),
-    Identity(RecipeIdError),
-}
-impl fmt::Display for SketchCopyError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Sketch(cause) => write!(formatter, "sketch selection copy: {cause}"),
-            Self::Identity(cause) => write!(formatter, "sketch copy identity: {cause}"),
-        }
-    }
-}
-impl Error for SketchCopyError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::Sketch(cause) => Some(cause),
-            Self::Identity(cause) => Some(cause),
-        }
-    }
 }
 
 impl PreparedSelectionCopy {

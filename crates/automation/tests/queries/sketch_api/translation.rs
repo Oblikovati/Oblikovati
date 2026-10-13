@@ -350,3 +350,5 @@ mod rotation;
 mod copy;
 #[path = "mirror.rs"]
 mod mirror;
+#[path = "split.rs"]
+mod split;

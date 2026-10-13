@@ -383,3 +383,5 @@ impl DocumentEditHistory {
 mod tests;
 
 mod metadata_recipe;
+
+mod sketch_split;
