@@ -413,6 +413,8 @@ mod dimension_create;
 mod sketch_deletion_selection;
 #[path = "lifecycle/sketch_editor_selection.rs"]
 mod sketch_editor_selection;
+#[path = "lifecycle/sketch_endpoint.rs"]
+mod sketch_endpoint;
 #[path = "lifecycle/sketch_entity_delete.rs"]
 mod sketch_entity_delete;
 #[path = "lifecycle/sketch_selection_click.rs"]

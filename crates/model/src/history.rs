@@ -385,3 +385,5 @@ mod tests;
 mod metadata_recipe;
 
 mod sketch_split;
+
+mod sketch_endpoint;

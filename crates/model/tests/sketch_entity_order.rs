@@ -257,6 +257,8 @@ mod rotation;
 
 #[path = "sketch_entity_order/copy.rs"]
 mod copy;
+#[path = "sketch_entity_order/endpoint.rs"]
+mod endpoint;
 #[path = "sketch_entity_order/mirror.rs"]
 mod mirror;
 #[path = "sketch_entity_order/split.rs"]

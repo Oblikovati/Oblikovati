@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{Sketch2D, SketchEntityEditError, SketchEntityId, SketchError, SketchLine2D};
+use super::{
+    Sketch2D, SketchEntityEditError, SketchEntityId, SketchError, SketchLine2D, SketchLineEnd,
+};
 use crate::identity::RecipeIdError;
 mod projection;
 /// The original first half, fresh second half, and their shared new defining point.
@@ -48,25 +50,7 @@ impl Sketch2D {
         self.add_defining_point(report.junction, position)?;
         self.add_line(report.parts[1], [report.junction, original.endpoints[1]])?;
         self.copy_entity_roles(source, original.id, report.parts[1])?;
-        self.set_split_junction(original.id, report.junction)
-    }
-    fn set_split_junction(
-        &mut self,
-        original: SketchEntityId,
-        junction: SketchEntityId,
-    ) -> Result<(), SketchError> {
-        let first = self
-            .lines
-            .iter_mut()
-            .find(|line| line.id == original)
-            .ok_or_else(|| {
-                SketchError::Definition(format!(
-                    "split line {:?}: expected the retained source line",
-                    original
-                ))
-            })?;
-        first.endpoints[1] = junction;
-        Ok(())
+        self.rewire_line_endpoint(original.id, SketchLineEnd::Last, report.junction)
     }
 }
 
