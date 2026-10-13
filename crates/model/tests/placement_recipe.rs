@@ -6,6 +6,7 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct GoRecipe {
+    kind: String,
     curved: bool,
     input: [[f64; 2]; 3],
     width: f64,
@@ -31,7 +32,8 @@ struct GoEntity {
 #[serde(rename_all = "PascalCase")]
 struct GoRelation {
     kind: String,
-    entities: [usize; 2],
+    entities: Vec<usize>,
+    points: Option<Vec<usize>>,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -42,13 +44,17 @@ struct GoField {
     binding: String,
     points: [usize; 2],
     entity: i64,
+    orientation: String,
 }
 #[test]
 fn constrained_slot_graphs_and_field_bindings_match_the_independent_go_recipes() {
     let fixtures: Vec<GoRecipe> =
         serde_json::from_str(include_str!("placement_recipe/go-recipes.json")).unwrap();
-    assert_eq!(fixtures.len(), 16);
-    for fixture in fixtures {
+    assert_eq!(fixtures.len(), 28);
+    for fixture in fixtures
+        .into_iter()
+        .filter(|fixture| fixture.kind.is_empty())
+    {
         let [center, start, end] = fixture.input;
         let actual = if fixture.curved {
             SketchPlacementRecipe::arc_slot(center, [start, end], fixture.width, fixture.ccw)
@@ -103,8 +109,19 @@ fn verify_relations(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
                 line: b.entities[0],
                 curve: b.entities[1],
             },
-            "circularTangent" => SketchPlacementRelation::CircularTangent(b.entities),
-            "equalRadius" => SketchPlacementRelation::EqualRadius(b.entities),
+            "circularTangent" => {
+                SketchPlacementRelation::CircularTangent([b.entities[0], b.entities[1]])
+            }
+            "equalRadius" => SketchPlacementRelation::EqualRadius([b.entities[0], b.entities[1]]),
+            "horizontalLine" => SketchPlacementRelation::LineHorizontal(b.entities[0]),
+            "verticalLine" => SketchPlacementRelation::LineVertical(b.entities[0]),
+            "perpendicular" => {
+                SketchPlacementRelation::Perpendicular([b.entities[0], b.entities[1]])
+            }
+            "midpoint" => SketchPlacementRelation::Midpoint {
+                point: b.points.as_ref().unwrap()[0],
+                line: b.entities[0],
+            },
             _ => panic!("unknown relation {}", b.kind),
         };
         assert_eq!(*a, expected);
@@ -119,7 +136,12 @@ fn verify_fields(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
             close(*a, *b);
         }
         let expected = match b.binding.as_str() {
-            "distance" => SketchPlacementBinding::Distance(b.points),
+            "distance" => match b.orientation.as_str() {
+                "horizontal" => SketchPlacementBinding::HorizontalDistance(b.points),
+                "vertical" => SketchPlacementBinding::VerticalDistance(b.points),
+                "" | "aligned" => SketchPlacementBinding::Distance(b.points),
+                value => panic!("unknown orientation {value}"),
+            },
             "diameter" => SketchPlacementBinding::Diameter(usize::try_from(b.entity).unwrap()),
             "steering" => SketchPlacementBinding::SteeringAngle,
             _ => panic!("unknown binding {}", b.binding),
@@ -135,3 +157,6 @@ fn verify_fields(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
         );
     }
 }
+
+#[path = "placement_recipe/rectangles.rs"]
+mod rectangles;

@@ -320,3 +320,6 @@ mod slot_input_tests;
 
 #[path = "native_scene/sketch_edit.rs"]
 mod sketch_edit_tests;
+
+#[path = "native_scene/rectangle_input.rs"]
+mod rectangle_input_tests;

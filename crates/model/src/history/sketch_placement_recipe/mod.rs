@@ -54,7 +54,7 @@ impl DocumentSnapshot {
         let points = append_defining_positions(&mut geometry, &recipe.points, ids)
             .map_err(SketchPlacementCreationError::Primitive)?;
         let members = append_members(&mut geometry, sketch, recipe, &points, ids)?;
-        let relations = append_relations(&mut geometry, sketch, recipe, &members, ids)?;
+        let relations = append_relations(&mut geometry, sketch, recipe, &points, &members, ids)?;
         self.sketches.replace_geometry(sketch, geometry)?;
         Ok(SketchPlacementCreationReport {
             sketch,
@@ -88,6 +88,7 @@ fn append_relations(
     geometry: &mut Sketch2D,
     sketch: DocumentSketchId,
     recipe: &SketchPlacementRecipe,
+    points: &[SketchEntityId],
     members: &[SketchEntityId],
     ids: &mut RecipeReservations<'_>,
 ) -> Result<Vec<SketchConstraintId>, SketchPlacementCreationError> {
@@ -95,7 +96,7 @@ fn append_relations(
         .relations
         .iter()
         .map(|relation| {
-            let input = relation.resolve(members)?;
+            let input = relation.resolve(points, members)?;
             input.validate(geometry)?;
             let id = ids
                 .allocate_sketch_constraint(sketch)

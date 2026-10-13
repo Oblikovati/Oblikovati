@@ -36,7 +36,7 @@ fn native_sketch_edit_faces_plane_and_restores_view_after_finish_and_resize() {
     owner.finish_sketch_edit().unwrap();
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
     assert_eq!(window.view.camera_state().unwrap(), original);
-    assert!(!owner.slot_placement_active());
+    assert!(!owner.placement_active());
     owner.finish().unwrap();
     window.finish().unwrap();
 }

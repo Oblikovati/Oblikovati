@@ -48,7 +48,7 @@ fn creation_enters_once_and_finish_preserves_independent_history() {
     owner.begin_sketch_edit(document, sketch).unwrap();
     owner.start_slot_placement(document, sketch, 2.).unwrap();
     owner.finish_sketch_edit().unwrap();
-    assert!(!owner.slot_placement_active());
+    assert!(!owner.placement_active());
 }
 #[test]
 fn history_reattaches_identity_and_undoing_creation_exits() {
@@ -95,7 +95,7 @@ fn invalid_entry_and_document_switch_do_not_select_an_arbitrary_sketch() {
     assert!(owner.active_sketch_edit().is_none());
     assert!(owner.begin_sketch_edit(first, sketch).is_err());
     assert!(owner.begin_sketch_edit(second, sketch).is_err());
-    assert!(owner.slot_placement_preview().is_none());
+    assert!(owner.placement_preview().is_none());
 }
 #[test]
 fn creation_failure_and_transaction_refusal_preserve_edit_state() {
@@ -241,5 +241,5 @@ fn switching_away_and_back_in_one_host_borrow_does_not_revive_edit() {
             .unwrap();
     }
     assert!(owner.active_sketch_edit().is_none());
-    assert!(!owner.slot_placement_active());
+    assert!(!owner.placement_active());
 }

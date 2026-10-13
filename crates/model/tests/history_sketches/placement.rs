@@ -32,7 +32,7 @@ fn committed(
     history.commit(&token, false).unwrap();
     (history, report)
 }
-fn lock(expression: &str) -> Option<SketchPlacementFieldLock> {
+pub(super) fn lock(expression: &str) -> Option<SketchPlacementFieldLock> {
     Some(SketchPlacementFieldLock {
         expression: expression.into(),
         text_point: Some([3.0, 4.0]),

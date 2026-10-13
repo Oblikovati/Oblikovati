@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{SketchError, SketchPathMember, require_position};
 mod bindings;
+mod fields;
+mod rectangles;
 mod slots;
 pub use bindings::{SketchPlacementBinding, SketchPlacementRelation};
 /// A shared authoring graph for preview and atomic commit; indices are local, not permanent IDs.

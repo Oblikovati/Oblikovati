@@ -65,7 +65,7 @@ fn count(owner: &TestOwner, document: u64, sketch: DocumentSketchId) -> usize {
         .points()
         .len()
 }
-fn deliver(owner: &mut TestOwner, events: &[ViewportEvent]) {
+pub(super) fn deliver(owner: &mut TestOwner, events: &[ViewportEvent]) {
     owner
         .process_window_inputs(events, &PlanarInputWindow::default())
         .unwrap();
@@ -77,22 +77,22 @@ fn slot_click_click_and_drag_release_share_geometry_and_one_history_command() {
         let before = count(&owner, document, sketch);
         let history = owner.gui_command_state().unwrap();
         deliver(&mut owner, &[button([0, 0], true), motion([0, 0])]);
-        assert!(owner.slot_placement_preview().is_none());
+        assert!(owner.placement_preview().is_none());
         if !drag {
             deliver(&mut owner, &[button([0, 0], false)]);
         }
         deliver(&mut owner, &[motion([10, 0])]);
         assert_eq!(count(&owner, document, sketch), before);
         assert_eq!(owner.gui_command_state().unwrap(), history);
-        let preview = owner.slot_placement_preview().unwrap().clone();
+        let preview = owner.placement_preview().unwrap().clone();
         deliver(&mut owner, &[button([10, 0], !drag)]);
         assert_eq!(count(&owner, document, sketch), before + 6);
-        assert!(owner.slot_placement_active());
-        assert!(owner.slot_placement_preview().is_none());
+        assert!(owner.placement_active());
+        assert!(owner.placement_preview().is_none());
         verify_slot_centers(&owner, document, sketch, &preview);
         deliver(&mut owner, &[key(ViewportKey::Undo, true)]);
         assert_eq!(count(&owner, document, sketch), before);
-        assert!(!owner.slot_placement_active());
+        assert!(!owner.placement_active());
     }
 }
 fn verify_slot_centers(
@@ -124,7 +124,7 @@ fn slot_sub_slop_release_does_not_commit_and_release_itself_can_start_a_drag() {
     let before = count(&owner, document, sketch);
     deliver(&mut owner, &[button([0, 0], true), button([4, 0], false)]);
     assert_eq!(count(&owner, document, sketch), before);
-    assert!(owner.slot_placement_preview().is_none());
+    assert!(owner.placement_preview().is_none());
     deliver(&mut owner, &[button([10, 0], true), button([20, 0], false)]);
     assert_eq!(count(&owner, document, sketch), before + 6);
     deliver(&mut owner, &[button([30, 0], true), button([40, 0], false)]);
@@ -149,7 +149,7 @@ fn slot_cancel_lifecycle_and_navigation_never_turn_release_into_a_commit() {
                 button([10, 0], false),
             ],
         );
-        assert!(!owner.slot_placement_active());
+        assert!(!owner.placement_active());
         assert_eq!(count(&owner, document, sketch), before);
     }
     verify_navigation_disarms_slot();
@@ -225,10 +225,10 @@ fn slot_rejects_wrong_document_bad_width_or_transaction_and_cancels_on_external_
     );
     deliver(&mut owner, &[button([0, 0], true), motion([10, 0])]);
     super::commands::dirty_property(&mut owner, document);
-    assert!(owner.slot_placement_preview().is_none());
-    assert!(!owner.slot_placement_active());
+    assert!(owner.placement_preview().is_none());
+    assert!(!owner.placement_active());
     deliver(&mut owner, &[]);
-    assert!(!owner.slot_placement_active());
+    assert!(!owner.placement_active());
     Client::new(owner.document_host())
         .transactions()
         .begin(&TransactionBeginArgs {
@@ -248,7 +248,7 @@ fn inactive_owner_and_edge_on_planes_do_not_create_geometry() {
     owner
         .process_window_inputs(&[button([0, 0], true), button([10, 0], false)], &edge)
         .unwrap();
-    assert!(owner.slot_placement_preview().is_none());
+    assert!(owner.placement_preview().is_none());
     deliver(
         &mut owner,
         &[
@@ -324,7 +324,7 @@ fn preview_packet_contains_current_plane_and_owned_recipe() {
         .unwrap();
     let packet = owner.sketch_preview().unwrap();
     assert_eq!(packet.plane, SketchPlane::xy());
-    assert_eq!(&packet.recipe, owner.slot_placement_preview().unwrap());
+    assert_eq!(&packet.recipe, owner.placement_preview().unwrap());
     owner
         .process_window_inputs(
             &[key(ViewportKey::Cancel, true)],

@@ -47,7 +47,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         oblikovati_session::SketchContinuityWatch,
         oblikovati_session::workspace::WorkspaceFocusIdentity,
     )>,
-    slot_placement: Option<crate::placement_slot::SlotPlacement>,
+    placement: Option<crate::placement_input::SketchPlacementState>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -80,7 +80,7 @@ impl<
             part_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),
-            slot_placement: None,
+            placement: None,
             sketch_edit: None,
         }
     }
@@ -180,7 +180,7 @@ impl<
     }
     fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
         self.sketch_edit = None;
-        self.slot_placement = None;
+        self.placement = None;
         self.command_notice = Some(DesktopCommandNotice::SketchEditFailed { cause });
         Ok(())
     }
@@ -189,9 +189,9 @@ impl<
     }
 
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
-        let recipe = self.slot_placement_preview()?.clone();
+        let recipe = self.placement_preview()?.clone();
         Some(oblikovati_viewport::ViewportSketchPreview {
-            plane: self.slot_placement.as_ref()?.plane,
+            plane: self.placement.as_ref()?.plane,
             recipe,
         })
     }
@@ -201,7 +201,7 @@ impl<
         inputs: &[oblikovati_viewport::ViewportEvent],
         window: &dyn crate::HeadWindow,
     ) -> Result<bool, String> {
-        self.process_slot_inputs(inputs, window)
+        self.process_placement_inputs(inputs, window)
     }
     fn take_command_notice(&mut self) -> Option<DesktopCommandNotice> {
         self.command_notice.take()
@@ -229,7 +229,7 @@ impl<
         Ok(self.refused_close.is_empty() && pending == 0)
     }
     fn finish(&mut self) -> Result<(), String> {
-        self.slot_placement = None;
+        self.placement = None;
         self.sketch_edit = None;
         self.part_scenes.clear();
         self.dispatch.close();
@@ -272,8 +272,8 @@ mod placement;
 #[path = "../tests/owner.rs"]
 mod tests;
 
-#[path = "owner_slot_input.rs"]
-mod slot_input;
+#[path = "owner_placement_input.rs"]
+mod placement_input;
 
 #[path = "owner_sketch_edit.rs"]
 mod sketch_environment;

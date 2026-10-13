@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::fields::{distance, field};
 use super::*;
 use crate::sketch::SketchSlotPlacement;
 use SketchPlacementBinding::{Diameter, Distance, SteeringAngle};
@@ -75,19 +76,6 @@ fn arc(center: usize, endpoints: [usize; 2], counter_clockwise: bool) -> SketchP
         counter_clockwise,
     }
 }
-fn field(
-    label: &str,
-    value: f64,
-    witness: [[f64; 2]; 2],
-    binding: SketchPlacementBinding,
-) -> SketchPlacementField {
-    SketchPlacementField {
-        label: label.into(),
-        value,
-        witness,
-        binding,
-    }
-}
 fn straight_fields(
     centers: [[f64; 2]; 2],
     width: f64,
@@ -118,8 +106,4 @@ fn curved_fields(
         field("Sweep", to - from, [start, end], SteeringAngle),
         field("Width", width, [start, outer_start], Diameter(3)),
     ]
-}
-fn distance([a, b]: [[f64; 2]; 2]) -> f64 {
-    let delta = [b[0] - a[0], b[1] - a[1]];
-    (delta[0] * delta[0] + delta[1] * delta[1]).sqrt()
 }

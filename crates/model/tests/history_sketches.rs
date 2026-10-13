@@ -218,3 +218,6 @@ mod polygon;
 mod polyline;
 #[path = "history_sketches/slots.rs"]
 mod slots;
+
+#[path = "history_sketches/rectangles.rs"]
+mod rectangles;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Capture the pinned Go aa8297d1 constrained-slot recipes and rank independently.
+// Capture the pinned Go aa8297d1 constrained slot and rectangle recipes and rank independently.
 package main
 
 import (
@@ -11,6 +11,7 @@ import (
 )
 
 type record struct {
+	Kind      string
 	Curved    bool
 	Input     [3][2]float64
 	Width     float64
@@ -27,16 +28,18 @@ type entity struct {
 	CCW, Construction bool
 }
 type relation struct {
+	Points   []int
 	Kind     string
 	Entities []int
 }
 type field struct {
-	Label   string
-	Value   float64
-	Witness [2][2]float64
-	Binding string
-	Points  [2]int
-	Entity  int
+	Label       string
+	Value       float64
+	Witness     [2][2]float64
+	Binding     string
+	Points      [2]int
+	Entity      int
+	Orientation string
 }
 
 func main() {
@@ -50,6 +53,11 @@ func main() {
 			}
 		}
 	}
+	for _, kind := range []string{"rectangle", "center", "threePoint"} {
+		for _, sign := range [][2]float64{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}} {
+			out = append(out, capture(record{Kind: kind, Input: [3][2]float64{{3, 4}, {3 + 6*sign[0], 4 + 8*sign[1]}, {-5, 10}}}))
+		}
+	}
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}
@@ -60,6 +68,14 @@ func capture(out record) record {
 	r := sketch.StraightSlotRecipe(c, s, out.Width)
 	if out.Curved {
 		r = sketch.ArcSlotRecipe(c, s, e, out.Width, out.CCW)
+	}
+	switch out.Kind {
+	case "rectangle":
+		r = sketch.RectangleRecipe(c, s)
+	case "center":
+		r = sketch.CenterRectangleRecipe(c, s)
+	case "threePoint":
+		r = sketch.ThreePointRectangleRecipe(c, s, e)
 	}
 	for _, p := range r.Points {
 		out.Points = append(out.Points, xy(p))
@@ -72,7 +88,7 @@ func capture(out record) record {
 		out.Entities = append(out.Entities, entity{kind, v.Points, v.CounterClockwise, v.Construction})
 	}
 	for _, v := range r.Constraints {
-		out.Relations = append(out.Relations, relation{string(v.Kind), v.Entities})
+		out.Relations = append(out.Relations, relation{v.Points, string(v.Kind), v.Entities})
 	}
 	for _, v := range r.Fields {
 		binding := "steering"
@@ -82,7 +98,7 @@ func capture(out record) record {
 		if v.Dim.Kind == sketch.DiameterDim {
 			binding = "diameter"
 		}
-		out.Fields = append(out.Fields, field{v.Label, v.Value, [2][2]float64{xy(v.Witness[0]), xy(v.Witness[1])}, binding, v.Dim.Points, v.Dim.Entity})
+		out.Fields = append(out.Fields, field{v.Label, v.Value, [2][2]float64{xy(v.Witness[0]), xy(v.Witness[1])}, binding, v.Dim.Points, v.Dim.Entity, sketch.DistanceOrientationName(v.Dim.Orientation)})
 	}
 	owner := sketch.NewSketches().Add(sketch.XYPlane())
 	if _, _, err := owner.Apply(r, types.OverConstrainedApplyDriven); err != nil {

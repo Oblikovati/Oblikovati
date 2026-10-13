@@ -4,14 +4,14 @@ use oblikovati_model::{
     sketch::{SketchPlacementRecipe, SketchPlane},
 };
 use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, ViewportKey};
-pub(crate) struct SlotPlacement {
+pub(crate) struct SketchPlacementState {
     pub document: u64,
     pub sketch: DocumentSketchId,
     pub generation: u64,
     pub plane: SketchPlane,
-    pub width: f64,
+    pub tool: crate::SketchPlacementTool,
     pub preview: Option<SketchPlacementRecipe>,
-    start: Option<[f64; 2]>,
+    accepted: Vec<[f64; 2]>,
     press: Option<PlacementPress>,
     navigation: [bool; 3],
 }
@@ -24,27 +24,23 @@ pub(crate) enum PlacementAction {
     Cancel,
     Cursor { pixel: [i32; 2], place: bool },
 }
-impl SlotPlacement {
+impl SketchPlacementState {
     pub(crate) fn new(
         document: u64,
         sketch: DocumentSketchId,
         generation: u64,
         plane: SketchPlane,
-        width: f64,
+        tool: crate::SketchPlacementTool,
     ) -> Result<Self, String> {
-        if !width.is_finite() || width <= 0. {
-            return Err(format!(
-                "slot width {width}: expected a positive finite working-unit length"
-            ));
-        }
+        tool.validate()?;
         Ok(Self {
             document,
             sketch,
             generation,
             plane,
-            width,
+            tool,
             preview: None,
-            start: None,
+            accepted: Vec::new(),
             press: None,
             navigation: [false; 3],
         })
@@ -145,17 +141,16 @@ impl SlotPlacement {
             self.press = None;
             return Ok(None);
         };
-        let Some(start) = self.start else {
+        if self.accepted.len() + 1 < self.tool.point_count() {
             if place {
-                self.start = Some(point);
+                self.accept_point(point)?;
             }
             return Ok(None);
-        };
-        if !place && start == point {
+        }
+        if !place && self.accepted.last() == Some(&point) {
             return Ok(None);
         }
-        let recipe = SketchPlacementRecipe::straight_slot([start, point], self.width)
-            .map_err(|cause| cause.to_string())?;
+        let recipe = self.tool.recipe(&self.accepted, point)?;
         self.preview = Some(recipe.clone());
         Ok(place.then_some(recipe))
     }
@@ -165,14 +160,42 @@ impl SlotPlacement {
     }
     pub(crate) fn restart(&mut self, generation: u64) {
         self.generation = generation;
-        self.start = None;
+        self.accepted.clear();
         self.press = None;
         self.preview = None;
     }
     pub(crate) fn prompt(&self) -> String {
-        if self.start.is_none() {
-            return "Slot: select the first centre point. Escape cancels.".into();
+        self.tool.prompt(self.accepted.len())
+    }
+    fn accept_point(&mut self, point: [f64; 2]) -> Result<(), String> {
+        if point.iter().any(|value| !value.is_finite()) || self.accepted.last() == Some(&point) {
+            return Err(format!(
+                "placement point {point:?}: expected a finite point distinct from the preceding point"
+            ));
         }
-        "Slot: select the second centre point. Escape cancels.".into()
+        self.accepted.push(point);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn nonfinite_first_points_do_not_advance_the_placement_stage() {
+        let mut state = SketchPlacementState::new(
+            1,
+            DocumentSketchId(1),
+            0,
+            SketchPlane::xy(),
+            crate::SketchPlacementTool::Rectangle,
+        )
+        .unwrap();
+        let before = state.prompt();
+        assert!(state.cursor(Some([f64::NAN, 0.]), true).is_err());
+        assert_eq!(state.prompt(), before);
+        assert!(state.preview.is_none());
+        state.cursor(Some([0., 0.]), true).unwrap();
+        assert!(state.cursor(Some([1., 2.]), true).unwrap().is_some());
     }
 }

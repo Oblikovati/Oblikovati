@@ -81,8 +81,8 @@ fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
 mod scene_fixture;
 
-#[path = "placement/slot.rs"]
-mod placement_slot;
+#[path = "placement/input.rs"]
+mod placement_input;
 
 #[cfg(test)]
 #[path = "../tests/placement_inputs.rs"]
@@ -90,3 +90,7 @@ mod placement_test_inputs;
 
 mod sketch_edit;
 pub use sketch_edit::HeadSketchEdit;
+
+#[path = "placement/tool.rs"]
+mod placement_tool;
+pub use placement_tool::SketchPlacementTool;

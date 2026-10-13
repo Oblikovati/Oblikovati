@@ -50,7 +50,7 @@ impl<
             )
         })?;
         self.require_edit_document(edit.document)?;
-        self.slot_placement = None;
+        self.placement = None;
         self.sketch_edit = None;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: "Sketch finished.".into(),
@@ -147,13 +147,13 @@ impl<
             return false;
         }
         self.sketch_edit = None;
-        self.slot_placement = None;
+        self.placement = None;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: "Sketch edit ended because its document or plane is unavailable.".into(),
         });
         true
     }
-    pub(super) fn select_slot_sketch(
+    pub(super) fn select_placement_sketch(
         &mut self,
         document: u64,
         sketch: DocumentSketchId,

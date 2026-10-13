@@ -59,6 +59,11 @@ fn every_rectangle_constructor_refuses_nonfinite_authored_positions() {
                     let pair = [points[0], points[1]];
                     assert!(SketchRectangleSeed::Corners(pair).vertices().is_err());
                     assert!(SketchRectangleSeed::Center(pair).vertices().is_err());
+                    assert!(
+                        SketchRectangleSeed::DirectedCenter(pair)
+                            .vertices()
+                            .is_err()
+                    );
                 }
             }
         }
@@ -79,4 +84,19 @@ fn rectangle_declines_unrepresentable_intermediate_or_output_coordinates() {
     ] {
         assert!(seed.vertices().is_err(), "accepted {seed:?}");
     }
+}
+
+#[test]
+fn directed_centers_keep_corner_order_without_changing_raw_center_order() {
+    let inputs = [[3., 4.], [-3., -4.]];
+    assert_eq!(
+        SketchRectangleSeed::DirectedCenter(inputs)
+            .vertices()
+            .unwrap(),
+        [[9., 12.], [-3., 12.], [-3., -4.], [9., -4.]]
+    );
+    assert_eq!(
+        SketchRectangleSeed::Center(inputs).vertices().unwrap(),
+        [[-3., -4.], [9., -4.], [9., 12.], [-3., 12.]]
+    );
 }

@@ -5,6 +5,8 @@ use super::{SketchError, require_position};
 pub enum SketchRectangleSeed {
     Corners([[f64; 2]; 2]),
     Center([[f64; 2]; 2]),
+    /// Placement retains the clicked corner direction; raw API Center uses absolute half-extents.
+    DirectedCenter([[f64; 2]; 2]),
     ThreePoints([[f64; 2]; 3]),
 }
 impl SketchRectangleSeed {
@@ -13,7 +15,8 @@ impl SketchRectangleSeed {
     pub fn vertices(self) -> Result<[[f64; 2]; 4], SketchError> {
         let vertices = match self {
             Self::Corners(points) => rectangle_corners(points)?,
-            Self::Center(points) => centered_rectangle(points)?,
+            Self::Center(points) => centered_rectangle(points, false)?,
+            Self::DirectedCenter(points) => centered_rectangle(points, true)?,
             Self::ThreePoints(points) => three_point_rectangle(points)?,
         };
         for position in vertices {
@@ -32,10 +35,15 @@ fn rectangle_corners([first, opposite]: [[f64; 2]; 2]) -> Result<[[f64; 2]; 4], 
         [first[0], opposite[1]],
     ])
 }
-fn centered_rectangle([center, corner]: [[f64; 2]; 2]) -> Result<[[f64; 2]; 4], SketchError> {
+fn centered_rectangle(
+    [center, corner]: [[f64; 2]; 2],
+    directed: bool,
+) -> Result<[[f64; 2]; 4], SketchError> {
     require_position(center)?;
     require_position(corner)?;
-    let half = [(corner[0] - center[0]).abs(), (corner[1] - center[1]).abs()];
+    let half = [corner[0] - center[0], corner[1] - center[1]];
+    // Go aa8297d1: AddRectangleByCenter uses absolute extents; CenterRectangleRecipe retains direction.
+    let half = if directed { half } else { half.map(f64::abs) };
     require_position(half)?;
     rectangle_corners([
         [center[0] - half[0], center[1] - half[1]],
@@ -69,6 +77,7 @@ fn rectangle_normal(first: [f64; 2], second: [f64; 2]) -> Result<[f64; 2], Sketc
             "rectangle first edge {first:?} -> {second:?}, length {length}: expected a finite nonzero representable length"
         )));
     }
+    // Retain the pinned Go reciprocal/multiply order for the placement seed.
     let inverse = 1.0 / length;
     let normal = perpendicular.map(|coordinate| coordinate * inverse);
     require_position(normal)?;

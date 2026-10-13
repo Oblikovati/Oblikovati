@@ -4,9 +4,9 @@ use crate::placement_test_inputs::*;
 use oblikovati_model::sketch::{SketchPlacementRecipe, SketchPlane};
 use oblikovati_viewport::{ViewportEvent, ViewportKey};
 use std::collections::VecDeque;
-struct PlacementEventWindow {
-    native: NativeHeadWindow,
-    scripted: VecDeque<Vec<ViewportEvent>>,
+pub(super) struct PlacementEventWindow {
+    pub(super) native: NativeHeadWindow,
+    pub(super) scripted: VecDeque<Vec<ViewportEvent>>,
 }
 impl HeadWindow for PlacementEventWindow {
     fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
@@ -98,7 +98,7 @@ fn drive_slot_preview(
     }
     window.scripted = VecDeque::from([first, vec![motion([820, 500])]]);
     crate::frames::run_frames(window, HeadOptions { frames: Some(2) }, owner).unwrap();
-    let preview = owner.slot_placement_preview().unwrap().clone();
+    let preview = owner.placement_preview().unwrap().clone();
     verify_outline_pixels(owner, window);
     assert!(
         before.same_recipe(
@@ -149,8 +149,8 @@ fn drive_slot_commit(
             assert!((a - b).abs() < 1e-8);
         }
     }
-    assert!(owner.slot_placement_active());
-    assert!(owner.slot_placement_preview().is_none());
+    assert!(owner.placement_active());
+    assert!(owner.placement_preview().is_none());
     assert!(!window.native.set_sketch_preview(None).unwrap());
     assert_eq!(solid_pixels(&capture_native_scene(&mut window.native)), 0);
     sketches
@@ -162,7 +162,7 @@ fn drive_slot_undo(
 ) {
     window.scripted = VecDeque::from([vec![key(ViewportKey::Undo, true)]]);
     crate::frames::run_frames(window, HeadOptions { frames: Some(2) }, owner).unwrap();
-    assert!(!owner.slot_placement_active());
+    assert!(!owner.placement_active());
     window.native.view.set_status_text("").unwrap();
     assert_eq!(capture_native_scene(&mut window.native).rgba, original.rgba);
 }
@@ -239,7 +239,7 @@ fn verify_ordered_slot_centers(
     }
 }
 
-fn verify_outline_pixels(owner: &NativeDesktopOwner, window: &mut PlacementEventWindow) {
+pub(super) fn verify_outline_pixels(owner: &NativeDesktopOwner, window: &mut PlacementEventWindow) {
     let outlined = capture_native_scene(&mut window.native);
     assert!(window.native.set_sketch_preview(None).unwrap());
     let cleared = capture_native_scene(&mut window.native);

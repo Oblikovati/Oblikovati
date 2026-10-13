@@ -79,3 +79,6 @@ the gate.
 
 Selected sketch ownership and camera entry/exit are covered by the later
 [sketch edit step](implementation-sketch-environment.md).
+
+The later [rectangle placement step](implementation-rectangle-placement.md)
+replaces the slot-only input state with one shared placement pipeline.

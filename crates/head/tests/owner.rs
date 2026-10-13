@@ -223,3 +223,6 @@ mod slot_input;
 
 #[path = "owner/sketch_edit.rs"]
 mod sketch_edit;
+
+#[path = "owner/rectangle_input.rs"]
+mod rectangle_input;
