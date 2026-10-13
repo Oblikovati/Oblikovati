@@ -4,30 +4,11 @@ use oblikovati_model::{
     document_sketch::DocumentSketchId,
     sketch::{
         PlanarConstraint, Sketch2D, SketchConstraintId, SketchEntityEditError, SketchEntityId,
-        SketchLineEnd, SketchLineEndpointReport, SketchPlane,
+        SketchLineEnd, SketchLineEndpointReport,
     },
 };
 fn endpoint_session(veto: Option<&'static str>) -> DocumentSession<RecordingObserver> {
-    let mut snapshot = recipe();
-    snapshot
-        .sketches
-        .add(
-            DocumentSketchId(1),
-            "Endpoint",
-            SketchPlane::xy(),
-            endpoint_geometry(),
-        )
-        .unwrap();
-    let ids = RecipeIdAllocator::restore(Some(1), &[1]).unwrap();
-    let history = DocumentEditHistory::new(snapshot, ids).unwrap();
-    DocumentSession::new(
-        17,
-        history,
-        RecordingObserver {
-            veto,
-            ..Default::default()
-        },
-    )
+    super::sketch_fixture::owned_sketch_session(veto, "Endpoint", endpoint_geometry())
 }
 fn endpoint_geometry() -> Sketch2D {
     let mut sketch = Sketch2D::default();

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{SketchError, require_position};
+use super::{SketchError, SketchPathMember, require_position};
 mod curved;
 mod straight;
 /// Seed placements for one slot; these author geometry without adding design constraints.
@@ -23,17 +23,7 @@ pub enum SketchSlotPlacement {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchSlotLayout {
     pub points: Vec<[f64; 2]>,
-    pub members: [SketchSlotMember; 4],
-}
-/// A slot boundary member; centers are distinct from its shared endpoints.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SketchSlotMember {
-    Line([usize; 2]),
-    Arc {
-        center: usize,
-        endpoints: [usize; 2],
-        counter_clockwise: bool,
-    },
+    pub members: [SketchPathMember; 4],
 }
 impl SketchSlotPlacement {
     /// Prepare finite seeds before allocating IDs; example: `placement.layout(2.0)?`.
@@ -84,8 +74,8 @@ fn direction(first: [f64; 2], last: [f64; 2]) -> Result<([f64; 2], f64), SketchE
 fn shifted(point: [f64; 2], offset: [f64; 2]) -> [f64; 2] {
     [point[0] + offset[0], point[1] + offset[1]]
 }
-fn arc_member(center: usize, endpoints: [usize; 2], counter_clockwise: bool) -> SketchSlotMember {
-    SketchSlotMember::Arc {
+fn arc_member(center: usize, endpoints: [usize; 2], counter_clockwise: bool) -> SketchPathMember {
+    SketchPathMember::Arc {
         center,
         endpoints,
         counter_clockwise,
@@ -95,7 +85,7 @@ fn arc_member(center: usize, endpoints: [usize; 2], counter_clockwise: bool) -> 
 impl SketchSlotLayout {
     fn require_caps(&self) -> Result<(), SketchError> {
         for index in [1, 3] {
-            if let SketchSlotMember::Arc {
+            if let SketchPathMember::Arc {
                 center, endpoints, ..
             } = self.members[index]
             {

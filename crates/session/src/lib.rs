@@ -154,3 +154,4 @@ pub use sketch_split::SketchSplitProjectionInput;
 
 mod sketch_polyline;
 pub use sketch_polyline::SketchPolylineProjectionInput;
+mod sketch_placement_recipe;

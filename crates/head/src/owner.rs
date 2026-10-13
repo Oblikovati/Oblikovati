@@ -230,6 +230,8 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         .with_part_topology(scenes)
         .with_sketch_construction(construction, Default::default())
 }
+#[path = "owner_placement.rs"]
+mod placement;
 #[cfg(test)]
 #[path = "../tests/owner.rs"]
 mod tests;

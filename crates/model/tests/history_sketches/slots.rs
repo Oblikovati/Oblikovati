@@ -2,7 +2,7 @@
 use super::*;
 use oblikovati_model::{
     history::SketchSlotCreation,
-    sketch::{SketchSlotMember, SketchSlotPlacement},
+    sketch::{SketchPathMember, SketchSlotPlacement},
 };
 fn slot_input(curved: bool) -> SketchSlotCreation {
     SketchSlotCreation {
@@ -53,11 +53,11 @@ fn verify_owned_slot(
     for (member, id) in layout.members.iter().zip(&report.members) {
         assert!(geometry.is_construction(*id).unwrap());
         match member {
-            SketchSlotMember::Line(pair) => assert_eq!(
+            SketchPathMember::Line(pair) => assert_eq!(
                 geometry.line(*id).unwrap().endpoints,
                 pair.map(|i| report.points[i])
             ),
-            SketchSlotMember::Arc {
+            SketchPathMember::Arc {
                 center,
                 endpoints,
                 counter_clockwise,

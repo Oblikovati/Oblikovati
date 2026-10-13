@@ -398,3 +398,7 @@ pub use sketch_polygon::{
 
 mod sketch_slot;
 pub use sketch_slot::{SketchSlotCreation, SketchSlotCreationReport};
+mod sketch_placement_recipe;
+pub use sketch_placement_recipe::{
+    SketchPlacementCreationError, SketchPlacementCreationReport, SketchPlacementFieldLock,
+};

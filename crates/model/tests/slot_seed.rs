@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_model::sketch::{SketchSlotMember, SketchSlotPlacement};
+use oblikovati_model::sketch::{SketchPathMember, SketchSlotPlacement};
 use serde::Deserialize;
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -64,9 +64,9 @@ fn every_slot_seed_and_shared_reference_matches_the_independent_go_capture() {
         }
         for (actual, expected) in layout.members.iter().zip(record.members) {
             let member = if expected.kind == "line" {
-                SketchSlotMember::Line(expected.ends)
+                SketchPathMember::Line(expected.ends)
             } else {
-                SketchSlotMember::Arc {
+                SketchPathMember::Arc {
                     center: expected.center,
                     endpoints: expected.ends,
                     counter_clockwise: expected.ccw,

@@ -332,4 +332,5 @@ mod tests {
 
 mod sketch_split;
 
+mod sketch_placement_recipe;
 mod sketch_polyline;

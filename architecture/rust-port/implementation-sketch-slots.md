@@ -69,8 +69,9 @@ checks remain open. This work is local only; no push or release is included.
 Go also has separate GUI placement recipes in `model/sketch/recipe_slot.go`.
 Those include construction centerlines, tangency/equal-radius relations, and
 interactive length/angle/width fields. They are not the constructors called by
-`sketch.addEntity`. Their Rust recipe and interactive placement port remains
-required; this API step does not complete that separate user flow. The six
+`sketch.addEntity`. The constrained recipe commit path is now covered by
+[slot placement recipes](implementation-slot-placement-recipes.md). Interactive
+placement remains required; this API step does not complete that user flow. The six
 pinned Go composite-constructor/profile tests pass independently.
 
 The complete local `make gate` passed for all 13 crates, all targets and features:

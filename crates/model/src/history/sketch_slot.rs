@@ -3,10 +3,7 @@ use super::sketch_primitive::{append_defining_positions, append_primitive};
 use super::{DocumentSnapshot, RecipeReservations, SketchPrimitiveCreationError};
 use crate::{
     document_sketch::DocumentSketchId,
-    sketch::{
-        Sketch2D, SketchEntityId, SketchPointInput, SketchPrimitiveCreation, SketchSlotLayout,
-        SketchSlotMember, SketchSlotPlacement,
-    },
+    sketch::{Sketch2D, SketchEntityId, SketchPathMember, SketchSlotLayout, SketchSlotPlacement},
 };
 /// One slot placement with a positive width and a role for all boundary members.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -59,9 +56,11 @@ fn append_slot(
     let mut members = Vec::new();
     let mut exposed_points = Vec::new();
     for member in layout.members {
-        let primitive = slot_primitive(member, &points, input.construction);
+        let primitive = member
+            .primitive(&points, input.construction)
+            .map_err(SketchPrimitiveCreationError::Sketch)?;
         members.push(append_primitive(geometry, sketch, &primitive, ids)?.entity);
-        if let SketchSlotMember::Line(pair) = member {
+        if let SketchPathMember::Line(pair) = member {
             exposed_points.extend(pair.map(|index| points[index]));
         }
     }
@@ -71,27 +70,4 @@ fn append_slot(
         points,
         exposed_points,
     })
-}
-fn slot_primitive(
-    member: SketchSlotMember,
-    points: &[SketchEntityId],
-    construction: bool,
-) -> SketchPrimitiveCreation {
-    match member {
-        SketchSlotMember::Line(pair) => SketchPrimitiveCreation::Line {
-            endpoints: pair.map(|index| SketchPointInput::Owned(points[index])),
-            construction,
-            centerline: false,
-        },
-        SketchSlotMember::Arc {
-            center,
-            endpoints,
-            counter_clockwise,
-        } => SketchPrimitiveCreation::Arc {
-            center: SketchPointInput::Owned(points[center]),
-            endpoints: endpoints.map(|index| SketchPointInput::Owned(points[index])),
-            counter_clockwise,
-            construction,
-        },
-    }
 }

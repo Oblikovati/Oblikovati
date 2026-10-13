@@ -18,9 +18,9 @@ pub(super) fn centers(
         ],
         // Go aa8297d1: clockwise caps bulge away from the slot centerline.
         members: [
-            SketchSlotMember::Line([0, 1]),
+            SketchPathMember::Line([0, 1]),
             arc_member(4, [1, 2], false),
-            SketchSlotMember::Line([2, 3]),
+            SketchPathMember::Line([2, 3]),
             arc_member(5, [3, 0], false),
         ],
     })

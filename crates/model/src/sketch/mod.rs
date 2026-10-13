@@ -165,4 +165,11 @@ pub use construction_backend::{
 };
 
 mod slot_seed;
-pub use slot_seed::{SketchSlotLayout, SketchSlotMember, SketchSlotPlacement};
+pub use slot_seed::{SketchSlotLayout, SketchSlotPlacement};
+mod path_member;
+pub use path_member::SketchPathMember;
+mod placement_recipe;
+pub use placement_recipe::{
+    SketchPlacementBinding, SketchPlacementField, SketchPlacementMember, SketchPlacementRecipe,
+    SketchPlacementRelation,
+};

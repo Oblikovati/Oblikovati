@@ -409,6 +409,8 @@ mod sketch_dimension_delete;
 #[path = "lifecycle/dimension_create.rs"]
 mod dimension_create;
 
+#[path = "lifecycle/placement_recipe.rs"]
+mod placement_recipe;
 #[path = "lifecycle/sketch_deletion_selection.rs"]
 mod sketch_deletion_selection;
 #[path = "lifecycle/sketch_editor_selection.rs"]
@@ -417,6 +419,8 @@ mod sketch_editor_selection;
 mod sketch_endpoint;
 #[path = "lifecycle/sketch_entity_delete.rs"]
 mod sketch_entity_delete;
+#[path = "lifecycle/sketch_fixture.rs"]
+mod sketch_fixture;
 #[path = "lifecycle/sketch_polyline.rs"]
 mod sketch_polyline;
 #[path = "lifecycle/sketch_selection_click.rs"]

@@ -210,6 +210,8 @@ fn verify_sketches(snapshot: &mut DocumentSnapshot) -> Result<(), String> {
         .candidate;
     Ok(())
 }
+#[path = "history_sketches/placement.rs"]
+mod placement;
 #[path = "history_sketches/polygon.rs"]
 mod polygon;
 #[path = "history_sketches/polyline.rs"]
