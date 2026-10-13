@@ -47,10 +47,10 @@ impl Sketch2D {
                 .ok_or_else(|| selection_geometry_error(*id))?;
             selected.extend(shape.transform_points(transform)?);
         }
+        // #3563: constructor-owned defining points are hidden from the visible entity list.
         Ok(self
-            .entity_ids()
-            .iter()
-            .copied()
+            .owned_entity_ids()
+            .into_iter()
             .filter(|id| selected.contains(id))
             .collect())
     }

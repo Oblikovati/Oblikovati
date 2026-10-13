@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::sketch::SketchSelectionTransform;
+use std::slice::from_ref;
 fn rotation(entities: Vec<u64>, center: Vec<f64>, angle: &str) -> TransformSketchArgs {
     TransformSketchArgs {
         op: "rotate".into(),
@@ -192,4 +193,58 @@ fn reject_rotation_reply(files: &mut DiscoveryWorkspace, document: u64) {
             Err::<(), _>("reply refused")
         });
     assert!(result.is_err());
+}
+#[test]
+fn newly_created_line_moves_and_rotates_its_hidden_endpoints_through_the_typed_api() {
+    let (mut files, document, mut source, line) = free_created_line();
+    let original = rows(&files);
+    let before = created_line_row(&files, line);
+    let movement = movement(vec![line], vec![3.0, 4.0]);
+    move_call(&mut files, &mut source, &movement).unwrap();
+    let moved = created_line_row(&files, line);
+    assert_translated(&[before], from_ref(&moved), [3.0, 4.0]);
+    let rotation = rotation(vec![line], vec![0.0; 2], "90 deg");
+    move_call(&mut files, &mut source, &rotation).unwrap();
+    let rotated = created_line_row(&files, line);
+    assert_quarter_turn(from_ref(&moved), from_ref(&rotated), [0.0; 2]);
+    assert_eq!(rows(&files)[0], original[0]);
+    verify_keys(&files, &original);
+    verify_created_line_history(&mut files, document, &mut source, line, moved, rotated);
+}
+fn free_created_line() -> (DiscoveryWorkspace, u64, QueryGuids, u64) {
+    use oblikovati_model::sketch::{SketchPointInput, SketchPrimitiveCreation};
+    let (mut files, document, source) = configured_files(DOCUMENT_PART, Default::default());
+    let sketch = create_owner(&mut files, document);
+    let input = SketchPrimitiveCreation::Line {
+        endpoints: [[2.0, 0.0], [4.0, 0.0]].map(SketchPointInput::New),
+        construction: false,
+        centerline: false,
+    };
+    let report = files
+        .commands(document)
+        .unwrap()
+        .create_sketch_primitive(sketch, &input)
+        .unwrap();
+    assert_eq!(rows(&files).len(), 2);
+    (files, document, source, report.entity.0)
+}
+fn created_line_row(files: &DiscoveryWorkspace, line: u64) -> SketchEntityInfo {
+    rows(files).into_iter().find(|row| row.id == line).unwrap()
+}
+fn verify_created_line_history(
+    files: &mut DiscoveryWorkspace,
+    document: u64,
+    source: &mut QueryGuids,
+    line: u64,
+    moved: SketchEntityInfo,
+    rotated: SketchEntityInfo,
+) {
+    files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(created_line_row(files, line), moved);
+    files.commands(document).unwrap().redo().unwrap();
+    assert_eq!(created_line_row(files, line), rotated);
+    reopen_with_observer(files, document, source, Default::default());
+    assert_eq!(created_line_row(files, line), rotated);
+    move_call(files, source, &movement(vec![line], vec![1.0, 2.0])).unwrap();
+    assert_translated(&[rotated], &[created_line_row(files, line)], [1.0, 2.0]);
 }

@@ -250,5 +250,7 @@ mod construction;
 #[path = "sketch_entity_order/translation.rs"]
 mod translation;
 
+#[path = "sketch_entity_order/defining_transforms.rs"]
+mod defining_transforms;
 #[path = "sketch_entity_order/rotation.rs"]
 mod rotation;

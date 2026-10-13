@@ -10,7 +10,9 @@ shared module. Translation resolves the full selection, collects unique defining
 points, and prepares every finite output before mutation. It moves shared points
 once, including when a point and several incident curves are selected together.
 Duplicate selections follow the same unique-point rule as Go. The report lists
-authored defining point IDs in entity order, not final solver displacement.
+defining point IDs in owned entity order, not final solver displacement. The
+[constructor-point regression](implementation-sketch-rotation.md#constructor-owned-defining-points--2026-10-13)
+extends that traversal to hidden defining points.
 
 The edit keeps curve identities, incidence, circle radius, arc direction,
 constraints, construction roles, entity order, and reference keys. It allocates

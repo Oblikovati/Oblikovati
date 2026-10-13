@@ -67,3 +67,36 @@ exceeds 80%. The shared point-edit implementation, new affine transform module,
 and wire transform route each have 100% line coverage. Workspace duplication is
 0.72% (478 of 66,297 Rust lines). This evidence uses the released API and kernel
 pins; it does not substitute for the remaining port milestone acceptance.
+
+## Constructor-owned defining points — 2026-10-13
+
+A constructor-boundary regression found a gap in the selection traversal at
+`cc61b496`. Primitive constructors can hide defining points from `entity_ids()`.
+The transform collected their IDs from the curve, then filtered against that
+visible list. As a result, a newly created free line could return a successful
+move while its endpoints stayed unchanged. Rotation could turn an ellipse axis
+without turning its hidden center. Earlier tests used visible points or a
+constrained center that was expected to stay in place; those premises did not
+cover this case.
+
+Both model regression cases failed before the fix: move and rotate returned an
+empty affected-point list instead of the three shared defining-point IDs. A
+separate typed API test created a line through the primitive command, requested
+a `[3,4]` move, and observed unchanged `[2,0]` and `[4,0]` endpoints instead of
+`[5,4]` and `[7,4]`. These tests exercise the actual point-ownership representation.
+
+The shared transform now filters the complete `owned_entity_ids()` enumeration.
+Visible entity order remains unchanged; hidden defining points follow in their
+owned order. There is no separate branch for a constructor or curve type.
+Regression coverage includes hidden line/arc endpoints, circle/ellipse centers,
+control/fit spline points, shared points, duplicate selections, mixed visible
+and hidden points, atomic overflow refusal, and unchanged visibility metadata.
+The typed API case also checks rotation, keys, undo/redo, saved reload, and another
+move after reload. Copy remains unimplemented; this fixes a prerequisite exposed
+while inspecting its identity and point-sharing requirements.
+
+The defining-point fix passes the full local gate over all 13 crates, including
+native display tests. Model line coverage is 98.80% (17,459/17,671); every crate
+exceeds 80%, and duplication remains 0.72%. The production change replaces the
+visible enumeration with the existing complete ownership enumeration. It adds no
+geometry formula, tolerance, entity allocation, wire method, or dependency pin.
