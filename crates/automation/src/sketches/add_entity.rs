@@ -4,6 +4,7 @@ use oblikovati_session::SketchPrimitiveProjectionInput;
 mod chain_reply;
 mod inputs;
 mod line_reply;
+mod slot;
 mod three_point;
 use inputs::PreparedEntity;
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -29,6 +30,7 @@ fn create_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
 ) -> Result<Vec<u8>, Error> {
     let mut commands = files.commands(document).map_err(api_error)?;
     match input {
+        PreparedEntity::Slot(input) => slot::create(files, document, sketch, input, construction),
         PreparedEntity::ThreePoint(input) => {
             three_point::create(files, document, sketch, input, construction)
         }

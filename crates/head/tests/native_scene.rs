@@ -303,6 +303,8 @@ mod copy_tests;
 mod polygon_tests;
 #[path = "native_scene/polyline.rs"]
 mod polyline_tests;
+#[path = "native_scene/slots.rs"]
+mod slot_tests;
 #[path = "native_scene/split.rs"]
 mod split_tests;
 #[path = "native_scene/three_point.rs"]

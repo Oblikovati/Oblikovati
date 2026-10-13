@@ -163,3 +163,6 @@ pub use construction_backend::{
     CircumcircleOptions, PlanarCircumcircle, SketchCircleConstruction, SketchConstructionPolicy,
     SolvedCircularSeed,
 };
+
+mod slot_seed;
+pub use slot_seed::{SketchSlotLayout, SketchSlotMember, SketchSlotPlacement};

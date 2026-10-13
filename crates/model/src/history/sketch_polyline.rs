@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::sketch_primitive::{append_point, append_primitive};
+use super::sketch_primitive::{append_defining_positions, append_primitive};
 use super::{DocumentSnapshot, RecipeReservations, SketchPrimitiveCreationError};
 use crate::{
     document_sketch::DocumentSketchId,
@@ -68,30 +68,13 @@ pub(super) fn append_polyline(
     input
         .validate()
         .map_err(SketchPrimitiveCreationError::Sketch)?;
-    let points = append_polyline_points(geometry, input, ids)?;
+    let points = append_defining_positions(geometry, &input.points, ids)?;
     let lines = append_polyline_lines(geometry, sketch, input, &points, ids)?;
     Ok(SketchPolylineCreationReport {
         sketch,
         lines,
         points,
     })
-}
-fn append_polyline_points(
-    geometry: &mut Sketch2D,
-    input: &SketchPolylineCreation,
-    ids: &mut RecipeReservations<'_>,
-) -> Result<Vec<SketchEntityId>, SketchPrimitiveCreationError> {
-    let mut created = Vec::new();
-    for position in &input.points {
-        append_point(
-            geometry,
-            SketchPointInput::New(*position),
-            ids,
-            &mut created,
-            Sketch2D::add_defining_point,
-        )?;
-    }
-    Ok(created)
 }
 fn append_polyline_lines(
     geometry: &mut Sketch2D,

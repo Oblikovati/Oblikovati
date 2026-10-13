@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_model::history::{SketchPolylineCreation, SketchPrimitiveCreationError};
 use oblikovati_model::identity::RecipeIdError;
 use std::error::Error;
-fn polyline_history() -> DocumentEditHistory {
+pub(super) fn polyline_history() -> DocumentEditHistory {
     let mut snapshot = document_snapshot::empty_snapshot();
     snapshot
         .sketches

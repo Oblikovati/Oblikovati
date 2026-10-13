@@ -395,3 +395,6 @@ mod sketch_polygon;
 pub use sketch_polygon::{
     SketchPolygonCreation, SketchPolygonCreationError, SketchPolygonCreationReport,
 };
+
+mod sketch_slot;
+pub use sketch_slot::{SketchSlotCreation, SketchSlotCreationReport};

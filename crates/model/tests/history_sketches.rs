@@ -214,3 +214,5 @@ fn verify_sketches(snapshot: &mut DocumentSnapshot) -> Result<(), String> {
 mod polygon;
 #[path = "history_sketches/polyline.rs"]
 mod polyline;
+#[path = "history_sketches/slots.rs"]
+mod slots;

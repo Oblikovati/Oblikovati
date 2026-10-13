@@ -12,7 +12,9 @@ use oblikovati_model::{
 mod chains;
 mod points;
 mod polygon;
+pub(super) mod slots;
 pub(super) enum PreparedEntity {
+    Slot(slots::SlotInput),
     ThreePoint(super::three_point::ThreePointCreation),
     Polygon(oblikovati_model::history::SketchPolygonCreation),
     Primitive(SketchPrimitiveCreation, &'static str),
@@ -39,6 +41,7 @@ pub(super) fn prepare(
         "polyline" => return chains::polyline(snapshot, request),
         "rectangle" => return chains::rectangle(snapshot, request),
         "polygon" => return polygon::prepare(snapshot, request),
+        "slot" => return slots::prepare(snapshot, request),
         "circle" | "arc" if request.variant == "threePoint" => {
             return three_point_input(snapshot, request);
         }

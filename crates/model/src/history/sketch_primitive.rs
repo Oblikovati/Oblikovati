@@ -136,3 +136,21 @@ impl Error for SketchPrimitiveCreationError {
         }
     }
 }
+
+pub(super) fn append_defining_positions(
+    geometry: &mut Sketch2D,
+    positions: &[[f64; 2]],
+    reservations: &mut RecipeReservations<'_>,
+) -> Result<Vec<SketchEntityId>, SketchPrimitiveCreationError> {
+    let mut created = Vec::new();
+    for position in positions {
+        append_point(
+            geometry,
+            SketchPointInput::New(*position),
+            reservations,
+            &mut created,
+            Sketch2D::add_defining_point,
+        )?;
+    }
+    Ok(created)
+}

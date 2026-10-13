@@ -6,8 +6,8 @@ use oblikovati_model::sketch::{
 };
 use std::{boxed::Box, cell::RefCell, error::Error as StdError};
 #[derive(Default)]
-struct CardinalCircleConstruction {
-    fail_verification: bool,
+pub(super) struct CardinalCircleConstruction {
+    pub(super) fail_verification: bool,
     calls: RefCell<Vec<CircumcircleOptions>>,
     solved: RefCell<Vec<SolvedCircularSeed>>,
 }
@@ -49,7 +49,7 @@ fn request(kind: &str) -> AddSketchEntityArgs {
         ..literal_input(kind, &[[2.0, 0.0], [0.0, 2.0], [-2.0, 0.0]])
     }
 }
-fn call(
+pub(super) fn call(
     files: &mut DiscoveryWorkspace,
     source: &mut QueryGuids,
     input: &AddSketchEntityArgs,
