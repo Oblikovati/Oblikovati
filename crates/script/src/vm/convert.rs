@@ -43,12 +43,9 @@ fn number_to_json(number: f64) -> mlua::Result<JsonValue> {
             "Lua number {number}: expected finite JSON number"
         )));
     }
-    if number.fract() == 0.0 {
-        if number.abs() > MAX_SAFE_INTEGER as f64 {
-            return Err(failure(format!(
-                "Lua integer {number}: expected exact identifier within ±{MAX_SAFE_INTEGER}"
-            )));
-        }
+    // Lua 5.1 has only doubles. Large whole-valued physical scalars remain floats;
+    // the canonical typed host rejects floating tokens for integer ID fields (#3563).
+    if number.fract() == 0.0 && number.abs() <= MAX_SAFE_INTEGER as f64 {
         return Ok(JsonValue::Number(Number::from(number as i64)));
     }
     Number::from_f64(number)

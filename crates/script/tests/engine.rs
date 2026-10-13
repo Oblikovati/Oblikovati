@@ -21,6 +21,11 @@ impl Caller for EchoScriptHost {
             "large" => Ok(br#"{"id":9007199254740993}"#.to_vec()),
             "negative-large" => Ok(br#"{"id":-9007199254740993}"#.to_vec()),
             "scalars" => Ok(br#"{"resistivity":1e16,"negative":-1e16,"fractional":1.25}"#.to_vec()),
+            "identifier" => {
+                serde_json::from_slice::<oblikovati_api::wire::SaveDocumentArgs>(arguments)
+                    .map_err(|cause| Error(cause.to_string()))
+                    .map(|_| b"{}".to_vec())
+            }
             "empty" => Ok(Vec::new()),
             "null" => Ok(b"null".to_vec()),
             _ => Ok(arguments.to_vec()),
@@ -88,7 +93,7 @@ assert(not ok); print(tostring(err))"#,
 fn conversion_refuses_cycles_invalid_numbers_ambiguous_keys_and_unsupported_values() {
     for source in [
         r#"local x={};x.self=x;oblikovati.call("echo",x)"#,
-        r#"oblikovati.call("echo",{id=9007199254740993})"#,
+        r#"oblikovati.call("identifier",{document=9007199254740993})"#,
         r#"oblikovati.call("large",{})"#,
         r#"oblikovati.call("negative-large",{})"#,
         r#"oblikovati.call("echo",{value=0/0})"#,
@@ -159,4 +164,11 @@ fn integral_api_doubles_remain_scalars_without_weakening_integer_id_checks() {
     let source = r#"local x=oblikovati.call("scalars",{});assert(x.resistivity==1e16);assert(x.negative==-1e16);assert(x.fractional==1.25);print('physical-scalars')"#;
     let (output, _) = run(source, ScriptLimits::default()).unwrap();
     assert_eq!(output, "physical-scalars\n");
+}
+
+#[test]
+fn physical_scalar_arguments_round_trip_while_typed_integer_fields_refuse_large_values() {
+    let source = r#"local x=oblikovati.call('scalars',{});local y=oblikovati.call('echo',x);assert(y.resistivity==x.resistivity and y.negative==x.negative);assert(pcall(oblikovati.call,'identifier',{document=9007199254740991}));for _,n in ipairs({1e16,-1e16,9007199254740993}) do assert(not pcall(oblikovati.call,'identifier',{document=n})) end;print('scalar-write')"#;
+    let (output, _) = run(source, ScriptLimits::default()).unwrap();
+    assert_eq!(output, "scalar-write\n");
 }
