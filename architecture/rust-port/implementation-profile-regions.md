@@ -25,7 +25,7 @@ against a separately compiled OCCT 8.0.0 result. Input edge history covers all
 source edges. The divider splits five original edges into seven and retains
 the distinct four-parent boundary sets for its two regions.
 
-The kernel analytic face classifier distinguishes an inner region from its
+The released face classifier distinguishes an inner region from its
 surrounding region, rejects an outside seed, and reports both incidences for a
 seed on their shared boundary. No ordered first-match selection is introduced.
 This is a test of kernel results, not a persisted application selection policy.
@@ -42,7 +42,7 @@ inputs along with the multi-curve inputs and supplies their provenance.
 An owning-kernel work item/ADR and its tested release remain prerequisites.
 
 `BRepTopAdaptorFClass2d` is used here to identify bounded test faces. Its source
-uses sampled wire polygons and an exact classifier near uncertain boundaries.
+uses sampled wire polygons and a curve classifier near uncertain boundaries.
 This evidence does not prove the stronger application requirement for exact or
 filtered topology predicates. That policy belongs in the kernel's region
 contract; do not promote the diagnostic fixture classifier into an application
@@ -113,3 +113,56 @@ predicates, complete validation and measured tolerance, ownership, cancellation,
 persistent split identity, seed ambiguity, and a tested owner release remain
 required by issue #10. No production application or kernel code changes in this
 experiment. Do not expose `features.add` by silently reducing these requirements.
+
+## Crossing curves and region-to-solid evidence, 2026-10-13
+
+The released-kernel diagnostic corpus now includes eight more inputs:
+rectangle/circle and rectangle/ellipse crossings, a circle crossed by a divider,
+overlapping circles inside a rectangle, a circle tangent to a rectangle, and
+pairs of separated, tangent, and nearly overlapping unit circles. The last
+three use center distances 2.0001, 2, and 1.9999. These are explicit finite
+fixtures, not a proof over arbitrary near-degenerate inputs or scales.
+
+All 23 bounded regions pass native geometric validity and per-region OCCT
+area, centroid, wire-count, and edge-count assertions. Every source edge remains
+covered by operation history. Each region's complete fixture parent set is
+asserted, including repeated parent sets for distinct regions. In particular,
+all three regions of two overlapping circles have the same two source parents.
+This is evidence that persistent split identity needs more than a parent set.
+
+Each region also goes through the same released prism builder with displacement
+`(0,0,2)`. All 23 results are solids and pass native geometric validity. All 123
+faces match the independent OCCT result for analytic area, centroid, surface
+type, wire count, and edge count; volume is an additional smoke test. Prism
+history assigns every face exactly one start-cap, end-cap, or source-edge role.
+This is operation history, not persisted application reference-key acceptance.
+
+Oracle comparisons retain the diagnostic absolute bound of `1e-8` in these
+fixture units. Mathematically equal areas can have different rounding order in
+the independent integrators. Comparison therefore requires a unique geometric
+match and checks that every expected face is used once. It never uses geometric
+matching to assign production identity. These tests do not measure achieved
+modelling tolerance or certify exact analytic-curve incidence.
+
+The C++ oracle has `--curved` and `--curved-prisms` modes; link `-lTKPrim` in
+addition to the libraries in the earlier command. The five retained CSV files
+reproduce byte-for-byte, including the three earlier files. All seven
+`profile_regions` tests pass. The generator now shares bounded-region
+construction between its region and prism reports; Rust diagnostics share the
+same bounded-face selector too. No second production algorithm was added.
+
+Martensite local main now contains exact 2D orientation in commit `90df47a70`,
+with its owning ADR 0003. This application still consumes v0.2.1 and does not
+use that unreleased primitive. The sampled diagnostic classifier remains
+ineligible for production. General analytic bounded-region classification,
+arc/spline coverage, ownership and cancellation contracts, complete validation,
+measured tolerances, persistent naming, and a tested owner release remain open
+under kernel issue #10. No feature API or production extrude scope is claimed.
+
+The final `make gate` passed for the complete discovered application workspace
+(13 crates), including native Linux display tests on Xvfb with lavapipe, build,
+lint, coverage, documentation, SPDX, and duplication checks. Per-crate coverage
+remains above 80%; duplication is 0.69%. An earlier gate invocation was stopped
+because startup warnings were mistaken for the Xvfb display number. The final
+run used the confirmed display `:2`. No test failure was accepted or skipped.
+No push, PR, dependency update, or production geometry change is part of this work.

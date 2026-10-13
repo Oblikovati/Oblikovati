@@ -120,13 +120,8 @@ fn bounded_region_reports(
     arrangement: &Arrangement,
 ) -> Result<Vec<RegionReport>, Failure> {
     let mut reports = Vec::new();
-    for shape in builder.areas().iter() {
-        let face = face(shape)?;
-        let state = BRepTopAdaptorFClass2d::new(&face, 1e-9)?.perform_infinite_point()?;
-        if state != State::Out {
-            continue;
-        }
-        reports.push(measure_fixture_region(shape, arrangement)?);
+    for shape in bounded_region_faces(builder)? {
+        reports.push(measure_fixture_region(&shape, arrangement)?);
     }
     reports.sort_by(|a, b| {
         a.area
@@ -135,6 +130,16 @@ fn bounded_region_reports(
             .then(a.centroid[1].total_cmp(&b.centroid[1]))
     });
     Ok(reports)
+}
+fn bounded_region_faces(builder: &BuilderFace) -> Result<Vec<Shape>, Failure> {
+    let mut bounded = Vec::new();
+    for shape in builder.areas().iter() {
+        let state = BRepTopAdaptorFClass2d::new(&face(shape)?, 1e-9)?.perform_infinite_point()?;
+        if state == State::Out {
+            bounded.push(shape.clone());
+        }
+    }
+    Ok(bounded)
 }
 fn verify_occt_region(region_receipt: &RegionReport, expected: &[f64]) {
     assert!(
@@ -297,3 +302,12 @@ fn analytic_region_seeds_distinguish_nested_regions_and_shared_boundary() {
 }
 #[path = "profile_regions/nonempty.rs"]
 mod nonempty;
+
+#[path = "profile_regions/curved.rs"]
+mod curved;
+
+#[path = "profile_regions/curved_history.rs"]
+mod curved_history;
+
+#[path = "profile_regions/curved_prism.rs"]
+mod curved_prism;

@@ -11,7 +11,7 @@ pub(super) fn build_region_fixture(case: &str) -> Result<Shape, Failure> {
     builder.make_compound(&mut shape);
     let mut shape = shape.into_shape();
     append_region_conic(&builder, &mut shape, case)?;
-    if !case.starts_with("single-") {
+    if !case.starts_with("single-") && !case.starts_with("pair-") {
         append_region_lines(&builder, &mut shape, case)?;
     }
     Ok(shape)
@@ -25,7 +25,7 @@ fn append_region_lines(
     if case == "nested" {
         append_region_loop(builder, shape, &[[1., 1.], [3., 1.], [3., 2.], [1., 2.]])?;
     }
-    if case == "divider" {
+    if case == "divider" || case == "circle-divider" {
         append_region_segment(builder, shape, [2., 0.], [2., 3.])?;
     }
     if case == "crossing" {
@@ -38,18 +38,32 @@ fn append_region_conic(
     shape: &mut Shape,
     case: &str,
 ) -> Result<(), Failure> {
-    let axes = Axis2::new(Point3::new(2., 1.5, 0.), Direction3::new(0., 0., 1.)?)?;
-    let segment = match case {
-        "circle" | "single-circle" => {
-            BRepBuilderAPIMakeEdge::from_circ(Circle3::new(axes, 0.5)?)?.edge()?
-        }
-        "ellipse" | "single-ellipse" => {
-            BRepBuilderAPIMakeEdge::from_elips(Ellipse3::new(axes, 0.7, 0.4)?)?.edge()?
-        }
-        _ => return Ok(()),
-    };
-    builder.add(shape, &segment)
+    for [x, y, major, minor] in region_conic_parameters(case) {
+        let axes = Axis2::new(Point3::new(x, y, 0.), Direction3::new(0., 0., 1.)?)?;
+        let segment = if major == minor {
+            BRepBuilderAPIMakeEdge::from_circ(Circle3::new(axes, major)?)?.edge()?
+        } else {
+            BRepBuilderAPIMakeEdge::from_elips(Ellipse3::new(axes, major, minor)?)?.edge()?
+        };
+        builder.add(shape, &segment)?;
+    }
+    Ok(())
 }
+fn region_conic_parameters(case: &str) -> Vec<[f64; 4]> {
+    match case {
+        "circle" | "single-circle" | "circle-divider" => vec![[2., 1.5, 0.5, 0.5]],
+        "ellipse" | "single-ellipse" => vec![[2., 1.5, 0.7, 0.4]],
+        "circle-tangent" => vec![[5., 1.5, 1., 1.]],
+        "pair-separated" => vec![[0., 0., 1., 1.], [2.0001, 0., 1., 1.]],
+        "pair-tangent" => vec![[0., 0., 1., 1.], [2., 0., 1., 1.]],
+        "pair-near-overlap" => vec![[0., 0., 1., 1.], [1.9999, 0., 1., 1.]],
+        "circle-boundary" => vec![[4., 1.5, 1., 1.]],
+        "ellipse-boundary" => vec![[4., 1.5, 1., 0.6]],
+        "overlap-circles" => vec![[1.5, 1.5, 1., 1.], [2.5, 1.5, 1., 1.]],
+        _ => Vec::new(),
+    }
+}
+
 fn append_region_loop(
     builder: &BRepBuilder,
     shape: &mut Shape,

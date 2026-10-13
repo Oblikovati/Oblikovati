@@ -37,19 +37,10 @@ fn nonempty_region_reports(
     sources: &IndexedMapOfShape,
 ) -> Vec<RegionReport> {
     let mut reports = Vec::new();
-    for shape in nonempty_faces(builder).areas().iter() {
-        let face = face(shape).unwrap();
-        if BRepTopAdaptorFClass2d::new(&face, 1e-9)
-            .unwrap()
-            .perform_infinite_point()
-            .unwrap()
-            != State::Out
-        {
-            continue;
-        }
-        let edges = indexed_region_shapes(shape, ShapeEnum::Edge).unwrap();
+    for shape in bounded_region_faces(&nonempty_faces(builder)).unwrap() {
+        let edges = indexed_region_shapes(&shape, ShapeEnum::Edge).unwrap();
         let lineage = nonempty_source_parents(&edges, sources, builder);
-        reports.push(measure_region_geometry(shape, lineage).unwrap());
+        reports.push(measure_region_geometry(&shape, lineage).unwrap());
     }
     reports.sort_by(|a, b| {
         a.area

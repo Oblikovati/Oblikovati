@@ -33,15 +33,29 @@ void append_segment(ShapeList& inputs, Point start, Point end) {
 void append_loop(ShapeList& inputs, const std::vector<Point>& points) {
   for (size_t i=0;i<points.size();++i) append_segment(inputs,points[i],points[(i+1)%points.size()]);
 }
+void append_conics(ShapeList& inputs,const std::string& kind) {
+  const gp_Ax2 axes(gp_Pnt(2,1.5,0),gp_Dir(0,0,1));
+  if (kind=="circle" || kind=="single-circle" || kind=="circle-divider") inputs.Append(BRepBuilderAPI_MakeEdge(gp_Circ(axes,0.5)).Edge());
+  if (kind=="ellipse" || kind=="single-ellipse") inputs.Append(BRepBuilderAPI_MakeEdge(gp_Elips(axes,0.7,0.4)).Edge());
+  const gp_Ax2 boundary(gp_Pnt(4,1.5,0),gp_Dir(0,0,1));
+  if (kind=="circle-boundary") inputs.Append(BRepBuilderAPI_MakeEdge(gp_Circ(boundary,1)).Edge());
+  if (kind=="ellipse-boundary") inputs.Append(BRepBuilderAPI_MakeEdge(gp_Elips(boundary,1,0.6)).Edge());
+  if (kind=="overlap-circles") {
+    for(double x:{1.5,2.5}) inputs.Append(BRepBuilderAPI_MakeEdge(gp_Circ(gp_Ax2(gp_Pnt(x,1.5,0),gp_Dir(0,0,1)),1)).Edge());
+  }
+  if (kind=="circle-tangent") inputs.Append(BRepBuilderAPI_MakeEdge(gp_Circ(gp_Ax2(gp_Pnt(5,1.5,0),gp_Dir(0,0,1)),1)).Edge());
+  if (kind.rfind("pair-",0)==0) {
+    const double distance = kind=="pair-separated" ? 2.0001 : kind=="pair-tangent" ? 2. : 1.9999;
+    for(double x:{0.,distance}) inputs.Append(BRepBuilderAPI_MakeEdge(gp_Circ(gp_Ax2(gp_Pnt(x,0,0),gp_Dir(0,0,1)),1)).Edge());
+  }
+}
 ShapeList arguments(const std::string& kind) {
   ShapeList inputs;
-  if (kind.rfind("single-",0)!=0) append_loop(inputs,{{0,0},{4,0},{4,3},{0,3}});
+  if (kind.rfind("single-",0)!=0 && kind.rfind("pair-",0)!=0) append_loop(inputs,{{0,0},{4,0},{4,3},{0,3}});
   if (kind=="nested") append_loop(inputs,{{1,1},{3,1},{3,2},{1,2}});
-  if (kind=="divider") append_segment(inputs,{2,0},{2,3});
+  if (kind=="divider" || kind=="circle-divider") append_segment(inputs,{2,0},{2,3});
   if (kind=="crossing") append_segment(inputs,{0,0},{4,3});
-  const gp_Ax2 axes(gp_Pnt(2,1.5,0),gp_Dir(0,0,1));
-  if (kind=="circle" || kind=="single-circle") inputs.Append(BRepBuilderAPI_MakeEdge(gp_Circ(axes,0.5)).Edge());
-  if (kind=="ellipse" || kind=="single-ellipse") inputs.Append(BRepBuilderAPI_MakeEdge(gp_Elips(axes,0.7,0.4)).Edge());
+  append_conics(inputs,kind);
   return inputs;
 }
 ShapeList oriented_edges(const TopoDS_Shape& split, const TopoDS_Face& plane) {
@@ -65,31 +79,32 @@ Row report(const TopoDS_Shape& shape) {
   TopExp::MapShapes(shape,TopAbs_EDGE,edges);
   return {props.Mass(),center.X(),center.Y(),center.Z(),double(wires.Extent()),double(edges.Extent())};
 }
-std::vector<Row> bounded_rows(const BOPAlgo_BuilderFace& builder) {
-  std::vector<Row> rows;
-  for (const auto& shape:builder.Areas()) {
-    if (BRepTopAdaptor_FClass2d(TopoDS::Face(shape),1e-9).PerformInfinitePoint()==TopAbs_OUT)
-      rows.push_back(report(shape));
+ShapeList region_shapes(const TopoDS_Shape& shape,const std::string& kind) {
+  const auto plane=BRepBuilderAPI_MakeFace(gp_Pln()).Face();
+  BOPAlgo_BuilderFace builder;
+  builder.SetFace(plane); builder.SetShapes(oriented_edges(shape,plane)); builder.Perform();
+  if (builder.HasErrors()) throw std::runtime_error(kind+": face builder failed");
+  ShapeList bounded;
+  for(const auto& region:builder.Areas()) {
+    if(BRepTopAdaptor_FClass2d(TopoDS::Face(region),1e-9).PerformInfinitePoint()==TopAbs_OUT)
+      bounded.Append(region);
   }
+  return bounded;
+}
+std::vector<Row> regions_from_shape(const TopoDS_Shape& shape,const std::string& kind) {
+  std::vector<Row> rows;
+  for(const auto& region:region_shapes(shape,kind)) rows.push_back(report(region));
   std::sort(rows.begin(),rows.end());
   return rows;
 }
-std::vector<Row> regions_from_shape(const TopoDS_Shape& shape,const std::string& kind) {
-  const auto plane=BRepBuilderAPI_MakeFace(gp_Pln()).Face();
-  BOPAlgo_BuilderFace builder;
-  builder.SetFace(plane);
-  builder.SetShapes(oriented_edges(shape,plane));
-  builder.Perform();
-  if (builder.HasErrors()) throw std::runtime_error(kind+": face builder failed");
-  return bounded_rows(builder);
+TopoDS_Shape fused_shape(const std::string& kind) {
+  BRepAlgoAPI_BuilderAlgo fuse;
+  fuse.SetArguments(arguments(kind)); fuse.SetNonDestructive(true); fuse.Build();
+  if(fuse.HasErrors()) throw std::runtime_error(kind+": general fuse failed");
+  return fuse.Shape();
 }
 std::vector<Row> regions(const std::string& kind) {
-  BRepAlgoAPI_BuilderAlgo fuse;
-  fuse.SetArguments(arguments(kind));
-  fuse.SetNonDestructive(true);
-  fuse.Build();
-  if (fuse.HasErrors()) throw std::runtime_error(kind+": general fuse failed");
-  return regions_from_shape(fuse.Shape(),kind);
+  return regions_from_shape(fused_shape(kind),kind);
 }
 
 void single_curve_declines() {
@@ -119,9 +134,20 @@ void nonempty_regions() {
     }
   }
 }
+const std::vector<std::string> curved_cases={"circle-boundary","ellipse-boundary","circle-divider","overlap-circles","circle-tangent","pair-separated","pair-tangent","pair-near-overlap"};
+#include "curved_prism_oracle.hpp"
+void curved_regions() {
+  for(const auto& kind:curved_cases) {
+    for(const auto& row:regions(kind)) {
+      std::cout<<kind; for(double scalar:row) std::cout<<","<<scalar; std::cout<<"\n";
+    }
+  }
+}
 int main(int argc, char** argv) {
   std::cout<<std::setprecision(17);
   if (argc==2 && std::string(argv[1])=="--nonempty") { nonempty_regions(); return 0; }
+  if (argc==2 && std::string(argv[1])=="--curved") { curved_regions(); return 0; }
+  if (argc==2 && std::string(argv[1])=="--curved-prisms") { curved_prisms(); return 0; }
   if (argc>1) { single_curve_declines(); return 0; }
   for (const auto kind:{"rectangle","nested","divider","crossing","circle","ellipse"}) {
     for (const auto& row:regions(kind)) {
