@@ -166,3 +166,28 @@ remains above 80%; duplication is 0.69%. An earlier gate invocation was stopped
 because startup warnings were mistaken for the Xvfb display number. The final
 run used the confirmed display `:2`. No test failure was accepted or skipped.
 No push, PR, dependency update, or production geometry change is part of this work.
+
+## Exact polynomial root prerequisite, 2026-10-13
+
+Martensite local main commit `d983a7383` adds exact polynomial root isolation
+under ADR 0004. It returns ordered, disjoint closed dyadic brackets and exact
+multiplicities for supplied binary64 coefficients. Versioned degree and work
+limits, cancellation, and typed failure keep incomplete results out of success.
+The implementation uses one integer Sturm path without a floating fallback.
+
+The retained independent Jacobian corpus has 22 inputs and 47 distinct roots.
+Tests cover repeated roots, near-tangencies, all finite binary64 exponent
+fields, roots below the smallest subnormal, maximal bounds, cancellation,
+work limits, and input/result ownership. The complete TKMath suite passes
+2,793 tests with none skipped. New root modules have 98.97% line coverage and
+0% detected duplication; lint, Rustdoc, formatting, and documentation checks pass.
+The kernel validation record retains the exact scope and benchmark receipt in
+`docs/exact-polynomial-roots.md`.
+
+This primitive certifies supplied coefficients. Exact analytic-curve conversion,
+rational denominators, periodic trims, incidence ownership, complete region
+validation, measured tolerances, and persistent split naming remain open under
+kernel issue #10. The application still pins released Martensite v0.2.1. This
+step does not enable general production extrusion or change dependency pins.
+Validation above covers the kernel change; the application change is this
+record only and is checked with `make docs-lint`.
