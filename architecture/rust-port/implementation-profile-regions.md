@@ -191,3 +191,29 @@ kernel issue #10. The application still pins released Martensite v0.2.1. This
 step does not enable general production extrusion or change dependency pins.
 Validation above covers the kernel change; the application change is this
 record only and is checked with `make docs-lint`.
+
+## Exact Bernstein conversion prerequisite, 2026-10-13
+
+Martensite local main commit `8c764eb99` adds scalar Bernstein input to the
+same exact root solver under ADR 0005. Integer forward differences and binomial
+factors preserve the supplied controls without rounded power coefficients.
+The query interval does not rescale the [0,1] basis. Degree admission follows
+exact reduction, so elevated linear and constant representations retain their
+true degree. Existing power results remain unchanged.
+
+The retained independent corpus adds 20 inputs and 38 distinct roots. Two
+counterexamples prove that floating conversion can create a false tangent or
+merge separate crossings. Other tests cover endpoint multiplicity, reversal,
+degree elevation, every finite exponent field, roots below the binary64
+parameter range, cancellation, and source/result ownership. The complete
+TKMath suite passes 2,806 tests with none skipped. Shared root-module coverage
+is 98.91%, including 100% for the new conversion module; duplication is 0%.
+Lint, documentation, and formatting checks pass. Detailed evidence and the
+combined benchmark are in kernel `docs/exact-bernstein-roots.md`.
+
+This certifies supplied scalar controls, not rounded point/weight products,
+rational denominator poles, spline knot extraction, or complete geometric
+intersections. Those constructions and the region acceptance requirements remain
+open under issue #10. The application dependency pin and production extrusion
+scope are unchanged. This application record passes `make docs-lint`; the
+runtime validation above is for the kernel change.
