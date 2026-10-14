@@ -9,8 +9,9 @@ use oblikovati_api::types::{
     SKETCH_ENTITY_SPLINE, SketchEntityKind,
 };
 use std::collections::BTreeMap;
-#[derive(Clone, Copy)]
-pub(super) enum OwnedSketchGeometry<'a> {
+/// Read-only owned entity geometry; defining point identities stay in the sketch namespace.
+#[derive(Clone, Copy, Debug)]
+pub enum OwnedSketchGeometry<'a> {
     Point(SketchPoint2D),
     Line(SketchLine2D),
     Circle(SketchCircle2D),
@@ -20,14 +21,14 @@ pub(super) enum OwnedSketchGeometry<'a> {
     OffsetSpline(super::SketchOffsetSpline2D),
 }
 impl OwnedSketchGeometry<'_> {
-    pub fn ownership_dependencies(self) -> Vec<SketchEntityId> {
+    pub(crate) fn ownership_dependencies(self) -> Vec<SketchEntityId> {
         match self {
             Self::Point(_) => Vec::new(),
             Self::OffsetSpline(offset) => vec![offset.parent()],
             _ => self.points(),
         }
     }
-    pub fn fit_method(self) -> Option<oblikovati_api::types::SplineFitMethod> {
+    pub(crate) fn fit_method(self) -> Option<oblikovati_api::types::SplineFitMethod> {
         if let Self::Spline(parent) = self
             && let super::SketchSplineKind::Fit { method } = parent.kind()
         {
@@ -35,7 +36,7 @@ impl OwnedSketchGeometry<'_> {
         }
         None
     }
-    pub fn id(self) -> SketchEntityId {
+    pub(crate) fn id(self) -> SketchEntityId {
         match self {
             Self::Point(shape) => shape.id,
             Self::Line(shape) => shape.id,
@@ -46,7 +47,7 @@ impl OwnedSketchGeometry<'_> {
             Self::OffsetSpline(shape) => shape.id(),
         }
     }
-    pub fn kind(self) -> SketchEntityKind {
+    pub(crate) fn kind(self) -> SketchEntityKind {
         match self {
             Self::Point(_) => SKETCH_ENTITY_POINT,
             Self::Line(_) => SKETCH_ENTITY_LINE,
@@ -57,7 +58,7 @@ impl OwnedSketchGeometry<'_> {
             Self::OffsetSpline(_) => SKETCH_ENTITY_OFFSET_SPLINE,
         }
     }
-    pub fn transform_points(
+    pub(crate) fn transform_points(
         self,
         transform: super::SketchSelectionTransform,
     ) -> Result<Vec<SketchEntityId>, SketchError> {
@@ -71,7 +72,7 @@ impl OwnedSketchGeometry<'_> {
         }
         Ok(self.points())
     }
-    pub fn points(self) -> Vec<SketchEntityId> {
+    pub(crate) fn points(self) -> Vec<SketchEntityId> {
         match self {
             Self::Point(shape) => vec![shape.id],
             Self::Line(shape) => shape.endpoints.to_vec(),
@@ -82,14 +83,14 @@ impl OwnedSketchGeometry<'_> {
             Self::OffsetSpline(_) => Vec::new(),
         }
     }
-    pub fn radius(self, sketch: &Sketch2D) -> Result<f64, SketchError> {
+    pub(crate) fn radius(self, sketch: &Sketch2D) -> Result<f64, SketchError> {
         match self {
             Self::Circle(shape) => Ok(shape.radius),
             Self::Arc(shape) => sketch.arc_radius(shape.id),
             _ => Ok(0.0),
         }
     }
-    pub fn columns(self, sketch: &Sketch2D) -> Result<Vec<usize>, SketchError> {
+    pub(crate) fn columns(self, sketch: &Sketch2D) -> Result<Vec<usize>, SketchError> {
         let mut variables = sketch.point_variables(&self.points());
         if let Self::Circle(shape) = self {
             variables.push(SketchVariable::Radius(shape.id));

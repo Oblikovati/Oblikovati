@@ -173,3 +173,7 @@ pub use placement_recipe::{
     SketchPlacementBinding, SketchPlacementField, SketchPlacementMember, SketchPlacementRecipe,
     SketchPlacementRelation,
 };
+
+mod read_index;
+pub use entity_geometry::OwnedSketchGeometry;
+pub use read_index::SketchReadIndex;

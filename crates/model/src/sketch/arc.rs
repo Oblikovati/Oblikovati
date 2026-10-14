@@ -46,14 +46,12 @@ impl Sketch2D {
     }
     /// Derive radius from center and start without an independent scalar; example: `sketch.arc_radius(id)?`.
     pub fn arc_radius(&self, id: SketchEntityId) -> Result<f64, SketchError> {
-        self.arc(id)?;
-        let (_, radius) = self.frame_values(self.circular_frame(id)?)?;
-        if !radius.is_finite() || radius <= 0.0 {
-            return Err(SketchError::Definition(format!(
-                "sketch arc {id:?} radius {radius:?}: expected a positive finite derived length"
-            )));
-        }
-        Ok(radius)
+        let arc = self.arc(id)?;
+        derived_radius(
+            id,
+            self.point(arc.center)?.position,
+            self.point(arc.start)?.position,
+        )
     }
     pub(super) fn arc_columns(&self, arc: &SketchArc2D) -> Result<Vec<usize>, SketchError> {
         [arc.center, arc.start, arc.end]
@@ -67,4 +65,18 @@ impl Sketch2D {
             .map(|variable| self.variable_column(variable))
             .collect()
     }
+}
+
+pub(super) fn derived_radius(
+    id: SketchEntityId,
+    center: [f64; 2],
+    start: [f64; 2],
+) -> Result<f64, SketchError> {
+    let radius = (start[0] - center[0]).hypot(start[1] - center[1]);
+    if !radius.is_finite() || radius <= 0. {
+        return Err(SketchError::Definition(format!(
+            "sketch arc {id:?} radius {radius:?}: expected a positive finite derived length"
+        )));
+    }
+    Ok(radius)
 }
