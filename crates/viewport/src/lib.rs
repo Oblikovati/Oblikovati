@@ -43,3 +43,6 @@ mod sketch_preview;
 pub use sketch_preview::ViewportSketchPreview;
 
 mod sketch_camera;
+
+mod sketch_display;
+pub use sketch_display::{ViewportSketchDecline, ViewportSketchDisplay};

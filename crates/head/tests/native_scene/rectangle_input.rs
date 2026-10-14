@@ -63,6 +63,20 @@ fn run_native_rectangle(kind: SketchPlacementTool) {
         )
     );
     commit_native_rectangle(&mut owner, &mut window, document, &preview);
+    let committed = window
+        .native
+        .sketch_scene_status()
+        .unwrap()
+        .sketches
+        .clone();
+    owner.finish_sketch_edit().unwrap();
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    assert_eq!(
+        window.native.sketch_scene_status().unwrap().sketches,
+        committed
+    );
+    assert!(window.native.sketch_display_declines().unwrap().is_empty());
+
     Client::new(owner.document_host())
         .transactions()
         .undo()

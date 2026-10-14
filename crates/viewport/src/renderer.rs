@@ -16,7 +16,10 @@ use rustycad_tkservice::{
 use rustycad_tkv3d::v3d::{V3dViewSource, V3dViewer};
 #[path = "renderer/navigation.rs"]
 mod navigation;
+mod sketch_display;
 mod sketch_preview;
+mod sketch_structure;
+mod sketch_vertices;
 #[path = "renderer/status_text.rs"]
 mod status_text;
 pub(crate) struct SavedViewCamera {
@@ -30,6 +33,7 @@ pub(crate) struct RenderView {
     structures: Vec<Handle<Graphic3dStructure>>,
     status: status_text::StatusTextOverlay,
     preview: sketch_preview::SketchPreviewOverlay,
+    sketches: sketch_display::SketchDisplayOverlay,
 }
 impl RenderView {
     pub fn new(
@@ -52,6 +56,7 @@ impl RenderView {
             structures: Vec::new(),
             status: Default::default(),
             preview: Default::default(),
+            sketches: Default::default(),
         };
         result.configure(window)?;
         result.camera(ViewportCamera::default(), extent)?;
@@ -126,6 +131,7 @@ impl Drop for RenderView {
         }
         self.status.clear();
         self.preview.clear();
+        self.sketches.clear();
         self.view.remove();
     }
 }
@@ -185,11 +191,7 @@ impl RenderView {
         &mut self,
         preview: Option<&crate::ViewportSketchPreview>,
     ) -> Result<bool, String> {
-        let deflection = self
-            .view
-            .convert_pixel_to_view(1)
-            .map_err(|cause| cause.to_string())?
-            * 0.5;
+        let deflection = self.sketch_deflection()?;
         self.preview.submit(&self.viewer, preview, deflection)
     }
 }
@@ -200,5 +202,15 @@ impl RenderView {
             .source
             .as_ref()
             .map(|(source, _)| source.clone())
+    }
+}
+
+impl RenderView {
+    fn sketch_deflection(&self) -> Result<f64, String> {
+        // Both sketch paths request the same half-pixel presentation error after zoom or resize.
+        self.view
+            .convert_pixel_to_view(1)
+            .map(|length| length * 0.5)
+            .map_err(|cause| cause.to_string())
     }
 }

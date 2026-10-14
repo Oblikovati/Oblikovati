@@ -113,3 +113,6 @@ mod projection;
 
 #[path = "native/sketch_preview.rs"]
 mod sketch_preview;
+
+#[path = "native/sketch_display.rs"]
+mod sketch_display;

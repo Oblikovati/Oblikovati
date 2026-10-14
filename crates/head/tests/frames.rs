@@ -487,3 +487,6 @@ fn unsupported_window_declines_edit_framing_without_mutation() {
             .contains("framing")
     );
 }
+
+#[path = "frames/sketch_display.rs"]
+mod sketch_display;

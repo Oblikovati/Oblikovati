@@ -28,6 +28,13 @@ struct ScriptWindow {
     timed_waits: usize,
 }
 impl HeadWindow for ScriptWindow {
+    fn submit_sketch_scene(
+        &mut self,
+        update: oblikovati_head::HeadSketchSceneUpdate,
+    ) -> Result<(), String> {
+        self.native.submit_sketch_scene(update)
+    }
+
     fn submit_scene(&mut self, update: oblikovati_head::HeadSceneUpdate) -> Result<(), String> {
         self.native.submit_scene(update)
     }

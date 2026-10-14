@@ -6,19 +6,6 @@ impl Viewport {
         &mut self,
         preview: Option<&crate::ViewportSketchPreview>,
     ) -> Result<bool, String> {
-        self.live()?;
-        self.refresh_extent()?;
-        let next = next_generation(self.overlay)?;
-        if !self
-            .render
-            .as_mut()
-            .expect("live view")
-            .sketch_preview(preview)?
-        {
-            return Ok(false);
-        }
-        self.overlay = next;
-        self.completed = None;
-        Ok(true)
+        self.update_overlay(|render| render.sketch_preview(preview))
     }
 }

@@ -51,12 +51,18 @@ pub(super) fn publish_native_scene(
     owner: &mut NativeDesktopOwner,
     window: &mut NativeHeadWindow,
 ) -> ViewportCapture {
+    if let Some(update) = owner.take_sketch_scene().unwrap() {
+        window.submit_sketch_scene(update).unwrap();
+    }
     window
         .submit_scene(owner.take_scene().unwrap().unwrap())
         .unwrap();
-    assert_eq!(
-        window.view.native_title().unwrap(),
-        window.scene_status().unwrap().title()
+    assert!(
+        window
+            .view
+            .native_title()
+            .unwrap()
+            .starts_with(&window.scene_status().unwrap().title())
     );
     capture_native_scene(window)
 }

@@ -49,7 +49,7 @@ impl RenderView {
         self.preview.without_preview(|| self.fit_scene(margin))
     }
     fn fit_scene(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
-        if self.structures.is_empty() {
+        if self.structures.is_empty() && self.sketches.is_empty() {
             return Ok(());
         }
         let camera = self.view.camera();

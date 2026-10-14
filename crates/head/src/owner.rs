@@ -41,6 +41,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     caller: QueuedCaller<S>,
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
+    sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
     command_notice: Option<DesktopCommandNotice>,
     sketch_edit: Option<(
         u64,
@@ -78,6 +79,7 @@ impl<
             caller,
             refused_close: Vec::new(),
             part_scenes: Default::default(),
+            sketch_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),
             placement: None,
@@ -220,6 +222,9 @@ impl<
             wake_after: None,
         })
     }
+    fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
+        self.sketch_scenes.refresh(&self.files)
+    }
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         self.part_scenes.refresh(&mut self.files)
     }
@@ -232,6 +237,7 @@ impl<
         self.placement = None;
         self.sketch_edit = None;
         self.part_scenes.clear();
+        self.sketch_scenes.clear();
         self.dispatch.close();
         Ok(())
     }

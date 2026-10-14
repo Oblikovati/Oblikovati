@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_martensite::planar_curve::sketch::{
-    PlacementPreviewCurve, PlacementSamplingOptionsV1, sample_placement_preview,
+    PlacementPreviewCurve, SketchSamplingOptionsV1, sample_placement_preview,
 };
 use oblikovati_model::sketch::{SketchPathMember, SketchPlacementRecipe};
-fn options(deflection: f64) -> PlacementSamplingOptionsV1 {
-    PlacementSamplingOptionsV1 {
+fn options(deflection: f64) -> SketchSamplingOptionsV1 {
+    SketchSamplingOptionsV1 {
         deflection,
         maximum_curve_points: 4096,
     }
@@ -90,7 +90,7 @@ fn preview_refuses_invalid_options_and_excessive_native_sampling() {
         assert!(sample_placement_preview(&recipe, options(deflection)).is_err());
     }
     for maximum_curve_points in [0, 3, u32::MAX] {
-        let options = PlacementSamplingOptionsV1 {
+        let options = SketchSamplingOptionsV1 {
             deflection: 0.1,
             maximum_curve_points,
         };

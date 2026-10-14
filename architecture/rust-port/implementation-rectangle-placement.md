@@ -63,7 +63,8 @@ foreground X11 pixels. A captured centre rectangle was inspected visually: its
 boundary is solid and its two construction diagonals are dashed. The same native
 renderer and sampler used by slots produce these outlines.
 
-Native menu/ribbon selection, persistent sketch geometry presentation and hit
+The later [committed sketch display step](implementation-sketch-presentation.md)
+keeps geometry visible after commit and Finish. Native menu/ribbon selection, hit
 testing, editable field widgets, snapping, annotation positions and the other
 placement tools remain open. These mouse tools do not
 automatically fix their position or add dimensions; the model's locked-field path

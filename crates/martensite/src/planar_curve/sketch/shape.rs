@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::super::{PlanarConicFrame, PlanarCurveDefinition, PlanarGeometry, construct};
 use super::{ResolvedSketchCurve, SketchCurveFailure, SketchLineDomain};
-use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
+use oblikovati_model::sketch::{
+    OwnedSketchGeometry, SketchArc2D, SketchCircle2D, SketchEllipse2D, SketchEntityId,
+    SketchLine2D, SketchReadIndex,
+};
 use rustycad_tkmath::{elclib, gp::Point2};
 mod endpoints;
 pub(super) fn point(
-    sketch: &Sketch2D,
+    sketch: &SketchReadIndex<'_>,
     entity: SketchEntityId,
 ) -> Result<[f64; 2], SketchCurveFailure> {
     sketch
@@ -13,15 +16,36 @@ pub(super) fn point(
         .map(|point| point.position)
         .map_err(|cause| SketchCurveFailure::model(entity, cause))
 }
-pub(super) fn line(
-    sketch: &Sketch2D,
+pub(super) fn resolve(
+    sketch: &SketchReadIndex<'_>,
     entity: SketchEntityId,
     domain: SketchLineDomain,
     limit: f64,
 ) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
-    let line = sketch
-        .line(entity)
-        .map_err(|cause| SketchCurveFailure::model(entity, cause))?;
+    match sketch
+        .entity(entity)
+        .map_err(|cause| SketchCurveFailure::model(entity, cause))?
+    {
+        OwnedSketchGeometry::Line(value) => line(sketch, value, domain, limit),
+        OwnedSketchGeometry::Circle(value) => circle(sketch, value),
+        OwnedSketchGeometry::Arc(value) => arc(sketch, value, limit),
+        OwnedSketchGeometry::Ellipse(value) => ellipse(sketch, value),
+        OwnedSketchGeometry::Point(_) => Err(SketchCurveFailure::input(
+            entity,
+            "point geometry: expected an analytic curve".into(),
+        )),
+        OwnedSketchGeometry::Spline(_) | OwnedSketchGeometry::OffsetSpline(_) => {
+            Err(super::failure::unreleased_spline(entity))
+        }
+    }
+}
+fn line(
+    sketch: &SketchReadIndex<'_>,
+    line: SketchLine2D,
+    domain: SketchLineDomain,
+    limit: f64,
+) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
+    let entity = line.id;
     let endpoints = [
         point(sketch, line.endpoints[0])?,
         point(sketch, line.endpoints[1])?,
@@ -42,13 +66,11 @@ pub(super) fn line(
     )?);
     Ok(result)
 }
-pub(super) fn circle(
-    sketch: &Sketch2D,
-    entity: SketchEntityId,
+fn circle(
+    sketch: &SketchReadIndex<'_>,
+    circle: SketchCircle2D,
 ) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
-    let circle = sketch
-        .circle(entity)
-        .map_err(|cause| SketchCurveFailure::model(entity, cause))?;
+    let entity = circle.id;
     let frame = PlanarConicFrame {
         center: point(sketch, circle.center)?,
         axis: [1.0, 0.0],
@@ -63,13 +85,11 @@ pub(super) fn circle(
         None,
     )
 }
-pub(super) fn ellipse(
-    sketch: &Sketch2D,
-    entity: SketchEntityId,
+fn ellipse(
+    sketch: &SketchReadIndex<'_>,
+    ellipse: SketchEllipse2D,
 ) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
-    let ellipse = sketch
-        .ellipse(entity)
-        .map_err(|cause| SketchCurveFailure::model(entity, cause))?;
+    let entity = ellipse.id();
     let frame = PlanarConicFrame {
         center: point(sketch, ellipse.center())?,
         axis: ellipse.major_axis(),
@@ -84,14 +104,12 @@ pub(super) fn ellipse(
         None,
     )
 }
-pub(super) fn arc(
-    sketch: &Sketch2D,
-    entity: SketchEntityId,
+fn arc(
+    sketch: &SketchReadIndex<'_>,
+    arc: SketchArc2D,
     limit: f64,
 ) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
-    let arc = sketch
-        .arc(entity)
-        .map_err(|cause| SketchCurveFailure::model(entity, cause))?;
+    let entity = arc.id;
     let center = point(sketch, arc.center)?;
     let endpoints = [point(sketch, arc.start)?, point(sketch, arc.end)?];
     let axis = std::array::from_fn(|coordinate| endpoints[0][coordinate] - center[coordinate]);

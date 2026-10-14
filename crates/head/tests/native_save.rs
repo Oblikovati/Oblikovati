@@ -7,6 +7,10 @@ struct SaveOnceWindow {
     saved_title: Option<String>,
 }
 impl HeadWindow for SaveOnceWindow {
+    fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
+        self.native.submit_sketch_scene(update)
+    }
+
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         let mut inputs = self.native.events(limit)?;
         if self.saved_title.is_some() {

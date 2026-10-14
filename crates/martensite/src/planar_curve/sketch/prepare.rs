@@ -2,7 +2,7 @@
 use super::{
     ResolvedSketchCurve, SketchCurveFailure, SketchIntersectionOptionsV1, SketchLineDomain, shape,
 };
-use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
+use oblikovati_model::sketch::{OwnedSketchGeometry, Sketch2D, SketchEntityId, SketchReadIndex};
 pub(super) fn require_request(
     sketch: &Sketch2D,
     line: SketchEntityId,
@@ -30,43 +30,28 @@ fn require_released_geometry(sketch: &Sketch2D) -> Result<(), SketchCurveFailure
         .chain(sketch.offset_splines().iter().map(|curve| curve.id()))
         .min();
     if let Some(entity) = unsupported {
-        return Err(SketchCurveFailure::input(
-            entity,
-            format!(
-                "spline entity {entity:?}: expected a released native sketch constructor; Martensite issue #9 remains required"
-            ),
-        ));
+        return Err(super::failure::unreleased_spline(entity));
     }
     Ok(())
 }
 pub(super) fn targets(
-    sketch: &Sketch2D,
+    sketch: &SketchReadIndex<'_>,
     source: SketchEntityId,
     domain: SketchLineDomain,
     limit: f64,
 ) -> Result<Vec<ResolvedSketchCurve>, SketchCurveFailure> {
-    let lines = sketch
-        .lines()
+    let mut targets = Vec::new();
+    for entity in sketch
+        .entity_ids()
         .iter()
-        .filter(|line| line.id != source)
-        .map(|line| shape::line(sketch, line.id, domain, limit));
-    let circles = sketch
-        .circles()
-        .iter()
-        .map(|circle| shape::circle(sketch, circle.id));
-    let arcs = sketch
-        .arcs()
-        .iter()
-        .map(|arc| shape::arc(sketch, arc.id, limit));
-    let ellipses = sketch
-        .ellipses()
-        .iter()
-        .map(|ellipse| shape::ellipse(sketch, ellipse.id()));
-    let mut targets = lines
-        .chain(circles)
-        .chain(arcs)
-        .chain(ellipses)
-        .collect::<Result<Vec<_>, _>>()?;
+        .copied()
+        .filter(|id| *id != source)
+    {
+        if matches!(sketch.entity(entity), Ok(OwnedSketchGeometry::Point(_))) {
+            continue;
+        }
+        targets.push(shape::resolve(sketch, entity, domain, limit)?);
+    }
     targets.sort_by_key(|target| target.entity);
     Ok(targets)
 }

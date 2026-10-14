@@ -12,6 +12,7 @@ pub struct NativeHeadWindow {
     view: Viewport,
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
+    sketch_scene: Option<crate::HeadSketchSceneUpdate>,
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
     command_notice: Option<crate::DesktopCommandNotice>,
@@ -30,6 +31,7 @@ impl NativeHeadWindow {
             view,
             wake: ViewportWake::new()?,
             scene_status: None,
+            sketch_scene: None,
             navigation: Default::default(),
             sketch_view: None,
             command_notice: None,
@@ -59,6 +61,12 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
+        self.view.set_sketch_display(&update.sketches)?;
+        self.sketch_scene = Some(update);
+        self.refresh_title()
+    }
+
     fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
         self.synchronize_sketch_camera(edit)
     }
@@ -110,7 +118,9 @@ impl HeadWindow for NativeHeadWindow {
         self.view.poll_events(limit)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
-        Ok(match self.view.present()? {
+        let presentation = self.view.present()?;
+        self.refresh_title()?;
+        Ok(match presentation {
             ViewportPresentation::Completed(_) => HeadPresentation::Completed,
             ViewportPresentation::SurfaceChanged(_) => HeadPresentation::SurfaceChanged,
         })
@@ -233,6 +243,7 @@ impl NativeHeadWindow {
             .scene_status
             .as_ref()
             .map_or_else(|| "Oblikovati".into(), crate::HeadSceneStatus::title);
+        title.push_str(&self.sketch_display_title()?);
         if let Some(notice) = &self.command_notice {
             title.push_str(&format!(" - {}", notice.message()));
         }
@@ -256,3 +267,9 @@ mod addin_services_tests;
 mod projection;
 
 mod sketch_edit;
+
+mod sketch_display;
+
+#[cfg(test)]
+#[path = "../tests/native_sketch_display.rs"]
+mod sketch_display_tests;

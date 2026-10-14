@@ -9,6 +9,10 @@ pub(super) struct PlacementEventWindow {
     pub(super) scripted: VecDeque<Vec<ViewportEvent>>,
 }
 impl HeadWindow for PlacementEventWindow {
+    fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
+        self.native.submit_sketch_scene(update)
+    }
+
     fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
         self.native.set_sketch_edit(edit)
     }

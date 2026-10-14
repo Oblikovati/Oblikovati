@@ -257,6 +257,7 @@ impl Viewport {
         self.refresh_extent()?;
         let preview = self.live()?.preview_source();
         self.set_sketch_preview(preview.as_ref())?;
+        self.refresh_sketch_display()?;
         self.target
             .as_ref()
             .expect("live target")
@@ -395,9 +396,25 @@ impl Viewport {
     /// Show screen-space command feedback through the existing kernel view.
     /// Example: `viewport.set_status_text("Saved part.opd")?`; an empty string clears it.
     pub fn set_status_text(&mut self, text: &str) -> Result<bool, String> {
+        self.update_overlay(|render| render.status_text(text))
+    }
+}
+
+mod projection;
+
+mod sketch_preview;
+
+mod sketch_display;
+
+impl Viewport {
+    fn update_overlay(
+        &mut self,
+        replace: impl FnOnce(&mut RenderView) -> Result<bool, String>,
+    ) -> Result<bool, String> {
         self.live()?;
+        self.refresh_extent()?;
         let next = next_generation(self.overlay)?;
-        if !self.render.as_mut().expect("live view").status_text(text)? {
+        if !replace(self.render.as_mut().expect("live view"))? {
             return Ok(false);
         }
         self.overlay = next;
@@ -405,7 +422,3 @@ impl Viewport {
         Ok(true)
     }
 }
-
-mod projection;
-
-mod sketch_preview;

@@ -13,6 +13,17 @@ pub struct HeadSummary {
 }
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Replace the active document's committed sketches; example: `window.submit_sketch_scene(update)?` after Undo.
+    fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
+        if update.sketches.is_empty() && update.plane_declines.is_empty() {
+            return Ok(());
+        }
+        Err(format!(
+            "sketch scene {:?}: expected a window with committed sketch rendering",
+            update.source
+        ))
+    }
+
     /// Apply edit-plane framing or restore the return view; example: `window.set_sketch_edit(None)?` on finish.
     fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
         if edit.is_none() {
@@ -212,6 +223,7 @@ fn run_owner_frame(
     let activity = owner.poll(32)?;
     control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;
+    control.pending |= publish_owner_sketches(window, owner)?;
     control.pending |= publish_owner_scene(window, owner)?;
     control.pending |= synchronize_sketch_view(window, owner)?;
     publish_command_notice(window, owner)?;
@@ -298,4 +310,15 @@ fn synchronize_sketch_view(
             Ok(true)
         }
     }
+}
+
+fn publish_owner_sketches(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+) -> Result<bool, String> {
+    let Some(update) = owner.take_sketch_scene()? else {
+        return Ok(false);
+    };
+    window.submit_sketch_scene(update)?;
+    Ok(true)
 }

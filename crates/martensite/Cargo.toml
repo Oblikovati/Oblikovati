@@ -76,3 +76,7 @@ path = "tests/sketch_projection.rs"
 [[test]]
 name = "placement_preview"
 path = "tests/placement_preview.rs"
+
+[[test]]
+name = "sketch_display"
+path = "tests/sketch_display.rs"

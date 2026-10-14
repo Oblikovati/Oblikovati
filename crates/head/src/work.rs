@@ -12,6 +12,11 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Consume a committed authoring update; example: `work.take_sketch_scene()?` after polling history.
+    fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
+        Ok(None)
+    }
+
     /// End an edit whose view could not be prepared; example: `work.decline_sketch_edit(cause)?` after a camera refusal.
     fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
         Err(format!(
@@ -94,3 +99,25 @@ impl HeadWork for IdleHeadWork {
         Ok(())
     }
 }
+
+// Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
+macro_rules! forward_sketch_work {
+    ($owner:ident) => {
+        fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
+            self.$owner.decline_sketch_edit(cause)
+        }
+        fn sketch_edit(&self) -> Option<$crate::HeadSketchEdit> {
+            self.$owner.sketch_edit()
+        }
+        fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+            self.$owner.sketch_preview()
+        }
+        fn take_sketch_scene(&mut self) -> Result<Option<$crate::HeadSketchSceneUpdate>, String> {
+            self.$owner.take_sketch_scene()
+        }
+        fn take_scene(&mut self) -> Result<Option<$crate::HeadSceneUpdate>, String> {
+            self.$owner.take_scene()
+        }
+    };
+}
+pub(crate) use forward_sketch_work;

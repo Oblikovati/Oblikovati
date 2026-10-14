@@ -6,6 +6,10 @@ pub(super) struct CloseWhenReadyWindow<'a> {
     pub deadline: std::time::Instant,
 }
 impl HeadWindow for CloseWhenReadyWindow<'_> {
+    fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
+        self.window.submit_sketch_scene(update)
+    }
+
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         if std::time::Instant::now() >= self.deadline {
             return Err("native fixture startup: expected completion within twenty seconds".into());

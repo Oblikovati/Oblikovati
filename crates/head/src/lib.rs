@@ -94,3 +94,6 @@ pub use sketch_edit::HeadSketchEdit;
 #[path = "placement/tool.rs"]
 mod placement_tool;
 pub use placement_tool::SketchPlacementTool;
+
+mod sketch_scene;
+pub use sketch_scene::HeadSketchSceneUpdate;

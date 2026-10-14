@@ -236,3 +236,6 @@ fn typed_kernel_decline_reaches_desktop_status_and_recovers() {
         1
     );
 }
+
+#[path = "part_scene/sketches.rs"]
+mod sketches;

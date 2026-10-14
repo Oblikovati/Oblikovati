@@ -9,6 +9,10 @@ struct WorkflowWindow {
     reopened: Option<u64>,
 }
 impl HeadWindow for WorkflowWindow {
+    fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
+        self.native.submit_sketch_scene(update)
+    }
+
     fn submit_scene(&mut self, update: crate::HeadSceneUpdate) -> Result<(), String> {
         self.native.submit_scene(update)
     }

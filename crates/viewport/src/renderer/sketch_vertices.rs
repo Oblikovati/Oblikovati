@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::*;
 use oblikovati_model::sketch::SketchPlane;
+use rustycad_tkernel::standard::Handle;
+use rustycad_tkservice::graphic3d::*;
 pub(super) fn polyline(
     plane: SketchPlane,
     points: &[[f64; 2]],
@@ -23,7 +24,7 @@ pub(super) fn polyline(
     Ok(vertices)
 }
 
-fn render_position(plane: SketchPlane, point: [f64; 2]) -> Result<[f64; 3], String> {
+pub(super) fn render_position(plane: SketchPlane, point: [f64; 2]) -> Result<[f64; 3], String> {
     let position = plane.to_model(point).map_err(|cause| cause.to_string())?;
     if position.iter().any(|value| !(*value as f32).is_finite()) {
         return Err(format!(
@@ -31,4 +32,19 @@ fn render_position(plane: SketchPlane, point: [f64; 2]) -> Result<[f64; 3], Stri
         ));
     }
     Ok(position)
+}
+
+pub(super) fn point(
+    plane: SketchPlane,
+    point: [f64; 2],
+) -> Result<Handle<Graphic3dArrayOfPrimitives>, String> {
+    let vertices = Handle::new(
+        Graphic3dArrayOfPrimitives::new(Graphic3dTypeOfPrimitiveArray::Points, 1, 0, 0, 0)
+            .map_err(|cause| cause.to_string())?,
+    );
+    let position = render_position(plane, point)?;
+    vertices
+        .add_vertex_f64(position[0], position[1], position[2])
+        .map_err(|cause| cause.to_string())?;
+    Ok(vertices)
 }

@@ -51,8 +51,9 @@ pub fn intersect_sketch_line(
     options: SketchIntersectionOptionsV1,
 ) -> Result<SketchLineIncidences, SketchCurveFailure> {
     prepare::require_request(sketch, line, options)?;
-    let source = shape::line(sketch, line, domain, options.maximum_endpoint_residual)?;
-    let targets = prepare::targets(sketch, line, domain, options.maximum_endpoint_residual)?;
+    let index = sketch.read_index();
+    let source = shape::resolve(&index, line, domain, options.maximum_endpoint_residual)?;
+    let targets = prepare::targets(&index, line, domain, options.maximum_endpoint_residual)?;
     let targets = targets
         .into_iter()
         .map(|target| intersect_target(&source, target, options))
@@ -79,4 +80,11 @@ fn intersect_target(
 }
 
 mod preview;
-pub use preview::{PlacementPreviewCurve, PlacementSamplingOptionsV1, sample_placement_preview};
+pub use preview::{PlacementPreviewCurve, sample_placement_preview};
+pub use sampling::SketchSamplingOptionsV1;
+mod presentation;
+mod sampling;
+pub use presentation::{
+    SketchDisplayDecline, SketchDisplayEntity, SketchDisplayPrimitive, SketchDisplayReport,
+    sample_sketch_display,
+};

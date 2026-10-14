@@ -2,7 +2,7 @@
 use super::*;
 use oblikovati_model::sketch::{SketchPlacementRecipe, SketchPlane};
 use oblikovati_viewport::ViewportSketchPreview;
-fn packet() -> ViewportSketchPreview {
+pub(super) fn packet() -> ViewportSketchPreview {
     ViewportSketchPreview {
         plane: SketchPlane::xy(),
         recipe: SketchPlacementRecipe::straight_slot([[-5., 0.], [5., 0.]], 4.).unwrap(),
