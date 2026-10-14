@@ -109,8 +109,8 @@ impl Sketch2D {
         super::ground_constraint::require_ground_schema(recipe)?;
         sketch.restore_geometry(recipe)?;
         sketch.restore_ellipses(recipe)?;
-        sketch.restore_splines(recipe)?;
         sketch.restore_point_ownership(recipe)?;
+        sketch.restore_splines(recipe)?;
         sketch.restore_entity_order(recipe)?;
         sketch.restore_construction_curves(recipe)?;
         sketch.restore_centerlines(recipe)?;

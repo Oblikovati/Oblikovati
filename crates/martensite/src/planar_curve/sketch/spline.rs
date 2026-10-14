@@ -7,11 +7,11 @@ use crate::{
 use oblikovati_api::types::{SPLINE_FIT_CHORD, SPLINE_FIT_SMOOTH, SPLINE_FIT_SWEET};
 use oblikovati_model::sketch::{
     OwnedSketchGeometry, SketchEntityId, SketchOffsetSpline2D, SketchReadIndex, SketchSpline2D,
-    SketchSplineKind,
+    SketchSplineHandle2D, SketchSplineKind,
 };
 use rustycad_tkgeomalgo::sketch_spline::{
-    SketchFitSpacing, SketchSplineIntent, SketchSplineOptionsV1, SketchSplineReport,
-    build_unhandled_spline,
+    SketchFitSpacing, SketchHandleOptionsV1, SketchSplineHandle, SketchSplineIntent,
+    SketchSplineOptionsV1, SketchSplineReport, build_handled_spline, build_unhandled_spline,
 };
 use rustycad_tkmath::gp::Point2;
 /// Measured checks and policy for one owned parent construction.
@@ -39,15 +39,8 @@ pub(super) fn resolve(
     limit: f64,
 ) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
     let entity = spline.id();
-    let points = native_points(index, spline)?;
-    let report = build_unhandled_spline(
-        &points,
-        intent(spline)?,
-        spline.closed(),
-        SketchSplineOptionsV1::default(),
-    )
-    .map_err(|cause| SketchCurveFailure::curve(entity, cause.into()))?;
-    let mut result = resolved_report(entity, report)?;
+    let (definition, report) = native_definition(index, spline)?;
+    let mut result = resolved_report(entity, definition, report)?;
     if let Some(ends) = authored_ends(spline) {
         let positions = [shape::point(index, ends[0])?, shape::point(index, ends[1])?];
         result.endpoint_residuals = Some(shape::endpoints::measure(
@@ -58,6 +51,72 @@ pub(super) fn resolve(
         )?);
     }
     Ok(result)
+}
+fn native_definition(
+    index: &SketchReadIndex<'_>,
+    spline: &SketchSpline2D,
+) -> Result<
+    (
+        rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
+        SketchSplineReport,
+    ),
+    SketchCurveFailure,
+> {
+    let points = native_points(index, spline)?;
+    let handles = native_handles(index, spline)?;
+    if handles.is_empty() {
+        return natural_definition(spline, &points);
+    }
+    let entity = spline.id();
+    let report = build_handled_spline(
+        &points,
+        fit_spacing(spline)?,
+        spline.closed(),
+        &handles,
+        SketchHandleOptionsV1::default(),
+    )
+    .map_err(|cause| SketchCurveFailure::curve(entity, cause.into()))?;
+    Ok((report.definition, report.natural))
+}
+fn natural_definition(
+    spline: &SketchSpline2D,
+    points: &[Point2],
+) -> Result<
+    (
+        rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
+        SketchSplineReport,
+    ),
+    SketchCurveFailure,
+> {
+    let entity = spline.id();
+    let report = build_unhandled_spline(
+        points,
+        intent(spline)?,
+        spline.closed(),
+        SketchSplineOptionsV1::default(),
+    )
+    .map_err(|cause| SketchCurveFailure::curve(entity, cause.into()))?;
+    Ok((report.definition.clone(), report))
+}
+fn native_handles(
+    index: &SketchReadIndex<'_>,
+    spline: &SketchSpline2D,
+) -> Result<Vec<SketchSplineHandle>, SketchCurveFailure> {
+    index
+        .spline_handles(spline.id())
+        .map_err(|cause| SketchCurveFailure::model(spline.id(), cause))?
+        .into_iter()
+        .map(|handle| native_handle(index, handle))
+        .collect()
+}
+fn native_handle(
+    index: &SketchReadIndex<'_>,
+    handle: SketchSplineHandle2D,
+) -> Result<SketchSplineHandle, SketchCurveFailure> {
+    Ok(SketchSplineHandle {
+        fit_index: handle.fit_index(),
+        end: shape::point(index, handle.end()).map(|[x, y]| Point2::new(x, y))?,
+    })
 }
 fn native_points(
     index: &SketchReadIndex<'_>,
@@ -83,9 +142,10 @@ fn authored_ends(spline: &SketchSpline2D) -> Option<[SketchEntityId; 2]> {
 }
 fn resolved_report(
     entity: SketchEntityId,
+    definition: rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
     report: SketchSplineReport,
 ) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
-    let definition = owned_definition(&report)
+    let definition = owned_definition(&definition)
         .map_err(|cause| SketchCurveFailure::curve(entity, cause.into()))?;
     Ok(ResolvedSketchCurve {
         entity,
@@ -119,13 +179,21 @@ fn intent(spline: &SketchSpline2D) -> Result<SketchSplineIntent, SketchCurveFail
     };
     Ok(SketchSplineIntent::Fit(spacing))
 }
+fn fit_spacing(spline: &SketchSpline2D) -> Result<SketchFitSpacing, SketchCurveFailure> {
+    match intent(spline)? {
+        SketchSplineIntent::Fit(spacing) => Ok(spacing),
+        SketchSplineIntent::Control => Err(SketchCurveFailure::input(
+            spline.id(),
+            "active spline handles: expected a fit spline".to_owned(),
+        )),
+    }
+}
 fn owned_definition(
-    report: &SketchSplineReport,
+    definition: &rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
 ) -> Result<PlanarSplineDefinition, rustycad_tkernel::standard::Failure> {
-    let curve = report.definition.curve()?;
+    let curve = definition.curve()?;
     Ok(PlanarSplineDefinition {
-        poles: report
-            .definition
+        poles: definition
             .poles()
             .iter()
             .map(|point| [point.x(), point.y()])
@@ -133,7 +201,7 @@ fn owned_definition(
         weights: None,
         knots: curve.knots().as_slice().to_vec(),
         multiplicities: curve.multiplicities().as_slice().to_vec(),
-        degree: report.definition.degree(),
+        degree: definition.degree(),
         // The released recipe represents closure with wrapped poles, not a periodic flag.
         periodic: false,
     })

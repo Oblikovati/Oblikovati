@@ -25,11 +25,60 @@ fn handle_adoption_requires_one_fit_parent_point_and_owned_end() {
         },
         1.0,
     );
-    sketch.add_point(id(6), [3.0, 0.0]).unwrap();
+    sketch.add_defining_point(id(6), [3.0, 0.0]).unwrap();
     let handle = SketchSplineHandle2D::new(id(4), 1, id(6)).unwrap();
     sketch.add_spline_handle(handle).unwrap();
     assert_eq!(sketch.spline_handles(), &[handle]);
     assert!(sketch.add_spline_handle(handle).is_err());
+}
+#[test]
+fn handle_lookup_keeps_the_parent_spline() {
+    let mut sketch = owned(
+        SketchSplineKind::Fit {
+            method: SPLINE_FIT_SMOOTH,
+        },
+        1.0,
+    );
+    sketch.add_defining_point(id(6), [3.0, 0.0]).unwrap();
+    let handle = SketchSplineHandle2D::new(id(4), 1, id(6)).unwrap();
+    sketch.add_spline_handle(handle).unwrap();
+    assert_eq!(sketch.spline_handle(id(4), 1).unwrap(), handle);
+    assert_eq!(sketch.spline(id(4)).unwrap().id(), id(4));
+    assert!(sketch.spline_handle(id(4), 2).is_err());
+}
+#[test]
+fn handle_endpoint_deletion_deactivates_without_retiring_the_parent() {
+    let mut sketch = owned(
+        SketchSplineKind::Fit {
+            method: SPLINE_FIT_SMOOTH,
+        },
+        1.0,
+    );
+    sketch.add_defining_point(id(6), [3.0, 0.0]).unwrap();
+    sketch
+        .add_spline_handle(SketchSplineHandle2D::new(id(4), 1, id(6)).unwrap())
+        .unwrap();
+    let retired = sketch.delete_entities(&[id(6)]).unwrap();
+    assert_eq!(retired.entities, vec![id(6)]);
+    assert_eq!(sketch.spline(id(4)).unwrap().id(), id(4));
+    assert!(sketch.spline_handles().is_empty());
+}
+#[test]
+fn parent_deletion_retires_its_hidden_handle_endpoint() {
+    let mut sketch = owned(
+        SketchSplineKind::Fit {
+            method: SPLINE_FIT_SMOOTH,
+        },
+        1.0,
+    );
+    sketch.add_defining_point(id(6), [3.0, 0.0]).unwrap();
+    sketch
+        .add_spline_handle(SketchSplineHandle2D::new(id(4), 1, id(6)).unwrap())
+        .unwrap();
+    let retired = sketch.delete_entities(&[id(4)]).unwrap();
+    assert!(retired.entities.contains(&id(6)));
+    assert!(sketch.spline_handles().is_empty());
+    assert!(sketch.point(id(6)).is_err());
 }
 fn owned(kind: SketchSplineKind, distance: f64) -> Sketch2D {
     let mut sketch = Sketch2D::default();

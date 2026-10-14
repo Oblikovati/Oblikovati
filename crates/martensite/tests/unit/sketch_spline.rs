@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::evaluate_planar_spline;
-use oblikovati_model::sketch::Sketch2D;
+use oblikovati_model::sketch::{Sketch2D, SketchSplineHandle2D};
 #[path = "../planar_spline/go_recipe_fixture.rs"]
 mod fixture;
 use fixture::{FIT_POINTS, GoSplineOracle};
@@ -115,6 +115,24 @@ fn constructed_fit_and_control_curves_match_169_occt_positions_and_tangents() {
             verify_occt_row(row, &curves);
         }
     }
+}
+#[test]
+fn active_fit_handle_uses_the_released_native_hermite_constructor() {
+    let mut sketch = owned_spline(&[[0., 0.], [1., 1.], [2., 0.]], fit_kind(0), false);
+    let natural = resolved(&sketch);
+    sketch
+        .add_defining_point(SketchEntityId(99), [0., 3.])
+        .unwrap();
+    sketch
+        .add_spline_handle(
+            SketchSplineHandle2D::new(SketchEntityId(1), 0, SketchEntityId(99)).unwrap(),
+        )
+        .unwrap();
+    let handled = resolved(&sketch);
+    assert_ne!(definition(&handled), definition(&natural));
+    let endpoint = evaluate_planar_spline(definition(&handled), 0., 0.).unwrap();
+    close_values(endpoint.position.into_iter(), [0., 0.].into_iter());
+    assert!(endpoint.tangent[1].abs() > endpoint.tangent[0].abs());
 }
 fn verify_occt_row(row: &str, curves: &[ResolvedSketchCurve]) {
     let values: Vec<f64> = row.split(',').map(|field| field.parse().unwrap()).collect();

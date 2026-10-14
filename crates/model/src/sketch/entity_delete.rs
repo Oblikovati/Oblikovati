@@ -48,10 +48,14 @@ impl Sketch2D {
         Ok(())
     }
     fn deletion_closure(&self, selected: &[SketchEntityId]) -> BTreeSet<SketchEntityId> {
-        let edges: BTreeMap<SketchEntityId, Vec<SketchEntityId>> = entity_geometry::catalogue(self)
-            .into_iter()
-            .map(|(id, shape)| (id, shape.ownership_dependencies()))
-            .collect();
+        let mut edges: BTreeMap<SketchEntityId, Vec<SketchEntityId>> =
+            entity_geometry::catalogue(self)
+                .into_iter()
+                .map(|(id, shape)| (id, shape.ownership_dependencies()))
+                .collect();
+        for handle in self.spline_handles() {
+            edges.entry(handle.end()).or_default().push(handle.parent());
+        }
         let mut retired: BTreeSet<SketchEntityId> = selected.iter().copied().collect();
         extend_dependent_entities(&edges, &mut retired);
         let live: BTreeSet<SketchEntityId> = edges

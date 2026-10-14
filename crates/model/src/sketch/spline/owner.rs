@@ -36,6 +36,11 @@ impl Sketch2D {
             )));
         }
         self.point(handle.end())?;
+        if !self.defining_points.contains(&handle.end()) {
+            return Err(SketchError::Definition(format!(
+                "spline handle {handle:?}: expected a hidden owned end point"
+            )));
+        }
         if self.spline_handles.iter().any(|saved| {
             saved.parent() == handle.parent() && saved.fit_index() == handle.fit_index()
         }) {
@@ -45,6 +50,19 @@ impl Sketch2D {
         }
         self.spline_handles.push(handle);
         Ok(())
+    }
+    /// Resolve one active handle by parent and fit-point index; example: `sketch.spline_handle(parent, 1)?`.
+    pub fn spline_handle(
+        &self,
+        parent: SketchEntityId,
+        fit_index: usize,
+    ) -> Result<SketchSplineHandle2D, SketchError> {
+        self
+            .spline_handles
+            .iter()
+            .copied()
+            .find(|handle| handle.parent() == parent && handle.fit_index() == fit_index)
+            .ok_or_else(|| SketchError::Definition(format!("spline handle parent {parent:?} fit point {fit_index}: expected an active handle")))
     }
     /// Resolve the exact parent identity; example: `sketch.spline(parent_id)?`.
     pub fn spline(&self, id: SketchEntityId) -> Result<&SketchSpline2D, SketchError> {

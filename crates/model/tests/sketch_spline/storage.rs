@@ -14,7 +14,7 @@ fn schema_thirteen_round_trips_active_handles_and_refuses_old_shape() {
         },
         1.0,
     );
-    sketch.add_point(id(6), [3.0, 0.0]).unwrap();
+    sketch.add_defining_point(id(6), [3.0, 0.0]).unwrap();
     let handle = SketchSplineHandle2D::new(id(4), 1, id(6)).unwrap();
     sketch.add_spline_handle(handle).unwrap();
     let recipe = sketch.recipe();

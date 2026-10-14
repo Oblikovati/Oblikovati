@@ -11,6 +11,9 @@ impl Sketch2D {
             .retain(|ellipse| !retired.contains(&ellipse.id()));
         self.splines
             .retain(|parent| !retired.contains(&parent.id()));
+        self.spline_handles.retain(|handle| {
+            !retired.contains(&handle.parent()) && !retired.contains(&handle.end())
+        });
         self.offset_splines
             .retain(|offset| !retired.contains(&offset.id()));
         self.entity_order.retain(|id| !retired.contains(id));
