@@ -2,7 +2,7 @@
 
 Date: 2026-10-15. Status: Accepted for the Rust target design.
 Boundary: planar fit-spline handles and `sketch.setSplineHandle`.
-Tracking: Oblikovati#3789, Oblikovati#626.
+Tracking: Oblikovati#626.
 
 ## Decision
 
