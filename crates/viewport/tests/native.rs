@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #![cfg(target_os = "linux")]
 use oblikovati_viewport::{
-    Viewport, ViewportCamera, ViewportCapture, ViewportOptions, ViewportPresentation,
-    ViewportRuntime, ViewportScene, ViewportTriangle,
+    GuiAtlas, GuiBatch, GuiFrame, GuiVertex, Viewport, ViewportCamera, ViewportCapture,
+    ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene, ViewportTriangle,
 };
 use std::time::{Duration, Instant};
 #[path = "native/navigation.rs"]
@@ -119,3 +119,8 @@ mod sketch_display;
 
 #[path = "native/point_preview.rs"]
 mod point_preview;
+
+#[path = "native/gui_composition.rs"]
+mod gui_composition;
+#[path = "gui_fixture.rs"]
+mod gui_fixture;

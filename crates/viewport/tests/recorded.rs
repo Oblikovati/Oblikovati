@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::ViewportTriangle;
+use crate::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
 use martensite_vulkan::{FrameCapture, RenderBackend, RenderError, RenderFrame};
 use rustycad_tkmath::gp::Point3;
 use rustycad_tkservice::aspect::AspectNeutralWindow;
@@ -484,3 +485,8 @@ mod overlay_tests;
 
 #[path = "projection_resize.rs"]
 mod projection_resize_tests;
+
+#[path = "gui_fixture.rs"]
+mod gui_fixture;
+#[path = "gui_recorded.rs"]
+mod gui_tests;

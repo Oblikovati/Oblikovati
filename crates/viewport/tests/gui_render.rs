@@ -2,28 +2,11 @@
 #![cfg(target_os = "linux")]
 use oblikovati_viewport::*;
 use std::sync::Arc;
-fn atlas() -> GuiAtlas {
-    GuiAtlas {
-        extent: [1, 1],
-        rgba: Arc::new(vec![[255; 4]]),
-    }
-}
+#[path = "gui_fixture.rs"]
+mod gui_fixture;
+use gui_fixture::atlas;
 fn colored_quad(color: [u8; 4], clip_rect: [f32; 4]) -> GuiFrame {
-    let vertices = [[0., 0.], [32., 0.], [32., 32.], [0., 32.]]
-        .map(|position| GuiVertex {
-            position,
-            uv: [0.5; 2],
-            srgb: color,
-        })
-        .into();
-    GuiFrame {
-        extent: [32; 2],
-        batches: vec![GuiBatch {
-            vertices,
-            indices: vec![0, 1, 2, 0, 2, 3],
-            clip_rect,
-        }],
-    }
+    gui_fixture::frame([32; 2], color, clip_rect)
 }
 #[test]
 fn compilation_preserves_order_and_uses_four_intersected_clip_chains() {

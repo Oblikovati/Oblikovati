@@ -160,3 +160,11 @@ Vulkan renderer. The resulting offscreen control panel was visually inspected;
 text orientation, font UVs, button colors, and clipping were correct, and Vulkan
 validation reported no errors. This preview does not attach UI to the executable's
 native view; the composition requirement above remains open.
+
+## Released native composition
+
+Kernel v0.2.7 supplies the required attach/replace/clear contract. The viewport
+and native head now consume it with the existing frame compiler. See the
+[native composition receipt](implementation-native-gui-composition.md) for model
+and GUI pixel checks on software Vulkan and AMD. Automatic executable attachment,
+input routing, frame scheduling and command dispatch remain open.

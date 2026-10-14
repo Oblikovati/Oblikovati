@@ -273,3 +273,9 @@ mod sketch_display;
 #[cfg(test)]
 #[path = "../tests/native_sketch_display.rs"]
 mod sketch_display_tests;
+
+mod gui_composition;
+
+#[cfg(test)]
+#[path = "../tests/native_gui_composition.rs"]
+mod gui_composition_tests;
