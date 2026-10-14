@@ -43,3 +43,12 @@ impl SketchPlacementGeometry {
         }
     }
 }
+
+pub(super) fn closed_boundary(sides: usize) -> Vec<super::SketchPlacementMember> {
+    (0..sides)
+        .map(|i| super::SketchPlacementMember {
+            geometry: SketchPlacementGeometry::Path(SketchPathMember::Line([i, (i + 1) % sides])),
+            construction: false,
+        })
+        .collect()
+}

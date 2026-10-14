@@ -64,16 +64,10 @@ impl SketchPolygonCreation {
         self,
         geometry: &Sketch2D,
     ) -> Result<(SketchPolylineCreation, SketchPrimitiveCreation), SketchPolygonCreationError> {
-        let points = self
+        let (points, radius) = self
             .seed
-            .vertices()
+            .boundary()
             .map_err(SketchPolygonCreationError::Sketch)?;
-        let offset = [
-            points[0][0] - self.seed.center[0],
-            points[0][1] - self.seed.center[1],
-        ];
-        // Go derives the construction radius from the first authored vertex (#3563, aa8297d1).
-        let radius = (offset[0] * offset[0] + offset[1] * offset[1]).sqrt();
         let circle = SketchPrimitiveCreation::Circle {
             center: SketchPointInput::New(self.seed.center),
             radius,

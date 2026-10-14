@@ -12,6 +12,8 @@ import (
 )
 
 type record struct {
+	Sides        int
+	Inscribed    bool
 	Locked       []lockedArc
 	SolvedPoints [][2]float64
 	Kind         string
@@ -87,6 +89,13 @@ func main() {
 			out = append(out, capture(record{Kind: "ellipse", Input: [3][2]float64{{3, -4}, axis, radii}}))
 		}
 	}
+	for _, sides := range []int{3, 4, 5, 8, 17} {
+		for _, inscribed := range []bool{true, false} {
+			for _, through := range [][2]float64{{8, -4}, {6, 0}} {
+				out = append(out, capture(record{Kind: "polygon", Sides: sides, Inscribed: inscribed, Input: [3][2]float64{{3, -4}, through}}))
+			}
+		}
+	}
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}
@@ -100,6 +109,8 @@ func capture(out record) record {
 		r = sketch.ArcSlotRecipe(c, s, e, out.Width, out.CCW)
 	}
 	switch out.Kind {
+	case "polygon":
+		r = sketch.PolygonRecipe(c, s, out.Sides, out.Inscribed)
 	case "ellipse":
 		r = sketch.EllipseRecipe(c, m.V2(s.X, s.Y), e.X, e.Y)
 	case "arc":

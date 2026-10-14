@@ -1,31 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use crate::sketch::{LineRelation, PlanarConstraint};
+use crate::sketch::SketchPlacementRelation;
 pub(super) fn append(
     geometry: &mut Sketch2D,
     chain: &SketchPolylineCreationReport,
     circle: SketchEntityId,
     ids: &mut RecipeReservations<'_>,
 ) -> Result<Vec<SketchConstraintId>, SketchPolygonCreationError> {
-    let radial = chain
-        .points
-        .iter()
-        .map(|point| PlanarConstraint::PointOnCircularCurve {
-            point: *point,
-            curve: circle,
-        });
-    let equal = chain.lines.windows(2).map(|pair| PlanarConstraint::Lines {
-        lines: [pair[0], pair[1]],
-        relation: LineRelation::EqualLength,
-    });
-    radial
-        .chain(equal)
+    let mut members = chain.lines.clone();
+    members.push(circle);
+    SketchPlacementRelation::polygon(chain.lines.len())
         .map(|relation| {
+            let input = relation
+                .resolve(&chain.points, &members)
+                .map_err(SketchPolygonCreationError::Sketch)?;
             let id = ids
                 .allocate_sketch_constraint(chain.sketch)
                 .map_err(SketchPolygonCreationError::Constraint)?;
-            geometry
-                .add_constraint(id, relation)
+            input
+                .append(geometry, id)
                 .map_err(SketchPolygonCreationError::Sketch)?;
             Ok(id)
         })

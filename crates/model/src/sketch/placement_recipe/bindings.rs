@@ -11,6 +11,8 @@ pub enum SketchPlacementRelation {
     LineHorizontal(usize),
     LineVertical(usize),
     Perpendicular([usize; 2]),
+    EqualLength([usize; 2]),
+    PointOnCircle { point: usize, circle: usize },
     Midpoint { point: usize, line: usize },
     LineTangent { line: usize, curve: usize },
     CircularTangent([usize; 2]),
@@ -35,6 +37,16 @@ impl SketchPlacementRelation {
                 lines: [member(a)?, member(b)?],
                 relation: crate::sketch::LineRelation::Perpendicular,
             }),
+            Self::EqualLength([a, b]) => Relation(PlanarConstraint::Lines {
+                lines: [member(a)?, member(b)?],
+                relation: crate::sketch::LineRelation::EqualLength,
+            }),
+            Self::PointOnCircle { point, circle } => {
+                Relation(PlanarConstraint::PointOnCircularCurve {
+                    point: indexed_entity(points, point)?,
+                    curve: member(circle)?,
+                })
+            }
             Self::Midpoint { point, line } => Relation(PlanarConstraint::Midpoint {
                 point: indexed_entity(points, point)?,
                 line: member(line)?,

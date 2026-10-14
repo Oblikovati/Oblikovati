@@ -31,6 +31,17 @@ impl SketchPolygonSeed {
         }
         Ok(vertices)
     }
+    pub(crate) fn boundary(self) -> Result<(Vec<[f64; 2]>, f64), SketchError> {
+        let vertices = self.vertices()?;
+        let delta = [
+            vertices[0][0] - self.center[0],
+            vertices[0][1] - self.center[1],
+        ];
+        // Go derives the construction radius from the first authored vertex (#3563, aa8297d1).
+        let radius = (delta[0] * delta[0] + delta[1] * delta[1]).sqrt();
+        super::circle::require_radius_value(radius)?;
+        Ok((vertices, radius))
+    }
     fn polar_seed(self) -> Result<(f64, f64, f64, f64), SketchError> {
         let vector = self.first_radius_vector()?;
         let radius = (vector[0] * vector[0] + vector[1] * vector[1]).sqrt();

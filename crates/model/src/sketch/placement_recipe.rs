@@ -6,6 +6,7 @@ mod circles;
 mod ellipses;
 mod fields;
 mod geometry;
+mod polygons;
 mod rectangles;
 mod slots;
 mod verification;

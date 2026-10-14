@@ -45,7 +45,7 @@ fn arc_recipes_refuse_nonfinite_or_zero_radial_input() {
         assert!(SketchPlacementRecipe::arc(points[0], [points[1], points[2]], true).is_err());
     }
 }
-fn center_distance(center: [f64; 2], point: [f64; 2]) -> f64 {
+pub(super) fn center_distance(center: [f64; 2], point: [f64; 2]) -> f64 {
     (point[0] - center[0]).hypot(point[1] - center[1])
 }
 fn assert_circular_positions(points: &[[f64; 2]]) {
