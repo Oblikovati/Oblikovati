@@ -238,4 +238,15 @@ fn group_management_actions_require_safe_document_and_group_names() {
             .unwrap_err()
             .contains("presentation text")
     );
+    let missing_member = GuiParameterGroupAction::RemoveMember {
+        document: 7,
+        internal_name: "ratios".into(),
+        parameter: 0,
+    };
+    assert!(
+        missing_member
+            .validate()
+            .unwrap_err()
+            .contains("member identity")
+    );
 }

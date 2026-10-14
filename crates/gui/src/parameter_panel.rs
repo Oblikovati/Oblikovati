@@ -110,6 +110,11 @@ pub enum GuiParameterGroupAction {
         internal_name: String,
         delete_parameters: bool,
     },
+    RemoveMember {
+        document: u64,
+        internal_name: String,
+        parameter: u64,
+    },
 }
 impl GuiParameterGroupAction {
     /// Reject malformed names before they reach the document owner; example: `action.validate()?`.
@@ -136,6 +141,18 @@ impl GuiParameterGroupAction {
                 internal_name,
                 ..
             } => (*document, internal_name, None, None),
+            Self::RemoveMember {
+                document,
+                internal_name,
+                parameter,
+            } => {
+                if *parameter == 0 {
+                    return Err(format!(
+                        "GUI parameter group action {self:?}: expected a nonzero member identity"
+                    ));
+                }
+                (*document, internal_name, None, None)
+            }
         };
         if document == 0
             || key.is_empty()
@@ -153,7 +170,8 @@ impl GuiParameterGroupAction {
         match self {
             Self::Create { document, .. }
             | Self::Rename { document, .. }
-            | Self::Delete { document, .. } => *document,
+            | Self::Delete { document, .. }
+            | Self::RemoveMember { document, .. } => *document,
         }
     }
 }

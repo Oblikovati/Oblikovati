@@ -161,6 +161,34 @@ fn group_management_rejects_stale_and_invalid_packets_before_mutation() {
     );
 }
 #[test]
+fn group_management_removes_one_member_without_losing_other_memberships() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    add_view_parameters(&mut owner);
+    owner
+        .apply_gui_parameter(&group_action(&owner, 0, "ratios"))
+        .unwrap();
+    owner
+        .apply_gui_parameter(&group_action(&owner, 0, "frame"))
+        .unwrap();
+    let parameter = owner.gui_parameter_snapshot().unwrap().unwrap().rows[0].parameter;
+    let remove = GuiParameterAction::GroupManagement(GuiParameterGroupAction::RemoveMember {
+        document,
+        internal_name: "ratios".into(),
+        parameter,
+    });
+    owner.apply_gui_parameter(&remove).unwrap();
+    let parameters = &owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .parameters;
+    assert!(parameters.group_members("ratios").unwrap().is_empty());
+    assert_eq!(parameters.group_members("frame").unwrap(), vec![parameter]);
+}
+#[test]
 fn invalid_and_stale_group_packets_do_not_create_groups_or_change_history() {
     let (mut owner, awake) = owner();
     let document = create(&mut owner, &awake);

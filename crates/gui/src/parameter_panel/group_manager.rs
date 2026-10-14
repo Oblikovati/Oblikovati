@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::GuiParameterGroup;
 use imgui::{TreeNodeFlags, Ui};
 
 /// Inline controls for creating, renaming, and removing document parameter groups.
@@ -29,13 +30,18 @@ impl ParameterGroupManager {
         actions: &mut Vec<GuiParameterAction>,
     ) {
         if ui.collapsing_header("Parameter Groups", TreeNodeFlags::empty()) {
-            self.draw_groups(ui, snapshot);
+            self.draw_groups(ui, snapshot, actions);
             self.draw_create(ui, snapshot.document, actions);
             self.draw_selected(ui, snapshot.document, actions);
         }
     }
 
-    fn draw_groups(&mut self, ui: &Ui, snapshot: &GuiParameterSnapshot) {
+    fn draw_groups(
+        &mut self,
+        ui: &Ui,
+        snapshot: &GuiParameterSnapshot,
+        actions: &mut Vec<GuiParameterAction>,
+    ) {
         for group in &snapshot.groups {
             ui.text(format!("{} ({})", group.display_name, group.key));
             ui.same_line();
@@ -46,6 +52,34 @@ impl ParameterGroupManager {
             }
             ui.same_line();
             ui.text_disabled(format!("{} member(s)", group.members.len()));
+            self.draw_members(ui, snapshot, group, actions);
+        }
+    }
+
+    fn draw_members(
+        &self,
+        ui: &Ui,
+        snapshot: &GuiParameterSnapshot,
+        group: &GuiParameterGroup,
+        actions: &mut Vec<GuiParameterAction>,
+    ) {
+        for member in &group.members {
+            let Some(row) = snapshot.rows.iter().find(|row| row.parameter == *member) else {
+                continue;
+            };
+            ui.same_line();
+            if ui.small_button(format!(
+                "Remove {}##group:{}:member:{member}",
+                row.detail.parameter_info.name, group.key
+            )) {
+                actions.push(GuiParameterAction::GroupManagement(
+                    GuiParameterGroupAction::RemoveMember {
+                        document: snapshot.document,
+                        internal_name: group.key.clone(),
+                        parameter: *member,
+                    },
+                ));
+            }
         }
     }
 

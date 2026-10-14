@@ -303,9 +303,16 @@ impl<
         let key = match edit {
             GuiParameterGroupAction::Create { internal_name, .. }
             | GuiParameterGroupAction::Rename { internal_name, .. }
-            | GuiParameterGroupAction::Delete { internal_name, .. } => internal_name,
+            | GuiParameterGroupAction::Delete { internal_name, .. }
+            | GuiParameterGroupAction::RemoveMember { internal_name, .. } => internal_name,
         };
         parameter_view::require_group_owner(&self.files, edit.document(), key, exists)?;
+        let member_name = match edit {
+            GuiParameterGroupAction::RemoveMember { parameter, .. } => Some(
+                parameter_view::group_member_name(&self.files, edit.document(), *parameter)?,
+            ),
+            _ => None,
+        };
         let client = oblikovati_api::client::Client::new(self.document_host());
         match edit {
             GuiParameterGroupAction::Create {
@@ -343,6 +350,17 @@ impl<
                     })
                     .map_err(|cause| cause.to_string())?;
                 return Ok(true);
+            }
+            GuiParameterGroupAction::RemoveMember { parameter, .. } => {
+                let parameter = member_name.ok_or_else(|| {
+                    format!("GUI parameter group member {parameter}: expected a resolved name")
+                })?;
+                client.parameters().remove_group_member(
+                    &oblikovati_api::wire::ParameterGroupMemberArgs {
+                        internal_name: key.to_owned(),
+                        parameter,
+                    },
+                )
             }
         }
         .map_err(|cause| cause.to_string())?;

@@ -50,6 +50,19 @@ pub(super) fn require_group_owner<
     }
     Ok(())
 }
+pub(super) fn group_member_name<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    parameter: u64,
+) -> Result<String, String> {
+    let session = files
+        .workspace()
+        .session(document)
+        .map_err(|cause| cause.to_string())?;
+    session.snapshot().parameters.get(parameter)
+        .map(|state| state.name.clone())
+        .ok_or_else(|| format!("GUI parameter group member {parameter} in document {document}: expected a registered parameter"))
+}
 pub(super) fn owner_parameter_snapshot<
     O: TransactionObserver,
     W: WorkspaceObserver,
