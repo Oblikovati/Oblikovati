@@ -11,8 +11,19 @@ pub struct HeadSummary {
     pub attempts: u64,
     pub completed: u64,
 }
+mod gui;
+pub use gui::HeadGuiUpdate;
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Advance GUI work before routing one input; example: `window.gui_frame(Some(event), &commands)?`.
+    fn gui_frame(
+        &mut self,
+        _: Option<&ViewportEvent>,
+        _: &oblikovati_gui::GuiCommandState,
+    ) -> Result<HeadGuiUpdate, String> {
+        Ok(HeadGuiUpdate::default())
+    }
+
     /// Replace the active document's committed sketches; example: `window.submit_sketch_scene(update)?` after Undo.
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
         if update.sketches.is_empty() && update.plane_declines.is_empty() {
@@ -220,17 +231,22 @@ fn run_owner_frame(
 ) -> Result<crate::HeadWorkStatus, String> {
     let inputs = window.events(64)?;
     control.pending |= process_frame_inputs(window, owner, &inputs)?;
-    let activity = owner.poll(32)?;
+    let mut activity = owner.poll(32)?;
+    publish_command_notice(window, owner)?;
+    let gui = gui::advance_gui(window, owner, None)?;
+    control.pending |= gui.changed;
+    // Deferred GUI input can dispatch after polling; drain its owner effects before idle.
+    activity.pending |= !gui.actions.is_empty();
+    activity.wake_after = gui::earliest_wake(activity.wake_after, gui.wake_after);
     control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;
     control.pending |= publish_owner_sketches(window, owner)?;
     control.pending |= publish_owner_scene(window, owner)?;
     control.pending |= synchronize_sketch_view(window, owner)?;
-    publish_command_notice(window, owner)?;
     control.pending |= publish_sketch_preview(window, owner)?;
     let closing = inputs.contains(&ViewportEvent::CloseRequested);
     control.events(&inputs, !closing || owner.close_allowed()?);
-    if control.stopped() {
+    if control.stopped() || gui.deferred {
         return Ok(activity);
     }
     control.frame(window)?;
@@ -243,10 +259,13 @@ fn process_frame_inputs(
 ) -> Result<bool, String> {
     let mut changed = owner.process_window_inputs(&[], window)?;
     changed |= synchronize_sketch_view(window, owner)?;
+    changed |= gui::advance_gui(window, owner, None)?.changed;
     for event in inputs {
-        changed |= window.process_view_input(event)?;
-        changed |= owner.process_window_inputs(&[*event], window)?;
-        changed |= synchronize_sketch_view(window, owner)?;
+        let gui = gui::advance_gui(window, owner, Some(event))?;
+        changed |= gui.changed;
+        if !gui.consumed_input {
+            changed |= gui::dispatch_frame_input(window, owner, event)?;
+        }
     }
     Ok(changed)
 }

@@ -51,6 +51,11 @@ pub(super) fn publish_native_scene(
     owner: &mut NativeDesktopOwner,
     window: &mut NativeHeadWindow,
 ) -> ViewportCapture {
+    submit_native_scene(owner, window);
+    capture_native_scene(window)
+}
+/// Submit the current owner scene without selecting a pixel oracle; example: `submit_native_scene(owner, window)`.
+pub(super) fn submit_native_scene(owner: &mut NativeDesktopOwner, window: &mut NativeHeadWindow) {
     if let Some(update) = owner.take_sketch_scene().unwrap() {
         window.submit_sketch_scene(update).unwrap();
     }
@@ -64,17 +69,26 @@ pub(super) fn publish_native_scene(
             .unwrap()
             .starts_with(&window.scene_status().unwrap().title())
     );
-    capture_native_scene(window)
 }
 /// Capture a completed scene and check its X11 pixels; example: `capture_native_scene(window)`.
 pub(super) fn capture_native_scene(window: &mut NativeHeadWindow) -> ViewportCapture {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    let capture = completed_framebuffer_until(window, deadline);
+    verify_native_pixels(window, &capture, deadline);
+    capture
+}
+/// Capture the current completed framebuffer; example: `capture_framebuffer(window)` for GUI acceptance.
+pub(super) fn capture_framebuffer(window: &mut NativeHeadWindow) -> ViewportCapture {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    completed_framebuffer_until(window, deadline)
+}
+fn completed_framebuffer_until(
+    window: &mut NativeHeadWindow,
+    deadline: std::time::Instant,
+) -> ViewportCapture {
     loop {
         match window.view.present().unwrap() {
-            ViewportPresentation::Completed(capture) => {
-                verify_native_pixels(window, &capture, deadline);
-                return capture;
-            }
+            ViewportPresentation::Completed(capture) => return capture,
             ViewportPresentation::SurfaceChanged(_) => {
                 assert!(std::time::Instant::now() < deadline);
                 window.view.poll_events(64).unwrap();

@@ -16,6 +16,8 @@ pub struct NativeHeadWindow {
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
     command_notice: Option<crate::DesktopCommandNotice>,
+    gui: Option<gui_loop::NativeGui>,
+    gui_epoch: std::time::Instant,
 }
 impl NativeHeadWindow {
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
@@ -35,6 +37,8 @@ impl NativeHeadWindow {
             navigation: Default::default(),
             sketch_view: None,
             command_notice: None,
+            gui: None,
+            gui_epoch: std::time::Instant::now(),
         })
     }
 }
@@ -61,6 +65,14 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn gui_frame(
+        &mut self,
+        event: Option<&ViewportEvent>,
+        commands: &oblikovati_gui::GuiCommandState,
+    ) -> Result<crate::HeadGuiUpdate, String> {
+        self.advance_native_gui(event, commands)
+    }
+
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
         self.view.set_sketch_display(&update.sketches)?;
         self.sketch_scene = Some(update);
@@ -103,7 +115,9 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
-        self.view.set_status_text(&notice.message())?;
+        if self.gui.is_none() {
+            self.view.set_status_text(&notice.message())?;
+        }
         self.command_notice = Some(notice);
         self.refresh_title()
     }
@@ -131,6 +145,7 @@ impl HeadWindow for NativeHeadWindow {
             .map(|ready| ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
+        self.gui.take();
         self.view.close();
         let errors = self.runtime.validation_errors();
         if errors.is_empty() {
@@ -279,3 +294,8 @@ mod gui_composition;
 #[cfg(test)]
 #[path = "../tests/native_gui_composition.rs"]
 mod gui_composition_tests;
+
+mod gui_loop;
+#[cfg(test)]
+#[path = "../tests/native_gui_loop.rs"]
+mod gui_loop_tests;

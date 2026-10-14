@@ -30,6 +30,7 @@ fn owned_shell_packet(extent: [u32; 2]) -> (GuiFrameCompiler, GuiFrame) {
     let compiler = GuiFrameCompiler::new(engine.atlas()).unwrap();
     let request = GuiFrameRequest {
         extent,
+        status: None,
         events: vec![],
         commands: Default::default(),
         delta_seconds: 1. / 60.,

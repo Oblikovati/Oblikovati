@@ -56,6 +56,7 @@ fn verify_native_edit_navigation(window: &mut NativeHeadWindow, edit: crate::Hea
     assert_eq!(window.view.camera_state().unwrap(), navigated);
     window.view.resize([900, 600]).unwrap();
     window.view.poll_events(64).unwrap();
+    window.gui_frame(None, &Default::default()).unwrap();
     capture_native_scene(window);
 }
 #[test]

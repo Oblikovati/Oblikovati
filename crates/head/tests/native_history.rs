@@ -43,6 +43,7 @@ fn verify_history_pixels(
     );
     // Validate the overlay first, then retire it to retain the exact whole-model image oracle.
     window.view.set_status_text("").unwrap();
+    window.clear_gui_frame().unwrap();
     let capture = capture_native_scene(window);
     assert_eq!(capture.rgba, expected.rgba);
     assert_eq!(window.view.camera_state().unwrap(), camera);

@@ -18,6 +18,10 @@ impl NativeHeadWindow {
     }
     /// Remove the GUI without replacing document presentation; example: `window.clear_gui_frame()?;`.
     pub fn clear_gui_frame(&mut self) -> Result<(), String> {
-        self.view.clear_gui_frame()
+        self.view.clear_gui_frame()?;
+        if let Some(gui) = &mut self.gui {
+            gui.require_publication();
+        }
+        Ok(())
     }
 }

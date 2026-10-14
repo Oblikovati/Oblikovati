@@ -13,6 +13,7 @@ pub struct GuiFrameRequest {
     pub extent: [u32; 2],
     pub events: Vec<GuiInputEvent>,
     pub commands: GuiCommandState,
+    pub status: Option<String>,
     pub delta_seconds: f32,
     pub framebuffer_scale: [f32; 2],
 }
@@ -80,6 +81,16 @@ fn validate_request(request: &GuiFrameRequest) -> Result<(), String> {
     }
     validate_logical_inputs(request)?;
     request.commands.validate()?;
+    if request
+        .status
+        .as_ref()
+        .is_some_and(|text| text.contains('\0'))
+    {
+        return Err(format!(
+            "GUI status {:?}: expected text without NUL",
+            request.status
+        ));
+    }
     for event in &request.events {
         validate_input(event, request.framebuffer_scale)?;
     }
@@ -113,7 +124,12 @@ fn draw_controls(
     prepare_frame_inputs(context, request);
     let ui = context.frame();
     let mut selected = Vec::new();
-    shell_panel(ui, &request.commands, &mut selected);
+    shell_panel(
+        ui,
+        &request.commands,
+        request.status.as_deref(),
+        &mut selected,
+    );
     let snapshot = capture_frame(context.render(), request.extent)?;
     Ok(GuiFrameOutput {
         draws: snapshot,
@@ -122,13 +138,21 @@ fn draw_controls(
         activity: frame_activity()?,
     })
 }
-fn shell_panel(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
+fn shell_panel(
+    ui: &imgui::Ui,
+    state: &GuiCommandState,
+    status: Option<&str>,
+    selected: &mut Vec<GuiShellAction>,
+) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
         .size([300., 110.], Condition::Always)
         .movable(false)
         .resizable(false)
-        .build(|| shell_buttons(ui, state, selected));
+        .build(|| {
+            shell_buttons(ui, state, selected);
+            ui.text_wrapped(status.unwrap_or("Document commands"));
+        });
 }
 fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
     for (label, action) in [
@@ -143,7 +167,6 @@ fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<Gui
         ui.same_line();
     }
     ui.new_line();
-    ui.text("Document commands");
 }
 
 fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {

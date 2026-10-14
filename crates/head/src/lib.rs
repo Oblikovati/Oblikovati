@@ -12,7 +12,9 @@ pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 #[cfg(target_os = "linux")]
 mod frames;
 #[cfg(target_os = "linux")]
-pub use frames::{HeadPresentation, HeadSummary, HeadWindow, run_window, run_window_with_owner};
+pub use frames::{
+    HeadGuiUpdate, HeadPresentation, HeadSummary, HeadWindow, run_window, run_window_with_owner,
+};
 #[cfg(target_os = "linux")]
 mod native;
 #[cfg(target_os = "linux")]

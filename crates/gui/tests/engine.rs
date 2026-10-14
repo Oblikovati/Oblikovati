@@ -4,6 +4,7 @@ use oblikovati_viewport::compile_gui_frame;
 fn request() -> GuiFrameRequest {
     GuiFrameRequest {
         extent: [640, 360],
+        status: None,
         events: vec![GuiInputEvent::PointerMoved([0., 0.])],
         commands: GuiCommandState {
             undo_label: Some("Edit".into()),
@@ -63,6 +64,16 @@ fn click_control(
     engine.frame(input).unwrap()
 }
 fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
+    let mut status_request = request();
+    status_request.status = Some("Saved\0part".into());
+    status_request.events = vec![left_button_event(true)];
+    let error = engine.frame(&status_request).unwrap_err();
+    assert!(error.contains("status") && error.contains("NUL"));
+    status_request.status = Some("Saved part".into());
+    status_request.events.clear();
+    let status_frame = engine.frame(&status_request).unwrap();
+    assert!(status_frame.actions.is_empty());
+    assert_ne!(status_frame.draws, engine.frame(&request()).unwrap().draws);
     let mut input = request();
     for invalid in [0., -1., f32::NAN] {
         input.delta_seconds = invalid;
