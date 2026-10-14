@@ -5,6 +5,7 @@ mod input;
 mod keyboard;
 mod keyboard_map;
 mod layout;
+mod pixels;
 mod text;
 mod text_channel;
 use rustycad_tkernel::standard::Handle;
@@ -21,17 +22,6 @@ use std::{
     time::{Duration, Instant},
 };
 use x11_dl::xlib;
-struct NativeImage<'a> {
-    pointer: *mut xlib::XImage,
-    api: &'a xlib::Xlib,
-}
-impl Drop for NativeImage<'_> {
-    fn drop(&mut self) {
-        unsafe {
-            (self.api.XDestroyImage)(self.pointer);
-        }
-    }
-}
 pub(crate) struct NativeX11 {
     api: Arc<xlib::Xlib>,
     input_locale: Result<(), String>,
@@ -78,6 +68,7 @@ pub(crate) struct NativeWindow {
     pub window: Handle<XwWindow>,
     display: Handle<AspectDisplayConnection>,
     x11: Rc<NativeX11>,
+    capture: RefCell<Option<pixels::NativePixelReader>>,
 }
 impl NativeWindow {
     pub fn create(x11: Rc<NativeX11>, title: &str, extent: [u32; 2]) -> Result<Self, String> {
@@ -106,6 +97,7 @@ impl NativeWindow {
                 window.native_handle(),
             )?,
             copied_input: RefCell::new(VecDeque::new()),
+            capture: RefCell::new(None),
             window,
             display,
             x11,
@@ -294,62 +286,30 @@ impl NativeWindow {
             .then_some(ViewportEvent::CloseRequested)
     }
     pub fn pixels(&self) -> Result<Vec<u8>, String> {
-        if !self.window.is_mapped() {
-            return Err("native pixel capture: expected a mapped viewport".into());
+        let mut capture = self.capture.borrow_mut();
+        if capture.is_none() {
+            *capture = Some(pixels::NativePixelReader::open_checked_capture(
+                &self.capture_display_name()?,
+            )?);
         }
-        self.sync();
-        self.window.do_resize();
-        let (width, height) = self.window.size();
-        let image = self.capture_image(width, height)?;
-        self.image_pixels(&image, width, height)
+        capture
+            .as_ref()
+            .expect("initialized checked image reader")
+            .read_drawable_rgba(self.window.native_handle())
     }
-    fn capture_image(&self, width: i32, height: i32) -> Result<NativeImage<'_>, String> {
-        let image = self.acquire_image(width, height);
-        if image.is_null() {
-            return Err(format!(
-                "native pixel capture {width}x{height}: expected XGetImage pixels"
-            ));
+    fn capture_display_name(&self) -> Result<String, String> {
+        // XDisplayString reads the owned connection's client metadata, not another native resource.
+        let name = unsafe { (self.x11.api.XDisplayString)(self.pointer()) };
+        if name.is_null() {
+            return Err("native capture display pointer 0: expected an owned display name".into());
         }
-        let owned = NativeImage {
-            pointer: image,
-            api: &self.x11.api,
-        };
-        validate_masks(image_masks(image))?;
-        Ok(owned)
-    }
-    fn acquire_image(&self, width: i32, height: i32) -> *mut xlib::XImage {
-        unsafe {
-            (self.x11.api.XGetImage)(
-                self.pointer(),
-                self.window.native_handle(),
-                0,
-                0,
-                width as u32,
-                height as u32,
-                !0,
-                xlib::ZPixmap,
+        let name = unsafe { CStr::from_ptr(name) };
+        name.to_str().map(str::to_owned).map_err(|cause| {
+            format!(
+                "native capture display bytes {:?}: expected a UTF-8 display name: {cause}",
+                name.to_bytes()
             )
-        }
-    }
-    fn image_pixels(
-        &self,
-        image: &NativeImage<'_>,
-        width: i32,
-        height: i32,
-    ) -> Result<Vec<u8>, String> {
-        let mut rgba = rgba_buffer(width, height)?;
-        for y in 0..height {
-            for x in 0..width {
-                rgba.extend(self.pixel(image.pointer, x, y));
-            }
-        }
-        Ok(rgba)
-    }
-    fn pixel(&self, image: *mut xlib::XImage, x: i32, y: i32) -> [u8; 4] {
-        let value = unsafe { (self.x11.api.XGetPixel)(image, x, y) };
-        let masks = image_masks(image);
-        let [red, green, blue] = masks.map(|mask| color_channel(value, mask));
-        [red, green, blue, 255]
+        })
     }
 }
 fn color_channel(value: u64, mask: u64) -> u8 {
@@ -377,9 +337,6 @@ fn rgba_buffer(width: i32, height: i32) -> Result<Vec<u8>, String> {
     Ok(rgba)
 }
 
-fn image_masks(image: *mut xlib::XImage) -> [u64; 3] {
-    unsafe { [(*image).red_mask, (*image).green_mask, (*image).blue_mask] }
-}
 fn validate_masks(masks: [u64; 3]) -> Result<(), String> {
     let invalid = masks.iter().any(|mask| {
         let bits = mask >> mask.trailing_zeros().min(63);
@@ -403,6 +360,9 @@ fn validate_title(title: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
+#[path = "../tests/native_pixels.rs"]
+mod capture_tests;
 #[cfg(test)]
 #[path = "../../../test-utilities/private_x11.rs"]
 pub(crate) mod private_server;
