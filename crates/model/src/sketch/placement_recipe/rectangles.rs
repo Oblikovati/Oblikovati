@@ -35,7 +35,7 @@ impl SketchPlacementRecipe {
         checked_rectangle(Self {
             circular_checks: Vec::new(),
             points: vec![a, b, c, d],
-            members: super::geometry::closed_boundary(4),
+            members: super::geometry::chain_members(4, true),
             // Go aa8297d1 (#2014): the fourth perpendicular relation is redundant in a closed loop.
             relations: [[0, 1], [1, 2], [2, 3]]
                 .map(SketchPlacementRelation::Perpendicular)
@@ -54,7 +54,7 @@ fn axis_rectangle(points: Vec<[f64; 2]>) -> Result<SketchPlacementRecipe, Sketch
     checked_rectangle(SketchPlacementRecipe {
         circular_checks: Vec::new(),
         points,
-        members: super::geometry::closed_boundary(4),
+        members: super::geometry::chain_members(4, true),
         relations: vec![
             LineHorizontal(0),
             LineHorizontal(2),

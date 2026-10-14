@@ -2,6 +2,7 @@
 use super::{SketchError, SketchPathMember, require_position};
 mod arcs;
 mod bindings;
+mod chains;
 mod circles;
 mod ellipses;
 mod fields;

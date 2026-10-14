@@ -329,3 +329,6 @@ mod sketch_edit_tests;
 
 #[path = "native_scene/recipe_input.rs"]
 mod recipe_input_tests;
+
+#[path = "native_scene/chain_recipe.rs"]
+mod chain_recipe_tests;

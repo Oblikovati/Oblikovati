@@ -58,10 +58,10 @@ impl SketchPlacementGeometry {
     }
 }
 
-pub(super) fn closed_boundary(sides: usize) -> Vec<super::SketchPlacementMember> {
-    (0..sides)
-        .map(|i| super::SketchPlacementMember {
-            geometry: SketchPlacementGeometry::Path(SketchPathMember::Line([i, (i + 1) % sides])),
+pub(super) fn chain_members(count: usize, closed: bool) -> Vec<super::SketchPlacementMember> {
+    super::super::chain_layout::line_chain_indices(count, closed)
+        .map(|endpoints| super::SketchPlacementMember {
+            geometry: SketchPlacementGeometry::Path(SketchPathMember::Line(endpoints)),
             construction: false,
         })
         .collect()

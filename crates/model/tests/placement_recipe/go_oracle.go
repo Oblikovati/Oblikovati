@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle, arc, ellipse and point recipes and rank independently.
+// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle, arc, ellipse, point and line-chain recipes and rank independently.
 package main
 
 import (
@@ -12,6 +12,8 @@ import (
 )
 
 type record struct {
+	Chain        [][2]float64 `json:",omitempty"`
+	Closed       bool         `json:",omitempty"`
 	Sides        int
 	Inscribed    bool
 	Locked       []lockedArc
@@ -99,6 +101,18 @@ func main() {
 	for _, point := range [][2]float64{{0, 0}, {3, -4}, {-20, 30}, {0.125, 100}} {
 		out = append(out, capture(record{Kind: "point", Input: [3][2]float64{point}}))
 	}
+	for _, sign := range [][2]float64{{1, 1}, {1, -1}, {-1, 1}, {-1, -1}} {
+		chain := [][2]float64{{3, -4}, {9, -4}, {9, 4}, {-2, 4}, {-2, -1}}
+		for i, p := range chain {
+			chain[i] = [2]float64{p[0] * sign[0], p[1] * sign[1]}
+		}
+		for _, count := range []int{2, 3, 5} {
+			out = append(out, capture(record{Kind: "chain", Chain: chain[:count]}))
+			if count >= 3 {
+				out = append(out, capture(record{Kind: "chain", Chain: chain[:count], Closed: true}))
+			}
+		}
+	}
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}
@@ -113,6 +127,8 @@ func capture(out record) record {
 		r = sketch.ArcSlotRecipe(c, s, e, out.Width, out.CCW)
 	}
 	switch out.Kind {
+	case "chain":
+		r = chainRecipe(out)
 	case "point":
 		r = sketch.PointRecipe(c)
 	case "polygon":
@@ -218,4 +234,50 @@ func captureLockedArc(r sketch.Recipe) []lockedArc {
 		out = append(out, sample)
 	}
 	return out
+}
+
+// Closure is read from Go AddPolyline's actual shared point identities, not rebuilt from indices.
+func chainRecipe(out record) sketch.Recipe {
+	points := make([]m.Point2, len(out.Chain))
+	for i, p := range out.Chain {
+		points[i] = m.P2(p[0], p[1])
+	}
+	if len(points) == 2 {
+		return sketch.LineRecipe(points[0], points[1])
+	}
+	if !out.Closed {
+		return sketch.LineChainRecipe(points)
+	}
+	return closedChainRecipe(points)
+}
+func closedChainRecipe(points []m.Point2) sketch.Recipe {
+	owner := sketch.NewSketches().Add(sketch.XYPlane())
+	members, err := owner.AddPolyline(points, true)
+	if err != nil {
+		panic(err)
+	}
+	recipe := sketch.Recipe{}
+	ids := map[*sketch.Point]int{}
+	for _, member := range members {
+		line := member.(*sketch.Line)
+		pair := []int{captureChainPoint(&recipe, ids, line.A), captureChainPoint(&recipe, ids, line.B)}
+		recipe.Entities = append(recipe.Entities, sketch.RecipeEntity{Kind: sketch.RecipeLine, Points: pair})
+	}
+	last := members[len(members)-1].(*sketch.Line)
+	recipe.Fields = sketch.LineRecipe(last.A.Position(), last.B.Position()).Fields
+	ends := recipe.Entities[len(recipe.Entities)-1].Points
+	recipe.Fields[0].Dim.Points = [2]int{ends[0], ends[1]}
+	if len(recipe.Points) != len(points) || owner.DegreesOfFreedom() != 2*len(points) {
+		panic("closed chain ownership or rank changed")
+	}
+	return recipe
+}
+func captureChainPoint(recipe *sketch.Recipe, ids map[*sketch.Point]int, point *sketch.Point) int {
+	if id, found := ids[point]; found {
+		return id
+	}
+	id := len(recipe.Points)
+	ids[point] = id
+	recipe.Points = append(recipe.Points, point.Position())
+	return id
 }

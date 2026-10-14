@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{fields::field, geometry::closed_boundary, *};
+use super::{fields::field, geometry::chain_members, *};
 use crate::sketch::SketchPolygonSeed;
 impl SketchPlacementRecipe {
     /// Preserve polygon regularity for preview and commit; example: `SketchPlacementRecipe::polygon(seed)?`.
@@ -53,7 +53,7 @@ fn polygon_fields(
 }
 
 fn polygon_members(sides: usize, radius: f64) -> Vec<SketchPlacementMember> {
-    let mut members = closed_boundary(sides);
+    let mut members = chain_members(sides, true);
     members.push(SketchPlacementMember {
         geometry: SketchPlacementGeometry::Circle {
             center: sides,

@@ -7,6 +7,10 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct GoRecipe {
+    #[serde(default)]
+    chain: Vec<[f64; 2]>,
+    #[serde(default)]
+    closed: bool,
     sides: usize,
     inscribed: bool,
     kind: String,
@@ -58,7 +62,7 @@ struct GoField {
 fn constrained_slot_graphs_and_field_bindings_match_the_independent_go_recipes() {
     let fixtures: Vec<GoRecipe> =
         serde_json::from_str(include_str!("placement_recipe/go-recipes.json")).unwrap();
-    assert_eq!(fixtures.len(), 83);
+    assert_eq!(fixtures.len(), 103);
     for fixture in fixtures
         .into_iter()
         .filter(|fixture| fixture.kind.is_empty())
@@ -222,3 +226,6 @@ mod slot_centerline;
 
 #[path = "placement_recipe/points.rs"]
 mod points;
+
+#[path = "placement_recipe/chains.rs"]
+mod chains;

@@ -309,3 +309,28 @@ fn point_and_curve_members_keep_shared_positions_and_authored_order() {
         SketchDisplayPrimitive::Curve(recipe.points)
     );
 }
+
+#[test]
+fn chain_preview_displays_every_committable_segment_including_explicit_closure() {
+    let points = [[3., -4.], [9., -4.], [9., 4.], [-2., 4.], [-2., -1.]];
+    for closed in [false, true] {
+        let recipe = SketchPlacementRecipe::line_chain(&points, closed).unwrap();
+        let sampled = sample_placement_preview(&recipe, options(0.01)).unwrap();
+        assert_eq!(
+            sampled.len(),
+            if closed {
+                points.len()
+            } else {
+                points.len() - 1
+            }
+        );
+        for (index, member) in sampled.iter().enumerate() {
+            assert_eq!(member.member_index, index);
+            assert!(!member.construction);
+            assert_eq!(
+                curve_points(member),
+                &[points[index], points[(index + 1) % points.len()]]
+            );
+        }
+    }
+}
