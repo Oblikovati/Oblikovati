@@ -60,6 +60,16 @@ fn failed_hud_option_save_keeps_the_previous_preference_state() {
 }
 
 #[test]
+fn hud_options_require_the_injected_preference_owner() {
+    let (mut files, _, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
+    expect_api_decline(
+        client.application().hud_options(),
+        "injected application preference owner",
+    );
+}
+
+#[test]
 fn injected_preference_owner_is_shared_between_api_calls_and_later_creations() {
     let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
     let mut preferences = persisted_preferences(false);
