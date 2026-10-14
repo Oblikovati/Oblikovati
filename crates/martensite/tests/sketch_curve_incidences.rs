@@ -31,6 +31,42 @@ fn source() -> Sketch2D {
     add_line(&mut sketch, 10, [[0.0, 0.0], [1.0, 0.0]]);
     sketch
 }
+fn source_with_control_spline() -> Sketch2D {
+    let mut sketch = source();
+    sketch
+        .add_defining_point(SketchEntityId(41), [0.5, -1.])
+        .unwrap();
+    sketch
+        .add_defining_point(SketchEntityId(42), [0.5, 1.])
+        .unwrap();
+    sketch
+        .add_spline(
+            SketchSpline2D::new(
+                SketchEntityId(40),
+                vec![SketchEntityId(41), SketchEntityId(42)],
+                false,
+                SketchSplineKind::Control,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    sketch
+}
+#[test]
+fn constructed_control_spline_participates_in_analytic_line_intersections() {
+    let report = intersect_sketch_line(
+        &source_with_control_spline(),
+        SketchEntityId(10),
+        SketchLineDomain::Segment,
+        options(),
+    )
+    .unwrap();
+    assert_eq!(report.targets.len(), 1);
+    assert_eq!(report.targets[0].target.entity, SketchEntityId(40));
+    assert_eq!(report.targets[0].target.endpoint_residuals, Some([0.; 2]));
+    assert_eq!(report.targets[0].intersection.points.len(), 1);
+    assert_eq!(report.targets[0].intersection.points[0].position, [0.5, 0.]);
+}
 #[test]
 fn finite_segments_and_infinite_supports_preserve_the_go_line_domain_distinction() {
     let mut sketch = source();
@@ -282,7 +318,7 @@ fn points_are_noncurves_but_construction_and_centerline_curves_still_participate
     assert_eq!(report.targets[0].intersection.points.len(), 1);
 }
 #[test]
-fn unreleased_spline_construction_stops_the_whole_query_before_native_geometry() {
+fn degenerate_target_is_not_hidden_by_a_released_spline() {
     let mut sketch = source();
     add_line(&mut sketch, 20, [[0.0; 2]; 2]);
     let spline = SketchSpline2D::new(
@@ -301,12 +337,12 @@ fn unreleased_spline_construction_stops_the_whole_query_before_native_geometry()
         options(),
     )
     .unwrap_err();
-    assert_eq!(failure.entity, SketchEntityId(40));
-    assert!(failure.to_string().contains("issue #9"));
+    assert_eq!(failure.entity, SketchEntityId(20));
+    assert!(!failure.to_string().contains("issue #9"));
     let SketchCurveFailureCause::Curve(cause) = failure.cause else {
         panic!("expected typed curve failure")
     };
-    assert_eq!(cause.kind(), PlanarCurveFailureKind::InvalidInput);
+    assert_eq!(cause.kind(), PlanarCurveFailureKind::Kernel);
     assert_eq!(before, sketch);
 }
 #[test]

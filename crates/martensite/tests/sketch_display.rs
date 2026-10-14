@@ -72,7 +72,7 @@ fn assert_analytic_samples(id: Id, primitive: &SketchDisplayPrimitive) {
     }
 }
 #[test]
-fn unsupported_and_degenerate_entities_are_named_without_hiding_valid_geometry() {
+fn degenerate_entities_are_named_without_hiding_released_splines() {
     let mut sketch = fixture();
     let spline = SketchSpline2D::new(
         Id(2),
@@ -84,13 +84,12 @@ fn unsupported_and_degenerate_entities_are_named_without_hiding_valid_geometry()
     sketch.add_spline(spline).unwrap();
     sketch.add_line(Id(1), [Id(100); 2]).unwrap();
     let report = sample_sketch_display(&sketch, options()).unwrap();
-    assert_eq!(report.entities.len(), 5);
+    assert_eq!(report.entities.len(), 6);
     assert_eq!(
         report.declines.iter().map(|d| d.entity).collect::<Vec<_>>(),
-        [Id(2), Id(1)]
+        [Id(1)]
     );
-    assert!(report.declines[0].cause.contains("issue #9"));
-    assert!(!report.declines[1].cause.is_empty());
+    assert!(!report.declines[0].cause.is_empty());
 }
 #[test]
 fn invalid_policy_is_refused_even_for_an_empty_sketch() {

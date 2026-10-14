@@ -6,7 +6,7 @@ use oblikovati_model::sketch::{
     SketchLine2D, SketchReadIndex,
 };
 use rustycad_tkmath::{elclib, gp::Point2};
-mod endpoints;
+pub(super) mod endpoints;
 pub(super) fn point(
     sketch: &SketchReadIndex<'_>,
     entity: SketchEntityId,
@@ -34,9 +34,8 @@ pub(super) fn resolve(
             entity,
             "point geometry: expected an analytic curve".into(),
         )),
-        OwnedSketchGeometry::Spline(_) | OwnedSketchGeometry::OffsetSpline(_) => {
-            Err(super::failure::unreleased_spline(entity))
-        }
+        OwnedSketchGeometry::Spline(value) => super::spline::resolve(sketch, value, limit),
+        OwnedSketchGeometry::OffsetSpline(value) => super::spline::offset(sketch, value, limit),
     }
 }
 fn line(
@@ -169,5 +168,6 @@ fn resolved(
         entity,
         definition,
         endpoint_residuals: None,
+        spline_construction: None,
     })
 }

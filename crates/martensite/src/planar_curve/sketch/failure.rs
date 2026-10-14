@@ -48,12 +48,3 @@ impl Error for SketchCurveFailure {
         }
     }
 }
-
-pub(super) fn unreleased_spline(entity: SketchEntityId) -> SketchCurveFailure {
-    SketchCurveFailure::input(
-        entity,
-        format!(
-            "spline entity {entity:?}: expected a released native sketch constructor; Martensite issue #9 remains required"
-        ),
-    )
-}

@@ -9,6 +9,7 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 oblikovati-solve = { path = "../solve" }
 rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 oblikovati-model = { path = "../model" }
@@ -30,7 +31,6 @@ workspace = true
 oblikovati-persistence = { path = "../persistence" }
 rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 oblikovati-session = { path = "../session" }
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 
