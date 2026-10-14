@@ -2,7 +2,10 @@
 use super::*;
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    sketch::{Sketch2D, SketchEntityId as Id, SketchPlane},
+    sketch::{
+        Sketch2D, SketchEntityId as Id, SketchOffsetSpline2D, SketchPlane, SketchSpline2D,
+        SketchSplineKind,
+    },
 };
 use oblikovati_viewport::{ViewportNavigation, ViewportSketchDisplay};
 fn packet() -> ViewportSketchDisplay {
@@ -200,4 +203,60 @@ fn horizontal_lit_count(view: &Viewport, capture: &ViewportCapture) -> usize {
             })
         })
         .count()
+}
+
+#[test]
+fn constructed_spline_and_signed_offset_reach_native_pixels() {
+    let (runtime, mut view) = open_display("Constructed spline offset");
+    let mut packet = spline_packet();
+    view.set_sketch_display(std::slice::from_ref(&packet))
+        .unwrap();
+    assert!(view.sketch_display_declines().unwrap().is_empty());
+    let parent = complete_surface_frame(&mut view);
+    await_presented_pixels(&view, &parent);
+    assert!(lit_near(&view, &parent, [0., 0.]));
+    assert!(!lit_near(&view, &parent, [0., 1.]));
+    packet
+        .geometry
+        .add_offset_spline(SketchOffsetSpline2D::new(Id(2), Id(1), 1.).unwrap())
+        .unwrap();
+    view.set_sketch_display(&[packet]).unwrap();
+    assert!(view.sketch_display_declines().unwrap().is_empty());
+    let with_offset = complete_surface_frame(&mut view);
+    await_presented_pixels(&view, &with_offset);
+    assert!(lit_near(&view, &with_offset, [0., 1.]));
+    assert!(lit_near(&view, &with_offset, [0., 0.]));
+    close_display(&runtime, &mut view);
+}
+
+fn spline_packet() -> ViewportSketchDisplay {
+    let mut geometry = Sketch2D::default();
+    geometry.add_defining_point(Id(100), [-3., 0.]).unwrap();
+    geometry.add_defining_point(Id(101), [3., 0.]).unwrap();
+    geometry
+        .add_spline(
+            SketchSpline2D::new(
+                Id(1),
+                vec![Id(100), Id(101)],
+                false,
+                SketchSplineKind::Control,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    ViewportSketchDisplay {
+        sketch: DocumentSketchId(1),
+        plane: SketchPlane::xy(),
+        geometry,
+    }
+}
+
+fn lit_near(view: &Viewport, capture: &ViewportCapture, position: [f64; 2]) -> bool {
+    let [x, y] = view.sketch_pixel(SketchPlane::xy(), position).unwrap();
+    (-2..=2).any(|dy| {
+        (-2..=2).any(|dx| {
+            let at = ((y + dy) as usize * capture.extent[0] as usize + (x + dx) as usize) * 4;
+            capture.rgba[at] > 100
+        })
+    })
 }

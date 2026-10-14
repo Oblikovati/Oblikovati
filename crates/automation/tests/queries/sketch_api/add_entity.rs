@@ -179,7 +179,7 @@ fn bad_shapes_counts_and_null_coordinates_are_atomic_and_do_not_reserve_ids() {
 #[test]
 fn unknown_kinds_and_constructor_overloads_decline_by_name() {
     let (mut files, document, mut source) = fresh();
-    for kind in ["bogus", "ellipticalArc", "spline"] {
+    for kind in ["bogus", "ellipticalArc"] {
         assert_refused(
             &mut files,
             document,
@@ -434,6 +434,8 @@ mod polygon;
 mod polyline;
 #[path = "add_entity/rectangle.rs"]
 mod rectangle;
+#[path = "add_entity/spline.rs"]
+mod spline;
 #[path = "add_entity/three_point.rs"]
 mod three_point;
 

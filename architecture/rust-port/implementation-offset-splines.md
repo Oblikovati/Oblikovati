@@ -3,7 +3,7 @@
 Tracking: [#3789](https://github.com/Oblikovati/Oblikovati/issues/3789).
 Decision: [ADR-0016](../decisions/ADR-0016-derived-sketch-curves.md).
 
-The application adapter consumes owner-published Martensite v0.1.2 at
+The original analytic offset adapter consumed owner-published Martensite v0.1.2 at
 `19108f6650cdfca7050febc759d91bdfec001769`. Its new tkg2d, tkernel and tkmath
 imports use that same exact version/revision; there are no sibling path imports.
 It creates a fresh B-spline from explicit poles, optional weights, knots,
@@ -44,7 +44,7 @@ analytic position/derivative samples, including all returned fit stations.
 The Rust `go_spline_recipe` test evaluates their explicit poles and knots in the
 published kernel, checks independent authored point coordinates at stations,
 and checks closed endpoint tangent agreement. Input definitions remain unchanged.
-These checks prove recipe evaluation. They do not prove native construction,
+These earlier checks prove recipe evaluation. Alone, they do not prove native construction,
 curvature continuity, handles, control curves or degenerate fitting inputs.
 
 To regenerate, use Go 1.27.0 with a `go.work` that uses the pinned Go application
@@ -64,8 +64,9 @@ requirements. Published `Geom2dAPIInterpolate` uses two extra poles for cubic op
 interpolation without tangent requests; Go uses one pole per station with averaged
 knots. Equal input parameters alone do not prove construction equivalence.
 `PointsToBSpline` approximation does not replace interpolation. This extension
-belongs in Martensite and must pass the owner's tests and release workflow before
-the application adopts it.
+shipped in Martensite v0.2.7 at `d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b`.
+The application adopted the released fit/control constructor in
+[ADR-0024](../decisions/ADR-0024-released-sketch-spline-construction.md).
 
 ## Native ownership and storage
 
@@ -138,19 +139,30 @@ contain it. Parent-only recipes remain schema 10. Native package tests restore
 source expressions, IDs and side in both part and assembly documents, then solve
 the restored negative-side offset to its independently checked magnitude.
 
-This proves native dimension behavior. Canonical API dimension creation remains
-at its explicit decline until public entity creation and fitting acceptance are
-available. No end-to-end add-in, application window or B-rep claim follows from
-these native tests.
+This proves native dimension behavior. The canonical typed API now creates fit,
+control and offset spline entities in part and assembly owners through the
+existing primitive transaction. It also creates, edits, reports and deletes
+`offsetSplineDim` through the existing dimension owner. Negative-side source
+edits, reference mode, annotation, undo/redo, abort, veto, save/reopen and copy
+are tested. The API-created spline and offset reach native head window pixels
+on software Vulkan and AMD RADV. This is not B-rep or trim acceptance.
+
+The public `sketch.transform` route now has acceptance for moving an authored fit
+parent in both document owners, copying it with its fit method, and rotating it
+through undo/redo and save/reopen. The derived offset retains its exact parent
+identity and signed distance. These tests use the existing model transform and
+copy commands; they add no separate spline edit path. Control-parent transforms,
+mirror, handle edits and native curve regeneration after each edit remain open.
 
 ## Remaining port
 
-Preserve the Go fit/control distinction, periodic closure, public fit methods and
-active handle rules. The Go parent recipe stores shared defining points. Required
-construction/fitting extensions belong in Martensite. The native distance relation is in place. Public creation and fit/handle
-evaluation must use the owner-published kernel construction capabilities.
+Preserve active handle rules and add their authoring, persistence and public
+editing path. The Go parent recipe stores shared defining points. Public spline
+creation now uses the owner-published kernel construction capability through the
+analytic sketch adapter. Native trim, profile extrusion and complete root
+certification still require separate acceptance.
 
-Keep #3789 open until typed ownership, solver/Jacobian and degenerates, canonical
-API creation/edit/deletion, both document owners, live/reference formulas and
-health, identity/annotation/history/rollback, and save/reopen/copy pass. The
-current missing-native-geometry decline is not removed by this adapter alone.
+Keep #3789 open until active handles, degenerates, remaining public transform/edit
+coverage, dimension health under failed sources, and downstream feature
+acceptance pass. This slice removes the old API constructor and dimension
+declines but does not complete the broader R3 issue.

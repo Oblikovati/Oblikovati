@@ -61,16 +61,28 @@ fn require_spline_definition(
     points: &[SketchEntityId],
     kind: SketchSplineKind,
 ) -> Result<(), SketchError> {
-    if id.0 == 0 || points.len() < 2 || points.iter().any(|point| point.0 == 0 || *point == id) {
+    if id.0 == 0 || points.iter().any(|point| point.0 == 0 || *point == id) {
         return Err(SketchError::Definition(format!(
-            "spline {id:?} points {points:?}: expected a nonzero curve ID and at least two nonzero point references distinct from the curve"
+            "spline {id:?} points {points:?}: expected a nonzero curve ID and nonzero point references distinct from the curve"
+        )));
+    }
+    require_spline_intent(points.len(), kind)?;
+    Ok(())
+}
+pub(crate) fn require_spline_intent(
+    point_count: usize,
+    kind: SketchSplineKind,
+) -> Result<(), SketchError> {
+    if point_count < 2 {
+        return Err(SketchError::Definition(format!(
+            "spline point count {point_count}: expected at least two defining points"
         )));
     }
     if let SketchSplineKind::Fit { method } = kind
         && ![SPLINE_FIT_CHORD, SPLINE_FIT_SMOOTH, SPLINE_FIT_SWEET].contains(&method)
     {
         return Err(SketchError::Definition(format!(
-            "spline {id:?} fit method {method:?}: expected chord, smooth, or sweet"
+            "spline fit method {method:?}: expected chord, smooth, or sweet"
         )));
     }
     Ok(())
@@ -90,11 +102,12 @@ impl SketchOffsetSpline2D {
         parent: SketchEntityId,
         distance: f64,
     ) -> Result<Self, SketchError> {
-        if id.0 == 0 || parent.0 == 0 || id == parent || !distance.is_finite() {
+        if id.0 == 0 || parent.0 == 0 || id == parent {
             return Err(SketchError::Definition(format!(
-                "offset spline {id:?} parent {parent:?} distance {distance}: expected distinct nonzero IDs and a finite signed working length"
+                "offset spline {id:?} parent {parent:?}: expected distinct nonzero IDs"
             )));
         }
+        require_offset_distance(distance)?;
         Ok(Self {
             id,
             parent,
@@ -113,6 +126,14 @@ impl SketchOffsetSpline2D {
     pub fn distance(self) -> f64 {
         self.distance
     }
+}
+pub(crate) fn require_offset_distance(distance: f64) -> Result<(), SketchError> {
+    if !distance.is_finite() {
+        return Err(SketchError::Definition(format!(
+            "offset spline distance {distance}: expected a finite signed working length"
+        )));
+    }
+    Ok(())
 }
 
 pub(super) fn require_spline_schema(recipe: &super::SketchRecipe) -> Result<(), SketchError> {

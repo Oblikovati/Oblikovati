@@ -20,18 +20,6 @@ pub(super) fn require_request(
             format!("endpoint residual bound {limit}: expected a finite positive length"),
         ));
     }
-    require_released_geometry(sketch)
-}
-fn require_released_geometry(sketch: &Sketch2D) -> Result<(), SketchCurveFailure> {
-    let unsupported = sketch
-        .splines()
-        .iter()
-        .map(|curve| curve.id())
-        .chain(sketch.offset_splines().iter().map(|curve| curve.id()))
-        .min();
-    if let Some(entity) = unsupported {
-        return Err(super::failure::unreleased_spline(entity));
-    }
     Ok(())
 }
 pub(super) fn targets(

@@ -70,7 +70,7 @@ impl Sketch2D {
         let owned = self.curve_identity_set();
         if selected.len() != entities.len() || !selected.is_subset(&owned) {
             return Err(SketchError::Definition(format!(
-                "construction selection {entities:?}: expected unique owned line/circle/arc/ellipse IDs from {owned:?}"
+                "construction selection {entities:?}: expected unique owned curve IDs from {owned:?}"
             )));
         }
         Ok(selected)

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_api::types::{
-    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_ELLIPSE, SKETCH_ENTITY_LINE,
-    SKETCH_ENTITY_POINT,
+    SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_CONTROL_POINT_SPLINE,
+    SKETCH_ENTITY_ELLIPSE, SKETCH_ENTITY_LINE, SKETCH_ENTITY_OFFSET_SPLINE, SKETCH_ENTITY_POINT,
+    SKETCH_ENTITY_SPLINE,
 };
 use oblikovati_model::{
     history::SketchLineCreation,
@@ -13,6 +14,7 @@ mod chains;
 mod points;
 mod polygon;
 pub(super) mod slots;
+mod spline;
 pub(super) enum PreparedEntity {
     Slot(slots::SlotInput),
     ThreePoint(super::three_point::ThreePointCreation),
@@ -42,6 +44,12 @@ pub(super) fn prepare(
         "rectangle" => return chains::rectangle(snapshot, request),
         "polygon" => return polygon::prepare(snapshot, request),
         "slot" => return slots::prepare(snapshot, request),
+        kind if kind == SKETCH_ENTITY_SPLINE.0
+            || kind == SKETCH_ENTITY_CONTROL_POINT_SPLINE.0
+            || kind == SKETCH_ENTITY_OFFSET_SPLINE.0 =>
+        {
+            return spline::prepare(snapshot, request);
+        }
         "circle" | "arc" if request.variant == "threePoint" => {
             return three_point_input(snapshot, request);
         }

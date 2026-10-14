@@ -3,6 +3,8 @@ use super::entities::{author_large_point, configured_scaled, install_mixed, rows
 use super::primitive::{create_circle, create_owner};
 use super::*;
 use oblikovati_api::wire::SketchEntityInfo;
+#[path = "translation/spline.rs"]
+mod spline;
 fn movement(entities: Vec<u64>, vector: Vec<f64>) -> TransformSketchArgs {
     TransformSketchArgs {
         op: "move".into(),

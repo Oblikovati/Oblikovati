@@ -58,6 +58,7 @@ fn constructor(
         kind if kind == DIM_CONSTRAINT_ANGLE => angle(geometry, request),
         kind if kind == DIM_CONSTRAINT_THREE_POINT_ANGLE => three_point_angle(geometry, request),
         kind if kind == DIM_CONSTRAINT_OFFSET => offset(geometry, request),
+        kind if kind == DIM_CONSTRAINT_OFFSET_SPLINE => offset_spline(geometry, request),
         kind if kind == DIM_CONSTRAINT_TANGENT_DISTANCE => tangent(geometry, request),
         _ => unsupported_kind(&kind),
     }
@@ -68,13 +69,8 @@ fn is_ellipse_radius(kind: &DimensionConstraintKind) -> bool {
 fn unsupported_kind(
     kind: &DimensionConstraintKind,
 ) -> Result<SketchDimensionalConstraintCreation, Error> {
-    let expected = if *kind == DIM_CONSTRAINT_OFFSET_SPLINE {
-        "native offset-spline geometry; this R3 capability is not ported"
-    } else {
-        "a supported canonical dimension kind"
-    };
     Err(Error(format!(
-        "dimension constructor {kind:?}: expected {expected}"
+        "dimension constructor {kind:?}: expected a supported canonical dimension kind"
     )))
 }
 
@@ -132,6 +128,13 @@ fn offset(
         point_line,
         linear_diameter: request.linear_diameter,
     }))
+}
+fn offset_spline(
+    geometry: &Sketch2D,
+    request: &AddDimensionArgs,
+) -> Result<SketchDimensionalConstraintCreation, Error> {
+    let [offset] = require(geometry, request, [Shape::OffsetSpline])?;
+    Ok(Seeded(SeededDimensionOperands::OffsetSpline { offset }))
 }
 fn tangent(
     geometry: &Sketch2D,

@@ -14,6 +14,7 @@ pub(super) fn require(relation: &PlanarConstraint) -> Result<DimensionShape, Err
         Offset {
             linear_diameter, ..
         } => (DIM_CONSTRAINT_OFFSET, "", *linear_diameter),
+        OffsetSplineDistance { .. } => (DIM_CONSTRAINT_OFFSET_SPLINE, "", false),
         Angle { .. } => (DIM_CONSTRAINT_ANGLE, "", false),
         ThreePointAngle { .. } => (DIM_CONSTRAINT_THREE_POINT_ANGLE, "", false),
         TangentDistance { options, .. } => tangent_dimension_shape(options),

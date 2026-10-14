@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ResolvedSketchCurve, SketchCurveFailure, construct};
-pub(super) fn measure(
+pub(in crate::planar_curve::sketch) fn measure(
     curve: &ResolvedSketchCurve,
     parameters: [f64; 2],
     endpoints: [[f64; 2]; 2],

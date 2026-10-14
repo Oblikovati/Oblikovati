@@ -480,6 +480,8 @@ mod translation;
 
 #[path = "sketch_api/add_entity.rs"]
 mod add_entity;
+#[path = "sketch_api/spline_requests.rs"]
+mod spline_requests;
 
 #[path = "sketch_api/settings.rs"]
 mod settings;

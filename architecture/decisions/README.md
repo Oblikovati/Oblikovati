@@ -119,6 +119,8 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0021](ADR-0021-semantic-topology-reference-keys.md) | Semantic topology names and scheme-2 identity | R1/R3/R5 |
 | [ADR-0022](ADR-0022-analytic-body-properties.md) | Analytic body integrals, units, and principal inertia | R1/R7 |
 | [ADR-0023](ADR-0023-analytic-part-aggregation.md) | Analytic part aggregation and empty-system semantics | R1/R7 |
+| [ADR-0024](ADR-0024-released-sketch-spline-construction.md) | Released construction of authored sketch splines | R2/R3/R4 |
+| [ADR-0025](ADR-0025-typed-sketch-spline-authoring.md) | Typed sketch spline authoring through the existing owner | R3/R4 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

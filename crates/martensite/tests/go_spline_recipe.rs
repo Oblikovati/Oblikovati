@@ -1,18 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_martensite::{PlanarSplineDefinition, evaluate_planar_spline};
-use serde::Deserialize;
-
-#[derive(Deserialize)]
-#[serde(rename_all = "PascalCase", deny_unknown_fields)]
-struct GoSplineOracle {
-    method: u8,
-    closed: bool,
-    degree: i32,
-    poles: Vec<[f64; 2]>,
-    knots: Vec<f64>,
-    stations: Vec<f64>,
-    samples: Vec<[f64; 5]>,
-}
+#[path = "planar_spline/go_recipe_fixture.rs"]
+mod fixture;
+use fixture::{FIT_POINTS, GoSplineOracle};
 
 #[test]
 fn published_kernel_evaluates_all_go_fit_methods_without_changing_the_recipe() {
@@ -68,7 +58,7 @@ fn distinct_knots(flat: &[f64]) -> (Vec<f64>, Vec<i32>) {
 }
 
 fn assert_fit_stations(record: &GoSplineOracle, curve: &PlanarSplineDefinition) {
-    let points = [[0.0, 0.0], [0.2, 1.0], [2.0, 1.5], [3.0, -0.5], [1.0, -2.0]];
+    let points = FIT_POINTS;
     assert_eq!(
         record.stations.len(),
         points.len() + usize::from(record.closed)

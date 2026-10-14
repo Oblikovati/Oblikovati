@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    Sketch2D, SketchEntityId, SketchError, circle::require_radius_value, geometry::require_position,
+    Sketch2D, SketchEntityId, SketchError, SketchOffsetSpline2D, SketchSpline2D, SketchSplineKind,
+    circle::require_radius_value, geometry::require_position,
 };
 
 /// A defining point is new in working units or shares an existing point in this sketch.
@@ -37,6 +38,17 @@ pub enum SketchPrimitiveCreation {
         counter_clockwise: bool,
         construction: bool,
     },
+    Spline {
+        points: Vec<SketchPointInput>,
+        kind: SketchSplineKind,
+        closed: bool,
+        construction: bool,
+    },
+    OffsetSpline {
+        parent: SketchEntityId,
+        distance: f64,
+        construction: bool,
+    },
 }
 impl SketchPrimitiveCreation {
     pub(crate) fn defining_points(&self) -> Vec<SketchPointInput> {
@@ -47,9 +59,15 @@ impl SketchPrimitiveCreation {
             Self::Arc {
                 center, endpoints, ..
             } => vec![*center, endpoints[0], endpoints[1]],
+            Self::Spline { points, .. } => points.clone(),
+            Self::OffsetSpline { .. } => Vec::new(),
         }
     }
     pub(crate) fn validate(&self, geometry: &Sketch2D) -> Result<(), SketchError> {
+        self.validate_defining_points(geometry)?;
+        self.validate_curve_inputs(geometry)
+    }
+    fn validate_defining_points(&self, geometry: &Sketch2D) -> Result<(), SketchError> {
         for point in self.defining_points() {
             match point {
                 SketchPointInput::New(position) => require_position(position)?,
@@ -58,6 +76,9 @@ impl SketchPrimitiveCreation {
                 }
             }
         }
+        Ok(())
+    }
+    fn validate_curve_inputs(&self, geometry: &Sketch2D) -> Result<(), SketchError> {
         if let Self::Circle { radius, .. } = self {
             require_radius_value(*radius)?;
         }
@@ -66,6 +87,16 @@ impl SketchPrimitiveCreation {
         } = self
         {
             super::ellipse::require_ellipse_frame(*major_axis, *radii)?;
+        }
+        if let Self::Spline { points, kind, .. } = self {
+            super::spline::require_spline_intent(points.len(), *kind)?;
+        }
+        if let Self::OffsetSpline {
+            parent, distance, ..
+        } = self
+        {
+            geometry.spline(*parent)?;
+            super::spline::require_offset_distance(*distance)?;
         }
         Ok(())
     }
@@ -106,6 +137,12 @@ impl SketchPrimitiveCreation {
             Self::Arc {
                 counter_clockwise, ..
             } => geometry.add_arc(id, points[0], [points[1], points[2]], *counter_clockwise)?,
+            Self::Spline { kind, closed, .. } => {
+                geometry.add_spline(SketchSpline2D::new(id, points.to_vec(), *closed, *kind)?)?
+            }
+            Self::OffsetSpline {
+                parent, distance, ..
+            } => geometry.add_offset_spline(SketchOffsetSpline2D::new(id, *parent, *distance)?)?,
         }
         Ok(())
     }
@@ -115,7 +152,9 @@ impl SketchPrimitiveCreation {
             Self::Line { construction, .. }
             | Self::Circle { construction, .. }
             | Self::Ellipse { construction, .. }
-            | Self::Arc { construction, .. } => *construction,
+            | Self::Arc { construction, .. }
+            | Self::Spline { construction, .. }
+            | Self::OffsetSpline { construction, .. } => *construction,
         }
     }
 }

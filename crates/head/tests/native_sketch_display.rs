@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::HeadWork;
+use oblikovati_api::{client::Client, wire::AddSketchEntityArgs};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     sketch::{Sketch2D, SketchEntityId, SketchPlane},
@@ -50,4 +52,47 @@ fn verify_failure_feedback(window: &mut NativeHeadWindow) {
             && title.contains("missing plane 99"),
         "{title}"
     );
+}
+
+#[test]
+fn typed_spline_and_offset_creation_reaches_native_window_pixels() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    super::scene_tests::open_native_part(&mut owner, &directory.path().join("spline.opd"));
+    let baseline = super::scene_tests::publish_native_scene(&mut owner, &mut window);
+    let fit = add_fit_spline(&mut owner);
+    add_offset_spline(&mut owner, fit);
+    let changed = super::scene_tests::publish_native_scene(&mut owner, &mut window);
+    assert!(window.sketch_display_declines().unwrap().is_empty());
+    assert_ne!(changed.rgba, baseline.rgba);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+fn add_fit_spline(owner: &mut NativeDesktopOwner) -> u64 {
+    let points = [[0., 0.], [0.2, 1.], [2., 1.5], [3., -0.5], [1., -2.]];
+    Client::new(owner.document_host())
+        .sketch()
+        .add_entity(&AddSketchEntityArgs {
+            kind: "spline".into(),
+            points: Some(points.iter().map(|point| Some(point.to_vec())).collect()),
+            construction: true,
+            ..Default::default()
+        })
+        .unwrap()
+        .entity_id
+}
+
+fn add_offset_spline(owner: &mut NativeDesktopOwner, parent: u64) {
+    Client::new(owner.document_host())
+        .sketch()
+        .add_entity(&AddSketchEntityArgs {
+            kind: "offsetSpline".into(),
+            entity_refs: Some(vec![parent]),
+            radius: "-5 mm".into(),
+            construction: true,
+            ..Default::default()
+        })
+        .unwrap();
 }

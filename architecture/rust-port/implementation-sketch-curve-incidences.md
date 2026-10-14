@@ -29,12 +29,11 @@ coincidence merge, nearest-root choice, tessellation, geometry retry, or fallbac
 A completed native result is not a certificate of root completeness.
 
 Standalone and defining points are not curve operands. Construction curves and
-centerlines still participate. All spline and offset-spline entities cause an
-explicit preflight refusal, before any native curve is built. The current
-Martensite v0.2.5 release lacks the construction extension now on kernel main;
-[kernel issue #9](https://github.com/Oblikovati/RustyCADKernel/issues/9) remains
-the owner release and application acceptance task. A missing spline must never
-produce a successful query that omitted a possible crossing.
+centerlines still participate. Since Martensite v0.2.7, owned fit, control and
+offset splines resolve through the released native constructor. A simple
+control-spline crossing is retained as an analytic query test. A failed spline
+construction names the source or target and cannot produce a successful query
+that omitted a possible crossing. Root completeness remains uncertified.
 
 Errors retain the offending entity and original typed model or kernel-adapter
 cause. The source chain still reaches native exceptions. Every target is resolved
@@ -53,8 +52,8 @@ these checks add owned-sketch conversion and domain-policy evidence.
 Line extension still requires certified endpoint/root selection, atomic endpoint
 replacement with identity reservations, history and workspace ownership, typed
 API replies, save/reopen, and native edit acceptance. Trim additionally requires
-interval classification and survivor construction. Spline release consumption,
-general profile adoption, and full R3 acceptance remain open. This query must not
+interval classification and survivor construction. General profile adoption and
+full R3 acceptance remain open. This query must not
 be presented as completed trim or extension support.
 
 ## Local verification

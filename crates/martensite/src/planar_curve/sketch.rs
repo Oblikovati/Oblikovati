@@ -7,7 +7,9 @@ use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
 mod failure;
 mod prepare;
 mod shape;
+mod spline;
 pub use failure::{SketchCurveFailure, SketchCurveFailureCause};
+pub use spline::SketchSplineConstructionReport;
 /// Go trim uses finite lines; extension uses infinite supports for all line operands.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SketchLineDomain {
@@ -25,7 +27,9 @@ pub struct SketchIntersectionOptionsV1 {
 pub struct ResolvedSketchCurve {
     pub entity: SketchEntityId,
     pub definition: PlanarCurveDefinition,
-    /// Line/arc endpoint distances to native evaluation; absent for full conics.
+    /// Native construction checks for an authored spline or its named parent.
+    pub spline_construction: Option<SketchSplineConstructionReport>,
+    /// Distances for authored line, arc, and spline endpoints; absent where no endpoints are authored.
     pub endpoint_residuals: Option<[f64; 2]>,
 }
 /// All reported incidences against one target; overlaps and empty results are retained.

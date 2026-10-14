@@ -124,8 +124,9 @@ layers together. Passing this scope does not complete R3 or the application port
 ## Required native geometry work
 
 Ellipse major-radius dimensions now use the native ellipse path documented in
-[ellipse implementation](implementation-ellipse.md). Offset-spline dimensions
-still decline with their named missing geometry capability. Required R3 work
+[ellipse implementation](implementation-ellipse.md). The typed offset-spline
+dimension path now uses the native relation and released spline constructor;
+active handles and downstream feature acceptance remain open. Required R3 work
 for complete ellipse support and offset splines is tracked in
 [#3788](https://github.com/Oblikovati/Oblikovati/issues/3788) and
 [#3789](https://github.com/Oblikovati/Oblikovati/issues/3789).

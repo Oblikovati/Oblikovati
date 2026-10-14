@@ -68,7 +68,8 @@ fn creation_reply(
     encode(&AddSketchEntityResult {
         entity_id: report.entity.0,
         kind: kind.into(),
-        point_i_ds: Some(report.points.into_iter().map(|id| id.0).collect()),
+        point_i_ds: (!report.points.is_empty())
+            .then(|| report.points.into_iter().map(|id| id.0).collect()),
         ..Default::default()
     })
 }
