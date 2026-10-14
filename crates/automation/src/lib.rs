@@ -58,7 +58,8 @@ use oblikovati_session::{
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 33] = [
+pub const QUERY_METHODS: [&str; 34] = [
+    METHOD_APPLICATION_API_VERSION,
     METHOD_CLIENT_APPS_LIST,
     METHOD_SKETCH_GET_INFERENCE_OPTIONS,
     METHOD_DOCUMENTS_LIST_ATTACHMENTS,
@@ -125,6 +126,11 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_APPLICATION_API_VERSION => encode(&ApplicationApiVersionResult {
+                version: oblikovati_api::VERSION.into(),
+                major: i64::from(oblikovati_api::API_MAJOR),
+                minor: i64::from(oblikovati_api::API_MINOR),
+            }),
             METHOD_SKETCH_GET_INFERENCE_OPTIONS => {
                 sketch_inference::query_inference_preferences(self.workspace)
             }

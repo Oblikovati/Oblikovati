@@ -89,6 +89,20 @@ impl GuidSource for QueryGuids {
     }
 }
 type Workspace = WorkspaceSession<QueryObserver, QueryObserver>;
+
+#[test]
+fn application_api_version_uses_the_compiled_contract_without_a_document() {
+    let workspace = Workspace::new(QueryObserver::default());
+    let version = Client::new(SessionQueryHost::new(&workspace))
+        .application()
+        .api_version()
+        .unwrap();
+    assert_eq!(version.version, oblikovati_api::VERSION);
+    assert_eq!(version.major, i64::from(oblikovati_api::API_MAJOR));
+    assert_eq!(version.minor, i64::from(oblikovati_api::API_MINOR));
+    assert!(QUERY_METHODS.contains(&METHOD_APPLICATION_API_VERSION));
+}
+
 fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut QueryGuids) -> u64 {
     let snapshot = DocumentSnapshot {
         work_geometry: Default::default(),
