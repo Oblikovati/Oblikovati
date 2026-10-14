@@ -13,3 +13,6 @@ all = "warn"
 [dependencies]
 imgui = { version = "=0.12.0", features = ["docking"] }
 oblikovati-viewport = { path = "../viewport" }
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+rustix = { version = "=1.1.4", features = ["event"] }

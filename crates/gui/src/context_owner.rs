@@ -72,3 +72,7 @@ fn window_needs_layout(window: &imgui::sys::ImGuiWindow) -> bool {
 #[cfg(test)]
 #[path = "../tests/activity/native.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "../tests/clipboard/native.rs"]
+mod clipboard_tests;

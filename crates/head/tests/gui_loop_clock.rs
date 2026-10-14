@@ -22,7 +22,7 @@ fn click_event(pressed: bool) -> ViewportEvent {
 }
 #[test]
 fn first_click_without_motion_is_captured_and_dispatched_once() {
-    let mut gui = NativeGui::new().unwrap();
+    let mut gui = NativeGui::new(None).unwrap();
     gui_step(&mut gui, 0, None);
     let down = gui_step(&mut gui, 1, Some(&click_event(true)));
     assert!(down.consumed_input);
@@ -37,7 +37,7 @@ fn first_click_without_motion_is_captured_and_dispatched_once() {
 }
 #[test]
 fn idle_frame_settles_and_metadata_or_extent_requests_a_new_packet() {
-    let mut gui = NativeGui::new().unwrap();
+    let mut gui = NativeGui::new(None).unwrap();
     for tick in 0..8 {
         gui_step(&mut gui, tick, None);
     }
@@ -64,7 +64,7 @@ fn idle_frame_settles_and_metadata_or_extent_requests_a_new_packet() {
 }
 #[test]
 fn hover_uses_a_deadline_and_focus_or_unmap_suspends_it() {
-    let mut gui = NativeGui::new().unwrap();
+    let mut gui = NativeGui::new(None).unwrap();
     gui_step(&mut gui, 0, None);
     let motion = ViewportEvent::Input(ViewportInput::Motion {
         position: [30, 45],
@@ -91,7 +91,7 @@ fn hover_uses_a_deadline_and_focus_or_unmap_suspends_it() {
 }
 #[test]
 fn repeated_timestamp_is_valid_but_reversed_time_is_refused() {
-    let mut gui = NativeGui::new().unwrap();
+    let mut gui = NativeGui::new(None).unwrap();
     gui_step(&mut gui, 2, None);
     gui_step(&mut gui, 2, Some(&ViewportEvent::Expose));
     let error = gui

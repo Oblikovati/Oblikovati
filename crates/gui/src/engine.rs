@@ -41,6 +41,12 @@ impl GuiFrameEngine {
         let atlas = configure_owner_context(&mut context);
         Ok(Self { context, atlas })
     }
+    /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
+    pub fn with_clipboard(clipboard: crate::GuiClipboard) -> Result<Self, String> {
+        let mut owner = Self::new()?;
+        owner.context.set_clipboard_backend(clipboard);
+        Ok(owner)
+    }
     /// Retain the atlas independently of the next UI frame; example: `engine.atlas().clone()` for submission.
     pub fn atlas(&self) -> &GuiAtlas {
         &self.atlas

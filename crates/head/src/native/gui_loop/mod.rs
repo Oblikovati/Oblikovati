@@ -2,8 +2,8 @@
 use super::NativeHeadWindow;
 use crate::HeadGuiUpdate;
 use oblikovati_gui::{
-    GuiCommandState, GuiFrameActivity, GuiFrameEngine, GuiFrameOutput, GuiFrameRequest,
-    GuiInputEvent,
+    GuiClipboard, GuiCommandState, GuiFrameActivity, GuiFrameEngine, GuiFrameOutput,
+    GuiFrameRequest, GuiInputEvent,
 };
 use oblikovati_viewport::{GuiFrame, GuiFrameCompiler, ViewportEvent};
 use std::time::Duration;
@@ -23,15 +23,26 @@ pub(super) struct NativeGui {
     focused: bool,
     mapped: bool,
     pointer: input::PointerOwnership,
+    clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
     pub(super) fn require_publication(&mut self) {
         self.dirty = true;
     }
-    fn new() -> Result<Self, String> {
-        let engine = GuiFrameEngine::new()?;
+    fn new(clipboard: Option<GuiClipboard>) -> Result<Self, String> {
+        let engine = match &clipboard {
+            Some(clipboard) => GuiFrameEngine::with_clipboard(clipboard.clone())?,
+            None => GuiFrameEngine::new()?,
+        };
         let compiler = GuiFrameCompiler::new(engine.atlas())?;
-        Ok(Self {
+        Ok(Self::with_compiler(engine, compiler, clipboard))
+    }
+    fn with_compiler(
+        engine: GuiFrameEngine,
+        compiler: GuiFrameCompiler,
+        clipboard: Option<GuiClipboard>,
+    ) -> Self {
+        Self {
             engine,
             compiler,
             draws: None,
@@ -44,7 +55,8 @@ impl NativeGui {
             focused: true,
             mapped: true,
             pointer: Default::default(),
-        })
+            clipboard,
+        }
     }
     fn step(
         &mut self,
@@ -164,7 +176,18 @@ impl NativeHeadWindow {
         if let Some(issue) = self.view.text_input_issue()? {
             messages.push(format!("Text input unavailable: {issue}"));
         }
+        if let Some(issue) = self.native_clipboard_issue() {
+            messages.push(format!("Clipboard unavailable: {issue}"));
+        }
         Ok((!messages.is_empty()).then(|| messages.join("\n")))
+    }
+    fn native_clipboard_issue(&self) -> Option<String> {
+        self.clipboard.issue().or_else(|| {
+            self.gui
+                .as_ref()
+                .and_then(|gui| gui.clipboard.as_ref())
+                .and_then(GuiClipboard::issue)
+        })
     }
     pub(super) fn advance_native_gui(
         &mut self,
@@ -176,7 +199,9 @@ impl NativeHeadWindow {
         }
         let extent = self.view.drawable_extent()?;
         if self.gui.is_none() {
-            self.gui = Some(NativeGui::new()?);
+            let clipboard =
+                GuiClipboard::new(self.clipboard.clone(), super::clipboard::CLIPBOARD_BYTES)?;
+            self.gui = Some(NativeGui::new(Some(clipboard))?);
             self.view.set_status_text("")?;
         }
         let now = self.gui_epoch.elapsed();
@@ -210,6 +235,9 @@ fn publish_gui(
     Ok(())
 }
 
+#[cfg(test)]
+#[path = "../../../tests/native_clipboard_health.rs"]
+mod clipboard_health_tests;
 #[cfg(test)]
 #[path = "../../../tests/native_input_method.rs"]
 mod provider_tests;

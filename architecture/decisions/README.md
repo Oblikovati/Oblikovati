@@ -2,8 +2,9 @@
 
 The Rust application starts with a clean ADR set, as requested on 2026-10-10.
 The migration of all 66 legacy records is recorded in the
-[legacy map](legacy-map.md). The consolidated Rust records are accepted
-as the target design. Application implementation and runtime proof are pending.
+[legacy map](legacy-map.md). Each Rust record states its design status.
+Accepted records define the target design. Application implementation and
+runtime proof are tracked separately.
 
 ## Authority and numbering
 
@@ -122,6 +123,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0024](ADR-0024-released-sketch-spline-construction.md) | Released construction of authored sketch splines | R2/R3/R4 |
 | [ADR-0025](ADR-0025-typed-sketch-spline-authoring.md) | Typed sketch spline authoring through the existing owner | R3/R4 |
 | [ADR-0026](ADR-0026-owned-native-keyboard-and-text.md) | Owned native keyboard and text input | R1V/R4 |
+| [ADR-0027](ADR-0027-owned-native-text-clipboard.md) | Owned native text clipboard | R1V/R4 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

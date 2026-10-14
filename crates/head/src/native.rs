@@ -18,6 +18,7 @@ pub struct NativeHeadWindow {
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
     gui_epoch: std::time::Instant,
+    clipboard: std::rc::Rc<clipboard::NativeClipboardChannel>,
 }
 impl NativeHeadWindow {
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
@@ -39,6 +40,7 @@ impl NativeHeadWindow {
             command_notice: None,
             gui: None,
             gui_epoch: std::time::Instant::now(),
+            clipboard: clipboard::NativeClipboardChannel::open(),
         })
     }
 }
@@ -129,6 +131,7 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
+        self.clipboard.service_pending(limit);
         self.view.poll_events(limit)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
@@ -145,22 +148,31 @@ impl HeadWindow for NativeHeadWindow {
         })
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
-        self.view
-            .wait_events(&self.wake, timeout)
-            .map(|ready| ready.worker_wake)
+        let ready = match self.clipboard.endpoint() {
+            Some(clipboard) => self
+                .view
+                .wait_events_with_clipboard(&self.wake, clipboard, timeout),
+            None => self.view.wait_events(&self.wake, timeout),
+        }?;
+        Ok(ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
         self.gui.take();
+        let clipboard = self.clipboard.handoff_on_shutdown();
         self.view.close();
-        let errors = self.runtime.validation_errors();
+        let mut errors = self.runtime.validation_errors();
+        if let Err(cause) = clipboard {
+            errors.push(cause);
+        }
         if errors.is_empty() {
             return Ok(());
         }
         Err(format!(
-            "head Vulkan validation {errors:?}: expected no renderer errors"
+            "head shutdown {errors:?}: expected completed clipboard retirement and no renderer errors"
         ))
     }
 }
+mod clipboard;
 #[derive(Clone)]
 struct NativeOwnerWake(ViewportWake);
 impl oblikovati_automation::dispatch::DispatchWakeup for NativeOwnerWake {

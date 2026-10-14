@@ -123,6 +123,10 @@ fn pointer_button_change(button: GuiPointerButton) -> GuiInputEvent {
     }
 }
 
+#[cfg(target_os = "linux")]
+#[path = "../clipboard/widget.rs"]
+mod clipboard_widget_tests;
+
 #[test]
 fn focus_loss_clears_held_keys_buttons_and_modifiers_in_frame_order() {
     let mut context = input_probe_context();
