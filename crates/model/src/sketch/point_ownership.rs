@@ -2,6 +2,17 @@
 use super::{Sketch2D, SketchEntityId, SketchError, SketchRecipe};
 use std::collections::BTreeSet;
 impl Sketch2D {
+    pub(crate) fn expose_defining_point(&mut self, id: SketchEntityId) -> Result<(), SketchError> {
+        self.point(id)?;
+        if !self.defining_points.remove(&id) {
+            return Err(SketchError::Definition(format!(
+                "placement point {id:?}: expected a hidden defining point, not an existing visible member"
+            )));
+        }
+        self.entity_order.push(id);
+        Ok(())
+    }
+
     /// Adopt a shared solver point without a standalone marker; example: `sketch.add_defining_point(id, [0.0, 0.0])?`.
     pub fn add_defining_point(
         &mut self,

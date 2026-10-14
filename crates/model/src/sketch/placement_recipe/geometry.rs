@@ -6,6 +6,7 @@ use super::super::{
 /// Indexed placement geometry; a closed circle has no artificial path endpoints.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SketchPlacementGeometry {
+    Point(usize),
     Path(SketchPathMember),
     Ellipse {
         center: usize,
@@ -17,13 +18,25 @@ pub enum SketchPlacementGeometry {
         radius: f64,
     },
 }
+pub(crate) enum PlacementPrimitive {
+    Point(SketchEntityId),
+    Curve(SketchPrimitiveCreation),
+}
 impl SketchPlacementGeometry {
     pub(crate) fn primitive(
         self,
         points: &[SketchEntityId],
         construction: bool,
-    ) -> Result<SketchPrimitiveCreation, SketchError> {
-        match self {
+    ) -> Result<PlacementPrimitive, SketchError> {
+        let primitive = match self {
+            Self::Point(index) => {
+                if construction {
+                    return Err(SketchError::Definition(format!(
+                        "placement point {index}, construction {construction}: expected false because points have no curve role"
+                    )));
+                }
+                return Ok(PlacementPrimitive::Point(indexed_entity(points, index)?));
+            }
             Self::Ellipse {
                 center,
                 major_axis,
@@ -40,7 +53,8 @@ impl SketchPlacementGeometry {
                 radius,
                 construction,
             }),
-        }
+        }?;
+        Ok(PlacementPrimitive::Curve(primitive))
     }
 }
 

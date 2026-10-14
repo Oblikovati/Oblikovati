@@ -6,11 +6,13 @@ mod circles;
 mod ellipses;
 mod fields;
 mod geometry;
+mod points;
 mod polygons;
 mod rectangles;
 mod slots;
 mod verification;
 pub use bindings::{SketchPlacementBinding, SketchPlacementRelation};
+pub(crate) use geometry::PlacementPrimitive;
 pub use geometry::SketchPlacementGeometry;
 pub use verification::SketchCircularPlacementCheck;
 /// A shared authoring graph for preview and atomic commit; indices are local, not permanent IDs.

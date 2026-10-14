@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle, arc and ellipse recipes and rank independently.
+// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle, arc, ellipse and point recipes and rank independently.
 package main
 
 import (
@@ -96,6 +96,9 @@ func main() {
 			}
 		}
 	}
+	for _, point := range [][2]float64{{0, 0}, {3, -4}, {-20, 30}, {0.125, 100}} {
+		out = append(out, capture(record{Kind: "point", Input: [3][2]float64{point}}))
+	}
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}
@@ -103,12 +106,15 @@ func main() {
 func xy(p m.Point2) [2]float64 { return [2]float64{p.X, p.Y} }
 func capture(out record) record {
 	out.Relations = []relation{}
+	out.Fields = []field{}
 	c, s, e := m.P2(out.Input[0][0], out.Input[0][1]), m.P2(out.Input[1][0], out.Input[1][1]), m.P2(out.Input[2][0], out.Input[2][1])
 	r := sketch.StraightSlotRecipe(c, s, out.Width)
 	if out.Curved {
 		r = sketch.ArcSlotRecipe(c, s, e, out.Width, out.CCW)
 	}
 	switch out.Kind {
+	case "point":
+		r = sketch.PointRecipe(c)
 	case "polygon":
 		r = sketch.PolygonRecipe(c, s, out.Sides, out.Inscribed)
 	case "ellipse":
@@ -129,6 +135,9 @@ func capture(out record) record {
 	}
 	for _, v := range r.Entities {
 		kind := "line"
+		if v.Kind == sketch.RecipePoint {
+			kind = "point"
+		}
 		if v.Kind == sketch.RecipeArc {
 			kind = "arc"
 		}

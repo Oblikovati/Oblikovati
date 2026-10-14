@@ -5,7 +5,9 @@ use super::{
 };
 use crate::{
     document_sketch::DocumentSketchId,
-    sketch::{Sketch2D, SketchConstraintId, SketchEntityId, SketchPlacementRecipe},
+    sketch::{
+        PlacementPrimitive, Sketch2D, SketchConstraintId, SketchEntityId, SketchPlacementRecipe,
+    },
 };
 use oblikovati_solve::nonlinear::SolveOptions;
 mod error;
@@ -76,7 +78,13 @@ fn append_members(
         .members
         .iter()
         .map(|member| {
-            let primitive = member.geometry.primitive(points, member.construction)?;
+            let primitive = match member.geometry.primitive(points, member.construction)? {
+                PlacementPrimitive::Point(id) => {
+                    geometry.expose_defining_point(id)?;
+                    return Ok(id);
+                }
+                PlacementPrimitive::Curve(primitive) => primitive,
+            };
             primitive.validate(geometry)?;
             append_primitive(geometry, sketch, &primitive, ids)
                 .map(|report| report.entity)

@@ -58,7 +58,7 @@ struct GoField {
 fn constrained_slot_graphs_and_field_bindings_match_the_independent_go_recipes() {
     let fixtures: Vec<GoRecipe> =
         serde_json::from_str(include_str!("placement_recipe/go-recipes.json")).unwrap();
-    assert_eq!(fixtures.len(), 79);
+    assert_eq!(fixtures.len(), 83);
     for fixture in fixtures
         .into_iter()
         .filter(|fixture| fixture.kind.is_empty())
@@ -107,6 +107,9 @@ fn verify_entities(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
     }
 }
 fn expected_geometry(entity: &GoEntity) -> SketchPlacementGeometry {
+    if entity.kind == "point" {
+        return SketchPlacementGeometry::Point(entity.points[0]);
+    }
     if entity.kind == "circle" {
         return SketchPlacementGeometry::Circle {
             center: entity.points[0],
@@ -216,3 +219,6 @@ mod polygons;
 
 #[path = "placement_recipe/slot_centerline.rs"]
 mod slot_centerline;
+
+#[path = "placement_recipe/points.rs"]
+mod points;

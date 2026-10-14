@@ -169,6 +169,7 @@ pub use slot_seed::{SketchSlotLayout, SketchSlotPlacement};
 mod path_member;
 pub use path_member::SketchPathMember;
 mod placement_recipe;
+pub(crate) use placement_recipe::PlacementPrimitive;
 pub use placement_recipe::{
     SketchCircularPlacementCheck, SketchPlacementBinding, SketchPlacementField,
     SketchPlacementGeometry, SketchPlacementMember, SketchPlacementRecipe, SketchPlacementRelation,
