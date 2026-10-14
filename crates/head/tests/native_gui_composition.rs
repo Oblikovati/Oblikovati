@@ -36,10 +36,16 @@ fn owned_shell_packet(extent: [u32; 2]) -> (GuiFrameCompiler, GuiFrame) {
         framebuffer_scale: [1.; 2],
     };
     // Dear ImGui lays out the new window before it emits its visible contents.
-    engine.frame(&request).unwrap();
-    let packet = engine.frame(&request).unwrap().draws;
-    assert!(!packet.batches.is_empty());
-    (compiler, packet)
+    // Follow reported work instead of assuming a fixed warmup frame count.
+    let mut output = engine.frame(&request).unwrap();
+    let mut attempts = 0;
+    while output.activity.needs_frame() {
+        assert!(attempts < 8, "expected idle shell layout to settle");
+        output = engine.frame(&request).unwrap();
+        attempts += 1;
+    }
+    assert!(!output.draws.batches.is_empty());
+    (compiler, output.draws)
 }
 fn verify_panel_and_document(
     baseline: &oblikovati_viewport::ViewportCapture,

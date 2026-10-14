@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned Dear ImGui frames for the application viewport draw boundary.
+mod activity;
+pub use activity::GuiFrameActivity;
 mod commands;
 #[allow(unsafe_code)]
 mod context_owner;

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
-    GuiAtlas, GuiCommandState, GuiFrame, GuiInputCapture, GuiInputEvent, GuiShellAction,
-    context_owner::require_vacant_context,
+    GuiAtlas, GuiCommandState, GuiFrame, GuiFrameActivity, GuiInputCapture, GuiInputEvent,
+    GuiShellAction,
+    context_owner::{frame_activity, require_vacant_context},
     input::{apply_input, input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
@@ -20,6 +21,7 @@ pub struct GuiFrameOutput {
     pub draws: GuiFrame,
     pub actions: Vec<GuiShellAction>,
     pub capture: GuiInputCapture,
+    pub activity: GuiFrameActivity,
 }
 /// One GUI thread retains the active context for its lifetime; packets contain no borrowed FFI pointers.
 /// ```compile_fail
@@ -117,6 +119,7 @@ fn draw_controls(
         draws: snapshot,
         actions: selected,
         capture: input_capture(context.io()),
+        activity: frame_activity()?,
     })
 }
 fn shell_panel(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {

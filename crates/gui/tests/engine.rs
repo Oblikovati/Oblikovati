@@ -176,12 +176,21 @@ fn verify_queued_clicks_survive_frame_boundaries(engine: &mut GuiFrameEngine) {
         .into_iter()
         .map(left_button_event)
         .collect();
-    let mut actions = engine.frame(&input).unwrap().actions;
+    let mut output = engine.frame(&input).unwrap();
+    assert!(output.activity.queued_input);
+    let mut actions = output.actions;
     input.events.clear();
-    for _ in 0..3 {
-        actions.extend(engine.frame(&input).unwrap().actions);
+    let mut attempts = 0;
+    while output.activity.queued_input {
+        assert!(attempts < 8, "expected the finite click batch to drain");
+        output = engine.frame(&input).unwrap();
+        actions.extend(output.actions);
+        attempts += 1;
     }
     assert_eq!(actions, [GuiShellAction::Save, GuiShellAction::Save]);
+    assert!(output.activity.interaction);
+    input.events = vec![GuiInputEvent::PointerMoved([500., 300.])];
+    assert!(!engine.frame(&input).unwrap().activity.needs_frame());
 }
 
 fn verify_owner_command_enabling(engine: &mut GuiFrameEngine) {

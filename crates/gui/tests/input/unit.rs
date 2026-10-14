@@ -120,3 +120,44 @@ fn pointer_button_change(button: GuiPointerButton) -> GuiInputEvent {
         pressed: true,
     }
 }
+
+#[test]
+fn focus_loss_clears_held_keys_buttons_and_modifiers_in_frame_order() {
+    let mut context = input_probe_context();
+    let mut text = String::new();
+    focus_text_probe(&mut context, &mut text);
+    let held = [
+        GuiInputEvent::Modifiers(GuiModifiers {
+            control: true,
+            ..Default::default()
+        }),
+        GuiInputEvent::Key {
+            key: GuiKey::LeftCtrl,
+            pressed: true,
+        },
+        GuiInputEvent::PointerButton {
+            button: GuiPointerButton::Left,
+            pressed: true,
+        },
+    ];
+    widget_frame(&mut context, &held, &mut text, false);
+    widget_frame(&mut context, &[], &mut text, false);
+    assert!(context.io().key_ctrl && context.io().mouse_down[0]);
+    apply_input(context.io_mut(), &GuiInputEvent::Focus(false), [1.; 2]);
+    let ui = context.frame();
+    assert!(ui.io().app_focus_lost);
+    assert!(!ui.io().key_ctrl);
+    assert!(!ui.io().mouse_down.iter().any(|down| *down));
+    draw_text_probe(ui, &mut text, false);
+    context.render();
+    // Dear ImGui 1.89.2 clears the transient focus-loss flag in EndFrame.
+    assert!(!context.io().app_focus_lost);
+    widget_frame(
+        &mut context,
+        &[GuiInputEvent::Focus(true)],
+        &mut text,
+        false,
+    );
+    assert!(!context.io().app_focus_lost);
+    assert!(!context.io().key_ctrl);
+}

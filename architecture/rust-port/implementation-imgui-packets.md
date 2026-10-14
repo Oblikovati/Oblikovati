@@ -168,3 +168,11 @@ and native head now consume it with the existing frame compiler. See the
 [native composition receipt](implementation-native-gui-composition.md) for model
 and GUI pixel checks on software Vulkan and AMD. Automatic executable attachment,
 input routing, frame scheduling and command dispatch remain open.
+
+## Frame continuation and focus
+
+The producer now reports deferred input, pending layout and active interaction,
+and accepts ordered focus events. See the
+[frame activity receipt](implementation-gui-frame-activity.md) for queued-click,
+idle, layout and held-input tests. This supplies scheduling evidence; native
+input routing and automatic GUI activation remain open.

@@ -136,6 +136,7 @@ pub struct GuiModifiers {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiInputEvent {
+    Focus(bool),
     PointerMoved([f32; 2]),
     PointerButton {
         button: GuiPointerButton,
@@ -173,6 +174,7 @@ pub(crate) fn validate_input(event: &GuiInputEvent, scale: [f32; 2]) -> Result<(
 }
 pub(crate) fn apply_input(io: &mut Io, event: &GuiInputEvent, scale: [f32; 2]) {
     match event {
+        GuiInputEvent::Focus(focused) => crate::context_owner::queue_focus(io, *focused),
         GuiInputEvent::PointerMoved(position) => {
             io.add_mouse_pos_event(std::array::from_fn(|axis| position[axis] / scale[axis]))
         }
