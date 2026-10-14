@@ -2,16 +2,20 @@
 use super::{
     Sketch2D, SketchEndpointInference, SketchInferencePolicy, SketchLinePlacementInference,
 };
-use crate::sketch::SketchPoint2D;
+use crate::sketch::{SketchEntityId, SketchPoint2D};
 pub(super) fn propose(
     sketch: &Sketch2D,
+    excluded: &[SketchEntityId],
     report: &mut SketchLinePlacementInference,
     constrain: bool,
     policy: SketchInferencePolicy,
 ) {
     for endpoint in 0..2 {
         let Some(target) = nearest_point(
-            sketch.points(),
+            sketch
+                .points()
+                .iter()
+                .filter(|point| !excluded.contains(&point.id)),
             report.candidate_endpoints[endpoint],
             policy.snap_distance_working,
         ) else {
@@ -26,8 +30,8 @@ pub(super) fn propose(
         }
     }
 }
-fn nearest_point(
-    points: &[SketchPoint2D],
+fn nearest_point<'a>(
+    points: impl Iterator<Item = &'a SketchPoint2D>,
     position: [f64; 2],
     reach: f64,
 ) -> Option<SketchPoint2D> {

@@ -11,7 +11,9 @@ use crate::{
     },
 };
 use oblikovati_solve::nonlinear::SolveOptions;
+mod chain;
 mod error;
+pub use chain::{SketchLineChainCreation, SketchLineChainCreationReport};
 mod relations;
 pub use error::SketchLineCreationError;
 /// Fresh endpoints in document working units; inference reads existing geometry before allocation.
@@ -50,13 +52,12 @@ impl DocumentSnapshot {
         let (mut geometry, inference, enabled) =
             self.prepare_inferred_line(sketch, input, policy, solve_options)?;
         let creation = input.primitive(inference.candidate_endpoints);
-        let primitive = append_primitive(&mut geometry, sketch, &creation, ids)
-            .map_err(SketchLineCreationError::Primitive)?;
-        let applied = relations::append(&mut geometry, &primitive, &inference, enabled, ids)?;
+        let report =
+            append_inferred_primitive(&mut geometry, sketch, &creation, inference, enabled, ids)?;
         self.sketches
             .replace_geometry(sketch, geometry)
             .map_err(SketchLineCreationError::Sketch)?;
-        Ok(creation_report(primitive, inference, applied))
+        Ok(report)
     }
     fn prepare_inferred_line(
         &self,
@@ -85,15 +86,21 @@ impl SketchLineCreation {
     }
 }
 
-fn creation_report(
-    primitive: SketchPrimitiveCreationReport,
+fn append_inferred_primitive(
+    geometry: &mut Sketch2D,
+    sketch: DocumentSketchId,
+    creation: &SketchPrimitiveCreation,
     inference: SketchLinePlacementInference,
-    applied: (Vec<SketchConstraintId>, Option<SketchAppliedLineDirection>),
-) -> SketchLineCreationReport {
-    SketchLineCreationReport {
+    enabled: bool,
+    ids: &mut RecipeReservations<'_>,
+) -> Result<SketchLineCreationReport, SketchLineCreationError> {
+    let primitive = append_primitive(geometry, sketch, creation, ids)
+        .map_err(SketchLineCreationError::Primitive)?;
+    let applied = relations::append(geometry, &primitive, &inference, enabled, ids)?;
+    Ok(SketchLineCreationReport {
         primitive,
         inference,
         point_constraints: applied.0,
         direction: applied.1,
-    }
+    })
 }

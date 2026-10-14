@@ -33,8 +33,8 @@ mod sketch_relation_create;
 mod sketch_relation_delete;
 pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
 pub use sketch_line::{
-    SketchAppliedLineDirection, SketchLineCreation, SketchLineCreationError,
-    SketchLineCreationReport,
+    SketchAppliedLineDirection, SketchLineChainCreation, SketchLineChainCreationReport,
+    SketchLineCreation, SketchLineCreationError, SketchLineCreationReport,
 };
 pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
 pub use sketch_relation_create::{SketchGeometricCreationError, SketchGeometricCreationReport};

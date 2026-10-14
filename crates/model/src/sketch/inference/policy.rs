@@ -18,7 +18,7 @@ impl SketchInferencePolicy {
             snap_distance_working: 0.001 / units.working_scale(),
         }
     }
-    pub(super) fn require_valid(self) -> Result<(), SketchError> {
+    pub(crate) fn require_valid(self) -> Result<(), SketchError> {
         let angle = self.angle_tolerance_radians;
         let distance = self.snap_distance_working;
         if !angle.is_finite() || angle <= 0.0 || angle >= std::f64::consts::FRAC_PI_4 {

@@ -36,24 +36,67 @@ impl Sketch2D {
         settings: &SketchSettings,
         policy: SketchInferencePolicy,
     ) -> Result<SketchLinePlacementInference, SketchError> {
+        let report = self.line_point_proposals(endpoints, &[], settings, policy)?;
+        self.complete_line_inference(report, settings, policy)
+    }
+    pub(crate) fn infer_owned_line_placement(
+        &mut self,
+        points: [SketchEntityId; 2],
+        settings: &SketchSettings,
+        policy: SketchInferencePolicy,
+    ) -> Result<SketchLinePlacementInference, SketchError> {
+        let endpoints = [
+            self.point(points[0])?.position,
+            self.point(points[1])?.position,
+        ];
+        let report = self.line_point_proposals(endpoints, &points, settings, policy)?;
+        // Go aa8297d1 applies snaps before ranking directions, including shared reference endpoints.
+        for (point, position) in points.into_iter().zip(report.candidate_endpoints) {
+            self.set_position(point, position)?;
+        }
+        self.complete_line_inference(report, settings, policy)
+    }
+    fn line_point_proposals(
+        &self,
+        endpoints: [[f64; 2]; 2],
+        excluded: &[SketchEntityId],
+        settings: &SketchSettings,
+        policy: SketchInferencePolicy,
+    ) -> Result<SketchLinePlacementInference, SketchError> {
         policy.require_valid()?;
         for endpoint in endpoints {
             require_position(endpoint)?;
         }
         let mut report = empty_report(endpoints);
-        if !settings.infer_constraints {
-            return Ok(report);
+        if settings.infer_constraints {
+            snap::propose(
+                self,
+                excluded,
+                &mut report,
+                settings.auto_apply_constraints,
+                policy,
+            );
         }
-        snap::propose(self, &mut report, settings.auto_apply_constraints, policy);
-        report.direction = direction::winner(
-            self,
-            report.candidate_endpoints,
-            settings.constraint_priority,
-            policy,
-        )?;
+        Ok(report)
+    }
+    fn complete_line_inference(
+        &self,
+        mut report: SketchLinePlacementInference,
+        settings: &SketchSettings,
+        policy: SketchInferencePolicy,
+    ) -> Result<SketchLinePlacementInference, SketchError> {
+        if settings.infer_constraints {
+            report.direction = direction::winner(
+                self,
+                report.candidate_endpoints,
+                settings.constraint_priority,
+                policy,
+            )?;
+        }
         Ok(report)
     }
 }
+
 fn empty_report(endpoints: [[f64; 2]; 2]) -> SketchLinePlacementInference {
     SketchLinePlacementInference {
         candidate_endpoints: endpoints,

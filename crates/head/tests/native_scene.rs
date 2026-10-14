@@ -332,3 +332,6 @@ mod recipe_input_tests;
 
 #[path = "native_scene/chain_recipe.rs"]
 mod chain_recipe_tests;
+
+#[path = "native_scene/inferred_chain.rs"]
+mod inferred_chain_tests;

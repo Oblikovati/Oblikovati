@@ -127,3 +127,37 @@ fn refuse_failed_source(
     assert_eq!(snapshot.sketches, geometry_before);
     Ok(())
 }
+
+#[test]
+fn chain_inference_uses_parameter_edits_before_allocating_its_visible_points() {
+    let mut history = driven_owner();
+    let token = history.begin("Resize and author a chain").unwrap();
+    let report = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.parameters.set_expression(1, "6 cm").unwrap();
+            let request = oblikovati_model::history::SketchLineChainCreation {
+                points: vec![[6.0001, 2.0001], [10.0, 2.0001], [10.0, 4.0]],
+                closed: false,
+                construction: false,
+                centerline: false,
+            };
+            snapshot.create_inferred_sketch_line_chain(
+                DocumentSketchId(1),
+                &request,
+                policy(),
+                Default::default(),
+                ids,
+            )
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert_eq!(
+        report.lines[0].inference.points[0].target,
+        SketchEntityId(2)
+    );
+    assert_eq!(report.lines[0].point_constraints[0], SketchConstraintId(4));
+    assert_eq!(
+        report.lines[1].primitive.points[0],
+        report.lines[0].primitive.points[1]
+    );
+}
