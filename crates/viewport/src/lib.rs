@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned Linux viewports over the published Martensite device and presentation path.
+mod clipboard;
 mod input;
+pub use clipboard::ViewportClipboard;
+#[cfg(target_os = "linux")]
+pub use clipboard::{NativeClipboardEndpoint, NativeClipboardHandoff, NativeClipboardOptions};
 mod keyboard;
 pub use input::{
     ViewportButton, ViewportInput, ViewportKey, ViewportModifiers, ViewportNavigation,

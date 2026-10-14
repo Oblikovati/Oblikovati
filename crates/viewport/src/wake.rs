@@ -5,7 +5,7 @@ use rustix::{
     io::{Errno, read, write},
 };
 use std::{sync::Arc, time::Duration};
-/// A copied readiness result; both sources can be ready together.
+/// A copied readiness result; native sources and a worker signal can be ready together.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ViewportReady {
     pub native_events: bool,
@@ -49,17 +49,27 @@ impl ViewportWake {
         native: BorrowedFd<'_>,
         timeout: Option<Duration>,
     ) -> Result<ViewportReady, String> {
+        self.wait_sources(&[native], timeout)
+    }
+    pub(crate) fn wait_sources(
+        &self,
+        sources: &[BorrowedFd<'_>],
+        timeout: Option<Duration>,
+    ) -> Result<ViewportReady, String> {
         let timeout = wait_timeout(timeout)?;
-        let mut descriptors = [
-            PollFd::new(&native, PollFlags::IN),
-            PollFd::new(&*self.descriptor, PollFlags::IN),
-        ];
+        let mut descriptors: Vec<_> = sources
+            .iter()
+            .map(|source| PollFd::new(source, PollFlags::IN))
+            .collect();
+        descriptors.push(PollFd::new(&*self.descriptor, PollFlags::IN));
         if !poll_once(&mut descriptors, timeout.as_ref())? {
             return Ok(ViewportReady::default());
         }
         check_descriptors(&descriptors)?;
         Ok(ViewportReady {
-            native_events: descriptors[0].revents().contains(PollFlags::IN),
+            native_events: descriptors[..sources.len()]
+                .iter()
+                .any(|descriptor| descriptor.revents().contains(PollFlags::IN)),
             worker_wake: self.consume()?,
         })
     }

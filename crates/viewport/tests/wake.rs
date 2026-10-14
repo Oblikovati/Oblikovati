@@ -49,3 +49,41 @@ fn verify_native_and_failed_sources(wake: &ViewportWake, native: &UnixStream, pe
             .contains("live event source")
     );
 }
+#[test]
+fn multiple_native_sources_share_one_wait_with_worker_readiness() {
+    let (window, _window_peer) = UnixStream::pair().unwrap();
+    let (clipboard, clipboard_peer) = UnixStream::pair().unwrap();
+    let wake = ViewportWake::new().unwrap();
+    let sources = [window.as_fd(), clipboard.as_fd()];
+    assert_eq!(
+        wake.wait_sources(&sources, Some(Duration::ZERO)).unwrap(),
+        ViewportReady::default()
+    );
+    rustix::io::write(&clipboard_peer, b"selection").unwrap();
+    wake.wake().unwrap();
+    assert_eq!(
+        wake.wait_sources(&sources, None).unwrap(),
+        ViewportReady {
+            native_events: true,
+            worker_wake: true
+        }
+    );
+    drop(clipboard_peer);
+    assert!(wake.wait_sources(&sources, Some(Duration::ZERO)).is_err());
+}
+#[test]
+fn worker_only_wait_preserves_timeout_and_consumes_signal() {
+    let wake = ViewportWake::new().unwrap();
+    assert_eq!(
+        wake.wait_sources(&[], Some(Duration::ZERO)).unwrap(),
+        ViewportReady::default()
+    );
+    wake.wake().unwrap();
+    assert_eq!(
+        wake.wait_sources(&[], None).unwrap(),
+        ViewportReady {
+            native_events: false,
+            worker_wake: true
+        }
+    );
+}

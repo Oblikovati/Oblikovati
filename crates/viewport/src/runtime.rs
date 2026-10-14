@@ -459,4 +459,5 @@ impl Viewport {
     }
 }
 
+mod clipboard;
 mod gui_composition;

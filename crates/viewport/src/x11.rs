@@ -207,14 +207,31 @@ impl NativeWindow {
         wake: &crate::ViewportWake,
         timeout: Option<Duration>,
     ) -> Result<crate::ViewportReady, String> {
-        if !self.copied_input.borrow().is_empty()
-            || unsafe { (self.x11.api.XPending)(self.pointer()) } != 0
-        {
+        self.wait_native_sources(wake, timeout, None)
+    }
+    pub(crate) fn wait_native_sources(
+        &self,
+        wake: &crate::ViewportWake,
+        timeout: Option<Duration>,
+        clipboard: Option<&crate::NativeClipboardEndpoint>,
+    ) -> Result<crate::ViewportReady, String> {
+        if self.has_pending_input() {
             return Ok(crate::ViewportReady {
                 native_events: true,
                 worker_wake: wake.consume()?,
             });
         }
+        let native = self.connection_descriptor()?;
+        match clipboard {
+            Some(clipboard) => clipboard.wait_with_sources(wake, &[native], timeout),
+            None => wake.wait(native, timeout),
+        }
+    }
+    fn has_pending_input(&self) -> bool {
+        !self.copied_input.borrow().is_empty()
+            || unsafe { (self.x11.api.XPending)(self.pointer()) } != 0
+    }
+    fn connection_descriptor(&self) -> Result<rustix::fd::BorrowedFd<'_>, String> {
         let descriptor = unsafe { (self.x11.api.XConnectionNumber)(self.pointer()) };
         if descriptor < 0 {
             return Err(format!(
@@ -222,8 +239,7 @@ impl NativeWindow {
             ));
         }
         // The borrowed connection stays owned by this native target throughout the wait.
-        let native = unsafe { rustix::fd::BorrowedFd::borrow_raw(descriptor) };
-        wake.wait(native, timeout)
+        Ok(unsafe { rustix::fd::BorrowedFd::borrow_raw(descriptor) })
     }
     pub fn poll(&self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         let mut events = Vec::new();
@@ -388,8 +404,8 @@ fn validate_title(title: &str) -> Result<(), String> {
 }
 
 #[cfg(test)]
-#[path = "../tests/private_x11.rs"]
-mod private_server;
+#[path = "../../../test-utilities/private_x11.rs"]
+pub(crate) mod private_server;
 #[cfg(test)]
 #[path = "../tests/x11_events.rs"]
 mod tests;

@@ -2,12 +2,12 @@
 use rustix::event::{PollFd, PollFlags, Timespec, poll};
 use std::io::{BufRead, BufReader};
 use std::process::{Child, Command, Stdio};
-pub(super) struct PrivateX11Server {
+pub(crate) struct PrivateX11Server {
     child: Child,
     display: String,
 }
 impl PrivateX11Server {
-    pub(super) fn open_compose_fixture() -> Result<Self, String> {
+    pub(crate) fn open_compose_fixture() -> Result<Self, String> {
         let program = std::env::var_os("OBLIKOVATI_XVFB_BINARY").unwrap_or_else(|| "Xvfb".into());
         let child = Command::new(&program).args(["-displayfd", "1", "-screen", "0", "640x480x24", "-nolisten", "tcp", "-noreset"])
             .stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn()
@@ -58,7 +58,7 @@ impl PrivateX11Server {
         }
         Ok(())
     }
-    pub(super) fn display(&self) -> &str {
+    pub(crate) fn display(&self) -> &str {
         &self.display
     }
 }
