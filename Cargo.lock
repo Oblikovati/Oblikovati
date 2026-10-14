@@ -445,8 +445,8 @@ checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
 
 [[package]]
 name = "martensite-vulkan"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "ash",
  "rustycad-tkernel",
@@ -891,13 +891,13 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
 name = "rustycad-cmath"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 
 [[package]]
 name = "rustycad-tkbo"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-tkbrep",
  "rustycad-tkernel",
@@ -913,8 +913,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkbrep"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-tkernel",
  "rustycad-tkg2d",
@@ -925,8 +925,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkernel"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "allocator-api2",
  "bytemuck",
@@ -939,8 +939,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkg2d"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-cmath",
  "rustycad-tkernel",
@@ -949,8 +949,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkg3d"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-cmath",
  "rustycad-tkernel",
@@ -960,8 +960,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkgeomalgo"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-tkbrep",
  "rustycad-tkernel",
@@ -973,8 +973,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkgeombase"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-cmath",
  "rustycad-tkernel",
@@ -985,8 +985,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkmath"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "num-bigint",
  "num-complex",
@@ -997,8 +997,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkmesh"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "allocator-api2",
  "rustycad-tkbrep",
@@ -1014,8 +1014,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkprim"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-tkbrep",
  "rustycad-tkernel",
@@ -1029,8 +1029,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkservice"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "libc",
  "rustycad-tkernel",
@@ -1041,8 +1041,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkshhealing"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-tkbrep",
  "rustycad-tkernel",
@@ -1056,8 +1056,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tktopalgo"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-tkbrep",
  "rustycad-tkernel",
@@ -1070,8 +1070,8 @@ dependencies = [
 
 [[package]]
 name = "rustycad-tkv3d"
-version = "0.2.5"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=8118c7e1fae4d28bb5bb5656cd8f86445dadef10#8118c7e1fae4d28bb5bb5656cd8f86445dadef10"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
 dependencies = [
  "rustycad-tkbrep",
  "rustycad-tkernel",

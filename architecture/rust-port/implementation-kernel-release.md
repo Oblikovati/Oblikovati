@@ -120,3 +120,46 @@ constant or platform-specific path; the view remains in the existing Linux
 renderer boundary. Existing comments and camera behavior remain intact.
 Windows and macOS acceptance remains deferred. No push, PR, or publication
 is part of this intake.
+
+## v0.2.7 local intake
+
+The application pins [kernel v0.2.7](https://github.com/Oblikovati/RustyCADKernel/releases/tag/v0.2.7)
+at `d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b`. The annotated tag,
+published manifest and all 31 crate archives identify this revision. The archives
+record clean source metadata. The manifest records
+`extracted-workspace-tests-and-doctests`. Release workflow
+[38511000655](https://github.com/Oblikovati/RustyCADKernel/actions/runs/38511000655)
+completed successfully before application adoption.
+
+All 35 payloads and the manifest passed the published SHA-256 checks. All 37
+published files, including `SHA256SUMS`, also match the completed workflow's
+package artifact byte for byte. The local checked download is
+`/tmp/oblikovati-kernel-v0.2.7-published`.
+
+Both consumer manifests, the lockfile, packaging configuration and pin regression
+test agree. All 16 consumed kernel packages use the exact release revision. Every
+other locked package remains unchanged, including API v0.158.0. The Rust toolchain
+remains 1.99.0. Cargo reads the released Git source; no sibling checkout supplies
+code or binaries.
+
+This release includes native GUI composition and the owned spline and exact
+predicate prerequisites. Their application integration remains separate work.
+The release notes explicitly leave the general sketch-region-to-solid certificate
+incomplete. Internal selected-prism diagnostics are not a certified application
+body. The kernel blocker priorities remain until the relevant consuming feature
+passes its acceptance tests. This pin change alone does not complete R1, R3 or R4.
+
+The complete local Linux `make gate` passed for all 13 application crates,
+all targets and features. Formatting, Clippy, build, tests, doctests, coverage,
+Markdown, documentation links, SPDX, workflow checks and duplication passed.
+Native tests used Xvfb at 1920×1080×24 with software Vulkan and checked captured
+pixels against the presented X11 window. The retained log is
+`/tmp/kernel-v0.2.7-gate.log`.
+
+Every crate exceeded 80% line coverage. The adapter reached 91.67%, viewport
+94.28% and head 96.19%. Duplication remains 0.77% (577 of 74,756 scanned lines).
+No application compatibility fix was needed. This change adds no numeric or
+platform-specific constant. The existing camera and preview Fit comments remain
+valid against the released source and were retained. Windows and macOS remain
+deferred. Integration is local only; no push, PR or application publication is
+part of this intake.
