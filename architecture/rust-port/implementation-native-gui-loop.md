@@ -24,7 +24,7 @@ open for complete R4 acceptance.
 The check includes format, Clippy, build, tests, doctests, each-crate coverage,
 SPDX, Markdown, document links, workflow checks and duplication.
 Head coverage is 96.31%, GUI coverage is 99.29%, and viewport coverage is
-94.33%. Every crate exceeds 80%. Duplication is 0.77%: 577 of 75,351
+94.33%. Every crate exceeds 80%. Duplication is 0.76%: 577 of 75,675
 scanned lines, 67 pairs.
 
 New tests cover first-click dispatch, pointer ownership across panel edges,
