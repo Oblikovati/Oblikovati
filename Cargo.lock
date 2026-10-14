@@ -594,6 +594,9 @@ dependencies = [
  "oblikovati-session",
  "oblikovati-solve",
  "quick-xml",
+ "rustycad-tkg2d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkmath",
  "serde",
  "serde_json",
 ]
