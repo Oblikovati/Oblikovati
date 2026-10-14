@@ -6,6 +6,7 @@ use martensite_vulkan::{FrameCapture, RenderBackend, RenderError, RenderFrame};
 use rustycad_tkmath::gp::Point3;
 use rustycad_tkservice::aspect::AspectNeutralWindow;
 use std::sync::{Arc, Mutex};
+
 #[derive(Default)]
 struct RecordedDevice {
     frames: Vec<RenderFrame>,
@@ -490,3 +491,6 @@ mod projection_resize_tests;
 mod gui_fixture;
 #[path = "gui_recorded.rs"]
 mod gui_tests;
+
+#[path = "text_health_recorded.rs"]
+mod text_health_tests;

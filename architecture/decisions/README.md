@@ -121,6 +121,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0023](ADR-0023-analytic-part-aggregation.md) | Analytic part aggregation and empty-system semantics | R1/R7 |
 | [ADR-0024](ADR-0024-released-sketch-spline-construction.md) | Released construction of authored sketch splines | R2/R3/R4 |
 | [ADR-0025](ADR-0025-typed-sketch-spline-authoring.md) | Typed sketch spline authoring through the existing owner | R3/R4 |
+| [ADR-0026](ADR-0026-owned-native-keyboard-and-text.md) | Owned native keyboard and text input | R1V/R4 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

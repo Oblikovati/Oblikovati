@@ -3,7 +3,7 @@ use crate::{types::valid_extent, x11::NativeWindow};
 use rustycad_tkernel::standard::Handle;
 use rustycad_tkservice::aspect::{AspectNeutralWindow, AspectWindow, AspectWindowMembers};
 pub(crate) enum ViewTarget {
-    Native(NativeWindow),
+    Native(Box<NativeWindow>),
     Offscreen(Handle<AspectNeutralWindow>),
 }
 impl ViewTarget {

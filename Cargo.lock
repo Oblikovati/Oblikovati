@@ -732,6 +732,7 @@ version = "0.1.0"
 name = "oblikovati-viewport"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "martensite-vulkan",
  "oblikovati-api",
  "oblikovati-martensite",

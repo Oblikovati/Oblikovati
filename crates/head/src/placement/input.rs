@@ -57,6 +57,12 @@ impl SketchPlacementState {
     fn input(&mut self, input: ViewportInput) -> PlacementAction {
         match input {
             ViewportInput::Key { key, pressed } => self.key(key, pressed),
+            ViewportInput::PhysicalKey {
+                command: Some(key),
+                pressed,
+                ..
+            } => self.key(key, pressed),
+            ViewportInput::PhysicalKey { .. } | ViewportInput::Text(_) => PlacementAction::Idle,
             ViewportInput::Wheel { .. } => {
                 self.press = None;
                 PlacementAction::Idle

@@ -12,8 +12,14 @@ the existing text-focus rules. GUI activity joins the existing owner wake deadli
 The active-frame interval follows the pinned Go head's 1/60-second policy.
 Command feedback is copied into the GUI panel so the panel cannot cover it.
 
-The production event source still lacks physical-key and Unicode/IME input.
-That work is not replaced by treating application command keys as physical keys.
+The production X11 event source now copies physical keys and XIM UTF-8 commits
+under [ADR-0026](../decisions/ADR-0026-owned-native-keyboard-and-text.md).
+Layout letters feed GUI shortcuts; physical positions retain navigation identity.
+Keyboard navigation reports pending GUI work even when the pointer is outside
+the panel. Clipboard and inline IME candidate placement remain open.
+Text-provider and locale declines are visible through viewport health and the
+GUI. They leave physical input, commands and rendering available. The host
+keeps the requested provider and produces no substitute text commits.
 Observed native resize between GUI attachment and presentation now requests a
 fresh packet through `SurfaceChanged`. Surface revisions also reject a packet
 after resize away and back to the same extent. Native tests verify recovery and
@@ -64,5 +70,22 @@ The reduced wheel case passed 50 of 50 AMD runs after the fix. The full
 Save/Undo/Redo/Home command case passed 20 of 20 before cleanup and 10 of 10
 after cleanup on AMD. Both focused cases pass on Xvfb/lavapipe. The rapid-click
 engine test still passes. This evidence clears the earlier native GUI blocker;
-physical-key/IME input and renderer-interrupted resize remain open. No kernel source or
-dependency override was introduced.
+the former physical-key/committed-text gap is now handled under ADR-0026.
+Renderer-interrupted resize remains open. No kernel source or dependency
+override was introduced.
+
+## Native keyboard acceptance
+
+The keyboard and text-input gate passed for all 13 crates, every target and
+feature, on Xvfb/lavapipe. Every crate exceeds 80% line coverage: viewport
+94.33%, head 96.18%, GUI 99.30%; the lowest crate is 91.82%. Duplication is
+0.76% (584 of 76,634 lines). The gate includes native tests, doctests, Clippy,
+Markdown, documentation links, SPDX, workflow checks and the build.
+
+The native keyboard Save check also passes on AMD with the inherited unavailable
+IBus configuration. Separate child processes verify unavailable providers and
+locales, completed GUI framebuffers, persistent visible health, and command
+feedback. Native corpus checks cover composed Unicode, supplementary characters,
+active layout groups, mapping changes, repeat, release identity, focus and unmap.
+The retained gate log is `target/quality/native-keyboard-2026-10-14-gate.log`.
+This is local integration evidence; full R1V/R4 acceptance remains open.

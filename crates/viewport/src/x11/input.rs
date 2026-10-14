@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{ViewportButton, ViewportInput, ViewportKey, ViewportModifiers};
-fn copied_modifiers(state: u32) -> ViewportModifiers {
+pub(super) fn copied_modifiers(state: u32) -> ViewportModifiers {
     ViewportModifiers {
         shift: state & xlib::ShiftMask != 0,
         control: state & xlib::ControlMask != 0,
+        alt: state & (xlib::Mod1Mask | xlib::Mod5Mask) != 0,
+        super_key: state & xlib::Mod4Mask != 0,
     }
 }
 fn copied_button(button: u32) -> Option<ViewportButton> {
@@ -15,12 +17,11 @@ fn copied_button(button: u32) -> Option<ViewportButton> {
         _ => None,
     }
 }
-pub(super) fn translate_pointer_key(
-    api: &xlib::Xlib,
+pub(super) fn translate_native_pointer(
     owner: *mut xlib::Display,
     event: xlib::XEvent,
 ) -> Option<ViewportInput> {
-    // Key lookup dereferences the event display; require the owning connection first.
+    // Copied pointer values must come from the owning connection.
     if owner.is_null() || unsafe { event.any.display } != owner {
         return None;
     }
@@ -33,7 +34,6 @@ pub(super) fn translate_pointer_key(
                 modifiers: copied_modifiers(pointer.state),
             })
         }
-        xlib::KeyPress | xlib::KeyRelease => key_input(api, unsafe { event.key }),
         _ => None,
     }
 }
@@ -53,28 +53,21 @@ fn button_input(pointer: xlib::XButtonEvent) -> Option<ViewportInput> {
         modifiers: copied_modifiers(pointer.state),
     })
 }
-fn key_input(api: &xlib::Xlib, mut event: xlib::XKeyEvent) -> Option<ViewportInput> {
-    let symbol = unsafe { (api.XLookupKeysym)(&mut event, 0) };
-    let key = copied_key(symbol as u32, event.state)?;
-    Some(ViewportInput::Key {
-        key,
-        pressed: event.type_ == xlib::KeyPress,
-    })
-}
 #[cfg(test)]
 #[path = "../../tests/x11_input.rs"]
 mod tests;
 
 fn control_only_chord(state: u32) -> bool {
-    state & xlib::ControlMask != 0 && state & (xlib::ShiftMask | xlib::Mod1Mask) == 0
+    state & xlib::ControlMask != 0
+        && state & (xlib::ShiftMask | xlib::Mod1Mask | xlib::Mod4Mask | xlib::Mod5Mask) == 0
 }
 
 fn redo_shift_chord(state: u32) -> bool {
     state & (xlib::ControlMask | xlib::ShiftMask) == xlib::ControlMask | xlib::ShiftMask
-        && state & xlib::Mod1Mask == 0
+        && state & (xlib::Mod1Mask | xlib::Mod4Mask | xlib::Mod5Mask) == 0
 }
 
-fn copied_key(symbol: u32, state: u32) -> Option<ViewportKey> {
+pub(super) fn copied_key(symbol: u32, state: u32) -> Option<ViewportKey> {
     use x11_dl::keysym;
     let key = match symbol {
         keysym::XK_s | keysym::XK_S if control_only_chord(state) => ViewportKey::Save,

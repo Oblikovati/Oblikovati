@@ -21,6 +21,7 @@ rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = 
 rustycad-tkservice = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 rustycad-tkv3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 x11-dl = "=2.21.0"
+libc = "=0.2.190"
 rustix = { version = "=1.1.4", features = ["event"] }
 [dev-dependencies]
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }

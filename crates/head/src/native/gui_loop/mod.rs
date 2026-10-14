@@ -154,6 +154,18 @@ impl NativeGui {
     }
 }
 impl NativeHeadWindow {
+    fn native_gui_notice(&self) -> Result<Option<String>, String> {
+        let mut messages = self
+            .command_notice
+            .as_ref()
+            .map(crate::DesktopCommandNotice::message)
+            .into_iter()
+            .collect::<Vec<_>>();
+        if let Some(issue) = self.view.text_input_issue()? {
+            messages.push(format!("Text input unavailable: {issue}"));
+        }
+        Ok((!messages.is_empty()).then(|| messages.join("\n")))
+    }
     pub(super) fn advance_native_gui(
         &mut self,
         event: Option<&ViewportEvent>,
@@ -168,11 +180,8 @@ impl NativeHeadWindow {
             self.view.set_status_text("")?;
         }
         let now = self.gui_epoch.elapsed();
+        let notice = self.native_gui_notice()?;
         let gui = self.gui.as_mut().expect("initialized GUI");
-        let notice = self
-            .command_notice
-            .as_ref()
-            .map(crate::DesktopCommandNotice::message);
         let mut update = gui.step(now, extent, event, commands, notice.as_deref())?;
         if gui.dirty {
             publish_gui(&mut self.view, gui, now, &mut update)?;
@@ -201,6 +210,9 @@ fn publish_gui(
     Ok(())
 }
 
+#[cfg(test)]
+#[path = "../../../tests/native_input_method.rs"]
+mod provider_tests;
 #[cfg(test)]
 #[path = "../../../tests/gui_loop_clock.rs"]
 mod tests;

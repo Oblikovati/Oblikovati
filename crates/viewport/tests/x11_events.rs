@@ -129,7 +129,7 @@ fn native_wait_preserves_pending_events_and_consumes_worker_wakes() {
         .wait_events(&wake, Some(Duration::ZERO))
         .unwrap();
     assert!(ready.native_events);
-    assert!(!fixture.window.poll(64).is_empty());
+    assert!(!fixture.window.poll(64).unwrap().is_empty());
     let worker = wake.clone();
     std::thread::spawn(move || worker.wake().unwrap())
         .join()

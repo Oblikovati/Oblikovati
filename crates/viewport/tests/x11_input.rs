@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::super::private_server::PrivateX11Server;
 use super::super::{NativeWindow, NativeX11};
 use super::*;
 struct NativeInputFixture {
@@ -10,6 +11,24 @@ impl NativeInputFixture {
             window: NativeWindow::create(
                 NativeX11::open().unwrap(),
                 "Oblikovati input acceptance",
+                [64, 48],
+            )
+            .unwrap(),
+        }
+    }
+    fn on_display(name: &str) -> Self {
+        let x11 = NativeX11::open().unwrap();
+        let display = Handle::new(
+            AspectDisplayConnection::with_display_name(
+                &rustycad_tkernel::tcollection::AsciiString::from(name),
+            )
+            .unwrap(),
+        );
+        Self {
+            window: NativeWindow::create_with_display(
+                x11,
+                display,
+                "Oblikovati compose acceptance",
                 [64, 48],
             )
             .unwrap(),
@@ -64,10 +83,7 @@ fn mouse_buttons_copy_positions_and_modifiers_and_ignore_auxiliary_releases() {
     let mut event = fixture.event(xlib::ButtonRelease);
     for button in [4, 5, 9] {
         event.button.button = button;
-        assert!(
-            translate_pointer_key(&fixture.window.x11.api, fixture.window.pointer(), event)
-                .is_none()
-        );
+        assert!(translate_native_pointer(fixture.window.pointer(), event).is_none());
     }
 }
 fn check_native_button(
@@ -99,13 +115,14 @@ fn expected_button_input(button: ViewportButton, pressed: bool) -> ViewportInput
         modifiers: ViewportModifiers {
             shift: true,
             control: true,
+            ..Default::default()
         },
     }
 }
 #[test]
 fn wheel_and_motion_events_are_copied_through_the_actual_native_queue() {
     let fixture = NativeInputFixture::new();
-    fixture.window.poll(64);
+    fixture.window.poll(64).unwrap();
     for (button, notches) in [(4, 1), (5, -1)] {
         let mut event = fixture.event(xlib::ButtonPress);
         event.button.button = button;
@@ -114,7 +131,7 @@ fn wheel_and_motion_events_are_copied_through_the_actual_native_queue() {
             notches,
             position: [0, 0],
         });
-        assert!(fixture.window.poll(64).contains(&expected));
+        assert!(fixture.window.poll(64).unwrap().contains(&expected));
     }
     check_native_motion(&fixture);
 }
@@ -129,9 +146,10 @@ fn check_native_motion(fixture: &NativeInputFixture) {
         modifiers: ViewportModifiers {
             shift: true,
             control: false,
+            ..Default::default()
         },
     });
-    assert!(fixture.window.poll(64).contains(&expected));
+    assert!(fixture.window.poll(64).unwrap().contains(&expected));
 }
 #[test]
 fn navigation_keys_use_the_native_keymap_and_preserve_press_release_state() {
@@ -157,18 +175,20 @@ fn check_unrelated_native_input(fixture: &NativeInputFixture) {
             .is_none()
     );
     let event = fixture.event(xlib::Expose);
-    assert!(
-        translate_pointer_key(&fixture.window.x11.api, fixture.window.pointer(), event).is_none()
-    );
+    assert!(translate_native_pointer(fixture.window.pointer(), event).is_none());
     assert!(copied_button(9).is_none());
 }
 
 fn check_mapped_key(fixture: &NativeInputFixture, symbol: u32, key: ViewportKey) {
     for pressed in [true, false] {
-        let expected = ViewportEvent::Input(ViewportInput::Key { key, pressed });
         assert_eq!(
-            fixture.window.translate(fixture.key(symbol, pressed)),
-            Some(expected)
+            copied_command(
+                &fixture
+                    .window
+                    .copy_event(fixture.key(symbol, pressed))
+                    .unwrap()
+            ),
+            Some((key, pressed))
         );
     }
 }
@@ -178,10 +198,10 @@ fn missing_and_foreign_display_pointers_are_declined_before_key_lookup() {
     let fixture = NativeInputFixture::new();
     let mut event = fixture.key(x11_dl::keysym::XK_F2, true);
     event.key.display = std::ptr::null_mut();
-    assert!(fixture.window.translate(event).is_none());
+    assert!(fixture.window.copy_event(event).unwrap().is_empty());
     event.key.display = std::ptr::dangling_mut();
-    assert!(fixture.window.translate(event).is_none());
-    assert!(translate_pointer_key(&fixture.window.x11.api, std::ptr::null_mut(), event).is_none());
+    assert!(fixture.window.copy_event(event).unwrap().is_empty());
+    assert!(translate_native_pointer(std::ptr::null_mut(), event).is_none());
 }
 
 #[test]
@@ -202,11 +222,11 @@ fn check_native_save_key(fixture: &NativeInputFixture, state: u32, accepted: boo
     for pressed in [true, false] {
         let mut event = fixture.key(x11_dl::keysym::XK_s, pressed);
         event.key.state = state;
-        let expected = accepted.then_some(ViewportEvent::Input(ViewportInput::Key {
-            key: ViewportKey::Save,
-            pressed,
-        }));
-        assert_eq!(fixture.window.translate(event), expected);
+        let expected = accepted.then_some((ViewportKey::Save, pressed));
+        assert_eq!(
+            copied_command(&fixture.window.copy_event(event).unwrap()),
+            expected
+        );
     }
 }
 
@@ -236,7 +256,24 @@ fn verify_native_history_key(
     for pressed in [true, false] {
         let mut event = fixture.key(symbol, pressed);
         event.key.state = state;
-        let expected = key.map(|key| ViewportEvent::Input(ViewportInput::Key { key, pressed }));
-        assert_eq!(fixture.window.translate(event), expected);
+        let expected = key.map(|key| (key, pressed));
+        assert_eq!(
+            copied_command(&fixture.window.copy_event(event).unwrap()),
+            expected
+        );
     }
 }
+
+fn copied_command(events: &[ViewportEvent]) -> Option<(ViewportKey, bool)> {
+    events.iter().find_map(|event| match event {
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            command: Some(key),
+            pressed,
+            ..
+        })
+        | ViewportEvent::Input(ViewportInput::Key { key, pressed }) => Some((*key, *pressed)),
+        _ => None,
+    })
+}
+#[path = "x11_keyboard.rs"]
+mod keyboard_tests;

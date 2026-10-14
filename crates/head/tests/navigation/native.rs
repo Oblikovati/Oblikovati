@@ -17,6 +17,7 @@ fn motion_input(position: [i32; 2], shift: bool) -> ViewportEvent {
         modifiers: ViewportModifiers {
             shift,
             control: false,
+            ..Default::default()
         },
     })
 }

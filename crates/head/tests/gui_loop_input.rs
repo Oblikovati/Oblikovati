@@ -1,11 +1,68 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_viewport::ViewportPhysicalKey;
 fn captured(pointer: bool) -> GuiInputCapture {
     GuiInputCapture {
         pointer,
         keyboard: true,
         text: true,
     }
+}
+#[test]
+fn physical_keys_and_modifiers_reach_the_gui_as_owned_events() {
+    let modifiers = ViewportModifiers {
+        shift: true,
+        control: true,
+        alt: true,
+        super_key: true,
+    };
+    let event = physical_gui_key_event(
+        ViewportPhysicalKey::Tab,
+        ViewportPhysicalKey::Tab,
+        modifiers,
+    );
+    assert_gui_tab_packet(&event, modifiers);
+    let mut routing = PointerOwnership::default();
+    assert!(routing.consumed(Some(&event), captured(true)));
+}
+#[test]
+fn physical_command_chords_keep_the_existing_text_focus_policy() {
+    let mut routing = PointerOwnership::default();
+    for (key, command, consumed) in [
+        (ViewportPhysicalKey::S, ViewportKey::Save, false),
+        (ViewportPhysicalKey::F6, ViewportKey::Home, true),
+    ] {
+        let event = ViewportEvent::Input(ViewportInput::PhysicalKey {
+            key,
+            layout_key: key,
+            command: Some(command),
+            pressed: true,
+            modifiers: Default::default(),
+        });
+        assert_eq!(routing.consumed(Some(&event), captured(true)), consumed);
+    }
+}
+#[test]
+fn gui_shortcuts_follow_layout_letters_without_changing_physical_position() {
+    let event = physical_gui_key_event(
+        ViewportPhysicalKey::Q,
+        ViewportPhysicalKey::A,
+        ViewportModifiers {
+            control: true,
+            ..Default::default()
+        },
+    );
+    let copied = copied_gui_events(Some(&event));
+    assert!(matches!(
+        copied.as_slice(),
+        [
+            GuiInputEvent::Modifiers(_),
+            GuiInputEvent::Key {
+                key: ViewportPhysicalKey::A,
+                pressed: true
+            }
+        ]
+    ));
 }
 fn press(button: ViewportButton, pressed: bool) -> ViewportEvent {
     ViewportEvent::Input(ViewportInput::Button {
@@ -107,6 +164,7 @@ fn copied_pointer_events_preserve_coordinates_buttons_and_modifiers() {
         modifiers: ViewportModifiers {
             shift: true,
             control: true,
+            ..Default::default()
         },
     });
     assert_eq!(
@@ -158,4 +216,43 @@ fn wheel_and_focus_are_copied_but_mapping_does_not_invent_focus() {
         assert!(copied_gui_events(event).is_empty());
         assert!(!routing.consumed(event, captured(true)));
     }
+}
+
+#[test]
+fn committed_unicode_is_owned_text_and_obeys_text_capture() {
+    let text = ViewportEvent::Input(ViewportInput::Text('🙂'));
+    assert_eq!(
+        copied_gui_events(Some(&text)),
+        [GuiInputEvent::Text("🙂".into())]
+    );
+    let mut routing = PointerOwnership::default();
+    assert!(routing.consumed(Some(&text), captured(true)));
+    assert!(!routing.consumed(Some(&text), Default::default()));
+}
+
+fn physical_gui_key_event(
+    key: ViewportPhysicalKey,
+    layout_key: ViewportPhysicalKey,
+    modifiers: ViewportModifiers,
+) -> ViewportEvent {
+    ViewportEvent::Input(ViewportInput::PhysicalKey {
+        key,
+        layout_key,
+        modifiers,
+        command: None,
+        pressed: true,
+    })
+}
+
+fn assert_gui_tab_packet(event: &ViewportEvent, modifiers: ViewportModifiers) {
+    assert_eq!(
+        copied_gui_events(Some(event)),
+        [
+            GuiInputEvent::Modifiers(modifiers),
+            GuiInputEvent::Key {
+                key: ViewportPhysicalKey::Tab,
+                pressed: true
+            }
+        ]
+    );
 }

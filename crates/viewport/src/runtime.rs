@@ -50,9 +50,9 @@ impl ViewportRuntime {
             .as_ref()
             .ok_or("viewport runtime: expected native X11 support")?
             .clone();
-        self.create(ViewTarget::Native(NativeWindow::create(
+        self.create(ViewTarget::Native(Box::new(NativeWindow::create(
             x11, title, extent,
-        )?))
+        )?)))
     }
     /// Create an explicit capture target on the same kernel renderer; example: `runtime.open_offscreen([64,64])?`.
     pub fn open_offscreen(&self, extent: [u32; 2]) -> Result<Viewport, String> {
@@ -186,12 +186,21 @@ impl Viewport {
         self.completed = None;
         Ok(())
     }
+    /// Read a native text-input decline without stopping rendering or commands.
+    /// Example: `viewport.text_input_issue()?` supplies the GUI health message.
+    pub fn text_input_issue(&self) -> Result<Option<String>, String> {
+        self.live()?;
+        Ok(match self.target.as_ref().expect("live target") {
+            ViewTarget::Native(native) => native.text_input_issue(),
+            ViewTarget::Offscreen(_) => None,
+        })
+    }
     /// Poll bounded native lifecycle events; offscreen targets have no native events.
     /// Example: `viewport.poll_events(32)?` lets the owner react to close requests.
     pub fn poll_events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.live()?;
         let events = match self.target.as_ref().expect("live target") {
-            ViewTarget::Native(native) => native.poll(limit),
+            ViewTarget::Native(native) => native.poll(limit)?,
             ViewTarget::Offscreen(_) => Vec::new(),
         };
         self.observe_visibility(&events)?;

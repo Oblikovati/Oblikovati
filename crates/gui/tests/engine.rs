@@ -136,6 +136,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     ] {
         verify_gui_click(engine, &mut input, x, action);
     }
+    verify_keyboard_save_activation(engine);
     verify_scaled_frame(engine);
     verify_exclusive_context(engine);
     verify_invalid_requests(engine);
@@ -144,7 +145,42 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     verify_queued_clicks_survive_frame_boundaries(engine);
     verify_owner_command_enabling(engine);
 }
+fn verify_keyboard_save_activation(engine: &mut GuiFrameEngine) {
+    let mut input = request();
+    click_control(engine, &mut input, 165.);
+    input.events = vec![GuiInputEvent::PointerMoved([600., 300.])];
+    engine.frame(&input).unwrap();
+    let mut actions = Vec::new();
+    for key in [
+        GuiKey::LeftArrow,
+        GuiKey::LeftArrow,
+        GuiKey::LeftArrow,
+        GuiKey::Space,
+    ] {
+        actions.extend(copy_keyboard_actions(engine, &mut input, key));
+    }
+    input.events.clear();
+    actions.extend(engine.frame(&input).unwrap().actions);
+    assert_eq!(actions, [GuiShellAction::Save]);
+}
 
+fn copy_keyboard_actions(
+    engine: &mut GuiFrameEngine,
+    input: &mut GuiFrameRequest,
+    key: GuiKey,
+) -> Vec<GuiShellAction> {
+    let mut actions = Vec::new();
+    for pressed in [true, false] {
+        input.events = vec![GuiInputEvent::Key { key, pressed }];
+        let output = engine.frame(input).unwrap();
+        if key == GuiKey::LeftArrow && pressed {
+            assert!(output.activity.pending_navigation);
+            assert!(output.activity.needs_frame());
+        }
+        actions.extend(output.actions);
+    }
+    actions
+}
 fn verify_scaled_input_overflow(engine: &mut GuiFrameEngine) {
     let mut input = request();
     input.framebuffer_scale[0] = f32::from_bits(1);

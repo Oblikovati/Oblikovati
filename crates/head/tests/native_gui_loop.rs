@@ -94,6 +94,60 @@ fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {
     owner.finish().unwrap();
     window.finish().unwrap();
 }
+#[test]
+fn physical_keyboard_navigation_activates_native_save_without_camera_input() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("keyboard commands.opd");
+    let native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(native.wake.clone()).unwrap();
+    open_native_part(&mut owner, &path);
+    let mut window = scripted_window(native);
+    publish_gui_framebuffer(&mut owner, &mut window.native);
+    native_set(&mut owner, "width", "6 cm");
+    click_shell(&mut window, &mut owner, 165);
+    verify_keyboard_save_navigation(&mut window, &mut owner, &path);
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn verify_keyboard_save_navigation(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    path: &std::path::Path,
+) {
+    let camera = window.native.view.camera_state().unwrap();
+    for _ in 0..3 {
+        press_shell_key(
+            window,
+            owner,
+            oblikovati_viewport::ViewportPhysicalKey::LeftArrow,
+        );
+    }
+    press_shell_key(
+        window,
+        owner,
+        oblikovati_viewport::ViewportPhysicalKey::Space,
+    );
+    verify_gui_save(path, &mut window.native);
+    assert_eq!(window.native.view.camera_state().unwrap(), camera);
+}
+fn press_shell_key(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    key: oblikovati_viewport::ViewportPhysicalKey,
+) {
+    window.scripted = [true, false]
+        .map(|pressed| {
+            ViewportEvent::Input(ViewportInput::PhysicalKey {
+                key,
+                layout_key: key,
+                command: None,
+                pressed,
+                modifiers: Default::default(),
+            })
+        })
+        .into();
+    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
+}
 fn publish_gui_framebuffer(
     owner: &mut NativeDesktopOwner,
     window: &mut NativeHeadWindow,

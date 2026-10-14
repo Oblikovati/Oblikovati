@@ -2,11 +2,18 @@
 use crate::{ViewportEvent, types::valid_extent};
 #[path = "x11/input.rs"]
 mod input;
+mod keyboard;
+mod keyboard_map;
+mod layout;
+mod text;
+mod text_channel;
 use rustycad_tkernel::standard::Handle;
 use rustycad_tkservice::{
     aspect::{AspectDisplayConnection, AspectWindow, AspectXAtom},
     xw::XwWindow,
 };
+use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::{
     ffi::{CStr, CString},
     rc::Rc,
@@ -27,22 +34,35 @@ impl Drop for NativeImage<'_> {
 }
 pub(crate) struct NativeX11 {
     api: Arc<xlib::Xlib>,
+    input_locale: Result<(), String>,
+}
+#[derive(Clone)]
+struct InitializedXlib {
+    api: Arc<xlib::Xlib>,
+    input_locale: Result<(), String>,
 }
 impl NativeX11 {
     pub fn open() -> Result<Rc<Self>, String> {
         // Runtime creation precedes all application X11 connections and add-in activation.
         // Keep the initialized library loaded: XInitThreads state belongs to that library.
-        static API: OnceLock<Result<Arc<xlib::Xlib>, String>> = OnceLock::new();
-        let api = API.get_or_init(load_threaded_xlib).clone()?;
-        Ok(Rc::new(Self { api }))
+        static API: OnceLock<Result<InitializedXlib, String>> = OnceLock::new();
+        let initialized = API.get_or_init(load_threaded_xlib).clone()?;
+        Ok(Rc::new(Self {
+            api: initialized.api,
+            input_locale: initialized.input_locale,
+        }))
     }
 }
-fn load_threaded_xlib() -> Result<Arc<xlib::Xlib>, String> {
+fn load_threaded_xlib() -> Result<InitializedXlib, String> {
     let api = xlib::Xlib::open()
         .map_err(|cause| format!("X11 runtime: expected loadable Xlib: {cause}"))?;
     // Xlib's thread contract: https://www.x.org/releases/current/doc/libX11/libX11/libX11.html
     require_threaded_xlib(unsafe { (api.XInitThreads)() })?;
-    Ok(Arc::new(api))
+    let input_locale = text::configure_input_locale(&api);
+    Ok(InitializedXlib {
+        api: Arc::new(api),
+        input_locale,
+    })
 }
 fn require_threaded_xlib(status: i32) -> Result<(), String> {
     if status == 0 {
@@ -53,29 +73,54 @@ fn require_threaded_xlib(status: i32) -> Result<(), String> {
     Ok(())
 }
 pub(crate) struct NativeWindow {
+    keyboard: keyboard::NativeKeyboard,
+    copied_input: RefCell<VecDeque<ViewportEvent>>,
     pub window: Handle<XwWindow>,
     display: Handle<AspectDisplayConnection>,
     x11: Rc<NativeX11>,
 }
 impl NativeWindow {
     pub fn create(x11: Rc<NativeX11>, title: &str, extent: [u32; 2]) -> Result<Self, String> {
-        let [width, height] = valid_extent(extent)?;
+        valid_extent(extent)?;
         validate_title(title)?;
         let display =
             Handle::new(AspectDisplayConnection::new().map_err(|error| error.to_string())?);
+        Self::create_with_display(x11, display, title, extent)
+    }
+    pub(super) fn create_with_display(
+        x11: Rc<NativeX11>,
+        display: Handle<AspectDisplayConnection>,
+        title: &str,
+        extent: [u32; 2],
+    ) -> Result<Self, String> {
+        let [width, height] = valid_extent(extent)?;
+        validate_title(title)?;
         let window = Handle::new(
             XwWindow::create(&display, title, 100, 100, width, height)
                 .map_err(|error| error.to_string())?,
         );
         let result = Self {
+            keyboard: keyboard::NativeKeyboard::open(
+                x11.clone(),
+                display.clone(),
+                window.native_handle(),
+            )?,
+            copied_input: RefCell::new(VecDeque::new()),
             window,
             display,
             x11,
         };
-        result.configure_events()?;
-        result.mapped(true)?;
-        result.window.do_resize();
+        result.activate_window()?;
         Ok(result)
+    }
+    fn activate_window(&self) -> Result<(), String> {
+        self.configure_events()?;
+        self.mapped(true)?;
+        self.window.do_resize();
+        Ok(())
+    }
+    pub(super) fn text_input_issue(&self) -> Option<String> {
+        self.keyboard.text_input_issue()
     }
     fn pointer(&self) -> *mut xlib::Display {
         self.display.get_display_aspect() as *mut xlib::Display
@@ -162,7 +207,9 @@ impl NativeWindow {
         wake: &crate::ViewportWake,
         timeout: Option<Duration>,
     ) -> Result<crate::ViewportReady, String> {
-        if unsafe { (self.x11.api.XPending)(self.pointer()) } != 0 {
+        if !self.copied_input.borrow().is_empty()
+            || unsafe { (self.x11.api.XPending)(self.pointer()) } != 0
+        {
             return Ok(crate::ViewportReady {
                 native_events: true,
                 worker_wake: wake.consume()?,
@@ -178,9 +225,13 @@ impl NativeWindow {
         let native = unsafe { rustix::fd::BorrowedFd::borrow_raw(descriptor) };
         wake.wait(native, timeout)
     }
-    pub fn poll(&self, limit: usize) -> Vec<ViewportEvent> {
+    pub fn poll(&self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         let mut events = Vec::new();
         for _ in 0..limit {
+            if let Some(event) = self.copied_input.borrow_mut().pop_front() {
+                events.push(event);
+                continue;
+            }
             if unsafe { (self.x11.api.XPending)(self.pointer()) } == 0 {
                 break;
             }
@@ -188,11 +239,11 @@ impl NativeWindow {
             unsafe {
                 (self.x11.api.XNextEvent)(self.pointer(), event.as_mut_ptr());
             }
-            if let Some(event) = self.translate(unsafe { event.assume_init() }) {
-                events.push(event);
-            }
+            self.copied_input
+                .borrow_mut()
+                .extend(self.copy_event(unsafe { event.assume_init() })?);
         }
-        events
+        Ok(events)
     }
     fn translate(&self, event: xlib::XEvent) -> Option<ViewportEvent> {
         if unsafe { event.any.window } != self.window.native_handle() {
@@ -208,8 +259,7 @@ impl NativeWindow {
                 Some(ViewportEvent::Mapped(event.get_type() == xlib::MapNotify))
             }
             xlib::ClientMessage => self.close_event(event),
-            _ => input::translate_pointer_key(&self.x11.api, self.pointer(), event)
-                .map(ViewportEvent::Input),
+            _ => input::translate_native_pointer(self.pointer(), event).map(ViewportEvent::Input),
         }
     }
     fn resize_event(&self) -> ViewportEvent {
@@ -337,6 +387,9 @@ fn validate_title(title: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
+#[path = "../tests/private_x11.rs"]
+mod private_server;
 #[cfg(test)]
 #[path = "../tests/x11_events.rs"]
 mod tests;

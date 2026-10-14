@@ -9,6 +9,23 @@ struct FakeGuiWindow {
     states: Vec<oblikovati_gui::GuiCommandState>,
     presentations: usize,
 }
+#[test]
+fn physical_command_dispatch_reuses_the_semantic_command_path() {
+    let input = ViewportEvent::Input(ViewportInput::PhysicalKey {
+        key: oblikovati_viewport::ViewportPhysicalKey::S,
+        layout_key: oblikovati_viewport::ViewportPhysicalKey::S,
+        command: Some(ViewportKey::Save),
+        pressed: true,
+        modifiers: Default::default(),
+    });
+    let expected = ViewportEvent::Input(ViewportInput::Key {
+        key: ViewportKey::Save,
+        pressed: true,
+    });
+    assert_eq!(semantic_command_event(input), expected);
+    let text = ViewportEvent::Input(ViewportInput::Text('界'));
+    assert_eq!(semantic_command_event(text), text);
+}
 impl HeadWindow for FakeGuiWindow {
     fn gui_frame(
         &mut self,

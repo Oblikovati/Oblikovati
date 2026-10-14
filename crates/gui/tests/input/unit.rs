@@ -3,11 +3,13 @@ use super::*;
 use imgui::{Condition, Context};
 #[test]
 fn named_keys_and_buttons_have_unique_explicit_bindings() {
-    let codes: std::collections::BTreeSet<u32> =
-        GuiKey::ALL.iter().map(|key| key.native() as u32).collect();
+    let codes: std::collections::BTreeSet<u32> = GuiKey::ALL
+        .iter()
+        .map(|key| native_gui_key(*key) as u32)
+        .collect();
     assert_eq!(codes.len(), GuiKey::ALL.len());
-    assert_eq!(GuiKey::S.native(), Key::S);
-    assert_eq!(GuiKey::KeypadEnter.native(), Key::KeypadEnter);
+    assert_eq!(native_gui_key(GuiKey::S), Key::S);
+    assert_eq!(native_gui_key(GuiKey::KeypadEnter), Key::KeypadEnter);
     assert_eq!(GuiPointerButton::Left.native(), MouseButton::Left);
     assert_eq!(GuiPointerButton::Middle.native(), MouseButton::Middle);
     assert_eq!(GuiPointerButton::Right.native(), MouseButton::Right);

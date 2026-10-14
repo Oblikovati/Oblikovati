@@ -14,6 +14,7 @@ fn pointer_motion(position: [i32; 2], shift: bool) -> ViewportEvent {
         modifiers: ViewportModifiers {
             shift,
             control: true,
+            ..Default::default()
         },
     })
 }

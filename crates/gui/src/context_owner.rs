@@ -29,6 +29,10 @@ pub(crate) fn frame_activity() -> Result<crate::GuiFrameActivity, String> {
     Ok(crate::GuiFrameActivity {
         queued_input: context.InputEventsQueue.Size > 0,
         pending_layout: pending_window_layout(context)?,
+        pending_navigation: context.NavMoveSubmitted
+            || context.NavInitRequest
+            || context.NavInitResultId != 0
+            || context.NavNextActivateId != 0,
         interaction: interactive_context(context),
     })
 }

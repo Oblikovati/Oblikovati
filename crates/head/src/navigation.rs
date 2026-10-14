@@ -56,11 +56,22 @@ impl DesktopNavigation {
             ViewportInput::Key {
                 key: ViewportKey::Home,
                 pressed: true,
+            }
+            | ViewportInput::PhysicalKey {
+                command: Some(ViewportKey::Home),
+                pressed: true,
+                ..
             } => {
                 self.clear_gesture();
                 return Ok(Some(ViewportNavigation::Home { margin: 0.1 }));
             }
-            ViewportInput::Key { key, pressed } => self.key_mode(key, pressed),
+            ViewportInput::Key { key, pressed }
+            | ViewportInput::PhysicalKey {
+                command: Some(key),
+                pressed,
+                ..
+            } => self.key_mode(key, pressed),
+            ViewportInput::PhysicalKey { .. } | ViewportInput::Text(_) => {}
         }
         Ok(None)
     }

@@ -59,7 +59,7 @@ fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context
         .io_mut()
         .config_flags
-        .insert(ConfigFlags::DOCKING_ENABLE);
+        .insert(ConfigFlags::DOCKING_ENABLE | ConfigFlags::NAV_ENABLE_KEYBOARD);
     let atlas = copy_atlas(context);
     // imgui-rs e246a334 rebuilds and clears TexID; bind after the atlas is built.
     context.fonts().tex_id = TextureId::new(FONT_TEXTURE_ID);

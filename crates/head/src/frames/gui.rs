@@ -40,10 +40,23 @@ pub(super) fn dispatch_frame_input(
     owner: &mut dyn HeadWork,
     event: &ViewportEvent,
 ) -> Result<bool, String> {
+    let event = semantic_command_event(*event);
+    let event = &event;
     let mut changed = window.process_view_input(event)?;
     changed |= owner.process_window_inputs(&[*event], window)?;
     changed |= synchronize_sketch_view(window, owner)?;
     Ok(changed)
+}
+fn semantic_command_event(event: ViewportEvent) -> ViewportEvent {
+    let ViewportEvent::Input(ViewportInput::PhysicalKey {
+        command: Some(key),
+        pressed,
+        ..
+    }) = event
+    else {
+        return event;
+    };
+    ViewportEvent::Input(ViewportInput::Key { key, pressed })
 }
 pub(super) fn earliest_wake(left: Option<Duration>, right: Option<Duration>) -> Option<Duration> {
     left.into_iter().chain(right).min()

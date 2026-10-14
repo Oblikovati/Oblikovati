@@ -1,139 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Io, Key, MouseButton};
-macro_rules! owned_keyboard_keys {
+pub use oblikovati_viewport::ViewportPhysicalKey as GuiKey;
+macro_rules! native_gui_keys {
     ($($key:ident),+ $(,)?) => {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-        pub enum GuiKey { $($key),+ }
-        impl GuiKey {
-            #[cfg(test)]
-            pub(crate) const ALL: &[Self] = &[$(Self::$key),+];
-            pub(crate) fn native(self) -> Key {
-                match self { $(Self::$key => Key::$key),+ }
-            }
+        pub(crate) fn native_gui_key(key: GuiKey) -> Key {
+            match key { $(GuiKey::$key => Key::$key),+ }
         }
     };
 }
-owned_keyboard_keys!(
-    Tab,
-    LeftArrow,
-    RightArrow,
-    UpArrow,
-    DownArrow,
-    PageUp,
-    PageDown,
-    Home,
-    End,
-    Insert,
-    Delete,
-    Backspace,
-    Space,
-    Enter,
-    Escape,
-    LeftCtrl,
-    LeftShift,
-    LeftAlt,
-    LeftSuper,
-    RightCtrl,
-    RightShift,
-    RightAlt,
-    RightSuper,
-    Menu,
-    Alpha0,
-    Alpha1,
-    Alpha2,
-    Alpha3,
-    Alpha4,
-    Alpha5,
-    Alpha6,
-    Alpha7,
-    Alpha8,
-    Alpha9,
-    A,
-    B,
-    C,
-    D,
-    E,
-    F,
-    G,
-    H,
-    I,
-    J,
-    K,
-    L,
-    M,
-    N,
-    O,
-    P,
-    Q,
-    R,
-    S,
-    T,
-    U,
-    V,
-    W,
-    X,
-    Y,
-    Z,
-    F1,
-    F2,
-    F3,
-    F4,
-    F5,
-    F6,
-    F7,
-    F8,
-    F9,
-    F10,
-    F11,
-    F12,
-    Apostrophe,
-    Comma,
-    Minus,
-    Period,
-    Slash,
-    Semicolon,
-    Equal,
-    LeftBracket,
-    Backslash,
-    RightBracket,
-    GraveAccent,
-    CapsLock,
-    ScrollLock,
-    NumLock,
-    PrintScreen,
-    Pause,
-    Keypad0,
-    Keypad1,
-    Keypad2,
-    Keypad3,
-    Keypad4,
-    Keypad5,
-    Keypad6,
-    Keypad7,
-    Keypad8,
-    Keypad9,
-    KeypadDecimal,
-    KeypadDivide,
-    KeypadMultiply,
-    KeypadSubtract,
-    KeypadAdd,
-    KeypadEnter,
-    KeypadEqual,
-);
+oblikovati_viewport::viewport_keyboard_keys!(native_gui_keys);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiPointerButton {
     Left,
     Middle,
     Right,
 }
-/// Aggregate modifier state accompanies physical key events, including AltGr combinations.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct GuiModifiers {
-    pub control: bool,
-    pub shift: bool,
-    pub alt: bool,
-    pub super_key: bool,
-}
+pub use oblikovati_viewport::ViewportModifiers as GuiModifiers;
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiInputEvent {
     Focus(bool),
@@ -182,7 +64,7 @@ pub(crate) fn apply_input(io: &mut Io, event: &GuiInputEvent, scale: [f32; 2]) {
             io.add_mouse_button_event(button.native(), *pressed)
         }
         GuiInputEvent::Wheel(wheel) => io.add_mouse_wheel_event(*wheel),
-        GuiInputEvent::Key { key, pressed } => io.add_key_event(key.native(), *pressed),
+        GuiInputEvent::Key { key, pressed } => io.add_key_event(native_gui_key(*key), *pressed),
         GuiInputEvent::Modifiers(modifiers) => apply_modifiers(io, *modifiers),
         GuiInputEvent::Text(text) => apply_text(io, text),
     }

@@ -4,6 +4,8 @@
 pub struct ViewportModifiers {
     pub shift: bool,
     pub control: bool,
+    pub alt: bool,
+    pub super_key: bool,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewportButton {
@@ -43,6 +45,14 @@ pub enum ViewportInput {
         key: ViewportKey,
         pressed: bool,
     },
+    PhysicalKey {
+        key: crate::ViewportPhysicalKey,
+        layout_key: crate::ViewportPhysicalKey,
+        command: Option<ViewportKey>,
+        pressed: bool,
+        modifiers: ViewportModifiers,
+    },
+    Text(char),
 }
 /// Camera-only requests to the kernel adapter; they cannot change document geometry.
 #[derive(Clone, Copy, Debug, PartialEq)]

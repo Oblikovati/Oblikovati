@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_gui::{GuiInputCapture, GuiInputEvent, GuiModifiers, GuiPointerButton};
+#[cfg(test)]
+use oblikovati_gui::GuiModifiers;
+use oblikovati_gui::{GuiInputCapture, GuiInputEvent, GuiPointerButton};
 use oblikovati_viewport::{
     ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportModifiers,
 };
@@ -35,6 +37,13 @@ impl PointerOwnership {
             }
             ViewportInput::Wheel { .. } => capture.pointer,
             ViewportInput::Key { key, pressed } => pressed && capture.text && !global_chord(key),
+            ViewportInput::PhysicalKey {
+                command: Some(key),
+                pressed,
+                ..
+            } => pressed && capture.text && !global_chord(key),
+            ViewportInput::PhysicalKey { pressed, .. } => pressed && capture.keyboard,
+            ViewportInput::Text(_) => capture.text,
         }
     }
     fn button(&mut self, button: ViewportButton, pressed: bool, capture: bool) -> bool {
@@ -96,16 +105,22 @@ fn pointer_events(input: ViewportInput) -> Vec<GuiInputEvent> {
         ],
         // These are already resolved application commands, not physical key events.
         ViewportInput::Key { .. } => Vec::new(),
+        ViewportInput::PhysicalKey {
+            layout_key: key,
+            pressed,
+            modifiers,
+            ..
+        } => vec![
+            GuiInputEvent::Modifiers(modifiers),
+            GuiInputEvent::Key { key, pressed },
+        ],
+        ViewportInput::Text(character) => vec![GuiInputEvent::Text(character.to_string())],
     }
 }
 fn positioned(position: [i32; 2], modifiers: ViewportModifiers) -> Vec<GuiInputEvent> {
     vec![
         GuiInputEvent::PointerMoved(position.map(|v| v as f32)),
-        GuiInputEvent::Modifiers(GuiModifiers {
-            shift: modifiers.shift,
-            control: modifiers.control,
-            ..Default::default()
-        }),
+        GuiInputEvent::Modifiers(modifiers),
     ]
 }
 
