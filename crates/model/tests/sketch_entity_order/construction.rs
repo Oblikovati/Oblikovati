@@ -64,7 +64,7 @@ fn invalid_batches_cannot_partially_flag_curves_or_claim_a_point_role() {
             .set_curve_construction(&ids, true)
             .unwrap_err()
             .to_string();
-        assert!(cause.contains("expected unique owned line/circle/arc/ellipse IDs"));
+        assert!(cause.contains("expected unique owned curve IDs"));
         assert!(cause.contains(&format!("{ids:?}")));
         assert!(sketch.same_recipe(&original));
     }

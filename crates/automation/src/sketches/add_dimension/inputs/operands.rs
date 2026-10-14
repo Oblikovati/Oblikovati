@@ -7,6 +7,7 @@ pub(super) enum Shape {
     Circular,
     Arc,
     Ellipse,
+    OffsetSpline,
 }
 impl Shape {
     fn matches(self, kind: SketchEntityKind) -> bool {
@@ -16,6 +17,7 @@ impl Shape {
             Self::Circular => kind == SKETCH_ENTITY_CIRCLE || kind == SKETCH_ENTITY_ARC,
             Self::Arc => kind == SKETCH_ENTITY_ARC,
             Self::Ellipse => kind == SKETCH_ENTITY_ELLIPSE,
+            Self::OffsetSpline => kind == SKETCH_ENTITY_OFFSET_SPLINE,
         }
     }
 }

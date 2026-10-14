@@ -62,10 +62,7 @@ fn valid_yaml_with_foreign_or_point_metadata_refuses_owner_restore() {
             serde_yaml_ng::to_value(vec![id]).unwrap();
         let cause = restore_decline(&document);
         assert!(cause.contains(&id.to_string()), "{cause}");
-        assert!(
-            cause.contains("expected unique owned line/circle/arc/ellipse IDs"),
-            "{cause}"
-        );
+        assert!(cause.contains("expected unique owned curve IDs"), "{cause}");
     }
 }
 #[test]

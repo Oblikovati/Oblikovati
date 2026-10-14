@@ -189,5 +189,8 @@ mod acceptance;
 #[path = "add_dimension/driving.rs"]
 mod driving;
 
+#[path = "add_dimension/offset_spline.rs"]
+mod offset_spline;
+
 #[path = "add_dimension/ellipse.rs"]
 mod ellipse;
