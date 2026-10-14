@@ -88,7 +88,7 @@ fn verify_reply(
     access: SketchConstructionAccess<'_>,
     options: CircumcircleOptions,
 ) -> Result<Vec<u8>, Error> {
-    let solved = solved_seed(snapshot, &report, input.arc)?;
+    let solved = solved_seed(snapshot, &report)?;
     access
         .constructor
         .verify(input.points, solved, options)
@@ -98,37 +98,13 @@ fn verify_reply(
 fn solved_seed(
     snapshot: &DocumentSnapshot,
     report: &SketchPrimitiveCreationReport,
-    arc: bool,
 ) -> Result<SolvedCircularSeed, Error> {
-    let geometry = snapshot
+    snapshot
         .sketches
         .get(report.sketch)
         .map_err(api_error)?
-        .geometry();
-    if arc {
-        return solved_arc_seed(geometry, report.entity);
-    }
-    let circle = geometry.circle(report.entity).map_err(api_error)?;
-    Ok(SolvedCircularSeed {
-        center: geometry.point(circle.center).map_err(api_error)?.position,
-        radius: circle.radius,
-        arc: None,
-    })
-}
-
-fn solved_arc_seed(
-    geometry: &oblikovati_model::sketch::Sketch2D,
-    entity: oblikovati_model::sketch::SketchEntityId,
-) -> Result<SolvedCircularSeed, Error> {
-    let curve = geometry.arc(entity).map_err(api_error)?;
-    let center = geometry.point(curve.center).map_err(api_error)?.position;
-    let endpoints = [
-        geometry.point(curve.start).map_err(api_error)?.position,
-        geometry.point(curve.end).map_err(api_error)?.position,
-    ];
-    Ok(SolvedCircularSeed {
-        center,
-        radius: geometry.arc_radius(entity).map_err(api_error)?,
-        arc: Some((endpoints, curve.counter_clockwise)),
-    })
+        .geometry()
+        .read_index()
+        .circular_seed(report.entity)
+        .map_err(api_error)
 }

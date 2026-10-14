@@ -91,6 +91,10 @@ impl<O: TransactionObserver> DocumentSession<O> {
         }
     }
 
+    /// Share the same numerical policy with a transient preview; example: `session.sketch_solve_options()`.
+    pub fn sketch_solve_options(&self) -> oblikovati_solve::nonlinear::SolveOptions {
+        self.sketch_options
+    }
     /// Inspect the current immutable recipe; example: `session.snapshot().parameters.ids()`.
     pub fn snapshot(&self) -> &DocumentSnapshot {
         self.history.snapshot()

@@ -170,8 +170,8 @@ mod path_member;
 pub use path_member::SketchPathMember;
 mod placement_recipe;
 pub use placement_recipe::{
-    SketchPlacementBinding, SketchPlacementField, SketchPlacementGeometry, SketchPlacementMember,
-    SketchPlacementRecipe, SketchPlacementRelation,
+    SketchCircularPlacementCheck, SketchPlacementBinding, SketchPlacementField,
+    SketchPlacementGeometry, SketchPlacementMember, SketchPlacementRecipe, SketchPlacementRelation,
 };
 
 mod read_index;

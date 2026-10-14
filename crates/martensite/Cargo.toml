@@ -9,6 +9,7 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
+oblikovati-solve = { path = "../solve" }
 rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }
 oblikovati-model = { path = "../model" }
 rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "8118c7e1fae4d28bb5bb5656cd8f86445dadef10", version = "=0.2.5" }

@@ -24,6 +24,9 @@ pub struct SolvedCircularSeed {
 }
 /// Kernel construction is injected; the model and automation do not link a geometry kernel.
 pub trait SketchCircleConstruction {
+    /// Select a finite nonzero arc sweep; example: `backend.arc_direction([center,start,end])?`.
+    fn arc_direction(&self, points: [[f64; 2]; 3]) -> Result<bool, Box<dyn Error>>;
+
     /// Create an isolated seed; example: `backend.circumcircle(points, options)?`.
     fn circumcircle(
         &self,

@@ -8,6 +8,8 @@ use serde::Deserialize;
 #[serde(rename_all = "PascalCase")]
 struct GoRecipe {
     kind: String,
+    locked: Option<Vec<GoLockedArc>>,
+    solved_points: Option<Vec<[f64; 2]>>,
     curved: bool,
     input: [[f64; 2]; 3],
     width: f64,
@@ -52,7 +54,7 @@ struct GoField {
 fn constrained_slot_graphs_and_field_bindings_match_the_independent_go_recipes() {
     let fixtures: Vec<GoRecipe> =
         serde_json::from_str(include_str!("placement_recipe/go-recipes.json")).unwrap();
-    assert_eq!(fixtures.len(), 37);
+    assert_eq!(fixtures.len(), 47);
     for fixture in fixtures
         .into_iter()
         .filter(|fixture| fixture.kind.is_empty())
@@ -151,6 +153,7 @@ fn verify_fields(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
                 "" | "aligned" => SketchPlacementBinding::Distance(b.points),
                 value => panic!("unknown orientation {value}"),
             },
+            "radius" => SketchPlacementBinding::Radius(usize::try_from(b.entity).unwrap()),
             "diameter" => SketchPlacementBinding::Diameter(usize::try_from(b.entity).unwrap()),
             "steering" => SketchPlacementBinding::SteeringAngle,
             _ => panic!("unknown binding {}", b.binding),
@@ -172,3 +175,15 @@ mod rectangles;
 
 #[path = "placement_recipe/circles.rs"]
 mod circles;
+
+#[path = "placement_recipe/arcs.rs"]
+mod arcs;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct GoLockedArc {
+    radius: f64,
+    points: Vec<[f64; 2]>,
+    #[serde(rename = "DOF")]
+    dof: usize,
+}

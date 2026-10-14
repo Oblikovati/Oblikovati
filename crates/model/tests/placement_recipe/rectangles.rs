@@ -60,7 +60,13 @@ fn rectangles_refuse_collapsed_edges_and_nonfinite_placements_before_commit() {
 #[allow(dead_code)]
 #[path = "../common/document_snapshot.rs"]
 mod document_snapshot;
-pub(super) fn solved_rank(recipe: &SketchPlacementRecipe) -> usize {
+pub(super) fn recipe_history(
+    recipe: &SketchPlacementRecipe,
+    locks: &[Option<oblikovati_model::history::SketchPlacementFieldLock>],
+) -> (
+    oblikovati_model::history::DocumentEditHistory,
+    oblikovati_model::history::SketchPlacementCreationReport,
+) {
     use oblikovati_model::{
         document_sketch::DocumentSketchId,
         history::DocumentEditHistory,
@@ -74,15 +80,22 @@ pub(super) fn solved_rank(recipe: &SketchPlacementRecipe) -> usize {
         .unwrap();
     let mut history = DocumentEditHistory::new(snapshot, Default::default()).unwrap();
     let token = history.begin("Oracle").unwrap();
-    history
+    let report = history
         .edit(&token, |snapshot, ids| {
-            snapshot.create_sketch_placement(sketch, recipe, &[], Default::default(), ids)
+            snapshot.create_sketch_placement(sketch, recipe, locks, Default::default(), ids)
         })
         .unwrap();
+    history.commit(&token, false).unwrap();
+    (history, report)
+}
+pub(super) fn solved_recipe(
+    recipe: &SketchPlacementRecipe,
+) -> oblikovati_model::sketch::SketchSolveOutcome {
+    let (history, report) = recipe_history(recipe, &[]);
     let snapshot = history.snapshot();
     let solved = snapshot
         .sketches
-        .get(sketch)
+        .get(report.sketch)
         .unwrap()
         .geometry()
         .solve(&snapshot.parameters, Default::default(), || false)
@@ -92,5 +105,11 @@ pub(super) fn solved_rank(recipe: &SketchPlacementRecipe) -> usize {
         oblikovati_solve::nonlinear::SolveTermination::Converged
     );
     assert_eq!(solved.numerical().structure.redundant_equations, 0);
-    solved.numerical().structure.degrees_of_freedom
+    solved
+}
+pub(super) fn solved_rank(recipe: &SketchPlacementRecipe) -> usize {
+    solved_recipe(recipe)
+        .numerical()
+        .structure
+        .degrees_of_freedom
 }

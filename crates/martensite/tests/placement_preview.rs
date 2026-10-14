@@ -127,3 +127,55 @@ fn circle_preview_is_closed_and_matches_the_canonical_circle_without_mutation() 
     }
     verify_arc(&curves[0], [3., -4.], 5., true);
 }
+
+#[test]
+fn unequal_arc_radii_are_solved_before_sampling_without_changing_the_recipe() {
+    let recipe = SketchPlacementRecipe::arc([0., 0.], [[5., 0.], [0., 2.]], true).unwrap();
+    let before = recipe.clone();
+    let curves = sample_placement_preview(&recipe, options(0.01)).unwrap();
+    assert_eq!(recipe, before);
+    assert_eq!(curves.len(), 1);
+    assert!(curves[0].points.len() > 2);
+    assert_ne!(curves[0].points[0], recipe.points[1]);
+}
+#[test]
+fn preview_refuses_failed_solve_and_circular_postconditions() {
+    use oblikovati_model::sketch::{CircumcircleOptions, SketchCircularPlacementCheck};
+    let mut circle = SketchPlacementRecipe::circle([0., 0.], 2.).unwrap();
+    circle.circular_checks.push(SketchCircularPlacementCheck {
+        member: 0,
+        points: [[5., 0.], [0., 5.], [-5., 0.]],
+        options: CircumcircleOptions {
+            maximum_point_residual: 0.,
+        },
+    });
+    assert!(
+        sample_placement_preview(&circle, options(0.01))
+            .unwrap_err()
+            .contains("verification")
+    );
+    let mut arc = SketchPlacementRecipe::arc([0., 0.], [[5., 0.], [0., 2.]], true).unwrap();
+    arc.points[0] = [-f64::MAX, 0.];
+    arc.points[1] = [f64::MAX, 0.];
+    assert!(
+        sample_placement_preview(&arc, options(0.01))
+            .unwrap_err()
+            .contains("preview solve")
+    );
+}
+
+#[test]
+fn preview_respects_the_owner_iteration_limit_and_can_recover_with_its_normal_policy() {
+    use oblikovati_martensite::planar_curve::sketch::sample_placement_preview_with_policy;
+    use oblikovati_solve::nonlinear::SolveOptions;
+    let recipe = SketchPlacementRecipe::arc([0., 0.], [[5., 0.], [0., 2.]], true).unwrap();
+    let limited = SolveOptions {
+        max_iterations: 1,
+        ..Default::default()
+    };
+    let error = sample_placement_preview_with_policy(&recipe, options(0.01), limited).unwrap_err();
+    assert!(error.contains("IterationLimit"), "{error}");
+    assert!(
+        sample_placement_preview_with_policy(&recipe, options(0.01), Default::default()).is_ok()
+    );
+}

@@ -18,8 +18,17 @@ pub fn sample_placement_preview(
     recipe: &SketchPlacementRecipe,
     options: SketchSamplingOptionsV1,
 ) -> Result<Vec<PlacementPreviewCurve>, String> {
+    sample_placement_preview_with_policy(recipe, options, Default::default())
+}
+/// Sample a solved placement using its document's numerical policy.
+/// Example: `sample_placement_preview_with_policy(&recipe,sampling,solve_options)?`.
+pub fn sample_placement_preview_with_policy(
+    recipe: &SketchPlacementRecipe,
+    options: SketchSamplingOptionsV1,
+    solve_options: oblikovati_solve::nonlinear::SolveOptions,
+) -> Result<Vec<PlacementPreviewCurve>, String> {
     require_sampling_options(options)?;
-    let (geometry, members) = local_model::build(recipe)?;
+    let (geometry, members) = local_model::build(recipe, solve_options)?;
     let index = geometry.read_index();
     recipe
         .members

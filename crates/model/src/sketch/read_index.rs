@@ -3,6 +3,7 @@ use super::{
     Sketch2D, SketchEntityId, SketchError, SketchPoint2D,
     entity_geometry::{OwnedSketchGeometry, catalogue},
 };
+mod circular_seed;
 use std::collections::{BTreeMap, BTreeSet};
 /// One immutable index for a batch read; borrowing the sketch prevents stale lookups after an edit.
 pub struct SketchReadIndex<'a> {

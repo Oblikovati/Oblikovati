@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{SketchError, SketchPathMember, require_position};
+mod arcs;
 mod bindings;
 mod circles;
 mod fields;
 mod geometry;
 mod rectangles;
 mod slots;
+mod verification;
 pub use bindings::{SketchPlacementBinding, SketchPlacementRelation};
 pub use geometry::SketchPlacementGeometry;
+pub use verification::SketchCircularPlacementCheck;
 /// A shared authoring graph for preview and atomic commit; indices are local, not permanent IDs.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchPlacementRecipe {
@@ -15,6 +18,7 @@ pub struct SketchPlacementRecipe {
     pub members: Vec<SketchPlacementMember>,
     pub relations: Vec<SketchPlacementRelation>,
     pub fields: Vec<SketchPlacementField>,
+    pub circular_checks: Vec<SketchCircularPlacementCheck>,
 }
 /// One boundary or construction member using the recipe's point indices.
 #[derive(Clone, Copy, Debug, PartialEq)]

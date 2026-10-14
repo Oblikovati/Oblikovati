@@ -6,6 +6,7 @@ impl SketchPlacementRecipe {
     pub fn circle(center: [f64; 2], radius: f64) -> Result<Self, SketchError> {
         require_radius_value(radius)?;
         let recipe = Self {
+            circular_checks: Vec::new(),
             points: vec![center],
             members: vec![SketchPlacementMember {
                 geometry: SketchPlacementGeometry::Circle { center: 0, radius },

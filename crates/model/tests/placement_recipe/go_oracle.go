@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle recipes and rank independently.
+// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle and arc recipes and rank independently.
 package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"oblikovati.org/api/types"
 	m "oblikovati.org/math"
 	"oblikovati.org/model/sketch"
@@ -11,16 +12,23 @@ import (
 )
 
 type record struct {
-	Kind      string
-	Curved    bool
-	Input     [3][2]float64
-	Width     float64
-	CCW       bool
-	Points    [][2]float64
-	Entities  []entity
-	Relations []relation
-	Fields    []field
-	DOF       int
+	Locked       []lockedArc
+	SolvedPoints [][2]float64
+	Kind         string
+	Curved       bool
+	Input        [3][2]float64
+	Width        float64
+	CCW          bool
+	Points       [][2]float64
+	Entities     []entity
+	Relations    []relation
+	Fields       []field
+	DOF          int
+}
+type lockedArc struct {
+	Radius float64
+	Points [][2]float64
+	DOF    int
 }
 type entity struct {
 	Radius            float64
@@ -64,6 +72,14 @@ func main() {
 			out = append(out, capture(record{Kind: "circle", Input: [3][2]float64{center}, Width: radius}))
 		}
 	}
+	for _, input := range [][3][2]float64{
+		{{0, 0}, {5, 0}, {0, 5}}, {{0, 0}, {5, 0}, {0, 2}},
+		{{3, -4}, {8, -4}, {3, -9}}, {{0, 0}, {5, 0}, {-5, 0}}, {{3, 4}, {-2, 4}, {3, 9}},
+	} {
+		for _, ccw := range []bool{false, true} {
+			out = append(out, capture(record{Kind: "arc", Input: input, CCW: ccw}))
+		}
+	}
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}
@@ -77,6 +93,8 @@ func capture(out record) record {
 		r = sketch.ArcSlotRecipe(c, s, e, out.Width, out.CCW)
 	}
 	switch out.Kind {
+	case "arc":
+		r = sketch.ArcRecipe(c, s, e, out.CCW)
 	case "circle":
 		r = sketch.CircleRecipe(c, out.Width)
 	case "rectangle":
@@ -107,15 +125,59 @@ func capture(out record) record {
 		if v.Dim.Kind == sketch.DistanceDim {
 			binding = "distance"
 		}
+		if v.Dim.Kind == sketch.RadiusDim {
+			binding = "radius"
+		}
 		if v.Dim.Kind == sketch.DiameterDim {
 			binding = "diameter"
 		}
 		out.Fields = append(out.Fields, field{v.Label, v.Value, [2][2]float64{xy(v.Witness[0]), xy(v.Witness[1])}, binding, v.Dim.Points, v.Dim.Entity, sketch.DistanceOrientationName(v.Dim.Orientation)})
 	}
 	owner := sketch.NewSketches().Add(sketch.XYPlane())
-	if _, _, err := owner.Apply(r, types.OverConstrainedApplyDriven); err != nil {
+	_, pts, err := owner.Apply(r, types.OverConstrainedApplyDriven)
+	if err != nil {
 		panic(err)
 	}
 	out.DOF = owner.DegreesOfFreedom()
+	if out.Kind == "arc" {
+		if !owner.Solve().Converged {
+			panic("arc solve failed")
+		}
+		for _, p := range pts {
+			out.SolvedPoints = append(out.SolvedPoints, xy(p.Position()))
+		}
+		if out.Input[2][0] == out.Input[0][0] {
+			out.Locked = captureLockedArc(r)
+		}
+	}
+	return out
+}
+func captureLockedArc(r sketch.Recipe) []lockedArc {
+	owner := sketch.NewSketches().Add(sketch.XYPlane())
+	ents, pts, err := owner.Apply(r, types.OverConstrainedApplyDriven)
+	if err != nil {
+		panic(err)
+	}
+	owner.GeometricConstraints().AddFix(pts[0])
+	owner.GeometricConstraints().AddHorizontal(pts[0], pts[1])
+	owner.GeometricConstraints().AddVertical(pts[0], pts[2])
+	dimension, err := owner.DimensionConstraints().AddRadius(ents[0].(sketch.CircularCurve), "5 cm")
+	if err != nil {
+		panic(err)
+	}
+	out := []lockedArc{}
+	for _, radius := range []float64{5, 7, 1.5} {
+		if err := dimension.Parameter().SetExpression(fmt.Sprintf("%g cm", radius)); err != nil {
+			panic(err)
+		}
+		if !owner.Solve().Converged {
+			panic("locked arc solve failed")
+		}
+		sample := lockedArc{Radius: radius, DOF: owner.DegreesOfFreedom()}
+		for _, point := range pts {
+			sample.Points = append(sample.Points, xy(point.Position()))
+		}
+		out = append(out, sample)
+	}
 	return out
 }

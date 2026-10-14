@@ -60,6 +60,7 @@ pub enum SketchPlacementBinding {
     Distance([usize; 2]),
     HorizontalDistance([usize; 2]),
     VerticalDistance([usize; 2]),
+    Radius(usize),
     Diameter(usize),
     SteeringAngle,
 }
@@ -85,6 +86,9 @@ impl SketchPlacementBinding {
             Self::VerticalDistance(pair) => {
                 distance_operand(points, pair, DistanceMeasure::Vertical)?
             }
+            Self::Radius(index) => MeasuredDimensionOperands::Radius {
+                curve: indexed_entity(members, index)?,
+            },
             Self::Diameter(index) => MeasuredDimensionOperands::Diameter {
                 curve: indexed_entity(members, index)?,
             },

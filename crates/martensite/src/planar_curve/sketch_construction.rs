@@ -6,10 +6,15 @@ use super::{
 };
 use oblikovati_model::sketch::{SketchCircleConstruction, SolvedCircularSeed};
 use std::error::Error;
+mod arc_direction;
 /// Stateless geometry service injected at the desktop and CLI composition roots.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct MartensiteSketchConstruction;
 impl SketchCircleConstruction for MartensiteSketchConstruction {
+    fn arc_direction(&self, points: [[f64; 2]; 3]) -> Result<bool, Box<dyn Error>> {
+        arc_direction::classify(points).map_err(|cause| Box::new(cause) as Box<dyn Error>)
+    }
+
     fn circumcircle(
         &self,
         points: [[f64; 2]; 3],

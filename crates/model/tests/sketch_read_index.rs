@@ -101,3 +101,31 @@ fn circular_center_markers_retain_hidden_identity_without_duplicate_glyphs() {
     assert_eq!(centers[0].id, Id(100));
     assert_eq!(centers[0].position[1].to_bits(), (-0f64).to_bits());
 }
+
+#[test]
+fn circular_seed_reads_current_circle_and_arc_values_without_mutation() {
+    let mut sketch = fixture();
+    sketch.add_circle(Id(70), Id(100), 7.).unwrap();
+    let before = sketch.recipe();
+    let index = sketch.read_index();
+    let circle = index.circular_seed(Id(70)).unwrap();
+    assert_eq!(circle.center, [0., -0.]);
+    assert_eq!(circle.radius, 7.);
+    assert_eq!(circle.arc, None);
+    let arc = index.circular_seed(Id(10)).unwrap();
+    assert_eq!(arc.center, circle.center);
+    assert_eq!(arc.radius, 5.);
+    assert_eq!(arc.arc, Some(([[3., 4.], [-4., 3.]], true)));
+    assert!(
+        index
+            .circular_seed(Id(90))
+            .unwrap_err()
+            .to_string()
+            .contains("90")
+    );
+    assert!(index.circular_seed(Id(999)).is_err());
+    assert_eq!(
+        serde_json::to_vec(&sketch.recipe()).unwrap(),
+        serde_json::to_vec(&before).unwrap()
+    );
+}

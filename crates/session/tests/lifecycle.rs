@@ -428,3 +428,6 @@ mod sketch_selection_click;
 
 #[path = "lifecycle/sketch_continuity.rs"]
 mod sketch_continuity;
+
+#[path = "lifecycle/placement_verification.rs"]
+mod placement_verification;

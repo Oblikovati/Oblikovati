@@ -247,3 +247,44 @@ fn injected_constructor_and_final_verifier_keep_the_same_owned_geometry_contract
             .is_some()
     );
 }
+
+#[test]
+fn centered_arc_winding_uses_exact_orientation_and_accepts_semicircles() {
+    use oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
+    use oblikovati_model::sketch::SketchCircleConstruction;
+    let backend = MartensiteSketchConstruction;
+    for scale in [1e-200, 1., 1e200] {
+        let center = [0., 0.];
+        let start = [scale, 0.];
+        assert!(backend.arc_direction([center, start, [0., scale]]).unwrap());
+        assert!(
+            !backend
+                .arc_direction([center, start, [0., -scale]])
+                .unwrap()
+        );
+        assert!(
+            !backend
+                .arc_direction([center, start, [-scale, 0.]])
+                .unwrap()
+        );
+        assert!(
+            !backend
+                .arc_direction([center, [0., scale], [0., -scale]])
+                .unwrap()
+        );
+    }
+}
+#[test]
+fn centered_arc_refuses_nonfinite_zero_and_identical_radial_directions() {
+    use oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
+    use oblikovati_model::sketch::SketchCircleConstruction;
+    for points in [
+        [[0., 0.], [1., 0.], [2., 0.]],
+        [[0., 0.], [0., 1.], [0., 2.]],
+        [[0., 0.], [0., 0.], [1., 0.]],
+        [[0., 0.], [1., 0.], [0., 0.]],
+        [[f64::NAN, 0.], [1., 0.], [0., 1.]],
+    ] {
+        assert!(MartensiteSketchConstruction.arc_direction(points).is_err());
+    }
+}

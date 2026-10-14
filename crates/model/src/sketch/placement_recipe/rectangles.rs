@@ -33,6 +33,7 @@ impl SketchPlacementRecipe {
             SketchRectangleSeed::ThreePoints([base[0], base[1], height]).vertices()?;
         let delta = [b[0] - a[0], b[1] - a[1]];
         checked_rectangle(Self {
+            circular_checks: Vec::new(),
             points: vec![a, b, c, d],
             members: rectangle_boundary(),
             // Go aa8297d1 (#2014): the fourth perpendicular relation is redundant in a closed loop.
@@ -51,6 +52,7 @@ fn axis_rectangle(points: Vec<[f64; 2]>) -> Result<SketchPlacementRecipe, Sketch
     let [a, b, c] = [points[0], points[1], points[2]];
     use SketchPlacementRelation::{LineHorizontal, LineVertical};
     checked_rectangle(SketchPlacementRecipe {
+        circular_checks: Vec::new(),
         points,
         members: rectangle_boundary(),
         relations: vec![

@@ -12,6 +12,12 @@ pub(super) struct CardinalCircleConstruction {
     solved: RefCell<Vec<SolvedCircularSeed>>,
 }
 impl SketchCircleConstruction for CardinalCircleConstruction {
+    fn arc_direction(&self, _points: [[f64; 2]; 3]) -> Result<bool, Box<dyn StdError>> {
+        Err(Box::new(SketchError::Definition(
+            "cardinal fake: expected circumcircle calls only".into(),
+        )))
+    }
+
     fn circumcircle(
         &self,
         points: [[f64; 2]; 3],

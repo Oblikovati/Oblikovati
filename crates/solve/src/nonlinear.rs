@@ -11,7 +11,7 @@ use crate::{
 use std::{error::Error, fmt};
 
 /// Numerical policy, independent from the model's geometric tolerances.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SolveOptions {
     pub max_iterations: usize,
     pub max_trial_steps: usize,

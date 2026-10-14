@@ -17,3 +17,14 @@ pub(super) fn distance([a, b]: [[f64; 2]; 2]) -> f64 {
     let delta = [b[0] - a[0], b[1] - a[1]];
     (delta[0] * delta[0] + delta[1] * delta[1]).sqrt()
 }
+
+pub(super) fn sweep_field(center: [f64; 2], [start, end]: [[f64; 2]; 2]) -> SketchPlacementField {
+    let from = (start[1] - center[1]).atan2(start[0] - center[0]);
+    let to = (end[1] - center[1]).atan2(end[0] - center[0]);
+    field(
+        "Sweep",
+        to - from,
+        [start, end],
+        SketchPlacementBinding::SteeringAngle,
+    )
+}

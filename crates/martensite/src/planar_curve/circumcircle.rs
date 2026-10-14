@@ -46,9 +46,7 @@ pub(super) fn require_options(options: CircumcircleOptions) -> Result<(), Planar
     Ok(())
 }
 pub(super) fn classify_points(points: [[f64; 2]; 3]) -> Result<bool, PlanarCurveFailure> {
-    match orient2d(points[0], points[1], points[2])
-        .map_err(|cause| PlanarCurveFailure::input(cause.to_string()))?
-    {
+    match classify_turn(points)? {
         OrientationSign::Positive => Ok(true),
         OrientationSign::Negative => Ok(false),
         OrientationSign::Zero => Err(PlanarCurveFailure::input(format!(
@@ -88,4 +86,8 @@ pub(super) fn measure_residuals(
         )));
     }
     Ok(residuals)
+}
+pub(super) fn classify_turn(points: [[f64; 2]; 3]) -> Result<OrientationSign, PlanarCurveFailure> {
+    orient2d(points[0], points[1], points[2])
+        .map_err(|cause| PlanarCurveFailure::input(cause.to_string()))
 }

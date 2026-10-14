@@ -19,6 +19,7 @@ impl SketchPlacementRecipe {
         relations.push(SketchPlacementRelation::EqualRadius([1, 3]));
         let fields = straight_fields(centers, width, &layout.points);
         Ok(Self {
+            circular_checks: Vec::new(),
             points: layout.points,
             members,
             relations,
@@ -56,6 +57,7 @@ impl SketchPlacementRecipe {
             .to_vec();
         let fields = curved_fields(center, endpoints, width, points[1]);
         Ok(Self {
+            circular_checks: Vec::new(),
             points,
             members,
             relations,
@@ -94,8 +96,6 @@ fn curved_fields(
     width: f64,
     outer_start: [f64; 2],
 ) -> Vec<SketchPlacementField> {
-    let from = (start[1] - center[1]).atan2(start[0] - center[0]);
-    let to = (end[1] - center[1]).atan2(end[0] - center[0]);
     vec![
         field(
             "Radius",
@@ -103,7 +103,7 @@ fn curved_fields(
             [center, start],
             Distance([0, 5]),
         ),
-        field("Sweep", to - from, [start, end], SteeringAngle),
+        super::fields::sweep_field(center, [start, end]),
         field("Width", width, [start, outer_start], Diameter(3)),
     ]
 }
