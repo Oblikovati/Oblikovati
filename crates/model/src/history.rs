@@ -31,6 +31,7 @@ mod sketch_line;
 mod sketch_primitive;
 mod sketch_relation_create;
 mod sketch_relation_delete;
+mod sketch_spline_handle;
 pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
 pub use sketch_line::{
     SketchAppliedLineDirection, SketchLineChainCreation, SketchLineChainCreationReport,
@@ -38,6 +39,7 @@ pub use sketch_line::{
 };
 pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
 pub use sketch_relation_create::{SketchGeometricCreationError, SketchGeometricCreationReport};
+pub use sketch_spline_handle::{SketchSplineHandleEdit, SketchSplineHandleReport};
 mod sketch_delete;
 pub use datum_delete::{DocumentDatumDeleteError, DocumentDatumDeleteReport};
 mod dimension_names;
