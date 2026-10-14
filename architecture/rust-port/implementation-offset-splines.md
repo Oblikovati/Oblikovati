@@ -147,6 +147,13 @@ edits, reference mode, annotation, undo/redo, abort, veto, save/reopen and copy
 are tested. The API-created spline and offset reach native head window pixels
 on software Vulkan and AMD RADV. This is not B-rep or trim acceptance.
 
+The public `sketch.transform` route now has acceptance for moving an authored fit
+parent in both document owners, copying it with its fit method, and rotating it
+through undo/redo and save/reopen. The derived offset retains its exact parent
+identity and signed distance. These tests use the existing model transform and
+copy commands; they add no separate spline edit path. Control-parent transforms,
+mirror, handle edits and native curve regeneration after each edit remain open.
+
 ## Remaining port
 
 Preserve active handle rules and add their authoring, persistence and public
@@ -155,7 +162,7 @@ creation now uses the owner-published kernel construction capability through the
 analytic sketch adapter. Native trim, profile extrusion and complete root
 certification still require separate acceptance.
 
-Keep #3789 open until active handles, degenerates, public transform/edit
+Keep #3789 open until active handles, degenerates, remaining public transform/edit
 coverage, dimension health under failed sources, and downstream feature
 acceptance pass. This slice removes the old API constructor and dimension
 declines but does not complete the broader R3 issue.
