@@ -409,6 +409,7 @@ fn bounded_frames_start_counting_after_owner_startup() {
 #[test]
 fn preview_refusal_clears_stale_geometry_and_reports_without_stopping() {
     let packet = oblikovati_viewport::ViewportSketchPreview {
+        solve_options: Default::default(),
         plane: oblikovati_model::sketch::SketchPlane::xy(),
         recipe: oblikovati_model::sketch::SketchPlacementRecipe::straight_slot(
             [[0., 0.], [10., 0.]],

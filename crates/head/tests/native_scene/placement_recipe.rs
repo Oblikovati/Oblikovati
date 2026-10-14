@@ -78,11 +78,11 @@ fn verify_native_placement(owner: &mut NativeDesktopOwner, document: u64, curved
         usize::from(!curved)
     );
 }
-fn verify_reopened_placement(
+pub(super) fn verify_reopened_placement(
     owner: &mut NativeDesktopOwner,
     document: u64,
     path: &std::path::Path,
-) {
+) -> u64 {
     let before = owner
         .documents()
         .workspace()
@@ -120,4 +120,5 @@ fn verify_reopened_placement(
         .snapshot();
     assert!(before.sketches.same_recipe(&after.sketches));
     assert!(before.parameters.same_recipe(&after.parameters));
+    reopened
 }

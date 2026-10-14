@@ -10,6 +10,7 @@ publish.workspace = true
 [package.metadata.oblikovati]
 requires-display = true
 [dependencies]
+oblikovati-solve = { path = "../solve" }
 oblikovati-model = { path = "../model" }
 oblikovati-martensite = { path = "../martensite" }
 

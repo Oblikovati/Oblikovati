@@ -12,6 +12,12 @@ fn native_recipe_tools_preview_commit_finish_and_undo_through_shared_input_pipel
                 maximum_point_residual: 1e-9,
             },
         },
+        SketchPlacementTool::CenterPointArc,
+        SketchPlacementTool::ThreePointArc {
+            options: oblikovati_model::sketch::CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
         SketchPlacementTool::Rectangle,
         SketchPlacementTool::CenterRectangle,
         SketchPlacementTool::ThreePointRectangle,
@@ -43,7 +49,10 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
     let mut inputs = vec![button([650, 430], true), button([650, 430], false)];
     if matches!(
         kind,
-        SketchPlacementTool::ThreePointRectangle | SketchPlacementTool::ThreePointCircle { .. }
+        SketchPlacementTool::ThreePointRectangle
+            | SketchPlacementTool::ThreePointCircle { .. }
+            | SketchPlacementTool::ThreePointArc { .. }
+            | SketchPlacementTool::CenterPointArc
     ) {
         inputs.extend([button([800, 430], true), button([800, 430], false)]);
     }
@@ -57,7 +66,10 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
             6
         } else if matches!(
             kind,
-            SketchPlacementTool::Circle | SketchPlacementTool::ThreePointCircle { .. }
+            SketchPlacementTool::Circle
+                | SketchPlacementTool::ThreePointCircle { .. }
+                | SketchPlacementTool::ThreePointArc { .. }
+                | SketchPlacementTool::CenterPointArc
         ) {
             1
         } else {
@@ -117,6 +129,17 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
         committed
     );
     capture_native_scene(&mut window.native);
+    super::placement_recipe_tests::verify_reopened_placement(
+        &mut owner,
+        document,
+        &directory.path().join("recipe-placement.opd"),
+    );
+    publish_native_scene(&mut owner, &mut window.native);
+    assert_eq!(
+        window.native.sketch_scene_status().unwrap().sketches,
+        committed
+    );
+    assert!(window.native.sketch_display_declines().unwrap().is_empty());
     owner.finish().unwrap();
     window.finish().unwrap();
 }
@@ -141,18 +164,6 @@ fn commit_native_recipe(
         .get(fixture::SKETCH)
         .unwrap()
         .geometry();
-    let points = &geometry.points()[geometry.points().len() - preview.points.len()..];
-    for (point, expected) in points.iter().zip(&preview.points) {
-        for (actual, wanted) in point.position.iter().zip(expected) {
-            assert!((actual - wanted).abs() < 1e-8);
-        }
-    }
-    if let oblikovati_model::sketch::SketchPlacementGeometry::Circle { radius, .. } =
-        preview.members[0].geometry
-    {
-        let circle = geometry.circles().last().unwrap();
-        assert_eq!(circle.radius, radius);
-        assert_eq!(circle.center, points[0].id);
-    }
+    crate::placement_test_samples::assert_recipe_tail(geometry, preview);
     capture_native_scene(&mut window.native);
 }

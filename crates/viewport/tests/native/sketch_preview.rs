@@ -4,6 +4,7 @@ use oblikovati_model::sketch::{SketchPlacementRecipe, SketchPlane};
 use oblikovati_viewport::ViewportSketchPreview;
 pub(super) fn packet() -> ViewportSketchPreview {
     ViewportSketchPreview {
+        solve_options: Default::default(),
         plane: SketchPlane::xy(),
         recipe: SketchPlacementRecipe::straight_slot([[-5., 0.], [5., 0.]], 4.).unwrap(),
     }
@@ -127,6 +128,27 @@ fn preview_resamples_after_zoom_and_never_changes_fit_bounds() {
             .contains("f32")
     );
     assert_eq!(view.capture().unwrap(), after);
+    view.close();
+    assert!(runtime.validation_errors().is_empty());
+}
+
+#[test]
+fn changing_only_preview_solver_policy_invalidates_the_cached_geometry() {
+    let runtime = ViewportRuntime::new(Default::default()).unwrap();
+    let mut view = runtime.open_window("Arc solve policy", [320, 240]).unwrap();
+    view.submit(&ViewportScene {
+        background: [0.; 3],
+        triangles: vec![],
+    })
+    .unwrap();
+    let mut packet = packet();
+    packet.recipe = SketchPlacementRecipe::arc([0., 0.], [[5., 0.], [0., 2.]], true).unwrap();
+    assert!(view.set_sketch_preview(Some(&packet)).unwrap());
+    let accepted = packet.clone();
+    packet.solve_options.max_iterations = 1;
+    let error = view.set_sketch_preview(Some(&packet)).unwrap_err();
+    assert!(error.contains("IterationLimit"), "{error}");
+    assert!(!view.set_sketch_preview(Some(&accepted)).unwrap());
     view.close();
     assert!(runtime.validation_errors().is_empty());
 }

@@ -25,7 +25,12 @@ impl<
         self.files
             .commands(document)
             .map_err(|cause| format!("placement document {document}: {cause}"))?
-            .create_sketch_placement(sketch, recipe, locks)
+            .create_sketch_placement_with_construction(
+                sketch,
+                recipe,
+                locks,
+                &self.sketch_construction,
+            )
             .map_err(|cause| {
                 format!(
                     "placement document {document}, sketch {}: {cause}",

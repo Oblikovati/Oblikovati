@@ -14,11 +14,18 @@ fn incomplete_point_sequences_are_refused_before_indexing() {
     for tool in [
         SketchPlacementTool::StraightSlot { width: 2. },
         SketchPlacementTool::Circle,
+        SketchPlacementTool::CenterPointArc,
+        SketchPlacementTool::ThreePointArc {
+            options: CircumcircleOptions {
+                maximum_point_residual: 0.,
+            },
+        },
         circumcircle_tool(0.),
         SketchPlacementTool::Rectangle,
         SketchPlacementTool::CenterRectangle,
         SketchPlacementTool::ThreePointRectangle,
     ] {
+        assert_eq!(tool.point_labels().len(), tool.point_count());
         for accepted in [vec![], vec![[0., 0.]; 3]] {
             assert!(
                 tool.recipe(&accepted, [1., 2.], &MartensiteSketchConstruction)

@@ -26,8 +26,17 @@ type TestOwner = DesktopOwner<
     RecordedWake,
 >;
 fn owner() -> (TestOwner, Receiver<()>) {
+    owner_with_options(Default::default())
+}
+fn owner_with_options(
+    options: oblikovati_solve::nonlinear::SolveOptions,
+) -> (TestOwner, Receiver<()>) {
     let observations = DesktopObservations::default();
-    let files = FileWorkspace::new(observations.clone(), MemoryDocumentFiles::default());
+    let files = FileWorkspace::new_with_sketch_options(
+        observations.clone(),
+        MemoryDocumentFiles::default(),
+        options,
+    );
     let (signal, awake) = mpsc::channel();
     (
         DesktopOwner::new(
@@ -229,3 +238,6 @@ mod rectangle_input;
 
 #[path = "owner/circle_input.rs"]
 mod circle_input;
+
+#[path = "owner/arc_input.rs"]
+mod arc_input;

@@ -12,7 +12,17 @@ pub(super) fn placement_owner(
     u64,
     oblikovati_model::document_sketch::DocumentSketchId,
 ) {
-    let (mut owner, awake) = owner();
+    placement_owner_with_options(kind, Default::default())
+}
+pub(super) fn placement_owner_with_options(
+    kind: SketchPlacementTool,
+    options: oblikovati_solve::nonlinear::SolveOptions,
+) -> (
+    TestOwner,
+    u64,
+    oblikovati_model::document_sketch::DocumentSketchId,
+) {
+    let (mut owner, awake) = owner_with_options(options);
     let document = create(&mut owner, &awake);
     let sketch = owner
         .create_sketch_for_edit(

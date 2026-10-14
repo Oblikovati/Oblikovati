@@ -26,15 +26,19 @@ fn owned_sketches(owner: &TestOwner, document: u64) -> &DocumentSketches {
 #[test]
 fn circles_share_click_drag_preview_commit_restart_and_history() {
     for kind in [SketchPlacementTool::Circle, three_point_circle(0.)] {
-        let clicked = place_circle(kind, false);
-        let dragged = place_circle(kind, true);
+        let clicked = place_round_tool(kind, false, verify_circle_preview);
+        let dragged = place_round_tool(kind, true, verify_circle_preview);
         assert!(clicked.same_recipe(&dragged));
     }
 }
-fn place_circle(kind: SketchPlacementTool, drag: bool) -> DocumentSketches {
+pub(super) fn place_round_tool(
+    kind: SketchPlacementTool,
+    drag: bool,
+    verify: fn(&Sketch2D, &SketchPlacementRecipe),
+) -> DocumentSketches {
     let (mut owner, document, sketch) = placement_owner(kind);
     let before = owner.gui_command_state().unwrap();
-    circle_prefix(&mut owner, kind, drag);
+    round_tool_prefix(&mut owner, kind, drag);
     deliver(&mut owner, &[motion([5, 5])]);
     assert_eq!(owner.gui_command_state().unwrap(), before);
     let preview = owner.placement_preview().unwrap().clone();
@@ -45,7 +49,7 @@ fn place_circle(kind: SketchPlacementTool, drag: bool) -> DocumentSketches {
     assert!(owner.placement_active());
     assert!(owner.placement_preview().is_none());
     let saved = owned_sketches(&owner, document).clone();
-    verify_circle_preview(saved.get(sketch).unwrap().geometry(), &preview);
+    verify(saved.get(sketch).unwrap().geometry(), &preview);
     circle_history(&mut owner, document, sketch, &saved);
     saved
 }
@@ -57,7 +61,7 @@ fn verify_circle_preview(geometry: &Sketch2D, preview: &SketchPlacementRecipe) {
     assert_eq!(geometry.circles()[0].radius, radius);
     assert_eq!(geometry.points()[0].position, preview.points[0]);
 }
-fn circle_prefix(owner: &mut TestOwner, kind: SketchPlacementTool, drag: bool) {
+fn round_tool_prefix(owner: &mut TestOwner, kind: SketchPlacementTool, drag: bool) {
     deliver(owner, &[button([0, 0], true)]);
     if !drag {
         deliver(owner, &[button([0, 0], false)]);
