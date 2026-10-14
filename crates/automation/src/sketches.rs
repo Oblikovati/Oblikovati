@@ -34,7 +34,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 12] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 13] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
@@ -47,6 +47,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 12] = [
     METHOD_SKETCH_MOVE_DIMENSION,
     METHOD_SKETCH_DRIVE_DIMENSION,
     METHOD_SKETCH_ADD_DIMENSION,
+    METHOD_SKETCH_SET_SPLINE_HANDLE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
 pub const SKETCH_QUERY_METHODS: [&str; 6] = [
@@ -98,6 +99,9 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     match method {
+        METHOD_SKETCH_SET_SPLINE_HANDLE => {
+            spline_handle::apply(files, crate::decode(method, request)?)
+        }
         METHOD_SKETCH_TRANSFORM => transform::apply(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_ENTITY => add_entity::apply(files, crate::decode(method, request)?, None),
         METHOD_SKETCH_ADD_CONSTRAINT => {

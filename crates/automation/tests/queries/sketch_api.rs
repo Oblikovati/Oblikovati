@@ -483,6 +483,9 @@ mod add_entity;
 #[path = "sketch_api/spline_requests.rs"]
 mod spline_requests;
 
+#[path = "sketch_api/spline_handle.rs"]
+mod spline_handle;
+
 #[path = "sketch_api/settings.rs"]
 mod settings;
 
