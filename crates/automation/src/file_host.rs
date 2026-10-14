@@ -23,7 +23,8 @@ pub use open::DocumentObserverFactory;
 pub(crate) use sketch_construction::SketchConstructionAccess;
 
 /// Implemented calls that require the file owner.
-pub const FILE_COMMAND_METHODS: [&str; 11] = [
+pub const FILE_COMMAND_METHODS: [&str; 12] = [
+    METHOD_DOCUMENT_SET_END_OF_PART,
     METHOD_DOCUMENT_SET_SKETCH_SETTINGS,
     METHOD_DOCUMENTS_ADD_ATTACHMENT,
     METHOD_DOCUMENTS_ACTIVATE,
@@ -108,6 +109,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         }
         if method == METHOD_DOCUMENT_SET_SKETCH_SETTINGS {
             return crate::document_sketch_settings::apply(context.files, decode(method, request)?);
+        }
+        if method == METHOD_DOCUMENT_SET_END_OF_PART {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::end_of_part::apply(files, part_topology, request);
         }
         context.owned_command(method, request)
     }

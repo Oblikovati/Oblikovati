@@ -6,7 +6,8 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 12] = [
+pub const FILE_QUERY_METHODS: [&str; 13] = [
+    METHOD_DOCUMENT_GET_END_OF_PART,
     METHOD_DOCUMENT_GET_SKETCH_SETTINGS,
     METHOD_DOCUMENTS_LIST,
     METHOD_PARAMETERS_DERIVED_TABLES_LIST,
@@ -46,6 +47,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         }
         if crate::SKETCH_QUERY_METHODS.contains(&method) {
             return crate::sketches::query(self.files, method, request);
+        }
+        if method == METHOD_DOCUMENT_GET_END_OF_PART {
+            return crate::end_of_part::query(self.files, request);
         }
         if method == METHOD_DOCUMENT_GET_SKETCH_SETTINGS {
             return crate::document_sketch_settings::query(

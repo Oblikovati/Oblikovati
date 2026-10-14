@@ -42,6 +42,12 @@ fn rebuild(owner: &mut TestOwner) -> UpdateDocumentResult {
         .rebuild(&UpdateDocumentArgs::default())
         .unwrap()
 }
+fn end_of_part(owner: &mut TestOwner) -> EndOfPartResult {
+    Client::new(owner.document_host())
+        .documents()
+        .get_end_of_part(&oblikovati_api::json::EmptyObject {})
+        .unwrap()
+}
 #[test]
 fn one_body_analysis_is_identical_and_empty_part_is_zero_with_the_requested_density() {
     let (mut owner, awake) = owner();
@@ -141,6 +147,49 @@ fn update_refreshes_a_healthy_part_and_reports_or_refuses_failed_features() {
     assert_eq!((errors.len(), errors[0].kind.as_str()), (1, "extrude"));
     assert!(!errors[0].name.is_empty() && !errors[0].message.is_empty());
     assert!(!requires_update(&mut owner));
+}
+#[test]
+fn end_of_part_round_trips_through_history_and_the_native_evaluation() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, true);
+    assert_eq!(
+        end_of_part(&mut owner),
+        EndOfPartResult {
+            position: -1,
+            rolled_back: false
+        }
+    );
+    let rolled_back = Client::new(owner.document_host())
+        .documents()
+        .set_end_of_part(&SetEndOfPartArgs { position: 1 })
+        .unwrap();
+    assert_eq!(
+        rolled_back,
+        EndOfPartResult {
+            position: 1,
+            rolled_back: true
+        }
+    );
+    assert_eq!(total(&mut owner, 0.).volume_mm3, 24000.);
+    let restored = Client::new(owner.document_host())
+        .documents()
+        .set_end_of_part(&SetEndOfPartArgs { position: -1 })
+        .unwrap();
+    assert_eq!(
+        restored,
+        EndOfPartResult {
+            position: -1,
+            rolled_back: false
+        }
+    );
+    assert_eq!(total(&mut owner, 0.).volume_mm3, 48000.);
+    assert!(
+        Client::new(owner.document_host())
+            .documents()
+            .set_end_of_part(&SetEndOfPartArgs { position: 3 })
+            .is_err()
+    );
+    assert_eq!(end_of_part(&mut owner), restored);
 }
 #[test]
 fn part_analysis_uses_assigned_density_and_validates_requests() {

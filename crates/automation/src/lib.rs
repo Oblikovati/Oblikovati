@@ -39,6 +39,7 @@ mod collection;
 mod detail;
 pub use detail::parameter_detail;
 mod document_sketch_settings;
+mod end_of_part;
 mod expressions;
 mod parameter_choices;
 mod parameter_edit;
