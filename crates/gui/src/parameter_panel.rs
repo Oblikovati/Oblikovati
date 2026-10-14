@@ -264,8 +264,12 @@ impl ParameterPanel {
             GuiParameterAction::Text(edit) => {
                 self.acknowledge(edit, result);
             }
-            GuiParameterAction::GroupManagement(_)
-            | GuiParameterAction::Toggle { .. }
+            GuiParameterAction::GroupManagement(edit) => {
+                if let Some(issue) = self.group_manager.acknowledge(edit, result) {
+                    self.issue = Some(issue);
+                }
+            }
+            GuiParameterAction::Toggle { .. }
             | GuiParameterAction::Row { .. }
             | GuiParameterAction::DeleteLinkedTable { .. } => self.issue = result.err(),
         }
