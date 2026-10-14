@@ -86,13 +86,81 @@ fn resize_requires_a_packet_for_the_current_target_without_rescaling_old_input()
     view.redraw().unwrap();
     view.resize([80, 60]).unwrap();
     assert!(view.capture().is_err());
-    assert!(view.redraw().unwrap_err().contains("GUI"));
+    assert_eq!(
+        view.present().unwrap(),
+        ViewportPresentation::SurfaceChanged([80, 60])
+    );
     assert!(view.submit_gui_frame(&compiler, &packet).is_err());
     assert_eq!(recorder.state.lock().unwrap().frames.len(), 1);
     let fresh = frame([80, 60], [255; 4], [0., 0., 80., 60.]);
     view.submit_gui_frame(&compiler, &fresh).unwrap();
     assert_eq!(view.redraw().unwrap().extent, [80, 60]);
     assert_eq!(recorder.state.lock().unwrap().frames.len(), 2);
+}
+
+#[test]
+fn external_gui_resize_is_observed_before_submitting_stale_draws() {
+    let (mut view, compiler, recorder) = gui_resize_fixture();
+    view.redraw().unwrap();
+    let Some(ViewTarget::Offscreen(window)) = &view.target else {
+        panic!("GUI resize fixture: expected an offscreen target");
+    };
+    window.set_size(80, 60);
+    assert_gui_surface_replacement(&mut view, &compiler, &recorder, 1);
+}
+
+#[test]
+fn gui_resize_during_completed_draw_discards_capture_and_requires_fresh_packet() {
+    let (mut view, compiler, recorder) = gui_resize_fixture();
+    schedule_recorded_gui_resize(&view, &recorder);
+    assert_eq!(
+        view.present().unwrap(),
+        ViewportPresentation::SurfaceChanged([80, 60])
+    );
+    assert_gui_surface_replacement(&mut view, &compiler, &recorder, 1);
+    verify_gui_failure(&mut view, &recorder);
+}
+
+fn gui_resize_fixture() -> (Viewport, GuiFrameCompiler, RecordingDevice) {
+    let (runtime, recorder) = runtime();
+    let mut view = runtime.open_offscreen([64, 48]).unwrap();
+    let compiler = GuiFrameCompiler::new(&atlas()).unwrap();
+    view.submit_gui_frame(&compiler, &frame([64, 48], [255; 4], [0., 0., 64., 48.]))
+        .unwrap();
+    (view, compiler, recorder)
+}
+
+fn schedule_recorded_gui_resize(view: &Viewport, recorder: &RecordingDevice) {
+    let Some(ViewTarget::Offscreen(window)) = &view.target else {
+        panic!("GUI resize fixture: expected an offscreen target");
+    };
+    recorder.state.lock().unwrap().resize_once = Some(ResizeDuringDraw {
+        window: window.clone(),
+        extent: [80, 60],
+    });
+}
+
+fn assert_gui_surface_replacement(
+    view: &mut Viewport,
+    compiler: &GuiFrameCompiler,
+    recorder: &RecordingDevice,
+    previous_draws: usize,
+) {
+    assert!(view.capture().is_err());
+    assert_eq!(
+        view.present().unwrap(),
+        ViewportPresentation::SurfaceChanged([80, 60])
+    );
+    assert_eq!(recorder.state.lock().unwrap().frames.len(), previous_draws);
+    view.submit_gui_frame(compiler, &frame([80, 60], [255; 4], [0., 0., 80., 60.]))
+        .unwrap();
+    let fresh = view.redraw().unwrap();
+    assert_eq!(fresh.extent, [80, 60]);
+    assert_eq!(fresh.surface_generation, 1);
+    assert_eq!(
+        recorder.state.lock().unwrap().frames.len(),
+        previous_draws + 1
+    );
 }
 
 #[test]

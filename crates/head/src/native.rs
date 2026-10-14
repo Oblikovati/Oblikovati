@@ -136,7 +136,12 @@ impl HeadWindow for NativeHeadWindow {
         self.refresh_title()?;
         Ok(match presentation {
             ViewportPresentation::Completed(_) => HeadPresentation::Completed,
-            ViewportPresentation::SurfaceChanged(_) => HeadPresentation::SurfaceChanged,
+            ViewportPresentation::SurfaceChanged(_) => {
+                if let Some(gui) = &mut self.gui {
+                    gui.require_publication();
+                }
+                HeadPresentation::SurfaceChanged
+            }
         })
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {

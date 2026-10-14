@@ -77,6 +77,7 @@ impl ViewportRuntime {
             extent,
             completed: None,
             overlay: 0,
+            gui_surface: None,
             view_history: VecDeque::new(),
         })
     }
@@ -106,6 +107,7 @@ pub struct Viewport {
     extent: [u32; 2],
     completed: Option<[u64; 4]>,
     overlay: u64,
+    gui_surface: Option<u64>,
     view_history: VecDeque<crate::renderer::SavedViewCamera>,
 }
 impl Viewport {
@@ -199,8 +201,7 @@ impl Viewport {
     fn observe_visibility(&mut self, events: &[ViewportEvent]) -> Result<(), String> {
         for event in events {
             if matches!(event, ViewportEvent::Mapped(_)) {
-                self.completed = None;
-                self.surface = next_generation(self.surface)?;
+                self.record_mapping_surface(next_generation(self.surface)?);
             }
         }
         Ok(())
@@ -222,8 +223,15 @@ impl Viewport {
         let surface = next_generation(self.surface)?;
         self.completed = None;
         native.mapped(mapped)?;
-        self.surface = surface;
+        self.record_mapping_surface(surface);
         Ok(())
+    }
+    fn record_mapping_surface(&mut self, surface: u64) {
+        self.completed = None;
+        if self.gui_surface == Some(self.surface) {
+            self.gui_surface = Some(surface);
+        }
+        self.surface = surface;
     }
     /// Present and return only a fresh completed frame; example: `let capture=viewport.redraw()?;`.
     pub fn redraw(&mut self) -> Result<ViewportCapture, String> {
@@ -238,7 +246,15 @@ impl Viewport {
     /// Present once and distinguish an observed resize from a renderer fault.
     /// Example: schedule a new frame after `ViewportPresentation::SurfaceChanged(extent)`.
     pub fn present(&mut self) -> Result<ViewportPresentation, String> {
-        self.draw()?;
+        if !self.draw_current_surface()? {
+            return Ok(ViewportPresentation::SurfaceChanged(self.extent));
+        }
+        if let Some(extent) = self.observe_draw_extent()? {
+            return Ok(ViewportPresentation::SurfaceChanged(extent));
+        }
+        self.capture_completed_surface()
+    }
+    fn capture_completed_surface(&mut self) -> Result<ViewportPresentation, String> {
         let frame = self
             .live()?
             .renderer
@@ -251,20 +267,31 @@ impl Viewport {
         self.completed = Some(self.generations());
         Ok(ViewportPresentation::Completed(self.capture_from(frame)))
     }
-    fn draw(&mut self) -> Result<(), String> {
+    fn draw_current_surface(&mut self) -> Result<bool, String> {
         self.completed = None;
         self.live()?;
         self.refresh_extent()?;
-        let preview = self.live()?.preview_source();
-        self.set_sketch_preview(preview.as_ref())?;
-        self.refresh_sketch_display()?;
         self.target
             .as_ref()
             .expect("live target")
             .require_presentation()?;
+        // #3630: a resized GUI must be reattached before the kernel consumes its packet.
+        if self
+            .gui_surface
+            .is_some_and(|surface| surface != self.surface)
+        {
+            return Ok(false);
+        }
+        self.redraw_current_layers()
+    }
+    fn redraw_current_layers(&mut self) -> Result<bool, String> {
+        let preview = self.live()?.preview_source();
+        self.set_sketch_preview(preview.as_ref())?;
+        self.refresh_sketch_display()?;
         self.live()?
             .renderer
             .try_redraw()
+            .map(|_| true)
             .map_err(|error| format!("viewport {} redraw: {error}", self.id))
     }
     fn observe_draw_extent(&mut self) -> Result<Option<[u32; 2]>, String> {

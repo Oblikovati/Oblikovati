@@ -24,8 +24,9 @@ impl Viewport {
                 .attach_gui_layer(frame.extent, layer)
                 .map_err(|cause| cause.to_string())?;
             Ok(true)
-        })
-        .map(|_| ())
+        })?;
+        self.gui_surface = Some(self.surface);
+        Ok(())
     }
     /// Remove GUI content while retaining the model and camera; redraw is required before capture.
     /// Example: `view.clear_gui_frame()?; view.redraw()?;`.
@@ -36,7 +37,8 @@ impl Viewport {
                 .clear_gui_layer()
                 .map_err(|cause| cause.to_string())?;
             Ok(true)
-        })
-        .map(|_| ())
+        })?;
+        self.gui_surface = None;
+        Ok(())
     }
 }

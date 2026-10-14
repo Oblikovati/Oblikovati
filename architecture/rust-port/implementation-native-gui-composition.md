@@ -24,7 +24,12 @@ and capture invalidation. A requested window size is not the actual size: the AM
 native test observed a 401-pixel target after a 400-pixel request. The corrected
 consumer test builds its fresh packet from the observed extent. A changed extent
 requires a new GUI packet; the old packet is refused rather than rescaled.
-A later resize can still race submission and must be handled by the caller.
+The viewport retains the surface revision of each accepted GUI packet. A resize
+observed before draw or after a completed draw returns `SurfaceChanged` before
+capture. The native GUI owner then publishes a fresh packet, including when the
+target returned to its earlier extent. A resize that causes a kernel renderer
+error during draw/capture still propagates; a typed lifecycle outcome is needed
+before that error can be distinguished from a real renderer fault.
 
 ## Consumer evidence
 

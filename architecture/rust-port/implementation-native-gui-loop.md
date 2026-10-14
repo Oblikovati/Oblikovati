@@ -14,13 +14,18 @@ Command feedback is copied into the GUI panel so the panel cannot cover it.
 
 The production event source still lacks physical-key and Unicode/IME input.
 That work is not replaced by treating application command keys as physical keys.
-Native resize between GUI attachment and presentation still needs a dedicated
-race test. Attachment-time extent changes currently defer the frame. These remain
-open for complete R4 acceptance.
+Observed native resize between GUI attachment and presentation now requests a
+fresh packet through `SurfaceChanged`. Surface revisions also reject a packet
+after resize away and back to the same extent. Native tests verify recovery and
+visible completed framebuffer content on both drivers. A resize that interrupts
+the kernel's draw or capture with an error still requires a typed kernel outcome;
+the released text-only error must propagate. These remain open for complete R4
+acceptance.
 
 ## Verified local checks
 
-`make gate` passed for all 13 crates, all targets and features, on Xvfb/lavapipe.
+The GUI-loop integration gate at app `a71c7ba8` passed for all 13 crates, all
+targets and features, on Xvfb/lavapipe.
 The check includes format, Clippy, build, tests, doctests, each-crate coverage,
 SPDX, Markdown, document links, workflow checks and duplication.
 Head coverage is 96.31%, GUI coverage is 99.29%, and viewport coverage is
@@ -59,5 +64,5 @@ The reduced wheel case passed 50 of 50 AMD runs after the fix. The full
 Save/Undo/Redo/Home command case passed 20 of 20 before cleanup and 10 of 10
 after cleanup on AMD. Both focused cases pass on Xvfb/lavapipe. The rapid-click
 engine test still passes. This evidence clears the earlier native GUI blocker;
-physical-key/IME input and the resize race remain open. No kernel source or
+physical-key/IME input and renderer-interrupted resize remain open. No kernel source or
 dependency override was introduced.

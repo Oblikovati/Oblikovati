@@ -89,6 +89,7 @@ fn verify_gui_resize(view: &mut Viewport, compiler: &GuiFrameCompiler, packet: &
     view.submit_gui_frame(compiler, &fresh).unwrap();
     assert_eq!(pixel(&gui_capture(view), [200, 150]), [0, 255, 0, 255]);
     view.set_mapped(false).unwrap();
+    assert!(view.present().is_err());
     assert!(view.redraw().is_err());
     assert!(view.capture().is_err());
     view.set_mapped(true).unwrap();
