@@ -21,6 +21,13 @@ fn health(owner: &mut TestOwner) -> ModelHealthResult {
         .model_health(&ModelHealthArgs::default())
         .unwrap()
 }
+fn requires_update(owner: &mut TestOwner) -> bool {
+    Client::new(owner.document_host())
+        .documents()
+        .requires_update()
+        .unwrap()
+        .requires_update
+}
 #[test]
 fn one_body_analysis_is_identical_and_empty_part_is_zero_with_the_requested_density() {
     let (mut owner, awake) = owner();
@@ -85,6 +92,21 @@ fn model_health_lists_only_the_failed_feature_after_current_replay() {
     assert_eq!((unhealthy.len(), unhealthy[0].status.as_str()), (1, "sick"));
     assert!(!unhealthy[0].name.is_empty());
     assert!(!unhealthy[0].reason.is_empty());
+}
+#[test]
+fn requires_update_tracks_the_current_native_evaluation_generation() {
+    let (mut empty_owner, awake) = owner();
+    create(&mut empty_owner, &awake);
+    assert!(!requires_update(&mut empty_owner));
+    empty_owner.finish().unwrap();
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    total(&mut owner, 0.);
+    assert!(!requires_update(&mut owner));
+    set_parameter(&mut owner, "depth", "3 cm");
+    assert!(requires_update(&mut owner));
+    total(&mut owner, 0.);
+    assert!(!requires_update(&mut owner));
 }
 #[test]
 fn part_analysis_uses_assigned_density_and_validates_requests() {

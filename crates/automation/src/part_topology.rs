@@ -30,6 +30,12 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<ModelHealthResult, String>;
+    /// Report whether the current recipe differs from the native evaluation; example: `access.requires_update(files, document)?`.
+    fn requires_update(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<bool, String>;
     /// Verify a current exact target before any edit; example: `access.verify(files, document, key, TopologyEntityKind::Face)?`.
     fn verify(
         &mut self,
@@ -41,11 +47,12 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 4] = [
+pub const BODY_QUERY_METHODS: [&str; 5] = [
     METHOD_BODY_LIST,
     METHOD_BODY_PHYSICAL_PROPS,
     METHOD_ANALYSIS_MASS_PROPERTIES,
     METHOD_ANALYSIS_MODEL_HEALTH,
+    METHOD_DOCUMENTS_REQUIRES_UPDATE,
 ];
 mod physical;
 pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -92,8 +99,22 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             let _: ModelHealthArgs = crate::decode(method, encoded)?;
             crate::encode(&owner.model_health(files, document).map_err(Error)?)
         }
+        METHOD_DOCUMENTS_REQUIRES_UPDATE => {
+            no_arguments(method, encoded)?;
+            crate::encode(&RequiresUpdateResult {
+                requires_update: owner.requires_update(files, document).map_err(Error)?,
+            })
+        }
         _ => Err(Error(format!(
             "body query {method:?}: expected {BODY_QUERY_METHODS:?}"
         ))),
     }
+}
+
+fn no_arguments(method: &str, encoded: &[u8]) -> Result<(), Error> {
+    if encoded.is_empty() {
+        return Ok(());
+    }
+    let _: EmptyObject = crate::decode(method, encoded)?;
+    Ok(())
 }

@@ -31,6 +31,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         self.ensure_current(files, document)?;
         self.current_model_health(files, document)
     }
+    fn requires_update(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<bool, String> {
+        self.part_requires_update(files, document)
+    }
     fn verify(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

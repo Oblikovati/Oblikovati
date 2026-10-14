@@ -3,6 +3,25 @@ use super::*;
 use oblikovati_api::wire::{FeatureHealth, ModelHealthResult};
 
 impl DesktopPartScenes {
+    pub(super) fn part_requires_update<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<bool, String> {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        if session.snapshot().work_geometry.features().is_empty() {
+            return Ok(false);
+        }
+        Ok(self.current(session).is_err())
+    }
+
     pub(super) fn current_model_health<
         O: TransactionObserver,
         W: WorkspaceObserver,
