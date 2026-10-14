@@ -22,6 +22,7 @@ impl ParameterSnapshotFixture {
             snapshot: GuiParameterSnapshot {
                 linked_tables: Vec::new(),
                 link_sources: Vec::new(),
+                groups: Vec::new(),
                 document: 7,
                 rows: vec![GuiParameterRow {
                     tolerance_text: String::new(),
@@ -81,6 +82,34 @@ fn empty_views_and_failed_parameters_remain_inspectable() {
     fixture.snapshot.validate().unwrap();
     fixture.snapshot.rows.clear();
     fixture.snapshot.validate().unwrap();
+}
+#[test]
+fn groups_require_current_members_and_safe_presentation_text() {
+    let mut fixture = ParameterSnapshotFixture::new();
+    fixture.snapshot.groups.push(GuiParameterGroup {
+        key: "ratios".into(),
+        display_name: "Gear ratios".into(),
+        client_id: "addin".into(),
+        members: vec![11],
+    });
+    fixture.snapshot.validate().unwrap();
+    fixture.snapshot.groups[0].members.push(12);
+    assert!(
+        fixture
+            .snapshot
+            .validate()
+            .unwrap_err()
+            .contains("member 12")
+    );
+    fixture.snapshot.groups[0].members = vec![11];
+    fixture.snapshot.groups[0].display_name = "\0".into();
+    assert!(
+        fixture
+            .snapshot
+            .validate()
+            .unwrap_err()
+            .contains("display name")
+    );
 }
 #[test]
 fn value_list_choices_are_validated_as_widget_text() {

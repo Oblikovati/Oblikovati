@@ -17,6 +17,7 @@ impl ParameterCellWidgetFixture {
         let snapshot = GuiParameterSnapshot {
             linked_tables: Vec::new(),
             link_sources: Vec::new(),
+            groups: Vec::new(),
             document: 7,
             rows: vec![GuiParameterRow {
                 tolerance_text: String::new(),
@@ -111,6 +112,7 @@ fn panel_response_forwarding_retires_only_the_matching_text_request() {
     let view = GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: vec![GuiParameterRow {
             tolerance_text: String::new(),

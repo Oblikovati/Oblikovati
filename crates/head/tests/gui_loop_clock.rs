@@ -118,6 +118,7 @@ fn parameter_metadata_and_results_schedule_frames_without_replaying_commands() {
     let snapshot = oblikovati_gui::GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: Vec::new(),
     };
@@ -163,6 +164,7 @@ fn parameter_view_issues_request_one_frame_and_valid_metadata_recovers() {
     let view = oblikovati_gui::GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: Vec::new(),
     };

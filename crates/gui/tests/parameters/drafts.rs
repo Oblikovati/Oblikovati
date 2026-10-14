@@ -11,6 +11,7 @@ impl ParameterDraftFixture {
         let snapshot = GuiParameterSnapshot {
             linked_tables: Vec::new(),
             link_sources: Vec::new(),
+            groups: Vec::new(),
             document: 7,
             rows: vec![GuiParameterRow {
                 tolerance_text: String::new(),

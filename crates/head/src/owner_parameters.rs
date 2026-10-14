@@ -9,7 +9,8 @@ use oblikovati_api::client::Client;
 use oblikovati_api::types::Tolerance;
 use oblikovati_automation::{FileQueryHost, parameter_detail};
 use oblikovati_gui::{
-    GuiParameterLinkParameter, GuiParameterLinkSource, GuiParameterRow, GuiParameterSnapshot,
+    GuiParameterGroup, GuiParameterLinkParameter, GuiParameterLinkSource, GuiParameterRow,
+    GuiParameterSnapshot,
 };
 use oblikovati_model::{
     parameter::ParameterCollection,
@@ -17,6 +18,38 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+pub(super) fn require_group_owner<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    key: &str,
+    must_exist: bool,
+) -> Result<(), String> {
+    if files.workspace().active_document() != Some(document) {
+        return Err(format!(
+            "GUI parameter group document {document}: expected current document {:?}",
+            files.workspace().active_document()
+        ));
+    }
+    if must_exist
+        && files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .snapshot()
+            .parameters
+            .group(key)
+            .is_none()
+    {
+        return Err(format!(
+            "GUI parameter group {key:?} in document {document}: expected an existing group key"
+        ));
+    }
+    Ok(())
+}
 pub(super) fn owner_parameter_snapshot<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -44,11 +77,26 @@ pub(super) fn owner_parameter_snapshot<
         .tables
         .unwrap_or_default();
     let link_sources = owner_link_sources(files, document)?;
+    let groups = parameters
+        .groups()
+        .iter()
+        .map(|group| {
+            Ok(GuiParameterGroup {
+                key: group.key.0.to_string(),
+                display_name: group.display_name.clone(),
+                client_id: group.client_id.clone(),
+                members: parameters
+                    .group_members(&group.key.0)
+                    .map_err(|cause| cause.to_string())?,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
     Ok(Some(GuiParameterSnapshot {
         document,
         rows,
         linked_tables,
         link_sources,
+        groups,
     }))
 }
 pub(super) fn owner_link_sources<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

@@ -127,6 +127,9 @@ fn apply_parameter_value(
     action: &GuiParameterAction,
 ) -> Result<(), String> {
     match action {
+        GuiParameterAction::GroupManagement(edit) => Err(format!(
+            "GUI parameter group action {edit:?}: expected document-level group dispatch"
+        )),
         GuiParameterAction::Link(edit) => Err(format!(
             "GUI link request {}: expected document-level link dispatch",
             edit.request

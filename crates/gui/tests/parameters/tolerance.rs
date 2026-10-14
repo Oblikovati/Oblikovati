@@ -94,6 +94,7 @@ fn tolerance_open_validation_is_atomic_and_document_changes_retire_stale_targets
     let snapshot = GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: vec![tolerance_row()],
     };
@@ -113,6 +114,7 @@ fn tolerance_open_validation_is_atomic_and_document_changes_retire_stale_targets
     editor.synchronize(Some(&GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: Vec::new(),
     }));

@@ -49,6 +49,15 @@ pub struct GuiParameterSnapshot {
     pub rows: Vec<GuiParameterRow>,
     pub linked_tables: Vec<oblikovati_api::wire::DerivedParameterTableInfo>,
     pub link_sources: Vec<GuiParameterLinkSource>,
+    pub groups: Vec<GuiParameterGroup>,
+}
+/// A group retains its immutable API key and stable member identities for native controls.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiParameterGroup {
+    pub key: String,
+    pub display_name: String,
+    pub client_id: String,
+    pub members: Vec<u64>,
 }
 /// One open document that can supply numeric user parameters to a derived table.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -83,7 +92,38 @@ impl GuiParameterSnapshot {
         }
         validate_linked_tables(&self.linked_tables)
             .and_then(|()| validate_link_sources(&self.link_sources, self.document))
+            .and_then(|()| validate_groups(&self.groups, &identities))
     }
+}
+fn validate_groups(groups: &[GuiParameterGroup], parameters: &BTreeSet<u64>) -> Result<(), String> {
+    let mut keys = BTreeSet::new();
+    for group in groups {
+        if group.key.is_empty() || group.key.contains('\0') || !keys.insert(&group.key) {
+            return Err(format!(
+                "GUI parameter group {:?}: expected a unique nonempty NUL-free key",
+                group.key
+            ));
+        }
+        if group.display_name.is_empty()
+            || group.display_name.contains('\0')
+            || group.client_id.contains('\0')
+        {
+            return Err(format!(
+                "GUI parameter group {:?}: expected a nonempty NUL-free display name and NUL-free client ID",
+                group.key
+            ));
+        }
+        let mut members = BTreeSet::new();
+        for member in &group.members {
+            if !parameters.contains(member) || !members.insert(member) {
+                return Err(format!(
+                    "GUI parameter group {:?}, member {}: expected a unique current parameter identity",
+                    group.key, member
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 fn validate_link_sources(sources: &[GuiParameterLinkSource], target: u64) -> Result<(), String> {
     let mut documents = BTreeSet::new();

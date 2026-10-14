@@ -73,6 +73,7 @@ fn group_editors_retire_targets_for_deleted_parameters_and_closed_documents() {
     let snapshot = GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: vec![group_row()],
     };
@@ -82,6 +83,7 @@ fn group_editors_retire_targets_for_deleted_parameters_and_closed_documents() {
     editor.synchronize(Some(&GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: Vec::new(),
     }));

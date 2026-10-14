@@ -16,6 +16,7 @@ fn parameter_view() -> GuiParameterSnapshot {
     GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: vec![
             numeric,
@@ -216,4 +217,25 @@ fn group_editor_open_actions_stay_local_for_read_only_rows() {
     panel.consume_editor_actions(&mut actions);
     assert!(actions.is_empty());
     assert!(panel.issue.is_none());
+}
+#[test]
+fn group_management_actions_require_safe_document_and_group_names() {
+    let valid = GuiParameterGroupAction::Create {
+        document: 7,
+        internal_name: "ratios".into(),
+        display_name: "Ratios".into(),
+        client_id: String::new(),
+    };
+    valid.validate().unwrap();
+    let invalid = GuiParameterGroupAction::Rename {
+        document: 7,
+        internal_name: "ratios".into(),
+        display_name: String::new(),
+    };
+    assert!(
+        invalid
+            .validate()
+            .unwrap_err()
+            .contains("presentation text")
+    );
 }

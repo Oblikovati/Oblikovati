@@ -15,6 +15,7 @@ fn link_picker_emits_one_owned_selection_and_retires_after_matching_result() {
         document: 7,
         rows: Vec::new(),
         linked_tables: Vec::new(),
+        groups: Vec::new(),
         link_sources: vec![GuiParameterLinkSource {
             document: 8,
             source_document: "source.opd".into(),
@@ -53,6 +54,7 @@ fn canonical_linked_tables_build_owned_draws_in_the_parameter_panel() {
             ..Default::default()
         }],
         link_sources: Vec::new(),
+        groups: Vec::new(),
     };
     engine.set_parameter_snapshot(Some(snapshot)).unwrap();
     engine.set_parameters_open(true);

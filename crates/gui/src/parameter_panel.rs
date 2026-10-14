@@ -7,6 +7,7 @@ use imgui::{Condition, TableFlags, Ui};
 mod control_identity;
 mod create;
 mod group;
+mod group_manager;
 mod linked_tables;
 use control_identity::parameter_controls_identity;
 pub use group::GuiParameterGroupEdit;
@@ -67,6 +68,7 @@ pub enum GuiParameterRowOperation {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiParameterAction {
+    GroupManagement(GuiParameterGroupAction),
     Link(GuiParameterLinkEdit),
     DeleteLinkedTable {
         document: u64,
@@ -89,6 +91,72 @@ pub enum GuiParameterAction {
         value: bool,
     },
 }
+/// A document-level change to immutable-keyed parameter groups.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GuiParameterGroupAction {
+    Create {
+        document: u64,
+        internal_name: String,
+        display_name: String,
+        client_id: String,
+    },
+    Rename {
+        document: u64,
+        internal_name: String,
+        display_name: String,
+    },
+    Delete {
+        document: u64,
+        internal_name: String,
+        delete_parameters: bool,
+    },
+}
+impl GuiParameterGroupAction {
+    /// Reject malformed names before they reach the document owner; example: `action.validate()?`.
+    pub fn validate(&self) -> Result<(), String> {
+        let (document, key, display, client) = match self {
+            Self::Create {
+                document,
+                internal_name,
+                display_name,
+                client_id,
+            } => (
+                *document,
+                internal_name,
+                Some(display_name),
+                Some(client_id),
+            ),
+            Self::Rename {
+                document,
+                internal_name,
+                display_name,
+            } => (*document, internal_name, Some(display_name), None),
+            Self::Delete {
+                document,
+                internal_name,
+                ..
+            } => (*document, internal_name, None, None),
+        };
+        if document == 0
+            || key.is_empty()
+            || key.contains('\0')
+            || display.is_some_and(|value| value.is_empty() || value.contains('\0'))
+            || client.is_some_and(|value| value.contains('\0'))
+        {
+            return Err(format!(
+                "GUI parameter group action {self:?}: expected a nonzero document, nonempty NUL-free key and valid presentation text"
+            ));
+        }
+        Ok(())
+    }
+    pub fn document(&self) -> u64 {
+        match self {
+            Self::Create { document, .. }
+            | Self::Rename { document, .. }
+            | Self::Delete { document, .. } => *document,
+        }
+    }
+}
 pub(crate) struct ParameterPanel {
     open: bool,
     snapshot: Option<GuiParameterSnapshot>,
@@ -100,6 +168,7 @@ pub(crate) struct ParameterPanel {
     value_list: value_list::ParameterValueListEditor,
     tolerance: tolerance::ParameterToleranceEditor,
     group: group::ParameterGroupEditor,
+    group_manager: group_manager::ParameterGroupManager,
     link_picker: linked_tables::LinkPicker,
 }
 impl ParameterPanel {
@@ -115,6 +184,7 @@ impl ParameterPanel {
             value_list: Default::default(),
             tolerance: Default::default(),
             group: Default::default(),
+            group_manager: Default::default(),
             link_picker: Default::default(),
         })
     }
@@ -128,6 +198,7 @@ impl ParameterPanel {
         self.value_list.synchronize(snapshot.as_ref());
         self.tolerance.synchronize(snapshot.as_ref());
         self.group.synchronize(snapshot.as_ref());
+        self.group_manager.synchronize(snapshot.as_ref());
         self.link_picker.synchronize(snapshot.as_ref());
         let changed = self.snapshot != snapshot || self.metadata_issue.is_some();
         self.metadata_issue = None;
@@ -175,7 +246,8 @@ impl ParameterPanel {
             GuiParameterAction::Text(edit) => {
                 self.acknowledge(edit, result);
             }
-            GuiParameterAction::Toggle { .. }
+            GuiParameterAction::GroupManagement(_)
+            | GuiParameterAction::Toggle { .. }
             | GuiParameterAction::Row { .. }
             | GuiParameterAction::DeleteLinkedTable { .. } => self.issue = result.err(),
         }
@@ -287,6 +359,7 @@ impl ParameterPanel {
         );
         self.creation.draw(ui, actions);
         linked_tables::draw_linked_tables(ui, snapshot, actions, &mut self.link_picker);
+        self.group_manager.draw(ui, snapshot, actions);
         if let Some(issue) = &self.issue {
             ui.text_wrapped(issue.replace('\0', "\\0"));
         }

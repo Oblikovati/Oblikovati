@@ -71,6 +71,7 @@ fn value_list_document_switch_and_deletion_retire_only_stale_targets() {
     let snapshot = GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: vec![value_list_row()],
     };
@@ -80,6 +81,7 @@ fn value_list_document_switch_and_deletion_retire_only_stale_targets() {
     editor.synchronize(Some(&GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 7,
         rows: Vec::new(),
     }));
@@ -88,6 +90,7 @@ fn value_list_document_switch_and_deletion_retire_only_stale_targets() {
     editor.synchronize(Some(&GuiParameterSnapshot {
         linked_tables: Vec::new(),
         link_sources: Vec::new(),
+        groups: Vec::new(),
         document: 8,
         rows: snapshot.rows,
     }));

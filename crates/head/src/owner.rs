@@ -185,6 +185,10 @@ impl<
         &mut self,
         action: &oblikovati_gui::GuiParameterAction,
     ) -> Result<bool, String> {
+        if let oblikovati_gui::GuiParameterAction::GroupManagement(edit) = action {
+            edit.validate()?;
+            return self.apply_parameter_group_management(edit);
+        }
         if let oblikovati_gui::GuiParameterAction::Link(edit) = action {
             edit.validate()?;
             let (source_document, linked) =
@@ -279,6 +283,70 @@ impl<
         self.sketch_scenes.clear();
         self.dispatch.close();
         Ok(())
+    }
+}
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> DesktopOwner<O, W, F, G, R, S>
+{
+    fn apply_parameter_group_management(
+        &mut self,
+        edit: &oblikovati_gui::GuiParameterGroupAction,
+    ) -> Result<bool, String> {
+        use oblikovati_gui::GuiParameterGroupAction;
+        let exists = !matches!(edit, GuiParameterGroupAction::Create { .. });
+        let key = match edit {
+            GuiParameterGroupAction::Create { internal_name, .. }
+            | GuiParameterGroupAction::Rename { internal_name, .. }
+            | GuiParameterGroupAction::Delete { internal_name, .. } => internal_name,
+        };
+        parameter_view::require_group_owner(&self.files, edit.document(), key, exists)?;
+        let client = oblikovati_api::client::Client::new(self.document_host());
+        match edit {
+            GuiParameterGroupAction::Create {
+                internal_name,
+                display_name,
+                client_id,
+                ..
+            } => client
+                .parameters()
+                .add_group(&oblikovati_api::wire::ParameterGroupAddArgs {
+                    internal_name: internal_name.clone(),
+                    display_name: display_name.clone(),
+                    client_id: client_id.clone(),
+                }),
+            GuiParameterGroupAction::Rename {
+                internal_name,
+                display_name,
+                ..
+            } => client.parameters().set_group_display_name(
+                &oblikovati_api::wire::ParameterGroupDisplayNameArgs {
+                    internal_name: internal_name.clone(),
+                    display_name: display_name.clone(),
+                },
+            ),
+            GuiParameterGroupAction::Delete {
+                internal_name,
+                delete_parameters,
+                ..
+            } => {
+                client
+                    .parameters()
+                    .delete_group(&oblikovati_api::wire::ParameterGroupDeleteArgs {
+                        internal_name: internal_name.clone(),
+                        delete_parameters: *delete_parameters,
+                    })
+                    .map_err(|cause| cause.to_string())?;
+                return Ok(true);
+            }
+        }
+        .map_err(|cause| cause.to_string())?;
+        Ok(true)
     }
 }
 impl<
