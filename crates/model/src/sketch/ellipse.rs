@@ -135,7 +135,7 @@ fn require_ellipse_radii(radii: [f64; 2]) -> Result<(), SketchError> {
     }
     Ok(())
 }
-fn normalized_ellipse_axis(axis: [f64; 2]) -> Result<[f64; 2], SketchError> {
+pub(super) fn normalized_ellipse_axis(axis: [f64; 2]) -> Result<[f64; 2], SketchError> {
     let scale = axis[0].abs().max(axis[1].abs());
     if axis.iter().any(|value| !value.is_finite()) || scale == 0.0 {
         return Err(SketchError::Definition(format!(

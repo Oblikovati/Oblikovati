@@ -54,7 +54,7 @@ impl SketchPlacementRelation {
         })
     }
 }
-/// Field operands use local points/members; a steering angle changes placement but has no reference edge.
+/// Field operands use local points/members; steering inputs change placement without a live dimension.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SketchPlacementBinding {
     Distance([usize; 2]),
@@ -63,6 +63,8 @@ pub enum SketchPlacementBinding {
     Radius(usize),
     Diameter(usize),
     SteeringAngle,
+    SteeringLength,
+    EllipseRadius(usize),
 }
 impl SketchPlacementBinding {
     /// Read the field's unit category; example: `field.binding.dimension()` for an input box.
@@ -78,7 +80,10 @@ impl SketchPlacementBinding {
         members: &[SketchEntityId],
     ) -> Result<Option<SketchDimensionalConstraintCreation>, SketchError> {
         let operand = match self {
-            Self::SteeringAngle => return Ok(None),
+            Self::SteeringAngle | Self::SteeringLength => return Ok(None),
+            Self::EllipseRadius(index) => MeasuredDimensionOperands::EllipseRadius {
+                ellipse: indexed_entity(members, index)?,
+            },
             Self::Distance(pair) => distance_operand(points, pair, DistanceMeasure::Aligned)?,
             Self::HorizontalDistance(pair) => {
                 distance_operand(points, pair, DistanceMeasure::Horizontal)?

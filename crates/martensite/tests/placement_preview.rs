@@ -179,3 +179,30 @@ fn preview_respects_the_owner_iteration_limit_and_can_recover_with_its_normal_po
         sample_placement_preview_with_policy(&recipe, options(0.01), Default::default()).is_ok()
     );
 }
+
+#[test]
+fn ellipse_preview_is_closed_and_uses_the_native_analytic_frame() {
+    let recipe = SketchPlacementRecipe::ellipse([3., 4.], [0.6, 0.8], [5., 2.]).unwrap();
+    let before = recipe.clone();
+    let curves = sample_placement_preview(&recipe, options(0.01)).unwrap();
+    assert_eq!(recipe, before);
+    assert_eq!(curves.len(), 1);
+    let curve = &curves[0];
+    assert_eq!(curve.member_index, 0);
+    assert!(!curve.construction);
+    assert!(
+        distance(
+            *curve.points.first().unwrap(),
+            *curve.points.last().unwrap()
+        ) < 1e-12
+    );
+    for point in &curve.points {
+        let x = point[0] - 3.;
+        let y = point[1] - 4.;
+        let major = (0.6 * x + 0.8 * y) / 5.;
+        let minor = (-0.8 * x + 0.6 * y) / 2.;
+        assert!((major * major + minor * minor - 1.).abs() < 1e-12);
+    }
+    let fine = sample_placement_preview(&recipe, options(0.001)).unwrap();
+    assert!(fine[0].points.len() > curve.points.len());
+}

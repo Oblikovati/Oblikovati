@@ -3,6 +3,7 @@ use super::{SketchError, SketchPathMember, require_position};
 mod arcs;
 mod bindings;
 mod circles;
+mod ellipses;
 mod fields;
 mod geometry;
 mod rectangles;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle and arc recipes and rank independently.
+// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle, arc and ellipse recipes and rank independently.
 package main
 
 import (
@@ -31,6 +31,8 @@ type lockedArc struct {
 	DOF    int
 }
 type entity struct {
+	MajorAxis         [2]float64
+	MinorRadius       float64
 	Radius            float64
 	Kind              string
 	Points            []int
@@ -80,6 +82,11 @@ func main() {
 			out = append(out, capture(record{Kind: "arc", Input: input, CCW: ccw}))
 		}
 	}
+	for _, axis := range [][2]float64{{1, 0}, {0, 1}, {0.6, 0.8}, {-0.6, -0.8}} {
+		for _, radii := range [][2]float64{{5, 2}, {5, 5}, {100, 0.125}} {
+			out = append(out, capture(record{Kind: "ellipse", Input: [3][2]float64{{3, -4}, axis, radii}}))
+		}
+	}
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}
@@ -93,6 +100,8 @@ func capture(out record) record {
 		r = sketch.ArcSlotRecipe(c, s, e, out.Width, out.CCW)
 	}
 	switch out.Kind {
+	case "ellipse":
+		r = sketch.EllipseRecipe(c, m.V2(s.X, s.Y), e.X, e.Y)
 	case "arc":
 		r = sketch.ArcRecipe(c, s, e, out.CCW)
 	case "circle":
@@ -115,7 +124,10 @@ func capture(out record) record {
 		if v.Kind == sketch.RecipeCircle {
 			kind = "circle"
 		}
-		out.Entities = append(out.Entities, entity{float64(v.Radius), kind, v.Points, v.CounterClockwise, v.Construction})
+		if v.Kind == sketch.RecipeEllipse {
+			kind = "ellipse"
+		}
+		out.Entities = append(out.Entities, entity{[2]float64{v.MajorAxis.X, v.MajorAxis.Y}, float64(v.MinorRadius), float64(v.Radius), kind, v.Points, v.CounterClockwise, v.Construction})
 	}
 	for _, v := range r.Constraints {
 		out.Relations = append(out.Relations, relation{v.Points, string(v.Kind), v.Entities})
@@ -130,6 +142,12 @@ func capture(out record) record {
 		}
 		if v.Dim.Kind == sketch.DiameterDim {
 			binding = "diameter"
+		}
+		if v.Dim.Kind == sketch.EllipseRadiusDim {
+			binding = "ellipseRadius"
+			if v.Dim.Entity == sketch.NoRecipeEntity {
+				binding = "steeringLength"
+			}
 		}
 		out.Fields = append(out.Fields, field{v.Label, v.Value, [2][2]float64{xy(v.Witness[0]), xy(v.Witness[1])}, binding, v.Dim.Points, v.Dim.Entity, sketch.DistanceOrientationName(v.Dim.Orientation)})
 	}

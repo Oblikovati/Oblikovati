@@ -7,7 +7,15 @@ use super::super::{
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SketchPlacementGeometry {
     Path(SketchPathMember),
-    Circle { center: usize, radius: f64 },
+    Ellipse {
+        center: usize,
+        major_axis: [f64; 2],
+        radii: [f64; 2],
+    },
+    Circle {
+        center: usize,
+        radius: f64,
+    },
 }
 impl SketchPlacementGeometry {
     pub(crate) fn primitive(
@@ -16,6 +24,16 @@ impl SketchPlacementGeometry {
         construction: bool,
     ) -> Result<SketchPrimitiveCreation, SketchError> {
         match self {
+            Self::Ellipse {
+                center,
+                major_axis,
+                radii,
+            } => Ok(SketchPrimitiveCreation::Ellipse {
+                center: SketchPointInput::Owned(indexed_entity(points, center)?),
+                major_axis,
+                radii,
+                construction,
+            }),
             Self::Path(path) => path.primitive(points, construction),
             Self::Circle { center, radius } => Ok(SketchPrimitiveCreation::Circle {
                 center: SketchPointInput::Owned(indexed_entity(points, center)?),

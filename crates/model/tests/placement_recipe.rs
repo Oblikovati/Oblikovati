@@ -25,6 +25,8 @@ struct GoRecipe {
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct GoEntity {
+    major_axis: [f64; 2],
+    minor_radius: f64,
     radius: f64,
     kind: String,
     points: Vec<usize>,
@@ -54,7 +56,7 @@ struct GoField {
 fn constrained_slot_graphs_and_field_bindings_match_the_independent_go_recipes() {
     let fixtures: Vec<GoRecipe> =
         serde_json::from_str(include_str!("placement_recipe/go-recipes.json")).unwrap();
-    assert_eq!(fixtures.len(), 47);
+    assert_eq!(fixtures.len(), 59);
     for fixture in fixtures
         .into_iter()
         .filter(|fixture| fixture.kind.is_empty())
@@ -91,26 +93,31 @@ fn close(actual: f64, expected: f64) {
 }
 fn verify_entities(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
     assert_eq!(actual.members.len(), fixture.entities.len());
-    for (a, b) in actual.members.iter().zip(&fixture.entities) {
-        let expected = if b.kind == "circle" {
-            SketchPlacementGeometry::Circle {
-                center: b.points[0],
-                radius: b.radius,
-            }
+    for (actual, expected) in actual.members.iter().zip(&fixture.entities) {
+        if expected.kind == "ellipse" {
+            ellipses::verify_frame(actual.geometry, expected);
         } else {
-            SketchPlacementGeometry::Path(if b.kind == "line" {
-                SketchPathMember::Line([b.points[0], b.points[1]])
-            } else {
-                SketchPathMember::Arc {
-                    center: b.points[0],
-                    endpoints: [b.points[1], b.points[2]],
-                    counter_clockwise: b.ccw,
-                }
-            })
-        };
-        assert_eq!(a.geometry, expected);
-        assert_eq!(a.construction, b.construction);
+            assert_eq!(actual.geometry, expected_geometry(expected));
+        }
+        assert_eq!(actual.construction, expected.construction);
     }
+}
+fn expected_geometry(entity: &GoEntity) -> SketchPlacementGeometry {
+    if entity.kind == "circle" {
+        return SketchPlacementGeometry::Circle {
+            center: entity.points[0],
+            radius: entity.radius,
+        };
+    }
+    SketchPlacementGeometry::Path(if entity.kind == "line" {
+        SketchPathMember::Line([entity.points[0], entity.points[1]])
+    } else {
+        SketchPathMember::Arc {
+            center: entity.points[0],
+            endpoints: [entity.points[1], entity.points[2]],
+            counter_clockwise: entity.ccw,
+        }
+    })
 }
 fn verify_relations(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
     assert_eq!(actual.relations.len(), fixture.relations.len());
@@ -153,6 +160,10 @@ fn verify_fields(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
                 "" | "aligned" => SketchPlacementBinding::Distance(b.points),
                 value => panic!("unknown orientation {value}"),
             },
+            "ellipseRadius" => {
+                SketchPlacementBinding::EllipseRadius(usize::try_from(b.entity).unwrap())
+            }
+            "steeringLength" => SketchPlacementBinding::SteeringLength,
             "radius" => SketchPlacementBinding::Radius(usize::try_from(b.entity).unwrap()),
             "diameter" => SketchPlacementBinding::Diameter(usize::try_from(b.entity).unwrap()),
             "steering" => SketchPlacementBinding::SteeringAngle,
@@ -187,3 +198,6 @@ struct GoLockedArc {
     #[serde(rename = "DOF")]
     dof: usize,
 }
+
+#[path = "placement_recipe/ellipses.rs"]
+mod ellipses;
