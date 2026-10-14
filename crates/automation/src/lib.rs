@@ -41,6 +41,7 @@ pub use detail::parameter_detail;
 mod document_sketch_settings;
 mod end_of_part;
 mod expressions;
+mod feature_lifecycle;
 mod parameter_choices;
 mod parameter_edit;
 mod parameter_exchange;
@@ -260,6 +261,7 @@ pub use asset_commands::ASSET_COMMAND_METHODS;
 mod asset_assignments;
 pub use asset_assignments::ASSET_ASSIGNMENT_METHODS;
 mod part_topology;
+pub use feature_lifecycle::FEATURE_LIFECYCLE_METHODS;
 pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKind};
 
 mod body_commands;

@@ -48,6 +48,12 @@ fn end_of_part(owner: &mut TestOwner) -> EndOfPartResult {
         .get_end_of_part(&oblikovati_api::json::EmptyObject {})
         .unwrap()
 }
+fn feature(owner: &mut TestOwner, id: u64) -> FeatureDetailResult {
+    Client::new(owner.document_host())
+        .features()
+        .get(&FeatureRefArgs { id })
+        .unwrap()
+}
 #[test]
 fn one_body_analysis_is_identical_and_empty_part_is_zero_with_the_requested_density() {
     let (mut owner, awake) = owner();
@@ -190,6 +196,67 @@ fn end_of_part_round_trips_through_history_and_the_native_evaluation() {
             .is_err()
     );
     assert_eq!(end_of_part(&mut owner), restored);
+}
+#[test]
+fn feature_lifecycle_edits_native_history_and_returns_current_detail() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, true);
+    let initial = feature(&mut owner, 1);
+    assert_eq!(
+        (
+            initial.feature.index,
+            initial.feature.feature_info.kind.as_str()
+        ),
+        (0, "extrude")
+    );
+    let renamed = Client::new(owner.document_host())
+        .features()
+        .rename(&RenameFeatureArgs {
+            id: 1,
+            name: "Base".into(),
+        })
+        .unwrap();
+    assert_eq!(renamed.feature.feature_info.name, "Base");
+    assert!(
+        Client::new(owner.document_host())
+            .features()
+            .rename(&RenameFeatureArgs {
+                id: 2,
+                name: "Base".into()
+            })
+            .is_err()
+    );
+    let suppressed = Client::new(owner.document_host())
+        .features()
+        .set_suppressed(&SetFeatureSuppressedArgs {
+            id: 1,
+            suppressed: true,
+        })
+        .unwrap();
+    assert_eq!(
+        (
+            suppressed.feature.feature_info.health.as_str(),
+            total(&mut owner, 0.).volume_mm3
+        ),
+        ("suppressed", 24000.)
+    );
+    let restored = Client::new(owner.document_host())
+        .features()
+        .set_suppressed(&SetFeatureSuppressedArgs {
+            id: 1,
+            suppressed: false,
+        })
+        .unwrap();
+    assert!(restored.feature.feature_info.health.is_empty());
+    let moved = Client::new(owner.document_host())
+        .features()
+        .reorder(&ReorderFeatureArgs {
+            id: 2,
+            new_index: 0,
+        })
+        .unwrap();
+    assert_eq!(moved.feature.index, 0);
+    assert_eq!(total(&mut owner, 0.).volume_mm3, 48000.);
 }
 #[test]
 fn part_analysis_uses_assigned_density_and_validates_requests() {
