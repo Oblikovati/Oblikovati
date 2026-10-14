@@ -226,3 +226,6 @@ mod sketch_edit;
 
 #[path = "owner/rectangle_input.rs"]
 mod rectangle_input;
+
+#[path = "owner/circle_input.rs"]
+mod circle_input;

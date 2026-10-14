@@ -126,7 +126,7 @@ impl<
     ) {
         let outcome = window
             .sketch_point(pixel, tool.plane)
-            .and_then(|point| tool.cursor(point, place))
+            .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
             .and_then(|recipe| self.commit_placement_cursor(tool, recipe));
         match outcome {
             Ok(()) => self.placement_notice(tool.prompt()),

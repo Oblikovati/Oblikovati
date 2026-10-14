@@ -135,6 +135,7 @@ impl SketchPlacementState {
         &mut self,
         point: Option<[f64; 2]>,
         place: bool,
+        construction: &dyn oblikovati_model::sketch::SketchCircleConstruction,
     ) -> Result<Option<SketchPlacementRecipe>, String> {
         self.preview = None;
         let Some(point) = point else {
@@ -150,7 +151,7 @@ impl SketchPlacementState {
         if !place && self.accepted.last() == Some(&point) {
             return Ok(None);
         }
-        let recipe = self.tool.recipe(&self.accepted, point)?;
+        let recipe = self.tool.recipe(&self.accepted, point, construction)?;
         self.preview = Some(recipe.clone());
         Ok(place.then_some(recipe))
     }
@@ -191,11 +192,21 @@ mod tests {
             crate::SketchPlacementTool::Rectangle,
         )
         .unwrap();
+        let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
         let before = state.prompt();
-        assert!(state.cursor(Some([f64::NAN, 0.]), true).is_err());
+        assert!(
+            state
+                .cursor(Some([f64::NAN, 0.]), true, &construction)
+                .is_err()
+        );
         assert_eq!(state.prompt(), before);
         assert!(state.preview.is_none());
-        state.cursor(Some([0., 0.]), true).unwrap();
-        assert!(state.cursor(Some([1., 2.]), true).unwrap().is_some());
+        state.cursor(Some([0., 0.]), true, &construction).unwrap();
+        assert!(
+            state
+                .cursor(Some([1., 2.]), true, &construction)
+                .unwrap()
+                .is_some()
+        );
     }
 }

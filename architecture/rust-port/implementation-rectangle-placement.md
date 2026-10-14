@@ -89,3 +89,6 @@ Xvfb display, software Vulkan and validation layer 1.4.321. Every crate exceeded
 shared seed, field helpers and placement state/tool modules reached 100%. The
 owner input module reached 98.56%. Duplication was 0.82% (595/72,369 scanned lines),
 with no additional duplicated lines or clone pairs relative to the wave base.
+
+[Circle placement](implementation-circle-placement.md) now extends this shared
+input and recipe path with centre-radius and three-point circles.

@@ -5,7 +5,7 @@ use crate::{SketchPlacementTool, placement_test_inputs::*};
 use oblikovati_model::{
     document_sketch::SketchPlacement, history::DocumentSketchCreation, sketch::SketchPlane,
 };
-fn rectangle_owner(
+pub(super) fn placement_owner(
     kind: SketchPlacementTool,
 ) -> (
     TestOwner,
@@ -46,7 +46,7 @@ fn place_rectangle(
     kind: SketchPlacementTool,
     drag: bool,
 ) -> oblikovati_model::document_sketch::DocumentSketches {
-    let (mut owner, document, sketch) = rectangle_owner(kind);
+    let (mut owner, document, sketch) = placement_owner(kind);
     let before = owner.gui_command_state().unwrap();
     deliver(&mut owner, &[button([0, 0], true)]);
     if !drag {
@@ -129,7 +129,7 @@ fn place_rectangle(
 }
 #[test]
 fn rectangle_failed_points_keep_the_current_stage_and_escape_cancels() {
-    let (mut owner, document, _) = rectangle_owner(SketchPlacementTool::ThreePointRectangle);
+    let (mut owner, document, _) = placement_owner(SketchPlacementTool::ThreePointRectangle);
     let before = owner
         .documents()
         .workspace()

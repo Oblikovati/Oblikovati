@@ -4,20 +4,26 @@ use super::*;
 use crate::{SketchPlacementTool, placement_test_inputs::*};
 use std::collections::VecDeque;
 #[test]
-fn native_rectangles_preview_commit_and_undo_through_shared_input_pipeline() {
+fn native_recipe_tools_preview_commit_finish_and_undo_through_shared_input_pipeline() {
     for kind in [
+        SketchPlacementTool::Circle,
+        SketchPlacementTool::ThreePointCircle {
+            options: oblikovati_model::sketch::CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
         SketchPlacementTool::Rectangle,
         SketchPlacementTool::CenterRectangle,
         SketchPlacementTool::ThreePointRectangle,
     ] {
-        run_native_rectangle(kind);
+        run_native_recipe_tool(kind);
     }
 }
-fn run_native_rectangle(kind: SketchPlacementTool) {
+fn run_native_recipe_tool(kind: SketchPlacementTool) {
     let directory = tempfile::tempdir().unwrap();
     let mut native = NativeHeadWindow::open().unwrap();
     let mut owner = native_owner(native.wake.clone()).unwrap();
-    let document = open_native_part(&mut owner, &directory.path().join("rectangle.opd"));
+    let document = open_native_part(&mut owner, &directory.path().join("recipe-placement.opd"));
     publish_native_scene(&mut owner, &mut native);
     let before = owner
         .documents()
@@ -35,7 +41,10 @@ fn run_native_rectangle(kind: SketchPlacementTool) {
         scripted: VecDeque::new(),
     };
     let mut inputs = vec![button([650, 430], true), button([650, 430], false)];
-    if kind == SketchPlacementTool::ThreePointRectangle {
+    if matches!(
+        kind,
+        SketchPlacementTool::ThreePointRectangle | SketchPlacementTool::ThreePointCircle { .. }
+    ) {
         inputs.extend([button([800, 430], true), button([800, 430], false)]);
     }
     inputs.push(motion([820, 520]));
@@ -46,6 +55,11 @@ fn run_native_rectangle(kind: SketchPlacementTool) {
         preview.members.len(),
         if kind == SketchPlacementTool::CenterRectangle {
             6
+        } else if matches!(
+            kind,
+            SketchPlacementTool::Circle | SketchPlacementTool::ThreePointCircle { .. }
+        ) {
+            1
         } else {
             4
         }
@@ -62,7 +76,7 @@ fn run_native_rectangle(kind: SketchPlacementTool) {
                 .sketches
         )
     );
-    commit_native_rectangle(&mut owner, &mut window, document, &preview);
+    commit_native_recipe(&mut owner, &mut window, document, &preview);
     let committed = window
         .native
         .sketch_scene_status()
@@ -93,11 +107,20 @@ fn run_native_rectangle(kind: SketchPlacementTool) {
                 .sketches
         )
     );
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    assert_eq!(
+        window.native.sketch_scene_status().unwrap().sketches,
+        committed
+    );
     capture_native_scene(&mut window.native);
     owner.finish().unwrap();
     window.finish().unwrap();
 }
-fn commit_native_rectangle(
+fn commit_native_recipe(
     owner: &mut NativeDesktopOwner,
     window: &mut PlacementEventWindow,
     document: u64,
@@ -123,6 +146,13 @@ fn commit_native_rectangle(
         for (actual, wanted) in point.position.iter().zip(expected) {
             assert!((actual - wanted).abs() < 1e-8);
         }
+    }
+    if let oblikovati_model::sketch::SketchPlacementGeometry::Circle { radius, .. } =
+        preview.members[0].geometry
+    {
+        let circle = geometry.circles().last().unwrap();
+        assert_eq!(circle.radius, radius);
+        assert_eq!(circle.center, points[0].id);
     }
     capture_native_scene(&mut window.native);
 }
