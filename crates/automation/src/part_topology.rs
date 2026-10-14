@@ -24,6 +24,12 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         index: Option<i64>,
         density: f64,
     ) -> Result<MassPropertiesResult, String>;
+    /// Aggregate the current replay health; example: `access.model_health(files, document)?`.
+    fn model_health(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<ModelHealthResult, String>;
     /// Verify a current exact target before any edit; example: `access.verify(files, document, key, TopologyEntityKind::Face)?`.
     fn verify(
         &mut self,
@@ -35,10 +41,11 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 3] = [
+pub const BODY_QUERY_METHODS: [&str; 4] = [
     METHOD_BODY_LIST,
     METHOD_BODY_PHYSICAL_PROPS,
     METHOD_ANALYSIS_MASS_PROPERTIES,
+    METHOD_ANALYSIS_MODEL_HEALTH,
 ];
 mod physical;
 pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -80,6 +87,10 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                     .physical_properties(files, document, None, request.density_g_cm3)
                     .map_err(Error)?,
             )
+        }
+        METHOD_ANALYSIS_MODEL_HEALTH => {
+            let _: ModelHealthArgs = crate::decode(method, encoded)?;
+            crate::encode(&owner.model_health(files, document).map_err(Error)?)
         }
         _ => Err(Error(format!(
             "body query {method:?}: expected {BODY_QUERY_METHODS:?}"

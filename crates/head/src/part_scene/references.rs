@@ -23,6 +23,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         self.ensure_current(files, document)?;
         self.body_physical_properties(files, document, index, density)
     }
+    fn model_health(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_api::wire::ModelHealthResult, String> {
+        self.ensure_current(files, document)?;
+        self.current_model_health(files, document)
+    }
     fn verify(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

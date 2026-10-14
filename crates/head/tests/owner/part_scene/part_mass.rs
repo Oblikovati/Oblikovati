@@ -15,6 +15,12 @@ fn one(owner: &mut TestOwner) -> MassPropertiesResult {
         .physical_properties(&BodyPhysicalPropertiesArgs::default())
         .unwrap()
 }
+fn health(owner: &mut TestOwner) -> ModelHealthResult {
+    Client::new(owner.document_host())
+        .analysis()
+        .model_health(&ModelHealthArgs::default())
+        .unwrap()
+}
 #[test]
 fn one_body_analysis_is_identical_and_empty_part_is_zero_with_the_requested_density() {
     let (mut owner, awake) = owner();
@@ -60,6 +66,25 @@ fn analysis_sums_current_bodies_without_union_and_tracks_edit_undo_and_failure()
         owner.take_scene().unwrap().unwrap().status.visible_bodies,
         1
     );
+}
+#[test]
+fn model_health_lists_only_the_failed_feature_after_current_replay() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    assert_eq!(
+        health(&mut owner),
+        ModelHealthResult {
+            overall: "ok".into(),
+            ..Default::default()
+        }
+    );
+    set_parameter(&mut owner, "depth", "0 cm");
+    let result = health(&mut owner);
+    assert_eq!((result.overall.as_str(), result.sick_count), ("sick", 1));
+    let unhealthy = result.unhealthy.unwrap();
+    assert_eq!((unhealthy.len(), unhealthy[0].status.as_str()), (1, "sick"));
+    assert!(!unhealthy[0].name.is_empty());
+    assert!(!unhealthy[0].reason.is_empty());
 }
 #[test]
 fn part_analysis_uses_assigned_density_and_validates_requests() {
