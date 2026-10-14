@@ -28,6 +28,20 @@ fn requires_update(owner: &mut TestOwner) -> bool {
         .unwrap()
         .requires_update
 }
+fn update(owner: &mut TestOwner, accept_errors_and_continue: bool) -> UpdateDocumentResult {
+    Client::new(owner.document_host())
+        .documents()
+        .update(&UpdateDocumentArgs {
+            accept_errors_and_continue,
+        })
+        .unwrap()
+}
+fn rebuild(owner: &mut TestOwner) -> UpdateDocumentResult {
+    Client::new(owner.document_host())
+        .documents()
+        .rebuild(&UpdateDocumentArgs::default())
+        .unwrap()
+}
 #[test]
 fn one_body_analysis_is_identical_and_empty_part_is_zero_with_the_requested_density() {
     let (mut owner, awake) = owner();
@@ -106,6 +120,26 @@ fn requires_update_tracks_the_current_native_evaluation_generation() {
     set_parameter(&mut owner, "depth", "3 cm");
     assert!(requires_update(&mut owner));
     total(&mut owner, 0.);
+    assert!(!requires_update(&mut owner));
+}
+#[test]
+fn update_refreshes_a_healthy_part_and_reports_or_refuses_failed_features() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    assert_eq!(update(&mut owner, false), UpdateDocumentResult::default());
+    assert_eq!(rebuild(&mut owner), UpdateDocumentResult::default());
+    set_parameter(&mut owner, "depth", "0 cm");
+    assert!(
+        Client::new(owner.document_host())
+            .documents()
+            .update(&UpdateDocumentArgs::default())
+            .is_err()
+    );
+    let result = update(&mut owner, true);
+    assert!(!result.requires_update);
+    let errors = result.errors.unwrap();
+    assert_eq!((errors.len(), errors[0].kind.as_str()), (1, "extrude"));
+    assert!(!errors[0].name.is_empty() && !errors[0].message.is_empty());
     assert!(!requires_update(&mut owner));
 }
 #[test]

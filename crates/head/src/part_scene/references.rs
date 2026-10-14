@@ -38,6 +38,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
     ) -> Result<bool, String> {
         self.part_requires_update(files, document)
     }
+    fn update(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        rebuild: bool,
+    ) -> Result<Vec<oblikovati_api::wire::FeatureError>, String> {
+        self.update_part(files, document, rebuild)
+    }
     fn verify(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

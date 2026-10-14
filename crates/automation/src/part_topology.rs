@@ -36,6 +36,13 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<bool, String>;
+    /// Recompute the current part; example: `access.update(files, document, false)?` updates only stale state.
+    fn update(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        rebuild: bool,
+    ) -> Result<Vec<FeatureError>, String>;
     /// Verify a current exact target before any edit; example: `access.verify(files, document, key, TopologyEntityKind::Face)?`.
     fn verify(
         &mut self,
@@ -47,12 +54,14 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 5] = [
+pub const BODY_QUERY_METHODS: [&str; 7] = [
     METHOD_BODY_LIST,
     METHOD_BODY_PHYSICAL_PROPS,
     METHOD_ANALYSIS_MASS_PROPERTIES,
     METHOD_ANALYSIS_MODEL_HEALTH,
     METHOD_DOCUMENTS_REQUIRES_UPDATE,
+    METHOD_DOCUMENTS_REBUILD,
+    METHOD_DOCUMENTS_UPDATE,
 ];
 mod physical;
 pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -105,10 +114,34 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                 requires_update: owner.requires_update(files, document).map_err(Error)?,
             })
         }
+        METHOD_DOCUMENTS_REBUILD | METHOD_DOCUMENTS_UPDATE => {
+            let request: UpdateDocumentArgs = crate::decode(method, encoded)?;
+            let errors = owner
+                .update(files, document, method == METHOD_DOCUMENTS_REBUILD)
+                .map_err(Error)?;
+            update_result(method, request.accept_errors_and_continue, errors)
+        }
         _ => Err(Error(format!(
             "body query {method:?}: expected {BODY_QUERY_METHODS:?}"
         ))),
     }
+}
+
+fn update_result(
+    method: &str,
+    accept_errors: bool,
+    errors: Vec<FeatureError>,
+) -> Result<Vec<u8>, Error> {
+    if !errors.is_empty() && !accept_errors {
+        return Err(Error(format!(
+            "{method}: {} feature(s) are sick after recompute; pass acceptErrorsAndContinue to report them",
+            errors.len()
+        )));
+    }
+    crate::encode(&UpdateDocumentResult {
+        requires_update: false,
+        errors: (!errors.is_empty()).then_some(errors),
+    })
 }
 
 fn no_arguments(method: &str, encoded: &[u8]) -> Result<(), Error> {

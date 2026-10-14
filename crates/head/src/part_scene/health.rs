@@ -1,8 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::wire::{FeatureHealth, ModelHealthResult};
+use oblikovati_api::wire::{FeatureError, FeatureHealth, ModelHealthResult};
 
 impl DesktopPartScenes {
+    pub(super) fn update_part<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        rebuild: bool,
+    ) -> Result<Vec<FeatureError>, String> {
+        if rebuild {
+            self.adopt_current(files, document)?;
+        } else {
+            self.ensure_current(files, document)?;
+        }
+        self.current_feature_errors(files, document)
+    }
+
     pub(super) fn part_requires_update<
         O: TransactionObserver,
         W: WorkspaceObserver,
@@ -38,6 +52,19 @@ impl DesktopPartScenes {
         let evaluation = self.current(session)?;
         let entries = health_entries(&session.snapshot().work_geometry, evaluation.health())?;
         aggregate(entries)
+    }
+
+    fn current_feature_errors<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Vec<FeatureError>, String> {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let evaluation = self.current(session)?;
+        feature_errors(&session.snapshot().work_geometry, evaluation.health())
     }
 }
 
@@ -85,6 +112,68 @@ fn health_entry(
             status: "sick".into(),
             reason: status_reason(status),
         })),
+    }
+}
+
+fn feature_errors(
+    features: &oblikovati_model::feature::FeatureSequence<
+        oblikovati_model::feature::part::PartFeatureDefinition,
+    >,
+    records: &[oblikovati_model::feature::FeatureHealthRecord<
+        oblikovati_model::feature::part::PartFeatureFailure<
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    >],
+) -> Result<Vec<FeatureError>, String> {
+    records
+        .iter()
+        .filter_map(|record| feature_error(features, record).transpose())
+        .collect()
+}
+
+fn feature_error(
+    features: &oblikovati_model::feature::FeatureSequence<
+        oblikovati_model::feature::part::PartFeatureDefinition,
+    >,
+    record: &oblikovati_model::feature::FeatureHealthRecord<
+        oblikovati_model::feature::part::PartFeatureFailure<
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    >,
+) -> Result<Option<FeatureError>, String> {
+    use oblikovati_model::feature::FeatureEvaluationStatus;
+    if matches!(
+        record.status,
+        FeatureEvaluationStatus::Healthy | FeatureEvaluationStatus::Suppressed
+    ) {
+        return Ok(None);
+    }
+    let feature = features.get(record.feature).map_err(|cause| {
+        format!(
+            "feature error {:?}: expected an authored feature: {cause}",
+            record.feature
+        )
+    })?;
+    Ok(Some(FeatureError {
+        id: record.feature.0,
+        name: feature.name().into(),
+        kind: feature_kind(feature.definition()).into(),
+        message: status_reason(&record.status),
+    }))
+}
+
+fn feature_kind(
+    definition: &oblikovati_model::feature::part::PartFeatureDefinition,
+) -> &'static str {
+    use oblikovati_model::feature::part::PartFeatureDefinition;
+    match definition {
+        PartFeatureDefinition::SketchPrism(_) => "extrude",
+        PartFeatureDefinition::DeleteBody(_) => "delete-body",
+        PartFeatureDefinition::Axis(_) | PartFeatureDefinition::AxisThroughPoints(_) => "work-axis",
+        PartFeatureDefinition::Point(_) | PartFeatureDefinition::PointAtReference(_) => {
+            "work-point"
+        }
+        _ => "work-plane",
     }
 }
 
