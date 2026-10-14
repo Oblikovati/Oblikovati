@@ -8,6 +8,7 @@ pub enum SketchSlotPlacement {
     Centers([[f64; 2]; 2]),
     Overall([[f64; 2]; 2]),
     SlotCenter([[f64; 2]; 2]),
+    /// The end supplies a direction; both cap centres use the start radius.
     Arc {
         center: [f64; 2],
         endpoints: [[f64; 2]; 2],

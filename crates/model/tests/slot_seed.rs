@@ -108,3 +108,52 @@ fn rounded_away_slot_width_cannot_publish_collapsed_caps() {
     let placement = SketchSlotPlacement::Centers([[1e16, 1e16], [1e16 + 4.0, 1e16]]);
     assert!(placement.layout(0.1).is_err());
 }
+
+#[test]
+fn arc_slot_end_cap_uses_the_start_radius_for_every_cursor_direction() {
+    for ccw in [false, true] {
+        for cursor_radius in [2., 5., 10., 20.] {
+            for direction in [[0.6, 0.8], [-0.6, 0.8], [-0.6, -0.8], [0.6, -0.8]] {
+                let center = [3., -4.];
+                let cursor = [
+                    center[0] + direction[0] * cursor_radius,
+                    center[1] + direction[1] * cursor_radius,
+                ];
+                let layout = SketchSlotPlacement::Arc {
+                    center,
+                    endpoints: [[13., -4.], cursor],
+                    counter_clockwise: ccw,
+                }
+                .layout(2.)
+                .unwrap();
+                assert!(
+                    ((layout.points[6][0] - 3.).hypot(layout.points[6][1] + 4.) - 10.).abs()
+                        < 1e-12
+                );
+                for end in [2, 3] {
+                    let cap = layout.points[6];
+                    let point = layout.points[end];
+                    assert!(((point[0] - cap[0]).hypot(point[1] - cap[1]) - 1.).abs() < 1e-12);
+                }
+            }
+        }
+    }
+}
+#[test]
+fn equal_radius_slot_caps_keep_original_coordinate_bits() {
+    for (center, start, end) in [
+        ([0., 0.], [6., 8.], [-8., 6.]),
+        ([3., -4.], [13., -4.], [3., 6.]),
+        ([0., 0.], [10., 0.], [-10., -0.]),
+    ] {
+        let layout = SketchSlotPlacement::Arc {
+            center,
+            endpoints: [start, end],
+            counter_clockwise: true,
+        }
+        .layout(2.)
+        .unwrap();
+        assert_eq!(layout.points[6].map(f64::to_bits), end.map(f64::to_bits));
+        assert_eq!(layout.points[7].map(f64::to_bits), start.map(f64::to_bits));
+    }
+}
