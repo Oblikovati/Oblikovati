@@ -4,6 +4,8 @@ use oblikovati_model::sketch::{
 };
 #[path = "circular_recipes.rs"]
 mod circular_recipes;
+#[path = "ellipse_recipe.rs"]
+mod ellipse_recipe;
 /// A recipe choice in the shared mouse placement pipeline; dimensions are in working units.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SketchPlacementTool {
@@ -18,6 +20,7 @@ pub enum SketchPlacementTool {
     Rectangle,
     CenterRectangle,
     CenterPointArc,
+    Ellipse,
     ThreePointArc {
         options: CircumcircleOptions,
     },
@@ -45,6 +48,7 @@ impl SketchPlacementTool {
         match self {
             Self::StraightSlot { .. } => "Slot",
             Self::Circle => "Circle",
+            Self::Ellipse => "Ellipse",
             Self::CenterPointArc => "Centre-point arc",
             Self::ThreePointArc { .. } => "Three-point arc",
             Self::ThreePointCircle { .. } => "Three-point circle",
@@ -59,7 +63,8 @@ impl SketchPlacementTool {
             Self::ThreePointRectangle
             | Self::ThreePointCircle { .. }
             | Self::ThreePointArc { .. }
-            | Self::CenterPointArc => 3,
+            | Self::CenterPointArc
+            | Self::Ellipse => 3,
         }
     }
     pub(crate) fn recipe(
@@ -96,6 +101,7 @@ impl SketchPlacementTool {
             Self::ThreePointCircle { options } => {
                 circular_recipe([first, next, cursor], false, options, service)
             }
+            Self::Ellipse => ellipse_recipe::from_clicks([first, next, cursor]),
             Self::Circle => radial_recipe([first, cursor]),
             Self::StraightSlot { width } => Recipe::straight_slot([first, cursor], width),
             Self::Rectangle => Recipe::rectangle([first, cursor]),
@@ -113,6 +119,11 @@ impl SketchPlacementTool {
         match self {
             Self::StraightSlot { .. } => &["the first centre point", "the second centre point"],
             Self::Circle => &["the centre point", "a circumference point"],
+            Self::Ellipse => &[
+                "the centre point",
+                "the major-axis endpoint",
+                "the minor radius",
+            ],
             Self::ThreePointCircle { .. } => &[
                 "the first circumference point",
                 "the second circumference point",
@@ -140,3 +151,7 @@ mod tests;
 #[cfg(test)]
 #[path = "arc_tool_tests.rs"]
 mod arc_tests;
+
+#[cfg(test)]
+#[path = "ellipse_tool_tests.rs"]
+mod ellipse_tests;

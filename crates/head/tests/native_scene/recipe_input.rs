@@ -7,6 +7,7 @@ use std::collections::VecDeque;
 fn native_recipe_tools_preview_commit_finish_and_undo_through_shared_input_pipeline() {
     for kind in [
         SketchPlacementTool::Circle,
+        SketchPlacementTool::Ellipse,
         SketchPlacementTool::ThreePointCircle {
             options: oblikovati_model::sketch::CircumcircleOptions {
                 maximum_point_residual: 1e-9,
@@ -53,6 +54,7 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
             | SketchPlacementTool::ThreePointCircle { .. }
             | SketchPlacementTool::ThreePointArc { .. }
             | SketchPlacementTool::CenterPointArc
+            | SketchPlacementTool::Ellipse
     ) {
         inputs.extend([button([800, 430], true), button([800, 430], false)]);
     }
@@ -70,6 +72,7 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
                 | SketchPlacementTool::ThreePointCircle { .. }
                 | SketchPlacementTool::ThreePointArc { .. }
                 | SketchPlacementTool::CenterPointArc
+                | SketchPlacementTool::Ellipse
         ) {
             1
         } else {

@@ -241,3 +241,6 @@ mod circle_input;
 
 #[path = "owner/arc_input.rs"]
 mod arc_input;
+
+#[path = "owner/ellipse_input.rs"]
+mod ellipse_input;
