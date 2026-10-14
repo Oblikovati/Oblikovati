@@ -257,6 +257,23 @@ fn feature_lifecycle_edits_native_history_and_returns_current_detail() {
         .unwrap();
     assert_eq!(moved.feature.index, 0);
     assert_eq!(total(&mut owner, 0.).volume_mm3, 48000.);
+    assert_eq!(
+        Client::new(owner.document_host())
+            .features()
+            .delete(&FeatureRefArgs { id: 1 })
+            .unwrap(),
+        DeleteFeatureResult {
+            id: 1,
+            deleted: true
+        }
+    );
+    assert_eq!(total(&mut owner, 0.).volume_mm3, 24000.);
+    assert!(
+        Client::new(owner.document_host())
+            .features()
+            .get(&FeatureRefArgs { id: 1 })
+            .is_err()
+    );
 }
 #[test]
 fn part_analysis_uses_assigned_density_and_validates_requests() {

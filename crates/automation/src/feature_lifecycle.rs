@@ -8,7 +8,8 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Native feature lifecycle calls that operate on the active part history.
-pub const FEATURE_LIFECYCLE_METHODS: [&str; 4] = [
+pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [
+    METHOD_FEATURES_DELETE,
     METHOD_FEATURES_GET,
     METHOD_FEATURES_RENAME,
     METHOD_FEATURES_REORDER,
@@ -35,9 +36,27 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     encoded: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let document = active_part(files)?;
+    require_owner(access, document)?;
     let id = apply_edit(files, document, method, encoded)?;
     let errors = refresh(access, files, document)?;
     detail(files, document, id, errors)
+}
+
+/// Delete one unreferenced native feature and refresh the retained native evaluation.
+pub(crate) fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    encoded: &[u8],
+) -> Result<Vec<u8>, Error> {
+    let document = active_part(files)?;
+    require_owner(access, document)?;
+    let request: FeatureRefArgs = crate::decode(METHOD_FEATURES_DELETE, encoded)?;
+    remove(files, document, request.id)?;
+    refresh(access, files, document)?;
+    encode(&DeleteFeatureResult {
+        id: request.id,
+        deleted: true,
+    })
 }
 
 fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -102,6 +121,24 @@ fn history_index(index: i64) -> Result<usize, Error> {
             "features.reorder index {index}: expected a non-negative history index: {cause}"
         ))
     })
+}
+
+fn remove<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    id: u64,
+) -> Result<(), Error> {
+    files
+        .commands(document)
+        .map_err(api_error)?
+        .run("Delete Feature", |snapshot, _| {
+            snapshot
+                .work_geometry
+                .remove(FeatureId(id))
+                .map_err(api_error)?;
+            Ok::<_, Error>(())
+        })
+        .map_err(api_error)
 }
 
 fn suppress<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -228,6 +265,17 @@ fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         ))
     })?;
     owner.update(files, document, false).map_err(Error)
+}
+
+fn require_owner<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
+    document: u64,
+) -> Result<(), Error> {
+    access.as_deref_mut().map(|_| ()).ok_or_else(|| {
+        Error(format!(
+            "feature lifecycle document {document}: expected an injected exact topology owner"
+        ))
+    })
 }
 
 fn api_error(cause: impl std::fmt::Display) -> Error {
