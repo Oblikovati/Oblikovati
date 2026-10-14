@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_martensite::planar_curve::sketch::{
-    PlacementPreviewCurve, SketchDisplayEntity, SketchDisplayPrimitive, SketchSamplingOptionsV1,
+    PlacementPreviewMember, SketchDisplayEntity, SketchDisplayPrimitive, SketchSamplingOptionsV1,
     sample_placement_preview, sample_sketch_display,
 };
 use oblikovati_model::sketch::{Sketch2D, SketchPlacementRecipe};
@@ -15,20 +15,22 @@ pub(crate) fn assert_recipe_tail(geometry: &Sketch2D, recipe: &SketchPlacementRe
     assert!(display.entities.len() >= preview.len());
     let tail = &display.entities[display.entities.len() - preview.len()..];
     for (actual, expected) in tail.iter().zip(&preview) {
-        assert_curve(actual, expected);
+        assert_member(actual, expected);
     }
 }
-fn assert_curve(actual: &SketchDisplayEntity, expected: &PlacementPreviewCurve) {
-    let SketchDisplayPrimitive::Curve(points) = &actual.primitive else {
-        panic!("expected curve samples")
-    };
+fn assert_member(actual: &SketchDisplayEntity, expected: &PlacementPreviewMember) {
     assert_eq!(actual.construction, expected.construction);
-    assert_eq!(points.len(), expected.points.len());
-    for (a, b) in points
-        .iter()
-        .flatten()
-        .zip(expected.points.iter().flatten())
-    {
+    match (&actual.primitive, &expected.primitive) {
+        (SketchDisplayPrimitive::Point(a), SketchDisplayPrimitive::Point(b)) => assert_eq!(a, b),
+        (SketchDisplayPrimitive::Curve(a), SketchDisplayPrimitive::Curve(b)) => {
+            assert_curve_samples(a, b)
+        }
+        pair => panic!("expected matching display primitives, got {pair:?}"),
+    }
+}
+fn assert_curve_samples(actual: &[[f64; 2]], expected: &[[f64; 2]]) {
+    assert_eq!(actual.len(), expected.len());
+    for (a, b) in actual.iter().flatten().zip(expected.iter().flatten()) {
         assert!((a - b).abs() < 1e-8, "committed {a} != preview {b}");
     }
 }

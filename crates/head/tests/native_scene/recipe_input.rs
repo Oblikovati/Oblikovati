@@ -6,6 +6,7 @@ use std::collections::VecDeque;
 #[test]
 fn native_recipe_tools_preview_commit_finish_and_undo_through_shared_input_pipeline() {
     for kind in [
+        SketchPlacementTool::Point,
         SketchPlacementTool::Circle,
         SketchPlacementTool::CenterPointArcSlot { width: 2. },
         SketchPlacementTool::ThreePointArcSlot {
@@ -55,7 +56,11 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
         native,
         scripted: VecDeque::new(),
     };
-    let mut inputs = vec![button([650, 430], true), button([650, 430], false)];
+    let mut inputs = if kind == SketchPlacementTool::Point {
+        Vec::new()
+    } else {
+        vec![button([650, 430], true), button([650, 430], false)]
+    };
     if matches!(
         kind,
         SketchPlacementTool::ThreePointRectangle
@@ -80,7 +85,8 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
             6
         } else if matches!(
             kind,
-            SketchPlacementTool::Circle
+            SketchPlacementTool::Point
+                | SketchPlacementTool::Circle
                 | SketchPlacementTool::ThreePointCircle { .. }
                 | SketchPlacementTool::ThreePointArc { .. }
                 | SketchPlacementTool::CenterPointArc
@@ -103,7 +109,7 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
                 .sketches
         )
     );
-    commit_native_recipe(&mut owner, &mut window, document, &preview);
+    commit_native_recipe(&mut owner, &mut window, document, &preview, kind);
     let committed = window
         .native
         .sketch_scene_status()
@@ -163,10 +169,11 @@ fn commit_native_recipe(
     window: &mut PlacementEventWindow,
     document: u64,
     preview: &oblikovati_model::sketch::SketchPlacementRecipe,
+    kind: SketchPlacementTool,
 ) {
     window.scripted = VecDeque::from([vec![button([820, 520], true), button([820, 520], false)]]);
     crate::frames::run_frames(window, HeadOptions { frames: Some(1) }, owner).unwrap();
-    assert!(owner.placement_active());
+    assert_eq!(owner.placement_active(), kind != SketchPlacementTool::Point);
     assert!(owner.placement_preview().is_none());
     assert!(!window.native.set_sketch_preview(None).unwrap());
     let geometry = owner

@@ -23,11 +23,11 @@ preserve finite coordinate bits, including signed zero and extreme magnitudes,
 and reject nonfinite coordinates. Extreme inputs are authoring tests, not a
 claim that every later solver or rendering operation accepts those scales.
 
-This is the model part of point placement. Mouse activation, the transient
-point marker and one-click completion remain open. The current curve sampler
-does not yet accept point members. No point tool is exposed through it by this
-change. Existing point creation and committed point rendering are unchanged.
-This step does not complete R3/R4 or the full port. Work is local only.
+This is the model part of point placement. The later
+[mouse input step](implementation-point-input.md) adds transient point markers
+and one-click completion through the shared placement path. Existing point
+creation and committed point rendering keep their owned identities. This step
+does not complete R3/R4 or the full port. Work is local only.
 
 Cross-platform review checked explicit member order, checked local indices,
 single permanent identity, finite coordinate validation and unchanged input

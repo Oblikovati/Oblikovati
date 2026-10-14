@@ -9,6 +9,7 @@ mod ellipse_recipe;
 /// A recipe choice in the shared mouse placement pipeline; dimensions are in working units.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SketchPlacementTool {
+    Point,
     StraightSlot {
         width: f64,
     },
@@ -66,6 +67,7 @@ impl SketchPlacementTool {
     pub(crate) fn name(self) -> &'static str {
         match self {
             Self::StraightSlot { .. } => "Slot",
+            Self::Point => "Point",
             Self::Circle => "Circle",
             Self::CenterPointArcSlot { .. } => "Centre-point arc slot",
             Self::ThreePointArcSlot { .. } => "Three-point arc slot",
@@ -81,6 +83,7 @@ impl SketchPlacementTool {
     }
     pub(crate) fn point_count(self) -> usize {
         match self {
+            Self::Point => 1,
             Self::StraightSlot { .. }
             | Self::Circle
             | Self::Rectangle
@@ -122,9 +125,10 @@ impl SketchPlacementTool {
             radial_recipe,
         };
         use oblikovati_model::sketch::SketchPlacementRecipe as Recipe;
-        let first = accepted[0];
+        let first = accepted.first().copied().unwrap_or(cursor);
         let next = accepted.get(1).copied().unwrap_or(cursor);
         let result = match self {
+            Self::Point => Recipe::point(cursor),
             Self::CenterPointArcSlot { width } => {
                 center_slot_recipe([first, next, cursor], width, service)
             }
@@ -166,6 +170,7 @@ impl SketchPlacementTool {
     fn point_labels(self) -> &'static [&'static str] {
         match self {
             Self::StraightSlot { .. } => &["the first centre point", "the second centre point"],
+            Self::Point => &["the point position"],
             Self::Circle => &["the centre point", "a circumference point"],
             Self::Polygon { .. } => &["the centre point", "a vertex"],
             Self::Ellipse => &[

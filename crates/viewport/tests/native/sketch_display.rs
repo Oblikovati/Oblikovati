@@ -19,7 +19,7 @@ fn packet() -> ViewportSketchDisplay {
         geometry,
     }
 }
-fn open_display(title: &str) -> (ViewportRuntime, Viewport) {
+pub(super) fn open_display(title: &str) -> (ViewportRuntime, Viewport) {
     let runtime = ViewportRuntime::new(Default::default()).unwrap();
     let mut view = runtime.open_window(title, [320, 240]).unwrap();
     view.submit(&ViewportScene {
@@ -29,7 +29,7 @@ fn open_display(title: &str) -> (ViewportRuntime, Viewport) {
     .unwrap();
     (runtime, view)
 }
-fn close_display(runtime: &ViewportRuntime, view: &mut Viewport) {
+pub(super) fn close_display(runtime: &ViewportRuntime, view: &mut Viewport) {
     view.close();
     assert!(view.set_sketch_display(&[]).is_err());
     assert!(view.sketch_display_declines().is_err());

@@ -250,3 +250,6 @@ mod polygon_input;
 
 #[path = "owner/arc_slot_input.rs"]
 mod arc_slot_input;
+
+#[path = "owner/point_input.rs"]
+mod point_input;

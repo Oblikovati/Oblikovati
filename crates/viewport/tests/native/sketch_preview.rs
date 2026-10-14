@@ -88,6 +88,14 @@ fn verify_line_styles(view: &Viewport, capture: &ViewportCapture) {
 
 #[test]
 fn preview_resamples_after_zoom_and_never_changes_fit_bounds() {
+    for recipe in [
+        SketchPlacementRecipe::straight_slot([[-500., 0.], [500., 0.]], 50.).unwrap(),
+        SketchPlacementRecipe::point([500., 500.]).unwrap(),
+    ] {
+        verify_preview_fit_and_zoom(recipe);
+    }
+}
+fn verify_preview_fit_and_zoom(recipe: SketchPlacementRecipe) {
     use oblikovati_viewport::ViewportNavigation;
     let runtime = ViewportRuntime::new(Default::default()).unwrap();
     let mut view = runtime
@@ -100,7 +108,7 @@ fn preview_resamples_after_zoom_and_never_changes_fit_bounds() {
     let expected = view.camera_state().unwrap();
     view.set_camera(initial).unwrap();
     let mut preview = packet();
-    preview.recipe = SketchPlacementRecipe::straight_slot([[-500., 0.], [500., 0.]], 50.).unwrap();
+    preview.recipe = recipe;
     view.set_sketch_preview(Some(&preview)).unwrap();
     view.navigate(ViewportNavigation::Fit { margin: 0.1 })
         .unwrap();

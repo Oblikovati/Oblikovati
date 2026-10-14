@@ -116,3 +116,6 @@ mod sketch_preview;
 
 #[path = "native/sketch_display.rs"]
 mod sketch_display;
+
+#[path = "native/point_preview.rs"]
+mod point_preview;

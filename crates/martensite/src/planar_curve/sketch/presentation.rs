@@ -68,7 +68,7 @@ fn display_entity(
     })
 }
 
-fn display_primitive(
+pub(super) fn display_primitive(
     index: &SketchReadIndex<'_>,
     entity: SketchEntityId,
     options: SketchSamplingOptionsV1,

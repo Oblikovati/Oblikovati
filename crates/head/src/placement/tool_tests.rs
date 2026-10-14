@@ -123,3 +123,24 @@ fn verify_native_circle_recipe(
         }
     );
 }
+
+#[test]
+fn point_tool_has_one_click_and_refuses_nonfinite_or_extra_positions() {
+    let tool = SketchPlacementTool::Point;
+    assert!(tool.validate().is_ok());
+    assert_eq!(tool.point_count(), 1);
+    assert_eq!(tool.point_labels(), &["the point position"]);
+    assert!(tool.prompt(0).starts_with("Point:"));
+    let recipe = tool
+        .recipe(&[], [3., -4.], &MartensiteSketchConstruction)
+        .unwrap();
+    assert_eq!(recipe, SketchPlacementRecipe::point([3., -4.]).unwrap());
+    assert!(
+        tool.recipe(&[[0., 0.]], [3., -4.], &MartensiteSketchConstruction)
+            .is_err()
+    );
+    assert!(
+        tool.recipe(&[], [f64::NAN, 0.], &MartensiteSketchConstruction)
+            .is_err()
+    );
+}

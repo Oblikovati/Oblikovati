@@ -4,9 +4,9 @@ use crate::{HeadPresentation, HeadWindow, placement_test_inputs::*};
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchPlane};
 use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, ViewportKey};
 #[derive(Default)]
-struct PlanarInputWindow {
-    fail: bool,
-    edge_on: bool,
+pub(super) struct PlanarInputWindow {
+    pub(super) fail: bool,
+    pub(super) edge_on: bool,
 }
 impl HeadWindow for PlanarInputWindow {
     fn sketch_point(&self, pixel: [i32; 2], _: SketchPlane) -> Result<Option<[f64; 2]>, String> {

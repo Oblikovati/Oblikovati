@@ -2,7 +2,7 @@
 use super::sketch_structure::{self, SketchStructure};
 use crate::ViewportSketchPreview;
 use oblikovati_martensite::planar_curve::sketch::{
-    SketchSamplingOptionsV1, sample_placement_preview_with_policy,
+    SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_placement_preview_with_policy,
 };
 use rustycad_tkernel::quantity::{Color, NamedColor};
 use rustycad_tkservice::aspect::AspectTypeOfLine;
@@ -54,28 +54,29 @@ fn build(
     )?;
     sampled
         .iter()
-        .map(|curve| build_member(viewer, source.plane, curve))
+        .map(|member| build_member(viewer, source.plane, member))
         .collect()
 }
 fn build_member(
     viewer: &V3dViewer,
     plane: oblikovati_model::sketch::SketchPlane,
-    curve: &oblikovati_martensite::planar_curve::sketch::PlacementPreviewCurve,
+    member: &oblikovati_martensite::planar_curve::sketch::PlacementPreviewMember,
 ) -> Result<SketchStructure, String> {
-    let kind = if curve.construction {
+    let kind = if member.construction {
         AspectTypeOfLine::Dash
     } else {
         AspectTypeOfLine::Solid
     };
     // The pinned Go dark theme uses white for transient geometry.
-    sketch_structure::curve(
-        viewer,
-        plane,
-        &curve.points,
-        Color::named(NamedColor::WHITE),
-        kind,
-        true,
-    )
+    let color = Color::named(NamedColor::WHITE);
+    match &member.primitive {
+        SketchDisplayPrimitive::Point(point) => {
+            sketch_structure::point(viewer, plane, *point, color, true)
+        }
+        SketchDisplayPrimitive::Curve(points) => {
+            sketch_structure::curve(viewer, plane, points, color, kind, true)
+        }
+    }
 }
 
 struct HiddenPreview<'a>(&'a [SketchStructure]);

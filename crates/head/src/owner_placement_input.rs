@@ -107,14 +107,16 @@ impl<
             self.placement_notice(format!("{} canceled.", tool.tool.name()));
             return true;
         }
-        let changed = match action {
+        let changed = matches!(action, PlacementAction::Cursor { .. });
+        let completed = match action {
             PlacementAction::Cursor { pixel, place } => {
-                self.placement_cursor(&mut tool, window, pixel, place);
-                true
+                self.placement_cursor(&mut tool, window, pixel, place)
             }
             _ => false,
         };
-        self.placement = Some(tool);
+        if !completed {
+            self.placement = Some(tool);
+        }
         changed
     }
     fn placement_cursor(
@@ -123,16 +125,24 @@ impl<
         window: &dyn HeadWindow,
         pixel: [i32; 2],
         place: bool,
-    ) {
+    ) -> bool {
         let outcome = window
             .sketch_point(pixel, tool.plane)
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
             .and_then(|recipe| self.commit_placement_cursor(tool, recipe));
         match outcome {
-            Ok(()) => self.placement_notice(tool.prompt()),
+            Ok(true) => {
+                self.placement_notice(format!("{} placed.", tool.tool.name()));
+                true
+            }
+            Ok(false) => {
+                self.placement_notice(tool.prompt());
+                false
+            }
             Err(cause) => {
                 tool.abandon_press();
                 self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+                false
             }
         }
     }
@@ -140,11 +150,14 @@ impl<
         &mut self,
         tool: &mut SketchPlacementState,
         recipe: Option<SketchPlacementRecipe>,
-    ) -> Result<(), String> {
+    ) -> Result<bool, String> {
         let Some(recipe) = recipe else {
-            return Ok(());
+            return Ok(false);
         };
         self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &[])?;
+        if tool.tool == crate::SketchPlacementTool::Point {
+            return Ok(true);
+        }
         let generation = self
             .files
             .workspace()
@@ -152,7 +165,7 @@ impl<
             .map_err(|cause| cause.to_string())?
             .generation();
         tool.restart(generation);
-        Ok(())
+        Ok(false)
     }
     fn placement_notice(&mut self, message: String) {
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt { message });

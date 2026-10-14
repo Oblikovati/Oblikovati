@@ -123,7 +123,7 @@ fn build_entity(
     let kind = entity_line_style(entity);
     match &entity.primitive {
         SketchDisplayPrimitive::Point(point) => {
-            sketch_structure::point(viewer, sketch.plane, *point, color)
+            sketch_structure::point(viewer, sketch.plane, *point, color, false)
         }
         SketchDisplayPrimitive::Curve(points) => {
             sketch_structure::curve(viewer, sketch.plane, points, color, kind, false)

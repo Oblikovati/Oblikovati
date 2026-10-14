@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_martensite::planar_curve::sketch::{
-    PlacementPreviewCurve, SketchSamplingOptionsV1, sample_placement_preview,
+    PlacementPreviewMember, SketchDisplayPrimitive, SketchSamplingOptionsV1,
+    sample_placement_preview,
 };
 use oblikovati_model::sketch::{SketchPathMember, SketchPlacementGeometry, SketchPlacementRecipe};
 fn options(deflection: f64) -> SketchSamplingOptionsV1 {
@@ -30,11 +31,11 @@ fn verify_recipe(recipe: &SketchPlacementRecipe) {
     }
     let fine = sample_placement_preview(recipe, options(0.001)).unwrap();
     assert!(
-        fine.iter().map(|c| c.points.len()).sum::<usize>()
-            > curves.iter().map(|c| c.points.len()).sum()
+        fine.iter().map(|c| curve_points(c).len()).sum::<usize>()
+            > curves.iter().map(|c| curve_points(c).len()).sum()
     );
 }
-fn verify_member(recipe: &SketchPlacementRecipe, index: usize, curve: &PlacementPreviewCurve) {
+fn verify_member(recipe: &SketchPlacementRecipe, index: usize, curve: &PlacementPreviewMember) {
     let member = recipe.members[index];
     assert_eq!(curve.member_index, index);
     assert_eq!(curve.construction, member.construction);
@@ -45,9 +46,12 @@ fn verify_member(recipe: &SketchPlacementRecipe, index: usize, curve: &Placement
         SketchPathMember::Line(ends) => ends,
         SketchPathMember::Arc { endpoints, .. } => endpoints,
     };
-    for (sample, id) in [curve.points.first().unwrap(), curve.points.last().unwrap()]
-        .into_iter()
-        .zip(endpoints)
+    for (sample, id) in [
+        curve_points(curve).first().unwrap(),
+        curve_points(curve).last().unwrap(),
+    ]
+    .into_iter()
+    .zip(endpoints)
     {
         assert!(distance(*sample, recipe.points[id]) < 1e-12);
     }
@@ -65,11 +69,11 @@ fn verify_member(recipe: &SketchPlacementRecipe, index: usize, curve: &Placement
             counter_clockwise,
         );
     } else {
-        assert_eq!(curve.points.len(), 2);
+        assert_eq!(curve_points(curve).len(), 2);
     }
 }
-fn verify_arc(curve: &PlacementPreviewCurve, center: [f64; 2], radius: f64, ccw: bool) {
-    for pair in curve.points.windows(2) {
+fn verify_arc(curve: &PlacementPreviewMember, center: [f64; 2], radius: f64, ccw: bool) {
+    for pair in curve_points(curve).windows(2) {
         let midpoint = [
             (pair[0][0] + pair[1][0]) * 0.5,
             (pair[0][1] + pair[1][1]) * 0.5,
@@ -120,7 +124,7 @@ fn circle_preview_is_closed_and_matches_the_canonical_circle_without_mutation() 
     assert_eq!(curves.len(), 1);
     assert_eq!(curves[0].member_index, 0);
     assert!(!curves[0].construction);
-    let samples = &curves[0].points;
+    let samples = curve_points(&curves[0]);
     assert!(distance(*samples.first().unwrap(), *samples.last().unwrap()) < 1e-12);
     for sample in samples {
         assert!((distance(*sample, [3., -4.]) - 5.).abs() < 1e-12);
@@ -135,8 +139,8 @@ fn unequal_arc_radii_are_solved_before_sampling_without_changing_the_recipe() {
     let curves = sample_placement_preview(&recipe, options(0.01)).unwrap();
     assert_eq!(recipe, before);
     assert_eq!(curves.len(), 1);
-    assert!(curves[0].points.len() > 2);
-    assert_ne!(curves[0].points[0], recipe.points[1]);
+    assert!(curve_points(&curves[0]).len() > 2);
+    assert_ne!(curve_points(&curves[0])[0], recipe.points[1]);
 }
 #[test]
 fn preview_refuses_failed_solve_and_circular_postconditions() {
@@ -193,11 +197,11 @@ fn ellipse_preview_is_closed_and_uses_the_native_analytic_frame() {
     assert!(!curve.construction);
     assert!(
         distance(
-            *curve.points.first().unwrap(),
-            *curve.points.last().unwrap()
+            *curve_points(curve).first().unwrap(),
+            *curve_points(curve).last().unwrap()
         ) < 1e-12
     );
-    for point in &curve.points {
+    for point in curve_points(curve) {
         let x = point[0] - 3.;
         let y = point[1] - 4.;
         let major = (0.6 * x + 0.8 * y) / 5.;
@@ -205,7 +209,7 @@ fn ellipse_preview_is_closed_and_uses_the_native_analytic_frame() {
         assert!((major * major + minor * minor - 1.).abs() < 1e-12);
     }
     let fine = sample_placement_preview(&recipe, options(0.001)).unwrap();
-    assert!(fine[0].points.len() > curve.points.len());
+    assert!(curve_points(&fine[0]).len() > curve_points(curve).len());
 }
 
 #[test]
@@ -215,11 +219,11 @@ fn off_radius_arc_slot_cursor_keeps_four_nondegenerate_boundary_arcs() {
     let curves = sample_placement_preview(&recipe, options(0.01)).unwrap();
     assert_eq!(curves.len(), 4);
     for curve in &curves {
-        assert!(curve.points.len() > 2);
+        assert!(curve_points(curve).len() > 2);
         assert!(
             distance(
-                *curve.points.first().unwrap(),
-                *curve.points.last().unwrap()
+                *curve_points(curve).first().unwrap(),
+                *curve_points(curve).last().unwrap()
             ) > 0.1
         );
     }
@@ -252,4 +256,56 @@ fn three_point_slot_preview_checks_solved_centerline_and_rejects_wrong_caps() {
     );
     recipe.circular_checks[0].cap_members = Some([3, 99]);
     assert!(sample_placement_preview(&recipe, options(0.01)).is_err());
+}
+
+fn curve_points(member: &PlacementPreviewMember) -> &[[f64; 2]] {
+    let SketchDisplayPrimitive::Curve(points) = &member.primitive else {
+        panic!("expected curve samples, got {:?}", member.primitive)
+    };
+    points
+}
+
+#[test]
+fn point_preview_retains_position_and_is_a_marker_instead_of_a_curve() {
+    for position in [[0., 0.], [3., -4.], [-20., 30.], [0.125, 100.]] {
+        let recipe = SketchPlacementRecipe::point(position).unwrap();
+        let before = recipe.clone();
+        let sampled = sample_placement_preview(&recipe, options(0.01)).unwrap();
+        assert_eq!(recipe, before);
+        assert_eq!(
+            sampled,
+            vec![PlacementPreviewMember {
+                member_index: 0,
+                construction: false,
+                primitive: SketchDisplayPrimitive::Point(position),
+            }]
+        );
+        assert_eq!(
+            sampled,
+            sample_placement_preview(&recipe, options(0.001)).unwrap()
+        );
+    }
+}
+
+#[test]
+fn point_and_curve_members_keep_shared_positions_and_authored_order() {
+    use oblikovati_model::sketch::SketchPlacementMember;
+    let mut recipe = SketchPlacementRecipe::point([3., -4.]).unwrap();
+    recipe.points.push([8., -4.]);
+    recipe.members.push(SketchPlacementMember {
+        geometry: SketchPlacementGeometry::Path(SketchPathMember::Line([0, 1])),
+        construction: true,
+    });
+    let sampled = sample_placement_preview(&recipe, options(0.01)).unwrap();
+    assert_eq!(sampled.len(), 2);
+    assert_eq!(
+        sampled[0].primitive,
+        SketchDisplayPrimitive::Point([3., -4.])
+    );
+    assert_eq!(sampled[1].member_index, 1);
+    assert!(sampled[1].construction);
+    assert_eq!(
+        sampled[1].primitive,
+        SketchDisplayPrimitive::Curve(recipe.points)
+    );
 }
