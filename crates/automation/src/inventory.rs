@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::*;
 use oblikovati_api::wire::METHOD_DOCUMENTS_LIST_ATTACHMENTS;
-const FILE_METHOD_GROUPS: [&[&str]; 17] = [
+const FILE_METHOD_GROUPS: [&[&str]; 18] = [
     &QUERY_METHODS,
     &ASSET_QUERY_METHODS,
     &ASSET_COMMAND_METHODS,
@@ -10,6 +10,7 @@ const FILE_METHOD_GROUPS: [&[&str]; 17] = [
     &BODY_COMMAND_METHODS,
     &FILE_QUERY_METHODS,
     &FILE_COMMAND_METHODS,
+    &APPLICATION_PREFERENCE_METHODS,
     &CLIENT_COMMAND_METHODS,
     &EDIT_METHODS,
     &TRANSACTION_METHODS,
@@ -49,6 +50,7 @@ mod tests {
     fn assert_groups(methods: &[String]) {
         for group in [
             &FILE_COMMAND_METHODS[..],
+            &APPLICATION_PREFERENCE_METHODS,
             &ASSET_QUERY_METHODS,
             &ASSET_COMMAND_METHODS,
             &ASSET_ASSIGNMENT_METHODS,

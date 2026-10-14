@@ -35,6 +35,11 @@ pub const FILE_COMMAND_METHODS: [&str; 10] = [
     METHOD_DOCUMENTS_CLOSE,
     METHOD_DOCUMENTS_CLOSE_ALL,
 ];
+/// Application preferences that require the injected persistent preference owner.
+pub const APPLICATION_PREFERENCE_METHODS: [&str; 2] = [
+    METHOD_APPLICATION_GET_HUD_OPTIONS,
+    METHOD_APPLICATION_SET_HUD_OPTIONS,
+];
 
 /// Synchronous API access that retains file, history, and identity ownership.
 pub struct FileHost<'a, O: TransactionObserver, W, F> {
@@ -85,10 +90,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
-        if matches!(
-            method,
-            METHOD_APPLICATION_GET_HUD_OPTIONS | METHOD_APPLICATION_SET_HUD_OPTIONS
-        ) {
+        if APPLICATION_PREFERENCE_METHODS.contains(&method) {
             return context.hud_options(method, request);
         }
         if crate::CLIENT_COMMAND_METHODS.contains(&method) {

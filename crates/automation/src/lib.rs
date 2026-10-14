@@ -14,7 +14,8 @@ mod edit;
 mod file_host;
 mod interests;
 pub use file_host::{
-    DERIVED_COMMAND_METHODS, DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,
+    APPLICATION_PREFERENCE_METHODS, DERIVED_COMMAND_METHODS, DocumentObserverFactory,
+    FILE_COMMAND_METHODS, FileHost,
 };
 pub mod dispatch;
 mod file_queries;
