@@ -593,6 +593,7 @@ dependencies = [
  "oblikovati-persistence",
  "oblikovati-session",
  "oblikovati-solve",
+ "quick-xml",
  "serde",
  "serde_json",
 ]
@@ -813,6 +814,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.39.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdcc8dd4e2f670d309a5f0e83fe36dfdc05af317008fea29144da1a2ac858e5e"
+dependencies = [
+ "memchr",
+ "serde",
 ]
 
 [[package]]

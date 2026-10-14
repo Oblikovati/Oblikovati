@@ -311,7 +311,7 @@ fn unregistered_methods_and_malformed_arguments_are_refused_before_model_work() 
             .iter()
             .collect::<std::collections::BTreeSet<_>>()
             .len(),
-        32
+        33
     );
     assert!(
         host.call(METHOD_PARAMETERS_SET, b"{}")
@@ -390,6 +390,9 @@ mod parameter_tolerance;
 
 #[path = "queries/parameter_update.rs"]
 mod parameter_update;
+
+#[path = "queries/parameter_exchange.rs"]
+mod parameter_exchange;
 
 #[path = "queries/transactions.rs"]
 mod transactions;

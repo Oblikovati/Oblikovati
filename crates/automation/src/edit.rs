@@ -2,20 +2,21 @@
 
 use crate::properties;
 use crate::{
-    collection, decode, encode, groups_edit, parameter_choices, parameter_edit,
+    collection, decode, encode, groups_edit, parameter_choices, parameter_edit, parameter_exchange,
     parameter_tolerance, parameter_update, parameter_value, settings_edit,
 };
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 23] = [
+pub const EDIT_METHODS: [&str; 24] = [
     METHOD_DOCUMENTS_REMOVE_ATTACHMENT,
     METHOD_DOCUMENTS_ADD_INTEREST,
     METHOD_DOCUMENTS_REMOVE_INTEREST,
     METHOD_ATTRIBUTES_SET,
     METHOD_ATTRIBUTES_DELETE,
     METHOD_PARAMETERS_SET_SETTINGS,
+    METHOD_PARAMETERS_IMPORT,
     METHOD_PARAMETERS_DERIVED_TABLES_DELETE,
     METHOD_DOCUMENTS_SET_UNITS,
     METHOD_DOCUMENTS_SET_PROPERTY,
@@ -42,6 +43,7 @@ pub(super) enum PreparedEdit {
     AttributeSet(SetAttributeArgs),
     AttributeDelete(DeleteAttributeArgs),
     Settings(ParameterSettingsUpdateArgs),
+    Import(ParameterImportArgs),
     DerivedDelete(DerivedParameterTableDeleteArgs),
     Units(SetDocumentUnitsArgs),
     Property(SetPropertyArgs),
@@ -85,6 +87,7 @@ impl PreparedEdit {
             METHOD_PARAMETERS_CONVERT => Ok(Self::Convert(decode(method, request)?)),
             METHOD_PARAMETERS_DELETE => Ok(Self::Delete(decode(method, request)?)),
             METHOD_PARAMETERS_SET_SETTINGS => Ok(Self::Settings(decode(method, request)?)),
+            METHOD_PARAMETERS_IMPORT => Ok(Self::Import(decode(method, request)?)),
             METHOD_PARAMETERS_GROUPS_ADD => Ok(Self::GroupAdd(decode(method, request)?)),
             METHOD_PARAMETERS_GROUPS_DELETE => Ok(Self::GroupDelete(decode(method, request)?)),
             METHOD_PARAMETERS_GROUPS_SET_DISPLAY_NAME => {
@@ -122,6 +125,7 @@ impl PreparedEdit {
             Self::Convert(_) => "Convert Parameter",
             Self::Delete(_) => "Delete Parameter",
             Self::Settings(_) => "Edit Parameter Settings",
+            Self::Import(_) => "Import Parameters",
             Self::GroupAdd(_) => "Add Parameter Group",
             Self::GroupDelete(_) => "Delete Parameter Group",
             Self::GroupRename(_) => "Rename Parameter Group",
@@ -174,6 +178,11 @@ impl PreparedEdit {
                 settings_edit::apply(parameters, request)?;
                 encode(&collection::settings(parameters)?)
             }
+            Self::Import(request) => encode(&parameter_exchange::import(
+                parameters,
+                reservations,
+                request,
+            )?),
             Self::GroupAdd(request) => encode(&groups_edit::add(parameters, request)?),
             Self::GroupDelete(request) => groups_edit::delete(parameters, request),
             Self::GroupRename(request) => encode(&groups_edit::rename(parameters, request)?),

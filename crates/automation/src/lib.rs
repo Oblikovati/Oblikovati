@@ -40,6 +40,7 @@ pub use detail::parameter_detail;
 mod expressions;
 mod parameter_choices;
 mod parameter_edit;
+mod parameter_exchange;
 mod parameter_tolerance;
 mod parameter_update;
 mod parameter_value;
@@ -57,7 +58,7 @@ use oblikovati_session::{
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 32] = [
+pub const QUERY_METHODS: [&str; 33] = [
     METHOD_CLIENT_APPS_LIST,
     METHOD_SKETCH_GET_INFERENCE_OPTIONS,
     METHOD_DOCUMENTS_LIST_ATTACHMENTS,
@@ -77,6 +78,7 @@ pub const QUERY_METHODS: [&str; 32] = [
     METHOD_PARAMETERS_GET_SETTINGS,
     METHOD_PARAMETERS_GROUPS_LIST,
     METHOD_PARAMETERS_GET,
+    METHOD_PARAMETERS_EXPORT,
     METHOD_PARAMETERS_DRIVEN_BY,
     METHOD_PARAMETERS_DEPENDENTS,
     METHOD_UNITS_GET_VALUE_FROM_EXPRESSION,
@@ -170,6 +172,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
                 self.active_parameters()?,
                 decode(method, request)?,
             )?),
+            METHOD_PARAMETERS_EXPORT => {
+                encode(&parameter_exchange::export(self.active_parameters()?)?)
+            }
             METHOD_PARAMETERS_DRIVEN_BY => encode(&parameters::neighbors(
                 self.active_parameters()?,
                 decode(method, request)?,
