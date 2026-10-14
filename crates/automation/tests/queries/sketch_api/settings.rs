@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_automation::{FILE_COMMAND_METHODS, FILE_QUERY_METHODS};
 use oblikovati_model::sketch_settings::{SketchSettings, default_sketch_settings};
 fn settings(files: &DiscoveryWorkspace, document: u64) -> Option<SketchSettings> {
     files
@@ -19,6 +20,63 @@ fn store(files: &mut DiscoveryWorkspace, document: u64, settings: Option<SketchS
             Ok::<(), String>(())
         })
         .unwrap();
+}
+fn read_settings(files: &DiscoveryWorkspace, document: u64) -> SketchSettingsResult {
+    Client::new(FileQueryHost::new(files))
+        .documents()
+        .get_sketch_settings(&GetSketchSettingsArgs { document })
+        .unwrap()
+}
+#[test]
+fn document_sketch_settings_api_reads_defaults_and_stores_an_undoable_document_value() {
+    let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    assert!(FILE_QUERY_METHODS.contains(&METHOD_DOCUMENT_GET_SKETCH_SETTINGS));
+    assert!(FILE_COMMAND_METHODS.contains(&METHOD_DOCUMENT_SET_SKETCH_SETTINGS));
+    assert_eq!(
+        read_settings(&files, 0),
+        SketchSettingsResult {
+            settings: default_sketch_settings()
+        }
+    );
+    assert_eq!(settings(&files, document), None);
+    assert!(
+        Client::new(FileQueryHost::new(&files))
+            .documents()
+            .get_sketch_settings(&GetSketchSettingsArgs {
+                document: document + 1,
+            })
+            .is_err()
+    );
+    let mut expected = default_sketch_settings();
+    expected.infer_constraints = false;
+    expected.x_snap_spacing = 0.75;
+    let result = Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .documents()
+        .set_sketch_settings(&SetSketchSettingsArgs {
+            document,
+            settings: expected.clone(),
+        })
+        .unwrap();
+    assert_eq!(
+        result,
+        SketchSettingsResult {
+            settings: expected.clone()
+        }
+    );
+    assert_eq!(read_settings(&files, document).settings, expected);
+    assert_eq!(owner_revision(&files, document).1, ["Set sketch settings"]);
+    files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(settings(&files, document), None);
+    assert!(
+        Client::new(FileHost::new(&mut files, &mut source, "test"))
+            .documents()
+            .set_sketch_settings(&SetSketchSettingsArgs {
+                document: document + 1,
+                settings: default_sketch_settings(),
+            })
+            .is_err()
+    );
+    assert_eq!(settings(&files, document), None);
 }
 #[test]
 fn explicit_defaults_are_dirty_and_undo_restores_absence() {

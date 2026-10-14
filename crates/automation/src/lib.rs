@@ -38,6 +38,7 @@ pub use sketches::{SKETCH_COMMAND_METHODS, SKETCH_QUERY_METHODS};
 mod collection;
 mod detail;
 pub use detail::parameter_detail;
+mod document_sketch_settings;
 mod expressions;
 mod parameter_choices;
 mod parameter_edit;
