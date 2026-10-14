@@ -7,6 +7,7 @@ use std::collections::VecDeque;
 fn native_recipe_tools_preview_commit_finish_and_undo_through_shared_input_pipeline() {
     for kind in [
         SketchPlacementTool::Circle,
+        SketchPlacementTool::Polygon { sides: 6 },
         SketchPlacementTool::Ellipse,
         SketchPlacementTool::ThreePointCircle {
             options: oblikovati_model::sketch::CircumcircleOptions {
@@ -64,7 +65,9 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
     let preview = owner.placement_preview().unwrap().clone();
     assert_eq!(
         preview.members.len(),
-        if kind == SketchPlacementTool::CenterRectangle {
+        if let SketchPlacementTool::Polygon { sides } = kind {
+            sides + 1
+        } else if kind == SketchPlacementTool::CenterRectangle {
             6
         } else if matches!(
             kind,

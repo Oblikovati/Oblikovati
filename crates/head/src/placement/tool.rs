@@ -13,6 +13,9 @@ pub enum SketchPlacementTool {
         width: f64,
     },
     Circle,
+    Polygon {
+        sides: usize,
+    },
     /// Caller sets the residual bound in document working units, independent of view scale.
     ThreePointCircle {
         options: CircumcircleOptions,
@@ -42,12 +45,18 @@ impl SketchPlacementTool {
                 "circular construction accuracy {options:?}: expected a finite nonnegative residual bound"
             ));
         }
+        if let Self::Polygon { sides } = self
+            && sides < 3
+        {
+            return Err(format!("polygon sides {sides}: expected at least 3"));
+        }
         Ok(())
     }
     pub(crate) fn name(self) -> &'static str {
         match self {
             Self::StraightSlot { .. } => "Slot",
             Self::Circle => "Circle",
+            Self::Polygon { .. } => "Polygon",
             Self::Ellipse => "Ellipse",
             Self::CenterPointArc => "Centre-point arc",
             Self::ThreePointArc { .. } => "Three-point arc",
@@ -59,7 +68,11 @@ impl SketchPlacementTool {
     }
     pub(crate) fn point_count(self) -> usize {
         match self {
-            Self::StraightSlot { .. } | Self::Circle | Self::Rectangle | Self::CenterRectangle => 2,
+            Self::StraightSlot { .. }
+            | Self::Circle
+            | Self::Rectangle
+            | Self::CenterRectangle
+            | Self::Polygon { .. } => 2,
             Self::ThreePointRectangle
             | Self::ThreePointCircle { .. }
             | Self::ThreePointArc { .. }
@@ -102,6 +115,14 @@ impl SketchPlacementTool {
                 circular_recipe([first, next, cursor], false, options, service)
             }
             Self::Ellipse => ellipse_recipe::from_clicks([first, next, cursor]),
+            Self::Polygon { sides } => {
+                Recipe::polygon(oblikovati_model::sketch::SketchPolygonSeed {
+                    center: first,
+                    through: cursor,
+                    sides,
+                    inscribed: true,
+                })
+            }
             Self::Circle => radial_recipe([first, cursor]),
             Self::StraightSlot { width } => Recipe::straight_slot([first, cursor], width),
             Self::Rectangle => Recipe::rectangle([first, cursor]),
@@ -119,6 +140,7 @@ impl SketchPlacementTool {
         match self {
             Self::StraightSlot { .. } => &["the first centre point", "the second centre point"],
             Self::Circle => &["the centre point", "a circumference point"],
+            Self::Polygon { .. } => &["the centre point", "a vertex"],
             Self::Ellipse => &[
                 "the centre point",
                 "the major-axis endpoint",

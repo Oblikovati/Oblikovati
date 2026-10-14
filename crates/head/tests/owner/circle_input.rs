@@ -44,7 +44,7 @@ pub(super) fn place_round_tool(
     let preview = owner.placement_preview().unwrap().clone();
     deliver(
         &mut owner,
-        &[button([5, 5], !drag || kind != SketchPlacementTool::Circle)],
+        &[button([5, 5], !drag || kind.point_count() != 2)],
     );
     assert!(owner.placement_active());
     assert!(owner.placement_preview().is_none());
@@ -66,7 +66,7 @@ fn round_tool_prefix(owner: &mut TestOwner, kind: SketchPlacementTool, drag: boo
     if !drag {
         deliver(owner, &[button([0, 0], false)]);
     }
-    if kind != SketchPlacementTool::Circle {
+    if kind.point_count() != 2 {
         deliver(
             owner,
             &[

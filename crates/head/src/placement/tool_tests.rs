@@ -14,6 +14,7 @@ fn incomplete_point_sequences_are_refused_before_indexing() {
     for tool in [
         SketchPlacementTool::StraightSlot { width: 2. },
         SketchPlacementTool::Circle,
+        SketchPlacementTool::Polygon { sides: 6 },
         SketchPlacementTool::Ellipse,
         SketchPlacementTool::CenterPointArc,
         SketchPlacementTool::ThreePointArc {
