@@ -16,6 +16,12 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<Vec<BodyInfo>, String>;
+    /// Enumerate verified current topology keys; example: `access.reference_keys(files, document)?`.
+    fn reference_keys(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<ReferenceKeysResult, String>;
     /// Query an indexed body or the complete current part at an explicit density; example: `access.physical_properties(files, document, Some(0), 7.85)?`.
     fn physical_properties(
         &mut self,
@@ -54,7 +60,8 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 7] = [
+pub const BODY_QUERY_METHODS: [&str; 8] = [
+    METHOD_MODEL_REFERENCE_KEYS,
     METHOD_BODY_LIST,
     METHOD_BODY_PHYSICAL_PROPS,
     METHOD_ANALYSIS_MASS_PROPERTIES,
@@ -77,6 +84,10 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         ))
     })?;
     match method {
+        METHOD_MODEL_REFERENCE_KEYS => {
+            no_arguments(method, encoded)?;
+            crate::encode(&owner.reference_keys(files, document).map_err(Error)?)
+        }
         METHOD_BODY_LIST => {
             let _: EmptyObject = crate::decode(method, encoded)?;
             crate::encode(&BodyListResult {

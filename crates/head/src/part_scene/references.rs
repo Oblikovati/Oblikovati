@@ -13,6 +13,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartTopolog
         self.ensure_current(files, document)?;
         self.body_infos(files, document)
     }
+    fn reference_keys(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<oblikovati_api::wire::ReferenceKeysResult, String> {
+        self.ensure_current(files, document)?;
+        self.current_reference_keys(files, document)
+    }
     fn physical_properties(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

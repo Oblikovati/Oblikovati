@@ -239,6 +239,7 @@ fn render_part_scene(
 }
 
 mod references;
+mod topology;
 
 mod bodies;
 

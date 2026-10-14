@@ -139,6 +139,24 @@ fn model_tree_publishes_native_feature_ids_and_current_body_count() {
     assert!(features.iter().all(|feature| feature.kind == "extrude"));
 }
 #[test]
+fn native_reference_keys_list_verified_face_keys_per_body() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    let result = Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap();
+    let bodies = result.bodies.unwrap();
+    assert_eq!(bodies.len(), 1);
+    let faces = bodies[0].faces.as_ref().unwrap();
+    assert_eq!(faces.len(), 6);
+    assert!(
+        faces
+            .iter()
+            .all(|face| face.kind == "face" && !face.key.is_empty())
+    );
+}
+#[test]
 fn requires_update_tracks_the_current_native_evaluation_generation() {
     let (mut empty_owner, awake) = owner();
     create(&mut empty_owner, &awake);
