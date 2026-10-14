@@ -16,7 +16,7 @@ impl SketchPlacementRecipe {
         recipe
             .members
             .extend([[0, 2], [1, 3]].map(|points| SketchPlacementMember {
-                path: SketchPathMember::Line(points),
+                geometry: SketchPlacementGeometry::Path(SketchPathMember::Line(points)),
                 construction: true,
             }));
         recipe
@@ -78,7 +78,7 @@ fn axis_rectangle(points: Vec<[f64; 2]>) -> Result<SketchPlacementRecipe, Sketch
 fn rectangle_boundary() -> Vec<SketchPlacementMember> {
     (0..4)
         .map(|i| SketchPlacementMember {
-            path: SketchPathMember::Line([i, (i + 1) % 4]),
+            geometry: SketchPlacementGeometry::Path(SketchPathMember::Line([i, (i + 1) % 4])),
             construction: false,
         })
         .collect()

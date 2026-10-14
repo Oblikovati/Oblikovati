@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{SketchError, SketchPathMember, require_position};
 mod bindings;
+mod circles;
 mod fields;
+mod geometry;
 mod rectangles;
 mod slots;
 pub use bindings::{SketchPlacementBinding, SketchPlacementRelation};
+pub use geometry::SketchPlacementGeometry;
 /// A shared authoring graph for preview and atomic commit; indices are local, not permanent IDs.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchPlacementRecipe {
@@ -16,7 +19,7 @@ pub struct SketchPlacementRecipe {
 /// One boundary or construction member using the recipe's point indices.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SketchPlacementMember {
-    pub path: SketchPathMember,
+    pub geometry: SketchPlacementGeometry,
     pub construction: bool,
 }
 /// A measured placement field; steering fields do not create a dimension on commit.

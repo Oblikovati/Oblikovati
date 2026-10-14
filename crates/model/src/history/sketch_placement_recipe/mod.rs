@@ -76,7 +76,7 @@ fn append_members(
         .members
         .iter()
         .map(|member| {
-            let primitive = member.path.primitive(points, member.construction)?;
+            let primitive = member.geometry.primitive(points, member.construction)?;
             primitive.validate(geometry)?;
             append_primitive(geometry, sketch, &primitive, ids)
                 .map(|report| report.entity)

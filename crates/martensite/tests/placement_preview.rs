@@ -2,7 +2,7 @@
 use oblikovati_martensite::planar_curve::sketch::{
     PlacementPreviewCurve, SketchSamplingOptionsV1, sample_placement_preview,
 };
-use oblikovati_model::sketch::{SketchPathMember, SketchPlacementRecipe};
+use oblikovati_model::sketch::{SketchPathMember, SketchPlacementGeometry, SketchPlacementRecipe};
 fn options(deflection: f64) -> SketchSamplingOptionsV1 {
     SketchSamplingOptionsV1 {
         deflection,
@@ -38,7 +38,10 @@ fn verify_member(recipe: &SketchPlacementRecipe, index: usize, curve: &Placement
     let member = recipe.members[index];
     assert_eq!(curve.member_index, index);
     assert_eq!(curve.construction, member.construction);
-    let endpoints = match member.path {
+    let SketchPlacementGeometry::Path(path) = member.geometry else {
+        panic!("expected path")
+    };
+    let endpoints = match path {
         SketchPathMember::Line(ends) => ends,
         SketchPathMember::Arc { endpoints, .. } => endpoints,
     };
@@ -52,7 +55,7 @@ fn verify_member(recipe: &SketchPlacementRecipe, index: usize, curve: &Placement
         center,
         counter_clockwise,
         ..
-    } = member.path
+    } = path
     {
         let center = recipe.points[center];
         verify_arc(
@@ -100,10 +103,27 @@ fn preview_refuses_invalid_options_and_excessive_native_sampling() {
 #[test]
 fn preview_refuses_malformed_recipe_indices() {
     let mut recipe = arc(true);
-    recipe.members[0].path = SketchPathMember::Line([0, 999]);
+    recipe.members[0].geometry = SketchPlacementGeometry::Path(SketchPathMember::Line([0, 999]));
     assert!(
         sample_placement_preview(&recipe, options(0.1))
             .unwrap_err()
             .contains("999")
     );
+}
+
+#[test]
+fn circle_preview_is_closed_and_matches_the_canonical_circle_without_mutation() {
+    let recipe = SketchPlacementRecipe::circle([3., -4.], 5.).unwrap();
+    let original = recipe.clone();
+    let curves = sample_placement_preview(&recipe, options(0.01)).unwrap();
+    assert_eq!(recipe, original);
+    assert_eq!(curves.len(), 1);
+    assert_eq!(curves[0].member_index, 0);
+    assert!(!curves[0].construction);
+    let samples = &curves[0].points;
+    assert!(distance(*samples.first().unwrap(), *samples.last().unwrap()) < 1e-12);
+    for sample in samples {
+        assert!((distance(*sample, [3., -4.]) - 5.).abs() < 1e-12);
+    }
+    verify_arc(&curves[0], [3., -4.], 5., true);
 }

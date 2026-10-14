@@ -226,7 +226,8 @@ fn malformed_recipe_indices_and_field_values_never_publish_partial_geometry() {
     recipe.points[0][0] = f64::NAN;
     bad.push(recipe);
     let mut recipe = original.clone();
-    recipe.members[0].path = SketchPathMember::Line([99, 1]);
+    recipe.members[0].geometry =
+        oblikovati_model::sketch::SketchPlacementGeometry::Path(SketchPathMember::Line([99, 1]));
     bad.push(recipe);
     let mut recipe = original.clone();
     recipe.relations[0] = SketchPlacementRelation::EqualRadius([1, 99]);

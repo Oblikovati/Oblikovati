@@ -5,7 +5,7 @@ fn all_rectangle_graphs_fields_and_rank_match_pinned_go_in_every_quadrant() {
     let fixtures: Vec<GoRecipe> = serde_json::from_str(include_str!("go-recipes.json")).unwrap();
     let rectangles: Vec<_> = fixtures
         .into_iter()
-        .filter(|f| !f.kind.is_empty())
+        .filter(|f| matches!(f.kind.as_str(), "rectangle" | "center" | "threePoint"))
         .collect();
     assert_eq!(rectangles.len(), 12);
     for fixture in rectangles {
@@ -60,7 +60,7 @@ fn rectangles_refuse_collapsed_edges_and_nonfinite_placements_before_commit() {
 #[allow(dead_code)]
 #[path = "../common/document_snapshot.rs"]
 mod document_snapshot;
-fn solved_rank(recipe: &SketchPlacementRecipe) -> usize {
+pub(super) fn solved_rank(recipe: &SketchPlacementRecipe) -> usize {
     use oblikovati_model::{
         document_sketch::DocumentSketchId,
         history::DocumentEditHistory,

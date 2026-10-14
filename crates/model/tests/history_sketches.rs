@@ -221,3 +221,6 @@ mod slots;
 
 #[path = "history_sketches/rectangles.rs"]
 mod rectangles;
+
+#[path = "history_sketches/circles.rs"]
+mod circles;

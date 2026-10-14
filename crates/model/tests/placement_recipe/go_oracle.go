@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// Capture the pinned Go aa8297d1 constrained slot and rectangle recipes and rank independently.
+// Capture the pinned Go aa8297d1 constrained slot, rectangle and circle recipes and rank independently.
 package main
 
 import (
@@ -23,6 +23,7 @@ type record struct {
 	DOF       int
 }
 type entity struct {
+	Radius            float64
 	Kind              string
 	Points            []int
 	CCW, Construction bool
@@ -58,18 +59,26 @@ func main() {
 			out = append(out, capture(record{Kind: kind, Input: [3][2]float64{{3, 4}, {3 + 6*sign[0], 4 + 8*sign[1]}, {-5, 10}}}))
 		}
 	}
+	for _, center := range [][2]float64{{0, 0}, {3, -4}, {-20, 30}} {
+		for _, radius := range []float64{0.125, 5, 100} {
+			out = append(out, capture(record{Kind: "circle", Input: [3][2]float64{center}, Width: radius}))
+		}
+	}
 	if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 		panic(err)
 	}
 }
 func xy(p m.Point2) [2]float64 { return [2]float64{p.X, p.Y} }
 func capture(out record) record {
+	out.Relations = []relation{}
 	c, s, e := m.P2(out.Input[0][0], out.Input[0][1]), m.P2(out.Input[1][0], out.Input[1][1]), m.P2(out.Input[2][0], out.Input[2][1])
 	r := sketch.StraightSlotRecipe(c, s, out.Width)
 	if out.Curved {
 		r = sketch.ArcSlotRecipe(c, s, e, out.Width, out.CCW)
 	}
 	switch out.Kind {
+	case "circle":
+		r = sketch.CircleRecipe(c, out.Width)
 	case "rectangle":
 		r = sketch.RectangleRecipe(c, s)
 	case "center":
@@ -85,7 +94,10 @@ func capture(out record) record {
 		if v.Kind == sketch.RecipeArc {
 			kind = "arc"
 		}
-		out.Entities = append(out.Entities, entity{kind, v.Points, v.CounterClockwise, v.Construction})
+		if v.Kind == sketch.RecipeCircle {
+			kind = "circle"
+		}
+		out.Entities = append(out.Entities, entity{float64(v.Radius), kind, v.Points, v.CounterClockwise, v.Construction})
 	}
 	for _, v := range r.Constraints {
 		out.Relations = append(out.Relations, relation{v.Points, string(v.Kind), v.Entities})

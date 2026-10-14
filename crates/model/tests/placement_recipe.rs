@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_model::sketch::{
-    SketchPathMember, SketchPlacementBinding, SketchPlacementRecipe, SketchPlacementRelation,
+    SketchPathMember, SketchPlacementBinding, SketchPlacementGeometry, SketchPlacementRecipe,
+    SketchPlacementRelation,
 };
 use serde::Deserialize;
 #[derive(Deserialize)]
@@ -22,6 +23,7 @@ struct GoRecipe {
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct GoEntity {
+    radius: f64,
     kind: String,
     points: Vec<usize>,
     #[serde(rename = "CCW")]
@@ -50,7 +52,7 @@ struct GoField {
 fn constrained_slot_graphs_and_field_bindings_match_the_independent_go_recipes() {
     let fixtures: Vec<GoRecipe> =
         serde_json::from_str(include_str!("placement_recipe/go-recipes.json")).unwrap();
-    assert_eq!(fixtures.len(), 28);
+    assert_eq!(fixtures.len(), 37);
     for fixture in fixtures
         .into_iter()
         .filter(|fixture| fixture.kind.is_empty())
@@ -88,16 +90,23 @@ fn close(actual: f64, expected: f64) {
 fn verify_entities(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
     assert_eq!(actual.members.len(), fixture.entities.len());
     for (a, b) in actual.members.iter().zip(&fixture.entities) {
-        let expected = if b.kind == "line" {
-            SketchPathMember::Line([b.points[0], b.points[1]])
-        } else {
-            SketchPathMember::Arc {
+        let expected = if b.kind == "circle" {
+            SketchPlacementGeometry::Circle {
                 center: b.points[0],
-                endpoints: [b.points[1], b.points[2]],
-                counter_clockwise: b.ccw,
+                radius: b.radius,
             }
+        } else {
+            SketchPlacementGeometry::Path(if b.kind == "line" {
+                SketchPathMember::Line([b.points[0], b.points[1]])
+            } else {
+                SketchPathMember::Arc {
+                    center: b.points[0],
+                    endpoints: [b.points[1], b.points[2]],
+                    counter_clockwise: b.ccw,
+                }
+            })
         };
-        assert_eq!(a.path, expected);
+        assert_eq!(a.geometry, expected);
         assert_eq!(a.construction, b.construction);
     }
 }
@@ -160,3 +169,6 @@ fn verify_fields(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
 
 #[path = "placement_recipe/rectangles.rs"]
 mod rectangles;
+
+#[path = "placement_recipe/circles.rs"]
+mod circles;
