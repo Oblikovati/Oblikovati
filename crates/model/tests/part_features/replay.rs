@@ -238,6 +238,13 @@ fn bind_projected_origin(document: &mut DocumentSnapshot) {
 }
 
 #[test]
+fn native_part_definitions_report_stable_diagnostic_kinds() {
+    let prism = PartFeatureDefinition::SketchPrism(Box::new(prism_source()));
+    let point = PartFeatureDefinition::Point([DatumLength::Constant(0.); 3]);
+    assert_eq!((prism.kind(), point.kind()), ("extrude", "work-point"));
+}
+
+#[test]
 fn incomplete_saved_dependency_coverage_refuses_replay_before_kernel_calls() {
     let mut document = replay_document();
     let definition = PartFeatureDefinition::SketchPrism(Box::new(prism_source()));

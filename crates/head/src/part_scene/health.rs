@@ -157,24 +157,9 @@ fn feature_error(
     Ok(Some(FeatureError {
         id: record.feature.0,
         name: feature.name().into(),
-        kind: feature_kind(feature.definition()).into(),
+        kind: feature.definition().kind().into(),
         message: status_reason(&record.status),
     }))
-}
-
-fn feature_kind(
-    definition: &oblikovati_model::feature::part::PartFeatureDefinition,
-) -> &'static str {
-    use oblikovati_model::feature::part::PartFeatureDefinition;
-    match definition {
-        PartFeatureDefinition::SketchPrism(_) => "extrude",
-        PartFeatureDefinition::DeleteBody(_) => "delete-body",
-        PartFeatureDefinition::Axis(_) | PartFeatureDefinition::AxisThroughPoints(_) => "work-axis",
-        PartFeatureDefinition::Point(_) | PartFeatureDefinition::PointAtReference(_) => {
-            "work-point"
-        }
-        _ => "work-plane",
-    }
 }
 
 fn status_reason(

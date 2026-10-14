@@ -40,6 +40,18 @@ pub enum PartFeatureDefinition {
     PointAtReference(WorkPointReference),
     AxisThroughPoints(WorkAxisPoints),
 }
+impl PartFeatureDefinition {
+    /// Return the stable feature vocabulary reported by diagnostics; example: `definition.kind() == "extrude"`.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::SketchPrism(_) => "extrude",
+            Self::DeleteBody(_) => "delete-body",
+            Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
+            Self::Point(_) | Self::PointAtReference(_) => "work-point",
+            _ => "work-plane",
+        }
+    }
+}
 impl super::AuthoredFeature<PartFeatureDefinition> {
     /// Attach prism sources to the common program with current document dependencies.
     /// Example: `AuthoredFeature::sketch_prism(id, "Extrude", definition, &snapshot)?`.
