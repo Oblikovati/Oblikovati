@@ -140,6 +140,17 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.owner.gui_command_state()
     }
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        self.owner.gui_parameter_snapshot()
+    }
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        self.owner.apply_gui_parameter(action)
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],

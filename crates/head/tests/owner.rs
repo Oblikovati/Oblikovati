@@ -226,6 +226,8 @@ mod commands;
 
 #[path = "owner/gui_commands.rs"]
 mod gui_commands;
+#[path = "owner/parameter_view.rs"]
+mod parameter_view;
 
 #[path = "owner/slot_input.rs"]
 mod slot_input;

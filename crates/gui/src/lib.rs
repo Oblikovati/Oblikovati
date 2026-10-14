@@ -5,6 +5,21 @@ mod clipboard;
 pub use activity::GuiFrameActivity;
 pub use clipboard::GuiClipboard;
 mod commands;
+mod parameter_snapshot;
+pub use parameter_snapshot::{
+    GuiParameterLinkParameter, GuiParameterLinkSource, GuiParameterRow, GuiParameterSnapshot,
+};
+mod parameter_drafts;
+mod parameter_panel;
+pub use parameter_drafts::{
+    GuiParameterAck, GuiParameterDrafts, GuiParameterTextEdit, GuiParameterTextField,
+    GuiParameterTextTarget,
+};
+pub use parameter_panel::{
+    GuiParameterAction, GuiParameterChoiceEdit, GuiParameterCreation, GuiParameterGroupEdit,
+    GuiParameterInitialValue, GuiParameterLinkEdit, GuiParameterRowOperation,
+    GuiParameterToggleField, GuiParameterToleranceEdit,
+};
 #[allow(unsafe_code)]
 mod context_owner;
 mod engine;

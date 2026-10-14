@@ -23,6 +23,7 @@ pub struct GuiFrameOutput {
     pub actions: Vec<GuiShellAction>,
     pub capture: GuiInputCapture,
     pub activity: GuiFrameActivity,
+    pub parameter_actions: Vec<crate::GuiParameterAction>,
 }
 /// One GUI thread retains the active context for its lifetime; packets contain no borrowed FFI pointers.
 /// ```compile_fail
@@ -32,6 +33,7 @@ pub struct GuiFrameOutput {
 pub struct GuiFrameEngine {
     context: Context,
     atlas: GuiAtlas,
+    parameter_panel: crate::parameter_panel::ParameterPanel,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -39,7 +41,12 @@ impl GuiFrameEngine {
         require_vacant_context()?;
         let mut context = Context::create();
         let atlas = configure_owner_context(&mut context);
-        Ok(Self { context, atlas })
+        let parameter_panel = crate::parameter_panel::ParameterPanel::new()?;
+        Ok(Self {
+            context,
+            atlas,
+            parameter_panel,
+        })
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
     pub fn with_clipboard(clipboard: crate::GuiClipboard) -> Result<Self, String> {
@@ -55,7 +62,43 @@ impl GuiFrameEngine {
     /// Example: `engine.frame(&request)?` returns draws, actions, and channel capture requests.
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
-        draw_controls(&mut self.context, request)
+        draw_controls(&mut self.context, &mut self.parameter_panel, request)
+    }
+    /// Publish a copied parameter view; example: `engine.set_parameter_snapshot(Some(snapshot))?`.
+    pub fn set_parameter_snapshot(
+        &mut self,
+        snapshot: Option<crate::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        self.parameter_panel.replace_snapshot(snapshot)
+    }
+    /// Show a failed view without retaining stale edit targets; example: `engine.report_parameter_view_issue(issue)?`.
+    pub fn report_parameter_view_issue(&mut self, issue: String) -> Result<bool, String> {
+        self.parameter_panel.report_metadata_issue(issue)
+    }
+    /// Open the native parameter editor on this GUI owner; example: `engine.set_parameters_open(true)`.
+    pub fn set_parameters_open(&mut self, open: bool) {
+        self.parameter_panel.set_open(open);
+    }
+    /// Query whether the panel needs model metadata; example: `engine.parameters_open()` before publishing rows.
+    pub fn parameters_open(&self) -> bool {
+        self.parameter_panel.is_open()
+    }
+    /// Return a widget result; example: `engine.acknowledge_parameter_action(&action, result)`.
+    pub fn acknowledge_parameter_action(
+        &mut self,
+        action: &crate::GuiParameterAction,
+        result: Result<(), String>,
+    ) {
+        self.parameter_panel.acknowledge_action(action, result);
+    }
+    /// Resolve the matching text edit without borrowing model state into widgets.
+    /// Example: `engine.acknowledge_parameter_edit(&edit, result)` after the owner processes it.
+    pub fn acknowledge_parameter_edit(
+        &mut self,
+        edit: &crate::GuiParameterTextEdit,
+        result: Result<(), String>,
+    ) -> crate::GuiParameterAck {
+        self.parameter_panel.acknowledge(edit, result)
     }
 }
 
@@ -125,6 +168,7 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 }
 fn draw_controls(
     context: &mut Context,
+    parameters: &mut crate::parameter_panel::ParameterPanel,
     request: &GuiFrameRequest,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
@@ -135,13 +179,16 @@ fn draw_controls(
         &request.commands,
         request.status.as_deref(),
         &mut selected,
+        parameters,
     );
+    let parameter_actions = parameters.draw(ui);
     let snapshot = capture_frame(context.render(), request.extent)?;
     Ok(GuiFrameOutput {
         draws: snapshot,
         actions: selected,
         capture: input_capture(context.io()),
         activity: frame_activity()?,
+        parameter_actions,
     })
 }
 fn shell_panel(
@@ -149,6 +196,7 @@ fn shell_panel(
     state: &GuiCommandState,
     status: Option<&str>,
     selected: &mut Vec<GuiShellAction>,
+    parameters: &mut crate::parameter_panel::ParameterPanel,
 ) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
@@ -157,6 +205,9 @@ fn shell_panel(
         .resizable(false)
         .build(|| {
             shell_buttons(ui, state, selected);
+            if ui.button("Parameters") {
+                parameters.set_open(true);
+            }
             ui.text_wrapped(status.unwrap_or("Document commands"));
         });
 }

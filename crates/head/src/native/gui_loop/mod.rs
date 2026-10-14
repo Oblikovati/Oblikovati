@@ -20,12 +20,38 @@ pub(super) struct NativeGui {
     deadline: Option<Duration>,
     activity: GuiFrameActivity,
     dirty: bool,
+    parameter_changed: bool,
     focused: bool,
     mapped: bool,
     pointer: input::PointerOwnership,
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
+    pub(super) fn parameters_open(&self) -> bool {
+        self.engine.parameters_open()
+    }
+    pub(super) fn set_parameters(
+        &mut self,
+        snapshot: Option<oblikovati_gui::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        let changed = self.engine.set_parameter_snapshot(snapshot)?;
+        self.parameter_changed |= changed;
+        Ok(changed)
+    }
+    pub(super) fn report_parameter_issue(&mut self, issue: String) -> Result<bool, String> {
+        let changed = self.engine.report_parameter_view_issue(issue)?;
+        self.parameter_changed |= changed;
+        Ok(changed)
+    }
+    pub(super) fn acknowledge_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+        result: Result<(), String>,
+    ) {
+        self.engine.acknowledge_parameter_action(action, result);
+        self.parameter_changed = true;
+        self.deadline = Some(self.last_frame.unwrap_or_default());
+    }
     pub(super) fn require_publication(&mut self) {
         self.dirty = true;
     }
@@ -52,6 +78,7 @@ impl NativeGui {
             deadline: None,
             activity: Default::default(),
             dirty: false,
+            parameter_changed: false,
             focused: true,
             mapped: true,
             pointer: Default::default(),
@@ -80,6 +107,7 @@ impl NativeGui {
         self.commands = Some(commands.clone());
         self.notice = notice.map(str::to_owned);
         self.last_frame = Some(now);
+        self.parameter_changed = false;
         self.activity = output.activity;
         self.deadline = self
             .activity
@@ -88,6 +116,7 @@ impl NativeGui {
         Ok(HeadGuiUpdate {
             consumed_input: self.pointer.consumed(event, output.capture),
             actions: output.actions,
+            parameter_actions: output.parameter_actions,
             wake_after: self.wake_after(now),
             ..Default::default()
         })
@@ -107,6 +136,10 @@ impl NativeGui {
         let mut final_frame = self.engine.frame(&wheeled)?;
         first.actions.append(&mut final_frame.actions);
         final_frame.actions = first.actions;
+        first
+            .parameter_actions
+            .append(&mut final_frame.parameter_actions);
+        final_frame.parameter_actions = first.parameter_actions;
         Ok(final_frame)
     }
     fn observe_lifecycle(&mut self, event: Option<&ViewportEvent>) {
@@ -124,7 +157,8 @@ impl NativeGui {
         commands: &GuiCommandState,
         notice: Option<&str>,
     ) -> bool {
-        event.is_some()
+        self.parameter_changed
+            || event.is_some()
             || self
                 .draws
                 .as_ref()

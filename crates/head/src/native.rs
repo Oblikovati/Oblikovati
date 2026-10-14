@@ -67,6 +67,38 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn gui_parameters_open(&self) -> bool {
+        self.gui.as_ref().is_some_and(|gui| gui.parameters_open())
+    }
+    fn set_gui_parameter_snapshot(
+        &mut self,
+        snapshot: Option<oblikovati_gui::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        let Some(gui) = &mut self.gui else {
+            return Ok(false);
+        };
+        gui.set_parameters(snapshot)
+    }
+    fn show_gui_parameter_issue(&mut self, issue: String) -> Result<bool, String> {
+        let Some(gui) = &mut self.gui else {
+            return Err(format!(
+                "GUI parameter view issue {issue:?}: expected an initialized GUI"
+            ));
+        };
+        gui.report_parameter_issue(issue)
+    }
+    fn acknowledge_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        let Some(gui) = &mut self.gui else {
+            return Ok(());
+        };
+        gui.acknowledge_parameter(action, result);
+        Ok(())
+    }
+
     fn gui_frame(
         &mut self,
         event: Option<&ViewportEvent>,

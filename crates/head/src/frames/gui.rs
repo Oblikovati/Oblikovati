@@ -4,12 +4,13 @@ use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::{ViewportInput, ViewportKey};
 use std::time::Duration;
 /// GUI work joins the existing event and wake paths; lifecycle events remain owner-visible.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct HeadGuiUpdate {
     pub changed: bool,
     pub consumed_input: bool,
     pub deferred: bool,
     pub actions: Vec<GuiShellAction>,
+    pub parameter_actions: Vec<oblikovati_gui::GuiParameterAction>,
     pub wake_after: Option<Duration>,
 }
 pub(super) fn advance_gui(
@@ -17,7 +18,14 @@ pub(super) fn advance_gui(
     owner: &mut dyn HeadWork,
     event: Option<&ViewportEvent>,
 ) -> Result<HeadGuiUpdate, String> {
+    let metadata_changed = window.gui_parameters_open() && publish_parameter_view(window, owner)?;
     let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
+    update.changed |= metadata_changed;
+    for action in &update.parameter_actions {
+        let result = owner.apply_gui_parameter(action);
+        update.changed |= result.as_ref().copied().unwrap_or(false);
+        window.acknowledge_gui_parameter(action, result.map(|_| ()))?;
+    }
     for action in &update.actions {
         let event = ViewportEvent::Input(ViewportInput::Key {
             key: action_key(*action),
@@ -26,6 +34,17 @@ pub(super) fn advance_gui(
         update.changed |= dispatch_frame_input(window, owner, &event)?;
     }
     Ok(update)
+}
+fn publish_parameter_view(
+    window: &mut dyn HeadWindow,
+    owner: &dyn HeadWork,
+) -> Result<bool, String> {
+    match owner.gui_parameter_snapshot() {
+        Ok(snapshot) => window
+            .set_gui_parameter_snapshot(snapshot)
+            .or_else(|issue| window.show_gui_parameter_issue(issue)),
+        Err(issue) => window.show_gui_parameter_issue(issue),
+    }
 }
 fn action_key(action: GuiShellAction) -> ViewportKey {
     match action {

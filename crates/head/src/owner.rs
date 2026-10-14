@@ -10,6 +10,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
+#[path = "owner_parameters.rs"]
+mod parameter_view;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
 #[derive(Clone, Copy, Debug)]
 pub struct DesktopDispatchOptions {
@@ -173,6 +175,40 @@ impl<
             redo_label: session.redo_label().map(str::to_owned),
             transaction_open: session.in_transaction(),
         })
+    }
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        parameter_view::owner_parameter_snapshot(&self.files)
+    }
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        if let oblikovati_gui::GuiParameterAction::Link(edit) = action {
+            edit.validate()?;
+            let (source_document, linked) =
+                parameter_view::derived::linked_source_names(&self.files, edit)?;
+            oblikovati_api::client::Client::new(self.document_host())
+                .parameters()
+                .add_derived_table(&oblikovati_api::wire::DerivedParameterTableAddArgs {
+                    source_document,
+                    linked: Some(linked),
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        if let oblikovati_gui::GuiParameterAction::DeleteLinkedTable { document, table } = action {
+            parameter_view::derived::require_linked_table_owner(&self.files, *document, *table)?;
+            oblikovati_api::client::Client::new(self.document_host())
+                .parameters()
+                .delete_derived_table(&oblikovati_api::wire::DerivedParameterTableDeleteArgs {
+                    id: *table,
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        parameter_view::apply::apply_owner_parameter(&mut self.files, action)
     }
     fn process_inputs(
         &mut self,

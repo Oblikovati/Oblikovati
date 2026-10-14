@@ -4,6 +4,25 @@ use super::*;
 use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_PART, DocumentType};
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspace<O, W, F> {
+    /// Read the exact source identifier accepted by derived-link commands; example: `host.parameter_source_name(id)?`.
+    pub fn parameter_source_name(&self, id: u64) -> Result<String, FileWorkspaceError> {
+        let file = self
+            .retained
+            .get(&id)
+            .ok_or(FileWorkspaceError::MissingFile(id))?;
+        match &file.path {
+            Some(path) => path.to_str().map(str::to_owned).ok_or_else(|| {
+                FileWorkspaceError::DerivedRefresh(format!(
+                    "source path {path:?}: expected UTF-8 text"
+                ))
+            }),
+            None => file.display_override.clone().ok_or_else(|| {
+                FileWorkspaceError::DerivedRefresh(format!(
+                    "source document {id}: expected an unsaved display name"
+                ))
+            }),
+        }
+    }
     /// Resolve an open parameter source without I/O or activation; ambiguous names are errors.
     /// Example: `host.resolve_parameter_source("/parts/gear.opd")?`.
     pub fn resolve_parameter_source(&self, name: &str) -> Result<Option<u64>, FileWorkspaceError> {

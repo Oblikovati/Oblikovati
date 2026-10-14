@@ -57,7 +57,23 @@ pub trait HeadWork {
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         Ok(Default::default())
     }
+    /// Copy parameter identities and canonical presentation on the owner thread.
+    /// Example: `work.gui_parameter_snapshot()?` when the parameter panel requests a view.
+    fn gui_parameter_snapshot(
+        &self,
+    ) -> Result<Option<oblikovati_gui::GuiParameterSnapshot>, String> {
+        Ok(None)
+    }
 
+    /// Apply a GUI edit through the current document owner; example: `work.apply_gui_parameter(&action)?`.
+    fn apply_gui_parameter(
+        &mut self,
+        action: &oblikovati_gui::GuiParameterAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "GUI parameter action {action:?}: expected a parameter-edit owner"
+        ))
+    }
     /// Apply native commands on the document owner; example: `work.process_inputs(&events)?` before polling.
     fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
         Ok(false)

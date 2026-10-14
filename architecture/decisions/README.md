@@ -16,7 +16,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0021`.
+The next unused number is `ADR-0030`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -125,6 +125,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0026](ADR-0026-owned-native-keyboard-and-text.md) | Owned native keyboard and text input | R1V/R4 |
 | [ADR-0027](ADR-0027-owned-native-text-clipboard.md) | Owned native text clipboard | R1V/R4 |
 | [ADR-0028](ADR-0028-checked-native-image-reads.md) | Checked native image reads | R1V |
+| [ADR-0029](ADR-0029-owned-native-parameter-editor.md) | Owned native parameter editor (proposed) | R1V/R4 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

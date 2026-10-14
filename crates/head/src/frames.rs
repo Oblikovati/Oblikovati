@@ -15,6 +15,32 @@ mod gui;
 pub use gui::HeadGuiUpdate;
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Request owner metadata only while visible; example: `window.gui_parameters_open()`.
+    fn gui_parameters_open(&self) -> bool {
+        false
+    }
+    /// Copy the current parameter view; example: `window.set_gui_parameter_snapshot(None)?` on close.
+    fn set_gui_parameter_snapshot(
+        &mut self,
+        _: Option<oblikovati_gui::GuiParameterSnapshot>,
+    ) -> Result<bool, String> {
+        Ok(false)
+    }
+    /// Show a parameter view decline locally; example: `window.show_gui_parameter_issue(issue)?`.
+    fn show_gui_parameter_issue(&mut self, issue: String) -> Result<bool, String> {
+        Err(format!(
+            "GUI parameter view issue {issue:?}: expected a window with parameter feedback"
+        ))
+    }
+    /// Return one owner result to its widget; example: `window.acknowledge_gui_parameter(&action, result)?`.
+    fn acknowledge_gui_parameter(
+        &mut self,
+        _: &oblikovati_gui::GuiParameterAction,
+        _: Result<(), String>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
     /// Advance GUI work before routing one input; example: `window.gui_frame(Some(event), &commands)?`.
     fn gui_frame(
         &mut self,
@@ -236,7 +262,7 @@ fn run_owner_frame(
     let gui = gui::advance_gui(window, owner, None)?;
     control.pending |= gui.changed;
     // Deferred GUI input can dispatch after polling; drain its owner effects before idle.
-    activity.pending |= !gui.actions.is_empty();
+    activity.pending |= !gui.actions.is_empty() || !gui.parameter_actions.is_empty();
     activity.wake_after = gui::earliest_wake(activity.wake_after, gui.wake_after);
     control.startup_ready = owner.startup_ready();
     control.pending |= activity.changed;
