@@ -144,6 +144,7 @@ fn preview_refuses_failed_solve_and_circular_postconditions() {
     let mut circle = SketchPlacementRecipe::circle([0., 0.], 2.).unwrap();
     circle.circular_checks.push(SketchCircularPlacementCheck {
         member: 0,
+        cap_members: None,
         points: [[5., 0.], [0., 5.], [-5., 0.]],
         options: CircumcircleOptions {
             maximum_point_residual: 0.,
@@ -205,4 +206,50 @@ fn ellipse_preview_is_closed_and_uses_the_native_analytic_frame() {
     }
     let fine = sample_placement_preview(&recipe, options(0.001)).unwrap();
     assert!(fine[0].points.len() > curve.points.len());
+}
+
+#[test]
+fn off_radius_arc_slot_cursor_keeps_four_nondegenerate_boundary_arcs() {
+    let recipe =
+        SketchPlacementRecipe::arc_slot([0., 0.], [[10., 0.], [5., 5.]], 2., true).unwrap();
+    let curves = sample_placement_preview(&recipe, options(0.01)).unwrap();
+    assert_eq!(curves.len(), 4);
+    for curve in &curves {
+        assert!(curve.points.len() > 2);
+        assert!(
+            distance(
+                *curve.points.first().unwrap(),
+                *curve.points.last().unwrap()
+            ) > 0.1
+        );
+    }
+}
+
+#[test]
+fn three_point_slot_preview_checks_solved_centerline_and_rejects_wrong_caps() {
+    use oblikovati_model::sketch::{CircumcircleOptions, SketchCircularPlacementCheck};
+    let mut recipe =
+        SketchPlacementRecipe::arc_slot([0., 0.], [[5., 0.], [0., 5.]], 2., true).unwrap();
+    recipe.circular_checks.push(SketchCircularPlacementCheck {
+        member: 0,
+        cap_members: Some([3, 1]),
+        points: [[5., 0.], [3., 4.], [0., 5.]],
+        options: CircumcircleOptions {
+            maximum_point_residual: 1e-9,
+        },
+    });
+    assert_eq!(
+        sample_placement_preview(&recipe, options(0.01))
+            .unwrap()
+            .len(),
+        4
+    );
+    recipe.circular_checks[0].cap_members = Some([1, 3]);
+    assert!(
+        sample_placement_preview(&recipe, options(0.01))
+            .unwrap_err()
+            .contains("displacement")
+    );
+    recipe.circular_checks[0].cap_members = Some([3, 99]);
+    assert!(sample_placement_preview(&recipe, options(0.01)).is_err());
 }

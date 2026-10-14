@@ -4,6 +4,7 @@ use super::{
     entity_geometry::{OwnedSketchGeometry, catalogue},
 };
 mod circular_seed;
+mod slot_centerline;
 use std::collections::{BTreeMap, BTreeSet};
 /// One immutable index for a batch read; borrowing the sketch prevents stale lookups after an edit.
 pub struct SketchReadIndex<'a> {

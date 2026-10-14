@@ -13,6 +13,13 @@ pub enum SketchPlacementTool {
         width: f64,
     },
     Circle,
+    CenterPointArcSlot {
+        width: f64,
+    },
+    ThreePointArcSlot {
+        width: f64,
+        options: CircumcircleOptions,
+    },
     Polygon {
         sides: usize,
     },
@@ -31,14 +38,18 @@ pub enum SketchPlacementTool {
 }
 impl SketchPlacementTool {
     pub(crate) fn validate(self) -> Result<(), String> {
-        if let Self::StraightSlot { width } = self
+        if let Self::StraightSlot { width }
+        | Self::CenterPointArcSlot { width }
+        | Self::ThreePointArcSlot { width, .. } = self
             && (!width.is_finite() || width <= 0.)
         {
             return Err(format!(
                 "slot width {width}: expected a positive finite working-unit length"
             ));
         }
-        if let Self::ThreePointCircle { options } | Self::ThreePointArc { options } = self
+        if let Self::ThreePointCircle { options }
+        | Self::ThreePointArc { options }
+        | Self::ThreePointArcSlot { options, .. } = self
             && (!options.maximum_point_residual.is_finite() || options.maximum_point_residual < 0.)
         {
             return Err(format!(
@@ -56,6 +67,8 @@ impl SketchPlacementTool {
         match self {
             Self::StraightSlot { .. } => "Slot",
             Self::Circle => "Circle",
+            Self::CenterPointArcSlot { .. } => "Centre-point arc slot",
+            Self::ThreePointArcSlot { .. } => "Three-point arc slot",
             Self::Polygon { .. } => "Polygon",
             Self::Ellipse => "Ellipse",
             Self::CenterPointArc => "Centre-point arc",
@@ -77,7 +90,9 @@ impl SketchPlacementTool {
             | Self::ThreePointCircle { .. }
             | Self::ThreePointArc { .. }
             | Self::CenterPointArc
-            | Self::Ellipse => 3,
+            | Self::Ellipse
+            | Self::CenterPointArcSlot { .. }
+            | Self::ThreePointArcSlot { .. } => 3,
         }
     }
     pub(crate) fn recipe(
@@ -102,17 +117,29 @@ impl SketchPlacementTool {
         cursor: [f64; 2],
         service: &dyn SketchCircleConstruction,
     ) -> Result<SketchPlacementRecipe, String> {
-        use circular_recipes::{center_recipe, circular_recipe, radial_recipe};
+        use circular_recipes::{
+            CircularRecipeKind as Circular, center_recipe, center_slot_recipe, circular_recipe,
+            radial_recipe,
+        };
         use oblikovati_model::sketch::SketchPlacementRecipe as Recipe;
         let first = accepted[0];
         let next = accepted.get(1).copied().unwrap_or(cursor);
         let result = match self {
+            Self::CenterPointArcSlot { width } => {
+                center_slot_recipe([first, next, cursor], width, service)
+            }
+            Self::ThreePointArcSlot { width, options } => circular_recipe(
+                [first, cursor, next],
+                Circular::Slot { width },
+                options,
+                service,
+            ),
             Self::CenterPointArc => center_recipe([first, next, cursor], service),
             Self::ThreePointArc { options } => {
-                circular_recipe([first, cursor, next], true, options, service)
+                circular_recipe([first, cursor, next], Circular::Arc, options, service)
             }
             Self::ThreePointCircle { options } => {
-                circular_recipe([first, next, cursor], false, options, service)
+                circular_recipe([first, next, cursor], Circular::Circle, options, service)
             }
             Self::Ellipse => ellipse_recipe::from_clicks([first, next, cursor]),
             Self::Polygon { sides } => {
@@ -151,8 +178,10 @@ impl SketchPlacementTool {
                 "the second circumference point",
                 "the third circumference point",
             ],
-            Self::CenterPointArc => &["the centre point", "the start point", "the end point"],
-            Self::ThreePointArc { .. } => {
+            Self::CenterPointArc | Self::CenterPointArcSlot { .. } => {
+                &["the centre point", "the start point", "the end point"]
+            }
+            Self::ThreePointArc { .. } | Self::ThreePointArcSlot { .. } => {
                 &["the start point", "the end point", "a point on the arc"]
             }
             Self::Rectangle => &["the first corner", "the opposite corner"],
@@ -177,3 +206,7 @@ mod arc_tests;
 #[cfg(test)]
 #[path = "ellipse_tool_tests.rs"]
 mod ellipse_tests;
+
+#[cfg(test)]
+#[path = "arc_slot_tool_tests.rs"]
+mod arc_slot_tests;

@@ -44,6 +44,7 @@ impl SketchCircleConstruction for RecordingCircularVerifier {
 fn check() -> SketchCircularPlacementCheck {
     SketchCircularPlacementCheck {
         member: 0,
+        cap_members: None,
         points: [[5., 0.], [3., 3.], [0., 2.]],
         options: CircumcircleOptions {
             maximum_point_residual: 1e-9,
@@ -161,4 +162,45 @@ fn missing_service_and_malformed_member_checks_leave_no_geometry() {
     assert!(verifier.observed.borrow().is_empty());
     assert!(before.sketches.same_recipe(&session.snapshot().sketches));
     assert!(session.undo_labels().is_empty());
+}
+
+#[test]
+fn slot_verification_reads_cap_centers_and_refusal_never_adopts_the_slot() {
+    let mut recipe =
+        SketchPlacementRecipe::arc_slot([0., 0.], [[5., 0.], [0., 2.]], 2., true).unwrap();
+    let mut centerline_check = check();
+    centerline_check.cap_members = Some([3, 1]);
+    recipe.circular_checks.push(centerline_check);
+    for refuse in [false, true] {
+        let mut session = arc_session();
+        let verifier = RecordingCircularVerifier {
+            refuse,
+            ..Default::default()
+        };
+        let result = session.create_sketch_placement_with_construction(
+            DocumentSketchId(1),
+            &recipe,
+            &[],
+            &verifier,
+        );
+        assert_eq!(result.is_err(), refuse);
+        let observed = verifier.observed.borrow();
+        assert_eq!(observed.len(), 1);
+        assert_eq!(
+            observed[0],
+            SolvedCircularSeed {
+                center: [0., 0.],
+                radius: 5.,
+                arc: Some(([[5., 0.], [0., 5.]], true))
+            }
+        );
+        let geometry = session
+            .snapshot()
+            .sketches
+            .get(DocumentSketchId(1))
+            .unwrap()
+            .geometry();
+        assert_eq!(geometry.arcs().len(), if refuse { 0 } else { 4 });
+        assert!(session.history().sketch_reservations().entity > 0);
+    }
 }

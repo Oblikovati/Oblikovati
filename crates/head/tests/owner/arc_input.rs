@@ -26,6 +26,13 @@ fn verify_solved_arc(geometry: &Sketch2D, recipe: &SketchPlacementRecipe) {
 fn invalid_curved_inputs_keep_the_stage_for_retry_and_cancel() {
     for tool in [
         SketchPlacementTool::Ellipse,
+        SketchPlacementTool::CenterPointArcSlot { width: 2. },
+        SketchPlacementTool::ThreePointArcSlot {
+            width: 2.,
+            options: CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
         SketchPlacementTool::CenterPointArc,
         SketchPlacementTool::ThreePointArc {
             options: CircumcircleOptions {

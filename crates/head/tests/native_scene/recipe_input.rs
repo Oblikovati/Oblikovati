@@ -7,6 +7,13 @@ use std::collections::VecDeque;
 fn native_recipe_tools_preview_commit_finish_and_undo_through_shared_input_pipeline() {
     for kind in [
         SketchPlacementTool::Circle,
+        SketchPlacementTool::CenterPointArcSlot { width: 2. },
+        SketchPlacementTool::ThreePointArcSlot {
+            width: 2.,
+            options: oblikovati_model::sketch::CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
         SketchPlacementTool::Polygon { sides: 6 },
         SketchPlacementTool::Ellipse,
         SketchPlacementTool::ThreePointCircle {
@@ -56,6 +63,8 @@ fn run_native_recipe_tool(kind: SketchPlacementTool) {
             | SketchPlacementTool::ThreePointArc { .. }
             | SketchPlacementTool::CenterPointArc
             | SketchPlacementTool::Ellipse
+            | SketchPlacementTool::CenterPointArcSlot { .. }
+            | SketchPlacementTool::ThreePointArcSlot { .. }
     ) {
         inputs.extend([button([800, 430], true), button([800, 430], false)]);
     }

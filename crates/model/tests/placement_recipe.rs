@@ -213,3 +213,6 @@ mod ellipses;
 
 #[path = "placement_recipe/polygons.rs"]
 mod polygons;
+
+#[path = "placement_recipe/slot_centerline.rs"]
+mod slot_centerline;

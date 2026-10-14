@@ -8,6 +8,8 @@ use crate::sketch::{
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SketchCircularPlacementCheck {
     pub member: usize,
+    /// Optional start/end cap members: verify their centreline instead of the boundary arc.
+    pub cap_members: Option<[usize; 2]>,
     pub points: [[f64; 2]; 3],
     pub options: CircumcircleOptions,
 }
@@ -42,8 +44,7 @@ impl SketchCircularPlacementCheck {
         members: &[SketchEntityId],
         backend: &dyn SketchCircleConstruction,
     ) -> Result<(), SketchError> {
-        let entity = indexed_entity(members, self.member)?;
-        let seed = index.circular_seed(entity)?;
+        let seed = self.solved_seed(index, members)?;
         backend
             .verify(self.points, seed, self.options)
             .map_err(|cause| {
@@ -53,5 +54,22 @@ impl SketchCircularPlacementCheck {
                 ))
             })?;
         Ok(())
+    }
+    fn solved_seed(
+        &self,
+        index: &SketchReadIndex<'_>,
+        members: &[SketchEntityId],
+    ) -> Result<crate::sketch::SolvedCircularSeed, SketchError> {
+        let entity = indexed_entity(members, self.member)?;
+        Ok(match self.cap_members {
+            None => index.circular_seed(entity)?,
+            Some([start, end]) => index.arc_slot_centerline(
+                entity,
+                [
+                    indexed_entity(members, start)?,
+                    indexed_entity(members, end)?,
+                ],
+            )?,
+        })
     }
 }

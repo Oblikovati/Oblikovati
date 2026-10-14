@@ -14,6 +14,13 @@ fn incomplete_point_sequences_are_refused_before_indexing() {
     for tool in [
         SketchPlacementTool::StraightSlot { width: 2. },
         SketchPlacementTool::Circle,
+        SketchPlacementTool::CenterPointArcSlot { width: 2. },
+        SketchPlacementTool::ThreePointArcSlot {
+            width: 2.,
+            options: oblikovati_model::sketch::CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
         SketchPlacementTool::Polygon { sides: 6 },
         SketchPlacementTool::Ellipse,
         SketchPlacementTool::CenterPointArc,
