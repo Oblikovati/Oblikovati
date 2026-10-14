@@ -85,6 +85,12 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if matches!(
+            method,
+            METHOD_APPLICATION_GET_HUD_OPTIONS | METHOD_APPLICATION_SET_HUD_OPTIONS
+        ) {
+            return context.hud_options(method, request);
+        }
         if crate::CLIENT_COMMAND_METHODS.contains(&method) {
             return crate::clients::apply(context.files.connected_clients_mut(), method, request);
         }

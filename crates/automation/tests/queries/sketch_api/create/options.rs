@@ -22,6 +22,43 @@ fn set_view(
         .options()
         .set_sketch(view)
 }
+
+#[test]
+fn hud_options_round_trip_through_the_injected_preference_owner() {
+    let (mut files, _, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let mut preferences = persisted_preferences(false);
+    let client = Client::new(
+        FileHost::new(&mut files, &mut source, "test").with_sketch_preferences(&mut preferences),
+    );
+    let mut view = client.application().hud_options().unwrap();
+    assert!(!view.enabled);
+    view.dimension_input_in_cartesian_coordinates = true;
+    view.create_dimensions_on_value_input = false;
+    assert_eq!(client.application().set_hud_options(&view).unwrap(), view);
+    assert_eq!(client.application().hud_options().unwrap(), view);
+    assert!(preferences.sketch_options().dimension_input_cartesian);
+    assert!(
+        !preferences
+            .sketch_options()
+            .create_dimensions_on_value_input
+    );
+}
+
+#[test]
+fn failed_hud_option_save_keeps_the_previous_preference_state() {
+    let (mut files, _, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let mut preferences = persisted_preferences(true);
+    let before = preferences.sketch_options().clone();
+    let client = Client::new(
+        FileHost::new(&mut files, &mut source, "test").with_sketch_preferences(&mut preferences),
+    );
+    let mut view = client.application().hud_options().unwrap();
+    view.enabled = !view.enabled;
+    expect_api_decline(client.application().set_hud_options(&view), "write refused");
+    drop(client);
+    assert_eq!(preferences.sketch_options(), &before);
+}
+
 #[test]
 fn injected_preference_owner_is_shared_between_api_calls_and_later_creations() {
     let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
