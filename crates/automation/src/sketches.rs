@@ -16,6 +16,7 @@ mod indices;
 mod move_dimension;
 mod owner;
 mod references;
+mod spline_handle;
 mod transform;
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::{
