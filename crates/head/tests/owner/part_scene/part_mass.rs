@@ -54,6 +54,9 @@ fn feature(owner: &mut TestOwner, id: u64) -> FeatureDetailResult {
         .get(&FeatureRefArgs { id })
         .unwrap()
 }
+fn tree(owner: &mut TestOwner) -> ModelTreeResult {
+    Client::new(owner.document_host()).model().tree().unwrap()
+}
 #[test]
 fn one_body_analysis_is_identical_and_empty_part_is_zero_with_the_requested_density() {
     let (mut owner, awake) = owner();
@@ -118,6 +121,22 @@ fn model_health_lists_only_the_failed_feature_after_current_replay() {
     assert_eq!((unhealthy.len(), unhealthy[0].status.as_str()), (1, "sick"));
     assert!(!unhealthy[0].name.is_empty());
     assert!(!unhealthy[0].reason.is_empty());
+}
+#[test]
+fn model_tree_publishes_native_feature_ids_and_current_body_count() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, true);
+    let result = tree(&mut owner);
+    assert_eq!((result.sketches, result.bodies), (1, 2));
+    let features = result.features.unwrap();
+    assert_eq!(
+        features
+            .iter()
+            .map(|feature| feature.id)
+            .collect::<Vec<_>>(),
+        [1, 2]
+    );
+    assert!(features.iter().all(|feature| feature.kind == "extrude"));
 }
 #[test]
 fn requires_update_tracks_the_current_native_evaluation_generation() {

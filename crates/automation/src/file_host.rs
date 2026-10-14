@@ -134,6 +134,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             } = &mut *context;
             return crate::feature_lifecycle::delete(files, part_topology, request);
         }
+        if method == METHOD_MODEL_TREE {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::model_tree::query(files, part_topology, request);
+        }
         if crate::FEATURE_LIFECYCLE_METHODS.contains(&method) {
             let FileContext {
                 files,

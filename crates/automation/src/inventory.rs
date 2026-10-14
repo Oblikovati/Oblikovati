@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::*;
 use oblikovati_api::wire::METHOD_DOCUMENTS_LIST_ATTACHMENTS;
-const FILE_METHOD_GROUPS: [&[&str]; 19] = [
+const FILE_METHOD_GROUPS: [&[&str]; 20] = [
     &QUERY_METHODS,
     &ASSET_QUERY_METHODS,
     &ASSET_COMMAND_METHODS,
     &ASSET_ASSIGNMENT_METHODS,
     &BODY_QUERY_METHODS,
     &BODY_COMMAND_METHODS,
+    &[METHOD_MODEL_TREE],
     &FEATURE_LIFECYCLE_METHODS,
     &FILE_QUERY_METHODS,
     &FILE_COMMAND_METHODS,
@@ -57,6 +58,7 @@ mod tests {
             &ASSET_ASSIGNMENT_METHODS,
             &BODY_QUERY_METHODS,
             &BODY_COMMAND_METHODS,
+            &[METHOD_MODEL_TREE],
             &FEATURE_LIFECYCLE_METHODS,
             &SKETCH_COMMAND_METHODS,
             &EDIT_METHODS,
