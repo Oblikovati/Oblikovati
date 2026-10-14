@@ -74,11 +74,13 @@ and active-widget isolation across document and parameter changes. The JSON
 zero-omission test remains unchanged; only the internal GUI view avoids that
 serialization boundary.
 
-Group membership controls now create or reuse a keyed group, preserve other
+Group membership controls create or reuse a keyed group, preserve other
 memberships, and remove all memberships without deleting parameters or groups.
-Existing group display names and client IDs remain unchanged. Tests prove undo,
-Unicode input, read-only row menus, and active-input isolation. The separate
-group management journey remains part of the wider UI port.
+The native group section also creates groups, edits display names, deletes a
+group with an explicit member-delete option, and detaches one selected member
+without changing its other memberships. Existing group display names and client
+IDs remain unchanged. Tests prove undo, Unicode input, read-only row menus,
+active-input isolation, stale packets, and member detachment.
 
 The linked-table section now renders canonical table identities, source names,
 linked names, and health. Delete uses the existing typed document host and
@@ -96,6 +98,6 @@ stored working-unit deviations. Invalid metadata retires stale edit targets
 and appears as a local view issue; corrected metadata restores the panel.
 Repeated identical issues do not force idle redraws. The child editors need foreground interaction and screenshot proof.
 The full local `make gate` passed with all 13 crates above 80% line coverage
-and 0.92% duplication. The whole editor still needs a foreground
+and 0.93% line duplication. The whole editor still needs a foreground
 edit/save/reopen test and screenshot inspection through the MCP bridge.
 These focused checks do not prove completion of the editor or R1V/R4.
