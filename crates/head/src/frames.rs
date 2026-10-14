@@ -44,7 +44,7 @@ pub trait HeadWindow {
         }
         Err(format!(
             "head sketch preview with {} members: expected a window with outline rendering",
-            preview.expect("present preview").recipe.members.len()
+            preview.expect("present preview").member_count()
         ))
     }
 

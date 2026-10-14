@@ -46,7 +46,7 @@ fn verify_chain_preview(
     recipe: &SketchPlacementRecipe,
     original: &ViewportCapture,
 ) {
-    let preview = ViewportSketchPreview {
+    let preview = ViewportSketchPreview::Recipe {
         recipe: recipe.clone(),
         plane: SketchPlane::xy(),
         solve_options: Default::default(),

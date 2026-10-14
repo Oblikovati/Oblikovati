@@ -194,7 +194,7 @@ impl<
         let recipe = self.placement_preview()?.clone();
         let tool = self.placement.as_ref()?;
         let session = self.files.workspace().session(tool.document).ok()?;
-        Some(oblikovati_viewport::ViewportSketchPreview {
+        Some(oblikovati_viewport::ViewportSketchPreview::Recipe {
             solve_options: session.sketch_solve_options(),
             plane: tool.plane,
             recipe,

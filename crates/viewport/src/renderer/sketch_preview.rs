@@ -3,6 +3,7 @@ use super::sketch_structure::{self, SketchStructure};
 use crate::ViewportSketchPreview;
 use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_placement_preview_with_policy,
+    sample_sketch_preview_members,
 };
 use rustycad_tkernel::quantity::{Color, NamedColor};
 use rustycad_tkservice::aspect::AspectTypeOfLine;
@@ -44,17 +45,23 @@ fn build(
     source: &ViewportSketchPreview,
     deflection: f64,
 ) -> Result<Vec<SketchStructure>, String> {
-    let sampled = sample_placement_preview_with_policy(
-        &source.recipe,
-        SketchSamplingOptionsV1 {
-            deflection,
-            maximum_curve_points: 4096,
-        },
-        source.solve_options,
-    )?;
+    let options = SketchSamplingOptionsV1 {
+        deflection,
+        maximum_curve_points: 4096,
+    };
+    let sampled = match source {
+        ViewportSketchPreview::Recipe {
+            recipe,
+            solve_options,
+            ..
+        } => sample_placement_preview_with_policy(recipe, options, *solve_options)?,
+        ViewportSketchPreview::Resolved {
+            geometry, members, ..
+        } => sample_sketch_preview_members(geometry, members, options)?,
+    };
     sampled
         .iter()
-        .map(|member| build_member(viewer, source.plane, member))
+        .map(|member| build_member(viewer, source.plane(), member))
         .collect()
 }
 fn build_member(

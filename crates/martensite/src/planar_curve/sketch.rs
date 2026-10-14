@@ -82,6 +82,7 @@ fn intersect_target(
 mod preview;
 pub use preview::{
     PlacementPreviewMember, sample_placement_preview, sample_placement_preview_with_policy,
+    sample_sketch_preview_members,
 };
 pub use sampling::SketchSamplingOptionsV1;
 mod presentation;

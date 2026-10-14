@@ -118,7 +118,7 @@ pub(super) fn verify_copy_readiness_and_undo(
     window: &mut NativeHeadWindow,
     before: &ViewportCapture,
     free: usize,
-) {
+) -> ViewportCapture {
     let after = publish_native_scene(owner, window);
     assert_eq!(solid_pixels(&after), 0);
     verify_copy_free_variables(window.scene_status().unwrap(), free);
@@ -127,6 +127,7 @@ pub(super) fn verify_copy_readiness_and_undo(
         .undo()
         .unwrap();
     assert!(publish_native_scene(owner, window).rgba == before.rgba);
+    after
 }
 fn verify_copy_free_variables(status: &crate::HeadSceneStatus, free: usize) {
     let FeatureEvaluationStatus::Failed(PartFeatureFailure::Inputs(cause)) =

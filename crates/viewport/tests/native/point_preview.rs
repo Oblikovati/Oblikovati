@@ -28,7 +28,7 @@ fn transient_point_uses_the_same_marker_pixels_as_the_committed_point() {
     close_display(&runtime, &mut view);
 }
 fn point_packet(position: [f64; 2]) -> ViewportSketchPreview {
-    ViewportSketchPreview {
+    ViewportSketchPreview::Recipe {
         recipe: SketchPlacementRecipe::point(position).unwrap(),
         plane: SketchPlane::new(
             [1., 2., 0.],
@@ -45,7 +45,7 @@ fn committed_point(preview: &ViewportSketchPreview, position: [f64; 2]) -> Viewp
     geometry.add_point(SketchEntityId(1), position).unwrap();
     ViewportSketchDisplay {
         sketch: DocumentSketchId(1),
-        plane: preview.plane,
+        plane: preview.plane(),
         geometry,
     }
 }
@@ -66,7 +66,7 @@ fn verify_point_preview_cache(
     assert!(!view.set_sketch_preview(Some(preview)).unwrap());
     assert_eq!(view.capture().unwrap(), *drawn);
     let mut invalid = preview.clone();
-    invalid.recipe.points[0][0] = f64::NAN;
+    super::sketch_preview::recipe_parts(&mut invalid).0.points[0][0] = f64::NAN;
     assert!(view.set_sketch_preview(Some(&invalid)).is_err());
     assert_eq!(view.capture().unwrap(), *drawn);
 }

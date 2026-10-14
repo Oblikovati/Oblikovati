@@ -367,3 +367,6 @@ mod refresh;
 
 #[path = "history/derived_ids.rs"]
 mod derived_ids;
+
+#[path = "history/preview.rs"]
+mod preview;

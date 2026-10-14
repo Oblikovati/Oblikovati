@@ -471,3 +471,6 @@ mod inferred_line;
 
 #[path = "sketch_primitive/ellipse.rs"]
 mod ellipse;
+
+#[path = "sketch_primitive/chain_preview.rs"]
+mod chain_preview;

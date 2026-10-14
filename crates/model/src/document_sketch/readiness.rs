@@ -37,6 +37,18 @@ impl PlacedSketch {
     ) -> Result<&SketchSolveDiagnostics, SketchReadinessError> {
         self.require_health(self.health_with_projection_inputs(parameters, projections))
     }
+    pub(crate) fn require_converged_with_projection_inputs(
+        &self,
+        parameters: &ParameterCollection<u64>,
+        projections: &Result<Vec<crate::sketch::SketchPoint2D>, SketchError>,
+    ) -> Result<&SketchSolveDiagnostics, SketchReadinessError> {
+        converged(self.health_with_projection_inputs(parameters, projections)).map_err(|cause| {
+            SketchReadinessError {
+                sketch: self.id,
+                cause,
+            }
+        })
+    }
     fn require_health<'a>(
         &'a self,
         health: PlacedSketchHealth<'a>,
@@ -48,6 +60,17 @@ impl PlacedSketch {
     }
 }
 fn ready(health: PlacedSketchHealth<'_>) -> Result<&SketchSolveDiagnostics, SketchReadinessCause> {
+    let diag = converged(health)?;
+    if diag.structure.degrees_of_freedom != 0 {
+        return Err(SketchReadinessCause::FreeVariables(
+            diag.structure.degrees_of_freedom,
+        ));
+    }
+    Ok(diag)
+}
+fn converged(
+    health: PlacedSketchHealth<'_>,
+) -> Result<&SketchSolveDiagnostics, SketchReadinessCause> {
     match health {
         PlacedSketchHealth::Unevaluated => Err(SketchReadinessCause::Unevaluated),
         PlacedSketchHealth::Stale(ids) => Err(SketchReadinessCause::Stale(ids)),
@@ -60,19 +83,14 @@ fn ready(health: PlacedSketchHealth<'_>) -> Result<&SketchSolveDiagnostics, Sket
         PlacedSketchHealth::Current(SketchEvaluation::Failed(cause)) => {
             Err(SketchReadinessCause::Failed(cause.clone()))
         }
-        PlacedSketchHealth::Current(SketchEvaluation::Numerical(diag)) => ready_numerical(diag),
+        PlacedSketchHealth::Current(SketchEvaluation::Numerical(diag)) => converged_numerical(diag),
     }
 }
-fn ready_numerical(
+fn converged_numerical(
     diag: &SketchSolveDiagnostics,
 ) -> Result<&SketchSolveDiagnostics, SketchReadinessCause> {
     if diag.termination != SolveTermination::Converged {
         return Err(SketchReadinessCause::Unconverged(diag.termination));
-    }
-    if diag.structure.degrees_of_freedom != 0 {
-        return Err(SketchReadinessCause::FreeVariables(
-            diag.structure.degrees_of_freedom,
-        ));
     }
     Ok(diag)
 }

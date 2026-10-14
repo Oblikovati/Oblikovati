@@ -323,8 +323,11 @@ fn preview_packet_contains_current_plane_and_owned_recipe() {
         )
         .unwrap();
     let packet = owner.sketch_preview().unwrap();
-    assert_eq!(packet.plane, SketchPlane::xy());
-    assert_eq!(&packet.recipe, owner.placement_preview().unwrap());
+    assert_eq!(packet.plane(), SketchPlane::xy());
+    let oblikovati_viewport::ViewportSketchPreview::Recipe { ref recipe, .. } = packet else {
+        panic!("expected standalone recipe");
+    };
+    assert_eq!(recipe, owner.placement_preview().unwrap());
     owner
         .process_window_inputs(
             &[key(ViewportKey::Cancel, true)],
@@ -332,5 +335,5 @@ fn preview_packet_contains_current_plane_and_owned_recipe() {
         )
         .unwrap();
     assert!(owner.sketch_preview().is_none());
-    assert!(!packet.recipe.members.is_empty());
+    assert!(packet.member_count() > 0);
 }

@@ -70,3 +70,22 @@ impl DocumentSnapshot {
             .inspect_entities(&self.parameters, &anchors, options)
     }
 }
+
+impl DocumentSnapshot {
+    /// Read verified current geometry for authoring; free variables are allowed, failed or stale solves are not.
+    /// Example: `snapshot.require_converged_sketch(sketch)?` after recompute and before preview publication.
+    pub fn require_converged_sketch(
+        &self,
+        sketch: DocumentSketchId,
+    ) -> Result<&crate::sketch::Sketch2D, crate::document_sketch::SketchReadinessError> {
+        let placed = self.sketches.get(sketch).map_err(|cause| {
+            crate::document_sketch::SketchReadinessError {
+                sketch,
+                cause: crate::document_sketch::SketchReadinessCause::Failed(cause),
+            }
+        })?;
+        let projections = self.resolve_sketch_projected_points(sketch);
+        placed.require_converged_with_projection_inputs(&self.parameters, &projections)?;
+        Ok(placed.geometry())
+    }
+}

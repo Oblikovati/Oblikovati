@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_model::sketch::{SketchPlacementRecipe, SketchPlane};
 use oblikovati_viewport::ViewportSketchPreview;
 pub(super) fn packet() -> ViewportSketchPreview {
-    ViewportSketchPreview {
+    ViewportSketchPreview::Recipe {
         solve_options: Default::default(),
         plane: SketchPlane::xy(),
         recipe: SketchPlacementRecipe::straight_slot([[-5., 0.], [5., 0.]], 4.).unwrap(),
@@ -52,7 +52,7 @@ fn native_sketch_preview_draws_clears_and_keeps_model_generation() {
 }
 fn verify_invalid_and_resize(view: &mut Viewport, packet: &ViewportSketchPreview) {
     let mut invalid = packet.clone();
-    invalid.recipe.points[0][0] = f64::NAN;
+    recipe_parts(&mut invalid).0.points[0][0] = f64::NAN;
     assert!(view.set_sketch_preview(Some(&invalid)).is_err());
     assert!(!view.set_sketch_preview(Some(packet)).unwrap());
     view.resize([400, 300]).unwrap();
@@ -92,10 +92,13 @@ fn preview_resamples_after_zoom_and_never_changes_fit_bounds() {
         SketchPlacementRecipe::straight_slot([[-500., 0.], [500., 0.]], 50.).unwrap(),
         SketchPlacementRecipe::point([500., 500.]).unwrap(),
     ] {
-        verify_preview_fit_and_zoom(recipe);
+        let mut preview = packet();
+        *recipe_parts(&mut preview).0 = recipe;
+        verify_preview_fit_and_zoom(preview);
     }
+    verify_preview_fit_and_zoom(resolved_circle_packet());
 }
-fn verify_preview_fit_and_zoom(recipe: SketchPlacementRecipe) {
+fn verify_preview_fit_and_zoom(preview: ViewportSketchPreview) {
     use oblikovati_viewport::ViewportNavigation;
     let runtime = ViewportRuntime::new(Default::default()).unwrap();
     let mut view = runtime
@@ -107,8 +110,6 @@ fn verify_preview_fit_and_zoom(recipe: SketchPlacementRecipe) {
         .unwrap();
     let expected = view.camera_state().unwrap();
     view.set_camera(initial).unwrap();
-    let mut preview = packet();
-    preview.recipe = recipe;
     view.set_sketch_preview(Some(&preview)).unwrap();
     view.navigate(ViewportNavigation::Fit { margin: 0.1 })
         .unwrap();
@@ -123,7 +124,7 @@ fn verify_preview_fit_and_zoom(recipe: SketchPlacementRecipe) {
     assert!(after.overlay_generation > before.overlay_generation);
     assert_eq!(after.scene_generation, before.scene_generation);
     let mut invalid = packet();
-    invalid.plane = SketchPlane::new(
+    *recipe_parts(&mut invalid).2 = SketchPlane::new(
         [f64::MAX, 0., 0.],
         [1., 0., 0.],
         [0., 1., 0.],
@@ -150,13 +151,43 @@ fn changing_only_preview_solver_policy_invalidates_the_cached_geometry() {
     })
     .unwrap();
     let mut packet = packet();
-    packet.recipe = SketchPlacementRecipe::arc([0., 0.], [[5., 0.], [0., 2.]], true).unwrap();
+    *recipe_parts(&mut packet).0 =
+        SketchPlacementRecipe::arc([0., 0.], [[5., 0.], [0., 2.]], true).unwrap();
     assert!(view.set_sketch_preview(Some(&packet)).unwrap());
     let accepted = packet.clone();
-    packet.solve_options.max_iterations = 1;
+    recipe_parts(&mut packet).1.max_iterations = 1;
     let error = view.set_sketch_preview(Some(&packet)).unwrap_err();
     assert!(error.contains("IterationLimit"), "{error}");
     assert!(!view.set_sketch_preview(Some(&accepted)).unwrap());
     view.close();
     assert!(runtime.validation_errors().is_empty());
+}
+
+pub(super) fn recipe_parts(
+    packet: &mut ViewportSketchPreview,
+) -> (
+    &mut SketchPlacementRecipe,
+    &mut oblikovati_solve::nonlinear::SolveOptions,
+    &mut SketchPlane,
+) {
+    match packet {
+        ViewportSketchPreview::Recipe {
+            recipe,
+            solve_options,
+            plane,
+        } => (recipe, solve_options, plane),
+        ViewportSketchPreview::Resolved { .. } => panic!("expected a standalone recipe fixture"),
+    }
+}
+
+fn resolved_circle_packet() -> ViewportSketchPreview {
+    use oblikovati_model::sketch::{Sketch2D, SketchEntityId as Id};
+    let mut geometry = Sketch2D::default();
+    geometry.add_point(Id(1), [500.0, 500.0]).unwrap();
+    geometry.add_circle(Id(2), Id(1), 50.0).unwrap();
+    ViewportSketchPreview::Resolved {
+        plane: SketchPlane::xy(),
+        geometry: Box::new(geometry),
+        members: vec![Id(1), Id(2)],
+    }
 }

@@ -2,7 +2,10 @@
 use super::*;
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    history::{SketchPlacementCreationReport, SketchPlacementFieldLock},
+    history::{
+        SketchLineChainCreation, SketchLineChainCreationReport, SketchPlacementCreationReport,
+        SketchPlacementFieldLock,
+    },
     sketch::SketchPlacementRecipe,
 };
 impl<
@@ -34,6 +37,48 @@ impl<
             .map_err(|cause| {
                 format!(
                     "placement document {document}, sketch {}: {cause}",
+                    sketch.0
+                )
+            })
+    }
+    /// Prepare current-document inference without publishing geometry or reserving permanent IDs.
+    /// Example: `window.set_sketch_preview(Some(&owner.preview_sketch_line_chain(document, sketch, &input)?))?;`.
+    pub fn preview_sketch_line_chain(
+        &self,
+        document: u64,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+    ) -> Result<oblikovati_viewport::ViewportSketchPreview, String> {
+        let plane = self.resolve_edit(document, sketch)?.plane;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let preview = session
+            .preview_inferred_sketch_line_chain(sketch, input)
+            .map_err(|cause| cause.to_string())?;
+        Ok(oblikovati_viewport::ViewportSketchPreview::Resolved {
+            plane,
+            geometry: Box::new(preview.geometry),
+            members: preview.members,
+        })
+    }
+    /// Commit the same inferred chain operation used by the current-document preview.
+    /// Example: `owner.commit_sketch_line_chain(document, sketch, &input)?;`.
+    pub fn commit_sketch_line_chain(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+    ) -> Result<SketchLineChainCreationReport, String> {
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .create_inferred_sketch_line_chain(sketch, input)
+            .map_err(|cause| {
+                format!(
+                    "line-chain placement document {document}, sketch {}: {cause}",
                     sketch.0
                 )
             })

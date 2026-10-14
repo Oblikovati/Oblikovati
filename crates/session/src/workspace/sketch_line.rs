@@ -27,3 +27,19 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
             .create_inferred_sketch_line_projected(sketch, input, project)
     }
 }
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Commit a converged line chain on this document without changing focus.
+    /// Example: `commands.create_inferred_sketch_line_chain(sketch, &input)?;`.
+    pub fn create_inferred_sketch_line_chain(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &oblikovati_model::history::SketchLineChainCreation,
+    ) -> Result<
+        oblikovati_model::history::SketchLineChainCreationReport,
+        CommandError<SketchLineCreationError>,
+    > {
+        self.session
+            .create_inferred_sketch_line_chain(sketch, input)
+    }
+}

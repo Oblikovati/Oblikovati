@@ -334,3 +334,42 @@ fn chain_preview_displays_every_committable_segment_including_explicit_closure()
         }
     }
 }
+
+#[test]
+fn resolved_preview_samples_only_requested_members_in_the_supplied_order() {
+    use oblikovati_martensite::planar_curve::sketch::sample_sketch_preview_members;
+    use oblikovati_model::sketch::{Sketch2D, SketchEntityId as Id};
+    let mut geometry = Sketch2D::default();
+    geometry.add_point(Id(1), [2.0, 3.0]).unwrap();
+    geometry.add_point(Id(2), [6.0, 3.0]).unwrap();
+    geometry.add_line(Id(3), [Id(1), Id(2)]).unwrap();
+    geometry.add_circle(Id(4), Id(1), 2.0).unwrap();
+    geometry.set_curve_construction(&[Id(3)], true).unwrap();
+    let original = geometry.clone();
+    let members = sample_sketch_preview_members(&geometry, &[Id(2), Id(3)], options(0.01)).unwrap();
+    assert_eq!(members.len(), 2);
+    assert_eq!(
+        members[0].primitive,
+        SketchDisplayPrimitive::Point([6.0, 3.0])
+    );
+    assert_eq!(
+        members[1].primitive,
+        SketchDisplayPrimitive::Curve(vec![[2.0, 3.0], [6.0, 3.0]])
+    );
+    assert!(!members[0].construction);
+    assert!(members[1].construction);
+    assert_eq!(
+        members
+            .iter()
+            .map(|member| member.member_index)
+            .collect::<Vec<_>>(),
+        [0, 1]
+    );
+    assert_eq!(geometry, original);
+    assert!(
+        sample_sketch_preview_members(&geometry, &[Id(99)], options(0.01))
+            .unwrap_err()
+            .contains("preview member 0")
+    );
+    assert!(sample_sketch_preview_members(&geometry, &[Id(1)], options(0.0)).is_err());
+}

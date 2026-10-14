@@ -300,7 +300,7 @@ fn native_escape_clears_outline_without_editing_document() {
 #[test]
 fn native_preview_recovery_removes_only_the_preview_failure_notice() {
     let mut window = NativeHeadWindow::open().unwrap();
-    let preview = oblikovati_viewport::ViewportSketchPreview {
+    let preview = oblikovati_viewport::ViewportSketchPreview::Recipe {
         solve_options: Default::default(),
         plane: SketchPlane::xy(),
         recipe: SketchPlacementRecipe::straight_slot([[0., 0.], [5., 0.]], 2.).unwrap(),

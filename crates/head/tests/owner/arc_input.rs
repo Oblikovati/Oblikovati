@@ -96,6 +96,9 @@ fn placement_packet_retains_the_document_solver_policy() {
         ],
     );
     let packet = owner.sketch_preview().unwrap();
-    assert_eq!(packet.solve_options, options);
+    let oblikovati_viewport::ViewportSketchPreview::Recipe { solve_options, .. } = packet else {
+        panic!("expected standalone recipe");
+    };
+    assert_eq!(solve_options, options);
     assert!(owner.placement_active());
 }

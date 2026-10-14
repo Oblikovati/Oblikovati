@@ -164,3 +164,6 @@ mod sketch_placement_recipe;
 
 mod sketch_continuity;
 pub use sketch_continuity::SketchContinuityWatch;
+
+mod sketch_line_chain;
+pub use sketch_line_chain::SketchLineChainPreview;

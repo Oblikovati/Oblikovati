@@ -92,3 +92,139 @@ fn verify_inferred_chain_keys(
         );
     }
 }
+
+#[test]
+fn native_document_chain_preview_matches_commit_without_editing_its_source() {
+    for closed in [false, true] {
+        verify_document_chain_preview(closed);
+    }
+}
+fn verify_document_chain_preview(closed: bool) {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("document-chain-preview.opd");
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let document = open_native_part(&mut owner, &path);
+    let original = publish_native_scene(&mut owner, &mut window);
+    let request = SketchLineChainCreation {
+        points: vec![[4.0001, 3.0001], [6.0, 3.02], [6.01, 5.0]],
+        closed,
+        construction: false,
+        centerline: false,
+    };
+    let preview =
+        verify_private_chain_preview(&mut owner, &mut window, document, &request, &original);
+    let report = owner
+        .commit_sketch_line_chain(document, fixture::SKETCH, &request)
+        .unwrap();
+    assert_eq!(report.lines[0].inference.points.len(), 1);
+    verify_preview_geometry_adoption(&owner, document, &preview);
+    window.set_sketch_preview(None).unwrap();
+    verify_inferred_chain_keys(&mut owner, &report);
+    let committed =
+        super::copy_tests::verify_copy_readiness_and_undo(&mut owner, &mut window, &original, 2);
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    assert_eq!(
+        publish_native_scene(&mut owner, &mut window).rgba,
+        committed.rgba
+    );
+    super::placement_recipe_tests::verify_reopened_placement(&mut owner, document, &path);
+    assert_eq!(
+        publish_native_scene(&mut owner, &mut window).rgba,
+        committed.rgba
+    );
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+fn verify_private_chain_preview(
+    owner: &mut NativeDesktopOwner,
+    window: &mut NativeHeadWindow,
+    document: u64,
+    request: &SketchLineChainCreation,
+    original: &ViewportCapture,
+) -> oblikovati_viewport::ViewportSketchPreview {
+    let session = owner.documents().workspace().session(document).unwrap();
+    let before = session.snapshot().sketches.clone();
+    let marks = session.history().sketch_reservations();
+    let generation = session.generation();
+    let preview = owner
+        .preview_sketch_line_chain(document, fixture::SKETCH, request)
+        .unwrap();
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert_eq!(session.snapshot().sketches, before);
+    assert_eq!(session.history().sketch_reservations(), marks);
+    assert_eq!(session.generation(), generation);
+    assert_eq!(preview.member_count(), if request.closed { 6 } else { 5 });
+    assert!(window.set_sketch_preview(Some(&preview)).unwrap());
+    let visible = capture_native_scene(window);
+    assert_ne!(visible.rgba, original.rgba);
+    assert_eq!(visible.scene_generation, original.scene_generation);
+    assert!(!window.set_sketch_preview(Some(&preview)).unwrap());
+    verify_failed_preview_preserves_overlay(owner, window, document, request, &preview, &visible);
+    window.set_sketch_preview(None).unwrap();
+    assert_eq!(capture_native_scene(window).rgba, original.rgba);
+    window.set_sketch_preview(Some(&preview)).unwrap();
+    preview
+}
+fn verify_failed_preview_preserves_overlay(
+    owner: &mut NativeDesktopOwner,
+    window: &mut NativeHeadWindow,
+    document: u64,
+    request: &SketchLineChainCreation,
+    preview: &oblikovati_viewport::ViewportSketchPreview,
+    visible: &ViewportCapture,
+) {
+    assert!(
+        owner
+            .preview_sketch_line_chain(999, fixture::SKETCH, request)
+            .is_err()
+    );
+    assert!(
+        owner
+            .commit_sketch_line_chain(999, fixture::SKETCH, request)
+            .is_err()
+    );
+    let mut invalid = request.clone();
+    invalid.points[0][0] = f64::NAN;
+    assert!(
+        owner
+            .preview_sketch_line_chain(document, fixture::SKETCH, &invalid)
+            .is_err()
+    );
+    assert!(
+        owner
+            .commit_sketch_line_chain(document, fixture::SKETCH, &invalid)
+            .is_err()
+    );
+    let mut malformed = preview.clone();
+    let oblikovati_viewport::ViewportSketchPreview::Resolved { members, .. } = &mut malformed
+    else {
+        panic!("expected document result");
+    };
+    members.push(oblikovati_model::sketch::SketchEntityId(u64::MAX));
+    assert!(window.set_sketch_preview(Some(&malformed)).is_err());
+    assert_eq!(capture_native_scene(window).rgba, visible.rgba);
+}
+fn verify_preview_geometry_adoption(
+    owner: &NativeDesktopOwner,
+    document: u64,
+    preview: &oblikovati_viewport::ViewportSketchPreview,
+) {
+    let oblikovati_viewport::ViewportSketchPreview::Resolved { geometry, .. } = preview else {
+        panic!("expected document result");
+    };
+    let committed = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(fixture::SKETCH)
+        .unwrap()
+        .geometry();
+    assert_eq!(committed, geometry.as_ref());
+}

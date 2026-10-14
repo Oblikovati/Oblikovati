@@ -4,10 +4,11 @@ use crate::{
     sketch::SketchError,
 };
 use std::{error::Error, fmt};
-/// Keep geometry, primitive reservations, and local constraint exhaustion as typed causes.
+/// Keep geometry, solve readiness, primitive reservations, and local constraint exhaustion as typed causes.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SketchLineCreationError {
     Sketch(SketchError),
+    Readiness(crate::document_sketch::SketchReadinessError),
     Primitive(SketchPrimitiveCreationError),
     Constraint(SketchConstraintReservationError),
 }
@@ -15,6 +16,7 @@ impl SketchLineCreationError {
     fn cause(&self) -> &(dyn Error + 'static) {
         match self {
             Self::Sketch(cause) => cause,
+            Self::Readiness(cause) => cause,
             Self::Primitive(cause) => cause,
             Self::Constraint(cause) => cause,
         }
