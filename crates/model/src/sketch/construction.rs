@@ -93,7 +93,7 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.construction_curves) {
             (1 | 2, None) => Ok(()),
-            (3..=12, Some(curves)) => self.adopt_construction_curves(curves),
+            (3..=13, Some(curves)) => self.adopt_construction_curves(curves),
             shape => Err(SketchError::Definition(format!(
                 "construction recipe {shape:?}: expected no metadata in versions 1/2 or explicit curve metadata in versions 3-12"
             ))),

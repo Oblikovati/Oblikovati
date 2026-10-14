@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership.
-pub const SKETCH_RECIPE_VERSION: u32 = 12;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 active spline handles.
+pub const SKETCH_RECIPE_VERSION: u32 = 13;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -20,6 +20,8 @@ pub struct SketchRecipe {
     pub splines: Option<Vec<super::SketchSpline2D>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offset_splines: Option<Vec<super::SketchOffsetSpline2D>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spline_handles: Option<Vec<super::SketchSplineHandle2D>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub defining_points: Option<Vec<super::SketchEntityId>>,
     pub constraints: Vec<SketchConstraint>,
@@ -59,6 +61,7 @@ impl Sketch2D {
             ellipses: None,
             splines: None,
             offset_splines: None,
+            spline_handles: None,
             defining_points: None,
             constraints: self.constraints.clone(),
             entity_order: self.saved_entity_order(),

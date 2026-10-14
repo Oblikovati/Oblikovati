@@ -74,7 +74,7 @@ mod solve;
 mod source;
 mod spline;
 pub use entity_delete::{SketchDeletionSelection, SketchEntityDeletion};
-pub use spline::{SketchOffsetSpline2D, SketchSpline2D, SketchSplineKind};
+pub use spline::{SketchOffsetSpline2D, SketchSpline2D, SketchSplineHandle2D, SketchSplineKind};
 mod tangent;
 mod tangent_distance;
 mod tangent_distance_compile;
@@ -109,6 +109,7 @@ pub struct Sketch2D {
     arcs: Vec<SketchArc2D>,
     ellipses: Vec<SketchEllipse2D>,
     splines: Vec<SketchSpline2D>,
+    spline_handles: Vec<SketchSplineHandle2D>,
     offset_splines: Vec<SketchOffsetSpline2D>,
     constraints: Vec<SketchConstraint>,
     reference_dimensions: std::collections::BTreeSet<SketchConstraintId>,

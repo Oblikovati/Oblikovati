@@ -39,7 +39,7 @@ impl Sketch2D {
         if self.defining_points.is_empty() {
             return;
         }
-        recipe.version = 12;
+        recipe.version = recipe.version.max(12);
         self.capture_complete_schema_metadata(recipe);
         recipe.splines = Some(self.splines.clone());
         recipe.offset_splines = Some(self.offset_splines.clone());
@@ -77,7 +77,7 @@ impl Sketch2D {
 }
 pub(super) fn require_point_ownership_schema(recipe: &SketchRecipe) -> Result<(), SketchError> {
     match (recipe.version, &recipe.defining_points) {
-        (1..=11, None) | (12, Some(_)) => Ok(()),
+        (1..=11, None) | (12..=13, Some(_)) | (13, None) => Ok(()),
         shape => Err(SketchError::Definition(format!(
             "point ownership recipe {shape:?}: expected no defining-point field in versions 1-11 or an explicit list in version 12"
         ))),

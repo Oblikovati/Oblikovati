@@ -6,6 +6,27 @@ fn schema_ten_preserves_parent_intent_signed_zero_and_shared_identity() {
         assert_saved_parent(kind);
     }
 }
+#[test]
+fn schema_thirteen_round_trips_active_handles_and_refuses_old_shape() {
+    let mut sketch = owned(
+        SketchSplineKind::Fit {
+            method: SPLINE_FIT_SMOOTH,
+        },
+        1.0,
+    );
+    sketch.add_point(id(6), [3.0, 0.0]).unwrap();
+    let handle = SketchSplineHandle2D::new(id(4), 1, id(6)).unwrap();
+    sketch.add_spline_handle(handle).unwrap();
+    let recipe = sketch.recipe();
+    assert_eq!(recipe.version, 13);
+    assert_eq!(
+        Sketch2D::from_recipe(&recipe).unwrap().spline_handles(),
+        &[handle]
+    );
+    let mut old = recipe;
+    old.version = 12;
+    assert!(Sketch2D::from_recipe(&old).is_err());
+}
 fn assert_saved_parent(kind: SketchSplineKind) {
     let sketch = owned(kind, -0.0);
     let recipe = sketch.recipe();
@@ -40,7 +61,7 @@ fn older_schemas_refuse_spline_fields_and_schema_ten_requires_explicit_lists() {
             Sketch2D::from_recipe(&legacy)
                 .unwrap_err()
                 .to_string()
-                .contains("versions 10-12")
+                .contains("explicit parent/offset lists")
         );
     }
     assert_missing_spline_lists(recipe);

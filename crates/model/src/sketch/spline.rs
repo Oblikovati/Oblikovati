@@ -95,6 +95,47 @@ pub struct SketchOffsetSpline2D {
     parent: SketchEntityId,
     distance: f64,
 }
+
+/// One active fit-spline handle with a stable end-point identity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SketchSplineHandle2D {
+    parent: SketchEntityId,
+    fit_index: usize,
+    end: SketchEntityId,
+}
+
+impl SketchSplineHandle2D {
+    /// Prepare a handle before its parent and end point are resolved; example: `SketchSplineHandle2D::new(parent, 1, end)?`.
+    pub fn new(
+        parent: SketchEntityId,
+        fit_index: usize,
+        end: SketchEntityId,
+    ) -> Result<Self, SketchError> {
+        if parent.0 == 0 || end.0 == 0 || parent == end {
+            return Err(SketchError::Definition(format!(
+                "spline handle parent {parent:?} end {end:?}: expected distinct nonzero identities"
+            )));
+        }
+        Ok(Self {
+            parent,
+            fit_index,
+            end,
+        })
+    }
+    /// Inspect the exact parent spline identity; example: `handle.parent()`.
+    pub fn parent(self) -> SketchEntityId {
+        self.parent
+    }
+    /// Inspect the parent fit-point index; example: `handle.fit_index()`.
+    pub fn fit_index(self) -> usize {
+        self.fit_index
+    }
+    /// Inspect the owned handle-end identity; example: `handle.end()`.
+    pub fn end(self) -> SketchEntityId {
+        self.end
+    }
+}
 impl SketchOffsetSpline2D {
     /// Prepare an offset without adopting it; example: `SketchOffsetSpline2D::new(id, parent, -2.0)?`.
     pub fn new(

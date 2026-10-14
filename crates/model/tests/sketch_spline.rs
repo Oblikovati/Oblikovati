@@ -10,6 +10,27 @@ fn id(value: u64) -> SketchEntityId {
 fn parent(kind: SketchSplineKind) -> SketchSpline2D {
     SketchSpline2D::new(id(4), vec![id(1), id(2), id(3)], false, kind).unwrap()
 }
+#[test]
+fn handle_record_requires_distinct_parent_and_end_identities() {
+    assert!(SketchSplineHandle2D::new(id(4), 1, id(5)).is_ok());
+    for (parent, end) in [(0, 5), (4, 0), (4, 4)] {
+        assert!(SketchSplineHandle2D::new(id(parent), 0, id(end)).is_err());
+    }
+}
+#[test]
+fn handle_adoption_requires_one_fit_parent_point_and_owned_end() {
+    let mut sketch = owned(
+        SketchSplineKind::Fit {
+            method: SPLINE_FIT_SMOOTH,
+        },
+        1.0,
+    );
+    sketch.add_point(id(6), [3.0, 0.0]).unwrap();
+    let handle = SketchSplineHandle2D::new(id(4), 1, id(6)).unwrap();
+    sketch.add_spline_handle(handle).unwrap();
+    assert_eq!(sketch.spline_handles(), &[handle]);
+    assert!(sketch.add_spline_handle(handle).is_err());
+}
 fn owned(kind: SketchSplineKind, distance: f64) -> Sketch2D {
     let mut sketch = Sketch2D::default();
     for (point, position) in [(1, [0.0, 0.0]), (2, [1.0, 1.0]), (3, [2.0, 0.0])] {
