@@ -257,6 +257,29 @@ impl<
                 active: document.active,
             })
             .collect();
+        let ribbon_tabs = oblikovati_api::client::Client::new(self.document_host())
+            .ribbon()
+            .list()
+            .map_err(|cause| cause.to_string())?
+            .tabs
+            .unwrap_or_default()
+            .into_iter()
+            .map(|tab| oblikovati_gui::GuiRibbonTab {
+                name: tab.name,
+                controls: tab
+                    .panels
+                    .unwrap_or_default()
+                    .into_iter()
+                    .flat_map(|panel| panel.controls.unwrap_or_default())
+                    .map(|control| oblikovati_gui::GuiRibbonControl {
+                        command_id: control.command_id,
+                        display_name: control.display_name,
+                        icon: control.icon,
+                        enabled: control.enabled,
+                    })
+                    .collect(),
+            })
+            .collect();
         let tree = oblikovati_api::client::Client::new(self.document_host())
             .model()
             .tree()
@@ -270,6 +293,7 @@ impl<
             redo_label,
             transaction_open,
             documents,
+            ribbon_tabs,
             model_tree: Some(gui_model_tree(tree, bodies)?),
         })
     }

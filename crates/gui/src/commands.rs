@@ -20,6 +20,18 @@ pub struct GuiDocumentTab {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiRibbonControl {
+    pub command_id: String,
+    pub display_name: String,
+    pub icon: String,
+    pub enabled: bool,
+}
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiRibbonTab {
+    pub name: String,
+    pub controls: Vec<GuiRibbonControl>,
+}
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelFeature {
     pub name: String,
     pub kind: String,
@@ -47,6 +59,7 @@ pub struct GuiCommandState {
     pub redo_label: Option<String>,
     pub transaction_open: bool,
     pub documents: Vec<GuiDocumentTab>,
+    pub ribbon_tabs: Vec<GuiRibbonTab>,
     pub model_tree: Option<GuiModelTree>,
 }
 impl GuiCommandState {

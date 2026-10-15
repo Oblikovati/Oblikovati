@@ -141,6 +141,14 @@ fn draw_ribbon(
                 selected,
                 &mut workspace.icons,
             );
+            if let Some(tab) = state
+                .ribbon_tabs
+                .iter()
+                .find(|tab| tab.name == ribbon_tab_name(workspace.active_tab))
+            {
+                draw_host_controls(ui, &tab.controls, selected, &mut workspace.icons);
+                return;
+            }
             match workspace.active_tab {
                 RibbonTab::Part => draw_part_tab(ui, state, selected, &mut workspace.icons),
                 RibbonTab::Sketch => draw_sketch_tab(ui, state, selected, &mut workspace.icons),
@@ -468,5 +476,47 @@ fn icon_for_action(action: GuiShellAction) -> &'static str {
         GuiShellAction::Rectangle => "rectangle",
         GuiShellAction::Extrude => "extrude",
         GuiShellAction::ActivateDocument(_) => "view-new",
+    }
+}
+
+fn ribbon_tab_name(tab: RibbonTab) -> &'static str {
+    match tab {
+        RibbonTab::Part => "Part",
+        RibbonTab::Sketch => "Sketch",
+        RibbonTab::Model => "3D Model",
+        RibbonTab::View => "View",
+    }
+}
+fn draw_host_controls(
+    ui: &Ui,
+    controls: &[crate::GuiRibbonControl],
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    for control in controls {
+        if let Some(action) = host_action(&control.command_id) {
+            let disabled = ui.begin_disabled(!control.enabled);
+            let clicked = ui.button(&control.display_name);
+            if let Some(id) = icons.texture_id(&control.icon) {
+                ui.same_line();
+                Image::new(TextureId::new(id), [18., 18.]).build(ui);
+            }
+            drop(disabled);
+            if clicked && control.enabled {
+                selected.push(action);
+            }
+            ui.same_line();
+        }
+    }
+}
+fn host_action(id: &str) -> Option<GuiShellAction> {
+    match id {
+        "GetStarted.NewPart" => Some(GuiShellAction::NewPart),
+        "File.Save" => Some(GuiShellAction::Save),
+        "Sketch.Create" => Some(GuiShellAction::SketchXY),
+        "Sketch.Rectangle" => Some(GuiShellAction::Rectangle),
+        "Feature.Extrude" => Some(GuiShellAction::Extrude),
+        "View.Home" => Some(GuiShellAction::Home),
+        _ => None,
     }
 }
