@@ -227,14 +227,53 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         oblikovati_persistence::file_access::NativeDocumentFiles,
     );
     let version = oblikovati_cli::BuildIdentity::parse(oblikovati_cli::BUILD_MANIFEST)?.version;
-    Ok(crate::DesktopOwner::new(
+    Ok(crate::DesktopOwner::with_sketch_preferences(
         files,
         oblikovati_model::identity::SystemGuidSource,
         observations,
         version,
         NativeOwnerWake(wake),
         crate::DesktopDispatchOptions::default(),
+        native_sketch_preferences()?,
     ))
+}
+
+fn native_sketch_preferences()
+-> Result<Box<dyn oblikovati_model::application_options::SketchPreferenceAccess>, String> {
+    let path = native_options_path()?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("native preferences {path:?}: expected a parent directory"))?;
+    std::fs::create_dir_all(parent).map_err(|cause| {
+        format!("native preferences {parent:?}: expected a writable directory: {cause}")
+    })?;
+    let preferences = oblikovati_persistence::application_options::SketchPreferenceFile::load(
+        &path,
+        oblikovati_persistence::file_access::NativeDocumentFiles,
+    )
+    .map_err(|cause| {
+        format!("native preferences {path:?}: expected a readable options file: {cause}")
+    })?;
+    Ok(Box::new(preferences))
+}
+
+fn native_options_path() -> Result<std::path::PathBuf, String> {
+    #[cfg(target_os = "windows")]
+    let root = std::env::var_os("APPDATA")
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| {
+            "native preferences: expected APPDATA to locate the user config directory".to_owned()
+        })?;
+    #[cfg(not(target_os = "windows"))]
+    let root = std::env::var_os("HOME")
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| {
+            "native preferences: expected HOME to locate the user config directory".to_owned()
+        })?;
+    #[cfg(target_os = "windows")]
+    return Ok(root.join("oblikovati").join("options.yaml"));
+    #[cfg(not(target_os = "windows"))]
+    Ok(root.join(".oblikovati").join("options.yaml"))
 }
 #[cfg(test)]
 type NativeScriptDesktop = crate::DesktopScripts<NativeDesktopOwner>;

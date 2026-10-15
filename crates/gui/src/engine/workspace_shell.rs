@@ -86,7 +86,12 @@ pub(crate) fn draw(
     workspace_panels::draw_model_browser(ui, state.model_tree.as_ref());
     workspace_panels::draw_command_window(ui, status);
     workspace_panels::draw_status_bar(ui, status);
-    draw_preferences(ui, &mut workspace.preferences_open);
+    draw_preferences(
+        ui,
+        &mut workspace.preferences_open,
+        state.sketch_preferences.as_ref(),
+        selected,
+    );
     draw_selection_filter(
         ui,
         &mut workspace.selection_open,
@@ -336,7 +341,12 @@ fn draw_view_tab(
     }
 }
 
-fn draw_preferences(ui: &Ui, open: &mut bool) {
+fn draw_preferences(
+    ui: &Ui,
+    open: &mut bool,
+    preferences: Option<&crate::GuiSketchPreferences>,
+    selected: &mut Vec<GuiShellAction>,
+) {
     if !*open {
         return;
     }
@@ -358,12 +368,7 @@ fn draw_preferences(ui: &Ui, open: &mut bool) {
                     "Anonymous usage statistics",
                     "No personal data is collected.",
                 );
-                preference_tab(
-                    ui,
-                    "Sketch Grid",
-                    "Sketch grid",
-                    "Grid spacing, major-line interval, and dynamic input.",
-                );
+                draw_sketch_grid_tab(ui, preferences, selected);
                 preference_tab(
                     ui,
                     "Modeling",
@@ -378,6 +383,86 @@ fn draw_preferences(ui: &Ui, open: &mut bool) {
                 );
             }
         });
+}
+
+fn draw_sketch_grid_tab(
+    ui: &Ui,
+    preferences: Option<&crate::GuiSketchPreferences>,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let Some(_tab) = ui.tab_item("Sketch Grid") else {
+        return;
+    };
+    let Some(preferences) = preferences else {
+        ui.text("Sketch preferences are unavailable.");
+        return;
+    };
+    ui.text("Sketch grid");
+    ui.separator();
+    edit_grid_spacing(ui, preferences.grid_spacing_cm, selected);
+    edit_grid_major_every(ui, preferences.grid_major_every, selected);
+    preference_checkbox(
+        ui,
+        "Show grid in sketch",
+        preferences.grid_visible,
+        GuiShellAction::SetGridVisible,
+        selected,
+    );
+    ui.separator();
+    preference_checkbox(
+        ui,
+        "Heads-up dynamic input while sketching",
+        preferences.heads_up_display,
+        GuiShellAction::SetHeadsUpDisplay,
+        selected,
+    );
+    preference_checkbox(
+        ui,
+        "Pointer input",
+        preferences.pointer_input,
+        GuiShellAction::SetPointerInput,
+        selected,
+    );
+    preference_checkbox(
+        ui,
+        "Dimension input",
+        preferences.dimension_input,
+        GuiShellAction::SetDimensionInput,
+        selected,
+    );
+}
+
+fn edit_grid_spacing(ui: &Ui, current: f64, selected: &mut Vec<GuiShellAction>) {
+    let mut spacing = current as f32;
+    if ui.input_float("Grid spacing (cm)", &mut spacing).build() {
+        let spacing = f64::from(spacing);
+        if spacing.is_finite() && spacing > 0. {
+            selected.push(GuiShellAction::SetGridSpacingCm(spacing));
+        }
+    }
+}
+
+fn edit_grid_major_every(ui: &Ui, current: i64, selected: &mut Vec<GuiShellAction>) {
+    let Ok(mut major) = i32::try_from(current) else {
+        ui.text("Major line interval is outside the desktop input range.");
+        return;
+    };
+    if ui.input_int("Major line every", &mut major).build() && major >= 1 {
+        selected.push(GuiShellAction::SetGridMajorEvery(i64::from(major)));
+    }
+}
+
+fn preference_checkbox(
+    ui: &Ui,
+    label: &str,
+    value: bool,
+    action: impl FnOnce(bool) -> GuiShellAction,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let mut edited = value;
+    if ui.checkbox(label, &mut edited) {
+        selected.push(action(edited));
+    }
 }
 
 fn preference_tab(ui: &Ui, name: &str, heading: &str, detail: &str) {
@@ -471,6 +556,12 @@ fn icon_for_action(action: GuiShellAction) -> &'static str {
         GuiShellAction::Rectangle => "rectangle",
         GuiShellAction::Extrude => "extrude",
         GuiShellAction::ActivateDocument(_) => "view-new",
+        GuiShellAction::SetGridSpacingCm(_)
+        | GuiShellAction::SetGridVisible(_)
+        | GuiShellAction::SetGridMajorEvery(_)
+        | GuiShellAction::SetHeadsUpDisplay(_)
+        | GuiShellAction::SetPointerInput(_)
+        | GuiShellAction::SetDimensionInput(_) => "settings",
     }
 }
 

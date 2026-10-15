@@ -55,7 +55,13 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         | GuiShellAction::SketchXY
         | GuiShellAction::Rectangle
         | GuiShellAction::Extrude
-        | GuiShellAction::ActivateDocument(_) => return None,
+        | GuiShellAction::ActivateDocument(_)
+        | GuiShellAction::SetGridSpacingCm(_)
+        | GuiShellAction::SetGridVisible(_)
+        | GuiShellAction::SetGridMajorEvery(_)
+        | GuiShellAction::SetHeadsUpDisplay(_)
+        | GuiShellAction::SetPointerInput(_)
+        | GuiShellAction::SetDimensionInput(_) => return None,
     };
     Some(ViewportEvent::Input(ViewportInput::Key {
         key,

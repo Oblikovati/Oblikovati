@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum GuiShellAction {
     Save,
     Undo,
@@ -10,6 +10,12 @@ pub enum GuiShellAction {
     Rectangle,
     Extrude,
     ActivateDocument(u64),
+    SetGridSpacingCm(f64),
+    SetGridVisible(bool),
+    SetGridMajorEvery(i64),
+    SetHeadsUpDisplay(bool),
+    SetPointerInput(bool),
+    SetDimensionInput(bool),
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiDocumentTab {
@@ -44,6 +50,16 @@ pub struct GuiModelBody {
     pub faces: usize,
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiSketchPreferences {
+    pub grid_spacing_cm: f64,
+    pub grid_visible: bool,
+    pub grid_major_every: i64,
+    pub heads_up_display: bool,
+    pub pointer_input: bool,
+    pub dimension_input: bool,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelTree {
     pub document: String,
@@ -53,7 +69,7 @@ pub struct GuiModelTree {
     pub bodies: Vec<GuiModelBody>,
 }
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
@@ -61,6 +77,7 @@ pub struct GuiCommandState {
     pub documents: Vec<GuiDocumentTab>,
     pub ribbon_tabs: Vec<GuiRibbonTab>,
     pub model_tree: Option<GuiModelTree>,
+    pub sketch_preferences: Option<GuiSketchPreferences>,
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -86,7 +103,13 @@ impl GuiShellAction {
             | Self::SketchXY
             | Self::Rectangle
             | Self::Extrude
-            | Self::ActivateDocument(_) => true,
+            | Self::ActivateDocument(_)
+            | Self::SetGridSpacingCm(_)
+            | Self::SetGridVisible(_)
+            | Self::SetGridMajorEvery(_)
+            | Self::SetHeadsUpDisplay(_)
+            | Self::SetPointerInput(_)
+            | Self::SetDimensionInput(_) => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

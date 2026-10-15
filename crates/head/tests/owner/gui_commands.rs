@@ -148,3 +148,45 @@ fn gui_model_browser_state_projects_the_typed_model_tree() {
         assert_eq!(actual.health, expected.health);
     }
 }
+
+#[test]
+fn gui_sketch_preferences_publish_and_apply_on_the_owner() {
+    let (mut owner, awake) = owner();
+    create(&mut owner, &awake);
+    let before = owner
+        .gui_command_state()
+        .unwrap()
+        .sketch_preferences
+        .unwrap();
+    assert!(before.grid_visible);
+    assert!(before.heads_up_display);
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::SetGridVisible(false))
+            .unwrap()
+    );
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::SetHeadsUpDisplay(false))
+            .unwrap()
+    );
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::SetGridSpacingCm(2.5))
+            .unwrap()
+    );
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::SetGridMajorEvery(8))
+            .unwrap()
+    );
+    let after = owner
+        .gui_command_state()
+        .unwrap()
+        .sketch_preferences
+        .unwrap();
+    assert!(!after.grid_visible);
+    assert!(!after.heads_up_display);
+    assert_eq!(after.grid_spacing_cm, 2.5);
+    assert_eq!(after.grid_major_every, 8);
+}

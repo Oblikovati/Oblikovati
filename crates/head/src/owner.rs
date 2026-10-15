@@ -4,7 +4,10 @@ use oblikovati_automation::{
     DocumentObserverFactory, FileHost,
     dispatch::{DispatchWakeup, OwnerDispatch, QueuedCaller, owner_dispatch},
 };
-use oblikovati_model::identity::GuidSource;
+use oblikovati_model::{
+    application_options::{SketchApplicationOptions, SketchPreferenceAccess},
+    identity::GuidSource,
+};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::time::Duration;
@@ -55,6 +58,24 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     placement: Option<crate::placement_input::SketchPlacementState>,
     cube_rectangle: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
+    sketch_preferences: Box<dyn SketchPreferenceAccess>,
+}
+
+/// Volatile sketch preferences for embedding hosts that do not own a preference file.
+/// Example: `DesktopSketchPreferences::default()` for a test-only desktop owner.
+#[derive(Default)]
+pub struct DesktopSketchPreferences {
+    options: SketchApplicationOptions,
+}
+impl SketchPreferenceAccess for DesktopSketchPreferences {
+    fn sketch_options(&self) -> &SketchApplicationOptions {
+        &self.options
+    }
+    fn set_sketch_options(&mut self, options: SketchApplicationOptions) -> Result<(), String> {
+        options.validate()?;
+        self.options = options;
+        Ok(())
+    }
 }
 
 fn gui_model_tree(
@@ -117,6 +138,19 @@ fn gui_model_tree(
     })
 }
 
+fn gui_sketch_preferences(
+    options: &SketchApplicationOptions,
+) -> oblikovati_gui::GuiSketchPreferences {
+    oblikovati_gui::GuiSketchPreferences {
+        grid_spacing_cm: options.grid_spacing_cm,
+        grid_visible: options.grid_visible,
+        grid_major_every: options.grid_major_every,
+        heads_up_display: options.heads_up_display,
+        pointer_input: options.pointer_input,
+        dimension_input: options.dimension_input,
+    }
+}
+
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -126,7 +160,7 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    /// Inject document ownership and queue options; example: `DesktopOwner::new(files, guids, factory, version, wake, options)`.
+    /// Construct a desktop owner with volatile preferences; example: `DesktopOwner::new(files, guids, factory, version, wake, options)`.
     pub fn new(
         files: FileWorkspace<O, W, F>,
         guids: G,
@@ -134,6 +168,26 @@ impl<
         version: String,
         wake: S,
         options: DesktopDispatchOptions,
+    ) -> Self {
+        Self::with_sketch_preferences(
+            files,
+            guids,
+            factory,
+            version,
+            wake,
+            options,
+            Box::new(DesktopSketchPreferences::default()),
+        )
+    }
+    /// Inject the application preference owner; example: `DesktopOwner::with_sketch_preferences(..., preferences)`.
+    pub fn with_sketch_preferences(
+        files: FileWorkspace<O, W, F>,
+        guids: G,
+        factory: R,
+        version: String,
+        wake: S,
+        options: DesktopDispatchOptions,
+        sketch_preferences: Box<dyn SketchPreferenceAccess>,
     ) -> Self {
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
@@ -151,6 +205,7 @@ impl<
             placement: None,
             cube_rectangle: None,
             sketch_edit: None,
+            sketch_preferences,
         }
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -180,6 +235,7 @@ impl<
             &mut self.factory,
             &mut self.part_scenes,
             &self.sketch_construction,
+            self.sketch_preferences.as_mut(),
         )
     }
     fn drain_calls(&mut self, budget: usize) -> Result<usize, String> {
@@ -190,6 +246,7 @@ impl<
             &mut self.factory,
             &mut self.part_scenes,
             &self.sketch_construction,
+            self.sketch_preferences.as_mut(),
         );
         self.dispatch
             .drain(budget, &host)
@@ -295,6 +352,9 @@ impl<
             documents,
             ribbon_tabs,
             model_tree: Some(gui_model_tree(tree, bodies)?),
+            sketch_preferences: Some(gui_sketch_preferences(
+                self.sketch_preferences.sketch_options(),
+            )),
         })
     }
     fn gui_parameter_snapshot(
@@ -346,7 +406,27 @@ impl<
                 .map_err(|cause| cause.to_string())?;
             return Ok(true);
         }
-        self.apply_cube_action(action)
+        let mut options = self.sketch_preferences.sketch_options().clone();
+        match action {
+            oblikovati_gui::GuiShellAction::SetGridSpacingCm(value) => {
+                options.grid_spacing_cm = value
+            }
+            oblikovati_gui::GuiShellAction::SetGridVisible(value) => options.grid_visible = value,
+            oblikovati_gui::GuiShellAction::SetGridMajorEvery(value) => {
+                options.grid_major_every = value
+            }
+            oblikovati_gui::GuiShellAction::SetHeadsUpDisplay(value) => {
+                options.heads_up_display = value
+            }
+            oblikovati_gui::GuiShellAction::SetPointerInput(value) => options.pointer_input = value,
+            oblikovati_gui::GuiShellAction::SetDimensionInput(value) => {
+                options.dimension_input = value
+            }
+            _ => return self.apply_cube_action(action),
+        }
+        options.validate()?;
+        self.sketch_preferences.set_sketch_options(options)?;
+        Ok(true)
     }
 
     fn process_inputs(
@@ -526,11 +606,13 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     factory: &'a mut dyn DocumentObserverFactory<Observer = O>,
     scenes: &'a mut crate::part_scene::DesktopPartScenes,
     construction: &'a dyn oblikovati_model::sketch::SketchCircleConstruction,
+    preferences: &'a mut dyn SketchPreferenceAccess,
 ) -> FileHost<'a, O, W, F> {
     FileHost::new(files, guids, version)
         .with_observer_factory(factory)
         .with_part_topology(scenes)
         .with_sketch_construction(construction, Default::default())
+        .with_sketch_preferences(preferences)
 }
 #[path = "owner_placement.rs"]
 mod placement;
