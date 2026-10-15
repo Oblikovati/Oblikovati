@@ -335,18 +335,62 @@ fn draw_view_tab(
 }
 
 fn draw_preferences(ui: &Ui, open: &mut bool) {
+    if !*open {
+        return;
+    }
     ui.window("Preferences")
         .opened(open)
-        .size([360., 240.], Condition::FirstUseEver)
+        .size([640., 480.], Condition::FirstUseEver)
         .build(|| {
-            ui.text("Appearance");
-            ui.separator();
-            ui.text(
-                "Theme and display settings will use the document-independent desktop preferences.",
-            );
+            if let Some(_tabs) = ui.tab_bar("##preferences-tabs") {
+                preference_tab(ui, "General", "On startup", "New part");
+                preference_tab(
+                    ui,
+                    "UI",
+                    "Interface scale",
+                    "Desktop UI settings use the application preference service.",
+                );
+                preference_tab(
+                    ui,
+                    "Privacy",
+                    "Anonymous usage statistics",
+                    "No personal data is collected.",
+                );
+                preference_tab(
+                    ui,
+                    "Sketch Grid",
+                    "Sketch grid",
+                    "Grid spacing, major-line interval, and dynamic input.",
+                );
+                preference_tab(
+                    ui,
+                    "Modeling",
+                    "Chamfer corners",
+                    "Modeling defaults apply to new features.",
+                );
+                preference_tab(
+                    ui,
+                    "Theme",
+                    "Appearance",
+                    "Theme selection uses the application preference service.",
+                );
+            }
         });
 }
+
+fn preference_tab(ui: &Ui, name: &str, heading: &str, detail: &str) {
+    let Some(_tab) = ui.tab_item(name) else {
+        return;
+    };
+    ui.text(heading);
+    ui.separator();
+    ui.text_wrapped(detail);
+}
+
 fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterState) {
+    if !*open {
+        return;
+    }
     ui.window("Selection Filter")
         .opened(open)
         .size([300., 360.], Condition::FirstUseEver)
