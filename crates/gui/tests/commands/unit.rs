@@ -17,6 +17,7 @@ fn history_controls_preserve_go_enabled_but_inert_transaction_rules() {
             undo_label: undo.then(|| "Edit".into()),
             redo_label: redo.then(|| "Redo edit".into()),
             transaction_open: open,
+            ..Default::default()
         };
         verify_history_commands(&state, [undo, redo], dispatch);
         verify_nonhistory_commands(&state);

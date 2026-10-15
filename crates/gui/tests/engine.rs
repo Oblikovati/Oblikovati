@@ -26,6 +26,8 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     let snapshot = output.draws;
     let actions = output.actions;
     assert!(!snapshot.batches.is_empty());
+    assert_eq!(snapshot.textures.len(), 4);
+    assert!(snapshot.batches.iter().any(|batch| batch.texture_id >= 100));
     assert!(actions.is_empty());
     let vertices = snapshot.batches[0].vertices.clone();
     let saved = snapshot.clone();

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::{Condition, TextureId, Ui};
 
 #[derive(Clone, Copy, Default)]
 pub(crate) enum RibbonTab {
@@ -17,6 +17,13 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
     selection_filter: SelectionFilterState,
+    icons: crate::icon_assets::GuiIconCache,
+}
+
+impl WorkspaceShellState {
+    pub(crate) fn textures(&self) -> &[crate::GuiTexture] {
+        self.icons.textures()
+    }
 }
 
 struct SelectionFilterState {
@@ -54,15 +61,7 @@ pub(crate) fn draw(
         &mut workspace.preferences_open,
         &mut workspace.selection_open,
     );
-    draw_ribbon(
-        ui,
-        state,
-        selected,
-        parameters,
-        &mut workspace.active_tab,
-        &mut workspace.preferences_open,
-        &mut workspace.selection_open,
-    );
+    draw_ribbon(ui, state, selected, parameters, workspace);
     draw_document_tabs(ui, &state.documents, selected);
     draw_model_browser(ui, state.model_tree.as_ref());
     draw_command_window(ui, status);
@@ -125,9 +124,7 @@ fn draw_ribbon(
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
-    active_tab: &mut RibbonTab,
-    preferences_open: &mut bool,
-    selection_open: &mut bool,
+    workspace: &mut WorkspaceShellState,
 ) {
     ui.window("Ribbon")
         .position([0., 20.], Condition::Always)
@@ -136,8 +133,14 @@ fn draw_ribbon(
         .movable(false)
         .resizable(false)
         .build(|| {
-            draw_ribbon_tabs(ui, active_tab);
-            match active_tab {
+            draw_ribbon_tabs(
+                ui,
+                &mut workspace.active_tab,
+                state,
+                selected,
+                &mut workspace.icons,
+            );
+            match workspace.active_tab {
                 RibbonTab::Part => draw_part_tab(ui, state, selected),
                 RibbonTab::Sketch => draw_sketch_tab(ui, state, selected),
                 RibbonTab::Model => draw_model_tab(ui, state, selected),
@@ -146,14 +149,20 @@ fn draw_ribbon(
                     state,
                     selected,
                     parameters,
-                    preferences_open,
-                    selection_open,
+                    &mut workspace.preferences_open,
+                    &mut workspace.selection_open,
                 ),
             }
         });
 }
 
-fn draw_ribbon_tabs(ui: &Ui, active_tab: &mut RibbonTab) {
+fn draw_ribbon_tabs(
+    ui: &Ui,
+    active_tab: &mut RibbonTab,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
     for (label, tab) in [
         ("Part##ribbon-tab", RibbonTab::Part),
         ("Sketch##ribbon-tab", RibbonTab::Sketch),
@@ -165,7 +174,54 @@ fn draw_ribbon_tabs(ui: &Ui, active_tab: &mut RibbonTab) {
         }
         ui.same_line();
     }
+    draw_quick_access(ui, state, selected, icons);
     ui.new_line();
+}
+
+fn draw_quick_access(
+    ui: &Ui,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    for (label, icon, action) in [
+        ("New Part", "new-part", GuiShellAction::NewPart),
+        ("Save", "save", GuiShellAction::Save),
+        ("Undo", "undo", GuiShellAction::Undo),
+        ("Redo", "redo", GuiShellAction::Redo),
+    ] {
+        quick_access_action(ui, label, icon, action, state, selected, icons);
+    }
+}
+
+fn quick_access_action(
+    ui: &Ui,
+    label: &str,
+    icon: &str,
+    action: GuiShellAction,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    let disabled = ui.begin_disabled(!action.enabled(state));
+    let clicked = icons.texture_id(icon).map_or_else(
+        || ui.button(label),
+        |id| {
+            ui.image_button(
+                format!("{label}##quick-access"),
+                TextureId::new(id),
+                [18., 18.],
+            )
+        },
+    );
+    drop(disabled);
+    if ui.is_item_hovered() {
+        ui.tooltip_text(label);
+    }
+    if clicked && action.dispatchable(state) {
+        selected.push(action);
+    }
+    ui.same_line();
 }
 
 fn draw_part_tab(ui: &Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {

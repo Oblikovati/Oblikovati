@@ -192,7 +192,7 @@ fn draw_controls(
         workspace,
     );
     let parameter_actions = parameters.draw(ui);
-    let snapshot = capture_frame(context.render(), request.extent, &[])?;
+    let snapshot = capture_frame(context.render(), request.extent, workspace.textures())?;
     Ok(GuiFrameOutput {
         draws: snapshot,
         actions: selected,

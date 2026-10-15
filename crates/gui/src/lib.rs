@@ -24,6 +24,7 @@ pub use parameter_panel::{
 #[allow(unsafe_code)]
 mod context_owner;
 mod engine;
+mod icon_assets;
 mod input;
 mod snapshot;
 pub use commands::{
