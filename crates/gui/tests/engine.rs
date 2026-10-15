@@ -108,9 +108,9 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     let mut input = request();
     select_ribbon_tab(engine, &mut input, [25., 38.]);
     for (x, action) in [
-        (100., GuiShellAction::Save),
-        (145., GuiShellAction::Undo),
-        (190., GuiShellAction::Redo),
+        (125., GuiShellAction::Save),
+        (195., GuiShellAction::Undo),
+        (265., GuiShellAction::Redo),
     ] {
         verify_gui_click_at(engine, &mut input, [x, 60.], action);
     }
@@ -128,7 +128,7 @@ fn verify_cube_actions(engine: &mut GuiFrameEngine) {
     verify_gui_click_at(engine, &mut input, [40., 60.], GuiShellAction::NewPart);
     select_ribbon_tab(engine, &mut input, [90., 38.]);
     verify_gui_click_at(engine, &mut input, [40., 60.], GuiShellAction::SketchXY);
-    verify_gui_click_at(engine, &mut input, [115., 60.], GuiShellAction::Rectangle);
+    verify_gui_click_at(engine, &mut input, [145., 60.], GuiShellAction::Rectangle);
     select_ribbon_tab(engine, &mut input, [135., 38.]);
     verify_gui_click_at(engine, &mut input, [40., 60.], GuiShellAction::Extrude);
     select_ribbon_tab(engine, &mut input, [200., 38.]);
@@ -204,7 +204,7 @@ fn verify_invalid_event_batch_is_atomic(engine: &mut GuiFrameEngine) {
 fn verify_queued_clicks_survive_frame_boundaries(engine: &mut GuiFrameEngine) {
     let mut input = request();
     select_ribbon_tab(engine, &mut input, [25., 38.]);
-    input.events = vec![GuiInputEvent::PointerMoved([100., 60.])];
+    input.events = vec![GuiInputEvent::PointerMoved([125., 60.])];
     engine.frame(&input).unwrap();
     input.events = [true, false, true, false]
         .into_iter()
@@ -238,7 +238,7 @@ fn verify_owner_command_enabling(engine: &mut GuiFrameEngine) {
     ] {
         input.commands = state;
         select_ribbon_tab(engine, &mut input, [25., 38.]);
-        for x in [145., 190.] {
+        for x in [195., 265.] {
             assert!(
                 click_control_at(engine, &mut input, [x, 60.])
                     .actions
@@ -246,7 +246,7 @@ fn verify_owner_command_enabling(engine: &mut GuiFrameEngine) {
             );
         }
         assert_eq!(
-            click_control_at(engine, &mut input, [100., 60.]).actions,
+            click_control_at(engine, &mut input, [125., 60.]).actions,
             [GuiShellAction::Save]
         );
         select_ribbon_tab(engine, &mut input, [200., 38.]);

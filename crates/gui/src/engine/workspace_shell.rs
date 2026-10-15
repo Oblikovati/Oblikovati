@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, TextureId, Ui};
+use imgui::{Condition, Image, TextureId, Ui};
 
 #[derive(Clone, Copy, Default)]
 pub(crate) enum RibbonTab {
@@ -141,9 +141,9 @@ fn draw_ribbon(
                 &mut workspace.icons,
             );
             match workspace.active_tab {
-                RibbonTab::Part => draw_part_tab(ui, state, selected),
-                RibbonTab::Sketch => draw_sketch_tab(ui, state, selected),
-                RibbonTab::Model => draw_model_tab(ui, state, selected),
+                RibbonTab::Part => draw_part_tab(ui, state, selected, &mut workspace.icons),
+                RibbonTab::Sketch => draw_sketch_tab(ui, state, selected, &mut workspace.icons),
+                RibbonTab::Model => draw_model_tab(ui, state, selected, &mut workspace.icons),
                 RibbonTab::View => draw_view_tab(
                     ui,
                     state,
@@ -151,6 +151,7 @@ fn draw_ribbon(
                     parameters,
                     &mut workspace.preferences_open,
                     &mut workspace.selection_open,
+                    &mut workspace.icons,
                 ),
             }
         });
@@ -224,20 +225,63 @@ fn quick_access_action(
     ui.same_line();
 }
 
-fn draw_part_tab(ui: &Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
-    ribbon_action(ui, "New Part", GuiShellAction::NewPart, state, selected);
-    ribbon_action(ui, "Save", GuiShellAction::Save, state, selected);
-    ribbon_action(ui, "Undo", GuiShellAction::Undo, state, selected);
-    ribbon_action(ui, "Redo", GuiShellAction::Redo, state, selected);
+fn draw_part_tab(
+    ui: &Ui,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    ribbon_action(
+        ui,
+        "New Part",
+        GuiShellAction::NewPart,
+        state,
+        selected,
+        icons,
+    );
+    ribbon_action(ui, "Save", GuiShellAction::Save, state, selected, icons);
+    ribbon_action(ui, "Undo", GuiShellAction::Undo, state, selected, icons);
+    ribbon_action(ui, "Redo", GuiShellAction::Redo, state, selected, icons);
 }
 
-fn draw_sketch_tab(ui: &Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
-    ribbon_action(ui, "Sketch XY", GuiShellAction::SketchXY, state, selected);
-    ribbon_action(ui, "Rectangle", GuiShellAction::Rectangle, state, selected);
+fn draw_sketch_tab(
+    ui: &Ui,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    ribbon_action(
+        ui,
+        "Sketch XY",
+        GuiShellAction::SketchXY,
+        state,
+        selected,
+        icons,
+    );
+    ribbon_action(
+        ui,
+        "Rectangle",
+        GuiShellAction::Rectangle,
+        state,
+        selected,
+        icons,
+    );
 }
 
-fn draw_model_tab(ui: &Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
-    ribbon_action(ui, "Extrude", GuiShellAction::Extrude, state, selected);
+fn draw_model_tab(
+    ui: &Ui,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    ribbon_action(
+        ui,
+        "Extrude",
+        GuiShellAction::Extrude,
+        state,
+        selected,
+        icons,
+    );
 }
 
 fn draw_view_tab(
@@ -247,8 +291,9 @@ fn draw_view_tab(
     parameters: &mut crate::parameter_panel::ParameterPanel,
     preferences_open: &mut bool,
     selection_open: &mut bool,
+    icons: &mut crate::icon_assets::GuiIconCache,
 ) {
-    ribbon_action(ui, "Home", GuiShellAction::Home, state, selected);
+    ribbon_action(ui, "Home", GuiShellAction::Home, state, selected, icons);
     if ui.button("Parameters") {
         parameters.set_open(true);
     }
@@ -390,9 +435,14 @@ fn ribbon_action(
     action: GuiShellAction,
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
 ) {
     let disabled = ui.begin_disabled(!action.enabled(state));
     let clicked = ui.button(label);
+    if let Some(id) = icons.texture_id(icon_for_action(action)) {
+        ui.same_line();
+        Image::new(TextureId::new(id), [18., 18.]).build(ui);
+    }
     drop(disabled);
     if ui.is_item_hovered()
         && let Some(next) = action.next_label(state)
@@ -403,4 +453,18 @@ fn ribbon_action(
         selected.push(action);
     }
     ui.same_line();
+}
+
+fn icon_for_action(action: GuiShellAction) -> &'static str {
+    match action {
+        GuiShellAction::NewPart => "new-part",
+        GuiShellAction::Save => "save",
+        GuiShellAction::Undo => "undo",
+        GuiShellAction::Redo => "redo",
+        GuiShellAction::Home => "home",
+        GuiShellAction::SketchXY => "create-sketch",
+        GuiShellAction::Rectangle => "rectangle",
+        GuiShellAction::Extrude => "extrude",
+        GuiShellAction::ActivateDocument(_) => "view-new",
+    }
 }
