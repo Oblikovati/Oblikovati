@@ -20,7 +20,9 @@ pub fn frame(extent: [u32; 2], color: [u8; 4], clip_rect: [f32; 4]) -> GuiFrame 
         .into();
     GuiFrame {
         extent,
+        textures: Vec::new(),
         batches: vec![GuiBatch {
+            texture_id: 1,
             vertices,
             indices: vec![0, 1, 2, 0, 2, 3],
             clip_rect,

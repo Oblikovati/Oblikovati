@@ -31,4 +31,4 @@ pub use commands::{
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
-pub use oblikovati_viewport::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
+pub use oblikovati_viewport::{GuiAtlas, GuiBatch, GuiFrame, GuiTexture, GuiVertex};

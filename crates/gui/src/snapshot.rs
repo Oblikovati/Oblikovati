@@ -3,21 +3,30 @@ use crate::{GuiBatch, GuiFrame, GuiVertex};
 use imgui::{DrawCmd, DrawCmdParams, DrawData, DrawList};
 use std::collections::BTreeMap;
 pub(crate) const FONT_TEXTURE_ID: usize = 1;
-pub(crate) fn capture_frame(draws: &DrawData, extent: [u32; 2]) -> Result<GuiFrame, String> {
+pub(crate) fn capture_frame(
+    draws: &DrawData,
+    extent: [u32; 2],
+    textures: &[crate::GuiTexture],
+) -> Result<GuiFrame, String> {
     let mut batches = Vec::new();
     for list in draws.draw_lists() {
         for command in list.commands() {
-            if let Some(batch) = capture_command(list, command, draws)? {
+            if let Some(batch) = capture_command(list, command, draws, textures)? {
                 batches.push(batch);
             }
         }
     }
-    Ok(GuiFrame { extent, batches })
+    Ok(GuiFrame {
+        extent,
+        textures: textures.to_vec(),
+        batches,
+    })
 }
 fn capture_command(
     list: &DrawList,
     command: DrawCmd,
     frame: &DrawData,
+    textures: &[crate::GuiTexture],
 ) -> Result<Option<GuiBatch>, String> {
     match command {
         DrawCmd::ResetRenderState => Ok(None),
@@ -25,7 +34,7 @@ fn capture_command(
             Err("GUI raw callback: expected an owned declarative draw command".into())
         }
         DrawCmd::Elements { count, cmd_params } => {
-            capture_elements(list, count, cmd_params, frame).map(Some)
+            capture_elements(list, count, cmd_params, frame, textures).map(Some)
         }
     }
 }
@@ -34,13 +43,15 @@ fn capture_elements(
     count: usize,
     params: DrawCmdParams,
     frame: &DrawData,
+    textures: &[crate::GuiTexture],
 ) -> Result<GuiBatch, String> {
-    require_font_binding(params.texture_id.id())?;
+    require_texture_binding(params.texture_id.id(), textures)?;
     let span = command_index_span(params.idx_offset, count, list.idx_buffer().len())?;
     let selected = &list.idx_buffer()[span];
     let indices = capture_indices(selected, params.vtx_offset, list.vtx_buffer().len())?;
     let (vertices, indices) = compact_vertices(list, &indices, frame);
     Ok(GuiBatch {
+        texture_id: params.texture_id.id(),
         vertices,
         indices,
         clip_rect: scaled_clip(params.clip_rect, frame),
@@ -118,13 +129,13 @@ fn captured_vertex(vertex: &imgui::DrawVert, frame: &DrawData) -> GuiVertex {
     }
 }
 
-fn require_font_binding(texture: usize) -> Result<(), String> {
-    if texture != FONT_TEXTURE_ID {
-        return Err(format!(
-            "GUI texture {texture}: expected font atlas {FONT_TEXTURE_ID}"
-        ));
+fn require_texture_binding(texture: usize, textures: &[crate::GuiTexture]) -> Result<(), String> {
+    if texture == FONT_TEXTURE_ID || textures.iter().any(|candidate| candidate.id == texture) {
+        return Ok(());
     }
-    Ok(())
+    Err(format!(
+        "GUI texture {texture}: expected font atlas {FONT_TEXTURE_ID} or an owned GUI texture"
+    ))
 }
 
 #[cfg(test)]
@@ -133,9 +144,9 @@ mod tests {
     #[test]
     fn index_offsets_refuse_overflow_and_invalid_vertex_references() {
         assert_eq!(capture_indices(&[0, 1, 2], 3, 6).unwrap(), [3, 4, 5]);
-        require_font_binding(FONT_TEXTURE_ID).unwrap();
+        require_texture_binding(FONT_TEXTURE_ID, &[]).unwrap();
         assert!(
-            require_font_binding(0)
+            require_texture_binding(0, &[])
                 .unwrap_err()
                 .contains("GUI texture 0")
         );

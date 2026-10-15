@@ -33,7 +33,13 @@ impl GuiFrameCompiler {
             .batches
             .iter()
             .filter(|batch| !batch.indices.is_empty())
-            .map(|batch| compile_batch(batch, self.image.clone(), projection))
+            .map(|batch| {
+                compile_batch(
+                    batch,
+                    texture_image(batch.texture_id, frame, &self.image)?,
+                    projection,
+                )
+            })
             .collect::<Result<Vec<_>, _>>()?;
         Ok(RenderLayer::new(draws, false, false, false))
     }
@@ -65,6 +71,49 @@ fn validate_font_pixels(atlas: &GuiAtlas) -> Result<(), String> {
     }
     Ok(())
 }
+fn texture_image(id: usize, frame: &GuiFrame, font: &RasterImage) -> Result<RasterImage, String> {
+    if id == 1 {
+        return Ok(font.clone());
+    }
+    let texture = frame
+        .textures
+        .iter()
+        .find(|texture| texture.id == id)
+        .ok_or_else(|| format!("GUI texture {id}: expected an owned frame texture"))?;
+    texture_image_pixels(texture)
+}
+
+fn texture_image_pixels(texture: &crate::GuiTexture) -> Result<RasterImage, String> {
+    let expected = usize::try_from(texture.extent[0])
+        .ok()
+        .and_then(|width| {
+            usize::try_from(texture.extent[1])
+                .ok()
+                .and_then(|height| width.checked_mul(height))
+        })
+        .ok_or_else(|| {
+            format!(
+                "GUI texture {} extent {:?}: expected addressable pixels",
+                texture.id, texture.extent
+            )
+        })?;
+    if texture.id == 1 || expected != texture.rgba.len() {
+        return Err(format!(
+            "GUI texture {} extent {:?} pixels {}: expected non-font texture with {} RGBA pixels",
+            texture.id,
+            texture.extent,
+            texture.rgba.len(),
+            expected
+        ));
+    }
+    let pixels = texture
+        .rgba
+        .iter()
+        .map(|pixel| pixel.map(|byte| f32::from(byte) / 255.))
+        .collect();
+    RasterImage::new(texture.extent, pixels).map_err(|cause| cause.to_string())
+}
+
 fn compile_batch(
     batch: &GuiBatch,
     image: RasterImage,

@@ -114,3 +114,20 @@ fn require_invalid_font(snapshot: &GuiFrame) {
             .contains("white RGB")
     );
 }
+
+#[test]
+fn owned_gui_texture_is_used_by_its_matching_batch() {
+    use martensite_vulkan::{RenderBackend, VulkanOptions, VulkanRenderer};
+    let mut renderer = VulkanRenderer::new(VulkanOptions::default()).unwrap();
+    let mut snapshot = colored_quad([255; 4], [0., 0., 32., 32.]);
+    snapshot.batches[0].texture_id = 2;
+    snapshot.textures.push(GuiTexture {
+        id: 2,
+        extent: [1, 1],
+        rgba: Arc::new(vec![[0, 255, 0, 255]]),
+    });
+    let captured = renderer
+        .render(&compile_gui_frame(&snapshot, &atlas()).unwrap())
+        .unwrap();
+    assert_eq!(captured.pixel(16, 16).unwrap(), [0, 255, 0, 255]);
+}
