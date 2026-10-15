@@ -60,6 +60,9 @@ impl<
                 ..Default::default()
             })
             .map_err(|cause| cause.to_string())?;
+        self.placement = None;
+        self.sketch_edit = None;
+        self.cube_rectangle = None;
         Ok(true)
     }
 
@@ -82,12 +85,12 @@ impl<
         let edit = self
             .active_sketch_edit()
             .ok_or_else(|| "Rectangle: expected an active XY sketch".to_string())?;
-        self.cube_rectangle = Some((edit.document, edit.sketch));
         self.start_sketch_placement(
             edit.document,
             edit.sketch,
             crate::SketchPlacementTool::Rectangle,
         )?;
+        self.cube_rectangle = Some((edit.document, edit.sketch));
         Ok(true)
     }
 
