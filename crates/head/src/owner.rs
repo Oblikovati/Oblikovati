@@ -85,6 +85,24 @@ fn selection_kind_name(kind: SelectionKind) -> &'static str {
     }
 }
 
+fn selection_kind_label(kind: SelectionKind) -> &'static str {
+    match kind {
+        SelectionKind::WorkPoint => "Work points",
+        SelectionKind::WorkAxis => "Work axes",
+        SelectionKind::PointCloudPoint => "Point cloud points",
+        SelectionKind::Vertex => "Vertices",
+        SelectionKind::Edge => "Edges",
+        SelectionKind::Occurrence => "Occurrences",
+        SelectionKind::Body => "Bodies",
+        SelectionKind::Face => "Faces",
+        SelectionKind::MeshFace => "Mesh faces",
+        SelectionKind::WorkPlane => "Work planes",
+        SelectionKind::Profile => "Profiles",
+        SelectionKind::SketchEntity => "Sketch entities",
+        _ => "Unsupported",
+    }
+}
+
 fn gui_selection_filter(filter: &AmbientSelectionFilter) -> oblikovati_gui::GuiSelectionFilter {
     oblikovati_gui::GuiSelectionFilter {
         entries: filter
@@ -94,7 +112,7 @@ fn gui_selection_filter(filter: &AmbientSelectionFilter) -> oblikovati_gui::GuiS
                 let name = selection_kind_name(*kind);
                 oblikovati_gui::GuiSelectionFilterEntry {
                     kind: name.into(),
-                    label: name.into(),
+                    label: selection_kind_label(*kind).into(),
                     enabled: filter.enabled(*kind),
                 }
             })

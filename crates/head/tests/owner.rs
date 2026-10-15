@@ -80,6 +80,8 @@ fn selection_filter_names_round_trip_to_the_host_kinds() {
     let filter = AmbientSelectionFilter::default();
     let view = gui_selection_filter(&filter);
     assert_eq!(view.entries.len(), 12);
+    assert_eq!(view.entries[0].label, "Work points");
+    assert_eq!(view.entries[11].label, "Sketch entities");
     assert!(
         view.entries
             .iter()
