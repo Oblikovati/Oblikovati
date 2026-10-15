@@ -349,3 +349,6 @@ mod chain_recipe_tests;
 
 #[path = "native_scene/inferred_chain.rs"]
 mod inferred_chain_tests;
+
+#[path = "native_scene/cube_ui.rs"]
+mod cube_ui;
