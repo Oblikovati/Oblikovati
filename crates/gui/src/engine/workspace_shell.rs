@@ -395,6 +395,9 @@ fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {
             ui.text(&tree.document);
             ui.bullet_text("Origin");
             ui.bullet_text(format!("Parameters ({})", tree.parameters.len()));
+            for parameter in &tree.parameters {
+                ui.text(format!("  {parameter}"));
+            }
             ui.bullet_text(format!("Sketches ({})", tree.sketches));
             ui.bullet_text(format!("Features ({})", tree.features.len()));
             for feature in &tree.features {
