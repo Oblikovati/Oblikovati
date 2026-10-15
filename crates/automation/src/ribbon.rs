@@ -29,7 +29,10 @@ pub(crate) fn list() -> ListRibbonResult {
             tab(
                 "View",
                 "Navigate",
-                vec![control("View.Home", "Home", "home")],
+                vec![
+                    control("View.Home", "Home", "home"),
+                    control("View.Previous", "Previous View", "home"),
+                ],
             ),
         ]),
         ..Default::default()
@@ -71,6 +74,20 @@ mod tests {
         assert!(
             tabs.iter()
                 .all(|tab| tab.panels.as_ref().is_some_and(|panels| !panels.is_empty()))
+        );
+    }
+
+    #[test]
+    fn view_ribbon_declares_each_available_camera_command() {
+        let tabs = list().tabs.unwrap();
+        let view = tabs.iter().find(|tab| tab.name == "View").unwrap();
+        let controls = view.panels.as_ref().unwrap()[0].controls.as_ref().unwrap();
+        assert_eq!(
+            controls
+                .iter()
+                .map(|control| control.command_id.as_str())
+                .collect::<Vec<_>>(),
+            ["View.Home", "View.Previous"]
         );
     }
 }

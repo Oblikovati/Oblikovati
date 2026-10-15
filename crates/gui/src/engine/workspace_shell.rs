@@ -1007,6 +1007,7 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
         "Sketch.Rectangle" => Some(GuiShellAction::Rectangle),
         "Feature.Extrude" => Some(GuiShellAction::Extrude),
         "View.Home" => Some(GuiShellAction::Home),
+        "View.Previous" => Some(GuiShellAction::PreviousView),
         _ => None,
     }
 }
