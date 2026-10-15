@@ -88,6 +88,7 @@ impl HeadWindow for FakeGuiWindow {
 #[derive(Default)]
 struct FakeGuiOwner {
     inputs: Vec<ViewportEvent>,
+    shell_actions: Vec<oblikovati_gui::GuiShellAction>,
     parameter_edits: Vec<oblikovati_gui::GuiParameterAction>,
     parameter_failure: bool,
     parameter_view_failure: bool,
@@ -110,6 +111,14 @@ impl HeadWork for FakeGuiOwner {
         if self.parameter_failure {
             return Err("formula (: expected a valid expression".into());
         }
+        Ok(true)
+    }
+
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        self.shell_actions.push(action);
         Ok(true)
     }
 
@@ -163,6 +172,28 @@ fn gui_actions_use_existing_owner_and_camera_command_paths() {
     assert_eq!(owner.inputs, expected);
     assert_eq!(window.states[0].undo_label.as_deref(), Some("Dimension"));
 }
+#[test]
+fn cube_actions_reach_the_owner_without_viewport_commands() {
+    let actions = vec![
+        GuiShellAction::NewPart,
+        GuiShellAction::SketchXY,
+        GuiShellAction::Rectangle,
+        GuiShellAction::Extrude,
+    ];
+    let mut window = FakeGuiWindow {
+        packets: [HeadGuiUpdate {
+            actions: actions.clone(),
+            ..Default::default()
+        }]
+        .into(),
+        ..Default::default()
+    };
+    let mut owner = FakeGuiOwner::default();
+    assert!(advance_gui(&mut window, &mut owner, None).unwrap().changed);
+    assert_eq!(owner.shell_actions, actions);
+    assert!(window.inputs.is_empty() && owner.inputs.is_empty());
+}
+
 #[test]
 fn captured_pointer_does_not_reach_document_or_camera() {
     let mut window = FakeGuiWindow {

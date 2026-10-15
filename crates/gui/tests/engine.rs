@@ -136,6 +136,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     ] {
         verify_gui_click(engine, &mut input, x, action);
     }
+    verify_cube_actions(engine);
     verify_keyboard_save_activation(engine);
     verify_scaled_frame(engine);
     verify_exclusive_context(engine);
@@ -145,6 +146,32 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     verify_queued_clicks_survive_frame_boundaries(engine);
     verify_owner_command_enabling(engine);
 }
+fn verify_cube_actions(engine: &mut GuiFrameEngine) {
+    let mut input = request();
+    for (x, action) in [
+        (40., GuiShellAction::NewPart),
+        (115., GuiShellAction::SketchXY),
+        (195., GuiShellAction::Rectangle),
+        (265., GuiShellAction::Extrude),
+    ] {
+        let output = click_control_at(engine, &mut input, [x, 70.]);
+        assert_eq!(output.actions, [action]);
+    }
+}
+
+fn click_control_at(
+    engine: &mut GuiFrameEngine,
+    input: &mut GuiFrameRequest,
+    point: [f32; 2],
+) -> GuiFrameOutput {
+    input.events = vec![GuiInputEvent::PointerMoved(point)];
+    engine.frame(input).unwrap();
+    input.events = vec![left_button_event(true)];
+    engine.frame(input).unwrap();
+    input.events = vec![left_button_event(false)];
+    engine.frame(input).unwrap()
+}
+
 fn verify_keyboard_save_activation(engine: &mut GuiFrameEngine) {
     let mut input = request();
     click_control(engine, &mut input, 165.);

@@ -33,7 +33,14 @@ fn verify_history_commands(state: &GuiCommandState, enabled: [bool; 2], dispatch
 }
 fn verify_nonhistory_commands(state: &GuiCommandState) {
     state.validate().unwrap();
-    for action in [GuiShellAction::Save, GuiShellAction::Home] {
+    for action in [
+        GuiShellAction::Save,
+        GuiShellAction::Home,
+        GuiShellAction::NewPart,
+        GuiShellAction::SketchXY,
+        GuiShellAction::Rectangle,
+        GuiShellAction::Extrude,
+    ] {
         assert!(action.enabled(state) && action.dispatchable(state));
         assert!(action.next_label(state).is_none());
     }
