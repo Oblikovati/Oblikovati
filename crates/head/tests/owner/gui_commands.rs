@@ -215,3 +215,26 @@ fn gui_document_tab_close_uses_the_typed_document_route() {
     );
     assert!(owner.documents().workspace().documents().is_empty());
 }
+
+#[test]
+fn gui_history_jump_uses_the_typed_transaction_route() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    dirty_property(&mut owner, document);
+    let before = owner.gui_command_state().unwrap();
+    assert_eq!(before.histories[0].document, document);
+    assert_eq!(before.histories[0].position, 1);
+    assert_eq!(before.histories[0].entries.len(), 1);
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::JumpHistoryTo {
+                document,
+                position: 0,
+            })
+            .unwrap()
+    );
+    let after = owner.gui_command_state().unwrap();
+    assert_eq!(after.histories[0].position, 0);
+    assert!(after.undo_label.is_none());
+    assert!(after.redo_label.is_some());
+}

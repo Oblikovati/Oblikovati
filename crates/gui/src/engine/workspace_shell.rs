@@ -16,9 +16,11 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) active_tab: RibbonTab,
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
+    pub(crate) history_open: bool,
     pub(crate) model_browser_open: bool,
     pub(crate) command_panel_open: bool,
     selection_filter: SelectionFilterState,
+    history_documents: Vec<u64>,
     icons: crate::icon_assets::GuiIconCache,
 }
 
@@ -28,9 +30,11 @@ impl Default for WorkspaceShellState {
             active_tab: Default::default(),
             preferences_open: false,
             selection_open: false,
+            history_open: false,
             model_browser_open: true,
             command_panel_open: true,
             selection_filter: Default::default(),
+            history_documents: Vec::new(),
             icons: Default::default(),
         }
     }
@@ -123,6 +127,13 @@ pub(crate) fn draw(
         &mut workspace.selection_open,
         &mut workspace.selection_filter,
     );
+    draw_history_browser(
+        ui,
+        &mut workspace.history_open,
+        &state.histories,
+        &mut workspace.history_documents,
+        selected,
+    );
 }
 
 fn draw_menu_bar(
@@ -173,6 +184,9 @@ fn draw_menu_bar(
             {
                 workspace.command_panel_open = !workspace.command_panel_open;
             }
+            if ui.menu_item("History Browser") {
+                workspace.history_open = true;
+            }
         });
         ui.menu("Tools", || {
             if ui.menu_item("Preferences") {
@@ -219,15 +233,7 @@ fn draw_ribbon(
                 RibbonTab::Part => draw_part_tab(ui, state, selected, &mut workspace.icons),
                 RibbonTab::Sketch => draw_sketch_tab(ui, state, selected, &mut workspace.icons),
                 RibbonTab::Model => draw_model_tab(ui, state, selected, &mut workspace.icons),
-                RibbonTab::View => draw_view_tab(
-                    ui,
-                    state,
-                    selected,
-                    parameters,
-                    &mut workspace.preferences_open,
-                    &mut workspace.selection_open,
-                    &mut workspace.icons,
-                ),
+                RibbonTab::View => draw_view_tab(ui, state, selected, parameters, workspace),
             }
         });
 }
@@ -364,19 +370,27 @@ fn draw_view_tab(
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
-    preferences_open: &mut bool,
-    selection_open: &mut bool,
-    icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
 ) {
-    ribbon_action(ui, "Home", GuiShellAction::Home, state, selected, icons);
+    ribbon_action(
+        ui,
+        "Home",
+        GuiShellAction::Home,
+        state,
+        selected,
+        &mut workspace.icons,
+    );
     if ui.button("Parameters") {
         parameters.set_open(true);
     }
     if ui.button("Preferences") {
-        *preferences_open = true;
+        workspace.preferences_open = true;
     }
     if ui.button("Selection Filter") {
-        *selection_open = true;
+        workspace.selection_open = true;
+    }
+    if ui.button("History Browser") {
+        workspace.history_open = true;
     }
 }
 
@@ -593,6 +607,131 @@ fn draw_selection_filter_entry(ui: &Ui, filter: &mut SelectionFilterState, index
     }
 }
 
+fn draw_history_browser(
+    ui: &Ui,
+    open: &mut bool,
+    histories: &[crate::GuiDocumentHistory],
+    selected_documents: &mut Vec<u64>,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    if !*open {
+        return;
+    }
+    sync_history_documents(histories, selected_documents);
+    ui.window("History Browser")
+        .opened(open)
+        .size([560., 480.], Condition::FirstUseEver)
+        .build(|| draw_history_browser_body(ui, histories, selected_documents, selected));
+}
+
+fn draw_history_browser_body(
+    ui: &Ui,
+    histories: &[crate::GuiDocumentHistory],
+    selected_documents: &mut Vec<u64>,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    draw_history_document_picker(ui, histories, selected_documents);
+    ui.separator();
+    draw_history_timelines(ui, histories, selected_documents, selected);
+}
+
+fn sync_history_documents(histories: &[crate::GuiDocumentHistory], selected: &mut Vec<u64>) {
+    selected.retain(|id| histories.iter().any(|history| history.document == *id));
+    if selected.is_empty()
+        && let Some(history) = histories.first()
+    {
+        selected.push(history.document);
+    }
+}
+
+fn draw_history_document_picker(
+    ui: &Ui,
+    histories: &[crate::GuiDocumentHistory],
+    selected: &mut Vec<u64>,
+) {
+    for history in histories {
+        let mut shown = selected.contains(&history.document);
+        if ui.checkbox(
+            format!("{}##history-{}", history.name, history.document),
+            &mut shown,
+        ) {
+            set_history_document(selected, history.document, shown);
+        }
+    }
+}
+
+fn set_history_document(selected: &mut Vec<u64>, document: u64, shown: bool) {
+    selected.retain(|id| *id != document);
+    if shown {
+        selected.push(document);
+    }
+}
+
+fn draw_history_timelines(
+    ui: &Ui,
+    histories: &[crate::GuiDocumentHistory],
+    selected_documents: &[u64],
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let mut shown = false;
+    for history in histories
+        .iter()
+        .filter(|history| selected_documents.contains(&history.document))
+    {
+        shown = true;
+        draw_history_timeline(ui, history, selected);
+    }
+    if !shown {
+        ui.text("Select a document timeline.");
+    }
+}
+
+fn draw_history_timeline(
+    ui: &Ui,
+    history: &crate::GuiDocumentHistory,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    ui.text(&history.name);
+    draw_history_position(ui, history, "Open", 0, selected);
+    for (index, entry) in history.entries.iter().enumerate() {
+        let position = i64::try_from(index + 1).unwrap_or(i64::MAX);
+        draw_history_position(ui, history, &history_entry_label(entry), position, selected);
+    }
+    ui.separator();
+}
+
+fn draw_history_position(
+    ui: &Ui,
+    history: &crate::GuiDocumentHistory,
+    label: &str,
+    position: i64,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    if history_row(
+        ui,
+        label,
+        history.document,
+        position,
+        history.position == position,
+    ) {
+        selected.push(GuiShellAction::JumpHistoryTo {
+            document: history.document,
+            position,
+        });
+    }
+}
+
+fn history_row(ui: &Ui, label: &str, document: u64, position: i64, current: bool) -> bool {
+    ui.selectable_config(format!("{label}##history-{document}-{position}"))
+        .selected(current)
+        .build()
+}
+
+fn history_entry_label(entry: &crate::GuiHistoryEntry) -> String {
+    let saved = if entry.saved { "* " } else { "  " };
+    format!("{saved}{}", entry.label)
+}
+
 fn menu_action(
     ui: &Ui,
     label: &str,
@@ -646,6 +785,7 @@ fn icon_for_action(action: &GuiShellAction) -> &'static str {
         GuiShellAction::Extrude => "extrude",
         GuiShellAction::ActivateDocument(_) => "view-new",
         GuiShellAction::CloseDocument(_) => "close",
+        GuiShellAction::JumpHistoryTo { .. } => "history",
         GuiShellAction::SetBodyVisible { .. } => "visibility",
         GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
@@ -705,7 +845,8 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 
 #[cfg(test)]
 mod tests {
-    use super::SelectionFilterState;
+    use super::{SelectionFilterState, history_entry_label, set_history_document};
+    use crate::GuiHistoryEntry;
 
     #[test]
     fn selection_filter_defaults_to_the_host_pick_order() {
@@ -725,5 +866,20 @@ mod tests {
         assert!(!filter.entries[0].enabled);
         filter.move_entry(0, -1);
         assert_eq!(filter.entries[0].label, "Work axes");
+    }
+
+    #[test]
+    fn history_picker_replaces_a_document_and_marks_saved_entries() {
+        let mut selected = vec![7, 9];
+        set_history_document(&mut selected, 7, false);
+        set_history_document(&mut selected, 12, true);
+        assert_eq!(selected, [9, 12]);
+        assert_eq!(
+            history_entry_label(&GuiHistoryEntry {
+                label: "Extrude".into(),
+                saved: true,
+            }),
+            "* Extrude"
+        );
     }
 }

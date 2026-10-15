@@ -139,6 +139,25 @@ fn gui_model_tree(
     })
 }
 
+fn gui_document_history(
+    history: oblikovati_api::wire::TransactionHistory,
+) -> oblikovati_gui::GuiDocumentHistory {
+    oblikovati_gui::GuiDocumentHistory {
+        document: history.document,
+        name: history.name,
+        position: history.position,
+        entries: history
+            .entries
+            .unwrap_or_default()
+            .into_iter()
+            .map(|entry| oblikovati_gui::GuiHistoryEntry {
+                label: entry.label,
+                saved: entry.saved,
+            })
+            .collect(),
+    }
+}
+
 fn gui_sketch_preferences(
     options: &SketchApplicationOptions,
 ) -> oblikovati_gui::GuiSketchPreferences {
@@ -305,21 +324,22 @@ impl<
                 history.in_transaction(),
             )
         };
-        let documents = oblikovati_api::client::Client::new(self.document_host())
-            .documents()
-            .list()
-            .map_err(|cause| cause.to_string())?
-            .documents
-            .unwrap_or_default()
-            .into_iter()
-            .filter(|document| document.visible)
-            .map(|document| oblikovati_gui::GuiDocumentTab {
-                id: document.id,
-                name: document.name,
-                dirty: document.dirty,
-                active: document.active,
-            })
-            .collect();
+        let documents: Vec<oblikovati_gui::GuiDocumentTab> =
+            oblikovati_api::client::Client::new(self.document_host())
+                .documents()
+                .list()
+                .map_err(|cause| cause.to_string())?
+                .documents
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|document| document.visible)
+                .map(|document| oblikovati_gui::GuiDocumentTab {
+                    id: document.id,
+                    name: document.name,
+                    dirty: document.dirty,
+                    active: document.active,
+                })
+                .collect();
         let ribbon_tabs = oblikovati_api::client::Client::new(self.document_host())
             .ribbon()
             .list()
@@ -351,11 +371,22 @@ impl<
             .body()
             .list(&oblikovati_api::json::EmptyObject {})
             .map_err(|cause| cause.to_string())?;
+        let histories = documents
+            .iter()
+            .map(|tab| {
+                let history = oblikovati_api::client::Client::new(self.document_host())
+                    .transactions()
+                    .history(&oblikovati_api::wire::TransactionHistoryArgs { document: tab.id })
+                    .map_err(|cause| cause.to_string())?;
+                Ok(gui_document_history(history))
+            })
+            .collect::<Result<Vec<_>, String>>()?;
         Ok(oblikovati_gui::GuiCommandState {
             undo_label,
             redo_label,
             transaction_open,
             documents,
+            histories,
             ribbon_tabs,
             model_tree: Some(gui_model_tree(tree, bodies)?),
             sketch_preferences: Some(gui_sketch_preferences(
@@ -405,33 +436,46 @@ impl<
         &mut self,
         action: oblikovati_gui::GuiShellAction,
     ) -> Result<bool, String> {
-        if let oblikovati_gui::GuiShellAction::ActivateDocument(id) = action {
+        if let oblikovati_gui::GuiShellAction::ActivateDocument(id) = &action {
             oblikovati_api::client::Client::new(self.document_host())
                 .documents()
-                .activate(&oblikovati_api::wire::ActivateDocumentArgs { id })
+                .activate(&oblikovati_api::wire::ActivateDocumentArgs { id: *id })
                 .map_err(|cause| cause.to_string())?;
             return Ok(true);
         }
-        if let oblikovati_gui::GuiShellAction::SetBodyVisible { index, visible } = action {
+        if let oblikovati_gui::GuiShellAction::SetBodyVisible { index, visible } = &action {
             oblikovati_api::client::Client::new(self.document_host())
                 .body()
                 .set_visible(&oblikovati_api::wire::BodySetVisibleArgs {
-                    body_index: index,
-                    visible,
+                    body_index: *index,
+                    visible: *visible,
                 })
                 .map_err(|cause| cause.to_string())?;
             return Ok(true);
         }
-        if let oblikovati_gui::GuiShellAction::CloseDocument(id) = action {
+        if let oblikovati_gui::GuiShellAction::CloseDocument(id) = &action {
             let result = oblikovati_api::client::Client::new(self.document_host())
                 .documents()
-                .close(&oblikovati_api::wire::CloseDocumentArgs { id, force: false });
+                .close(&oblikovati_api::wire::CloseDocumentArgs {
+                    id: *id,
+                    force: false,
+                });
             if let Err(cause) = result {
                 self.command_notice = Some(DesktopCommandNotice::CloseFailed {
-                    document: id,
+                    document: *id,
                     cause: cause.to_string(),
                 });
             }
+            return Ok(true);
+        }
+        if let oblikovati_gui::GuiShellAction::JumpHistoryTo { document, position } = &action {
+            oblikovati_api::client::Client::new(self.document_host())
+                .transactions()
+                .jump_to(&oblikovati_api::wire::TransactionJumpToArgs {
+                    document: *document,
+                    position: *position,
+                })
+                .map_err(|cause| cause.to_string())?;
             return Ok(true);
         }
         let mut options = self.sketch_preferences.sketch_options().clone();

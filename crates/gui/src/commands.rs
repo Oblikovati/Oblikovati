@@ -11,6 +11,7 @@ pub enum GuiShellAction {
     Extrude,
     ActivateDocument(u64),
     CloseDocument(u64),
+    JumpHistoryTo { document: u64, position: i64 },
     SetBodyVisible { index: i64, visible: bool },
     SetGridSpacingCm(f64),
     SetGridVisible(bool),
@@ -58,6 +59,20 @@ pub struct GuiModelBody {
     pub faces: usize,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiHistoryEntry {
+    pub label: String,
+    pub saved: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiDocumentHistory {
+    pub document: u64,
+    pub name: String,
+    pub position: i64,
+    pub entries: Vec<GuiHistoryEntry>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiSketchPreferences {
     pub grid_spacing_cm: f64,
@@ -88,6 +103,7 @@ pub struct GuiCommandState {
     pub redo_label: Option<String>,
     pub transaction_open: bool,
     pub documents: Vec<GuiDocumentTab>,
+    pub histories: Vec<GuiDocumentHistory>,
     pub ribbon_tabs: Vec<GuiRibbonTab>,
     pub model_tree: Option<GuiModelTree>,
     pub sketch_preferences: Option<GuiSketchPreferences>,
@@ -118,6 +134,7 @@ impl GuiShellAction {
             | Self::Extrude
             | Self::ActivateDocument(_)
             | Self::CloseDocument(_)
+            | Self::JumpHistoryTo { .. }
             | Self::SetBodyVisible { .. }
             | Self::SetGridSpacingCm(_)
             | Self::SetGridVisible(_)
