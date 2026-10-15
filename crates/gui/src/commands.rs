@@ -5,6 +5,10 @@ pub enum GuiShellAction {
     Undo,
     Redo,
     Home,
+    NewPart,
+    SketchXY,
+    Rectangle,
+    Extrude,
 }
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -31,7 +35,12 @@ impl GuiShellAction {
         match self {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
-            Self::Save | Self::Home => true,
+            Self::Save
+            | Self::Home
+            | Self::NewPart
+            | Self::SketchXY
+            | Self::Rectangle
+            | Self::Extrude => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

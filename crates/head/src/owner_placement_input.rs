@@ -154,8 +154,10 @@ impl<
         let Some(recipe) = recipe else {
             return Ok(false);
         };
-        self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &[])?;
-        if tool.tool == crate::SketchPlacementTool::Point {
+        let cube_rectangle = self.cube_rectangle == Some((tool.document, tool.sketch));
+        let report = self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &[])?;
+        self.complete_cube_rectangle(tool.document, tool.sketch, &report)?;
+        if cube_rectangle || tool.tool == crate::SketchPlacementTool::Point {
             return Ok(true);
         }
         let generation = self

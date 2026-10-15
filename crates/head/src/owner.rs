@@ -10,6 +10,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
+#[path = "owner_cube.rs"]
+mod cube;
 #[path = "owner_parameters.rs"]
 mod parameter_view;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
@@ -51,6 +53,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         oblikovati_session::workspace::WorkspaceFocusIdentity,
     )>,
     placement: Option<crate::placement_input::SketchPlacementState>,
+    cube_rectangle: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -85,6 +88,7 @@ impl<
             command_notice: None,
             sketch_construction: Default::default(),
             placement: None,
+            cube_rectangle: None,
             sketch_edit: None,
         }
     }
@@ -214,6 +218,13 @@ impl<
         }
         parameter_view::apply::apply_owner_parameter(&mut self.files, action)
     }
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        self.apply_cube_action(action)
+    }
+
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],

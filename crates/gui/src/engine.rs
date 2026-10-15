@@ -200,11 +200,12 @@ fn shell_panel(
 ) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
-        .size([300., 110.], Condition::Always)
+        .size([300., 150.], Condition::Always)
         .movable(false)
         .resizable(false)
         .build(|| {
             shell_buttons(ui, state, selected);
+            cube_buttons(ui, state, selected);
             if ui.button("Parameters") {
                 parameters.set_open(true);
             }
@@ -217,6 +218,21 @@ fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<Gui
         ("Undo", GuiShellAction::Undo),
         ("Redo", GuiShellAction::Redo),
         ("Home", GuiShellAction::Home),
+    ] {
+        if shell_button(ui, label, action, state) {
+            selected.push(action);
+        }
+        ui.same_line();
+    }
+    ui.new_line();
+}
+
+fn cube_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
+    for (label, action) in [
+        ("New Part", GuiShellAction::NewPart),
+        ("Sketch XY", GuiShellAction::SketchXY),
+        ("Rectangle", GuiShellAction::Rectangle),
+        ("Extrude", GuiShellAction::Extrude),
     ] {
         if shell_button(ui, label, action, state) {
             selected.push(action);

@@ -255,3 +255,6 @@ mod arc_slot_input;
 
 #[path = "owner/point_input.rs"]
 mod point_input;
+
+#[path = "owner/cube_ui.rs"]
+mod cube_ui;

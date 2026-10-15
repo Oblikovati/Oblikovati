@@ -74,6 +74,15 @@ pub trait HeadWork {
             "GUI parameter action {action:?}: expected a parameter-edit owner"
         ))
     }
+    /// Apply one GUI shell action on the owner; example: `work.apply_gui_shell_action(action)?`.
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        let _ = action;
+        Ok(false)
+    }
+
     /// Apply native commands on the document owner; example: `work.process_inputs(&events)?` before polling.
     fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
         Ok(false)

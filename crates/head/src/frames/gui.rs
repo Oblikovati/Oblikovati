@@ -27,11 +27,10 @@ pub(super) fn advance_gui(
         window.acknowledge_gui_parameter(action, result.map(|_| ()))?;
     }
     for action in &update.actions {
-        let event = ViewportEvent::Input(ViewportInput::Key {
-            key: action_key(*action),
-            pressed: true,
-        });
-        update.changed |= dispatch_frame_input(window, owner, &event)?;
+        update.changed |= owner.apply_gui_shell_action(*action)?;
+        if let Some(event) = action_event(*action) {
+            update.changed |= dispatch_frame_input(window, owner, &event)?;
+        }
     }
     Ok(update)
 }
@@ -46,13 +45,21 @@ fn publish_parameter_view(
         Err(issue) => window.show_gui_parameter_issue(issue),
     }
 }
-fn action_key(action: GuiShellAction) -> ViewportKey {
-    match action {
+fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
+    let key = match action {
         GuiShellAction::Save => ViewportKey::Save,
         GuiShellAction::Undo => ViewportKey::Undo,
         GuiShellAction::Redo => ViewportKey::Redo,
         GuiShellAction::Home => ViewportKey::Home,
-    }
+        GuiShellAction::NewPart
+        | GuiShellAction::SketchXY
+        | GuiShellAction::Rectangle
+        | GuiShellAction::Extrude => return None,
+    };
+    Some(ViewportEvent::Input(ViewportInput::Key {
+        key,
+        pressed: true,
+    }))
 }
 pub(super) fn dispatch_frame_input(
     window: &mut dyn HeadWindow,
