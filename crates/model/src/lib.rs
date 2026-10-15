@@ -20,6 +20,7 @@ pub mod resource;
 pub mod units;
 
 pub mod interest;
+pub mod named_view;
 
 pub mod document_sketch;
 pub mod sketch;
