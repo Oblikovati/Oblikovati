@@ -7,9 +7,13 @@ fn api_cube_rebuilds_through_history_storage_and_named_faces() {
     let (mut owner, awake) = owner();
     let document = create(&mut owner, &awake);
     author_cube(&mut owner);
+    assert_extrude_scalar(&mut owner, 1, 10.);
+    reject_invalid_extrude_edit(&mut owner, 1);
+    assert_extrude_scalar(&mut owner, 1, 10.);
     let original = current_cube(&mut owner);
     assert_volume(&mut owner, 1_000.);
-    set_parameter(&mut owner, "size", "20 mm");
+    edit_extrude_distance(&mut owner, 1, "20 mm");
+    assert_extrude_scalar(&mut owner, 1, 20.);
     assert_eq!(
         current_cube(&mut owner).scene.triangles.len(),
         original.scene.triangles.len()
@@ -140,6 +144,46 @@ fn add_extrude(owner: &mut TestOwner, sketch: i64) {
             args: JsonValue(Some(args)),
         })
         .unwrap();
+}
+
+fn reject_invalid_extrude_edit(owner: &mut TestOwner, id: u64) {
+    let result = Client::new(owner.document_host())
+        .features()
+        .edit(&EditFeatureArgs {
+            id,
+            scalars: Some(vec![ScalarEdit {
+                index: 1,
+                value: "20 mm".into(),
+            }]),
+            ..Default::default()
+        });
+    assert!(result.is_err());
+}
+
+fn edit_extrude_distance(owner: &mut TestOwner, id: u64, value: &str) {
+    Client::new(owner.document_host())
+        .features()
+        .edit(&EditFeatureArgs {
+            id,
+            scalars: Some(vec![ScalarEdit {
+                index: 0,
+                value: value.into(),
+            }]),
+            ..Default::default()
+        })
+        .unwrap();
+}
+
+fn assert_extrude_scalar(owner: &mut TestOwner, id: u64, expected: f64) {
+    let feature = Client::new(owner.document_host())
+        .features()
+        .get(&FeatureRefArgs { id })
+        .unwrap()
+        .feature;
+    let scalar = &feature.scalars.unwrap()[0];
+    assert_eq!(scalar.label, "Distance");
+    assert_eq!(scalar.unit, "mm");
+    assert_eq!(scalar.value, expected);
 }
 
 fn current_cube(owner: &mut TestOwner) -> crate::HeadSceneUpdate {

@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{Error, PartTopologyAccess, encode, part_owner::active_part};
 use oblikovati_api::wire::*;
-use oblikovati_model::feature::{
-    AuthoredFeature, FeatureId, FeatureSequence, part::PartFeatureDefinition,
+use oblikovati_model::{
+    feature::{AuthoredFeature, FeatureId, FeatureSequence, part::PartFeatureDefinition},
+    history::DocumentSnapshot,
+    quantity::{Dimension, Quantity},
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Native feature lifecycle calls that operate on the active part history.
-pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [
+pub const FEATURE_LIFECYCLE_METHODS: [&str; 6] = [
     METHOD_FEATURES_DELETE,
+    METHOD_FEATURES_EDIT,
     METHOD_FEATURES_GET,
     METHOD_FEATURES_RENAME,
     METHOD_FEATURES_REORDER,
@@ -66,6 +69,7 @@ fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     encoded: &[u8],
 ) -> Result<u64, Error> {
     match method {
+        METHOD_FEATURES_EDIT => edit(files, document, crate::decode(method, encoded)?),
         METHOD_FEATURES_RENAME => rename(files, document, crate::decode(method, encoded)?),
         METHOD_FEATURES_REORDER => reorder(files, document, crate::decode(method, encoded)?),
         METHOD_FEATURES_SET_SUPPRESSED => {
@@ -75,6 +79,69 @@ fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
             "feature lifecycle {method:?}: expected an implemented lifecycle method"
         ))),
     }
+}
+
+fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    request: EditFeatureArgs,
+) -> Result<u64, Error> {
+    files
+        .commands(document)
+        .map_err(api_error)?
+        .run("Edit Feature", |snapshot, _| {
+            edit_prism_distance(snapshot, &request)?;
+            Ok::<_, Error>(request.id)
+        })
+        .map_err(api_error)
+}
+
+fn edit_prism_distance(
+    snapshot: &mut DocumentSnapshot,
+    request: &EditFeatureArgs,
+) -> Result<(), Error> {
+    require_empty_repicks(request)?;
+    let source = prism_distance_parameter(snapshot, request.id)?;
+    let value = single_distance_edit(request)?;
+    snapshot
+        .parameters
+        .set_authored_expression(source, value, Dimension::Length)
+        .map_err(api_error)
+}
+
+fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {
+    if request.repick.as_deref().unwrap_or_default().is_empty() {
+        return Ok(());
+    }
+    Err(Error(format!(
+        "features.edit id {} repick: expected no repicks for a sketch prism",
+        request.id
+    )))
+}
+
+fn prism_distance_parameter(snapshot: &DocumentSnapshot, id: u64) -> Result<u64, Error> {
+    let (feature, _) = locate(&snapshot.work_geometry, id)?;
+    let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
+        return Err(Error(format!(
+            "features.edit id {id}: expected a sketch prism feature"
+        )));
+    };
+    definition.displacement()[2].parameter().ok_or_else(|| {
+        Error(format!(
+            "features.edit id {id}: expected a parameter-driven prism distance"
+        ))
+    })
+}
+
+fn single_distance_edit(request: &EditFeatureArgs) -> Result<&str, Error> {
+    let edits = request.scalars.as_deref().unwrap_or_default();
+    if edits.len() != 1 || edits[0].index != 0 || edits[0].value.trim().is_empty() {
+        return Err(Error(format!(
+            "features.edit id {} scalars {edits:?}: expected one nonempty distance edit at slot 0",
+            request.id
+        )));
+    }
+    Ok(&edits[0].value)
 }
 
 fn rename<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -172,7 +239,7 @@ fn detail<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         .snapshot();
     let (feature, index) = locate(&snapshot.work_geometry, id)?;
     encode(&FeatureDetailResult {
-        feature: feature_detail(feature, index, &errors)?,
+        feature: feature_detail(feature, index, &errors, snapshot)?,
     })
 }
 
@@ -196,6 +263,7 @@ fn feature_detail(
     feature: &AuthoredFeature<PartFeatureDefinition>,
     index: usize,
     errors: &[FeatureError],
+    snapshot: &DocumentSnapshot,
 ) -> Result<FeatureDetail, Error> {
     let id = feature.id().0;
     Ok(FeatureDetail {
@@ -207,9 +275,36 @@ fn feature_detail(
             health: health(feature.suppressed(), id, errors),
         },
         index: checked_index(id, index)?,
-        scalars: None,
+        scalars: prism_scalars(feature, snapshot)?,
         slots: None,
     })
+}
+
+fn prism_scalars(
+    feature: &AuthoredFeature<PartFeatureDefinition>,
+    snapshot: &DocumentSnapshot,
+) -> Result<Option<Vec<FeatureScalar>>, Error> {
+    let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
+        return Ok(None);
+    };
+    let distance = definition.displacement()[2]
+        .resolve(&snapshot.parameters)
+        .map_err(api_error)?;
+    let units = snapshot.parameters.units();
+    let value = units.to_preferred(Quantity::new(distance, Dimension::Length));
+    if !value.is_finite() {
+        return Err(Error(format!(
+            "feature {} distance {distance}: expected a finite display value",
+            feature.id().0
+        )));
+    }
+    Ok(Some(vec![FeatureScalar {
+        index: 0,
+        label: "Distance".into(),
+        unit: units.preferred_name(Dimension::Length).into(),
+        value,
+        integer: false,
+    }]))
 }
 
 fn checked_index(id: u64, index: usize) -> Result<i64, Error> {
