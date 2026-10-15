@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::GuiShellAction;
-use imgui::{Condition, Ui};
+use imgui::{Condition, TreeNodeFlags, Ui};
 
 pub(super) fn draw_status_bar(ui: &Ui, status: Option<&str>) {
     let display = ui.io().display_size;
@@ -73,25 +73,75 @@ pub(super) fn draw_model_browser(
                 ui.text("No active part");
                 return;
             };
-            ui.text(&tree.document);
-            ui.bullet_text("Origin");
-            ui.bullet_text(format!("Parameters ({})", tree.parameters.len()));
-            for parameter in &tree.parameters {
-                ui.text(format!("  {parameter}"));
-            }
-            ui.bullet_text(format!("Sketches ({})", tree.sketches));
-            ui.bullet_text(format!("Features ({})", tree.features.len()));
-            for feature in &tree.features {
-                ui.text(format!(
-                    "  {} ({}) {}",
-                    feature.name, feature.kind, feature.health
-                ));
-            }
-            ui.bullet_text(format!("Bodies ({})", tree.bodies.len()));
-            for body in &tree.bodies {
-                draw_body_row(ui, body, selected);
-            }
+            draw_model_tree(ui, tree, selected);
         });
+}
+
+fn draw_model_tree(ui: &Ui, tree: &crate::GuiModelTree, selected: &mut Vec<GuiShellAction>) {
+    if !ui.collapsing_header(&tree.document, TreeNodeFlags::DEFAULT_OPEN) {
+        return;
+    }
+    draw_model_origin(ui);
+    draw_model_parameters(ui, &tree.parameters);
+    draw_model_sketches(ui, tree.sketches);
+    draw_model_features(ui, &tree.features);
+    draw_model_bodies(ui, &tree.bodies, selected);
+}
+
+fn draw_model_origin(ui: &Ui) {
+    if ui.collapsing_header("Origin", TreeNodeFlags::empty()) {
+        ui.bullet_text("XY Plane");
+        ui.bullet_text("XZ Plane");
+        ui.bullet_text("YZ Plane");
+    }
+}
+
+fn draw_model_parameters(ui: &Ui, parameters: &[String]) {
+    if !ui.collapsing_header(
+        format!("Parameters ({})", parameters.len()),
+        TreeNodeFlags::empty(),
+    ) {
+        return;
+    }
+    for parameter in parameters {
+        ui.bullet_text(parameter);
+    }
+}
+
+fn draw_model_sketches(ui: &Ui, count: usize) {
+    if ui.collapsing_header(format!("Sketches ({count})"), TreeNodeFlags::empty()) {
+        for index in 1..=count {
+            ui.bullet_text(format!("Sketch {index}"));
+        }
+    }
+}
+
+fn draw_model_features(ui: &Ui, features: &[crate::GuiModelFeature]) {
+    if !ui.collapsing_header(
+        format!("Features ({})", features.len()),
+        TreeNodeFlags::empty(),
+    ) {
+        return;
+    }
+    for feature in features {
+        ui.bullet_text(model_feature_label(feature));
+    }
+}
+
+fn model_feature_label(feature: &crate::GuiModelFeature) -> String {
+    format!("{} ({}) — {}", feature.name, feature.kind, feature.health)
+}
+
+fn draw_model_bodies(ui: &Ui, bodies: &[crate::GuiModelBody], selected: &mut Vec<GuiShellAction>) {
+    if !ui.collapsing_header(
+        format!("Bodies ({})", bodies.len()),
+        TreeNodeFlags::DEFAULT_OPEN,
+    ) {
+        return;
+    }
+    for body in bodies {
+        draw_body_row(ui, body, selected);
+    }
 }
 
 fn draw_body_row(ui: &Ui, body: &crate::GuiModelBody, selected: &mut Vec<GuiShellAction>) {
@@ -115,4 +165,20 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
             ui.separator();
             ui.text_wrapped(status.unwrap_or("Ready."));
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::model_feature_label;
+    use crate::GuiModelFeature;
+
+    #[test]
+    fn feature_rows_keep_name_kind_and_health() {
+        let label = model_feature_label(&GuiModelFeature {
+            name: "Extrude1".into(),
+            kind: "Extrude".into(),
+            health: "Healthy".into(),
+        });
+        assert_eq!(label, "Extrude1 (Extrude) — Healthy");
+    }
 }
