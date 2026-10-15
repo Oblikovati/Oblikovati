@@ -8,6 +8,7 @@ use crate::{
 };
 use imgui::{ConfigFlags, Context, TextureId};
 use std::sync::Arc;
+mod workspace_panels;
 mod workspace_shell;
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
