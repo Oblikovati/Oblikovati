@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{HeadGuiUpdate, HeadWork};
-use oblikovati_gui::GuiCommandState;
+use oblikovati_gui::{GuiCommandState, GuiShellAction};
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
 struct ScriptedGuiWindow {
@@ -72,13 +72,33 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native.finish()
     }
 }
-fn click_shell(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, x: i32) {
+fn click_shell(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    action: GuiShellAction,
+) {
+    let (tab, control) = match action {
+        GuiShellAction::Save => ([25, 38], [100, 60]),
+        GuiShellAction::Undo => ([25, 38], [145, 60]),
+        GuiShellAction::Redo => ([25, 38], [190, 60]),
+        GuiShellAction::Home => ([200, 38], [40, 60]),
+        found => panic!("native shell click {found:?}: expected a history, save, or view action"),
+    };
+    click_shell_point(window, owner, tab);
+    click_shell_point(window, owner, control);
+}
+
+fn click_shell_point(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    position: [i32; 2],
+) {
     window.scripted = [true, false]
         .map(|pressed| {
             ViewportEvent::Input(ViewportInput::Button {
                 button: ViewportButton::Left,
                 pressed,
-                position: [x, 45],
+                position,
                 modifiers: Default::default(),
             })
         })
@@ -104,11 +124,11 @@ fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {
     native_set(&mut owner, "width", "6 cm");
     let edited = publish_gui_framebuffer(&mut owner, &mut window.native);
     assert_ne!(before.rgba, edited.rgba);
-    click_shell(&mut window, &mut owner, 75);
+    click_shell(&mut window, &mut owner, GuiShellAction::Undo);
     assert_model_without_gui(&mut window.native, &before);
-    click_shell(&mut window, &mut owner, 120);
+    click_shell(&mut window, &mut owner, GuiShellAction::Redo);
     assert_model_without_gui(&mut window.native, &edited);
-    click_shell(&mut window, &mut owner, 30);
+    click_shell(&mut window, &mut owner, GuiShellAction::Save);
     verify_gui_save(&path, &mut window.native);
     verify_gui_camera(&mut window, &mut owner);
     owner.finish().unwrap();
@@ -124,7 +144,7 @@ fn physical_keyboard_navigation_activates_native_save_without_camera_input() {
     let mut window = scripted_window(native);
     publish_gui_framebuffer(&mut owner, &mut window.native);
     native_set(&mut owner, "width", "6 cm");
-    click_shell(&mut window, &mut owner, 165);
+    click_shell(&mut window, &mut owner, GuiShellAction::Save);
     verify_keyboard_save_navigation(&mut window, &mut owner, &path);
     owner.finish().unwrap();
     window.finish().unwrap();
@@ -206,7 +226,7 @@ fn verify_gui_camera(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOw
     assert_eq!(window.native.view.camera_state().unwrap(), initial);
     assert!(drive_wheel(window, owner, [600, 400]));
     assert_ne!(window.native.view.camera_state().unwrap(), initial);
-    click_shell(window, owner, 165);
+    click_shell(window, owner, GuiShellAction::Home);
     assert_eq!(window.native.view.camera_state().unwrap(), initial);
 }
 fn drive_wheel(
@@ -232,7 +252,7 @@ fn native_model_wheel_after_gui_click_and_gui_wheel_reaches_camera() {
     open_native_part(&mut owner, &directory.path().join("wheel.opd"));
     let mut window = scripted_window(native);
     publish_gui_framebuffer(&mut owner, &mut window.native);
-    click_shell(&mut window, &mut owner, 165);
+    click_shell(&mut window, &mut owner, GuiShellAction::Home);
     let before = window.native.view.camera_state().unwrap();
     assert!(!drive_wheel(&mut window, &mut owner, [50, 50]));
     assert_eq!(window.native.view.camera_state().unwrap(), before);

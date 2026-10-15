@@ -6,8 +6,9 @@ use crate::{
     input::{apply_input, input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
-use imgui::{Condition, ConfigFlags, Context, TextureId};
+use imgui::{ConfigFlags, Context, TextureId};
 use std::sync::Arc;
+mod workspace_shell;
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
     pub extent: [u32; 2],
@@ -34,6 +35,7 @@ pub struct GuiFrameEngine {
     context: Context,
     atlas: GuiAtlas,
     parameter_panel: crate::parameter_panel::ParameterPanel,
+    workspace_tab: workspace_shell::RibbonTab,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -46,6 +48,7 @@ impl GuiFrameEngine {
             context,
             atlas,
             parameter_panel,
+            workspace_tab: Default::default(),
         })
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
@@ -62,7 +65,12 @@ impl GuiFrameEngine {
     /// Example: `engine.frame(&request)?` returns draws, actions, and channel capture requests.
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
-        draw_controls(&mut self.context, &mut self.parameter_panel, request)
+        draw_controls(
+            &mut self.context,
+            &mut self.parameter_panel,
+            &mut self.workspace_tab,
+            request,
+        )
     }
     /// Publish a copied parameter view; example: `engine.set_parameter_snapshot(Some(snapshot))?`.
     pub fn set_parameter_snapshot(
@@ -169,17 +177,19 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 fn draw_controls(
     context: &mut Context,
     parameters: &mut crate::parameter_panel::ParameterPanel,
+    workspace_tab: &mut workspace_shell::RibbonTab,
     request: &GuiFrameRequest,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
     let ui = context.frame();
     let mut selected = Vec::new();
-    shell_panel(
+    workspace_shell::draw(
         ui,
         &request.commands,
         request.status.as_deref(),
         &mut selected,
         parameters,
+        workspace_tab,
     );
     let parameter_actions = parameters.draw(ui);
     let snapshot = capture_frame(context.render(), request.extent)?;
@@ -191,57 +201,6 @@ fn draw_controls(
         parameter_actions,
     })
 }
-fn shell_panel(
-    ui: &imgui::Ui,
-    state: &GuiCommandState,
-    status: Option<&str>,
-    selected: &mut Vec<GuiShellAction>,
-    parameters: &mut crate::parameter_panel::ParameterPanel,
-) {
-    ui.window("Oblikovati")
-        .position([8., 8.], Condition::Always)
-        .size([300., 150.], Condition::Always)
-        .movable(false)
-        .resizable(false)
-        .build(|| {
-            shell_buttons(ui, state, selected);
-            cube_buttons(ui, state, selected);
-            if ui.button("Parameters") {
-                parameters.set_open(true);
-            }
-            ui.text_wrapped(status.unwrap_or("Document commands"));
-        });
-}
-fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
-    for (label, action) in [
-        ("Save", GuiShellAction::Save),
-        ("Undo", GuiShellAction::Undo),
-        ("Redo", GuiShellAction::Redo),
-        ("Home", GuiShellAction::Home),
-    ] {
-        if shell_button(ui, label, action, state) {
-            selected.push(action);
-        }
-        ui.same_line();
-    }
-    ui.new_line();
-}
-
-fn cube_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
-    for (label, action) in [
-        ("New Part", GuiShellAction::NewPart),
-        ("Sketch XY", GuiShellAction::SketchXY),
-        ("Rectangle", GuiShellAction::Rectangle),
-        ("Extrude", GuiShellAction::Extrude),
-    ] {
-        if shell_button(ui, label, action, state) {
-            selected.push(action);
-        }
-        ui.same_line();
-    }
-    ui.new_line();
-}
-
 fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
     let io = context.io_mut();
     io.display_size =
@@ -251,21 +210,4 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
     for event in &request.events {
         apply_input(io, event, request.framebuffer_scale);
     }
-}
-
-fn shell_button(
-    ui: &imgui::Ui,
-    label: &str,
-    action: GuiShellAction,
-    state: &GuiCommandState,
-) -> bool {
-    let disabled = ui.begin_disabled(!action.enabled(state));
-    let clicked = ui.button(label);
-    drop(disabled);
-    if ui.is_item_hovered()
-        && let Some(next) = action.next_label(state)
-    {
-        ui.tooltip_text(format!("{label} {next}"));
-    }
-    clicked && action.dispatchable(state)
 }
