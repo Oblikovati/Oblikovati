@@ -56,6 +56,7 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         | GuiShellAction::Rectangle
         | GuiShellAction::Extrude
         | GuiShellAction::ActivateDocument(_)
+        | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
         | GuiShellAction::SetGridMajorEvery(_)

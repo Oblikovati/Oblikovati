@@ -190,3 +190,22 @@ fn gui_sketch_preferences_publish_and_apply_on_the_owner() {
     assert_eq!(after.grid_spacing_cm, 2.5);
     assert_eq!(after.grid_major_every, 8);
 }
+
+#[test]
+fn gui_document_tab_close_uses_the_typed_document_route() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    Client::new(owner.document_host())
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document,
+            new_full_document_name: "/memory/closable.opd".into(),
+        })
+        .unwrap();
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::CloseDocument(document))
+            .unwrap()
+    );
+    assert!(owner.documents().workspace().documents().is_empty());
+}

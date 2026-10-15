@@ -10,6 +10,7 @@ pub enum GuiShellAction {
     Rectangle,
     Extrude,
     ActivateDocument(u64),
+    CloseDocument(u64),
     SetGridSpacingCm(f64),
     SetGridVisible(bool),
     SetGridMajorEvery(i64),
@@ -104,6 +105,7 @@ impl GuiShellAction {
             | Self::Rectangle
             | Self::Extrude
             | Self::ActivateDocument(_)
+            | Self::CloseDocument(_)
             | Self::SetGridSpacingCm(_)
             | Self::SetGridVisible(_)
             | Self::SetGridMajorEvery(_)

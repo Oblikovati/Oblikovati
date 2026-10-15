@@ -556,6 +556,7 @@ fn icon_for_action(action: GuiShellAction) -> &'static str {
         GuiShellAction::Rectangle => "rectangle",
         GuiShellAction::Extrude => "extrude",
         GuiShellAction::ActivateDocument(_) => "view-new",
+        GuiShellAction::CloseDocument(_) => "close",
         GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
         | GuiShellAction::SetGridMajorEvery(_)

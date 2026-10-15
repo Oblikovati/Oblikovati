@@ -29,23 +29,34 @@ pub(super) fn draw_document_tabs(
         .movable(false)
         .resizable(false)
         .build(|| {
+            let Some(_tabs) = ui.tab_bar("##document-tabs") else {
+                return;
+            };
             for document in documents {
-                let label = if document.dirty {
-                    format!("{} *##document-{}", document.name, document.id)
-                } else {
-                    format!("{}##document-{}", document.name, document.id)
-                };
-                if ui
-                    .selectable_config(&label)
-                    .selected(document.active)
-                    .build()
-                    && !document.active
-                {
-                    selected.push(GuiShellAction::ActivateDocument(document.id));
-                }
-                ui.same_line();
+                draw_document_tab(ui, document, selected);
             }
         });
+}
+
+fn draw_document_tab(
+    ui: &Ui,
+    document: &crate::GuiDocumentTab,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let mut open = true;
+    let label = document_tab_label(document);
+    let active = ui.tab_item_with_opened(label, &mut open).is_some();
+    if active && !document.active {
+        selected.push(GuiShellAction::ActivateDocument(document.id));
+    }
+    if !open {
+        selected.push(GuiShellAction::CloseDocument(document.id));
+    }
+}
+
+fn document_tab_label(document: &crate::GuiDocumentTab) -> String {
+    let dirty = if document.dirty { " *" } else { "" };
+    format!("{}{dirty}###document-{}", document.name, document.id)
 }
 
 pub(super) fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {

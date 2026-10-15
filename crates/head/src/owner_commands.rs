@@ -52,6 +52,10 @@ pub enum DesktopCommandNotice {
         document: u64,
         cause: String,
     },
+    CloseFailed {
+        document: u64,
+        cause: String,
+    },
 }
 impl DesktopCommandNotice {
     /// Explain the result for native feedback; example: `notice.message()` in a title or status panel.
@@ -72,6 +76,7 @@ impl DesktopCommandNotice {
             }
             Self::Saved { document, path } => format!("Saved document {document}: {path}"),
             Self::SaveFailed { document, cause } => format!("Save document {document}: {cause}"),
+            Self::CloseFailed { document, cause } => format!("Close document {document}: {cause}"),
         }
     }
 }

@@ -406,6 +406,18 @@ impl<
                 .map_err(|cause| cause.to_string())?;
             return Ok(true);
         }
+        if let oblikovati_gui::GuiShellAction::CloseDocument(id) = action {
+            let result = oblikovati_api::client::Client::new(self.document_host())
+                .documents()
+                .close(&oblikovati_api::wire::CloseDocumentArgs { id, force: false });
+            if let Err(cause) = result {
+                self.command_notice = Some(DesktopCommandNotice::CloseFailed {
+                    document: id,
+                    cause: cause.to_string(),
+                });
+            }
+            return Ok(true);
+        }
         let mut options = self.sketch_preferences.sketch_options().clone();
         match action {
             oblikovati_gui::GuiShellAction::SetGridSpacingCm(value) => {
