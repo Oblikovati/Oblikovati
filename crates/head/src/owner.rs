@@ -174,10 +174,41 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
+        let snapshot = session.snapshot();
+        let tree = oblikovati_gui::GuiModelTree {
+            document: self
+                .files
+                .document_info(document)
+                .map_err(|cause| cause.to_string())?
+                .name,
+            parameters: snapshot
+                .parameters
+                .ids()
+                .iter()
+                .filter_map(|id| snapshot.parameters.get(*id))
+                .map(|state| state.name.clone())
+                .collect(),
+            sketches: snapshot.sketches.sketches().len(),
+            features: snapshot
+                .work_geometry
+                .features()
+                .iter()
+                .map(|feature| oblikovati_gui::GuiModelFeature {
+                    name: feature.name().into(),
+                    health: if feature.suppressed() {
+                        "suppressed".into()
+                    } else {
+                        String::new()
+                    },
+                })
+                .collect(),
+            bodies: 0,
+        };
         Ok(oblikovati_gui::GuiCommandState {
             undo_label: session.undo_label().map(str::to_owned),
             redo_label: session.redo_label().map(str::to_owned),
             transaction_open: session.in_transaction(),
+            model_tree: Some(tree),
         })
     }
     fn gui_parameter_snapshot(

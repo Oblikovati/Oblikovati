@@ -22,7 +22,7 @@ pub(crate) fn draw(
     ui.dockspace_over_main_viewport();
     draw_menu_bar(ui, state, selected, parameters);
     draw_ribbon(ui, state, selected, parameters, active_tab);
-    draw_model_browser(ui);
+    draw_model_browser(ui, state.model_tree.as_ref());
     draw_command_window(ui, status);
 }
 
@@ -130,17 +130,23 @@ fn draw_view_tab(
     }
 }
 
-fn draw_model_browser(ui: &Ui) {
+fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {
     ui.window("Model")
         .size([280., 420.], Condition::FirstUseEver)
         .build(|| {
-            ui.text("No active part");
-            ui.separator();
+            let Some(tree) = tree else {
+                ui.text("No active part");
+                return;
+            };
+            ui.text(&tree.document);
             ui.bullet_text("Origin");
-            ui.bullet_text("Parameters");
-            ui.bullet_text("Sketches");
-            ui.bullet_text("Features");
-            ui.bullet_text("Bodies");
+            ui.bullet_text(format!("Parameters ({})", tree.parameters.len()));
+            ui.bullet_text(format!("Sketches ({})", tree.sketches));
+            ui.bullet_text(format!("Features ({})", tree.features.len()));
+            for feature in &tree.features {
+                ui.text(format!("  {} {}", feature.name, feature.health));
+            }
+            ui.bullet_text(format!("Bodies ({})", tree.bodies));
         });
 }
 

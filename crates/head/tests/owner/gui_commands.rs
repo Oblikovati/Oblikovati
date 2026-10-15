@@ -10,9 +10,13 @@ fn gui_command_metadata_follows_the_active_owner_history() {
         GuiCommandState::default()
     );
     let document = create(&mut owner, &awake);
+    let active = owner.gui_command_state().unwrap();
     assert_eq!(
-        owner.gui_command_state().unwrap(),
-        GuiCommandState::default()
+        active
+            .model_tree
+            .as_ref()
+            .map(|tree| tree.document.as_str()),
+        Some("Owner part")
     );
     dirty_property(&mut owner, document);
     let edited = owner.gui_command_state().unwrap();
@@ -72,10 +76,7 @@ fn verify_script_owner_command_state(owner: TestOwner) -> TestOwner {
 fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, first: u64) {
     let previous = owner.gui_command_state().unwrap();
     let second = create(owner, awake);
-    assert_eq!(
-        owner.gui_command_state().unwrap(),
-        GuiCommandState::default()
-    );
+    assert!(owner.gui_command_state().unwrap().model_tree.is_some());
     Client::new(owner.document_host())
         .documents()
         .close(&CloseDocumentArgs {

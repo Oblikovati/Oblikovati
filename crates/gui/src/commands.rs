@@ -10,12 +10,26 @@ pub enum GuiShellAction {
     Rectangle,
     Extrude,
 }
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiModelFeature {
+    pub name: String,
+    pub health: String,
+}
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiModelTree {
+    pub document: String,
+    pub parameters: Vec<String>,
+    pub sketches: usize,
+    pub features: Vec<GuiModelFeature>,
+    pub bodies: usize,
+}
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiCommandState {
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
     pub transaction_open: bool,
+    pub model_tree: Option<GuiModelTree>,
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {

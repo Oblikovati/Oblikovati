@@ -10,6 +10,7 @@ fn request() -> GuiFrameRequest {
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
             transaction_open: false,
+            ..Default::default()
         },
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],
