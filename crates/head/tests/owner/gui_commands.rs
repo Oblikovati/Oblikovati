@@ -60,14 +60,16 @@ fn verify_transaction_metadata(owner: &mut TestOwner) {
     assert_eq!(owner.gui_command_state().unwrap(), before);
 }
 
-fn verify_script_owner_command_state(owner: TestOwner) -> TestOwner {
+fn verify_script_owner_command_state(mut owner: TestOwner) -> TestOwner {
     let expected = owner.gui_command_state().unwrap();
     let engine =
         oblikovati_script::IsolatedLuaEngine::new(&std::env::current_exe().unwrap(), Vec::new());
-    let desktop = crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
+    let mut desktop =
+        crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
     assert_eq!(desktop.gui_command_state().unwrap(), expected);
+    let mut idle = crate::work::IdleHeadWork;
     assert_eq!(
-        crate::work::IdleHeadWork.gui_command_state().unwrap(),
+        idle.gui_command_state().unwrap(),
         GuiCommandState::default()
     );
     desktop.into_document_owner()
@@ -96,4 +98,23 @@ fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, firs
         owner.gui_command_state().unwrap(),
         GuiCommandState::default()
     );
+}
+
+#[test]
+fn gui_model_browser_state_projects_the_typed_model_tree() {
+    let (mut owner, awake) = owner();
+    create(&mut owner, &awake);
+    let expected = Client::new(owner.document_host()).model().tree().unwrap();
+    let actual = owner.gui_command_state().unwrap().model_tree.unwrap();
+    assert_eq!(actual.document, expected.document);
+    assert_eq!(actual.parameters, expected.parameters.unwrap_or_default());
+    assert_eq!(actual.sketches, usize::try_from(expected.sketches).unwrap());
+    assert_eq!(actual.bodies, usize::try_from(expected.bodies).unwrap());
+    let expected_features = expected.features.unwrap_or_default();
+    assert_eq!(actual.features.len(), expected_features.len());
+    for (actual, expected) in actual.features.iter().zip(expected_features) {
+        assert_eq!(actual.name, expected.name);
+        assert_eq!(actual.kind, expected.kind);
+        assert_eq!(actual.health, expected.health);
+    }
 }

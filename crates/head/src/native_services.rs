@@ -137,7 +137,7 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.complete_save_path(document, selected)
     }
-    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+    fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.owner.gui_command_state()
     }
     fn gui_parameter_snapshot(

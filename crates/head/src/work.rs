@@ -54,7 +54,7 @@ pub trait HeadWork {
     }
 
     /// Copy bounded command metadata on the owner; example: `work.gui_command_state()?` after polling.
-    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+    fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         Ok(Default::default())
     }
     /// Copy parameter identities and canonical presentation on the owner thread.

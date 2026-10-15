@@ -11,16 +11,39 @@ pub(crate) enum RibbonTab {
     View,
 }
 
-#[allow(clippy::too_many_arguments)]
+#[derive(Default)]
+pub(crate) struct WorkspaceShellState {
+    pub(crate) active_tab: RibbonTab,
+    pub(crate) preferences_open: bool,
+    pub(crate) selection_open: bool,
+    selection_filter: SelectionFilterState,
+}
+
+struct SelectionFilterState {
+    bodies: bool,
+    faces: bool,
+    edges: bool,
+    vertices: bool,
+}
+
+impl Default for SelectionFilterState {
+    fn default() -> Self {
+        Self {
+            bodies: true,
+            faces: true,
+            edges: true,
+            vertices: true,
+        }
+    }
+}
+
 pub(crate) fn draw(
     ui: &Ui,
     state: &GuiCommandState,
     status: Option<&str>,
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
-    active_tab: &mut RibbonTab,
-    preferences_open: &mut bool,
-    selection_open: &mut bool,
+    workspace: &mut WorkspaceShellState,
 ) {
     ui.dockspace_over_main_viewport();
     draw_menu_bar(
@@ -28,22 +51,26 @@ pub(crate) fn draw(
         state,
         selected,
         parameters,
-        preferences_open,
-        selection_open,
+        &mut workspace.preferences_open,
+        &mut workspace.selection_open,
     );
     draw_ribbon(
         ui,
         state,
         selected,
         parameters,
-        active_tab,
-        preferences_open,
-        selection_open,
+        &mut workspace.active_tab,
+        &mut workspace.preferences_open,
+        &mut workspace.selection_open,
     );
     draw_model_browser(ui, state.model_tree.as_ref());
     draw_command_window(ui, status);
-    draw_preferences(ui, preferences_open);
-    draw_selection_filter(ui, selection_open);
+    draw_preferences(ui, &mut workspace.preferences_open);
+    draw_selection_filter(
+        ui,
+        &mut workspace.selection_open,
+        &mut workspace.selection_filter,
+    );
 }
 
 fn draw_menu_bar(
@@ -187,19 +214,15 @@ fn draw_preferences(ui: &Ui, open: &mut bool) {
             );
         });
 }
-fn draw_selection_filter(ui: &Ui, open: &mut bool) {
+fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterState) {
     ui.window("Selection Filter")
         .opened(open)
         .size([260., 220.], Condition::FirstUseEver)
         .build(|| {
-            let mut bodies = true;
-            let mut faces = true;
-            let mut edges = true;
-            let mut vertices = true;
-            ui.checkbox("Bodies", &mut bodies);
-            ui.checkbox("Faces", &mut faces);
-            ui.checkbox("Edges", &mut edges);
-            ui.checkbox("Vertices", &mut vertices);
+            ui.checkbox("Bodies", &mut filter.bodies);
+            ui.checkbox("Faces", &mut filter.faces);
+            ui.checkbox("Edges", &mut filter.edges);
+            ui.checkbox("Vertices", &mut filter.vertices);
         });
 }
 
@@ -217,7 +240,10 @@ fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {
             ui.bullet_text(format!("Sketches ({})", tree.sketches));
             ui.bullet_text(format!("Features ({})", tree.features.len()));
             for feature in &tree.features {
-                ui.text(format!("  {} {}", feature.name, feature.health));
+                ui.text(format!(
+                    "  {} ({}) {}",
+                    feature.name, feature.kind, feature.health
+                ));
             }
             ui.bullet_text(format!("Bodies ({})", tree.bodies));
         });

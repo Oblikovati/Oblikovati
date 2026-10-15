@@ -56,6 +56,41 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     cube_rectangle: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
+
+fn gui_model_tree(
+    tree: oblikovati_api::wire::ModelTreeResult,
+) -> Result<oblikovati_gui::GuiModelTree, String> {
+    let sketches = usize::try_from(tree.sketches).map_err(|cause| {
+        format!(
+            "model.tree sketches {}: expected a non-negative count: {cause}",
+            tree.sketches
+        )
+    })?;
+    let bodies = usize::try_from(tree.bodies).map_err(|cause| {
+        format!(
+            "model.tree bodies {}: expected a non-negative count: {cause}",
+            tree.bodies
+        )
+    })?;
+    let features = tree
+        .features
+        .unwrap_or_default()
+        .into_iter()
+        .map(|feature| oblikovati_gui::GuiModelFeature {
+            name: feature.name,
+            kind: feature.kind,
+            health: feature.health,
+        })
+        .collect();
+    Ok(oblikovati_gui::GuiModelTree {
+        document: tree.document,
+        parameters: tree.parameters.unwrap_or_default(),
+        sketches,
+        features,
+        bodies,
+    })
+}
+
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -165,50 +200,31 @@ impl<
     ) -> Result<bool, String> {
         Ok(self.complete_document_save_path(document, selected))
     }
-    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+    fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(Default::default());
         };
-        let session = self
-            .files
-            .workspace()
-            .session(document)
-            .map_err(|cause| cause.to_string())?;
-        let snapshot = session.snapshot();
-        let tree = oblikovati_gui::GuiModelTree {
-            document: self
+        let (undo_label, redo_label, transaction_open) = {
+            let history = self
                 .files
-                .document_info(document)
-                .map_err(|cause| cause.to_string())?
-                .name,
-            parameters: snapshot
-                .parameters
-                .ids()
-                .iter()
-                .filter_map(|id| snapshot.parameters.get(*id))
-                .map(|state| state.name.clone())
-                .collect(),
-            sketches: snapshot.sketches.sketches().len(),
-            features: snapshot
-                .work_geometry
-                .features()
-                .iter()
-                .map(|feature| oblikovati_gui::GuiModelFeature {
-                    name: feature.name().into(),
-                    health: if feature.suppressed() {
-                        "suppressed".into()
-                    } else {
-                        String::new()
-                    },
-                })
-                .collect(),
-            bodies: 0,
+                .workspace()
+                .session(document)
+                .map_err(|cause| cause.to_string())?;
+            (
+                history.undo_label().map(str::to_owned),
+                history.redo_label().map(str::to_owned),
+                history.in_transaction(),
+            )
         };
+        let tree = oblikovati_api::client::Client::new(self.document_host())
+            .model()
+            .tree()
+            .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
-            undo_label: session.undo_label().map(str::to_owned),
-            redo_label: session.redo_label().map(str::to_owned),
-            transaction_open: session.in_transaction(),
-            model_tree: Some(tree),
+            undo_label,
+            redo_label,
+            transaction_open,
+            model_tree: Some(gui_model_tree(tree)?),
         })
     }
     fn gui_parameter_snapshot(

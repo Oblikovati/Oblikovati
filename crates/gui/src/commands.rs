@@ -13,6 +13,7 @@ pub enum GuiShellAction {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelFeature {
     pub name: String,
+    pub kind: String,
     pub health: String,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
