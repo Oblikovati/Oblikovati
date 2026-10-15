@@ -41,6 +41,7 @@ pub use detail::parameter_detail;
 mod document_sketch_settings;
 mod end_of_part;
 mod expressions;
+mod feature_add;
 mod feature_lifecycle;
 mod model_tree;
 mod parameter_choices;

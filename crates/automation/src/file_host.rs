@@ -118,6 +118,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             } = &mut *context;
             return crate::end_of_part::apply(files, part_topology, request);
         }
+        if method == METHOD_FEATURES_ADD {
+            let FileContext {
+                files,
+                part_topology,
+                ..
+            } = &mut *context;
+            return crate::feature_add::apply(files, part_topology, request);
+        }
         if method == METHOD_FEATURES_GET {
             let FileContext {
                 files,

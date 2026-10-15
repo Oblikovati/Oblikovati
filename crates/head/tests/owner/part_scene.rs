@@ -237,5 +237,7 @@ fn typed_kernel_decline_reaches_desktop_status_and_recovers() {
     );
 }
 
+#[path = "part_scene/cube.rs"]
+mod cube;
 #[path = "part_scene/sketches.rs"]
 mod sketches;
