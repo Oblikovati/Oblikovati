@@ -19,9 +19,11 @@ pub(crate) fn draw(
     parameters: &mut crate::parameter_panel::ParameterPanel,
     active_tab: &mut RibbonTab,
 ) {
+    ui.dockspace_over_main_viewport();
     draw_menu_bar(ui, state, selected, parameters);
     draw_ribbon(ui, state, selected, parameters, active_tab);
-    draw_command_panel(ui, status);
+    draw_model_browser(ui);
+    draw_command_window(ui, status);
 }
 
 fn draw_menu_bar(
@@ -128,14 +130,25 @@ fn draw_view_tab(
     }
 }
 
-fn draw_command_panel(ui: &Ui, status: Option<&str>) {
-    ui.window("Command Panel")
-        .position([8., 120.], Condition::Always)
-        .size([280., 130.], Condition::Always)
+fn draw_model_browser(ui: &Ui) {
+    ui.window("Model")
+        .size([280., 420.], Condition::FirstUseEver)
         .build(|| {
-            ui.text("Cube workflow");
+            ui.text("No active part");
             ui.separator();
-            ui.text_wrapped("New Part, Sketch XY, Rectangle, then Extrude.");
+            ui.bullet_text("Origin");
+            ui.bullet_text("Parameters");
+            ui.bullet_text("Sketches");
+            ui.bullet_text("Features");
+            ui.bullet_text("Bodies");
+        });
+}
+
+fn draw_command_window(ui: &Ui, status: Option<&str>) {
+    ui.window("Command")
+        .size([360., 130.], Condition::FirstUseEver)
+        .build(|| {
+            ui.text("Command");
             ui.separator();
             ui.text_wrapped(status.unwrap_or("Ready."));
         });
