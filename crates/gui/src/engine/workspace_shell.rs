@@ -17,6 +17,7 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
     pub(crate) model_browser_open: bool,
+    pub(crate) command_panel_open: bool,
     selection_filter: SelectionFilterState,
     icons: crate::icon_assets::GuiIconCache,
 }
@@ -28,6 +29,7 @@ impl Default for WorkspaceShellState {
             preferences_open: false,
             selection_open: false,
             model_browser_open: true,
+            command_panel_open: true,
             selection_filter: Default::default(),
             icons: Default::default(),
         }
@@ -95,15 +97,7 @@ pub(crate) fn draw(
     workspace: &mut WorkspaceShellState,
 ) {
     ui.dockspace_over_main_viewport();
-    draw_menu_bar(
-        ui,
-        state,
-        selected,
-        parameters,
-        &mut workspace.preferences_open,
-        &mut workspace.selection_open,
-        &mut workspace.model_browser_open,
-    );
+    draw_menu_bar(ui, state, selected, parameters, workspace);
     draw_ribbon(ui, state, selected, parameters, workspace);
     workspace_panels::draw_document_tabs(ui, &state.documents, selected);
     if workspace.model_browser_open {
@@ -114,7 +108,9 @@ pub(crate) fn draw(
             &mut workspace.model_browser_open,
         );
     }
-    workspace_panels::draw_command_window(ui, status);
+    if workspace.command_panel_open {
+        workspace_panels::draw_command_window(ui, status, &mut workspace.command_panel_open);
+    }
     workspace_panels::draw_status_bar(ui, status);
     draw_preferences(
         ui,
@@ -134,9 +130,7 @@ fn draw_menu_bar(
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
-    preferences_open: &mut bool,
-    selection_open: &mut bool,
-    model_browser_open: &mut bool,
+    workspace: &mut WorkspaceShellState,
 ) {
     ui.main_menu_bar(|| {
         ui.menu("File", || {
@@ -167,18 +161,25 @@ fn draw_menu_bar(
             }
             if ui
                 .menu_item_config("Model Browser")
-                .selected(*model_browser_open)
+                .selected(workspace.model_browser_open)
                 .build()
             {
-                *model_browser_open = !*model_browser_open;
+                workspace.model_browser_open = !workspace.model_browser_open;
+            }
+            if ui
+                .menu_item_config("Command Panel")
+                .selected(workspace.command_panel_open)
+                .build()
+            {
+                workspace.command_panel_open = !workspace.command_panel_open;
             }
         });
         ui.menu("Tools", || {
             if ui.menu_item("Preferences") {
-                *preferences_open = true;
+                workspace.preferences_open = true;
             }
             if ui.menu_item("Selection Filter") {
-                *selection_open = true;
+                workspace.selection_open = true;
             }
         });
     });

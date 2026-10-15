@@ -106,8 +106,9 @@ fn draw_body_row(ui: &Ui, body: &crate::GuiModelBody, selected: &mut Vec<GuiShel
     ui.text(format!("{} — {} faces", body.name, body.faces));
 }
 
-pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>) {
+pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool) {
     ui.window("Command")
+        .opened(open)
         .size([360., 130.], Condition::FirstUseEver)
         .build(|| {
             ui.text("Command");
