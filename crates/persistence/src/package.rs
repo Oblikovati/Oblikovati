@@ -13,6 +13,7 @@ mod container;
 mod copy_metadata;
 mod empty;
 mod interests;
+mod named_views;
 mod parameters;
 mod properties;
 mod resource_edit;
