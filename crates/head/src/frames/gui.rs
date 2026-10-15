@@ -27,8 +27,8 @@ pub(super) fn advance_gui(
         window.acknowledge_gui_parameter(action, result.map(|_| ()))?;
     }
     for action in &update.actions {
-        update.changed |= owner.apply_gui_shell_action(*action)?;
-        if let Some(event) = action_event(*action) {
+        update.changed |= owner.apply_gui_shell_action(action.clone())?;
+        if let Some(event) = action_event(action.clone()) {
             update.changed |= dispatch_frame_input(window, owner, &event)?;
         }
     }
