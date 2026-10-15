@@ -36,6 +36,8 @@ pub struct GuiFrameEngine {
     atlas: GuiAtlas,
     parameter_panel: crate::parameter_panel::ParameterPanel,
     workspace_tab: workspace_shell::RibbonTab,
+    preferences_open: bool,
+    selection_open: bool,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -49,6 +51,8 @@ impl GuiFrameEngine {
             atlas,
             parameter_panel,
             workspace_tab: Default::default(),
+            preferences_open: false,
+            selection_open: false,
         })
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
@@ -69,6 +73,8 @@ impl GuiFrameEngine {
             &mut self.context,
             &mut self.parameter_panel,
             &mut self.workspace_tab,
+            &mut self.preferences_open,
+            &mut self.selection_open,
             request,
         )
     }
@@ -178,6 +184,8 @@ fn draw_controls(
     context: &mut Context,
     parameters: &mut crate::parameter_panel::ParameterPanel,
     workspace_tab: &mut workspace_shell::RibbonTab,
+    preferences_open: &mut bool,
+    selection_open: &mut bool,
     request: &GuiFrameRequest,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
@@ -190,6 +198,8 @@ fn draw_controls(
         &mut selected,
         parameters,
         workspace_tab,
+        preferences_open,
+        selection_open,
     );
     let parameter_actions = parameters.draw(ui);
     let snapshot = capture_frame(context.render(), request.extent)?;

@@ -11,6 +11,7 @@ pub(crate) enum RibbonTab {
     View,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn draw(
     ui: &Ui,
     state: &GuiCommandState,
@@ -18,12 +19,31 @@ pub(crate) fn draw(
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
     active_tab: &mut RibbonTab,
+    preferences_open: &mut bool,
+    selection_open: &mut bool,
 ) {
     ui.dockspace_over_main_viewport();
-    draw_menu_bar(ui, state, selected, parameters);
-    draw_ribbon(ui, state, selected, parameters, active_tab);
+    draw_menu_bar(
+        ui,
+        state,
+        selected,
+        parameters,
+        preferences_open,
+        selection_open,
+    );
+    draw_ribbon(
+        ui,
+        state,
+        selected,
+        parameters,
+        active_tab,
+        preferences_open,
+        selection_open,
+    );
     draw_model_browser(ui, state.model_tree.as_ref());
     draw_command_window(ui, status);
+    draw_preferences(ui, preferences_open);
+    draw_selection_filter(ui, selection_open);
 }
 
 fn draw_menu_bar(
@@ -31,6 +51,8 @@ fn draw_menu_bar(
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
+    preferences_open: &mut bool,
+    selection_open: &mut bool,
 ) {
     ui.main_menu_bar(|| {
         ui.menu("File", || {
@@ -59,6 +81,12 @@ fn draw_menu_bar(
             if ui.menu_item("Parameters") {
                 parameters.set_open(true);
             }
+            if ui.menu_item("Preferences") {
+                *preferences_open = true;
+            }
+            if ui.menu_item("Selection Filter") {
+                *selection_open = true;
+            }
         });
     });
 }
@@ -69,6 +97,8 @@ fn draw_ribbon(
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
     active_tab: &mut RibbonTab,
+    preferences_open: &mut bool,
+    selection_open: &mut bool,
 ) {
     ui.window("Ribbon")
         .position([0., 20.], Condition::Always)
@@ -82,7 +112,14 @@ fn draw_ribbon(
                 RibbonTab::Part => draw_part_tab(ui, state, selected),
                 RibbonTab::Sketch => draw_sketch_tab(ui, state, selected),
                 RibbonTab::Model => draw_model_tab(ui, state, selected),
-                RibbonTab::View => draw_view_tab(ui, state, selected, parameters),
+                RibbonTab::View => draw_view_tab(
+                    ui,
+                    state,
+                    selected,
+                    parameters,
+                    preferences_open,
+                    selection_open,
+                ),
             }
         });
 }
@@ -123,11 +160,47 @@ fn draw_view_tab(
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     parameters: &mut crate::parameter_panel::ParameterPanel,
+    preferences_open: &mut bool,
+    selection_open: &mut bool,
 ) {
     ribbon_action(ui, "Home", GuiShellAction::Home, state, selected);
     if ui.button("Parameters") {
         parameters.set_open(true);
     }
+    if ui.button("Preferences") {
+        *preferences_open = true;
+    }
+    if ui.button("Selection Filter") {
+        *selection_open = true;
+    }
+}
+
+fn draw_preferences(ui: &Ui, open: &mut bool) {
+    ui.window("Preferences")
+        .opened(open)
+        .size([360., 240.], Condition::FirstUseEver)
+        .build(|| {
+            ui.text("Appearance");
+            ui.separator();
+            ui.text(
+                "Theme and display settings will use the document-independent desktop preferences.",
+            );
+        });
+}
+fn draw_selection_filter(ui: &Ui, open: &mut bool) {
+    ui.window("Selection Filter")
+        .opened(open)
+        .size([260., 220.], Condition::FirstUseEver)
+        .build(|| {
+            let mut bodies = true;
+            let mut faces = true;
+            let mut edges = true;
+            let mut vertices = true;
+            ui.checkbox("Bodies", &mut bodies);
+            ui.checkbox("Faces", &mut faces);
+            ui.checkbox("Edges", &mut edges);
+            ui.checkbox("Vertices", &mut vertices);
+        });
 }
 
 fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {
