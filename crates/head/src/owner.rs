@@ -106,6 +106,7 @@ fn gui_model_tree(
                 )
             })?;
             Ok(oblikovati_gui::GuiModelBody {
+                index: body.index,
                 name: body.name,
                 visible: body.visible,
                 faces,
@@ -403,6 +404,16 @@ impl<
             oblikovati_api::client::Client::new(self.document_host())
                 .documents()
                 .activate(&oblikovati_api::wire::ActivateDocumentArgs { id })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        if let oblikovati_gui::GuiShellAction::SetBodyVisible { index, visible } = action {
+            oblikovati_api::client::Client::new(self.document_host())
+                .body()
+                .set_visible(&oblikovati_api::wire::BodySetVisibleArgs {
+                    body_index: index,
+                    visible,
+                })
                 .map_err(|cause| cause.to_string())?;
             return Ok(true);
         }

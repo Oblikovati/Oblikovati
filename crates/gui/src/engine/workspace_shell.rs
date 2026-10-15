@@ -83,7 +83,7 @@ pub(crate) fn draw(
     );
     draw_ribbon(ui, state, selected, parameters, workspace);
     workspace_panels::draw_document_tabs(ui, &state.documents, selected);
-    workspace_panels::draw_model_browser(ui, state.model_tree.as_ref());
+    workspace_panels::draw_model_browser(ui, state.model_tree.as_ref(), selected);
     workspace_panels::draw_command_window(ui, status);
     workspace_panels::draw_status_bar(ui, status);
     draw_preferences(
@@ -557,6 +557,7 @@ fn icon_for_action(action: GuiShellAction) -> &'static str {
         GuiShellAction::Extrude => "extrude",
         GuiShellAction::ActivateDocument(_) => "view-new",
         GuiShellAction::CloseDocument(_) => "close",
+        GuiShellAction::SetBodyVisible { .. } => "visibility",
         GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
         | GuiShellAction::SetGridMajorEvery(_)

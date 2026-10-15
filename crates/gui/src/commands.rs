@@ -11,6 +11,7 @@ pub enum GuiShellAction {
     Extrude,
     ActivateDocument(u64),
     CloseDocument(u64),
+    SetBodyVisible { index: i64, visible: bool },
     SetGridSpacingCm(f64),
     SetGridVisible(bool),
     SetGridMajorEvery(i64),
@@ -46,6 +47,7 @@ pub struct GuiModelFeature {
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelBody {
+    pub index: i64,
     pub name: String,
     pub visible: bool,
     pub faces: usize,
@@ -106,6 +108,7 @@ impl GuiShellAction {
             | Self::Extrude
             | Self::ActivateDocument(_)
             | Self::CloseDocument(_)
+            | Self::SetBodyVisible { .. }
             | Self::SetGridSpacingCm(_)
             | Self::SetGridVisible(_)
             | Self::SetGridMajorEvery(_)

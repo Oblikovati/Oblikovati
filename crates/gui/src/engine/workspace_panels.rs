@@ -59,7 +59,11 @@ fn document_tab_label(document: &crate::GuiDocumentTab) -> String {
     format!("{}{dirty}###document-{}", document.name, document.id)
 }
 
-pub(super) fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {
+pub(super) fn draw_model_browser(
+    ui: &Ui,
+    tree: Option<&crate::GuiModelTree>,
+    selected: &mut Vec<GuiShellAction>,
+) {
     ui.window("Model")
         .size([280., 420.], Condition::FirstUseEver)
         .build(|| {
@@ -83,13 +87,21 @@ pub(super) fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {
             }
             ui.bullet_text(format!("Bodies ({})", tree.bodies.len()));
             for body in &tree.bodies {
-                let visibility = if body.visible { "visible" } else { "hidden" };
-                ui.text(format!(
-                    "  {} — {} faces, {}",
-                    body.name, body.faces, visibility
-                ));
+                draw_body_row(ui, body, selected);
             }
         });
+}
+
+fn draw_body_row(ui: &Ui, body: &crate::GuiModelBody, selected: &mut Vec<GuiShellAction>) {
+    let mut visible = body.visible;
+    if ui.checkbox(format!("##body-visible-{}", body.index), &mut visible) {
+        selected.push(GuiShellAction::SetBodyVisible {
+            index: body.index,
+            visible,
+        });
+    }
+    ui.same_line();
+    ui.text(format!("{} — {} faces", body.name, body.faces));
 }
 
 pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>) {

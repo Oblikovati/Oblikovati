@@ -57,6 +57,7 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         | GuiShellAction::Extrude
         | GuiShellAction::ActivateDocument(_)
         | GuiShellAction::CloseDocument(_)
+        | GuiShellAction::SetBodyVisible { .. }
         | GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
         | GuiShellAction::SetGridMajorEvery(_)
