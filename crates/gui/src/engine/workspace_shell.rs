@@ -65,6 +65,7 @@ pub(crate) fn draw(
     );
     draw_model_browser(ui, state.model_tree.as_ref());
     draw_command_window(ui, status);
+    draw_status_bar(ui, status);
     draw_preferences(ui, &mut workspace.preferences_open);
     draw_selection_filter(
         ui,
@@ -200,6 +201,17 @@ fn draw_view_tab(
     if ui.button("Selection Filter") {
         *selection_open = true;
     }
+}
+
+fn draw_status_bar(ui: &Ui, status: Option<&str>) {
+    let display = ui.io().display_size;
+    ui.window("Status")
+        .position([0., display[1] - 28.], Condition::Always)
+        .size([display[0], 28.], Condition::Always)
+        .title_bar(false)
+        .movable(false)
+        .resizable(false)
+        .build(|| ui.text(status.unwrap_or("Press F1 for more help")));
 }
 
 fn draw_preferences(ui: &Ui, open: &mut bool) {
