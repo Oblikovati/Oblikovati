@@ -359,3 +359,27 @@ fn part_analysis_uses_assigned_density_and_validates_requests() {
             .is_err()
     );
 }
+
+#[test]
+fn model_browser_state_names_each_exact_body() {
+    let (mut owner, _) = owner();
+    open_prism(&mut owner, false);
+    let expected = Client::new(owner.document_host())
+        .body()
+        .list(&oblikovati_api::json::EmptyObject {})
+        .unwrap()
+        .bodies
+        .unwrap_or_default();
+    let actual = owner
+        .gui_command_state()
+        .unwrap()
+        .model_tree
+        .unwrap()
+        .bodies;
+    assert_eq!(actual.len(), expected.len());
+    for (actual, expected) in actual.iter().zip(expected) {
+        assert_eq!(actual.name, expected.name);
+        assert_eq!(actual.visible, expected.visible);
+        assert_eq!(actual.faces, usize::try_from(expected.faces).unwrap());
+    }
+}

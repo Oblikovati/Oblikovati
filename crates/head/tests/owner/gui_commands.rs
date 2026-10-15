@@ -129,7 +129,17 @@ fn gui_model_browser_state_projects_the_typed_model_tree() {
     assert_eq!(actual.document, expected.document);
     assert_eq!(actual.parameters, expected.parameters.unwrap_or_default());
     assert_eq!(actual.sketches, usize::try_from(expected.sketches).unwrap());
-    assert_eq!(actual.bodies, usize::try_from(expected.bodies).unwrap());
+    let expected_bodies = Client::new(owner.document_host())
+        .body()
+        .list(&oblikovati_api::json::EmptyObject {})
+        .unwrap()
+        .bodies
+        .unwrap_or_default();
+    assert_eq!(
+        actual.bodies.len(),
+        usize::try_from(expected.bodies).unwrap()
+    );
+    assert_eq!(actual.bodies.len(), expected_bodies.len());
     let expected_features = expected.features.unwrap_or_default();
     assert_eq!(actual.features.len(), expected_features.len());
     for (actual, expected) in actual.features.iter().zip(expected_features) {

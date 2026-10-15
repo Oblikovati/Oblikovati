@@ -27,7 +27,7 @@ mod engine;
 mod input;
 mod snapshot;
 pub use commands::{
-    GuiCommandState, GuiDocumentTab, GuiModelFeature, GuiModelTree, GuiShellAction,
+    GuiCommandState, GuiDocumentTab, GuiModelBody, GuiModelFeature, GuiModelTree, GuiShellAction,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

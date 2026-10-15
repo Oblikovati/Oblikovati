@@ -292,7 +292,14 @@ fn draw_model_browser(ui: &Ui, tree: Option<&crate::GuiModelTree>) {
                     feature.name, feature.kind, feature.health
                 ));
             }
-            ui.bullet_text(format!("Bodies ({})", tree.bodies));
+            ui.bullet_text(format!("Bodies ({})", tree.bodies.len()));
+            for body in &tree.bodies {
+                let visibility = if body.visible { "visible" } else { "hidden" };
+                ui.text(format!(
+                    "  {} — {} faces, {}",
+                    body.name, body.faces, visibility
+                ));
+            }
         });
 }
 

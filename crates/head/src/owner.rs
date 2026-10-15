@@ -59,6 +59,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
 
 fn gui_model_tree(
     tree: oblikovati_api::wire::ModelTreeResult,
+    bodies: oblikovati_api::wire::BodyListResult,
 ) -> Result<oblikovati_gui::GuiModelTree, String> {
     let sketches = usize::try_from(tree.sketches).map_err(|cause| {
         format!(
@@ -66,12 +67,37 @@ fn gui_model_tree(
             tree.sketches
         )
     })?;
-    let bodies = usize::try_from(tree.bodies).map_err(|cause| {
+    let expected_bodies = usize::try_from(tree.bodies).map_err(|cause| {
         format!(
             "model.tree bodies {}: expected a non-negative count: {cause}",
             tree.bodies
         )
     })?;
+    let bodies = bodies
+        .bodies
+        .unwrap_or_default()
+        .into_iter()
+        .map(|body| {
+            let faces = usize::try_from(body.faces).map_err(|cause| {
+                format!(
+                    "body {} faces {}: expected a non-negative count: {cause}",
+                    body.name, body.faces
+                )
+            })?;
+            Ok(oblikovati_gui::GuiModelBody {
+                name: body.name,
+                visible: body.visible,
+                faces,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    if bodies.len() != expected_bodies {
+        return Err(format!(
+            "model.tree bodies {}: expected body.list count {}",
+            expected_bodies,
+            bodies.len()
+        ));
+    }
     let features = tree
         .features
         .unwrap_or_default()
@@ -235,12 +261,16 @@ impl<
             .model()
             .tree()
             .map_err(|cause| cause.to_string())?;
+        let bodies = oblikovati_api::client::Client::new(self.document_host())
+            .body()
+            .list(&oblikovati_api::json::EmptyObject {})
+            .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
             undo_label,
             redo_label,
             transaction_open,
             documents,
-            model_tree: Some(gui_model_tree(tree)?),
+            model_tree: Some(gui_model_tree(tree, bodies)?),
         })
     }
     fn gui_parameter_snapshot(

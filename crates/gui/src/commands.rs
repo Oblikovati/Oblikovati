@@ -26,12 +26,19 @@ pub struct GuiModelFeature {
     pub health: String,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiModelBody {
+    pub name: String,
+    pub visible: bool,
+    pub faces: usize,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelTree {
     pub document: String,
     pub parameters: Vec<String>,
     pub sketches: usize,
     pub features: Vec<GuiModelFeature>,
-    pub bodies: usize,
+    pub bodies: Vec<GuiModelBody>,
 }
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
