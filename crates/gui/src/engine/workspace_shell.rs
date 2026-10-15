@@ -129,6 +129,8 @@ fn draw_menu_bar(
             if ui.menu_item("Parameters") {
                 parameters.set_open(true);
             }
+        });
+        ui.menu("Tools", || {
             if ui.menu_item("Preferences") {
                 *preferences_open = true;
             }
