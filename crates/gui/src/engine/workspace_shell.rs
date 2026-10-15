@@ -28,19 +28,38 @@ impl WorkspaceShellState {
 }
 
 struct SelectionFilterState {
-    bodies: bool,
-    faces: bool,
-    edges: bool,
-    vertices: bool,
+    entries: Vec<SelectionFilterEntry>,
+}
+
+struct SelectionFilterEntry {
+    label: &'static str,
+    enabled: bool,
 }
 
 impl Default for SelectionFilterState {
     fn default() -> Self {
+        let labels = [
+            "Work points",
+            "Work axes",
+            "Point cloud points",
+            "Vertices",
+            "Edges",
+            "Occurrences",
+            "Bodies",
+            "Faces",
+            "Mesh faces",
+            "Work planes",
+            "Profiles",
+            "Sketch entities",
+        ];
         Self {
-            bodies: true,
-            faces: true,
-            edges: true,
-            vertices: true,
+            entries: labels
+                .into_iter()
+                .map(|label| SelectionFilterEntry {
+                    label,
+                    enabled: true,
+                })
+                .collect(),
         }
     }
 }
@@ -330,12 +349,27 @@ fn draw_preferences(ui: &Ui, open: &mut bool) {
 fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterState) {
     ui.window("Selection Filter")
         .opened(open)
-        .size([260., 220.], Condition::FirstUseEver)
+        .size([300., 360.], Condition::FirstUseEver)
         .build(|| {
-            ui.checkbox("Bodies", &mut filter.bodies);
-            ui.checkbox("Faces", &mut filter.faces);
-            ui.checkbox("Edges", &mut filter.edges);
-            ui.checkbox("Vertices", &mut filter.vertices);
+            ui.text("Tick to allow picking. Earlier rows have higher priority.");
+            ui.separator();
+            for entry in &mut filter.entries {
+                ui.checkbox(entry.label, &mut entry.enabled);
+            }
+            ui.separator();
+            if ui.button("Select All") {
+                filter
+                    .entries
+                    .iter_mut()
+                    .for_each(|entry| entry.enabled = true);
+            }
+            ui.same_line();
+            if ui.button("Deselect All") {
+                filter
+                    .entries
+                    .iter_mut()
+                    .for_each(|entry| entry.enabled = false);
+            }
         });
 }
 
@@ -433,5 +467,19 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
         "Feature.Extrude" => Some(GuiShellAction::Extrude),
         "View.Home" => Some(GuiShellAction::Home),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SelectionFilterState;
+
+    #[test]
+    fn selection_filter_defaults_to_the_host_pick_order() {
+        let filter = SelectionFilterState::default();
+        assert_eq!(filter.entries.len(), 12);
+        assert!(filter.entries.iter().all(|entry| entry.enabled));
+        assert_eq!(filter.entries[0].label, "Work points");
+        assert_eq!(filter.entries[11].label, "Sketch entities");
     }
 }
