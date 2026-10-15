@@ -20,7 +20,6 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) units_open: bool,
     pub(crate) model_browser_open: bool,
     pub(crate) command_panel_open: bool,
-    selection_filter: SelectionFilterState,
     history_documents: Vec<u64>,
     icons: crate::icon_assets::GuiIconCache,
 }
@@ -35,7 +34,6 @@ impl Default for WorkspaceShellState {
             units_open: false,
             model_browser_open: true,
             command_panel_open: true,
-            selection_filter: Default::default(),
             history_documents: Vec::new(),
             icons: Default::default(),
         }
@@ -44,53 +42,6 @@ impl Default for WorkspaceShellState {
 impl WorkspaceShellState {
     pub(crate) fn textures(&self) -> &[crate::GuiTexture] {
         self.icons.textures()
-    }
-}
-
-struct SelectionFilterState {
-    entries: Vec<SelectionFilterEntry>,
-}
-impl SelectionFilterState {
-    fn move_entry(&mut self, index: usize, offset: isize) {
-        let Some(target) = index.checked_add_signed(offset) else {
-            return;
-        };
-        if target < self.entries.len() {
-            self.entries.swap(index, target);
-        }
-    }
-}
-
-struct SelectionFilterEntry {
-    label: &'static str,
-    enabled: bool,
-}
-
-impl Default for SelectionFilterState {
-    fn default() -> Self {
-        let labels = [
-            "Work points",
-            "Work axes",
-            "Point cloud points",
-            "Vertices",
-            "Edges",
-            "Occurrences",
-            "Bodies",
-            "Faces",
-            "Mesh faces",
-            "Work planes",
-            "Profiles",
-            "Sketch entities",
-        ];
-        Self {
-            entries: labels
-                .into_iter()
-                .map(|label| SelectionFilterEntry {
-                    label,
-                    enabled: true,
-                })
-                .collect(),
-        }
     }
 }
 
@@ -127,7 +78,8 @@ pub(crate) fn draw(
     draw_selection_filter(
         ui,
         &mut workspace.selection_open,
-        &mut workspace.selection_filter,
+        state.selection_filter.as_ref(),
+        selected,
     );
     draw_history_browser(
         ui,
@@ -604,7 +556,12 @@ fn preference_tab(ui: &Ui, name: &str, heading: &str, detail: &str) {
     ui.text_wrapped(detail);
 }
 
-fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterState) {
+fn draw_selection_filter(
+    ui: &Ui,
+    open: &mut bool,
+    filter: Option<&crate::GuiSelectionFilter>,
+    selected: &mut Vec<GuiShellAction>,
+) {
     if !*open {
         return;
     }
@@ -614,38 +571,62 @@ fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterS
         .build(|| {
             ui.text("Tick to allow picking. Earlier rows have higher priority.");
             ui.separator();
-            for index in 0..filter.entries.len() {
-                draw_selection_filter_entry(ui, filter, index);
+            let Some(filter) = filter else {
+                ui.text("No active document");
+                return;
+            };
+            for (index, entry) in filter.entries.iter().enumerate() {
+                draw_selection_filter_entry(ui, entry, index, selected);
             }
             ui.separator();
             if ui.button("Select All") {
-                filter
-                    .entries
-                    .iter_mut()
-                    .for_each(|entry| entry.enabled = true);
+                for entry in &filter.entries {
+                    selected.push(GuiShellAction::SetSelectionEnabled {
+                        kind: entry.kind.clone(),
+                        enabled: true,
+                    });
+                }
             }
             ui.same_line();
             if ui.button("Deselect All") {
-                filter
-                    .entries
-                    .iter_mut()
-                    .for_each(|entry| entry.enabled = false);
+                for entry in &filter.entries {
+                    selected.push(GuiShellAction::SetSelectionEnabled {
+                        kind: entry.kind.clone(),
+                        enabled: false,
+                    });
+                }
             }
         });
 }
 
-fn draw_selection_filter_entry(ui: &Ui, filter: &mut SelectionFilterState, index: usize) {
-    let entry = &mut filter.entries[index];
-    ui.checkbox(entry.label, &mut entry.enabled);
+fn draw_selection_filter_entry(
+    ui: &Ui,
+    entry: &crate::GuiSelectionFilterEntry,
+    index: usize,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let mut enabled = entry.enabled;
+    if ui.checkbox(&entry.label, &mut enabled) {
+        selected.push(GuiShellAction::SetSelectionEnabled {
+            kind: entry.kind.clone(),
+            enabled,
+        });
+    }
     ui.same_line();
     let move_up = ui.small_button(format!("↑##selection-up-{index}"));
     ui.same_line();
     let move_down = ui.small_button(format!("↓##selection-down-{index}"));
     if move_up {
-        filter.move_entry(index, -1);
+        selected.push(GuiShellAction::MoveSelectionKind {
+            from: index,
+            to: index - 1,
+        });
     }
     if move_down {
-        filter.move_entry(index, 1);
+        selected.push(GuiShellAction::MoveSelectionKind {
+            from: index,
+            to: index + 1,
+        });
     }
 }
 
@@ -968,6 +949,9 @@ fn icon_for_action(action: &GuiShellAction) -> &'static str {
         | GuiShellAction::SetAnglePrecision(_)
         | GuiShellAction::SetLengthFormat(_) => "settings",
         GuiShellAction::SetBodyVisible { .. } => "visibility",
+        GuiShellAction::SetSelectionEnabled { .. } | GuiShellAction::MoveSelectionKind { .. } => {
+            "selection-filter"
+        }
         GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
         | GuiShellAction::SetGridMajorEvery(_)
@@ -1027,28 +1011,8 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 
 #[cfg(test)]
 mod tests {
-    use super::{SelectionFilterState, history_entry_label, set_history_document};
+    use super::{history_entry_label, set_history_document};
     use crate::GuiHistoryEntry;
-
-    #[test]
-    fn selection_filter_defaults_to_the_host_pick_order() {
-        let filter = SelectionFilterState::default();
-        assert_eq!(filter.entries.len(), 12);
-        assert!(filter.entries.iter().all(|entry| entry.enabled));
-        assert_eq!(filter.entries[0].label, "Work points");
-        assert_eq!(filter.entries[11].label, "Sketch entities");
-    }
-
-    #[test]
-    fn selection_filter_moves_entries_without_changing_their_enabled_state() {
-        let mut filter = SelectionFilterState::default();
-        filter.entries[1].enabled = false;
-        filter.move_entry(1, -1);
-        assert_eq!(filter.entries[0].label, "Work axes");
-        assert!(!filter.entries[0].enabled);
-        filter.move_entry(0, -1);
-        assert_eq!(filter.entries[0].label, "Work axes");
-    }
 
     #[test]
     fn history_picker_replaces_a_document_and_marks_saved_entries() {

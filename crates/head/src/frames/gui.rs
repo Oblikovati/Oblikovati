@@ -67,6 +67,8 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         | GuiShellAction::SetAnglePrecision(_)
         | GuiShellAction::SetLengthFormat(_)
         | GuiShellAction::SetBodyVisible { .. }
+        | GuiShellAction::SetSelectionEnabled { .. }
+        | GuiShellAction::MoveSelectionKind { .. }
         | GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
         | GuiShellAction::SetGridMajorEvery(_)

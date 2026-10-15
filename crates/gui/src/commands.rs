@@ -21,6 +21,8 @@ pub enum GuiShellAction {
     SetAnglePrecision(i64),
     SetLengthFormat(String),
     SetBodyVisible { index: i64, visible: bool },
+    SetSelectionEnabled { kind: String, enabled: bool },
+    MoveSelectionKind { from: usize, to: usize },
     SetGridSpacingCm(f64),
     SetGridVisible(bool),
     SetGridMajorEvery(i64),
@@ -106,6 +108,16 @@ pub struct GuiSketchPreferences {
     pub auto_project_origin: bool,
     pub suppress_format_overrides: bool,
 }
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiSelectionFilterEntry {
+    pub kind: String,
+    pub label: String,
+    pub enabled: bool,
+}
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiSelectionFilter {
+    pub entries: Vec<GuiSelectionFilterEntry>,
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelTree {
@@ -127,6 +139,7 @@ pub struct GuiCommandState {
     pub ribbon_tabs: Vec<GuiRibbonTab>,
     pub model_tree: Option<GuiModelTree>,
     pub sketch_preferences: Option<GuiSketchPreferences>,
+    pub selection_filter: Option<GuiSelectionFilter>,
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -164,6 +177,8 @@ impl GuiShellAction {
             | Self::SetAnglePrecision(_)
             | Self::SetLengthFormat(_)
             | Self::SetBodyVisible { .. }
+            | Self::SetSelectionEnabled { .. }
+            | Self::MoveSelectionKind { .. }
             | Self::SetGridSpacingCm(_)
             | Self::SetGridVisible(_)
             | Self::SetGridMajorEvery(_)

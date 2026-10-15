@@ -74,6 +74,22 @@ fn create(owner: &mut TestOwner, awake: &Receiver<()>) -> u64 {
             .id
     })
 }
+
+#[test]
+fn selection_filter_names_round_trip_to_the_host_kinds() {
+    let filter = AmbientSelectionFilter::default();
+    let view = gui_selection_filter(&filter);
+    assert_eq!(view.entries.len(), 12);
+    assert!(
+        view.entries
+            .iter()
+            .all(|entry| selection_kind(&entry.kind).is_ok())
+    );
+    assert_eq!(
+        selection_kind("not-a-kind").unwrap_err(),
+        "selection kind \"not-a-kind\": expected a filterable desktop kind"
+    );
+}
 #[test]
 fn typed_workers_create_save_reopen_and_close_through_the_document_owner() {
     let (mut owner, awake) = owner();

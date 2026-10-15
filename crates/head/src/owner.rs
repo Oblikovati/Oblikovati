@@ -9,7 +9,12 @@ use oblikovati_model::{
     identity::GuidSource,
 };
 use oblikovati_persistence::file_access::DocumentFiles;
-use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+use oblikovati_session::{
+    TransactionObserver,
+    files::FileWorkspace,
+    selection::{AmbientSelectionFilter, SelectionKind},
+    workspace::WorkspaceObserver,
+};
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
@@ -59,6 +64,65 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     cube_rectangle: Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
     sketch_preferences: Box<dyn SketchPreferenceAccess>,
+    selection_filter: AmbientSelectionFilter,
+}
+
+fn selection_kind_name(kind: SelectionKind) -> &'static str {
+    match kind {
+        SelectionKind::WorkPoint => "workPoint",
+        SelectionKind::WorkAxis => "workAxis",
+        SelectionKind::PointCloudPoint => "pointCloudPoint",
+        SelectionKind::Vertex => "vertex",
+        SelectionKind::Edge => "edge",
+        SelectionKind::Occurrence => "occurrence",
+        SelectionKind::Body => "body",
+        SelectionKind::Face => "face",
+        SelectionKind::MeshFace => "meshFace",
+        SelectionKind::WorkPlane => "workPlane",
+        SelectionKind::Profile => "profile",
+        SelectionKind::SketchEntity => "sketchEntity",
+        _ => "unsupported",
+    }
+}
+
+fn gui_selection_filter(filter: &AmbientSelectionFilter) -> oblikovati_gui::GuiSelectionFilter {
+    oblikovati_gui::GuiSelectionFilter {
+        entries: filter
+            .order()
+            .iter()
+            .map(|kind| {
+                let name = selection_kind_name(*kind);
+                oblikovati_gui::GuiSelectionFilterEntry {
+                    kind: name.into(),
+                    label: name.into(),
+                    enabled: filter.enabled(*kind),
+                }
+            })
+            .collect(),
+    }
+}
+
+fn selection_kind(value: &str) -> Result<SelectionKind, String> {
+    let kind = match value {
+        "workPoint" => SelectionKind::WorkPoint,
+        "workAxis" => SelectionKind::WorkAxis,
+        "pointCloudPoint" => SelectionKind::PointCloudPoint,
+        "vertex" => SelectionKind::Vertex,
+        "edge" => SelectionKind::Edge,
+        "occurrence" => SelectionKind::Occurrence,
+        "body" => SelectionKind::Body,
+        "face" => SelectionKind::Face,
+        "meshFace" => SelectionKind::MeshFace,
+        "workPlane" => SelectionKind::WorkPlane,
+        "profile" => SelectionKind::Profile,
+        "sketchEntity" => SelectionKind::SketchEntity,
+        _ => {
+            return Err(format!(
+                "selection kind {value:?}: expected a filterable desktop kind"
+            ));
+        }
+    };
+    Ok(kind)
 }
 
 /// Volatile sketch preferences for embedding hosts that do not own a preference file.
@@ -269,6 +333,7 @@ impl<
             cube_rectangle: None,
             sketch_edit: None,
             sketch_preferences,
+            selection_filter: Default::default(),
         }
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
@@ -436,6 +501,7 @@ impl<
             sketch_preferences: Some(gui_sketch_preferences(
                 self.sketch_preferences.sketch_options(),
             )),
+            selection_filter: Some(gui_selection_filter(&self.selection_filter)),
         })
     }
     fn gui_parameter_snapshot(
@@ -480,6 +546,15 @@ impl<
         &mut self,
         action: oblikovati_gui::GuiShellAction,
     ) -> Result<bool, String> {
+        if let oblikovati_gui::GuiShellAction::SetSelectionEnabled { kind, enabled } = &action {
+            self.selection_filter
+                .set_enabled(selection_kind(kind)?, *enabled);
+            return Ok(true);
+        }
+        if let oblikovati_gui::GuiShellAction::MoveSelectionKind { from, to } = action {
+            self.selection_filter.move_kind(from, to);
+            return Ok(true);
+        }
         if let oblikovati_gui::GuiShellAction::ActivateDocument(id) = &action {
             oblikovati_api::client::Client::new(self.document_host())
                 .documents()
