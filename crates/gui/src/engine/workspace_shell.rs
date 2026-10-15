@@ -126,9 +126,10 @@ fn draw_ribbon(
     parameters: &mut crate::parameter_panel::ParameterPanel,
     workspace: &mut WorkspaceShellState,
 ) {
+    let display = ui.io().display_size;
     ui.window("Ribbon")
         .position([0., 20.], Condition::Always)
-        .size([640., 92.], Condition::Always)
+        .size([display[0], 92.], Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -348,9 +349,10 @@ fn draw_document_tabs(
     if documents.is_empty() {
         return;
     }
+    let display = ui.io().display_size;
     ui.window("Documents")
         .position([0., 112.], Condition::Always)
-        .size([640., 30.], Condition::Always)
+        .size([display[0], 30.], Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)
