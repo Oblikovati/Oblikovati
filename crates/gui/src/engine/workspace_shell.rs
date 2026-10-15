@@ -175,6 +175,13 @@ fn draw_menu_bar(
         });
         ui.menu("View", || {
             menu_action(ui, "Home", GuiShellAction::Home, state, selected);
+            menu_action(
+                ui,
+                "Previous View",
+                GuiShellAction::PreviousView,
+                state,
+                selected,
+            );
             if ui.menu_item("Parameters") {
                 parameters.set_open(true);
             }
@@ -387,6 +394,14 @@ fn draw_view_tab(
         ui,
         "Home",
         GuiShellAction::Home,
+        state,
+        selected,
+        &mut workspace.icons,
+    );
+    ribbon_action(
+        ui,
+        "Previous View",
+        GuiShellAction::PreviousView,
         state,
         selected,
         &mut workspace.icons,
@@ -925,6 +940,7 @@ fn icon_for_action(action: &GuiShellAction) -> &'static str {
         GuiShellAction::Undo => "undo",
         GuiShellAction::Redo => "redo",
         GuiShellAction::Home => "home",
+        GuiShellAction::PreviousView => "home",
         GuiShellAction::SketchXY => "create-sketch",
         GuiShellAction::Rectangle => "rectangle",
         GuiShellAction::Extrude => "extrude",

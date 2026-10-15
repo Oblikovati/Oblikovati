@@ -149,6 +149,7 @@ fn gui_actions_use_existing_owner_and_camera_command_paths() {
         GuiShellAction::Undo,
         GuiShellAction::Redo,
         GuiShellAction::Home,
+        GuiShellAction::PreviousView,
     ];
     let mut window = FakeGuiWindow {
         packets: [HeadGuiUpdate {
@@ -165,6 +166,7 @@ fn gui_actions_use_existing_owner_and_camera_command_paths() {
         ViewportKey::Undo,
         ViewportKey::Redo,
         ViewportKey::Home,
+        ViewportKey::Previous,
     ]
     .map(|key| ViewportEvent::Input(ViewportInput::Key { key, pressed: true }))
     .into();

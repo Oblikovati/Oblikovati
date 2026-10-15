@@ -5,6 +5,7 @@ pub enum GuiShellAction {
     Undo,
     Redo,
     Home,
+    PreviousView,
     NewPart,
     SketchXY,
     Rectangle,
@@ -147,6 +148,7 @@ impl GuiShellAction {
             Self::Redo => state.redo_label.is_some(),
             Self::Save
             | Self::Home
+            | Self::PreviousView
             | Self::NewPart
             | Self::SketchXY
             | Self::Rectangle

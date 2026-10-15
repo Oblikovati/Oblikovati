@@ -51,6 +51,7 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         GuiShellAction::Undo => ViewportKey::Undo,
         GuiShellAction::Redo => ViewportKey::Redo,
         GuiShellAction::Home => ViewportKey::Home,
+        GuiShellAction::PreviousView => ViewportKey::Previous,
         GuiShellAction::NewPart
         | GuiShellAction::SketchXY
         | GuiShellAction::Rectangle
