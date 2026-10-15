@@ -63,8 +63,10 @@ pub(super) fn draw_model_browser(
     ui: &Ui,
     tree: Option<&crate::GuiModelTree>,
     selected: &mut Vec<GuiShellAction>,
+    open: &mut bool,
 ) {
     ui.window("Model")
+        .opened(open)
         .size([280., 420.], Condition::FirstUseEver)
         .build(|| {
             let Some(tree) = tree else {

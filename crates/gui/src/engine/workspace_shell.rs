@@ -12,15 +12,27 @@ pub(crate) enum RibbonTab {
     View,
 }
 
-#[derive(Default)]
 pub(crate) struct WorkspaceShellState {
     pub(crate) active_tab: RibbonTab,
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
+    pub(crate) model_browser_open: bool,
     selection_filter: SelectionFilterState,
     icons: crate::icon_assets::GuiIconCache,
 }
 
+impl Default for WorkspaceShellState {
+    fn default() -> Self {
+        Self {
+            active_tab: Default::default(),
+            preferences_open: false,
+            selection_open: false,
+            model_browser_open: true,
+            selection_filter: Default::default(),
+            icons: Default::default(),
+        }
+    }
+}
 impl WorkspaceShellState {
     pub(crate) fn textures(&self) -> &[crate::GuiTexture] {
         self.icons.textures()
@@ -90,10 +102,18 @@ pub(crate) fn draw(
         parameters,
         &mut workspace.preferences_open,
         &mut workspace.selection_open,
+        &mut workspace.model_browser_open,
     );
     draw_ribbon(ui, state, selected, parameters, workspace);
     workspace_panels::draw_document_tabs(ui, &state.documents, selected);
-    workspace_panels::draw_model_browser(ui, state.model_tree.as_ref(), selected);
+    if workspace.model_browser_open {
+        workspace_panels::draw_model_browser(
+            ui,
+            state.model_tree.as_ref(),
+            selected,
+            &mut workspace.model_browser_open,
+        );
+    }
     workspace_panels::draw_command_window(ui, status);
     workspace_panels::draw_status_bar(ui, status);
     draw_preferences(
@@ -116,6 +136,7 @@ fn draw_menu_bar(
     parameters: &mut crate::parameter_panel::ParameterPanel,
     preferences_open: &mut bool,
     selection_open: &mut bool,
+    model_browser_open: &mut bool,
 ) {
     ui.main_menu_bar(|| {
         ui.menu("File", || {
@@ -143,6 +164,13 @@ fn draw_menu_bar(
             menu_action(ui, "Home", GuiShellAction::Home, state, selected);
             if ui.menu_item("Parameters") {
                 parameters.set_open(true);
+            }
+            if ui
+                .menu_item_config("Model Browser")
+                .selected(*model_browser_open)
+                .build()
+            {
+                *model_browser_open = !*model_browser_open;
             }
         });
         ui.menu("Tools", || {
