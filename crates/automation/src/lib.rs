@@ -52,6 +52,7 @@ mod parameter_update;
 mod parameter_value;
 mod parameters;
 mod properties;
+mod ribbon;
 mod transactions;
 mod units;
 mod units_edit;
@@ -140,6 +141,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
             METHOD_SKETCH_GET_INFERENCE_OPTIONS => {
                 sketch_inference::query_inference_preferences(self.workspace)
             }
+            METHOD_RIBBON_LIST => encode(&ribbon::list()),
             METHOD_CLIENT_APPS_LIST => encode(&ListClientApplicationsResult {
                 clients: Some(self.workspace.connected_clients().entries().to_vec()),
             }),
