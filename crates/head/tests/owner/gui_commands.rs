@@ -78,7 +78,27 @@ fn verify_script_owner_command_state(mut owner: TestOwner) -> TestOwner {
 fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, first: u64) {
     let previous = owner.gui_command_state().unwrap();
     let second = create(owner, awake);
-    assert!(owner.gui_command_state().unwrap().model_tree.is_some());
+    let second_active = owner.gui_command_state().unwrap();
+    assert_eq!(second_active.documents.len(), 2);
+    assert!(
+        second_active
+            .documents
+            .iter()
+            .any(|tab| tab.id == second && tab.active)
+    );
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::ActivateDocument(first))
+            .unwrap()
+    );
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .documents
+            .iter()
+            .any(|tab| tab.id == first && tab.active)
+    );
     Client::new(owner.document_host())
         .documents()
         .close(&CloseDocumentArgs {

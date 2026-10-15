@@ -9,7 +9,16 @@ pub enum GuiShellAction {
     SketchXY,
     Rectangle,
     Extrude,
+    ActivateDocument(u64),
 }
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiDocumentTab {
+    pub id: u64,
+    pub name: String,
+    pub dirty: bool,
+    pub active: bool,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelFeature {
     pub name: String,
@@ -30,6 +39,7 @@ pub struct GuiCommandState {
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
     pub transaction_open: bool,
+    pub documents: Vec<GuiDocumentTab>,
     pub model_tree: Option<GuiModelTree>,
 }
 impl GuiCommandState {
@@ -55,7 +65,8 @@ impl GuiShellAction {
             | Self::NewPart
             | Self::SketchXY
             | Self::Rectangle
-            | Self::Extrude => true,
+            | Self::Extrude
+            | Self::ActivateDocument(_) => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

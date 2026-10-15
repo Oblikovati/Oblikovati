@@ -54,7 +54,8 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         GuiShellAction::NewPart
         | GuiShellAction::SketchXY
         | GuiShellAction::Rectangle
-        | GuiShellAction::Extrude => return None,
+        | GuiShellAction::Extrude
+        | GuiShellAction::ActivateDocument(_) => return None,
     };
     Some(ViewportEvent::Input(ViewportInput::Key {
         key,

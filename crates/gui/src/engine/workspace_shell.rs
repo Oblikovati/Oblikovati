@@ -63,6 +63,7 @@ pub(crate) fn draw(
         &mut workspace.preferences_open,
         &mut workspace.selection_open,
     );
+    draw_document_tabs(ui, &state.documents, selected);
     draw_model_browser(ui, state.model_tree.as_ref());
     draw_command_window(ui, status);
     draw_status_bar(ui, status);
@@ -235,6 +236,40 @@ fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterS
             ui.checkbox("Faces", &mut filter.faces);
             ui.checkbox("Edges", &mut filter.edges);
             ui.checkbox("Vertices", &mut filter.vertices);
+        });
+}
+
+fn draw_document_tabs(
+    ui: &Ui,
+    documents: &[crate::GuiDocumentTab],
+    selected: &mut Vec<GuiShellAction>,
+) {
+    if documents.is_empty() {
+        return;
+    }
+    ui.window("Documents")
+        .position([0., 112.], Condition::Always)
+        .size([640., 30.], Condition::Always)
+        .title_bar(false)
+        .movable(false)
+        .resizable(false)
+        .build(|| {
+            for document in documents {
+                let label = if document.dirty {
+                    format!("{} *##document-{}", document.name, document.id)
+                } else {
+                    format!("{}##document-{}", document.name, document.id)
+                };
+                if ui
+                    .selectable_config(&label)
+                    .selected(document.active)
+                    .build()
+                    && !document.active
+                {
+                    selected.push(GuiShellAction::ActivateDocument(document.id));
+                }
+                ui.same_line();
+            }
         });
 }
 

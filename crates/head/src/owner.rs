@@ -216,6 +216,21 @@ impl<
                 history.in_transaction(),
             )
         };
+        let documents = oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .list()
+            .map_err(|cause| cause.to_string())?
+            .documents
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|document| document.visible)
+            .map(|document| oblikovati_gui::GuiDocumentTab {
+                id: document.id,
+                name: document.name,
+                dirty: document.dirty,
+                active: document.active,
+            })
+            .collect();
         let tree = oblikovati_api::client::Client::new(self.document_host())
             .model()
             .tree()
@@ -224,6 +239,7 @@ impl<
             undo_label,
             redo_label,
             transaction_open,
+            documents,
             model_tree: Some(gui_model_tree(tree)?),
         })
     }
@@ -269,6 +285,13 @@ impl<
         &mut self,
         action: oblikovati_gui::GuiShellAction,
     ) -> Result<bool, String> {
+        if let oblikovati_gui::GuiShellAction::ActivateDocument(id) = action {
+            oblikovati_api::client::Client::new(self.document_host())
+                .documents()
+                .activate(&oblikovati_api::wire::ActivateDocumentArgs { id })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
         self.apply_cube_action(action)
     }
 
