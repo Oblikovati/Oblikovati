@@ -32,6 +32,7 @@ fn api_cube_rebuilds_through_history_storage_and_named_faces() {
     save_reopen_cube(&mut owner, document);
     assert_volume(&mut owner, 8_000.);
     assert_cube_topology(&mut owner);
+    assert_cube_face_properties(&owner);
 }
 
 fn author_cube(owner: &mut TestOwner) {
@@ -224,6 +225,34 @@ fn save_reopen_cube(owner: &mut TestOwner, document: u64) {
             ..Default::default()
         })
         .unwrap();
+}
+
+fn assert_cube_face_properties(owner: &TestOwner) {
+    let document = owner.documents().workspace().active_document().unwrap();
+    let workspace = owner.documents().workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let body = owner
+        .part_scenes
+        .current(session)
+        .unwrap()
+        .body(oblikovati_model::feature::FeatureId(1))
+        .unwrap();
+    let faces = published_keys(owner, document, oblikovati_model::feature::FeatureId(1))
+        .into_iter()
+        .filter(|key| face_key(key))
+        .collect::<Vec<_>>();
+    assert_eq!(faces.len(), 6);
+    for key in faces {
+        let face = body.face_report(session.history(), guid, &key).unwrap();
+        assert_eq!(face.loops, 1);
+        assert!((face.area - 4.).abs() < 1e-9);
+    }
+}
+
+fn face_key(key: &[u8]) -> bool {
+    oblikovati_model::identity::ReferenceEnvelope::decode(key)
+        .is_ok_and(|reference| reference.kind == 1)
 }
 
 fn assert_cube_topology(owner: &mut TestOwner) {
