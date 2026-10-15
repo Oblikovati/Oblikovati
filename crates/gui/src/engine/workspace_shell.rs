@@ -245,6 +245,9 @@ fn draw_ribbon(
                 .find(|tab| tab.name == ribbon_tab_name(workspace.active_tab))
             {
                 draw_host_controls(ui, &tab.controls, selected, &mut workspace.icons);
+                if matches!(workspace.active_tab, RibbonTab::View) {
+                    draw_view_window_controls(ui, parameters, workspace);
+                }
                 return;
             }
             match workspace.active_tab {
@@ -390,22 +393,15 @@ fn draw_view_tab(
     parameters: &mut crate::parameter_panel::ParameterPanel,
     workspace: &mut WorkspaceShellState,
 ) {
-    ribbon_action(
-        ui,
-        "Home",
-        GuiShellAction::Home,
-        state,
-        selected,
-        &mut workspace.icons,
-    );
-    ribbon_action(
-        ui,
-        "Previous View",
-        GuiShellAction::PreviousView,
-        state,
-        selected,
-        &mut workspace.icons,
-    );
+    draw_view_navigation_controls(ui, state, selected, &mut workspace.icons);
+    draw_view_window_controls(ui, parameters, workspace);
+}
+
+fn draw_view_window_controls(
+    ui: &Ui,
+    parameters: &mut crate::parameter_panel::ParameterPanel,
+    workspace: &mut WorkspaceShellState,
+) {
     if ui.button("Parameters") {
         parameters.set_open(true);
     }
@@ -421,6 +417,23 @@ fn draw_view_tab(
     if ui.button("Document Units") {
         workspace.units_open = true;
     }
+}
+
+fn draw_view_navigation_controls(
+    ui: &Ui,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    ribbon_action(ui, "Home", GuiShellAction::Home, state, selected, icons);
+    ribbon_action(
+        ui,
+        "Previous View",
+        GuiShellAction::PreviousView,
+        state,
+        selected,
+        icons,
+    );
 }
 
 fn draw_preferences(
