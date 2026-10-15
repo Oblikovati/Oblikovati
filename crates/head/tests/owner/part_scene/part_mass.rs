@@ -157,6 +157,16 @@ fn native_reference_keys_list_verified_face_keys_per_body() {
     );
 }
 #[test]
+fn native_reference_keys_of_an_empty_part_are_empty() {
+    let (mut owner, awake) = owner();
+    create(&mut owner, &awake);
+    let result = Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap();
+    assert_eq!(result.bodies, Some(Vec::new()));
+}
+#[test]
 fn requires_update_tracks_the_current_native_evaluation_generation() {
     let (mut empty_owner, awake) = owner();
     create(&mut empty_owner, &awake);
