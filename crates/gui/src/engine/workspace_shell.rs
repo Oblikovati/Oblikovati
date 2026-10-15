@@ -618,7 +618,7 @@ fn ribbon_action(
 ) {
     let disabled = ui.begin_disabled(!action.enabled(state));
     let clicked = ui.button(label);
-    if let Some(id) = icons.texture_id(icon_for_action(action)) {
+    if let Some(id) = icons.texture_id(icon_for_action(&action)) {
         ui.same_line();
         Image::new(TextureId::new(id), [18., 18.]).build(ui);
     }
@@ -634,7 +634,7 @@ fn ribbon_action(
     ui.same_line();
 }
 
-fn icon_for_action(action: GuiShellAction) -> &'static str {
+fn icon_for_action(action: &GuiShellAction) -> &'static str {
     match action {
         GuiShellAction::NewPart => "new-part",
         GuiShellAction::Save => "save",

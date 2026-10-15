@@ -106,7 +106,7 @@ impl GuiCommandState {
 }
 impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
-    pub fn enabled(self, state: &GuiCommandState) -> bool {
+    pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
@@ -133,11 +133,11 @@ impl GuiShellAction {
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.
-    pub fn dispatchable(self, state: &GuiCommandState) -> bool {
+    pub fn dispatchable(&self, state: &GuiCommandState) -> bool {
         let history = matches!(self, Self::Undo | Self::Redo);
         self.enabled(state) && !(history && state.transaction_open)
     }
-    pub(crate) fn next_label(self, state: &GuiCommandState) -> Option<&str> {
+    pub(crate) fn next_label<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {
         match self {
             Self::Undo => state.undo_label.as_deref(),
             Self::Redo => state.redo_label.as_deref(),
