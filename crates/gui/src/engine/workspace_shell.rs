@@ -430,6 +430,41 @@ fn draw_sketch_grid_tab(
         GuiShellAction::SetDimensionInput,
         selected,
     );
+    preference_checkbox(
+        ui,
+        "Snap to points",
+        preferences.snap_to_points,
+        GuiShellAction::SetSnapToPoints,
+        selected,
+    );
+    preference_checkbox(
+        ui,
+        "Snap to grid",
+        preferences.snap_to_grid,
+        GuiShellAction::SetSnapToGrid,
+        selected,
+    );
+    preference_checkbox(
+        ui,
+        "Relax mode",
+        preferences.relax_mode,
+        GuiShellAction::SetRelaxMode,
+        selected,
+    );
+    preference_checkbox(
+        ui,
+        "Auto-project origin",
+        preferences.auto_project_origin,
+        GuiShellAction::SetAutoProjectOrigin,
+        selected,
+    );
+    preference_checkbox(
+        ui,
+        "Suppress format overrides",
+        preferences.suppress_format_overrides,
+        GuiShellAction::SetSuppressFormatOverrides,
+        selected,
+    );
 }
 
 fn edit_grid_spacing(ui: &Ui, current: f64, selected: &mut Vec<GuiShellAction>) {
@@ -563,7 +598,12 @@ fn icon_for_action(action: GuiShellAction) -> &'static str {
         | GuiShellAction::SetGridMajorEvery(_)
         | GuiShellAction::SetHeadsUpDisplay(_)
         | GuiShellAction::SetPointerInput(_)
-        | GuiShellAction::SetDimensionInput(_) => "settings",
+        | GuiShellAction::SetDimensionInput(_)
+        | GuiShellAction::SetSnapToPoints(_)
+        | GuiShellAction::SetSnapToGrid(_)
+        | GuiShellAction::SetRelaxMode(_)
+        | GuiShellAction::SetAutoProjectOrigin(_)
+        | GuiShellAction::SetSuppressFormatOverrides(_) => "settings",
     }
 }
 

@@ -18,6 +18,11 @@ pub enum GuiShellAction {
     SetHeadsUpDisplay(bool),
     SetPointerInput(bool),
     SetDimensionInput(bool),
+    SetSnapToPoints(bool),
+    SetSnapToGrid(bool),
+    SetRelaxMode(bool),
+    SetAutoProjectOrigin(bool),
+    SetSuppressFormatOverrides(bool),
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiDocumentTab {
@@ -61,6 +66,11 @@ pub struct GuiSketchPreferences {
     pub heads_up_display: bool,
     pub pointer_input: bool,
     pub dimension_input: bool,
+    pub snap_to_points: bool,
+    pub snap_to_grid: bool,
+    pub relax_mode: bool,
+    pub auto_project_origin: bool,
+    pub suppress_format_overrides: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -114,7 +124,12 @@ impl GuiShellAction {
             | Self::SetGridMajorEvery(_)
             | Self::SetHeadsUpDisplay(_)
             | Self::SetPointerInput(_)
-            | Self::SetDimensionInput(_) => true,
+            | Self::SetDimensionInput(_)
+            | Self::SetSnapToPoints(_)
+            | Self::SetSnapToGrid(_)
+            | Self::SetRelaxMode(_)
+            | Self::SetAutoProjectOrigin(_)
+            | Self::SetSuppressFormatOverrides(_) => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

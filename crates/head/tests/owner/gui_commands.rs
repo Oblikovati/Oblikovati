@@ -180,6 +180,11 @@ fn gui_sketch_preferences_publish_and_apply_on_the_owner() {
             .apply_gui_shell_action(GuiShellAction::SetGridMajorEvery(8))
             .unwrap()
     );
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::SetSnapToGrid(false))
+            .unwrap()
+    );
     let after = owner
         .gui_command_state()
         .unwrap()
@@ -189,6 +194,7 @@ fn gui_sketch_preferences_publish_and_apply_on_the_owner() {
     assert!(!after.heads_up_display);
     assert_eq!(after.grid_spacing_cm, 2.5);
     assert_eq!(after.grid_major_every, 8);
+    assert!(!after.snap_to_grid);
 }
 
 #[test]

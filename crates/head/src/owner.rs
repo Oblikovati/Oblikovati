@@ -149,6 +149,11 @@ fn gui_sketch_preferences(
         heads_up_display: options.heads_up_display,
         pointer_input: options.pointer_input,
         dimension_input: options.dimension_input,
+        snap_to_points: options.snap_to_points,
+        snap_to_grid: options.snap_to_grid,
+        relax_mode: options.relax_mode,
+        auto_project_origin: options.auto_project_origin,
+        suppress_format_overrides: options.suppress_format_overrides,
     }
 }
 
@@ -444,6 +449,17 @@ impl<
             oblikovati_gui::GuiShellAction::SetPointerInput(value) => options.pointer_input = value,
             oblikovati_gui::GuiShellAction::SetDimensionInput(value) => {
                 options.dimension_input = value
+            }
+            oblikovati_gui::GuiShellAction::SetSnapToPoints(value) => {
+                options.snap_to_points = value
+            }
+            oblikovati_gui::GuiShellAction::SetSnapToGrid(value) => options.snap_to_grid = value,
+            oblikovati_gui::GuiShellAction::SetRelaxMode(value) => options.relax_mode = value,
+            oblikovati_gui::GuiShellAction::SetAutoProjectOrigin(value) => {
+                options.auto_project_origin = value
+            }
+            oblikovati_gui::GuiShellAction::SetSuppressFormatOverrides(value) => {
+                options.suppress_format_overrides = value
             }
             _ => return self.apply_cube_action(action),
         }

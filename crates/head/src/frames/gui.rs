@@ -63,7 +63,12 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         | GuiShellAction::SetGridMajorEvery(_)
         | GuiShellAction::SetHeadsUpDisplay(_)
         | GuiShellAction::SetPointerInput(_)
-        | GuiShellAction::SetDimensionInput(_) => return None,
+        | GuiShellAction::SetDimensionInput(_)
+        | GuiShellAction::SetSnapToPoints(_)
+        | GuiShellAction::SetSnapToGrid(_)
+        | GuiShellAction::SetRelaxMode(_)
+        | GuiShellAction::SetAutoProjectOrigin(_)
+        | GuiShellAction::SetSuppressFormatOverrides(_) => return None,
     };
     Some(ViewportEvent::Input(ViewportInput::Key {
         key,
