@@ -30,6 +30,16 @@ impl WorkspaceShellState {
 struct SelectionFilterState {
     entries: Vec<SelectionFilterEntry>,
 }
+impl SelectionFilterState {
+    fn move_entry(&mut self, index: usize, offset: isize) {
+        let Some(target) = index.checked_add_signed(offset) else {
+            return;
+        };
+        if target < self.entries.len() {
+            self.entries.swap(index, target);
+        }
+    }
+}
 
 struct SelectionFilterEntry {
     label: &'static str,
@@ -519,8 +529,8 @@ fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterS
         .build(|| {
             ui.text("Tick to allow picking. Earlier rows have higher priority.");
             ui.separator();
-            for entry in &mut filter.entries {
-                ui.checkbox(entry.label, &mut entry.enabled);
+            for index in 0..filter.entries.len() {
+                draw_selection_filter_entry(ui, filter, index);
             }
             ui.separator();
             if ui.button("Select All") {
@@ -537,6 +547,21 @@ fn draw_selection_filter(ui: &Ui, open: &mut bool, filter: &mut SelectionFilterS
                     .for_each(|entry| entry.enabled = false);
             }
         });
+}
+
+fn draw_selection_filter_entry(ui: &Ui, filter: &mut SelectionFilterState, index: usize) {
+    let entry = &mut filter.entries[index];
+    ui.checkbox(entry.label, &mut entry.enabled);
+    ui.same_line();
+    let move_up = ui.small_button(format!("↑##selection-up-{index}"));
+    ui.same_line();
+    let move_down = ui.small_button(format!("↓##selection-down-{index}"));
+    if move_up {
+        filter.move_entry(index, -1);
+    }
+    if move_down {
+        filter.move_entry(index, 1);
+    }
 }
 
 fn menu_action(
@@ -660,5 +685,16 @@ mod tests {
         assert!(filter.entries.iter().all(|entry| entry.enabled));
         assert_eq!(filter.entries[0].label, "Work points");
         assert_eq!(filter.entries[11].label, "Sketch entities");
+    }
+
+    #[test]
+    fn selection_filter_moves_entries_without_changing_their_enabled_state() {
+        let mut filter = SelectionFilterState::default();
+        filter.entries[1].enabled = false;
+        filter.move_entry(1, -1);
+        assert_eq!(filter.entries[0].label, "Work axes");
+        assert!(!filter.entries[0].enabled);
+        filter.move_entry(0, -1);
+        assert_eq!(filter.entries[0].label, "Work axes");
     }
 }
