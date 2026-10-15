@@ -58,6 +58,13 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         | GuiShellAction::ActivateDocument(_)
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::JumpHistoryTo { .. }
+        | GuiShellAction::SetLengthUnit(_)
+        | GuiShellAction::SetAngleUnit(_)
+        | GuiShellAction::SetMassUnit(_)
+        | GuiShellAction::SetTimeUnit(_)
+        | GuiShellAction::SetLengthPrecision(_)
+        | GuiShellAction::SetAnglePrecision(_)
+        | GuiShellAction::SetLengthFormat(_)
         | GuiShellAction::SetBodyVisible { .. }
         | GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)

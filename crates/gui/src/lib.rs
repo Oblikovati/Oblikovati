@@ -28,8 +28,8 @@ mod icon_assets;
 mod input;
 mod snapshot;
 pub use commands::{
-    GuiCommandState, GuiDocumentHistory, GuiDocumentTab, GuiHistoryEntry, GuiModelBody,
-    GuiModelFeature, GuiModelTree, GuiRibbonControl, GuiRibbonTab, GuiShellAction,
+    GuiCommandState, GuiDocumentHistory, GuiDocumentTab, GuiDocumentUnits, GuiHistoryEntry,
+    GuiModelBody, GuiModelFeature, GuiModelTree, GuiRibbonControl, GuiRibbonTab, GuiShellAction,
     GuiSketchPreferences,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};

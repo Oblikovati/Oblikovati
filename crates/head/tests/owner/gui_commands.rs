@@ -238,3 +238,24 @@ fn gui_history_jump_uses_the_typed_transaction_route() {
     assert!(after.undo_label.is_none());
     assert!(after.redo_label.is_some());
 }
+
+#[test]
+fn gui_units_actions_use_the_typed_document_route() {
+    let (mut owner, awake) = owner();
+    create(&mut owner, &awake);
+    let before = owner.gui_command_state().unwrap().document_units.unwrap();
+    assert_eq!(before.length_unit, "mm");
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::SetLengthUnit("cm".into()))
+            .unwrap()
+    );
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::SetLengthPrecision(5))
+            .unwrap()
+    );
+    let after = owner.gui_command_state().unwrap().document_units.unwrap();
+    assert_eq!(after.length_unit, "cm");
+    assert_eq!(after.length_precision, 5);
+}

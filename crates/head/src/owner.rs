@@ -158,6 +158,44 @@ fn gui_document_history(
     }
 }
 
+fn gui_document_units(
+    units: oblikovati_api::wire::DocumentUnitsInfo,
+) -> oblikovati_gui::GuiDocumentUnits {
+    oblikovati_gui::GuiDocumentUnits {
+        length_unit: units.length_unit,
+        angle_unit: units.angle_unit,
+        mass_unit: units.mass_unit,
+        time_unit: units.time_unit,
+        length_precision: units.length_display_precision,
+        angle_precision: units.angle_display_precision,
+        length_format: units.length_display_format,
+    }
+}
+
+fn gui_units_edit(
+    action: &oblikovati_gui::GuiShellAction,
+) -> Option<oblikovati_api::wire::SetDocumentUnitsArgs> {
+    use oblikovati_gui::GuiShellAction;
+    let mut edit = oblikovati_api::wire::SetDocumentUnitsArgs::default();
+    match action {
+        GuiShellAction::SetLengthUnit(value) => edit.length_unit = Some(Box::new(value.clone())),
+        GuiShellAction::SetAngleUnit(value) => edit.angle_unit = Some(Box::new(value.clone())),
+        GuiShellAction::SetMassUnit(value) => edit.mass_unit = Some(Box::new(value.clone())),
+        GuiShellAction::SetTimeUnit(value) => edit.time_unit = Some(Box::new(value.clone())),
+        GuiShellAction::SetLengthPrecision(value) => {
+            edit.length_display_precision = Some(Box::new(*value))
+        }
+        GuiShellAction::SetAnglePrecision(value) => {
+            edit.angle_display_precision = Some(Box::new(*value))
+        }
+        GuiShellAction::SetLengthFormat(value) => {
+            edit.length_display_format = Some(Box::new(value.clone()))
+        }
+        _ => return None,
+    }
+    Some(edit)
+}
+
 fn gui_sketch_preferences(
     options: &SketchApplicationOptions,
 ) -> oblikovati_gui::GuiSketchPreferences {
@@ -381,12 +419,18 @@ impl<
                 Ok(gui_document_history(history))
             })
             .collect::<Result<Vec<_>, String>>()?;
+        let document_units = oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .get_units()
+            .map(gui_document_units)
+            .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
             undo_label,
             redo_label,
             transaction_open,
             documents,
             histories,
+            document_units: Some(document_units),
             ribbon_tabs,
             model_tree: Some(gui_model_tree(tree, bodies)?),
             sketch_preferences: Some(gui_sketch_preferences(
@@ -475,6 +519,13 @@ impl<
                     document: *document,
                     position: *position,
                 })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        if let Some(units) = gui_units_edit(&action) {
+            oblikovati_api::client::Client::new(self.document_host())
+                .documents()
+                .set_units(&units)
                 .map_err(|cause| cause.to_string())?;
             return Ok(true);
         }

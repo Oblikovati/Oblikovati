@@ -17,6 +17,7 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
     pub(crate) history_open: bool,
+    pub(crate) units_open: bool,
     pub(crate) model_browser_open: bool,
     pub(crate) command_panel_open: bool,
     selection_filter: SelectionFilterState,
@@ -31,6 +32,7 @@ impl Default for WorkspaceShellState {
             preferences_open: false,
             selection_open: false,
             history_open: false,
+            units_open: false,
             model_browser_open: true,
             command_panel_open: true,
             selection_filter: Default::default(),
@@ -134,6 +136,12 @@ pub(crate) fn draw(
         &mut workspace.history_documents,
         selected,
     );
+    draw_units_settings(
+        ui,
+        &mut workspace.units_open,
+        state.document_units.as_ref(),
+        selected,
+    );
 }
 
 fn draw_menu_bar(
@@ -186,6 +194,9 @@ fn draw_menu_bar(
             }
             if ui.menu_item("History Browser") {
                 workspace.history_open = true;
+            }
+            if ui.menu_item("Document Settings — Units") {
+                workspace.units_open = true;
             }
         });
         ui.menu("Tools", || {
@@ -391,6 +402,9 @@ fn draw_view_tab(
     }
     if ui.button("History Browser") {
         workspace.history_open = true;
+    }
+    if ui.button("Document Units") {
+        workspace.units_open = true;
     }
 }
 
@@ -732,6 +746,137 @@ fn history_entry_label(entry: &crate::GuiHistoryEntry) -> String {
     format!("{saved}{}", entry.label)
 }
 
+fn draw_units_settings(
+    ui: &Ui,
+    open: &mut bool,
+    units: Option<&crate::GuiDocumentUnits>,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    if !*open {
+        return;
+    }
+    ui.window("Document Settings — Units")
+        .opened(open)
+        .size([340., 360.], Condition::FirstUseEver)
+        .build(|| draw_units_settings_body(ui, units, selected));
+}
+
+fn draw_units_settings_body(
+    ui: &Ui,
+    units: Option<&crate::GuiDocumentUnits>,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let Some(units) = units else {
+        ui.text("Document units are unavailable.");
+        return;
+    };
+    draw_unit_pickers(ui, units, selected);
+    ui.separator();
+    draw_unit_precision(ui, units, selected);
+}
+
+fn draw_unit_pickers(ui: &Ui, units: &crate::GuiDocumentUnits, selected: &mut Vec<GuiShellAction>) {
+    unit_picker(
+        ui,
+        "Length",
+        &units.length_unit,
+        &["µm", "mm", "cm", "m", "in", "ft"],
+        GuiShellAction::SetLengthUnit,
+        selected,
+    );
+    unit_picker(
+        ui,
+        "Angle",
+        &units.angle_unit,
+        &["deg", "rad"],
+        GuiShellAction::SetAngleUnit,
+        selected,
+    );
+    unit_picker(
+        ui,
+        "Mass",
+        &units.mass_unit,
+        &["kg", "g", "lb"],
+        GuiShellAction::SetMassUnit,
+        selected,
+    );
+    unit_picker(
+        ui,
+        "Time",
+        &units.time_unit,
+        &["s", "ms", "min", "hr"],
+        GuiShellAction::SetTimeUnit,
+        selected,
+    );
+}
+
+fn unit_picker(
+    ui: &Ui,
+    label: &str,
+    current: &str,
+    options: &[&str],
+    action: impl Fn(String) -> GuiShellAction,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let Some(_combo) = ui.begin_combo(label, current) else {
+        return;
+    };
+    for option in options {
+        if ui
+            .selectable_config(option)
+            .selected(*option == current)
+            .build()
+        {
+            selected.push(action((*option).into()));
+        }
+    }
+}
+
+fn draw_unit_precision(
+    ui: &Ui,
+    units: &crate::GuiDocumentUnits,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    edit_precision(
+        ui,
+        "Length precision",
+        units.length_precision,
+        GuiShellAction::SetLengthPrecision,
+        selected,
+    );
+    edit_precision(
+        ui,
+        "Angle precision",
+        units.angle_precision,
+        GuiShellAction::SetAnglePrecision,
+        selected,
+    );
+    unit_picker(
+        ui,
+        "Length format",
+        &units.length_format,
+        &["decimal", "fractional", "architectural"],
+        GuiShellAction::SetLengthFormat,
+        selected,
+    );
+}
+
+fn edit_precision(
+    ui: &Ui,
+    label: &str,
+    current: i64,
+    action: impl Fn(i64) -> GuiShellAction,
+    selected: &mut Vec<GuiShellAction>,
+) {
+    let Ok(mut value) = i32::try_from(current) else {
+        ui.text(format!("{label} is outside the desktop input range."));
+        return;
+    };
+    if ui.input_int(label, &mut value).build() && value >= 0 {
+        selected.push(action(i64::from(value)));
+    }
+}
+
 fn menu_action(
     ui: &Ui,
     label: &str,
@@ -786,6 +931,13 @@ fn icon_for_action(action: &GuiShellAction) -> &'static str {
         GuiShellAction::ActivateDocument(_) => "view-new",
         GuiShellAction::CloseDocument(_) => "close",
         GuiShellAction::JumpHistoryTo { .. } => "history",
+        GuiShellAction::SetLengthUnit(_)
+        | GuiShellAction::SetAngleUnit(_)
+        | GuiShellAction::SetMassUnit(_)
+        | GuiShellAction::SetTimeUnit(_)
+        | GuiShellAction::SetLengthPrecision(_)
+        | GuiShellAction::SetAnglePrecision(_)
+        | GuiShellAction::SetLengthFormat(_) => "settings",
         GuiShellAction::SetBodyVisible { .. } => "visibility",
         GuiShellAction::SetGridSpacingCm(_)
         | GuiShellAction::SetGridVisible(_)
