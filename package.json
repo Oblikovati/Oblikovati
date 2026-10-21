@@ -5,6 +5,6 @@
   "license": "GPL-2.0-only",
   "devDependencies": {
     "jscpd": "5.4.1",
-    "markdownlint-cli2": "0.23.3"
+    "markdownlint-cli2": "0.24.0"
   }
 }
