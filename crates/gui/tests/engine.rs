@@ -35,6 +35,7 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     drop(engine);
     let next_owner = GuiFrameEngine::new().unwrap();
     drop(next_owner);
+    verify_semantic_ribbon_target();
     assert_eq!(snapshot, saved);
     assert_eq!(snapshot.batches[0].vertices, vertices);
     assert!(
@@ -43,6 +44,54 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
             .draws()
             .is_empty()
     );
+}
+
+fn verify_semantic_ribbon_target() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut input = semantic_ribbon_request();
+    let target = engine
+        .frame(&input)
+        .unwrap()
+        .targets
+        .into_iter()
+        .find(|target| target.command_id == "GetStarted.NewPart")
+        .unwrap();
+    input.events = vec![GuiInputEvent::PointerMoved(target.center)];
+    engine.frame(&input).unwrap();
+    input.events = vec![left_button_event(true)];
+    let mut actions = engine.frame(&input).unwrap().actions;
+    input.events = vec![left_button_event(false)];
+    actions.extend(engine.frame(&input).unwrap().actions);
+    assert_eq!(actions, [GuiShellAction::NewPart]);
+}
+
+fn semantic_ribbon_request() -> GuiFrameRequest {
+    let control = GuiRibbonControl {
+        command_id: "GetStarted.NewPart".into(),
+        display_name: "New Part".into(),
+        icon: "new-part".into(),
+        button_style: 2,
+        enabled: true,
+        active: false,
+    };
+    GuiFrameRequest {
+        extent: [640, 360],
+        events: Vec::new(),
+        commands: GuiCommandState {
+            ribbon_key: "ZeroDoc".into(),
+            ribbon_tabs: vec![GuiRibbonTab {
+                name: "Get Started".into(),
+                panels: vec![GuiRibbonPanel {
+                    name: "Launch".into(),
+                    controls: vec![control],
+                }],
+            }],
+            ..Default::default()
+        },
+        status: None,
+        delta_seconds: 1. / 60.,
+        framebuffer_scale: [1.; 2],
+    }
 }
 fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
     let mut status_request = request();

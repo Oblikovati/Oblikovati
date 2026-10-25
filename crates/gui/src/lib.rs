@@ -29,9 +29,10 @@ mod icon_assets;
 mod input;
 mod snapshot;
 pub use commands::{
-    GuiCommandState, GuiDocumentHistory, GuiDocumentTab, GuiDocumentUnits, GuiHistoryEntry,
-    GuiModelBody, GuiModelFeature, GuiModelTree, GuiRibbonControl, GuiRibbonPanel, GuiRibbonTab,
-    GuiSelectionFilter, GuiSelectionFilterEntry, GuiShellAction, GuiSketchPreferences,
+    GuiCommandState, GuiControlTarget, GuiDocumentHistory, GuiDocumentTab, GuiDocumentUnits,
+    GuiHistoryEntry, GuiModelBody, GuiModelFeature, GuiModelTree, GuiRibbonControl, GuiRibbonPanel,
+    GuiRibbonTab, GuiSelectionFilter, GuiSelectionFilterEntry, GuiShellAction,
+    GuiSketchPreferences,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

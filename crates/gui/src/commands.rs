@@ -55,6 +55,13 @@ pub struct GuiRibbonControl {
     pub active: bool,
     pub button_style: u8,
 }
+/// A visible ribbon-control hit target; example: test code finds `Sketch.Create` before clicking it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiControlTarget {
+    pub command_id: String,
+    pub center: [f32; 2],
+    pub enabled: bool,
+}
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiRibbonPanel {
     pub name: String,

@@ -22,6 +22,7 @@ pub struct GuiFrameRequest {
 #[derive(Clone, Debug)]
 pub struct GuiFrameOutput {
     pub draws: GuiFrame,
+    pub targets: Vec<crate::GuiControlTarget>,
     pub actions: Vec<GuiShellAction>,
     pub capture: GuiInputCapture,
     pub activity: GuiFrameActivity,
@@ -197,6 +198,7 @@ fn draw_controls(
     let snapshot = capture_frame(context.render(), request.extent, workspace.textures())?;
     Ok(GuiFrameOutput {
         draws: snapshot,
+        targets: workspace.control_targets(),
         actions: selected,
         capture: input_capture(context.io()),
         activity: frame_activity()?,

@@ -18,6 +18,7 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) model_browser_open: bool,
     pub(crate) command_panel_open: bool,
     history_documents: Vec<u64>,
+    control_targets: Vec<crate::GuiControlTarget>,
     icons: crate::icon_assets::GuiIconCache,
 }
 
@@ -34,6 +35,7 @@ impl Default for WorkspaceShellState {
             model_browser_open: true,
             command_panel_open: true,
             history_documents: Vec::new(),
+            control_targets: Vec::new(),
             icons: Default::default(),
         }
     }
@@ -41,6 +43,19 @@ impl Default for WorkspaceShellState {
 impl WorkspaceShellState {
     pub(crate) fn textures(&self) -> &[crate::GuiTexture] {
         self.icons.textures()
+    }
+    pub(crate) fn control_targets(&self) -> Vec<crate::GuiControlTarget> {
+        self.control_targets.clone()
+    }
+    fn begin_frame(&mut self) {
+        self.control_targets.clear();
+    }
+    fn record_control(&mut self, control: &crate::GuiRibbonControl, min: [f32; 2], max: [f32; 2]) {
+        self.control_targets.push(crate::GuiControlTarget {
+            command_id: control.command_id.clone(),
+            center: [(min[0] + max[0]) / 2., (min[1] + max[1]) / 2.],
+            enabled: control.enabled,
+        });
     }
 }
 
@@ -52,6 +67,7 @@ pub(crate) fn draw(
     parameters: &mut crate::parameter_panel::ParameterPanel,
     workspace: &mut WorkspaceShellState,
 ) {
+    workspace.begin_frame();
     ui.dockspace_over_main_viewport();
     draw_menu_bar(ui, state, selected, parameters, workspace);
     draw_ribbon(ui, state, selected, parameters, workspace);
@@ -278,7 +294,7 @@ fn draw_ribbon_tab(
         return;
     };
     workspace.active_tab = tab.name.clone();
-    draw_host_panels(ui, &tab.panels, selected, icons);
+    draw_host_panels(ui, &tab.panels, selected, icons, workspace);
     if tab.name == "View" {
         draw_view_window_controls(ui, parameters, workspace);
     }
@@ -935,9 +951,10 @@ fn draw_host_panels(
     panels: &[crate::GuiRibbonPanel],
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
 ) {
     for panel in panels {
-        draw_host_panel(ui, panel, selected, icons);
+        draw_host_panel(ui, panel, selected, icons, workspace);
         ui.same_line();
     }
 }
@@ -947,9 +964,16 @@ fn draw_host_panel(
     panel: &crate::GuiRibbonPanel,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
 ) {
     ui.group(|| {
-        draw_panel_columns(ui, &pack_panel_columns(&panel.controls), selected, icons);
+        draw_panel_columns(
+            ui,
+            &pack_panel_columns(&panel.controls),
+            selected,
+            icons,
+            workspace,
+        );
         ui.dummy([0., 4.]);
         ui.separator();
         ui.text(&panel.name);
@@ -961,11 +985,12 @@ fn draw_panel_columns(
     columns: &[Vec<&crate::GuiRibbonControl>],
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
 ) {
     for (index, column) in columns.iter().enumerate() {
         ui.group(|| {
             for control in column {
-                draw_host_control(ui, control, selected, icons);
+                draw_host_control(ui, control, selected, icons, workspace);
             }
         });
         if index + 1 != columns.len() {
@@ -1007,16 +1032,19 @@ fn draw_host_control(
     control: &crate::GuiRibbonControl,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
 ) {
     let action = host_action(&control.command_id);
     let disabled = ui.begin_disabled(!control.enabled);
     let label = format!("{}##{}", control.display_name, control.command_id);
-    let clicked = if control.button_style == 2 {
+    let (clicked, minimum, maximum) = if control.button_style == 2 {
         draw_large_ribbon_control(ui, control, &label, icons)
     } else {
-        draw_small_ribbon_control(ui, control, &label, icons)
+        let clicked = draw_small_ribbon_control(ui, control, &label, icons);
+        (clicked, ui.item_rect_min(), ui.item_rect_max())
     };
     drop(disabled);
+    workspace.record_control(control, minimum, maximum);
     if ui.is_item_hovered() && !control.display_name.is_empty() {
         ui.tooltip_text(&control.display_name);
     }
@@ -1033,13 +1061,16 @@ fn draw_large_ribbon_control(
     control: &crate::GuiRibbonControl,
     label: &str,
     icons: &mut crate::icon_assets::GuiIconCache,
-) -> bool {
+) -> (bool, [f32; 2], [f32; 2]) {
     let Some(icon) = icons.texture_id(&control.icon) else {
-        return ui.button_with_size(label, [70., 52.]);
+        let clicked = ui.button_with_size(label, [70., 52.]);
+        return (clicked, ui.item_rect_min(), ui.item_rect_max());
     };
     let clicked = ui.image_button(label, TextureId::new(icon), [32., 32.]);
+    let minimum = ui.item_rect_min();
+    let maximum = ui.item_rect_max();
     ui.text_wrapped(&control.display_name);
-    clicked
+    (clicked, minimum, maximum)
 }
 
 fn draw_small_ribbon_control(
