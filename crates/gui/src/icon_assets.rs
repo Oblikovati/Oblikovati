@@ -72,4 +72,16 @@ mod tests {
         assert_eq!(cache.textures().len(), 1);
         assert_eq!(cache.texture_id("missing"), None);
     }
+
+    #[test]
+    fn new_part_raster_uses_the_go_dark_icon_roles() {
+        let raster = ICON_RASTERS
+            .iter()
+            .find(|raster| raster.name == "new-part")
+            .unwrap();
+        let pixels = icon_pixels(raster).unwrap();
+        assert!(pixels.contains(&[230, 230, 230, 255]));
+        assert!(pixels.contains(&[81, 221, 180, 255]));
+        assert!(pixels.contains(&[0, 0, 0, 31]));
+    }
 }
