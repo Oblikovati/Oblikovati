@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::GuiShellAction;
-use imgui::{Condition, TreeNodeFlags, Ui, WindowFlags};
+use imgui::{Condition, StyleColor, TreeNodeFlags, Ui, WindowFlags};
 
 use super::workspace_shell::RIBBON_BOTTOM;
 
@@ -12,6 +12,7 @@ const OVERLAY_MARGIN: f32 = 10.;
 const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 const AXIS_TRIAD_MARGIN: f32 = 46.;
 const AXIS_TRIAD_RADIUS: f32 = 30.;
+const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 0.631];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WorkspaceLayout {
@@ -303,6 +304,8 @@ pub(super) fn draw_model_browser(
     open: &mut bool,
 ) {
     let layout = workspace_layout(ui.io().display_size);
+    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
+    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Model")
         .opened(open)
         .position(layout.model_position, Condition::Always)
@@ -399,6 +402,8 @@ fn draw_body_row(ui: &Ui, body: &crate::GuiModelBody, selected: &mut Vec<GuiShel
 
 pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool) {
     let layout = workspace_layout(ui.io().display_size);
+    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
+    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Command")
         .opened(open)
         .position(layout.command_position, Condition::Always)
