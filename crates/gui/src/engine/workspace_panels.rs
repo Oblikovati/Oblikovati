@@ -202,8 +202,6 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
         .movable(false)
         .resizable(false)
         .build(|| {
-            ui.text("Command");
-            ui.separator();
             ui.text_wrapped(status_text(status));
         });
 }
