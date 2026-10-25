@@ -4,7 +4,8 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, TabItemFlags, TextureId, Ui};
 use std::collections::BTreeMap;
 
-pub(super) const MENU_BAR_HEIGHT: f32 = 20.;
+// Go's live 16 px menu uses the default 3 px vertical frame padding, plus its border.
+pub(super) const MENU_BAR_HEIGHT: f32 = 22.;
 // Go computes this from its 16 px Liberation Sans font and stock Dear ImGui metrics:
 // 2*8 window padding + 22 tab strip + 4 gap + 108 control grid + 4 gap + 16 caption.
 const RIBBON_HEIGHT: f32 = 170.;

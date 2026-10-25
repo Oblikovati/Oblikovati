@@ -7,7 +7,9 @@ use super::workspace_shell::RIBBON_BOTTOM;
 // Go's DockBuilder splits the work area 22% left and 7% down after fixed chrome claims its bands.
 const MODEL_WIDTH_FRACTION: f32 = 0.22;
 const COMMAND_HEIGHT_FRACTION: f32 = 0.07;
-const STATUS_HEIGHT: f32 = 21.;
+const COMMAND_MIN_HEIGHT: f32 = 43.;
+// Go's status side bar is one 16 px text line with the default 8 px top/bottom padding.
+const STATUS_HEIGHT: f32 = 32.;
 const VIEWPORT_HEADER_HEIGHT: f32 = 19.;
 const DOCUMENT_TABS_HEIGHT: f32 = 19.;
 const VIEW_CUBE_SIZE: f32 = 86.;
@@ -36,7 +38,7 @@ fn workspace_layout(display: [f32; 2]) -> WorkspaceLayout {
     let model_width = model_width(display);
     let work_width = (display[0] - model_width).max(0.);
     let work_height = (display[1] - RIBBON_BOTTOM - STATUS_HEIGHT).max(0.);
-    let command_height = work_height * COMMAND_HEIGHT_FRACTION;
+    let command_height = (work_height * COMMAND_HEIGHT_FRACTION).max(COMMAND_MIN_HEIGHT);
     WorkspaceLayout {
         model_position: [0., RIBBON_BOTTOM],
         model_size: [model_width, work_height],
@@ -681,11 +683,20 @@ mod tests {
     #[test]
     fn fallback_layout_matches_the_go_model_viewport_command_arrangement() {
         let layout = workspace_layout([1440., 900.]);
-        assert_eq!(layout.model_position, [0., 190.]);
-        assert_eq!(layout.model_size, [316.8, 689.]);
-        assert_eq!(layout.document_position, [316.8, 209.]);
-        assert_eq!(layout.command_position, [316.8, 830.77]);
-        assert_eq!(layout.command_size, [1123.2, 48.23]);
+        assert_eq!(layout.model_position, [0., 192.]);
+        assert_eq!(layout.model_size, [316.8, 676.]);
+        assert_eq!(layout.document_position, [316.8, 211.]);
+        assert_eq!(layout.command_position, [316.8, 820.68]);
+        assert_eq!(layout.command_size, [1123.2, 47.32]);
+    }
+
+    #[test]
+    fn compact_layout_preserves_go_command_minimum_and_status_band() {
+        let layout = workspace_layout([800., 600.]);
+        assert_eq!(layout.model_position, [0., 192.]);
+        assert_eq!(layout.model_size, [176., 376.]);
+        assert_eq!(layout.command_position, [176., 525.]);
+        assert_eq!(layout.command_size, [624., 43.]);
     }
 
     #[test]
@@ -699,11 +710,11 @@ mod tests {
     fn overlays_anchor_to_the_visible_viewport() {
         assert_eq!(
             viewport_rect([1440., 900.], true),
-            ([316.8, 228.], [1123.2, 602.77])
+            ([316.8, 230.], [1123.2, 590.68])
         );
         assert_eq!(
             viewport_rect([1440., 900.], false),
-            ([0., 228.], [1440., 602.77])
+            ([0., 230.], [1440., 590.68])
         );
     }
 

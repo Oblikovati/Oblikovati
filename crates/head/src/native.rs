@@ -25,8 +25,14 @@ pub struct NativeHeadWindow {
 impl NativeHeadWindow {
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
     pub fn open() -> Result<Self, String> {
+        Self::open_with_extent([1440, 900])
+    }
+
+    /// Open an owner-thread desktop target with a requested drawable extent; example: `NativeHeadWindow::open_with_extent([800, 600])?`.
+    pub fn open_with_extent(extent: [u32; 2]) -> Result<Self, String> {
+        validate_window_extent(extent)?;
         let runtime = ViewportRuntime::new(ViewportOptions::default())?;
-        let mut view = runtime.open_window("Oblikovati", [1440, 900])?;
+        let mut view = runtime.open_window("Oblikovati", extent)?;
         view.submit(&ViewportScene {
             background: crate::part_scene::GO_DARK_VIEWPORT_BACKGROUND,
             triangles: Vec::new(),
@@ -47,6 +53,15 @@ impl NativeHeadWindow {
             clipboard: clipboard::NativeClipboardChannel::open(),
         })
     }
+}
+
+fn validate_window_extent(extent: [u32; 2]) -> Result<(), String> {
+    if extent.contains(&0) {
+        return Err(format!(
+            "native window extent {extent:?}: expected two positive pixel dimensions"
+        ));
+    }
+    Ok(())
 }
 impl NativeHeadWindow {
     /// Inspect the current displayed generation and detailed declines; example: `window.scene_status()` for a health panel.
