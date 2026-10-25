@@ -33,6 +33,15 @@ fn owner_thread_automation_captures_and_queues_viewport_input() {
 }
 
 #[test]
+fn native_zero_document_uses_the_go_dark_viewport_background() {
+    let mut window = NativeHeadWindow::open().unwrap();
+    window.present().unwrap();
+    let capture = window.capture_window().unwrap();
+    assert!(capture.rgba.as_chunks::<4>().0.contains(&[30, 45, 80, 255]));
+    window.finish().unwrap();
+}
+
+#[test]
 fn public_automation_requests_capture_and_queue_each_input_kind() {
     let mut window = NativeHeadWindow::open().unwrap();
     window.present().unwrap();

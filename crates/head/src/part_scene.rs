@@ -11,7 +11,7 @@ use oblikovati_session::{
 use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
 
 /// Go Dark's `#1e2d50` viewport background, converted from sRGB to renderer-linear RGB.
-const GO_DARK_VIEWPORT_BACKGROUND: [f64; 3] = [0.0132, 0.0262, 0.0803];
+pub(crate) const GO_DARK_VIEWPORT_BACKGROUND: [f64; 3] = [0.0132, 0.0262, 0.0803];
 /// Go's neutral default material keeps Part solids legible without feature-specific appearances.
 const GO_DEFAULT_SURFACE_COLOR: [f32; 4] = [0.7, 0.72, 0.75, 1.];
 /// Owned display state names its document and generation; kernel handles stay in result storage.
