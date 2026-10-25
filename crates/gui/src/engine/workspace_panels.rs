@@ -15,10 +15,15 @@ const VIEWPORT_HEADER_HEIGHT: f32 = 22.;
 const DOCUMENT_TABS_HEIGHT: f32 = 34.;
 const VIEW_CUBE_SIZE: f32 = 86.;
 const VIEW_CUBE_EDGE_BAND: f32 = 0.2;
-const VIEW_CUBE_HOME_SIZE: f32 = 24.;
-const VIEW_CUBE_HOME_GAP: f32 = 5.;
-const VIEW_CUBE_HOME_LEFT_INSET: f32 = 12.;
-const OVERLAY_MARGIN: f32 = 10.;
+const VIEW_CUBE_RADIUS: f32 = 36.;
+const VIEW_CUBE_MARGIN_RATIO: f32 = 2.4;
+const VIEW_CUBE_REACH_RATIO: f32 = 1.74;
+const VIEW_CUBE_HOME_GAP_RATIO: f32 = 0.22;
+const VIEW_CUBE_HOME_RADIUS_RATIO: f32 = 0.36;
+const VIEW_CUBE_HOME_SIZE: f32 = VIEW_CUBE_RADIUS * VIEW_CUBE_HOME_RADIUS_RATIO * 2.;
+const VIEWPORT_CONTENT_LEFT_INSET: f32 = 8.;
+const VIEWPORT_CONTENT_RIGHT_INSET: f32 = 5.;
+const VIEWPORT_CONTENT_BOTTOM_INSET: f32 = 8.;
 const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 const AXIS_TRIAD_MARGIN: f32 = 46.;
 const AXIS_TRIAD_RADIUS: f32 = 30.;
@@ -230,20 +235,18 @@ fn axis_arrowhead(center: [f32; 2], tip: [f32; 2]) -> Option<[[f32; 2]; 3]> {
 
 fn viewport_rect(display: [f32; 2], model_open: bool) -> ([f32; 2], [f32; 2]) {
     let layout = workspace_layout(display);
-    let left = if model_open { layout.model_size[0] } else { 0. };
+    let left = if model_open { layout.model_size[0] } else { 0. } + VIEWPORT_CONTENT_LEFT_INSET;
     let top = layout.document_tabs_position[1] + layout.document_tabs_size[1];
-    let bottom = layout.command_position[1];
+    let right = (display[0] - VIEWPORT_CONTENT_RIGHT_INSET).max(left);
+    let bottom = (layout.command_position[1] - VIEWPORT_CONTENT_BOTTOM_INSET).max(top);
     (
         [left, top],
-        [(display[0] - left).max(0.), (bottom - top).max(0.)],
+        [(right - left).max(0.), (bottom - top).max(0.)],
     )
 }
 
 fn draw_view_cube(ui: &Ui, origin: [f32; 2], size: [f32; 2], selected: &mut Vec<GuiShellAction>) {
-    let position = [
-        origin[0] + size[0] - VIEW_CUBE_SIZE - OVERLAY_MARGIN,
-        origin[1] + OVERLAY_MARGIN,
-    ];
+    let position = view_cube_position(origin, size);
     ui.window("##view-cube")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .position(position, Condition::Always)
@@ -284,9 +287,23 @@ fn draw_view_cube_home(ui: &Ui, cube: [f32; 2], selected: &mut Vec<GuiShellActio
 }
 
 fn view_cube_home_position(cube: [f32; 2]) -> [f32; 2] {
+    let center = [cube[0] + VIEW_CUBE_SIZE / 2., cube[1] + VIEW_CUBE_SIZE / 2.];
+    let home_offset = VIEW_CUBE_RADIUS
+        * (VIEW_CUBE_REACH_RATIO + VIEW_CUBE_HOME_GAP_RATIO + VIEW_CUBE_HOME_RADIUS_RATIO);
     [
-        cube[0] + VIEW_CUBE_HOME_LEFT_INSET,
-        cube[1] + VIEW_CUBE_SIZE + VIEW_CUBE_HOME_GAP,
+        center[0] - VIEW_CUBE_RADIUS - VIEW_CUBE_HOME_SIZE / 2.,
+        center[1] + home_offset - VIEW_CUBE_HOME_SIZE / 2.,
+    ]
+}
+
+fn view_cube_position(origin: [f32; 2], size: [f32; 2]) -> [f32; 2] {
+    let center = [
+        origin[0] + size[0] - VIEW_CUBE_RADIUS * VIEW_CUBE_MARGIN_RATIO,
+        origin[1] + VIEW_CUBE_RADIUS * VIEW_CUBE_MARGIN_RATIO,
+    ];
+    [
+        center[0] - VIEW_CUBE_SIZE / 2.,
+        center[1] - VIEW_CUBE_SIZE / 2.,
     ]
 }
 
@@ -715,7 +732,7 @@ mod tests {
     use super::{
         AXIS_ARROW_HEAD, axis_arrowhead, axis_triad_arrows, cube_grid_fractions, cube_points,
         dock_tab_bounds, model_feature_label, navigation_buttons, quad_point, status_text,
-        view_cube_home_position, viewport_rect, workspace_layout,
+        view_cube_home_position, view_cube_position, viewport_rect, workspace_layout,
     };
     use crate::{
         GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
@@ -776,11 +793,11 @@ mod tests {
     fn overlays_anchor_to_the_visible_viewport() {
         assert_eq!(
             viewport_rect([1440., 900.], true),
-            ([316.8, 248.], [1123.2, 572.68])
+            ([324.8, 248.], [1110.2, 564.68])
         );
         assert_eq!(
             viewport_rect([1440., 900.], false),
-            ([0., 248.], [1440., 572.68])
+            ([8., 248.], [1427., 564.68])
         );
     }
 
@@ -803,7 +820,15 @@ mod tests {
 
     #[test]
     fn view_cube_home_button_sits_below_the_compass() {
-        assert_eq!(view_cube_home_position([100., 200.]), [112., 291.]);
+        assert_eq!(view_cube_home_position([100., 200.]), [94.04, 313.56003]);
+    }
+
+    #[test]
+    fn view_cube_position_uses_the_go_radius_and_corner_inset() {
+        assert_eq!(
+            view_cube_position([176., 248.], [624., 277.]),
+            [670.6, 291.4]
+        );
     }
 
     #[test]
