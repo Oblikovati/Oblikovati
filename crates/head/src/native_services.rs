@@ -68,11 +68,29 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
         Ok(())
     }
     fn poll_native(&mut self, budget: usize) -> Result<bool, String> {
-        let host = self.owner.script_host();
-        let outcome = self
-            .runtime
-            .poll(budget, &host)
-            .map_err(|cause| cause.to_string())?;
+        let outcome = {
+            let host = self.owner.script_host();
+            self.runtime.poll(budget, &host)
+        }
+        .map_err(|cause| cause.to_string())?;
+        self.record_native_outcome(outcome)
+    }
+    fn poll_native_window(
+        &mut self,
+        budget: usize,
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        let outcome = {
+            let host = crate::window_caller::WindowCaller::new(self.owner.script_host(), window);
+            self.runtime.poll(budget, &host)
+        }
+        .map_err(|cause| cause.to_string())?;
+        self.record_native_outcome(outcome)
+    }
+    fn record_native_outcome(
+        &mut self,
+        outcome: Option<Result<NativeCompletion, oblikovati_api::Error>>,
+    ) -> Result<bool, String> {
         let Some(outcome) = outcome else {
             return Ok(false);
         };
@@ -184,6 +202,23 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
             ));
         }
         let changed = self.poll_native(budget / 2)?;
+        let mut activity = self.owner.poll(budget - budget / 2)?;
+        activity.changed |= changed;
+        activity.pending |= self
+            .runtime
+            .queued_calls_pending()
+            .map_err(|cause| cause.to_string())?;
+        Ok(activity)
+    }
+    fn poll_window(
+        &mut self,
+        budget: usize,
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<HeadWorkStatus, String> {
+        if self.stopped {
+            return Err("native desktop stopped=true: expected live owner polling".into());
+        }
+        let changed = self.poll_native_window(budget / 2, window)?;
         let mut activity = self.owner.poll(budget - budget / 2)?;
         activity.changed |= changed;
         activity.pending |= self

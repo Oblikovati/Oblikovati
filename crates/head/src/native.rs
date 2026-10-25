@@ -186,7 +186,8 @@ impl HeadWindow for NativeHeadWindow {
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.clipboard.service_pending(limit);
-        let mut events: Vec<_> = self.injected_events.drain(..limit).collect();
+        let queued = limit.min(self.injected_events.len());
+        let mut events: Vec<_> = self.injected_events.drain(..queued).collect();
         if events.len() < limit {
             events.extend(self.view.poll_events(limit - events.len())?);
         }
