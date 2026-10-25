@@ -39,7 +39,11 @@ pub(super) fn draw_status_bar(ui: &Ui, status: Option<&str>) {
         .title_bar(false)
         .movable(false)
         .resizable(false)
-        .build(|| ui.text(status.unwrap_or("Press F1 for more help")));
+        .build(|| ui.text(status_text(status)));
+}
+
+fn status_text(status: Option<&str>) -> &str {
+    status.filter(|text| !text.is_empty()).unwrap_or("Ready")
 }
 
 pub(super) fn draw_document_tabs(
@@ -200,13 +204,13 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
         .build(|| {
             ui.text("Command");
             ui.separator();
-            ui.text_wrapped(status.unwrap_or("Ready."));
+            ui.text_wrapped(status_text(status));
         });
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{model_feature_label, workspace_layout};
+    use super::{model_feature_label, status_text, workspace_layout};
     use crate::GuiModelFeature;
 
     #[test]
@@ -227,5 +231,12 @@ mod tests {
         assert_eq!(layout.document_position, [280., 145.]);
         assert_eq!(layout.command_position, [280., 742.]);
         assert_eq!(layout.command_size, [1160., 130.]);
+    }
+
+    #[test]
+    fn idle_status_matches_the_go_status_model() {
+        assert_eq!(status_text(None), "Ready");
+        assert_eq!(status_text(Some("")), "Ready");
+        assert_eq!(status_text(Some("Click a face")), "Click a face");
     }
 }
