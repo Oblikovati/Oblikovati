@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::GuiShellAction;
-use imgui::{Condition, StyleColor, TreeNodeFlags, Ui, WindowFlags};
+use imgui::{Condition, StyleColor, Ui, WindowFlags};
 
 use super::workspace_shell::RIBBON_BOTTOM;
 
@@ -10,8 +10,9 @@ const COMMAND_HEIGHT_FRACTION: f32 = 0.07;
 const COMMAND_MIN_HEIGHT: f32 = 43.;
 // Go's status side bar is one 16 px text line with the default 8 px top/bottom padding.
 const STATUS_HEIGHT: f32 = 32.;
-const VIEWPORT_HEADER_HEIGHT: f32 = 19.;
-const DOCUMENT_TABS_HEIGHT: f32 = 19.;
+const VIEWPORT_HEADER_HEIGHT: f32 = 22.;
+// A tab strip lives inside the viewport window: 8 px top/bottom padding plus its 18 px tab row.
+const DOCUMENT_TABS_HEIGHT: f32 = 34.;
 const VIEW_CUBE_SIZE: f32 = 86.;
 const VIEW_CUBE_EDGE_BAND: f32 = 0.2;
 const VIEW_CUBE_HOME_SIZE: f32 = 24.;
@@ -28,8 +29,10 @@ pub(super) const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 1.];
 struct WorkspaceLayout {
     model_position: [f32; 2],
     model_size: [f32; 2],
-    document_position: [f32; 2],
-    document_size: [f32; 2],
+    viewport_header_position: [f32; 2],
+    viewport_header_size: [f32; 2],
+    document_tabs_position: [f32; 2],
+    document_tabs_size: [f32; 2],
     command_position: [f32; 2],
     command_size: [f32; 2],
 }
@@ -42,8 +45,10 @@ fn workspace_layout(display: [f32; 2]) -> WorkspaceLayout {
     WorkspaceLayout {
         model_position: [0., RIBBON_BOTTOM],
         model_size: [model_width, work_height],
-        document_position: [model_width, RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT],
-        document_size: [work_width, DOCUMENT_TABS_HEIGHT],
+        viewport_header_position: [model_width, RIBBON_BOTTOM],
+        viewport_header_size: [work_width, VIEWPORT_HEADER_HEIGHT],
+        document_tabs_position: [model_width, RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT],
+        document_tabs_size: [work_width, DOCUMENT_TABS_HEIGHT],
         command_position: [model_width, display[1] - STATUS_HEIGHT - command_height],
         command_size: [work_width, command_height],
     }
@@ -83,11 +88,8 @@ pub(super) fn draw_document_tabs(
     let layout = workspace_layout(ui.io().display_size);
     ui.window("Documents")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
-        .position(
-            [layout.document_position[0], RIBBON_BOTTOM],
-            Condition::Always,
-        )
-        .size(layout.document_size, Condition::Always)
+        .position(layout.document_tabs_position, Condition::Always)
+        .size(layout.document_tabs_size, Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -110,11 +112,8 @@ pub(super) fn draw_viewport_header(ui: &Ui, has_document: bool) {
     let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Viewport")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
-        .position(layout.document_position, Condition::Always)
-        .size(
-            [layout.document_size[0], VIEWPORT_HEADER_HEIGHT],
-            Condition::Always,
-        )
+        .position(layout.viewport_header_position, Condition::Always)
+        .size(layout.viewport_header_size, Condition::Always)
         .movable(false)
         .resizable(false)
         .build(|| {});
@@ -197,7 +196,7 @@ fn axis_arrowhead(center: [f32; 2], tip: [f32; 2]) -> Option<[[f32; 2]; 3]> {
 fn viewport_rect(display: [f32; 2], model_open: bool) -> ([f32; 2], [f32; 2]) {
     let layout = workspace_layout(display);
     let left = if model_open { layout.model_size[0] } else { 0. };
-    let top = RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT + DOCUMENT_TABS_HEIGHT;
+    let top = layout.document_tabs_position[1] + layout.document_tabs_size[1];
     let bottom = layout.command_position[1];
     (
         [left, top],
@@ -565,9 +564,13 @@ pub(super) fn draw_model_browser(
 }
 
 fn draw_model_tree(ui: &Ui, tree: &crate::GuiModelTree, selected: &mut Vec<GuiShellAction>) {
-    if !ui.collapsing_header(&tree.document, TreeNodeFlags::DEFAULT_OPEN) {
+    let Some(_document) = ui
+        .tree_node_config(&tree.document)
+        .default_open(true)
+        .push()
+    else {
         return;
-    }
+    };
     draw_model_origin(ui);
     draw_model_parameters(ui, &tree.parameters);
     draw_model_sketches(ui, tree.sketches);
@@ -576,7 +579,7 @@ fn draw_model_tree(ui: &Ui, tree: &crate::GuiModelTree, selected: &mut Vec<GuiSh
 }
 
 fn draw_model_origin(ui: &Ui) {
-    if ui.collapsing_header("Origin", TreeNodeFlags::empty()) {
+    if let Some(_origin) = ui.tree_node("Origin") {
         ui.bullet_text("XY Plane");
         ui.bullet_text("XZ Plane");
         ui.bullet_text("YZ Plane");
@@ -584,32 +587,42 @@ fn draw_model_origin(ui: &Ui) {
 }
 
 fn draw_model_parameters(ui: &Ui, parameters: &[String]) {
-    if !ui.collapsing_header(
-        format!("Parameters ({})", parameters.len()),
-        TreeNodeFlags::empty(),
-    ) {
+    if parameters.is_empty() {
+        ui.bullet_text("Parameters");
         return;
     }
+    let label = format!("Parameters ({})", parameters.len());
+    let Some(_parameters) = ui.tree_node(&label) else {
+        return;
+    };
     for parameter in parameters {
         ui.bullet_text(parameter);
     }
 }
 
 fn draw_model_sketches(ui: &Ui, count: usize) {
-    if ui.collapsing_header(format!("Sketches ({count})"), TreeNodeFlags::empty()) {
-        for index in 1..=count {
-            ui.bullet_text(format!("Sketch {index}"));
-        }
+    if count == 0 {
+        ui.bullet_text("Sketches");
+        return;
+    }
+    let label = format!("Sketches ({count})");
+    let Some(_sketches) = ui.tree_node(&label) else {
+        return;
+    };
+    for index in 1..=count {
+        ui.bullet_text(format!("Sketch {index}"));
     }
 }
 
 fn draw_model_features(ui: &Ui, features: &[crate::GuiModelFeature]) {
-    if !ui.collapsing_header(
-        format!("Features ({})", features.len()),
-        TreeNodeFlags::empty(),
-    ) {
+    if features.is_empty() {
+        ui.bullet_text("Features");
         return;
     }
+    let label = format!("Features ({})", features.len());
+    let Some(_features) = ui.tree_node(&label) else {
+        return;
+    };
     for feature in features {
         ui.bullet_text(model_feature_label(feature));
     }
@@ -620,12 +633,14 @@ fn model_feature_label(feature: &crate::GuiModelFeature) -> String {
 }
 
 fn draw_model_bodies(ui: &Ui, bodies: &[crate::GuiModelBody], selected: &mut Vec<GuiShellAction>) {
-    if !ui.collapsing_header(
-        format!("Bodies ({})", bodies.len()),
-        TreeNodeFlags::DEFAULT_OPEN,
-    ) {
+    if bodies.is_empty() {
+        ui.bullet_text("Bodies");
         return;
     }
+    let label = format!("Bodies ({})", bodies.len());
+    let Some(_bodies) = ui.tree_node_config(&label).default_open(true).push() else {
+        return;
+    };
     for body in bodies {
         draw_body_row(ui, body, selected);
     }
@@ -685,7 +700,10 @@ mod tests {
         let layout = workspace_layout([1440., 900.]);
         assert_eq!(layout.model_position, [0., 192.]);
         assert_eq!(layout.model_size, [316.8, 676.]);
-        assert_eq!(layout.document_position, [316.8, 211.]);
+        assert_eq!(layout.viewport_header_position, [316.8, 192.]);
+        assert_eq!(layout.viewport_header_size, [1123.2, 22.]);
+        assert_eq!(layout.document_tabs_position, [316.8, 214.]);
+        assert_eq!(layout.document_tabs_size, [1123.2, 34.]);
         assert_eq!(layout.command_position, [316.8, 820.68]);
         assert_eq!(layout.command_size, [1123.2, 47.32]);
     }
@@ -710,11 +728,11 @@ mod tests {
     fn overlays_anchor_to_the_visible_viewport() {
         assert_eq!(
             viewport_rect([1440., 900.], true),
-            ([316.8, 230.], [1123.2, 590.68])
+            ([316.8, 248.], [1123.2, 572.68])
         );
         assert_eq!(
             viewport_rect([1440., 900.], false),
-            ([0., 230.], [1440., 590.68])
+            ([0., 248.], [1440., 572.68])
         );
     }
 
