@@ -71,6 +71,7 @@ pub(crate) fn draw(
     ui.dockspace_over_main_viewport();
     draw_menu_bar(ui, state, selected, parameters, workspace);
     draw_ribbon(ui, state, selected, parameters, workspace);
+    workspace_panels::draw_viewport_header(ui, !state.documents.is_empty());
     workspace_panels::draw_document_tabs(ui, &state.documents, selected);
     if workspace.model_browser_open {
         workspace_panels::draw_model_browser(

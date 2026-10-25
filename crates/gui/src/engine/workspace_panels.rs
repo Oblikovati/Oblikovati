@@ -7,12 +7,13 @@ use super::workspace_shell::RIBBON_BOTTOM;
 const STATUS_HEIGHT: f32 = 28.;
 const MODEL_WIDTH: f32 = 280.;
 const COMMAND_HEIGHT: f32 = 130.;
+const VIEWPORT_HEADER_HEIGHT: f32 = 20.;
 const VIEW_CUBE_SIZE: f32 = 86.;
 const OVERLAY_MARGIN: f32 = 10.;
 const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 const AXIS_TRIAD_MARGIN: f32 = 46.;
 const AXIS_TRIAD_RADIUS: f32 = 30.;
-const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 0.631];
+pub(super) const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 0.631];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WorkspaceLayout {
@@ -30,7 +31,7 @@ fn workspace_layout(display: [f32; 2]) -> WorkspaceLayout {
     WorkspaceLayout {
         model_position: [0., RIBBON_BOTTOM],
         model_size: [MODEL_WIDTH, work_height],
-        document_position: [MODEL_WIDTH, RIBBON_BOTTOM],
+        document_position: [MODEL_WIDTH, RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT],
         document_size: [work_width, 30.],
         command_position: [MODEL_WIDTH, display[1] - STATUS_HEIGHT - COMMAND_HEIGHT],
         command_size: [work_width, COMMAND_HEIGHT],
@@ -77,6 +78,24 @@ pub(super) fn draw_document_tabs(
                 draw_document_tab(ui, document, selected);
             }
         });
+}
+
+pub(super) fn draw_viewport_header(ui: &Ui, has_document: bool) {
+    if !has_document {
+        return;
+    }
+    let layout = workspace_layout(ui.io().display_size);
+    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
+    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
+    ui.window("Viewport")
+        .position([MODEL_WIDTH, RIBBON_BOTTOM], Condition::Always)
+        .size(
+            [layout.document_size[0], VIEWPORT_HEADER_HEIGHT],
+            Condition::Always,
+        )
+        .movable(false)
+        .resizable(false)
+        .build(|| {});
 }
 
 pub(super) fn draw_viewport_overlays(
@@ -126,7 +145,7 @@ fn draw_axis_arrow(ui: &Ui, center: [f32; 2], tip: [f32; 2], color: [f32; 4], la
 
 fn viewport_rect(display: [f32; 2], model_open: bool) -> ([f32; 2], [f32; 2]) {
     let left = if model_open { MODEL_WIDTH } else { 0. };
-    let top = RIBBON_BOTTOM + 30.;
+    let top = RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT + 30.;
     let bottom = display[1] - STATUS_HEIGHT - COMMAND_HEIGHT;
     (
         [left, top],
@@ -442,7 +461,7 @@ mod tests {
         let layout = workspace_layout([1440., 900.]);
         assert_eq!(layout.model_position, [0., 145.]);
         assert_eq!(layout.model_size, [280., 727.]);
-        assert_eq!(layout.document_position, [280., 145.]);
+        assert_eq!(layout.document_position, [280., 165.]);
         assert_eq!(layout.command_position, [280., 742.]);
         assert_eq!(layout.command_size, [1160., 130.]);
     }
@@ -458,11 +477,11 @@ mod tests {
     fn overlays_anchor_to_the_visible_viewport() {
         assert_eq!(
             viewport_rect([1440., 900.], true),
-            ([280., 175.], [1160., 567.])
+            ([280., 195.], [1160., 547.])
         );
         assert_eq!(
             viewport_rect([1440., 900.], false),
-            ([0., 175.], [1440., 567.])
+            ([0., 195.], [1440., 547.])
         );
     }
 
