@@ -1163,8 +1163,33 @@ fn draw_large_ribbon_control(
     let clicked = ui.image_button(label, TextureId::new(icon), [40., 40.]);
     let minimum = ui.item_rect_min();
     let maximum = ui.item_rect_max();
-    ui.text_wrapped(&control.display_name);
+    draw_large_caption(ui, &control.display_name, minimum, maximum);
     (clicked, minimum, maximum)
+}
+
+fn draw_large_caption(ui: &Ui, caption: &str, minimum: [f32; 2], maximum: [f32; 2]) {
+    for line in large_caption_lines(caption) {
+        let width = ui.calc_text_size(line)[0];
+        let x = ((minimum[0] + maximum[0] - width) / 2.).max(minimum[0]);
+        ui.set_cursor_screen_pos([x, ui.cursor_screen_pos()[1]]);
+        ui.text(line);
+    }
+}
+
+fn large_caption_lines(caption: &str) -> Vec<&str> {
+    let starts: Vec<_> = caption
+        .char_indices()
+        .filter_map(|(index, character)| {
+            (index == 0 || caption[..index].ends_with(char::is_whitespace))
+                .then_some((index, character))
+        })
+        .map(|(index, _)| index)
+        .collect();
+    if starts.len() < 2 {
+        return vec![caption];
+    }
+    let split = starts[starts.len().div_ceil(2)];
+    vec![caption[..split].trim(), caption[split..].trim()]
 }
 
 fn draw_small_ribbon_control(
@@ -1173,12 +1198,15 @@ fn draw_small_ribbon_control(
     label: &str,
     icons: &mut crate::icon_assets::GuiIconCache,
 ) -> bool {
-    let icon_clicked = icons.texture_id(&control.icon).is_some_and(|icon| {
+    let Some(icon) = icons.texture_id(&control.icon) else {
+        return ui.button(label);
+    };
+    ui.group(|| {
         let clicked = ui.image_button(format!("{}##icon", label), TextureId::new(icon), [18., 18.]);
         ui.same_line();
+        ui.text(&control.display_name);
         clicked
-    });
-    icon_clicked || ui.button_with_size(label, [64., 18.])
+    })
 }
 fn host_action(id: &str) -> Option<GuiShellAction> {
     match id {
@@ -1199,8 +1227,9 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 #[cfg(test)]
 mod tests {
     use super::{
-        WorkspaceShellState, history_entry_label, pack_panel_columns, panel_divider_line,
-        select_available_ribbon_tab, select_contextual_ribbon_tab, set_history_document,
+        WorkspaceShellState, history_entry_label, large_caption_lines, pack_panel_columns,
+        panel_divider_line, select_available_ribbon_tab, select_contextual_ribbon_tab,
+        set_history_document,
     };
     use crate::{
         GuiCommandState, GuiFrameEngine, GuiFrameRequest, GuiHistoryEntry, GuiRibbonControl,
@@ -1248,6 +1277,12 @@ mod tests {
                 vec!["Hole"]
             ]
         );
+    }
+
+    #[test]
+    fn large_caption_wraps_at_the_middle_word_like_the_go_ribbon() {
+        assert_eq!(large_caption_lines("New 2D Sketch"), ["New 2D", "Sketch"]);
+        assert_eq!(large_caption_lines("Extrude"), ["Extrude"]);
     }
 
     #[test]
