@@ -113,7 +113,7 @@ pub(super) fn solid_pixels(capture: &ViewportCapture) -> usize {
         .as_chunks::<4>()
         .0
         .iter()
-        .filter(|pixel| **pixel == [0, 255, 0, 255])
+        .filter(|pixel| **pixel == [218, 221, 225, 255])
         .count()
 }
 #[test]

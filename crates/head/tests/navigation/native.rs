@@ -99,7 +99,13 @@ fn native_home_key_recovers_the_part_without_recompute() {
     let before = publish_native_scene(&mut owner, &mut window);
     recover_native_home(&mut window);
     let restored = capture_native_scene(&mut window);
-    assert!(restored.rgba.as_chunks::<4>().0.contains(&[0, 255, 0, 255]));
+    assert!(
+        restored
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .contains(&[218, 221, 225, 255])
+    );
     assert_eq!(restored.scene_generation, before.scene_generation);
     assert!(owner.take_scene().unwrap().is_none());
     owner.finish().unwrap();
