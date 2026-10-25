@@ -431,7 +431,15 @@ impl<
     }
     fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         let Some(document) = self.files.workspace().active_document() else {
-            return Ok(Default::default());
+            let ribbon = oblikovati_api::client::Client::new(self.document_host())
+                .ribbon()
+                .list()
+                .map_err(|cause| cause.to_string())?;
+            return Ok(oblikovati_gui::GuiCommandState {
+                ribbon_key: ribbon.key.0.into_owned(),
+                ribbon_tabs: gui_ribbon_tabs(ribbon.tabs),
+                ..Default::default()
+            });
         };
         let (undo_label, redo_label, transaction_open) = {
             let history = self
@@ -465,35 +473,12 @@ impl<
             .ribbon()
             .list()
             .map_err(|cause| cause.to_string())?;
-        let ribbon_tabs = ribbon
-            .tabs
-            .unwrap_or_default()
-            .into_iter()
-            .map(|tab| oblikovati_gui::GuiRibbonTab {
-                name: tab.name,
-                panels: tab
-                    .panels
-                    .unwrap_or_default()
-                    .into_iter()
-                    .map(|panel| oblikovati_gui::GuiRibbonPanel {
-                        name: panel.name,
-                        controls: panel
-                            .controls
-                            .unwrap_or_default()
-                            .into_iter()
-                            .map(|control| oblikovati_gui::GuiRibbonControl {
-                                command_id: control.command_id,
-                                display_name: control.display_name,
-                                icon: control.icon,
-                                enabled: control.enabled,
-                                active: control.active,
-                                button_style: control.button_style.0,
-                            })
-                            .collect(),
-                    })
-                    .collect(),
-            })
-            .collect();
+        let mut ribbon_tabs = gui_ribbon_tabs(ribbon.tabs);
+        if self.sketch_edit.is_some() {
+            ribbon_tabs.push(gui_ribbon_tab(
+                oblikovati_automation::ribbon::contextual_sketch_tab(),
+            ));
+        }
         let tree = oblikovati_api::client::Client::new(self.document_host())
             .model()
             .tree()
@@ -837,6 +822,43 @@ impl<
         self.document_host()
     }
 }
+
+fn gui_ribbon_tabs(
+    tabs: Option<Vec<oblikovati_api::wire::RibbonTabInfo>>,
+) -> Vec<oblikovati_gui::GuiRibbonTab> {
+    tabs.unwrap_or_default()
+        .into_iter()
+        .map(gui_ribbon_tab)
+        .collect()
+}
+
+fn gui_ribbon_tab(tab: oblikovati_api::wire::RibbonTabInfo) -> oblikovati_gui::GuiRibbonTab {
+    oblikovati_gui::GuiRibbonTab {
+        name: tab.name,
+        panels: tab
+            .panels
+            .unwrap_or_default()
+            .into_iter()
+            .map(|panel| oblikovati_gui::GuiRibbonPanel {
+                name: panel.name,
+                controls: panel
+                    .controls
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|control| oblikovati_gui::GuiRibbonControl {
+                        command_id: control.command_id,
+                        display_name: control.display_name,
+                        icon: control.icon,
+                        enabled: control.enabled,
+                        active: control.active,
+                        button_style: control.button_style.0,
+                    })
+                    .collect(),
+            })
+            .collect(),
+    }
+}
+
 fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &'a mut FileWorkspace<O, W, F>,
     guids: &'a mut dyn GuidSource,

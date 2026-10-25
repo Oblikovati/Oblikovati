@@ -52,7 +52,7 @@ mod parameter_update;
 mod parameter_value;
 mod parameters;
 mod properties;
-mod ribbon;
+pub mod ribbon;
 mod transactions;
 mod units;
 mod units_edit;

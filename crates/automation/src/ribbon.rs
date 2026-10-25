@@ -79,17 +79,22 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
             )],
         ),
         tab("Inspect", vec![panel("Measure", vec![])]),
-        tab(
-            "Sketch",
-            vec![panel(
-                "Draw",
-                vec![
-                    large("Sketch.Rectangle", "Rectangle", "rectangle"),
-                    text("Sketch.Finish", "Finish Sketch"),
-                ],
-            )],
-        ),
     ]
+}
+
+/// Return the contextual tab shown only while a 2D sketch is edited.
+/// Example: `contextual_sketch_tab()` appends the Go Sketch tab to a Part ribbon.
+pub fn contextual_sketch_tab() -> RibbonTabInfo {
+    tab(
+        "Sketch",
+        vec![panel(
+            "Draw",
+            vec![
+                large("Sketch.Rectangle", "Rectangle", "rectangle"),
+                text("Sketch.Finish", "Finish Sketch"),
+            ],
+        )],
+    )
 }
 
 fn common_document_tabs(primary: &str) -> Vec<RibbonTabInfo> {
@@ -176,7 +181,7 @@ mod tests {
         let tabs = list(PART_RIBBON).tabs.unwrap();
         assert_eq!(tabs[0].name, "Create & Modify");
         assert_eq!(tabs[1].name, "Surfaces & Mesh");
-        assert_eq!(tabs[6].name, "Sketch");
         assert_eq!(tabs[0].panels.as_ref().unwrap().len(), 2);
+        assert_eq!(contextual_sketch_tab().name, "Sketch");
     }
 }
