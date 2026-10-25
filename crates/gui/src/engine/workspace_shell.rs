@@ -1016,11 +1016,12 @@ fn draw_host_panels(
     icons: &mut crate::icon_assets::GuiIconCache,
     workspace: &mut WorkspaceShellState,
 ) {
+    let label_y = ui.cursor_screen_pos()[1] + RIBBON_PANEL_DIVIDER_HEIGHT + 4.;
     for (index, panel) in panels.iter().enumerate() {
         if index > 0 {
             draw_panel_divider(ui);
         }
-        draw_host_panel(ui, panel, selected, icons, workspace);
+        draw_host_panel(ui, panel, label_y, selected, icons, workspace);
         if index + 1 != panels.len() {
             ui.same_line();
         }
@@ -1044,6 +1045,7 @@ fn panel_divider_line(cursor: [f32; 2]) -> ([f32; 2], [f32; 2]) {
 fn draw_host_panel(
     ui: &Ui,
     panel: &crate::GuiRibbonPanel,
+    label_y: f32,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
     workspace: &mut WorkspaceShellState,
@@ -1060,8 +1062,7 @@ fn draw_host_panel(
         });
         let content_minimum = ui.item_rect_min();
         let content_maximum = ui.item_rect_max();
-        ui.dummy([0., 4.]);
-        ui.separator();
+        ui.set_cursor_screen_pos([content_minimum[0], label_y]);
         draw_panel_name(ui, &panel.name, content_minimum, content_maximum);
     });
 }
