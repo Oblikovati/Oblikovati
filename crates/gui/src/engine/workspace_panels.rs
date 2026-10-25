@@ -10,6 +10,9 @@ const COMMAND_HEIGHT: f32 = 130.;
 const VIEWPORT_HEADER_HEIGHT: f32 = 20.;
 const VIEW_CUBE_SIZE: f32 = 86.;
 const VIEW_CUBE_EDGE_BAND: f32 = 0.2;
+const VIEW_CUBE_HOME_SIZE: f32 = 24.;
+const VIEW_CUBE_HOME_GAP: f32 = 5.;
+const VIEW_CUBE_HOME_LEFT_INSET: f32 = 12.;
 const OVERLAY_MARGIN: f32 = 10.;
 const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 const AXIS_TRIAD_MARGIN: f32 = 46.;
@@ -169,13 +172,71 @@ fn draw_view_cube(ui: &Ui, origin: [f32; 2], size: [f32; 2], selected: &mut Vec<
         .scroll_bar(false)
         .draw_background(false)
         .build(|| draw_view_cube_faces(ui, selected));
+    draw_view_cube_home(ui, position, selected);
 }
 
 fn draw_view_cube_faces(ui: &Ui, selected: &mut Vec<GuiShellAction>) {
     let origin = ui.cursor_screen_pos();
-    let clicked = ui.invisible_button("##view-cube-home", [VIEW_CUBE_SIZE, VIEW_CUBE_SIZE]);
+    let clicked = ui.invisible_button("##view-cube-regions", [VIEW_CUBE_SIZE, VIEW_CUBE_SIZE]);
     draw_cube_faces(ui, origin);
     draw_cube_labels(ui, origin);
+    if clicked {
+        selected.push(GuiShellAction::Home);
+    }
+}
+
+fn draw_view_cube_home(ui: &Ui, cube: [f32; 2], selected: &mut Vec<GuiShellAction>) {
+    let position = view_cube_home_position(cube);
+    ui.window("##view-cube-home")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
+        .position(position, Condition::Always)
+        .size(
+            [VIEW_CUBE_HOME_SIZE, VIEW_CUBE_HOME_SIZE],
+            Condition::Always,
+        )
+        .title_bar(false)
+        .movable(false)
+        .resizable(false)
+        .scroll_bar(false)
+        .build(|| draw_view_cube_home_button(ui, selected));
+}
+
+fn view_cube_home_position(cube: [f32; 2]) -> [f32; 2] {
+    [
+        cube[0] + VIEW_CUBE_HOME_LEFT_INSET,
+        cube[1] + VIEW_CUBE_SIZE + VIEW_CUBE_HOME_GAP,
+    ]
+}
+
+fn draw_view_cube_home_button(ui: &Ui, selected: &mut Vec<GuiShellAction>) {
+    let origin = ui.cursor_screen_pos();
+    let clicked = ui.invisible_button(
+        "##view-cube-go-home",
+        [VIEW_CUBE_HOME_SIZE, VIEW_CUBE_HOME_SIZE],
+    );
+    let draw = ui.get_window_draw_list();
+    let color = [0.72, 0.76, 0.82, 0.95];
+    draw.add_polyline(
+        vec![
+            [origin[0] + 4., origin[1] + 12.],
+            [origin[0] + 12., origin[1] + 5.],
+            [origin[0] + 20., origin[1] + 12.],
+        ],
+        color,
+    )
+    .thickness(1.8)
+    .build();
+    draw.add_polyline(
+        vec![
+            [origin[0] + 6., origin[1] + 11.],
+            [origin[0] + 6., origin[1] + 20.],
+            [origin[0] + 18., origin[1] + 20.],
+            [origin[0] + 18., origin[1] + 11.],
+        ],
+        color,
+    )
+    .thickness(1.8)
+    .build();
     if clicked {
         selected.push(GuiShellAction::Home);
     }
@@ -506,7 +567,8 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
 mod tests {
     use super::{
         axis_triad_arrows, cube_grid_fractions, cube_points, model_feature_label,
-        navigation_buttons, quad_point, status_text, viewport_rect, workspace_layout,
+        navigation_buttons, quad_point, status_text, view_cube_home_position, viewport_rect,
+        workspace_layout,
     };
     use crate::{
         GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
@@ -566,6 +628,11 @@ mod tests {
             quad_point([[0., 0.], [10., 0.], [10., 10.], [0., 10.]], 0.2, 0.8),
             [2., 8.]
         );
+    }
+
+    #[test]
+    fn view_cube_home_button_sits_below_the_compass() {
+        assert_eq!(view_cube_home_position([100., 200.]), [112., 291.]);
     }
 
     #[test]
