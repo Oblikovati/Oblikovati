@@ -32,23 +32,25 @@ fn configure_geometry(style: &mut Style) {
 
 fn apply_surface_palette(style: &mut Style) {
     style[StyleColor::Text] = rgba(0.773, 0.773, 0.773, 1.);
-    style[StyleColor::TextDisabled] = rgba(0.49, 0.49, 0.49, 1.);
-    style[StyleColor::WindowBg] = rgba(0.106, 0.106, 0.106, 1.);
+    style[StyleColor::TextDisabled] = rgba(0.773, 0.773, 0.773, 0.5);
+    style[StyleColor::WindowBg] = rgba(0.086, 0.086, 0.086, 1.);
     style[StyleColor::ChildBg] = rgba(0.106, 0.106, 0.106, 1.);
-    style[StyleColor::PopupBg] = rgba(0.106, 0.106, 0.106, 1.);
-    style[StyleColor::MenuBarBg] = rgba(0.086, 0.086, 0.086, 1.);
+    style[StyleColor::PopupBg] = rgba(0.122, 0.122, 0.122, 0.937);
+    style[StyleColor::MenuBarBg] = rgba(0.137, 0.137, 0.137, 1.);
     style[StyleColor::Border] = rgba(0.114, 0.114, 0.114, 1.);
     style[StyleColor::Separator] = rgba(0.114, 0.114, 0.114, 1.);
     style[StyleColor::TitleBg] = rgba(0.129, 0.129, 0.129, 1.);
     style[StyleColor::TitleBgCollapsed] = rgba(0.129, 0.129, 0.129, 1.);
+    style[StyleColor::Header] = rgba(0.129, 0.129, 0.129, 1.);
 }
 
 fn apply_control_palette(style: &mut Style) {
-    style[StyleColor::FrameBg] = rgba(0.141, 0.141, 0.141, 1.);
-    style[StyleColor::FrameBgHovered] = rgba(0.18, 0.18, 0.18, 1.);
-    style[StyleColor::FrameBgActive] = rgba(0.506, 0.376, 0.89, 1.);
-    style[StyleColor::Button] = rgba(0.18, 0.18, 0.18, 1.);
-    style[StyleColor::ButtonHovered] = rgba(0.24, 0.24, 0.24, 1.);
+    style[StyleColor::FrameBg] = rgba(0.122, 0.122, 0.122, 1.);
+    style[StyleColor::FrameBgHovered] = rgba(0.187, 0.187, 0.187, 1.);
+    style[StyleColor::FrameBgActive] = rgba(0.241, 0.241, 0.241, 1.);
+    style[StyleColor::ScrollbarBg] = rgba(0.122, 0.122, 0.122, 1.);
+    style[StyleColor::Button] = rgba(0.165, 0.165, 0.165, 1.);
+    style[StyleColor::ButtonHovered] = rgba(0.226, 0.226, 0.226, 1.);
     style[StyleColor::ButtonActive] = rgba(0.506, 0.376, 0.89, 1.);
     style[StyleColor::CheckMark] = rgba(0.506, 0.376, 0.89, 1.);
     style[StyleColor::SliderGrab] = rgba(0.506, 0.376, 0.89, 1.);
@@ -57,7 +59,7 @@ fn apply_control_palette(style: &mut Style) {
 }
 
 fn apply_navigation_palette(style: &mut Style) {
-    let accent = rgba(0.506, 0.376, 0.89, 1.);
+    let accent = rgba(0.506, 0.376, 0.89, 0.631);
     style[StyleColor::TitleBgActive] = accent;
     style[StyleColor::TabActive] = accent;
     style[StyleColor::TabHovered] = accent;
@@ -65,8 +67,11 @@ fn apply_navigation_palette(style: &mut Style) {
     style[StyleColor::HeaderActive] = accent;
     style[StyleColor::SeparatorHovered] = accent;
     style[StyleColor::SeparatorActive] = accent;
-    style[StyleColor::ScrollbarGrab] = rgba(0.247, 0.247, 0.247, 1.);
-    style[StyleColor::ScrollbarGrabHovered] = accent;
+    style[StyleColor::Tab] = rgba(0.165, 0.165, 0.165, 1.);
+    style[StyleColor::TabUnfocused] = rgba(0.165, 0.165, 0.165, 1.);
+    style[StyleColor::TabUnfocusedActive] = rgba(0.506, 0.376, 0.89, 1.);
+    style[StyleColor::ScrollbarGrab] = rgba(0.322, 0.22, 0.537, 1.);
+    style[StyleColor::ScrollbarGrabHovered] = rgba(0.322, 0.22, 0.537, 1.);
     style[StyleColor::ScrollbarGrabActive] = accent;
 }
 
@@ -83,7 +88,11 @@ mod tests {
         let mut context = Context::create();
         configure(&mut context);
         let style = context.style();
-        assert_eq!(style[StyleColor::WindowBg], rgba(0.106, 0.106, 0.106, 1.));
-        assert_eq!(style[StyleColor::TabActive], rgba(0.506, 0.376, 0.89, 1.));
+        assert_eq!(style[StyleColor::WindowBg], rgba(0.086, 0.086, 0.086, 1.));
+        assert_eq!(style[StyleColor::PopupBg], rgba(0.122, 0.122, 0.122, 0.937));
+        assert_eq!(
+            style[StyleColor::TabActive],
+            rgba(0.506, 0.376, 0.89, 0.631)
+        );
     }
 }
