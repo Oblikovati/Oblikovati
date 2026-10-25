@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::GuiShellAction;
-use imgui::{Condition, TreeNodeFlags, Ui};
+use imgui::{Condition, TreeNodeFlags, Ui, WindowFlags};
 
 use super::workspace_shell::RIBBON_BOTTOM;
 
 const STATUS_HEIGHT: f32 = 28.;
 const MODEL_WIDTH: f32 = 280.;
 const COMMAND_HEIGHT: f32 = 130.;
+const VIEW_CUBE_SIZE: f32 = 86.;
+const OVERLAY_MARGIN: f32 = 10.;
+const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WorkspaceLayout {
@@ -69,6 +72,175 @@ pub(super) fn draw_document_tabs(
                 draw_document_tab(ui, document, selected);
             }
         });
+}
+
+pub(super) fn draw_viewport_overlays(
+    ui: &Ui,
+    has_document: bool,
+    model_open: bool,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    if !has_document {
+        return;
+    }
+    let (origin, size) = viewport_rect(ui.io().display_size, model_open);
+    draw_view_cube(ui, origin, size, selected);
+    draw_navigation_bar(ui, origin, size, selected, icons);
+}
+
+fn viewport_rect(display: [f32; 2], model_open: bool) -> ([f32; 2], [f32; 2]) {
+    let left = if model_open { MODEL_WIDTH } else { 0. };
+    let top = RIBBON_BOTTOM + 30.;
+    let bottom = display[1] - STATUS_HEIGHT - COMMAND_HEIGHT;
+    (
+        [left, top],
+        [(display[0] - left).max(0.), (bottom - top).max(0.)],
+    )
+}
+
+fn draw_view_cube(ui: &Ui, origin: [f32; 2], size: [f32; 2], selected: &mut Vec<GuiShellAction>) {
+    let position = [
+        origin[0] + size[0] - VIEW_CUBE_SIZE - OVERLAY_MARGIN,
+        origin[1] + OVERLAY_MARGIN,
+    ];
+    ui.window("##view-cube")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
+        .position(position, Condition::Always)
+        .size([VIEW_CUBE_SIZE, VIEW_CUBE_SIZE], Condition::Always)
+        .title_bar(false)
+        .movable(false)
+        .resizable(false)
+        .scroll_bar(false)
+        .draw_background(false)
+        .build(|| draw_view_cube_faces(ui, selected));
+}
+
+fn draw_view_cube_faces(ui: &Ui, selected: &mut Vec<GuiShellAction>) {
+    let origin = ui.cursor_screen_pos();
+    let clicked = ui.invisible_button("##view-cube-home", [VIEW_CUBE_SIZE, VIEW_CUBE_SIZE]);
+    draw_cube_faces(ui, origin);
+    draw_cube_labels(ui, origin);
+    if clicked {
+        selected.push(GuiShellAction::Home);
+    }
+}
+
+fn draw_cube_faces(ui: &Ui, origin: [f32; 2]) {
+    let points = cube_points(origin);
+    let draw = ui.get_window_draw_list();
+    for (face, color) in points.into_iter().zip([
+        [0.82, 0.84, 0.88, 0.92],
+        [0.65, 0.68, 0.74, 0.92],
+        [0.72, 0.75, 0.80, 0.92],
+    ]) {
+        draw.add_polyline(face.to_vec(), color).filled(true).build();
+    }
+}
+
+fn draw_cube_labels(ui: &Ui, origin: [f32; 2]) {
+    let draw = ui.get_window_draw_list();
+    for (offset, label) in [([32., 25.], "TOP"), ([21., 51.], "F"), ([59., 51.], "R")] {
+        draw.add_text(
+            [origin[0] + offset[0], origin[1] + offset[1]],
+            [0.12, 0.14, 0.18, 1.],
+            label,
+        );
+    }
+}
+
+fn cube_points(origin: [f32; 2]) -> [[[f32; 2]; 4]; 3] {
+    let [x, y] = origin;
+    [
+        [
+            [x + 43., y + 8.],
+            [x + 76., y + 27.],
+            [x + 43., y + 45.],
+            [x + 10., y + 27.],
+        ],
+        [
+            [x + 10., y + 27.],
+            [x + 43., y + 45.],
+            [x + 43., y + 77.],
+            [x + 10., y + 60.],
+        ],
+        [
+            [x + 43., y + 45.],
+            [x + 76., y + 27.],
+            [x + 76., y + 60.],
+            [x + 43., y + 77.],
+        ],
+    ]
+}
+
+fn draw_navigation_bar(
+    ui: &Ui,
+    origin: [f32; 2],
+    size: [f32; 2],
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    let position = [
+        origin[0] + size[0] - 42.,
+        origin[1] + (size[1] - NAVIGATION_BAR_HEIGHT) / 2.,
+    ];
+    ui.window("##navigation-bar")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
+        .position(position, Condition::Always)
+        .size([34., NAVIGATION_BAR_HEIGHT], Condition::Always)
+        .title_bar(false)
+        .movable(false)
+        .resizable(false)
+        .scroll_bar(false)
+        .build(|| draw_navigation_buttons(ui, selected, icons));
+}
+
+fn draw_navigation_buttons(
+    ui: &Ui,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    for (label, icon, action, enabled) in navigation_buttons() {
+        draw_navigation_button(ui, label, icon, action, enabled, selected, icons);
+    }
+}
+
+fn navigation_buttons() -> [(&'static str, &'static str, GuiShellAction, bool); 5] {
+    [
+        ("Home", "home", GuiShellAction::Home, true),
+        ("Fit", "zoom-all", GuiShellAction::Home, true),
+        ("Zoom Window", "zoom-window", GuiShellAction::Home, false),
+        (
+            "Constrained Orbit",
+            "orbit-constrained",
+            GuiShellAction::Home,
+            false,
+        ),
+        ("Look At", "look-at", GuiShellAction::Home, false),
+    ]
+}
+
+fn draw_navigation_button(
+    ui: &Ui,
+    label: &str,
+    icon: &str,
+    action: GuiShellAction,
+    enabled: bool,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    let disabled = ui.begin_disabled(!enabled);
+    let clicked = icons.texture_id(icon).map_or_else(
+        || ui.button(label),
+        |id| ui.image_button(format!("##navigation-{label}"), id.into(), [22., 22.]),
+    );
+    drop(disabled);
+    if clicked {
+        selected.push(action);
+    }
+    if ui.is_item_hovered() {
+        ui.tooltip_text(label);
+    }
 }
 
 fn draw_document_tab(
@@ -208,8 +380,13 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
 
 #[cfg(test)]
 mod tests {
-    use super::{model_feature_label, status_text, workspace_layout};
-    use crate::GuiModelFeature;
+    use super::{
+        cube_points, model_feature_label, navigation_buttons, status_text, viewport_rect,
+        workspace_layout,
+    };
+    use crate::{
+        GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
+    };
 
     #[test]
     fn feature_rows_keep_name_kind_and_health() {
@@ -236,5 +413,62 @@ mod tests {
         assert_eq!(status_text(None), "Ready");
         assert_eq!(status_text(Some("")), "Ready");
         assert_eq!(status_text(Some("Click a face")), "Click a face");
+    }
+
+    #[test]
+    fn overlays_anchor_to_the_visible_viewport() {
+        assert_eq!(
+            viewport_rect([1440., 900.], true),
+            ([280., 175.], [1160., 567.])
+        );
+        assert_eq!(
+            viewport_rect([1440., 900.], false),
+            ([0., 175.], [1440., 567.])
+        );
+    }
+
+    #[test]
+    fn view_cube_faces_share_the_front_top_right_corner() {
+        let faces = cube_points([100., 200.]);
+        assert_eq!(faces[0][2], [143., 245.]);
+        assert_eq!(faces[1][1], [143., 245.]);
+        assert_eq!(faces[2][0], [143., 245.]);
+    }
+
+    #[test]
+    fn navigation_bar_keeps_the_five_go_navigation_tools() {
+        let buttons = navigation_buttons();
+        assert_eq!(buttons.len(), 5);
+        assert_eq!(buttons[0].0, "Home");
+        assert_eq!(buttons[4].0, "Look At");
+    }
+
+    #[test]
+    fn document_frame_includes_the_view_cube_faces() {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let request = GuiFrameRequest {
+            extent: [1440, 900],
+            commands: GuiCommandState {
+                documents: vec![GuiDocumentTab {
+                    id: 1,
+                    name: "Part".into(),
+                    active: true,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            delta_seconds: 1. / 60.,
+            framebuffer_scale: [1.; 2],
+            events: Vec::new(),
+            status: None,
+        };
+        let frame = engine.frame(&request).unwrap().draws;
+        assert!(
+            frame
+                .batches
+                .iter()
+                .flat_map(|batch| &batch.vertices)
+                .any(|vertex| { vertex.srgb == [209, 214, 224, 235] })
+        );
     }
 }

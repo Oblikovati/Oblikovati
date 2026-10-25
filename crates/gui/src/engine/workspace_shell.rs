@@ -67,6 +67,15 @@ pub(crate) fn draw(
     if workspace.command_panel_open {
         workspace_panels::draw_command_window(ui, status, &mut workspace.command_panel_open);
     }
+    let mut icons = std::mem::take(&mut workspace.icons);
+    workspace_panels::draw_viewport_overlays(
+        ui,
+        !state.documents.is_empty(),
+        workspace.model_browser_open,
+        selected,
+        &mut icons,
+    );
+    workspace.icons = icons;
     workspace_panels::draw_status_bar(ui, status);
     draw_preferences(
         ui,
