@@ -968,17 +968,29 @@ fn draw_host_panel(
     workspace: &mut WorkspaceShellState,
 ) {
     ui.group(|| {
-        draw_panel_columns(
-            ui,
-            &pack_panel_columns(&panel.controls),
-            selected,
-            icons,
-            workspace,
-        );
+        ui.group(|| {
+            draw_panel_columns(
+                ui,
+                &pack_panel_columns(&panel.controls),
+                selected,
+                icons,
+                workspace,
+            );
+        });
+        let content_minimum = ui.item_rect_min();
+        let content_maximum = ui.item_rect_max();
         ui.dummy([0., 4.]);
         ui.separator();
-        ui.text(&panel.name);
+        draw_panel_name(ui, &panel.name, content_minimum, content_maximum);
     });
+}
+
+fn draw_panel_name(ui: &Ui, name: &str, minimum: [f32; 2], maximum: [f32; 2]) {
+    let width = ui.calc_text_size(name)[0];
+    let x = ((minimum[0] + maximum[0] - width) / 2.).max(minimum[0]);
+    let y = ui.cursor_screen_pos()[1];
+    ui.set_cursor_screen_pos([x, y]);
+    ui.text(name);
 }
 
 fn draw_panel_columns(
