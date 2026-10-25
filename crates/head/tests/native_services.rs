@@ -188,7 +188,10 @@ fn verify_service_delegation(services: &mut TestNativeServices<'_>) {
             .message()
             .contains("test camera refusal")
     );
-    assert_eq!(services.gui_command_state().unwrap(), Default::default());
+    let zero_document = services.gui_command_state().unwrap();
+    assert!(zero_document.documents.is_empty());
+    assert_eq!(zero_document.ribbon_key, "ZeroDoc");
+    assert_eq!(zero_document.ribbon_tabs[0].name, "Get Started");
     assert!(
         !services
             .process_window_inputs(&[], &crate::placement_test_inputs::ProjectionlessWindow)
