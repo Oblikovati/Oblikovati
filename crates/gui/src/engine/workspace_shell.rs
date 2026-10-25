@@ -2,6 +2,7 @@
 use super::workspace_panels;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, TabItemFlags, TextureId, Ui};
+use std::collections::BTreeMap;
 
 pub(super) const MENU_BAR_HEIGHT: f32 = 20.;
 const RIBBON_HEIGHT: f32 = 125.;
@@ -20,6 +21,7 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) model_browser_open: bool,
     pub(crate) command_panel_open: bool,
     history_documents: Vec<u64>,
+    ribbon_panel_widths: BTreeMap<String, f32>,
     control_targets: Vec<crate::GuiControlTarget>,
     icons: crate::icon_assets::GuiIconCache,
 }
@@ -38,6 +40,7 @@ impl Default for WorkspaceShellState {
             model_browser_open: true,
             command_panel_open: true,
             history_documents: Vec::new(),
+            ribbon_panel_widths: BTreeMap::new(),
             control_targets: Vec::new(),
             icons: Default::default(),
         }
@@ -321,7 +324,7 @@ fn draw_ribbon_tab(
     }
     workspace.active_tab = tab.name.clone();
     workspace.force_active_tab = false;
-    draw_host_panels(ui, &tab.panels, selected, icons, workspace);
+    draw_host_panels(ui, &tab.name, &tab.panels, selected, icons, workspace);
     if tab.name == "View" {
         draw_view_window_controls(ui, parameters, workspace);
     }
@@ -1011,17 +1014,33 @@ fn menu_action(
 
 fn draw_host_panels(
     ui: &Ui,
+    tab_name: &str,
     panels: &[crate::GuiRibbonPanel],
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
     workspace: &mut WorkspaceShellState,
 ) {
     let label_y = ui.cursor_screen_pos()[1] + RIBBON_PANEL_DIVIDER_HEIGHT + 4.;
+    let collapsed_width = collapsed_panel_width(ui, panels);
+    let widths = cached_panel_widths(tab_name, panels, workspace);
+    let expanded = panels_that_fit(
+        &widths,
+        panel_divider_width(ui),
+        collapsed_width,
+        ui.content_region_avail()[0],
+    );
     for (index, panel) in panels.iter().enumerate() {
         if index > 0 {
             draw_panel_divider(ui);
         }
-        draw_host_panel(ui, panel, label_y, selected, icons, workspace);
+        if index < expanded {
+            let width = draw_host_panel(ui, panel, label_y, selected, icons, workspace);
+            workspace
+                .ribbon_panel_widths
+                .insert(ribbon_panel_width_key(tab_name, &panel.name), width);
+        } else {
+            draw_collapsed_panel(ui, tab_name, panel, label_y, selected, icons, workspace);
+        }
         if index + 1 != panels.len() {
             ui.same_line();
         }
@@ -1037,6 +1056,10 @@ fn draw_panel_divider(ui: &Ui) {
     ui.set_cursor_screen_pos([end[0] + 7., start[1]]);
 }
 
+fn panel_divider_width(ui: &Ui) -> f32 {
+    2. * ui.clone_style().item_spacing[0] + 1.
+}
+
 fn panel_divider_line(cursor: [f32; 2]) -> ([f32; 2], [f32; 2]) {
     let x = cursor[0] + 3.;
     ([x, cursor[1]], [x, cursor[1] + RIBBON_PANEL_DIVIDER_HEIGHT])
@@ -1049,7 +1072,7 @@ fn draw_host_panel(
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
     workspace: &mut WorkspaceShellState,
-) {
+) -> f32 {
     ui.group(|| {
         ui.group(|| {
             draw_panel_columns(
@@ -1065,6 +1088,85 @@ fn draw_host_panel(
         ui.set_cursor_screen_pos([content_minimum[0], label_y]);
         draw_panel_name(ui, &panel.name, content_minimum, content_maximum);
     });
+    ui.item_rect_max()[0] - ui.item_rect_min()[0]
+}
+
+fn draw_collapsed_panel(
+    ui: &Ui,
+    tab_name: &str,
+    panel: &crate::GuiRibbonPanel,
+    label_y: f32,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
+) {
+    let width = collapsed_panel_width(ui, std::slice::from_ref(panel));
+    let popup = format!("##ribbon-panel-{tab_name}-{}", panel.name);
+    ui.group(|| {
+        let minimum = ui.cursor_screen_pos();
+        if ui.button_with_size(format!("⌄{popup}"), [width, RIBBON_PANEL_DIVIDER_HEIGHT]) {
+            ui.open_popup(&popup);
+        }
+        if ui.is_item_hovered() {
+            ui.tooltip_text(format!("{} — show commands", panel.name));
+        }
+        let maximum = ui.item_rect_max();
+        ui.set_cursor_screen_pos([minimum[0], label_y]);
+        draw_panel_name(ui, &panel.name, minimum, maximum);
+    });
+    if let Some(_popup) = ui.begin_popup(&popup) {
+        draw_panel_columns(
+            ui,
+            &pack_panel_columns(&panel.controls),
+            selected,
+            icons,
+            workspace,
+        );
+    }
+}
+
+fn cached_panel_widths(
+    tab_name: &str,
+    panels: &[crate::GuiRibbonPanel],
+    workspace: &WorkspaceShellState,
+) -> Vec<f32> {
+    panels
+        .iter()
+        .map(|panel| {
+            workspace
+                .ribbon_panel_widths
+                .get(&ribbon_panel_width_key(tab_name, &panel.name))
+                .copied()
+                .unwrap_or_default()
+        })
+        .collect()
+}
+
+fn ribbon_panel_width_key(tab_name: &str, panel_name: &str) -> String {
+    format!("{tab_name}\u{0}{panel_name}")
+}
+
+fn collapsed_panel_width(ui: &Ui, panels: &[crate::GuiRibbonPanel]) -> f32 {
+    panels
+        .iter()
+        .map(|panel| ui.calc_text_size(&panel.name)[0] + 2. * ui.clone_style().frame_padding[0])
+        .fold(44., f32::max)
+}
+
+fn panels_that_fit(widths: &[f32], divider: f32, collapsed: f32, available: f32) -> usize {
+    (0..=widths.len())
+        .rev()
+        .find(|expanded| panel_row_width(widths, *expanded, divider, collapsed) <= available)
+        .unwrap_or_default()
+}
+
+fn panel_row_width(widths: &[f32], expanded: usize, divider: f32, collapsed: f32) -> f32 {
+    let panel_width = widths
+        .iter()
+        .enumerate()
+        .map(|(index, width)| if index < expanded { *width } else { collapsed })
+        .sum::<f32>();
+    panel_width + divider * widths.len().saturating_sub(1) as f32
 }
 
 fn draw_panel_name(ui: &Ui, name: &str, minimum: [f32; 2], maximum: [f32; 2]) {
@@ -1229,8 +1331,8 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 mod tests {
     use super::{
         WorkspaceShellState, history_entry_label, large_caption_lines, pack_panel_columns,
-        panel_divider_line, select_available_ribbon_tab, select_contextual_ribbon_tab,
-        set_history_document,
+        panel_divider_line, panels_that_fit, select_available_ribbon_tab,
+        select_contextual_ribbon_tab, set_history_document,
     };
     use crate::{
         GuiCommandState, GuiFrameEngine, GuiFrameRequest, GuiHistoryEntry, GuiRibbonControl,
@@ -1289,6 +1391,12 @@ mod tests {
     #[test]
     fn panel_divider_uses_the_go_control_grid_height() {
         assert_eq!(panel_divider_line([100., 40.]), ([103., 40.], [103., 104.]));
+    }
+
+    #[test]
+    fn narrow_ribbon_collapses_trailing_panels_before_overflowing() {
+        assert_eq!(panels_that_fit(&[100., 90., 80.], 10., 40., 240.), 1);
+        assert_eq!(panels_that_fit(&[0., 0., 0.], 10., 40., 100.), 3);
     }
 
     #[test]
