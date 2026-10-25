@@ -9,6 +9,7 @@ const MODEL_WIDTH: f32 = 280.;
 const COMMAND_HEIGHT: f32 = 130.;
 const VIEWPORT_HEADER_HEIGHT: f32 = 20.;
 const VIEW_CUBE_SIZE: f32 = 86.;
+const VIEW_CUBE_EDGE_BAND: f32 = 0.2;
 const OVERLAY_MARGIN: f32 = 10.;
 const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 const AXIS_TRIAD_MARGIN: f32 = 46.;
@@ -182,6 +183,12 @@ fn draw_view_cube_faces(ui: &Ui, selected: &mut Vec<GuiShellAction>) {
 
 fn draw_cube_faces(ui: &Ui, origin: [f32; 2]) {
     let points = cube_points(origin);
+    draw_cube_compass(ui, origin);
+    draw_cube_face_fills(ui, points);
+    draw_cube_grids(ui, points);
+}
+
+fn draw_cube_face_fills(ui: &Ui, points: [[[f32; 2]; 4]; 3]) {
     let draw = ui.get_window_draw_list();
     for (face, color) in points.into_iter().zip([
         [0.82, 0.84, 0.88, 0.92],
@@ -190,6 +197,65 @@ fn draw_cube_faces(ui: &Ui, origin: [f32; 2]) {
     ]) {
         draw.add_polyline(face.to_vec(), color).filled(true).build();
     }
+}
+
+fn draw_cube_compass(ui: &Ui, origin: [f32; 2]) {
+    let center = [origin[0] + 43., origin[1] + 43.];
+    let draw = ui.get_window_draw_list();
+    draw.add_circle(center, 39., [0.64, 0.68, 0.74, 0.9])
+        .thickness(1.2)
+        .build();
+    for (offset, label) in [
+        ([0., -42.], "N"),
+        ([42., 0.], "E"),
+        ([0., 37.], "S"),
+        ([-42., 0.], "W"),
+    ] {
+        draw.add_text(
+            [center[0] + offset[0] - 3., center[1] + offset[1]],
+            [0.75, 0.78, 0.84, 0.9],
+            label,
+        );
+    }
+}
+
+fn draw_cube_grids(ui: &Ui, points: [[[f32; 2]; 4]; 3]) {
+    let draw = ui.get_window_draw_list();
+    for face in points {
+        for fraction in cube_grid_fractions() {
+            draw.add_line(
+                quad_point(face, fraction, 0.),
+                quad_point(face, fraction, 1.),
+                [0.30, 0.33, 0.39, 0.7],
+            )
+            .thickness(1.)
+            .build();
+            draw.add_line(
+                quad_point(face, 0., fraction),
+                quad_point(face, 1., fraction),
+                [0.30, 0.33, 0.39, 0.7],
+            )
+            .thickness(1.)
+            .build();
+        }
+    }
+}
+
+fn cube_grid_fractions() -> [f32; 2] {
+    [VIEW_CUBE_EDGE_BAND, 1. - VIEW_CUBE_EDGE_BAND]
+}
+
+fn quad_point(quad: [[f32; 2]; 4], horizontal: f32, vertical: f32) -> [f32; 2] {
+    let top = interpolate_point(quad[0], quad[1], horizontal);
+    let bottom = interpolate_point(quad[3], quad[2], horizontal);
+    interpolate_point(top, bottom, vertical)
+}
+
+fn interpolate_point(start: [f32; 2], end: [f32; 2], fraction: f32) -> [f32; 2] {
+    [
+        start[0] + (end[0] - start[0]) * fraction,
+        start[1] + (end[1] - start[1]) * fraction,
+    ]
 }
 
 fn draw_cube_labels(ui: &Ui, origin: [f32; 2]) {
@@ -439,8 +505,8 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
 #[cfg(test)]
 mod tests {
     use super::{
-        axis_triad_arrows, cube_points, model_feature_label, navigation_buttons, status_text,
-        viewport_rect, workspace_layout,
+        axis_triad_arrows, cube_grid_fractions, cube_points, model_feature_label,
+        navigation_buttons, quad_point, status_text, viewport_rect, workspace_layout,
     };
     use crate::{
         GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
@@ -491,6 +557,15 @@ mod tests {
         assert_eq!(faces[0][2], [143., 245.]);
         assert_eq!(faces[1][1], [143., 245.]);
         assert_eq!(faces[2][0], [143., 245.]);
+    }
+
+    #[test]
+    fn view_cube_keeps_the_go_thin_edge_grid() {
+        assert_eq!(cube_grid_fractions(), [0.2, 0.8]);
+        assert_eq!(
+            quad_point([[0., 0.], [10., 0.], [10., 10.], [0., 10.]], 0.2, 0.8),
+            [2., 8.]
+        );
     }
 
     #[test]
