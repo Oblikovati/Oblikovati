@@ -252,14 +252,65 @@ fn draw_quick_access(
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
+    draw_application_menu(ui, state, selected, icons);
     for (label, icon, action) in [
         ("New Part", "new-part", GuiShellAction::NewPart),
+        ("Open", "open", GuiShellAction::Save),
         ("Save", "save", GuiShellAction::Save),
         ("Undo", "undo", GuiShellAction::Undo),
         ("Redo", "redo", GuiShellAction::Redo),
     ] {
+        if label == "Open" {
+            draw_disabled_quick_access(ui, label, icon, icons);
+            continue;
+        }
         quick_access_action(ui, label, icon, action, state, selected, icons);
     }
+}
+
+fn draw_application_menu(
+    ui: &Ui,
+    state: &GuiCommandState,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    let clicked = icons.texture_id("file-menu").map_or_else(
+        || ui.button("File##app-menu"),
+        |id| ui.image_button("##app-menu", TextureId::new(id), [18., 18.]),
+    );
+    if clicked {
+        ui.open_popup("##app-menu-popup");
+    }
+    if let Some(_popup) = ui.begin_popup("##app-menu-popup") {
+        menu_action(ui, "New Part", GuiShellAction::NewPart, state, selected);
+        ui.menu_item_config("Open").enabled(false).build();
+        menu_action(ui, "Save", GuiShellAction::Save, state, selected);
+    }
+    ui.same_line();
+}
+
+fn draw_disabled_quick_access(
+    ui: &Ui,
+    label: &str,
+    icon: &str,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    let disabled = ui.begin_disabled(true);
+    icons.texture_id(icon).map_or_else(
+        || ui.button(label),
+        |id| {
+            ui.image_button(
+                format!("{label}##quick-access"),
+                TextureId::new(id),
+                [18., 18.],
+            )
+        },
+    );
+    drop(disabled);
+    if ui.is_item_hovered() {
+        ui.tooltip_text(label);
+    }
+    ui.same_line();
 }
 
 fn quick_access_action(
