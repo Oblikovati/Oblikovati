@@ -41,7 +41,9 @@ fn apply_control_palette(style: &mut Style) {
 }
 
 fn apply_navigation_palette(style: &mut Style) {
-    let accent = rgba(0.506, 0.376, 0.89, 0.631);
+    // Go's theme source stores #8160e3a1, but its native theme bridge renders the
+    // active chrome slots as the opaque #8160e3 result visible in the reference shell.
+    let accent = rgba(0.506, 0.376, 0.89, 1.);
     style[StyleColor::TitleBgActive] = accent;
     style[StyleColor::TabActive] = accent;
     style[StyleColor::TabHovered] = accent;
@@ -72,10 +74,7 @@ mod tests {
         let style = context.style();
         assert_eq!(style[StyleColor::WindowBg], rgba(0.086, 0.086, 0.086, 1.));
         assert_eq!(style[StyleColor::PopupBg], rgba(0.122, 0.122, 0.122, 0.937));
-        assert_eq!(
-            style[StyleColor::TabActive],
-            rgba(0.506, 0.376, 0.89, 0.631)
-        );
+        assert_eq!(style[StyleColor::TabActive], rgba(0.506, 0.376, 0.89, 1.));
     }
 
     #[test]

@@ -22,7 +22,7 @@ const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 const AXIS_TRIAD_MARGIN: f32 = 46.;
 const AXIS_TRIAD_RADIUS: f32 = 30.;
 const AXIS_ARROW_HEAD: f32 = 9.;
-pub(super) const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 0.631];
+pub(super) const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 1.];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WorkspaceLayout {
