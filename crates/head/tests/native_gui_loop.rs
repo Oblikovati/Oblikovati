@@ -79,6 +79,7 @@ fn click_shell(
 ) {
     crate::frames::run_frames(window, HeadOptions { frames: Some(1) }, owner).unwrap();
     let control = match action {
+        GuiShellAction::NewPart => control_center(&window.native, "QuickAccess.New Part"),
         GuiShellAction::Save => control_center(&window.native, "QuickAccess.Save"),
         GuiShellAction::Undo => control_center(&window.native, "QuickAccess.Undo"),
         GuiShellAction::Redo => control_center(&window.native, "QuickAccess.Redo"),
@@ -86,6 +87,19 @@ fn click_shell(
         found => panic!("native shell click {found:?}: expected a history, save, or view action"),
     };
     click_shell_point(window, owner, control);
+}
+
+#[test]
+fn native_mouse_new_part_switches_the_zero_document_ribbon_to_part() {
+    let native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let mut window = scripted_window(native);
+    click_shell(&mut window, &mut owner, GuiShellAction::NewPart);
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.ribbon_key, "Part");
+    assert_eq!(state.ribbon_tabs[0].name, "Create & Modify");
+    owner.finish().unwrap();
+    window.finish().unwrap();
 }
 
 fn control_center(window: &NativeHeadWindow, command_id: &str) -> [i32; 2] {
