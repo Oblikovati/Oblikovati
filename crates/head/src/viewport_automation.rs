@@ -56,12 +56,11 @@ struct CapturedImage {
 }
 
 fn captured_image(window: &mut dyn HeadWindow, path: PathBuf) -> Result<CapturedImage, Error> {
-    let capture = window.capture_window().map_err(Error)?;
-    crate::capture::write_rgba_png(&path, &capture).map_err(Error)?;
+    let extent = window.queue_window_capture(&path).map_err(Error)?;
     Ok(CapturedImage {
         path: path.to_string_lossy().into_owned(),
-        width: i64::from(capture.extent[0]),
-        height: i64::from(capture.extent[1]),
+        width: i64::from(extent[0]),
+        height: i64::from(extent[1]),
     })
 }
 

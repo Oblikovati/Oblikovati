@@ -98,6 +98,12 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.apply_gui_parameter(action)
     }
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        self.owner.apply_gui_shell_action(action)
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],
@@ -178,17 +184,30 @@ mod tests {
 
     #[test]
     fn script_desktop_delegates_window_aware_polling() {
-        let called = Rc::new(Cell::new(false));
+        let window_called = Rc::new(Cell::new(false));
+        let action_called = Rc::new(Cell::new(false));
         let mut desktop = DesktopScripts::new(
-            WindowAwareOwner(Rc::clone(&called)),
+            WindowAwareOwner {
+                window_called: Rc::clone(&window_called),
+                action_called: Rc::clone(&action_called),
+            },
             IsolatedLuaEngine::new(std::path::Path::new("/usr/bin/true"), Vec::new()),
             ScriptLimits::gui(),
         );
         desktop.poll_window(2, &mut EmptyWindow).unwrap();
-        assert!(called.get());
+        assert!(window_called.get());
+        assert!(
+            desktop
+                .apply_gui_shell_action(oblikovati_gui::GuiShellAction::NewPart)
+                .unwrap()
+        );
+        assert!(action_called.get());
     }
 
-    struct WindowAwareOwner(Rc<Cell<bool>>);
+    struct WindowAwareOwner {
+        window_called: Rc<Cell<bool>>,
+        action_called: Rc<Cell<bool>>,
+    }
 
     impl HeadWork for WindowAwareOwner {
         fn poll(&mut self, _: usize) -> Result<HeadWorkStatus, String> {
@@ -199,8 +218,15 @@ mod tests {
             _: usize,
             _: &mut dyn crate::HeadWindow,
         ) -> Result<HeadWorkStatus, String> {
-            self.0.set(true);
+            self.window_called.set(true);
             Ok(Default::default())
+        }
+        fn apply_gui_shell_action(
+            &mut self,
+            _: oblikovati_gui::GuiShellAction,
+        ) -> Result<bool, String> {
+            self.action_called.set(true);
+            Ok(true)
         }
         fn close_allowed(&mut self) -> Result<bool, String> {
             Ok(true)

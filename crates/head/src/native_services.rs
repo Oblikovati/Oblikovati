@@ -80,12 +80,13 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
         budget: usize,
         window: &mut dyn crate::HeadWindow,
     ) -> Result<bool, String> {
-        let outcome = {
+        let (outcome, capture_queued) = {
             let host = crate::window_caller::WindowCaller::new(self.owner.script_host(), window);
-            self.runtime.poll(budget, &host)
-        }
-        .map_err(|cause| cause.to_string())?;
-        self.record_native_outcome(outcome)
+            let outcome = self.runtime.poll(budget, &host);
+            (outcome, host.capture_queued())
+        };
+        let outcome = outcome.map_err(|cause| cause.to_string())?;
+        Ok(self.record_native_outcome(outcome)? || capture_queued)
     }
     fn record_native_outcome(
         &mut self,
@@ -168,6 +169,12 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
         action: &oblikovati_gui::GuiParameterAction,
     ) -> Result<bool, String> {
         self.owner.apply_gui_parameter(action)
+    }
+    fn apply_gui_shell_action(
+        &mut self,
+        action: oblikovati_gui::GuiShellAction,
+    ) -> Result<bool, String> {
+        self.owner.apply_gui_shell_action(action)
     }
     fn process_inputs(
         &mut self,

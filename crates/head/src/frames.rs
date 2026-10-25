@@ -20,6 +20,11 @@ pub trait HeadWindow {
         Err("window capture: expected a native capture-capable window".into())
     }
 
+    /// Queue a capture after the next presented frame; example: `window.queue_window_capture(path)?`.
+    fn queue_window_capture(&mut self, _: &std::path::Path) -> Result<[u32; 2], String> {
+        Err("window capture: expected a native capture-capable window".into())
+    }
+
     /// Inject one viewport event through the same path as native input; example: `window.inject_viewport_input(event)?`.
     fn inject_viewport_input(
         &mut self,

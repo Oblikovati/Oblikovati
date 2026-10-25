@@ -45,6 +45,8 @@ fn public_automation_requests_capture_and_queue_each_input_kind() {
             path: path.to_string_lossy().into_owned(),
         },
     );
+    assert!(!path.exists());
+    window.present().unwrap();
     call(
         &mut window,
         METHOD_VIEWPORT_CLICK,

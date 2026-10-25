@@ -18,6 +18,7 @@ pub struct NativeHeadWindow {
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
     injected_events: std::collections::VecDeque<ViewportEvent>,
+    pending_captures: Vec<std::path::PathBuf>,
     gui_epoch: std::time::Instant,
     clipboard: std::rc::Rc<clipboard::NativeClipboardChannel>,
 }
@@ -41,6 +42,7 @@ impl NativeHeadWindow {
             command_notice: None,
             gui: None,
             injected_events: Default::default(),
+            pending_captures: Vec::new(),
             gui_epoch: std::time::Instant::now(),
             clipboard: clipboard::NativeClipboardChannel::open(),
         })
@@ -60,6 +62,21 @@ impl NativeHeadWindow {
         let capture = self.view.capture()?;
         crate::capture::write_rgba_png(path, &capture)?;
         Ok(capture)
+    }
+
+    fn queue_capture(&mut self, path: &std::path::Path) -> Result<[u32; 2], String> {
+        let extent = self.view.drawable_extent()?;
+        self.pending_captures.push(path.into());
+        self.wake.wake()?;
+        Ok(extent)
+    }
+
+    fn write_pending_captures(&mut self) -> Result<(), String> {
+        for path in std::mem::take(&mut self.pending_captures) {
+            let capture = self.view.capture()?;
+            crate::capture::write_rgba_png(&path, &capture)?;
+        }
+        Ok(())
     }
 }
 impl NativeHeadWindow {
@@ -81,6 +98,10 @@ impl NativeHeadWindow {
 impl HeadWindow for NativeHeadWindow {
     fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
         self.view.capture()
+    }
+
+    fn queue_window_capture(&mut self, path: &std::path::Path) -> Result<[u32; 2], String> {
+        self.queue_capture(path)
     }
 
     fn inject_viewport_input(&mut self, event: ViewportEvent) -> Result<(), String> {
@@ -195,6 +216,7 @@ impl HeadWindow for NativeHeadWindow {
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
         let presentation = self.view.present()?;
+        self.write_pending_captures()?;
         self.refresh_title()?;
         Ok(match presentation {
             ViewportPresentation::Completed(_) => HeadPresentation::Completed,
