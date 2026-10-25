@@ -15,7 +15,8 @@ pub(crate) fn list(key: RibbonKey) -> ListRibbonResult {
         "Part" => part_tabs(),
         "Assembly" => assembly_tabs(),
         "Drawing" => drawing_tabs(),
-        "Presentation" | "IFeatures" | "UnknownDocument" => Vec::new(),
+        "Presentation" => presentation_tabs(),
+        "IFeatures" | "UnknownDocument" => Vec::new(),
         _ => Vec::new(),
     };
     ListRibbonResult {
@@ -179,6 +180,46 @@ fn drawing_tabs() -> Vec<RibbonTabInfo> {
             ),
         ],
     )]
+}
+
+fn presentation_tabs() -> Vec<RibbonTabInfo> {
+    vec![
+        tab(
+            "Presentation",
+            vec![
+                presentation_create_panel(),
+                presentation_storyboard_panel(),
+                presentation_view_panel(),
+            ],
+        ),
+        view_tab(),
+    ]
+}
+
+fn presentation_create_panel() -> RibbonPanelInfo {
+    panel(
+        "Create",
+        vec![unavailable_large(
+            "Presentation.Tweak",
+            "Tweak Components",
+            "presentation-tweak",
+        )],
+    )
+}
+
+fn presentation_storyboard_panel() -> RibbonPanelInfo {
+    unavailable_compact_panel("Storyboard", &["Add Action", "Animate", "Publish Video"])
+}
+
+fn presentation_view_panel() -> RibbonPanelInfo {
+    panel(
+        "View",
+        vec![unavailable_large(
+            "Presentation.Snapshot",
+            "Snapshot View",
+            "presentation-snapshot",
+        )],
+    )
 }
 
 fn part_tabs() -> Vec<RibbonTabInfo> {
@@ -385,6 +426,19 @@ mod tests {
             key_for_document(Some(DOCUMENT_PRESENTATION)).0,
             "Presentation"
         );
+
+        for key in [
+            ZERO_DOC_RIBBON,
+            PART_RIBBON,
+            RibbonKey("Assembly".into()),
+            RibbonKey("Drawing".into()),
+            RibbonKey("Presentation".into()),
+        ] {
+            assert!(
+                !list(key).tabs.unwrap().is_empty(),
+                "supported document ribbon must have a visible tab"
+            );
+        }
     }
 
     #[test]
@@ -436,11 +490,9 @@ mod tests {
         assert_eq!(drawing[0].name, "Drawing");
         assert_eq!(drawing[0].panels.as_ref().unwrap()[0].name, "Sheets");
 
-        assert!(
-            list(RibbonKey("Presentation".into()))
-                .tabs
-                .unwrap()
-                .is_empty()
-        );
+        let presentation = list(RibbonKey("Presentation".into())).tabs.unwrap();
+        assert_eq!(presentation[0].name, "Presentation");
+        assert_eq!(presentation[0].panels.as_ref().unwrap()[0].name, "Create");
+        assert_eq!(presentation[1].name, "View");
     }
 }
