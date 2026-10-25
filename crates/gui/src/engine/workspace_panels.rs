@@ -145,7 +145,7 @@ fn axis_triad_arrows() -> [([f32; 2], [f32; 4], &'static str); 3] {
 }
 
 fn draw_axis_arrow(ui: &Ui, center: [f32; 2], tip: [f32; 2], color: [f32; 4], label: &str) {
-    let draw = ui.get_window_draw_list();
+    let draw = ui.get_foreground_draw_list();
     draw.add_line(center, tip, color).thickness(2.4).build();
     if let Some(head) = axis_arrowhead(center, tip) {
         draw.add_polyline(head.to_vec(), color).filled(true).build();
@@ -724,5 +724,32 @@ mod tests {
                 .flat_map(|batch| &batch.vertices)
                 .any(|vertex| { vertex.srgb == [209, 214, 224, 235] })
         );
+        assert!(!frame.batches.iter().any(default_debug_surface));
+    }
+
+    fn default_debug_surface(batch: &crate::GuiBatch) -> bool {
+        let Some(first) = batch.vertices.first() else {
+            return false;
+        };
+        first.srgb == [22, 22, 22, 255]
+            && batch.clip_rect == [0., 0., 1440., 900.]
+            && bounds(batch.vertices.as_slice())
+                .iter()
+                .zip([59., 59., 461., 461.])
+                .all(|(actual, expected)| (actual - expected).abs() < 0.01)
+    }
+
+    fn bounds(vertices: &[crate::GuiVertex]) -> [f32; 4] {
+        vertices.iter().fold(
+            [f32::MAX, f32::MAX, f32::MIN, f32::MIN],
+            |[left, top, right, bottom], vertex| {
+                [
+                    left.min(vertex.position[0]),
+                    top.min(vertex.position[1]),
+                    right.max(vertex.position[0]),
+                    bottom.max(vertex.position[1]),
+                ]
+            },
+        )
     }
 }
