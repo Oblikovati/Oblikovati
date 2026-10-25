@@ -1111,6 +1111,12 @@ fn draw_collapsed_panel(
             ui.tooltip_text(format!("{} — show commands", panel.name));
         }
         let maximum = ui.item_rect_max();
+        workspace.record_target(
+            &format!("RibbonPanel.{tab_name}.{}", panel.name),
+            true,
+            minimum,
+            maximum,
+        );
         ui.set_cursor_screen_pos([minimum[0], label_y]);
         draw_panel_name(ui, &panel.name, minimum, maximum);
     });
@@ -1448,6 +1454,20 @@ mod tests {
         assert_ne!(draws, baseline);
     }
 
+    #[test]
+    fn narrow_ribbon_exposes_collapsed_panel_flyouts() {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let request = narrow_ribbon_request();
+        engine.frame(&request).unwrap();
+        let second = engine.frame(&request).unwrap();
+        assert!(
+            second
+                .targets
+                .iter()
+                .any(|target| target.command_id == "RibbonPanel.Test.Third")
+        );
+    }
+
     fn unavailable_control() -> GuiRibbonControl {
         GuiRibbonControl {
             command_id: "Future.Unavailable".into(),
@@ -1468,6 +1488,33 @@ mod tests {
                         name: "Panel".into(),
                         controls: vec![control],
                     }],
+                }],
+                ..Default::default()
+            },
+            delta_seconds: 1. / 60.,
+            framebuffer_scale: [1.; 2],
+            events: Vec::new(),
+            status: None,
+        }
+    }
+
+    fn narrow_ribbon_request() -> GuiFrameRequest {
+        let panel = |name: &str| GuiRibbonPanel {
+            name: name.into(),
+            controls: vec![GuiRibbonControl {
+                command_id: format!("{name}.Action"),
+                display_name: "Very Wide Ribbon Command".into(),
+                enabled: true,
+                button_style: 2,
+                ..Default::default()
+            }],
+        };
+        GuiFrameRequest {
+            extent: [180, 360],
+            commands: GuiCommandState {
+                ribbon_tabs: vec![GuiRibbonTab {
+                    name: "Test".into(),
+                    panels: ["First", "Second", "Third"].map(panel).to_vec(),
                 }],
                 ..Default::default()
             },
