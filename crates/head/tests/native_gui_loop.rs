@@ -78,7 +78,7 @@ fn click_shell(
     action: GuiShellAction,
 ) {
     crate::frames::run_frames(window, HeadOptions { frames: Some(1) }, owner).unwrap();
-    let control = match action {
+    let command_id = match action {
         GuiShellAction::NewPart => control_center(&window.native, "QuickAccess.New Part"),
         GuiShellAction::Save => control_center(&window.native, "QuickAccess.Save"),
         GuiShellAction::Undo => control_center(&window.native, "QuickAccess.Undo"),
@@ -86,7 +86,7 @@ fn click_shell(
         GuiShellAction::Home => control_center(&window.native, "Navigation.Home"),
         found => panic!("native shell click {found:?}: expected a history, save, or view action"),
     };
-    click_shell_point(window, owner, control);
+    click_shell_point(window, owner, command_id);
 }
 
 #[test]
@@ -100,6 +100,28 @@ fn native_mouse_new_part_switches_the_zero_document_ribbon_to_part() {
     assert_eq!(state.ribbon_tabs[0].name, "Create & Modify");
     owner.finish().unwrap();
     window.finish().unwrap();
+}
+
+#[test]
+fn native_zero_document_ribbon_creates_each_supported_document_type() {
+    for (control, ribbon_key, first_tab) in [
+        ("GetStarted.NewPart", "Part", "Create & Modify"),
+        ("GetStarted.NewAssembly", "Assembly", "Assemble"),
+        ("GetStarted.NewDrawing", "Drawing", "Drawing"),
+    ] {
+        let native = NativeHeadWindow::open().unwrap();
+        let mut owner = native_owner(native.wake.clone()).unwrap();
+        let mut window = scripted_window(native);
+        crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner)
+            .unwrap();
+        let point = control_center(&window.native, control);
+        click_shell_point(&mut window, &mut owner, point);
+        let state = owner.gui_command_state().unwrap();
+        assert_eq!(state.ribbon_key, ribbon_key);
+        assert_eq!(state.ribbon_tabs[0].name, first_tab);
+        owner.finish().unwrap();
+        window.finish().unwrap();
+    }
 }
 
 fn control_center(window: &NativeHeadWindow, command_id: &str) -> [i32; 2] {
