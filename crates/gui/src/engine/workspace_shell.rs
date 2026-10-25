@@ -1008,9 +1008,7 @@ fn draw_host_control(
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
-    let Some(action) = host_action(&control.command_id) else {
-        return;
-    };
+    let action = host_action(&control.command_id);
     let disabled = ui.begin_disabled(!control.enabled);
     let label = format!("{}##{}", control.display_name, control.command_id);
     let clicked = if control.button_style == 2 {
@@ -1023,6 +1021,9 @@ fn draw_host_control(
         ui.tooltip_text(&control.display_name);
     }
     if clicked && control.enabled {
+        let Some(action) = action else {
+            return;
+        };
         selected.push(action);
     }
 }
@@ -1076,7 +1077,10 @@ mod tests {
         WorkspaceShellState, history_entry_label, pack_panel_columns, select_available_ribbon_tab,
         select_contextual_ribbon_tab, set_history_document,
     };
-    use crate::{GuiCommandState, GuiHistoryEntry, GuiRibbonControl, GuiRibbonTab};
+    use crate::{
+        GuiCommandState, GuiFrameEngine, GuiFrameRequest, GuiHistoryEntry, GuiRibbonControl,
+        GuiRibbonPanel, GuiRibbonTab,
+    };
 
     #[test]
     fn history_picker_replaces_a_document_and_marks_saved_entries() {
@@ -1154,6 +1158,50 @@ mod tests {
         };
         select_available_ribbon_tab(&assembly, &mut workspace);
         assert_eq!(workspace.active_tab, "Assemble");
+    }
+
+    #[test]
+    fn unavailable_ribbon_controls_are_drawn_without_a_host_action() {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let draws = engine
+            .frame(&ribbon_request(unavailable_control()))
+            .unwrap()
+            .draws;
+        let baseline = engine
+            .frame(&ribbon_request(GuiRibbonControl::default()))
+            .unwrap()
+            .draws;
+        assert_ne!(draws, baseline);
+    }
+
+    fn unavailable_control() -> GuiRibbonControl {
+        GuiRibbonControl {
+            command_id: "Future.Unavailable".into(),
+            display_name: "Unavailable".into(),
+            enabled: false,
+            button_style: 2,
+            ..Default::default()
+        }
+    }
+
+    fn ribbon_request(control: GuiRibbonControl) -> GuiFrameRequest {
+        GuiFrameRequest {
+            extent: [640, 360],
+            commands: GuiCommandState {
+                ribbon_tabs: vec![GuiRibbonTab {
+                    name: "Test".into(),
+                    panels: vec![GuiRibbonPanel {
+                        name: "Panel".into(),
+                        controls: vec![control],
+                    }],
+                }],
+                ..Default::default()
+            },
+            delta_seconds: 1. / 60.,
+            framebuffer_scale: [1.; 2],
+            events: Vec::new(),
+            status: None,
+        }
     }
 
     fn small(name: &str) -> GuiRibbonControl {

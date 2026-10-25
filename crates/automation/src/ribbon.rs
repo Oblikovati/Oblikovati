@@ -188,15 +188,72 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
             vec![
                 panel(
                     "Sketch",
-                    vec![large("Sketch.Create", "New 2D Sketch", "create-sketch")],
+                    vec![
+                        large("Sketch.Create", "New 2D Sketch", "create-sketch"),
+                        unavailable_large("Sketch.Create3D", "New 3D Sketch", "create-sketch-3d"),
+                    ],
                 ),
                 panel(
                     "Create",
-                    vec![large("Feature.Extrude", "Extrude", "extrude")],
+                    vec![
+                        large("Feature.Extrude", "Extrude", "extrude"),
+                        unavailable_large("Create.Revolve", "Revolve", "revolve"),
+                        unavailable_large("Create.Sweep", "Sweep", "sweep"),
+                        unavailable_large("Create.Loft", "Loft", "loft"),
+                        unavailable_large("Create.Coil", "Coil", "coil"),
+                    ],
+                ),
+                panel(
+                    "Work Features",
+                    vec![
+                        unavailable_large("WorkPlane.Offset", "Work Plane", "work-plane-offset"),
+                        unavailable_large("WorkAxis.OnEdge", "Work Axis", "work-axis"),
+                        unavailable_large("WorkPoint.AtVertex", "Work Point", "work-point"),
+                    ],
+                ),
+                unavailable_compact_panel(
+                    "Modify",
+                    &[
+                        "Hole",
+                        "Boss",
+                        "Lip",
+                        "Chamfer",
+                        "Fillet",
+                        "Shell",
+                        "Draft",
+                        "Thicken",
+                        "Combine",
+                        "Split",
+                        "Move Face",
+                        "Move Bodies",
+                    ],
+                ),
+                unavailable_compact_panel(
+                    "Pattern",
+                    &["Rectangular", "Circular", "Mirror", "Sketch Driven"],
                 ),
             ],
         ),
-        tab("Surfaces & Mesh", vec![panel("Surface", vec![])]),
+        tab(
+            "Surfaces & Mesh",
+            vec![
+                panel(
+                    "Sketch",
+                    vec![
+                        large("Sketch.Create", "New 2D Sketch", "create-sketch"),
+                        unavailable_large("Sketch.Create3D", "New 3D Sketch", "create-sketch-3d"),
+                    ],
+                ),
+                unavailable_compact_panel(
+                    "Surface",
+                    &[
+                        "Patch", "Trim", "Extend", "Stitch", "Offset", "Thicken", "Ruled", "Loft",
+                    ],
+                ),
+                unavailable_compact_panel("Freeform", &["Create Form", "Edit Form", "Finish Form"]),
+                unavailable_compact_panel("Mesh", &["Import Mesh", "Repair", "Convert"]),
+            ],
+        ),
         tab(
             "Manage",
             vec![panel("Parameters", vec![text("File.Save", "Save")])],
@@ -231,7 +288,15 @@ fn view_tab() -> RibbonTabInfo {
         vec![panel(
             "Navigate",
             vec![
+                unavailable_large("View.Fit", "Zoom All", "zoom-all"),
                 compact("View.Home", "Home", "home"),
+                unavailable_large("View.LookAt", "Look At", "look-at"),
+                unavailable_large("View.ZoomWindow", "Zoom Window", "zoom-window"),
+                unavailable_large(
+                    "View.ConstrainedOrbit",
+                    "Constrained Orbit",
+                    "orbit-constrained",
+                ),
                 compact("View.Previous", "Previous View", "home"),
             ],
         )],
@@ -327,7 +392,16 @@ mod tests {
         let tabs = list(PART_RIBBON).tabs.unwrap();
         assert_eq!(tabs[0].name, "Create & Modify");
         assert_eq!(tabs[1].name, "Surfaces & Mesh");
-        assert_eq!(tabs[0].panels.as_ref().unwrap().len(), 2);
+        assert_eq!(
+            tabs[0]
+                .panels
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(|panel| panel.name.as_str())
+                .collect::<Vec<_>>(),
+            ["Sketch", "Create", "Work Features", "Modify", "Pattern"]
+        );
         let sketch = contextual_sketch_tab();
         assert_eq!(sketch.name, "Sketch");
         assert_eq!(sketch.panels.as_ref().unwrap()[0].name, "Create");
