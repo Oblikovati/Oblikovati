@@ -9,6 +9,9 @@ use oblikovati_session::{
     workspace::WorkspaceObserver,
 };
 use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
+
+/// Go Dark's `#1e2d50` viewport background, converted from sRGB to renderer-linear RGB.
+const GO_DARK_VIEWPORT_BACKGROUND: [f64; 3] = [0.0132, 0.0262, 0.0803];
 /// Owned display state names its document and generation; kernel handles stay in result storage.
 #[derive(Clone, Debug)]
 pub struct HeadSceneStatus {
@@ -152,7 +155,7 @@ impl DesktopPartScenes {
         self.slot.clear();
         HeadSceneUpdate {
             scene: ViewportScene {
-                background: [0., 0., 1.],
+                background: GO_DARK_VIEWPORT_BACKGROUND,
                 triangles: Vec::new(),
             },
             status: HeadSceneStatus {
@@ -166,6 +169,17 @@ impl DesktopPartScenes {
     pub fn clear(&mut self) {
         self.slot.clear();
         self.source = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DesktopPartScenes, GO_DARK_VIEWPORT_BACKGROUND};
+
+    #[test]
+    fn empty_scene_uses_the_go_dark_viewport_background() {
+        let mut scenes = DesktopPartScenes::default();
+        assert_eq!(scenes.empty().scene.background, GO_DARK_VIEWPORT_BACKGROUND);
     }
 }
 
@@ -223,7 +237,7 @@ fn render_part_scene(
             chord_error: 0.05,
             angular_error: 0.5,
         },
-        [0., 0., 1.],
+        GO_DARK_VIEWPORT_BACKGROUND,
         [0., 1., 0., 1.],
         visible,
     )?;
