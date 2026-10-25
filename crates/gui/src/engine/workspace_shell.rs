@@ -54,10 +54,19 @@ impl WorkspaceShellState {
         self.control_targets.clear();
     }
     fn record_control(&mut self, control: &crate::GuiRibbonControl, min: [f32; 2], max: [f32; 2]) {
+        self.record_target(&control.command_id, control.enabled, min, max);
+    }
+    pub(super) fn record_target(
+        &mut self,
+        command_id: &str,
+        enabled: bool,
+        min: [f32; 2],
+        max: [f32; 2],
+    ) {
         self.control_targets.push(crate::GuiControlTarget {
-            command_id: control.command_id.clone(),
+            command_id: command_id.into(),
             center: [(min[0] + max[0]) / 2., (min[1] + max[1]) / 2.],
-            enabled: control.enabled,
+            enabled,
         });
     }
 }
@@ -94,6 +103,7 @@ pub(crate) fn draw(
         workspace.model_browser_open,
         selected,
         &mut icons,
+        workspace,
     );
     workspace.icons = icons;
     workspace_panels::draw_status_bar(ui, status);
@@ -280,7 +290,7 @@ fn draw_ribbon_content(
     workspace: &mut WorkspaceShellState,
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
-    draw_quick_access(ui, state, selected, icons);
+    draw_quick_access(ui, state, selected, icons, workspace);
     let Some(_tabs) = ui.tab_bar("##ribbon-tabs") else {
         return;
     };
@@ -322,21 +332,52 @@ fn draw_quick_access(
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
 ) {
     draw_application_menu(ui, state, selected, icons);
-    for (label, icon, action) in [
-        ("New Part", "new-part", GuiShellAction::NewPart),
-        ("Open", "open", GuiShellAction::Save),
-        ("Save", "save", GuiShellAction::Save),
-        ("Undo", "undo", GuiShellAction::Undo),
-        ("Redo", "redo", GuiShellAction::Redo),
-    ] {
-        if label == "Open" {
-            draw_disabled_quick_access(ui, label, icon, icons);
+    for button in quick_access_buttons() {
+        if button.label == "Open" {
+            draw_disabled_quick_access(ui, button.label, button.icon, icons);
             continue;
         }
-        quick_access_action(ui, label, icon, action, state, selected, icons);
+        quick_access_action(ui, &button, state, selected, icons, workspace);
     }
+}
+
+struct QuickAccessButton {
+    label: &'static str,
+    icon: &'static str,
+    action: GuiShellAction,
+}
+
+fn quick_access_buttons() -> [QuickAccessButton; 5] {
+    [
+        QuickAccessButton {
+            label: "New Part",
+            icon: "new-part",
+            action: GuiShellAction::NewPart,
+        },
+        QuickAccessButton {
+            label: "Open",
+            icon: "open",
+            action: GuiShellAction::Save,
+        },
+        QuickAccessButton {
+            label: "Save",
+            icon: "save",
+            action: GuiShellAction::Save,
+        },
+        QuickAccessButton {
+            label: "Undo",
+            icon: "undo",
+            action: GuiShellAction::Undo,
+        },
+        QuickAccessButton {
+            label: "Redo",
+            icon: "redo",
+            action: GuiShellAction::Redo,
+        },
+    ]
 }
 
 fn draw_application_menu(
@@ -400,30 +441,35 @@ fn draw_disabled_quick_access(
 
 fn quick_access_action(
     ui: &Ui,
-    label: &str,
-    icon: &str,
-    action: GuiShellAction,
+    button: &QuickAccessButton,
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut WorkspaceShellState,
 ) {
-    let disabled = ui.begin_disabled(!action.enabled(state));
-    let clicked = icons.texture_id(icon).map_or_else(
-        || ui.button(label),
+    let disabled = ui.begin_disabled(!button.action.enabled(state));
+    let clicked = icons.texture_id(button.icon).map_or_else(
+        || ui.button(button.label),
         |id| {
             ui.image_button(
-                format!("{label}##quick-access"),
+                format!("{}##quick-access", button.label),
                 TextureId::new(id),
                 [18., 18.],
             )
         },
     );
     drop(disabled);
+    workspace.record_target(
+        &format!("QuickAccess.{}", button.label),
+        button.action.enabled(state),
+        ui.item_rect_min(),
+        ui.item_rect_max(),
+    );
     if ui.is_item_hovered() {
-        ui.tooltip_text(label);
+        ui.tooltip_text(button.label);
     }
-    if clicked && action.dispatchable(state) {
-        selected.push(action);
+    if clicked && button.action.dispatchable(state) {
+        selected.push(button.action.clone());
     }
     ui.same_line();
 }

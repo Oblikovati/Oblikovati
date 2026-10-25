@@ -77,15 +77,24 @@ fn click_shell(
     owner: &mut NativeDesktopOwner,
     action: GuiShellAction,
 ) {
-    let (tab, control) = match action {
-        GuiShellAction::Save => ([25, 38], [100, 60]),
-        GuiShellAction::Undo => ([25, 38], [145, 60]),
-        GuiShellAction::Redo => ([25, 38], [190, 60]),
-        GuiShellAction::Home => ([200, 38], [40, 60]),
+    crate::frames::run_frames(window, HeadOptions { frames: Some(1) }, owner).unwrap();
+    let control = match action {
+        GuiShellAction::Save => control_center(&window.native, "QuickAccess.Save"),
+        GuiShellAction::Undo => control_center(&window.native, "QuickAccess.Undo"),
+        GuiShellAction::Redo => control_center(&window.native, "QuickAccess.Redo"),
+        GuiShellAction::Home => control_center(&window.native, "Navigation.Home"),
         found => panic!("native shell click {found:?}: expected a history, save, or view action"),
     };
-    click_shell_point(window, owner, tab);
     click_shell_point(window, owner, control);
+}
+
+fn control_center(window: &NativeHeadWindow, command_id: &str) -> [i32; 2] {
+    let target = window
+        .gui
+        .as_ref()
+        .and_then(|gui| gui.control_target(command_id))
+        .unwrap_or_else(|| panic!("native control {command_id:?}: expected a visible hit target"));
+    target.center.map(|coordinate| coordinate.round() as i32)
 }
 
 fn click_shell_point(
@@ -226,7 +235,11 @@ fn verify_gui_camera(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOw
     assert_eq!(window.native.view.camera_state().unwrap(), initial);
     assert!(drive_wheel(window, owner, [600, 400]));
     assert_ne!(window.native.view.camera_state().unwrap(), initial);
-    click_shell(window, owner, GuiShellAction::Home);
+    window
+        .native
+        .view
+        .navigate(oblikovati_viewport::ViewportNavigation::Home { margin: 0.1 })
+        .unwrap();
     assert_eq!(window.native.view.camera_state().unwrap(), initial);
 }
 fn drive_wheel(

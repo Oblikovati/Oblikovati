@@ -112,6 +112,7 @@ pub(super) fn draw_viewport_overlays(
     model_open: bool,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut super::workspace_shell::WorkspaceShellState,
 ) {
     if !has_document {
         return;
@@ -119,7 +120,7 @@ pub(super) fn draw_viewport_overlays(
     let (origin, size) = viewport_rect(ui.io().display_size, model_open);
     draw_axis_triad(ui, origin, size);
     draw_view_cube(ui, origin, size, selected);
-    draw_navigation_bar(ui, origin, size, selected, icons);
+    draw_navigation_bar(ui, origin, size, selected, icons, workspace);
 }
 
 fn draw_axis_triad(ui: &Ui, origin: [f32; 2], size: [f32; 2]) {
@@ -392,6 +393,7 @@ fn draw_navigation_bar(
     size: [f32; 2],
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut super::workspace_shell::WorkspaceShellState,
 ) {
     let position = [
         origin[0] + size[0] - 42.,
@@ -405,54 +407,92 @@ fn draw_navigation_bar(
         .movable(false)
         .resizable(false)
         .scroll_bar(false)
-        .build(|| draw_navigation_buttons(ui, selected, icons));
+        .build(|| draw_navigation_buttons(ui, selected, icons, workspace));
 }
 
 fn draw_navigation_buttons(
     ui: &Ui,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut super::workspace_shell::WorkspaceShellState,
 ) {
-    for (label, icon, action, enabled) in navigation_buttons() {
-        draw_navigation_button(ui, label, icon, action, enabled, selected, icons);
+    for button in &navigation_buttons() {
+        draw_navigation_button(ui, button, selected, icons, workspace);
     }
 }
 
-fn navigation_buttons() -> [(&'static str, &'static str, GuiShellAction, bool); 5] {
+struct NavigationButton {
+    label: &'static str,
+    icon: &'static str,
+    action: GuiShellAction,
+    enabled: bool,
+}
+
+fn navigation_buttons() -> [NavigationButton; 5] {
     [
-        ("Home", "home", GuiShellAction::Home, true),
-        ("Fit", "zoom-all", GuiShellAction::Home, true),
-        ("Zoom Window", "zoom-window", GuiShellAction::Home, false),
-        (
-            "Constrained Orbit",
-            "orbit-constrained",
-            GuiShellAction::Home,
-            false,
-        ),
-        ("Look At", "look-at", GuiShellAction::Home, false),
+        NavigationButton {
+            label: "Home",
+            icon: "home",
+            action: GuiShellAction::Home,
+            enabled: true,
+        },
+        NavigationButton {
+            label: "Fit",
+            icon: "zoom-all",
+            action: GuiShellAction::Home,
+            enabled: true,
+        },
+        NavigationButton {
+            label: "Zoom Window",
+            icon: "zoom-window",
+            action: GuiShellAction::Home,
+            enabled: false,
+        },
+        NavigationButton {
+            label: "Constrained Orbit",
+            icon: "orbit-constrained",
+            action: GuiShellAction::Home,
+            enabled: false,
+        },
+        NavigationButton {
+            label: "Look At",
+            icon: "look-at",
+            action: GuiShellAction::Home,
+            enabled: false,
+        },
     ]
 }
 
 fn draw_navigation_button(
     ui: &Ui,
-    label: &str,
-    icon: &str,
-    action: GuiShellAction,
-    enabled: bool,
+    button: &NavigationButton,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
+    workspace: &mut super::workspace_shell::WorkspaceShellState,
 ) {
-    let disabled = ui.begin_disabled(!enabled);
-    let clicked = icons.texture_id(icon).map_or_else(
-        || ui.button(label),
-        |id| ui.image_button(format!("##navigation-{label}"), id.into(), [22., 22.]),
+    let disabled = ui.begin_disabled(!button.enabled);
+    let clicked = icons.texture_id(button.icon).map_or_else(
+        || ui.button(button.label),
+        |id| {
+            ui.image_button(
+                format!("##navigation-{}", button.label),
+                id.into(),
+                [22., 22.],
+            )
+        },
     );
     drop(disabled);
+    workspace.record_target(
+        &format!("Navigation.{}", button.label),
+        button.enabled,
+        ui.item_rect_min(),
+        ui.item_rect_max(),
+    );
     if clicked {
-        selected.push(action);
+        selected.push(button.action.clone());
     }
     if ui.is_item_hovered() {
-        ui.tooltip_text(label);
+        ui.tooltip_text(button.label);
     }
 }
 
@@ -673,8 +713,8 @@ mod tests {
     fn navigation_bar_keeps_the_five_go_navigation_tools() {
         let buttons = navigation_buttons();
         assert_eq!(buttons.len(), 5);
-        assert_eq!(buttons[0].0, "Home");
-        assert_eq!(buttons[4].0, "Look At");
+        assert_eq!(buttons[0].label, "Home");
+        assert_eq!(buttons[4].label, "Look At");
     }
 
     #[test]
@@ -716,7 +756,14 @@ mod tests {
             events: Vec::new(),
             status: None,
         };
-        let frame = engine.frame(&request).unwrap().draws;
+        let output = engine.frame(&request).unwrap();
+        assert!(
+            output
+                .targets
+                .iter()
+                .any(|target| target.command_id == "Navigation.Home" && target.enabled)
+        );
+        let frame = output.draws;
         assert!(
             frame
                 .batches

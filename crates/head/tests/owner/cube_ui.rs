@@ -9,6 +9,9 @@ use oblikovati_gui::{
 #[test]
 fn gui_document_actions_select_the_document_specific_ribbon() {
     let (mut owner, _) = owner();
+    let zero_document = owner.gui_command_state().unwrap();
+    assert_eq!(zero_document.ribbon_key, "ZeroDoc");
+    assert_eq!(zero_document.ribbon_tabs[0].name, "Get Started");
     for (action, key, tab) in [
         (GuiShellAction::NewPart, "Part", "Create & Modify"),
         (GuiShellAction::NewAssembly, "Assembly", "Assemble"),

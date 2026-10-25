@@ -49,15 +49,18 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
 fn verify_semantic_ribbon_target() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut input = semantic_ribbon_request();
-    let target = engine
-        .frame(&input)
-        .unwrap()
-        .targets
+    let targets = engine.frame(&input).unwrap().targets;
+    assert!(
+        targets
+            .iter()
+            .any(|target| { target.command_id == "QuickAccess.New Part" && target.enabled })
+    );
+    let target = targets
         .into_iter()
         .find(|target| target.command_id == "GetStarted.NewPart")
         .unwrap();
     input.events = vec![GuiInputEvent::PointerMoved(target.center)];
-    engine.frame(&input).unwrap();
+    assert!(engine.frame(&input).unwrap().capture.pointer);
     input.events = vec![left_button_event(true)];
     let mut actions = engine.frame(&input).unwrap().actions;
     input.events = vec![left_button_event(false)];

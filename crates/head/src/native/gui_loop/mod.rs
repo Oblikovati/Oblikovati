@@ -25,6 +25,7 @@ pub(super) struct NativeGui {
     mapped: bool,
     pointer: input::PointerOwnership,
     clipboard: Option<GuiClipboard>,
+    targets: Vec<oblikovati_gui::GuiControlTarget>,
 }
 impl NativeGui {
     pub(super) fn parameters_open(&self) -> bool {
@@ -83,6 +84,7 @@ impl NativeGui {
             mapped: true,
             pointer: Default::default(),
             clipboard,
+            targets: Vec::new(),
         }
     }
     fn step(
@@ -104,6 +106,7 @@ impl NativeGui {
         let output = self.frame_input(&request)?;
         self.dirty |= self.draws.as_ref() != Some(&output.draws);
         self.draws = Some(output.draws);
+        self.targets = output.targets;
         self.commands = Some(commands.clone());
         self.notice = notice.map(str::to_owned);
         self.last_frame = Some(now);
@@ -122,11 +125,19 @@ impl NativeGui {
         })
     }
     fn frame_input(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
-        let [GuiInputEvent::PointerMoved(_), GuiInputEvent::Wheel(_)] = request.events.as_slice()
-        else {
+        let Some(GuiInputEvent::PointerMoved(_)) = request.events.first() else {
             return self.engine.frame(request);
         };
-        // #3630: ImGui can defer a wheel's new pointer position; keep click-queue trickling intact.
+        let Some(last) = request.events.last() else {
+            return self.engine.frame(request);
+        };
+        if !matches!(
+            last,
+            GuiInputEvent::Wheel(_) | GuiInputEvent::PointerButton { .. }
+        ) {
+            return self.engine.frame(request);
+        }
+        // #3630: ImGui needs a frame to publish a pointer move before a wheel or click uses it.
         let mut moved = request.clone();
         moved.events.truncate(1);
         let mut first = self.engine.frame(&moved)?;
@@ -134,6 +145,9 @@ impl NativeGui {
         wheeled.events.remove(0);
         wheeled.delta_seconds = Duration::from_nanos(1).as_secs_f32();
         let mut final_frame = self.engine.frame(&wheeled)?;
+        final_frame.capture.pointer |= first.capture.pointer;
+        final_frame.capture.keyboard |= first.capture.keyboard;
+        final_frame.capture.text |= first.capture.text;
         first.actions.append(&mut final_frame.actions);
         final_frame.actions = first.actions;
         first
@@ -197,6 +211,18 @@ impl NativeGui {
             delta_seconds,
             framebuffer_scale: [1.; 2],
         })
+    }
+}
+impl NativeGui {
+    #[cfg(test)]
+    pub(super) fn control_target(
+        &self,
+        command_id: &str,
+    ) -> Option<oblikovati_gui::GuiControlTarget> {
+        self.targets
+            .iter()
+            .find(|target| target.command_id == command_id)
+            .cloned()
     }
 }
 impl NativeHeadWindow {
