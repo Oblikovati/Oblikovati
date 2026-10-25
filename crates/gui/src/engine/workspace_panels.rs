@@ -10,6 +10,8 @@ const COMMAND_HEIGHT: f32 = 130.;
 const VIEW_CUBE_SIZE: f32 = 86.;
 const OVERLAY_MARGIN: f32 = 10.;
 const NAVIGATION_BAR_HEIGHT: f32 = 146.;
+const AXIS_TRIAD_MARGIN: f32 = 46.;
+const AXIS_TRIAD_RADIUS: f32 = 30.;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WorkspaceLayout {
@@ -85,8 +87,38 @@ pub(super) fn draw_viewport_overlays(
         return;
     }
     let (origin, size) = viewport_rect(ui.io().display_size, model_open);
+    draw_axis_triad(ui, origin, size);
     draw_view_cube(ui, origin, size, selected);
     draw_navigation_bar(ui, origin, size, selected, icons);
+}
+
+fn draw_axis_triad(ui: &Ui, origin: [f32; 2], size: [f32; 2]) {
+    let center = [
+        origin[0] + AXIS_TRIAD_MARGIN,
+        origin[1] + size[1] - AXIS_TRIAD_MARGIN,
+    ];
+    for (offset, color, label) in axis_triad_arrows() {
+        let tip = [
+            center[0] + offset[0] * AXIS_TRIAD_RADIUS,
+            center[1] + offset[1] * AXIS_TRIAD_RADIUS,
+        ];
+        draw_axis_arrow(ui, center, tip, color, label);
+    }
+}
+
+fn axis_triad_arrows() -> [([f32; 2], [f32; 4], &'static str); 3] {
+    [
+        ([0.86, 0.32], [0.90, 0.23, 0.27, 1.], "X"),
+        ([-0.48, 0.58], [0.42, 0.74, 0.28, 1.], "Y"),
+        ([0., -1.], [0.24, 0.50, 0.92, 1.], "Z"),
+    ]
+}
+
+fn draw_axis_arrow(ui: &Ui, center: [f32; 2], tip: [f32; 2], color: [f32; 4], label: &str) {
+    let draw = ui.get_window_draw_list();
+    draw.add_line(center, tip, color).thickness(2.4).build();
+    draw.add_circle(tip, 4.5, color).filled(true).build();
+    draw.add_text([tip[0] + 3., tip[1] - 7.], color, label);
 }
 
 fn viewport_rect(display: [f32; 2], model_open: bool) -> ([f32; 2], [f32; 2]) {
@@ -381,8 +413,8 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
 #[cfg(test)]
 mod tests {
     use super::{
-        cube_points, model_feature_label, navigation_buttons, status_text, viewport_rect,
-        workspace_layout,
+        axis_triad_arrows, cube_points, model_feature_label, navigation_buttons, status_text,
+        viewport_rect, workspace_layout,
     };
     use crate::{
         GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
@@ -441,6 +473,15 @@ mod tests {
         assert_eq!(buttons.len(), 5);
         assert_eq!(buttons[0].0, "Home");
         assert_eq!(buttons[4].0, "Look At");
+    }
+
+    #[test]
+    fn axis_triad_keeps_the_go_xyz_order_and_colours() {
+        let arrows = axis_triad_arrows();
+        assert_eq!(arrows.map(|arrow| arrow.2), ["X", "Y", "Z"]);
+        assert_eq!(arrows[0].1, [0.90, 0.23, 0.27, 1.]);
+        assert_eq!(arrows[1].1, [0.42, 0.74, 0.28, 1.]);
+        assert_eq!(arrows[2].1, [0.24, 0.50, 0.92, 1.]);
     }
 
     #[test]
