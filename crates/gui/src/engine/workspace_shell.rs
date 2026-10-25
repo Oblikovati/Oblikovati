@@ -1066,7 +1066,7 @@ fn draw_large_ribbon_control(
         let clicked = ui.button_with_size(label, [70., 52.]);
         return (clicked, ui.item_rect_min(), ui.item_rect_max());
     };
-    let clicked = ui.image_button(label, TextureId::new(icon), [32., 32.]);
+    let clicked = ui.image_button(label, TextureId::new(icon), [40., 40.]);
     let minimum = ui.item_rect_min();
     let maximum = ui.item_rect_max();
     ui.text_wrapped(&control.display_name);
@@ -1080,11 +1080,11 @@ fn draw_small_ribbon_control(
     icons: &mut crate::icon_assets::GuiIconCache,
 ) -> bool {
     let icon_clicked = icons.texture_id(&control.icon).is_some_and(|icon| {
-        let clicked = ui.image_button(format!("{}##icon", label), TextureId::new(icon), [14., 14.]);
+        let clicked = ui.image_button(format!("{}##icon", label), TextureId::new(icon), [18., 18.]);
         ui.same_line();
         clicked
     });
-    icon_clicked || ui.button_with_size(label, [64., 16.])
+    icon_clicked || ui.button_with_size(label, [64., 18.])
 }
 fn host_action(id: &str) -> Option<GuiShellAction> {
     match id {
