@@ -114,6 +114,7 @@ impl GuiFrameEngine {
 fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.set_ini_filename(None);
     context.set_log_filename(None);
+    crate::chrome_style::configure(context);
     context
         .io_mut()
         .config_flags

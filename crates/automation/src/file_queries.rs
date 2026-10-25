@@ -48,6 +48,18 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         if crate::SKETCH_QUERY_METHODS.contains(&method) {
             return crate::sketches::query(self.files, method, request);
         }
+        if method == METHOD_RIBBON_LIST {
+            let document = self
+                .files
+                .workspace()
+                .active_document()
+                .map(|id| self.files.document_type(id))
+                .transpose()
+                .map_err(|error| Error(error.to_string()))?;
+            return encode(&crate::ribbon::list(crate::ribbon::key_for_document(
+                document,
+            )));
+        }
         if method == METHOD_DOCUMENT_GET_END_OF_PART {
             return crate::end_of_part::query(self.files, request);
         }

@@ -461,25 +461,35 @@ impl<
                     active: document.active,
                 })
                 .collect();
-        let ribbon_tabs = oblikovati_api::client::Client::new(self.document_host())
+        let ribbon = oblikovati_api::client::Client::new(self.document_host())
             .ribbon()
             .list()
-            .map_err(|cause| cause.to_string())?
+            .map_err(|cause| cause.to_string())?;
+        let ribbon_tabs = ribbon
             .tabs
             .unwrap_or_default()
             .into_iter()
             .map(|tab| oblikovati_gui::GuiRibbonTab {
                 name: tab.name,
-                controls: tab
+                panels: tab
                     .panels
                     .unwrap_or_default()
                     .into_iter()
-                    .flat_map(|panel| panel.controls.unwrap_or_default())
-                    .map(|control| oblikovati_gui::GuiRibbonControl {
-                        command_id: control.command_id,
-                        display_name: control.display_name,
-                        icon: control.icon,
-                        enabled: control.enabled,
+                    .map(|panel| oblikovati_gui::GuiRibbonPanel {
+                        name: panel.name,
+                        controls: panel
+                            .controls
+                            .unwrap_or_default()
+                            .into_iter()
+                            .map(|control| oblikovati_gui::GuiRibbonControl {
+                                command_id: control.command_id,
+                                display_name: control.display_name,
+                                icon: control.icon,
+                                enabled: control.enabled,
+                                active: control.active,
+                                button_style: control.button_style.0,
+                            })
+                            .collect(),
                     })
                     .collect(),
             })
@@ -514,6 +524,7 @@ impl<
             documents,
             histories,
             document_units: Some(document_units),
+            ribbon_key: ribbon.key.0.into_owned(),
             ribbon_tabs,
             model_tree: Some(gui_model_tree(tree, bodies)?),
             sketch_preferences: Some(gui_sketch_preferences(

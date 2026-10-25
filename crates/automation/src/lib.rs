@@ -141,7 +141,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
             METHOD_SKETCH_GET_INFERENCE_OPTIONS => {
                 sketch_inference::query_inference_preferences(self.workspace)
             }
-            METHOD_RIBBON_LIST => encode(&ribbon::list()),
+            METHOD_RIBBON_LIST => encode(&ribbon::list(ribbon::key_for_document(None))),
             METHOD_CLIENT_APPS_LIST => encode(&ListClientApplicationsResult {
                 clients: Some(self.workspace.connected_clients().entries().to_vec()),
             }),

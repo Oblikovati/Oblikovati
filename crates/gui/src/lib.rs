@@ -4,6 +4,7 @@ mod activity;
 mod clipboard;
 pub use activity::GuiFrameActivity;
 pub use clipboard::GuiClipboard;
+mod chrome_style;
 mod commands;
 mod parameter_snapshot;
 pub use parameter_snapshot::{
@@ -29,7 +30,7 @@ mod input;
 mod snapshot;
 pub use commands::{
     GuiCommandState, GuiDocumentHistory, GuiDocumentTab, GuiDocumentUnits, GuiHistoryEntry,
-    GuiModelBody, GuiModelFeature, GuiModelTree, GuiRibbonControl, GuiRibbonTab,
+    GuiModelBody, GuiModelFeature, GuiModelTree, GuiRibbonControl, GuiRibbonPanel, GuiRibbonTab,
     GuiSelectionFilter, GuiSelectionFilterEntry, GuiShellAction, GuiSketchPreferences,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};

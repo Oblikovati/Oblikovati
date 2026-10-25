@@ -43,13 +43,6 @@ fn verify_nonhistory_commands(state: &GuiCommandState) {
         GuiShellAction::Extrude,
     ] {
         assert!(action.enabled(state) && action.dispatchable(state));
-        assert!(action.next_label(state).is_none());
-    }
-    for (action, label) in [
-        (GuiShellAction::Undo, state.undo_label.as_deref()),
-        (GuiShellAction::Redo, state.redo_label.as_deref()),
-    ] {
-        assert_eq!(action.next_label(state), label);
     }
 }
 #[test]

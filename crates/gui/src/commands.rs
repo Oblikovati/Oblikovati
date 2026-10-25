@@ -50,11 +50,18 @@ pub struct GuiRibbonControl {
     pub display_name: String,
     pub icon: String,
     pub enabled: bool,
+    pub active: bool,
+    pub button_style: u8,
+}
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiRibbonPanel {
+    pub name: String,
+    pub controls: Vec<GuiRibbonControl>,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiRibbonTab {
     pub name: String,
-    pub controls: Vec<GuiRibbonControl>,
+    pub panels: Vec<GuiRibbonPanel>,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiModelFeature {
@@ -137,6 +144,7 @@ pub struct GuiCommandState {
     pub documents: Vec<GuiDocumentTab>,
     pub histories: Vec<GuiDocumentHistory>,
     pub document_units: Option<GuiDocumentUnits>,
+    pub ribbon_key: String,
     pub ribbon_tabs: Vec<GuiRibbonTab>,
     pub model_tree: Option<GuiModelTree>,
     pub sketch_preferences: Option<GuiSketchPreferences>,
@@ -198,13 +206,6 @@ impl GuiShellAction {
     pub fn dispatchable(&self, state: &GuiCommandState) -> bool {
         let history = matches!(self, Self::Undo | Self::Redo);
         self.enabled(state) && !(history && state.transaction_open)
-    }
-    pub(crate) fn next_label<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {
-        match self {
-            Self::Undo => state.undo_label.as_deref(),
-            Self::Redo => state.redo_label.as_deref(),
-            _ => None,
-        }
     }
 }
 #[cfg(test)]

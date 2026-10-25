@@ -3,17 +3,8 @@ use super::workspace_panels;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Image, TextureId, Ui};
 
-#[derive(Clone, Copy, Default)]
-pub(crate) enum RibbonTab {
-    #[default]
-    Part,
-    Sketch,
-    Model,
-    View,
-}
-
 pub(crate) struct WorkspaceShellState {
-    pub(crate) active_tab: RibbonTab,
+    pub(crate) active_tab: String,
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
     pub(crate) history_open: bool,
@@ -27,7 +18,7 @@ pub(crate) struct WorkspaceShellState {
 impl Default for WorkspaceShellState {
     fn default() -> Self {
         Self {
-            active_tab: Default::default(),
+            active_tab: String::new(),
             preferences_open: false,
             selection_open: false,
             history_open: false,
@@ -183,6 +174,7 @@ fn draw_ribbon(
     parameters: &mut crate::parameter_panel::ParameterPanel,
     workspace: &mut WorkspaceShellState,
 ) {
+    select_available_ribbon_tab(state, workspace);
     let display = ui.io().display_size;
     ui.window("Ribbon")
         .position([0., 20.], Condition::Always)
@@ -201,38 +193,42 @@ fn draw_ribbon(
             if let Some(tab) = state
                 .ribbon_tabs
                 .iter()
-                .find(|tab| tab.name == ribbon_tab_name(workspace.active_tab))
+                .find(|tab| tab.name == workspace.active_tab)
             {
-                draw_host_controls(ui, &tab.controls, selected, &mut workspace.icons);
-                if matches!(workspace.active_tab, RibbonTab::View) {
+                draw_host_panels(ui, &tab.panels, selected, &mut workspace.icons);
+                if workspace.active_tab == "View" {
                     draw_view_window_controls(ui, parameters, workspace);
                 }
-                return;
-            }
-            match workspace.active_tab {
-                RibbonTab::Part => draw_part_tab(ui, state, selected, &mut workspace.icons),
-                RibbonTab::Sketch => draw_sketch_tab(ui, state, selected, &mut workspace.icons),
-                RibbonTab::Model => draw_model_tab(ui, state, selected, &mut workspace.icons),
-                RibbonTab::View => draw_view_tab(ui, state, selected, parameters, workspace),
             }
         });
 }
 
+fn select_available_ribbon_tab(state: &GuiCommandState, workspace: &mut WorkspaceShellState) {
+    if state
+        .ribbon_tabs
+        .iter()
+        .any(|tab| tab.name == workspace.active_tab)
+    {
+        return;
+    }
+    workspace.active_tab = state
+        .ribbon_tabs
+        .first()
+        .map(|tab| tab.name.clone())
+        .unwrap_or_default();
+}
+
 fn draw_ribbon_tabs(
     ui: &Ui,
-    active_tab: &mut RibbonTab,
+    active_tab: &mut String,
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
-    for (label, tab) in [
-        ("Part##ribbon-tab", RibbonTab::Part),
-        ("Sketch##ribbon-tab", RibbonTab::Sketch),
-        ("3D Model##ribbon-tab", RibbonTab::Model),
-        ("View##ribbon-tab", RibbonTab::View),
-    ] {
-        if ui.button(label) {
-            *active_tab = tab;
+    for tab in &state.ribbon_tabs {
+        let label = format!("{}##ribbon-tab", tab.name);
+        if ui.button(&label) {
+            *active_tab = tab.name.clone();
         }
         ui.same_line();
     }
@@ -286,84 +282,6 @@ fn quick_access_action(
     ui.same_line();
 }
 
-fn draw_part_tab(
-    ui: &Ui,
-    state: &GuiCommandState,
-    selected: &mut Vec<GuiShellAction>,
-    icons: &mut crate::icon_assets::GuiIconCache,
-) {
-    ribbon_action(
-        ui,
-        "New Part",
-        GuiShellAction::NewPart,
-        state,
-        selected,
-        icons,
-    );
-    ribbon_action(ui, "Save", GuiShellAction::Save, state, selected, icons);
-    ribbon_action(ui, "Undo", GuiShellAction::Undo, state, selected, icons);
-    ribbon_action(ui, "Redo", GuiShellAction::Redo, state, selected, icons);
-}
-
-fn draw_sketch_tab(
-    ui: &Ui,
-    state: &GuiCommandState,
-    selected: &mut Vec<GuiShellAction>,
-    icons: &mut crate::icon_assets::GuiIconCache,
-) {
-    ribbon_action(
-        ui,
-        "Sketch XY",
-        GuiShellAction::SketchXY,
-        state,
-        selected,
-        icons,
-    );
-    ribbon_action(
-        ui,
-        "Rectangle",
-        GuiShellAction::Rectangle,
-        state,
-        selected,
-        icons,
-    );
-    ribbon_action(
-        ui,
-        "Exit Sketch",
-        GuiShellAction::ExitSketch,
-        state,
-        selected,
-        icons,
-    );
-}
-
-fn draw_model_tab(
-    ui: &Ui,
-    state: &GuiCommandState,
-    selected: &mut Vec<GuiShellAction>,
-    icons: &mut crate::icon_assets::GuiIconCache,
-) {
-    ribbon_action(
-        ui,
-        "Extrude",
-        GuiShellAction::Extrude,
-        state,
-        selected,
-        icons,
-    );
-}
-
-fn draw_view_tab(
-    ui: &Ui,
-    state: &GuiCommandState,
-    selected: &mut Vec<GuiShellAction>,
-    parameters: &mut crate::parameter_panel::ParameterPanel,
-    workspace: &mut WorkspaceShellState,
-) {
-    draw_view_navigation_controls(ui, state, selected, &mut workspace.icons);
-    draw_view_window_controls(ui, parameters, workspace);
-}
-
 fn draw_view_window_controls(
     ui: &Ui,
     parameters: &mut crate::parameter_panel::ParameterPanel,
@@ -384,23 +302,6 @@ fn draw_view_window_controls(
     if ui.button("Document Units") {
         workspace.units_open = true;
     }
-}
-
-fn draw_view_navigation_controls(
-    ui: &Ui,
-    state: &GuiCommandState,
-    selected: &mut Vec<GuiShellAction>,
-    icons: &mut crate::icon_assets::GuiIconCache,
-) {
-    ribbon_action(ui, "Home", GuiShellAction::Home, state, selected, icons);
-    ribbon_action(
-        ui,
-        "Previous View",
-        GuiShellAction::PreviousView,
-        state,
-        selected,
-        icons,
-    );
 }
 
 fn draw_preferences(
@@ -916,100 +817,50 @@ fn menu_action(
     }
 }
 
-fn ribbon_action(
+fn draw_host_panels(
     ui: &Ui,
-    label: &str,
-    action: GuiShellAction,
-    state: &GuiCommandState,
+    panels: &[crate::GuiRibbonPanel],
     selected: &mut Vec<GuiShellAction>,
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
-    let disabled = ui.begin_disabled(!action.enabled(state));
-    let clicked = ui.button(label);
-    if let Some(id) = icons.texture_id(icon_for_action(&action)) {
+    for panel in panels {
+        ui.group(|| {
+            for control in &panel.controls {
+                draw_host_control(ui, control, selected, icons);
+            }
+            ui.separator();
+            ui.text(&panel.name);
+        });
+        ui.same_line();
+    }
+}
+
+fn draw_host_control(
+    ui: &Ui,
+    control: &crate::GuiRibbonControl,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    let Some(action) = host_action(&control.command_id) else {
+        return;
+    };
+    let disabled = ui.begin_disabled(!control.enabled);
+    let label = format!("{}##{}", control.display_name, control.command_id);
+    let clicked = if control.button_style == 2 {
+        ui.button_with_size(&label, [64., 42.])
+    } else {
+        ui.button(&label)
+    };
+    if let Some(id) = icons.texture_id(&control.icon) {
         ui.same_line();
         Image::new(TextureId::new(id), [18., 18.]).build(ui);
     }
     drop(disabled);
-    if ui.is_item_hovered()
-        && let Some(next) = action.next_label(state)
-    {
-        ui.tooltip_text(format!("{label} {next}"));
+    if ui.is_item_hovered() && !control.display_name.is_empty() {
+        ui.tooltip_text(&control.display_name);
     }
-    if clicked && action.dispatchable(state) {
+    if clicked && control.enabled {
         selected.push(action);
-    }
-    ui.same_line();
-}
-
-fn icon_for_action(action: &GuiShellAction) -> &'static str {
-    match action {
-        GuiShellAction::NewPart => "new-part",
-        GuiShellAction::Save => "save",
-        GuiShellAction::Undo => "undo",
-        GuiShellAction::Redo => "redo",
-        GuiShellAction::Home => "home",
-        GuiShellAction::PreviousView => "home",
-        GuiShellAction::SketchXY => "create-sketch",
-        GuiShellAction::Rectangle => "rectangle",
-        GuiShellAction::ExitSketch => "finish-sketch",
-        GuiShellAction::Extrude => "extrude",
-        GuiShellAction::ActivateDocument(_) => "view-new",
-        GuiShellAction::CloseDocument(_) => "close",
-        GuiShellAction::JumpHistoryTo { .. } => "history",
-        GuiShellAction::SetLengthUnit(_)
-        | GuiShellAction::SetAngleUnit(_)
-        | GuiShellAction::SetMassUnit(_)
-        | GuiShellAction::SetTimeUnit(_)
-        | GuiShellAction::SetLengthPrecision(_)
-        | GuiShellAction::SetAnglePrecision(_)
-        | GuiShellAction::SetLengthFormat(_) => "settings",
-        GuiShellAction::SetBodyVisible { .. } => "visibility",
-        GuiShellAction::SetSelectionEnabled { .. } | GuiShellAction::MoveSelectionKind { .. } => {
-            "selection-filter"
-        }
-        GuiShellAction::SetGridSpacingCm(_)
-        | GuiShellAction::SetGridVisible(_)
-        | GuiShellAction::SetGridMajorEvery(_)
-        | GuiShellAction::SetHeadsUpDisplay(_)
-        | GuiShellAction::SetPointerInput(_)
-        | GuiShellAction::SetDimensionInput(_)
-        | GuiShellAction::SetSnapToPoints(_)
-        | GuiShellAction::SetSnapToGrid(_)
-        | GuiShellAction::SetRelaxMode(_)
-        | GuiShellAction::SetAutoProjectOrigin(_)
-        | GuiShellAction::SetSuppressFormatOverrides(_) => "settings",
-    }
-}
-
-fn ribbon_tab_name(tab: RibbonTab) -> &'static str {
-    match tab {
-        RibbonTab::Part => "Part",
-        RibbonTab::Sketch => "Sketch",
-        RibbonTab::Model => "3D Model",
-        RibbonTab::View => "View",
-    }
-}
-fn draw_host_controls(
-    ui: &Ui,
-    controls: &[crate::GuiRibbonControl],
-    selected: &mut Vec<GuiShellAction>,
-    icons: &mut crate::icon_assets::GuiIconCache,
-) {
-    for control in controls {
-        if let Some(action) = host_action(&control.command_id) {
-            let disabled = ui.begin_disabled(!control.enabled);
-            let clicked = ui.button(&control.display_name);
-            if let Some(id) = icons.texture_id(&control.icon) {
-                ui.same_line();
-                Image::new(TextureId::new(id), [18., 18.]).build(ui);
-            }
-            drop(disabled);
-            if clicked && control.enabled {
-                selected.push(action);
-            }
-            ui.same_line();
-        }
     }
 }
 fn host_action(id: &str) -> Option<GuiShellAction> {
