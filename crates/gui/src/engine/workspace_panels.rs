@@ -17,6 +17,7 @@ const OVERLAY_MARGIN: f32 = 10.;
 const NAVIGATION_BAR_HEIGHT: f32 = 146.;
 const AXIS_TRIAD_MARGIN: f32 = 46.;
 const AXIS_TRIAD_RADIUS: f32 = 30.;
+const AXIS_ARROW_HEAD: f32 = 9.;
 pub(super) const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 0.631];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -143,8 +144,36 @@ fn axis_triad_arrows() -> [([f32; 2], [f32; 4], &'static str); 3] {
 fn draw_axis_arrow(ui: &Ui, center: [f32; 2], tip: [f32; 2], color: [f32; 4], label: &str) {
     let draw = ui.get_window_draw_list();
     draw.add_line(center, tip, color).thickness(2.4).build();
-    draw.add_circle(tip, 4.5, color).filled(true).build();
+    if let Some(head) = axis_arrowhead(center, tip) {
+        draw.add_polyline(head.to_vec(), color).filled(true).build();
+    }
     draw.add_text([tip[0] + 3., tip[1] - 7.], color, label);
+}
+
+fn axis_arrowhead(center: [f32; 2], tip: [f32; 2]) -> Option<[[f32; 2]; 3]> {
+    let direction = [tip[0] - center[0], tip[1] - center[1]];
+    let length = direction[0].hypot(direction[1]);
+    if length < f32::EPSILON {
+        return None;
+    }
+    let unit = [direction[0] / length, direction[1] / length];
+    let perpendicular = [-unit[1], unit[0]];
+    let base = [
+        tip[0] - unit[0] * AXIS_ARROW_HEAD,
+        tip[1] - unit[1] * AXIS_ARROW_HEAD,
+    ];
+    let half_width = AXIS_ARROW_HEAD * 0.45;
+    Some([
+        tip,
+        [
+            base[0] + perpendicular[0] * half_width,
+            base[1] + perpendicular[1] * half_width,
+        ],
+        [
+            base[0] - perpendicular[0] * half_width,
+            base[1] - perpendicular[1] * half_width,
+        ],
+    ])
 }
 
 fn viewport_rect(display: [f32; 2], model_open: bool) -> ([f32; 2], [f32; 2]) {
@@ -566,9 +595,9 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
 #[cfg(test)]
 mod tests {
     use super::{
-        axis_triad_arrows, cube_grid_fractions, cube_points, model_feature_label,
-        navigation_buttons, quad_point, status_text, view_cube_home_position, viewport_rect,
-        workspace_layout,
+        AXIS_ARROW_HEAD, axis_arrowhead, axis_triad_arrows, cube_grid_fractions, cube_points,
+        model_feature_label, navigation_buttons, quad_point, status_text, view_cube_home_position,
+        viewport_rect, workspace_layout,
     };
     use crate::{
         GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
@@ -650,6 +679,17 @@ mod tests {
         assert_eq!(arrows[0].1, [0.90, 0.23, 0.27, 1.]);
         assert_eq!(arrows[1].1, [0.42, 0.74, 0.28, 1.]);
         assert_eq!(arrows[2].1, [0.24, 0.50, 0.92, 1.]);
+    }
+
+    #[test]
+    fn axis_arrowhead_keeps_the_go_length_and_width() {
+        let head = axis_arrowhead([0., 0.], [30., 0.]).unwrap();
+        assert_eq!(head[0], [30., 0.]);
+        assert_eq!(head[1][0], 21.);
+        assert_eq!(head[2][0], 21.);
+        assert_eq!(head[1][1], AXIS_ARROW_HEAD * 0.45);
+        assert_eq!(head[2][1], -AXIS_ARROW_HEAD * 0.45);
+        assert_eq!(axis_arrowhead([2., 2.], [2., 2.]), None);
     }
 
     #[test]
