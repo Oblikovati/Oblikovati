@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::workspace_panels;
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, Image, TextureId, Ui};
+use imgui::{Condition, TextureId, Ui};
 
 pub(crate) struct WorkspaceShellState {
     pub(crate) active_tab: String,
@@ -824,15 +824,69 @@ fn draw_host_panels(
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
     for panel in panels {
-        ui.group(|| {
-            for control in &panel.controls {
-                draw_host_control(ui, control, selected, icons);
-            }
-            ui.separator();
-            ui.text(&panel.name);
-        });
+        draw_host_panel(ui, panel, selected, icons);
         ui.same_line();
     }
+}
+
+fn draw_host_panel(
+    ui: &Ui,
+    panel: &crate::GuiRibbonPanel,
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    ui.group(|| {
+        draw_panel_columns(ui, &pack_panel_columns(&panel.controls), selected, icons);
+        ui.dummy([0., 4.]);
+        ui.separator();
+        ui.text(&panel.name);
+    });
+}
+
+fn draw_panel_columns(
+    ui: &Ui,
+    columns: &[Vec<&crate::GuiRibbonControl>],
+    selected: &mut Vec<GuiShellAction>,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    for (index, column) in columns.iter().enumerate() {
+        ui.group(|| {
+            for control in column {
+                draw_host_control(ui, control, selected, icons);
+            }
+        });
+        if index + 1 != columns.len() {
+            ui.same_line();
+        }
+    }
+}
+
+fn pack_panel_columns(controls: &[crate::GuiRibbonControl]) -> Vec<Vec<&crate::GuiRibbonControl>> {
+    let mut columns = Vec::new();
+    let mut stack = Vec::new();
+    for control in controls {
+        if control.button_style == 2 {
+            push_panel_stack(&mut columns, &mut stack);
+            columns.push(vec![control]);
+            continue;
+        }
+        stack.push(control);
+        if stack.len() == 3 {
+            push_panel_stack(&mut columns, &mut stack);
+        }
+    }
+    push_panel_stack(&mut columns, &mut stack);
+    columns
+}
+
+fn push_panel_stack<'a>(
+    columns: &mut Vec<Vec<&'a crate::GuiRibbonControl>>,
+    stack: &mut Vec<&'a crate::GuiRibbonControl>,
+) {
+    if stack.is_empty() {
+        return;
+    }
+    columns.push(std::mem::take(stack));
 }
 
 fn draw_host_control(
@@ -847,14 +901,10 @@ fn draw_host_control(
     let disabled = ui.begin_disabled(!control.enabled);
     let label = format!("{}##{}", control.display_name, control.command_id);
     let clicked = if control.button_style == 2 {
-        ui.button_with_size(&label, [64., 42.])
+        draw_large_ribbon_control(ui, control, &label, icons)
     } else {
-        ui.button(&label)
+        draw_small_ribbon_control(ui, control, &label, icons)
     };
-    if let Some(id) = icons.texture_id(&control.icon) {
-        ui.same_line();
-        Image::new(TextureId::new(id), [18., 18.]).build(ui);
-    }
     drop(disabled);
     if ui.is_item_hovered() && !control.display_name.is_empty() {
         ui.tooltip_text(&control.display_name);
@@ -862,6 +912,34 @@ fn draw_host_control(
     if clicked && control.enabled {
         selected.push(action);
     }
+}
+
+fn draw_large_ribbon_control(
+    ui: &Ui,
+    control: &crate::GuiRibbonControl,
+    label: &str,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) -> bool {
+    let Some(icon) = icons.texture_id(&control.icon) else {
+        return ui.button_with_size(label, [70., 52.]);
+    };
+    let clicked = ui.image_button(label, TextureId::new(icon), [32., 32.]);
+    ui.text_wrapped(&control.display_name);
+    clicked
+}
+
+fn draw_small_ribbon_control(
+    ui: &Ui,
+    control: &crate::GuiRibbonControl,
+    label: &str,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) -> bool {
+    let icon_clicked = icons.texture_id(&control.icon).is_some_and(|icon| {
+        let clicked = ui.image_button(format!("{}##icon", label), TextureId::new(icon), [14., 14.]);
+        ui.same_line();
+        clicked
+    });
+    icon_clicked || ui.button_with_size(label, [64., 16.])
 }
 fn host_action(id: &str) -> Option<GuiShellAction> {
     match id {
@@ -879,8 +957,8 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 
 #[cfg(test)]
 mod tests {
-    use super::{history_entry_label, set_history_document};
-    use crate::GuiHistoryEntry;
+    use super::{history_entry_label, pack_panel_columns, set_history_document};
+    use crate::{GuiHistoryEntry, GuiRibbonControl};
 
     #[test]
     fn history_picker_replaces_a_document_and_marks_saved_entries() {
@@ -895,5 +973,48 @@ mod tests {
             }),
             "* Extrude"
         );
+    }
+
+    #[test]
+    fn panel_columns_match_the_go_three_row_ribbon_flow() {
+        let controls = [
+            small("Move"),
+            small("Copy"),
+            small("Rotate"),
+            large("Extrude"),
+            small("Hole"),
+        ];
+        let names = pack_panel_columns(&controls)
+            .into_iter()
+            .map(|column| {
+                column
+                    .into_iter()
+                    .map(|control| control.display_name.as_str())
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            names,
+            vec![
+                vec!["Move", "Copy", "Rotate"],
+                vec!["Extrude"],
+                vec!["Hole"]
+            ]
+        );
+    }
+
+    fn small(name: &str) -> GuiRibbonControl {
+        GuiRibbonControl {
+            display_name: name.into(),
+            ..Default::default()
+        }
+    }
+
+    fn large(name: &str) -> GuiRibbonControl {
+        GuiRibbonControl {
+            display_name: name.into(),
+            button_style: 2,
+            ..Default::default()
+        }
     }
 }
