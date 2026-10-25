@@ -24,6 +24,12 @@ const AXIS_TRIAD_MARGIN: f32 = 46.;
 const AXIS_TRIAD_RADIUS: f32 = 30.;
 const AXIS_ARROW_HEAD: f32 = 9.;
 pub(super) const GO_DOCK_ACCENT: [f32; 4] = [0.506, 0.376, 0.89, 1.];
+const GO_DOCK_HEADER: [f32; 4] = [0.129, 0.129, 0.129, 1.];
+const DOCK_TAB_LEFT_INSET: f32 = 26.;
+const DOCK_TAB_TOP_INSET: f32 = 1.;
+const DOCK_TAB_TEXT_INSET: f32 = 5.;
+const DOCK_TAB_RIGHT_INSET: f32 = 13.;
+const DOCK_TAB_CLOSE_RESERVE: f32 = 25.;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WorkspaceLayout {
@@ -108,15 +114,44 @@ pub(super) fn draw_viewport_header(ui: &Ui, has_document: bool) {
         return;
     }
     let layout = workspace_layout(ui.io().display_size);
-    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
-    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
-    ui.window("Viewport")
+    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_HEADER);
+    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_HEADER);
+    ui.window("##viewport-window")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .position(layout.viewport_header_position, Condition::Always)
         .size(layout.viewport_header_size, Condition::Always)
         .movable(false)
         .resizable(false)
         .build(|| {});
+    draw_dock_tab(ui, layout.viewport_header_position, "Viewport", false);
+}
+
+fn draw_dock_tab(ui: &Ui, header_position: [f32; 2], label: &str, closable: bool) {
+    let text_width = ui.calc_text_size(label)[0];
+    let (min, max) = dock_tab_bounds(header_position, text_width, closable);
+    let draw = ui.get_foreground_draw_list();
+    draw.add_rect(min, max, GO_DOCK_ACCENT).filled(true).build();
+    draw.add_text(
+        [min[0] + DOCK_TAB_TEXT_INSET, min[1] + 3.],
+        [0.773, 0.773, 0.773, 1.],
+        label,
+    );
+    if closable {
+        draw.add_text([max[0] - 16., min[1] + 3.], [0.86, 0.86, 0.86, 1.], "×");
+    }
+}
+
+fn dock_tab_bounds(position: [f32; 2], text_width: f32, closable: bool) -> ([f32; 2], [f32; 2]) {
+    let close_reserve = if closable { DOCK_TAB_CLOSE_RESERVE } else { 0. };
+    let min = [
+        position[0] + DOCK_TAB_LEFT_INSET,
+        position[1] + DOCK_TAB_TOP_INSET,
+    ];
+    let max = [
+        min[0] + DOCK_TAB_TEXT_INSET + text_width + DOCK_TAB_RIGHT_INSET + close_reserve,
+        position[1] + VIEWPORT_HEADER_HEIGHT,
+    ];
+    (min, max)
 }
 
 pub(super) fn draw_viewport_overlays(
@@ -545,9 +580,9 @@ pub(super) fn draw_model_browser(
     open: &mut bool,
 ) {
     let layout = workspace_layout(ui.io().display_size);
-    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
-    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
-    ui.window("Model")
+    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_HEADER);
+    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_HEADER);
+    ui.window("##model-window")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .opened(open)
         .position(layout.model_position, Condition::Always)
@@ -561,6 +596,7 @@ pub(super) fn draw_model_browser(
             };
             draw_model_tree(ui, tree, selected);
         });
+    draw_dock_tab(ui, layout.model_position, "Model", true);
 }
 
 fn draw_model_tree(ui: &Ui, tree: &crate::GuiModelTree, selected: &mut Vec<GuiShellAction>) {
@@ -678,8 +714,8 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
 mod tests {
     use super::{
         AXIS_ARROW_HEAD, axis_arrowhead, axis_triad_arrows, cube_grid_fractions, cube_points,
-        model_feature_label, navigation_buttons, quad_point, status_text, view_cube_home_position,
-        viewport_rect, workspace_layout,
+        dock_tab_bounds, model_feature_label, navigation_buttons, quad_point, status_text,
+        view_cube_home_position, viewport_rect, workspace_layout,
     };
     use crate::{
         GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
@@ -715,6 +751,18 @@ mod tests {
         assert_eq!(layout.model_size, [176., 376.]);
         assert_eq!(layout.command_position, [176., 525.]);
         assert_eq!(layout.command_size, [624., 43.]);
+    }
+
+    #[test]
+    fn dock_tab_bounds_reserves_the_go_close_affordance_only_when_needed() {
+        assert_eq!(
+            dock_tab_bounds([176., 192.], 58., false),
+            ([202., 193.], [278., 214.])
+        );
+        assert_eq!(
+            dock_tab_bounds([0., 192.], 40., true),
+            ([26., 193.], [109., 214.])
+        );
     }
 
     #[test]
