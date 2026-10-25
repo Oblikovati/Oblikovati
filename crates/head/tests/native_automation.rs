@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::HeadWindow;
+use oblikovati_api::wire::{
+    CaptureWindowArgs, ClickViewportArgs, METHOD_VIEWPORT_CAPTURE_WINDOW, METHOD_VIEWPORT_CLICK,
+    METHOD_VIEWPORT_KEY, METHOD_VIEWPORT_SCROLL, PressKeyArgs, ScrollViewportArgs,
+};
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey};
 
 #[test]
@@ -26,4 +30,56 @@ fn owner_thread_automation_captures_and_queues_viewport_input() {
         })]
     ));
     window.finish().unwrap();
+}
+
+#[test]
+fn public_automation_requests_capture_and_queue_each_input_kind() {
+    let mut window = NativeHeadWindow::open().unwrap();
+    window.present().unwrap();
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("captured.png");
+    call(
+        &mut window,
+        METHOD_VIEWPORT_CAPTURE_WINDOW,
+        &CaptureWindowArgs {
+            path: path.to_string_lossy().into_owned(),
+        },
+    );
+    call(
+        &mut window,
+        METHOD_VIEWPORT_CLICK,
+        &ClickViewportArgs {
+            x: 20.,
+            y: 30.,
+            ..Default::default()
+        },
+    );
+    call(
+        &mut window,
+        METHOD_VIEWPORT_KEY,
+        &PressKeyArgs {
+            key: "Home".into(),
+            ..Default::default()
+        },
+    );
+    call(
+        &mut window,
+        METHOD_VIEWPORT_SCROLL,
+        &ScrollViewportArgs {
+            dy: 2.,
+            x: 20.,
+            y: 30.,
+            ..Default::default()
+        },
+    );
+    assert!(std::fs::metadata(path).unwrap().len() > 8);
+    assert_eq!(window.events(4).unwrap().len(), 4);
+    window.finish().unwrap();
+}
+
+fn call<T: serde::Serialize>(window: &mut NativeHeadWindow, method: &str, args: &T) {
+    let bytes = serde_json::to_vec(args).unwrap();
+    crate::viewport_automation::apply(window, method, &bytes)
+        .unwrap()
+        .unwrap();
 }

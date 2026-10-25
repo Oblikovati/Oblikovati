@@ -107,6 +107,14 @@ pub trait HeadWork {
 
     /// Drain one bounded request batch; example: `work.poll(32)?` before presentation.
     fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String>;
+    /// Drain owner work that needs the native window; example: `work.poll_window(32, window)?`.
+    fn poll_window(
+        &mut self,
+        budget: usize,
+        _: &mut dyn crate::HeadWindow,
+    ) -> Result<HeadWorkStatus, String> {
+        self.poll(budget)
+    }
     /// Check close without discarding documents; example: `work.close_allowed()?` after a native close request.
     fn close_allowed(&mut self) -> Result<bool, String>;
     /// Stop admission before window retirement; example: `work.finish()?` after the owner loop ends.

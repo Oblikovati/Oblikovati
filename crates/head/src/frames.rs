@@ -270,7 +270,7 @@ fn run_owner_frame(
 ) -> Result<crate::HeadWorkStatus, String> {
     let inputs = window.events(64)?;
     control.pending |= process_frame_inputs(window, owner, &inputs)?;
-    let mut activity = owner.poll(32)?;
+    let mut activity = owner.poll_window(32, window)?;
     publish_command_notice(window, owner)?;
     let gui = gui::advance_gui(window, owner, None)?;
     control.pending |= gui.changed;
