@@ -60,7 +60,8 @@ pub trait PartTopologyAccess<O: TransactionObserver, W: WorkspaceObserver, F: Do
 }
 
 /// Native body queries share the exact reference owner used by assignments.
-pub const BODY_QUERY_METHODS: [&str; 8] = [
+pub const BODY_QUERY_METHODS: [&str; 9] = [
+    METHOD_MODEL_PHYSICAL_PROPERTIES,
     METHOD_MODEL_REFERENCE_KEYS,
     METHOD_BODY_LIST,
     METHOD_BODY_PHYSICAL_PROPS,
@@ -84,6 +85,13 @@ pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         ))
     })?;
     match method {
+        METHOD_MODEL_PHYSICAL_PROPERTIES => {
+            let density = physical::model_density(files, encoded)?;
+            let result = owner
+                .physical_properties(files, document, None, density)
+                .map_err(Error)?;
+            crate::encode(&physical::model_properties(result)?)
+        }
         METHOD_MODEL_REFERENCE_KEYS => {
             no_arguments(method, encoded)?;
             crate::encode(&owner.reference_keys(files, document).map_err(Error)?)
@@ -155,7 +163,7 @@ fn update_result(
     })
 }
 
-fn no_arguments(method: &str, encoded: &[u8]) -> Result<(), Error> {
+pub(super) fn no_arguments(method: &str, encoded: &[u8]) -> Result<(), Error> {
     if encoded.is_empty() {
         return Ok(());
     }

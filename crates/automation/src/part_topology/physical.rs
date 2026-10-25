@@ -1,6 +1,32 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::contract::Material;
+use oblikovati_api::{contract::Material, types::PhysicalProperties};
+
+pub(super) fn model_density<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    encoded: &[u8],
+) -> Result<f64, Error> {
+    super::no_arguments(METHOD_MODEL_PHYSICAL_PROPERTIES, encoded)?;
+    part_density(files)
+}
+
+pub(super) fn model_properties(
+    properties: MassPropertiesResult,
+) -> Result<PhysicalProperties, Error> {
+    let result = PhysicalProperties {
+        mass: properties.mass_g,
+        volume: properties.volume_mm3 / 1000.,
+        area: properties.surface_area_mm2 / 100.,
+        density: properties.density_g_cm3,
+        centroid: [
+            properties.centroid_x_mm / 10.,
+            properties.centroid_y_mm / 10.,
+            properties.centroid_z_mm / 10.,
+        ],
+    };
+    require_finite_model_properties(&result)?;
+    Ok(result)
+}
 pub(super) fn request<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     encoded: &[u8],
@@ -51,4 +77,22 @@ fn part_density<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     crate::assets::with_scoped_assets(files, |materials, _| {
         Ok(materials.resolve(id).map_err(Error)?.density())
     })
+}
+
+fn require_finite_model_properties(properties: &PhysicalProperties) -> Result<(), Error> {
+    let values = [
+        properties.mass,
+        properties.volume,
+        properties.area,
+        properties.density,
+        properties.centroid[0],
+        properties.centroid[1],
+        properties.centroid[2],
+    ];
+    if values.into_iter().all(f64::is_finite) {
+        return Ok(());
+    }
+    Err(Error(format!(
+        "model physical properties {properties:?}: expected finite API values"
+    )))
 }
