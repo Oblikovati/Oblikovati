@@ -46,6 +46,7 @@ fn workspace_layout(display: [f32; 2]) -> WorkspaceLayout {
 pub(super) fn draw_status_bar(ui: &Ui, status: Option<&str>) {
     let display = ui.io().display_size;
     ui.window("Status")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .position([0., display[1] - 28.], Condition::Always)
         .size([display[0], 28.], Condition::Always)
         .title_bar(false)
@@ -70,6 +71,7 @@ pub(super) fn draw_document_tabs(
     }
     let layout = workspace_layout(ui.io().display_size);
     ui.window("Documents")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .position(layout.document_position, Condition::Always)
         .size(layout.document_size, Condition::Always)
         .title_bar(false)
@@ -93,6 +95,7 @@ pub(super) fn draw_viewport_header(ui: &Ui, has_document: bool) {
     let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
     let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Viewport")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .position([MODEL_WIDTH, RIBBON_BOTTOM], Condition::Always)
         .size(
             [layout.document_size[0], VIEWPORT_HEADER_HEIGHT],
@@ -484,6 +487,7 @@ pub(super) fn draw_model_browser(
     let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
     let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Model")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .opened(open)
         .position(layout.model_position, Condition::Always)
         .size(layout.model_size, Condition::Always)
@@ -582,6 +586,7 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
     let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
     let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Command")
+        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
         .opened(open)
         .position(layout.command_position, Condition::Always)
         .size(layout.command_size, Condition::Always)
