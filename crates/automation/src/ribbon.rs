@@ -53,11 +53,11 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
             "Create & Modify",
             vec![
                 panel(
-                    "Create",
-                    vec![large("Sketch.Create", "Start Sketch", "create-sketch")],
+                    "Sketch",
+                    vec![large("Sketch.Create", "New 2D Sketch", "create-sketch")],
                 ),
                 panel(
-                    "Solid",
+                    "Create",
                     vec![large("Feature.Extrude", "Extrude", "extrude")],
                 ),
             ],
@@ -87,13 +87,16 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
 pub fn contextual_sketch_tab() -> RibbonTabInfo {
     tab(
         "Sketch",
-        vec![panel(
-            "Draw",
-            vec![
-                large("Sketch.Rectangle", "Rectangle", "rectangle"),
-                text("Sketch.Finish", "Finish Sketch"),
-            ],
-        )],
+        vec![
+            panel(
+                "Create",
+                vec![large("Sketch.Rectangle", "Rectangle", "rectangle")],
+            ),
+            panel(
+                "Exit",
+                vec![large("Sketch.Finish", "Finish Sketch", "finish-sketch")],
+            ),
+        ],
     )
 }
 
@@ -182,6 +185,9 @@ mod tests {
         assert_eq!(tabs[0].name, "Create & Modify");
         assert_eq!(tabs[1].name, "Surfaces & Mesh");
         assert_eq!(tabs[0].panels.as_ref().unwrap().len(), 2);
-        assert_eq!(contextual_sketch_tab().name, "Sketch");
+        let sketch = contextual_sketch_tab();
+        assert_eq!(sketch.name, "Sketch");
+        assert_eq!(sketch.panels.as_ref().unwrap()[0].name, "Create");
+        assert_eq!(sketch.panels.as_ref().unwrap()[1].name, "Exit");
     }
 }
