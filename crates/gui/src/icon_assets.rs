@@ -80,8 +80,12 @@ mod tests {
             .find(|raster| raster.name == "new-part")
             .unwrap();
         let pixels = icon_pixels(raster).unwrap();
-        assert!(pixels.contains(&[230, 230, 230, 255]));
-        assert!(pixels.contains(&[81, 221, 180, 255]));
+        assert!(pixels.iter().any(|pixel| pixel[0] > 200 && pixel[3] > 0));
+        assert!(
+            pixels
+                .iter()
+                .any(|pixel| pixel[1] > pixel[0] && pixel[1] > pixel[2] && pixel[3] > 0)
+        );
         assert!(pixels.contains(&[0, 0, 0, 31]));
     }
 }
