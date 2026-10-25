@@ -3,6 +3,10 @@ use super::workspace_panels;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, TextureId, Ui};
 
+pub(super) const MENU_BAR_HEIGHT: f32 = 20.;
+const RIBBON_HEIGHT: f32 = 125.;
+pub(super) const RIBBON_BOTTOM: f32 = MENU_BAR_HEIGHT + RIBBON_HEIGHT;
+
 pub(crate) struct WorkspaceShellState {
     pub(crate) active_tab: String,
     pub(crate) preferences_open: bool,
@@ -103,26 +107,6 @@ fn draw_menu_bar(
             menu_action(ui, "Undo", GuiShellAction::Undo, state, selected);
             menu_action(ui, "Redo", GuiShellAction::Redo, state, selected);
         });
-        ui.menu("Sketch", || {
-            menu_action(
-                ui,
-                "Start Sketch on XY",
-                GuiShellAction::SketchXY,
-                state,
-                selected,
-            );
-            menu_action(ui, "Rectangle", GuiShellAction::Rectangle, state, selected);
-            menu_action(
-                ui,
-                "Exit Sketch",
-                GuiShellAction::ExitSketch,
-                state,
-                selected,
-            );
-        });
-        ui.menu("3D Model", || {
-            menu_action(ui, "Extrude", GuiShellAction::Extrude, state, selected);
-        });
         ui.menu("View", || {
             menu_action(ui, "Home", GuiShellAction::Home, state, selected);
             menu_action(
@@ -164,6 +148,14 @@ fn draw_menu_bar(
                 workspace.selection_open = true;
             }
         });
+        ui.menu("Help", || {
+            ui.menu_item_config("Documentation").enabled(false).build();
+            ui.separator();
+            ui.menu_item_config("Check for Updates")
+                .enabled(false)
+                .build();
+            ui.menu_item_config("Report Bug").enabled(false).build();
+        });
     });
 }
 
@@ -177,8 +169,8 @@ fn draw_ribbon(
     select_available_ribbon_tab(state, workspace);
     let display = ui.io().display_size;
     ui.window("Ribbon")
-        .position([0., 20.], Condition::Always)
-        .size([display[0], 92.], Condition::Always)
+        .position([0., MENU_BAR_HEIGHT], Condition::Always)
+        .size([display[0], RIBBON_HEIGHT], Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)

@@ -2,7 +2,8 @@
 use crate::GuiShellAction;
 use imgui::{Condition, TreeNodeFlags, Ui};
 
-const RIBBON_BOTTOM: f32 = 112.;
+use super::workspace_shell::RIBBON_BOTTOM;
+
 const STATUS_HEIGHT: f32 = 28.;
 const MODEL_WIDTH: f32 = 280.;
 const COMMAND_HEIGHT: f32 = 130.;
@@ -221,9 +222,9 @@ mod tests {
     #[test]
     fn fallback_layout_matches_the_go_model_viewport_command_arrangement() {
         let layout = workspace_layout([1440., 900.]);
-        assert_eq!(layout.model_position, [0., 112.]);
-        assert_eq!(layout.model_size, [280., 760.]);
-        assert_eq!(layout.document_position, [280., 112.]);
+        assert_eq!(layout.model_position, [0., 145.]);
+        assert_eq!(layout.model_size, [280., 727.]);
+        assert_eq!(layout.document_position, [280., 145.]);
         assert_eq!(layout.command_position, [280., 742.]);
         assert_eq!(layout.command_size, [1160., 130.]);
     }
