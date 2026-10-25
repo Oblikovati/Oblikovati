@@ -58,7 +58,7 @@ fn public_automation_requests_capture_and_queue_each_input_kind() {
         &mut window,
         METHOD_VIEWPORT_KEY,
         &PressKeyArgs {
-            key: "Home".into(),
+            key: "Enter".into(),
             ..Default::default()
         },
     );
@@ -73,7 +73,29 @@ fn public_automation_requests_capture_and_queue_each_input_kind() {
         },
     );
     assert!(std::fs::metadata(path).unwrap().len() > 8);
-    assert_eq!(window.events(4).unwrap().len(), 4);
+    assert_eq!(window.events(5).unwrap().len(), 5);
+    window.finish().unwrap();
+}
+
+#[test]
+fn public_automation_keys_follow_native_physical_and_text_input() {
+    let mut window = NativeHeadWindow::open().unwrap();
+    call(
+        &mut window,
+        METHOD_VIEWPORT_KEY,
+        &PressKeyArgs {
+            key: "a".into(),
+            ..Default::default()
+        },
+    );
+    assert!(matches!(
+        window.events(3).unwrap().as_slice(),
+        [
+            ViewportEvent::Input(ViewportInput::PhysicalKey { pressed: true, .. }),
+            ViewportEvent::Input(ViewportInput::PhysicalKey { pressed: false, .. }),
+            ViewportEvent::Input(ViewportInput::Text('a')),
+        ]
+    ));
     window.finish().unwrap();
 }
 
