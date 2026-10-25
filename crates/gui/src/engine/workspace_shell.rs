@@ -5,8 +5,9 @@ use imgui::{Condition, TabItemFlags, TextureId, Ui};
 use std::collections::BTreeMap;
 
 pub(super) const MENU_BAR_HEIGHT: f32 = 20.;
-const RIBBON_HEIGHT: f32 = 125.;
-const RIBBON_PANEL_DIVIDER_HEIGHT: f32 = 64.;
+// Matches Go's live default metrics: tab row + four small-control rows + panel caption strip.
+const RIBBON_HEIGHT: f32 = 131.;
+const RIBBON_PANEL_DIVIDER_HEIGHT: f32 = 85.;
 pub(super) const RIBBON_BOTTOM: f32 = MENU_BAR_HEIGHT + RIBBON_HEIGHT;
 
 pub(crate) struct WorkspaceShellState {
@@ -1396,7 +1397,7 @@ mod tests {
 
     #[test]
     fn panel_divider_uses_the_go_control_grid_height() {
-        assert_eq!(panel_divider_line([100., 40.]), ([103., 40.], [103., 104.]));
+        assert_eq!(panel_divider_line([100., 40.]), ([103., 40.], [103., 125.]));
     }
 
     #[test]

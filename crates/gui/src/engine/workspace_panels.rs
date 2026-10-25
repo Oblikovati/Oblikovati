@@ -4,10 +4,12 @@ use imgui::{Condition, StyleColor, TreeNodeFlags, Ui, WindowFlags};
 
 use super::workspace_shell::RIBBON_BOTTOM;
 
-const STATUS_HEIGHT: f32 = 28.;
-const MODEL_WIDTH: f32 = 280.;
-const COMMAND_HEIGHT: f32 = 130.;
-const VIEWPORT_HEADER_HEIGHT: f32 = 20.;
+// Go's DockBuilder splits the work area 22% left and 7% down after fixed chrome claims its bands.
+const MODEL_WIDTH_FRACTION: f32 = 0.22;
+const COMMAND_HEIGHT_FRACTION: f32 = 0.07;
+const STATUS_HEIGHT: f32 = 21.;
+const VIEWPORT_HEADER_HEIGHT: f32 = 19.;
+const DOCUMENT_TABS_HEIGHT: f32 = 19.;
 const VIEW_CUBE_SIZE: f32 = 86.;
 const VIEW_CUBE_EDGE_BAND: f32 = 0.2;
 const VIEW_CUBE_HOME_SIZE: f32 = 24.;
@@ -31,24 +33,30 @@ struct WorkspaceLayout {
 }
 
 fn workspace_layout(display: [f32; 2]) -> WorkspaceLayout {
-    let work_width = (display[0] - MODEL_WIDTH).max(0.);
+    let model_width = model_width(display);
+    let work_width = (display[0] - model_width).max(0.);
     let work_height = (display[1] - RIBBON_BOTTOM - STATUS_HEIGHT).max(0.);
+    let command_height = work_height * COMMAND_HEIGHT_FRACTION;
     WorkspaceLayout {
         model_position: [0., RIBBON_BOTTOM],
-        model_size: [MODEL_WIDTH, work_height],
-        document_position: [MODEL_WIDTH, RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT],
-        document_size: [work_width, 30.],
-        command_position: [MODEL_WIDTH, display[1] - STATUS_HEIGHT - COMMAND_HEIGHT],
-        command_size: [work_width, COMMAND_HEIGHT],
+        model_size: [model_width, work_height],
+        document_position: [model_width, RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT],
+        document_size: [work_width, DOCUMENT_TABS_HEIGHT],
+        command_position: [model_width, display[1] - STATUS_HEIGHT - command_height],
+        command_size: [work_width, command_height],
     }
+}
+
+fn model_width(display: [f32; 2]) -> f32 {
+    display[0] * MODEL_WIDTH_FRACTION
 }
 
 pub(super) fn draw_status_bar(ui: &Ui, status: Option<&str>) {
     let display = ui.io().display_size;
     ui.window("Status")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
-        .position([0., display[1] - 28.], Condition::Always)
-        .size([display[0], 28.], Condition::Always)
+        .position([0., display[1] - STATUS_HEIGHT], Condition::Always)
+        .size([display[0], STATUS_HEIGHT], Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -73,7 +81,10 @@ pub(super) fn draw_document_tabs(
     let layout = workspace_layout(ui.io().display_size);
     ui.window("Documents")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
-        .position(layout.document_position, Condition::Always)
+        .position(
+            [layout.document_position[0], RIBBON_BOTTOM],
+            Condition::Always,
+        )
         .size(layout.document_size, Condition::Always)
         .title_bar(false)
         .movable(false)
@@ -97,7 +108,7 @@ pub(super) fn draw_viewport_header(ui: &Ui, has_document: bool) {
     let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Viewport")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
-        .position([MODEL_WIDTH, RIBBON_BOTTOM], Condition::Always)
+        .position(layout.document_position, Condition::Always)
         .size(
             [layout.document_size[0], VIEWPORT_HEADER_HEIGHT],
             Condition::Always,
@@ -182,9 +193,10 @@ fn axis_arrowhead(center: [f32; 2], tip: [f32; 2]) -> Option<[[f32; 2]; 3]> {
 }
 
 fn viewport_rect(display: [f32; 2], model_open: bool) -> ([f32; 2], [f32; 2]) {
-    let left = if model_open { MODEL_WIDTH } else { 0. };
-    let top = RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT + 30.;
-    let bottom = display[1] - STATUS_HEIGHT - COMMAND_HEIGHT;
+    let layout = workspace_layout(display);
+    let left = if model_open { layout.model_size[0] } else { 0. };
+    let top = RIBBON_BOTTOM + VIEWPORT_HEADER_HEIGHT + DOCUMENT_TABS_HEIGHT;
+    let bottom = layout.command_position[1];
     (
         [left, top],
         [(display[0] - left).max(0.), (bottom - top).max(0.)],
@@ -669,11 +681,11 @@ mod tests {
     #[test]
     fn fallback_layout_matches_the_go_model_viewport_command_arrangement() {
         let layout = workspace_layout([1440., 900.]);
-        assert_eq!(layout.model_position, [0., 145.]);
-        assert_eq!(layout.model_size, [280., 727.]);
-        assert_eq!(layout.document_position, [280., 165.]);
-        assert_eq!(layout.command_position, [280., 742.]);
-        assert_eq!(layout.command_size, [1160., 130.]);
+        assert_eq!(layout.model_position, [0., 151.]);
+        assert_eq!(layout.model_size, [316.8, 728.]);
+        assert_eq!(layout.document_position, [316.8, 170.]);
+        assert_eq!(layout.command_position, [316.8, 828.04]);
+        assert_eq!(layout.command_size, [1123.2, 50.96]);
     }
 
     #[test]
@@ -687,11 +699,11 @@ mod tests {
     fn overlays_anchor_to_the_visible_viewport() {
         assert_eq!(
             viewport_rect([1440., 900.], true),
-            ([280., 195.], [1160., 547.])
+            ([316.8, 189.], [1123.2, 639.04])
         );
         assert_eq!(
             viewport_rect([1440., 900.], false),
-            ([0., 195.], [1440., 547.])
+            ([0., 189.], [1440., 639.04])
         );
     }
 
