@@ -2,6 +2,34 @@
 use crate::GuiShellAction;
 use imgui::{Condition, TreeNodeFlags, Ui};
 
+const RIBBON_BOTTOM: f32 = 112.;
+const STATUS_HEIGHT: f32 = 28.;
+const MODEL_WIDTH: f32 = 280.;
+const COMMAND_HEIGHT: f32 = 130.;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct WorkspaceLayout {
+    model_position: [f32; 2],
+    model_size: [f32; 2],
+    document_position: [f32; 2],
+    document_size: [f32; 2],
+    command_position: [f32; 2],
+    command_size: [f32; 2],
+}
+
+fn workspace_layout(display: [f32; 2]) -> WorkspaceLayout {
+    let work_width = (display[0] - MODEL_WIDTH).max(0.);
+    let work_height = (display[1] - RIBBON_BOTTOM - STATUS_HEIGHT).max(0.);
+    WorkspaceLayout {
+        model_position: [0., RIBBON_BOTTOM],
+        model_size: [MODEL_WIDTH, work_height],
+        document_position: [MODEL_WIDTH, RIBBON_BOTTOM],
+        document_size: [work_width, 30.],
+        command_position: [MODEL_WIDTH, display[1] - STATUS_HEIGHT - COMMAND_HEIGHT],
+        command_size: [work_width, COMMAND_HEIGHT],
+    }
+}
+
 pub(super) fn draw_status_bar(ui: &Ui, status: Option<&str>) {
     let display = ui.io().display_size;
     ui.window("Status")
@@ -21,10 +49,10 @@ pub(super) fn draw_document_tabs(
     if documents.is_empty() {
         return;
     }
-    let display = ui.io().display_size;
+    let layout = workspace_layout(ui.io().display_size);
     ui.window("Documents")
-        .position([0., 112.], Condition::Always)
-        .size([display[0], 30.], Condition::Always)
+        .position(layout.document_position, Condition::Always)
+        .size(layout.document_size, Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -65,9 +93,13 @@ pub(super) fn draw_model_browser(
     selected: &mut Vec<GuiShellAction>,
     open: &mut bool,
 ) {
+    let layout = workspace_layout(ui.io().display_size);
     ui.window("Model")
         .opened(open)
-        .size([280., 420.], Condition::FirstUseEver)
+        .position(layout.model_position, Condition::Always)
+        .size(layout.model_size, Condition::Always)
+        .movable(false)
+        .resizable(false)
         .build(|| {
             let Some(tree) = tree else {
                 ui.text("No active part");
@@ -157,9 +189,13 @@ fn draw_body_row(ui: &Ui, body: &crate::GuiModelBody, selected: &mut Vec<GuiShel
 }
 
 pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool) {
+    let layout = workspace_layout(ui.io().display_size);
     ui.window("Command")
         .opened(open)
-        .size([360., 130.], Condition::FirstUseEver)
+        .position(layout.command_position, Condition::Always)
+        .size(layout.command_size, Condition::Always)
+        .movable(false)
+        .resizable(false)
         .build(|| {
             ui.text("Command");
             ui.separator();
@@ -169,7 +205,7 @@ pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool
 
 #[cfg(test)]
 mod tests {
-    use super::model_feature_label;
+    use super::{model_feature_label, workspace_layout};
     use crate::GuiModelFeature;
 
     #[test]
@@ -180,5 +216,15 @@ mod tests {
             health: "Healthy".into(),
         });
         assert_eq!(label, "Extrude1 (Extrude) — Healthy");
+    }
+
+    #[test]
+    fn fallback_layout_matches_the_go_model_viewport_command_arrangement() {
+        let layout = workspace_layout([1440., 900.]);
+        assert_eq!(layout.model_position, [0., 112.]);
+        assert_eq!(layout.model_size, [280., 760.]);
+        assert_eq!(layout.document_position, [280., 112.]);
+        assert_eq!(layout.command_position, [280., 742.]);
+        assert_eq!(layout.command_size, [1160., 130.]);
     }
 }
