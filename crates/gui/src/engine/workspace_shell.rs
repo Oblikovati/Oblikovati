@@ -9,6 +9,7 @@ pub(super) const RIBBON_BOTTOM: f32 = MENU_BAR_HEIGHT + RIBBON_HEIGHT;
 
 pub(crate) struct WorkspaceShellState {
     pub(crate) active_tab: String,
+    active_ribbon_key: String,
     contextual_sketch_tab_visible: bool,
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
@@ -24,6 +25,7 @@ impl Default for WorkspaceShellState {
     fn default() -> Self {
         Self {
             active_tab: String::new(),
+            active_ribbon_key: String::new(),
             contextual_sketch_tab_visible: false,
             preferences_open: false,
             selection_open: false,
@@ -198,6 +200,7 @@ fn draw_ribbon(
 }
 
 fn select_available_ribbon_tab(state: &GuiCommandState, workspace: &mut WorkspaceShellState) {
+    select_document_ribbon(state, workspace);
     select_contextual_ribbon_tab(state, workspace);
     if state
         .ribbon_tabs
@@ -206,6 +209,18 @@ fn select_available_ribbon_tab(state: &GuiCommandState, workspace: &mut Workspac
     {
         return;
     }
+    workspace.active_tab = state
+        .ribbon_tabs
+        .first()
+        .map(|tab| tab.name.clone())
+        .unwrap_or_default();
+}
+
+fn select_document_ribbon(state: &GuiCommandState, workspace: &mut WorkspaceShellState) {
+    if workspace.active_ribbon_key == state.ribbon_key {
+        return;
+    }
+    workspace.active_ribbon_key.clone_from(&state.ribbon_key);
     workspace.active_tab = state
         .ribbon_tabs
         .first()
@@ -1049,8 +1064,8 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 #[cfg(test)]
 mod tests {
     use super::{
-        WorkspaceShellState, history_entry_label, pack_panel_columns, select_contextual_ribbon_tab,
-        set_history_document,
+        WorkspaceShellState, history_entry_label, pack_panel_columns, select_available_ribbon_tab,
+        select_contextual_ribbon_tab, set_history_document,
     };
     use crate::{GuiCommandState, GuiHistoryEntry, GuiRibbonControl, GuiRibbonTab};
 
@@ -1111,6 +1126,25 @@ mod tests {
         assert_eq!(workspace.active_tab, "Sketch");
         select_contextual_ribbon_tab(&GuiCommandState::default(), &mut workspace);
         assert_eq!(workspace.active_tab, "Create & Modify");
+    }
+
+    #[test]
+    fn document_ribbon_change_selects_its_first_tab() {
+        let mut workspace = WorkspaceShellState {
+            active_tab: "View".into(),
+            active_ribbon_key: "Part".into(),
+            ..Default::default()
+        };
+        let assembly = GuiCommandState {
+            ribbon_key: "Assembly".into(),
+            ribbon_tabs: vec![GuiRibbonTab {
+                name: "Assemble".into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        select_available_ribbon_tab(&assembly, &mut workspace);
+        assert_eq!(workspace.active_tab, "Assemble");
     }
 
     fn small(name: &str) -> GuiRibbonControl {
