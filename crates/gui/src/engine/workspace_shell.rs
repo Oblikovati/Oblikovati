@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::workspace_panels;
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, TextureId, Ui};
+use imgui::{Condition, TabItemFlags, TextureId, Ui};
 
 pub(super) const MENU_BAR_HEIGHT: f32 = 20.;
 const RIBBON_HEIGHT: f32 = 125.;
@@ -10,6 +10,7 @@ pub(super) const RIBBON_BOTTOM: f32 = MENU_BAR_HEIGHT + RIBBON_HEIGHT;
 
 pub(crate) struct WorkspaceShellState {
     pub(crate) active_tab: String,
+    force_active_tab: bool,
     active_ribbon_key: String,
     contextual_sketch_tab_visible: bool,
     pub(crate) preferences_open: bool,
@@ -27,6 +28,7 @@ impl Default for WorkspaceShellState {
     fn default() -> Self {
         Self {
             active_tab: String::new(),
+            force_active_tab: false,
             active_ribbon_key: String::new(),
             contextual_sketch_tab_visible: false,
             preferences_open: false,
@@ -241,6 +243,7 @@ fn select_available_ribbon_tab(state: &GuiCommandState, workspace: &mut Workspac
         .first()
         .map(|tab| tab.name.clone())
         .unwrap_or_default();
+    workspace.force_active_tab = true;
 }
 
 fn select_document_ribbon(state: &GuiCommandState, workspace: &mut WorkspaceShellState) {
@@ -253,15 +256,18 @@ fn select_document_ribbon(state: &GuiCommandState, workspace: &mut WorkspaceShel
         .first()
         .map(|tab| tab.name.clone())
         .unwrap_or_default();
+    workspace.force_active_tab = true;
 }
 
 fn select_contextual_ribbon_tab(state: &GuiCommandState, workspace: &mut WorkspaceShellState) {
     let sketch_visible = state.ribbon_tabs.iter().any(|tab| tab.name == "Sketch");
     if sketch_visible && !workspace.contextual_sketch_tab_visible {
         workspace.active_tab = "Sketch".into();
+        workspace.force_active_tab = true;
     }
     if !sketch_visible && workspace.contextual_sketch_tab_visible {
         workspace.active_tab = "Create & Modify".into();
+        workspace.force_active_tab = true;
     }
     workspace.contextual_sketch_tab_visible = sketch_visible;
 }
@@ -292,10 +298,19 @@ fn draw_ribbon_tab(
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
     let label = format!("{}##ribbon-tab", tab.name);
-    let Some(_item) = ui.tab_item(label) else {
+    let flags = if workspace.force_active_tab && workspace.active_tab == tab.name {
+        TabItemFlags::SET_SELECTED
+    } else {
+        TabItemFlags::empty()
+    };
+    let Some(_item) = ui.tab_item_with_flags(label, None, flags) else {
         return;
     };
+    if workspace.force_active_tab && workspace.active_tab != tab.name {
+        return;
+    }
     workspace.active_tab = tab.name.clone();
+    workspace.force_active_tab = false;
     draw_host_panels(ui, &tab.panels, selected, icons, workspace);
     if tab.name == "View" {
         draw_view_window_controls(ui, parameters, workspace);
