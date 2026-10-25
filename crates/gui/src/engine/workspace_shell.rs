@@ -23,6 +23,8 @@ pub(crate) struct WorkspaceShellState {
     pub(crate) units_open: bool,
     pub(crate) model_browser_open: bool,
     pub(crate) command_panel_open: bool,
+    pub(super) command_input: String,
+    pub(super) command_focus_next: bool,
     history_documents: Vec<u64>,
     ribbon_panel_widths: BTreeMap<String, f32>,
     control_targets: Vec<crate::GuiControlTarget>,
@@ -42,6 +44,8 @@ impl Default for WorkspaceShellState {
             units_open: false,
             model_browser_open: true,
             command_panel_open: true,
+            command_input: String::new(),
+            command_focus_next: true,
             history_documents: Vec::new(),
             ribbon_panel_widths: BTreeMap::new(),
             control_targets: Vec::new(),
@@ -100,7 +104,7 @@ pub(crate) fn draw(
         );
     }
     if workspace.command_panel_open {
-        workspace_panels::draw_command_window(ui, status, &mut workspace.command_panel_open);
+        workspace_panels::draw_command_window(ui, workspace);
     }
     let mut icons = std::mem::take(&mut workspace.icons);
     workspace_panels::draw_viewport_overlays(
@@ -1368,6 +1372,13 @@ mod tests {
         );
         assert!(workspace.preferences_open);
         assert!(selected.is_empty());
+    }
+
+    #[test]
+    fn command_window_starts_with_an_empty_focused_input_line() {
+        let workspace = WorkspaceShellState::default();
+        assert!(workspace.command_input.is_empty());
+        assert!(workspace.command_focus_next);
     }
     use crate::{
         GuiCommandState, GuiFrameEngine, GuiFrameRequest, GuiHistoryEntry, GuiRibbonControl,

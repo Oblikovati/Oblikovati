@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::GuiShellAction;
-use imgui::{Condition, StyleColor, Ui, WindowFlags};
+use imgui::{Condition, StyleColor, StyleVar, Ui, WindowFlags};
 
 use super::workspace_shell::RIBBON_BOTTOM;
 
@@ -711,19 +711,31 @@ fn draw_body_row(ui: &Ui, body: &crate::GuiModelBody, selected: &mut Vec<GuiShel
     ui.text(format!("{} — {} faces", body.name, body.faces));
 }
 
-pub(super) fn draw_command_window(ui: &Ui, status: Option<&str>, open: &mut bool) {
+pub(super) fn draw_command_window(
+    ui: &Ui,
+    workspace: &mut super::workspace_shell::WorkspaceShellState,
+) {
     let layout = workspace_layout(ui.io().display_size);
     let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_ACCENT);
     let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_ACCENT);
     ui.window("Command")
         .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
-        .opened(open)
+        .opened(&mut workspace.command_panel_open)
         .position(layout.command_position, Condition::Always)
         .size(layout.command_size, Condition::Always)
         .movable(false)
         .resizable(false)
         .build(|| {
-            ui.text_wrapped(status_text(status));
+            let _padding = ui.push_style_var(StyleVar::WindowPadding([8., 0.]));
+            let input_position = ui.cursor_screen_pos();
+            ui.set_cursor_screen_pos([input_position[0], input_position[1] - 8.]);
+            if workspace.command_focus_next {
+                ui.set_keyboard_focus_here();
+                workspace.command_focus_next = false;
+            }
+            ui.set_next_item_width(-1.);
+            ui.input_text("##command-input", &mut workspace.command_input)
+                .build();
         });
 }
 
