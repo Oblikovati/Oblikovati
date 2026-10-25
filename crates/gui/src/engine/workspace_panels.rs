@@ -49,7 +49,9 @@ pub(super) fn draw_status_bar(ui: &Ui, status: Option<&str>) {
 }
 
 fn status_text(status: Option<&str>) -> &str {
-    status.filter(|text| !text.is_empty()).unwrap_or("Ready")
+    status
+        .filter(|text| !text.is_empty())
+        .unwrap_or("Press F1 for more help")
 }
 
 pub(super) fn draw_document_tabs(
@@ -446,9 +448,9 @@ mod tests {
     }
 
     #[test]
-    fn idle_status_matches_the_go_status_model() {
-        assert_eq!(status_text(None), "Ready");
-        assert_eq!(status_text(Some("")), "Ready");
+    fn idle_status_matches_the_go_status_presentation() {
+        assert_eq!(status_text(None), "Press F1 for more help");
+        assert_eq!(status_text(Some("")), "Press F1 for more help");
         assert_eq!(status_text(Some("Click a face")), "Click a face");
     }
 
