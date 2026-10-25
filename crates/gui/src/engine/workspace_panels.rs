@@ -29,7 +29,7 @@ const DOCK_TAB_LEFT_INSET: f32 = 26.;
 const DOCK_TAB_TOP_INSET: f32 = 1.;
 const DOCK_TAB_TEXT_INSET: f32 = 5.;
 const DOCK_TAB_RIGHT_INSET: f32 = 13.;
-const DOCK_TAB_CLOSE_RESERVE: f32 = 25.;
+const DOCK_TAB_CLOSE_RESERVE: f32 = 10.;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct WorkspaceLayout {
@@ -761,7 +761,7 @@ mod tests {
         );
         assert_eq!(
             dock_tab_bounds([0., 192.], 40., true),
-            ([26., 193.], [109., 214.])
+            ([26., 193.], [94., 214.])
         );
     }
 
