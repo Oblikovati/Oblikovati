@@ -681,11 +681,11 @@ mod tests {
     #[test]
     fn fallback_layout_matches_the_go_model_viewport_command_arrangement() {
         let layout = workspace_layout([1440., 900.]);
-        assert_eq!(layout.model_position, [0., 151.]);
-        assert_eq!(layout.model_size, [316.8, 728.]);
-        assert_eq!(layout.document_position, [316.8, 170.]);
-        assert_eq!(layout.command_position, [316.8, 828.04]);
-        assert_eq!(layout.command_size, [1123.2, 50.96]);
+        assert_eq!(layout.model_position, [0., 190.]);
+        assert_eq!(layout.model_size, [316.8, 689.]);
+        assert_eq!(layout.document_position, [316.8, 209.]);
+        assert_eq!(layout.command_position, [316.8, 830.77]);
+        assert_eq!(layout.command_size, [1123.2, 48.23]);
     }
 
     #[test]
@@ -699,11 +699,11 @@ mod tests {
     fn overlays_anchor_to_the_visible_viewport() {
         assert_eq!(
             viewport_rect([1440., 900.], true),
-            ([316.8, 189.], [1123.2, 639.04])
+            ([316.8, 228.], [1123.2, 602.77])
         );
         assert_eq!(
             viewport_rect([1440., 900.], false),
-            ([0., 189.], [1440., 639.04])
+            ([0., 228.], [1440., 602.77])
         );
     }
 

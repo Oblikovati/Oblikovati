@@ -7,27 +7,9 @@ use imgui::{Context, Style, StyleColor};
 pub(crate) fn configure(context: &mut Context) {
     let style = context.style_mut();
     style.use_dark_colors();
-    configure_geometry(style);
     apply_surface_palette(style);
     apply_control_palette(style);
     apply_navigation_palette(style);
-}
-
-fn configure_geometry(style: &mut Style) {
-    style.window_padding = [6., 4.];
-    style.frame_padding = [5., 3.];
-    style.item_spacing = [6., 3.];
-    style.item_inner_spacing = [4., 3.];
-    style.window_border_size = 1.;
-    style.frame_border_size = 1.;
-    style.window_rounding = 0.;
-    style.child_rounding = 0.;
-    style.frame_rounding = 2.;
-    style.grab_rounding = 2.;
-    style.tab_rounding = 2.;
-    style.scrollbar_rounding = 2.;
-    style.scrollbar_size = 12.;
-    style.indent_spacing = 12.;
 }
 
 fn apply_surface_palette(style: &mut Style) {
@@ -94,5 +76,15 @@ mod tests {
             style[StyleColor::TabActive],
             rgba(0.506, 0.376, 0.89, 0.631)
         );
+    }
+
+    #[test]
+    fn go_default_geometry_remains_unchanged() {
+        let mut context = Context::create();
+        configure(&mut context);
+        let style = context.style();
+        assert_eq!(style.window_padding, [8., 8.]);
+        assert_eq!(style.frame_padding, [4., 3.]);
+        assert_eq!(style.item_spacing, [8., 4.]);
     }
 }

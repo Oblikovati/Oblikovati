@@ -6,7 +6,7 @@ use crate::{
     input::{apply_input, input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
-use imgui::{ConfigFlags, Context, TextureId};
+use imgui::{ConfigFlags, Context, FontSource, TextureId};
 use std::sync::Arc;
 mod workspace_panels;
 mod workspace_shell;
@@ -116,6 +116,7 @@ fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.set_ini_filename(None);
     context.set_log_filename(None);
     crate::chrome_style::configure(context);
+    install_go_ui_font(context);
     context
         .io_mut()
         .config_flags
@@ -124,6 +125,15 @@ fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     // imgui-rs e246a334 rebuilds and clears TexID; bind after the atlas is built.
     context.fonts().tex_id = TextureId::new(FONT_TEXTURE_ID);
     atlas
+}
+
+fn install_go_ui_font(context: &mut Context) {
+    const GO_UI_FONT: &[u8] = include_bytes!("../assets/fonts/LiberationSans-Regular.ttf");
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: GO_UI_FONT,
+        size_pixels: 16.,
+        config: None,
+    }]);
 }
 fn copy_atlas(context: &mut Context) -> GuiAtlas {
     let atlas = context.fonts().build_rgba32_texture();
@@ -213,5 +223,20 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
     io.delta_time = request.delta_seconds;
     for event in &request.events {
         apply_input(io, event, request.framebuffer_scale);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn go_ui_font_uses_the_shared_sixteen_pixel_liberation_face() {
+        let mut context = Context::create();
+        install_go_ui_font(&mut context);
+        let texture = context.fonts().build_rgba32_texture();
+        drop(texture);
+        let id = context.fonts().fonts().into_iter().next().unwrap();
+        assert_eq!(context.fonts().get_font(id).unwrap().font_size, 16.);
     }
 }
