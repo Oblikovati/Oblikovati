@@ -19,6 +19,11 @@ fn gui_cube_actions_create_a_mouse_drawn_cube_in_the_part_viewport() {
     assert!(!owner.placement_active());
     assert!(
         owner
+            .apply_gui_shell_action(GuiShellAction::ExitSketch)
+            .unwrap()
+    );
+    assert!(
+        owner
             .apply_gui_shell_action(GuiShellAction::Extrude)
             .unwrap()
     );

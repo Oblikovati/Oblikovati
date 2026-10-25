@@ -121,6 +121,13 @@ fn draw_menu_bar(
                 selected,
             );
             menu_action(ui, "Rectangle", GuiShellAction::Rectangle, state, selected);
+            menu_action(
+                ui,
+                "Exit Sketch",
+                GuiShellAction::ExitSketch,
+                state,
+                selected,
+            );
         });
         ui.menu("3D Model", || {
             menu_action(ui, "Extrude", GuiShellAction::Extrude, state, selected);
@@ -316,6 +323,14 @@ fn draw_sketch_tab(
         ui,
         "Rectangle",
         GuiShellAction::Rectangle,
+        state,
+        selected,
+        icons,
+    );
+    ribbon_action(
+        ui,
+        "Exit Sketch",
+        GuiShellAction::ExitSketch,
         state,
         selected,
         icons,
@@ -937,6 +952,7 @@ fn icon_for_action(action: &GuiShellAction) -> &'static str {
         GuiShellAction::PreviousView => "home",
         GuiShellAction::SketchXY => "create-sketch",
         GuiShellAction::Rectangle => "rectangle",
+        GuiShellAction::ExitSketch => "finish-sketch",
         GuiShellAction::Extrude => "extrude",
         GuiShellAction::ActivateDocument(_) => "view-new",
         GuiShellAction::CloseDocument(_) => "close",
@@ -1002,6 +1018,7 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
         "File.Save" => Some(GuiShellAction::Save),
         "Sketch.Create" => Some(GuiShellAction::SketchXY),
         "Sketch.Rectangle" => Some(GuiShellAction::Rectangle),
+        "Sketch.Finish" => Some(GuiShellAction::ExitSketch),
         "Feature.Extrude" => Some(GuiShellAction::Extrude),
         "View.Home" => Some(GuiShellAction::Home),
         "View.Previous" => Some(GuiShellAction::PreviousView),

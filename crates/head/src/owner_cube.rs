@@ -27,6 +27,7 @@ impl<
             oblikovati_gui::GuiShellAction::NewPart => self.new_cube_part(),
             oblikovati_gui::GuiShellAction::SketchXY => self.start_cube_sketch(),
             oblikovati_gui::GuiShellAction::Rectangle => self.start_cube_rectangle(),
+            oblikovati_gui::GuiShellAction::ExitSketch => self.finish_cube_sketch(),
             oblikovati_gui::GuiShellAction::Extrude => self.extrude_cube_sketch(),
             _ => Ok(false),
         }
@@ -95,11 +96,9 @@ impl<
     }
 
     fn extrude_cube_sketch(&mut self) -> Result<bool, String> {
-        let edit = self
-            .active_sketch_edit()
-            .ok_or_else(|| "Extrude: expected an active cube sketch".to_string())?;
+        let (document, sketch) = self.extrude_sketch()?;
         let args = serde_json::to_value(oblikovati_api::wire::featureargs::Extrude {
-            sketch_index: self.sketch_index(edit.document, edit.sketch)?,
+            sketch_index: self.sketch_index(document, sketch)?,
             profile_index: 0,
             distance: "size".into(),
             operation: "new".into(),
@@ -113,8 +112,23 @@ impl<
                 args: JsonValue(Some(args)),
             })
             .map_err(|cause| cause.to_string())?;
+        if self.active_sketch_edit().is_some() {
+            self.finish_sketch_edit()?;
+        }
+        Ok(true)
+    }
+
+    fn finish_cube_sketch(&mut self) -> Result<bool, String> {
         self.finish_sketch_edit()?;
         Ok(true)
+    }
+
+    fn extrude_sketch(&self) -> Result<(u64, DocumentSketchId), String> {
+        if let Some(edit) = self.active_sketch_edit() {
+            return Ok((edit.document, edit.sketch));
+        }
+        let document = self.active_part_document()?;
+        Ok((document, self.latest_sketch(document)?))
     }
 
     fn active_part_document(&self) -> Result<u64, String> {

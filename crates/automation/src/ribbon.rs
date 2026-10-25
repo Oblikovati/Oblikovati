@@ -19,6 +19,7 @@ pub(crate) fn list() -> ListRibbonResult {
                 vec![
                     control("Sketch.Create", "Start Sketch on XY", "create-sketch"),
                     control("Sketch.Rectangle", "Rectangle", "rectangle"),
+                    control("Sketch.Finish", "Exit Sketch", "finish-sketch"),
                 ],
             ),
             tab(
