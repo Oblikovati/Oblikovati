@@ -62,7 +62,7 @@ fn zero_document_tabs() -> Vec<RibbonTabInfo> {
                         "AddIn Catalogue",
                         "addin-catalogue",
                     ),
-                    unavailable_large("GetStarted.Preferences", "Preferences", "preferences"),
+                    large("GetStarted.Preferences", "Preferences", "preferences"),
                 ],
             ),
         ],
@@ -479,6 +479,13 @@ mod tests {
                 .controls
                 .as_ref()
                 .unwrap()[3]
+                .enabled
+        );
+        assert!(
+            zero_doc[0].panels.as_ref().unwrap()[1]
+                .controls
+                .as_ref()
+                .unwrap()[1]
                 .enabled
         );
 

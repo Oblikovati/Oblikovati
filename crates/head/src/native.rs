@@ -34,7 +34,7 @@ impl NativeHeadWindow {
         let runtime = ViewportRuntime::new(ViewportOptions::default())?;
         let mut view = runtime.open_window("Oblikovati", extent)?;
         view.submit(&ViewportScene {
-            background: crate::part_scene::GO_DARK_VIEWPORT_BACKGROUND,
+            background: crate::part_scene::GO_DARK_EMPTY_WORKSPACE_BACKGROUND,
             triangles: Vec::new(),
         })?;
         Ok(Self {

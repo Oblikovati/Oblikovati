@@ -1255,9 +1255,21 @@ fn draw_host_control(
         ui.tooltip_text(&control.display_name);
     }
     if clicked && control.enabled {
-        let Some(action) = action else {
-            return;
-        };
+        dispatch_ribbon_control(&control.command_id, action, selected, workspace);
+    }
+}
+
+fn dispatch_ribbon_control(
+    command_id: &str,
+    action: Option<GuiShellAction>,
+    selected: &mut Vec<GuiShellAction>,
+    workspace: &mut WorkspaceShellState,
+) {
+    if command_id == "GetStarted.Preferences" {
+        workspace.preferences_open = true;
+        return;
+    }
+    if let Some(action) = action {
         selected.push(action);
     }
 }
@@ -1339,10 +1351,24 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 #[cfg(test)]
 mod tests {
     use super::{
-        WorkspaceShellState, history_entry_label, large_caption_lines, pack_panel_columns,
-        panel_divider_line, panels_that_fit, select_available_ribbon_tab,
+        WorkspaceShellState, dispatch_ribbon_control, history_entry_label, large_caption_lines,
+        pack_panel_columns, panel_divider_line, panels_that_fit, select_available_ribbon_tab,
         select_contextual_ribbon_tab, set_history_document,
     };
+
+    #[test]
+    fn zero_document_preferences_opens_the_shared_preferences_panel() {
+        let mut workspace = WorkspaceShellState::default();
+        let mut selected = Vec::new();
+        dispatch_ribbon_control(
+            "GetStarted.Preferences",
+            None,
+            &mut selected,
+            &mut workspace,
+        );
+        assert!(workspace.preferences_open);
+        assert!(selected.is_empty());
+    }
     use crate::{
         GuiCommandState, GuiFrameEngine, GuiFrameRequest, GuiHistoryEntry, GuiRibbonControl,
         GuiRibbonPanel, GuiRibbonTab,

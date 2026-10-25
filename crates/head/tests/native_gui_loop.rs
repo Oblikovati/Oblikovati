@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{HeadGuiUpdate, HeadWork};
+use oblikovati_api::{
+    client::Client,
+    wire::{CreateDocumentArgs, SaveDocumentAsArgs},
+};
 use oblikovati_gui::{GuiCommandState, GuiShellAction};
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
@@ -131,10 +135,47 @@ fn native_document_tab_click_selects_its_document_ribbon() {
     let mut window = scripted_window(native);
     let part = create_document(&mut owner, GuiShellAction::NewPart);
     let assembly = create_document(&mut owner, GuiShellAction::NewAssembly);
-    create_document(&mut owner, GuiShellAction::NewDrawing);
+    let drawing = create_document(&mut owner, GuiShellAction::NewDrawing);
+    let presentation = create_document_type(&mut owner, "presentation", "Presentation");
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
     select_document_and_assert(&mut window, &mut owner, part, "Part", "Create & Modify");
     select_document_and_assert(&mut window, &mut owner, assembly, "Assembly", "Assemble");
+    select_document_and_assert(&mut window, &mut owner, drawing, "Drawing", "Drawing");
+    select_document_and_assert(
+        &mut window,
+        &mut owner,
+        presentation,
+        "Presentation",
+        "Presentation",
+    );
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+#[test]
+fn closing_the_last_document_restores_the_zero_document_ribbon() {
+    let native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let mut window = scripted_window(native);
+    let document = create_document(&mut owner, GuiShellAction::NewPart);
+    let directory = tempfile::tempdir().unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document,
+            new_full_document_name: directory.path().join("zero-doc.opd").display().to_string(),
+        })
+        .unwrap();
+    assert!(
+        owner
+            .apply_gui_shell_action(GuiShellAction::CloseDocument(document))
+            .unwrap()
+    );
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    let state = owner.gui_command_state().unwrap();
+    assert!(state.documents.is_empty());
+    assert_eq!(state.ribbon_key, "ZeroDoc");
+    assert_eq!(state.ribbon_tabs[0].name, "Get Started");
     owner.finish().unwrap();
     window.finish().unwrap();
 }
@@ -149,6 +190,18 @@ fn create_document(owner: &mut NativeDesktopOwner, action: GuiShellAction) -> u6
         .find(|document| document.active)
         .map(|document| document.id)
         .expect("new document must be active")
+}
+
+fn create_document_type(owner: &mut NativeDesktopOwner, type_: &str, name: &str) -> u64 {
+    Client::new(owner.document_host())
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: type_.into(),
+            name: name.into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id
 }
 
 fn select_document_and_assert(
