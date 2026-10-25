@@ -9,6 +9,7 @@ pub(super) const RIBBON_BOTTOM: f32 = MENU_BAR_HEIGHT + RIBBON_HEIGHT;
 
 pub(crate) struct WorkspaceShellState {
     pub(crate) active_tab: String,
+    contextual_sketch_tab_visible: bool,
     pub(crate) preferences_open: bool,
     pub(crate) selection_open: bool,
     pub(crate) history_open: bool,
@@ -23,6 +24,7 @@ impl Default for WorkspaceShellState {
     fn default() -> Self {
         Self {
             active_tab: String::new(),
+            contextual_sketch_tab_visible: false,
             preferences_open: false,
             selection_open: false,
             history_open: false,
@@ -175,27 +177,14 @@ fn draw_ribbon(
         .movable(false)
         .resizable(false)
         .build(|| {
-            draw_ribbon_tabs(
-                ui,
-                &mut workspace.active_tab,
-                state,
-                selected,
-                &mut workspace.icons,
-            );
-            if let Some(tab) = state
-                .ribbon_tabs
-                .iter()
-                .find(|tab| tab.name == workspace.active_tab)
-            {
-                draw_host_panels(ui, &tab.panels, selected, &mut workspace.icons);
-                if workspace.active_tab == "View" {
-                    draw_view_window_controls(ui, parameters, workspace);
-                }
-            }
+            let mut icons = std::mem::take(&mut workspace.icons);
+            draw_ribbon_content(ui, state, selected, parameters, workspace, &mut icons);
+            workspace.icons = icons;
         });
 }
 
 fn select_available_ribbon_tab(state: &GuiCommandState, workspace: &mut WorkspaceShellState) {
+    select_contextual_ribbon_tab(state, workspace);
     if state
         .ribbon_tabs
         .iter()
@@ -210,22 +199,51 @@ fn select_available_ribbon_tab(state: &GuiCommandState, workspace: &mut Workspac
         .unwrap_or_default();
 }
 
-fn draw_ribbon_tabs(
+fn select_contextual_ribbon_tab(state: &GuiCommandState, workspace: &mut WorkspaceShellState) {
+    let sketch_visible = state.ribbon_tabs.iter().any(|tab| tab.name == "Sketch");
+    if sketch_visible && !workspace.contextual_sketch_tab_visible {
+        workspace.active_tab = "Sketch".into();
+    }
+    if !sketch_visible && workspace.contextual_sketch_tab_visible {
+        workspace.active_tab = "Create & Modify".into();
+    }
+    workspace.contextual_sketch_tab_visible = sketch_visible;
+}
+
+fn draw_ribbon_content(
     ui: &Ui,
-    active_tab: &mut String,
     state: &GuiCommandState,
     selected: &mut Vec<GuiShellAction>,
+    parameters: &mut crate::parameter_panel::ParameterPanel,
+    workspace: &mut WorkspaceShellState,
     icons: &mut crate::icon_assets::GuiIconCache,
 ) {
-    for tab in &state.ribbon_tabs {
-        let label = format!("{}##ribbon-tab", tab.name);
-        if ui.button(&label) {
-            *active_tab = tab.name.clone();
-        }
-        ui.same_line();
-    }
     draw_quick_access(ui, state, selected, icons);
-    ui.new_line();
+    let Some(_tabs) = ui.tab_bar("##ribbon-tabs") else {
+        return;
+    };
+    for tab in &state.ribbon_tabs {
+        draw_ribbon_tab(ui, tab, selected, parameters, workspace, icons);
+    }
+}
+
+fn draw_ribbon_tab(
+    ui: &Ui,
+    tab: &crate::GuiRibbonTab,
+    selected: &mut Vec<GuiShellAction>,
+    parameters: &mut crate::parameter_panel::ParameterPanel,
+    workspace: &mut WorkspaceShellState,
+    icons: &mut crate::icon_assets::GuiIconCache,
+) {
+    let label = format!("{}##ribbon-tab", tab.name);
+    let Some(_item) = ui.tab_item(label) else {
+        return;
+    };
+    workspace.active_tab = tab.name.clone();
+    draw_host_panels(ui, &tab.panels, selected, icons);
+    if tab.name == "View" {
+        draw_view_window_controls(ui, parameters, workspace);
+    }
 }
 
 fn draw_quick_access(
@@ -949,8 +967,11 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 
 #[cfg(test)]
 mod tests {
-    use super::{history_entry_label, pack_panel_columns, set_history_document};
-    use crate::{GuiHistoryEntry, GuiRibbonControl};
+    use super::{
+        WorkspaceShellState, history_entry_label, pack_panel_columns, select_contextual_ribbon_tab,
+        set_history_document,
+    };
+    use crate::{GuiCommandState, GuiHistoryEntry, GuiRibbonControl, GuiRibbonTab};
 
     #[test]
     fn history_picker_replaces_a_document_and_marks_saved_entries() {
@@ -993,6 +1014,22 @@ mod tests {
                 vec!["Hole"]
             ]
         );
+    }
+
+    #[test]
+    fn contextual_sketch_tab_selects_on_entry_and_model_tab_on_exit() {
+        let mut workspace = WorkspaceShellState::default();
+        let sketch = GuiCommandState {
+            ribbon_tabs: vec![GuiRibbonTab {
+                name: "Sketch".into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        select_contextual_ribbon_tab(&sketch, &mut workspace);
+        assert_eq!(workspace.active_tab, "Sketch");
+        select_contextual_ribbon_tab(&GuiCommandState::default(), &mut workspace);
+        assert_eq!(workspace.active_tab, "Create & Modify");
     }
 
     fn small(name: &str) -> GuiRibbonControl {
