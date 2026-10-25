@@ -101,6 +101,24 @@ fn public_automation_keys_follow_native_physical_and_text_input() {
     window.finish().unwrap();
 }
 
+#[test]
+fn public_automation_delivers_printable_text_without_a_named_key() {
+    let mut window = NativeHeadWindow::open().unwrap();
+    call(
+        &mut window,
+        METHOD_VIEWPORT_KEY,
+        &PressKeyArgs {
+            key: "5".into(),
+            ..Default::default()
+        },
+    );
+    assert_eq!(
+        window.events(1).unwrap(),
+        [ViewportEvent::Input(ViewportInput::Text('5'))]
+    );
+    window.finish().unwrap();
+}
+
 fn call<T: serde::Serialize>(window: &mut NativeHeadWindow, method: &str, args: &T) {
     let bytes = serde_json::to_vec(args).unwrap();
     crate::viewport_automation::apply(window, method, &bytes)

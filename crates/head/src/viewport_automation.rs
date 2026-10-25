@@ -88,10 +88,15 @@ fn click(window: &mut dyn HeadWindow, method: &str, bytes: &[u8]) -> Result<Vec<
 
 fn key(window: &mut dyn HeadWindow, method: &str, bytes: &[u8]) -> Result<Vec<u8>, Error> {
     let args: PressKeyArgs = decode_wire_arguments(method, bytes)?;
-    let key = physical_key(&args.key)?;
     let modifiers = key_modifiers(&args);
-    let command = command_key(&args.key, modifiers);
-    inject_key(window, key, command, modifiers)?;
+    if let Some(key) = physical_key(&args.key) {
+        inject_key(window, key, command_key(&args.key, modifiers), modifiers)?;
+    } else if plain_text_key(&args.key, modifiers).is_none() {
+        return Err(Error(format!(
+            "viewport key {:?}: expected a supported named key or one printable character",
+            args.key
+        )));
+    }
     inject_text(window, &args.key, modifiers)?;
     encode_wire_reply(&PressKeyResult::default())
 }
@@ -121,14 +126,7 @@ fn inject_text(
     value: &str,
     modifiers: ViewportModifiers,
 ) -> Result<(), Error> {
-    if modifiers.control || modifiers.alt || value.chars().count() != 1 {
-        return Ok(());
-    }
-    let Some(character) = value
-        .chars()
-        .next()
-        .filter(|character| !character.is_control())
-    else {
+    let Some(character) = plain_text_key(value, modifiers) else {
         return Ok(());
     };
     window
@@ -136,15 +134,17 @@ fn inject_text(
         .map_err(Error)
 }
 
-fn physical_key(value: &str) -> Result<ViewportPhysicalKey, Error> {
-    let key = navigation_key(value)
+fn plain_text_key(value: &str, modifiers: ViewportModifiers) -> Option<char> {
+    (!modifiers.control && !modifiers.alt)
+        .then(|| value.chars().next())
+        .flatten()
+        .filter(|character| value.chars().count() == 1 && !character.is_control())
+}
+
+fn physical_key(value: &str) -> Option<ViewportPhysicalKey> {
+    navigation_key(value)
         .or_else(|| editing_key(value))
-        .or_else(|| command_letter_key(value));
-    key.ok_or_else(|| {
-        Error(format!(
-            "viewport key {value:?}: expected a supported physical key or Ctrl+S, Ctrl+Y, Ctrl+Z"
-        ))
-    })
+        .or_else(|| command_letter_key(value))
 }
 
 fn navigation_key(value: &str) -> Option<ViewportPhysicalKey> {
