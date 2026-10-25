@@ -65,6 +65,7 @@ pub(super) fn draw_document_tabs(
     ui: &Ui,
     documents: &[crate::GuiDocumentTab],
     selected: &mut Vec<GuiShellAction>,
+    workspace: &mut super::workspace_shell::WorkspaceShellState,
 ) {
     if documents.is_empty() {
         return;
@@ -82,7 +83,7 @@ pub(super) fn draw_document_tabs(
                 return;
             };
             for document in documents {
-                draw_document_tab(ui, document, selected);
+                draw_document_tab(ui, document, selected, workspace);
             }
         });
 }
@@ -500,10 +501,17 @@ fn draw_document_tab(
     ui: &Ui,
     document: &crate::GuiDocumentTab,
     selected: &mut Vec<GuiShellAction>,
+    workspace: &mut super::workspace_shell::WorkspaceShellState,
 ) {
     let mut open = true;
     let label = document_tab_label(document);
     let active = ui.tab_item_with_opened(label, &mut open).is_some();
+    workspace.record_target(
+        &format!("Document.{}", document.id),
+        true,
+        ui.item_rect_min(),
+        ui.item_rect_max(),
+    );
     if active && !document.active {
         selected.push(GuiShellAction::ActivateDocument(document.id));
     }

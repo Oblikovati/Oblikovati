@@ -124,6 +124,50 @@ fn native_zero_document_ribbon_creates_each_supported_document_type() {
     }
 }
 
+#[test]
+fn native_document_tab_click_selects_its_document_ribbon() {
+    let native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let mut window = scripted_window(native);
+    let part = create_document(&mut owner, GuiShellAction::NewPart);
+    let assembly = create_document(&mut owner, GuiShellAction::NewAssembly);
+    create_document(&mut owner, GuiShellAction::NewDrawing);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
+    select_document_and_assert(&mut window, &mut owner, part, "Part", "Create & Modify");
+    select_document_and_assert(&mut window, &mut owner, assembly, "Assembly", "Assemble");
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+fn create_document(owner: &mut NativeDesktopOwner, action: GuiShellAction) -> u64 {
+    assert!(owner.apply_gui_shell_action(action).unwrap());
+    owner
+        .gui_command_state()
+        .unwrap()
+        .documents
+        .iter()
+        .find(|document| document.active)
+        .map(|document| document.id)
+        .expect("new document must be active")
+}
+
+fn select_document_and_assert(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    document: u64,
+    ribbon_key: &str,
+    first_tab: &str,
+) {
+    click_shell_point(
+        window,
+        owner,
+        control_center(&window.native, &format!("Document.{document}")),
+    );
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.ribbon_key, ribbon_key);
+    assert_eq!(state.ribbon_tabs[0].name, first_tab);
+}
+
 fn control_center(window: &NativeHeadWindow, command_id: &str) -> [i32; 2] {
     let target = window
         .gui
