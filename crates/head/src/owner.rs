@@ -398,6 +398,30 @@ impl<
             .drain(budget, &host)
             .map_err(|error| error.to_string())
     }
+    fn part_model_tree(
+        &mut self,
+        document: u64,
+    ) -> Result<Option<oblikovati_gui::GuiModelTree>, String> {
+        if !self.is_part_document(document)? {
+            return Ok(None);
+        }
+        let tree = oblikovati_api::client::Client::new(self.document_host())
+            .model()
+            .tree()
+            .map_err(|cause| cause.to_string())?;
+        let bodies = oblikovati_api::client::Client::new(self.document_host())
+            .body()
+            .list(&oblikovati_api::json::EmptyObject {})
+            .map_err(|cause| cause.to_string())?;
+        Ok(Some(gui_model_tree(tree, bodies)?))
+    }
+    fn is_part_document(&self, document: u64) -> Result<bool, String> {
+        Ok(self
+            .files
+            .document_type(document)
+            .map_err(|cause| cause.to_string())?
+            == oblikovati_api::types::DOCUMENT_PART)
+    }
     fn close_blockers(&self) -> Result<Vec<u64>, String> {
         let workspace = self.files.workspace();
         let mut blocked = Vec::new();
@@ -479,14 +503,7 @@ impl<
                 oblikovati_automation::ribbon::contextual_sketch_tab(),
             ));
         }
-        let tree = oblikovati_api::client::Client::new(self.document_host())
-            .model()
-            .tree()
-            .map_err(|cause| cause.to_string())?;
-        let bodies = oblikovati_api::client::Client::new(self.document_host())
-            .body()
-            .list(&oblikovati_api::json::EmptyObject {})
-            .map_err(|cause| cause.to_string())?;
+        let model_tree = self.part_model_tree(document)?;
         let histories = documents
             .iter()
             .map(|tab| {
@@ -511,7 +528,7 @@ impl<
             document_units: Some(document_units),
             ribbon_key: ribbon.key.0.into_owned(),
             ribbon_tabs,
-            model_tree: Some(gui_model_tree(tree, bodies)?),
+            model_tree,
             sketch_preferences: Some(gui_sketch_preferences(
                 self.sketch_preferences.sketch_options(),
             )),

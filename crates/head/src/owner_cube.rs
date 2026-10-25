@@ -25,6 +25,10 @@ impl<
     ) -> Result<bool, String> {
         match action {
             oblikovati_gui::GuiShellAction::NewPart => self.new_cube_part(),
+            oblikovati_gui::GuiShellAction::NewAssembly => {
+                self.new_document("assembly", "Assembly")
+            }
+            oblikovati_gui::GuiShellAction::NewDrawing => self.new_document("drawing", "Drawing"),
             oblikovati_gui::GuiShellAction::SketchXY => self.start_cube_sketch(),
             oblikovati_gui::GuiShellAction::Rectangle => self.start_cube_rectangle(),
             oblikovati_gui::GuiShellAction::ExitSketch => self.finish_cube_sketch(),
@@ -53,11 +57,15 @@ impl<
     }
 
     fn new_cube_part(&mut self) -> Result<bool, String> {
+        self.new_document("part", "Cube")
+    }
+
+    fn new_document(&mut self, type_: &str, name: &str) -> Result<bool, String> {
         Client::new(self.document_host())
             .documents()
             .create(&CreateDocumentArgs {
-                type_: "part".into(),
-                name: "Cube".into(),
+                type_: type_.into(),
+                name: name.into(),
                 ..Default::default()
             })
             .map_err(|cause| cause.to_string())?;

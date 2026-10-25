@@ -7,6 +7,8 @@ pub enum GuiShellAction {
     Home,
     PreviousView,
     NewPart,
+    NewAssembly,
+    NewDrawing,
     SketchXY,
     Rectangle,
     ExitSketch,
@@ -172,6 +174,8 @@ impl GuiShellAction {
             | Self::Home
             | Self::PreviousView
             | Self::NewPart
+            | Self::NewAssembly
+            | Self::NewDrawing
             | Self::SketchXY
             | Self::Rectangle
             | Self::ExitSketch

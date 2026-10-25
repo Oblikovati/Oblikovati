@@ -5,6 +5,21 @@ use crate::{HeadWork, placement_test_inputs::*};
 use oblikovati_gui::GuiShellAction;
 
 #[test]
+fn gui_document_actions_select_the_document_specific_ribbon() {
+    let (mut owner, _) = owner();
+    for (action, key, tab) in [
+        (GuiShellAction::NewPart, "Part", "Create & Modify"),
+        (GuiShellAction::NewAssembly, "Assembly", "Assemble"),
+        (GuiShellAction::NewDrawing, "Drawing", "Drawing"),
+    ] {
+        assert!(owner.apply_gui_shell_action(action).unwrap());
+        let state = owner.gui_command_state().unwrap();
+        assert_eq!(state.ribbon_key, key);
+        assert_eq!(state.ribbon_tabs[0].name, tab);
+    }
+}
+
+#[test]
 fn gui_cube_actions_create_a_mouse_drawn_cube_in_the_part_viewport() {
     let (mut owner, _) = owner();
     for action in [

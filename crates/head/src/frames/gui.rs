@@ -53,6 +53,8 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         GuiShellAction::Home => ViewportKey::Home,
         GuiShellAction::PreviousView => ViewportKey::Previous,
         GuiShellAction::NewPart
+        | GuiShellAction::NewAssembly
+        | GuiShellAction::NewDrawing
         | GuiShellAction::SketchXY
         | GuiShellAction::Rectangle
         | GuiShellAction::ExitSketch

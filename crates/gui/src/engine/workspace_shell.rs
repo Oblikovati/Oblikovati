@@ -103,6 +103,20 @@ fn draw_menu_bar(
     ui.main_menu_bar(|| {
         ui.menu("File", || {
             menu_action(ui, "New Part", GuiShellAction::NewPart, state, selected);
+            menu_action(
+                ui,
+                "New Assembly",
+                GuiShellAction::NewAssembly,
+                state,
+                selected,
+            );
+            menu_action(
+                ui,
+                "New Drawing",
+                GuiShellAction::NewDrawing,
+                state,
+                selected,
+            );
             menu_action(ui, "Save", GuiShellAction::Save, state, selected);
         });
         ui.menu("Edit", || {
@@ -283,6 +297,20 @@ fn draw_application_menu(
     }
     if let Some(_popup) = ui.begin_popup("##app-menu-popup") {
         menu_action(ui, "New Part", GuiShellAction::NewPart, state, selected);
+        menu_action(
+            ui,
+            "New Assembly",
+            GuiShellAction::NewAssembly,
+            state,
+            selected,
+        );
+        menu_action(
+            ui,
+            "New Drawing",
+            GuiShellAction::NewDrawing,
+            state,
+            selected,
+        );
         ui.menu_item_config("Open").enabled(false).build();
         menu_action(ui, "Save", GuiShellAction::Save, state, selected);
     }
@@ -1005,6 +1033,8 @@ fn draw_small_ribbon_control(
 fn host_action(id: &str) -> Option<GuiShellAction> {
     match id {
         "GetStarted.NewPart" => Some(GuiShellAction::NewPart),
+        "GetStarted.NewAssembly" => Some(GuiShellAction::NewAssembly),
+        "GetStarted.NewDrawing" => Some(GuiShellAction::NewDrawing),
         "File.Save" => Some(GuiShellAction::Save),
         "Sketch.Create" => Some(GuiShellAction::SketchXY),
         "Sketch.Rectangle" => Some(GuiShellAction::Rectangle),

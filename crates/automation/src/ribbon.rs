@@ -13,11 +13,10 @@ pub(crate) fn list(key: RibbonKey) -> ListRibbonResult {
     let tabs = match key.0.as_ref() {
         "ZeroDoc" => zero_document_tabs(),
         "Part" => part_tabs(),
-        "Assembly" => common_document_tabs("Assembly"),
-        "Drawing" => common_document_tabs("Drawing"),
-        "Presentation" => common_document_tabs("Presentation"),
-        "IFeatures" => common_document_tabs("iFeatures"),
-        _ => common_document_tabs("Tools"),
+        "Assembly" => assembly_tabs(),
+        "Drawing" => drawing_tabs(),
+        "Presentation" | "IFeatures" | "UnknownDocument" => Vec::new(),
+        _ => Vec::new(),
     };
     ListRibbonResult {
         key,
@@ -40,10 +39,145 @@ pub(crate) fn key_for_document(document: Option<oblikovati_api::types::DocumentT
 fn zero_document_tabs() -> Vec<RibbonTabInfo> {
     vec![tab(
         "Get Started",
-        vec![panel(
-            "Create",
-            vec![large("GetStarted.NewPart", "New Part", "new-part")],
-        )],
+        vec![
+            panel(
+                "Launch",
+                vec![
+                    large("GetStarted.NewPart", "New Part", "new-part"),
+                    unavailable_large(
+                        "GetStarted.NewSheetMetalPart",
+                        "New Sheet Metal Part",
+                        "sheet-metal-new",
+                    ),
+                    large("GetStarted.NewAssembly", "New Assembly", "new-assembly"),
+                    large("GetStarted.NewDrawing", "New Drawing", "new-drawing"),
+                ],
+            ),
+            panel(
+                "Manage",
+                vec![
+                    unavailable_large(
+                        "GetStarted.AddInCatalogue",
+                        "AddIn Catalogue",
+                        "addin-catalogue",
+                    ),
+                    unavailable_large("GetStarted.Preferences", "Preferences", "preferences"),
+                ],
+            ),
+        ],
+    )]
+}
+
+fn assembly_tabs() -> Vec<RibbonTabInfo> {
+    vec![
+        tab(
+            "Assemble",
+            vec![
+                panel(
+                    "Component",
+                    vec![unavailable_large("Assembly.Place", "Place", "place")],
+                ),
+                unavailable_compact_panel(
+                    "Relationships",
+                    &["Mate", "Flush", "Angle", "Tangent", "Insert"],
+                ),
+                unavailable_compact_panel(
+                    "Joints",
+                    &[
+                        "Rigid",
+                        "Rotational",
+                        "Slider",
+                        "Cylindrical",
+                        "Planar",
+                        "Ball",
+                    ],
+                ),
+                panel(
+                    "Representation",
+                    vec![unavailable_large(
+                        "Assembly.Representations",
+                        "Representations",
+                        "representation",
+                    )],
+                ),
+                panel(
+                    "Contact",
+                    vec![unavailable_large(
+                        "Assembly.ContactSet",
+                        "Contact Set",
+                        "contact-set",
+                    )],
+                ),
+                panel(
+                    "Sketch",
+                    vec![unavailable_large(
+                        "Assembly.CreateSketch",
+                        "Create 2D Sketch",
+                        "create-sketch",
+                    )],
+                ),
+                unavailable_compact_panel(
+                    "Modify",
+                    &["Extrude", "Revolve", "Hole", "Chamfer", "Fillet"],
+                ),
+                unavailable_compact_panel(
+                    "Pattern",
+                    &["Rectangular Pattern", "Circular Pattern", "Mirror", "Copy"],
+                ),
+                panel(
+                    "BOM",
+                    vec![unavailable_large(
+                        "Assembly.BOM",
+                        "Bill of Materials",
+                        "bom",
+                    )],
+                ),
+            ],
+        ),
+        tab(
+            "Manage",
+            vec![panel(
+                "Parameters",
+                vec![unavailable_large(
+                    "Manage.Parameters",
+                    "Parameters",
+                    "parameters",
+                )],
+            )],
+        ),
+        view_tab(),
+    ]
+}
+
+fn drawing_tabs() -> Vec<RibbonTabInfo> {
+    vec![tab(
+        "Drawing",
+        vec![
+            unavailable_compact_panel("Sheets", &["New Sheet", "Delete Sheet"]),
+            unavailable_compact_panel("Setup", &["Model Reference", "Drafting Standard"]),
+            unavailable_compact_panel(
+                "Views",
+                &["Base View", "Projected View", "Section View", "Detail View"],
+            ),
+            unavailable_compact_panel(
+                "Dimension",
+                &["Linear Dimension", "Radial Dimension", "Angular Dimension"],
+            ),
+            unavailable_compact_panel("Annotate", &["Center Mark", "Centerline", "Note"]),
+            unavailable_compact_panel("Table", &["Parts List", "Balloon", "Hole Table"]),
+            unavailable_compact_panel(
+                "Sketch",
+                &["Sketch Rectangle", "Sketch Circle", "Hatch Region"],
+            ),
+            panel(
+                "Output",
+                vec![unavailable_large(
+                    "Drawing.ExportDXF",
+                    "Export DXF",
+                    "drawing-export-dxf",
+                )],
+            ),
+        ],
     )]
 }
 
@@ -68,16 +202,7 @@ fn part_tabs() -> Vec<RibbonTabInfo> {
             vec![panel("Parameters", vec![text("File.Save", "Save")])],
         ),
         tab("Sheet Metal", vec![panel("Create", vec![])]),
-        tab(
-            "View",
-            vec![panel(
-                "Navigate",
-                vec![
-                    compact("View.Home", "Home", "home"),
-                    compact("View.Previous", "Previous View", "home"),
-                ],
-            )],
-        ),
+        view_tab(),
         tab("Inspect", vec![panel("Measure", vec![])]),
     ]
 }
@@ -100,24 +225,17 @@ pub fn contextual_sketch_tab() -> RibbonTabInfo {
     )
 }
 
-fn common_document_tabs(primary: &str) -> Vec<RibbonTabInfo> {
-    vec![
-        tab(primary, vec![panel("Create", vec![])]),
-        tab(
-            "Manage",
-            vec![panel("File", vec![text("File.Save", "Save")])],
-        ),
-        tab(
-            "View",
-            vec![panel(
-                "Navigate",
-                vec![
-                    compact("View.Home", "Home", "home"),
-                    compact("View.Previous", "Previous View", "home"),
-                ],
-            )],
-        ),
-    ]
+fn view_tab() -> RibbonTabInfo {
+    tab(
+        "View",
+        vec![panel(
+            "Navigate",
+            vec![
+                compact("View.Home", "Home", "home"),
+                compact("View.Previous", "Previous View", "home"),
+            ],
+        )],
+    )
 }
 
 fn tab(name: &str, panels: Vec<RibbonPanelInfo>) -> RibbonTabInfo {
@@ -145,6 +263,31 @@ fn compact(command_id: &str, display_name: &str, icon: &str) -> RibbonControlInf
 
 fn text(command_id: &str, display_name: &str) -> RibbonControlInfo {
     control(command_id, display_name, "", TEXT_ONLY_BUTTON)
+}
+
+fn unavailable_large(command_id: &str, display_name: &str, icon: &str) -> RibbonControlInfo {
+    unavailable(command_id, display_name, icon, LARGE_ICON_BUTTON)
+}
+
+fn unavailable_compact_panel(name: &str, labels: &[&str]) -> RibbonPanelInfo {
+    panel(
+        name,
+        labels
+            .iter()
+            .map(|label| unavailable("", label, "", COMPACT_ICON_BUTTON))
+            .collect(),
+    )
+}
+
+fn unavailable(
+    command_id: &str,
+    display_name: &str,
+    icon: &str,
+    button_style: ButtonStyle,
+) -> RibbonControlInfo {
+    let mut control = control(command_id, display_name, icon, button_style);
+    control.enabled = false;
+    control
 }
 
 fn control(
@@ -189,5 +332,41 @@ mod tests {
         assert_eq!(sketch.name, "Sketch");
         assert_eq!(sketch.panels.as_ref().unwrap()[0].name, "Create");
         assert_eq!(sketch.panels.as_ref().unwrap()[1].name, "Exit");
+    }
+
+    #[test]
+    fn document_ribbons_keep_the_go_document_specific_tabs_and_panels() {
+        let zero_doc = list(ZERO_DOC_RIBBON).tabs.unwrap();
+        assert_eq!(zero_doc[0].name, "Get Started");
+        assert_eq!(zero_doc[0].panels.as_ref().unwrap()[0].name, "Launch");
+        assert!(
+            zero_doc[0].panels.as_ref().unwrap()[0]
+                .controls
+                .as_ref()
+                .unwrap()[2]
+                .enabled
+        );
+        assert!(
+            zero_doc[0].panels.as_ref().unwrap()[0]
+                .controls
+                .as_ref()
+                .unwrap()[3]
+                .enabled
+        );
+
+        let assembly = list(RibbonKey("Assembly".into())).tabs.unwrap();
+        assert_eq!(assembly[0].name, "Assemble");
+        assert_eq!(assembly[0].panels.as_ref().unwrap()[0].name, "Component");
+
+        let drawing = list(RibbonKey("Drawing".into())).tabs.unwrap();
+        assert_eq!(drawing[0].name, "Drawing");
+        assert_eq!(drawing[0].panels.as_ref().unwrap()[0].name, "Sheets");
+
+        assert!(
+            list(RibbonKey("Presentation".into()))
+                .tabs
+                .unwrap()
+                .is_empty()
+        );
     }
 }
