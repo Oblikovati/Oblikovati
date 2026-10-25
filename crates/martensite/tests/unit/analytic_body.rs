@@ -25,8 +25,8 @@ fn canonical_axis_uses_stable_sign_ties_and_positive_zero() {
     assert!(!canonical_axis([1., 0., -0.])[2].is_sign_negative());
 }
 fn offset_box(origin: [f64; 3], sizes: [f64; 3]) -> Shape {
-    use rustycad_tkmath::gp::Point3;
-    use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
+    use martensite_tkmath::gp::Point3;
+    use martensite_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
     BRepPrimAPIMakeBox::at_point(
         Point3::new(origin[0], origin[1], origin[2]),
         sizes[0],

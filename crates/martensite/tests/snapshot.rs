@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::{brep::BRepTool, topexp::Explorer, topods::Face};
-use rustycad_tkg3d::top_abs::ShapeEnum;
-use rustycad_tkmath::{
+use martensite_tkbrep::{brep::BRepTool, topexp::Explorer, topods::Face};
+use martensite_tkg3d::top_abs::ShapeEnum;
+use martensite_tkmath::{
     gp::{Transform3, Vector3},
     toploc::Location,
 };
@@ -10,7 +10,7 @@ fn faces(shape: &Shape) -> Vec<Face> {
     let mut explorer = Explorer::new(shape, ShapeEnum::Face, ShapeEnum::Shape).unwrap();
     let mut faces = Vec::new();
     while explorer.more() {
-        faces.push(rustycad_tkbrep::topods::face(explorer.current()).unwrap());
+        faces.push(martensite_tkbrep::topods::face(explorer.current()).unwrap());
         explorer.next().unwrap();
     }
     faces
@@ -87,8 +87,8 @@ fn verify_nonfinite_properties_declined() {
 }
 
 fn unique_shapes(shape: &Shape, kind: ShapeEnum) -> Vec<Shape> {
-    let mut indexed = rustycad_tkbrep::toptools::IndexedMapOfShape::default();
-    rustycad_tkbrep::topexp::map_shapes_of_type(shape, kind, &mut indexed).unwrap();
+    let mut indexed = martensite_tkbrep::toptools::IndexedMapOfShape::default();
+    martensite_tkbrep::topexp::map_shapes_of_type(shape, kind, &mut indexed).unwrap();
     (1..=indexed.extent())
         .map(|index| indexed.find_key(index).unwrap().clone())
         .collect()
@@ -101,8 +101,8 @@ fn edge_geometry_and_face_attributes_remain_isolated_after_capture() {
     let copies = unique_shapes(&frozen.shape, ShapeEnum::Edge);
     assert_eq!((originals.len(), copies.len()), (12, 12));
     for (original, copied) in originals.iter().zip(&copies) {
-        let original = rustycad_tkbrep::topods::edge(original).unwrap();
-        let copied = rustycad_tkbrep::topods::edge(copied).unwrap();
+        let original = martensite_tkbrep::topods::edge(original).unwrap();
+        let copied = martensite_tkbrep::topods::edge(copied).unwrap();
         let original = BRepTool::curve_with_location(&original).unwrap().curve;
         let copied = BRepTool::curve_with_location(&copied).unwrap().curve;
         assert_ne!(original, copied);
@@ -116,7 +116,7 @@ fn verify_face_tolerance_isolation(source: &Shape, frozen: &Shape) {
     let original = faces(source)[0].clone();
     let copied = faces(frozen)[0].clone();
     let before = BRepTool::face_tolerance(&copied).unwrap();
-    rustycad_tkbrep::brep::BRepBuilder::default()
+    martensite_tkbrep::brep::BRepBuilder::default()
         .update_face_tolerance(&original, 0.25)
         .unwrap();
     assert_eq!(BRepTool::face_tolerance(&copied).unwrap(), before);
@@ -192,13 +192,13 @@ fn vertex_point_mutation_does_not_cross_the_snapshot_boundary() {
     let originals = unique_shapes(&source, ShapeEnum::Vertex);
     let copies = unique_shapes(&frozen.shape, ShapeEnum::Vertex);
     assert_eq!((originals.len(), copies.len()), (8, 8));
-    let original = rustycad_tkbrep::topods::vertex(&originals[0]).unwrap();
-    let copied = rustycad_tkbrep::topods::vertex(&copies[0]).unwrap();
+    let original = martensite_tkbrep::topods::vertex(&originals[0]).unwrap();
+    let copied = martensite_tkbrep::topods::vertex(&copies[0]).unwrap();
     assert!(!original.is_partner(&copied));
     let before = BRepTool::pnt(&copied).unwrap();
     let tolerance = BRepTool::vertex_tolerance(&original).unwrap();
-    let changed = rustycad_tkmath::gp::Point3::new(100., 200., 300.);
-    rustycad_tkbrep::brep::BRepBuilder::default()
+    let changed = martensite_tkmath::gp::Point3::new(100., 200., 300.);
+    martensite_tkbrep::brep::BRepBuilder::default()
         .update_vertex_point(&original, changed, tolerance)
         .unwrap();
     assert_eq!(BRepTool::pnt(&copied).unwrap(), before);

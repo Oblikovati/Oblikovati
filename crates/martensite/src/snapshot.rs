@@ -3,8 +3,8 @@ use crate::{
     ReleaseProbeProperties, analytic_probe_properties, build_probe, require_extents,
     require_valid_probe,
 };
-use rustycad_tkbrep::topods::Shape;
-use rustycad_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIMakeShape};
+use martensite_tkbrep::topods::Shape;
+use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIMakeShape};
 use std::{marker::PhantomData, rc::Rc};
 /// Retained release-probe B-rep with detached topology and geometry.
 /// This diagnostic boundary stays on its owner thread; full feature validity and naming remain open.

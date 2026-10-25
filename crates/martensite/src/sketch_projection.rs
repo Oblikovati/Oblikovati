@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use martensite_tkgeombase::int_ana::IntConicQuad;
+use martensite_tkmath::gp::{Direction3, Line3, Plane3, Point3};
 use oblikovati_model::sketch::SketchPlane;
-use rustycad_tkgeombase::int_ana::IntConicQuad;
-use rustycad_tkmath::gp::{Direction3, Line3, Plane3, Point3};
 
 /// Intersect an unbounded camera line with an authored sketch frame, without snapping.
 /// Example: `sketch_projection(plane, [0.,0.,20.], [0.,0.,-1.], 1e-9)?`.

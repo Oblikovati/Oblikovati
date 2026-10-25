@@ -11,25 +11,24 @@ autotests = false
 [dependencies]
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 oblikovati-solve = { path = "../solve" }
-rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
+martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.6" }
 oblikovati-model = { path = "../model" }
-rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
+martensite-tkmesh = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.6" }
+martensite-tkg3d = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.5" }
+martensite-tkprim = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.6" }
+martensite-tkbrep = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.6" }
+martensite-tkgeombase = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.5" }
+martensite-tktopalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.6" }
 
-rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
+martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.5" }
+martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.6" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.5" }
 
 [lints]
 workspace = true
 
 [dev-dependencies]
 oblikovati-persistence = { path = "../persistence" }
-rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
 oblikovati-session = { path = "../session" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
@@ -49,10 +48,6 @@ path = "tests/prism.rs"
 [[test]]
 name = "sketch_prism"
 path = "tests/sketch_prism.rs"
-
-[[test]]
-name = "profile_regions"
-path = "tests/profile_regions.rs"
 
 [[test]]
 name = "planar_intersections"

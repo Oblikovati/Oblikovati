@@ -16,4 +16,4 @@ oblikovati-viewport = { path = "../viewport" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
-rustix = { version = "=1.1.4", features = ["event"] }
+rustix = { version = "=1.1.5", features = ["event"] }

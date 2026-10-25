@@ -69,7 +69,7 @@ Martensite pin. Windows and macOS tests remain deferred by user instruction.
 
 ## Dependency ownership
 
-**Oblikovati.API and RustyCADKernel each test, package, and publish their own
+**Oblikovati.API and Martensite each test, package, and publish their own
 releases.** Application CI does not run their private test suites, publish their
 packages, or read sibling working trees. It tests application integration with
 their released Rust crates.
@@ -85,9 +85,9 @@ must resolve to the same owner release and commit.
 The API repository owns Go/Rust contract synchronization, examples, and wiki
 gates. The kernel repository owns geometry, oracle, and kernel-package gates.
 The application still owns its API/host inventory, kernel integration, feature,
-live GUI, and installation tests. The application now pins the stable kernel
-v0.1.2 release; an unpublished local kernel revision is not a release pin. See
-[kernel intake evidence](architecture/rust-port/implementation-kernel-release.md).
+live GUI, and installation tests. The application now pins the stable Martensite
+v0.3.6 release; an unpublished local kernel revision is not a release pin. See
+[migration evidence](architecture/rust-port/martensite-v0.3.6-migration.md).
 Product publication remains blocked by the R9 readiness fields.
 
 ## Product version

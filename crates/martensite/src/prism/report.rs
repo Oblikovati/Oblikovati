@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use martensite_tkbrep::{topexp, topods::Shape, toptools::IndexedMapOfShape};
+use martensite_tkg3d::top_abs::ShapeEnum;
+use martensite_tkgeombase::gprop::GProps;
+use martensite_tkprim::brep_prim_api::BRepPrimAPIMakeSweep;
+use martensite_tktopalgo::brep_gprop::BRepGProp;
 use profile::BuiltProfile;
-use rustycad_tkbrep::{topexp, topods::Shape, toptools::IndexedMapOfShape};
-use rustycad_tkg3d::top_abs::ShapeEnum;
-use rustycad_tkgeombase::gprop::GProps;
-use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeSweep;
-use rustycad_tktopalgo::brep_gprop::BRepGProp;
 pub(super) fn construction_lineage(
     maker: &mut BRepPrimAPIMakePrism,
     profile: &BuiltProfile,
@@ -69,7 +69,7 @@ fn generated_face(
     })?;
     require_generated_count(key, generated.len())?;
     let shape = generated.first().expect("one generated shape").clone();
-    rustycad_tkbrep::topods::face(&shape).map_err(|error| {
+    martensite_tkbrep::topods::face(&shape).map_err(|error| {
         Phase::History.native(
             Entity::Edge(key),
             format!("prism edge {key}: expected generated face"),

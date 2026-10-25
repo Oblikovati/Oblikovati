@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::super::{PlanarCurveFailure, circumcircle::classify_turn};
-use rustycad_tkmath::predicates::OrientationSign;
+use martensite_tkmath::predicates::OrientationSign;
 pub(super) fn classify(points: [[f64; 2]; 3]) -> Result<bool, PlanarCurveFailure> {
     let sign = classify_turn(points)?;
     if sign == OrientationSign::Zero && !opposite_rays(points) {

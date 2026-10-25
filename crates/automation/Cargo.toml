@@ -20,6 +20,6 @@ oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1"
 quick-xml = { version = "=0.39.4", features = ["serialize"] }
-rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
-rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "7a2f2a75c0588a794d65a3015b216aed200ed760", version = "=0.2.8" }
+martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.6" }
+martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.5" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "98d408444db53e6f4410adf578590e53d9062aff", version = "=0.3.5" }

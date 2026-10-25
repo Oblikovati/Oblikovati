@@ -4,16 +4,16 @@ use crate::{
     PlanarSplineDefinition,
     planar_curve::{PlanarCurveDefinition, PlanarGeometry, construct},
 };
+use martensite_tkgeomalgo::sketch_spline::{
+    SketchFitSpacing, SketchHandleOptionsV1, SketchSplineHandle, SketchSplineIntent,
+    SketchSplineOptionsV1, SketchSplineReport, build_handled_spline, build_unhandled_spline,
+};
+use martensite_tkmath::gp::Point2;
 use oblikovati_api::types::{SPLINE_FIT_CHORD, SPLINE_FIT_SMOOTH, SPLINE_FIT_SWEET};
 use oblikovati_model::sketch::{
     OwnedSketchGeometry, SketchEntityId, SketchOffsetSpline2D, SketchReadIndex, SketchSpline2D,
     SketchSplineHandle2D, SketchSplineKind,
 };
-use rustycad_tkgeomalgo::sketch_spline::{
-    SketchFitSpacing, SketchHandleOptionsV1, SketchSplineHandle, SketchSplineIntent,
-    SketchSplineOptionsV1, SketchSplineReport, build_handled_spline, build_unhandled_spline,
-};
-use rustycad_tkmath::gp::Point2;
 /// Measured checks and policy for one owned parent construction.
 /// Example: inspect `curve.spline_construction.as_ref()?.fit_residual` after resolution.
 #[derive(Clone, Debug, PartialEq)]
@@ -57,7 +57,7 @@ fn native_definition(
     spline: &SketchSpline2D,
 ) -> Result<
     (
-        rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
+        martensite_tkgeomalgo::sketch_spline::SketchSplineDefinition,
         SketchSplineReport,
     ),
     SketchCurveFailure,
@@ -83,7 +83,7 @@ fn natural_definition(
     points: &[Point2],
 ) -> Result<
     (
-        rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
+        martensite_tkgeomalgo::sketch_spline::SketchSplineDefinition,
         SketchSplineReport,
     ),
     SketchCurveFailure,
@@ -142,7 +142,7 @@ fn authored_ends(spline: &SketchSpline2D) -> Option<[SketchEntityId; 2]> {
 }
 fn resolved_report(
     entity: SketchEntityId,
-    definition: rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
+    definition: martensite_tkgeomalgo::sketch_spline::SketchSplineDefinition,
     report: SketchSplineReport,
 ) -> Result<ResolvedSketchCurve, SketchCurveFailure> {
     let definition = owned_definition(&definition)
@@ -189,8 +189,8 @@ fn fit_spacing(spline: &SketchSpline2D) -> Result<SketchFitSpacing, SketchCurveF
     }
 }
 fn owned_definition(
-    definition: &rustycad_tkgeomalgo::sketch_spline::SketchSplineDefinition,
-) -> Result<PlanarSplineDefinition, rustycad_tkernel::standard::Failure> {
+    definition: &martensite_tkgeomalgo::sketch_spline::SketchSplineDefinition,
+) -> Result<PlanarSplineDefinition, martensite_tkernel::standard::Failure> {
     let curve = definition.curve()?;
     Ok(PlanarSplineDefinition {
         poles: definition

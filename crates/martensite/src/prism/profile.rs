@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::topods::{Edge, Face, Wire};
-use rustycad_tktopalgo::brep_builder_api::{BRepBuilderAPIMakeFace, BRepBuilderAPIMakePolygon};
+use martensite_tkbrep::topods::{Edge, Face, Wire};
+use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPIMakeFace, BRepBuilderAPIMakePolygon};
 pub(super) struct BuiltProfile {
     pub face: Face,
     pub edges: Vec<(u64, Edge)>,

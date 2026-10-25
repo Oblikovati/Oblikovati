@@ -1,40 +1,42 @@
 # Martensite integration and readiness
 
-This plan consumes Martensite from `RustyCADKernel`. It does not assume that
+This plan consumes released crates from
+[Martensite](https://github.com/Oblikovati/Martensite). It does not assume that
 all OCCT capabilities are already usable. It also requires Martensite to gain
 the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
-[source baseline](source-map.md) fixes the inspected revision.
+[source baseline](source-map.md) fixes the inspected revision. The active
+[Martensite v0.3.6 migration](martensite-v0.3.6-migration.md) records the
+adapter pin and the current native-presentation gap.
 
 The accepted application contracts are
 [ADR-0007: Martensite integration](../decisions/ADR-0007-martensite-integration.md)
 and [ADR-0008: Vulkan renderer](../decisions/ADR-0008-vulkan-renderer.md).
 Their acceptance does not close any capability check below. Required new
-kernel-internal decisions still belong to RustyCADKernel.
+kernel-internal decisions still belong to Martensite.
 
 ## Observed integration limits
 
-- The package `rustycad-kernel` currently re-exports only `rustycad_tkernel`
-  as `foundation`. A dependency on that facade alone will not provide modeling.
-- Modeling lives in toolkit crates, including `rustycad-tkbrep`,
-  `rustycad-tktopalgo`, `rustycad-tkprim`, `rustycad-tkbo`,
-  `rustycad-tkfillet`, `rustycad-tkoffset`, and `rustycad-tkmesh`.
-  Source and tests exist, but this planning task did not run their acceptance.
+- Modeling is consumed from released toolkit crates, including
+  `martensite-tkbrep`, `martensite-tktopalgo`, `martensite-tkprim`, and
+  `martensite-tkmesh`. The adapter acceptance is separate from toolkit
+  acceptance in Martensite.
 - `Shape` contains a shared `Handle<dyn TShape>`. A cloned shape preserves
   shared identity. Some builders can update referenced geometry while preparing
   an operation, so `&Shape` alone does not imply immutable evaluation.
-- `martensite-vulkan` has an offscreen path through Graphic3d, V3d, and AIS.
-  At the recorded revision, native window presentation is unsupported, and
-  highlight rendering and the wider built-in presentation set remain open.
+- The released v0.3.6 graph has no V3d or Vulkan presentation crate. The
+  viewport remains on the prior renderer until issue #3630 moves it to a
+  released Martensite-native presentation path. Do not extend that temporary
+  renderer dependency.
 - The kernel completeness record does not claim full behavioral equivalence
   or a complete platform matrix. Toolkit mapping counts are not readiness
   evidence for an application feature.
 - The kernel's current priority is visualization and Vulkan before broad
   exchange-format work. The application schedule follows that order.
 
-Select the required toolkit dependencies in the application adapter. Keep
-their revisions identical. A later facade expansion belongs in Martensite;
-it is not a prerequisite for every initial application test. Do not invent
-a dependency named `martensite` that the repository does not provide.
+Select the required toolkit dependencies in the application adapter. Keep their
+release commit identical. A later facade expansion belongs in Martensite; it is
+not a prerequisite for every initial application test. Do not invent a
+dependency named `martensite` that the repository does not provide.
 
 The Go model and API use centimetres and radians by default. Documents can
 also carry a working scale (`model/param/units_of_measure.go`). Preserve its
@@ -78,7 +80,7 @@ Each required extension must:
 4. Port the relevant Go tests and add independent correctness checks, generated
    degenerate inputs, and application-level tests. Differential agreement with
    the Go implementation alone cannot prove correctness.
-5. Be integrated and tested in `RustyCADKernel` before the application feature
+5. Be integrated and tested in Martensite before the application feature
    can count as ported. Keep kernel algorithms out of the application adapter.
 
 Track extension acceptance separately from OCCT parity. These capabilities
@@ -95,7 +97,7 @@ the extension or weaken its acceptance checks.
 ## Exchange ownership
 
 [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md) assigns every
-exchange format implementation to RustyCADKernel. DWG uses
+exchange format implementation to Martensite. DWG uses
 [acadrust](https://github.com/hakanaktt/acadrust) in the kernel. This includes
 legacy recipe/domain translators; they are not application port tasks.
 The kernel owner provides the exchange contract, dependency pins, format tests,

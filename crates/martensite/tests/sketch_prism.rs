@@ -55,12 +55,21 @@ fn current_plane_changes_placement_without_editing_local_geometry() {
         retain_selected_sketch_prism(&document, SKETCH, &selected_sketch_boundary(), [0., 0., 2.])
             .unwrap();
     assert_volume(body.report().properties.volume, 24.);
-    assert_eq!(body.report().properties.centroid, [1., 2., 1.5]);
+    assert_centroid(body.report().properties.centroid, [1., 2., 1.5]);
     assert_eq!(
         document.sketches.get(SKETCH).unwrap().geometry().recipe(),
         before
     );
 }
+fn assert_centroid(actual: [f64; 3], expected: [f64; 3]) {
+    for (actual_coordinate, expected_coordinate) in actual.into_iter().zip(expected) {
+        assert!(
+            (actual_coordinate - expected_coordinate).abs() <= 1e-12,
+            "centroid coordinate {actual_coordinate}, expected {expected_coordinate}"
+        );
+    }
+}
+
 fn assert_volume(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < expected * 1e-9,

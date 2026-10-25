@@ -1,8 +1,8 @@
 # Oblikovati Rust application
 
 This branch will contain the Rust port of the Oblikovati application. It will
-use the Rust contract in **Oblikovati.API** and the **Martensite** kernel in
-**RustyCADKernel**.
+use the Rust contract in **Oblikovati.API** and the released **Martensite**
+kernel.
 
 Go-kernel capabilities that support application features and are outside OCCT
 must be ported and adapted into Martensite as required kernel extensions.
@@ -14,8 +14,8 @@ manifest inspection, version, and help. The first desktop executable supplies
 native window lifetime, saved prism display, camera navigation, and document
 startup. Dear ImGui chrome and remaining CLI commands are not yet ported.
 Publication remains blocked. The
-[kernel release intake](architecture/rust-port/implementation-kernel-release.md)
-pins Martensite v0.2.1 and adds Linux package acceptance at the adapter boundary.
+[Martensite v0.3.6 migration](architecture/rust-port/martensite-v0.3.6-migration.md)
+pins the released kernel and records its adapter and presentation boundaries.
 
 Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
 package manifest without reconstructing geometry or changing the file.

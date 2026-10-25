@@ -122,6 +122,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "cfg_aliases"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
+
+[[package]]
 name = "chlorine"
 version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -219,6 +225,15 @@ checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys",
+]
+
+[[package]]
+name = "fast_polynomial"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0a0db42615e971ab610b46ff2865e6edee7eb447ce867dbfb3f79f292c4cd54"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -454,6 +469,169 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
 
 [[package]]
+name = "martensite-cmath"
+version = "0.3.5"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "metallic",
+]
+
+[[package]]
+name = "martensite-tkbrep"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkernel"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "allocator-api2",
+ "bytemuck",
+ "libc",
+ "mach2",
+ "martensite-cmath",
+ "nix",
+ "rustix",
+ "smallvec",
+ "windows-sys",
+ "winsafe",
+ "xattr",
+]
+
+[[package]]
+name = "martensite-tkg2d"
+version = "0.3.5"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkg3d"
+version = "0.3.5"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkgeomalgo"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkgeombase"
+version = "0.3.5"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkmath"
+version = "0.3.5"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "num-bigint",
+ "num-complex",
+ "rustc_apfloat",
+]
+
+[[package]]
+name = "martensite-tkmesh"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "allocator-api2",
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkshhealing",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tkprim"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tkshhealing"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tktopalgo"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+]
+
+[[package]]
 name = "martensite-vulkan"
 version = "0.2.8"
 source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=7a2f2a75c0588a794d65a3015b216aed200ed760#1541ac0f498871fb0ef2702b9e85de43b6d6daa8"
@@ -469,6 +647,15 @@ name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "metallic"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c93c1301b4423171c9ac8235383a713969ce16656d1d02b2c7835b122a4a0167"
+dependencies = [
+ "fast_polynomial",
+]
 
 [[package]]
 name = "miniz_oxide"
@@ -513,6 +700,18 @@ dependencies = [
  "lua-src",
  "luajit-src",
  "pkg-config",
+]
+
+[[package]]
+name = "nix"
+version = "0.31.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
+dependencies = [
+ "bitflags 2.13.2",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
 ]
 
 [[package]]
@@ -588,15 +787,15 @@ dependencies = [
 name = "oblikovati-automation"
 version = "0.1.0"
 dependencies = [
+ "martensite-tkg2d",
+ "martensite-tkgeomalgo",
+ "martensite-tkmath",
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-session",
  "oblikovati-solve",
  "quick-xml",
- "rustycad-tkg2d",
- "rustycad-tkgeomalgo",
- "rustycad-tkmath",
  "serde",
  "serde_json",
 ]
@@ -672,22 +871,21 @@ dependencies = [
 name = "oblikovati-martensite"
 version = "0.1.0"
 dependencies = [
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkmesh",
+ "martensite-tkprim",
+ "martensite-tktopalgo",
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-session",
  "oblikovati-solve",
- "rustycad-tkbo",
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
- "rustycad-tkmesh",
- "rustycad-tkprim",
- "rustycad-tktopalgo",
  "serde",
  "serde_json",
 ]
@@ -900,9 +1098,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.1.4"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190"
+checksum = "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d"
 dependencies = [
  "bitflags 2.13.2",
  "errno",
@@ -921,23 +1119,6 @@ checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 name = "rustycad-cmath"
 version = "0.2.8"
 source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=7a2f2a75c0588a794d65a3015b216aed200ed760#1541ac0f498871fb0ef2702b9e85de43b6d6daa8"
-
-[[package]]
-name = "rustycad-tkbo"
-version = "0.2.8"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=7a2f2a75c0588a794d65a3015b216aed200ed760#1541ac0f498871fb0ef2702b9e85de43b6d6daa8"
-dependencies = [
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
- "rustycad-tkprim",
- "rustycad-tkshhealing",
- "rustycad-tktopalgo",
-]
 
 [[package]]
 name = "rustycad-tkbrep"
@@ -1052,21 +1233,6 @@ dependencies = [
  "rustycad-tkgeombase",
  "rustycad-tkmath",
  "rustycad-tkshhealing",
- "rustycad-tktopalgo",
-]
-
-[[package]]
-name = "rustycad-tkprim"
-version = "0.2.8"
-source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=7a2f2a75c0588a794d65a3015b216aed200ed760#1541ac0f498871fb0ef2702b9e85de43b6d6daa8"
-dependencies = [
- "rustycad-tkbrep",
- "rustycad-tkernel",
- "rustycad-tkg2d",
- "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
- "rustycad-tkgeombase",
- "rustycad-tkmath",
  "rustycad-tktopalgo",
 ]
 
@@ -1594,6 +1760,12 @@ name = "winnow"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
+
+[[package]]
+name = "winsafe"
+version = "0.0.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ef0ffc427f045c0cc9ebffd6f4f91153dcd2a1547b5c3c29ee3f541e16e95c6"
 
 [[package]]
 name = "x11-dl"

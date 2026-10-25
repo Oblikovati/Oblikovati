@@ -49,13 +49,15 @@ fn failed_hud_option_save_keeps_the_previous_preference_state() {
     let (mut files, _, mut source) = configured_files(DOCUMENT_PART, Default::default());
     let mut preferences = persisted_preferences(true);
     let before = preferences.sketch_options().clone();
-    let client = Client::new(
-        FileHost::new(&mut files, &mut source, "test").with_sketch_preferences(&mut preferences),
-    );
-    let mut view = client.application().hud_options().unwrap();
-    view.enabled = !view.enabled;
-    expect_api_decline(client.application().set_hud_options(&view), "write refused");
-    drop(client);
+    {
+        let client = Client::new(
+            FileHost::new(&mut files, &mut source, "test")
+                .with_sketch_preferences(&mut preferences),
+        );
+        let mut view = client.application().hud_options().unwrap();
+        view.enabled = !view.enabled;
+        expect_api_decline(client.application().set_hud_options(&view), "write refused");
+    }
     assert_eq!(preferences.sketch_options(), &before);
 }
 

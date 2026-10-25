@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::{brep::BRepTool, topods};
-use rustycad_tkmath::poly::mesh_purpose;
+use martensite_tkbrep::{brep::BRepTool, topods};
+use martensite_tkmath::poly::mesh_purpose;
 fn retained_fixture() -> PrismProbeSnapshot {
     retain_planar_prism(&PrismProbeDefinition {
         outer: PrismProbeLoop {
@@ -58,7 +58,7 @@ fn detached_prism_copies_each_native_role_and_geometry() {
 }
 #[test]
 fn mesh_orientation_reverses_only_the_triangle_winding() {
-    use rustycad_tkg3d::top_abs::Orientation;
+    use martensite_tkg3d::top_abs::Orientation;
     assert_eq!(
         mesh::oriented_indices([1, 2, 3], Orientation::Forward).unwrap(),
         [1, 2, 3]

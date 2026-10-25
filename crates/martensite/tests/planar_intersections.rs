@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Released-kernel prerequisites for analytic sketch trim and extend.
-use rustycad_tkernel::{ncollection::Array1, standard::Handle};
-use rustycad_tkg2d::geom2d::{
+use martensite_tkernel::{ncollection::Array1, standard::Handle};
+use martensite_tkg2d::geom2d::{
     Geom2dBSplineCurve, Geom2dCircle, Geom2dCurve, Geom2dEllipse, Geom2dLine, Geom2dTrimmedCurve,
 };
-use rustycad_tkgeomalgo::{geom2d_api::InterCurveCurve, int_res2d::IntersectionPoint};
-use rustycad_tkmath::gp::{Axis2d, Direction2, Ellipse2, Point2};
+use martensite_tkgeomalgo::{geom2d_api::InterCurveCurve, int_res2d::IntersectionPoint};
+use martensite_tkmath::gp::{Axis2d, Direction2, Ellipse2, Point2};
 #[path = "planar_intersections/mod.rs"]
 mod support;
 use support::*;

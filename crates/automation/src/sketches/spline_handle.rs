@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use martensite_tkg2d::geom2d::Geom2dCurve;
+use martensite_tkgeomalgo::sketch_spline::{
+    SketchFitSpacing, SketchSplineIntent, SketchSplineOptionsV1, build_unhandled_spline,
+};
+use martensite_tkmath::gp::Point2;
 use oblikovati_api::{
     Error,
     types::{SPLINE_FIT_CHORD, SPLINE_FIT_SMOOTH, SPLINE_FIT_SWEET},
@@ -9,11 +14,6 @@ use oblikovati_model::{
     history::{SketchSplineHandleEdit, SketchSplineHandleReport},
     sketch::{Sketch2D, SketchEntityId, SketchSplineKind},
 };
-use rustycad_tkg2d::geom2d::Geom2dCurve;
-use rustycad_tkgeomalgo::sketch_spline::{
-    SketchFitSpacing, SketchSplineIntent, SketchSplineOptionsV1, build_unhandled_spline,
-};
-use rustycad_tkmath::gp::Point2;
 
 pub(super) fn tangent_direction(input: &Option<Vec<f64>>) -> Result<Option<[f64; 2]>, Error> {
     let Some(values) = input else {
@@ -234,7 +234,7 @@ fn natural_derivative(
     closed: bool,
     fit_index: usize,
     spacing: SketchFitSpacing,
-) -> Result<rustycad_tkmath::gp::Vector2, Error> {
+) -> Result<martensite_tkmath::gp::Vector2, Error> {
     let point_values = kernel_points(points);
     let report = build_unhandled_spline(
         &point_values,

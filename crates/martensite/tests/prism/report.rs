@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::topods::Face;
+use martensite_tkbrep::topods::Face;
 fn body_faces() -> (Shape, Vec<(PrismFaceRole, Shape)>) {
     let body = crate::build_probe([2., 3., 4.]).unwrap();
     let mut faces = IndexedMapOfShape::default();
@@ -50,7 +50,7 @@ fn nonfinite_face_values_and_empty_faces_are_named_refusals() {
         );
     }
     let mut face = Face::default();
-    rustycad_tkbrep::brep::BRepBuilder::default().make_face(&mut face);
+    martensite_tkbrep::brep::BRepBuilder::default().make_face(&mut face);
     assert!(face_report(PrismFaceRole::Start, &face).is_err());
 }
 #[test]

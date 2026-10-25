@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use rustycad_tkernel::{ncollection::Array1, standard::Handle};
-use rustycad_tkg2d::geom2d::{Geom2dBSplineCurve, Geom2dCurve, Geom2dOffsetCurve};
-use rustycad_tkmath::gp::Point2;
+use martensite_tkernel::{ncollection::Array1, standard::Handle};
+use martensite_tkg2d::geom2d::{Geom2dBSplineCurve, Geom2dCurve, Geom2dOffsetCurve};
+use martensite_tkmath::gp::Point2;
 
 pub(crate) mod validation;
 /// Immutable inputs for analytic evaluation; no kernel handle crosses this boundary.
@@ -42,7 +42,7 @@ pub fn evaluate_planar_spline(
 }
 pub(crate) fn build_parent(
     definition: &PlanarSplineDefinition,
-) -> Result<Handle<dyn Geom2dCurve>, rustycad_tkernel::standard::Failure> {
+) -> Result<Handle<dyn Geom2dCurve>, martensite_tkernel::standard::Failure> {
     let poles: Vec<Point2> = definition
         .poles
         .iter()
@@ -80,7 +80,7 @@ fn evaluate_owned_curve(
 pub(crate) fn build_left_offset(
     parent: &Handle<dyn Geom2dCurve>,
     left_offset: f64,
-) -> Result<Geom2dOffsetCurve, rustycad_tkernel::standard::Failure> {
+) -> Result<Geom2dOffsetCurve, martensite_tkernel::standard::Failure> {
     // #3789 / ADR-0016: OCCT's right normal is the inverse of the authored left side.
     Geom2dOffsetCurve::new(parent, -left_offset, false)
 }
@@ -102,7 +102,7 @@ fn build_weighted(
     knots: &Array1<'_, f64>,
     mults: &Array1<'_, i32>,
     weights: &[f64],
-) -> Result<Geom2dBSplineCurve, rustycad_tkernel::standard::Failure> {
+) -> Result<Geom2dBSplineCurve, martensite_tkernel::standard::Failure> {
     Geom2dBSplineCurve::with_weights(
         poles,
         &Array1::from_shared(weights, 1),
@@ -118,6 +118,6 @@ fn build_unweighted(
     poles: &Array1<'_, Point2>,
     knots: &Array1<'_, f64>,
     mults: &Array1<'_, i32>,
-) -> Result<Geom2dBSplineCurve, rustycad_tkernel::standard::Failure> {
+) -> Result<Geom2dBSplineCurve, martensite_tkernel::standard::Failure> {
     Geom2dBSplineCurve::new(poles, knots, mults, definition.degree, definition.periodic)
 }
