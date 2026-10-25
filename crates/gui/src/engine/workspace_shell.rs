@@ -5,6 +5,7 @@ use imgui::{Condition, TextureId, Ui};
 
 pub(super) const MENU_BAR_HEIGHT: f32 = 20.;
 const RIBBON_HEIGHT: f32 = 125.;
+const RIBBON_PANEL_DIVIDER_HEIGHT: f32 = 64.;
 pub(super) const RIBBON_BOTTOM: f32 = MENU_BAR_HEIGHT + RIBBON_HEIGHT;
 
 pub(crate) struct WorkspaceShellState {
@@ -954,10 +955,29 @@ fn draw_host_panels(
     icons: &mut crate::icon_assets::GuiIconCache,
     workspace: &mut WorkspaceShellState,
 ) {
-    for panel in panels {
+    for (index, panel) in panels.iter().enumerate() {
+        if index > 0 {
+            draw_panel_divider(ui);
+        }
         draw_host_panel(ui, panel, selected, icons, workspace);
-        ui.same_line();
+        if index + 1 != panels.len() {
+            ui.same_line();
+        }
     }
+}
+
+fn draw_panel_divider(ui: &Ui) {
+    let (start, end) = panel_divider_line(ui.cursor_screen_pos());
+    ui.get_window_draw_list()
+        .add_line(start, end, [0.42, 0.44, 0.49, 0.64])
+        .thickness(1.)
+        .build();
+    ui.set_cursor_screen_pos([end[0] + 7., start[1]]);
+}
+
+fn panel_divider_line(cursor: [f32; 2]) -> ([f32; 2], [f32; 2]) {
+    let x = cursor[0] + 3.;
+    ([x, cursor[1]], [x, cursor[1] + RIBBON_PANEL_DIVIDER_HEIGHT])
 }
 
 fn draw_host_panel(
@@ -1118,8 +1138,8 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
 #[cfg(test)]
 mod tests {
     use super::{
-        WorkspaceShellState, history_entry_label, pack_panel_columns, select_available_ribbon_tab,
-        select_contextual_ribbon_tab, set_history_document,
+        WorkspaceShellState, history_entry_label, pack_panel_columns, panel_divider_line,
+        select_available_ribbon_tab, select_contextual_ribbon_tab, set_history_document,
     };
     use crate::{
         GuiCommandState, GuiFrameEngine, GuiFrameRequest, GuiHistoryEntry, GuiRibbonControl,
@@ -1167,6 +1187,11 @@ mod tests {
                 vec!["Hole"]
             ]
         );
+    }
+
+    #[test]
+    fn panel_divider_uses_the_go_control_grid_height() {
+        assert_eq!(panel_divider_line([100., 40.]), ([103., 40.], [103., 104.]));
     }
 
     #[test]
