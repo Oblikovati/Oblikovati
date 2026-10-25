@@ -608,7 +608,7 @@ pub(super) fn draw_model_browser(
         .resizable(false)
         .build(|| {
             let Some(tree) = tree else {
-                ui.text("No active part");
+                ui.bullet_text("(no document)");
                 return;
             };
             draw_model_tree(ui, tree, selected);
