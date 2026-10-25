@@ -17,6 +17,7 @@ pub struct NativeHeadWindow {
     sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
+    injected_events: std::collections::VecDeque<ViewportEvent>,
     gui_epoch: std::time::Instant,
     clipboard: std::rc::Rc<clipboard::NativeClipboardChannel>,
 }
@@ -39,6 +40,7 @@ impl NativeHeadWindow {
             sketch_view: None,
             command_notice: None,
             gui: None,
+            injected_events: Default::default(),
             gui_epoch: std::time::Instant::now(),
             clipboard: clipboard::NativeClipboardChannel::open(),
         })
@@ -48,6 +50,16 @@ impl NativeHeadWindow {
     /// Inspect the current displayed generation and detailed declines; example: `window.scene_status()` for a health panel.
     pub fn scene_status(&self) -> Option<&crate::HeadSceneStatus> {
         self.scene_status.as_ref()
+    }
+
+    /// Capture the composed native window to a PNG; example: `window.capture_window_png(path)?`.
+    pub fn capture_window_png(
+        &self,
+        path: &std::path::Path,
+    ) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        let capture = self.view.capture()?;
+        crate::capture::write_rgba_png(path, &capture)?;
+        Ok(capture)
     }
 }
 impl NativeHeadWindow {
@@ -67,6 +79,16 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        self.view.capture()
+    }
+
+    fn inject_viewport_input(&mut self, event: ViewportEvent) -> Result<(), String> {
+        self.injected_events.push_back(event);
+        self.wake.wake()?;
+        Ok(())
+    }
+
     fn gui_parameters_open(&self) -> bool {
         self.gui.as_ref().is_some_and(|gui| gui.parameters_open())
     }
@@ -164,7 +186,11 @@ impl HeadWindow for NativeHeadWindow {
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.clipboard.service_pending(limit);
-        self.view.poll_events(limit)
+        let mut events: Vec<_> = self.injected_events.drain(..limit).collect();
+        if events.len() < limit {
+            events.extend(self.view.poll_events(limit - events.len())?);
+        }
+        Ok(events)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
         let presentation = self.view.present()?;
@@ -313,6 +339,10 @@ pub fn run_native_documents(
 #[cfg(test)]
 #[path = "../tests/native_wait.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "../tests/native_automation.rs"]
+mod automation_tests;
 
 #[cfg(test)]
 #[path = "../tests/native_owner.rs"]

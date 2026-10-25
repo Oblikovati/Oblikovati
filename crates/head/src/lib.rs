@@ -10,6 +10,8 @@ mod addin_discovery;
 mod arguments;
 pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 #[cfg(target_os = "linux")]
+mod capture;
+#[cfg(target_os = "linux")]
 mod frames;
 #[cfg(target_os = "linux")]
 pub use frames::{

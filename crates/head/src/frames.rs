@@ -15,6 +15,19 @@ mod gui;
 pub use gui::HeadGuiUpdate;
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Capture the current composed window on the owner thread; example: `window.capture_window()?`.
+    fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
+        Err("window capture: expected a native capture-capable window".into())
+    }
+
+    /// Inject one viewport event through the same path as native input; example: `window.inject_viewport_input(event)?`.
+    fn inject_viewport_input(
+        &mut self,
+        _: oblikovati_viewport::ViewportEvent,
+    ) -> Result<(), String> {
+        Err("viewport input: expected a native input-capable window".into())
+    }
+
     /// Request owner metadata only while visible; example: `window.gui_parameters_open()`.
     fn gui_parameters_open(&self) -> bool {
         false
