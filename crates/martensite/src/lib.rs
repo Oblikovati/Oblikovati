@@ -101,7 +101,7 @@ pub use prism::{
 mod sketch_prism;
 mod stored_prism;
 pub use sketch_prism::{
-    MartensitePrismEvaluator, SketchDirectedLine, SketchPrismSelection,
+    MartensitePrismEvaluator, SketchDirectedCurve, SketchPrismSelection,
     retain_resolved_sketch_prism, retain_selected_sketch_prism, retain_sketch_prism_definition,
 };
 pub use stored_prism::retain_stored_sketch_prism;

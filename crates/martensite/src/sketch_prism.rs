@@ -4,7 +4,7 @@ use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase, PrismProbeDefinition, PrismProbeSnapshot,
 };
-pub use oblikovati_model::feature::sketch_prism::{SketchDirectedLine, SketchPrismSelection};
+pub use oblikovati_model::feature::sketch_prism::{SketchDirectedCurve, SketchPrismSelection};
 use oblikovati_model::feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength};
 use oblikovati_model::{document_sketch::DocumentSketchId, history::DocumentSnapshot};
 /// Consume current fully constrained geometry and placement before retaining a diagnostic prism.

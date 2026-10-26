@@ -10,7 +10,7 @@ struct DirectedEndpoints {
 }
 pub(super) fn selected_loop(
     geometry: &Sketch2D,
-    lines: &[SketchDirectedLine],
+    lines: &[SketchDirectedCurve],
 ) -> Result<PrismProbeLoop, EvaluationFailure> {
     let resolved = lines
         .iter()
@@ -24,9 +24,9 @@ pub(super) fn selected_loop(
 }
 fn resolve_endpoints(
     geometry: &Sketch2D,
-    directed: SketchDirectedLine,
+    directed: SketchDirectedCurve,
 ) -> Result<DirectedEndpoints, EvaluationFailure> {
-    let line = require_boundary_line(geometry, directed.line)?;
+    let line = require_boundary_line(geometry, directed.curve)?;
     let [a, b] = line.endpoints;
     let [start, end] = if directed.reversed { [b, a] } else { [a, b] };
     let position = geometry

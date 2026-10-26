@@ -10,7 +10,7 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
     }
     let mut used = BTreeSet::new();
     for lines in std::iter::once(&definition.selection.outer).chain(&definition.selection.holes) {
-        validate_line_identities(lines, &mut used)?;
+        validate_curve_identities(lines, &mut used)?;
     }
     for (axis, source) in definition.displacement.into_iter().enumerate() {
         validate_scalar_source(source, axis)?;
@@ -20,20 +20,20 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
     }
     Ok(())
 }
-fn validate_line_identities(
-    lines: &[SketchDirectedLine],
+fn validate_curve_identities(
+    curves: &[SketchDirectedCurve],
     used: &mut BTreeSet<SketchEntityId>,
 ) -> Result<(), SketchPrismCause> {
-    if lines.len() < 3 {
+    if curves.len() < 3 {
         return Err(SketchPrismCause::Definition(format!(
-            "sketch prism boundary {lines:?}: expected at least three directed lines"
+            "sketch prism boundary {curves:?}: expected at least three directed curves"
         )));
     }
-    for directed in lines {
-        if directed.line.0 == 0 || !used.insert(directed.line) {
+    for directed in curves {
+        if directed.curve.0 == 0 || !used.insert(directed.curve) {
             return Err(SketchPrismCause::Definition(format!(
-                "sketch prism line {:?}: expected nonzero identity with one occurrence across all boundaries",
-                directed.line
+                "sketch prism curve {:?}: expected nonzero identity with one occurrence across all boundaries",
+                directed.curve
             )));
         }
     }

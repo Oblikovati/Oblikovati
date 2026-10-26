@@ -6,7 +6,7 @@ use oblikovati_api::wire::{
 use oblikovati_model::{
     feature::{
         AuthoredFeature,
-        sketch_prism::{SketchDirectedLine, SketchPrismDefinition, SketchPrismSelection},
+        sketch_prism::{SketchDirectedCurve, SketchPrismDefinition, SketchPrismSelection},
         work_geometry::DatumLength,
     },
     history::DocumentSnapshot,
@@ -102,8 +102,8 @@ fn rectangle_selection(
     Ok(SketchPrismSelection {
         outer: lines
             .into_iter()
-            .map(|line| SketchDirectedLine {
-                line,
+            .map(|curve| SketchDirectedCurve {
+                curve,
                 reversed: false,
             })
             .collect(),

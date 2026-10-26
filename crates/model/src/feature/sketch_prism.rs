@@ -9,19 +9,19 @@ use crate::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 pub use error::{SketchPrismCause, SketchPrismError};
 pub use recipe::SketchPrismRecipe;
 pub use resolve::ResolvedSketchPrism;
-/// One authored line in a directed boundary; reversal changes traversal, not its source identity.
+/// One authored curve in a directed boundary; reversal changes traversal, not its source identity.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct SketchDirectedLine {
-    pub line: SketchEntityId,
+pub struct SketchDirectedCurve {
+    pub curve: SketchEntityId,
     pub reversed: bool,
 }
 /// Explicit ordered boundaries over shared authored endpoints; this is not automatic region detection.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SketchPrismSelection {
-    pub outer: Vec<SketchDirectedLine>,
-    pub holes: Vec<Vec<SketchDirectedLine>>,
+    pub outer: Vec<SketchDirectedCurve>,
+    pub holes: Vec<Vec<SketchDirectedCurve>>,
 }
 /// Validated authored input. Evaluated coordinates, solve reports and native shapes are not stored here.
 #[derive(Clone, Debug)]
