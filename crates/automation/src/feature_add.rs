@@ -73,7 +73,7 @@ fn definition(
 ) -> Result<SketchPrismDefinition, Error> {
     require_supported_extent(request)?;
     let sketch = sketch_at(snapshot, request.sketch_index)?;
-    let selection = rectangle_selection(snapshot, sketch, request)?;
+    let selection = profile_selection(snapshot, sketch, request)?;
     let source = distance_source(snapshot, request)?;
     SketchPrismDefinition::new(
         sketch,
@@ -87,7 +87,7 @@ fn definition(
     .map_err(api_error)
 }
 
-fn rectangle_selection(
+fn profile_selection(
     snapshot: &DocumentSnapshot,
     sketch: oblikovati_model::document_sketch::DocumentSketchId,
     request: &Extrude,
@@ -98,7 +98,7 @@ fn rectangle_selection(
         .map_err(api_error)?
         .geometry()
         .profile_curve_ids();
-    require_rectangle_profile(request, &lines)?;
+    require_single_profile(request, &lines)?;
     Ok(SketchPrismSelection {
         outer: lines
             .into_iter()
@@ -111,15 +111,15 @@ fn rectangle_selection(
     })
 }
 
-fn require_rectangle_profile(
+fn require_single_profile(
     request: &Extrude,
     lines: &[oblikovati_model::sketch::SketchEntityId],
 ) -> Result<(), Error> {
-    if lines.len() == 4 && request.profile_index == 0 {
+    if !lines.is_empty() && request.profile_index == 0 {
         return Ok(());
     }
     Err(Error(format!(
-        "extrude sketch {} profile {} with {} profile curves: expected profile 0 with one four-line rectangle",
+        "extrude sketch {} profile {} with {} profile curves: expected profile 0 with at least one non-construction curve",
         request.sketch_index,
         request.profile_index,
         lines.len()

@@ -96,10 +96,7 @@ fn copy_failure_retains_the_native_exception() {
 #[test]
 fn collinear_prism_retains_validation_decline_and_legacy_text() {
     let definition = crate::PrismProbeDefinition {
-        outer: crate::PrismProbeLoop {
-            edge_keys: vec![1, 2, 3],
-            vertices: vec![[0., 0.], [1., 0.], [2., 0.]],
-        },
+        outer: crate::PrismProbeLoop::polygon(vec![1, 2, 3], vec![[0., 0.], [1., 0.], [2., 0.]]),
         holes: Vec::new(),
         displacement: [0., 0., 1.],
     };

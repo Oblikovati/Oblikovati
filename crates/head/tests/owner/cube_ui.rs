@@ -74,7 +74,7 @@ fn ribbon_mouse_journey_creates_a_cube_through_the_host() {
 }
 
 #[test]
-fn ribbon_mouse_journey_creates_a_fully_constrained_parameter_circle() {
+fn ribbon_mouse_journey_extrudes_a_fully_constrained_parameter_circle() {
     let (mut owner, _) = owner();
     let mut gui = GuiFrameEngine::new().unwrap();
     for control in ["GetStarted.NewPart", "Sketch.Create", "Sketch.Circle"] {
@@ -96,6 +96,12 @@ fn ribbon_mouse_journey_creates_a_fully_constrained_parameter_circle() {
     assert!(snapshot.parameters.find("size").is_some());
     let structure = snapshot.analyze_document_sketch(placed.id(), 1e-9).unwrap();
     assert_eq!(structure.degrees_of_freedom, 0);
+    for control in ["Sketch.Finish", "Feature.Extrude"] {
+        click_ribbon_control(&mut owner, &mut gui, control);
+    }
+    let scene = owner.take_scene().unwrap().unwrap();
+    assert_eq!(scene.status.visible_bodies, 1);
+    assert!(!scene.scene.triangles.is_empty());
 }
 
 fn click_ribbon_control(owner: &mut TestOwner, gui: &mut GuiFrameEngine, command_id: &str) {

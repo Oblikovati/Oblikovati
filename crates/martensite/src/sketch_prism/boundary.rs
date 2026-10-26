@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::PrismProbeLoop;
-use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
+use oblikovati_model::sketch::{OwnedSketchGeometry, Sketch2D, SketchEntityId};
 struct DirectedEndpoints {
     line: SketchEntityId,
     start: SketchEntityId,
@@ -10,17 +10,33 @@ struct DirectedEndpoints {
 }
 pub(super) fn selected_loop(
     geometry: &Sketch2D,
-    lines: &[SketchDirectedCurve],
+    curves: &[SketchDirectedCurve],
 ) -> Result<PrismProbeLoop, EvaluationFailure> {
-    let resolved = lines
+    if let [directed] = curves
+        && let OwnedSketchGeometry::Circle(circle) = geometry
+            .read_index()
+            .entity(directed.curve)
+            .map_err(|error| Phase::Input.sketch(Entity::SketchEntity(directed.curve.0), error))?
+    {
+        require_boundary_curve(geometry, circle.id)?;
+        let center = geometry
+            .point(circle.center)
+            .map_err(|error| Phase::Input.sketch(Entity::SketchEntity(circle.center.0), error))?;
+        return Ok(PrismProbeLoop::circle(
+            circle.id.0,
+            center.position,
+            circle.radius,
+        ));
+    }
+    let resolved = curves
         .iter()
         .map(|directed| resolve_endpoints(geometry, *directed))
         .collect::<Result<Vec<_>, _>>()?;
     require_shared_closed_boundary(&resolved)?;
-    Ok(PrismProbeLoop {
-        edge_keys: resolved.iter().map(|edge| edge.line.0).collect(),
-        vertices: resolved.iter().map(|edge| edge.position).collect(),
-    })
+    Ok(PrismProbeLoop::polygon(
+        resolved.iter().map(|edge| edge.line.0).collect(),
+        resolved.iter().map(|edge| edge.position).collect(),
+    ))
 }
 fn resolve_endpoints(
     geometry: &Sketch2D,
@@ -59,8 +75,15 @@ fn require_boundary_line(
     let line = geometry
         .line(id)
         .map_err(|error| Phase::Input.sketch(Entity::SketchEntity(id.0), error))?;
+    require_boundary_curve(geometry, line.id)?;
+    Ok(*line)
+}
+fn require_boundary_curve(
+    geometry: &Sketch2D,
+    id: SketchEntityId,
+) -> Result<(), EvaluationFailure> {
     if geometry
-        .is_construction(line.id)
+        .is_construction(id)
         .map_err(|error| Phase::Input.sketch(Entity::SketchEntity(id.0), error))?
     {
         return Err(Phase::Input.refused(
@@ -68,9 +91,9 @@ fn require_boundary_line(
             Entity::SketchEntity(id.0),
             format!(
                 "sketch prism line {:?}: expected a non-construction boundary curve",
-                line.id
+                id
             ),
         ));
     }
-    Ok(*line)
+    Ok(())
 }

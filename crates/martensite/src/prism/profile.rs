@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use martensite_tkbrep::topods::{Edge, Face, Wire};
-use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPIMakeFace, BRepBuilderAPIMakePolygon};
+use martensite_tkmath::gp::{Axis2, Circle3, Direction3};
+use martensite_tktopalgo::brep_builder_api::{
+    BRepBuilderAPIMakeEdge, BRepBuilderAPIMakeFace, BRepBuilderAPIMakePolygon,
+    BRepBuilderAPIMakeWire,
+};
 pub(super) struct BuiltProfile {
     pub face: Face,
     pub edges: Vec<(u64, Edge)>,
@@ -33,10 +37,10 @@ fn append_profile_holes(
         let (wire, inner_edges) = build_loop(hole, plane)?;
         maker.add(&wire).map_err(|cause| {
             Phase::Profile.native(
-                Entity::Edges(hole.edge_keys.clone()),
+                Entity::Edges(hole.edge_keys()),
                 format!(
                     "prism inner loop {:?}: expected accepted wire",
-                    hole.edge_keys
+                    hole.edge_keys()
                 ),
                 cause,
             )
@@ -58,33 +62,110 @@ fn build_loop(
     profile: &PrismProbeLoop,
     plane: SketchPlane,
 ) -> Result<(Wire, Vec<(u64, Edge)>), EvaluationFailure> {
-    let mut maker = BRepBuilderAPIMakePolygon::new();
-    let [x, y] = profile.vertices[0];
-    maker
-        .add_point(placement::model_point(plane, [x, y], profile.edge_keys[0])?)
-        .map_err(|error| {
-            Phase::Profile.native(Entity::Edge(profile.edge_keys[0]), String::new(), error)
-        })?;
-    let mut edges = Vec::new();
-    for (index, [x, y]) in profile.vertices.iter().copied().enumerate().skip(1) {
-        add_segment_point(&mut maker, [x, y], profile.edge_keys[index - 1], plane)?;
-        append_edge(&maker, profile.edge_keys[index - 1], &mut edges)?;
+    match profile {
+        PrismProbeLoop::Polygon {
+            edge_keys,
+            vertices,
+        } => build_polygon_loop(edge_keys, vertices, plane),
+        PrismProbeLoop::Circle {
+            edge_key,
+            center,
+            radius,
+        } => build_circle_loop(*edge_key, *center, *radius, plane),
     }
-    close_profile_with_history(&mut maker, profile, &mut edges)?;
-    let wire = completed_wire(&maker, profile)?;
+}
+fn build_polygon_loop(
+    edge_keys: &[u64],
+    vertices: &[[f64; 2]],
+    plane: SketchPlane,
+) -> Result<(Wire, Vec<(u64, Edge)>), EvaluationFailure> {
+    let mut maker = BRepBuilderAPIMakePolygon::new();
+    let [x, y] = vertices[0];
+    maker
+        .add_point(placement::model_point(plane, [x, y], edge_keys[0])?)
+        .map_err(|error| Phase::Profile.native(Entity::Edge(edge_keys[0]), String::new(), error))?;
+    let mut edges = Vec::new();
+    for (index, [x, y]) in vertices.iter().copied().enumerate().skip(1) {
+        add_segment_point(&mut maker, [x, y], edge_keys[index - 1], plane)?;
+        append_edge(&maker, edge_keys[index - 1], &mut edges)?;
+    }
+    close_profile_with_history(&mut maker, edge_keys, &mut edges)?;
+    let wire = completed_polygon_wire(&maker, edge_keys)?;
     Ok((wire, edges))
+}
+fn build_circle_loop(
+    edge_key: u64,
+    center: [f64; 2],
+    radius: f64,
+    plane: SketchPlane,
+) -> Result<(Wire, Vec<(u64, Edge)>), EvaluationFailure> {
+    let origin = placement::model_point(plane, center, edge_key)?;
+    let normal = plane.normal();
+    let direction = Direction3::new(normal[0], normal[1], normal[2]).map_err(|cause| {
+        Phase::Profile.native(
+            Entity::Edge(edge_key),
+            "prism circle: expected usable sketch-plane normal".into(),
+            cause,
+        )
+    })?;
+    let circle = Circle3::new(
+        Axis2::new(origin, direction).map_err(|cause| {
+            Phase::Profile.native(
+                Entity::Edge(edge_key),
+                "prism circle: expected usable local frame".into(),
+                cause,
+            )
+        })?,
+        radius,
+    )
+    .map_err(|cause| {
+        Phase::Profile.native(
+            Entity::Edge(edge_key),
+            format!("prism circle radius {radius:?}: expected positive radius"),
+            cause,
+        )
+    })?;
+    let edge = BRepBuilderAPIMakeEdge::from_circ(circle)
+        .map_err(|cause| {
+            Phase::Profile.native(
+                Entity::Edge(edge_key),
+                "prism circle: expected exact native edge".into(),
+                cause,
+            )
+        })?
+        .edge()
+        .map_err(|cause| {
+            Phase::Profile.native(
+                Entity::Edge(edge_key),
+                "prism circle: expected completed native edge".into(),
+                cause,
+            )
+        })?;
+    let wire = BRepBuilderAPIMakeWire::from_edge(&edge)
+        .map_err(|cause| {
+            Phase::Profile.native(
+                Entity::Edge(edge_key),
+                "prism circle: expected closed native wire".into(),
+                cause,
+            )
+        })?
+        .wire()
+        .map_err(|cause| {
+            Phase::Profile.native(
+                Entity::Edge(edge_key),
+                "prism circle: expected completed native wire".into(),
+                cause,
+            )
+        })?;
+    Ok((wire, vec![(edge_key, edge)]))
 }
 fn close_profile_with_history(
     maker: &mut BRepBuilderAPIMakePolygon,
-    profile: &PrismProbeLoop,
+    edge_keys: &[u64],
     edges: &mut Vec<(u64, Edge)>,
 ) -> Result<(), EvaluationFailure> {
-    close_loop(maker, profile)?;
-    append_edge(
-        maker,
-        *profile.edge_keys.last().expect("validated keys"),
-        edges,
-    )
+    close_loop(maker, edge_keys)?;
+    append_edge(maker, *edge_keys.last().expect("validated keys"), edges)
 }
 fn add_segment_point(
     maker: &mut BRepBuilderAPIMakePolygon,
@@ -104,27 +185,24 @@ fn add_segment_point(
 }
 fn close_loop(
     maker: &mut BRepBuilderAPIMakePolygon,
-    profile: &PrismProbeLoop,
+    edge_keys: &[u64],
 ) -> Result<(), EvaluationFailure> {
     maker.close().map_err(|error| {
         Phase::Profile.native(
-            Entity::Edges(profile.edge_keys.clone()),
-            format!("prism loop {:?}: expected closed wire", profile.edge_keys),
+            Entity::Edges(edge_keys.to_vec()),
+            format!("prism loop {edge_keys:?}: expected closed wire"),
             error,
         )
     })
 }
-fn completed_wire(
+fn completed_polygon_wire(
     maker: &BRepBuilderAPIMakePolygon,
-    profile: &PrismProbeLoop,
+    edge_keys: &[u64],
 ) -> Result<Wire, EvaluationFailure> {
     maker.wire().map_err(|error| {
         Phase::Profile.native(
-            Entity::Edges(profile.edge_keys.clone()),
-            format!(
-                "prism loop {:?}: expected completed wire",
-                profile.edge_keys
-            ),
+            Entity::Edges(edge_keys.to_vec()),
+            format!("prism loop {:?}: expected completed wire", edge_keys),
             error,
         )
     })

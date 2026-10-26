@@ -1,9 +1,45 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/// Ordered straight segments: edge key i connects vertex i to the next vertex, wrapping at the end.
+/// An exact source curve in a planar prism boundary.
 #[derive(Clone, Debug, PartialEq)]
-pub struct PrismProbeLoop {
-    pub edge_keys: Vec<u64>,
-    pub vertices: Vec<[f64; 2]>,
+pub enum PrismProbeLoop {
+    /// Ordered segments: edge i joins vertex i to the next vertex, wrapping at the end.
+    Polygon {
+        edge_keys: Vec<u64>,
+        vertices: Vec<[f64; 2]>,
+    },
+    /// One closed analytic circle. Its edge remains a single provenance source.
+    Circle {
+        edge_key: u64,
+        center: [f64; 2],
+        radius: f64,
+    },
+}
+
+impl PrismProbeLoop {
+    /// Build a polygonal loop; example: `PrismProbeLoop::polygon(vec![1, 2, 3], vertices)`.
+    pub fn polygon(edge_keys: Vec<u64>, vertices: Vec<[f64; 2]>) -> Self {
+        Self::Polygon {
+            edge_keys,
+            vertices,
+        }
+    }
+
+    /// Build an analytic circular loop; example: `PrismProbeLoop::circle(1, [0., 0.], 2.)`.
+    pub fn circle(edge_key: u64, center: [f64; 2], radius: f64) -> Self {
+        Self::Circle {
+            edge_key,
+            center,
+            radius,
+        }
+    }
+
+    /// Return source identities in traversal order; example: `loop_.edge_keys()`.
+    pub fn edge_keys(&self) -> Vec<u64> {
+        match self {
+            Self::Polygon { edge_keys, .. } => edge_keys.clone(),
+            Self::Circle { edge_key, .. } => vec![*edge_key],
+        }
+    }
 }
 /// A local planar profile with an outer loop and oriented inner loops in working units.
 /// Displacement components follow local X, Y and normal; the default entry point places it on XY.

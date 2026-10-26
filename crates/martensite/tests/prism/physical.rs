@@ -10,7 +10,7 @@ fn metric(actual: f64, expected: f64) {
 #[test]
 fn rotated_translated_prism_has_independently_verified_centroidal_inertia() {
     let mut definition = rectangle();
-    for vertex in &mut definition.outer.vertices {
+    for vertex in polygon_mut(&mut definition.outer).1 {
         let [x, y] = *vertex;
         *vertex = [0.6 * x - 0.8 * y + 10., 0.8 * x + 0.6 * y - 20.];
     }

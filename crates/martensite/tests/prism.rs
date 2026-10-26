@@ -4,10 +4,10 @@ use oblikovati_martensite::{
 };
 fn rectangle() -> PrismProbeDefinition {
     PrismProbeDefinition {
-        outer: PrismProbeLoop {
-            edge_keys: vec![1, 2, 3, 4],
-            vertices: vec![[0., 0.], [4., 0.], [4., 3.], [0., 3.]],
-        },
+        outer: PrismProbeLoop::polygon(
+            vec![1, 2, 3, 4],
+            vec![[0., 0.], [4., 0.], [4., 3.], [0., 3.]],
+        ),
         holes: Vec::new(),
         displacement: [0., 0., 2.],
     }
@@ -19,14 +19,31 @@ fn closed_profile_prism_has_analytic_caps_sides_and_complete_source_roles() {
     assert!((report.properties.volume - 24.).abs() < 1e-11);
     assert_eq!(report.faces.len(), 6);
     verify_caps(&report, 12., 1);
-    for key in &definition.outer.edge_keys {
+    for key in definition.outer.edge_keys() {
         assert!(
             report
                 .faces
                 .iter()
-                .any(|face| face.role == PrismFaceRole::ProfileEdge(*key))
+                .any(|face| face.role == PrismFaceRole::ProfileEdge(key))
         );
     }
+}
+#[test]
+fn analytic_circle_profile_uses_one_exact_source_edge() {
+    let definition = PrismProbeDefinition {
+        outer: PrismProbeLoop::circle(9, [2., 3.], 2.),
+        holes: Vec::new(),
+        displacement: [0., 0., 5.],
+    };
+    let report = probe_planar_prism(&definition).unwrap();
+    assert!((report.properties.volume - 20. * std::f64::consts::PI).abs() < 1e-9);
+    assert_eq!(report.faces.len(), 3);
+    assert!(
+        report
+            .faces
+            .iter()
+            .any(|face| face.role == PrismFaceRole::ProfileEdge(9))
+    );
 }
 fn verify_caps(report: &oblikovati_martensite::PrismProbeReport, area: f64, loops: usize) {
     let start = report
@@ -44,10 +61,10 @@ fn verify_caps(report: &oblikovati_martensite::PrismProbeReport, area: f64, loop
 }
 fn with_hole() -> PrismProbeDefinition {
     let mut definition = rectangle();
-    definition.holes.push(PrismProbeLoop {
-        edge_keys: vec![11, 12, 13, 14],
-        vertices: vec![[1., 1.], [1., 2.], [3., 2.], [3., 1.]],
-    });
+    definition.holes.push(PrismProbeLoop::polygon(
+        vec![11, 12, 13, 14],
+        vec![[1., 1.], [1., 2.], [3., 2.], [3., 1.]],
+    ));
     definition
 }
 #[test]
@@ -91,7 +108,7 @@ fn malformed_profile_and_direction_inputs_are_declined_before_construction() {
 fn malformed_profile_keys_and_loop_shapes_are_declined_before_construction() {
     for keys in [vec![1, 2], vec![0, 2, 3, 4], vec![1, 2, 1, 4]] {
         let mut definition = rectangle();
-        definition.outer.edge_keys = keys;
+        *polygon_mut(&mut definition.outer).0 = keys;
         assert!(
             probe_planar_prism(&definition)
                 .unwrap_err()
@@ -99,7 +116,7 @@ fn malformed_profile_keys_and_loop_shapes_are_declined_before_construction() {
         );
     }
     let mut definition = with_hole();
-    definition.holes[0].edge_keys[0] = 1;
+    polygon_mut(&mut definition.holes[0]).0[0] = 1;
     assert!(
         probe_planar_prism(&definition)
             .unwrap_err()
@@ -109,19 +126,20 @@ fn malformed_profile_keys_and_loop_shapes_are_declined_before_construction() {
 #[test]
 fn collapsed_and_nonfinite_segments_are_refused_with_the_source_identity() {
     let mut definition = rectangle();
-    definition.outer.vertices[1] = definition.outer.vertices[0];
+    let vertices = &mut polygon_mut(&mut definition.outer).1;
+    vertices[1] = vertices[0];
     assert!(
         probe_planar_prism(&definition)
             .unwrap_err()
             .contains("edge 1")
     );
-    definition.outer.vertices[1] = [1e-10, 0.];
+    polygon_mut(&mut definition.outer).1[1] = [1e-10, 0.];
     assert!(
         probe_planar_prism(&definition)
             .unwrap_err()
             .contains("collapsed")
     );
-    definition.outer.vertices[1] = [f64::INFINITY, 0.];
+    polygon_mut(&mut definition.outer).1[1] = [f64::INFINITY, 0.];
     let error = probe_planar_prism(&definition).unwrap_err();
     assert!(error.contains("finite XY"));
 }
@@ -130,10 +148,10 @@ mod oracle;
 #[test]
 fn self_crossing_and_wrongly_oriented_inner_loops_are_kernel_declines() {
     let mut crossing = rectangle();
-    crossing.outer.vertices = vec![[0., 0.], [4., 3.], [0., 3.], [4., 0.]];
+    *polygon_mut(&mut crossing.outer).1 = vec![[0., 0.], [4., 3.], [0., 3.], [4., 0.]];
     assert!(probe_planar_prism(&crossing).is_err());
     let mut wrong_hole = with_hole();
-    wrong_hole.holes[0].vertices.reverse();
+    polygon_mut(&mut wrong_hole.holes[0]).1.reverse();
     assert!(probe_planar_prism(&wrong_hole).is_err());
 }
 #[test]
@@ -188,3 +206,14 @@ fn native_topology_counts_unique_entities_including_inner_wires() {
 }
 #[path = "prism/physical.rs"]
 mod physical;
+
+fn polygon_mut(loop_: &mut PrismProbeLoop) -> (&mut Vec<u64>, &mut Vec<[f64; 2]>) {
+    let PrismProbeLoop::Polygon {
+        edge_keys,
+        vertices,
+    } = loop_
+    else {
+        panic!("expected polygon test fixture");
+    };
+    (edge_keys, vertices)
+}

@@ -24,9 +24,9 @@ fn validate_curve_identities(
     curves: &[SketchDirectedCurve],
     used: &mut BTreeSet<SketchEntityId>,
 ) -> Result<(), SketchPrismCause> {
-    if curves.len() < 3 {
+    if curves.is_empty() {
         return Err(SketchPrismCause::Definition(format!(
-            "sketch prism boundary {curves:?}: expected at least three directed curves"
+            "sketch prism boundary {curves:?}: expected at least one directed curve"
         )));
     }
     for directed in curves {
