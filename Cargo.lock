@@ -480,7 +480,7 @@ checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
 [[package]]
 name = "martensite-cmath"
 version = "0.3.5"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "metallic",
 ]
@@ -488,7 +488,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkbrep"
 version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -500,8 +500,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkernel"
-version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+version = "0.4.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "allocator-api2",
  "bytemuck",
@@ -518,8 +518,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkg2d"
-version = "0.3.5"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -528,8 +528,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkg3d"
-version = "0.3.5"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -539,8 +539,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tkgeomalgo"
-version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+version = "0.3.7"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -554,7 +554,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkgeombase"
 version = "0.3.5"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -566,7 +566,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkmath"
 version = "0.3.5"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkernel",
@@ -578,7 +578,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkmesh"
 version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "allocator-api2",
  "martensite-cmath",
@@ -596,7 +596,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkprim"
 version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -612,7 +612,7 @@ dependencies = [
 [[package]]
 name = "martensite-tkshhealing"
 version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
@@ -627,8 +627,8 @@ dependencies = [
 
 [[package]]
 name = "martensite-tktopalgo"
-version = "0.3.6"
-source = "git+https://github.com/Oblikovati/Martensite?rev=98d408444db53e6f4410adf578590e53d9062aff#98d408444db53e6f4410adf578590e53d9062aff"
+version = "0.4.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=8373005675a5f286cdcc0f62aa9a4bf621dac79a#8373005675a5f286cdcc0f62aa9a4bf621dac79a"
 dependencies = [
  "martensite-cmath",
  "martensite-tkbrep",
