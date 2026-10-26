@@ -4,6 +4,8 @@ use imgui::{Condition, StyleColor, StyleVar, Ui, WindowFlags};
 
 use super::workspace_shell::RIBBON_BOTTOM;
 
+mod model_browser;
+
 // Go's DockBuilder splits the work area 22% left and 7% down after fixed chrome claims its bands.
 const MODEL_WIDTH_FRACTION: f32 = 0.22;
 const COMMAND_HEIGHT_FRACTION: f32 = 0.07;
@@ -590,126 +592,7 @@ fn document_tab_label(document: &crate::GuiDocumentTab) -> String {
     format!("{}{dirty}###document-{}", document.name, document.id)
 }
 
-pub(super) fn draw_model_browser(
-    ui: &Ui,
-    tree: Option<&crate::GuiModelTree>,
-    selected: &mut Vec<GuiShellAction>,
-    open: &mut bool,
-) {
-    let layout = workspace_layout(ui.io().display_size);
-    let _title = ui.push_style_color(StyleColor::TitleBg, GO_DOCK_HEADER);
-    let _active = ui.push_style_color(StyleColor::TitleBgActive, GO_DOCK_HEADER);
-    ui.window("##model-window")
-        .flags(WindowFlags::NO_DOCKING | WindowFlags::NO_SAVED_SETTINGS)
-        .opened(open)
-        .position(layout.model_position, Condition::Always)
-        .size(layout.model_size, Condition::Always)
-        .movable(false)
-        .resizable(false)
-        .build(|| {
-            let Some(tree) = tree else {
-                ui.bullet_text("(no document)");
-                return;
-            };
-            draw_model_tree(ui, tree, selected);
-        });
-    draw_dock_tab(ui, layout.model_position, "Model", true);
-}
-
-fn draw_model_tree(ui: &Ui, tree: &crate::GuiModelTree, selected: &mut Vec<GuiShellAction>) {
-    let Some(_document) = ui
-        .tree_node_config(&tree.document)
-        .default_open(true)
-        .push()
-    else {
-        return;
-    };
-    draw_model_origin(ui);
-    draw_model_parameters(ui, &tree.parameters);
-    draw_model_sketches(ui, tree.sketches);
-    draw_model_features(ui, &tree.features);
-    draw_model_bodies(ui, &tree.bodies, selected);
-}
-
-fn draw_model_origin(ui: &Ui) {
-    if let Some(_origin) = ui.tree_node("Origin") {
-        ui.bullet_text("XY Plane");
-        ui.bullet_text("XZ Plane");
-        ui.bullet_text("YZ Plane");
-    }
-}
-
-fn draw_model_parameters(ui: &Ui, parameters: &[String]) {
-    if parameters.is_empty() {
-        ui.bullet_text("Parameters");
-        return;
-    }
-    let label = format!("Parameters ({})", parameters.len());
-    let Some(_parameters) = ui.tree_node(&label) else {
-        return;
-    };
-    for parameter in parameters {
-        ui.bullet_text(parameter);
-    }
-}
-
-fn draw_model_sketches(ui: &Ui, count: usize) {
-    if count == 0 {
-        ui.bullet_text("Sketches");
-        return;
-    }
-    let label = format!("Sketches ({count})");
-    let Some(_sketches) = ui.tree_node(&label) else {
-        return;
-    };
-    for index in 1..=count {
-        ui.bullet_text(format!("Sketch {index}"));
-    }
-}
-
-fn draw_model_features(ui: &Ui, features: &[crate::GuiModelFeature]) {
-    if features.is_empty() {
-        ui.bullet_text("Features");
-        return;
-    }
-    let label = format!("Features ({})", features.len());
-    let Some(_features) = ui.tree_node(&label) else {
-        return;
-    };
-    for feature in features {
-        ui.bullet_text(model_feature_label(feature));
-    }
-}
-
-fn model_feature_label(feature: &crate::GuiModelFeature) -> String {
-    format!("{} ({}) — {}", feature.name, feature.kind, feature.health)
-}
-
-fn draw_model_bodies(ui: &Ui, bodies: &[crate::GuiModelBody], selected: &mut Vec<GuiShellAction>) {
-    if bodies.is_empty() {
-        ui.bullet_text("Bodies");
-        return;
-    }
-    let label = format!("Bodies ({})", bodies.len());
-    let Some(_bodies) = ui.tree_node_config(&label).default_open(true).push() else {
-        return;
-    };
-    for body in bodies {
-        draw_body_row(ui, body, selected);
-    }
-}
-
-fn draw_body_row(ui: &Ui, body: &crate::GuiModelBody, selected: &mut Vec<GuiShellAction>) {
-    let mut visible = body.visible;
-    if ui.checkbox(format!("##body-visible-{}", body.index), &mut visible) {
-        selected.push(GuiShellAction::SetBodyVisible {
-            index: body.index,
-            visible,
-        });
-    }
-    ui.same_line();
-    ui.text(format!("{} — {} faces", body.name, body.faces));
-}
+pub(super) use model_browser::draw as draw_model_browser;
 
 pub(super) fn draw_command_window(
     ui: &Ui,
@@ -743,22 +626,10 @@ pub(super) fn draw_command_window(
 mod tests {
     use super::{
         AXIS_ARROW_HEAD, axis_arrowhead, axis_triad_arrows, cube_grid_fractions, cube_points,
-        dock_tab_bounds, model_feature_label, navigation_buttons, quad_point, status_text,
-        view_cube_home_position, view_cube_position, viewport_rect, workspace_layout,
+        dock_tab_bounds, navigation_buttons, quad_point, status_text, view_cube_home_position,
+        view_cube_position, viewport_rect, workspace_layout,
     };
-    use crate::{
-        GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelFeature,
-    };
-
-    #[test]
-    fn feature_rows_keep_name_kind_and_health() {
-        let label = model_feature_label(&GuiModelFeature {
-            name: "Extrude1".into(),
-            kind: "Extrude".into(),
-            health: "Healthy".into(),
-        });
-        assert_eq!(label, "Extrude1 (Extrude) — Healthy");
-    }
+    use crate::{GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest};
 
     #[test]
     fn fallback_layout_matches_the_go_model_viewport_command_arrangement() {
