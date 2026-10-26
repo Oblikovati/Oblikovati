@@ -87,7 +87,7 @@ gates. The kernel repository owns geometry, oracle, and kernel-package gates.
 The application still owns its API/host inventory, kernel integration, feature,
 live GUI, and installation tests. The application now pins the stable Martensite
 v0.3.6 release; an unpublished local kernel revision is not a release pin. See
-[migration evidence](architecture/rust-port/martensite-v0.3.6-migration.md).
+[migration evidence](architecture/rust-port/martensite-v0.4.0-migration.md).
 Product publication remains blocked by the R9 readiness fields.
 
 ## Product version

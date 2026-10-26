@@ -14,7 +14,7 @@ manifest inspection, version, and help. The first desktop executable supplies
 native window lifetime, saved prism display, camera navigation, and document
 startup. Dear ImGui chrome and remaining CLI commands are not yet ported.
 Publication remains blocked. The
-[Martensite v0.3.6 migration](architecture/rust-port/martensite-v0.3.6-migration.md)
+[Martensite v0.4.0 migration](architecture/rust-port/martensite-v0.4.0-migration.md)
 pins the released kernel and records its adapter and presentation boundaries.
 
 Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
