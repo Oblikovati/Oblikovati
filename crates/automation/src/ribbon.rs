@@ -8,6 +8,8 @@ use oblikovati_api::{
     wire::{ListRibbonResult, RibbonControlInfo, RibbonPanelInfo, RibbonTabInfo},
 };
 
+mod ribbon_presentation;
+
 /// Build the document ribbon from its selected key; example: `list(PART_RIBBON)`.
 pub(crate) fn list(key: RibbonKey) -> ListRibbonResult {
     let tabs = match key.0.as_ref() {
@@ -15,7 +17,7 @@ pub(crate) fn list(key: RibbonKey) -> ListRibbonResult {
         "Part" => part_tabs(),
         "Assembly" => assembly_tabs(),
         "Drawing" => drawing_tabs(),
-        "Presentation" => presentation_tabs(),
+        "Presentation" => ribbon_presentation::tabs(),
         "IFeatures" | "UnknownDocument" => Vec::new(),
         _ => Vec::new(),
     };
@@ -180,46 +182,6 @@ fn drawing_tabs() -> Vec<RibbonTabInfo> {
             ),
         ],
     )]
-}
-
-fn presentation_tabs() -> Vec<RibbonTabInfo> {
-    vec![
-        tab(
-            "Presentation",
-            vec![
-                presentation_create_panel(),
-                presentation_storyboard_panel(),
-                presentation_view_panel(),
-            ],
-        ),
-        view_tab(),
-    ]
-}
-
-fn presentation_create_panel() -> RibbonPanelInfo {
-    panel(
-        "Create",
-        vec![unavailable_large(
-            "Presentation.Tweak",
-            "Tweak Components",
-            "presentation-tweak",
-        )],
-    )
-}
-
-fn presentation_storyboard_panel() -> RibbonPanelInfo {
-    unavailable_compact_panel("Storyboard", &["Add Action", "Animate", "Publish Video"])
-}
-
-fn presentation_view_panel() -> RibbonPanelInfo {
-    panel(
-        "View",
-        vec![unavailable_large(
-            "Presentation.Snapshot",
-            "Snapshot View",
-            "presentation-snapshot",
-        )],
-    )
 }
 
 fn part_tabs() -> Vec<RibbonTabInfo> {
