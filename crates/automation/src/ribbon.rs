@@ -313,7 +313,10 @@ pub fn contextual_sketch_tab() -> RibbonTabInfo {
         vec![
             panel(
                 "Create",
-                vec![large("Sketch.Rectangle", "Rectangle", "rectangle")],
+                vec![
+                    large("Sketch.Rectangle", "Rectangle", "rectangle"),
+                    large("Sketch.Circle", "Circle", "circle"),
+                ],
             ),
             panel(
                 "Exit",
@@ -460,6 +463,17 @@ mod tests {
         assert_eq!(sketch.name, "Sketch");
         assert_eq!(sketch.panels.as_ref().unwrap()[0].name, "Create");
         assert_eq!(sketch.panels.as_ref().unwrap()[1].name, "Exit");
+    }
+
+    #[test]
+    fn sketch_context_exposes_rectangle_and_circle_creation() {
+        let create = &contextual_sketch_tab().panels.unwrap()[0];
+        let controls = create.controls.as_ref().unwrap();
+        assert_eq!(create.name, "Create");
+        assert_eq!(controls.len(), 2);
+        assert_eq!(controls[0].command_id, "Sketch.Rectangle");
+        assert_eq!(controls[1].command_id, "Sketch.Circle");
+        assert!(controls.iter().all(|control| control.enabled));
     }
 
     #[test]

@@ -73,6 +73,31 @@ fn ribbon_mouse_journey_creates_a_cube_through_the_host() {
     assert!(!scene.scene.triangles.is_empty());
 }
 
+#[test]
+fn ribbon_mouse_journey_creates_a_fully_constrained_parameter_circle() {
+    let (mut owner, _) = owner();
+    let mut gui = GuiFrameEngine::new().unwrap();
+    for control in ["GetStarted.NewPart", "Sketch.Create", "Sketch.Circle"] {
+        click_ribbon_control(&mut owner, &mut gui, control);
+    }
+    deliver(&mut owner, &[button([0, 0], true), button([0, 0], false)]);
+    deliver(&mut owner, &[motion([10, 0]), button([10, 0], true)]);
+    assert!(!owner.placement_active());
+    let document = owner.documents().workspace().active_document().unwrap();
+    let snapshot = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    let placed = &snapshot.sketches.sketches()[0];
+    let sketch = placed.geometry();
+    assert_eq!(sketch.circles().len(), 1);
+    assert!(snapshot.parameters.find("size").is_some());
+    let structure = snapshot.analyze_document_sketch(placed.id(), 1e-9).unwrap();
+    assert_eq!(structure.degrees_of_freedom, 0);
+}
+
 fn click_ribbon_control(owner: &mut TestOwner, gui: &mut GuiFrameEngine, command_id: &str) {
     gui_frame(owner, gui, Vec::new());
     let targets = gui_frame(owner, gui, Vec::new()).targets;

@@ -11,6 +11,7 @@ pub enum GuiShellAction {
     NewDrawing,
     SketchXY,
     Rectangle,
+    Circle,
     ExitSketch,
     Extrude,
     ActivateDocument(u64),
@@ -185,6 +186,7 @@ impl GuiShellAction {
             | Self::NewDrawing
             | Self::SketchXY
             | Self::Rectangle
+            | Self::Circle
             | Self::ExitSketch
             | Self::Extrude
             | Self::ActivateDocument(_)

@@ -1344,6 +1344,7 @@ fn host_action(id: &str) -> Option<GuiShellAction> {
         "File.Save" => Some(GuiShellAction::Save),
         "Sketch.Create" => Some(GuiShellAction::SketchXY),
         "Sketch.Rectangle" => Some(GuiShellAction::Rectangle),
+        "Sketch.Circle" => Some(GuiShellAction::Circle),
         "Sketch.Finish" => Some(GuiShellAction::ExitSketch),
         "Feature.Extrude" => Some(GuiShellAction::Extrude),
         "View.Home" => Some(GuiShellAction::Home),

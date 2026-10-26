@@ -57,6 +57,7 @@ fn action_event(action: GuiShellAction) -> Option<ViewportEvent> {
         | GuiShellAction::NewDrawing
         | GuiShellAction::SketchXY
         | GuiShellAction::Rectangle
+        | GuiShellAction::Circle
         | GuiShellAction::ExitSketch
         | GuiShellAction::Extrude
         | GuiShellAction::ActivateDocument(_)

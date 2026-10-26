@@ -155,9 +155,11 @@ impl<
             return Ok(false);
         };
         let cube_rectangle = self.cube_rectangle == Some((tool.document, tool.sketch));
+        let parameter_circle = self.parameter_circle == Some((tool.document, tool.sketch));
         let report = self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &[])?;
         self.complete_cube_rectangle(tool.document, tool.sketch, &report)?;
-        if cube_rectangle || tool.tool == crate::SketchPlacementTool::Point {
+        self.complete_parameter_circle(tool.document, tool.sketch, &report)?;
+        if cube_rectangle || parameter_circle || tool.tool == crate::SketchPlacementTool::Point {
             return Ok(true);
         }
         let generation = self

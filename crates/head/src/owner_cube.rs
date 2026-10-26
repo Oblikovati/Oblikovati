@@ -31,6 +31,7 @@ impl<
             oblikovati_gui::GuiShellAction::NewDrawing => self.new_document("drawing", "Drawing"),
             oblikovati_gui::GuiShellAction::SketchXY => self.start_cube_sketch(),
             oblikovati_gui::GuiShellAction::Rectangle => self.start_cube_rectangle(),
+            oblikovati_gui::GuiShellAction::Circle => self.start_parameter_circle(),
             oblikovati_gui::GuiShellAction::ExitSketch => self.finish_cube_sketch(),
             oblikovati_gui::GuiShellAction::Extrude => self.extrude_cube_sketch(),
             _ => Ok(false),
@@ -56,6 +57,25 @@ impl<
         Ok(())
     }
 
+    pub(super) fn complete_parameter_circle(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        report: &oblikovati_model::history::SketchPlacementCreationReport,
+    ) -> Result<(), String> {
+        if self.parameter_circle != Some((document, sketch)) {
+            return Ok(());
+        }
+        let center = one_entity(&report.points, "circle centre")?;
+        let circle = one_entity(&report.members, "circle")?;
+        constrain_parameter_circle(self, document, sketch, center, circle)?;
+        self.parameter_circle = None;
+        self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
+            message: "Circle constrained. Click Extrude.".into(),
+        });
+        Ok(())
+    }
+
     fn new_cube_part(&mut self) -> Result<bool, String> {
         self.new_document("part", "Cube")
     }
@@ -72,6 +92,7 @@ impl<
         self.placement = None;
         self.sketch_edit = None;
         self.cube_rectangle = None;
+        self.parameter_circle = None;
         Ok(true)
     }
 
@@ -100,6 +121,19 @@ impl<
             crate::SketchPlacementTool::Rectangle,
         )?;
         self.cube_rectangle = Some((edit.document, edit.sketch));
+        Ok(true)
+    }
+
+    fn start_parameter_circle(&mut self) -> Result<bool, String> {
+        let edit = self
+            .active_sketch_edit()
+            .ok_or_else(|| "Circle: expected an active XY sketch".to_string())?;
+        self.start_sketch_placement(
+            edit.document,
+            edit.sketch,
+            crate::SketchPlacementTool::Circle,
+        )?;
+        self.parameter_circle = Some((edit.document, edit.sketch));
         Ok(true)
     }
 
@@ -217,6 +251,18 @@ fn ids(ids: &[oblikovati_model::sketch::SketchEntityId]) -> Result<Vec<u64>, Str
     ))
 }
 
+fn one_entity(
+    entities: &[oblikovati_model::sketch::SketchEntityId],
+    description: &str,
+) -> Result<u64, String> {
+    match entities {
+        [entity] => Ok(entity.0),
+        _ => Err(format!(
+            "{description} entities {entities:?}: expected one authored entity"
+        )),
+    }
+}
+
 fn constrain_cube_rectangle<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -262,5 +308,42 @@ fn constrain_cube_rectangle<
             })
             .map_err(|cause| cause.to_string())?;
     }
+    Ok(())
+}
+
+fn constrain_parameter_circle<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+>(
+    owner: &mut DesktopOwner<O, W, F, G, R, S>,
+    document: u64,
+    sketch: DocumentSketchId,
+    center: u64,
+    circle: u64,
+) -> Result<(), String> {
+    let sketch_index = owner.sketch_index(document, sketch)?;
+    Client::new(owner.document_host())
+        .constrain()
+        .add(&AddConstraintArgs {
+            sketch_index,
+            kind: "fix".into(),
+            entities: Some(vec![center]),
+            ..Default::default()
+        })
+        .map_err(|cause| cause.to_string())?;
+    Client::new(owner.document_host())
+        .dimension()
+        .add(&AddDimensionArgs {
+            sketch_index,
+            kind: "radius".into(),
+            entities: Some(vec![circle]),
+            expression: "size".into(),
+            ..Default::default()
+        })
+        .map_err(|cause| cause.to_string())?;
     Ok(())
 }
