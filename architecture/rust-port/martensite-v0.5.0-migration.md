@@ -1,7 +1,7 @@
-# Martensite v0.4.0 migration
+# Martensite v0.5.0 migration
 
-The Rust application pins the Martensite v0.4.0 release commit
-`8373005675a5f286cdcc0f62aa9a4bf621dac79a`. Its adapter uses only released
+The Rust application pins the Martensite v0.5.0 release commit
+`6650a6d2548e5408a2bf6afc5cb76fa6fee29f86`. Its adapter uses only released
 `martensite-*` crates. It does not retain RustyCADKernel as a fallback.
 
 ## Released adapter path
@@ -12,7 +12,7 @@ prism creation, topology inspection, mass properties, and mesh production.
 
 ## Blocked Boolean profile regions
 
-Martensite v0.4.0 does not release the former `TKBO` Boolean crate. The
+Martensite v0.5.0 does not release the former `TKBO` Boolean crate. The
 `profile_regions` integration target therefore remains outside this release
 migration. It stays in source as the regression corpus for the future general
 Boolean pipeline. Do not restore RustyCADKernel only to run it.
@@ -25,7 +25,7 @@ crate.
 ## Native presentation migration
 
 The workspace viewport still uses the former `martensite-vulkan` and `TKV3d`
-crates. Martensite v0.4.0 releases `TKService` but not those renderer crates.
+crates. Martensite v0.5.0 releases `TKService` but not those renderer crates.
 The native presentation migration is tracked by Oblikovati issue #3630. It must
 replace the viewport renderer with the released Martensite services and a
 separate maintained graphics backend. It must not extend the RustyCADKernel

@@ -20,6 +20,6 @@ oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1"
 quick-xml = { version = "=0.39.4", features = ["serialize"] }
-martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "8373005675a5f286cdcc0f62aa9a4bf621dac79a", version = "=0.3.7" }
-martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "8373005675a5f286cdcc0f62aa9a4bf621dac79a", version = "=0.3.6" }
-martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "8373005675a5f286cdcc0f62aa9a4bf621dac79a", version = "=0.3.5" }
+martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "6650a6d2548e5408a2bf6afc5cb76fa6fee29f86", version = "=0.3.7" }
+martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "6650a6d2548e5408a2bf6afc5cb76fa6fee29f86", version = "=0.3.6" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "6650a6d2548e5408a2bf6afc5cb76fa6fee29f86", version = "=0.3.5" }

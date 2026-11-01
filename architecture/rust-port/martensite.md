@@ -5,7 +5,7 @@ This plan consumes released crates from
 all OCCT capabilities are already usable. It also requires Martensite to gain
 the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
 [source baseline](source-map.md) fixes the inspected revision. The active
-[Martensite v0.4.0 migration](martensite-v0.4.0-migration.md) records the
+[Martensite v0.5.0 migration](martensite-v0.5.0-migration.md) records the
 adapter pin and the current native-presentation gap.
 
 The accepted application contracts are
@@ -23,7 +23,7 @@ kernel-internal decisions still belong to Martensite.
 - `Shape` contains a shared `Handle<dyn TShape>`. A cloned shape preserves
   shared identity. Some builders can update referenced geometry while preparing
   an operation, so `&Shape` alone does not imply immutable evaluation.
-- The released v0.4.0 graph has no V3d or Vulkan presentation crate. The
+- The released v0.5.0 graph has no V3d or Vulkan presentation crate. The
   viewport remains on the prior renderer until issue #3630 moves it to a
   released Martensite-native presentation path. Do not extend that temporary
   renderer dependency.
