@@ -1,6 +1,7 @@
 # Martensite integration and readiness
 
-This plan consumes Martensite from `RustyCADKernel`. It does not assume that
+This plan consumes tagged `Martensite` packages directly. `RustyCADKernel` is
+a transitional dependency only; it is not an accepted host target. It does not assume that
 all OCCT capabilities are already usable. It also requires Martensite to gain
 the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
 [source baseline](source-map.md) fixes the inspected revision.
@@ -9,7 +10,7 @@ The accepted application contracts are
 [ADR-0007: Martensite integration](../decisions/ADR-0007-martensite-integration.md)
 and [ADR-0008: Vulkan renderer](../decisions/ADR-0008-vulkan-renderer.md).
 Their acceptance does not close any capability check below. Required new
-kernel-internal decisions still belong to RustyCADKernel.
+kernel-internal decisions belong to Martensite.
 
 ## Observed integration limits
 
@@ -31,10 +32,16 @@ kernel-internal decisions still belong to RustyCADKernel.
 - The kernel's current priority is visualization and Vulkan before broad
   exchange-format work. The application schedule follows that order.
 
-Select the required toolkit dependencies in the application adapter. Keep
-their revisions identical. A later facade expansion belongs in Martensite;
+Select the required released Martensite toolkit dependencies in the application
+adapter. Keep their revisions identical. A facade expansion belongs in Martensite;
 it is not a prerequisite for every initial application test. Do not invent
 a dependency named `martensite` that the repository does not provide.
+
+Martensite v0.6.0 does not yet publish the `martensite-tkv3d`,
+`martensite-vulkan`, and `martensite-tkbo` packages. These are a P0 host
+blocker tracked by Martensite issue #365. Do not describe a host still pinned
+to RustyCADKernel as migrated until those packages are released and the host
+viewport and profile-region tests run against one Martensite revision.
 
 The Go model and API use centimetres and radians by default. Documents can
 also carry a working scale (`model/param/units_of_measure.go`). Preserve its
