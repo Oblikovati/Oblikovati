@@ -4,7 +4,7 @@
 mod fixture;
 use fixture::*;
 use oblikovati_model::{
-    feature::{sketch_revolve::SketchRevolveDefinition, work_geometry::DatumAngle},
+    feature::{FeatureReadKey, sketch_revolve::SketchRevolveDefinition, work_geometry::DatumAngle},
     sketch::{PlanarConstraint, SketchConstraintId, SketchEntityId},
 };
 
@@ -91,5 +91,19 @@ fn resolve_declines_a_sketch_without_a_centerline() {
             .unwrap_err()
             .to_string()
             .contains("exactly one owned centerline")
+    );
+}
+
+#[test]
+fn reads_include_the_sketch_dimensions_and_angle_parameter() {
+    let reads = definition().reads(&document_with_axis()).unwrap();
+    assert_eq!(
+        reads.keys().iter().copied().collect::<Vec<_>>(),
+        vec![
+            FeatureReadKey::Parameter(1),
+            FeatureReadKey::Parameter(2),
+            FeatureReadKey::Parameter(3),
+            FeatureReadKey::Sketch(1),
+        ]
     );
 }

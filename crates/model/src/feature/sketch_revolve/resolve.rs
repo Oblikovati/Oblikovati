@@ -47,6 +47,7 @@ impl SketchRevolveDefinition {
             .get(self.sketch)
             .map_err(|cause| self.decline(SketchRevolveCause::Sketch(cause)))?;
         let mut keys = sketch.read_footprint().keys().clone();
+        keys.insert(FeatureReadKey::Sketch(self.sketch.0));
         keys.extend(self.angle.parameter_id().map(FeatureReadKey::Parameter));
         Ok(FeatureReadFootprint::new(
             keys,
