@@ -96,12 +96,7 @@ pub(crate) fn draw(
     workspace_panels::draw_viewport_header(ui, !state.documents.is_empty());
     workspace_panels::draw_document_tabs(ui, &state.documents, selected, workspace);
     if workspace.model_browser_open {
-        workspace_panels::draw_model_browser(
-            ui,
-            state.model_tree.as_ref(),
-            selected,
-            &mut workspace.model_browser_open,
-        );
+        workspace_panels::draw_model_browser(ui, state.model_tree.as_ref(), selected, workspace);
     }
     if workspace.command_panel_open {
         workspace_panels::draw_command_window(ui, workspace);

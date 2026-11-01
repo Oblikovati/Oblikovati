@@ -210,7 +210,10 @@ pub(super) fn draw_command_window(
 #[cfg(test)]
 mod tests {
     use super::{dock_tab_bounds, status_text, viewport_overlays, workspace_layout};
-    use crate::{GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest};
+    use crate::{
+        GuiCommandState, GuiDocumentTab, GuiFrameEngine, GuiFrameRequest, GuiModelBody,
+        GuiModelTree,
+    };
 
     #[test]
     fn fallback_layout_matches_the_go_model_viewport_command_arrangement() {
@@ -361,6 +364,44 @@ mod tests {
                 .any(|vertex| { vertex.srgb == [209, 214, 224, 235] })
         );
         assert!(!frame.batches.iter().any(default_debug_surface));
+    }
+
+    #[test]
+    fn model_browser_publishes_each_body_visibility_control() {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let request = GuiFrameRequest {
+            extent: [1440, 900],
+            commands: GuiCommandState {
+                documents: vec![GuiDocumentTab {
+                    id: 1,
+                    name: "Part".into(),
+                    active: true,
+                    ..Default::default()
+                }],
+                model_tree: Some(GuiModelTree {
+                    document: "Part".into(),
+                    bodies: vec![GuiModelBody {
+                        index: 7,
+                        name: "Body1".into(),
+                        visible: true,
+                        faces: 6,
+                    }],
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            delta_seconds: 1. / 60.,
+            framebuffer_scale: [1.; 2],
+            events: Vec::new(),
+            status: None,
+        };
+        let output = engine.frame(&request).unwrap();
+        assert!(
+            output
+                .targets
+                .iter()
+                .any(|target| { target.command_id == "Model.BodyVisibility.7" && target.enabled })
+        );
     }
 
     fn default_debug_surface(batch: &crate::GuiBatch) -> bool {
