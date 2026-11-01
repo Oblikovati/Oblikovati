@@ -6,15 +6,16 @@ use martensite_tktopalgo::brep_builder_api::{
     BRepBuilderAPIMakeEdge, BRepBuilderAPIMakeFace, BRepBuilderAPIMakePolygon,
     BRepBuilderAPIMakeWire,
 };
-pub(super) struct BuiltProfile {
+pub(crate) struct BuiltProfile {
     pub face: Face,
     pub edges: Vec<(u64, Edge)>,
 }
-pub(super) fn build_profile(
-    definition: &PrismProbeDefinition,
+pub(crate) fn build_profile(
+    outer: &PrismProbeLoop,
+    holes: &[PrismProbeLoop],
     plane: SketchPlane,
 ) -> Result<BuiltProfile, EvaluationFailure> {
-    let (outer, mut edges) = build_loop(&definition.outer, plane)?;
+    let (outer, mut edges) = build_loop(outer, plane)?;
     let mut maker = BRepBuilderAPIMakeFace::from_wire(&outer, true).map_err(|error| {
         Phase::Profile.native(
             Entity::Body,
@@ -22,7 +23,7 @@ pub(super) fn build_profile(
             error,
         )
     })?;
-    append_profile_holes(&mut maker, &definition.holes, plane, &mut edges)?;
+    append_profile_holes(&mut maker, holes, plane, &mut edges)?;
     let face = completed_profile_face(&maker)?;
     crate::checked_shape::require_geometry(&face, "prism profile")?;
     Ok(BuiltProfile { face, edges })

@@ -10,11 +10,16 @@ pub(super) fn validate_definition(
             "prism displacement {vector:?}: expected finite components with nonzero profile-normal displacement"
         )));
     }
+    validate_profile(&definition.outer, &definition.holes)
+}
+/// Validate shared planar profile inputs before any kernel construction.
+/// Example: `validate_profile(&outer, &holes)?` before a rotational sweep.
+pub(crate) fn validate_profile(
+    outer: &PrismProbeLoop,
+    holes: &[PrismProbeLoop],
+) -> Result<(), EvaluationFailure> {
     let mut keys = BTreeSet::new();
-    for (index, profile) in std::iter::once(&definition.outer)
-        .chain(&definition.holes)
-        .enumerate()
-    {
+    for (index, profile) in std::iter::once(outer).chain(holes).enumerate() {
         validate_loop(profile, index, &mut keys)?;
     }
     Ok(())

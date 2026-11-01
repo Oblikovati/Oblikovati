@@ -3,14 +3,14 @@ use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase,
 };
-mod input;
+pub(crate) mod input;
 mod named;
 pub use named::{
     NamedPrismEvaluator, NamedPrismSnapshot, named_part_properties, retain_named_sketch_prism,
 };
 mod mesh;
 mod placement;
-mod profile;
+pub(crate) mod profile;
 mod report;
 mod snapshot;
 #[cfg(test)]
@@ -38,7 +38,7 @@ pub(crate) fn build_prism(
 ) -> Result<PrismProbeSnapshot, EvaluationFailure> {
     input::validate_definition(definition)?;
     let vector = placement::model_displacement(plane, definition.displacement)?;
-    let profile = profile::build_profile(definition, plane)?;
+    let profile = profile::build_profile(&definition.outer, &definition.holes, plane)?;
     let mut maker = construct_prism(&profile.face, vector, definition.displacement)?;
     let shape = completed_prism(&mut maker)?;
     crate::checked_shape::require_geometry(&shape, "prism result")?;
