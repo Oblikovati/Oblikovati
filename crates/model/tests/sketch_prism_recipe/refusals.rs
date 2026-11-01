@@ -9,7 +9,7 @@ fn invalid_versions_identities_and_scalar_sources_fail_before_adoption() {
     invalid.sketch.0 = 0;
     assert!(SketchPrismDefinition::from_recipe(&invalid).is_err());
     invalid = baseline.clone();
-    invalid.selection.outer[0].line = SketchEntityId(0);
+    invalid.selection.outer[0].curve = SketchEntityId(0);
     assert!(SketchPrismDefinition::from_recipe(&invalid).is_err());
     invalid = baseline.clone();
     invalid

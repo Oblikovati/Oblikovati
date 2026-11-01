@@ -8,15 +8,21 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
             definition.sketch
         )));
     }
-    let mut used = BTreeSet::new();
-    for lines in std::iter::once(&definition.selection.outer).chain(&definition.selection.holes) {
-        validate_curve_identities(lines, &mut used)?;
-    }
+    validate_selection(&definition.selection)?;
     for (axis, source) in definition.displacement.into_iter().enumerate() {
         validate_scalar_source(source, axis)?;
     }
     if let DatumLength::Constant(normal) = definition.displacement[2] {
         require_normal_displacement(normal)?;
+    }
+    Ok(())
+}
+/// Validate one shared directed closed-profile selection before a sweep operation.
+/// Example: `validate_selection(&selection)?` before an authored revolve is accepted.
+pub(crate) fn validate_selection(selection: &SketchPrismSelection) -> Result<(), SketchPrismCause> {
+    let mut used = BTreeSet::new();
+    for lines in std::iter::once(&selection.outer).chain(&selection.holes) {
+        validate_curve_identities(lines, &mut used)?;
     }
     Ok(())
 }
