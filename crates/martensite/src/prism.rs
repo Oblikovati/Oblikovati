@@ -11,7 +11,7 @@ pub use named::{
 mod mesh;
 mod placement;
 pub(crate) mod profile;
-mod report;
+pub(crate) mod report;
 mod snapshot;
 #[cfg(test)]
 #[path = "../tests/unit/prism_snapshot.rs"]
@@ -23,8 +23,8 @@ pub use mesh::{PrismFaceMesh, PrismMeshOptions, PrismPresentation};
 use oblikovati_model::sketch::SketchPlane;
 pub use snapshot::{PrismProbeSnapshot, retain_planar_prism, retain_prism_on_plane};
 pub use types::{
-    PrismFaceProbe, PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
-    PrismTopologySummary,
+    FaceProbe, PlanarProfileLoop, PrismFaceProbe, PrismFaceRole, PrismProbeDefinition,
+    PrismProbeLoop, PrismProbeReport, PrismTopologySummary, TopologySummary,
 };
 /// Check the released planar profile/prism path and generated-face lineage in working units.
 /// Example: `probe_planar_prism(&definition)?` reports analytic geometry without publishing a feature result.

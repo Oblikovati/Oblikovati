@@ -45,6 +45,10 @@ path = "tests/go_spline_recipe.rs"
 [[test]]
 name = "prism"
 path = "tests/prism.rs"
+
+[[test]]
+name = "revolve"
+path = "tests/revolve.rs"
 [[test]]
 name = "sketch_prism"
 path = "tests/sketch_prism.rs"

@@ -138,52 +138,50 @@ pub(super) fn face_report(
     role: PrismFaceRole,
     shape: &Shape,
 ) -> Result<PrismFaceProbe, EvaluationFailure> {
-    let properties = face_integrals(role, shape)?;
-    let centroid = properties.centre_of_mass();
-    let centroid = [centroid.x(), centroid.y(), centroid.z()];
-    let area = properties.mass();
-    require_finite_face(role, area, centroid)?;
-    let mut wires = IndexedMapOfShape::default();
-    topexp::map_shapes_of_type(shape, ShapeEnum::Wire, &mut wires)
-        .map_err(|error| Phase::Measurement.native(Entity::Face(role), String::new(), error))?;
+    let (area, centroid, loops) = face_measurement(shape, &format!("prism face {role:?}"))?;
     Ok(PrismFaceProbe {
         role,
         area,
         centroid,
-        loops: wires.extent(),
+        loops,
     })
 }
-
-fn face_integrals(role: PrismFaceRole, shape: &Shape) -> Result<GProps, EvaluationFailure> {
+pub(crate) fn face_measurement(
+    shape: &Shape,
+    context: &str,
+) -> Result<(f64, [f64; 3], usize), EvaluationFailure> {
     let mut properties = GProps::new();
     BRepGProp::surface_properties(shape, &mut properties, false, false).map_err(|cause| {
         Phase::Measurement.native(
-            Entity::Face(role),
-            format!("prism face {role:?}: expected analytic area"),
+            Entity::Body,
+            format!("{context}: expected analytic area"),
             cause,
         )
     })?;
-    Ok(properties)
-}
-
-fn require_finite_face(
-    role: PrismFaceRole,
-    area: f64,
-    centroid: [f64; 3],
-) -> Result<(), EvaluationFailure> {
+    let centroid = properties.centre_of_mass();
+    let centroid = [centroid.x(), centroid.y(), centroid.z()];
+    let area = properties.mass();
     if !area.is_finite() || area <= 0. || centroid.iter().any(|value| !value.is_finite()) {
-        return Err(Phase::Measurement.refused(Kind::InvalidResult, Entity::Face(role), format!(
-            "prism face {role:?}, area={area}, centroid={centroid:?}: expected finite positive analytic area and centroid"
+        return Err(Phase::Measurement.refused(Kind::InvalidResult, Entity::Body, format!(
+            "{context}, area={area}, centroid={centroid:?}: expected finite positive analytic area and centroid"
         )));
     }
-    Ok(())
+    let mut wires = IndexedMapOfShape::default();
+    topexp::map_shapes_of_type(shape, ShapeEnum::Wire, &mut wires).map_err(|cause| {
+        Phase::Measurement.native(
+            Entity::Body,
+            format!("{context}: expected face wires"),
+            cause,
+        )
+    })?;
+    Ok((area, centroid, wires.extent()))
 }
 
 #[cfg(test)]
 #[path = "../../tests/prism/report.rs"]
 mod tests;
 
-fn topology_summary(shape: &Shape) -> Result<PrismTopologySummary, EvaluationFailure> {
+pub(crate) fn topology_summary(shape: &Shape) -> Result<PrismTopologySummary, EvaluationFailure> {
     Ok(PrismTopologySummary {
         solid: shape
             .shape_type()
