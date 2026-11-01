@@ -3,7 +3,7 @@
 mod error;
 mod recipe;
 mod resolve;
-mod validation;
+pub(crate) mod validation;
 use super::work_geometry::DatumLength;
 use crate::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 pub use error::{SketchPrismCause, SketchPrismError};
