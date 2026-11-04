@@ -12,6 +12,12 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Enter or finish the owner sketch edit; example: `work.edit_sketch_from_gui(true)?`.
+    fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
+        Err(format!(
+            "GUI sketch start={start}: expected a sketch document owner"
+        ))
+    }
     /// Create a part through the document owner; example: `work.create_part_document()?`.
     fn create_part_document(&mut self) -> Result<bool, String> {
         Err("New Part: expected a document owner with part creation support".into())

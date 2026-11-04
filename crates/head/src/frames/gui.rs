@@ -19,6 +19,15 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
     for action in &update.actions {
+        if matches!(
+            action,
+            GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch
+        ) {
+            update.changed |=
+                owner.edit_sketch_from_gui(*action == GuiShellAction::StartSketchXY)?;
+            update.changed |= synchronize_sketch_view(window, owner)?;
+            continue;
+        }
         if *action == GuiShellAction::NewPart {
             update.changed |= owner.create_part_document()?;
             continue;
@@ -33,7 +42,9 @@ pub(super) fn advance_gui(
 }
 fn action_key(action: GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
-        GuiShellAction::NewPart => return None,
+        GuiShellAction::NewPart | GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch => {
+            return None;
+        }
         GuiShellAction::Save => ViewportKey::Save,
         GuiShellAction::Undo => ViewportKey::Undo,
         GuiShellAction::Redo => ViewportKey::Redo,

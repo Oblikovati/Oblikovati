@@ -2,6 +2,8 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiShellAction {
     NewPart,
+    StartSketchXY,
+    FinishSketch,
     Save,
     Undo,
     Redo,
@@ -32,7 +34,9 @@ impl GuiShellAction {
         match self {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
-            Self::NewPart | Self::Save | Self::Home => true,
+            Self::StartSketchXY | Self::FinishSketch | Self::NewPart | Self::Save | Self::Home => {
+                true
+            }
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

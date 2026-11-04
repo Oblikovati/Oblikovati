@@ -176,6 +176,15 @@ fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<Gui
     if shell_button(ui, "New Part", GuiShellAction::NewPart, state) {
         selected.push(GuiShellAction::NewPart);
     }
+    for (label, action) in [
+        ("Sketch XY", GuiShellAction::StartSketchXY),
+        ("Finish Sketch", GuiShellAction::FinishSketch),
+    ] {
+        ui.same_line();
+        if shell_button(ui, label, action, state) {
+            selected.push(action);
+        }
+    }
 }
 
 fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {

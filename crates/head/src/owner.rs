@@ -185,6 +185,29 @@ impl<
             .map_err(|cause| format!("New Part: expected a created part document: {cause}"))?;
         Ok(true)
     }
+    fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
+        if !start {
+            self.finish_sketch_edit()?;
+            return Ok(true);
+        }
+        let document = self
+            .files
+            .workspace()
+            .active_document()
+            .ok_or("Sketch XY: expected an active part document")?;
+        self.create_sketch_for_edit(
+            document,
+            &oblikovati_model::history::DocumentSketchCreation {
+                name: "Sketch".into(),
+                placement: oblikovati_model::document_sketch::SketchPlacement::Fixed(
+                    oblikovati_model::sketch::SketchPlane::xy(),
+                ),
+                orientation: None,
+                project_origin: true,
+            },
+        )?;
+        Ok(true)
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],
