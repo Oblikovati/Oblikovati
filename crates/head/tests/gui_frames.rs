@@ -56,8 +56,13 @@ impl HeadWindow for FakeGuiWindow {
 #[derive(Default)]
 struct FakeGuiOwner {
     inputs: Vec<ViewportEvent>,
+    created_parts: usize,
 }
 impl HeadWork for FakeGuiOwner {
+    fn create_part_document(&mut self) -> Result<bool, String> {
+        self.created_parts += 1;
+        Ok(true)
+    }
     fn process_inputs(&mut self, events: &[ViewportEvent]) -> Result<bool, String> {
         self.inputs.extend(events);
         Ok(!events.is_empty())
@@ -77,6 +82,19 @@ impl HeadWork for FakeGuiOwner {
     fn finish(&mut self) -> Result<(), String> {
         Ok(())
     }
+}
+#[test]
+fn new_part_gui_action_reaches_the_owner_without_camera_input() {
+    let mut window = FakeGuiWindow::default();
+    window.packets.push_back(HeadGuiUpdate {
+        actions: vec![GuiShellAction::NewPart],
+        ..Default::default()
+    });
+    let mut owner = FakeGuiOwner::default();
+    assert!(advance_gui(&mut window, &mut owner, None).unwrap().changed);
+    assert_eq!(owner.created_parts, 1);
+    assert!(owner.inputs.is_empty());
+    assert!(window.inputs.is_empty());
 }
 #[test]
 fn gui_actions_use_existing_owner_and_camera_command_paths() {

@@ -12,6 +12,10 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Create a part through the document owner; example: `work.create_part_document()?`.
+    fn create_part_document(&mut self) -> Result<bool, String> {
+        Err("New Part: expected a document owner with part creation support".into())
+    }
     /// Consume a committed authoring update; example: `work.take_sketch_scene()?` after polling history.
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         Ok(None)

@@ -173,6 +173,9 @@ fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<Gui
         ui.same_line();
     }
     ui.new_line();
+    if shell_button(ui, "New Part", GuiShellAction::NewPart, state) {
+        selected.push(GuiShellAction::NewPart);
+    }
 }
 
 fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {

@@ -61,6 +61,9 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
+    fn create_part_document(&mut self) -> Result<bool, String> {
+        self.owner.create_part_document()
+    }
     fn startup_ready(&self) -> bool {
         self.owner.startup_ready()
     }

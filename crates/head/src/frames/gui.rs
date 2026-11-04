@@ -19,21 +19,26 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
     for action in &update.actions {
+        if *action == GuiShellAction::NewPart {
+            update.changed |= owner.create_part_document()?;
+            continue;
+        }
         let event = ViewportEvent::Input(ViewportInput::Key {
-            key: action_key(*action),
+            key: action_key(*action).ok_or("GUI action: expected a keyboard command")?,
             pressed: true,
         });
         update.changed |= dispatch_frame_input(window, owner, &event)?;
     }
     Ok(update)
 }
-fn action_key(action: GuiShellAction) -> ViewportKey {
-    match action {
+fn action_key(action: GuiShellAction) -> Option<ViewportKey> {
+    Some(match action {
+        GuiShellAction::NewPart => return None,
         GuiShellAction::Save => ViewportKey::Save,
         GuiShellAction::Undo => ViewportKey::Undo,
         GuiShellAction::Redo => ViewportKey::Redo,
         GuiShellAction::Home => ViewportKey::Home,
-    }
+    })
 }
 pub(super) fn dispatch_frame_input(
     window: &mut dyn HeadWindow,

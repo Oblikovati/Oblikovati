@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiShellAction {
+    NewPart,
     Save,
     Undo,
     Redo,
@@ -31,7 +32,7 @@ impl GuiShellAction {
         match self {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
-            Self::Save | Self::Home => true,
+            Self::NewPart | Self::Save | Self::Home => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

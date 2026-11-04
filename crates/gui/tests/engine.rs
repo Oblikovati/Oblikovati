@@ -128,6 +128,15 @@ fn vertex_positions(frame: &GuiFrame) -> Vec<[f32; 2]> {
 
 fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     let mut input = request();
+    input.events = vec![GuiInputEvent::PointerMoved([40., 68.])];
+    engine.frame(&input).unwrap();
+    input.events = vec![left_button_event(true)];
+    engine.frame(&input).unwrap();
+    input.events = vec![left_button_event(false)];
+    assert_eq!(
+        engine.frame(&input).unwrap().actions,
+        [GuiShellAction::NewPart]
+    );
     for (x, action) in [
         (30., GuiShellAction::Save),
         (75., GuiShellAction::Undo),

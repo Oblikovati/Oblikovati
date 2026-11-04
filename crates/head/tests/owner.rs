@@ -75,6 +75,18 @@ fn create(owner: &mut TestOwner, awake: &Receiver<()>) -> u64 {
     })
 }
 #[test]
+fn gui_new_part_creates_an_active_unsaved_document() {
+    let (mut owner, _) = owner();
+    assert!(owner.create_part_document().unwrap());
+    let workspace = owner.documents().workspace();
+    let first = workspace.active_document().unwrap();
+    assert_eq!(workspace.documents(), &[first]);
+    assert!(!owner.close_allowed().unwrap());
+    assert!(owner.create_part_document().unwrap());
+    assert_eq!(owner.documents().workspace().documents().len(), 2);
+    assert_ne!(owner.documents().workspace().active_document(), Some(first));
+}
+#[test]
 fn typed_workers_create_save_reopen_and_close_through_the_document_owner() {
     let (mut owner, awake) = owner();
     assert!(owner.close_allowed().unwrap());

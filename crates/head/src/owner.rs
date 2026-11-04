@@ -174,6 +174,17 @@ impl<
             transaction_open: session.in_transaction(),
         })
     }
+    fn create_part_document(&mut self) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .create(&oblikovati_api::wire::CreateDocumentArgs {
+                type_: "part".into(),
+                name: "Part".into(),
+                ..Default::default()
+            })
+            .map_err(|cause| format!("New Part: expected a created part document: {cause}"))?;
+        Ok(true)
+    }
     fn process_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],
