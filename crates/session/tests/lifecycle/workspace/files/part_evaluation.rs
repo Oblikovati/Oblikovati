@@ -2,7 +2,7 @@
 use super::*;
 #[allow(dead_code)]
 #[path = "../../../../../../test-utilities/rust/selected_sketch_prism.rs"]
-mod prism_fixture;
+pub(super) mod prism_fixture;
 use oblikovati_model::feature::{
     FeatureId, part::SketchPrismEvaluator, sketch_prism::ResolvedSketchPrism,
 };
