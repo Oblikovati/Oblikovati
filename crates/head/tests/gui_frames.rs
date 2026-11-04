@@ -66,6 +66,26 @@ fn refused_authoring_command_reports_feedback_without_stopping_the_window() {
     assert!(window.notices[0].message().contains("missing sketch"));
     assert!(!report_authoring_result(&mut window, Ok(false)).unwrap());
 }
+#[test]
+fn unavailable_sketch_commands_remain_local_feedback_and_keep_input_routing_alive() {
+    let mut window = FakeGuiWindow::default();
+    let mut owner = FakeGuiOwner::default();
+    for action in [
+        GuiShellAction::StartSketchXY,
+        GuiShellAction::FinishSketch,
+        GuiShellAction::Rectangle,
+    ] {
+        window.packets.push_back(HeadGuiUpdate {
+            actions: vec![action],
+            ..Default::default()
+        });
+        assert!(advance_gui(&mut window, &mut owner, None).unwrap().changed);
+    }
+    assert_eq!(window.notices.len(), 3);
+    assert!(owner.inputs.is_empty());
+    assert!(window.inputs.is_empty());
+    assert!(!advance_gui(&mut window, &mut owner, None).unwrap().changed);
+}
 #[derive(Default)]
 struct FakeGuiOwner {
     inputs: Vec<ViewportEvent>,
