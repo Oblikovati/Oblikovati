@@ -17,6 +17,13 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
     }
 }
 impl HeadWindow for ScriptedGuiWindow {
+    fn sketch_point(
+        &self,
+        pixel: [i32; 2],
+        plane: oblikovati_model::sketch::SketchPlane,
+    ) -> Result<Option<[f64; 2]>, String> {
+        self.native.sketch_point(pixel, plane)
+    }
     fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
         self.native.set_sketch_edit(edit)
     }
@@ -96,6 +103,36 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(owner.active_sketch_edit().is_some());
     click_shell_position(&mut window, &mut owner, [40, 107]);
     assert!(owner.placement_active());
+    let edit = owner.active_sketch_edit().unwrap();
+    for position in [[800, 400], [1000, 600]] {
+        window.scripted = [true, false]
+            .map(|pressed| {
+                ViewportEvent::Input(ViewportInput::Button {
+                    button: ViewportButton::Left,
+                    pressed,
+                    position,
+                    modifiers: Default::default(),
+                })
+            })
+            .into();
+        crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner)
+            .unwrap();
+    }
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(edit.document)
+            .unwrap()
+            .snapshot()
+            .sketches
+            .get(edit.sketch)
+            .unwrap()
+            .geometry()
+            .lines()
+            .len(),
+        4
+    );
     click_shell_position(&mut window, &mut owner, [210, 68]);
     assert!(owner.active_sketch_edit().is_none());
     assert!(!owner.placement_active());
