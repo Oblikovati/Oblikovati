@@ -4,6 +4,7 @@ use crate::{HeadOptions, HeadPresentation, HeadWorkStatus};
 use std::collections::VecDeque;
 #[derive(Default)]
 struct FakeGuiWindow {
+    notices: Vec<crate::DesktopCommandNotice>,
     packets: VecDeque<HeadGuiUpdate>,
     inputs: Vec<ViewportEvent>,
     states: Vec<oblikovati_gui::GuiCommandState>,
@@ -27,6 +28,10 @@ fn physical_command_dispatch_reuses_the_semantic_command_path() {
     assert_eq!(semantic_command_event(text), text);
 }
 impl HeadWindow for FakeGuiWindow {
+    fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
+        self.notices.push(notice);
+        Ok(())
+    }
     fn gui_frame(
         &mut self,
         _: Option<&ViewportEvent>,
@@ -52,6 +57,14 @@ impl HeadWindow for FakeGuiWindow {
     fn finish(&mut self) -> Result<(), String> {
         Ok(())
     }
+}
+#[test]
+fn refused_authoring_command_reports_feedback_without_stopping_the_window() {
+    let mut window = FakeGuiWindow::default();
+    assert!(report_authoring_result(&mut window, Err("missing sketch".into())).unwrap());
+    assert_eq!(window.notices.len(), 1);
+    assert!(window.notices[0].message().contains("missing sketch"));
+    assert!(!report_authoring_result(&mut window, Ok(false)).unwrap());
 }
 #[derive(Default)]
 struct FakeGuiOwner {
