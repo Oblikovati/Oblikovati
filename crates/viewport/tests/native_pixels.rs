@@ -43,7 +43,7 @@ fn open_fixture_window(name: &str, extent: [u32; 2]) -> NativeWindow {
     let x11 = NativeX11::open().unwrap();
     let display = Handle::new(
         AspectDisplayConnection::with_display_name(
-            &rustycad_tkernel::tcollection::AsciiString::from(name),
+            &martensite_tkernel::tcollection::AsciiString::from(name),
         )
         .unwrap(),
     );

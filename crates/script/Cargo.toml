@@ -14,4 +14,4 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 [target.'cfg(target_os = "linux")'.dependencies]
 mlua = { version = "=0.12.2", features = ["lua51", "vendored"] }
-rustix = { version = "=1.1.4", features = ["process"] }
+rustix = { version = "=1.1.5", features = ["process"] }

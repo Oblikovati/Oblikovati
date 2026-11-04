@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::sketch_structure::{self, SketchStructure};
 use crate::ViewportSketchPreview;
+use martensite_tkernel::quantity::{Color, NamedColor};
+use martensite_tkservice::aspect::AspectTypeOfLine;
+use martensite_tkv3d::v3d::V3dViewer;
 use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_placement_preview_with_policy,
     sample_sketch_preview_members,
 };
-use rustycad_tkernel::quantity::{Color, NamedColor};
-use rustycad_tkservice::aspect::AspectTypeOfLine;
-use rustycad_tkv3d::v3d::V3dViewer;
 #[derive(Default)]
 pub(super) struct SketchPreviewOverlay {
     pub(super) source: Option<(ViewportSketchPreview, f64)>,
@@ -106,4 +106,4 @@ impl SketchPreviewOverlay {
     }
 }
 
-use rustycad_tkservice::graphic3d::Graphic3dStructureSource;
+use martensite_tkservice::graphic3d::Graphic3dStructureSource;

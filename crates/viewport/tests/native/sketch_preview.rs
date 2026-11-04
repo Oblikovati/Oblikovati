@@ -48,7 +48,7 @@ fn native_sketch_preview_draws_clears_and_keeps_model_generation() {
     );
     view.close();
     assert!(view.set_sketch_preview(None).is_err());
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 fn verify_invalid_and_resize(view: &mut Viewport, packet: &ViewportSketchPreview) {
     let mut invalid = packet.clone();
@@ -138,7 +138,7 @@ fn verify_preview_fit_and_zoom(preview: ViewportSketchPreview) {
     );
     assert_eq!(view.capture().unwrap(), after);
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 
 #[test]
@@ -160,7 +160,7 @@ fn changing_only_preview_solver_policy_invalidates_the_cached_geometry() {
     assert!(error.contains("IterationLimit"), "{error}");
     assert!(!view.set_sketch_preview(Some(&accepted)).unwrap());
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 
 pub(super) fn recipe_parts(

@@ -32,7 +32,7 @@ fn native_sketch_projection_tracks_pixels_camera_history_and_surface_sizes() {
     view.close();
     assert!(view.sketch_point([1, 1], SketchPlane::xy()).is_err());
     assert!(view.sketch_pixel(SketchPlane::xy(), [0.; 2]).is_err());
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 fn verify_mapping(view: &mut Viewport) {
     let capture = complete_surface_frame(view);
@@ -84,5 +84,5 @@ fn native_projection_matches_independent_orthographic_coordinates_and_tilted_fra
     assert!((point[0] - 5. / 0.6).abs() < 1e-10);
     assert!((point[1] - 5.).abs() < 1e-10);
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }

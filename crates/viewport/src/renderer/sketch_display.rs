@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::sketch_structure::{self, SketchStructure};
 use crate::{ViewportSketchDecline, ViewportSketchDisplay};
+use martensite_tkernel::quantity::{Color, ColorSpace};
+use martensite_tkservice::aspect::AspectTypeOfLine;
+use martensite_tkv3d::v3d::V3dViewer;
 use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayEntity, SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_sketch_display,
 };
-use rustycad_tkernel::quantity::{Color, ColorSpace};
-use rustycad_tkservice::aspect::AspectTypeOfLine;
-use rustycad_tkv3d::v3d::V3dViewer;
 #[derive(Default)]
 pub(super) struct SketchDisplayOverlay {
     pub(super) source: Option<(Vec<ViewportSketchDisplay>, f64)>,
@@ -154,7 +154,7 @@ impl super::RenderView {
     }
 }
 
-use rustycad_tkservice::graphic3d::Graphic3dStructureSource;
+use martensite_tkservice::graphic3d::Graphic3dStructureSource;
 
 fn entity_line_style(entity: &SketchDisplayEntity) -> AspectTypeOfLine {
     if entity.centerline {

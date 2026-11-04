@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{types::valid_extent, x11::NativeWindow};
-use rustycad_tkernel::standard::Handle;
-use rustycad_tkservice::aspect::{AspectNeutralWindow, AspectWindow, AspectWindowMembers};
+use martensite_tkernel::standard::Handle;
+use martensite_tkservice::aspect::{AspectNeutralWindow, AspectWindow, AspectWindowMembers};
 pub(crate) enum ViewTarget {
     Native(Box<NativeWindow>),
     Offscreen(Handle<AspectNeutralWindow>),

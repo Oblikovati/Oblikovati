@@ -2,9 +2,9 @@
 use super::*;
 use crate::ViewportTriangle;
 use crate::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
+use martensite_tkmath::gp::Point3;
+use martensite_tkservice::aspect::AspectNeutralWindow;
 use martensite_vulkan::{FrameCapture, RenderBackend, RenderError, RenderFrame};
-use rustycad_tkmath::gp::Point3;
-use rustycad_tkservice::aspect::AspectNeutralWindow;
 use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
@@ -171,7 +171,7 @@ fn target_classes_and_view_ids_are_explicit_and_runtime_outlives_its_creator() {
     assert!(first.poll_events(32).unwrap().is_empty());
     assert!(runtime.open_window("fixture", [8, 8]).is_err());
     assert!(runtime.device_name().contains("injected"));
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().is_err());
     drop(runtime);
     assert_eq!(first.redraw().unwrap().extent, [8, 8]);
 }

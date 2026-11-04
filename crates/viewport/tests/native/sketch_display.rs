@@ -36,7 +36,7 @@ pub(super) fn close_display(runtime: &ViewportRuntime, view: &mut Viewport) {
     view.close();
     assert!(view.set_sketch_display(&[]).is_err());
     assert!(view.sketch_display_declines().is_err());
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 #[test]
 fn committed_geometry_survives_preview_clear_and_reports_local_failures() {

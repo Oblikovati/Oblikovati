@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkservice::aspect::AspectWindow;
+use martensite_tkservice::aspect::AspectWindow;
 struct FakeUnavailableTextProvider;
 impl FakeUnavailableTextProvider {
     fn admission(&self) -> Result<NativeInputMethod, String> {

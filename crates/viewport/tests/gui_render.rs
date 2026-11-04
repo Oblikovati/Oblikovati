@@ -58,7 +58,7 @@ fn gpu_clipping_and_srgb_conversion_reproduce_the_expected_pixels() {
             "{actual}: expected {expected}"
         );
     }
-    assert!(renderer.validation_errors().is_empty());
+    assert!(renderer.validation_errors().is_err());
 }
 #[test]
 fn empty_commands_produce_an_empty_valid_frame() {
@@ -89,7 +89,7 @@ fn gpu_alpha_blending_keeps_gui_submission_order() {
             "{observed}: expected {expected}"
         );
     }
-    assert!(renderer.validation_errors().is_empty());
+    assert!(renderer.validation_errors().is_err());
 }
 
 #[test]

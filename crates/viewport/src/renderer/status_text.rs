@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkernel::{ncollection::Vec2, quantity::NamedColor};
-use rustycad_tkservice::aspect::{
+use martensite_tkernel::{ncollection::Vec2, quantity::NamedColor};
+use martensite_tkservice::aspect::{
     AspectTypeOfDisplayText, AspectTypeOfStyleText, AspectTypeOfTriedronPosition,
 };
-use rustycad_tkservice::graphic3d::*;
+use martensite_tkservice::graphic3d::*;
 #[derive(Default)]
 pub(super) struct StatusTextOverlay {
     text: String,

@@ -8,8 +8,8 @@ mod layout;
 mod pixels;
 mod text;
 mod text_channel;
-use rustycad_tkernel::standard::Handle;
-use rustycad_tkservice::{
+use martensite_tkernel::standard::Handle;
+use martensite_tkservice::{
     aspect::{AspectDisplayConnection, AspectWindow, AspectXAtom},
     xw::XwWindow,
 };

@@ -121,7 +121,7 @@ fn prism_hole_pixels_remain_valid_when_the_drawable_is_wide() {
         assert_eq!(capture.extent, extent);
         verify_hole_pixels(&capture);
     }
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 fn sample(capture: &ViewportCapture, x: u32, y: u32) -> [u8; 4] {
     let offset = ((y * capture.extent[0] + x) * 4) as usize;

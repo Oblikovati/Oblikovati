@@ -35,7 +35,7 @@ fn native_pan_and_orbit_preserve_camera_invariants_and_reach_presented_pixels() 
     view.close();
     assert!(view.camera_state().is_err());
     assert!(view.navigate(ViewportNavigation::Pan([1, 0])).is_err());
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 fn verify_native_orbit(view: &mut Viewport) {
     view.set_camera(ViewportCamera::default()).unwrap();
@@ -82,7 +82,7 @@ fn anchored_zoom_round_trips_and_invalid_changes_preserve_completed_frames() {
     assert_eq!(restored.rgba, before.rgba);
     verify_camera_rejection(&mut view, &restored);
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 fn centered_navigation(factor: f64) -> ViewportNavigation {
     ViewportNavigation::Zoom {
@@ -116,7 +116,7 @@ fn fit_restores_offscreen_geometry_and_home_sets_the_go_isometric_direction() {
     assert_eq!(home.scene_generation, fitted.scene_generation);
     assert!(home.camera_generation > fitted.camera_generation);
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 fn verify_home_direction(view: &mut Viewport) {
     assert!(
@@ -167,7 +167,7 @@ fn previous_view_keeps_the_new_native_extent_after_resize() {
     assert_eq!(restored.extent, [192, 128]);
     assert!(!view.previous_view().unwrap());
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 
 fn expected_anchor_shift([width, height]: [u32; 2]) -> [f64; 3] {

@@ -18,7 +18,7 @@ fn native_status_uses_the_same_view_and_keeps_pixel_position_during_camera_navig
     assert_eq!(moved.overlay_generation, before.overlay_generation);
     verify_status_fit_and_clear(&mut view);
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }
 fn status_ink(capture: &ViewportCapture) -> Vec<[u32; 2]> {
     capture

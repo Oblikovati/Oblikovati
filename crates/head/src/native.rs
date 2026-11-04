@@ -160,7 +160,7 @@ impl HeadWindow for NativeHeadWindow {
         self.gui.take();
         let clipboard = self.clipboard.handoff_on_shutdown();
         self.view.close();
-        let mut errors = self.runtime.validation_errors();
+        let mut errors = self.runtime.validation_errors()?;
         if let Err(cause) = clipboard {
             errors.push(cause);
         }

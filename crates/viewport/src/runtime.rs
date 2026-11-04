@@ -6,8 +6,8 @@ use crate::{
     target::ViewTarget,
     x11::{NativeWindow, NativeX11},
 };
+use martensite_tkernel::standard::Handle;
 use martensite_vulkan::{Graphic3dRenderDriver, VulkanOptions};
-use rustycad_tkernel::standard::Handle;
 use std::{cell::Cell, collections::VecDeque, rc::Rc};
 #[path = "view_history.rs"]
 mod view_history;
@@ -85,9 +85,12 @@ impl ViewportRuntime {
     pub fn device_name(&self) -> String {
         self.state.driver.device_name()
     }
-    /// Read kernel Vulkan validation errors; example: `runtime.validation_errors()` after viewport acceptance.
-    pub fn validation_errors(&self) -> Vec<String> {
-        self.state.driver.validation_errors()
+    /// Read complete kernel Vulkan validation observations; example: `runtime.validation_errors()?` after viewport acceptance.
+    pub fn validation_errors(&self) -> Result<Vec<String>, String> {
+        self.state
+            .driver
+            .validation_errors()
+            .map_err(|cause| cause.to_string())
     }
 }
 /// Kernel views retire before their native target; the shared runtime outlives both.

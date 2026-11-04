@@ -23,9 +23,9 @@ fn native_gui_composes_over_model_and_replaces_clears_resizes_and_retires() {
     view.close();
     assert!(view.clear_gui_frame().is_err());
     assert!(
-        runtime.validation_errors().is_empty(),
+        runtime.validation_errors().unwrap().is_empty(),
         "{:?}",
-        runtime.validation_errors()
+        runtime.validation_errors().unwrap()
     );
 }
 fn gui_capture(view: &mut Viewport) -> ViewportCapture {
@@ -116,5 +116,5 @@ fn gui_ownership_survives_compiler_drop_and_does_not_enter_camera_fit() {
     view.clear_gui_frame().unwrap();
     verify_native(&mut view);
     view.close();
-    assert!(runtime.validation_errors().is_empty());
+    assert!(runtime.validation_errors().unwrap().is_empty());
 }

@@ -95,9 +95,9 @@ fn application_owned_linux_windows_present_resize_capture_and_remove() {
     second.close();
     prism::verify_meshed_prism(&runtime);
     assert!(
-        runtime.validation_errors().is_empty(),
+        runtime.validation_errors().unwrap().is_empty(),
         "{:?}",
-        runtime.validation_errors()
+        runtime.validation_errors().unwrap()
     );
 }
 

@@ -45,10 +45,10 @@ impl RenderView {
         };
         result.map_err(|cause| cause.to_string())
     }
-    fn fit_displayed(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
+    fn fit_displayed(&self, margin: f64) -> Result<(), martensite_tkernel::standard::Failure> {
         self.preview.without_preview(|| self.fit_scene(margin))
     }
-    fn fit_scene(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
+    fn fit_scene(&self, margin: f64) -> Result<(), martensite_tkernel::standard::Failure> {
         if self.structures.is_empty() && self.sketches.is_empty() {
             return Ok(());
         }
@@ -60,7 +60,7 @@ impl RenderView {
         camera.set_distance(distance);
         self.view.z_fit_all(1.)
     }
-    fn home_displayed(&self, margin: f64) -> Result<(), rustycad_tkernel::standard::Failure> {
+    fn home_displayed(&self, margin: f64) -> Result<(), martensite_tkernel::standard::Failure> {
         let camera = self.view.camera();
         // Preserve Go scene/camera.go Home: eye offset (+X,+Y,+Z), Y-up.
         camera.set_direction(&Direction3::new(-1., -1., -1.)?);
@@ -71,7 +71,7 @@ impl RenderView {
         &self,
         yaw: f64,
         pitch: f64,
-    ) -> Result<(), rustycad_tkernel::standard::Failure> {
+    ) -> Result<(), martensite_tkernel::standard::Failure> {
         // Preserve the Go yaw-then-pitch order and the current target as the orbit pivot.
         // Kernel 193572dc Rotate uses -Ax about up and Ay about right.
         self.view.rotate(-yaw, 0., 0., true)?;
@@ -81,7 +81,7 @@ impl RenderView {
         &self,
         factor: f64,
         anchor: Option<[i32; 2]>,
-    ) -> Result<(), rustycad_tkernel::standard::Failure> {
+    ) -> Result<(), martensite_tkernel::standard::Failure> {
         let (x, y) = match anchor {
             Some([x, y]) => self.view.convert_to_view(x, y)?,
             None => (0., 0.),
