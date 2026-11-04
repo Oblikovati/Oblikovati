@@ -61,6 +61,9 @@ impl<D: ScriptDocumentOwner> DesktopScripts<D> {
     }
 }
 impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
+    fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
+        self.owner.place_rectangle_from_gui()
+    }
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
         self.owner.edit_sketch_from_gui(start)
     }

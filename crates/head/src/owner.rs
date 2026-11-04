@@ -185,6 +185,17 @@ impl<
             .map_err(|cause| format!("New Part: expected a created part document: {cause}"))?;
         Ok(true)
     }
+    fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
+        let edit = self
+            .active_sketch_edit()
+            .ok_or("Rectangle: expected an active sketch edit")?;
+        self.start_sketch_placement(
+            edit.document,
+            edit.sketch,
+            crate::SketchPlacementTool::Rectangle,
+        )?;
+        Ok(true)
+    }
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
         if !start {
             self.finish_sketch_edit()?;

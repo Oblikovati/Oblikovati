@@ -19,6 +19,10 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
     for action in &update.actions {
+        if *action == GuiShellAction::Rectangle {
+            update.changed |= owner.place_rectangle_from_gui()?;
+            continue;
+        }
         if matches!(
             action,
             GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch
@@ -42,7 +46,10 @@ pub(super) fn advance_gui(
 }
 fn action_key(action: GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
-        GuiShellAction::NewPart | GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch => {
+        GuiShellAction::Rectangle
+        | GuiShellAction::NewPart
+        | GuiShellAction::StartSketchXY
+        | GuiShellAction::FinishSketch => {
             return None;
         }
         GuiShellAction::Save => ViewportKey::Save,

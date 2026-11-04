@@ -100,6 +100,18 @@ fn gui_sketch_xy_enters_and_finishes_the_owned_edit() {
     assert!(owner.edit_sketch_from_gui(false).is_err());
 }
 #[test]
+fn gui_rectangle_requires_an_edit_and_uses_owned_placement() {
+    let (mut owner, _) = owner();
+    assert!(owner.place_rectangle_from_gui().is_err());
+    owner.create_part_document().unwrap();
+    owner.edit_sketch_from_gui(true).unwrap();
+    assert!(owner.place_rectangle_from_gui().unwrap());
+    assert!(owner.placement_active());
+    owner.edit_sketch_from_gui(false).unwrap();
+    assert!(!owner.placement_active());
+    assert!(owner.place_rectangle_from_gui().is_err());
+}
+#[test]
 fn typed_workers_create_save_reopen_and_close_through_the_document_owner() {
     let (mut owner, awake) = owner();
     assert!(owner.close_allowed().unwrap());

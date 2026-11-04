@@ -12,6 +12,10 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Activate rectangle placement on the current sketch; example: `work.place_rectangle_from_gui()?`.
+    fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
+        Err("Rectangle: expected an owner with an active sketch".into())
+    }
     /// Enter or finish the owner sketch edit; example: `work.edit_sketch_from_gui(true)?`.
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
         Err(format!(

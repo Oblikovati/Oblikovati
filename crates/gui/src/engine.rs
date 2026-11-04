@@ -152,7 +152,7 @@ fn shell_panel(
 ) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
-        .size([300., 110.], Condition::Always)
+        .size([300., 150.], Condition::Always)
         .movable(false)
         .resizable(false)
         .build(|| {
@@ -184,6 +184,10 @@ fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<Gui
         if shell_button(ui, label, action, state) {
             selected.push(action);
         }
+    }
+    ui.new_line();
+    if shell_button(ui, "Rectangle", GuiShellAction::Rectangle, state) {
+        selected.push(GuiShellAction::Rectangle);
     }
 }
 
