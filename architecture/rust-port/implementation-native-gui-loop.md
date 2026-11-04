@@ -50,9 +50,9 @@ tests retain window, event, mapping, resize and swapchain checks.
 ## Native AMD diagnosis and corrected input order
 
 The original AMD command test compared GPU capture with client `XGetImage`.
-The [kernel oracle diagnosis](../../../RustyCADKernel/docs/evidence/native-gui-oracle-2026-10-14/README.md)
+The [kernel oracle diagnosis](https://github.com/Oblikovati/RustyCADKernel/blob/8fb379c187028a1440692460b1bb599978d764c9/docs/evidence/native-gui-oracle-2026-10-14/README.md)
 proved that the Xwayland client read can remain stale while the compositor
-displays the current GPU frame. The accepted [framebuffer decision](../../../RustyCADKernel/docs/adr/0016-framebuffer-images-for-rendering-acceptance.md)
+displays the current GPU frame. The accepted [framebuffer decision](https://github.com/Oblikovati/RustyCADKernel/blob/fc9d1b3a3b4dc7d05d29884d95b54bde989c30f7/docs/adr/0016-framebuffer-images-for-rendering-acceptance.md)
 replaces that GUI pixel oracle. The command test now compares completed
 framebuffers without an extra redraw to improve a comparison result.
 
