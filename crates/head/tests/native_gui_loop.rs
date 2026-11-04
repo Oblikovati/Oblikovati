@@ -133,6 +133,24 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
             .len(),
         4
     );
+    for (button_x, expected_lines) in [(75, 0), (120, 4)] {
+        click_shell(&mut window, &mut owner, button_x);
+        assert_eq!(
+            owner
+                .documents()
+                .workspace()
+                .session(edit.document)
+                .unwrap()
+                .snapshot()
+                .sketches
+                .get(edit.sketch)
+                .unwrap()
+                .geometry()
+                .lines()
+                .len(),
+            expected_lines
+        );
+    }
     click_shell_position(&mut window, &mut owner, [210, 68]);
     assert!(owner.active_sketch_edit().is_none());
     assert!(!owner.placement_active());
