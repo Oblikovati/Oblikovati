@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::protocol::{ParentFrame, WorkerFrame, read_frame, write_frame};
+use crate::protocol::{ParentFrame, read_frame};
+#[cfg(target_os = "linux")]
+use crate::protocol::{WorkerFrame, write_frame};
 use std::io::{self, BufReader};
 /// Serve exactly one isolated worker request; example: call from the private executable entry.
 /// This entry must never execute in the document-owning parent process.
