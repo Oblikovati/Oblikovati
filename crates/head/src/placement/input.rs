@@ -75,10 +75,11 @@ impl SketchPlacementState {
         }
     }
     pub(crate) fn field_prompt(&self) -> String {
+        let stage = self.prompt();
         self.preview
             .as_ref()
-            .map(|recipe| self.fields.prompt(&recipe.fields))
-            .unwrap_or_else(|| self.prompt())
+            .map(|recipe| format!("{stage}  {}", self.fields.prompt(&recipe.fields)))
+            .unwrap_or(stage)
     }
     pub(crate) fn fields_engaged(&self) -> bool {
         self.fields.engaged()

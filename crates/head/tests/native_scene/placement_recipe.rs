@@ -3,7 +3,10 @@ use super::copy_tests::{
     native_sketch_entities, verify_copy_readiness_and_undo, verify_native_entity_reference,
 };
 use super::*;
-use oblikovati_model::{history::SketchPlacementFieldLock, sketch::SketchPlacementRecipe};
+use oblikovati_model::{
+    history::{SketchPlacementCreationReport, SketchPlacementFieldLock},
+    sketch::{PlanarConstraint, SketchEntityId, SketchPlacementRecipe},
+};
 #[test]
 fn native_owner_commits_constrained_slot_recipes_and_reopens_their_locked_fields() {
     for curved in [false, true] {
@@ -19,7 +22,8 @@ fn native_owner_commits_constrained_slot_recipes_and_reopens_their_locked_fields
             &mut owner,
             &mut window,
             &original,
-            if curved { 4 } else { 3 },
+            // f1515ca8 anchors translation through the existing profile corner.
+            if curved { 2 } else { 1 },
         );
         Client::new(owner.document_host())
             .transactions()
@@ -68,6 +72,7 @@ fn verify_native_placement(owner: &mut NativeDesktopOwner, document: u64, curved
         .commit_sketch_placement(document, fixture::SKETCH, &recipe, &locks)
         .unwrap();
     assert_eq!(report.dimensions.len(), 2);
+    verify_existing_corner_anchor(owner, document, &report, &recipe);
     let client = Client::new(owner.document_host());
     let rows = native_sketch_entities(&client);
     for id in report.members {
@@ -76,6 +81,35 @@ fn verify_native_placement(owner: &mut NativeDesktopOwner, document: u64, curved
     assert_eq!(
         rows.iter().filter(|row| row.construction).count(),
         usize::from(!curved)
+    );
+}
+fn verify_existing_corner_anchor(
+    owner: &NativeDesktopOwner,
+    document: u64,
+    report: &SketchPlacementCreationReport,
+    recipe: &SketchPlacementRecipe,
+) {
+    let session = owner.documents().workspace().session(document).unwrap();
+    let geometry = session
+        .snapshot()
+        .sketches
+        .get(fixture::SKETCH)
+        .unwrap()
+        .geometry();
+    let origin_index = recipe
+        .points
+        .iter()
+        .position(|point| *point == [0., 0.])
+        .unwrap();
+    let expected = PlanarConstraint::Coincident {
+        points: [report.points[origin_index], SketchEntityId(1)],
+    };
+    assert!(
+        geometry
+            .constraints()
+            .iter()
+            .any(|constraint| report.relations.contains(&constraint.id)
+                && constraint.relation == expected)
     );
 }
 pub(super) fn verify_reopened_placement(
