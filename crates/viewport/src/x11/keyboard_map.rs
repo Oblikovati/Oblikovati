@@ -45,8 +45,8 @@ fn copy_physical_keymap(keyboard: &OwnedXkbMap<'_>) -> Result<NativeKeymap, Stri
     let mut copied = BTreeMap::new();
     for code in descriptor.min_key_code..=descriptor.max_key_code {
         // XKB names.keys is indexed by the descriptor's native keycode bounds.
-        let name = unsafe { (*names.keys.add(usize::from(code))).name }.map(|byte| byte as u8);
-        if let Some(key) = physical_key_name(name) {
+        let name = unsafe { (*names.keys.add(usize::from(code))).name };
+        if let Some(key) = native_position_key(name) {
             copied.insert(u32::from(code), key);
         }
     }
@@ -159,6 +159,10 @@ const XKB_POSITION_KEYS: &[([u8; 4], ViewportPhysicalKey)] = &[
     (*b"KPEN", ViewportPhysicalKey::KeypadEnter),
     (*b"KPEQ", ViewportPhysicalKey::KeypadEqual),
 ];
+fn native_position_key(name: [std::ffi::c_char; 4]) -> Option<ViewportPhysicalKey> {
+    // #3795: C char signedness varies by target; preserve the ABI bytes.
+    physical_key_name(name.map(|byte| byte.to_ne_bytes()[0]))
+}
 fn physical_key_name(name: [u8; 4]) -> Option<ViewportPhysicalKey> {
     XKB_POSITION_KEYS
         .iter()
@@ -168,6 +172,13 @@ fn physical_key_name(name: [u8; 4]) -> Option<ViewportPhysicalKey> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn native_char_position_names_preserve_physical_keys_and_unknown_bytes() {
+        let name = b"AD01".map(|byte| std::ffi::c_char::from_ne_bytes([byte]));
+        assert_eq!(native_position_key(name), Some(ViewportPhysicalKey::Q));
+        let unknown = [255, 128, 0, 0].map(|byte| std::ffi::c_char::from_ne_bytes([byte]));
+        assert_eq!(native_position_key(unknown), None);
+    }
     #[test]
     fn xkb_positions_are_independent_from_shifted_character_spelling() {
         assert_eq!(physical_key_name(*b"AD01"), Some(ViewportPhysicalKey::Q));
