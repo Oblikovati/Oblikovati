@@ -11,6 +11,8 @@ fn request() -> GuiFrameRequest {
             redo_label: Some("Edit".into()),
             transaction_open: false,
             authoring: GuiAuthoringContext::Part,
+            document: Some(1),
+            parameters: Vec::new(),
         },
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],

@@ -10,6 +10,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
+#[path = "owner_parameters.rs"]
+mod parameters_gui;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
 #[derive(Clone, Copy, Debug)]
 pub struct DesktopDispatchOptions {
@@ -169,11 +171,26 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            document: Some(document),
+            parameters: self.gui_parameter_rows()?,
             authoring: self.gui_authoring_context(document)?,
             undo_label: session.undo_label().map(str::to_owned),
             redo_label: session.redo_label().map(str::to_owned),
             transaction_open: session.in_transaction(),
         })
+    }
+    fn edit_parameter_from_gui(
+        &mut self,
+        mutation: oblikovati_gui::GuiParameterMutation,
+        request: &oblikovati_api::wire::ParameterSetArgs,
+    ) -> Result<bool, String> {
+        let client = oblikovati_api::client::Client::new(self.document_host());
+        match mutation {
+            oblikovati_gui::GuiParameterMutation::Add => client.parameters().add(request),
+            oblikovati_gui::GuiParameterMutation::Set => client.parameters().set(request),
+        }
+        .map_err(|cause| format!("Parameter {:?}: {cause}", request.name))?;
+        Ok(true)
     }
     fn create_part_document(&mut self) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())

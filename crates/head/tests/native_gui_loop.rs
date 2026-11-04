@@ -4,6 +4,8 @@ use crate::{HeadGuiUpdate, HeadWork};
 use oblikovati_gui::GuiCommandState;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
+#[path = "native_gui_loop/parameters.rs"]
+mod parameters;
 struct ScriptedGuiWindow {
     native: NativeHeadWindow,
     scripted: Vec<ViewportEvent>,
@@ -99,6 +101,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert_eq!(owner.documents().workspace().documents().len(), 1);
     assert!(owner.documents().workspace().active_document().is_some());
     assert!(!owner.close_allowed().unwrap());
+    parameters::create_size_parameter(&mut window, &mut owner);
     click_shell_position(&mut window, &mut owner, [110, 68]);
     assert!(owner.active_sketch_edit().is_some());
     click_shell_position(&mut window, &mut owner, [40, 107]);
@@ -132,10 +135,10 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
         oblikovati_viewport::ViewportPhysicalKey::Tab,
         oblikovati_viewport::ViewportPhysicalKey::Enter,
     ] {
-        type_placement_expression(&mut window, &mut owner, "10 mm");
+        type_native_text(&mut window, &mut owner, "size");
         press_shell_key(&mut window, &mut owner, key);
     }
-    verify_native_rectangle_dimensions(&owner, edit);
+    parameters::verify_rectangle(&owner, edit, 1.);
     assert_eq!(
         owner
             .documents()
@@ -172,10 +175,11 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     click_shell_position(&mut window, &mut owner, [210, 68]);
     assert!(owner.active_sketch_edit().is_none());
     assert!(!owner.placement_active());
+    parameters::edit_size_and_history(&mut window, &mut owner, edit);
     owner.finish().unwrap();
     window.finish().unwrap();
 }
-fn type_placement_expression(
+fn type_native_text(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,
     expression: &str,
@@ -185,31 +189,6 @@ fn type_placement_expression(
         .map(|character| ViewportEvent::Input(ViewportInput::Text(character)))
         .collect();
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
-}
-fn verify_native_rectangle_dimensions(owner: &NativeDesktopOwner, edit: crate::HeadSketchEdit) {
-    let session = owner
-        .documents()
-        .workspace()
-        .session(edit.document)
-        .unwrap();
-    assert_eq!(
-        session
-            .analyze_sketch(edit.sketch)
-            .unwrap()
-            .degrees_of_freedom,
-        0
-    );
-    let geometry = session
-        .snapshot()
-        .sketches
-        .get(edit.sketch)
-        .unwrap()
-        .geometry();
-    assert_eq!(geometry.dimensional_constraints().count(), 2);
-    for (constraint, _) in geometry.dimensional_constraints() {
-        assert!(!geometry.dimension_is_reference(constraint.id).unwrap());
-        assert!((geometry.measure_dimension(constraint.id).unwrap().value - 1.).abs() < 1e-9);
-    }
 }
 #[test]
 fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {

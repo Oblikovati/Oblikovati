@@ -32,6 +32,7 @@ pub struct GuiFrameOutput {
 pub struct GuiFrameEngine {
     context: Context,
     atlas: GuiAtlas,
+    parameter_editor: crate::parameters::GuiParameterEditor,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -39,7 +40,11 @@ impl GuiFrameEngine {
         require_vacant_context()?;
         let mut context = Context::create();
         let atlas = configure_owner_context(&mut context);
-        Ok(Self { context, atlas })
+        Ok(Self {
+            context,
+            atlas,
+            parameter_editor: Default::default(),
+        })
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
     pub fn with_clipboard(clipboard: crate::GuiClipboard) -> Result<Self, String> {
@@ -55,7 +60,7 @@ impl GuiFrameEngine {
     /// Example: `engine.frame(&request)?` returns draws, actions, and channel capture requests.
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
-        draw_controls(&mut self.context, request)
+        draw_controls(&mut self.context, request, &mut self.parameter_editor)
     }
 }
 
@@ -126,6 +131,7 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 fn draw_controls(
     context: &mut Context,
     request: &GuiFrameRequest,
+    parameter_editor: &mut crate::parameters::GuiParameterEditor,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
     let ui = context.frame();
@@ -135,7 +141,9 @@ fn draw_controls(
         &request.commands,
         request.status.as_deref(),
         &mut selected,
+        parameter_editor,
     );
+    parameter_editor.panel(ui, &request.commands, &mut selected);
     let snapshot = capture_frame(context.render(), request.extent)?;
     Ok(GuiFrameOutput {
         draws: snapshot,
@@ -149,6 +157,7 @@ fn shell_panel(
     state: &GuiCommandState,
     status: Option<&str>,
     selected: &mut Vec<GuiShellAction>,
+    parameter_editor: &mut crate::parameters::GuiParameterEditor,
 ) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
@@ -157,6 +166,8 @@ fn shell_panel(
         .resizable(false)
         .build(|| {
             shell_buttons(ui, state, selected);
+            ui.same_line();
+            parameter_editor.toolbar(ui, state);
             ui.text_wrapped(status.unwrap_or("Document commands"));
         });
 }
@@ -167,13 +178,13 @@ fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<Gui
         ("Redo", GuiShellAction::Redo),
         ("Home", GuiShellAction::Home),
     ] {
-        if shell_button(ui, label, action, state) {
+        if shell_button(ui, label, &action, state) {
             selected.push(action);
         }
         ui.same_line();
     }
     ui.new_line();
-    if shell_button(ui, "New Part", GuiShellAction::NewPart, state) {
+    if shell_button(ui, "New Part", &GuiShellAction::NewPart, state) {
         selected.push(GuiShellAction::NewPart);
     }
     for (label, action) in [
@@ -181,12 +192,12 @@ fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<Gui
         ("Finish Sketch", GuiShellAction::FinishSketch),
     ] {
         ui.same_line();
-        if shell_button(ui, label, action, state) {
+        if shell_button(ui, label, &action, state) {
             selected.push(action);
         }
     }
     ui.new_line();
-    if shell_button(ui, "Rectangle", GuiShellAction::Rectangle, state) {
+    if shell_button(ui, "Rectangle", &GuiShellAction::Rectangle, state) {
         selected.push(GuiShellAction::Rectangle);
     }
 }
@@ -205,7 +216,7 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
 fn shell_button(
     ui: &imgui::Ui,
     label: &str,
-    action: GuiShellAction,
+    action: &GuiShellAction,
     state: &GuiCommandState,
 ) -> bool {
     let disabled = ui.begin_disabled(!action.enabled(state));

@@ -4,7 +4,7 @@ use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::{ViewportInput, ViewportKey};
 use std::time::Duration;
 /// GUI work joins the existing event and wake paths; lifecycle events remain owner-visible.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct HeadGuiUpdate {
     pub changed: bool,
     pub consumed_input: bool,
@@ -19,6 +19,11 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
     for action in &update.actions {
+        if let GuiShellAction::Parameter { mutation, request } = action {
+            update.changed |=
+                report_authoring_result(window, owner.edit_parameter_from_gui(*mutation, request))?;
+            continue;
+        }
         if *action == GuiShellAction::Rectangle {
             update.changed |= report_authoring_result(window, owner.place_rectangle_from_gui())?;
             continue;
@@ -39,7 +44,7 @@ pub(super) fn advance_gui(
             continue;
         }
         let event = ViewportEvent::Input(ViewportInput::Key {
-            key: action_key(*action).ok_or("GUI action: expected a keyboard command")?,
+            key: action_key(action).ok_or("GUI action: expected a keyboard command")?,
             pressed: true,
         });
         update.changed |= dispatch_frame_input(window, owner, &event)?;
@@ -58,9 +63,10 @@ fn report_authoring_result(
         }
     }
 }
-fn action_key(action: GuiShellAction) -> Option<ViewportKey> {
+fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
-        GuiShellAction::Rectangle
+        GuiShellAction::Parameter { .. }
+        | GuiShellAction::Rectangle
         | GuiShellAction::NewPart
         | GuiShellAction::StartSketchXY
         | GuiShellAction::FinishSketch => {

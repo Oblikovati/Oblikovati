@@ -943,6 +943,7 @@ name = "oblikovati-gui"
 version = "0.1.0"
 dependencies = [
  "imgui",
+ "oblikovati-api",
  "oblikovati-viewport",
  "rustix",
 ]

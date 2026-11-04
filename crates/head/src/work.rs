@@ -71,6 +71,16 @@ pub trait HeadWork {
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         Ok(Default::default())
     }
+    /// Apply a parameter editor request on the document owner; example: `work.edit_parameter_from_gui(GuiParameterMutation::Add, &request)?`.
+    fn edit_parameter_from_gui(
+        &mut self,
+        mutation: oblikovati_gui::GuiParameterMutation,
+        request: &oblikovati_api::wire::ParameterSetArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "GUI parameter {mutation:?} {request:?}: expected a document parameter owner"
+        ))
+    }
 
     /// Apply native commands on the document owner; example: `work.process_inputs(&events)?` before polling.
     fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
