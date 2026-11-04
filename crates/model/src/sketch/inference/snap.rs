@@ -30,7 +30,7 @@ pub(super) fn propose(
         }
     }
 }
-fn nearest_point<'a>(
+pub(super) fn nearest_point<'a>(
     points: impl Iterator<Item = &'a SketchPoint2D>,
     position: [f64; 2],
     reach: f64,

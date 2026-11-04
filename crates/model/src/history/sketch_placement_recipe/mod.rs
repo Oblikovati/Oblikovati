@@ -12,6 +12,7 @@ use crate::{
 use oblikovati_solve::nonlinear::SolveOptions;
 mod error;
 mod fields;
+mod inference;
 pub use error::SketchPlacementCreationError;
 /// A user-entered expression and the preview's optional annotation position, in working units.
 #[derive(Clone, Debug, PartialEq)]
@@ -40,7 +41,7 @@ impl DocumentSnapshot {
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
         recipe.validate()?;
         let mut candidate = self.clone();
-        let mut report = candidate.append_placement(sketch, recipe, ids)?;
+        let mut report = candidate.append_placement(sketch, recipe, options, ids)?;
         fields::append(&mut candidate, recipe, locks, &mut report, options, ids)?;
         self.parameters = candidate.parameters;
         self.sketches = candidate.sketches;
@@ -50,13 +51,18 @@ impl DocumentSnapshot {
         &mut self,
         sketch: DocumentSketchId,
         recipe: &SketchPlacementRecipe,
+        options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
-        let mut geometry = self.sketches.get(sketch)?.geometry().clone();
+        let mut geometry = self.current_sketch_authoring_geometry(sketch, options)?;
         let points = append_defining_positions(&mut geometry, &recipe.points, ids)
             .map_err(SketchPlacementCreationError::Primitive)?;
+        // Primitives can add auxiliary points; infer before those can become fresh targets.
+        let inferred = inference::append(self, &mut geometry, sketch, &points, ids)?;
         let members = append_members(&mut geometry, sketch, recipe, &points, ids)?;
-        let relations = append_relations(&mut geometry, sketch, recipe, &points, &members, ids)?;
+        let mut relations =
+            append_relations(&mut geometry, sketch, recipe, &points, &members, ids)?;
+        relations.extend(inferred);
         self.sketches.replace_geometry(sketch, geometry)?;
         Ok(SketchPlacementCreationReport {
             sketch,

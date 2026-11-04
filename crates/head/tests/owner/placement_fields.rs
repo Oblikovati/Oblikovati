@@ -24,6 +24,13 @@ fn enter_expression(owner: &mut TestOwner, expression: &str, key: ViewportPhysic
 }
 fn parameter_rectangle_owner() -> (TestOwner, u64, DocumentSketchId) {
     let (mut owner, document, sketch) = placement_owner(SketchPlacementTool::Rectangle);
+    add_size_parameter(&mut owner);
+    owner
+        .start_sketch_placement(document, sketch, SketchPlacementTool::Rectangle)
+        .unwrap();
+    (owner, document, sketch)
+}
+fn add_size_parameter(owner: &mut TestOwner) {
     Client::new(owner.document_host())
         .parameters()
         .add(&ParameterSetArgs {
@@ -32,10 +39,95 @@ fn parameter_rectangle_owner() -> (TestOwner, u64, DocumentSketchId) {
             ..Default::default()
         })
         .unwrap();
+}
+fn origin_rectangle_owner() -> (TestOwner, u64, DocumentSketchId) {
+    let (mut owner, _awake) = owner();
+    owner.create_part_document().unwrap();
+    owner.edit_sketch_from_gui(true).unwrap();
+    add_size_parameter(&mut owner);
+    let edit = owner.active_sketch_edit().unwrap();
     owner
-        .start_sketch_placement(document, sketch, SketchPlacementTool::Rectangle)
+        .start_sketch_placement(edit.document, edit.sketch, SketchPlacementTool::Rectangle)
         .unwrap();
-    (owner, document, sketch)
+    (owner, edit.document, edit.sketch)
+}
+#[test]
+fn origin_coincidence_and_two_size_fields_remove_all_rectangle_freedom() {
+    let (mut owner, document, sketch) = origin_rectangle_owner();
+    begin_rectangle_preview(&mut owner);
+    enter_expression(&mut owner, "size", ViewportPhysicalKey::Tab);
+    enter_expression(&mut owner, "size", ViewportPhysicalKey::Enter);
+    verify_dimensions(&owner, document, sketch);
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .analyze_sketch(sketch)
+            .unwrap()
+            .degrees_of_freedom,
+        0
+    );
+    let geometry = rectangle_geometry(&owner, document, sketch);
+    assert_eq!(
+        geometry
+            .constraints()
+            .iter()
+            .filter(|constraint| matches!(
+                constraint.relation,
+                oblikovati_model::sketch::PlanarConstraint::Coincident { .. }
+            ))
+            .count(),
+        1
+    );
+}
+#[test]
+fn parameter_edits_and_history_keep_the_origin_rectangle_fully_constrained() {
+    let (mut owner, document, sketch) = origin_rectangle_owner();
+    begin_rectangle_preview(&mut owner);
+    enter_expression(&mut owner, "size", ViewportPhysicalKey::Tab);
+    enter_expression(&mut owner, "size", ViewportPhysicalKey::Enter);
+    assert_origin_size(&owner, document, sketch, 1.);
+    set_origin_size(&mut owner, "20 mm");
+    assert_origin_size(&owner, document, sketch, 2.);
+    deliver(
+        &mut owner,
+        &[key(oblikovati_viewport::ViewportKey::Undo, true)],
+    );
+    assert_origin_size(&owner, document, sketch, 1.);
+    deliver(
+        &mut owner,
+        &[key(oblikovati_viewport::ViewportKey::Redo, true)],
+    );
+    assert_origin_size(&owner, document, sketch, 2.);
+}
+fn set_origin_size(owner: &mut TestOwner, expression: &str) {
+    Client::new(owner.document_host())
+        .parameters()
+        .set(&ParameterSetArgs {
+            name: "size".into(),
+            expression: expression.into(),
+            ..Default::default()
+        })
+        .unwrap();
+}
+fn assert_origin_size(owner: &TestOwner, document: u64, sketch: DocumentSketchId, expected: f64) {
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert_eq!(
+        session.analyze_sketch(sketch).unwrap().degrees_of_freedom,
+        0
+    );
+    let geometry = session.snapshot().sketches.get(sketch).unwrap().geometry();
+    assert_eq!(geometry.dimensional_constraints().count(), 2);
+    for (constraint, parameter) in geometry.dimensional_constraints() {
+        assert_eq!(
+            session.snapshot().parameters.get(parameter).unwrap().source,
+            "size"
+        );
+        assert!(!geometry.dimension_is_reference(constraint.id).unwrap());
+        assert!((geometry.measure_dimension(constraint.id).unwrap().value - expected).abs() < 1e-9);
+    }
 }
 #[test]
 fn typed_rectangle_fields_commit_parameter_dimensions_in_one_history_step() {

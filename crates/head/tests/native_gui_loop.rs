@@ -105,7 +105,11 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(owner.placement_active());
     let edit = owner.active_sketch_edit().unwrap();
     {
-        let position = [800, 400];
+        let position = window
+            .native
+            .view
+            .sketch_pixel(edit.plane, [0., 0.])
+            .unwrap();
         window.scripted = [true, false]
             .map(|pressed| {
                 ViewportEvent::Input(ViewportInput::Button {
@@ -131,21 +135,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
         type_placement_expression(&mut window, &mut owner, "10 mm");
         press_shell_key(&mut window, &mut owner, key);
     }
-    assert_eq!(
-        owner
-            .documents()
-            .workspace()
-            .session(edit.document)
-            .unwrap()
-            .snapshot()
-            .sketches
-            .get(edit.sketch)
-            .unwrap()
-            .geometry()
-            .dimensional_constraints()
-            .count(),
-        2
-    );
+    verify_native_rectangle_dimensions(&owner, edit);
     assert_eq!(
         owner
             .documents()
@@ -195,6 +185,31 @@ fn type_placement_expression(
         .map(|character| ViewportEvent::Input(ViewportInput::Text(character)))
         .collect();
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
+}
+fn verify_native_rectangle_dimensions(owner: &NativeDesktopOwner, edit: crate::HeadSketchEdit) {
+    let session = owner
+        .documents()
+        .workspace()
+        .session(edit.document)
+        .unwrap();
+    assert_eq!(
+        session
+            .analyze_sketch(edit.sketch)
+            .unwrap()
+            .degrees_of_freedom,
+        0
+    );
+    let geometry = session
+        .snapshot()
+        .sketches
+        .get(edit.sketch)
+        .unwrap()
+        .geometry();
+    assert_eq!(geometry.dimensional_constraints().count(), 2);
+    for (constraint, _) in geometry.dimensional_constraints() {
+        assert!(!geometry.dimension_is_reference(constraint.id).unwrap());
+        assert!((geometry.measure_dimension(constraint.id).unwrap().value - 1.).abs() < 1e-9);
+    }
 }
 #[test]
 fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {

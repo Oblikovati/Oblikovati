@@ -28,6 +28,29 @@ pub struct SketchLinePlacementInference {
     pub direction: Option<SketchDirectionInference>,
 }
 impl Sketch2D {
+    /// Propose coincidence with an existing point under the shared interaction policy.
+    /// Example: `sketch.infer_point_coincidence([0.,0.], &new_points, &settings, policy)?`.
+    pub fn infer_point_coincidence(
+        &self,
+        position: [f64; 2],
+        excluded: &[SketchEntityId],
+        settings: &SketchSettings,
+        policy: SketchInferencePolicy,
+    ) -> Result<Option<SketchEntityId>, SketchError> {
+        policy.require_valid()?;
+        require_position(position)?;
+        if !settings.infer_constraints {
+            return Ok(None);
+        }
+        Ok(snap::nearest_point(
+            self.points()
+                .iter()
+                .filter(|point| !excluded.contains(&point.id)),
+            position,
+            policy.snap_distance_working,
+        )
+        .map(|point| point.id))
+    }
     /// Propose relations for a fresh segment without altering existing recipe state.
     /// Example: `sketch.infer_line_placement([[0.0, 0.0], [4.0, 0.01]], &settings, policy)?;`.
     pub fn infer_line_placement(
