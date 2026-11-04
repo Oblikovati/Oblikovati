@@ -63,6 +63,25 @@ fn extrusion_creation_joins_session_history_and_undo_redo() {
     assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
 }
 #[test]
+fn created_extrusion_tracks_parameter_edits_and_history_replay() {
+    let mut owner = session(7);
+    let id = owner
+        .create_sketch_prism("Parameter extrusion", fixture::selected_prism_definition())
+        .unwrap();
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    assert_eq!(*slot.current(&owner).unwrap().body(id).unwrap(), 2.);
+    edit_depth(&mut owner, "3 cm");
+    publish(&mut owner, &mut slot);
+    assert_eq!(*slot.current(&owner).unwrap().body(id).unwrap(), 3.);
+    owner.undo().unwrap();
+    publish(&mut owner, &mut slot);
+    assert_eq!(*slot.current(&owner).unwrap().body(id).unwrap(), 2.);
+    owner.redo().unwrap();
+    publish(&mut owner, &mut slot);
+    assert_eq!(*slot.current(&owner).unwrap().body(id).unwrap(), 3.);
+}
+#[test]
 fn missing_extrusion_sketch_is_refused_without_history_or_recipe_changes() {
     let mut owner = session(7);
     let before = owner.snapshot().work_geometry.features().len();
