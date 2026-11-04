@@ -17,6 +17,9 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
     }
 }
 impl HeadWindow for ScriptedGuiWindow {
+    fn set_sketch_edit(&mut self, edit: Option<crate::HeadSketchEdit>) -> Result<bool, String> {
+        self.native.set_sketch_edit(edit)
+    }
     fn gui_frame(
         &mut self,
         event: Option<&ViewportEvent>,
@@ -53,12 +56,19 @@ impl HeadWindow for ScriptedGuiWindow {
     }
 }
 fn click_shell(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, x: i32) {
+    click_shell_position(window, owner, [x, 45]);
+}
+fn click_shell_position(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    position: [i32; 2],
+) {
     window.scripted = [true, false]
         .map(|pressed| {
             ViewportEvent::Input(ViewportInput::Button {
                 button: ViewportButton::Left,
                 pressed,
-                position: [x, 45],
+                position,
                 modifiers: Default::default(),
             })
         })
@@ -71,6 +81,26 @@ fn click_shell(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, x
             .iter()
             .any(|event| matches!(event, ViewportEvent::Input(ViewportInput::Button { .. })))
     );
+}
+#[test]
+fn native_new_part_button_creates_and_selects_an_unsaved_document() {
+    let native = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let mut window = scripted_window(native);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    click_shell_position(&mut window, &mut owner, [40, 68]);
+    assert_eq!(owner.documents().workspace().documents().len(), 1);
+    assert!(owner.documents().workspace().active_document().is_some());
+    assert!(!owner.close_allowed().unwrap());
+    click_shell_position(&mut window, &mut owner, [110, 68]);
+    assert!(owner.active_sketch_edit().is_some());
+    click_shell_position(&mut window, &mut owner, [40, 107]);
+    assert!(owner.placement_active());
+    click_shell_position(&mut window, &mut owner, [210, 68]);
+    assert!(owner.active_sketch_edit().is_none());
+    assert!(!owner.placement_active());
+    owner.finish().unwrap();
+    window.finish().unwrap();
 }
 #[test]
 fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {
