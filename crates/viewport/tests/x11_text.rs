@@ -115,9 +115,10 @@ fn root_style_admission_rejects_empty_and_foreign_style_sets() {
         count_styles: 1,
         supported_styles: offered.as_mut_ptr(),
     };
-    assert!(unsafe { supported_style(&styles, 0x408) }.is_ok());
+    let copied = unsafe { copy_input_styles(&styles) }.unwrap();
+    assert!(supported_style(&copied, 0x408).is_ok());
     assert!(
-        unsafe { supported_style(&styles, 0x402) }
+        supported_style(&copied, 0x402)
             .unwrap_err()
             .contains("1026")
     );
@@ -125,7 +126,23 @@ fn root_style_admission_rejects_empty_and_foreign_style_sets() {
         count_styles: 0,
         supported_styles: std::ptr::null_mut(),
     };
-    assert!(unsafe { supported_style(&styles, 0x408) }.is_err());
+    assert!(unsafe { copy_input_styles(&styles) }.is_err());
+}
+#[test]
+fn admitted_input_styles_remain_owned_after_the_native_list_is_released() {
+    let copied = {
+        let mut offered = vec![0x408, 0x402];
+        let styles = NativeInputStyles {
+            count_styles: 2,
+            supported_styles: offered.as_mut_ptr(),
+        };
+        let copied = unsafe { copy_input_styles(&styles) }.unwrap();
+        offered.fill(0);
+        copied
+    };
+    assert_eq!(copied, [0x408, 0x402]);
+    assert!(supported_style(&copied, 0x408).is_ok());
+    assert!(supported_style(&[], 0x408).is_err());
 }
 #[test]
 fn provider_retirement_is_idempotent_and_invalidates_its_owned_liveness_flag() {
