@@ -1,30 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use serde::Deserialize;
+use crate::fetched_source::{FetchedPackage, locked_source_package};
 use std::path::PathBuf;
-#[derive(Deserialize)]
-struct HelpMetadata {
-    packages: Vec<HelpPackage>,
-}
-#[derive(Deserialize)]
-struct HelpPackage {
-    name: String,
-    version: String,
-    source: Option<String>,
-    manifest_path: PathBuf,
-}
 pub(super) fn api_source(
     root: &Path,
     runner: &dyn Runner,
     pin: &ReleasedDependency,
 ) -> BuildResult<PathBuf> {
-    let metadata = metadata(root, runner)?;
-    let package = metadata
-        .packages
-        .iter()
-        .find(|package| package.name == "oblikovati-api")
-        .ok_or("Cargo help metadata: expected the pinned oblikovati-api package")?;
-    validate_package(package, pin)?;
+    let package = locked_source_package(root, runner, "oblikovati-api")?;
+    validate_package(&package, pin)?;
     let parent = package
         .manifest_path
         .parent()
@@ -37,7 +21,7 @@ pub(super) fn api_source(
         })?;
     Ok(parent.join("go"))
 }
-fn validate_package(package: &HelpPackage, pin: &ReleasedDependency) -> BuildResult<()> {
+fn validate_package(package: &FetchedPackage, pin: &ReleasedDependency) -> BuildResult<()> {
     let source = package.source.as_deref().unwrap_or_default();
     let repository = source
         .split(['?', '#'])
@@ -54,15 +38,4 @@ fn validate_package(package: &HelpPackage, pin: &ReleasedDependency) -> BuildRes
         ));
     }
     Ok(())
-}
-
-fn metadata(root: &Path, runner: &dyn Runner) -> BuildResult<HelpMetadata> {
-    let output = runner.output(
-        root,
-        "cargo",
-        &["metadata", "--locked", "--format-version", "1"],
-    )?;
-    let metadata: HelpMetadata = serde_json::from_str(&output)
-        .map_err(|error| format!("Cargo help metadata: expected package records: {error}"))?;
-    Ok(metadata)
 }

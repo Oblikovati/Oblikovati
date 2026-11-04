@@ -22,11 +22,52 @@ struct ReleaseAsset {
 struct CargoLock {
     package: Vec<LockedPackage>,
 }
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct LockedPackage {
     name: String,
     version: String,
     source: Option<String>,
+}
+
+/// Admit the same source Cargo locked; example: `require_locked_source(root, &package)?` before executing SDK tooling.
+pub(crate) fn require_locked_source(
+    root: &Path,
+    package: &crate::fetched_source::FetchedPackage,
+) -> BuildResult<()> {
+    let lock = read_lockfile(&root.join("Cargo.lock"))?;
+    let expected = unique_locked_package(&lock, &package.name)?;
+    if package.source.is_none()
+        || package.source != expected.source
+        || package.version != expected.version
+    {
+        return Err(format!(
+            "Cargo source {} {} {:?}: expected locked {} {:?}",
+            package.name, package.version, package.source, expected.version, expected.source
+        ));
+    }
+    Ok(())
+}
+
+fn read_lockfile(path: &Path) -> BuildResult<CargoLock> {
+    toml::from_str(&read_text(path)?).map_err(|error| {
+        format!(
+            "{}: expected Cargo.lock package records: {error}",
+            path.display()
+        )
+    })
+}
+
+fn unique_locked_package<'a>(lock: &'a CargoLock, name: &str) -> BuildResult<&'a LockedPackage> {
+    let mut found = lock.package.iter().filter(|entry| entry.name == name);
+    let package = found
+        .next()
+        .ok_or_else(|| format!("Cargo source {name:?}: expected a lockfile package"))?;
+    if found.next().is_some() {
+        return Err(format!(
+            "Cargo source {name:?}: expected one lockfile package, found multiple versions"
+        ));
+    }
+    Ok(package)
 }
 
 pub(crate) fn check_pins(root: &Path) -> BuildResult<()> {
@@ -39,8 +80,7 @@ pub(crate) fn check_pins(root: &Path) -> BuildResult<()> {
 }
 
 fn check_renderer_pin(root: &Path) -> BuildResult<()> {
-    let lock: CargoLock = toml::from_str(&read_text(&root.join("Cargo.lock"))?)
-        .map_err(|error| format!("renderer lock: expected Cargo packages: {error}"))?;
+    let lock = read_lockfile(&root.join("Cargo.lock"))?;
     for required in ["martensite-vulkan", "martensite-tkv3d"] {
         if !lock.package.iter().any(|package| package.name == required) {
             return Err(format!(
@@ -148,12 +188,7 @@ pub(crate) fn locked_crates(
     dependency: &ReleasedDependency,
 ) -> BuildResult<Vec<String>> {
     validate_pin(dependency)?;
-    let lock: CargoLock = toml::from_str(&read_text(lock_path)?).map_err(|error| {
-        format!(
-            "{}: expected Cargo.lock packages: {error}",
-            lock_path.display()
-        )
-    })?;
+    let lock = read_lockfile(lock_path)?;
     let packages = lock
         .package
         .iter()

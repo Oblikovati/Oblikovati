@@ -8,9 +8,11 @@ mod dependencies;
 mod distribution;
 mod docs;
 mod driver;
+mod fetched_source;
 mod linux;
 mod macos;
 mod native_package;
+mod native_validation;
 mod packaging;
 mod platform;
 mod process;
@@ -46,6 +48,9 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
     match arguments {
         [task @ ("build" | "test" | "lint")] => quality::run(root, runner, task),
         ["matrix"] => print_matrix(),
+        ["native-validation", directory, environment] => {
+            native_validation::prepare(root, runner, Path::new(directory), Path::new(environment))
+        }
         ["version", channel] => print_version(root, runner, channel),
         [task @ ("native" | "gate" | "docs" | "tools" | "script-docs" | "script-docs-check")] => {
             local_task(task, root, runner)

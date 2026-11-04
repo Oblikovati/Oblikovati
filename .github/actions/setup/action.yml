@@ -7,6 +7,15 @@ inputs:
 runs:
   using: composite
   steps:
+    - if: runner.os == 'Windows'
+      shell: bash
+      # Cargo's Git dependency checkout must admit the kernel's long evidence paths.
+      run: git config --global core.longpaths true
+    - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      with:
+        # Native ABI fixtures compile against the pinned API's Go 1.27 contract.
+        go-version: '1.27.0'
+        cache: false
     - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
       with:
         toolchain: 1.99.0
@@ -26,6 +35,10 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config xvfb mesa-vulkan-drivers vulkan-validationlayers glslc
+        printf '%s\n' 'XMODIFIERS=@im=none' >> "$GITHUB_ENV"
+    - if: runner.os == 'Linux' && runner.arch == 'X64'
+      shell: bash
+      run: cargo xtask native-validation "$RUNNER_TEMP/oblikovati-vulkan" "$GITHUB_ENV"
     - if: runner.os == 'macOS'
       shell: bash
       run: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config

@@ -4,6 +4,17 @@ use super::*;
 use crate::{process::tests::FakeRunner, release_config::tests::config, tree::tests::FixtureTree};
 
 #[test]
+fn source_installation_refuses_ambiguous_locked_packages() {
+    let lock: CargoLock = toml::from_str("[[package]]\nname='wanted'\nversion='1.0.0'\n[[package]]\nname='wanted'\nversion='2.0.0'\n").unwrap();
+    assert!(
+        unique_locked_package(&lock, "wanted")
+            .unwrap_err()
+            .contains("multiple versions")
+    );
+    assert!(unique_locked_package(&lock, "missing").is_err());
+}
+
+#[test]
 fn renderer_pin_rejects_local_and_changed_sources() {
     let mut package = LockedPackage {
         name: "martensite-vulkan".into(),

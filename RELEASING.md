@@ -7,17 +7,30 @@ and [ADR-0013](architecture/decisions/ADR-0013-packaging-and-release.md).
 
 The application port is incomplete. The Cargo workspace contains the build tool,
 model/storage/session foundations, a CLI, and a native head with saved prism
-display and camera navigation. Dear ImGui chrome and editing controls remain
-open work. A passing gate tests the code that exists.
+display and camera navigation. Dear ImGui controls create Parts, start and finish
+sketches, draw rectangles, and edit driving parameters. The complete cube UI
+journey, ribbon parity, and native file dialogs remain open. A passing gate tests
+the code that exists.
 Application package and publication preflight checks must fail until the real
 application, released dependencies, resources, and native acceptance tests exist.
 
 ## Local commands
 
-Install Rust with rustup, Node.js 24.15.0, npm, Git, Make, curl, and tar. The
+Install Rust with rustup, Node.js 24.15.0, npm, Git, Make, curl, and tar. Native
+Go add-in fixtures also require Go 1.27.0 and a C compiler. The
 repository pins Rust 1.99.0, including rustfmt, Clippy, and LLVM tools.
 `make tools` installs the locked npm tools, cargo-llvm-cov 0.9.1, and actionlint
 1.7.7. The actionlint archive has a checked-in SHA-256 pin for each host.
+
+Windows source dependency checkouts require Git long-path support:
+`git config --global core.longpaths true`. The shared CI setup enables it before
+Cargo fetches the kernel source.
+
+Linux x86_64 CI prepares Vulkan validation and lavapipe through the installer in
+the pinned Martensite source. `cargo xtask native-validation CACHE ENVIRONMENT`
+verifies the source against `Cargo.lock`, then writes the installer's environment
+settings to `ENVIRONMENT` in GitHub environment-file format. The kernel owns the
+archive URLs and checksums. Xvfb tests select the local XIM provider explicitly.
 
 ```sh
 make tools
