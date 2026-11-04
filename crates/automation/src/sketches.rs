@@ -13,6 +13,7 @@ mod dimensions;
 mod drive_dimension;
 mod entities;
 mod indices;
+pub(crate) mod inspection;
 mod move_dimension;
 mod owner;
 mod references;
@@ -48,7 +49,9 @@ pub const SKETCH_COMMAND_METHODS: [&str; 12] = [
     METHOD_SKETCH_ADD_DIMENSION,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 6] = [
+pub const SKETCH_QUERY_METHODS: [&str; 8] = [
+    METHOD_SKETCH_LIST,
+    METHOD_SKETCH_GET,
     METHOD_SKETCH_CONSTRAINTS,
     METHOD_SKETCH_DIMENSIONS,
     METHOD_SKETCH_CONSTRAINT_STATUS,
@@ -60,7 +63,11 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     files: &FileWorkspace<O, W, F>,
     method: &str,
     request: &[u8],
+    editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if [METHOD_SKETCH_LIST, METHOD_SKETCH_GET].contains(&method) {
+        return inspection::query(files, method, request, editing);
+    }
     if method == METHOD_SKETCH_DIMENSIONS {
         return dimensions::query(files, crate::decode(method, request)?);
     }

@@ -28,7 +28,9 @@ pub use selection_events::{
 };
 mod options;
 mod settings_edit;
+mod sketch_edit_state;
 mod sketch_inference;
+pub use sketch_edit_state::SketchInspectionEdit;
 mod sketches;
 pub use edit::EDIT_METHODS;
 pub use host::SessionHost;

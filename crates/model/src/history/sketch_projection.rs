@@ -66,6 +66,16 @@ impl BorrowedSketchProjectionInputs<'_> {
 }
 
 impl DocumentSnapshot {
+    /// Inspect retained solve evidence against current parameters and projected anchors.
+    /// Example: `snapshot.document_sketch_health(id)?` before displaying a health badge.
+    pub fn document_sketch_health(
+        &self,
+        id: DocumentSketchId,
+    ) -> Result<crate::document_sketch::PlacedSketchHealth<'_>, SketchError> {
+        let placed = self.sketches.get(id)?;
+        let projections = self.resolve_sketch_projected_points(id);
+        Ok(placed.health_with_projection_inputs(&self.parameters, &projections))
+    }
     /// Resolve saved anchors from the current immutable owner; example: `snapshot.resolve_sketch_projected_points(id)?`.
     pub fn resolve_sketch_projected_points(
         &self,

@@ -12,6 +12,17 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(crate) fn sketch_inspection_edit(
+        &self,
+    ) -> Option<oblikovati_automation::SketchInspectionEdit> {
+        self.sketch_edit.as_ref().map(|(document, watch, focus)| {
+            oblikovati_automation::SketchInspectionEdit::new(
+                *document,
+                watch.clone(),
+                focus.clone(),
+            )
+        })
+    }
     pub(crate) fn gui_authoring_context(
         &self,
         document: u64,

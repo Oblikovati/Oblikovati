@@ -127,6 +127,16 @@ impl HeadWork for IdleHeadWork {
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_sketch_work {
     ($owner:ident) => {
+        // #3796: an add-in layer must retain the same UI authoring operations as the script layer.
+        fn create_part_document(&mut self) -> Result<bool, String> {
+            self.$owner.create_part_document()
+        }
+        fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
+            self.$owner.edit_sketch_from_gui(start)
+        }
+        fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
+            self.$owner.place_rectangle_from_gui()
+        }
         fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
             self.$owner.decline_sketch_edit(cause)
         }

@@ -494,3 +494,6 @@ mod constraint_list;
 
 #[path = "sketch_api/selection_events.rs"]
 mod selection_events;
+
+#[path = "sketch_api/inspection.rs"]
+mod inspection;

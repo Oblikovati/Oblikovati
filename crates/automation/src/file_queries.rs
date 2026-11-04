@@ -6,7 +6,9 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 11] = [
+pub const FILE_QUERY_METHODS: [&str; 13] = [
+    METHOD_SKETCH_LIST,
+    METHOD_SKETCH_GET,
     METHOD_DOCUMENTS_LIST,
     METHOD_PARAMETERS_DERIVED_TABLES_LIST,
     METHOD_SKETCH_CONSTRAINT_STATUS,
@@ -24,13 +26,22 @@ pub(crate) mod derived;
 /// Immutable API access to file-owned documents and their session state.
 pub struct FileQueryHost<'a, O, W, F> {
     files: &'a FileWorkspace<O, W, F>,
+    sketch_edit: Option<crate::SketchInspectionEdit>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
     FileQueryHost<'a, O, W, F>
 {
     /// Borrow file-owned state; example: `Client::new(FileQueryHost::new(&files))`.
     pub fn new(files: &'a FileWorkspace<O, W, F>) -> Self {
-        Self { files }
+        Self {
+            files,
+            sketch_edit: None,
+        }
+    }
+    /// Supply the live desktop edit guards; example: `host.with_sketch_edit(Some(edit.clone()))`.
+    pub fn with_sketch_edit(mut self, edit: Option<crate::SketchInspectionEdit>) -> Self {
+        self.sketch_edit = edit;
+        self
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
@@ -44,7 +55,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             return crate::datums::query(self.files, method, request);
         }
         if crate::SKETCH_QUERY_METHODS.contains(&method) {
-            return crate::sketches::query(self.files, method, request);
+            let editing = self
+                .sketch_edit
+                .as_ref()
+                .and_then(|edit| edit.current(self.files.workspace()));
+            return crate::sketches::query(self.files, method, request, editing);
         }
         if method == METHOD_PARAMETERS_DERIVED_TABLES_LIST {
             return encode(&derived::list(self.files)?);
