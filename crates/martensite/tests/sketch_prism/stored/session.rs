@@ -21,6 +21,47 @@ impl TransactionObserver for NativeResultObserver {
 type NativePartSession = DocumentSession<NativeResultObserver>;
 type NativePartSlot =
     PartEvaluationSlot<PrismProbeSnapshot, oblikovati_martensite::EvaluationFailure>;
+#[test]
+fn session_created_extrusion_builds_exact_faces_through_parameter_history() {
+    let mut snapshot = selected_prism_document();
+    snapshot.work_geometry = Default::default();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    let history = DocumentEditHistory::new(snapshot, ids).unwrap();
+    let mut owner = DocumentSession::new(7, history, NativeResultObserver);
+    let id = owner
+        .create_sketch_prism("Extrude", stored_definition())
+        .unwrap();
+    let mut slot = NativePartSlot::default();
+    assert_created_faces(&mut owner, &mut slot, id, [6., 6., 8., 8., 12., 12.]);
+    native_depth_edit(&mut owner);
+    assert_created_faces(&mut owner, &mut slot, id, [9., 9., 12., 12., 12., 12.]);
+    owner.undo().unwrap();
+    assert_created_faces(&mut owner, &mut slot, id, [6., 6., 8., 8., 12., 12.]);
+    owner.redo().unwrap();
+    assert_created_faces(&mut owner, &mut slot, id, [9., 9., 12., 12., 12., 12.]);
+}
+fn assert_created_faces(
+    owner: &mut NativePartSession,
+    slot: &mut NativePartSlot,
+    id: FeatureId,
+    expected: [f64; 6],
+) {
+    publish_native(owner, slot);
+    let body = slot.current(owner).unwrap().body(id).unwrap();
+    let report = body.report();
+    assert!(report.topology.solid);
+    assert_eq!(report.topology.faces, 6);
+    assert_eq!(report.topology.edges, 12);
+    assert_eq!(report.topology.vertices, 8);
+    assert_eq!(report.faces.len(), expected.len());
+    assert_source_roles(report);
+    assert!(report.faces.iter().all(|face| face.loops == 1));
+    let mut areas: Vec<f64> = report.faces.iter().map(|face| face.area).collect();
+    areas.sort_by(f64::total_cmp);
+    for (area, expected_area) in areas.into_iter().zip(expected) {
+        assert_volume(area, expected_area);
+    }
+}
 fn native_part_session() -> NativePartSession {
     let document = selected_prism_document();
     let ids = RecipeIdAllocator::restore(None, document.parameters.ids()).unwrap();
