@@ -63,6 +63,20 @@ fn extrusion_creation_joins_session_history_and_undo_redo() {
     assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
 }
 #[test]
+fn extrusion_creation_obeys_an_explicit_transaction_abort() {
+    let mut owner = session(7);
+    let before = owner.snapshot().work_geometry.features().len();
+    owner.begin("Grouped extrusion").unwrap();
+    owner
+        .create_sketch_prism("Extrude", fixture::selected_prism_definition())
+        .unwrap();
+    assert!(owner.in_transaction());
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
+    owner.abort().unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before);
+    assert!(owner.undo_labels().is_empty());
+}
+#[test]
 fn rejected_extrusion_reply_preserves_recipe_and_history_but_reserves_identity() {
     let mut owner = session(7);
     let before = owner.snapshot().work_geometry.features().len();
