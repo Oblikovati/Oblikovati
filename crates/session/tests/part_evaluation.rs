@@ -49,6 +49,40 @@ impl SketchPrismEvaluator for FakePrismEvaluator {
 }
 type PartSession = DocumentSession<RecordingPartObserver>;
 type PartSlot = PartEvaluationSlot<f64, &'static str>;
+#[test]
+fn extrusion_creation_joins_session_history_and_undo_redo() {
+    let mut owner = session(7);
+    let before = owner.snapshot().work_geometry.features().len();
+    owner
+        .create_sketch_prism("Second extrusion", fixture::selected_prism_definition())
+        .unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
+    owner.undo().unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before);
+    owner.redo().unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
+}
+#[test]
+fn rejected_extrusion_reply_preserves_recipe_and_history_but_reserves_identity() {
+    let mut owner = session(7);
+    let before = owner.snapshot().work_geometry.features().len();
+    let mut attempted = None;
+    let result: Result<(), _> = owner.create_sketch_prism_projected(
+        "Rejected extrusion",
+        fixture::selected_prism_definition(),
+        |created| {
+            attempted = Some(created.unwrap());
+            Err("reply encoding refused")
+        },
+    );
+    assert!(result.is_err());
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before);
+    assert!(owner.undo_labels().is_empty());
+    let next = owner
+        .create_sketch_prism("Accepted extrusion", fixture::selected_prism_definition())
+        .unwrap();
+    assert_ne!(Some(next), attempted);
+}
 fn session(id: u64) -> PartSession {
     let document = fixture::selected_prism_document();
     let ids = RecipeIdAllocator::restore(None, document.parameters.ids()).unwrap();

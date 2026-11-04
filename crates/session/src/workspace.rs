@@ -13,6 +13,7 @@ mod lifecycle;
 mod save;
 mod sketch_inference;
 pub use sketch_inference::SketchInferenceCommandError;
+mod prism_create;
 mod sketch_construction;
 mod sketch_copy;
 mod sketch_create;

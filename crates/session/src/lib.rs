@@ -13,6 +13,7 @@ mod refresh;
 pub mod selection;
 mod sketch_inference;
 pub use sketch_inference::SketchInferenceProjectionInput;
+mod prism_create;
 mod sketch_construction;
 mod sketch_create;
 mod sketch_dimension_create;
