@@ -14,6 +14,30 @@ mod isolation;
 #[path = "../../addin-host/tests/support/resources.rs"]
 mod resources;
 use controlled_window::CloseWhenReadyWindow;
+
+#[test]
+fn addin_wrapper_keeps_part_and_sketch_authoring_on_the_document_owner() {
+    let case = "native::addin_services_tests::addin_wrapper_keeps_part_and_sketch_authoring_on_the_document_owner";
+    if isolation::case("OBLIKOVATI_ADDIN_AUTHORING", case) {
+        return;
+    }
+    let mut window = NativeHeadWindow::open().unwrap();
+    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let mut services = NativeAddInDesktop::new(
+        &mut owner,
+        Default::default(),
+        NativeOwnerWake(window.wake.clone()),
+    )
+    .unwrap();
+    assert!(services.create_part_document().unwrap());
+    assert!(services.edit_sketch_from_gui(true).unwrap());
+    assert!(services.sketch_edit().is_some());
+    assert!(services.place_rectangle_from_gui().unwrap());
+    assert!(services.edit_sketch_from_gui(false).unwrap());
+    assert!(services.sketch_edit().is_none());
+    services.finish().unwrap();
+    window.finish().unwrap();
+}
 #[derive(Clone, Copy, Debug)]
 enum StartupStep {
     Loading,
