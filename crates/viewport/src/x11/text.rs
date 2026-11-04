@@ -50,8 +50,7 @@ impl NativeInputMethod {
     }
     fn require_input_style(&self, requested: std::ffi::c_ulong) -> Result<(), String> {
         let styles = native_input_styles(self)?;
-        // The native query admitted an owned nonnull list; its lifetime stays within this call.
-        unsafe { supported_style(&*styles.pointer, requested) }
+        supported_style(&styles, requested)
     }
     pub(super) fn focus(&self, focused: bool) -> Result<(), String> {
         self.require_live_context()?;
@@ -133,7 +132,7 @@ fn create_native_context(
         format!("XCreateIC window {window}, style {style}: expected a live input context")
     })
 }
-fn native_input_styles(input: &NativeInputMethod) -> Result<OwnedInputStyles<'_>, String> {
+fn native_input_styles(input: &NativeInputMethod) -> Result<Vec<std::ffi::c_ulong>, String> {
     let mut styles = OwnedInputStyles {
         api: &input.api.api,
         pointer: std::ptr::null_mut(),
@@ -152,17 +151,15 @@ fn native_input_styles(input: &NativeInputMethod) -> Result<OwnedInputStyles<'_>
             styles.pointer
         ));
     }
-    Ok(styles)
+    // #3794: native allocation validity ends here; callers receive independent Rust values.
+    unsafe { copy_input_styles(&*styles.pointer) }
 }
 unsafe extern "C" fn input_method_retired(_: xlib::XIM, owner: xlib::XPointer, _: xlib::XPointer) {
     if let Some(alive) = unsafe { owner.cast::<AtomicBool>().as_ref() } {
         alive.store(false, Ordering::Release);
     }
 }
-unsafe fn supported_style(
-    styles: &NativeInputStyles,
-    requested: std::ffi::c_ulong,
-) -> Result<(), String> {
+unsafe fn copy_input_styles(styles: &NativeInputStyles) -> Result<Vec<std::ffi::c_ulong>, String> {
     if styles.count_styles == 0 || styles.supported_styles.is_null() {
         return Err(format!(
             "XIM styles count {}: expected a nonempty owned style list",
@@ -172,6 +169,12 @@ unsafe fn supported_style(
     let offered = unsafe {
         std::slice::from_raw_parts(styles.supported_styles, usize::from(styles.count_styles))
     };
+    Ok(offered.to_vec())
+}
+fn supported_style(
+    offered: &[std::ffi::c_ulong],
+    requested: std::ffi::c_ulong,
+) -> Result<(), String> {
     if offered.contains(&requested) {
         return Ok(());
     }
