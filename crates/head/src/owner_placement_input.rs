@@ -107,17 +107,50 @@ impl<
             self.placement_notice(format!("{} canceled.", tool.tool.name()));
             return true;
         }
-        let changed = matches!(action, PlacementAction::Cursor { .. });
-        let completed = match action {
-            PlacementAction::Cursor { pixel, place } => {
-                self.placement_cursor(&mut tool, window, pixel, place)
-            }
-            _ => false,
-        };
+        let changed = !matches!(action, PlacementAction::Idle);
+        let completed = self.apply_placement_action(&mut tool, window, action);
         if !completed {
             self.placement = Some(tool);
         }
         changed
+    }
+    fn apply_placement_action(
+        &mut self,
+        tool: &mut SketchPlacementState,
+        window: &dyn HeadWindow,
+        action: PlacementAction,
+    ) -> bool {
+        match action {
+            PlacementAction::FieldsChanged => {
+                self.refresh_placement_fields(tool);
+                false
+            }
+            PlacementAction::CommitFields => self.commit_placement_fields(tool),
+            PlacementAction::Cursor { pixel, place } => {
+                self.placement_cursor(tool, window, pixel, place)
+            }
+            _ => false,
+        }
+    }
+    fn commit_placement_fields(&mut self, tool: &mut SketchPlacementState) -> bool {
+        let recipe = tool.preview.clone();
+        self.commit_placement_cursor(tool, recipe)
+            .unwrap_or_else(|cause| {
+                self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+                false
+            })
+    }
+    fn refresh_placement_fields(&mut self, tool: &mut SketchPlacementState) {
+        tool.resolved_preview = None;
+        match self.resolved_placement_preview(tool) {
+            Ok(preview) => {
+                tool.resolved_preview = preview;
+                self.placement_notice(tool.field_prompt());
+            }
+            Err(cause) => {
+                self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+            }
+        }
     }
     fn placement_cursor(
         &mut self,
@@ -129,14 +162,17 @@ impl<
         let outcome = window
             .sketch_point(pixel, tool.plane)
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
-            .and_then(|recipe| self.commit_placement_cursor(tool, recipe));
+            .and_then(|recipe| {
+                tool.resolved_preview = self.resolved_placement_preview(tool)?;
+                self.commit_placement_cursor(tool, recipe)
+            });
         match outcome {
             Ok(true) => {
                 self.placement_notice(format!("{} placed.", tool.tool.name()));
                 true
             }
             Ok(false) => {
-                self.placement_notice(tool.prompt());
+                self.placement_notice(tool.field_prompt());
                 false
             }
             Err(cause) => {
@@ -154,7 +190,8 @@ impl<
         let Some(recipe) = recipe else {
             return Ok(false);
         };
-        self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &[])?;
+        let locks = tool.preview_locks()?;
+        self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &locks)?;
         if tool.tool == crate::SketchPlacementTool::Point {
             return Ok(true);
         }

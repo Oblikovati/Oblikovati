@@ -162,6 +162,7 @@ pub use sketch_split::SketchSplitProjectionInput;
 mod sketch_polyline;
 pub use sketch_polyline::SketchPolylineProjectionInput;
 mod sketch_placement_recipe;
+pub use sketch_placement_recipe::SketchPlacementPreview;
 
 mod sketch_continuity;
 pub use sketch_continuity::SketchContinuityWatch;

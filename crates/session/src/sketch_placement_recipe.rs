@@ -7,7 +7,39 @@ use oblikovati_model::{
     },
     sketch::{SketchCircleConstruction, SketchPlacementRecipe},
 };
+/// Solved private-copy geometry and only the new placement's members.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SketchPlacementPreview {
+    pub geometry: oblikovati_model::sketch::Sketch2D,
+    pub members: Vec<oblikovati_model::sketch::SketchEntityId>,
+}
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Solve the commit operation on a private history owner without reserving live IDs.
+    /// Example: `session.preview_sketch_placement(sketch, recipe, locks, backend)?`.
+    pub fn preview_sketch_placement(
+        &self,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+        construction: &dyn SketchCircleConstruction,
+    ) -> Result<SketchPlacementPreview, CommandError<SketchPlacementCreationError>> {
+        let options = self.sketch_options;
+        self.history
+            .preview(|snapshot, ids| {
+                crate::sketch_recompute::apply_recipe_edit(
+                    snapshot,
+                    ids,
+                    |snapshot, ids| {
+                        snapshot.create_sketch_placement(sketch, recipe, locks, options, ids)
+                    },
+                    Some(options),
+                    |snapshot, report| {
+                        collect_placement_preview(snapshot, report, recipe, construction)
+                    },
+                )
+            })
+            .map_err(CommandError::Edit)
+    }
     /// Commit the preview's recipe and locked fields in one history command.
     /// Example: `session.create_sketch_placement(sketch,&recipe,&locked_fields)?;`.
     pub fn create_sketch_placement(
@@ -40,10 +72,31 @@ impl<O: TransactionObserver> DocumentSession<O> {
             "Create constrained sketch recipe",
             |snapshot, ids| snapshot.create_sketch_placement(sketch, recipe, locks, options, ids),
             |snapshot, report| {
-                let geometry = snapshot.sketches.get(sketch)?.geometry();
-                recipe.verify_circular_seeds(geometry, &report.members, construction)?;
+                verify_placement(snapshot, &report, recipe, construction)?;
                 Ok(report)
             },
         )
     }
+}
+fn collect_placement_preview(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    report: SketchPlacementCreationReport,
+    recipe: &SketchPlacementRecipe,
+    construction: &dyn SketchCircleConstruction,
+) -> Result<SketchPlacementPreview, SketchPlacementCreationError> {
+    verify_placement(snapshot, &report, recipe, Some(construction))?;
+    Ok(SketchPlacementPreview {
+        geometry: snapshot.sketches.get(report.sketch)?.geometry().clone(),
+        members: report.members,
+    })
+}
+fn verify_placement(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    report: &SketchPlacementCreationReport,
+    recipe: &SketchPlacementRecipe,
+    construction: Option<&dyn SketchCircleConstruction>,
+) -> Result<(), SketchPlacementCreationError> {
+    let geometry = snapshot.sketches.get(report.sketch)?.geometry();
+    recipe.verify_circular_seeds(geometry, &report.members, construction)?;
+    Ok(())
 }

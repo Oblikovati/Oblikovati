@@ -17,6 +17,31 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn resolved_placement_preview(
+        &self,
+        tool: &crate::placement_input::SketchPlacementState,
+    ) -> Result<Option<oblikovati_viewport::ViewportSketchPreview>, String> {
+        if !tool.fields_engaged() {
+            return Ok(None);
+        }
+        let Some(recipe) = tool.preview.as_ref() else {
+            return Ok(None);
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(tool.document)
+            .map_err(|cause| cause.to_string())?;
+        let preview = session
+            .preview_sketch_placement(
+                tool.sketch,
+                recipe,
+                &tool.preview_locks()?,
+                &self.sketch_construction,
+            )
+            .map_err(|cause| format!("placement preview {}: {cause}", tool.field_prompt()))?;
+        Ok(Some(placement_preview_packet(tool.plane, preview)))
+    }
     /// Commit the displayed recipe through the document owner; example: `owner.commit_sketch_placement(document,sketch,&recipe,&locks)?;`.
     pub fn commit_sketch_placement(
         &mut self,
@@ -82,5 +107,15 @@ impl<
                     sketch.0
                 )
             })
+    }
+}
+fn placement_preview_packet(
+    plane: oblikovati_model::sketch::SketchPlane,
+    preview: oblikovati_session::SketchPlacementPreview,
+) -> oblikovati_viewport::ViewportSketchPreview {
+    oblikovati_viewport::ViewportSketchPreview::Resolved {
+        plane,
+        geometry: Box::new(preview.geometry),
+        members: preview.members,
     }
 }

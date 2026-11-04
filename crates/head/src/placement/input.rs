@@ -4,6 +4,9 @@ use oblikovati_model::{
     sketch::{SketchPlacementRecipe, SketchPlane},
 };
 use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, ViewportKey};
+#[path = "fields.rs"]
+mod fields;
+use fields::{PlacementFieldAction, PlacementFieldEntry};
 pub(crate) struct SketchPlacementState {
     pub document: u64,
     pub sketch: DocumentSketchId,
@@ -11,9 +14,11 @@ pub(crate) struct SketchPlacementState {
     pub plane: SketchPlane,
     pub tool: crate::SketchPlacementTool,
     pub preview: Option<SketchPlacementRecipe>,
+    pub resolved_preview: Option<oblikovati_viewport::ViewportSketchPreview>,
     accepted: Vec<[f64; 2]>,
     press: Option<PlacementPress>,
     navigation: [bool; 3],
+    fields: PlacementFieldEntry,
 }
 struct PlacementPress {
     pixel: [i32; 2],
@@ -22,6 +27,8 @@ struct PlacementPress {
 pub(crate) enum PlacementAction {
     Idle,
     Cancel,
+    FieldsChanged,
+    CommitFields,
     Cursor { pixel: [i32; 2], place: bool },
 }
 impl SketchPlacementState {
@@ -40,12 +47,25 @@ impl SketchPlacementState {
             plane,
             tool,
             preview: None,
+            resolved_preview: None,
             accepted: Vec::new(),
             press: None,
             navigation: [false; 3],
+            fields: Default::default(),
         })
     }
     pub(crate) fn event(&mut self, event: ViewportEvent) -> PlacementAction {
+        if let ViewportEvent::Input(input) = event {
+            let count = self
+                .preview
+                .as_ref()
+                .map_or(0, |recipe| recipe.fields.len());
+            match self.fields.input(input, count) {
+                PlacementFieldAction::Changed => return PlacementAction::FieldsChanged,
+                PlacementFieldAction::Commit => return PlacementAction::CommitFields,
+                PlacementFieldAction::Ignored => {}
+            }
+        }
         match event {
             ViewportEvent::Input(input) => self.input(input),
             ViewportEvent::Focus(false)
@@ -53,6 +73,24 @@ impl SketchPlacementState {
             | ViewportEvent::CloseRequested => PlacementAction::Cancel,
             _ => PlacementAction::Idle,
         }
+    }
+    pub(crate) fn field_prompt(&self) -> String {
+        self.preview
+            .as_ref()
+            .map(|recipe| self.fields.prompt(&recipe.fields))
+            .unwrap_or_else(|| self.prompt())
+    }
+    pub(crate) fn fields_engaged(&self) -> bool {
+        self.fields.engaged()
+    }
+    pub(crate) fn preview_locks(
+        &self,
+    ) -> Result<Vec<Option<oblikovati_model::history::SketchPlacementFieldLock>>, String> {
+        let locks = self.fields.preview_locks();
+        if let Some(recipe) = &self.preview {
+            fields::validate_dimension_locks(&recipe.fields, &locks)?;
+        }
+        Ok(locks)
     }
     fn input(&mut self, input: ViewportInput) -> PlacementAction {
         match input {
@@ -143,6 +181,7 @@ impl SketchPlacementState {
         place: bool,
         construction: &dyn oblikovati_model::sketch::SketchCircleConstruction,
     ) -> Result<Option<SketchPlacementRecipe>, String> {
+        self.resolved_preview = None;
         self.preview = None;
         let Some(point) = point else {
             self.press = None;
@@ -162,10 +201,13 @@ impl SketchPlacementState {
         Ok(place.then_some(recipe))
     }
     pub(crate) fn abandon_press(&mut self) {
+        self.resolved_preview = None;
         self.press = None;
         self.preview = None;
     }
     pub(crate) fn restart(&mut self, generation: u64) {
+        self.resolved_preview = None;
+        self.fields = Default::default();
         self.generation = generation;
         self.accepted.clear();
         self.press = None;

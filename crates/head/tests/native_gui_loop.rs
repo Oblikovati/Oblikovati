@@ -104,7 +104,8 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     click_shell_position(&mut window, &mut owner, [40, 107]);
     assert!(owner.placement_active());
     let edit = owner.active_sketch_edit().unwrap();
-    for position in [[800, 400], [1000, 600]] {
+    {
+        let position = [800, 400];
         window.scripted = [true, false]
             .map(|pressed| {
                 ViewportEvent::Input(ViewportInput::Button {
@@ -118,6 +119,33 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
         crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner)
             .unwrap();
     }
+    window.scripted = vec![ViewportEvent::Input(ViewportInput::Motion {
+        position: [1000, 600],
+        modifiers: Default::default(),
+    })];
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    for key in [
+        oblikovati_viewport::ViewportPhysicalKey::Tab,
+        oblikovati_viewport::ViewportPhysicalKey::Enter,
+    ] {
+        type_placement_expression(&mut window, &mut owner, "10 mm");
+        press_shell_key(&mut window, &mut owner, key);
+    }
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(edit.document)
+            .unwrap()
+            .snapshot()
+            .sketches
+            .get(edit.sketch)
+            .unwrap()
+            .geometry()
+            .dimensional_constraints()
+            .count(),
+        2
+    );
     assert_eq!(
         owner
             .documents()
@@ -156,6 +184,17 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(!owner.placement_active());
     owner.finish().unwrap();
     window.finish().unwrap();
+}
+fn type_placement_expression(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    expression: &str,
+) {
+    window.scripted = expression
+        .chars()
+        .map(|character| ViewportEvent::Input(ViewportInput::Text(character)))
+        .collect();
+    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
 }
 #[test]
 fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {

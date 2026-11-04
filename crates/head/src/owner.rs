@@ -239,6 +239,9 @@ impl<
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         let recipe = self.placement_preview()?.clone();
         let tool = self.placement.as_ref()?;
+        if tool.fields_engaged() {
+            return tool.resolved_preview.clone();
+        }
         let session = self.files.workspace().session(tool.document).ok()?;
         Some(oblikovati_viewport::ViewportSketchPreview::Recipe {
             solve_options: session.sketch_solve_options(),
