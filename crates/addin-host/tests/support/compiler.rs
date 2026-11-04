@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::resources::{FixtureResources, run};
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{path::PathBuf, process::Command};
 pub struct FixtureCompiler {
     resources: FixtureResources,
 }
@@ -29,10 +26,14 @@ impl FixtureCompiler {
         run(compile.arg(source).arg("-o").arg(&library));
         library
     }
-    /// Build the fixed Go reference ABI fixture; example: `compiler.go_library(reference)`.
-    pub fn go_library(&self, source: &Path) -> PathBuf {
+    /// Build the frozen Go reference ABI fixture; example: `compiler.go_library()`.
+    pub fn go_library(&self) -> PathBuf {
+        let source = self.resources.directory.path().join("go-echo.go");
+        // Oblikovati aa8297d1: retain an independent legacy ABI oracle without a sibling checkout.
+        std::fs::write(&source, include_str!("echo_addin.go.txt")).unwrap();
         let library = self.resources.directory.path().join("go-echo.so");
         run(Command::new("go")
+            .current_dir(self.resources.directory.path())
             .env("GOWORK", "off")
             .env("CGO_ENABLED", "1")
             .args(["build", "-buildmode=c-shared", "-o"])

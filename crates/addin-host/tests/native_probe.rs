@@ -6,7 +6,7 @@ mod compiler;
 use compiler::FixtureCompiler;
 use oblikovati_addin_host::{AddInProbe, probe_library};
 use oblikovati_api::{API_MAJOR, API_MINOR};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 fn probe(path: &Path) -> Result<AddInProbe, oblikovati_api::Error> {
     // SAFETY: these fixtures are built here from trusted source with the pinned ABI prototypes.
     unsafe { probe_library(path) }
@@ -27,9 +27,7 @@ fn rust_library_reports_copied_metadata_and_optional_automation() {
 #[test]
 fn go_reference_library_passes_the_existing_older_minor_handshake() {
     let compiler = FixtureCompiler::new();
-    let reference = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../Oblikovati/head/internal/addinhost/testdata/echoaddin/main.go");
-    let library = compiler.go_library(&reference);
+    let library = compiler.go_library();
     let metadata = probe(&library).unwrap();
     assert_eq!(metadata.id, "com.oblikovati.echo-fixture");
     assert!(metadata.has_automation);

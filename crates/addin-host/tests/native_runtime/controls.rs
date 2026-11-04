@@ -43,8 +43,6 @@ pub(super) fn new_runtime() -> NativeAddInRuntime<NativeWakeCount> {
 }
 
 fn affinity_libraries(compiler: &fixture_compiler::FixtureCompiler) -> [PathBuf; 2] {
-    let reference = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../Oblikovati/head/internal/addinhost/testdata/echoaddin/main.go");
     [
         compiler.rust_library(
             "affinity",
@@ -58,7 +56,7 @@ fn affinity_libraries(compiler: &fixture_compiler::FixtureCompiler) -> [PathBuf;
             oblikovati_api::API_MAJOR,
             oblikovati_api::API_MINOR,
         ),
-        compiler.go_library(&reference),
+        compiler.go_library(),
     ]
 }
 fn verify_affinity_library(runtime: &mut NativeAddInRuntime<NativeWakeCount>, path: &Path) {

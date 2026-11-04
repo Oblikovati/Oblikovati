@@ -29,10 +29,8 @@ fn real_go_and_rust_activation_use_one_queued_callback_identity() {
     owner.close();
 }
 fn activation_libraries(compiler: &compiler::FixtureCompiler) -> [std::path::PathBuf; 2] {
-    let reference = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../Oblikovati/head/internal/addinhost/testdata/echoaddin/main.go");
     [
-        compiler.go_library(&reference),
+        compiler.go_library(),
         compiler.rust_library(
             "callback",
             &["lifecycle", "callback_echo"],

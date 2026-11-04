@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use std::{collections::BTreeMap, ffi::CStr, path::PathBuf, sync::Mutex};
+use std::{collections::BTreeMap, ffi::CStr, sync::Mutex};
 struct EchoHostBuffers {
     live: BTreeMap<usize, Box<[u8]>>,
     freed: usize,
@@ -66,9 +66,7 @@ unsafe extern "C" fn echo_free(pointer: *mut u8) {
 #[test]
 fn real_go_activation_reads_and_frees_host_response_then_automation_returns_addin_owned_bytes() {
     let compiler = FixtureCompiler::new();
-    let reference = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../Oblikovati/head/internal/addinhost/testdata/echoaddin/main.go");
-    let path = compiler.go_library(&reference);
+    let path = compiler.go_library();
     let mut addin = open(&path);
     let before = ECHO_HOST.lock().unwrap().freed;
     // SAFETY: the fixed Go fixture calls only echo; static callbacks and buffer store remain live through cleanup.

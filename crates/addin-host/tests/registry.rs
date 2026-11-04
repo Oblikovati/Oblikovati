@@ -83,9 +83,7 @@ fn rust_library(compiler: &compiler::FixtureCompiler, name: &str, flags: &[&str]
     )
 }
 fn go_library(compiler: &compiler::FixtureCompiler) -> PathBuf {
-    let reference = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../Oblikovati/head/internal/addinhost/testdata/echoaddin/main.go");
-    compiler.go_library(&reference)
+    compiler.go_library()
 }
 fn load(registry: &mut NativeAddInRegistry, path: &Path) -> String {
     // SAFETY: fixtures use canonical exports and resident mappings, with no external lifecycle aliases.
