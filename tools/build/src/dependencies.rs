@@ -34,6 +34,40 @@ pub(crate) fn check_pins(root: &Path) -> BuildResult<()> {
     for dependency in [&config.api, &config.kernel] {
         locked_crates(&root.join("Cargo.lock"), dependency)?;
     }
+    check_renderer_pin(root)?;
+    Ok(())
+}
+
+fn check_renderer_pin(root: &Path) -> BuildResult<()> {
+    let lock: CargoLock = toml::from_str(&read_text(&root.join("Cargo.lock"))?)
+        .map_err(|error| format!("renderer lock: expected Cargo packages: {error}"))?;
+    for required in ["martensite-vulkan", "martensite-tkv3d"] {
+        if !lock.package.iter().any(|package| package.name == required) {
+            return Err(format!(
+                "renderer lock: missing {required}; expected both renderer toolkits"
+            ));
+        }
+    }
+    for package in lock
+        .package
+        .iter()
+        .filter(|item| item.name.starts_with("martensite-"))
+    {
+        verify_renderer_package(package)?;
+    }
+    Ok(())
+}
+
+fn verify_renderer_package(package: &LockedPackage) -> BuildResult<()> {
+    const REVISION: &str = "cf938e4e801d6410649e3eff61e6b0d9c806fcb3";
+    let expected =
+        format!("git+https://github.com/Oblikovati/Martensite?rev={REVISION}#{REVISION}");
+    if package.source.as_deref() != Some(expected.as_str()) {
+        return Err(format!(
+            "renderer {} source {:?}: expected {expected}",
+            package.name, package.source
+        ));
+    }
     Ok(())
 }
 
@@ -145,7 +179,7 @@ fn owned_package(name: &str, dependency: &ReleasedDependency) -> bool {
     if dependency.repository.ends_with("Oblikovati.API") {
         return name == "oblikovati-api";
     }
-    name.starts_with("rustycad-") || name.starts_with("martensite-")
+    name.starts_with("rustycad-")
 }
 
 fn verify_locked(package: &LockedPackage, dependency: &ReleasedDependency) -> BuildResult<()> {

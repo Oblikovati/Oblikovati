@@ -4,6 +4,23 @@ use super::*;
 use crate::{process::tests::FakeRunner, release_config::tests::config, tree::tests::FixtureTree};
 
 #[test]
+fn renderer_pin_rejects_local_and_changed_sources() {
+    let mut package = LockedPackage {
+        name: "martensite-vulkan".into(),
+        version: "0.7.0".into(),
+        source: None,
+    };
+    assert!(verify_renderer_package(&package).is_err());
+    package.source = Some("git+https://github.com/Oblikovati/Martensite#changed".into());
+    assert!(verify_renderer_package(&package).is_err());
+    let tree = FixtureTree::new();
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    check_renderer_pin(tree.root()).unwrap();
+    tree.put("Cargo.lock", "package = []");
+    assert!(check_renderer_pin(tree.root()).is_err());
+}
+
+#[test]
 fn application_lock_consumes_the_pinned_kernel_modeling_release() {
     let tree = FixtureTree::new();
     tree.put("release.toml", include_str!("../../../release.toml"));
