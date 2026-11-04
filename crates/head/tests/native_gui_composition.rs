@@ -13,12 +13,13 @@ fn native_owned_imgui_packet_composes_with_the_document_after_context_destructio
     let baseline = publish_native_scene(&mut owner, &mut window);
     assert!(solid_pixels(&baseline) > 0);
     let (compiler, packet) = owned_shell_packet(window.drawable_extent().unwrap());
+    let bounds = shell_vertex_bounds(&packet);
     window.submit_gui_frame(&compiler, &packet).unwrap();
     drop(compiler);
     drop(packet);
     assert!(window.view.capture().is_err());
     let composed = capture_native_scene(&mut window);
-    verify_panel_and_document(&baseline, &composed);
+    verify_panel_and_document(&baseline, &composed, bounds);
     window.clear_gui_frame().unwrap();
     assert!(window.view.capture().is_err());
     assert_eq!(capture_native_scene(&mut window).rgba, baseline.rgba);
@@ -51,6 +52,7 @@ fn owned_shell_packet(extent: [u32; 2]) -> (GuiFrameCompiler, GuiFrame) {
 fn verify_panel_and_document(
     baseline: &oblikovati_viewport::ViewportCapture,
     composed: &oblikovati_viewport::ViewportCapture,
+    bounds: [f32; 4],
 ) {
     assert_eq!(composed.scene_generation, baseline.scene_generation);
     assert_eq!(composed.camera_generation, baseline.camera_generation);
@@ -68,7 +70,28 @@ fn verify_panel_and_document(
         .map(|(index, _)| [index % width, index / width])
         .collect();
     assert!(changed.len() > 1000, "expected a visible Dear ImGui panel");
-    assert!(changed.iter().all(|[x, y]| *x < 320 && *y < 130));
+    assert!(
+        changed.iter().all(|[x, y]| {
+            let [x, y] = [*x as f32 + 0.5, *y as f32 + 0.5];
+            x >= bounds[0] && y >= bounds[1] && x <= bounds[2] && y <= bounds[3]
+        }),
+        "changed pixels: expected GUI vertex bounds {bounds:?}"
+    );
+}
+fn shell_vertex_bounds(packet: &GuiFrame) -> [f32; 4] {
+    let mut bounds = [
+        f32::INFINITY,
+        f32::INFINITY,
+        f32::NEG_INFINITY,
+        f32::NEG_INFINITY,
+    ];
+    for vertex in packet.batches.iter().flat_map(|batch| &batch.vertices) {
+        for axis in 0..2 {
+            bounds[axis] = bounds[axis].min(vertex.position[axis]);
+            bounds[axis + 2] = bounds[axis + 2].max(vertex.position[axis]);
+        }
+    }
+    bounds
 }
 fn verify_gui_retirement(window: &mut NativeHeadWindow) {
     let (compiler, packet) = owned_shell_packet(window.drawable_extent().unwrap());
