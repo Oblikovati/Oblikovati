@@ -1,5 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn native_style_output_must_be_nonnull_before_it_becomes_an_owned_allocation() {
+    let cause = require_style_pointer(std::ptr::null_mut()).unwrap_err();
+    assert!(cause.contains("0x0") && cause.contains("expected a nonnull owned"));
+    let mut styles = NativeInputStyles {
+        count_styles: 0,
+        supported_styles: std::ptr::null_mut(),
+    };
+    let pointer = std::ptr::from_mut(&mut styles);
+    assert_eq!(require_style_pointer(pointer).unwrap().as_ptr(), pointer);
+}
 use std::cell::RefCell;
 use std::collections::VecDeque;
 struct FakeTextReply {

@@ -82,13 +82,11 @@ impl NativeInputMethod {
 }
 struct OwnedInputStyles<'a> {
     api: &'a xlib::Xlib,
-    pointer: *mut NativeInputStyles,
+    pointer: NonNull<NativeInputStyles>,
 }
 impl Drop for OwnedInputStyles<'_> {
     fn drop(&mut self) {
-        if !self.pointer.is_null() {
-            unsafe { (self.api.XFree)(self.pointer.cast()) };
-        }
+        unsafe { (self.api.XFree)(self.pointer.as_ptr().cast()) };
     }
 }
 fn register_native_retirement(
@@ -133,26 +131,38 @@ fn create_native_context(
     })
 }
 fn native_input_styles(input: &NativeInputMethod) -> Result<Vec<std::ffi::c_ulong>, String> {
-    let mut styles = OwnedInputStyles {
-        api: &input.api.api,
-        pointer: std::ptr::null_mut(),
-    };
+    let styles = queried_style_allocation(input)?;
+    // #3794: keep nullable FFI output out of the owner and copy before native retirement.
+    unsafe { copy_input_styles(styles.pointer.as_ref()) }
+}
+fn queried_style_allocation(input: &NativeInputMethod) -> Result<OwnedInputStyles<'_>, String> {
+    let mut pointer = std::ptr::null_mut();
     let rejected = unsafe {
         (input.api.api.XGetIMValues)(
             input.method.as_ptr(),
             c"queryInputStyle".as_ptr(),
-            &mut styles.pointer,
+            &mut pointer,
             std::ptr::null::<std::ffi::c_char>(),
         )
     };
-    if !rejected.is_null() || styles.pointer.is_null() {
+    let styles = OwnedInputStyles {
+        api: &input.api.api,
+        pointer: require_style_pointer(pointer)?,
+    };
+    if !rejected.is_null() {
         return Err(format!(
             "XIM style query {:?}: expected an owned supported-style list",
             styles.pointer
         ));
     }
-    // #3794: native allocation validity ends here; callers receive independent Rust values.
-    unsafe { copy_input_styles(&*styles.pointer) }
+    Ok(styles)
+}
+fn require_style_pointer(
+    pointer: *mut NativeInputStyles,
+) -> Result<NonNull<NativeInputStyles>, String> {
+    NonNull::new(pointer).ok_or_else(|| {
+        format!("XIM style query {pointer:?}: expected a nonnull owned supported-style list")
+    })
 }
 unsafe extern "C" fn input_method_retired(_: xlib::XIM, owner: xlib::XPointer, _: xlib::XPointer) {
     if let Some(alive) = unsafe { owner.cast::<AtomicBool>().as_ref() } {
