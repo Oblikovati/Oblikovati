@@ -1,8 +1,9 @@
 # Oblikovati Rust application
 
-This branch will contain the Rust port of the Oblikovati application. It will
-use the Rust contract in **Oblikovati.API** and the **Martensite** kernel in
-**RustyCADKernel**.
+This branch contains the Rust application port in progress. It uses the Rust
+contract in **Oblikovati.API**. The native Vulkan/TKV3D viewport uses the
+**Martensite** repository. The model adapter still consumes the previous
+**RustyCADKernel** packages while its Martensite migration is qualified.
 
 Go-kernel capabilities that support application features and are outside OCCT
 must be ported and adapted into Martensite as required kernel extensions.
@@ -12,10 +13,14 @@ Go ADRs have a recorded disposition. The Rust build and release tools are presen
 model, parameter, file lifecycle, and storage foundations are present. The headless CLI supports document creation, recipe open/save-as, script execution,
 manifest inspection, version, and help. The first desktop executable supplies
 native window lifetime, saved prism display, camera navigation, and document
-startup. Dear ImGui chrome and remaining CLI commands are not yet ported.
-Publication remains blocked. The
+startup. Dear ImGui controls create a Part, start and finish an XY sketch, draw
+an anchored rectangle, and create or edit its driving size parameter. The native
+test verifies zero DOF, recomputation, undo, and redo. The complete cube UI
+journey, ribbon and model-browser parity, and native file dialogs remain open.
+Publication remains blocked. Current dependencies are pinned in `release.toml`
+and the adapter manifests; the
 [kernel release intake](architecture/rust-port/implementation-kernel-release.md)
-pins Martensite v0.2.1 and adds Linux package acceptance at the adapter boundary.
+records the earlier release probes.
 
 Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
 package manifest without reconstructing geometry or changing the file.
@@ -24,8 +29,8 @@ Run `cargo run -p oblikovati-head -- --frames 3` on the local Linux display for 
 bounded native window smoke run. Add a native document path to display its
 supported stored geometry, for example
 `cargo run -p oblikovati-head -- --frames 3 "path/to/part.opd"`.
-Editing controls remain open work.
 See [startup behavior and checks](architecture/rust-port/implementation-desktop-startup.md).
+See [native parameter authoring evidence](architecture/rust-port/implementation-native-parameters.md).
 
 - [Implementation evidence](architecture/rust-port/implementation.md): tested
   behavior, source mapping, and remaining work.
@@ -49,8 +54,7 @@ See [startup behavior and checks](architecture/rust-port/implementation-desktop-
   live tests, platform checks, and cutover.
 
 `rust` is the repository's default and integration branch. It has an independent
-root commit. Port work continues on the single `rust-port` working branch.
-Create a pull request only when the user explicitly requests one.
+root commit. Topic branches retain the implementation commits before integration.
 
 `go-legacy` preserves the Go application history. It was the `develop` default
 branch before the branch change on 2026-10-10; the repository had no `main`
