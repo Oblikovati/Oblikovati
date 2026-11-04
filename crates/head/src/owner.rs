@@ -108,6 +108,7 @@ impl<
     }
     /// Borrow the canonical caller for UI commands on this owner; example: `Client::new(owner.document_host())`.
     pub fn document_host(&mut self) -> FileHost<'_, O, W, F> {
+        let editing = self.sketch_inspection_edit();
         borrowed_host(
             &mut self.files,
             &mut self.guids,
@@ -116,8 +117,10 @@ impl<
             &mut self.part_scenes,
             &self.sketch_construction,
         )
+        .with_sketch_edit(editing)
     }
     fn drain_calls(&mut self, budget: usize) -> Result<usize, String> {
+        let editing = self.sketch_inspection_edit();
         let host = borrowed_host(
             &mut self.files,
             &mut self.guids,
@@ -125,7 +128,8 @@ impl<
             &mut self.factory,
             &mut self.part_scenes,
             &self.sketch_construction,
-        );
+        )
+        .with_sketch_edit(editing);
         self.dispatch
             .drain(budget, &host)
             .map_err(|error| error.to_string())

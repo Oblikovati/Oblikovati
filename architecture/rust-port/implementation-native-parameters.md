@@ -23,6 +23,28 @@ Redo settled. The driver read the client window's screen position before sending
 input. The isolated Xvfb process was closed after the run. This supplements the
 model assertions in the frame-loop test; it does not cover Extrude or file dialogs.
 
+The same OS-input journey also runs with the real MCPBridge add-in loaded. Its
+`get_sketch` tool reads the Rust owner's canonical `sketch.get` query. The bridge
+observed a healthy sketch with zero DOF at 10 mm, after editing to 20 mm, after
+Undo, and after Redo. The first corner must land on the displayed origin; a click
+one pixel below it retained two translation DOF under the current physical snap
+distance. These are read-only observations, with no API setup or geometry edits.
+Window captures were made through X11; the MCP capture methods are not yet ported.
+
+`sketch.list` and `sketch.get` inspect the current owner without recording history.
+They report names, planes, authored entity counts, structural DOF, current solve
+health, and feature consumption. Desktop edit state retains the existing focus
+and sketch continuity guards: switching documents or deleting a sketch clears
+the observation even when history restores the same identity. Tests cover both
+immutable and command hosts, projected-source freshness, free coordinates, and
+invalid owners or indices. Visibility remains on for all displayed sketches;
+sharing and style edits are not exposed in this port.
+
+Issue #3796 records an add-in wrapper delegation defect found by this live test.
+The common forwarding path now keeps Part creation, sketch entry/exit, and
+rectangle placement available in both script and add-in wrappers. The native
+wrapper regression failed before the fix and passed after it.
+
 Placement fields preview and commit through the same validated sketch command.
 Point-coincidence inference uses the existing sketch preferences and point order.
 An inferred anchor to the existing origin removes the rectangle's translation

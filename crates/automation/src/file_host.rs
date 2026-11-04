@@ -41,6 +41,7 @@ pub struct FileHost<'a, O: TransactionObserver, W, F> {
     context: RefCell<FileContext<'a, O, W, F>>,
 }
 struct FileContext<'a, O: TransactionObserver, W, F> {
+    sketch_edit: Option<crate::SketchInspectionEdit>,
     files: &'a mut FileWorkspace<O, W, F>,
     source: &'a mut dyn GuidSource,
     version: &'a str,
@@ -52,6 +53,12 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Supply current desktop edit state without changing the document recipe.
+    /// Example: `host.with_sketch_edit(Some(edit.clone()))`.
+    pub fn with_sketch_edit(mut self, edit: Option<crate::SketchInspectionEdit>) -> Self {
+        self.context.get_mut().sketch_edit = edit;
+        self
+    }
     /// Share the native exact-reference owner; example: `host.with_part_topology(&mut scenes)`.
     pub fn with_part_topology(
         mut self,
@@ -68,6 +75,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
     ) -> Self {
         Self {
             context: RefCell::new(FileContext {
+                sketch_edit: None,
                 files,
                 source,
                 version,
@@ -144,7 +152,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if FILE_COMMAND_METHODS.contains(&method) {
             return self.lifecycle_command(method, request);
         }
-        FileQueryHost::new(self.files).call(method, request)
+        FileQueryHost::new(self.files)
+            .with_sketch_edit(self.sketch_edit.clone())
+            .call(method, request)
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {

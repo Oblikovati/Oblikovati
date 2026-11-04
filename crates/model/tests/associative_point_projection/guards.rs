@@ -2,6 +2,32 @@
 use super::*;
 
 #[test]
+fn document_health_reads_current_projected_sources_without_mutating_the_sketch() {
+    let mut snapshot = snapshot();
+    assert!(matches!(
+        snapshot.document_sketch_health(SKETCH).unwrap(),
+        PlacedSketchHealth::Unevaluated
+    ));
+    recompute(&mut snapshot);
+    assert!(matches!(
+        snapshot.document_sketch_health(SKETCH).unwrap(),
+        PlacedSketchHealth::Current(_)
+    ));
+    let before = snapshot.sketches.clone();
+    snapshot.parameters.set_expression(1, "6 cm").unwrap();
+    assert!(matches!(
+        snapshot.document_sketch_health(SKETCH).unwrap(),
+        PlacedSketchHealth::ProjectionInputsChanged
+    ));
+    assert!(before.same_evaluated_state(&snapshot.sketches));
+    assert!(
+        snapshot
+            .document_sketch_health(DocumentSketchId(99))
+            .is_err()
+    );
+}
+
+#[test]
 fn source_failure_and_recovery_are_local_and_never_return_last_good_geometry_as_verified() {
     let mut snapshot = snapshot();
     recompute(&mut snapshot);

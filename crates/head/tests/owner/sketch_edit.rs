@@ -13,6 +13,34 @@ fn request(plane: SketchPlane) -> DocumentSketchCreation {
         project_origin: true,
     }
 }
+
+#[test]
+fn typed_sketch_inspection_tracks_enter_and_exit_without_authored_edits() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    owner
+        .create_sketch_for_edit(document, &request(SketchPlane::xy()))
+        .unwrap();
+    let during = Client::new(owner.document_host())
+        .sketch()
+        .get(&SketchArgs::default())
+        .unwrap();
+    assert!(during.editing && during.healthy);
+    assert_eq!(during.dof, 0);
+    owner.finish_sketch_edit().unwrap();
+    let after = Client::new(owner.document_host())
+        .sketch()
+        .get(&SketchArgs::default())
+        .unwrap();
+    assert!(!after.editing);
+    assert_eq!(
+        SketchInfo {
+            editing: false,
+            ..during
+        },
+        after
+    );
+}
 #[test]
 fn creation_enters_once_and_finish_preserves_independent_history() {
     let (mut owner, awake) = owner();
