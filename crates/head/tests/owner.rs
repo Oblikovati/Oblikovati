@@ -88,15 +88,20 @@ fn gui_new_part_creates_an_active_unsaved_document() {
 }
 #[test]
 fn gui_sketch_xy_enters_and_finishes_the_owned_edit() {
+    use oblikovati_gui::GuiAuthoringContext::*;
     let (mut owner, _) = owner();
     assert!(owner.edit_sketch_from_gui(true).is_err());
+    gui_commands::assert_authoring_context(&owner, NoDocument);
     owner.create_part_document().unwrap();
+    gui_commands::assert_authoring_context(&owner, Part);
     assert!(owner.edit_sketch_from_gui(true).unwrap());
+    gui_commands::assert_authoring_context(&owner, Sketch);
     let edit = owner.active_sketch_edit().unwrap();
     assert_eq!(edit.plane, oblikovati_model::sketch::SketchPlane::xy());
     assert!(owner.edit_sketch_from_gui(true).is_err());
     assert!(owner.edit_sketch_from_gui(false).unwrap());
     assert!(owner.active_sketch_edit().is_none());
+    gui_commands::assert_authoring_context(&owner, Part);
     assert!(owner.edit_sketch_from_gui(false).is_err());
 }
 #[test]

@@ -10,6 +10,7 @@ fn request() -> GuiFrameRequest {
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
             transaction_open: false,
+            authoring: GuiAuthoringContext::Part,
         },
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],
@@ -132,6 +133,11 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
         (110., GuiShellAction::StartSketchXY),
         (210., GuiShellAction::FinishSketch),
     ] {
+        input.commands.authoring = if expected == GuiShellAction::StartSketchXY {
+            GuiAuthoringContext::Part
+        } else {
+            GuiAuthoringContext::Sketch
+        };
         input.events = vec![GuiInputEvent::PointerMoved([x, 68.])];
         engine.frame(&input).unwrap();
         input.events = vec![left_button_event(true)];

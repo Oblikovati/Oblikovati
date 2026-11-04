@@ -11,8 +11,18 @@ pub enum GuiShellAction {
     Home,
 }
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GuiAuthoringContext {
+    #[default]
+    NoDocument,
+    OtherDocument,
+    Part,
+    Sketch,
+}
+/// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiCommandState {
+    pub authoring: GuiAuthoringContext,
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
     pub transaction_open: bool,
@@ -35,12 +45,9 @@ impl GuiShellAction {
         match self {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
-            Self::Rectangle
-            | Self::StartSketchXY
-            | Self::FinishSketch
-            | Self::NewPart
-            | Self::Save
-            | Self::Home => true,
+            Self::StartSketchXY => state.authoring == GuiAuthoringContext::Part,
+            Self::Rectangle | Self::FinishSketch => state.authoring == GuiAuthoringContext::Sketch,
+            Self::NewPart | Self::Save | Self::Home => true,
         }
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.

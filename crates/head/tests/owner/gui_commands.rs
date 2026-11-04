@@ -2,6 +2,21 @@
 use super::commands::dirty_property;
 use super::*;
 use oblikovati_gui::{GuiCommandState, GuiShellAction};
+pub(super) fn assert_authoring_context(
+    owner: &TestOwner,
+    expected: oblikovati_gui::GuiAuthoringContext,
+) {
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.authoring, expected);
+    assert_eq!(
+        GuiShellAction::StartSketchXY.enabled(&state),
+        expected == oblikovati_gui::GuiAuthoringContext::Part
+    );
+    assert_eq!(
+        GuiShellAction::Rectangle.enabled(&state),
+        expected == oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+}
 #[test]
 fn gui_command_metadata_follows_the_active_owner_history() {
     let (mut owner, awake) = owner();
@@ -11,8 +26,8 @@ fn gui_command_metadata_follows_the_active_owner_history() {
     );
     let document = create(&mut owner, &awake);
     assert_eq!(
-        owner.gui_command_state().unwrap(),
-        GuiCommandState::default()
+        owner.gui_command_state().unwrap().authoring,
+        oblikovati_gui::GuiAuthoringContext::Part
     );
     dirty_property(&mut owner, document);
     let edited = owner.gui_command_state().unwrap();
@@ -73,8 +88,8 @@ fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, firs
     let previous = owner.gui_command_state().unwrap();
     let second = create(owner, awake);
     assert_eq!(
-        owner.gui_command_state().unwrap(),
-        GuiCommandState::default()
+        owner.gui_command_state().unwrap().authoring,
+        oblikovati_gui::GuiAuthoringContext::Part
     );
     Client::new(owner.document_host())
         .documents()

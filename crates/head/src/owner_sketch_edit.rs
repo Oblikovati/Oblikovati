@@ -12,6 +12,24 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(crate) fn gui_authoring_context(
+        &self,
+        document: u64,
+    ) -> Result<oblikovati_gui::GuiAuthoringContext, String> {
+        use oblikovati_gui::GuiAuthoringContext;
+        if self.active_sketch_edit().is_some() {
+            return Ok(GuiAuthoringContext::Sketch);
+        }
+        let kind = self
+            .files
+            .document_type(document)
+            .map_err(|cause| cause.to_string())?;
+        Ok(if kind == DOCUMENT_PART {
+            GuiAuthoringContext::Part
+        } else {
+            GuiAuthoringContext::OtherDocument
+        })
+    }
     /// Enter an explicitly selected sketch without editing its recipe; example: `owner.begin_sketch_edit(document, sketch)?`.
     pub fn begin_sketch_edit(
         &mut self,

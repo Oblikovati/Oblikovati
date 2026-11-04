@@ -169,6 +169,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            authoring: self.gui_authoring_context(document)?,
             undo_label: session.undo_label().map(str::to_owned),
             redo_label: session.redo_label().map(str::to_owned),
             transaction_open: session.in_transaction(),
