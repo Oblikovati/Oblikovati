@@ -14,7 +14,7 @@ impl GuiParameterEditor {
     pub(crate) fn toolbar(&mut self, ui: &Ui, state: &GuiCommandState) {
         self.synchronize_document(state.document);
         let disabled = ui.begin_disabled(state.document.is_none());
-        if ui.button("Parameters") {
+        if ui.button_with_size("Parameters", [108., 58.]) {
             self.visible = !self.visible;
         }
         drop(disabled);

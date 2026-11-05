@@ -12,6 +12,7 @@ fn browser_request() -> GuiFrameRequest {
         commands: GuiCommandState {
             document: Some(12),
             authoring: GuiAuthoringContext::Part,
+            document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             browser: Some(GuiModelBrowser {
                 name: "Browser part".into(),
                 sketches: vec![GuiBrowserSketch {

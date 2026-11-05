@@ -11,6 +11,7 @@ fn file_request() -> GuiFrameRequest {
         commands: GuiCommandState {
             document: Some(7),
             authoring: GuiAuthoringContext::Part,
+            document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             ..Default::default()
         },
     }
@@ -55,8 +56,8 @@ fn choose_file_item(
     request: &mut GuiFrameRequest,
     item_y: f32,
 ) -> Vec<GuiShellAction> {
-    assert!(click_file_control(engine, request, [195., 107.]).is_empty());
-    let mut actions = click_file_control(engine, request, [340., item_y]);
+    assert!(click_file_control(engine, request, [20., 10.]).is_empty());
+    let mut actions = click_file_control(engine, request, [50., item_y - 74.]);
     request.events.clear();
     for _ in 0..32 {
         let output = engine.frame(request).unwrap();

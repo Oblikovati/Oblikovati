@@ -10,6 +10,7 @@ fn parameter_request() -> GuiFrameRequest {
         commands: GuiCommandState {
             document: Some(1),
             authoring: GuiAuthoringContext::Part,
+            document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             ..Default::default()
         },
         delta_seconds: 1. / 60.,
@@ -114,7 +115,7 @@ fn mouse_and_keyboard_create_and_edit_a_size_parameter_without_draft_leaks() {
     let mut request = parameter_request();
     deliver(&mut engine, &mut request, Vec::new());
     deliver(&mut engine, &mut request, Vec::new());
-    assert!(click(&mut engine, &mut request, [130., 107.]).is_empty());
+    open_parameters(&mut engine, &mut request);
     deliver(&mut engine, &mut request, Vec::new());
     type_at(&mut engine, &mut request, [400., 43.], "size");
     type_at(&mut engine, &mut request, [400., 66.], "10 mm");
@@ -129,6 +130,13 @@ fn mouse_and_keyboard_create_and_edit_a_size_parameter_without_draft_leaks() {
     );
     request.commands.document = Some(2);
     deliver(&mut engine, &mut request, Vec::new());
-    click(&mut engine, &mut request, [130., 107.]);
+    open_parameters(&mut engine, &mut request);
     assert!(click(&mut engine, &mut request, [345., 90.]).is_empty());
+}
+
+fn open_parameters(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
+    assert!(click(engine, request, [350., 44.]).is_empty());
+    request.events.clear();
+    engine.frame(request).unwrap();
+    assert!(click(engine, request, [50., 90.]).is_empty());
 }

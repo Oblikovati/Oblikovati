@@ -303,3 +303,6 @@ mod arc_slot_input;
 
 #[path = "owner/point_input.rs"]
 mod point_input;
+
+#[path = "owner/ribbon.rs"]
+mod ribbon;

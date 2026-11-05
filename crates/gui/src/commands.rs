@@ -40,6 +40,7 @@ pub enum GuiAuthoringContext {
 pub struct GuiCommandState {
     pub browser: Option<crate::GuiModelBrowser>,
     pub document: Option<u64>,
+    pub document_type: Option<oblikovati_api::types::DocumentType>,
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,
     pub authoring: GuiAuthoringContext,
     pub undo_label: Option<String>,
