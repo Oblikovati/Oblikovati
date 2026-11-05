@@ -1,0 +1,249 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use crate::{GuiCommandState, GuiShellAction};
+use imgui::{Condition, MouseButton, StyleColor, Ui};
+use oblikovati_model::{document_sketch::DocumentSketchId, feature::FeatureId};
+
+/// Immutable document structure; only the desktop owner can activate an edit.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiModelBrowser {
+    pub name: String,
+    pub has_origin: bool,
+    pub sketches: Vec<GuiBrowserSketch>,
+    pub features: Vec<GuiBrowserFeature>,
+}
+/// Stable sketch identity paired with its current canonical API inspection or local decline.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiBrowserSketch {
+    pub id: DocumentSketchId,
+    pub inspection: Result<oblikovati_api::wire::SketchInfo, String>,
+    pub name: String,
+    pub consumed_by: Option<FeatureId>,
+}
+/// One authored feature in model program order, with its actual suppression state.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiBrowserFeature {
+    pub id: FeatureId,
+    pub name: String,
+    pub suppressed: bool,
+}
+impl GuiModelBrowser {
+    pub(crate) fn validate(&self) -> Result<(), String> {
+        self.validate_labels()?;
+        self.validate_identities()?;
+        for row in &self.sketches {
+            row.validate(&self.features)?;
+        }
+        Ok(())
+    }
+    fn validate_labels(&self) -> Result<(), String> {
+        for text in std::iter::once(&self.name)
+            .chain(self.sketches.iter().map(|row| &row.name))
+            .chain(self.features.iter().map(|row| &row.name))
+        {
+            if text.contains('\0') {
+                return Err(format!("browser label {text:?}: expected text without NUL"));
+            }
+        }
+        Ok(())
+    }
+    fn validate_identities(&self) -> Result<(), String> {
+        let sketches: std::collections::BTreeSet<_> =
+            self.sketches.iter().map(|row| row.id.0).collect();
+        let features: std::collections::BTreeSet<_> =
+            self.features.iter().map(|row| row.id.0).collect();
+        if sketches.len() != self.sketches.len()
+            || features.len() != self.features.len()
+            || sketches.contains(&0)
+            || features.contains(&0)
+        {
+            return Err(format!(
+                "browser identities sketches={sketches:?}, features={features:?}: expected unique nonzero IDs within each namespace"
+            ));
+        }
+        Ok(())
+    }
+}
+impl GuiBrowserSketch {
+    fn validate(&self, features: &[GuiBrowserFeature]) -> Result<(), String> {
+        self.validate_consumer(features)?;
+        let tooltip = match &self.inspection {
+            Ok(summary) => &summary.plane,
+            Err(cause) => cause,
+        };
+        if tooltip.contains('\0') {
+            return Err(format!(
+                "browser sketch {:?} inspection {tooltip:?}: expected text without NUL",
+                self.id
+            ));
+        }
+        Ok(())
+    }
+    fn validate_consumer(&self, features: &[GuiBrowserFeature]) -> Result<(), String> {
+        if self
+            .consumed_by
+            .is_some_and(|owner| !features.iter().any(|feature| feature.id == owner))
+        {
+            return Err(format!(
+                "browser sketch {:?}, owner {:?}: expected an owner in the current feature program",
+                self.id, self.consumed_by
+            ));
+        }
+        Ok(())
+    }
+}
+pub(crate) fn panel(
+    ui: &Ui,
+    state: &GuiCommandState,
+    height: f32,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    ui.window("Model")
+        .position([8., 168.], Condition::Always)
+        .size([300., (height - 176.).max(120.)], Condition::Always)
+        .movable(false)
+        .resizable(false)
+        .build(|| browser_contents(ui, state, actions));
+}
+fn browser_contents(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let Some(browser) = &state.browser else {
+        ui.text("(no document)");
+        return;
+    };
+    let _document = ui.push_id(format!("document-{:?}", state.document));
+    ui.text(&browser.name);
+    origin_branch(ui, browser);
+    parameter_branch(ui, state);
+    sketch_branches(ui, state, browser, actions);
+    feature_branch(ui, state, browser, actions);
+}
+fn origin_branch(ui: &Ui, browser: &GuiModelBrowser) {
+    if !browser.has_origin {
+        return;
+    }
+    if let Some(_origin) = ui.tree_node_config("Origin").default_open(true).push() {
+        for label in [
+            "Center Point",
+            "X Axis",
+            "Y Axis",
+            "Z Axis",
+            "XY Plane",
+            "XZ Plane",
+            "YZ Plane",
+        ] {
+            ui.bullet_text(label);
+        }
+    }
+}
+fn parameter_branch(ui: &Ui, state: &GuiCommandState) {
+    if let Some(_parameters) = ui.tree_node_config("Parameters").default_open(false).push() {
+        for row in &state.parameters {
+            ui.bullet_text(format!("{} = {}", row.name, row.value));
+        }
+    }
+}
+fn sketch_branches(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    if let Some(_sketches) = ui.tree_node_config("Sketches").default_open(true).push() {
+        for row in browser
+            .sketches
+            .iter()
+            .filter(|row| row.consumed_by.is_none())
+        {
+            sketch_row(ui, state, row, actions);
+        }
+    }
+}
+fn feature_branch(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    if let Some(_features) = ui.tree_node_config("Features").default_open(true).push() {
+        for feature in &browser.features {
+            feature_row(ui, state, browser, feature, actions);
+        }
+    }
+}
+fn feature_row(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    feature: &GuiBrowserFeature,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let _feature = ui.push_id(format!("feature-{}", feature.id.0));
+    ui.text(if feature.suppressed {
+        format!("{} (suppressed)", feature.name)
+    } else {
+        feature.name.clone()
+    });
+    ui.indent();
+    for row in browser
+        .sketches
+        .iter()
+        .filter(|row| row.consumed_by == Some(feature.id))
+    {
+        sketch_row(ui, state, row, actions);
+    }
+    ui.unindent();
+}
+fn sketch_row(
+    ui: &Ui,
+    state: &GuiCommandState,
+    row: &GuiBrowserSketch,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let _sketch = ui.push_id(format!("sketch-{}", row.id.0));
+    let action = GuiShellAction::EditSketch {
+        document: state.document.unwrap_or(0),
+        sketch: row.id,
+    };
+    let editing = row.inspection.as_ref().is_ok_and(|summary| summary.editing);
+    let position = ui.cursor_screen_pos();
+    let activated = ui
+        .selectable_config("##sketch-row")
+        .allow_double_click(true)
+        .selected(editing)
+        .build();
+    // Literal labels are drawn separately so imported names containing ## remain visible.
+    ui.get_window_draw_list().add_text(
+        position,
+        ui.style_color(StyleColor::Text),
+        sketch_caption(row),
+    );
+    if activated && ui.is_mouse_double_clicked(MouseButton::Left) && action.dispatchable(state) {
+        actions.push(action);
+    }
+    if ui.is_item_hovered() {
+        ui.tooltip_text(sketch_tooltip(row));
+    }
+}
+fn sketch_caption(row: &GuiBrowserSketch) -> String {
+    match &row.inspection {
+        Ok(summary) => format!(
+            "{}  [DOF {}{}]",
+            row.name,
+            summary.dof,
+            if summary.healthy { "" } else { ", sick" }
+        ),
+        Err(_) => format!("{}  [unavailable]", row.name),
+    }
+}
+fn sketch_tooltip(row: &GuiBrowserSketch) -> String {
+    match &row.inspection {
+        Ok(summary) => format!(
+            "{} plane, {} entities. Double-click to edit.",
+            summary.plane, summary.entity_count
+        ),
+        Err(cause) => format!("{}: {cause}", row.name),
+    }
+}
+
+#[cfg(test)]
+#[path = "../tests/browser/unit.rs"]
+mod tests;

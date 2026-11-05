@@ -19,6 +19,14 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
     for action in &update.actions {
+        if let GuiShellAction::EditSketch { document, sketch } = action {
+            update.changed |= report_authoring_result(
+                window,
+                owner.edit_existing_sketch_from_gui(*document, *sketch),
+            )?;
+            update.changed |= synchronize_sketch_view(window, owner)?;
+            continue;
+        }
         if let GuiShellAction::Parameter { mutation, request } = action {
             update.changed |=
                 report_authoring_result(window, owner.edit_parameter_from_gui(*mutation, request))?;
@@ -66,6 +74,7 @@ fn report_authoring_result(
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
         GuiShellAction::Parameter { .. }
+        | GuiShellAction::EditSketch { .. }
         | GuiShellAction::Rectangle
         | GuiShellAction::NewPart
         | GuiShellAction::StartSketchXY

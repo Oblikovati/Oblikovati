@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned Dear ImGui frames for the application viewport draw boundary.
 mod activity;
+mod browser;
+pub use browser::{GuiBrowserFeature, GuiBrowserSketch, GuiModelBrowser};
 mod clipboard;
 pub use activity::GuiFrameActivity;
 pub use clipboard::GuiClipboard;

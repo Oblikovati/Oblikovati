@@ -12,6 +12,17 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Activate a stable sketch selected in the model browser.
+    /// Example: `work.edit_existing_sketch_from_gui(document, sketch)?` after a double-click.
+    fn edit_existing_sketch_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "browser sketch {sketch:?}, document {document}: expected an owner with sketch edit support"
+        ))
+    }
     /// Observe the current drawable before admitting API capture requests.
     /// Example: `work.observe_window_capture_extent(Some([1440, 900]))` before polling.
     fn observe_window_capture_extent(&mut self, _: Option<[u32; 2]>) {}
@@ -134,6 +145,13 @@ impl HeadWork for IdleHeadWork {
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn edit_existing_sketch_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        ) -> Result<bool, String> {
+            self.$owner.edit_existing_sketch_from_gui(document, sketch)
+        }
         fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
             self.$owner.observe_window_capture_extent(extent);
         }

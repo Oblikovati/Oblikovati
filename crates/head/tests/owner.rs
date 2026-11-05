@@ -274,6 +274,8 @@ mod parameter_editor;
 #[path = "owner/slot_input.rs"]
 mod slot_input;
 
+#[path = "owner/browser.rs"]
+mod browser;
 #[path = "owner/sketch_edit.rs"]
 mod sketch_edit;
 
