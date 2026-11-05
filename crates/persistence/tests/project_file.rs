@@ -4,12 +4,10 @@ use oblikovati_persistence::{
     load::PackageFileReader,
     project_file::{ProjectConfiguration, read_project_file, write_project_file},
 };
-use std::{
-    cell::RefCell,
-    io,
-    path::{Path, PathBuf},
-    rc::Rc,
-};
+#[path = "support/project_paths.rs"]
+mod project_paths;
+use project_paths::native_project_fixture_root as root;
+use std::{cell::RefCell, io, path::Path, rc::Rc};
 
 #[derive(Default)]
 struct ProjectDisk {
@@ -91,18 +89,25 @@ fn go_project_round_trip_keeps_recorded_paths_and_order() {
 
 #[test]
 fn bound_paths_use_project_parent_and_leave_configuration_unchanged() {
-    let project = sample();
-    let bound = project.bind(Path::new("/work/acme/gear.OPJ")).unwrap();
+    let mut project = sample();
+    // #3795: bind native absolute paths; the Go wire round-trip above keeps its original strings.
+    project.libraries[1] = root("bearings").to_str().unwrap().into();
+    let before = project.clone();
+    let bound = project.bind(&root("work/acme/gear.OPJ")).unwrap();
     assert_eq!(
-        bound.lookup.search_paths().collect::<Vec<_>>(),
+        bound
+            .lookup
+            .search_paths()
+            .map(Path::to_path_buf)
+            .collect::<Vec<_>>(),
         [
-            Path::new("/work/acme/workspace"),
-            Path::new("/work/fasteners"),
-            Path::new("/opt/bearings")
+            root("work/acme/workspace"),
+            root("work/fasteners"),
+            root("bearings")
         ]
     );
-    assert_eq!(bound.design_data, Some(PathBuf::from("/work/acme/design")));
-    assert_eq!(project, sample());
+    assert_eq!(bound.design_data, Some(root("work/acme/design")));
+    assert_eq!(project, before);
     assert!(
         project
             .bind(Path::new("gear.opj"))
@@ -111,7 +116,7 @@ fn bound_paths_use_project_parent_and_leave_configuration_unchanged() {
             .contains("absolute")
     );
     let empty = ProjectConfiguration::default()
-        .bind(Path::new("/work/empty.opj"))
+        .bind(&root("work/empty.opj"))
         .unwrap();
     assert_eq!(empty.lookup.search_paths().count(), 0);
     assert!(empty.design_data.is_none());
@@ -137,7 +142,7 @@ fn malformed_schema_fields_and_locations_are_refused() {
     let mut invalid = sample();
     invalid.libraries.push(String::new());
     assert!(invalid.encode().is_err());
-    assert!(invalid.bind(Path::new("/work/gear.opj")).is_err());
+    assert!(invalid.bind(&root("work/gear.opj")).is_err());
 }
 
 #[test]

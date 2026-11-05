@@ -301,12 +301,16 @@ fn failed_writes_report_every_item_without_adopting_revisions() {
 #[test]
 fn non_utf8_bound_path_is_refused_before_a_wire_save_writes() {
     use std::os::unix::ffi::OsStringExt;
-    let directory = tempfile::tempdir().unwrap();
-    let original = directory
-        .path()
-        .join(std::ffi::OsString::from_vec(b"source-\xff.obk".to_vec()));
-    std::fs::write(&original, fixture(1)).unwrap();
-    let mut host = FileWorkspace::new(RecordingWorkspace::default(), NativeDocumentFiles);
+    let original = path("non-utf8").join(std::ffi::OsString::from_vec(b"source-\xff.obk".to_vec()));
+    // #3795: macOS filesystems refuse these bytes before the wire-save guard can run.
+    let files = WorkspaceFiles::default();
+    files
+        .contents
+        .borrow_mut()
+        .insert(original.clone(), fixture(1));
+    let contents = Rc::clone(&files.contents);
+    let before = contents.borrow().clone();
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), files);
     let mut source = SequenceGuids(1000);
     let id = host
         .open(
@@ -330,6 +334,6 @@ fn non_utf8_bound_path_is_refused_before_a_wire_save_writes() {
     assert_eq!(result.saved, 0);
     assert!(!outcome.ok);
     assert!(outcome.error.contains("expected UTF-8"));
-    assert_eq!(std::fs::read(original).unwrap(), fixture(1));
+    assert_eq!(*contents.borrow(), before);
     assert_eq!(source.0, count);
 }
