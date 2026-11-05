@@ -24,3 +24,5 @@ mod theme_preferences_native;
 pub mod user_config;
 
 pub mod theme_files;
+
+pub mod theme_file_preferences;

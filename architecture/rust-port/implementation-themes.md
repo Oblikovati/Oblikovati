@@ -55,7 +55,8 @@ selection to that owner. A failed save keeps the old live palette. The default
 configuration root matches Go; `OBK_CONFIG_DIR` overrides it for isolated runs.
 Startup also loads custom XML files in filename order. Valid files survive
 malformed, missing and duplicate-file declines; their notices reach desktop
-status. Custom snapshot export uses the atomic writer. OS XTest selection and
+status. Custom snapshot export uses the atomic writer. The loaded-name-to-source map is
+retained by storage so later edits update the original filename. OS XTest selection and
 fresh-process reload of Workshop passed with a malformed neighbour present,
 confirmed by MCPBridge queries and captured orange accents. An unrelated stored
 preference group survived selection save.

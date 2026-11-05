@@ -5,7 +5,7 @@ use crate::{
 };
 use oblikovati_model::theme::ThemeDefinition;
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     ffi::OsString,
     io,
     path::{Path, PathBuf},
@@ -23,6 +23,7 @@ pub struct ThemeFileDecline {
 }
 #[derive(Debug)]
 pub struct LoadedCustomThemes {
+    pub sources: BTreeMap<String, PathBuf>,
     pub customs: Vec<ThemeDefinition>,
     pub declines: Vec<ThemeFileDecline>,
 }
@@ -34,6 +35,7 @@ pub fn load_custom_themes<Files: ThemeDirectoryFiles>(
     let directory = root.join("themes");
     let entries = discover_theme_entries(&directory, files)?;
     let mut loaded = LoadedCustomThemes {
+        sources: BTreeMap::new(),
         customs: Vec::new(),
         declines: Vec::new(),
     };
@@ -55,7 +57,10 @@ fn load_entry<Files: ThemeDirectoryFiles>(
     }
     let path = directory.join(name);
     match read_custom(&path, name, files, names) {
-        Ok(theme) => loaded.customs.push(theme),
+        Ok(theme) => {
+            loaded.sources.insert(theme.name().into(), path);
+            loaded.customs.push(theme);
+        }
         Err(cause) => loaded.declines.push(ThemeFileDecline { path, cause }),
     }
 }

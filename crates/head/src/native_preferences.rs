@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_model::theme::ThemeLibrary;
 use oblikovati_persistence::{
+    theme_file_preferences::ThemeFilePreferences,
     theme_files::{ThemeFileDecline, load_custom_themes},
     theme_preferences::{NativeThemePreferenceFiles, ThemePreferenceFile},
     user_config::user_config_directory,
 };
 use std::path::{Path, PathBuf};
-type NativeThemePreferences = ThemePreferenceFile<NativeThemePreferenceFiles>;
+type NativeThemePreferences = ThemeFilePreferences<NativeThemePreferenceFiles>;
 
 pub(super) struct NativeThemeStartup {
     pub library: ThemeLibrary,
@@ -23,6 +24,8 @@ pub(super) fn load_native_themes() -> Result<NativeThemeStartup, String> {
     let loaded = load_custom_themes(&directory, &mut NativeThemePreferenceFiles)
         .map_err(|cause| cause.to_string())?;
     let library = ThemeLibrary::new(loaded.customs, preferences.active_name())?;
+    let preferences =
+        ThemeFilePreferences::new(preferences, NativeThemePreferenceFiles, loaded.sources);
     Ok(NativeThemeStartup {
         library,
         preferences,

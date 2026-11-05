@@ -74,6 +74,8 @@ fn custom_gallery_loads_in_filename_order_with_plain_blender_fallback_names() {
         ["a", "Workshop"]
     );
     assert_eq!(files.reads.len(), 2);
+    assert_eq!(loaded.sources["a"], Path::new("config/themes/a.xml"));
+    assert_eq!(loaded.sources["Workshop"], Path::new("config/themes/z.xml"));
 }
 #[test]
 fn malformed_missing_duplicate_and_builtin_names_decline_without_losing_good_files() {
@@ -87,6 +89,8 @@ fn malformed_missing_duplicate_and_builtin_names_decline_without_losing_good_fil
     let loaded = load_custom_themes(Path::new("config"), &mut files).unwrap();
     assert_eq!(loaded.customs.len(), 1);
     assert_eq!(loaded.customs[0].name(), "Workshop");
+    assert_eq!(loaded.sources["Workshop"], Path::new("config/themes/a.xml"));
+    assert_eq!(loaded.sources.len(), 1);
     assert_eq!(loaded.declines.len(), 5);
     assert!(
         loaded
