@@ -10,6 +10,7 @@ mod chrome;
 mod commands;
 #[allow(unsafe_code)]
 mod context_owner;
+mod document_tabs;
 mod engine;
 mod files;
 mod input;

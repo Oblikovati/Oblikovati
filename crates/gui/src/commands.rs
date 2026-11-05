@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    ActivateDocument(oblikovati_api::wire::ActivateDocumentArgs),
     CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
     OpenDocument(oblikovati_api::wire::OpenDocumentArgs),
     SaveDocumentAs(oblikovati_api::wire::SaveDocumentAsArgs),
@@ -39,6 +40,7 @@ pub enum GuiAuthoringContext {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
     pub browser: Option<crate::GuiModelBrowser>,
+    pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
     pub document: Option<u64>,
     pub document_type: Option<oblikovati_api::types::DocumentType>,
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,
@@ -49,6 +51,7 @@ pub struct GuiCommandState {
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
+        crate::document_tabs::validate_documents(&self.documents)?;
         if self.browser.is_some() && self.document.is_none() {
             return Err("GUI browser document None: expected an active document identity".into());
         }
@@ -72,9 +75,19 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::ActivateDocument(request) => {
+                !state.transaction_open
+                    && state.authoring != GuiAuthoringContext::Sketch
+                    && state
+                        .documents
+                        .iter()
+                        .any(|row| row.id == request.id && row.visible)
+            }
             Self::OpenDocument(_) => !state.transaction_open,
             Self::CloseDocument(request) => {
-                state.document == Some(request.id) && !state.transaction_open
+                (state.document == Some(request.id)
+                    || state.documents.iter().any(|row| row.id == request.id))
+                    && !state.transaction_open
             }
             Self::SaveDocumentAs(request) => {
                 state.document == Some(request.document) && !state.transaction_open

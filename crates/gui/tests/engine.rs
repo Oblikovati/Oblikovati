@@ -8,6 +8,7 @@ fn request() -> GuiFrameRequest {
         status: None,
         events: vec![GuiInputEvent::PointerMoved([630., 350.])],
         commands: GuiCommandState {
+            documents: Vec::new(),
             browser: None,
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
