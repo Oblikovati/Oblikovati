@@ -977,6 +977,11 @@ dependencies = [
 name = "oblikovati-martensite"
 version = "0.1.0"
 dependencies = [
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-persistence",
@@ -985,9 +990,7 @@ dependencies = [
  "rustycad-tkbo",
  "rustycad-tkbrep",
  "rustycad-tkernel",
- "rustycad-tkg2d",
  "rustycad-tkg3d",
- "rustycad-tkgeomalgo",
  "rustycad-tkgeombase",
  "rustycad-tkmath",
  "rustycad-tkmesh",

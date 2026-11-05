@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use rustycad_tkernel::standard::Failure;
+use martensite_tkernel::standard::Failure;
 use std::{error::Error, fmt};
 /// Failure classes can be inspected without parsing a displayed native exception.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

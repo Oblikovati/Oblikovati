@@ -16,7 +16,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0021`.
+The next unused number is `ADR-0030`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -120,7 +120,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0021](ADR-0021-semantic-topology-reference-keys.md) | Semantic topology names and scheme-2 identity | R1/R3/R5 |
 | [ADR-0022](ADR-0022-analytic-body-properties.md) | Analytic body integrals, units, and principal inertia | R1/R7 |
 | [ADR-0023](ADR-0023-analytic-part-aggregation.md) | Analytic part aggregation and empty-system semantics | R1/R7 |
-| [ADR-0024](ADR-0024-released-sketch-spline-construction.md) | Released construction of authored sketch splines | R2/R3/R4 |
+| [ADR-0029](ADR-0029-released-sketch-geometry.md) | Released sketch geometry; supersedes ADR-0024 | R2/R3/R4; #3814 |
 | [ADR-0025](ADR-0025-typed-sketch-spline-authoring.md) | Typed sketch spline authoring through the existing owner | R3/R4 |
 | [ADR-0026](ADR-0026-owned-native-keyboard-and-text.md) | Owned native keyboard and text input | R1V/R4 |
 | [ADR-0027](ADR-0027-owned-native-text-clipboard.md) | Owned native text clipboard | R1V/R4 |
