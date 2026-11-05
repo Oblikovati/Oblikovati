@@ -99,7 +99,7 @@ fn check_renderer_pin(root: &Path) -> BuildResult<()> {
 }
 
 fn verify_renderer_package(package: &LockedPackage) -> BuildResult<()> {
-    const REVISION: &str = "a65734bde6eaf7d724222ed280a42928909d537c";
+    const REVISION: &str = "66fe4eb0da43b7df4e734296a9d19c01bd07d03e";
     let expected =
         format!("git+https://github.com/Oblikovati/Martensite?rev={REVISION}#{REVISION}");
     if package.source.as_deref() != Some(expected.as_str()) {

@@ -71,6 +71,7 @@ workflow lint, and duplication. Every crate exceeded 80% line coverage; GUI reac
 98.71%, head 95.40%, and duplication was 0.79%. A separate native-window capture
 run passed, and the Parameters panel and rectangle were visually checked.
 
-The renderer pins Martensite main commit `a65734bd`. The model adapter migration
+The renderer pins Martensite main commit `66fe4eb0`, which includes the merged
+renderer font changes. The model adapter migration
 remains separate. The Extrude API/UI route, general profile selection, and the
 complete cube edit/save/reopen/named-face UI acceptance remain open.
