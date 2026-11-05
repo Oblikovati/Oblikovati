@@ -9,6 +9,7 @@ fn reader(
     driver: &str,
     name: &str,
 ) -> u64 {
+    let driver = fixture_file_name(driver);
     let recipe = format!(
         "schemaVersion: 2\ndocumentType: 1\nmodel:\n  parameters: [{{name: {name}, kind: derived, value: 2, unit: length}}]\n  derivedParameterTables: [{{id: 7, sourceDocument: {driver}, linked: [{name}]}}]\n"
     );
@@ -223,7 +224,7 @@ fn ambiguous_source_refuses_the_whole_plan_before_refresh() {
     let (mut files, source, target, mut guids) = linked_files();
     let _duplicate = files
         .create_unbound(
-            DocumentPackage::empty(DOCUMENT_PART, "/source.opd"),
+            DocumentPackage::empty(DOCUMENT_PART, &fixture_file_name("/source.opd")),
             QueryObserver::default(),
             "test",
             &mut guids,

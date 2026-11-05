@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #![cfg(target_os = "linux")]
 use oblikovati_cli::{ScriptSources, run_script_with_files};
-use oblikovati_model::identity::{DocumentGuid, GuidSource, IdentityTransitionError};
-use oblikovati_persistence::{
-    atomic::{AtomicFiles, StagedFile},
-    file_access::DocumentFiles,
-    load::PackageFileReader,
-};
+
 use oblikovati_script::{IsolatedLuaEngine, WORKER_ARGUMENT};
 use std::{
     cell::RefCell,
-    collections::BTreeMap,
     ffi::OsString,
-    io,
     path::{Path, PathBuf},
     rc::Rc,
 };

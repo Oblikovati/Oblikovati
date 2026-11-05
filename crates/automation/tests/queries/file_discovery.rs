@@ -17,12 +17,17 @@ use std::{
     rc::Rc,
 };
 
-type MemoryPackages = Rc<RefCell<BTreeMap<PathBuf, Vec<u8>>>>;
+#[path = "fixture_paths.rs"]
+mod fixture_paths;
+use fixture_paths::{
+    FixturePathMap, fixture_file_name, fixture_native_path, fixture_source_package,
+};
+type MemoryPackages = Rc<RefCell<FixturePathMap<Vec<u8>>>>;
 #[derive(Default)]
 struct DiscoveryFiles {
     reads: usize,
     refuse_write: Cell<bool>,
-    save_aliases: RefCell<BTreeMap<PathBuf, PathBuf>>,
+    save_aliases: RefCell<FixturePathMap<PathBuf>>,
     packages: MemoryPackages,
 }
 struct DiscoveryStage {
@@ -44,10 +49,10 @@ impl DocumentFiles for DiscoveryFiles {
             .borrow()
             .get(requested)
             .cloned()
-            .unwrap_or_else(|| requested.into()))
+            .unwrap_or_else(|| fixture_native_path(requested)))
     }
     fn canonical_path(&mut self, requested: &Path) -> io::Result<PathBuf> {
-        Ok(requested.into())
+        Ok(fixture_native_path(requested))
     }
 }
 impl AtomicFiles for DiscoveryFiles {

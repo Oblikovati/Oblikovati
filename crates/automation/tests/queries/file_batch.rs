@@ -46,8 +46,14 @@ fn batch_save_continues_after_failed_item_and_preserves_request_order() {
     assert!(!results[0].ok && results[1].ok);
     assert!(results[0].error.contains("transaction"));
     assert!(results[1].error.is_empty());
-    assert_eq!(results[0].full_document_name, "/fixtures/part.opd");
-    assert_eq!(results[1].full_document_name, "/fixtures/second.opd");
+    assert_eq!(
+        results[0].full_document_name,
+        fixture_file_name("/fixtures/part.opd")
+    );
+    assert_eq!(
+        results[1].full_document_name,
+        fixture_file_name("/fixtures/second.opd")
+    );
     assert_eq!(files.files().packages.borrow().len(), 1);
     assert!(files.workspace().needs_save(first).unwrap());
     assert!(!files.workspace().needs_save(second).unwrap());
@@ -90,7 +96,7 @@ fn batch_save_as_rebinds_and_copy_preserves_source_state() {
             if operation == "saveAs" {
                 assert_eq!(
                     files.path(id).unwrap(),
-                    Path::new(&format!("/fixtures/output{index}.opd"))
+                    fixture_native_path(Path::new(&format!("/fixtures/output{index}.opd")))
                 );
                 assert!(!files.workspace().needs_save(id).unwrap());
                 assert_eq!(

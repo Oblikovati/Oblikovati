@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_cli::run_with_files;
-use oblikovati_model::identity::{DocumentGuid, GuidSource, IdentityTransitionError};
-use oblikovati_persistence::{
-    atomic::{AtomicFiles, StagedFile},
-    file_access::DocumentFiles,
-    load::PackageFileReader,
-    package::DocumentPackage,
-};
+use oblikovati_persistence::package::DocumentPackage;
 use std::{
     cell::RefCell,
-    collections::BTreeMap,
     ffi::OsString,
     io::{self, Write},
-    path::{Path, PathBuf},
+    path::Path,
     rc::Rc,
 };
 #[path = "new_command/fake.rs"]

@@ -7,7 +7,7 @@ fn linked_files() -> (DiscoveryWorkspace, u64, u64, QueryGuids) {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);
     let source_id = files.create(Path::new("/source.opd"), DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 2\nmodel:\n  parameters:\n    - {name: width, kind: user, expression: '2 cm'}\n    - {name: height, kind: user, expression: '3 cm'}\n    - {name: computed, kind: model, expression: '4 cm'}\n    - {name: title, kind: user, valueType: text, text: 'note'}\n").unwrap(), QueryObserver::default(), "test", &mut source).unwrap().session_id;
-    let target = files.create(Path::new("/target.opd"), DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  parameters: [{name: width, kind: derived, value: 2, unit: length}]\n  derivedParameterTables: [{id: 7, sourceDocument: /source.opd, linked: [width], ownedByFeature: true}, {id: 8, sourceDocument: absent.opd, linked: []}]\n").unwrap(), QueryObserver::default(), "test", &mut source).unwrap().session_id;
+    let target = files.create(Path::new("/target.opd"), fixture_source_package("schemaVersion: 2\ndocumentType: 1\nmodel:\n  parameters: [{name: width, kind: derived, value: 2, unit: length}]\n  derivedParameterTables: [{id: 7, sourceDocument: $SOURCE_DOCUMENT, linked: [width], ownedByFeature: true}, {id: 8, sourceDocument: absent.opd, linked: []}]\n", "/source.opd"), QueryObserver::default(), "test", &mut source).unwrap().session_id;
     (files, source_id, target, source)
 }
 
@@ -34,7 +34,10 @@ fn table_queries_resolve_live_candidates_without_changing_focus_or_recipe() {
         "width"
     );
     assert!(list[0].has_reference_component);
-    assert_eq!(list[0].reference_component, "/source.opd");
+    assert_eq!(
+        list[0].reference_component,
+        fixture_file_name("/source.opd")
+    );
     assert!(list[0].health.contains("not been synchronized"));
     assert_eq!(list[1].available, None);
     assert!(list[1].health.contains("unavailable"));
@@ -65,7 +68,12 @@ fn table_queries_resolve_live_candidates_without_changing_focus_or_recipe() {
         Some(vec!["width".into(), "tall".into()])
     );
     files.close_discarding_changes(source_id).unwrap();
-    assert_eq!(files.resolve_parameter_source("/source.opd").unwrap(), None);
+    assert_eq!(
+        files
+            .resolve_parameter_source(&fixture_file_name("/source.opd"))
+            .unwrap(),
+        None
+    );
 }
 
 #[test]
@@ -77,10 +85,16 @@ fn derived_health_reports_refresh_results_and_unavailable_sources() {
                 "width".into(),
                 Quantity::new(2.0, Dimension::Length),
             )])),
-            "",
+            String::new(),
         ),
-        (Some(BTreeMap::new()), "removed at source: [width]"),
-        (None, "source document /source.opd is unavailable"),
+        (Some(BTreeMap::new()), "removed at source: [width]".into()),
+        (
+            None,
+            format!(
+                "source document {} is unavailable",
+                fixture_file_name("/source.opd")
+            ),
+        ),
     ] {
         files
             .commands(target)
@@ -103,7 +117,9 @@ fn derived_health_reports_refresh_results_and_unavailable_sources() {
 fn source_lookup_refuses_duplicate_unbound_names_and_excludes_drawings() {
     let (mut files, source_id, _, mut source) = linked_files();
     assert_eq!(
-        files.resolve_parameter_source("/source.opd").unwrap(),
+        files
+            .resolve_parameter_source(&fixture_file_name("/source.opd"))
+            .unwrap(),
         Some(source_id)
     );
     assert_eq!(files.resolve_parameter_source("source").unwrap(), None);
@@ -193,7 +209,7 @@ fn source_values_use_target_scale_and_exclude_failed_or_nonuser_values() {
         .unwrap()
         .session_id;
     let values = files
-        .derived_source_values("/source.opd", target)
+        .derived_source_values(&fixture_file_name("/source.opd"), target)
         .unwrap()
         .unwrap();
     assert_eq!(
@@ -209,13 +225,17 @@ fn source_values_use_target_scale_and_exclude_failed_or_nonuser_values() {
         })
         .unwrap();
     let values = files
-        .derived_source_values("/source.opd", target)
+        .derived_source_values(&fixture_file_name("/source.opd"), target)
         .unwrap()
         .unwrap();
     assert!(!values.contains_key("width"));
     assert_eq!(values["height"].value, 6.0);
     assert_eq!(files.derived_source_values("absent", target).unwrap(), None);
-    assert!(files.derived_source_values("/source.opd", 999).is_err());
+    assert!(
+        files
+            .derived_source_values(&fixture_file_name("/source.opd"), 999)
+            .is_err()
+    );
     assert_eq!(files.workspace().active_document(), Some(target));
     assert!(
         files
@@ -251,7 +271,7 @@ fn source_transfer_failure_names_the_parameter_and_does_not_change_target() {
         .unwrap()
         .session_id;
     let error = files
-        .derived_source_values("/source.opd", target)
+        .derived_source_values(&fixture_file_name("/source.opd"), target)
         .unwrap_err()
         .to_string();
     assert!(

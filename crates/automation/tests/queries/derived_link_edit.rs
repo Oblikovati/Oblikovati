@@ -29,7 +29,7 @@ fn add_link(
     Client::new(FileHost::new(files, guids, "test"))
         .parameters()
         .add_derived_table(&DerivedParameterTableAddArgs {
-            source_document: "/source.opd".into(),
+            source_document: fixture_file_name("/source.opd"),
             linked: Some(names.iter().map(|name| (*name).into()).collect()),
         })
 }
