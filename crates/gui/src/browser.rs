@@ -203,24 +203,47 @@ fn sketch_row(
         document: state.document.unwrap_or(0),
         sketch: row.id,
     };
+    if sketch_selectable(ui, row)
+        && ui.is_mouse_double_clicked(MouseButton::Left)
+        && action.dispatchable(state)
+    {
+        actions.push(action.clone());
+    }
+    sketch_context_menu(ui, state, action, actions);
+}
+fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch) -> bool {
     let editing = row.inspection.as_ref().is_ok_and(|summary| summary.editing);
     let position = ui.cursor_screen_pos();
-    let activated = ui
+    let selectable = ui
         .selectable_config("##sketch-row")
-        .allow_double_click(true)
-        .selected(editing)
-        .build();
+        .allow_double_click(true);
+    let activated = selectable.selected(editing).build();
     // Literal labels are drawn separately so imported names containing ## remain visible.
     ui.get_window_draw_list().add_text(
         position,
         ui.style_color(StyleColor::Text),
         sketch_caption(row),
     );
-    if activated && ui.is_mouse_double_clicked(MouseButton::Left) && action.dispatchable(state) {
-        actions.push(action);
-    }
     if ui.is_item_hovered() {
         ui.tooltip_text(sketch_tooltip(row));
+    }
+    activated
+}
+fn sketch_context_menu(
+    ui: &Ui,
+    state: &GuiCommandState,
+    action: GuiShellAction,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let Some(_popup) = ui.begin_popup_context_item() else {
+        return;
+    };
+    if ui
+        .menu_item_config("Edit Sketch")
+        .enabled(action.dispatchable(state))
+        .build()
+    {
+        actions.push(action);
     }
 }
 fn sketch_caption(row: &GuiBrowserSketch) -> String {
