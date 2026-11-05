@@ -6,7 +6,7 @@ pub(super) fn create_size_parameter(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,
 ) {
-    click_shell_position(window, owner, [130, 107]);
+    open_parameter_ribbon(window, owner);
     click_shell_position(window, owner, [400, 43]);
     type_native_text(window, owner, "size");
     click_shell_position(window, owner, [400, 66]);
@@ -14,6 +14,7 @@ pub(super) fn create_size_parameter(
     click_shell_position(window, owner, [345, 90]);
     assert_size_expression(owner, "10 mm");
     click_shell_position(window, owner, [440, 90]);
+    click_shell_position(window, owner, [250, 44]);
 }
 fn assert_size_expression(owner: &NativeDesktopOwner, expression: &str) {
     let state = owner.gui_command_state().unwrap();
@@ -25,7 +26,7 @@ fn assert_size_expression(owner: &NativeDesktopOwner, expression: &str) {
     assert_eq!(parameter.expression, expression);
 }
 fn edit_size_parameter(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
-    click_shell_position(window, owner, [130, 107]);
+    open_parameter_ribbon(window, owner);
     click_shell_position(window, owner, [350, 137]);
     click_shell_position(window, owner, [400, 66]);
     for _ in "10 mm".chars() {
@@ -75,4 +76,9 @@ pub(super) fn verify_rectangle(
         assert!(!geometry.dimension_is_reference(constraint.id).unwrap());
         assert!((geometry.measure_dimension(constraint.id).unwrap().value - expected).abs() < 1e-9);
     }
+}
+
+fn open_parameter_ribbon(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+    click_shell_position(window, owner, [350, 44]);
+    click_shell_position(window, owner, [50, 90]);
 }

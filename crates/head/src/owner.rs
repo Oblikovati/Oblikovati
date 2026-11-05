@@ -199,6 +199,11 @@ impl<
         Ok(oblikovati_gui::GuiCommandState {
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),
+            document_type: Some(
+                self.files
+                    .document_type(document)
+                    .map_err(|cause| cause.to_string())?,
+            ),
             parameters: self.gui_parameter_rows()?,
             authoring: self.gui_authoring_context(document)?,
             undo_label: session.undo_label().map(str::to_owned),

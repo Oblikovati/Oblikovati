@@ -43,8 +43,8 @@ pub(super) fn save_rectangle_file(
     directory
 }
 fn choose_file_menu(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, item_y: i32) {
-    click_shell_position(window, owner, [195, 107]);
-    click_shell_position(window, owner, [340, item_y]);
+    click_shell_position(window, owner, [20, 10]);
+    click_shell_position(window, owner, [50, item_y - 74]);
 }
 fn close_and_reopen(
     window: &mut ScriptedGuiWindow,

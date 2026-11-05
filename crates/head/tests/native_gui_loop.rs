@@ -74,16 +74,19 @@ fn click_shell_position(
     owner: &mut NativeDesktopOwner,
     position: [i32; 2],
 ) {
-    window.scripted = [true, false]
-        .map(|pressed| {
-            ViewportEvent::Input(ViewportInput::Button {
-                button: ViewportButton::Left,
-                pressed,
-                position,
-                modifiers: Default::default(),
-            })
+    let motion = ViewportEvent::Input(ViewportInput::Motion {
+        position,
+        modifiers: Default::default(),
+    });
+    let clicks = [true, false].map(|pressed| {
+        ViewportEvent::Input(ViewportInput::Button {
+            button: ViewportButton::Left,
+            pressed,
+            position,
+            modifiers: Default::default(),
         })
-        .into();
+    });
+    window.scripted = std::iter::once(motion).chain(clicks).collect();
     window.passed.clear();
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
     assert!(
@@ -204,11 +207,13 @@ fn verify_browser_reentry_pixels(
     assert_eq!(window.native.view.camera_state().unwrap(), original);
     let after = capture_framebuffer(&mut window.native);
     let width = before.extent[0] as usize;
+    // #3798: contextual chrome changes on entry; the camera and visible model must not.
     for (row, (old, new)) in before
         .rgba
         .chunks_exact(width * 4)
         .zip(after.rgba.chunks_exact(width * 4))
         .enumerate()
+        .skip(168)
     {
         assert!(
             old[500 * 4..] == new[500 * 4..],

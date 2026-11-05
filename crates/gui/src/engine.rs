@@ -6,7 +6,7 @@ use crate::{
     input::{apply_input, input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
-use imgui::{Condition, ConfigFlags, Context, TextureId};
+use imgui::{ConfigFlags, Context, TextureId};
 use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct GuiFrameRequest {
@@ -34,6 +34,7 @@ pub struct GuiFrameEngine {
     atlas: GuiAtlas,
     parameter_editor: crate::parameters::GuiParameterEditor,
     document_files: crate::files::GuiDocumentFiles,
+    ribbon: crate::ribbon::DocumentRibbon,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -46,6 +47,7 @@ impl GuiFrameEngine {
             atlas,
             parameter_editor: Default::default(),
             document_files: Default::default(),
+            ribbon: Default::default(),
         })
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
@@ -68,6 +70,7 @@ impl GuiFrameEngine {
             request,
             &mut self.parameter_editor,
             &mut self.document_files,
+            &mut self.ribbon,
         )
     }
     /// Request a path for the owner's unsaved document without writing it.
@@ -146,17 +149,18 @@ fn draw_controls(
     request: &GuiFrameRequest,
     parameter_editor: &mut crate::parameters::GuiParameterEditor,
     document_files: &mut crate::files::GuiDocumentFiles,
+    ribbon: &mut crate::ribbon::DocumentRibbon,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
     let ui = context.frame();
     let mut selected = Vec::new();
-    shell_panel(
+    crate::chrome::ribbon_band(
         ui,
-        &request.commands,
-        request.status.as_deref(),
-        &mut selected,
+        request,
+        ribbon,
         parameter_editor,
         document_files,
+        &mut selected,
     );
     parameter_editor.panel(ui, &request.commands, &mut selected);
     crate::browser::panel(
@@ -174,59 +178,6 @@ fn draw_controls(
         activity: frame_activity()?,
     })
 }
-fn shell_panel(
-    ui: &imgui::Ui,
-    state: &GuiCommandState,
-    status: Option<&str>,
-    selected: &mut Vec<GuiShellAction>,
-    parameter_editor: &mut crate::parameters::GuiParameterEditor,
-    document_files: &mut crate::files::GuiDocumentFiles,
-) {
-    ui.window("Oblikovati")
-        .position([8., 8.], Condition::Always)
-        .size([300., 150.], Condition::Always)
-        .movable(false)
-        .resizable(false)
-        .build(|| {
-            shell_buttons(ui, state, selected);
-            ui.same_line();
-            parameter_editor.toolbar(ui, state);
-            ui.same_line();
-            document_files.menu(ui, state, selected);
-            ui.text_wrapped(status.unwrap_or("Document commands"));
-        });
-}
-fn shell_buttons(ui: &imgui::Ui, state: &GuiCommandState, selected: &mut Vec<GuiShellAction>) {
-    for (label, action) in [
-        ("Save", GuiShellAction::Save),
-        ("Undo", GuiShellAction::Undo),
-        ("Redo", GuiShellAction::Redo),
-        ("Home", GuiShellAction::Home),
-    ] {
-        if shell_button(ui, label, &action, state) {
-            selected.push(action);
-        }
-        ui.same_line();
-    }
-    ui.new_line();
-    if shell_button(ui, "New Part", &GuiShellAction::NewPart, state) {
-        selected.push(GuiShellAction::NewPart);
-    }
-    for (label, action) in [
-        ("Sketch XY", GuiShellAction::StartSketchXY),
-        ("Finish Sketch", GuiShellAction::FinishSketch),
-    ] {
-        ui.same_line();
-        if shell_button(ui, label, &action, state) {
-            selected.push(action);
-        }
-    }
-    ui.new_line();
-    if shell_button(ui, "Rectangle", &GuiShellAction::Rectangle, state) {
-        selected.push(GuiShellAction::Rectangle);
-    }
-}
-
 fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
     let io = context.io_mut();
     io.display_size =
@@ -236,21 +187,4 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
     for event in &request.events {
         apply_input(io, event, request.framebuffer_scale);
     }
-}
-
-fn shell_button(
-    ui: &imgui::Ui,
-    label: &str,
-    action: &GuiShellAction,
-    state: &GuiCommandState,
-) -> bool {
-    let disabled = ui.begin_disabled(!action.enabled(state));
-    let clicked = ui.button(label);
-    drop(disabled);
-    if ui.is_item_hovered()
-        && let Some(next) = action.next_label(state)
-    {
-        ui.tooltip_text(format!("{label} {next}"));
-    }
-    clicked && action.dispatchable(state)
 }

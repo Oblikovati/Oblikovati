@@ -6,13 +6,14 @@ fn request() -> GuiFrameRequest {
     GuiFrameRequest {
         extent: [640, 360],
         status: None,
-        events: vec![GuiInputEvent::PointerMoved([0., 0.])],
+        events: vec![GuiInputEvent::PointerMoved([630., 350.])],
         commands: GuiCommandState {
             browser: None,
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
             transaction_open: false,
             authoring: GuiAuthoringContext::Part,
+            document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             document: Some(1),
             parameters: Vec::new(),
         },
@@ -162,6 +163,8 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
         engine.frame(&input).unwrap().actions,
         [GuiShellAction::Rectangle]
     );
+    let active_document = input.commands.clone();
+    input.commands = GuiCommandState::default();
     input.events = vec![GuiInputEvent::PointerMoved([40., 68.])];
     engine.frame(&input).unwrap();
     input.events = vec![left_button_event(true)];
@@ -171,6 +174,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
         engine.frame(&input).unwrap().actions,
         [GuiShellAction::NewPart]
     );
+    input.commands = active_document;
     for (x, action) in [
         (30., GuiShellAction::Save),
         (75., GuiShellAction::Undo),
