@@ -2,6 +2,7 @@
 
 //! Serial document edits and transaction observations, independent of UI and I/O.
 mod body_visibility;
+mod browser_selection;
 pub mod clients;
 mod command;
 mod error;
