@@ -46,12 +46,6 @@ impl Default for DesktopDispatchOptions {
 /// require_send::<DesktopOwner<(), (), (), (), (), PollingDispatchWakeup>>();
 /// ```
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
-    browser_selection: std::collections::BTreeMap<
-        u64,
-        oblikovati_session::selection::SelectionSet<
-            oblikovati_session::selection::BrowserSketchPick,
-        >,
-    >,
     color_schemes: oblikovati_model::color_scheme::ColorSchemeRegistry,
     theme_store: Option<Box<dyn oblikovati_model::theme::ThemeSelectionStore>>,
     themes: Option<oblikovati_model::theme::ThemeLibrary>,
@@ -94,7 +88,6 @@ impl<
     ) -> Self {
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
-            browser_selection: Default::default(),
             color_schemes: Default::default(),
             theme_store: None,
             themes: None,

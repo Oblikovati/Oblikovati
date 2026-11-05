@@ -7,10 +7,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
     /// Activate an open document; example: `workspace.activate(id)?;`.
     pub fn activate(&mut self, id: u64) -> Result<(), WorkspaceError> {
         self.session(id)?;
-        if self.active != Some(id) {
-            self.focus_identity = std::sync::Arc::new(());
-        }
-        self.active = Some(id);
+        self.switch_document_focus(Some(id));
         self.observer.activated(id);
         Ok(())
     }
@@ -47,6 +44,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             .map_err(WorkspaceSaveError::Workspace)
     }
 
+    fn switch_document_focus(&mut self, document: Option<u64>) {
+        if self.active == document {
+            return;
+        }
+        // Go watchDocumentSwitches at aa8297d1 (#1105) retires picks on an actual switch.
+        for id in self.active.into_iter().chain(document) {
+            if let Some(entry) = self.entries.get_mut(&id) {
+                entry.session.browser_selection.clear();
+            }
+        }
+        self.focus_identity = std::sync::Arc::new(());
+        self.active = document;
+    }
+
     fn approve_close(&mut self, id: u64) -> Result<(), WorkspaceError> {
         let entry = self.entries.get(&id).ok_or(WorkspaceError::Missing(id))?;
         self.observer
@@ -62,8 +73,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let entry = self.entries.remove(&id).expect("validated document");
         self.order.retain(|candidate| *candidate != id);
         if self.active == Some(id) {
-            self.focus_identity = std::sync::Arc::new(());
-            self.active = self.order.first().copied();
+            self.switch_document_focus(self.order.first().copied());
         }
         let observer = entry.session.close();
         self.observer.closed(id, self.active);

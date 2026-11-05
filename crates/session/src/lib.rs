@@ -61,6 +61,7 @@ struct BoundedGroup {
 /// One document owner; observers can inspect snapshots but cannot mutate this owner.
 pub struct DocumentSession<O> {
     document: u64,
+    browser_selection: selection::SelectionSet<selection::BrowserSketchPick>,
     history: DocumentEditHistory,
     observer: O,
     group: Option<BoundedGroup>,
@@ -84,6 +85,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
     ) -> Self {
         Self {
             document,
+            browser_selection: Default::default(),
             history,
             observer,
             group: None,

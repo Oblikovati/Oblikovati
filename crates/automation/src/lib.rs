@@ -20,6 +20,7 @@ pub mod dispatch;
 mod file_queries;
 mod groups_edit;
 mod host;
+mod model_selection;
 mod selection_events;
 pub use file_queries::{FILE_QUERY_METHODS, FileQueryHost};
 pub use selection_events::{
@@ -60,8 +61,9 @@ use oblikovati_session::{
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 32] = [
+pub const QUERY_METHODS: [&str; 33] = [
     METHOD_CLIENT_APPS_LIST,
+    METHOD_MODEL_SELECTION,
     METHOD_SKETCH_GET_INFERENCE_OPTIONS,
     METHOD_DOCUMENTS_LIST_ATTACHMENTS,
     METHOD_DOCUMENTS_LIST_INTERESTS,
@@ -126,6 +128,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_MODEL_SELECTION => encode(&model_selection::read(self.workspace)?),
             METHOD_SKETCH_GET_INFERENCE_OPTIONS => {
                 sketch_inference::query_inference_preferences(self.workspace)
             }

@@ -18,14 +18,13 @@ impl<
         toggle: bool,
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
-        let session = self
-            .files
-            .workspace()
-            .session(document)
-            .map_err(|cause| cause.to_string())?;
-        let picks = self.browser_selection.entry(document).or_default();
         let mode = SelectionClickMode::from_modifiers(toggle, false);
-        apply_checked_browser_sketch(session, sketch, mode, self.placement.is_some(), picks)
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .set_browser_sketch_selection(Some(sketch), mode, self.placement.is_some())
+            .map(|count| count.is_some())
+            .map_err(|cause| cause.to_string())
     }
     fn require_browser_document(&self, document: u64) -> Result<(), String> {
         if self.files.workspace().active_document() != Some(document) {
@@ -36,41 +35,11 @@ impl<
         }
         Ok(())
     }
-    pub(super) fn prune_browser_selection(&mut self) {
-        let documents = self.files.workspace().documents();
-        self.browser_selection
-            .retain(|document, _| documents.contains(document));
-    }
     pub(super) fn selected_browser_sketches(&self, document: u64) -> Vec<DocumentSketchId> {
-        let Some(picks) = self.browser_selection.get(&document) else {
-            return Vec::new();
-        };
-        let Ok(session) = self.files.workspace().session(document) else {
-            return Vec::new();
-        };
-        picks
-            .items()
-            .iter()
-            .filter(|pick| session.browser_sketch_pick(pick.sketch()).as_ref() == Ok(*pick))
-            .map(|pick| pick.sketch())
-            .collect()
+        self.files
+            .workspace()
+            .session(document)
+            .map(|session| session.selected_browser_sketches())
+            .unwrap_or_default()
     }
-}
-
-fn apply_checked_browser_sketch<O: TransactionObserver>(
-    session: &oblikovati_session::DocumentSession<O>,
-    sketch: DocumentSketchId,
-    mode: SelectionClickMode,
-    tool_active: bool,
-    picks: &mut oblikovati_session::selection::SelectionSet<
-        oblikovati_session::selection::BrowserSketchPick,
-    >,
-) -> Result<bool, String> {
-    let pick = session
-        .browser_sketch_pick(sketch)
-        .map_err(|cause| cause.to_string())?;
-    session
-        .apply_browser_sketch_click(Some(pick), mode, tool_active, picks)
-        .map(|count| count.is_some())
-        .map_err(|cause| cause.to_string())
 }

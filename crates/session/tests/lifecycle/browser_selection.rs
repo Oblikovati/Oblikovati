@@ -155,3 +155,38 @@ fn browser_identity_follows_existence_through_undo_and_redo() {
     );
     assert_eq!(picks.items(), &[pick]);
 }
+
+#[test]
+fn owned_browser_selection_can_clear_without_model_history_and_tools_do_not_take_it() {
+    let mut session = selection_session(None);
+    assert_eq!(
+        session
+            .set_browser_sketch_selection(Some(DocumentSketchId(99)), Replace, true)
+            .unwrap(),
+        None
+    );
+    assert_eq!(
+        session
+            .set_browser_sketch_selection(Some(BROWSER_SKETCH), Replace, false)
+            .unwrap(),
+        Some(1)
+    );
+    assert_eq!(session.selected_browser_sketches(), [BROWSER_SKETCH]);
+    assert_eq!(
+        session
+            .set_browser_sketch_selection(None, Toggle, false)
+            .unwrap(),
+        None
+    );
+    assert_eq!(session.selected_browser_sketches(), [BROWSER_SKETCH]);
+    assert_eq!(
+        session
+            .set_browser_sketch_selection(None, Replace, false)
+            .unwrap(),
+        Some(0)
+    );
+    assert!(session.selected_browser_sketches().is_empty());
+    assert_eq!(session.generation(), 0);
+    assert!(session.undo_labels().is_empty());
+    assert!(session.observer().observations.is_empty());
+}

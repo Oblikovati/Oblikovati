@@ -242,7 +242,6 @@ impl<
             return Err("desktop drain budget 0: expected a positive bounded batch".into());
         }
         let serviced = self.drain_calls(budget)?;
-        self.prune_browser_selection();
         let changed = self.factory.take_changed() || serviced != 0;
         let changed = self.synchronize_sketch_edit() || changed;
         let pending = self.dispatch.pending().map_err(|error| error.to_string())? != 0;
