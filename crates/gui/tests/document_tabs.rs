@@ -160,3 +160,32 @@ fn literal_identical_tab_labels_keep_separate_click_identities() {
         })]
     );
 }
+#[test]
+fn refused_active_tab_close_does_not_activate_another_document_on_idle_or_save() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = tab_request();
+    request.commands.document = Some(2);
+    for row in &mut request.commands.documents {
+        row.active = row.id == 2;
+    }
+    for _ in 0..3 {
+        engine.frame(&request).unwrap();
+    }
+    assert_eq!(
+        tab_click(&mut engine, &mut request, [452., 178.]),
+        [GuiShellAction::CloseDocument(
+            oblikovati_api::wire::CloseDocumentArgs {
+                id: 2,
+                force: false
+            }
+        )]
+    );
+    request.events.clear();
+    for _ in 0..10 {
+        assert!(engine.frame(&request).unwrap().actions.is_empty());
+    }
+    assert_eq!(
+        tab_click(&mut engine, &mut request, [34., 45.]),
+        [GuiShellAction::Save]
+    );
+}
