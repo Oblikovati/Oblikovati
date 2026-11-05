@@ -29,6 +29,8 @@ pub use selection_events::{
 mod options;
 mod settings_edit;
 mod sketch_edit_state;
+mod window_capture;
+pub use window_capture::{WINDOW_CAPTURE_METHODS, WindowCaptureAccess};
 mod sketch_inference;
 pub use sketch_edit_state::SketchInspectionEdit;
 mod sketches;

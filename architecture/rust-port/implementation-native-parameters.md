@@ -29,7 +29,10 @@ observed a healthy sketch with zero DOF at 10 mm, after editing to 20 mm, after
 Undo, and after Redo. The first corner must land on the displayed origin; a click
 one pixel below it retained two translation DOF under the current physical snap
 distance. These are read-only observations, with no API setup or geometry edits.
-Window captures were made through X11; the MCP capture methods are not yet ported.
+The repeated run used the bridge's `capture_window` tool to obtain each completed
+native frame as a PNG image. The returned image bytes matched the host's PNG file.
+The 10 mm rectangle and the 20 mm parameter panel after Redo were visually checked.
+The window and MCP listener were closed at the end of the run.
 
 `sketch.list` and `sketch.get` inspect the current owner without recording history.
 They report names, planes, authored entity counts, structural DOF, current solve
@@ -44,6 +47,16 @@ Issue #3796 records an add-in wrapper delegation defect found by this live test.
 The common forwarding path now keeps Part creation, sketch entry/exit, and
 rectangle placement available in both script and add-in wrappers. The native
 wrapper regression failed before the fix and passed after it.
+
+`viewport.captureWindow` now queues bounded view work through the same file owner.
+It reports the observed drawable size and publishes the next completed frame,
+including GUI content, with an atomic PNG replacement. Capture requests do not
+edit a document or add history. The default path uses an injected temporary
+directory and a per-desktop namespace. A resize that changes the requested extent
+or a file-write failure produces a visible capture error and leaves the window
+live. Tests cover queue bounds, invalid requests, exact PNG row/alpha/sRGB values,
+native API-to-frame transfer, and file failures. The separate GUI-free
+`viewport.capture` contract is not yet ported.
 
 Placement fields preview and commit through the same validated sketch command.
 Point-coincidence inference uses the existing sketch preferences and point order.

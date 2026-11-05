@@ -15,6 +15,24 @@ mod gui;
 pub use gui::HeadGuiUpdate;
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Observe the drawable used for capture metadata; example: `window.window_capture_extent()?`.
+    fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
+        Ok(None)
+    }
+    /// Admit another batch only after the previous batch completes.
+    /// Example: `window.window_capture_ready()` before transferring owner requests.
+    fn window_capture_ready(&self) -> bool {
+        false
+    }
+    /// Retain requests until a completed frame; example: `window.request_window_captures(jobs)?`.
+    fn request_window_captures(
+        &mut self,
+        requests: Vec<crate::WindowCaptureJob>,
+    ) -> Result<(), String> {
+        Err(format!(
+            "window capture requests {requests:?}: expected a native completed-frame capture target"
+        ))
+    }
     /// Advance GUI work before routing one input; example: `window.gui_frame(Some(event), &commands)?`.
     fn gui_frame(
         &mut self,
@@ -230,6 +248,7 @@ fn run_owner_frame(
     control: &mut FrameControl,
 ) -> Result<crate::HeadWorkStatus, String> {
     let inputs = window.events(64)?;
+    owner.observe_window_capture_extent(window.window_capture_extent()?);
     control.pending |= process_frame_inputs(window, owner, &inputs)?;
     let mut activity = owner.poll(32)?;
     publish_command_notice(window, owner)?;
@@ -249,8 +268,25 @@ fn run_owner_frame(
     if control.stopped() || gui.deferred {
         return Ok(activity);
     }
+    if control.mapped {
+        control.pending |= publish_window_capture_requests(window, owner)?;
+    }
     control.frame(window)?;
     Ok(activity)
+}
+fn publish_window_capture_requests(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+) -> Result<bool, String> {
+    if !window.window_capture_ready() {
+        return Ok(false);
+    }
+    let requests = owner.take_window_capture_requests();
+    if requests.is_empty() {
+        return Ok(false);
+    }
+    window.request_window_captures(requests)?;
+    Ok(true)
 }
 fn process_frame_inputs(
     window: &mut dyn HeadWindow,

@@ -12,6 +12,13 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Observe the current drawable before admitting API capture requests.
+    /// Example: `work.observe_window_capture_extent(Some([1440, 900]))` before polling.
+    fn observe_window_capture_extent(&mut self, _: Option<[u32; 2]>) {}
+    /// Transfer bounded capture work to the native window; example: `work.take_window_capture_requests()`.
+    fn take_window_capture_requests(&mut self) -> Vec<crate::WindowCaptureJob> {
+        Vec::new()
+    }
     /// Activate rectangle placement on the current sketch; example: `work.place_rectangle_from_gui()?`.
     fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
         Err("Rectangle: expected an owner with an active sketch".into())
@@ -125,8 +132,14 @@ impl HeadWork for IdleHeadWork {
 }
 
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
-macro_rules! forward_sketch_work {
+macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
+            self.$owner.observe_window_capture_extent(extent);
+        }
+        fn take_window_capture_requests(&mut self) -> Vec<$crate::WindowCaptureJob> {
+            self.$owner.take_window_capture_requests()
+        }
         // #3796: an add-in layer must retain the same UI authoring operations as the script layer.
         fn create_part_document(&mut self) -> Result<bool, String> {
             self.$owner.create_part_document()
@@ -154,4 +167,4 @@ macro_rules! forward_sketch_work {
         }
     };
 }
-pub(crate) use forward_sketch_work;
+pub(crate) use forward_owner_view_work;

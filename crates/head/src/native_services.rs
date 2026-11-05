@@ -154,7 +154,7 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
         self.owner.process_inputs(inputs)
     }
 
-    crate::work::forward_sketch_work!(owner);
+    crate::work::forward_owner_view_work!(owner);
 
     fn process_window_inputs(
         &mut self,

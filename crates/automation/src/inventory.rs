@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::*;
 use oblikovati_api::wire::METHOD_DOCUMENTS_LIST_ATTACHMENTS;
-const FILE_METHOD_GROUPS: [&[&str]; 17] = [
+const FILE_METHOD_GROUPS: [&[&str]; 18] = [
+    &WINDOW_CAPTURE_METHODS,
     &QUERY_METHODS,
     &ASSET_QUERY_METHODS,
     &ASSET_COMMAND_METHODS,
