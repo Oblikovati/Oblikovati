@@ -15,6 +15,8 @@ unsafe_code = "deny"
 [lints.clippy]
 all = "warn"
 [dependencies]
+png = "=0.17.16"
+tempfile = "=3.27.0"
 oblikovati-addin-host = { path = "../addin-host" }
 oblikovati-gui = { path = "../gui" }
 oblikovati-martensite = { path = "../martensite" }

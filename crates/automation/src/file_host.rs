@@ -41,6 +41,7 @@ pub struct FileHost<'a, O: TransactionObserver, W, F> {
     context: RefCell<FileContext<'a, O, W, F>>,
 }
 struct FileContext<'a, O: TransactionObserver, W, F> {
+    window_capture: Option<&'a mut dyn crate::WindowCaptureAccess>,
     sketch_edit: Option<crate::SketchInspectionEdit>,
     files: &'a mut FileWorkspace<O, W, F>,
     source: &'a mut dyn GuidSource,
@@ -53,6 +54,11 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Inject the native capture queue; example: `host.with_window_capture(&mut captures)`.
+    pub fn with_window_capture(mut self, capture: &'a mut dyn crate::WindowCaptureAccess) -> Self {
+        self.context.get_mut().window_capture = Some(capture);
+        self
+    }
     /// Supply current desktop edit state without changing the document recipe.
     /// Example: `host.with_sketch_edit(Some(edit.clone()))`.
     pub fn with_sketch_edit(mut self, edit: Option<crate::SketchInspectionEdit>) -> Self {
@@ -75,6 +81,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
     ) -> Self {
         Self {
             context: RefCell::new(FileContext {
+                window_capture: None,
                 sketch_edit: None,
                 files,
                 source,
@@ -93,6 +100,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if crate::WINDOW_CAPTURE_METHODS.contains(&method) {
+            return crate::window_capture::apply(&mut context.window_capture, request);
+        }
         if crate::CLIENT_COMMAND_METHODS.contains(&method) {
             return crate::clients::apply(context.files.connected_clients_mut(), method, request);
         }

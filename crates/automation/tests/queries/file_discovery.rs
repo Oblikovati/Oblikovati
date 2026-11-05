@@ -219,3 +219,6 @@ mod datums_api;
 
 #[path = "asset_catalog.rs"]
 mod asset_catalog;
+
+#[path = "window_capture.rs"]
+mod window_capture;

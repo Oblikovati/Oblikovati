@@ -35,6 +35,7 @@ impl Default for DesktopDispatchOptions {
 /// require_send::<DesktopOwner<(), (), (), (), (), PollingDispatchWakeup>>();
 /// ```
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
+    window_captures: Option<crate::DesktopWindowCaptures>,
     files: FileWorkspace<O, W, F>,
     guids: G,
     factory: R,
@@ -73,6 +74,7 @@ impl<
     ) -> Self {
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
+            window_captures: None,
             files,
             guids,
             factory,
@@ -87,6 +89,12 @@ impl<
             placement: None,
             sketch_edit: None,
         }
+    }
+    /// Enable view capture with an injected output configuration.
+    /// Example: `owner.with_window_captures(DesktopWindowCaptures::new(directory, namespace))`.
+    pub fn with_window_captures(mut self, captures: crate::DesktopWindowCaptures) -> Self {
+        self.window_captures = Some(captures);
+        self
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
     pub fn caller(&self) -> QueuedCaller<S> {
@@ -116,6 +124,7 @@ impl<
             &mut self.factory,
             &mut self.part_scenes,
             &self.sketch_construction,
+            &mut self.window_captures,
         )
         .with_sketch_edit(editing)
     }
@@ -128,6 +137,7 @@ impl<
             &mut self.factory,
             &mut self.part_scenes,
             &self.sketch_construction,
+            &mut self.window_captures,
         )
         .with_sketch_edit(editing);
         self.dispatch
@@ -158,6 +168,16 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
+        if let Some(captures) = &mut self.window_captures {
+            captures.observe_extent(extent);
+        }
+    }
+    fn take_window_capture_requests(&mut self) -> Vec<crate::WindowCaptureJob> {
+        self.window_captures
+            .as_mut()
+            .map_or_else(Vec::new, |captures| captures.take_pending())
+    }
     fn complete_save_path(
         &mut self,
         document: u64,
@@ -339,11 +359,16 @@ fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     factory: &'a mut dyn DocumentObserverFactory<Observer = O>,
     scenes: &'a mut crate::part_scene::DesktopPartScenes,
     construction: &'a dyn oblikovati_model::sketch::SketchCircleConstruction,
+    captures: &'a mut Option<crate::DesktopWindowCaptures>,
 ) -> FileHost<'a, O, W, F> {
-    FileHost::new(files, guids, version)
+    let host = FileHost::new(files, guids, version)
         .with_observer_factory(factory)
         .with_part_topology(scenes)
-        .with_sketch_construction(construction, Default::default())
+        .with_sketch_construction(construction, Default::default());
+    match captures {
+        Some(captures) => host.with_window_capture(captures),
+        None => host,
+    }
 }
 #[path = "owner_placement.rs"]
 mod placement;

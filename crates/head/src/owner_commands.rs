@@ -16,6 +16,10 @@ enum NativeDocumentCommand {
 /// Command feedback stays on the owner until the native window consumes it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DesktopCommandNotice {
+    WindowCaptureFailed {
+        path: std::path::PathBuf,
+        cause: String,
+    },
     AuthoringFailed {
         cause: String,
     },
@@ -60,6 +64,9 @@ impl DesktopCommandNotice {
     /// Explain the result for native feedback; example: `notice.message()` in a title or status panel.
     pub fn message(&self) -> String {
         match self {
+            Self::WindowCaptureFailed { path, cause } => {
+                format!("Window capture {path:?} failed: {cause}")
+            }
             Self::AuthoringFailed { cause } => format!("Command failed: {cause}"),
             Self::SketchEditFailed { cause } => format!("Sketch edit could not be opened: {cause}"),
             Self::PreviewFailed { cause } => format!("Preview could not be drawn: {cause}"),

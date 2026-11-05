@@ -8,6 +8,8 @@ use oblikovati_viewport::{
     ViewportWake,
 };
 pub struct NativeHeadWindow {
+    capture_files: Box<dyn crate::WindowCaptureFiles>,
+    capture_requests: Vec<crate::WindowCaptureJob>,
     runtime: ViewportRuntime,
     view: Viewport,
     wake: ViewportWake,
@@ -23,6 +25,13 @@ pub struct NativeHeadWindow {
 impl NativeHeadWindow {
     /// Open an owner-thread desktop target; example: `let window = NativeHeadWindow::open()?;`.
     pub fn open() -> Result<Self, String> {
+        Self::open_with_capture_files(Box::new(crate::NativeWindowCaptureFiles))
+    }
+    /// Inject PNG publication while retaining the same native renderer.
+    /// Example: `NativeHeadWindow::open_with_capture_files(Box::new(files))?`.
+    pub fn open_with_capture_files(
+        capture_files: Box<dyn crate::WindowCaptureFiles>,
+    ) -> Result<Self, String> {
         let runtime = ViewportRuntime::new(ViewportOptions::default())?;
         let mut view = runtime.open_window("Oblikovati", [1440, 900])?;
         view.submit(&ViewportScene {
@@ -30,6 +39,8 @@ impl NativeHeadWindow {
             triangles: Vec::new(),
         })?;
         Ok(Self {
+            capture_files,
+            capture_requests: Vec::new(),
             runtime,
             view,
             wake: ViewportWake::new()?,
@@ -67,6 +78,29 @@ impl NativeHeadWindow {
     }
 }
 impl HeadWindow for NativeHeadWindow {
+    fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
+        self.view.drawable_extent().map(Some)
+    }
+    fn window_capture_ready(&self) -> bool {
+        self.capture_requests.is_empty()
+    }
+    fn request_window_captures(
+        &mut self,
+        requests: Vec<crate::WindowCaptureJob>,
+    ) -> Result<(), String> {
+        if !self.capture_requests.is_empty()
+            || requests.len() > crate::window_capture::WINDOW_CAPTURE_QUEUE_CAPACITY
+        {
+            return Err(format!(
+                "window captures pending={}, offered={}: expected an empty target and at most {} requests",
+                self.capture_requests.len(),
+                requests.len(),
+                crate::window_capture::WINDOW_CAPTURE_QUEUE_CAPACITY
+            ));
+        }
+        self.capture_requests = requests;
+        Ok(())
+    }
     fn gui_frame(
         &mut self,
         event: Option<&ViewportEvent>,
@@ -138,7 +172,10 @@ impl HeadWindow for NativeHeadWindow {
         let presentation = self.view.present()?;
         self.refresh_title()?;
         Ok(match presentation {
-            ViewportPresentation::Completed(_) => HeadPresentation::Completed,
+            ViewportPresentation::Completed(capture) => {
+                self.publish_window_captures(&capture)?;
+                HeadPresentation::Completed
+            }
             ViewportPresentation::SurfaceChanged(_) => {
                 if let Some(gui) = &mut self.gui {
                     gui.require_publication();
@@ -158,6 +195,7 @@ impl HeadWindow for NativeHeadWindow {
     }
     fn finish(&mut self) -> Result<(), String> {
         self.gui.take();
+        self.capture_requests.clear();
         let clipboard = self.clipboard.handoff_on_shutdown();
         self.view.close();
         let mut errors = self.runtime.validation_errors()?;
@@ -172,6 +210,7 @@ impl HeadWindow for NativeHeadWindow {
         ))
     }
 }
+mod capture;
 mod clipboard;
 #[derive(Clone)]
 struct NativeOwnerWake(ViewportWake);
@@ -202,7 +241,11 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         version,
         NativeOwnerWake(wake),
         crate::DesktopDispatchOptions::default(),
-    ))
+    )
+    .with_window_captures(crate::DesktopWindowCaptures::new(
+        std::env::temp_dir(),
+        u64::from(std::process::id()),
+    )))
 }
 #[cfg(test)]
 type NativeScriptDesktop = crate::DesktopScripts<NativeDesktopOwner>;

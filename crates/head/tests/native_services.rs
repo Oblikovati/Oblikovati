@@ -9,7 +9,7 @@ mod compiler;
 #[path = "native_services/window.rs"]
 mod controlled_window;
 #[path = "../../addin-host/tests/support/isolation.rs"]
-mod isolation;
+pub(super) mod isolation;
 #[allow(dead_code)]
 #[path = "../../addin-host/tests/support/resources.rs"]
 mod resources;

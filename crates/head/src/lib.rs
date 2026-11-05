@@ -26,7 +26,15 @@ mod startup;
 #[cfg(target_os = "linux")]
 pub use startup::run_window_with_documents;
 #[cfg(target_os = "linux")]
+mod capture_png;
+#[cfg(target_os = "linux")]
+mod window_capture;
+#[cfg(target_os = "linux")]
 mod work;
+#[cfg(target_os = "linux")]
+pub use capture_png::{NativeWindowCaptureFiles, WindowCaptureFiles};
+#[cfg(target_os = "linux")]
+pub use window_capture::{DesktopWindowCaptures, WindowCaptureJob};
 #[cfg(target_os = "linux")]
 pub use work::{HeadInvalidation, HeadWork, HeadWorkStatus};
 #[cfg(target_os = "linux")]

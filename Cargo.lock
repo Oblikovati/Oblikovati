@@ -964,6 +964,7 @@ dependencies = [
  "oblikovati-session",
  "oblikovati-solve",
  "oblikovati-viewport",
+ "png",
  "serde",
  "serde_json",
  "tempfile",
