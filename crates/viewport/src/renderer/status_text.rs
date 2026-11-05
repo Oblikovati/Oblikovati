@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use martensite_tkernel::{ncollection::Vec2, quantity::NamedColor};
+use martensite_tkernel::{
+    ncollection::Vec2,
+    quantity::{Color, NamedColor},
+};
 use martensite_tkservice::aspect::{
     AspectTypeOfDisplayText, AspectTypeOfStyleText, AspectTypeOfTriedronPosition,
 };

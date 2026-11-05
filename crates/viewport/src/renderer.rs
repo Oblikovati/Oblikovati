@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{ViewportCamera, ViewportScene};
-use martensite_tkernel::{
-    quantity::{Color, ColorSpace},
-    standard::Handle,
-};
+use martensite_tkernel::standard::Handle;
 use martensite_tkmath::gp::{Direction3, Point3};
 use martensite_tkservice::{
     aspect::AspectWindow,
@@ -14,6 +11,7 @@ use martensite_tkservice::{
 };
 use martensite_tkv3d::v3d::{V3dViewSource, V3dViewer};
 use martensite_vulkan::{Graphic3dRenderDriver, Graphic3dRenderView};
+mod background;
 #[path = "renderer/navigation.rs"]
 mod navigation;
 mod sketch_display;
@@ -27,6 +25,7 @@ pub(crate) struct SavedViewCamera {
     members: Graphic3dCamera,
 }
 pub(crate) struct RenderView {
+    pub background: Option<crate::ViewportBackground>,
     pub viewer: Handle<V3dViewer>,
     pub view: Handle<dyn V3dViewSource>,
     pub renderer: Handle<Graphic3dRenderView>,
@@ -53,6 +52,7 @@ impl RenderView {
             viewer,
             view,
             renderer,
+            background: None,
             structures: Vec::new(),
             status: Default::default(),
             preview: Default::default(),
@@ -82,21 +82,19 @@ impl RenderView {
     pub fn submit(&mut self, scene: &ViewportScene) -> Result<(), String> {
         scene.validate()?;
         let structures = crate::scene::build_scene(&self.viewer, &scene.triangles)?;
-        let color = Color::new(
-            scene.background[0],
-            scene.background[1],
-            scene.background[2],
-            ColorSpace::Rgb,
-        )
-        .map_err(|error| error.to_string())?;
+        background::apply_scene_background(&self.view, self.background, scene.background)?;
         for old in self.structures.drain(..) {
             old.remove();
         }
-        self.view.set_background_color(color);
         for structure in &structures {
             structure.display();
         }
         self.structures = structures;
+        Ok(())
+    }
+    pub fn set_background(&mut self, background: crate::ViewportBackground) -> Result<(), String> {
+        background::apply_background(&self.view, background)?;
+        self.background = Some(background);
         Ok(())
     }
     pub(crate) fn saved_camera(&self) -> SavedViewCamera {

@@ -5,6 +5,8 @@ use oblikovati_viewport::{
     ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene, ViewportTriangle,
 };
 use std::time::{Duration, Instant};
+#[path = "native/background.rs"]
+mod background;
 #[path = "native/navigation.rs"]
 mod navigation;
 #[path = "native/prism.rs"]

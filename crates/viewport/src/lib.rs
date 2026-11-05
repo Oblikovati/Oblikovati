@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owned Linux viewports over the published Martensite device and presentation path.
+mod background;
+pub use background::ViewportBackground;
 mod clipboard;
 mod input;
 pub use clipboard::ViewportClipboard;

@@ -126,6 +126,23 @@ impl Viewport {
     fn generations(&self) -> [u64; 4] {
         [self.scene, self.camera, self.surface, self.overlay]
     }
+    /// Apply application colours independently of geometry; example: `viewport.set_background(ViewportBackground::Solid([0, 0, 0]))?`.
+    pub fn set_background(
+        &mut self,
+        background: crate::ViewportBackground,
+    ) -> Result<bool, String> {
+        if self.live()?.background == Some(background) {
+            return Ok(false);
+        }
+        let next = next_generation(self.scene)?;
+        self.render
+            .as_mut()
+            .expect("live view")
+            .set_background(background)?;
+        self.scene = next;
+        self.completed = None;
+        Ok(true)
+    }
     /// Replace validated presentation inputs; example: `viewport.submit(&scene)?`.
     pub fn submit(&mut self, scene: &ViewportScene) -> Result<(), String> {
         self.live()?;
