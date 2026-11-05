@@ -10,6 +10,7 @@ pub struct GuiModelBrowser {
     pub has_origin: bool,
     pub sketches: Vec<GuiBrowserSketch>,
     pub features: Vec<GuiBrowserFeature>,
+    pub selected_sketches: Vec<DocumentSketchId>,
 }
 /// Stable sketch identity paired with its current canonical API inspection or local decline.
 #[derive(Clone, Debug, PartialEq)]
@@ -30,6 +31,13 @@ impl GuiModelBrowser {
     pub(crate) fn validate(&self) -> Result<(), String> {
         self.validate_labels()?;
         self.validate_identities()?;
+        for id in &self.selected_sketches {
+            if !self.sketches.iter().any(|row| row.id == *id) {
+                return Err(format!(
+                    "browser selected sketch {id:?}: expected a current sketch row"
+                ));
+            }
+        }
         for row in &self.sketches {
             row.validate(&self.features)?;
         }
@@ -207,18 +215,42 @@ fn sketch_row(
         document: state.document.unwrap_or(0),
         sketch: row.id,
     };
-    if sketch_selectable(ui, row)
-        && ui.is_mouse_double_clicked(MouseButton::Left)
-        && action.dispatchable(state)
-    {
-        actions.push(action.clone());
+    if sketch_selectable(
+        ui,
+        row,
+        state
+            .browser
+            .as_ref()
+            .is_some_and(|browser| browser.selected_sketches.contains(&row.id)),
+    ) {
+        sketch_activation(ui, state, row.id, &action, actions);
     }
     sketch_context_menu(ui, state, action, actions);
 }
-fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch) -> bool {
-    let editing = row.inspection.as_ref().is_ok_and(|summary| summary.editing);
+fn sketch_activation(
+    ui: &Ui,
+    state: &GuiCommandState,
+    sketch: DocumentSketchId,
+    edit: &GuiShellAction,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let select = GuiShellAction::SelectBrowserSketch {
+        document: state.document.unwrap_or(0),
+        sketch,
+        // #3811: edit activation must retain its sketch even after a modified first click.
+        toggle: !ui.is_mouse_double_clicked(MouseButton::Left)
+            && (ui.io().key_shift || ui.io().key_ctrl),
+    };
+    if select.dispatchable(state) {
+        actions.push(select);
+    }
+    if ui.is_mouse_double_clicked(MouseButton::Left) && edit.dispatchable(state) {
+        actions.push(edit.clone());
+    }
+}
+fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch, selected: bool) -> bool {
     let position = ui.cursor_screen_pos();
-    let activated = crate::widget_abi::selectable(ui, "##sketch-row", editing, true);
+    let activated = crate::widget_abi::selectable(ui, "##sketch-row", selected, true);
     // Literal labels are drawn separately so imported names containing ## remain visible.
     crate::widget_abi::literal_text(
         ui,

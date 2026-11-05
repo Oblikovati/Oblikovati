@@ -91,6 +91,18 @@ pub trait HeadWork {
             request.full_document_name
         ))
     }
+    /// Select a checked browser row without starting an edit.
+    /// Example: `work.select_browser_sketch_from_gui(document, sketch, false)?`.
+    fn select_browser_sketch_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        _toggle: bool,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "browser sketch {sketch:?}, document {document}: expected a selection owner"
+        ))
+    }
     /// Activate a stable sketch selected in the model browser.
     /// Example: `work.edit_existing_sketch_from_gui(document, sketch)?` after a double-click.
     fn edit_existing_sketch_from_gui(
@@ -245,6 +257,16 @@ macro_rules! forward_owner_view_work {
             request: &oblikovati_api::wire::OpenDocumentArgs,
         ) -> Result<bool, String> {
             self.$owner.open_document_from_gui(request)
+        }
+        // #3811: live browser actions must reach the same owner through every wrapper.
+        fn select_browser_sketch_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            toggle: bool,
+        ) -> Result<bool, String> {
+            self.$owner
+                .select_browser_sketch_from_gui(document, sketch, toggle)
         }
         fn edit_existing_sketch_from_gui(
             &mut self,

@@ -22,6 +22,11 @@ pub enum GuiShellAction {
     CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
     OpenDocument(oblikovati_api::wire::OpenDocumentArgs),
     SaveDocumentAs(oblikovati_api::wire::SaveDocumentAsArgs),
+    SelectBrowserSketch {
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        toggle: bool,
+    },
     EditSketch {
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
@@ -134,6 +139,16 @@ impl GuiShellAction {
             }
             Self::SaveDocumentAs(request) => {
                 state.document == Some(request.document) && !state.transaction_open
+            }
+            Self::SelectBrowserSketch {
+                document, sketch, ..
+            } => {
+                state.document == Some(*document)
+                    && !state.transaction_open
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
             }
             Self::EditSketch { document, sketch } => {
                 state.document == Some(*document)

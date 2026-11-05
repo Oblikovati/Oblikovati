@@ -42,22 +42,36 @@ fn mouse_frame(
     engine.frame(request).unwrap().actions
 }
 #[test]
-fn double_click_opens_the_row_identity_but_a_single_click_does_not() {
+fn single_click_selects_and_double_click_selects_then_opens_the_row() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
     engine.frame(&request).unwrap();
     request.events = vec![GuiInputEvent::PointerMoved([90., 251.])];
     engine.frame(&request).unwrap();
     assert!(mouse_frame(&mut engine, &mut request, true).is_empty());
-    assert!(mouse_frame(&mut engine, &mut request, false).is_empty());
+    assert_eq!(
+        mouse_frame(&mut engine, &mut request, false),
+        [GuiShellAction::SelectBrowserSketch {
+            document: 12,
+            sketch: DocumentSketchId(7),
+            toggle: false,
+        }]
+    );
     let mut actions = mouse_frame(&mut engine, &mut request, true);
     actions.extend(mouse_frame(&mut engine, &mut request, false));
     assert_eq!(
         actions,
-        [GuiShellAction::EditSketch {
-            document: 12,
-            sketch: DocumentSketchId(7)
-        }]
+        [
+            GuiShellAction::SelectBrowserSketch {
+                document: 12,
+                sketch: DocumentSketchId(7),
+                toggle: false
+            },
+            GuiShellAction::EditSketch {
+                document: 12,
+                sketch: DocumentSketchId(7)
+            }
+        ]
     );
 }
 
@@ -205,5 +219,63 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
             document: 12,
             sketch: DocumentSketchId(8)
         }]
+    );
+}
+
+#[test]
+fn shift_click_requests_membership_toggle_without_entering_edit_mode() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = browser_request();
+    engine.frame(&request).unwrap();
+    request.events = vec![GuiInputEvent::Modifiers(GuiModifiers {
+        shift: true,
+        ..Default::default()
+    })];
+    engine.frame(&request).unwrap();
+    assert_eq!(
+        pointer_gesture(
+            &mut engine,
+            &mut request,
+            [90., 251.],
+            GuiPointerButton::Left
+        ),
+        [GuiShellAction::SelectBrowserSketch {
+            document: 12,
+            sketch: DocumentSketchId(7),
+            toggle: true
+        }]
+    );
+}
+
+#[test]
+fn modified_double_click_selects_the_sketch_before_editing() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = browser_request();
+    engine.frame(&request).unwrap();
+    request.events = vec![
+        GuiInputEvent::Modifiers(GuiModifiers {
+            control: true,
+            ..Default::default()
+        }),
+        GuiInputEvent::PointerMoved([90., 251.]),
+    ];
+    engine.frame(&request).unwrap();
+    mouse_frame(&mut engine, &mut request, true);
+    mouse_frame(&mut engine, &mut request, false);
+    let mut actions = mouse_frame(&mut engine, &mut request, true);
+    actions.extend(mouse_frame(&mut engine, &mut request, false));
+    assert_eq!(
+        actions,
+        [
+            GuiShellAction::SelectBrowserSketch {
+                document: 12,
+                sketch: DocumentSketchId(7),
+                toggle: false
+            },
+            GuiShellAction::EditSketch {
+                document: 12,
+                sketch: DocumentSketchId(7)
+            }
+        ]
     );
 }

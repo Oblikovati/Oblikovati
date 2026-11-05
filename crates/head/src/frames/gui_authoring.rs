@@ -38,6 +38,11 @@ fn document(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, S
 }
 fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
+        GuiShellAction::SelectBrowserSketch {
+            document,
+            sketch,
+            toggle,
+        } => owner.select_browser_sketch_from_gui(*document, *sketch, *toggle),
         GuiShellAction::EditSketch { document, sketch } => {
             owner.edit_existing_sketch_from_gui(*document, *sketch)
         }
@@ -109,5 +114,20 @@ mod tests {
             .unwrap_err()
             .contains("Rectangle")
         );
+    }
+}
+
+#[cfg(test)]
+mod browser_selection_tests {
+    use super::*;
+    #[test]
+    fn selection_requires_an_application_owner() {
+        let action = GuiShellAction::SelectBrowserSketch {
+            document: 9,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId(3),
+            toggle: false,
+        };
+        let cause = apply(&mut crate::work::IdleHeadWork, &action).unwrap_err();
+        assert!(cause.contains("document 9") && cause.contains("selection owner"));
     }
 }

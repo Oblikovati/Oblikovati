@@ -106,3 +106,29 @@ fn canonical_plane_text_is_checked_before_it_reaches_the_tooltip() {
     browser.sketches[0].inspection.as_mut().unwrap().plane = "XY\0plane".into();
     assert!(browser.validate().unwrap_err().contains("NUL"));
 }
+
+#[test]
+fn selection_has_its_own_enablement_and_requires_a_current_row() {
+    let mut state = sample_state();
+    let select = GuiShellAction::SelectBrowserSketch {
+        document: 1,
+        sketch: DocumentSketchId(7),
+        toggle: false,
+    };
+    assert!(select.dispatchable(&state));
+    state.authoring = crate::GuiAuthoringContext::Sketch;
+    assert!(select.dispatchable(&state));
+    state.transaction_open = true;
+    assert!(!select.dispatchable(&state));
+    state.transaction_open = false;
+    state.document = Some(2);
+    assert!(!select.dispatchable(&state));
+    state.document = Some(1);
+    state
+        .browser
+        .as_mut()
+        .unwrap()
+        .selected_sketches
+        .push(DocumentSketchId(99));
+    assert!(state.validate().unwrap_err().contains("current sketch row"));
+}

@@ -267,3 +267,43 @@ fn script_wrapper_forwards_application_theme_selection() {
     );
     assert_ne!(before, desktop.gui_command_state().unwrap().color_scheme);
 }
+
+#[test]
+fn script_wrapper_forwards_browser_selection_to_the_document_owner() {
+    let mut desktop = desktop();
+    desktop.create_part_document().unwrap();
+    desktop.edit_sketch_from_gui(true).unwrap();
+    desktop.edit_sketch_from_gui(false).unwrap();
+    let state = desktop.gui_command_state().unwrap();
+    let document = state.document.unwrap();
+    let sketch = state.browser.unwrap().sketches[0].id;
+    assert!(
+        desktop
+            .select_browser_sketch_from_gui(document, sketch, false)
+            .unwrap()
+    );
+    assert_eq!(
+        desktop
+            .gui_command_state()
+            .unwrap()
+            .browser
+            .unwrap()
+            .selected_sketches,
+        [sketch]
+    );
+    assert!(desktop.sketch_edit().is_none());
+    assert!(
+        desktop
+            .select_browser_sketch_from_gui(document, sketch, true)
+            .unwrap()
+    );
+    assert!(
+        desktop
+            .gui_command_state()
+            .unwrap()
+            .browser
+            .unwrap()
+            .selected_sketches
+            .is_empty()
+    );
+}

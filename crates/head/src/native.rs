@@ -64,6 +64,23 @@ impl NativeHeadWindow {
     }
 }
 impl NativeHeadWindow {
+    fn synchronize_browser_highlights(
+        &mut self,
+        commands: &oblikovati_gui::GuiCommandState,
+    ) -> Result<bool, String> {
+        let selected = commands
+            .browser
+            .as_ref()
+            .filter(|_| {
+                self.sketch_scene
+                    .as_ref()
+                    .and_then(|scene| scene.source)
+                    .map(|(document, _)| document)
+                    == commands.document
+            })
+            .map_or(&[][..], |browser| browser.selected_sketches.as_slice());
+        self.view.set_selected_sketches(selected)
+    }
     fn apply_navigation_inputs(&mut self, inputs: &[ViewportEvent]) -> Result<bool, String> {
         let mut changed = false;
         for event in inputs {
@@ -116,8 +133,9 @@ impl HeadWindow for NativeHeadWindow {
             Some(theme) => self.view.set_sketch_palette(theme.sketch_palette())?,
             None => false,
         };
+        let selection_changed = self.synchronize_browser_highlights(commands)?;
         let mut update = self.advance_native_gui(event, commands)?;
-        update.changed |= changed || sketch_changed;
+        update.changed |= changed || sketch_changed || selection_changed;
         Ok(update)
     }
 
