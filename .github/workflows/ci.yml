@@ -11,6 +11,11 @@ on:
         default: ''
 permissions:
   contents: read
+env:
+  # Keep every check, but avoid retaining full type debug data on ephemeral runners.
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
 defaults:
   run:
     shell: bash

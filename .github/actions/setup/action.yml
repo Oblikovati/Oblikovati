@@ -26,7 +26,10 @@ runs:
         for setting in KACHE_AUTO_CLEAN_ORPHANED_TARGETS KACHE_AUTO_SHARE_TARGET_FILES KACHE_AUTO_RECOVER_TARGETS; do
           printf '%s=false\n' "$setting" >> "$GITHUB_ENV"
         done
-        printf '%s\n' 'KACHE_AUTO_CLEAN_UNUSED_UNITS_DAYS=0' 'KACHE_AUTO_CLEAN_IDLE_TARGETS_DAYS=0' >> "$GITHUB_ENV"
+        printf '%s\n' \
+          'KACHE_AUTO_CLEAN_UNUSED_UNITS_DAYS=0' \
+          'KACHE_AUTO_CLEAN_IDLE_TARGETS_DAYS=0' \
+          'KACHE_GC_EVICT_SHARED=true' >> "$GITHUB_ENV"
     - uses: kunobi-ninja/kache-action@ad7317540dcdd71c904f7a60a87b620a0c0e67ed # v1
       with:
         version: v2.0.0
