@@ -141,7 +141,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     let mut input = request();
     for (x, expected) in [
         (110., GuiShellAction::StartSketchXY),
-        (210., GuiShellAction::FinishSketch),
+        (440., GuiShellAction::FinishSketch),
     ] {
         input.commands.authoring = if expected == GuiShellAction::StartSketchXY {
             GuiAuthoringContext::Part
@@ -162,7 +162,9 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     input.events = vec![left_button_event(false)];
     assert_eq!(
         engine.frame(&input).unwrap().actions,
-        [GuiShellAction::Rectangle]
+        [GuiShellAction::PlaceSketchTool(
+            oblikovati_gui::GuiSketchTool::Rectangle
+        )]
     );
     let active_document = input.commands.clone();
     input.commands = GuiCommandState::default();

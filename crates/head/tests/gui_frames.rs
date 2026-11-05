@@ -73,7 +73,7 @@ fn unavailable_authoring_commands_remain_local_feedback_and_keep_input_routing_a
     for action in [
         GuiShellAction::StartSketchXY,
         GuiShellAction::FinishSketch,
-        GuiShellAction::Rectangle,
+        GuiShellAction::PlaceSketchTool(oblikovati_gui::GuiSketchTool::Rectangle),
         GuiShellAction::OpenDocument(oblikovati_api::wire::OpenDocumentArgs {
             full_document_name: "/missing.opd".into(),
             ..Default::default()

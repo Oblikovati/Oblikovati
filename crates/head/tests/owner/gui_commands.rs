@@ -13,7 +13,7 @@ pub(super) fn assert_authoring_context(
         expected == oblikovati_gui::GuiAuthoringContext::Part
     );
     assert_eq!(
-        GuiShellAction::Rectangle.enabled(&state),
+        GuiShellAction::PlaceSketchTool(oblikovati_gui::GuiSketchTool::Rectangle).enabled(&state),
         expected == oblikovati_gui::GuiAuthoringContext::Sketch
     );
 }

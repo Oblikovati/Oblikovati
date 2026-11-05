@@ -107,14 +107,26 @@ fn gui_sketch_xy_enters_and_finishes_the_owned_edit() {
 #[test]
 fn gui_rectangle_requires_an_edit_and_uses_owned_placement() {
     let (mut owner, _) = owner();
-    assert!(owner.place_rectangle_from_gui().is_err());
+    assert!(
+        owner
+            .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
+            .is_err()
+    );
     owner.create_part_document().unwrap();
     owner.edit_sketch_from_gui(true).unwrap();
-    assert!(owner.place_rectangle_from_gui().unwrap());
+    assert!(
+        owner
+            .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
+            .unwrap()
+    );
     assert!(owner.placement_active());
     owner.edit_sketch_from_gui(false).unwrap();
     assert!(!owner.placement_active());
-    assert!(owner.place_rectangle_from_gui().is_err());
+    assert!(
+        owner
+            .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
+            .is_err()
+    );
 }
 #[test]
 fn typed_workers_create_save_reopen_and_close_through_the_document_owner() {
@@ -309,3 +321,6 @@ mod ribbon;
 
 #[path = "owner/document_tabs.rs"]
 mod document_tabs;
+
+#[path = "owner/sketch_tools.rs"]
+mod sketch_tools;

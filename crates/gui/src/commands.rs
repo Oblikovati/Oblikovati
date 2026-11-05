@@ -16,7 +16,7 @@ pub enum GuiShellAction {
     NewPart,
     StartSketchXY,
     FinishSketch,
-    Rectangle,
+    PlaceSketchTool(crate::GuiSketchTool),
     Save,
     Undo,
     Redo,
@@ -104,7 +104,9 @@ impl GuiShellAction {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
             Self::StartSketchXY => state.authoring == GuiAuthoringContext::Part,
-            Self::Rectangle | Self::FinishSketch => state.authoring == GuiAuthoringContext::Sketch,
+            Self::PlaceSketchTool(_) | Self::FinishSketch => {
+                state.authoring == GuiAuthoringContext::Sketch
+            }
             Self::NewPart | Self::Save | Self::Home => true,
         }
     }

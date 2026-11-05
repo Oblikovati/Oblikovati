@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use GuiShellAction::{FinishSketch, Home, NewPart, Rectangle, StartSketchXY};
+use GuiShellAction::{FinishSketch, Home, NewPart, StartSketchXY};
 use oblikovati_api::types::DOCUMENT_PART;
 use oblikovati_gui::*;
 
@@ -71,8 +71,13 @@ fn context_changes_select_the_supported_ribbon_commands() {
     expect_ribbon(&mut engine, &mut request, [50., 90.], StartSketchXY);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], Rectangle);
-    expect_ribbon(&mut engine, &mut request, [200., 90.], FinishSketch);
+    expect_ribbon(
+        &mut engine,
+        &mut request,
+        [50., 90.],
+        GuiShellAction::PlaceSketchTool(GuiSketchTool::Rectangle),
+    );
+    expect_ribbon(&mut engine, &mut request, [440., 90.], FinishSketch);
 }
 #[test]
 fn manual_view_selection_survives_frames_until_sketch_exit() {
@@ -121,4 +126,54 @@ fn pointer_wheel_does_not_scroll_the_fixed_ribbon_band() {
         before == after,
         "ribbon wheel [0, -10]: expected unchanged fixed-band draws"
     );
+}
+#[test]
+fn every_supported_tool_dispatches_from_the_sketch_ribbon_at_both_scales() {
+    use GuiSketchTool::*;
+    for scale in [1., 2.] {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let mut request = ribbon_request();
+        request.extent = [640 * scale as u32, 360 * scale as u32];
+        request.framebuffer_scale = [scale; 2];
+        enter_part(&mut request);
+        request.commands.authoring = GuiAuthoringContext::Sketch;
+        settle_ribbon(&mut engine, &mut request);
+        for (tool, point) in [
+            (Rectangle, [50., 90.]),
+            (Circle, [180., 68.]),
+            (Point, [300., 68.]),
+            (CenterPointArc, [180., 88.]),
+            (Ellipse, [300., 88.]),
+            (CenterRectangle, [180., 108.]),
+            (ThreePointRectangle, [300., 108.]),
+        ] {
+            expect_ribbon(
+                &mut engine,
+                &mut request,
+                point.map(|value| value * scale),
+                GuiShellAction::PlaceSketchTool(tool),
+            );
+        }
+        expect_ribbon(
+            &mut engine,
+            &mut request,
+            [440. * scale, 90. * scale],
+            FinishSketch,
+        );
+    }
+}
+#[test]
+fn sketch_tool_captions_identify_the_existing_construction_choices() {
+    use GuiSketchTool::*;
+    for (tool, label) in [
+        (Rectangle, "Rectangle"),
+        (Circle, "Circle"),
+        (Point, "Point"),
+        (CenterPointArc, "Center Arc"),
+        (Ellipse, "Ellipse"),
+        (CenterRectangle, "Center Rect."),
+        (ThreePointRectangle, "3-Point Rect."),
+    ] {
+        assert_eq!(tool.label(), label);
+    }
 }

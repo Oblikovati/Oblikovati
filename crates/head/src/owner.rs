@@ -12,6 +12,9 @@ use std::time::Duration;
 mod commands;
 #[path = "owner_documents.rs"]
 mod documents_gui;
+#[path = "owner_sketch_tools.rs"]
+mod sketch_tools_gui;
+use sketch_tools_gui::gui_placement_tool;
 #[path = "owner_browser.rs"]
 mod model_browser;
 #[path = "owner_parameters.rs"]
@@ -279,15 +282,14 @@ impl<
         });
         Ok(true)
     }
-    fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
+    fn place_sketch_tool_from_gui(
+        &mut self,
+        tool: oblikovati_gui::GuiSketchTool,
+    ) -> Result<bool, String> {
         let edit = self
             .active_sketch_edit()
-            .ok_or("Rectangle: expected an active sketch edit")?;
-        self.start_sketch_placement(
-            edit.document,
-            edit.sketch,
-            crate::SketchPlacementTool::Rectangle,
-        )?;
+            .ok_or_else(|| format!("{tool:?}: expected an active sketch edit"))?;
+        self.start_sketch_placement(edit.document, edit.sketch, gui_placement_tool(tool))?;
         Ok(true)
     }
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {

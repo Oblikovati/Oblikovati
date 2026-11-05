@@ -194,7 +194,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
             expected_lines
         );
     }
-    click_shell_position(&mut window, &mut owner, [210, 68]);
+    click_shell_position(&mut window, &mut owner, [440, 68]);
     assert!(owner.active_sketch_edit().is_none());
     assert!(!owner.placement_active());
     verify_browser_reentry_pixels(&mut window, &mut owner, edit);

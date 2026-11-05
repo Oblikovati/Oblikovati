@@ -95,12 +95,41 @@ fn tab_panels(
 }
 
 fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    let create = ("Create", "Rectangle", GuiShellAction::Rectangle);
-    command_panel(ui, state, actions, create);
+    ui.group(|| sketch_create_controls(ui, state, actions));
     ui.same_line();
-    ui.set_cursor_pos([140., 59.]);
+    ui.set_cursor_pos([388., 59.]);
     let exit = ("Exit", "Finish Sketch", GuiShellAction::FinishSketch);
     command_panel(ui, state, actions, exit);
+}
+fn sketch_create_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let rectangle = crate::GuiSketchTool::Rectangle;
+    sketch_tool_button(ui, state, actions, rectangle, [108., 58.]);
+    let secondary = crate::sketch_tools::SECONDARY_SKETCH_TOOLS;
+    for (index, tool) in secondary.into_iter().enumerate() {
+        ui.set_cursor_pos([
+            140. + (index % 2) as f32 * 116.,
+            59. + (index / 2) as f32 * 20.,
+        ]);
+        sketch_tool_button(ui, state, actions, tool, [108., 18.]);
+    }
+    ui.set_cursor_pos([16., 125.]);
+    ui.text("Create");
+}
+fn sketch_tool_button(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    tool: crate::GuiSketchTool,
+    size: [f32; 2],
+) {
+    command_button(
+        ui,
+        tool.label(),
+        GuiShellAction::PlaceSketchTool(tool),
+        state,
+        size,
+        actions,
+    );
 }
 type RibbonCommandSpec = (&'static str, &'static str, GuiShellAction);
 fn command_panel(
