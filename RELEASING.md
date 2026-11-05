@@ -19,8 +19,11 @@ application, released dependencies, resources, and native acceptance tests exist
 Install Rust with rustup, Node.js 24.15.0, npm, Git, Make, curl, and tar. Native
 Go add-in fixtures also require Go 1.27.0 and a C compiler. The
 repository pins Rust 1.99.0, including rustfmt, Clippy, and LLVM tools.
-`make tools` installs the locked npm tools, cargo-llvm-cov 0.9.1, and actionlint
-1.7.7. The actionlint archive has a checked-in SHA-256 pin for each host.
+`make tools` installs the locked npm tools, cargo-llvm-cov 0.9.1, actionlint
+1.7.7, and Kache 2.0.0. The downloaded archives have checked-in SHA-256 pins.
+Make build commands use the bounded compiler cache by default. See the
+[cache commands and measurements](architecture/rust-port/implementation-build-cache.md)
+for worktree sharing and the `BUILD_CACHE=off` option.
 
 Windows source dependency checkouts require Git long-path support:
 `git config --global core.longpaths true`. The shared CI setup enables it before

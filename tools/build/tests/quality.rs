@@ -81,6 +81,7 @@ impl Runner for GateRunner {
             ("cargo", ["metadata", "--locked", "--format-version", "1"]) => Ok(self.help.metadata()),
             ("cargo", ["metadata", ..]) => Ok(serde_json::json!({"workspace_root": self.tree.root(), "workspace_members":["fixture"], "packages":[{"id":"fixture","name":"fixture","manifest_path":self.tree.root().join("Cargo.toml"),"license":"GPL-2.0-only","targets":[],"dependencies":[]}]}).to_string()),
             ("rustc", _) => Ok("rustc 1.99.0 (fixture)".into()),
+            ("kache", ["--version"]) => Ok("kache 2.0.0".into()),
             ("cargo", ["llvm-cov", "--version"]) => Ok("cargo-llvm-cov 0.9.1".into()),
             ("cargo", ["llvm-cov", ..]) => {
                 let index = arguments.iter().position(|value| *value == "--output-path").unwrap();

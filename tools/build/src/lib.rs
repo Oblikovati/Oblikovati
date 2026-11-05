@@ -9,6 +9,7 @@ mod distribution;
 mod docs;
 mod driver;
 mod fetched_source;
+mod kache;
 mod linux;
 mod macos;
 mod native_package;
@@ -52,9 +53,10 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
             native_validation::prepare(root, runner, Path::new(directory), Path::new(environment))
         }
         ["version", channel] => print_version(root, runner, channel),
-        [task @ ("native" | "gate" | "docs" | "tools" | "script-docs" | "script-docs-check")] => {
-            local_task(task, root, runner)
-        }
+        [
+            task @ ("native" | "gate" | "docs" | "tools" | "cache-tools" | "script-docs"
+            | "script-docs-check"),
+        ] => local_task(task, root, runner),
         _ => release_task(arguments, root, runner),
     }
 }
@@ -67,7 +69,11 @@ fn local_task(task: &str, root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         "native" => native(root, runner),
         "gate" => quality::gate(root, runner),
         "docs" => docs::check(root),
-        "tools" => bootstrap::install(root, runner),
+        "tools" => {
+            bootstrap::install(root, runner)?;
+            kache::install(root, runner)
+        }
+        "cache-tools" => kache::install(root, runner),
         "script-docs" => script_docs::write(root, runner),
         "script-docs-check" => script_docs::check(root, runner),
         _ => Err(format!(
@@ -99,7 +105,7 @@ fn distribution_task(arguments: &[&str], root: &Path, runner: &dyn Runner) -> Bu
             driver::verify_release(root, runner, version, Path::new(output))
         }
         _ => Err(format!(
-            "arguments {arguments:?}: expected build|test|lint|native|gate|docs|script-docs|script-docs-check|tools|matrix|version CHANNEL|preflight build/publish|release-request CHANNEL|package TARGET VERSION [--signed]|mac-bundle VERSION [--signed]|collect VERSION INPUT OUTPUT|verify-release VERSION OUTPUT"
+            "arguments {arguments:?}: expected build|test|lint|native|gate|docs|script-docs|script-docs-check|tools|cache-tools|matrix|version CHANNEL|preflight build/publish|release-request CHANNEL|package TARGET VERSION [--signed]|mac-bundle VERSION [--signed]|collect VERSION INPUT OUTPUT|verify-release VERSION OUTPUT"
         )),
     }
 }

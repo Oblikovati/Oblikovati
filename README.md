@@ -35,6 +35,9 @@ See [native parameter authoring evidence](architecture/rust-port/implementation-
 - [Implementation evidence](architecture/rust-port/implementation.md): tested
   behavior, source mapping, and remaining work.
 
+- [Build cache](architecture/rust-port/implementation-build-cache.md): pinned Kache,
+  shared worktree cache, measured reuse, and cache controls.
+
 - [Build and release commands](RELEASING.md): local gate, CI, native packaging,
   released API/kernel dependencies, versioning, and publication requirements.
 
