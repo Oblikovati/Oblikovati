@@ -112,6 +112,23 @@ fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAct
     crate::widget_abi::cursor_position(ui, [388., 59.]);
     let exit = ("Exit", "Finish Sketch", GuiShellAction::FinishSketch);
     command_panel(ui, state, actions, exit);
+    sketch_constraint_controls(ui, state, actions);
+}
+fn sketch_constraint_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    use crate::GuiSketchConstraint::{Coincident, Horizontal, Vertical};
+    for (index, choice) in [Horizontal, Vertical, Coincident].into_iter().enumerate() {
+        crate::widget_abi::cursor_position(ui, [504., 59. + index as f32 * 20.]);
+        command_button(
+            ui,
+            choice.label(),
+            GuiShellAction::ConstrainSketch(choice),
+            state,
+            [108., 18.],
+            actions,
+        );
+    }
+    crate::widget_abi::cursor_position(ui, [504., 125.]);
+    ui.text("Constrain");
 }
 fn sketch_create_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let rectangle = crate::GuiSketchTool::Rectangle;

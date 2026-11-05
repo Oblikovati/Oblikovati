@@ -1,8 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{HeadSketchEdit, HeadWindow};
-use oblikovati_martensite::planar_curve::{PlanarPickOptionsV1, sketch::SketchPickQuery};
+use oblikovati_gui::GuiSketchConstraint;
+use oblikovati_martensite::planar_curve::{
+    PlanarPickOptionsV1,
+    sketch::{SketchEntityPickWitness, SketchPickQuery},
+};
 use oblikovati_model::sketch::{Sketch2D, SketchEntityId, SketchPlane};
+#[derive(Clone, Copy)]
+pub(super) enum SketchPickFilter {
+    Any,
+    Geometric(GuiSketchConstraint),
+}
+impl SketchPickFilter {
+    fn accepts(self, kind: &oblikovati_api::types::SketchEntityKind) -> bool {
+        match self {
+            Self::Any => true,
+            Self::Geometric(choice) => crate::sketch_geometric::accepts(choice, kind),
+        }
+    }
+}
 use oblikovati_session::selection::{SelectionClickMode, SketchPickTarget};
 use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput};
 
@@ -57,7 +74,7 @@ impl<
         self.command_notice = Some(DesktopCommandNotice::SelectionChanged { count });
         Ok(())
     }
-    fn store_sketch_click(
+    pub(super) fn store_sketch_click(
         &mut self,
         edit: HeadSketchEdit,
         picked: Option<SketchEntityId>,
@@ -81,6 +98,16 @@ impl<
         pixel: [i32; 2],
         window: &dyn HeadWindow,
     ) -> Result<Option<SketchEntityId>, String> {
+        self.resolve_sketch_hit(edit, pixel, window, SketchPickFilter::Any)
+            .map(|hit| hit.map(|witness| witness.entity))
+    }
+    pub(super) fn resolve_sketch_hit(
+        &self,
+        edit: HeadSketchEdit,
+        pixel: [i32; 2],
+        window: &dyn HeadWindow,
+        filter: SketchPickFilter,
+    ) -> Result<Option<SketchEntityPickWitness>, String> {
         let session = self
             .files
             .workspace()
@@ -91,10 +118,11 @@ impl<
             .sketches
             .get(edit.sketch)
             .map_err(|cause| cause.to_string())?;
-        pick_entity(sketch.geometry(), edit.plane, pixel, window)
+        pick_witness(sketch.geometry(), edit.plane, pixel, window, filter)
     }
 }
-fn ordinary_click(event: ViewportEvent) -> Option<([i32; 2], SelectionClickMode)> {
+
+pub(super) fn ordinary_click(event: ViewportEvent) -> Option<([i32; 2], SelectionClickMode)> {
     let ViewportEvent::Input(ViewportInput::Button {
         button: ViewportButton::Left,
         pressed: true,
@@ -113,12 +141,13 @@ fn ordinary_click(event: ViewportEvent) -> Option<([i32; 2], SelectionClickMode)
     ))
 }
 
-fn pick_entity(
+fn pick_witness(
     sketch: &Sketch2D,
     plane: SketchPlane,
     pixel: [i32; 2],
     window: &dyn HeadWindow,
-) -> Result<Option<SketchEntityId>, String> {
+    filter: SketchPickFilter,
+) -> Result<Option<SketchEntityPickWitness>, String> {
     let Some(cursor) = window.sketch_point(pixel, plane)? else {
         return Ok(None);
     };
@@ -134,33 +163,59 @@ fn pick_entity(
     if points.is_some() {
         return Ok(points);
     }
-    let curves = sketch
+    let curves = eligible_curves(sketch, &point_ids, filter)?;
+    nearest_screen_candidate(curves.into_iter(), &query, plane, pixel, window)
+}
+fn eligible_curves(
+    sketch: &Sketch2D,
+    points: &std::collections::BTreeSet<SketchEntityId>,
+    filter: SketchPickFilter,
+) -> Result<Vec<SketchEntityId>, String> {
+    let mut curves = Vec::new();
+    for entity in sketch
         .entity_ids()
         .iter()
         .copied()
-        .filter(|id| !point_ids.contains(id));
-    nearest_screen_candidate(curves, &query, plane, pixel, window)
+        .filter(|id| !points.contains(id))
+    {
+        let kind = sketch
+            .entity_kind(entity)
+            .map_err(|cause| cause.to_string())?;
+        if filter.accepts(&kind) {
+            curves.push(entity);
+        }
+    }
+    Ok(curves)
 }
+
 fn nearest_screen_candidate(
     ids: impl Iterator<Item = SketchEntityId>,
     query: &SketchPickQuery<'_>,
     plane: SketchPlane,
     pixel: [i32; 2],
     window: &dyn HeadWindow,
-) -> Result<Option<SketchEntityId>, String> {
-    let mut candidates: Vec<(f64, SketchEntityId)> = Vec::new();
+) -> Result<Option<SketchEntityPickWitness>, String> {
+    let mut candidates: Vec<(f64, SketchEntityPickWitness)> = Vec::new();
     for entity in ids {
         let witness = query.candidate(entity).map_err(|cause| cause.to_string())?;
         let projected = window.sketch_pixel(plane, witness.position)?;
-        let distance = (f64::from(projected[0]) - f64::from(pixel[0]))
-            .hypot(f64::from(projected[1]) - f64::from(pixel[1]));
+        let distance = screen_distance(projected, pixel);
         // Match Go's snapPixels=12; this is a UI hit radius, not a modelling tolerance.
         if distance <= 12. {
-            candidates.push((distance, entity));
+            candidates.push((distance, witness));
         }
     }
     Ok(candidates
         .into_iter()
-        .min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))
-        .map(|(_, entity)| entity))
+        .min_by(|first, second| {
+            first
+                .0
+                .total_cmp(&second.0)
+                .then(first.1.entity.cmp(&second.1.entity))
+        })
+        .map(|(_, witness)| witness))
+}
+
+pub(super) fn screen_distance(first: [i32; 2], second: [i32; 2]) -> f64 {
+    (f64::from(first[0]) - f64::from(second[0])).hypot(f64::from(first[1]) - f64::from(second[1]))
 }

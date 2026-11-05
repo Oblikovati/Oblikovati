@@ -177,3 +177,28 @@ fn sketch_tool_captions_identify_the_existing_construction_choices() {
         assert_eq!(tool.label(), label);
     }
 }
+
+#[test]
+fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
+    use GuiSketchConstraint::{Coincident, Horizontal, Vertical};
+    for scale in [1., 2.] {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let mut request = ribbon_request();
+        request.extent = [640 * scale as u32, 360 * scale as u32];
+        request.framebuffer_scale = [scale; 2];
+        enter_part(&mut request);
+        request.commands.authoring = GuiAuthoringContext::Sketch;
+        settle_ribbon(&mut engine, &mut request);
+        for (choice, y) in [(Horizontal, 68.), (Vertical, 88.), (Coincident, 108.)] {
+            expect_ribbon(
+                &mut engine,
+                &mut request,
+                [550. * scale, y * scale],
+                GuiShellAction::ConstrainSketch(choice),
+            );
+        }
+        request.commands.transaction_open = true;
+        settle_ribbon(&mut engine, &mut request);
+        assert!(click_ribbon(&mut engine, &mut request, [550. * scale, 68. * scale]).is_empty());
+    }
+}

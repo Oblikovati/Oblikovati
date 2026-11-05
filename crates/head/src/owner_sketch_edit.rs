@@ -79,7 +79,7 @@ impl<
             )
         })?;
         self.require_edit_document(edit.document)?;
-        self.placement = None;
+        self.retire_sketch_tool()?;
         self.sketch_edit = None;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: "Sketch finished.".into(),
@@ -175,10 +175,13 @@ impl<
         if self.sketch_edit.is_none() || self.active_sketch_edit().is_some() {
             return false;
         }
+        let retired = self.retire_sketch_tool();
         self.sketch_edit = None;
-        self.placement = None;
-        self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
-            message: "Sketch edit ended because its document or plane is unavailable.".into(),
+        self.command_notice = Some(match retired {
+            Ok(()) => DesktopCommandNotice::PlacementPrompt {
+                message: "Sketch edit ended because its document or plane is unavailable.".into(),
+            },
+            Err(cause) => DesktopCommandNotice::AuthoringFailed { cause },
         });
         true
     }
