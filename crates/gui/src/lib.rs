@@ -10,6 +10,7 @@ mod commands;
 #[allow(unsafe_code)]
 mod context_owner;
 mod engine;
+mod files;
 mod input;
 mod parameters;
 mod snapshot;

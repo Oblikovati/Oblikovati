@@ -151,6 +151,11 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
+        if let (crate::DesktopCommandNotice::SavePathRequired { document }, Some(gui)) =
+            (&notice, &mut self.gui)
+        {
+            gui.request_save_path(*document)?;
+        }
         if self.gui.is_none() {
             self.view.set_status_text(&notice.message())?;
         }
