@@ -42,6 +42,14 @@ passed. A fresh process reopened the healthy sketch with all three constraints
 and empty transient selection. MCP screenshots were checked. Both desktops
 closed normally.
 
+The existing rectangle UI regression also passed analytic selection, 10 mm to
+20 mm size edits, undo/redo, save and same-session reopen with healthy DOF zero.
+Its desktop closed normally.
+
+The full local gate passed for every discovered workspace, with all 13 crates
+above 80% line coverage and 0.89% duplication. It includes native tests under
+Xvfb, formatting, Clippy, documentation and SPDX checks.
+
 This completes these three geometric tools. Dimensional constraint tools,
 constraint marker selection and the full cube acceptance journey remain open.
 A healthy DOF=2 test sketch is not a fully constrained cube profile. Solid adapter
