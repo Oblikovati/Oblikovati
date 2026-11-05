@@ -163,6 +163,7 @@ pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
 
 fn gate_tool_versions(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
     require_tool(runner, root, "rustc", &["--version"], "rustc 1.99.0 ")?;
+    require_tool(runner, root, "kache", &["--version"], "kache 2.0.0")?;
     require_tool(
         runner,
         root,
