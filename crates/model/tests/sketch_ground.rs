@@ -203,3 +203,80 @@ fn incompatible_frozen_anchor_sets_report_their_authored_constraints() {
     assert!(conflicts.contains(&SketchConstraintId(1)));
     assert!(conflicts.contains(&SketchConstraintId(2)));
 }
+
+fn solve_anchored(sketch: &Sketch2D, anchors: &[SketchPoint2D]) -> SketchSolveOutcome {
+    sketch
+        .solve_with_grounded_points(
+            &ParameterCollection::new(Default::default()),
+            anchors,
+            Default::default(),
+            || false,
+        )
+        .unwrap()
+}
+fn assert_exact_anchor(result: &SketchSolveOutcome, point: u64, target: [f64; 2]) {
+    assert_eq!(
+        result.numerical().termination,
+        oblikovati_solve::nonlinear::SolveTermination::Converged
+    );
+    let actual = result.candidate().point(id(point)).unwrap().position;
+    assert_eq!(actual.map(f64::to_bits), target.map(f64::to_bits));
+}
+#[test]
+fn ground_keeps_anchor_bits_when_the_warm_start_is_already_within_solve_tolerance() {
+    let mut sketch = grounded(1.0, &[1]);
+    let target = sketch.point(id(1)).unwrap().position;
+    sketch
+        .translate_entities(&[id(1)], [f64::EPSILON * 2.0, 0.0])
+        .unwrap();
+    assert_ne!(
+        sketch.point(id(1)).unwrap().position[0].to_bits(),
+        target[0].to_bits()
+    );
+    assert_exact_anchor(&solve_anchored(&sketch, &[]), 1, target);
+}
+fn fixed_anchor_sketch(target: [f64; 2]) -> Sketch2D {
+    let mut sketch = Sketch2D::default();
+    sketch.add_point(id(1), [1., 2.]).unwrap();
+    let relation = PlanarConstraint::Fix {
+        point: id(1),
+        position: target,
+    };
+    sketch
+        .add_constraint(SketchConstraintId(1), relation)
+        .unwrap();
+    sketch
+}
+fn append_ground_anchor(sketch: &mut Sketch2D, constraint: u64, target: [f64; 2]) {
+    let points = vec![SketchPoint2D {
+        id: id(1),
+        position: target,
+    }];
+    sketch
+        .add_constraint(
+            SketchConstraintId(constraint),
+            PlanarConstraint::Ground { points },
+        )
+        .unwrap();
+}
+#[test]
+fn fix_coordinates_and_repeated_ground_targets_preserve_signed_zero() {
+    let target = [-0.0_f64, 2.];
+    let mut sketch = fixed_anchor_sketch(target);
+    for constraint in [2, 3] {
+        append_ground_anchor(&mut sketch, constraint, target);
+    }
+    let result = solve_anchored(&sketch, &[]);
+    assert_exact_anchor(&result, 1, target);
+    assert_eq!(result.numerical().evaluation.jacobian().len(), 6);
+}
+#[test]
+fn authored_constants_follow_the_reduced_layout_of_external_reference_points() {
+    let mut sketch = grounded(1.0, &[3]);
+    let expected = *sketch.point(id(3)).unwrap();
+    let external = *sketch.point(id(1)).unwrap();
+    sketch.translate_entities(&[id(3)], [1., 1.]).unwrap();
+    let result = solve_anchored(&sketch, &[external]);
+    assert_exact_anchor(&result, 3, expected.position);
+    assert_exact_anchor(&result, 1, external.position);
+}

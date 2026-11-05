@@ -13,6 +13,7 @@ use layout::{GroundedLayout, GroundedSlot};
 
 pub(super) struct GroundedSketch {
     pub values: Vec<f64>,
+    pub constants: Vec<(usize, f64)>,
     pub origins: Vec<SketchRelationId>,
     pub parameter_dependencies: Vec<u64>,
     sources: Vec<GroundedResidual>,
@@ -41,10 +42,7 @@ pub(super) fn prepare(
     parameters: &ParameterCollection<u64>,
     anchors: &[SketchPoint2D],
 ) -> Result<GroundedSketch, SketchError> {
-    // #3762: branch and contact preparation must see the current reference coordinates.
-    let (seed, identities) = grounded_seed(sketch, anchors)?;
-    let prepared = compile::prepare(&seed, parameters)?;
-    let layout = GroundedLayout::new(&prepared.values, &grounded_columns(&seed, &identities));
+    let (prepared, layout, constants) = prepare_coordinates(sketch, parameters, anchors)?;
     let sources = prepared
         .sources
         .into_iter()
@@ -52,12 +50,32 @@ pub(super) fn prepare(
         .collect();
     Ok(GroundedSketch {
         values: layout.active_values(&prepared.values),
+        constants: layout.active_constants(&constants),
         origins: prepared.origins,
         parameter_dependencies: prepared.parameter_dependencies,
         sources,
         layout,
     })
 }
+type PreparedCoordinates = (compile::PreparedSketch, GroundedLayout, Vec<(usize, f64)>);
+fn prepare_coordinates(
+    sketch: &Sketch2D,
+    parameters: &ParameterCollection<u64>,
+    anchors: &[SketchPoint2D],
+) -> Result<PreparedCoordinates, SketchError> {
+    // #3762 / #3808: branch and contact preparation must see the current reference coordinates.
+    let (warm, identities) = grounded_seed(sketch, anchors)?;
+    let columns = grounded_columns(&warm, &identities);
+    let mut constants = super::frozen::authored_constants(&warm)?;
+    constants.retain(|(column, _)| !columns.contains(column));
+    let seed = super::frozen::seed_authored(&warm, &constants)?;
+    let mut prepared = compile::prepare(&seed, parameters)?;
+    // Keep the unaccepted warm start available for cancellation; targets guide branch preparation.
+    prepared.values = warm.variable_values();
+    let layout = GroundedLayout::new(&prepared.values, &columns);
+    Ok((prepared, layout, constants))
+}
+
 fn grounded_seed(
     sketch: &Sketch2D,
     anchors: &[SketchPoint2D],

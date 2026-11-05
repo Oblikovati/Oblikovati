@@ -47,3 +47,33 @@ The pinned Go `TestGroundConstraintFixesEntity` supplies baseline behavior evide
 Full Linux validation is `make gate`. This work introduces no kernel operation or
 native UI runtime. Grounding does not supply a missing minor-radius dimension;
 fully constrained ellipse acceptance remains open in #3788.
+
+## Exact coordinate iteration (#3808)
+
+Unanimous Ground and Fix coordinate targets are now fixed variables in the shared
+nonlinear iteration. Targets enter the branch/contact preparation seed before
+compilation. They do not enter QR or receive an arithmetic step. The result keeps
+the complete residual equations, Jacobian columns, DOF and source diagnostics;
+there is no post-solve coordinate snap. Disagreeing authored targets remain in
+the normal conflict system, so both constraint identities are reported.
+
+External reference anchors retain their existing reduced layout and take their
+current coordinates from the caller. Authored constants are mapped into that
+layout. Cancellation before an accepted step returns the original warm-start
+candidate; seeding a target does not count as an accepted document edit.
+
+The regression reproduces convergence one floating-point step from a grounded
+target with default policy. Tests require exact coordinate bits, signed zero,
+repeated targets, unchanged full Jacobians, conflicts, cancellation and reference
+composition. The circle trial tests now drive a free point through a coincidence
+relation, so rejected-radius and unused-radius checks still exercise iteration.
+The collapsed-line test authors genuinely collapsed fixed endpoints. The line
+alignment test requests precision consistent with its unchanged absolute error
+bound; default convergence is model-relative. Hosted Windows/macOS qualification
+remains required before claiming the CI failure is resolved.
+
+Live OS input created an XY rectangle driven by one size parameter, changed size
+from 10 to 20 mm, used undo/redo, saved, closed and reopened the part, then reopened
+it in a fresh process. MCPBridge reported a healthy DOF=0 sketch at every checked
+stage. Completed window captures verified the rendered stages. Both desktops
+closed normally. This is sketch acceptance, not the still-blocked Extrude journey.

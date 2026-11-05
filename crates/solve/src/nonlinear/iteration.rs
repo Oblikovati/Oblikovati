@@ -8,6 +8,7 @@ use crate::{
 
 struct Iterate {
     values: Vec<f64>,
+    constants: std::collections::BTreeSet<usize>,
     evaluation: ResidualEvaluation,
     scaled: metrics::ScaledEvaluation,
     damping: f64,
@@ -19,13 +20,36 @@ struct Iterate {
 pub(super) fn run(
     values: &[f64],
     blocks: &[ResidualBlock<'_>],
+    constants: &[(usize, f64)],
     options: SolveOptions,
     cancelled: &mut impl FnMut() -> bool,
 ) -> Result<NonlinearResult, SolveError> {
     validate_options(options)?;
-    let mut state = initial_state(values, blocks)?;
+    let (seeded, constants) = super::constants::seed(values, constants)?;
+    let mut state = initial_state(&seeded, blocks)?;
+    state.constants = constants;
     let termination = iterate(&mut state, blocks, options, cancelled)?;
+    restore_unaccepted_seed(&mut state, values, blocks, termination)?;
     finish(state, options, termination)
+}
+
+fn restore_unaccepted_seed(
+    state: &mut Iterate,
+    values: &[f64],
+    blocks: &[ResidualBlock<'_>],
+    termination: SolveTermination,
+) -> Result<(), SolveError> {
+    if termination != SolveTermination::Cancelled
+        || state.iterations != 0
+        || state.constants.is_empty()
+    {
+        return Ok(());
+    }
+    let original = initial_state(values, blocks)?;
+    state.values = original.values;
+    state.evaluation = original.evaluation;
+    state.scaled = original.scaled;
+    Ok(())
 }
 
 fn initial_state(values: &[f64], blocks: &[ResidualBlock<'_>]) -> Result<Iterate, SolveError> {
@@ -33,6 +57,7 @@ fn initial_state(values: &[f64], blocks: &[ResidualBlock<'_>]) -> Result<Iterate
     let scaled = metrics::scale_evaluation(&evaluation, metrics::model_scale(values), blocks)?;
     Ok(Iterate {
         values: values.to_vec(),
+        constants: Default::default(),
         evaluation,
         scaled,
         damping: step::INITIAL_DAMPING,
@@ -142,7 +167,12 @@ fn evaluate_trial(
     state: &Iterate,
     blocks: &[ResidualBlock<'_>],
 ) -> Result<Option<AcceptedTrial>, SolveError> {
-    let delta = step::damped_delta(&state.scaled, state.values.len(), state.damping)?;
+    let delta = step::damped_delta(
+        &state.scaled,
+        state.values.len(),
+        state.damping,
+        &state.constants,
+    )?;
     let values = step::trial_values(&state.values, &delta, state.scaled.model_scale)?;
     let evaluation = evaluate_residuals(&values, blocks)?;
     // Compare both points with the SAME weights; moving derivatives cannot fake a decrease.

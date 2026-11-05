@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Bounded, immutable Levenberg–Marquardt iteration for the shared constraint core.
+mod constants;
 mod iteration;
 mod metrics;
 mod step;
@@ -92,7 +93,20 @@ pub fn solve_constraints(
     options: SolveOptions,
     mut cancelled: impl FnMut() -> bool,
 ) -> Result<NonlinearResult, SolveError> {
-    iteration::run(values, blocks, options, &mut cancelled)
+    iteration::run(values, blocks, &[], options, &mut cancelled)
+}
+
+/// Hold declared coordinates exact while retaining the full Jacobian and source diagnostics.
+/// Callers retain their defining equations in `blocks`, so diagnostics describe the full authored system.
+/// Example: `solve_constraints_with_constants(&values, &blocks, &[(0, 2.0)], options, || false)?`.
+pub fn solve_constraints_with_constants(
+    values: &[f64],
+    blocks: &[ResidualBlock<'_>],
+    constants: &[(usize, f64)],
+    options: SolveOptions,
+    mut cancelled: impl FnMut() -> bool,
+) -> Result<NonlinearResult, SolveError> {
+    iteration::run(values, blocks, constants, options, &mut cancelled)
 }
 
 fn checked(value: f64, context: &str) -> Result<f64, SolveError> {
