@@ -58,7 +58,10 @@ fn failed_choice_can_retry_without_binding_a_path_or_losing_history() {
     owner.documents().files().fail_stage.set(false);
     choose_path(&mut owner, document, "/memory/retry.opd");
     assert_saved_choice(&mut owner, document, "/memory/retry.opd");
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    let mut saved = before;
+    // #3800: successful save clears the tab's dirty flag without changing history or focus.
+    saved.documents[0].dirty = false;
+    assert_eq!(owner.gui_command_state().unwrap(), saved);
     assert!(!owner.documents().workspace().needs_save(document).unwrap());
 }
 
