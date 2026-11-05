@@ -32,8 +32,11 @@ previously used by inferred lines is now shared with these seed-dependent edits;
 its existing convergence requirement and free-variable support are preserved.
 
 The normal session command prepares the response before publication and retains
-automatic recompute for other pending readers. A numerical nonconvergence retains
-explicit sketch health. A compile or contact-selection failure publishes no
+automatic recompute for other pending readers. Under
+[ADR-0031](../decisions/ADR-0031-converged-geometric-authoring.md), numerical
+nonconvergence now refuses the isolated geometric candidate before adoption.
+The former adoption of a failed construction is removed by #3818; DOF alone
+cannot certify a valid result. A compile or contact-selection failure publishes no
 geometry and retains attempted reservations. Response rejection, commit veto,
 group abort, deletion, undo, and storage reload cannot reuse those identities.
 

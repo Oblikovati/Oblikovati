@@ -21,6 +21,7 @@ pub struct SketchGeometricCreationReport {
 pub enum SketchGeometricCreationError {
     Sketch(SketchError),
     Identity(SketchConstraintReservationError),
+    Readiness(crate::document_sketch::SketchReadinessError),
 }
 impl DocumentSnapshot {
     /// Append and evaluate one geometric relation on an isolated owner candidate.
@@ -41,10 +42,14 @@ impl DocumentSnapshot {
         input
             .append(&mut geometry, id)
             .map_err(SketchGeometricCreationError::Sketch)?;
-        let (sketches, report) = self
+        let (candidate, report) = self
             .evaluate_geometric_creation(sketch, geometry, id, options)
             .map_err(SketchGeometricCreationError::Sketch)?;
-        self.sketches = sketches;
+        // #3818: zero DOF does not certify convergence; refuse before adopting the candidate.
+        candidate
+            .require_converged_sketch(sketch)
+            .map_err(SketchGeometricCreationError::Readiness)?;
+        self.sketches = candidate.sketches;
         Ok(report)
     }
     fn prepare_geometric_creation(
@@ -66,13 +71,7 @@ impl DocumentSnapshot {
         geometry: Sketch2D,
         id: SketchConstraintId,
         options: SolveOptions,
-    ) -> Result<
-        (
-            crate::document_sketch::DocumentSketches,
-            SketchGeometricCreationReport,
-        ),
-        SketchError,
-    > {
+    ) -> Result<(DocumentSnapshot, SketchGeometricCreationReport), SketchError> {
         let geometric_index = geometry.geometric_constraint_index(id)?;
         let constraint = created_constraint(&geometry, geometric_index, id)?;
         let mut candidate = self.clone();
@@ -84,7 +83,8 @@ impl DocumentSnapshot {
             geometric_index,
             degrees_of_freedom,
         };
-        Ok((solved.candidate, report))
+        candidate.sketches = solved.candidate;
+        Ok((candidate, report))
     }
 }
 pub(super) fn solved_sketch_dof(
@@ -110,6 +110,7 @@ impl SketchGeometricCreationError {
         match self {
             Self::Sketch(cause) => cause,
             Self::Identity(cause) => cause,
+            Self::Readiness(cause) => cause,
         }
     }
 }

@@ -2,11 +2,16 @@
 use super::*;
 use oblikovati_api::wire::{AddConstraintArgs, AddConstraintResult};
 fn fresh(kind: DocumentType) -> (DiscoveryWorkspace, u64, QueryGuids) {
+    fresh_geometry(kind, constructor_geometry())
+}
+fn fresh_geometry(kind: DocumentType, geometry: Sketch2D) -> (DiscoveryWorkspace, u64, QueryGuids) {
     let (mut files, document, source) = configured_files(kind, Default::default());
     files
         .commands(document)
         .unwrap()
-        .run("Owned constructor operands", install_operands)
+        .run("Owned constructor operands", |snapshot, ids| {
+            install_geometry(snapshot, ids, geometry)
+        })
         .unwrap();
     (files, document, source)
 }
@@ -14,23 +19,33 @@ fn install_operands(
     snapshot: &mut DocumentSnapshot,
     ids: &mut RecipeReservations<'_>,
 ) -> Result<(), String> {
+    install_geometry(snapshot, ids, constructor_geometry())
+}
+fn install_geometry(
+    snapshot: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+    geometry: Sketch2D,
+) -> Result<(), String> {
     let sketch = ids.allocate_sketch().unwrap();
     for expected in 1..=11 {
         assert_eq!(ids.allocate_sketch_entity().unwrap(), entity(expected));
     }
     snapshot
         .sketches
-        .add(sketch, "Author", SketchPlane::xy(), constructor_geometry())
+        .add(sketch, "Author", SketchPlane::xy(), geometry)
         .map_err(|cause| cause.to_string())
 }
 fn constructor_geometry() -> Sketch2D {
+    constructor_geometry_with_rise(0.)
+}
+fn constructor_geometry_with_rise(secondary_rise: f64) -> Sketch2D {
     let mut geometry = Sketch2D::default();
     let points = [
         [0.0, 0.0],
         [1.0, 0.0],
         [0.0, 1.0],
         [3.0, 2.0],
-        [4.0, 2.0],
+        [4.0, 2.0 + secondary_rise],
         [3.0, 3.0],
     ];
     for (index, position) in points.into_iter().enumerate() {
@@ -122,9 +137,14 @@ fn circular_constructors() -> Vec<(&'static str, Vec<u64>, &'static str)> {
     cases
 }
 fn assert_constructor(owner: DocumentType, kind: &str, refs: &[u64], actual: &str) {
-    let (mut files, document, mut source) = fresh(owner);
+    let (mut files, document, mut source) =
+        fresh_geometry(owner, constructor_geometry_with_rise(0.5));
     let focus = files.workspace().active_document();
-    let result = add(&mut files, &mut source, &request(kind, refs)).unwrap();
+    let result = add(&mut files, &mut source, &request(kind, refs)).unwrap_or_else(|cause| {
+        panic!(
+            "constructor {owner:?}/{kind}/{refs:?}: expected a converged authored result: {cause}"
+        )
+    });
     assert_eq!(result.index, 0);
     assert_eq!(result.kind, actual);
     let row = &list(&files)[0];
@@ -228,3 +248,6 @@ mod add_dimension;
 
 #[path = "create/ground.rs"]
 mod ground;
+
+#[path = "create/readiness.rs"]
+mod readiness;
