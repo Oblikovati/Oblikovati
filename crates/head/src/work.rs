@@ -12,6 +12,17 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Activate a visible document through its owner; example: `work.activate_document_from_gui(&request)?`.
+    fn activate_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::ActivateDocumentArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "activate document {}: expected a document owner",
+            request.id
+        ))
+    }
+
     /// Close a document through its owner's save guard; example: `work.close_document_from_gui(&request)?`.
     fn close_document_from_gui(
         &mut self,
@@ -165,6 +176,13 @@ impl HeadWork for IdleHeadWork {
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn activate_document_from_gui(
+            &mut self,
+            request: &oblikovati_api::wire::ActivateDocumentArgs,
+        ) -> Result<bool, String> {
+            self.$owner.activate_document_from_gui(request)
+        }
+
         fn close_document_from_gui(
             &mut self,
             request: &oblikovati_api::wire::CloseDocumentArgs,
@@ -218,3 +236,15 @@ macro_rules! forward_owner_view_work {
     };
 }
 pub(crate) use forward_owner_view_work;
+
+#[cfg(test)]
+mod document_activation_tests {
+    use super::{HeadWork, IdleHeadWork};
+    #[test]
+    fn an_owner_without_documents_names_the_refused_activation() {
+        let failure = IdleHeadWork
+            .activate_document_from_gui(&oblikovati_api::wire::ActivateDocumentArgs { id: 41 })
+            .unwrap_err();
+        assert!(failure.contains("41") && failure.contains("document owner"));
+    }
+}

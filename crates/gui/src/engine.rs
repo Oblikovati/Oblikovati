@@ -35,6 +35,7 @@ pub struct GuiFrameEngine {
     parameter_editor: crate::parameters::GuiParameterEditor,
     document_files: crate::files::GuiDocumentFiles,
     ribbon: crate::ribbon::DocumentRibbon,
+    document_tabs: crate::document_tabs::DocumentTabs,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -48,6 +49,7 @@ impl GuiFrameEngine {
             parameter_editor: Default::default(),
             document_files: Default::default(),
             ribbon: Default::default(),
+            document_tabs: Default::default(),
         })
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
@@ -71,6 +73,7 @@ impl GuiFrameEngine {
             &mut self.parameter_editor,
             &mut self.document_files,
             &mut self.ribbon,
+            &mut self.document_tabs,
         )
     }
     /// Request a path for the owner's unsaved document without writing it.
@@ -150,6 +153,7 @@ fn draw_controls(
     parameter_editor: &mut crate::parameters::GuiParameterEditor,
     document_files: &mut crate::files::GuiDocumentFiles,
     ribbon: &mut crate::ribbon::DocumentRibbon,
+    document_tabs: &mut crate::document_tabs::DocumentTabs,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
     let ui = context.frame();
@@ -162,6 +166,7 @@ fn draw_controls(
         document_files,
         &mut selected,
     );
+    document_tabs.panel(ui, request, &mut selected);
     parameter_editor.panel(ui, &request.commands, &mut selected);
     crate::browser::panel(
         ui,

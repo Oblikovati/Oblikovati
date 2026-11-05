@@ -306,3 +306,6 @@ mod point_input;
 
 #[path = "owner/ribbon.rs"]
 mod ribbon;
+
+#[path = "owner/document_tabs.rs"]
+mod document_tabs;

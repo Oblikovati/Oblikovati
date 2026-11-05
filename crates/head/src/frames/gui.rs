@@ -52,6 +52,7 @@ fn report_authoring_result(
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
         GuiShellAction::Parameter { .. }
+        | GuiShellAction::ActivateDocument(_)
         | GuiShellAction::OpenDocument(_)
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SaveDocumentAs(_)

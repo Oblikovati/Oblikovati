@@ -10,6 +10,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
+#[path = "owner_documents.rs"]
+mod documents_gui;
 #[path = "owner_browser.rs"]
 mod model_browser;
 #[path = "owner_parameters.rs"]
@@ -197,6 +199,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            documents: self.gui_document_rows()?,
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),
             document_type: Some(
@@ -223,6 +226,12 @@ impl<
         }
         .map_err(|cause| format!("Parameter {:?}: {cause}", request.name))?;
         Ok(true)
+    }
+    fn activate_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::ActivateDocumentArgs,
+    ) -> Result<bool, String> {
+        self.activate_gui_document(request)
     }
     fn create_part_document(&mut self) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())
