@@ -146,3 +146,103 @@ fn verify_srgb_channels(view: &mut Viewport) {
         .unwrap();
     assert!(colour_count(&view.redraw().unwrap(), [128, 64, 191]) > 10);
 }
+
+#[test]
+fn native_selection_restyles_only_committed_sketches_and_survives_refresh() {
+    let (runtime, mut view) = super::sketch_display::open_display("Selected sketch acceptance");
+    let geometry = super::sketch_display::packet();
+    view.set_sketch_palette(&selection_palette([0., 0., 1.]))
+        .unwrap();
+    view.set_sketch_display(std::slice::from_ref(&geometry))
+        .unwrap();
+    view.set_sketch_preview(Some(&super::sketch_preview::packet()))
+        .unwrap();
+    let before = view.redraw().unwrap();
+    assert!(colour_count(&before, [255, 0, 0]) > 10);
+    assert!(
+        view.set_selected_sketches(&[geometry.sketch, geometry.sketch])
+            .unwrap()
+    );
+    let selected = view.redraw().unwrap();
+    assert_eq!(selected.scene_generation, before.scene_generation);
+    assert!(colour_count(&selected, [0, 0, 255]) > 10);
+    assert!(colour_count(&selected, [0, 255, 0]) > 10);
+    assert_eq!(colour_count(&selected, [255, 0, 0]), 0);
+    verify_selected_refresh(&mut view, &geometry);
+    super::sketch_display::close_display(&runtime, &mut view);
+    assert!(view.set_selected_sketches(&[]).is_err());
+}
+fn selection_palette(selected: [f32; 3]) -> ViewportSketchPalette {
+    let mut theme = ThemeDefinition::dark()
+        .unwrap()
+        .duplicate("Selection")
+        .unwrap();
+    for (token, rgb) in [
+        (TOKEN_SKETCH_GEOMETRY, [1., 0., 0.]),
+        (TOKEN_SKETCH_PREVIEW, [0., 1., 0.]),
+        (oblikovati_api::types::TOKEN_SKETCH_SELECTED, selected),
+    ] {
+        theme
+            .set_color(
+                &token,
+                Rgba {
+                    r: rgb[0],
+                    g: rgb[1],
+                    b: rgb[2],
+                    a: 1.,
+                },
+            )
+            .unwrap();
+    }
+    ViewportSketchPalette::from_theme(&theme)
+}
+fn verify_selected_refresh(
+    view: &mut Viewport,
+    geometry: &oblikovati_viewport::ViewportSketchDisplay,
+) {
+    assert!(!view.set_selected_sketches(&[geometry.sketch]).unwrap());
+    assert!(
+        !view
+            .set_sketch_display(std::slice::from_ref(geometry))
+            .unwrap()
+    );
+    view.navigate(ViewportNavigation::Zoom {
+        factor: 1.5,
+        anchor: None,
+    })
+    .unwrap();
+    assert!(colour_count(&view.redraw().unwrap(), [0, 0, 255]) > 10);
+    view.set_sketch_palette(&selection_palette([0., 0., 1.]))
+        .unwrap();
+    view.set_selected_sketches(&[]).unwrap();
+    assert!(colour_count(&view.redraw().unwrap(), [255, 0, 0]) > 10);
+}
+
+#[test]
+fn native_selection_uses_sketch_identity_and_restyles_selected_theme_colours() {
+    let (runtime, mut view) = super::sketch_display::open_display("Independent sketch selection");
+    let first = super::sketch_display::packet();
+    let mut second = first.clone();
+    second.sketch = oblikovati_model::document_sketch::DocumentSketchId(2);
+    second.plane = oblikovati_model::sketch::SketchPlane::new(
+        [8., 0., 0.],
+        [1., 0., 0.],
+        [0., 1., 0.],
+        Default::default(),
+    )
+    .unwrap();
+    view.set_sketch_palette(&selection_palette([0., 0., 1.]))
+        .unwrap();
+    view.set_sketch_display(&[first.clone(), second]).unwrap();
+    view.set_selected_sketches(&[first.sketch]).unwrap();
+    assert_selection_colours(&mut view, [0, 0, 255]);
+    view.set_sketch_palette(&selection_palette([0., 1., 1.]))
+        .unwrap();
+    assert_selection_colours(&mut view, [0, 255, 255]);
+    super::sketch_display::close_display(&runtime, &mut view);
+}
+fn assert_selection_colours(view: &mut Viewport, selected: [u8; 3]) {
+    let capture = view.redraw().unwrap();
+    assert!(colour_count(&capture, [255, 0, 0]) > 10);
+    assert!(colour_count(&capture, selected) > 10);
+}

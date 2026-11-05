@@ -12,7 +12,7 @@ impl RenderView {
             return Ok(false);
         }
         let deflection = self.sketch_deflection()?;
-        let sketches = self.restyle_committed(palette, deflection)?;
+        let sketches = self.restyle_committed(palette, deflection, &self.selected_sketches)?;
         let preview = self.restyle_preview(palette, deflection)?;
         // Build both replacements before publishing either, so a declined preview keeps both old overlays.
         sketches.show();
@@ -26,13 +26,14 @@ impl RenderView {
         &self,
         palette: &ViewportSketchPalette,
         deflection: f64,
+        selected: &[oblikovati_model::document_sketch::DocumentSketchId],
     ) -> Result<SketchDisplayOverlay, String> {
         let source = self
             .sketches
             .source
             .as_ref()
             .map_or(&[][..], |(source, _)| source.as_slice());
-        SketchDisplayOverlay::replacement(&self.viewer, source, deflection, &palette.geometry)
+        SketchDisplayOverlay::replacement(&self.viewer, source, deflection, palette, selected)
     }
     fn restyle_preview(
         &self,
@@ -45,5 +46,25 @@ impl RenderView {
             deflection,
             &palette.preview,
         )
+    }
+}
+
+impl RenderView {
+    pub(crate) fn set_selected_sketches(
+        &mut self,
+        selected: &[oblikovati_model::document_sketch::DocumentSketchId],
+    ) -> Result<bool, String> {
+        let mut selected = selected.to_vec();
+        selected.sort_by_key(|id| id.0);
+        selected.dedup();
+        if self.selected_sketches == selected {
+            return Ok(false);
+        }
+        let sketches =
+            self.restyle_committed(&self.sketch_palette, self.sketch_deflection()?, &selected)?;
+        sketches.show();
+        self.sketches = sketches;
+        self.selected_sketches = selected;
+        Ok(true)
     }
 }

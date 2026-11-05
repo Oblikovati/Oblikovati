@@ -5,6 +5,7 @@ use oblikovati_model::theme::{Rgba, ThemeDefinition};
 pub struct ViewportSketchPalette {
     pub(crate) geometry: Rgba,
     pub(crate) preview: Rgba,
+    pub(crate) selected: Rgba,
 }
 impl ViewportSketchPalette {
     /// Copy the same semantic tokens as Go's sketchThemeColors; example: `ViewportSketchPalette::from_theme(library.active())`.
@@ -12,6 +13,7 @@ impl ViewportSketchPalette {
         Self {
             geometry: theme.color(&oblikovati_api::types::TOKEN_SKETCH_GEOMETRY),
             preview: theme.color(&oblikovati_api::types::TOKEN_SKETCH_PREVIEW),
+            selected: theme.color(&oblikovati_api::types::TOKEN_SKETCH_SELECTED),
         }
     }
 }
@@ -33,6 +35,10 @@ mod tests {
             assert_eq!(
                 palette.preview,
                 theme.color(&oblikovati_api::types::TOKEN_SKETCH_PREVIEW)
+            );
+            assert_eq!(
+                palette.selected,
+                theme.color(&oblikovati_api::types::TOKEN_SKETCH_SELECTED)
             );
             let mut custom = theme.duplicate("Workshop").unwrap();
             custom

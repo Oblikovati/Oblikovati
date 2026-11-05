@@ -13,6 +13,8 @@ pub(super) struct SketchDisplayOverlay {
     pub(super) declines: Vec<ViewportSketchDecline>,
     structures: Vec<SketchStructure>,
     color: Rgba,
+    selected_color: Rgba,
+    selected: Vec<oblikovati_model::document_sketch::DocumentSketchId>,
 }
 impl SketchDisplayOverlay {
     pub(super) fn is_empty(&self) -> bool {
@@ -24,14 +26,19 @@ impl SketchDisplayOverlay {
         viewer: &V3dViewer,
         source: &[ViewportSketchDisplay],
         deflection: f64,
-        color: &Rgba,
+        palette: &crate::ViewportSketchPalette,
+        selected: &[oblikovati_model::document_sketch::DocumentSketchId],
     ) -> Result<bool, String> {
         if self.source.as_ref().is_some_and(|(previous, error)| {
-            previous == source && *error == deflection && &self.color == color
+            previous == source
+                && *error == deflection
+                && self.color == palette.geometry
+                && self.selected_color == palette.selected
+                && self.selected == selected
         }) {
             return Ok(false);
         }
-        let replacement = Self::replacement(viewer, source, deflection, color)?;
+        let replacement = Self::replacement(viewer, source, deflection, palette, selected)?;
         replacement.show();
         *self = replacement;
         Ok(true)
@@ -40,11 +47,14 @@ impl SketchDisplayOverlay {
         viewer: &V3dViewer,
         source: &[ViewportSketchDisplay],
         deflection: f64,
-        color: &Rgba,
+        palette: &crate::ViewportSketchPalette,
+        selected: &[oblikovati_model::document_sketch::DocumentSketchId],
     ) -> Result<Self, String> {
         let mut result = Self {
             source: Some((source.to_vec(), deflection)),
-            color: color.clone(),
+            color: palette.geometry.clone(),
+            selected_color: palette.selected.clone(),
+            selected: selected.to_vec(),
             ..Self::default()
         };
         for sketch in source {
@@ -104,7 +114,12 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         entity: &SketchDisplayEntity,
     ) {
-        match build_entity(viewer, sketch, entity, &self.color) {
+        let color = if self.selected.contains(&sketch.sketch) {
+            &self.selected_color
+        } else {
+            &self.color
+        };
+        match build_entity(viewer, sketch, entity, color) {
             Ok(structure) => self.structures.push(structure),
             Err(cause) => self
                 .declines
@@ -143,7 +158,8 @@ impl super::RenderView {
             &self.viewer,
             source,
             deflection,
-            &self.sketch_palette.geometry,
+            &self.sketch_palette,
+            &self.selected_sketches,
         )
     }
     pub(crate) fn refresh_sketch_display(&mut self) -> Result<bool, String> {
@@ -159,7 +175,8 @@ impl super::RenderView {
             &self.viewer,
             &source,
             deflection,
-            &self.sketch_palette.geometry,
+            &self.sketch_palette,
+            &self.selected_sketches,
         )
     }
     pub(crate) fn sketch_declines(&self) -> &[ViewportSketchDecline] {
