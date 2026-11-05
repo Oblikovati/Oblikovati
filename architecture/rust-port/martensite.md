@@ -1,9 +1,12 @@
 # Martensite integration and readiness
 
-This plan consumes Martensite from `RustyCADKernel`. It does not assume that
-all OCCT capabilities are already usable. It also requires Martensite to gain
-the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
-[source baseline](source-map.md) fixes the inspected revision.
+The original geometry baseline uses `RustyCADKernel`. The native renderer now
+consumes the released `Oblikovati/Martensite` toolkits. The
+[v0.8 adoption record](implementation-martensite-0-8.md) states the current pin
+and its qualification limits. The production geometry adapter remains on its
+qualified baseline until the replacement passes its mass-property and analytic
+region contracts. The [source baseline](source-map.md) records the original
+inspection; it is not proof that every later toolkit is ready for the host.
 
 The accepted application contracts are
 [ADR-0007: Martensite integration](../decisions/ADR-0007-martensite-integration.md)
@@ -22,9 +25,10 @@ kernel-internal decisions still belong to RustyCADKernel.
 - `Shape` contains a shared `Handle<dyn TShape>`. A cloned shape preserves
   shared identity. Some builders can update referenced geometry while preparing
   an operation, so `&Shape` alone does not imply immutable evaluation.
-- `martensite-vulkan` has an offscreen path through Graphic3d, V3d, and AIS.
-  At the recorded revision, native window presentation is unsupported, and
-  highlight rendering and the wider built-in presentation set remain open.
+- Native window presentation now runs through Martensite V3d and Vulkan.
+  The former offscreen-only limit is retired. Native Linux display, palettes,
+  sketch overlays and captures have executable host evidence. Highlight rendering
+  and the wider built-in presentation set still require application acceptance.
 - The kernel completeness record does not claim full behavioral equivalence
   or a complete platform matrix. Toolkit mapping counts are not readiness
   evidence for an application feature.
