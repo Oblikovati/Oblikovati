@@ -22,6 +22,7 @@ mod sketch_dimension_delete;
 mod sketch_entity_delete;
 mod sketch_selection;
 mod sketch_selection_click;
+mod sketch_selection_owned;
 pub use sketch_dimension_create::SketchDimensionCreationProjectionInput;
 pub use sketch_entity_delete::SketchEntityDeleteProjectionInput;
 mod sketch_dimension_edit;
@@ -62,6 +63,7 @@ struct BoundedGroup {
 pub struct DocumentSession<O> {
     document: u64,
     browser_selection: selection::SelectionSet<selection::BrowserSketchPick>,
+    editor_selection: selection::SelectionSet<selection::SketchPick>,
     history: DocumentEditHistory,
     observer: O,
     group: Option<BoundedGroup>,
@@ -86,6 +88,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         Self {
             document,
             browser_selection: Default::default(),
+            editor_selection: Default::default(),
             history,
             observer,
             group: None,

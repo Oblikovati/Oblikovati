@@ -168,3 +168,92 @@ fn select_dimension(
         Some(2)
     );
 }
+
+#[test]
+fn owned_editor_selection_is_shared_transient_and_exclusive_of_browser_rows() {
+    let mut session = selection_session(None);
+    let target = SketchPickTarget::Entity(SketchEntityId(2));
+    session
+        .set_browser_sketch_selection(Some(CLICK_SKETCH), Replace, false)
+        .unwrap();
+    assert_eq!(
+        session
+            .set_sketch_selection(CLICK_SKETCH, Some(target), Replace, false)
+            .unwrap(),
+        Some(1)
+    );
+    assert!(session.selected_browser_sketches().is_empty());
+    assert_eq!(
+        session.selected_sketch_picks(CLICK_SKETCH),
+        [curve_pick(&session)]
+    );
+    assert_no_model_edit(&session);
+    assert_eq!(
+        session
+            .set_sketch_selection(CLICK_SKETCH, None, Replace, true)
+            .unwrap(),
+        None
+    );
+    assert_eq!(session.selected_sketch_picks(CLICK_SKETCH).len(), 1);
+    session
+        .set_browser_sketch_selection(Some(CLICK_SKETCH), Replace, false)
+        .unwrap();
+    assert!(session.selected_sketch_picks(CLICK_SKETCH).is_empty());
+}
+#[test]
+fn owned_editor_selection_hides_stale_handles_and_refuses_stale_additions() {
+    let mut session = selection_session(None);
+    let target = SketchPickTarget::Entity(SketchEntityId(2));
+    session
+        .set_sketch_selection(CLICK_SKETCH, Some(target), Replace, false)
+        .unwrap();
+    change_width(&mut session);
+    assert!(session.selected_sketch_picks(CLICK_SKETCH).is_empty());
+    assert!(
+        session
+            .set_sketch_selection(CLICK_SKETCH, Some(target), Toggle, false)
+            .is_err()
+    );
+    session
+        .set_sketch_selection(CLICK_SKETCH, Some(target), Replace, false)
+        .unwrap();
+    assert_eq!(
+        session.selected_sketch_picks(CLICK_SKETCH),
+        [curve_pick(&session)]
+    );
+    assert!(
+        session
+            .set_sketch_selection(
+                CLICK_SKETCH,
+                Some(SketchPickTarget::Entity(SketchEntityId(99))),
+                Replace,
+                false
+            )
+            .is_err()
+    );
+    assert_eq!(session.selected_sketch_picks(CLICK_SKETCH).len(), 1);
+    assert_eq!(session.undo_labels(), ["Width"]);
+}
+
+#[test]
+fn plain_empty_editor_click_retires_a_browser_row_but_modified_empty_click_keeps_it() {
+    let mut session = selection_session(None);
+    session
+        .set_browser_sketch_selection(Some(CLICK_SKETCH), Replace, false)
+        .unwrap();
+    assert_eq!(
+        session
+            .set_sketch_selection(CLICK_SKETCH, None, Toggle, false)
+            .unwrap(),
+        None
+    );
+    assert_eq!(session.selected_browser_sketches(), [CLICK_SKETCH]);
+    assert_eq!(
+        session
+            .set_sketch_selection(CLICK_SKETCH, None, Replace, false)
+            .unwrap(),
+        Some(0)
+    );
+    assert!(session.selected_browser_sketches().is_empty());
+    assert_no_model_edit(&session);
+}

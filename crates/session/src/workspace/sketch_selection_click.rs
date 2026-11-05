@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::SessionCommands;
 use crate::TransactionObserver;
-use crate::selection::{SelectionClickMode, SelectionSet, SketchPick};
+use crate::selection::{SelectionClickMode, SelectionSet, SketchPick, SketchPickTarget};
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchError};
 impl<O: TransactionObserver> SessionCommands<'_, O> {
     /// Apply a resolved click without changing model history or workspace focus.
@@ -16,5 +16,20 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) -> Result<Option<usize>, SketchError> {
         self.session
             .apply_sketch_click(sketch, picked, mode, tool_active, picks)
+    }
+}
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Change the owner selection shared by native tools and API readers.
+    /// Example: `commands.set_sketch_selection(sketch, Some(target), mode, false)?;`.
+    pub fn set_sketch_selection(
+        &mut self,
+        sketch: DocumentSketchId,
+        target: Option<SketchPickTarget>,
+        mode: SelectionClickMode,
+        tool_active: bool,
+    ) -> Result<Option<usize>, SketchError> {
+        self.session
+            .set_sketch_selection(sketch, target, mode, tool_active)
     }
 }

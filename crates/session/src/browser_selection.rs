@@ -54,7 +54,14 @@ impl<O: TransactionObserver> DocumentSession<O> {
         }
         let picked = sketch.map(|id| self.browser_sketch_pick(id)).transpose()?;
         self.validate_browser_click(picked, mode, &self.browser_selection)?;
-        Ok(self.browser_selection.apply_click(picked, mode, false))
+        let retire_editor = (picked.is_some() || mode == SelectionClickMode::Replace)
+            && !self.editor_selection.items().is_empty();
+        let count = self.browser_selection.apply_click(picked, mode, false);
+        if retire_editor {
+            self.editor_selection.clear();
+            return Ok(Some(self.browser_selection.items().len()));
+        }
+        Ok(count)
     }
     fn validate_browser_click(
         &self,
