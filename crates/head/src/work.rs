@@ -12,6 +12,26 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Close a document through its owner's save guard; example: `work.close_document_from_gui(&request)?`.
+    fn close_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::CloseDocumentArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "close document {}: expected an owner with document file support",
+            request.id
+        ))
+    }
+    /// Open a chosen document through the document owner; example: `work.open_document_from_gui(&request)?`.
+    fn open_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::OpenDocumentArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "open document {:?}: expected an owner with document file support",
+            request.full_document_name
+        ))
+    }
     /// Activate a stable sketch selected in the model browser.
     /// Example: `work.edit_existing_sketch_from_gui(document, sketch)?` after a double-click.
     fn edit_existing_sketch_from_gui(
@@ -145,6 +165,18 @@ impl HeadWork for IdleHeadWork {
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn close_document_from_gui(
+            &mut self,
+            request: &oblikovati_api::wire::CloseDocumentArgs,
+        ) -> Result<bool, String> {
+            self.$owner.close_document_from_gui(request)
+        }
+        fn open_document_from_gui(
+            &mut self,
+            request: &oblikovati_api::wire::OpenDocumentArgs,
+        ) -> Result<bool, String> {
+            self.$owner.open_document_from_gui(request)
+        }
         fn edit_existing_sketch_from_gui(
             &mut self,
             document: u64,

@@ -266,6 +266,8 @@ mod part_scene;
 #[path = "owner/commands.rs"]
 mod commands;
 
+#[path = "owner/file_tools.rs"]
+mod file_tools;
 #[path = "owner/gui_commands.rs"]
 mod gui_commands;
 #[path = "owner/parameter_editor.rs"]
