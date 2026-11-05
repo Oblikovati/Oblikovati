@@ -188,3 +188,7 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
         apply_input(io, event, request.framebuffer_scale);
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/parameter_journey/platform.rs"]
+mod parameter_shortcuts;

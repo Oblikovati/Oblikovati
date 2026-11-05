@@ -8,11 +8,10 @@ fn save_as_rebinds_the_owner_and_returns_the_resolved_destination() {
     files.save(id, "test", &mut source).unwrap();
     let original = files.files().packages.borrow()[Path::new("/fixtures/part.opd")].clone();
     let identity = files.workspace().identity(id).unwrap().internal_name;
-    files
-        .files()
-        .save_aliases
-        .borrow_mut()
-        .insert("/fixtures/alias.opd".into(), "/fixtures/renamed.opd".into());
+    files.files().save_aliases.borrow_mut().insert(
+        "/fixtures/alias.opd".into(),
+        fixture_native_path(Path::new("/fixtures/renamed.opd")),
+    );
     {
         let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
         client
@@ -30,7 +29,10 @@ fn save_as_rebinds_the_owner_and_returns_the_resolved_destination() {
                 new_full_document_name: "/fixtures/alias.opd".into(),
             })
             .unwrap();
-        assert_eq!(result.full_document_name, "/fixtures/renamed.opd");
+        assert_eq!(
+            result.full_document_name,
+            fixture_file_name("/fixtures/renamed.opd")
+        );
         let document = client
             .documents()
             .list()
@@ -41,7 +43,10 @@ fn save_as_rebinds_the_owner_and_returns_the_resolved_destination() {
         assert_eq!(document.name, "renamed");
         assert!(!document.dirty);
     }
-    assert_eq!(files.path(id).unwrap(), Path::new("/fixtures/renamed.opd"));
+    assert_eq!(
+        files.path(id).unwrap(),
+        fixture_native_path(Path::new("/fixtures/renamed.opd"))
+    );
     assert_eq!(
         files.workspace().identity(id).unwrap().internal_name,
         identity
@@ -134,7 +139,10 @@ fn failed_save_as_and_copy_keep_binding_and_identity_unchanged() {
             .is_err()
     );
     assert_eq!(files.workspace().identity(id).unwrap(), &identity);
-    assert_eq!(files.path(id).unwrap(), Path::new("/fixtures/part.opd"));
+    assert_eq!(
+        files.path(id).unwrap(),
+        fixture_native_path(Path::new("/fixtures/part.opd"))
+    );
     assert!(files.files().packages.borrow().is_empty());
     assert!(files.workspace().needs_save(id).unwrap());
 }
@@ -163,5 +171,8 @@ fn non_utf8_resolved_save_as_is_refused_before_storage() {
     assert!(error.to_string().contains("UTF-8"));
     assert!(files.files().packages.borrow().is_empty());
     assert_eq!(files.workspace().identity(id).unwrap(), &identity);
-    assert_eq!(files.path(id).unwrap(), Path::new("/fixtures/part.opd"));
+    assert_eq!(
+        files.path(id).unwrap(),
+        fixture_native_path(Path::new("/fixtures/part.opd"))
+    );
 }

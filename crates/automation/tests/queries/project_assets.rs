@@ -10,7 +10,7 @@ pub(super) fn project_files(
     name: &str,
     steel_name: &str,
 ) -> std::path::PathBuf {
-    let root = std::path::PathBuf::from(format!("/fixtures/{name}"));
+    let root = fixture_native_path(Path::new(&format!("/fixtures/{name}")));
     let project = root.join("design.opj");
     let configuration = ProjectConfiguration {
         name: name.into(),

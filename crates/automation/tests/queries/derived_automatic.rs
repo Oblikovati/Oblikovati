@@ -175,7 +175,7 @@ fn graph_preflight_failure_reports_source_commit_without_refreshing_target() {
     let (mut files, source, target, mut guids) = linked_files();
     let _duplicate = files
         .create_unbound(
-            DocumentPackage::empty(DOCUMENT_PART, "/source.opd"),
+            DocumentPackage::empty(DOCUMENT_PART, &fixture_file_name("/source.opd")),
             QueryObserver::default(),
             "test",
             &mut guids,

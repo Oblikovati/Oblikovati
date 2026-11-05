@@ -72,7 +72,10 @@ fn file_host_edits_history_and_save_use_the_same_owned_document() {
             .documents()
             .save(&SaveDocumentArgs { document: id })
             .unwrap();
-        assert_eq!(result.full_document_name, "/fixtures/part.opd");
+        assert_eq!(
+            result.full_document_name,
+            fixture_file_name("/fixtures/part.opd")
+        );
         assert!(
             client
                 .transactions()

@@ -1,9 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::*;
+use oblikovati_model::identity::{DocumentGuid, GuidSource, IdentityTransitionError};
+use oblikovati_persistence::{
+    atomic::{AtomicFiles, StagedFile},
+    file_access::DocumentFiles,
+    load::PackageFileReader,
+};
+use std::{
+    cell::RefCell,
+    io,
+    path::{Path, PathBuf},
+    rc::Rc,
+};
+#[path = "../../../../test-utilities/rust/fixture_paths.rs"]
+mod fixture_paths;
+use fixture_paths::{FixturePathMap, fixture_native_path};
 
 #[derive(Default)]
 pub(super) struct RecordedStore {
-    pub files: BTreeMap<PathBuf, Vec<u8>>,
+    pub files: FixturePathMap<Vec<u8>>,
     pub events: Vec<&'static str>,
 }
 #[derive(Default)]
@@ -44,11 +58,11 @@ impl PackageFileReader for RecordedFiles {
 impl DocumentFiles for RecordedFiles {
     fn save_path(&mut self, requested: &Path) -> io::Result<PathBuf> {
         observe(&self.store, self.failure, "path")?;
-        Ok(requested.to_path_buf())
+        Ok(fixture_native_path(requested))
     }
     fn canonical_path(&mut self, requested: &Path) -> io::Result<PathBuf> {
         observe(&self.store, self.failure, "canonical")?;
-        Ok(requested.to_path_buf())
+        Ok(fixture_native_path(requested))
     }
 }
 pub(super) struct RecordedStage {

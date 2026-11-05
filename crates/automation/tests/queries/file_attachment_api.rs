@@ -30,8 +30,9 @@ impl ExternalAttachmentFiles for ForeignFiles {
         }
         Ok((!state.missing).then_some(ResolvedAttachmentSource {
             resolved_file_name: path.into(),
+            // #3795: Windows SystemTime stores 100 ns ticks; retain representable fractional precision.
             modified: SystemTime::UNIX_EPOCH
-                + Duration::new(if state.changed { 101 } else { 100 }, 1),
+                + Duration::new(if state.changed { 101 } else { 100 }, 100),
         }))
     }
     fn read(&mut self, _: &str) -> io::Result<Vec<u8>> {
@@ -75,10 +76,7 @@ fn typed_attachment_capture_status_undo_and_file_round_trip() {
         .documents()
         .add_attachment(&add(id, "linked", ATTACHMENT_LINKED))
         .unwrap();
-    assert_eq!(
-        linked.last_known_file_time,
-        "1970-01-01T00:01:40.000000001Z"
-    );
+    assert_eq!(linked.last_known_file_time, "1970-01-01T00:01:40.0000001Z");
     assert_eq!(linked.resolved_file_name, "source.bin");
     assert_eq!(linked.status, REFERENCE_UP_TO_DATE);
     let embedded = client
@@ -342,7 +340,12 @@ fn vetoed_attachment_command_discards_the_captured_candidate() {
 fn project_attachment_api_preserves_reference_and_reports_resolved_source() {
     use oblikovati_persistence::project::{ProjectAttachmentFiles, ProjectFileLookup};
     let (mut files, id, mut guids) = created_files(false);
-    let lookup = ProjectFileLookup::new(Some("/project".into()), vec![], None).unwrap();
+    let lookup = ProjectFileLookup::new(
+        Some(fixture_native_path(Path::new("/project"))),
+        vec![],
+        None,
+    )
+    .unwrap();
     let mut external = ForeignFiles(Rc::new(RefCell::new(ForeignState::default())));
     let mut project_files = ProjectAttachmentFiles::new(&lookup, &mut external);
     let client = Client::new(
@@ -353,7 +356,10 @@ fn project_attachment_api_preserves_reference_and_reports_resolved_source() {
         .add_attachment(&add(id, "linked", ATTACHMENT_LINKED))
         .unwrap();
     assert_eq!(result.full_file_name, "source.bin");
-    assert_eq!(result.resolved_file_name, "/project/source.bin");
+    assert_eq!(
+        Path::new(&result.resolved_file_name),
+        fixture_native_path(Path::new("/project/source.bin"))
+    );
     let listed = client
         .documents()
         .attachments(&ListAttachmentsArgs { document: id })
@@ -388,9 +394,12 @@ fn active_project_selection_changes_attachment_resolution_without_rewriting_refe
         .documents()
         .add_attachment(&add(id, "linked", ATTACHMENT_LINKED))
         .unwrap();
-    assert_eq!(captured.resolved_file_name, "/fixtures/alpha/source.bin");
+    assert_eq!(
+        Path::new(&captured.resolved_file_name),
+        fixture_native_path(Path::new("/fixtures/alpha/source.bin"))
+    );
     files
-        .select_project(Path::new("/fixtures/beta.opj"))
+        .select_project(&fixture_native_path(Path::new("/fixtures/beta.opj")))
         .unwrap();
     let client = Client::new(
         FileHost::new(&mut files, &mut guids, "test").with_attachment_files(&mut external),
@@ -401,7 +410,10 @@ fn active_project_selection_changes_attachment_resolution_without_rewriting_refe
         .unwrap()
         .attachments
         .unwrap();
-    assert_eq!(listed[0].resolved_file_name, "/fixtures/beta/source.bin");
+    assert_eq!(
+        Path::new(&listed[0].resolved_file_name),
+        fixture_native_path(Path::new("/fixtures/beta/source.bin"))
+    );
     assert_eq!(listed[0].full_file_name, "source.bin");
     assert_eq!(
         listed[0].last_known_file_time,

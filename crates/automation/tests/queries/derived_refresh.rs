@@ -130,7 +130,7 @@ fn unavailable_and_invalid_sources_keep_failure_local() {
 #[test]
 fn self_source_is_refused_without_changes() {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
-    let target = files.create(Path::new("/self.opd"), DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\nmodel:\n  derivedParameterTables: [{id: 1, sourceDocument: /self.opd}]\n").unwrap(), QueryObserver::default(), "test", &mut QueryGuids(0)).unwrap().session_id;
+    let target = files.create(Path::new("/self.opd"), fixture_source_package("schemaVersion: 2\ndocumentType: 1\nmodel:\n  derivedParameterTables: [{id: 1, sourceDocument: $SOURCE_DOCUMENT}]\n", "/self.opd"), QueryObserver::default(), "test", &mut QueryGuids(0)).unwrap().session_id;
     let error = files
         .refresh_derived_table(target, 1)
         .unwrap_err()

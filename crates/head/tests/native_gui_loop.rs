@@ -4,6 +4,7 @@ use crate::{HeadGuiUpdate, HeadWork};
 use oblikovati_gui::GuiCommandState;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
+use std::time::Duration;
 #[path = "native_gui_loop/files.rs"]
 mod files;
 #[path = "native_gui_loop/parameters.rs"]
@@ -12,12 +13,14 @@ struct ScriptedGuiWindow {
     native: NativeHeadWindow,
     scripted: Vec<ViewportEvent>,
     passed: Vec<ViewportEvent>,
+    presentation_delay: Duration,
 }
 fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
     ScriptedGuiWindow {
         native,
         scripted: Vec::new(),
         passed: Vec::new(),
+        presentation_delay: Duration::ZERO,
     }
 }
 impl HeadWindow for ScriptedGuiWindow {
@@ -57,6 +60,9 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native.show_command_notice(notice)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
+        if !self.presentation_delay.is_zero() {
+            std::thread::sleep(self.presentation_delay);
+        }
         self.native.present()
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
@@ -74,11 +80,14 @@ fn click_shell_position(
     owner: &mut NativeDesktopOwner,
     position: [i32; 2],
 ) {
+    drive_pointer_clicks(window, owner, position, 1);
+}
+fn pointer_click_events(position: [i32; 2], count: usize) -> Vec<ViewportEvent> {
     let motion = ViewportEvent::Input(ViewportInput::Motion {
         position,
         modifiers: Default::default(),
     });
-    let clicks = [true, false].map(|pressed| {
+    let clicks = (0..count).flat_map(|_| [true, false]).map(|pressed| {
         ViewportEvent::Input(ViewportInput::Button {
             button: ViewportButton::Left,
             pressed,
@@ -86,7 +95,15 @@ fn click_shell_position(
             modifiers: Default::default(),
         })
     });
-    window.scripted = std::iter::once(motion).chain(clicks).collect();
+    std::iter::once(motion).chain(clicks).collect()
+}
+fn drive_pointer_clicks(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    position: [i32; 2],
+    count: usize,
+) {
+    window.scripted = pointer_click_events(position, count);
     window.passed.clear();
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
     assert!(
@@ -201,8 +218,7 @@ fn verify_browser_reentry_pixels(
         "expected visible committed sketch geometry before browser activation"
     );
     let original = window.native.view.camera_state().unwrap();
-    click_shell_position(window, owner, [90, 389]);
-    click_shell_position(window, owner, [90, 389]);
+    browser::double_click_browser_row(window, owner);
     assert_eq!(owner.active_sketch_edit().unwrap(), edit);
     assert_eq!(window.native.view.camera_state().unwrap(), original);
     let after = capture_framebuffer(&mut window.native);
@@ -453,3 +469,6 @@ fn assert_gui_framebuffer_visible(capture: &oblikovati_viewport::ViewportCapture
         "expected the fresh GUI in the completed framebuffer"
     );
 }
+
+#[path = "native_gui_loop/browser.rs"]
+mod browser;

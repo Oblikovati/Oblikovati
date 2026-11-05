@@ -49,7 +49,7 @@ fn close_marks_readers_unavailable_and_reopen_restores_current_values() {
     )
     .documents()
     .open(&OpenDocumentArgs {
-        full_document_name: "/source.opd".into(),
+        full_document_name: fixture_file_name("/source.opd"),
         ..Default::default()
     })
     .unwrap();
@@ -93,7 +93,7 @@ fn source_rebinding_updates_path_based_links_without_target_undo() {
         .documents()
         .save_as(&SaveDocumentAsArgs {
             document: source,
-            new_full_document_name: "/source.opd".into(),
+            new_full_document_name: fixture_file_name("/source.opd"),
         })
         .unwrap();
     assert_eq!(current_width(&files, target), Some(2.0));
@@ -116,7 +116,7 @@ fn successful_creation_reports_ambiguous_links_without_discarding_new_owner() {
     .documents()
     .create(&CreateDocumentArgs {
         type_: "part".into(),
-        name: "/source.opd".into(),
+        name: fixture_file_name("/source.opd"),
         ..Default::default()
     })
     .unwrap_err()
@@ -286,7 +286,7 @@ fn unavailable_exposed_link_saves_reopens_and_recovers_without_stale_properties(
     )
     .documents()
     .open(&OpenDocumentArgs {
-        full_document_name: "/source.opd".into(),
+        full_document_name: fixture_file_name("/source.opd"),
         ..Default::default()
     })
     .unwrap();
