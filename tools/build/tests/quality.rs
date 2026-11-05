@@ -13,6 +13,9 @@ fn command_plan_tests_all_targets_and_docs_with_locked_dependencies() {
     assert_eq!(calls.len(), 5);
     assert!(calls[0].contains(&"--all-targets".into()));
     assert!(calls[2].contains(&"--doc".into()));
+    for call in &calls[1..=2] {
+        assert!(call.ends_with(&["--".into(), "--test-threads=1".into()]));
+    }
     assert!(calls[4].contains(&"warnings".into()));
     assert!(workspace_command(&runner, Path::new("."), "skip").is_err());
 }
@@ -60,11 +63,12 @@ fn missing_required_display_and_wrong_tools_fail_by_name() {
             .contains("DISPLAY")
     );
     let runner = FakeRunner::default();
-    assert!(require_tool(&runner, tree.root(), "rustc", &["--version"], "1.98.1").is_err());
+    assert!(require_tool(&runner, tree.root(), "rustc", &["--version"], "1.99.0").is_err());
 }
 
 struct GateRunner {
     tree: FixtureTree,
+    help: crate::script_docs::tests::HelpSourceFixture,
     calls: std::cell::RefCell<Vec<String>>,
 }
 
@@ -74,8 +78,10 @@ impl Runner for GateRunner {
             .borrow_mut()
             .push(format!("{program} {}", arguments.join(" ")));
         match (program, arguments) {
+            ("cargo", ["metadata", "--locked", "--format-version", "1"]) => Ok(self.help.metadata()),
             ("cargo", ["metadata", ..]) => Ok(serde_json::json!({"workspace_root": self.tree.root(), "workspace_members":["fixture"], "packages":[{"id":"fixture","name":"fixture","manifest_path":self.tree.root().join("Cargo.toml"),"license":"GPL-2.0-only","targets":[],"dependencies":[]}]}).to_string()),
-            ("rustc", _) => Ok("rustc 1.98.1 (fixture)".into()),
+            ("rustc", _) => Ok("rustc 1.99.0 (fixture)".into()),
+            ("kache", ["--version"]) => Ok("kache 2.0.0".into()),
             ("cargo", ["llvm-cov", "--version"]) => Ok("cargo-llvm-cov 0.9.1".into()),
             ("cargo", ["llvm-cov", ..]) => {
                 let index = arguments.iter().position(|value| *value == "--output-path").unwrap();
@@ -100,17 +106,15 @@ impl Runner for GateRunner {
 
 #[test]
 fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips() {
-    let runner = GateRunner {
-        tree: FixtureTree::new(),
-        calls: std::cell::RefCell::new(Vec::new()),
-    };
-    for name in ["Cargo.toml", "Cargo.lock", "LICENSE"] {
-        runner.tree.put(name, "fixture");
-    }
-    runner.tree.put("Cargo.toml", "[package]\nname = 'fixture'");
+    let runner = gate_fixture();
     gate(runner.tree.root(), &runner).unwrap();
     run(runner.tree.root(), &runner, "test").unwrap();
     let calls = runner.calls.borrow();
+    let coverage = calls
+        .iter()
+        .find(|call| call.starts_with("cargo llvm-cov --locked"))
+        .unwrap();
+    assert!(coverage.ends_with(" -- --test-threads=1"));
     for fragment in [
         "llvm-cov --locked",
         "--doc",
@@ -124,4 +128,55 @@ fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips
             "{fragment}"
         );
     }
+}
+
+#[test]
+fn local_gate_refuses_stale_api_and_kernel_pins_before_external_checks() {
+    let tree = FixtureTree::new();
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    let runner = FakeRunner::default();
+    for owner in ["api", "kernel"] {
+        write_stale_pin(&tree, owner);
+        let error = gate(tree.root(), &runner).unwrap_err();
+        assert!(
+            error.contains("locked") && error.contains(&"0".repeat(40)),
+            "{error}"
+        );
+        assert!(runner.calls.borrow().is_empty());
+    }
+}
+
+fn gate_fixture() -> GateRunner {
+    let tree = FixtureTree::new();
+    let help = crate::script_docs::tests::HelpSourceFixture::new(&tree);
+    let runner = GateRunner {
+        tree,
+        help,
+        calls: std::cell::RefCell::new(Vec::new()),
+    };
+    for name in ["Cargo.toml", "LICENSE"] {
+        runner.tree.put(name, "fixture");
+    }
+    runner.tree.put("Cargo.toml", "[package]\nname = 'fixture'");
+    runner
+        .tree
+        .put("release.toml", include_str!("../../../release.toml"));
+    runner
+        .tree
+        .put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    runner
+}
+
+fn write_stale_pin(tree: &FixtureTree, owner: &str) {
+    let mut config = toml::from_str::<crate::release_config::ReleaseConfig>(include_str!(
+        "../../../release.toml"
+    ))
+    .unwrap();
+    let pin = if owner == "api" {
+        &mut config.api
+    } else {
+        &mut config.kernel
+    };
+    pin.revision = "0".repeat(40);
+    tree.put("release.toml", &toml::to_string(&config).unwrap());
 }

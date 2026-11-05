@@ -7,12 +7,21 @@ mod evaluate;
 mod functions;
 mod node;
 mod parser;
+mod rename;
 mod token;
 
 use crate::{quantity::Quantity, units::UnitsOfMeasure};
 pub use binding::BoundExpression;
 pub use error::ExpressionError;
 use node::Node;
+pub(crate) use token::reference_name;
+
+#[derive(Clone, Debug)]
+struct ReferenceSpan {
+    start: usize,
+    end: usize,
+    reference: usize,
+}
 
 /// An owned expression snapshot. Syntax nodes are flat to keep evaluation and drop stack-safe.
 #[derive(Clone, Debug)]
@@ -20,14 +29,45 @@ pub struct Expression {
     source: String,
     nodes: Vec<Node>,
     references: Vec<String>,
+    spans: Vec<ReferenceSpan>,
     root: usize,
 }
 
 impl Expression {
+    /// Store an already measured quantity without parsing it; for example `Expression::constant(area)`.
+    pub fn constant(quantity: Quantity) -> Self {
+        Self {
+            source: format!(
+                "{} {}",
+                quantity.value,
+                crate::units::category_name(quantity.dimension)
+            ),
+            nodes: vec![Node::Literal(quantity)],
+            references: Vec::new(),
+            spans: Vec::new(),
+            root: 0,
+        }
+    }
+
     /// Compile in document working units; for example `Expression::parse("2 * width", &units)`.
     /// Bare expression numbers are unitless, independent of display preferences.
     pub fn parse(source: &str, units: &UnitsOfMeasure) -> Result<Self, ExpressionError> {
         parser::compile(source, units)
+    }
+
+    /// Compile a bare numeric input in its captured unit; formula operands remain unitless.
+    /// Example: `Expression::parse_with_bare_unit("10", &units, "mm")?` retains source `10`.
+    pub fn parse_with_bare_unit(
+        source: &str,
+        units: &UnitsOfMeasure,
+        unit: &str,
+    ) -> Result<Self, ExpressionError> {
+        if !source.trim().parse::<f64>().is_ok_and(f64::is_finite) || unit.is_empty() {
+            return Self::parse(source, units);
+        }
+        let mut expression = Self::parse(&format!("{source} {unit}"), units)?;
+        expression.source = source.into();
+        Ok(expression)
     }
 
     /// Return the authored source unchanged; for example `assert_eq!(formula.source(), "width");`.

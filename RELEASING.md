@@ -5,17 +5,43 @@ The workflows replace the Go build, test, package, and publish commands on the
 and [ADR-0013](architecture/decisions/ADR-0013-packaging-and-release.md).
 [Issue #3560](https://github.com/Oblikovati/Oblikovati/issues/3560) tracks this port.
 
-The application is not yet ported. The current Cargo workspace contains the
-build tool, not the GUI or CLI. A passing gate tests the code that exists.
+The application port is incomplete. The Cargo workspace contains the build tool,
+model/storage/session foundations, a CLI, and a native head with saved prism
+display and camera navigation. Dear ImGui controls create Parts, start and finish
+sketches, draw rectangles, and edit driving parameters. The complete cube UI
+journey, ribbon parity, and native file dialogs remain open. A passing gate tests
+the code that exists.
 Application package and publication preflight checks must fail until the real
 application, released dependencies, resources, and native acceptance tests exist.
 
 ## Local commands
 
-Install Rust with rustup, Node.js 24.15.0, npm, Git, Make, curl, and tar. The
-repository pins Rust 1.98.1, including rustfmt, Clippy, and LLVM tools.
-`make tools` installs the locked npm tools, cargo-llvm-cov 0.9.1, and actionlint
-1.7.7. The actionlint archive has a checked-in SHA-256 pin for each host.
+Install Rust with rustup, Node.js 24.15.0, npm, Git, Make, curl, and tar. Native
+Go add-in fixtures also require Go 1.27.0 and a C compiler. The
+repository pins Rust 1.99.0, including rustfmt, Clippy, and LLVM tools.
+`make tools` installs the locked npm tools, cargo-llvm-cov 0.9.1, actionlint
+1.7.7, and Kache 2.0.0. The downloaded archives have checked-in SHA-256 pins.
+Make build commands use the bounded compiler cache by default. See the
+[cache commands and measurements](architecture/rust-port/implementation-build-cache.md)
+for worktree sharing and the `BUILD_CACHE=off` option.
+
+Windows source dependency checkouts require Git long-path support:
+`git config --global core.longpaths true`. The shared CI setup enables it before
+Cargo fetches the kernel source.
+
+Linux x86_64 CI prepares Vulkan validation and lavapipe through the installer in
+the pinned Martensite source. `cargo xtask native-validation CACHE ENVIRONMENT`
+verifies the source against `Cargo.lock`, then writes the installer's environment
+settings to `ENVIRONMENT` in GitHub environment-file format. The kernel owns the
+archive URLs and checksums. Xvfb tests select the local XIM provider explicitly.
+
+The pinned lavapipe library also needs the Ubuntu 24.04 packages `libllvm20` and
+`libdisplay-info1`. Install them with the native build dependencies; installing
+Mesa drivers alone does not supply `libdisplay-info.so.1`. A clean Ubuntu
+container reproduced the incompatible-driver failure without that library and
+completed the native smoke run after it was installed. Linux ARM64 runtime
+qualification remains open in
+[Martensite #388](https://github.com/Oblikovati/Martensite/issues/388).
 
 ```sh
 make tools
@@ -45,10 +71,31 @@ exclusion; generated output and installed tools are excluded. Reports go to
 `target/quality/`. These measures are not application behavior coverage.
 
 Set `package.metadata.oblikovati.requires-display = true` on crates that need a
-display. `oblikovati-head` always requires one on Linux. Run `xvfb-run -a make
-gate` when no physical display is available. A missing required display is an
-error. Native CI checks every target below; a local Linux pass is not a macOS
-or Windows runtime result.
+display. `oblikovati-head` always requires one on Linux. A missing required
+display is an error. When no physical display is available, retain the Xvfb
+server state between the suite's independent clients:
+
+```sh
+xvfb-run -a -s "-screen 0 1920x1080x24 -noreset" make gate
+```
+
+Native CI checks every target below; a local Linux pass is not a macOS or
+Windows runtime result.
+
+This host's installed Vulkan validation layer 1.3.275 crashes during concurrent
+device use. Local acceptance uses the official Ubuntu layer 1.4.321.0-1, kept
+under ignored `.tools/vulkan-validation-1.4.321/`, with its manifest naming the
+absolute library path. Validation stays enabled and tests stay concurrent:
+
+```sh
+VK_LAYER_PATH="$PWD/.tools/vulkan-validation-1.4.321/layers" \
+  CARGO_NET_OFFLINE=true make gate
+```
+
+The [native stress report](architecture/rust-port/diagnostic-startup-native-crash.md)
+records package provenance, the failing stack, and the comparison. This is a
+local test-tool selection; it does not change system libraries or the released
+Martensite pin. Windows and macOS native runtime acceptance remains incomplete.
 
 ## Dependency ownership
 
@@ -68,8 +115,10 @@ must resolve to the same owner release and commit.
 The API repository owns Go/Rust contract synchronization, examples, and wiki
 gates. The kernel repository owns geometry, oracle, and kernel-package gates.
 The application still owns its API/host inventory, kernel integration, feature,
-live GUI, and installation tests. The current empty release commit pins are
-explicit blockers; an unpublished local kernel revision is not a release pin.
+live GUI, and installation tests. The application now pins the stable kernel
+v0.1.2 release; an unpublished local kernel revision is not a release pin. See
+[kernel intake evidence](architecture/rust-port/implementation-kernel-release.md).
+Product publication remains blocked by the R9 readiness fields.
 
 ## Product version
 
@@ -118,8 +167,9 @@ projects, as required by ADR-0013. Package names alone do not prove that behavio
 
 ## Application integration contract
 
-Create the real `oblikovati-cli` and `oblikovati-head` packages with binaries of
-the same names in the root workspace. The packaging build passes
+The `oblikovati-cli` package now provides manifest inspection and version/help.
+Finish its remaining commands and add the real `oblikovati-head` package with a
+binary of the same name in the root workspace. The packaging build passes
 `OBLIKOVATI_BUILD_MANIFEST` and `SOURCE_DATE_EPOCH`. The application build script
 must embed that manifest, declare it as a rebuild input, and make `--version`
 report the product version. Do not stamp only the Cargo tool version.

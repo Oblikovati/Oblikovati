@@ -15,16 +15,25 @@ impl<Id: Copy + Ord> DependencyGraph<Id> {
     /// ```
     pub fn recompute_order(&self, changed: Id) -> Result<Vec<Id>, DependencyError<Id>> {
         self.require_node(changed)?;
-        let affected = self.affected_set(changed);
+        Ok(self.order_subset(&self.affected_set(changed)))
+    }
+
+    /// Order every node with drivers first; useful after ownership changes.
+    /// Example: `let order = graph.recompute_all();` includes isolated documents.
+    pub fn recompute_all(&self) -> Vec<Id> {
+        self.order_subset(&self.nodes.keys().copied().collect())
+    }
+
+    fn order_subset(&self, affected: &BTreeSet<Id>) -> Vec<Id> {
         let ranks = self.insertion_ranks();
-        let mut pending = self.pending_counts(&affected);
+        let mut pending = self.pending_counts(affected);
         let mut ready = Self::ready_nodes(&pending, &ranks);
         let mut ordered = Vec::with_capacity(affected.len());
         while let Some((_, id)) = ready.pop_first() {
             ordered.push(id);
             self.release_readers(id, &ranks, &mut pending, &mut ready);
         }
-        Ok(ordered)
+        ordered
     }
 
     fn insertion_ranks(&self) -> BTreeMap<Id, usize> {

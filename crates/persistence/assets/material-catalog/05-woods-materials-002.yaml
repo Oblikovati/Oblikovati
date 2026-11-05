@@ -1,0 +1,92 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: solid woods most used in furniture, construction and joinery.
+#
+# Wood is ORTHOTROPIC; entries carry both a scalar summary and the full orthotropic
+# elastic group (ADR-0025) so they are ready for FEA without re-sourcing.
+#
+# Scalar fields (mechanical/thermal/electrical) are the standard engineering values
+# measured PARALLEL TO THE GRAIN at 12% moisture content, from the USDA Forest Products
+# Laboratory "Wood Handbook" (FPL-GTR-282) and the Wood Database (wood-database.com):
+#   - youngsModulus: modulus of elasticity along the grain (= orthotropic E1).
+#   - yieldStrength: maximum crushing strength in compression parallel to grain (wood has
+#     no metallic yield; conventional design-strength proxy). UTS = modulus of rupture.
+#   - thermal.expansionCoeff: longitudinal thermal expansion (= orthotropic alpha1).
+#
+# The `orthotropic` block gives the direction-dependent constants in the material axes
+# 1=longitudinal, 2=radial, 3=tangential. They are derived from E1 using the FPL Wood
+# Handbook average elastic RATIOS (Table 5-1) for hardwoods / softwoods:
+#   hardwood: E2/E1=0.10 E3/E1=0.05 G12/E1=0.066 G13/E1=0.060 G23/E1=0.013
+#             nu12(LR)=0.37 nu13(LT)=0.42 nu23(RT)=0.47
+#   softwood: E2/E1=0.075 E3/E1=0.043 G12/E1=0.061 G13/E1=0.069 G23/E1=0.007
+#             nu12(LR)=0.32 nu13(LT)=0.42 nu23(RT)=0.40
+# Transverse thermal expansion (alpha2 radial, alpha3 tangential) is representative for
+# timber (Wood Handbook ch.4: transverse CTE is ~6-10x longitudinal).
+#
+# Appearances are dielectric (metallic = 0.0), high roughness, representative finished
+# sRGB body colour (no grain texture map yet).
+#
+# Units: density g/cm3 | E & G GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff & alpha 1/K | specificHeat J/(kg*K) | resistivity ohm*m | nu, eps_r -
+
+materials:
+    - id: balsa
+      name: Balsa
+      density: 0.16
+      mechanical:
+        youngsModulus: 3.4
+        poissonsRatio: 0.37
+        yieldStrength: 12
+        ultimateTensileStrength: 19
+      thermal:
+        conductivity: 0.055
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 3.4
+        e2: 0.34
+        e3: 0.17
+        g12: 0.22
+        g23: 0.04
+        g13: 0.2
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: balsa
+    - id: bamboo
+      name: Bamboo (Moso, Laminated)
+      density: 0.7
+      mechanical:
+        youngsModulus: 15
+        poissonsRatio: 0.37
+        yieldStrength: 55
+        ultimateTensileStrength: 120
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 4e-06
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      isotropy: orthotropic
+      orthotropic:
+        e1: 15
+        e2: 1.5
+        e3: 0.75
+        g12: 0.99
+        g23: 0.2
+        g13: 0.9
+        nu12: 0.37
+        nu23: 0.47
+        nu13: 0.42
+        alpha1: 4e-06
+        alpha2: 3e-05
+        alpha3: 4e-05
+      appearance: bamboo

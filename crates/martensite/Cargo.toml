@@ -1,0 +1,83 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-martensite"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+autotests = false
+
+[dependencies]
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
+oblikovati-solve = { path = "../solve" }
+rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+oblikovati-model = { path = "../model" }
+rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tkprim = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+
+rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+oblikovati-persistence = { path = "../persistence" }
+rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+oblikovati-session = { path = "../session" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[[test]]
+name = "release_probe"
+path = "tests/release_probe.rs"
+[[test]]
+name = "planar_spline"
+path = "tests/planar_spline.rs"
+[[test]]
+name = "go_spline_recipe"
+path = "tests/go_spline_recipe.rs"
+[[test]]
+name = "prism"
+path = "tests/prism.rs"
+[[test]]
+name = "sketch_prism"
+path = "tests/sketch_prism.rs"
+
+[[test]]
+name = "profile_regions"
+path = "tests/profile_regions.rs"
+
+[[test]]
+name = "planar_intersections"
+path = "tests/planar_intersections.rs"
+
+[[test]]
+name = "planar_curve_boundary"
+path = "tests/planar_curve_boundary.rs"
+
+[[test]]
+name = "sketch_curve_incidences"
+path = "tests/sketch_curve_incidences.rs"
+
+[[test]]
+name = "circumcircle"
+path = "tests/circumcircle.rs"
+
+[[test]]
+name = "sketch_projection"
+path = "tests/sketch_projection.rs"
+
+[[test]]
+name = "placement_preview"
+path = "tests/placement_preview.rs"
+
+[[test]]
+name = "sketch_display"
+path = "tests/sketch_display.rs"

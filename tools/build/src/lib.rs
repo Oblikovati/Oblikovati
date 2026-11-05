@@ -8,14 +8,18 @@ mod dependencies;
 mod distribution;
 mod docs;
 mod driver;
+mod fetched_source;
+mod kache;
 mod linux;
 mod macos;
 mod native_package;
+mod native_validation;
 mod packaging;
 mod platform;
 mod process;
 mod quality;
 mod release_config;
+mod script_docs;
 mod signing;
 mod tree;
 mod version;
@@ -44,15 +48,41 @@ pub fn run(arguments: &[String], root: &Path) -> Result<(), String> {
 fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult<()> {
     match arguments {
         [task @ ("build" | "test" | "lint")] => quality::run(root, runner, task),
-        ["native"] => native(root, runner),
-        ["gate"] => quality::gate(root, runner),
-        ["docs"] => docs::check(root),
-        ["tools"] => bootstrap::install(root, runner),
-        ["matrix"] => {
-            println!("{}", serde_json::json!({"include": platform::PLATFORMS}));
-            Ok(())
+        ["matrix"] => print_matrix(),
+        ["native-validation", directory, environment] => {
+            native_validation::prepare(root, runner, Path::new(directory), Path::new(environment))
         }
         ["version", channel] => print_version(root, runner, channel),
+        [
+            task @ ("native" | "gate" | "docs" | "tools" | "cache-tools" | "script-docs"
+            | "script-docs-check"),
+        ] => local_task(task, root, runner),
+        _ => release_task(arguments, root, runner),
+    }
+}
+fn print_matrix() -> BuildResult<()> {
+    println!("{}", serde_json::json!({"include": platform::PLATFORMS}));
+    Ok(())
+}
+fn local_task(task: &str, root: &Path, runner: &dyn Runner) -> BuildResult<()> {
+    match task {
+        "native" => native(root, runner),
+        "gate" => quality::gate(root, runner),
+        "docs" => docs::check(root),
+        "tools" => {
+            bootstrap::install(root, runner)?;
+            kache::install(root, runner)
+        }
+        "cache-tools" => kache::install(root, runner),
+        "script-docs" => script_docs::write(root, runner),
+        "script-docs-check" => script_docs::check(root, runner),
+        _ => Err(format!(
+            "local task {task:?}: expected a repository validation or generation command"
+        )),
+    }
+}
+fn release_task(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult<()> {
+    match arguments {
         ["preflight", mode @ ("build" | "publish")] => {
             driver::preflight(root, runner, *mode == "publish").map(|_| ())
         }
@@ -63,6 +93,11 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
         }
         ["mac-bundle", version] => driver::mac_bundle(root, runner, version, false),
         ["mac-bundle", version, "--signed"] => driver::mac_bundle(root, runner, version, true),
+        _ => distribution_task(arguments, root, runner),
+    }
+}
+fn distribution_task(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult<()> {
+    match arguments {
         ["collect", version, input, output] => {
             driver::collect(root, runner, version, Path::new(input), Path::new(output))
         }
@@ -70,7 +105,7 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
             driver::verify_release(root, runner, version, Path::new(output))
         }
         _ => Err(format!(
-            "arguments {arguments:?}: expected build|test|lint|native|gate|docs|tools|matrix|version CHANNEL|preflight build/publish|release-request CHANNEL|package TARGET VERSION [--signed]|mac-bundle VERSION [--signed]|collect VERSION INPUT OUTPUT|verify-release VERSION OUTPUT"
+            "arguments {arguments:?}: expected build|test|lint|native|gate|docs|script-docs|script-docs-check|tools|cache-tools|matrix|version CHANNEL|preflight build/publish|release-request CHANNEL|package TARGET VERSION [--signed]|mac-bundle VERSION [--signed]|collect VERSION INPUT OUTPUT|verify-release VERSION OUTPUT"
         )),
     }
 }

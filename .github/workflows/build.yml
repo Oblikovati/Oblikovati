@@ -97,7 +97,7 @@ jobs:
           args=(package "$TARGET" "$VERSION")
           if [ "$SIGNED" = true ]; then args+=(--signed); fi
           if [ "$RUNNER_OS" = Linux ]; then
-            xvfb-run -a cargo xtask "${args[@]}"
+            xvfb-run -a -s "-screen 0 1920x1080x24" cargo xtask "${args[@]}"
           else
             cargo xtask "${args[@]}"
           fi

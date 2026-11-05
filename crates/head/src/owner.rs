@@ -1,0 +1,437 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use crate::{HeadInvalidation, HeadWork, HeadWorkStatus};
+use oblikovati_automation::{
+    DocumentObserverFactory, FileHost,
+    dispatch::{DispatchWakeup, OwnerDispatch, QueuedCaller, owner_dispatch},
+};
+use oblikovati_model::identity::GuidSource;
+use oblikovati_persistence::file_access::DocumentFiles;
+use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+use std::time::Duration;
+#[path = "owner_commands.rs"]
+mod commands;
+#[path = "owner_documents.rs"]
+mod documents_gui;
+#[path = "owner_sketch_tools.rs"]
+mod sketch_tools_gui;
+use sketch_tools_gui::gui_placement_tool;
+#[path = "owner_browser.rs"]
+mod model_browser;
+#[path = "owner_parameters.rs"]
+mod parameters_gui;
+pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
+#[derive(Clone, Copy, Debug)]
+pub struct DesktopDispatchOptions {
+    pub capacity: usize,
+    pub timeout: Duration,
+}
+impl Default for DesktopDispatchOptions {
+    fn default() -> Self {
+        // The fixed Go head uses dispatch.New(64) and hostCallTimeout = 10 seconds.
+        Self {
+            capacity: 64,
+            timeout: Duration::from_secs(10),
+        }
+    }
+}
+/// Documents and queue admission share one owner. The worker transport contains no model.
+/// ```compile_fail
+/// use oblikovati_head::DesktopOwner;
+/// use oblikovati_automation::dispatch::PollingDispatchWakeup;
+/// fn require_send<T: Send>() {}
+/// require_send::<DesktopOwner<(), (), (), (), (), PollingDispatchWakeup>>();
+/// ```
+pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
+    window_captures: Option<crate::DesktopWindowCaptures>,
+    files: FileWorkspace<O, W, F>,
+    guids: G,
+    factory: R,
+    version: String,
+    dispatch: OwnerDispatch<S>,
+    caller: QueuedCaller<S>,
+    refused_close: Vec<u64>,
+    part_scenes: crate::part_scene::DesktopPartScenes,
+    sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
+    command_notice: Option<DesktopCommandNotice>,
+    sketch_edit: Option<(
+        u64,
+        oblikovati_session::SketchContinuityWatch,
+        oblikovati_session::workspace::WorkspaceFocusIdentity,
+    )>,
+    placement: Option<crate::placement_input::SketchPlacementState>,
+    sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
+}
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> DesktopOwner<O, W, F, G, R, S>
+{
+    /// Inject document ownership and queue options; example: `DesktopOwner::new(files, guids, factory, version, wake, options)`.
+    pub fn new(
+        files: FileWorkspace<O, W, F>,
+        guids: G,
+        factory: R,
+        version: String,
+        wake: S,
+        options: DesktopDispatchOptions,
+    ) -> Self {
+        let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
+        Self {
+            window_captures: None,
+            files,
+            guids,
+            factory,
+            version,
+            dispatch,
+            caller,
+            refused_close: Vec::new(),
+            part_scenes: Default::default(),
+            sketch_scenes: Default::default(),
+            command_notice: None,
+            sketch_construction: Default::default(),
+            placement: None,
+            sketch_edit: None,
+        }
+    }
+    /// Enable view capture with an injected output configuration.
+    /// Example: `owner.with_window_captures(DesktopWindowCaptures::new(directory, namespace))`.
+    pub fn with_window_captures(mut self, captures: crate::DesktopWindowCaptures) -> Self {
+        self.window_captures = Some(captures);
+        self
+    }
+    /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
+    pub fn caller(&self) -> QueuedCaller<S> {
+        self.caller.clone()
+    }
+    /// Inspect immutable document ownership; example: `owner.documents().workspace().documents()`.
+    pub fn documents(&self) -> &FileWorkspace<O, W, F> {
+        &self.files
+    }
+    /// Inspect documents that refused the latest native close; example: `owner.refused_close()` for a save prompt.
+    pub fn refused_close(&self) -> &[u64] {
+        &self.refused_close
+    }
+    /// Return document ownership after queue retirement, including a failed window run.
+    /// Example: `let files = owner.into_documents();` lets the caller save or reopen a window explicitly.
+    pub fn into_documents(mut self) -> FileWorkspace<O, W, F> {
+        self.dispatch.close();
+        self.files
+    }
+    /// Borrow the canonical caller for UI commands on this owner; example: `Client::new(owner.document_host())`.
+    pub fn document_host(&mut self) -> FileHost<'_, O, W, F> {
+        let editing = self.sketch_inspection_edit();
+        borrowed_host(
+            &mut self.files,
+            &mut self.guids,
+            &self.version,
+            &mut self.factory,
+            &mut self.part_scenes,
+            &self.sketch_construction,
+            &mut self.window_captures,
+        )
+        .with_sketch_edit(editing)
+    }
+    fn drain_calls(&mut self, budget: usize) -> Result<usize, String> {
+        let editing = self.sketch_inspection_edit();
+        let host = borrowed_host(
+            &mut self.files,
+            &mut self.guids,
+            &self.version,
+            &mut self.factory,
+            &mut self.part_scenes,
+            &self.sketch_construction,
+            &mut self.window_captures,
+        )
+        .with_sketch_edit(editing);
+        self.dispatch
+            .drain(budget, &host)
+            .map_err(|error| error.to_string())
+    }
+    fn close_blockers(&self) -> Result<Vec<u64>, String> {
+        let workspace = self.files.workspace();
+        let mut blocked = Vec::new();
+        for id in workspace.documents() {
+            let session = workspace.session(*id).map_err(|error| error.to_string())?;
+            let dirty = workspace
+                .needs_save(*id)
+                .map_err(|error| error.to_string())?;
+            if self.files.path(*id).is_err() || dirty || session.in_transaction() {
+                blocked.push(*id);
+            }
+        }
+        Ok(blocked)
+    }
+}
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> HeadWork for DesktopOwner<O, W, F, G, R, S>
+{
+    fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
+        if let Some(captures) = &mut self.window_captures {
+            captures.observe_extent(extent);
+        }
+    }
+    fn take_window_capture_requests(&mut self) -> Vec<crate::WindowCaptureJob> {
+        self.window_captures
+            .as_mut()
+            .map_or_else(Vec::new, |captures| captures.take_pending())
+    }
+    fn complete_save_path(
+        &mut self,
+        document: u64,
+        selected: Option<&std::path::Path>,
+    ) -> Result<bool, String> {
+        Ok(self.complete_document_save_path(document, selected))
+    }
+    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+        let Some(document) = self.files.workspace().active_document() else {
+            return Ok(Default::default());
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        Ok(oblikovati_gui::GuiCommandState {
+            documents: self.gui_document_rows()?,
+            browser: Some(self.gui_browser_snapshot(document)?),
+            document: Some(document),
+            document_type: Some(
+                self.files
+                    .document_type(document)
+                    .map_err(|cause| cause.to_string())?,
+            ),
+            parameters: self.gui_parameter_rows()?,
+            authoring: self.gui_authoring_context(document)?,
+            undo_label: session.undo_label().map(str::to_owned),
+            redo_label: session.redo_label().map(str::to_owned),
+            transaction_open: session.in_transaction(),
+        })
+    }
+    fn edit_parameter_from_gui(
+        &mut self,
+        mutation: oblikovati_gui::GuiParameterMutation,
+        request: &oblikovati_api::wire::ParameterSetArgs,
+    ) -> Result<bool, String> {
+        let client = oblikovati_api::client::Client::new(self.document_host());
+        match mutation {
+            oblikovati_gui::GuiParameterMutation::Add => client.parameters().add(request),
+            oblikovati_gui::GuiParameterMutation::Set => client.parameters().set(request),
+        }
+        .map_err(|cause| format!("Parameter {:?}: {cause}", request.name))?;
+        Ok(true)
+    }
+    fn activate_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::ActivateDocumentArgs,
+    ) -> Result<bool, String> {
+        self.activate_gui_document(request)
+    }
+    fn create_part_document(&mut self) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .create(&oblikovati_api::wire::CreateDocumentArgs {
+                type_: "part".into(),
+                name: "Part".into(),
+                ..Default::default()
+            })
+            .map_err(|cause| format!("New Part: expected a created part document: {cause}"))?;
+        Ok(true)
+    }
+    fn edit_existing_sketch_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<bool, String> {
+        self.begin_sketch_edit(document, sketch)?;
+        Ok(true)
+    }
+    fn open_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::OpenDocumentArgs,
+    ) -> Result<bool, String> {
+        let opened = oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .open(request)
+            .map_err(|cause| cause.to_string())?;
+        self.command_notice = Some(DesktopCommandNotice::DocumentOpened {
+            document: opened.id,
+            path: request.full_document_name.clone(),
+        });
+        Ok(true)
+    }
+    fn close_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::CloseDocumentArgs,
+    ) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .close(request)
+            .map_err(|cause| cause.to_string())?;
+        self.command_notice = Some(DesktopCommandNotice::DocumentClosed {
+            document: request.id,
+        });
+        Ok(true)
+    }
+    fn place_sketch_tool_from_gui(
+        &mut self,
+        tool: oblikovati_gui::GuiSketchTool,
+    ) -> Result<bool, String> {
+        let edit = self
+            .active_sketch_edit()
+            .ok_or_else(|| format!("{tool:?}: expected an active sketch edit"))?;
+        self.start_sketch_placement(edit.document, edit.sketch, gui_placement_tool(tool))?;
+        Ok(true)
+    }
+    fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
+        if !start {
+            self.finish_sketch_edit()?;
+            return Ok(true);
+        }
+        let document = self
+            .files
+            .workspace()
+            .active_document()
+            .ok_or("Sketch XY: expected an active part document")?;
+        self.create_sketch_for_edit(
+            document,
+            &oblikovati_model::history::DocumentSketchCreation {
+                name: "Sketch".into(),
+                placement: oblikovati_model::document_sketch::SketchPlacement::Fixed(
+                    oblikovati_model::sketch::SketchPlane::xy(),
+                ),
+                orientation: None,
+                project_origin: true,
+            },
+        )?;
+        Ok(true)
+    }
+    fn process_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+    ) -> Result<bool, String> {
+        self.process_document_inputs(inputs)
+    }
+    fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
+        self.sketch_edit = None;
+        self.placement = None;
+        self.command_notice = Some(DesktopCommandNotice::SketchEditFailed { cause });
+        Ok(())
+    }
+    fn sketch_edit(&self) -> Option<crate::HeadSketchEdit> {
+        self.active_sketch_edit()
+    }
+
+    fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
+        let recipe = self.placement_preview()?.clone();
+        let tool = self.placement.as_ref()?;
+        if tool.fields_engaged() {
+            return tool.resolved_preview.clone();
+        }
+        let session = self.files.workspace().session(tool.document).ok()?;
+        Some(oblikovati_viewport::ViewportSketchPreview::Recipe {
+            solve_options: session.sketch_solve_options(),
+            plane: tool.plane,
+            recipe,
+        })
+    }
+
+    fn process_window_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+        window: &dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        self.process_placement_inputs(inputs, window)
+    }
+    fn take_command_notice(&mut self) -> Option<DesktopCommandNotice> {
+        self.command_notice.take()
+    }
+    fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String> {
+        if budget == 0 {
+            return Err("desktop drain budget 0: expected a positive bounded batch".into());
+        }
+        let serviced = self.drain_calls(budget)?;
+        let changed = self.factory.take_changed() || serviced != 0;
+        let changed = self.synchronize_sketch_edit() || changed;
+        let pending = self.dispatch.pending().map_err(|error| error.to_string())? != 0;
+        Ok(HeadWorkStatus {
+            changed,
+            pending,
+            wake_after: None,
+        })
+    }
+    fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
+        self.sketch_scenes.refresh(&self.files)
+    }
+    fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
+        self.part_scenes.refresh(&mut self.files)
+    }
+    fn close_allowed(&mut self) -> Result<bool, String> {
+        self.refused_close = self.close_blockers()?;
+        let pending = self.dispatch.pending().map_err(|error| error.to_string())?;
+        Ok(self.refused_close.is_empty() && pending == 0)
+    }
+    fn finish(&mut self) -> Result<(), String> {
+        self.placement = None;
+        self.sketch_edit = None;
+        self.part_scenes.clear();
+        self.sketch_scenes.clear();
+        self.dispatch.close();
+        Ok(())
+    }
+}
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> crate::ScriptDocumentOwner for DesktopOwner<O, W, F, G, R, S>
+{
+    type Host<'a>
+        = FileHost<'a, O, W, F>
+    where
+        Self: 'a;
+    fn script_host(&mut self) -> Self::Host<'_> {
+        self.document_host()
+    }
+}
+fn borrowed_host<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &'a mut FileWorkspace<O, W, F>,
+    guids: &'a mut dyn GuidSource,
+    version: &'a str,
+    factory: &'a mut dyn DocumentObserverFactory<Observer = O>,
+    scenes: &'a mut crate::part_scene::DesktopPartScenes,
+    construction: &'a dyn oblikovati_model::sketch::SketchCircleConstruction,
+    captures: &'a mut Option<crate::DesktopWindowCaptures>,
+) -> FileHost<'a, O, W, F> {
+    let host = FileHost::new(files, guids, version)
+        .with_observer_factory(factory)
+        .with_part_topology(scenes)
+        .with_sketch_construction(construction, Default::default());
+    match captures {
+        Some(captures) => host.with_window_capture(captures),
+        None => host,
+    }
+}
+#[path = "owner_placement.rs"]
+mod placement;
+#[cfg(test)]
+#[path = "../tests/owner.rs"]
+mod tests;
+
+#[path = "owner_placement_input.rs"]
+mod placement_input;
+
+#[path = "owner_sketch_edit.rs"]
+mod sketch_environment;

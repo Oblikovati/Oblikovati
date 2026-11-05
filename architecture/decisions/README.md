@@ -2,8 +2,9 @@
 
 The Rust application starts with a clean ADR set, as requested on 2026-10-10.
 The migration of all 66 legacy records is recorded in the
-[legacy map](legacy-map.md). Thirteen consolidated Rust records are accepted
-as the target design. Application implementation and runtime proof are pending.
+[legacy map](legacy-map.md). Each Rust record states its design status.
+Accepted records define the target design. Application implementation and
+runtime proof are tracked separately.
 
 ## Authority and numbering
 
@@ -15,7 +16,7 @@ Keep the original records in the Go repository, with references to the fixed
 
 The new sequence starts at `ADR-0001`. Use filenames such as
 `ADR-0001-<decision-title>.md`; assign numbers when records are created.
-The next unused number is `ADR-0014`.
+The next unused number is `ADR-0021`.
 Qualify old references with the repository, commit, and legacy ADR number so
 they cannot be confused with a new Rust ADR that has the same number.
 
@@ -86,31 +87,44 @@ renderer interface, presentation, resources, synchronization, platform
 capabilities, display modes, lighting, instancing, capture, and validation.
 Its legacy inputs are assigned by section in the migration map.
 
-UI behavior is owned by ADR-0009, asset state by ADR-0010, packaging by
+UI behavior is owned by ADR-0009, asset state by ADR-0019, packaging by
 ADR-0013, and public declarations by Oblikovati.API. These records reference
 the shared rendering interface. There is no separate current renderer ADR
 for a display mode, material model, or platform exception.
 
 ## Current Rust ADR index
 
-All records below are **Accepted for the Rust target design**, dated
-2026-10-10. No application runtime acceptance is claimed.
+All current records below are **Accepted for the Rust target design**.
+Each record states its decision date. No application runtime acceptance is claimed.
 
 | Current record | Boundary | Implementation proof |
 | --- | --- | --- |
 | [ADR-0001](ADR-0001-rust-application-architecture.md) | Rust application composition and repository ownership | R0/R1 |
 | [ADR-0002](ADR-0002-api-and-addin-host.md) | Public automation and native add-in lifecycle | R2/R4 |
-| [ADR-0003](ADR-0003-documents-and-storage.md) | Document recipes, resources, projects, configuration | R2/R3/R6/R8 |
+| [ADR-0003](ADR-0003-documents-and-storage.md) (superseded by ADR-0014) | Document recipes, resources, projects, configuration | R2/R3/R6/R8 |
 | [ADR-0004](ADR-0004-session-and-feature-evaluation.md) | Session transactions, invalidation, feature evaluation | R2-R6 |
 | [ADR-0005](ADR-0005-identity-and-references.md) | Persistent identity and external references | R1/R3/R5/R6/R8 |
-| [ADR-0006](ADR-0006-parameters-and-constraints.md) | Parameters, units, shared constraint solver | R2/R3/R6 |
+| [ADR-0006](ADR-0006-parameters-and-constraints.md) (superseded by ADR-0015) | Parameters, units, shared constraint solver | R2/R3/R6 |
+| [ADR-0015](ADR-0015-parameters-and-constraints.md) | Parameters, units, solver, analytic ellipse variables | R2/R3/R6 |
+| [ADR-0016](ADR-0016-derived-sketch-curves.md) | Derived spline ownership and analytic offset evaluation | R3; #3789 |
+| [ADR-0017](ADR-0017-sketch-point-ownership.md) | Standalone entities, defining points, deletion closure | R3; #3789 |
 | [ADR-0007](ADR-0007-martensite-integration.md) | Application requirements on Martensite operations | R1-R8; K01-K11 |
 | [ADR-0008](ADR-0008-vulkan-renderer.md) | Vulkan presentation and rendering | R1V/R4/R7 |
 | [ADR-0009](ADR-0009-ui-and-selection.md) | Desktop UI, tools, selection, themes, editor | R1V/R4/R7 |
-| [ADR-0010](ADR-0010-materials-and-appearances.md) | Materials, appearances, asset assignment | R5/R7 |
+| [ADR-0019](ADR-0019-materials-and-appearances.md) | Materials, appearances, asset assignment; supersedes ADR-0010 | R5/R7 |
 | [ADR-0011](ADR-0011-scripting.md) | Lua runtime contract and rule execution | R7 |
 | [ADR-0012](ADR-0012-build-and-validation.md) | Build and integration evidence | R0 onward |
 | [ADR-0013](ADR-0013-packaging-and-release.md) | Packages, updates, release transition | R9 |
+| [ADR-0020](ADR-0020-documents-and-storage.md) | Documents, storage, schema-3 links and occurrence assets; supersedes ADR-0014 | R2/R3/R6/R8 |
+| [ADR-0018](ADR-0018-exchange-format-ownership.md) | Kernel-owned exchange formats and application workflows | K10/R8 |
+| [ADR-0021](ADR-0021-semantic-topology-reference-keys.md) | Semantic topology names and scheme-2 identity | R1/R3/R5 |
+| [ADR-0022](ADR-0022-analytic-body-properties.md) | Analytic body integrals, units, and principal inertia | R1/R7 |
+| [ADR-0023](ADR-0023-analytic-part-aggregation.md) | Analytic part aggregation and empty-system semantics | R1/R7 |
+| [ADR-0024](ADR-0024-released-sketch-spline-construction.md) | Released construction of authored sketch splines | R2/R3/R4 |
+| [ADR-0025](ADR-0025-typed-sketch-spline-authoring.md) | Typed sketch spline authoring through the existing owner | R3/R4 |
+| [ADR-0026](ADR-0026-owned-native-keyboard-and-text.md) | Owned native keyboard and text input | R1V/R4 |
+| [ADR-0027](ADR-0027-owned-native-text-clipboard.md) | Owned native text clipboard | R1V/R4 |
+| [ADR-0028](ADR-0028-checked-native-image-reads.md) | Checked native image reads | R1V |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

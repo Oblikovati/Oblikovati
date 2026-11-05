@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Neutral appearance exported from Go material.defaultAppearance at aa8297d1b0ac33c024f19e54821536d76e8a447a.
+{
+  "appearances": [
+    {
+      "id": "default",
+      "base": {
+        "weight": 1,
+        "color": {
+          "r": 0.702,
+          "g": 0.722,
+          "b": 0.741
+        },
+        "metalness": 0,
+        "diffuseRoughness": 0
+      },
+      "specular": {
+        "weight": 1,
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        },
+        "roughness": 0.3,
+        "roughnessAnisotropy": 0,
+        "ior": 1.5
+      },
+      "transmission": {
+        "weight": 0,
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        },
+        "depth": 0,
+        "scatter": {
+          "r": 0,
+          "g": 0,
+          "b": 0
+        },
+        "scatterAnisotropy": 0,
+        "dispersionScale": 0,
+        "dispersionAbbeNumber": 20
+      },
+      "subsurface": {
+        "weight": 0,
+        "color": {
+          "r": 0.8,
+          "g": 0.8,
+          "b": 0.8
+        },
+        "radius": 1,
+        "radiusScale": {
+          "r": 1,
+          "g": 0.5,
+          "b": 0.25
+        },
+        "scatterAnisotropy": 0
+      },
+      "coat": {
+        "weight": 0,
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        },
+        "roughness": 0,
+        "roughnessAnisotropy": 0,
+        "ior": 1.6,
+        "darkening": 1
+      },
+      "fuzz": {
+        "weight": 0,
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        },
+        "roughness": 0.5
+      },
+      "thinFilm": {
+        "weight": 0,
+        "thickness": 0.5,
+        "ior": 1.4
+      },
+      "emission": {
+        "luminance": 0,
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1
+        }
+      },
+      "geometry": {
+        "opacity": 1,
+        "thinWalled": false
+      },
+      "name": "Default"
+    }
+  ]
+}

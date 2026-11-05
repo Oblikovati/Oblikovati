@@ -10,6 +10,7 @@ pub(super) enum TokenKind {
     Minus,
     Star,
     Slash,
+    Caret,
     Open,
     Close,
     Comma,
@@ -92,9 +93,16 @@ fn punctuation(byte: u8) -> Option<TokenKind> {
         b'-' => Some(TokenKind::Minus),
         b'*' => Some(TokenKind::Star),
         b'/' => Some(TokenKind::Slash),
+        b'^' => Some(TokenKind::Caret),
         b'(' => Some(TokenKind::Open),
         b')' => Some(TokenKind::Close),
         b',' => Some(TokenKind::Comma),
         _ => None,
     }
+}
+
+pub(crate) fn reference_name(name: &str) -> bool {
+    tokenize(name).is_ok_and(|tokens| {
+        tokens.len() == 2 && tokens[0].kind == TokenKind::Name && tokens[0].text == name
+    })
 }
