@@ -77,3 +77,13 @@ These results establish local cross-worktree reuse, not hosted CI speed.
 
 Tests cover six desktop archive pins, limited extraction, bad checksum refusal,
 download cleanup, Make paths with spaces, and the cache-disabled build path.
+
+## Native display lifetime
+
+The CI display uses Xvfb `-noreset`. A reset-enabled server discards its state
+when the last client closes. The native suite opens and closes independent
+clients, so it needs the same persistent server lifetime as a real desktop.
+A separate integration test creates an atom, closes its connection, reconnects,
+and verifies that the atom remains. It fails with default Xvfb and passes with
+`-noreset`. This changes the display fixture; application assertions and capture
+deadlines are unchanged.

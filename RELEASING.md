@@ -71,10 +71,16 @@ exclusion; generated output and installed tools are excluded. Reports go to
 `target/quality/`. These measures are not application behavior coverage.
 
 Set `package.metadata.oblikovati.requires-display = true` on crates that need a
-display. `oblikovati-head` always requires one on Linux. Run `xvfb-run -a make
-gate` when no physical display is available. A missing required display is an
-error. Native CI checks every target below; a local Linux pass is not a macOS
-or Windows runtime result.
+display. `oblikovati-head` always requires one on Linux. A missing required
+display is an error. When no physical display is available, retain the Xvfb
+server state between the suite's independent clients:
+
+```sh
+xvfb-run -a -s "-screen 0 1920x1080x24 -noreset" make gate
+```
+
+Native CI checks every target below; a local Linux pass is not a macOS or
+Windows runtime result.
 
 This host's installed Vulkan validation layer 1.3.275 crashes during concurrent
 device use. Local acceptance uses the official Ubuntu layer 1.4.321.0-1, kept
