@@ -95,3 +95,6 @@ pub use presentation::{
     SketchDisplayDecline, SketchDisplayEntity, SketchDisplayPrimitive, SketchDisplayReport,
     sample_sketch_display,
 };
+
+mod picking;
+pub use picking::{SketchEntityPickWitness, SketchPickQuery, nearest_sketch_entity_candidate};
