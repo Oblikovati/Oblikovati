@@ -39,3 +39,7 @@ path = "tests/native.rs"
 [[test]]
 name = "gui_render"
 path = "tests/gui_render.rs"
+
+[[test]]
+name = "display_lifetime"
+path = "tests/display_lifetime.rs"

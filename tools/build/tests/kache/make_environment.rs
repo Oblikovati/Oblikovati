@@ -24,14 +24,16 @@ impl FakeCacheCargo {
         Self { tree, root }
     }
     fn command(&self, mode: &str) -> Command {
-        let path = format!(
-            "PATH={}:/usr/bin:/bin",
-            self.tree.root().join("bin").display()
+        let cargo = format!(
+            "CARGO={}",
+            self.tree.root().join("bin with spaces/cargo").display()
         );
         let mode = format!("BUILD_CACHE={mode}");
         let mut command = Command::new("make");
-        command.args(["--no-print-directory", "build", &path, &mode]);
+        command.args(["--no-print-directory", "build", &cargo, &mode]);
         command.current_dir(&self.root);
+        let ceiling = self.tree.root().canonicalize().unwrap();
+        command.env("GIT_CEILING_DIRECTORIES", ceiling);
         for name in CACHE_ENVIRONMENT {
             command.env_remove(name);
         }
@@ -50,9 +52,9 @@ impl FakeCacheCargo {
     }
 }
 fn write_fake_cargo(tree: &FixtureTree) {
-    tree.put("bin/cargo", "#!/bin/sh\nprintf '{\"wrapper\":\"%s\",\"config\":\"%s\",\"store\":\"%s\"}' \"$RUSTC_WRAPPER\" \"$KACHE_CONFIG\" \"$KACHE_CACHE_DIR\"\n");
+    tree.put("bin with spaces/cargo", "#!/bin/sh\nprintf '{\"wrapper\":\"%s\",\"config\":\"%s\",\"store\":\"%s\"}' \"$RUSTC_WRAPPER\" \"$KACHE_CONFIG\" \"$KACHE_CACHE_DIR\"\n");
     std::fs::set_permissions(
-        tree.root().join("bin/cargo"),
+        tree.root().join("bin with spaces/cargo"),
         std::fs::Permissions::from_mode(0o755),
     )
     .unwrap();
@@ -62,14 +64,16 @@ fn write_fake_cargo(tree: &FixtureTree) {
 fn make_build_scopes_cache_settings_and_preserves_spaces_in_paths() {
     let fixture = FakeCacheCargo::new();
     let cache = fixture.build_environment("kache");
+    // Make reports the physical working directory, including macOS /var aliases.
+    let physical_root = fixture.root.canonicalize().unwrap();
     assert_eq!(cache["wrapper"], "kache");
     assert_eq!(
         cache["config"],
-        fixture.root.join(".kache.toml").to_str().unwrap()
+        physical_root.join(".kache.toml").to_str().unwrap()
     );
     assert_eq!(
         cache["store"],
-        fixture.root.join(".cache/kache").to_str().unwrap()
+        physical_root.join(".cache/kache").to_str().unwrap()
     );
 }
 #[test]

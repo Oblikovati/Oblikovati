@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 export PATH := $(CURDIR)/.tools:$(HOME)/.cargo/bin:$(PATH)
+CARGO ?= cargo
 
 BUILD_CACHE ?= kache
 KACHE_CONFIG ?= $(CURDIR)/.kache.toml
@@ -19,34 +20,34 @@ endif
 .PHONY: tools gate build test lint docs-lint package release-check
 tools:
 	npm ci
-	cargo install cargo-llvm-cov --locked --version 0.9.1
-	cargo xtask tools
+	"$(CARGO)" install cargo-llvm-cov --locked --version 0.9.1
+	"$(CARGO)" xtask tools
 
 gate:
-	cargo xtask gate
+	"$(CARGO)" xtask gate
 
 build:
-	cargo xtask build
+	"$(CARGO)" xtask build
 
 test:
-	cargo xtask test
+	"$(CARGO)" xtask test
 
 lint:
-	cargo xtask lint
+	"$(CARGO)" xtask lint
 
 docs-lint:
 	npm exec --offline -- markdownlint-cli2
-	cargo xtask docs
+	"$(CARGO)" xtask docs
 
 package:
-	cargo xtask package "$(TARGET)" "$(VERSION)"
+	"$(CARGO)" xtask package "$(TARGET)" "$(VERSION)"
 
 release-check:
-	cargo xtask preflight publish
+	"$(CARGO)" xtask preflight publish
 
 .PHONY: script-docs
 script-docs:
-	cargo run --locked -p oblikovati-build -- script-docs
+	"$(CARGO)" run --locked -p oblikovati-build -- script-docs
 
 .PHONY: cache-stats
 cache-stats:
@@ -54,4 +55,4 @@ cache-stats:
 
 .PHONY: cache-tools
 cache-tools:
-	cargo xtask cache-tools
+	"$(CARGO)" xtask cache-tools
