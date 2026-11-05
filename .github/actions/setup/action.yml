@@ -34,7 +34,8 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config xvfb mesa-vulkan-drivers vulkan-validationlayers glslc
+        # The pinned lavapipe archive links LLVM 20 and libdisplay-info.so.1.
+        sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config xvfb mesa-vulkan-drivers vulkan-validationlayers glslc libllvm20 libdisplay-info1
         printf '%s\n' 'XMODIFIERS=@im=none' >> "$GITHUB_ENV"
     - if: runner.os == 'Linux' && runner.arch == 'X64'
       shell: bash

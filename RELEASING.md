@@ -32,6 +32,14 @@ verifies the source against `Cargo.lock`, then writes the installer's environmen
 settings to `ENVIRONMENT` in GitHub environment-file format. The kernel owns the
 archive URLs and checksums. Xvfb tests select the local XIM provider explicitly.
 
+The pinned lavapipe library also needs the Ubuntu 24.04 packages `libllvm20` and
+`libdisplay-info1`. Install them with the native build dependencies; installing
+Mesa drivers alone does not supply `libdisplay-info.so.1`. A clean Ubuntu
+container reproduced the incompatible-driver failure without that library and
+completed the native smoke run after it was installed. Linux ARM64 runtime
+qualification remains open in
+[Martensite #388](https://github.com/Oblikovati/Martensite/issues/388).
+
 ```sh
 make tools
 make gate
@@ -78,7 +86,7 @@ VK_LAYER_PATH="$PWD/.tools/vulkan-validation-1.4.321/layers" \
 The [native stress report](architecture/rust-port/diagnostic-startup-native-crash.md)
 records package provenance, the failing stack, and the comparison. This is a
 local test-tool selection; it does not change system libraries or the released
-Martensite pin. Windows and macOS tests remain deferred by user instruction.
+Martensite pin. Windows and macOS native runtime acceptance remains incomplete.
 
 ## Dependency ownership
 

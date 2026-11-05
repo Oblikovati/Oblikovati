@@ -156,6 +156,7 @@ pub enum ViewportEvent {
     Mapped(bool),
     CloseRequested,
 }
+#[cfg(any(target_os = "linux", test))]
 pub(crate) fn valid_extent(extent: [u32; 2]) -> Result<[i32; 2], String> {
     if extent
         .iter()

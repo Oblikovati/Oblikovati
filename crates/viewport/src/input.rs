@@ -75,6 +75,7 @@ pub enum ViewportNavigation {
         anchor: Option<[i32; 2]>,
     },
 }
+#[cfg(any(target_os = "linux", test))]
 impl ViewportNavigation {
     pub(crate) fn validate(self, extent: [u32; 2]) -> Result<(), String> {
         let valid = match self {
@@ -104,6 +105,7 @@ impl ViewportNavigation {
         }
     }
 }
+#[cfg(any(target_os = "linux", test))]
 fn valid_zoom_anchor(anchor: Option<[i32; 2]>, extent: [u32; 2]) -> bool {
     anchor.is_none_or(|[_, y]| {
         i32::try_from(extent[1])
