@@ -280,3 +280,35 @@ fn authored_constants_follow_the_reduced_layout_of_external_reference_points() {
     assert_exact_anchor(&result, 3, expected.position);
     assert_exact_anchor(&result, 1, external.position);
 }
+
+#[test]
+fn fixed_coordinate_rank_inspection_uses_the_same_targets_as_solving() {
+    let mut sketch = fixed_anchor_sketch([2., 0.]);
+    sketch.set_position(id(1), [0., 0.]).unwrap();
+    sketch.add_point(id(2), [0., 0.]).unwrap();
+    let parameters = rank_distance_parameters(&mut sketch);
+    let inspected = sketch.analyze(&parameters, 1e-9).unwrap();
+    assert_eq!(inspected.degrees_of_freedom, 1);
+    let solved = sketch
+        .solve(&parameters, Default::default(), || false)
+        .unwrap();
+    assert_eq!(inspected, solved.numerical().structure);
+}
+
+fn rank_distance_parameters(sketch: &mut Sketch2D) -> ParameterCollection<u64> {
+    let mut parameters = ParameterCollection::new(Default::default());
+    parameters
+        .insert_expression(1, "length", oblikovati_api::types::USER_PARAM, "2 cm")
+        .unwrap();
+    sketch
+        .add_constraint(
+            SketchConstraintId(3),
+            PlanarConstraint::Distance {
+                points: [id(1), id(2)],
+                measure: DistanceMeasure::Aligned,
+                parameter: 1,
+            },
+        )
+        .unwrap();
+    parameters
+}

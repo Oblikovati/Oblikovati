@@ -77,3 +77,8 @@ from 10 to 20 mm, used undo/redo, saved, closed and reopened the part, then reop
 it in a fresh process. MCPBridge reported a healthy DOF=0 sketch at every checked
 stage. Completed window captures verified the rendered stages. Both desktops
 closed normally. This is sketch acceptance, not the still-blocked Extrude journey.
+
+Rank inspection uses the frozen target positions as well. A coincident warm start
+with one point fixed away from the other must report one remaining distance
+freedom, not two. The unaccepted warm-start values are kept separate for solve
+cancellation. A focused regression compares inspection with the solved structure.

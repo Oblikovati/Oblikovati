@@ -12,9 +12,12 @@ only this graph.
 
 The desktop builds against the release. All 22 native viewport tests pass,
 including palette changes, sRGB and alpha, point markers, preview clear,
-scene refresh, camera navigation, native surface capture and close. The combined
-host gate and live UI acceptance remain required before this branch is pushed.
-The separately tested authored-coordinate fix is tracked in #3808.
+scene refresh, camera navigation, native surface capture and close. Live OS input
+created a parameter-driven rectangle, verified preview and committed colours,
+switched themes, saved and reopened it in a fresh process. MCPBridge confirmed
+healthy DOF=0 geometry, and both desktops closed normally. The combined host must
+pass the full local gate and parameter history/save/reopen acceptance before
+pushing. The separately tested authored-coordinate fix is tracked in #3808.
 
 The release adds TKBO, TKBool, TKFillet and TKCaf. Available toolkits do not by
 themselves prove Boolean, blend, feature naming or feature replay acceptance.

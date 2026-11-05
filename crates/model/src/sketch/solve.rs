@@ -95,8 +95,9 @@ impl Sketch2D {
         cancelled: impl FnMut() -> bool,
     ) -> Result<SketchSolveOutcome, SketchError> {
         let prepared = grounded::prepare(self, parameters, anchors)?;
+        let warm_values = prepared.warm_start_values(self);
         let numerical = solve_constraints_with_constants(
-            &prepared.values,
+            &warm_values,
             &prepared.blocks(),
             &prepared.constants,
             options,

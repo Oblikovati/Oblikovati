@@ -30,6 +30,9 @@ impl GroundedSketch {
             })
             .collect()
     }
+    pub fn warm_start_values(&self, sketch: &Sketch2D) -> Vec<f64> {
+        self.layout.active_values(&sketch.variable_values())
+    }
     pub fn restore_freedoms(&self, values: &[bool]) -> Result<Vec<bool>, SketchError> {
         self.layout.restore_freedoms(values)
     }
@@ -69,9 +72,8 @@ fn prepare_coordinates(
     let mut constants = super::frozen::authored_constants(&warm)?;
     constants.retain(|(column, _)| !columns.contains(column));
     let seed = super::frozen::seed_authored(&warm, &constants)?;
-    let mut prepared = compile::prepare(&seed, parameters)?;
-    // Keep the unaccepted warm start available for cancellation; targets guide branch preparation.
-    prepared.values = warm.variable_values();
+    // #3808: rank inspection evaluates the same fixed target positions as nonlinear iteration.
+    let prepared = compile::prepare(&seed, parameters)?;
     let layout = GroundedLayout::new(&prepared.values, &columns);
     Ok((prepared, layout, constants))
 }
