@@ -85,3 +85,245 @@ fn browser_activation_refuses_missing_and_inactive_document_identity() {
     );
     assert!(owner.active_sketch_edit().is_none());
 }
+
+#[test]
+fn browser_selection_is_separate_from_editing_and_toggles_without_history() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner.finish_sketch_edit().unwrap();
+    let history = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .history_entries();
+    assert!(
+        owner
+            .select_browser_sketch_from_gui(document, sketch, false)
+            .unwrap()
+    );
+    assert_eq!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_sketches,
+        [sketch]
+    );
+    assert!(owner.active_sketch_edit().is_none());
+    assert!(
+        owner
+            .select_browser_sketch_from_gui(document, sketch, true)
+            .unwrap()
+    );
+    assert!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_sketches
+            .is_empty()
+    );
+    assert_eq!(
+        owner
+            .documents()
+            .workspace()
+            .session(document)
+            .unwrap()
+            .history_entries(),
+        history
+    );
+}
+#[test]
+fn browser_selection_refuses_stale_rows_and_is_scoped_to_the_active_document() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner.finish_sketch_edit().unwrap();
+    owner
+        .select_browser_sketch_from_gui(document, sketch, false)
+        .unwrap();
+    assert!(
+        owner
+            .select_browser_sketch_from_gui(document, DocumentSketchId(999), false)
+            .is_err()
+    );
+    assert_eq!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_sketches,
+        [sketch]
+    );
+    let second = create(&mut owner, &awake);
+    assert!(
+        owner
+            .select_browser_sketch_from_gui(document, sketch, false)
+            .is_err()
+    );
+    assert!(
+        owner
+            .gui_browser_snapshot(second)
+            .unwrap()
+            .selected_sketches
+            .is_empty()
+    );
+}
+#[test]
+fn browser_selection_does_not_take_placement_tool_clicks() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner
+        .start_sketch_placement(document, sketch, crate::SketchPlacementTool::Rectangle)
+        .unwrap();
+    assert!(
+        !owner
+            .select_browser_sketch_from_gui(document, sketch, false)
+            .unwrap()
+    );
+    assert!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_sketches
+            .is_empty()
+    );
+}
+#[test]
+fn browser_selection_is_retired_when_its_document_closes() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner.finish_sketch_edit().unwrap();
+    owner
+        .select_browser_sketch_from_gui(document, sketch, false)
+        .unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    assert!(owner.selected_browser_sketches(document).is_empty());
+    owner.poll(1).unwrap();
+    assert_eq!(
+        Client::new(owner.document_host())
+            .model()
+            .selection()
+            .unwrap()
+            .count,
+        0
+    );
+}
+
+#[test]
+fn browser_selection_snapshot_tracks_undo_and_redo_without_reusing_row_positions() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner.finish_sketch_edit().unwrap();
+    owner
+        .select_browser_sketch_from_gui(document, sketch, false)
+        .unwrap();
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_sketches
+            .is_empty()
+    );
+    assert!(
+        owner
+            .select_browser_sketch_from_gui(document, sketch, false)
+            .is_err()
+    );
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    assert_eq!(
+        owner
+            .gui_browser_snapshot(document)
+            .unwrap()
+            .selected_sketches,
+        [sketch]
+    );
+}
+
+#[test]
+fn canonical_selection_query_reads_the_sketch_selected_in_the_browser() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner.finish_sketch_edit().unwrap();
+    owner
+        .select_browser_sketch_from_gui(document, sketch, false)
+        .unwrap();
+    let selected = Client::new(owner.document_host())
+        .model()
+        .selection()
+        .unwrap();
+    assert_eq!(selected.count, 1);
+    assert_eq!(selected.kinds, Some(vec![8]));
+    assert_eq!(selected.refs, Some(vec![String::new()]));
+    let query = oblikovati_automation::FileQueryHost::new(owner.documents());
+    assert_eq!(Client::new(query).model().selection().unwrap(), selected);
+    assert!(owner.active_sketch_edit().is_none());
+}
+
+#[test]
+fn one_api_transport_reads_the_current_document_selection_after_each_switch() {
+    let (mut owner, awake) = owner();
+    let first = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(first, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    owner.finish_sketch_edit().unwrap();
+    owner
+        .select_browser_sketch_from_gui(first, sketch, false)
+        .unwrap();
+    let client = Client::new(owner.document_host());
+    assert_eq!(client.model().selection().unwrap().count, 1);
+    client
+        .documents()
+        .activate(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    assert_eq!(client.model().selection().unwrap().count, 1);
+    let second = client
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: "part".into(),
+            name: "Second selection document".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    assert_eq!(client.model().selection().unwrap().count, 0);
+    client
+        .documents()
+        .activate(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    assert_eq!(client.model().selection().unwrap().count, 0);
+    client
+        .documents()
+        .activate(&ActivateDocumentArgs { id: second })
+        .unwrap();
+    assert_eq!(client.model().selection().unwrap().count, 0);
+}

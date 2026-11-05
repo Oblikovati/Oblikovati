@@ -29,6 +29,7 @@ impl<
         let query = oblikovati_automation::FileQueryHost::new(&self.files)
             .with_sketch_edit(self.sketch_inspection_edit());
         populate_browser(&mut browser, snapshot, &Client::new(query));
+        browser.selected_sketches = self.selected_browser_sketches(document);
         Ok(browser)
     }
     fn gui_browser_root(&self, document: u64) -> Result<GuiModelBrowser, String> {

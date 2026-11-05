@@ -431,3 +431,6 @@ mod sketch_continuity;
 
 #[path = "lifecycle/placement_verification.rs"]
 mod placement_verification;
+
+#[path = "lifecycle/browser_selection.rs"]
+mod browser_selection;

@@ -219,6 +219,19 @@ fn verify_browser_reentry_pixels(
             .contains(&[160, 160, 160, 255]),
         "expected visible committed sketch geometry before browser activation"
     );
+    // #3811: selection changes colour; isolate edit re-entry from that intended change.
+    drive_pointer_clicks(window, owner, [90, 389], 1);
+    assert!(owner.active_sketch_edit().is_none());
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .browser
+            .unwrap()
+            .selected_sketches,
+        [edit.sketch]
+    );
+    let before = capture_framebuffer(&mut window.native);
     let original = window.native.view.camera_state().unwrap();
     browser::double_click_browser_row(window, owner);
     assert_eq!(owner.active_sketch_edit().unwrap(), edit);

@@ -62,6 +62,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::OpenDocument(_)
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SaveDocumentAs(_)
+        | GuiShellAction::SelectBrowserSketch { .. }
         | GuiShellAction::EditSketch { .. }
         | GuiShellAction::PlaceSketchTool(_)
         | GuiShellAction::NewPart

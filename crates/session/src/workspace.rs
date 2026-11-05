@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Ordered open-document ownership without file I/O or UI dependencies.
+mod browser_selection;
 mod commands;
 mod derived_edit;
 mod open_verification;
