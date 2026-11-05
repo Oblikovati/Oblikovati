@@ -174,7 +174,7 @@ fn unrepresentable_tiny_center_retains_the_native_exception_as_its_source() {
         error
             .source()
             .unwrap()
-            .downcast_ref::<rustycad_tkernel::standard::Failure>()
+            .downcast_ref::<martensite_tkernel::standard::Failure>()
             .is_some()
     );
     assert!(error.to_string().contains("zero norm"));

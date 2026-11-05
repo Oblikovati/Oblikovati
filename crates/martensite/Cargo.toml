@@ -9,9 +9,13 @@ publish.workspace = true
 autotests = false
 
 [dependencies]
+martensite-tkg2d = { git = "https://github.com/Oblikovati/Martensite", rev = "59aca38960bdfbaa75a07a80d9b2de522005ddac", version = "=0.3.7" }
+martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "59aca38960bdfbaa75a07a80d9b2de522005ddac", version = "=0.3.8" }
+martensite-tkgeombase = { git = "https://github.com/Oblikovati/Martensite", rev = "59aca38960bdfbaa75a07a80d9b2de522005ddac", version = "=0.3.6" }
+martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "59aca38960bdfbaa75a07a80d9b2de522005ddac", version = "=0.4.2" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "59aca38960bdfbaa75a07a80d9b2de522005ddac", version = "=0.3.6" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 oblikovati-solve = { path = "../solve" }
-rustycad-tkgeomalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 oblikovati-model = { path = "../model" }
 rustycad-tkmesh = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 rustycad-tkg3d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
@@ -20,7 +24,6 @@ rustycad-tkbrep = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = 
 rustycad-tkgeombase = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 
-rustycad-tkg2d = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 
