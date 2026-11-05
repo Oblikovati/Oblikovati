@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! Convert named user units to document working units without changing stored quantities.
+mod display;
 mod error;
+pub use display::{AngleFormat, DisplayOptions};
 mod literal;
 mod registry;
 mod scale;
+mod service;
+mod transfer;
+pub use service::{category_name, convert_value, parse_category, unit_category};
 
 use crate::quantity::{Dimension, Quantity};
 pub use error::UnitError;
@@ -16,6 +21,7 @@ use registry::{NamedUnit, require_category};
 pub struct UnitsOfMeasure {
     preferences: Vec<NamedUnit>,
     centimetres_per_unit: f64,
+    display: DisplayOptions,
 }
 
 impl Default for UnitsOfMeasure {
@@ -27,6 +33,7 @@ impl Default for UnitsOfMeasure {
         Self {
             preferences,
             centimetres_per_unit: 1.0,
+            display: DisplayOptions::default(),
         }
     }
 }

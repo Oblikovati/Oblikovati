@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-head"
+description = "Oblikovati desktop composition root"
+autotests = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+[package.metadata.oblikovati]
+requires-display = true
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
+[dependencies]
+png = "=0.17.16"
+tempfile = "=3.27.0"
+oblikovati-addin-host = { path = "../addin-host" }
+oblikovati-gui = { path = "../gui" }
+oblikovati-martensite = { path = "../martensite" }
+oblikovati-cli = { path = "../cli" }
+oblikovati-script = { path = "../script" }
+oblikovati-viewport = { path = "../viewport" }
+oblikovati-automation = { path = "../automation" }
+oblikovati-model = { path = "../model" }
+oblikovati-session = { path = "../session" }
+oblikovati-persistence = { path = "../persistence" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
+
+[[test]]
+name = "arguments"
+path = "tests/arguments.rs"
+[[test]]
+name = "native"
+path = "tests/native.rs"
+
+[dev-dependencies]
+oblikovati-solve = { path = "../solve" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "=3.27.0"
+
+[[test]]
+name = "scripts"
+path = "tests/scripts.rs"
+
+[[test]]
+name = "scripts_native"
+path = "tests/scripts_native.rs"
+
+[[test]]
+name = "addin_startup"
+path = "tests/addin_startup.rs"

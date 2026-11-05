@@ -299,21 +299,27 @@ Work:
 
 1. Split the exchange inventory by format, direction, document kind, metadata,
    assembly handling, platform, and required external tools.
-2. Prefer Martensite readers/writers for geometry formats that it supplies.
-   Integrate missing general kernel formats upstream, including required
-   Go-kernel capabilities outside OCCT. Port application-owned
-   recipe or domain translators here; do not create a second STEP geometry
-   engine or hide a native OCCT fallback in an adapter.
-3. Cover the separate Inventor, OLE, and SolidWorks module behavior found in
-   the baseline, and the external exporter/add-in workflows they use.
+2. Consume released Martensite exchange capabilities. DWG uses
+   [acadrust](https://github.com/hakanaktt/acadrust) inside the kernel. All
+   exchange parsers, writers, and format-specific translators belong to
+   RustyCADKernel, including required Go behavior outside OCCT. Do not port
+   exchange implementations in the application scope.
+3. Port application commands, dialogs, API routing, resource storage, and
+   transactional adoption of kernel results. Include the external exporter
+   and add-in workflows from the inventory; Inventor, OLE, and SolidWorks
+   format implementations remain kernel-owned. Follow
+   [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md).
 4. Test import, edit, save, reopen, and export with units, analytic face types,
    topology, names, colors, references, and assembly structure. Include the
    elliptical-arc STEP regression linked in the source map.
 5. Document formats that were already unavailable at the fixed baseline as
    roadmap work. Required baseline formats cannot be silently removed.
 
-**Exit:** the format matrix has passing round-trip and independent-oracle
-evidence for every required row. Clear errors preserve source files on failure.
+**Exit:** each required format row links to kernel release and round-trip/oracle
+evidence, plus passing application integration tests. Kernel tests and package
+releases remain the kernel repository's responsibility. Clear errors preserve
+source files on failure. Current testing is local Linux; Windows and macOS
+remain deferred.
 
 ## R9 — Prove conformance and switch releases
 

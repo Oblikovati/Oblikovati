@@ -1,0 +1,324 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+use crate::{
+    EDIT_METHODS, FileQueryHost, TRANSACTION_METHODS, command_owner, decode, encode, host::busy,
+    transactions,
+};
+use oblikovati_api::{Error, client::Caller, wire::*};
+use oblikovati_model::{attachment::ExternalAttachmentFiles, identity::GuidSource};
+use oblikovati_persistence::file_access::DocumentFiles;
+use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+use std::cell::RefCell;
+mod attachments;
+mod close;
+mod derived_links;
+mod selection;
+pub use derived_links::DERIVED_COMMAND_METHODS;
+mod create;
+mod lifecycle;
+mod open;
+mod sketch_construction;
+mod sketch_preferences;
+pub use open::DocumentObserverFactory;
+pub(crate) use sketch_construction::SketchConstructionAccess;
+
+/// Implemented calls that require the file owner.
+pub const FILE_COMMAND_METHODS: [&str; 10] = [
+    METHOD_DOCUMENTS_ADD_ATTACHMENT,
+    METHOD_DOCUMENTS_ACTIVATE,
+    METHOD_DOCUMENTS_OPEN,
+    METHOD_DOCUMENTS_CREATE,
+    METHOD_DOCUMENTS_BATCH_SAVE,
+    METHOD_DOCUMENTS_SAVE,
+    METHOD_DOCUMENTS_SAVE_AS,
+    METHOD_DOCUMENTS_SAVE_COPY_AS,
+    METHOD_DOCUMENTS_CLOSE,
+    METHOD_DOCUMENTS_CLOSE_ALL,
+];
+
+/// Synchronous API access that retains file, history, and identity ownership.
+pub struct FileHost<'a, O: TransactionObserver, W, F> {
+    context: RefCell<FileContext<'a, O, W, F>>,
+}
+struct FileContext<'a, O: TransactionObserver, W, F> {
+    color_schemes: Option<&'a mut oblikovati_model::color_scheme::ColorSchemeRegistry>,
+    themes: Option<&'a oblikovati_model::theme::ThemeLibrary>,
+    window_capture: Option<&'a mut dyn crate::WindowCaptureAccess>,
+    sketch_edit: Option<crate::SketchInspectionEdit>,
+    files: &'a mut FileWorkspace<O, W, F>,
+    source: &'a mut dyn GuidSource,
+    version: &'a str,
+    external: Option<&'a mut dyn ExternalAttachmentFiles>,
+    observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
+    sketch_construction: Option<SketchConstructionAccess<'a>>,
+    part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
+    sketch_preferences:
+        Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
+}
+impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Borrow the application viewport palettes; example: `host.with_color_schemes(&mut registry)`.
+    pub fn with_color_schemes(
+        mut self,
+        registry: &'a mut oblikovati_model::color_scheme::ColorSchemeRegistry,
+    ) -> Self {
+        self.context.get_mut().color_schemes = Some(registry);
+        self
+    }
+    /// Share the application theme library; example: `host.with_themes(&library)`.
+    pub fn with_themes(mut self, library: &'a oblikovati_model::theme::ThemeLibrary) -> Self {
+        self.context.get_mut().themes = Some(library);
+        self
+    }
+    /// Inject the native capture queue; example: `host.with_window_capture(&mut captures)`.
+    pub fn with_window_capture(mut self, capture: &'a mut dyn crate::WindowCaptureAccess) -> Self {
+        self.context.get_mut().window_capture = Some(capture);
+        self
+    }
+    /// Supply current desktop edit state without changing the document recipe.
+    /// Example: `host.with_sketch_edit(Some(edit.clone()))`.
+    pub fn with_sketch_edit(mut self, edit: Option<crate::SketchInspectionEdit>) -> Self {
+        self.context.get_mut().sketch_edit = edit;
+        self
+    }
+    /// Share the native exact-reference owner; example: `host.with_part_topology(&mut scenes)`.
+    pub fn with_part_topology(
+        mut self,
+        references: &'a mut dyn crate::PartTopologyAccess<O, W, F>,
+    ) -> Self {
+        self.context.get_mut().part_topology = Some(references);
+        self
+    }
+    /// Borrow owned files and identity generation; example: `FileHost::new(&mut files, &mut guids, "alpha")`.
+    pub fn new(
+        files: &'a mut FileWorkspace<O, W, F>,
+        source: &'a mut dyn GuidSource,
+        version: &'a str,
+    ) -> Self {
+        Self {
+            context: RefCell::new(FileContext {
+                color_schemes: None,
+                themes: None,
+                window_capture: None,
+                sketch_edit: None,
+                files,
+                source,
+                version,
+                observers: None,
+                external: None,
+                sketch_preferences: None,
+                part_topology: None,
+                sketch_construction: None,
+            }),
+        }
+    }
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
+    for FileHost<'_, O, W, F>
+{
+    fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if crate::COLOR_SCHEME_METHODS.contains(&method) {
+            let registry = context.color_schemes.as_deref_mut().ok_or_else(|| Error(format!(
+                "color scheme call {method:?}: expected an injected application palette registry"
+            )))?;
+            return crate::color_schemes::apply(registry, method, request);
+        }
+        if crate::THEME_QUERY_METHODS.contains(&method) {
+            let library = context.themes.ok_or_else(|| {
+                Error(format!(
+                    "theme call {method:?}: expected an injected application theme library"
+                ))
+            })?;
+            return crate::ThemeQueryHost::new(library).call(method, request);
+        }
+        if crate::WINDOW_CAPTURE_METHODS.contains(&method) {
+            return crate::window_capture::apply(&mut context.window_capture, request);
+        }
+        if crate::CLIENT_COMMAND_METHODS.contains(&method) {
+            return crate::clients::apply(context.files.connected_clients_mut(), method, request);
+        }
+        if method == METHOD_DOCUMENTS_LIST_ATTACHMENTS {
+            return context.list_attachments(decode(method, request)?);
+        }
+        if crate::DATUM_COMMAND_METHODS.contains(&method) {
+            return crate::datums::apply(context.files, method, request);
+        }
+        if crate::SKETCH_COMMAND_METHODS.contains(&method) {
+            return context.sketch_command(method, request);
+        }
+        context.owned_command(method, request)
+    }
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
+    fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if crate::BODY_COMMAND_METHODS.contains(&method) {
+            return crate::body_commands::apply(
+                self.files,
+                &mut self.part_topology,
+                method,
+                request,
+            );
+        }
+        if crate::BODY_QUERY_METHODS.contains(&method) {
+            return crate::part_topology::query(
+                self.files,
+                &mut self.part_topology,
+                method,
+                request,
+            );
+        }
+        if crate::ASSET_ASSIGNMENT_METHODS.contains(&method) {
+            return crate::asset_assignments::apply(
+                self.files,
+                &mut self.part_topology,
+                method,
+                request,
+            );
+        }
+        if crate::ASSET_COMMAND_METHODS.contains(&method) {
+            return crate::asset_commands::apply(self.files, method, request);
+        }
+        if crate::SKETCH_OPTION_METHODS.contains(&method) {
+            return self.sketch_option_command(method, request);
+        }
+        if EDIT_METHODS.contains(&method) {
+            return command_owner::edit(self.files, method, request);
+        }
+        if TRANSACTION_METHODS.contains(&method) {
+            return transactions::apply(self.files, method, request);
+        }
+        if DERIVED_COMMAND_METHODS.contains(&method) {
+            return self.derived_command(method, request);
+        }
+        if FILE_COMMAND_METHODS.contains(&method) {
+            return self.lifecycle_command(method, request);
+        }
+        FileQueryHost::new(self.files)
+            .with_sketch_edit(self.sketch_edit.clone())
+            .call(method, request)
+    }
+}
+impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
+    fn command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        match method {
+            METHOD_DOCUMENTS_ADD_ATTACHMENT => self.add_attachment(decode(method, request)?),
+            METHOD_DOCUMENTS_CREATE => self.create(decode(method, request)?),
+            METHOD_DOCUMENTS_OPEN => self.open(decode(method, request)?),
+            METHOD_DOCUMENTS_ACTIVATE => self.activate(decode(method, request)?),
+            METHOD_DOCUMENTS_BATCH_SAVE => self.batch_save(decode(method, request)?),
+            METHOD_DOCUMENTS_SAVE => self.save(decode(method, request)?),
+            METHOD_DOCUMENTS_SAVE_AS => self.save_as(decode(method, request)?),
+            METHOD_DOCUMENTS_SAVE_COPY_AS => self.save_copy(decode(method, request)?),
+            METHOD_DOCUMENTS_CLOSE_ALL => self.close_all(decode(method, request)?),
+            METHOD_DOCUMENTS_CLOSE => self.close(decode(method, request)?),
+            _ => Err(Error(format!(
+                "file command {method:?}: expected one of {FILE_COMMAND_METHODS:?}"
+            ))),
+        }
+    }
+
+    fn batch_save(&mut self, request: BatchSaveArgs) -> Result<Vec<u8>, Error> {
+        let response = self
+            .files
+            .batch_save(request, self.version, self.source)
+            .map_err(|error| Error(error.to_string()))?;
+        encode(&response)
+    }
+
+    fn activate(&mut self, request: ActivateDocumentArgs) -> Result<Vec<u8>, Error> {
+        let response = encode(&OKResult { ok: true })?;
+        self.files
+            .activate(request.id)
+            .map_err(|error| Error(error.to_string()))?;
+        Ok(response)
+    }
+
+    fn save(&mut self, request: SaveDocumentArgs) -> Result<Vec<u8>, Error> {
+        let path = self
+            .files
+            .path(request.document)
+            .map_err(|error| Error(error.to_string()))?;
+        let name = path.to_str().ok_or_else(|| {
+            Error(format!(
+                "save path {path:?}: expected a UTF-8 path for the canonical API response"
+            ))
+        })?;
+        let response = encode(&SaveDocumentResult {
+            full_document_name: name.into(),
+        })?;
+        self.files
+            .save(request.document, self.version, self.source)
+            .map_err(|error| Error(error.to_string()))?;
+        Ok(response)
+    }
+
+    fn save_as(&mut self, request: SaveDocumentAsArgs) -> Result<Vec<u8>, Error> {
+        let response = self
+            .files
+            .save_as_report(request, self.version, self.source)
+            .map_err(|error| Error(error.to_string()))?;
+        encode(&response)
+    }
+
+    fn save_copy(&mut self, request: SaveCopyAsArgs) -> Result<Vec<u8>, Error> {
+        let response = encode(&SaveDocumentResult {
+            full_document_name: request.target_file_name.clone(),
+        })?;
+        self.files
+            .save_copy(
+                request.document,
+                std::path::Path::new(&request.target_file_name),
+                request.metadata.as_deref(),
+                self.version,
+                self.source,
+            )
+            .map_err(|error| Error(error.to_string()))?;
+        Ok(response)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::host::tests::RejectUnexpectedCalls;
+    use oblikovati_model::identity::{DocumentGuid, IdentityTransitionError};
+    use oblikovati_persistence::file_access::NativeDocumentFiles;
+
+    struct RejectGuidRequests;
+    impl GuidSource for RejectGuidRequests {
+        fn generate(&mut self) -> Result<DocumentGuid, IdentityTransitionError> {
+            panic!("unexpected GUID request")
+        }
+    }
+
+    #[test]
+    fn file_host_refuses_reentry_and_recovers_for_queries() {
+        let mut files = FileWorkspace::<RejectUnexpectedCalls, _, _>::new(
+            RejectUnexpectedCalls,
+            NativeDocumentFiles,
+        );
+        let mut source = RejectGuidRequests;
+        let host = FileHost::new(&mut files, &mut source, "test");
+        {
+            let _active = host.context.borrow_mut();
+            for method in [
+                METHOD_DOCUMENTS_LIST,
+                METHOD_DOCUMENTS_LIST_ATTACHMENTS,
+                METHOD_DOCUMENTS_ADD_ATTACHMENT,
+                METHOD_DOCUMENTS_SAVE,
+                METHOD_PARAMETERS_SET,
+                METHOD_TRANSACTION_BEGIN,
+            ] {
+                assert!(
+                    host.call(method, b"{}")
+                        .unwrap_err()
+                        .to_string()
+                        .contains("reentry is refused")
+                );
+            }
+        }
+        let reply: ListDocumentsResult =
+            serde_json::from_slice(&host.call(METHOD_DOCUMENTS_LIST, b"").unwrap()).unwrap();
+        assert_eq!(reply.documents, Some(vec![]));
+    }
+}

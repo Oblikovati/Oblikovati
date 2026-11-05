@@ -46,3 +46,6 @@ Desktop.ini
 *.swo
 /core
 /core.[0-9]*
+
+# Cache fallback for source archives without Git metadata.
+/.cache/

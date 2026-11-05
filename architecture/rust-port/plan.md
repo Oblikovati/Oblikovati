@@ -2,6 +2,8 @@
 
 Date: 2026-10-10. Status: implementation started.
 See the [implementation evidence](implementation.md) for tested behavior and limits.
+The [feature sequence evidence](implementation-features.md) records the ordered
+recipe foundation and the remaining replay integration work.
 
 ## Outcome
 
@@ -25,9 +27,16 @@ The [source map](source-map.md) records the starting revisions. The
 | --- | --- | --- |
 | `oblikovati-rust`, branch `rust` | GPL application, feature recipes, documents, session, GUI, CLI, host | Implement the application in Rust. |
 | `Oblikovati.API` | Apache public types, traits, wire declarations, clients, C ABI | Consume the Rust crate. Change the shared contract here first when required. |
-| `RustyCADKernel` | Martensite geometry, topology, algorithms, and visualization | Integrate tested capabilities, complete missing OCCT behavior, and port required Go-kernel capabilities outside OCCT as Martensite extensions. |
+| `RustyCADKernel` | Martensite geometry, topology, algorithms, visualization, and exchange formats | Integrate tested capabilities, complete missing OCCT behavior, and port required Go-kernel capabilities outside OCCT as Martensite extensions. |
 | `Oblikovati.AddIns.*` | Separate add-ins | Keep the C ABI. Test existing Go add-ins against the Rust host. |
 | `Oblikovati` | Go reference application | Read source and run comparison tests at the recorded revision. |
+
+All exchange format implementations belong to `RustyCADKernel`. DWG uses
+[acadrust](https://github.com/hakanaktt/acadrust) inside the kernel. The
+application port covers exchange commands, dialogs, API routing, storage, and
+kernel result integration. It does not port format parsers, writers, or
+translators. See [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md).
+Native Oblikovati recipe persistence remains application-owned.
 
 **Required scope: Go-kernel capabilities that support application features
 and are not part of OCCT must be ported and adapted into Martensite.** OCCT
@@ -204,16 +213,17 @@ change supersedes its accepted record; it does not silently edit that decision.
 | --- | --- | --- |
 | [0001: application architecture](../decisions/ADR-0001-rust-application-architecture.md) | R0/R1 | Compile the crate boundaries, common toolchain, and fixed dependencies; verify ownership. |
 | [0002: API and add-ins](../decisions/ADR-0002-api-and-addin-host.md) | R2/R4 | Trait/wire conformance and real Go/Rust C ABI lifecycle tests. |
-| [0003: storage](../decisions/ADR-0003-documents-and-storage.md) | R2/R3/R6/R8 | Schema-2 recipes, resources, projects, and failure-safe round trips. |
+| [0020: storage](../decisions/ADR-0020-documents-and-storage.md) | R2/R3/R6/R8 | Schema-2 recipes, resources, projects, and failure-safe round trips. |
 | [0004: evaluation](../decisions/ADR-0004-session-and-feature-evaluation.md) | R2-R6 | Transactions, invalidation, stale-result rejection, and independent failure. |
 | [0005: identity](../decisions/ADR-0005-identity-and-references.md) | R1/R3/R5/R6/R8 | Provenance and old-key replay without incorrect rebinding. |
 | [0006: constraints](../decisions/ADR-0006-parameters-and-constraints.md) | R2/R3/R6 | Units, expressions, rank/DOF, achieved precision, and placement. |
 | [0007: Martensite](../decisions/ADR-0007-martensite-integration.md) | R1-R8 | K01-K11, shape isolation, analytic results, and required Go-kernel extensions. |
 | [0008: Vulkan](../decisions/ADR-0008-vulkan-renderer.md) | R1V/R4/R7 | Native presentation, GPU lifetime, styles, captures, and required extensions. |
 | [0009: UI and selection](../decisions/ADR-0009-ui-and-selection.md) | R1V/R4/R7 | Native binding, input, tools, themes, editor, and visible selection. |
-| [0010: assets](../decisions/ADR-0010-materials-and-appearances.md) | R5/R7 | Typed material/appearance round trips, assignment, and analytic properties. |
+| [0019: assets](../decisions/ADR-0019-materials-and-appearances.md) | R5/R7 | Typed material/appearance round trips, assignment, and analytic properties. |
 | [0011: scripting](../decisions/ADR-0011-scripting.md) | R7 | Lua 5.1, limits, cancellation, and containment with the selected engine. |
 | [0012: validation](../decisions/ADR-0012-build-and-validation.md) | R0 onward | Full discovered workspace gate, independent oracles, platform/live evidence. |
+| [0018: exchange](../decisions/ADR-0018-exchange-format-ownership.md) | K10/R8 | Released kernel exchange contract; application routing, transactions, resources, and diagnostics. |
 | [0013: releases](../decisions/ADR-0013-packaging-and-release.md) | R9 | Reproducible packages, dependency pins, upgrade and rollback. |
 
 Do not select a new YAML, Lua, window, or UI wrapper only from its name. Check
@@ -229,10 +239,11 @@ upstream for reference. Do not merge `go-legacy` with
 `--allow-unrelated-histories`; that would restore the Go tree that this branch
 was created to replace.
 
-Use small feature branches from `rust` and PRs back to `rust`.
-Fetch and merge the current `rust` integration branch before
-each feature PR. Keep granular commits. Kernel changes follow the separate
-Martensite integration workflow; API changes follow the API workflow.
+Current user policy: work on the single `rust-port` working branch. Integrate
+any authorized delegated work there and keep granular commits. Fetch and merge
+its upstream before publishing work. Create a PR only when the user requests
+one. Kernel changes follow the separate Martensite integration workflow; API
+changes follow the API workflow.
 
 The [port epic #3563](https://github.com/Oblikovati/Oblikovati/issues/3563)
 tracks the full application port. R0 creates the remaining milestone issues.

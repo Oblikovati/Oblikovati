@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::{SketchOffsetSpline2D, SketchSpline2D, require_spline_definition};
+use crate::sketch::{Sketch2D, SketchEntityId, SketchError};
+impl Sketch2D {
+    /// Adopt a parent after resolving every shared point; example: `sketch.add_spline(parent)?`.
+    pub fn add_spline(&mut self, spline: SketchSpline2D) -> Result<(), SketchError> {
+        self.require_new_entity(spline.id())?;
+        require_spline_definition(spline.id(), spline.points(), spline.kind())?;
+        for point in spline.points() {
+            self.point(*point)?;
+        }
+        self.entity_order.push(spline.id());
+        self.splines.push(spline);
+        Ok(())
+    }
+    /// Adopt an offset only against an owned parent spline; example: `sketch.add_offset_spline(offset)?`.
+    pub fn add_offset_spline(&mut self, offset: SketchOffsetSpline2D) -> Result<(), SketchError> {
+        self.require_new_entity(offset.id())?;
+        SketchOffsetSpline2D::new(offset.id(), offset.parent(), offset.distance())?;
+        self.spline(offset.parent())?;
+        self.entity_order.push(offset.id());
+        self.offset_splines.push(offset);
+        Ok(())
+    }
+    /// Resolve the exact parent identity; example: `sketch.spline(parent_id)?`.
+    pub fn spline(&self, id: SketchEntityId) -> Result<&SketchSpline2D, SketchError> {
+        self.splines
+            .iter()
+            .find(|spline| spline.id() == id)
+            .ok_or_else(|| {
+                SketchError::Definition(format!(
+                    "sketch spline {id:?}: expected an owned parent spline"
+                ))
+            })
+    }
+    /// Resolve an offset without geometric proximity; example: `sketch.offset_spline(id)?`.
+    pub fn offset_spline(&self, id: SketchEntityId) -> Result<&SketchOffsetSpline2D, SketchError> {
+        self.offset_splines
+            .iter()
+            .find(|offset| offset.id() == id)
+            .ok_or_else(|| {
+                SketchError::Definition(format!(
+                    "sketch offset spline {id:?}: expected an owned offset spline"
+                ))
+            })
+    }
+    /// Inspect parents in insertion order; example: `sketch.splines()`.
+    pub fn splines(&self) -> &[SketchSpline2D] {
+        &self.splines
+    }
+    /// Inspect derived offsets in insertion order; example: `sketch.offset_splines()`.
+    pub fn offset_splines(&self) -> &[SketchOffsetSpline2D] {
+        &self.offset_splines
+    }
+}

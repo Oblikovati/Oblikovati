@@ -3,13 +3,18 @@
 use super::*;
 
 pub(crate) fn config() -> ReleaseConfig {
-    toml::from_str(include_str!("../../../release.toml")).unwrap()
+    toml::from_str(include_str!("fixtures/release.toml")).unwrap()
 }
 
 #[test]
 fn repository_state_cannot_publish_an_empty_port() {
-    let mut config = config();
+    let config: ReleaseConfig = toml::from_str(include_str!("../../../release.toml")).unwrap();
     assert!(publication_ready(&config).unwrap_err().contains("R9"));
+}
+
+#[test]
+fn fixture_pins_and_compatibility_fields_require_complete_values() {
+    let mut config = config();
     assert!(validate_pin(&config.api).is_err());
     assert!(validate_pin(&config.kernel).is_err());
     config.api.revision = "a".repeat(40);

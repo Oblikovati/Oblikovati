@@ -1,0 +1,126 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::sketch_structure::{self, SketchStructure};
+use crate::ViewportSketchPreview;
+use martensite_tkservice::aspect::AspectTypeOfLine;
+use martensite_tkv3d::v3d::V3dViewer;
+use oblikovati_martensite::planar_curve::sketch::{
+    SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_placement_preview_with_policy,
+    sample_sketch_preview_members,
+};
+use oblikovati_model::theme::Rgba;
+#[derive(Default)]
+pub(super) struct SketchPreviewOverlay {
+    pub(super) source: Option<(ViewportSketchPreview, f64)>,
+    structures: Vec<SketchStructure>,
+    color: Option<Rgba>,
+}
+impl SketchPreviewOverlay {
+    pub(super) fn submit(
+        &mut self,
+        viewer: &V3dViewer,
+        source: Option<&ViewportSketchPreview>,
+        deflection: f64,
+        color: &Rgba,
+    ) -> Result<bool, String> {
+        let key = source.map(|source| (source.clone(), deflection));
+        if self.source == key && (source.is_none() || self.color.as_ref() == Some(color)) {
+            return Ok(false);
+        }
+        let replacement = Self::replacement(viewer, source, deflection, color)?;
+        replacement.show();
+        *self = replacement;
+        Ok(true)
+    }
+    pub(super) fn replacement(
+        viewer: &V3dViewer,
+        source: Option<&ViewportSketchPreview>,
+        deflection: f64,
+        color: &Rgba,
+    ) -> Result<Self, String> {
+        let structures = source
+            .map(|source| build(viewer, source, deflection, color))
+            .transpose()?
+            .unwrap_or_default();
+        Ok(Self {
+            source: source.map(|source| (source.clone(), deflection)),
+            structures,
+            color: Some(color.clone()),
+        })
+    }
+    pub(super) fn show(&self) {
+        for structure in &self.structures {
+            structure.0.display();
+        }
+    }
+    pub(super) fn clear(&mut self) {
+        self.structures.clear();
+        self.source = None;
+    }
+}
+fn build(
+    viewer: &V3dViewer,
+    source: &ViewportSketchPreview,
+    deflection: f64,
+    color: &Rgba,
+) -> Result<Vec<SketchStructure>, String> {
+    let options = SketchSamplingOptionsV1 {
+        deflection,
+        maximum_curve_points: 4096,
+    };
+    let sampled = match source {
+        ViewportSketchPreview::Recipe {
+            recipe,
+            solve_options,
+            ..
+        } => sample_placement_preview_with_policy(recipe, options, *solve_options)?,
+        ViewportSketchPreview::Resolved {
+            geometry, members, ..
+        } => sample_sketch_preview_members(geometry, members, options)?,
+    };
+    sampled
+        .iter()
+        .map(|member| build_member(viewer, source.plane(), member, color))
+        .collect()
+}
+fn build_member(
+    viewer: &V3dViewer,
+    plane: oblikovati_model::sketch::SketchPlane,
+    member: &oblikovati_martensite::planar_curve::sketch::PlacementPreviewMember,
+    color: &Rgba,
+) -> Result<SketchStructure, String> {
+    let kind = if member.construction {
+        AspectTypeOfLine::Dash
+    } else {
+        AspectTypeOfLine::Solid
+    };
+    match &member.primitive {
+        SketchDisplayPrimitive::Point(point) => {
+            sketch_structure::point(viewer, plane, *point, color, true)
+        }
+        SketchDisplayPrimitive::Curve(points) => {
+            sketch_structure::curve(viewer, plane, points, color, kind, true)
+        }
+    }
+}
+
+struct HiddenPreview<'a>(&'a [SketchStructure]);
+impl Drop for HiddenPreview<'_> {
+    fn drop(&mut self) {
+        for structure in self.0 {
+            structure.0.display();
+        }
+    }
+}
+impl SketchPreviewOverlay {
+    pub(super) fn without_preview<T>(&self, operation: impl FnOnce() -> T) -> T {
+        // v0.2.5 ZFitAll includes infinite structures in its graphic depth bounds.
+        // Exclude transient presentation for the whole fit, including error returns.
+        let _restore = HiddenPreview(&self.structures);
+        for structure in &self.structures {
+            structure.0.erase();
+        }
+        operation()
+    }
+}
+
+use martensite_tkservice::graphic3d::Graphic3dStructureSource;

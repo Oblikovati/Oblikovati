@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::resources::{FixtureResources, run};
+use std::{path::PathBuf, process::Command};
+pub struct FixtureCompiler {
+    resources: FixtureResources,
+}
+impl FixtureCompiler {
+    /// Prepare isolated native fixtures; example: `FixtureCompiler::new()`.
+    pub fn new() -> Self {
+        Self {
+            resources: FixtureResources::new(),
+        }
+    }
+    /// Build one trusted Rust ABI fixture; example: `compiler.rust_library("valid", &[], 0, 158)`.
+    pub fn rust_library(&self, name: &str, flags: &[&str], major: i32, minor: i32) -> PathBuf {
+        let source = self.resources.directory.path().join(format!("{name}.rs"));
+        let library = self.resources.directory.path().join(format!("{name}.so"));
+        let template = include_str!("fixture.rs.txt")
+            .replace("SDK_PATH", &format!("{:?}", self.resources.sdk));
+        let source_text = fixture_source(template, flags, major, minor);
+        std::fs::write(&source, source_text).unwrap();
+        let mut compile = rust_compiler();
+        for flag in flags {
+            compile.arg("--cfg").arg(flag);
+        }
+        run(compile.arg(source).arg("-o").arg(&library));
+        library
+    }
+    /// Build the frozen Go reference ABI fixture; example: `compiler.go_library()`.
+    pub fn go_library(&self) -> PathBuf {
+        let source = self.resources.directory.path().join("go-echo.go");
+        // Oblikovati aa8297d1: retain an independent legacy ABI oracle without a sibling checkout.
+        std::fs::write(&source, include_str!("echo_addin.go.txt")).unwrap();
+        let library = self.resources.directory.path().join("go-echo.so");
+        run(Command::new("go")
+            .current_dir(self.resources.directory.path())
+            .env("GOWORK", "off")
+            .env("CGO_ENABLED", "1")
+            .args(["build", "-buildmode=c-shared", "-o"])
+            .arg(&library)
+            .arg(source));
+        library
+    }
+}
+fn rust_compiler() -> Command {
+    let mut command = Command::new("rustc");
+    command.args([
+        "--crate-type",
+        "cdylib",
+        "--edition=2024",
+        "-A",
+        "dead_code",
+    ]);
+    command
+}
+fn fixture_source(template: String, flags: &[&str], major: i32, minor: i32) -> String {
+    let template = if flags.contains(&"lifecycle") {
+        let start = template
+            .find("#[unsafe(no_mangle)]\npub extern \"C\" fn ObkAddInActivate")
+            .unwrap();
+        format!(
+            "{}{}",
+            &template[..start],
+            include_str!("fixture_lifecycle.rs.txt")
+        )
+    } else {
+        template
+    };
+    template
+        .replace("API_MAJOR_VALUE", &major.to_string())
+        .replace("API_MINOR_VALUE", &minor.to_string())
+}

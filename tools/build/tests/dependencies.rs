@@ -4,6 +4,53 @@ use super::*;
 use crate::{process::tests::FakeRunner, release_config::tests::config, tree::tests::FixtureTree};
 
 #[test]
+fn source_installation_refuses_ambiguous_locked_packages() {
+    let lock: CargoLock = toml::from_str("[[package]]\nname='wanted'\nversion='1.0.0'\n[[package]]\nname='wanted'\nversion='2.0.0'\n").unwrap();
+    assert!(
+        unique_locked_package(&lock, "wanted")
+            .unwrap_err()
+            .contains("multiple versions")
+    );
+    assert!(unique_locked_package(&lock, "missing").is_err());
+}
+
+#[test]
+fn renderer_pin_rejects_local_and_changed_sources() {
+    let mut package = LockedPackage {
+        name: "martensite-vulkan".into(),
+        version: "0.7.0".into(),
+        source: None,
+    };
+    assert!(verify_renderer_package(&package).is_err());
+    package.source = Some("git+https://github.com/Oblikovati/Martensite#changed".into());
+    assert!(verify_renderer_package(&package).is_err());
+    let tree = FixtureTree::new();
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    check_renderer_pin(tree.root()).unwrap();
+    tree.put("Cargo.lock", "package = []");
+    assert!(check_renderer_pin(tree.root()).is_err());
+}
+
+#[test]
+fn application_lock_consumes_the_pinned_kernel_modeling_release() {
+    let tree = FixtureTree::new();
+    tree.put("release.toml", include_str!("../../../release.toml"));
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    let pin = crate::release_config::load(tree.root()).unwrap().kernel;
+    let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
+    assert_eq!(pin.version, "0.2.7");
+    assert_eq!(pin.revision, "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b");
+    for name in [
+        "rustycad-tkprim",
+        "rustycad-tkbrep",
+        "rustycad-tkgeombase",
+        "rustycad-tktopalgo",
+    ] {
+        assert!(names.iter().any(|locked| locked == name), "missing {name}");
+    }
+}
+
+#[test]
 fn published_archive_and_tag_must_both_match_the_pin() {
     let tree = FixtureTree::new();
     let mut dependency = config().api;
@@ -92,4 +139,16 @@ fn lockfile_cannot_substitute_a_local_or_different_dependency() {
     assert!(locked_crates(&tree.root().join("Cargo.lock"), &dependency).is_err());
     assert!(owned_package("rustycad-tkbrep", &config().kernel));
     assert!(!owned_package("serde", &config().kernel));
+}
+
+#[test]
+fn application_lock_consumes_the_api_release_named_by_packaging() {
+    let tree = FixtureTree::new();
+    tree.put("release.toml", include_str!("../../../release.toml"));
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    let pin = crate::release_config::load(tree.root()).unwrap().api;
+    let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
+    assert_eq!(names, ["oblikovati-api"]);
+    assert_eq!(pin.version, "0.158.0");
+    assert_eq!(pin.revision, "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd");
 }

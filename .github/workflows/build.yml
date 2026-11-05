@@ -97,7 +97,7 @@ jobs:
           args=(package "$TARGET" "$VERSION")
           if [ "$SIGNED" = true ]; then args+=(--signed); fi
           if [ "$RUNNER_OS" = Linux ]; then
-            xvfb-run -a cargo xtask "${args[@]}"
+            xvfb-run -a -s "-screen 0 1920x1080x24" cargo xtask "${args[@]}"
           else
             cargo xtask "${args[@]}"
           fi
@@ -117,7 +117,8 @@ jobs:
         run: security delete-keychain "$RUNNER_TEMP/oblikovati-rust.keychain-db"
   macos-universal:
     needs: package
-    runs-on: macos-14
+    # #3795: actions/runner-images#13518 retired Sonoma on 2026-11-02.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
