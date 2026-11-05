@@ -3,6 +3,16 @@
 use oblikovati_model::attachment::{ExternalAttachmentFiles, ResolvedAttachmentSource};
 use oblikovati_persistence::project::{ProjectAttachmentFiles, ProjectFileLookup};
 use std::{io, time::SystemTime};
+#[path = "support/project_paths.rs"]
+mod project_paths;
+use project_paths::native_project_fixture_root as root;
+
+fn fixture_file(directory: &str) -> String {
+    let path = root(directory).join("source.bin");
+    path.to_str()
+        .unwrap_or_else(|| panic!("fixture path {path:?}: expected a UTF-8 native path"))
+        .to_owned()
+}
 
 #[derive(Default)]
 struct SearchFiles {
@@ -35,41 +45,41 @@ impl ExternalAttachmentFiles for SearchFiles {
     }
 }
 fn project() -> ProjectFileLookup {
-    ProjectFileLookup::new(Some("/workspace".into()), vec!["/library".into()], None).unwrap()
+    ProjectFileLookup::new(Some(root("workspace")), vec![root("library")], None).unwrap()
 }
 
 #[test]
 fn ordered_search_retains_successful_observation_without_second_probe() {
     let lookup = project();
     let mut files = SearchFiles {
-        present: vec!["/library/source.bin".into()],
+        present: vec![fixture_file("library")],
         ..Default::default()
     };
     let source = ProjectAttachmentFiles::new(&lookup, &mut files)
         .inspect_source("source.bin")
         .unwrap()
         .unwrap();
-    assert_eq!(source.resolved_file_name, "/library/source.bin");
+    assert_eq!(source.resolved_file_name, fixture_file("library"));
     assert_eq!(source.modified, SystemTime::UNIX_EPOCH);
     assert_eq!(
         files.inspected,
-        ["/workspace/source.bin", "/library/source.bin"]
+        [fixture_file("workspace"), fixture_file("library")]
     );
-    files.present.push("/workspace/source.bin".into());
+    files.present.push(fixture_file("workspace"));
     files.inspected.clear();
     let source = ProjectAttachmentFiles::new(&lookup, &mut files)
         .inspect_source("source.bin")
         .unwrap()
         .unwrap();
-    assert_eq!(source.resolved_file_name, "/workspace/source.bin");
-    assert_eq!(files.inspected, ["/workspace/source.bin"]);
+    assert_eq!(source.resolved_file_name, fixture_file("workspace"));
+    assert_eq!(files.inspected, [fixture_file("workspace")]);
 }
 
 #[test]
 fn payload_read_uses_selected_path_and_missing_read_names_reference() {
     let lookup = project();
     let mut files = SearchFiles {
-        present: vec!["/library/source.bin".into()],
+        present: vec![fixture_file("library")],
         ..Default::default()
     };
     assert_eq!(
@@ -78,7 +88,7 @@ fn payload_read_uses_selected_path_and_missing_read_names_reference() {
             .unwrap(),
         [0, 255]
     );
-    assert_eq!(files.read_paths, ["/library/source.bin"]);
+    assert_eq!(files.read_paths, [fixture_file("library")]);
     files.present.clear();
     let error = ProjectAttachmentFiles::new(&lookup, &mut files)
         .read("source.bin")
@@ -94,11 +104,11 @@ fn absolute_empty_and_unconfigured_references_do_not_search_other_roots() {
     let mut files = SearchFiles::default();
     assert!(
         ProjectAttachmentFiles::new(&lookup, &mut files)
-            .inspect_source("/elsewhere/source.bin")
+            .inspect_source(&fixture_file("elsewhere"))
             .unwrap()
             .is_none()
     );
-    assert_eq!(files.inspected, ["/elsewhere/source.bin"]);
+    assert_eq!(files.inspected, [fixture_file("elsewhere")]);
     files.inspected.clear();
     assert!(
         ProjectAttachmentFiles::new(&lookup, &mut files)
@@ -120,17 +130,21 @@ fn absolute_empty_and_unconfigured_references_do_not_search_other_roots() {
 fn access_error_stops_search_and_preserves_cause() {
     let lookup = project();
     let mut files = SearchFiles {
-        denied: Some("/workspace/source.bin".into()),
-        present: vec!["/library/source.bin".into()],
+        denied: Some(fixture_file("workspace")),
+        present: vec![fixture_file("library")],
         ..Default::default()
     };
     let error = ProjectAttachmentFiles::new(&lookup, &mut files)
         .inspect_source("source.bin")
         .unwrap_err();
     assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
-    assert!(error.to_string().contains("/workspace/source.bin"));
+    assert!(
+        error
+            .to_string()
+            .contains(&format!("{:?}", root("workspace").join("source.bin")))
+    );
     assert!(error.to_string().contains("source denied"));
-    assert_eq!(files.inspected, ["/workspace/source.bin"]);
+    assert_eq!(files.inspected, [fixture_file("workspace")]);
 }
 
 #[cfg(unix)]

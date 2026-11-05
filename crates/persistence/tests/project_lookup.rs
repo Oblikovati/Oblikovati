@@ -27,11 +27,9 @@ impl ProjectFileProbe for RecordingFileProbe {
     }
 }
 
-fn root(name: &str) -> PathBuf {
-    std::env::temp_dir()
-        .join("oblikovati-project-fixtures")
-        .join(name)
-}
+#[path = "support/project_paths.rs"]
+mod project_paths;
+use project_paths::native_project_fixture_root as root;
 fn project() -> ProjectFileLookup {
     ProjectFileLookup::new(
         Some(root("workspace")),
