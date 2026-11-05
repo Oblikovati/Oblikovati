@@ -170,7 +170,9 @@ fn native_shortcut_repeat_is_suppressed_and_release_keeps_its_press_identity() {
 }
 #[test]
 fn native_modifier_release_keeps_the_other_side_held() {
-    let fixture = NativeInputFixture::new();
+    // #3797: a desktop can map only Control_L; this regression requires both sides.
+    let server = PrivateX11Server::open_compose_fixture().unwrap();
+    let fixture = NativeInputFixture::on_display(server.display());
     for (symbol, pressed, expected) in [
         (x11_dl::keysym::XK_Control_L, true, true),
         (x11_dl::keysym::XK_Control_R, true, true),

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_gui::*;
+#[cfg(target_os = "linux")]
 use oblikovati_viewport::compile_gui_frame;
 fn request() -> GuiFrameRequest {
     GuiFrameRequest {
@@ -23,6 +24,7 @@ fn request() -> GuiFrameRequest {
 fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let atlas = engine.atlas().clone();
+    assert!(!atlas.rgba.is_empty());
     let input = request();
     engine.frame(&input).unwrap();
     let output = engine.frame(&input).unwrap();
@@ -38,6 +40,7 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     drop(next_owner);
     assert_eq!(snapshot, saved);
     assert_eq!(snapshot.batches[0].vertices, vertices);
+    #[cfg(target_os = "linux")]
     assert!(
         !compile_gui_frame(&snapshot, &atlas)
             .unwrap()
