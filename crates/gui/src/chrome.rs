@@ -91,6 +91,9 @@ fn tab_panels(
         RibbonTab::Manage => return parameter_panel(ui, state, parameters),
     };
     command_panel(ui, state, actions, command);
+    if tab == RibbonTab::View {
+        appearance_panel(ui, state, actions);
+    }
 }
 
 fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
@@ -178,4 +181,20 @@ fn command_button(
     if clicked && action.dispatchable(state) {
         actions.push(action);
     }
+}
+
+fn appearance_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    if state.theme.is_none() && state.color_scheme.is_none() {
+        return;
+    }
+    ui.same_line();
+    ui.group(|| {
+        if let Some(theme) = &state.theme {
+            theme.controls(ui, actions);
+        }
+        if let Some(palette) = &state.color_scheme {
+            palette.controls(ui, actions);
+        }
+        ui.text("Appearance");
+    });
 }

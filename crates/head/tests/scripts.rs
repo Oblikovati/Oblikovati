@@ -35,6 +35,8 @@ fn desktop() -> NativeScripts {
         PollingDispatchWakeup,
         DesktopDispatchOptions::default(),
     );
+    let owner =
+        owner.with_themes(oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Dark").unwrap());
     DesktopScripts::new(owner, head_worker(), ScriptLimits::gui())
 }
 fn head_worker() -> IsolatedLuaEngine {
@@ -245,4 +247,23 @@ fn desktop_console_reads_the_owned_material_catalog_without_a_document() {
 fn scripts_forward_absent_sketch_preview() {
     assert!(desktop().sketch_preview().is_none());
     assert!(desktop().sketch_edit().is_none());
+}
+
+#[test]
+fn script_wrapper_forwards_application_theme_selection() {
+    let mut desktop = desktop();
+    let before = desktop.gui_command_state().unwrap().theme;
+    assert!(desktop.select_theme_from_gui("Light").unwrap());
+    assert!(!desktop.select_theme_from_gui("Light").unwrap());
+    assert_ne!(before, desktop.gui_command_state().unwrap().theme);
+    assert!(desktop.select_theme_from_gui("missing").is_err());
+    let before = desktop.gui_command_state().unwrap().color_scheme;
+    assert!(
+        desktop
+            .select_color_scheme_from_gui(&oblikovati_api::wire::SetColorSchemeArgs {
+                name: "Sky".into()
+            })
+            .unwrap()
+    );
+    assert_ne!(before, desktop.gui_command_state().unwrap().color_scheme);
 }

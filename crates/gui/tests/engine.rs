@@ -8,6 +8,8 @@ fn request() -> GuiFrameRequest {
         status: None,
         events: vec![GuiInputEvent::PointerMoved([630., 350.])],
         commands: GuiCommandState {
+            theme: None,
+            color_scheme: None,
             documents: Vec::new(),
             browser: None,
             undo_label: Some("Edit".into()),
@@ -25,6 +27,7 @@ fn request() -> GuiFrameRequest {
 #[test]
 fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
     let mut engine = GuiFrameEngine::new().unwrap();
+    engine.apply_theme(&oblikovati_model::theme::ThemeDefinition::dark().unwrap());
     let atlas = engine.atlas().clone();
     assert!(!atlas.rgba.is_empty());
     let input = request();

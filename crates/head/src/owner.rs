@@ -42,6 +42,9 @@ impl Default for DesktopDispatchOptions {
 /// require_send::<DesktopOwner<(), (), (), (), (), PollingDispatchWakeup>>();
 /// ```
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
+    color_schemes: oblikovati_model::color_scheme::ColorSchemeRegistry,
+    theme_store: Option<Box<dyn oblikovati_model::theme::ThemeSelectionStore>>,
+    themes: Option<oblikovati_model::theme::ThemeLibrary>,
     window_captures: Option<crate::DesktopWindowCaptures>,
     files: FileWorkspace<O, W, F>,
     guids: G,
@@ -81,6 +84,9 @@ impl<
     ) -> Self {
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
+            color_schemes: Default::default(),
+            theme_store: None,
+            themes: None,
             window_captures: None,
             files,
             guids,
@@ -96,6 +102,12 @@ impl<
             placement: None,
             sketch_edit: None,
         }
+    }
+    /// Share one library with API queries and the GUI; example: `owner.with_themes(library)`.
+    pub fn with_themes(mut self, library: oblikovati_model::theme::ThemeLibrary) -> Self {
+        self.themes = Some(library);
+        self.theme_store = None;
+        self
     }
     /// Enable view capture with an injected output configuration.
     /// Example: `owner.with_window_captures(DesktopWindowCaptures::new(directory, namespace))`.
@@ -124,7 +136,7 @@ impl<
     /// Borrow the canonical caller for UI commands on this owner; example: `Client::new(owner.document_host())`.
     pub fn document_host(&mut self) -> FileHost<'_, O, W, F> {
         let editing = self.sketch_inspection_edit();
-        borrowed_host(
+        let host = borrowed_host(
             &mut self.files,
             &mut self.guids,
             &self.version,
@@ -134,6 +146,11 @@ impl<
             &mut self.window_captures,
         )
         .with_sketch_edit(editing)
+        .with_color_schemes(&mut self.color_schemes);
+        match &self.themes {
+            Some(library) => host.with_themes(library),
+            None => host,
+        }
     }
     fn drain_calls(&mut self, budget: usize) -> Result<usize, String> {
         let editing = self.sketch_inspection_edit();
@@ -146,7 +163,12 @@ impl<
             &self.sketch_construction,
             &mut self.window_captures,
         )
-        .with_sketch_edit(editing);
+        .with_sketch_edit(editing)
+        .with_color_schemes(&mut self.color_schemes);
+        let host = match &self.themes {
+            Some(library) => host.with_themes(library),
+            None => host,
+        };
         self.dispatch
             .drain(budget, &host)
             .map_err(|error| error.to_string())
@@ -192,9 +214,33 @@ impl<
     ) -> Result<bool, String> {
         Ok(self.complete_document_save_path(document, selected))
     }
+    fn select_color_scheme_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::SetColorSchemeArgs,
+    ) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .color_schemes()
+            .set_active(request)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+    fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.select_application_theme(name)
+    }
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+        let theme = self
+            .themes
+            .as_ref()
+            .map(oblikovati_gui::GuiThemeState::from_library);
+        let color_scheme = Some(oblikovati_gui::GuiColorSchemeState::from_registry(
+            &self.color_schemes,
+        )?);
         let Some(document) = self.files.workspace().active_document() else {
-            return Ok(Default::default());
+            return Ok(oblikovati_gui::GuiCommandState {
+                theme,
+                color_scheme,
+                ..Default::default()
+            });
         };
         let session = self
             .files
@@ -202,6 +248,8 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            theme,
+            color_scheme,
             documents: self.gui_document_rows()?,
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),
@@ -435,3 +483,6 @@ mod placement_input;
 
 #[path = "owner_sketch_edit.rs"]
 mod sketch_environment;
+
+#[path = "owner_themes.rs"]
+mod application_themes;

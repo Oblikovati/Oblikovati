@@ -12,6 +12,24 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Apply the canonical palette selection; example: `work.select_color_scheme_from_gui(&request)?`.
+    fn select_color_scheme_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::SetColorSchemeArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "colour scheme {:?}: expected an application palette owner",
+            request.name
+        ))
+    }
+
+    /// Select the application theme; example: `work.select_theme_from_gui("Light")?`.
+    fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        Err(format!(
+            "theme {name:?}: expected an application theme owner"
+        ))
+    }
+
     /// Activate a visible document through its owner; example: `work.activate_document_from_gui(&request)?`.
     fn activate_document_from_gui(
         &mut self,

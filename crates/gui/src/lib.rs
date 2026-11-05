@@ -7,6 +7,7 @@ mod clipboard;
 pub use activity::GuiFrameActivity;
 pub use clipboard::GuiClipboard;
 mod chrome;
+mod color_scheme_state;
 mod commands;
 #[allow(unsafe_code)]
 mod context_owner;
@@ -18,6 +19,10 @@ mod parameters;
 mod ribbon;
 mod sketch_tools;
 mod snapshot;
+mod theme;
+pub use color_scheme_state::GuiColorSchemeState;
+mod theme_state;
+pub use theme_state::GuiThemeState;
 #[allow(unsafe_code)]
 mod widget_abi;
 pub use commands::{GuiAuthoringContext, GuiCommandState, GuiParameterMutation, GuiShellAction};

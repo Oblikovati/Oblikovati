@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    SetTheme(String),
+    SetColorScheme(oblikovati_api::wire::SetColorSchemeArgs),
     ActivateDocument(oblikovati_api::wire::ActivateDocumentArgs),
     CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
     OpenDocument(oblikovati_api::wire::OpenDocumentArgs),
@@ -39,6 +41,8 @@ pub enum GuiAuthoringContext {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    pub color_scheme: Option<crate::GuiColorSchemeState>,
+    pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,
     pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
     pub document: Option<u64>,
@@ -83,6 +87,14 @@ impl GuiShellAction {
                         .iter()
                         .any(|row| row.id == request.id && row.visible)
             }
+            Self::SetColorScheme(request) => state
+                .color_scheme
+                .as_ref()
+                .is_some_and(|palette| palette.contains(&request.name)),
+            Self::SetTheme(name) => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.contains(name)),
             Self::OpenDocument(_) => !state.transaction_open,
             Self::CloseDocument(request) => {
                 (state.document == Some(request.id)

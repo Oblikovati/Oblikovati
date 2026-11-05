@@ -137,6 +137,15 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.complete_save_path(document, selected)
     }
+    fn select_color_scheme_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::SetColorSchemeArgs,
+    ) -> Result<bool, String> {
+        self.owner.select_color_scheme_from_gui(request)
+    }
+    fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.owner.select_theme_from_gui(name)
+    }
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.owner.gui_command_state()
     }

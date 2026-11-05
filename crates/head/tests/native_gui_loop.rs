@@ -330,6 +330,7 @@ fn publish_gui_framebuffer(
     owner: &mut NativeDesktopOwner,
     window: &mut NativeHeadWindow,
 ) -> oblikovati_viewport::ViewportCapture {
+    scene_tests::apply_application_background(owner, window);
     submit_native_scene(owner, window);
     capture_framebuffer(window)
 }
@@ -342,7 +343,7 @@ fn assert_model_without_gui(
     assert!(window.command_notice.is_some());
     window.clear_gui_frame().unwrap();
     assert!(window.view.capture().is_err());
-    assert_eq!(capture_framebuffer(window).rgba, expected.rgba);
+    scene_tests::assert_same_native_pixels(&capture_framebuffer(window), expected);
 }
 fn verify_gui_save(path: &std::path::Path, window: &mut NativeHeadWindow) {
     let package =

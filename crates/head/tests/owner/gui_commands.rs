@@ -20,10 +20,7 @@ pub(super) fn assert_authoring_context(
 #[test]
 fn gui_command_metadata_follows_the_active_owner_history() {
     let (mut owner, awake) = owner();
-    assert_eq!(
-        owner.gui_command_state().unwrap(),
-        GuiCommandState::default()
-    );
+    assert_eq!(owner.gui_command_state().unwrap(), empty_owner_gui_state());
     let document = create(&mut owner, &awake);
     assert_eq!(
         owner.gui_command_state().unwrap().authoring,
@@ -106,8 +103,17 @@ fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, firs
             force: true,
         })
         .unwrap();
-    assert_eq!(
-        owner.gui_command_state().unwrap(),
-        GuiCommandState::default()
-    );
+    assert_eq!(owner.gui_command_state().unwrap(), empty_owner_gui_state());
+}
+
+fn empty_owner_gui_state() -> GuiCommandState {
+    GuiCommandState {
+        color_scheme: Some(
+            oblikovati_gui::GuiColorSchemeState::from_registry(
+                &oblikovati_model::color_scheme::ColorSchemeRegistry::default(),
+            )
+            .unwrap(),
+        ),
+        ..Default::default()
+    }
 }

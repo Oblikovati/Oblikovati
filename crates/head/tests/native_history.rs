@@ -14,6 +14,7 @@ fn native_history_keys_restore_prism_pixels_without_changing_the_camera() {
         owner.document_owner_mut(),
         &directory.path().join("history.opd"),
     );
+    super::scene_tests::apply_application_background(&owner, &mut window);
     let before = publish_native_scene(owner.document_owner_mut(), &mut window);
     native_set(owner.document_owner_mut(), "width", "6 cm");
     let edited = publish_native_scene(owner.document_owner_mut(), &mut window);
@@ -34,18 +35,15 @@ fn verify_history_pixels(
     assert!(owner.process_inputs(&[input]).unwrap());
     crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
     let status_frame = capture_native_scene(window);
-    assert!(
-        status_frame
-            .rgba
-            .as_chunks::<4>()
-            .0
-            .contains(&[255, 255, 255, 255])
-    );
+    let state = owner.gui_command_state().unwrap();
+    let text = &state.theme.as_ref().unwrap().palette()[&oblikovati_api::types::TOKEN_CHROME_TEXT];
+    let text_bytes = [text.r, text.g, text.b, text.a].map(|channel| (channel * 255. + 0.5) as u8);
+    assert!(status_frame.rgba.as_chunks::<4>().0.contains(&text_bytes));
     // Validate the overlay first, then retire it to retain the exact whole-model image oracle.
     window.view.set_status_text("").unwrap();
     window.clear_gui_frame().unwrap();
     let capture = capture_native_scene(window);
-    assert_eq!(capture.rgba, expected.rgba);
+    super::scene_tests::assert_same_native_pixels(&capture, expected);
     assert_eq!(window.view.camera_state().unwrap(), camera);
     assert!(window.view.native_title().unwrap().contains("complete"));
 }

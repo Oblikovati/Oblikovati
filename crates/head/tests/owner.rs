@@ -324,3 +324,9 @@ mod document_tabs;
 
 #[path = "owner/sketch_tools.rs"]
 mod sketch_tools;
+
+#[path = "owner/themes.rs"]
+mod themes;
+
+#[path = "owner/color_schemes.rs"]
+mod color_schemes;

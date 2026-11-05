@@ -22,13 +22,25 @@ fn addin_wrapper_keeps_part_and_sketch_authoring_on_the_document_owner() {
         return;
     }
     let mut window = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(window.wake.clone()).unwrap();
+    let mut owner = native_owner(window.wake.clone())
+        .unwrap()
+        .with_themes(oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Dark").unwrap());
     let mut services = NativeAddInDesktop::new(
         &mut owner,
         Default::default(),
         NativeOwnerWake(window.wake.clone()),
     )
     .unwrap();
+    assert!(
+        services
+            .select_color_scheme_from_gui(&oblikovati_api::wire::SetColorSchemeArgs {
+                name: "Sky".into()
+            })
+            .unwrap()
+    );
+    assert!(services.select_theme_from_gui("Light").unwrap());
+    assert!(!services.select_theme_from_gui("Light").unwrap());
+    assert!(services.select_theme_from_gui("Dark").unwrap());
     assert!(services.create_part_document().unwrap());
     assert!(services.edit_sketch_from_gui(true).unwrap());
     assert!(services.sketch_edit().is_some());
@@ -204,6 +216,7 @@ fn verify_pending_load_retirement(owner: &mut NativeDesktopOwner, wake: NativeOw
 }
 
 fn verify_service_delegation(services: &mut TestNativeServices<'_>) {
+    let before = services.gui_command_state().unwrap();
     assert!(services.sketch_preview().is_none());
     assert!(services.sketch_edit().is_none());
     services
@@ -216,7 +229,7 @@ fn verify_service_delegation(services: &mut TestNativeServices<'_>) {
             .message()
             .contains("test camera refusal")
     );
-    assert_eq!(services.gui_command_state().unwrap(), Default::default());
+    assert_eq!(services.gui_command_state().unwrap(), before);
     assert!(
         !services
             .process_window_inputs(&[], &crate::placement_test_inputs::ProjectionlessWindow)

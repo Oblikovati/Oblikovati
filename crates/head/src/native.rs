@@ -3,6 +3,8 @@ use crate::{HeadOptions, HeadPresentation, HeadSummary, HeadWindow};
 #[allow(unsafe_code)]
 #[path = "native/addin_launch.rs"]
 mod addin_launch;
+#[path = "native_preferences.rs"]
+mod preferences;
 use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene,
     ViewportWake,
@@ -106,7 +108,13 @@ impl HeadWindow for NativeHeadWindow {
         event: Option<&ViewportEvent>,
         commands: &oblikovati_gui::GuiCommandState,
     ) -> Result<crate::HeadGuiUpdate, String> {
-        self.advance_native_gui(event, commands)
+        let changed = match &commands.color_scheme {
+            Some(palette) => self.view.set_background(palette.background())?,
+            None => false,
+        };
+        let mut update = self.advance_native_gui(event, commands)?;
+        update.changed |= changed;
+        Ok(update)
     }
 
     fn submit_sketch_scene(&mut self, update: crate::HeadSketchSceneUpdate) -> Result<(), String> {
@@ -233,6 +241,7 @@ type NativeDesktopOwner = crate::DesktopOwner<
     NativeOwnerWake,
 >;
 fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
+    let themes = preferences::load_native_themes()?;
     let observations = crate::DesktopObservations::default();
     let files = oblikovati_session::files::FileWorkspace::new(
         observations.clone(),
@@ -247,6 +256,8 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         NativeOwnerWake(wake),
         crate::DesktopDispatchOptions::default(),
     )
+    .with_theme_store(themes.library, Box::new(themes.preferences))
+    .with_theme_file_declines(themes.declines)
     .with_window_captures(crate::DesktopWindowCaptures::new(
         std::env::temp_dir(),
         u64::from(std::process::id()),

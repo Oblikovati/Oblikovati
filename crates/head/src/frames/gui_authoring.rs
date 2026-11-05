@@ -4,6 +4,8 @@ use oblikovati_gui::GuiShellAction;
 
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
+        GuiShellAction::SetColorScheme(request) => owner.select_color_scheme_from_gui(request),
+        GuiShellAction::SetTheme(name) => owner.select_theme_from_gui(name),
         GuiShellAction::Parameter { mutation, request } => {
             owner.edit_parameter_from_gui(*mutation, request)
         }

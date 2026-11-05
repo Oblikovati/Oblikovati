@@ -16,6 +16,9 @@ enum NativeDocumentCommand {
 /// Command feedback stays on the owner until the native window consumes it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DesktopCommandNotice {
+    ThemeFilesDeclined {
+        causes: Vec<String>,
+    },
     DocumentOpened {
         document: u64,
         path: String,
@@ -71,6 +74,9 @@ impl DesktopCommandNotice {
     /// Explain the result for native feedback; example: `notice.message()` in a title or status panel.
     pub fn message(&self) -> String {
         match self {
+            Self::ThemeFilesDeclined { causes } => {
+                format!("Theme files declined: {}", causes.join("; "))
+            }
             Self::DocumentOpened { document, path } => {
                 format!("Opened document {document}: {path}")
             }

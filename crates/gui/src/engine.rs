@@ -52,6 +52,10 @@ impl GuiFrameEngine {
             document_tabs: Default::default(),
         })
     }
+    /// Apply semantic chrome colours on the GUI thread; example: `engine.apply_theme(library.active())`.
+    pub fn apply_theme(&mut self, theme: &oblikovati_model::theme::ThemeDefinition) {
+        crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
+    }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
     pub fn with_clipboard(clipboard: crate::GuiClipboard) -> Result<Self, String> {
         let mut owner = Self::new()?;
@@ -67,6 +71,9 @@ impl GuiFrameEngine {
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
         self.document_files.validate()?;
+        if let Some(theme) = &request.commands.theme {
+            crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
+        }
         draw_controls(
             &mut self.context,
             request,

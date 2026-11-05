@@ -349,3 +349,30 @@ mod chain_recipe_tests;
 
 #[path = "native_scene/inferred_chain.rs"]
 mod inferred_chain_tests;
+
+/// Apply the same owner palette before recording a model-only baseline; example: `apply_application_background(owner, window)`.
+pub(super) fn apply_application_background(
+    owner: &dyn crate::HeadWork,
+    window: &mut NativeHeadWindow,
+) {
+    let state = owner.gui_command_state().unwrap();
+    let palette = state.color_scheme.expect("native owner palette");
+    window.view.set_background(palette.background()).unwrap();
+}
+/// Keep exact pixel checks bounded on failure; example: `assert_same_native_pixels(&actual, &expected)`.
+pub(super) fn assert_same_native_pixels(actual: &ViewportCapture, expected: &ViewportCapture) {
+    assert_eq!(actual.extent, expected.extent);
+    assert_eq!(actual.rgba.len(), expected.rgba.len());
+    let mismatch = actual
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(expected.rgba.as_chunks::<4>().0)
+        .enumerate()
+        .find(|(_, (actual, expected))| actual != expected);
+    assert!(
+        mismatch.is_none(),
+        "expected identical native pixels; first mismatch {mismatch:?}"
+    );
+}

@@ -8,6 +8,8 @@ fn parameter_request() -> GuiFrameRequest {
         events: Vec::new(),
         status: None,
         commands: GuiCommandState {
+            theme: None,
+            color_scheme: None,
             document: Some(1),
             authoring: GuiAuthoringContext::Part,
             document_type: Some(oblikovati_api::types::DOCUMENT_PART),
