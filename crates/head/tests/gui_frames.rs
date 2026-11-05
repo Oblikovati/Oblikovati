@@ -67,13 +67,25 @@ fn refused_authoring_command_reports_feedback_without_stopping_the_window() {
     assert!(!report_authoring_result(&mut window, Ok(false)).unwrap());
 }
 #[test]
-fn unavailable_sketch_commands_remain_local_feedback_and_keep_input_routing_alive() {
+fn unavailable_authoring_commands_remain_local_feedback_and_keep_input_routing_alive() {
     let mut window = FakeGuiWindow::default();
     let mut owner = FakeGuiOwner::default();
     for action in [
         GuiShellAction::StartSketchXY,
         GuiShellAction::FinishSketch,
         GuiShellAction::Rectangle,
+        GuiShellAction::OpenDocument(oblikovati_api::wire::OpenDocumentArgs {
+            full_document_name: "/missing.opd".into(),
+            ..Default::default()
+        }),
+        GuiShellAction::CloseDocument(oblikovati_api::wire::CloseDocumentArgs {
+            id: 1,
+            force: false,
+        }),
+        GuiShellAction::SaveDocumentAs(oblikovati_api::wire::SaveDocumentAsArgs {
+            document: 1,
+            new_full_document_name: "/draft.opd".into(),
+        }),
     ] {
         window.packets.push_back(HeadGuiUpdate {
             actions: vec![action],
@@ -81,7 +93,7 @@ fn unavailable_sketch_commands_remain_local_feedback_and_keep_input_routing_aliv
         });
         assert!(advance_gui(&mut window, &mut owner, None).unwrap().changed);
     }
-    assert_eq!(window.notices.len(), 3);
+    assert_eq!(window.notices.len(), 6);
     assert!(owner.inputs.is_empty());
     assert!(window.inputs.is_empty());
     assert!(!advance_gui(&mut window, &mut owner, None).unwrap().changed);

@@ -26,6 +26,11 @@ pub(super) struct NativeGui {
     clipboard: Option<GuiClipboard>,
 }
 impl NativeGui {
+    pub(super) fn request_save_path(&mut self, document: u64) -> Result<(), String> {
+        self.engine.request_save_path(document)?;
+        self.deadline = Some(Duration::ZERO);
+        Ok(())
+    }
     pub(super) fn require_publication(&mut self) {
         self.dirty = true;
     }
@@ -166,6 +171,22 @@ impl NativeGui {
     }
 }
 impl NativeHeadWindow {
+    fn ensure_native_gui(&mut self) -> Result<(), String> {
+        if self.gui.is_some() {
+            return Ok(());
+        }
+        let clipboard =
+            GuiClipboard::new(self.clipboard.clone(), super::clipboard::CLIPBOARD_BYTES)?;
+        let mut gui = NativeGui::new(Some(clipboard))?;
+        if let Some(crate::DesktopCommandNotice::SavePathRequired { document }) =
+            &self.command_notice
+        {
+            gui.request_save_path(*document)?;
+        }
+        self.gui = Some(gui);
+        self.view.set_status_text("")?;
+        Ok(())
+    }
     fn native_gui_notice(&self) -> Result<Option<String>, String> {
         let mut messages = self
             .command_notice
@@ -198,12 +219,7 @@ impl NativeHeadWindow {
             return Ok(Default::default());
         }
         let extent = self.view.drawable_extent()?;
-        if self.gui.is_none() {
-            let clipboard =
-                GuiClipboard::new(self.clipboard.clone(), super::clipboard::CLIPBOARD_BYTES)?;
-            self.gui = Some(NativeGui::new(Some(clipboard))?);
-            self.view.set_status_text("")?;
-        }
+        self.ensure_native_gui()?;
         let now = self.gui_epoch.elapsed();
         let notice = self.native_gui_notice()?;
         let gui = self.gui.as_mut().expect("initialized GUI");

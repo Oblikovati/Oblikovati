@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
+    OpenDocument(oblikovati_api::wire::OpenDocumentArgs),
+    SaveDocumentAs(oblikovati_api::wire::SaveDocumentAsArgs),
     EditSketch {
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
@@ -68,6 +71,13 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::OpenDocument(_) => !state.transaction_open,
+            Self::CloseDocument(request) => {
+                state.document == Some(request.id) && !state.transaction_open
+            }
+            Self::SaveDocumentAs(request) => {
+                state.document == Some(request.document) && !state.transaction_open
+            }
             Self::EditSketch { document, sketch } => {
                 state.document == Some(*document)
                     && state.authoring != GuiAuthoringContext::Sketch

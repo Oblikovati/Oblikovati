@@ -33,6 +33,7 @@ pub struct GuiFrameEngine {
     context: Context,
     atlas: GuiAtlas,
     parameter_editor: crate::parameters::GuiParameterEditor,
+    document_files: crate::files::GuiDocumentFiles,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -44,6 +45,7 @@ impl GuiFrameEngine {
             context,
             atlas,
             parameter_editor: Default::default(),
+            document_files: Default::default(),
         })
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
@@ -60,7 +62,18 @@ impl GuiFrameEngine {
     /// Example: `engine.frame(&request)?` returns draws, actions, and channel capture requests.
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
-        draw_controls(&mut self.context, request, &mut self.parameter_editor)
+        self.document_files.validate()?;
+        draw_controls(
+            &mut self.context,
+            request,
+            &mut self.parameter_editor,
+            &mut self.document_files,
+        )
+    }
+    /// Request a path for the owner's unsaved document without writing it.
+    /// Example: `engine.request_save_path(document)?` after a SavePathRequired notice.
+    pub fn request_save_path(&mut self, document: u64) -> Result<(), String> {
+        self.document_files.request_save_path(document)
     }
 }
 
@@ -132,6 +145,7 @@ fn draw_controls(
     context: &mut Context,
     request: &GuiFrameRequest,
     parameter_editor: &mut crate::parameters::GuiParameterEditor,
+    document_files: &mut crate::files::GuiDocumentFiles,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
     let ui = context.frame();
@@ -142,6 +156,7 @@ fn draw_controls(
         request.status.as_deref(),
         &mut selected,
         parameter_editor,
+        document_files,
     );
     parameter_editor.panel(ui, &request.commands, &mut selected);
     crate::browser::panel(
@@ -150,6 +165,7 @@ fn draw_controls(
         request.extent[1] as f32 / request.framebuffer_scale[1],
         &mut selected,
     );
+    document_files.panel(ui, &request.commands, &mut selected);
     let snapshot = capture_frame(context.render(), request.extent)?;
     Ok(GuiFrameOutput {
         draws: snapshot,
@@ -164,6 +180,7 @@ fn shell_panel(
     status: Option<&str>,
     selected: &mut Vec<GuiShellAction>,
     parameter_editor: &mut crate::parameters::GuiParameterEditor,
+    document_files: &mut crate::files::GuiDocumentFiles,
 ) {
     ui.window("Oblikovati")
         .position([8., 8.], Condition::Always)
@@ -174,6 +191,8 @@ fn shell_panel(
             shell_buttons(ui, state, selected);
             ui.same_line();
             parameter_editor.toolbar(ui, state);
+            ui.same_line();
+            document_files.menu(ui, state, selected);
             ui.text_wrapped(status.unwrap_or("Document commands"));
         });
 }

@@ -4,6 +4,8 @@ use crate::{HeadGuiUpdate, HeadWork};
 use oblikovati_gui::GuiCommandState;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
 use scene_tests::{capture_framebuffer, native_set, open_native_part, submit_native_scene};
+#[path = "native_gui_loop/files.rs"]
+mod files;
 #[path = "native_gui_loop/parameters.rs"]
 mod parameters;
 struct ScriptedGuiWindow {
@@ -177,6 +179,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(!owner.placement_active());
     verify_browser_reentry_pixels(&mut window, &mut owner, edit);
     parameters::edit_size_and_history(&mut window, &mut owner, edit);
+    let _saved_directory = files::save_rectangle_file(&mut window, &mut owner, edit);
     owner.finish().unwrap();
     window.finish().unwrap();
 }

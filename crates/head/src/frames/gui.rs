@@ -3,6 +3,8 @@ use super::{HeadWindow, HeadWork, ViewportEvent, synchronize_sketch_view};
 use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::{ViewportInput, ViewportKey};
 use std::time::Duration;
+#[path = "gui_authoring.rs"]
+mod authoring;
 /// GUI work joins the existing event and wake paths; lifecycle events remain owner-visible.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct HeadGuiUpdate {
@@ -19,45 +21,21 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
     for action in &update.actions {
-        if let GuiShellAction::EditSketch { document, sketch } = action {
-            update.changed |= report_authoring_result(
-                window,
-                owner.edit_existing_sketch_from_gui(*document, *sketch),
-            )?;
-            update.changed |= synchronize_sketch_view(window, owner)?;
-            continue;
-        }
-        if let GuiShellAction::Parameter { mutation, request } = action {
-            update.changed |=
-                report_authoring_result(window, owner.edit_parameter_from_gui(*mutation, request))?;
-            continue;
-        }
-        if *action == GuiShellAction::Rectangle {
-            update.changed |= report_authoring_result(window, owner.place_rectangle_from_gui())?;
-            continue;
-        }
-        if matches!(
-            action,
-            GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch
-        ) {
-            update.changed |= report_authoring_result(
-                window,
-                owner.edit_sketch_from_gui(*action == GuiShellAction::StartSketchXY),
-            )?;
-            update.changed |= synchronize_sketch_view(window, owner)?;
-            continue;
-        }
-        if *action == GuiShellAction::NewPart {
-            update.changed |= report_authoring_result(window, owner.create_part_document())?;
-            continue;
-        }
-        let event = ViewportEvent::Input(ViewportInput::Key {
-            key: action_key(action).ok_or("GUI action: expected a keyboard command")?,
-            pressed: true,
-        });
-        update.changed |= dispatch_frame_input(window, owner, &event)?;
+        update.changed |= dispatch_gui_action(window, owner, action)?;
     }
     Ok(update)
+}
+fn dispatch_gui_action(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    action: &GuiShellAction,
+) -> Result<bool, String> {
+    if let Some(key) = action_key(action) {
+        let event = ViewportEvent::Input(ViewportInput::Key { key, pressed: true });
+        return dispatch_frame_input(window, owner, &event);
+    }
+    let changed = report_authoring_result(window, authoring::apply(owner, action))?;
+    Ok(synchronize_sketch_view(window, owner)? || changed)
 }
 fn report_authoring_result(
     window: &mut dyn HeadWindow,
@@ -74,6 +52,9 @@ fn report_authoring_result(
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
         GuiShellAction::Parameter { .. }
+        | GuiShellAction::OpenDocument(_)
+        | GuiShellAction::CloseDocument(_)
+        | GuiShellAction::SaveDocumentAs(_)
         | GuiShellAction::EditSketch { .. }
         | GuiShellAction::Rectangle
         | GuiShellAction::NewPart

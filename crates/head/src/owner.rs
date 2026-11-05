@@ -238,6 +238,33 @@ impl<
         self.begin_sketch_edit(document, sketch)?;
         Ok(true)
     }
+    fn open_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::OpenDocumentArgs,
+    ) -> Result<bool, String> {
+        let opened = oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .open(request)
+            .map_err(|cause| cause.to_string())?;
+        self.command_notice = Some(DesktopCommandNotice::DocumentOpened {
+            document: opened.id,
+            path: request.full_document_name.clone(),
+        });
+        Ok(true)
+    }
+    fn close_document_from_gui(
+        &mut self,
+        request: &oblikovati_api::wire::CloseDocumentArgs,
+    ) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .close(request)
+            .map_err(|cause| cause.to_string())?;
+        self.command_notice = Some(DesktopCommandNotice::DocumentClosed {
+            document: request.id,
+        });
+        Ok(true)
+    }
     fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
         let edit = self
             .active_sketch_edit()
