@@ -78,6 +78,19 @@ these boundaries and memory-only libraries. OS XTest created two similarly named
 copies, reopened the selected copy, deleted it, and reopened Dark. The other copy
 and original vendor XML remained intact. All three desktops closed normally.
 
+Committed sketch curves and point markers now use `SketchGeometry`; transient
+outlines use `SketchPreview`, matching Go's `sketchThemeColors`. Palette changes
+rebuild both overlays before publishing them, invalidate captures, and keep the
+model generation and source geometry unchanged. The native tests cover scene
+refresh, zoom resampling, preview clear, repeated selection, sRGB midtones, and
+opaque, half-opacity and transparent colours. Predefined AlphaSprite markers
+ignore material opacity in the pinned kernel, so the host authors an RGBA sprite
+from the kernel's own OPlus mask. Martensite owns the mask and rasterization.
+Live OS input created a parameter-driven rectangle with green preview and red
+committed geometry, switched it to Light's grey and back, then saved and reopened
+it. MCPBridge confirmed a healthy DOF=0 sketch; completed captures confirmed each
+colour. Both desktops closed normally.
+
 Apply the selection/highlight colours to selection rendering. OS XTest selection of all four schemes has passed with Go
 MCPBridge queries and pixel samples from completed window captures. High Contrast
 stays black when the chrome theme changes; Presentation and Sky retain their

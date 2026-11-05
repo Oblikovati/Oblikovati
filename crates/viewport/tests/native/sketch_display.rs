@@ -8,7 +8,7 @@ use oblikovati_model::{
     },
 };
 use oblikovati_viewport::{ViewportNavigation, ViewportSketchDisplay};
-fn packet() -> ViewportSketchDisplay {
+pub(super) fn packet() -> ViewportSketchDisplay {
     let mut geometry = Sketch2D::default();
     for (id, point) in [(100, [-5., 0.]), (101, [5., 0.]), (102, [0., 0.])] {
         geometry.add_defining_point(Id(id), point).unwrap();

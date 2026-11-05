@@ -9,6 +9,13 @@ impl Viewport {
     ) -> Result<bool, String> {
         self.update_overlay(|render| render.sketch_display(sketches))
     }
+    /// Restyle existing committed and preview geometry together; example: `viewport.set_sketch_palette(&palette)?`.
+    pub fn set_sketch_palette(
+        &mut self,
+        palette: &crate::ViewportSketchPalette,
+    ) -> Result<bool, String> {
+        self.update_overlay(|render| render.set_sketch_palette(palette))
+    }
     /// Inspect every local display failure; example: `viewport.sketch_display_declines()?` for visible feedback.
     pub fn sketch_display_declines(&self) -> Result<&[crate::ViewportSketchDecline], String> {
         Ok(self.live()?.sketch_declines())

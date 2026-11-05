@@ -112,8 +112,12 @@ impl HeadWindow for NativeHeadWindow {
             Some(palette) => self.view.set_background(palette.background())?,
             None => false,
         };
+        let sketch_changed = match &commands.theme {
+            Some(theme) => self.view.set_sketch_palette(theme.sketch_palette())?,
+            None => false,
+        };
         let mut update = self.advance_native_gui(event, commands)?;
-        update.changed |= changed;
+        update.changed |= changed || sketch_changed;
         Ok(update)
     }
 

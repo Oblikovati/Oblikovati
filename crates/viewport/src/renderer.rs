@@ -15,6 +15,8 @@ mod background;
 #[path = "renderer/navigation.rs"]
 mod navigation;
 mod sketch_display;
+mod sketch_marker;
+mod sketch_palette;
 mod sketch_preview;
 mod sketch_structure;
 mod sketch_vertices;
@@ -26,6 +28,7 @@ pub(crate) struct SavedViewCamera {
 }
 pub(crate) struct RenderView {
     pub background: Option<crate::ViewportBackground>,
+    sketch_palette: crate::ViewportSketchPalette,
     pub viewer: Handle<V3dViewer>,
     pub view: Handle<dyn V3dViewSource>,
     pub renderer: Handle<Graphic3dRenderView>,
@@ -53,6 +56,9 @@ impl RenderView {
             view,
             renderer,
             background: None,
+            sketch_palette: crate::ViewportSketchPalette::from_theme(
+                &oblikovati_model::theme::ThemeDefinition::dark()?,
+            ),
             structures: Vec::new(),
             status: Default::default(),
             preview: Default::default(),
@@ -190,7 +196,12 @@ impl RenderView {
         preview: Option<&crate::ViewportSketchPreview>,
     ) -> Result<bool, String> {
         let deflection = self.sketch_deflection()?;
-        self.preview.submit(&self.viewer, preview, deflection)
+        self.preview.submit(
+            &self.viewer,
+            preview,
+            deflection,
+            &self.sketch_palette.preview,
+        )
     }
 }
 

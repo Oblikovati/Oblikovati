@@ -11,6 +11,7 @@ pub struct GuiThemeState {
     deletion_available: bool,
     names: Vec<String>,
     palette: ThemePalette,
+    sketch_palette: oblikovati_viewport::ViewportSketchPalette,
     revision: u64,
 }
 impl GuiThemeState {
@@ -28,6 +29,9 @@ impl GuiThemeState {
                 .map(|theme| theme.name().into())
                 .collect(),
             palette: library.active().palette().clone(),
+            sketch_palette: oblikovati_viewport::ViewportSketchPalette::from_theme(
+                library.active(),
+            ),
             revision: library.revision(),
         }
     }
@@ -56,6 +60,10 @@ impl GuiThemeState {
     }
     pub(crate) fn save_available(&self) -> bool {
         self.save_available
+    }
+    /// Read the same sketch palette used by native rendering; example: `viewport.set_sketch_palette(state.sketch_palette())?`.
+    pub fn sketch_palette(&self) -> &oblikovati_viewport::ViewportSketchPalette {
+        &self.sketch_palette
     }
     /// Read semantic colours without mutable ownership; example: `state.palette()[&TOKEN_CHROME_TEXT]`.
     pub fn palette(&self) -> &ThemePalette {
@@ -87,6 +95,10 @@ mod tests {
         assert_eq!(before.active, "Dark");
         assert_eq!(after.active, "Light");
         assert_eq!(after.palette(), library.active().palette());
+        assert_eq!(
+            after.sketch_palette(),
+            &oblikovati_viewport::ViewportSketchPalette::from_theme(library.active())
+        );
     }
 }
 

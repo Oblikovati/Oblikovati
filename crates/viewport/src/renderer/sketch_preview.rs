@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::sketch_structure::{self, SketchStructure};
 use crate::ViewportSketchPreview;
-use martensite_tkernel::quantity::{Color, NamedColor};
 use martensite_tkservice::aspect::AspectTypeOfLine;
 use martensite_tkv3d::v3d::V3dViewer;
 use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_placement_preview_with_policy,
     sample_sketch_preview_members,
 };
+use oblikovati_model::theme::Rgba;
 #[derive(Default)]
 pub(super) struct SketchPreviewOverlay {
     pub(super) source: Option<(ViewportSketchPreview, f64)>,
     structures: Vec<SketchStructure>,
+    color: Option<Rgba>,
 }
 impl SketchPreviewOverlay {
     pub(super) fn submit(
@@ -19,21 +20,37 @@ impl SketchPreviewOverlay {
         viewer: &V3dViewer,
         source: Option<&ViewportSketchPreview>,
         deflection: f64,
+        color: &Rgba,
     ) -> Result<bool, String> {
         let key = source.map(|source| (source.clone(), deflection));
-        if self.source == key {
+        if self.source == key && (source.is_none() || self.color.as_ref() == Some(color)) {
             return Ok(false);
         }
-        let replacement = source
-            .map(|source| build(viewer, source, deflection))
+        let replacement = Self::replacement(viewer, source, deflection, color)?;
+        replacement.show();
+        *self = replacement;
+        Ok(true)
+    }
+    pub(super) fn replacement(
+        viewer: &V3dViewer,
+        source: Option<&ViewportSketchPreview>,
+        deflection: f64,
+        color: &Rgba,
+    ) -> Result<Self, String> {
+        let structures = source
+            .map(|source| build(viewer, source, deflection, color))
             .transpose()?
             .unwrap_or_default();
-        for structure in &replacement {
+        Ok(Self {
+            source: source.map(|source| (source.clone(), deflection)),
+            structures,
+            color: Some(color.clone()),
+        })
+    }
+    pub(super) fn show(&self) {
+        for structure in &self.structures {
             structure.0.display();
         }
-        self.structures = replacement;
-        self.source = key;
-        Ok(true)
     }
     pub(super) fn clear(&mut self) {
         self.structures.clear();
@@ -44,6 +61,7 @@ fn build(
     viewer: &V3dViewer,
     source: &ViewportSketchPreview,
     deflection: f64,
+    color: &Rgba,
 ) -> Result<Vec<SketchStructure>, String> {
     let options = SketchSamplingOptionsV1 {
         deflection,
@@ -61,21 +79,20 @@ fn build(
     };
     sampled
         .iter()
-        .map(|member| build_member(viewer, source.plane(), member))
+        .map(|member| build_member(viewer, source.plane(), member, color))
         .collect()
 }
 fn build_member(
     viewer: &V3dViewer,
     plane: oblikovati_model::sketch::SketchPlane,
     member: &oblikovati_martensite::planar_curve::sketch::PlacementPreviewMember,
+    color: &Rgba,
 ) -> Result<SketchStructure, String> {
     let kind = if member.construction {
         AspectTypeOfLine::Dash
     } else {
         AspectTypeOfLine::Solid
     };
-    // The pinned Go dark theme uses white for transient geometry.
-    let color = Color::named(NamedColor::WHITE);
     match &member.primitive {
         SketchDisplayPrimitive::Point(point) => {
             sketch_structure::point(viewer, plane, *point, color, true)

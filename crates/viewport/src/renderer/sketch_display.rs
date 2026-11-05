@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::sketch_structure::{self, SketchStructure};
 use crate::{ViewportSketchDecline, ViewportSketchDisplay};
-use martensite_tkernel::quantity::{Color, ColorSpace};
 use martensite_tkservice::aspect::AspectTypeOfLine;
 use martensite_tkv3d::v3d::V3dViewer;
 use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayEntity, SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_sketch_display,
 };
+use oblikovati_model::theme::Rgba;
 #[derive(Default)]
 pub(super) struct SketchDisplayOverlay {
     pub(super) source: Option<(Vec<ViewportSketchDisplay>, f64)>,
     pub(super) declines: Vec<ViewportSketchDecline>,
     structures: Vec<SketchStructure>,
+    color: Rgba,
 }
 impl SketchDisplayOverlay {
     pub(super) fn is_empty(&self) -> bool {
@@ -23,34 +24,38 @@ impl SketchDisplayOverlay {
         viewer: &V3dViewer,
         source: &[ViewportSketchDisplay],
         deflection: f64,
+        color: &Rgba,
     ) -> Result<bool, String> {
-        if self
-            .source
-            .as_ref()
-            .is_some_and(|(previous, error)| previous == source && *error == deflection)
-        {
+        if self.source.as_ref().is_some_and(|(previous, error)| {
+            previous == source && *error == deflection && &self.color == color
+        }) {
             return Ok(false);
         }
-        let replacement = Self::replacement(viewer, source, deflection)?;
-        for structure in &replacement.structures {
-            structure.0.display();
-        }
+        let replacement = Self::replacement(viewer, source, deflection, color)?;
+        replacement.show();
         *self = replacement;
         Ok(true)
     }
-    fn replacement(
+    pub(super) fn replacement(
         viewer: &V3dViewer,
         source: &[ViewportSketchDisplay],
         deflection: f64,
+        color: &Rgba,
     ) -> Result<Self, String> {
         let mut result = Self {
             source: Some((source.to_vec(), deflection)),
+            color: color.clone(),
             ..Self::default()
         };
         for sketch in source {
             result.append_sketch(viewer, sketch, deflection)?;
         }
         Ok(result)
+    }
+    pub(super) fn show(&self) {
+        for structure in &self.structures {
+            structure.0.display();
+        }
     }
     fn append_sketch(
         &mut self,
@@ -99,7 +104,7 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         entity: &SketchDisplayEntity,
     ) {
-        match build_entity(viewer, sketch, entity) {
+        match build_entity(viewer, sketch, entity, &self.color) {
             Ok(structure) => self.structures.push(structure),
             Err(cause) => self
                 .declines
@@ -116,10 +121,8 @@ fn build_entity(
     viewer: &V3dViewer,
     sketch: &ViewportSketchDisplay,
     entity: &SketchDisplayEntity,
+    color: &Rgba,
 ) -> Result<SketchStructure, String> {
-    // Go's default dark theme maps TokenSketchGeometry to wire_edit #a0a0a0.
-    let color = Color::new(160. / 255., 160. / 255., 160. / 255., ColorSpace::Srgb)
-        .map_err(|cause| cause.to_string())?;
     let kind = entity_line_style(entity);
     match &entity.primitive {
         SketchDisplayPrimitive::Point(point) => {
@@ -136,7 +139,12 @@ impl super::RenderView {
         source: &[ViewportSketchDisplay],
     ) -> Result<bool, String> {
         let deflection = self.sketch_deflection()?;
-        self.sketches.submit(&self.viewer, source, deflection)
+        self.sketches.submit(
+            &self.viewer,
+            source,
+            deflection,
+            &self.sketch_palette.geometry,
+        )
     }
     pub(crate) fn refresh_sketch_display(&mut self) -> Result<bool, String> {
         let deflection = self.sketch_deflection()?;
@@ -147,7 +155,12 @@ impl super::RenderView {
             return Ok(false);
         }
         let source = source.clone();
-        self.sketches.submit(&self.viewer, &source, deflection)
+        self.sketches.submit(
+            &self.viewer,
+            &source,
+            deflection,
+            &self.sketch_palette.geometry,
+        )
     }
     pub(crate) fn sketch_declines(&self) -> &[ViewportSketchDecline] {
         &self.sketches.declines
