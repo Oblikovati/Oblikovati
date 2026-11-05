@@ -64,23 +64,25 @@ impl NativeHeadWindow {
     }
 }
 impl NativeHeadWindow {
-    fn synchronize_browser_highlights(
+    fn synchronize_sketch_highlights(
         &mut self,
         commands: &oblikovati_gui::GuiCommandState,
     ) -> Result<bool, String> {
-        let selected = commands
-            .browser
+        let matching_document = self
+            .sketch_scene
             .as_ref()
-            .filter(|_| {
-                self.sketch_scene
-                    .as_ref()
-                    .and_then(|scene| scene.source)
-                    .map(|(document, _)| document)
-                    == commands.document
-            })
-            .map_or(&[][..], |browser| browser.selected_sketches.as_slice());
-        self.view.set_selected_sketches(selected)
+            .and_then(|scene| scene.source)
+            .map(|(document, _)| document)
+            == commands.document;
+        let empty = oblikovati_viewport::ViewportSketchSelection::default();
+        let selected = if matching_document {
+            &commands.sketch_selection
+        } else {
+            &empty
+        };
+        self.view.set_sketch_selection(selected)
     }
+
     fn apply_navigation_inputs(&mut self, inputs: &[ViewportEvent]) -> Result<bool, String> {
         let mut changed = false;
         for event in inputs {
@@ -133,7 +135,7 @@ impl HeadWindow for NativeHeadWindow {
             Some(theme) => self.view.set_sketch_palette(theme.sketch_palette())?,
             None => false,
         };
-        let selection_changed = self.synchronize_browser_highlights(commands)?;
+        let selection_changed = self.synchronize_sketch_highlights(commands)?;
         let mut update = self.advance_native_gui(event, commands)?;
         update.changed |= changed || sketch_changed || selection_changed;
         Ok(update)
@@ -178,6 +180,18 @@ impl HeadWindow for NativeHeadWindow {
         plane: oblikovati_model::sketch::SketchPlane,
     ) -> Result<Option<[f64; 2]>, String> {
         NativeHeadWindow::sketch_point(self, pixel, plane)
+    }
+
+    fn navigation_active(&self) -> bool {
+        self.navigation.captures_pointer()
+    }
+
+    fn sketch_pixel(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        point: [f64; 2],
+    ) -> Result<[i32; 2], String> {
+        NativeHeadWindow::sketch_pixel(self, plane, point)
     }
 
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {

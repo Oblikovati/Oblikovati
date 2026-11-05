@@ -16,13 +16,13 @@ impl Viewport {
     ) -> Result<bool, String> {
         self.update_overlay(|render| render.set_sketch_palette(palette))
     }
-    /// Restyle whole sketches selected by the active document owner.
-    /// Example: `viewport.set_selected_sketches(&[sketch])?` after a browser click.
-    pub fn set_selected_sketches(
+    /// Restyle whole sketches and individual entities selected by the active document owner.
+    /// Example: `viewport.set_sketch_selection(&selection)?` after a browser click.
+    pub fn set_sketch_selection(
         &mut self,
-        selected: &[oblikovati_model::document_sketch::DocumentSketchId],
+        selected: &crate::ViewportSketchSelection,
     ) -> Result<bool, String> {
-        self.update_overlay(|render| render.set_selected_sketches(selected))
+        self.update_overlay(|render| render.set_sketch_selection(selected))
     }
     /// Inspect every local display failure; example: `viewport.sketch_display_declines()?` for visible feedback.
     pub fn sketch_display_declines(&self) -> Result<&[crate::ViewportSketchDecline], String> {

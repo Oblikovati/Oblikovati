@@ -72,7 +72,11 @@ impl<
         for input in inputs {
             changed |= self.process_document_inputs(&[*input])?;
             changed |= self.check_placement_context();
+            let placing = self.placement_active();
             changed |= self.process_placement_event(*input, window);
+            if !placing {
+                changed |= self.process_sketch_pick(*input, window);
+            }
         }
         Ok(changed)
     }

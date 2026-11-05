@@ -45,9 +45,12 @@ impl PlanarCurveFailure {
         }
     }
     pub(super) fn incomplete() -> Self {
+        Self::incomplete_operation("planar intersection")
+    }
+    pub(super) fn incomplete_operation(operation: &str) -> Self {
         Self {
             kind: PlanarCurveFailureKind::Incomplete,
-            message: "planar intersection is not done: expected a completed native result".into(),
+            message: format!("{operation} is not done: expected a completed native result"),
             cause: None,
         }
     }

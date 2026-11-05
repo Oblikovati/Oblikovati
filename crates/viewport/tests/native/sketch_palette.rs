@@ -160,8 +160,11 @@ fn native_selection_restyles_only_committed_sketches_and_survives_refresh() {
     let before = view.redraw().unwrap();
     assert!(colour_count(&before, [255, 0, 0]) > 10);
     assert!(
-        view.set_selected_sketches(&[geometry.sketch, geometry.sketch])
-            .unwrap()
+        view.set_sketch_selection(&oblikovati_viewport::ViewportSketchSelection {
+            sketches: vec![geometry.sketch, geometry.sketch],
+            ..Default::default()
+        })
+        .unwrap()
     );
     let selected = view.redraw().unwrap();
     assert_eq!(selected.scene_generation, before.scene_generation);
@@ -170,7 +173,13 @@ fn native_selection_restyles_only_committed_sketches_and_survives_refresh() {
     assert_eq!(colour_count(&selected, [255, 0, 0]), 0);
     verify_selected_refresh(&mut view, &geometry);
     super::sketch_display::close_display(&runtime, &mut view);
-    assert!(view.set_selected_sketches(&[]).is_err());
+    assert!(
+        view.set_sketch_selection(&oblikovati_viewport::ViewportSketchSelection {
+            sketches: vec![],
+            ..Default::default()
+        })
+        .is_err()
+    );
 }
 fn selection_palette(selected: [f32; 3]) -> ViewportSketchPalette {
     let mut theme = ThemeDefinition::dark()
@@ -200,7 +209,14 @@ fn verify_selected_refresh(
     view: &mut Viewport,
     geometry: &oblikovati_viewport::ViewportSketchDisplay,
 ) {
-    assert!(!view.set_selected_sketches(&[geometry.sketch]).unwrap());
+    assert!(
+        !view
+            .set_sketch_selection(&oblikovati_viewport::ViewportSketchSelection {
+                sketches: vec![geometry.sketch],
+                ..Default::default()
+            })
+            .unwrap()
+    );
     assert!(
         !view
             .set_sketch_display(std::slice::from_ref(geometry))
@@ -214,7 +230,11 @@ fn verify_selected_refresh(
     assert!(colour_count(&view.redraw().unwrap(), [0, 0, 255]) > 10);
     view.set_sketch_palette(&selection_palette([0., 0., 1.]))
         .unwrap();
-    view.set_selected_sketches(&[]).unwrap();
+    view.set_sketch_selection(&oblikovati_viewport::ViewportSketchSelection {
+        sketches: vec![],
+        ..Default::default()
+    })
+    .unwrap();
     assert!(colour_count(&view.redraw().unwrap(), [255, 0, 0]) > 10);
 }
 
@@ -234,7 +254,11 @@ fn native_selection_uses_sketch_identity_and_restyles_selected_theme_colours() {
     view.set_sketch_palette(&selection_palette([0., 0., 1.]))
         .unwrap();
     view.set_sketch_display(&[first.clone(), second]).unwrap();
-    view.set_selected_sketches(&[first.sketch]).unwrap();
+    view.set_sketch_selection(&oblikovati_viewport::ViewportSketchSelection {
+        sketches: vec![first.sketch],
+        ..Default::default()
+    })
+    .unwrap();
     assert_selection_colours(&mut view, [0, 0, 255]);
     view.set_sketch_palette(&selection_palette([0., 1., 1.]))
         .unwrap();
@@ -245,4 +269,40 @@ fn assert_selection_colours(view: &mut Viewport, selected: [u8; 3]) {
     let capture = view.redraw().unwrap();
     assert!(colour_count(&capture, [255, 0, 0]) > 10);
     assert!(colour_count(&capture, selected) > 10);
+}
+
+#[test]
+fn individual_curve_and_hidden_endpoint_highlights_keep_other_entities_unselected() {
+    use oblikovati_model::sketch::SketchEntityId as Id;
+    use oblikovati_viewport::ViewportSketchSelection;
+    let (runtime, mut view) = super::sketch_display::open_display("Entity selection");
+    let geometry = super::sketch_display::packet();
+    view.set_sketch_palette(&selection_palette([0., 0., 1.]))
+        .unwrap();
+    view.set_sketch_display(std::slice::from_ref(&geometry))
+        .unwrap();
+    let selected = ViewportSketchSelection {
+        sketches: vec![],
+        entities: vec![(geometry.sketch, Id(1))],
+    };
+    assert!(view.set_sketch_selection(&selected).unwrap());
+    assert_selection_colours(&mut view, [0, 0, 255]);
+    assert!(
+        !view
+            .set_sketch_selection(&ViewportSketchSelection {
+                entities: vec![(geometry.sketch, Id(1)); 2],
+                ..Default::default()
+            })
+            .unwrap()
+    );
+    view.set_sketch_selection(&ViewportSketchSelection {
+        entities: vec![(geometry.sketch, Id(100))],
+        ..Default::default()
+    })
+    .unwrap();
+    assert_selection_colours(&mut view, [0, 0, 255]);
+    view.set_sketch_selection(&ViewportSketchSelection::default())
+        .unwrap();
+    assert_eq!(colour_count(&view.redraw().unwrap(), [0, 0, 255]), 0);
+    super::sketch_display::close_display(&runtime, &mut view);
 }

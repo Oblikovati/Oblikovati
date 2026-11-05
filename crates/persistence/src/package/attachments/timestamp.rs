@@ -61,21 +61,44 @@ pub fn format_attachment_time(stamp: Option<SystemTime>) -> Result<String, Packa
     let nanos = i128::try_from(duration.as_nanos())
         .map_err(|cause| error(&format!("{stamp:?}"), cause))?
         * sign;
+    format_known_time_nanos(nanos)
+}
+
+fn format_known_time_nanos(nanos: i128) -> Result<String, PackageCodecError> {
     if nanos == GO_ZERO_UNIX_NANOS {
         return Err(error(
-            &format!("{stamp:?}"),
+            &nanos.to_string(),
             "Go zero-time sentinel: expected None for an unknown attachment time",
         ));
     }
     let parsed = OffsetDateTime::from_unix_timestamp_nanos(nanos)
-        .map_err(|cause| error(&format!("{stamp:?}"), cause))?;
+        .map_err(|cause| error(&nanos.to_string(), cause))?;
     parsed
         .format(&Rfc3339)
-        .map_err(|cause| error(&format!("{stamp:?}"), cause))
+        .map_err(|cause| error(&nanos.to_string(), cause))
 }
 
 fn error(value: &str, cause: impl std::fmt::Display) -> PackageCodecError {
     PackageCodecError(format!(
         "attachment timestamp {value:?}: expected an exact RFC 3339 nanosecond timestamp: {cause}"
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn known_go_zero_time_is_refused_independent_of_the_native_clock_range() {
+        let cause = format_known_time_nanos(GO_ZERO_UNIX_NANOS).unwrap_err();
+        assert!(cause.to_string().contains("zero-time sentinel"));
+        assert!(cause.to_string().contains("expected None"));
+    }
+    #[test]
+    fn known_times_on_both_sides_of_epoch_preserve_each_nanosecond() {
+        for nanos in [-1, 0, 1, 1_000_000_001] {
+            let text = format_known_time_nanos(nanos).unwrap();
+            let parsed = OffsetDateTime::parse(&text, &Rfc3339).unwrap();
+            assert_eq!(parsed.unix_timestamp_nanos(), nanos);
+        }
+    }
 }

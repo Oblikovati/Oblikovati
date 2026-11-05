@@ -193,7 +193,9 @@ fn unsupported_output_timestamp_refuses_capture_without_mutation() {
 }
 
 #[test]
-fn go_zero_time_is_unknown_and_cannot_silently_replace_an_explicit_model_time() {
+fn go_zero_time_decodes_to_unknown_in_utc_and_equivalent_offsets() {
+    // #3795: Windows cannot represent year 1 as SystemTime. The formatter's
+    // portable nanosecond test checks explicit zero-time rejection on every OS.
     for text in ["0001-01-01T00:00:00Z", "0001-01-01T01:00:00+01:00"] {
         let original = package(&format!(
             "[{{name: link, kind: linked, fullFileName: file, lastKnownFileTime: '{text}'}}]"
@@ -208,25 +210,6 @@ fn go_zero_time_is_unknown_and_cannot_silently_replace_an_explicit_model_time() 
             &AttachmentContents::Linked { last_known: None }
         );
     }
-    let zero = SystemTime::UNIX_EPOCH
-        .checked_sub(Duration::from_secs(62_135_596_800))
-        .unwrap();
-    let mut attachments = DocumentAttachments::default();
-    attachments
-        .restore(
-            "link",
-            "file",
-            AttachmentContents::Linked {
-                last_known: Some(zero),
-            },
-            false,
-        )
-        .unwrap();
-    assert!(
-        package("[]")
-            .with_attachments(&attachments)
-            .unwrap_err()
-            .to_string()
-            .contains("zero-time sentinel")
-    );
+    // #3795: Windows cannot represent year 1 as SystemTime. The formatter's
+    // portable nanosecond test checks explicit zero-time rejection on every OS.
 }

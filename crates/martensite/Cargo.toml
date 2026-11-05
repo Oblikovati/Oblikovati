@@ -84,3 +84,7 @@ path = "tests/placement_preview.rs"
 [[test]]
 name = "sketch_display"
 path = "tests/sketch_display.rs"
+
+[[test]]
+name = "planar_pick"
+path = "tests/planar_pick.rs"

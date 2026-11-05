@@ -322,3 +322,21 @@ fn native_preview_recovery_removes_only_the_preview_failure_notice() {
     assert_eq!(window.command_notice, Some(notice));
     window.finish().unwrap();
 }
+
+#[test]
+fn native_selection_feedback_replaces_a_delivered_failure_and_updates_the_window() {
+    let mut window = NativeHeadWindow::open().unwrap();
+    window
+        .show_command_notice(crate::DesktopCommandNotice::SelectionFailed {
+            cause: "query declined".into(),
+        })
+        .unwrap();
+    assert!(matches!(
+        window.command_notice,
+        Some(crate::DesktopCommandNotice::SelectionFailed { .. })
+    ));
+    let notice = crate::DesktopCommandNotice::SelectionChanged { count: 1 };
+    window.show_command_notice(notice.clone()).unwrap();
+    assert_eq!(window.command_notice, Some(notice));
+    window.finish().unwrap();
+}

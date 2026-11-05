@@ -6,14 +6,25 @@ use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, Viewport
 #[derive(Default)]
 pub(super) struct PlanarInputWindow {
     pub(super) fail: bool,
+    pub(super) navigating: bool,
     pub(super) edge_on: bool,
 }
 impl HeadWindow for PlanarInputWindow {
+    fn navigation_active(&self) -> bool {
+        self.navigating
+    }
+
     fn sketch_point(&self, pixel: [i32; 2], _: SketchPlane) -> Result<Option<[f64; 2]>, String> {
         if self.fail {
             return Err("named projection failure".into());
         }
         Ok((!self.edge_on).then_some(pixel.map(f64::from)))
+    }
+    fn sketch_pixel(&self, _: SketchPlane, point: [f64; 2]) -> Result<[i32; 2], String> {
+        if self.fail {
+            return Err("named projection failure".into());
+        }
+        Ok(point.map(|coordinate| coordinate.round() as i32))
     }
     fn events(&mut self, _: usize) -> Result<Vec<ViewportEvent>, String> {
         Ok(Vec::new())
@@ -196,6 +207,7 @@ fn slot_projection_failure_and_invalid_second_point_keep_a_retryable_first_point
         Some(DesktopCommandNotice::PlacementFailed { .. })
     ));
     let failed = PlanarInputWindow {
+        navigating: false,
         fail: true,
         edge_on: false,
     };
@@ -242,6 +254,7 @@ fn inactive_owner_and_edge_on_planes_do_not_create_geometry() {
     let (mut owner, document, sketch) = slot_owner();
     let before = count(&owner, document, sketch);
     let edge = PlanarInputWindow {
+        navigating: false,
         edge_on: true,
         ..Default::default()
     };

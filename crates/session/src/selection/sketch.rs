@@ -34,6 +34,10 @@ impl SketchPick {
             target,
         }
     }
+    /// Read the checked sketch owner; example: `pick.sketch()` when routing an entity highlight.
+    pub fn sketch(&self) -> DocumentSketchId {
+        self.sketch
+    }
     /// Read the typed model identity without exposing mutable geometry.
     /// Example: `let target = pick.target();`.
     pub fn target(&self) -> SketchPickTarget {
