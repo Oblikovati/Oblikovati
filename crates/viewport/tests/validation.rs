@@ -1,5 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn drawable_extent_validation_keeps_signed_31_bit_limits_on_every_platform() {
+    assert_eq!(valid_extent([1, i32::MAX as u32]).unwrap(), [1, i32::MAX]);
+    for extent in [[0, 1], [1, 0], [u32::MAX, 1], [1, u32::MAX]] {
+        let cause = valid_extent(extent).unwrap_err();
+        assert!(
+            cause.contains(&format!("{extent:?}")) && cause.contains("positive 31-bit dimensions")
+        );
+    }
+}
 #[test]
 fn camera_vectors_and_projection_decline_invalid_inputs() {
     let changes: [fn(&mut ViewportCamera); 8] = [
