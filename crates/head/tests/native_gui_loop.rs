@@ -116,7 +116,9 @@ fn drive_pointer_clicks(
 #[test]
 fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     let native = NativeHeadWindow::open().unwrap();
-    let mut owner = native_owner(native.wake.clone()).unwrap();
+    let mut owner = native_owner(native.wake.clone())
+        .unwrap()
+        .with_themes(oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Dark").unwrap());
     let mut window = scripted_window(native);
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
     click_shell_position(&mut window, &mut owner, [40, 68]);
@@ -330,7 +332,7 @@ fn publish_gui_framebuffer(
     owner: &mut NativeDesktopOwner,
     window: &mut NativeHeadWindow,
 ) -> oblikovati_viewport::ViewportCapture {
-    scene_tests::apply_application_background(owner, window);
+    scene_tests::apply_application_appearance(owner, window);
     submit_native_scene(owner, window);
     capture_framebuffer(window)
 }

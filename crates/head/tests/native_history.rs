@@ -14,7 +14,7 @@ fn native_history_keys_restore_prism_pixels_without_changing_the_camera() {
         owner.document_owner_mut(),
         &directory.path().join("history.opd"),
     );
-    super::scene_tests::apply_application_background(&owner, &mut window);
+    super::scene_tests::apply_application_appearance(&owner, &mut window);
     let before = publish_native_scene(owner.document_owner_mut(), &mut window);
     native_set(owner.document_owner_mut(), "width", "6 cm");
     let edited = publish_native_scene(owner.document_owner_mut(), &mut window);
