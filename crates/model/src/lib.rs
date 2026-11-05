@@ -25,3 +25,7 @@ pub mod document_sketch;
 pub mod sketch;
 
 pub mod sketch_settings;
+
+pub mod theme;
+
+pub mod color_scheme;
