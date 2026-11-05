@@ -5,7 +5,7 @@ use oblikovati_model::{
     history::DocumentSketchCreation,
     sketch::SketchPlane,
 };
-fn request(plane: SketchPlane) -> DocumentSketchCreation {
+pub(super) fn request(plane: SketchPlane) -> DocumentSketchCreation {
     DocumentSketchCreation {
         name: "Edited sketch".into(),
         placement: SketchPlacement::Fixed(plane),

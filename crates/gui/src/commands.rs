@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    EditSketch {
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    },
     Parameter {
         mutation: GuiParameterMutation,
         request: oblikovati_api::wire::ParameterSetArgs,
@@ -31,6 +35,7 @@ pub enum GuiAuthoringContext {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    pub browser: Option<crate::GuiModelBrowser>,
     pub document: Option<u64>,
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,
     pub authoring: GuiAuthoringContext,
@@ -40,6 +45,12 @@ pub struct GuiCommandState {
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
+        if self.browser.is_some() && self.document.is_none() {
+            return Err("GUI browser document None: expected an active document identity".into());
+        }
+        if let Some(browser) = &self.browser {
+            browser.validate()?;
+        }
         for label in [&self.undo_label, &self.redo_label].into_iter().flatten() {
             if label.contains('\0') {
                 return Err(format!(
@@ -57,6 +68,14 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::EditSketch { document, sketch } => {
+                state.document == Some(*document)
+                    && state.authoring != GuiAuthoringContext::Sketch
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
+            }
             Self::Parameter { .. } => state.document.is_some(),
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
@@ -67,7 +86,7 @@ impl GuiShellAction {
     }
     /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.
     pub fn dispatchable(&self, state: &GuiCommandState) -> bool {
-        let history = matches!(self, Self::Undo | Self::Redo);
+        let history = matches!(self, Self::Undo | Self::Redo | Self::EditSketch { .. });
         self.enabled(state) && !(history && state.transaction_open)
     }
     pub(crate) fn next_label<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {

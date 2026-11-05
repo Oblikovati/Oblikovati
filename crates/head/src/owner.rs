@@ -10,6 +10,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 use std::time::Duration;
 #[path = "owner_commands.rs"]
 mod commands;
+#[path = "owner_browser.rs"]
+mod model_browser;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
@@ -195,6 +197,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),
             parameters: self.gui_parameter_rows()?,
             authoring: self.gui_authoring_context(document)?,
@@ -225,6 +228,14 @@ impl<
                 ..Default::default()
             })
             .map_err(|cause| format!("New Part: expected a created part document: {cause}"))?;
+        Ok(true)
+    }
+    fn edit_existing_sketch_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    ) -> Result<bool, String> {
+        self.begin_sketch_edit(document, sketch)?;
         Ok(true)
     }
     fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {

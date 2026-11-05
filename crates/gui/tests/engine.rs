@@ -7,6 +7,7 @@ fn request() -> GuiFrameRequest {
         status: None,
         events: vec![GuiInputEvent::PointerMoved([0., 0.])],
         commands: GuiCommandState {
+            browser: None,
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
             transaction_open: false,
@@ -97,6 +98,8 @@ fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
 fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
     let baseline = engine.frame(&request()).unwrap().draws;
     let mut input = request();
+    // Preserve logical viewport size so responsive panels have the same layout.
+    input.extent = input.extent.map(|value| value * 2);
     input.framebuffer_scale = [2.; 2];
     let snapshot = engine.frame(&input).unwrap().draws;
     assert_eq!(snapshot.extent, input.extent);

@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::{
-    document_sketch::{PlacedSketch, PlacedSketchHealth, SketchEvaluation},
-    feature::part::PartFeatureDefinition,
-};
+use oblikovati_model::document_sketch::{PlacedSketch, PlacedSketchHealth, SketchEvaluation};
 
 pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
@@ -80,14 +77,9 @@ fn sketch_summary(
 fn consuming_feature(snapshot: &DocumentSnapshot, sketch: DocumentSketchId) -> Option<&str> {
     snapshot
         .work_geometry
-        .features()
-        .iter()
-        .find_map(|feature| {
-            let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
-                return None;
-            };
-            (definition.sketch() == sketch).then(|| feature.name())
-        })
+        .sketch_consumers(sketch)
+        .next()
+        .map(|feature| feature.name())
 }
 
 fn current_health(snapshot: &DocumentSnapshot, id: DocumentSketchId) -> Result<bool, Error> {
@@ -110,6 +102,7 @@ fn plane_label(normal: [f64; 3]) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use oblikovati_model::feature::part::PartFeatureDefinition;
     use oblikovati_model::{
         feature::{
             AuthoredFeature, FeatureId, FeatureReadFootprint,
@@ -162,6 +155,14 @@ mod tests {
         assert_eq!(
             consuming_feature(&snapshot, DocumentSketchId(1)),
             Some("First extrusion")
+        );
+        assert_eq!(
+            snapshot
+                .work_geometry
+                .sketch_consumers(DocumentSketchId(1))
+                .map(|feature| feature.id().0)
+                .collect::<Vec<_>>(),
+            [1, 2]
         );
         assert_eq!(consuming_feature(&snapshot, DocumentSketchId(2)), None);
     }

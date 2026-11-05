@@ -1,6 +1,31 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[test]
+fn browser_keeps_shared_sketch_at_top_level_and_preserves_feature_order() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, true);
+    let browser = owner.gui_browser_snapshot(document).unwrap();
+    assert_eq!(browser.sketches.len(), 1);
+    assert_eq!(browser.sketches[0].id, fixture::SKETCH);
+    assert_eq!(browser.sketches[0].consumed_by, None);
+    assert_eq!(
+        browser
+            .features
+            .iter()
+            .map(|row| row.id)
+            .collect::<Vec<_>>(),
+        [FeatureId(1), FeatureId(2)]
+    );
+    assert!(browser.sketches[0].inspection.as_ref().unwrap().healthy);
+}
+#[test]
+fn browser_nests_a_sketch_only_under_its_single_consumer() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let browser = owner.gui_browser_snapshot(document).unwrap();
+    assert_eq!(browser.sketches[0].consumed_by, Some(FeatureId(1)));
+}
+#[test]
 fn authoring_display_is_cached_and_independent_of_solid_failure() {
     let (mut owner, _) = owner();
     assert!(owner.take_sketch_scene().unwrap().is_none());

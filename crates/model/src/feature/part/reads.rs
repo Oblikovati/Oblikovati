@@ -4,6 +4,19 @@ use crate::{
     feature::{FeatureId, FeatureReadFootprint, FeatureReplayError},
     history::DocumentSnapshot,
 };
+impl crate::feature::FeatureSequence<PartFeatureDefinition> {
+    /// Enumerate consuming features in authored program order without resolving names.
+    /// Example: `snapshot.work_geometry.sketch_consumers(sketch).next()` gives its primary owner.
+    pub fn sketch_consumers(
+        &self,
+        sketch: crate::document_sketch::DocumentSketchId,
+    ) -> impl Iterator<Item = &crate::feature::AuthoredFeature<PartFeatureDefinition>> {
+        self.features().iter().filter(move |feature| {
+            matches!(feature.definition(),
+            PartFeatureDefinition::SketchPrism(definition) if definition.sketch() == sketch)
+        })
+    }
+}
 impl DocumentSnapshot {
     /// Validate current body source dependencies before owner adoption; example: `snapshot.validate_prism_reads()?`.
     pub fn validate_prism_reads(&self) -> Result<(), PartFeatureProgramError> {

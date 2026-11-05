@@ -11,6 +11,7 @@ unsafe_code = "deny"
 [lints.clippy]
 all = "warn"
 [dependencies]
+oblikovati-model = { path = "../model" }
 oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd", version = "=0.158.0" }
 imgui = { version = "=0.12.0", features = ["docking"] }
 oblikovati-viewport = { path = "../viewport" }

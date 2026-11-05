@@ -144,6 +144,12 @@ fn draw_controls(
         parameter_editor,
     );
     parameter_editor.panel(ui, &request.commands, &mut selected);
+    crate::browser::panel(
+        ui,
+        &request.commands,
+        request.extent[1] as f32 / request.framebuffer_scale[1],
+        &mut selected,
+    );
     let snapshot = capture_frame(context.render(), request.extent)?;
     Ok(GuiFrameOutput {
         draws: snapshot,

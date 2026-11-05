@@ -175,9 +175,45 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     click_shell_position(&mut window, &mut owner, [210, 68]);
     assert!(owner.active_sketch_edit().is_none());
     assert!(!owner.placement_active());
+    verify_browser_reentry_pixels(&mut window, &mut owner, edit);
     parameters::edit_size_and_history(&mut window, &mut owner, edit);
     owner.finish().unwrap();
     window.finish().unwrap();
+}
+fn verify_browser_reentry_pixels(
+    window: &mut ScriptedGuiWindow,
+    owner: &mut NativeDesktopOwner,
+    edit: crate::HeadSketchEdit,
+) {
+    let before = capture_framebuffer(&mut window.native);
+    assert!(
+        before
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .contains(&[160, 160, 160, 255]),
+        "expected visible committed sketch geometry before browser activation"
+    );
+    let original = window.native.view.camera_state().unwrap();
+    click_shell_position(window, owner, [90, 389]);
+    click_shell_position(window, owner, [90, 389]);
+    assert_eq!(owner.active_sketch_edit().unwrap(), edit);
+    assert_eq!(window.native.view.camera_state().unwrap(), original);
+    let after = capture_framebuffer(&mut window.native);
+    let width = before.extent[0] as usize;
+    for (row, (old, new)) in before
+        .rgba
+        .chunks_exact(width * 4)
+        .zip(after.rgba.chunks_exact(width * 4))
+        .enumerate()
+    {
+        assert!(
+            old[500 * 4..] == new[500 * 4..],
+            "re-entering the same XY camera must preserve rectangle pixels on row {row}"
+        );
+    }
+    owner.finish_sketch_edit().unwrap();
+    window.native.set_sketch_edit(None).unwrap();
 }
 fn type_native_text(
     window: &mut ScriptedGuiWindow,
