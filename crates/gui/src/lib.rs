@@ -33,3 +33,6 @@ pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
 pub use oblikovati_viewport::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
 pub use sketch_tools::GuiSketchTool;
+
+mod sketch_constraints;
+pub use sketch_constraints::GuiSketchConstraint;

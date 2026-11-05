@@ -177,6 +177,12 @@ impl<
         });
         Ok(true)
     }
+    fn constrain_sketch_from_gui(
+        &mut self,
+        choice: oblikovati_gui::GuiSketchConstraint,
+    ) -> Result<bool, String> {
+        self.start_geometric_tool(choice)
+    }
     fn place_sketch_tool_from_gui(
         &mut self,
         tool: oblikovati_gui::GuiSketchTool,
@@ -218,7 +224,7 @@ impl<
     }
     fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
         self.sketch_edit = None;
-        self.placement = None;
+        self.retire_sketch_tool()?;
         self.command_notice = Some(DesktopCommandNotice::SketchEditFailed { cause });
         Ok(())
     }
@@ -228,7 +234,7 @@ impl<
 
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         let recipe = self.placement_preview()?.clone();
-        let tool = self.placement.as_ref()?;
+        let tool = self.placement_state()?;
         if tool.fields_engaged() {
             return tool.resolved_preview.clone();
         }
@@ -276,7 +282,7 @@ impl<
         Ok(self.refused_close.is_empty() && pending == 0)
     }
     fn finish(&mut self) -> Result<(), String> {
-        self.placement = None;
+        self.retire_sketch_tool()?;
         self.sketch_edit = None;
         self.part_scenes.clear();
         self.sketch_scenes.clear();

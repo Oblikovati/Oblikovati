@@ -22,7 +22,7 @@ impl<
         self.files
             .commands(document)
             .map_err(|cause| cause.to_string())?
-            .set_browser_sketch_selection(Some(sketch), mode, self.placement.is_some())
+            .set_browser_sketch_selection(Some(sketch), mode, self.sketch_tool.is_some())
             .map(|count| count.is_some())
             .map_err(|cause| cause.to_string())
     }

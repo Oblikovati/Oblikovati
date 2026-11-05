@@ -257,3 +257,25 @@ fn plain_empty_editor_click_retires_a_browser_row_but_modified_empty_click_keeps
     assert!(session.selected_browser_sketches().is_empty());
     assert_no_model_edit(&session);
 }
+
+#[test]
+fn clear_transient_selection_retires_stale_storage_and_does_not_change_history() {
+    let mut session = selection_session(None);
+    let target = SketchPickTarget::Entity(SketchEntityId(2));
+    session
+        .set_sketch_selection(CLICK_SKETCH, Some(target), Replace, false)
+        .unwrap();
+    change_width(&mut session);
+    assert!(session.clear_transient_selection());
+    assert!(!session.clear_transient_selection());
+    session
+        .set_sketch_selection(CLICK_SKETCH, Some(target), Toggle, false)
+        .unwrap();
+    assert_eq!(session.selected_editor_picks().len(), 1);
+    session
+        .set_browser_sketch_selection(Some(CLICK_SKETCH), Replace, false)
+        .unwrap();
+    assert!(session.clear_transient_selection());
+    assert!(session.selected_browser_sketches().is_empty());
+    assert_eq!(session.undo_labels(), ["Width"]);
+}

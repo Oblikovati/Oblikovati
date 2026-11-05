@@ -32,4 +32,9 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session
             .set_sketch_selection(sketch, target, mode, tool_active)
     }
+    /// Clear document selection through the same owner used by API readers.
+    /// Example: `commands.clear_transient_selection()` after a tool commits.
+    pub fn clear_transient_selection(&mut self) -> bool {
+        self.session.clear_transient_selection()
+    }
 }

@@ -26,6 +26,16 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .collect()
     }
 
+    /// Retire all transient document picks without reading geometry or changing history.
+    /// Example: `session.clear_transient_selection()` on tool cancellation.
+    pub fn clear_transient_selection(&mut self) -> bool {
+        let changed =
+            !self.browser_selection.items().is_empty() || !self.editor_selection.items().is_empty();
+        self.browser_selection.clear();
+        self.editor_selection.clear();
+        changed
+    }
+
     /// Store a checked editor click in the document owner without creating history.
     /// Example: `session.set_sketch_selection(sketch, Some(target), mode, false)?;`.
     pub fn set_sketch_selection(

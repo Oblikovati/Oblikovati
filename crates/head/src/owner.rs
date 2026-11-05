@@ -21,6 +21,10 @@ mod browser_selection;
 mod model_browser;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
+#[path = "owner_sketch_geometric.rs"]
+mod sketch_geometric;
+#[path = "owner_sketch_interaction.rs"]
+mod sketch_interaction;
 #[path = "owner_sketch_picking.rs"]
 mod sketch_picking;
 #[path = "owner_work.rs"]
@@ -67,7 +71,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         oblikovati_session::SketchContinuityWatch,
         oblikovati_session::workspace::WorkspaceFocusIdentity,
     )>,
-    placement: Option<crate::placement_input::SketchPlacementState>,
+    sketch_tool: Option<crate::sketch_tool::SketchToolState>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -105,7 +109,7 @@ impl<
             sketch_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),
-            placement: None,
+            sketch_tool: None,
             sketch_edit: None,
         }
     }

@@ -128,6 +128,16 @@ pub trait HeadWork {
     ) -> Result<bool, String> {
         Err(format!("{tool:?}: expected an owner with an active sketch"))
     }
+    /// Start a checked geometric constraint tool on the active sketch.
+    /// Example: `work.constrain_sketch_from_gui(GuiSketchConstraint::Horizontal)?;`.
+    fn constrain_sketch_from_gui(
+        &mut self,
+        choice: oblikovati_gui::GuiSketchConstraint,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "constraint {choice:?}: expected an owner with an active sketch"
+        ))
+    }
     /// Enter or finish the owner sketch edit; example: `work.edit_sketch_from_gui(true)?`.
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
         Err(format!(
@@ -293,6 +303,12 @@ macro_rules! forward_owner_view_work {
             tool: oblikovati_gui::GuiSketchTool,
         ) -> Result<bool, String> {
             self.$owner.place_sketch_tool_from_gui(tool)
+        }
+        fn constrain_sketch_from_gui(
+            &mut self,
+            choice: oblikovati_gui::GuiSketchConstraint,
+        ) -> Result<bool, String> {
+            self.$owner.constrain_sketch_from_gui(choice)
         }
         fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
             self.$owner.decline_sketch_edit(cause)

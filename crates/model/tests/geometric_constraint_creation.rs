@@ -29,14 +29,20 @@ fn owner(geometry: Sketch2D) -> DocumentEditHistory {
     DocumentEditHistory::new(snapshot, RecipeIdAllocator::default()).unwrap()
 }
 fn fixture() -> Sketch2D {
+    fixture_with_secondary_height(0.)
+}
+fn constructor_fixture() -> Sketch2D {
+    fixture_with_secondary_height(2.)
+}
+fn fixture_with_secondary_height(height: f64) -> Sketch2D {
     let mut geometry = Sketch2D::default();
     let points = [
         [0.0, 0.0],
         [1.0, 0.0],
         [0.0, 1.0],
-        [3.0, 0.0],
-        [4.0, 0.0],
-        [3.0, 1.0],
+        [3.0, height],
+        [4.0, height],
+        [3.0, height + 1.0],
     ];
     for (index, point) in points.into_iter().enumerate() {
         geometry.add_point(entity(index as u64 + 1), point).unwrap();
@@ -58,7 +64,9 @@ fn create(
                 ids,
             )
         })
-        .unwrap();
+        .unwrap_or_else(|cause| {
+            panic!("constructor {input:?}: expected a converged result: {cause}")
+        });
     history.commit(&token, false).unwrap();
     report
 }
@@ -133,7 +141,7 @@ fn every_geometric_form_authors_a_real_relation_with_current_rank_and_health() {
         .chain(line_inputs())
         .chain(circular_inputs())
     {
-        let mut history = owner(fixture());
+        let mut history = owner(constructor_fixture());
         let report = create(&mut history, &input);
         assert_created(&history, &report);
     }
@@ -366,24 +374,29 @@ fn exhausted_constraint_namespace_does_not_publish_a_relation() {
     assert_eq!(history.sketch_reservations(), marks);
 }
 #[test]
-fn numerical_nonconvergence_retains_the_authored_relation_and_explicit_health() {
+fn numerical_nonconvergence_refuses_adoption_but_retires_the_attempted_identity() {
     let mut history = contradictory_owner();
-    let report = create(
-        &mut history,
-        &direct(PlanarConstraint::Horizontal {
-            points: [entity(1), entity(3)],
-        }),
-    );
-    assert_eq!(report.constraint.id, SketchConstraintId(3));
-    let snapshot = history.snapshot();
-    let health = snapshot.sketches.sketches()[0].health(&snapshot.parameters);
-    let PlacedSketchHealth::Current(SketchEvaluation::Numerical(numerical)) = health else {
-        panic!("{health:?}");
-    };
-    assert_ne!(
-        numerical.termination,
-        oblikovati_solve::nonlinear::SolveTermination::Converged
-    );
+    let before = history.snapshot().sketches.clone();
+    let generation = history.generation();
+    let token = history.begin("Refused relation").unwrap();
+    let input = direct(PlanarConstraint::Horizontal {
+        points: [entity(1), entity(3)],
+    });
+    let error = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_geometric_constraint(
+                DocumentSketchId(1),
+                &input,
+                Default::default(),
+                ids,
+            )
+        })
+        .unwrap_err();
+    assert!(error.to_string().contains("expected Converged"), "{error}");
+    assert!(history.snapshot().sketches.same_evaluated_state(&before));
+    assert_eq!(history.generation(), generation);
+    history.abort(&token).unwrap();
+    assert_eq!(history.sketch_reservations().constraints[&1], 3);
 }
 
 fn assert_driven_report(report: &SketchGeometricCreationReport) {
@@ -416,3 +429,6 @@ fn circular_incidence_input() -> Vec<SketchGeometricConstraintCreation> {
 
 #[path = "geometric_constraint_creation/generated.rs"]
 mod generated;
+
+#[path = "geometric_constraint_creation/readiness.rs"]
+mod readiness;

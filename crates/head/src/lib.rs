@@ -111,3 +111,6 @@ pub use placement_tool::SketchPlacementTool;
 
 mod sketch_scene;
 pub use sketch_scene::HeadSketchSceneUpdate;
+
+mod sketch_geometric;
+mod sketch_tool;

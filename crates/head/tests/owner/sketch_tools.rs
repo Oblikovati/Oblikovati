@@ -36,7 +36,7 @@ fn gui_tool_selection_uses_the_existing_engine_without_a_history_edit() {
     let before = owner.gui_command_state().unwrap();
     for (choice, expected) in TOOL_ENGINE_CASES {
         assert!(owner.place_sketch_tool_from_gui(choice).unwrap());
-        assert_eq!(owner.placement.as_ref().unwrap().tool, expected);
+        assert_eq!(owner.placement_state().unwrap().tool, expected);
         assert_eq!(owner.gui_command_state().unwrap(), before);
         assert!(owner.placement_preview().is_none());
     }

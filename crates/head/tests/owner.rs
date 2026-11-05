@@ -339,3 +339,6 @@ mod theme_lifecycle;
 
 #[path = "owner/sketch_picking.rs"]
 mod sketch_picking;
+
+#[path = "owner/geometric_tools.rs"]
+mod geometric_tools;

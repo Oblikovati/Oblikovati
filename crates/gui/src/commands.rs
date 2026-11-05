@@ -39,6 +39,7 @@ pub enum GuiShellAction {
     StartSketchXY,
     FinishSketch,
     PlaceSketchTool(crate::GuiSketchTool),
+    ConstrainSketch(crate::GuiSketchConstraint),
     Save,
     Undo,
     Redo,
@@ -163,6 +164,9 @@ impl GuiShellAction {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
             Self::StartSketchXY => state.authoring == GuiAuthoringContext::Part,
+            Self::ConstrainSketch(_) => {
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
+            }
             Self::PlaceSketchTool(_) | Self::FinishSketch => {
                 state.authoring == GuiAuthoringContext::Sketch
             }
