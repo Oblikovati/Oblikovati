@@ -35,3 +35,12 @@ Full Go parity remains open: icon assets, the complete command catalogue, panel
 collapse/flyouts, ribbon customization, add-in command registration, document types'
 own unported tools, and a content-area viewport layout. The Extrude UI and complete
 cube journey also remain open.
+
+## Sketch row context menu
+
+The model browser provides the Go-style right-click Edit Sketch entry (#3799).
+It sends the same typed owner action as a double-click. Document and sketch IDs
+scope the popup; labels do not establish identity. Availability is checked on
+each frame, including transaction or document changes while a popup is open.
+Dismissing a menu sends no action. Visibility, rename, selection synchronization,
+and the remaining Go browser menu entries remain separate port work.
