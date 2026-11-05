@@ -33,8 +33,20 @@ pub(crate) fn frame_activity() -> Result<crate::GuiFrameActivity, String> {
             || context.NavInitRequest
             || context.NavInitResultId != 0
             || context.NavNextActivateId != 0,
+        pending_animation: pending_dimming(context),
         interaction: interactive_context(context),
     })
+}
+fn pending_dimming(context: &imgui::sys::ImGuiContext) -> bool {
+    // ImGui 1.89 imgui.cpp:4698 advances dimming in NewFrame. An endpoint can
+    // still need a frame when this frame opened or closed the modal (#3805).
+    let modal = !unsafe { imgui::sys::igGetTopMostPopupModal() }.is_null();
+    let windowing =
+        !context.NavWindowingTarget.is_null() && context.NavWindowingHighlightAlpha > 0.;
+    if modal || windowing {
+        return context.DimBgRatio < 1.;
+    }
+    context.DimBgRatio > 0.
 }
 fn interactive_context(context: &imgui::sys::ImGuiContext) -> bool {
     context.ActiveId != 0

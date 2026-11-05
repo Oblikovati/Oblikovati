@@ -60,8 +60,16 @@ retained by storage so later edits update the original filename. OS XTest select
 fresh-process reload of Workshop passed with a malformed neighbour present,
 confirmed by MCPBridge queries and captured orange accents. An unrelated stored
 preference group survived selection save.
-Add custom creation/edit/export desktop controls and apply the selection/highlight
-colours to selection rendering. OS XTest selection of all four schemes has passed with Go
+The theme editor now exposes all 39 Go-labelled colour rows. Built-ins are
+read-only. Custom edits preview through the owner, and Save writes the loaded
+source file. Stale names, invalid colours and failed writes have named declines.
+GUI tests cover modal fade completion, read-only controls, document closure and
+theme-owner retirement. Live OS input verified preview without disk writes,
+explicit Save, preserved vendor metadata and preferences, and a fresh-process
+reopen of the edited colour. Both desktops closed normally.
+
+Add Duplicate and Delete controls and apply the selection/highlight colours to
+selection rendering. OS XTest selection of all four schemes has passed with Go
 MCPBridge queries and pixel samples from completed window captures. High Contrast
 stays black when the chrome theme changes; Presentation and Sky retain their
 authored gradient directions. Native tests also cover gradient-to-solid changes,

@@ -2,6 +2,14 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
     SetTheme(String),
+    EditThemeColor {
+        name: String,
+        token: oblikovati_api::types::ThemeToken,
+        value: oblikovati_api::types::Rgba,
+    },
+    SaveTheme {
+        name: String,
+    },
     SetColorScheme(oblikovati_api::wire::SetColorSchemeArgs),
     ActivateDocument(oblikovati_api::wire::ActivateDocumentArgs),
     CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
@@ -87,6 +95,14 @@ impl GuiShellAction {
                         .iter()
                         .any(|row| row.id == request.id && row.visible)
             }
+            Self::EditThemeColor { name, .. } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.editable() && theme.active_name() == name),
+            Self::SaveTheme { name } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.save_available() && theme.active_name() == name),
             Self::SetColorScheme(request) => state
                 .color_scheme
                 .as_ref()

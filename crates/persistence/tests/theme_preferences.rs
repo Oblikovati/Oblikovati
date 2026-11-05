@@ -67,3 +67,22 @@ fn malformed_and_unreadable_preferences_are_reported_without_overwrite() {
     disk.borrow_mut().read_error = Some(io::ErrorKind::PermissionDenied);
     assert!(load(&disk).is_err());
 }
+
+#[test]
+fn selection_only_storage_does_not_advertise_or_stage_custom_xml_writes() {
+    use oblikovati_model::theme::ThemeSelectionStore;
+    let disk = theme_disk(b"activeTheme: Dark\n");
+    let mut preferences = load(&disk).unwrap();
+    let custom = ThemeDefinition::dark()
+        .unwrap()
+        .duplicate("Workshop")
+        .unwrap();
+    assert!(!preferences.can_save_custom(&custom));
+    assert!(
+        preferences
+            .save_custom_theme(&custom)
+            .unwrap_err()
+            .contains("known custom XML source")
+    );
+    assert_eq!(disk.borrow().calls, ["read"]);
+}

@@ -51,7 +51,9 @@ fn report_authoring_result(
 }
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
-        GuiShellAction::SetColorScheme(_)
+        GuiShellAction::EditThemeColor { .. }
+        | GuiShellAction::SaveTheme { .. }
+        | GuiShellAction::SetColorScheme(_)
         | GuiShellAction::SetTheme(_)
         | GuiShellAction::Parameter { .. }
         | GuiShellAction::ActivateDocument(_)

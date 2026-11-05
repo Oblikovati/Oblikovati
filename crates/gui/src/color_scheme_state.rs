@@ -34,20 +34,15 @@ impl GuiColorSchemeState {
         self.names.iter().any(|candidate| candidate == name)
     }
     pub(crate) fn controls(&self, ui: &imgui::Ui, actions: &mut Vec<crate::GuiShellAction>) {
-        ui.set_next_item_width(160.);
-        let Some(_combo) = ui.begin_combo("Colour scheme", &self.active) else {
-            return;
-        };
-        for name in &self.names {
-            if ui
-                .menu_item_config(name)
-                .selected(name == &self.active)
-                .build()
-            {
-                actions.push(crate::GuiShellAction::SetColorScheme(SetColorSchemeArgs {
-                    name: name.clone(),
-                }));
-            }
+        if let Some(name) = crate::appearance_choice::appearance_choice(
+            ui,
+            "Colour scheme",
+            &self.active,
+            &self.names,
+        ) {
+            actions.push(crate::GuiShellAction::SetColorScheme(SetColorSchemeArgs {
+                name,
+            }));
         }
     }
 }

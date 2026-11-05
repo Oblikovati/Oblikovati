@@ -143,6 +143,17 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.select_color_scheme_from_gui(request)
     }
+    fn edit_theme_color_from_gui(
+        &mut self,
+        name: &str,
+        token: &oblikovati_api::types::ThemeToken,
+        value: oblikovati_api::types::Rgba,
+    ) -> Result<bool, String> {
+        self.owner.edit_theme_color_from_gui(name, token, value)
+    }
+    fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.owner.save_theme_from_gui(name)
+    }
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.owner.select_theme_from_gui(name)
     }

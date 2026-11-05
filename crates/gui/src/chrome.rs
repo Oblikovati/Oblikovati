@@ -47,6 +47,7 @@ fn ribbon_contents(
     ribbon_tabs(ui, ribbon, frame);
     crate::widget_abi::cursor_position(ui, [16., 59.]);
     tab_panels(ui, ribbon.active, &request.commands, parameters, actions);
+    crate::theme_editor::panel(ui, request.commands.theme.as_ref(), actions);
     crate::widget_abi::cursor_position(ui, [8., 138.]);
     ui.text(request.status.as_deref().unwrap_or("Ready"));
 }
@@ -194,6 +195,9 @@ fn appearance_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShell
         }
         if let Some(palette) = &state.color_scheme {
             palette.controls(ui, actions);
+        }
+        if state.theme.is_some() {
+            crate::theme_editor::launcher(ui);
         }
         ui.text("Appearance");
     });

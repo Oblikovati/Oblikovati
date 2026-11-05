@@ -17,6 +17,10 @@ fn each_activity_reason_keeps_the_next_frame_due() {
             ..Default::default()
         },
         GuiFrameActivity {
+            pending_animation: true,
+            ..Default::default()
+        },
+        GuiFrameActivity {
             interaction: true,
             ..Default::default()
         },

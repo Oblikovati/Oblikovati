@@ -41,6 +41,13 @@ impl<Files: AtomicFiles + PackageFileReader> ThemeFilePreferences<Files> {
     }
 }
 impl<Files: AtomicFiles + PackageFileReader> ThemeSelectionStore for ThemeFilePreferences<Files> {
+    fn can_save_custom(&self, theme: &ThemeDefinition) -> bool {
+        theme.kind() == &oblikovati_api::types::THEME_CUSTOM
+            && self.sources.contains_key(theme.name())
+    }
+    fn save_custom_theme(&mut self, theme: &ThemeDefinition) -> Result<(), String> {
+        self.save_custom(theme)
+    }
     fn save_selection(&mut self, theme: &ThemeDefinition) -> Result<(), String> {
         self.selection.save_selection(theme)
     }

@@ -5,12 +5,17 @@ pub struct GuiFrameActivity {
     pub queued_input: bool,
     pub pending_layout: bool,
     pub pending_navigation: bool,
+    pub pending_animation: bool,
     pub interaction: bool,
 }
 impl GuiFrameActivity {
-    /// Keep deferred input, layout and interactive timers moving; example: `output.activity.needs_frame()`.
+    /// Keep deferred input, layout, animations and interactive timers moving; example: `output.activity.needs_frame()`.
     pub fn needs_frame(self) -> bool {
-        self.queued_input || self.pending_layout || self.pending_navigation || self.interaction
+        self.queued_input
+            || self.pending_layout
+            || self.pending_navigation
+            || self.pending_animation
+            || self.interaction
     }
 }
 #[cfg(test)]

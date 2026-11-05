@@ -103,12 +103,6 @@ impl<
             sketch_edit: None,
         }
     }
-    /// Share one library with API queries and the GUI; example: `owner.with_themes(library)`.
-    pub fn with_themes(mut self, library: oblikovati_model::theme::ThemeLibrary) -> Self {
-        self.themes = Some(library);
-        self.theme_store = None;
-        self
-    }
     /// Enable view capture with an injected output configuration.
     /// Example: `owner.with_window_captures(DesktopWindowCaptures::new(directory, namespace))`.
     pub fn with_window_captures(mut self, captures: crate::DesktopWindowCaptures) -> Self {
@@ -224,14 +218,22 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
+    fn edit_theme_color_from_gui(
+        &mut self,
+        name: &str,
+        token: &oblikovati_api::types::ThemeToken,
+        value: oblikovati_api::types::Rgba,
+    ) -> Result<bool, String> {
+        self.preview_custom_theme_color(name, token, value)
+    }
+    fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.persist_active_custom_theme(name)
+    }
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.select_application_theme(name)
     }
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
-        let theme = self
-            .themes
-            .as_ref()
-            .map(oblikovati_gui::GuiThemeState::from_library);
+        let theme = self.gui_theme_snapshot();
         let color_scheme = Some(oblikovati_gui::GuiColorSchemeState::from_registry(
             &self.color_schemes,
         )?);

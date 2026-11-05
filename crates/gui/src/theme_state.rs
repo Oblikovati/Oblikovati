@@ -5,6 +5,8 @@ use oblikovati_model::theme::{ThemeLibrary, ThemePalette};
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiThemeState {
     active: String,
+    editable: bool,
+    save_available: bool,
     names: Vec<String>,
     palette: ThemePalette,
     revision: u64,
@@ -14,6 +16,8 @@ impl GuiThemeState {
     pub fn from_library(library: &ThemeLibrary) -> Self {
         Self {
             active: library.active().name().into(),
+            editable: library.active().kind() == &oblikovati_api::types::THEME_CUSTOM,
+            save_available: false,
             names: library
                 .themes()
                 .iter()
@@ -23,6 +27,20 @@ impl GuiThemeState {
             revision: library.revision(),
         }
     }
+    /// Attach the owner's storage capability; example: `state.with_custom_save_available(can_save)`.
+    pub fn with_custom_save_available(mut self, available: bool) -> Self {
+        self.save_available = available && self.editable;
+        self
+    }
+    pub(crate) fn active_name(&self) -> &str {
+        &self.active
+    }
+    pub(crate) fn editable(&self) -> bool {
+        self.editable
+    }
+    pub(crate) fn save_available(&self) -> bool {
+        self.save_available
+    }
     /// Read semantic colours without mutable ownership; example: `state.palette()[&TOKEN_CHROME_TEXT]`.
     pub fn palette(&self) -> &ThemePalette {
         &self.palette
@@ -31,18 +49,10 @@ impl GuiThemeState {
         self.names.iter().any(|candidate| candidate == name)
     }
     pub(crate) fn controls(&self, ui: &imgui::Ui, actions: &mut Vec<crate::GuiShellAction>) {
-        ui.set_next_item_width(160.);
-        let Some(_combo) = ui.begin_combo("Theme", &self.active) else {
-            return;
-        };
-        for name in &self.names {
-            if ui
-                .menu_item_config(name)
-                .selected(name == &self.active)
-                .build()
-            {
-                actions.push(crate::GuiShellAction::SetTheme(name.clone()));
-            }
+        if let Some(name) =
+            crate::appearance_choice::appearance_choice(ui, "Theme", &self.active, &self.names)
+        {
+            actions.push(crate::GuiShellAction::SetTheme(name));
         }
     }
 }

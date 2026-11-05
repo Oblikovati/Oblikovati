@@ -95,7 +95,8 @@ fn custom_save_reuses_the_loaded_filename_and_keeps_selection_preferences_intact
     let mut fixture = storage_fixture();
     let theme = edited_theme();
     let selection = fixture.selection.borrow().committed.clone();
-    fixture.store.save_custom(&theme).unwrap();
+    assert!(fixture.store.can_save_custom(&theme));
+    fixture.store.save_custom_theme(&theme).unwrap();
     assert_eq!(
         *fixture.staged.borrow(),
         [PathBuf::from("config/themes/from-vendor.xml")]
@@ -135,6 +136,7 @@ fn unknown_custom_sources_refuse_before_any_staging() {
         .unwrap()
         .duplicate("Missing")
         .unwrap();
+    assert!(!fixture.store.can_save_custom(&unknown));
     let error = fixture.store.save_custom(&unknown).unwrap_err();
     assert!(error.contains("Missing") && error.contains("known loaded XML source"));
     assert!(fixture.staged.borrow().is_empty());

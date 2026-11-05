@@ -330,3 +330,6 @@ mod themes;
 
 #[path = "owner/color_schemes.rs"]
 mod color_schemes;
+
+#[path = "owner/theme_editor.rs"]
+mod theme_editor;

@@ -4,6 +4,10 @@ use oblikovati_gui::GuiShellAction;
 
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
+        GuiShellAction::EditThemeColor { name, token, value } => {
+            owner.edit_theme_color_from_gui(name, token, value.clone())
+        }
+        GuiShellAction::SaveTheme { name } => owner.save_theme_from_gui(name),
         GuiShellAction::SetColorScheme(request) => owner.select_color_scheme_from_gui(request),
         GuiShellAction::SetTheme(name) => owner.select_theme_from_gui(name),
         GuiShellAction::Parameter { mutation, request } => {
@@ -51,6 +55,28 @@ fn unsupported(action: &GuiShellAction) -> Result<bool, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn idle_theme_editor_requests_return_named_owner_declines() {
+        let mut owner = crate::work::IdleHeadWork;
+        let color = oblikovati_api::types::Rgba {
+            r: 1.,
+            g: 0.,
+            b: 0.,
+            a: 1.,
+        };
+        let edit = GuiShellAction::EditThemeColor {
+            name: "Workshop".into(),
+            token: oblikovati_api::types::TOKEN_CHROME_ACCENT,
+            value: color,
+        };
+        let save = GuiShellAction::SaveTheme {
+            name: "Workshop".into(),
+        };
+        for action in [edit, save] {
+            let cause = apply(&mut owner, &action).unwrap_err();
+            assert!(cause.contains("Workshop") && cause.contains("expected"));
+        }
+    }
     #[test]
     fn semantic_keys_and_wrong_authoring_groups_are_refused_without_owner_work() {
         let mut owner = crate::work::IdleHeadWork;

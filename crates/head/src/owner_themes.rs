@@ -10,6 +10,12 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    /// Share one library with API queries and the GUI; example: `owner.with_themes(library)`.
+    pub fn with_themes(mut self, library: oblikovati_model::theme::ThemeLibrary) -> Self {
+        self.themes = Some(library);
+        self.theme_store = None;
+        self
+    }
     /// Inject selection storage and its loaded library; example: `owner.with_theme_store(library, Box::new(preferences))`.
     pub fn with_theme_store(
         mut self,
@@ -33,6 +39,36 @@ impl<
             self.command_notice = Some(DesktopCommandNotice::ThemeFilesDeclined { causes });
         }
         self
+    }
+    pub(super) fn gui_theme_snapshot(&self) -> Option<oblikovati_gui::GuiThemeState> {
+        let library = self.themes.as_ref()?;
+        let can_save = self
+            .theme_store
+            .as_ref()
+            .is_some_and(|store| store.can_save_custom(library.active()));
+        Some(
+            oblikovati_gui::GuiThemeState::from_library(library)
+                .with_custom_save_available(can_save),
+        )
+    }
+    pub(super) fn preview_custom_theme_color(
+        &mut self,
+        name: &str,
+        token: &oblikovati_api::types::ThemeToken,
+        value: oblikovati_api::types::Rgba,
+    ) -> Result<bool, String> {
+        active_custom_library(&mut self.themes, name)?.edit_active_color(token, value)
+    }
+    pub(super) fn persist_active_custom_theme(&mut self, name: &str) -> Result<bool, String> {
+        let library = active_custom_library(&mut self.themes, name)?;
+        let store = self
+            .theme_store
+            .as_mut()
+            .filter(|store| store.can_save_custom(library.active()))
+            .ok_or_else(|| format!("theme {name:?}: expected a writable custom XML source"))?;
+        store.save_custom_theme(library.active())?;
+        self.command_notice = Some(DesktopCommandNotice::ThemeSaved { name: name.into() });
+        Ok(true)
     }
     pub(super) fn select_application_theme(&mut self, name: &str) -> Result<bool, String> {
         let library = self.themes.as_mut().ok_or_else(|| {
@@ -58,4 +94,22 @@ fn selected_theme<'a>(
         .iter()
         .find(|theme| theme.name() == name)
         .ok_or_else(|| format!("theme {name:?}: expected a name from the application gallery"))
+}
+
+fn active_custom_library<'a>(
+    themes: &'a mut Option<ThemeLibrary>,
+    name: &str,
+) -> Result<&'a mut ThemeLibrary, String> {
+    let library = themes
+        .as_mut()
+        .ok_or_else(|| format!("theme {name:?}: expected an application theme library"))?;
+    if library.active().name() != name
+        || library.active().kind() != &oblikovati_api::types::THEME_CUSTOM
+    {
+        return Err(format!(
+            "theme {name:?}: expected the active editable custom theme {:?}",
+            library.active().name()
+        ));
+    }
+    Ok(library)
 }

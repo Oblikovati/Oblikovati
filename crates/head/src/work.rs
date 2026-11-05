@@ -12,6 +12,24 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Apply a live custom colour preview; example: `work.edit_theme_color_from_gui(name, token, value)?`.
+    fn edit_theme_color_from_gui(
+        &mut self,
+        name: &str,
+        token: &oblikovati_api::types::ThemeToken,
+        _value: oblikovati_api::types::Rgba,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "theme {name:?}, token {token:?}: expected an editable application theme owner"
+        ))
+    }
+    /// Save the active custom snapshot; example: `work.save_theme_from_gui(name)?`.
+    fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        Err(format!(
+            "theme {name:?}: expected an application theme storage owner"
+        ))
+    }
+
     /// Apply the canonical palette selection; example: `work.select_color_scheme_from_gui(&request)?`.
     fn select_color_scheme_from_gui(
         &mut self,
