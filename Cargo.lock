@@ -942,7 +942,9 @@ dependencies = [
 name = "oblikovati-gui"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "imgui",
+ "imgui-sys",
  "oblikovati-api",
  "oblikovati-model",
  "oblikovati-viewport",

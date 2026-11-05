@@ -90,10 +90,9 @@ impl GuiDocumentFiles {
         let Some(draft) = &mut self.draft else {
             return;
         };
+        crate::widget_abi::window_geometry(ui, [320., 168.], [620., 160.], Condition::FirstUseEver);
         let close = ui
             .window(draft.purpose.title())
-            .position([320., 168.], Condition::FirstUseEver)
-            .size([620., 160.], Condition::FirstUseEver)
             .collapsible(false)
             .build(|| path_controls(ui, state, draft, actions))
             .unwrap_or(false);
@@ -175,7 +174,8 @@ fn path_controls(
     let entered = path_entry(ui, draft);
     let accepted = submit_path(ui, state, draft, entered, actions);
     ui.same_line();
-    let cancelled = ui.button("Cancel") || ui.is_key_pressed(imgui::Key::Escape);
+    let cancelled =
+        crate::widget_abi::button(ui, "Cancel", [0.; 2]) || ui.is_key_pressed(imgui::Key::Escape);
     accepted || cancelled
 }
 fn path_entry(ui: &Ui, draft: &mut DocumentPathDraft) -> bool {
@@ -198,7 +198,8 @@ fn submit_path(
         .expect("validated draft and GUI text input exclude NUL");
     let can_submit = !draft.path.is_empty() && action.dispatchable(state);
     let disabled = ui.begin_disabled(!can_submit);
-    let accepted = (ui.button(draft.purpose.button()) || entered) && can_submit;
+    let accepted =
+        (crate::widget_abi::button(ui, draft.purpose.button(), [0.; 2]) || entered) && can_submit;
     drop(disabled);
     if accepted {
         actions.push(action);

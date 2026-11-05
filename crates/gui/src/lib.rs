@@ -18,6 +18,8 @@ mod parameters;
 mod ribbon;
 mod sketch_tools;
 mod snapshot;
+#[allow(unsafe_code)]
+mod widget_abi;
 pub use commands::{GuiAuthoringContext, GuiCommandState, GuiParameterMutation, GuiShellAction};
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

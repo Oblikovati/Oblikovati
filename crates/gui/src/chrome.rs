@@ -19,9 +19,8 @@ pub(crate) fn ribbon_band(
 }
 fn begin_ribbon_band(ui: &Ui, width: f32) -> Option<imgui::WindowToken<'_>> {
     // #3798: chrome owns a fixed band; wheel input must never move its commands.
+    crate::widget_abi::window_geometry(ui, [0., 0.], [width, 158.], Condition::Always);
     ui.window("##application-ribbon")
-        .position([0., 0.], Condition::Always)
-        .size([width, 158.], Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -42,13 +41,13 @@ fn ribbon_contents(
     actions: &mut Vec<GuiShellAction>,
 ) {
     ui.menu_bar(|| files.menu(ui, &request.commands, actions));
-    ui.set_cursor_pos([16., 35.]);
+    crate::widget_abi::cursor_position(ui, [16., 35.]);
     quick_access(ui, &request.commands, actions);
     ui.same_line();
     ribbon_tabs(ui, ribbon, frame);
-    ui.set_cursor_pos([16., 59.]);
+    crate::widget_abi::cursor_position(ui, [16., 59.]);
     tab_panels(ui, ribbon.active, &request.commands, parameters, actions);
-    ui.set_cursor_pos([8., 138.]);
+    crate::widget_abi::cursor_position(ui, [8., 138.]);
     ui.text(request.status.as_deref().unwrap_or("Ready"));
 }
 fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
@@ -97,7 +96,7 @@ fn tab_panels(
 fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     ui.group(|| sketch_create_controls(ui, state, actions));
     ui.same_line();
-    ui.set_cursor_pos([388., 59.]);
+    crate::widget_abi::cursor_position(ui, [388., 59.]);
     let exit = ("Exit", "Finish Sketch", GuiShellAction::FinishSketch);
     command_panel(ui, state, actions, exit);
 }
@@ -106,13 +105,16 @@ fn sketch_create_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
     sketch_tool_button(ui, state, actions, rectangle, [108., 58.]);
     let secondary = crate::sketch_tools::SECONDARY_SKETCH_TOOLS;
     for (index, tool) in secondary.into_iter().enumerate() {
-        ui.set_cursor_pos([
-            140. + (index % 2) as f32 * 116.,
-            59. + (index / 2) as f32 * 20.,
-        ]);
+        crate::widget_abi::cursor_position(
+            ui,
+            [
+                140. + (index % 2) as f32 * 116.,
+                59. + (index / 2) as f32 * 20.,
+            ],
+        );
         sketch_tool_button(ui, state, actions, tool, [108., 18.]);
     }
-    ui.set_cursor_pos([16., 125.]);
+    crate::widget_abi::cursor_position(ui, [16., 125.]);
     ui.text("Create");
 }
 fn sketch_tool_button(
@@ -166,7 +168,7 @@ fn command_button(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let disabled = ui.begin_disabled(!action.enabled(state));
-    let clicked = ui.button_with_size(label, size);
+    let clicked = crate::widget_abi::button(ui, label, size);
     drop(disabled);
     if ui.is_item_hovered()
         && let Some(next) = action.next_label(state)

@@ -97,9 +97,13 @@ pub(crate) fn panel(
     height: f32,
     actions: &mut Vec<GuiShellAction>,
 ) {
+    crate::widget_abi::window_geometry(
+        ui,
+        [8., 168.],
+        [300., (height - 176.).max(120.)],
+        Condition::Always,
+    );
     ui.window("Model")
-        .position([8., 168.], Condition::Always)
-        .size([300., (height - 176.).max(120.)], Condition::Always)
         .movable(false)
         .resizable(false)
         .build(|| browser_contents(ui, state, actions));
@@ -214,15 +218,13 @@ fn sketch_row(
 fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch) -> bool {
     let editing = row.inspection.as_ref().is_ok_and(|summary| summary.editing);
     let position = ui.cursor_screen_pos();
-    let selectable = ui
-        .selectable_config("##sketch-row")
-        .allow_double_click(true);
-    let activated = selectable.selected(editing).build();
+    let activated = crate::widget_abi::selectable(ui, "##sketch-row", editing, true);
     // Literal labels are drawn separately so imported names containing ## remain visible.
-    ui.get_window_draw_list().add_text(
+    crate::widget_abi::literal_text(
+        ui,
         position,
         ui.style_color(StyleColor::Text),
-        sketch_caption(row),
+        &sketch_caption(row),
     );
     if ui.is_item_hovered() {
         ui.tooltip_text(sketch_tooltip(row));
