@@ -26,3 +26,5 @@ pub mod user_config;
 pub mod theme_files;
 
 pub mod theme_file_preferences;
+
+pub mod theme_lifecycle;

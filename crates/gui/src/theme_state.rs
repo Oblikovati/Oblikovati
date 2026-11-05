@@ -7,6 +7,8 @@ pub struct GuiThemeState {
     active: String,
     editable: bool,
     save_available: bool,
+    creation_available: bool,
+    deletion_available: bool,
     names: Vec<String>,
     palette: ThemePalette,
     revision: u64,
@@ -18,6 +20,8 @@ impl GuiThemeState {
             active: library.active().name().into(),
             editable: library.active().kind() == &oblikovati_api::types::THEME_CUSTOM,
             save_available: false,
+            creation_available: true,
+            deletion_available: library.active().kind() == &oblikovati_api::types::THEME_CUSTOM,
             names: library
                 .themes()
                 .iter()
@@ -31,6 +35,18 @@ impl GuiThemeState {
     pub fn with_custom_save_available(mut self, available: bool) -> Self {
         self.save_available = available && self.editable;
         self
+    }
+    /// Attach lifecycle storage capabilities; example: `state.with_lifecycle_available(true, false)`.
+    pub fn with_lifecycle_available(mut self, create: bool, delete: bool) -> Self {
+        self.creation_available = create;
+        self.deletion_available = delete && self.editable;
+        self
+    }
+    pub(crate) fn creation_available(&self) -> bool {
+        self.creation_available
+    }
+    pub(crate) fn deletion_available(&self) -> bool {
+        self.deletion_available
     }
     pub(crate) fn active_name(&self) -> &str {
         &self.active
@@ -71,5 +87,45 @@ mod tests {
         assert_eq!(before.active, "Dark");
         assert_eq!(after.active, "Light");
         assert_eq!(after.palette(), library.active().palette());
+    }
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+    use super::*;
+    #[test]
+    fn lifecycle_capabilities_do_not_enable_builtin_delete_or_disable_custom_preview() {
+        let mut library = ThemeLibrary::new(Vec::new(), "Dark").unwrap();
+        let builtin = GuiThemeState::from_library(&library).with_lifecycle_available(false, true);
+        assert!(!builtin.creation_available() && !builtin.deletion_available());
+        library.duplicate("Dark", "Workshop").unwrap();
+        let custom = GuiThemeState::from_library(&library).with_lifecycle_available(false, false);
+        let state = crate::GuiCommandState {
+            theme: Some(custom),
+            ..Default::default()
+        };
+        assert!(
+            !crate::GuiShellAction::DuplicateTheme {
+                base: "Workshop".into(),
+                name: "Copy".into()
+            }
+            .enabled(&state)
+        );
+        assert!(
+            !crate::GuiShellAction::DeleteTheme {
+                name: "Workshop".into()
+            }
+            .enabled(&state)
+        );
+        assert!(
+            crate::GuiShellAction::EditThemeColor {
+                name: "Workshop".into(),
+                token: oblikovati_api::types::TOKEN_CHROME_ACCENT,
+                value: library
+                    .active()
+                    .color(&oblikovati_api::types::TOKEN_CHROME_ACCENT)
+            }
+            .enabled(&state)
+        );
     }
 }

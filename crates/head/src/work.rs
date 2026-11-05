@@ -23,6 +23,18 @@ pub trait HeadWork {
             "theme {name:?}, token {token:?}: expected an editable application theme owner"
         ))
     }
+    /// Copy the active theme; example: `work.duplicate_theme_from_gui("Dark", "Workshop")?`.
+    fn duplicate_theme_from_gui(&mut self, base: &str, name: &str) -> Result<bool, String> {
+        Err(format!(
+            "theme {base:?} -> {name:?}: expected an application theme owner"
+        ))
+    }
+    /// Delete an active custom; example: `work.delete_theme_from_gui("Workshop")?`.
+    fn delete_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        Err(format!(
+            "theme {name:?}: expected an application theme owner"
+        ))
+    }
     /// Save the active custom snapshot; example: `work.save_theme_from_gui(name)?`.
     fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         Err(format!(

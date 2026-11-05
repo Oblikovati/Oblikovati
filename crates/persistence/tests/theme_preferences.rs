@@ -84,5 +84,18 @@ fn selection_only_storage_does_not_advertise_or_stage_custom_xml_writes() {
             .unwrap_err()
             .contains("known custom XML source")
     );
+    assert!(!preferences.can_create_custom());
+    assert!(
+        preferences
+            .create_custom_theme(&custom)
+            .unwrap_err()
+            .contains("creation support")
+    );
+    assert!(
+        preferences
+            .remove_custom_theme(&custom)
+            .unwrap_err()
+            .contains("removal support")
+    );
     assert_eq!(disk.borrow().calls, ["read"]);
 }

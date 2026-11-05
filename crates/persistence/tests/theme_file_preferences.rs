@@ -158,3 +158,16 @@ fn failed_source_writes_preserve_the_previous_custom_file_and_active_selection()
         assert_eq!(fixture.store.active_name(), "Workshop");
     }
 }
+
+impl oblikovati_persistence::theme_lifecycle::ThemeLifecycleFiles for RecordedThemeFiles {
+    fn create_theme(&mut self, _directory: &Path, _xml: &[u8]) -> io::Result<PathBuf> {
+        Err(io::Error::other(
+            "RecordedThemeFiles expects existing-source writes only",
+        ))
+    }
+    fn remove_theme(&mut self, _source: &Path) -> io::Result<()> {
+        Err(io::Error::other(
+            "RecordedThemeFiles expects existing-source writes only",
+        ))
+    }
+}

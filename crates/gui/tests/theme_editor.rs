@@ -112,6 +112,7 @@ fn editor_previews_custom_colours_emits_save_and_keeps_builtin_controls_read_onl
     assert_eq!(modal_dim_alpha(&settle(&mut engine, &mut request)), 0);
     set_document_presence(&mut request, true);
     verify_builtin_read_only(&mut engine, &mut request, &mut library);
+    verify_lifecycle_controls(&mut engine, &mut request, &mut library);
     verify_editor_retires_with_its_theme_owner(&mut engine, &mut request);
 }
 fn verify_custom_edit(
@@ -119,7 +120,7 @@ fn verify_custom_edit(
     request: &mut GuiFrameRequest,
     library: &mut ThemeLibrary,
 ) {
-    control_click(engine, request, 259.);
+    control_click(engine, request, 282.);
     let output = deliver(engine, request, vec![GuiInputEvent::Text("80".into())]);
     let [GuiShellAction::EditThemeColor { name, token, value }] = output.actions.as_slice() else {
         panic!("expected one custom colour edit, got {:?}", output.actions);
@@ -159,7 +160,7 @@ fn verify_builtin_read_only(
     deliver(engine, request, Vec::new());
     assert!(click(engine, request, [440., 91.]).is_empty());
     settle(engine, request);
-    control_click(engine, request, 276.);
+    control_click(engine, request, 299.);
     assert!(
         deliver(engine, request, vec![GuiInputEvent::Text("80".into())])
             .actions
@@ -188,4 +189,44 @@ fn verify_editor_retires_with_its_theme_owner(
     request.commands.theme = None;
     deliver(engine, request, Vec::new());
     assert_eq!(modal_dim_alpha(&settle(engine, request)), 0);
+}
+
+fn verify_lifecycle_controls(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    library: &mut ThemeLibrary,
+) {
+    assert!(click(engine, request, [440., 91.]).is_empty());
+    settle(engine, request);
+    assert!(
+        click(engine, request, [670., 196.]).is_empty(),
+        "built-in Delete must be disabled"
+    );
+    assert!(click(engine, request, [500., 222.]).is_empty());
+    deliver(
+        engine,
+        request,
+        vec![GuiInputEvent::Text("My Theme".into())],
+    );
+    assert_eq!(
+        click(engine, request, [790., 222.]),
+        [GuiShellAction::DuplicateTheme {
+            base: "Dark".into(),
+            name: "My Theme".into()
+        }]
+    );
+    library.duplicate("Dark", "My Theme").unwrap();
+    request.commands.theme = Some(GuiThemeState::from_library(library));
+    deliver(engine, request, Vec::new());
+    assert_eq!(
+        click(engine, request, [670., 196.]),
+        [GuiShellAction::DeleteTheme {
+            name: "My Theme".into()
+        }]
+    );
+    library.remove("My Theme").unwrap();
+    request.commands.theme = Some(GuiThemeState::from_library(library));
+    deliver(engine, request, Vec::new());
+    assert!(click(engine, request, [590., 196.]).is_empty());
+    settle(engine, request);
 }

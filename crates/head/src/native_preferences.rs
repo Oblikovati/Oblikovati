@@ -25,7 +25,8 @@ pub(super) fn load_native_themes() -> Result<NativeThemeStartup, String> {
         .map_err(|cause| cause.to_string())?;
     let library = ThemeLibrary::new(loaded.customs, preferences.active_name())?;
     let preferences =
-        ThemeFilePreferences::new(preferences, NativeThemePreferenceFiles, loaded.sources);
+        ThemeFilePreferences::new(preferences, NativeThemePreferenceFiles, loaded.sources)
+            .with_custom_directory(directory.join("themes"));
     Ok(NativeThemeStartup {
         library,
         preferences,

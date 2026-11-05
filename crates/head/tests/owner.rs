@@ -333,3 +333,6 @@ mod color_schemes;
 
 #[path = "owner/theme_editor.rs"]
 mod theme_editor;
+
+#[path = "owner/theme_lifecycle.rs"]
+mod theme_lifecycle;

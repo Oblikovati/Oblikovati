@@ -9,12 +9,20 @@ pub(crate) fn ribbon_band(
     ribbon: &mut DocumentRibbon,
     parameters: &mut crate::parameters::GuiParameterEditor,
     files: &mut crate::files::GuiDocumentFiles,
+    theme_editor: &mut crate::theme_editor::GuiThemeEditor,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let width = request.extent[0] as f32 / request.framebuffer_scale[0];
-    let frame = ribbon.prepare(&request.commands);
     if let Some(_band) = begin_ribbon_band(ui, width) {
-        ribbon_contents(ui, request, ribbon, &frame, parameters, files, actions);
+        ribbon_contents(
+            ui,
+            request,
+            ribbon,
+            parameters,
+            files,
+            theme_editor,
+            actions,
+        );
     }
 }
 fn begin_ribbon_band(ui: &Ui, width: f32) -> Option<imgui::WindowToken<'_>> {
@@ -35,19 +43,20 @@ fn ribbon_contents(
     ui: &Ui,
     request: &GuiFrameRequest,
     ribbon: &mut DocumentRibbon,
-    frame: &RibbonFrame,
     parameters: &mut crate::parameters::GuiParameterEditor,
     files: &mut crate::files::GuiDocumentFiles,
+    theme_editor: &mut crate::theme_editor::GuiThemeEditor,
     actions: &mut Vec<GuiShellAction>,
 ) {
+    let frame = ribbon.prepare(&request.commands);
     ui.menu_bar(|| files.menu(ui, &request.commands, actions));
     crate::widget_abi::cursor_position(ui, [16., 35.]);
     quick_access(ui, &request.commands, actions);
     ui.same_line();
-    ribbon_tabs(ui, ribbon, frame);
+    ribbon_tabs(ui, ribbon, &frame);
     crate::widget_abi::cursor_position(ui, [16., 59.]);
     tab_panels(ui, ribbon.active, &request.commands, parameters, actions);
-    crate::theme_editor::panel(ui, request.commands.theme.as_ref(), actions);
+    crate::theme_editor::panel(ui, request.commands.theme.as_ref(), theme_editor, actions);
     crate::widget_abi::cursor_position(ui, [8., 138.]);
     ui.text(request.status.as_deref().unwrap_or("Ready"));
 }

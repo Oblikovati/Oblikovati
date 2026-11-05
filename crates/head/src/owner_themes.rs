@@ -48,7 +48,13 @@ impl<
             .is_some_and(|store| store.can_save_custom(library.active()));
         Some(
             oblikovati_gui::GuiThemeState::from_library(library)
-                .with_custom_save_available(can_save),
+                .with_custom_save_available(can_save)
+                .with_lifecycle_available(
+                    self.theme_store
+                        .as_ref()
+                        .is_none_or(|store| store.can_create_custom()),
+                    self.theme_store.is_none() || can_save,
+                ),
         )
     }
     pub(super) fn preview_custom_theme_color(
@@ -68,6 +74,36 @@ impl<
             .ok_or_else(|| format!("theme {name:?}: expected a writable custom XML source"))?;
         store.save_custom_theme(library.active())?;
         self.command_notice = Some(DesktopCommandNotice::ThemeSaved { name: name.into() });
+        Ok(true)
+    }
+    pub(super) fn duplicate_application_theme(
+        &mut self,
+        base: &str,
+        name: &str,
+    ) -> Result<bool, String> {
+        let library = self
+            .themes
+            .as_mut()
+            .ok_or_else(|| format!("theme {base:?}: expected an application theme library"))?;
+        let candidate = duplicate_candidate(library, base, name)?;
+        if let Some(store) = &mut self.theme_store {
+            store.create_custom_theme(candidate.active())?;
+        }
+        publish_duplicate_selection(library, &mut self.theme_store, candidate, base, name)
+    }
+    pub(super) fn delete_application_theme(&mut self, name: &str) -> Result<bool, String> {
+        let library = active_custom_library(&mut self.themes, name)?;
+        let mut candidate = library.clone();
+        candidate.remove(name)?;
+        if let Some(store) = &mut self.theme_store {
+            store.remove_custom_theme(library.active())?;
+        }
+        *library = candidate;
+        if let Some(store) = &mut self.theme_store {
+            store.save_selection(library.active()).map_err(|cause| {
+                format!("theme {name:?} was deleted but selection was not saved: {cause}")
+            })?;
+        }
         Ok(true)
     }
     pub(super) fn select_application_theme(&mut self, name: &str) -> Result<bool, String> {
@@ -112,4 +148,40 @@ fn active_custom_library<'a>(
         ));
     }
     Ok(library)
+}
+
+fn duplicate_candidate(
+    library: &ThemeLibrary,
+    base: &str,
+    name: &str,
+) -> Result<ThemeLibrary, String> {
+    if library.active().name() != base {
+        return Err(format!(
+            "theme {base:?}: expected active theme {:?}",
+            library.active().name()
+        ));
+    }
+    let mut candidate = library.clone();
+    candidate.duplicate(base, name)?;
+    Ok(candidate)
+}
+fn publish_duplicate_selection(
+    library: &mut ThemeLibrary,
+    store: &mut Option<Box<dyn ThemeSelectionStore>>,
+    mut candidate: ThemeLibrary,
+    base: &str,
+    name: &str,
+) -> Result<bool, String> {
+    let selection = store
+        .as_mut()
+        .map_or(Ok(()), |store| store.save_selection(candidate.active()));
+    if let Err(cause) = selection {
+        candidate.set_active(base);
+        *library = candidate;
+        return Err(format!(
+            "theme {name:?} was created but selection was not saved: {cause}"
+        ));
+    }
+    *library = candidate;
+    Ok(true)
 }

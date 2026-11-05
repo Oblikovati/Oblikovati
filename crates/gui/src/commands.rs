@@ -7,6 +7,13 @@ pub enum GuiShellAction {
         token: oblikovati_api::types::ThemeToken,
         value: oblikovati_api::types::Rgba,
     },
+    DuplicateTheme {
+        base: String,
+        name: String,
+    },
+    DeleteTheme {
+        name: String,
+    },
     SaveTheme {
         name: String,
     },
@@ -99,6 +106,14 @@ impl GuiShellAction {
                 .theme
                 .as_ref()
                 .is_some_and(|theme| theme.editable() && theme.active_name() == name),
+            Self::DuplicateTheme { base, .. } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.creation_available() && theme.active_name() == base),
+            Self::DeleteTheme { name } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.deletion_available() && theme.active_name() == name),
             Self::SaveTheme { name } => state
                 .theme
                 .as_ref()

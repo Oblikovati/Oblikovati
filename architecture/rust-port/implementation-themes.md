@@ -68,14 +68,23 @@ theme-owner retirement. Live OS input verified preview without disk writes,
 explicit Save, preserved vendor metadata and preferences, and a fresh-process
 reopen of the edited colour. Both desktops closed normally.
 
-Add Duplicate and Delete controls and apply the selection/highlight colours to
-selection rendering. OS XTest selection of all four schemes has passed with Go
+Duplicate and Delete now call the same owner, with built-in deletion disabled.
+New files receive independent source identities, so display-name slug collisions
+cannot overwrite another theme. Delete uses the original source filename.
+Creation and removal failures preserve the previous palette and source map.
+A preference failure after a completed file change reports that partial outcome;
+the gallery retains created themes and removes deleted ones. Unit tests cover
+these boundaries and memory-only libraries. OS XTest created two similarly named
+copies, reopened the selected copy, deleted it, and reopened Dark. The other copy
+and original vendor XML remained intact. All three desktops closed normally.
+
+Apply the selection/highlight colours to selection rendering. OS XTest selection of all four schemes has passed with Go
 MCPBridge queries and pixel samples from completed window captures. High Contrast
 stays black when the chrome theme changes; Presentation and Sky retain their
 authored gradient directions. Native tests also cover gradient-to-solid changes,
 scene refresh, no-op capture generations and a closed view.
 The built-in selection path has passed OS XTest mouse input, Go MCPBridge theme
 queries and window captures, atomic preference save, and a fresh-process Light
-theme reopen. Both desktops closed normally. Custom edits still need the same
-live acceptance. Run the full local gate, coverage and duplication checks before
-pushing. This evidence covers built-in selection; the full feature acceptance is incomplete.
+theme reopen. Both desktops closed normally. Run the full local gate, coverage and duplication
+checks before pushing. Selection/highlight rendering and the full feature
+acceptance remain incomplete.

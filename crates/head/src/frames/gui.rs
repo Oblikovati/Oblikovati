@@ -52,6 +52,8 @@ fn report_authoring_result(
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
         GuiShellAction::EditThemeColor { .. }
+        | GuiShellAction::DuplicateTheme { .. }
+        | GuiShellAction::DeleteTheme { .. }
         | GuiShellAction::SaveTheme { .. }
         | GuiShellAction::SetColorScheme(_)
         | GuiShellAction::SetTheme(_)

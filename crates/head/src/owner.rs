@@ -226,6 +226,12 @@ impl<
     ) -> Result<bool, String> {
         self.preview_custom_theme_color(name, token, value)
     }
+    fn duplicate_theme_from_gui(&mut self, base: &str, name: &str) -> Result<bool, String> {
+        self.duplicate_application_theme(base, name)
+    }
+    fn delete_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.delete_application_theme(name)
+    }
     fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.persist_active_custom_theme(name)
     }

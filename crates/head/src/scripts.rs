@@ -85,6 +85,12 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.edit_theme_color_from_gui(name, token, value)
     }
+    fn duplicate_theme_from_gui(&mut self, base: &str, name: &str) -> Result<bool, String> {
+        self.owner.duplicate_theme_from_gui(base, name)
+    }
+    fn delete_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
+        self.owner.delete_theme_from_gui(name)
+    }
     fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.owner.save_theme_from_gui(name)
     }

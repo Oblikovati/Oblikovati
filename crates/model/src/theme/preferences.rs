@@ -16,4 +16,22 @@ pub trait ThemeSelectionStore {
             theme.name()
         ))
     }
+    /// Report creation storage; example: `store.can_create_custom()` before enabling Duplicate.
+    fn can_create_custom(&self) -> bool {
+        false
+    }
+    /// Create a new source without replacing another file; example: `store.create_custom_theme(&copy)?`.
+    fn create_custom_theme(&mut self, theme: &ThemeDefinition) -> Result<(), String> {
+        Err(format!(
+            "theme {:?}: expected storage with custom creation support",
+            theme.name()
+        ))
+    }
+    /// Remove a known source; example: `store.remove_custom_theme(&theme)?`.
+    fn remove_custom_theme(&mut self, theme: &ThemeDefinition) -> Result<(), String> {
+        Err(format!(
+            "theme {:?}: expected storage with custom removal support",
+            theme.name()
+        ))
+    }
 }

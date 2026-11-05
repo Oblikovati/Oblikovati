@@ -36,6 +36,7 @@ pub struct GuiFrameEngine {
     document_files: crate::files::GuiDocumentFiles,
     ribbon: crate::ribbon::DocumentRibbon,
     document_tabs: crate::document_tabs::DocumentTabs,
+    theme_editor: crate::theme_editor::GuiThemeEditor,
 }
 impl GuiFrameEngine {
     /// Create the GUI owner on its UI thread without automatic file I/O; example: `GuiFrameEngine::new()?`.
@@ -50,6 +51,7 @@ impl GuiFrameEngine {
             document_files: Default::default(),
             ribbon: Default::default(),
             document_tabs: Default::default(),
+            theme_editor: Default::default(),
         })
     }
     /// Apply semantic chrome colours on the GUI thread; example: `engine.apply_theme(library.active())`.
@@ -81,6 +83,7 @@ impl GuiFrameEngine {
             &mut self.document_files,
             &mut self.ribbon,
             &mut self.document_tabs,
+            &mut self.theme_editor,
         )
     }
     /// Request a path for the owner's unsaved document without writing it.
@@ -161,6 +164,7 @@ fn draw_controls(
     document_files: &mut crate::files::GuiDocumentFiles,
     ribbon: &mut crate::ribbon::DocumentRibbon,
     document_tabs: &mut crate::document_tabs::DocumentTabs,
+    theme_editor: &mut crate::theme_editor::GuiThemeEditor,
 ) -> Result<GuiFrameOutput, String> {
     prepare_frame_inputs(context, request);
     let ui = context.frame();
@@ -171,6 +175,7 @@ fn draw_controls(
         ribbon,
         parameter_editor,
         document_files,
+        theme_editor,
         &mut selected,
     );
     document_tabs.panel(ui, request, &mut selected);

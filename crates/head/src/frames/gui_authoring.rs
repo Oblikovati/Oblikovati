@@ -7,6 +7,8 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::EditThemeColor { name, token, value } => {
             owner.edit_theme_color_from_gui(name, token, value.clone())
         }
+        GuiShellAction::DuplicateTheme { base, name } => owner.duplicate_theme_from_gui(base, name),
+        GuiShellAction::DeleteTheme { name } => owner.delete_theme_from_gui(name),
         GuiShellAction::SaveTheme { name } => owner.save_theme_from_gui(name),
         GuiShellAction::SetColorScheme(request) => owner.select_color_scheme_from_gui(request),
         GuiShellAction::SetTheme(name) => owner.select_theme_from_gui(name),
@@ -72,7 +74,14 @@ mod tests {
         let save = GuiShellAction::SaveTheme {
             name: "Workshop".into(),
         };
-        for action in [edit, save] {
+        let duplicate = GuiShellAction::DuplicateTheme {
+            base: "Dark".into(),
+            name: "Workshop".into(),
+        };
+        let delete = GuiShellAction::DeleteTheme {
+            name: "Workshop".into(),
+        };
+        for action in [edit, save, duplicate, delete] {
             let cause = apply(&mut owner, &action).unwrap_err();
             assert!(cause.contains("Workshop") && cause.contains("expected"));
         }
