@@ -49,12 +49,14 @@ impl SketchSolveOutcome {
             .filter_map(SketchRelationId::authored)
             .collect())
     }
-    /// Inspect all unsatisfied authored and structural relations; example: `outcome.conflicting_relations()`.
+    /// Inspect all unsatisfied authored and structural relations in source order; example: `outcome.conflicting_relations()`.
     pub fn conflicting_relations(&self) -> Vec<SketchRelationId> {
-        self.numerical
-            .conflicts
-            .iter()
-            .map(|&index| self.origins[index])
+        // #3802: residual severity can change across platforms; report stable source order.
+        let mut sources = self.numerical.conflicts.clone();
+        sources.sort_unstable();
+        sources
+            .into_iter()
+            .map(|index| self.origins[index])
             .collect()
     }
     /// Inspect all individually redundant sources, including structural equations; example: `outcome.redundant_relations(1e-9)?`.
@@ -125,3 +127,7 @@ impl Sketch2D {
         Ok(analyze_structure(&evaluation, rank_tolerance).map_err(SolveError::from)?)
     }
 }
+
+#[cfg(test)]
+#[path = "../../tests/sketch/conflict_order.rs"]
+mod conflict_order_tests;
