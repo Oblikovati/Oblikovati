@@ -47,9 +47,13 @@ fn document_strip(
     }
 }
 fn document_strip_window(ui: &Ui, width: f32, contents: impl FnOnce()) {
+    crate::widget_abi::window_geometry(
+        ui,
+        [316., 160.],
+        [(width - 316.).max(1.), 32.],
+        Condition::Always,
+    );
     ui.window("##open-document-tabs")
-        .position([316., 160.], Condition::Always)
-        .size([(width - 316.).max(1.), 32.], Condition::Always)
         .title_bar(false)
         .movable(false)
         .resizable(false)
@@ -111,7 +115,8 @@ fn document_tab_action(
 }
 fn draw_literal_tab_label(ui: &Ui, label: &str) {
     let minimum = ui.item_rect_min();
-    ui.get_window_draw_list().add_text(
+    crate::widget_abi::literal_text(
+        ui,
         [minimum[0] + 8., minimum[1] + 3.],
         ui.style_color(imgui::StyleColor::Text),
         label,

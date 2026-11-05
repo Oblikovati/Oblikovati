@@ -14,7 +14,7 @@ impl GuiParameterEditor {
     pub(crate) fn toolbar(&mut self, ui: &Ui, state: &GuiCommandState) {
         self.synchronize_document(state.document);
         let disabled = ui.begin_disabled(state.document.is_none());
-        if ui.button_with_size("Parameters", [108., 58.]) {
+        if crate::widget_abi::button(ui, "Parameters", [108., 58.]) {
             self.visible = !self.visible;
         }
         drop(disabled);
@@ -29,9 +29,8 @@ impl GuiParameterEditor {
         if !self.visible {
             return;
         }
+        crate::widget_abi::window_geometry(ui, [320., 8.], [540., 360.], Condition::FirstUseEver);
         ui.window("Parameters")
-            .position([320., 8.], Condition::FirstUseEver)
-            .size([540., 360.], Condition::FirstUseEver)
             .build(|| self.contents(ui, state, actions));
     }
     fn synchronize_document(&mut self, document: Option<u64>) {
@@ -57,13 +56,13 @@ impl GuiParameterEditor {
             ("Add", GuiParameterMutation::Add),
             ("Apply", GuiParameterMutation::Set),
         ] {
-            if ui.button(label) {
+            if crate::widget_abi::button(ui, label, [0.; 2]) {
                 actions.push(self.request(mutation));
             }
             ui.same_line();
         }
         drop(disabled);
-        if ui.button("Cancel") {
+        if crate::widget_abi::button(ui, "Cancel", [0.; 2]) {
             self.visible = false;
         }
     }
@@ -85,7 +84,7 @@ impl GuiParameterEditor {
         }
         ui.separator();
         for row in &state.parameters {
-            if ui.selectable(&row.name) {
+            if crate::widget_abi::selectable(ui, &row.name, false, false) {
                 self.name = row.name.clone();
                 self.expression = row.expression.clone();
             }

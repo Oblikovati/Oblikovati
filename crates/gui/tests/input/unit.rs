@@ -91,15 +91,13 @@ fn verify_pointer_channels(context: &mut Context, text: &mut String) {
 }
 
 fn draw_text_probe(ui: &imgui::Ui, text: &mut String, focus: bool) {
-    ui.window("Input probe")
-        .position([8., 8.], Condition::Always)
-        .size([240., 160.], Condition::Always)
-        .build(|| {
-            if focus {
-                ui.set_keyboard_focus_here();
-            }
-            ui.input_text("Value", text).build();
-        });
+    crate::widget_abi::window_geometry(ui, [8., 8.], [240., 160.], Condition::Always);
+    ui.window("Input probe").build(|| {
+        if focus {
+            ui.set_keyboard_focus_here();
+        }
+        ui.input_text("Value", text).build();
+    });
 }
 
 fn pointer_probe_events() -> [GuiInputEvent; 5] {
