@@ -91,13 +91,14 @@ fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
 mod scene_fixture;
 
+#[cfg(any(target_os = "linux", test))]
 #[path = "placement/input.rs"]
 mod placement_input;
 
 #[cfg(test)]
 #[path = "../tests/placement_inputs.rs"]
 mod placement_test_inputs;
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 #[path = "../tests/placement_samples.rs"]
 mod placement_test_samples;
 

@@ -259,3 +259,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "input_tests.rs"]
+mod interaction_tests;
