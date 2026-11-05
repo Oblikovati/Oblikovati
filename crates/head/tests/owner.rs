@@ -336,3 +336,6 @@ mod theme_editor;
 
 #[path = "owner/theme_lifecycle.rs"]
 mod theme_lifecycle;
+
+#[path = "owner/sketch_picking.rs"]
+mod sketch_picking;

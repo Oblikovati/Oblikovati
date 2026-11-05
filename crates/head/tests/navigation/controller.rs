@@ -216,3 +216,36 @@ fn previous_view_cancels_a_drag_without_producing_a_continuous_camera_command() 
         None
     );
 }
+
+#[test]
+fn held_modes_capture_pointer_until_release_or_focus_loss() {
+    let mut navigation = DesktopNavigation::default();
+    assert!(!navigation.captures_pointer());
+    for key in [ViewportKey::Pan, ViewportKey::Zoom, ViewportKey::Orbit] {
+        navigation
+            .command(&ViewportEvent::Input(ViewportInput::Key {
+                key,
+                pressed: true,
+            }))
+            .unwrap();
+        assert!(navigation.captures_pointer());
+        navigation
+            .command(&ViewportEvent::Input(ViewportInput::Key {
+                key,
+                pressed: false,
+            }))
+            .unwrap();
+        assert!(!navigation.captures_pointer());
+    }
+    navigation
+        .command(&ViewportEvent::Input(ViewportInput::Button {
+            button: ViewportButton::Middle,
+            pressed: true,
+            position: [0; 2],
+            modifiers: Default::default(),
+        }))
+        .unwrap();
+    assert!(navigation.captures_pointer());
+    navigation.command(&ViewportEvent::Focus(false)).unwrap();
+    assert!(!navigation.captures_pointer());
+}

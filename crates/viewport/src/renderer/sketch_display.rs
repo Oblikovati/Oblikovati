@@ -14,7 +14,7 @@ pub(super) struct SketchDisplayOverlay {
     structures: Vec<SketchStructure>,
     color: Rgba,
     selected_color: Rgba,
-    selected: Vec<oblikovati_model::document_sketch::DocumentSketchId>,
+    selected: crate::ViewportSketchSelection,
 }
 impl SketchDisplayOverlay {
     pub(super) fn is_empty(&self) -> bool {
@@ -27,14 +27,14 @@ impl SketchDisplayOverlay {
         source: &[ViewportSketchDisplay],
         deflection: f64,
         palette: &crate::ViewportSketchPalette,
-        selected: &[oblikovati_model::document_sketch::DocumentSketchId],
+        selected: &crate::ViewportSketchSelection,
     ) -> Result<bool, String> {
         if self.source.as_ref().is_some_and(|(previous, error)| {
             previous == source
                 && *error == deflection
                 && self.color == palette.geometry
                 && self.selected_color == palette.selected
-                && self.selected == selected
+                && self.selected == *selected
         }) {
             return Ok(false);
         }
@@ -48,13 +48,13 @@ impl SketchDisplayOverlay {
         source: &[ViewportSketchDisplay],
         deflection: f64,
         palette: &crate::ViewportSketchPalette,
-        selected: &[oblikovati_model::document_sketch::DocumentSketchId],
+        selected: &crate::ViewportSketchSelection,
     ) -> Result<Self, String> {
         let mut result = Self {
             source: Some((source.to_vec(), deflection)),
             color: palette.geometry.clone(),
             selected_color: palette.selected.clone(),
-            selected: selected.to_vec(),
+            selected: selected.clone(),
             ..Self::default()
         };
         for sketch in source {
@@ -86,6 +86,25 @@ impl SketchDisplayOverlay {
                 .into_iter()
                 .map(|decline| display_decline(sketch, decline.entity, decline.cause)),
         );
+        let marked = report
+            .center_markers
+            .iter()
+            .map(|point| point.id)
+            .chain(report.entities.iter().map(|entity| entity.entity))
+            .collect::<std::collections::BTreeSet<_>>();
+        for point in sketch
+            .geometry
+            .points()
+            .iter()
+            .filter(|point| {
+                !marked.contains(&point.id)
+                    && self.selected.entities.contains(&(sketch.sketch, point.id))
+            })
+            .copied()
+            .collect::<Vec<_>>()
+        {
+            self.append_marker(viewer, sketch, point);
+        }
         for point in report.center_markers {
             self.append_marker(viewer, sketch, point);
         }
@@ -114,7 +133,12 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         entity: &SketchDisplayEntity,
     ) {
-        let color = if self.selected.contains(&sketch.sketch) {
+        let color = if self.selected.sketches.contains(&sketch.sketch)
+            || self
+                .selected
+                .entities
+                .contains(&(sketch.sketch, entity.entity))
+        {
             &self.selected_color
         } else {
             &self.color
@@ -159,7 +183,7 @@ impl super::RenderView {
             source,
             deflection,
             &self.sketch_palette,
-            &self.selected_sketches,
+            &self.sketch_selection,
         )
     }
     pub(crate) fn refresh_sketch_display(&mut self) -> Result<bool, String> {
@@ -176,7 +200,7 @@ impl super::RenderView {
             &source,
             deflection,
             &self.sketch_palette,
-            &self.selected_sketches,
+            &self.sketch_selection,
         )
     }
     pub(crate) fn sketch_declines(&self) -> &[ViewportSketchDecline] {

@@ -17,3 +17,22 @@ pub struct ViewportSketchDecline {
     pub entity: oblikovati_model::sketch::SketchEntityId,
     pub cause: String,
 }
+
+/// Transient authored identities selected by the active document owner.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ViewportSketchSelection {
+    pub sketches: Vec<DocumentSketchId>,
+    pub entities: Vec<(DocumentSketchId, oblikovati_model::sketch::SketchEntityId)>,
+}
+impl ViewportSketchSelection {
+    pub(crate) fn normalized(&self) -> Self {
+        let mut selection = self.clone();
+        selection.sketches.sort_by_key(|id| id.0);
+        selection.sketches.dedup();
+        selection
+            .entities
+            .sort_by_key(|(sketch, entity)| (sketch.0, entity.0));
+        selection.entities.dedup();
+        selection
+    }
+}

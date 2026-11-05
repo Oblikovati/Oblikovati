@@ -29,7 +29,7 @@ pub(crate) struct SavedViewCamera {
 pub(crate) struct RenderView {
     pub background: Option<crate::ViewportBackground>,
     sketch_palette: crate::ViewportSketchPalette,
-    selected_sketches: Vec<oblikovati_model::document_sketch::DocumentSketchId>,
+    sketch_selection: crate::ViewportSketchSelection,
     pub viewer: Handle<V3dViewer>,
     pub view: Handle<dyn V3dViewSource>,
     pub renderer: Handle<Graphic3dRenderView>,
@@ -57,7 +57,7 @@ impl RenderView {
             view,
             renderer,
             background: None,
-            selected_sketches: Vec::new(),
+            sketch_selection: Default::default(),
             sketch_palette: crate::ViewportSketchPalette::from_theme(
                 &oblikovati_model::theme::ThemeDefinition::dark()?,
             ),

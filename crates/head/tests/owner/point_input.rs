@@ -121,10 +121,12 @@ fn cancel_and_lost_focus_drop_point_preview_without_changing_history() {
 fn projection_failure_or_edge_on_plane_preserves_point_tool_for_retry() {
     for window in [
         PlanarInputWindow {
+            navigating: false,
             fail: true,
             edge_on: false,
         },
         PlanarInputWindow {
+            navigating: false,
             fail: false,
             edge_on: true,
         },

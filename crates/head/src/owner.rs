@@ -21,6 +21,8 @@ mod browser_selection;
 mod model_browser;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
+#[path = "owner_sketch_picking.rs"]
+mod sketch_picking;
 #[path = "owner_work.rs"]
 mod work;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};

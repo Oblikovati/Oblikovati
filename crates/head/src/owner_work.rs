@@ -76,6 +76,19 @@ impl<
         Ok(oblikovati_gui::GuiCommandState {
             theme,
             color_scheme,
+            sketch_selection: oblikovati_viewport::ViewportSketchSelection {
+                sketches: session.selected_browser_sketches(),
+                entities: session
+                    .selected_editor_picks()
+                    .iter()
+                    .filter_map(|pick| match pick.target() {
+                        oblikovati_session::selection::SketchPickTarget::Entity(entity) => {
+                            Some((pick.sketch(), entity))
+                        }
+                        _ => None,
+                    })
+                    .collect(),
+            },
             documents: self.gui_document_rows()?,
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),

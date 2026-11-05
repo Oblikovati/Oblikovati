@@ -93,6 +93,24 @@ pub trait HeadWindow {
         ))
     }
 
+    /// Keep modelling clicks out of an active camera gesture.
+    /// Example: `window.navigation_active()` before selecting a sketch entity.
+    fn navigation_active(&self) -> bool {
+        false
+    }
+
+    /// Project an analytic sketch witness for screen-space hit acceptance.
+    /// Example: `window.sketch_pixel(plane, witness.position)?`.
+    fn sketch_pixel(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        point: [f64; 2],
+    ) -> Result<[i32; 2], String> {
+        Err(format!(
+            "sketch witness {point:?} on {plane:?}: expected a window with sketch projection"
+        ))
+    }
+
     /// Show an owner command result without terminating the window; example: `window.show_command_notice(notice)?`.
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
         Err(format!(

@@ -61,6 +61,7 @@ pub enum GuiAuthoringContext {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,

@@ -45,3 +45,9 @@ ARM64 runtime is tracked in
 [#388](https://github.com/Oblikovati/Martensite/issues/388). No runtime fallback
 or second renderer is added by this dependency update. The full cube journey
 remains unaccepted.
+
+Analytic editor picking is being integrated under
+[#3816](https://github.com/Oblikovati/Oblikovati/issues/3816). Its implementation
+and local evidence are recorded in the
+[analytic picking ledger](implementation-analytic-sketch-picking.md). Constraint
+tool and full cube acceptance remain separate requirements.
