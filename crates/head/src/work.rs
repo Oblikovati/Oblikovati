@@ -61,9 +61,12 @@ pub trait HeadWork {
     fn take_window_capture_requests(&mut self) -> Vec<crate::WindowCaptureJob> {
         Vec::new()
     }
-    /// Activate rectangle placement on the current sketch; example: `work.place_rectangle_from_gui()?`.
-    fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
-        Err("Rectangle: expected an owner with an active sketch".into())
+    /// Activate a supported placement engine; example: `work.place_sketch_tool_from_gui(GuiSketchTool::Circle)?`.
+    fn place_sketch_tool_from_gui(
+        &mut self,
+        tool: oblikovati_gui::GuiSketchTool,
+    ) -> Result<bool, String> {
+        Err(format!("{tool:?}: expected an owner with an active sketch"))
     }
     /// Enter or finish the owner sketch edit; example: `work.edit_sketch_from_gui(true)?`.
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
@@ -215,8 +218,11 @@ macro_rules! forward_owner_view_work {
         fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
             self.$owner.edit_sketch_from_gui(start)
         }
-        fn place_rectangle_from_gui(&mut self) -> Result<bool, String> {
-            self.$owner.place_rectangle_from_gui()
+        fn place_sketch_tool_from_gui(
+            &mut self,
+            tool: oblikovati_gui::GuiSketchTool,
+        ) -> Result<bool, String> {
+            self.$owner.place_sketch_tool_from_gui(tool)
         }
         fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
             self.$owner.decline_sketch_edit(cause)

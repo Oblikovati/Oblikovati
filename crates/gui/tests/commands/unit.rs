@@ -37,7 +37,10 @@ fn sketch_commands_follow_the_active_document_and_edit_context() {
         };
         assert_eq!(GuiShellAction::StartSketchXY.dispatchable(&state), start);
         assert_eq!(GuiShellAction::FinishSketch.dispatchable(&state), edit);
-        assert_eq!(GuiShellAction::Rectangle.dispatchable(&state), edit);
+        assert_eq!(
+            GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Rectangle).dispatchable(&state),
+            edit
+        );
     }
 }
 fn verify_history_commands(state: &GuiCommandState, enabled: [bool; 2], dispatch: [bool; 2]) {

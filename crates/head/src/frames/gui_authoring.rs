@@ -36,7 +36,7 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch => {
             owner.edit_sketch_from_gui(*action == GuiShellAction::StartSketchXY)
         }
-        GuiShellAction::Rectangle => owner.place_rectangle_from_gui(),
+        GuiShellAction::PlaceSketchTool(tool) => owner.place_sketch_tool_from_gui(*tool),
         _ => unsupported(action),
     }
 }
@@ -65,9 +65,12 @@ mod tests {
             );
         }
         assert!(
-            document(&mut owner, &GuiShellAction::Rectangle)
-                .unwrap_err()
-                .contains("Rectangle")
+            document(
+                &mut owner,
+                &GuiShellAction::PlaceSketchTool(oblikovati_gui::GuiSketchTool::Rectangle)
+            )
+            .unwrap_err()
+            .contains("Rectangle")
         );
     }
 }

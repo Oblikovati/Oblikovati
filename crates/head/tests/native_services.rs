@@ -32,7 +32,11 @@ fn addin_wrapper_keeps_part_and_sketch_authoring_on_the_document_owner() {
     assert!(services.create_part_document().unwrap());
     assert!(services.edit_sketch_from_gui(true).unwrap());
     assert!(services.sketch_edit().is_some());
-    assert!(services.place_rectangle_from_gui().unwrap());
+    assert!(
+        services
+            .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
+            .unwrap()
+    );
     assert!(services.edit_sketch_from_gui(false).unwrap());
     assert!(services.sketch_edit().is_none());
     services.finish().unwrap();

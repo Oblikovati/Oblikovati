@@ -57,7 +57,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SaveDocumentAs(_)
         | GuiShellAction::EditSketch { .. }
-        | GuiShellAction::Rectangle
+        | GuiShellAction::PlaceSketchTool(_)
         | GuiShellAction::NewPart
         | GuiShellAction::StartSketchXY
         | GuiShellAction::FinishSketch => {
