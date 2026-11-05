@@ -51,8 +51,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         // Go watchDocumentSwitches at aa8297d1 (#1105) retires picks on an actual switch.
         for id in self.active.into_iter().chain(document) {
             if let Some(entry) = self.entries.get_mut(&id) {
-                entry.session.browser_selection.clear();
-                entry.session.editor_selection.clear();
+                entry.session.clear_transient_selection();
             }
         }
         self.focus_identity = std::sync::Arc::new(());
