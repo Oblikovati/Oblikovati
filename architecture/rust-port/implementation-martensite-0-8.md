@@ -2,7 +2,10 @@
 
 Tracking: [#3809](https://github.com/Oblikovati/Oblikovati/issues/3809).
 
-The current Martensite dependency graph targets the
+This records the v0.8 intake. The subsequent
+[v0.9 intake](implementation-martensite-0-9.md) has its own qualification record.
+
+The v0.8 dependency graph targets the
 [v0.8.0 release](https://github.com/Oblikovati/Martensite/releases/tag/v0.8.0),
 commit `59aca38960bdfbaa75a07a80d9b2de522005ddac`. The source guard checks
 that exact revision for every locked Martensite package. Toolkit versions remain
