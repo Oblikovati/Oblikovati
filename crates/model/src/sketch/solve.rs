@@ -6,7 +6,7 @@ use super::{
 use crate::parameter::ParameterCollection;
 use oblikovati_solve::{
     diagnostics::{ConstraintStructure, analyze_structure, redundant_sources},
-    nonlinear::{NonlinearResult, SolveError, SolveOptions, solve_constraints},
+    nonlinear::{NonlinearResult, SolveError, SolveOptions, solve_constraints_with_constants},
     residual::evaluate_residuals,
 };
 
@@ -95,8 +95,14 @@ impl Sketch2D {
         cancelled: impl FnMut() -> bool,
     ) -> Result<SketchSolveOutcome, SketchError> {
         let prepared = grounded::prepare(self, parameters, anchors)?;
-        let numerical = solve_constraints(&prepared.values, &prepared.blocks(), options, cancelled)
-            .map_err(|cause| source_failure(&prepared.origins, cause))?;
+        let numerical = solve_constraints_with_constants(
+            &prepared.values,
+            &prepared.blocks(),
+            &prepared.constants,
+            options,
+            cancelled,
+        )
+        .map_err(|cause| source_failure(&prepared.origins, cause))?;
         let candidate = self.candidate_values(&prepared.restore(&numerical.values)?)?;
         Ok(SketchSolveOutcome {
             origins: prepared.origins,

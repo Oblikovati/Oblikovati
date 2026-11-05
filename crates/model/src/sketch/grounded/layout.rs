@@ -38,6 +38,15 @@ impl GroundedLayout {
             .filter_map(|(slot, value)| matches!(slot, GroundedSlot::Active(_)).then_some(*value))
             .collect()
     }
+    pub fn active_constants(&self, constants: &[(usize, f64)]) -> Vec<(usize, f64)> {
+        constants
+            .iter()
+            .filter_map(|&(column, value)| match self.slots[column] {
+                GroundedSlot::Active(index) => Some((index, value)),
+                GroundedSlot::Constant(_) => None,
+            })
+            .collect()
+    }
     pub fn local_slots(&self, columns: &[usize]) -> Vec<GroundedSlot> {
         columns.iter().map(|column| self.slots[*column]).collect()
     }
@@ -88,5 +97,9 @@ mod tests {
         assert!(cause.contains("grounded coordinate freedom has 0"));
         assert!(cause.contains("expected 2 active values"));
         assert!(layout.restore(&[]).is_err());
+        assert_eq!(
+            layout.active_constants(&[(0, 4.), (1, 5.), (2, -0.)]),
+            [(0, 4.), (1, -0.)]
+        );
     }
 }

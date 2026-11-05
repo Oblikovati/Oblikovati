@@ -15,9 +15,13 @@ pub(super) fn damped_delta(
     scaled: &ScaledEvaluation,
     columns: usize,
     damping: f64,
+    constants: &std::collections::BTreeSet<usize>,
 ) -> Result<Vec<f64>, SolveError> {
+    // #3808: fixed coordinates never enter QR. Their zero step also preserves signed-zero bits.
     let observed: Vec<usize> = (0..columns)
-        .filter(|&column| scaled.jacobian.iter().any(|row| row[column] != 0.0))
+        .filter(|&column| {
+            !constants.contains(&column) && scaled.jacobian.iter().any(|row| row[column] != 0.0)
+        })
         .collect();
     let mut delta = vec![0.0; columns];
     if observed.is_empty() {
@@ -152,7 +156,7 @@ mod tests {
             model_scale: 1.0,
             domains: vec![],
         };
-        let delta = damped_delta(&scaled, 2, INITIAL_DAMPING).unwrap();
+        let delta = damped_delta(&scaled, 2, INITIAL_DAMPING, &Default::default()).unwrap();
         assert_eq!(delta[1], 0.0, "unused column delta {:?}", delta[1]);
     }
 }

@@ -262,6 +262,7 @@ fn trial_steps_that_cross_the_positive_radius_domain_are_rejected() {
     sketch.add_point(entity(1), [0.0, 0.0]).unwrap();
     sketch.add_point(entity(2), [10.0, 0.0]).unwrap();
     sketch.add_circle(entity(3), entity(1), 0.1).unwrap();
+    sketch.add_point(entity(4), [-10., 0.]).unwrap();
     relation(
         &mut sketch,
         1,
@@ -274,7 +275,7 @@ fn trial_steps_that_cross_the_positive_radius_domain_are_rejected() {
         &mut sketch,
         2,
         PlanarConstraint::Fix {
-            point: entity(2),
+            point: entity(4),
             position: [-10.0, 0.0],
         },
     );
@@ -284,6 +285,13 @@ fn trial_steps_that_cross_the_positive_radius_domain_are_rejected() {
         PlanarConstraint::PointOnCircularCurve {
             point: entity(2),
             curve: entity(3),
+        },
+    );
+    relation(
+        &mut sketch,
+        4,
+        PlanarConstraint::Coincident {
+            points: [entity(2), entity(4)],
         },
     );
     let result = sketch
@@ -305,12 +313,20 @@ fn unconstrained_radii_keep_their_authored_values_while_centers_move() {
             .add_point(entity(1), [3.0 * coordinate_scale, 4.0 * coordinate_scale])
             .unwrap();
         sketch.add_circle(entity(2), entity(1), radius).unwrap();
+        sketch.add_point(entity(3), [0., 0.]).unwrap();
         relation(
             &mut sketch,
             1,
             PlanarConstraint::Fix {
-                point: entity(1),
+                point: entity(3),
                 position: [0.0, 0.0],
+            },
+        );
+        relation(
+            &mut sketch,
+            2,
+            PlanarConstraint::Coincident {
+                points: [entity(1), entity(3)],
             },
         );
         let result = sketch

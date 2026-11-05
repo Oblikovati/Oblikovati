@@ -179,3 +179,5 @@ pub use placement_recipe::{
 mod read_index;
 pub use entity_geometry::OwnedSketchGeometry;
 pub use read_index::SketchReadIndex;
+
+mod frozen;

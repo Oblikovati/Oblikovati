@@ -107,14 +107,21 @@ fn grounded_single_line_relations_solve_with_one_remaining_length_freedom() {
         let mut geometry = line_geometry([0.0; 2], end);
         append(&mut geometry, 1, line_relation(vertical));
         fix_start(&mut geometry, 2);
-        let solved = geometry
-            .solve(&parameters(), SolveOptions::default(), || false)
-            .unwrap();
+        // #3808: the assertion is an absolute coordinate bound; default convergence is model-relative.
+        let precision = SolveOptions {
+            relative_tolerance: 1e-12,
+            ..Default::default()
+        };
+        let solved = geometry.solve(&parameters(), precision, || false).unwrap();
         assert_eq!(solved.numerical().termination, SolveTermination::Converged);
         assert_eq!(solved.numerical().structure.degrees_of_freedom, 1);
         let coordinate = usize::from(!vertical);
         let points = solved.candidate().points();
-        assert!((points[1].position[coordinate] - points[0].position[coordinate]).abs() < 1e-10);
+        assert!(
+            (points[1].position[coordinate] - points[0].position[coordinate]).abs() < 1e-10,
+            "vertical={vertical}, points={points:?}, relative residual={}",
+            solved.numerical().relative_residual
+        );
     }
 }
 #[test]

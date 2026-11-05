@@ -151,6 +151,17 @@ fn invalid_targets_and_collapsed_line_errors_name_the_original_constraint() {
     parameters.set_expression(3, "2 cm").unwrap();
     let mut collapsed = sketch.clone();
     collapsed.set_position(entity(2), [0.0, 0.0]).unwrap();
+    collapsed
+        .remove_geometric_constraint(constraint(2))
+        .unwrap();
+    relation(
+        &mut collapsed,
+        2,
+        PlanarConstraint::Fix {
+            point: entity(2),
+            position: [0., 0.],
+        },
+    );
     assert!(
         matches!(collapsed.solve(&parameters, SolveOptions::default(), || false), Err(SketchError::Residual { constraint: id, .. }) if id == constraint(4))
     );
