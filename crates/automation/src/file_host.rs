@@ -41,6 +41,8 @@ pub struct FileHost<'a, O: TransactionObserver, W, F> {
     context: RefCell<FileContext<'a, O, W, F>>,
 }
 struct FileContext<'a, O: TransactionObserver, W, F> {
+    color_schemes: Option<&'a mut oblikovati_model::color_scheme::ColorSchemeRegistry>,
+    themes: Option<&'a oblikovati_model::theme::ThemeLibrary>,
     window_capture: Option<&'a mut dyn crate::WindowCaptureAccess>,
     sketch_edit: Option<crate::SketchInspectionEdit>,
     files: &'a mut FileWorkspace<O, W, F>,
@@ -54,6 +56,19 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Borrow the application viewport palettes; example: `host.with_color_schemes(&mut registry)`.
+    pub fn with_color_schemes(
+        mut self,
+        registry: &'a mut oblikovati_model::color_scheme::ColorSchemeRegistry,
+    ) -> Self {
+        self.context.get_mut().color_schemes = Some(registry);
+        self
+    }
+    /// Share the application theme library; example: `host.with_themes(&library)`.
+    pub fn with_themes(mut self, library: &'a oblikovati_model::theme::ThemeLibrary) -> Self {
+        self.context.get_mut().themes = Some(library);
+        self
+    }
     /// Inject the native capture queue; example: `host.with_window_capture(&mut captures)`.
     pub fn with_window_capture(mut self, capture: &'a mut dyn crate::WindowCaptureAccess) -> Self {
         self.context.get_mut().window_capture = Some(capture);
@@ -81,6 +96,8 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
     ) -> Self {
         Self {
             context: RefCell::new(FileContext {
+                color_schemes: None,
+                themes: None,
                 window_capture: None,
                 sketch_edit: None,
                 files,
@@ -100,6 +117,20 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut context = self.context.try_borrow_mut().map_err(|_| busy(method))?;
+        if crate::COLOR_SCHEME_METHODS.contains(&method) {
+            let registry = context.color_schemes.as_deref_mut().ok_or_else(|| Error(format!(
+                "color scheme call {method:?}: expected an injected application palette registry"
+            )))?;
+            return crate::color_schemes::apply(registry, method, request);
+        }
+        if crate::THEME_QUERY_METHODS.contains(&method) {
+            let library = context.themes.ok_or_else(|| {
+                Error(format!(
+                    "theme call {method:?}: expected an injected application theme library"
+                ))
+            })?;
+            return crate::ThemeQueryHost::new(library).call(method, request);
+        }
         if crate::WINDOW_CAPTURE_METHODS.contains(&method) {
             return crate::window_capture::apply(&mut context.window_capture, request);
         }

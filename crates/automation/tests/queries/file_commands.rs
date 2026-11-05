@@ -332,3 +332,9 @@ mod attachment_api;
 
 #[path = "file_clients.rs"]
 mod clients;
+
+#[path = "file_themes.rs"]
+mod file_themes;
+
+#[path = "file_color_schemes.rs"]
+mod file_color_schemes;

@@ -253,3 +253,9 @@ pub use part_topology::{BODY_QUERY_METHODS, PartTopologyAccess, TopologyEntityKi
 
 mod body_commands;
 pub use body_commands::BODY_COMMAND_METHODS;
+
+mod themes;
+pub use themes::{THEME_QUERY_METHODS, ThemeQueryHost};
+
+mod color_schemes;
+pub use color_schemes::COLOR_SCHEME_METHODS;
