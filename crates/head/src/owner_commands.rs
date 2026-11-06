@@ -100,7 +100,7 @@ impl DesktopCommandNotice {
             Self::PlacementPrompt { message } => message.clone(),
             Self::SelectionChanged { count } => format!("Sketch selection count: {count}."),
             Self::SelectionFailed { cause } => format!("Selection failed: {cause}"),
-            Self::PlacementFailed { cause } => format!("Slot could not be created: {cause}"),
+            Self::PlacementFailed { cause } => format!("Sketch placement failed: {cause}"),
             Self::AddInStartupFailed { library, cause } => format!("Add-in {library:?}: {cause}"),
             Self::HistoryCompleted { document, action } => {
                 format!("{} document {document}: complete", action.label())

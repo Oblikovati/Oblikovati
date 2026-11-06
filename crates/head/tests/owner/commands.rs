@@ -142,3 +142,14 @@ mod history;
 
 #[path = "save_path.rs"]
 mod save_path;
+
+#[test]
+fn placement_failure_message_identifies_the_shared_sketch_operation() {
+    let notice = DesktopCommandNotice::PlacementFailed {
+        cause: "circumcircle points [[0,0],[1,0],[2,0]]: expected non-collinear input".into(),
+    };
+    assert_eq!(
+        notice.message(),
+        "Sketch placement failed: circumcircle points [[0,0],[1,0],[2,0]]: expected non-collinear input"
+    );
+}
