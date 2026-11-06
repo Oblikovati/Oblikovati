@@ -26,6 +26,8 @@ pub(super) struct RenderedRun {
 pub(super) struct RenderedMark {
     pub list: usize,
     pub position: [f32; 2],
+    /// A mark's own colour: a window's dark rounded corner also counts as a mark.
+    pub bright: bool,
 }
 /// Everything a scenario may read from one completed frame.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -78,9 +80,10 @@ pub(super) fn frame_of_draw_data(
         let (glyphs, marks) = list_shapes(list, lookup);
         frame
             .marks
-            .extend(marks.into_iter().map(|position| RenderedMark {
+            .extend(marks.into_iter().map(|(position, bright)| RenderedMark {
                 list: index,
                 position,
+                bright,
             }));
         for glyph in glyphs {
             match frame.runs[first_of_list..].last_mut() {
@@ -113,7 +116,7 @@ pub(super) fn glyph_lookup() -> BTreeMap<GlyphCoordinates, char> {
 fn list_shapes(
     list: &imgui::DrawList,
     lookup: &BTreeMap<GlyphCoordinates, char>,
-) -> (Vec<RenderedGlyph>, Vec<[f32; 2]>) {
+) -> (Vec<RenderedGlyph>, Vec<([f32; 2], bool)>) {
     let mut glyphs = Vec::new();
     let mut marks = Vec::new();
     for command in list.commands() {
@@ -128,7 +131,7 @@ fn list_shapes(
 }
 fn append_command_shapes(
     glyphs: &mut Vec<RenderedGlyph>,
-    marks: &mut Vec<[f32; 2]>,
+    marks: &mut Vec<([f32; 2], bool)>,
     indices: &[u16],
     vertices: &[DrawVert],
     clip: [f32; 4],
@@ -138,17 +141,26 @@ fn append_command_shapes(
     let mut at = 0;
     while at < indices.len() {
         if at + QUAD_INDICES > indices.len() || !is_quad(&indices[at..at + QUAD_INDICES]) {
-            marks.push(vertices[indices[at] as usize].pos);
+            marks.push(mark_of(&vertices[indices[at] as usize]));
             at += 1;
             continue;
         }
         if let Some(glyph) = quad_glyph(indices[at], vertices, clip, lookup) {
             glyphs.push(glyph);
         } else if slanted_quad(indices[at], vertices) {
-            marks.push(vertices[indices[at] as usize].pos);
+            marks.push(mark_of(&vertices[indices[at] as usize]));
         }
         at += QUAD_INDICES;
     }
+}
+const BRIGHT_MARK_CHANNEL: u8 = 90;
+fn mark_of(vertex: &DrawVert) -> ([f32; 2], bool) {
+    (
+        vertex.pos,
+        vertex.col[..3]
+            .iter()
+            .any(|channel| *channel > BRIGHT_MARK_CHANNEL),
+    )
 }
 /// Anti-aliased strokes such as check marks are quads too, but never axis aligned.
 fn slanted_quad(first: u16, vertices: &[DrawVert]) -> bool {

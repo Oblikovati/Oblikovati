@@ -15,7 +15,7 @@ fn ribbon_blank_point() -> [i32; 2] {
     }
     [800, 120]
 }
-fn open_context_menu(world: &mut ApplicationWorld) {
+pub(super) fn open_context_menu(world: &mut ApplicationWorld) {
     let at = ribbon_blank_point();
     world.right_click(at);
     world.pump(Vec::new());

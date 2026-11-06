@@ -143,6 +143,7 @@ pub(crate) struct RibbonPanelOwners<'a> {
 struct PanelDrawContext<'a> {
     ui: &'a Ui,
     state: &'a GuiCommandState,
+    hidden: std::collections::BTreeSet<(RibbonTab, RibbonPanel)>,
     owners: RibbonPanelOwners<'a>,
     actions: &'a mut Vec<GuiShellAction>,
 }
@@ -172,6 +173,7 @@ pub(crate) fn draw_panels(
     let mut context = PanelDrawContext {
         ui,
         state,
+        hidden: display.hidden_panels.clone(),
         owners,
         actions,
     };
@@ -210,10 +212,11 @@ pub(crate) fn draw_side_groups(
     let mut context = PanelDrawContext {
         ui,
         state,
+        hidden: display.hidden_panels.clone(),
         owners,
         actions,
     };
-    for panel in panels_for(tab, state) {
+    for panel in shown_panels(tab, state, &display.hidden_panels) {
         if crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON) {
             display.temporary = Some(TemporaryPanel::Group(panel));
             display.side_anchor = Some(crate::application::ribbon_display::SideAnchor {
@@ -236,7 +239,7 @@ fn compact_row(
         return;
     };
     let ui = context.ui;
-    for panel in panels_for(tab, context.state) {
+    for panel in shown_panels(tab, context.state, &context.hidden) {
         if crate::widget_abi::button(ui, panel.label(), size) {
             display.temporary = Some(TemporaryPanel::Group(panel));
             display.temporary_anchor = ui.item_rect_min()[0];
@@ -326,11 +329,22 @@ fn temporary_contents(
         }
     }
 }
-fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
+/// The panels a user has not hidden, in the tab's order.
+fn shown_panels(
+    tab: RibbonTab,
+    state: &GuiCommandState,
+    hidden: &std::collections::BTreeSet<(RibbonTab, RibbonPanel)>,
+) -> Vec<RibbonPanel> {
+    let mut panels = panels_for(tab, state);
+    panels.retain(|panel| !hidden.contains(&(tab, *panel)));
+    panels
+}
+/// Every panel a tab offers, hidden ones included.
+pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
     use RibbonPanel::*;
     match tab {
         RibbonTab::GetStarted => vec![Launch],
-        RibbonTab::Model => vec![Sketch, PartCreate, PartModify, PartWorkFeatures],
+        RibbonTab::Model => vec![Sketch, PartCreate, PartModify, PartWorkFeatures, Parameters],
         RibbonTab::SheetMetal => vec![SheetMetalTools, Sketch],
         RibbonTab::Assemble => vec![Component],
         RibbonTab::PlaceViews => vec![DrawingViews, DrawingModify, DrawingSketch, DrawingSheets],
@@ -355,7 +369,7 @@ fn draw_row(
     layout: &mut RibbonPanelLayout,
     available: f32,
 ) {
-    let panels = panels_for(tab, context.state);
+    let panels = shown_panels(tab, context.state, &context.hidden);
     let collapsed = panels
         .iter()
         .map(|panel| (context.ui.calc_text_size(panel.label())[0] + 16.).max(108.))

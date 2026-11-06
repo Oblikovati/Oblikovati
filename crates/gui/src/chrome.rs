@@ -33,7 +33,9 @@ pub(crate) fn ribbon_band(
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
         ribbon_contents(ui, request, &mut owners, &frame, actions);
         request_context_menu_when_clicked(ui, owners.ribbon);
-        owners.ribbon.display.context_menu(ui);
+        let tab = owners.ribbon.active;
+        let panels = crate::ribbon_panels::panels_for(tab, &request.commands);
+        owners.ribbon.display.context_menu(ui, tab, &panels);
     }
     side_ribbon(
         ui,

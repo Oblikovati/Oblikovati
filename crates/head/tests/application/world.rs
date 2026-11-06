@@ -165,9 +165,10 @@ impl ApplicationWorld {
     pub fn checked(&self, label: &str) -> bool {
         let run = self.run(label).clone();
         self.frame.marks.iter().any(|mark| {
-            mark.list == run.list
-                && mark.position[1] >= run.minimum[1] - 2.
-                && mark.position[1] <= run.maximum[1] + 2.
+            mark.bright
+                && mark.list == run.list
+                // Close to the label's own centre line: a neighbour's mark reaches past its row.
+                && (mark.position[1] - run.center()[1]).abs() < CHECK_MARK_REACH
         })
     }
     /// The framebuffer colour just left of a label, inside the widget that holds it.
@@ -235,6 +236,7 @@ impl Drop for ApplicationWorld {
     }
 }
 
+const CHECK_MARK_REACH: f32 = 6.;
 fn squeezed(text: &str) -> String {
     text.chars()
         .filter(|letter| !letter.is_whitespace())

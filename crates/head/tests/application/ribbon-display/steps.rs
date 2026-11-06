@@ -418,7 +418,10 @@ fn viewport_visible(world: &mut ApplicationWorld) {
 }
 #[given("the 3D Model ribbon is expanded")]
 fn model_ribbon_expanded(world: &mut ApplicationWorld) {
-    activate_display_control(world);
+    // After Minimize to Tabs, the control expands it; a full ribbon already is.
+    if !world.shows("Sketch XY") {
+        activate_display_control(world);
+    }
     world.expect_text("Sketch XY");
 }
 #[then("the permanent command groups disappear and the ribbon tabs remain visible")]

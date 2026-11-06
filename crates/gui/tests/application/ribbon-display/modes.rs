@@ -77,3 +77,32 @@ fn moving_the_ribbon_closes_a_temporary_panel_and_its_anchor() {
     assert_eq!(state.placement, RibbonPlacement::Left);
     assert!(state.temporary.is_none() && state.side_anchor.is_none());
 }
+#[test]
+fn a_panel_toggles_for_its_own_tab_only() {
+    let mut state = RibbonDisplayState::default();
+    let navigate = (RibbonTab::View, RibbonPanel::Navigate);
+    assert!(!state.hidden_panels.contains(&navigate));
+    state.toggle_panel(navigate.0, navigate.1);
+    assert!(state.hidden_panels.contains(&navigate));
+    assert!(
+        !state
+            .hidden_panels
+            .contains(&(RibbonTab::Manage, RibbonPanel::Navigate))
+    );
+    state.toggle_panel(navigate.0, navigate.1);
+    assert!(!state.hidden_panels.contains(&navigate));
+}
+#[test]
+fn parameters_start_hidden_on_the_model_tab_and_shown_on_manage() {
+    let state = RibbonDisplayState::default();
+    assert!(
+        state
+            .hidden_panels
+            .contains(&(RibbonTab::Model, RibbonPanel::Parameters))
+    );
+    assert!(
+        !state
+            .hidden_panels
+            .contains(&(RibbonTab::Manage, RibbonPanel::Parameters))
+    );
+}

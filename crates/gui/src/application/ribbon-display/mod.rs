@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! How much of the ribbon stays open, and the temporary panel that shows what a mode hides.
+use crate::ribbon::RibbonTab;
 use crate::ribbon_panels::RibbonPanel;
 use imgui::Ui;
+use std::collections::BTreeSet;
 
 const CYCLE: [RibbonDisplay; 4] = [
     RibbonDisplay::Full,
@@ -84,6 +86,8 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    /// Panels a user has hidden, per tab; they stay listed in Show Panels.
+    pub hidden_panels: BTreeSet<(RibbonTab, RibbonPanel)>,
 }
 impl Default for RibbonDisplayState {
     fn default() -> Self {
@@ -96,6 +100,8 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            // Parameters lives on Manage, and is offered here for those who want it beside Create.
+            hidden_panels: BTreeSet::from([(RibbonTab::Model, RibbonPanel::Parameters)]),
         }
     }
 }
@@ -120,14 +126,30 @@ impl RibbonDisplayState {
         self.temporary = None;
         self.side_anchor = None;
     }
+    fn toggle_panel(&mut self, tab: RibbonTab, panel: RibbonPanel) {
+        if !self.hidden_panels.remove(&(tab, panel)) {
+            self.hidden_panels.insert((tab, panel));
+        }
+    }
+    fn show_panels_menu(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
+        ui.menu("Show Panels", || {
+            for panel in panels {
+                let shown = !self.hidden_panels.contains(&(tab, *panel));
+                if ui.menu_item_config(panel.label()).selected(shown).build() {
+                    self.toggle_panel(tab, *panel);
+                }
+            }
+        });
+    }
     /// Draw the context menu that any of the ribbon's windows can ask for.
-    pub(crate) fn context_menu(&mut self, ui: &Ui) {
+    pub(crate) fn context_menu(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
         if std::mem::take(&mut self.context_requested) {
             ui.open_popup(CONTEXT_MENU);
         }
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
             return;
         };
+        self.show_panels_menu(ui, tab, panels);
         ui.menu("Docking Positions", || {
             for (label, placement) in DOCKING_POSITIONS {
                 let checked = self.placement == placement;

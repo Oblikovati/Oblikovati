@@ -110,7 +110,11 @@ fn unrelated_filtered(world: &mut ApplicationWorld) {
     // Whole rows: the ribbon's Work Features group holds one of these words too.
     for unrelated in ["Origin", "Features", "EndofPart"] {
         let shown = world.frame.runs.iter().any(|run| run.text == unrelated);
-        assert!(!shown, "rendered text {:?}: expected no {unrelated:?} row", world.text());
+        assert!(
+            !shown,
+            "rendered text {:?}: expected no {unrelated:?} row",
+            world.text()
+        );
     }
     world.expect_no_text("XY Plane");
 }

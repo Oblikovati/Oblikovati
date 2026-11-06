@@ -21,6 +21,8 @@ mod file_menu;
 mod ribbon_display;
 #[path = "ribbon-docking/steps.rs"]
 mod ribbon_docking;
+#[path = "ribbon-panel-visibility/steps.rs"]
+mod ribbon_panel_visibility;
 #[path = "workspace-layout/steps.rs"]
 mod workspace_layout;
 
