@@ -426,3 +426,6 @@ fn line_commands_pass_ribbon_keyboard_focus_without_reactivating_buttons() {
         }
     }
 }
+
+#[path = "ribbon_click/sketch_delete.rs"]
+mod sketch_delete;

@@ -33,6 +33,8 @@ mod line_scope;
 mod model_browser;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
+#[path = "owner_sketch_delete.rs"]
+mod sketch_delete;
 #[path = "owner_sketch_dimension.rs"]
 mod sketch_dimension;
 #[path = "owner_sketch_geometric.rs"]

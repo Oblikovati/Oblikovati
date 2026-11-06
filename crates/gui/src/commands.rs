@@ -43,6 +43,7 @@ pub enum GuiShellAction {
     NewPart,
     StartSketchXY,
     FinishSketch,
+    DeleteSketchSelection,
     PlaceSketchTool(crate::GuiSketchTool),
     ConstrainSketch(crate::GuiSketchConstraint),
     Dimension(crate::GuiDimensionAction),
@@ -83,6 +84,7 @@ pub struct GuiCommandState {
     pub redo_label: Option<String>,
     pub transaction_open: bool,
     pub sketch_tool_transaction: bool,
+    pub sketch_delete_available: bool,
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -192,6 +194,11 @@ impl GuiShellAction {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
             Self::StartSketchXY => state.authoring == GuiAuthoringContext::Part,
+            Self::DeleteSketchSelection => {
+                state.authoring == GuiAuthoringContext::Sketch
+                    && state.sketch_delete_available
+                    && !state.transaction_open
+            }
             Self::Dimension(crate::GuiDimensionAction::Start) => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && (!state.transaction_open || state.sketch_tool_transaction)

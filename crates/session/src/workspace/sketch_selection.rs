@@ -16,6 +16,15 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) -> Result<SketchPick, SketchError> {
         self.session.sketch_pick(sketch, target)
     }
+    /// Delete the borrowed owner's current editor picks without a second selection store.
+    /// Example: `commands.delete_editor_selection(Some(sketch), false)?;`.
+    pub fn delete_editor_selection(
+        &mut self,
+        sketch: Option<DocumentSketchId>,
+        tool_active: bool,
+    ) -> Result<SketchEntityDeletion, CommandError<SketchError>> {
+        self.session.delete_editor_selection(sketch, tool_active)
+    }
     /// Apply editor deletion through the same borrowed owner and transaction stream.
     /// Example: `commands.delete_selected_sketch_picks(Some(sketch), false, &mut picks)?;`.
     pub fn delete_selected_sketch_picks(

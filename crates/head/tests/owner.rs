@@ -370,3 +370,6 @@ mod line_relations;
 
 #[path = "owner/curve_relations.rs"]
 mod curve_relations;
+
+#[path = "owner/sketch_delete.rs"]
+mod sketch_delete;

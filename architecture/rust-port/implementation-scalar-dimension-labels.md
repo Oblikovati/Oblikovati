@@ -48,8 +48,14 @@ expression correction, a 10 mm dimension bound to `size`, edits to 20 mm,
 undo/redo, save and fresh-process reopen. Reopen retains the expression, value,
 text anchor and healthy DOF three. MCPBridge reads and inspected captures check
 preview, redo and reopened labels. Both acceptance desktops close normally.
-The exact new head still requires Windows ARM64 native qualification before
-issue #3839 can be called resolved. No assertion or platform test is disabled.
+
+Native Windows ARM64 qualification passes at exact head
+`f55f9710c00032b88cb737c3a44087d2f67a7eab`, hosted run 42167873444,
+job 127731793203. The original theme/scale label test and the new scalar
+background-layer regression both pass. The gate and Linux x64, macOS Intel/ARM64
+and Windows x64 native jobs also pass. This verifies the ABI repair; integration
+in PR #3840 remains blocked by the separate Linux ARM64 runtime failure.
+No assertion or platform test is disabled.
 
 The Linux ARM64 Vulkan runtime failure in Martensite#388 remains separate. The
 complete Extrude, cube and named-face journey remains unfinished.

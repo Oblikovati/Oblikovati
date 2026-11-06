@@ -1,7 +1,33 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::selection::{SelectionClickMode, SketchPick, SketchPickTarget};
-use crate::{DocumentSession, TransactionObserver};
-use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchError};
+use crate::selection::{SelectionClickMode, SelectionSet, SketchPick, SketchPickTarget};
+use crate::{CommandError, DocumentSession, TransactionObserver};
+use oblikovati_model::{
+    document_sketch::DocumentSketchId,
+    sketch::{SketchEntityDeletion, SketchError},
+};
+struct EditorDeletionBaseline {
+    generation: u64,
+    sketches: oblikovati_model::document_sketch::DocumentSketches,
+    parameters: oblikovati_model::parameter::ParameterCollection<u64>,
+}
+impl EditorDeletionBaseline {
+    fn capture(snapshot: &oblikovati_model::history::DocumentSnapshot, generation: u64) -> Self {
+        Self {
+            generation,
+            sketches: snapshot.sketches.clone(),
+            parameters: snapshot.parameters.clone(),
+        }
+    }
+    fn is_verified_rollback(
+        &self,
+        snapshot: &oblikovati_model::history::DocumentSnapshot,
+        generation: u64,
+    ) -> bool {
+        generation != self.generation
+            && snapshot.sketches.same_recipe(&self.sketches)
+            && snapshot.parameters.same_recipe(&self.parameters)
+    }
+}
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Read current-generation editor picks; stale handles are never published.
     /// Example: `session.selected_sketch_picks(sketch)` for rendering or constraint tools.
@@ -36,6 +62,44 @@ impl<O: TransactionObserver> DocumentSession<O> {
         changed
     }
 
+    /// Delete the session-owned editor selection through the checked command path.
+    /// Example: `session.delete_editor_selection(Some(sketch), false)?;`.
+    pub fn delete_editor_selection(
+        &mut self,
+        sketch: Option<DocumentSketchId>,
+        tool_active: bool,
+    ) -> Result<SketchEntityDeletion, CommandError<SketchError>> {
+        let before = EditorDeletionBaseline::capture(self.snapshot(), self.generation());
+        let mut candidate = self.editor_selection.clone();
+        match self.delete_selected_sketch_picks(sketch, tool_active, &mut candidate) {
+            Ok(report) => {
+                self.editor_selection = candidate;
+                Ok(report)
+            }
+            Err(error) => {
+                self.restore_refused_editor_picks(&before, sketch, &candidate);
+                Err(error)
+            }
+        }
+    }
+    fn restore_refused_editor_picks(
+        &mut self,
+        before: &EditorDeletionBaseline,
+        sketch: Option<DocumentSketchId>,
+        picks: &SelectionSet<SketchPick>,
+    ) {
+        let Some(sketch) = sketch else {
+            return;
+        };
+        let original_scope = picks
+            .validate_scope(self.document, before.generation, sketch)
+            .is_ok();
+        if !original_scope || !before.is_verified_rollback(self.snapshot(), self.generation()) {
+            return;
+        }
+        // #3841: a verified veto rollback changes generation, not selected identities.
+        self.editor_selection = restamped_editor_picks(picks, self.document, self.generation());
+    }
     /// Store a checked editor click in the document owner without creating history.
     /// Example: `session.set_sketch_selection(sketch, Some(target), mode, false)?;`.
     pub fn set_sketch_selection(
@@ -75,3 +139,26 @@ impl<O: TransactionObserver> DocumentSession<O> {
         Ok(picked)
     }
 }
+
+fn restamped_editor_picks(
+    picks: &SelectionSet<SketchPick>,
+    document: u64,
+    generation: u64,
+) -> SelectionSet<SketchPick> {
+    let mut restored = SelectionSet::default();
+    for pick in picks.items() {
+        restored.add(SketchPick::checked(
+            document,
+            generation,
+            pick.sketch(),
+            pick.target(),
+        ));
+    }
+    // A narrowed filter controls future picks, not existing membership (#3841).
+    restored.set_filter(picks.filter().clone());
+    restored
+}
+
+#[cfg(test)]
+#[path = "../tests/lifecycle/owned_selection_restamp_unit.rs"]
+mod tests;
