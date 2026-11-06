@@ -117,3 +117,11 @@ pub use sketch_scene::HeadSketchSceneUpdate;
 mod sketch_geometric;
 #[cfg(target_os = "linux")]
 mod sketch_tool;
+
+#[cfg(target_os = "linux")]
+mod sketch_dimension;
+#[cfg(target_os = "linux")]
+mod sketch_operands;
+
+mod dimension_annotations;
+pub use dimension_annotations::{HeadDimensionAnnotation, HeadDimensionAnnotations};

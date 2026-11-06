@@ -12,19 +12,31 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    pub(super) fn retire_sketch_tool(&mut self) -> Result<(), String> {
-        let Some(SketchToolState::Geometric(tool)) = self.sketch_tool.take() else {
-            return Ok(());
-        };
-        if !self
+    pub(super) fn capture_sketch_tool_context(
+        &self,
+    ) -> Result<(crate::HeadSketchEdit, u64), String> {
+        let edit = self
+            .active_sketch_edit()
+            .ok_or_else(|| "sketch tool edit None: expected an active sketch".to_string())?;
+        self.require_edit_document(edit.document)?;
+        let generation = self
             .files
             .workspace()
-            .documents()
-            .contains(&tool.edit.document)
-        {
+            .session(edit.document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        Ok((edit, generation))
+    }
+    pub(super) fn retire_sketch_tool(&mut self) -> Result<(), String> {
+        let edit = match self.sketch_tool.take() {
+            Some(SketchToolState::Geometric(tool)) => tool.edit,
+            Some(SketchToolState::Dimension(tool)) => tool.edit,
+            _ => return Ok(()),
+        };
+        if !self.files.workspace().documents().contains(&edit.document) {
             return Ok(());
         }
-        self.clear_geometric_picks(tool.edit)
+        self.clear_geometric_picks(edit)
     }
     pub(super) fn placement_state(&self) -> Option<&SketchPlacementState> {
         self.sketch_tool
@@ -76,6 +88,9 @@ impl<
             }
             Some(SketchToolState::Geometric(tool)) => {
                 self.process_geometric_event(tool, event, window)
+            }
+            Some(SketchToolState::Dimension(tool)) => {
+                self.process_dimension_event(tool, event, window)
             }
             None => self.process_sketch_pick(event, window),
         }

@@ -49,6 +49,7 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch => {
             owner.edit_sketch_from_gui(*action == GuiShellAction::StartSketchXY)
         }
+        GuiShellAction::Dimension(action) => owner.dimension_tool_from_gui(action),
         GuiShellAction::ConstrainSketch(choice) => owner.constrain_sketch_from_gui(*choice),
         GuiShellAction::PlaceSketchTool(tool) => owner.place_sketch_tool_from_gui(*tool),
         _ => unsupported(action),

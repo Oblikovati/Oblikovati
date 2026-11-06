@@ -31,16 +31,7 @@ impl<
         Ok(true)
     }
     fn geometric_state(&self, choice: GuiSketchConstraint) -> Result<SketchGeometricState, String> {
-        let edit = self
-            .active_sketch_edit()
-            .ok_or_else(|| format!("constraint {choice:?}: expected an active sketch"))?;
-        self.require_edit_document(edit.document)?;
-        let generation = self
-            .files
-            .workspace()
-            .session(edit.document)
-            .map_err(|cause| cause.to_string())?
-            .generation();
+        let (edit, generation) = self.capture_sketch_tool_context()?;
         Ok(SketchGeometricState {
             edit,
             generation,

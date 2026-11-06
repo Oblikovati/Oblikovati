@@ -32,6 +32,7 @@ pub struct GuiFrameOutput {
 pub struct GuiFrameEngine {
     context: Context,
     atlas: GuiAtlas,
+    dimension_editor: crate::dimensions::GuiDimensionEditor,
     parameter_editor: crate::parameters::GuiParameterEditor,
     document_files: crate::files::GuiDocumentFiles,
     ribbon: crate::ribbon::DocumentRibbon,
@@ -47,6 +48,7 @@ impl GuiFrameEngine {
         Ok(Self {
             context,
             atlas,
+            dimension_editor: Default::default(),
             parameter_editor: Default::default(),
             document_files: Default::default(),
             ribbon: Default::default(),
@@ -76,15 +78,7 @@ impl GuiFrameEngine {
         if let Some(theme) = &request.commands.theme {
             crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
         }
-        draw_controls(
-            &mut self.context,
-            request,
-            &mut self.parameter_editor,
-            &mut self.document_files,
-            &mut self.ribbon,
-            &mut self.document_tabs,
-            &mut self.theme_editor,
-        )
+        self.draw_controls(request)
     }
     /// Request a path for the owner's unsaved document without writing it.
     /// Example: `engine.request_save_path(document)?` after a SavePathRequired notice.
@@ -157,43 +151,42 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
     }
     Ok(())
 }
-fn draw_controls(
-    context: &mut Context,
-    request: &GuiFrameRequest,
-    parameter_editor: &mut crate::parameters::GuiParameterEditor,
-    document_files: &mut crate::files::GuiDocumentFiles,
-    ribbon: &mut crate::ribbon::DocumentRibbon,
-    document_tabs: &mut crate::document_tabs::DocumentTabs,
-    theme_editor: &mut crate::theme_editor::GuiThemeEditor,
-) -> Result<GuiFrameOutput, String> {
-    prepare_frame_inputs(context, request);
-    let ui = context.frame();
-    let mut selected = Vec::new();
-    crate::chrome::ribbon_band(
-        ui,
-        request,
-        ribbon,
-        parameter_editor,
-        document_files,
-        theme_editor,
-        &mut selected,
-    );
-    document_tabs.panel(ui, request, &mut selected);
-    parameter_editor.panel(ui, &request.commands, &mut selected);
-    crate::browser::panel(
-        ui,
-        &request.commands,
-        request.extent[1] as f32 / request.framebuffer_scale[1],
-        &mut selected,
-    );
-    document_files.panel(ui, &request.commands, &mut selected);
-    let snapshot = capture_frame(context.render(), request.extent)?;
-    Ok(GuiFrameOutput {
-        draws: snapshot,
-        actions: selected,
-        capture: input_capture(context.io()),
-        activity: frame_activity()?,
-    })
+impl GuiFrameEngine {
+    fn draw_controls(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
+        prepare_frame_inputs(&mut self.context, request);
+        let ui = self.context.frame();
+        crate::dimension_labels::draw_dimension_labels(ui, request);
+        let mut selected = Vec::new();
+        crate::chrome::ribbon_band(
+            ui,
+            request,
+            &mut self.ribbon,
+            &mut self.parameter_editor,
+            &mut self.document_files,
+            &mut self.theme_editor,
+            &mut selected,
+        );
+        self.document_tabs.panel(ui, request, &mut selected);
+        self.parameter_editor
+            .panel(ui, &request.commands, &mut selected);
+        crate::browser::panel(
+            ui,
+            &request.commands,
+            request.extent[1] as f32 / request.framebuffer_scale[1],
+            &mut selected,
+        );
+        self.document_files
+            .panel(ui, &request.commands, &mut selected);
+        self.dimension_editor
+            .panel(ui, &request.commands, &mut selected);
+        let snapshot = capture_frame(self.context.render(), request.extent)?;
+        Ok(GuiFrameOutput {
+            draws: snapshot,
+            actions: selected,
+            capture: input_capture(self.context.io()),
+            activity: frame_activity()?,
+        })
+    }
 }
 fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
     let io = context.io_mut();

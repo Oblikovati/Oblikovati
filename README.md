@@ -17,7 +17,9 @@ manifest inspection, version, and help. The first desktop executable supplies
 native window lifetime, saved prism display, camera navigation, and document
 startup. Dear ImGui controls create a Part, start and finish an XY sketch, draw
 an anchored rectangle, and create or edit its driving size parameter. Native
-Horizontal, Vertical and Coincident tools use analytic picks and the typed API. The native
+Horizontal, Vertical and Coincident tools use analytic picks and the typed API.
+General Dimension supplies explicit label placement, expression entry and
+parameter-driven values. The native
 test verifies zero DOF, recomputation, undo, and redo. The complete cube UI
 journey, ribbon and model-browser parity, and native file dialogs remain open.
 Publication remains blocked. Current dependencies are pinned in `release.toml`
@@ -34,6 +36,7 @@ supported stored geometry, for example
 `cargo run -p oblikovati-head -- --frames 3 "path/to/part.opd"`.
 See [startup behavior and checks](architecture/rust-port/implementation-desktop-startup.md).
 See [native parameter authoring evidence](architecture/rust-port/implementation-native-parameters.md).
+See [native dimension creation evidence](architecture/rust-port/implementation-native-dimension-tool.md).
 
 - [Implementation evidence](architecture/rust-port/implementation.md): tested
   behavior, source mapping, and remaining work.

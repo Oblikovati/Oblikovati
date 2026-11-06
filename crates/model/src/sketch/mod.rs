@@ -31,6 +31,7 @@ pub use geometric_authoring::SketchGeometricConstraintCreation;
 mod dependencies;
 mod dimension_measurement;
 mod dimension_placement;
+mod dimension_preview;
 mod dimension_settings;
 pub use dimension_placement::SketchDimensionPlacement;
 pub use dimension_settings::{SketchDimensionLimitRecipe, SketchDimensionLimits};

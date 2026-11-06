@@ -113,6 +113,15 @@ fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAct
     let exit = ("Exit", "Finish Sketch", GuiShellAction::FinishSketch);
     command_panel(ui, state, actions, exit);
     sketch_constraint_controls(ui, state, actions);
+    crate::widget_abi::cursor_position(ui, [620., 59.]);
+    command_button(
+        ui,
+        "Dimension",
+        GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
+        state,
+        [108., 58.],
+        actions,
+    );
 }
 fn sketch_constraint_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     use crate::GuiSketchConstraint::{Coincident, Horizontal, Vertical};

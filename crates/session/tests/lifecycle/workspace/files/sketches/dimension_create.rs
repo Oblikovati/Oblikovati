@@ -17,7 +17,8 @@ fn input() -> SketchDimensionCreation {
             },
         ),
         expression: "width * 4".into(),
-        reference: false,
+        // ADR-0033: both endpoints are fixed in saved_driven_sketch; this annotation measures them.
+        reference: true,
         text_point: Some([-2.0, 3.0]),
     }
 }
@@ -45,6 +46,14 @@ fn assert_saved_creation(
     );
     assert_eq!(source.kind, MODEL_PARAM);
     let geometry = snapshot.sketches.get(sketch).unwrap().geometry();
+    assert!(geometry.dimension_is_reference(report.constraint).unwrap());
+    assert_eq!(
+        snapshot
+            .analyze_document_sketch(sketch, SolveOptions::default().rank_tolerance)
+            .unwrap()
+            .redundant_equations,
+        0
+    );
     assert_eq!(
         geometry.dimension_text_point(report.constraint).unwrap(),
         Some([-2.0, 3.0])
@@ -118,4 +127,26 @@ fn assert_next_identity(next: &SketchDimensionCreationReport) {
         ),
         (3, 6, "d1")
     );
+}
+
+#[test]
+fn workspace_redundant_driving_creation_is_atomic_and_reference_retry_retires_ids() {
+    let (mut host, _, document, sketch) = saved_driven_sketch();
+    let snapshot = host.workspace().session(document).unwrap().snapshot();
+    let before = snapshot.sketches.clone();
+    let parameters = snapshot.parameters.ids().to_vec();
+    let mut request = input();
+    request.reference = false;
+    let cause = host
+        .commands(document)
+        .unwrap()
+        .create_sketch_dimension(sketch, &request)
+        .unwrap_err();
+    assert!(cause.to_string().contains("redundant"), "{cause}");
+    let snapshot = host.workspace().session(document).unwrap().snapshot();
+    assert!(snapshot.sketches.same_evaluated_state(&before));
+    assert_eq!(snapshot.parameters.ids(), parameters);
+    let report = create(&mut host, document, sketch);
+    assert_next_identity(&report);
+    assert_saved_creation(&host, document, sketch, &report);
 }

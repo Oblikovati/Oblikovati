@@ -4,10 +4,14 @@ use super::*;
 fn angle_creation_retains_the_current_solved_branch_instead_of_stale_recipe_coordinates() {
     let snapshot = stale_clockwise_snapshot();
     let mut history = history(snapshot);
-    let input = request(
+    let mut input = request(
         angular_relation(false),
         Quantity::new(PI / 3.0, Dimension::Angle),
     );
+    let refusal = create(&mut history, &input).unwrap_err();
+    assert!(refusal.contains("redundant"), "{refusal}");
+    // ADR-0033: the existing angle already drives this relation; a reference still tests its solved branch.
+    input.reference = true;
     let report = create(&mut history, &input).unwrap();
     assert_clockwise_relation(&history, report.constraint);
 }

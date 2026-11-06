@@ -8,6 +8,8 @@ fn request() -> GuiFrameRequest {
         status: None,
         events: vec![GuiInputEvent::PointerMoved([630., 350.])],
         commands: GuiCommandState {
+            dimension_draft: None,
+            dimension_labels: Vec::new(),
             sketch_selection: Default::default(),
             theme: None,
             color_scheme: None,

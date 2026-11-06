@@ -112,67 +112,7 @@ fn locked_fields_create_owned_parameters_but_steering_fields_do_not() {
         assert!(after.parameters.same_recipe(&history.snapshot().parameters));
     }
 }
-#[test]
-fn duplicate_locked_fields_follow_the_document_redundancy_policy() {
-    use oblikovati_api::types::OVER_CONSTRAINED_APPLY_DRIVING;
-    for driving in [false, true] {
-        let mut history = super::polyline::polyline_history();
-        let mut recipe = placement(false);
-        recipe.fields.push(recipe.fields[0].clone());
-        let locks = [
-            lock("10 cm"),
-            None,
-            None,
-            lock(if driving { "10 cm" } else { "20 cm" }),
-        ];
-        let token = history.begin("Redundancy policy").unwrap();
-        let report = history
-            .edit(&token, |snapshot, ids| {
-                if driving {
-                    let mut settings = snapshot.effective_sketch_settings();
-                    settings.over_constrained_behavior = OVER_CONSTRAINED_APPLY_DRIVING;
-                    snapshot.sketch_settings = Some(settings);
-                }
-                snapshot.create_sketch_placement(
-                    DocumentSketchId(1),
-                    &recipe,
-                    &locks,
-                    Default::default(),
-                    ids,
-                )
-            })
-            .unwrap();
-        history.commit(&token, false).unwrap();
-        let geometry = history
-            .snapshot()
-            .sketches
-            .get(report.sketch)
-            .unwrap()
-            .geometry();
-        let second = &report.dimensions[1].1;
-        assert_eq!(
-            geometry.dimension_is_reference(second.constraint).unwrap(),
-            !driving
-        );
-        assert_eq!(
-            history
-                .snapshot()
-                .analyze_document_sketch(report.sketch, SolveOptions::default().rank_tolerance)
-                .unwrap()
-                .redundant_equations,
-            usize::from(driving)
-        );
-        assert!(
-            (geometry
-                .measure_dimension(report.dimensions[0].1.constraint)
-                .unwrap()
-                .value
-                - 10.0)
-                .abs()
-                < 1e-7
-        );
-    }
-}
+
 #[test]
 fn late_field_failure_discards_geometry_relations_and_earlier_parameter_sources() {
     use std::error::Error;
@@ -429,3 +369,6 @@ fn driving_policy_does_not_accept_an_unavailable_locked_field() {
             .same_recipe(&history.snapshot().parameters)
     );
 }
+
+#[path = "placement/role.rs"]
+mod role;

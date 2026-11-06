@@ -128,6 +128,19 @@ pub trait HeadWork {
     ) -> Result<bool, String> {
         Err(format!("{tool:?}: expected an owner with an active sketch"))
     }
+    /// Read authored and preview labels without changing history; example: `work.sketch_dimension_annotations()?` before projection.
+    fn sketch_dimension_annotations(&self) -> Result<crate::HeadDimensionAnnotations, String> {
+        Ok(Default::default())
+    }
+    /// Route a dimension intent to its checked owner draft; example: `work.dimension_tool_from_gui(&GuiDimensionAction::Start)?`.
+    fn dimension_tool_from_gui(
+        &mut self,
+        action: &oblikovati_gui::GuiDimensionAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "dimension action {action:?}: expected an owner with an active sketch"
+        ))
+    }
     /// Start a checked geometric constraint tool on the active sketch.
     /// Example: `work.constrain_sketch_from_gui(GuiSketchConstraint::Horizontal)?;`.
     fn constrain_sketch_from_gui(
@@ -303,6 +316,15 @@ macro_rules! forward_owner_view_work {
             tool: oblikovati_gui::GuiSketchTool,
         ) -> Result<bool, String> {
             self.$owner.place_sketch_tool_from_gui(tool)
+        }
+        fn sketch_dimension_annotations(&self) -> Result<$crate::HeadDimensionAnnotations, String> {
+            self.$owner.sketch_dimension_annotations()
+        }
+        fn dimension_tool_from_gui(
+            &mut self,
+            action: &oblikovati_gui::GuiDimensionAction,
+        ) -> Result<bool, String> {
+            self.$owner.dimension_tool_from_gui(action)
         }
         fn constrain_sketch_from_gui(
             &mut self,

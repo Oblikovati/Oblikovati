@@ -2,9 +2,8 @@
 use super::*;
 use crate::{
     history::{SketchDimensionCreation, SketchDimensionCreationError},
-    sketch::{SketchDimensionalConstraintCreation, SketchError},
+    sketch::SketchDimensionalConstraintCreation,
 };
-use oblikovati_api::types::OVER_CONSTRAINED_APPLY_DRIVING;
 pub(super) fn append(
     snapshot: &mut DocumentSnapshot,
     recipe: &SketchPlacementRecipe,
@@ -52,49 +51,10 @@ fn append_field(
         reference: false,
         text_point: lock.text_point,
     };
-    let before = snapshot
-        .analyze_document_sketch(sketch, options.rank_tolerance)?
-        .redundant_equations;
-    let mut created = snapshot.create_sketch_dimension(sketch, &input, options, ids)?;
+    let created = snapshot.create_placement_dimension(sketch, &input, options, ids)?;
     // A locked placement input must be evaluable even when redundant dimensions remain driving.
     if let Some(cause) = created.unavailable_targets.first() {
         return Err(cause.clone().into());
     }
-    resolve_redundancy(snapshot, sketch, before, &mut created, options)?;
     Ok(created)
-}
-fn resolve_redundancy(
-    snapshot: &mut DocumentSnapshot,
-    sketch: DocumentSketchId,
-    before: usize,
-    created: &mut SketchDimensionCreationReport,
-    options: SolveOptions,
-) -> Result<(), SketchError> {
-    if snapshot
-        .effective_sketch_settings()
-        .over_constrained_behavior
-        == OVER_CONSTRAINED_APPLY_DRIVING
-    {
-        return Ok(());
-    }
-    let after = snapshot
-        .analyze_document_sketch(sketch, options.rank_tolerance)?
-        .redundant_equations;
-    if after <= before {
-        return Ok(());
-    }
-    snapshot
-        .sketches
-        .set_dimension_reference(sketch, created.constraint, true)?;
-    let solved = snapshot.solve_one_document_sketch(sketch, options, || false)?;
-    snapshot.sketches = solved.candidate;
-    created.degrees_of_freedom = snapshot
-        .analyze_document_sketch(sketch, options.rank_tolerance)?
-        .degrees_of_freedom;
-    created.measured = snapshot
-        .sketches
-        .get(sketch)?
-        .geometry()
-        .measure_dimension(created.constraint)?;
-    Ok(())
 }

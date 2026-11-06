@@ -28,6 +28,22 @@ fn physical_command_dispatch_reuses_the_semantic_command_path() {
     assert_eq!(semantic_command_event(text), text);
 }
 impl HeadWindow for FakeGuiWindow {
+    fn sketch_pixel(
+        &self,
+        _: oblikovati_model::sketch::SketchPlane,
+        position: [f64; 2],
+    ) -> Result<[i32; 2], String> {
+        if position[0] < 0. {
+            return Err(format!(
+                "annotation {position:?}: expected a projectable test point"
+            ));
+        }
+        Ok([
+            (position[0] * 2.).round() as i32,
+            (position[1] * 3.).round() as i32,
+        ])
+    }
+
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
         self.notices.push(notice);
         Ok(())
@@ -102,8 +118,12 @@ fn unavailable_authoring_commands_remain_local_feedback_and_keep_input_routing_a
 struct FakeGuiOwner {
     inputs: Vec<ViewportEvent>,
     created_parts: usize,
+    annotations: crate::HeadDimensionAnnotations,
 }
 impl HeadWork for FakeGuiOwner {
+    fn sketch_dimension_annotations(&self) -> Result<crate::HeadDimensionAnnotations, String> {
+        Ok(self.annotations.clone())
+    }
     fn create_part_document(&mut self) -> Result<bool, String> {
         self.created_parts += 1;
         Ok(true)
@@ -234,4 +254,36 @@ fn owner_and_gui_wake_use_the_earliest_deadline() {
     ] {
         assert_eq!(earliest_wake(left, right), expected);
     }
+}
+
+#[test]
+fn annotation_projection_preserves_other_labels_and_names_local_declines() {
+    use oblikovati_gui::GuiDimensionLabelRole::Driving;
+    let mut owner = FakeGuiOwner::default();
+    owner.annotations.declines.push("unavailable plane".into());
+    for position in [[3., 5.], [-1., 2.]] {
+        owner
+            .annotations
+            .labels
+            .push(crate::HeadDimensionAnnotation {
+                plane: oblikovati_model::sketch::SketchPlane::xy(),
+                position,
+                text: "d0 = 10 mm".into(),
+                role: Driving,
+            });
+    }
+    let mut window = FakeGuiWindow::default();
+    advance_gui(&mut window, &mut owner, None).unwrap();
+    assert_eq!(
+        window.states[0].dimension_labels,
+        [oblikovati_gui::GuiDimensionLabel {
+            pixel: [6, 15],
+            text: "d0 = 10 mm".into(),
+            role: Driving
+        }]
+    );
+    assert_eq!(window.notices.len(), 1);
+    assert!(window.notices[0].message().contains("unavailable plane"));
+    assert!(window.notices[0].message().contains("[-1.0, 2.0]"));
+    assert!(owner.inputs.is_empty());
 }

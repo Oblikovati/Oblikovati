@@ -36,3 +36,9 @@ pub use sketch_tools::GuiSketchTool;
 
 mod sketch_constraints;
 pub use sketch_constraints::GuiSketchConstraint;
+
+mod dimensions;
+pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
+
+mod dimension_labels;
+pub use dimension_labels::{GuiDimensionLabel, GuiDimensionLabelRole};

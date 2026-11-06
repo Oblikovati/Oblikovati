@@ -11,10 +11,10 @@ pub(crate) struct SketchGeometricState {
     pub midpoint_lines: BTreeSet<SketchEntityId>,
 }
 
+use crate::sketch_operands as operands;
 use oblikovati_api::{types::*, wire::AddConstraintArgs};
 use oblikovati_model::sketch::Sketch2D;
 use oblikovati_session::selection::SketchPick;
-mod operands;
 use operands::OperandCategory::{Circular, Line, Point};
 
 pub(crate) fn accepts(choice: GuiSketchConstraint, kind: &SketchEntityKind) -> bool {

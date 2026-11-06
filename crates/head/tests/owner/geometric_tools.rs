@@ -9,7 +9,10 @@ use oblikovati_model::{
 };
 use oblikovati_viewport::ViewportKey;
 
-fn geometric_owner(points: &[[f64; 2]], connected: bool) -> (TestOwner, u64, DocumentSketchId) {
+pub(super) fn geometric_owner(
+    points: &[[f64; 2]],
+    connected: bool,
+) -> (TestOwner, u64, DocumentSketchId) {
     let (mut owner, awake) = owner();
     let document = create(&mut owner, &awake);
     let mut request = super::sketch_edit::request(SketchPlane::xy());
@@ -30,7 +33,7 @@ fn geometric_owner(points: &[[f64; 2]], connected: bool) -> (TestOwner, u64, Doc
     }
     (owner, document, sketch)
 }
-fn inspection(owner: &mut TestOwner) -> SketchInfo {
+pub(super) fn inspection(owner: &mut TestOwner) -> SketchInfo {
     Client::new(owner.document_host())
         .sketch()
         .get(&SketchArgs::default())
