@@ -7,6 +7,7 @@ impl SketchPlacementRecipe {
         Ok(Self {
             points: vec![position],
             members: vec![SketchPlacementMember {
+                centerline: false,
                 geometry: SketchPlacementGeometry::Point(0),
                 construction: false,
             }],

@@ -16,13 +16,14 @@ impl SketchPathMember {
         self,
         points: &[SketchEntityId],
         construction: bool,
+        centerline: bool,
     ) -> Result<SketchPrimitiveCreation, SketchError> {
         let point = |index| indexed_entity(points, index).map(SketchPointInput::Owned);
         Ok(match self {
             Self::Line([a, b]) => SketchPrimitiveCreation::Line {
                 endpoints: [point(a)?, point(b)?],
                 construction,
-                centerline: false,
+                centerline,
             },
             Self::Arc {
                 center,

@@ -57,7 +57,7 @@ fn append_slot(
     let mut exposed_points = Vec::new();
     for member in layout.members {
         let primitive = member
-            .primitive(&points, input.construction)
+            .primitive(&points, input.construction, false)
             .map_err(SketchPrimitiveCreationError::Sketch)?;
         members.push(append_primitive(geometry, sketch, &primitive, ids)?.entity);
         if let SketchPathMember::Line(pair) = member {

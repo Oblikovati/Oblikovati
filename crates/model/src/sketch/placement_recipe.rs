@@ -6,6 +6,7 @@ mod chains;
 mod circles;
 mod ellipses;
 mod fields;
+mod formats;
 mod geometry;
 mod points;
 mod polygons;
@@ -29,6 +30,7 @@ pub struct SketchPlacementRecipe {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SketchPlacementMember {
     pub geometry: SketchPlacementGeometry,
+    pub centerline: bool,
     pub construction: bool,
 }
 /// A measured placement field; steering fields do not create a dimension on commit.

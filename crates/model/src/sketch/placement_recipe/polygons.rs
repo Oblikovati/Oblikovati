@@ -55,6 +55,7 @@ fn polygon_fields(
 fn polygon_members(sides: usize, radius: f64) -> Vec<SketchPlacementMember> {
     let mut members = chain_members(sides, true);
     members.push(SketchPlacementMember {
+        centerline: false,
         geometry: SketchPlacementGeometry::Circle {
             center: sides,
             radius,

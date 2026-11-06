@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::document_sketch::PlacedSketchHealth;
-fn curve_ids() -> [SketchEntityId; 3] {
+pub(super) fn curve_ids() -> [SketchEntityId; 3] {
     [SketchEntityId(11), SketchEntityId(7), SketchEntityId(15)]
 }
 #[test]
@@ -184,7 +184,7 @@ fn metadata_edits_retain_numerical_health_shared_geometry_constraints_and_names(
         guid().sketch_entity_key(11).to_string()
     );
 }
-fn assert_unchanged_numerical_state(
+pub(super) fn assert_unchanged_numerical_state(
     sketches: &DocumentSketches,
     before: &DocumentSketches,
     parameters: &ParameterCollection<u64>,

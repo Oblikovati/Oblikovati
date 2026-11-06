@@ -36,6 +36,7 @@ impl<
         kind: crate::SketchPlacementTool,
     ) -> Result<(), String> {
         self.require_placement_target(document, sketch, kind)?;
+        self.require_format_tool(kind)?;
         let plane = self.resolve_edit(document, sketch)?.plane;
         self.retire_sketch_tool()?;
         self.require_edit_document(document)?;
@@ -46,6 +47,7 @@ impl<
             .map_err(|cause| cause.to_string())?
             .generation();
         let mut tool = SketchPlacementState::new(document, sketch, generation, plane, kind)?;
+        tool.formats = self.sketch_formats.clone();
         self.select_placement_sketch(document, sketch)?;
         self.begin_line_scope(&mut tool)?;
         self.placement_notice(tool.prompt());
@@ -79,7 +81,7 @@ impl<
         }
         Ok(changed)
     }
-    fn placement_context_valid(&self, tool: &SketchPlacementState) -> bool {
+    pub(super) fn placement_context_valid(&self, tool: &SketchPlacementState) -> bool {
         if tool.tool == crate::SketchPlacementTool::Line {
             return self.line_scope_context_valid(tool);
         }
@@ -148,7 +150,7 @@ impl<
                 false
             })
     }
-    fn refresh_placement_fields(&mut self, tool: &mut SketchPlacementState) {
+    pub(super) fn refresh_placement_fields(&mut self, tool: &mut SketchPlacementState) {
         tool.resolved_preview = None;
         match self.resolved_placement_preview(tool) {
             Ok(preview) => {
@@ -213,7 +215,7 @@ impl<
         tool.restart(generation);
         Ok(false)
     }
-    fn placement_notice(&mut self, message: String) {
+    pub(super) fn placement_notice(&mut self, message: String) {
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt { message });
     }
     fn require_placement_target(

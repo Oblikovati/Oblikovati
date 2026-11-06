@@ -44,6 +44,7 @@ fn radial_witness(center: [f64; 2], axis: [f64; 2], radius: f64) -> [[f64; 2]; 2
 
 fn ellipse_member(major_axis: [f64; 2], radii: [f64; 2]) -> SketchPlacementMember {
     SketchPlacementMember {
+        centerline: false,
         geometry: SketchPlacementGeometry::Ellipse {
             center: 0,
             major_axis,

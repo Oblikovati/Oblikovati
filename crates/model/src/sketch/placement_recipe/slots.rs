@@ -9,6 +9,7 @@ impl SketchPlacementRecipe {
         let layout = SketchSlotPlacement::Centers(centers).layout(width)?;
         let mut members: Vec<_> = layout.members.into_iter().map(boundary).collect();
         members.push(SketchPlacementMember {
+            centerline: false,
             geometry: SketchPlacementGeometry::Path(SketchPathMember::Line([5, 4])),
             construction: true,
         });
@@ -67,6 +68,7 @@ impl SketchPlacementRecipe {
 }
 fn boundary(path: SketchPathMember) -> SketchPlacementMember {
     SketchPlacementMember {
+        centerline: false,
         geometry: SketchPlacementGeometry::Path(path),
         construction: false,
     }

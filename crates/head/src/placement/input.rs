@@ -7,6 +7,8 @@ use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, Viewport
 #[path = "fields.rs"]
 mod fields;
 use fields::{PlacementFieldAction, PlacementFieldEntry};
+#[path = "formats.rs"]
+mod formats;
 #[path = "line.rs"]
 mod line;
 pub(crate) struct SketchPlacementState {
@@ -19,7 +21,8 @@ pub(crate) struct SketchPlacementState {
     pub resolved_preview: Option<oblikovati_viewport::ViewportSketchPreview>,
     accepted: Vec<[f64; 2]>,
     pub line_scope: Option<oblikovati_model::history::TransactionToken>,
-    line_cursor: Option<[f64; 2]>,
+    cursor_point: Option<[f64; 2]>,
+    pub(crate) formats: oblikovati_api::types::SketchFormatModes,
     line_pending: bool,
     press: Option<PlacementPress>,
     navigation: [bool; 3],
@@ -57,7 +60,8 @@ impl SketchPlacementState {
             resolved_preview: None,
             accepted: Vec::new(),
             line_scope: None,
-            line_cursor: None,
+            cursor_point: None,
+            formats: Default::default(),
             line_pending: false,
             press: None,
             navigation: [false; 3],
@@ -202,6 +206,7 @@ impl SketchPlacementState {
     ) -> Result<Option<SketchPlacementRecipe>, String> {
         self.resolved_preview = None;
         self.preview = None;
+        self.cursor_point = point;
         let Some(point) = point else {
             self.press = None;
             return Ok(None);
@@ -218,7 +223,10 @@ impl SketchPlacementState {
         if !place && self.accepted.last() == Some(&point) {
             return Ok(None);
         }
-        let recipe = self.tool.recipe(&self.accepted, point, construction)?;
+        let mut recipe = self.tool.recipe(&self.accepted, point, construction)?;
+        recipe
+            .apply_creation_formats(self.formats.construction, self.formats.centerline)
+            .map_err(|cause| cause.to_string())?;
         self.preview = Some(recipe.clone());
         Ok(place.then_some(recipe))
     }
@@ -233,6 +241,7 @@ impl SketchPlacementState {
         self.fields = Default::default();
         self.generation = generation;
         self.accepted.clear();
+        self.cursor_point = None;
         self.press = None;
         self.preview = None;
     }

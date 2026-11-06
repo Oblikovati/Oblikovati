@@ -45,6 +45,7 @@ fn require_arc_points(center: [f64; 2], endpoints: [[f64; 2]; 2]) -> Result<(), 
 }
 fn arc_member(ccw: bool) -> SketchPlacementMember {
     SketchPlacementMember {
+        centerline: false,
         geometry: SketchPlacementGeometry::Path(SketchPathMember::Arc {
             center: 0,
             endpoints: [1, 2],

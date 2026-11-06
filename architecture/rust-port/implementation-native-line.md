@@ -60,6 +60,8 @@ fresh-process reopen retained the geometry and identities. MCPBridge supplied
 read-only inspections and captures; the captures were inspected. Both test
 desktops closed normally.
 
-This command does not provide the numeric Line HUD or additional creation-format
-modes. It does not complete general Extrude or the cube/named-face journey;
-Martensite#390 remains the tracked analytic region prerequisite.
+The numeric Line HUD remains unported. Construction and Centerline creation modes
+now share the owner path described in
+[native sketch formats](implementation-native-sketch-formats.md).
+General Extrude and the cube/named-face journey remain incomplete;
+Martensite#390 is the tracked analytic region prerequisite.

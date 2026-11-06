@@ -44,6 +44,7 @@ reservations, and file lifecycle. Pinned Go construction and format-toggle tests
 provide independent baseline checks at
 `aa8297d1b0ac33c024f19e54821536d76e8a447a`.
 
-Native selection versus armed construction mode, centerline formatting, included
-curves, rendering acceptance, and kernel profile/feature consumers remain required
-for the application port.
+Native curve conversion, armed Construction/Centerline creation modes and
+rendering are connected in [native sketch formats](implementation-native-sketch-formats.md).
+Construction points, center-point markers, driven creation modes, included curves
+and kernel profile/feature consumers remain required for the application port.

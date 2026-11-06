@@ -263,3 +263,6 @@ mod endpoint;
 mod mirror;
 #[path = "sketch_entity_order/split.rs"]
 mod split;
+
+#[path = "sketch_entity_order/curve_format.rs"]
+mod curve_format;

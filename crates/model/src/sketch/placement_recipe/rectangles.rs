@@ -16,6 +16,7 @@ impl SketchPlacementRecipe {
         recipe
             .members
             .extend([[0, 2], [1, 3]].map(|points| SketchPlacementMember {
+                centerline: false,
                 geometry: SketchPlacementGeometry::Path(SketchPathMember::Line(points)),
                 construction: true,
             }));

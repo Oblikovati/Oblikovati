@@ -8,6 +8,7 @@ mod local_model;
 pub struct PlacementPreviewMember {
     pub member_index: usize,
     pub construction: bool,
+    pub centerline: bool,
     pub primitive: SketchDisplayPrimitive,
 }
 /// Sample the same authoring graph used by commit, in a private temporary namespace.
@@ -56,6 +57,9 @@ fn sample_member(
 ) -> Result<PlacementPreviewMember, String> {
     Ok(PlacementPreviewMember {
         member_index,
+        centerline: geometry
+            .is_centerline(id)
+            .map_err(|cause| cause.to_string())?,
         construction: geometry
             .is_construction(id)
             .map_err(|cause| cause.to_string())?,

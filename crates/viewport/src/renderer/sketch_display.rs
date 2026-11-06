@@ -211,10 +211,13 @@ impl super::RenderView {
 use martensite_tkservice::graphic3d::Graphic3dStructureSource;
 
 fn entity_line_style(entity: &SketchDisplayEntity) -> AspectTypeOfLine {
-    if entity.centerline {
+    curve_role_line_style(entity.construction, entity.centerline)
+}
+pub(super) fn curve_role_line_style(construction: bool, centerline: bool) -> AspectTypeOfLine {
+    if centerline {
         return AspectTypeOfLine::Dotdash;
     }
-    if entity.construction {
+    if construction {
         return AspectTypeOfLine::Dash;
     }
     AspectTypeOfLine::Solid
@@ -229,5 +232,20 @@ fn display_decline(
         sketch: sketch.sketch,
         entity,
         cause,
+    }
+}
+
+#[cfg(test)]
+mod role_style_tests {
+    use super::*;
+    #[test]
+    fn axis_style_has_priority_over_its_effective_construction_role() {
+        assert_eq!(curve_role_line_style(false, false), AspectTypeOfLine::Solid);
+        assert_eq!(curve_role_line_style(true, false), AspectTypeOfLine::Dash);
+        assert_eq!(
+            curve_role_line_style(false, true),
+            AspectTypeOfLine::Dotdash
+        );
+        assert_eq!(curve_role_line_style(true, true), AspectTypeOfLine::Dotdash);
     }
 }

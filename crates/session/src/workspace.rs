@@ -18,6 +18,7 @@ mod prism_create;
 mod sketch_construction;
 mod sketch_copy;
 mod sketch_create;
+mod sketch_curve_format;
 mod sketch_delete;
 mod sketch_dimension_create;
 mod sketch_dimension_delete;

@@ -9,6 +9,7 @@ impl SketchPlacementRecipe {
             circular_checks: Vec::new(),
             points: vec![center],
             members: vec![SketchPlacementMember {
+                centerline: false,
                 geometry: SketchPlacementGeometry::Circle { center: 0, radius },
                 construction: false,
             }],
