@@ -379,7 +379,7 @@ impl TemplateChooser {
             if self.drawing_layout == Some(DrawingLayout::Assembly)
                 && template.kind == GuiTemplateKind::Drawing
             {
-                self.component.request();
+                self.component.request(active_document_name(state));
             } else {
                 actions.push(GuiShellAction::CreateDocument(template));
             }
@@ -396,6 +396,13 @@ impl TemplateChooser {
             self.projects.request();
         }
     }
+}
+fn active_document_name(state: &GuiCommandState) -> &str {
+    state
+        .documents
+        .iter()
+        .find(|row| Some(row.id) == state.document)
+        .map_or("", |row| row.name.as_str())
 }
 const GALLERY_HEIGHT: f32 = 280.;
 const FOLDER_COLUMN_WIDTH: f32 = 130.;

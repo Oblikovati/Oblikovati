@@ -262,3 +262,78 @@ fn no_drawing_tab(world: &mut ApplicationWorld) {
     assert_eq!(world.state().documents.len(), world.parts.len());
     world.expect_no_text("Drawing1");
 }
+const LAYOUT_FILE: &str = "bracket.opd";
+#[given("a populated drawing layout is being created in the MCAD Software")]
+fn layout_being_created(world: &mut ApplicationWorld) {
+    world.previous_document = Some(world.add_part());
+    open_chooser(world);
+    world.click_text("Metric");
+    world.click_text(METRIC_DRAWING);
+    world.click_text("Assembly Layout");
+    world.click_text("Create");
+    world.pump(Vec::new());
+    world.expect_text("Select Component");
+}
+#[given("the component-selection dialog displays a document name")]
+#[given("the component-selection dialog displays an initial component")]
+fn component_name_shown(world: &mut ApplicationWorld) {
+    let id = world.active_id();
+    let name = world.document_name(id);
+    world.expect_text(&name);
+}
+#[when("I choose Browse beside the document name")]
+fn browse_component(world: &mut ApplicationWorld) {
+    world.click_text("Browse...");
+    world.pump(Vec::new());
+}
+#[then("a file-selection dialog opens above component selection")]
+fn file_dialog_above(world: &mut ApplicationWorld) {
+    let chooser = world.run("Select Component File").list;
+    let component = world.run("Document name").list;
+    assert!(
+        chooser > component,
+        "file selection: expected it above component selection"
+    );
+}
+#[then("it displays a file list, a file name field and Open and Cancel controls")]
+fn file_dialog_controls(world: &mut ApplicationWorld) {
+    for shown in ["Look in", "File name", "Open", "Cancel"] {
+        world.expect_text(shown);
+    }
+}
+#[when("I cancel the file-selection dialog")]
+fn cancel_file_dialog(world: &mut ApplicationWorld) {
+    world.click_text("Cancel");
+    world.pump(Vec::new());
+}
+#[then("the component-selection dialog is displayed again")]
+fn component_again(world: &mut ApplicationWorld) {
+    world.expect_text("Select Component");
+    world.expect_no_text("Look in");
+}
+#[then("its previous document name remains displayed")]
+fn component_name_remains(world: &mut ApplicationWorld) {
+    component_name_shown(world);
+}
+#[then("the original document remains active")]
+fn original_document_active(world: &mut ApplicationWorld) {
+    previous_document(world);
+}
+#[given("a different part file that needs updating is available")]
+fn different_part_file(world: &mut ApplicationWorld) {
+    let path = world.scratch_folder().join(LAYOUT_FILE);
+    std::fs::write(path, b"listed by this scenario, never opened").unwrap();
+}
+#[when("I select the different part file and choose Open")]
+fn select_different_file(world: &mut ApplicationWorld) {
+    let folder = world.scratch_folder();
+    world.enter_in_field("Look in", folder.to_str().unwrap());
+    world.click_text(LAYOUT_FILE);
+    world.click_text("Open");
+    world.pump(Vec::new());
+}
+#[then("the component-selection dialog displays the selected file name")]
+fn component_shows_file(world: &mut ApplicationWorld) {
+    world.expect_no_text("Look in");
+    world.expect_text("Select Component");
+}
