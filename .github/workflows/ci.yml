@@ -1,7 +1,7 @@
 name: Rust CI
 on:
   push:
-    branches: [rust, rust-port]
+    branches: [rust, rust-port, ci/linux-arm64-ubuntu-26-04-proof]
   pull_request:
     branches: [rust]
   workflow_call:
