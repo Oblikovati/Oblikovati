@@ -59,7 +59,7 @@ fn inspection_matches_edit_identity_in_both_owners() {
     assert_eq!(owner_revision(&files, document), before);
 }
 
-fn inspection_edit(
+pub(super) fn inspection_edit(
     files: &mut DiscoveryWorkspace,
     document: u64,
     sketch: DocumentSketchId,

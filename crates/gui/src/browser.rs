@@ -18,6 +18,7 @@ pub struct GuiBrowserSketch {
     pub id: DocumentSketchId,
     pub inspection: Result<oblikovati_api::wire::SketchInfo, String>,
     pub name: String,
+    pub visible: bool,
     pub consumed_by: Option<FeatureId>,
 }
 /// One authored feature in model program order, with its actual suppression state.
@@ -225,7 +226,7 @@ fn sketch_row(
     ) {
         sketch_activation(ui, state, row.id, &action, actions);
     }
-    sketch_context_menu(ui, state, action, actions);
+    sketch_context_menu(ui, state, row, action, actions);
 }
 fn sketch_activation(
     ui: &Ui,
@@ -266,6 +267,7 @@ fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch, selected: bool) -> bool {
 fn sketch_context_menu(
     ui: &Ui,
     state: &GuiCommandState,
+    row: &GuiBrowserSketch,
     action: GuiShellAction,
     actions: &mut Vec<GuiShellAction>,
 ) {
@@ -278,6 +280,27 @@ fn sketch_context_menu(
         .build()
     {
         actions.push(action);
+    }
+    sketch_visibility_menu(ui, state, row, actions);
+}
+fn sketch_visibility_menu(
+    ui: &Ui,
+    state: &GuiCommandState,
+    row: &GuiBrowserSketch,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let visibility = GuiShellAction::SetSketchVisibility {
+        document: state.document.unwrap_or(0),
+        sketch: row.id,
+        visible: !row.visible,
+    };
+    if ui
+        .menu_item_config("Visibility")
+        .selected(row.visible)
+        .enabled(visibility.dispatchable(state))
+        .build()
+    {
+        actions.push(visibility);
     }
 }
 fn sketch_caption(row: &GuiBrowserSketch) -> String {

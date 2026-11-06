@@ -69,7 +69,9 @@ fn require_expression(request: &ParameterSetArgs) -> Result<(), Error> {
     Ok(())
 }
 
-fn boolean_literal(source: &str) -> Result<bool, Error> {
+/// Parse the parameter codec's Go boolean forms with optional whitespace.
+/// Example: `boolean_literal(" false ")?`; strict wire properties reject whitespace first.
+pub(crate) fn boolean_literal(source: &str) -> Result<bool, Error> {
     // Preserve strconv.ParseBool spellings, including its numeric and single-letter forms.
     match source.trim() {
         "1" | "t" | "T" | "TRUE" | "true" | "True" => Ok(true),

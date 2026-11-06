@@ -9,6 +9,7 @@ mod dimension_placement;
 mod dimension_settings;
 mod health;
 mod translation;
+mod visibility;
 pub use construction::SketchConstructionReport;
 mod orientation;
 pub(crate) use orientation::UnavailableSketchAxes;
@@ -35,6 +36,7 @@ pub struct DocumentSketchId(pub u64);
 pub struct PlacedSketch {
     id: DocumentSketchId,
     name: String,
+    visible: bool,
     placement: SketchPlacement,
     orientation: Option<SketchOrientationDefinition>,
     point_projections: Vec<SketchPointProjection>,
@@ -52,6 +54,9 @@ pub struct DocumentSketches {
 pub struct PlacedSketchRecipe {
     pub id: DocumentSketchId,
     pub name: String,
+    /// Version 5 overrides the legacy visible default; absent values preserve older encodings.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub visible: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plane: Option<SketchPlaneRecipe>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -81,6 +86,7 @@ impl PlacedSketch {
         Self {
             id,
             name: name.into(),
+            visible: true,
             placement,
             orientation: None,
             point_projections: Vec::new(),
@@ -108,6 +114,7 @@ impl PlacedSketch {
         PlacedSketchRecipe {
             id: self.id,
             name: self.name.clone(),
+            visible: (!self.visible).then_some(false),
             plane,
             plane_options,
             plane_feature,
@@ -117,6 +124,9 @@ impl PlacedSketch {
         }
     }
     fn recipe_version(&self) -> u32 {
+        if !self.visible {
+            return 5;
+        }
         if !self.point_projections.is_empty() {
             return 4;
         }
@@ -140,6 +150,7 @@ impl DocumentSketches {
                 .all(|(first, second)| {
                     first.id == second.id
                         && first.name == second.name
+                        && first.visible == second.visible
                         && first.placement.same_recipe(second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
                         && first.point_projections == second.point_projections
@@ -245,9 +256,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=4) {
+        if !matches!(recipe.version, 1..=5) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1, 2, 3, or 4",
+                "document sketch recipe version {}: expected 1, 2, 3, 4, or 5",
                 recipe.version
             )));
         }
@@ -258,6 +269,7 @@ impl DocumentSketches {
             restored.insert_placed(sketch.id, &sketch.name, placement, geometry)?;
             orientation::restore_orientation(&mut restored, sketch, recipe.version)?;
             point_projection::restore_bindings(&mut restored, sketch, recipe.version)?;
+            visibility::restore_visibility(&mut restored, sketch, recipe.version)?;
         }
         Ok(restored)
     }
@@ -318,6 +330,7 @@ impl PartialEq for PlacedSketch {
         // Derived verification is not authored content and is rebuilt after loading (#3722).
         self.id == other.id
             && self.name == other.name
+            && self.visible == other.visible
             && self.placement == other.placement
             && self.orientation == other.orientation
             && self.point_projections == other.point_projections

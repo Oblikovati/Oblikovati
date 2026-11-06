@@ -13,13 +13,15 @@ fn absent_orientation_keeps_legacy_layout_and_oriented_records_require_version_t
     );
     assign(&mut snapshot, SketchAxisReference::OriginX);
     let mut recipe = snapshot.sketches.recipe();
-    for version in [1, 2, 5] {
+    for version in [0, 1, 2, 6] {
         recipe.version = version;
         assert!(DocumentSketches::from_recipe(&recipe).is_err());
     }
-    recipe.version = 3;
-    let restored = DocumentSketches::from_recipe(&recipe).unwrap();
-    assert!(restored.same_recipe(&snapshot.sketches));
+    for version in [3, 4, 5] {
+        recipe.version = version;
+        let restored = DocumentSketches::from_recipe(&recipe).unwrap();
+        assert!(restored.same_recipe(&snapshot.sketches));
+    }
 }
 
 #[test]
@@ -93,4 +95,17 @@ fn source_axis_choice_and_direction_changes_are_authored_edits() {
         assign_definition(&mut snapshot, Some(changed)).unwrap();
         assert!(!before.same_recipe(&snapshot.sketches));
     }
+}
+
+#[test]
+fn hidden_oriented_sketch_restores_both_metadata_and_axis_sources() {
+    let mut snapshot = snapshot();
+    assign(&mut snapshot, SketchAxisReference::OriginX);
+    let id = snapshot.sketches.recipe().sketches[0].id;
+    snapshot.sketches.set_visible(id, false).unwrap();
+    let recipe = snapshot.sketches.recipe();
+    assert_eq!(recipe.version, 5);
+    let restored = DocumentSketches::from_recipe(&recipe).unwrap();
+    assert!(restored.same_recipe(&snapshot.sketches));
+    assert!(!restored.get(id).unwrap().visible());
 }

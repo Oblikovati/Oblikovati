@@ -144,6 +144,14 @@ impl<
     ) -> Result<bool, String> {
         self.select_browser_sketch(document, sketch, toggle)
     }
+    fn set_sketch_visibility_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        visible: bool,
+    ) -> Result<bool, String> {
+        self.set_browser_sketch_visibility(document, sketch, visible)
+    }
     fn edit_existing_sketch_from_gui(
         &mut self,
         document: u64,

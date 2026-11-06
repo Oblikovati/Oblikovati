@@ -87,6 +87,7 @@ fn browser_sketch<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
         });
     GuiBrowserSketch {
         id: sketch.id(),
+        visible: sketch.visible(),
         name: sketch.name().into(),
         inspection,
         consumed_by: exclusive_sketch_consumer(snapshot, sketch.id()),

@@ -24,7 +24,12 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?
             .snapshot();
-        for sketch in snapshot.sketches.sketches() {
+        for sketch in snapshot
+            .sketches
+            .sketches()
+            .iter()
+            .filter(|sketch| sketch.visible())
+        {
             collect_dimension_annotations(snapshot, sketch, &mut output);
         }
         match self.dimension_preview_annotation() {

@@ -120,6 +120,9 @@ impl<
             .sketches
             .get(edit.sketch)
             .map_err(|cause| cause.to_string())?;
+        if !sketch.visible() {
+            return Ok(None);
+        }
         pick_witness(sketch.geometry(), edit.plane, pixel, window, filter)
     }
 }

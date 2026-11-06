@@ -17,6 +17,8 @@ mod sketch_tools_gui;
 use sketch_tools_gui::gui_placement_tool;
 #[path = "owner_browser_selection.rs"]
 mod browser_selection;
+#[path = "owner_browser_visibility.rs"]
+mod browser_visibility;
 #[path = "owner_dimension_annotations.rs"]
 mod dimension_annotations;
 #[path = "owner_dimension_query.rs"]

@@ -345,3 +345,6 @@ mod geometric_tools;
 
 #[path = "owner/dimension_tools.rs"]
 mod dimension_tools;
+
+#[path = "owner/browser_visibility.rs"]
+mod browser_visibility;

@@ -30,6 +30,7 @@ mod sketch_dimension_placement;
 mod sketch_line;
 mod sketch_relation_create;
 mod sketch_relation_delete;
+mod sketch_visibility;
 pub use sketch_relation_create::SketchGeometricCreationProjectionInput;
 pub use sketch_relation_delete::SketchRelationDeleteProjectionInput;
 mod sketch_copy;

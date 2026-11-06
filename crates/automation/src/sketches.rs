@@ -16,6 +16,7 @@ mod indices;
 pub(crate) mod inspection;
 mod move_dimension;
 mod owner;
+mod properties;
 mod references;
 mod transform;
 use oblikovati_api::{Error, wire::*};
@@ -34,8 +35,9 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 12] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 13] = [
     METHOD_SKETCH_CREATE,
+    METHOD_SKETCH_SET_PROPERTY,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
@@ -87,7 +89,11 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     files: &mut FileWorkspace<O, W, F>,
     method: &str,
     request: &[u8],
+    editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_SET_PROPERTY {
+        return properties::apply(files, crate::decode(method, request)?, editing);
+    }
     if method == METHOD_SKETCH_SET_INFERENCE_OPTIONS {
         return files
             .set_sketch_inference_options_projected(
