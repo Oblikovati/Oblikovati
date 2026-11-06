@@ -22,6 +22,8 @@ impl GuiFolders for FakeFolders {
             created: Some(SystemTime::UNIX_EPOCH),
             modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(90_061)),
             accessed: None,
+            read_only: false,
+            size_on_disk: Some(12),
         })
     }
 }

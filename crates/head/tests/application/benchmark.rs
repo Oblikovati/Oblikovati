@@ -7,6 +7,7 @@ use cucumber::{
 use std::{fmt, fs, path::PathBuf};
 mod diagnostics;
 mod documents;
+mod refinements;
 mod world;
 use world::ApplicationWorld;
 #[path = "document-creation/steps.rs"]
@@ -19,6 +20,8 @@ mod document_tabs;
 mod file_menu;
 #[path = "home-recent-documents/steps.rs"]
 mod home_recent_documents;
+#[path = "project-dialog/steps.rs"]
+mod project_dialog;
 #[path = "quick-access-toolbar/steps.rs"]
 mod quick_access_toolbar;
 #[path = "ribbon-display/steps.rs"]

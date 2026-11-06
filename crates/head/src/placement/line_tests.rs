@@ -167,3 +167,27 @@ fn restart_drops_the_chain_and_escape_ends_the_command() {
     assert!(state.line_awaits_start());
     assert_eq!(state.generation, 9);
 }
+#[test]
+fn an_exact_start_joins_the_acquired_vertex_and_an_exact_end_locks_nothing() {
+    let mut state = draft();
+    assert!(state.line_segment_to([1., 1.], None).is_none());
+    let vertex = SketchEntityId(7);
+    state.line_start_on([2., 3.], Some(vertex), None).unwrap();
+    let input = state.line_segment_to([5., 3.], None).unwrap();
+    assert_eq!(input.points, [[2., 3.], [5., 3.]]);
+    assert_eq!(input.joins, [Some(vertex), None]);
+    assert!(input.locks.iter().all(Option::is_none));
+}
+#[test]
+fn a_click_three_pixels_on_makes_a_segment_and_two_pixels_on_is_a_double_click() {
+    let mut state = draft();
+    state.line_start_at([0., 0.], [100, 100]).unwrap();
+    assert!(matches!(
+        press(&mut state, [102, 100]),
+        PlacementAction::Idle
+    ));
+    assert!(matches!(
+        press(&mut state, [103, 100]),
+        PlacementAction::Cursor { place: true, .. }
+    ));
+}

@@ -31,6 +31,7 @@ fn part_open(world: &mut ApplicationWorld) {
     world.previous_document = world.app().owner.gui_command_state().unwrap().document;
     world.pump(Vec::new());
 }
+#[given("the 3D Model ribbon is active")]
 #[given("the 3D Model ribbon tab is active")]
 fn model_tab_active(world: &mut ApplicationWorld) {
     world.expect_text("3D Model");
@@ -62,6 +63,13 @@ fn open_user_interface(world: &mut ApplicationWorld) {
     world.click_text("View");
     world.click_text("User Interface");
 }
+/// The option leaves its menu open, so reopening only opens what has since closed.
+#[when("I reopen the User Interface menu")]
+fn reopen_user_interface(world: &mut ApplicationWorld) {
+    if !world.shows("Model Browser") {
+        open_user_interface(world);
+    }
+}
 #[when("I clear the Model Browser option")]
 #[when("I select the Model Browser option again")]
 fn toggle_browser(world: &mut ApplicationWorld) {
@@ -71,7 +79,7 @@ fn toggle_browser(world: &mut ApplicationWorld) {
 fn browser_hidden(world: &mut ApplicationWorld) {
     world.expect_no_text("Origin");
 }
-#[then("the drawing area extends into the space it occupied")]
+#[then("the viewport extends into the space it occupied")]
 #[then("the viewport occupies the space previously used by the docked browser")]
 fn left_space_free(world: &mut ApplicationWorld) {
     let height = world.extent()[1] as usize;

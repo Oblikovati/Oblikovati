@@ -57,6 +57,13 @@ fn numbered_row<'a>(row: &'a DocumentInfo, window: &GuiDocumentWindow) -> TabRow
 pub(crate) fn is_active_window(state: &GuiCommandState, tab: &TabRow<'_>) -> bool {
     state.document == Some(tab.row.id) && (!tab.numbered || state.active_window == Some(tab.window))
 }
+/// The name of the window in front; example: `Part1:2` for a part's second window.
+pub fn active_window_name(state: &GuiCommandState) -> Option<String> {
+    tab_rows(state)
+        .into_iter()
+        .find(|tab| is_active_window(state, tab))
+        .map(|tab| tab.name)
+}
 /// What choosing this tab asks of the owner; nothing when it is already in front.
 pub(crate) fn activation(state: &GuiCommandState, tab: &TabRow<'_>) -> Option<GuiShellAction> {
     if is_active_window(state, tab) {

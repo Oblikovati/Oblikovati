@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The component a populated drawing layout asks for before its drawing exists.
 use crate::application::document_saving::folder_browser::{
-    DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog, dialog_buttons,
-    file_name_field, full_path,
+    BROWSER_COLUMN_WIDTH, DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog,
+    dialog_buttons, file_name_field, file_type_field, full_path,
 };
 use crate::application::file_system::NativeFolders;
 use imgui::Ui;
@@ -14,6 +14,7 @@ const NOT_AVAILABLE: &str = "Placing a drawing view is not available in this bui
 
 pub(crate) struct ComponentDialog {
     browser: FolderBrowser,
+    file_type: usize,
     /// The component's document: an open document's name, or a chosen file's path.
     name: String,
     /// The nested chooser's own field, which a Cancel there discards.
@@ -26,6 +27,7 @@ impl Default for ComponentDialog {
     fn default() -> Self {
         Self {
             browser: FolderBrowser::new(Rc::new(NativeFolders)),
+            file_type: 0,
             name: String::new(),
             file_name: String::new(),
             file_escape: DialogEscape::default(),
@@ -74,13 +76,20 @@ impl ComponentDialog {
         let Some(_chooser) = ui.begin_modal_popup(FILE_CHOOSER) else {
             return;
         };
-        if let Some(name) = self
-            .browser
-            .controls(ui, "Look in", FileTypeList::any().filter(0))
-        {
+        let types = FileTypeList::any();
+        ui.columns(2, "component-layout", true);
+        ui.set_column_width(0, BROWSER_COLUMN_WIDTH);
+        if let Some(name) = self.browser.controls(ui, "Look in", types.filter(0)) {
             self.file_name = name;
         }
+        ui.next_column();
+        ui.child_window("##component-preview")
+            .size([0., 110.])
+            .border(true)
+            .build(|| ui.text_disabled("Preview"));
+        ui.columns(1, "component-layout-end", false);
         let entered = file_name_field(ui, &mut self.file_name);
+        file_type_field(ui, &types, &mut self.file_type);
         let can_open = !self.file_name.is_empty();
         let end = dialog_buttons(ui, "Open", can_open, entered, &mut self.file_escape);
         if end == Some(DialogEnd::Accepted) {

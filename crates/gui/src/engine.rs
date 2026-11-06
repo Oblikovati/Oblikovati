@@ -3,7 +3,8 @@ use crate::{
     GuiAtlas, GuiCommandState, GuiFrame, GuiFrameActivity, GuiInputCapture, GuiInputEvent,
     GuiShellAction,
     context_owner::{frame_activity, require_vacant_context},
-    input::{apply_input, input_capture, sketch_tool_key, validate_input},
+    frame_keys::prepare_frame_inputs,
+    input::{input_capture, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
 use imgui::{ConfigFlags, Context, TextureId};
@@ -36,6 +37,12 @@ pub struct GuiFrameEngine {
     preferences: crate::ui_scale::GuiScalePreferences,
     dimension_editor: crate::dimensions::GuiDimensionEditor,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
+    precise_input: crate::sketch::precise_input::PreciseInputBar,
+    /// A popup was open last frame: Escape closes it, and the frame that opens is already too
+    /// late to ask, since Dear ImGui acts on the key as the frame begins.
+    popup_was_open: bool,
+    /// Keys a widget received the press of, so their release reaches it too.
+    widget_keys: Vec<crate::GuiKey>,
     quick_access: crate::application::quick_access_toolbar::QuickAccessToolbar,
     home: crate::application::home_recent_documents::HomeWorkspace,
     plane_selection: crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
@@ -65,6 +72,9 @@ impl GuiFrameEngine {
             preferences: Default::default(),
             dimension_editor: Default::default(),
             dimension_value_editor: Default::default(),
+            precise_input: Default::default(),
+            popup_was_open: false,
+            widget_keys: Vec::new(),
             quick_access: Default::default(),
             home: Default::default(),
             plane_selection: Default::default(),
@@ -193,10 +203,18 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 }
 impl GuiFrameEngine {
     fn draw_controls(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
-        let keys = prepare_frame_inputs(&mut self.context, request, &mut self.modifiers_held);
+        let keys = prepare_frame_inputs(
+            &mut self.context,
+            request,
+            &mut self.modifiers_held,
+            self.popup_was_open,
+            &mut self.widget_keys,
+        );
         let ui = self.context.frame();
         crate::dimension_labels::draw_dimension_labels(ui, request);
+        crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
         let mut selected = Vec::new();
+        self.document_files.home_in_front = self.home.active;
         let band_height = crate::chrome::ribbon_band(
             ui,
             request,
@@ -206,6 +224,7 @@ impl GuiFrameEngine {
                 files: &mut self.document_files,
                 theme_editor: &mut self.theme_editor,
                 preferences: &mut self.preferences,
+                precise_input: &mut self.precise_input,
                 workspace: &mut self.workspace,
                 workspaces: &mut self.workspaces,
                 quick_access: &mut self.quick_access,
@@ -255,6 +274,12 @@ impl GuiFrameEngine {
             &mut selected,
         );
         self.document_tabs.previews.showing = workspace_front(request, area, self.home.active);
+        self.document_tabs.previews.showing_file = request
+            .commands
+            .document
+            .filter(|_| !self.home.active)
+            .and_then(|id| request.commands.document_storage.get(&id))
+            .and_then(|storage| storage.path.clone());
         self.home.panel(ui, &request.commands, area, &mut selected);
         let home_requests = std::mem::take(&mut self.home.requests);
         if home_requests.new_document {
@@ -266,12 +291,18 @@ impl GuiFrameEngine {
         if let Some(path) = home_requests.file_properties {
             self.document_tabs.menu.properties.request_file(&path);
         }
-        self.document_files
-            .panel(ui, &request.commands, &mut selected);
+        self.document_files.panel(
+            ui,
+            &request.commands,
+            &self.document_tabs.previews,
+            &mut selected,
+        );
         self.preferences.panel(ui, &request.commands, &mut selected);
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
+        self.precise_input
+            .panel(ui, &request.commands, &mut selected);
         crate::sketch::inspect::canvas_menu(ui, &request.commands, &mut selected);
         self.dimension_value_editor
             .panel(ui, request, &mut selected);
@@ -309,9 +340,19 @@ impl GuiFrameEngine {
         self.known_documents.clone_from(&request.commands.documents);
         self.known_document_type = request.commands.document_type;
         self.workspaces.note_created(&selected);
+        // A popup that closed this frame still owned the key that closed it.
+        let popup_open = self.popup_was_open || crate::widget_abi::any_popup_open(ui);
+        self.popup_was_open = crate::widget_abi::any_popup_open(ui);
         let snapshot = capture_frame(self.context.render(), request.extent)?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;
+        // Dear ImGui claims the keyboard for whichever window last had focus. A click on the
+        // ribbon must leave M and F8 to the sketch unless a widget is really using the keys.
+        // A popup always owns them, even on the frame Escape closes it and focus moves on.
+        capture.keyboard &= capture.text || self.context.io().nav_visible;
+        capture.keyboard |= popup_open;
+        capture.popup = popup_open;
+        capture.pointer |= self.dimension_value_editor.over_label;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=
@@ -395,65 +436,6 @@ fn apply_quick_access(
     }
     planes.active |= requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane);
 }
-/// Keys the engine consumed before Dear ImGui could read them.
-#[derive(Default)]
-struct FrameKeys {
-    tool_keyboard: bool,
-    switch_document: Option<crate::application::document_tabs::DocumentStep>,
-}
-fn prepare_frame_inputs(
-    context: &mut Context,
-    request: &GuiFrameRequest,
-    held: &mut crate::GuiModifiers,
-) -> FrameKeys {
-    let io = context.io_mut();
-    io.display_size =
-        std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
-    io.display_framebuffer_scale = request.layout_scale();
-    io.delta_time = request.delta_seconds;
-    let mut keys = FrameKeys::default();
-    for event in &request.events {
-        if let crate::GuiInputEvent::Modifiers(modifiers) = event {
-            *held = *modifiers;
-        }
-        if sketch_tool_key(
-            event,
-            request.commands.sketch_tool_keyboard,
-            io.want_text_input,
-        ) {
-            keys.tool_keyboard = true;
-            continue;
-        }
-        // Dear ImGui would read Ctrl+Tab as its own window switcher; here it switches documents.
-        if document_switch_key(event, held.control) {
-            if matches!(event, crate::GuiInputEvent::Key { pressed: true, .. }) {
-                keys.switch_document = Some(document_step(*held));
-            }
-            continue;
-        }
-        apply_input(io, event, request.layout_scale());
-    }
-    keys
-}
-fn document_step(held: crate::GuiModifiers) -> crate::application::document_tabs::DocumentStep {
-    use crate::application::document_tabs::DocumentStep;
-    if held.shift {
-        DocumentStep::Previous
-    } else {
-        DocumentStep::Next
-    }
-}
-fn document_switch_key(event: &crate::GuiInputEvent, control_held: bool) -> bool {
-    control_held
-        && matches!(
-            event,
-            crate::GuiInputEvent::Key {
-                key: crate::GuiKey::Tab,
-                ..
-            }
-        )
-}
-
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]
 mod parameter_shortcuts;

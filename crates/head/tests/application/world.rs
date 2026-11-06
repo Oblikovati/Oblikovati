@@ -29,6 +29,10 @@ pub(super) struct ApplicationWorld {
     pub last_capture: Option<oblikovati_viewport::ViewportCapture>,
     pub observed_second_view: Option<[i32; 2]>,
     pub observed_annotations: Option<bool>,
+    /// Text read before a later step changes what the window shows.
+    pub observed_rows: Option<String>,
+    /// The latest drag, for a step that checks the preview it left.
+    pub last_drag: Option<[[i32; 2]; 2]>,
 }
 pub(super) struct NativeApplication {
     pub window: ScriptedGuiWindow,
@@ -45,7 +49,9 @@ impl fmt::Debug for ApplicationWorld {
 impl ApplicationWorld {
     fn new() -> Self {
         let native = NativeHeadWindow::open().unwrap();
-        let owner = native_owner(native.wake.clone()).unwrap();
+        let mut owner = native_owner(native.wake.clone()).unwrap();
+        // The options file outlives a scenario; one that failed part-way must not reach the next.
+        owner.change_sketch_options(Default::default()).unwrap();
         let mut world = Self {
             app: Some(NativeApplication {
                 window: scripted_window(native),
@@ -74,6 +80,8 @@ impl ApplicationWorld {
             last_capture: None,
             observed_second_view: None,
             observed_annotations: None,
+            observed_rows: None,
+            last_drag: None,
         };
         world.pump(Vec::new());
         world

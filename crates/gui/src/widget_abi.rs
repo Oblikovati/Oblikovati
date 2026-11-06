@@ -29,6 +29,13 @@ pub(crate) fn window_geometry(_: &Ui, position: [f32; 2], size: [f32; 2], condit
         oblikovati_gui_window_size(size[0], size[1], condition as i32);
     }
 }
+/// Place the next window where it first appears; example: a list opened beside its menu row.
+pub(crate) fn next_window_position(_: &Ui, position: [f32; 2]) {
+    // The live Ui owns this thread's context; only scalar arguments cross into C++ (#3803).
+    unsafe {
+        oblikovati_gui_window_position(position[0], position[1], Condition::Appearing as i32)
+    };
+}
 /// Move the current window cursor; example: `cursor_position(ui, [16.,59.])` before a ribbon control.
 pub(crate) fn cursor_position(_: &Ui, position: [f32; 2]) {
     // The Ui borrow keeps the current context and window alive for this scalar call.
@@ -62,6 +69,11 @@ pub(crate) fn dialog_selectable(_: &Ui, label: &str, selected: bool) -> bool {
     let label = ImString::new(label);
     // The label owner and Ui remain live; no C++ vector class crosses the ABI.
     unsafe { oblikovati_gui_selectable(label.as_ptr().cast(), selected, flags as i32) }
+}
+/// Leave no window focused; example: after the panel that held the keyboard has closed.
+pub(crate) fn release_keyboard_focus(_: &Ui) {
+    // A null name is the documented form for removing focus; no string crosses the ABI.
+    unsafe { imgui::sys::igSetWindowFocus_Str(std::ptr::null()) };
 }
 /// Whether a list or dialog opened from inside the current popup is still open.
 pub(crate) fn nested_popup_open(_: &Ui) -> bool {

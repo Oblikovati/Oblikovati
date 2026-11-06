@@ -16,8 +16,10 @@ use oblikovati_viewport::{
     ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
 };
 
-/// A line's midpoint is a selection of its own within this reach of the pointer, in pixels.
-const MIDPOINT_REACH: f64 = 6.;
+/// A vertex is a selection of its own within this reach of the pointer, in pixels.
+const VERTEX_REACH: f64 = 4.;
+/// A line's midpoint is too, nearer in: a short segment's middle is also where it is clicked.
+const MIDPOINT_REACH: f64 = 3.;
 
 impl<
     O: TransactionObserver,
@@ -64,10 +66,11 @@ impl<
         }
         Ok(true)
     }
-    /// The M key at Ready starts Measure; while a command runs the key is that command's.
-    pub(super) fn measure_key(&mut self, event: ViewportEvent) -> Result<bool, String> {
+    /// At Ready, M starts Measure and F8 and F9 show and hide every relation's mark; while a
+    /// command runs these keys are that command's.
+    pub(super) fn sketch_ready_key(&mut self, event: ViewportEvent) -> Result<bool, String> {
         let ViewportEvent::Input(ViewportInput::PhysicalKey {
-            key: ViewportPhysicalKey::M,
+            key,
             pressed: true,
             modifiers,
             ..
@@ -78,7 +81,12 @@ impl<
         if modifiers.control || self.active_sketch_edit().is_none() {
             return Ok(false);
         }
-        self.start_measure()?;
+        match key {
+            ViewportPhysicalKey::M => self.start_measure()?,
+            ViewportPhysicalKey::F8 => self.set_constraints_shown(true)?,
+            ViewportPhysicalKey::F9 => self.set_constraints_shown(false)?,
+            _ => return Ok(false),
+        }
         Ok(true)
     }
     fn start_measure(&mut self) -> Result<(), String> {
@@ -265,13 +273,31 @@ fn selection_pixel(event: ViewportEvent) -> Option<[i32; 2]> {
         _ => None,
     }
 }
-/// Midpoints first: they sit on their curve, so the curve would otherwise always win.
+/// Points first: they sit on their curves, so a curve would otherwise always win.
 fn measure_target(
     geometry: &oblikovati_model::sketch::Sketch2D,
     plane: SketchPlane,
     pixel: [i32; 2],
     window: &dyn HeadWindow,
 ) -> Result<Option<MeasurePick>, String> {
+    if let Some(point) = measure_point(geometry, plane, pixel, window)? {
+        return Ok(Some(MeasurePick::Point(point)));
+    }
+    let picked = pick_witness(geometry, plane, pixel, window, SketchPickFilter::Curves)?;
+    Ok(picked.map(|witness| MeasurePick::Curve(witness.entity)))
+}
+fn measure_point(
+    geometry: &oblikovati_model::sketch::Sketch2D,
+    plane: SketchPlane,
+    pixel: [i32; 2],
+    window: &dyn HeadWindow,
+) -> Result<Option<[f64; 2]>, String> {
+    for point in geometry.points() {
+        let at = window.sketch_pixel(plane, point.position)?;
+        if super::sketch_picking::screen_distance(at, pixel) <= VERTEX_REACH {
+            return Ok(Some(point.position));
+        }
+    }
     for line in geometry.lines() {
         let [start, end] = line.endpoints.map(|point| geometry.point(point));
         let (start, end) = (
@@ -281,14 +307,8 @@ fn measure_target(
         let middle = [(start[0] + end[0]) * 0.5, (start[1] + end[1]) * 0.5];
         let at = window.sketch_pixel(plane, middle)?;
         if super::sketch_picking::screen_distance(at, pixel) <= MIDPOINT_REACH {
-            return Ok(Some(MeasurePick::Point(middle)));
+            return Ok(Some(middle));
         }
     }
-    let Some(witness) = pick_witness(geometry, plane, pixel, window, SketchPickFilter::Any)? else {
-        return Ok(None);
-    };
-    Ok(Some(match witness.curve {
-        Some(_) => MeasurePick::Curve(witness.entity),
-        None => MeasurePick::Point(witness.position),
-    }))
+    Ok(None)
 }

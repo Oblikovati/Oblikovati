@@ -82,6 +82,19 @@ pub trait HeadWork {
             "inspection {action:?}: expected a document with an edited sketch"
         ))
     }
+    /// Place the running command's next point exactly; example: `work.precise_point_from_gui(&point)`.
+    fn precise_point_from_gui(
+        &mut self,
+        point: &oblikovati_gui::GuiPrecisePoint,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "precise point {point:?}: expected a document owner"
+        ))
+    }
+    /// The edited sketch's shown relation marks; example: `work.sketch_constraint_marks()`.
+    fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
+        Vec::new()
+    }
     /// Apply one active Line menu choice; example: `work.line_command_from_gui(command)`.
     fn line_command_from_gui(
         &mut self,
@@ -380,122 +393,6 @@ impl HeadWork for IdleHeadWork {
         Ok(())
     }
 }
-
-// Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
-macro_rules! forward_owner_view_work {
-    ($owner:ident) => {
-        fn activate_document_from_gui(
-            &mut self,
-            request: &oblikovati_api::wire::ActivateDocumentArgs,
-        ) -> Result<bool, String> {
-            self.$owner.activate_document_from_gui(request)
-        }
-
-        fn close_document_from_gui(
-            &mut self,
-            request: &oblikovati_api::wire::CloseDocumentArgs,
-        ) -> Result<bool, String> {
-            self.$owner.close_document_from_gui(request)
-        }
-        fn open_document_from_gui(
-            &mut self,
-            request: &oblikovati_api::wire::OpenDocumentArgs,
-        ) -> Result<bool, String> {
-            self.$owner.open_document_from_gui(request)
-        }
-        // #3811: live browser actions must reach the same owner through every wrapper.
-        fn select_browser_sketch_from_gui(
-            &mut self,
-            document: u64,
-            sketch: oblikovati_model::document_sketch::DocumentSketchId,
-            toggle: bool,
-        ) -> Result<bool, String> {
-            self.$owner
-                .select_browser_sketch_from_gui(document, sketch, toggle)
-        }
-        fn set_sketch_visibility_from_gui(
-            &mut self,
-            document: u64,
-            sketch: oblikovati_model::document_sketch::DocumentSketchId,
-            visible: bool,
-        ) -> Result<bool, String> {
-            self.$owner
-                .set_sketch_visibility_from_gui(document, sketch, visible)
-        }
-        fn edit_existing_sketch_from_gui(
-            &mut self,
-            document: u64,
-            sketch: oblikovati_model::document_sketch::DocumentSketchId,
-        ) -> Result<bool, String> {
-            self.$owner.edit_existing_sketch_from_gui(document, sketch)
-        }
-        fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
-            self.$owner.observe_window_capture_extent(extent);
-        }
-        fn take_window_capture_requests(&mut self) -> Vec<$crate::WindowCaptureJob> {
-            self.$owner.take_window_capture_requests()
-        }
-        // #3796: an add-in layer must retain the same UI authoring operations as the script layer.
-        fn create_part_document(&mut self) -> Result<bool, String> {
-            self.$owner.create_part_document()
-        }
-        fn create_document_template(
-            &mut self,
-            template: oblikovati_gui::GuiDocumentTemplate,
-        ) -> Result<bool, String> {
-            self.$owner.create_document_template(template)
-        }
-        fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
-            self.$owner.edit_sketch_from_gui(start)
-        }
-        fn toggle_sketch_format_from_gui(
-            &mut self,
-            format: oblikovati_model::sketch::SketchCurveFormat,
-        ) -> Result<bool, String> {
-            self.$owner.toggle_sketch_format_from_gui(format)
-        }
-        fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
-            self.$owner.delete_sketch_selection_from_gui()
-        }
-        fn place_sketch_tool_from_gui(
-            &mut self,
-            tool: oblikovati_gui::GuiSketchTool,
-        ) -> Result<bool, String> {
-            self.$owner.place_sketch_tool_from_gui(tool)
-        }
-        fn sketch_dimension_annotations(&self) -> Result<$crate::HeadDimensionAnnotations, String> {
-            self.$owner.sketch_dimension_annotations()
-        }
-        fn dimension_tool_from_gui(
-            &mut self,
-            action: &oblikovati_gui::GuiDimensionAction,
-        ) -> Result<bool, String> {
-            self.$owner.dimension_tool_from_gui(action)
-        }
-        fn constrain_sketch_from_gui(
-            &mut self,
-            choice: oblikovati_gui::GuiSketchConstraint,
-        ) -> Result<bool, String> {
-            self.$owner.constrain_sketch_from_gui(choice)
-        }
-        fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
-            self.$owner.decline_sketch_edit(cause)
-        }
-        fn sketch_edit(&self) -> Option<$crate::HeadSketchEdit> {
-            self.$owner.sketch_edit()
-        }
-        fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
-            self.$owner.sketch_preview()
-        }
-        fn take_sketch_scene(&mut self) -> Result<Option<$crate::HeadSketchSceneUpdate>, String> {
-            self.$owner.take_sketch_scene()
-        }
-        fn take_scene(&mut self) -> Result<Option<$crate::HeadSceneUpdate>, String> {
-            self.$owner.take_scene()
-        }
-    };
-}
-pub(crate) use forward_owner_view_work;
 
 #[cfg(test)]
 mod document_activation_tests {

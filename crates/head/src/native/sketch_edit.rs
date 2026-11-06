@@ -18,6 +18,18 @@ impl NativeHeadWindow {
         };
         self.face_sketch_camera(edit)
     }
+    /// Name the active document in the title bar; only a change touches the window.
+    pub(super) fn note_document_title(
+        &mut self,
+        commands: &oblikovati_gui::GuiCommandState,
+    ) -> Result<(), String> {
+        let title = oblikovati_gui::active_window_name(commands);
+        if title == self.document_title {
+            return Ok(());
+        }
+        self.document_title = title;
+        self.refresh_title()
+    }
     /// Keep this window's view and restore the next one's; a new window starts at the default.
     pub(super) fn switch_view_slot(&mut self, slot: u64) -> Result<bool, String> {
         if slot == self.view_slot {

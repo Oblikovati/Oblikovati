@@ -104,7 +104,7 @@ fn preferences_choose_text_scale_without_changing_the_stored_icon_factor() {
     settle(&mut owner, &mut request);
     assert!(click(&mut owner, &mut request, [55., 10.]).is_empty());
     assert!(click(&mut owner, &mut request, [100., 32.]).is_empty());
-    let actions = click(&mut owner, &mut request, [530., 514.]);
+    let actions = click(&mut owner, &mut request, [530., 474.]);
     assert_eq!(
         actions,
         [GuiShellAction::SetUiScale(

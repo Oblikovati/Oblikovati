@@ -30,6 +30,23 @@ pub(super) fn projected_dimension_labels(
     }
     Ok(labels)
 }
+/// Marks the camera cannot place are left out: a mark is a reading aid, never a modelling input.
+pub(super) fn projected_constraint_glyphs(
+    window: &dyn HeadWindow,
+    owner: &dyn HeadWork,
+) -> Vec<oblikovati_gui::GuiConstraintGlyph> {
+    owner
+        .sketch_constraint_marks()
+        .into_iter()
+        .filter_map(|mark| {
+            let pixel = window.sketch_pixel(mark.plane, mark.at).ok()?;
+            Some(oblikovati_gui::GuiConstraintGlyph {
+                pixel,
+                text: mark.text,
+            })
+        })
+        .collect()
+}
 /// A half-side of the displayed origin planes, in working lengths: readable at the default view.
 const ORIGIN_PLANE_REACH: f64 = 6.;
 /// The planes as the camera sees them; a window that cannot project shows none.

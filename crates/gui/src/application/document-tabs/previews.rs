@@ -25,6 +25,10 @@ const CHROME: f32 = 16.;
 #[derive(Default)]
 pub(crate) struct TabPreviews {
     images: BTreeMap<PreviewKey, GuiPreviewImage>,
+    /// The same pictures by saved file, for dialogs that list files after their tab has gone.
+    file_images: BTreeMap<String, GuiPreviewImage>,
+    /// The saved file of what is in front.
+    pub showing_file: Option<String>,
     /// What is in front, and where, as of the last drawn frame.
     pub showing: Option<(PreviewKey, [[f32; 2]; 2])>,
 }
@@ -35,8 +39,15 @@ impl TabPreviews {
             return;
         };
         if let Some(image) = cropped_picture(extent, rgba, minimum, maximum) {
+            if let Some(file) = &self.showing_file {
+                self.file_images.insert(file.clone(), image.clone());
+            }
             self.images.insert(key, image);
         }
+    }
+    /// The picture of a file this session has shown; example: for the Open dialog's preview.
+    pub(crate) fn picture_of_file(&self, path: &str) -> Option<&GuiPreviewImage> {
+        self.file_images.get(path)
     }
     /// Draw above the hovered tab; it takes no input, so moving away simply ends it.
     pub(crate) fn panel(&self, ui: &Ui, hovered: Option<&HoveredTab>) {

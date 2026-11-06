@@ -1,56 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-const PROJECT_NAME: &str = "Gearbox";
-#[given("a project is active")]
-fn project_active(world: &mut ApplicationWorld) {
-    let path = world.scratch_folder().join("gearbox.opj");
-    std::fs::write(&path, "schemaVersion: 1\nname: Gearbox\nworkspace: work\n").unwrap();
-    world.app().owner.load_project_for_test(&path);
-    world.pump(Vec::new());
-}
-#[when("I choose Projects in the chooser")]
-fn choose_projects(world: &mut ApplicationWorld) {
-    world.click_text("Projects");
-    world.pump(Vec::new());
-    world.pump(Vec::new());
-}
-#[then("a Projects dialog opens above the chooser")]
-fn projects_above(world: &mut ApplicationWorld) {
-    world.expect_text("Project Settings");
-    let dialog = world.run("Project Settings").list;
-    let chooser = world.run("Template folders").list;
-    assert!(
-        dialog > chooser,
-        "Projects: expected it drawn above the chooser"
-    );
-}
-#[then("it lists project names and locations")]
-fn project_rows_listed(world: &mut ApplicationWorld) {
-    world.expect_text(PROJECT_NAME);
-    world.expect_text("gearbox.opj");
-}
-#[then("the active project is marked")]
-fn project_marked(world: &mut ApplicationWorld) {
-    world.expect_text(&format!("(active) {PROJECT_NAME}"));
-}
-#[then("the dialog displays a project settings tree")]
-fn project_tree(world: &mut ApplicationWorld) {
-    world.expect_text("Workspace: work");
-}
-#[when("I choose Done without changing the project")]
-fn choose_done(world: &mut ApplicationWorld) {
-    world.click_text("Done");
-    world.pump(Vec::new());
-}
-#[then("the Projects dialog closes")]
-fn projects_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text("Project Settings");
-}
-#[then("the template chooser is displayed again")]
-fn chooser_again(world: &mut ApplicationWorld) {
-    world.expect_text("Template folders");
-}
 #[then("the previously selected template details remain displayed")]
+#[then("the selected template details remain displayed")]
 fn previous_details(world: &mut ApplicationWorld) {
     world.expect_text("Template details");
 }
@@ -78,22 +29,17 @@ fn metric_part_details_shown(world: &mut ApplicationWorld) {
     world.click_text(METRIC_PART);
     expect_part_details(world);
 }
-#[given("the Size column is not the active sort column")]
-fn size_not_sorted(world: &mut ApplicationWorld) {
-    let plain_size = world.frame.runs.iter().any(|run| run.text == "Size");
-    assert!(plain_size, "expected a Size heading with no direction");
-}
 fn click_size_heading(world: &mut ApplicationWorld) {
     world.click_text("Size");
     world.pump(Vec::new());
 }
 #[when("I click the Size column header")]
-#[when("I click the Size column header again")]
 fn click_size(world: &mut ApplicationWorld) {
     click_size_heading(world);
 }
-#[then("the visible part templates are ordered by increasing file size")]
-fn ordered_increasing(world: &mut ApplicationWorld) {
+#[given("Size is the active sort with visible part templates ordered by increasing file size")]
+fn sorted_ascending(world: &mut ApplicationWorld) {
+    click_size_heading(world);
     expect_part_tiles_ordered(world, true);
 }
 #[then("the visible part templates are ordered by decreasing file size")]
@@ -167,6 +113,7 @@ fn root_selected_no_entries(world: &mut ApplicationWorld) {
     chooser_home(world);
     world.expect_no_text(METRIC_PART);
 }
+#[given("Create is disabled")]
 #[then("Create is disabled")]
 #[then("Create remains disabled")]
 fn create_disabled(world: &mut ApplicationWorld) {
@@ -294,12 +241,6 @@ fn file_dialog_above(world: &mut ApplicationWorld) {
         chooser > component,
         "file selection: expected it above component selection"
     );
-}
-#[then("it displays a file list, a file name field and Open and Cancel controls")]
-fn file_dialog_controls(world: &mut ApplicationWorld) {
-    for shown in ["Look in", "File name", "Open", "Cancel"] {
-        world.expect_text(shown);
-    }
 }
 #[when("I cancel the file-selection dialog")]
 fn cancel_file_dialog(world: &mut ApplicationWorld) {

@@ -38,6 +38,8 @@ pub struct GuiInputCapture {
     pub pointer: bool,
     pub keyboard: bool,
     pub text: bool,
+    /// A popup was open at any point this frame; Escape is its own, not the running command's.
+    pub popup: bool,
 }
 pub(crate) fn validate_input(event: &GuiInputEvent, scale: [f32; 2]) -> Result<(), String> {
     let valid = match event {
@@ -54,21 +56,33 @@ pub(crate) fn validate_input(event: &GuiInputEvent, scale: [f32; 2]) -> Result<(
     }
     Ok(())
 }
-pub(crate) fn sketch_tool_key(event: &GuiInputEvent, owned: bool, text: bool) -> bool {
+pub(crate) fn sketch_tool_key(
+    event: &GuiInputEvent,
+    owned: bool,
+    text: bool,
+    widget_keys: &mut Vec<GuiKey>,
+) -> bool {
+    let GuiInputEvent::Key { key, pressed } = event else {
+        return false;
+    };
+    if !matches!(
+        key,
+        GuiKey::Enter | GuiKey::KeypadEnter | GuiKey::Backspace | GuiKey::Tab | GuiKey::Escape
+    ) {
+        return false;
+    }
+    // A release follows its press: a widget that never saw one would read the key as held, and
+    // repeat it into every later field.
+    if !pressed && let Some(held) = widget_keys.iter().position(|known| known == key) {
+        widget_keys.swap_remove(held);
+        return false;
+    }
     // #3830: ribbon navigation must not consume an owned tool command outside text entry.
-    owned
-        && !text
-        && matches!(
-            event,
-            GuiInputEvent::Key {
-                key: GuiKey::Enter
-                    | GuiKey::KeypadEnter
-                    | GuiKey::Backspace
-                    | GuiKey::Tab
-                    | GuiKey::Escape,
-                ..
-            }
-        )
+    let claimed = owned && !text;
+    if *pressed && !claimed {
+        widget_keys.push(*key);
+    }
+    claimed
 }
 pub(crate) fn apply_input(io: &mut Io, event: &GuiInputEvent, scale: [f32; 2]) {
     match event {
@@ -118,6 +132,7 @@ pub(crate) fn input_capture(io: &Io) -> GuiInputCapture {
         pointer: io.want_capture_mouse,
         keyboard: io.want_capture_keyboard,
         text: io.want_text_input,
+        popup: false,
     }
 }
 #[cfg(test)]

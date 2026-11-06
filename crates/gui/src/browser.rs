@@ -123,7 +123,7 @@ pub(crate) fn browser_contents(
         ui.text("(no document)");
         return;
     };
-    view.header(ui);
+    view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
     let _document = ui.push_id(format!("document-{:?}", state.document));
     ui.text(&browser.name);
     if let Some(query) = view.query() {
@@ -188,16 +188,35 @@ impl BrowserTree<'_> {
                 continue;
             };
             for (row, name) in rows.iter().enumerate() {
-                let chosen = self
-                    .ui
-                    .selectable_config(name)
-                    .selected(view.selected_row == Some((branch, row)))
-                    .build();
+                let selected = view.selected_row == Some((branch, row));
+                let chosen = if *name == SHEET_TITLE_BLOCK {
+                    self.title_block_row(selected)
+                } else {
+                    self.ui.selectable_config(name).selected(selected).build()
+                };
                 if chosen {
                     view.selected_row = Some((branch, row));
                 }
             }
         }
+    }
+    /// A selectable row that is also a branch: its arrow opens it, its text selects it.
+    fn title_block_row(&self, selected: bool) -> bool {
+        let node = self
+            .ui
+            .tree_node_config(SHEET_TITLE_BLOCK)
+            .open_on_arrow(true)
+            .default_open(true)
+            .selected(selected);
+        let token = match self.expansion {
+            Some(open) => node.opened(open, imgui::Condition::Always).push(),
+            None => node.push(),
+        };
+        let chosen = self.ui.is_item_clicked() && !self.ui.is_item_toggled_open();
+        if token.is_some() {
+            self.ui.text(TITLE_BLOCK_FIELD);
+        }
+        chosen
     }
     fn origin(&self) {
         if !self.browser.has_origin {
@@ -236,6 +255,9 @@ impl BrowserTree<'_> {
         }
     }
 }
+const SHEET_TITLE_BLOCK: &str = "Title Block";
+/// What a title block holds, one level under its row on the sheet.
+const TITLE_BLOCK_FIELD: &str = "Field Text";
 /// A drawing's browser tree: the built-in template's one sheet and the resources it draws from.
 pub(crate) const DRAWING_TREE: [(&str, &[&str]); 2] = [
     (

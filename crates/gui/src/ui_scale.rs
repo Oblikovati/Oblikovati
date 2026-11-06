@@ -46,7 +46,7 @@ impl GuiScalePreferences {
     pub(crate) fn menu(&mut self, ui: &Ui, state: &GuiCommandState) {
         ui.menu("Tools", || {
             if ui
-                .menu_item_config("Preferences...")
+                .menu_item_config("Application Options...")
                 .enabled(state.ui_scale.is_some())
                 .build()
             {
@@ -65,7 +65,7 @@ impl GuiScalePreferences {
         };
         preference_geometry(ui);
         let escape = ui
-            .window("Preferences")
+            .window("Application Options")
             .opened(&mut self.open)
             .collapsible(false)
             .build(|| {
@@ -73,6 +73,7 @@ impl GuiScalePreferences {
                 ui.separator();
                 ui.text("Text size");
                 scale_choices(ui, options, actions);
+                sketch_choices(ui, state, actions);
                 ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);
@@ -85,14 +86,31 @@ fn preference_geometry(ui: &Ui) {
     let [width, height] = ui.io().display_size;
     let size = [
         (width - 32.).clamp(1., 420.),
-        (height - 32.).clamp(1., 260.),
+        (height - 32.).clamp(1., 340.),
     ];
     crate::widget_abi::fit_dialog(
         ui,
-        "Preferences",
+        "Application Options",
         [(width - size[0]) * 0.5, (height - size[1]) * 0.5],
         size,
     );
+}
+/// Each choice goes to the owner, which keeps it across sessions.
+fn sketch_choices(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let Some(options) = &state.sketch_options else {
+        return;
+    };
+    ui.separator();
+    ui.text("Sketch");
+    let mut shown = options.heads_up_display;
+    if ui.checkbox("Sketch HUD", &mut shown) {
+        actions.push(GuiShellAction::SetSketchOptions(
+            oblikovati_model::application_options::SketchApplicationOptions {
+                heads_up_display: shown,
+                ..options.clone()
+            },
+        ));
+    }
 }
 fn scale_choices(ui: &Ui, options: UiScaleOptions, actions: &mut Vec<GuiShellAction>) {
     for percent in [75_u16, 100, 125, 150, 175, 200] {

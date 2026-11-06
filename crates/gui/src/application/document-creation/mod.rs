@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[path = "component_dialog.rs"]
 pub(crate) mod component_dialog;
-#[path = "projects.rs"]
-pub(crate) mod projects;
 #[path = "templates.rs"]
 pub(crate) mod templates;
 #[path = "workspaces.rs"]
@@ -52,7 +50,7 @@ pub(crate) struct TemplateChooser {
     size_sort: Option<SizeOrder>,
     /// A double click on a tile asks for what Create does.
     create_requested: bool,
-    projects: projects::ProjectsDialog,
+    projects: crate::application::project_dialog::ProjectsDialog,
 }
 /// What a drawing template's previews offer.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

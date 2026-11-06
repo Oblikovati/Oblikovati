@@ -49,6 +49,8 @@ impl<
     ) -> Result<(), String> {
         self.require_sketch_edit_entry(document)?;
         self.watch_sketch_edit(document, sketch)?;
+        // What the last command reported is over; an open sketch at rest reads Ready.
+        self.command_notice = Some(DesktopCommandNotice::Ready);
         Ok(())
     }
     /// Create one history step and select the new sketch; example: `owner.create_sketch_for_edit(document, &request)?`.

@@ -22,6 +22,8 @@ pub struct GuiDimensionValue {
 #[derive(Default)]
 pub(crate) struct GuiDimensionValueEditor {
     open: Option<GuiDimensionEdit>,
+    /// The pointer is on a label that opens an editor, so its clicks are not a viewport pick.
+    pub over_label: bool,
     text: String,
     focus: bool,
     position: [f32; 2],
@@ -69,11 +71,13 @@ impl GuiDimensionValueEditor {
         });
         if close {
             self.open = None;
+            // Keyboard focus was this editor's; the sketch's own keys work again without a click.
+            crate::widget_abi::release_keyboard_focus(ui);
         }
     }
     fn open_at_pointer(&mut self, ui: &Ui, request: &GuiFrameRequest) {
+        self.over_label = false;
         if !request.commands.sketch_at_ready
-            || !ui.is_mouse_double_clicked(imgui::MouseButton::Left)
             || ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
         {
             return;
@@ -81,6 +85,10 @@ impl GuiDimensionValueEditor {
         let Some(edit) = label_under_pointer(ui, request, &request.commands) else {
             return;
         };
+        self.over_label = true;
+        if !ui.is_mouse_double_clicked(imgui::MouseButton::Left) {
+            return;
+        }
         self.text.clone_from(&edit.expression);
         self.open = Some(edit);
         self.focus = true;

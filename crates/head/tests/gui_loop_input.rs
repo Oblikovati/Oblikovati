@@ -6,7 +6,21 @@ fn captured(pointer: bool) -> GuiInputCapture {
         pointer,
         keyboard: true,
         text: true,
+        popup: false,
     }
+}
+#[test]
+fn an_open_popup_owns_escape_and_leaves_other_commands_alone() {
+    let capture = GuiInputCapture {
+        popup: true,
+        ..Default::default()
+    };
+    assert!(gui_owns_command(ViewportKey::Cancel, capture));
+    assert!(!gui_owns_command(ViewportKey::Undo, capture));
+    assert!(!gui_owns_command(
+        ViewportKey::Cancel,
+        GuiInputCapture::default()
+    ));
 }
 #[test]
 fn physical_keys_and_modifiers_reach_the_gui_as_owned_events() {

@@ -26,6 +26,8 @@ fn request() -> GuiFrameRequest {
             sketch_tool_keyboard: false,
             dimensions_needed: None,
             sketch_hud: None,
+            constraint_glyphs: Vec::new(),
+            undo_labels: Vec::new(),
             line_command: None,
             sketch_options: None,
             sketch_at_ready: false,

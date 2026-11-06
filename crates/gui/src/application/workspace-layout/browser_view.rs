@@ -10,6 +10,7 @@ const HIGHLIGHT: [f32; 4] = [0.95, 0.75, 0.2, 0.45];
 
 #[derive(Debug, Default)]
 pub(crate) struct BrowserView {
+    autoscroll: bool,
     /// Present while the field is open; an empty query still shows the whole tree.
     query: Option<String>,
     expansion: Option<bool>,
@@ -18,7 +19,7 @@ pub(crate) struct BrowserView {
 }
 impl BrowserView {
     /// Draw the menu and search controls above the tree; example: `view.header(ui)`.
-    pub(crate) fn header(&mut self, ui: &Ui) {
+    pub(crate) fn header(&mut self, ui: &Ui, drawing: bool) {
         if crate::widget_abi::button(ui, "Menu", [0.; 2]) {
             ui.open_popup(BROWSER_MENU);
         }
@@ -26,22 +27,30 @@ impl BrowserView {
         if crate::widget_abi::button(ui, "Search", [0.; 2]) {
             self.open_search();
         }
-        self.menu(ui);
+        self.menu(ui, drawing);
         self.search_field(ui);
     }
-    fn menu(&mut self, ui: &Ui) {
+    fn menu(&mut self, ui: &Ui, drawing: bool) {
         let Some(_menu) = ui.begin_popup(BROWSER_MENU) else {
             return;
         };
+        if !drawing {
+            // The choice is kept for the tree's selection sync, which scrolls only when it is on.
+            ui.checkbox("Autoscroll", &mut self.autoscroll);
+        }
         if ui.menu_item("Expand All") {
             self.expansion = Some(true);
         }
         if ui.menu_item("Collapse All") {
             self.expansion = Some(false);
         }
-        if ui.menu_item("Find") {
-            self.open_search();
+        if !drawing {
+            if ui.menu_item("Find") {
+                self.open_search();
+            }
+            muted_menu_item(ui, "Display Preferences");
         }
+        muted_menu_item(ui, "Help");
     }
     fn open_search(&mut self) {
         self.query.get_or_insert_with(String::new);
@@ -73,6 +82,12 @@ impl BrowserView {
     /// The state for this frame's tree, once: a later frame lets a user open branches again.
     pub(crate) fn take_expansion(&mut self) -> Option<bool> {
         self.expansion.take()
+    }
+}
+fn muted_menu_item(ui: &Ui, label: &str) {
+    ui.menu_item_config(label).enabled(false).build();
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text("This command is not available in this build.");
     }
 }
 /// Every row a search can reach, in tree order.

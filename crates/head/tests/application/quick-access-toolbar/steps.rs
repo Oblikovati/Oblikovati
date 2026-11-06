@@ -24,16 +24,19 @@ fn below_row_holds(run: &super::diagnostics::RenderedRun) -> bool {
         run.center()[1] >= position[1] && run.center()[1] <= position[1] + size[1]
     })
 }
-fn row_center(world: &ApplicationWorld, label: &str) -> [i32; 2] {
-    let run = world
+/// The row's own run: the ribbon names its commands the same way.
+fn row_run<'a>(world: &'a ApplicationWorld, label: &str) -> &'a super::diagnostics::RenderedRun {
+    world
         .frame
         .runs
         .iter()
         .find(|run| {
             run.text == label && (run.center()[1] < ROW_ABOVE_LIMIT || below_row_holds(run))
         })
-        .unwrap_or_else(|| panic!("expected {label} on the row in {:?}", world.text()));
-    run.center().map(|value| value as i32)
+        .unwrap_or_else(|| panic!("expected {label} on the row in {:?}", world.text()))
+}
+fn row_center(world: &ApplicationWorld, label: &str) -> [i32; 2] {
+    row_run(world, label).center().map(|value| value as i32)
 }
 fn add_extrude(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
@@ -83,6 +86,12 @@ fn open_menu(world: &mut ApplicationWorld) {
 #[then("Print is unchecked")]
 fn print_unchecked(world: &mut ApplicationWorld) {
     assert!(!world.checked("Print"), "expected Print unchecked");
+}
+#[given("New, Open, Save, Undo, Redo and Home are present on the toolbar")]
+fn defaults_present(world: &mut ApplicationWorld) {
+    for entry in DEFAULT_ENTRIES {
+        assert!(on_row(world, entry), "expected {entry} on the toolbar");
+    }
 }
 #[then("New, Open, Save, Undo, Redo and Home are checked")]
 fn defaults_checked(world: &mut ApplicationWorld) {
@@ -231,8 +240,8 @@ fn choose_separator(world: &mut ApplicationWorld) {
 }
 /// How far the row's control sits from Extrude: a divider takes room and draws in it.
 fn row_gap_after_extrude(world: &ApplicationWorld) -> f32 {
-    let extrude = world.run("Extrude").maximum[0];
-    let control = world.run(CONTROL).minimum[0];
+    let extrude = row_run(world, "Extrude").maximum[0];
+    let control = row_run(world, CONTROL).minimum[0];
     control - extrude
 }
 #[then("the quick access row gains a narrow divider beside the added command")]
@@ -241,7 +250,7 @@ fn divider_drawn(world: &mut ApplicationWorld) {
     let after = row_gap_after_extrude(world);
     assert!(after > before, "gap {after}: expected more than {before}");
     let extrude = row_center(world, "Extrude");
-    let run = world.run("Extrude").clone();
+    let run = row_run(world, "Extrude").clone();
     let x = run.maximum[0] as usize + 10;
     let lit = (0..14).any(|offset| {
         let at = [x + offset, extrude[1] as usize];
@@ -421,23 +430,13 @@ fn print_on_part(world: &mut ApplicationWorld) {
 fn print_off_assembly(world: &mut ApplicationWorld) {
     assert!(!on_row(world, "Print"), "expected no Print on the assembly");
 }
-#[then("Print is unchecked in its quick access customization menu")]
-fn print_unchecked_there(world: &mut ApplicationWorld) {
-    open_customization(world);
-    assert!(!world.checked("Print"), "expected Print unchecked");
-    world.escape();
-    world.pump(Vec::new());
-}
 #[when("I return to the part")]
 fn return_to_part(world: &mut ApplicationWorld) {
+    // The customization menu is still up from the step before; it takes the next click.
+    world.escape();
     let part = world.parts[0];
     world.click_tab(part);
     world.pump(Vec::new());
-}
-#[then("Print is checked in its quick access customization menu")]
-fn print_checked_there(world: &mut ApplicationWorld) {
-    open_customization(world);
-    assert!(world.checked("Print"), "expected Print checked");
 }
 #[then("Print is removed from the part's quick access toolbar")]
 fn print_off_part(world: &mut ApplicationWorld) {

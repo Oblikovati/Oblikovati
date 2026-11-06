@@ -36,12 +36,12 @@ impl PointerOwnership {
                 self.buttons.contains(&Some(true)) || capture.pointer
             }
             ViewportInput::Wheel { .. } => capture.pointer,
-            ViewportInput::Key { key, pressed } => pressed && capture.text && !global_chord(key),
+            ViewportInput::Key { key, pressed } => pressed && gui_owns_command(key, capture),
             ViewportInput::PhysicalKey {
                 command: Some(key),
                 pressed,
                 ..
-            } => pressed && capture.text && !global_chord(key),
+            } => pressed && gui_owns_command(key, capture),
             ViewportInput::PhysicalKey { pressed, .. } => pressed && capture.keyboard,
             ViewportInput::Text(_) => capture.text,
         }
@@ -58,6 +58,10 @@ impl PointerOwnership {
         }
         self.buttons[index].take().unwrap_or(capture)
     }
+}
+/// Text entry owns every key but the global ones; an open popup owns Escape, which closes it.
+fn gui_owns_command(key: ViewportKey, capture: GuiInputCapture) -> bool {
+    (capture.text && !global_chord(key)) || (capture.popup && key == ViewportKey::Cancel)
 }
 fn global_chord(key: ViewportKey) -> bool {
     // Go head/ui/chrome.go: Ctrl chords and universal Escape survive text focus.

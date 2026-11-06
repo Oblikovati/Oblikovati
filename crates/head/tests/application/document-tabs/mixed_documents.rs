@@ -2,7 +2,12 @@
 use super::*;
 #[given("the part has an active sketch editing environment")]
 fn part_in_sketch(world: &mut ApplicationWorld) {
-    world.activate_through_tab(part_of(world));
+    // A mixed fixture names its part; on its own the scenario's part is the active document.
+    let part = match world.other_document {
+        Some(part) => part,
+        None => world.active_id(),
+    };
+    world.activate_through_tab(part);
     world.start_sketch();
 }
 #[given("the drawing is active with its drawing resources branch collapsed")]

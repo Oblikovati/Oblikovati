@@ -10,7 +10,7 @@ const SEGMENT: [[i32; 2]; 2] = [[620, 300], [840, 420]];
 fn software_running(world: &mut ApplicationWorld) {
     world.expect_text("Ready");
 }
-#[given("an empty editable planar sketch")]
+#[given("an empty editable planar sketch is active")]
 fn empty_sketch(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     world.expect_ready();
@@ -31,11 +31,8 @@ fn one_segment_and_next(world: &mut ApplicationWorld) {
         "expected the fields of the next segment"
     );
 }
-#[then(
-    "Escape retains the visible segment at Ready, with no exhaustive constraint inventory inferred"
-)]
-fn escape_retains(world: &mut ApplicationWorld) {
-    world.escape();
+#[then("the command ends and the visible segment remains")]
+fn command_ended(world: &mut ApplicationWorld) {
     world.expect_ready();
     world.expect_segment_drawn(SEGMENT[0], SEGMENT[1]);
 }
@@ -46,3 +43,9 @@ mod chain;
 mod inspect;
 #[path = "numeric.rs"]
 mod numeric;
+#[path = "recorded.rs"]
+mod recorded;
+#[path = "repeated_click.rs"]
+mod repeated_click;
+#[path = "retained_arc.rs"]
+mod retained_arc;

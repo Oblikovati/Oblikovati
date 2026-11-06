@@ -42,6 +42,10 @@ fn cycling(world: &mut ApplicationWorld) {
     );
     world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
 }
+#[then("the full View command groups remain visible")]
+fn view_groups_remain(world: &mut ApplicationWorld) {
+    world.expect_text(WINDOWS_COMMAND);
+}
 #[given("the View ribbon tab displays its full groups of commands")]
 #[given("the View ribbon is expanded")]
 fn view_expanded(world: &mut ApplicationWorld) {
@@ -54,6 +58,7 @@ fn view_expanded(world: &mut ApplicationWorld) {
 fn activate(world: &mut ApplicationWorld) {
     activate_display_control(world);
 }
+#[then("the View groups are shown as compact buttons")]
 #[then("the View ribbon shows compact buttons for Visibility, Appearance, Windows and Navigate")]
 fn compact_buttons(world: &mut ApplicationWorld) {
     expect_compact_groups(world);
@@ -78,6 +83,7 @@ fn compact_state(world: &mut ApplicationWorld) {
     activate_display_control(world);
     expect_compact_groups(world);
 }
+#[then("the View group titles appear in a narrow strip")]
 #[then("the View ribbon displays group titles in a narrow strip")]
 fn title_strip(world: &mut ApplicationWorld) {
     expect_compact_groups(world);
@@ -89,6 +95,7 @@ fn title_state(world: &mut ApplicationWorld) {
     activate_display_control(world);
     expect_compact_groups(world);
 }
+#[then("the tabs remain visible without a permanent group strip")]
 #[then("the ribbon shows its tabs without the group strip")]
 fn tabs_only(world: &mut ApplicationWorld) {
     world.expect_text("3D Model");
@@ -100,6 +107,7 @@ fn tabs_only(world: &mut ApplicationWorld) {
 fn select_view_tab(world: &mut ApplicationWorld) {
     world.click_text("View");
 }
+#[then("its commands appear in a temporary panel")]
 #[then("the View commands appear in a temporary panel below the tabs")]
 fn view_commands_below(world: &mut ApplicationWorld) {
     world.expect_text(WINDOWS_COMMAND);

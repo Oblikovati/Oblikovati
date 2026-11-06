@@ -19,6 +19,7 @@ const STANDARD: [StandardCommand; 7] = [
 ];
 const CUSTOMIZE_MENU: &str = "##quick-access-customize";
 const SHORTCUT_MENU: &str = "##quick-access-shortcut";
+const UNDO_HISTORY: &str = "##undo-history";
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
 /// Height of the separate row below the ribbon.
 pub(crate) const BELOW_ROW_HEIGHT: f32 = 30.;
@@ -158,14 +159,17 @@ impl QuickAccessToolbar {
                 [0.; 2],
                 actions,
             ),
-            StandardCommand::Undo => crate::chrome::command_button(
-                ui,
-                label,
-                GuiShellAction::Undo,
-                state,
-                [0.; 2],
-                actions,
-            ),
+            StandardCommand::Undo => {
+                crate::chrome::command_button(
+                    ui,
+                    label,
+                    GuiShellAction::Undo,
+                    state,
+                    [0.; 2],
+                    actions,
+                );
+                self.undo_history(ui, state);
+            }
             StandardCommand::Redo => crate::chrome::command_button(
                 ui,
                 label,
@@ -175,6 +179,22 @@ impl QuickAccessToolbar {
                 actions,
             ),
             StandardCommand::Print => muted_button(ui, label),
+        }
+    }
+    /// Right-click on Undo reads what it would undo, latest first.
+    fn undo_history(&mut self, ui: &Ui, state: &GuiCommandState) {
+        let hovered = ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED);
+        if hovered && ui.is_mouse_clicked(MouseButton::Right) {
+            self.command_took_right_click = true;
+        }
+        if hovered && ui.is_mouse_released(MouseButton::Right) {
+            ui.open_popup(UNDO_HISTORY);
+        }
+        let Some(_menu) = ui.begin_popup(UNDO_HISTORY) else {
+            return;
+        };
+        for label in state.undo_labels.iter().rev() {
+            ui.text(label);
         }
     }
     fn added_entry(&mut self, ui: &Ui, entry: &AddedEntry, state: &GuiCommandState) {

@@ -143,6 +143,7 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
     pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
     pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
+    pub precise_input: &'a mut crate::sketch::precise_input::PreciseInputBar,
     pub plane_selection_active: bool,
 }
 struct PanelDrawContext<'a> {
@@ -222,6 +223,9 @@ pub(crate) fn draw_side_groups(
         actions,
     };
     for panel in shown_panels(tab, state, &display.hidden_panels) {
+        let open = display.temporary == Some(TemporaryPanel::Group(panel));
+        let lit = ui.style_color(imgui::StyleColor::ButtonActive);
+        let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
         if crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON) {
             display.temporary = Some(TemporaryPanel::Group(panel));
             display.side_anchor = Some(crate::application::ribbon_display::SideAnchor {

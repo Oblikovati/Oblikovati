@@ -64,6 +64,7 @@ pub(crate) struct SideAnchor {
     pub ends_at_x: bool,
 }
 const CONTEXT_MENU: &str = "##ribbon-context";
+const SHOW_PANELS: &str = "##show-panels";
 const DOCKING_POSITIONS: [(&str, RibbonPlacement); 3] = [
     ("Top", RibbonPlacement::Top),
     ("Left", RibbonPlacement::Left),
@@ -86,6 +87,8 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    /// A choice in Show Panels ends the whole menu, as a choice in any other row does.
+    close_context_menu: bool,
     /// Panels a user has hidden, per tab; they stay listed in Show Panels.
     pub hidden_panels: BTreeSet<(RibbonTab, RibbonPanel)>,
 }
@@ -100,6 +103,7 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            close_context_menu: false,
             // Parameters lives on Manage, and is offered here for those who want it beside Create.
             hidden_panels: BTreeSet::from([(RibbonTab::Model, RibbonPanel::Parameters)]),
         }
@@ -131,15 +135,24 @@ impl RibbonDisplayState {
             self.hidden_panels.insert((tab, panel));
         }
     }
+    /// Opened by a click, not by hovering: Escape closes this list alone, and a pointer still
+    /// resting on the row must not reopen it on the next frame.
     fn show_panels_menu(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
-        ui.menu("Show Panels", || {
-            for panel in panels {
-                let shown = !self.hidden_panels.contains(&(tab, *panel));
-                if ui.menu_item_config(panel.label()).selected(shown).build() {
-                    self.toggle_panel(tab, *panel);
-                }
+        if crate::widget_abi::dialog_selectable(ui, "Show Panels", false) {
+            ui.open_popup(SHOW_PANELS);
+        }
+        let at = [ui.item_rect_max()[0], ui.item_rect_min()[1]];
+        crate::widget_abi::next_window_position(ui, at);
+        let Some(_list) = ui.begin_popup(SHOW_PANELS) else {
+            return;
+        };
+        for panel in panels {
+            let shown = !self.hidden_panels.contains(&(tab, *panel));
+            if ui.menu_item_config(panel.label()).selected(shown).build() {
+                self.toggle_panel(tab, *panel);
+                self.close_context_menu = true;
             }
-        });
+        }
     }
     /// Draw the context menu that any of the ribbon's windows can ask for.
     pub(crate) fn context_menu(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
@@ -149,7 +162,12 @@ impl RibbonDisplayState {
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
             return;
         };
+        muted_context_item(ui, "Ribbon Appearance");
         self.show_panels_menu(ui, tab, panels);
+        if std::mem::take(&mut self.close_context_menu) {
+            ui.close_current_popup();
+        }
+        muted_context_item(ui, "Customize User Commands");
         ui.menu("Docking Positions", || {
             for (label, placement) in DOCKING_POSITIONS {
                 let checked = self.placement == placement;
@@ -241,3 +259,9 @@ impl RibbonDisplayState {
 #[cfg(test)]
 #[path = "../../../tests/application/ribbon-display/modes.rs"]
 mod tests;
+fn muted_context_item(ui: &Ui, label: &str) {
+    ui.menu_item_config(label).enabled(false).build();
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text("This command is not available in this build.");
+    }
+}

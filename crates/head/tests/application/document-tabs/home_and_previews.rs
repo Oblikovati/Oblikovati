@@ -82,18 +82,21 @@ fn part_displayed(world: &mut ApplicationWorld) {
     let part = world.active_id();
     world.expect_browser_of(part);
 }
-#[when("I choose More Windows from the View tab's Switch menu")]
 fn choose_more(world: &mut ApplicationWorld) {
     open_switch(world);
     world.click_text("More Windows");
     world.pump(Vec::new());
 }
-#[when("another part is highlighted in the Select Window dialog")]
 fn highlight_other(world: &mut ApplicationWorld) {
     let other = world.parts[0];
     let name = world.document_name(other);
     let row = world.run(&name).center().map(|value| value as i32);
     world.click(row);
+}
+#[given("the Select Window dialog is open with another part highlighted")]
+fn dialog_with_highlight(world: &mut ApplicationWorld) {
+    choose_more(world);
+    highlight_other(world);
 }
 #[then("the Select Window dialog closes")]
 fn dialog_closed(world: &mut ApplicationWorld) {
@@ -154,6 +157,7 @@ fn part_open(world: &mut ApplicationWorld) {
     world.other_document = Some(part);
 }
 #[when("I choose Home from the View tab's Switch menu")]
+#[when("I choose Home from the View ribbon Switch menu")]
 fn home_from_switch(world: &mut ApplicationWorld) {
     open_switch(world);
     world.click_text("Home");
@@ -167,6 +171,7 @@ fn home_displayed(world: &mut ApplicationWorld) {
     expect_home_shown(world);
 }
 #[then("the part remains available in the document tab strip")]
+#[then("the part document remains available as an open tab")]
 fn part_in_strip(world: &mut ApplicationWorld) {
     let part = world.previous_document.expect("expected a remembered part");
     let name = world.document_name(part);
@@ -288,15 +293,6 @@ fn preview_path(world: &mut ApplicationWorld) {
         preview_text(world).contains(&wanted),
         "expected {wanted} in {}",
         preview_text(world)
-    );
-}
-#[then("the preview label displays the part name")]
-fn preview_name(world: &mut ApplicationWorld) {
-    let second = world.parts[1];
-    let name = world.document_name(second);
-    assert!(
-        preview_text(world).contains(&name),
-        "expected {name} in the preview"
     );
 }
 #[given("the part is being edited in a sketch")]

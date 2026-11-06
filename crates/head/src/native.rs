@@ -21,6 +21,8 @@ pub struct NativeHeadWindow {
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
     /// The window of a document in front; each keeps its own view while another is shown.
+    /// What the title bar names: the active document, with its window number when it has one.
+    document_title: Option<String>,
     view_slot: u64,
     saved_views: std::collections::BTreeMap<
         u64,
@@ -61,6 +63,7 @@ impl NativeHeadWindow {
             sketch_scene: None,
             navigation: Default::default(),
             sketch_view: None,
+            document_title: None,
             view_slot: 0,
             saved_views: Default::default(),
             command_notice: None,
@@ -140,6 +143,7 @@ impl HeadWindow for NativeHeadWindow {
         event: Option<&ViewportEvent>,
         commands: &oblikovati_gui::GuiCommandState,
     ) -> Result<crate::HeadGuiUpdate, String> {
+        self.note_document_title(commands)?;
         let changed = match &commands.color_scheme {
             Some(palette) => self.view.set_background(palette.background())?,
             None => false,
@@ -409,6 +413,9 @@ impl NativeHeadWindow {
             .scene_status
             .as_ref()
             .map_or_else(|| "Oblikovati".into(), crate::HeadSceneStatus::title);
+        if let Some(document) = &self.document_title {
+            title = format!("{document} - {title}");
+        }
         title.push_str(&self.sketch_display_title()?);
         if let Some(notice) = &self.command_notice {
             title.push_str(&format!(" - {}", notice.message()));

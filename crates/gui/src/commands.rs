@@ -8,6 +8,7 @@ pub enum GuiShellAction {
     },
     SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
     LineCommand(crate::GuiLineCommand),
+    PrecisePoint(crate::GuiPrecisePoint),
     Inspect(crate::GuiInspectAction),
     EditDimensionValue(crate::GuiDimensionValue),
     SetTheme(String),
@@ -132,12 +133,16 @@ pub struct GuiCommandState {
     pub authoring: GuiAuthoringContext,
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
+    /// Every step that can be undone, oldest first.
+    pub undo_labels: Vec<String>,
     pub transaction_open: bool,
     /// The running Line command reads the keyboard before any GUI widget does.
     pub sketch_tool_keyboard: bool,
     /// The edited sketch's remaining freedom; `None` outside a sketch.
     pub dimensions_needed: Option<usize>,
     pub sketch_hud: Option<crate::GuiSketchHud>,
+    /// Projected by the frame, which owns the camera.
+    pub constraint_glyphs: Vec<crate::GuiConstraintGlyph>,
     pub line_command: Option<crate::GuiLineCommandMenu>,
     pub sketch_options: Option<oblikovati_model::application_options::SketchApplicationOptions>,
     /// A sketch is open with no command running: the canvas offers its own menu.
@@ -163,7 +168,8 @@ impl GuiCommandState {
         if let Some(browser) = &self.browser {
             browser.validate()?;
         }
-        for label in [&self.undo_label, &self.redo_label].into_iter().flatten() {
+        let named = [&self.undo_label, &self.redo_label].into_iter().flatten();
+        for label in named.chain(&self.undo_labels) {
             if label.contains('\0') {
                 return Err(format!(
                     "GUI history label {label:?}: expected text without NUL"
@@ -186,7 +192,7 @@ impl GuiShellAction {
                 !state.transaction_open
             }
             Self::SetSketchOptions(_) => state.sketch_options.is_some(),
-            Self::LineCommand(_) => state.line_command.is_some(),
+            Self::LineCommand(_) | Self::PrecisePoint(_) => state.line_command.is_some(),
             Self::Inspect(_) => state.authoring == GuiAuthoringContext::Sketch,
             Self::EditDimensionValue(_) => state.sketch_at_ready && !state.transaction_open,
             Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,

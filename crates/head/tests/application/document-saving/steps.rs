@@ -108,7 +108,6 @@ fn close_tab(world: &mut ApplicationWorld) {
     world.close_active_tab();
 }
 #[when("I open the saved file from the same folder")]
-#[when("I reopen the saved part in the same session")]
 #[when("I reopen the newly saved part in the same session")]
 #[when("I reopen the saved part file")]
 fn reopen(world: &mut ApplicationWorld) {
@@ -286,13 +285,17 @@ fn types_offered(world: &mut ApplicationWorld) {
     world.expect_text("All Files (*.*)");
     world.expect_text(SAVE_IN);
 }
-#[given("an unsaved part containing a finished sketch is active in the MCAD Software")]
+#[given("an unsaved part containing a finished empty sketch is active in the MCAD Software")]
 #[given("an unsaved modified part is active in the MCAD Software")]
 fn unsaved_with_sketch(world: &mut ApplicationWorld) {
     // The other document lets a closing part hand focus to something.
     let other = world.add_part();
     world.other_document = Some(other);
     modified_part(world);
+}
+#[given("another document is open")]
+fn another_open(world: &mut ApplicationWorld) {
+    assert!(world.other_document.is_some(), "expected a second document");
 }
 #[given("save-change prompts are configured to always show")]
 fn prompts_always(world: &mut ApplicationWorld) {

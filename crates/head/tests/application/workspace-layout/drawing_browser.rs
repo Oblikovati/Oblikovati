@@ -8,11 +8,17 @@ const SHEET_TITLE_BLOCK: &str = "Title Block";
 #[given("a drawing with browser entries is open in the MCAD Software")]
 #[given("a drawing with a border and title block is open in the MCAD Software")]
 #[given("a drawing with a sheet and drawing resources is open in the MCAD Software")]
-#[given("a drawing with a border resource is open in the MCAD Software")]
+#[given("a drawing with a border resource and a sheet border is open in the MCAD Software")]
 fn drawing_open(world: &mut ApplicationWorld) {
     world.previous_document = Some(world.add_drawing());
 }
+#[given("the nested title block branch is expanded")]
+#[then("the nested title block branch appears expanded")]
+fn title_block_open(world: &mut ApplicationWorld) {
+    world.expect_text("Field Text");
+}
 #[given("the browser has expanded branches containing nested entries")]
+#[given("the drawing browser branches are expanded")]
 #[given("the sheet branch is expanded in the drawing browser")]
 #[given("the sheet and drawing resources branches are expanded in the browser")]
 fn drawing_branches_open(world: &mut ApplicationWorld) {
@@ -99,8 +105,9 @@ fn drawing_tree_back(world: &mut ApplicationWorld) {
 }
 #[then("the search field is hidden")]
 fn drawing_search_hidden(world: &mut ApplicationWorld) {
-    world.expect_no_text("x");
-    drawing_tree_back(world);
+    // Only the field's close control reads exactly this; "Field Text" holds the letter too.
+    let close_shown = world.frame.runs.iter().any(|run| run.text == "x");
+    assert!(!close_shown, "expected no search close control");
 }
 #[when("I enter a query that matches no drawing browser entry")]
 fn no_drawing_match(world: &mut ApplicationWorld) {
@@ -212,6 +219,17 @@ fn filtered_resource(world: &mut ApplicationWorld) {
     world.expect_text("Drawing Resources");
     world.expect_text(DRAWING_BORDER);
     world.expect_no_text("Sheet Formats");
+}
+#[then("the filtered tree shows the matching sheet border")]
+fn filtered_sheet_border(world: &mut ApplicationWorld) {
+    world.expect_text("Sheet:1");
+    let borders = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == DRAWING_BORDER.replace(' ', ""))
+        .count();
+    assert_eq!(borders, 2, "expected the resource's and the sheet's border");
 }
 #[then("the unfiltered tree is restored")]
 fn tree_restored(world: &mut ApplicationWorld) {

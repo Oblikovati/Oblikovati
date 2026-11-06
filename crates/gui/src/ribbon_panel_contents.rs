@@ -4,6 +4,9 @@ use crate::ribbon_panels::RibbonPanel;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
+/// Below the two format toggles, which take twenty pixels each.
+const PRECISE_INPUT_ROW: f32 = 40.;
+
 pub(crate) fn draw_panel_content(
     ui: &Ui,
     panel: RibbonPanel,
@@ -17,7 +20,9 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Create => sketch_create_controls(ui, origin, state, actions),
         RibbonPanel::Constrain => sketch_constraint_controls(ui, origin, state, actions),
         RibbonPanel::Format => {
-            crate::sketch_formats::sketch_format_controls(ui, origin, state, actions)
+            crate::sketch_formats::sketch_format_controls(ui, origin, state, actions);
+            crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + PRECISE_INPUT_ROW]);
+            owners.precise_input.toggle(ui);
         }
         RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state),
         RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),

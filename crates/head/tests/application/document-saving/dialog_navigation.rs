@@ -358,6 +358,11 @@ fn offers_save_as(world: &mut ApplicationWorld) {
     world.expect_text("Save As...");
     world.expect_text("Save Copy As");
 }
+#[then("the submenu offers Save As and Save Copy As")]
+fn save_as_rows(world: &mut ApplicationWorld) {
+    world.expect_text("Save As");
+    world.expect_text("Save Copy As");
+}
 #[then("it offers Save Copy As Template and Pack and Go")]
 fn offers_template(world: &mut ApplicationWorld) {
     world.expect_text("Save Copy As Template");

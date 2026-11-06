@@ -10,6 +10,8 @@ use oblikovati_model::sketch::{Sketch2D, SketchEntityId, SketchPlane};
 #[derive(Clone, Copy)]
 pub(super) enum SketchPickFilter {
     Any,
+    /// Everything but a point; example: Measure once its point reach has been checked.
+    Curves,
     Geometric(GuiSketchConstraint),
     Dimension,
 }
@@ -17,6 +19,7 @@ impl SketchPickFilter {
     fn accepts(self, kind: &oblikovati_api::types::SketchEntityKind) -> bool {
         match self {
             Self::Any => true,
+            Self::Curves => *kind != oblikovati_api::types::SKETCH_ENTITY_POINT,
             Self::Dimension => crate::sketch_operands::category(kind).is_some(),
             Self::Geometric(choice) => crate::sketch_geometric::accepts(choice, kind),
         }

@@ -126,6 +126,15 @@ impl<
     ) -> Result<bool, String> {
         DesktopOwner::inspect_from_gui(self, action)
     }
+    fn precise_point_from_gui(
+        &mut self,
+        point: &oblikovati_gui::GuiPrecisePoint,
+    ) -> Result<bool, String> {
+        DesktopOwner::precise_point_from_gui(self, point)
+    }
+    fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
+        DesktopOwner::sketch_constraint_marks(self)
+    }
     fn line_command_from_gui(
         &mut self,
         command: oblikovati_gui::GuiLineCommand,
@@ -163,6 +172,8 @@ impl<
         Ok(oblikovati_gui::GuiCommandState {
             ui_scale: self.gui_ui_scale(),
             sketch_options: Some(self.sketch_options.clone()),
+            // Projected by the frame, which owns the camera.
+            constraint_glyphs: Vec::new(),
             recent_documents: self.gui_recent_rows(),
             theme,
             color_scheme,
@@ -205,6 +216,11 @@ impl<
             authoring: self.gui_authoring_context(document)?,
             undo_label: session.undo_label().map(str::to_owned),
             redo_label: session.redo_label().map(str::to_owned),
+            undo_labels: session
+                .undo_labels()
+                .iter()
+                .map(|&label| label.to_owned())
+                .collect(),
             transaction_open: session.in_transaction(),
             sketch_tool_keyboard: self.placement_state().is_some_and(|tool| {
                 tool.tool == crate::SketchPlacementTool::Line && self.placement_context_valid(tool)

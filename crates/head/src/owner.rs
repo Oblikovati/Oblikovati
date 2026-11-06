@@ -33,6 +33,8 @@ mod inspect;
 mod line_commit;
 #[path = "owner_browser.rs"]
 mod model_browser;
+#[path = "owner_precise_input.rs"]
+pub(crate) mod owner_precise_input;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
 #[path = "owner_recent.rs"]

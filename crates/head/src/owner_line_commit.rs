@@ -6,7 +6,11 @@ use oblikovati_model::{
     application_options::{SketchApplicationOptions, SketchPreferenceAccess},
     history::SketchLineChainCreation,
     quantity::Dimension,
+    sketch::SketchEntityId,
 };
+
+/// A new start this close to a vertex is at that vertex.
+const ACQUIRE_VERTEX_PIXELS: f64 = 12.;
 
 impl<
     O: TransactionObserver,
@@ -30,10 +34,55 @@ impl<
         tool.line_cursor(point);
         if let (true, Some(point)) = (place, point) {
             if tool.line_awaits_start() {
-                tool.line_start_at(point, pixel)?;
+                let acquired = self.vertex_under_pointer(tool, window, pixel)?;
+                let at = acquired.map_or(point, |(position, _)| position);
+                let vertex = acquired.map(|(_, vertex)| vertex);
+                tool.line_start_on(at, vertex, Some(pixel))?;
             } else {
                 self.commit_pending_line(tool, Some(pixel))?;
             }
+        }
+        self.refresh_line_fields(tool)
+    }
+    /// The nearest sketch vertex within reach: a start placed there joins it instead of adding one.
+    fn vertex_under_pointer(
+        &self,
+        tool: &SketchPlacementState,
+        window: &dyn HeadWindow,
+        pixel: [i32; 2],
+    ) -> Result<Option<([f64; 2], SketchEntityId)>, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(tool.document)
+            .map_err(|cause| cause.to_string())?;
+        let snapshot = session.snapshot();
+        let geometry = snapshot
+            .sketches
+            .get(tool.sketch)
+            .map_err(|cause| cause.to_string())?
+            .geometry();
+        let mut nearest = None;
+        let mut reach = ACQUIRE_VERTEX_PIXELS;
+        for point in geometry.points() {
+            let at = window.sketch_pixel(tool.plane, point.position)?;
+            let distance = super::sketch_picking::screen_distance(at, pixel);
+            if distance <= reach {
+                reach = distance;
+                nearest = Some((point.position, point.id));
+            }
+        }
+        Ok(nearest)
+    }
+    /// Place the next point exactly where it was typed.
+    pub(super) fn line_place_exact(
+        &mut self,
+        tool: &mut SketchPlacementState,
+        position: [f64; 2],
+    ) -> Result<(), String> {
+        match tool.line_segment_to(position, None) {
+            Some(input) => self.commit_line_input(tool, &input, None)?,
+            None => tool.line_start_on(position, None, None)?,
         }
         self.refresh_line_fields(tool)
     }
@@ -154,7 +203,7 @@ impl<
         self
     }
     /// Persist first, so a failed write leaves the options in effect unchanged.
-    pub(super) fn change_sketch_options(
+    pub(crate) fn change_sketch_options(
         &mut self,
         options: SketchApplicationOptions,
     ) -> Result<(), String> {

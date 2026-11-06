@@ -16,8 +16,9 @@ pub(super) struct LineChain {
     accepted_pixel: Option<[i32; 2]>,
     repeat_press: bool,
 }
-/// Strictly within this many pixels, a second click at an accepted endpoint is a double-click.
-const REPEAT_CLICK_PIXELS: i32 = 4;
+/// Within this many pixels, a second click at an accepted endpoint is a double-click. A click
+/// three pixels on makes its own short segment, as the recorded repeated-coordinate attempt did.
+const REPEAT_CLICK_PIXELS: i32 = 2;
 
 impl SketchPlacementState {
     pub(super) fn line_event(&self, event: ViewportEvent) -> Option<PlacementAction> {
@@ -57,6 +58,15 @@ impl SketchPlacementState {
         self.line.start.is_none()
     }
     pub(crate) fn line_start_at(&mut self, point: [f64; 2], pixel: [i32; 2]) -> Result<(), String> {
+        self.line_start_on(point, None, Some(pixel))
+    }
+    /// Start from an exact position, joined to the vertex there when one was acquired.
+    pub(crate) fn line_start_on(
+        &mut self,
+        point: [f64; 2],
+        vertex: Option<SketchEntityId>,
+        pixel: Option<[i32; 2]>,
+    ) -> Result<(), String> {
         if point.iter().any(|value| !value.is_finite()) {
             return Err(format!(
                 "Line start {point:?}: expected a finite sketch position"
@@ -64,7 +74,8 @@ impl SketchPlacementState {
         }
         self.line = LineChain {
             start: Some(point),
-            accepted_pixel: Some(pixel),
+            start_vertex: vertex,
+            accepted_pixel: pixel,
             ..Default::default()
         };
         Ok(())
@@ -126,12 +137,20 @@ impl SketchPlacementState {
     /// The closing edge from the current end back to the chain's first point.
     pub(crate) fn line_close_input(&self) -> Option<SketchLineChainCreation> {
         let (first, first_vertex) = self.line.first?;
+        self.line_segment_to(first, Some(first_vertex))
+    }
+    /// One segment from the current end to an exact point, with nothing typed to lock.
+    pub(crate) fn line_segment_to(
+        &self,
+        end: [f64; 2],
+        end_vertex: Option<SketchEntityId>,
+    ) -> Option<SketchLineChainCreation> {
         Some(SketchLineChainCreation {
-            points: vec![self.line.start?, first],
+            points: vec![self.line.start?, end],
             closed: false,
             construction: self.formats.construction,
             centerline: self.formats.centerline,
-            joins: [self.line.start_vertex, Some(first_vertex)],
+            joins: [self.line.start_vertex, end_vertex],
             locks: Default::default(),
         })
     }

@@ -36,6 +36,8 @@ pub(crate) struct GuiDocumentFiles {
     first_saves: FirstSaves,
     options_requested: bool,
     properties_requested: bool,
+    /// Home covers the active document, so commands about that document have nothing to act on.
+    pub home_in_front: bool,
 }
 /// How the File menu orders and shows its recent files.
 #[derive(Default)]
@@ -168,7 +170,7 @@ impl GuiDocumentFiles {
     fn document_properties_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         self.properties_requested |= ui
             .menu_item_config("Document Properties")
-            .enabled(state.document.is_some())
+            .enabled(state.document.is_some() && !self.home_in_front)
             .build();
     }
     fn options_item(&mut self, ui: &Ui) {
@@ -205,7 +207,7 @@ impl GuiDocumentFiles {
     }
     /// Save As opens beside the menu with its related commands; only Save As itself is available.
     fn save_as_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
-        let enabled = state.document.is_some() && !state.transaction_open;
+        let enabled = state.document.is_some() && !state.transaction_open && !self.home_in_front;
         ui.menu_with_enabled("Save As", enabled, || {
             let chosen = ui.menu_item("Save As...");
             ui.text_disabled("Save under a new name and keep working on the new file.");
@@ -227,10 +229,11 @@ impl GuiDocumentFiles {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        pictures: &crate::application::document_tabs::previews::TabPreviews,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.templates.panel(ui, state, actions);
-        self.open.panel(ui, state, actions);
+        self.open.panel(ui, state, pictures, actions);
     }
     /// Route this frame's closes, then draw the prompts and Save As. Runs after every control has
     /// drawn, and answered closes join `actions` after the routing so no answer is asked twice.

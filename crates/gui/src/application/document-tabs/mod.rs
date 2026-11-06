@@ -109,7 +109,11 @@ impl WindowSwitcher {
         ui.separator();
         if ui.menu_item("More Windows...") {
             self.opening = true;
-            self.selected = state.document;
+            // Starts on a different document: the active one is what a person already sees.
+            self.selected = visible(state)
+                .map(|row| row.id)
+                .find(|id| Some(*id) != state.document)
+                .or(state.document);
         }
     }
     /// A frame must follow so the extended list opens without waiting for an event.

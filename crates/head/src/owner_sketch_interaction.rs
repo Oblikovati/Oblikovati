@@ -94,7 +94,7 @@ impl<
             }
             Some(SketchToolState::Measure(tool)) => self.process_measure_event(tool, event, window),
             Some(SketchToolState::Region(tool)) => self.process_region_event(tool, event, window),
-            None => match self.measure_key(event) {
+            None => match self.sketch_ready_key(event) {
                 Ok(true) => true,
                 Ok(false) => self.process_sketch_pick(event, window),
                 Err(cause) => {

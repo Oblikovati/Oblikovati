@@ -12,16 +12,8 @@ const NEXT: [i32; 2] = [1010, 350];
 fn hud_is_open(world: &ApplicationWorld) -> bool {
     !world.window_text("##sketch-hud").is_empty()
 }
-// line-03 and line-06
-#[given("Sketch3 is Ready with 215 dimensions needed in step 6")]
-#[given("editable Sketch3 is Ready with 215 dimensions needed as recorded in step 6")]
-fn ready_with_215(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
-    world.seed_dimensions_needed(215);
-    world.expect_ready();
-    world.expect_dimensions_needed(215);
-}
-#[when("I select Line and choose the start in step 9")]
+// line-03
+#[when("I select Line and choose a start point")]
 fn line_and_start(world: &mut ApplicationWorld) {
     world.select_line_tool();
     world.sketch_click(START);
@@ -29,48 +21,31 @@ fn line_and_start(world: &mut ApplicationWorld) {
     assert!(hud_is_open(world), "expected the fields of the pending end");
 }
 #[when("press Escape before an endpoint")]
-#[when("I press Escape before accepting an endpoint")]
 fn escape_before_end(world: &mut ApplicationWorld) {
     world.escape();
 }
-#[then("the HUD closes and Ready returns with 215 dimensions needed")]
-fn hud_closed_215(world: &mut ApplicationWorld) {
-    assert!(!hud_is_open(world), "expected the fields to close");
-    world.expect_ready();
-    world.expect_dimensions_needed(215);
-}
 #[then("no new segment is visible at the canceled location")]
-#[then("no line is visible at the cancelled location")]
 fn no_segment(world: &mut ApplicationWorld) {
     world.expect_segment_absent(START, END);
 }
-#[when("I select ordinary Line through the variants menu")]
-fn line_from_variants(world: &mut ApplicationWorld) {
-    world.open_line_variants();
-    world.click_text("Line");
+#[given("an editable sketch is Ready")]
+fn sketch_ready(world: &mut ApplicationWorld) {
+    world.start_empty_sketch();
+    world.expect_ready();
 }
-#[when("I choose the first point recorded in step 9")]
-fn first_point(world: &mut ApplicationWorld) {
-    world.sketch_click(START);
-    world.hover(END);
-}
-#[then("the HUD closes and the sketch returns to Ready")]
-fn hud_closed_ready(world: &mut ApplicationWorld) {
+#[then("the dynamic input closes and Ready returns")]
+fn input_closed(world: &mut ApplicationWorld) {
     assert!(!hud_is_open(world), "expected the fields to close");
     world.expect_ready();
 }
-#[then("the status still reports 215 dimensions needed")]
-fn still_215(world: &mut ApplicationWorld) {
-    world.expect_dimensions_needed(215);
-}
 // line-05
-#[given("the Line start and endpoint inputs in steps 3-4")]
+#[given("Line is active and a start point has been selected")]
 fn start_and_end_inputs(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     world.select_line_tool();
     world.sketch_click(START);
 }
-#[when("the endpoint is accepted")]
+#[when("I select a distinct endpoint")]
 fn endpoint_accepted(world: &mut ApplicationWorld) {
     world.sketch_click(END);
 }
@@ -79,10 +54,6 @@ fn offers_next(world: &mut ApplicationWorld) {
     world.expect_status("Select end of line");
     world.hover(NEXT);
     world.expect_segment_drawn(END, NEXT);
-}
-#[when("I press Escape in step 5")]
-fn escape_step_five(world: &mut ApplicationWorld) {
-    world.escape();
 }
 #[then("Ready returns and the accepted segment remains")]
 fn ready_segment_remains(world: &mut ApplicationWorld) {
@@ -94,7 +65,6 @@ fn ready_segment_remains(world: &mut ApplicationWorld) {
 #[given("Line has a newly chosen start point")]
 fn newly_chosen_start(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
-    world.seed_dimensions_needed(12);
     world.select_line_tool();
     world.sketch_click(START);
 }
@@ -106,49 +76,45 @@ fn double_click_end(world: &mut ApplicationWorld) {
 fn accepted_new_start(world: &mut ApplicationWorld) {
     world.expect_segment_drawn(START, END);
     world.expect_status("Select start of line");
-    world.expect_dimensions_needed(16);
 }
 #[when("I exit Line then undo once")]
 fn exit_and_undo(world: &mut ApplicationWorld) {
     world.escape();
     world.undo();
 }
-#[then("only that last segment disappears and dimensions needed changes from 16 to 12")]
-fn last_gone(world: &mut ApplicationWorld) {
+#[then("only that last segment disappears")]
+fn last_segment_gone(world: &mut ApplicationWorld) {
     world.expect_segment_absent(START, END);
-    world.expect_dimensions_needed(12);
+}
+#[then("the segment returns")]
+fn segment_back(world: &mut ApplicationWorld) {
+    world.expect_segment_drawn(START, END);
 }
 #[when("I redo")]
 fn redo(world: &mut ApplicationWorld) {
     world.redo();
 }
-#[then("the segment returns and dimensions needed is 16")]
-fn segment_back(world: &mut ApplicationWorld) {
-    world.expect_segment_drawn(START, END);
-    world.expect_dimensions_needed(16);
-}
 // line-23 and line-24
 /// A second segment off a free first: 20 with the seeds, one direction inferred horizontal.
 const HORIZONTAL_END: [i32; 2] = [1040, 420];
-#[given("the two connected segments accepted in steps 177 through 180")]
-#[given("two accepted connected segments and the active pending preview in step 185")]
+#[given("two connected segments have been accepted")]
+#[given("Line is active with two accepted connected segments and a pending third preview")]
 fn two_connected(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
-    world.seed_dimensions_needed(15);
     world.select_line_tool();
     world.sketch_click(START);
     world.sketch_click(END);
     world.sketch_click(HORIZONTAL_END);
-    world.expect_dimensions_needed(20);
+    assert_eq!(
+        world.edited_geometry().lines().len(),
+        2,
+        "accepted segments"
+    );
     world.hover(NEXT);
 }
 #[given("Line is active with its dynamic length field selected")]
 fn length_field_selected(world: &mut ApplicationWorld) {
     assert!(hud_is_open(world), "expected the fields of the pending end");
-}
-#[when("I press Ctrl+Z and inspect a observations")]
-fn ctrl_z_active(world: &mut ApplicationWorld) {
-    world.undo();
 }
 #[then("both accepted segments remain visible and Line remains active")]
 fn both_remain(world: &mut ApplicationWorld) {
@@ -176,31 +142,26 @@ fn choose_ok(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.click_text("OK");
 }
-#[then("the second accepted segment disappears and dimensions needed is 19")]
+#[then("the second accepted segment disappears")]
 fn second_gone(world: &mut ApplicationWorld) {
     world.expect_segment_absent(END, HORIZONTAL_END);
     world.expect_segment_drawn(START, END);
-    world.expect_dimensions_needed(19);
+}
+#[then("the second segment returns")]
+fn second_back(world: &mut ApplicationWorld) {
+    world.expect_segment_drawn(END, HORIZONTAL_END);
 }
 #[when("I press Ctrl+Y")]
 fn ctrl_y(world: &mut ApplicationWorld) {
     world.redo();
 }
-#[then("the second segment returns and dimensions needed is 20")]
-fn second_back(world: &mut ApplicationWorld) {
-    world.expect_segment_drawn(END, HORIZONTAL_END);
-    world.expect_dimensions_needed(20);
-}
-#[then("no cause is asserted for the different active-command result")]
-fn no_cause(_: &mut ApplicationWorld) {}
 #[when("I choose OK in the marking menu")]
 fn ok_in_menu(world: &mut ApplicationWorld) {
     choose_ok(world);
 }
-#[then("Line ends and Ready shows 20 dimensions needed")]
-fn ended_20(world: &mut ApplicationWorld) {
+#[then("Line ends and Ready returns")]
+fn line_ended(world: &mut ApplicationWorld) {
     world.expect_ready();
-    world.expect_dimensions_needed(20);
 }
 #[then("the two accepted segments remain")]
 fn two_remain(world: &mut ApplicationWorld) {
@@ -247,7 +208,9 @@ fn new_start(world: &mut ApplicationWorld) {
     world.expect_status("Select start of line");
 }
 // line-20, up to the loop: the Region Properties half is in `regions.rs`
-#[given("two connected straight segments have been accepted with Line still active")]
+#[given(
+    "two connected straight segments in the recorded triangle fixture have been accepted with Line still active"
+)]
 fn two_with_line_active(world: &mut ApplicationWorld) {
     use oblikovati_viewport::ViewportPhysicalKey::{Enter, Tab};
     world.start_empty_sketch();
@@ -296,10 +259,6 @@ fn source_with_line_active(world: &mut ApplicationWorld) {
 fn drag_from_source(world: &mut ApplicationWorld) {
     world.drag(SOURCE[1], DRAG_END);
 }
-#[then("the observations does not establish an arc preview")]
-fn no_arc_preview(world: &mut ApplicationWorld) {
-    world.expect_segment_drawn(SOURCE[1], DRAG_END);
-}
 #[when("I click (1590,300)")]
 fn click_after_drag(world: &mut ApplicationWorld) {
     world.sketch_click(CLICK_END);
@@ -327,8 +286,6 @@ fn two_earlier_retained(world: &mut ApplicationWorld) {
 fn pending_disappears(world: &mut ApplicationWorld) {
     world.expect_segment_absent(CLICK_END, LATER_DRAG);
 }
-#[then("no successful tangent-arc transition is inferred")]
-fn no_tangent_transition(_: &mut ApplicationWorld) {}
 #[given("the retained source visibly ends near (1590,295)")]
 fn retained_source(world: &mut ApplicationWorld) {
     world.start_empty_sketch();

@@ -111,13 +111,6 @@ fn activate_first(world: &mut ApplicationWorld) {
     world.click_tab(first);
     world.pump(Vec::new());
 }
-#[given("the View ribbon is expanded with the Navigate panel visible")]
-fn view_expanded_with_navigate(world: &mut ApplicationWorld) {
-    world.click_text("View");
-    world.pump(Vec::new());
-    world.expect_text("Navigate");
-    world.previous_document = Some(world.active_id());
-}
 #[then("Visibility, Appearance, Windows and Navigate are checked")]
 fn view_panels_checked(world: &mut ApplicationWorld) {
     for panel in ["Visibility", "Appearance", "Windows", "Navigate"] {
@@ -180,7 +173,6 @@ fn model_docked_left(world: &mut ApplicationWorld) {
 #[given("the 3D Model ribbon is docked at the top with Modify visible")]
 #[then("the Modify group returns to the side-docked ribbon")]
 #[then("the Modify group returns to the left-docked ribbon")]
-#[then("the Modify group appears in the floating ribbon")]
 #[then("the Modify panel is visible in the top ribbon")]
 #[then("the Modify panel is visible again")]
 fn modify_visible(world: &mut ApplicationWorld) {
@@ -348,10 +340,6 @@ fn navigate_stays_hidden(world: &mut ApplicationWorld) {
 fn panels_on_view(world: &mut ApplicationWorld) {
     expand_show_panels(world);
 }
-#[then("Navigate is unchecked")]
-fn navigate_box_clear(world: &mut ApplicationWorld) {
-    assert!(!world.checked("Navigate"), "expected Navigate unchecked");
-}
 #[when("I select Navigate")]
 fn select_navigate(world: &mut ApplicationWorld) {
     toggle_panel(world, "Navigate");
@@ -364,20 +352,43 @@ fn navigate_appears(world: &mut ApplicationWorld) {
     world.expect_text("Navigate");
 }
 // Dismissing the list
-#[given("the 3D Model ribbon shows Create and Modify")]
+#[given("the Create and Modify panels are visible")]
 fn shows_create_modify(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
     world.pump(Vec::new());
     world.expect_text("Create");
     world.expect_text("Modify");
 }
+#[given("the View ribbon is expanded with Visibility, Appearance, Windows and Navigate visible")]
+fn view_ribbon_expanded(world: &mut ApplicationWorld) {
+    world.click_text("View");
+    world.pump(Vec::new());
+    for panel in ["Visibility", "Appearance", "Windows", "Navigate"] {
+        world.expect_text(panel);
+    }
+}
+#[given("the 3D Model ribbon is expanded and docked at the top")]
+fn model_ribbon_at_top(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+    world.expect_text("Start 2D Sketch");
+    world.expect_text("Ribbon Display");
+}
+#[given("it shows Create and Modify while Parameters is hidden")]
+fn create_modify_without_parameters(world: &mut ApplicationWorld) {
+    shows_create_modify(world);
+    parameters_is_hidden(world);
+}
 #[given("Parameters is hidden")]
 fn parameters_is_hidden(world: &mut ApplicationWorld) {
-    expand_show_panels(world);
-    toggle_panel(world, PARAMETERS);
-    world.escape();
-    world.escape();
-    world.pump(Vec::new());
+    // Whether a new part shows the panel is the ribbon's default, not this scenario's subject.
+    if parameters_panel_shown(world) {
+        expand_show_panels(world);
+        toggle_panel(world, PARAMETERS);
+        world.escape();
+        world.escape();
+        world.pump(Vec::new());
+    }
     assert!(
         !parameters_panel_shown(world),
         "expected no Parameters panel"

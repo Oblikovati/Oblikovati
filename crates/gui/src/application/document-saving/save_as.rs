@@ -208,7 +208,7 @@ fn shown_window_preview(draft: &SaveAsDraft) -> Option<&crate::GuiPreviewImage> 
         .flatten()
 }
 /// A grid of filled cells: the GUI binds one font texture, and a preview needs no other.
-fn draw_preview_image(ui: &Ui, image: &crate::GuiPreviewImage) {
+pub(super) fn draw_preview_image(ui: &Ui, image: &crate::GuiPreviewImage) {
     let origin = ui.cursor_screen_pos();
     let size = ui.content_region_avail();
     let cell = (size[0] / image.extent[0] as f32).min(size[1] / image.extent[1] as f32);

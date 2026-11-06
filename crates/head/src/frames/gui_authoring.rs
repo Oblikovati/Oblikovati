@@ -9,6 +9,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.set_sketch_options_from_gui(options.clone())
         }
         GuiShellAction::LineCommand(command) => owner.line_command_from_gui(*command),
+        GuiShellAction::PrecisePoint(point) => owner.precise_point_from_gui(point),
         GuiShellAction::Inspect(action) => owner.inspect_from_gui(*action),
         GuiShellAction::EditDimensionValue(value) => owner.edit_dimension_value_from_gui(value),
         GuiShellAction::SetPromptFrequency { prompt, frequency } => {

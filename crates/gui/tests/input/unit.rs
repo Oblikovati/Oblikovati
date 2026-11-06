@@ -175,13 +175,37 @@ fn tool_keyboard_ownership_is_limited_to_commands_outside_text_entry() {
         GuiKey::A,
     ] {
         let event = GuiInputEvent::Key { key, pressed: true };
-        assert_eq!(sketch_tool_key(&event, true, false), key != GuiKey::A);
-        assert!(!sketch_tool_key(&event, true, true));
-        assert!(!sketch_tool_key(&event, false, false));
+        let mut held = Vec::new();
+        assert_eq!(
+            sketch_tool_key(&event, true, false, &mut held),
+            key != GuiKey::A
+        );
+        assert!(!sketch_tool_key(&event, true, true, &mut held));
+        assert!(!sketch_tool_key(&event, false, false, &mut held));
     }
     assert!(!sketch_tool_key(
         &GuiInputEvent::Text("c".into()),
         true,
-        false
+        false,
+        &mut Vec::new()
     ));
+}
+#[test]
+fn a_release_reaches_the_widget_that_received_the_press() {
+    let press = GuiInputEvent::Key {
+        key: GuiKey::Tab,
+        pressed: true,
+    };
+    let release = GuiInputEvent::Key {
+        key: GuiKey::Tab,
+        pressed: false,
+    };
+    let mut held = Vec::new();
+    // A field had the keyboard on the press; it no longer does when the key comes up.
+    assert!(!sketch_tool_key(&press, true, true, &mut held));
+    assert!(!sketch_tool_key(&release, true, false, &mut held));
+    assert!(held.is_empty());
+    // With nothing held by a widget, the running command keeps both ends of the key.
+    assert!(sketch_tool_key(&press, true, false, &mut held));
+    assert!(sketch_tool_key(&release, true, false, &mut held));
 }

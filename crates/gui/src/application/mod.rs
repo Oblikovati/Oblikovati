@@ -9,6 +9,8 @@ pub(crate) mod document_tabs;
 pub(crate) mod file_system;
 #[path = "home-recent-documents/mod.rs"]
 pub(crate) mod home_recent_documents;
+#[path = "project-dialog/mod.rs"]
+pub(crate) mod project_dialog;
 #[path = "quick-access-toolbar/mod.rs"]
 pub(crate) mod quick_access_toolbar;
 #[path = "ribbon-display/mod.rs"]

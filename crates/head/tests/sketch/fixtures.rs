@@ -86,13 +86,6 @@ impl ApplicationWorld {
     pub fn select_line_tool(&mut self) {
         self.click_text("Line");
     }
-    /// The Line button's variants arrow sits immediately right of its caption.
-    pub fn open_line_variants(&mut self) {
-        let run = self.run("Line").clone();
-        let at = [run.maximum[0] as i32 + 34, run.center()[1] as i32];
-        self.click(at);
-        self.pump(Vec::new());
-    }
     pub fn double_click(&mut self, position: [i32; 2]) {
         self.pump(super::super::pointer_click_events(position, 2));
     }
@@ -189,43 +182,130 @@ impl ApplicationWorld {
             .geometry()
             .clone()
     }
-    /// Make `count` dimensions on far-away geometry, so the next one has the recorded name.
-    pub fn seed_named_dimensions(&mut self, count: usize) {
+    /// One line's point this fraction along it, in window pixels; lines count in creation order.
+    pub fn line_point(&mut self, index: usize, fraction: f64) -> [i32; 2] {
         let edit = self.app().owner.active_sketch_edit().unwrap();
-        for index in 0..count {
-            let at = SEED_ORIGIN[1] + SEED_STEP * 3. + SEED_STEP * index as f64;
-            let creation = seed_creation(index, 2, at);
-            let owner = &mut self.app().owner;
-            let mut commands = owner.document_commands(edit.document);
-            let first = commands
-                .create_sketch_primitive(edit.sketch, &creation)
-                .unwrap();
-            let second = commands
-                .create_sketch_primitive(
-                    edit.sketch,
-                    &SketchPrimitiveCreation::Point {
-                        position: [at + 7., SEED_ORIGIN[1] + 5.],
-                    },
-                )
-                .unwrap();
-            commands
-                .create_sketch_dimension(
-                    edit.sketch,
-                    &oblikovati_model::history::SketchDimensionCreation {
-                        operands:
-                            oblikovati_model::sketch::SketchDimensionalConstraintCreation::Measured(
-                                oblikovati_model::sketch::MeasuredDimensionOperands::Distance {
-                                    points: [first.entity, second.entity],
-                                    measure: oblikovati_model::sketch::DistanceMeasure::Aligned,
-                                },
-                            ),
-                        expression: "1 mm".into(),
-                        reference: false,
-                        text_point: None,
-                    },
-                )
-                .unwrap();
+        let geometry = self.edited_geometry();
+        let line = geometry.lines()[index];
+        let [from, to] = line
+            .endpoints
+            .map(|point| geometry.point(point).unwrap().position);
+        let at = std::array::from_fn(|axis| from[axis] + (to[axis] - from[axis]) * fraction);
+        crate::HeadWindow::sketch_pixel(&self.app().window, edit.plane, at).unwrap()
+    }
+    /// The first arc at mid-sweep, in window pixels; example: a click that picks the arc itself.
+    pub fn arc_pixel(&mut self) -> [i32; 2] {
+        let edit = self.app().owner.active_sketch_edit().unwrap();
+        let geometry = self.edited_geometry();
+        let arc = geometry.arcs()[0];
+        let center = geometry.point(arc.center).unwrap().position;
+        let angle_of = |point| {
+            let at: [f64; 2] = geometry.point(point).unwrap().position;
+            (at[1] - center[1]).atan2(at[0] - center[0])
+        };
+        let radius = {
+            let start = geometry.point(arc.start).unwrap().position;
+            (start[0] - center[0]).hypot(start[1] - center[1])
+        };
+        let sweep = (angle_of(arc.end) - angle_of(arc.start)).rem_euclid(std::f64::consts::TAU);
+        let sweep = if arc.counter_clockwise {
+            sweep
+        } else {
+            sweep - std::f64::consts::TAU
+        };
+        let middle = angle_of(arc.start) + sweep * 0.5;
+        let at = [
+            center[0] + radius * middle.cos(),
+            center[1] + radius * middle.sin(),
+        ];
+        crate::HeadWindow::sketch_pixel(&self.app().window, edit.plane, at).unwrap()
+    }
+    pub fn sketch_pixel_of(&mut self, at: [f64; 2]) -> [i32; 2] {
+        let edit = self.app().owner.active_sketch_edit().unwrap();
+        crate::HeadWindow::sketch_pixel(&self.app().window, edit.plane, at).unwrap()
+    }
+    pub fn sketch_point_of(&mut self, pixel: [i32; 2]) -> [f64; 2] {
+        let edit = self.app().owner.active_sketch_edit().unwrap();
+        crate::HeadWindow::sketch_point(&self.app().window, pixel, edit.plane)
+            .unwrap()
+            .expect("expected the pixel to reach the sketch plane")
+    }
+    /// Open the toolbar through the ribbon's Format panel.
+    pub fn open_precise_input(&mut self) {
+        self.click_text("Precise Input");
+        self.pump(Vec::new());
+        self.expect_text("X");
+    }
+    /// Close it through its own options, the way the recording did.
+    pub fn close_precise_input(&mut self) {
+        let options = self
+            .run_in_window("Precise Input", "...")
+            .center()
+            .map(|value| value as i32);
+        self.click(options);
+        self.pump(Vec::new());
+        self.click_text("Close");
+        self.pump(Vec::new());
+        assert!(
+            diagnostics::window_geometry("Precise Input").is_none(),
+            "expected the Precise Input toolbar to close"
+        );
+    }
+    /// Type one exact point, in millimetres, and accept it.
+    pub fn precise_point(&mut self, at: [f64; 2]) {
+        for (label, value) in [("X", at[0]), ("Y", at[1])] {
+            let label = self.run_in_window("Precise Input", label).clone();
+            // The field sits immediately left of its label.
+            self.click([label.minimum[0] as i32 - 20, label.center()[1] as i32]);
+            self.type_text(&format!("{value:.6}"));
         }
+        self.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+        self.pump(Vec::new());
+    }
+    /// The text run inside one named window, for a word the ribbon also shows.
+    pub fn run_in_window(&self, title: &str, text: &str) -> &diagnostics::RenderedRun {
+        let (position, size) = diagnostics::window_geometry(title)
+            .unwrap_or_else(|| panic!("expected a window {title:?}"));
+        self.frame
+            .runs
+            .iter()
+            .filter(|run| run.text == text)
+            .find(|run| {
+                let center = run.center();
+                (0..2).all(|axis| {
+                    center[axis] >= position[axis] && center[axis] <= position[axis] + size[axis]
+                })
+            })
+            .unwrap_or_else(|| {
+                let shown = self.window_text(title);
+                panic!("expected {text:?} in window {title:?}, which shows {shown:?}")
+            })
+    }
+    pub fn open_application_options(&mut self) {
+        self.click_text("Tools");
+        self.pump(Vec::new());
+        self.click_text("Application Options...");
+        self.pump(Vec::new());
+    }
+    pub fn close_application_options(&mut self) {
+        self.escape();
+        self.pump(Vec::new());
+    }
+    /// Right-click on Undo lists what it would undo, a list only that popup shows.
+    pub fn open_undo_history(&mut self) {
+        let undo = self.run("Undo").center().map(|value| value as i32);
+        self.right_click(undo);
+        self.pump(Vec::new());
+    }
+    pub fn undo_history_rows(&self) -> Vec<String> {
+        let mut rows: Vec<&diagnostics::RenderedRun> = self
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text.starts_with("Create") && run.text.len() > "Create".len())
+            .collect();
+        rows.sort_by(|first, second| first.center()[1].total_cmp(&second.center()[1]));
+        rows.into_iter().map(|run| run.text.clone()).collect()
     }
     /// The centre of a run reading exactly `text`, for an annotation under the pointer.
     pub fn exact_run_center(&self, text: &str) -> [i32; 2] {

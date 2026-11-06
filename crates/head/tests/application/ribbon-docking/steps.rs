@@ -78,6 +78,12 @@ fn expect_vertical(world: &mut ApplicationWorld, labels: &[&str]) {
 fn part_active(world: &mut ApplicationWorld) {
     world.previous_document = Some(world.add_part());
 }
+#[given("the ribbon is docked at the top with the 3D Model tab selected")]
+fn docked_top_on_model_tab(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+    expect_top_dock(world);
+}
 #[given("the ribbon is docked at the top")]
 fn docked_top(world: &mut ApplicationWorld) {
     expect_top_dock(world);

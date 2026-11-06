@@ -206,6 +206,15 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.inspect_from_gui(action)
     }
+    fn precise_point_from_gui(
+        &mut self,
+        point: &oblikovati_gui::GuiPrecisePoint,
+    ) -> Result<bool, String> {
+        self.owner.precise_point_from_gui(point)
+    }
+    fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
+        self.owner.sketch_constraint_marks()
+    }
     fn line_command_from_gui(
         &mut self,
         command: oblikovati_gui::GuiLineCommand,
@@ -238,7 +247,7 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
         self.owner.process_inputs(inputs)
     }
 
-    crate::work::forward_owner_view_work!(owner);
+    crate::work_forwarding::forward_owner_view_work!(owner);
 
     fn process_window_inputs(
         &mut self,

@@ -210,32 +210,9 @@ fn ok_and_cancel(world: &mut ApplicationWorld) {
     world.expect_text("OK");
     world.expect_text("Cancel");
 }
-#[given("one part document is active")]
-fn one_active(world: &mut ApplicationWorld) {
-    // Home follows the last tab, so the first part is the one with a part beside it.
-    world.activate_through_tab(first(world));
-    world.previous_document = Some(world.active_id());
-}
 #[when("I press Control+Tab")]
 fn control_tab(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Tab, true);
-}
-#[then("another open part document becomes active")]
-fn another_active(world: &mut ApplicationWorld) {
-    let before = world.previous_document.expect("expected a prior document");
-    let now = world.active_id();
-    assert_ne!(
-        now, before,
-        "Control+Tab: expected a different active document"
-    );
-    world.expect_active(now);
-}
-#[then("the previously active part remains open")]
-fn previous_open(world: &mut ApplicationWorld) {
-    let before = world.previous_document.expect("expected a prior document");
-    assert!(world.document_is_open(before));
-    let name = world.document_name(before);
-    world.expect_tab(&name);
 }
 #[given("the second part has been saved")]
 #[given("the second part is saved and has no unsaved changes")]
@@ -303,9 +280,23 @@ fn list_offers_closes(world: &mut ApplicationWorld) {
     world.expect_text("Close All");
 }
 #[given("two part tabs are adjacent in the MCAD Software")]
+#[given("two neighboring part tabs are visible in the MCAD Software")]
 fn adjacent_tabs(world: &mut ApplicationWorld) {
     world.add_part();
     world.add_part();
+}
+#[given("the left-hand part is active")]
+fn left_hand_active(world: &mut ApplicationWorld) {
+    world.activate_through_tab(world.parts[0]);
+}
+#[then("the right-hand part becomes active")]
+fn right_hand_active(world: &mut ApplicationWorld) {
+    world.expect_active(world.parts[1]);
+}
+#[then("the left-hand part remains open")]
+fn left_hand_open(world: &mut ApplicationWorld) {
+    let name = world.document_name(world.parts[0]);
+    world.expect_tab(&name);
 }
 #[given("the part on the right is active")]
 fn right_active(world: &mut ApplicationWorld) {

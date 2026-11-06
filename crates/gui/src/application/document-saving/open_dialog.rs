@@ -66,6 +66,7 @@ impl OpenDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        pictures: &crate::application::document_tabs::previews::TabPreviews,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let Some(draft) = &mut self.draft else {
@@ -78,7 +79,7 @@ impl OpenDialog {
         let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
             return;
         };
-        if contents(ui, state, &mut self.browser, draft, actions).is_some() {
+        if contents(ui, state, pictures, &mut self.browser, draft, actions).is_some() {
             self.draft = None;
             ui.close_current_popup();
         }
@@ -87,6 +88,7 @@ impl OpenDialog {
 fn contents(
     ui: &Ui,
     state: &GuiCommandState,
+    pictures: &crate::application::document_tabs::previews::TabPreviews,
     browser: &mut FolderBrowser,
     draft: &mut OpenDraft,
     actions: &mut Vec<GuiShellAction>,
@@ -100,7 +102,13 @@ fn contents(
     ui.child_window("##open-preview")
         .size([0., 110.])
         .border(true)
-        .build(|| ui.text_disabled(NO_PREVIEW));
+        .build(|| {
+            let path = full_path(&browser.folder, &draft.name);
+            match pictures.picture_of_file(&path) {
+                Some(image) => super::save_as::draw_preview_image(ui, image),
+                None => ui.text_disabled(NO_PREVIEW),
+            }
+        });
     ui.columns(1, "open-layout-end", false);
     ui.separator();
     let entered = file_name_field(ui, &mut draft.name);

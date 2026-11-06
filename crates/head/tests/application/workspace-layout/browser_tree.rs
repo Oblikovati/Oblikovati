@@ -154,3 +154,81 @@ fn no_results(world: &mut ApplicationWorld) {
     world.expect_text("No matching entries");
     world.expect_no_text("Origin");
 }
+// While a sketch is being edited
+fn expect_sketch_editing(world: &mut ApplicationWorld) {
+    assert!(
+        world.state().authoring == oblikovati_gui::GuiAuthoringContext::Sketch,
+        "expected the sketch still under edit"
+    );
+    world.expect_text("Finish Sketch");
+}
+fn close_control_shown(world: &ApplicationWorld) -> bool {
+    world.frame.runs.iter().any(|run| run.text == "x")
+}
+#[given("a part document is open in the MCAD Software with a sketch being edited")]
+fn part_with_sketch_under_edit(world: &mut ApplicationWorld) {
+    world.add_part();
+    world.start_sketch();
+    expect_sketch_editing(world);
+}
+#[given("the model browser shows an expanded Origin branch and other document entries")]
+fn origin_expanded(world: &mut ApplicationWorld) {
+    world.expect_text("Center Point");
+    world.expect_text("Sketches");
+    world.expect_text("Features");
+}
+#[when("I select the expansion control beside Origin")]
+#[when("I select the expansion control beside Origin again")]
+fn toggle_origin(world: &mut ApplicationWorld) {
+    world.press_disclosure("Origin");
+}
+#[then("the Origin branch collapses and its child entries are hidden")]
+fn origin_collapsed(world: &mut ApplicationWorld) {
+    world.expect_text("Origin");
+    world.expect_no_text("Center Point");
+}
+#[then("the Origin branch expands and its child entries are displayed")]
+fn origin_open(world: &mut ApplicationWorld) {
+    world.expect_text("Center Point");
+}
+#[then("the other document entries remain visible in the browser")]
+#[then("the other document entries remain visible")]
+fn other_entries_remain(world: &mut ApplicationWorld) {
+    world.expect_text("Sketches");
+    world.expect_text("Features");
+}
+#[then("the sketch remains displayed in the viewport")]
+fn sketch_remains(world: &mut ApplicationWorld) {
+    expect_sketch_editing(world);
+}
+#[given("the model browser is visible with its search field closed")]
+fn search_closed(world: &mut ApplicationWorld) {
+    world.expect_text("Origin");
+    assert!(!close_control_shown(world), "expected no search field");
+}
+#[when("I select the browser search control")]
+fn select_search_control(world: &mut ApplicationWorld) {
+    open_search(world);
+}
+#[then("an empty search field appears beneath the browser header")]
+fn empty_field(world: &mut ApplicationWorld) {
+    assert!(close_control_shown(world), "expected the search field");
+    let control = world.run("Menu").center()[1];
+    let close = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text == "x")
+        .map_or(0., |run| run.center()[1]);
+    assert!(close > control, "expected the field beneath the header");
+}
+#[then("the model browser tree and sketch viewport remain visible")]
+#[then("the browser tree and sketch viewport remain visible")]
+fn tree_and_viewport(world: &mut ApplicationWorld) {
+    world.expect_text("Origin");
+    expect_sketch_editing(world);
+}
+#[when("I select the close control on the empty search field")]
+fn close_empty_field(world: &mut ApplicationWorld) {
+    press_search_close(world);
+}

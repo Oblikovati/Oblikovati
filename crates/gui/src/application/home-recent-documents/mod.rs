@@ -193,7 +193,8 @@ impl HomeWorkspace {
         }
         ui.text_disabled("Search History");
         for term in self.history.clone() {
-            if ui.selectable(&term) {
+            // The clock mark says this is a past search, not a result.
+            if ui.selectable(format!("(h) {term}###history-{term}")) {
                 self.query = term;
                 self.apply_search();
             }

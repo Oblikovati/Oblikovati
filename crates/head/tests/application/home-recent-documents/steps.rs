@@ -92,6 +92,7 @@ fn select_assembly_filter(world: &mut ApplicationWorld) {
 fn expect_filter_count(world: &ApplicationWorld, count: usize) {
     world.expect_text(&format!("Filter ({count})"));
 }
+#[given("Home is active in the MCAD Software")]
 #[given("the Home workspace is active in the MCAD Software")]
 fn home_active(world: &mut ApplicationWorld) {
     save_recent_files(world);
@@ -114,9 +115,46 @@ fn list_contains(world: &mut ApplicationWorld) {
         "expected {ASSEMBLY} on the list"
     );
 }
+#[given("the recent list contains documents")]
+fn recent_list_filled(world: &mut ApplicationWorld) {
+    // Saving lands other parts on the list; the one under edit is what the scenario is about.
+    let part = world.active_id();
+    save_recent_files(world);
+    world.activate_through_tab(part);
+    world.previous_document = Some(part);
+}
+#[then("the Home workspace displays Open and New actions in a left navigation rail")]
+fn rail_actions(world: &mut ApplicationWorld) {
+    let recent = home_run(world, "Recent").expect("expected the Recent area");
+    for action in ["Open", "New"] {
+        let run = home_run(world, action)
+            .unwrap_or_else(|| panic!("expected {action:?} in {:?}", world.window_text(HOME)));
+        assert!(
+            run.center()[0] < recent.center()[0],
+            "{action}: expected the rail left of Recent"
+        );
+    }
+}
+#[then("a Recent area appears to the right of the rail")]
+fn recent_area(world: &mut ApplicationWorld) {
+    assert!(home_shows(world, "Recent"), "expected the Recent area");
+}
+#[then("the Recent area offers list view, grid view, search and filter controls")]
+fn recent_controls(world: &mut ApplicationWorld) {
+    for control in ["List View", "Grid View", "Search recent", "Filter"] {
+        assert!(home_shows(world, control), "expected {control} in Home");
+    }
+}
 #[given("the recent documents are displayed as a list")]
 #[given("recent documents are displayed in List View")]
 #[given("recent documents are shown in List View")]
+#[then("the Home recent-documents view remains visible around the menu")]
+fn home_behind_menu(_: &mut ApplicationWorld) {
+    assert!(
+        window_geometry(HOME).is_some(),
+        "expected the Home workspace"
+    );
+}
 #[given("recent documents are in List View")]
 #[given("several recent documents are displayed in List View")]
 #[given("recent documents with different names are displayed in List View")]
@@ -213,7 +251,7 @@ fn history_includes(world: &mut ApplicationWorld) {
         .frame
         .runs
         .iter()
-        .any(|run| in_home(run) && run.text == SEARCHED && run.center()[1] > panel);
+        .any(|run| in_home(run) && run.text.ends_with(SEARCHED) && run.center()[1] > panel);
     assert!(term, "expected {SEARCHED} under the panel title");
 }
 #[when("I select Grid View")]
@@ -261,7 +299,7 @@ fn parts_and_assemblies(world: &mut ApplicationWorld) {
     assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
 }
-#[given("no file-type filter is selected")]
+#[given("no other rows are checked and no recent-document filters are active")]
 #[given("no recent-document filters are active")]
 fn no_filters(world: &mut ApplicationWorld) {
     world.expect_no_text("Filter (");
