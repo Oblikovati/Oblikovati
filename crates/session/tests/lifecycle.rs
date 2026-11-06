@@ -440,3 +440,6 @@ mod sketch_visibility;
 
 #[path = "lifecycle/transaction_identity.rs"]
 mod transaction_identity;
+
+#[path = "lifecycle/sketch_owned_deletion.rs"]
+mod sketch_owned_deletion;
