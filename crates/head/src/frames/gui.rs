@@ -5,6 +5,8 @@ use oblikovati_viewport::{ViewportInput, ViewportKey};
 use std::time::Duration;
 #[path = "gui_authoring.rs"]
 mod authoring;
+#[path = "gui_dimension_labels.rs"]
+mod dimension_labels;
 /// GUI work joins the existing event and wake paths; lifecycle events remain owner-visible.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct HeadGuiUpdate {
@@ -19,7 +21,9 @@ pub(super) fn advance_gui(
     owner: &mut dyn HeadWork,
     event: Option<&ViewportEvent>,
 ) -> Result<HeadGuiUpdate, String> {
-    let mut update = window.gui_frame(event, &owner.gui_command_state()?)?;
+    let mut commands = owner.gui_command_state()?;
+    commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
+    let mut update = window.gui_frame(event, &commands)?;
     for action in &update.actions {
         update.changed |= dispatch_gui_action(window, owner, action)?;
     }
@@ -64,6 +68,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SaveDocumentAs(_)
         | GuiShellAction::SelectBrowserSketch { .. }
         | GuiShellAction::EditSketch { .. }
+        | GuiShellAction::Dimension(_)
         | GuiShellAction::ConstrainSketch(_)
         | GuiShellAction::PlaceSketchTool(_)
         | GuiShellAction::NewPart

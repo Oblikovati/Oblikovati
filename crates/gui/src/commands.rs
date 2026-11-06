@@ -40,6 +40,7 @@ pub enum GuiShellAction {
     FinishSketch,
     PlaceSketchTool(crate::GuiSketchTool),
     ConstrainSketch(crate::GuiSketchConstraint),
+    Dimension(crate::GuiDimensionAction),
     Save,
     Undo,
     Redo,
@@ -62,6 +63,8 @@ pub enum GuiAuthoringContext {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    pub dimension_labels: Vec<crate::GuiDimensionLabel>,
+    pub dimension_draft: Option<crate::GuiDimensionDraft>,
     pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
@@ -77,6 +80,8 @@ pub struct GuiCommandState {
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
+        crate::dimensions::validate_dimension_draft(self)?;
+        crate::dimension_labels::validate_dimension_labels(&self.dimension_labels)?;
         crate::document_tabs::validate_documents(&self.documents)?;
         if self.browser.is_some() && self.document.is_none() {
             return Err("GUI browser document None: expected an active document identity".into());
@@ -164,6 +169,20 @@ impl GuiShellAction {
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
             Self::StartSketchXY => state.authoring == GuiAuthoringContext::Part,
+            Self::Dimension(crate::GuiDimensionAction::Start) => {
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
+            }
+            Self::Dimension(crate::GuiDimensionAction::Apply { id, .. }) => {
+                state
+                    .dimension_draft
+                    .as_ref()
+                    .is_some_and(|draft| draft.id == *id)
+                    && !state.transaction_open
+            }
+            Self::Dimension(crate::GuiDimensionAction::Cancel { id }) => state
+                .dimension_draft
+                .as_ref()
+                .is_some_and(|draft| draft.id == *id),
             Self::ConstrainSketch(_) => {
                 state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }

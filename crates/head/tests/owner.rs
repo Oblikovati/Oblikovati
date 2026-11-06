@@ -342,3 +342,6 @@ mod sketch_picking;
 
 #[path = "owner/geometric_tools.rs"]
 mod geometric_tools;
+
+#[path = "owner/dimension_tools.rs"]
+mod dimension_tools;

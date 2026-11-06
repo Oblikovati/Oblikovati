@@ -76,6 +76,8 @@ impl<
         Ok(oblikovati_gui::GuiCommandState {
             theme,
             color_scheme,
+            dimension_draft: self.gui_dimension_draft()?,
+            dimension_labels: Vec::new(),
             sketch_selection: oblikovati_viewport::ViewportSketchSelection {
                 sketches: session.selected_browser_sketches(),
                 entities: session
@@ -176,6 +178,15 @@ impl<
             document: request.id,
         });
         Ok(true)
+    }
+    fn sketch_dimension_annotations(&self) -> Result<crate::HeadDimensionAnnotations, String> {
+        self.dimension_annotations()
+    }
+    fn dimension_tool_from_gui(
+        &mut self,
+        action: &oblikovati_gui::GuiDimensionAction,
+    ) -> Result<bool, String> {
+        self.apply_dimension_intent(action)
     }
     fn constrain_sketch_from_gui(
         &mut self,

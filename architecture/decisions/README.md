@@ -127,8 +127,8 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0028](ADR-0028-checked-native-image-reads.md) | Checked native image reads | R1V |
 | [ADR-0030](ADR-0030-analytic-sketch-pick-witnesses.md) | Analytic sketch pick witnesses | R3/R4; #3816 |
 | [ADR-0031](ADR-0031-converged-geometric-authoring.md) | Converged geometric constraint authoring | R3/R4; #3818 |
-| [ADR-0033](ADR-0033-independent-dimension-authoring.md) | Independent driving dimension authoring | R3/R4; #3824 |
 | [ADR-0032](ADR-0032-converged-dimension-authoring.md) | Converged dimension authoring with available targets | R3/R4; #3824 |
+| [ADR-0033](ADR-0033-independent-dimension-authoring.md) | Independent driving dimension authoring | R3/R4; #3824 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

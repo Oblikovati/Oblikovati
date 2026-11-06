@@ -17,10 +17,16 @@ mod sketch_tools_gui;
 use sketch_tools_gui::gui_placement_tool;
 #[path = "owner_browser_selection.rs"]
 mod browser_selection;
+#[path = "owner_dimension_annotations.rs"]
+mod dimension_annotations;
+#[path = "owner_dimension_query.rs"]
+mod dimension_query;
 #[path = "owner_browser.rs"]
 mod model_browser;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
+#[path = "owner_sketch_dimension.rs"]
+mod sketch_dimension;
 #[path = "owner_sketch_geometric.rs"]
 mod sketch_geometric;
 #[path = "owner_sketch_interaction.rs"]
@@ -72,6 +78,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         oblikovati_session::workspace::WorkspaceFocusIdentity,
     )>,
     sketch_tool: Option<crate::sketch_tool::SketchToolState>,
+    dimension_serial: u64,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -110,6 +117,7 @@ impl<
             command_notice: None,
             sketch_construction: Default::default(),
             sketch_tool: None,
+            dimension_serial: 0,
             sketch_edit: None,
         }
     }

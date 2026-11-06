@@ -114,3 +114,9 @@ pub use sketch_scene::HeadSketchSceneUpdate;
 
 mod sketch_geometric;
 mod sketch_tool;
+
+mod sketch_dimension;
+mod sketch_operands;
+
+mod dimension_annotations;
+pub use dimension_annotations::{HeadDimensionAnnotation, HeadDimensionAnnotations};
