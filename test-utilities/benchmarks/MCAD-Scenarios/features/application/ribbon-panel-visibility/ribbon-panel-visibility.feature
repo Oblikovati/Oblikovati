@@ -131,3 +131,34 @@ Feature: Ribbon panel visibility
     Then Modify is checked and Pattern is unchecked
     When I select Pattern
     Then both panels are visible in the ribbon
+
+  @needs_review
+  Scenario: Retain separate panel choices on different ribbon tabs
+    Given a part is active in the MCAD Software
+    And Modify is visible on the 3D Model ribbon
+    And Navigate is visible on the View ribbon
+    When I hide Modify on 3D Model through Show Panels
+    And I switch to View and hide Navigate through Show Panels
+    And I return to 3D Model
+    Then Modify remains hidden
+    When I restore Modify through Show Panels
+    And I switch to View
+    Then Navigate remains hidden
+    And Navigate is unchecked in Show Panels
+    When I select Navigate
+    Then the Navigate panel appears on the View ribbon
+
+  @needs_review
+  Scenario: Dismiss the panel list without changing visibility
+    Given a part is active in the MCAD Software
+    And the 3D Model ribbon shows Create and Modify
+    And Parameters is hidden
+    When I open the ribbon context menu and expand Show Panels
+    Then Create and Modify are checked and Parameters is unchecked
+    When I press Escape
+    Then the Show Panels submenu closes
+    And the ribbon context menu remains open
+    When I press Escape again
+    Then the ribbon context menu closes
+    And Create and Modify remain visible
+    And Parameters remains hidden

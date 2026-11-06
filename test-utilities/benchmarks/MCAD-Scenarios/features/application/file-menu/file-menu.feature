@@ -37,3 +37,15 @@ Feature: File menu
     When I press Escape
     Then the File menu closes
     And the same drawing document remains active
+
+  @needs_review
+  Scenario: Inspect controls in the recent-documents region
+    Given a part document is active in the MCAD Software
+    And recent documents are available
+    When I select File
+    Then the recent-documents region shows an ordering control labeled By Ordered List
+    And a separate display control is visible beside it
+    And the region lists document names with document-type symbols and pin controls
+    And the active part remains visible around the menu
+    When I press Escape
+    Then the menu closes and the same part remains active

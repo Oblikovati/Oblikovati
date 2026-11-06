@@ -57,3 +57,15 @@
 ## Interaction sequence wireframe
 
 [Original step-by-step schematic](panel-visibility-steps.svg) shows the observed right-click, submenu, hidden state and restoration. It uses generic geometry and illustrative colors; it is not a captured application image.
+
+## Choices on different tabs
+
+- Trigger: hide Modify on 3D Model, then hide Navigate on View.
+- Feedback: each group remains absent when returning to its tab. Restoring Modify does not restore Navigate; the latter remains unchecked in the View panel list until selected.
+- Limit: one panel per tab in one session.
+
+## Dismiss the visibility menu
+
+- Trigger: press Escape while Show Panels is expanded, then press Escape again.
+- Feedback: the child list disappears first, leaving the parent context menu; the next press removes the parent menu. The ribbon retains its existing panels.
+- Limit: observed on the expanded top-docked 3D Model ribbon.

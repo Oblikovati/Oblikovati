@@ -9,3 +9,5 @@ See [file-menu.feature](file-menu.feature) for the observed scenarios and [VISUA
 Clicking an empty area of the viewport outside the open menu also dismisses the menu and leaves the same part active.
 
 The same top-level command labels and recent-documents region were visible with a drawing active. The drawing sheet remained visible around the panel, and Escape returned to that drawing. This comparison does not establish whether the commands or submenus behave identically across document types.
+
+In the observed recent-documents region, an ordering control displayed By Ordered List and a separate small display control appeared beside it. Recent rows showed document-type symbols, names and individual pin controls. The displayed names were session-specific; the ordering, display and pin controls were not operated in this observation.

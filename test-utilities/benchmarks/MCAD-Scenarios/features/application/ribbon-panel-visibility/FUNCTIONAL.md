@@ -21,3 +21,7 @@ After hiding Modify on the top-docked ribbon, undocking produced a floating ribb
 Hiding Modify in the floating ribbon and docking it at the top left the panel hidden. Show Panels listed Modify unchecked, and selecting it restored the panel. After restoration, switching to View and back returned the ribbon to its usual height. The sequence was observed in one session.
 
 Modify and Pattern could both be hidden through successive Show Panels selections. Both entries were unchecked on reopening. Restoring Modify left Pattern hidden and unchecked; selecting Pattern then restored both panels. This was observed on the 3D Model ribbon within one session.
+
+A cross-tab sequence hid Modify on 3D Model and Navigate on View. Returning to 3D Model showed Modify still hidden. Restoring Modify and returning to View left Navigate hidden and unchecked; it was then restored. This observes separate choices for these two panels in one session.
+
+With Show Panels expanded on the 3D Model ribbon, pressing Escape closed the panel submenu while leaving the parent context menu open. A second Escape closed the context menu. The observed visible and hidden panels did not change.

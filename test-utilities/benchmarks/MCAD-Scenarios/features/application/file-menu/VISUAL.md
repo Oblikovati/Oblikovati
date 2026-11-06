@@ -30,3 +30,10 @@
 - Limit: individual menu commands and submenus were not invoked in this drawing.
 
 [File-menu icon](file-menu-icon.svg) is an original colored folded-page and grid design created from the brief; it is not extracted from a source screenshot.
+
+## Recent-document controls
+
+- Context: File menu open with recent documents available.
+- Layout: an ordering label with a disclosure marker and a separate small display control sit above a vertical list. Each visible row pairs a type symbol and name on the left with a pin symbol at the right.
+- Meaning: the symbols distinguish document entries and expose pin affordances; behavior of those controls was not established.
+- Color: light labels and muted symbols on a blue-grey panel, with small blue accents on some document-type symbols.
