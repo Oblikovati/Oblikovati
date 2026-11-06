@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "chooser_details.rs"]
+mod chooser_details;
 #[given("the metric template folder is selected")]
 fn metric_selected(world: &mut ApplicationWorld) {
     world.click_text("Metric");
@@ -93,7 +95,7 @@ fn choose_template_view(world: &mut ApplicationWorld, view: &str) {
 }
 /// The vertical distance between the part group's two tiles.
 fn tile_spacing(world: &ApplicationWorld) -> f32 {
-    world.run(METRIC_SHEET_METAL).center()[1] - world.run(METRIC_PART).center()[1]
+    (world.run(METRIC_SHEET_METAL).center()[1] - world.run(METRIC_PART).center()[1]).abs()
 }
 #[when("I choose List in the template display menu")]
 fn choose_list_view(world: &mut ApplicationWorld) {
@@ -254,4 +256,33 @@ fn small_tiles(world: &mut ApplicationWorld) {
 #[then("the template gallery displays medium-sized icons")]
 fn medium_sized(world: &mut ApplicationWorld) {
     medium_tiles(world);
+}
+#[when("I double-click the standard metric part template")]
+fn double_click_part(world: &mut ApplicationWorld) {
+    let center = world.run(METRIC_PART).center().map(|value| value as i32);
+    world.pump(super::super::pointer_click_events(center, 2));
+    world.pump(Vec::new());
+}
+#[when("I press Enter")]
+fn press_enter(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+}
+#[then("a new empty part document becomes active")]
+fn new_empty_part(world: &mut ApplicationWorld) {
+    expect_new_document(world, oblikovati_api::types::DOCUMENT_PART);
+    empty_part(world);
+}
+#[then("the original part remains active")]
+fn original_active(world: &mut ApplicationWorld) {
+    previous_document(world);
+}
+#[then("its viewport and browser are displayed")]
+fn viewport_and_browser_shown(world: &mut ApplicationWorld) {
+    world.expect_text("Origin");
+    world.expect_blank_region(VIEWPORT_X, VIEWPORT_Y);
+}
+#[then("no new document tab is created")]
+fn no_new_tab(world: &mut ApplicationWorld) {
+    assert_eq!(world.state().documents.len(), world.parts.len());
 }

@@ -17,6 +17,8 @@ fn request() -> GuiFrameRequest {
             documents: Vec::new(),
             document_storage: Default::default(),
             prompts: Default::default(),
+            projects: Vec::new(),
+            template_sizes: Vec::new(),
             browser: None,
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),

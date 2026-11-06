@@ -40,6 +40,24 @@ impl<
             }
         }
     }
+    /// Report loaded projects and their settings; example: for the Projects dialog.
+    pub(super) fn gui_projects(&self) -> Vec<oblikovati_gui::GuiProject> {
+        let active = self.files.active_project().map(|project| &project.path);
+        self.files
+            .projects()
+            .iter()
+            .map(|project| oblikovati_gui::GuiProject {
+                name: project.configuration.name.clone(),
+                location: project.path.display().to_string(),
+                active: active == Some(&project.path),
+                settings: project_settings(&project.configuration),
+            })
+            .collect()
+    }
+    #[cfg(test)]
+    pub(crate) fn load_project_for_test(&mut self, path: &std::path::Path) {
+        self.files.load_project(path).unwrap();
+    }
     /// Report each document's file and whether closing it would lose work.
     /// Example: `owner.gui_document_storage()?` for one GUI snapshot.
     pub(super) fn gui_document_storage(
@@ -141,4 +159,15 @@ impl<
         }
         Ok(())
     }
+}
+
+fn project_settings(
+    configuration: &oblikovati_persistence::project_file::ProjectConfiguration,
+) -> Vec<(String, String)> {
+    vec![
+        ("Workspace".to_string(), configuration.workspace.clone()),
+        ("Libraries".to_string(), configuration.libraries.join(", ")),
+        ("Templates".to_string(), configuration.templates.clone()),
+        ("Design data".to_string(), configuration.design_data.clone()),
+    ]
 }

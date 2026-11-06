@@ -11,7 +11,9 @@ fn a_drawing_cannot_be_created_until_its_template_preview_is_accepted() {
         ..Default::default()
     };
     assert!(!chooser.can_create(&state));
-    chooser.use_template = true;
+    chooser.drawing_layout = Some(DrawingLayout::Template);
+    assert!(chooser.can_create(&state));
+    chooser.drawing_layout = Some(DrawingLayout::Assembly);
     assert!(chooser.can_create(&state));
 }
 #[test]
@@ -75,6 +77,41 @@ fn choosing_the_current_folder_adds_no_history() {
     let mut chooser = TemplateChooser::default();
     chooser.go_to(TemplateFolder::default());
     assert!(chooser.folders_behind.is_empty());
+}
+#[test]
+fn the_size_column_starts_increasing_and_then_reverses() {
+    assert_eq!(next_size_order(None), SizeOrder::Increasing);
+    assert_eq!(
+        next_size_order(Some(SizeOrder::Increasing)),
+        SizeOrder::Decreasing
+    );
+    assert_eq!(
+        next_size_order(Some(SizeOrder::Decreasing)),
+        SizeOrder::Increasing
+    );
+}
+#[test]
+fn tiles_follow_the_size_order_and_keep_the_gallery_order_without_one() {
+    use GuiTemplateKind::{Part, SheetMetal};
+    let state = GuiCommandState {
+        template_sizes: vec![(Part, 10), (SheetMetal, 20)],
+        ..Default::default()
+    };
+    let kinds = [SheetMetal, Part];
+    assert_eq!(ordered_kinds(&kinds, None, &state), kinds);
+    assert_eq!(
+        ordered_kinds(&kinds, Some(SizeOrder::Increasing), &state),
+        [Part, SheetMetal]
+    );
+    assert_eq!(
+        ordered_kinds(&kinds, Some(SizeOrder::Decreasing), &state),
+        [SheetMetal, Part]
+    );
+}
+#[test]
+fn an_unmeasured_template_says_so() {
+    assert_eq!(size_text(None), "-");
+    assert_eq!(size_text(Some(120)), "120 B");
 }
 #[test]
 fn opening_the_chooser_does_not_create_a_document_and_escape_cancels() {

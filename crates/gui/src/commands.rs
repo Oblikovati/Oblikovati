@@ -83,6 +83,14 @@ pub struct GuiPreviewImage {
     pub extent: [u32; 2],
     pub rgb: std::sync::Arc<Vec<[u8; 3]>>,
 }
+/// One loaded project, with the settings its dialog lists.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiProject {
+    pub name: String,
+    pub location: String,
+    pub active: bool,
+    pub settings: Vec<(String, String)>,
+}
 /// What the owner knows about one open document's file beyond its wire row.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiDocumentStorage {
@@ -103,6 +111,9 @@ pub struct GuiCommandState {
     pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
     pub document_storage: std::collections::BTreeMap<u64, GuiDocumentStorage>,
     pub prompts: oblikovati_model::application_prompts::PromptPreferences,
+    pub projects: Vec<GuiProject>,
+    /// What a new document from each template measures as a file, in bytes.
+    pub template_sizes: Vec<(crate::GuiTemplateKind, u64)>,
     pub document: Option<u64>,
     pub document_type: Option<oblikovati_api::types::DocumentType>,
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,

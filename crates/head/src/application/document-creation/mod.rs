@@ -4,7 +4,7 @@ use oblikovati_api::{
     client::{Caller, Client},
     wire::{ActivateDocumentArgs, CloseDocumentArgs, CreateDocumentArgs, SetDocumentUnitsArgs},
 };
-use oblikovati_gui::GuiDocumentTemplate;
+use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind};
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -35,6 +35,47 @@ impl<
         )?;
         Ok(true)
     }
+}
+/// Measure what each template creates by encoding it: built-in templates have no file on disk.
+/// Example: `gui_template_sizes()` for the chooser's Details view.
+pub(crate) fn gui_template_sizes() -> Vec<(GuiTemplateKind, u64)> {
+    static SIZES: std::sync::OnceLock<Vec<(GuiTemplateKind, u64)>> = std::sync::OnceLock::new();
+    SIZES
+        .get_or_init(|| {
+            TEMPLATE_KINDS
+                .into_iter()
+                .map(encoded_template_size)
+                .collect()
+        })
+        .clone()
+}
+const TEMPLATE_KINDS: [GuiTemplateKind; 5] = [
+    GuiTemplateKind::Part,
+    GuiTemplateKind::SheetMetal,
+    GuiTemplateKind::Assembly,
+    GuiTemplateKind::Drawing,
+    GuiTemplateKind::Presentation,
+];
+fn encoded_template_size(kind: GuiTemplateKind) -> (GuiTemplateKind, u64) {
+    let template = GuiDocumentTemplate {
+        kind,
+        ..Default::default()
+    };
+    let kind_id = match template.type_name() {
+        "assembly" => oblikovati_api::types::DOCUMENT_ASSEMBLY,
+        "drawing" => oblikovati_api::types::DOCUMENT_DRAWING,
+        "presentation" => oblikovati_api::types::DOCUMENT_PRESENTATION,
+        _ => oblikovati_api::types::DOCUMENT_PART,
+    };
+    let package =
+        oblikovati_persistence::package::DocumentPackage::empty(kind_id, template.name_prefix());
+    let package = if template.sub_type().is_empty() {
+        package
+    } else {
+        package.with_sub_type(template.sub_type())
+    };
+    let bytes = package.encode().map_or(0, |encoded| encoded.len() as u64);
+    (kind, bytes)
 }
 fn create_template<T: Caller>(
     client: &Client<T>,

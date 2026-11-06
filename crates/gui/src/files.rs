@@ -177,6 +177,7 @@ impl GuiDocumentFiles {
             || self.first_saves.is_waiting()
             || self.save_as.is_opening()
             || self.open.is_opening()
+            || self.templates.needs_frame()
     }
 }
 fn document_name(state: &GuiCommandState, document: u64) -> &str {

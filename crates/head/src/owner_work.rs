@@ -79,6 +79,8 @@ impl<
                 ui_scale: self.gui_ui_scale(),
                 theme,
                 color_scheme,
+                projects: self.gui_projects(),
+                template_sizes: document_creation::gui_template_sizes(),
                 ..Default::default()
             });
         };
@@ -116,6 +118,8 @@ impl<
             },
             documents: self.gui_document_rows()?,
             document_storage: self.gui_document_storage()?,
+            projects: self.gui_projects(),
+            template_sizes: document_creation::gui_template_sizes(),
             prompts: self.prompt_frequencies,
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),

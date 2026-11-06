@@ -108,6 +108,7 @@ fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, firs
 
 fn empty_owner_gui_state() -> GuiCommandState {
     GuiCommandState {
+        template_sizes: document_creation::gui_template_sizes(),
         color_scheme: Some(
             oblikovati_gui::GuiColorSchemeState::from_registry(
                 &oblikovati_model::color_scheme::ColorSchemeRegistry::default(),

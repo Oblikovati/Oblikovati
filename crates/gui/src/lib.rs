@@ -39,7 +39,7 @@ pub use theme_state::GuiThemeState;
 mod widget_abi;
 pub use commands::{
     GuiAuthoringContext, GuiCommandState, GuiDocumentStorage, GuiParameterMutation,
-    GuiPreviewImage, GuiShellAction,
+    GuiPreviewImage, GuiProject, GuiShellAction,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
