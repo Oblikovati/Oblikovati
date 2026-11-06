@@ -42,5 +42,17 @@ mouse clicks, scene filtering, picking, labels, and live tool lifetime. The nati
 acceptance path uses X11 mouse and keyboard input for mutations and MCPBridge
 queries and captures for observation.
 
+The full local gate passed all 13 crates, including all 337 head tests. Line
+coverage is 91.96% to 99.60%, duplicated lines are 0.97%, and Markdown lint has
+zero issues. Windows x64 GNU and macOS ARM64 host/GUI Clippy checks also passed.
+These compile checks do not claim native runtime coverage on those systems.
+
+The live X11 path created and edited a parameter-bound dimension, hid its sketch
+through the browser menu, verified that hidden edit clicks select nothing, tested
+undo/redo, and saved the hidden sketch. MCP captures showed the points and label
+leaving the viewport while the browser row and dimension remained in the model.
+A fresh process reopened the hidden sketch, retained its expression and label
+anchor, and restored its points and label through the browser Visibility menu.
+
 The complete cube and named-face acceptance remains a separate task. This change
 does not add a kernel profile or Extrude implementation.
