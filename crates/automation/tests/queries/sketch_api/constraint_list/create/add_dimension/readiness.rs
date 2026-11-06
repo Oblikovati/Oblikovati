@@ -57,3 +57,30 @@ fn dimension_iteration_budget_refuses_without_adopting_a_source_or_relation() {
         assert_eq!(owner_revision(&files, document), revision);
     }
 }
+
+#[test]
+fn redundant_driving_dimension_refuses_both_owners_and_can_be_retried_as_reference() {
+    for owner in [DOCUMENT_PART, DOCUMENT_ASSEMBLY] {
+        let (mut files, document, mut source) = fresh(owner);
+        for point in [1, 5] {
+            add(&mut files, &mut source, &request("fix", &[point])).unwrap();
+        }
+        let before = owned_geometry(&files, document).clone();
+        let revision = owner_revision(&files, document);
+        let mut input = dimension_request("distance", &[1, 5]);
+        input.orientation = "horizontal".into();
+        input.expression = "4 cm".into();
+        input.driven = false;
+        let error = create_dimension(&mut files, &mut source, &input).unwrap_err();
+        assert!(error.to_string().contains("redundant"), "{error}");
+        assert!(before.same_evaluated_state(owned_geometry(&files, document)));
+        assert_eq!(owner_revision(&files, document), revision);
+        input.driven = true;
+        assert_eq!(
+            create_dimension(&mut files, &mut source, &input)
+                .unwrap()
+                .parameter,
+            "d1"
+        );
+    }
+}

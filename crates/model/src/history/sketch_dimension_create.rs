@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DocumentSnapshot, RecipeReservations, sketch_relation_create::solved_sketch_dof};
+use super::{
+    DocumentSnapshot, RecipeReservations, sketch_relation_create::solved_sketch_numerical,
+};
 use crate::{
     document_sketch::{DocumentSketchId, DocumentSketchSolveOutcome},
     quantity::Quantity,
@@ -158,22 +160,44 @@ impl DocumentSnapshot {
         solved: &DocumentSketchSolveOutcome,
         options: SolveOptions,
     ) -> Result<(usize, Vec<SketchError>), SketchError> {
-        match solved_sketch_dof(solved, sketch) {
-            Ok(dof) => Ok((dof, Vec::new())),
+        match solved_sketch_numerical(solved, sketch) {
+            Ok(numerical) => self.available_dimension_structure(numerical),
             Err(SketchError::Parameter { .. }) => {
-                let anchors = self.resolve_sketch_projected_points(sketch)?;
-                let analysis = self
-                    .sketches
-                    .get(sketch)?
-                    .geometry()
-                    .analyze_available_targets(
-                        &self.parameters,
-                        &anchors,
-                        options.rank_tolerance,
-                    )?;
-                Ok((analysis.structure.degrees_of_freedom, analysis.unavailable))
+                self.unavailable_dimension_structure(sketch, options)
             }
             Err(cause) => Err(cause),
         }
+    }
+    fn available_dimension_structure(
+        &self,
+        numerical: &oblikovati_solve::nonlinear::NonlinearResult,
+    ) -> Result<(usize, Vec<SketchError>), SketchError> {
+        use oblikovati_api::types::OVER_CONSTRAINED_APPLY_DRIVING;
+        let structure = &numerical.structure;
+        let explicit_driving = self.effective_sketch_settings().over_constrained_behavior
+            == OVER_CONSTRAINED_APPLY_DRIVING;
+        if numerical.termination == oblikovati_solve::nonlinear::SolveTermination::Converged
+            && structure.redundant_equations != 0
+            && !explicit_driving
+        {
+            return Err(SketchError::Definition(format!(
+                "dimension candidate has {} redundant equations: expected zero; use a reference dimension for a measured relation",
+                structure.redundant_equations
+            )));
+        }
+        Ok((structure.degrees_of_freedom, Vec::new()))
+    }
+    fn unavailable_dimension_structure(
+        &self,
+        sketch: DocumentSketchId,
+        options: SolveOptions,
+    ) -> Result<(usize, Vec<SketchError>), SketchError> {
+        let anchors = self.resolve_sketch_projected_points(sketch)?;
+        let analysis = self
+            .sketches
+            .get(sketch)?
+            .geometry()
+            .analyze_available_targets(&self.parameters, &anchors, options.rank_tolerance)?;
+        Ok((analysis.structure.degrees_of_freedom, analysis.unavailable))
     }
 }

@@ -91,6 +91,14 @@ pub(super) fn solved_sketch_dof(
     solved: &DocumentSketchSolveOutcome,
     sketch: DocumentSketchId,
 ) -> Result<usize, SketchError> {
+    Ok(solved_sketch_numerical(solved, sketch)?
+        .structure
+        .degrees_of_freedom)
+}
+pub(super) fn solved_sketch_numerical(
+    solved: &DocumentSketchSolveOutcome,
+    sketch: DocumentSketchId,
+) -> Result<&oblikovati_solve::nonlinear::NonlinearResult, SketchError> {
     let report = solved
         .report
         .reports
@@ -103,7 +111,7 @@ pub(super) fn solved_sketch_dof(
             ))
         })?;
     let result = report.result.as_ref().map_err(Clone::clone)?;
-    Ok(result.numerical().structure.degrees_of_freedom)
+    Ok(result.numerical())
 }
 impl SketchGeometricCreationError {
     fn cause(&self) -> &(dyn Error + 'static) {

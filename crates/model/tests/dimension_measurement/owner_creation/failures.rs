@@ -190,3 +190,14 @@ fn a_dimension_iteration_limit_is_not_reported_as_success() {
     assert!(history.snapshot().parameters.ids().is_empty());
     history.abort(&token).unwrap();
 }
+
+#[test]
+fn redundant_driving_dimension_is_refused_before_adoption() {
+    let mut history = history(fixed_distance_snapshot());
+    let before = history.snapshot().sketches.clone();
+    let cause = create(&mut history, &distance_request("5 cm", false)).unwrap_err();
+    assert!(cause.contains("redundant"), "{cause}");
+    assert!(history.snapshot().sketches.same_evaluated_state(&before));
+    assert!(history.snapshot().parameters.ids().is_empty());
+    create(&mut history, &distance_request("5 cm", true)).unwrap();
+}
