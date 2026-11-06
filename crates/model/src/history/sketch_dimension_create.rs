@@ -7,7 +7,9 @@ use crate::{
 };
 use oblikovati_solve::nonlinear::SolveOptions;
 mod error;
+mod role;
 pub use error::SketchDimensionCreationError;
+use role::DimensionRolePolicy;
 /// One authored dimension with a fresh owned Model formula and optional creation metadata.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchDimensionCreation {
@@ -42,14 +44,39 @@ impl DocumentSnapshot {
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
+        self.create_dimension_with_role(sketch, input, options, ids, DimensionRolePolicy::Explicit)
+    }
+    fn create_dimension_with_role(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchDimensionCreation,
+        options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+        policy: DimensionRolePolicy,
+    ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
         let geometry = self.prepare_dimension_creation(sketch, input, options)?;
+        let probe = self.prepare_dimension_role(sketch, &geometry, input, policy, options)?;
         let reserved = self.reserve_dimension_creation(sketch, ids)?;
         let mut candidate = self.clone();
         candidate.append_owned_dimension(sketch, input, geometry, &reserved)?;
+        candidate.classify_dimension_role(sketch, reserved.constraint, probe, options)?;
         let report = candidate.evaluate_created_dimension(sketch, &reserved, options)?;
+        candidate.confirm_dimension_creation(sketch, &report)?;
         self.parameters = candidate.parameters;
         self.sketches = candidate.sketches;
         Ok(report)
+    }
+    fn confirm_dimension_creation(
+        &self,
+        sketch: DocumentSketchId,
+        report: &SketchDimensionCreationReport,
+    ) -> Result<(), SketchDimensionCreationError> {
+        // #3824: DOF cannot certify a numerical result with available targets.
+        if report.unavailable_targets.is_empty() {
+            self.require_converged_sketch(sketch)
+                .map_err(SketchDimensionCreationError::Readiness)?;
+        }
+        Ok(())
     }
     fn prepare_dimension_creation(
         &self,

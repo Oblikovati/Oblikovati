@@ -8,6 +8,7 @@ use std::{error::Error, fmt};
 #[derive(Clone, Debug, PartialEq)]
 pub enum SketchDimensionCreationError {
     Sketch(SketchError),
+    Readiness(crate::document_sketch::SketchReadinessError),
     Parameter(ParameterError<u64>),
     Identity(RecipeIdError),
     ConstraintIdentity(SketchConstraintReservationError),
@@ -16,6 +17,7 @@ impl SketchDimensionCreationError {
     fn cause(&self) -> &(dyn Error + 'static) {
         match self {
             Self::Sketch(cause) => cause,
+            Self::Readiness(cause) => cause,
             Self::Parameter(cause) => cause,
             Self::Identity(cause) => cause,
             Self::ConstraintIdentity(cause) => cause,

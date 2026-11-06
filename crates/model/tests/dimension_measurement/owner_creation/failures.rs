@@ -147,3 +147,46 @@ fn incompatible_and_undefined_math_formulas_remain_authored_and_sick() {
         assert_failed_sketch_health(&history);
     }
 }
+
+#[test]
+fn incompatible_available_target_refuses_adoption_and_retires_its_identifiers() {
+    let mut history = history(fixed_distance_snapshot());
+    let before = history.snapshot().sketches.clone();
+    let parameters = history.snapshot().parameters.ids().to_vec();
+    let generation = history.generation();
+    let input = distance_request("1 cm", false);
+    let token = history.begin("Refused dimension").unwrap();
+    let error = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_dimension(DocumentSketchId(1), &input, Default::default(), ids)
+        })
+        .unwrap_err();
+    assert!(error.to_string().contains("expected Converged"), "{error}");
+    assert!(history.snapshot().sketches.same_evaluated_state(&before));
+    assert_eq!(history.snapshot().parameters.ids(), parameters);
+    assert_eq!(history.generation(), generation);
+    history.abort(&token).unwrap();
+    let report = create(&mut history, &distance_request("5 cm", true)).unwrap();
+    assert_eq!(report.parameter_name, "d1");
+    assert_eq!(report.parameter, 2);
+}
+#[test]
+fn a_dimension_iteration_limit_is_not_reported_as_success() {
+    let mut history = history(snapshot());
+    let before = history.snapshot().sketches.clone();
+    let input = distance_request("1 cm", false);
+    let token = history.begin("Iteration limit").unwrap();
+    let options = oblikovati_solve::nonlinear::SolveOptions {
+        max_iterations: 0,
+        ..Default::default()
+    };
+    let error = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_dimension(DocumentSketchId(1), &input, options, ids)
+        })
+        .unwrap_err();
+    assert!(error.to_string().contains("IterationLimit"), "{error}");
+    assert!(history.snapshot().sketches.same_evaluated_state(&before));
+    assert!(history.snapshot().parameters.ids().is_empty());
+    history.abort(&token).unwrap();
+}

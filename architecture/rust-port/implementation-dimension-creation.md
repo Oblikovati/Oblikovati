@@ -75,6 +75,11 @@ inspection neither solves nor changes recipe state; it never substitutes zero
 or reports convergence. Healthy invalid geometry or metric domains remain errors.
 Later parameter binding repairs the source and triggers normal verification.
 
+[ADR-0032](../decisions/ADR-0032-converged-dimension-authoring.md) now requires
+convergence before adoption when all target sources are available (#3824).
+Numerical nonconvergence is refused; DOF alone is not successful creation.
+Unavailable-source authoring and repair above retain their explicit contract.
+
 Session and workspace commands prepare a projected reply before adoption. Their
 normal event, veto, group, recompute, and history boundaries apply. Tests cover all
 24 native forms with healthy and unresolved sources, formula propagation,
