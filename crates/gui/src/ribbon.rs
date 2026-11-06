@@ -42,12 +42,17 @@ pub(crate) struct DocumentRibbon {
     pub active: RibbonTab,
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
     pub display: crate::application::ribbon_display::RibbonDisplayState,
+    settling_frames: u8,
 }
 pub(crate) struct RibbonFrame {
     pub tabs: Vec<RibbonTab>,
     pub select: Option<RibbonTab>,
 }
+const TAB_SETTLING_FRAMES: u8 = 2;
 impl DocumentRibbon {
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.settling_frames > 0
+    }
     pub(crate) fn prepare(&mut self, state: &GuiCommandState) -> RibbonFrame {
         let key = document_ribbon_key(state);
         let sketch = state.authoring == GuiAuthoringContext::Sketch;
@@ -55,7 +60,10 @@ impl DocumentRibbon {
         let tabs = document_tabs(&key, sketch, sheet_metal);
         let identity = (key, sketch, sheet_metal);
         let changed = self.previous.as_ref() != Some(&identity);
+        self.settling_frames = self.settling_frames.saturating_sub(1);
         if changed {
+            // Dear ImGui lays a new tab out in its second frame, and GUI frames wait for an event.
+            self.settling_frames = TAB_SETTLING_FRAMES;
             self.active = contextual_tab(&tabs, sketch);
             self.previous = Some(identity);
         }

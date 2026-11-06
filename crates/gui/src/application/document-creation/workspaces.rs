@@ -14,6 +14,7 @@ const INSERT: &str = "Insert";
 const SHEET_RATIO: f32 = 420. / 297.;
 const SHEET_MARGIN: f32 = 12.;
 const BORDER_INSET: f32 = 12.;
+const TITLE_BLOCK_SIZE: [f32; 2] = [280., 70.];
 const SHEET_COLOR: [f32; 4] = [0.93, 0.93, 0.91, 1.];
 const LINE_COLOR: [f32; 4] = [0.1, 0.1, 0.12, 1.];
 const SNAPSHOT_WIDTH: f32 = 220.;
@@ -60,7 +61,13 @@ impl DocumentWorkspaces {
         self.expecting_presentation || self.insert.opening
     }
     /// Draw the active document's surroundings; example: `workspaces.panel(ui, &state, area)`.
-    pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState, area: WorkspaceArea) {
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        area: WorkspaceArea,
+        detached: bool,
+    ) {
         let created = state.document != self.last_document;
         self.last_document = state.document;
         let presentation = state.document_type == Some(DOCUMENT_PRESENTATION);
@@ -68,7 +75,7 @@ impl DocumentWorkspaces {
             self.insert.request();
         }
         match state.document_type {
-            Some(DOCUMENT_DRAWING) => draw_sheet(ui, active_name(state), area),
+            Some(DOCUMENT_DRAWING) if !detached => draw_sheet(ui, active_name(state), area),
             Some(DOCUMENT_PRESENTATION) => presentation_panels(ui, area),
             _ => {}
         }
@@ -98,8 +105,22 @@ fn sheet_rectangle(area: WorkspaceArea) -> ([f32; 2], [f32; 2]) {
 }
 /// Drawn over the viewport, behind every window: the host has no drawing renderer yet.
 fn draw_sheet(ui: &Ui, name: &str, area: WorkspaceArea) {
+    sheet_on_list(&ui.get_background_draw_list(), name, area);
+}
+/// A sheet in a window's own content; example: a drawing detached from the tab strip.
+pub(crate) fn draw_sheet_in_window(ui: &Ui, name: &str) {
+    let minimum = ui.cursor_screen_pos();
+    let size = ui.content_region_avail();
+    let area = WorkspaceArea {
+        left: minimum[0],
+        top: minimum[1],
+        right: minimum[0] + size[0],
+        bottom: minimum[1] + size[1],
+    };
+    sheet_on_list(&ui.get_window_draw_list(), name, area);
+}
+fn sheet_on_list(list: &imgui::DrawListMut<'_>, name: &str, area: WorkspaceArea) {
     let (minimum, maximum) = sheet_rectangle(area);
-    let list = ui.get_background_draw_list();
     list.add_rect(minimum, maximum, SHEET_COLOR)
         .filled(true)
         .build();
@@ -107,10 +128,13 @@ fn draw_sheet(ui: &Ui, name: &str, area: WorkspaceArea) {
     let border_maximum = maximum.map(|value| value - BORDER_INSET);
     list.add_rect(border_minimum, border_maximum, LINE_COLOR)
         .build();
-    let title_minimum = [border_maximum[0] - 280., border_maximum[1] - 70.];
+    let title_minimum = [
+        (border_maximum[0] - TITLE_BLOCK_SIZE[0]).max(border_minimum[0]),
+        (border_maximum[1] - TITLE_BLOCK_SIZE[1]).max(border_minimum[1]),
+    ];
     list.add_rect(title_minimum, border_maximum, LINE_COLOR)
         .build();
-    let divider = title_minimum[1] + 35.;
+    let divider = title_minimum[1] + TITLE_BLOCK_SIZE[1] * 0.5;
     list.add_line(
         [title_minimum[0], divider],
         [border_maximum[0], divider],

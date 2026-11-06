@@ -204,7 +204,7 @@ fn tab_closes(state: &GuiCommandState, keep: Option<u64>) -> Vec<GuiShellAction>
 /// Example: `document_keys(ui, switch_requested, state, actions)` once per frame.
 pub(crate) fn document_keys(
     ui: &Ui,
-    switch_requested: bool,
+    switch_requested: Option<DocumentStep>,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
@@ -214,16 +214,26 @@ pub(crate) fn document_keys(
     if ui.io().key_ctrl && ui.is_key_pressed(imgui::Key::W) && !state.transaction_open {
         actions.extend(state.document.map(close));
     }
-    if switch_requested {
-        actions.extend(next_document(state).filter(|action| action.dispatchable(state)));
+    if let Some(step) = switch_requested {
+        actions.extend(neighbor_document(state, step).filter(|action| action.dispatchable(state)));
     }
 }
-/// The document after the active one in tab order, wrapping past the last.
-fn next_document(state: &GuiCommandState) -> Option<GuiShellAction> {
+/// Which way Control+Tab moves through the tabs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum DocumentStep {
+    Next,
+    Previous,
+}
+/// The document beside the active one in tab order, wrapping past either end.
+fn neighbor_document(state: &GuiCommandState, step: DocumentStep) -> Option<GuiShellAction> {
     let rows: Vec<u64> = visible(state).map(|row| row.id).collect();
     let active = rows.iter().position(|id| Some(*id) == state.document)?;
-    let next = rows[(active + 1) % rows.len()];
-    (next != rows[active]).then(|| activate(next))
+    let offset = match step {
+        DocumentStep::Next => 1,
+        DocumentStep::Previous => rows.len() - 1,
+    };
+    let neighbor = rows[(active + offset) % rows.len()];
+    (neighbor != rows[active]).then(|| activate(neighbor))
 }
 #[cfg(test)]
 #[path = "../../../tests/application/document-tabs/commands.rs"]

@@ -44,8 +44,8 @@ pub struct GuiFrameEngine {
     known_documents: Vec<oblikovati_api::wire::DocumentInfo>,
     known_document_type: Option<oblikovati_api::types::DocumentType>,
     workspaces: crate::application::document_creation::workspaces::DocumentWorkspaces,
-    /// Modifier state across frames: Control and Tab can arrive in different frames.
-    control_held: bool,
+    /// Modifier state across frames: a modifier and Tab can arrive in different frames.
+    modifiers_held: crate::GuiModifiers,
     theme_editor: crate::theme_editor::GuiThemeEditor,
 }
 impl GuiFrameEngine {
@@ -68,7 +68,7 @@ impl GuiFrameEngine {
             known_documents: Vec::new(),
             known_document_type: None,
             workspaces: Default::default(),
-            control_held: false,
+            modifiers_held: Default::default(),
             theme_editor: Default::default(),
         })
     }
@@ -185,7 +185,7 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 }
 impl GuiFrameEngine {
     fn draw_controls(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
-        let keys = prepare_frame_inputs(&mut self.context, request, &mut self.control_held);
+        let keys = prepare_frame_inputs(&mut self.context, request, &mut self.modifiers_held);
         let ui = self.context.frame();
         crate::dimension_labels::draw_dimension_labels(ui, request);
         let mut selected = Vec::new();
@@ -220,7 +220,8 @@ impl GuiFrameEngine {
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let area = self.workspace.document_area(logical, band_height);
-        self.workspaces.panel(ui, &request.commands, area);
+        let detached = self.document_tabs.is_detached(request.commands.document);
+        self.workspaces.panel(ui, &request.commands, area, detached);
         self.document_files
             .panel(ui, &request.commands, &mut selected);
         self.preferences.panel(ui, &request.commands, &mut selected);
@@ -260,7 +261,7 @@ impl GuiFrameEngine {
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;
         let mut activity = frame_activity()?;
-        activity.pending_layout |= self.ribbon.panels.pending_layout;
+        activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |= self.workspace.pending_layout;
         activity.pending_layout |= self.document_files.needs_frame()
             || self.document_tabs.needs_frame()
@@ -279,12 +280,12 @@ impl GuiFrameEngine {
 #[derive(Default)]
 struct FrameKeys {
     tool_keyboard: bool,
-    switch_document: bool,
+    switch_document: Option<crate::application::document_tabs::DocumentStep>,
 }
 fn prepare_frame_inputs(
     context: &mut Context,
     request: &GuiFrameRequest,
-    control_held: &mut bool,
+    held: &mut crate::GuiModifiers,
 ) -> FrameKeys {
     let io = context.io_mut();
     io.display_size =
@@ -294,7 +295,7 @@ fn prepare_frame_inputs(
     let mut keys = FrameKeys::default();
     for event in &request.events {
         if let crate::GuiInputEvent::Modifiers(modifiers) = event {
-            *control_held = modifiers.control;
+            *held = *modifiers;
         }
         if tool_transaction_key(
             event,
@@ -305,14 +306,23 @@ fn prepare_frame_inputs(
             continue;
         }
         // Dear ImGui would read Ctrl+Tab as its own window switcher; here it switches documents.
-        if document_switch_key(event, *control_held) {
-            keys.switch_document |=
-                matches!(event, crate::GuiInputEvent::Key { pressed: true, .. });
+        if document_switch_key(event, held.control) {
+            if matches!(event, crate::GuiInputEvent::Key { pressed: true, .. }) {
+                keys.switch_document = Some(document_step(*held));
+            }
             continue;
         }
         apply_input(io, event, request.layout_scale());
     }
     keys
+}
+fn document_step(held: crate::GuiModifiers) -> crate::application::document_tabs::DocumentStep {
+    use crate::application::document_tabs::DocumentStep;
+    if held.shift {
+        DocumentStep::Previous
+    } else {
+        DocumentStep::Next
+    }
 }
 fn document_switch_key(event: &crate::GuiInputEvent, control_held: bool) -> bool {
     control_held

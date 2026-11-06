@@ -23,12 +23,24 @@ fn only_visible_documents_are_offered() {
 #[test]
 fn the_keyboard_moves_to_the_next_tab_and_wraps() {
     let rows = [(1, true), (2, false), (3, true)];
-    assert_eq!(next_document(&state(1, &rows)), Some(activate(3)));
-    assert_eq!(next_document(&state(3, &rows)), Some(activate(1)));
+    let next = DocumentStep::Next;
+    assert_eq!(neighbor_document(&state(1, &rows), next), Some(activate(3)));
+    assert_eq!(neighbor_document(&state(3, &rows), next), Some(activate(1)));
+    let previous = DocumentStep::Previous;
+    assert_eq!(
+        neighbor_document(&state(3, &rows), previous),
+        Some(activate(1))
+    );
+    assert_eq!(
+        neighbor_document(&state(1, &rows), previous),
+        Some(activate(3))
+    );
 }
 #[test]
 fn one_open_document_has_nowhere_to_switch() {
-    assert_eq!(next_document(&state(1, &[(1, true)])), None);
+    let alone = state(1, &[(1, true)]);
+    assert_eq!(neighbor_document(&alone, DocumentStep::Next), None);
+    assert_eq!(neighbor_document(&alone, DocumentStep::Previous), None);
 }
 #[test]
 fn close_tabs_keeps_its_own_tab_and_close_all_keeps_none() {

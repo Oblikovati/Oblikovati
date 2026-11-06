@@ -86,6 +86,25 @@ impl ApplicationWorld {
         self.pump(vec![event(true, modifiers)]);
         self.pump(vec![event(false, Default::default())]);
     }
+    /// Control+Shift plus a key, sent as one press with its modifiers.
+    pub fn control_shift_key(&mut self, key: ViewportPhysicalKey) {
+        let modifiers = oblikovati_viewport::ViewportModifiers {
+            control: true,
+            shift: true,
+            ..Default::default()
+        };
+        let event = |pressed, modifiers| {
+            ViewportEvent::Input(ViewportInput::PhysicalKey {
+                key,
+                layout_key: key,
+                pressed,
+                command: None,
+                modifiers,
+            })
+        };
+        self.pump(vec![event(true, modifiers)]);
+        self.pump(vec![event(false, Default::default())]);
+    }
     pub fn press_save_shortcut(&mut self) {
         self.command_key(ViewportPhysicalKey::S, ViewportKey::Save);
     }
