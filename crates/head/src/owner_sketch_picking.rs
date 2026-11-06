@@ -165,7 +165,7 @@ fn pick_witness(
         .collect::<std::collections::BTreeSet<_>>();
     // Go app/sketch_select.go gives every standalone or defining point priority over curves.
     let points = nearest_screen_candidate(point_ids.iter().copied(), &query, plane, pixel, window)?;
-    if points.is_some() {
+    if filter.accepts(&oblikovati_api::types::SKETCH_ENTITY_POINT) && points.is_some() {
         return Ok(points);
     }
     let curves = eligible_curves(sketch, &point_ids, filter)?;

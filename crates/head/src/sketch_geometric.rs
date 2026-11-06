@@ -18,16 +18,24 @@ use oblikovati_session::selection::SketchPick;
 use operands::OperandCategory::{Circular, Line, Point};
 
 pub(crate) fn accepts(choice: GuiSketchConstraint, kind: &SketchEntityKind) -> bool {
-    matches!(
-        (choice, operands::category(kind)),
-        (_, Some(Point | Line)) | (GuiSketchConstraint::Coincident, Some(Circular))
-    )
+    match choice {
+        GuiSketchConstraint::Parallel | GuiSketchConstraint::Perpendicular => {
+            operands::category(kind) == Some(Line)
+        }
+        _ => matches!(
+            (choice, operands::category(kind)),
+            (_, Some(Point | Line)) | (GuiSketchConstraint::Coincident, Some(Circular))
+        ),
+    }
 }
 impl SketchGeometricState {
     pub(crate) fn prompt(&self) -> &'static str {
         match self.choice {
             GuiSketchConstraint::Horizontal | GuiSketchConstraint::Vertical => {
                 "Select a line or two points. Escape cancels."
+            }
+            GuiSketchConstraint::Parallel | GuiSketchConstraint::Perpendicular => {
+                "Select two lines. Escape cancels."
             }
             GuiSketchConstraint::Fix => "Select a point or line to fix. Escape cancels.",
             GuiSketchConstraint::Coincident => {
@@ -53,6 +61,9 @@ impl SketchGeometricState {
                 self.alignment_recipe(&points, &lines)
             }
             GuiSketchConstraint::Coincident => self.coincident_recipe(&points, &lines, &circular),
+            GuiSketchConstraint::Parallel | GuiSketchConstraint::Perpendicular => {
+                self.line_pair_recipe(&lines)
+            }
             GuiSketchConstraint::Fix => None,
         };
         Ok(recipe
@@ -73,13 +84,27 @@ impl SketchGeometricState {
         let kind = match self.choice {
             GuiSketchConstraint::Horizontal => GEO_CONSTRAINT_HORIZONTAL,
             GuiSketchConstraint::Vertical => GEO_CONSTRAINT_VERTICAL,
-            GuiSketchConstraint::Coincident | GuiSketchConstraint::Fix => return None,
+            _ => return None,
         };
         if let Some(line) = lines.first() {
             return Some((kind, vec![line.0]));
         }
         let [first, second, ..] = points else {
             return None;
+        };
+        Some((kind, vec![first.0, second.0]))
+    }
+    fn line_pair_recipe(
+        &self,
+        lines: &[SketchEntityId],
+    ) -> Option<(GeometricConstraintKind, Vec<u64>)> {
+        let [first, second, ..] = lines else {
+            return None;
+        };
+        let kind = match self.choice {
+            GuiSketchConstraint::Parallel => GEO_CONSTRAINT_PARALLEL,
+            GuiSketchConstraint::Perpendicular => GEO_CONSTRAINT_PERPENDICULAR,
+            _ => return None,
         };
         Some((kind, vec![first.0, second.0]))
     }
