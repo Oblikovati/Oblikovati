@@ -29,8 +29,18 @@ fn an_open_transaction_or_no_selection_blocks_creation() {
 #[test]
 fn every_view_has_its_label_and_only_icon_sizes_change_the_row_height() {
     let labels: Vec<&str> = TemplateView::ALL.map(TemplateView::label).into();
-    assert_eq!(labels, ["Large Icons", "Small Icons", "List", "Details"]);
-    assert!(TemplateView::LargeIcons.row_height() > TemplateView::SmallIcons.row_height());
+    assert_eq!(
+        labels,
+        [
+            "Large Icons",
+            "Medium Icons",
+            "Small Icons",
+            "List",
+            "Details"
+        ]
+    );
+    assert!(TemplateView::LargeIcons.row_height() > TemplateView::MediumIcons.row_height());
+    assert!(TemplateView::MediumIcons.row_height() > TemplateView::SmallIcons.row_height());
     assert_eq!(TemplateView::List.row_height(), 0.);
     assert_eq!(TemplateView::Details.row_height(), 0.);
 }

@@ -21,14 +21,16 @@ pub(crate) struct TemplateChooser {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum TemplateView {
     LargeIcons,
+    MediumIcons,
     SmallIcons,
     #[default]
     List,
     Details,
 }
 impl TemplateView {
-    const ALL: [Self; 4] = [
+    const ALL: [Self; 5] = [
         Self::LargeIcons,
+        Self::MediumIcons,
         Self::SmallIcons,
         Self::List,
         Self::Details,
@@ -36,6 +38,7 @@ impl TemplateView {
     fn label(self) -> &'static str {
         match self {
             Self::LargeIcons => "Large Icons",
+            Self::MediumIcons => "Medium Icons",
             Self::SmallIcons => "Small Icons",
             Self::List => "List",
             Self::Details => "Details",
@@ -44,7 +47,8 @@ impl TemplateView {
     /// Zero lets the row take its text's own height.
     fn row_height(self) -> f32 {
         match self {
-            Self::LargeIcons => 48.,
+            Self::LargeIcons => 56.,
+            Self::MediumIcons => 40.,
             Self::SmallIcons => 28.,
             Self::List | Self::Details => 0.,
         }
