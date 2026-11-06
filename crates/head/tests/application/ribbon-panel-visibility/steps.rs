@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{ApplicationWorld, ribbon_docking::open_context_menu};
+use super::{
+    ApplicationWorld,
+    ribbon_docking::{dock_ribbon_top, open_context_menu, undock_ribbon},
+};
 use cucumber::{given, then, when};
 const PARAMETERS: &str = "Parameters";
 
@@ -38,6 +41,8 @@ fn parameters_hidden(world: &mut ApplicationWorld) {
 }
 #[when("I open the ribbon context menu and expand Show Panels")]
 #[when("I open Show Panels on the left-docked ribbon")]
+#[when("I open Show Panels on the floating ribbon")]
+#[when("I open Show Panels on the top ribbon")]
 #[when("I open the compact ribbon context menu and expand Show Panels")]
 #[when("I reopen Show Panels")]
 #[when("I open the View ribbon context menu and expand Show Panels")]
@@ -175,6 +180,9 @@ fn model_docked_left(world: &mut ApplicationWorld) {
 #[given("the 3D Model ribbon is docked at the top with Modify visible")]
 #[then("the Modify group returns to the side-docked ribbon")]
 #[then("the Modify group returns to the left-docked ribbon")]
+#[then("the Modify group appears in the floating ribbon")]
+#[then("the Modify panel is visible in the top ribbon")]
+#[then("the Modify panel is visible again")]
 fn modify_visible(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
 }
@@ -190,6 +198,9 @@ fn toggle_modify(world: &mut ApplicationWorld) {
 }
 #[then("the Modify group disappears from the side-docked ribbon")]
 #[then("the Modify panel disappears from the ribbon")]
+#[then("the floating ribbon does not show the Modify group")]
+#[then("the floating ribbon no longer shows the Modify group")]
+#[then("the top ribbon does not show the Modify panel")]
 #[then("the Modify group remains hidden")]
 fn modify_gone(world: &mut ApplicationWorld) {
     world.expect_no_text("Modify");
@@ -225,4 +236,60 @@ fn is_docked_left(world: &mut ApplicationWorld) {
         "column at {position:?}: expected the left edge"
     );
     world.expect_text("3D Model");
+}
+#[when("I undock the ribbon")]
+fn undock(world: &mut ApplicationWorld) {
+    undock_ribbon(world);
+}
+#[given("the floating 3D Model ribbon shows the Modify group")]
+fn floating_with_modify(world: &mut ApplicationWorld) {
+    undock_ribbon(world);
+    world.expect_text("Modify");
+}
+#[when("I dock the ribbon at the top")]
+fn dock_top(world: &mut ApplicationWorld) {
+    dock_ribbon_top(world);
+}
+const PATTERN: &str = "Pattern";
+#[given("the expanded 3D Model ribbon shows Modify and Pattern")]
+fn modify_and_pattern(world: &mut ApplicationWorld) {
+    world.expect_text("Modify");
+    world.expect_text(PATTERN);
+}
+#[when("I hide Pattern through Show Panels")]
+fn hide_pattern(world: &mut ApplicationWorld) {
+    expand_show_panels(world);
+    toggle_panel(world, PATTERN);
+}
+#[then("neither Modify nor Pattern is visible in the ribbon")]
+fn neither_visible(world: &mut ApplicationWorld) {
+    world.expect_no_text("Modify");
+    world.expect_no_text(PATTERN);
+}
+#[then("Modify and Pattern are both unchecked")]
+fn both_unchecked(world: &mut ApplicationWorld) {
+    assert!(!world.checked("Modify"), "expected Modify unchecked");
+    assert!(!world.checked(PATTERN), "expected Pattern unchecked");
+}
+#[then("Modify appears in the ribbon")]
+fn modify_appears(world: &mut ApplicationWorld) {
+    world.expect_text("Modify");
+}
+#[then("Pattern remains hidden")]
+fn pattern_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text(PATTERN);
+}
+#[then("Modify is checked and Pattern is unchecked")]
+fn modify_checked_only(world: &mut ApplicationWorld) {
+    assert!(world.checked("Modify"), "expected Modify checked");
+    assert!(!world.checked(PATTERN), "expected Pattern unchecked");
+}
+#[when("I select Pattern")]
+fn select_pattern(world: &mut ApplicationWorld) {
+    toggle_panel(world, PATTERN);
+}
+#[then("both panels are visible in the ribbon")]
+fn both_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Modify");
+    world.expect_text(PATTERN);
 }

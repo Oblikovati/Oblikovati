@@ -32,6 +32,7 @@ pub(crate) enum RibbonPanel {
     PartCreate,
     PartModify,
     PartWorkFeatures,
+    PartPattern,
     PartNotes,
     PresentationModel,
 }
@@ -56,6 +57,7 @@ impl RibbonPanel {
             Self::DrawingModify | Self::PartModify => "Modify",
             Self::PartWorkFeatures => "Work Features",
             Self::PartNotes => "Notes",
+            Self::PartPattern => "Pattern",
             Self::DrawingSketch => "Sketch",
             Self::DrawingSheets => "Sheets",
             Self::AnnotateDimension => "Dimension",
@@ -90,6 +92,7 @@ impl RibbonPanel {
             | Self::PartCreate
             | Self::PartModify
             | Self::PartWorkFeatures
+            | Self::PartPattern
             | Self::PartNotes
             | Self::PresentationModel => {
                 return None;
@@ -344,7 +347,14 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
     use RibbonPanel::*;
     match tab {
         RibbonTab::GetStarted => vec![Launch],
-        RibbonTab::Model => vec![Sketch, PartCreate, PartModify, PartWorkFeatures, Parameters],
+        RibbonTab::Model => vec![
+            Sketch,
+            PartCreate,
+            PartModify,
+            PartWorkFeatures,
+            PartPattern,
+            Parameters,
+        ],
         RibbonTab::SheetMetal => vec![SheetMetalTools, Sketch],
         RibbonTab::Assemble => vec![Component],
         RibbonTab::PlaceViews => vec![DrawingViews, DrawingModify, DrawingSketch, DrawingSheets],

@@ -43,7 +43,8 @@ fn choose_position(world: &mut ApplicationWorld, position: &str) {
     world.click_text(position);
     world.pump(Vec::new());
 }
-fn undock(world: &mut ApplicationWorld) {
+pub(super) fn undock_ribbon(world: &mut ApplicationWorld) {
+    close_ribbon_menus(world);
     open_context_menu(world);
     world.click_text("Undock Ribbon");
     world.pump(Vec::new());
@@ -219,7 +220,7 @@ fn top_from_positions(world: &mut ApplicationWorld) {
 #[given("the ribbon is floating with the 3D Model tab selected")]
 #[given("the floating ribbon shows the 3D Model groups at the top of its scroll area")]
 fn floating_on_model(world: &mut ApplicationWorld) {
-    undock(world);
+    undock_ribbon(world);
     expect_floating(world);
     world.expect_text("3D Model");
 }
@@ -417,4 +418,7 @@ fn sheet_metal_tabs(world: &mut ApplicationWorld) {
 fn sheet_metal_active(world: &mut ApplicationWorld) {
     let sheet_metal = *world.parts.last().expect("expected the sheet-metal part");
     assert_eq!(world.state().document, Some(sheet_metal));
+}
+pub(super) fn dock_ribbon_top(world: &mut ApplicationWorld) {
+    choose_position(world, "Top");
 }
