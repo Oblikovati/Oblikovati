@@ -118,7 +118,9 @@ mod sketch_geometric;
 #[cfg(target_os = "linux")]
 mod sketch_tool;
 
+#[cfg(target_os = "linux")]
 mod sketch_dimension;
+#[cfg(target_os = "linux")]
 mod sketch_operands;
 
 mod dimension_annotations;

@@ -78,3 +78,17 @@ without a text point, extension/leader graphics, label picking/dragging and
 post-placement dimension editing remain separate port work. General Dimension
 creation does not complete ribbon/browser parity or the full cube, Extrude and
 named-face journey. The tracked Martensite solid-adapter limits still apply.
+
+## Platform admission follow-up
+
+The upstream platform repair for [#3795](https://github.com/Oblikovati/Oblikovati/issues/3795)
+is integrated without dropping the feature's history. Private dimension state
+and operand modules follow their Linux desktop-owner callers. Public GUI packets
+and dimension annotation types remain portable. Windows GNU and macOS ARM64
+all-target/all-feature host and GUI Clippy pass. This is compile evidence;
+hosted native qualification remains required. The combined Linux gate passed
+all 13 crates above 80% line coverage, all 333 head tests, and 0.96% duplication.
+The repeated X11 distance workflow passed preview, cancellation, expression
+correction, size edits, undo/redo, save and fresh-process reopen. Both desktops
+closed normally, and MCP screenshots were inspected. The unchanged angle and
+reference-radius paths retain their earlier live evidence and automated checks.
