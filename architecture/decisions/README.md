@@ -129,6 +129,7 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0031](ADR-0031-converged-geometric-authoring.md) | Converged geometric constraint authoring | R3/R4; #3818 |
 | [ADR-0032](ADR-0032-converged-dimension-authoring.md) | Converged dimension authoring with available targets | R3/R4; #3824 |
 | [ADR-0033](ADR-0033-independent-dimension-authoring.md) | Independent driving dimension authoring | R3/R4; #3824 |
+| [ADR-0034](ADR-0034-identity-collinear-equations.md) | Identity supplies collinear incidence | R3/R4; #3837 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
 [port plan](../rust-port/plan.md#architecture-decisions-and-implementation-evidence)

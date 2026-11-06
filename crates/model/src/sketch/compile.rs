@@ -154,7 +154,7 @@ fn equation(
             layouts: axes.map(super::axis_operand::SketchAxisOperand::layout),
             perpendicular,
         },
-        PlanarConstraint::Lines { relation, .. } => PlanarEquation::Lines(relation),
+        PlanarConstraint::Lines { lines, relation } => line_equation(sketch, lines, relation)?,
         PlanarConstraint::Distance {
             measure, parameter, ..
         } => PlanarEquation::Distance {
@@ -300,4 +300,22 @@ pub(super) fn half_dimension(
         )));
     }
     Ok(half)
+}
+
+fn line_equation(
+    sketch: &Sketch2D,
+    lines: [super::SketchEntityId; 2],
+    relation: super::LineRelation,
+) -> Result<PlanarEquation, SketchError> {
+    let first = sketch.line(lines[0])?.endpoints;
+    let second = sketch.line(lines[1])?.endpoints;
+    // #3837: identity supplies incidence exactly; never normalize its cancelled AD row.
+    let shared_endpoints = first
+        .iter()
+        .filter(|endpoint| second.contains(endpoint))
+        .count();
+    Ok(PlanarEquation::Lines {
+        relation,
+        shared_endpoints,
+    })
 }

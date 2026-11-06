@@ -20,6 +20,7 @@ pub(super) fn signed_offset(
 pub(super) fn line_relation(
     variables: &[DualNumber],
     relation: LineRelation,
+    shared_endpoints: usize,
 ) -> Result<Vec<DualNumber>, ResidualError> {
     let first = point(variables, 2)?.minus(&point(variables, 0)?)?;
     let second = point(variables, 6)?.minus(&point(variables, 4)?)?;
@@ -33,7 +34,7 @@ pub(super) fn line_relation(
             let (first, second) = oriented_directions(&first, &second)?;
             Ok(vec![first.dot(&second)?])
         }
-        LineRelation::Collinear => collinear(variables, &first, &second),
+        LineRelation::Collinear => collinear(variables, &first, &second, shared_endpoints),
     }
 }
 fn oriented_directions(
@@ -46,8 +47,15 @@ fn collinear(
     variables: &[DualNumber],
     first: &DualVector<2>,
     second: &DualVector<2>,
+    shared_endpoints: usize,
 ) -> Result<Vec<DualNumber>, ResidualError> {
     let (first, second) = oriented_directions(first, second)?;
+    if shared_endpoints == 2 {
+        return Ok(vec![]);
+    }
+    if shared_endpoints == 1 {
+        return Ok(vec![first.cross(&second)?]);
+    }
     let offset = point(variables, 4)?.minus(&point(variables, 0)?)?;
     Ok(vec![first.cross(&second)?, first.cross(&offset)?])
 }

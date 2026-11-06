@@ -3,10 +3,22 @@ use super::*;
 use crate::sketch::residual::{PlanarEquation, PreparedConstraint};
 fn relation(name: &str) -> PlanarEquation {
     match name {
-        "parallel" => PlanarEquation::Lines(LineRelation::Parallel),
-        "perpendicular" => PlanarEquation::Lines(LineRelation::Perpendicular),
-        "collinear" => PlanarEquation::Lines(LineRelation::Collinear),
-        "equal" => PlanarEquation::Lines(LineRelation::EqualLength),
+        "parallel" => PlanarEquation::Lines {
+            relation: LineRelation::Parallel,
+            shared_endpoints: 0,
+        },
+        "perpendicular" => PlanarEquation::Lines {
+            relation: LineRelation::Perpendicular,
+            shared_endpoints: 0,
+        },
+        "collinear" => PlanarEquation::Lines {
+            relation: LineRelation::Collinear,
+            shared_endpoints: 0,
+        },
+        "equal" => PlanarEquation::Lines {
+            relation: LineRelation::EqualLength,
+            shared_endpoints: 0,
+        },
         "on-line" => PlanarEquation::PointOnLine,
         _ => panic!("unknown fixture {name}"),
     }
@@ -139,11 +151,50 @@ fn zero_direction_is_a_domain_error_instead_of_a_satisfied_angle() {
         LineRelation::Perpendicular,
         LineRelation::Collinear,
     ] {
-        assert!(line_relation(&coordinates, relation).is_err());
+        assert!(line_relation(&coordinates, relation, 0).is_err());
     }
     assert_eq!(
-        line_relation(&coordinates, LineRelation::EqualLength).unwrap()[0].value(),
+        line_relation(&coordinates, LineRelation::EqualLength, 0).unwrap()[0].value(),
         0.0
     );
     assert!(point_on_line(&coordinates[..6]).is_err());
+}
+
+fn original_disjoint_collinear(variables: &[DualNumber]) -> Vec<DualNumber> {
+    let first = point(variables, 2)
+        .unwrap()
+        .minus(&point(variables, 0).unwrap())
+        .unwrap();
+    let second = point(variables, 6)
+        .unwrap()
+        .minus(&point(variables, 4).unwrap())
+        .unwrap();
+    let (first, second) = oriented_directions(&first, &second).unwrap();
+    let offset = point(variables, 4)
+        .unwrap()
+        .minus(&point(variables, 0).unwrap())
+        .unwrap();
+    vec![first.cross(&second).unwrap(), first.cross(&offset).unwrap()]
+}
+#[test]
+fn disjoint_collinear_values_and_derivatives_keep_the_original_bits() {
+    for scale in [0.01, 1., 100.] {
+        let seeded = DualNumber::seed(&input("collinear", scale)).unwrap();
+        let current = line_relation(&seeded, LineRelation::Collinear, 0).unwrap();
+        let original = original_disjoint_collinear(&seeded);
+        for (current, original) in current.iter().zip(original) {
+            assert_eq!(current.value().to_bits(), original.value().to_bits());
+            let actual: Vec<u64> = current
+                .gradient()
+                .iter()
+                .map(|value| value.to_bits())
+                .collect();
+            let expected: Vec<u64> = original
+                .gradient()
+                .iter()
+                .map(|value| value.to_bits())
+                .collect();
+            assert_eq!(actual, expected);
+        }
+    }
 }

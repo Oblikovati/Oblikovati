@@ -40,7 +40,10 @@ pub(super) enum PlanarEquation {
         target: f64,
         side: LineContactSide,
     },
-    Lines(LineRelation),
+    Lines {
+        relation: LineRelation,
+        shared_endpoints: usize,
+    },
     PointOnCircle,
     PinnedLineTangent {
         at_b: bool,
@@ -83,8 +86,11 @@ impl PreparedConstraint {
             | PlanarEquation::ArcMidpoint(_)
             | PlanarEquation::Coincident
             | PlanarEquation::Fix(_)
-            | PlanarEquation::Midpoint
-            | PlanarEquation::Lines(LineRelation::Collinear) => 2,
+            | PlanarEquation::Midpoint => 2,
+            PlanarEquation::Lines {
+                relation: LineRelation::Collinear,
+                shared_endpoints,
+            } => 2 - shared_endpoints,
             _ => 1,
         }
     }
@@ -116,7 +122,7 @@ impl PreparedConstraint {
             PlanarEquation::Midpoint
             | PlanarEquation::PointOnLine
             | PlanarEquation::Offset { .. } => 6,
-            PlanarEquation::Lines(_) | PlanarEquation::Angle { .. } => 8,
+            PlanarEquation::Lines { .. } | PlanarEquation::Angle { .. } => 8,
             _ => 4,
         }
     }
@@ -226,7 +232,10 @@ impl ResidualSource for PreparedConstraint {
             PlanarEquation::ScalarLength { target, domain } => {
                 super::scalar_length::scalar_length_target(&variables[0], target, domain)
             }
-            PlanarEquation::Lines(relation) => line_residual::line_relation(variables, relation),
+            PlanarEquation::Lines {
+                relation,
+                shared_endpoints,
+            } => line_residual::line_relation(variables, relation, shared_endpoints),
             PlanarEquation::Distance { measure, target } => {
                 Ok(vec![distance(variables, measure)?.shifted(-target)?])
             }
