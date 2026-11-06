@@ -160,6 +160,12 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.owner.save_theme_from_gui(name)
     }
+    fn set_ui_scale_from_gui(
+        &mut self,
+        options: oblikovati_model::ui_scale::UiScaleOptions,
+    ) -> Result<bool, String> {
+        self.owner.set_ui_scale_from_gui(options)
+    }
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.owner.select_theme_from_gui(name)
     }

@@ -71,6 +71,7 @@ impl Default for DesktopDispatchOptions {
 /// ```
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     color_schemes: oblikovati_model::color_scheme::ColorSchemeRegistry,
+    ui_scale_store: Option<Box<dyn oblikovati_model::ui_scale::UiScalePreferenceAccess>>,
     theme_store: Option<Box<dyn oblikovati_model::theme::ThemeSelectionStore>>,
     themes: Option<oblikovati_model::theme::ThemeLibrary>,
     window_captures: Option<crate::DesktopWindowCaptures>,
@@ -115,6 +116,7 @@ impl<
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
             color_schemes: Default::default(),
+            ui_scale_store: None,
             theme_store: None,
             themes: None,
             window_captures: None,
@@ -263,3 +265,6 @@ mod sketch_environment;
 
 #[path = "owner_themes.rs"]
 mod application_themes;
+
+#[path = "owner_ui_scale.rs"]
+mod ui_scale;

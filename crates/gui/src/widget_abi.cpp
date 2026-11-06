@@ -1,10 +1,26 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #include "imgui.h"
+#include "imgui_internal.h"
 #include <cstddef>
 
 // #3803: Rust C aggregates and MSVC ARM64 C++ vector classes use different registers.
 // Only scalars and byte pointers cross this boundary; C++ constructs its own vectors.
 extern "C" {
+void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height) {
+    const ImGuiWindow* previous = ImGui::FindWindowByName(reinterpret_cast<const char*>(title));
+    const ImVec2 position = previous ? previous->Pos : ImVec2(x, y);
+    const ImVec2 size = previous ? previous->SizeFull : ImVec2(width, height);
+    const ImVec2 display = ImGui::GetIO().DisplaySize;
+    const ImVec2 fitted_size(ImClamp(size.x, 1.0f, ImMax(1.0f, display.x - 32.0f)),
+                             ImClamp(size.y, 1.0f, ImMax(1.0f, display.y - 32.0f)));
+    const ImVec2 fitted_position(ImClamp(position.x, 0.0f, ImMax(0.0f, display.x - fitted_size.x - 16.0f)),
+                                 ImClamp(position.y, 0.0f, ImMax(0.0f, display.y - fitted_size.y - 16.0f)));
+    if (!previous || position.x != fitted_position.x || position.y != fitted_position.y)
+        ImGui::SetNextWindowPos(fitted_position, ImGuiCond_Always);
+    if (!previous || size.x != fitted_size.x || size.y != fitted_size.y)
+        ImGui::SetNextWindowSize(fitted_size, ImGuiCond_Always);
+}
+
 void oblikovati_gui_window_position(float x, float y, int condition) {
     ImGui::SetNextWindowPos(ImVec2(x, y), condition);
 }

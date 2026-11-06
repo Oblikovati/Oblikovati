@@ -376,3 +376,6 @@ mod sketch_delete;
 
 #[path = "owner/sketch_formats.rs"]
 mod sketch_formats;
+
+#[path = "owner/ui_scale.rs"]
+mod ui_scale;

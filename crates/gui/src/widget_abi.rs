@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 unsafe extern "C" {
+    fn oblikovati_gui_fit_dialog(title: *const u8, x: f32, y: f32, width: f32, height: f32);
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
     fn oblikovati_gui_window_position(x: f32, y: f32, condition: i32);
@@ -108,4 +109,20 @@ pub(crate) fn scroll_region<'ui>(
 pub(crate) fn dummy(_: &Ui, size: [f32; 2]) {
     // SAFETY: the owning frame retains the context; only C++ constructs the aggregate argument (#3803).
     unsafe { oblikovati_gui_dummy(size[0], size[1]) };
+}
+
+/// Keep a floating dialog inside the current content viewport while preserving valid user placement.
+/// Example: `fit_dialog(ui, "Parameters", [320.,8.], [540.,360.])` before opening that window.
+pub(crate) fn fit_dialog(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) {
+    let title = ImString::new(title);
+    // SAFETY: the frame owns the current context; the live ID and scalar values are copied by C++ (#3803, #3850).
+    unsafe {
+        oblikovati_gui_fit_dialog(
+            title.as_ptr().cast(),
+            origin[0],
+            origin[1],
+            size[0],
+            size[1],
+        )
+    };
 }

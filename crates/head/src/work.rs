@@ -12,6 +12,16 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Save application text/icon scale; example: `work.set_ui_scale_from_gui(options)?`.
+    fn set_ui_scale_from_gui(
+        &mut self,
+        options: oblikovati_model::ui_scale::UiScaleOptions,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "UI scale {options:?}: expected an application preference owner"
+        ))
+    }
+
     /// Apply a live custom colour preview; example: `work.edit_theme_color_from_gui(name, token, value)?`.
     fn edit_theme_color_from_gui(
         &mut self,

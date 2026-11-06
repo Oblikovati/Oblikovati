@@ -13,6 +13,7 @@ const GUI_TICK: Duration = Duration::from_nanos(1_000_000_000 / 60);
 pub(super) struct NativeGui {
     engine: GuiFrameEngine,
     compiler: GuiFrameCompiler,
+    atlas: oblikovati_gui::GuiAtlas,
     draws: Option<GuiFrame>,
     commands: Option<GuiCommandState>,
     notice: Option<String>,
@@ -47,8 +48,10 @@ impl NativeGui {
         compiler: GuiFrameCompiler,
         clipboard: Option<GuiClipboard>,
     ) -> Self {
+        let atlas = engine.atlas().clone();
         Self {
             engine,
+            atlas,
             compiler,
             draws: None,
             commands: None,
@@ -80,6 +83,7 @@ impl NativeGui {
         }
         let request = self.request(now, extent, event, commands, notice)?;
         let output = self.frame_input(&request)?;
+        self.refresh_gui_atlas()?;
         self.dirty |= self.draws.as_ref() != Some(&output.draws);
         self.draws = Some(output.draws);
         self.commands = Some(commands.clone());
@@ -260,3 +264,16 @@ mod provider_tests;
 #[cfg(test)]
 #[path = "../../../tests/gui_loop_clock.rs"]
 mod tests;
+
+impl NativeGui {
+    fn refresh_gui_atlas(&mut self) -> Result<(), String> {
+        let atlas = self.engine.atlas();
+        if std::sync::Arc::ptr_eq(&self.atlas.rgba, &atlas.rgba) {
+            return Ok(());
+        }
+        self.compiler = GuiFrameCompiler::new(atlas)?;
+        self.atlas = atlas.clone();
+        self.dirty = true;
+        Ok(())
+    }
+}

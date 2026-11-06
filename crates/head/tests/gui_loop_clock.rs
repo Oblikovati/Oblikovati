@@ -106,3 +106,23 @@ fn repeated_timestamp_is_valid_but_reversed_time_is_refused() {
     assert!(error.contains("monotonic"), "{error}");
     assert_eq!(gui.last_frame, Some(GUI_TICK * 2));
 }
+
+#[test]
+fn changed_content_scale_replaces_the_compiler_atlas_before_publication() {
+    let mut gui = NativeGui::new(None).unwrap();
+    gui_step(&mut gui, 0, None);
+    let previous = gui.atlas.clone();
+    let commands = GuiCommandState {
+        ui_scale: Some(oblikovati_model::ui_scale::UiScaleOptions::new(2., 1.).unwrap()),
+        ..Default::default()
+    };
+    gui.step(GUI_TICK, [1440, 900], None, &commands, None)
+        .unwrap();
+    assert!(!std::sync::Arc::ptr_eq(&previous.rgba, &gui.atlas.rgba));
+    assert!(std::sync::Arc::ptr_eq(
+        &gui.atlas.rgba,
+        &gui.engine.atlas().rgba
+    ));
+    assert!(gui.dirty);
+    gui.compiler.compile(gui.draws.as_ref().unwrap()).unwrap();
+}

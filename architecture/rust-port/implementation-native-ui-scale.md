@@ -29,12 +29,44 @@ seven sketch preference tests. They cover bounds, defaults, independent factors,
 invalid/non-finite values, unknown-key retention, interleaved group saves, and
 failure without publishing changed values. The full application gate passed
 across all 13 crates. The scale model has 100% line coverage and the application
-preference store has 96.91%; workspace duplication is 1.01%. No native scale
-acceptance is claimed for this preference-only change.
+preference store has 96.91% line coverage.
 
-This foundation does not yet load scale into the native GUI or expose its
-controls. The remaining work includes the native preference owner, font/spacing
-and icon sizing, UI controls, and native mouse/keyboard acceptance at 100% and
-200% content scale. Actual backing ratio 2 also needs a platform adapter with
-separate logical and framebuffer extents; GUI transform tests alone do not prove
-that native behavior.
+## Native text controls
+
+The desktop owner loads `options.yaml` and supplies validated scale options to
+the GUI. Tools → Preferences exposes text sizes from 75% to 200%, matching the Go
+UI range. Changes save through the application owner before the next frame sees
+them. A failed save reports a command notice and retains the previous scale.
+
+Layout, clips, pointer coordinates, and projected dimension labels use the
+product of content scale and native backing density. The two inputs remain
+separate. The font atlas is rebuilt at that raster size and retained by the
+native frame compiler before publication. Returning to 100% restores the default
+atlas bytes. Font raster sizes above 256 pixels are refused before allocation;
+the default font is 13 pixels.
+
+Floating file, parameter, and dimension dialogs retain valid user positions and
+sizes. They fit the available content viewport after a resize or scale change,
+including when a collapsed dialog is expanded. The model browser keeps its
+300-unit width in wide windows and leaves the view centre available in narrow
+windows. These changes keep controls and model picks reachable at 200%.
+
+Native OS mouse and keyboard acceptance passed at backing ratio 1. The run
+changed text size from 100% to 200%, created `size = 10 mm` through the parameter
+dialog, and authored an anchored XY rectangle with both dimensions driven by
+`size`. MCP queries confirmed healthy DOF zero, the two dimensional expressions,
+coincident/horizontal/vertical relations, and model extents. It changed size to
+20 mm, undid and redid that edit, saved, resized, and closed. A fresh process
+loaded the stored 200% preference and reopened the Part. Resetting text to 100%
+retained the stored icon factor and unknown option keys and left Part bytes
+unchanged. Both desktops closed normally; MCP PNG captures were inspected.
+
+Icon assets and independent icon rendering controls, desktop content-scale
+detection, and actual native backing ratio 2 acceptance remain open. This change
+does not complete #3850 or the profile/Extrude journey.
+
+The final application gate passed across all 13 crates, including all 389 head
+tests. GUI coverage was 98.37%, head coverage 92.64%, and workspace duplication
+1.02%. The new scale-owner module had 100% line coverage. Cross-target Clippy
+passed for head and GUI on Windows x64 and macOS ARM64. These are compile checks;
+the native runtime acceptance above is X11.

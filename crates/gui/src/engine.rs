@@ -32,6 +32,8 @@ pub struct GuiFrameOutput {
 pub struct GuiFrameEngine {
     context: Context,
     atlas: GuiAtlas,
+    raster_scale: f32,
+    preferences: crate::ui_scale::GuiScalePreferences,
     dimension_editor: crate::dimensions::GuiDimensionEditor,
     parameter_editor: crate::parameters::GuiParameterEditor,
     document_files: crate::files::GuiDocumentFiles,
@@ -48,6 +50,8 @@ impl GuiFrameEngine {
         Ok(Self {
             context,
             atlas,
+            raster_scale: 1.,
+            preferences: Default::default(),
             dimension_editor: Default::default(),
             parameter_editor: Default::default(),
             document_files: Default::default(),
@@ -75,6 +79,7 @@ impl GuiFrameEngine {
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
         self.document_files.validate()?;
+        self.refresh_font_scale(request)?;
         if let Some(theme) = &request.commands.theme {
             crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
         }
@@ -99,7 +104,7 @@ fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.fonts().tex_id = TextureId::new(FONT_TEXTURE_ID);
     atlas
 }
-fn copy_atlas(context: &mut Context) -> GuiAtlas {
+pub(crate) fn copy_atlas(context: &mut Context) -> GuiAtlas {
     let atlas = context.fonts().build_rgba32_texture();
     let rgba = atlas.data.as_chunks::<4>().0.to_vec();
     GuiAtlas {
@@ -114,6 +119,7 @@ fn validate_request(request: &GuiFrameRequest) -> Result<(), String> {
         ));
     }
     validate_logical_inputs(request)?;
+    crate::ui_scale::font_raster_scale(request)?;
     request.commands.validate()?;
     if request
         .status
@@ -126,7 +132,7 @@ fn validate_request(request: &GuiFrameRequest) -> Result<(), String> {
         ));
     }
     for event in &request.events {
-        validate_input(event, request.framebuffer_scale)?;
+        validate_input(event, request.layout_scale())?;
     }
     Ok(())
 }
@@ -141,7 +147,7 @@ fn valid_frame_scalars(request: &GuiFrameRequest) -> bool {
 }
 fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
     for axis in 0..2 {
-        let scale = request.framebuffer_scale[axis];
+        let scale = request.layout_scale()[axis];
         let size = request.extent[axis] as f32 / scale;
         if !size.is_finite() || size <= 0. {
             return Err(format!(
@@ -160,10 +166,13 @@ impl GuiFrameEngine {
         let band_height = crate::chrome::ribbon_band(
             ui,
             request,
-            &mut self.ribbon,
-            &mut self.parameter_editor,
-            &mut self.document_files,
-            &mut self.theme_editor,
+            crate::chrome::RibbonDrawOwners {
+                ribbon: &mut self.ribbon,
+                parameters: &mut self.parameter_editor,
+                files: &mut self.document_files,
+                theme_editor: &mut self.theme_editor,
+                preferences: &mut self.preferences,
+            },
             &mut selected,
         );
         self.document_tabs
@@ -173,12 +182,13 @@ impl GuiFrameEngine {
         crate::browser::panel(
             ui,
             &request.commands,
-            request.extent[1] as f32 / request.framebuffer_scale[1],
+            request.extent[1] as f32 / request.layout_scale()[1],
             band_height,
             &mut selected,
         );
         self.document_files
             .panel(ui, &request.commands, &mut selected);
+        self.preferences.panel(ui, &request.commands, &mut selected);
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
         crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);
@@ -198,8 +208,8 @@ impl GuiFrameEngine {
 fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) -> bool {
     let io = context.io_mut();
     io.display_size =
-        std::array::from_fn(|axis| request.extent[axis] as f32 / request.framebuffer_scale[axis]);
-    io.display_framebuffer_scale = request.framebuffer_scale;
+        std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
+    io.display_framebuffer_scale = request.layout_scale();
     io.delta_time = request.delta_seconds;
     let mut tool_keyboard = false;
     for event in &request.events {
@@ -211,7 +221,7 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) -> boo
             tool_keyboard = true;
             continue;
         }
-        apply_input(io, event, request.framebuffer_scale);
+        apply_input(io, event, request.layout_scale());
     }
     tool_keyboard
 }
@@ -219,3 +229,28 @@ fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) -> boo
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]
 mod parameter_shortcuts;
+
+impl GuiFrameRequest {
+    /// Convert UI layout units to backing pixels; native backing density stays independently recorded.
+    /// Example: backing 1 and content 2 produce `layout_scale() == [2.; 2]`.
+    pub(crate) fn layout_scale(&self) -> [f32; 2] {
+        let content = self.commands.ui_scale.unwrap_or_default().font();
+        self.framebuffer_scale.map(|backing| backing * content)
+    }
+}
+impl GuiFrameEngine {
+    fn refresh_font_scale(&mut self, request: &GuiFrameRequest) -> Result<(), String> {
+        let scale = crate::ui_scale::font_raster_scale(request)?;
+        if self.raster_scale == scale {
+            return Ok(());
+        }
+        self.atlas = crate::ui_scale::rebuild_font_atlas(&mut self.context, scale);
+        self.raster_scale = scale;
+        self.ribbon.panels = Default::default();
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+#[path = "../tests/ui_scale/engine.rs"]
+mod scale_tests;
