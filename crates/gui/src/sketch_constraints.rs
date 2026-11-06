@@ -6,6 +6,8 @@ pub enum GuiSketchConstraint {
     Vertical,
     Coincident,
     Fix,
+    Parallel,
+    Perpendicular,
 }
 impl GuiSketchConstraint {
     /// Name a constraint command; example: `GuiSketchConstraint::Horizontal.label()`.
@@ -15,6 +17,8 @@ impl GuiSketchConstraint {
             Self::Vertical => "Vertical",
             Self::Coincident => "Coincident",
             Self::Fix => "Fix",
+            Self::Parallel => "Parallel",
+            Self::Perpendicular => "Perpendicular",
         }
     }
 }
