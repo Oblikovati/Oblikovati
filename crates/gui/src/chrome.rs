@@ -158,6 +158,8 @@ fn sketch_create_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<Gu
         );
         sketch_tool_button(ui, state, actions, tool, [108., 18.]);
     }
+    crate::widget_abi::cursor_position(ui, [140., 119.]);
+    sketch_tool_button(ui, state, actions, crate::GuiSketchTool::Line, [108., 18.]);
     crate::widget_abi::cursor_position(ui, [16., 125.]);
     ui.text("Create");
 }

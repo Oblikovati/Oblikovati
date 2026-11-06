@@ -139,6 +139,7 @@ fn every_supported_tool_dispatches_from_the_sketch_ribbon_at_both_scales() {
         request.commands.authoring = GuiAuthoringContext::Sketch;
         settle_ribbon(&mut engine, &mut request);
         for (tool, point) in [
+            (Line, [180., 128.]),
             (Rectangle, [50., 90.]),
             (Circle, [180., 68.]),
             (Point, [300., 68.]),
@@ -166,6 +167,7 @@ fn every_supported_tool_dispatches_from_the_sketch_ribbon_at_both_scales() {
 fn sketch_tool_captions_identify_the_existing_construction_choices() {
     use GuiSketchTool::*;
     for (tool, label) in [
+        (Line, "Line"),
         (Rectangle, "Rectangle"),
         (Circle, "Circle"),
         (Point, "Point"),
@@ -377,4 +379,31 @@ fn malformed_dimension_drafts_are_refused_before_gui_input() {
     engine.frame(&request).unwrap();
     request.commands.document = None;
     assert!(engine.frame(&request).is_err());
+}
+
+#[test]
+fn line_commands_pass_ribbon_keyboard_focus_without_reactivating_buttons() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    enter_part(&mut request);
+    request.commands.authoring = GuiAuthoringContext::Sketch;
+    request.commands.undo_label = Some("Create sketch".into());
+    settle_ribbon(&mut engine, &mut request);
+    expect_ribbon(
+        &mut engine,
+        &mut request,
+        [180., 128.],
+        GuiShellAction::PlaceSketchTool(GuiSketchTool::Line),
+    );
+    request.commands.transaction_open = true;
+    request.commands.sketch_tool_transaction = true;
+    settle_ribbon(&mut engine, &mut request);
+    assert!(click_ribbon(&mut engine, &mut request, [75., 45.]).is_empty());
+    for key in [GuiKey::Backspace, GuiKey::Enter] {
+        for pressed in [true, false] {
+            request.events = vec![GuiInputEvent::Key { key, pressed }];
+            let output = engine.frame(&request).unwrap();
+            assert!(!output.capture.keyboard && output.actions.is_empty());
+        }
+    }
 }

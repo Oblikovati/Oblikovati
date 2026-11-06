@@ -165,3 +165,23 @@ fn focus_loss_clears_held_keys_buttons_and_modifiers_in_frame_order() {
     assert!(!context.io().app_focus_lost);
     assert!(!context.io().key_ctrl);
 }
+
+#[test]
+fn tool_keyboard_ownership_is_limited_to_commands_outside_text_entry() {
+    for key in [
+        GuiKey::Enter,
+        GuiKey::KeypadEnter,
+        GuiKey::Backspace,
+        GuiKey::A,
+    ] {
+        let event = GuiInputEvent::Key { key, pressed: true };
+        assert_eq!(tool_transaction_key(&event, true, false), key != GuiKey::A);
+        assert!(!tool_transaction_key(&event, true, true));
+        assert!(!tool_transaction_key(&event, false, false));
+    }
+    assert!(!tool_transaction_key(
+        &GuiInputEvent::Text("c".into()),
+        true,
+        false
+    ));
+}
