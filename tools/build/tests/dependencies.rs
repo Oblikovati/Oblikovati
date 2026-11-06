@@ -33,7 +33,7 @@ fn renderer_pin_rejects_local_and_changed_sources() {
 
 #[test]
 fn previous_martensite_release_is_refused_for_renderer_and_sketch_packages() {
-    let previous = "59aca38960bdfbaa75a07a80d9b2de522005ddac";
+    let previous = "b7c0f682577e842a81f37b20813451e7167ec80c";
     for name in ["martensite-vulkan", "martensite-tkg2d"] {
         let package = LockedPackage {
             name: name.into(),
@@ -44,7 +44,7 @@ fn previous_martensite_release_is_refused_for_renderer_and_sketch_packages() {
         };
         let cause = verify_renderer_package(&package).unwrap_err();
         assert!(cause.contains(name));
-        assert!(cause.contains("b7c0f682577e842a81f37b20813451e7167ec80c"));
+        assert!(cause.contains("59bc4bda93e9b17100017608296bf053e10e5cbf"));
     }
 }
 
