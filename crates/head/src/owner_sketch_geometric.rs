@@ -23,8 +23,8 @@ impl<
         choice: GuiSketchConstraint,
     ) -> Result<bool, String> {
         self.synchronize_sketch_edit();
-        let tool = self.geometric_state(choice)?;
         self.retire_sketch_tool()?;
+        let tool = self.geometric_state(choice)?;
         self.clear_geometric_picks(tool.edit)?;
         self.geometric_prompt(&tool);
         self.sketch_tool = Some(SketchToolState::Geometric(Box::new(tool)));

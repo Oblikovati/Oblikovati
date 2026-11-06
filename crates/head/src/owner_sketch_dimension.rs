@@ -31,6 +31,7 @@ impl<
     }
     fn start_dimension_tool(&mut self) -> Result<bool, String> {
         self.synchronize_sketch_edit();
+        self.retire_sketch_tool()?;
         let (edit, generation) = self.capture_sketch_tool_context()?;
         let serial = self.dimension_serial.checked_add(1).ok_or_else(|| {
             format!(
@@ -38,7 +39,6 @@ impl<
                 self.dimension_serial
             )
         })?;
-        self.retire_sketch_tool()?;
         self.clear_geometric_picks(edit)?;
         self.dimension_serial = serial;
         self.sketch_tool = Some(SketchToolState::Dimension(Box::new(SketchDimensionState {

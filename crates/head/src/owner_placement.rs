@@ -21,6 +21,12 @@ impl<
         &self,
         tool: &crate::placement_input::SketchPlacementState,
     ) -> Result<Option<oblikovati_viewport::ViewportSketchPreview>, String> {
+        if tool.tool == crate::SketchPlacementTool::Line {
+            return tool
+                .line_input(true, false)
+                .map(|input| self.preview_sketch_line_chain(tool.document, tool.sketch, &input))
+                .transpose();
+        }
         if !tool.fields_engaged() {
             return Ok(None);
         }

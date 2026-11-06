@@ -25,6 +25,10 @@ mod dimension_annotations;
 mod dimension_query;
 #[path = "owner_geometric_batch.rs"]
 mod geometric_batch;
+#[path = "owner_line_commit.rs"]
+mod line_commit;
+#[path = "owner_line_scope.rs"]
+mod line_scope;
 #[path = "owner_browser.rs"]
 mod model_browser;
 #[path = "owner_parameters.rs"]

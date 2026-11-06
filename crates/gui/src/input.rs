@@ -32,7 +32,7 @@ pub enum GuiInputEvent {
     Modifiers(GuiModifiers),
     Text(String),
 }
-/// Dear ImGui's request for each input channel, copied with its frame.
+/// GUI input ownership for a frame, releasing scoped tool commands outside text entry.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GuiInputCapture {
     pub pointer: bool,
@@ -53,6 +53,18 @@ pub(crate) fn validate_input(event: &GuiInputEvent, scale: [f32; 2]) -> Result<(
         ));
     }
     Ok(())
+}
+pub(crate) fn tool_transaction_key(event: &GuiInputEvent, owned: bool, text: bool) -> bool {
+    // #3830: ribbon navigation must not consume an owned tool command outside text entry.
+    owned
+        && !text
+        && matches!(
+            event,
+            GuiInputEvent::Key {
+                key: GuiKey::Enter | GuiKey::KeypadEnter | GuiKey::Backspace,
+                ..
+            }
+        )
 }
 pub(crate) fn apply_input(io: &mut Io, event: &GuiInputEvent, scale: [f32; 2]) {
     match event {

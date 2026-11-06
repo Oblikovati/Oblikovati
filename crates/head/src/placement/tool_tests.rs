@@ -12,6 +12,7 @@ fn circumcircle_tool(bound: f64) -> SketchPlacementTool {
 #[test]
 fn incomplete_point_sequences_are_refused_before_indexing() {
     for tool in [
+        SketchPlacementTool::Line,
         SketchPlacementTool::StraightSlot { width: 2. },
         SketchPlacementTool::Circle,
         SketchPlacementTool::CenterPointArcSlot { width: 2. },

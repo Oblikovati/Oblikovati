@@ -4,6 +4,7 @@ use oblikovati_gui::GuiSketchTool;
 /// Select the existing placement engine; example: `gui_placement_tool(GuiSketchTool::Circle)`.
 pub(super) fn gui_placement_tool(tool: GuiSketchTool) -> SketchPlacementTool {
     match tool {
+        GuiSketchTool::Line => SketchPlacementTool::Line,
         GuiSketchTool::Rectangle => SketchPlacementTool::Rectangle,
         GuiSketchTool::Circle => SketchPlacementTool::Circle,
         GuiSketchTool::Point => SketchPlacementTool::Point,

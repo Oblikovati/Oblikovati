@@ -7,6 +7,8 @@ use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, Viewport
 #[path = "fields.rs"]
 mod fields;
 use fields::{PlacementFieldAction, PlacementFieldEntry};
+#[path = "line.rs"]
+mod line;
 pub(crate) struct SketchPlacementState {
     pub document: u64,
     pub sketch: DocumentSketchId,
@@ -16,6 +18,9 @@ pub(crate) struct SketchPlacementState {
     pub preview: Option<SketchPlacementRecipe>,
     pub resolved_preview: Option<oblikovati_viewport::ViewportSketchPreview>,
     accepted: Vec<[f64; 2]>,
+    pub line_scope: Option<oblikovati_model::history::TransactionToken>,
+    line_cursor: Option<[f64; 2]>,
+    line_pending: bool,
     press: Option<PlacementPress>,
     navigation: [bool; 3],
     fields: PlacementFieldEntry,
@@ -29,6 +34,8 @@ pub(crate) enum PlacementAction {
     Cancel,
     FieldsChanged,
     CommitFields,
+    FinishLine { closed: bool },
+    UndoLine,
     Cursor { pixel: [i32; 2], place: bool },
 }
 impl SketchPlacementState {
@@ -49,13 +56,21 @@ impl SketchPlacementState {
             preview: None,
             resolved_preview: None,
             accepted: Vec::new(),
+            line_scope: None,
+            line_cursor: None,
+            line_pending: false,
             press: None,
             navigation: [false; 3],
             fields: Default::default(),
         })
     }
     pub(crate) fn event(&mut self, event: ViewportEvent) -> PlacementAction {
-        if let ViewportEvent::Input(input) = event {
+        if let Some(action) = self.line_event(event) {
+            return action;
+        }
+        if self.tool != crate::SketchPlacementTool::Line
+            && let ViewportEvent::Input(input) = event
+        {
             let count = self
                 .preview
                 .as_ref()
@@ -76,6 +91,9 @@ impl SketchPlacementState {
     }
     pub(crate) fn field_prompt(&self) -> String {
         let stage = self.prompt();
+        if self.tool == crate::SketchPlacementTool::Line {
+            return stage;
+        }
         self.preview
             .as_ref()
             .map(|recipe| format!("{stage}  {}", self.fields.prompt(&recipe.fields)))
@@ -188,6 +206,9 @@ impl SketchPlacementState {
             self.press = None;
             return Ok(None);
         };
+        if self.tool == crate::SketchPlacementTool::Line {
+            return self.line_cursor(point, place);
+        }
         if self.accepted.len() + 1 < self.tool.point_count() {
             if place {
                 self.accept_point(point)?;
@@ -202,6 +223,7 @@ impl SketchPlacementState {
         Ok(place.then_some(recipe))
     }
     pub(crate) fn abandon_press(&mut self) {
+        self.reject_line_vertex();
         self.resolved_preview = None;
         self.press = None;
         self.preview = None;
@@ -215,6 +237,12 @@ impl SketchPlacementState {
         self.preview = None;
     }
     pub(crate) fn prompt(&self) -> String {
+        if self.tool == crate::SketchPlacementTool::Line {
+            return format!(
+                "Line: {} points. Enter/Escape finishes; C closes; Backspace undoes a point.",
+                self.accepted.len()
+            );
+        }
         self.tool.prompt(self.accepted.len())
     }
     fn accept_point(&mut self, point: [f64; 2]) -> Result<(), String> {

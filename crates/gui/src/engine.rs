@@ -3,7 +3,7 @@ use crate::{
     GuiAtlas, GuiCommandState, GuiFrame, GuiFrameActivity, GuiInputCapture, GuiInputEvent,
     GuiShellAction,
     context_owner::{frame_activity, require_vacant_context},
-    input::{apply_input, input_capture, validate_input},
+    input::{apply_input, input_capture, tool_transaction_key, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
 use imgui::{ConfigFlags, Context, TextureId};
@@ -153,7 +153,7 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 }
 impl GuiFrameEngine {
     fn draw_controls(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
-        prepare_frame_inputs(&mut self.context, request);
+        let tool_keyboard = prepare_frame_inputs(&mut self.context, request);
         let ui = self.context.frame();
         crate::dimension_labels::draw_dimension_labels(ui, request);
         let mut selected = Vec::new();
@@ -180,23 +180,35 @@ impl GuiFrameEngine {
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
         let snapshot = capture_frame(self.context.render(), request.extent)?;
+        let mut capture = input_capture(self.context.io());
+        capture.keyboard &= !tool_keyboard;
         Ok(GuiFrameOutput {
             draws: snapshot,
             actions: selected,
-            capture: input_capture(self.context.io()),
+            capture,
             activity: frame_activity()?,
         })
     }
 }
-fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) {
+fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) -> bool {
     let io = context.io_mut();
     io.display_size =
         std::array::from_fn(|axis| request.extent[axis] as f32 / request.framebuffer_scale[axis]);
     io.display_framebuffer_scale = request.framebuffer_scale;
     io.delta_time = request.delta_seconds;
+    let mut tool_keyboard = false;
     for event in &request.events {
+        if tool_transaction_key(
+            event,
+            request.commands.sketch_tool_transaction,
+            io.want_text_input,
+        ) {
+            tool_keyboard = true;
+            continue;
+        }
         apply_input(io, event, request.framebuffer_scale);
     }
+    tool_keyboard
 }
 
 #[cfg(test)]

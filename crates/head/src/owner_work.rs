@@ -104,6 +104,9 @@ impl<
             undo_label: session.undo_label().map(str::to_owned),
             redo_label: session.redo_label().map(str::to_owned),
             transaction_open: session.in_transaction(),
+            sketch_tool_transaction: self.placement_state().is_some_and(|tool| {
+                tool.tool == crate::SketchPlacementTool::Line && self.line_scope_context_valid(tool)
+            }),
         })
     }
     fn edit_parameter_from_gui(
@@ -254,7 +257,7 @@ impl<
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         let recipe = self.placement_preview()?.clone();
         let tool = self.placement_state()?;
-        if tool.fields_engaged() {
+        if tool.tool == crate::SketchPlacementTool::Line || tool.fields_engaged() {
             return tool.resolved_preview.clone();
         }
         let session = self.files.workspace().session(tool.document).ok()?;

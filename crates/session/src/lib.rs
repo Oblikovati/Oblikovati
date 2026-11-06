@@ -133,6 +133,11 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.group.is_some()
     }
 
+    /// Identify the current bounded group without opening one; example: `let owned = session.transaction_identity();`.
+    pub fn transaction_identity(&self) -> Option<oblikovati_model::history::TransactionToken> {
+        self.group.as_ref().map(|group| group.token.clone())
+    }
+
     /// Inspect the next committed undo without validating execution; example: `session.undo_label()` in UI state.
     pub fn undo_label(&self) -> Option<&str> {
         self.history.committed_undo_label()
