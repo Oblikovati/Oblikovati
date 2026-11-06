@@ -123,8 +123,12 @@ fn reopen(world: &mut ApplicationWorld) {
 #[then("the part becomes active")]
 #[then("the reopened part is active")]
 fn reopened_active(world: &mut ApplicationWorld) {
-    let path = world.saved_path.clone().expect("expected a saved file");
     let id = world.active_id();
+    // Without a saved file, the part is the last one a scenario opened, activated by its tab.
+    let Some(path) = world.saved_path.clone() else {
+        assert_eq!(world.parts.last(), Some(&id));
+        return;
+    };
     assert_eq!(
         world.state().document_storage[&id].path.as_deref(),
         path.to_str()

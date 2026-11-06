@@ -19,6 +19,7 @@ pub(super) struct ApplicationWorld {
     pub proposed_name: Option<String>,
     pub browser_width: Option<f32>,
     pub strip_left: Option<f32>,
+    pub dragged_tab_x: Option<f32>,
 }
 pub(super) struct NativeApplication {
     pub window: ScriptedGuiWindow,
@@ -55,6 +56,7 @@ impl ApplicationWorld {
             proposed_name: None,
             browser_width: None,
             strip_left: None,
+            dragged_tab_x: None,
         };
         world.pump(Vec::new());
         world

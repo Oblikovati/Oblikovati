@@ -81,8 +81,9 @@ fn activation_requires_a_visible_current_row_and_no_edit_group() {
     request.commands.transaction_open = true;
     assert!(!action.dispatchable(&request.commands));
     request.commands.transaction_open = false;
+    // A sketch edit parks with its document, so it does not block the switch.
     request.commands.authoring = GuiAuthoringContext::Sketch;
-    assert!(!action.dispatchable(&request.commands));
+    assert!(action.dispatchable(&request.commands));
     request.commands.documents.clear();
     assert!(!action.dispatchable(&request.commands));
 }
@@ -129,13 +130,12 @@ fn active_tab_close_uses_the_existing_guarded_close_request() {
 }
 #[test]
 fn hidden_or_disabled_document_tabs_cannot_dispatch_pointer_activation() {
-    for mode in 0..3 {
+    for mode in 0..2 {
         let mut engine = GuiFrameEngine::new().unwrap();
         let mut request = tab_request();
         match mode {
             0 => request.commands.documents[1].visible = false,
-            1 => request.commands.transaction_open = true,
-            _ => request.commands.authoring = GuiAuthoringContext::Sketch,
+            _ => request.commands.transaction_open = true,
         }
         for _ in 0..3 {
             engine.frame(&request).unwrap();

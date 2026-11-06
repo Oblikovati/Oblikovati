@@ -90,6 +90,9 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     part_scenes: crate::part_scene::DesktopPartScenes,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
     command_notice: Option<DesktopCommandNotice>,
+    /// Sketches being edited in documents that are not active, by document.
+    parked_sketch_edits:
+        std::collections::BTreeMap<u64, oblikovati_model::document_sketch::DocumentSketchId>,
     sketch_edit: Option<(
         u64,
         oblikovati_session::SketchContinuityWatch,
@@ -142,6 +145,7 @@ impl<
             sketch_formats: Default::default(),
             sketch_tool: None,
             dimension_serial: 0,
+            parked_sketch_edits: Default::default(),
             sketch_edit: None,
         }
     }

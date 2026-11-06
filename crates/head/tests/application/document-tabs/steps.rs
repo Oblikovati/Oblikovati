@@ -366,7 +366,11 @@ fn exit_asked(world: &mut ApplicationWorld) {
 }
 #[then("the part remains open")]
 fn part_open(world: &mut ApplicationWorld) {
-    let id = world.closed_document.expect("expected the part");
+    // The part a close asked about, else the part of a drawing and part pair.
+    let id = world
+        .closed_document
+        .or(world.other_document)
+        .expect("expected the part");
     world.expect_no_text(EXIT_QUESTION);
     world.expect_no_text("before closing");
     assert!(world.document_is_open(id));
@@ -464,4 +468,210 @@ fn new_tab_gone(world: &mut ApplicationWorld) {
 #[when("I choose Close")]
 fn choose_close(world: &mut ApplicationWorld) {
     world.click_text("Close");
+}
+fn part_of(world: &ApplicationWorld) -> u64 {
+    world.other_document.expect("expected the part")
+}
+fn drawing_of(world: &ApplicationWorld) -> u64 {
+    world.previous_document.expect("expected the drawing")
+}
+#[given("the part has an active sketch editing environment")]
+fn part_in_sketch(world: &mut ApplicationWorld) {
+    world.activate_through_tab(part_of(world));
+    world.start_sketch();
+}
+#[given("the drawing is active with its drawing resources branch collapsed")]
+fn drawing_active_collapsed(world: &mut ApplicationWorld) {
+    world.activate_through_tab(drawing_of(world));
+    world.press_disclosure("Drawing Resources");
+    world.expect_no_text("Sheet Formats");
+}
+#[when("I select the part document tab")]
+#[when("I select the part document tab again")]
+fn select_part_tab(world: &mut ApplicationWorld) {
+    world.click_tab(part_of(world));
+}
+#[then("the part sketch viewport and model browser are displayed")]
+fn part_sketch_shown(world: &mut ApplicationWorld) {
+    world.expect_active(part_of(world));
+    let centre = world.pixel_at([700, 450]);
+    assert!(
+        centre[..3].iter().all(|channel| *channel < 150),
+        "viewport {centre:?}: expected no sheet"
+    );
+}
+#[then("the sketch ribbon is active")]
+fn sketch_ribbon(world: &mut ApplicationWorld) {
+    world.expect_text("Finish Sketch");
+}
+#[when("I select the drawing document tab")]
+fn select_drawing_tab(world: &mut ApplicationWorld) {
+    world.click_tab(drawing_of(world));
+}
+fn expect_drawing_shown(world: &mut ApplicationWorld) {
+    let sheet = world.pixel_at([1000, 500]);
+    assert!(
+        sheet[..3].iter().all(|channel| *channel > 200),
+        "sheet {sheet:?}"
+    );
+    world.expect_text("Drawing Resources");
+}
+#[then("the drawing sheet and drawing browser are displayed")]
+#[then("its sheet and drawing browser are displayed")]
+fn drawing_shown(world: &mut ApplicationWorld) {
+    expect_drawing_shown(world);
+}
+#[then("the drawing ribbon is active")]
+fn drawing_ribbon_active(world: &mut ApplicationWorld) {
+    world.expect_text("Base View");
+    world.expect_no_text("Finish Sketch");
+}
+#[then("the part remains available as an open tab")]
+fn part_tab_remains(world: &mut ApplicationWorld) {
+    let name = world.document_name(part_of(world));
+    world.expect_tab(&name);
+}
+#[given("the part is active")]
+fn part_active(world: &mut ApplicationWorld) {
+    world.activate_through_tab(part_of(world));
+}
+#[when("I open the document list at the end of the tab strip")]
+fn open_document_list(world: &mut ApplicationWorld) {
+    world.click_text("Documents");
+    world.pump(Vec::new());
+}
+#[then("the list contains the open part and drawing")]
+fn list_contains(world: &mut ApplicationWorld) {
+    for id in [part_of(world), drawing_of(world)] {
+        let name = world.document_name(id);
+        world.expect_text(&name);
+    }
+}
+#[then("the active part is marked in the list")]
+fn active_marked(world: &mut ApplicationWorld) {
+    let name = world.document_name(part_of(world));
+    assert!(world.checked(&name), "list row {name:?}: expected a mark");
+}
+#[when("I select the drawing from the list")]
+fn select_drawing_row(world: &mut ApplicationWorld) {
+    let name = world.document_name(drawing_of(world));
+    world.click_text(&name);
+}
+#[then("the drawing becomes active")]
+fn drawing_is_active(world: &mut ApplicationWorld) {
+    assert_eq!(world.state().document, Some(drawing_of(world)));
+}
+#[then("the menu offers Arrange, Horizontal Tile, Vertical Tile and Restore All")]
+fn arrangement_offered(world: &mut ApplicationWorld) {
+    for entry in ["Arrange", "Horizontal Tile", "Vertical Tile", "Restore All"] {
+        world.expect_text(entry);
+    }
+}
+#[then("the menu offers Close Tabs and Close All")]
+fn list_offers_closes(world: &mut ApplicationWorld) {
+    world.expect_text("Close Tabs");
+    world.expect_text("Close All");
+}
+const NEIGHBOR_PARTS: usize = 3;
+fn open_parts_then_drawing(world: &mut ApplicationWorld) {
+    for _ in 0..NEIGHBOR_PARTS {
+        world.add_part();
+    }
+    world.previous_document = Some(world.add_drawing());
+}
+fn tab_x(world: &mut ApplicationWorld, id: u64) -> f32 {
+    let name = world.document_name(id);
+    world.expect_tab(&name).center()[0]
+}
+fn drag_tab_to_first_place(world: &mut ApplicationWorld, id: u64) {
+    world.dragged_tab_x = Some(tab_x(world, id));
+    let name = world.document_name(id);
+    let from = world.expect_tab(&name).center().map(|value| value as i32);
+    let first = tab_x(world, world.parts[0]) as i32;
+    world.drag(from, [first - 30, from[1]]);
+    world.pump(Vec::new());
+}
+fn expect_tab_moved_left(world: &mut ApplicationWorld, id: u64) {
+    let before = world.dragged_tab_x.expect("expected a starting position");
+    let now = tab_x(world, id);
+    assert!(
+        now < before - 100.,
+        "tab at {now}: expected well left of {before}"
+    );
+    let first_part = tab_x(world, world.parts[0]);
+    assert!(
+        now < first_part,
+        "tab at {now}: expected before the first part at {first_part}"
+    );
+}
+#[given("a drawing and several other documents are open in the MCAD Software")]
+#[given("a drawing and several parts are open in the MCAD Software")]
+fn parts_and_drawing(world: &mut ApplicationWorld) {
+    open_parts_then_drawing(world);
+}
+#[given("the drawing is active and its tab is visible")]
+#[given("the drawing is active")]
+fn drawing_tab_visible(world: &mut ApplicationWorld) {
+    let drawing = drawing_of(world);
+    assert_eq!(world.state().document, Some(drawing));
+    tab_x(world, drawing);
+}
+#[when("I drag the drawing tab left across several neighboring tabs")]
+fn drag_drawing_tab_left(world: &mut ApplicationWorld) {
+    drag_tab_to_first_place(world, drawing_of(world));
+}
+#[then("the drawing tab appears at its new position among the document tabs")]
+fn drawing_tab_moved(world: &mut ApplicationWorld) {
+    expect_tab_moved_left(world, drawing_of(world));
+}
+#[then("its sheet and browser remain displayed")]
+fn sheet_and_browser(world: &mut ApplicationWorld) {
+    expect_drawing_shown(world);
+}
+#[when("I drag the drawing tab back to its earlier position")]
+fn drag_drawing_tab_back(world: &mut ApplicationWorld) {
+    let name = world.document_name(drawing_of(world));
+    let from = world.expect_tab(&name).center().map(|value| value as i32);
+    let target = world.dragged_tab_x.expect("expected a starting position") as i32;
+    world.drag(from, [target + 30, from[1]]);
+    world.pump(Vec::new());
+}
+#[then("the drawing tab returns to its earlier position")]
+fn drawing_tab_back(world: &mut ApplicationWorld) {
+    let before = world.dragged_tab_x.expect("expected a starting position");
+    let now = tab_x(world, drawing_of(world));
+    assert!((now - before).abs() < 6., "tab at {now}: expected {before}");
+}
+#[given("an inactive part tab is visible")]
+fn inactive_part_visible(world: &mut ApplicationWorld) {
+    let part = world.parts[NEIGHBOR_PARTS - 1];
+    tab_x(world, part);
+}
+#[when("I drag the inactive part tab left across several neighboring tabs")]
+fn drag_part_tab_left(world: &mut ApplicationWorld) {
+    drag_tab_to_first_place(world, world.parts[NEIGHBOR_PARTS - 1]);
+}
+#[then("the part tab appears at its new position among the document tabs")]
+fn part_tab_moved(world: &mut ApplicationWorld) {
+    let part = world.parts[NEIGHBOR_PARTS - 1];
+    let before = world.dragged_tab_x.expect("expected a starting position");
+    let now = tab_x(world, part);
+    assert!(
+        now < before - 60.,
+        "tab at {now}: expected well left of {before}"
+    );
+    let first_part = tab_x(world, world.parts[0]);
+    assert!(
+        now < first_part,
+        "tab at {now}: expected before the first part at {first_part}"
+    );
+}
+#[then("the part viewport and model browser are displayed")]
+fn dragged_part_shown(world: &mut ApplicationWorld) {
+    world.expect_active(world.parts[NEIGHBOR_PARTS - 1]);
+    world.expect_blank_region(super::documents::VIEWPORT_X, super::documents::VIEWPORT_Y);
+}
+#[then("the drawing remains open")]
+fn drawing_open(world: &mut ApplicationWorld) {
+    assert!(world.document_is_open(drawing_of(world)));
 }

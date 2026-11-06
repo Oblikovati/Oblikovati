@@ -26,17 +26,46 @@ fn document_snapshot_and_gui_activation_follow_the_same_file_owner() {
     assert_eq!(owner.gui_command_state().unwrap(), state);
 }
 #[test]
-fn gui_activation_cannot_abandon_a_sketch_or_an_open_transaction() {
+fn a_sketch_edit_parks_with_its_document_and_resumes_on_return() {
+    let (mut owner, awake) = owner();
+    let first = create(&mut owner, &awake);
+    let second = create(&mut owner, &awake);
+    let sketch = owner
+        .create_sketch_for_edit(second, &sketch_edit::request(SketchPlane::xy()))
+        .unwrap();
+    let away = ActivateDocumentArgs { id: first };
+    assert!(owner.activate_document_from_gui(&away).unwrap());
+    assert!(owner.active_sketch_edit().is_none());
+    let back = ActivateDocumentArgs { id: second };
+    assert!(owner.activate_document_from_gui(&back).unwrap());
+    let resumed = owner.active_sketch_edit().unwrap();
+    assert_eq!((resumed.document, resumed.sketch), (second, sketch));
+}
+#[test]
+fn closing_a_document_forgets_its_parked_edit() {
     let (mut owner, awake) = owner();
     let first = create(&mut owner, &awake);
     let second = create(&mut owner, &awake);
     owner
         .create_sketch_for_edit(second, &sketch_edit::request(SketchPlane::xy()))
         .unwrap();
+    let away = ActivateDocumentArgs { id: first };
+    owner.activate_document_from_gui(&away).unwrap();
+    assert_eq!(owner.parked_sketch_edits.len(), 1);
+    owner
+        .close_document_from_gui(&oblikovati_api::wire::CloseDocumentArgs {
+            id: second,
+            force: true,
+        })
+        .unwrap();
+    assert!(owner.parked_sketch_edits.is_empty());
+}
+#[test]
+fn gui_activation_cannot_abandon_an_open_transaction() {
+    let (mut owner, awake) = owner();
+    let first = create(&mut owner, &awake);
+    let second = create(&mut owner, &awake);
     let request = ActivateDocumentArgs { id: first };
-    assert!(owner.activate_document_from_gui(&request).is_err());
-    assert_eq!(owner.active_sketch_edit().unwrap().document, second);
-    owner.finish_sketch_edit().unwrap();
     Client::new(owner.document_host())
         .transactions()
         .begin(&TransactionBeginArgs {

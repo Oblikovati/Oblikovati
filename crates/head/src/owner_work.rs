@@ -217,6 +217,7 @@ impl<
             .documents()
             .close(request)
             .map_err(|cause| cause.to_string())?;
+        self.parked_sketch_edits.remove(&request.id);
         self.command_notice = Some(DesktopCommandNotice::DocumentClosed {
             document: request.id,
         });

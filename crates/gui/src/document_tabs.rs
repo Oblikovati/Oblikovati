@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{GuiAuthoringContext, GuiFrameRequest, GuiShellAction};
+use crate::{GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 use oblikovati_api::wire::{ActivateDocumentArgs, CloseDocumentArgs, DocumentInfo};
 
 const SETTLING_FRAMES: u8 = 2;
+/// The room the document list control takes at the end of the strip.
+const DOCUMENT_LIST_WIDTH: f32 = 92.;
 #[derive(Default)]
 pub(crate) struct DocumentTabs {
     previous: Option<u64>,
@@ -23,11 +25,8 @@ impl DocumentTabs {
         layout: &crate::application::workspace_layout::WorkspaceLayout,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        // A sketch edit keeps its document selected: a tab click must not move the bar away from it.
         self.track_labels(&request.commands);
-        let force = self.previous != request.commands.document
-            || request.commands.authoring == GuiAuthoringContext::Sketch
-            || self.right_button_selection(ui);
+        let force = self.previous != request.commands.document || self.right_button_selection(ui);
         self.previous = request.commands.document;
         if !layout.tabs_visible || !request.commands.documents.iter().any(|row| row.visible) {
             return;
@@ -35,9 +34,18 @@ impl DocumentTabs {
         let width = request.extent[0] as f32 / request.layout_scale()[0];
         let before = actions.len();
         let menu = &mut self.menu;
-        document_strip_window(ui, layout.tab_span(width), band_height, || {
+        let span = layout.tab_span(width);
+        let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
+        document_strip_window(ui, strip, band_height, || {
             document_strip(ui, request, force, menu, actions)
         });
+        crate::application::document_tabs::document_list_control(
+            ui,
+            [span.0 + strip.1, band_height + 2.],
+            DOCUMENT_LIST_WIDTH,
+            &request.commands,
+            actions,
+        );
         // #3800: a refused dirty close or activation must restore the owner's tab selection.
         if actions.len() != before {
             self.previous = None;
@@ -83,11 +91,11 @@ fn document_strip(
     menu: &mut crate::application::document_tabs::TabMenu,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let Some(_bar) = ui.tab_bar("##visible-documents") else {
+    let flags = imgui::TabBarFlags::REORDERABLE;
+    let Some(_bar) = ui.tab_bar_with_flags("##visible-documents", flags) else {
         return;
     };
     let state = &request.commands;
-    // A sketch edit keeps close marks live: closing asks to leave the sketch first.
     let _disabled = ui.begin_disabled(state.transaction_open);
     for row in state.documents.iter().filter(|row| row.visible) {
         let selected = force && state.document == Some(row.id);

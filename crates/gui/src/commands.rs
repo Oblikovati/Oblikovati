@@ -161,7 +161,6 @@ impl GuiShellAction {
             Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,
             Self::ActivateDocument(request) => {
                 !state.transaction_open
-                    && state.authoring != GuiAuthoringContext::Sketch
                     && state
                         .documents
                         .iter()

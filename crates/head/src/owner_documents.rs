@@ -82,20 +82,38 @@ impl<
         if self.files.workspace().active_document() == Some(request.id) {
             return Ok(false);
         }
+        self.park_active_sketch_edit()?;
         Client::new(self.document_host())
             .documents()
             .activate(request)
             .map_err(|cause| format!("Activate document {}: {cause}", request.id))?;
+        self.resume_parked_sketch_edit(request.id)?;
         Ok(true)
+    }
+    /// An edit stays with its document while another one is active; nothing in its recipe changes.
+    fn park_active_sketch_edit(&mut self) -> Result<(), String> {
+        let Some(edit) = self.active_sketch_edit() else {
+            return Ok(());
+        };
+        self.retire_sketch_tool()?;
+        self.sketch_edit = None;
+        self.parked_sketch_edits.insert(edit.document, edit.sketch);
+        Ok(())
+    }
+    fn resume_parked_sketch_edit(&mut self, document: u64) -> Result<(), String> {
+        match self.parked_sketch_edits.remove(&document) {
+            Some(sketch) => self.begin_sketch_edit(document, sketch),
+            None => Ok(()),
+        }
     }
     fn require_gui_document_switch(&self, target: u64) -> Result<(), String> {
         let row = self
             .files
             .document_info(target)
             .map_err(|cause| cause.to_string())?;
-        if !row.visible || self.active_sketch_edit().is_some() {
+        if !row.visible {
             return Err(format!(
-                "Activate document {target}, visible={}: expected a visible document with no active sketch edit",
+                "Activate document {target}, visible={}: expected a visible document",
                 row.visible
             ));
         }

@@ -331,6 +331,13 @@ impl ApplicationWorld {
         let common = counts.into_iter().max_by_key(|(_, count)| *count);
         common.is_some_and(|(pixel, _)| pixel != plain)
     }
+    /// Press a branch's disclosure control, drawn just left of its label.
+    pub fn press_disclosure(&mut self, branch: &str) {
+        let label = self.run(branch).clone();
+        let at = [label.minimum[0] as i32 - 12, label.center()[1] as i32];
+        self.click(at);
+        self.pump(Vec::new());
+    }
     /// The location steps as rendered, without spaces; no other text in a dialog holds `>`.
     pub fn breadcrumb_text(&self) -> String {
         self.frame

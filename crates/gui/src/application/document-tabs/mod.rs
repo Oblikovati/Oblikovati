@@ -8,6 +8,7 @@ use oblikovati_api::wire::{ActivateDocumentArgs, CloseDocumentArgs, DocumentInfo
 
 const SELECT_WINDOW: &str = "Select Window";
 const SWITCH_MENU: &str = "##switch-windows";
+const DOCUMENT_LIST_MENU: &str = "##tab-strip-documents";
 
 fn visible(state: &GuiCommandState) -> impl Iterator<Item = &DocumentInfo> {
     state.documents.iter().filter(|row| row.visible)
@@ -17,6 +18,63 @@ fn activate(id: u64) -> GuiShellAction {
 }
 fn close(id: u64) -> GuiShellAction {
     GuiShellAction::CloseDocument(CloseDocumentArgs { id, force: false })
+}
+/// Every open document, the active one checked; a choice activates it.
+fn document_rows(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    for row in visible(state) {
+        let chosen = ui
+            .menu_item_config(&row.name)
+            .selected(state.document == Some(row.id))
+            .build();
+        if chosen {
+            actions.push(activate(row.id));
+        }
+    }
+}
+/// One document shows at a time for now, so window arrangements are offered muted with the reason.
+fn arrangement_rows(ui: &Ui) {
+    for label in ["Arrange", "Horizontal Tile", "Vertical Tile", "Restore All"] {
+        ui.menu_item_config(label).enabled(false).build();
+        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+            ui.tooltip_text("This command is not available in this build.");
+        }
+    }
+}
+/// The control at the end of the tab strip that lists every open document.
+/// Example: `document_list_control(ui, [1340., 160.], 92., state, actions)`.
+pub(crate) fn document_list_control(
+    ui: &Ui,
+    position: [f32; 2],
+    width: f32,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    crate::widget_abi::window_geometry(ui, position, [width, 32.], imgui::Condition::Always);
+    ui.window("##document-list-control")
+        .flags(
+            imgui::WindowFlags::NO_DECORATION
+                | imgui::WindowFlags::NO_MOVE
+                | imgui::WindowFlags::NO_DOCKING
+                | imgui::WindowFlags::NO_SAVED_SETTINGS
+                | imgui::WindowFlags::NO_FOCUS_ON_APPEARING,
+        )
+        .build(|| {
+            if crate::widget_abi::button(ui, "Documents", [0.; 2]) {
+                ui.open_popup(DOCUMENT_LIST_MENU);
+            }
+            if let Some(_menu) = ui.begin_popup(DOCUMENT_LIST_MENU) {
+                arrangement_rows(ui);
+                ui.separator();
+                document_rows(ui, state, actions);
+                ui.separator();
+                if ui.menu_item("Close Tabs") {
+                    actions.extend(tab_closes(state, state.document));
+                }
+                if ui.menu_item("Close All") {
+                    actions.extend(tab_closes(state, None));
+                }
+            }
+        });
 }
 /// The View tab's Switch menu and its extended list.
 #[derive(Debug, Default)]
@@ -39,15 +97,7 @@ impl WindowSwitcher {
         let Some(_menu) = ui.begin_popup(SWITCH_MENU) else {
             return;
         };
-        for row in visible(state) {
-            let chosen = ui
-                .menu_item_config(&row.name)
-                .selected(state.document == Some(row.id))
-                .build();
-            if chosen {
-                actions.push(activate(row.id));
-            }
-        }
+        document_rows(ui, state, actions);
         ui.separator();
         if ui.menu_item("More Windows...") {
             self.opening = true;
