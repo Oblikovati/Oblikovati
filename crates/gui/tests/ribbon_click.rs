@@ -175,6 +175,8 @@ fn sketch_tool_captions_identify_the_existing_construction_choices() {
         (Ellipse, "Ellipse"),
         (CenterRectangle, "Center Rect."),
         (ThreePointRectangle, "3-Point Rect."),
+        (ThreePointCircle, "3-Point Circle"),
+        (ThreePointArc, "3-Point Arc"),
     ] {
         assert_eq!(tool.label(), label);
     }
@@ -429,3 +431,6 @@ fn line_commands_pass_ribbon_keyboard_focus_without_reactivating_buttons() {
 
 #[path = "ribbon_click/sketch_delete.rs"]
 mod sketch_delete;
+
+#[path = "ribbon_click/circular_flyouts.rs"]
+mod circular_flyouts;
