@@ -21,8 +21,10 @@ bool oblikovati_gui_selectable(const unsigned char* label, bool selected, int fl
     return ImGui::Selectable(reinterpret_cast<const char*>(label), selected, flags, ImVec2(0, 0));
 }
 void oblikovati_gui_literal_text(const unsigned char* text, std::size_t length,
-                                float x, float y, unsigned int color) {
+                                float x, float y, unsigned int color, bool background) {
     const char* begin = reinterpret_cast<const char*>(text);
-    ImGui::GetWindowDrawList()->AddText(ImVec2(x, y), color, begin, begin + length);
+    // #3839: annotations need the same scalar ABI even before a window is active.
+    ImDrawList* draw = background ? ImGui::GetBackgroundDrawList() : ImGui::GetWindowDrawList();
+    draw->AddText(ImVec2(x, y), color, begin, begin + length);
 }
 }

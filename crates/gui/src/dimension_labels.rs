@@ -19,7 +19,6 @@ pub struct GuiDimensionLabel {
     pub role: GuiDimensionLabelRole,
 }
 pub(crate) fn draw_dimension_labels(ui: &imgui::Ui, request: &GuiFrameRequest) {
-    let draw = ui.get_background_draw_list();
     for label in request.commands.dimension_labels.iter().filter(|label| {
         label
             .pixel
@@ -31,7 +30,12 @@ pub(crate) fn draw_dimension_labels(ui: &imgui::Ui, request: &GuiFrameRequest) {
         let position = std::array::from_fn::<_, 2, _>(|axis| {
             label.pixel[axis] as f32 / request.framebuffer_scale[axis] - size[axis] / 2.
         });
-        draw.add_text(position, label_color(ui, request, label.role), &label.text);
+        crate::widget_abi::background_literal_text(
+            ui,
+            position,
+            label_color(ui, request, label.role),
+            &label.text,
+        );
     }
 }
 fn label_color(ui: &imgui::Ui, request: &GuiFrameRequest, role: GuiDimensionLabelRole) -> [f32; 4] {

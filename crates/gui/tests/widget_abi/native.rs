@@ -71,3 +71,37 @@ fn assert_literal_draw_color(context: &mut imgui::Context) {
             .any(|vertex| vertex.col == color)
     );
 }
+
+#[test]
+fn scalar_background_text_keeps_literal_glyphs_behind_window_geometry() {
+    let mut context = probe_context();
+    let ui = context.frame();
+    let text = "d0 = 10 mm##literal";
+    background_literal_text(ui, [80.25, 100.5], [1., 0., 0., 1.], text);
+    window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
+    ui.window("Annotation layer probe").build(|| {
+        literal_text(ui, [80., 100.], [0., 0., 1., 1.], "Window");
+    });
+    assert_background_draws(&mut context, text);
+}
+fn assert_background_draws(context: &mut imgui::Context, text: &str) {
+    let draws = context.render();
+    let lists: Vec<&imgui::DrawList> = draws.draw_lists().collect();
+    let red = ImColor32::from_rgba(255, 0, 0, 255).to_bits().to_ne_bytes();
+    let vertices = lists[0].vtx_buffer();
+    assert_eq!(
+        vertices.len(),
+        text.chars().filter(|value| !value.is_whitespace()).count() * 4
+    );
+    assert!(vertices.iter().all(|vertex| vertex.col == red));
+    assert!(
+        lists.len() > 1,
+        "expected window geometry after the background annotation"
+    );
+    assert!(
+        lists[1..]
+            .iter()
+            .flat_map(|list| list.vtx_buffer())
+            .all(|vertex| vertex.col != red)
+    );
+}
