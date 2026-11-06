@@ -62,7 +62,7 @@ fn yaml_round_trip_preserves_binding_identity_seed_bits_and_reservation_marks() 
 }
 #[test]
 fn older_recipe_versions_cannot_silently_accept_projection_sources() {
-    for version in [1u64, 2, 3, 5] {
+    for version in [1u64, 2, 3, 6] {
         let mut document = yaml_document();
         document["model"]["planarSketches"]["recipe"]["version"] = version.into();
         assert!(decode_document(&document).restore_sketches().is_err());
@@ -76,4 +76,26 @@ fn zero_and_missing_anchor_ids_are_refused_during_package_restore() {
             anchor.into();
         assert!(decode_document(&document).restore_sketches().is_err());
     }
+}
+
+#[test]
+fn hidden_projected_sketch_round_trips_in_a_version_five_package() {
+    let mut hidden = sketches();
+    hidden.set_visible(DocumentSketchId(3), false).unwrap();
+    let package = DocumentPackage::empty(DOCUMENT_PART, "Hidden projection")
+        .with_sketches(&hidden, 9, 15)
+        .unwrap();
+    let restored = DocumentPackage::decode(&package.encode().unwrap())
+        .unwrap()
+        .restore_sketches()
+        .unwrap();
+    assert_eq!(restored.sketches.recipe().version, 5);
+    assert!(restored.sketches.same_recipe(&hidden));
+    assert!(
+        !restored
+            .sketches
+            .get(DocumentSketchId(3))
+            .unwrap()
+            .visible()
+    );
 }
