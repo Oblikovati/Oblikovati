@@ -12,6 +12,8 @@ use world::ApplicationWorld;
 mod document_creation;
 #[path = "file-menu/steps.rs"]
 mod file_menu;
+#[path = "ribbon-display/steps.rs"]
+mod ribbon_display;
 #[path = "workspace-layout/steps.rs"]
 mod workspace_layout;
 

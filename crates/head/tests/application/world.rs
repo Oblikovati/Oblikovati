@@ -7,6 +7,7 @@ pub(super) struct ApplicationWorld {
     pub app: Option<NativeApplication>,
     pub frame: diagnostics::RenderedFrame,
     pub previous_document: Option<u64>,
+    pub ribbon_height: f32,
     pub saved_path: Option<std::path::PathBuf>,
     pub scratch: Option<tempfile::TempDir>,
 }
@@ -33,6 +34,7 @@ impl ApplicationWorld {
             }),
             frame: Default::default(),
             previous_document: None,
+            ribbon_height: 0.,
             saved_path: None,
             scratch: None,
         };
@@ -147,6 +149,14 @@ impl ApplicationWorld {
                 && mark.position[1] >= run.minimum[1] - 2.
                 && mark.position[1] <= run.maximum[1] + 2.
         })
+    }
+    /// The framebuffer colour just left of a label, inside the widget that holds it.
+    pub fn pixel_left_of(&mut self, label: &str) -> [u8; 4] {
+        let run = self.run(label).clone();
+        let capture = super::capture_framebuffer(&mut self.app().window.native);
+        let x = run.minimum[0] as usize - 3;
+        let at = (run.center()[1] as usize * capture.extent[0] as usize + x) * 4;
+        std::array::from_fn(|channel| capture.rgba[at + channel])
     }
     pub fn extent(&mut self) -> [u32; 2] {
         self.app()

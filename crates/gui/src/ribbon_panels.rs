@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Per-owner panel measurements keep the Go ribbon's width-dependent collapse behavior.
+use crate::application::ribbon_display::{RibbonDisplay, RibbonDisplayState, TemporaryPanel};
 use crate::ribbon::RibbonTab;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
@@ -123,21 +124,99 @@ pub(crate) fn draw_panels(
     state: &GuiCommandState,
     owners: RibbonPanelOwners<'_>,
     layout: &mut RibbonPanelLayout,
+    display: &mut RibbonDisplayState,
     actions: &mut Vec<GuiShellAction>,
 ) {
+    layout.pending_layout = false;
+    let mut context = PanelDrawContext {
+        ui,
+        state,
+        owners,
+        actions,
+    };
+    if display.mode == RibbonDisplay::Full {
+        full_row(&mut context, tab, layout);
+    } else {
+        compact_row(&mut context, tab, display);
+        temporary_panel(&mut context, tab, layout, display);
+    }
+}
+fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut RibbonPanelLayout) {
+    let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
     let height = 80. + layout.scrollbar_height(ui);
-    layout.pending_layout = false;
     let region = crate::widget_abi::scroll_region(ui, "##ribbon-panels", [available, height]);
     if region.visible {
-        let mut context = PanelDrawContext {
-            ui,
-            state,
-            owners,
-            actions,
-        };
-        draw_row(&mut context, tab, layout, available);
+        draw_row(context, tab, layout, available);
         layout.observe_scrollbar(ui.scroll_max_x() > 0.);
+    }
+}
+/// One button per group; a group's commands open in the temporary panel.
+fn compact_row(
+    context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
+    display: &mut RibbonDisplayState,
+) {
+    let Some(size) = display.mode.group_button() else {
+        return;
+    };
+    let ui = context.ui;
+    for panel in panels_for(tab, context.state) {
+        if crate::widget_abi::button(ui, panel.label(), size) {
+            display.temporary = Some(TemporaryPanel::Group(panel));
+        }
+        ui.same_line();
+    }
+}
+/// Commands a compact mode hides, over the workspace until the next click elsewhere.
+fn temporary_panel(
+    context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
+    layout: &mut RibbonPanelLayout,
+    display: &mut RibbonDisplayState,
+) {
+    let Some(shown) = display.temporary else {
+        return;
+    };
+    let ui = context.ui;
+    let width = ui.io().display_size[0] - 16.;
+    let top = ui.window_size()[1];
+    crate::widget_abi::window_geometry(ui, [8., top], [width, 104.], imgui::Condition::Always);
+    let before = context.actions.len();
+    let mut keep = true;
+    ui.window("##ribbon-temporary-panel")
+        .title_bar(false)
+        .movable(false)
+        .resizable(false)
+        .collapsible(false)
+        .flags(imgui::WindowFlags::NO_DOCKING)
+        .build(|| {
+            let local = temporary_contents(context, tab, layout, shown);
+            keep = !local
+                && (ui.is_window_hovered() || !ui.is_mouse_clicked(imgui::MouseButton::Left));
+        });
+    if !keep || context.actions.len() != before {
+        display.temporary = None;
+    }
+}
+fn temporary_contents(
+    context: &mut PanelDrawContext<'_>,
+    tab: RibbonTab,
+    layout: &mut RibbonPanelLayout,
+    shown: TemporaryPanel,
+) -> bool {
+    let ui = context.ui;
+    let available = ui.content_region_avail()[0].max(1.);
+    let region = crate::widget_abi::scroll_region(ui, "##temporary-contents", [available, 86.]);
+    if !region.visible {
+        return false;
+    }
+    match shown {
+        TemporaryPanel::Group(panel) => draw_expanded(context, panel, [0.; 2]).1,
+        TemporaryPanel::WholeTab => {
+            draw_row(context, tab, layout, available);
+            false
+        }
     }
 }
 fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {

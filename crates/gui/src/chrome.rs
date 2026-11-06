@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::application::ribbon_display::{RibbonDisplay, TemporaryPanel};
 use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
@@ -18,7 +19,8 @@ pub(crate) fn ribbon_band(
     actions: &mut Vec<GuiShellAction>,
 ) -> f32 {
     let width = request.extent[0] as f32 / request.layout_scale()[0];
-    let height = 158. + owners.ribbon.panels.scrollbar_height(ui);
+    let scrollbar = owners.ribbon.panels.scrollbar_height(ui);
+    let height = owners.ribbon.display.mode.band_height(scrollbar);
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
         ribbon_contents(ui, request, &mut owners, actions);
     }
@@ -53,6 +55,8 @@ fn ribbon_contents(
     quick_access(ui, &request.commands, actions);
     ui.same_line();
     ribbon_tabs(ui, owners.ribbon, &frame);
+    let control = [ui.window_size()[0] - 160., 35.];
+    owners.ribbon.display.control(ui, control);
     ribbon_panel_row(ui, request, owners, actions);
     crate::widget_abi::cursor_position(ui, [8., ui.window_size()[1] - 20.]);
     ui.text(request.status.as_deref().unwrap_or("Ready"));
@@ -64,16 +68,18 @@ fn ribbon_panel_row(
     actions: &mut Vec<GuiShellAction>,
 ) {
     crate::widget_abi::cursor_position(ui, [16., 59.]);
+    let ribbon = &mut *owners.ribbon;
     crate::ribbon_panels::draw_panels(
         ui,
-        owners.ribbon.active,
+        ribbon.active,
         &request.commands,
         crate::ribbon_panels::RibbonPanelOwners {
             parameters: owners.parameters,
             editor: owners.theme_editor,
             workspace: owners.workspace,
         },
-        &mut owners.ribbon.panels,
+        &mut ribbon.panels,
+        &mut ribbon.display,
         actions,
     );
     crate::theme_editor::panel(
@@ -93,8 +99,15 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         } else {
             TabItemFlags::empty()
         };
-        if let Some(_item) = ui.tab_item_with_flags(tab.label(), None, flags) {
+        let item = ui.tab_item_with_flags(tab.label(), None, flags);
+        // On release: the press itself is a click outside any panel still open, and closes it.
+        let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
+        if item.is_some() {
             ribbon.active = *tab;
+        }
+        drop(item);
+        if released && ribbon.display.mode == RibbonDisplay::Tabs {
+            ribbon.display.temporary = Some(TemporaryPanel::WholeTab);
         }
     }
 }

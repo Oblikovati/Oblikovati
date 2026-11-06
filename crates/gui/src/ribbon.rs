@@ -31,6 +31,7 @@ pub(crate) struct DocumentRibbon {
     previous: Option<(RibbonKey, bool)>,
     pub active: RibbonTab,
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
+    pub display: crate::application::ribbon_display::RibbonDisplayState,
 }
 pub(crate) struct RibbonFrame {
     pub tabs: Vec<RibbonTab>,
