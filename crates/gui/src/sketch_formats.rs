@@ -22,4 +22,8 @@ pub(crate) fn sketch_format_controls(
             actions.push(action);
         }
     }
+    widget_abi::cursor_position(ui, [origin[0], origin[1] + 40.]);
+    if widget_abi::toggle_button(ui, "Center Point", [108., 18.], state.center_point_format) {
+        actions.push(GuiShellAction::ToggleCenterPointFormat);
+    }
 }

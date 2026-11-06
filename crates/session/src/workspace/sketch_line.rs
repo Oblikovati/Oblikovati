@@ -42,6 +42,15 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session
             .create_inferred_sketch_line_chain(sketch, input)
     }
+    /// Place one point on this document; example: `commands.create_sketch_point(id, &at)?`.
+    pub fn create_sketch_point(
+        &mut self,
+        sketch: DocumentSketchId,
+        placement: &oblikovati_model::history::SketchPointPlacement,
+    ) -> Result<oblikovati_model::sketch::SketchEntityId, CommandError<SketchLineCreationError>>
+    {
+        self.session.create_sketch_point(sketch, placement)
+    }
     /// Create one tangent arc on this document without changing focus.
     /// Example: `commands.create_tangent_arc(sketch, &input)?;`.
     pub fn create_tangent_arc(

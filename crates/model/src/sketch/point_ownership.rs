@@ -36,7 +36,7 @@ impl Sketch2D {
         ids
     }
     pub(super) fn capture_point_ownership_schema(&self, recipe: &mut SketchRecipe) {
-        if self.defining_points.is_empty() {
+        if self.defining_points.is_empty() && !self.has_center_points() {
             return;
         }
         recipe.version = 12;

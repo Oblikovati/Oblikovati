@@ -118,6 +118,12 @@ fn native_delete_observer_veto_retains_geometry_and_picks() {
         .process_window_inputs(&[button([100, 100], true)], &window)
         .unwrap();
     owner
+        .process_window_inputs(
+            &[key(oblikovati_viewport::ViewportKey::Cancel, true)],
+            &window,
+        )
+        .unwrap();
+    owner
         .process_window_inputs(&[button([100, 100], true)], &window)
         .unwrap();
     let document = owner.gui_command_state().unwrap().document.unwrap();

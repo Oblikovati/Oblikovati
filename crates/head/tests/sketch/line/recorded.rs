@@ -24,14 +24,6 @@ const CLEAR_START: [i32; 2] = [620, 480];
 /// Where the pointer rests while values are typed; clear of every fixture.
 const TYPING_POINTER: [i32; 2] = [1000, 300];
 
-pub(super) fn start_yz_sketch(world: &mut ApplicationWorld) {
-    world.add_part();
-    world.click_text("Start 2D Sketch");
-    world.pump(Vec::new());
-    world.click_text("YZ Plane");
-    world.pump(Vec::new());
-    world.remember_sketch_baseline();
-}
 fn enter_length_and_angle(world: &mut ApplicationWorld, length: &str, angle: &str) {
     world.type_text(length);
     world.key(ViewportPhysicalKey::Tab, false);
@@ -92,7 +84,7 @@ pub(super) fn finish_and_save(world: &mut ApplicationWorld) {
 // line-17
 #[given("a horizontal source segment in an editable YZ sketch")]
 fn horizontal_source(world: &mut ApplicationWorld) {
-    start_yz_sketch(world);
+    world.start_sketch_on("YZ Plane");
     world.select_line_tool();
     for corner in SOURCE_PIXELS {
         world.sketch_click(corner);
@@ -161,7 +153,7 @@ fn only_source(world: &mut ApplicationWorld) {
 // line-18
 #[given("the recorded YZ sketch fixture contains an isolated horizontal reference curve")]
 fn isolated_reference(world: &mut ApplicationWorld) {
-    start_yz_sketch(world);
+    world.start_sketch_on("YZ Plane");
     world.open_precise_input();
     exact_typed_line(world, REFERENCE_START, REFERENCE_LENGTH, "90");
 }
@@ -184,7 +176,6 @@ fn enter_numeric(world: &mut ApplicationWorld) {
 fn exit_and_measure(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
-    world.close_precise_input();
     world.key(ViewportPhysicalKey::M, false);
 }
 #[when("I select the new curve and the horizontal reference")]
@@ -233,7 +224,6 @@ fn same_rows(world: &mut ApplicationWorld) {
 fn numeric_and_reference(world: &mut ApplicationWorld) {
     isolated_reference(world);
     exact_typed_line(world, NUMERIC_START, "10", "30");
-    world.close_precise_input();
 }
 #[when("the saved sketch is edited and the two curves are selected in Measure")]
 fn saved_sketch_measured(world: &mut ApplicationWorld) {
@@ -285,7 +275,7 @@ fn pointer_chain(world: &mut ApplicationWorld, corners: &[[i32; 2]]) {
 }
 #[given("the retained Line groups after Ready-state Redo show 20 dimensions needed")]
 fn retained_groups(world: &mut ApplicationWorld) {
-    start_yz_sketch(world);
+    world.start_sketch_on("YZ Plane");
     pointer_chain(world, &SOURCE_PIXELS);
     world.expect_dimensions_needed(3);
     pointer_chain(world, &CHAIN);
@@ -295,7 +285,6 @@ fn retained_groups(world: &mut ApplicationWorld) {
     world.expect_dimensions_needed(11);
     closed_triangle(world);
     world.expect_dimensions_needed(13);
-    world.close_precise_input();
     pointer_chain(world, &SEPARATE);
     world.expect_dimensions_needed(16);
     pointer_chain(world, &OBLIQUE);

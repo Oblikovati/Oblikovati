@@ -5,9 +5,13 @@ use super::*;
 pub(super) mod fixtures;
 #[path = "line/steps.rs"]
 mod line;
+#[path = "point/steps.rs"]
+mod point;
+#[path = "precise-input/steps.rs"]
+mod precise_input;
 
 /// Features the gate requires; each is one finished folder under `features/sketch`.
-const ACCEPTED_FEATURES: &[&str] = &["line"];
+const ACCEPTED_FEATURES: &[&str] = &["line", "point", "precise-input"];
 #[test]
 fn sketch_scenarios_use_the_native_window() {
     std::thread::Builder::new()

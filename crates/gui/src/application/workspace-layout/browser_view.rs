@@ -7,6 +7,15 @@ const BROWSER_MENU: &str = "##browser-menu";
 const NO_RESULTS: &str = "No matching entries";
 const SEARCH_HINT: &str = "Search";
 const HIGHLIGHT: [f32; 4] = [0.95, 0.75, 0.2, 0.45];
+const LISTED_DISPLAY_PREFERENCES: [&str; 7] = [
+    "Hide Notes",
+    "Hide Documents",
+    "Hide Warnings",
+    "Show Extended Names",
+    "Hide Blue Dot Indicator",
+    "Auto expand Representations Folder on Open",
+    "Design View Expansion",
+];
 
 #[derive(Debug, Default)]
 pub(crate) struct BrowserView {
@@ -16,6 +25,11 @@ pub(crate) struct BrowserView {
     expansion: Option<bool>,
     /// The drawing tree row a click chose, as its branch and row.
     pub selected_row: Option<(usize, usize)>,
+    /// The origin row a click chose.
+    pub selected_origin_row: Option<usize>,
+    pub hide_work_features: bool,
+    /// The branch was just brought back: it opens closed, once.
+    pub origin_closes_on_return: bool,
 }
 impl BrowserView {
     /// Draw the menu and search controls above the tree; example: `view.header(ui)`.
@@ -48,9 +62,27 @@ impl BrowserView {
             if ui.menu_item("Find") {
                 self.open_search();
             }
-            muted_menu_item(ui, "Display Preferences");
+            self.display_preferences(ui);
         }
         muted_menu_item(ui, "Help");
+    }
+    /// Only Hide Work Features has a tree to act on yet; the rest are listed, not offered.
+    fn display_preferences(&mut self, ui: &Ui) {
+        ui.menu("Display Preferences", || {
+            muted_menu_item(ui, "Hide UCS");
+            let hidden = self.hide_work_features;
+            if ui
+                .menu_item_config("Hide Work Features")
+                .selected(hidden)
+                .build()
+            {
+                self.hide_work_features = !hidden;
+                self.origin_closes_on_return = hidden;
+            }
+            for row in LISTED_DISPLAY_PREFERENCES {
+                muted_menu_item(ui, row);
+            }
+        });
     }
     fn open_search(&mut self) {
         self.query.get_or_insert_with(String::new);

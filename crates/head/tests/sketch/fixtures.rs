@@ -11,6 +11,13 @@ const SEED_ORIGIN: [f64; 2] = [5000., 5000.];
 const SEED_STEP: f64 = 40.;
 /// A drawn line differs from the empty view within this reach of its centre, in pixels.
 const LINE_REACH: i32 = 2;
+/// A dot ends inside this many pixels of its center; a cross's arms pass it.
+const CROSS_ARM: i32 = 7;
+const MARK_REACH: i32 = 1;
+/// The mono font's advance; a label's run starts this far per glyph left of its end.
+const LABEL_GLYPH_WIDTH: f32 = 7.;
+/// From a label's start into the middle of the field left of it.
+const FIELD_INSIDE_LABEL: f32 = 40.;
 impl ApplicationWorld {
     /// An empty editable sketch; the view with nothing drawn is kept for later comparison.
     pub fn start_empty_sketch(&mut self) {
@@ -85,6 +92,91 @@ impl ApplicationWorld {
     }
     pub fn select_line_tool(&mut self) {
         self.click_text("Line");
+    }
+    pub fn select_point_tool(&mut self) {
+        self.click_text("Point");
+        self.pump(Vec::new());
+    }
+    /// A new sketch on a named origin plane, the view with nothing drawn kept for comparison.
+    pub fn start_sketch_on(&mut self, plane: &str) {
+        self.add_part();
+        self.click_text("Start 2D Sketch");
+        self.pump(Vec::new());
+        self.click_text(plane);
+        self.pump(Vec::new());
+        self.remember_sketch_baseline();
+    }
+    /// A new sketch on any plane, for a fixture that names where its points must measure.
+    pub fn start_sketch_on_plane(&mut self, plane: oblikovati_model::sketch::SketchPlane) {
+        use oblikovati_model::{document_sketch::SketchPlacement, history::DocumentSketchCreation};
+        let document = self.add_part();
+        let request = DocumentSketchCreation {
+            name: "Sketch1".into(),
+            placement: SketchPlacement::Fixed(plane),
+            orientation: None,
+            project_origin: false,
+        };
+        self.app()
+            .owner
+            .create_sketch_for_edit(document, &request)
+            .unwrap();
+        self.pump(Vec::new());
+        self.pump(Vec::new());
+        self.remember_sketch_baseline();
+    }
+    /// What a sketch point draws at this pixel, read from the framebuffer.
+    pub fn expect_point_mark(&mut self, at: [i32; 2], wanted: PointMark) {
+        let capture = super::super::capture_framebuffer(&mut self.app().window.native);
+        let baseline = self
+            .sketch_baseline
+            .as_ref()
+            .expect("expected a remembered sketch baseline");
+        let shown = point_mark(&capture, baseline, at);
+        assert_eq!(shown, wanted, "point mark at {at:?}");
+    }
+    /// Click a toolbar field; its label sits right of it and may share a run with its value.
+    pub fn click_precise_field(&mut self, label: &str) {
+        let (position, size) = diagnostics::window_geometry("Precise Input")
+            .expect("expected the Precise Input toolbar");
+        let run = self
+            .frame
+            .runs
+            .iter()
+            .find(|run| {
+                let center = run.center();
+                run.text.ends_with(label)
+                    && (0..2).all(|axis| {
+                        center[axis] >= position[axis]
+                            && center[axis] <= position[axis] + size[axis]
+                    })
+            })
+            .unwrap_or_else(|| panic!("expected a field {label} in {:?}", self.text()))
+            .clone();
+        let label_width = LABEL_GLYPH_WIDTH * label.len() as f32;
+        let x = run.maximum[0] - label_width - FIELD_INSIDE_LABEL;
+        self.click([x as i32, run.center()[1] as i32]);
+    }
+    /// Type both of the toolbar's values and accept them, whatever its fields are named.
+    pub fn precise_values(&mut self, first: &str, second: &str) {
+        let labels = self.precise_field_labels();
+        self.click_precise_field(labels[0]);
+        self.type_text(first);
+        self.click_precise_field(labels[1]);
+        self.type_text(second);
+        self.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+        self.pump(Vec::new());
+    }
+    fn precise_field_labels(&self) -> [&'static str; 2] {
+        let text = self.window_text("Precise Input");
+        if text.contains("Distance") {
+            ["Distance", "Angle"]
+        } else if !text.contains("Angle") {
+            ["X", "Y"]
+        } else if text.contains('Y') {
+            ["Y", "Angle"]
+        } else {
+            ["X", "Angle"]
+        }
     }
     pub fn double_click(&mut self, position: [i32; 2]) {
         self.pump(super::super::pointer_click_events(position, 2));
@@ -230,11 +322,10 @@ impl ApplicationWorld {
             .unwrap()
             .expect("expected the pixel to reach the sketch plane")
     }
-    /// Open the toolbar through the ribbon's Format panel.
+    /// Open the toolbar through the ribbon's Format panel; it shows while a command takes points.
     pub fn open_precise_input(&mut self) {
         self.click_text("Precise Input");
         self.pump(Vec::new());
-        self.expect_text("X");
     }
     /// Close it through its own options, the way the recording did.
     pub fn close_precise_input(&mut self) {
@@ -253,14 +344,7 @@ impl ApplicationWorld {
     }
     /// Type one exact point, in millimetres, and accept it.
     pub fn precise_point(&mut self, at: [f64; 2]) {
-        for (label, value) in [("X", at[0]), ("Y", at[1])] {
-            let label = self.run_in_window("Precise Input", label).clone();
-            // The field sits immediately left of its label.
-            self.click([label.minimum[0] as i32 - 20, label.center()[1] as i32]);
-            self.type_text(&format!("{value:.6}"));
-        }
-        self.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
-        self.pump(Vec::new());
+        self.precise_values(&format!("{:.6}", at[0]), &format!("{:.6}", at[1]));
     }
     /// The text run inside one named window, for a word the ribbon also shows.
     pub fn run_in_window(&self, title: &str, text: &str) -> &diagnostics::RenderedRun {
@@ -396,14 +480,51 @@ impl ApplicationWorld {
         }
     }
 }
+/// What a sketch point's marker looks like on screen.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PointMark {
+    Absent,
+    Dot,
+    Cross,
+}
+/// A cross has arms reaching past a dot's edge, along the axes.
+fn point_mark(
+    capture: &oblikovati_viewport::ViewportCapture,
+    baseline: &oblikovati_viewport::ViewportCapture,
+    at: [i32; 2],
+) -> PointMark {
+    // A sprite can land a pixel off the projected point, so each sample reads a small patch.
+    let changed =
+        |dx: i32, dy: i32| changed_within(capture, baseline, [at[0] + dx, at[1] + dy], MARK_REACH);
+    if !changed(0, 0) {
+        return PointMark::Absent;
+    }
+    let cross = changed(CROSS_ARM, 0)
+        && changed(-CROSS_ARM, 0)
+        && changed(0, CROSS_ARM)
+        && changed(0, -CROSS_ARM);
+    if cross {
+        PointMark::Cross
+    } else {
+        PointMark::Dot
+    }
+}
 fn changed_near(
     capture: &oblikovati_viewport::ViewportCapture,
     baseline: &oblikovati_viewport::ViewportCapture,
     at: [i32; 2],
 ) -> bool {
+    changed_within(capture, baseline, at, LINE_REACH)
+}
+fn changed_within(
+    capture: &oblikovati_viewport::ViewportCapture,
+    baseline: &oblikovati_viewport::ViewportCapture,
+    at: [i32; 2],
+    reach: i32,
+) -> bool {
     let width = capture.extent[0] as i32;
-    (-LINE_REACH..=LINE_REACH).any(|dy| {
-        (-LINE_REACH..=LINE_REACH).any(|dx| {
+    (-reach..=reach).any(|dy| {
+        (-reach..=reach).any(|dx| {
             let offset = (((at[1] + dy) * width + at[0] + dx) * 4) as usize;
             capture.rgba[offset..offset + 3] != baseline.rgba[offset..offset + 3]
         })

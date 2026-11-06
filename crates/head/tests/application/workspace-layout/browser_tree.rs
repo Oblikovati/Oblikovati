@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+const RIBBON_BAND_BOTTOM: f32 = 160.;
 #[given("a part with nested model browser branches is open in the MCAD Software")]
 fn nested_part(world: &mut ApplicationWorld) {
     world.add_part();
@@ -162,6 +163,14 @@ fn expect_sketch_editing(world: &mut ApplicationWorld) {
     );
     world.expect_text("Finish Sketch");
 }
+/// The browser's row, below the band where the ribbon's Center Point toggle also reads so.
+fn origin_row_shown(world: &ApplicationWorld) -> bool {
+    world
+        .frame
+        .runs
+        .iter()
+        .any(|run| run.text == "CenterPoint" && run.center()[1] > RIBBON_BAND_BOTTOM)
+}
 fn close_control_shown(world: &ApplicationWorld) -> bool {
     world.frame.runs.iter().any(|run| run.text == "x")
 }
@@ -172,6 +181,8 @@ fn part_with_sketch_under_edit(world: &mut ApplicationWorld) {
     expect_sketch_editing(world);
 }
 #[given("the model browser shows an expanded Origin branch and other document entries")]
+#[given("the model browser shows an expanded Origin branch")]
+#[given("the Origin branch is expanded in the model browser")]
 fn origin_expanded(world: &mut ApplicationWorld) {
     world.expect_text("Center Point");
     world.expect_text("Sketches");
@@ -185,11 +196,14 @@ fn toggle_origin(world: &mut ApplicationWorld) {
 #[then("the Origin branch collapses and its child entries are hidden")]
 fn origin_collapsed(world: &mut ApplicationWorld) {
     world.expect_text("Origin");
-    world.expect_no_text("Center Point");
+    assert!(
+        !origin_row_shown(world),
+        "expected the branch's rows hidden"
+    );
 }
 #[then("the Origin branch expands and its child entries are displayed")]
 fn origin_open(world: &mut ApplicationWorld) {
-    world.expect_text("Center Point");
+    assert!(origin_row_shown(world), "expected the branch's rows shown");
 }
 #[then("the other document entries remain visible in the browser")]
 #[then("the other document entries remain visible")]
@@ -198,6 +212,8 @@ fn other_entries_remain(world: &mut ApplicationWorld) {
     world.expect_text("Features");
 }
 #[then("the sketch remains displayed in the viewport")]
+#[then("the sketch remains visible in the viewport")]
+#[then("the sketch viewport remains visible")]
 fn sketch_remains(world: &mut ApplicationWorld) {
     expect_sketch_editing(world);
 }
@@ -231,4 +247,104 @@ fn tree_and_viewport(world: &mut ApplicationWorld) {
 #[when("I select the close control on the empty search field")]
 fn close_empty_field(world: &mut ApplicationWorld) {
     press_search_close(world);
+}
+// Origin rows and Display Preferences
+#[when("I select the X Axis entry in the browser")]
+fn select_x_axis(world: &mut ApplicationWorld) {
+    world.click_text("X Axis");
+    world.pump(Vec::new());
+}
+#[then("the X Axis entry is highlighted in the browser")]
+fn x_axis_highlighted(world: &mut ApplicationWorld) {
+    assert!(
+        world.row_highlighted("X Axis"),
+        "expected X Axis highlighted"
+    );
+}
+fn expand_display_preferences(world: &mut ApplicationWorld) {
+    open_browser_menu(world);
+    world.click_text("Display Preferences");
+    world.pump(Vec::new());
+}
+#[when("I open the browser header menu")]
+fn open_header_menu(world: &mut ApplicationWorld) {
+    open_browser_menu(world);
+}
+#[when("I expand Display Preferences")]
+fn expand_preferences(world: &mut ApplicationWorld) {
+    world.click_text("Display Preferences");
+    world.pump(Vec::new());
+}
+fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
+    for row in rows {
+        world.expect_text(row);
+    }
+}
+#[then(
+    "the submenu offers Hide UCS, Hide Work Features, Hide Notes, Hide Documents and Hide Warnings"
+)]
+fn hide_rows(world: &mut ApplicationWorld) {
+    expect_rows(
+        world,
+        &[
+            "Hide UCS",
+            "Hide Work Features",
+            "Hide Notes",
+            "Hide Documents",
+            "Hide Warnings",
+        ],
+    );
+}
+#[then("it offers Show Extended Names and Hide Blue Dot Indicator")]
+fn name_rows(world: &mut ApplicationWorld) {
+    expect_rows(world, &["Show Extended Names", "Hide Blue Dot Indicator"]);
+}
+#[then("it offers Auto expand Representations Folder on Open and Design View Expansion")]
+fn folder_rows(world: &mut ApplicationWorld) {
+    expect_rows(
+        world,
+        &[
+            "Auto expand Representations Folder on Open",
+            "Design View Expansion",
+        ],
+    );
+}
+#[given("Hide Work Features is unchecked in browser Display Preferences")]
+fn work_features_unchecked(world: &mut ApplicationWorld) {
+    expand_display_preferences(world);
+    assert!(
+        !world.checked("Hide Work Features"),
+        "expected the row unchecked"
+    );
+}
+#[when("I select Hide Work Features")]
+#[when("I select Hide Work Features again")]
+fn select_hide_work_features(world: &mut ApplicationWorld) {
+    world.click_text("Hide Work Features");
+    world.pump(Vec::new());
+}
+#[then("the Origin branch is hidden from the browser")]
+fn origin_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text("Origin");
+}
+#[then("the sketch entries and sketch viewport remain visible")]
+fn sketch_entries_remain(world: &mut ApplicationWorld) {
+    world.expect_text("Sketches");
+    expect_sketch_editing(world);
+}
+#[when("I reopen browser Display Preferences")]
+fn reopen_preferences(world: &mut ApplicationWorld) {
+    expand_display_preferences(world);
+}
+#[then("Hide Work Features is checked")]
+fn work_features_checked(world: &mut ApplicationWorld) {
+    assert!(
+        world.checked("Hide Work Features"),
+        "expected the row checked"
+    );
+}
+#[then("the Origin branch returns to the browser in a collapsed state")]
+fn origin_back_collapsed(world: &mut ApplicationWorld) {
+    world.expect_text("Origin");
+    assert!(!origin_row_shown(world), "expected the branch closed");
 }

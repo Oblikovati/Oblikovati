@@ -52,12 +52,13 @@ pub(super) fn point(
     viewer: &V3dViewer,
     plane: SketchPlane,
     point: [f64; 2],
+    glyph: super::sketch_marker::SketchPointGlyph,
     color: &oblikovati_model::theme::Rgba,
     transient: bool,
 ) -> Result<SketchStructure, String> {
     let (structure, group) = grouped_structure(viewer, transient)?;
     let rgba = srgb_rgba(color)?;
-    let style = Handle::new(super::sketch_marker::theme_marker(rgba)?);
+    let style = Handle::new(super::sketch_marker::theme_marker(rgba, glyph)?);
     style.set_interior_color_rgba(rgba);
     // v0.7 line rasterization admits blending through the explicit MaskBlend aspect.
     style.set_alpha_mode(Graphic3dAlphaMode::MaskBlend, 0.);

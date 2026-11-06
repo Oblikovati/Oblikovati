@@ -32,9 +32,11 @@ pub use application::home_recent_documents::{GuiRecentAction, GuiRecentDocument}
 pub use application::quick_access_toolbar::plane_selection::{GuiOriginPlane, GuiOriginPlaneKind};
 pub use sketch::constraint_glyphs::GuiConstraintGlyph;
 pub use sketch::dimension_edit::{GuiDimensionEdit, GuiDimensionValue};
-pub use sketch::inspect::{GuiInspectAction, GuiMeasurePanel};
+pub use sketch::inspect::{GuiInspectAction, GuiMeasurePanel, GuiSketchContext};
 pub use sketch::line::{GuiLineCommand, GuiLineCommandMenu, GuiSketchHud, GuiSketchHudField};
-pub use sketch::precise_input::GuiPrecisePoint;
+pub use sketch::precise_input::{
+    GuiPreciseMode, GuiPrecisePoint, GuiPreciseTarget, GuiTriadCommand,
+};
 pub use sketch::region_properties::GuiRegionPanel;
 mod sketch_flyouts;
 mod sketch_formats;

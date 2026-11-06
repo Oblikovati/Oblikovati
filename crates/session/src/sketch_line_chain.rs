@@ -57,6 +57,17 @@ impl<O: TransactionObserver> DocumentSession<O> {
             },
         )
     }
+    /// Place one point as its own history step; example: `session.create_sketch_point(id, &at)?`.
+    pub fn create_sketch_point(
+        &mut self,
+        sketch: DocumentSketchId,
+        placement: &oblikovati_model::history::SketchPointPlacement,
+    ) -> Result<SketchEntityId, CommandError<SketchLineCreationError>> {
+        let options = self.sketch_options;
+        self.run("Create Point", |snapshot, ids| {
+            snapshot.create_sketch_point(sketch, placement, options, ids)
+        })
+    }
     /// Create one arc off a line's end as its own history step.
     /// Example: `session.create_tangent_arc(sketch, &input)?;`.
     pub fn create_tangent_arc(

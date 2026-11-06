@@ -57,9 +57,6 @@ impl SketchPlacementState {
     pub(crate) fn line_awaits_start(&self) -> bool {
         self.line.start.is_none()
     }
-    pub(crate) fn line_start_at(&mut self, point: [f64; 2], pixel: [i32; 2]) -> Result<(), String> {
-        self.line_start_on(point, None, Some(pixel))
-    }
     /// Start from an exact position, joined to the vertex there when one was acquired.
     pub(crate) fn line_start_on(
         &mut self,

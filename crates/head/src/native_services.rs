@@ -215,6 +215,21 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
         self.owner.sketch_constraint_marks()
     }
+    fn precise_triad_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiTriadCommand,
+    ) -> Result<bool, String> {
+        self.owner.precise_triad_from_gui(command)
+    }
+    fn precise_triad_position(&self) -> Option<(oblikovati_model::sketch::SketchPlane, [f64; 2])> {
+        self.owner.precise_triad_position()
+    }
+    fn toggle_center_point_format_from_gui(&mut self) -> Result<bool, String> {
+        self.owner.toggle_center_point_format_from_gui()
+    }
+    fn set_center_point_from_gui(&mut self, point: u64, center: bool) -> Result<bool, String> {
+        self.owner.set_center_point_from_gui(point, center)
+    }
     fn line_command_from_gui(
         &mut self,
         command: oblikovati_gui::GuiLineCommand,

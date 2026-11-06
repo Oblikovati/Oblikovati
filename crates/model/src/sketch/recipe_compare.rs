@@ -6,6 +6,7 @@ impl Sketch2D {
         self.same_dimension_settings(other)
             && self.same_dimension_placements(other)
             && self.centerlines == other.centerlines
+            && self.center_points == other.center_points
             && self.construction_curves == other.construction_curves
             && self.entity_order == other.entity_order
             && self.defining_points == other.defining_points

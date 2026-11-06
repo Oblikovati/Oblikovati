@@ -80,6 +80,7 @@ fn browser_hidden(world: &mut ApplicationWorld) {
     world.expect_no_text("Origin");
 }
 #[then("the viewport extends into the space it occupied")]
+#[then("the sketch viewport extends into the freed space")]
 #[then("the viewport occupies the space previously used by the docked browser")]
 fn left_space_free(world: &mut ApplicationWorld) {
     let height = world.extent()[1] as usize;
@@ -291,6 +292,7 @@ fn drawing_takes_space(world: &mut ApplicationWorld) {
     expect_sheet_at(world, [300, 500]);
 }
 #[then("a plus control remains at the upper left of the workspace")]
+#[then("a panel-add control remains at the upper left of the workspace")]
 fn plus_remains(world: &mut ApplicationWorld) {
     let plus = world.run("+").center();
     assert!(
@@ -299,6 +301,7 @@ fn plus_remains(world: &mut ApplicationWorld) {
     );
 }
 #[when("I open the plus control")]
+#[when("I open the panel-add control")]
 fn open_plus(world: &mut ApplicationWorld) {
     world.click_text("+");
     world.pump(Vec::new());
@@ -313,6 +316,7 @@ fn select_model_browser(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[then("the browser returns to the left")]
+#[then("the model browser returns to the left")]
 fn browser_back(world: &mut ApplicationWorld) {
     expect_docked_left(world);
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The retained arc fixtures, and comparing a pointer drag with the fields hidden.
 use super::super::super::ApplicationWorld;
-use super::recorded::{expect_measure, finish_and_save, reopen_and_edit, start_yz_sketch};
+use super::recorded::{expect_measure, finish_and_save, reopen_and_edit};
 use cucumber::{given, then, when};
 use oblikovati_model::history::SketchTangentArcCreation;
 use oblikovati_viewport::ViewportPhysicalKey;
@@ -64,13 +64,12 @@ fn following_line(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 fn build_arc_fixture(world: &mut ApplicationWorld) {
-    start_yz_sketch(world);
+    world.start_sketch_on("YZ Plane");
     world.seed_dimensions_needed(SEEDED_BEFORE_ARC_FIXTURE);
     world.open_precise_input();
     arc_source(world);
     add_tangent_arc(world);
     following_line(world);
-    world.close_precise_input();
     world.expect_ready();
     world.expect_dimensions_needed(28);
 }
@@ -214,7 +213,7 @@ fn hud_enabled(world: &mut ApplicationWorld) {
 #[when("HUD is temporarily disabled and Line acquires the original source endpoint")]
 fn hud_off(world: &mut ApplicationWorld) {
     toggle_sketch_hud(world);
-    start_yz_sketch(world);
+    world.start_sketch_on("YZ Plane");
     world.seed_dimensions_needed(SEEDED_BEFORE_SOURCE);
     let source_end = source_end_for_drag(world);
     let in_mm = source_end.map(|value| value * MM_PER_CM);
@@ -224,7 +223,6 @@ fn hud_off(world: &mut ApplicationWorld) {
     world.precise_point([in_mm[0] + 8., in_mm[1] + 1.2]);
     world.precise_point(in_mm);
     world.escape();
-    world.close_precise_input();
     world.pump(Vec::new());
     world.observed_view = Some(world.sketch_pixel_of(source_end));
     world.select_line_tool();

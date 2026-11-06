@@ -29,7 +29,7 @@ fn release(state: &mut SketchPlacementState, pixel: [i32; 2]) -> PlacementAction
 fn the_pending_end_follows_the_pointer_from_the_start_point() {
     let mut state = draft();
     assert!(state.line_input().is_none());
-    state.line_start_at([1., 2.], [10, 10]).unwrap();
+    state.line_start_on([1., 2.], None, Some([10, 10])).unwrap();
     state.line_cursor(Some([4., 6.]));
     let input = state.line_input().unwrap();
     assert_eq!(input.points, [[1., 2.], [4., 6.]]);
@@ -41,7 +41,7 @@ fn the_pending_end_follows_the_pointer_from_the_start_point() {
 fn typed_length_and_angle_replace_the_pointer_and_become_locks() {
     let mut state = draft();
     state.committing_value_dimensions = true;
-    state.line_start_at([0., 0.], [10, 10]).unwrap();
+    state.line_start_on([0., 0.], None, Some([10, 10])).unwrap();
     state.line_cursor(Some([5., 5.]));
     state.fields.input(ViewportInput::Text('2'), 2);
     state.evaluate_line_values(&|_, _| Some(2.));
@@ -60,7 +60,7 @@ fn typed_length_and_angle_replace_the_pointer_and_become_locks() {
 #[test]
 fn a_value_that_does_not_evaluate_keeps_its_field_and_blocks_tab() {
     let mut state = draft();
-    state.line_start_at([0., 0.], [10, 10]).unwrap();
+    state.line_start_on([0., 0.], None, Some([10, 10])).unwrap();
     state.fields.input(ViewportInput::Text('0'), 2);
     state.evaluate_line_values(&|_, _| None);
     assert!(state.fields_invalid());
@@ -81,7 +81,7 @@ fn a_value_that_does_not_evaluate_keeps_its_field_and_blocks_tab() {
 #[test]
 fn select_all_makes_the_next_character_replace_the_field() {
     let mut state = draft();
-    state.line_start_at([0., 0.], [10, 10]).unwrap();
+    state.line_start_on([0., 0.], None, Some([10, 10])).unwrap();
     state.fields.input(ViewportInput::Text('0'), 2);
     let select = ViewportInput::PhysicalKey {
         key: ViewportPhysicalKey::A,
@@ -101,7 +101,9 @@ fn select_all_makes_the_next_character_replace_the_field() {
 #[test]
 fn a_second_click_at_the_accepted_end_ends_the_chain_but_a_drag_does_not() {
     let mut state = draft();
-    state.line_start_at([0., 0.], [100, 100]).unwrap();
+    state
+        .line_start_on([0., 0.], None, Some([100, 100]))
+        .unwrap();
     state.accept_line_segment(&report([1, 2]), [5., 0.], Some([200, 100]), 3);
     assert!(matches!(
         press(&mut state, [201, 101]),
@@ -125,7 +127,9 @@ fn a_second_click_at_the_accepted_end_ends_the_chain_but_a_drag_does_not() {
 #[test]
 fn a_repeated_click_on_a_lone_start_point_keeps_waiting_for_the_end() {
     let mut state = draft();
-    state.line_start_at([0., 0.], [100, 100]).unwrap();
+    state
+        .line_start_on([0., 0.], None, Some([100, 100]))
+        .unwrap();
     assert!(matches!(
         press(&mut state, [100, 100]),
         PlacementAction::Idle
@@ -139,7 +143,9 @@ fn a_repeated_click_on_a_lone_start_point_keeps_waiting_for_the_end() {
 #[test]
 fn close_needs_two_segments_and_joins_the_first_vertex() {
     let mut state = draft();
-    state.line_start_at([0., 0.], [100, 100]).unwrap();
+    state
+        .line_start_on([0., 0.], None, Some([100, 100]))
+        .unwrap();
     assert!(state.line_close_input().is_none());
     state.accept_line_segment(&report([1, 2]), [5., 0.], Some([200, 100]), 3);
     assert!(!state.line_close_available());
@@ -155,7 +161,9 @@ fn close_needs_two_segments_and_joins_the_first_vertex() {
 #[test]
 fn restart_drops_the_chain_and_escape_ends_the_command() {
     let mut state = draft();
-    state.line_start_at([0., 0.], [100, 100]).unwrap();
+    state
+        .line_start_on([0., 0.], None, Some([100, 100]))
+        .unwrap();
     assert!(matches!(
         state.event(ViewportEvent::Input(ViewportInput::Key {
             key: ViewportKey::Cancel,
@@ -181,7 +189,9 @@ fn an_exact_start_joins_the_acquired_vertex_and_an_exact_end_locks_nothing() {
 #[test]
 fn a_click_three_pixels_on_makes_a_segment_and_two_pixels_on_is_a_double_click() {
     let mut state = draft();
-    state.line_start_at([0., 0.], [100, 100]).unwrap();
+    state
+        .line_start_on([0., 0.], None, Some([100, 100]))
+        .unwrap();
     assert!(matches!(
         press(&mut state, [102, 100]),
         PlacementAction::Idle

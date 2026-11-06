@@ -91,6 +91,27 @@ pub trait HeadWork {
             "precise point {point:?}: expected a document owner"
         ))
     }
+    /// Move or reset the toolbar's triad; example: `work.precise_triad_from_gui(command)`.
+    fn precise_triad_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiTriadCommand,
+    ) -> Result<bool, String> {
+        Err(format!("triad {command:?}: expected a document owner"))
+    }
+    /// Where the toolbar's triad sits; example: `work.precise_triad_position()`.
+    fn precise_triad_position(&self) -> Option<(oblikovati_model::sketch::SketchPlane, [f64; 2])> {
+        None
+    }
+    /// Change what new points are; example: `work.toggle_center_point_format_from_gui()`.
+    fn toggle_center_point_format_from_gui(&mut self) -> Result<bool, String> {
+        Err("center point format: expected a document owner".into())
+    }
+    /// Change one point's role; example: `work.set_center_point_from_gui(point, true)`.
+    fn set_center_point_from_gui(&mut self, point: u64, center: bool) -> Result<bool, String> {
+        Err(format!(
+            "point {point} center {center}: expected a document owner"
+        ))
+    }
     /// The edited sketch's shown relation marks; example: `work.sketch_constraint_marks()`.
     fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
         Vec::new()

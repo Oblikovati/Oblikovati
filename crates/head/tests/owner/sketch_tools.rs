@@ -53,6 +53,8 @@ pub(super) fn without_tool_state(
     state.sketch_at_ready = false;
     state.sketch_tool_keyboard = false;
     state.line_command = None;
+    state.precise_target = None;
+    state.repeat_tool = None;
     state
 }
 #[test]
@@ -97,7 +99,10 @@ fn gui_tool_switch_and_cancel_retire_the_preview_without_committing_geometry() {
     assert!(owner.placement_active() && owner.placement_preview().is_none());
     slot_input::deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
     assert!(!owner.placement_active() && owner.placement_preview().is_none());
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        without_tool_state(owner.gui_command_state().unwrap()),
+        without_tool_state(before)
+    );
 }
 
 fn selected_circular_options(choice: GuiSketchTool, scale: f64) -> CircumcircleOptions {

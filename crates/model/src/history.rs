@@ -28,6 +28,7 @@ mod sketch_dimension_edit;
 pub use sketch_dimension_edit::SketchDimensionEdit;
 mod sketch_copy;
 mod sketch_line;
+mod sketch_point;
 mod sketch_primitive;
 mod sketch_relation_create;
 mod sketch_relation_delete;
@@ -37,6 +38,7 @@ pub use sketch_line::{
     SketchLineCreation, SketchLineCreationError, SketchLineCreationReport,
     SketchTangentArcCreation, SketchTangentArcReport,
 };
+pub use sketch_point::SketchPointPlacement;
 pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
 pub use sketch_relation_create::{SketchGeometricCreationError, SketchGeometricCreationReport};
 mod sketch_delete;

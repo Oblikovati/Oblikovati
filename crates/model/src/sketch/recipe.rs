@@ -28,6 +28,8 @@ pub struct SketchRecipe {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub construction_curves: Option<Vec<super::SketchEntityId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub center_points: Option<Vec<super::SketchEntityId>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub centerlines: Option<Vec<super::SketchEntityId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension_placements: Option<Vec<super::SketchDimensionPlacement>>,
@@ -63,6 +65,7 @@ impl Sketch2D {
             constraints: self.constraints.clone(),
             entity_order: self.saved_entity_order(),
             construction_curves: self.saved_construction_curves(),
+            center_points: self.saved_center_points(),
             centerlines: self.saved_centerlines(),
             dimension_placements: self.saved_dimension_placements(),
             reference_dimensions: self.saved_reference_dimensions(),
@@ -111,6 +114,7 @@ impl Sketch2D {
         sketch.restore_entity_order(recipe)?;
         sketch.restore_construction_curves(recipe)?;
         sketch.restore_centerlines(recipe)?;
+        sketch.restore_center_points(recipe)?;
         for constraint in &recipe.constraints {
             sketch.add_constraint(constraint.id, constraint.relation.clone())?;
         }

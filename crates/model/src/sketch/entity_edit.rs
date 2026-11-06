@@ -66,6 +66,9 @@ impl Sketch2D {
         if source.centerlines.contains(&original) {
             self.set_line_centerline(created, true)?;
         }
+        if source.is_center_point(original) {
+            self.set_center_point(created, true)?;
+        }
         Ok(())
     }
 }

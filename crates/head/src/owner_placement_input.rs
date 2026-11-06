@@ -48,6 +48,9 @@ impl<
             .generation();
         let mut tool = SketchPlacementState::new(document, sketch, generation, plane, kind)?;
         tool.formats = self.sketch_formats.clone();
+        tool.center_point = self.sketch_memory.center_point;
+        self.sketch_memory.triad = None;
+        self.sketch_memory.triad_pick = None;
         self.select_placement_sketch(document, sketch)?;
         tool.committing_value_dimensions = self.sketch_options.create_dimensions_on_value_input;
         self.placement_notice(tool.prompt());
@@ -90,9 +93,26 @@ impl<
         event: ViewportEvent,
         window: &dyn HeadWindow,
     ) -> bool {
+        match self.triad_pick_event(&mut tool, event, window) {
+            Ok(false) => {}
+            outcome => {
+                if let Err(cause) = outcome {
+                    self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+                }
+                self.sketch_tool = Some(crate::sketch_tool::SketchToolState::Placement(tool));
+                return true;
+            }
+        }
         let action = tool.event(event);
         if matches!(action, PlacementAction::Cancel) {
-            self.placement_notice(format!("{} canceled.", tool.tool.name()));
+            self.command_notice = Some(if tool.tool == crate::SketchPlacementTool::Point {
+                // Point ends cleanly: every placed point is already its own step.
+                DesktopCommandNotice::Ready
+            } else {
+                DesktopCommandNotice::PlacementPrompt {
+                    message: format!("{} canceled.", tool.tool.name()),
+                }
+            });
             return true;
         }
         let changed = !matches!(action, PlacementAction::Idle);
@@ -180,6 +200,13 @@ impl<
         pixel: [i32; 2],
         place: bool,
     ) -> bool {
+        if place && tool.tool == crate::SketchPlacementTool::Point {
+            if let Err(cause) = self.place_point_at_pointer(tool, window, pixel) {
+                tool.abandon_press();
+                self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+            }
+            return false;
+        }
         let outcome = window
             .sketch_point(pixel, tool.plane)
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
@@ -211,11 +238,12 @@ impl<
         let Some(recipe) = recipe else {
             return Ok(false);
         };
+        if tool.tool == crate::SketchPlacementTool::Point {
+            self.commit_point(tool, recipe.points[0], None)?;
+            return Ok(false);
+        }
         let locks = tool.preview_locks()?;
         self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &locks)?;
-        if tool.tool == crate::SketchPlacementTool::Point {
-            return Ok(true);
-        }
         let generation = self
             .files
             .workspace()

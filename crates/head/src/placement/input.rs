@@ -27,6 +27,8 @@ pub(crate) struct SketchPlacementState {
     /// Where the numeric fields follow the pointer, in window pixels.
     pub(crate) cursor_pixel: Option<[i32; 2]>,
     pub(crate) formats: oblikovati_api::types::SketchFormatModes,
+    /// For Point: what the next click makes, and so what the command asks for.
+    pub(crate) center_point: bool,
     /// A typed value becomes a dimension unless the application option turns that off.
     pub(crate) committing_value_dimensions: bool,
     press: Option<PlacementPress>,
@@ -66,6 +68,7 @@ impl SketchPlacementState {
             accepted: Vec::new(),
             line: Default::default(),
             cursor_point: None,
+            center_point: false,
             cursor_pixel: None,
             formats: Default::default(),
             committing_value_dimensions: true,
@@ -101,6 +104,10 @@ impl SketchPlacementState {
         self.preview
             .as_ref()
             .map_or(0, |recipe| recipe.fields.len())
+    }
+    /// The pointer's sketch position, once it has moved over the sketch.
+    pub(crate) fn pointer_position(&self) -> Option<[f64; 2]> {
+        self.cursor_point
     }
     pub(crate) fn field_prompt(&self) -> String {
         let stage = self.prompt();
@@ -269,6 +276,13 @@ impl SketchPlacementState {
     pub(crate) fn prompt(&self) -> String {
         if self.tool == crate::SketchPlacementTool::Line {
             return self.line_prompt();
+        }
+        if self.tool == crate::SketchPlacementTool::Point {
+            return if self.center_point {
+                "Select center point".to_owned()
+            } else {
+                "Select Sketch Point".to_owned()
+            };
         }
         self.tool.prompt(self.accepted.len())
     }

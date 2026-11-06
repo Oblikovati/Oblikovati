@@ -45,7 +45,7 @@ impl<
         self.refresh_line_fields(tool)
     }
     /// The nearest sketch vertex within reach: a start placed there joins it instead of adding one.
-    fn vertex_under_pointer(
+    pub(super) fn vertex_under_pointer(
         &self,
         tool: &SketchPlacementState,
         window: &dyn HeadWindow,
@@ -65,7 +65,10 @@ impl<
         let mut nearest = None;
         let mut reach = ACQUIRE_VERTEX_PIXELS;
         for point in geometry.points() {
-            let at = window.sketch_pixel(tool.plane, point.position)?;
+            // A point the camera cannot place is not under the pointer.
+            let Ok(at) = window.sketch_pixel(tool.plane, point.position) else {
+                continue;
+            };
             let distance = super::sketch_picking::screen_distance(at, pixel);
             if distance <= reach {
                 reach = distance;

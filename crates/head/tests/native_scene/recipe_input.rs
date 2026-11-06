@@ -173,7 +173,11 @@ fn commit_native_recipe(
 ) {
     window.scripted = VecDeque::from([vec![button([820, 520], true), button([820, 520], false)]]);
     crate::frames::run_frames(window, HeadOptions { frames: Some(1) }, owner).unwrap();
-    assert_eq!(owner.placement_active(), kind != SketchPlacementTool::Point);
+    // Point keeps placing; the rest restart for their next shape.
+    assert!(
+        owner.placement_active(),
+        "{kind:?}: expected the command to stay up"
+    );
     assert!(owner.placement_preview().is_none());
     assert!(!window.native.set_sketch_preview(None).unwrap());
     let geometry = owner

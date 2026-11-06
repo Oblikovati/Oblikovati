@@ -9,6 +9,14 @@ pub enum GuiShellAction {
     SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
     LineCommand(crate::GuiLineCommand),
     PrecisePoint(crate::GuiPrecisePoint),
+    PreciseTriad(crate::GuiTriadCommand),
+    /// Turn new points into center points, or back.
+    ToggleCenterPointFormat,
+    /// Change the role of the point the canvas menu was opened on.
+    SetCenterPoint {
+        point: u64,
+        center: bool,
+    },
     Inspect(crate::GuiInspectAction),
     EditDimensionValue(crate::GuiDimensionValue),
     SetTheme(String),
@@ -143,6 +151,14 @@ pub struct GuiCommandState {
     pub sketch_hud: Option<crate::GuiSketchHud>,
     /// Projected by the frame, which owns the camera.
     pub constraint_glyphs: Vec<crate::GuiConstraintGlyph>,
+    /// A running command that accepts typed points; the frame adds the triad's pixels.
+    pub precise_target: Option<crate::GuiPreciseTarget>,
+    /// New points are center points.
+    pub center_point_format: bool,
+    /// What the pointer was on when the canvas menu was asked for.
+    pub sketch_context: Option<crate::GuiSketchContext>,
+    /// The command the canvas menu offers to run again.
+    pub repeat_tool: Option<crate::GuiSketchTool>,
     pub line_command: Option<crate::GuiLineCommandMenu>,
     pub sketch_options: Option<oblikovati_model::application_options::SketchApplicationOptions>,
     /// A sketch is open with no command running: the canvas offers its own menu.
@@ -192,7 +208,10 @@ impl GuiShellAction {
                 !state.transaction_open
             }
             Self::SetSketchOptions(_) => state.sketch_options.is_some(),
-            Self::LineCommand(_) | Self::PrecisePoint(_) => state.line_command.is_some(),
+            Self::LineCommand(_) => state.line_command.is_some(),
+            Self::PrecisePoint(_) | Self::PreciseTriad(_) => state.precise_target.is_some(),
+            Self::ToggleCenterPointFormat => state.authoring == GuiAuthoringContext::Sketch,
+            Self::SetCenterPoint { .. } => state.sketch_at_ready && !state.transaction_open,
             Self::Inspect(_) => state.authoring == GuiAuthoringContext::Sketch,
             Self::EditDimensionValue(_) => state.sketch_at_ready && !state.transaction_open,
             Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,

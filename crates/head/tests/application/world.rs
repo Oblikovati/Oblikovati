@@ -120,8 +120,12 @@ impl ApplicationWorld {
                 modifiers,
             })
         };
-        self.pump(vec![event(true, modifiers)]);
-        self.pump(vec![event(false, Default::default())]);
+        // One pump, so the key is down for one frame: Dear ImGui repeats a key held across slow
+        // software-rendered frames, and a person's press is shorter than the repeat delay.
+        self.pump(vec![
+            event(true, modifiers),
+            event(false, Default::default()),
+        ]);
     }
     /// All visible text, one run per line, for assertions and failure messages.
     pub fn text(&self) -> String {

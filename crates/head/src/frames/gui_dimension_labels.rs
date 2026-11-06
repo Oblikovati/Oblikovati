@@ -47,6 +47,28 @@ pub(super) fn projected_constraint_glyphs(
         })
         .collect()
 }
+/// How far the triad's axes reach on screen, in pixels: a mark, not a measure.
+const TRIAD_REACH: i32 = 28;
+/// The toolbar's triad at its sketch position; a window that cannot project shows none.
+pub(super) fn project_precise_triad(
+    window: &dyn HeadWindow,
+    owner: &dyn HeadWork,
+    commands: &mut oblikovati_gui::GuiCommandState,
+) {
+    let Some(target) = commands.precise_target.as_mut() else {
+        return;
+    };
+    let Some((plane, at)) = owner.precise_triad_position() else {
+        return;
+    };
+    target.triad = window.sketch_pixel(plane, at).ok().map(|origin| {
+        [
+            origin,
+            [origin[0] + TRIAD_REACH, origin[1]],
+            [origin[0], origin[1] - TRIAD_REACH],
+        ]
+    });
+}
 /// A half-side of the displayed origin planes, in working lengths: readable at the default view.
 const ORIGIN_PLANE_REACH: f64 = 6.;
 /// The planes as the camera sees them; a window that cannot project shows none.

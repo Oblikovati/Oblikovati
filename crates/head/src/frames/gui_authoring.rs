@@ -10,6 +10,11 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         }
         GuiShellAction::LineCommand(command) => owner.line_command_from_gui(*command),
         GuiShellAction::PrecisePoint(point) => owner.precise_point_from_gui(point),
+        GuiShellAction::PreciseTriad(command) => owner.precise_triad_from_gui(*command),
+        GuiShellAction::ToggleCenterPointFormat => owner.toggle_center_point_format_from_gui(),
+        GuiShellAction::SetCenterPoint { point, center } => {
+            owner.set_center_point_from_gui(*point, *center)
+        }
         GuiShellAction::Inspect(action) => owner.inspect_from_gui(*action),
         GuiShellAction::EditDimensionValue(value) => owner.edit_dimension_value_from_gui(value),
         GuiShellAction::SetPromptFrequency { prompt, frequency } => {

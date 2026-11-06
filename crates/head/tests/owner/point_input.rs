@@ -22,13 +22,19 @@ fn point_sketches(owner: &TestOwner, document: u64) -> &DocumentSketches {
 #[test]
 fn point_hover_does_not_edit_and_first_press_commits_exactly_once() {
     let (mut owner, document, sketch) = placement_owner(SketchPlacementTool::Point);
-    let before = owner.gui_command_state().unwrap();
+    let before = super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap());
     deliver(&mut owner, &[motion([3, -4])]);
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        before
+    );
     let preview = owner.placement_preview().unwrap().clone();
     deliver(&mut owner, &[button([3, -4], true)]);
-    assert!(!owner.placement_active());
+    // The command stays up for the next point, and asks for a fresh pointer position.
+    assert!(owner.placement_active());
     assert!(owner.placement_preview().is_none());
+    deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
+    assert!(!owner.placement_active());
     let saved = point_sketches(&owner, document).clone();
     let geometry = saved.get(sketch).unwrap().geometry();
     assert_single_point(geometry, [3., -4.]);
@@ -76,7 +82,7 @@ fn verify_point_undo(
     assert!(point_sketches(owner, document).same_recipe(saved));
 }
 #[test]
-fn point_can_commit_without_prior_motion_and_requires_activation_for_each_point() {
+fn point_can_commit_without_prior_motion_and_places_again_without_restarting() {
     let (mut owner, document, sketch) = placement_owner(SketchPlacementTool::Point);
     deliver(&mut owner, &[button([3, 4], true), button([3, 4], false)]);
     assert_single_point(
@@ -86,12 +92,10 @@ fn point_can_commit_without_prior_motion_and_requires_activation_for_each_point(
             .geometry(),
         [3., 4.],
     );
+    assert!(owner.placement_active(), "expected the command to continue");
     assert!(
-        matches!(owner.take_command_notice(), Some(DesktopCommandNotice::PlacementPrompt { message }) if message == "Point placed.")
+        matches!(owner.take_command_notice(), Some(DesktopCommandNotice::PlacementPrompt { message }) if message == "Select center point")
     );
-    owner
-        .start_sketch_placement(document, sketch, SketchPlacementTool::Point)
-        .unwrap();
     deliver(&mut owner, &[button([3, 4], true), button([3, 4], false)]);
     let geometry = point_sketches(&owner, document)
         .get(sketch)
@@ -140,7 +144,7 @@ fn projection_failure_or_edge_on_plane_preserves_point_tool_for_retry() {
         assert!(owner.placement_preview().is_none());
         assert_eq!(owner.gui_command_state().unwrap(), before);
         deliver(&mut owner, &[button([3, 4], true)]);
-        assert!(!owner.placement_active());
+        assert!(owner.placement_active());
         assert_single_point(
             point_sketches(&owner, document)
                 .get(sketch)

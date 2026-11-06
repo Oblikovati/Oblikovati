@@ -74,6 +74,23 @@ impl<O: TransactionObserver> DocumentSession<O> {
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Change one point's role as a history step; position and solve are untouched.
+    /// Example: `session.set_sketch_center_point(id, point, true)?`.
+    pub fn set_sketch_center_point(
+        &mut self,
+        sketch: DocumentSketchId,
+        point: oblikovati_model::sketch::SketchEntityId,
+        center: bool,
+    ) -> Result<(), CommandError<SketchError>> {
+        self.run("Center Point", |snapshot, _| {
+            let mut geometry = snapshot.sketches.get(sketch)?.geometry().clone();
+            geometry.set_center_point(point, center)?;
+            snapshot.sketches.replace_geometry(sketch, geometry)
+        })
+    }
+}
+
+impl<O: TransactionObserver> DocumentSession<O> {
     /// Name a design view of the document; example: `session.create_design_view("Front")`.
     pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
         self.run("Create Design View", |snapshot, _| {

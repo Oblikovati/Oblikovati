@@ -25,6 +25,7 @@ pub(super) fn advance_gui(
     commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
     commands.constraint_glyphs = dimension_labels::projected_constraint_glyphs(window, owner);
+    dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
     for action in &update.actions {
         update.changed |= dispatch_gui_action(window, owner, action)?;
@@ -66,6 +67,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetSketchOptions(_)
         | GuiShellAction::LineCommand(_)
         | GuiShellAction::PrecisePoint(_)
+        | GuiShellAction::PreciseTriad(_)
+        | GuiShellAction::ToggleCenterPointFormat
+        | GuiShellAction::SetCenterPoint { .. }
         | GuiShellAction::Inspect(_)
         | GuiShellAction::EditDimensionValue(_)
         | GuiShellAction::SetPromptFrequency { .. }

@@ -135,6 +135,21 @@ impl<
     fn sketch_constraint_marks(&self) -> Vec<crate::HeadConstraintMark> {
         DesktopOwner::sketch_constraint_marks(self)
     }
+    fn precise_triad_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiTriadCommand,
+    ) -> Result<bool, String> {
+        DesktopOwner::precise_triad_from_gui(self, command)
+    }
+    fn precise_triad_position(&self) -> Option<(oblikovati_model::sketch::SketchPlane, [f64; 2])> {
+        DesktopOwner::precise_triad_position(self)
+    }
+    fn toggle_center_point_format_from_gui(&mut self) -> Result<bool, String> {
+        DesktopOwner::toggle_center_point_format_from_gui(self)
+    }
+    fn set_center_point_from_gui(&mut self, point: u64, center: bool) -> Result<bool, String> {
+        DesktopOwner::set_center_point_from_gui(self, point, center)
+    }
     fn line_command_from_gui(
         &mut self,
         command: oblikovati_gui::GuiLineCommand,
@@ -234,6 +249,10 @@ impl<
             measure: self.gui_measure_panel(),
             region_properties: self.gui_region_panel(),
             sketch_hud: self.gui_sketch_hud(),
+            precise_target: self.gui_precise_target(),
+            center_point_format: self.sketch_memory.center_point,
+            sketch_context: self.gui_sketch_context(),
+            repeat_tool: self.sketch_memory.repeat_tool,
             line_command: self.gui_line_command_menu(),
         })
     }
@@ -368,6 +387,7 @@ impl<
             .units()
             .working_scale();
         self.start_sketch_placement(edit.document, edit.sketch, gui_placement_tool(tool, scale)?)?;
+        self.sketch_memory.repeat_tool = Some(tool);
         Ok(true)
     }
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {

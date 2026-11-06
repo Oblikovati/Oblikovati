@@ -38,6 +38,18 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
 }
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Change one point's role; example: `commands.set_sketch_center_point(id, point, true)?`.
+    pub fn set_sketch_center_point(
+        &mut self,
+        sketch: DocumentSketchId,
+        point: oblikovati_model::sketch::SketchEntityId,
+        center: bool,
+    ) -> Result<(), CommandError<SketchError>> {
+        self.session.set_sketch_center_point(sketch, point, center)
+    }
+}
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
     /// Name a design view of this document; example: `commands.create_design_view("Front")`.
     pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
         self.session.create_design_view(name)

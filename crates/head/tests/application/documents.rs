@@ -111,8 +111,18 @@ impl ApplicationWorld {
     pub fn press_save_shortcut(&mut self) {
         self.command_key(ViewportPhysicalKey::S, ViewportKey::Save);
     }
+    /// As the window system reports it: the physical key carrying its Cancel command.
     pub fn escape(&mut self) {
-        self.key(ViewportPhysicalKey::Escape, false);
+        let event = |pressed| {
+            ViewportEvent::Input(ViewportInput::PhysicalKey {
+                key: ViewportPhysicalKey::Escape,
+                layout_key: ViewportPhysicalKey::Escape,
+                pressed,
+                command: Some(ViewportKey::Cancel),
+                modifiers: Default::default(),
+            })
+        };
+        self.pump(vec![event(true), event(false)]);
     }
     pub fn type_text(&mut self, text: &str) {
         let events = text

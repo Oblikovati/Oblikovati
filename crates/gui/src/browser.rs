@@ -148,9 +148,9 @@ struct BrowserTree<'a> {
 impl BrowserTree<'_> {
     fn draw(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         match self.browser.kind {
-            GuiBrowserKind::Part => self.modeling("End of Part", actions),
-            GuiBrowserKind::SheetMetal => self.folded_model(actions),
-            GuiBrowserKind::Assembly => self.assembly(actions),
+            GuiBrowserKind::Part => self.modeling("End of Part", view, actions),
+            GuiBrowserKind::SheetMetal => self.folded_model(view, actions),
+            GuiBrowserKind::Assembly => self.assembly(view, actions),
             GuiBrowserKind::Drawing => self.drawing(view),
             GuiBrowserKind::Presentation => self.ui.text("Scene1"),
         }
@@ -162,8 +162,13 @@ impl BrowserTree<'_> {
             None => node.push(),
         }
     }
-    fn modeling(&self, end_marker: &str, actions: &mut Vec<GuiShellAction>) {
-        self.origin();
+    fn modeling(
+        &self,
+        end_marker: &str,
+        view: &mut BrowserView,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.origin(view);
         self.parameters();
         self.sketches(actions);
         self.features(actions);
@@ -172,15 +177,15 @@ impl BrowserTree<'_> {
             self.ui.text(end_marker);
         }
     }
-    fn folded_model(&self, actions: &mut Vec<GuiShellAction>) {
+    fn folded_model(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         if let Some(_folded) = self.branch("Folded Model", true) {
-            self.modeling("End of Folded", actions);
+            self.modeling("End of Folded", view, actions);
         }
     }
-    fn assembly(&self, actions: &mut Vec<GuiShellAction>) {
+    fn assembly(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         self.ui.text("Representations");
         self.ui.text("Relationships");
-        self.modeling("End of Assembly", actions);
+        self.modeling("End of Assembly", view, actions);
     }
     fn drawing(&self, view: &mut BrowserView) {
         for (branch, (label, rows)) in DRAWING_TREE.iter().enumerate() {
@@ -218,13 +223,26 @@ impl BrowserTree<'_> {
         }
         chosen
     }
-    fn origin(&self) {
-        if !self.browser.has_origin {
+    fn origin(&self, view: &mut BrowserView) {
+        if !self.browser.has_origin || view.hide_work_features {
             return;
         }
-        if let Some(_origin) = self.branch("Origin", true) {
-            for label in ORIGIN_ROWS {
-                self.ui.bullet_text(label);
+        // Brought back by Display Preferences, the branch starts closed.
+        let closed = std::mem::take(&mut view.origin_closes_on_return);
+        let node = self.ui.tree_node_config("Origin").default_open(true);
+        let node = match (closed, self.expansion) {
+            (true, _) => node.opened(false, imgui::Condition::Always),
+            (false, Some(open)) => node.opened(open, imgui::Condition::Always),
+            (false, None) => node,
+        };
+        if let Some(_origin) = node.push() {
+            for (row, label) in ORIGIN_ROWS.into_iter().enumerate() {
+                self.ui.bullet();
+                self.ui.same_line();
+                let selected = view.selected_origin_row == Some(row);
+                if self.ui.selectable_config(label).selected(selected).build() {
+                    view.selected_origin_row = Some(row);
+                }
             }
         }
     }

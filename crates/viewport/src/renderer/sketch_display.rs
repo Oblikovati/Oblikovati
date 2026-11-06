@@ -165,7 +165,15 @@ fn build_entity(
     let kind = entity_line_style(entity);
     match &entity.primitive {
         SketchDisplayPrimitive::Point(point) => {
-            sketch_structure::point(viewer, sketch.plane, *point, color, false)
+            // Circle and arc centers read as center points whether or not a role was saved.
+            let cross = sketch.geometry.is_center_point(entity.entity)
+                || sketch.geometry.is_implicit_circular_center(entity.entity);
+            let glyph = if cross {
+                super::sketch_marker::SketchPointGlyph::Cross
+            } else {
+                super::sketch_marker::SketchPointGlyph::Dot
+            };
+            sketch_structure::point(viewer, sketch.plane, *point, glyph, color, false)
         }
         SketchDisplayPrimitive::Curve(points) => {
             sketch_structure::curve(viewer, sketch.plane, points, color, kind, false)

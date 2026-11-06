@@ -90,7 +90,8 @@ fn build_member(
     let kind = super::sketch_display::curve_role_line_style(member.construction, member.centerline);
     match &member.primitive {
         SketchDisplayPrimitive::Point(point) => {
-            sketch_structure::point(viewer, plane, *point, color, true)
+            let glyph = super::sketch_marker::SketchPointGlyph::Cross;
+            sketch_structure::point(viewer, plane, *point, glyph, color, true)
         }
         SketchDisplayPrimitive::Curve(points) => {
             sketch_structure::curve(viewer, plane, points, color, kind, true)

@@ -10,6 +10,7 @@ mod arc_midpoint;
 mod arc_residual;
 mod arc_sweep;
 mod authoring;
+mod center_point;
 mod centerline;
 mod curve_format;
 pub use curve_format::{SketchCurveFormat, SketchCurveFormatChange};
@@ -105,6 +106,7 @@ pub struct Sketch2D {
     entity_order: Vec<SketchEntityId>,
     defining_points: std::collections::BTreeSet<SketchEntityId>,
     construction_curves: std::collections::BTreeSet<SketchEntityId>,
+    center_points: std::collections::BTreeSet<SketchEntityId>,
     centerlines: std::collections::BTreeSet<SketchEntityId>,
     points: Vec<SketchPoint2D>,
     lines: Vec<SketchLine2D>,
