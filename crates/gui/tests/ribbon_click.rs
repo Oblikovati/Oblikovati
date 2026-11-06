@@ -182,11 +182,14 @@ fn sketch_tool_captions_identify_the_existing_construction_choices() {
 
 #[test]
 fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
-    use GuiSketchConstraint::{Coincident, Fix, Horizontal, Parallel, Perpendicular, Vertical};
+    use GuiSketchConstraint::{
+        Coincident, Collinear, Concentric, Equal, Fix, Horizontal, Parallel, Perpendicular,
+        Tangent, Vertical,
+    };
     for scale in [1., 2.] {
         let mut engine = GuiFrameEngine::new().unwrap();
         let mut request = ribbon_request();
-        request.extent = [900 * scale as u32, 360 * scale as u32];
+        request.extent = [1000 * scale as u32, 360 * scale as u32];
         request.framebuffer_scale = [scale; 2];
         enter_part(&mut request);
         request.commands.authoring = GuiAuthoringContext::Sketch;
@@ -205,11 +208,19 @@ fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
             [670. * scale, 128. * scale],
             GuiShellAction::ConstrainSketch(Fix),
         );
-        for (choice, y) in [(Parallel, 68.), (Perpendicular, 88.)] {
+        for (choice, y) in [(Parallel, 68.), (Perpendicular, 88.), (Collinear, 108.)] {
             expect_ribbon(
                 &mut engine,
                 &mut request,
                 [790. * scale, y * scale],
+                GuiShellAction::ConstrainSketch(choice),
+            );
+        }
+        for (choice, y) in [(Equal, 68.), (Concentric, 88.), (Tangent, 108.)] {
+            expect_ribbon(
+                &mut engine,
+                &mut request,
+                [900. * scale, y * scale],
                 GuiShellAction::ConstrainSketch(choice),
             );
         }

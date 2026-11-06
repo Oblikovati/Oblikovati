@@ -482,3 +482,6 @@ mod recipes;
 
 #[path = "sketch/planes.rs"]
 mod planes;
+
+#[path = "sketch/collinear_incidence.rs"]
+mod collinear_incidence;

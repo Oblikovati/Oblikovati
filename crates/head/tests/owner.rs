@@ -367,3 +367,6 @@ mod tool_veto;
 
 #[path = "owner/line_relations.rs"]
 mod line_relations;
+
+#[path = "owner/curve_relations.rs"]
+mod curve_relations;

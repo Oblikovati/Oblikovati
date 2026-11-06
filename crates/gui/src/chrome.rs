@@ -125,7 +125,8 @@ fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAct
 }
 fn sketch_constraint_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     use crate::GuiSketchConstraint::{
-        Coincident, Fix, Horizontal, Parallel, Perpendicular, Vertical,
+        Coincident, Collinear, Concentric, Equal, Fix, Horizontal, Parallel, Perpendicular,
+        Tangent, Vertical,
     };
     for (choice, position) in [
         (Horizontal, [504., 59.]),
@@ -134,6 +135,10 @@ fn sketch_constraint_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Ve
         (Fix, [620., 119.]),
         (Parallel, [736., 59.]),
         (Perpendicular, [736., 79.]),
+        (Collinear, [736., 99.]),
+        (Equal, [852., 59.]),
+        (Concentric, [852., 79.]),
+        (Tangent, [852., 99.]),
     ] {
         crate::widget_abi::cursor_position(ui, position);
         command_button(

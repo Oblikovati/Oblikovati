@@ -19,8 +19,12 @@ use operands::OperandCategory::{Circular, Line, Point};
 
 pub(crate) fn accepts(choice: GuiSketchConstraint, kind: &SketchEntityKind) -> bool {
     match choice {
-        GuiSketchConstraint::Parallel | GuiSketchConstraint::Perpendicular => {
-            operands::category(kind) == Some(Line)
+        GuiSketchConstraint::Parallel
+        | GuiSketchConstraint::Perpendicular
+        | GuiSketchConstraint::Collinear => operands::category(kind) == Some(Line),
+        GuiSketchConstraint::Concentric => operands::category(kind) == Some(Circular),
+        GuiSketchConstraint::Equal | GuiSketchConstraint::Tangent => {
+            matches!(operands::category(kind), Some(Line | Circular))
         }
         _ => matches!(
             (choice, operands::category(kind)),
@@ -34,8 +38,13 @@ impl SketchGeometricState {
             GuiSketchConstraint::Horizontal | GuiSketchConstraint::Vertical => {
                 "Select a line or two points. Escape cancels."
             }
-            GuiSketchConstraint::Parallel | GuiSketchConstraint::Perpendicular => {
-                "Select two lines. Escape cancels."
+            GuiSketchConstraint::Parallel
+            | GuiSketchConstraint::Perpendicular
+            | GuiSketchConstraint::Collinear => "Select two lines. Escape cancels.",
+            GuiSketchConstraint::Equal => "Select two lines, or two circles/arcs. Escape cancels.",
+            GuiSketchConstraint::Concentric => "Select two circles or arcs. Escape cancels.",
+            GuiSketchConstraint::Tangent => {
+                "Select a line and circle/arc, or two circles/arcs. Escape cancels."
             }
             GuiSketchConstraint::Fix => "Select a point or line to fix. Escape cancels.",
             GuiSketchConstraint::Coincident => {
@@ -61,9 +70,12 @@ impl SketchGeometricState {
                 self.alignment_recipe(&points, &lines)
             }
             GuiSketchConstraint::Coincident => self.coincident_recipe(&points, &lines, &circular),
-            GuiSketchConstraint::Parallel | GuiSketchConstraint::Perpendicular => {
-                self.line_pair_recipe(&lines)
-            }
+            GuiSketchConstraint::Parallel
+            | GuiSketchConstraint::Perpendicular
+            | GuiSketchConstraint::Collinear => self.line_pair_recipe(&lines),
+            GuiSketchConstraint::Equal
+            | GuiSketchConstraint::Concentric
+            | GuiSketchConstraint::Tangent => curve_relation_recipe(self.choice, &lines, &circular),
             GuiSketchConstraint::Fix => None,
         };
         Ok(recipe
@@ -98,15 +110,13 @@ impl SketchGeometricState {
         &self,
         lines: &[SketchEntityId],
     ) -> Option<(GeometricConstraintKind, Vec<u64>)> {
-        let [first, second, ..] = lines else {
-            return None;
-        };
         let kind = match self.choice {
             GuiSketchConstraint::Parallel => GEO_CONSTRAINT_PARALLEL,
             GuiSketchConstraint::Perpendicular => GEO_CONSTRAINT_PERPENDICULAR,
+            GuiSketchConstraint::Collinear => GEO_CONSTRAINT_COLLINEAR,
             _ => return None,
         };
-        Some((kind, vec![first.0, second.0]))
+        pair_recipe(kind, lines)
     }
     fn coincident_recipe(
         &self,
@@ -194,4 +204,32 @@ fn fixed_point_requests(
             ..Default::default()
         })
         .collect())
+}
+
+fn pair_recipe(
+    kind: GeometricConstraintKind,
+    entities: &[SketchEntityId],
+) -> Option<(GeometricConstraintKind, Vec<u64>)> {
+    let [first, second, ..] = entities else {
+        return None;
+    };
+    Some((kind, vec![first.0, second.0]))
+}
+fn curve_relation_recipe(
+    choice: GuiSketchConstraint,
+    lines: &[SketchEntityId],
+    circular: &[SketchEntityId],
+) -> Option<(GeometricConstraintKind, Vec<u64>)> {
+    match choice {
+        GuiSketchConstraint::Equal if lines.len() >= 2 => {
+            pair_recipe(GEO_CONSTRAINT_EQUAL_LENGTH, lines)
+        }
+        GuiSketchConstraint::Equal => pair_recipe(GEO_CONSTRAINT_EQUAL_RADIUS, circular),
+        GuiSketchConstraint::Concentric => pair_recipe(GEO_CONSTRAINT_CONCENTRIC, circular),
+        GuiSketchConstraint::Tangent if !lines.is_empty() && !circular.is_empty() => {
+            Some((GEO_CONSTRAINT_TANGENT, vec![lines[0].0, circular[0].0]))
+        }
+        GuiSketchConstraint::Tangent => pair_recipe(GEO_CONSTRAINT_TANGENT, circular),
+        _ => None,
+    }
 }
