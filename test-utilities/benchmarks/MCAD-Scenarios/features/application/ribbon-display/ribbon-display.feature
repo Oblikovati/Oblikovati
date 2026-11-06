@@ -130,3 +130,24 @@ Feature: Ribbon display modes
     Then the Annotate command groups appear as compact buttons
     When I open the ribbon display control menu
     Then Minimize to Panel Buttons is checked
+
+  @needs_review
+  Scenario: Identify the control for restoring the full ribbon
+    Given a part is active in the MCAD Software
+    And the ribbon displays tabs without permanent command groups
+    When the pointer rests over the ribbon display control
+    Then a tooltip identifies the action as Show Full Ribbon
+    And the part viewport remains visible
+
+  @needs_review
+  Scenario: Toggle between tabs-only and full ribbon display
+    Given a part is active in the MCAD Software
+    And Minimize to Tabs is the selected ribbon display mode
+    And the 3D Model ribbon is expanded
+    When I activate the ribbon display control
+    Then the permanent command groups disappear and the ribbon tabs remain visible
+    When I activate the ribbon display control again
+    Then the full 3D Model command groups are visible
+    When I activate the ribbon display control again
+    Then the ribbon returns to tabs-only display
+    And the part remains active

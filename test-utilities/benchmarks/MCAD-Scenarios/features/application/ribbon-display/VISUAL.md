@@ -29,7 +29,7 @@
 
 - Trigger: choose Minimize to Tabs directly in the display control menu, select a different ribbon tab, then click outside its temporary panel.
 - Feedback: the command area collapses immediately. The chosen tab opens its own commands temporarily, which close on an outside viewport click while the selected tab remains marked. Reopening the display menu shows a checkmark beside Minimize to Tabs. The prior cycle-through-all option was subsequently restored.
-- Limits: other direct minimization choices and preference persistence after restarting the application remain unobserved.
+- Limits: preference persistence after restarting the application remains unobserved. The other direct minimization choices are described below.
 
 ## Double-click the active drawing ribbon tab
 
@@ -73,3 +73,16 @@
 - Trigger: choose Minimize to Panel Buttons in the display menu of an expanded drawing ribbon.
 - Feedback: Annotate groups become compact icon-and-label buttons. The display control alternates between the full command area and the compact buttons; reopening the menu shows a checkmark for the panel-button choice.
 - Limits: one drawing and session were observed; restart persistence was not checked. The cycle setting and expanded ribbon were restored.
+
+## Tooltip in tabs-only mode
+
+- Context: a part workspace with only the ribbon tabs permanently visible.
+- Feedback: with the pointer resting over the display control, a small light rectangular tooltip appears just below and to its right, labeled Show Full Ribbon. The dark viewport remains visible.
+- Limit: the tooltip identifies the offered action; the activation outcome was not established in this observation.
+
+## Toggle tabs-only and full display
+
+- Context: an active part with Minimize to Tabs selected in the display menu.
+- Trigger: activate the ribbon display control repeatedly.
+- Feedback: the full 3D Model command area disappears, returns on the next activation, and disappears again on the next. The tab row and part viewport remain visible.
+- Limit: observed in one part and session; restart persistence was not checked.

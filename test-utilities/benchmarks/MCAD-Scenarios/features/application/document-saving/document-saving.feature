@@ -185,3 +185,68 @@ Feature: Save and reopen part documents
     And I press Control+S again for the same part
     Then Active Component Iso View on Save is selected
     And Active Window on Save is not selected
+
+  @needs_review @needs_fixture
+  Scenario: Switch save-dialog navigation modes
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And the navigation pane shows libraries and recent folders
+    And the dialog displays a current folder and proposed file name
+    When I switch to system-location navigation
+    Then the navigation pane displays system locations and drives
+    And the current folder and proposed file name remain displayed
+    And the preview settings remain displayed
+    When I switch back to recent-folder navigation
+    Then the navigation pane displays libraries and recent folders
+    And the current folder and proposed file name remain displayed
+    When I cancel Save As
+    Then the unsaved part remains active
+
+  @needs_review @needs_fixture
+  Scenario: Reopen Save As after switching navigation mode
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And the navigation pane shows libraries and recent folders
+    When I switch to system-location navigation
+    And I cancel Save As
+    And I open Save As again for the same part
+    Then the navigation pane shows libraries and recent folders
+    And the proposed file name is selected
+    When I cancel Save As
+    Then the unsaved part remains active
+
+  @needs_review @needs_fixture
+  Scenario: Change the file-list presentation in Save As
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And the current folder contains part files and subfolders
+    And the file list is displayed in Details view
+    And a proposed file name is displayed
+    When I activate the file-list view control
+    Then the file list displays thumbnail tiles with names and file information
+    And the proposed file name and preview settings remain displayed
+    When I choose the Details view shortcut
+    Then the file list displays rows with name, modification date, type and size columns
+    And the proposed file name remains displayed
+    When I cancel Save As
+    Then the unsaved part remains active
+
+  @needs_review @needs_fixture
+  Scenario: Decline replacing an existing part during first save
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And the current folder contains an existing part file
+    When I select the existing part file
+    And I choose Save
+    Then a confirmation identifies the existing file and asks whether to replace it
+    And the confirmation offers Yes and No
+    When I choose No
+    Then the confirmation closes
+    And Save As remains open with the existing file name displayed
+    When I cancel Save As
+    Then the new unsaved part remains active
+
+  @needs_review
+  Scenario: Inspect Save As commands for a saved part
+    Given a saved part is active in the MCAD Software
+    When I open the application menu
+    And I expand Save As
+    Then the menu offers Save As and Save Copy As
+    And it offers Save Copy As Template and Pack and Go
+    And the Save Copy As description says the original file remains open

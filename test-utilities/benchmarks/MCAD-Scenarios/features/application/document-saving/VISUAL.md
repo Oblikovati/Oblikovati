@@ -82,3 +82,23 @@
 - Starting with preview saving enabled and the isometric source selected, clear the checkbox, cancel, and reopen Save As for the same new part: the checkbox is selected and the preview source choices return.
 - Starting from the same initial choice, select Active Window on Save, cancel, and reopen: the isometric source is selected again.
 - Limits: both observations concern the same unsaved part and session; they do not determine behavior after a successful save or restart.
+
+## Save-dialog navigation modes
+
+Adjacent small toolbar controls change the left pane between a compact libraries and recent-folders tree and a longer system-location list with folder and drive icons. The file list remains in the center, preview controls on the right, and filename and actions at the bottom.
+
+## Reopen after switching navigation mode
+
+Reopening the canceled first-save dialog restored the libraries and recent-folders pane; the proposed name was highlighted in the filename field.
+
+## File-list presentation
+
+Details view uses compact rows under Name, Date modified, Type and Size headers. The observed alternate view arranges larger folder icons and part thumbnail tiles across the center, while filename and preview controls remain in place.
+
+## Existing-file confirmation
+
+A small centered light dialog overlays the disabled Save As window. A yellow warning symbol accompanies the existing filename and replacement question, with Yes and No buttons below. No dismisses the prompt and reveals the previous Save As state.
+
+## Save As menu
+
+The dark application menu expands a secondary panel to the right. Four vertically arranged commands pair a small icon and bold label with a short description; the active Save As item is highlighted in the main menu.

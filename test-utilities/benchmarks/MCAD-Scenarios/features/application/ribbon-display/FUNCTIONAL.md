@@ -19,3 +19,7 @@ With the drawing ribbon in compact group-button mode and the Place Views Create 
 In the drawing workspace, choosing Minimize to Panel Titles directly reduced the active ribbon to its group-title strip. With that choice selected, successive activations of the display control alternated between the full ribbon and the title strip; the menu marked Minimize to Panel Titles as selected. Cycle Through All and the expanded ribbon were restored afterward.
 
 Choosing Minimize to Panel Buttons directly in the drawing workspace showed compact group buttons. With that choice selected, the display control alternated between the full ribbon and compact buttons, and the menu marked the choice as selected. Cycle Through All and the full ribbon were restored afterward.
+
+In the observed part workspace with the ribbon reduced to tabs, resting the pointer over the display control showed a Show Full Ribbon tooltip. The tooltip identifies the available action; this observation does not establish a successful activation.
+
+With Minimize to Tabs selected in an active part, repeated activation of the display control alternated between the full 3D Model command groups and tabs-only display. The part remained active. Cycle Through All and the expanded ribbon were restored after the observation.
