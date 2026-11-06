@@ -10,6 +10,24 @@ struct EditorDeletionBaseline {
     sketches: oblikovati_model::document_sketch::DocumentSketches,
     parameters: oblikovati_model::parameter::ParameterCollection<u64>,
 }
+impl EditorDeletionBaseline {
+    fn capture(snapshot: &oblikovati_model::history::DocumentSnapshot, generation: u64) -> Self {
+        Self {
+            generation,
+            sketches: snapshot.sketches.clone(),
+            parameters: snapshot.parameters.clone(),
+        }
+    }
+    fn is_verified_rollback(
+        &self,
+        snapshot: &oblikovati_model::history::DocumentSnapshot,
+        generation: u64,
+    ) -> bool {
+        generation != self.generation
+            && snapshot.sketches.same_recipe(&self.sketches)
+            && snapshot.parameters.same_recipe(&self.parameters)
+    }
+}
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Read current-generation editor picks; stale handles are never published.
     /// Example: `session.selected_sketch_picks(sketch)` for rendering or constraint tools.
@@ -51,11 +69,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: Option<DocumentSketchId>,
         tool_active: bool,
     ) -> Result<SketchEntityDeletion, CommandError<SketchError>> {
-        let before = EditorDeletionBaseline {
-            generation: self.generation(),
-            sketches: self.snapshot().sketches.clone(),
-            parameters: self.snapshot().parameters.clone(),
-        };
+        let before = EditorDeletionBaseline::capture(self.snapshot(), self.generation());
         let mut candidate = self.editor_selection.clone();
         match self.delete_selected_sketch_picks(sketch, tool_active, &mut candidate) {
             Ok(report) => {
@@ -77,13 +91,10 @@ impl<O: TransactionObserver> DocumentSession<O> {
         let Some(sketch) = sketch else {
             return;
         };
-        if self.generation() == before.generation
-            || picks
-                .validate_scope(self.document, before.generation, sketch)
-                .is_err()
-            || !self.snapshot().sketches.same_recipe(&before.sketches)
-            || !self.snapshot().parameters.same_recipe(&before.parameters)
-        {
+        let original_scope = picks
+            .validate_scope(self.document, before.generation, sketch)
+            .is_ok();
+        if !original_scope || !before.is_verified_rollback(self.snapshot(), self.generation()) {
             return;
         }
         // #3841: a verified veto rollback changes generation, not selected identities.

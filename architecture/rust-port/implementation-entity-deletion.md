@@ -179,4 +179,7 @@ application deletion acceptance from these tests.
 
 The [interactive selection engine](implementation-interactive-selection.md#checked-sketch-picks-and-editor-deletion)
 now connects checked, generation-bound sketch picks to this command path. Native
-input, selection-change events, and viewport acceptance remain open.
+entity input and deletion acceptance are recorded in
+[the native editor implementation](implementation-native-sketch-delete.md).
+Standalone relation-marker picking and complete selection-event publication
+remain separate port work.

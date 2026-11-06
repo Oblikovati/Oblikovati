@@ -113,6 +113,7 @@ fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAct
     let exit = ("Exit", "Finish Sketch", GuiShellAction::FinishSketch);
     command_panel(ui, state, actions, exit);
     sketch_constraint_controls(ui, state, actions);
+    sketch_delete_control(ui, state, actions);
     crate::widget_abi::cursor_position(ui, [620., 59.]);
     command_button(
         ui,
@@ -252,4 +253,14 @@ fn appearance_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShell
         }
         ui.text("Appearance");
     });
+}
+
+fn sketch_delete_control(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    crate::widget_abi::cursor_position(ui, [968., 59.]);
+    command_panel(
+        ui,
+        state,
+        actions,
+        ("Modify", "Delete", GuiShellAction::DeleteSketchSelection),
+    );
 }

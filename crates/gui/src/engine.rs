@@ -179,6 +179,7 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
+        crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);
         let snapshot = capture_frame(self.context.render(), request.extent)?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !tool_keyboard;

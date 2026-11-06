@@ -42,3 +42,5 @@ pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
 
 mod dimension_labels;
 pub use dimension_labels::{GuiDimensionLabel, GuiDimensionLabelRole};
+
+mod sketch_delete;

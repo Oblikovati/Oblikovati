@@ -78,6 +78,12 @@ impl<
             color_scheme,
             dimension_draft: self.gui_dimension_draft()?,
             dimension_labels: Vec::new(),
+            sketch_delete_available: !session.in_transaction()
+                && self.sketch_tool.is_none()
+                && self.active_sketch_edit().is_some_and(|edit| {
+                    edit.document == document
+                        && !session.selected_sketch_picks(edit.sketch).is_empty()
+                }),
             sketch_selection: oblikovati_viewport::ViewportSketchSelection {
                 sketches: session.selected_browser_sketches(),
                 entities: session
@@ -198,6 +204,9 @@ impl<
         action: &oblikovati_gui::GuiDimensionAction,
     ) -> Result<bool, String> {
         self.apply_dimension_intent(action)
+    }
+    fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
+        self.delete_gui_sketch_selection()
     }
     fn constrain_sketch_from_gui(
         &mut self,

@@ -132,6 +132,10 @@ pub trait HeadWork {
     fn take_window_capture_requests(&mut self) -> Vec<crate::WindowCaptureJob> {
         Vec::new()
     }
+    /// Delete checked editor picks through their owner; example: `work.delete_sketch_selection_from_gui()?`.
+    fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
+        Err("Delete Sketch Selection: expected a document editor owner".into())
+    }
     /// Activate a supported placement engine; example: `work.place_sketch_tool_from_gui(GuiSketchTool::Circle)?`.
     fn place_sketch_tool_from_gui(
         &mut self,
@@ -330,6 +334,9 @@ macro_rules! forward_owner_view_work {
         }
         fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
             self.$owner.edit_sketch_from_gui(start)
+        }
+        fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
+            self.$owner.delete_sketch_selection_from_gui()
         }
         fn place_sketch_tool_from_gui(
             &mut self,

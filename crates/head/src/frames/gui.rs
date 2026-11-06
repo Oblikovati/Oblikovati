@@ -72,6 +72,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Dimension(_)
         | GuiShellAction::ConstrainSketch(_)
         | GuiShellAction::PlaceSketchTool(_)
+        | GuiShellAction::DeleteSketchSelection
         | GuiShellAction::NewPart
         | GuiShellAction::StartSketchXY
         | GuiShellAction::FinishSketch => {
