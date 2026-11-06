@@ -94,3 +94,35 @@ After selecting the metric part tile, Enter replaced the chooser with an empty p
 ## Escape from the chooser
 
 Escape dismissed the centered chooser, revealing the previously active part workspace and its existing document tabs.
+
+## Projects dialog from the chooser
+
+A light dialog overlays the template chooser. Its upper area is a project name and location list with an active-project mark; a lower tree shows project settings. New, Browse, Save, Apply and Done controls appear along the bottom, with unavailable actions visually muted. Done returns to the still-open template chooser.
+
+## Size sort in Details view
+
+The gallery uses compact rows with Name, Size and Type columns. A small directional marker appears in the Size header and reverses when the sort direction changes. Rows reorder inside the existing type sections while the selected template information stays in the right pane.
+
+## Reopened chooser sort indication
+
+After reopening in medium icon view and switching back to Details, the Size column again displayed its descending-direction marker, and the visible part rows ran from larger to smaller file sizes.
+
+## Create from an empty template root
+
+At the selected root, empty white type sections remain in the central gallery, while the earlier part details and preview stay on the right. Create remains visible at the bottom. Activating it replaces the chooser with a new empty part workspace and active tab.
+
+## No selection and retained selection
+
+Without a selected template, the preview area is blank gray, detail values are blank and Create is visibly muted. Selecting an assembly tile highlights it, fills the information pane and enables Create. Switching folders replaces the center tiles while keeping the earlier assembly information visible on the right.
+
+## Drawing layout and component prompt
+
+Drawing template selection changes the right pane into a vertically scrollable stack of sheet previews. The chosen layout receives a blue selection highlight. Creation displays a compact light component-selection dialog over the workspace with one document-name field, a browse icon and OK and Cancel buttons. Cancel returns to the part workspace.
+
+## Drawing layout with an update warning
+
+A centered information dialog presents the affected component, a message-display preference and an OK button. After dismissal, a portrait sheet occupies the viewport, with a framed title block at the bottom and a parts list at the top. The browser lists the corresponding parts list and view beneath the sheet.
+
+## Browse for a component
+
+A large light file-selection dialog overlays the smaller component prompt. Navigation is on the left, the file list in the center and preview/options on the right; filename and action controls run along the bottom. Cancel reveals the smaller prompt again.

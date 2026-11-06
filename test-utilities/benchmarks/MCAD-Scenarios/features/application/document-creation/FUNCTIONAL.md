@@ -51,3 +51,39 @@ After clicking the standard metric part template, pressing Enter dismissed the c
 ## Dismiss the chooser with Escape
 
 Pressing Escape while the template chooser was open closed it and returned to the previously active part, with its browser, viewport and existing tabs displayed. No new document appeared.
+
+## Inspect projects from the chooser
+
+Choosing Projects opened a separate dialog over the template chooser. It listed project names and locations, marked the active project, and displayed a project settings tree. Choosing Done without making a change returned to the chooser with the previously selected part details still shown. Project activation, editing and persistence were not tested.
+
+## Sort templates by size
+
+In the grouped metric template gallery's Details view, clicking Size arranged the visible part templates in increasing file-size order; clicking it again reversed that order. The other visible type sections also changed order, and the previously selected standard metric part details remained displayed. The observed sequence starts from the chooser state used for the capture; initial sort state and other columns were not established.
+
+## Reopen after changing template sort order
+
+With the metric gallery grouped by type and sorted by descending size in Details view, switching to Medium icons, canceling, and reopening the chooser in the same session retained the metric folder and medium view. Returning to Details displayed the part rows in descending size order with the Size sort indicator. Restart persistence was not observed.
+
+## Create using a retained template after Home
+
+With the standard metric part selected, Home moved to a template root containing no direct entries. The groups appeared empty, but the part details remained displayed. Choosing Create closed the chooser and opened a new empty part, demonstrating that the retained selection remained actionable in this observed state. The unedited part was closed afterward. The separate no-selection state is described below.
+
+## No template selected
+
+When the chooser reopened at an empty template root with no selected template, its details were blank and Create was disabled. Choosing the metric folder displayed template tiles but left Create disabled until the standard metric assembly tile was selected; its details then appeared and Create became enabled. This state followed creating a document from the root in the same session.
+
+## Create a retained selection after changing folders
+
+After selecting the metric assembly template, choosing the English folder changed the gallery but left the metric assembly details displayed. Choosing Create without selecting an English template opened an empty assembly with the assembly browser and ribbon. Its units were not independently inspected after creation. The unedited assembly was closed afterward.
+
+## Cancel component selection for a drawing layout
+
+Selecting the inch drawing template exposed the base template preview and populated layout previews. Selecting a populated assembly layout and choosing Create closed the chooser and opened a component-selection dialog for a drawing view, with a document-name field, browse control, OK and Cancel. Cancel returned to the original part; no new drawing tab appeared. The observed layout and available default document depend on the installed templates and open documents. Successful component selection was not observed in this sequence.
+
+## Create a populated layout with a component needing an update
+
+Selecting the populated assembly layout and confirming the component already displayed in the component-selection dialog produced a message that the referenced component needed updating and that the drawing reflected its non-updated state. After acknowledgement, a drawing opened with a border, title block and parts list. Its browser contained a parts list and a view referring to the component; no model geometry was visible in the sheet in this observed case. The newly created drawing was closed without saving. This observation does not establish behavior for an up-to-date component or a model with visible geometry.
+
+## Browse for a drawing-layout component
+
+From the component-selection dialog, Browse opened a file-selection dialog with a folder and file list, file-name input, file-type filter, preview area, Open and Cancel. Cancel returned to component selection with the previous document name still displayed. Canceling component selection then returned to the existing part without creating a drawing. Selecting a different file was not part of this observation.

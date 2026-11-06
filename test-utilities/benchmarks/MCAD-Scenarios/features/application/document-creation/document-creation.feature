@@ -227,3 +227,132 @@ Feature: Create a document from a template
     And the original part remains active
     And its viewport and browser are displayed
     And no new document tab is created
+
+  @needs_review @needs_fixture
+  Scenario: Inspect projects from the template chooser
+    Given the new-document template chooser is open in the MCAD Software
+    And a project is active
+    When I choose Projects in the chooser
+    Then a Projects dialog opens above the chooser
+    And it lists project names and locations
+    And the active project is marked
+    And the dialog displays a project settings tree
+    When I choose Done without changing the project
+    Then the Projects dialog closes
+    And the template chooser is displayed again
+    And the previously selected template details remain displayed
+
+  @needs_review @needs_fixture
+  Scenario: Reverse template size sorting in Details view
+    Given the new-document template chooser is open in the MCAD Software
+    And the metric template folder is selected
+    And the gallery is grouped by template type and displayed in Details view
+    And the standard metric part template details are displayed
+    And the Size column is not the active sort column
+    When I click the Size column header
+    Then the visible part templates are ordered by increasing file size
+    And the standard metric part template details remain displayed
+    When I click the Size column header again
+    Then the visible part templates are ordered by decreasing file size
+    And the standard metric part template details remain displayed
+    And the gallery remains grouped by template type
+
+  @needs_review @needs_fixture
+  Scenario: Retain template sort order when reopening the chooser
+    Given the new-document template chooser is open in the MCAD Software
+    And the metric gallery is grouped by template type in Details view
+    And the visible part templates are sorted by decreasing file size
+    When I choose Medium icons in the template display menu
+    And I cancel the chooser
+    And I reopen the chooser in the same session
+    Then the metric template folder and medium icon view are displayed
+    When I choose Details in the template display menu
+    Then the visible part templates are ordered by decreasing file size
+    And the Size column indicates descending order
+
+  @needs_review @needs_fixture
+  Scenario: Create a part after navigating to an empty template root
+    Given the new-document template chooser is open in the MCAD Software
+    And the standard metric part template is selected
+    And the template root contains no direct template entries
+    When I choose Home in the template chooser
+    Then the root is selected and its template groups are empty
+    And the standard metric part template details remain displayed
+    When I choose Create
+    Then the chooser closes
+    And a new empty part document becomes active
+    And its model browser displays an origin and an end-of-part marker
+    And a new document tab is visible
+
+  @needs_review @needs_fixture
+  Scenario: Enable creation by selecting a template
+    Given the new-document template chooser is open in the MCAD Software
+    And no template is selected
+    And the selected template root has no direct template entries
+    Then Create is disabled
+    When I select the metric template folder
+    Then template tiles are displayed
+    And Create remains disabled
+    When I select the standard metric assembly template
+    Then its assembly details are displayed
+    And Create is enabled
+
+  @needs_review @needs_fixture
+  Scenario: Create the retained template after changing folders
+    Given the new-document template chooser is open in the MCAD Software
+    And the standard metric assembly template is selected
+    When I select the English template folder without selecting another template
+    Then the gallery displays the English folder templates
+    And the details still identify the metric assembly template
+    When I choose Create
+    Then the chooser closes
+    And a new empty assembly document becomes active
+    And its browser displays representations, relationships and origin entries
+    And a new document tab is visible
+
+  @needs_review @needs_fixture
+  Scenario: Cancel component selection for a drawing layout
+    Given a part document is active in the MCAD Software
+    And the new-document template chooser is open
+    And an inch drawing template with a populated assembly layout preview is available
+    When I select the inch drawing template
+    Then the chooser displays the template sheet and available layout previews
+    When I select the populated assembly layout preview
+    And I choose Create
+    Then the template chooser closes
+    And a component-selection dialog opens for a drawing view
+    And the dialog displays a document name field and a browse control
+    When I cancel component selection
+    Then the component-selection dialog closes
+    And the original part document remains active
+    And no new drawing tab is displayed
+
+  @needs_review @needs_fixture
+  Scenario: Create a populated drawing layout with a component that needs updating
+    Given a part document is active in the MCAD Software
+    And a drawing template provides a populated layout with a parts list and a view
+    And an available part component requires an update
+    When I select the drawing template and populated layout
+    And I choose Create
+    And I confirm that component in the component-selection dialog
+    Then a message identifies the component as needing an update
+    And the message says the drawing reflects the model's non-updated state
+    When I acknowledge the message
+    Then a new drawing document becomes active
+    And its sheet displays a border, title block and parts list
+    And the drawing browser lists a parts list and a view referencing the component
+    And a new document tab is visible
+
+  @needs_review @needs_fixture
+  Scenario: Cancel browsing for a drawing-layout component
+    Given a populated drawing layout is being created in the MCAD Software
+    And the component-selection dialog displays a document name
+    When I choose Browse beside the document name
+    Then a file-selection dialog opens above component selection
+    And it displays a file list, a file name field and Open and Cancel controls
+    When I cancel the file-selection dialog
+    Then the component-selection dialog is displayed again
+    And its previous document name remains displayed
+    When I cancel component selection
+    Then the original document remains active
+    And no new drawing tab is displayed
