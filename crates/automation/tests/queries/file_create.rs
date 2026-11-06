@@ -43,6 +43,37 @@ fn creation_preserves_duplicate_titles_and_activates_each_document_kind() {
 }
 
 #[test]
+fn the_sheet_metal_flavor_is_recorded_for_a_part_and_refused_for_other_kinds() {
+    let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
+    let mut source = QueryGuids(0);
+    let mut factory = QueryObserverFactory {
+        created: 0,
+        limit: 4,
+    };
+    let client = Client::new(
+        FileHost::new(&mut files, &mut source, "test").with_observer_factory(&mut factory),
+    );
+    let flavor = oblikovati_api::types::SUB_TYPE_SHEET_METAL_PART
+        .0
+        .to_string();
+    let created = client
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: "part".into(),
+            name: "Sheet".into(),
+            sub_type: flavor.clone(),
+        })
+        .unwrap();
+    assert_eq!(created.sub_type, flavor);
+    let refusal = client.documents().create(&CreateDocumentArgs {
+        type_: "assembly".into(),
+        name: "Bad".into(),
+        sub_type: flavor,
+    });
+    assert!(refusal.is_err());
+}
+
+#[test]
 fn created_part_edits_saves_and_reopens_through_the_typed_client() {
     let mut files = DiscoveryWorkspace::new(QueryObserver::default(), DiscoveryFiles::default());
     let mut source = QueryGuids(0);

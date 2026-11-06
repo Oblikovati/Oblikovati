@@ -18,13 +18,18 @@ pub(crate) struct GuiDocumentFiles {
     first_saves: FirstSaves,
 }
 impl GuiDocumentFiles {
-    pub(crate) fn request_save_path(&mut self, document: u64, name: &str) -> Result<(), String> {
+    pub(crate) fn request_save_path(
+        &mut self,
+        document: u64,
+        name: &str,
+        kind: Option<oblikovati_api::types::DocumentType>,
+    ) -> Result<(), String> {
         if document == 0 {
             return Err(format!(
                 "save dialog document {document}: expected a nonzero document identity"
             ));
         }
-        self.save_as.request(document, name, false);
+        self.save_as.request(document, name, kind, false);
         Ok(())
     }
     pub(crate) fn menu(
@@ -71,7 +76,8 @@ impl GuiDocumentFiles {
             .enabled(state.document.is_some() && !state.transaction_open)
             .build();
         if let Some(document) = state.document.filter(|_| chosen) {
-            self.save_as.request(document, active_name(state), false);
+            self.save_as
+                .request(document, active_name(state), state.document_type, false);
         }
     }
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -114,8 +120,12 @@ impl GuiDocumentFiles {
             return;
         }
         if let Some(document) = self.first_saves.next(state, actions) {
-            self.save_as
-                .request(document, document_name(state, document), true);
+            self.save_as.request(
+                document,
+                document_name(state, document),
+                state.document_type,
+                true,
+            );
         }
     }
     /// A dialog must open or a held close must continue; GUI frames otherwise wait for an event.

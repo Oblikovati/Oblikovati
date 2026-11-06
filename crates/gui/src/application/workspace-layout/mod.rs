@@ -3,6 +3,8 @@
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, MouseButton, Ui, WindowFlags};
 
+/// The tab strip and the gap under it.
+const TAB_STRIP_HEIGHT: f32 = 34.;
 const EDGE_MARGIN: f32 = 8.;
 /// A header released this close to a side edge docks there.
 const DOCK_TARGET: f32 = 48.;
@@ -111,6 +113,26 @@ impl WorkspaceLayout {
             (true, BrowserDock::Left) => (reserved, (width - reserved).max(1.)),
             (true, BrowserDock::Right) => (EDGE_MARGIN, (width - reserved - EDGE_MARGIN).max(1.)),
             _ => (EDGE_MARGIN, (width - 2. * EDGE_MARGIN).max(1.)),
+        }
+    }
+    /// The screen area left for a document after the browser, tabs and ribbon band.
+    /// Example: `layout.document_area([1440., 900.], 120.)`.
+    pub(crate) fn document_area(
+        &self,
+        display: [f32; 2],
+        band_height: f32,
+    ) -> crate::application::document_creation::workspaces::WorkspaceArea {
+        let (left, width) = self.tab_span(display[0]);
+        let tabs = if self.tabs_visible {
+            TAB_STRIP_HEIGHT
+        } else {
+            0.
+        };
+        crate::application::document_creation::workspaces::WorkspaceArea {
+            left,
+            top: band_height + tabs + EDGE_MARGIN,
+            right: left + width,
+            bottom: display[1] - EDGE_MARGIN,
         }
     }
     /// Draw the View tab's panel checklist; example: `layout.user_interface_menu(ui, [108., 18.])`.

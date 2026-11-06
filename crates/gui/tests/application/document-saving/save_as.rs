@@ -15,7 +15,7 @@ impl GuiFolders for FakeFolders {
 }
 fn requested(close_after: bool) -> SaveAsDialog {
     let mut dialog = SaveAsDialog::with_folders(Rc::new(FakeFolders));
-    dialog.request(7, "Part", close_after);
+    dialog.request(7, "Part", None, close_after);
     dialog
 }
 #[test]
@@ -26,6 +26,19 @@ fn a_request_proposes_the_name_and_the_default_preview() {
     assert!(draft.close_after && draft.save_preview);
     assert_eq!(draft.source, PreviewSource::ActiveComponentIso);
     assert!(dialog.is_opening() && dialog.is_open());
+}
+#[test]
+fn an_assembly_proposes_its_own_file_type() {
+    let mut dialog = SaveAsDialog::with_folders(Rc::new(FakeFolders));
+    dialog.request(
+        7,
+        "Assembly1",
+        Some(oblikovati_api::types::DOCUMENT_ASSEMBLY),
+        false,
+    );
+    let draft = dialog.draft.as_ref().unwrap();
+    assert_eq!(draft.name, "Assembly1.oad");
+    assert_eq!(draft.types.filter(0), Some("oad"));
 }
 #[test]
 fn the_preview_area_follows_the_options() {

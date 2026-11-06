@@ -46,7 +46,7 @@ pub enum GuiShellAction {
         request: oblikovati_api::wire::ParameterSetArgs,
     },
     NewPart,
-    CreatePart(crate::GuiPartTemplate),
+    CreateDocument(crate::GuiDocumentTemplate),
     StartSketchXY,
     FinishSketch,
     DeleteSketchSelection,
@@ -181,7 +181,7 @@ impl GuiShellAction {
                 .theme
                 .as_ref()
                 .is_some_and(|theme| theme.contains(name)),
-            Self::OpenDocument(_) | Self::CreatePart(_) => !state.transaction_open,
+            Self::OpenDocument(_) | Self::CreateDocument(_) => !state.transaction_open,
             Self::CloseDocument(request) => {
                 (state.document == Some(request.id)
                     || state.documents.iter().any(|row| row.id == request.id))

@@ -26,16 +26,20 @@ fn creation_package(request: &CreateDocumentArgs) -> Result<DocumentPackage, Err
             "documents.create name \"\": expected a nonempty document name".into(),
         ));
     }
-    if !request.sub_type.is_empty() {
+    let kind = creation_kind(&request.type_)?;
+    let sheet_metal = kind == DOCUMENT_PART && request.sub_type == SUB_TYPE_SHEET_METAL_PART.0;
+    if !request.sub_type.is_empty() && !sheet_metal {
         return Err(Error(format!(
-            "documents.create subType {:?}: expected empty; subtype registration and flavor setup are not yet ported",
+            "documents.create subType {:?}: expected empty, or the sheet-metal flavor of a part; subtype registration and flavor setup are not yet ported",
             request.sub_type
         )));
     }
-    Ok(DocumentPackage::empty(
-        creation_kind(&request.type_)?,
-        &request.name,
-    ))
+    let package = DocumentPackage::empty(kind, &request.name);
+    Ok(if sheet_metal {
+        package.with_sub_type(&request.sub_type)
+    } else {
+        package
+    })
 }
 
 fn creation_kind(name: &str) -> Result<DocumentType, Error> {

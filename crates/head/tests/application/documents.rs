@@ -263,7 +263,7 @@ impl ApplicationWorld {
             "viewport: expected drawn geometry over the background"
         );
     }
-    fn pixel_at(&mut self, position: [usize; 2]) -> [u8; 4] {
+    pub fn pixel_at(&mut self, position: [usize; 2]) -> [u8; 4] {
         let capture = super::capture_framebuffer(&mut self.app().window.native);
         let at = (position[1] * capture.extent[0] as usize + position[0]) * 4;
         std::array::from_fn(|channel| capture.rgba[at + channel])

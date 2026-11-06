@@ -27,13 +27,14 @@ impl<
             })
             .collect()
     }
-    /// Name a new part so two open tabs never read the same; example: `Part1`, then `Part2`.
-    /// The count only grows in a session: closing `Part2` does not reuse its name.
-    pub(super) fn next_new_part_name(&mut self) -> String {
+    /// Name a new document so two open tabs never read the same; example: `Part1`, then `Part2`.
+    /// Each count only grows in a session: closing `Part2` does not reuse its name.
+    pub(super) fn next_new_document_name(&mut self, prefix: &'static str) -> String {
         let open = self.gui_document_rows().unwrap_or_default();
+        let count = self.new_document_counts.entry(prefix).or_default();
         loop {
-            self.new_part_count += 1;
-            let name = format!("Part{}", self.new_part_count);
+            *count += 1;
+            let name = format!("{prefix}{count}");
             if open.iter().all(|row| row.name != name) {
                 return name;
             }

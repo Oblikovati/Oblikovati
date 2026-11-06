@@ -27,10 +27,28 @@ impl DocumentPackage {
     }
 }
 
+impl DocumentPackage {
+    /// Mark a new package as a registered flavor of its document type.
+    /// Example: `DocumentPackage::empty(DOCUMENT_PART, "Bracket").with_sub_type(id)`.
+    pub fn with_sub_type(mut self, sub_type: &str) -> Self {
+        self.manifest.sub_type = sub_type.into();
+        self.root.insert("subType".into(), sub_type.into());
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use oblikovati_api::types::*;
+
+    #[test]
+    fn a_new_package_flavor_survives_encoding() {
+        let package = DocumentPackage::empty(DOCUMENT_PART, "Bracket")
+            .with_sub_type(SUB_TYPE_SHEET_METAL_PART.0.as_ref());
+        let decoded = DocumentPackage::decode(&package.encode().unwrap()).unwrap();
+        assert_eq!(decoded.manifest().sub_type, SUB_TYPE_SHEET_METAL_PART.0);
+    }
 
     #[test]
     fn empty_envelopes_round_trip_titles_kinds_and_have_no_persisted_identity() {

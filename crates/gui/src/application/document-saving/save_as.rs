@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::folder_browser::{
-    ALL_FILES, DialogEnd, DialogEscape, FolderBrowser, dialog_buttons, file_name_field,
-    file_type_field, full_path, proposed_file_name,
+    DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog, dialog_buttons,
+    file_name_field, file_type_field, full_path, native_file_type, proposed_file_name,
 };
 use crate::application::file_system::{GuiFolders, NativeFolders};
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, Ui};
-use oblikovati_api::wire::{CloseDocumentArgs, SaveDocumentAsArgs};
+use imgui::Ui;
+use oblikovati_api::{
+    types::DocumentType,
+    wire::{CloseDocumentArgs, SaveDocumentAsArgs},
+};
 use std::rc::Rc;
 
 const TITLE: &str = "Save As";
@@ -40,6 +43,7 @@ struct SaveAsDraft {
     document: u64,
     close_after: bool,
     name: String,
+    types: FileTypeList,
     file_type: usize,
     save_preview: bool,
     source: PreviewSource,
@@ -68,13 +72,21 @@ impl SaveAsDialog {
             draft: None,
         }
     }
-    /// Open for a document, proposing its name; example: `dialog.request(7, "Part", false)`.
-    pub(crate) fn request(&mut self, document: u64, name: &str, close_after: bool) {
+    /// Open for a document, proposing its name; example: `dialog.request(7, "Part", None, false)`.
+    pub(crate) fn request(
+        &mut self,
+        document: u64,
+        name: &str,
+        kind: Option<DocumentType>,
+        close_after: bool,
+    ) {
+        let native = native_file_type(kind);
         self.browser.refresh();
         self.draft = Some(SaveAsDraft {
             document,
             close_after,
-            name: proposed_file_name(name),
+            name: proposed_file_name(name, native.extension),
+            types: FileTypeList::saving(native),
             file_type: 0,
             save_preview: true,
             source: PreviewSource::default(),
@@ -127,7 +139,7 @@ impl SaveAsDialog {
         if std::mem::take(&mut draft.opening) {
             ui.open_popup(TITLE);
         }
-        dialog_geometry(ui);
+        center_dialog(ui, [860., 440.]);
         let _dialog = ui.begin_modal_popup(TITLE)?;
         let end = self.contents(ui, state, actions);
         if end.is_some() {
@@ -144,7 +156,8 @@ impl SaveAsDialog {
     ) -> Option<DialogEnd> {
         let draft = self.draft.as_mut()?;
         ui.columns(2, "save-as-layout", true);
-        let chosen = self.browser.controls(ui, "Save in", draft.file_type);
+        let filter = draft.types.filter(draft.file_type);
+        let chosen = self.browser.controls(ui, "Save in", filter);
         if let Some(name) = chosen {
             draft.name = name;
         }
@@ -154,12 +167,6 @@ impl SaveAsDialog {
         ui.separator();
         footer(ui, state, &self.browser.folder, draft, actions)
     }
-}
-fn dialog_geometry(ui: &Ui) {
-    let display = ui.io().display_size;
-    let size = [860_f32.min(display[0] - 24.), 440_f32.min(display[1] - 24.)];
-    let position = std::array::from_fn(|axis| (display[axis] - size[axis]) * 0.5);
-    crate::widget_abi::window_geometry(ui, position, size, Condition::Appearing);
 }
 /// What the preview area shows; the picture itself is not stored in the file yet.
 fn preview_text(draft: &SaveAsDraft) -> &str {
@@ -202,7 +209,10 @@ fn image_chooser(ui: &Ui, draft: &mut SaveAsDraft) {
     let Some(_chooser) = ui.begin_modal_popup(IMAGE_CHOOSER) else {
         return;
     };
-    if let Some(name) = draft.images.controls(ui, "Look in", ALL_FILES) {
+    if let Some(name) = draft
+        .images
+        .controls(ui, "Look in", FileTypeList::any().filter(0))
+    {
         draft.image_name = name;
     }
     let entered = file_name_field(ui, &mut draft.image_name);
@@ -223,7 +233,7 @@ fn footer(
     actions: &mut Vec<GuiShellAction>,
 ) -> Option<DialogEnd> {
     let entered = file_name_field(ui, &mut draft.name);
-    file_type_field(ui, &mut draft.file_type);
+    file_type_field(ui, &draft.types, &mut draft.file_type);
     let action = GuiShellAction::SaveDocumentAs(SaveDocumentAsArgs {
         document: draft.document,
         new_full_document_name: full_path(folder, &draft.name),

@@ -205,13 +205,13 @@ pub trait HeadWork {
     fn create_part_document(&mut self) -> Result<bool, String> {
         Err("New Part: expected a document owner with part creation support".into())
     }
-    /// Create a selected part template; example: `work.create_part_template(GuiPartTemplate::Metric)?`.
-    fn create_part_template(
+    /// Create a selected document template; example: `work.create_document_template(GuiDocumentTemplate::Metric)?`.
+    fn create_document_template(
         &mut self,
-        template: oblikovati_gui::GuiPartTemplate,
+        template: oblikovati_gui::GuiDocumentTemplate,
     ) -> Result<bool, String> {
         Err(format!(
-            "part template {template:?}: expected a document owner with template creation support"
+            "document template {template:?}: expected a document owner with template creation support"
         ))
     }
     /// Consume a committed authoring update; example: `work.take_sketch_scene()?` after polling history.
@@ -370,11 +370,11 @@ macro_rules! forward_owner_view_work {
         fn create_part_document(&mut self) -> Result<bool, String> {
             self.$owner.create_part_document()
         }
-        fn create_part_template(
+        fn create_document_template(
             &mut self,
-            template: oblikovati_gui::GuiPartTemplate,
+            template: oblikovati_gui::GuiDocumentTemplate,
         ) -> Result<bool, String> {
-            self.$owner.create_part_template(template)
+            self.$owner.create_document_template(template)
         }
         fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
             self.$owner.edit_sketch_from_gui(start)

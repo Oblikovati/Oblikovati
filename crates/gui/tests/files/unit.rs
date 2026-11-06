@@ -5,9 +5,9 @@ use oblikovati_api::wire::{CloseDocumentArgs, OpenDocumentArgs, SaveDocumentAsAr
 #[test]
 fn a_save_dialog_needs_a_real_document_identity() {
     let mut files = GuiDocumentFiles::default();
-    let refusal = files.request_save_path(0, "Part").unwrap_err();
+    let refusal = files.request_save_path(0, "Part", None).unwrap_err();
     assert!(refusal.contains("nonzero") && refusal.contains('0'));
-    files.request_save_path(7, "Part").unwrap();
+    files.request_save_path(7, "Part", None).unwrap();
     assert!(files.needs_frame());
 }
 #[test]

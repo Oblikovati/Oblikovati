@@ -10,7 +10,7 @@ fn editor_request(library: &ThemeLibrary) -> GuiFrameRequest {
         framebuffer_scale: [1.; 2],
         commands: GuiCommandState {
             document: Some(1),
-            document_type: Some(oblikovati_api::types::DOCUMENT_DRAWING),
+            document_type: Some(oblikovati_api::types::DOCUMENT_UNKNOWN),
             authoring: GuiAuthoringContext::OtherDocument,
             theme: Some(GuiThemeState::from_library(library).with_custom_save_available(true)),
             color_scheme: Some(GuiColorSchemeState::from_registry(&Default::default()).unwrap()),
@@ -173,7 +173,7 @@ fn verify_builtin_read_only(
 
 fn set_document_presence(request: &mut GuiFrameRequest, present: bool) {
     request.commands.document = present.then_some(1);
-    request.commands.document_type = present.then_some(oblikovati_api::types::DOCUMENT_DRAWING);
+    request.commands.document_type = present.then_some(oblikovati_api::types::DOCUMENT_UNKNOWN);
     request.commands.authoring = if present {
         GuiAuthoringContext::OtherDocument
     } else {

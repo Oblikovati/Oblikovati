@@ -23,7 +23,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         | GuiShellAction::OpenDocument(_)
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SaveDocumentAs(_)
-        | GuiShellAction::CreatePart(_)
+        | GuiShellAction::CreateDocument(_)
         | GuiShellAction::NewPart => document(owner, action),
         _ => sketch(owner, action),
     }
@@ -38,7 +38,7 @@ fn document(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, S
             Some(std::path::Path::new(&request.new_full_document_name)),
         ),
         GuiShellAction::NewPart => owner.create_part_document(),
-        GuiShellAction::CreatePart(template) => owner.create_part_template(*template),
+        GuiShellAction::CreateDocument(template) => owner.create_document_template(*template),
         _ => unsupported(action),
     }
 }

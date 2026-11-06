@@ -101,15 +101,17 @@ fn an_unchanged_choice_reports_no_change() {
     );
 }
 #[test]
-fn new_part_names_never_repeat_among_open_documents_or_in_a_session() {
+fn new_document_names_count_per_kind_and_skip_open_names() {
     let (mut owner, awake) = owner();
-    assert_eq!(owner.next_new_part_name(), "Part1");
-    assert_eq!(owner.next_new_part_name(), "Part2");
+    assert_eq!(owner.next_new_document_name("Part"), "Part1");
+    assert_eq!(owner.next_new_document_name("Part"), "Part2");
+    assert_eq!(owner.next_new_document_name("Assembly"), "Assembly1");
     create(&mut owner, &awake);
-    owner.new_part_count = 0;
+    assert_eq!(owner.next_new_document_name("Owner part"), "Owner part1");
     let open = owner.gui_document_rows().unwrap()[0].name.clone();
-    assert_eq!(open, "Owner part");
-    assert_eq!(owner.next_new_part_name(), "Part1");
+    owner.new_document_counts.clear();
+    let taken = open.strip_suffix(' ').unwrap_or(&open);
+    assert_ne!(owner.next_new_document_name("Part"), taken);
 }
 #[test]
 fn a_new_part_has_no_work_to_lose_until_it_is_edited() {

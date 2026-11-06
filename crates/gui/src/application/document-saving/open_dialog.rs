@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::folder_browser::{
-    DialogEnd, DialogEscape, FolderBrowser, dialog_buttons, file_name_field, file_type_field,
-    full_path,
+    DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog, dialog_buttons,
+    file_name_field, file_type_field, full_path,
 };
 use crate::application::file_system::{GuiFolders, NativeFolders};
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::Ui;
 use oblikovati_api::wire::OpenDocumentArgs;
 use std::rc::Rc;
 
 const TITLE: &str = "Open";
 const NO_PREVIEW: &str = "No preview image";
+/// The list's last row: Open starts by showing every file in the folder.
+const ALL_DOCUMENT_TYPES: usize = 4;
 
 struct OpenDraft {
     name: String,
+    types: FileTypeList,
     file_type: usize,
     escape: DialogEscape,
     opening: bool,
@@ -39,7 +42,8 @@ impl OpenDialog {
         self.browser.refresh();
         self.draft = Some(OpenDraft {
             name: String::new(),
-            file_type: 0,
+            types: FileTypeList::opening(),
+            file_type: ALL_DOCUMENT_TYPES,
             escape: DialogEscape::default(),
             opening: true,
         });
@@ -70,7 +74,7 @@ impl OpenDialog {
         if std::mem::take(&mut draft.opening) {
             ui.open_popup(TITLE);
         }
-        dialog_geometry(ui);
+        center_dialog(ui, [760., 400.]);
         let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
             return;
         };
@@ -79,12 +83,6 @@ impl OpenDialog {
             ui.close_current_popup();
         }
     }
-}
-fn dialog_geometry(ui: &Ui) {
-    let display = ui.io().display_size;
-    let size = [760_f32.min(display[0] - 24.), 400_f32.min(display[1] - 24.)];
-    let position = std::array::from_fn(|axis| (display[axis] - size[axis]) * 0.5);
-    crate::widget_abi::window_geometry(ui, position, size, Condition::Appearing);
 }
 fn contents(
     ui: &Ui,
@@ -95,7 +93,7 @@ fn contents(
 ) -> Option<DialogEnd> {
     ui.columns(2, "open-layout", true);
     ui.set_column_width(0, 520.);
-    if let Some(name) = browser.controls(ui, "Look in", draft.file_type) {
+    if let Some(name) = browser.controls(ui, "Look in", draft.types.filter(draft.file_type)) {
         draft.name = name;
     }
     ui.next_column();
@@ -106,7 +104,7 @@ fn contents(
     ui.columns(1, "open-layout-end", false);
     ui.separator();
     let entered = file_name_field(ui, &mut draft.name);
-    file_type_field(ui, &mut draft.file_type);
+    file_type_field(ui, &draft.types, &mut draft.file_type);
     let action = open_action(&full_path(&browser.folder, &draft.name));
     let can_open = !draft.name.is_empty() && action.dispatchable(state);
     let end = dialog_buttons(ui, "Open", can_open, entered, &mut draft.escape);

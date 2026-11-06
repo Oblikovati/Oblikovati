@@ -2,8 +2,8 @@
 use crate::{GuiAuthoringContext, GuiCommandState};
 use oblikovati_api::types::{
     ASSEMBLY_RIBBON, DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PART, DOCUMENT_PRESENTATION,
-    DRAWING_RIBBON, PART_RIBBON, PRESENTATION_RIBBON, RibbonKey, UNKNOWN_DOCUMENT_RIBBON,
-    ZERO_DOC_RIBBON,
+    DRAWING_RIBBON, PART_RIBBON, PRESENTATION_RIBBON, RibbonKey, SUB_TYPE_SHEET_METAL_PART,
+    UNKNOWN_DOCUMENT_RIBBON, ZERO_DOC_RIBBON,
 };
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -11,6 +11,10 @@ pub(crate) enum RibbonTab {
     #[default]
     GetStarted,
     Model,
+    SheetMetal,
+    Assemble,
+    PlaceViews,
+    Presentation,
     Sketch,
     Manage,
     View,
@@ -20,6 +24,10 @@ impl RibbonTab {
         match self {
             Self::GetStarted => "Get Started",
             Self::Model => "3D Model",
+            Self::SheetMetal => "Sheet Metal",
+            Self::Assemble => "Assemble",
+            Self::PlaceViews => "Place Views",
+            Self::Presentation => "Presentation",
             Self::Sketch => "Sketch",
             Self::Manage => "Manage",
             Self::View => "View",
@@ -28,7 +36,7 @@ impl RibbonTab {
 }
 #[derive(Default)]
 pub(crate) struct DocumentRibbon {
-    previous: Option<(RibbonKey, bool)>,
+    previous: Option<(RibbonKey, bool, bool)>,
     pub active: RibbonTab,
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
     pub display: crate::application::ribbon_display::RibbonDisplayState,
@@ -41,8 +49,9 @@ impl DocumentRibbon {
     pub(crate) fn prepare(&mut self, state: &GuiCommandState) -> RibbonFrame {
         let key = document_ribbon_key(state);
         let sketch = state.authoring == GuiAuthoringContext::Sketch;
-        let tabs = document_tabs(&key, sketch);
-        let identity = (key, sketch);
+        let sheet_metal = active_sheet_metal(state);
+        let tabs = document_tabs(&key, sketch, sheet_metal);
+        let identity = (key, sketch, sheet_metal);
         let changed = self.previous.as_ref() != Some(&identity);
         if changed {
             self.active = contextual_tab(&tabs, sketch);
@@ -66,13 +75,32 @@ fn document_ribbon_key(state: &GuiCommandState) -> RibbonKey {
         _ => UNKNOWN_DOCUMENT_RIBBON,
     }
 }
-fn document_tabs(key: &RibbonKey, sketch: bool) -> Vec<RibbonTab> {
+fn active_sheet_metal(state: &GuiCommandState) -> bool {
+    state
+        .documents
+        .iter()
+        .any(|row| Some(row.id) == state.document && row.sub_type == SUB_TYPE_SHEET_METAL_PART.0)
+}
+fn document_tabs(key: &RibbonKey, sketch: bool, sheet_metal: bool) -> Vec<RibbonTab> {
     if *key == ZERO_DOC_RIBBON {
         return vec![RibbonTab::GetStarted];
     }
     let mut tabs = Vec::new();
     if *key == PART_RIBBON {
-        tabs.push(RibbonTab::Model);
+        tabs.push(if sheet_metal {
+            RibbonTab::SheetMetal
+        } else {
+            RibbonTab::Model
+        });
+    }
+    if *key == ASSEMBLY_RIBBON {
+        tabs.push(RibbonTab::Assemble);
+    }
+    if *key == DRAWING_RIBBON {
+        tabs.push(RibbonTab::PlaceViews);
+    }
+    if *key == PRESENTATION_RIBBON {
+        tabs.push(RibbonTab::Presentation);
     }
     if *key == PART_RIBBON || *key == ASSEMBLY_RIBBON {
         if sketch {

@@ -22,8 +22,20 @@ mod ribbon_display;
 #[path = "workspace-layout/steps.rs"]
 mod workspace_layout;
 
+/// Unoptimized Cucumber futures hold every step on the stack, so the suite outgrows a test
+/// thread's default as scenarios arrive. The window and its GUI context live on this one thread.
+const SCENARIO_STACK_BYTES: usize = 256 * 1024 * 1024;
 #[test]
 fn application_scenarios_use_the_native_window() {
+    std::thread::Builder::new()
+        .name("application-scenarios".into())
+        .stack_size(SCENARIO_STACK_BYTES)
+        .spawn(run_application_scenarios)
+        .unwrap()
+        .join()
+        .unwrap();
+}
+fn run_application_scenarios() {
     let root = feature_root();
     let reports = world::reports_folder();
     fs::create_dir_all(&reports).unwrap();

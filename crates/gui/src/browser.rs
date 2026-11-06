@@ -3,10 +3,21 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, StyleColor, Ui};
 use oblikovati_model::{document_sketch::DocumentSketchId, feature::FeatureId};
 
+/// The browser tree a document kind shows; each kind names its own branches.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GuiBrowserKind {
+    #[default]
+    Part,
+    SheetMetal,
+    Assembly,
+    Drawing,
+    Presentation,
+}
 /// Immutable document structure; only the desktop owner can activate an edit.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiModelBrowser {
     pub name: String,
+    pub kind: GuiBrowserKind,
     pub has_origin: bool,
     pub sketches: Vec<GuiBrowserSketch>,
     pub features: Vec<GuiBrowserFeature>,
@@ -111,16 +122,59 @@ pub(crate) fn browser_contents(
     };
     let _document = ui.push_id(format!("document-{:?}", state.document));
     ui.text(&browser.name);
+    match browser.kind {
+        GuiBrowserKind::Part => modeling_tree(ui, state, browser, "End of Part", actions),
+        GuiBrowserKind::SheetMetal => folded_model_tree(ui, state, browser, actions),
+        GuiBrowserKind::Assembly => assembly_tree(ui, state, browser, actions),
+        GuiBrowserKind::Drawing => drawing_tree(ui),
+        GuiBrowserKind::Presentation => ui.text("Scene1"),
+    }
+}
+fn modeling_tree(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    end_marker: &str,
+    actions: &mut Vec<GuiShellAction>,
+) {
     origin_branch(ui, browser);
     parameter_branch(ui, state);
     sketch_branches(ui, state, browser, actions);
     feature_branch(ui, state, browser, actions);
-    end_of_document_marker(ui, browser);
-}
-fn end_of_document_marker(ui: &Ui, browser: &GuiModelBrowser) {
     // The marker closes a modelled document's history; a document without an origin has none.
     if browser.has_origin {
-        ui.text("End of Part");
+        ui.text(end_marker);
+    }
+}
+fn folded_model_tree(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    if let Some(_folded) = ui
+        .tree_node_config("Folded Model")
+        .default_open(true)
+        .push()
+    {
+        modeling_tree(ui, state, browser, "End of Folded", actions);
+    }
+}
+fn assembly_tree(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    ui.text("Representations");
+    ui.text("Relationships");
+    modeling_tree(ui, state, browser, "End of Assembly", actions);
+}
+fn drawing_tree(ui: &Ui) {
+    ui.text("Drawing Resources");
+    if let Some(_sheet) = ui.tree_node_config("Sheet:1").default_open(true).push() {
+        ui.bullet_text("Border");
+        ui.bullet_text("Title Block");
     }
 }
 fn origin_branch(ui: &Ui, browser: &GuiModelBrowser) {

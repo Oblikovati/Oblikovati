@@ -28,15 +28,54 @@ fn entry(name: &str, is_folder: bool) -> FolderEntry {
 }
 #[test]
 fn a_document_name_becomes_a_native_file_name_once() {
-    assert_eq!(proposed_file_name("Part"), "Part.opd");
-    assert_eq!(proposed_file_name("Part.opd"), "Part.opd");
+    assert_eq!(proposed_file_name("Part", "opd"), "Part.opd");
+    assert_eq!(proposed_file_name("Part.opd", "opd"), "Part.opd");
+    assert_eq!(proposed_file_name("Assembly1", "oad"), "Assembly1.oad");
 }
 #[test]
-fn the_part_filter_keeps_folders_and_native_files_only() {
-    assert!(listed(&entry("old", true), 0));
-    assert!(listed(&entry("a.opd", false), 0));
-    assert!(!listed(&entry("b.png", false), 0));
-    assert!(listed(&entry("b.png", false), ALL_FILES));
+fn a_filter_keeps_folders_and_its_files_only() {
+    assert!(listed(&entry("old", true), Some("opd")));
+    assert!(listed(&entry("a.opd", false), Some("opd")));
+    assert!(listed(&entry("A.OPD", false), Some("opd")));
+    assert!(!listed(&entry("b.png", false), Some("opd")));
+    assert!(listed(&entry("b.png", false), None));
+}
+#[test]
+fn each_document_kind_saves_as_its_native_type() {
+    assert_eq!(native_file_type(Some(DOCUMENT_ASSEMBLY)).extension, "oad");
+    assert_eq!(native_file_type(Some(DOCUMENT_DRAWING)).extension, "odd");
+    assert_eq!(
+        native_file_type(Some(DOCUMENT_PRESENTATION)).extension,
+        "ord"
+    );
+    assert_eq!(native_file_type(None).extension, "opd");
+}
+#[test]
+fn the_extensions_are_the_registered_ones() {
+    use oblikovati_api::types::*;
+    for (native, registered) in [
+        (PART_FILES, PART_FILE_EXTENSION),
+        (ASSEMBLY_FILES, ASSEMBLY_FILE_EXTENSION),
+        (DRAWING_FILES, DRAWING_FILE_EXTENSION),
+        (PRESENTATION_FILES, PRESENTATION_FILE_EXTENSION),
+    ] {
+        assert_eq!(format!(".{}", native.extension), registered);
+        assert!(
+            native.label.contains(registered),
+            "label {:?}",
+            native.label
+        );
+    }
+}
+#[test]
+fn file_type_rows_name_what_they_keep() {
+    let saving = FileTypeList::saving(PART_FILES);
+    assert_eq!(saving.labels(), [PART_FILES.label, ALL_FILES]);
+    assert_eq!(saving.filter(0), Some("opd"));
+    assert_eq!(saving.filter(1), None);
+    assert_eq!(FileTypeList::opening().rows.len(), 5);
+    assert_eq!(FileTypeList::assemblies().filter(0), Some("oad"));
+    assert_eq!(FileTypeList::any().filter(0), None);
 }
 #[test]
 fn a_folder_row_reads_as_a_folder() {

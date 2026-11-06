@@ -42,6 +42,8 @@ pub struct GuiFrameEngine {
     workspace: crate::application::workspace_layout::WorkspaceLayout,
     /// The documents of the latest frame, for dialogs an owner notice opens between frames.
     known_documents: Vec<oblikovati_api::wire::DocumentInfo>,
+    known_document_type: Option<oblikovati_api::types::DocumentType>,
+    workspaces: crate::application::document_creation::workspaces::DocumentWorkspaces,
     /// Modifier state across frames: Control and Tab can arrive in different frames.
     control_held: bool,
     theme_editor: crate::theme_editor::GuiThemeEditor,
@@ -64,6 +66,8 @@ impl GuiFrameEngine {
             document_tabs: Default::default(),
             workspace: Default::default(),
             known_documents: Vec::new(),
+            known_document_type: None,
+            workspaces: Default::default(),
             control_held: false,
             theme_editor: Default::default(),
         })
@@ -97,7 +101,8 @@ impl GuiFrameEngine {
     /// Example: `engine.request_save_path(document)?` after a SavePathRequired notice.
     pub fn request_save_path(&mut self, document: u64) -> Result<(), String> {
         let name = self.document_name(document);
-        self.document_files.request_save_path(document, &name)
+        self.document_files
+            .request_save_path(document, &name, self.known_document_type)
     }
 }
 
@@ -190,6 +195,7 @@ impl GuiFrameEngine {
                 theme_editor: &mut self.theme_editor,
                 preferences: &mut self.preferences,
                 workspace: &mut self.workspace,
+                workspaces: &mut self.workspaces,
             },
             &mut selected,
         );
@@ -204,6 +210,10 @@ impl GuiFrameEngine {
             band_height,
             &mut selected,
         );
+        let logical =
+            std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
+        let area = self.workspace.document_area(logical, band_height);
+        self.workspaces.panel(ui, &request.commands, area);
         self.document_files
             .panel(ui, &request.commands, &mut selected);
         self.preferences.panel(ui, &request.commands, &mut selected);
@@ -226,6 +236,8 @@ impl GuiFrameEngine {
         self.document_files
             .closing_panel(ui, &request.commands, &mut selected);
         self.known_documents.clone_from(&request.commands.documents);
+        self.known_document_type = request.commands.document_type;
+        self.workspaces.note_created(&selected);
         let snapshot = capture_frame(self.context.render(), request.extent)?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;
@@ -234,6 +246,7 @@ impl GuiFrameEngine {
         activity.pending_layout |= self.workspace.pending_layout;
         activity.pending_layout |= self.document_files.needs_frame()
             || self.document_tabs.needs_frame()
+            || self.workspaces.needs_frame()
             || self.workspace.switcher.needs_frame()
             || self.document_tabs.menu.properties.needs_frame();
         Ok(GuiFrameOutput {

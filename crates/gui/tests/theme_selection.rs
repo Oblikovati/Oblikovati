@@ -11,7 +11,7 @@ fn theme_request(library: &ThemeLibrary) -> GuiFrameRequest {
         commands: GuiCommandState {
             theme: Some(GuiThemeState::from_library(library)),
             document: Some(1),
-            document_type: Some(oblikovati_api::types::DOCUMENT_DRAWING),
+            document_type: Some(oblikovati_api::types::DOCUMENT_UNKNOWN),
             authoring: GuiAuthoringContext::OtherDocument,
             ..Default::default()
         },

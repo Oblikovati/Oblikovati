@@ -3,11 +3,15 @@ use super::*;
 #[test]
 fn selected_part_templates_create_real_documents_with_the_selected_units() {
     let (mut owner, _) = owner();
-    for template in [
-        oblikovati_gui::GuiPartTemplate::Metric,
-        oblikovati_gui::GuiPartTemplate::Inch,
+    for units in [
+        oblikovati_gui::GuiTemplateUnits::Metric,
+        oblikovati_gui::GuiTemplateUnits::Inch,
     ] {
-        assert!(owner.create_part_template(template).unwrap());
+        let template = oblikovati_gui::GuiDocumentTemplate {
+            kind: oblikovati_gui::GuiTemplateKind::Part,
+            units,
+        };
+        assert!(owner.create_document_template(template).unwrap());
         let client = Client::new(owner.document_host());
         let units = client.documents().get_units().unwrap();
         assert_eq!(units.length_unit, template.length_unit());
@@ -18,5 +22,40 @@ fn selected_part_templates_create_real_documents_with_the_selected_units() {
         );
         assert!(state.browser.as_ref().unwrap().has_origin);
         assert!(state.browser.as_ref().unwrap().features.is_empty());
+    }
+}
+#[test]
+fn each_template_kind_creates_its_own_document_type_and_units() {
+    use oblikovati_api::types::*;
+    use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
+    let (mut owner, _) = owner();
+    for (kind, document_type, name) in [
+        (GuiTemplateKind::SheetMetal, DOCUMENT_PART, "Part1"),
+        (GuiTemplateKind::Assembly, DOCUMENT_ASSEMBLY, "Assembly1"),
+        (GuiTemplateKind::Drawing, DOCUMENT_DRAWING, "Drawing1"),
+        (
+            GuiTemplateKind::Presentation,
+            DOCUMENT_PRESENTATION,
+            "Presentation1",
+        ),
+    ] {
+        let template = GuiDocumentTemplate {
+            kind,
+            units: GuiTemplateUnits::Metric,
+        };
+        assert!(owner.create_document_template(template).unwrap());
+        let state = owner.gui_command_state().unwrap();
+        assert_eq!(state.document_type, Some(document_type));
+        let active = state.documents.iter().find(|row| row.active).unwrap();
+        assert_eq!(active.name, name);
+        assert_eq!(
+            active.sub_type.is_empty(),
+            kind != GuiTemplateKind::SheetMetal
+        );
+        let units = Client::new(owner.document_host())
+            .documents()
+            .get_units()
+            .unwrap();
+        assert_eq!(units.length_unit, "mm");
     }
 }

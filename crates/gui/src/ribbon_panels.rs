@@ -20,6 +20,10 @@ pub(crate) enum RibbonPanel {
     Appearance,
     Visibility,
     Windows,
+    Component,
+    SheetMetalTools,
+    DrawingViews,
+    PresentationModel,
 }
 impl RibbonPanel {
     pub(crate) fn label(self) -> &'static str {
@@ -36,6 +40,10 @@ impl RibbonPanel {
             Self::Appearance => "Appearance",
             Self::Visibility => "Visibility",
             Self::Windows => "Windows",
+            Self::Component => "Component",
+            Self::SheetMetalTools => "Sheet Metal",
+            Self::DrawingViews => "Create",
+            Self::PresentationModel => "Workshop",
         }
     }
     pub(crate) fn command(self) -> Option<(&'static str, GuiShellAction)> {
@@ -51,7 +59,11 @@ impl RibbonPanel {
             | Self::Parameters
             | Self::Appearance
             | Self::Visibility
-            | Self::Windows => {
+            | Self::Windows
+            | Self::Component
+            | Self::SheetMetalTools
+            | Self::DrawingViews
+            | Self::PresentationModel => {
                 return None;
             }
         })
@@ -98,6 +110,7 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
     pub editor: &'a mut crate::theme_editor::GuiThemeEditor,
     pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
+    pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
 }
 struct PanelDrawContext<'a> {
     ui: &'a Ui,
@@ -248,6 +261,10 @@ fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
     match tab {
         RibbonTab::GetStarted => vec![Launch],
         RibbonTab::Model => vec![Sketch],
+        RibbonTab::SheetMetal => vec![SheetMetalTools, Sketch],
+        RibbonTab::Assemble => vec![Component],
+        RibbonTab::PlaceViews => vec![DrawingViews],
+        RibbonTab::Presentation => vec![PresentationModel],
         RibbonTab::Sketch => vec![Create, Exit, Constrain, Modify, Format],
         RibbonTab::Manage => vec![Parameters],
         RibbonTab::View if state.theme.is_some() || state.color_scheme.is_some() => {

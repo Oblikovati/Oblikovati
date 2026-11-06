@@ -2,10 +2,12 @@
 //! Owned Dear ImGui frames for the application viewport draw boundary.
 mod activity;
 mod application;
-pub use application::document_creation::GuiPartTemplate;
+pub use application::document_creation::templates::{
+    GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits,
+};
 mod appearance_choice;
 mod browser;
-pub use browser::{GuiBrowserFeature, GuiBrowserSketch, GuiModelBrowser};
+pub use browser::{GuiBrowserFeature, GuiBrowserKind, GuiBrowserSketch, GuiModelBrowser};
 mod clipboard;
 pub use activity::GuiFrameActivity;
 pub use clipboard::GuiClipboard;

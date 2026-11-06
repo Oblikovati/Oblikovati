@@ -76,7 +76,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PlaceSketchTool(_)
         | GuiShellAction::ToggleSketchFormat(_)
         | GuiShellAction::DeleteSketchSelection
-        | GuiShellAction::CreatePart(_)
+        | GuiShellAction::CreateDocument(_)
         | GuiShellAction::NewPart
         | GuiShellAction::StartSketchXY
         | GuiShellAction::FinishSketch => {

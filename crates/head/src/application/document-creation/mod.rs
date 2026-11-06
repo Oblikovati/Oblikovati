@@ -4,7 +4,7 @@ use oblikovati_api::{
     client::{Caller, Client},
     wire::{ActivateDocumentArgs, CloseDocumentArgs, CreateDocumentArgs, SetDocumentUnitsArgs},
 };
-use oblikovati_gui::GuiPartTemplate;
+use oblikovati_gui::GuiDocumentTemplate;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -14,19 +14,19 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    pub(super) fn create_template_part(
+    pub(super) fn create_template_document(
         &mut self,
-        template: GuiPartTemplate,
+        template: GuiDocumentTemplate,
     ) -> Result<bool, String> {
         let state = self.gui_command_state()?;
         if state.transaction_open || state.authoring == oblikovati_gui::GuiAuthoringContext::Sketch
         {
             return Err(format!(
-                "part template {template:?}: expected no active edit or transaction"
+                "document template {template:?}: expected no active edit or transaction"
             ));
         }
         let previous = self.files.workspace().active_document();
-        let name = self.next_new_part_name();
+        let name = self.next_new_document_name(template.name_prefix());
         create_template(
             &Client::new(self.document_host()),
             template,
@@ -38,18 +38,20 @@ impl<
 }
 fn create_template<T: Caller>(
     client: &Client<T>,
-    template: GuiPartTemplate,
+    template: GuiDocumentTemplate,
     name: &str,
     previous: Option<u64>,
 ) -> Result<(), String> {
     let created = client
         .documents()
         .create(&CreateDocumentArgs {
-            type_: "part".into(),
+            type_: template.type_name().into(),
             name: name.into(),
-            ..Default::default()
+            sub_type: template.sub_type().into(),
         })
-        .map_err(|cause| format!("part template {template:?}: expected a new part: {cause}"))?;
+        .map_err(|cause| {
+            format!("document template {template:?}: expected a new document: {cause}")
+        })?;
     let result = client.documents().set_units(&SetDocumentUnitsArgs {
         length_unit: Some(Box::new(template.length_unit().into())),
         ..Default::default()
@@ -57,7 +59,7 @@ fn create_template<T: Caller>(
     if let Err(cause) = result {
         rollback_template(client, created.id, previous)?;
         return Err(format!(
-            "part template {template:?}: expected length unit {:?}: {cause}",
+            "document template {template:?}: expected length unit {:?}: {cause}",
             template.length_unit()
         ));
     }
@@ -75,14 +77,14 @@ fn rollback_template<T: Caller>(
             force: true,
         })
         .map_err(|cause| {
-            format!("failed template part {created}: expected rollback close: {cause}")
+            format!("failed template document {created}: expected rollback close: {cause}")
         })?;
     if let Some(id) = previous {
         client
             .documents()
             .activate(&ActivateDocumentArgs { id })
             .map_err(|cause| {
-                format!("previous part {id}: expected rollback activation: {cause}")
+                format!("previous document {id}: expected rollback activation: {cause}")
             })?;
     }
     Ok(())

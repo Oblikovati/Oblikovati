@@ -74,7 +74,7 @@ impl Default for DesktopDispatchOptions {
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     color_schemes: oblikovati_model::color_scheme::ColorSchemeRegistry,
     ui_scale_store: Option<Box<dyn oblikovati_model::ui_scale::UiScalePreferenceAccess>>,
-    new_part_count: u32,
+    new_document_counts: std::collections::BTreeMap<&'static str, u32>,
     prompt_store: Option<Box<dyn oblikovati_model::application_prompts::PromptPreferenceAccess>>,
     prompt_frequencies: oblikovati_model::application_prompts::PromptPreferences,
     theme_store: Option<Box<dyn oblikovati_model::theme::ThemeSelectionStore>>,
@@ -122,7 +122,7 @@ impl<
         Self {
             color_schemes: Default::default(),
             ui_scale_store: None,
-            new_part_count: 0,
+            new_document_counts: Default::default(),
             prompt_store: None,
             prompt_frequencies: Default::default(),
             theme_store: None,

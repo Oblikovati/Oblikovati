@@ -51,7 +51,7 @@ impl RenderedRun {
         // is well under it, and the padding between neighbouring buttons is over it.
         let gap = glyph.minimum[0] - self.maximum[0];
         (glyph.minimum[1] - self.minimum[1]).abs() < font_size * 0.7
-            && (-1.0..font_size * 0.85).contains(&gap)
+            && (-1.0..font_size * 0.95).contains(&gap)
     }
     fn push(&mut self, glyph: RenderedGlyph) {
         self.text.push(glyph.letter);

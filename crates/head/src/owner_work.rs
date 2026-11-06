@@ -153,14 +153,14 @@ impl<
     ) -> Result<bool, String> {
         self.activate_gui_document(request)
     }
-    fn create_part_template(
+    fn create_document_template(
         &mut self,
-        template: oblikovati_gui::GuiPartTemplate,
+        template: oblikovati_gui::GuiDocumentTemplate,
     ) -> Result<bool, String> {
-        self.create_template_part(template)
+        self.create_template_document(template)
     }
     fn create_part_document(&mut self) -> Result<bool, String> {
-        let name = self.next_new_part_name();
+        let name = self.next_new_document_name("Part");
         oblikovati_api::client::Client::new(self.document_host())
             .documents()
             .create(&oblikovati_api::wire::CreateDocumentArgs {

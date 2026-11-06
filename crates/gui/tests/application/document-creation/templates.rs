@@ -1,20 +1,38 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[test]
-fn template_units_and_descriptions_agree() {
-    for (template, unit, folder, title) in [
-        (
-            GuiPartTemplate::Metric,
-            "mm",
-            "Metric",
-            "Standard metric part",
-        ),
-        (GuiPartTemplate::Inch, "in", "English", "Standard inch part"),
-    ] {
-        assert_eq!(template.length_unit(), unit);
-        assert_eq!(template.folder(), folder);
-        assert_eq!(template.title(), title);
-    }
+fn a_drawing_cannot_be_created_until_its_template_preview_is_accepted() {
+    let state = GuiCommandState::default();
+    let mut chooser = TemplateChooser {
+        selected: Some(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        }),
+        ..Default::default()
+    };
+    assert!(!chooser.can_create(&state));
+    chooser.use_template = true;
+    assert!(chooser.can_create(&state));
+}
+#[test]
+fn an_open_transaction_or_no_selection_blocks_creation() {
+    let mut chooser = TemplateChooser::default();
+    assert!(!chooser.can_create(&GuiCommandState::default()));
+    chooser.selected = Some(GuiDocumentTemplate::default());
+    assert!(chooser.can_create(&GuiCommandState::default()));
+    let busy = GuiCommandState {
+        transaction_open: true,
+        ..Default::default()
+    };
+    assert!(!chooser.can_create(&busy));
+}
+#[test]
+fn every_view_has_its_label_and_only_icon_sizes_change_the_row_height() {
+    let labels: Vec<&str> = TemplateView::ALL.map(TemplateView::label).into();
+    assert_eq!(labels, ["Large Icons", "Small Icons", "List", "Details"]);
+    assert!(TemplateView::LargeIcons.row_height() > TemplateView::SmallIcons.row_height());
+    assert_eq!(TemplateView::List.row_height(), 0.);
+    assert_eq!(TemplateView::Details.row_height(), 0.);
 }
 #[test]
 fn opening_the_chooser_does_not_create_a_document_and_escape_cancels() {

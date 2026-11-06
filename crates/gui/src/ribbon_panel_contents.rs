@@ -23,9 +23,35 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
         RibbonPanel::Visibility => visibility_controls(ui, state, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
+        RibbonPanel::Component => muted_commands(ui, origin, &["Place", "Create"], NOT_PORTED),
+        RibbonPanel::SheetMetalTools => {
+            muted_commands(ui, origin, &["Flange", "Flat Pattern"], NOT_PORTED);
+        }
+        RibbonPanel::DrawingViews => {
+            muted_commands(ui, origin, &["Base View", "Projected View"], NOT_PORTED);
+        }
+        RibbonPanel::PresentationModel => {
+            if crate::widget_abi::button(ui, "Insert Model", [108., 58.]) {
+                owners.workspaces.request_insert();
+            }
+        }
         other => single_command(ui, other, state, actions),
     }
     false
+}
+/// Commands a document kind will offer: shown muted with the reason, never as a working button.
+const NOT_PORTED: &str = "This command is not available in this build.";
+fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
+    for (row, label) in labels.iter().enumerate() {
+        crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + row as f32 * 30.]);
+        {
+            let _muted = ui.begin_disabled(true);
+            crate::widget_abi::button(ui, label, [108., 26.]);
+        }
+        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+            ui.tooltip_text(reason);
+        }
+    }
 }
 fn single_command(
     ui: &Ui,

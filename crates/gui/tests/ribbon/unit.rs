@@ -53,18 +53,28 @@ fn changing_document_identity_keeps_the_tab_but_changing_kind_selects_its_base()
     assert_eq!(ribbon.prepare(&state).select, None);
     assert_eq!(ribbon.active, RibbonTab::View);
     state.document_type = Some(DOCUMENT_DRAWING);
-    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::View));
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::PlaceViews));
 }
 #[test]
 fn document_tabs_keep_sketch_context_off_other_document_types() {
-    for key in [DRAWING_RIBBON, PRESENTATION_RIBBON, UNKNOWN_DOCUMENT_RIBBON] {
-        assert_eq!(document_tabs(&key, true), [RibbonTab::View]);
+    for (key, tabs) in [
+        (
+            DRAWING_RIBBON,
+            &[RibbonTab::PlaceViews, RibbonTab::View][..],
+        ),
+        (
+            PRESENTATION_RIBBON,
+            &[RibbonTab::Presentation, RibbonTab::View][..],
+        ),
+        (UNKNOWN_DOCUMENT_RIBBON, &[RibbonTab::View][..]),
+    ] {
+        assert_eq!(document_tabs(&key, true, false), tabs);
     }
-    let zero_tabs = document_tabs(&ZERO_DOC_RIBBON, true);
+    let zero_tabs = document_tabs(&ZERO_DOC_RIBBON, true, false);
     assert_eq!(zero_tabs, [RibbonTab::GetStarted]);
     for key in [PART_RIBBON, ASSEMBLY_RIBBON] {
-        assert!(document_tabs(&key, true).contains(&RibbonTab::Sketch));
-        assert!(!document_tabs(&key, false).contains(&RibbonTab::Sketch));
+        assert!(document_tabs(&key, true, false).contains(&RibbonTab::Sketch));
+        assert!(!document_tabs(&key, false, false).contains(&RibbonTab::Sketch));
     }
 }
 #[test]
@@ -77,5 +87,18 @@ fn tab_names_match_the_go_command_registry() {
         (RibbonTab::View, "View"),
     ] {
         assert_eq!(tab.label(), label);
+    }
+}
+#[test]
+fn each_document_kind_opens_on_its_own_tab() {
+    for (key, sheet_metal, expected) in [
+        (PART_RIBBON, false, RibbonTab::Model),
+        (PART_RIBBON, true, RibbonTab::SheetMetal),
+        (ASSEMBLY_RIBBON, false, RibbonTab::Assemble),
+        (DRAWING_RIBBON, false, RibbonTab::PlaceViews),
+        (PRESENTATION_RIBBON, false, RibbonTab::Presentation),
+    ] {
+        let tabs = document_tabs(&key, false, sheet_metal);
+        assert_eq!(contextual_tab(&tabs, false), expected);
     }
 }

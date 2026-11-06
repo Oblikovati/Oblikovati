@@ -11,6 +11,7 @@ pub(crate) struct RibbonDrawOwners<'a> {
     pub theme_editor: &'a mut crate::theme_editor::GuiThemeEditor,
     pub preferences: &'a mut crate::ui_scale::GuiScalePreferences,
     pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
+    pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
 }
 pub(crate) fn ribbon_band(
     ui: &Ui,
@@ -77,6 +78,7 @@ fn ribbon_panel_row(
             parameters: owners.parameters,
             editor: owners.theme_editor,
             workspace: owners.workspace,
+            workspaces: owners.workspaces,
         },
         &mut ribbon.panels,
         &mut ribbon.display,

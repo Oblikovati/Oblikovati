@@ -2,7 +2,10 @@
 use super::*;
 use oblikovati_api::{
     client::Client,
-    types::{DOCUMENT_ASSEMBLY, DOCUMENT_PART},
+    types::{
+        DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PART, DOCUMENT_PRESENTATION, DocumentType,
+        SUB_TYPE_SHEET_METAL_PART,
+    },
     wire::SketchArgs,
 };
 use oblikovati_gui::{GuiBrowserFeature, GuiBrowserSketch, GuiModelBrowser};
@@ -42,10 +45,21 @@ impl<
             .document_type(document)
             .map_err(|cause| cause.to_string())?;
         Ok(GuiModelBrowser {
+            kind: browser_kind(kind, &info.sub_type),
             name: info.name,
             has_origin: matches!(kind, DOCUMENT_PART | DOCUMENT_ASSEMBLY),
             ..Default::default()
         })
+    }
+}
+fn browser_kind(kind: DocumentType, sub_type: &str) -> oblikovati_gui::GuiBrowserKind {
+    use oblikovati_gui::GuiBrowserKind;
+    match kind {
+        DOCUMENT_ASSEMBLY => GuiBrowserKind::Assembly,
+        DOCUMENT_DRAWING => GuiBrowserKind::Drawing,
+        DOCUMENT_PRESENTATION => GuiBrowserKind::Presentation,
+        _ if sub_type == SUB_TYPE_SHEET_METAL_PART.0 => GuiBrowserKind::SheetMetal,
+        _ => GuiBrowserKind::Part,
     }
 }
 fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

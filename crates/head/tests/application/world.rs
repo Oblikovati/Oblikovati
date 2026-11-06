@@ -106,7 +106,7 @@ impl ApplicationWorld {
     pub fn expect_text(&self, text: &str) {
         assert!(
             self.shows(text),
-            "rendered text {:?}: expected {text:?}",
+            "expected {text:?} in rendered text {:?}",
             self.text()
         );
     }
