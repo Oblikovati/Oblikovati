@@ -122,7 +122,12 @@ fn gui_resize_during_completed_draw_discards_capture_and_requires_fresh_packet()
 }
 
 fn gui_resize_fixture() -> (Viewport, GuiFrameCompiler, RecordingDevice) {
-    let (runtime, recorder) = runtime();
+    gui_resize_fixture_with_policy(Default::default())
+}
+fn gui_resize_fixture_with_policy(
+    policy: martensite_vulkan::RenderGuiSurfacePolicy,
+) -> (Viewport, GuiFrameCompiler, RecordingDevice) {
+    let (runtime, recorder) = super::recorded_device::runtime_with_gui_policy(policy);
     let mut view = runtime.open_offscreen([64, 48]).unwrap();
     let compiler = GuiFrameCompiler::new(&atlas()).unwrap();
     view.submit_gui_frame(&compiler, &frame([64, 48], [255; 4], [0., 0., 64., 48.]))
@@ -182,3 +187,6 @@ fn drawable_extent_observes_external_resize_and_invalidates_the_completed_frame(
     view.close();
     assert!(view.drawable_extent().is_err());
 }
+
+#[path = "gui_checked.rs"]
+mod checked;

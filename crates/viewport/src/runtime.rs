@@ -7,7 +7,7 @@ use crate::{
     x11::{NativeWindow, NativeX11},
 };
 use martensite_tkernel::standard::Handle;
-use martensite_vulkan::{Graphic3dRenderDriver, VulkanOptions};
+use martensite_vulkan::Graphic3dRenderDriver;
 use std::{cell::Cell, collections::VecDeque, rc::Rc};
 #[path = "view_history.rs"]
 mod view_history;
@@ -29,11 +29,7 @@ impl ViewportRuntime {
     /// Initialize before other application X11 connections; example: `ViewportRuntime::new(ViewportOptions::default())?`.
     pub fn new(options: ViewportOptions) -> Result<Self, String> {
         let x11 = NativeX11::open()?;
-        let driver = Graphic3dRenderDriver::new(VulkanOptions {
-            validation: options.validation,
-            device_index: options.physical_device,
-        })
-        .map_err(|error| error.to_string())?;
+        let driver = gui_outcomes::native_gui_driver(options)?;
         Ok(Self {
             state: Rc::new(RuntimeState {
                 driver,
@@ -284,11 +280,10 @@ impl Viewport {
         self.capture_completed_surface()
     }
     fn capture_completed_surface(&mut self) -> Result<ViewportPresentation, String> {
-        let frame = self
-            .live()?
-            .renderer
-            .capture()
-            .map_err(|error| format!("viewport {} capture: {error}", self.id))?;
+        let result = self.live()?.renderer.capture();
+        let Some(frame) = self.checked_gui_result(result, "capture")? else {
+            return Ok(ViewportPresentation::SurfaceChanged(self.extent));
+        };
         if let Some(extent) = self.observe_draw_extent()? {
             return Ok(ViewportPresentation::SurfaceChanged(extent));
         }
@@ -317,11 +312,9 @@ impl Viewport {
         let preview = self.live()?.preview_source();
         self.set_sketch_preview(preview.as_ref())?;
         self.refresh_sketch_display()?;
-        self.live()?
-            .renderer
-            .try_redraw()
-            .map(|_| true)
-            .map_err(|error| format!("viewport {} redraw: {error}", self.id))
+        let result = self.live()?.renderer.try_redraw();
+        self.checked_gui_result(result, "redraw")
+            .map(|draw| draw.is_some())
     }
     fn observe_draw_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         if self.target.as_ref().expect("live target").extent() == self.extent {
@@ -481,3 +474,5 @@ impl Viewport {
 
 mod clipboard;
 mod gui_composition;
+
+mod gui_outcomes;

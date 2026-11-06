@@ -16,8 +16,8 @@ mod presentation;
 pub use presentation::{PartPresentation, PartPresentationDecline};
 mod types;
 pub use types::{
-    ViewportCamera, ViewportCapture, ViewportEvent, ViewportOptions, ViewportPresentation,
-    ViewportScene, ViewportTriangle,
+    ViewportCamera, ViewportCapture, ViewportEvent, ViewportGuiSubmission, ViewportOptions,
+    ViewportPresentation, ViewportScene, ViewportTriangle,
 };
 #[cfg(target_os = "linux")]
 mod renderer;

@@ -4,65 +4,10 @@ use crate::ViewportTriangle;
 use crate::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
 use martensite_tkmath::gp::Point3;
 use martensite_tkservice::aspect::AspectNeutralWindow;
-use martensite_vulkan::{FrameCapture, RenderBackend, RenderError, RenderFrame};
-use std::sync::{Arc, Mutex};
 
-#[derive(Default)]
-struct RecordedDevice {
-    frames: Vec<RenderFrame>,
-    fail: bool,
-    resize_once: Option<ResizeDuringDraw>,
-    reported_extent: Option<[u32; 2]>,
-}
-struct ResizeDuringDraw {
-    window: Handle<AspectNeutralWindow>,
-    extent: [i32; 2],
-}
-#[derive(Clone, Default)]
-struct RecordingDevice {
-    state: Arc<Mutex<RecordedDevice>>,
-}
-impl RenderBackend for RecordingDevice {
-    fn render(&mut self, frame: &RenderFrame) -> Result<FrameCapture, RenderError> {
-        let mut state = self.state.lock().unwrap();
-        state.frames.push(frame.clone());
-        if state.fail {
-            return Err(RenderError::rejected(
-                "recorded device fault",
-                "a successful draw",
-            ));
-        }
-        if let Some(resize) = state.resize_once.take() {
-            resize.window.set_size(resize.extent[0], resize.extent[1]);
-        }
-        let [width, height] = state.reported_extent.unwrap_or(frame.extent());
-        Ok(FrameCapture {
-            width,
-            height,
-            rgba: vec![255; width as usize * height as usize * 4],
-            depth: vec![1.; width as usize * height as usize],
-        })
-    }
-}
-fn runtime() -> (ViewportRuntime, RecordingDevice) {
-    let recorder = RecordingDevice::default();
-    let driver = Graphic3dRenderDriver::with_backend_and_fonts(
-        recorder.clone(),
-        1024,
-        Arc::new(overlay_tests::FixedOverlayFont),
-    )
-    .unwrap();
-    (
-        ViewportRuntime {
-            state: Rc::new(RuntimeState {
-                driver,
-                x11: None,
-                next_view: Cell::new(1),
-            }),
-        },
-        recorder,
-    )
-}
+#[path = "recorded_device.rs"]
+mod recorded_device;
+use recorded_device::{RecordingDevice, ResizeDuringDraw, runtime};
 fn scene() -> ViewportScene {
     ViewportScene {
         background: [0., 0., 1.],
