@@ -105,3 +105,46 @@ fn assert_background_draws(context: &mut imgui::Context, text: &str) {
             .all(|vertex| vertex.col != red)
     );
 }
+
+#[test]
+fn fitted_dialog_retains_valid_user_placement_and_refits_after_viewport_resize() {
+    let mut context = probe_context();
+    assert_fitted_dialog(&mut context, [16., 168.], [608., 160.]);
+    let ui = context.frame();
+    window_geometry(ui, [37., 51.], [350., 200.], Condition::Always);
+    ui.window("Fitted").build(|| {});
+    context.render();
+    assert_fitted_dialog(&mut context, [37., 51.], [350., 200.]);
+    context.io_mut().display_size = [200., 120.];
+    assert_fitted_dialog(&mut context, [16., 16.], [168., 88.]);
+}
+fn assert_fitted_dialog(context: &mut imgui::Context, position: [f32; 2], size: [f32; 2]) {
+    let ui = context.frame();
+    fit_dialog(ui, "Fitted", [320., 168.], [620., 160.]);
+    ui.window("Fitted").build(|| {
+        assert_eq!(ui.window_pos(), position);
+        assert_eq!(ui.window_size(), size);
+    });
+    context.render();
+}
+
+#[test]
+fn collapsed_dialog_refits_its_full_size_before_it_is_expanded() {
+    let mut context = probe_context();
+    let ui = context.frame();
+    window_geometry(ui, [37., 51.], [350., 200.], Condition::Always);
+    ui.window("Collapsed")
+        .collapsed(true, Condition::Always)
+        .build(|| {});
+    context.render();
+    context.io_mut().display_size = [200., 120.];
+    let ui = context.frame();
+    fit_dialog(ui, "Collapsed", [320., 168.], [620., 160.]);
+    ui.window("Collapsed")
+        .collapsed(false, Condition::Always)
+        .build(|| {
+            assert_eq!(ui.window_pos(), [16., 16.]);
+            assert_eq!(ui.window_size(), [168., 88.]);
+        });
+    context.render();
+}

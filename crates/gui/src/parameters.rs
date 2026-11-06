@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiCommandState, GuiParameterMutation, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::Ui;
 use oblikovati_api::wire::ParameterSetArgs;
 
 #[derive(Default)]
@@ -31,7 +31,7 @@ impl GuiParameterEditor {
         if !self.visible {
             return;
         }
-        crate::widget_abi::window_geometry(ui, [320., 8.], [540., 360.], Condition::FirstUseEver);
+        crate::widget_abi::fit_dialog(ui, "Parameters", [320., 8.], [540., 360.]);
         ui.window("Parameters")
             .build(|| self.contents(ui, state, actions));
     }

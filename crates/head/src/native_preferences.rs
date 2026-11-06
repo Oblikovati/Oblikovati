@@ -45,3 +45,18 @@ fn native_config_directory() -> Result<PathBuf, String> {
         cfg!(windows),
     )
 }
+
+/// Load application scale from the user config root; example: `owner.with_ui_scale_preferences(Box::new(load_native_ui_scale()?))`.
+pub(super) fn load_native_ui_scale() -> Result<
+    oblikovati_persistence::application_options::ApplicationPreferenceFile<
+        NativeThemePreferenceFiles,
+    >,
+    String,
+> {
+    let path = native_config_directory()?.join("options.yaml");
+    oblikovati_persistence::application_options::ApplicationPreferenceFile::load(
+        &path,
+        NativeThemePreferenceFiles,
+    )
+    .map_err(|cause| cause.to_string())
+}

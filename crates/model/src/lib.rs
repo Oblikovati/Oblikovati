@@ -29,3 +29,5 @@ pub mod sketch_settings;
 pub mod theme;
 
 pub mod color_scheme;
+
+pub mod ui_scale;

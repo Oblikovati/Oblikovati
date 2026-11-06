@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, Key, Ui};
+use imgui::{Key, Ui};
 
 /// A checked owner draft; example: display `draft.kind` before accepting its expression.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,7 +40,7 @@ impl GuiDimensionEditor {
         let Some(draft) = state.dimension_draft.as_ref() else {
             return;
         };
-        crate::widget_abi::window_geometry(ui, [640., 240.], [420., 180.], Condition::FirstUseEver);
+        crate::widget_abi::fit_dialog(ui, "Dimension", [640., 240.], [420., 180.]);
         ui.window("Dimension").build(|| {
             self.fields(ui, draft, fresh);
             self.controls(ui, state, draft.id, actions);

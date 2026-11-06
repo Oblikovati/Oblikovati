@@ -21,7 +21,7 @@ impl DocumentTabs {
         if !request.commands.documents.iter().any(|row| row.visible) {
             return;
         }
-        let width = request.extent[0] as f32 / request.framebuffer_scale[0];
+        let width = request.extent[0] as f32 / request.layout_scale()[0];
         let before = actions.len();
         document_strip_window(ui, width, band_height, || {
             document_strip(ui, request, force, actions)

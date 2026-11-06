@@ -28,7 +28,7 @@ pub(crate) fn draw_dimension_labels(ui: &imgui::Ui, request: &GuiFrameRequest) {
     }) {
         let size = ui.calc_text_size(&label.text);
         let position = std::array::from_fn::<_, 2, _>(|axis| {
-            label.pixel[axis] as f32 / request.framebuffer_scale[axis] - size[axis] / 2.
+            label.pixel[axis] as f32 / request.layout_scale()[axis] - size[axis] / 2.
         });
         crate::widget_abi::background_literal_text(
             ui,

@@ -3,27 +3,23 @@ use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 
+pub(crate) struct RibbonDrawOwners<'a> {
+    pub ribbon: &'a mut DocumentRibbon,
+    pub parameters: &'a mut crate::parameters::GuiParameterEditor,
+    pub files: &'a mut crate::files::GuiDocumentFiles,
+    pub theme_editor: &'a mut crate::theme_editor::GuiThemeEditor,
+    pub preferences: &'a mut crate::ui_scale::GuiScalePreferences,
+}
 pub(crate) fn ribbon_band(
     ui: &Ui,
     request: &GuiFrameRequest,
-    ribbon: &mut DocumentRibbon,
-    parameters: &mut crate::parameters::GuiParameterEditor,
-    files: &mut crate::files::GuiDocumentFiles,
-    theme_editor: &mut crate::theme_editor::GuiThemeEditor,
+    mut owners: RibbonDrawOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) -> f32 {
-    let width = request.extent[0] as f32 / request.framebuffer_scale[0];
-    let height = 158. + ribbon.panels.scrollbar_height(ui);
+    let width = request.extent[0] as f32 / request.layout_scale()[0];
+    let height = 158. + owners.ribbon.panels.scrollbar_height(ui);
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
-        ribbon_contents(
-            ui,
-            request,
-            ribbon,
-            parameters,
-            files,
-            theme_editor,
-            actions,
-        );
+        ribbon_contents(ui, request, &mut owners, actions);
     }
     height
 }
@@ -44,31 +40,44 @@ fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowTo
 fn ribbon_contents(
     ui: &Ui,
     request: &GuiFrameRequest,
-    ribbon: &mut DocumentRibbon,
-    parameters: &mut crate::parameters::GuiParameterEditor,
-    files: &mut crate::files::GuiDocumentFiles,
-    theme_editor: &mut crate::theme_editor::GuiThemeEditor,
+    owners: &mut RibbonDrawOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let frame = ribbon.prepare(&request.commands);
-    ui.menu_bar(|| files.menu(ui, &request.commands, actions));
+    let frame = owners.ribbon.prepare(&request.commands);
+    ui.menu_bar(|| {
+        owners.files.menu(ui, &request.commands, actions);
+        owners.preferences.menu(ui, &request.commands);
+    });
     crate::widget_abi::cursor_position(ui, [16., 35.]);
     quick_access(ui, &request.commands, actions);
     ui.same_line();
-    ribbon_tabs(ui, ribbon, &frame);
+    ribbon_tabs(ui, owners.ribbon, &frame);
+    ribbon_panel_row(ui, request, owners, actions);
+    crate::widget_abi::cursor_position(ui, [8., ui.window_size()[1] - 20.]);
+    ui.text(request.status.as_deref().unwrap_or("Ready"));
+}
+fn ribbon_panel_row(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    owners: &mut RibbonDrawOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) {
     crate::widget_abi::cursor_position(ui, [16., 59.]);
     crate::ribbon_panels::draw_panels(
         ui,
-        ribbon.active,
+        owners.ribbon.active,
         &request.commands,
-        parameters,
-        theme_editor,
-        &mut ribbon.panels,
+        owners.parameters,
+        owners.theme_editor,
+        &mut owners.ribbon.panels,
         actions,
     );
-    crate::theme_editor::panel(ui, request.commands.theme.as_ref(), theme_editor, actions);
-    crate::widget_abi::cursor_position(ui, [8., ui.window_size()[1] - 20.]);
-    ui.text(request.status.as_deref().unwrap_or("Ready"));
+    crate::theme_editor::panel(
+        ui,
+        request.commands.theme.as_ref(),
+        owners.theme_editor,
+        actions,
+    );
 }
 fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     let Some(_tabs) = ui.tab_bar("##document-ribbon-tabs") else {

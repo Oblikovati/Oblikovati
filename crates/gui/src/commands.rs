@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
     SetTheme(String),
     EditThemeColor {
         name: String,
@@ -70,6 +71,7 @@ pub enum GuiAuthoringContext {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    pub ui_scale: Option<oblikovati_model::ui_scale::UiScaleOptions>,
     pub dimension_labels: Vec<crate::GuiDimensionLabel>,
     pub dimension_draft: Option<crate::GuiDimensionDraft>,
     pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
@@ -131,6 +133,7 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::SetUiScale(_) => state.ui_scale.is_some(),
             Self::ActivateDocument(request) => {
                 !state.transaction_open
                     && state.authoring != GuiAuthoringContext::Sketch

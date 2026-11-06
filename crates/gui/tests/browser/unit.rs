@@ -133,3 +133,15 @@ fn selection_has_its_own_enablement_and_requires_a_current_row() {
         .push(DocumentSketchId(99));
     assert!(state.validate().unwrap_err().contains("current sketch row"));
 }
+
+#[test]
+fn browser_preserves_wide_width_and_leaves_the_view_centre_available_when_narrow() {
+    for width in [640., 720., 1440.] {
+        assert_eq!(model_browser_width(width), 300.);
+    }
+    for width in [200., 320., 480.] {
+        let panel = model_browser_width(width);
+        assert!(panel > 0. && 8. + panel < width * 0.5);
+    }
+    assert_eq!(model_browser_width(1.), 1.);
+}

@@ -56,6 +56,12 @@ impl<
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.select_application_theme(name)
     }
+    fn set_ui_scale_from_gui(
+        &mut self,
+        options: oblikovati_model::ui_scale::UiScaleOptions,
+    ) -> Result<bool, String> {
+        self.persist_ui_scale(options)
+    }
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         let theme = self.gui_theme_snapshot();
         let color_scheme = Some(oblikovati_gui::GuiColorSchemeState::from_registry(
@@ -63,6 +69,7 @@ impl<
         )?);
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(oblikovati_gui::GuiCommandState {
+                ui_scale: self.gui_ui_scale(),
                 theme,
                 color_scheme,
                 ..Default::default()
@@ -74,6 +81,7 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            ui_scale: self.gui_ui_scale(),
             theme,
             color_scheme,
             dimension_draft: self.gui_dimension_draft()?,

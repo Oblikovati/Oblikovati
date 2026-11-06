@@ -110,7 +110,10 @@ pub(crate) fn panel(
     crate::widget_abi::window_geometry(
         ui,
         [8., band_height + 10.],
-        [300., (height - band_height - 18.).max(120.)],
+        [
+            model_browser_width(ui.io().display_size[0]),
+            (height - band_height - 18.).max(120.),
+        ],
         Condition::Always,
     );
     ui.window("Model")
@@ -328,3 +331,8 @@ fn sketch_tooltip(row: &GuiBrowserSketch) -> String {
 #[cfg(test)]
 #[path = "../tests/browser/unit.rs"]
 mod tests;
+
+fn model_browser_width(viewport_width: f32) -> f32 {
+    // Keep the native view centre available for picks even when content scale narrows the layout (#3850).
+    300_f32.min((viewport_width * 0.5 - 16.).max(1.))
+}

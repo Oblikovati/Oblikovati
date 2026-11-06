@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, Ui};
+use imgui::Ui;
 use oblikovati_api::wire::{OpenDocumentArgs, SaveDocumentAsArgs};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -90,7 +90,7 @@ impl GuiDocumentFiles {
         let Some(draft) = &mut self.draft else {
             return;
         };
-        crate::widget_abi::window_geometry(ui, [320., 168.], [620., 160.], Condition::FirstUseEver);
+        crate::widget_abi::fit_dialog(ui, draft.purpose.title(), [320., 168.], [620., 160.]);
         let close = ui
             .window(draft.purpose.title())
             .collapsible(false)
