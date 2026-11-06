@@ -1,5 +1,5 @@
 @application @documents
-Feature: First save of a new part
+Feature: Save and reopen part documents
 
   @needs_review
   Scenario: Open and cancel the first save
@@ -119,3 +119,69 @@ Feature: First save of a new part
     When I reopen the newly saved part in the same session
     Then the part becomes active
     And its model browser contains the finished sketch
+
+  @needs_review
+  Scenario: Capture an active window preview before saving
+    Given the Save As dialog is open for a new empty part in the MCAD Software
+    And Save Preview Picture is selected
+    When I choose Active Window as the preview source
+    Then a capture control appears beside Active Window
+    And the preview area displays a placeholder
+    When I activate the capture control
+    Then the preview area displays a dark image matching the empty workspace
+    And the Save As dialog remains open
+    When I cancel the dialog
+    Then the unsaved part remains active
+
+  @needs_review
+  Scenario: Select an existing part in the first-save dialog
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And the current folder contains an existing part file
+    When I select that part file in the file list
+    Then the selected file row is highlighted
+    And the file name field displays the selected file's name
+    And the status area reports one selected item
+    When I cancel the dialog
+    Then the unsaved part remains active
+
+  @needs_review
+  Scenario: Navigate to a subfolder and back while choosing a save location
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And the initial folder contains a subfolder
+    And the dialog displays a proposed file name
+    When I open the subfolder
+    Then the location breadcrumb and file list show the subfolder
+    And the proposed file name remains in the file name field
+    When I choose Back
+    Then the initial folder and its file list are displayed
+    And the proposed file name remains in the file name field
+
+  @needs_review
+  Scenario: Reopen first save after cancelling in a subfolder
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And I have navigated from the initial folder into a subfolder
+    When I cancel the dialog
+    And I press Control+S again for the same part
+    Then the Save As dialog opens in the initial folder
+    And the original proposed file name is selected
+
+  @needs_review
+  Scenario: Cancel disabling the preview picture
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And Save Preview Picture is selected
+    When I clear Save Preview Picture
+    And I cancel the dialog
+    And I press Control+S again for the same part
+    Then Save Preview Picture is selected
+    And the preview source choices are displayed
+
+  @needs_review
+  Scenario: Cancel a change to the preview source
+    Given the Save As dialog is open for a new part in the MCAD Software
+    And Save Preview Picture is selected
+    And Active Component Iso View on Save is selected
+    When I choose Active Window on Save
+    And I cancel the dialog
+    And I press Control+S again for the same part
+    Then Active Component Iso View on Save is selected
+    And Active Window on Save is not selected

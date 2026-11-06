@@ -52,3 +52,33 @@
 - Trigger: close an unsaved part containing a finished empty sketch, choose Yes, and accept a proposed non-existing filename in Save As.
 - Feedback: Save As closes, the document tab closes, and another open document becomes active. Reopening the newly saved file restores its sketch entry in the browser.
 - Limits: this sequence establishes the close-initiated save for an empty sketch in the same session; modeled geometry and later application restarts were not checked in this sequence.
+
+## Original visual assets
+
+- [Conceptual save dialog wireframe](save-dialog-wireframe.svg) records the major regions and controls. It is a schematic, not a screenshot or a pixel-exact specification; preview choices depend on the current selection.
+- [Save icon](save-icon.svg) is a newly drawn, colored document-and-tray symbol based on the icon brief above.
+
+## Capture the active window preview
+
+- Trigger: in Save As for a new empty part, select Active Window and activate its adjacent capture control.
+- Feedback: selecting Active Window displays a neutral image placeholder and a small action icon to its right. Activating the icon replaces the placeholder with a dark preview matching the empty viewport while the dialog remains open.
+- Original icon brief: use a small outlined view frame with a distinct capture dot, designed independently.
+- Limits: the dialog was cancelled; persistence and capture contents for non-empty models were not tested.
+
+## Select an existing file in Save As
+
+- Trigger: select a listed existing part while saving a new empty part.
+- Feedback: the selected row gains a blue highlight, the bottom file-name field changes from the proposed new name to the selected file's displayed name, and the status area reports one selected item. Cancel returns to the unsaved part.
+- Limits: Save was not activated after selecting the existing file; replacement behavior was not observed.
+
+## Navigate and cancel a save location
+
+- Trigger: open a visible subfolder in the first-save dialog, then use Back or cancel and reopen Save As.
+- Feedback: the breadcrumb and file listing update for the subfolder while the proposed filename remains in the field. Back restores the previous folder listing. After cancellation in the subfolder, a fresh save attempt for the same unsaved part reopened at the initial folder with the proposed name selected.
+- Limits: one folder and part were observed in a single session; behavior after saving or restarting was not checked.
+
+## Cancel changes to preview settings
+
+- Starting with preview saving enabled and the isometric source selected, clear the checkbox, cancel, and reopen Save As for the same new part: the checkbox is selected and the preview source choices return.
+- Starting from the same initial choice, select Active Window on Save, cancel, and reopen: the isometric source is selected again.
+- Limits: both observations concern the same unsaved part and session; they do not determine behavior after a successful save or restart.
