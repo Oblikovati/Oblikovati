@@ -24,6 +24,8 @@ pub struct ViewportSketchSelection {
     pub sketches: Vec<DocumentSketchId>,
     pub entities: Vec<(DocumentSketchId, oblikovati_model::sketch::SketchEntityId)>,
 }
+// #3795: only the Linux renderer consumes normalization; pure selection checks remain portable.
+#[cfg(any(target_os = "linux", test))]
 impl ViewportSketchSelection {
     pub(crate) fn normalized(&self) -> Self {
         let mut selection = self.clone();
@@ -36,3 +38,7 @@ impl ViewportSketchSelection {
         selection
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/sketch_selection.rs"]
+mod tests;
