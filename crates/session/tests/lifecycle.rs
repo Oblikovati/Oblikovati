@@ -443,3 +443,6 @@ mod transaction_identity;
 
 #[path = "lifecycle/sketch_owned_deletion.rs"]
 mod sketch_owned_deletion;
+
+#[path = "lifecycle/sketch_curve_formats.rs"]
+mod sketch_curve_formats;

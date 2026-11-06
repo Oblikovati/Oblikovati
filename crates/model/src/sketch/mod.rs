@@ -11,6 +11,8 @@ mod arc_residual;
 mod arc_sweep;
 mod authoring;
 mod centerline;
+mod curve_format;
+pub use curve_format::{SketchCurveFormat, SketchCurveFormatChange};
 mod circle;
 mod circle_residual;
 mod circular_compile;

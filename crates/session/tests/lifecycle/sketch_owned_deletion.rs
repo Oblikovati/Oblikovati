@@ -4,7 +4,7 @@ use super::*;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::*};
 use oblikovati_session::selection::{SelectionClickMode, SketchPickTarget};
 const SKETCH: DocumentSketchId = DocumentSketchId(1);
-fn select_owned_mixed(session: &mut DocumentSession<RecordingObserver>) {
+pub(super) fn select_owned_mixed(session: &mut DocumentSession<RecordingObserver>) {
     for target in [
         SketchPickTarget::Entity(SketchEntityId(2)),
         SketchPickTarget::Dimension(SketchConstraintId(1)),
