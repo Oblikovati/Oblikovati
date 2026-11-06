@@ -98,10 +98,8 @@ fn file_menu_new_and_save_reuse_owner_commands() {
     let mut request = file_request();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
-    assert_eq!(
-        choose_file_item(&mut engine, &mut request, 105.),
-        [GuiShellAction::NewPart]
-    );
+    assert!(choose_file_item(&mut engine, &mut request, 105.).is_empty());
+    assert!(key_frames(&mut engine, &mut request, GuiKey::Escape).is_empty());
     assert_eq!(
         choose_file_item(&mut engine, &mut request, 139.),
         [GuiShellAction::Save]

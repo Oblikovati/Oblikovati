@@ -488,3 +488,7 @@ fn assert_gui_framebuffer_visible(capture: &oblikovati_viewport::ViewportCapture
 
 #[path = "native_gui_loop/browser.rs"]
 mod browser;
+
+#[allow(unsafe_code)]
+#[path = "application/benchmark.rs"]
+mod application_bdd;

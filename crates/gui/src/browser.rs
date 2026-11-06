@@ -132,6 +132,13 @@ fn browser_contents(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShell
     parameter_branch(ui, state);
     sketch_branches(ui, state, browser, actions);
     feature_branch(ui, state, browser, actions);
+    end_of_document_marker(ui, browser);
+}
+fn end_of_document_marker(ui: &Ui, browser: &GuiModelBrowser) {
+    // The marker closes a modelled document's history; a document without an origin has none.
+    if browser.has_origin {
+        ui.text("End of Part");
+    }
 }
 fn origin_branch(ui: &Ui, browser: &GuiModelBrowser) {
     if !browser.has_origin {

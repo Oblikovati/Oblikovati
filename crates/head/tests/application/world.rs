@@ -1,0 +1,195 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+#[derive(cucumber::World)]
+#[world(init = Self::new)]
+pub(super) struct ApplicationWorld {
+    pub app: Option<NativeApplication>,
+    pub runs: Vec<diagnostics::RenderedRun>,
+    pub previous_document: Option<u64>,
+    pub saved_path: Option<std::path::PathBuf>,
+    pub scratch: Option<tempfile::TempDir>,
+}
+pub(super) struct NativeApplication {
+    pub window: ScriptedGuiWindow,
+    pub owner: NativeDesktopOwner,
+}
+impl fmt::Debug for ApplicationWorld {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ApplicationWorld")
+            .field("text", &self.text())
+            .finish_non_exhaustive()
+    }
+}
+impl ApplicationWorld {
+    fn new() -> Self {
+        let native = NativeHeadWindow::open().unwrap();
+        let owner = native_owner(native.wake.clone()).unwrap();
+        let mut world = Self {
+            app: Some(NativeApplication {
+                window: scripted_window(native),
+                owner,
+            }),
+            runs: Vec::new(),
+            previous_document: None,
+            saved_path: None,
+            scratch: None,
+        };
+        world.pump(Vec::new());
+        world
+    }
+    pub fn app(&mut self) -> &mut NativeApplication {
+        self.app
+            .as_mut()
+            .expect("expected an active native scenario")
+    }
+    pub fn pump(&mut self, events: Vec<ViewportEvent>) {
+        let app = self.app();
+        app.window.scripted = events;
+        crate::frames::run_frames(
+            &mut app.window,
+            HeadOptions { frames: Some(3) },
+            &mut app.owner,
+        )
+        .unwrap();
+        self.runs = diagnostics::rendered_runs();
+    }
+    pub fn click(&mut self, position: [i32; 2]) {
+        self.pump(pointer_click_events(position, 1));
+    }
+    pub fn key(&mut self, key: oblikovati_viewport::ViewportPhysicalKey, control: bool) {
+        use oblikovati_viewport::ViewportInput;
+        let modifiers = oblikovati_viewport::ViewportModifiers {
+            control,
+            ..Default::default()
+        };
+        let event = |pressed, modifiers| {
+            ViewportEvent::Input(ViewportInput::PhysicalKey {
+                key,
+                layout_key: key,
+                pressed,
+                command: None,
+                modifiers,
+            })
+        };
+        self.pump(vec![event(true, modifiers)]);
+        self.pump(vec![event(false, Default::default())]);
+    }
+    /// All visible text, one run per line, for assertions and failure messages.
+    pub fn text(&self) -> String {
+        let runs: Vec<&str> = self.runs.iter().map(|run| run.text.as_str()).collect();
+        runs.join("\n")
+    }
+    pub fn shows(&self, text: &str) -> bool {
+        let wanted = squeezed(text);
+        self.runs
+            .iter()
+            .any(|run| squeezed(&run.text).contains(&wanted))
+    }
+    pub fn expect_text(&self, text: &str) {
+        assert!(
+            self.shows(text),
+            "rendered text {:?}: expected {text:?}",
+            self.text()
+        );
+    }
+    pub fn expect_no_text(&self, text: &str) {
+        assert!(
+            !self.shows(text),
+            "rendered text {:?}: expected no {text:?}",
+            self.text()
+        );
+    }
+    /// The topmost run reading exactly `text`, else the topmost run containing it.
+    pub fn run(&self, text: &str) -> &diagnostics::RenderedRun {
+        let wanted = squeezed(text);
+        let exact = self.runs.iter().rev().find(|r| squeezed(&r.text) == wanted);
+        exact
+            .or_else(|| {
+                self.runs
+                    .iter()
+                    .rev()
+                    .find(|r| squeezed(&r.text).contains(&wanted))
+            })
+            .unwrap_or_else(|| panic!("rendered text {:?}: expected {text:?}", self.text()))
+    }
+    /// Press visible text with a real pointer event; a test never reaches for widget state.
+    pub fn click_text(&mut self, text: &str) {
+        let center = self.run(text).center();
+        self.click(center.map(|value| value as i32));
+    }
+    pub fn drag(&mut self, from: [i32; 2], to: [i32; 2]) {
+        self.pump(pointer_drag_press(from));
+        for step in 1..=4 {
+            let at = std::array::from_fn(|axis| from[axis] + (to[axis] - from[axis]) * step / 4);
+            self.pump(vec![pointer_motion(at)]);
+        }
+        self.pump(pointer_drag_release(to));
+    }
+    /// Keep the final frame for visual review; a scenario's image names its scenario.
+    pub fn save_capture(&mut self, scenario: &str) {
+        let Some(app) = self.app.as_mut() else { return };
+        let capture = super::capture_framebuffer(&mut app.window.native);
+        let name: String = scenario
+            .chars()
+            .map(|letter| {
+                if letter.is_alphanumeric() {
+                    letter
+                } else {
+                    '-'
+                }
+            })
+            .collect();
+        let _ = write_png(&reports_folder().join(format!("{name}.png")), &capture);
+    }
+    pub fn close(&mut self) {
+        if let Some(mut app) = self.app.take() {
+            app.owner.finish().unwrap();
+            app.window.finish().unwrap();
+        }
+    }
+}
+impl Drop for ApplicationWorld {
+    fn drop(&mut self) {
+        self.close();
+    }
+}
+
+fn squeezed(text: &str) -> String {
+    text.chars()
+        .filter(|letter| !letter.is_whitespace())
+        .collect()
+}
+pub(super) fn reports_folder() -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/benchmarks/application")
+}
+fn write_png(
+    path: &std::path::Path,
+    capture: &oblikovati_viewport::ViewportCapture,
+) -> Result<(), png::EncodingError> {
+    let file = std::io::BufWriter::new(std::fs::File::create(path)?);
+    let mut encoder = png::Encoder::new(file, capture.extent[0], capture.extent[1]);
+    encoder.set_color(png::ColorType::Rgba);
+    encoder.set_depth(png::BitDepth::Eight);
+    encoder.write_header()?.write_image_data(&capture.rgba)
+}
+fn pointer_motion(position: [i32; 2]) -> ViewportEvent {
+    ViewportEvent::Input(oblikovati_viewport::ViewportInput::Motion {
+        position,
+        modifiers: Default::default(),
+    })
+}
+fn pointer_button(position: [i32; 2], pressed: bool) -> ViewportEvent {
+    ViewportEvent::Input(oblikovati_viewport::ViewportInput::Button {
+        button: oblikovati_viewport::ViewportButton::Left,
+        pressed,
+        position,
+        modifiers: Default::default(),
+    })
+}
+fn pointer_drag_press(position: [i32; 2]) -> Vec<ViewportEvent> {
+    vec![pointer_motion(position), pointer_button(position, true)]
+}
+fn pointer_drag_release(position: [i32; 2]) -> Vec<ViewportEvent> {
+    vec![pointer_motion(position), pointer_button(position, false)]
+}

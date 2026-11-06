@@ -19,6 +19,7 @@ mod platform;
 mod process;
 mod quality;
 mod release_config;
+mod scenarios;
 mod script_docs;
 mod signing;
 mod tree;
@@ -49,6 +50,7 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
     match arguments {
         [task @ ("build" | "test" | "lint")] => quality::run(root, runner, task),
         ["matrix"] => print_matrix(),
+        ["scenarios", path] => scenarios::print_inventory(Path::new(path)),
         ["native-validation", directory, environment] => {
             native_validation::prepare(root, runner, Path::new(directory), Path::new(environment))
         }

@@ -55,6 +55,14 @@ pub(crate) fn selectable(_: &Ui, label: &str, selected: bool, double_click: bool
     // The label owner and Ui remain live; no C++ vector class crosses the ABI.
     unsafe { oblikovati_gui_selectable(label.as_ptr().cast(), selected, flags as i32) }
 }
+/// A row inside a dialog: a plain selectable would close the dialog that contains it.
+/// Example: `dialog_selectable(ui, "Metric", true)` keeps the dialog open when pressed.
+pub(crate) fn dialog_selectable(_: &Ui, label: &str, selected: bool) -> bool {
+    let flags = SelectableFlags::DONT_CLOSE_POPUPS.bits();
+    let label = ImString::new(label);
+    // The label owner and Ui remain live; no C++ vector class crosses the ABI.
+    unsafe { oblikovati_gui_selectable(label.as_ptr().cast(), selected, flags as i32) }
+}
 /// Draw literal UTF-8 in the current window; example: `literal_text(ui, point, color, "Part##1")` preserves hashes.
 pub(crate) fn literal_text(ui: &Ui, position: [f32; 2], color: [f32; 4], text: &str) {
     draw_literal_text(ui, position, color, text, false);

@@ -379,3 +379,6 @@ mod sketch_formats;
 
 #[path = "owner/ui_scale.rs"]
 mod ui_scale;
+
+#[path = "application/document-creation/owner.rs"]
+mod document_creation_benchmark;

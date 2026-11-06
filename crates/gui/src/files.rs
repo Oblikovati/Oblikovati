@@ -15,6 +15,7 @@ struct DocumentPathDraft {
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
     draft: Option<DocumentPathDraft>,
+    templates: crate::application::document_creation::TemplateChooser,
 }
 impl GuiDocumentFiles {
     pub(crate) fn request_save_path(&mut self, document: u64) -> Result<(), String> {
@@ -39,13 +40,26 @@ impl GuiDocumentFiles {
         actions: &mut Vec<GuiShellAction>,
     ) {
         ui.menu("File", || {
-            if ui.menu_item("New Part") {
-                actions.push(GuiShellAction::NewPart);
+            if ui
+                .menu_item_config("New")
+                .enabled(!state.transaction_open)
+                .build()
+            {
+                self.templates.request();
             }
             self.open_menu_item(ui, state);
             file_save_item(ui, state, actions);
             self.save_as_menu_item(ui, state);
             file_close_item(ui, state, actions);
+            unavailable_file_item(
+                ui,
+                "Export",
+                "Export is not available in this desktop build.",
+            );
+            unavailable_file_item(ui, "Print", "Print is not available in this desktop build.");
+            ui.separator();
+            ui.text_disabled("Recent documents");
+            ui.text_disabled("No recent documents");
         });
     }
     fn open_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
@@ -86,6 +100,7 @@ impl GuiDocumentFiles {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.templates.panel(ui, state, actions);
         self.synchronize_document(state.document);
         let Some(draft) = &mut self.draft else {
             return;
@@ -146,6 +161,12 @@ impl DocumentPathDraft {
             document,
             new_full_document_name: self.path.clone(),
         }
+    }
+}
+fn unavailable_file_item(ui: &Ui, label: &str, reason: &str) {
+    ui.menu_item_config(label).enabled(false).build();
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text(reason);
     }
 }
 fn file_save_item(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

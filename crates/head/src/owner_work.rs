@@ -144,6 +144,12 @@ impl<
     ) -> Result<bool, String> {
         self.activate_gui_document(request)
     }
+    fn create_part_template(
+        &mut self,
+        template: oblikovati_gui::GuiPartTemplate,
+    ) -> Result<bool, String> {
+        self.create_template_part(template)
+    }
     fn create_part_document(&mut self) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())
             .documents()

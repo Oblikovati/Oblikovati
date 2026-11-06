@@ -195,6 +195,15 @@ pub trait HeadWork {
     fn create_part_document(&mut self) -> Result<bool, String> {
         Err("New Part: expected a document owner with part creation support".into())
     }
+    /// Create a selected part template; example: `work.create_part_template(GuiPartTemplate::Metric)?`.
+    fn create_part_template(
+        &mut self,
+        template: oblikovati_gui::GuiPartTemplate,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "part template {template:?}: expected a document owner with template creation support"
+        ))
+    }
     /// Consume a committed authoring update; example: `work.take_sketch_scene()?` after polling history.
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         Ok(None)
@@ -350,6 +359,12 @@ macro_rules! forward_owner_view_work {
         // #3796: an add-in layer must retain the same UI authoring operations as the script layer.
         fn create_part_document(&mut self) -> Result<bool, String> {
             self.$owner.create_part_document()
+        }
+        fn create_part_template(
+            &mut self,
+            template: oblikovati_gui::GuiPartTemplate,
+        ) -> Result<bool, String> {
+            self.$owner.create_part_template(template)
         }
         fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
             self.$owner.edit_sketch_from_gui(start)
