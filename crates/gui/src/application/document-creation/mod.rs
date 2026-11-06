@@ -7,10 +7,38 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui};
 use templates::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits, TEMPLATE_GROUPS};
 
+/// A row of the folder tree; the root holds folders and no templates of its own.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TemplateFolder {
+    Root,
+    Units(GuiTemplateUnits),
+}
+impl Default for TemplateFolder {
+    fn default() -> Self {
+        Self::Units(GuiTemplateUnits::default())
+    }
+}
+impl TemplateFolder {
+    const ALL: [Self; 3] = [
+        Self::Root,
+        Self::Units(GuiTemplateUnits::Metric),
+        Self::Units(GuiTemplateUnits::Inch),
+    ];
+    fn label(self) -> &'static str {
+        match self {
+            Self::Root => "Templates",
+            Self::Units(units) => units.folder(),
+        }
+    }
+}
 #[derive(Default)]
 pub(crate) struct TemplateChooser {
     requested: bool,
-    folder: GuiTemplateUnits,
+    folder: TemplateFolder,
+    /// Folders left behind, most recent last, and those Back has passed through.
+    folders_behind: Vec<TemplateFolder>,
+    folders_ahead: Vec<TemplateFolder>,
+    /// Kept between openings: reopening after Cancel shows the same choice.
     selected: Option<GuiDocumentTemplate>,
     /// A drawing template offers its sheet as a preview to accept before it can be created.
     use_template: bool,
@@ -20,7 +48,7 @@ pub(crate) struct TemplateChooser {
 /// How the gallery shows its tiles; a size is a row height until tiles have icons.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum TemplateView {
-    LargeIcons,
+    ExtraLargeIcons,
     MediumIcons,
     SmallIcons,
     #[default]
@@ -29,7 +57,7 @@ enum TemplateView {
 }
 impl TemplateView {
     const ALL: [Self; 5] = [
-        Self::LargeIcons,
+        Self::ExtraLargeIcons,
         Self::MediumIcons,
         Self::SmallIcons,
         Self::List,
@@ -37,7 +65,7 @@ impl TemplateView {
     ];
     fn label(self) -> &'static str {
         match self {
-            Self::LargeIcons => "Large Icons",
+            Self::ExtraLargeIcons => "Extra Large Icons",
             Self::MediumIcons => "Medium Icons",
             Self::SmallIcons => "Small Icons",
             Self::List => "List",
@@ -47,7 +75,7 @@ impl TemplateView {
     /// Zero lets the row take its text's own height.
     fn row_height(self) -> f32 {
         match self {
-            Self::LargeIcons => 56.,
+            Self::ExtraLargeIcons => 64.,
             Self::MediumIcons => 40.,
             Self::SmallIcons => 28.,
             Self::List | Self::Details => 0.,
@@ -76,7 +104,6 @@ impl TemplateChooser {
             self.request();
         }
         if std::mem::take(&mut self.requested) {
-            self.selected = None;
             ui.open_popup("New document");
             dialog_geometry(ui);
         }
@@ -93,7 +120,7 @@ impl TemplateChooser {
         ui.text("Template folders");
         self.folders(ui);
         ui.next_column();
-        self.display_menu(ui);
+        self.navigation_bar(ui);
         ui.child_window("##template-gallery")
             .size([0., GALLERY_HEIGHT])
             .build(|| self.gallery(ui));
@@ -102,11 +129,46 @@ impl TemplateChooser {
         ui.columns(1, "template-layout-end", false);
     }
     fn folders(&mut self, ui: &Ui) {
-        for units in GuiTemplateUnits::ALL {
-            if crate::widget_abi::dialog_selectable(ui, units.folder(), self.folder == units) {
-                self.folder = units;
+        for folder in TemplateFolder::ALL {
+            if crate::widget_abi::dialog_selectable(ui, folder.label(), self.folder == folder) {
+                self.go_to(folder);
             }
         }
+    }
+    /// Choosing a folder starts a new path: what Back had passed through is gone.
+    fn go_to(&mut self, folder: TemplateFolder) {
+        if folder != self.folder {
+            self.folders_behind.push(self.folder);
+            self.folders_ahead.clear();
+            self.folder = folder;
+        }
+    }
+    fn back(&mut self) {
+        if let Some(folder) = self.folders_behind.pop() {
+            self.folders_ahead.push(self.folder);
+            self.folder = folder;
+        }
+    }
+    fn forward(&mut self) {
+        if let Some(folder) = self.folders_ahead.pop() {
+            self.folders_behind.push(self.folder);
+            self.folder = folder;
+        }
+    }
+    fn navigation_bar(&mut self, ui: &Ui) {
+        if crate::widget_abi::button(ui, "Back", [0.; 2]) {
+            self.back();
+        }
+        ui.same_line();
+        if crate::widget_abi::button(ui, "Forward", [0.; 2]) {
+            self.forward();
+        }
+        ui.same_line();
+        if crate::widget_abi::button(ui, "Home", [0.; 2]) {
+            self.go_to(TemplateFolder::Root);
+        }
+        ui.same_line();
+        self.display_menu(ui);
     }
     fn display_menu(&mut self, ui: &Ui) {
         if crate::widget_abi::button(ui, "Display", [0.; 2]) {
@@ -153,10 +215,11 @@ impl TemplateChooser {
         }
     }
     fn tile(&mut self, ui: &Ui, kind: GuiTemplateKind) {
-        let template = GuiDocumentTemplate {
-            kind,
-            units: self.folder,
+        // The root holds folders only: its gallery shows the headings above nothing.
+        let TemplateFolder::Units(units) = self.folder else {
+            return;
         };
+        let template = GuiDocumentTemplate { kind, units };
         if self.tile_row(ui, template) {
             self.selected = Some(template);
             self.use_template = false;

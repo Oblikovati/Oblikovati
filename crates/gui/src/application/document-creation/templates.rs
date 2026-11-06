@@ -17,7 +17,6 @@ pub enum GuiTemplateUnits {
     Inch,
 }
 impl GuiTemplateUnits {
-    pub(crate) const ALL: [Self; 2] = [Self::Metric, Self::Inch];
     /// The template folder that holds these units; example: `Metric`.
     pub(crate) fn folder(self) -> &'static str {
         match self {

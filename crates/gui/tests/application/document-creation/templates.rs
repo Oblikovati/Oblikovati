@@ -39,10 +39,42 @@ fn every_view_has_its_label_and_only_icon_sizes_change_the_row_height() {
             "Details"
         ]
     );
-    assert!(TemplateView::LargeIcons.row_height() > TemplateView::MediumIcons.row_height());
+    assert!(TemplateView::ExtraLargeIcons.row_height() > TemplateView::MediumIcons.row_height());
     assert!(TemplateView::MediumIcons.row_height() > TemplateView::SmallIcons.row_height());
     assert_eq!(TemplateView::List.row_height(), 0.);
     assert_eq!(TemplateView::Details.row_height(), 0.);
+}
+#[test]
+fn back_and_forward_walk_the_folders_visited() {
+    let metric = TemplateFolder::Units(GuiTemplateUnits::Metric);
+    let inch = TemplateFolder::Units(GuiTemplateUnits::Inch);
+    let mut chooser = TemplateChooser::default();
+    chooser.go_to(inch);
+    chooser.go_to(metric);
+    chooser.back();
+    assert_eq!(chooser.folder, inch);
+    chooser.back();
+    assert_eq!(chooser.folder, metric);
+    chooser.back();
+    assert_eq!(chooser.folder, metric);
+    chooser.forward();
+    assert_eq!(chooser.folder, inch);
+}
+#[test]
+fn a_new_folder_ends_the_path_forward() {
+    let inch = TemplateFolder::Units(GuiTemplateUnits::Inch);
+    let mut chooser = TemplateChooser::default();
+    chooser.go_to(inch);
+    chooser.back();
+    chooser.go_to(TemplateFolder::Root);
+    chooser.forward();
+    assert_eq!(chooser.folder, TemplateFolder::Root);
+}
+#[test]
+fn choosing_the_current_folder_adds_no_history() {
+    let mut chooser = TemplateChooser::default();
+    chooser.go_to(TemplateFolder::default());
+    assert!(chooser.folders_behind.is_empty());
 }
 #[test]
 fn opening_the_chooser_does_not_create_a_document_and_escape_cancels() {

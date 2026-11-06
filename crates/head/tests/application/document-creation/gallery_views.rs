@@ -133,3 +133,125 @@ fn medium_tiles(world: &mut ApplicationWorld) {
         "tile spacing {spacing}: expected medium tiles"
     );
 }
+#[when("I choose Back in the chooser navigation bar")]
+fn chooser_back(world: &mut ApplicationWorld) {
+    world.click_text("Back");
+}
+#[when("I choose Forward in the chooser navigation bar")]
+fn chooser_forward(world: &mut ApplicationWorld) {
+    world.click_text("Forward");
+}
+#[then("the English folder is selected")]
+fn english_selected(world: &mut ApplicationWorld) {
+    assert!(
+        world.row_accented_beside("English", "Metric"),
+        "expected English accented"
+    );
+}
+#[then("the metric folder is selected")]
+fn metric_folder_selected(world: &mut ApplicationWorld) {
+    assert!(
+        world.row_accented_beside("Metric", "English"),
+        "expected Metric accented"
+    );
+}
+#[then("the gallery displays its inch templates")]
+fn inch_gallery(world: &mut ApplicationWorld) {
+    world.expect_text("Standard inch part");
+    world.expect_no_text(METRIC_PART);
+}
+#[then("the gallery displays its metric templates")]
+fn metric_gallery(world: &mut ApplicationWorld) {
+    world.expect_text(METRIC_PART);
+    world.expect_no_text("Standard inch part");
+}
+#[given("the metric folder and standard metric assembly template are selected")]
+#[given("the standard metric assembly template details are displayed")]
+fn assembly_details_shown(world: &mut ApplicationWorld) {
+    world.click_text("Metric");
+    world.click_text(METRIC_ASSEMBLY);
+    expect_assembly_details(world);
+}
+#[when("I reopen the new-document chooser during the same session")]
+fn reopen_chooser(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::N, true);
+    world.pump(Vec::new());
+}
+#[then("the standard metric assembly template is selected")]
+fn assembly_tile_selected(world: &mut ApplicationWorld) {
+    let tile = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == METRIC_ASSEMBLY.replace(' ', ""))
+        .count();
+    assert_eq!(tile, 2, "expected the tile and the details pane");
+}
+#[then("its details identify an assembly with millimeter units")]
+fn its_assembly_details(world: &mut ApplicationWorld) {
+    expect_assembly_details(world);
+}
+#[given("the template root has no templates directly in it")]
+fn root_has_no_templates(world: &mut ApplicationWorld) {
+    world.expect_text("Templates");
+}
+#[when("I select Home in the chooser navigation bar")]
+fn chooser_home(world: &mut ApplicationWorld) {
+    world.click_text("Home");
+}
+#[then("the template root is selected in the folder tree")]
+fn root_selected(world: &mut ApplicationWorld) {
+    assert!(
+        world.row_accented_beside("Templates", "English"),
+        "expected the root accented"
+    );
+}
+#[then("the gallery type sections contain no template entries")]
+fn empty_sections(world: &mut ApplicationWorld) {
+    expect_group_headings(world, &["Part", "Assembly", "Drawing"]);
+    world.expect_no_text(METRIC_PART);
+    world.expect_no_text(METRIC_DRAWING);
+}
+#[then("the metric assembly template details remain displayed")]
+fn assembly_details_remain(world: &mut ApplicationWorld) {
+    world.expect_text(METRIC_ASSEMBLY);
+    expect_assembly_details(world);
+}
+#[then("the metric template folder and its gallery are displayed again")]
+fn metric_folder_back(world: &mut ApplicationWorld) {
+    metric_folder_selected(world);
+    world.expect_text(METRIC_PART);
+}
+#[given("the metric folder is selected and templates are grouped by type")]
+fn metric_grouped(world: &mut ApplicationWorld) {
+    world.click_text("Metric");
+    grouped_by_default(world);
+}
+#[when("I choose Extra large icons in the template display menu")]
+fn choose_extra_large(world: &mut ApplicationWorld) {
+    choose_template_view(world, "Extra Large Icons");
+}
+#[then("the template gallery displays extra-large tiles")]
+fn extra_large_tiles(world: &mut ApplicationWorld) {
+    let spacing = tile_spacing(world);
+    assert!(
+        spacing > 50.,
+        "tile spacing {spacing}: expected extra-large tiles"
+    );
+}
+#[when("I choose Small icons in the template display menu")]
+fn choose_small(world: &mut ApplicationWorld) {
+    choose_template_view(world, "Small Icons");
+}
+#[then("the template gallery displays small icons")]
+fn small_tiles(world: &mut ApplicationWorld) {
+    let spacing = tile_spacing(world);
+    assert!(
+        spacing < 40.,
+        "tile spacing {spacing}: expected small tiles"
+    );
+}
+#[then("the template gallery displays medium-sized icons")]
+fn medium_sized(world: &mut ApplicationWorld) {
+    medium_tiles(world);
+}

@@ -333,7 +333,7 @@ fn open_display_menu(world: &mut ApplicationWorld) {
 #[then("the menu offers icon sizes, List, Details, and Grouped by Type")]
 fn display_menu(world: &mut ApplicationWorld) {
     for entry in [
-        "Large Icons",
+        "Extra Large Icons",
         "Small Icons",
         "List",
         "Details",

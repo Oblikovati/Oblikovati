@@ -337,6 +337,13 @@ impl ApplicationWorld {
         // Far below any drawing tree row, the same column shows the plain panel.
         self.pixel_at([x, y]) != self.pixel_at([x, 700])
     }
+    /// A row's accent against another row of the same list, which reads plain.
+    pub fn row_accented_beside(&mut self, text: &str, plain: &str) -> bool {
+        let row = self.run(text).clone();
+        let other = self.run(plain).center()[1] as usize;
+        let x = row.maximum[0].max(self.run(plain).maximum[0]) as usize + 6;
+        self.pixel_at([x, row.center()[1] as usize]) != self.pixel_at([x, other])
+    }
     /// The last part of a row's text, where a match at its end is marked.
     pub fn end_of_text_is_marked(&mut self, text: &str) -> bool {
         let run = self.run(text).clone();
