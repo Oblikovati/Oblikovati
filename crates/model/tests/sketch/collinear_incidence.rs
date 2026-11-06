@@ -41,26 +41,28 @@ fn collinear_geometry(positions: [[f64; 2]; 4], ends: [[u64; 2]; 2]) -> Sketch2D
     );
     sketch
 }
+fn assert_incidence_orientations(shared: usize, scale: f64) {
+    for reverse in [[false, false], [true, false], [false, true], [true, true]] {
+        let sketch = incident_lines(shared, reverse, scale);
+        let report = sketch.analyze(&parameters(), 1e-9).unwrap();
+        assert_eq!(
+            report.equations,
+            2 - shared,
+            "shared={shared}, reverse={reverse:?}, scale={scale}"
+        );
+        assert_eq!(report.rank, 2 - shared);
+        assert_eq!(report.degrees_of_freedom, 6 + shared);
+        assert_eq!(report.redundant_equations, 0);
+    }
+}
 #[test]
 fn collinear_equation_count_uses_shared_identity_before_numeric_rank() {
     for shared in 0..=2 {
-        for reverse in [[false, false], [true, false], [false, true], [true, true]] {
-            for scale in [0.01, 1., 100.] {
-                let sketch = incident_lines(shared, reverse, scale);
-                let report = sketch.analyze(&parameters(), 1e-9).unwrap();
-                assert_eq!(
-                    report.equations,
-                    2 - shared,
-                    "shared={shared}, reverse={reverse:?}, scale={scale}"
-                );
-                assert_eq!(report.rank, 2 - shared);
-                assert_eq!(report.degrees_of_freedom, 6 + shared);
-                assert_eq!(report.redundant_equations, 0);
-            }
+        for scale in [0.01, 1., 100.] {
+            assert_incidence_orientations(shared, scale);
         }
     }
 }
-
 #[test]
 fn collinear_shared_incidence_solves_without_changing_identity() {
     for shared in 0..=2 {

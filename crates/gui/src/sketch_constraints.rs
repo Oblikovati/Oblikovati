@@ -8,6 +8,10 @@ pub enum GuiSketchConstraint {
     Fix,
     Parallel,
     Perpendicular,
+    Collinear,
+    Equal,
+    Concentric,
+    Tangent,
 }
 impl GuiSketchConstraint {
     /// Name a constraint command; example: `GuiSketchConstraint::Horizontal.label()`.
@@ -19,6 +23,10 @@ impl GuiSketchConstraint {
             Self::Fix => "Fix",
             Self::Parallel => "Parallel",
             Self::Perpendicular => "Perpendicular",
+            Self::Collinear => "Collinear",
+            Self::Equal => "Equal",
+            Self::Concentric => "Concentric",
+            Self::Tangent => "Tangent",
         }
     }
 }

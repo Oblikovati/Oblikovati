@@ -5,7 +5,7 @@ use crate::placement_test_inputs::*;
 use oblikovati_gui::GuiSketchConstraint::{Coincident, Horizontal, Vertical};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
-    sketch::{PlanarConstraint, SketchPlacementRecipe, SketchPlane},
+    sketch::{PlanarConstraint, Sketch2D, SketchPlacementRecipe, SketchPlane},
 };
 use oblikovati_viewport::ViewportKey;
 
@@ -352,4 +352,21 @@ fn history_change_cancels_a_pending_tool_and_clears_its_stale_pick_storage() {
             .count,
         1
     );
+}
+
+pub(super) fn geometry_for_relation(
+    owner: &TestOwner,
+    document: u64,
+    sketch: DocumentSketchId,
+) -> &Sketch2D {
+    owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .geometry()
 }

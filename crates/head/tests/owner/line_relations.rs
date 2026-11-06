@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::geometric_tools::{geometric_owner, inspection};
+use super::geometric_tools::{
+    geometric_owner, geometry_for_relation as relation_geometry, inspection,
+};
 use super::slot_input::deliver;
 use super::*;
 use crate::placement_test_inputs::*;
@@ -77,18 +79,6 @@ fn two_line_relations_ignore_isolated_points() {
         assert_eq!(selected_count(&mut owner), 0);
         assert_eq!(inspection(&mut owner).dof, 4);
     }
-}
-fn relation_geometry(owner: &TestOwner, document: u64, sketch: DocumentSketchId) -> &Sketch2D {
-    owner
-        .documents()
-        .workspace()
-        .session(document)
-        .unwrap()
-        .snapshot()
-        .sketches
-        .get(sketch)
-        .unwrap()
-        .geometry()
 }
 fn unit_line_direction(geometry: &Sketch2D, id: SketchEntityId) -> [f64; 2] {
     let endpoints = geometry
