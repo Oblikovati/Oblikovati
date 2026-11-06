@@ -32,7 +32,7 @@ fn every_view_has_its_label_and_only_icon_sizes_change_the_row_height() {
     assert_eq!(
         labels,
         [
-            "Large Icons",
+            "Extra Large Icons",
             "Medium Icons",
             "Small Icons",
             "List",
