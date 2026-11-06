@@ -4,7 +4,7 @@ This branch contains the Rust application port in progress. It uses the Rust
 contract in **Oblikovati.API**. The native Vulkan/TKV3D viewport uses the
 **Martensite** repository. The model adapter still consumes the previous
 **RustyCADKernel** packages while its Martensite migration is qualified. The
-[v0.9 release intake](architecture/rust-port/implementation-martensite-0-9.md)
+[v0.11 release intake](architecture/rust-port/implementation-martensite-0-11.md)
 records the current renderer and authored sketch geometry pins and qualification.
 
 Go-kernel capabilities that support application features and are outside OCCT
@@ -19,8 +19,9 @@ startup. Dear ImGui controls create a Part, start and finish an XY sketch, draw
 an anchored rectangle, and create or edit its driving size parameter. Native
 Horizontal, Vertical and Coincident tools use analytic picks and the typed API.
 General Dimension supplies explicit label placement, expression entry and
-parameter-driven values. The native
-test verifies zero DOF, recomputation, undo, and redo. The complete cube UI
+parameter-driven values. Line, circular-tool flyouts, checked Delete, and
+Construction/Centerline curve formats also use the shared owner operations.
+Native tests verify zero DOF, recomputation, undo/redo and save/reopen. The complete cube UI
 journey, ribbon and model-browser parity, and native file dialogs remain open.
 Publication remains blocked. Current dependencies are pinned in `release.toml`
 and the adapter manifests; the

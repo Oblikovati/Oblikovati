@@ -2,7 +2,7 @@
 
 The original geometry baseline uses `RustyCADKernel`. The native renderer now
 consumes the released `Oblikovati/Martensite` toolkits. The
-[v0.8 adoption record](implementation-martensite-0-8.md) states the current pin
+[v0.11 adoption record](implementation-martensite-0-11.md) states the current pin
 and its qualification limits. The production geometry adapter remains on its
 qualified baseline until the replacement passes its mass-property and analytic
 region contracts. The [source baseline](source-map.md) records the original
@@ -27,8 +27,9 @@ kernel-internal decisions still belong to RustyCADKernel.
   an operation, so `&Shape` alone does not imply immutable evaluation.
 - Native window presentation now runs through Martensite V3d and Vulkan.
   The former offscreen-only limit is retired. Native Linux display, palettes,
-  sketch overlays and captures have executable host evidence. Highlight rendering
-  and the wider built-in presentation set still require application acceptance.
+  sketch overlays and captures have executable host evidence. Line/curve
+  highlights retain their role patterns in native acceptance; the wider built-in
+  presentation set still requires application acceptance.
 - The kernel completeness record does not claim full behavioral equivalence
   or a complete platform matrix. Toolkit mapping counts are not readiness
   evidence for an application feature.
