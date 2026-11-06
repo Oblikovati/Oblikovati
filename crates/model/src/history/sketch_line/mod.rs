@@ -15,7 +15,9 @@ mod chain;
 mod error;
 pub use chain::{SketchLineChainCreation, SketchLineChainCreationReport};
 mod relations;
+mod tangent_arc;
 pub use error::SketchLineCreationError;
+pub use tangent_arc::{SketchTangentArcCreation, SketchTangentArcReport};
 /// Fresh endpoints in document working units; inference reads existing geometry before allocation.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SketchLineCreation {

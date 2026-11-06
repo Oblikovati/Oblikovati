@@ -42,4 +42,16 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session
             .create_inferred_sketch_line_chain(sketch, input)
     }
+    /// Create one tangent arc on this document without changing focus.
+    /// Example: `commands.create_tangent_arc(sketch, &input)?;`.
+    pub fn create_tangent_arc(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &oblikovati_model::history::SketchTangentArcCreation,
+    ) -> Result<
+        oblikovati_model::history::SketchTangentArcReport,
+        CommandError<SketchLineCreationError>,
+    > {
+        self.session.create_tangent_arc(sketch, input)
+    }
 }

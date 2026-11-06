@@ -47,6 +47,33 @@ impl<O: TransactionObserver> DocumentSession<O> {
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Show or hide the relation marks as one history step; repeating the state adds no step.
+    /// Example: `session.set_sketch_constraints_shown(id, true)?`.
+    pub fn set_sketch_constraints_shown(
+        &mut self,
+        sketch: DocumentSketchId,
+        shown: bool,
+    ) -> Result<(), CommandError<SketchError>> {
+        let unchanged = self
+            .snapshot()
+            .sketches
+            .get(sketch)
+            .is_ok_and(|current| current.constraints_shown() == shown);
+        if unchanged {
+            return Ok(());
+        }
+        let label = if shown {
+            "Show All Constraints"
+        } else {
+            "Hide All Constraints"
+        };
+        self.run(label, |snapshot, _| {
+            snapshot.sketches.set_constraints_shown(sketch, shown)
+        })
+    }
+}
+
+impl<O: TransactionObserver> DocumentSession<O> {
     /// Name a design view of the document; example: `session.create_design_view("Front")`.
     pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
         self.run("Create Design View", |snapshot, _| {

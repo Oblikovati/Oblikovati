@@ -37,6 +37,31 @@ fn visibility_metadata_has_one_history_step_and_no_numerical_side_effect() {
 }
 
 #[test]
+fn showing_constraints_is_one_named_history_step_and_repeating_it_adds_none() {
+    let mut session = visibility_session();
+    let id = DocumentSketchId(1);
+    session.set_sketch_constraints_shown(id, true).unwrap();
+    let shown = |session: &DocumentSession<RecordingObserver>| {
+        session
+            .snapshot()
+            .sketches
+            .get(id)
+            .unwrap()
+            .constraints_shown()
+    };
+    assert!(shown(&session));
+    assert_eq!(session.undo_label(), Some("Show All Constraints"));
+    let revision = session.generation();
+    session.set_sketch_constraints_shown(id, true).unwrap();
+    assert_eq!(session.generation(), revision);
+    session.undo().unwrap();
+    assert!(!shown(&session));
+    session.redo().unwrap();
+    session.set_sketch_constraints_shown(id, false).unwrap();
+    assert_eq!(session.undo_label(), Some("Hide All Constraints"));
+}
+
+#[test]
 fn rejected_visibility_reply_retains_geometry_verification_and_display_state() {
     let mut session = visibility_session();
     let original = session.snapshot().sketches.clone();

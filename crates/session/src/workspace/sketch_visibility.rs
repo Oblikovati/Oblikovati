@@ -27,6 +27,17 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
 }
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Show or hide the relation marks; example: `commands.set_sketch_constraints_shown(id, true)?`.
+    pub fn set_sketch_constraints_shown(
+        &mut self,
+        sketch: DocumentSketchId,
+        shown: bool,
+    ) -> Result<(), CommandError<SketchError>> {
+        self.session.set_sketch_constraints_shown(sketch, shown)
+    }
+}
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
     /// Name a design view of this document; example: `commands.create_design_view("Front")`.
     pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
         self.session.create_design_view(name)

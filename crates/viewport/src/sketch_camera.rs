@@ -22,7 +22,7 @@ impl ViewportCamera {
         let normal = plane.normal();
         let standoff = sketch_standoff(self, frame.origin, normal)?;
         let eye = std::array::from_fn(|axis| frame.origin[axis] + normal[axis] * standoff);
-        let up = normalized_up(frame.y_axis);
+        let up = normalized_up(sketch_up(frame.x_axis, frame.y_axis));
         let facing = Self {
             eye,
             target: frame.origin,
@@ -32,6 +32,12 @@ impl ViewportCamera {
         facing.validate()?;
         Ok(facing)
     }
+}
+
+/// Model Y stays up when the plane holds it, so a sketch on YZ reads as the Right view.
+fn sketch_up(x_axis: [f64; 3], y_axis: [f64; 3]) -> [f64; 3] {
+    const MODEL_Y: [f64; 3] = [0., 1., 0.];
+    if x_axis == MODEL_Y { MODEL_Y } else { y_axis }
 }
 
 fn sketch_standoff(
@@ -84,6 +90,21 @@ mod tests {
                 (camera.scale, camera.near, camera.far)
             );
         }
+    }
+    #[test]
+    fn model_y_stays_up_when_the_sketch_plane_holds_it() {
+        let right = ViewportCamera::default()
+            .facing_sketch(SketchPlane::yz())
+            .unwrap();
+        assert_eq!(right.up, [0., 1., 0.]);
+        let top = ViewportCamera::default()
+            .facing_sketch(SketchPlane::xz())
+            .unwrap();
+        assert_eq!(top.up, [0., 0., 1.]);
+        let front = ViewportCamera::default()
+            .facing_sketch(SketchPlane::xy())
+            .unwrap();
+        assert_eq!(front.up, [0., 1., 0.]);
     }
     #[test]
     fn facing_retains_go_small_distance_policy_and_refuses_overflow() {

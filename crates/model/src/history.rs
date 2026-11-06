@@ -35,6 +35,7 @@ pub use sketch_create::{DocumentSketchCreation, DocumentSketchCreationError};
 pub use sketch_line::{
     SketchAppliedLineDirection, SketchLineChainCreation, SketchLineChainCreationReport,
     SketchLineCreation, SketchLineCreationError, SketchLineCreationReport,
+    SketchTangentArcCreation, SketchTangentArcReport,
 };
 pub use sketch_primitive::{SketchPrimitiveCreationError, SketchPrimitiveCreationReport};
 pub use sketch_relation_create::{SketchGeometricCreationError, SketchGeometricCreationReport};

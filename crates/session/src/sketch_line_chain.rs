@@ -6,7 +6,8 @@ use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{
         DocumentSnapshot, RecipeReservations, SketchLineChainCreation,
-        SketchLineChainCreationReport, SketchLineCreationError,
+        SketchLineChainCreationReport, SketchLineCreationError, SketchTangentArcCreation,
+        SketchTangentArcReport,
     },
     sketch::{Sketch2D, SketchEntityId, SketchInferencePolicy},
 };
@@ -50,6 +51,23 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.run_projected(
             "Create Line",
             |snapshot, ids| author_chain(snapshot, ids, sketch, input, options),
+            |snapshot, report| {
+                chain_solution(snapshot, report.sketch)?;
+                Ok(report)
+            },
+        )
+    }
+    /// Create one arc off a line's end as its own history step.
+    /// Example: `session.create_tangent_arc(sketch, &input)?;`.
+    pub fn create_tangent_arc(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchTangentArcCreation,
+    ) -> Result<SketchTangentArcReport, CommandError<SketchLineCreationError>> {
+        let options = self.sketch_options;
+        self.run_projected(
+            "Create Tangent Arc",
+            |snapshot, ids| snapshot.create_tangent_arc(sketch, input, options, ids),
             |snapshot, report| {
                 chain_solution(snapshot, report.sketch)?;
                 Ok(report)

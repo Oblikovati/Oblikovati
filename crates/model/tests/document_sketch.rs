@@ -294,6 +294,24 @@ fn saved_document_reference_keys_survive_restore_and_keep_kind_and_document_name
     }
 }
 #[test]
+fn shown_constraints_round_trip_at_version_six_and_older_recipes_refuse_them() {
+    let mut original = document();
+    let id = DocumentSketchId(1);
+    assert!(!original.get(id).unwrap().constraints_shown());
+    assert!(original.recipe().sketches[0].constraints_shown.is_none());
+    original.set_constraints_shown(id, true).unwrap();
+    let mut recipe = original.recipe();
+    assert_eq!(recipe.version, 6);
+    let restored = DocumentSketches::from_recipe(&recipe).unwrap();
+    assert!(restored.get(id).unwrap().constraints_shown());
+    assert!(restored.same_recipe(&original));
+    recipe.version = 5;
+    let cause = DocumentSketches::from_recipe(&recipe)
+        .unwrap_err()
+        .to_string();
+    assert!(cause.contains("expected version 6"), "{cause}");
+}
+#[test]
 fn exact_recipe_comparison_tracks_signed_zero_geometry_fix_targets_and_collection_shape() {
     let original = document();
     assert!(original.same_recipe(&original.clone()));

@@ -38,6 +38,8 @@ pub struct PlacedSketch {
     id: DocumentSketchId,
     name: String,
     visible: bool,
+    /// Whether the sketch draws a mark beside each relation; a saved, undoable display choice.
+    constraints_shown: bool,
     placement: SketchPlacement,
     orientation: Option<SketchOrientationDefinition>,
     point_projections: Vec<SketchPointProjection>,
@@ -58,6 +60,9 @@ pub struct PlacedSketchRecipe {
     /// Version 5 overrides the legacy visible default; absent values preserve older encodings.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visible: Option<bool>,
+    /// Version 6: absent means the marks stay hidden, which every older file implies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub constraints_shown: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plane: Option<SketchPlaneRecipe>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -88,6 +93,7 @@ impl PlacedSketch {
             id,
             name: name.into(),
             visible: true,
+            constraints_shown: false,
             placement,
             orientation: None,
             point_projections: Vec::new(),
@@ -116,6 +122,7 @@ impl PlacedSketch {
             id: self.id,
             name: self.name.clone(),
             visible: (!self.visible).then_some(false),
+            constraints_shown: self.constraints_shown.then_some(true),
             plane,
             plane_options,
             plane_feature,
@@ -125,6 +132,9 @@ impl PlacedSketch {
         }
     }
     fn recipe_version(&self) -> u32 {
+        if self.constraints_shown {
+            return 6;
+        }
         if !self.visible {
             return 5;
         }
@@ -152,6 +162,7 @@ impl DocumentSketches {
                     first.id == second.id
                         && first.name == second.name
                         && first.visible == second.visible
+                        && first.constraints_shown == second.constraints_shown
                         && first.placement.same_recipe(second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
                         && first.point_projections == second.point_projections
@@ -257,9 +268,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=5) {
+        if !matches!(recipe.version, 1..=6) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1, 2, 3, 4, or 5",
+                "document sketch recipe version {}: expected 1, 2, 3, 4, 5, or 6",
                 recipe.version
             )));
         }
@@ -271,6 +282,7 @@ impl DocumentSketches {
             orientation::restore_orientation(&mut restored, sketch, recipe.version)?;
             point_projection::restore_bindings(&mut restored, sketch, recipe.version)?;
             visibility::restore_visibility(&mut restored, sketch, recipe.version)?;
+            visibility::restore_constraints_shown(&mut restored, sketch, recipe.version)?;
         }
         Ok(restored)
     }
@@ -332,6 +344,7 @@ impl PartialEq for PlacedSketch {
         self.id == other.id
             && self.name == other.name
             && self.visible == other.visible
+            && self.constraints_shown == other.constraints_shown
             && self.placement == other.placement
             && self.orientation == other.orientation
             && self.point_projections == other.point_projections

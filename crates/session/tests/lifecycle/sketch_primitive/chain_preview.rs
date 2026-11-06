@@ -245,3 +245,27 @@ fn driven_reference_session() -> DocumentSession<RecordingObserver> {
             .unwrap();
     DocumentSession::new(17, history, RecordingObserver::default())
 }
+#[test]
+fn a_tangent_arc_is_one_undo_step_bound_to_the_line_it_leaves() {
+    use oblikovati_model::history::SketchTangentArcCreation;
+    let mut session = session(None);
+    let sketch = empty_sketch(&mut session, true);
+    let mut straight = request();
+    straight.points = vec![[-3., 0.2], [-1., 0.7]];
+    let line = session
+        .create_inferred_sketch_line_chain(sketch, &straight)
+        .unwrap();
+    let input = SketchTangentArcCreation {
+        line: line.lines[0].primitive.entity,
+        vertex: line.points[1],
+        end: [0.5, 2.5],
+    };
+    let report = session.create_tangent_arc(sketch, &input).unwrap();
+    assert_eq!(session.undo_label(), Some("Create Tangent Arc"));
+    let arcs = geometry(&session, sketch).arcs();
+    assert_eq!(arcs.len(), 1);
+    assert_eq!(arcs[0].id, report.arc);
+    assert_eq!(arcs[0].start, line.points[1]);
+    session.undo().unwrap();
+    assert!(geometry(&session, sketch).arcs().is_empty());
+}
