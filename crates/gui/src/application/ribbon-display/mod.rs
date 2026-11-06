@@ -56,6 +56,7 @@ pub(crate) struct RibbonDisplayState {
     /// `None` cycles through every mode; a choice alternates between it and the full ribbon.
     minimized: Option<RibbonDisplay>,
     pub temporary: Option<TemporaryPanel>,
+    pub temporary_anchor: f32,
 }
 impl Default for RibbonDisplayState {
     fn default() -> Self {
@@ -63,6 +64,7 @@ impl Default for RibbonDisplayState {
             mode: RibbonDisplay::Full,
             minimized: None,
             temporary: None,
+            temporary_anchor: 8.,
         }
     }
 }

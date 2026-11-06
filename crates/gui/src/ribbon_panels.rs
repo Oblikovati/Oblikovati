@@ -164,6 +164,7 @@ fn compact_row(
     for panel in panels_for(tab, context.state) {
         if crate::widget_abi::button(ui, panel.label(), size) {
             display.temporary = Some(TemporaryPanel::Group(panel));
+            display.temporary_anchor = ui.item_rect_min()[0];
         }
         ui.same_line();
     }
@@ -179,17 +180,18 @@ fn temporary_panel(
         return;
     };
     let ui = context.ui;
-    let width = ui.io().display_size[0] - 16.;
     let top = ui.window_size()[1];
-    crate::widget_abi::window_geometry(ui, [8., top], [width, 104.], imgui::Condition::Always);
+    let (position, size) = temporary_geometry(ui, tab, layout, display, shown, top);
+    crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
     let before = context.actions.len();
     let mut keep = true;
     ui.window("##ribbon-temporary-panel")
+        // `flags` replaces the flags set so far, so it comes first.
+        .flags(imgui::WindowFlags::NO_DOCKING)
         .title_bar(false)
         .movable(false)
         .resizable(false)
         .collapsible(false)
-        .flags(imgui::WindowFlags::NO_DOCKING)
         .build(|| {
             let local = temporary_contents(context, tab, layout, shown);
             keep = !local
@@ -198,6 +200,24 @@ fn temporary_panel(
     if !keep || context.actions.len() != before {
         display.temporary = None;
     }
+}
+/// A group's panel opens under its button at its measured width; a whole tab spans the window.
+fn temporary_geometry(
+    ui: &Ui,
+    tab: RibbonTab,
+    layout: &RibbonPanelLayout,
+    display: &RibbonDisplayState,
+    shown: TemporaryPanel,
+    top: f32,
+) -> ([f32; 2], [f32; 2]) {
+    let viewport = ui.io().display_size[0];
+    let TemporaryPanel::Group(panel) = shown else {
+        return ([8., top], [viewport - 16., 104.]);
+    };
+    let measured = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
+    let width = (measured + 32.).max(140.).min(viewport - 16.);
+    let x = display.temporary_anchor.min(viewport - width - 8.).max(8.);
+    ([x, top], [width, 104.])
 }
 fn temporary_contents(
     context: &mut PanelDrawContext<'_>,
@@ -212,7 +232,11 @@ fn temporary_contents(
         return false;
     }
     match shown {
-        TemporaryPanel::Group(panel) => draw_expanded(context, panel, [0.; 2]).1,
+        TemporaryPanel::Group(panel) => {
+            let (width, local) = draw_expanded(context, panel, [0.; 2]);
+            layout.record_width(tab, panel, width);
+            local
+        }
         TemporaryPanel::WholeTab => {
             draw_row(context, tab, layout, available);
             false
