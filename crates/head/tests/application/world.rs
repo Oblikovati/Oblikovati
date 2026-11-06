@@ -14,6 +14,11 @@ pub(super) struct ApplicationWorld {
     pub parts: Vec<u64>,
     pub other_document: Option<u64>,
     pub closed_document: Option<u64>,
+    pub workspace_color: Option<[u8; 4]>,
+    pub initial_breadcrumb: Option<String>,
+    pub proposed_name: Option<String>,
+    pub browser_width: Option<f32>,
+    pub strip_left: Option<f32>,
 }
 pub(super) struct NativeApplication {
     pub window: ScriptedGuiWindow,
@@ -45,6 +50,11 @@ impl ApplicationWorld {
             parts: Vec::new(),
             other_document: None,
             closed_document: None,
+            workspace_color: None,
+            initial_breadcrumb: None,
+            proposed_name: None,
+            browser_width: None,
+            strip_left: None,
         };
         world.pump(Vec::new());
         world

@@ -57,6 +57,7 @@ pub(crate) struct RibbonDisplayState {
     minimized: Option<RibbonDisplay>,
     pub temporary: Option<TemporaryPanel>,
     pub temporary_anchor: f32,
+    tab_release_consumed: bool,
 }
 impl Default for RibbonDisplayState {
     fn default() -> Self {
@@ -65,10 +66,21 @@ impl Default for RibbonDisplayState {
             minimized: None,
             temporary: None,
             temporary_anchor: 8.,
+            tab_release_consumed: false,
         }
     }
 }
 impl RibbonDisplayState {
+    /// A double click on the active tab acts like the display control. Its own release must not
+    /// then open the whole-tab panel that a plain tab click opens in tabs-only mode.
+    pub(crate) fn advance_from_tab(&mut self) {
+        self.advance();
+        self.tab_release_consumed = true;
+    }
+    /// Whether this tab release opens the whole-tab panel; example: in tabs-only mode.
+    pub(crate) fn take_tab_release(&mut self) -> bool {
+        !std::mem::take(&mut self.tab_release_consumed) && self.mode == RibbonDisplay::Tabs
+    }
     fn advance(&mut self) {
         self.temporary = None;
         self.mode = match self.minimized {

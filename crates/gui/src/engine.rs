@@ -97,6 +97,10 @@ impl GuiFrameEngine {
         }
         self.draw_controls(request)
     }
+    /// Show a captured window picture in Save As; example: after `CaptureWindowPreview`.
+    pub fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
+        self.document_files.receive_window_preview(image);
+    }
     /// Request a path for the owner's unsaved document without writing it.
     /// Example: `engine.request_save_path(document)?` after a SavePathRequired notice.
     pub fn request_save_path(&mut self, document: u64) -> Result<(), String> {
@@ -229,6 +233,17 @@ impl GuiFrameEngine {
         self.workspace
             .switcher
             .panel(ui, &request.commands, &mut selected);
+        if self.document_files.take_options_request() {
+            self.preferences.request();
+        }
+        if self.document_files.take_properties_request()
+            && let Some(id) = request.commands.document
+        {
+            self.document_tabs
+                .menu
+                .properties
+                .request(&request.commands, id);
+        }
         self.document_tabs
             .menu
             .properties

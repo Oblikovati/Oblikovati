@@ -38,7 +38,8 @@ pub use theme_state::GuiThemeState;
 #[allow(unsafe_code)]
 mod widget_abi;
 pub use commands::{
-    GuiAuthoringContext, GuiCommandState, GuiDocumentStorage, GuiParameterMutation, GuiShellAction,
+    GuiAuthoringContext, GuiCommandState, GuiDocumentStorage, GuiParameterMutation,
+    GuiPreviewImage, GuiShellAction,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

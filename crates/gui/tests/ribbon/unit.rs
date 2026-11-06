@@ -60,7 +60,7 @@ fn document_tabs_keep_sketch_context_off_other_document_types() {
     for (key, tabs) in [
         (
             DRAWING_RIBBON,
-            &[RibbonTab::PlaceViews, RibbonTab::View][..],
+            &[RibbonTab::PlaceViews, RibbonTab::Annotate, RibbonTab::View][..],
         ),
         (
             PRESENTATION_RIBBON,

@@ -88,6 +88,37 @@ fn a_typed_absolute_name_wins_over_the_folder() {
     assert_eq!(full_path("/work", "/other/a.opd"), "/other/a.opd");
 }
 #[test]
+fn back_returns_through_the_folders_left_behind() {
+    let mut browser = FolderBrowser::new(Rc::new(FakeFolders));
+    browser.navigate("old");
+    browser.navigate("older");
+    browser.back();
+    assert_eq!(browser.folder, "/work/parts/old");
+    browser.back();
+    assert_eq!(browser.folder, "/work/parts");
+    browser.back();
+    assert_eq!(browser.folder, "/work/parts");
+}
+#[test]
+fn a_reset_starts_over_in_the_initial_folder_with_no_history() {
+    let mut browser = FolderBrowser::new(Rc::new(FakeFolders));
+    browser.navigate("old");
+    browser.selected = Some("a.opd".into());
+    browser.reset();
+    assert_eq!(browser.folder, "/work/parts");
+    assert!(browser.selected.is_none() && browser.history.is_empty());
+}
+#[test]
+fn the_status_names_a_selection_or_counts_the_rows() {
+    assert_eq!(status_text(true, 3), "1 item selected");
+    assert_eq!(status_text(false, 3), "3 items");
+}
+#[test]
+fn the_breadcrumb_shows_each_step_of_the_folder() {
+    assert_eq!(breadcrumb("/work/parts"), "/ > work > parts");
+    assert_eq!(breadcrumb("/a/b/c/d/e"), "... > c > d > e");
+}
+#[test]
 fn navigation_reads_the_new_folder_and_reports_a_bad_one() {
     let mut browser = FolderBrowser::new(Rc::new(FakeFolders));
     browser.refresh();

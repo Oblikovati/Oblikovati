@@ -41,6 +41,12 @@ impl HeadWindow for ScriptedGuiWindow {
     ) -> Result<HeadGuiUpdate, String> {
         self.native.gui_frame(event, commands)
     }
+    fn capture_window_preview(&mut self) -> Result<bool, String> {
+        self.native.capture_window_preview()
+    }
+    fn request_close(&mut self) -> Result<bool, String> {
+        self.native.request_close()
+    }
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         let mut events = self.native.events(limit)?;
         events.append(&mut self.scripted);
@@ -220,7 +226,7 @@ fn verify_browser_reentry_pixels(
         "expected visible committed sketch geometry before browser activation"
     );
     // #3811: selection changes colour; isolate edit re-entry from that intended change.
-    drive_pointer_clicks(window, owner, [90, 389], 1);
+    drive_pointer_clicks(window, owner, [90, 412], 1);
     assert!(owner.active_sketch_edit().is_none());
     assert_eq!(
         owner

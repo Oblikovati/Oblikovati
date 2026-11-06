@@ -3,8 +3,12 @@
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, MouseButton, Ui, WindowFlags};
 
+#[path = "browser_view.rs"]
+pub(crate) mod browser_view;
 /// The tab strip and the gap under it.
 const TAB_STRIP_HEIGHT: f32 = 34.;
+const BOUNDARY_WIDTH: f32 = 6.;
+const MINIMUM_BROWSER_WIDTH: f32 = 180.;
 const EDGE_MARGIN: f32 = 8.;
 /// A header released this close to a side edge docks there.
 const DOCK_TARGET: f32 = 48.;
@@ -27,6 +31,8 @@ pub(crate) struct WorkspaceLayout {
     /// GUI frames follow events, and a dropped panel takes its geometry in the next frame.
     pub pending_layout: bool,
     pub switcher: crate::application::document_tabs::WindowSwitcher,
+    browser_width_override: Option<f32>,
+    view: browser_view::BrowserView,
 }
 impl Default for WorkspaceLayout {
     fn default() -> Self {
@@ -38,6 +44,8 @@ impl Default for WorkspaceLayout {
             window_position: [0.; 2],
             pending_layout: false,
             switcher: Default::default(),
+            browser_width_override: None,
+            view: Default::default(),
         }
     }
 }
@@ -63,9 +71,52 @@ impl WorkspaceLayout {
             .collapsible(false)
             .build(|| {
                 self.track_header(ui);
-                crate::browser::browser_contents(ui, state, actions);
+                crate::browser::browser_contents(ui, state, &mut self.view, actions);
             });
         self.finish_drag(ui);
+        self.boundary_handle(ui, height, band_height);
+    }
+    /// The width the docked browser takes: a user's drag, else the window's default.
+    fn browser_width(&self, display_width: f32) -> f32 {
+        self.browser_width_override
+            .unwrap_or_else(|| crate::browser::model_browser_width(display_width))
+    }
+    /// A thin window over the boundary, so a drag never competes with the tree's own rows.
+    fn boundary_handle(&mut self, ui: &Ui, height: f32, band_height: f32) {
+        let display = ui.io().display_size[0];
+        let width = self.browser_width(display);
+        let x = match self.dock {
+            BrowserDock::Left => EDGE_MARGIN + width,
+            BrowserDock::Right => display - width - EDGE_MARGIN - BOUNDARY_WIDTH,
+            BrowserDock::Floating(_) => return,
+        };
+        let top = band_height + 10.;
+        let size = [BOUNDARY_WIDTH, (height - band_height - 18.).max(120.)];
+        crate::widget_abi::window_geometry(ui, [x, top], size, Condition::Always);
+        // A window's defaults would keep this handle 32 pixels wide and clip its own edges.
+        let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
+        let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
+        ui.window("##browser-boundary")
+            .flags(boundary_flags())
+            .build(|| self.boundary_drag(ui, size, display));
+    }
+    fn boundary_drag(&mut self, ui: &Ui, size: [f32; 2], display: f32) {
+        ui.invisible_button("##browser-boundary-drag", size);
+        if ui.is_item_hovered() || ui.is_item_active() {
+            ui.set_mouse_cursor(Some(imgui::MouseCursor::ResizeEW));
+        }
+        if !ui.is_item_active() {
+            return;
+        }
+        let delta = ui.io().mouse_delta[0];
+        let signed = if self.dock == BrowserDock::Left {
+            delta
+        } else {
+            -delta
+        };
+        let grown = self.browser_width(display) + signed;
+        self.browser_width_override = Some(grown.clamp(MINIMUM_BROWSER_WIDTH, display * 0.5));
+        self.pending_layout = true;
     }
     fn place_browser(&self, ui: &Ui, height: f32, band_height: f32) {
         // While the header is held, Dear ImGui owns the window position.
@@ -74,7 +125,7 @@ impl WorkspaceLayout {
         }
         let width = ui.io().display_size[0];
         let docked = [
-            crate::browser::model_browser_width(width),
+            self.browser_width(width),
             (height - band_height - 18.).max(120.),
         ];
         let top = band_height + 10.;
@@ -108,7 +159,7 @@ impl WorkspaceLayout {
     }
     /// The horizontal span the document tab strip may use; example: `layout.tab_span(1440.)`.
     pub(crate) fn tab_span(&self, width: f32) -> (f32, f32) {
-        let reserved = crate::browser::model_browser_width(width) + 2. * EDGE_MARGIN;
+        let reserved = self.browser_width(width) + 2. * EDGE_MARGIN;
         match (self.browser_visible, self.dock) {
             (true, BrowserDock::Left) => (reserved, (width - reserved).max(1.)),
             (true, BrowserDock::Right) => (EDGE_MARGIN, (width - reserved - EDGE_MARGIN).max(1.)),
@@ -158,3 +209,13 @@ fn drop_target(pointer_x: f32, width: f32, position: [f32; 2]) -> BrowserDock {
 #[cfg(test)]
 #[path = "../../../tests/application/workspace-layout/layout.rs"]
 mod tests;
+
+fn boundary_flags() -> WindowFlags {
+    WindowFlags::NO_DECORATION
+        | WindowFlags::NO_MOVE
+        | WindowFlags::NO_DOCKING
+        | WindowFlags::NO_BACKGROUND
+        | WindowFlags::NO_SAVED_SETTINGS
+        | WindowFlags::NO_FOCUS_ON_APPEARING
+        | WindowFlags::NO_SCROLLBAR
+}

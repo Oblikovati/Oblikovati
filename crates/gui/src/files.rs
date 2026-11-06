@@ -9,6 +9,7 @@ use crate::application::document_saving::{
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
+const NOT_AVAILABLE: &str = "This command is not available in this build.";
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
     templates: crate::application::document_creation::TemplateChooser,
@@ -16,6 +17,8 @@ pub(crate) struct GuiDocumentFiles {
     save_as: SaveAsDialog,
     close_prompt: ClosePrompt,
     first_saves: FirstSaves,
+    options_requested: bool,
+    properties_requested: bool,
 }
 impl GuiDocumentFiles {
     pub(crate) fn request_save_path(
@@ -50,16 +53,41 @@ impl GuiDocumentFiles {
             file_save_item(ui, state, actions);
             self.save_as_menu_item(ui, state);
             file_close_item(ui, state, actions);
-            unavailable_file_item(
-                ui,
-                "Export",
-                "Export is not available in this desktop build.",
-            );
-            unavailable_file_item(ui, "Print", "Print is not available in this desktop build.");
+            unavailable_file_item(ui, "Export", NOT_AVAILABLE);
+            unavailable_file_item(ui, "Share", NOT_AVAILABLE);
+            unavailable_file_item(ui, "Manage", NOT_AVAILABLE);
+            self.document_properties_item(ui, state);
+            unavailable_file_item(ui, "Print", NOT_AVAILABLE);
             ui.separator();
             ui.text_disabled("Recent documents");
             ui.text_disabled("No recent documents");
+            ui.separator();
+            self.options_item(ui);
+            if ui.menu_item("Exit") {
+                actions.push(GuiShellAction::Exit);
+            }
         });
+    }
+    fn document_properties_item(&mut self, ui: &Ui, state: &GuiCommandState) {
+        self.properties_requested |= ui
+            .menu_item_config("Document Properties")
+            .enabled(state.document.is_some())
+            .build();
+    }
+    fn options_item(&mut self, ui: &Ui) {
+        self.options_requested |= ui.menu_item("Options...");
+    }
+    /// Consume the File menu's request; example: `files.take_options_request()`.
+    pub(crate) fn take_options_request(&mut self) -> bool {
+        std::mem::take(&mut self.options_requested)
+    }
+    /// Consume the File menu's request; example: `files.take_properties_request()`.
+    pub(crate) fn take_properties_request(&mut self) -> bool {
+        std::mem::take(&mut self.properties_requested)
+    }
+    /// Show a captured window picture in Save As.
+    pub(crate) fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
+        self.save_as.receive_window_preview(image);
     }
     fn open_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         if ui

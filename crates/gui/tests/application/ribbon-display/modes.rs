@@ -43,3 +43,14 @@ fn changing_mode_closes_the_temporary_panel() {
     state.advance();
     assert_eq!(state.temporary, None);
 }
+#[test]
+fn a_double_click_advances_and_its_release_opens_no_panel() {
+    let mut state = RibbonDisplayState {
+        mode: RibbonDisplay::PanelTitles,
+        ..Default::default()
+    };
+    state.advance_from_tab();
+    assert_eq!(state.mode, RibbonDisplay::Tabs);
+    assert!(!state.take_tab_release(), "the double click's own release");
+    assert!(state.take_tab_release(), "the next plain click's release");
+}

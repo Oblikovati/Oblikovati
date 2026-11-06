@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::application::workspace_layout::browser_view::BrowserView;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, StyleColor, Ui};
 use oblikovati_model::{document_sketch::DocumentSketchId, feature::FeatureId};
@@ -111,125 +112,129 @@ impl GuiBrowserSketch {
         Ok(())
     }
 }
+/// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
 pub(crate) fn browser_contents(
     ui: &Ui,
     state: &GuiCommandState,
+    view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let Some(browser) = &state.browser else {
         ui.text("(no document)");
         return;
     };
+    view.header(ui);
     let _document = ui.push_id(format!("document-{:?}", state.document));
     ui.text(&browser.name);
-    match browser.kind {
-        GuiBrowserKind::Part => modeling_tree(ui, state, browser, "End of Part", actions),
-        GuiBrowserKind::SheetMetal => folded_model_tree(ui, state, browser, actions),
-        GuiBrowserKind::Assembly => assembly_tree(ui, state, browser, actions),
-        GuiBrowserKind::Drawing => drawing_tree(ui),
-        GuiBrowserKind::Presentation => ui.text("Scene1"),
-    }
-}
-fn modeling_tree(
-    ui: &Ui,
-    state: &GuiCommandState,
-    browser: &GuiModelBrowser,
-    end_marker: &str,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    origin_branch(ui, browser);
-    parameter_branch(ui, state);
-    sketch_branches(ui, state, browser, actions);
-    feature_branch(ui, state, browser, actions);
-    // The marker closes a modelled document's history; a document without an origin has none.
-    if browser.has_origin {
-        ui.text(end_marker);
-    }
-}
-fn folded_model_tree(
-    ui: &Ui,
-    state: &GuiCommandState,
-    browser: &GuiModelBrowser,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    if let Some(_folded) = ui
-        .tree_node_config("Folded Model")
-        .default_open(true)
-        .push()
-    {
-        modeling_tree(ui, state, browser, "End of Folded", actions);
-    }
-}
-fn assembly_tree(
-    ui: &Ui,
-    state: &GuiCommandState,
-    browser: &GuiModelBrowser,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    ui.text("Representations");
-    ui.text("Relationships");
-    modeling_tree(ui, state, browser, "End of Assembly", actions);
-}
-fn drawing_tree(ui: &Ui) {
-    ui.text("Drawing Resources");
-    if let Some(_sheet) = ui.tree_node_config("Sheet:1").default_open(true).push() {
-        ui.bullet_text("Border");
-        ui.bullet_text("Title Block");
-    }
-}
-fn origin_branch(ui: &Ui, browser: &GuiModelBrowser) {
-    if !browser.has_origin {
+    if let Some(query) = view.query() {
+        crate::application::workspace_layout::browser_view::search_results(ui, browser, query);
         return;
     }
-    if let Some(_origin) = ui.tree_node_config("Origin").default_open(true).push() {
-        for label in [
-            "Center Point",
-            "X Axis",
-            "Y Axis",
-            "Z Axis",
-            "XY Plane",
-            "XZ Plane",
-            "YZ Plane",
-        ] {
-            ui.bullet_text(label);
+    let tree = BrowserTree {
+        ui,
+        state,
+        browser,
+        expansion: view.take_expansion(),
+    };
+    tree.draw(actions);
+}
+/// One frame's tree; `expansion` is set for the single frame after Expand All or Collapse All.
+struct BrowserTree<'a> {
+    ui: &'a Ui,
+    state: &'a GuiCommandState,
+    browser: &'a GuiModelBrowser,
+    expansion: Option<bool>,
+}
+impl BrowserTree<'_> {
+    fn draw(&self, actions: &mut Vec<GuiShellAction>) {
+        match self.browser.kind {
+            GuiBrowserKind::Part => self.modeling("End of Part", actions),
+            GuiBrowserKind::SheetMetal => self.folded_model(actions),
+            GuiBrowserKind::Assembly => self.assembly(actions),
+            GuiBrowserKind::Drawing => self.drawing(),
+            GuiBrowserKind::Presentation => self.ui.text("Scene1"),
+        }
+    }
+    fn branch(&self, label: &str, default_open: bool) -> Option<imgui::TreeNodeToken<'_>> {
+        let node = self.ui.tree_node_config(label).default_open(default_open);
+        match self.expansion {
+            Some(open) => node.opened(open, imgui::Condition::Always).push(),
+            None => node.push(),
+        }
+    }
+    fn modeling(&self, end_marker: &str, actions: &mut Vec<GuiShellAction>) {
+        self.origin();
+        self.parameters();
+        self.sketches(actions);
+        self.features(actions);
+        // The marker closes a modelled document's history; a document without an origin has none.
+        if self.browser.has_origin {
+            self.ui.text(end_marker);
+        }
+    }
+    fn folded_model(&self, actions: &mut Vec<GuiShellAction>) {
+        if let Some(_folded) = self.branch("Folded Model", true) {
+            self.modeling("End of Folded", actions);
+        }
+    }
+    fn assembly(&self, actions: &mut Vec<GuiShellAction>) {
+        self.ui.text("Representations");
+        self.ui.text("Relationships");
+        self.modeling("End of Assembly", actions);
+    }
+    fn drawing(&self) {
+        self.ui.text("Drawing Resources");
+        if let Some(_sheet) = self.branch("Sheet:1", true) {
+            self.ui.bullet_text("Border");
+            self.ui.bullet_text("Title Block");
+        }
+    }
+    fn origin(&self) {
+        if !self.browser.has_origin {
+            return;
+        }
+        if let Some(_origin) = self.branch("Origin", true) {
+            for label in ORIGIN_ROWS {
+                self.ui.bullet_text(label);
+            }
+        }
+    }
+    fn parameters(&self) {
+        if let Some(_parameters) = self.branch("Parameters", false) {
+            for row in &self.state.parameters {
+                self.ui.bullet_text(format!("{} = {}", row.name, row.value));
+            }
+        }
+    }
+    fn sketches(&self, actions: &mut Vec<GuiShellAction>) {
+        if let Some(_sketches) = self.branch("Sketches", true) {
+            for row in self
+                .browser
+                .sketches
+                .iter()
+                .filter(|row| row.consumed_by.is_none())
+            {
+                sketch_row(self.ui, self.state, row, actions);
+            }
+        }
+    }
+    fn features(&self, actions: &mut Vec<GuiShellAction>) {
+        if let Some(_features) = self.branch("Features", true) {
+            for feature in &self.browser.features {
+                feature_row(self.ui, self.state, self.browser, feature, actions);
+            }
         }
     }
 }
-fn parameter_branch(ui: &Ui, state: &GuiCommandState) {
-    if let Some(_parameters) = ui.tree_node_config("Parameters").default_open(false).push() {
-        for row in &state.parameters {
-            ui.bullet_text(format!("{} = {}", row.name, row.value));
-        }
-    }
-}
-fn sketch_branches(
-    ui: &Ui,
-    state: &GuiCommandState,
-    browser: &GuiModelBrowser,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    if let Some(_sketches) = ui.tree_node_config("Sketches").default_open(true).push() {
-        for row in browser
-            .sketches
-            .iter()
-            .filter(|row| row.consumed_by.is_none())
-        {
-            sketch_row(ui, state, row, actions);
-        }
-    }
-}
-fn feature_branch(
-    ui: &Ui,
-    state: &GuiCommandState,
-    browser: &GuiModelBrowser,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    if let Some(_features) = ui.tree_node_config("Features").default_open(true).push() {
-        for feature in &browser.features {
-            feature_row(ui, state, browser, feature, actions);
-        }
-    }
-}
+pub(crate) const ORIGIN_ROWS: [&str; 7] = [
+    "Center Point",
+    "X Axis",
+    "Y Axis",
+    "Z Axis",
+    "XY Plane",
+    "XZ Plane",
+    "YZ Plane",
+];
 fn feature_row(
     ui: &Ui,
     state: &GuiCommandState,

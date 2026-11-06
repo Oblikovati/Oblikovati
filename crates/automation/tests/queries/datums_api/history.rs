@@ -2,6 +2,20 @@
 use super::*;
 
 #[test]
+fn new_datums_read_as_distinct_numbered_names() {
+    let (mut files, _, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    for _ in 0..2 {
+        create_point(&mut files, &mut source, [1.0, 2.0, 3.0], false);
+    }
+    let names: Vec<String> = point_rows(&files, false)
+        .into_iter()
+        .skip(1)
+        .map(|row| row.name)
+        .collect();
+    assert_eq!(names, ["Work Point1", "Work Point2"]);
+}
+
+#[test]
 fn aborted_creation_retires_its_key_and_new_creation_survives_undo_storage_and_copy() {
     let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
     files

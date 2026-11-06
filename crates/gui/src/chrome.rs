@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::application::ribbon_display::{RibbonDisplay, TemporaryPanel};
+use crate::application::ribbon_display::TemporaryPanel;
 use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
@@ -104,11 +104,17 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         let item = ui.tab_item_with_flags(tab.label(), None, flags);
         // On release: the press itself is a click outside any panel still open, and closes it.
         let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
+        let doubled = ui.is_item_hovered()
+            && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
+            && ribbon.active == *tab;
         if item.is_some() {
             ribbon.active = *tab;
         }
         drop(item);
-        if released && ribbon.display.mode == RibbonDisplay::Tabs {
+        if doubled {
+            ribbon.display.advance_from_tab();
+        }
+        if released && ribbon.display.take_tab_release() {
             ribbon.display.temporary = Some(TemporaryPanel::WholeTab);
         }
     }

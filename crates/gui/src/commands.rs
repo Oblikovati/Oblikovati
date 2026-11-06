@@ -47,6 +47,10 @@ pub enum GuiShellAction {
     },
     NewPart,
     CreateDocument(crate::GuiDocumentTemplate),
+    /// Picture the active window for the Save As preview; the file is not changed.
+    CaptureWindowPreview,
+    /// Close the application through the window's own close policy.
+    Exit,
     StartSketchXY,
     FinishSketch,
     DeleteSketchSelection,
@@ -72,6 +76,12 @@ pub enum GuiAuthoringContext {
     OtherDocument,
     Part,
     Sketch,
+}
+/// A small picture of the window: enough cells for a preview area, drawn without a texture.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiPreviewImage {
+    pub extent: [u32; 2],
+    pub rgb: std::sync::Arc<Vec<[u8; 3]>>,
 }
 /// What the owner knows about one open document's file beyond its wire row.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -148,7 +158,7 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::SetUiScale(_) => state.ui_scale.is_some(),
-            Self::SetPromptFrequency { .. } => true,
+            Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,
             Self::ActivateDocument(request) => {
                 !state.transaction_open
                     && state.authoring != GuiAuthoringContext::Sketch

@@ -53,6 +53,36 @@ fn the_preview_area_follows_the_options() {
     assert_eq!(preview_text(draft), NO_PREVIEW);
 }
 #[test]
+fn the_active_window_shows_a_placeholder_until_its_image_arrives() {
+    let mut dialog = requested(false);
+    let draft = dialog.draft.as_mut().unwrap();
+    draft.source = PreviewSource::ActiveWindow;
+    assert_eq!(preview_text(draft), NO_PREVIEW);
+    assert!(shown_window_preview(draft).is_none());
+    let image = crate::GuiPreviewImage {
+        extent: [1, 1],
+        rgb: std::sync::Arc::new(vec![[1, 2, 3]]),
+    };
+    dialog.receive_window_preview(image);
+    let draft = dialog.draft.as_mut().unwrap();
+    assert!(shown_window_preview(draft).is_some());
+    draft.save_preview = false;
+    assert!(shown_window_preview(draft).is_none());
+}
+#[test]
+fn a_new_request_forgets_what_a_cancelled_dialog_changed() {
+    let mut dialog = requested(false);
+    let draft = dialog.draft.as_mut().unwrap();
+    draft.save_preview = false;
+    draft.source = PreviewSource::ActiveWindow;
+    dialog.browser.folder = "/elsewhere".into();
+    dialog.request(7, "Part", None, false);
+    let draft = dialog.draft.as_ref().unwrap();
+    assert!(draft.save_preview);
+    assert_eq!(draft.source, PreviewSource::ActiveComponentIso);
+    assert_eq!(dialog.browser.folder, "/work");
+}
+#[test]
 fn nul_in_a_field_is_refused_with_the_value() {
     let mut dialog = requested(false);
     dialog.draft.as_mut().unwrap().name = "a\0b".into();

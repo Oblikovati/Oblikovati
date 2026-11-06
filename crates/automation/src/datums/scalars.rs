@@ -8,6 +8,20 @@ pub(in crate::datums) use kind::OwnedDatumScalar;
 pub(super) fn validate_offset(snapshot: &DocumentSnapshot, source: &str) -> Result<(), Error> {
     OwnedDatumScalar::Offset.validate(snapshot, source)
 }
+/// The first free number: names stay distinct in the browser and after a datum is deleted.
+fn next_datum_name(snapshot: &DocumentSnapshot, collection: DatumCollection) -> String {
+    let taken = |name: &str| {
+        snapshot
+            .work_geometry
+            .features()
+            .iter()
+            .any(|feature| feature.name() == name)
+    };
+    (1_u32..)
+        .map(|number| format!("{}{number}", collection.label()))
+        .find(|name| !taken(name))
+        .expect("u32 names outnumber any document's datums")
+}
 pub(super) fn authored_feature(
     snapshot: &mut DocumentSnapshot,
     ids: &mut RecipeReservations<'_>,
@@ -18,7 +32,7 @@ pub(super) fn authored_feature(
     match source {
         PreparedGeometry::Definition(definition) => Ok(AuthoredFeature::datum(
             owner,
-            collection.label(),
+            &next_datum_name(snapshot, collection),
             definition,
         )),
         PreparedGeometry::LineAngle {
@@ -43,7 +57,8 @@ fn offset_feature(
         base,
         distance: oblikovati_model::feature::work_geometry::DatumLength::Parameter(parameter),
     };
-    AuthoredFeature::datum(owner, DatumCollection::Planes.label(), definition)
+    let name = next_datum_name(snapshot, DatumCollection::Planes);
+    AuthoredFeature::datum(owner, &name, definition)
         .with_owned_scalar(OwnedDatumScalar::Offset.role(), parameter)
         .map_err(api_error)
 }
@@ -63,7 +78,8 @@ fn angle_feature(
         base,
         angle: DatumAngle::parameter(parameter),
     });
-    AuthoredFeature::datum(owner, DatumCollection::Planes.label(), definition)
+    let name = next_datum_name(snapshot, DatumCollection::Planes);
+    AuthoredFeature::datum(owner, &name, definition)
         .with_owned_scalar(OwnedDatumScalar::Angle.role(), parameter)
         .map_err(api_error)
 }

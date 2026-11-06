@@ -32,6 +32,10 @@ impl NativeGui {
         self.deadline = Some(Duration::ZERO);
         Ok(())
     }
+    pub(super) fn receive_window_preview(&mut self, image: oblikovati_gui::GuiPreviewImage) {
+        self.engine.receive_window_preview(image);
+        self.deadline = Some(Duration::ZERO);
+    }
     pub(super) fn require_publication(&mut self) {
         self.dirty = true;
     }

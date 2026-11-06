@@ -12,6 +12,7 @@ use oblikovati_viewport::{
 pub struct NativeHeadWindow {
     capture_files: Box<dyn crate::WindowCaptureFiles>,
     capture_requests: Vec<crate::WindowCaptureJob>,
+    exit_requested: bool,
     runtime: ViewportRuntime,
     view: Viewport,
     wake: ViewportWake,
@@ -43,6 +44,7 @@ impl NativeHeadWindow {
         Ok(Self {
             capture_files,
             capture_requests: Vec::new(),
+            exit_requested: false,
             runtime,
             view,
             wake: ViewportWake::new()?,
@@ -215,7 +217,22 @@ impl HeadWindow for NativeHeadWindow {
 
     fn events(&mut self, limit: usize) -> Result<Vec<ViewportEvent>, String> {
         self.clipboard.service_pending(limit);
-        self.view.poll_events(limit)
+        let mut events = self.view.poll_events(limit)?;
+        if std::mem::take(&mut self.exit_requested) {
+            events.push(ViewportEvent::CloseRequested);
+        }
+        Ok(events)
+    }
+    fn capture_window_preview(&mut self) -> Result<bool, String> {
+        let image = self.scene_preview_image()?;
+        if let Some(gui) = &mut self.gui {
+            gui.receive_window_preview(image);
+        }
+        Ok(true)
+    }
+    fn request_close(&mut self) -> Result<bool, String> {
+        self.exit_requested = true;
+        Ok(true)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
         let presentation = self.view.present()?;

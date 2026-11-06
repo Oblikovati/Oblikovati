@@ -148,9 +148,9 @@ impl DatumCollection {
     }
     fn label(self) -> &'static str {
         match self {
-            Self::Axes => "WorkAxis",
-            Self::Points => "WorkPoint",
-            Self::Planes => "WorkPlane",
+            Self::Axes => "Work Axis",
+            Self::Points => "Work Point",
+            Self::Planes => "Work Plane",
         }
     }
 }

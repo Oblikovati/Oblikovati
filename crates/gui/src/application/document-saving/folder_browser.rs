@@ -7,7 +7,9 @@ use oblikovati_api::types::{
 };
 use std::{path::Path, rc::Rc};
 
-const LISTING_HEIGHT: f32 = 230.;
+const LISTING_HEIGHT: f32 = 200.;
+const LOCATION_FIELD_WIDTH: f32 = 230.;
+const BREADCRUMB_STEPS: usize = 3;
 /// Space between a field and its label, wide enough to read as two things.
 const LABEL_GAP: f32 = 16.;
 const ALL_FILES: &str = "All Files (*.*)";
@@ -92,6 +94,9 @@ pub(crate) struct FolderBrowser {
     folders: Rc<dyn GuiFolders>,
     pub folder: String,
     listing: Result<Vec<FolderEntry>, String>,
+    /// Folders left behind, most recent last; Back returns to them.
+    history: Vec<String>,
+    selected: Option<String>,
 }
 impl FolderBrowser {
     pub(crate) fn new(folders: Rc<dyn GuiFolders>) -> Self {
@@ -99,11 +104,20 @@ impl FolderBrowser {
             folder: folders.default_folder(),
             folders,
             listing: Ok(Vec::new()),
+            history: Vec::new(),
+            selected: None,
         }
     }
-    /// Read the current folder again; example: `browser.refresh()` when a dialog opens.
+    /// Read the current folder again; example: `browser.refresh()` after a save.
     pub(crate) fn refresh(&mut self) {
         self.listing = self.folders.entries(&self.folder);
+        self.selected = None;
+    }
+    /// Start over in the initial folder: a cancelled dialog keeps no location.
+    pub(crate) fn reset(&mut self) {
+        self.folder = self.folders.default_folder();
+        self.history.clear();
+        self.refresh();
     }
     /// Draw the location and listing; returns the file row a click chose.
     /// Example: `browser.controls(ui, "Save in", Some("opd"))`.
@@ -114,23 +128,36 @@ impl FolderBrowser {
         filter: Option<&str>,
     ) -> Option<String> {
         self.location(ui, label);
+        ui.text_disabled(breadcrumb(&self.folder));
         let (chosen, opened) = self.listing_rows(ui, filter);
+        ui.text_disabled(status_text(
+            self.selected.is_some(),
+            self.shown_count(filter),
+        ));
         if let Some(folder) = opened {
             self.navigate(&folder);
+        }
+        if let Some(name) = &chosen {
+            self.selected = Some(name.clone());
         }
         chosen
     }
     fn location(&mut self, ui: &Ui, label: &str) {
         ui.text(label);
         ui.same_line_with_spacing(0., LABEL_GAP);
-        ui.set_next_item_width(-48.);
+        ui.set_next_item_width(LOCATION_FIELD_WIDTH);
         let entered = ui
             .input_text(format!("##folder-{label}"), &mut self.folder)
             .auto_select_all(true)
             .enter_returns_true(true)
             .build();
         ui.same_line();
-        if crate::widget_abi::button(ui, "Up", [0.; 2]) {
+        let up = crate::widget_abi::button(ui, "Up", [0.; 2]);
+        ui.same_line();
+        let back = crate::widget_abi::button(ui, "Back", [0.; 2]);
+        if back {
+            self.back();
+        } else if up {
             self.up();
         } else if entered {
             self.refresh();
@@ -139,13 +166,25 @@ impl FolderBrowser {
     fn up(&mut self) {
         let parent = Path::new(&self.folder).parent().map(Path::to_path_buf);
         if let Some(parent) = parent {
+            self.history.push(self.folder.clone());
             self.folder = parent.display().to_string();
             self.refresh();
         }
     }
+    fn back(&mut self) {
+        if let Some(previous) = self.history.pop() {
+            self.folder = previous;
+            self.refresh();
+        }
+    }
     fn navigate(&mut self, name: &str) {
+        self.history.push(self.folder.clone());
         self.folder = Path::new(&self.folder).join(name).display().to_string();
         self.refresh();
+    }
+    fn shown_count(&self, filter: Option<&str>) -> usize {
+        let rows = self.listing.as_deref().unwrap_or_default();
+        rows.iter().filter(|row| listed(row, filter)).count()
     }
     fn listing_rows(&self, ui: &Ui, filter: Option<&str>) -> (Option<String>, Option<String>) {
         let (mut chosen, mut opened) = (None, None);
@@ -156,7 +195,8 @@ impl FolderBrowser {
                 Err(cause) => ui.text_disabled(cause),
                 Ok(rows) => {
                     for row in rows.iter().filter(|row| listed(row, filter)) {
-                        if crate::widget_abi::dialog_selectable(ui, &row_label(row), false) {
+                        let highlighted = self.selected.as_deref() == Some(row.name.as_str());
+                        if crate::widget_abi::dialog_selectable(ui, &row_label(row), highlighted) {
                             let target = if row.is_folder {
                                 &mut opened
                             } else {
@@ -169,6 +209,26 @@ impl FolderBrowser {
             });
         (chosen, opened)
     }
+}
+/// The folder's last steps; a dialog column cannot show a long path, and the end is what matters.
+/// Example: `... > work > parts > bolts`.
+fn breadcrumb(folder: &str) -> String {
+    let steps: Vec<String> = Path::new(folder)
+        .iter()
+        .map(|step| step.to_string_lossy().into_owned())
+        .collect();
+    let shown = steps.len().min(BREADCRUMB_STEPS);
+    let tail = steps[steps.len() - shown..].join(" > ");
+    if shown < steps.len() {
+        return format!("... > {tail}");
+    }
+    tail
+}
+fn status_text(selected: bool, count: usize) -> String {
+    if selected {
+        return "1 item selected".to_string();
+    }
+    format!("{count} items")
 }
 fn listed(row: &FolderEntry, filter: Option<&str>) -> bool {
     row.is_folder || filter.is_none_or(|extension| has_extension(&row.name, extension))
@@ -232,7 +292,7 @@ impl DialogEscape {
     /// Call once per frame after the dialog's nested popups; example: `escape.pressed(ui)`.
     pub(crate) fn pressed(&mut self, ui: &Ui) -> bool {
         // Dear ImGui closes the nested popup before this frame's widgets, so read last frame's state.
-        let pressed = ui.is_key_pressed(Key::Escape) && !self.nested_open;
+        let pressed = ui.is_key_pressed_no_repeat(Key::Escape) && !self.nested_open;
         self.nested_open = crate::widget_abi::nested_popup_open(ui);
         pressed
     }

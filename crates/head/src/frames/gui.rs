@@ -34,6 +34,11 @@ fn dispatch_gui_action(
     owner: &mut dyn HeadWork,
     action: &GuiShellAction,
 ) -> Result<bool, String> {
+    match action {
+        GuiShellAction::CaptureWindowPreview => return window.capture_window_preview(),
+        GuiShellAction::Exit => return window.request_close(),
+        _ => {}
+    }
     if let Some(key) = action_key(action) {
         let event = ViewportEvent::Input(ViewportInput::Key { key, pressed: true });
         return dispatch_frame_input(window, owner, &event);
@@ -57,6 +62,8 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
         GuiShellAction::SetUiScale(_)
         | GuiShellAction::SetPromptFrequency { .. }
+        | GuiShellAction::CaptureWindowPreview
+        | GuiShellAction::Exit
         | GuiShellAction::EditThemeColor { .. }
         | GuiShellAction::DuplicateTheme { .. }
         | GuiShellAction::DeleteTheme { .. }

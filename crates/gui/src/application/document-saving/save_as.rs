@@ -16,6 +16,7 @@ const TITLE: &str = "Save As";
 const IMAGE_CHOOSER: &str = "Select preview image";
 const NO_PREVIEW: &str = "No preview image";
 const CAPTURED_ON_SAVE: &str = "Picture captured on save";
+const PREVIEW_HEIGHT: f32 = 110.;
 
 /// Where the preview picture would come from when the document is saved.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -49,6 +50,7 @@ struct SaveAsDraft {
     source: PreviewSource,
     image: Option<String>,
     image_name: String,
+    window_preview: Option<crate::GuiPreviewImage>,
     images: FolderBrowser,
     image_escape: DialogEscape,
     escape: DialogEscape,
@@ -81,7 +83,7 @@ impl SaveAsDialog {
         close_after: bool,
     ) {
         let native = native_file_type(kind);
-        self.browser.refresh();
+        self.browser.reset();
         self.draft = Some(SaveAsDraft {
             document,
             close_after,
@@ -92,11 +94,18 @@ impl SaveAsDialog {
             source: PreviewSource::default(),
             image: None,
             image_name: String::new(),
+            window_preview: None,
             images: FolderBrowser::new(self.folders.clone()),
             image_escape: DialogEscape::default(),
             escape: DialogEscape::default(),
             opening: true,
         });
+    }
+    /// Show the image the owner captured for the active window.
+    pub(crate) fn receive_window_preview(&mut self, image: crate::GuiPreviewImage) {
+        if let Some(draft) = &mut self.draft {
+            draft.window_preview = Some(image);
+        }
     }
     /// A frame must follow so the popup opens without waiting for an event.
     pub(crate) fn is_opening(&self) -> bool {
@@ -162,7 +171,7 @@ impl SaveAsDialog {
             draft.name = name;
         }
         ui.next_column();
-        preview_options(ui, draft);
+        preview_options(ui, draft, actions);
         ui.columns(1, "save-as-layout-end", false);
         ui.separator();
         footer(ui, state, &self.browser.folder, draft, actions)
@@ -175,35 +184,77 @@ fn preview_text(draft: &SaveAsDraft) -> &str {
     }
     match (draft.source, &draft.image) {
         (PreviewSource::ImportFromFile, Some(image)) => image,
-        (PreviewSource::ImportFromFile, None) => NO_PREVIEW,
+        (PreviewSource::ImportFromFile | PreviewSource::ActiveWindow, _) => NO_PREVIEW,
         _ => CAPTURED_ON_SAVE,
     }
 }
-fn preview_options(ui: &Ui, draft: &mut SaveAsDraft) {
-    ui.child_window("##save-preview")
-        .size([0., 110.])
-        .border(true)
-        .build(|| ui.text_disabled(preview_text(draft)));
-    ui.checkbox("Save Preview Picture", &mut draft.save_preview);
-    if draft.save_preview {
-        source_choices(ui, draft);
+fn shown_window_preview(draft: &SaveAsDraft) -> Option<&crate::GuiPreviewImage> {
+    (draft.save_preview && draft.source == PreviewSource::ActiveWindow)
+        .then_some(draft.window_preview.as_ref())
+        .flatten()
+}
+/// A grid of filled cells: the GUI binds one font texture, and a preview needs no other.
+fn draw_preview_image(ui: &Ui, image: &crate::GuiPreviewImage) {
+    let origin = ui.cursor_screen_pos();
+    let size = ui.content_region_avail();
+    let cell = (size[0] / image.extent[0] as f32).min(size[1] / image.extent[1] as f32);
+    let list = ui.get_window_draw_list();
+    for (index, color) in image.rgb.iter().enumerate() {
+        let x = origin[0] + (index as u32 % image.extent[0]) as f32 * cell;
+        let y = origin[1] + (index as u32 / image.extent[0]) as f32 * cell;
+        let rgba = [
+            f32::from(color[0]) / 255.,
+            f32::from(color[1]) / 255.,
+            f32::from(color[2]) / 255.,
+            1.,
+        ];
+        list.add_rect([x, y], [x + cell, y + cell], rgba)
+            .filled(true)
+            .build();
     }
 }
-fn source_choices(ui: &Ui, draft: &mut SaveAsDraft) {
+fn preview_options(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellAction>) {
+    ui.child_window("##save-preview")
+        .size([0., PREVIEW_HEIGHT])
+        .border(true)
+        .build(|| match shown_window_preview(draft) {
+            Some(image) => draw_preview_image(ui, image),
+            None => ui.text_disabled(preview_text(draft)),
+        });
+    ui.checkbox("Save Preview Picture", &mut draft.save_preview);
+    if draft.save_preview {
+        source_choices(ui, draft, actions);
+    }
+}
+fn source_choices(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellAction>) {
     for source in PreviewSource::ALL {
         if ui.radio_button_bool(source.label(), draft.source == source) {
             draft.source = source;
         }
-    }
-    if draft.source != PreviewSource::ImportFromFile {
-        return;
-    }
-    ui.same_line();
-    if crate::widget_abi::button(ui, "Browse...", [0.; 2]) {
-        draft.images.refresh();
-        ui.open_popup(IMAGE_CHOOSER);
+        if source == draft.source {
+            source_control(ui, draft, actions);
+        }
     }
     image_chooser(ui, draft);
+}
+/// The action beside a source that needs one: a capture now, or an image to choose.
+fn source_control(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellAction>) {
+    match draft.source {
+        PreviewSource::ActiveWindow => {
+            ui.same_line();
+            if crate::widget_abi::button(ui, "Capture", [0.; 2]) {
+                actions.push(GuiShellAction::CaptureWindowPreview);
+            }
+        }
+        PreviewSource::ImportFromFile => {
+            ui.same_line();
+            if crate::widget_abi::button(ui, "Browse...", [0.; 2]) {
+                draft.images.refresh();
+                ui.open_popup(IMAGE_CHOOSER);
+            }
+        }
+        PreviewSource::ActiveComponentIso => {}
+    }
 }
 fn image_chooser(ui: &Ui, draft: &mut SaveAsDraft) {
     let Some(_chooser) = ui.begin_modal_popup(IMAGE_CHOOSER) else {

@@ -39,6 +39,10 @@ pub(crate) struct GuiScalePreferences {
     open: bool,
 }
 impl GuiScalePreferences {
+    /// Open the scale panel; example: the File menu's Options entry.
+    pub(crate) fn request(&mut self) {
+        self.open = true;
+    }
     pub(crate) fn menu(&mut self, ui: &Ui, state: &GuiCommandState) {
         ui.menu("Tools", || {
             if ui

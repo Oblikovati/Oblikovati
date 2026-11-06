@@ -14,6 +14,7 @@ pub(crate) enum RibbonTab {
     SheetMetal,
     Assemble,
     PlaceViews,
+    Annotate,
     Presentation,
     Sketch,
     Manage,
@@ -27,6 +28,7 @@ impl RibbonTab {
             Self::SheetMetal => "Sheet Metal",
             Self::Assemble => "Assemble",
             Self::PlaceViews => "Place Views",
+            Self::Annotate => "Annotate",
             Self::Presentation => "Presentation",
             Self::Sketch => "Sketch",
             Self::Manage => "Manage",
@@ -98,6 +100,7 @@ fn document_tabs(key: &RibbonKey, sketch: bool, sheet_metal: bool) -> Vec<Ribbon
     }
     if *key == DRAWING_RIBBON {
         tabs.push(RibbonTab::PlaceViews);
+        tabs.push(RibbonTab::Annotate);
     }
     if *key == PRESENTATION_RIBBON {
         tabs.push(RibbonTab::Presentation);

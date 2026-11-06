@@ -23,6 +23,14 @@ pub(crate) enum RibbonPanel {
     Component,
     SheetMetalTools,
     DrawingViews,
+    DrawingModify,
+    DrawingSketch,
+    DrawingSheets,
+    AnnotateDimension,
+    AnnotateText,
+    AnnotateSymbols,
+    PartCreate,
+    PartModify,
     PresentationModel,
 }
 impl RibbonPanel {
@@ -42,7 +50,13 @@ impl RibbonPanel {
             Self::Windows => "Windows",
             Self::Component => "Component",
             Self::SheetMetalTools => "Sheet Metal",
-            Self::DrawingViews => "Create",
+            Self::DrawingViews | Self::PartCreate => "Create",
+            Self::DrawingModify | Self::PartModify => "Modify",
+            Self::DrawingSketch => "Sketch",
+            Self::DrawingSheets => "Sheets",
+            Self::AnnotateDimension => "Dimension",
+            Self::AnnotateText => "Text",
+            Self::AnnotateSymbols => "Symbols",
             Self::PresentationModel => "Workshop",
         }
     }
@@ -63,6 +77,14 @@ impl RibbonPanel {
             | Self::Component
             | Self::SheetMetalTools
             | Self::DrawingViews
+            | Self::DrawingModify
+            | Self::DrawingSketch
+            | Self::DrawingSheets
+            | Self::AnnotateDimension
+            | Self::AnnotateText
+            | Self::AnnotateSymbols
+            | Self::PartCreate
+            | Self::PartModify
             | Self::PresentationModel => {
                 return None;
             }
@@ -260,10 +282,11 @@ fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
     use RibbonPanel::*;
     match tab {
         RibbonTab::GetStarted => vec![Launch],
-        RibbonTab::Model => vec![Sketch],
+        RibbonTab::Model => vec![Sketch, PartCreate, PartModify],
         RibbonTab::SheetMetal => vec![SheetMetalTools, Sketch],
         RibbonTab::Assemble => vec![Component],
-        RibbonTab::PlaceViews => vec![DrawingViews],
+        RibbonTab::PlaceViews => vec![DrawingViews, DrawingModify, DrawingSketch, DrawingSheets],
+        RibbonTab::Annotate => vec![AnnotateDimension, AnnotateText, AnnotateSymbols],
         RibbonTab::Presentation => vec![PresentationModel],
         RibbonTab::Sketch => vec![Create, Exit, Constrain, Modify, Format],
         RibbonTab::Manage => vec![Parameters],

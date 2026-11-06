@@ -39,6 +39,16 @@ impl ApplicationWorld {
         self.pump(Vec::new());
         id
     }
+    /// Setup only: a drawing through the owner command the chooser itself sends.
+    pub fn add_drawing(&mut self) -> u64 {
+        let template = oblikovati_gui::GuiDocumentTemplate {
+            kind: oblikovati_gui::GuiTemplateKind::Drawing,
+            units: oblikovati_gui::GuiTemplateUnits::Metric,
+        };
+        self.app().owner.create_document_template(template).unwrap();
+        self.pump(Vec::new());
+        self.active_id()
+    }
     pub fn scratch_folder(&mut self) -> std::path::PathBuf {
         let scratch = self
             .scratch
@@ -286,6 +296,16 @@ impl ApplicationWorld {
         }
         let common = counts.into_iter().max_by_key(|(_, count)| *count);
         common.is_some_and(|(pixel, _)| pixel != field)
+    }
+    /// The location steps as rendered, without spaces; no other text in a dialog holds `>`.
+    pub fn breadcrumb_text(&self) -> String {
+        self.frame
+            .runs
+            .iter()
+            .find(|run| run.text.contains('>'))
+            .unwrap_or_else(|| panic!("expected a breadcrumb in rendered text {:?}", self.text()))
+            .text
+            .clone()
     }
     /// Choose a file through File, Open and the listing a user sees.
     pub fn reopen_through_dialog(&mut self, path: &std::path::Path) {

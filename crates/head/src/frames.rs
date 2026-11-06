@@ -33,6 +33,14 @@ pub trait HeadWindow {
             "window capture requests {requests:?}: expected a native completed-frame capture target"
         ))
     }
+    /// Picture the viewport for the Save As preview; example: `window.capture_window_preview()?`.
+    fn capture_window_preview(&mut self) -> Result<bool, String> {
+        Err("window preview: expected a native window that presents frames".into())
+    }
+    /// Ask the window to close through its own close policy; example: the File menu's Exit.
+    fn request_close(&mut self) -> Result<bool, String> {
+        Err("exit: expected a native window that can close".into())
+    }
     /// Advance GUI work before routing one input; example: `window.gui_frame(Some(event), &commands)?`.
     fn gui_frame(
         &mut self,
