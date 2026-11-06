@@ -20,7 +20,7 @@ fn version_four_round_trip_preserves_sources_without_saving_verification() {
 fn old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore() {
     let snapshot = snapshot();
     let recipe = snapshot.sketches.recipe();
-    for version in [1, 2, 3, 5] {
+    for version in [0, 1, 2, 3, 6] {
         let mut invalid = recipe.clone();
         invalid.version = version;
         assert!(DocumentSketches::from_recipe(&invalid).is_err());
@@ -58,4 +58,19 @@ fn a_saved_warm_seed_cannot_override_current_projection_sources() {
     snapshot.sketches = DocumentSketches::from_recipe(&recipe).unwrap();
     recompute(&mut snapshot);
     assert_ready(&snapshot, [2.0, 4.0]);
+}
+
+#[test]
+fn hidden_projected_sketch_restores_and_remains_available_to_model_consumers() {
+    let mut snapshot = snapshot();
+    recompute(&mut snapshot);
+    snapshot.sketches.set_visible(SKETCH, false).unwrap();
+    let recipe = snapshot.sketches.recipe();
+    assert_eq!(recipe.version, 5);
+    let restored = DocumentSketches::from_recipe(&recipe).unwrap();
+    assert!(restored.same_recipe(&snapshot.sketches));
+    snapshot.sketches = restored;
+    recompute(&mut snapshot);
+    assert_ready(&snapshot, [2.0, 4.0]);
+    assert!(!snapshot.sketches.get(SKETCH).unwrap().visible());
 }

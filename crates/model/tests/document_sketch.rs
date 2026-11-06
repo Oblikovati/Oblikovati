@@ -344,3 +344,6 @@ mod pending;
 
 #[path = "document_sketch/selected.rs"]
 mod selected;
+
+#[path = "document_sketch/visibility.rs"]
+mod visibility;

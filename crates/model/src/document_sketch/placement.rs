@@ -34,7 +34,7 @@ impl SketchPlacement {
                 Ok(Self::WorkPlane(feature))
             }
             shape => Err(SketchError::Definition(format!(
-                "sketch {:?} placement {shape:?} in recipe version {version}: expected a fixed frame with options, or one nonzero feature ID in version 2, 3, or 4",
+                "sketch {:?} placement {shape:?} in recipe version {version}: expected a fixed frame with options, or one nonzero feature ID in version 2 or later",
                 recipe.id
             ))),
         }
