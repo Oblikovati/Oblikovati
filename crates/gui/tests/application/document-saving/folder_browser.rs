@@ -16,6 +16,9 @@ impl GuiFolders for FakeFolders {
         }
         Err(format!("folder {folder:?}: expected /work/parts"))
     }
+    fn system_locations(&self) -> Vec<(String, String)> {
+        vec![("Home".to_string(), "/home".to_string())]
+    }
     fn file_facts(&self, path: &str) -> Result<FileFacts, String> {
         Err(format!("file {path:?}: expected no file read"))
     }
@@ -24,6 +27,8 @@ fn entry(name: &str, is_folder: bool) -> FolderEntry {
     FolderEntry {
         name: name.into(),
         is_folder,
+        size: 12,
+        modified: None,
     }
 }
 #[test]
@@ -107,6 +112,29 @@ fn a_reset_starts_over_in_the_initial_folder_with_no_history() {
     browser.reset();
     assert_eq!(browser.folder, "/work/parts");
     assert!(browser.selected.is_none() && browser.history.is_empty());
+}
+#[test]
+fn visited_folders_appear_once_most_recent_first_and_a_reset_restores_the_recent_pane() {
+    let mut browser = FolderBrowser::new(Rc::new(FakeFolders));
+    browser.refresh();
+    browser.navigate("old");
+    browser.back();
+    assert_eq!(browser.recent, ["/work/parts", "/work/parts/old"]);
+    browser.navigation = NavigationPane::SystemLocations;
+    assert_eq!(browser.navigation_rows()[0].0, "Home");
+    browser.reset();
+    assert_eq!(browser.navigation, NavigationPane::RecentFolders);
+    assert_eq!(
+        browser.navigation_rows()[0],
+        ("parts".to_string(), "/work/parts".to_string())
+    );
+}
+#[test]
+fn a_file_type_names_its_document_kind() {
+    assert_eq!(entry_type(&entry("old", true)), "Folder");
+    assert_eq!(entry_type(&entry("a.opd", false)), "Part");
+    assert_eq!(entry_type(&entry("a.odd", false)), "Drawing");
+    assert_eq!(entry_type(&entry("a.png", false)), "File");
 }
 #[test]
 fn the_status_names_a_selection_or_counts_the_rows() {

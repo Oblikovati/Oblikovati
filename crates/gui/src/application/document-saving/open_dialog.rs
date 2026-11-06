@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::folder_browser::{
-    DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog, dialog_buttons,
-    file_name_field, file_type_field, full_path,
+    BROWSER_COLUMN_WIDTH, DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog,
+    dialog_buttons, file_name_field, file_type_field, full_path,
 };
 use crate::application::file_system::{GuiFolders, NativeFolders};
 use crate::{GuiCommandState, GuiShellAction};
@@ -74,7 +74,7 @@ impl OpenDialog {
         if std::mem::take(&mut draft.opening) {
             ui.open_popup(TITLE);
         }
-        center_dialog(ui, [760., 400.]);
+        center_dialog(ui, [1000., 420.]);
         let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
             return;
         };
@@ -92,7 +92,7 @@ fn contents(
     actions: &mut Vec<GuiShellAction>,
 ) -> Option<DialogEnd> {
     ui.columns(2, "open-layout", true);
-    ui.set_column_width(0, 520.);
+    ui.set_column_width(0, BROWSER_COLUMN_WIDTH);
     if let Some(name) = browser.controls(ui, "Look in", draft.types.filter(draft.file_type)) {
         draft.name = name;
     }

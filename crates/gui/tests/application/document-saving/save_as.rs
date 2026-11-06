@@ -9,6 +9,9 @@ impl GuiFolders for FakeFolders {
     fn entries(&self, _: &str) -> Result<Vec<FolderEntry>, String> {
         Ok(Vec::new())
     }
+    fn system_locations(&self) -> Vec<(String, String)> {
+        vec![("Home".to_string(), "/home".to_string())]
+    }
     fn file_facts(&self, path: &str) -> Result<FileFacts, String> {
         Err(format!("file {path:?}: expected no file read"))
     }

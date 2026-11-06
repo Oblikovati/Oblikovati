@@ -7,8 +7,16 @@ use oblikovati_api::types::{
 };
 use std::{path::Path, rc::Rc};
 
-const LISTING_HEIGHT: f32 = 200.;
-const LOCATION_FIELD_WIDTH: f32 = 230.;
+const LISTING_HEIGHT: f32 = 180.;
+const NAVIGATION_WIDTH: f32 = 150.;
+const RECENT_FOLDERS: usize = 8;
+const DATE_COLUMN: f32 = 190.;
+const TYPE_COLUMN: f32 = 370.;
+const SIZE_COLUMN: f32 = 450.;
+const TILE_HEIGHT: f32 = 36.;
+const LOCATION_FIELD_WIDTH: f32 = 480.;
+/// The width of the location and listing, when a dialog also shows a preview beside them.
+pub(crate) const BROWSER_COLUMN_WIDTH: f32 = 720.;
 const BREADCRUMB_STEPS: usize = 3;
 /// Space between a field and its label, wide enough to read as two things.
 const LABEL_GAP: f32 = 16.;
@@ -97,6 +105,24 @@ pub(crate) struct FolderBrowser {
     /// Folders left behind, most recent last; Back returns to them.
     history: Vec<String>,
     selected: Option<String>,
+    /// Folders this dialog has shown, most recent first, for the recent-folder pane.
+    recent: Vec<String>,
+    navigation: NavigationPane,
+    view: FileListView,
+}
+/// What the pane left of the file list offers.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum NavigationPane {
+    #[default]
+    RecentFolders,
+    SystemLocations,
+}
+/// How the file list shows its entries.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum FileListView {
+    #[default]
+    Details,
+    Tiles,
 }
 impl FolderBrowser {
     pub(crate) fn new(folders: Rc<dyn GuiFolders>) -> Self {
@@ -106,17 +132,28 @@ impl FolderBrowser {
             listing: Ok(Vec::new()),
             history: Vec::new(),
             selected: None,
+            recent: Vec::new(),
+            navigation: NavigationPane::default(),
+            view: FileListView::default(),
         }
     }
     /// Read the current folder again; example: `browser.refresh()` after a save.
     pub(crate) fn refresh(&mut self) {
         self.listing = self.folders.entries(&self.folder);
         self.selected = None;
+        self.remember_folder();
+    }
+    fn remember_folder(&mut self) {
+        let folder = self.folder.clone();
+        self.recent.retain(|recent| *recent != folder);
+        self.recent.insert(0, folder);
+        self.recent.truncate(RECENT_FOLDERS);
     }
     /// Start over in the initial folder: a cancelled dialog keeps no location.
     pub(crate) fn reset(&mut self) {
         self.folder = self.folders.default_folder();
         self.history.clear();
+        self.navigation = NavigationPane::default();
         self.refresh();
     }
     /// Draw the location and listing; returns the file row a click chose.
@@ -129,6 +166,9 @@ impl FolderBrowser {
     ) -> Option<String> {
         self.location(ui, label);
         ui.text_disabled(breadcrumb(&self.folder));
+        self.toolbar(ui);
+        let visited = self.navigation_pane(ui);
+        ui.same_line();
         let (chosen, opened) = self.listing_rows(ui, filter);
         ui.text_disabled(status_text(
             self.selected.is_some(),
@@ -137,10 +177,67 @@ impl FolderBrowser {
         if let Some(folder) = opened {
             self.navigate(&folder);
         }
+        if let Some(folder) = visited {
+            self.visit(folder);
+        }
         if let Some(name) = &chosen {
             self.selected = Some(name.clone());
         }
         chosen
+    }
+    fn toolbar(&mut self, ui: &Ui) {
+        let buttons = [
+            ("Recent", Toolbar::Pane(NavigationPane::RecentFolders)),
+            ("Locations", Toolbar::Pane(NavigationPane::SystemLocations)),
+            ("Details", Toolbar::View(FileListView::Details)),
+            ("Tiles", Toolbar::View(FileListView::Tiles)),
+        ];
+        for (label, choice) in buttons {
+            if crate::widget_abi::button(ui, label, [0.; 2]) {
+                match choice {
+                    Toolbar::Pane(pane) => self.navigation = pane,
+                    Toolbar::View(view) => self.view = view,
+                }
+            }
+            ui.same_line();
+        }
+        ui.new_line();
+    }
+    fn navigation_rows(&self) -> Vec<(String, String)> {
+        match self.navigation {
+            NavigationPane::RecentFolders => self
+                .recent
+                .iter()
+                .map(|folder| (folder_name(folder), folder.clone()))
+                .collect(),
+            NavigationPane::SystemLocations => self.folders.system_locations(),
+        }
+    }
+    /// Draw the pane; returns the folder a click chose.
+    fn navigation_pane(&self, ui: &Ui) -> Option<String> {
+        let mut visited = None;
+        ui.child_window("##folder-navigation")
+            .size([NAVIGATION_WIDTH, LISTING_HEIGHT])
+            .border(true)
+            .build(|| {
+                for heading in navigation_headings(self.navigation) {
+                    ui.text_disabled(heading);
+                }
+                for (label, folder) in self.navigation_rows() {
+                    let row = format!("{label}##{folder}");
+                    if crate::widget_abi::dialog_selectable(ui, &row, folder == self.folder) {
+                        visited = Some(folder);
+                    }
+                }
+            });
+        visited
+    }
+    fn visit(&mut self, folder: String) {
+        if folder != self.folder {
+            self.history.push(self.folder.clone());
+            self.folder = folder;
+            self.refresh();
+        }
     }
     fn location(&mut self, ui: &Ui, label: &str) {
         ui.text(label);
@@ -194,9 +291,11 @@ impl FolderBrowser {
             .build(|| match &self.listing {
                 Err(cause) => ui.text_disabled(cause),
                 Ok(rows) => {
+                    if self.view == FileListView::Details {
+                        details_heading(ui);
+                    }
                     for row in rows.iter().filter(|row| listed(row, filter)) {
-                        let highlighted = self.selected.as_deref() == Some(row.name.as_str());
-                        if crate::widget_abi::dialog_selectable(ui, &row_label(row), highlighted) {
+                        if self.file_row(ui, row) {
                             let target = if row.is_folder {
                                 &mut opened
                             } else {
@@ -209,6 +308,87 @@ impl FolderBrowser {
             });
         (chosen, opened)
     }
+    fn file_row(&self, ui: &Ui, row: &FolderEntry) -> bool {
+        let highlighted = self.selected.as_deref() == Some(row.name.as_str());
+        match self.view {
+            FileListView::Details => details_row(ui, row, highlighted),
+            FileListView::Tiles => tile_row(ui, row, highlighted),
+        }
+    }
+}
+/// The small toolbar's two groups of choices.
+#[derive(Clone, Copy)]
+enum Toolbar {
+    Pane(NavigationPane),
+    View(FileListView),
+}
+fn navigation_headings(pane: NavigationPane) -> &'static [&'static str] {
+    match pane {
+        NavigationPane::RecentFolders => &["Libraries", "Recent Folders"],
+        NavigationPane::SystemLocations => &["System Locations"],
+    }
+}
+fn folder_name(folder: &str) -> String {
+    Path::new(folder).file_name().map_or_else(
+        || folder.to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    )
+}
+fn details_heading(ui: &Ui) {
+    ui.text("Name");
+    ui.same_line_with_pos(DATE_COLUMN);
+    ui.text("Date modified");
+    ui.same_line_with_pos(TYPE_COLUMN);
+    ui.text("Type");
+    ui.same_line_with_pos(SIZE_COLUMN);
+    ui.text("Size");
+    ui.separator();
+}
+fn details_row(ui: &Ui, row: &FolderEntry, highlighted: bool) -> bool {
+    let chosen = crate::widget_abi::dialog_selectable(ui, &row_label(row), highlighted);
+    ui.same_line_with_pos(DATE_COLUMN);
+    ui.text_disabled(modified_text(row));
+    ui.same_line_with_pos(TYPE_COLUMN);
+    ui.text_disabled(entry_type(row));
+    if !row.is_folder {
+        ui.same_line_with_pos(SIZE_COLUMN);
+        ui.text_disabled(format!("{} B", row.size));
+    }
+    chosen
+}
+/// A tile names the file and gives its type and size on the line beneath.
+fn tile_row(ui: &Ui, row: &FolderEntry, highlighted: bool) -> bool {
+    let chosen = ui
+        .selectable_config(row_label(row))
+        .flags(imgui::SelectableFlags::DONT_CLOSE_POPUPS)
+        .selected(highlighted)
+        .size([0., TILE_HEIGHT])
+        .build();
+    let text = format!("{} {} B", entry_type(row), row.size);
+    let minimum = ui.item_rect_min();
+    let color = ui.style_color(imgui::StyleColor::TextDisabled);
+    ui.get_window_draw_list()
+        .add_text([minimum[0], minimum[1] + TILE_HEIGHT * 0.5], color, text);
+    chosen
+}
+fn entry_type(row: &FolderEntry) -> &'static str {
+    if row.is_folder {
+        return "Folder";
+    }
+    match Path::new(&row.name)
+        .extension()
+        .and_then(|extension| extension.to_str())
+    {
+        Some("opd") => "Part",
+        Some("oad") => "Assembly",
+        Some("odd") => "Drawing",
+        Some("ord") => "Presentation",
+        _ => "File",
+    }
+}
+fn modified_text(row: &FolderEntry) -> String {
+    row.modified
+        .map_or_else(String::new, crate::application::file_system::timestamp_text)
 }
 /// The folder's last steps; a dialog column cannot show a long path, and the end is what matters.
 /// Example: `... > work > parts > bolts`.

@@ -11,6 +11,20 @@ use imgui::Ui;
 
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
 const FILE_COMMANDS_WIDTH: f32 = 190.;
+const SAVE_AS_COMMANDS: [(&str, &str); 3] = [
+    (
+        "Save Copy As",
+        "Save a copy under a new name; the original file remains open.",
+    ),
+    (
+        "Save Copy As Template",
+        "Save a copy to the template folder.",
+    ),
+    (
+        "Pack and Go",
+        "Gather this file and what it references into one folder.",
+    ),
+];
 const FILE_MENU_WIDTH: f32 = 440.;
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
@@ -113,15 +127,21 @@ impl GuiDocumentFiles {
             self.open.request();
         }
     }
+    /// Save As opens beside the menu with its related commands; only Save As itself is available.
     fn save_as_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
-        let chosen = ui
-            .menu_item_config("Save As...")
-            .enabled(state.document.is_some() && !state.transaction_open)
-            .build();
-        if let Some(document) = state.document.filter(|_| chosen) {
-            self.save_as
-                .request(document, active_name(state), state.document_type, false);
-        }
+        let enabled = state.document.is_some() && !state.transaction_open;
+        ui.menu_with_enabled("Save As", enabled, || {
+            let chosen = ui.menu_item("Save As...");
+            ui.text_disabled("Save under a new name and keep working on the new file.");
+            if let Some(document) = state.document.filter(|_| chosen) {
+                self.save_as
+                    .request(document, active_name(state), state.document_type, false);
+            }
+            for (label, description) in SAVE_AS_COMMANDS {
+                unavailable_file_item(ui, label, NOT_AVAILABLE);
+                ui.text_disabled(description);
+            }
+        });
     }
     pub(crate) fn validate(&self) -> Result<(), String> {
         self.open.validate()?;

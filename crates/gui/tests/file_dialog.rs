@@ -77,6 +77,15 @@ fn choose_file_item(
         "file menu transition exceeded 32 frames: expected input, layout, and navigation to settle"
     );
 }
+/// Save As opens beside the File menu; its own command is the first row there.
+fn choose_save_as(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
+    assert!(choose_file_item(engine, request, 156.).is_empty());
+    assert!(click_file_control(engine, request, [500., 90.]).is_empty());
+    request.events.clear();
+    for _ in 0..4 {
+        engine.frame(request).unwrap();
+    }
+}
 #[test]
 fn file_menu_opens_a_visible_document_without_an_existing_document() {
     let mut engine = GuiFrameEngine::new().unwrap();
@@ -126,11 +135,11 @@ fn file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path() {
     let mut request = file_request();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
-    assert!(choose_file_item(&mut engine, &mut request, 156.).is_empty());
+    choose_save_as(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("/tmp/discarded.opd".into())];
     engine.frame(&request).unwrap();
     assert!(key_frames(&mut engine, &mut request, GuiKey::Escape).is_empty());
-    assert!(choose_file_item(&mut engine, &mut request, 156.).is_empty());
+    choose_save_as(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("/tmp/kept.opd".into())];
     engine.frame(&request).unwrap();
     assert_eq!(

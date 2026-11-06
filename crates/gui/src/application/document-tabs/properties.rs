@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::GuiCommandState;
-use crate::application::file_system::{FileFacts, GuiFolders, NativeFolders};
+use crate::application::file_system::{FileFacts, GuiFolders, NativeFolders, timestamp_text};
 use imgui::Ui;
 use oblikovati_api::wire::DocumentInfo;
 use std::{path::Path, rc::Rc, time::SystemTime};
@@ -134,33 +134,6 @@ fn timestamp_field(
 ) -> String {
     let stamp = facts.as_ref().ok().and_then(read);
     stamp.map_or_else(|| NOT_AVAILABLE.to_string(), timestamp_text)
-}
-/// UTC, because no time-zone source is available here; example: `2026-11-06 09:30:00 UTC`.
-fn timestamp_text(stamp: SystemTime) -> String {
-    let seconds = stamp
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map_or(0, |since| since.as_secs());
-    let (year, month, day) = civil_date((seconds / 86_400) as i64);
-    let (hour, minute, second) = (seconds / 3600 % 24, seconds / 60 % 60, seconds % 60);
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02} UTC")
-}
-/// Howard Hinnant's days-to-civil algorithm for the proleptic Gregorian calendar.
-fn civil_date(days: i64) -> (i64, u32, u32) {
-    let shifted = days + 719_468;
-    let era = shifted.div_euclid(146_097);
-    let day_of_era = shifted.rem_euclid(146_097);
-    let year_of_era =
-        (day_of_era - day_of_era / 1460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let shifted_month = (5 * day_of_year + 2) / 153;
-    let day = (day_of_year - (153 * shifted_month + 2) / 5 + 1) as u32;
-    let month = (if shifted_month < 10 {
-        shifted_month + 3
-    } else {
-        shifted_month - 9
-    }) as u32;
-    let year = year_of_era + era * 400 + i64::from(month <= 2);
-    (year, month, day)
 }
 #[cfg(test)]
 #[path = "../../../tests/application/document-tabs/properties.rs"]

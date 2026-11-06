@@ -71,8 +71,8 @@ fn row_highlighted(world: &mut ApplicationWorld) {
         .expect("expected the listed file row")
         .clone();
     let y = row.center()[1] as usize;
-    let beside = world.pixel_at([row.maximum[0] as usize + 20, y]);
-    let empty_row = world.pixel_at([row.maximum[0] as usize + 20, y + 60]);
+    let beside = world.pixel_at([row.maximum[0] as usize + 10, y]);
+    let empty_row = world.pixel_at([row.maximum[0] as usize + 10, y + 60]);
     assert_ne!(
         beside, empty_row,
         "row {row:?}: expected a highlight beyond its text"
@@ -185,4 +185,184 @@ fn iso_selected(world: &mut ApplicationWorld) {
 #[then("Active Window on Save is not selected")]
 fn window_not_selected(world: &mut ApplicationWorld) {
     assert!(!world.radio_selected(WINDOW), "expected {WINDOW:?} cleared");
+}
+#[given("the navigation pane shows libraries and recent folders")]
+#[then("the navigation pane displays libraries and recent folders")]
+#[then("the navigation pane shows libraries and recent folders")]
+fn pane_recent(world: &mut ApplicationWorld) {
+    world.expect_text("Libraries");
+    world.expect_text("Recent Folders");
+    world.expect_no_text("System Locations");
+}
+fn proposed_name_of(world: &mut ApplicationWorld) -> String {
+    let id = world.active_id();
+    format!("{}.opd", world.document_name(id))
+}
+#[given("the dialog displays a current folder and proposed file name")]
+#[given("a proposed file name is displayed")]
+fn current_and_proposed(world: &mut ApplicationWorld) {
+    world.proposed_name = Some(proposed_name_of(world));
+    world.initial_breadcrumb = Some(world.breadcrumb_text());
+    let name = world.proposed_name.clone().unwrap();
+    world.expect_text(&name);
+}
+#[when("I switch to system-location navigation")]
+fn switch_system(world: &mut ApplicationWorld) {
+    world.click_text("Locations");
+}
+#[then("the navigation pane displays system locations and drives")]
+fn pane_system(world: &mut ApplicationWorld) {
+    world.expect_text("System Locations");
+    world.expect_text("Computer");
+}
+#[then("the current folder and proposed file name remain displayed")]
+fn folder_and_name_remain(world: &mut ApplicationWorld) {
+    assert_eq!(Some(world.breadcrumb_text()), world.initial_breadcrumb);
+    let name = world
+        .proposed_name
+        .clone()
+        .expect("expected a proposed name");
+    world.expect_text(&name);
+}
+#[then("the preview settings remain displayed")]
+fn preview_settings_remain(world: &mut ApplicationWorld) {
+    world.expect_text("Save Preview Picture");
+    world.expect_text(ICONIC);
+}
+#[when("I switch back to recent-folder navigation")]
+fn switch_recent(world: &mut ApplicationWorld) {
+    world.click_text("Recent");
+}
+#[when("I open Save As again for the same part")]
+fn save_as_again(world: &mut ApplicationWorld) {
+    save_again(world);
+}
+#[then("the proposed file name is selected")]
+fn proposed_is_selected(world: &mut ApplicationWorld) {
+    let name = proposed_name_of(world);
+    assert!(
+        world.text_is_selected(&name),
+        "file name {name:?}: expected a selected proposal"
+    );
+}
+#[given("the current folder contains part files and subfolders")]
+fn folder_with_entries(world: &mut ApplicationWorld) {
+    let folder = world.scratch_folder();
+    std::fs::write(folder.join(EXISTING_PART), b"listed, never opened").unwrap();
+    std::fs::create_dir(folder.join("archive")).unwrap();
+    world.enter_in_field(SAVE_IN, folder.to_str().unwrap());
+    world.expect_text(EXISTING_PART);
+}
+#[given("the file list is displayed in Details view")]
+#[then("the file list displays rows with name, modification date, type and size columns")]
+fn details_columns(world: &mut ApplicationWorld) {
+    for heading in ["Name", "Date modified", "Type", "Size"] {
+        world.expect_text(heading);
+    }
+}
+#[when("I activate the file-list view control")]
+fn activate_view(world: &mut ApplicationWorld) {
+    world.click_text("Tiles");
+}
+#[then("the file list displays thumbnail tiles with names and file information")]
+fn tiles_shown(world: &mut ApplicationWorld) {
+    world.expect_no_text("Date modified");
+    world.expect_text(EXISTING_PART);
+    world.expect_text("Folder 4096 B");
+}
+#[then("the proposed file name and preview settings remain displayed")]
+fn name_and_preview_remain(world: &mut ApplicationWorld) {
+    let name = world
+        .proposed_name
+        .clone()
+        .expect("expected a proposed name");
+    world.expect_text(&name);
+    preview_settings_remain(world);
+}
+#[when("I choose the Details view shortcut")]
+fn choose_details_shortcut(world: &mut ApplicationWorld) {
+    world.click_text("Details");
+}
+#[then("the proposed file name remains displayed")]
+fn name_remains(world: &mut ApplicationWorld) {
+    let name = world
+        .proposed_name
+        .clone()
+        .expect("expected a proposed name");
+    world.expect_text(&name);
+}
+#[when("I select the existing part file")]
+fn select_existing_part(world: &mut ApplicationWorld) {
+    world.click_text(EXISTING_PART);
+}
+#[when("I choose Save")]
+fn choose_save(world: &mut ApplicationWorld) {
+    world.click_text("Save");
+    world.pump(Vec::new());
+}
+#[then("a confirmation identifies the existing file and asks whether to replace it")]
+fn replace_asked(world: &mut ApplicationWorld) {
+    world.expect_text("already exists");
+    world.expect_text(EXISTING_PART);
+    world.expect_text("replace it");
+}
+#[then("the confirmation offers Yes and No")]
+fn replace_choices(world: &mut ApplicationWorld) {
+    world.expect_text("Yes");
+    world.expect_text("No");
+}
+#[when("I choose No")]
+fn choose_no(world: &mut ApplicationWorld) {
+    world.click_text("No");
+    world.pump(Vec::new());
+}
+#[then("the confirmation closes")]
+fn replace_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("already exists");
+}
+#[then("Save As remains open with the existing file name displayed")]
+fn save_as_remains(world: &mut ApplicationWorld) {
+    world.expect_text(SAVE_IN);
+    world.expect_text(EXISTING_PART);
+    let folder = world.scratch_folder();
+    let bytes = std::fs::read(folder.join(EXISTING_PART)).unwrap();
+    assert_eq!(
+        bytes, b"not opened by this scenario",
+        "No: expected the file untouched"
+    );
+}
+#[then("the new unsaved part remains active")]
+fn new_unsaved_remains(world: &mut ApplicationWorld) {
+    unsaved_remains(world);
+}
+#[given("a saved part is active in the MCAD Software")]
+fn saved_part_active(world: &mut ApplicationWorld) {
+    let id = world.add_part();
+    world.saved_path = Some(world.save_part_to_file(id, "saved part.opd"));
+}
+#[when("I open the application menu")]
+fn open_app_menu(world: &mut ApplicationWorld) {
+    world.click_text("File");
+    world.pump(Vec::new());
+}
+#[when("I expand Save As")]
+fn expand_save_as(world: &mut ApplicationWorld) {
+    let center = world.run("Save As").center().map(|value| value as i32);
+    world.hover(center);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+#[then("the menu offers Save As and Save Copy As")]
+fn offers_save_as(world: &mut ApplicationWorld) {
+    world.expect_text("Save As...");
+    world.expect_text("Save Copy As");
+}
+#[then("it offers Save Copy As Template and Pack and Go")]
+fn offers_template(world: &mut ApplicationWorld) {
+    world.expect_text("Save Copy As Template");
+    world.expect_text("Pack and Go");
+}
+#[then("the Save Copy As description says the original file remains open")]
+fn copy_description(world: &mut ApplicationWorld) {
+    world.expect_text("the original file remains open");
 }

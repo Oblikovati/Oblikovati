@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::folder_browser::{
-    DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog, dialog_buttons,
-    file_name_field, file_type_field, full_path, native_file_type, proposed_file_name,
+    BROWSER_COLUMN_WIDTH, DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog,
+    dialog_buttons, file_name_field, file_type_field, full_path, native_file_type,
+    proposed_file_name,
 };
 use crate::application::file_system::{GuiFolders, NativeFolders};
 use crate::{GuiCommandState, GuiShellAction};
@@ -14,6 +15,7 @@ use std::rc::Rc;
 
 const TITLE: &str = "Save As";
 const IMAGE_CHOOSER: &str = "Select preview image";
+const CONFIRM_REPLACE: &str = "Confirm Save As";
 const NO_PREVIEW: &str = "No preview image";
 const CAPTURED_ON_SAVE: &str = "Picture captured on save";
 const PREVIEW_HEIGHT: f32 = 110.;
@@ -51,6 +53,8 @@ struct SaveAsDraft {
     image: Option<String>,
     image_name: String,
     window_preview: Option<crate::GuiPreviewImage>,
+    /// The path Save would replace, while its confirmation is open.
+    replacing: Option<String>,
     images: FolderBrowser,
     image_escape: DialogEscape,
     escape: DialogEscape,
@@ -95,6 +99,7 @@ impl SaveAsDialog {
             image: None,
             image_name: String::new(),
             window_preview: None,
+            replacing: None,
             images: FolderBrowser::new(self.folders.clone()),
             image_escape: DialogEscape::default(),
             escape: DialogEscape::default(),
@@ -148,7 +153,7 @@ impl SaveAsDialog {
         if std::mem::take(&mut draft.opening) {
             ui.open_popup(TITLE);
         }
-        center_dialog(ui, [860., 440.]);
+        center_dialog(ui, [1040., 450.]);
         let _dialog = ui.begin_modal_popup(TITLE)?;
         let end = self.contents(ui, state, actions);
         if end.is_some() {
@@ -165,6 +170,7 @@ impl SaveAsDialog {
     ) -> Option<DialogEnd> {
         let draft = self.draft.as_mut()?;
         ui.columns(2, "save-as-layout", true);
+        ui.set_column_width(0, BROWSER_COLUMN_WIDTH);
         let filter = draft.types.filter(draft.file_type);
         let chosen = self.browser.controls(ui, "Save in", filter);
         if let Some(name) = chosen {
@@ -174,7 +180,15 @@ impl SaveAsDialog {
         preview_options(ui, draft, actions);
         ui.columns(1, "save-as-layout-end", false);
         ui.separator();
-        footer(ui, state, &self.browser.folder, draft, actions)
+        let folders = self.folders.clone();
+        footer(
+            ui,
+            state,
+            &self.browser.folder,
+            folders.as_ref(),
+            draft,
+            actions,
+        )
     }
 }
 /// What the preview area shows; the picture itself is not stored in the file yet.
@@ -257,6 +271,7 @@ fn source_control(ui: &Ui, draft: &mut SaveAsDraft, actions: &mut Vec<GuiShellAc
     }
 }
 fn image_chooser(ui: &Ui, draft: &mut SaveAsDraft) {
+    center_dialog(ui, [860., 400.]);
     let Some(_chooser) = ui.begin_modal_popup(IMAGE_CHOOSER) else {
         return;
     };
@@ -280,26 +295,55 @@ fn footer(
     ui: &Ui,
     state: &GuiCommandState,
     folder: &str,
+    folders: &dyn GuiFolders,
     draft: &mut SaveAsDraft,
     actions: &mut Vec<GuiShellAction>,
 ) -> Option<DialogEnd> {
     let entered = file_name_field(ui, &mut draft.name);
     file_type_field(ui, &draft.types, &mut draft.file_type);
+    let path = full_path(folder, &draft.name);
     let action = GuiShellAction::SaveDocumentAs(SaveDocumentAsArgs {
         document: draft.document,
-        new_full_document_name: full_path(folder, &draft.name),
+        new_full_document_name: path.clone(),
     });
     let can_save = !draft.name.is_empty() && action.dispatchable(state);
-    let end = dialog_buttons(ui, "Save", can_save, entered, &mut draft.escape);
-    if end == Some(DialogEnd::Accepted) {
+    let pressed = dialog_buttons(ui, "Save", can_save, entered, &mut draft.escape);
+    let mut confirmed = replace_confirmation(ui, draft);
+    if pressed == Some(DialogEnd::Accepted) {
+        if folders.file_facts(&path).is_ok() {
+            draft.replacing = Some(path);
+            ui.open_popup(CONFIRM_REPLACE);
+        } else {
+            confirmed = true;
+        }
+    }
+    if confirmed {
         actions.push(action);
         actions.extend(
             draft
                 .close_after
                 .then_some(close_after_save(draft.document)),
         );
+        return Some(DialogEnd::Accepted);
     }
-    end
+    pressed.filter(|end| *end == DialogEnd::Cancelled)
+}
+/// A save must not replace a file silently; No returns to the dialog as it was.
+fn replace_confirmation(ui: &Ui, draft: &mut SaveAsDraft) -> bool {
+    let Some(_confirm) = ui.begin_modal_popup(CONFIRM_REPLACE) else {
+        return false;
+    };
+    let path = draft.replacing.as_deref().unwrap_or_default();
+    ui.text(format!("{path} already exists."));
+    ui.text("Do you want to replace it?");
+    let replace = crate::widget_abi::button(ui, "Yes", [80., 0.]);
+    ui.same_line();
+    let keep = crate::widget_abi::button(ui, "No", [80., 0.]);
+    if replace || keep {
+        draft.replacing = None;
+        ui.close_current_popup();
+    }
+    replace
 }
 /// Unforced on purpose: if the save fails, the document is still modified and the owner keeps it.
 fn close_after_save(id: u64) -> GuiShellAction {

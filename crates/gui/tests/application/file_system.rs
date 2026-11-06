@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use std::time::Duration;
 fn row(name: &str, is_folder: bool) -> FolderEntry {
     FolderEntry {
         name: name.into(),
         is_folder,
+        size: 0,
+        modified: None,
     }
 }
 #[test]
@@ -27,7 +30,13 @@ fn native_folders_read_a_real_listing_and_real_facts() {
     let rows = NativeFolders
         .entries(folder.path().to_str().unwrap())
         .unwrap();
-    assert_eq!(rows, [row("inner", true), row("part.opd", false)]);
+    let names: Vec<(&str, bool)> = rows
+        .iter()
+        .map(|entry| (entry.name.as_str(), entry.is_folder))
+        .collect();
+    assert_eq!(names, [("inner", true), ("part.opd", false)]);
+    assert_eq!(rows[1].size, 5);
+    assert!(rows[1].modified.is_some());
     let facts = NativeFolders.file_facts(file.to_str().unwrap()).unwrap();
     assert_eq!(facts.size, 5);
     assert!(facts.modified.is_some());
@@ -46,4 +55,25 @@ fn an_unreadable_folder_or_file_names_the_offending_path() {
             .unwrap_err()
             .contains("/no/such/file")
     );
+}
+#[test]
+fn the_system_pane_always_offers_the_computer_root() {
+    let places = NativeFolders.system_locations();
+    assert!(
+        places
+            .iter()
+            .any(|(label, folder)| label == "Computer" && folder == "/")
+    );
+}
+#[test]
+fn the_calendar_matches_known_dates() {
+    assert_eq!(civil_date(0), (1970, 1, 1));
+    assert_eq!(civil_date(-1), (1969, 12, 31));
+    assert_eq!(civil_date(11_016), (2000, 2, 29));
+    assert_eq!(civil_date(20_763), (2026, 11, 6));
+}
+#[test]
+fn a_timestamp_reads_in_utc() {
+    let stamp = SystemTime::UNIX_EPOCH + Duration::from_secs(90_061);
+    assert_eq!(timestamp_text(stamp), "1970-01-02 01:01:01 UTC");
 }

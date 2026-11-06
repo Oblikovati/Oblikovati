@@ -10,6 +10,9 @@ impl GuiFolders for FakeFolders {
     fn entries(&self, _: &str) -> Result<Vec<FolderEntry>, String> {
         Ok(Vec::new())
     }
+    fn system_locations(&self) -> Vec<(String, String)> {
+        vec![("Home".to_string(), "/home".to_string())]
+    }
     fn file_facts(&self, path: &str) -> Result<FileFacts, String> {
         if path != "/work/a.opd" {
             return Err(format!("file {path:?}: expected /work/a.opd"));
@@ -24,18 +27,6 @@ impl GuiFolders for FakeFolders {
 }
 fn value<'a>(fields: &'a [(&'static str, String)], label: &str) -> &'a str {
     &fields.iter().find(|(name, _)| *name == label).unwrap().1
-}
-#[test]
-fn the_calendar_matches_known_dates() {
-    assert_eq!(civil_date(0), (1970, 1, 1));
-    assert_eq!(civil_date(-1), (1969, 12, 31));
-    assert_eq!(civil_date(11_016), (2000, 2, 29));
-    assert_eq!(civil_date(20_763), (2026, 11, 6));
-}
-#[test]
-fn a_timestamp_reads_in_utc() {
-    let stamp = SystemTime::UNIX_EPOCH + Duration::from_secs(90_061);
-    assert_eq!(timestamp_text(stamp), "1970-01-02 01:01:01 UTC");
 }
 #[test]
 fn a_saved_document_reports_its_file_name_location_size_and_times() {
