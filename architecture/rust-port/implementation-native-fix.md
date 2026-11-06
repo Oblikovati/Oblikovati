@@ -30,5 +30,17 @@ cancellation. ImGui tests click the ribbon at both display scales and check
 transaction guards. Native mouse/keyboard acceptance checks the visible Fix
 command, sketch inspection, history, save/reopen, and normal test-window close.
 
+The full local gate passed all 13 crates, including all 341 head tests. Coverage
+is 91.96% to 99.60%, duplicated lines are 0.98%, and Markdown lint is clean.
+Windows x64 GNU and macOS ARM64 host/GUI Clippy checks passed; these compile
+checks do not claim native runtime coverage on those systems.
+
+Native X11 acceptance clicked Fix, cancelled it, fixed two free points, and
+observed DOF 4 to 2 to 0 with two canonical Fix constraints. It checked unchanged
+geometry and identities, undo/redo, save, and fresh-process reopen. MCPBridge
+provided read-only inspection and screenshots. The rendered ribbon and DOF-zero
+sketch were inspected. Line picking and grouped failure/veto rollback are owner
+tests; the live input test covers point Fix.
+
 The general analytic sketch-region boundary remains blocked on Martensite#390.
 This command does not complete the cube or general Extrude journey.
