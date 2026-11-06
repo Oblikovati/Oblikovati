@@ -1,71 +1,27 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_api::wire::{CloseDocumentArgs, OpenDocumentArgs, SaveDocumentAsArgs};
 
 #[test]
-fn open_uses_the_canonical_request_without_changing_the_path() {
-    let draft = DocumentPathDraft {
-        purpose: DocumentPathPurpose::Open,
-        path: " /tmp/部品.opd ".into(),
-    };
-    let GuiShellAction::OpenDocument(request) = draft.action().unwrap() else {
-        panic!("expected an OpenDocument action");
-    };
-    assert_eq!(request.full_document_name, draft.path);
-    assert!(request.visible && !request.defer_content);
-    assert_eq!(draft.purpose.title(), "Open document");
-    assert_eq!(draft.purpose.button(), "Open");
-}
-#[test]
-fn save_as_keeps_requesting_document_identity_in_the_canonical_request() {
+fn a_save_dialog_needs_a_real_document_identity() {
     let mut files = GuiDocumentFiles::default();
-    assert!(files.request_save_path(0).unwrap_err().contains("nonzero"));
-    files.request_save_path(7).unwrap();
-    let draft = files.draft.as_mut().unwrap();
-    draft.path = "/tmp/part.opd".into();
-    let GuiShellAction::SaveDocumentAs(request) = draft.action().unwrap() else {
-        panic!("expected a SaveDocumentAs action");
-    };
-    assert_eq!(request.document, 7);
-    assert_eq!(request.new_full_document_name, "/tmp/part.opd");
-    assert_eq!(draft.purpose.title(), "Save document as");
-    assert_eq!(draft.purpose.button(), "Save");
-}
-#[test]
-fn document_switch_discards_only_a_document_bound_save_draft() {
-    let mut files = GuiDocumentFiles::default();
-    files.request_save_path(7).unwrap();
-    files.synchronize_document(Some(7));
-    assert!(files.draft.is_some());
-    files.synchronize_document(Some(8));
-    assert!(files.draft.is_none());
-    files.begin(DocumentPathPurpose::Open);
-    files.synchronize_document(None);
-    assert!(files.draft.is_some());
-}
-#[test]
-fn invalid_path_is_refused_before_the_text_widget_receives_it() {
-    let mut files = GuiDocumentFiles::default();
-    files.validate().unwrap();
-    files.begin(DocumentPathPurpose::Open);
-    files.draft.as_mut().unwrap().path = "bad\0path".into();
-    assert!(files.validate().unwrap_err().contains("NUL"));
+    let refusal = files.request_save_path(0, "Part").unwrap_err();
+    assert!(refusal.contains("nonzero") && refusal.contains('0'));
+    files.request_save_path(7, "Part").unwrap();
+    assert!(files.needs_frame());
 }
 #[test]
 fn file_actions_require_live_identity_and_no_open_transaction() {
-    let open = DocumentPathDraft {
-        purpose: DocumentPathPurpose::Open,
-        path: "part.opd".into(),
-    }
-    .action()
-    .unwrap();
-    let save = DocumentPathDraft {
-        purpose: DocumentPathPurpose::SaveAs(7),
-        path: "part.opd".into(),
-    }
-    .action()
-    .unwrap();
+    let open = GuiShellAction::OpenDocument(OpenDocumentArgs {
+        full_document_name: "part.opd".into(),
+        ..Default::default()
+    });
+    let save = GuiShellAction::SaveDocumentAs(SaveDocumentAsArgs {
+        document: 7,
+        new_full_document_name: "part.opd".into(),
+    });
     let mut state = GuiCommandState::default();
-    let close = GuiShellAction::CloseDocument(oblikovati_api::wire::CloseDocumentArgs {
+    let close = GuiShellAction::CloseDocument(CloseDocumentArgs {
         id: 7,
         force: false,
     });
@@ -77,4 +33,32 @@ fn file_actions_require_live_identity_and_no_open_transaction() {
     state.transaction_open = true;
     assert!(!close.dispatchable(&state));
     assert!(!open.dispatchable(&state) && !save.dispatchable(&state));
+}
+#[test]
+fn an_answer_joins_the_frame_actions_and_queues_each_first_save() {
+    let mut files = GuiDocumentFiles::default();
+    let mut actions = vec![GuiShellAction::Save];
+    files.apply_close_outcome(
+        CloseOutcome {
+            actions: vec![GuiShellAction::Home],
+            first_saves: vec![7],
+        },
+        &mut actions,
+    );
+    assert_eq!(actions, [GuiShellAction::Save, GuiShellAction::Home]);
+    assert!(files.first_saves.is_waiting() && files.needs_frame());
+}
+#[test]
+fn the_active_name_falls_back_when_no_row_is_known() {
+    let mut state = GuiCommandState {
+        document: Some(7),
+        ..Default::default()
+    };
+    assert_eq!(active_name(&state), "Part");
+    state.documents.push(oblikovati_api::wire::DocumentInfo {
+        id: 7,
+        name: "Bracket".into(),
+        ..Default::default()
+    });
+    assert_eq!(active_name(&state), "Bracket");
 }

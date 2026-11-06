@@ -15,6 +15,8 @@ fn request() -> GuiFrameRequest {
             theme: None,
             color_scheme: None,
             documents: Vec::new(),
+            document_storage: Default::default(),
+            prompts: Default::default(),
             browser: None,
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),

@@ -79,6 +79,6 @@ pub(super) fn verify_rectangle(
 }
 
 fn open_parameter_ribbon(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
-    click_shell_position(window, owner, [350, 44]);
+    click_shell_position(window, owner, [285, 44]);
     click_shell_position(window, owner, [50, 90]);
 }

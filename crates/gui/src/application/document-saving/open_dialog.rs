@@ -1,0 +1,127 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::folder_browser::{
+    DialogEnd, DialogEscape, FolderBrowser, dialog_buttons, file_name_field, file_type_field,
+    full_path,
+};
+use crate::application::file_system::{GuiFolders, NativeFolders};
+use crate::{GuiCommandState, GuiShellAction};
+use imgui::{Condition, Ui};
+use oblikovati_api::wire::OpenDocumentArgs;
+use std::rc::Rc;
+
+const TITLE: &str = "Open";
+const NO_PREVIEW: &str = "No preview image";
+
+struct OpenDraft {
+    name: String,
+    file_type: usize,
+    escape: DialogEscape,
+    opening: bool,
+}
+pub(crate) struct OpenDialog {
+    browser: FolderBrowser,
+    draft: Option<OpenDraft>,
+}
+impl Default for OpenDialog {
+    fn default() -> Self {
+        Self::with_folders(Rc::new(NativeFolders))
+    }
+}
+impl OpenDialog {
+    pub(crate) fn with_folders(folders: Rc<dyn GuiFolders>) -> Self {
+        Self {
+            browser: FolderBrowser::new(folders),
+            draft: None,
+        }
+    }
+    /// Open at the last folder; example: `dialog.request()` from the File menu.
+    pub(crate) fn request(&mut self) {
+        self.browser.refresh();
+        self.draft = Some(OpenDraft {
+            name: String::new(),
+            file_type: 0,
+            escape: DialogEscape::default(),
+            opening: true,
+        });
+    }
+    /// A frame must follow so the popup opens without waiting for an event.
+    pub(crate) fn is_opening(&self) -> bool {
+        self.draft.as_ref().is_some_and(|draft| draft.opening)
+    }
+    pub(crate) fn validate(&self) -> Result<(), String> {
+        let name = self.draft.as_ref().map_or("", |draft| draft.name.as_str());
+        if name.contains('\0') || self.browser.folder.contains('\0') {
+            return Err(format!(
+                "open dialog name {name:?}, folder {:?}: expected text without NUL",
+                self.browser.folder
+            ));
+        }
+        Ok(())
+    }
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let Some(draft) = &mut self.draft else {
+            return;
+        };
+        if std::mem::take(&mut draft.opening) {
+            ui.open_popup(TITLE);
+        }
+        dialog_geometry(ui);
+        let Some(_dialog) = ui.begin_modal_popup(TITLE) else {
+            return;
+        };
+        if contents(ui, state, &mut self.browser, draft, actions).is_some() {
+            self.draft = None;
+            ui.close_current_popup();
+        }
+    }
+}
+fn dialog_geometry(ui: &Ui) {
+    let display = ui.io().display_size;
+    let size = [760_f32.min(display[0] - 24.), 400_f32.min(display[1] - 24.)];
+    let position = std::array::from_fn(|axis| (display[axis] - size[axis]) * 0.5);
+    crate::widget_abi::window_geometry(ui, position, size, Condition::Appearing);
+}
+fn contents(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &mut FolderBrowser,
+    draft: &mut OpenDraft,
+    actions: &mut Vec<GuiShellAction>,
+) -> Option<DialogEnd> {
+    ui.columns(2, "open-layout", true);
+    ui.set_column_width(0, 520.);
+    if let Some(name) = browser.controls(ui, "Look in", draft.file_type) {
+        draft.name = name;
+    }
+    ui.next_column();
+    ui.child_window("##open-preview")
+        .size([0., 110.])
+        .border(true)
+        .build(|| ui.text_disabled(NO_PREVIEW));
+    ui.columns(1, "open-layout-end", false);
+    ui.separator();
+    let entered = file_name_field(ui, &mut draft.name);
+    file_type_field(ui, &mut draft.file_type);
+    let action = open_action(&full_path(&browser.folder, &draft.name));
+    let can_open = !draft.name.is_empty() && action.dispatchable(state);
+    let end = dialog_buttons(ui, "Open", can_open, entered, &mut draft.escape);
+    if end == Some(DialogEnd::Accepted) {
+        actions.push(action);
+    }
+    end
+}
+fn open_action(path: &str) -> GuiShellAction {
+    GuiShellAction::OpenDocument(OpenDocumentArgs {
+        full_document_name: path.to_string(),
+        visible: true,
+        defer_content: false,
+    })
+}
+#[cfg(test)]
+#[path = "../../../tests/application/document-saving/open_dialog.rs"]
+mod tests;

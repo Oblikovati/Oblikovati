@@ -26,20 +26,27 @@ impl<
             ));
         }
         let previous = self.files.workspace().active_document();
-        create_template(&Client::new(self.document_host()), template, previous)?;
+        let name = self.next_new_part_name();
+        create_template(
+            &Client::new(self.document_host()),
+            template,
+            &name,
+            previous,
+        )?;
         Ok(true)
     }
 }
 fn create_template<T: Caller>(
     client: &Client<T>,
     template: GuiPartTemplate,
+    name: &str,
     previous: Option<u64>,
 ) -> Result<(), String> {
     let created = client
         .documents()
         .create(&CreateDocumentArgs {
             type_: "part".into(),
-            name: "Part".into(),
+            name: name.into(),
             ..Default::default()
         })
         .map_err(|cause| format!("part template {template:?}: expected a new part: {cause}"))?;

@@ -9,7 +9,11 @@ pub(super) struct ApplicationWorld {
     pub previous_document: Option<u64>,
     pub ribbon_height: f32,
     pub saved_path: Option<std::path::PathBuf>,
+    pub bytes_before_save: Option<Vec<u8>>,
     pub scratch: Option<tempfile::TempDir>,
+    pub parts: Vec<u64>,
+    pub other_document: Option<u64>,
+    pub closed_document: Option<u64>,
 }
 pub(super) struct NativeApplication {
     pub window: ScriptedGuiWindow,
@@ -36,7 +40,11 @@ impl ApplicationWorld {
             previous_document: None,
             ribbon_height: 0.,
             saved_path: None,
+            bytes_before_save: None,
             scratch: None,
+            parts: Vec::new(),
+            other_document: None,
+            closed_document: None,
         };
         world.pump(Vec::new());
         world

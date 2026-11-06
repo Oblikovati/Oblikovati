@@ -63,6 +63,19 @@ pub(crate) fn dialog_selectable(_: &Ui, label: &str, selected: bool) -> bool {
     // The label owner and Ui remain live; no C++ vector class crosses the ABI.
     unsafe { oblikovati_gui_selectable(label.as_ptr().cast(), selected, flags as i32) }
 }
+/// Whether a list or dialog opened from inside the current popup is still open.
+pub(crate) fn nested_popup_open(_: &Ui) -> bool {
+    let flags = imgui::sys::ImGuiPopupFlags_AnyPopupId as i32;
+    // A null identity is the documented form with AnyPopupId; no string crosses the ABI.
+    unsafe { imgui::sys::igIsPopupOpen_Str(std::ptr::null(), flags) }
+}
+/// Whether any popup at any level is open; application keys wait for it.
+pub(crate) fn any_popup_open(_: &Ui) -> bool {
+    let flags =
+        (imgui::sys::ImGuiPopupFlags_AnyPopupId | imgui::sys::ImGuiPopupFlags_AnyPopupLevel) as i32;
+    // A null identity is the documented form with AnyPopupId; no string crosses the ABI.
+    unsafe { imgui::sys::igIsPopupOpen_Str(std::ptr::null(), flags) }
+}
 /// Draw literal UTF-8 in the current window; example: `literal_text(ui, point, color, "Part##1")` preserves hashes.
 pub(crate) fn literal_text(ui: &Ui, position: [f32; 2], color: [f32; 4], text: &str) {
     draw_literal_text(ui, position, color, text, false);

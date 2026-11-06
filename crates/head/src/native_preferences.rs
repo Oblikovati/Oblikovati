@@ -46,8 +46,8 @@ fn native_config_directory() -> Result<PathBuf, String> {
     )
 }
 
-/// Load application scale from the user config root; example: `owner.with_ui_scale_preferences(Box::new(load_native_ui_scale()?))`.
-pub(super) fn load_native_ui_scale() -> Result<
+/// Load application options from the user config root; example: `owner.with_ui_scale_preferences(Box::new(load_native_application_options()?))`.
+pub(super) fn load_native_application_options() -> Result<
     oblikovati_persistence::application_options::ApplicationPreferenceFile<
         NativeThemePreferenceFiles,
     >,

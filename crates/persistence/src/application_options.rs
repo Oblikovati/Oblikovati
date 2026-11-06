@@ -4,6 +4,7 @@ use crate::{
     load::PackageFileReader,
 };
 use oblikovati_model::application_options::{SketchApplicationOptions, SketchPreferenceAccess};
+use oblikovati_model::application_prompts::{PromptPreferenceAccess, PromptPreferences};
 use oblikovati_model::ui_scale::{UiScaleOptions, UiScalePreferenceAccess};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -18,6 +19,8 @@ struct PreferenceRecipe {
     sketch: SketchApplicationOptions,
     #[serde(skip_serializing_if = "Option::is_none")]
     ui: Option<UiPreferenceRecipe>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    prompts: Option<PromptPreferences>,
     // Other Go groups stay opaque until their owners are ported; group edits preserve them.
     #[serde(flatten)]
     retained_groups: BTreeMap<String, serde_yaml_ng::Value>,
@@ -62,6 +65,15 @@ impl<Files: PackageFileReader + AtomicFiles> ApplicationPreferenceFile<Files> {
         ui.icon_scale = Some(options.icon());
         self.publish(candidate)
     }
+    /// Save prompt frequencies without changing other groups; example: `preferences.save_prompts(prompts)?`.
+    pub fn save_prompts(&mut self, prompts: PromptPreferences) -> io::Result<()> {
+        prompts
+            .validate_stored()
+            .map_err(|cause| preference_failure(&self.path, cause))?;
+        let mut candidate = read_preferences(&self.path, &mut self.files)?;
+        candidate.prompts = Some(prompts);
+        self.publish(candidate)
+    }
     fn publish(&mut self, candidate: PreferenceRecipe) -> io::Result<()> {
         let ui_scale = candidate
             .ui_options()
@@ -96,6 +108,11 @@ fn decode_preferences(path: &Path, encoded: &[u8]) -> io::Result<PreferenceRecip
         .sketch
         .validate()
         .map_err(|cause| preference_failure(path, cause))?;
+    recipe
+        .prompts
+        .unwrap_or_default()
+        .validate_stored()
+        .map_err(|cause| preference_failure(path, cause))?;
     Ok(recipe)
 }
 fn preference_failure(path: &Path, cause: impl std::fmt::Display) -> io::Error {
@@ -115,6 +132,17 @@ impl<Files: PackageFileReader + AtomicFiles> UiScalePreferenceAccess
     }
     fn set_ui_scale(&mut self, options: UiScaleOptions) -> Result<(), String> {
         self.save_ui_scale(options)
+            .map_err(|cause| cause.to_string())
+    }
+}
+impl<Files: PackageFileReader + AtomicFiles> PromptPreferenceAccess
+    for ApplicationPreferenceFile<Files>
+{
+    fn prompt_preferences(&self) -> PromptPreferences {
+        self.recipe.prompts.unwrap_or_default()
+    }
+    fn set_prompt_preferences(&mut self, prompts: PromptPreferences) -> Result<(), String> {
+        self.save_prompts(prompts)
             .map_err(|cause| cause.to_string())
     }
 }

@@ -22,7 +22,7 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state),
         RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
         RibbonPanel::Visibility => visibility_controls(ui, state, actions),
-        RibbonPanel::Windows => owners.workspace.user_interface_menu(ui, [108., 26.]),
+        RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
         other => single_command(ui, other, state, actions),
     }
     false
@@ -36,6 +36,20 @@ fn single_command(
     if let Some((label, action)) = panel.command() {
         crate::chrome::command_button(ui, label, action, state, [108., 58.], actions);
     }
+}
+fn windows_controls(
+    ui: &Ui,
+    origin: [f32; 2],
+    state: &GuiCommandState,
+    owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    owners.workspace.user_interface_menu(ui, [108., 26.]);
+    crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
+    owners
+        .workspace
+        .switcher
+        .menu(ui, [108., 26.], state, actions);
 }
 /// Show or hide every sketch at once through the owner's per-sketch command.
 fn visibility_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

@@ -140,3 +140,6 @@ fn assert_saved_format_override(disk: &Disk) {
             .suppress_format_overrides
     );
 }
+
+#[path = "application_options/prompts.rs"]
+mod prompts;

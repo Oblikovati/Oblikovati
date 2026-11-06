@@ -292,7 +292,8 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         NativeOwnerWake(wake),
         crate::DesktopDispatchOptions::default(),
     )
-    .with_ui_scale_preferences(Box::new(preferences::load_native_ui_scale()?))
+    .with_ui_scale_preferences(Box::new(preferences::load_native_application_options()?))
+    .with_prompt_preferences(Box::new(preferences::load_native_application_options()?))
     .with_theme_store(themes.library, Box::new(themes.preferences))
     .with_theme_file_declines(themes.declines)
     .with_window_captures(crate::DesktopWindowCaptures::new(

@@ -40,6 +40,10 @@ pub struct GuiFrameEngine {
     ribbon: crate::ribbon::DocumentRibbon,
     document_tabs: crate::document_tabs::DocumentTabs,
     workspace: crate::application::workspace_layout::WorkspaceLayout,
+    /// The documents of the latest frame, for dialogs an owner notice opens between frames.
+    known_documents: Vec<oblikovati_api::wire::DocumentInfo>,
+    /// Modifier state across frames: Control and Tab can arrive in different frames.
+    control_held: bool,
     theme_editor: crate::theme_editor::GuiThemeEditor,
 }
 impl GuiFrameEngine {
@@ -59,6 +63,8 @@ impl GuiFrameEngine {
             ribbon: Default::default(),
             document_tabs: Default::default(),
             workspace: Default::default(),
+            known_documents: Vec::new(),
+            control_held: false,
             theme_editor: Default::default(),
         })
     }
@@ -90,10 +96,19 @@ impl GuiFrameEngine {
     /// Request a path for the owner's unsaved document without writing it.
     /// Example: `engine.request_save_path(document)?` after a SavePathRequired notice.
     pub fn request_save_path(&mut self, document: u64) -> Result<(), String> {
-        self.document_files.request_save_path(document)
+        let name = self.document_name(document);
+        self.document_files.request_save_path(document, &name)
     }
 }
 
+impl GuiFrameEngine {
+    fn document_name(&self, document: u64) -> String {
+        self.known_documents
+            .iter()
+            .find(|row| row.id == document)
+            .map_or_else(|| "Part".to_string(), |row| row.name.clone())
+    }
+}
 fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.set_ini_filename(None);
     context.set_log_filename(None);
@@ -161,7 +176,7 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
 }
 impl GuiFrameEngine {
     fn draw_controls(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
-        let tool_keyboard = prepare_frame_inputs(&mut self.context, request);
+        let keys = prepare_frame_inputs(&mut self.context, request, &mut self.control_held);
         let ui = self.context.frame();
         crate::dimension_labels::draw_dimension_labels(ui, request);
         let mut selected = Vec::new();
@@ -195,12 +210,32 @@ impl GuiFrameEngine {
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
         crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);
+        crate::application::document_tabs::document_keys(
+            ui,
+            keys.switch_document,
+            &request.commands,
+            &mut selected,
+        );
+        self.workspace
+            .switcher
+            .panel(ui, &request.commands, &mut selected);
+        self.document_tabs
+            .menu
+            .properties
+            .panel(ui, &request.commands);
+        self.document_files
+            .closing_panel(ui, &request.commands, &mut selected);
+        self.known_documents.clone_from(&request.commands.documents);
         let snapshot = capture_frame(self.context.render(), request.extent)?;
         let mut capture = input_capture(self.context.io());
-        capture.keyboard &= !tool_keyboard;
+        capture.keyboard &= !keys.tool_keyboard;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.ribbon.panels.pending_layout;
         activity.pending_layout |= self.workspace.pending_layout;
+        activity.pending_layout |= self.document_files.needs_frame()
+            || self.document_tabs.needs_frame()
+            || self.workspace.switcher.needs_frame()
+            || self.document_tabs.menu.properties.needs_frame();
         Ok(GuiFrameOutput {
             draws: snapshot,
             actions: selected,
@@ -209,25 +244,54 @@ impl GuiFrameEngine {
         })
     }
 }
-fn prepare_frame_inputs(context: &mut Context, request: &GuiFrameRequest) -> bool {
+/// Keys the engine consumed before Dear ImGui could read them.
+#[derive(Default)]
+struct FrameKeys {
+    tool_keyboard: bool,
+    switch_document: bool,
+}
+fn prepare_frame_inputs(
+    context: &mut Context,
+    request: &GuiFrameRequest,
+    control_held: &mut bool,
+) -> FrameKeys {
     let io = context.io_mut();
     io.display_size =
         std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
     io.display_framebuffer_scale = request.layout_scale();
     io.delta_time = request.delta_seconds;
-    let mut tool_keyboard = false;
+    let mut keys = FrameKeys::default();
     for event in &request.events {
+        if let crate::GuiInputEvent::Modifiers(modifiers) = event {
+            *control_held = modifiers.control;
+        }
         if tool_transaction_key(
             event,
             request.commands.sketch_tool_transaction,
             io.want_text_input,
         ) {
-            tool_keyboard = true;
+            keys.tool_keyboard = true;
+            continue;
+        }
+        // Dear ImGui would read Ctrl+Tab as its own window switcher; here it switches documents.
+        if document_switch_key(event, *control_held) {
+            keys.switch_document |=
+                matches!(event, crate::GuiInputEvent::Key { pressed: true, .. });
             continue;
         }
         apply_input(io, event, request.layout_scale());
     }
-    tool_keyboard
+    keys
+}
+fn document_switch_key(event: &crate::GuiInputEvent, control_held: bool) -> bool {
+    control_held
+        && matches!(
+            event,
+            crate::GuiInputEvent::Key {
+                key: crate::GuiKey::Tab,
+                ..
+            }
+        )
 }
 
 #[cfg(test)]

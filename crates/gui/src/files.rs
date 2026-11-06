@@ -1,37 +1,31 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::application::document_saving::{
+    close_prompt::{CloseOutcome, ClosePrompt},
+    first_saves::FirstSaves,
+    folder_browser::DialogEnd,
+    open_dialog::OpenDialog,
+    save_as::SaveAsDialog,
+};
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
-use oblikovati_api::wire::{OpenDocumentArgs, SaveDocumentAsArgs};
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum DocumentPathPurpose {
-    Open,
-    SaveAs(u64),
-}
-struct DocumentPathDraft {
-    purpose: DocumentPathPurpose,
-    path: String,
-}
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
-    draft: Option<DocumentPathDraft>,
     templates: crate::application::document_creation::TemplateChooser,
+    open: OpenDialog,
+    save_as: SaveAsDialog,
+    close_prompt: ClosePrompt,
+    first_saves: FirstSaves,
 }
 impl GuiDocumentFiles {
-    pub(crate) fn request_save_path(&mut self, document: u64) -> Result<(), String> {
+    pub(crate) fn request_save_path(&mut self, document: u64, name: &str) -> Result<(), String> {
         if document == 0 {
             return Err(format!(
                 "save dialog document {document}: expected a nonzero document identity"
             ));
         }
-        self.begin(DocumentPathPurpose::SaveAs(document));
+        self.save_as.request(document, name, false);
         Ok(())
-    }
-    fn begin(&mut self, purpose: DocumentPathPurpose) {
-        self.draft = Some(DocumentPathDraft {
-            purpose,
-            path: String::new(),
-        });
     }
     pub(crate) fn menu(
         &mut self,
@@ -68,7 +62,7 @@ impl GuiDocumentFiles {
             .enabled(!state.transaction_open)
             .build()
         {
-            self.begin(DocumentPathPurpose::Open);
+            self.open.request();
         }
     }
     fn save_as_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
@@ -77,22 +71,12 @@ impl GuiDocumentFiles {
             .enabled(state.document.is_some() && !state.transaction_open)
             .build();
         if let Some(document) = state.document.filter(|_| chosen) {
-            self.begin(DocumentPathPurpose::SaveAs(document));
+            self.save_as.request(document, active_name(state), false);
         }
     }
     pub(crate) fn validate(&self) -> Result<(), String> {
-        if let Some(draft) = &self.draft {
-            draft.validate_path()?;
-        }
-        Ok(())
-    }
-    fn synchronize_document(&mut self, document: Option<u64>) {
-        let stale = self.draft.as_ref().is_some_and(|draft| {
-            matches!(draft.purpose, DocumentPathPurpose::SaveAs(owner) if document != Some(owner))
-        });
-        if stale {
-            self.draft = None;
-        }
+        self.open.validate()?;
+        self.save_as.validate()
     }
     pub(crate) fn panel(
         &mut self,
@@ -101,67 +85,58 @@ impl GuiDocumentFiles {
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.templates.panel(ui, state, actions);
-        self.synchronize_document(state.document);
-        let Some(draft) = &mut self.draft else {
+        self.open.panel(ui, state, actions);
+    }
+    /// Route this frame's closes, then draw the prompts and Save As. Runs after every control has
+    /// drawn, and answered closes join `actions` after the routing so no answer is asked twice.
+    /// Example: `files.closing_panel(ui, &state, &mut actions)` at the end of the frame.
+    pub(crate) fn closing_panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let routed = self.close_prompt.intercept(state, actions);
+        self.apply_close_outcome(routed, actions);
+        let answered = self.close_prompt.panel(ui, state);
+        self.apply_close_outcome(answered, actions);
+        self.next_first_save(state, actions);
+        if self.save_as.panel(ui, state, actions) == Some(DialogEnd::Cancelled) {
+            self.first_saves.cancel();
+        }
+    }
+    fn apply_close_outcome(&mut self, outcome: CloseOutcome, actions: &mut Vec<GuiShellAction>) {
+        actions.extend(outcome.actions);
+        self.first_saves.extend(outcome.first_saves);
+    }
+    fn next_first_save(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        if self.save_as.is_open() {
             return;
-        };
-        crate::widget_abi::fit_dialog(ui, draft.purpose.title(), [320., 168.], [620., 160.]);
-        let close = ui
-            .window(draft.purpose.title())
-            .collapsible(false)
-            .build(|| path_controls(ui, state, draft, actions))
-            .unwrap_or(false);
-        if close {
-            self.draft = None;
         }
+        if let Some(document) = self.first_saves.next(state, actions) {
+            self.save_as
+                .request(document, document_name(state, document), true);
+        }
+    }
+    /// A dialog must open or a held close must continue; GUI frames otherwise wait for an event.
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.close_prompt.needs_frame()
+            || self.first_saves.is_waiting()
+            || self.save_as.is_opening()
+            || self.open.is_opening()
     }
 }
-impl DocumentPathPurpose {
-    fn title(self) -> &'static str {
-        match self {
-            Self::Open => "Open document",
-            Self::SaveAs(_) => "Save document as",
-        }
-    }
-    fn button(self) -> &'static str {
-        match self {
-            Self::Open => "Open",
-            Self::SaveAs(_) => "Save",
-        }
-    }
+fn document_name(state: &GuiCommandState, document: u64) -> &str {
+    state
+        .documents
+        .iter()
+        .find(|row| row.id == document)
+        .map_or("Part", |row| row.name.as_str())
 }
-impl DocumentPathDraft {
-    fn validate_path(&self) -> Result<(), String> {
-        if self.path.contains('\0') {
-            return Err(format!(
-                "document path {:?}: expected text without NUL",
-                self.path
-            ));
-        }
-        Ok(())
-    }
-    fn action(&self) -> Result<GuiShellAction, String> {
-        self.validate_path()?;
-        Ok(match self.purpose {
-            DocumentPathPurpose::Open => GuiShellAction::OpenDocument(self.open_request()),
-            DocumentPathPurpose::SaveAs(document) => {
-                GuiShellAction::SaveDocumentAs(self.save_request(document))
-            }
-        })
-    }
-    fn open_request(&self) -> OpenDocumentArgs {
-        OpenDocumentArgs {
-            full_document_name: self.path.clone(),
-            visible: true,
-            defer_content: false,
-        }
-    }
-    fn save_request(&self, document: u64) -> SaveDocumentAsArgs {
-        SaveDocumentAsArgs {
-            document,
-            new_full_document_name: self.path.clone(),
-        }
-    }
+fn active_name(state: &GuiCommandState) -> &str {
+    state
+        .document
+        .map_or("Part", |document| document_name(state, document))
 }
 fn unavailable_file_item(ui: &Ui, label: &str, reason: &str) {
     ui.menu_item_config(label).enabled(false).build();
@@ -186,48 +161,6 @@ fn file_close_item(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellA
         ));
     }
 }
-fn path_controls(
-    ui: &Ui,
-    state: &GuiCommandState,
-    draft: &mut DocumentPathDraft,
-    actions: &mut Vec<GuiShellAction>,
-) -> bool {
-    let entered = path_entry(ui, draft);
-    let accepted = submit_path(ui, state, draft, entered, actions);
-    ui.same_line();
-    let cancelled =
-        crate::widget_abi::button(ui, "Cancel", [0.; 2]) || ui.is_key_pressed(imgui::Key::Escape);
-    accepted || cancelled
-}
-fn path_entry(ui: &Ui, draft: &mut DocumentPathDraft) -> bool {
-    if ui.is_window_appearing() {
-        ui.set_keyboard_focus_here();
-    }
-    ui.input_text("File name", &mut draft.path)
-        .enter_returns_true(true)
-        .build()
-}
-fn submit_path(
-    ui: &Ui,
-    state: &GuiCommandState,
-    draft: &DocumentPathDraft,
-    entered: bool,
-    actions: &mut Vec<GuiShellAction>,
-) -> bool {
-    let action = draft
-        .action()
-        .expect("validated draft and GUI text input exclude NUL");
-    let can_submit = !draft.path.is_empty() && action.dispatchable(state);
-    let disabled = ui.begin_disabled(!can_submit);
-    let accepted =
-        (crate::widget_abi::button(ui, draft.purpose.button(), [0.; 2]) || entered) && can_submit;
-    drop(disabled);
-    if accepted {
-        actions.push(action);
-    }
-    accepted
-}
-
 #[cfg(test)]
 #[path = "../tests/files/unit.rs"]
 mod tests;

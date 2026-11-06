@@ -56,6 +56,13 @@ impl<
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.select_application_theme(name)
     }
+    fn set_prompt_frequency_from_gui(
+        &mut self,
+        prompt: oblikovati_model::application_prompts::ApplicationPrompt,
+        frequency: oblikovati_model::application_prompts::PromptFrequency,
+    ) -> Result<bool, String> {
+        self.change_prompt_frequency(prompt, frequency)
+    }
     fn set_ui_scale_from_gui(
         &mut self,
         options: oblikovati_model::ui_scale::UiScaleOptions,
@@ -108,6 +115,8 @@ impl<
                     .collect(),
             },
             documents: self.gui_document_rows()?,
+            document_storage: self.gui_document_storage()?,
+            prompts: self.prompt_frequencies,
             browser: Some(self.gui_browser_snapshot(document)?),
             document: Some(document),
             document_type: Some(
@@ -151,11 +160,12 @@ impl<
         self.create_template_part(template)
     }
     fn create_part_document(&mut self) -> Result<bool, String> {
+        let name = self.next_new_part_name();
         oblikovati_api::client::Client::new(self.document_host())
             .documents()
             .create(&oblikovati_api::wire::CreateDocumentArgs {
                 type_: "part".into(),
-                name: "Part".into(),
+                name,
                 ..Default::default()
             })
             .map_err(|cause| format!("New Part: expected a created part document: {cause}"))?;

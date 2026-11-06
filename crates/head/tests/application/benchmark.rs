@@ -6,10 +6,15 @@ use cucumber::{
 };
 use std::{fmt, fs, path::PathBuf};
 mod diagnostics;
+mod documents;
 mod world;
 use world::ApplicationWorld;
 #[path = "document-creation/steps.rs"]
 mod document_creation;
+#[path = "document-saving/steps.rs"]
+mod document_saving;
+#[path = "document-tabs/steps.rs"]
+mod document_tabs;
 #[path = "file-menu/steps.rs"]
 mod file_menu;
 #[path = "ribbon-display/steps.rs"]

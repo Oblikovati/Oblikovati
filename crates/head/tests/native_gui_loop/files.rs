@@ -65,8 +65,8 @@ fn close_and_reopen(
 fn cancel_save_dialog(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     let before = owner.gui_command_state().unwrap();
     click_shell(window, owner, 30);
-    press_shell_key(window, owner, ViewportPhysicalKey::Enter);
     assert_eq!(owner.gui_command_state().unwrap(), before);
+    // Enter would accept the proposed name, so only Escape leaves the document unbound.
     press_shell_key(window, owner, ViewportPhysicalKey::Escape);
     assert_eq!(owner.gui_command_state().unwrap(), before);
     assert!(!owner.close_allowed().unwrap());

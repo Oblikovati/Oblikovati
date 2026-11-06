@@ -284,6 +284,8 @@ mod file_tools;
 mod gui_commands;
 #[path = "owner/parameter_editor.rs"]
 mod parameter_editor;
+#[path = "owner/prompts.rs"]
+mod prompts;
 
 #[path = "owner/slot_input.rs"]
 mod slot_input;

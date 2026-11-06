@@ -306,7 +306,7 @@ fn close_veto_preserves_document_history_identity_and_focus() {
 }
 
 #[test]
-fn discard_close_releases_claim_and_selects_first_remaining_document() {
+fn discard_close_releases_claim_and_focuses_the_remaining_document() {
     let mut workspace = TestWorkspace::new(RecordingWorkspace::default());
     let first = open(&mut workspace, 1, OpenActivation::Activate).session_id;
     let second = open(&mut workspace, 2, OpenActivation::Activate).session_id;
@@ -330,6 +330,39 @@ fn discard_close_releases_claim_and_selects_first_remaining_document() {
     assert_eq!(workspace.active_document(), Some(first));
     workspace.close_discarding_changes(first).unwrap();
     assert_eq!(workspace.active_document(), None);
+}
+
+#[test]
+fn closing_the_active_document_returns_to_the_one_used_before_it() {
+    let mut workspace = TestWorkspace::new(RecordingWorkspace::default());
+    let first = open(&mut workspace, 1, OpenActivation::Activate).session_id;
+    let second = open(&mut workspace, 2, OpenActivation::Activate).session_id;
+    workspace.activate(first).unwrap();
+    let third = open(&mut workspace, 3, OpenActivation::Activate).session_id;
+    workspace.close_discarding_changes(third).unwrap();
+    assert_eq!(workspace.active_document(), Some(first));
+    workspace.close_discarding_changes(first).unwrap();
+    assert_eq!(workspace.active_document(), Some(second));
+}
+
+#[test]
+fn a_document_never_focused_is_still_reachable_when_focus_history_runs_out() {
+    let mut workspace = TestWorkspace::new(RecordingWorkspace::default());
+    let first = open(&mut workspace, 1, OpenActivation::Activate).session_id;
+    let background = open(&mut workspace, 2, OpenActivation::Background).session_id;
+    workspace.close_discarding_changes(first).unwrap();
+    assert_eq!(workspace.active_document(), Some(background));
+}
+
+#[test]
+fn a_new_document_has_no_recipe_change_until_it_is_edited() {
+    let mut workspace = TestWorkspace::new(RecordingWorkspace::default());
+    let id = open(&mut workspace, 1, OpenActivation::Activate).session_id;
+    assert!(!workspace.recipe_changed(id).unwrap());
+    assert!(matches!(
+        workspace.recipe_changed(999),
+        Err(WorkspaceError::Missing(999))
+    ));
 }
 
 #[test]

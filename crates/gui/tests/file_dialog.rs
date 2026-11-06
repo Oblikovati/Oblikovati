@@ -10,6 +10,12 @@ fn file_request() -> GuiFrameRequest {
         framebuffer_scale: [1.; 2],
         commands: GuiCommandState {
             document: Some(7),
+            documents: vec![oblikovati_api::wire::DocumentInfo {
+                id: 7,
+                name: "Part1".into(),
+                visible: true,
+                ..Default::default()
+            }],
             authoring: GuiAuthoringContext::Part,
             document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             ..Default::default()
@@ -115,7 +121,7 @@ fn file_menu_new_and_save_reuse_owner_commands() {
     );
 }
 #[test]
-fn file_menu_save_as_cancels_by_mouse_and_accepts_a_fresh_path() {
+fn file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = file_request();
     engine.frame(&request).unwrap();
@@ -123,12 +129,12 @@ fn file_menu_save_as_cancels_by_mouse_and_accepts_a_fresh_path() {
     assert!(choose_file_item(&mut engine, &mut request, 156.).is_empty());
     request.events = vec![GuiInputEvent::Text("/tmp/discarded.opd".into())];
     engine.frame(&request).unwrap();
-    assert!(click_file_control(&mut engine, &mut request, [400., 225.]).is_empty());
+    assert!(key_frames(&mut engine, &mut request, GuiKey::Escape).is_empty());
     assert!(choose_file_item(&mut engine, &mut request, 156.).is_empty());
     request.events = vec![GuiInputEvent::Text("/tmp/kept.opd".into())];
     engine.frame(&request).unwrap();
     assert_eq!(
-        click_file_control(&mut engine, &mut request, [345., 225.]),
+        key_frames(&mut engine, &mut request, GuiKey::Enter),
         [GuiShellAction::SaveDocumentAs(
             oblikovati_api::wire::SaveDocumentAsArgs {
                 document: 7,

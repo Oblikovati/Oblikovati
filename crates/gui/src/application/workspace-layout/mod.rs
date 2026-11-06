@@ -24,6 +24,7 @@ pub(crate) struct WorkspaceLayout {
     window_position: [f32; 2],
     /// GUI frames follow events, and a dropped panel takes its geometry in the next frame.
     pub pending_layout: bool,
+    pub switcher: crate::application::document_tabs::WindowSwitcher,
 }
 impl Default for WorkspaceLayout {
     fn default() -> Self {
@@ -34,6 +35,7 @@ impl Default for WorkspaceLayout {
             dragging: false,
             window_position: [0.; 2],
             pending_layout: false,
+            switcher: Default::default(),
         }
     }
 }

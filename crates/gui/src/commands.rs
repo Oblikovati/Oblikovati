@@ -2,6 +2,10 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
     SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
+    SetPromptFrequency {
+        prompt: oblikovati_model::application_prompts::ApplicationPrompt,
+        frequency: oblikovati_model::application_prompts::PromptFrequency,
+    },
     SetTheme(String),
     EditThemeColor {
         name: String,
@@ -69,6 +73,13 @@ pub enum GuiAuthoringContext {
     Part,
     Sketch,
 }
+/// What the owner knows about one open document's file beyond its wire row.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiDocumentStorage {
+    pub path: Option<String>,
+    /// Closing without saving would lose work; a new, untouched part has none to lose.
+    pub unsaved_edits: bool,
+}
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
@@ -80,6 +91,8 @@ pub struct GuiCommandState {
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,
     pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
+    pub document_storage: std::collections::BTreeMap<u64, GuiDocumentStorage>,
+    pub prompts: oblikovati_model::application_prompts::PromptPreferences,
     pub document: Option<u64>,
     pub document_type: Option<oblikovati_api::types::DocumentType>,
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,
@@ -135,6 +148,7 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::SetUiScale(_) => state.ui_scale.is_some(),
+            Self::SetPromptFrequency { .. } => true,
             Self::ActivateDocument(request) => {
                 !state.transaction_open
                     && state.authoring != GuiAuthoringContext::Sketch

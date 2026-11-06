@@ -56,6 +56,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         }
         self.focus_identity = std::sync::Arc::new(());
         self.active = document;
+        if let Some(id) = document {
+            self.focus_order.retain(|candidate| *candidate != id);
+            self.focus_order.push(id);
+        }
     }
 
     fn approve_close(&mut self, id: u64) -> Result<(), WorkspaceError> {
@@ -72,8 +76,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         self.identities.close(id)?;
         let entry = self.entries.remove(&id).expect("validated document");
         self.order.retain(|candidate| *candidate != id);
+        self.focus_order.retain(|candidate| *candidate != id);
         if self.active == Some(id) {
-            self.switch_document_focus(self.order.first().copied());
+            // The document a user last worked in returns, not whichever opened first.
+            let next = self.focus_order.last().or(self.order.first()).copied();
+            self.switch_document_focus(next);
         }
         let observer = entry.session.close();
         self.observer.closed(id, self.active);

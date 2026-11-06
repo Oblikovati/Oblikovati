@@ -5,6 +5,9 @@ use oblikovati_gui::GuiShellAction;
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
         GuiShellAction::SetUiScale(options) => owner.set_ui_scale_from_gui(*options),
+        GuiShellAction::SetPromptFrequency { prompt, frequency } => {
+            owner.set_prompt_frequency_from_gui(*prompt, *frequency)
+        }
         GuiShellAction::EditThemeColor { name, token, value } => {
             owner.edit_theme_color_from_gui(name, token, value.clone())
         }

@@ -6,9 +6,8 @@ use oblikovati_viewport::ViewportPhysicalKey;
 #[given("a document is open in the MCAD Software")]
 #[given("a part document is active in the MCAD Software")]
 fn open_document(world: &mut ApplicationWorld) {
-    world.app().owner.create_part_document().unwrap();
-    world.previous_document = world.app().owner.gui_command_state().unwrap().document;
-    world.pump(Vec::new());
+    let id = world.add_part();
+    world.previous_document = Some(id);
 }
 #[when("I press Control+N")]
 #[given("the new-document template chooser is open")]

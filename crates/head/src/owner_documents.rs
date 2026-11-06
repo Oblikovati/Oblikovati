@@ -27,6 +27,51 @@ impl<
             })
             .collect()
     }
+    /// Name a new part so two open tabs never read the same; example: `Part1`, then `Part2`.
+    /// The count only grows in a session: closing `Part2` does not reuse its name.
+    pub(super) fn next_new_part_name(&mut self) -> String {
+        let open = self.gui_document_rows().unwrap_or_default();
+        loop {
+            self.new_part_count += 1;
+            let name = format!("Part{}", self.new_part_count);
+            if open.iter().all(|row| row.name != name) {
+                return name;
+            }
+        }
+    }
+    /// Report each document's file and whether closing it would lose work.
+    /// Example: `owner.gui_document_storage()?` for one GUI snapshot.
+    pub(super) fn gui_document_storage(
+        &self,
+    ) -> Result<std::collections::BTreeMap<u64, oblikovati_gui::GuiDocumentStorage>, String> {
+        let workspace = self.files.workspace();
+        workspace
+            .documents()
+            .iter()
+            .copied()
+            .map(|id| {
+                let path = self
+                    .files
+                    .path(id)
+                    .ok()
+                    .map(|path| path.display().to_string());
+                // A bound document's identity counts; a new part's unused identity does not.
+                let lost = if path.is_some() {
+                    workspace.needs_save(id)
+                } else {
+                    workspace.recipe_changed(id)
+                };
+                let unsaved_edits = lost.map_err(|cause| cause.to_string())?;
+                Ok((
+                    id,
+                    oblikovati_gui::GuiDocumentStorage {
+                        path,
+                        unsaved_edits,
+                    },
+                ))
+            })
+            .collect()
+    }
     /// Guard and apply the existing document activation; example: `owner.activate_gui_document(&request)?`.
     pub(super) fn activate_gui_document(
         &mut self,

@@ -12,6 +12,16 @@ pub trait HeadInvalidation {
 }
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Change how often a prompt appears; example: `work.set_prompt_frequency_from_gui(prompt, frequency)?`.
+    fn set_prompt_frequency_from_gui(
+        &mut self,
+        prompt: oblikovati_model::application_prompts::ApplicationPrompt,
+        frequency: oblikovati_model::application_prompts::PromptFrequency,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "prompt {prompt:?}, frequency {frequency:?}: expected an application preference owner"
+        ))
+    }
     /// Save application text/icon scale; example: `work.set_ui_scale_from_gui(options)?`.
     fn set_ui_scale_from_gui(
         &mut self,

@@ -17,6 +17,9 @@ imgui = { version = "=0.12.0", features = ["docking"] }
 imgui-sys = { version = "=0.12.0", features = ["docking"] }
 oblikovati-viewport = { path = "../viewport" }
 
+[dev-dependencies]
+tempfile = "=3.27.0"
+
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 rustix = { version = "=1.1.5", features = ["event"] }
 

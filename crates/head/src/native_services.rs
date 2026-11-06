@@ -160,6 +160,13 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     fn save_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.owner.save_theme_from_gui(name)
     }
+    fn set_prompt_frequency_from_gui(
+        &mut self,
+        prompt: oblikovati_model::application_prompts::ApplicationPrompt,
+        frequency: oblikovati_model::application_prompts::PromptFrequency,
+    ) -> Result<bool, String> {
+        self.owner.set_prompt_frequency_from_gui(prompt, frequency)
+    }
     fn set_ui_scale_from_gui(
         &mut self,
         options: oblikovati_model::ui_scale::UiScaleOptions,

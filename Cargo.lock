@@ -1565,6 +1565,7 @@ dependencies = [
  "oblikovati-model",
  "oblikovati-viewport",
  "rustix",
+ "tempfile",
 ]
 
 [[package]]

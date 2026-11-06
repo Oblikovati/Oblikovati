@@ -114,6 +114,8 @@ struct WorkspaceEntry<O> {
 pub struct WorkspaceSession<O, W> {
     entries: BTreeMap<u64, WorkspaceEntry<O>>,
     order: Vec<u64>,
+    /// Open documents by last focus, oldest first; the last entry is the active document.
+    focus_order: Vec<u64>,
     active: Option<u64>,
     focus_identity: std::sync::Arc<()>,
     identities: DocumentIdentityIndex,
@@ -151,6 +153,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             fallback_sketch_settings: oblikovati_model::sketch_settings::default_sketch_settings(),
             entries: BTreeMap::new(),
             order: Vec::new(),
+            focus_order: Vec::new(),
             active: None,
             focus_identity: std::sync::Arc::new(()),
             identities: DocumentIdentityIndex::default(),
@@ -273,19 +276,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
     /// Example: `workspace.needs_save(id)?` before prompting to close.
     pub fn needs_save(&self, id: u64) -> Result<bool, WorkspaceError> {
         let entry = self.entries.get(&id).ok_or(WorkspaceError::Missing(id))?;
+        Ok(entry.identity_dirty || self.recipe_changed(id)?)
+    }
+
+    /// Compare current recipe with loaded state only: a new, untouched part has nothing to lose.
+    /// Example: `workspace.recipe_changed(id)?` before asking about an unsaved document.
+    pub fn recipe_changed(&self, id: u64) -> Result<bool, WorkspaceError> {
+        let entry = self.entries.get(&id).ok_or(WorkspaceError::Missing(id))?;
         let current = entry.session.snapshot();
-        Ok(entry.identity_dirty
-            || entry.baseline_feature_high_water != entry.session.history.feature_high_water()
-            || !entry
-                .baseline
-                .work_geometry
-                .same_work_plane_recipe(&current.work_geometry)
-            || entry.baseline_sketch_marks != entry.session.history.sketch_reservations()
-            || !entry.baseline.sketches.same_recipe(&current.sketches)
-            || entry.baseline_parameter_high_water != entry.session.high_water()
-            || entry.baseline_derived_high_water != entry.session.history.derived_high_water()
-            || !entry.baseline.parameters.same_recipe(&current.parameters)
-            || !entry.baseline.same_metadata_recipe(current))
+        Ok(
+            entry.baseline_feature_high_water != entry.session.history.feature_high_water()
+                || !entry
+                    .baseline
+                    .work_geometry
+                    .same_work_plane_recipe(&current.work_geometry)
+                || entry.baseline_sketch_marks != entry.session.history.sketch_reservations()
+                || !entry.baseline.sketches.same_recipe(&current.sketches)
+                || entry.baseline_parameter_high_water != entry.session.high_water()
+                || entry.baseline_derived_high_water != entry.session.history.derived_high_water()
+                || !entry.baseline.parameters.same_recipe(&current.parameters)
+                || !entry.baseline.same_metadata_recipe(current),
+        )
     }
 }
 

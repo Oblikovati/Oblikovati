@@ -187,7 +187,13 @@ fn verify_editor_retires_with_its_theme_owner(
 ) {
     assert!(click(engine, request, [440., 91.]).is_empty());
     request.commands.theme = None;
-    deliver(engine, request, Vec::new());
+    // Without a theme the panels shift, and a button can move under the launcher's old position:
+    // a hovered button is rightly not idle, so the pointer leaves first.
+    deliver(
+        engine,
+        request,
+        vec![GuiInputEvent::PointerMoved([1000., 600.])],
+    );
     assert_eq!(modal_dim_alpha(&settle(engine, request)), 0);
 }
 

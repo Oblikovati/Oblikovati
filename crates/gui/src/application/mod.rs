@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[path = "document-creation/mod.rs"]
 pub(crate) mod document_creation;
+#[path = "document-saving/mod.rs"]
+pub(crate) mod document_saving;
+#[path = "document-tabs/mod.rs"]
+pub(crate) mod document_tabs;
+#[path = "file_system.rs"]
+pub(crate) mod file_system;
 #[path = "ribbon-display/mod.rs"]
 pub(crate) mod ribbon_display;
 #[path = "workspace-layout/mod.rs"]

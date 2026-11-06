@@ -30,4 +30,5 @@ pub mod theme;
 
 pub mod color_scheme;
 
+pub mod application_prompts;
 pub mod ui_scale;
