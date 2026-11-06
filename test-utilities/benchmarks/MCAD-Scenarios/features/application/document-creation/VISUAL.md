@@ -1,5 +1,7 @@
 # Document creation: visual observations
 
+[Original conceptual wireframes](document-creation-wireframes.svg) illustrate the chooser, component prompt and file browser. They simplify layout and use newly drawn symbols; they are not source screenshots.
+
 ## Template chooser
 
 - Trigger: press Control+N with a part document open.
@@ -47,7 +49,7 @@
 
 - With a metric sheet-metal template selected, selecting the English folder replaces the gallery with that folder's available tiles. The details pane continues to show the previous metric template and millimeter units until an English template is selected.
 - Selecting the inch sheet-metal tile updates the details pane to that template and inch units.
-- Limit: this records the displayed selection and details only; no document was created after switching folders.
+- In a separate creation sequence, switching folders after selecting a metric assembly left that selection actionable; Create opened an assembly. See the retained-selection scenario in the feature file.
 
 ## New presentation
 
@@ -126,3 +128,7 @@ A centered information dialog presents the affected component, a message-display
 ## Browse for a component
 
 A large light file-selection dialog overlays the smaller component prompt. Navigation is on the left, the file list in the center and preview/options on the right; filename and action controls run along the bottom. Cancel reveals the smaller prompt again.
+
+## Replace the pending component
+
+Selecting a file in the large browser and choosing Open returns to the compact component dialog with the new path shown in the document field. The resulting drawing presents the selected component name in the parts list and the view entry in the browser.

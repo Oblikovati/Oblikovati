@@ -87,3 +87,7 @@ Selecting the populated assembly layout and confirming the component already dis
 ## Browse for a drawing-layout component
 
 From the component-selection dialog, Browse opened a file-selection dialog with a folder and file list, file-name input, file-type filter, preview area, Open and Cancel. Cancel returned to component selection with the previous document name still displayed. Canceling component selection then returned to the existing part without creating a drawing. Selecting a different file was not part of this observation.
+
+## Choose a different drawing-layout component
+
+Browsing from the component prompt, selecting a different part file, and choosing Open replaced the document name in the prompt. Confirming it led to an update-needed message naming that file. After acknowledgement, the drawing's parts list and view browser entry identified the newly selected part. The created drawing was closed without saving. The selected part needed an update, so this does not establish the up-to-date path or visible model geometry.

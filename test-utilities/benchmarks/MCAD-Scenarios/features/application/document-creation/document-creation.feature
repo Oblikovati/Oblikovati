@@ -356,3 +356,18 @@ Feature: Create a document from a template
     When I cancel component selection
     Then the original document remains active
     And no new drawing tab is displayed
+
+  @needs_review @needs_fixture
+  Scenario: Browse to a different component for a populated drawing layout
+    Given a populated drawing layout is being created in the MCAD Software
+    And the component-selection dialog displays an initial component
+    And a different part file that needs updating is available
+    When I choose Browse beside the document name
+    And I select the different part file and choose Open
+    Then the component-selection dialog displays the selected file name
+    When I confirm the selected component
+    Then a message identifies the selected component as needing an update
+    When I acknowledge the message
+    Then a new drawing becomes active
+    And its parts list identifies the selected component
+    And its browser contains a view referencing the selected component
