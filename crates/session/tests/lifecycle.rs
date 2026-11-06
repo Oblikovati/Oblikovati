@@ -437,3 +437,6 @@ mod browser_selection;
 
 #[path = "lifecycle/sketch_visibility.rs"]
 mod sketch_visibility;
+
+#[path = "lifecycle/transaction_identity.rs"]
+mod transaction_identity;
