@@ -97,12 +97,12 @@ Git errors fail version calculation; they cannot silently return a fresh version
 
 | Target | Native runner | CLI archive | GUI package |
 | --- | --- | --- | --- |
-| Linux x86-64 | Ubuntu 24.04 | tar.gz | AppImage |
+| Linux x86-64 | Ubuntu 26.04 | tar.gz | AppImage |
 | Linux arm64 | Ubuntu 26.04 arm64 | tar.gz | Not in the legacy shipping matrix |
 | Windows x86-64 MSVC | Windows 2025 | zip | zip |
 | Windows arm64 MSVC | Windows 11 arm64 | zip | Not in the legacy shipping matrix |
-| macOS x86-64 | macOS 15 Intel | tar.gz | Universal app, combined with arm64 |
-| macOS arm64 | macOS 14 | tar.gz | Universal app, combined with x86-64 |
+| macOS x86-64 | macOS 26 Intel | tar.gz | Universal app, combined with arm64 |
+| macOS arm64 | macOS 26 | tar.gz | Universal app, combined with x86-64 |
 
 CLI packages now include resources, native libraries, licenses, and metadata;
 they are not assumed to be standalone, pure-Go executables. Linux packages use
