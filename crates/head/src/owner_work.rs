@@ -221,7 +221,16 @@ impl<
         let edit = self
             .active_sketch_edit()
             .ok_or_else(|| format!("{tool:?}: expected an active sketch edit"))?;
-        self.start_sketch_placement(edit.document, edit.sketch, gui_placement_tool(tool))?;
+        let scale = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|cause| cause.to_string())?
+            .snapshot()
+            .parameters
+            .units()
+            .working_scale();
+        self.start_sketch_placement(edit.document, edit.sketch, gui_placement_tool(tool, scale)?)?;
         Ok(true)
     }
     fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {

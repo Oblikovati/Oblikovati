@@ -10,6 +10,8 @@ pub enum GuiSketchTool {
     Ellipse,
     CenterRectangle,
     ThreePointRectangle,
+    ThreePointCircle,
+    ThreePointArc,
 }
 pub(crate) const SECONDARY_SKETCH_TOOLS: [GuiSketchTool; 6] = [
     GuiSketchTool::Circle,
@@ -31,6 +33,8 @@ impl GuiSketchTool {
             Self::Ellipse => "Ellipse",
             Self::CenterRectangle => "Center Rect.",
             Self::ThreePointRectangle => "3-Point Rect.",
+            Self::ThreePointCircle => "3-Point Circle",
+            Self::ThreePointArc => "3-Point Arc",
         }
     }
 }

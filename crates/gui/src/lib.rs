@@ -18,6 +18,7 @@ mod files;
 mod input;
 mod parameters;
 mod ribbon;
+mod sketch_flyouts;
 mod sketch_tools;
 mod snapshot;
 mod theme;

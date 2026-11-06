@@ -2,9 +2,25 @@
 use super::*;
 use crate::{SketchPlacementTool, placement_test_inputs::*};
 use oblikovati_gui::GuiSketchTool;
-use oblikovati_model::sketch::SketchPlane;
+use oblikovati_model::sketch::{CircumcircleOptions, SketchPlane};
 use oblikovati_viewport::ViewportKey;
-const TOOL_ENGINE_CASES: [(GuiSketchTool, SketchPlacementTool); 7] = [
+const TOOL_ENGINE_CASES: [(GuiSketchTool, SketchPlacementTool); 9] = [
+    (
+        GuiSketchTool::ThreePointCircle,
+        SketchPlacementTool::ThreePointCircle {
+            options: CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
+    ),
+    (
+        GuiSketchTool::ThreePointArc,
+        SketchPlacementTool::ThreePointArc {
+            options: CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
+    ),
     (GuiSketchTool::Rectangle, SketchPlacementTool::Rectangle),
     (GuiSketchTool::Circle, SketchPlacementTool::Circle),
     (GuiSketchTool::Point, SketchPlacementTool::Point),
@@ -70,4 +86,43 @@ fn gui_tool_switch_and_cancel_retire_the_preview_without_committing_geometry() {
     slot_input::deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
     assert!(!owner.placement_active() && owner.placement_preview().is_none());
     assert_eq!(owner.gui_command_state().unwrap(), before);
+}
+
+fn selected_circular_options(choice: GuiSketchTool, scale: f64) -> CircumcircleOptions {
+    use super::super::sketch_tools_gui::gui_placement_tool;
+    let resolved = gui_placement_tool(choice, scale).unwrap();
+    match resolved {
+        SketchPlacementTool::ThreePointCircle { options }
+        | SketchPlacementTool::ThreePointArc { options } => options,
+        _ => panic!("{resolved:?}: expected a three-point circular tool"),
+    }
+}
+#[test]
+fn circular_gui_choices_use_the_versioned_physical_policy_in_working_units() {
+    use oblikovati_model::sketch::SketchConstructionPolicy;
+    for scale in [0.1, 1., 2.54] {
+        let expected = SketchConstructionPolicy::default()
+            .in_working_units(scale)
+            .unwrap();
+        for choice in [
+            GuiSketchTool::ThreePointCircle,
+            GuiSketchTool::ThreePointArc,
+        ] {
+            assert_eq!(selected_circular_options(choice, scale), expected);
+        }
+    }
+}
+#[test]
+fn circular_gui_choices_refuse_invalid_working_unit_scales() {
+    use super::super::sketch_tools_gui::gui_placement_tool;
+    for choice in [
+        GuiSketchTool::ThreePointCircle,
+        GuiSketchTool::ThreePointArc,
+    ] {
+        assert!(
+            gui_placement_tool(choice, 0.)
+                .unwrap_err()
+                .contains("scale 0")
+        );
+    }
 }
