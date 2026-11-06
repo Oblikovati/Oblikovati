@@ -497,3 +497,6 @@ mod selection_events;
 
 #[path = "sketch_api/inspection.rs"]
 mod inspection;
+
+#[path = "sketch_api/visibility.rs"]
+mod visibility;

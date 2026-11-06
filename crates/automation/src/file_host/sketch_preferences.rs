@@ -26,7 +26,11 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             );
         }
         if method != METHOD_SKETCH_CREATE {
-            return crate::sketches::apply(self.files, method, request);
+            let editing = self
+                .sketch_edit
+                .as_ref()
+                .and_then(|edit| edit.current(self.files.workspace()));
+            return crate::sketches::apply(self.files, method, request, editing);
         }
         let project_origin = self
             .sketch_preferences

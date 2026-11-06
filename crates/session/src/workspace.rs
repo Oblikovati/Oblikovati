@@ -32,6 +32,7 @@ mod sketch_relation_delete;
 mod sketch_selection;
 mod sketch_selection_click;
 mod sketch_translation;
+mod sketch_visibility;
 use crate::{DocumentSession, TransactionObserver};
 pub use error::WorkspaceError;
 use oblikovati_model::{

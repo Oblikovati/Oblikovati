@@ -42,9 +42,28 @@ fn inspect<O: TransactionObserver>(
     id: DocumentSketchId,
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<SketchInfo, Error> {
-    let snapshot = session.snapshot();
+    inspect_snapshot(
+        session.snapshot(),
+        document,
+        index,
+        id,
+        editing,
+        session.sketch_solve_options().rank_tolerance,
+    )
+}
+
+pub(super) fn inspect_snapshot(
+    snapshot: &DocumentSnapshot,
+    document: u64,
+    index: i64,
+    id: DocumentSketchId,
+    editing: Option<(u64, DocumentSketchId)>,
+    rank_tolerance: f64,
+) -> Result<SketchInfo, Error> {
     let sketch = snapshot.sketches.get(id).map_err(api_error)?;
-    let structure = session.analyze_sketch(id).map_err(api_error)?;
+    let structure = snapshot
+        .analyze_document_sketch(id, rank_tolerance)
+        .map_err(api_error)?;
     let mut summary = sketch_summary(snapshot, sketch, index)?;
     summary.dof = wire_count(structure.degrees_of_freedom)?;
     summary.editing = editing == Some((document, id));
@@ -65,8 +84,8 @@ fn sketch_summary(
         index,
         name: sketch.name().into(),
         plane: plane_label(plane.normal()).into(),
-        // All authored sketches are displayed; visibility/share/style edits are not yet exposed (#3563).
-        visible: true,
+        // #3826: read saved visibility; shared/style editing remains deferred (#3563).
+        visible: sketch.visible(),
         entity_count: wire_count(sketch.geometry().entity_ids().len())?,
         consumed: owned_by.is_some(),
         owned_by: owned_by.unwrap_or_default().into(),

@@ -434,3 +434,6 @@ mod placement_verification;
 
 #[path = "lifecycle/browser_selection.rs"]
 mod browser_selection;
+
+#[path = "lifecycle/sketch_visibility.rs"]
+mod sketch_visibility;

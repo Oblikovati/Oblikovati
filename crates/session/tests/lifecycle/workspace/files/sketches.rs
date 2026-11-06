@@ -450,3 +450,6 @@ mod dimension_create;
 
 #[path = "sketches/entity_delete.rs"]
 mod entity_delete;
+
+#[path = "sketches/visibility.rs"]
+mod visibility;
