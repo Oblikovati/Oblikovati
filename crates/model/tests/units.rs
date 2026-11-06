@@ -224,3 +224,74 @@ fn malformed_literals_are_errors_without_panics() {
         UnitError::UnknownUnit("furlong".into())
     );
 }
+
+#[test]
+fn named_conversion_checks_every_registered_pair_against_physical_factors() {
+    use oblikovati_model::units::{convert_value, unit_category};
+    for (from, category, factor) in PHYSICAL_UNITS {
+        assert_eq!(unit_category(from).unwrap(), category);
+        for (to, target_category, target_factor) in PHYSICAL_UNITS {
+            let converted = convert_value(2.5, from, to);
+            if category == target_category {
+                assert_numeric_close(converted.unwrap(), 2.5 * factor / target_factor);
+            } else {
+                assert!(converted.is_err(), "{from} to {to}");
+            }
+        }
+    }
+}
+
+#[test]
+fn unit_services_reject_unknown_names_and_report_offending_conversions() {
+    use oblikovati_model::units::{convert_value, unit_category};
+    for name in ["", "furlong", "MM", " mm", "m^4"] {
+        assert!(
+            unit_category(name)
+                .unwrap_err()
+                .to_string()
+                .contains(&format!("{name:?}"))
+        );
+        assert!(convert_value(1.0, name, "mm").is_err());
+        assert!(convert_value(1.0, "mm", name).is_err());
+    }
+    let error = convert_value(7.0, "mm", "deg").unwrap_err().to_string();
+    for fragment in ["7", "mm", "deg", "expected", "same dimension"] {
+        assert!(error.contains(fragment), "{error}");
+    }
+}
+
+#[test]
+fn conversion_preserves_signed_zero_and_refuses_nonfinite_results() {
+    use oblikovati_model::units::convert_value;
+    assert_eq!(
+        convert_value(-0.0, "in", "cm").unwrap().to_bits(),
+        (-0.0_f64).to_bits()
+    );
+    assert_eq!(convert_value(1.0, "in", "cm").unwrap(), 2.54);
+    for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, f64::MAX] {
+        let error = convert_value(value, "km", "pm").unwrap_err().to_string();
+        assert!(error.contains(&value.to_string()), "{error}");
+        assert!(error.contains("finite"));
+    }
+}
+
+#[test]
+fn diagnostic_category_names_match_go_without_guessing_aliases() {
+    use oblikovati_model::units::parse_category;
+    for (name, expected) in [
+        ("unitless", Unitless),
+        ("length", Length),
+        ("angle", Angle),
+        ("area", Area),
+        ("volume", Volume),
+        ("mass", Mass),
+        ("time", Time),
+        ("boolean", Boolean),
+        ("text", Text),
+    ] {
+        assert_eq!(parse_category(name), Some(expected));
+    }
+    for invalid in ["", "Length", "mm", "length ", "number"] {
+        assert_eq!(parse_category(invalid), None);
+    }
+}

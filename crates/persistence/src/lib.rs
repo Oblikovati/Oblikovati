@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+//! Storage boundaries for complete document snapshots.
+
+pub mod application_options;
+pub mod assets;
+pub mod atomic;
+pub mod load;
+pub mod metadata;
+pub mod package;
+
+pub mod file_access;
+pub mod project;
+
+pub mod stream_file;
+
+pub mod attachment_files;
+
+pub mod project_file;
+
+pub mod theme_preferences;
+
+mod theme_preferences_native;
+pub mod user_config;
+
+pub mod theme_files;
+
+pub mod theme_file_preferences;
+
+pub mod theme_lifecycle;

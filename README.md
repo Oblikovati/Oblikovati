@@ -1,19 +1,49 @@
 # Oblikovati Rust application
 
-This branch will contain the Rust port of the Oblikovati application. It will
-use the Rust contract in **Oblikovati.API** and the **Martensite** kernel in
-**RustyCADKernel**.
+This branch contains the Rust application port in progress. It uses the Rust
+contract in **Oblikovati.API**. The native Vulkan/TKV3D viewport uses the
+**Martensite** repository. The model adapter still consumes the previous
+**RustyCADKernel** packages while its Martensite migration is qualified. The
+[v0.11 release intake](architecture/rust-port/implementation-martensite-0-11.md)
+records the current renderer and authored sketch geometry pins and qualification.
 
 Go-kernel capabilities that support application features and are outside OCCT
 must be ported and adapted into Martensite as required kernel extensions.
 
-The branch contains the port plan and 13 consolidated Rust ADRs. All 66 legacy
+The branch contains the port plan and consolidated Rust ADRs. All 66 legacy
 Go ADRs have a recorded disposition. The Rust build and release tools are present;
-the first model dependency graph is ported. The application GUI and CLI are not
-yet ported. Publication remains blocked.
+model, parameter, file lifecycle, and storage foundations are present. The headless CLI supports document creation, recipe open/save-as, script execution,
+manifest inspection, version, and help. The first desktop executable supplies
+native window lifetime, saved prism display, camera navigation, and document
+startup. Dear ImGui controls create a Part, start and finish an XY sketch, draw
+an anchored rectangle, and create or edit its driving size parameter. Native
+Horizontal, Vertical and Coincident tools use analytic picks and the typed API.
+General Dimension supplies explicit label placement, expression entry and
+parameter-driven values. Line, circular-tool flyouts, checked Delete, and
+Construction/Centerline curve formats also use the shared owner operations.
+Native tests verify zero DOF, recomputation, undo/redo and save/reopen. The complete cube UI
+journey, ribbon and model-browser parity, and native file dialogs remain open.
+Publication remains blocked. Current dependencies are pinned in `release.toml`
+and the adapter manifests; the
+[kernel release intake](architecture/rust-port/implementation-kernel-release.md)
+records the earlier release probes.
+
+Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
+package manifest without reconstructing geometry or changing the file.
+
+Run `cargo run -p oblikovati-head -- --frames 3` on the local Linux display for a
+bounded native window smoke run. Add a native document path to display its
+supported stored geometry, for example
+`cargo run -p oblikovati-head -- --frames 3 "path/to/part.opd"`.
+See [startup behavior and checks](architecture/rust-port/implementation-desktop-startup.md).
+See [native parameter authoring evidence](architecture/rust-port/implementation-native-parameters.md).
+See [native dimension creation evidence](architecture/rust-port/implementation-native-dimension-tool.md).
 
 - [Implementation evidence](architecture/rust-port/implementation.md): tested
   behavior, source mapping, and remaining work.
+
+- [Build cache](architecture/rust-port/implementation-build-cache.md): pinned Kache,
+  shared worktree cache, measured reuse, and cache controls.
 
 - [Build and release commands](RELEASING.md): local gate, CI, native packaging,
   released API/kernel dependencies, versioning, and publication requirements.
@@ -34,8 +64,7 @@ yet ported. Publication remains blocked.
   live tests, platform checks, and cutover.
 
 `rust` is the repository's default and integration branch. It has an independent
-root commit. Rust feature branches start from `rust` and target it for pull
-requests.
+root commit. Topic branches retain the implementation commits before integration.
 
 `go-legacy` preserves the Go application history. It was the `develop` default
 branch before the branch change on 2026-10-10; the repository had no `main`

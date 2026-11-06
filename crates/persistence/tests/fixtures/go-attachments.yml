@@ -1,0 +1,21 @@
+schemaVersion: 2
+documentType: 12290
+attachments:
+    - name: generic
+      kind: generic
+      fullFileName: side.txt
+    - name: linked
+      kind: linked
+      fullFileName: loads.csv
+      lastKnownFileTime: "2026-06-01T12:00:00.123456789Z"
+      browserVisible: true
+    - name: embedded
+      kind: embedded
+      fullFileName: table.bin
+      resourceId: 00000000-0000-4000-8000-000000000001
+      payload: AP+A
+      browserVisible: true
+model:
+    retained: [1, 2]
+data:
+    keep: BAU=

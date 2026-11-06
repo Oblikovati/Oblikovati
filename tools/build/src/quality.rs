@@ -2,7 +2,7 @@
 
 use crate::{
     cargo_tree::{Metadata, inventory, requires_display},
-    docs,
+    dependencies, docs,
     process::{BuildResult, Runner, execute},
     tree::{read_text, write_text},
 };
@@ -51,7 +51,7 @@ pub(crate) fn workspace_command(
             ],
         ),
         "test" => {
-            execute(
+            execute_tests(
                 runner,
                 workspace,
                 &[
@@ -93,8 +93,16 @@ pub(crate) fn workspace_command(
     }
 }
 
+// Native capture tests share the foreground display (#3563). A concurrent window
+// can obscure another test's pixels. Set the harness flag, not a caller's env var.
+fn execute_tests(runner: &dyn Runner, workspace: &Path, command: &[&str]) -> BuildResult<()> {
+    let mut serial_command = command.to_vec();
+    serial_command.extend(["--", "--test-threads=1"]);
+    execute(runner, workspace, &serial_command)
+}
+
 fn doctests(runner: &dyn Runner, workspace: &Path) -> BuildResult<()> {
-    execute(
+    execute_tests(
         runner,
         workspace,
         &[
@@ -134,13 +142,28 @@ fn check_display(workspaces: &[Metadata], linux: bool, present: bool) -> BuildRe
 }
 
 pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
+    dependencies::check_pins(root)?;
     let workspaces = inventory(root, runner)?;
     check_display(
         &workspaces,
         cfg!(target_os = "linux"),
         std::env::var_os("DISPLAY").is_some() || std::env::var_os("WAYLAND_DISPLAY").is_some(),
     )?;
-    require_tool(runner, root, "rustc", &["--version"], "rustc 1.98.1 ")?;
+    gate_tool_versions(root, runner)?;
+    for (index, workspace) in workspaces.iter().enumerate() {
+        gate_workspace(root, runner, workspace, index)?;
+    }
+    gate_repository_checks(root, runner)?;
+    println!(
+        "Gate passed for {} discovered Cargo workspace(s). Runtime evidence covers only the crates present in this tree.",
+        workspaces.len()
+    );
+    Ok(())
+}
+
+fn gate_tool_versions(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
+    require_tool(runner, root, "rustc", &["--version"], "rustc 1.99.0 ")?;
+    require_tool(runner, root, "kache", &["--version"], "kache 2.0.0")?;
     require_tool(
         runner,
         root,
@@ -148,16 +171,24 @@ pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         &["llvm-cov", "--version"],
         "cargo-llvm-cov 0.9.1",
     )?;
-    for (index, workspace) in workspaces.iter().enumerate() {
-        gate_workspace(root, runner, workspace, index)?;
-    }
+    Ok(())
+}
+
+fn gate_repository_checks(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
     execute(
         runner,
         root,
         &["npm", "exec", "--offline", "--", "markdownlint-cli2"],
     )?;
     docs::check(root)?;
+    crate::script_docs::check(root, runner)?;
     execute(runner, root, &["actionlint", "-shellcheck=", "-pyflakes="])?;
+    gate_duplication_check(root, runner)?;
+    execute(runner, root, &["git", "diff", "--check"])?;
+    Ok(())
+}
+
+fn gate_duplication_check(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
     execute(
         runner,
         root,
@@ -171,13 +202,7 @@ pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
             ".jscpd.json",
             ".",
         ],
-    )?;
-    execute(runner, root, &["git", "diff", "--check"])?;
-    println!(
-        "Gate passed for {} discovered Cargo workspace(s). Runtime evidence covers only the crates present in this tree.",
-        workspaces.len()
-    );
-    Ok(())
+    )
 }
 
 fn require_tool(
@@ -205,7 +230,7 @@ fn gate_workspace(
     workspace_command(runner, directory, "build")?;
     let report = root.join(format!("target/quality/coverage-{index}.json"));
     write_text(&report, "")?;
-    execute(
+    execute_tests(
         runner,
         directory,
         &[

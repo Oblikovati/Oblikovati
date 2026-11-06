@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Fixed test input: owner release updates must not change fake package identities (#3742).
+[product]
+major = 0
+resources = "packaging/resources"
+publication-ready = false
+document-schema = "3"
+reference-key = "pending"
+c-abi = "pending"
+
+[api]
+repository = "Oblikovati/Oblikovati.API"
+version = "0.154.0"
+revision = ""
+
+[kernel]
+repository = "Oblikovati/RustyCADKernel"
+version = ""
+revision = ""
+
+[linuxdeploy]
+url = ""
+sha256 = ""

@@ -1,0 +1,485 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: elemental metals industrially used, atomic number Z <= 83 (Bismuth).
+# Only elements with reliable mechanical, thermal AND electrical data are included; pure
+# reactive/liquid metals (Na, K, Ca, Hg) and metals without dependable structural data
+# (Mn, Ga, Tc, Tl) are intentionally omitted.
+#
+# Property sources (typical / annealed, room temperature):
+#   - Density, thermal conductivity, linear expansion, specific heat, electrical
+#     resistivity: CRC Handbook of Chemistry and Physics (97th ed.); ASM Metals
+#     Reference Book (3rd ed.); MatWeb element datasheets.
+#   - Young's modulus, Poisson's ratio, yield & ultimate tensile strength: ASM
+#     Metals Handbook Vol. 2; AZoM material profiles; MatWeb. Strength values are for
+#     commercially pure, annealed wrought form unless noted; brittle elements list an
+#     approximate tensile/flexural figure (no distinct yield) and are tagged "brittle".
+#
+# Appearance base colors (albedo) are physically-based metal F0 reflectance values in
+# sRGB, after the Lagarde/UE4/Filament metal reference chart; the Realistic shader
+# linearises them (mesh.frag: f0 = toLinear(albedo)). metallic = 1.0 for every pure
+# metal; roughness encodes a representative polished-to-satin finish.
+#
+# Units: density g/cm3 | youngsModulus GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
+
+materials:
+    - id: beryllium
+      name: Beryllium
+      density: 1.85
+      mechanical:
+        youngsModulus: 287
+        poissonsRatio: 0.032
+        yieldStrength: 240
+        ultimateTensileStrength: 370
+      thermal:
+        conductivity: 200
+        expansionCoeff: 1.13e-05
+        specificHeat: 1825
+      electrical:
+        resistivity: 3.6e-08
+        relativePermittivity: 1
+      appearance: beryllium
+    - id: magnesium
+      name: Magnesium
+      density: 1.74
+      mechanical:
+        youngsModulus: 45
+        poissonsRatio: 0.29
+        yieldStrength: 40
+        ultimateTensileStrength: 160
+      thermal:
+        conductivity: 156
+        expansionCoeff: 2.48e-05
+        specificHeat: 1023
+      electrical:
+        resistivity: 4.39e-08
+        relativePermittivity: 1
+      appearance: magnesium
+    - id: aluminum-1100
+      name: Aluminum (Pure, 1100)
+      density: 2.71
+      mechanical:
+        youngsModulus: 69
+        poissonsRatio: 0.33
+        yieldStrength: 34
+        ultimateTensileStrength: 90
+      thermal:
+        conductivity: 222
+        expansionCoeff: 2.36e-05
+        specificHeat: 904
+      electrical:
+        resistivity: 2.99e-08
+        relativePermittivity: 1
+      appearance: aluminum
+    - id: titanium-cp
+      name: Titanium (CP Grade 2)
+      density: 4.51
+      mechanical:
+        youngsModulus: 105
+        poissonsRatio: 0.34
+        yieldStrength: 275
+        ultimateTensileStrength: 345
+      thermal:
+        conductivity: 16.4
+        expansionCoeff: 8.6e-06
+        specificHeat: 523
+      electrical:
+        resistivity: 4.2e-07
+        relativePermittivity: 1
+      appearance: titanium
+    - id: vanadium
+      name: Vanadium
+      density: 6.11
+      mechanical:
+        youngsModulus: 128
+        poissonsRatio: 0.37
+        yieldStrength: 380
+        ultimateTensileStrength: 460
+      thermal:
+        conductivity: 30.7
+        expansionCoeff: 8.4e-06
+        specificHeat: 489
+      electrical:
+        resistivity: 1.97e-07
+        relativePermittivity: 1
+      appearance: vanadium
+    - id: chromium
+      name: Chromium
+      density: 7.19
+      mechanical:
+        youngsModulus: 279
+        poissonsRatio: 0.21
+        yieldStrength: 131
+        ultimateTensileStrength: 282
+      thermal:
+        conductivity: 93.9
+        expansionCoeff: 4.9e-06
+        specificHeat: 449
+      electrical:
+        resistivity: 1.25e-07
+        relativePermittivity: 1
+      appearance: chromium
+    - id: iron-pure
+      name: Iron (Pure)
+      density: 7.87
+      mechanical:
+        youngsModulus: 211
+        poissonsRatio: 0.29
+        yieldStrength: 50
+        ultimateTensileStrength: 200
+      thermal:
+        conductivity: 80.4
+        expansionCoeff: 1.18e-05
+        specificHeat: 449
+      electrical:
+        resistivity: 9.71e-08
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 5000
+        saturationFluxDensity: 2.16
+      appearance: iron
+    - id: cobalt
+      name: Cobalt
+      density: 8.9
+      mechanical:
+        youngsModulus: 209
+        poissonsRatio: 0.31
+        yieldStrength: 225
+        ultimateTensileStrength: 800
+      thermal:
+        conductivity: 100
+        expansionCoeff: 1.3e-05
+        specificHeat: 421
+      electrical:
+        resistivity: 6.24e-08
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 250
+        saturationFluxDensity: 1.8
+      appearance: cobalt
+    - id: nickel
+      name: Nickel
+      density: 8.9
+      mechanical:
+        youngsModulus: 200
+        poissonsRatio: 0.31
+        yieldStrength: 148
+        ultimateTensileStrength: 462
+      thermal:
+        conductivity: 90.9
+        expansionCoeff: 1.34e-05
+        specificHeat: 444
+      electrical:
+        resistivity: 6.99e-08
+        relativePermittivity: 1
+      magnetic:
+        class: soft-magnetic
+        relativePermeability: 600
+        saturationFluxDensity: 0.6
+      appearance: nickel
+    - id: copper-c110
+      name: Copper (C110)
+      density: 8.96
+      mechanical:
+        youngsModulus: 128
+        poissonsRatio: 0.34
+        yieldStrength: 70
+        ultimateTensileStrength: 220
+      thermal:
+        conductivity: 391
+        expansionCoeff: 1.65e-05
+        specificHeat: 385
+      electrical:
+        resistivity: 1.71e-08
+        relativePermittivity: 1
+      appearance: copper
+    - id: zinc
+      name: Zinc
+      density: 7.14
+      mechanical:
+        youngsModulus: 108
+        poissonsRatio: 0.25
+        yieldStrength: 110
+        ultimateTensileStrength: 150
+      thermal:
+        conductivity: 116
+        expansionCoeff: 3.02e-05
+        specificHeat: 388
+      electrical:
+        resistivity: 5.9e-08
+        relativePermittivity: 1
+      appearance: zinc
+    - id: zirconium
+      name: Zirconium
+      density: 6.52
+      mechanical:
+        youngsModulus: 88
+        poissonsRatio: 0.34
+        yieldStrength: 230
+        ultimateTensileStrength: 330
+      thermal:
+        conductivity: 22.6
+        expansionCoeff: 5.7e-06
+        specificHeat: 278
+      electrical:
+        resistivity: 4.21e-07
+        relativePermittivity: 1
+      appearance: zirconium
+    - id: niobium
+      name: Niobium
+      density: 8.57
+      mechanical:
+        youngsModulus: 105
+        poissonsRatio: 0.4
+        yieldStrength: 240
+        ultimateTensileStrength: 275
+      thermal:
+        conductivity: 53.7
+        expansionCoeff: 7.3e-06
+        specificHeat: 265
+      electrical:
+        resistivity: 1.52e-07
+        relativePermittivity: 1
+      appearance: niobium
+    - id: molybdenum
+      name: Molybdenum
+      density: 10.22
+      mechanical:
+        youngsModulus: 329
+        poissonsRatio: 0.31
+        yieldStrength: 415
+        ultimateTensileStrength: 690
+      thermal:
+        conductivity: 138
+        expansionCoeff: 4.8e-06
+        specificHeat: 251
+      electrical:
+        resistivity: 5.34e-08
+        relativePermittivity: 1
+      appearance: molybdenum
+    - id: ruthenium
+      name: Ruthenium
+      density: 12.37
+      mechanical:
+        youngsModulus: 447
+        poissonsRatio: 0.3
+        yieldStrength: 370
+        ultimateTensileStrength: 510
+      thermal:
+        conductivity: 117
+        expansionCoeff: 6.4e-06
+        specificHeat: 238
+      electrical:
+        resistivity: 7.1e-08
+        relativePermittivity: 1
+      appearance: ruthenium
+    - id: rhodium
+      name: Rhodium
+      density: 12.41
+      mechanical:
+        youngsModulus: 380
+        poissonsRatio: 0.26
+        yieldStrength: 70
+        ultimateTensileStrength: 951
+      thermal:
+        conductivity: 150
+        expansionCoeff: 8.2e-06
+        specificHeat: 243
+      electrical:
+        resistivity: 4.3e-08
+        relativePermittivity: 1
+      appearance: rhodium
+    - id: palladium
+      name: Palladium
+      density: 12.02
+      mechanical:
+        youngsModulus: 121
+        poissonsRatio: 0.39
+        yieldStrength: 55
+        ultimateTensileStrength: 180
+      thermal:
+        conductivity: 71.8
+        expansionCoeff: 1.18e-05
+        specificHeat: 244
+      electrical:
+        resistivity: 1.05e-07
+        relativePermittivity: 1
+      appearance: palladium
+    - id: silver
+      name: Silver
+      density: 10.49
+      mechanical:
+        youngsModulus: 83
+        poissonsRatio: 0.37
+        yieldStrength: 55
+        ultimateTensileStrength: 170
+      thermal:
+        conductivity: 429
+        expansionCoeff: 1.89e-05
+        specificHeat: 235
+      electrical:
+        resistivity: 1.59e-08
+        relativePermittivity: 1
+      appearance: silver
+    - id: cadmium
+      name: Cadmium
+      density: 8.65
+      mechanical:
+        youngsModulus: 50
+        poissonsRatio: 0.3
+        yieldStrength: 28
+        ultimateTensileStrength: 71
+      thermal:
+        conductivity: 96.6
+        expansionCoeff: 3.08e-05
+        specificHeat: 232
+      electrical:
+        resistivity: 7.27e-08
+        relativePermittivity: 1
+      appearance: cadmium
+    - id: indium
+      name: Indium
+      density: 7.31
+      mechanical:
+        youngsModulus: 11
+        poissonsRatio: 0.45
+        yieldStrength: 2.5
+        ultimateTensileStrength: 4.5
+      thermal:
+        conductivity: 81.8
+        expansionCoeff: 3.21e-05
+        specificHeat: 233
+      electrical:
+        resistivity: 8.37e-08
+        relativePermittivity: 1
+      appearance: indium
+    - id: tin
+      name: Tin
+      density: 7.27
+      mechanical:
+        youngsModulus: 50
+        poissonsRatio: 0.36
+        yieldStrength: 11
+        ultimateTensileStrength: 15
+      thermal:
+        conductivity: 66.8
+        expansionCoeff: 2.2e-05
+        specificHeat: 228
+      electrical:
+        resistivity: 1.15e-07
+        relativePermittivity: 1
+      appearance: tin
+    - id: antimony
+      name: Antimony
+      density: 6.68
+      mechanical:
+        youngsModulus: 55
+        poissonsRatio: 0.25
+        yieldStrength: 11
+        ultimateTensileStrength: 11
+      thermal:
+        conductivity: 24.4
+        expansionCoeff: 1.1e-05
+        specificHeat: 207
+      electrical:
+        resistivity: 4e-07
+        relativePermittivity: 1
+      appearance: antimony
+    - id: hafnium
+      name: Hafnium
+      density: 13.31
+      mechanical:
+        youngsModulus: 78
+        poissonsRatio: 0.37
+        yieldStrength: 240
+        ultimateTensileStrength: 450
+      thermal:
+        conductivity: 23
+        expansionCoeff: 5.9e-06
+        specificHeat: 144
+      electrical:
+        resistivity: 3.31e-07
+        relativePermittivity: 1
+      appearance: hafnium
+    - id: tantalum
+      name: Tantalum
+      density: 16.69
+      mechanical:
+        youngsModulus: 186
+        poissonsRatio: 0.34
+        yieldStrength: 180
+        ultimateTensileStrength: 205
+      thermal:
+        conductivity: 57.5
+        expansionCoeff: 6.3e-06
+        specificHeat: 140
+      electrical:
+        resistivity: 1.31e-07
+        relativePermittivity: 1
+      appearance: tantalum
+    - id: tungsten
+      name: Tungsten
+      density: 19.25
+      mechanical:
+        youngsModulus: 411
+        poissonsRatio: 0.28
+        yieldStrength: 750
+        ultimateTensileStrength: 980
+      thermal:
+        conductivity: 173
+        expansionCoeff: 4.5e-06
+        specificHeat: 132
+      electrical:
+        resistivity: 5.28e-08
+        relativePermittivity: 1
+      appearance: tungsten
+    - id: rhenium
+      name: Rhenium
+      density: 21.02
+      mechanical:
+        youngsModulus: 463
+        poissonsRatio: 0.3
+        yieldStrength: 290
+        ultimateTensileStrength: 1070
+      thermal:
+        conductivity: 48
+        expansionCoeff: 6.2e-06
+        specificHeat: 137
+      electrical:
+        resistivity: 1.8e-07
+        relativePermittivity: 1
+      appearance: rhenium
+    - id: osmium
+      name: Osmium
+      density: 22.59
+      mechanical:
+        youngsModulus: 559
+        poissonsRatio: 0.25
+        yieldStrength: 1000
+        ultimateTensileStrength: 1000
+      thermal:
+        conductivity: 87.6
+        expansionCoeff: 5.1e-06
+        specificHeat: 130
+      electrical:
+        resistivity: 8.1e-08
+        relativePermittivity: 1
+      appearance: osmium
+    - id: iridium
+      name: Iridium
+      density: 22.56
+      mechanical:
+        youngsModulus: 528
+        poissonsRatio: 0.26
+        yieldStrength: 490
+        ultimateTensileStrength: 1100
+      thermal:
+        conductivity: 147
+        expansionCoeff: 6.4e-06
+        specificHeat: 131
+      electrical:
+        resistivity: 4.71e-08
+        relativePermittivity: 1
+      appearance: iridium

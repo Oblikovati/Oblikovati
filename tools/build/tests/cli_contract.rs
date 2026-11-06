@@ -12,7 +12,7 @@ impl GitFixture {
         let fixture = Self(tempfile::tempdir().unwrap());
         std::fs::write(
             fixture.root().join("release.toml"),
-            include_str!("../../../release.toml"),
+            include_str!("fixtures/release.toml"),
         )
         .unwrap();
         fixture.git(&["init", "--quiet"]);
@@ -83,6 +83,8 @@ fn invalid_commands_and_incomplete_publication_have_nonzero_exit_codes() {
         vec!["unknown"],
         vec!["version", "beta"],
         vec!["preflight", "publish"],
+        vec!["collect", "0.1.0", "missing", "output"],
+        vec!["verify-release", "0.1.0", "missing"],
     ] {
         let output = fixture.run(&args);
         assert!(!output.status.success());

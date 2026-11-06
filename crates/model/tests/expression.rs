@@ -45,7 +45,7 @@ fn syntax_errors_report_byte_position_and_expected_shape() {
         ("+5", 0),
         ("1..2", 0),
         ("1e999", 0),
-        ("1 cm^2", 4),
+        ("1 cm^4", 2),
         ("max(1,)", 6),
         ("2 3", 2),
         ("width\n", 5),

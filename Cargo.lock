@@ -18,6 +18,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "allocator-api2"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c880a97d28a3681c0267bd29cff89621202715b065127cd445fa0f0fe0aa2880"
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -36,10 +42,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "ash"
+version = "0.38.0+1.3.281"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bb44936d800fea8f016d7f2311c6a4f97aebd5dc86f09906139ec848cf3a46f"
+dependencies = [
+ "libloading",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
+
+[[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
+
+[[package]]
+name = "bitflags"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
@@ -57,10 +84,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "bstr"
+version = "1.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bb31b46c14244e20ee9984b11bf5c992b91fb6939fea616e3512c8baecdbe5f"
+dependencies = [
+ "memchr",
+ "serde_core",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
+
+[[package]]
+name = "bytemuck"
+version = "1.25.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797"
+
+[[package]]
+name = "byteorder-lite"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
 
 [[package]]
 name = "cc"
@@ -79,6 +128,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "cfg_aliases"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
+
+[[package]]
+name = "chlorine"
+version = "1.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c00d31b1d19317b4777ec879192d3745bd97d05262b4b19cb1dda284b9d22f19"
+
+[[package]]
 name = "chrono"
 version = "0.4.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -88,6 +149,12 @@ dependencies = [
  "num-traits",
  "windows-link",
 ]
+
+[[package]]
+name = "color_quant"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "core-foundation-sys"
@@ -124,6 +191,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "deranged"
+version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
+
+[[package]]
 name = "derive_arbitrary"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -145,6 +218,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "either"
+version = "1.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e9c71c2167ca323c882b99918929403426e2373ea17242ff5653e0d5e1058be"
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -161,10 +240,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast_polynomial"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0a0db42615e971ab610b46ff2865e6edee7eb447ce867dbfb3f79f292c4cd54"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
+
+[[package]]
+name = "fdeflate"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e6853b52649d4ac5c0bd02320cddc5ba956bdb407c4b75a2c6b75bf51500f8c"
+dependencies = [
+ "simd-adler32",
+]
 
 [[package]]
 name = "filetime"
@@ -189,7 +286,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb"
 dependencies = [
  "crc32fast",
- "miniz_oxide",
+ "miniz_oxide 0.9.1",
  "zlib-rs",
 ]
 
@@ -228,6 +325,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gethostname"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bd49230192a3797a9a4d6abe9b3eed6f7fa4c8a8a4947977c6f80025f92cbd8"
+dependencies = [
+ "rustix",
+ "windows-link",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -236,6 +343,16 @@ dependencies = [
  "cfg-if",
  "libc",
  "r-efi",
+]
+
+[[package]]
+name = "gif"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ae047235e33e2829703574b54fdec96bfbad892062d97fed2f76022287de61b"
+dependencies = [
+ "color_quant",
+ "weezl",
 ]
 
 [[package]]
@@ -266,6 +383,47 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "image"
+version = "0.25.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db35664ce6b9810857a38a906215e75a9c879f0696556a39f59c62829710251a"
+dependencies = [
+ "bytemuck",
+ "byteorder-lite",
+ "color_quant",
+ "gif",
+ "num-traits",
+ "png",
+ "zune-core",
+ "zune-jpeg",
+]
+
+[[package]]
+name = "imgui"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8addafa5cecf0515812226e806913814e02ce38d10215778082af5174abe5669"
+dependencies = [
+ "bitflags 1.3.2",
+ "cfg-if",
+ "imgui-sys",
+ "mint",
+ "parking_lot",
+]
+
+[[package]]
+name = "imgui-sys"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ead193f9f4b60398e8b8f4ab1483e2321640d87aeebdaa3e5f44c55633ccd804"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "chlorine",
+ "mint",
 ]
 
 [[package]]
@@ -302,10 +460,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
 
 [[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
+
+[[package]]
+name = "lock_api"
+version = "0.4.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965"
+dependencies = [
+ "scopeguard",
+]
 
 [[package]]
 name = "log"
@@ -314,10 +491,266 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
+name = "lua-src"
+version = "551.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d400ffef0e3d4d29287092bdc5a276d0bf468b2c69709d5bab0d469312d9f947"
+dependencies = [
+ "cc",
+]
+
+[[package]]
+name = "luajit-src"
+version = "210.7.4+c6ffc14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1db548b001f0b7da416daf0ffae963912bae6cad1799fa9f4eaba09da6dba837"
+dependencies = [
+ "cc",
+ "which",
+]
+
+[[package]]
+name = "mach2"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0d28e293f2b8c9d2b2d1c0193bd3c1cbdc0d2cf396888dc01162f7cf9d6c3f3"
+
+[[package]]
+name = "martensite-cmath"
+version = "0.3.5"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "metallic",
+]
+
+[[package]]
+name = "martensite-tkbrep"
+version = "0.3.9"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkernel"
+version = "0.4.2"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "allocator-api2",
+ "bytemuck",
+ "libc",
+ "mach2",
+ "martensite-cmath",
+ "nix",
+ "rustix",
+ "smallvec",
+ "tempfile",
+ "windows-sys",
+ "winsafe",
+ "xattr",
+]
+
+[[package]]
+name = "martensite-tkg2d"
+version = "0.3.7"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkg3d"
+version = "0.3.8"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkgeomalgo"
+version = "0.3.8"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkgeombase"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkhlr"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tkmath"
+version = "0.3.7"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkernel",
+ "num-bigint",
+ "num-complex",
+ "rustc_apfloat",
+]
+
+[[package]]
+name = "martensite-tkmesh"
+version = "0.3.6"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "allocator-api2",
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkshhealing",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tkservice"
+version = "0.4.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "image",
+ "libc",
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkmath",
+ "windows-sys",
+ "winsafe",
+ "x11-dl",
+]
+
+[[package]]
+name = "martensite-tkshhealing"
+version = "0.3.8"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-tktopalgo"
+version = "0.4.2"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+]
+
+[[package]]
+name = "martensite-tkv3d"
+version = "0.7.0"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkhlr",
+ "martensite-tkmath",
+ "martensite-tkmesh",
+ "martensite-tkservice",
+ "martensite-tktopalgo",
+]
+
+[[package]]
+name = "martensite-vulkan"
+version = "0.7.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=4141137449d911884c9a3fd261f7913498548e90#4141137449d911884c9a3fd261f7913498548e90"
+dependencies = [
+ "ash",
+ "martensite-cmath",
+ "martensite-tkernel",
+ "martensite-tkmath",
+ "martensite-tkservice",
+ "num-rational",
+ "num-traits",
+]
+
+[[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "metallic"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c93c1301b4423171c9ac8235383a713969ce16656d1d02b2c7835b122a4a0167"
+dependencies = [
+ "fast_polynomial",
+]
+
+[[package]]
+name = "miniz_oxide"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
+dependencies = [
+ "adler2",
+ "simd-adler32",
+]
 
 [[package]]
 name = "miniz_oxide"
@@ -330,6 +763,98 @@ dependencies = [
 ]
 
 [[package]]
+name = "mint"
+version = "0.5.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e53debba6bda7a793e5f99b8dacf19e626084f525f7829104ba9898f367d85ff"
+
+[[package]]
+name = "mlua"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a7ae6b65bf54b7fdd4cf5b6f44f60862350ebf3fe3779b3a9cc005e7fa14f81"
+dependencies = [
+ "bstr",
+ "either",
+ "libc",
+ "mlua-sys",
+ "num-traits",
+ "parking_lot",
+ "rustc-hash",
+]
+
+[[package]]
+name = "mlua-sys"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1631cda17bd6486410ab751d91f5fd4484f441589278cdad879eb3afc721a285"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "libc",
+ "lua-src",
+ "luajit-src",
+ "pkg-config",
+]
+
+[[package]]
+name = "nix"
+version = "0.31.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
+dependencies = [
+ "bitflags 2.13.2",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
+]
+
+[[package]]
+name = "num-bigint"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
+dependencies = [
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "num-conv"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441"
+
+[[package]]
+name = "num-integer"
+version = "0.1.47"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ce2d95d4b3734dc35aa2f45e1aa22cd416814592a4f9d9205e11affd5b8e10b"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "num-rational"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f83d14da390562dca69fc84082e73e548e1ad308d24accdedd2720017cb37824"
+dependencies = [
+ "num-bigint",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -339,11 +864,51 @@ dependencies = [
 ]
 
 [[package]]
+name = "oblikovati-addin-host"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "oblikovati-api",
+ "oblikovati-automation",
+ "oblikovati-model",
+ "oblikovati-persistence",
+ "oblikovati-session",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "oblikovati-api"
+version = "0.158.0"
+source = "git+https://github.com/Oblikovati/Oblikovati.API.git?rev=32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd#32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd"
+dependencies = [
+ "base64",
+ "serde",
+ "serde_json",
+ "time",
+]
+
+[[package]]
+name = "oblikovati-automation"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-api",
+ "oblikovati-model",
+ "oblikovati-persistence",
+ "oblikovati-session",
+ "oblikovati-solve",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "oblikovati-build"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "flate2",
+ "oblikovati-script",
  "regex",
  "serde",
  "serde_json",
@@ -351,13 +916,161 @@ dependencies = [
  "tar",
  "tempfile",
  "toml",
+ "tree-sitter",
+ "tree-sitter-go",
  "walkdir",
  "zip",
 ]
 
 [[package]]
+name = "oblikovati-cli"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-api",
+ "oblikovati-automation",
+ "oblikovati-martensite",
+ "oblikovati-model",
+ "oblikovati-persistence",
+ "oblikovati-script",
+ "oblikovati-session",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "oblikovati-gui"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "imgui",
+ "imgui-sys",
+ "oblikovati-api",
+ "oblikovati-model",
+ "oblikovati-viewport",
+ "rustix",
+]
+
+[[package]]
+name = "oblikovati-head"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-addin-host",
+ "oblikovati-api",
+ "oblikovati-automation",
+ "oblikovati-cli",
+ "oblikovati-gui",
+ "oblikovati-martensite",
+ "oblikovati-model",
+ "oblikovati-persistence",
+ "oblikovati-script",
+ "oblikovati-session",
+ "oblikovati-solve",
+ "oblikovati-viewport",
+ "png",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "oblikovati-martensite"
+version = "0.1.0"
+dependencies = [
+ "martensite-tkernel",
+ "martensite-tkg2d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "oblikovati-api",
+ "oblikovati-model",
+ "oblikovati-persistence",
+ "oblikovati-session",
+ "oblikovati-solve",
+ "rustycad-tkbo",
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg3d",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tkmesh",
+ "rustycad-tkprim",
+ "rustycad-tktopalgo",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "oblikovati-model"
 version = "0.1.0"
+dependencies = [
+ "getrandom",
+ "oblikovati-api",
+ "oblikovati-solve",
+ "serde",
+ "serde_json",
+ "sha2",
+ "uuid",
+ "xml",
+]
+
+[[package]]
+name = "oblikovati-persistence"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "oblikovati-api",
+ "oblikovati-model",
+ "serde",
+ "serde_yaml_ng",
+ "tempfile",
+ "time",
+]
+
+[[package]]
+name = "oblikovati-script"
+version = "0.1.0"
+dependencies = [
+ "mlua",
+ "oblikovati-api",
+ "rustix",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "oblikovati-session"
+version = "0.1.0"
+dependencies = [
+ "oblikovati-api",
+ "oblikovati-model",
+ "oblikovati-persistence",
+ "oblikovati-solve",
+ "tempfile",
+]
+
+[[package]]
+name = "oblikovati-solve"
+version = "0.1.0"
+
+[[package]]
+name = "oblikovati-viewport"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "martensite-tkernel",
+ "martensite-tkmath",
+ "martensite-tkservice",
+ "martensite-tkv3d",
+ "martensite-vulkan",
+ "oblikovati-api",
+ "oblikovati-martensite",
+ "oblikovati-model",
+ "oblikovati-solve",
+ "rustix",
+ "x11-dl",
+ "x11rb",
+]
 
 [[package]]
 name = "once_cell"
@@ -366,10 +1079,58 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
+name = "parking_lot"
+version = "0.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a"
+dependencies = [
+ "lock_api",
+ "parking_lot_core",
+]
+
+[[package]]
+name = "parking_lot_core"
+version = "0.9.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2621685985a2ebf1c516881c026032ac7deafcda1a2c9b7850dc81e3dfcb64c1"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "redox_syscall",
+ "smallvec",
+ "windows-link",
+]
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
+
+[[package]]
+name = "pkg-config"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
+
+[[package]]
+name = "png"
+version = "0.17.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82151a2fc869e011c153adc57cf2789ccb8d9906ce52c0b39a6b5697749d7526"
+dependencies = [
+ "bitflags 1.3.2",
+ "crc32fast",
+ "fdeflate",
+ "flate2",
+ "miniz_oxide 0.8.9",
+]
+
+[[package]]
+name = "powerfmt"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a6394b9e965e73d0a289ee54f589087e2c676aedf60885baf52c76b771e4958"
 
 [[package]]
 name = "proc-macro2"
@@ -394,6 +1155,15 @@ name = "r-efi"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
+
+[[package]]
+name = "redox_syscall"
+version = "0.5.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
+dependencies = [
+ "bitflags 2.13.2",
+]
 
 [[package]]
 name = "regex"
@@ -425,12 +1195,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "rustc-hash"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b1e7f9a428571be2dc5bc0505c13fb6bf936822b894ec87abf8a08a4e51742d"
+
+[[package]]
+name = "rustc_apfloat"
+version = "0.2.3+llvm-462a31f5a5ab"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "486c2179b4796f65bfe2ee33679acf0927ac83ecf583ad6c91c3b4570911b9ad"
+dependencies = [
+ "bitflags 2.13.2",
+ "smallvec",
+]
+
+[[package]]
 name = "rustix"
 version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "891efababe418670775f199f0d233d84843c227a0949a883ce15b37c78d6629d"
 dependencies = [
- "bitflags",
+ "bitflags 2.13.2",
  "errno",
  "libc",
  "linux-raw-sys",
@@ -444,6 +1230,179 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
 
 [[package]]
+name = "rustycad-cmath"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+
+[[package]]
+name = "rustycad-tkbo"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tkprim",
+ "rustycad-tkshhealing",
+ "rustycad-tktopalgo",
+]
+
+[[package]]
+name = "rustycad-tkbrep"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkernel"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "allocator-api2",
+ "bytemuck",
+ "libc",
+ "mach2",
+ "rustycad-cmath",
+ "smallvec",
+ "windows-sys",
+]
+
+[[package]]
+name = "rustycad-tkg2d"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-cmath",
+ "rustycad-tkernel",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkg3d"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-cmath",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkgeomalgo"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkgeombase"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-cmath",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "rustycad-tkmath"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "num-bigint",
+ "num-complex",
+ "rustc_apfloat",
+ "rustycad-cmath",
+ "rustycad-tkernel",
+]
+
+[[package]]
+name = "rustycad-tkmesh"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "allocator-api2",
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tkshhealing",
+ "rustycad-tktopalgo",
+]
+
+[[package]]
+name = "rustycad-tkprim"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tktopalgo",
+]
+
+[[package]]
+name = "rustycad-tkshhealing"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+ "rustycad-tktopalgo",
+]
+
+[[package]]
+name = "rustycad-tktopalgo"
+version = "0.2.7"
+source = "git+https://github.com/Oblikovati/RustyCADKernel?rev=d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b#d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"
+dependencies = [
+ "rustycad-tkbrep",
+ "rustycad-tkernel",
+ "rustycad-tkg2d",
+ "rustycad-tkg3d",
+ "rustycad-tkgeomalgo",
+ "rustycad-tkgeombase",
+ "rustycad-tkmath",
+]
+
+[[package]]
+name = "ryu"
+version = "1.0.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -451,6 +1410,12 @@ checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
 ]
+
+[[package]]
+name = "scopeguard"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "serde"
@@ -488,6 +1453,7 @@ version = "1.0.151"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
 dependencies = [
+ "indexmap",
  "itoa",
  "memchr",
  "serde",
@@ -503,6 +1469,25 @@ checksum = "4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c"
 dependencies = [
  "serde_core",
 ]
+
+[[package]]
+name = "serde_yaml_ng"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b4db627b98b36d4203a7b458cf3573730f2bb591b28871d916dfa9efabfd41f"
+dependencies = [
+ "indexmap",
+ "itoa",
+ "ryu",
+ "serde",
+ "unsafe-libyaml",
+]
+
+[[package]]
+name = "sha1_smol"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbfa15b3dddfee50a0fff136974b3e1bde555604ba463834a7eb7deb6417705d"
 
 [[package]]
 name = "sha2"
@@ -532,6 +1517,18 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
+
+[[package]]
+name = "smallvec"
+version = "1.16.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b3dc8af474f516a851ff4bd12db780f948b9250ad37211e4eec0bccea54e01b"
+
+[[package]]
+name = "streaming-iterator"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b2231b7c3057d5e4ad0156fb3dc807d900806020c5ffa3ee6ff2c8c76fb8520"
 
 [[package]]
 name = "syn"
@@ -580,6 +1577,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "time"
+version = "0.3.55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdb87b95ec50ddfa440816d227a17b2ccbdda963a316a727fda0fc4334f7d134"
+dependencies = [
+ "deranged",
+ "num-conv",
+ "powerfmt",
+ "serde_core",
+ "time-core",
+ "time-macros",
+]
+
+[[package]]
+name = "time-core"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109"
+
+[[package]]
+name = "time-macros"
+version = "0.2.32"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e689342a48d2ea927c87ea50cabf8594854bf940e9310208848d680d668ed85"
+dependencies = [
+ "num-conv",
+ "time-core",
+]
+
+[[package]]
 name = "toml"
 version = "0.9.12+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -619,6 +1646,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
 
 [[package]]
+name = "tree-sitter"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5129de2ccc97808c4583d48f1fb44576d015cf241e432800572bda11ef30c3b"
+dependencies = [
+ "cc",
+ "regex",
+ "serde_json",
+ "streaming-iterator",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-go"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8560a4d2f835cc0d4d2c2e03cbd0dde2f6114b43bc491164238d333e28b16ea"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-language"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0af592be68c579aa78a16846bd19422978c3c52e438523d45ff5d1bff1f9d4a"
+
+[[package]]
 name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -629,6 +1685,23 @@ name = "unicode-ident"
 version = "1.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d245f478577f809a851594d02313b640fb437e0bb33866753cff937863096954"
+
+[[package]]
+name = "unsafe-libyaml"
+version = "0.2.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
+
+[[package]]
+name = "uuid"
+version = "1.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97277d36b9c3ace13e58fa6e753f8b0bbbf302a18dd193240d70f9e29681059a"
+dependencies = [
+ "js-sys",
+ "sha1_smol",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "version_check"
@@ -689,6 +1762,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f0c9c52aa7cd7d77769a4cfe2a9adb1b331f489a41d912ce14513d5ab995c6"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "weezl"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
+
+[[package]]
+name = "which"
+version = "8.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bae2f2b2b816647a1cab1acc91f5bd20812d53cb344382635ec2181940c8034f"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -781,6 +1869,40 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
 
 [[package]]
+name = "winsafe"
+version = "0.0.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ef0ffc427f045c0cc9ebffd6f4f91153dcd2a1547b5c3c29ee3f541e16e95c6"
+
+[[package]]
+name = "x11-dl"
+version = "2.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38735924fedd5314a6e548792904ed8c6de6636285cb9fec04d5b1db85c1516f"
+dependencies = [
+ "libc",
+ "once_cell",
+ "pkg-config",
+]
+
+[[package]]
+name = "x11rb"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a8885a854a8bfdf87a301e53e41b17c5f8f33639903131338b997b1eb614f44"
+dependencies = [
+ "gethostname",
+ "rustix",
+ "x11rb-protocol",
+]
+
+[[package]]
+name = "x11rb-protocol"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acf4d1bc32aa46eec18caa634ec3cf4c05bfa151f12b93b510b15190f69a1ca8"
+
+[[package]]
 name = "xattr"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -789,6 +1911,12 @@ dependencies = [
  "libc",
  "rustix",
 ]
+
+[[package]]
+name = "xml"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f45bb2c13fec6a6cb4c0f76a7e94839e110a14ec803ec2940777a94c347bc52"
 
 [[package]]
 name = "zip"
@@ -826,4 +1954,19 @@ dependencies = [
  "crc32fast",
  "log",
  "simd-adler32",
+]
+
+[[package]]
+name = "zune-core"
+version = "0.4.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f423a2c17029964870cfaabb1f13dfab7d092a62a29a89264f4d36990ca414a"
+
+[[package]]
+name = "zune-jpeg"
+version = "0.4.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29ce2c8a9384ad323cf564b67da86e21d3cfdff87908bc1223ed5c99bc792713"
+dependencies = [
+ "zune-core",
 ]

@@ -1,0 +1,33 @@
+units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: "2"
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: "3"
+    mass: kg
+    time: s
+    volume: mm^3
+parameters:
+    - name: measured0
+      kind: user
+      expression: 1.25 unitless
+    - name: measured1
+      kind: user
+      expression: 1.25 length
+    - name: measured2
+      kind: user
+      expression: 1.25 angle
+    - name: measured3
+      kind: user
+      expression: 1.25 area
+    - name: measured4
+      kind: user
+      expression: 1.25 volume
+    - name: measured5
+      kind: user
+      expression: 1.25 mass
+    - name: measured6
+      kind: user
+      expression: 1.25 time

@@ -1,9 +1,12 @@
 # Martensite integration and readiness
 
-This plan consumes Martensite from `RustyCADKernel`. It does not assume that
-all OCCT capabilities are already usable. It also requires Martensite to gain
-the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
-[source baseline](source-map.md) fixes the inspected revision.
+The original geometry baseline uses `RustyCADKernel`. The native renderer now
+consumes the released `Oblikovati/Martensite` toolkits. The
+[v0.11 adoption record](implementation-martensite-0-11.md) states the current pin
+and its qualification limits. The production geometry adapter remains on its
+qualified baseline until the replacement passes its mass-property and analytic
+region contracts. The [source baseline](source-map.md) records the original
+inspection; it is not proof that every later toolkit is ready for the host.
 
 The accepted application contracts are
 [ADR-0007: Martensite integration](../decisions/ADR-0007-martensite-integration.md)
@@ -22,9 +25,11 @@ kernel-internal decisions still belong to RustyCADKernel.
 - `Shape` contains a shared `Handle<dyn TShape>`. A cloned shape preserves
   shared identity. Some builders can update referenced geometry while preparing
   an operation, so `&Shape` alone does not imply immutable evaluation.
-- `martensite-vulkan` has an offscreen path through Graphic3d, V3d, and AIS.
-  At the recorded revision, native window presentation is unsupported, and
-  highlight rendering and the wider built-in presentation set remain open.
+- Native window presentation now runs through Martensite V3d and Vulkan.
+  The former offscreen-only limit is retired. Native Linux display, palettes,
+  sketch overlays and captures have executable host evidence. Line/curve
+  highlights retain their role patterns in native acceptance; the wider built-in
+  presentation set still requires application acceptance.
 - The kernel completeness record does not claim full behavioral equivalence
   or a complete platform matrix. Toolkit mapping counts are not readiness
   evidence for an application feature.
@@ -92,6 +97,17 @@ invariant with explicit hard assertions. Preserve the Go baseline as a
 behavior reference. An unavailable OCCT comparison is not permission to omit
 the extension or weaken its acceptance checks.
 
+## Exchange ownership
+
+[ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md) assigns every
+exchange format implementation to RustyCADKernel. DWG uses
+[acadrust](https://github.com/hakanaktt/acadrust) in the kernel. This includes
+legacy recipe/domain translators; they are not application port tasks.
+The kernel owner provides the exchange contract, dependency pins, format tests,
+and released package. The application consumes that release and tests its
+commands, typed API, document transactions, resources, and diagnostics.
+K10 remains open until both kernel evidence and application integration pass.
+
 ## Kernel capability checks
 
 Every row starts as **unverified for Oblikovati**. Close a row only with an
@@ -110,7 +126,7 @@ kernel evidence can support a row, but cannot replace the application test.
 | K07 | Boolean and feature operations | TKBO, TKBool, TKFillet, TKOffset, TKHelix, related crates | Join/cut/intersect, sweep/loft, blend/draft, shell/thicken, pattern, surface and sheet-metal inputs. Check each operation family before its R5/R6 feature. |
 | K08 | Assembly instances and HLR | TKBRep location, TKV3d, TKHLR | Shared part presentations with separate occurrence paths; exact HLR and drawing references after edits. R6. |
 | K09 | Materials and full application display | TKService/TKV3d/Vulkan plus agreed extensions | Complete Oblikovati's display, appearance, point-cloud, lighting, and OpenPBR inventory. Separate app requirements from the kernel's legacy-renderer scope. R7. |
-| K10 | File exchange | TKDE, TKXSBase, format toolkits as available | Verify each required reader/writer, units, assembly graph, metadata, and curved geometry. A format registry alone is insufficient. R8. |
+| K10 | Kernel-owned file exchange | acadrust for DWG; TKDE, TKXSBase, and kernel-owned format modules | Kernel tests/releases each reader and writer. Application verifies routing, units, assembly/metadata adoption, resources, and diagnostics against that release. ADR-0018; R8. |
 | K11 | Required Go-kernel capabilities outside OCCT | Martensite extension modules identified by the R0 inventory | Port and adapt each required capability, preserve source/test provenance, and pass independent correctness and application tests before closing its dependent milestone. Applies across R1-R8 and the R9 cutover. |
 
 Kernel gaps get a Martensite work item or porting-ledger entry with the source
@@ -189,6 +205,16 @@ For the viewport, define the owner of the Vulkan device, queues, swapchain,
 offscreen images, UI resources, and fences. Establish one submission and
 retirement protocol. Do not allow an ImGui backend to create a conflicting
 device lifecycle or keep an image alive after its owning view is removed.
+
+## Current sketch-region integration evidence
+
+The [released region probe](implementation-profile-regions.md) checks eleven
+bounded faces and their source-edge history against local OCCT 8.0.0. It also
+reproduces the general-fuse rejection of a single closed circle or ellipse.
+K02 remains open. A kernel-owned general sketch-region contract must cover
+these valid inputs and the required exact/filtered predicates, tolerances, and
+provenance. Its owning work item/ADR and release acceptance remain pending;
+the application must not add a separate region algorithm to pass this gate.
 
 ## First kernel and viewport proofs
 

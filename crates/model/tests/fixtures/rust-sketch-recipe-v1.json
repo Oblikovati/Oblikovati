@@ -1,0 +1,1 @@
+{"version":1,"points":[{"id":1,"position":[0.0,0.0]},{"id":2,"position":[4.0,0.0]},{"id":3,"position":[2.0,-3.0]}],"lines":[{"id":4,"endpoints":[1,2]}],"circles":[],"arcs":[],"constraints":[{"id":1,"relation":{"offset":{"point":3,"line":4,"parameter":7,"side":"right","linear_diameter":true}}}]}

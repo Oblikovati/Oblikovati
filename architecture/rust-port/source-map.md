@@ -79,7 +79,7 @@ Milestone IDs are defined in [milestones](milestones.md).
 | `model/drawing`, `linetype`, `text` | Model drawing modules and viewport | Views, dimensions, annotations, styles, HLR, sheets, and regeneration after model edits. | R6 |
 | `model/material`, `style`, `colorscheme`, `display`, `theme`, `osfont` | Model presentation modules, shell, platform | Materials, appearances, lighting/display modes, fonts, themes, and persisted settings. | R7 |
 | `model/analysis`, `bodyapi`, `pointcloud` | Model/query modules and viewport | Analytic measurement, transient bodies, point-cloud resources, display, and selection. | R5-R8 |
-| `model/exchange` and translator modules | Storage/exchange modules and Martensite adapter | Inventory each format and both directions; preserve units, names, assembly structure, diagnostics, and resources. | R8 |
+| `model/exchange` and translator modules | RustyCADKernel format implementations; application exchange adapter and workflows | Inventory each format and both directions; kernel owns translators and DWG/acadrust. Application preserves kernel results, diagnostics, and source resources. ADR-0018. | R8 |
 | `script`, script console | `oblikovati-script` and shell | Lua 5.1 surface, typed API access, quotas, cancellation, diagnostics, and editor behavior. | R7 |
 | `cmd/oblikovati-cli`, command/manual generators | `oblikovati-cli` and tools | Commands, exit codes, batch workflows, help, manuals, script execution, and headless behavior. | R2, R7-R9 |
 | `addincat`, `update`, `usagestats`, `report`, `crcpost` | Host/platform integration modules | Catalogue, installation/update lifecycle, opt-in telemetry, reporting, and existing transport settings. Inventory each behavior before replacement. | R7, R9 |
