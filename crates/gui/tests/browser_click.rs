@@ -281,6 +281,16 @@ fn modified_double_click_selects_the_sketch_before_editing() {
     );
 }
 
+fn settle_browser_layout(engine: &mut GuiFrameEngine, request: &GuiFrameRequest) {
+    // #3849: measured ribbon widths can move the browser while the first layout settles.
+    for _ in 0..32 {
+        let activity = engine.frame(request).unwrap().activity;
+        if !activity.pending_layout && !activity.pending_navigation {
+            return;
+        }
+    }
+    panic!("browser layout exceeded 32 frames; expected stable ribbon and browser bounds");
+}
 #[test]
 fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
     for visible in [false, true] {
@@ -288,7 +298,7 @@ fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
         let mut request = browser_request();
         request.commands.authoring = GuiAuthoringContext::Sketch;
         request.commands.browser.as_mut().unwrap().sketches[0].visible = visible;
-        engine.frame(&request).unwrap();
+        settle_browser_layout(&mut engine, &request);
         pointer_gesture(
             &mut engine,
             &mut request,

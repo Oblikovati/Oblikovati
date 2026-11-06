@@ -13,6 +13,7 @@ impl DocumentTabs {
         &mut self,
         ui: &Ui,
         request: &GuiFrameRequest,
+        band_height: f32,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let force = self.previous != request.commands.document;
@@ -22,7 +23,9 @@ impl DocumentTabs {
         }
         let width = request.extent[0] as f32 / request.framebuffer_scale[0];
         let before = actions.len();
-        document_strip_window(ui, width, || document_strip(ui, request, force, actions));
+        document_strip_window(ui, width, band_height, || {
+            document_strip(ui, request, force, actions)
+        });
         // #3800: a refused dirty close or activation must restore the owner's tab selection.
         if actions.len() != before {
             self.previous = None;
@@ -46,10 +49,10 @@ fn document_strip(
         document_tab(ui, request, row, selected, force, actions);
     }
 }
-fn document_strip_window(ui: &Ui, width: f32, contents: impl FnOnce()) {
+fn document_strip_window(ui: &Ui, width: f32, band_height: f32, contents: impl FnOnce()) {
     crate::widget_abi::window_geometry(
         ui,
-        [316., 160.],
+        [316., band_height + 2.],
         [(width - 316.).max(1.), 32.],
         Condition::Always,
     );

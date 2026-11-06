@@ -128,12 +128,12 @@ fn pointer_wheel_does_not_scroll_the_fixed_ribbon_band() {
     );
 }
 #[test]
-fn every_supported_tool_dispatches_from_the_sketch_ribbon_at_both_scales() {
+fn expanded_sketch_panels_dispatch_every_supported_tool_at_both_scales() {
     use GuiSketchTool::*;
     for scale in [1., 2.] {
         let mut engine = GuiFrameEngine::new().unwrap();
         let mut request = ribbon_request();
-        request.extent = [640 * scale as u32, 360 * scale as u32];
+        request.extent = [1440 * scale as u32, 900 * scale as u32];
         request.framebuffer_scale = [scale; 2];
         enter_part(&mut request);
         request.commands.authoring = GuiAuthoringContext::Sketch;
@@ -191,7 +191,7 @@ fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
     for scale in [1., 2.] {
         let mut engine = GuiFrameEngine::new().unwrap();
         let mut request = ribbon_request();
-        request.extent = [1000 * scale as u32, 360 * scale as u32];
+        request.extent = [1440 * scale as u32, 900 * scale as u32];
         request.framebuffer_scale = [scale; 2];
         enter_part(&mut request);
         request.commands.authoring = GuiAuthoringContext::Sketch;
@@ -437,3 +437,6 @@ mod circular_flyouts;
 
 #[path = "ribbon_click/sketch_formats.rs"]
 mod sketch_formats;
+
+#[path = "ribbon_click/panel_overflow.rs"]
+mod panel_overflow;

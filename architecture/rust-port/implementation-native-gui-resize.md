@@ -32,4 +32,7 @@ A native X11 test alternated widths 640, 1440, 320, and 1024 for 200 resizes at
 20 ms intervals. It returned a completed MCP screenshot and closed normally.
 The original ribbon journey then passed, including preview/cancel, parameter
 edit, undo/redo, save, and reopening in the same and a fresh process. Captures
-were inspected. The full application gate remains required before push.
+were inspected. The full application gate passed across all 13 crates,
+including all 385 head tests. Viewport coverage was 93.40%, head coverage was
+92.76%, and workspace duplication was 1.02%. The ribbon verification record
+lists the cross-target compile checks for this combined change.

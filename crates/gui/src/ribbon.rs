@@ -6,7 +6,7 @@ use oblikovati_api::types::{
     ZERO_DOC_RIBBON,
 };
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum RibbonTab {
     #[default]
     GetStarted,
@@ -30,6 +30,7 @@ impl RibbonTab {
 pub(crate) struct DocumentRibbon {
     previous: Option<(RibbonKey, bool)>,
     pub active: RibbonTab,
+    pub panels: crate::ribbon_panels::RibbonPanelLayout,
 }
 pub(crate) struct RibbonFrame {
     pub tabs: Vec<RibbonTab>,

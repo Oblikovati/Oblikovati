@@ -20,6 +20,13 @@ bool oblikovati_gui_button(const unsigned char* label, float width, float height
     if (selected) ImGui::PopStyleColor();
     return clicked;
 }
+bool oblikovati_gui_begin_scroll_region(const unsigned char* identity, float width, float height) {
+    return ImGui::BeginChild(reinterpret_cast<const char*>(identity), ImVec2(width, height), false,
+                             ImGuiWindowFlags_HorizontalScrollbar);
+}
+void oblikovati_gui_dummy(float width, float height) {
+    ImGui::Dummy(ImVec2(width, height));
+}
 bool oblikovati_gui_selectable(const unsigned char* label, bool selected, int flags) {
     return ImGui::Selectable(reinterpret_cast<const char*>(label), selected, flags, ImVec2(0, 0));
 }
