@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::ribbon::{DocumentRibbon, RibbonFrame, RibbonTab};
+use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 
@@ -11,9 +11,10 @@ pub(crate) fn ribbon_band(
     files: &mut crate::files::GuiDocumentFiles,
     theme_editor: &mut crate::theme_editor::GuiThemeEditor,
     actions: &mut Vec<GuiShellAction>,
-) {
+) -> f32 {
     let width = request.extent[0] as f32 / request.framebuffer_scale[0];
-    if let Some(_band) = begin_ribbon_band(ui, width) {
+    let height = 158. + ribbon.panels.scrollbar_height(ui);
+    if let Some(_band) = begin_ribbon_band(ui, width, height) {
         ribbon_contents(
             ui,
             request,
@@ -24,10 +25,11 @@ pub(crate) fn ribbon_band(
             actions,
         );
     }
+    height
 }
-fn begin_ribbon_band(ui: &Ui, width: f32) -> Option<imgui::WindowToken<'_>> {
+fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowToken<'_>> {
     // #3798: chrome owns a fixed band; wheel input must never move its commands.
-    crate::widget_abi::window_geometry(ui, [0., 0.], [width, 158.], Condition::Always);
+    crate::widget_abi::window_geometry(ui, [0., 0.], [width, height], Condition::Always);
     ui.window("##application-ribbon")
         .title_bar(false)
         .movable(false)
@@ -55,9 +57,17 @@ fn ribbon_contents(
     ui.same_line();
     ribbon_tabs(ui, ribbon, &frame);
     crate::widget_abi::cursor_position(ui, [16., 59.]);
-    tab_panels(ui, ribbon.active, &request.commands, parameters, actions);
+    crate::ribbon_panels::draw_panels(
+        ui,
+        ribbon.active,
+        &request.commands,
+        parameters,
+        theme_editor,
+        &mut ribbon.panels,
+        actions,
+    );
     crate::theme_editor::panel(ui, request.commands.theme.as_ref(), theme_editor, actions);
-    crate::widget_abi::cursor_position(ui, [8., 138.]);
+    crate::widget_abi::cursor_position(ui, [8., ui.window_size()[1] - 20.]);
     ui.text(request.status.as_deref().unwrap_or("Ready"));
 }
 fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
@@ -86,94 +96,6 @@ fn quick_access(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellActi
         ui.same_line();
     }
 }
-fn tab_panels(
-    ui: &Ui,
-    tab: RibbonTab,
-    state: &GuiCommandState,
-    parameters: &mut crate::parameters::GuiParameterEditor,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let command = match tab {
-        RibbonTab::GetStarted => ("Launch", "New Part", GuiShellAction::NewPart),
-        RibbonTab::CreateModify => ("Sketch", "Sketch XY", GuiShellAction::StartSketchXY),
-        RibbonTab::View => ("Navigate", "Home", GuiShellAction::Home),
-        RibbonTab::Sketch => return sketch_panels(ui, state, actions),
-        RibbonTab::Manage => return parameter_panel(ui, state, parameters),
-    };
-    command_panel(ui, state, actions, command);
-    if tab == RibbonTab::View {
-        appearance_panel(ui, state, actions);
-    }
-}
-
-fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    ui.group(|| sketch_create_controls(ui, state, actions));
-    ui.same_line();
-    crate::widget_abi::cursor_position(ui, [388., 59.]);
-    let exit = ("Exit", "Finish Sketch", GuiShellAction::FinishSketch);
-    command_panel(ui, state, actions, exit);
-    sketch_constraint_controls(ui, state, actions);
-    sketch_delete_control(ui, state, actions);
-    crate::sketch_formats::sketch_format_controls(ui, state, actions);
-    crate::widget_abi::cursor_position(ui, [620., 59.]);
-    command_button(
-        ui,
-        "Dimension",
-        GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
-        state,
-        [108., 58.],
-        actions,
-    );
-}
-fn sketch_constraint_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    use crate::GuiSketchConstraint::{
-        Coincident, Collinear, Concentric, Equal, Fix, Horizontal, Parallel, Perpendicular,
-        Tangent, Vertical,
-    };
-    for (choice, position) in [
-        (Horizontal, [504., 59.]),
-        (Vertical, [504., 79.]),
-        (Coincident, [504., 99.]),
-        (Fix, [620., 119.]),
-        (Parallel, [736., 59.]),
-        (Perpendicular, [736., 79.]),
-        (Collinear, [736., 99.]),
-        (Equal, [852., 59.]),
-        (Concentric, [852., 79.]),
-        (Tangent, [852., 99.]),
-    ] {
-        crate::widget_abi::cursor_position(ui, position);
-        command_button(
-            ui,
-            choice.label(),
-            GuiShellAction::ConstrainSketch(choice),
-            state,
-            [108., 18.],
-            actions,
-        );
-    }
-    crate::widget_abi::cursor_position(ui, [504., 125.]);
-    ui.text("Constrain");
-}
-fn sketch_create_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    let rectangle = crate::GuiSketchTool::Rectangle;
-    sketch_tool_button(ui, state, actions, rectangle, [108., 58.]);
-    let secondary = crate::sketch_tools::SECONDARY_SKETCH_TOOLS;
-    for (index, tool) in secondary.into_iter().enumerate() {
-        crate::widget_abi::cursor_position(
-            ui,
-            [
-                140. + (index % 2) as f32 * 116.,
-                59. + (index / 2) as f32 * 20.,
-            ],
-        );
-        crate::sketch_flyouts::circular_tool_button(ui, state, actions, tool);
-    }
-    crate::widget_abi::cursor_position(ui, [140., 119.]);
-    sketch_tool_button(ui, state, actions, crate::GuiSketchTool::Line, [108., 18.]);
-    crate::widget_abi::cursor_position(ui, [16., 125.]);
-    ui.text("Create");
-}
 pub(crate) fn sketch_tool_button(
     ui: &Ui,
     state: &GuiCommandState,
@@ -190,33 +112,7 @@ pub(crate) fn sketch_tool_button(
         actions,
     );
 }
-type RibbonCommandSpec = (&'static str, &'static str, GuiShellAction);
-fn command_panel(
-    ui: &Ui,
-    state: &GuiCommandState,
-    actions: &mut Vec<GuiShellAction>,
-    command: RibbonCommandSpec,
-) {
-    let (panel, label, action) = command;
-    let _identity = ui.push_id(panel);
-    ui.group(|| {
-        command_button(ui, label, action, state, [108., 58.], actions);
-        ui.spacing();
-        ui.text(panel);
-    });
-}
-fn parameter_panel(
-    ui: &Ui,
-    state: &GuiCommandState,
-    parameters: &mut crate::parameters::GuiParameterEditor,
-) {
-    ui.group(|| {
-        parameters.toolbar(ui, state);
-        ui.spacing();
-        ui.text("Parameters");
-    });
-}
-fn command_button(
+pub(crate) fn command_button(
     ui: &Ui,
     label: &str,
     action: GuiShellAction,
@@ -235,33 +131,4 @@ fn command_button(
     if clicked && action.dispatchable(state) {
         actions.push(action);
     }
-}
-
-fn appearance_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    if state.theme.is_none() && state.color_scheme.is_none() {
-        return;
-    }
-    ui.same_line();
-    ui.group(|| {
-        if let Some(theme) = &state.theme {
-            theme.controls(ui, actions);
-        }
-        if let Some(palette) = &state.color_scheme {
-            palette.controls(ui, actions);
-        }
-        if state.theme.is_some() {
-            crate::theme_editor::launcher(ui);
-        }
-        ui.text("Appearance");
-    });
-}
-
-fn sketch_delete_control(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    crate::widget_abi::cursor_position(ui, [968., 59.]);
-    command_panel(
-        ui,
-        state,
-        actions,
-        ("Modify", "Delete", GuiShellAction::DeleteSketchSelection),
-    );
 }

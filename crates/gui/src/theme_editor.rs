@@ -7,15 +7,15 @@ use imgui::{Condition, Ui};
 #[derive(Default)]
 pub(crate) struct GuiThemeEditor {
     pub(crate) new_name: String,
+    requested: bool,
 }
 const THEME_EDITOR_POPUP: &str = "Theme editor";
 
-pub(crate) fn launcher(ui: &Ui) {
+pub(crate) fn launcher(ui: &Ui, editor: &mut GuiThemeEditor) -> bool {
     ui.same_line();
-    if crate::widget_abi::button(ui, "Edit Theme", [100., 19.]) {
-        ui.open_popup(THEME_EDITOR_POPUP);
-        popup_geometry(ui);
-    }
+    let clicked = crate::widget_abi::button(ui, "Edit Theme", [100., 19.]);
+    editor.requested |= clicked;
+    clicked
 }
 pub(crate) fn panel(
     ui: &Ui,
@@ -23,6 +23,11 @@ pub(crate) fn panel(
     editor: &mut GuiThemeEditor,
     actions: &mut Vec<GuiShellAction>,
 ) {
+    // #3849: a panel flyout belongs to another window; open the modal from this stable owner.
+    if std::mem::take(&mut editor.requested) {
+        ui.open_popup(THEME_EDITOR_POPUP);
+        popup_geometry(ui);
+    }
     let Some(_popup) = ui.begin_modal_popup(THEME_EDITOR_POPUP) else {
         return;
     };

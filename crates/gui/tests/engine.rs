@@ -149,6 +149,8 @@ fn vertex_positions(frame: &GuiFrame) -> Vec<[f32; 2]> {
 
 fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     let mut input = request();
+    // #3849: these gestures address expanded controls; ribbon_click also covers their narrow flyouts.
+    input.extent[0] = 1440;
     for (x, expected) in [
         (110., GuiShellAction::StartSketchXY),
         (440., GuiShellAction::FinishSketch),

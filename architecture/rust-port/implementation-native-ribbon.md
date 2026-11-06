@@ -31,9 +31,12 @@ input, high-DPI full-band input capture, native document/assembly snapshots, and
 native rectangle edit/save/reopen journey. The browser camera/pixel regression
 compares the model region below the contextual ribbon, whose contents must change.
 
-Full Go parity remains open: icon assets, the complete command catalogue, panel
-collapse/flyouts, ribbon customization, add-in command registration, document types'
-own unported tools, and a content-area viewport layout. The Extrude UI and complete
+The supported panels use [measured collapse and flyouts](implementation-native-ribbon-overflow.md)
+when the window is narrow. That implementation records its own verification scope.
+
+Full Go parity remains open: icon assets, the complete command catalogue,
+ribbon customization, add-in command registration, document types' own unported
+tools, and a content-area viewport layout. The Extrude UI and complete
 cube journey also remain open.
 
 ## Sketch row context menu

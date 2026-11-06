@@ -104,12 +104,13 @@ pub(crate) fn panel(
     ui: &Ui,
     state: &GuiCommandState,
     height: f32,
+    band_height: f32,
     actions: &mut Vec<GuiShellAction>,
 ) {
     crate::widget_abi::window_geometry(
         ui,
-        [8., 168.],
-        [300., (height - 176.).max(120.)],
+        [8., band_height + 10.],
+        [300., (height - band_height - 18.).max(120.)],
         Condition::Always,
     );
     ui.window("Model")

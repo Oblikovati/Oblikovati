@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 unsafe extern "C" {
+    fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
+    fn oblikovati_gui_dummy(width: f32, height: f32);
     fn oblikovati_gui_window_position(x: f32, y: f32, condition: i32);
     fn oblikovati_gui_window_size(width: f32, height: f32, condition: i32);
     fn oblikovati_gui_cursor_position(x: f32, y: f32);
@@ -78,3 +80,32 @@ fn draw_literal_text(_: &Ui, position: [f32; 2], color: [f32; 4], text: &str, ba
 #[cfg(test)]
 #[path = "../tests/widget_abi/native.rs"]
 mod tests;
+
+/// A live child window is always ended, including clipped frames and unwinding.
+pub(crate) struct ScrollingRegion<'ui> {
+    pub visible: bool,
+    _ui: &'ui Ui,
+}
+impl Drop for ScrollingRegion<'_> {
+    fn drop(&mut self) {
+        // SAFETY: this token retains the UI that opened exactly one child, including a false BeginChild result.
+        unsafe { imgui::sys::igEndChild() };
+    }
+}
+/// Open scalar-sized scrolling content; example: `let region = scroll_region(ui, "panels", [640.,80.]);`.
+pub(crate) fn scroll_region<'ui>(
+    ui: &'ui Ui,
+    identity: &str,
+    size: [f32; 2],
+) -> ScrollingRegion<'ui> {
+    let identity = ImString::new(identity);
+    // SAFETY: the UI owns the current context; C++ copies the live ID and constructs its vector (#3803, #3849).
+    let visible =
+        unsafe { oblikovati_gui_begin_scroll_region(identity.as_ptr().cast(), size[0], size[1]) };
+    ScrollingRegion { visible, _ui: ui }
+}
+/// Reserve layout space through scalar ABI; example: `dummy(ui, [364.,0.])` keeps the Create grid's width.
+pub(crate) fn dummy(_: &Ui, size: [f32; 2]) {
+    // SAFETY: the owning frame retains the context; only C++ constructs the aggregate argument (#3803).
+    unsafe { oblikovati_gui_dummy(size[0], size[1]) };
+}

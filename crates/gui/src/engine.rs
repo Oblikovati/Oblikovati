@@ -157,7 +157,7 @@ impl GuiFrameEngine {
         let ui = self.context.frame();
         crate::dimension_labels::draw_dimension_labels(ui, request);
         let mut selected = Vec::new();
-        crate::chrome::ribbon_band(
+        let band_height = crate::chrome::ribbon_band(
             ui,
             request,
             &mut self.ribbon,
@@ -166,13 +166,15 @@ impl GuiFrameEngine {
             &mut self.theme_editor,
             &mut selected,
         );
-        self.document_tabs.panel(ui, request, &mut selected);
+        self.document_tabs
+            .panel(ui, request, band_height, &mut selected);
         self.parameter_editor
             .panel(ui, &request.commands, &mut selected);
         crate::browser::panel(
             ui,
             &request.commands,
             request.extent[1] as f32 / request.framebuffer_scale[1],
+            band_height,
             &mut selected,
         );
         self.document_files
@@ -183,11 +185,13 @@ impl GuiFrameEngine {
         let snapshot = capture_frame(self.context.render(), request.extent)?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !tool_keyboard;
+        let mut activity = frame_activity()?;
+        activity.pending_layout |= self.ribbon.panels.pending_layout;
         Ok(GuiFrameOutput {
             draws: snapshot,
             actions: selected,
             capture,
-            activity: frame_activity()?,
+            activity,
         })
     }
 }

@@ -237,17 +237,17 @@ fn publish_gui(
     update: &mut HeadGuiUpdate,
 ) -> Result<(), String> {
     let draws = gui.draws.as_ref().expect("dirty GUI has owned draws");
-    if let Err(cause) = view.submit_gui_frame(&gui.compiler, draws) {
-        if view.drawable_extent()? == draws.extent {
-            return Err(cause);
+    match view.submit_gui_frame_checked(&gui.compiler, draws)? {
+        oblikovati_viewport::ViewportGuiSubmission::Accepted => {
+            gui.dirty = false;
+            update.changed = true;
         }
-        gui.deadline = Some(now);
-        update.deferred = true;
-        update.wake_after = Some(Duration::ZERO);
-        return Ok(());
+        oblikovati_viewport::ViewportGuiSubmission::SurfaceChanged(_) => {
+            gui.deadline = Some(now);
+            update.deferred = true;
+            update.wake_after = Some(Duration::ZERO);
+        }
     }
-    gui.dirty = false;
-    update.changed = true;
     Ok(())
 }
 

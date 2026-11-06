@@ -141,6 +141,12 @@ pub struct ViewportCapture {
     pub extent: [u32; 2],
     pub rgba: Vec<u8>,
 }
+/// GUI publication result; `ViewportGuiSubmission::SurfaceChanged(extent)` requests a new packet.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ViewportGuiSubmission {
+    Accepted,
+    SurfaceChanged([u32; 2]),
+}
 /// A frame completes only for its observed surface; a resize requires a new presentation input.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ViewportPresentation {
