@@ -348,3 +348,9 @@ mod dimension_tools;
 
 #[path = "owner/browser_visibility.rs"]
 mod browser_visibility;
+
+#[path = "owner/fix_tools.rs"]
+mod fix_tools;
+
+#[path = "owner/fix_veto.rs"]
+mod fix_veto;

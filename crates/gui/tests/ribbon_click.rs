@@ -180,11 +180,11 @@ fn sketch_tool_captions_identify_the_existing_construction_choices() {
 
 #[test]
 fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
-    use GuiSketchConstraint::{Coincident, Horizontal, Vertical};
+    use GuiSketchConstraint::{Coincident, Fix, Horizontal, Vertical};
     for scale in [1., 2.] {
         let mut engine = GuiFrameEngine::new().unwrap();
         let mut request = ribbon_request();
-        request.extent = [640 * scale as u32, 360 * scale as u32];
+        request.extent = [900 * scale as u32, 360 * scale as u32];
         request.framebuffer_scale = [scale; 2];
         enter_part(&mut request);
         request.commands.authoring = GuiAuthoringContext::Sketch;
@@ -197,9 +197,16 @@ fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
                 GuiShellAction::ConstrainSketch(choice),
             );
         }
+        expect_ribbon(
+            &mut engine,
+            &mut request,
+            [670. * scale, 128. * scale],
+            GuiShellAction::ConstrainSketch(Fix),
+        );
         request.commands.transaction_open = true;
         settle_ribbon(&mut engine, &mut request);
         assert!(click_ribbon(&mut engine, &mut request, [550. * scale, 68. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, [670. * scale, 128. * scale]).is_empty());
     }
 }
 
