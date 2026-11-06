@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::sketch_structure::{self, SketchStructure};
 use crate::ViewportSketchPreview;
-use martensite_tkservice::aspect::AspectTypeOfLine;
 use martensite_tkv3d::v3d::V3dViewer;
 use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_placement_preview_with_policy,
@@ -88,11 +87,7 @@ fn build_member(
     member: &oblikovati_martensite::planar_curve::sketch::PlacementPreviewMember,
     color: &Rgba,
 ) -> Result<SketchStructure, String> {
-    let kind = if member.construction {
-        AspectTypeOfLine::Dash
-    } else {
-        AspectTypeOfLine::Solid
-    };
+    let kind = super::sketch_display::curve_role_line_style(member.construction, member.centerline);
     match &member.primitive {
         SketchDisplayPrimitive::Point(point) => {
             sketch_structure::point(viewer, plane, *point, color, true)

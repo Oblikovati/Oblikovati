@@ -84,13 +84,17 @@ fn append_members(
         .members
         .iter()
         .map(|member| {
-            let primitive = match member.geometry.primitive(points, member.construction)? {
-                PlacementPrimitive::Point(id) => {
-                    geometry.expose_defining_point(id)?;
-                    return Ok(id);
-                }
-                PlacementPrimitive::Curve(primitive) => primitive,
-            };
+            let primitive =
+                match member
+                    .geometry
+                    .primitive(points, member.construction, member.centerline)?
+                {
+                    PlacementPrimitive::Point(id) => {
+                        geometry.expose_defining_point(id)?;
+                        return Ok(id);
+                    }
+                    PlacementPrimitive::Curve(primitive) => primitive,
+                };
             primitive.validate(geometry)?;
             append_primitive(geometry, sketch, &primitive, ids)
                 .map(|report| report.entity)

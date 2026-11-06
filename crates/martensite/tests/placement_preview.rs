@@ -275,6 +275,7 @@ fn point_preview_retains_position_and_is_a_marker_instead_of_a_curve() {
         assert_eq!(
             sampled,
             vec![PlacementPreviewMember {
+                centerline: false,
                 member_index: 0,
                 construction: false,
                 primitive: SketchDisplayPrimitive::Point(position),
@@ -293,6 +294,7 @@ fn point_and_curve_members_keep_shared_positions_and_authored_order() {
     let mut recipe = SketchPlacementRecipe::point([3., -4.]).unwrap();
     recipe.points.push([8., -4.]);
     recipe.members.push(SketchPlacementMember {
+        centerline: false,
         geometry: SketchPlacementGeometry::Path(SketchPathMember::Line([0, 1])),
         construction: true,
     });
@@ -372,4 +374,23 @@ fn resolved_preview_samples_only_requested_members_in_the_supplied_order() {
             .contains("preview member 0")
     );
     assert!(sample_sketch_preview_members(&geometry, &[Id(1)], options(0.0)).is_err());
+}
+
+#[test]
+fn preview_retains_independent_axis_roles_and_effective_construction() {
+    let mut recipe = SketchPlacementRecipe::line_chain(&[[0., 0.], [4., 3.]], false).unwrap();
+    recipe.apply_creation_formats(false, true).unwrap();
+    let sampled = sample_placement_preview(&recipe, options(0.01)).unwrap();
+    assert_eq!(sampled.len(), 1);
+    assert!(sampled[0].centerline && sampled[0].construction);
+}
+#[test]
+fn preview_declines_an_axis_role_on_non_line_geometry() {
+    let mut recipe = SketchPlacementRecipe::circle([0.; 2], 2.).unwrap();
+    recipe.members[0].centerline = true;
+    assert!(
+        sample_placement_preview(&recipe, options(0.01))
+            .unwrap_err()
+            .contains("expected a line")
+    );
 }

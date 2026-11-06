@@ -229,3 +229,6 @@ mod points;
 
 #[path = "placement_recipe/chains.rs"]
 mod chains;
+
+#[path = "placement_recipe/formats.rs"]
+mod formats;

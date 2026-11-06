@@ -90,6 +90,7 @@ fn a_visible_point_can_share_a_curve_endpoint_in_authored_member_order() {
         let mut recipe = SketchPlacementRecipe::point([3., 4.]).unwrap();
         recipe.points.push([8., 4.]);
         recipe.members.push(SketchPlacementMember {
+            centerline: false,
             geometry: SketchPlacementGeometry::Path(SketchPathMember::Line([0, 1])),
             construction: false,
         });

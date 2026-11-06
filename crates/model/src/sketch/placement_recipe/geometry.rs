@@ -27,7 +27,13 @@ impl SketchPlacementGeometry {
         self,
         points: &[SketchEntityId],
         construction: bool,
+        centerline: bool,
     ) -> Result<PlacementPrimitive, SketchError> {
+        if centerline && !matches!(self, Self::Path(SketchPathMember::Line(_))) {
+            return Err(SketchError::Definition(format!(
+                "placement geometry {self:?}, centerline {centerline}: expected a line for an axis role"
+            )));
+        }
         let primitive = match self {
             Self::Point(index) => {
                 if construction {
@@ -47,7 +53,7 @@ impl SketchPlacementGeometry {
                 radii,
                 construction,
             }),
-            Self::Path(path) => path.primitive(points, construction),
+            Self::Path(path) => path.primitive(points, construction, centerline),
             Self::Circle { center, radius } => Ok(SketchPrimitiveCreation::Circle {
                 center: SketchPointInput::Owned(indexed_entity(points, center)?),
                 radius,
@@ -61,6 +67,7 @@ impl SketchPlacementGeometry {
 pub(super) fn chain_members(count: usize, closed: bool) -> Vec<super::SketchPlacementMember> {
     super::super::chain_layout::line_chain_indices(count, closed)
         .map(|endpoints| super::SketchPlacementMember {
+            centerline: false,
             geometry: SketchPlacementGeometry::Path(SketchPathMember::Line(endpoints)),
             construction: false,
         })
