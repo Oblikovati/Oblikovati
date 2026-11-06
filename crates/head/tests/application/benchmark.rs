@@ -19,6 +19,8 @@ mod document_tabs;
 mod file_menu;
 #[path = "ribbon-display/steps.rs"]
 mod ribbon_display;
+#[path = "ribbon-docking/steps.rs"]
+mod ribbon_docking;
 #[path = "workspace-layout/steps.rs"]
 mod workspace_layout;
 

@@ -31,6 +31,8 @@ pub(crate) enum RibbonPanel {
     AnnotateSymbols,
     PartCreate,
     PartModify,
+    PartWorkFeatures,
+    PartNotes,
     PresentationModel,
 }
 impl RibbonPanel {
@@ -52,6 +54,8 @@ impl RibbonPanel {
             Self::SheetMetalTools => "Sheet Metal",
             Self::DrawingViews | Self::PartCreate => "Create",
             Self::DrawingModify | Self::PartModify => "Modify",
+            Self::PartWorkFeatures => "Work Features",
+            Self::PartNotes => "Notes",
             Self::DrawingSketch => "Sketch",
             Self::DrawingSheets => "Sheets",
             Self::AnnotateDimension => "Dimension",
@@ -85,6 +89,8 @@ impl RibbonPanel {
             | Self::AnnotateSymbols
             | Self::PartCreate
             | Self::PartModify
+            | Self::PartWorkFeatures
+            | Self::PartNotes
             | Self::PresentationModel => {
                 return None;
             }
@@ -186,6 +192,40 @@ fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut Rib
         layout.observe_scrollbar(ui.scroll_max_x() > 0.);
     }
 }
+/// A side or floating ribbon's groups: one stacked button each, opening beside the ribbon.
+/// Example: `draw_side_groups(ui, tab, state, owners, layout, display, panel_x, actions)`.
+// Each is a distinct owner of what a side ribbon draws or changes.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn draw_side_groups(
+    ui: &Ui,
+    tab: RibbonTab,
+    state: &GuiCommandState,
+    owners: RibbonPanelOwners<'_>,
+    layout: &mut RibbonPanelLayout,
+    display: &mut RibbonDisplayState,
+    panel_x: (f32, bool),
+    actions: &mut Vec<GuiShellAction>,
+) {
+    layout.pending_layout = false;
+    let mut context = PanelDrawContext {
+        ui,
+        state,
+        owners,
+        actions,
+    };
+    for panel in panels_for(tab, state) {
+        if crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON) {
+            display.temporary = Some(TemporaryPanel::Group(panel));
+            display.side_anchor = Some(crate::application::ribbon_display::SideAnchor {
+                x: panel_x.0,
+                y: ui.item_rect_min()[1],
+                ends_at_x: panel_x.1,
+            });
+        }
+    }
+    temporary_panel(&mut context, tab, layout, display);
+}
+const SIDE_GROUP_BUTTON: [f32; 2] = [112., 48.];
 /// One button per group; a group's commands open in the temporary panel.
 fn compact_row(
     context: &mut PanelDrawContext<'_>,
@@ -251,6 +291,14 @@ fn temporary_geometry(
     };
     let measured = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
     let width = (measured + 32.).max(140.).min(viewport - 16.);
+    if let Some(anchor) = display.side_anchor {
+        let x = if anchor.ends_at_x {
+            anchor.x - width
+        } else {
+            anchor.x
+        };
+        return ([x, anchor.y], [width, 104.]);
+    }
     let x = display.temporary_anchor.min(viewport - width - 8.).max(8.);
     ([x, top], [width, 104.])
 }
@@ -282,10 +330,15 @@ fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
     use RibbonPanel::*;
     match tab {
         RibbonTab::GetStarted => vec![Launch],
-        RibbonTab::Model => vec![Sketch, PartCreate, PartModify],
+        RibbonTab::Model => vec![Sketch, PartCreate, PartModify, PartWorkFeatures],
         RibbonTab::SheetMetal => vec![SheetMetalTools, Sketch],
         RibbonTab::Assemble => vec![Component],
         RibbonTab::PlaceViews => vec![DrawingViews, DrawingModify, DrawingSketch, DrawingSheets],
+        RibbonTab::Annotate
+            if state.document_type == Some(oblikovati_api::types::DOCUMENT_PART) =>
+        {
+            vec![PartNotes]
+        }
         RibbonTab::Annotate => vec![AnnotateDimension, AnnotateText, AnnotateSymbols],
         RibbonTab::Presentation => vec![PresentationModel],
         RibbonTab::Sketch => vec![Create, Exit, Constrain, Modify, Format],

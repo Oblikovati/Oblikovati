@@ -120,6 +120,9 @@ fn document_tabs(key: &RibbonKey, sketch: bool, sheet_metal: bool) -> Vec<Ribbon
         tabs.push(RibbonTab::Manage);
     }
     tabs.push(RibbonTab::View);
+    if *key == PART_RIBBON {
+        tabs.push(RibbonTab::Annotate);
+    }
     tabs
 }
 fn contextual_tab(tabs: &[RibbonTab], sketch: bool) -> RibbonTab {

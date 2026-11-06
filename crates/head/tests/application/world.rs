@@ -146,7 +146,7 @@ impl ApplicationWorld {
                     .rev()
                     .find(|r| squeezed(&r.text).contains(&wanted))
             })
-            .unwrap_or_else(|| panic!("rendered text {:?}: expected {text:?}", self.text()))
+            .unwrap_or_else(|| panic!("expected {text:?} in rendered text {:?}", self.text()))
     }
     /// Press visible text with a real pointer event; a test never reaches for widget state.
     pub fn click_text(&mut self, text: &str) {

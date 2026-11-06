@@ -36,6 +36,9 @@ pub(crate) struct WorkspaceLayout {
     pub switcher: crate::application::document_tabs::WindowSwitcher,
     browser_width_override: Option<f32>,
     view: browser_view::BrowserView,
+    /// What a docked ribbon takes from each side of the window.
+    ribbon_left: f32,
+    ribbon_right: f32,
 }
 impl Default for WorkspaceLayout {
     fn default() -> Self {
@@ -49,6 +52,8 @@ impl Default for WorkspaceLayout {
             switcher: Default::default(),
             browser_width_override: None,
             view: Default::default(),
+            ribbon_left: 0.,
+            ribbon_right: 0.,
         }
     }
 }
@@ -98,7 +103,7 @@ impl WorkspaceLayout {
     }
     /// With every panel closed, only the plus control remains to bring one back.
     fn empty_dock_control(&mut self, ui: &Ui, band_height: f32) {
-        let position = [EDGE_MARGIN, band_height + 2.];
+        let position = [self.ribbon_left + EDGE_MARGIN, band_height + 2.];
         ui.window("##panel-plus")
             .position(position, Condition::Always)
             .flags(
@@ -112,6 +117,11 @@ impl WorkspaceLayout {
             .build(|| self.panels.plus_control(ui));
         self.pending_layout |= self.panels.needs_frame();
     }
+    /// Leave room for a docked ribbon; example: `layout.reserve_for_ribbon(196., 0.)`.
+    pub(crate) fn reserve_for_ribbon(&mut self, left: f32, right: f32) {
+        self.ribbon_left = left;
+        self.ribbon_right = right;
+    }
     /// The width the docked browser takes: a user's drag, else the window's default.
     fn browser_width(&self, display_width: f32) -> f32 {
         self.browser_width_override
@@ -122,8 +132,10 @@ impl WorkspaceLayout {
         let display = ui.io().display_size[0];
         let width = self.browser_width(display);
         let x = match self.dock {
-            BrowserDock::Left => EDGE_MARGIN + width,
-            BrowserDock::Right => display - width - EDGE_MARGIN - BOUNDARY_WIDTH,
+            BrowserDock::Left => self.ribbon_left + EDGE_MARGIN + width,
+            BrowserDock::Right => {
+                display - self.ribbon_right - width - EDGE_MARGIN - BOUNDARY_WIDTH
+            }
             BrowserDock::Floating(_) => return,
         };
         let top = band_height + 10.;
@@ -166,8 +178,11 @@ impl WorkspaceLayout {
         ];
         let top = band_height + 10.;
         let (position, size) = match self.dock {
-            BrowserDock::Left => ([EDGE_MARGIN, top], docked),
-            BrowserDock::Right => ([width - docked[0] - EDGE_MARGIN, top], docked),
+            BrowserDock::Left => ([self.ribbon_left + EDGE_MARGIN, top], docked),
+            BrowserDock::Right => (
+                [width - self.ribbon_right - docked[0] - EDGE_MARGIN, top],
+                docked,
+            ),
             BrowserDock::Floating(position) => (position, FLOATING_SIZE),
         };
         crate::widget_abi::window_geometry(ui, position, size, Condition::Always);
@@ -194,7 +209,12 @@ impl WorkspaceLayout {
         }
     }
     /// The horizontal span the document tab strip may use; example: `layout.tab_span(1440.)`.
-    pub(crate) fn tab_span(&self, width: f32) -> (f32, f32) {
+    pub(crate) fn tab_span(&self, display_width: f32) -> (f32, f32) {
+        let width = display_width - self.ribbon_left - self.ribbon_right;
+        let (left, span) = self.span_within(width);
+        (left + self.ribbon_left, span)
+    }
+    fn span_within(&self, width: f32) -> (f32, f32) {
         let reserved = self.browser_width(width) + 2. * EDGE_MARGIN;
         match (self.panels.dock_visible(), self.dock) {
             (true, BrowserDock::Left) => (reserved, (width - reserved).max(1.)),

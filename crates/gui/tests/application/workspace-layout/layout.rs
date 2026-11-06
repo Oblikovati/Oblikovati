@@ -41,3 +41,12 @@ fn the_document_area_leaves_room_for_the_tabs_only_when_they_show() {
     assert!(without.top < with_tabs.top);
     assert_eq!(without.bottom, with_tabs.bottom);
 }
+#[test]
+fn a_docked_ribbon_narrows_the_document_area_from_its_own_side() {
+    let mut layout = WorkspaceLayout::default();
+    let (start, span) = layout.tab_span(1000.);
+    layout.reserve_for_ribbon(196., 0.);
+    assert_eq!(layout.tab_span(1000.), (start + 196., span - 196.));
+    layout.reserve_for_ribbon(0., 196.);
+    assert_eq!(layout.tab_span(1000.), (start, span - 196.));
+}

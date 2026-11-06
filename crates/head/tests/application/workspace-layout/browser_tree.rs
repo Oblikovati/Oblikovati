@@ -107,8 +107,10 @@ fn matches_highlighted(world: &mut ApplicationWorld) {
 }
 #[then("unrelated visible feature rows are filtered from the browser")]
 fn unrelated_filtered(world: &mut ApplicationWorld) {
-    for unrelated in ["Origin", "Features", "End of Part"] {
-        world.expect_no_text(unrelated);
+    // Whole rows: the ribbon's Work Features group holds one of these words too.
+    for unrelated in ["Origin", "Features", "EndofPart"] {
+        let shown = world.frame.runs.iter().any(|run| run.text == unrelated);
+        assert!(!shown, "rendered text {:?}: expected no {unrelated:?} row", world.text());
     }
     world.expect_no_text("XY Plane");
 }

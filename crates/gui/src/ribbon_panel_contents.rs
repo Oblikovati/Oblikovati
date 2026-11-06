@@ -41,7 +41,15 @@ pub(crate) fn draw_panel_content(
             muted_commands(ui, origin, &["Surface", "Weld"], NOT_PORTED);
         }
         RibbonPanel::PartCreate => muted_commands(ui, origin, &["Extrude", "Revolve"], NOT_PORTED),
-        RibbonPanel::PartModify => muted_commands(ui, origin, &["Fillet", "Chamfer"], NOT_PORTED),
+        RibbonPanel::PartModify => {
+            muted_commands(ui, origin, &["Hole", "Fillet", "Chamfer"], NOT_PORTED);
+        }
+        RibbonPanel::PartNotes => {
+            muted_commands(ui, origin, &["General Note", "Leader Note"], NOT_PORTED);
+        }
+        RibbonPanel::PartWorkFeatures => {
+            muted_commands(ui, origin, &["Plane", "Axis", "Point"], NOT_PORTED);
+        }
         RibbonPanel::PresentationModel => {
             if crate::widget_abi::button(ui, "Insert Model", [108., 58.]) {
                 owners.workspaces.request_insert();
@@ -54,8 +62,10 @@ pub(crate) fn draw_panel_content(
 /// Commands a document kind will offer: shown muted with the reason, never as a working button.
 const NOT_PORTED: &str = "This command is not available in this build.";
 fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
-    for (row, label) in labels.iter().enumerate() {
-        crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + row as f32 * 30.]);
+    for (index, label) in labels.iter().enumerate() {
+        let column = (index / 2) as f32 * 116.;
+        let row = (index % 2) as f32 * 30.;
+        crate::widget_abi::cursor_position(ui, [origin[0] + column, origin[1] + row]);
         {
             let _muted = ui.begin_disabled(true);
             crate::widget_abi::button(ui, label, [108., 26.]);

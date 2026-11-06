@@ -39,15 +39,18 @@ impl ApplicationWorld {
         self.pump(Vec::new());
         id
     }
-    /// Setup only: a drawing through the owner command the chooser itself sends.
-    pub fn add_drawing(&mut self) -> u64 {
+    /// Setup only: a document through the owner command the chooser itself sends.
+    pub fn add_template(&mut self, kind: oblikovati_gui::GuiTemplateKind) -> u64 {
         let template = oblikovati_gui::GuiDocumentTemplate {
-            kind: oblikovati_gui::GuiTemplateKind::Drawing,
+            kind,
             units: oblikovati_gui::GuiTemplateUnits::Metric,
         };
         self.app().owner.create_document_template(template).unwrap();
         self.pump(Vec::new());
         self.active_id()
+    }
+    pub fn add_drawing(&mut self) -> u64 {
+        self.add_template(oblikovati_gui::GuiTemplateKind::Drawing)
     }
     pub fn scratch_folder(&mut self) -> std::path::PathBuf {
         let scratch = self

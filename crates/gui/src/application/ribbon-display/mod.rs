@@ -44,6 +44,29 @@ impl RibbonDisplay {
         }
     }
 }
+/// Where the ribbon sits around the workspace.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum RibbonPlacement {
+    #[default]
+    Top,
+    Left,
+    Right,
+    Floating,
+}
+/// Where a side ribbon's temporary panel opens: beside the group button that asked for it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct SideAnchor {
+    pub x: f32,
+    pub y: f32,
+    /// The panel ends at `x` rather than starting there, on a right-docked ribbon.
+    pub ends_at_x: bool,
+}
+const CONTEXT_MENU: &str = "##ribbon-context";
+const DOCKING_POSITIONS: [(&str, RibbonPlacement); 3] = [
+    ("Top", RibbonPlacement::Top),
+    ("Left", RibbonPlacement::Left),
+    ("Right", RibbonPlacement::Right),
+];
 /// What the temporary panel below the ribbon shows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum TemporaryPanel {
@@ -58,6 +81,9 @@ pub(crate) struct RibbonDisplayState {
     pub temporary: Option<TemporaryPanel>,
     pub temporary_anchor: f32,
     tab_release_consumed: bool,
+    pub placement: RibbonPlacement,
+    pub side_anchor: Option<SideAnchor>,
+    context_requested: bool,
 }
 impl Default for RibbonDisplayState {
     fn default() -> Self {
@@ -67,10 +93,58 @@ impl Default for RibbonDisplayState {
             temporary: None,
             temporary_anchor: 8.,
             tab_release_consumed: false,
+            placement: RibbonPlacement::default(),
+            side_anchor: None,
+            context_requested: false,
         }
     }
 }
 impl RibbonDisplayState {
+    /// What the display control will do next, for its tooltip.
+    fn control_tooltip(&self) -> &'static str {
+        let mut next = RibbonDisplayState {
+            mode: self.mode,
+            minimized: self.minimized,
+            ..Default::default()
+        };
+        next.advance();
+        next.mode.menu_label().unwrap_or("Show Full Ribbon")
+    }
+    /// Ask for the context menu from any of the ribbon's windows.
+    pub(crate) fn request_context_menu(&mut self) {
+        self.context_requested = true;
+    }
+    /// Move the ribbon; a temporary panel opened for the old place closes.
+    fn place(&mut self, placement: RibbonPlacement) {
+        self.placement = placement;
+        self.temporary = None;
+        self.side_anchor = None;
+    }
+    /// Draw the context menu that any of the ribbon's windows can ask for.
+    pub(crate) fn context_menu(&mut self, ui: &Ui) {
+        if std::mem::take(&mut self.context_requested) {
+            ui.open_popup(CONTEXT_MENU);
+        }
+        let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
+            return;
+        };
+        ui.menu("Docking Positions", || {
+            for (label, placement) in DOCKING_POSITIONS {
+                let checked = self.placement == placement;
+                if ui.menu_item_config(label).selected(checked).build() {
+                    self.place(placement);
+                }
+            }
+        });
+        let floating = self.placement == RibbonPlacement::Floating;
+        if ui
+            .menu_item_config("Undock Ribbon")
+            .enabled(!floating)
+            .build()
+        {
+            self.place(RibbonPlacement::Floating);
+        }
+    }
     /// A double click on the active tab acts like the display control. Its own release must not
     /// then open the whole-tab panel that a plain tab click opens in tabs-only mode.
     pub(crate) fn advance_from_tab(&mut self) {
@@ -108,6 +182,9 @@ impl RibbonDisplayState {
         crate::widget_abi::cursor_position(ui, position);
         if crate::widget_abi::button(ui, "Ribbon Display", [0.; 2]) {
             self.advance();
+        }
+        if ui.is_item_hovered() {
+            ui.tooltip_text(self.control_tooltip());
         }
         ui.same_line();
         if crate::widget_abi::button(ui, "v##ribbon-display-menu", [0.; 2]) {

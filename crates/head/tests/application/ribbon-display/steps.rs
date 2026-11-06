@@ -286,6 +286,7 @@ fn select_modify(world: &mut ApplicationWorld) {
 #[then("the Create panel closes")]
 fn create_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Base View");
+    world.expect_no_text("Extrude");
 }
 #[then("a temporary Modify panel displays modification commands")]
 fn modify_panel(world: &mut ApplicationWorld) {
@@ -386,4 +387,51 @@ fn buttons_checked(world: &mut ApplicationWorld) {
         world.checked("Minimize to Panel Buttons"),
         "expected the chosen mode checked"
     );
+}
+fn choose_tabs_mode(world: &mut ApplicationWorld) {
+    world.click_text("v");
+    world.click_text("Minimize to Tabs");
+    world.expect_no_text("Sketch XY");
+}
+#[given("the ribbon displays tabs without permanent command groups")]
+#[given("Minimize to Tabs is the selected ribbon display mode")]
+fn tabs_only_mode(world: &mut ApplicationWorld) {
+    choose_tabs_mode(world);
+}
+#[when("the pointer rests over the ribbon display control")]
+fn rest_on_control(world: &mut ApplicationWorld) {
+    let at = world
+        .run("Ribbon Display")
+        .center()
+        .map(|value| value as i32);
+    world.hover(at);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+#[then("a tooltip identifies the action as Show Full Ribbon")]
+fn full_ribbon_tooltip(world: &mut ApplicationWorld) {
+    world.expect_text("Show Full Ribbon");
+}
+#[then("the part viewport remains visible")]
+fn viewport_visible(world: &mut ApplicationWorld) {
+    world.expect_blank_region([400, 1400], [250, 650]);
+}
+#[given("the 3D Model ribbon is expanded")]
+fn model_ribbon_expanded(world: &mut ApplicationWorld) {
+    activate_display_control(world);
+    world.expect_text("Sketch XY");
+}
+#[then("the permanent command groups disappear and the ribbon tabs remain visible")]
+fn groups_gone(world: &mut ApplicationWorld) {
+    world.expect_no_text("Sketch XY");
+    world.expect_text("3D Model");
+}
+#[then("the full 3D Model command groups are visible")]
+fn model_groups_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Sketch XY");
+    world.expect_text("Extrude");
+}
+#[then("the ribbon returns to tabs-only display")]
+fn back_to_tabs_only(world: &mut ApplicationWorld) {
+    groups_gone(world);
 }

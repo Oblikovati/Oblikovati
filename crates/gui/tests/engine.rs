@@ -115,12 +115,17 @@ fn verify_invalid_requests(engine: &mut GuiFrameEngine) {
     engine.frame(&request()).unwrap();
 }
 
+const SCALE_SETTLING_FRAMES: usize = 3;
 fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
     let baseline = engine.frame(&request()).unwrap().draws;
     let mut input = request();
     // Preserve logical viewport size so responsive panels have the same layout.
     input.extent = input.extent.map(|value| value * 2);
     input.framebuffer_scale = [2.; 2];
+    // A new raster scale measures the ribbon's panels again, so the layout settles first.
+    for _ in 0..SCALE_SETTLING_FRAMES {
+        engine.frame(&input).unwrap();
+    }
     let snapshot = engine.frame(&input).unwrap().draws;
     assert_eq!(snapshot.extent, input.extent);
     assert!(!snapshot.batches.is_empty());
