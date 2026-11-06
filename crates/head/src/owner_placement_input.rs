@@ -35,17 +35,19 @@ impl<
         sketch: DocumentSketchId,
         kind: crate::SketchPlacementTool,
     ) -> Result<(), String> {
-        self.require_edit_document(document)?;
+        self.require_placement_target(document, sketch, kind)?;
         let plane = self.resolve_edit(document, sketch)?.plane;
+        self.retire_sketch_tool()?;
+        self.require_edit_document(document)?;
         let generation = self
             .files
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?
             .generation();
-        let tool = SketchPlacementState::new(document, sketch, generation, plane, kind)?;
+        let mut tool = SketchPlacementState::new(document, sketch, generation, plane, kind)?;
         self.select_placement_sketch(document, sketch)?;
-        self.retire_sketch_tool()?;
+        self.begin_line_scope(&mut tool)?;
         self.placement_notice(tool.prompt());
         self.sketch_tool = Some(crate::sketch_tool::SketchToolState::Placement(Box::new(
             tool,
@@ -78,6 +80,9 @@ impl<
         Ok(changed)
     }
     fn placement_context_valid(&self, tool: &SketchPlacementState) -> bool {
+        if tool.tool == crate::SketchPlacementTool::Line {
+            return self.line_scope_context_valid(tool);
+        }
         self.sketch_context_valid(tool.document, tool.sketch, tool.generation)
     }
     pub(super) fn process_placement_event(
@@ -88,6 +93,11 @@ impl<
     ) -> bool {
         let action = tool.event(event);
         if matches!(action, PlacementAction::Cancel) {
+            if let Err(cause) = self.cancel_line_scope(&tool) {
+                self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+                self.sketch_tool = Some(crate::sketch_tool::SketchToolState::Placement(tool));
+                return true;
+            }
             self.placement_notice(format!("{} canceled.", tool.tool.name()));
             return true;
         }
@@ -105,6 +115,20 @@ impl<
         action: PlacementAction,
     ) -> bool {
         match action {
+            PlacementAction::FinishLine { closed } => self
+                .finish_line_placement(tool, closed)
+                .unwrap_or_else(|cause| {
+                    self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+                    false
+                }),
+            PlacementAction::UndoLine => {
+                if let Err(cause) = tool.undo_line_vertex() {
+                    self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+                    return false;
+                }
+                self.refresh_placement_fields(tool);
+                false
+            }
             PlacementAction::FieldsChanged => {
                 self.refresh_placement_fields(tool);
                 false
@@ -148,6 +172,7 @@ impl<
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
             .and_then(|recipe| {
                 tool.resolved_preview = self.resolved_placement_preview(tool)?;
+                tool.confirm_line_vertex();
                 self.commit_placement_cursor(tool, recipe)
             });
         match outcome {
@@ -190,5 +215,28 @@ impl<
     }
     fn placement_notice(&mut self, message: String) {
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt { message });
+    }
+    fn require_placement_target(
+        &self,
+        document: u64,
+        sketch: DocumentSketchId,
+        kind: crate::SketchPlacementTool,
+    ) -> Result<(), String> {
+        kind.validate()?;
+        if let Some(edit) = self.active_sketch_edit()
+            && (edit.document, edit.sketch) != (document, sketch)
+        {
+            return Err(format!(
+                "placement document {document}, sketch {sketch:?}: expected active sketch {:?}",
+                edit
+            ));
+        }
+        if self
+            .placement_state()
+            .is_some_and(|tool| self.line_scope_context_valid(tool))
+        {
+            return Ok(());
+        }
+        self.require_edit_document(document)
     }
 }

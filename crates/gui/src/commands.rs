@@ -82,9 +82,11 @@ pub struct GuiCommandState {
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
     pub transaction_open: bool,
+    pub sketch_tool_transaction: bool,
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
+        self.validate_tool_transaction()?;
         crate::dimensions::validate_dimension_draft(self)?;
         crate::dimension_labels::validate_dimension_labels(&self.dimension_labels)?;
         crate::document_tabs::validate_documents(&self.documents)?;
@@ -103,6 +105,19 @@ impl GuiCommandState {
         }
         for parameter in &self.parameters {
             validate_parameter_row(parameter)?;
+        }
+        Ok(())
+    }
+    fn validate_tool_transaction(&self) -> Result<(), String> {
+        if self.sketch_tool_transaction
+            && (!self.transaction_open
+                || self.authoring != GuiAuthoringContext::Sketch
+                || self.document.is_none())
+        {
+            return Err(format!(
+                "GUI sketch tool transaction {}, open {}, context {:?}, document {:?}: expected an open owned sketch-tool transaction on an active sketch",
+                self.sketch_tool_transaction, self.transaction_open, self.authoring, self.document
+            ));
         }
         Ok(())
     }
@@ -178,7 +193,8 @@ impl GuiShellAction {
             Self::Redo => state.redo_label.is_some(),
             Self::StartSketchXY => state.authoring == GuiAuthoringContext::Part,
             Self::Dimension(crate::GuiDimensionAction::Start) => {
-                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
+                state.authoring == GuiAuthoringContext::Sketch
+                    && (!state.transaction_open || state.sketch_tool_transaction)
             }
             Self::Dimension(crate::GuiDimensionAction::Apply { id, .. }) => {
                 state
@@ -192,10 +208,15 @@ impl GuiShellAction {
                 .as_ref()
                 .is_some_and(|draft| draft.id == *id),
             Self::ConstrainSketch(_) => {
-                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
-            }
-            Self::PlaceSketchTool(_) | Self::FinishSketch => {
                 state.authoring == GuiAuthoringContext::Sketch
+                    && (!state.transaction_open || state.sketch_tool_transaction)
+            }
+            Self::PlaceSketchTool(_) => {
+                state.authoring == GuiAuthoringContext::Sketch
+                    && (!state.transaction_open || state.sketch_tool_transaction)
+            }
+            Self::FinishSketch => {
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
             Self::NewPart | Self::Save | Self::Home => true,
         }

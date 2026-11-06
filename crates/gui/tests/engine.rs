@@ -18,6 +18,7 @@ fn request() -> GuiFrameRequest {
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
             transaction_open: false,
+            sketch_tool_transaction: false,
             authoring: GuiAuthoringContext::Part,
             document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             document: Some(1),

@@ -89,3 +89,35 @@ fn history_labels_refuse_embedded_nul_before_widget_calls() {
         );
     }
 }
+
+#[test]
+fn owned_line_scope_allows_tool_replacement_but_not_sketch_exit_or_history() {
+    let mut state = GuiCommandState {
+        document: Some(1),
+        authoring: GuiAuthoringContext::Sketch,
+        transaction_open: true,
+        sketch_tool_transaction: true,
+        undo_label: Some("Previous".into()),
+        ..Default::default()
+    };
+    state.validate().unwrap();
+    for action in [
+        GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Point),
+        GuiShellAction::ConstrainSketch(crate::GuiSketchConstraint::Fix),
+        GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
+    ] {
+        assert!(action.dispatchable(&state));
+        state.sketch_tool_transaction = false;
+        assert!(!action.dispatchable(&state));
+        state.sketch_tool_transaction = true;
+    }
+    assert!(!GuiShellAction::FinishSketch.dispatchable(&state));
+    assert!(!GuiShellAction::Undo.dispatchable(&state));
+    state.transaction_open = false;
+    assert!(
+        state
+            .validate()
+            .unwrap_err()
+            .contains("expected an open owned sketch-tool transaction")
+    );
+}

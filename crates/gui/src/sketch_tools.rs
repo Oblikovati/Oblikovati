@@ -2,6 +2,7 @@
 /// A ribbon choice for an existing owner placement engine; numeric settings remain in that engine.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchTool {
+    Line,
     Rectangle,
     Circle,
     Point,
@@ -22,6 +23,7 @@ impl GuiSketchTool {
     /// Supply the compact ribbon caption; example: `GuiSketchTool::Circle.label()`.
     pub fn label(self) -> &'static str {
         match self {
+            Self::Line => "Line",
             Self::Rectangle => "Rectangle",
             Self::Circle => "Circle",
             Self::Point => "Point",
