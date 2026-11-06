@@ -80,6 +80,8 @@ pub(crate) fn apply_chrome_theme(
             colors[*slot as usize] = [color.r, color.g, color.b, color.a];
         }
     }
+    // A theme's translucent menu colour let the rows behind a menu read through its own rows.
+    colors[StyleColor::PopupBg as usize][3] = 1.;
 }
 
 #[cfg(test)]
@@ -110,7 +112,9 @@ mod tests {
             for (token, slots) in CHROME_STYLE_BINDINGS {
                 let rgba = theme.color(token);
                 for slot in *slots {
-                    assert_eq!(colors[*slot as usize], [rgba.r, rgba.g, rgba.b, rgba.a]);
+                    let opaque = *slot == StyleColor::PopupBg;
+                    let alpha = if opaque { 1. } else { rgba.a };
+                    assert_eq!(colors[*slot as usize], [rgba.r, rgba.g, rgba.b, alpha]);
                 }
             }
             assert_eq!(colors[StyleColor::PlotLines as usize], [0.123; 4]);

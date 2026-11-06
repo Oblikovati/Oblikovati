@@ -7,7 +7,9 @@ fn browser_geometry() -> ([f32; 2], [f32; 2]) {
     window_geometry(BROWSER).expect("model browser: expected a drawn window")
 }
 fn drag_header(world: &mut ApplicationWorld, to: [i32; 2]) {
-    let from = world.run(BROWSER).center().map(|value| value as i32);
+    // The title bar, not the Model tab with the same words below it.
+    let (position, _) = browser_geometry();
+    let from = [position[0] as i32 + 40, position[1] as i32 + 9];
     world.drag(from, to);
 }
 fn expect_docked_left(world: &mut ApplicationWorld) {
@@ -374,7 +376,7 @@ fn drag_over_drawing(world: &mut ApplicationWorld) {
     drag_header(world, [800, 300]);
 }
 #[then("the browser floats over the drawing sheet")]
-fn floats_over_sheet(world: &mut ApplicationWorld) {
+fn floats_over_sheet(_: &mut ApplicationWorld) {
     let (position, _) = browser_geometry();
     assert!(
         position[0] > 400.,
@@ -397,4 +399,249 @@ fn drawing_browser_docks(world: &mut ApplicationWorld) {
 #[then("the drawing remains visible in the remaining workspace")]
 fn sheet_remains(world: &mut ApplicationWorld) {
     expect_sheet_at(world, [1000, 500]);
+}
+#[given("its model browser is docked on the left")]
+#[given("its Model browser is docked on the left")]
+fn docked_on_left(world: &mut ApplicationWorld) {
+    expect_docked_left(world);
+    world.expect_text("Drawing Resources");
+}
+#[when("I select the browser tab's close control")]
+fn close_browser_tab(world: &mut ApplicationWorld) {
+    world.click_run_close_mark("Model");
+}
+#[then("the browser tree is hidden")]
+fn tree_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text("Drawing Resources");
+    assert!(
+        window_geometry(BROWSER).is_none(),
+        "expected no browser window"
+    );
+}
+#[then("the drawing occupies the space previously used by the browser")]
+fn drawing_takes_space(world: &mut ApplicationWorld) {
+    // This column was inside the docked browser, and the wider sheet now reaches it.
+    expect_sheet_at(world, [300, 500]);
+}
+#[then("a plus control remains at the upper left of the workspace")]
+fn plus_remains(world: &mut ApplicationWorld) {
+    let plus = world.run("+").center();
+    assert!(
+        plus[0] < 60. && plus[1] < 260.,
+        "plus control {plus:?}: expected the upper left"
+    );
+}
+#[when("I open the plus control")]
+fn open_plus(world: &mut ApplicationWorld) {
+    world.click_text("+");
+    world.pump(Vec::new());
+}
+#[then("the panel list offers Model Browser")]
+fn offers_model(world: &mut ApplicationWorld) {
+    world.expect_text("Model Browser");
+}
+#[when("I select Model Browser")]
+fn select_model_browser(world: &mut ApplicationWorld) {
+    world.click_text("Model Browser");
+    world.pump(Vec::new());
+}
+#[then("the browser returns to the left")]
+fn browser_back(world: &mut ApplicationWorld) {
+    expect_docked_left(world);
+}
+#[then("it displays the drawing resources and sheet tree")]
+#[then("the drawing resources and sheet tree are displayed")]
+fn drawing_tree(world: &mut ApplicationWorld) {
+    world.expect_text("Drawing Resources");
+    world.expect_text("Sheet:1");
+}
+#[given("an additional log panel is available in the browser's plus menu")]
+fn log_available(world: &mut ApplicationWorld) {
+    open_plus(world);
+    world.expect_text("Log Panel");
+    world.escape();
+}
+#[when("I add the log panel from the plus menu")]
+fn add_log(world: &mut ApplicationWorld) {
+    open_plus(world);
+    world.click_text("Log Panel");
+    world.pump(Vec::new());
+}
+fn expect_log_area(world: &mut ApplicationWorld) {
+    world.expect_text("Application messages");
+    world.expect_no_text("Drawing Resources");
+}
+#[then("the log panel becomes active in the same dock")]
+#[then("the log area is displayed in the dock")]
+fn log_active(world: &mut ApplicationWorld) {
+    expect_log_area(world);
+    expect_docked_left(world);
+}
+#[then("the Model browser remains available as a tab")]
+fn model_tab_remains(world: &mut ApplicationWorld) {
+    // The window's title and the tab both read Model.
+    let tabs = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == BROWSER)
+        .count();
+    assert_eq!(tabs, 2, "expected the title and the Model tab");
+}
+#[when("I select the Model browser tab")]
+fn select_model_tab(world: &mut ApplicationWorld) {
+    world.click_text(BROWSER);
+    world.pump(Vec::new());
+}
+#[when("I select the log panel tab")]
+fn select_log_tab(world: &mut ApplicationWorld) {
+    world.click_text("Log");
+    world.pump(Vec::new());
+}
+#[when("I close the log panel tab")]
+fn close_log_tab(world: &mut ApplicationWorld) {
+    world.click_run_close_mark("Log");
+    world.pump(Vec::new());
+}
+#[then("the Model browser is displayed")]
+fn model_displayed_again(world: &mut ApplicationWorld) {
+    drawing_tree(world);
+    world.expect_no_text("Application messages");
+}
+#[then("the drawing remains visible")]
+fn drawing_visible(world: &mut ApplicationWorld) {
+    expect_sheet_at(world, [1000, 500]);
+}
+const DRAWING_BORDER: &str = "Default Border";
+const SHEET_TITLE_BLOCK: &str = "Title Block";
+#[given("a drawing with drawing resources and a sheet is open in the MCAD Software")]
+#[given("a drawing with border entries in its resources and sheet is open in the MCAD Software")]
+#[given("a drawing with browser entries is open in the MCAD Software")]
+#[given("a drawing with a border and title block is open in the MCAD Software")]
+fn drawing_open(world: &mut ApplicationWorld) {
+    world.previous_document = Some(world.add_drawing());
+}
+#[given("the browser has expanded branches containing nested entries")]
+#[given("the sheet branch is expanded in the drawing browser")]
+fn drawing_branches_open(world: &mut ApplicationWorld) {
+    world.expect_text(DRAWING_BORDER);
+}
+#[when("I open the drawing browser menu")]
+fn open_drawing_menu(world: &mut ApplicationWorld) {
+    open_browser_menu(world);
+}
+#[then("the drawing resources and sheet remain visible as collapsed branches")]
+fn branches_collapsed(world: &mut ApplicationWorld) {
+    world.expect_text("Drawing Resources");
+    world.expect_text("Sheet:1");
+}
+#[then("their nested entries are hidden")]
+fn nested_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text(DRAWING_BORDER);
+    world.expect_no_text(SHEET_TITLE_BLOCK);
+}
+fn expect_sheet(world: &mut ApplicationWorld) {
+    expect_sheet_at(world, [1000, 500]);
+}
+#[then("the drawing sheet remains visible")]
+#[then("the drawing sheet remains displayed")]
+fn sheet_visible(world: &mut ApplicationWorld) {
+    expect_sheet(world);
+}
+#[then("nested entries under the drawing resources and sheet are displayed")]
+fn nested_shown(world: &mut ApplicationWorld) {
+    world.expect_text(DRAWING_BORDER);
+    world.expect_text("Sheet Formats");
+    world.expect_text(SHEET_TITLE_BLOCK);
+}
+#[when("I open the drawing browser search field")]
+#[given("the drawing browser search field is open")]
+fn open_drawing_search(world: &mut ApplicationWorld) {
+    world.click_text("Search");
+}
+#[then("matching border entries are displayed beneath their respective parent branches")]
+fn borders_under_parents(world: &mut ApplicationWorld) {
+    let row_of = |world: &ApplicationWorld, text: &str| world.run(text).center();
+    let resources = row_of(world, "Drawing Resources");
+    let sheet = row_of(world, "Sheet:1");
+    let rows: Vec<[f32; 2]> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "DefaultBorder")
+        .map(diagnostics_center)
+        .collect();
+    assert_eq!(rows.len(), 2, "expected a border under each branch");
+    assert!(
+        rows[0][1] > resources[1] && rows[0][1] < sheet[1],
+        "rows {rows:?}"
+    );
+    assert!(rows[1][1] > sheet[1], "rows {rows:?}");
+    assert!(
+        rows[0][0] > resources[0],
+        "rows {rows:?}: expected an indent"
+    );
+}
+fn diagnostics_center(run: &super::diagnostics::RenderedRun) -> [f32; 2] {
+    run.center()
+}
+#[then("matching text is highlighted")]
+fn border_marked(world: &mut ApplicationWorld) {
+    assert!(
+        world.end_of_text_is_marked(DRAWING_BORDER),
+        "expected a marked match"
+    );
+}
+#[then("unrelated browser entries are hidden")]
+fn unrelated_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text(SHEET_TITLE_BLOCK);
+    world.expect_no_text("Sheet Formats");
+}
+#[then("the unfiltered drawing browser tree is displayed")]
+fn drawing_tree_back(world: &mut ApplicationWorld) {
+    world.expect_text("Sheet Formats");
+    world.expect_text(SHEET_TITLE_BLOCK);
+}
+#[then("the search field is hidden")]
+fn drawing_search_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text("x");
+    drawing_tree_back(world);
+}
+#[when("I enter a query that matches no drawing browser entry")]
+fn no_drawing_match(world: &mut ApplicationWorld) {
+    type_in_search(world, "zzz");
+}
+#[then("a no-results message is displayed in place of the browser tree")]
+fn drawing_no_results(world: &mut ApplicationWorld) {
+    world.expect_text("No matching entries");
+    world.expect_no_text("Sheet:1");
+}
+#[when("I select the sheet border entry in the drawing browser")]
+fn select_border(world: &mut ApplicationWorld) {
+    world.click_text(DRAWING_BORDER);
+}
+#[then("the border entry is highlighted in the browser")]
+fn border_highlighted(world: &mut ApplicationWorld) {
+    assert!(
+        world.row_highlighted(DRAWING_BORDER),
+        "expected the border row accented"
+    );
+}
+#[when("I select the sheet title block entry in the drawing browser")]
+fn select_title_block(world: &mut ApplicationWorld) {
+    world.click_text(SHEET_TITLE_BLOCK);
+}
+#[then("the title block entry is highlighted in the browser")]
+fn title_highlighted(world: &mut ApplicationWorld) {
+    assert!(
+        world.row_highlighted(SHEET_TITLE_BLOCK),
+        "expected the title block row accented"
+    );
+}
+#[then("the border entry is no longer highlighted as the active selection")]
+fn border_cleared(world: &mut ApplicationWorld) {
+    assert!(
+        !world.row_highlighted(DRAWING_BORDER),
+        "expected the border row plain"
+    );
 }

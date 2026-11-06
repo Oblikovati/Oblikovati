@@ -89,3 +89,6 @@ fn rollback_template<T: Caller>(
     }
     Ok(())
 }
+#[cfg(test)]
+#[path = "../../../tests/application/document-creation/rollback.rs"]
+mod rollback_tests;

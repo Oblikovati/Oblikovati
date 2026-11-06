@@ -136,7 +136,7 @@ pub(crate) fn browser_contents(
         browser,
         expansion: view.take_expansion(),
     };
-    tree.draw(actions);
+    tree.draw(view, actions);
 }
 /// One frame's tree; `expansion` is set for the single frame after Expand All or Collapse All.
 struct BrowserTree<'a> {
@@ -146,12 +146,12 @@ struct BrowserTree<'a> {
     expansion: Option<bool>,
 }
 impl BrowserTree<'_> {
-    fn draw(&self, actions: &mut Vec<GuiShellAction>) {
+    fn draw(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         match self.browser.kind {
             GuiBrowserKind::Part => self.modeling("End of Part", actions),
             GuiBrowserKind::SheetMetal => self.folded_model(actions),
             GuiBrowserKind::Assembly => self.assembly(actions),
-            GuiBrowserKind::Drawing => self.drawing(),
+            GuiBrowserKind::Drawing => self.drawing(view),
             GuiBrowserKind::Presentation => self.ui.text("Scene1"),
         }
     }
@@ -182,11 +182,21 @@ impl BrowserTree<'_> {
         self.ui.text("Relationships");
         self.modeling("End of Assembly", actions);
     }
-    fn drawing(&self) {
-        self.ui.text("Drawing Resources");
-        if let Some(_sheet) = self.branch("Sheet:1", true) {
-            self.ui.bullet_text("Border");
-            self.ui.bullet_text("Title Block");
+    fn drawing(&self, view: &mut BrowserView) {
+        for (branch, (label, rows)) in DRAWING_TREE.iter().enumerate() {
+            let Some(_node) = self.branch(label, true) else {
+                continue;
+            };
+            for (row, name) in rows.iter().enumerate() {
+                let chosen = self
+                    .ui
+                    .selectable_config(name)
+                    .selected(view.selected_row == Some((branch, row)))
+                    .build();
+                if chosen {
+                    view.selected_row = Some((branch, row));
+                }
+            }
         }
     }
     fn origin(&self) {
@@ -226,6 +236,14 @@ impl BrowserTree<'_> {
         }
     }
 }
+/// A drawing's browser tree: the built-in template's one sheet and the resources it draws from.
+pub(crate) const DRAWING_TREE: [(&str, &[&str]); 2] = [
+    (
+        "Drawing Resources",
+        &["Sheet Formats", "Default Border", "Default Title Block"],
+    ),
+    ("Sheet:1", &["Default Border", "Title Block"]),
+];
 pub(crate) const ORIGIN_ROWS: [&str; 7] = [
     "Center Point",
     "X Axis",

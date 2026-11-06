@@ -196,7 +196,10 @@ impl ApplicationWorld {
         {
             let span = &row[x[0] * 4..x[1] * 4];
             assert!(
-                span.chunks_exact(4).all(|pixel| pixel == &span[..4]),
+                span.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .all(|pixel| pixel[..] == span[..4]),
                 "region x={x:?} y={y:?}: expected uniform viewport background rows"
             );
         }

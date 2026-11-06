@@ -10,7 +10,7 @@ pub(super) fn double_click_browser_row(
     owner: &mut NativeDesktopOwner,
 ) {
     // #3798: two separately presented single clicks depend on display speed, not input intent.
-    drive_pointer_clicks(window, owner, [90, 412], 2);
+    drive_pointer_clicks(window, owner, [90, 435], 2);
 }
 fn seed_browser_sketch(owner: &mut NativeDesktopOwner) -> crate::HeadSketchEdit {
     owner.create_part_document().unwrap();

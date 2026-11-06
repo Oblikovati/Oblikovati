@@ -226,7 +226,7 @@ fn verify_browser_reentry_pixels(
         "expected visible committed sketch geometry before browser activation"
     );
     // #3811: selection changes colour; isolate edit re-entry from that intended change.
-    drive_pointer_clicks(window, owner, [90, 412], 1);
+    drive_pointer_clicks(window, owner, [90, 435], 1);
     assert!(owner.active_sketch_edit().is_none());
     assert_eq!(
         owner

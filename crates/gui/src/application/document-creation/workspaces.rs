@@ -149,10 +149,11 @@ fn presentation_panels(ui: &Ui, area: WorkspaceArea) {
 fn fixed_panel(ui: &Ui, title: &str, position: [f32; 2], size: [f32; 2], empty: &str) {
     crate::widget_abi::window_geometry(ui, position, size, Condition::Always);
     ui.window(title)
+        // `flags` replaces the flags set so far, so it comes first.
+        .flags(imgui::WindowFlags::NO_DOCKING | imgui::WindowFlags::NO_FOCUS_ON_APPEARING)
         .movable(false)
         .resizable(false)
         .collapsible(false)
-        .flags(imgui::WindowFlags::NO_DOCKING | imgui::WindowFlags::NO_FOCUS_ON_APPEARING)
         .build(|| ui.text_disabled(empty));
 }
 /// Choosing an assembly is real; placing it is not, and the dialog says so instead of pretending.

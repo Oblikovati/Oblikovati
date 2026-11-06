@@ -19,8 +19,8 @@ fn the_tab_strip_avoids_only_a_docked_visible_browser() {
     layout.dock = BrowserDock::Floating([50., 50.]);
     assert_eq!(layout.tab_span(1000.), (8., 984.));
     layout.dock = BrowserDock::Left;
-    layout.browser_visible = false;
-    assert_eq!(layout.tab_span(1000.), (8., 984.));
+    layout.panels.model_open = false;
+    assert_eq!(layout.tab_span(1000.), (42., 950.));
 }
 #[test]
 fn a_dragged_browser_width_moves_the_document_tabs() {

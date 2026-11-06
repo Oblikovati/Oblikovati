@@ -64,3 +64,20 @@ fn an_expansion_applies_to_one_frame_only() {
     assert_eq!(view.take_expansion(), Some(false));
     assert_eq!(view.take_expansion(), None);
 }
+#[test]
+fn a_drawing_search_keeps_each_match_under_its_branch() {
+    let branches = matching_branches("border");
+    assert_eq!(
+        branches,
+        [
+            ("Drawing Resources", vec!["Default Border"]),
+            ("Sheet:1", vec!["Default Border"]),
+        ]
+    );
+}
+#[test]
+fn a_branch_with_no_match_is_left_out() {
+    let branches = matching_branches("formats");
+    assert_eq!(branches, [("Drawing Resources", vec!["Sheet Formats"])]);
+    assert!(matching_branches("zzz").is_empty());
+}

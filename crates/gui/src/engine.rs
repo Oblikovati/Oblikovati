@@ -207,6 +207,9 @@ impl GuiFrameEngine {
             .panel(ui, request, band_height, &self.workspace, &mut selected);
         self.parameter_editor
             .panel(ui, &request.commands, &mut selected);
+        self.workspace
+            .panels
+            .record_status(request.status.as_deref());
         self.workspace.browser_panel(
             ui,
             &request.commands,

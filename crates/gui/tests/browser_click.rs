@@ -47,7 +47,7 @@ fn single_click_selects_and_double_click_selects_then_opens_the_row() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
     engine.frame(&request).unwrap();
-    request.events = vec![GuiInputEvent::PointerMoved([90., 274.])];
+    request.events = vec![GuiInputEvent::PointerMoved([90., 297.])];
     engine.frame(&request).unwrap();
     assert!(mouse_frame(&mut engine, &mut request, true).is_empty());
     assert_eq!(
@@ -101,7 +101,7 @@ fn context_engine() -> (GuiFrameEngine, GuiFrameRequest) {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [90., 274.],
+            [90., 297.],
             GuiPointerButton::Right
         )
         .is_empty()
@@ -115,7 +115,7 @@ fn sketch_context_edit_dispatches_the_same_stable_identity_as_double_click() {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [140., 285.],
+            [140., 308.],
             GuiPointerButton::Left
         ),
         [GuiShellAction::EditSketch {
@@ -138,7 +138,7 @@ fn context_edit_is_inert_during_transactions_and_existing_sketch_edits() {
             pointer_gesture(
                 &mut engine,
                 &mut request,
-                [90., 274.],
+                [90., 297.],
                 GuiPointerButton::Right
             )
             .is_empty()
@@ -147,7 +147,7 @@ fn context_edit_is_inert_during_transactions_and_existing_sketch_edits() {
             pointer_gesture(
                 &mut engine,
                 &mut request,
-                [140., 285.],
+                [140., 308.],
                 GuiPointerButton::Left
             )
             .is_empty()
@@ -162,7 +162,7 @@ fn popup_dismissal_or_document_replacement_does_not_edit_a_sketch() {
             request.commands.document = Some(document);
         }
         let position = if replacement.is_some() {
-            [140., 285.]
+            [140., 308.]
         } else {
             [600., 500.]
         };
@@ -184,7 +184,7 @@ fn an_open_context_menu_rechecks_transaction_and_row_availability() {
             pointer_gesture(
                 &mut engine,
                 &mut request,
-                [140., 285.],
+                [140., 308.],
                 GuiPointerButton::Left
             )
             .is_empty()
@@ -204,7 +204,7 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [90., 291.],
+            [90., 314.],
             GuiPointerButton::Right
         )
         .is_empty()
@@ -213,7 +213,7 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [140., 302.],
+            [140., 325.],
             GuiPointerButton::Left
         ),
         [GuiShellAction::EditSketch {
@@ -237,7 +237,7 @@ fn shift_click_requests_membership_toggle_without_entering_edit_mode() {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [90., 274.],
+            [90., 297.],
             GuiPointerButton::Left
         ),
         [GuiShellAction::SelectBrowserSketch {
@@ -258,7 +258,7 @@ fn modified_double_click_selects_the_sketch_before_editing() {
             control: true,
             ..Default::default()
         }),
-        GuiInputEvent::PointerMoved([90., 274.]),
+        GuiInputEvent::PointerMoved([90., 297.]),
     ];
     engine.frame(&request).unwrap();
     mouse_frame(&mut engine, &mut request, true);
@@ -302,14 +302,14 @@ fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [90., 274.],
+            [90., 297.],
             GuiPointerButton::Right,
         );
         assert_eq!(
             pointer_gesture(
                 &mut engine,
                 &mut request,
-                [140., 302.],
+                [140., 325.],
                 GuiPointerButton::Left
             ),
             [GuiShellAction::SetSketchVisibility {
@@ -328,7 +328,7 @@ fn context_visibility_rechecks_an_open_transaction() {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [140., 302.],
+            [140., 325.],
             GuiPointerButton::Left
         )
         .is_empty()

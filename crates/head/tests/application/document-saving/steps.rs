@@ -419,12 +419,13 @@ fn select_existing(world: &mut ApplicationWorld) {
 }
 #[then("the selected file row is highlighted")]
 fn row_highlighted(world: &mut ApplicationWorld) {
-    // The field repeats the name after a click, so the row is the first of the two runs.
+    // The field below repeats the name after a click, so the row is the higher of the two.
     let row = world
         .frame
         .runs
         .iter()
-        .find(|run| run.text == EXISTING_PART.replace(' ', ""))
+        .filter(|run| run.text == EXISTING_PART.replace(' ', ""))
+        .min_by(|left, right| left.minimum[1].total_cmp(&right.minimum[1]))
         .expect("expected the listed file row")
         .clone();
     let y = row.center()[1] as usize;

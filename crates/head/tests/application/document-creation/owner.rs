@@ -59,3 +59,21 @@ fn each_template_kind_creates_its_own_document_type_and_units() {
         assert_eq!(units.length_unit, "mm");
     }
 }
+#[test]
+fn an_open_transaction_refuses_a_template_and_creates_nothing() {
+    let (mut owner, awake) = owner();
+    create(&mut owner, &awake);
+    invoke(&mut owner, &awake, |client| {
+        client
+            .transactions()
+            .begin(&TransactionBeginArgs {
+                label: "edit".into(),
+            })
+            .unwrap()
+    });
+    let refusal = owner
+        .create_document_template(oblikovati_gui::GuiDocumentTemplate::default())
+        .unwrap_err();
+    assert!(refusal.contains("transaction"), "refusal {refusal:?}");
+    assert_eq!(owner.documents().workspace().documents().len(), 1);
+}

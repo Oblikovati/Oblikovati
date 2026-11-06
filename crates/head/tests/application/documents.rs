@@ -166,6 +166,16 @@ impl ApplicationWorld {
         let center = self.expect_tab(&name).center();
         self.hover(center.map(|value| value as i32));
         let run = self.expect_tab(&name);
+        self.click_mark_after(&run);
+    }
+    /// Close a panel tab by its label; the topmost run with these words is the tab.
+    pub fn click_run_close_mark(&mut self, label: &str) {
+        let center = self.run(label).center();
+        self.hover(center.map(|value| value as i32));
+        let run = self.run(label).clone();
+        self.click_mark_after(&run);
+    }
+    fn click_mark_after(&mut self, run: &diagnostics::RenderedRun) {
         let marks: Vec<[f32; 2]> = self
             .frame
             .marks
@@ -181,7 +191,7 @@ impl ApplicationWorld {
             .collect();
         assert!(
             !marks.is_empty(),
-            "tab {name:?}: expected a drawn close mark"
+            "tab {run:?}: expected a drawn close mark"
         );
         let mean =
             |axis: usize| marks.iter().map(|mark| mark[axis]).sum::<f32>() / marks.len() as f32;
@@ -266,7 +276,10 @@ impl ApplicationWorld {
             .take(VIEWPORT_Y[1] - VIEWPORT_Y[0])
             .any(|row| {
                 let span = &row[VIEWPORT_X[0] * 4..VIEWPORT_X[1] * 4];
-                span.chunks_exact(4).any(|pixel| pixel != &span[..4])
+                span.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .any(|pixel| pixel[..] != span[..4])
             });
         assert!(
             drawn,
@@ -296,6 +309,27 @@ impl ApplicationWorld {
         }
         let common = counts.into_iter().max_by_key(|(_, count)| *count);
         common.is_some_and(|(pixel, _)| pixel != field)
+    }
+    /// A selected row's accent reaches past its text; the row's width shows it without the glyphs.
+    pub fn row_highlighted(&mut self, text: &str) -> bool {
+        let run = self.run(text).clone();
+        let x = run.maximum[0] as usize + 20;
+        let y = run.center()[1] as usize;
+        // Far below any drawing tree row, the same column shows the plain panel.
+        self.pixel_at([x, y]) != self.pixel_at([x, 700])
+    }
+    /// The last part of a row's text, where a match at its end is marked.
+    pub fn end_of_text_is_marked(&mut self, text: &str) -> bool {
+        let run = self.run(text).clone();
+        let y = run.center()[1] as usize;
+        let start = (run.minimum[0] + (run.maximum[0] - run.minimum[0]) * 0.6) as usize;
+        let plain = self.pixel_at([run.minimum[0] as usize - 3, y]);
+        let mut counts = std::collections::BTreeMap::new();
+        for x in start..run.maximum[0] as usize {
+            *counts.entry(self.pixel_at([x, y])).or_insert(0) += 1;
+        }
+        let common = counts.into_iter().max_by_key(|(_, count)| *count);
+        common.is_some_and(|(pixel, _)| pixel != plain)
     }
     /// The location steps as rendered, without spaces; no other text in a dialog holds `>`.
     pub fn breadcrumb_text(&self) -> String {

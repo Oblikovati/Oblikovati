@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The model browser's own commands: expanding its tree and searching its rows.
-use crate::browser::{GuiModelBrowser, ORIGIN_ROWS};
+use crate::browser::{DRAWING_TREE, GuiBrowserKind, GuiModelBrowser, ORIGIN_ROWS};
 use imgui::Ui;
 
 const BROWSER_MENU: &str = "##browser-menu";
@@ -13,6 +13,8 @@ pub(crate) struct BrowserView {
     /// Present while the field is open; an empty query still shows the whole tree.
     query: Option<String>,
     expansion: Option<bool>,
+    /// The drawing tree row a click chose, as its branch and row.
+    pub selected_row: Option<(usize, usize)>,
 }
 impl BrowserView {
     /// Draw the menu and search controls above the tree; example: `view.header(ui)`.
@@ -99,8 +101,27 @@ fn matching_rows<'a>(browser: &'a GuiModelBrowser, query: &str) -> Vec<&'a str> 
         .filter(|row| match_start(row, query).is_some())
         .collect()
 }
+/// A drawing's rows under the branches that hold them; a branch with no match is left out.
+fn matching_branches(query: &str) -> Vec<(&'static str, Vec<&'static str>)> {
+    DRAWING_TREE
+        .iter()
+        .map(|(branch, rows)| {
+            let matches = rows
+                .iter()
+                .copied()
+                .filter(|row| match_start(row, query).is_some())
+                .collect();
+            (*branch, matches)
+        })
+        .filter(|(_, rows): &(&str, Vec<&str>)| !rows.is_empty())
+        .collect()
+}
 /// Draw the rows a query leaves, each with its match marked; example: `search_results(ui, browser, "work")`.
 pub(crate) fn search_results(ui: &Ui, browser: &GuiModelBrowser, query: &str) {
+    if browser.kind == GuiBrowserKind::Drawing {
+        drawing_results(ui, query);
+        return;
+    }
     let rows = matching_rows(browser, query);
     if rows.is_empty() {
         ui.text_disabled(NO_RESULTS);
@@ -108,6 +129,21 @@ pub(crate) fn search_results(ui: &Ui, browser: &GuiModelBrowser, query: &str) {
     }
     for row in rows {
         result_row(ui, row, query);
+    }
+}
+fn drawing_results(ui: &Ui, query: &str) {
+    let branches = matching_branches(query);
+    if branches.is_empty() {
+        ui.text_disabled(NO_RESULTS);
+        return;
+    }
+    for (branch, rows) in branches {
+        ui.text(branch);
+        ui.indent();
+        for row in rows {
+            result_row(ui, row, query);
+        }
+        ui.unindent();
     }
 }
 fn result_row(ui: &Ui, row: &str, query: &str) {

@@ -58,7 +58,7 @@ impl GuiDocumentTemplate {
     /// The registered flavor, empty for a plain document.
     pub fn sub_type(self) -> &'static str {
         match self.kind {
-            GuiTemplateKind::SheetMetal => &SHEET_METAL_SUB_TYPE,
+            GuiTemplateKind::SheetMetal => SHEET_METAL_SUB_TYPE,
             _ => "",
         }
     }

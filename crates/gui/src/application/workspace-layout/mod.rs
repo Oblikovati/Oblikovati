@@ -5,9 +5,12 @@ use imgui::{Condition, MouseButton, Ui, WindowFlags};
 
 #[path = "browser_view.rs"]
 pub(crate) mod browser_view;
+#[path = "panel_tabs.rs"]
+pub(crate) mod panel_tabs;
 /// The tab strip and the gap under it.
 const TAB_STRIP_HEIGHT: f32 = 34.;
 const BOUNDARY_WIDTH: f32 = 6.;
+const PLUS_CONTROL_WIDTH: f32 = 34.;
 const MINIMUM_BROWSER_WIDTH: f32 = 180.;
 const EDGE_MARGIN: f32 = 8.;
 /// A header released this close to a side edge docks there.
@@ -23,7 +26,7 @@ enum BrowserDock {
 }
 #[derive(Debug)]
 pub(crate) struct WorkspaceLayout {
-    pub browser_visible: bool,
+    pub panels: panel_tabs::DockPanels,
     pub tabs_visible: bool,
     dock: BrowserDock,
     dragging: bool,
@@ -37,7 +40,7 @@ pub(crate) struct WorkspaceLayout {
 impl Default for WorkspaceLayout {
     fn default() -> Self {
         Self {
-            browser_visible: true,
+            panels: Default::default(),
             tabs_visible: true,
             dock: BrowserDock::default(),
             dragging: false,
@@ -60,7 +63,8 @@ impl WorkspaceLayout {
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.pending_layout = false;
-        if !self.browser_visible {
+        if !self.panels.dock_visible() {
+            self.empty_dock_control(ui, band_height);
             return;
         }
         self.place_browser(ui, height, band_height);
@@ -71,10 +75,42 @@ impl WorkspaceLayout {
             .collapsible(false)
             .build(|| {
                 self.track_header(ui);
-                crate::browser::browser_contents(ui, state, &mut self.view, actions);
+                self.dock_contents(ui, state, actions);
             });
+        self.pending_layout |= self.panels.needs_frame();
         self.finish_drag(ui);
         self.boundary_handle(ui, height, band_height);
+    }
+    fn dock_contents(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.panels.plus_control(ui);
+        ui.same_line();
+        let active = self.panels.tabs(ui);
+        if active == panel_tabs::DockPanel::Log {
+            self.panels.log_area(ui);
+        } else if self.panels.model_open {
+            crate::browser::browser_contents(ui, state, &mut self.view, actions);
+        }
+    }
+    /// With every panel closed, only the plus control remains to bring one back.
+    fn empty_dock_control(&mut self, ui: &Ui, band_height: f32) {
+        let position = [EDGE_MARGIN, band_height + 2.];
+        ui.window("##panel-plus")
+            .position(position, Condition::Always)
+            .flags(
+                WindowFlags::NO_DECORATION
+                    | WindowFlags::NO_MOVE
+                    | WindowFlags::NO_DOCKING
+                    | WindowFlags::NO_SAVED_SETTINGS
+                    | WindowFlags::ALWAYS_AUTO_RESIZE
+                    | WindowFlags::NO_FOCUS_ON_APPEARING,
+            )
+            .build(|| self.panels.plus_control(ui));
+        self.pending_layout |= self.panels.needs_frame();
     }
     /// The width the docked browser takes: a user's drag, else the window's default.
     fn browser_width(&self, display_width: f32) -> f32 {
@@ -160,9 +196,14 @@ impl WorkspaceLayout {
     /// The horizontal span the document tab strip may use; example: `layout.tab_span(1440.)`.
     pub(crate) fn tab_span(&self, width: f32) -> (f32, f32) {
         let reserved = self.browser_width(width) + 2. * EDGE_MARGIN;
-        match (self.browser_visible, self.dock) {
+        match (self.panels.dock_visible(), self.dock) {
             (true, BrowserDock::Left) => (reserved, (width - reserved).max(1.)),
             (true, BrowserDock::Right) => (EDGE_MARGIN, (width - reserved - EDGE_MARGIN).max(1.)),
+            // The plus control that brings a panel back sits in the strip's row.
+            (false, _) => {
+                let left = EDGE_MARGIN + PLUS_CONTROL_WIDTH;
+                (left, (width - left - EDGE_MARGIN).max(1.))
+            }
             _ => (EDGE_MARGIN, (width - 2. * EDGE_MARGIN).max(1.)),
         }
     }
@@ -192,7 +233,7 @@ impl WorkspaceLayout {
             ui.open_popup("##user-interface");
         }
         if let Some(_menu) = ui.begin_popup("##user-interface") {
-            ui.checkbox("Model Browser", &mut self.browser_visible);
+            ui.checkbox("Model Browser", &mut self.panels.model_open);
             ui.checkbox("Document Tabs", &mut self.tabs_visible);
         }
     }

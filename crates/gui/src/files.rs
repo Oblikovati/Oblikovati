@@ -10,6 +10,8 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
+const FILE_COMMANDS_WIDTH: f32 = 190.;
+const FILE_MENU_WIDTH: f32 = 440.;
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
     templates: crate::application::document_creation::TemplateChooser,
@@ -42,31 +44,44 @@ impl GuiDocumentFiles {
         actions: &mut Vec<GuiShellAction>,
     ) {
         ui.menu("File", || {
-            if ui
-                .menu_item_config("New")
-                .enabled(!state.transaction_open)
-                .build()
-            {
-                self.templates.request();
-            }
-            self.open_menu_item(ui, state);
-            file_save_item(ui, state, actions);
-            self.save_as_menu_item(ui, state);
-            file_close_item(ui, state, actions);
-            unavailable_file_item(ui, "Export", NOT_AVAILABLE);
-            unavailable_file_item(ui, "Share", NOT_AVAILABLE);
-            unavailable_file_item(ui, "Manage", NOT_AVAILABLE);
-            self.document_properties_item(ui, state);
-            unavailable_file_item(ui, "Print", NOT_AVAILABLE);
-            ui.separator();
+            ui.columns(2, "file-menu-layout", false);
+            ui.set_column_width(0, FILE_COMMANDS_WIDTH);
+            self.file_commands(ui, state, actions);
+            ui.next_column();
             ui.text_disabled("Recent documents");
             ui.text_disabled("No recent documents");
+            ui.columns(1, "file-menu-layout-end", false);
             ui.separator();
             self.options_item(ui);
             if ui.menu_item("Exit") {
                 actions.push(GuiShellAction::Exit);
             }
+            // Columns take their width from the menu, so the menu needs its own.
+            crate::widget_abi::dummy(ui, [FILE_MENU_WIDTH, 0.]);
         });
+    }
+    fn file_commands(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        if ui
+            .menu_item_config("New")
+            .enabled(!state.transaction_open)
+            .build()
+        {
+            self.templates.request();
+        }
+        self.open_menu_item(ui, state);
+        file_save_item(ui, state, actions);
+        self.save_as_menu_item(ui, state);
+        file_close_item(ui, state, actions);
+        unavailable_file_item(ui, "Export", NOT_AVAILABLE);
+        unavailable_file_item(ui, "Share", NOT_AVAILABLE);
+        unavailable_file_item(ui, "Manage", NOT_AVAILABLE);
+        self.document_properties_item(ui, state);
+        unavailable_file_item(ui, "Print", NOT_AVAILABLE);
     }
     fn document_properties_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         self.properties_requested |= ui

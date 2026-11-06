@@ -62,10 +62,10 @@ impl DocumentProperties {
         let Some(_dialog) = ui.begin_modal_popup(&title) else {
             return;
         };
-        if let Some(_pages) = ui.tab_bar("##property-pages") {
-            if let Some(_general) = ui.tab_item("General") {
-                general_page(ui, state, target, row);
-            }
+        if let Some(_pages) = ui.tab_bar("##property-pages")
+            && let Some(_general) = ui.tab_item("General")
+        {
+            general_page(ui, state, target, row);
         }
         let closed = crate::widget_abi::button(ui, "Close", [80., 0.])
             || ui.is_key_pressed(imgui::Key::Escape);
