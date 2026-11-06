@@ -47,6 +47,19 @@ at both display scales and the owned transaction guard. Native acceptance uses
 mouse and keyboard input for creation, Fix, history, save and fresh-process
 reopen, with MCPBridge read-only checks and screenshots.
 
+The final local gate passed all 13 crates and all 354 head tests. Coverage is
+91.96% to 99.60%, duplicated lines are 1.00%, and Markdown lint is clean. Windows
+x64 GNU and macOS ARM64 host/GUI Clippy checks passed; these compile checks do not
+claim native runtime coverage on those systems.
+
+Native X11 acceptance covered incomplete cancellation, Enter, a private chain
+preview, inert document Undo while Line owned its group, Backspace after ribbon
+focus, C closure, line endpoint Fix and a final point Fix to DOF zero. Three
+Undo/Redo steps removed and restored the same chain and Fix operations. Save and
+fresh-process reopen retained the geometry and identities. MCPBridge supplied
+read-only inspections and captures; the captures were inspected. Both test
+desktops closed normally.
+
 This command does not provide the numeric Line HUD or additional creation-format
 modes. It does not complete general Extrude or the cube/named-face journey;
 Martensite#390 remains the tracked analytic region prerequisite.
