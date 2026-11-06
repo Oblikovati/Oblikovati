@@ -12,7 +12,7 @@ jobs:
   prepare:
     # Explicitly inactive during migration. Enabling the schedule does not bypass R9 preflight.
     if: vars.RUST_PREVIEW_ENABLED == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       proceed: ${{ steps.request.outputs.proceed }}
       revision: ${{ steps.request.outputs.revision }}

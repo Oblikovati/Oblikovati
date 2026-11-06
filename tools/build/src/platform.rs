@@ -14,13 +14,13 @@ pub(crate) struct Platform {
 pub(crate) const PLATFORMS: [Platform; 6] = [
     Platform {
         target: "x86_64-unknown-linux-gnu",
-        runner: "ubuntu-24.04",
+        runner: "ubuntu-26.04",
         suffix: "linux-amd64",
         head: true,
     },
     Platform {
         target: "aarch64-unknown-linux-gnu",
-        runner: "ubuntu-24.04-arm",
+        runner: "ubuntu-26.04-arm",
         suffix: "linux-arm64",
         head: false,
     },
@@ -38,13 +38,13 @@ pub(crate) const PLATFORMS: [Platform; 6] = [
     },
     Platform {
         target: "x86_64-apple-darwin",
-        runner: "macos-15-intel",
+        runner: "macos-26-intel",
         suffix: "macos-amd64",
         head: true,
     },
     Platform {
         target: "aarch64-apple-darwin",
-        runner: "macos-14",
+        runner: "macos-26",
         suffix: "macos-arm64",
         head: true,
     },
