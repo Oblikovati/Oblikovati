@@ -29,6 +29,7 @@ const FILE_MENU_WIDTH: f32 = 440.;
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
     templates: crate::application::document_creation::TemplateChooser,
+    recent_menu: RecentMenu,
     open: OpenDialog,
     save_as: SaveAsDialog,
     close_prompt: ClosePrompt,
@@ -36,6 +37,73 @@ pub(crate) struct GuiDocumentFiles {
     options_requested: bool,
     properties_requested: bool,
 }
+/// How the File menu orders and shows its recent files.
+#[derive(Default)]
+struct RecentMenu {
+    by_date: bool,
+    with_locations: bool,
+}
+impl RecentMenu {
+    fn rows(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        self.controls(ui);
+        if state.recent_documents.is_empty() {
+            ui.text_disabled("No recent documents");
+        }
+        let mut rows: Vec<&crate::GuiRecentDocument> = state.recent_documents.iter().collect();
+        if self.by_date {
+            rows.sort_by_key(|row| std::cmp::Reverse(row.modified));
+        }
+        for row in rows.into_iter().take(RECENT_MENU_ROWS) {
+            self.row(ui, row, actions);
+        }
+    }
+    fn controls(&mut self, ui: &Ui) {
+        let ordering = if self.by_date {
+            "By Access Date"
+        } else {
+            "By Ordered List"
+        };
+        if ui.button(ordering) {
+            self.by_date = !self.by_date;
+        }
+        ui.same_line();
+        let display = if self.with_locations {
+            "Name and Location"
+        } else {
+            "Name"
+        };
+        if ui.button(format!("{display}###recent-display")) {
+            self.with_locations = !self.with_locations;
+        }
+    }
+    fn row(&self, ui: &Ui, row: &crate::GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {
+        use crate::application::home_recent_documents::recent_rows::kind_mark;
+        ui.text(kind_mark(row.kind));
+        ui.same_line_with_pos(RECENT_NAME_X);
+        if ui.button(format!("{}###recent-menu-{}", row.name, row.path)) {
+            actions.push(GuiShellAction::OpenDocument(
+                oblikovati_api::wire::OpenDocumentArgs {
+                    full_document_name: row.path.clone(),
+                    ..Default::default()
+                },
+            ));
+        }
+        ui.same_line_with_pos(RECENT_PIN_X);
+        let pin = if row.pinned { "Unpin" } else { "Pin" };
+        if ui.button(format!("{pin}###recent-menu-pin-{}", row.path)) {
+            actions.push(GuiShellAction::Recent(crate::GuiRecentAction::SetPinned {
+                path: row.path.clone(),
+                pinned: !row.pinned,
+            }));
+        }
+        if self.with_locations {
+            ui.text_disabled(&row.location);
+        }
+    }
+}
+const RECENT_MENU_ROWS: usize = 8;
+const RECENT_NAME_X: f32 = 22.;
+const RECENT_PIN_X: f32 = 190.;
 impl GuiDocumentFiles {
     pub(crate) fn request_save_path(
         &mut self,
@@ -63,7 +131,7 @@ impl GuiDocumentFiles {
             self.file_commands(ui, state, actions);
             ui.next_column();
             ui.text_disabled("Recent documents");
-            ui.text_disabled("No recent documents");
+            self.recent_menu.rows(ui, state, actions);
             ui.columns(1, "file-menu-layout-end", false);
             ui.separator();
             self.options_item(ui);
@@ -105,6 +173,14 @@ impl GuiDocumentFiles {
     }
     fn options_item(&mut self, ui: &Ui) {
         self.options_requested |= ui.menu_item("Options...");
+    }
+    /// Open the new-document chooser; example: from the Quick Access Toolbar.
+    pub(crate) fn request_new(&mut self) {
+        self.templates.request();
+    }
+    /// Open the Open dialog; example: from the Quick Access Toolbar.
+    pub(crate) fn request_open(&mut self) {
+        self.open.request();
     }
     /// Consume the File menu's request; example: `files.take_options_request()`.
     pub(crate) fn take_options_request(&mut self) -> bool {

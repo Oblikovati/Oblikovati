@@ -2,6 +2,18 @@
 use crate::ViewportCamera;
 use oblikovati_model::sketch::SketchPlane;
 impl ViewportCamera {
+    /// The same target and scale from the corner of the model axes.
+    /// Example: `ViewportCamera::default().isometric()` for a newly opened view.
+    pub fn isometric(self) -> Self {
+        let delta: [f64; 3] = std::array::from_fn(|axis| self.eye[axis] - self.target[axis]);
+        let distance = delta.iter().map(|value| value * value).sum::<f64>().sqrt();
+        let along = distance / 3f64.sqrt();
+        Self {
+            eye: self.target.map(|value| value + along),
+            up: [0., 1., 0.],
+            ..self
+        }
+    }
     /// Face a sketch from the viewer's current side, preserving scale and standoff.
     /// Example: `view.set_camera(view.camera_state()?.facing_sketch(plane)?)?` on edit entry.
     pub fn facing_sketch(self, plane: SketchPlane) -> Result<Self, String> {

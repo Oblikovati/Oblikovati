@@ -23,6 +23,7 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         presentation_delay: Duration::ZERO,
     }
 }
+const STATUS_LINE_ROWS: usize = 22;
 #[path = "native_gui_loop/scripted_window.rs"]
 mod scripted_window;
 fn click_shell(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner, x: i32) {
@@ -80,6 +81,8 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     assert!(!owner.close_allowed().unwrap());
     parameters::create_size_parameter(&mut window, &mut owner);
     click_shell_position(&mut window, &mut owner, [110, 68]);
+    // Start 2D Sketch asks for a plane; facing the view, only XY has any area to click.
+    click_shell_position(&mut window, &mut owner, [800, 500]);
     assert!(owner.active_sketch_edit().is_some());
     click_shell_position(&mut window, &mut owner, [40, 107]);
     assert!(owner.placement_active());
@@ -131,7 +134,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
             .len(),
         4
     );
-    for (button_x, expected_lines) in [(75, 0), (120, 4)] {
+    for (button_x, expected_lines) in [(156, 0), (201, 4)] {
         click_shell(&mut window, &mut owner, button_x);
         assert_eq!(
             owner
@@ -198,6 +201,8 @@ fn verify_browser_reentry_pixels(
         .zip(after.rgba.chunks_exact(width * 4))
         .enumerate()
         .skip(168)
+        // The status line at the foot reports the edit, as it should.
+        .take(before.extent[1] as usize - 168 - STATUS_LINE_ROWS)
     {
         assert!(
             old[500 * 4..] == new[500 * 4..],
@@ -230,11 +235,11 @@ fn native_gui_buttons_save_and_restore_model_pixels_without_camera_leakage() {
     native_set(&mut owner, "width", "6 cm");
     let edited = publish_gui_framebuffer(&mut owner, &mut window.native);
     assert_ne!(before.rgba, edited.rgba);
-    click_shell(&mut window, &mut owner, 75);
+    click_shell(&mut window, &mut owner, 156);
     assert_model_without_gui(&mut window.native, &before);
-    click_shell(&mut window, &mut owner, 120);
+    click_shell(&mut window, &mut owner, 201);
     assert_model_without_gui(&mut window.native, &edited);
-    click_shell(&mut window, &mut owner, 30);
+    click_shell(&mut window, &mut owner, 111);
     verify_gui_save(&path, &mut window.native);
     verify_gui_camera(&mut window, &mut owner);
     owner.finish().unwrap();
@@ -249,8 +254,9 @@ fn physical_keyboard_navigation_activates_native_save_without_camera_input() {
     open_native_part(&mut owner, &path);
     let mut window = scripted_window(native);
     publish_gui_framebuffer(&mut owner, &mut window.native);
+    // Saving leaves keyboard focus on the row's Save button; the edit then has something to save.
+    click_shell(&mut window, &mut owner, 111);
     native_set(&mut owner, "width", "6 cm");
-    click_shell(&mut window, &mut owner, 165);
     verify_keyboard_save_navigation(&mut window, &mut owner, &path);
     owner.finish().unwrap();
     window.finish().unwrap();
@@ -261,12 +267,11 @@ fn verify_keyboard_save_navigation(
     path: &std::path::Path,
 ) {
     let camera = window.native.view.camera_state().unwrap();
-    for _ in 0..3 {
-        press_shell_key(
-            window,
-            owner,
-            oblikovati_viewport::ViewportPhysicalKey::LeftArrow,
-        );
+    for key in [
+        oblikovati_viewport::ViewportPhysicalKey::RightArrow,
+        oblikovati_viewport::ViewportPhysicalKey::LeftArrow,
+    ] {
+        press_shell_key(window, owner, key);
     }
     press_shell_key(
         window,
@@ -275,6 +280,14 @@ fn verify_keyboard_save_navigation(
     );
     verify_gui_save(path, &mut window.native);
     assert_eq!(window.native.view.camera_state().unwrap(), camera);
+}
+/// The camera's Home, as the View tab's Navigate panel sends it; the row's Home opens a workspace.
+fn press_camera_home(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
+    window.scripted = vec![ViewportEvent::Input(ViewportInput::Key {
+        key: oblikovati_viewport::ViewportKey::Home,
+        pressed: true,
+    })];
+    crate::frames::run_frames(window, HeadOptions { frames: Some(3) }, owner).unwrap();
 }
 fn press_shell_key(
     window: &mut ScriptedGuiWindow,
@@ -333,7 +346,7 @@ fn verify_gui_camera(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOw
     assert_eq!(window.native.view.camera_state().unwrap(), initial);
     assert!(drive_wheel(window, owner, [600, 400]));
     assert_ne!(window.native.view.camera_state().unwrap(), initial);
-    click_shell(window, owner, 165);
+    press_camera_home(window, owner);
     assert_eq!(window.native.view.camera_state().unwrap(), initial);
 }
 fn drive_wheel(
@@ -359,7 +372,7 @@ fn native_model_wheel_after_gui_click_and_gui_wheel_reaches_camera() {
     open_native_part(&mut owner, &directory.path().join("wheel.opd"));
     let mut window = scripted_window(native);
     publish_gui_framebuffer(&mut owner, &mut window.native);
-    click_shell(&mut window, &mut owner, 165);
+    press_camera_home(&mut window, &mut owner);
     let before = window.native.view.camera_state().unwrap();
     assert!(!drive_wheel(&mut window, &mut owner, [50, 50]));
     assert_eq!(window.native.view.camera_state().unwrap(), before);

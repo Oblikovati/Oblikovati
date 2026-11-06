@@ -46,14 +46,26 @@ fn prepared_gui_tool_owner() -> TestOwner {
         .unwrap();
     owner
 }
+/// A running tool changes what the GUI offers; these tests compare what it did to the document.
+pub(super) fn without_tool_state(
+    mut state: oblikovati_gui::GuiCommandState,
+) -> oblikovati_gui::GuiCommandState {
+    state.sketch_at_ready = false;
+    state.sketch_tool_keyboard = false;
+    state.line_command = None;
+    state
+}
 #[test]
 fn gui_tool_selection_uses_the_existing_engine_without_a_history_edit() {
     let mut owner = prepared_gui_tool_owner();
-    let before = owner.gui_command_state().unwrap();
+    let before = without_tool_state(owner.gui_command_state().unwrap());
     for (choice, expected) in TOOL_ENGINE_CASES {
         assert!(owner.place_sketch_tool_from_gui(choice).unwrap());
         assert_eq!(owner.placement_state().unwrap().tool, expected);
-        assert_eq!(owner.gui_command_state().unwrap(), before);
+        assert_eq!(
+            without_tool_state(owner.gui_command_state().unwrap()),
+            before
+        );
         assert!(owner.placement_preview().is_none());
     }
     owner.finish_sketch_edit().unwrap();

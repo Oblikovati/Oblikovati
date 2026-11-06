@@ -1,6 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl HeadWindow for ScriptedGuiWindow {
+    fn set_sketch_preview(
+        &mut self,
+        preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
+    ) -> Result<bool, String> {
+        self.native.set_sketch_preview(preview)
+    }
+    fn set_view_slot(&mut self, slot: u64) -> Result<bool, String> {
+        self.native.set_view_slot(slot)
+    }
+    fn sketch_pixel(
+        &self,
+        plane: oblikovati_model::sketch::SketchPlane,
+        point: [f64; 2],
+    ) -> Result<[i32; 2], String> {
+        HeadWindow::sketch_pixel(&self.native, plane, point)
+    }
+    fn navigation_active(&self) -> bool {
+        self.native.navigation_active()
+    }
     fn sketch_point(
         &self,
         pixel: [i32; 2],

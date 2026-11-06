@@ -20,6 +20,15 @@ pub struct NativeHeadWindow {
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
     navigation: crate::navigation::DesktopNavigation,
     sketch_view: Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
+    /// The window of a document in front; each keeps its own view while another is shown.
+    view_slot: u64,
+    saved_views: std::collections::BTreeMap<
+        u64,
+        (
+            oblikovati_viewport::ViewportCamera,
+            Option<(crate::HeadSketchEdit, oblikovati_viewport::ViewportCamera)>,
+        ),
+    >,
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
     gui_epoch: std::time::Instant,
@@ -52,6 +61,8 @@ impl NativeHeadWindow {
             sketch_scene: None,
             navigation: Default::default(),
             sketch_view: None,
+            view_slot: 0,
+            saved_views: Default::default(),
             command_notice: None,
             gui: None,
             gui_epoch: std::time::Instant::now(),
@@ -153,6 +164,10 @@ impl HeadWindow for NativeHeadWindow {
         self.synchronize_sketch_camera(edit)
     }
 
+    fn set_view_slot(&mut self, slot: u64) -> Result<bool, String> {
+        self.switch_view_slot(slot)
+    }
+
     fn set_sketch_preview(
         &mut self,
         preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
@@ -205,7 +220,7 @@ impl HeadWindow for NativeHeadWindow {
         if self.gui.is_none() {
             self.view.set_status_text(&notice.message())?;
         }
-        self.command_notice = Some(notice);
+        self.command_notice = (notice != crate::DesktopCommandNotice::Ready).then_some(notice);
         self.refresh_title()
     }
 
@@ -239,6 +254,9 @@ impl HeadWindow for NativeHeadWindow {
         self.refresh_title()?;
         Ok(match presentation {
             ViewportPresentation::Completed(capture) => {
+                if let Some(gui) = &mut self.gui {
+                    gui.note_presented_frame(capture.extent, &capture.rgba);
+                }
                 self.publish_window_captures(&capture)?;
                 HeadPresentation::Completed
             }
@@ -311,6 +329,8 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
     )
     .with_ui_scale_preferences(Box::new(preferences::load_native_application_options()?))
     .with_prompt_preferences(Box::new(preferences::load_native_application_options()?))
+    .with_sketch_preferences(Box::new(preferences::load_native_application_options()?))
+    .with_recent_documents(Box::new(preferences::load_native_application_options()?))
     .with_theme_store(themes.library, Box::new(themes.preferences))
     .with_theme_file_declines(themes.declines)
     .with_window_captures(crate::DesktopWindowCaptures::new(

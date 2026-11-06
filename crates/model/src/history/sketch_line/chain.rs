@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{
+    history::{SketchDimensionCreation, SketchDimensionCreationReport, SketchPlacementFieldLock},
     sketch::{
-        SketchEntityId,
+        DistanceMeasure, MeasuredDimensionOperands, SeededDimensionOperands,
+        SketchDimensionalConstraintCreation, SketchEntityId,
         chain_layout::{line_chain_indices, require_chain_vertices},
     },
     sketch_settings::SketchSettings,
@@ -15,6 +17,11 @@ pub struct SketchLineChainCreation {
     pub closed: bool,
     pub construction: bool,
     pub centerline: bool,
+    /// Existing vertices the first and last points join, so a chain stays connected when
+    /// inference is off and each segment keeps its own undo step.
+    pub joins: [Option<SketchEntityId>; 2],
+    /// Typed length and angle of the last segment; each becomes a driving dimension.
+    pub locks: [Option<SketchPlacementFieldLock>; 2],
 }
 /// Visible vertices and ordered line reports preserve shared identity and per-segment inference.
 #[derive(Clone, Debug, PartialEq)]
@@ -22,6 +29,7 @@ pub struct SketchLineChainCreationReport {
     pub sketch: DocumentSketchId,
     pub points: Vec<SketchEntityId>,
     pub lines: Vec<SketchLineCreationReport>,
+    pub dimensions: Vec<SketchDimensionCreationReport>,
 }
 impl DocumentSnapshot {
     /// Author the continuous Line tool's visible chain atomically against current solved geometry.
@@ -51,8 +59,57 @@ impl DocumentSnapshot {
         self.sketches
             .replace_geometry(sketch, geometry)
             .map_err(SketchLineCreationError::Sketch)?;
-        Ok(report)
+        let dimensions =
+            self.append_locked_dimensions(sketch, input, &report, solve_options, ids)?;
+        Ok(SketchLineChainCreationReport {
+            dimensions,
+            ..report
+        })
     }
+    fn append_locked_dimensions(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+        report: &SketchLineChainCreationReport,
+        options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<Vec<SketchDimensionCreationReport>, SketchLineCreationError> {
+        let Some(last) = report.lines.last() else {
+            return Ok(Vec::new());
+        };
+        let operands = locked_segment_operands(last);
+        let mut dimensions = Vec::new();
+        for (lock, operands) in input.locks.iter().zip(operands) {
+            let Some(lock) = lock else {
+                continue;
+            };
+            let creation = SketchDimensionCreation {
+                operands,
+                expression: lock.expression.clone(),
+                reference: false,
+                text_point: lock.text_point,
+            };
+            let created = self
+                .create_placement_dimension(sketch, &creation, options, ids)
+                .map_err(SketchLineCreationError::Dimension)?;
+            dimensions.push(created);
+        }
+        Ok(dimensions)
+    }
+}
+fn locked_segment_operands(
+    line: &SketchLineCreationReport,
+) -> [SketchDimensionalConstraintCreation; 2] {
+    let [start, end] = [line.primitive.points[0], line.primitive.points[1]];
+    [
+        SketchDimensionalConstraintCreation::Measured(MeasuredDimensionOperands::Distance {
+            points: [start, end],
+            measure: DistanceMeasure::Aligned,
+        }),
+        SketchDimensionalConstraintCreation::Seeded(SeededDimensionOperands::LineAngle(
+            line.primitive.entity,
+        )),
+    ]
 }
 impl SketchLineChainCreation {
     fn append_chain(
@@ -63,21 +120,21 @@ impl SketchLineChainCreation {
         policy: SketchInferencePolicy,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
-        let first = append_visible_vertex(geometry, sketch, self.points[0], ids)?;
+        let first = match self.joins[0] {
+            Some(vertex) => vertex,
+            None => append_visible_vertex(geometry, sketch, self.points[0], ids)?,
+        };
         let mut report = SketchLineChainCreationReport {
             sketch,
             points: vec![first],
             lines: Vec::new(),
+            dimensions: Vec::new(),
         };
         let closed = self.closed && self.points.len() >= 3;
         for indices in line_chain_indices(self.points.len(), closed) {
             if indices[1] == report.points.len() {
-                report.points.push(append_visible_vertex(
-                    geometry,
-                    sketch,
-                    self.points[indices[1]],
-                    ids,
-                )?);
+                let vertex = self.chain_vertex(geometry, sketch, indices[1], ids)?;
+                report.points.push(vertex);
             }
             let endpoints = indices.map(|index| report.points[index]);
             report
@@ -85,6 +142,20 @@ impl SketchLineChainCreation {
                 .push(self.append_segment(geometry, sketch, endpoints, settings, policy, ids)?);
         }
         Ok(report)
+    }
+    fn chain_vertex(
+        &self,
+        geometry: &mut Sketch2D,
+        sketch: DocumentSketchId,
+        index: usize,
+        ids: &mut RecipeReservations<'_>,
+    ) -> Result<SketchEntityId, SketchLineCreationError> {
+        if index + 1 == self.points.len()
+            && let Some(vertex) = self.joins[1]
+        {
+            return Ok(vertex);
+        }
+        append_visible_vertex(geometry, sketch, self.points[index], ids)
     }
     fn append_segment(
         &self,
@@ -95,9 +166,13 @@ impl SketchLineChainCreation {
         policy: SketchInferencePolicy,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchLineCreationReport, SketchLineCreationError> {
-        let inference = geometry
+        let mut inference = geometry
             .infer_owned_line_placement(points, settings, policy)
             .map_err(SketchLineCreationError::Sketch)?;
+        // A typed angle owns the direction; an inferred relation on top would be redundant.
+        if self.locks[1].is_some() {
+            inference.direction = None;
+        }
         let creation = SketchPrimitiveCreation::Line {
             endpoints: points.map(SketchPointInput::Owned),
             construction: self.construction,

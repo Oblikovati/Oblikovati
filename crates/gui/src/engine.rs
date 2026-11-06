@@ -3,7 +3,7 @@ use crate::{
     GuiAtlas, GuiCommandState, GuiFrame, GuiFrameActivity, GuiInputCapture, GuiInputEvent,
     GuiShellAction,
     context_owner::{frame_activity, require_vacant_context},
-    input::{apply_input, input_capture, tool_transaction_key, validate_input},
+    input::{apply_input, input_capture, sketch_tool_key, validate_input},
     snapshot::{FONT_TEXTURE_ID, capture_frame},
 };
 use imgui::{ConfigFlags, Context, TextureId};
@@ -35,6 +35,10 @@ pub struct GuiFrameEngine {
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
     dimension_editor: crate::dimensions::GuiDimensionEditor,
+    dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
+    quick_access: crate::application::quick_access_toolbar::QuickAccessToolbar,
+    home: crate::application::home_recent_documents::HomeWorkspace,
+    plane_selection: crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
     parameter_editor: crate::parameters::GuiParameterEditor,
     document_files: crate::files::GuiDocumentFiles,
     ribbon: crate::ribbon::DocumentRibbon,
@@ -60,6 +64,10 @@ impl GuiFrameEngine {
             raster_scale: 1.,
             preferences: Default::default(),
             dimension_editor: Default::default(),
+            dimension_value_editor: Default::default(),
+            quick_access: Default::default(),
+            home: Default::default(),
+            plane_selection: Default::default(),
             parameter_editor: Default::default(),
             document_files: Default::default(),
             ribbon: Default::default(),
@@ -200,11 +208,27 @@ impl GuiFrameEngine {
                 preferences: &mut self.preferences,
                 workspace: &mut self.workspace,
                 workspaces: &mut self.workspaces,
+                quick_access: &mut self.quick_access,
+                plane_selection_active: self.plane_selection.active,
             },
             &mut selected,
         );
-        self.document_tabs
-            .panel(ui, request, band_height, &self.workspace, &mut selected);
+        apply_quick_access(
+            &mut self.quick_access,
+            &mut self.document_files,
+            &mut self.plane_selection,
+            &selected,
+        );
+        crate::application::workspace_layout::status_bar::status_bar(ui, request);
+        crate::sketch::line::hud_panel(ui, request);
+        self.document_tabs.panel(
+            ui,
+            request,
+            band_height,
+            &self.workspace,
+            &mut self.home,
+            &mut selected,
+        );
         self.parameter_editor
             .panel(ui, &request.commands, &mut selected);
         self.workspace
@@ -213,7 +237,8 @@ impl GuiFrameEngine {
         self.workspace.browser_panel(
             ui,
             &request.commands,
-            request.extent[1] as f32 / request.layout_scale()[1],
+            request.extent[1] as f32 / request.layout_scale()[1]
+                - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
             band_height,
             &mut selected,
         );
@@ -222,15 +247,41 @@ impl GuiFrameEngine {
         let area = self.workspace.document_area(logical, band_height);
         let detached = self.document_tabs.is_detached(request.commands.document);
         self.workspaces.panel(ui, &request.commands, area, detached);
+        self.plane_selection.panel(
+            ui,
+            &request.commands,
+            request.layout_scale(),
+            area,
+            &mut selected,
+        );
+        self.document_tabs.previews.showing = workspace_front(request, area, self.home.active);
+        self.home.panel(ui, &request.commands, area, &mut selected);
+        let home_requests = std::mem::take(&mut self.home.requests);
+        if home_requests.new_document {
+            self.document_files.request_new();
+        }
+        if home_requests.open_document {
+            self.document_files.request_open();
+        }
+        if let Some(path) = home_requests.file_properties {
+            self.document_tabs.menu.properties.request_file(&path);
+        }
         self.document_files
             .panel(ui, &request.commands, &mut selected);
         self.preferences.panel(ui, &request.commands, &mut selected);
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
+        crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
+        crate::sketch::inspect::canvas_menu(ui, &request.commands, &mut selected);
+        self.dimension_value_editor
+            .panel(ui, request, &mut selected);
+        crate::sketch::inspect::measure_panel(ui, &request.commands, &mut selected);
+        crate::sketch::region_properties::panel(ui, &request.commands, &mut selected);
         crate::sketch_delete::append_keyboard_delete(ui, &request.commands, &mut selected);
         crate::application::document_tabs::document_keys(
             ui,
             keys.switch_document,
+            self.home.active,
             &request.commands,
             &mut selected,
         );
@@ -254,6 +305,7 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands);
         self.document_files
             .closing_panel(ui, &request.commands, &mut selected);
+        let home_changed = home_follows_actions(&mut self.home, &selected);
         self.known_documents.clone_from(&request.commands.documents);
         self.known_document_type = request.commands.document_type;
         self.workspaces.note_created(&selected);
@@ -262,7 +314,8 @@ impl GuiFrameEngine {
         capture.keyboard &= !keys.tool_keyboard;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
-        activity.pending_layout |= self.workspace.pending_layout;
+        activity.pending_layout |=
+            self.workspace.pending_layout || home_changed || self.home.hover_changed;
         activity.pending_layout |= self.document_files.needs_frame()
             || self.document_tabs.needs_frame()
             || self.workspaces.needs_frame()
@@ -275,6 +328,72 @@ impl GuiFrameEngine {
             activity,
         })
     }
+}
+/// What the workspace shows, and where in window pixels, for the picture kept for its tab.
+fn workspace_front(
+    request: &GuiFrameRequest,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
+    home_active: bool,
+) -> Option<(
+    crate::application::document_tabs::previews::PreviewKey,
+    [[f32; 2]; 2],
+)> {
+    use crate::application::document_tabs::previews::PreviewKey;
+    let scale = request.layout_scale();
+    let bounds = [
+        [area.left * scale[0], area.top * scale[1]],
+        [area.right * scale[0], area.bottom * scale[1]],
+    ];
+    if home_active {
+        return Some((PreviewKey::Home, bounds));
+    }
+    let document = request.commands.document?;
+    let window = request.commands.active_window.unwrap_or(document);
+    Some((PreviewKey::Window(window), bounds))
+}
+impl GuiFrameEngine {
+    /// Keep a window's picture for its tab; example: after each completed presentation.
+    pub fn note_presented_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
+        self.document_tabs.previews.note_frame(extent, rgba);
+    }
+}
+/// Home is left by anything that puts a document in front of it; true when that changed.
+fn home_follows_actions(
+    home: &mut crate::application::home_recent_documents::HomeWorkspace,
+    selected: &[GuiShellAction],
+) -> bool {
+    let before = home.active;
+    for action in selected {
+        match action {
+            GuiShellAction::ShowHome => home.active = true,
+            GuiShellAction::CloseDocumentWindow(_) if home.reached_from_home => {
+                home.active = true;
+            }
+            GuiShellAction::ActivateDocument(_)
+            | GuiShellAction::ActivateWindow(_)
+            | GuiShellAction::OpenDocument(_)
+            | GuiShellAction::CreateDocument(_)
+            | GuiShellAction::NewPart => home.active = false,
+            _ => {}
+        }
+    }
+    home.active != before
+}
+/// The toolbar and ribbon ask; the owners that can answer are the engine's other parts.
+fn apply_quick_access(
+    toolbar: &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
+    files: &mut crate::files::GuiDocumentFiles,
+    planes: &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
+    selected: &[GuiShellAction],
+) {
+    let requests = toolbar.take_requests();
+    if requests.new_document {
+        files.request_new();
+    }
+    if requests.open_document {
+        files.request_open();
+    }
+    planes.active |= requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane);
 }
 /// Keys the engine consumed before Dear ImGui could read them.
 #[derive(Default)]
@@ -297,9 +416,9 @@ fn prepare_frame_inputs(
         if let crate::GuiInputEvent::Modifiers(modifiers) = event {
             *held = *modifiers;
         }
-        if tool_transaction_key(
+        if sketch_tool_key(
             event,
-            request.commands.sketch_tool_transaction,
+            request.commands.sketch_tool_keyboard,
             io.want_text_input,
         ) {
             keys.tool_keyboard = true;

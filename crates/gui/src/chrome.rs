@@ -12,6 +12,8 @@ pub(crate) struct RibbonDrawOwners<'a> {
     pub preferences: &'a mut crate::ui_scale::GuiScalePreferences,
     pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
     pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
+    pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
+    pub plane_selection_active: bool,
 }
 pub(crate) fn ribbon_band(
     ui: &Ui,
@@ -30,9 +32,12 @@ pub(crate) fn ribbon_band(
         RibbonDisplay::Tabs.band_height(scrollbar)
     };
     let frame = owners.ribbon.prepare(&request.commands);
+    owners.quick_access.command_took_right_click = false;
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
         ribbon_contents(ui, request, &mut owners, &frame, actions);
-        request_context_menu_when_clicked(ui, owners.ribbon);
+        if !owners.quick_access.command_took_right_click {
+            request_context_menu_when_clicked(ui, owners.ribbon);
+        }
         let tab = owners.ribbon.active;
         let panels = crate::ribbon_panels::panels_for(tab, &request.commands);
         owners.ribbon.display.context_menu(ui, tab, &panels);
@@ -46,7 +51,13 @@ pub(crate) fn ribbon_band(
         actions,
     );
     reserve_ribbon_margins(&mut owners, width);
-    height
+    if !owners.quick_access.below_ribbon {
+        return height;
+    }
+    owners
+        .quick_access
+        .band_below(ui, [0., height], width, &request.commands, actions);
+    height + crate::application::quick_access_toolbar::BELOW_ROW_HEIGHT
 }
 fn request_context_menu_when_clicked(ui: &Ui, ribbon: &mut DocumentRibbon) {
     let hovered = ui.is_window_hovered_with_flags(imgui::WindowHoveredFlags::CHILD_WINDOWS);
@@ -149,6 +160,8 @@ fn side_groups(
                 editor: owners.theme_editor,
                 workspace: owners.workspace,
                 workspaces: owners.workspaces,
+                quick_access: owners.quick_access,
+                plane_selection_active: owners.plane_selection_active,
             },
             &mut ribbon.panels,
             &mut ribbon.display,
@@ -183,9 +196,14 @@ fn ribbon_contents(
         owners.preferences.menu(ui, &request.commands);
     });
     crate::widget_abi::cursor_position(ui, [16., 35.]);
-    quick_access(ui, &request.commands, actions);
+    let row_above = !owners.quick_access.below_ribbon;
+    if row_above {
+        owners.quick_access.row(ui, &request.commands, actions);
+    }
     if owners.ribbon.display.placement == RibbonPlacement::Top {
-        ui.same_line();
+        if row_above {
+            ui.same_line();
+        }
         ribbon_tabs(ui, owners.ribbon, frame);
         let control = [ui.window_size()[0] - 160., 35.];
         owners.ribbon.display.control(ui, control);
@@ -197,8 +215,6 @@ fn ribbon_contents(
         owners.theme_editor,
         actions,
     );
-    crate::widget_abi::cursor_position(ui, [8., ui.window_size()[1] - 20.]);
-    ui.text(request.status.as_deref().unwrap_or("Ready"));
 }
 fn ribbon_panel_row(
     ui: &Ui,
@@ -217,6 +233,8 @@ fn ribbon_panel_row(
             editor: owners.theme_editor,
             workspace: owners.workspace,
             workspaces: owners.workspaces,
+            quick_access: owners.quick_access,
+            plane_selection_active: owners.plane_selection_active,
         },
         &mut ribbon.panels,
         &mut ribbon.display,
@@ -249,17 +267,6 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         if released && ribbon.display.take_tab_release() {
             ribbon.display.temporary = Some(TemporaryPanel::WholeTab);
         }
-    }
-}
-fn quick_access(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    for (label, action) in [
-        ("Save", GuiShellAction::Save),
-        ("Undo", GuiShellAction::Undo),
-        ("Redo", GuiShellAction::Redo),
-        ("Home", GuiShellAction::Home),
-    ] {
-        command_button(ui, label, action, state, [0.; 2], actions);
-        ui.same_line();
     }
 }
 pub(crate) fn sketch_tool_button(

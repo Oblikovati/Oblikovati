@@ -167,3 +167,5 @@ pub(crate) mod assets;
 mod body_display;
 
 mod body_names;
+mod design_views;
+pub use design_views::design_view_names_of_file;

@@ -9,10 +9,14 @@ use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportPhysicalKey};
 mod closing;
 #[path = "detached.rs"]
 mod detached;
+#[path = "home_and_previews.rs"]
+mod home_and_previews;
 #[path = "mixed_documents.rs"]
 mod mixed_documents;
 #[path = "reordering.rs"]
 mod reordering;
+#[path = "second_windows.rs"]
+mod second_windows;
 const TAB_STRIP: &str = "##open-document-tabs";
 const EXIT_QUESTION: &str = "Exit the sketch environment and continue?";
 /// More rows than the Select Window list can show, so its scrolling is measurable.
@@ -208,6 +212,8 @@ fn ok_and_cancel(world: &mut ApplicationWorld) {
 }
 #[given("one part document is active")]
 fn one_active(world: &mut ApplicationWorld) {
+    // Home follows the last tab, so the first part is the one with a part beside it.
+    world.activate_through_tab(first(world));
     world.previous_document = Some(world.active_id());
 }
 #[when("I press Control+Tab")]

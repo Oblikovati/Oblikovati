@@ -47,6 +47,8 @@ fn inferred_chain_package(closed: bool) -> (Vec<u8>, SketchLineChainCreationRepo
         closed,
         construction: false,
         centerline: false,
+        joins: Default::default(),
+        locks: Default::default(),
     };
     let report = history
         .edit(&token, |snapshot, ids| {
@@ -111,6 +113,8 @@ fn verify_document_chain_preview(closed: bool) {
         closed,
         construction: false,
         centerline: false,
+        joins: Default::default(),
+        locks: Default::default(),
     };
     let preview =
         verify_private_chain_preview(&mut owner, &mut window, document, &request, &original);

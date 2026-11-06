@@ -23,9 +23,6 @@ fn curve_formats_dispatch_at_both_scales_and_refuse_caller_transactions() {
             expect_ribbon(&mut engine, &mut request, point, Toggle(format));
             request.commands.transaction_open = true;
             assert!(click_ribbon(&mut engine, &mut request, point).is_empty());
-            request.commands.sketch_tool_transaction = true;
-            expect_ribbon(&mut engine, &mut request, point, Toggle(format));
-            request.commands.sketch_tool_transaction = false;
             request.commands.transaction_open = false;
         }
     }

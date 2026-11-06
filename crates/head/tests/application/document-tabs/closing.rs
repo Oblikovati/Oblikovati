@@ -107,7 +107,13 @@ fn part_open(world: &mut ApplicationWorld) {
 #[then("the sketch editing environment remains active")]
 fn sketch_remains(world: &mut ApplicationWorld) {
     assert_eq!(world.state().authoring, GuiAuthoringContext::Sketch);
-    world.expect_text("Finish Sketch");
+    // The status line counts dimensions only while a sketch is under edit; a ribbon tab may hide
+    // Finish Sketch.
+    assert!(
+        world.status_shows("dimension") || world.status_shows("Fully Constrained"),
+        "expected the sketch's count in status {:?}",
+        world.status_text()
+    );
 }
 #[given("a new part contains an unsaved sketch in the MCAD Software")]
 fn part_with_open_sketch(world: &mut ApplicationWorld) {
@@ -138,7 +144,7 @@ fn sketch_listed(world: &mut ApplicationWorld) {
 #[then("the part modeling environment is active")]
 fn modeling_active(world: &mut ApplicationWorld) {
     assert_eq!(world.state().authoring, GuiAuthoringContext::Part);
-    world.expect_text("Sketch XY");
+    world.expect_text("Start 2D Sketch");
 }
 #[given("a new part with an unsaved sketch is active in the MCAD Software")]
 fn new_part_with_sketch(world: &mut ApplicationWorld) {

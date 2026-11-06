@@ -6,6 +6,10 @@ pub enum GuiShellAction {
         prompt: oblikovati_model::application_prompts::ApplicationPrompt,
         frequency: oblikovati_model::application_prompts::PromptFrequency,
     },
+    SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
+    LineCommand(crate::GuiLineCommand),
+    Inspect(crate::GuiInspectAction),
+    EditDimensionValue(crate::GuiDimensionValue),
     SetTheme(String),
     EditThemeColor {
         name: String,
@@ -51,7 +55,15 @@ pub enum GuiShellAction {
     CaptureWindowPreview,
     /// Close the application through the window's own close policy.
     Exit,
-    StartSketchXY,
+    /// Show the Home workspace in front of the active document.
+    ShowHome,
+    Recent(crate::GuiRecentAction),
+    ActivateWindow(u64),
+    NewDocumentWindow,
+    CloseDocumentWindow(u64),
+    /// Show the origin planes; the sketch starts when one is chosen.
+    ChooseSketchPlane,
+    StartSketchOn(crate::GuiOriginPlaneKind),
     FinishSketch,
     DeleteSketchSelection,
     ToggleSketchFormat(oblikovati_model::sketch::SketchCurveFormat),
@@ -121,14 +133,27 @@ pub struct GuiCommandState {
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
     pub transaction_open: bool,
-    pub sketch_tool_transaction: bool,
+    /// The running Line command reads the keyboard before any GUI widget does.
+    pub sketch_tool_keyboard: bool,
+    /// The edited sketch's remaining freedom; `None` outside a sketch.
+    pub dimensions_needed: Option<usize>,
+    pub sketch_hud: Option<crate::GuiSketchHud>,
+    pub line_command: Option<crate::GuiLineCommandMenu>,
+    pub sketch_options: Option<oblikovati_model::application_options::SketchApplicationOptions>,
+    /// A sketch is open with no command running: the canvas offers its own menu.
+    pub sketch_at_ready: bool,
+    pub origin_planes: Vec<crate::GuiOriginPlane>,
+    pub document_windows: Vec<crate::GuiDocumentWindow>,
+    pub active_window: Option<u64>,
+    pub recent_documents: Vec<crate::GuiRecentDocument>,
+    pub measure: Option<crate::GuiMeasurePanel>,
+    pub region_properties: Option<crate::GuiRegionPanel>,
     pub sketch_delete_available: bool,
     pub sketch_format_available: bool,
     pub sketch_formats: oblikovati_api::types::SketchFormatModes,
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
-        self.validate_tool_transaction()?;
         crate::dimensions::validate_dimension_draft(self)?;
         crate::dimension_labels::validate_dimension_labels(&self.dimension_labels)?;
         crate::document_tabs::validate_documents(&self.documents)?;
@@ -150,25 +175,20 @@ impl GuiCommandState {
         }
         Ok(())
     }
-    fn validate_tool_transaction(&self) -> Result<(), String> {
-        if self.sketch_tool_transaction
-            && (!self.transaction_open
-                || self.authoring != GuiAuthoringContext::Sketch
-                || self.document.is_none())
-        {
-            return Err(format!(
-                "GUI sketch tool transaction {}, open {}, context {:?}, document {:?}: expected an open owned sketch-tool transaction on an active sketch",
-                self.sketch_tool_transaction, self.transaction_open, self.authoring, self.document
-            ));
-        }
-        Ok(())
-    }
 }
 impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::SetUiScale(_) => state.ui_scale.is_some(),
+            Self::ShowHome | Self::Recent(_) => true,
+            Self::ActivateWindow(_) | Self::CloseDocumentWindow(_) | Self::NewDocumentWindow => {
+                !state.transaction_open
+            }
+            Self::SetSketchOptions(_) => state.sketch_options.is_some(),
+            Self::LineCommand(_) => state.line_command.is_some(),
+            Self::Inspect(_) => state.authoring == GuiAuthoringContext::Sketch,
+            Self::EditDimensionValue(_) => state.sketch_at_ready && !state.transaction_open,
             Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,
             Self::ActivateDocument(request) => {
                 !state.transaction_open
@@ -234,15 +254,16 @@ impl GuiShellAction {
             Self::Parameter { .. } => state.document.is_some(),
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),
-            Self::StartSketchXY => state.authoring == GuiAuthoringContext::Part,
+            Self::ChooseSketchPlane | Self::StartSketchOn(_) => {
+                state.authoring == GuiAuthoringContext::Part
+            }
             Self::DeleteSketchSelection => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && state.sketch_delete_available
                     && !state.transaction_open
             }
             Self::Dimension(crate::GuiDimensionAction::Start) => {
-                state.authoring == GuiAuthoringContext::Sketch
-                    && (!state.transaction_open || state.sketch_tool_transaction)
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
             Self::Dimension(crate::GuiDimensionAction::Apply { id, .. }) => {
                 state
@@ -256,18 +277,17 @@ impl GuiShellAction {
                 .as_ref()
                 .is_some_and(|draft| draft.id == *id),
             Self::ConstrainSketch(_) => {
-                state.authoring == GuiAuthoringContext::Sketch
-                    && (!state.transaction_open || state.sketch_tool_transaction)
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
             Self::ToggleSketchFormat(_) => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && state.sketch_format_available
-                    && (!state.transaction_open || state.sketch_tool_transaction)
+                    && !state.transaction_open
             }
             Self::PlaceSketchTool(tool) => {
                 (*tool != crate::GuiSketchTool::Point || !state.sketch_formats.construction)
                     && state.authoring == GuiAuthoringContext::Sketch
-                    && (!state.transaction_open || state.sketch_tool_transaction)
+                    && !state.transaction_open
             }
             Self::FinishSketch => {
                 state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open

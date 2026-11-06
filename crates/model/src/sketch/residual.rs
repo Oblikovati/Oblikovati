@@ -10,6 +10,9 @@ use oblikovati_solve::{
 
 #[derive(Clone)]
 pub(super) enum PlanarEquation {
+    LineAngle {
+        target: f64,
+    },
     Angle {
         target: f64,
         turn: super::AngleTurn,
@@ -192,6 +195,9 @@ impl ResidualSource for PreparedConstraint {
             }
             PlanarEquation::Angle { target, turn } => {
                 super::angle::angle_residual(variables, target, turn)
+            }
+            PlanarEquation::LineAngle { target } => {
+                super::angle::line_angle_residual(variables, target)
             }
             PlanarEquation::ArcLength {
                 target,

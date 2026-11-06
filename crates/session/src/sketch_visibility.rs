@@ -45,3 +45,19 @@ impl<O: TransactionObserver> DocumentSession<O> {
         )
     }
 }
+
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Name a design view of the document; example: `session.create_design_view("Front")`.
+    pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
+        self.run("Create Design View", |snapshot, _| {
+            if name.is_empty() || snapshot.design_views.iter().any(|known| known == name) {
+                return Err(SketchError::Definition(format!(
+                    "design view {name:?}: expected a nonempty name not already in {:?}",
+                    snapshot.design_views
+                )));
+            }
+            snapshot.design_views.push(name.to_owned());
+            Ok(())
+        })
+    }
+}

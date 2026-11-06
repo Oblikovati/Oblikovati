@@ -26,13 +26,13 @@ rustycad-tktopalgo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev
 
 rustycad-tkernel = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 rustycad-tkmath = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
+rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 
 [lints]
 workspace = true
 
 [dev-dependencies]
 oblikovati-persistence = { path = "../persistence" }
-rustycad-tkbo = { git = "https://github.com/Oblikovati/RustyCADKernel", rev = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b", version = "=0.2.7" }
 oblikovati-session = { path = "../session" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

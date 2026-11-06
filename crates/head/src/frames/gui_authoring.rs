@@ -5,6 +5,12 @@ use oblikovati_gui::GuiShellAction;
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
         GuiShellAction::SetUiScale(options) => owner.set_ui_scale_from_gui(*options),
+        GuiShellAction::SetSketchOptions(options) => {
+            owner.set_sketch_options_from_gui(options.clone())
+        }
+        GuiShellAction::LineCommand(command) => owner.line_command_from_gui(*command),
+        GuiShellAction::Inspect(action) => owner.inspect_from_gui(*action),
+        GuiShellAction::EditDimensionValue(value) => owner.edit_dimension_value_from_gui(value),
         GuiShellAction::SetPromptFrequency { prompt, frequency } => {
             owner.set_prompt_frequency_from_gui(*prompt, *frequency)
         }
@@ -57,9 +63,14 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::EditSketch { document, sketch } => {
             owner.edit_existing_sketch_from_gui(*document, *sketch)
         }
-        GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch => {
-            owner.edit_sketch_from_gui(*action == GuiShellAction::StartSketchXY)
-        }
+        // Only the frame's plane display reacts; the sketch starts when a plane is chosen.
+        GuiShellAction::ChooseSketchPlane | GuiShellAction::ShowHome => Ok(false),
+        GuiShellAction::Recent(action) => owner.recent_from_gui(action),
+        GuiShellAction::ActivateWindow(id) => owner.document_window_from_gui(*id, false),
+        GuiShellAction::CloseDocumentWindow(id) => owner.document_window_from_gui(*id, true),
+        GuiShellAction::NewDocumentWindow => owner.new_document_window_from_gui(),
+        GuiShellAction::StartSketchOn(plane) => owner.start_sketch_on_plane_from_gui(*plane),
+        GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
         GuiShellAction::ToggleSketchFormat(format) => owner.toggle_sketch_format_from_gui(*format),
         GuiShellAction::DeleteSketchSelection => owner.delete_sketch_selection_from_gui(),
         GuiShellAction::Dimension(action) => owner.dimension_tool_from_gui(action),

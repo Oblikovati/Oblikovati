@@ -39,6 +39,8 @@ pub enum SeededDimensionOperands {
         offset: SketchEntityId,
     },
     Angle([SketchEntityId; 2]),
+    /// One line's direction from the sketch +x axis.
+    LineAngle(SketchEntityId),
     /// Vertex, first ray point, second ray point.
     ThreePointAngle([SketchEntityId; 3]),
     Offset {
@@ -58,7 +60,9 @@ impl SketchDimensionalConstraintCreation {
         if matches!(
             self,
             Self::Seeded(
-                SeededDimensionOperands::Angle(_) | SeededDimensionOperands::ThreePointAngle(_)
+                SeededDimensionOperands::Angle(_)
+                    | SeededDimensionOperands::LineAngle(_)
+                    | SeededDimensionOperands::ThreePointAngle(_)
             )
         ) {
             return crate::quantity::Dimension::Angle;
@@ -117,6 +121,13 @@ impl SeededDimensionOperands {
                 geometry.add_offset_spline_dimension(id, *offset, parameter)
             }
             Self::Angle(lines) => geometry.add_angle(id, *lines, parameter),
+            Self::LineAngle(line) => geometry.add_constraint(
+                id,
+                PlanarConstraint::LineAngle {
+                    line: *line,
+                    parameter,
+                },
+            ),
             Self::ThreePointAngle([vertex, first, second]) => {
                 geometry.add_three_point_angle(id, *vertex, [*first, *second], parameter)
             }

@@ -63,6 +63,75 @@ impl<
     ) -> Result<bool, String> {
         self.change_prompt_frequency(prompt, frequency)
     }
+    fn set_sketch_options_from_gui(
+        &mut self,
+        options: oblikovati_model::application_options::SketchApplicationOptions,
+    ) -> Result<bool, String> {
+        self.change_sketch_options(options)?;
+        Ok(true)
+    }
+    fn edit_dimension_value_from_gui(
+        &mut self,
+        value: &oblikovati_gui::GuiDimensionValue,
+    ) -> Result<bool, String> {
+        self.edit_dimension_value(value)
+    }
+    fn start_sketch_on_plane_from_gui(
+        &mut self,
+        plane: oblikovati_gui::GuiOriginPlaneKind,
+    ) -> Result<bool, String> {
+        use oblikovati_model::sketch::SketchPlane;
+        let document = self
+            .files
+            .workspace()
+            .active_document()
+            .ok_or_else(|| format!("{}: expected an active part document", plane.label()))?;
+        let frame = match plane {
+            oblikovati_gui::GuiOriginPlaneKind::Xy => SketchPlane::xy(),
+            oblikovati_gui::GuiOriginPlaneKind::Xz => SketchPlane::xz(),
+            oblikovati_gui::GuiOriginPlaneKind::Yz => SketchPlane::yz(),
+        };
+        self.create_sketch_for_edit(
+            document,
+            &oblikovati_model::history::DocumentSketchCreation {
+                name: "Sketch".into(),
+                placement: oblikovati_model::document_sketch::SketchPlacement::Fixed(frame),
+                orientation: None,
+                project_origin: true,
+            },
+        )?;
+        Ok(true)
+    }
+    fn recent_from_gui(
+        &mut self,
+        action: &oblikovati_gui::GuiRecentAction,
+    ) -> Result<bool, String> {
+        DesktopOwner::recent_from_gui(self, action)
+    }
+    fn view_slot(&self) -> u64 {
+        self.active_view_slot()
+    }
+    fn document_window_from_gui(&mut self, id: u64, close: bool) -> Result<bool, String> {
+        if close {
+            return self.close_document_window(id);
+        }
+        self.activate_document_window(id)
+    }
+    fn new_document_window_from_gui(&mut self) -> Result<bool, String> {
+        self.new_document_window()
+    }
+    fn inspect_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiInspectAction,
+    ) -> Result<bool, String> {
+        DesktopOwner::inspect_from_gui(self, action)
+    }
+    fn line_command_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiLineCommand,
+    ) -> Result<bool, String> {
+        DesktopOwner::line_command_from_gui(self, command)
+    }
     fn set_ui_scale_from_gui(
         &mut self,
         options: oblikovati_model::ui_scale::UiScaleOptions,
@@ -77,6 +146,8 @@ impl<
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(oblikovati_gui::GuiCommandState {
                 ui_scale: self.gui_ui_scale(),
+                sketch_options: Some(self.sketch_options.clone()),
+                recent_documents: self.gui_recent_rows(),
                 theme,
                 color_scheme,
                 projects: self.gui_projects(),
@@ -91,6 +162,8 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
             ui_scale: self.gui_ui_scale(),
+            sketch_options: Some(self.sketch_options.clone()),
+            recent_documents: self.gui_recent_rows(),
             theme,
             color_scheme,
             dimension_draft: self.gui_dimension_draft()?,
@@ -133,9 +206,19 @@ impl<
             undo_label: session.undo_label().map(str::to_owned),
             redo_label: session.redo_label().map(str::to_owned),
             transaction_open: session.in_transaction(),
-            sketch_tool_transaction: self.placement_state().is_some_and(|tool| {
-                tool.tool == crate::SketchPlacementTool::Line && self.line_scope_context_valid(tool)
+            sketch_tool_keyboard: self.placement_state().is_some_and(|tool| {
+                tool.tool == crate::SketchPlacementTool::Line && self.placement_context_valid(tool)
             }),
+            dimensions_needed: self.gui_dimensions_needed(document),
+            sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
+            // Projected by the frame, which owns the camera.
+            origin_planes: Vec::new(),
+            document_windows: self.document_windows.clone(),
+            active_window: Some(self.active_view_slot()),
+            measure: self.gui_measure_panel(),
+            region_properties: self.gui_region_panel(),
+            sketch_hud: self.gui_sketch_hud(),
+            line_command: self.gui_line_command_menu(),
         })
     }
     fn edit_parameter_from_gui(
@@ -207,6 +290,7 @@ impl<
             .documents()
             .open(request)
             .map_err(|cause| cause.to_string())?;
+        self.note_recent_file(&request.full_document_name);
         self.command_notice = Some(DesktopCommandNotice::DocumentOpened {
             document: opened.id,
             path: request.full_document_name.clone(),
@@ -221,7 +305,7 @@ impl<
             .documents()
             .close(request)
             .map_err(|cause| cause.to_string())?;
-        self.parked_sketch_edits.remove(&request.id);
+        self.forget_document_windows(request.id);
         self.command_notice = Some(DesktopCommandNotice::DocumentClosed {
             document: request.id,
         });
@@ -275,23 +359,7 @@ impl<
             self.finish_sketch_edit()?;
             return Ok(true);
         }
-        let document = self
-            .files
-            .workspace()
-            .active_document()
-            .ok_or("Sketch XY: expected an active part document")?;
-        self.create_sketch_for_edit(
-            document,
-            &oblikovati_model::history::DocumentSketchCreation {
-                name: "Sketch".into(),
-                placement: oblikovati_model::document_sketch::SketchPlacement::Fixed(
-                    oblikovati_model::sketch::SketchPlane::xy(),
-                ),
-                orientation: None,
-                project_origin: true,
-            },
-        )?;
-        Ok(true)
+        self.start_sketch_on_plane_from_gui(oblikovati_gui::GuiOriginPlaneKind::Xy)
     }
     fn process_inputs(
         &mut self,

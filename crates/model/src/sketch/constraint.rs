@@ -87,6 +87,11 @@ pub enum PlanarConstraint {
         parameter: u64,
         turn: AngleTurn,
     },
+    /// The line's direction from the sketch +x axis, the angle a numeric Line input retains.
+    LineAngle {
+        line: SketchEntityId,
+        parameter: u64,
+    },
     AxisCollinear {
         axes: [super::SketchAxisOperand; 2],
     },
@@ -268,6 +273,7 @@ impl Sketch2D {
             PlanarConstraint::ThreePointAngle { vertex, points, .. } => {
                 vec![*vertex, points[0], *vertex, points[1]]
             }
+            PlanarConstraint::LineAngle { line, .. } => self.line(*line)?.endpoints.to_vec(),
             PlanarConstraint::Lines { lines, .. } | PlanarConstraint::Angle { lines, .. } => {
                 let first = self.line(lines[0])?.endpoints;
                 let second = self.line(lines[1])?.endpoints;

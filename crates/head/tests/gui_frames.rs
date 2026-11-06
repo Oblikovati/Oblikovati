@@ -87,7 +87,7 @@ fn unavailable_authoring_commands_remain_local_feedback_and_keep_input_routing_a
     let mut window = FakeGuiWindow::default();
     let mut owner = FakeGuiOwner::default();
     for action in [
-        GuiShellAction::StartSketchXY,
+        GuiShellAction::StartSketchOn(oblikovati_gui::GuiOriginPlaneKind::Xy),
         GuiShellAction::FinishSketch,
         GuiShellAction::PlaceSketchTool(oblikovati_gui::GuiSketchTool::Rectangle),
         GuiShellAction::OpenDocument(oblikovati_api::wire::OpenDocumentArgs {
@@ -207,7 +207,7 @@ fn captured_pointer_does_not_reach_document_or_camera() {
     };
     let mut owner = FakeGuiOwner::default();
     let pointer = ViewportEvent::Input(ViewportInput::Motion {
-        position: [30, 45],
+        position: [111, 45],
         modifiers: Default::default(),
     });
     super::super::process_frame_inputs(
@@ -270,6 +270,7 @@ fn annotation_projection_preserves_other_labels_and_names_local_declines() {
                 position,
                 text: "d0 = 10 mm".into(),
                 role: Driving,
+                edit: None,
             });
     }
     let mut window = FakeGuiWindow::default();
@@ -279,7 +280,8 @@ fn annotation_projection_preserves_other_labels_and_names_local_declines() {
         [oblikovati_gui::GuiDimensionLabel {
             pixel: [6, 15],
             text: "d0 = 10 mm".into(),
-            role: Driving
+            role: Driving,
+            edit: None,
         }]
     );
     assert_eq!(window.notices.len(), 1);

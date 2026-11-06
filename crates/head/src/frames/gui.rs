@@ -23,6 +23,7 @@ pub(super) fn advance_gui(
 ) -> Result<HeadGuiUpdate, String> {
     let mut commands = owner.gui_command_state()?;
     commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
+    commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
     let mut update = window.gui_frame(event, &commands)?;
     for action in &update.actions {
         update.changed |= dispatch_gui_action(window, owner, action)?;
@@ -61,6 +62,10 @@ fn report_authoring_result(
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
         GuiShellAction::SetUiScale(_)
+        | GuiShellAction::SetSketchOptions(_)
+        | GuiShellAction::LineCommand(_)
+        | GuiShellAction::Inspect(_)
+        | GuiShellAction::EditDimensionValue(_)
         | GuiShellAction::SetPromptFrequency { .. }
         | GuiShellAction::CaptureWindowPreview
         | GuiShellAction::Exit
@@ -85,7 +90,13 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::DeleteSketchSelection
         | GuiShellAction::CreateDocument(_)
         | GuiShellAction::NewPart
-        | GuiShellAction::StartSketchXY
+        | GuiShellAction::ChooseSketchPlane
+        | GuiShellAction::ShowHome
+        | GuiShellAction::Recent(_)
+        | GuiShellAction::ActivateWindow(_)
+        | GuiShellAction::NewDocumentWindow
+        | GuiShellAction::CloseDocumentWindow(_)
+        | GuiShellAction::StartSketchOn(_)
         | GuiShellAction::FinishSketch => {
             return None;
         }

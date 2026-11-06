@@ -39,82 +39,58 @@ pub(super) fn line_owner() -> (TestOwner, u64, DocumentSketchId) {
     (owner, document, sketch)
 }
 #[test]
-fn continuous_line_keeps_preview_private_and_commits_shared_endpoints_once() {
+fn each_accepted_segment_is_one_history_step_and_only_the_pending_one_stays_private() {
     let (mut owner, document, sketch) = line_owner();
-    let marks = owner
-        .files
-        .workspace()
-        .session(document)
-        .unwrap()
-        .history()
-        .sketch_reservations();
-    assert!(owner.gui_command_state().unwrap().transaction_open);
-    assert!(!owner.close_allowed().unwrap());
+    assert!(!owner.gui_command_state().unwrap().transaction_open);
     deliver(
         &mut owner,
         &[
             button([0, 0], true),
+            button([0, 0], false),
             button([50, 20], true),
+            button([50, 20], false),
             button([80, 90], true),
+            button([80, 90], false),
             motion([120, 150]),
         ],
     );
     assert!(owner.placement_active());
-    assert!(
-        line_tool_geometry(&owner, document, sketch)
-            .lines()
-            .is_empty()
-    );
+    let accepted = line_tool_geometry(&owner, document, sketch);
+    assert_eq!(accepted.lines().len(), 2);
+    assert_eq!(accepted.points().len(), 3);
     assert_eq!(
-        owner
-            .files
-            .workspace()
-            .session(document)
-            .unwrap()
-            .history()
-            .sketch_reservations(),
-        marks
+        accepted.lines()[0].endpoints[1],
+        accepted.lines()[1].endpoints[0],
+        "the chain shares its vertex"
     );
     let oblikovati_viewport::ViewportSketchPreview::Resolved {
-        geometry: preview,
-        members,
-        ..
+        geometry: preview, ..
     } = owner.sketch_preview().unwrap()
     else {
         panic!("expected inferred Line preview")
     };
-    assert_eq!(members.len(), 7);
     assert_eq!(preview.lines().len(), 3);
-    assert_eq!(preview.points().len(), 4);
     assert_eq!(preview.points()[3].position, [120., 150.]);
-    deliver(&mut owner, &[line_key(ViewportPhysicalKey::Enter)]);
+    deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
     assert!(!owner.placement_active());
-    assert!(!owner.gui_command_state().unwrap().transaction_open);
-    let geometry = line_tool_geometry(&owner, document, sketch);
-    assert_eq!(geometry.lines().len(), 2);
-    assert_eq!(geometry.points().len(), 3);
-    assert_eq!(
-        geometry.lines()[0].endpoints[1],
-        geometry.lines()[1].endpoints[0]
-    );
+    assert_eq!(line_tool_geometry(&owner, document, sketch), accepted);
     assert_eq!(
         owner.gui_command_state().unwrap().undo_label.as_deref(),
-        Some("Line")
+        Some("Create Line")
     );
     Client::new(owner.document_host())
         .transactions()
         .undo()
         .unwrap();
-    assert!(
-        line_tool_geometry(&owner, document, sketch)
-            .lines()
-            .is_empty()
+    assert_eq!(
+        line_tool_geometry(&owner, document, sketch).lines().len(),
+        1
     );
     Client::new(owner.document_host())
         .transactions()
         .redo()
         .unwrap();
-    assert_eq!(line_tool_geometry(&owner, document, sketch), geometry);
+    assert_eq!(line_tool_geometry(&owner, document, sketch), accepted);
 }
 #[test]
 fn escape_keeps_segments_but_abandons_an_incomplete_line() {
@@ -140,22 +116,22 @@ fn escape_keeps_segments_but_abandons_an_incomplete_line() {
     }
 }
 #[test]
-fn backspace_changes_only_the_draft_and_close_uses_the_first_shared_vertex() {
+fn close_joins_the_first_vertex_and_asks_for_a_new_start() {
     let (mut owner, document, sketch) = line_owner();
     deliver(
         &mut owner,
         &[
             button([0, 0], true),
+            button([0, 0], false),
             button([50, 20], true),
-            button([80, 90], true),
-            line_key(ViewportPhysicalKey::Backspace),
+            button([50, 20], false),
             button([100, 80], true),
+            button([100, 80], false),
         ],
     );
-    deliver(
-        &mut owner,
-        &[ViewportEvent::Input(ViewportInput::Text('c'))],
-    );
+    owner
+        .line_command_from_gui(oblikovati_gui::GuiLineCommand::Close)
+        .unwrap();
     let geometry = line_tool_geometry(&owner, document, sketch);
     assert_eq!(geometry.lines().len(), 3);
     assert_eq!(geometry.points().len(), 3);
@@ -163,9 +139,12 @@ fn backspace_changes_only_the_draft_and_close_uses_the_first_shared_vertex() {
         geometry.lines()[2].endpoints[1],
         geometry.lines()[0].endpoints[0]
     );
-    assert_eq!(geometry.points()[2].position, [100., 80.]);
+    assert!(owner.placement_active());
+    assert!(
+        !owner.gui_line_command_menu().unwrap().restart_enabled,
+        "Close returns the command to start-point selection"
+    );
 }
-
 #[test]
 fn inferred_line_preview_matches_the_committed_graph() {
     let (mut owner, document, sketch) = line_owner();
@@ -173,17 +152,19 @@ fn inferred_line_preview_matches_the_committed_graph() {
         &mut owner,
         &[
             button([0, 0], true),
+            button([0, 0], false),
             button([100, 1], true),
-            button([100, 99], true),
+            button([100, 1], false),
+            motion([100, 99]),
         ],
     );
     let oblikovati_viewport::ViewportSketchPreview::Resolved {
         geometry: preview, ..
-    } = owner.sketch_preview().unwrap()
+    } = owner.sketch_preview().unwrap().clone()
     else {
         panic!("expected inferred Line preview")
     };
     assert!(!preview.constraints().is_empty());
-    deliver(&mut owner, &[line_key(ViewportPhysicalKey::Enter)]);
+    deliver(&mut owner, &[button([100, 99], true)]);
     assert_eq!(line_tool_geometry(&owner, document, sketch), *preview);
 }

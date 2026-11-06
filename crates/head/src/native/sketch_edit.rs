@@ -18,6 +18,29 @@ impl NativeHeadWindow {
         };
         self.face_sketch_camera(edit)
     }
+    /// Keep this window's view and restore the next one's; a new window starts at the default.
+    pub(super) fn switch_view_slot(&mut self, slot: u64) -> Result<bool, String> {
+        if slot == self.view_slot {
+            return Ok(false);
+        }
+        let camera = self.view.camera_state()?;
+        self.saved_views
+            .insert(self.view_slot, (camera, self.sketch_view.take()));
+        let (camera, sketch_view) = self.saved_views.remove(&slot).unwrap_or_else(|| {
+            let first_view = oblikovati_viewport::ViewportCamera::default();
+            let camera = if slot >= crate::FIRST_EXTRA_WINDOW {
+                first_view.isometric()
+            } else {
+                first_view
+            };
+            (camera, None)
+        });
+        self.view.set_camera(camera)?;
+        self.sketch_view = sketch_view;
+        self.view_slot = slot;
+        self.navigation = Default::default();
+        Ok(true)
+    }
     fn face_sketch_camera(&mut self, edit: crate::HeadSketchEdit) -> Result<bool, String> {
         let current = self.view.camera_state()?;
         let returning = self.sketch_view.map_or(current, |(_, returning)| returning);

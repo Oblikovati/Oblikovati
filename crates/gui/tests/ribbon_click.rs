@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use GuiShellAction::{FinishSketch, Home, NewPart, StartSketchXY};
+use GuiShellAction::{ChooseSketchPlane, FinishSketch, Home, NewPart};
 use oblikovati_api::types::DOCUMENT_PART;
 use oblikovati_gui::*;
 
@@ -68,7 +68,7 @@ fn context_changes_select_the_supported_ribbon_commands() {
     expect_ribbon(&mut engine, &mut request, [50., 90.], NewPart);
     enter_part(&mut request);
     settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], StartSketchXY);
+    expect_ribbon(&mut engine, &mut request, [50., 90.], ChooseSketchPlane);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     settle_ribbon(&mut engine, &mut request);
     expect_ribbon(
@@ -86,12 +86,12 @@ fn manual_view_selection_survives_frames_until_sketch_exit() {
     enter_part(&mut request);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     settle_ribbon(&mut engine, &mut request);
-    assert!(click_ribbon(&mut engine, &mut request, [401., 44.]).is_empty());
-    expect_ribbon(&mut engine, &mut request, [282., 90.], Home);
-    expect_ribbon(&mut engine, &mut request, [282., 90.], Home);
+    assert!(click_ribbon(&mut engine, &mut request, [519., 44.]).is_empty());
+    expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
+    expect_ribbon(&mut engine, &mut request, [398., 90.], Home);
     request.commands.authoring = GuiAuthoringContext::Part;
     settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], StartSketchXY);
+    expect_ribbon(&mut engine, &mut request, [50., 90.], ChooseSketchPlane);
     request.commands = Default::default();
     settle_ribbon(&mut engine, &mut request);
     expect_ribbon(&mut engine, &mut request, [50., 90.], NewPart);
@@ -331,6 +331,7 @@ fn dimension_labels_follow_theme_colours_and_physical_projection_at_both_scales(
                 pixel: [800 * scale as i32, y * scale as i32],
                 text: "d0 = 10 mm".into(),
                 role,
+                edit: None,
             });
         }
         settle_ribbon(&mut engine, &mut request);
@@ -416,11 +417,14 @@ fn line_commands_pass_ribbon_keyboard_focus_without_reactivating_buttons() {
         [180., 128.],
         GuiShellAction::PlaceSketchTool(GuiSketchTool::Line),
     );
-    request.commands.transaction_open = true;
-    request.commands.sketch_tool_transaction = true;
+    request.commands.sketch_tool_keyboard = true;
     settle_ribbon(&mut engine, &mut request);
-    assert!(click_ribbon(&mut engine, &mut request, [75., 45.]).is_empty());
-    for key in [GuiKey::Backspace, GuiKey::Enter] {
+    for key in [
+        GuiKey::Backspace,
+        GuiKey::Enter,
+        GuiKey::Tab,
+        GuiKey::Escape,
+    ] {
         for pressed in [true, false] {
             request.events = vec![GuiInputEvent::Key { key, pressed }];
             let output = engine.frame(&request).unwrap();

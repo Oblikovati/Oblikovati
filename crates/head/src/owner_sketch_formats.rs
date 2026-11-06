@@ -73,7 +73,7 @@ impl<
         }
         if self
             .placement_state()
-            .is_some_and(|tool| self.line_scope_context_valid(tool))
+            .is_some_and(|tool| self.placement_context_valid(tool))
         {
             return Ok(());
         }

@@ -338,6 +338,7 @@ fn new_unsaved_remains(world: &mut ApplicationWorld) {
 #[given("a saved part is active in the MCAD Software")]
 fn saved_part_active(world: &mut ApplicationWorld) {
     let id = world.add_part();
+    world.previous_document = Some(id);
     world.saved_path = Some(world.save_part_to_file(id, "saved part.opd"));
 }
 #[when("I open the application menu")]

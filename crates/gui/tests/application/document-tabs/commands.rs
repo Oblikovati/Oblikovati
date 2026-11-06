@@ -21,26 +21,34 @@ fn only_visible_documents_are_offered() {
     assert_eq!(ids, [1]);
 }
 #[test]
-fn the_keyboard_moves_to_the_next_tab_and_wraps() {
+fn the_keyboard_walks_the_tabs_with_home_first_and_wraps() {
     let rows = [(1, true), (2, false), (3, true)];
     let next = DocumentStep::Next;
-    assert_eq!(neighbor_document(&state(1, &rows), next), Some(activate(3)));
-    assert_eq!(neighbor_document(&state(3, &rows), next), Some(activate(1)));
     let previous = DocumentStep::Previous;
     assert_eq!(
-        neighbor_document(&state(3, &rows), previous),
+        neighbor_tab(&state(1, &rows), next, false),
+        Some(activate(3))
+    );
+    assert_eq!(
+        neighbor_tab(&state(3, &rows), next, false),
+        Some(GuiShellAction::ShowHome)
+    );
+    assert_eq!(
+        neighbor_tab(&state(1, &rows), previous, false),
+        Some(GuiShellAction::ShowHome)
+    );
+    assert_eq!(
+        neighbor_tab(&state(1, &rows), next, true),
         Some(activate(1))
     );
     assert_eq!(
-        neighbor_document(&state(1, &rows), previous),
+        neighbor_tab(&state(1, &rows), previous, true),
         Some(activate(3))
     );
 }
 #[test]
-fn one_open_document_has_nowhere_to_switch() {
-    let alone = state(1, &[(1, true)]);
-    assert_eq!(neighbor_document(&alone, DocumentStep::Next), None);
-    assert_eq!(neighbor_document(&alone, DocumentStep::Previous), None);
+fn with_no_open_document_home_has_nowhere_to_switch() {
+    assert_eq!(neighbor_tab(&state(1, &[]), DocumentStep::Next, true), None);
 }
 #[test]
 fn close_tabs_keeps_its_own_tab_and_close_all_keeps_none() {

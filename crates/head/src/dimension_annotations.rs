@@ -9,6 +9,7 @@ pub struct HeadDimensionAnnotation {
     pub position: [f64; 2],
     pub text: String,
     pub role: GuiDimensionLabelRole,
+    pub edit: Option<oblikovati_gui::GuiDimensionEdit>,
 }
 /// Local annotation failures retain other labels; example: show `annotations.declines` in command feedback.
 #[derive(Clone, Debug, Default, PartialEq)]

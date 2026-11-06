@@ -73,7 +73,12 @@ impl<
             .session(edit.document)
             .map_err(|cause| cause.to_string())?;
         let count = session.selected_sketch_picks(edit.sketch).len();
-        self.command_notice = Some(DesktopCommandNotice::SelectionChanged { count });
+        // Nothing selected is the sketch at rest, and the status line says so.
+        self.command_notice = Some(if count == 0 {
+            DesktopCommandNotice::Ready
+        } else {
+            DesktopCommandNotice::SelectionChanged { count }
+        });
         Ok(())
     }
     pub(super) fn store_sketch_click(
@@ -146,7 +151,7 @@ pub(super) fn ordinary_click(event: ViewportEvent) -> Option<([i32; 2], Selectio
     ))
 }
 
-fn pick_witness(
+pub(super) fn pick_witness(
     sketch: &Sketch2D,
     plane: SketchPlane,
     pixel: [i32; 2],

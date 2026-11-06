@@ -68,7 +68,7 @@ fn press(button: ViewportButton, pressed: bool) -> ViewportEvent {
     ViewportEvent::Input(ViewportInput::Button {
         button,
         pressed,
-        position: [30, 45],
+        position: [111, 45],
         modifiers: Default::default(),
     })
 }
@@ -150,7 +150,7 @@ fn copied_pointer_events_preserve_coordinates_buttons_and_modifiers() {
         assert_eq!(
             copied_gui_events(Some(&press(source, true))),
             vec![
-                GuiInputEvent::PointerMoved([30., 45.]),
+                GuiInputEvent::PointerMoved([111., 45.]),
                 GuiInputEvent::Modifiers(Default::default()),
                 GuiInputEvent::PointerButton {
                     button: expected,

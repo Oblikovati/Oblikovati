@@ -144,6 +144,9 @@ fn equation(
             target: angle_target(constraint, parameter, parameters)?,
             turn,
         },
+        PlanarConstraint::LineAngle { parameter, .. } => PlanarEquation::LineAngle {
+            target: line_angle_target(constraint, parameter, parameters)?,
+        },
         PlanarConstraint::AxisCollinear { axes } => PlanarEquation::AxisCollinear {
             layouts: axes.map(super::axis_operand::SketchAxisOperand::layout),
         },
@@ -227,6 +230,25 @@ fn angle_target(
             maximum: std::f64::consts::PI,
             label: "angle",
             expected: "a healthy finite angular quantity in [0, pi] radians",
+        },
+    )
+}
+/// A direction is a full turn, unlike the [0, pi] between two lines; the recorded 229.88 needs it.
+fn line_angle_target(
+    constraint: &SketchConstraint,
+    parameter: u64,
+    parameters: &ParameterCollection<u64>,
+) -> Result<f64, SketchError> {
+    dimensional_target(
+        constraint,
+        parameter,
+        parameters,
+        DimensionDomain {
+            kind: Dimension::Angle,
+            minimum: -std::f64::consts::TAU,
+            maximum: std::f64::consts::TAU,
+            label: "line angle",
+            expected: "a healthy finite angular quantity within one turn of the sketch x axis",
         },
     )
 }

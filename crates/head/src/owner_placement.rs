@@ -23,7 +23,7 @@ impl<
     ) -> Result<Option<oblikovati_viewport::ViewportSketchPreview>, String> {
         if tool.tool == crate::SketchPlacementTool::Line {
             return tool
-                .line_input(true, false)
+                .line_input()
                 .map(|input| self.preview_sketch_line_chain(tool.document, tool.sketch, &input))
                 .transpose();
         }

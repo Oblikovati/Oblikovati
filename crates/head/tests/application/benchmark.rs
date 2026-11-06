@@ -17,12 +17,18 @@ mod document_saving;
 mod document_tabs;
 #[path = "file-menu/steps.rs"]
 mod file_menu;
+#[path = "home-recent-documents/steps.rs"]
+mod home_recent_documents;
+#[path = "quick-access-toolbar/steps.rs"]
+mod quick_access_toolbar;
 #[path = "ribbon-display/steps.rs"]
 mod ribbon_display;
 #[path = "ribbon-docking/steps.rs"]
 mod ribbon_docking;
 #[path = "ribbon-panel-visibility/steps.rs"]
 mod ribbon_panel_visibility;
+#[path = "../sketch/benchmark.rs"]
+mod sketch;
 #[path = "workspace-layout/steps.rs"]
 mod workspace_layout;
 
@@ -34,13 +40,13 @@ fn application_scenarios_use_the_native_window() {
     std::thread::Builder::new()
         .name("application-scenarios".into())
         .stack_size(SCENARIO_STACK_BYTES)
-        .spawn(run_application_scenarios)
+        .spawn(|| run_scenarios(feature_root("application"), |_| true))
         .unwrap()
         .join()
         .unwrap();
 }
-fn run_application_scenarios() {
-    let root = feature_root();
+/// Run one area's features. `OBK_BDD_SCENARIO` narrows a run to matching scenario names.
+fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) -> bool) {
     let reports = world::reports_folder();
     fs::create_dir_all(&reports).unwrap();
     let json = fs::File::create(reports.join("cucumber.json")).unwrap();
@@ -66,18 +72,23 @@ fn run_application_scenarios() {
                     }
                 })
             })
-            .run(root),
+            .filter_run(root, move |feature, _, scenario| {
+                keep_feature(feature) && scenario_selected(&scenario.name)
+            }),
     );
     assert!(
         !result.execution_has_failed(),
-        "application benchmark: expected no failed, undefined, or skipped steps"
+        "scenario benchmark: expected no failed, undefined, or skipped steps"
     );
     assert!(
         result.passed_steps() > 0,
-        "application benchmark: expected at least one executed scenario"
+        "scenario benchmark: expected at least one executed scenario"
     );
 }
-fn feature_root() -> PathBuf {
+fn scenario_selected(name: &str) -> bool {
+    std::env::var("OBK_BDD_SCENARIO").map_or(true, |wanted| name.contains(&wanted))
+}
+fn feature_root(area: &str) -> PathBuf {
     let root = std::env::var_os("OBK_BDD_ROOT").map_or_else(
         || {
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -89,13 +100,13 @@ fn feature_root() -> PathBuf {
         root.is_absolute(),
         "scenario root {root:?}: expected an absolute path"
     );
-    let application = root.join("features/application");
+    let features = root.join("features").join(area);
     assert!(
-        application.is_dir(),
-        "scenario root {root:?}: expected features/application"
+        features.is_dir(),
+        "scenario root {root:?}: expected features/{area}"
     );
     let Some(feature) = std::env::var_os("OBK_BDD_FEATURE") else {
-        return application;
+        return features;
     };
     let feature = feature.to_str().expect("BDD feature: expected UTF-8");
     assert!(
@@ -105,7 +116,7 @@ fn feature_root() -> PathBuf {
                 .all(|byte| byte.is_ascii_lowercase() || byte == b'-'),
         "BDD feature {feature:?}: expected a folder name"
     );
-    let selected = application.join(feature);
+    let selected = features.join(feature);
     assert!(
         selected.is_dir(),
         "BDD feature {feature:?}: expected an existing feature folder"

@@ -9,7 +9,7 @@ pub(super) fn assert_authoring_context(
     let state = owner.gui_command_state().unwrap();
     assert_eq!(state.authoring, expected);
     assert_eq!(
-        GuiShellAction::StartSketchXY.enabled(&state),
+        GuiShellAction::ChooseSketchPlane.enabled(&state),
         expected == oblikovati_gui::GuiAuthoringContext::Part
     );
     assert_eq!(
@@ -109,6 +109,7 @@ fn verify_document_focus_state(owner: &mut TestOwner, awake: &Receiver<()>, firs
 fn empty_owner_gui_state() -> GuiCommandState {
     GuiCommandState {
         template_sizes: document_creation::gui_template_sizes(),
+        sketch_options: Some(Default::default()),
         color_scheme: Some(
             oblikovati_gui::GuiColorSchemeState::from_registry(
                 &oblikovati_model::color_scheme::ColorSchemeRegistry::default(),

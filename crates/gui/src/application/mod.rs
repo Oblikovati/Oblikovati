@@ -7,6 +7,10 @@ pub(crate) mod document_saving;
 pub(crate) mod document_tabs;
 #[path = "file_system.rs"]
 pub(crate) mod file_system;
+#[path = "home-recent-documents/mod.rs"]
+pub(crate) mod home_recent_documents;
+#[path = "quick-access-toolbar/mod.rs"]
+pub(crate) mod quick_access_toolbar;
 #[path = "ribbon-display/mod.rs"]
 pub(crate) mod ribbon_display;
 #[path = "workspace-layout/mod.rs"]

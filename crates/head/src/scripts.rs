@@ -101,6 +101,51 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.set_prompt_frequency_from_gui(prompt, frequency)
     }
+    fn set_sketch_options_from_gui(
+        &mut self,
+        options: oblikovati_model::application_options::SketchApplicationOptions,
+    ) -> Result<bool, String> {
+        self.owner.set_sketch_options_from_gui(options)
+    }
+    fn edit_dimension_value_from_gui(
+        &mut self,
+        value: &oblikovati_gui::GuiDimensionValue,
+    ) -> Result<bool, String> {
+        self.owner.edit_dimension_value_from_gui(value)
+    }
+    fn start_sketch_on_plane_from_gui(
+        &mut self,
+        plane: oblikovati_gui::GuiOriginPlaneKind,
+    ) -> Result<bool, String> {
+        self.owner.start_sketch_on_plane_from_gui(plane)
+    }
+    fn recent_from_gui(
+        &mut self,
+        action: &oblikovati_gui::GuiRecentAction,
+    ) -> Result<bool, String> {
+        self.owner.recent_from_gui(action)
+    }
+    fn view_slot(&self) -> u64 {
+        self.owner.view_slot()
+    }
+    fn document_window_from_gui(&mut self, id: u64, close: bool) -> Result<bool, String> {
+        self.owner.document_window_from_gui(id, close)
+    }
+    fn new_document_window_from_gui(&mut self) -> Result<bool, String> {
+        self.owner.new_document_window_from_gui()
+    }
+    fn inspect_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiInspectAction,
+    ) -> Result<bool, String> {
+        self.owner.inspect_from_gui(action)
+    }
+    fn line_command_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiLineCommand,
+    ) -> Result<bool, String> {
+        self.owner.line_command_from_gui(command)
+    }
     fn set_ui_scale_from_gui(
         &mut self,
         options: oblikovati_model::ui_scale::UiScaleOptions,

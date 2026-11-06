@@ -175,11 +175,11 @@ fn tool_keyboard_ownership_is_limited_to_commands_outside_text_entry() {
         GuiKey::A,
     ] {
         let event = GuiInputEvent::Key { key, pressed: true };
-        assert_eq!(tool_transaction_key(&event, true, false), key != GuiKey::A);
-        assert!(!tool_transaction_key(&event, true, true));
-        assert!(!tool_transaction_key(&event, false, false));
+        assert_eq!(sketch_tool_key(&event, true, false), key != GuiKey::A);
+        assert!(!sketch_tool_key(&event, true, true));
+        assert!(!sketch_tool_key(&event, false, false));
     }
-    assert!(!tool_transaction_key(
+    assert!(!sketch_tool_key(
         &GuiInputEvent::Text("c".into()),
         true,
         false

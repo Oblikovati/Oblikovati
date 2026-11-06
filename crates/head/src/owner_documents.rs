@@ -105,26 +105,33 @@ impl<
             .documents()
             .activate(request)
             .map_err(|cause| format!("Activate document {}: {cause}", request.id))?;
-        self.resume_parked_sketch_edit(request.id)?;
+        self.active_window = None;
+        let slot = self.active_view_slot();
+        self.resume_parked_sketch_edit(slot, request.id)?;
         Ok(true)
     }
     /// An edit stays with its document while another one is active; nothing in its recipe changes.
-    fn park_active_sketch_edit(&mut self) -> Result<(), String> {
+    pub(super) fn park_active_sketch_edit(&mut self) -> Result<(), String> {
         let Some(edit) = self.active_sketch_edit() else {
             return Ok(());
         };
+        let slot = self.active_view_slot();
         self.retire_sketch_tool()?;
         self.sketch_edit = None;
-        self.parked_sketch_edits.insert(edit.document, edit.sketch);
+        self.parked_sketch_edits.insert(slot, edit.sketch);
         Ok(())
     }
-    fn resume_parked_sketch_edit(&mut self, document: u64) -> Result<(), String> {
-        match self.parked_sketch_edits.remove(&document) {
+    pub(super) fn resume_parked_sketch_edit(
+        &mut self,
+        slot: u64,
+        document: u64,
+    ) -> Result<(), String> {
+        match self.parked_sketch_edits.remove(&slot) {
             Some(sketch) => self.begin_sketch_edit(document, sketch),
             None => Ok(()),
         }
     }
-    fn require_gui_document_switch(&self, target: u64) -> Result<(), String> {
+    pub(super) fn require_gui_document_switch(&self, target: u64) -> Result<(), String> {
         let row = self
             .files
             .document_info(target)

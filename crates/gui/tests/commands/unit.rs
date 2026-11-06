@@ -35,7 +35,10 @@ fn sketch_commands_follow_the_active_document_and_edit_context() {
             authoring,
             ..Default::default()
         };
-        assert_eq!(GuiShellAction::StartSketchXY.dispatchable(&state), start);
+        assert_eq!(
+            GuiShellAction::ChooseSketchPlane.dispatchable(&state),
+            start
+        );
         assert_eq!(GuiShellAction::FinishSketch.dispatchable(&state), edit);
         assert_eq!(
             GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Rectangle).dispatchable(&state),
@@ -91,12 +94,11 @@ fn history_labels_refuse_embedded_nul_before_widget_calls() {
 }
 
 #[test]
-fn owned_line_scope_allows_tool_replacement_but_not_sketch_exit_or_history() {
+fn a_running_line_command_leaves_sketch_commands_available_and_opens_no_transaction() {
     let mut state = GuiCommandState {
         document: Some(1),
         authoring: GuiAuthoringContext::Sketch,
-        transaction_open: true,
-        sketch_tool_transaction: true,
+        sketch_tool_keyboard: true,
         undo_label: Some("Previous".into()),
         ..Default::default()
     };
@@ -107,17 +109,11 @@ fn owned_line_scope_allows_tool_replacement_but_not_sketch_exit_or_history() {
         GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
     ] {
         assert!(action.dispatchable(&state));
-        state.sketch_tool_transaction = false;
-        assert!(!action.dispatchable(&state));
-        state.sketch_tool_transaction = true;
+        state.transaction_open = true;
+        assert!(
+            !action.dispatchable(&state),
+            "a caller's transaction refuses {action:?}"
+        );
+        state.transaction_open = false;
     }
-    assert!(!GuiShellAction::FinishSketch.dispatchable(&state));
-    assert!(!GuiShellAction::Undo.dispatchable(&state));
-    state.transaction_open = false;
-    assert!(
-        state
-            .validate()
-            .unwrap_err()
-            .contains("expected an open owned sketch-tool transaction")
-    );
 }

@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Reaching open documents without the tab strip, and the commands on a tab.
+#[path = "previews.rs"]
+pub(crate) mod previews;
 #[path = "properties.rs"]
 pub(crate) mod properties;
+#[path = "windows.rs"]
+pub(crate) mod windows;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use oblikovati_api::wire::{ActivateDocumentArgs, CloseDocumentArgs, DocumentInfo};
@@ -19,15 +23,16 @@ fn activate(id: u64) -> GuiShellAction {
 fn close(id: u64) -> GuiShellAction {
     GuiShellAction::CloseDocument(CloseDocumentArgs { id, force: false })
 }
-/// Every open document, the active one checked; a choice activates it.
+/// Every open window, the active one checked; a choice brings it forward.
 fn document_rows(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    for row in visible(state) {
+    for tab in windows::tab_rows(state) {
         let chosen = ui
-            .menu_item_config(&row.name)
-            .selected(state.document == Some(row.id))
+            .menu_item_config(&tab.name)
+            .selected(windows::is_active_window(state, &tab))
             .build();
         if chosen {
-            actions.push(activate(row.id));
+            // The window may already be behind Home, which the choice still leaves.
+            actions.push(windows::activation(state, &tab).unwrap_or_else(|| activate(tab.row.id)));
         }
     }
 }
@@ -97,6 +102,9 @@ impl WindowSwitcher {
         let Some(_menu) = ui.begin_popup(SWITCH_MENU) else {
             return;
         };
+        if ui.menu_item("Home") {
+            actions.push(GuiShellAction::ShowHome);
+        }
         document_rows(ui, state, actions);
         ui.separator();
         if ui.menu_item("More Windows...") {
@@ -169,6 +177,23 @@ impl TabMenu {
             self.items(ui, state, row, actions);
         }
     }
+    /// Home closes nothing of its own, so its menu acts only on the documents beside it.
+    pub(crate) fn home_popup(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        const IDENTITY: &str = "##home-tab-menu";
+        if ui.is_item_clicked_with_button(imgui::MouseButton::Right) {
+            ui.open_popup(IDENTITY);
+        }
+        if let Some(_menu) = ui.begin_popup(IDENTITY)
+            && (ui.menu_item("Close Tabs") || ui.menu_item("Close All"))
+        {
+            actions.extend(tab_closes(state, None));
+        }
+    }
     fn items(
         &mut self,
         ui: &Ui,
@@ -205,18 +230,48 @@ fn tab_closes(state: &GuiCommandState, keep: Option<u64>) -> Vec<GuiShellAction>
 pub(crate) fn document_keys(
     ui: &Ui,
     switch_requested: Option<DocumentStep>,
+    home_active: bool,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
     if crate::widget_abi::any_popup_open(ui) {
         return;
     }
-    if ui.io().key_ctrl && ui.is_key_pressed(imgui::Key::W) && !state.transaction_open {
+    if ui.io().key_ctrl
+        && ui.is_key_pressed(imgui::Key::W)
+        && !state.transaction_open
+        && !home_active
+    {
         actions.extend(state.document.map(close));
     }
+    close_window_key(ui, home_active, state, actions);
     if let Some(step) = switch_requested {
-        actions.extend(neighbor_document(state, step).filter(|action| action.dispatchable(state)));
+        let neighbor = neighbor_tab(state, step, home_active);
+        actions.extend(neighbor.filter(|action| action.dispatchable(state)));
     }
+}
+/// Control+F4 closes the window in front; a document's last window closes the document.
+fn close_window_key(
+    ui: &Ui,
+    home_active: bool,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    if !ui.io().key_ctrl || !ui.is_key_pressed(imgui::Key::F4) || home_active {
+        return;
+    }
+    let rows = windows::tab_rows(state);
+    let Some(tab) = rows
+        .iter()
+        .find(|tab| windows::is_active_window(state, tab))
+    else {
+        return;
+    };
+    actions.push(if tab.numbered {
+        GuiShellAction::CloseDocumentWindow(tab.window)
+    } else {
+        close(tab.row.id)
+    });
 }
 /// Which way Control+Tab moves through the tabs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -224,16 +279,35 @@ pub(crate) enum DocumentStep {
     Next,
     Previous,
 }
-/// The document beside the active one in tab order, wrapping past either end.
-fn neighbor_document(state: &GuiCommandState, step: DocumentStep) -> Option<GuiShellAction> {
-    let rows: Vec<u64> = visible(state).map(|row| row.id).collect();
-    let active = rows.iter().position(|id| Some(*id) == state.document)?;
+/// The tab beside the active one, wrapping past either end; Home is the strip's first tab.
+fn neighbor_tab(
+    state: &GuiCommandState,
+    step: DocumentStep,
+    home_active: bool,
+) -> Option<GuiShellAction> {
+    let rows = windows::tab_rows(state);
+    if rows.is_empty() {
+        return None;
+    }
+    let active = if home_active {
+        0
+    } else {
+        rows.iter()
+            .position(|tab| windows::is_active_window(state, tab))?
+            + 1
+    };
+    let tabs = rows.len() + 1;
     let offset = match step {
         DocumentStep::Next => 1,
-        DocumentStep::Previous => rows.len() - 1,
+        DocumentStep::Previous => tabs - 1,
     };
-    let neighbor = rows[(active + offset) % rows.len()];
-    (neighbor != rows[active]).then(|| activate(neighbor))
+    Some(match (active + offset) % tabs {
+        0 => GuiShellAction::ShowHome,
+        index => {
+            let tab = &rows[index - 1];
+            windows::activation(state, tab).unwrap_or_else(|| activate(tab.row.id))
+        }
+    })
 }
 #[cfg(test)]
 #[path = "../../../tests/application/document-tabs/commands.rs"]

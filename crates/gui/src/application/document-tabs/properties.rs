@@ -11,6 +11,8 @@ const NOT_SAVED: &str = "Not saved";
 
 struct PropertiesTarget {
     id: u64,
+    /// A file that is not open, from the Home list; an open document names its file itself.
+    file: Option<String>,
     /// Read once when the dialog opens: a frame loop must not touch the disk.
     facts: Result<FileFacts, String>,
 }
@@ -41,7 +43,20 @@ impl DocumentProperties {
         let facts = path.map_or(Ok(FileFacts::default()), |path| {
             self.folders.file_facts(path)
         });
-        self.target = Some(PropertiesTarget { id, facts });
+        self.target = Some(PropertiesTarget {
+            id,
+            file: None,
+            facts,
+        });
+        self.opening = true;
+    }
+    /// Inspect a file that need not be open; example: `properties.request_file("/work/a.opd")`.
+    pub(crate) fn request_file(&mut self, path: &str) {
+        self.target = Some(PropertiesTarget {
+            id: 0,
+            file: Some(path.to_owned()),
+            facts: self.folders.file_facts(path),
+        });
         self.opening = true;
     }
     /// A frame must follow so the dialog opens without waiting for an event.
@@ -54,7 +69,15 @@ impl DocumentProperties {
             return;
         };
         let row = state.documents.iter().find(|row| row.id == target.id);
-        let name = row.map_or("Document", |row| row.name.as_str());
+        let stem = target
+            .file
+            .as_deref()
+            .and_then(|file| Path::new(file).file_stem());
+        let file_name = stem.map(|stem| stem.to_string_lossy().into_owned());
+        let name = file_name
+            .as_deref()
+            .or(row.map(|row| row.name.as_str()))
+            .unwrap_or("Document");
         if std::mem::take(&mut self.opening) {
             ui.open_popup(POPUP);
         }
@@ -80,10 +103,11 @@ fn general_page(
     target: &PropertiesTarget,
     row: Option<&DocumentInfo>,
 ) {
-    let path = state
+    let stored = state
         .document_storage
         .get(&target.id)
         .and_then(|row| row.path.as_deref());
+    let path = target.file.as_deref().or(stored);
     let fields = general_fields(row, path, &target.facts);
     for (label, value) in &fields {
         ui.text(format!("{label}: {value}"));
@@ -95,9 +119,16 @@ fn general_fields(
     path: Option<&str>,
     facts: &Result<FileFacts, String>,
 ) -> Vec<(&'static str, String)> {
-    let name = row.map_or(String::new(), |row| row.name.clone());
-    let kind = row.map_or(String::new(), |row| row.type_.clone());
     let path = path.map(Path::new);
+    let stem = path
+        .and_then(Path::file_stem)
+        .map(|stem| stem.to_string_lossy().into_owned());
+    let name = row.map_or_else(|| stem.unwrap_or_default(), |row| row.name.clone());
+    // A file that is not open has its kind only in its extension.
+    let extension = path
+        .and_then(Path::extension)
+        .map(|extension| extension.to_string_lossy().into_owned());
+    let kind = row.map_or_else(|| extension.unwrap_or_default(), |row| row.type_.clone());
     let file_name = path
         .and_then(Path::file_name)
         .map(|file| file.to_string_lossy().into_owned());
@@ -116,6 +147,8 @@ fn general_fields(
             location.unwrap_or_else(|| NOT_SAVED.to_string()),
         ),
         ("Size", size_text(path.is_some(), facts)),
+        ("Size on disk", disk_size_text(facts)),
+        ("Attributes", attributes_text(path.is_some(), facts)),
         ("Created", timestamp_field(facts, |facts| facts.created)),
         ("Modified", timestamp_field(facts, |facts| facts.modified)),
         ("Accessed", timestamp_field(facts, |facts| facts.accessed)),
@@ -126,6 +159,20 @@ fn size_text(saved: bool, facts: &Result<FileFacts, String>) -> String {
         Ok(facts) if saved => format!("{} bytes", facts.size),
         Ok(_) => NOT_AVAILABLE.to_string(),
         Err(cause) => cause.clone(),
+    }
+}
+fn disk_size_text(facts: &Result<FileFacts, String>) -> String {
+    facts
+        .as_ref()
+        .ok()
+        .and_then(|facts| facts.size_on_disk)
+        .map_or_else(|| NOT_AVAILABLE.to_string(), |size| format!("{size} bytes"))
+}
+fn attributes_text(saved: bool, facts: &Result<FileFacts, String>) -> String {
+    match facts {
+        Ok(facts) if saved && facts.read_only => "Read-only".into(),
+        Ok(_) if saved => "Normal".into(),
+        _ => NOT_AVAILABLE.to_string(),
     }
 }
 fn timestamp_field(

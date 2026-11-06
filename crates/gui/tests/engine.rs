@@ -23,7 +23,18 @@ fn request() -> GuiFrameRequest {
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
             transaction_open: false,
-            sketch_tool_transaction: false,
+            sketch_tool_keyboard: false,
+            dimensions_needed: None,
+            sketch_hud: None,
+            line_command: None,
+            sketch_options: None,
+            sketch_at_ready: false,
+            origin_planes: Vec::new(),
+            document_windows: Vec::new(),
+            active_window: None,
+            recent_documents: Vec::new(),
+            measure: None,
+            region_properties: None,
             sketch_delete_available: false,
             sketch_format_available: false,
             sketch_formats: Default::default(),
@@ -162,10 +173,10 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     // #3849: these gestures address expanded controls; ribbon_click also covers their narrow flyouts.
     input.extent[0] = 1440;
     for (x, expected) in [
-        (110., GuiShellAction::StartSketchXY),
+        (110., GuiShellAction::ChooseSketchPlane),
         (440., GuiShellAction::FinishSketch),
     ] {
-        input.commands.authoring = if expected == GuiShellAction::StartSketchXY {
+        input.commands.authoring = if expected == GuiShellAction::ChooseSketchPlane {
             GuiAuthoringContext::Part
         } else {
             GuiAuthoringContext::Sketch
@@ -201,10 +212,10 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     );
     input.commands = active_document;
     for (x, action) in [
-        (30., GuiShellAction::Save),
-        (75., GuiShellAction::Undo),
-        (120., GuiShellAction::Redo),
-        (165., GuiShellAction::Home),
+        (111., GuiShellAction::Save),
+        (156., GuiShellAction::Undo),
+        (201., GuiShellAction::Redo),
+        (246., GuiShellAction::ShowHome),
     ] {
         verify_gui_click(engine, &mut input, x, action);
     }
@@ -219,7 +230,7 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
 }
 fn verify_keyboard_save_activation(engine: &mut GuiFrameEngine) {
     let mut input = request();
-    click_control(engine, &mut input, 165.);
+    click_control(engine, &mut input, 246.);
     input.events = vec![GuiInputEvent::PointerMoved([600., 300.])];
     engine.frame(&input).unwrap();
     let mut actions = Vec::new();
@@ -274,12 +285,12 @@ fn left_button_event(pressed: bool) -> GuiInputEvent {
 fn verify_invalid_event_batch_is_atomic(engine: &mut GuiFrameEngine) {
     let mut input = request();
     input.events = vec![
-        GuiInputEvent::PointerMoved([30., 45.]),
+        GuiInputEvent::PointerMoved([111., 45.]),
         left_button_event(true),
         GuiInputEvent::Text("bad\0text".into()),
     ];
     assert!(engine.frame(&input).is_err());
-    input.events = vec![GuiInputEvent::PointerMoved([30., 45.])];
+    input.events = vec![GuiInputEvent::PointerMoved([111., 45.])];
     engine.frame(&input).unwrap();
     input.events = vec![left_button_event(false)];
     assert!(engine.frame(&input).unwrap().actions.is_empty());
@@ -289,7 +300,7 @@ fn verify_invalid_event_batch_is_atomic(engine: &mut GuiFrameEngine) {
 
 fn verify_queued_clicks_survive_frame_boundaries(engine: &mut GuiFrameEngine) {
     let mut input = request();
-    input.events = vec![GuiInputEvent::PointerMoved([30., 45.])];
+    input.events = vec![GuiInputEvent::PointerMoved([111., 45.])];
     engine.frame(&input).unwrap();
     input.events = [true, false, true, false]
         .into_iter()
@@ -322,16 +333,16 @@ fn verify_owner_command_enabling(engine: &mut GuiFrameEngine) {
         },
     ] {
         input.commands = state;
-        for x in [75., 120.] {
+        for x in [156., 201.] {
             assert!(click_control(engine, &mut input, x).actions.is_empty());
         }
         assert_eq!(
-            click_control(engine, &mut input, 30.).actions,
+            click_control(engine, &mut input, 111.).actions,
             [GuiShellAction::Save]
         );
         assert_eq!(
-            click_control(engine, &mut input, 165.).actions,
-            [GuiShellAction::Home]
+            click_control(engine, &mut input, 246.).actions,
+            [GuiShellAction::ShowHome]
         );
     }
 }

@@ -109,3 +109,50 @@ fn sheet_around_menu(world: &mut ApplicationWorld) {
         "sheet {sheet:?}: expected the light sheet beside the menu"
     );
 }
+#[given("recent documents are available")]
+fn recent_available(world: &mut ApplicationWorld) {
+    let part = world.active_id();
+    world.app().owner.forget_recent_documents();
+    world.save_part_to_file(part, "Recent.opd");
+}
+#[then("the recent-documents region shows an ordering control labeled By Ordered List")]
+fn ordering_control(world: &mut ApplicationWorld) {
+    world.expect_text("By Ordered List");
+}
+#[then("a separate display control is visible beside it")]
+fn display_control(world: &mut ApplicationWorld) {
+    let ordering = world.run("By Ordered List").clone();
+    let display = world.run("Name").clone();
+    assert!(
+        display.minimum[0] > ordering.maximum[0],
+        "display at {:?}: expected beside the ordering control",
+        display.minimum
+    );
+}
+fn recent_row(world: &ApplicationWorld) -> super::diagnostics::RenderedRun {
+    world.run("Recent").clone()
+}
+#[then("each visible recent-document row shows a document-type symbol and name on the left")]
+fn row_left(world: &mut ApplicationWorld) {
+    let name = recent_row(world);
+    let symbol = world.frame.runs.iter().any(|run| {
+        run.text == "P"
+            && run.maximum[0] < name.minimum[0]
+            && (run.center()[1] - name.center()[1]).abs() < 8.
+    });
+    assert!(symbol, "expected a type symbol before the name");
+}
+#[then("each visible row shows a pin control on the right")]
+fn row_pin(world: &mut ApplicationWorld) {
+    let name = recent_row(world);
+    let pin = world.frame.runs.iter().any(|run| {
+        run.text == "Pin"
+            && run.minimum[0] > name.maximum[0]
+            && (run.center()[1] - name.center()[1]).abs() < 8.
+    });
+    assert!(pin, "expected a pin control after the name");
+}
+#[then("the active part remains visible around the menu")]
+fn part_around_menu(world: &mut ApplicationWorld) {
+    world.expect_text("Origin");
+}

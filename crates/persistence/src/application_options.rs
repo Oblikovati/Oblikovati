@@ -5,6 +5,7 @@ use crate::{
 };
 use oblikovati_model::application_options::{SketchApplicationOptions, SketchPreferenceAccess};
 use oblikovati_model::application_prompts::{PromptPreferenceAccess, PromptPreferences};
+use oblikovati_model::application_recent::{RecentDocument, RecentDocumentAccess};
 use oblikovati_model::ui_scale::{UiScaleOptions, UiScalePreferenceAccess};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -21,6 +22,8 @@ struct PreferenceRecipe {
     ui: Option<UiPreferenceRecipe>,
     #[serde(skip_serializing_if = "Option::is_none")]
     prompts: Option<PromptPreferences>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    recent_documents: Vec<RecentDocument>,
     // Other Go groups stay opaque until their owners are ported; group edits preserve them.
     #[serde(flatten)]
     retained_groups: BTreeMap<String, serde_yaml_ng::Value>,
@@ -84,6 +87,19 @@ impl<Files: PackageFileReader + AtomicFiles> ApplicationPreferenceFile<Files> {
         self.recipe = candidate;
         self.ui_scale = ui_scale;
         Ok(())
+    }
+}
+impl<Files: PackageFileReader + AtomicFiles> RecentDocumentAccess
+    for ApplicationPreferenceFile<Files>
+{
+    fn recent_documents(&self) -> Vec<RecentDocument> {
+        self.recipe.recent_documents.clone()
+    }
+    fn set_recent_documents(&mut self, list: Vec<RecentDocument>) -> Result<(), String> {
+        let mut candidate =
+            read_preferences(&self.path, &mut self.files).map_err(|cause| cause.to_string())?;
+        candidate.recent_documents = list;
+        self.publish(candidate).map_err(|cause| cause.to_string())
     }
 }
 impl<Files: PackageFileReader + AtomicFiles> SketchPreferenceAccess

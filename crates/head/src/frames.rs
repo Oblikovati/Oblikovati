@@ -72,6 +72,10 @@ pub trait HeadWindow {
     }
 
     /// Replace or clear the authoring outline; example: `window.set_sketch_preview(None)?` after cancellation.
+    /// Bring one document window's view forward; example: `window.set_view_slot(owner.view_slot())`.
+    fn set_view_slot(&mut self, _slot: u64) -> Result<bool, String> {
+        Ok(false)
+    }
     fn set_sketch_preview(
         &mut self,
         preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
@@ -383,8 +387,9 @@ fn synchronize_sketch_view(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
 ) -> Result<bool, String> {
+    let switched = window.set_view_slot(owner.view_slot())?;
     match window.set_sketch_edit(owner.sketch_edit()) {
-        Ok(changed) => Ok(changed),
+        Ok(changed) => Ok(changed || switched),
         Err(cause) => {
             owner.decline_sketch_edit(cause)?;
             window.set_sketch_edit(None)?;

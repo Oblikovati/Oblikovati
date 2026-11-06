@@ -115,6 +115,10 @@ pub use sketch_scene::HeadSketchSceneUpdate;
 // #3795: these private states require the Linux DesktopOwner and placement runtime.
 #[cfg(target_os = "linux")]
 mod sketch_geometric;
+/// Ids of extra document windows, which never collide with a document's own id.
+pub(crate) const FIRST_EXTRA_WINDOW: u64 = 1 << 40;
+#[path = "sketch/mod.rs"]
+mod sketch_inspect;
 #[cfg(target_os = "linux")]
 mod sketch_tool;
 

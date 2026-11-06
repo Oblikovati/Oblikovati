@@ -34,7 +34,7 @@ fn part_open(world: &mut ApplicationWorld) {
 #[given("the 3D Model ribbon tab is active")]
 fn model_tab_active(world: &mut ApplicationWorld) {
     world.expect_text("3D Model");
-    world.expect_text("Sketch XY");
+    world.expect_text("Start 2D Sketch");
 }
 #[when("I select the View ribbon tab")]
 fn select_view(world: &mut ApplicationWorld) {

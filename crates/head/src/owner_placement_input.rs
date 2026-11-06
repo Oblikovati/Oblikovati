@@ -49,7 +49,7 @@ impl<
         let mut tool = SketchPlacementState::new(document, sketch, generation, plane, kind)?;
         tool.formats = self.sketch_formats.clone();
         self.select_placement_sketch(document, sketch)?;
-        self.begin_line_scope(&mut tool)?;
+        tool.committing_value_dimensions = self.sketch_options.create_dimensions_on_value_input;
         self.placement_notice(tool.prompt());
         self.sketch_tool = Some(crate::sketch_tool::SketchToolState::Placement(Box::new(
             tool,
@@ -82,9 +82,6 @@ impl<
         Ok(changed)
     }
     pub(super) fn placement_context_valid(&self, tool: &SketchPlacementState) -> bool {
-        if tool.tool == crate::SketchPlacementTool::Line {
-            return self.line_scope_context_valid(tool);
-        }
         self.sketch_context_valid(tool.document, tool.sketch, tool.generation)
     }
     pub(super) fn process_placement_event(
@@ -95,11 +92,6 @@ impl<
     ) -> bool {
         let action = tool.event(event);
         if matches!(action, PlacementAction::Cancel) {
-            if let Err(cause) = self.cancel_line_scope(&tool) {
-                self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
-                self.sketch_tool = Some(crate::sketch_tool::SketchToolState::Placement(tool));
-                return true;
-            }
             self.placement_notice(format!("{} canceled.", tool.tool.name()));
             return true;
         }
@@ -117,18 +109,17 @@ impl<
         action: PlacementAction,
     ) -> bool {
         match action {
-            PlacementAction::FinishLine { closed } => self
-                .finish_line_placement(tool, closed)
-                .unwrap_or_else(|cause| {
-                    self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
-                    false
-                }),
-            PlacementAction::UndoLine => {
-                if let Err(cause) = tool.undo_line_vertex() {
-                    self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
-                    return false;
-                }
-                self.refresh_placement_fields(tool);
+            PlacementAction::FinishLine => {
+                // Ready again: accepted segments stay, a pending preview goes with the command.
+                self.command_notice = Some(DesktopCommandNotice::Ready);
+                true
+            }
+            PlacementAction::RestartLine => {
+                self.restart_line_chain(tool);
+                false
+            }
+            action if tool.tool == crate::SketchPlacementTool::Line => {
+                self.apply_line_action(tool, window, action);
                 false
             }
             PlacementAction::FieldsChanged => {
@@ -140,6 +131,26 @@ impl<
                 self.placement_cursor(tool, window, pixel, place)
             }
             _ => false,
+        }
+    }
+    fn apply_line_action(
+        &mut self,
+        tool: &mut SketchPlacementState,
+        window: &dyn HeadWindow,
+        action: PlacementAction,
+    ) {
+        let result = match action {
+            PlacementAction::Cursor { pixel, place } => {
+                self.line_pointer(tool, window, pixel, place)
+            }
+            PlacementAction::FieldsChanged => self.refresh_line_fields(tool),
+            PlacementAction::CommitFields => self.commit_line_fields(tool),
+            _ => Ok(()),
+        };
+        if let Err(cause) = result {
+            tool.abandon_press();
+            self.rearm_line_after_failure(tool);
+            self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
         }
     }
     fn commit_placement_fields(&mut self, tool: &mut SketchPlacementState) -> bool {
@@ -174,7 +185,6 @@ impl<
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
             .and_then(|recipe| {
                 tool.resolved_preview = self.resolved_placement_preview(tool)?;
-                tool.confirm_line_vertex();
                 self.commit_placement_cursor(tool, recipe)
             });
         match outcome {
@@ -235,7 +245,7 @@ impl<
         }
         if self
             .placement_state()
-            .is_some_and(|tool| self.line_scope_context_valid(tool))
+            .is_some_and(|tool| self.placement_context_valid(tool))
         {
             return Ok(());
         }

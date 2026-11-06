@@ -50,7 +50,7 @@ fn clicking_another_document_tab_dispatches_its_session_identity() {
         assert!(engine.frame(&request).unwrap().actions.is_empty());
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [410., 178.]),
+        tab_click(&mut engine, &mut request, [452., 178.]),
         [GuiShellAction::ActivateDocument(ActivateDocumentArgs {
             id: 2
         })]
@@ -119,7 +119,7 @@ fn active_tab_close_uses_the_existing_guarded_close_request() {
         engine.frame(&request).unwrap();
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [380., 178.]),
+        tab_click(&mut engine, &mut request, [422., 178.]),
         [GuiShellAction::CloseDocument(
             oblikovati_api::wire::CloseDocumentArgs {
                 id: 1,
@@ -140,7 +140,7 @@ fn hidden_or_disabled_document_tabs_cannot_dispatch_pointer_activation() {
         for _ in 0..3 {
             engine.frame(&request).unwrap();
         }
-        assert!(tab_click(&mut engine, &mut request, [410., 178.]).is_empty());
+        assert!(tab_click(&mut engine, &mut request, [452., 178.]).is_empty());
     }
 }
 #[test]
@@ -154,7 +154,7 @@ fn literal_identical_tab_labels_keep_separate_click_identities() {
         engine.frame(&request).unwrap();
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [480., 178.]),
+        tab_click(&mut engine, &mut request, [522., 178.]),
         [GuiShellAction::ActivateDocument(ActivateDocumentArgs {
             id: 2
         })]
@@ -172,7 +172,7 @@ fn refused_active_tab_close_does_not_activate_another_document_on_idle_or_save()
         engine.frame(&request).unwrap();
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [452., 178.]),
+        tab_click(&mut engine, &mut request, [494., 178.]),
         [GuiShellAction::CloseDocument(
             oblikovati_api::wire::CloseDocumentArgs {
                 id: 2,
@@ -185,7 +185,7 @@ fn refused_active_tab_close_does_not_activate_another_document_on_idle_or_save()
         assert!(engine.frame(&request).unwrap().actions.is_empty());
     }
     assert_eq!(
-        tab_click(&mut engine, &mut request, [34., 45.]),
+        tab_click(&mut engine, &mut request, [115., 45.]),
         [GuiShellAction::Save]
     );
 }

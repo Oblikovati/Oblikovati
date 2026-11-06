@@ -32,6 +32,8 @@ fn input(points: &[[f64; 2]], closed: bool) -> SketchLineChainCreation {
         closed,
         construction: false,
         centerline: false,
+        joins: Default::default(),
+        locks: Default::default(),
     }
 }
 fn create(

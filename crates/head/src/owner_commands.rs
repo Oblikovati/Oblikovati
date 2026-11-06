@@ -42,6 +42,8 @@ pub enum DesktopCommandNotice {
     PreviewFailed {
         cause: String,
     },
+    /// A command ended with nothing left to report: the status line returns to its idle text.
+    Ready,
     PlacementPrompt {
         message: String,
     },
@@ -97,6 +99,7 @@ impl DesktopCommandNotice {
             Self::AuthoringFailed { cause } => format!("Command failed: {cause}"),
             Self::SketchEditFailed { cause } => format!("Sketch edit could not be opened: {cause}"),
             Self::PreviewFailed { cause } => format!("Preview could not be drawn: {cause}"),
+            Self::Ready => "Ready".into(),
             Self::PlacementPrompt { message } => message.clone(),
             Self::SelectionChanged { count } => format!("Sketch selection count: {count}."),
             Self::SelectionFailed { cause } => format!("Selection failed: {cause}"),
@@ -153,6 +156,9 @@ impl<
             return false;
         };
         let result = self.save_selected_document(document, path);
+        if let Ok(saved) = &result {
+            self.note_recent_file(&saved.clone());
+        }
         self.command_notice = Some(match result {
             Ok(path) => DesktopCommandNotice::Saved { document, path },
             Err(cause) => DesktopCommandNotice::SaveFailed { document, cause },

@@ -86,6 +86,24 @@ pub(super) fn angle_measure(variables: &[DualNumber]) -> Result<DualNumber, Resi
     let second = unit_direction(&point(variables, 6)?.minus(&point(variables, 4)?)?)?;
     Ok(first.cross(&second)?.atan2(&first.dot(&second)?)?)
 }
+/// The direction measured from +x, one row so the rank holds at every direction.
+pub(super) fn line_angle_residual(
+    variables: &[DualNumber],
+    target: f64,
+) -> Result<Vec<DualNumber>, ResidualError> {
+    let difference = line_angle_measure(variables)?.shifted(-target)?;
+    Ok(vec![wrap_to_half_turn(difference)?])
+}
+pub(super) fn line_angle_measure(variables: &[DualNumber]) -> Result<DualNumber, ResidualError> {
+    let direction = unit_direction(&point(variables, 2)?.minus(&point(variables, 0)?)?)?;
+    let [x, y] = direction.components();
+    Ok(y.atan2(x)?)
+}
+/// A target can sit a full turn from the principal value, as a typed 229.88 does from -130.12.
+fn wrap_to_half_turn(difference: DualNumber) -> Result<DualNumber, ResidualError> {
+    let turns = (difference.value() / TAU).round();
+    Ok(difference.shifted(-turns * TAU)?)
+}
 fn wrap_angle_difference(difference: DualNumber) -> Result<DualNumber, ResidualError> {
     if difference.value() > PI {
         return Ok(difference.shifted(-TAU)?);

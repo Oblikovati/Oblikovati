@@ -11,6 +11,7 @@ pub(super) struct RenderedGlyph {
     pub minimum: [f32; 2],
     pub maximum: [f32; 2],
     pub alpha: u8,
+    pub color: [u8; 3],
 }
 /// A line of adjacent glyphs; buttons and menu rows are separate runs.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -19,6 +20,7 @@ pub(super) struct RenderedRun {
     pub minimum: [f32; 2],
     pub maximum: [f32; 2],
     pub alpha: u8,
+    pub color: [u8; 3],
     pub list: usize,
 }
 /// A vertex of a non-rectangular shape (check marks, arrows), for controls without glyphs.
@@ -46,6 +48,7 @@ impl RenderedRun {
             minimum: glyph.minimum,
             maximum: glyph.maximum,
             alpha: glyph.alpha,
+            color: glyph.color,
         }
     }
     fn continues(&self, glyph: RenderedGlyph, font_size: f32) -> bool {
@@ -191,6 +194,7 @@ fn quad_glyph(
         minimum: start.pos,
         maximum: opposite.pos,
         alpha: start.col[3],
+        color: [start.col[0], start.col[1], start.col[2]],
     })
 }
 fn inside_clip(first: DrawVert, opposite: DrawVert, clip: [f32; 4]) -> bool {

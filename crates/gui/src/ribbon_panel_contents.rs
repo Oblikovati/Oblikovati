@@ -40,7 +40,7 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::AnnotateSymbols => {
             muted_commands(ui, origin, &["Surface", "Weld"], NOT_PORTED);
         }
-        RibbonPanel::PartCreate => muted_commands(ui, origin, &["Extrude", "Revolve"], NOT_PORTED),
+        RibbonPanel::PartCreate => part_create_controls(ui, origin, state, owners, actions),
         RibbonPanel::PartModify => {
             muted_commands(ui, origin, &["Hole", "Fillet", "Chamfer"], NOT_PORTED);
         }
@@ -58,6 +58,7 @@ pub(crate) fn draw_panel_content(
                 owners.workspaces.request_insert();
             }
         }
+        RibbonPanel::Sketch => start_sketch_command(ui, state, owners, actions),
         other => single_command(ui, other, state, actions),
     }
     false
@@ -77,6 +78,53 @@ fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
             ui.tooltip_text(reason);
         }
     }
+}
+/// Extrude has no dialog yet: with no sketch it asks for a plane, otherwise it stays muted.
+fn part_create_controls(
+    ui: &Ui,
+    origin: [f32; 2],
+    state: &GuiCommandState,
+    owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    use crate::application::quick_access_toolbar::{EXTRUDE, extrude_can_start};
+    crate::widget_abi::cursor_position(ui, origin);
+    {
+        let _muted = ui.begin_disabled(!extrude_can_start(state));
+        if crate::widget_abi::button(ui, EXTRUDE, [108., 26.]) {
+            actions.push(GuiShellAction::ChooseSketchPlane);
+        }
+    }
+    if !extrude_can_start(state)
+        && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED)
+    {
+        ui.tooltip_text(NOT_PORTED);
+    }
+    owners.quick_access.ribbon_command_menu(ui, EXTRUDE, state);
+    crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
+    {
+        let _muted = ui.begin_disabled(true);
+        crate::widget_abi::button(ui, "Revolve", [108., 26.]);
+    }
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text(NOT_PORTED);
+    }
+    owners
+        .quick_access
+        .ribbon_command_menu(ui, "Revolve", state);
+}
+/// Stays lit while the origin planes wait for a choice.
+fn start_sketch_command(
+    ui: &Ui,
+    state: &GuiCommandState,
+    owners: &crate::ribbon_panels::RibbonPanelOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let lit = ui.style_color(imgui::StyleColor::ButtonActive);
+    let _highlight = owners
+        .plane_selection_active
+        .then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
+    single_command(ui, RibbonPanel::Sketch, state, actions);
 }
 fn single_command(
     ui: &Ui,
@@ -101,6 +149,15 @@ fn windows_controls(
         .workspace
         .switcher
         .menu(ui, [108., 26.], state, actions);
+    crate::widget_abi::cursor_position(ui, [origin[0] + 116., origin[1]]);
+    crate::chrome::command_button(
+        ui,
+        "New",
+        GuiShellAction::NewDocumentWindow,
+        state,
+        [108., 26.],
+        actions,
+    );
 }
 /// Show or hide every sketch at once through the owner's per-sketch command.
 fn visibility_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

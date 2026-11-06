@@ -92,7 +92,7 @@ fn searchable_rows(browser: &GuiModelBrowser) -> Vec<&str> {
         .collect()
 }
 /// Where the query starts in a row, ignoring case; its length in bytes is the query's.
-fn match_start(row: &str, query: &str) -> Option<usize> {
+pub(crate) fn match_start(row: &str, query: &str) -> Option<usize> {
     row.to_lowercase().find(&query.to_lowercase())
 }
 fn matching_rows<'a>(browser: &'a GuiModelBrowser, query: &str) -> Vec<&'a str> {

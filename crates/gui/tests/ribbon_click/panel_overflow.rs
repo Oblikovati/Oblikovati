@@ -170,7 +170,7 @@ fn changing_context_cancels_a_panel_popup_before_the_next_command() {
     open_panel(&mut engine, &mut request, [790., 88.], 1.);
     request.commands.authoring = GuiAuthoringContext::Part;
     settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], StartSketchXY);
+    expect_ribbon(&mut engine, &mut request, [50., 90.], ChooseSketchPlane);
 }
 #[test]
 fn widening_with_a_popup_open_restores_its_inline_command_immediately() {

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::application::document_tabs::windows::{TabRow, activation, is_active_window, tab_rows};
 use crate::{GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 use oblikovati_api::wire::{ActivateDocumentArgs, CloseDocumentArgs, DocumentInfo};
@@ -9,14 +10,19 @@ const DETACH_DISTANCE: f32 = 90.;
 const DRAWING_TYPE_NAME: &str = "drawing";
 /// The room the document list control takes at the end of the strip.
 const DOCUMENT_LIST_WIDTH: f32 = 92.;
+/// Room for the two scroll arrows, taken from the strip only when it overflows.
+const ARROWS_WIDTH: f32 = 52.;
+const TAB_ROOM: f32 = 40.;
 #[derive(Default)]
 pub(crate) struct DocumentTabs {
     previous: Option<u64>,
+    /// The first tab shown; earlier ones wait behind the left arrow.
+    first_tab: usize,
+    pub previews: crate::application::document_tabs::previews::TabPreviews,
     pub menu: crate::application::document_tabs::TabMenu,
     /// The labels of the last frame; a change needs the frames below to finish its layout.
     drawn_labels: Vec<(u64, String, bool)>,
     settling_frames: u8,
-    right_button_last_frame: bool,
     /// The drawing tab under the pointer, while a press could still detach it.
     pressed_tab: Option<u64>,
     /// Drawings shown in their own window; they leave this strip until the window closes.
@@ -30,27 +36,39 @@ impl DocumentTabs {
         request: &GuiFrameRequest,
         band_height: f32,
         layout: &crate::application::workspace_layout::WorkspaceLayout,
+        home: &mut crate::application::home_recent_documents::HomeWorkspace,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.track_labels(&request.commands);
         self.forget_closed_detached(&request.commands);
-        let force = self.previous != request.commands.document || self.right_button_selection(ui);
+        self.settle_after_right_button(ui);
+        let reveal_active = self.previous != request.commands.document;
         self.previous = request.commands.document;
-        if !layout.tabs_visible || !request.commands.documents.iter().any(|row| row.visible) {
+        let any_document = request.commands.documents.iter().any(|row| row.visible);
+        if !layout.tabs_visible || !(any_document || home.active) {
             return;
         }
         let width = request.extent[0] as f32 / request.layout_scale()[0];
-        let before = actions.len();
         let span = layout.tab_span(width);
         let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
         let mut strip_owner = StripOwner {
             menu: &mut self.menu,
             detached: &self.detached,
             pressed: &mut self.pressed_tab,
+            first_tab: &mut self.first_tab,
+            layout_changed: false,
+            reveal_active,
+            hovered: None,
+            home,
         };
         document_strip_window(ui, strip, band_height, || {
-            document_strip(ui, request, force, &mut strip_owner, actions)
+            document_strip(ui, request, &mut strip_owner, actions)
         });
+        let hovered = strip_owner.hovered.take();
+        if strip_owner.layout_changed {
+            self.settling_frames = SETTLING_FRAMES;
+        }
+        self.previews.panel(ui, hovered.as_ref());
         self.detach_on_release(ui, request, band_height, actions);
         self.detached_windows(ui, &request.commands, actions);
         crate::application::document_tabs::document_list_control(
@@ -60,10 +78,6 @@ impl DocumentTabs {
             &request.commands,
             actions,
         );
-        // #3800: a refused dirty close or activation must restore the owner's tab selection.
-        if actions.len() != before {
-            self.previous = None;
-        }
     }
 }
 impl DocumentTabs {
@@ -81,18 +95,12 @@ impl DocumentTabs {
             self.settling_frames = SETTLING_FRAMES;
         }
     }
-    /// Dear ImGui selects a tab on a right press and again on its release, a frame before the
-    /// selection shows. A menu on an inactive tab must not activate it, so the owner's selection
-    /// stays forced through the release and the frame after it.
-    fn right_button_selection(&mut self, ui: &Ui) -> bool {
+    /// A right press on a tab opens its menu on the release, a frame later.
+    fn settle_after_right_button(&mut self, ui: &Ui) {
         let right = imgui::MouseButton::Right;
-        let active = ui.is_mouse_down(right) || ui.is_mouse_released(right);
-        let held = active || self.right_button_last_frame;
-        self.right_button_last_frame = active;
-        if active {
+        if ui.is_mouse_down(right) || ui.is_mouse_released(right) {
             self.settling_frames = SETTLING_FRAMES;
         }
-        held
     }
     pub(crate) fn needs_frame(&self) -> bool {
         self.settling_frames > 0
@@ -103,6 +111,11 @@ struct StripOwner<'a> {
     menu: &'a mut crate::application::document_tabs::TabMenu,
     detached: &'a [u64],
     pressed: &'a mut Option<u64>,
+    first_tab: &'a mut usize,
+    layout_changed: bool,
+    reveal_active: bool,
+    hovered: Option<crate::application::document_tabs::previews::HoveredTab>,
+    home: &'a mut crate::application::home_recent_documents::HomeWorkspace,
 }
 impl DocumentTabs {
     fn forget_closed_detached(&mut self, state: &crate::GuiCommandState) {
@@ -215,24 +228,153 @@ fn detached_tab(
 fn document_strip(
     ui: &Ui,
     request: &GuiFrameRequest,
-    force: bool,
     owner: &mut StripOwner<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let flags = imgui::TabBarFlags::REORDERABLE;
-    let Some(_bar) = ui.tab_bar_with_flags("##visible-documents", flags) else {
-        return;
-    };
     let state = &request.commands;
-    let _disabled = ui.begin_disabled(state.transaction_open);
-    let shown = state
-        .documents
-        .iter()
-        .filter(|row| row.visible && !owner.detached.contains(&row.id));
-    for row in shown {
-        let selected = force && state.document == Some(row.id);
-        document_tab(ui, request, row, selected, force, owner, actions);
+    let tabs: Vec<TabRow<'_>> = tab_rows(state)
+        .into_iter()
+        .filter(|tab| !owner.detached.contains(&tab.row.id))
+        .collect();
+    let widths = tab_widths(ui, &tabs);
+    let available = ui.content_region_avail()[0];
+    let overflow = widths.iter().sum::<f32>() > available;
+    let room = if overflow {
+        available - ARROWS_WIDTH
+    } else {
+        available
+    };
+    let active = active_tab_index(state, &tabs, owner.home.active);
+    let (first, count) = visible_tabs(&widths, room, *owner.first_tab, active, owner.reveal_active);
+    // A tab reappearing in the strip lays out on its second frame, as a new one does.
+    owner.layout_changed = first != *owner.first_tab;
+    *owner.first_tab = first;
+    let flags = imgui::TabBarFlags::REORDERABLE;
+    if let Some(_bar) = ui.tab_bar_with_flags("##visible-documents", flags) {
+        let _disabled = ui.begin_disabled(state.transaction_open);
+        if first == 0 {
+            home_tab(ui, owner, state, actions);
+        }
+        let shown = first.saturating_sub(1)..(first + count).saturating_sub(1);
+        for tab in &tabs[shown.start.min(tabs.len())..shown.end.min(tabs.len())] {
+            document_tab(ui, request, tab, owner, actions);
+        }
     }
+    if overflow {
+        let more_to_the_right = first + count < widths.len();
+        scroll_arrows(
+            ui,
+            available,
+            owner.first_tab,
+            &mut owner.layout_changed,
+            more_to_the_right,
+        );
+    }
+}
+/// Home first, then one width per window, as they will be drawn.
+fn tab_widths(ui: &Ui, tabs: &[TabRow<'_>]) -> Vec<f32> {
+    let spacing = ui.clone_style().item_inner_spacing[0];
+    std::iter::once(ui.calc_text_size("Home")[0] + TAB_ROOM / 2.)
+        .chain(tabs.iter().map(|tab| {
+            let label = tab_label(tab);
+            ui.calc_text_size(&label)[0] + TAB_ROOM
+        }))
+        .map(|width| width + spacing)
+        .collect()
+}
+fn active_tab_index(
+    state: &crate::GuiCommandState,
+    tabs: &[TabRow<'_>],
+    home_active: bool,
+) -> Option<usize> {
+    if home_active {
+        return Some(0);
+    }
+    tabs.iter()
+        .position(|tab| crate::application::document_tabs::windows::is_active_window(state, tab))
+        .map(|index| index + 1)
+}
+/// Which tabs fit from `first`; a tab just brought forward is scrolled into the strip.
+fn visible_tabs(
+    widths: &[f32],
+    room: f32,
+    first: usize,
+    active: Option<usize>,
+    reveal: bool,
+) -> (usize, usize) {
+    let mut first = first.min(widths.len().saturating_sub(1));
+    if let Some(active) = active.filter(|_| reveal) {
+        first = first.min(active);
+        while first < active && fitting(widths, first, room) + first <= active {
+            first += 1;
+        }
+    }
+    (first, fitting(widths, first, room))
+}
+fn fitting(widths: &[f32], first: usize, room: f32) -> usize {
+    let mut used = 0.;
+    let mut count = 0;
+    for width in &widths[first..] {
+        used += width;
+        if used > room && count > 0 {
+            break;
+        }
+        count += 1;
+    }
+    count
+}
+/// Scrolling only moves the strip: the active document stays what it is.
+fn scroll_arrows(
+    ui: &Ui,
+    available: f32,
+    first: &mut usize,
+    moved: &mut bool,
+    more_to_the_right: bool,
+) {
+    let start = ui.window_content_region_min()[0];
+    ui.set_cursor_pos([
+        start + available - ARROWS_WIDTH + 4.,
+        ui.window_content_region_min()[1],
+    ]);
+    {
+        let _at_start = ui.begin_disabled(*first == 0);
+        if ui.button("<##tabs-left") {
+            *first = first.saturating_sub(1);
+            *moved = true;
+        }
+    }
+    ui.same_line();
+    let _at_end = ui.begin_disabled(!more_to_the_right);
+    if ui.button(">##tabs-right") {
+        *first += 1;
+        *moved = true;
+    }
+}
+/// Home is a workspace, not a document: it has no close control and is chosen only by a click.
+fn home_tab(
+    ui: &Ui,
+    owner: &mut StripOwner<'_>,
+    state: &crate::GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    use crate::application::document_tabs::previews::{HoveredTab, PreviewKey};
+    let flags = if owner.home.active {
+        TabItemFlags::SET_SELECTED
+    } else {
+        TabItemFlags::empty()
+    };
+    let shown = ui.tab_item_with_flags("Home###home-workspace-tab", None, flags);
+    let clicked = ui.is_item_clicked();
+    if ui.is_item_hovered() {
+        owner.hovered = Some(HoveredTab {
+            key: PreviewKey::Home,
+            corner: ui.item_rect_min(),
+            labels: vec!["Home".to_owned()],
+        });
+    }
+    drop(shown);
+    owner.menu.home_popup(ui, state, actions);
+    owner.home.active |= clicked;
 }
 fn document_strip_window(ui: &Ui, span: (f32, f32), band_height: f32, contents: impl FnOnce()) {
     crate::widget_abi::window_geometry(
@@ -250,73 +392,82 @@ fn document_strip_window(ui: &Ui, span: (f32, f32), band_height: f32, contents: 
         .collapsible(false)
         .build(contents);
 }
+/// A tab is chosen by its own click: the strip may scroll, or Home may stand in front, without
+/// the owner's document changing.
 fn document_tab(
     ui: &Ui,
     request: &GuiFrameRequest,
-    row: &DocumentInfo,
-    selected: bool,
-    force: bool,
+    tab: &TabRow<'_>,
     owner: &mut StripOwner<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let (active, keep) = draw_document_tab(ui, row, selected);
-    owner.menu.popup(ui, &request.commands, row, actions);
-    if ui.is_item_active() {
-        *owner.pressed = Some(row.id);
-    }
-    // While a detached drawing holds the shared controls, this strip's own selection is stale:
-    // only a real click on a tab asks for a change.
     let state = &request.commands;
-    let stale = state
-        .document
-        .is_some_and(|id| owner.detached.contains(&id));
-    if stale && keep && ui.is_item_clicked() {
-        actions.push(GuiShellAction::ActivateDocument(ActivateDocumentArgs {
-            id: row.id,
-        }));
+    let behind = owner.home.active
+        || state
+            .document
+            .is_some_and(|id| owner.detached.contains(&id));
+    let selected = !behind && is_active_window(state, tab);
+    let keep = draw_document_tab(ui, tab, selected);
+    let clicked = ui.is_item_clicked();
+    note_hovered_tab(ui, request, tab, owner);
+    owner.menu.popup(ui, state, tab.row, actions);
+    if ui.is_item_active() {
+        *owner.pressed = Some(tab.row.id);
     }
-    let force = force || stale;
-    let Some(action) = document_tab_action(row.id, active, keep, force, request.commands.document)
-    else {
+    if !keep {
+        actions.push(GuiShellAction::CloseDocument(CloseDocumentArgs {
+            id: tab.row.id,
+            ..Default::default()
+        }));
         return;
-    };
-    if action.dispatchable(&request.commands) {
-        actions.push(action);
+    }
+    if clicked {
+        owner.home.reached_from_home = owner.home.active;
+        owner.home.active = false;
+        actions.extend(activation(state, tab).filter(|action| action.dispatchable(state)));
     }
 }
-fn draw_document_tab(ui: &Ui, row: &DocumentInfo, selected: bool) -> (bool, bool) {
+fn note_hovered_tab(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    tab: &TabRow<'_>,
+    owner: &mut StripOwner<'_>,
+) {
+    use crate::application::document_tabs::previews::{HoveredTab, PreviewKey};
+    if !ui.is_item_hovered() {
+        return;
+    }
+    let saved = request
+        .commands
+        .document_storage
+        .get(&tab.row.id)
+        .and_then(|storage| storage.path.clone());
+    owner.hovered = Some(HoveredTab {
+        key: PreviewKey::Window(tab.window),
+        corner: ui.item_rect_min(),
+        labels: saved.into_iter().chain([tab.name.clone()]).collect(),
+    });
+}
+fn tab_label(tab: &TabRow<'_>) -> String {
+    format!("{}{}", tab.name, if tab.row.dirty { " *" } else { "" })
+}
+fn draw_document_tab(ui: &Ui, tab: &TabRow<'_>, selected: bool) -> bool {
     let flags = if selected {
         TabItemFlags::SET_SELECTED
     } else {
         TabItemFlags::empty()
     };
-    let label = format!("{}{}", row.name, if row.dirty { " *" } else { "" });
-    ui.set_next_item_width(ui.calc_text_size(&label)[0] + 40.);
+    let label = tab_label(tab);
+    ui.set_next_item_width(ui.calc_text_size(&label)[0] + TAB_ROOM);
     let mut keep = true;
     let contents = ui.tab_item_with_flags(
-        format!("###open-document-{}", row.id),
+        format!("###open-document-{}", tab.window),
         Some(&mut keep),
         flags,
     );
     draw_literal_tab_label(ui, &label);
-    (contents.is_some(), keep)
-}
-fn document_tab_action(
-    id: u64,
-    active: bool,
-    keep: bool,
-    force: bool,
-    current: Option<u64>,
-) -> Option<GuiShellAction> {
-    if !keep {
-        return Some(GuiShellAction::CloseDocument(CloseDocumentArgs {
-            id,
-            ..Default::default()
-        }));
-    }
-    (active && !force && current != Some(id)).then_some(GuiShellAction::ActivateDocument(
-        ActivateDocumentArgs { id },
-    ))
+    drop(contents);
+    keep
 }
 fn draw_literal_tab_label(ui: &Ui, label: &str) {
     let minimum = ui.item_rect_min();
@@ -326,9 +477,6 @@ fn draw_literal_tab_label(ui: &Ui, label: &str) {
         ui.style_color(imgui::StyleColor::Text),
         label,
     );
-    if ui.is_item_hovered() {
-        ui.tooltip_text(label);
-    }
 }
 /// Refuse ambiguous tab identities before ImGui input; example: `validate_documents(&state.documents)?`.
 pub(crate) fn validate_documents(rows: &[DocumentInfo]) -> Result<(), String> {

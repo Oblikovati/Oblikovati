@@ -64,7 +64,7 @@ fn close_and_reopen(
 }
 fn cancel_save_dialog(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     let before = owner.gui_command_state().unwrap();
-    click_shell(window, owner, 30);
+    click_shell(window, owner, 111);
     assert_eq!(owner.gui_command_state().unwrap(), before);
     // Enter would accept the proposed name, so only Escape leaves the document unbound.
     press_shell_key(window, owner, ViewportPhysicalKey::Escape);
@@ -76,7 +76,7 @@ fn save_from_dialog(
     owner: &mut NativeDesktopOwner,
     path: &std::path::Path,
 ) {
-    click_shell(window, owner, 30);
+    click_shell(window, owner, 111);
     type_native_text(window, owner, path.to_str().unwrap());
     press_shell_key(window, owner, ViewportPhysicalKey::Enter);
     assert!(matches!(

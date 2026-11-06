@@ -17,6 +17,8 @@ pub struct GuiDimensionLabel {
     pub pixel: [i32; 2],
     pub text: String,
     pub role: GuiDimensionLabelRole,
+    /// A driving dimension opens its value editor on a double-click.
+    pub edit: Option<crate::GuiDimensionEdit>,
 }
 pub(crate) fn draw_dimension_labels(ui: &imgui::Ui, request: &GuiFrameRequest) {
     for label in request.commands.dimension_labels.iter().filter(|label| {

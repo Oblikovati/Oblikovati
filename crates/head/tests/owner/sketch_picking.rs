@@ -160,9 +160,6 @@ fn successful_pick_replaces_a_failure_after_the_window_consumes_it() {
         Some(DesktopCommandNotice::SelectionChanged { count: 1 })
     );
     deliver(&mut owner, &[button([200, 200], true)]);
-    assert_eq!(
-        owner.take_command_notice().unwrap().message(),
-        "Sketch selection count: 0."
-    );
+    assert_eq!(owner.take_command_notice().unwrap().message(), "Ready");
     assert_eq!(selection(&mut owner).count, 0);
 }

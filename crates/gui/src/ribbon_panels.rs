@@ -69,7 +69,7 @@ impl RibbonPanel {
     pub(crate) fn command(self) -> Option<(&'static str, GuiShellAction)> {
         Some(match self {
             Self::Launch => ("New Part", GuiShellAction::NewPart),
-            Self::Sketch => ("Sketch XY", GuiShellAction::StartSketchXY),
+            Self::Sketch => ("Start 2D Sketch", GuiShellAction::ChooseSketchPlane),
             Self::Exit => ("Finish Sketch", GuiShellAction::FinishSketch),
             Self::Modify => ("Delete", GuiShellAction::DeleteSketchSelection),
             Self::Navigate => ("Home", GuiShellAction::Home),
@@ -142,6 +142,8 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub editor: &'a mut crate::theme_editor::GuiThemeEditor,
     pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
     pub workspaces: &'a mut crate::application::document_creation::workspaces::DocumentWorkspaces,
+    pub quick_access: &'a mut crate::application::quick_access_toolbar::QuickAccessToolbar,
+    pub plane_selection_active: bool,
 }
 struct PanelDrawContext<'a> {
     ui: &'a Ui,

@@ -40,6 +40,32 @@ impl<
         Ok(output)
     }
 }
+/// The stored text; a bare typed number reads with the unit the document gave it.
+fn stored_expression(
+    snapshot: &DocumentSnapshot,
+    state: &oblikovati_model::parameter::ParameterState<u64>,
+    dimension: oblikovati_model::quantity::Dimension,
+) -> String {
+    if state.source.trim().parse::<f64>().is_err() {
+        return state.source.clone();
+    }
+    let unit = snapshot.parameters.units().preferred_name(dimension);
+    format!("{} {unit}", state.source.trim())
+}
+/// A sketch reads a length without its document unit and an angle with two decimals.
+fn annotation_value(quantity: oblikovati_model::quantity::Quantity, shown: String) -> String {
+    if quantity.dimension == oblikovati_model::quantity::Dimension::Angle {
+        return format!("{:.2}", quantity.value.to_degrees());
+    }
+    let number = shown.split_whitespace().next().unwrap_or(&shown);
+    if !number.contains('.') {
+        return number.to_owned();
+    }
+    number
+        .trim_end_matches('0')
+        .trim_end_matches('.')
+        .to_owned()
+}
 fn collect_dimension_annotations(
     snapshot: &DocumentSnapshot,
     sketch: &PlacedSketch,
@@ -94,17 +120,22 @@ fn dimension_annotation(
         GuiDimensionLabelRole::Driving
     };
     let text = match &state.health {
-        oblikovati_model::parameter::ParameterHealth::Healthy => {
-            format!("{} = {value}", state.name)
-        }
+        oblikovati_model::parameter::ParameterHealth::Healthy => annotation_value(quantity, value),
         oblikovati_model::parameter::ParameterHealth::Failed(_) => {
             format!("{}: {value} (source unavailable)", state.name)
         }
     };
+    let edit = (role == GuiDimensionLabelRole::Driving).then(|| oblikovati_gui::GuiDimensionEdit {
+        sketch: sketch.id().0,
+        constraint: id.0,
+        name: state.name.clone(),
+        expression: stored_expression(snapshot, state, quantity.dimension),
+    });
     Ok(Some(HeadDimensionAnnotation {
         plane,
         position,
         text,
         role,
+        edit,
     }))
 }

@@ -147,3 +147,8 @@ pub(crate) fn fit_dialog(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) 
         )
     };
 }
+
+/// Over a panel even while a popup just opened by the same click blocks the panel's hover state.
+pub(crate) fn over_any_panel() -> imgui::WindowHoveredFlags {
+    imgui::WindowHoveredFlags::ANY_WINDOW | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP
+}

@@ -3,7 +3,9 @@ use oblikovati_model::{
     document_sketch::DocumentSketchId,
     sketch::{SketchPlacementRecipe, SketchPlane},
 };
-use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, ViewportKey};
+use oblikovati_viewport::{
+    ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
+};
 #[path = "fields.rs"]
 mod fields;
 use fields::{PlacementFieldAction, PlacementFieldEntry};
@@ -20,10 +22,13 @@ pub(crate) struct SketchPlacementState {
     pub preview: Option<SketchPlacementRecipe>,
     pub resolved_preview: Option<oblikovati_viewport::ViewportSketchPreview>,
     accepted: Vec<[f64; 2]>,
-    pub line_scope: Option<oblikovati_model::history::TransactionToken>,
+    line: line::LineChain,
     cursor_point: Option<[f64; 2]>,
+    /// Where the numeric fields follow the pointer, in window pixels.
+    pub(crate) cursor_pixel: Option<[i32; 2]>,
     pub(crate) formats: oblikovati_api::types::SketchFormatModes,
-    line_pending: bool,
+    /// A typed value becomes a dimension unless the application option turns that off.
+    pub(crate) committing_value_dimensions: bool,
     press: Option<PlacementPress>,
     navigation: [bool; 3],
     fields: PlacementFieldEntry,
@@ -37,8 +42,8 @@ pub(crate) enum PlacementAction {
     Cancel,
     FieldsChanged,
     CommitFields,
-    FinishLine { closed: bool },
-    UndoLine,
+    FinishLine,
+    RestartLine,
     Cursor { pixel: [i32; 2], place: bool },
 }
 impl SketchPlacementState {
@@ -59,10 +64,11 @@ impl SketchPlacementState {
             preview: None,
             resolved_preview: None,
             accepted: Vec::new(),
-            line_scope: None,
+            line: Default::default(),
             cursor_point: None,
+            cursor_pixel: None,
             formats: Default::default(),
-            line_pending: false,
+            committing_value_dimensions: true,
             press: None,
             navigation: [false; 3],
             fields: Default::default(),
@@ -72,13 +78,8 @@ impl SketchPlacementState {
         if let Some(action) = self.line_event(event) {
             return action;
         }
-        if self.tool != crate::SketchPlacementTool::Line
-            && let ViewportEvent::Input(input) = event
-        {
-            let count = self
-                .preview
-                .as_ref()
-                .map_or(0, |recipe| recipe.fields.len());
+        if let ViewportEvent::Input(input) = event {
+            let count = self.field_count();
             match self.fields.input(input, count) {
                 PlacementFieldAction::Changed => return PlacementAction::FieldsChanged,
                 PlacementFieldAction::Commit => return PlacementAction::CommitFields,
@@ -93,6 +94,14 @@ impl SketchPlacementState {
             _ => PlacementAction::Idle,
         }
     }
+    fn field_count(&self) -> usize {
+        if self.tool == crate::SketchPlacementTool::Line {
+            return self.line_field_count();
+        }
+        self.preview
+            .as_ref()
+            .map_or(0, |recipe| recipe.fields.len())
+    }
     pub(crate) fn field_prompt(&self) -> String {
         let stage = self.prompt();
         if self.tool == crate::SketchPlacementTool::Line {
@@ -105,6 +114,15 @@ impl SketchPlacementState {
     }
     pub(crate) fn fields_engaged(&self) -> bool {
         self.fields.engaged()
+    }
+    pub(crate) fn fields_invalid(&self) -> bool {
+        self.fields.has_invalid_value()
+    }
+    pub(crate) fn field_view(&self, index: usize) -> fields::PlacementFieldView {
+        self.fields.view(index)
+    }
+    pub(crate) fn evaluate_line_values(&mut self, evaluate: &dyn Fn(usize, &str) -> Option<f64>) {
+        self.fields.evaluate_line_fields(evaluate);
     }
     pub(crate) fn preview_locks(
         &self,
@@ -176,15 +194,22 @@ impl SketchPlacementState {
             self.press = None;
             return PlacementAction::Idle;
         }
+        let line = self.tool == crate::SketchPlacementTool::Line;
         if pressed {
             self.press = Some(PlacementPress {
                 pixel,
                 dragged: false,
             });
+            if line {
+                return self.line_press(pixel);
+            }
             return PlacementAction::Cursor { pixel, place: true };
         }
         self.track_drag(pixel);
         let place = self.press.take().is_some_and(|press| press.dragged);
+        if line {
+            return self.line_release(place);
+        }
         if place {
             return PlacementAction::Cursor { pixel, place: true };
         }
@@ -211,9 +236,6 @@ impl SketchPlacementState {
             self.press = None;
             return Ok(None);
         };
-        if self.tool == crate::SketchPlacementTool::Line {
-            return self.line_cursor(point, place);
-        }
         if self.accepted.len() + 1 < self.tool.point_count() {
             if place {
                 self.accept_point(point)?;
@@ -231,7 +253,6 @@ impl SketchPlacementState {
         Ok(place.then_some(recipe))
     }
     pub(crate) fn abandon_press(&mut self) {
-        self.reject_line_vertex();
         self.resolved_preview = None;
         self.press = None;
         self.preview = None;
@@ -247,10 +268,7 @@ impl SketchPlacementState {
     }
     pub(crate) fn prompt(&self) -> String {
         if self.tool == crate::SketchPlacementTool::Line {
-            return format!(
-                "Line: {} points. Enter/Escape finishes; C closes; Backspace undoes a point.",
-                self.accepted.len()
-            );
+            return self.line_prompt();
         }
         self.tool.prompt(self.accepted.len())
     }

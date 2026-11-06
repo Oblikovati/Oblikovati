@@ -51,7 +51,7 @@ pub(super) fn undock_ribbon(world: &mut ApplicationWorld) {
 }
 fn expect_top_dock(world: &mut ApplicationWorld) {
     world.expect_text("Ribbon Display");
-    world.expect_text("Sketch XY");
+    world.expect_text("Start 2D Sketch");
     assert!(window_geometry(COLUMN).is_none(), "expected no side column");
     assert!(
         window_geometry(FLOATING).is_none(),

@@ -156,11 +156,11 @@ fn select_model(world: &mut ApplicationWorld) {
 }
 #[then("its command groups appear temporarily below the tabs")]
 fn model_commands(world: &mut ApplicationWorld) {
-    world.expect_text("Sketch XY");
+    world.expect_text("Start 2D Sketch");
 }
 #[then("the temporary command groups close")]
 fn groups_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text("Sketch XY");
+    world.expect_no_text("Start 2D Sketch");
 }
 #[then("the 3D Model tab remains selected")]
 fn model_selected(world: &mut ApplicationWorld) {
@@ -255,7 +255,7 @@ fn activate_part(world: &mut ApplicationWorld) {
 }
 #[then("the part ribbon displays its command groups as compact buttons")]
 fn part_compact(world: &mut ApplicationWorld) {
-    world.expect_no_text("Sketch XY");
+    world.expect_no_text("Start 2D Sketch");
     world.expect_no_text("Extrude");
 }
 #[then("those buttons include Sketch, Create and Modify")]
@@ -391,7 +391,7 @@ fn buttons_checked(world: &mut ApplicationWorld) {
 fn choose_tabs_mode(world: &mut ApplicationWorld) {
     world.click_text("v");
     world.click_text("Minimize to Tabs");
-    world.expect_no_text("Sketch XY");
+    world.expect_no_text("Start 2D Sketch");
 }
 #[given("the ribbon displays tabs without permanent command groups")]
 #[given("Minimize to Tabs is the selected ribbon display mode")]
@@ -419,19 +419,19 @@ fn viewport_visible(world: &mut ApplicationWorld) {
 #[given("the 3D Model ribbon is expanded")]
 fn model_ribbon_expanded(world: &mut ApplicationWorld) {
     // After Minimize to Tabs, the control expands it; a full ribbon already is.
-    if !world.shows("Sketch XY") {
+    if !world.shows("Start 2D Sketch") {
         activate_display_control(world);
     }
-    world.expect_text("Sketch XY");
+    world.expect_text("Start 2D Sketch");
 }
 #[then("the permanent command groups disappear and the ribbon tabs remain visible")]
 fn groups_gone(world: &mut ApplicationWorld) {
-    world.expect_no_text("Sketch XY");
+    world.expect_no_text("Start 2D Sketch");
     world.expect_text("3D Model");
 }
 #[then("the full 3D Model command groups are visible")]
 fn model_groups_visible(world: &mut ApplicationWorld) {
-    world.expect_text("Sketch XY");
+    world.expect_text("Start 2D Sketch");
     world.expect_text("Extrude");
 }
 #[then("the ribbon returns to tabs-only display")]

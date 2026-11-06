@@ -96,5 +96,11 @@ pub use presentation::{
     sample_sketch_display,
 };
 
+mod measure;
+pub use measure::{
+    SketchCircularMeasure, SketchCurveMeasure, SketchDistanceRange, SketchDistanceWitness,
+    measure_sketch_curve, resolve_sketch_curve, sketch_curve_distance_range,
+    sketch_point_curve_distance_range,
+};
 mod picking;
 pub use picking::{SketchEntityPickWitness, SketchPickQuery, nearest_sketch_entity_candidate};

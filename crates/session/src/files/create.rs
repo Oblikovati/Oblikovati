@@ -96,6 +96,9 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         body_names: package
             .restore_body_names()
             .map_err(FileWorkspaceError::Package)?,
+        design_views: package
+            .restore_design_views()
+            .map_err(FileWorkspaceError::Package)?,
         assets: package
             .restore_assets()
             .map_err(FileWorkspaceError::Package)?,

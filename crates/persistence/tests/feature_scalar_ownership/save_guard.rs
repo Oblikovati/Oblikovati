@@ -41,6 +41,7 @@ fn snapshot() -> DocumentSnapshot {
         resources: Default::default(),
         assets: Default::default(),
         body_names: Default::default(),
+        design_views: Default::default(),
         sketch_settings: None,
         properties: Default::default(),
     }

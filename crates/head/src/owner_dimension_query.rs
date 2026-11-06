@@ -53,6 +53,7 @@ impl<
             plane: tool.edit.plane,
             position,
             text: format!("{} = {}", request.kind, request.expression),
+            edit: None,
             role: oblikovati_gui::GuiDimensionLabelRole::Preview,
         }))
     }

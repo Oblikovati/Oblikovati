@@ -27,14 +27,16 @@ mod dimension_query;
 mod document_creation;
 #[path = "owner_geometric_batch.rs"]
 mod geometric_batch;
+#[path = "owner_inspect.rs"]
+mod inspect;
 #[path = "owner_line_commit.rs"]
 mod line_commit;
-#[path = "owner_line_scope.rs"]
-mod line_scope;
 #[path = "owner_browser.rs"]
 mod model_browser;
 #[path = "owner_parameters.rs"]
 mod parameters_gui;
+#[path = "owner_recent.rs"]
+mod recent;
 #[path = "owner_sketch_delete.rs"]
 mod sketch_delete;
 #[path = "owner_sketch_dimension.rs"]
@@ -47,6 +49,8 @@ mod sketch_geometric;
 mod sketch_interaction;
 #[path = "owner_sketch_picking.rs"]
 mod sketch_picking;
+#[path = "owner_windows.rs"]
+mod windows;
 #[path = "owner_work.rs"]
 mod work;
 pub use commands::{DesktopCommandNotice, DesktopHistoryAction};
@@ -101,6 +105,14 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     sketch_tool: Option<crate::sketch_tool::SketchToolState>,
     dimension_serial: u64,
     sketch_formats: oblikovati_api::types::SketchFormatModes,
+    document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
+    active_window: Option<u64>,
+    window_serial: u64,
+    recent_documents: Vec<oblikovati_model::application_recent::RecentDocument>,
+    recent_rows: Vec<oblikovati_gui::GuiRecentDocument>,
+    recent_store: Option<Box<dyn oblikovati_model::application_recent::RecentDocumentAccess>>,
+    sketch_options: oblikovati_model::application_options::SketchApplicationOptions,
+    sketch_store: Option<Box<dyn oblikovati_model::application_options::SketchPreferenceAccess>>,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -143,6 +155,14 @@ impl<
             command_notice: None,
             sketch_construction: Default::default(),
             sketch_formats: Default::default(),
+            document_windows: Vec::new(),
+            active_window: None,
+            window_serial: 0,
+            recent_documents: Vec::new(),
+            recent_rows: Vec::new(),
+            recent_store: None,
+            sketch_options: Default::default(),
+            sketch_store: None,
             sketch_tool: None,
             dimension_serial: 0,
             parked_sketch_edits: Default::default(),

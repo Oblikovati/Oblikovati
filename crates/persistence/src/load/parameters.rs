@@ -17,6 +17,7 @@ pub struct LoadedParameterPackage {
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub body_names: std::collections::BTreeMap<String, String>,
+    pub design_views: Vec<String>,
     pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -50,6 +51,7 @@ pub fn load_parameter_package(
         interests: prepared.interests,
         resources: prepared.resources,
         body_names: prepared.body_names,
+        design_views: prepared.design_views,
         assets: prepared.assets,
         sketch_settings: prepared.sketch_settings,
     })
@@ -68,6 +70,7 @@ pub struct PreparedParameterPackage {
     pub interests: oblikovati_model::interest::DocumentInterests,
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub body_names: std::collections::BTreeMap<String, String>,
+    pub design_views: Vec<String>,
     pub assets: oblikovati_model::assets::DocumentAssets,
     pub sketch_settings: Option<oblikovati_model::sketch_settings::SketchSettings>,
     pub properties: oblikovati_model::property::DocumentProperties,
@@ -85,6 +88,9 @@ pub fn read_parameter_package(
     let package = read_package(path, reader)?;
     let body_names = package
         .restore_body_names()
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
+    let design_views = package
+        .restore_design_views()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
     let assets = package
         .restore_assets()
@@ -131,6 +137,7 @@ pub fn read_parameter_package(
         resources,
         assets,
         body_names,
+        design_views,
         sketch_settings,
         properties,
         identity,

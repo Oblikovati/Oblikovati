@@ -65,6 +65,7 @@ fn empty_snapshot() -> DocumentSnapshot {
         resources: Default::default(),
         assets: Default::default(),
         body_names: Default::default(),
+        design_views: Default::default(),
         sketch_settings: None,
         parameters: oblikovati_model::parameter::ParameterCollection::new(Default::default()),
         properties: Default::default(),

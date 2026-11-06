@@ -22,6 +22,75 @@ pub trait HeadWork {
             "prompt {prompt:?}, frequency {frequency:?}: expected an application preference owner"
         ))
     }
+    /// Save the sketch options; example: `work.set_sketch_options_from_gui(options)`.
+    fn set_sketch_options_from_gui(
+        &mut self,
+        options: oblikovati_model::application_options::SketchApplicationOptions,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "sketch options {options:?}: expected an application preference owner"
+        ))
+    }
+    /// Accept a dimension's new value; example: `work.edit_dimension_value_from_gui(&value)`.
+    fn edit_dimension_value_from_gui(
+        &mut self,
+        value: &oblikovati_gui::GuiDimensionValue,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "dimension value {value:?}: expected a document with an edited sketch"
+        ))
+    }
+    /// Start a sketch on an origin plane; example: `work.start_sketch_on_plane_from_gui(plane)`.
+    fn start_sketch_on_plane_from_gui(
+        &mut self,
+        plane: oblikovati_gui::GuiOriginPlaneKind,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "{}: expected a document owner with sketches",
+            plane.label()
+        ))
+    }
+    /// Change the stored recent list; example: `work.recent_from_gui(&action)`.
+    fn recent_from_gui(
+        &mut self,
+        action: &oblikovati_gui::GuiRecentAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "recent list {action:?}: expected an owner with a recent list"
+        ))
+    }
+    /// The window in front, for the view it keeps; example: `work.view_slot()`.
+    fn view_slot(&self) -> u64 {
+        0
+    }
+    /// Bring forward or close one document window; example: `work.document_window_from_gui(7, false)`.
+    fn document_window_from_gui(&mut self, id: u64, close: bool) -> Result<bool, String> {
+        Err(format!(
+            "document window {id}, close={close}: expected an owner with document windows"
+        ))
+    }
+    /// Open a second window on the active document; example: the View tab's New.
+    fn new_document_window_from_gui(&mut self) -> Result<bool, String> {
+        Err("New window: expected an owner with document windows".into())
+    }
+    /// Apply one inspection choice; example: `work.inspect_from_gui(action)`.
+    fn inspect_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiInspectAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "inspection {action:?}: expected a document with an edited sketch"
+        ))
+    }
+    /// Apply one active Line menu choice; example: `work.line_command_from_gui(command)`.
+    fn line_command_from_gui(
+        &mut self,
+        command: oblikovati_gui::GuiLineCommand,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "Line command {command:?}: expected a running Line command"
+        ))
+    }
     /// Save application text/icon scale; example: `work.set_ui_scale_from_gui(options)?`.
     fn set_ui_scale_from_gui(
         &mut self,

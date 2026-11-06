@@ -32,6 +32,9 @@ impl NativeGui {
         self.deadline = Some(Duration::ZERO);
         Ok(())
     }
+    pub(super) fn note_presented_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
+        self.engine.note_presented_frame(extent, rgba);
+    }
     pub(super) fn receive_window_preview(&mut self, image: oblikovati_gui::GuiPreviewImage) {
         self.engine.receive_window_preview(image);
         self.deadline = Some(Duration::ZERO);

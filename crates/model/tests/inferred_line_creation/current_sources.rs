@@ -140,6 +140,8 @@ fn chain_inference_uses_parameter_edits_before_allocating_its_visible_points() {
                 closed: false,
                 construction: false,
                 centerline: false,
+                joins: Default::default(),
+                locks: Default::default(),
             };
             snapshot.create_inferred_sketch_line_chain(
                 DocumentSketchId(1),

@@ -34,6 +34,13 @@ impl<
                 "expected an active document".into(),
             ));
         };
+        // The running Line command keeps its chain: undo applies once it has ended (line-23).
+        if self
+            .placement_state()
+            .is_some_and(|tool| tool.tool == crate::SketchPlacementTool::Line)
+        {
+            return None;
+        }
         match self.files.workspace().session(document) {
             Ok(session) if session.in_transaction() => return None,
             Err(cause) => return Some(history_failure(action, cause.to_string())),

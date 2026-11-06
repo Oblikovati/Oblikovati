@@ -62,7 +62,10 @@ fn refuse_then_retry(tool: SketchPlacementTool) {
         owner.take_command_notice(),
         Some(crate::DesktopCommandNotice::PlacementFailed { .. })
     ));
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        super::sketch_tools::without_tool_state(before.clone())
+    );
     deliver(&mut owner, &[motion([5, 5])]);
     assert!(owner.placement_preview().is_some());
     deliver(
@@ -70,7 +73,10 @@ fn refuse_then_retry(tool: SketchPlacementTool) {
         &[key(oblikovati_viewport::ViewportKey::Cancel, true)],
     );
     assert!(!owner.placement_active());
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        super::sketch_tools::without_tool_state(before.clone())
+    );
 }
 
 #[test]

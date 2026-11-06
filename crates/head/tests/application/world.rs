@@ -20,6 +20,15 @@ pub(super) struct ApplicationWorld {
     pub browser_width: Option<f32>,
     pub strip_left: Option<f32>,
     pub dragged_tab_x: Option<f32>,
+    /// The edited sketch's view with nothing drawn, for what a scenario later added or removed.
+    pub sketch_baseline: Option<oblikovati_viewport::ViewportCapture>,
+    pub observed_counts: Vec<usize>,
+    pub observed_row_gap: Option<f32>,
+    pub observed_row_plain: Option<[u8; 4]>,
+    pub observed_view: Option<[i32; 2]>,
+    pub last_capture: Option<oblikovati_viewport::ViewportCapture>,
+    pub observed_second_view: Option<[i32; 2]>,
+    pub observed_annotations: Option<bool>,
 }
 pub(super) struct NativeApplication {
     pub window: ScriptedGuiWindow,
@@ -57,6 +66,14 @@ impl ApplicationWorld {
             browser_width: None,
             strip_left: None,
             dragged_tab_x: None,
+            sketch_baseline: None,
+            observed_counts: Vec::new(),
+            observed_row_gap: None,
+            observed_row_plain: None,
+            observed_view: None,
+            last_capture: None,
+            observed_second_view: None,
+            observed_annotations: None,
         };
         world.pump(Vec::new());
         world

@@ -12,6 +12,9 @@ pub(crate) struct FolderEntry {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct FileFacts {
     pub size: u64,
+    pub read_only: bool,
+    /// What the file occupies on disk, where the platform reports it.
+    pub size_on_disk: Option<u64>,
     pub created: Option<SystemTime>,
     pub modified: Option<SystemTime>,
     pub accessed: Option<SystemTime>,
@@ -61,11 +64,23 @@ impl GuiFolders for NativeFolders {
             .map_err(|cause| format!("file {path:?}: expected a readable file: {cause}"))?;
         Ok(FileFacts {
             size: facts.len(),
+            read_only: facts.permissions().readonly(),
+            size_on_disk: disk_size(&facts),
             created: facts.created().ok(),
             modified: facts.modified().ok(),
             accessed: facts.accessed().ok(),
         })
     }
+}
+/// Allocated blocks are counted in units of 512 bytes, whatever the file system's block size.
+#[cfg(unix)]
+fn disk_size(facts: &std::fs::Metadata) -> Option<u64> {
+    use std::os::unix::fs::MetadataExt;
+    Some(facts.blocks() * 512)
+}
+#[cfg(not(unix))]
+fn disk_size(_: &std::fs::Metadata) -> Option<u64> {
+    None
 }
 fn folder_entry(entry: std::fs::DirEntry) -> FolderEntry {
     let facts = entry.metadata().ok();

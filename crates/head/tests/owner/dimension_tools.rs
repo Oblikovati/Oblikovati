@@ -249,7 +249,8 @@ fn cursor_preview_and_authored_labels_do_not_create_extra_history() {
     assert_eq!(authored.labels.len(), 1);
     assert_eq!(authored.labels[0].role, Driving);
     assert_eq!(authored.labels[0].position, [50., 100.]);
-    assert!(authored.labels[0].text.starts_with("d0 = "));
+    assert_eq!(authored.labels[0].text, "100");
+    assert_eq!(authored.labels[0].edit.as_ref().unwrap().name, "d0");
     Client::new(owner.document_host())
         .transactions()
         .undo()

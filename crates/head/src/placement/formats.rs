@@ -17,6 +17,9 @@ impl SketchPlacementState {
         &mut self,
         construction: &dyn SketchCircleConstruction,
     ) -> Result<(), String> {
+        if self.tool == crate::SketchPlacementTool::Line {
+            return self.refresh_line_preview();
+        }
         let Some(point) = self.cursor_point else {
             return Ok(());
         };

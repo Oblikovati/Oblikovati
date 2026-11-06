@@ -16,6 +16,7 @@ const MAPPING_FIELDS: &[&str] = &[
 const SEQUENCE_FIELDS: &[&str] = &[
     "references",
     "attachments",
+    "designViews",
     "interests",
     "pointClouds",
     "attributes",

@@ -1,51 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use super::{
-    line_tools::{line_key, line_owner, line_tool_geometry},
+    line_tools::{line_owner, line_tool_geometry},
     slot_input::{PlanarInputWindow, deliver},
 };
 use crate::placement_test_inputs::*;
-use oblikovati_viewport::{ViewportEvent, ViewportKey, ViewportPhysicalKey};
+use oblikovati_viewport::{ViewportEvent, ViewportKey};
 #[test]
-fn retiring_an_old_line_scope_never_aborts_a_new_caller_group() {
-    let (mut owner, document, _) = line_owner();
-    Client::new(owner.document_host())
-        .transactions()
-        .end()
-        .unwrap();
-    Client::new(owner.document_host())
-        .transactions()
-        .begin(&TransactionBeginArgs {
-            label: "Caller".into(),
-        })
-        .unwrap();
-    let caller = owner
-        .files
-        .workspace()
-        .session(document)
-        .unwrap()
-        .transaction_identity();
-    deliver(&mut owner, &[]);
-    assert!(!owner.placement_active());
-    assert_eq!(
-        owner
-            .files
-            .workspace()
-            .session(document)
-            .unwrap()
-            .transaction_identity(),
-        caller
-    );
-    Client::new(owner.document_host())
-        .transactions()
-        .abort()
-        .unwrap();
-}
-#[test]
-fn line_scope_releases_on_focus_loss_and_replacement_without_committing_the_draft() {
+fn focus_loss_and_replacement_end_the_command_and_drop_only_the_pending_segment() {
     for replacement in [false, true] {
         let (mut owner, document, sketch) = line_owner();
-        deliver(&mut owner, &[button([0, 0], true), button([50, 20], true)]);
+        deliver(
+            &mut owner,
+            &[
+                button([0, 0], true),
+                button([0, 0], false),
+                button([50, 20], true),
+                button([50, 20], false),
+                motion([80, 90]),
+            ],
+        );
         if replacement {
             owner
                 .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Point)
@@ -53,40 +27,33 @@ fn line_scope_releases_on_focus_loss_and_replacement_without_committing_the_draf
         } else {
             deliver(&mut owner, &[ViewportEvent::Focus(false)]);
         }
-        assert!(
-            !owner
-                .files
-                .workspace()
-                .session(document)
-                .unwrap()
-                .in_transaction()
-        );
-        assert!(
-            line_tool_geometry(&owner, document, sketch)
-                .lines()
-                .is_empty()
+        assert_eq!(
+            line_tool_geometry(&owner, document, sketch).lines().len(),
+            1
         );
     }
 }
 #[test]
-fn preview_projection_failure_and_duplicate_clicks_leave_a_recoverable_draft() {
+fn a_failed_preview_and_a_repeated_click_leave_a_recoverable_command() {
     let (mut owner, document, sketch) = line_owner();
-    deliver(&mut owner, &[button([0, 0], true)]);
+    deliver(&mut owner, &[button([0, 0], true), button([0, 0], false)]);
     owner
         .process_window_inputs(
-            &[button([50, 20], true)],
+            &[motion([50, 20])],
             &PlanarInputWindow {
                 fail: true,
                 ..Default::default()
             },
         )
         .unwrap();
+    assert!(owner.placement_active());
     deliver(
         &mut owner,
         &[
             button([0, 0], true),
+            button([0, 0], false),
             button([50, 20], true),
-            line_key(ViewportPhysicalKey::Enter),
+            button([50, 20], false),
         ],
     );
     let geometry = line_tool_geometry(&owner, document, sketch);
@@ -100,8 +67,10 @@ fn arming_and_canceling_line_preserve_the_redo_branch_and_refuse_history_mid_dra
         &mut owner,
         &[
             button([0, 0], true),
+            button([0, 0], false),
             button([50, 20], true),
-            line_key(ViewportPhysicalKey::Enter),
+            button([50, 20], false),
+            key(ViewportKey::Cancel, true),
         ],
     );
     Client::new(owner.document_host())
@@ -147,66 +116,39 @@ fn arming_and_canceling_line_preserve_the_redo_branch_and_refuse_history_mid_dra
 }
 
 #[test]
-fn invalid_replacement_does_not_retire_the_armed_line_scope() {
+fn invalid_replacement_keeps_the_running_line_command() {
     let (mut owner, document, sketch) = line_owner();
-    let before = owner
-        .files
-        .workspace()
-        .session(document)
-        .unwrap()
-        .transaction_identity();
     assert!(
         owner
             .start_slot_placement(document, sketch, f64::NAN)
             .is_err()
     );
     assert!(owner.placement_active());
-    assert_eq!(
-        owner
-            .files
-            .workspace()
-            .session(document)
-            .unwrap()
-            .transaction_identity(),
-        before
-    );
     deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
 }
 #[test]
-fn a_zero_length_closing_edge_is_refused_and_the_draft_can_be_corrected() {
+fn a_zero_length_closing_edge_is_refused_and_the_command_can_continue() {
     let (mut owner, document, sketch) = line_owner();
     deliver(
         &mut owner,
         &[
             button([0, 0], true),
+            button([0, 0], false),
             button([50, 20], true),
+            button([50, 20], false),
             button([0, 0], true),
+            button([0, 0], false),
         ],
     );
-    deliver(
-        &mut owner,
-        &[ViewportEvent::Input(
-            oblikovati_viewport::ViewportInput::Text('c'),
-        )],
+    let lines = line_tool_geometry(&owner, document, sketch).lines().len();
+    assert!(
+        owner
+            .line_command_from_gui(oblikovati_gui::GuiLineCommand::Close)
+            .is_err()
     );
     assert!(owner.placement_active());
-    assert!(
-        line_tool_geometry(&owner, document, sketch)
-            .lines()
-            .is_empty()
-    );
-    assert!(
-        matches!(owner.take_command_notice(), Some(DesktopCommandNotice::PlacementFailed { cause }) if cause.contains("finite nonzero length"))
-    );
-    deliver(
-        &mut owner,
-        &[
-            line_key(ViewportPhysicalKey::Backspace),
-            line_key(ViewportPhysicalKey::Enter),
-        ],
-    );
     assert_eq!(
         line_tool_geometry(&owner, document, sketch).lines().len(),
-        1
+        lines
     );
 }

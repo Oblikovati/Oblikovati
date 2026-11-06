@@ -48,7 +48,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
     ) -> Result<SketchLineChainCreationReport, CommandError<SketchLineCreationError>> {
         let options = self.sketch_options;
         self.run_projected(
-            "Create inferred sketch line chain",
+            "Create Line",
             |snapshot, ids| author_chain(snapshot, ids, sketch, input, options),
             |snapshot, report| {
                 chain_solution(snapshot, report.sketch)?;

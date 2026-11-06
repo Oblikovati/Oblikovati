@@ -10,6 +10,8 @@ fn request() -> SketchLineChainCreation {
         closed: false,
         construction: false,
         centerline: false,
+        joins: Default::default(),
+        locks: Default::default(),
     }
 }
 #[test]

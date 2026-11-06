@@ -67,6 +67,8 @@ use std::sync::{
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
     pub body_names: std::collections::BTreeMap<String, String>,
+    /// Named design views, in the order they were made.
+    pub design_views: Vec<String>,
     pub work_geometry:
         crate::feature::FeatureSequence<crate::feature::work_geometry::WorkGeometryDefinition>,
     pub assets: crate::assets::DocumentAssets,

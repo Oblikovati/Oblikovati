@@ -16,7 +16,7 @@ fn click_event(pressed: bool) -> ViewportEvent {
     ViewportEvent::Input(ViewportInput::Button {
         button: ViewportButton::Left,
         pressed,
-        position: [30, 45],
+        position: [111, 45],
         modifiers: Default::default(),
     })
 }
@@ -67,7 +67,7 @@ fn hover_uses_a_deadline_and_focus_or_unmap_suspends_it() {
     let mut gui = NativeGui::new(None).unwrap();
     gui_step(&mut gui, 0, None);
     let motion = ViewportEvent::Input(ViewportInput::Motion {
-        position: [30, 45],
+        position: [111, 45],
         modifiers: Default::default(),
     });
     assert_eq!(

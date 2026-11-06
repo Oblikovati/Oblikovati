@@ -31,13 +31,6 @@ impl<
         let edit = match self.sketch_tool.take() {
             Some(SketchToolState::Geometric(tool)) => tool.edit,
             Some(SketchToolState::Dimension(tool)) => tool.edit,
-            Some(SketchToolState::Placement(tool)) => {
-                let result = self.cancel_line_scope(&tool);
-                if result.is_err() {
-                    self.sketch_tool = Some(SketchToolState::Placement(tool));
-                }
-                return result;
-            }
             _ => return Ok(()),
         };
         if !self.files.workspace().documents().contains(&edit.document) {
@@ -70,13 +63,7 @@ impl<
             return false;
         };
         let (document, sketch, generation) = tool.context();
-        let valid = match tool {
-            SketchToolState::Placement(tool) if tool.tool == crate::SketchPlacementTool::Line => {
-                self.line_scope_context_valid(tool)
-            }
-            _ => self.sketch_context_valid(document, sketch, generation),
-        };
-        if valid {
+        if self.sketch_context_valid(document, sketch, generation) {
             return false;
         }
         let name = tool.label();
@@ -105,7 +92,16 @@ impl<
             Some(SketchToolState::Dimension(tool)) => {
                 self.process_dimension_event(tool, event, window)
             }
-            None => self.process_sketch_pick(event, window),
+            Some(SketchToolState::Measure(tool)) => self.process_measure_event(tool, event, window),
+            Some(SketchToolState::Region(tool)) => self.process_region_event(tool, event, window),
+            None => match self.measure_key(event) {
+                Ok(true) => true,
+                Ok(false) => self.process_sketch_pick(event, window),
+                Err(cause) => {
+                    self.command_notice = Some(DesktopCommandNotice::AuthoringFailed { cause });
+                    true
+                }
+            },
         }
     }
 }

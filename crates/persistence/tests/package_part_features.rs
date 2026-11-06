@@ -89,6 +89,7 @@ fn restored_part_owner(package: &DocumentPackage) -> DocumentEditHistory {
         work_geometry: features.program,
         assets: Default::default(),
         body_names: Default::default(),
+        design_views: Default::default(),
         sketch_settings: None,
         properties: Default::default(),
         attributes: Default::default(),

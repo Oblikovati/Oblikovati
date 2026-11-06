@@ -21,6 +21,7 @@ pub(super) fn snapshot() -> DocumentSnapshot {
         resources: Default::default(),
         assets: Default::default(),
         body_names: Default::default(),
+        design_views: Default::default(),
         sketch_settings: None,
         parameters: ParameterCollection::new(UnitsOfMeasure::default()),
         properties: Default::default(),

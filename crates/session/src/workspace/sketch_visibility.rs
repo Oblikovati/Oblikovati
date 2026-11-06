@@ -25,3 +25,10 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
             .set_sketch_visibility_projected(sketch, visible, project)
     }
 }
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Name a design view of this document; example: `commands.create_design_view("Front")`.
+    pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
+        self.session.create_design_view(name)
+    }
+}

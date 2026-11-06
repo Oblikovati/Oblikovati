@@ -85,7 +85,7 @@ fn two_parts(world: &mut ApplicationWorld) {
 fn first_active_expanded(world: &mut ApplicationWorld) {
     let first = world.parts[0];
     world.activate_through_tab(first);
-    world.expect_text("Sketch XY");
+    world.expect_text("Start 2D Sketch");
 }
 #[given("the Parameters panel is visible")]
 #[given("the Parameters group button is visible")]
@@ -152,7 +152,7 @@ fn navigate_back(world: &mut ApplicationWorld) {
 fn model_compact(world: &mut ApplicationWorld) {
     world.click_text("Ribbon Display");
     world.pump(Vec::new());
-    world.expect_no_text("Sketch XY");
+    world.expect_no_text("Start 2D Sketch");
 }
 #[then("the other compact group buttons remain visible")]
 fn other_groups_remain(world: &mut ApplicationWorld) {
@@ -162,7 +162,7 @@ fn other_groups_remain(world: &mut ApplicationWorld) {
 }
 #[when("I return the ribbon to its expanded display")]
 fn return_expanded(world: &mut ApplicationWorld) {
-    while !world.shows("Sketch XY") {
+    while !world.shows("Start 2D Sketch") {
         world.click_text("Ribbon Display");
         world.pump(Vec::new());
     }
@@ -292,4 +292,131 @@ fn select_pattern(world: &mut ApplicationWorld) {
 fn both_visible(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
     world.expect_text(PATTERN);
+}
+#[given("Modify is visible on the 3D Model ribbon")]
+fn modify_on_model(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+    world.expect_text("Modify");
+}
+#[given("Navigate is visible on the View ribbon")]
+fn navigate_visible(world: &mut ApplicationWorld) {
+    world.click_text("View");
+    world.pump(Vec::new());
+    world.expect_text("Navigate");
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+}
+#[when("I hide Modify on 3D Model through Show Panels")]
+#[when("I restore Modify through Show Panels")]
+fn toggle_modify_panel(world: &mut ApplicationWorld) {
+    expand_show_panels(world);
+    toggle_panel(world, "Modify");
+    world.escape();
+    world.escape();
+    world.pump(Vec::new());
+}
+#[when("I switch to View and hide Navigate through Show Panels")]
+fn hide_navigate(world: &mut ApplicationWorld) {
+    world.click_text("View");
+    world.pump(Vec::new());
+    expand_show_panels(world);
+    toggle_panel(world, "Navigate");
+    world.escape();
+    world.escape();
+    world.pump(Vec::new());
+}
+#[when("I return to 3D Model")]
+fn return_model(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+}
+#[then("Modify remains hidden")]
+fn modify_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text("Modify");
+}
+#[when("I switch to View")]
+fn switch_view(world: &mut ApplicationWorld) {
+    world.click_text("View");
+    world.pump(Vec::new());
+}
+#[then("Navigate remains hidden")]
+fn navigate_stays_hidden(world: &mut ApplicationWorld) {
+    world.expect_no_text("Navigate");
+}
+#[when("I open Show Panels on the View ribbon")]
+fn panels_on_view(world: &mut ApplicationWorld) {
+    expand_show_panels(world);
+}
+#[then("Navigate is unchecked")]
+fn navigate_box_clear(world: &mut ApplicationWorld) {
+    assert!(!world.checked("Navigate"), "expected Navigate unchecked");
+}
+#[when("I select Navigate")]
+fn select_navigate(world: &mut ApplicationWorld) {
+    toggle_panel(world, "Navigate");
+    world.escape();
+    world.escape();
+    world.pump(Vec::new());
+}
+#[then("the Navigate panel appears on the View ribbon")]
+fn navigate_appears(world: &mut ApplicationWorld) {
+    world.expect_text("Navigate");
+}
+// Dismissing the list
+#[given("the 3D Model ribbon shows Create and Modify")]
+fn shows_create_modify(world: &mut ApplicationWorld) {
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+    world.expect_text("Create");
+    world.expect_text("Modify");
+}
+#[given("Parameters is hidden")]
+fn parameters_is_hidden(world: &mut ApplicationWorld) {
+    expand_show_panels(world);
+    toggle_panel(world, PARAMETERS);
+    world.escape();
+    world.escape();
+    world.pump(Vec::new());
+    assert!(
+        !parameters_panel_shown(world),
+        "expected no Parameters panel"
+    );
+}
+#[then("Create and Modify are checked and Parameters is unchecked")]
+fn checks_read(world: &mut ApplicationWorld) {
+    for panel in ["Create", "Modify"] {
+        assert!(world.checked(panel), "{panel}: expected a check mark");
+    }
+    assert!(!world.checked(PARAMETERS), "expected Parameters unchecked");
+}
+#[then("the Show Panels submenu closes")]
+fn submenu_closed(world: &mut ApplicationWorld) {
+    world.pump(Vec::new());
+    assert!(!world.checked("Create"), "expected the list closed");
+}
+#[then("the ribbon context menu remains open")]
+fn context_open(world: &mut ApplicationWorld) {
+    world.expect_text("Show Panels");
+}
+#[when("I press Escape again")]
+fn escape_again(world: &mut ApplicationWorld) {
+    world.escape();
+    world.pump(Vec::new());
+}
+#[then("the ribbon context menu closes")]
+fn context_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Show Panels");
+}
+#[then("Create and Modify remain visible")]
+fn create_modify_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Create");
+    world.expect_text("Modify");
+}
+#[then("Parameters remains hidden")]
+fn parameters_stays_hidden(world: &mut ApplicationWorld) {
+    assert!(
+        !parameters_panel_shown(world),
+        "expected no Parameters panel"
+    );
 }

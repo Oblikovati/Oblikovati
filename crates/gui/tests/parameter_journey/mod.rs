@@ -120,7 +120,7 @@ pub(crate) fn exercise_parameter_journey(mut engine: GuiFrameEngine, mac_osx: bo
     deliver(&mut engine, &mut request, Vec::new());
     open_parameters(&mut engine, &mut request);
     deliver(&mut engine, &mut request, Vec::new());
-    type_at(&mut engine, &mut request, [400., 43.], "size");
+    type_at(&mut engine, &mut request, [518., 43.], "size");
     type_at(&mut engine, &mut request, [400., 66.], "10 mm");
     assert_eq!(
         click(&mut engine, &mut request, [345., 90.]),
@@ -138,7 +138,7 @@ pub(crate) fn exercise_parameter_journey(mut engine: GuiFrameEngine, mac_osx: bo
 }
 
 fn open_parameters(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
-    assert!(click(engine, request, [301., 44.]).is_empty());
+    assert!(click(engine, request, [419., 44.]).is_empty());
     request.events.clear();
     engine.frame(request).unwrap();
     assert!(click(engine, request, [50., 90.]).is_empty());

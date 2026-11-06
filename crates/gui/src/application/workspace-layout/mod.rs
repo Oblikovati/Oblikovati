@@ -7,6 +7,8 @@ use imgui::{Condition, MouseButton, Ui, WindowFlags};
 pub(crate) mod browser_view;
 #[path = "panel_tabs.rs"]
 pub(crate) mod panel_tabs;
+#[path = "status_bar.rs"]
+pub(crate) mod status_bar;
 /// The tab strip and the gap under it.
 const TAB_STRIP_HEIGHT: f32 = 34.;
 const BOUNDARY_WIDTH: f32 = 6.;
@@ -244,7 +246,7 @@ impl WorkspaceLayout {
             left,
             top: band_height + tabs + EDGE_MARGIN,
             right: left + width,
-            bottom: display[1] - EDGE_MARGIN,
+            bottom: display[1] - status_bar::STATUS_BAR_HEIGHT - EDGE_MARGIN,
         }
     }
     /// Draw the View tab's panel checklist; example: `layout.user_interface_menu(ui, [108., 18.])`.

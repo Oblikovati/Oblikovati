@@ -54,14 +54,18 @@ pub(crate) fn validate_input(event: &GuiInputEvent, scale: [f32; 2]) -> Result<(
     }
     Ok(())
 }
-pub(crate) fn tool_transaction_key(event: &GuiInputEvent, owned: bool, text: bool) -> bool {
+pub(crate) fn sketch_tool_key(event: &GuiInputEvent, owned: bool, text: bool) -> bool {
     // #3830: ribbon navigation must not consume an owned tool command outside text entry.
     owned
         && !text
         && matches!(
             event,
             GuiInputEvent::Key {
-                key: GuiKey::Enter | GuiKey::KeypadEnter | GuiKey::Backspace,
+                key: GuiKey::Enter
+                    | GuiKey::KeypadEnter
+                    | GuiKey::Backspace
+                    | GuiKey::Tab
+                    | GuiKey::Escape,
                 ..
             }
         )

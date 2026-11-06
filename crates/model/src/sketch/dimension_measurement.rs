@@ -52,9 +52,17 @@ fn measurement(
                 .counter_clockwise,
         ),
         Angle { .. } | ThreePointAngle { .. } => Ok(super::angle::angle_measure(variables)?.abs()?),
+        LineAngle { .. } => positive_direction(super::angle::line_angle_measure(variables)?),
         TangentDistance { options, .. } => tangent_measurement(variables, *options),
         _ => linear_measurement(relation, variables),
     }
+}
+/// Report a direction in [0, 360) degrees, as the Line input shows it.
+fn positive_direction(angle: DualNumber) -> Result<DualNumber, ResidualError> {
+    if angle.value() < 0. {
+        return Ok(angle.shifted(std::f64::consts::TAU)?);
+    }
+    Ok(angle)
 }
 fn tangent_measurement(
     variables: &[DualNumber],

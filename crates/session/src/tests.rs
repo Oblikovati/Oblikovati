@@ -31,6 +31,7 @@ fn nesting_overflow_preserves_group_and_is_visible() {
         resources: Default::default(),
         assets: Default::default(),
         body_names: Default::default(),
+        design_views: Default::default(),
         sketch_settings: None,
         parameters: ParameterCollection::new(UnitsOfMeasure::default()),
         properties: DocumentProperties::default(),
