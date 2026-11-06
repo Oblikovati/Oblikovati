@@ -37,6 +37,7 @@ fn parameters_hidden(world: &mut ApplicationWorld) {
     );
 }
 #[when("I open the ribbon context menu and expand Show Panels")]
+#[when("I open Show Panels on the left-docked ribbon")]
 #[when("I open the compact ribbon context menu and expand Show Panels")]
 #[when("I reopen Show Panels")]
 #[when("I open the View ribbon context menu and expand Show Panels")]
@@ -160,4 +161,68 @@ fn return_expanded(world: &mut ApplicationWorld) {
         world.click_text("Ribbon Display");
         world.pump(Vec::new());
     }
+}
+#[given("the 3D Model ribbon is docked on the left")]
+fn model_docked_left(world: &mut ApplicationWorld) {
+    open_context_menu(world);
+    world.click_text("Docking Positions");
+    world.pump(Vec::new());
+    world.click_text("Left");
+    world.pump(Vec::new());
+    world.expect_text("3D Model");
+}
+#[given("the Modify group is visible")]
+#[given("the 3D Model ribbon is docked at the top with Modify visible")]
+#[then("the Modify group returns to the side-docked ribbon")]
+#[then("the Modify group returns to the left-docked ribbon")]
+fn modify_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Modify");
+}
+#[then("Modify is checked")]
+fn modify_checked(world: &mut ApplicationWorld) {
+    assert!(world.checked("Modify"), "expected Modify checked");
+}
+#[when("I select Modify in Show Panels")]
+#[when("I select Modify")]
+fn toggle_modify(world: &mut ApplicationWorld) {
+    world.ribbon_height = world.run("Work Features").center()[1];
+    toggle_panel(world, "Modify");
+}
+#[then("the Modify group disappears from the side-docked ribbon")]
+#[then("the Modify panel disappears from the ribbon")]
+#[then("the Modify group remains hidden")]
+fn modify_gone(world: &mut ApplicationWorld) {
+    world.expect_no_text("Modify");
+}
+#[then("the remaining ribbon groups reflow vertically")]
+fn groups_reflow(world: &mut ApplicationWorld) {
+    let before = world.ribbon_height;
+    let now = world.run("Work Features").center()[1];
+    assert!(
+        now < before,
+        "Work Features at {now}: expected it to move up from {before}"
+    );
+}
+#[then("Modify is unchecked")]
+fn modify_unchecked(world: &mut ApplicationWorld) {
+    assert!(!world.checked("Modify"), "expected Modify unchecked");
+}
+#[when("I hide Modify through Show Panels")]
+fn hide_modify(world: &mut ApplicationWorld) {
+    expand_show_panels(world);
+    toggle_modify(world);
+}
+#[when("I dock the ribbon on the left")]
+fn dock_left(world: &mut ApplicationWorld) {
+    model_docked_left(world);
+}
+#[then("the ribbon is docked on the left")]
+fn is_docked_left(world: &mut ApplicationWorld) {
+    let column = super::diagnostics::window_geometry("##ribbon-column");
+    let (position, _) = column.expect("expected the side column");
+    assert_eq!(
+        position[0], 0.,
+        "column at {position:?}: expected the left edge"
+    );
+    world.expect_text("3D Model");
 }

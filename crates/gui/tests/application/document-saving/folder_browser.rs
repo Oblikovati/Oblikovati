@@ -131,6 +131,7 @@ fn visited_folders_appear_once_most_recent_first_and_a_reset_restores_the_recent
 }
 #[test]
 fn a_file_type_names_its_document_kind() {
+    use file_rows::entry_type;
     assert_eq!(entry_type(&entry("old", true)), "Folder");
     assert_eq!(entry_type(&entry("a.opd", false)), "Part");
     assert_eq!(entry_type(&entry("a.odd", false)), "Drawing");
