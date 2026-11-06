@@ -135,3 +135,40 @@ fn tangent_operands(
         options,
     }
 }
+
+#[test]
+fn constructor_measurement_keeps_geometry_and_identities_unchanged() {
+    let mut geometry = fixture();
+    for id in [1, u64::MAX] {
+        geometry
+            .add_constraint(
+                SketchConstraintId(id),
+                PlanarConstraint::Fix {
+                    point: entity(1),
+                    position: [0., 0.],
+                },
+            )
+            .unwrap();
+    }
+    let before = geometry.clone();
+    for (relation, expected) in base_cases()
+        .into_iter()
+        .chain(angle_cases())
+        .chain(offset_cases())
+    {
+        assert_eq!(
+            geometry.measure_dimension_input(&input(relation)).unwrap(),
+            expected
+        );
+        assert_eq!(geometry, before);
+    }
+    let invalid = Measured(MeasuredDimensionOperands::Radius { curve: entity(999) });
+    assert!(
+        geometry
+            .measure_dimension_input(&invalid)
+            .unwrap_err()
+            .to_string()
+            .contains("999")
+    );
+    assert_eq!(geometry, before);
+}
