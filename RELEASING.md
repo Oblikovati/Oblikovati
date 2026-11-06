@@ -147,7 +147,7 @@ Git errors fail version calculation; they cannot silently return a fresh version
 | Target | Native runner | CLI archive | GUI package |
 | --- | --- | --- | --- |
 | Linux x86-64 | Ubuntu 24.04 | tar.gz | AppImage |
-| Linux arm64 | Ubuntu 24.04 arm64 | tar.gz | Not in the legacy shipping matrix |
+| Linux arm64 | Ubuntu 26.04 arm64 | tar.gz | Not in the legacy shipping matrix |
 | Windows x86-64 MSVC | Windows 2025 | zip | zip |
 | Windows arm64 MSVC | Windows 11 arm64 | zip | Not in the legacy shipping matrix |
 | macOS x86-64 | macOS 15 Intel | tar.gz | Universal app, combined with arm64 |
@@ -155,9 +155,9 @@ Git errors fail version calculation; they cannot silently return a fresh version
 
 CLI packages now include resources, native libraries, licenses, and metadata;
 they are not assumed to be standalone, pure-Go executables. Linux packages use
-the Ubuntu 24.04 build ABI and the host glibc/GPU driver. Windows packages use
-MSVC, not the former MinGW Go toolchain. These choices need the R9 native
-installation checks before distribution is enabled.
+the build ABI of their runner above and the host glibc/GPU driver. Windows
+packages use MSVC, not the former MinGW Go toolchain. These choices need the R9
+native installation checks before distribution is enabled.
 
 All names start with `oblikovati-rust-`. macOS uses `Oblikovati Rust.app` and
 `org.oblikovati.rust`. The product label is a separate plist field; Apple's build

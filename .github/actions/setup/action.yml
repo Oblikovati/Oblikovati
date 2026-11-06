@@ -51,12 +51,14 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        # The pinned lavapipe archive links LLVM 20 and libdisplay-info.so.1.
-        sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config xvfb mesa-vulkan-drivers vulkan-validationlayers glslc libllvm20 libdisplay-info1
+        sudo apt-get install -y libglfw3-dev libvulkan-dev pkg-config xvfb mesa-vulkan-drivers vulkan-validationlayers glslc
         printf '%s\n' 'XMODIFIERS=@im=none' >> "$GITHUB_ENV"
     - if: runner.os == 'Linux' && runner.arch == 'X64'
       shell: bash
-      run: cargo xtask native-validation "$RUNNER_TEMP/oblikovati-vulkan" "$GITHUB_ENV"
+      run: |
+        # The pinned lavapipe archive links LLVM 20 and libdisplay-info.so.1.
+        sudo apt-get install -y libllvm20 libdisplay-info1
+        cargo xtask native-validation "$RUNNER_TEMP/oblikovati-vulkan" "$GITHUB_ENV"
     - if: runner.os == 'macOS'
       shell: bash
       run: brew install glfw vulkan-loader vulkan-headers molten-vk pkg-config
