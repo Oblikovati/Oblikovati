@@ -18,6 +18,7 @@ fn browser_request() -> GuiFrameRequest {
                 sketches: vec![GuiBrowserSketch {
                     id: DocumentSketchId(7),
                     name: "Section##literal".into(),
+                    visible: true,
                     consumed_by: None,
                     inspection: Ok(oblikovati_api::wire::SketchInfo {
                         healthy: true,
@@ -277,5 +278,49 @@ fn modified_double_click_selects_the_sketch_before_editing() {
                 sketch: DocumentSketchId(7)
             }
         ]
+    );
+}
+
+#[test]
+fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
+    for visible in [false, true] {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let mut request = browser_request();
+        request.commands.authoring = GuiAuthoringContext::Sketch;
+        request.commands.browser.as_mut().unwrap().sketches[0].visible = visible;
+        engine.frame(&request).unwrap();
+        pointer_gesture(
+            &mut engine,
+            &mut request,
+            [90., 251.],
+            GuiPointerButton::Right,
+        );
+        assert_eq!(
+            pointer_gesture(
+                &mut engine,
+                &mut request,
+                [140., 279.],
+                GuiPointerButton::Left
+            ),
+            [GuiShellAction::SetSketchVisibility {
+                document: 12,
+                sketch: DocumentSketchId(7),
+                visible: !visible
+            }]
+        );
+    }
+}
+#[test]
+fn context_visibility_rechecks_an_open_transaction() {
+    let (mut engine, mut request) = context_engine();
+    request.commands.transaction_open = true;
+    assert!(
+        pointer_gesture(
+            &mut engine,
+            &mut request,
+            [140., 279.],
+            GuiPointerButton::Left
+        )
+        .is_empty()
     );
 }

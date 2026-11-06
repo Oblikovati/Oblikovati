@@ -354,3 +354,27 @@ fn redundant_dimension_keeps_the_editor_until_explicit_reference_correction() {
     assert!(dimensions(&mut owner)[1].driven);
     assert!(inspection(&mut owner).healthy);
 }
+
+#[test]
+fn hidden_sketch_dimensions_leave_the_overlay_and_return_after_show() {
+    let (mut owner, document, sketch) = geometric_owner(&[[0., 0.], [100., 40.]], false);
+    point_draft(&mut owner, [50, 100]);
+    apply(&mut owner, "10 cm", false).unwrap();
+    let authored = owner.sketch_dimension_annotations().unwrap();
+    assert_eq!(authored.labels.len(), 1);
+    owner
+        .set_sketch_visibility_from_gui(document, sketch, false)
+        .unwrap();
+    assert!(
+        owner
+            .sketch_dimension_annotations()
+            .unwrap()
+            .labels
+            .is_empty()
+    );
+    assert_eq!(dimensions(&mut owner).len(), 1);
+    owner
+        .set_sketch_visibility_from_gui(document, sketch, true)
+        .unwrap();
+    assert_eq!(owner.sketch_dimension_annotations().unwrap(), authored);
+}

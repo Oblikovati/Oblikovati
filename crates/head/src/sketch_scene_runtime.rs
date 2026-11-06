@@ -61,7 +61,12 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
     Ok(update)
 }
 fn collect_sketches(snapshot: &DocumentSnapshot, update: &mut HeadSketchSceneUpdate) {
-    for sketch in snapshot.sketches.sketches() {
+    for sketch in snapshot
+        .sketches
+        .sketches()
+        .iter()
+        .filter(|sketch| sketch.visible())
+    {
         match snapshot.resolve_sketch_plane(sketch.id()) {
             Ok(plane) => update.sketches.push(ViewportSketchDisplay {
                 sketch: sketch.id(),

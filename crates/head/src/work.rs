@@ -103,6 +103,17 @@ pub trait HeadWork {
             "browser sketch {sketch:?}, document {document}: expected a selection owner"
         ))
     }
+    /// Change stored sketch visibility; example: `work.set_sketch_visibility_from_gui(document, sketch, false)?`.
+    fn set_sketch_visibility_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        _visible: bool,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "browser sketch {sketch:?}, document {document}: expected a visibility owner"
+        ))
+    }
     /// Activate a stable sketch selected in the model browser.
     /// Example: `work.edit_existing_sketch_from_gui(document, sketch)?` after a double-click.
     fn edit_existing_sketch_from_gui(
@@ -290,6 +301,15 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner
                 .select_browser_sketch_from_gui(document, sketch, toggle)
+        }
+        fn set_sketch_visibility_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            visible: bool,
+        ) -> Result<bool, String> {
+            self.$owner
+                .set_sketch_visibility_from_gui(document, sketch, visible)
         }
         fn edit_existing_sketch_from_gui(
             &mut self,

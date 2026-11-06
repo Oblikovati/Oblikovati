@@ -43,6 +43,11 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
             sketch,
             toggle,
         } => owner.select_browser_sketch_from_gui(*document, *sketch, *toggle),
+        GuiShellAction::SetSketchVisibility {
+            document,
+            sketch,
+            visible,
+        } => owner.set_sketch_visibility_from_gui(*document, *sketch, *visible),
         GuiShellAction::EditSketch { document, sketch } => {
             owner.edit_existing_sketch_from_gui(*document, *sketch)
         }

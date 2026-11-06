@@ -27,6 +27,11 @@ pub enum GuiShellAction {
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         toggle: bool,
     },
+    SetSketchVisibility {
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        visible: bool,
+    },
     EditSketch {
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
@@ -148,6 +153,9 @@ impl GuiShellAction {
                 state.document == Some(request.document) && !state.transaction_open
             }
             Self::SelectBrowserSketch {
+                document, sketch, ..
+            }
+            | Self::SetSketchVisibility {
                 document, sketch, ..
             } => {
                 state.document == Some(*document)

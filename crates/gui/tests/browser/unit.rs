@@ -4,6 +4,7 @@ fn sample_row() -> GuiBrowserSketch {
     GuiBrowserSketch {
         id: DocumentSketchId(7),
         name: "Section##7".into(),
+        visible: true,
         consumed_by: None,
         inspection: Ok(oblikovati_api::wire::SketchInfo {
             dof: 0,
