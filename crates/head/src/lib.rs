@@ -112,5 +112,8 @@ pub use placement_tool::SketchPlacementTool;
 mod sketch_scene;
 pub use sketch_scene::HeadSketchSceneUpdate;
 
+// #3795: these private states require the Linux DesktopOwner and placement runtime.
+#[cfg(target_os = "linux")]
 mod sketch_geometric;
+#[cfg(target_os = "linux")]
 mod sketch_tool;

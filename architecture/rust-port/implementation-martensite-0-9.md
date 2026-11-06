@@ -44,3 +44,31 @@ analytic sketch-region contract, remain required for solid migration. Linux
 ARM64 Vulkan qualification remains tracked in
 [#388](https://github.com/Oblikovati/Martensite/issues/388). The complete cube
 journey and dimensional UI remain unaccepted. No fallback renderer is added.
+
+## Private sketch state platform admission
+
+Follow-up for [#3795](https://github.com/Oblikovati/Oblikovati/issues/3795):
+the hosted matrix at `0a3fb0f1` rejected private selection normalization on
+Windows and macOS. Its production caller is in the Linux renderer. A direct
+Windows MSVC viewport Clippy check reproduced the same unused-method error.
+The normalization implementation now follows its caller's platform boundary;
+two portable unit checks retain sorting, deduplication, document scope,
+idempotence and source immutability coverage.
+
+Broader cross-target checks then exposed private sketch tool modules compiled
+without their Linux placement and desktop-owner callers. Their module guards
+now match those callers. Existing portable placement input and GUI tests stay
+enabled. No public packet type, algorithm, lint severity or native test is
+removed.
+
+Viewport all-target/all-feature Clippy passes on both Windows MSVC targets and
+both macOS targets. Head and GUI all-target/all-feature Clippy passes on Windows
+GNU and macOS ARM64 with the existing Zig C/C++ wrappers. These are compile
+checks; they do not establish native Windows or macOS desktop runtime support.
+The full Linux gate passed with all 13 crates above 80% line coverage and 0.89%
+duplication. Live X11 mouse and keyboard input with the Go MCPBridge verified
+selection highlights, cancellation, Horizontal/Vertical/Coincident, undo/redo,
+save and fresh-process reopen. The sketch stayed healthy at DOF two, transient
+selection cleared, and both desktops closed normally. MCP screenshots were
+inspected. Hosted qualification remains required; Linux ARM64 still requires
+Martensite #388.
