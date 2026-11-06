@@ -18,13 +18,7 @@ fn recent_documents(world: &mut ApplicationWorld) {
 #[then("the model workspace remains visible behind the menu")]
 fn workspace_behind_menu(world: &mut ApplicationWorld) {
     let (position, size) = super::diagnostics::window_geometry("##application-ribbon").unwrap();
-    let extent = world
-        .app()
-        .window
-        .native
-        .window_capture_extent()
-        .unwrap()
-        .unwrap();
+    let extent = world.extent();
     assert_eq!(position, [0.; 2]);
     assert!(
         size[1] < extent[1] as f32 / 2.,
@@ -32,4 +26,3 @@ fn workspace_behind_menu(world: &mut ApplicationWorld) {
     );
     world.expect_text("Origin");
 }
-use crate::HeadWindow;

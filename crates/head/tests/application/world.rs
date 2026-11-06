@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::HeadWindow;
 #[derive(cucumber::World)]
 #[world(init = Self::new)]
 pub(super) struct ApplicationWorld {
     pub app: Option<NativeApplication>,
-    pub runs: Vec<diagnostics::RenderedRun>,
+    pub frame: diagnostics::RenderedFrame,
     pub previous_document: Option<u64>,
     pub saved_path: Option<std::path::PathBuf>,
     pub scratch: Option<tempfile::TempDir>,
@@ -30,7 +31,7 @@ impl ApplicationWorld {
                 window: scripted_window(native),
                 owner,
             }),
-            runs: Vec::new(),
+            frame: Default::default(),
             previous_document: None,
             saved_path: None,
             scratch: None,
@@ -52,7 +53,7 @@ impl ApplicationWorld {
             &mut app.owner,
         )
         .unwrap();
-        self.runs = diagnostics::rendered_runs();
+        self.frame = diagnostics::rendered_frame();
     }
     pub fn click(&mut self, position: [i32; 2]) {
         self.pump(pointer_click_events(position, 1));
@@ -77,12 +78,18 @@ impl ApplicationWorld {
     }
     /// All visible text, one run per line, for assertions and failure messages.
     pub fn text(&self) -> String {
-        let runs: Vec<&str> = self.runs.iter().map(|run| run.text.as_str()).collect();
+        let runs: Vec<&str> = self
+            .frame
+            .runs
+            .iter()
+            .map(|run| run.text.as_str())
+            .collect();
         runs.join("\n")
     }
     pub fn shows(&self, text: &str) -> bool {
         let wanted = squeezed(text);
-        self.runs
+        self.frame
+            .runs
             .iter()
             .any(|run| squeezed(&run.text).contains(&wanted))
     }
@@ -103,10 +110,16 @@ impl ApplicationWorld {
     /// The topmost run reading exactly `text`, else the topmost run containing it.
     pub fn run(&self, text: &str) -> &diagnostics::RenderedRun {
         let wanted = squeezed(text);
-        let exact = self.runs.iter().rev().find(|r| squeezed(&r.text) == wanted);
+        let exact = self
+            .frame
+            .runs
+            .iter()
+            .rev()
+            .find(|r| squeezed(&r.text) == wanted);
         exact
             .or_else(|| {
-                self.runs
+                self.frame
+                    .runs
                     .iter()
                     .rev()
                     .find(|r| squeezed(&r.text).contains(&wanted))
@@ -125,6 +138,40 @@ impl ApplicationWorld {
             self.pump(vec![pointer_motion(at)]);
         }
         self.pump(pointer_drag_release(to));
+    }
+    /// A check mark drawn on the same row as `label`; a cleared option has none.
+    pub fn checked(&self, label: &str) -> bool {
+        let run = self.run(label).clone();
+        self.frame.marks.iter().any(|mark| {
+            mark.list == run.list
+                && mark.position[1] >= run.minimum[1] - 2.
+                && mark.position[1] <= run.maximum[1] + 2.
+        })
+    }
+    pub fn extent(&mut self) -> [u32; 2] {
+        self.app()
+            .window
+            .native
+            .window_capture_extent()
+            .unwrap()
+            .unwrap()
+    }
+    /// Assert the viewport shows in this rectangle: its background gradient has uniform rows.
+    pub fn expect_blank_region(&mut self, x: [usize; 2], y: [usize; 2]) {
+        let capture = super::capture_framebuffer(&mut self.app().window.native);
+        let width = capture.extent[0] as usize;
+        for row in capture
+            .rgba
+            .chunks_exact(width * 4)
+            .skip(y[0])
+            .take(y[1] - y[0])
+        {
+            let span = &row[x[0] * 4..x[1] * 4];
+            assert!(
+                span.chunks_exact(4).all(|pixel| pixel == &span[..4]),
+                "region x={x:?} y={y:?}: expected uniform viewport background rows"
+            );
+        }
     }
     /// Keep the final frame for visual review; a scenario's image names its scenario.
     pub fn save_capture(&mut self, scenario: &str) {

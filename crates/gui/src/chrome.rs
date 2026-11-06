@@ -9,6 +9,7 @@ pub(crate) struct RibbonDrawOwners<'a> {
     pub files: &'a mut crate::files::GuiDocumentFiles,
     pub theme_editor: &'a mut crate::theme_editor::GuiThemeEditor,
     pub preferences: &'a mut crate::ui_scale::GuiScalePreferences,
+    pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
 }
 pub(crate) fn ribbon_band(
     ui: &Ui,
@@ -67,8 +68,11 @@ fn ribbon_panel_row(
         ui,
         owners.ribbon.active,
         &request.commands,
-        owners.parameters,
-        owners.theme_editor,
+        crate::ribbon_panels::RibbonPanelOwners {
+            parameters: owners.parameters,
+            editor: owners.theme_editor,
+            workspace: owners.workspace,
+        },
         &mut owners.ribbon.panels,
         actions,
     );

@@ -9,8 +9,7 @@ pub(crate) fn draw_panel_content(
     panel: RibbonPanel,
     origin: [f32; 2],
     state: &GuiCommandState,
-    parameters: &mut crate::parameters::GuiParameterEditor,
-    editor: &mut crate::theme_editor::GuiThemeEditor,
+    owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) -> bool {
     crate::widget_abi::cursor_position(ui, origin);
@@ -20,8 +19,10 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::Format => {
             crate::sketch_formats::sketch_format_controls(ui, origin, state, actions)
         }
-        RibbonPanel::Parameters => return parameters.toolbar(ui, state),
-        RibbonPanel::Appearance => return appearance_controls(ui, state, editor, actions),
+        RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state),
+        RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
+        RibbonPanel::Visibility => visibility_controls(ui, state, actions),
+        RibbonPanel::Windows => owners.workspace.user_interface_menu(ui, [108., 26.]),
         other => single_command(ui, other, state, actions),
     }
     false
@@ -35,6 +36,34 @@ fn single_command(
     if let Some((label, action)) = panel.command() {
         crate::chrome::command_button(ui, label, action, state, [108., 58.], actions);
     }
+}
+/// Show or hide every sketch at once through the owner's per-sketch command.
+fn visibility_controls(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let sketches = state
+        .browser
+        .as_ref()
+        .map_or(&[][..], |browser| &browser.sketches);
+    let hide = sketches.iter().any(|row| row.visible);
+    let disabled = ui.begin_disabled(sketches.is_empty() || state.transaction_open);
+    let label = if hide {
+        "Hide Sketches"
+    } else {
+        "Show Sketches"
+    };
+    let pressed = crate::widget_abi::button(ui, label, [108., 26.]);
+    drop(disabled);
+    let Some(document) = state.document.filter(|_| pressed) else {
+        return;
+    };
+    actions.extend(
+        sketches
+            .iter()
+            .map(|row| GuiShellAction::SetSketchVisibility {
+                document,
+                sketch: row.id,
+                visible: !hide,
+            }),
+    );
 }
 fn appearance_controls(
     ui: &Ui,

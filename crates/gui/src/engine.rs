@@ -39,6 +39,7 @@ pub struct GuiFrameEngine {
     document_files: crate::files::GuiDocumentFiles,
     ribbon: crate::ribbon::DocumentRibbon,
     document_tabs: crate::document_tabs::DocumentTabs,
+    workspace: crate::application::workspace_layout::WorkspaceLayout,
     theme_editor: crate::theme_editor::GuiThemeEditor,
 }
 impl GuiFrameEngine {
@@ -57,6 +58,7 @@ impl GuiFrameEngine {
             document_files: Default::default(),
             ribbon: Default::default(),
             document_tabs: Default::default(),
+            workspace: Default::default(),
             theme_editor: Default::default(),
         })
     }
@@ -172,14 +174,15 @@ impl GuiFrameEngine {
                 files: &mut self.document_files,
                 theme_editor: &mut self.theme_editor,
                 preferences: &mut self.preferences,
+                workspace: &mut self.workspace,
             },
             &mut selected,
         );
         self.document_tabs
-            .panel(ui, request, band_height, &mut selected);
+            .panel(ui, request, band_height, &self.workspace, &mut selected);
         self.parameter_editor
             .panel(ui, &request.commands, &mut selected);
-        crate::browser::panel(
+        self.workspace.browser_panel(
             ui,
             &request.commands,
             request.extent[1] as f32 / request.layout_scale()[1],
@@ -197,6 +200,7 @@ impl GuiFrameEngine {
         capture.keyboard &= !tool_keyboard;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.ribbon.panels.pending_layout;
+        activity.pending_layout |= self.workspace.pending_layout;
         Ok(GuiFrameOutput {
             draws: snapshot,
             actions: selected,

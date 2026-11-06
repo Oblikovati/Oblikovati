@@ -17,6 +17,8 @@ pub(crate) enum RibbonPanel {
     Parameters,
     Navigate,
     Appearance,
+    Visibility,
+    Windows,
 }
 impl RibbonPanel {
     pub(crate) fn label(self) -> &'static str {
@@ -31,6 +33,8 @@ impl RibbonPanel {
             Self::Parameters => "Parameters",
             Self::Navigate => "Navigate",
             Self::Appearance => "Appearance",
+            Self::Visibility => "Visibility",
+            Self::Windows => "Windows",
         }
     }
     pub(crate) fn command(self) -> Option<(&'static str, GuiShellAction)> {
@@ -40,7 +44,13 @@ impl RibbonPanel {
             Self::Exit => ("Finish Sketch", GuiShellAction::FinishSketch),
             Self::Modify => ("Delete", GuiShellAction::DeleteSketchSelection),
             Self::Navigate => ("Home", GuiShellAction::Home),
-            Self::Create | Self::Constrain | Self::Format | Self::Parameters | Self::Appearance => {
+            Self::Create
+            | Self::Constrain
+            | Self::Format
+            | Self::Parameters
+            | Self::Appearance
+            | Self::Visibility
+            | Self::Windows => {
                 return None;
             }
         })
@@ -82,11 +92,16 @@ impl RibbonPanelLayout {
         self.scrollbar_shown = shown;
     }
 }
+/// Editors and layout a ribbon panel's controls can change.
+pub(crate) struct RibbonPanelOwners<'a> {
+    pub parameters: &'a mut crate::parameters::GuiParameterEditor,
+    pub editor: &'a mut crate::theme_editor::GuiThemeEditor,
+    pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
+}
 struct PanelDrawContext<'a> {
     ui: &'a Ui,
     state: &'a GuiCommandState,
-    parameters: &'a mut crate::parameters::GuiParameterEditor,
-    editor: &'a mut crate::theme_editor::GuiThemeEditor,
+    owners: RibbonPanelOwners<'a>,
     actions: &'a mut Vec<GuiShellAction>,
 }
 impl PanelDrawContext<'_> {
@@ -96,19 +111,17 @@ impl PanelDrawContext<'_> {
             panel,
             origin,
             self.state,
-            self.parameters,
-            self.editor,
+            &mut self.owners,
             self.actions,
         )
     }
 }
-/// Draw one measured row; example: `draw_panels(ui, tab, state, parameters, editor, layout, actions)`.
+/// Draw one measured row; example: `draw_panels(ui, tab, state, owners, layout, actions)`.
 pub(crate) fn draw_panels(
     ui: &Ui,
     tab: RibbonTab,
     state: &GuiCommandState,
-    parameters: &mut crate::parameters::GuiParameterEditor,
-    editor: &mut crate::theme_editor::GuiThemeEditor,
+    owners: RibbonPanelOwners<'_>,
     layout: &mut RibbonPanelLayout,
     actions: &mut Vec<GuiShellAction>,
 ) {
@@ -120,8 +133,7 @@ pub(crate) fn draw_panels(
         let mut context = PanelDrawContext {
             ui,
             state,
-            parameters,
-            editor,
+            owners,
             actions,
         };
         draw_row(&mut context, tab, layout, available);
@@ -132,13 +144,13 @@ fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
     use RibbonPanel::*;
     match tab {
         RibbonTab::GetStarted => vec![Launch],
-        RibbonTab::CreateModify => vec![Sketch],
+        RibbonTab::Model => vec![Sketch],
         RibbonTab::Sketch => vec![Create, Exit, Constrain, Modify, Format],
         RibbonTab::Manage => vec![Parameters],
         RibbonTab::View if state.theme.is_some() || state.color_scheme.is_some() => {
-            vec![Navigate, Appearance]
+            vec![Visibility, Appearance, Windows, Navigate]
         }
-        RibbonTab::View => vec![Navigate],
+        RibbonTab::View => vec![Visibility, Windows, Navigate],
     }
 }
 fn draw_row(

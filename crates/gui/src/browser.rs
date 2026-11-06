@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, MouseButton, StyleColor, Ui};
+use imgui::{MouseButton, StyleColor, Ui};
 use oblikovati_model::{document_sketch::DocumentSketchId, feature::FeatureId};
 
 /// Immutable document structure; only the desktop owner can activate an edit.
@@ -100,28 +100,11 @@ impl GuiBrowserSketch {
         Ok(())
     }
 }
-pub(crate) fn panel(
+pub(crate) fn browser_contents(
     ui: &Ui,
     state: &GuiCommandState,
-    height: f32,
-    band_height: f32,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::widget_abi::window_geometry(
-        ui,
-        [8., band_height + 10.],
-        [
-            model_browser_width(ui.io().display_size[0]),
-            (height - band_height - 18.).max(120.),
-        ],
-        Condition::Always,
-    );
-    ui.window("Model")
-        .movable(false)
-        .resizable(false)
-        .build(|| browser_contents(ui, state, actions));
-}
-fn browser_contents(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let Some(browser) = &state.browser else {
         ui.text("(no document)");
         return;
@@ -339,7 +322,7 @@ fn sketch_tooltip(row: &GuiBrowserSketch) -> String {
 #[path = "../tests/browser/unit.rs"]
 mod tests;
 
-fn model_browser_width(viewport_width: f32) -> f32 {
+pub(crate) fn model_browser_width(viewport_width: f32) -> f32 {
     // Keep the native view centre available for picks even when content scale narrows the layout (#3850).
     300_f32.min((viewport_width * 0.5 - 16.).max(1.))
 }

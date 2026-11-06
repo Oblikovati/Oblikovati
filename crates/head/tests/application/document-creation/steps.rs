@@ -83,19 +83,7 @@ fn empty_part(world: &mut ApplicationWorld) {
     let state = world.app().owner.gui_command_state().unwrap();
     let browser = state.browser.unwrap();
     assert!(browser.features.is_empty() && browser.sketches.is_empty());
-    assert_blank_model_region(world);
-}
-/// The view background is a vertical gradient: an empty model region has uniform rows.
-pub(super) fn assert_blank_model_region(world: &mut ApplicationWorld) {
-    let capture = super::capture_framebuffer(&mut world.app().window.native);
-    let width = capture.extent[0] as usize;
-    for row in capture.rgba.chunks_exact(width * 4).skip(250).take(400) {
-        let span = &row[400 * 4..(width - 40) * 4];
-        assert!(
-            span.chunks_exact(4).all(|pixel| pixel == &span[..4]),
-            "empty part: expected uniform background rows in the model region"
-        );
-    }
+    world.expect_blank_region([400, 1400], [250, 650]);
 }
 #[then("its model browser displays an origin and an end-of-part marker")]
 fn browser_origin(world: &mut ApplicationWorld) {

@@ -23,7 +23,7 @@ fn runs_of(build: impl FnOnce(&imgui::Ui), scale: f32) -> Vec<RenderedRun> {
         .build(|| build(ui));
     let lookup = glyph_lookup();
     let font_size = current_font_size();
-    runs_of_draw_data(context.render(), &lookup, font_size)
+    frame_of_draw_data(context.render(), &lookup, font_size).runs
 }
 fn has(runs: &[RenderedRun], text: &str) -> bool {
     runs.iter().any(|run| run.text.contains(text))
@@ -95,4 +95,31 @@ fn separate_buttons_are_separate_runs() {
     );
     assert!(runs.iter().any(|run| run.text == "Save"), "{runs:?}");
     assert!(runs.iter().any(|run| run.text == "Cancel"), "{runs:?}");
+}
+#[test]
+fn a_checked_box_has_a_mark_and_a_cleared_one_has_none() {
+    let marks = |mut value: bool| {
+        let _exclusive = HEADLESS_CONTEXT
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        let mut context = Context::create();
+        context.set_ini_filename(None);
+        context.fonts().build_rgba32_texture();
+        context.io_mut().display_size = [400., 300.];
+        context.io_mut().delta_time = 0.016;
+        let ui = context.frame();
+        let window = ui.window("probe");
+        let window = window
+            .position([0., 0.], Condition::Always)
+            .size([200., 100.], Condition::Always);
+        window.build(|| {
+            ui.checkbox("Option", &mut value);
+        });
+        let lookup = glyph_lookup();
+        let font_size = current_font_size();
+        frame_of_draw_data(context.render(), &lookup, font_size)
+            .marks
+            .len()
+    };
+    assert!(marks(true) > marks(false));
 }

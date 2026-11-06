@@ -12,6 +12,8 @@ use world::ApplicationWorld;
 mod document_creation;
 #[path = "file-menu/steps.rs"]
 mod file_menu;
+#[path = "workspace-layout/steps.rs"]
+mod workspace_layout;
 
 #[test]
 fn application_scenarios_use_the_native_window() {

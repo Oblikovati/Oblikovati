@@ -34,14 +34,14 @@ fn no_document_and_unresolved_document_kinds_have_distinct_ribbons() {
 fn manual_selection_is_preserved_between_environment_changes() {
     let mut ribbon = DocumentRibbon::default();
     let mut state = part_state();
-    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::CreateModify));
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Model));
     state.authoring = GuiAuthoringContext::Sketch;
     assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Sketch));
     ribbon.active = RibbonTab::Manage;
     assert_eq!(ribbon.prepare(&state).select, None);
     assert_eq!(ribbon.active, RibbonTab::Manage);
     state.authoring = GuiAuthoringContext::Part;
-    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::CreateModify));
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Model));
 }
 #[test]
 fn changing_document_identity_keeps_the_tab_but_changing_kind_selects_its_base() {
@@ -71,7 +71,7 @@ fn document_tabs_keep_sketch_context_off_other_document_types() {
 fn tab_names_match_the_go_command_registry() {
     for (tab, label) in [
         (RibbonTab::GetStarted, "Get Started"),
-        (RibbonTab::CreateModify, "Create & Modify"),
+        (RibbonTab::Model, "3D Model"),
         (RibbonTab::Sketch, "Sketch"),
         (RibbonTab::Manage, "Manage"),
         (RibbonTab::View, "View"),

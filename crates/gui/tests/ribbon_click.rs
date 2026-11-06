@@ -86,9 +86,9 @@ fn manual_view_selection_survives_frames_until_sketch_exit() {
     enter_part(&mut request);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     settle_ribbon(&mut engine, &mut request);
-    assert!(click_ribbon(&mut engine, &mut request, [450., 44.]).is_empty());
-    expect_ribbon(&mut engine, &mut request, [50., 90.], Home);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], Home);
+    assert!(click_ribbon(&mut engine, &mut request, [401., 44.]).is_empty());
+    expect_ribbon(&mut engine, &mut request, [282., 90.], Home);
+    expect_ribbon(&mut engine, &mut request, [282., 90.], Home);
     request.commands.authoring = GuiAuthoringContext::Part;
     settle_ribbon(&mut engine, &mut request);
     expect_ribbon(&mut engine, &mut request, [50., 90.], StartSketchXY);

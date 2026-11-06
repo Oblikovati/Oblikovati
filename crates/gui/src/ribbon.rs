@@ -10,7 +10,7 @@ use oblikovati_api::types::{
 pub(crate) enum RibbonTab {
     #[default]
     GetStarted,
-    CreateModify,
+    Model,
     Sketch,
     Manage,
     View,
@@ -19,7 +19,7 @@ impl RibbonTab {
     pub(crate) fn label(self) -> &'static str {
         match self {
             Self::GetStarted => "Get Started",
-            Self::CreateModify => "Create & Modify",
+            Self::Model => "3D Model",
             Self::Sketch => "Sketch",
             Self::Manage => "Manage",
             Self::View => "View",
@@ -71,7 +71,7 @@ fn document_tabs(key: &RibbonKey, sketch: bool) -> Vec<RibbonTab> {
     }
     let mut tabs = Vec::new();
     if *key == PART_RIBBON {
-        tabs.push(RibbonTab::CreateModify);
+        tabs.push(RibbonTab::Model);
     }
     if *key == PART_RIBBON || *key == ASSEMBLY_RIBBON {
         if sketch {

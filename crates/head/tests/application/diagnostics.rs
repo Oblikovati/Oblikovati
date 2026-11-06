@@ -19,13 +19,27 @@ pub(super) struct RenderedRun {
     pub minimum: [f32; 2],
     pub maximum: [f32; 2],
     pub alpha: u8,
+    pub list: usize,
+}
+/// A vertex of a non-rectangular shape (check marks, arrows), for controls without glyphs.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct RenderedMark {
+    pub list: usize,
+    pub position: [f32; 2],
+}
+/// Everything a scenario may read from one completed frame.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub(super) struct RenderedFrame {
+    pub runs: Vec<RenderedRun>,
+    pub marks: Vec<RenderedMark>,
 }
 impl RenderedRun {
     pub fn center(&self) -> [f32; 2] {
         std::array::from_fn(|axis| (self.minimum[axis] + self.maximum[axis]) * 0.5)
     }
-    fn starts(glyph: RenderedGlyph) -> Self {
+    fn starts(glyph: RenderedGlyph, list: usize) -> Self {
         Self {
+            list,
             text: glyph.letter.to_string(),
             minimum: glyph.minimum,
             maximum: glyph.maximum,
@@ -46,29 +60,36 @@ impl RenderedRun {
         self.minimum[1] = self.minimum[1].min(glyph.minimum[1]);
     }
 }
-/// Glyph runs of the completed frame in draw order, so the last match is topmost.
-pub(super) fn rendered_runs() -> Vec<RenderedRun> {
+/// The completed frame in draw order, so the last matching run is topmost.
+pub(super) fn rendered_frame() -> RenderedFrame {
     let raw =
         unsafe { sys::igGetDrawData().as_ref() }.expect("expected completed native GUI draws");
     let draws = unsafe { imgui::DrawData::from_raw(raw) };
-    runs_of_draw_data(draws, &glyph_lookup(), current_font_size())
+    frame_of_draw_data(draws, &glyph_lookup(), current_font_size())
 }
-pub(super) fn runs_of_draw_data(
+pub(super) fn frame_of_draw_data(
     draws: &imgui::DrawData,
     lookup: &BTreeMap<GlyphCoordinates, char>,
     font_size: f32,
-) -> Vec<RenderedRun> {
-    let mut runs: Vec<RenderedRun> = Vec::new();
-    for list in draws.draw_lists() {
-        let first_of_list = runs.len();
-        for glyph in list_glyphs(list, lookup) {
-            match runs[first_of_list..].last_mut() {
+) -> RenderedFrame {
+    let mut frame = RenderedFrame::default();
+    for (index, list) in draws.draw_lists().enumerate() {
+        let first_of_list = frame.runs.len();
+        let (glyphs, marks) = list_shapes(list, lookup);
+        frame
+            .marks
+            .extend(marks.into_iter().map(|position| RenderedMark {
+                list: index,
+                position,
+            }));
+        for glyph in glyphs {
+            match frame.runs[first_of_list..].last_mut() {
                 Some(run) if run.continues(glyph, font_size) => run.push(glyph),
-                _ => runs.push(RenderedRun::starts(glyph)),
+                _ => frame.runs.push(RenderedRun::starts(glyph, index)),
             }
         }
     }
-    runs
+    frame
 }
 pub(super) fn current_font_size() -> f32 {
     unsafe { sys::igGetCurrentContext().as_ref() }
@@ -89,22 +110,25 @@ pub(super) fn glyph_lookup() -> BTreeMap<GlyphCoordinates, char> {
         })
         .collect()
 }
-fn list_glyphs(
+fn list_shapes(
     list: &imgui::DrawList,
     lookup: &BTreeMap<GlyphCoordinates, char>,
-) -> Vec<RenderedGlyph> {
+) -> (Vec<RenderedGlyph>, Vec<[f32; 2]>) {
     let mut glyphs = Vec::new();
+    let mut marks = Vec::new();
     for command in list.commands() {
         if let DrawCmd::Elements { count, cmd_params } = command {
             let indices = &list.idx_buffer()[cmd_params.idx_offset..cmd_params.idx_offset + count];
             let vertices = &list.vtx_buffer()[cmd_params.vtx_offset..];
-            append_command_glyphs(&mut glyphs, indices, vertices, cmd_params.clip_rect, lookup);
+            let clip = cmd_params.clip_rect;
+            append_command_shapes(&mut glyphs, &mut marks, indices, vertices, clip, lookup);
         }
     }
-    glyphs
+    (glyphs, marks)
 }
-fn append_command_glyphs(
+fn append_command_shapes(
     glyphs: &mut Vec<RenderedGlyph>,
+    marks: &mut Vec<[f32; 2]>,
     indices: &[u16],
     vertices: &[DrawVert],
     clip: [f32; 4],
@@ -112,16 +136,25 @@ fn append_command_glyphs(
 ) {
     // Triangles (tree arrows, check marks) share the buffer, so quads are not index-aligned.
     let mut at = 0;
-    while at + QUAD_INDICES <= indices.len() {
-        if !is_quad(&indices[at..at + QUAD_INDICES]) {
+    while at < indices.len() {
+        if at + QUAD_INDICES > indices.len() || !is_quad(&indices[at..at + QUAD_INDICES]) {
+            marks.push(vertices[indices[at] as usize].pos);
             at += 1;
             continue;
         }
         if let Some(glyph) = quad_glyph(indices[at], vertices, clip, lookup) {
             glyphs.push(glyph);
+        } else if slanted_quad(indices[at], vertices) {
+            marks.push(vertices[indices[at] as usize].pos);
         }
         at += QUAD_INDICES;
     }
+}
+/// Anti-aliased strokes such as check marks are quads too, but never axis aligned.
+fn slanted_quad(first: u16, vertices: &[DrawVert]) -> bool {
+    let start = vertices[first as usize].pos;
+    let next = vertices[first as usize + 1].pos;
+    start[0] != next[0] && start[1] != next[1]
 }
 fn is_quad(indices: &[u16]) -> bool {
     let first = indices[0];
