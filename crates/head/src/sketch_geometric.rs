@@ -29,6 +29,7 @@ impl SketchGeometricState {
             GuiSketchConstraint::Horizontal | GuiSketchConstraint::Vertical => {
                 "Select a line or two points. Escape cancels."
             }
+            GuiSketchConstraint::Fix => "Select a point or line to fix. Escape cancels.",
             GuiSketchConstraint::Coincident => {
                 "Select two points, or a point and a line, circle or arc. Escape cancels."
             }
@@ -39,23 +40,30 @@ impl SketchGeometricState {
         sketch: &Sketch2D,
         picks: &[SketchPick],
         index: i64,
-    ) -> Result<Option<AddConstraintArgs>, String> {
+    ) -> Result<Vec<AddConstraintArgs>, String> {
         let operands = operands::resolve(sketch, picks)?;
         let points = operands::ids(&operands, Point);
         let lines = operands::ids(&operands, Line);
         let circular = operands::ids(&operands, Circular);
+        if self.choice == GuiSketchConstraint::Fix {
+            return fixed_point_requests(sketch, &points, &lines, index);
+        }
         let recipe = match self.choice {
             GuiSketchConstraint::Horizontal | GuiSketchConstraint::Vertical => {
                 self.alignment_recipe(&points, &lines)
             }
             GuiSketchConstraint::Coincident => self.coincident_recipe(&points, &lines, &circular),
+            GuiSketchConstraint::Fix => None,
         };
-        Ok(recipe.map(|(kind, entities)| AddConstraintArgs {
-            sketch_index: index,
-            kind: kind.0.to_string(),
-            entities: Some(entities),
-            ..Default::default()
-        }))
+        Ok(recipe
+            .into_iter()
+            .map(|(kind, entities)| AddConstraintArgs {
+                sketch_index: index,
+                kind: kind.0.to_string(),
+                entities: Some(entities),
+                ..Default::default()
+            })
+            .collect())
     }
     fn alignment_recipe(
         &self,
@@ -65,7 +73,7 @@ impl SketchGeometricState {
         let kind = match self.choice {
             GuiSketchConstraint::Horizontal => GEO_CONSTRAINT_HORIZONTAL,
             GuiSketchConstraint::Vertical => GEO_CONSTRAINT_VERTICAL,
-            GuiSketchConstraint::Coincident => return None,
+            GuiSketchConstraint::Coincident | GuiSketchConstraint::Fix => return None,
         };
         if let Some(line) = lines.first() {
             return Some((kind, vec![line.0]));
@@ -133,4 +141,32 @@ pub(crate) fn wire_sketch_index(
         .position(|placed| placed.id() == sketch)
         .ok_or_else(|| format!("constraint sketch {sketch:?}: expected a current sketch index"))?;
     i64::try_from(index).map_err(|_| format!("sketch index {index}: expected an i64 index"))
+}
+
+fn fixed_point_requests(
+    sketch: &Sketch2D,
+    points: &[SketchEntityId],
+    lines: &[SketchEntityId],
+    index: i64,
+) -> Result<Vec<AddConstraintArgs>, String> {
+    let mut fixed = points.to_vec();
+    for line in lines {
+        fixed.extend(
+            sketch
+                .line(*line)
+                .map_err(|cause| cause.to_string())?
+                .endpoints,
+        );
+    }
+    let mut seen = BTreeSet::new();
+    Ok(fixed
+        .into_iter()
+        .filter(|point| seen.insert(*point))
+        .map(|point| AddConstraintArgs {
+            sketch_index: index,
+            kind: GEO_CONSTRAINT_FIX.0.to_string(),
+            entities: Some(vec![point.0]),
+            ..Default::default()
+        })
+        .collect())
 }

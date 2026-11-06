@@ -23,6 +23,8 @@ mod browser_visibility;
 mod dimension_annotations;
 #[path = "owner_dimension_query.rs"]
 mod dimension_query;
+#[path = "owner_geometric_batch.rs"]
+mod geometric_batch;
 #[path = "owner_browser.rs"]
 mod model_browser;
 #[path = "owner_parameters.rs"]

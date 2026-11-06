@@ -92,15 +92,13 @@ impl<
         }
         self.finish_geometric_pick(tool).map(Some)
     }
-    fn finish_geometric_pick(&mut self, tool: &SketchGeometricState) -> Result<bool, String> {
-        let Some(request) = self.geometric_request(tool)? else {
+    fn finish_geometric_pick(&mut self, tool: &mut SketchGeometricState) -> Result<bool, String> {
+        let requests = self.geometric_request(tool)?;
+        if requests.is_empty() {
             self.geometric_prompt(tool);
             return Ok(false);
         };
-        let result = oblikovati_api::client::Client::new(self.document_host())
-            .constrain()
-            .add(&request)
-            .map_err(|cause| cause.to_string())?;
+        let result = self.apply_geometric_requests(tool, &requests)?;
         self.clear_geometric_picks(tool.edit)?;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: format!(
@@ -166,7 +164,7 @@ impl<
     fn geometric_request(
         &self,
         tool: &SketchGeometricState,
-    ) -> Result<Option<oblikovati_api::wire::AddConstraintArgs>, String> {
+    ) -> Result<Vec<oblikovati_api::wire::AddConstraintArgs>, String> {
         let session = self
             .files
             .workspace()
