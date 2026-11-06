@@ -54,6 +54,7 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::StartSketchXY | GuiShellAction::FinishSketch => {
             owner.edit_sketch_from_gui(*action == GuiShellAction::StartSketchXY)
         }
+        GuiShellAction::ToggleSketchFormat(format) => owner.toggle_sketch_format_from_gui(*format),
         GuiShellAction::DeleteSketchSelection => owner.delete_sketch_selection_from_gui(),
         GuiShellAction::Dimension(action) => owner.dimension_tool_from_gui(action),
         GuiShellAction::ConstrainSketch(choice) => owner.constrain_sketch_from_gui(*choice),

@@ -434,3 +434,6 @@ mod sketch_delete;
 
 #[path = "ribbon_click/circular_flyouts.rs"]
 mod circular_flyouts;
+
+#[path = "ribbon_click/sketch_formats.rs"]
+mod sketch_formats;

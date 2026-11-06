@@ -114,6 +114,7 @@ fn sketch_panels(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAct
     command_panel(ui, state, actions, exit);
     sketch_constraint_controls(ui, state, actions);
     sketch_delete_control(ui, state, actions);
+    crate::sketch_formats::sketch_format_controls(ui, state, actions);
     crate::widget_abi::cursor_position(ui, [620., 59.]);
     command_button(
         ui,

@@ -77,6 +77,8 @@ impl<
             theme,
             color_scheme,
             dimension_draft: self.gui_dimension_draft()?,
+            sketch_formats: self.sketch_formats.clone(),
+            sketch_format_available: self.gui_sketch_format_available(),
             dimension_labels: Vec::new(),
             sketch_delete_available: !session.in_transaction()
                 && self.sketch_tool.is_none()
@@ -204,6 +206,12 @@ impl<
         action: &oblikovati_gui::GuiDimensionAction,
     ) -> Result<bool, String> {
         self.apply_dimension_intent(action)
+    }
+    fn toggle_sketch_format_from_gui(
+        &mut self,
+        format: oblikovati_model::sketch::SketchCurveFormat,
+    ) -> Result<bool, String> {
+        self.toggle_gui_sketch_format(format)
     }
     fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
         self.delete_gui_sketch_selection()

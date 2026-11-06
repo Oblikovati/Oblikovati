@@ -132,6 +132,15 @@ pub trait HeadWork {
     fn take_window_capture_requests(&mut self) -> Vec<crate::WindowCaptureJob> {
         Vec::new()
     }
+    /// Convert selected curves or arm a creation mode; example: `work.toggle_sketch_format_from_gui(SketchCurveFormat::Construction)?`.
+    fn toggle_sketch_format_from_gui(
+        &mut self,
+        format: oblikovati_model::sketch::SketchCurveFormat,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "Format {format:?}: expected a document editor owner"
+        ))
+    }
     /// Delete checked editor picks through their owner; example: `work.delete_sketch_selection_from_gui()?`.
     fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
         Err("Delete Sketch Selection: expected a document editor owner".into())
@@ -335,6 +344,12 @@ macro_rules! forward_owner_view_work {
         fn edit_sketch_from_gui(&mut self, start: bool) -> Result<bool, String> {
             self.$owner.edit_sketch_from_gui(start)
         }
+        fn toggle_sketch_format_from_gui(
+            &mut self,
+            format: oblikovati_model::sketch::SketchCurveFormat,
+        ) -> Result<bool, String> {
+            self.$owner.toggle_sketch_format_from_gui(format)
+        }
         fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.delete_sketch_selection_from_gui()
         }
@@ -387,5 +402,14 @@ mod document_activation_tests {
             .activate_document_from_gui(&oblikovati_api::wire::ActivateDocumentArgs { id: 41 })
             .unwrap_err();
         assert!(failure.contains("41") && failure.contains("document owner"));
+    }
+    #[test]
+    fn idle_work_declines_curve_format_commands_without_an_owner() {
+        let failure = IdleHeadWork
+            .toggle_sketch_format_from_gui(
+                oblikovati_model::sketch::SketchCurveFormat::Construction,
+            )
+            .unwrap_err();
+        assert!(failure.contains("Construction") && failure.contains("document editor owner"));
     }
 }

@@ -4,7 +4,7 @@ unsafe extern "C" {
     fn oblikovati_gui_window_position(x: f32, y: f32, condition: i32);
     fn oblikovati_gui_window_size(width: f32, height: f32, condition: i32);
     fn oblikovati_gui_cursor_position(x: f32, y: f32);
-    fn oblikovati_gui_button(label: *const u8, width: f32, height: f32) -> bool;
+    fn oblikovati_gui_button(label: *const u8, width: f32, height: f32, selected: bool) -> bool;
     fn oblikovati_gui_selectable(label: *const u8, selected: bool, flags: i32) -> bool;
     fn oblikovati_gui_literal_text(
         text: *const u8,
@@ -32,10 +32,14 @@ pub(crate) fn cursor_position(_: &Ui, position: [f32; 2]) {
     unsafe { oblikovati_gui_cursor_position(position[0], position[1]) };
 }
 /// Draw a sized command control; example: `button(ui, "Save", [0.;2])` uses natural sizing.
-pub(crate) fn button(_: &Ui, label: &str, size: [f32; 2]) -> bool {
+pub(crate) fn button(ui: &Ui, label: &str, size: [f32; 2]) -> bool {
+    toggle_button(ui, label, size, false)
+}
+/// Draw an owned mode's pressed state through scalars; example: `toggle_button(ui, "Construction", [108.,18.], true)`.
+pub(crate) fn toggle_button(_: &Ui, label: &str, size: [f32; 2], selected: bool) -> bool {
     let label = ImString::new(label);
     // ImString owns terminated UTF-8 bytes through the call; C++ retains no label pointer.
-    unsafe { oblikovati_gui_button(label.as_ptr().cast(), size[0], size[1]) }
+    unsafe { oblikovati_gui_button(label.as_ptr().cast(), size[0], size[1], selected) }
 }
 /// Draw a current-window row; example: `selectable(ui, "##row", true, true)` permits double-click activation.
 pub(crate) fn selectable(_: &Ui, label: &str, selected: bool, double_click: bool) -> bool {

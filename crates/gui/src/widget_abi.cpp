@@ -14,8 +14,11 @@ void oblikovati_gui_window_size(float width, float height, int condition) {
 void oblikovati_gui_cursor_position(float x, float y) {
     ImGui::SetCursorPos(ImVec2(x, y));
 }
-bool oblikovati_gui_button(const unsigned char* label, float width, float height) {
-    return ImGui::Button(reinterpret_cast<const char*>(label), ImVec2(width, height));
+bool oblikovati_gui_button(const unsigned char* label, float width, float height, bool selected) {
+    if (selected) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    const bool clicked = ImGui::Button(reinterpret_cast<const char*>(label), ImVec2(width, height));
+    if (selected) ImGui::PopStyleColor();
+    return clicked;
 }
 bool oblikovati_gui_selectable(const unsigned char* label, bool selected, int flags) {
     return ImGui::Selectable(reinterpret_cast<const char*>(label), selected, flags, ImVec2(0, 0));

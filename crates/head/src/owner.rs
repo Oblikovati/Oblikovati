@@ -37,6 +37,8 @@ mod parameters_gui;
 mod sketch_delete;
 #[path = "owner_sketch_dimension.rs"]
 mod sketch_dimension;
+#[path = "owner_sketch_formats.rs"]
+mod sketch_formats;
 #[path = "owner_sketch_geometric.rs"]
 mod sketch_geometric;
 #[path = "owner_sketch_interaction.rs"]
@@ -89,6 +91,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     )>,
     sketch_tool: Option<crate::sketch_tool::SketchToolState>,
     dimension_serial: u64,
+    sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_construction: oblikovati_martensite::planar_curve::MartensiteSketchConstruction,
 }
 impl<
@@ -126,6 +129,7 @@ impl<
             sketch_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),
+            sketch_formats: Default::default(),
             sketch_tool: None,
             dimension_serial: 0,
             sketch_edit: None,

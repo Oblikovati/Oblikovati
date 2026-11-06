@@ -20,6 +20,8 @@ fn request() -> GuiFrameRequest {
             transaction_open: false,
             sketch_tool_transaction: false,
             sketch_delete_available: false,
+            sketch_format_available: false,
+            sketch_formats: Default::default(),
             authoring: GuiAuthoringContext::Part,
             document_type: Some(oblikovati_api::types::DOCUMENT_PART),
             document: Some(1),

@@ -44,6 +44,7 @@ pub enum GuiShellAction {
     StartSketchXY,
     FinishSketch,
     DeleteSketchSelection,
+    ToggleSketchFormat(oblikovati_model::sketch::SketchCurveFormat),
     PlaceSketchTool(crate::GuiSketchTool),
     ConstrainSketch(crate::GuiSketchConstraint),
     Dimension(crate::GuiDimensionAction),
@@ -85,6 +86,8 @@ pub struct GuiCommandState {
     pub transaction_open: bool,
     pub sketch_tool_transaction: bool,
     pub sketch_delete_available: bool,
+    pub sketch_format_available: bool,
+    pub sketch_formats: oblikovati_api::types::SketchFormatModes,
 }
 impl GuiCommandState {
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -218,8 +221,14 @@ impl GuiShellAction {
                 state.authoring == GuiAuthoringContext::Sketch
                     && (!state.transaction_open || state.sketch_tool_transaction)
             }
-            Self::PlaceSketchTool(_) => {
+            Self::ToggleSketchFormat(_) => {
                 state.authoring == GuiAuthoringContext::Sketch
+                    && state.sketch_format_available
+                    && (!state.transaction_open || state.sketch_tool_transaction)
+            }
+            Self::PlaceSketchTool(tool) => {
+                (*tool != crate::GuiSketchTool::Point || !state.sketch_formats.construction)
+                    && state.authoring == GuiAuthoringContext::Sketch
                     && (!state.transaction_open || state.sketch_tool_transaction)
             }
             Self::FinishSketch => {
