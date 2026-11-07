@@ -91,6 +91,26 @@ fn certified_sketch_prism_accepts_holes_and_reversed_source_lines() {
 }
 
 #[test]
+fn a_new_inner_loop_invalidates_the_previous_unholed_region() {
+    let mut document = selected_sketch_document();
+    document
+        .parameters
+        .insert_expression(3, "depth", oblikovati_api::types::USER_PARAM, "2 cm")
+        .unwrap();
+    let definition = parameter_definition();
+    retain_certified_sketch_prism(&document, &definition, resolution()).unwrap();
+    add_fixed_sketch_hole(&mut document);
+    solve_selected_sketches(&mut document);
+    let error = retain_certified_sketch_prism(&document, &definition, resolution())
+        .err()
+        .unwrap();
+    assert_eq!(
+        error.kind(),
+        oblikovati_martensite::EvaluationFailureKind::InvalidReference
+    );
+}
+
+#[test]
 fn exactly_coincident_endpoint_identities_remain_in_source_lineage() {
     use oblikovati_model::sketch::{
         PlanarConstraint, Sketch2D, SketchConstraintId, SketchEntityId, SketchPoint2D,

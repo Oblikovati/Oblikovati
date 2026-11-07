@@ -2,8 +2,7 @@
 //! Convert current document-owned sketch identities to the released profile operation.
 use super::*;
 use martensite_tkbo::profile_extrusion::{
-    ProfileCurve, ProfileCurveId, ProfilePlane, ProfileVertex, ProfileVertexId, Resolution,
-    SketchProfile,
+    ProfileCurve, ProfileCurveId, ProfileVertex, ProfileVertexId, Resolution,
 };
 use oblikovati_model::feature::sketch_prism::ResolvedSketchPrism;
 use std::collections::BTreeMap;
@@ -30,8 +29,7 @@ pub(crate) fn evaluate(
     resolution: Resolution,
 ) -> Result<crate::CertifiedPrismSnapshot, EvaluationFailure> {
     let plane = input.sketch.plane;
-    let (profile, sources) =
-        selected_profile(input.sketch.sketch.geometry(), input.selection, plane)?;
+    let (profile, sources) = super::regions::input::profile(input.sketch.sketch.geometry(), plane)?;
     let vector = crate::prism::placement::model_displacement(plane, input.displacement)?;
     let mut result = crate::retain_certified_profile_prism(
         &profile,
@@ -43,68 +41,35 @@ pub(crate) fn evaluate(
     Ok(result)
 }
 
-fn selected_profile(
-    sketch: &oblikovati_model::sketch::Sketch2D,
-    selection: &SketchPrismSelection,
-    plane: oblikovati_model::sketch::SketchPlane,
-) -> Result<(SketchProfile, BTreeMap<u64, Vec<u64>>), EvaluationFailure> {
-    let coincidence = super::incidence::CoincidentPoints::new(sketch);
-    let mut vertices = BTreeMap::new();
-    let mut curves = Vec::new();
-    for line in std::iter::once(&selection.outer)
-        .chain(&selection.holes)
-        .flatten()
-    {
-        curves.push(profile_line(sketch, *line, &coincidence, &mut vertices)?);
-    }
-    let recipe = plane.recipe();
-    let sources = vertices
-        .keys()
-        .map(|id| {
-            (
-                id.0,
-                coincidence.sources(oblikovati_model::sketch::SketchEntityId(id.0)),
-            )
-        })
-        .collect();
-    Ok((
-        SketchProfile {
-            plane: ProfilePlane {
-                origin: recipe.origin,
-                x_direction: recipe.x_axis,
-                normal: plane.normal(),
-            },
-            vertices: vertices.into_values().collect(),
-            curves,
-        },
-        sources,
-    ))
-}
-
-fn profile_line(
+pub(super) fn profile_line(
     sketch: &oblikovati_model::sketch::Sketch2D,
     directed: SketchDirectedLine,
     coincidence: &super::incidence::CoincidentPoints,
     vertices: &mut BTreeMap<ProfileVertexId, ProfileVertex>,
 ) -> Result<ProfileCurve, EvaluationFailure> {
     let line = boundary::require_boundary_line(sketch, directed.line)?;
-    let endpoints = line
-        .endpoints
-        .map(|id| coincidence.vertex(id))
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()?;
-    for point in &endpoints {
-        vertices.insert(
-            ProfileVertexId(point.id.0),
-            ProfileVertex {
-                id: ProfileVertexId(point.id.0),
-                point: point.position,
-            },
-        );
-    }
+    let [a, b] = line.endpoints;
+    let start = profile_vertex(coincidence, vertices, a)?;
+    let end = profile_vertex(coincidence, vertices, b)?;
     Ok(ProfileCurve::Line {
         id: ProfileCurveId(line.id.0),
-        start: ProfileVertexId(endpoints[0].id.0),
-        end: ProfileVertexId(endpoints[1].id.0),
+        start,
+        end,
     })
+}
+pub(super) fn profile_vertex(
+    coincidence: &super::incidence::CoincidentPoints,
+    vertices: &mut BTreeMap<ProfileVertexId, ProfileVertex>,
+    id: oblikovati_model::sketch::SketchEntityId,
+) -> Result<ProfileVertexId, EvaluationFailure> {
+    let point = coincidence.vertex(id)?;
+    let identity = ProfileVertexId(point.id.0);
+    vertices.insert(
+        identity,
+        ProfileVertex {
+            id: identity,
+            point: point.position,
+        },
+    );
+    Ok(identity)
 }

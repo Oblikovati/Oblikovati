@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod boundary;
+mod regions;
+pub use regions::{SketchRegionBoundary, SketchRegionCurveUse, certified_sketch_regions};
 pub(crate) mod certified;
 mod incidence;
 use crate::{

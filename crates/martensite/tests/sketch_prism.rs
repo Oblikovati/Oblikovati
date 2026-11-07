@@ -75,6 +75,8 @@ mod placement;
 mod recipe;
 #[path = "sketch_prism/refusals.rs"]
 mod refusals;
+#[path = "sketch_prism/regions.rs"]
+mod regions;
 #[path = "sketch_prism/stored.rs"]
 mod stored;
 
