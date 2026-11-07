@@ -100,7 +100,7 @@ fn desktop() -> NativeScripts {
         DesktopDispatchOptions::default(),
     );
     let engine = IsolatedLuaEngine::new(
-        Path::new(env!("CARGO_BIN_EXE_oblikovati-head")),
+        Path::new(env!("CARGO_BIN_EXE_oblikovati")),
         vec![oblikovati_script::WORKER_ARGUMENT.into()],
     );
     DesktopScripts::new(owner, engine, ScriptLimits::gui())

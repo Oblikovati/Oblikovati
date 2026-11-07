@@ -10,7 +10,7 @@ fn main() -> ExitCode {
     match outcome {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
-            eprintln!("oblikovati-head: {error}");
+            eprintln!("oblikovati: {error}");
             ExitCode::FAILURE
         }
     }

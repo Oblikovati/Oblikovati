@@ -62,9 +62,9 @@ impl ReleaseFixture {
     }
 
     fn metadata(&self) -> String {
-        let packages = ["oblikovati-cli", "oblikovati-head"].map(|name| serde_json::json!({
+        let packages = [("oblikovati-cli", "oblikovati-cli"), ("oblikovati-head", "oblikovati")].map(|(name, binary)| serde_json::json!({
             "id": name, "name": name, "manifest_path": self.tree.root().join("Cargo.toml"),
-            "license": "GPL-2.0-only", "dependencies": [], "targets":[{"name":name,"kind":["bin"]}]
+            "license": "GPL-2.0-only", "dependencies": [], "targets":[{"name":binary,"kind":["bin"]}]
         }));
         serde_json::json!({"workspace_root":self.tree.root(),"workspace_members":["oblikovati-cli","oblikovati-head"],"packages":packages}).to_string()
     }
@@ -116,7 +116,7 @@ impl ReleaseFixture {
         } else {
             ""
         };
-        for name in ["oblikovati-cli", "oblikovati-head"] {
+        for name in ["oblikovati-cli", "oblikovati"] {
             self.tree.put(
                 &format!("target/{}/release/{name}{extension}", self.platform.target),
                 "fixture executable bytes",

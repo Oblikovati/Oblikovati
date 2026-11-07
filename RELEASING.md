@@ -71,7 +71,7 @@ exclusion; generated output and installed tools are excluded. Reports go to
 `target/quality/`. These measures are not application behavior coverage.
 
 Set `package.metadata.oblikovati.requires-display = true` on crates that need a
-display. `oblikovati-head` always requires one on Linux. A missing required
+display. `oblikovati` always requires one on Linux. A missing required
 display is an error. When no physical display is available, retain the Xvfb
 server state between the suite's independent clients:
 
@@ -170,9 +170,11 @@ projects, as required by ADR-0013. Package names alone do not prove that behavio
 
 ## Application integration contract
 
-The `oblikovati-cli` package now provides manifest inspection and version/help.
-Finish its remaining commands and add the real `oblikovati-head` package with a
-binary of the same name in the root workspace. The packaging build passes
+The `oblikovati-cli` package builds the `oblikovati-cli` executable. The desktop
+composition-root package, `oblikovati-head`, builds the GUI executable
+`oblikovati`. Packaging verifies both Cargo targets and uses these executable
+names for archives, desktop launchers, macOS bundles and signing.
+The packaging build passes
 `OBLIKOVATI_BUILD_MANIFEST` and `SOURCE_DATE_EPOCH`. The application build script
 must embed that manifest, declare it as a rebuild input, and make `--version`
 report the product version. Do not stamp only the Cargo tool version.

@@ -31,10 +31,11 @@ records the earlier release probes.
 Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
 package manifest without reconstructing geometry or changing the file.
 
-Run `cargo run -p oblikovati-head -- --frames 3` on the local Linux display for a
+The GUI executable is `oblikovati`; the headless executable is `oblikovati-cli`.
+Run `cargo run -p oblikovati-head --bin oblikovati -- --frames 3` on the local Linux display for a
 bounded native window smoke run. Add a native document path to display its
 supported stored geometry, for example
-`cargo run -p oblikovati-head -- --frames 3 "path/to/part.opd"`.
+`cargo run -p oblikovati-head --bin oblikovati -- --frames 3 "path/to/part.opd"`.
 See [startup behavior and checks](architecture/rust-port/implementation-desktop-startup.md).
 See [native parameter authoring evidence](architecture/rust-port/implementation-native-parameters.md).
 See [native dimension creation evidence](architecture/rust-port/implementation-native-dimension-tool.md).

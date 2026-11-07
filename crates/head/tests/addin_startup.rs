@@ -18,7 +18,7 @@ fn executable_starts_real_go_and_rust_addins_and_skips_a_broken_library() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../addin-host/tests/typed_workflow");
     let compiler = compiler::WorkflowCompiler::from_fixture_root(&root);
     prepare_startup_libraries(&compiler, directory.path(), &selected);
-    let output = Command::new(env!("CARGO_BIN_EXE_oblikovati-head"))
+    let output = Command::new(env!("CARGO_BIN_EXE_oblikovati"))
         .args(["--frames", "3"])
         .env("OBK_ADDINS_DIR", &selected)
         .output()

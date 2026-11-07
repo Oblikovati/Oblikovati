@@ -50,11 +50,14 @@ fn application_requires_both_named_binary_targets() {
             .unwrap_err()
             .contains("oblikovati-cli")
     );
-    for name in ["oblikovati-cli", "oblikovati-head"] {
+    for (name, binary) in [
+        ("oblikovati-cli", "oblikovati-cli"),
+        ("oblikovati-head", "oblikovati"),
+    ] {
         let mut member = package(&tree);
         member.name = name.into();
         member.targets.push(Target {
-            name: name.into(),
+            name: binary.into(),
             kind: vec!["bin".into()],
         });
         workspace.packages.push(member);

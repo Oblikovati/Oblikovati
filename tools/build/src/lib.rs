@@ -8,6 +8,7 @@ mod dependencies;
 mod distribution;
 mod docs;
 mod driver;
+mod executable_names;
 mod fetched_source;
 mod kache;
 mod linux;

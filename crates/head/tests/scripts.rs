@@ -44,7 +44,7 @@ fn head_worker() -> IsolatedLuaEngine {
         Path::new("/usr/bin/env"),
         vec![
             "DISPLAY=:65530".into(),
-            env!("CARGO_BIN_EXE_oblikovati-head").into(),
+            env!("CARGO_BIN_EXE_oblikovati").into(),
             oblikovati_script::WORKER_ARGUMENT.into(),
         ],
     )

@@ -20,12 +20,20 @@ fn archive_inputs_and_linuxdeploy_arguments_are_checked() {
             .count(),
         2
     );
+    assert!(
+        arguments.contains(
+            &Path::new("app dir")
+                .join("usr/bin/oblikovati")
+                .to_string_lossy()
+                .into_owned()
+        )
+    );
 }
 
 #[test]
 fn cli_archive_removes_the_gui_but_preserves_runtime_resources() {
     let tree = FixtureTree::new();
-    tree.put("input/bin/oblikovati-head", "head");
+    tree.put("input/bin/oblikovati", "head");
     tree.put("input/bin/oblikovati-cli", "cli");
     tree.put("input/lib/runtime.so", "library");
     tree.put(
@@ -44,6 +52,6 @@ fn cli_archive_removes_the_gui_but_preserves_runtime_resources() {
     let stage = tree
         .root()
         .join("target/cli-package/x86_64-unknown-linux-gnu");
-    assert!(!stage.join("bin/oblikovati-head").exists());
+    assert!(!stage.join("bin/oblikovati").exists());
     assert_eq!(source_files(&stage).unwrap().len(), 2);
 }

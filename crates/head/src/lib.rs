@@ -59,7 +59,7 @@ mod scripts;
 #[cfg(target_os = "linux")]
 pub use scripts::{DesktopScripts, ScriptDocumentOwner};
 use std::{ffi::OsString, io::Write};
-const USAGE: &str = "usage: oblikovati-head [--frames N] [--] [DOCUMENT ...]\n       oblikovati-head --help\n       oblikovati-head --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
+const USAGE: &str = "usage: oblikovati [--frames N] [--] [DOCUMENT ...]\n       oblikovati --help\n       oblikovati --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
 /// Execute the desktop entry point with injected output; example: `run(&["--help".into()], output)?;`.
 pub fn run(arguments: &[OsString], output: &mut dyn Write) -> Result<(), String> {
     match parse_arguments(arguments)? {
@@ -69,7 +69,7 @@ pub fn run(arguments: &[OsString], output: &mut dyn Write) -> Result<(), String>
             write_output(
                 output,
                 &format!(
-                    "oblikovati-head {} (commit {})",
+                    "oblikovati {} (commit {})",
                     identity.version, identity.application_commit
                 ),
             )

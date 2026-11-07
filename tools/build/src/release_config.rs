@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use crate::executable_names::APPLICATION_TARGETS;
 use crate::{cargo_tree::Metadata, process::BuildResult, tree::read_text, version::api_field};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -72,19 +73,19 @@ pub(crate) fn validate_pin(dependency: &ReleasedDependency) -> BuildResult<()> {
 }
 
 pub(crate) fn require_application(workspaces: &[Metadata]) -> BuildResult<()> {
-    for name in ["oblikovati-cli", "oblikovati-head"] {
+    for (package_name, binary_name) in APPLICATION_TARGETS {
         let found = workspaces
             .iter()
             .flat_map(|workspace| &workspace.packages)
             .any(|package| {
-                package.name == name
+                package.name == package_name
                     && package.targets.iter().any(|target| {
-                        target.name == name && target.kind.iter().any(|kind| kind == "bin")
+                        target.name == binary_name && target.kind.iter().any(|kind| kind == "bin")
                     })
             });
         if !found {
             return Err(format!(
-                "application target {name:?}: required Rust package and binary are not ported"
+                "application package {package_name:?}, binary {binary_name:?}: expected both required Rust targets"
             ));
         }
     }
