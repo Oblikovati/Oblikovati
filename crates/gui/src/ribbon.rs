@@ -46,6 +46,7 @@ pub(crate) struct DocumentRibbon {
     pub display: crate::application::ribbon_display::RibbonDisplayState,
     settling_frames: u8,
     pending_tab: Option<RibbonTab>,
+    pub double_click_tab: Option<RibbonTab>,
 }
 pub(crate) struct RibbonFrame {
     pub tabs: Vec<RibbonTab>,

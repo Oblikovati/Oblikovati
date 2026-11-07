@@ -293,9 +293,15 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         hovered |= ui.is_item_hovered();
         // On release: the press itself is a click outside any panel still open, and closes it.
         let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
-        let doubled = ui.is_item_hovered()
-            && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
-            && ribbon.active == *tab;
+        let clicked = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
+        let double_click = clicked && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
+        let doubled = double_click && ribbon.double_click_tab == Some(*tab);
+        if clicked && !double_click {
+            ribbon.double_click_tab = (ribbon.active == *tab).then_some(*tab);
+        }
+        if double_click {
+            ribbon.double_click_tab = None;
+        }
         if item.is_some() {
             ribbon.active = *tab;
         }

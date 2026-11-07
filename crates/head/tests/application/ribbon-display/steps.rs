@@ -2,6 +2,7 @@
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod compact_options;
+mod double_click;
 mod tabs_only;
 const VIEW_GROUPS: [&str; 4] = ["Visibility", "Appearance", "Windows", "Navigate"];
 const WINDOWS_COMMAND: &str = "User Interface";
@@ -53,6 +54,7 @@ fn click_display_menu(world: &mut ApplicationWorld) {
     world.click(super::diagnostics::pointer_pixels(arrow));
 }
 #[given("the ribbon display control is configured to cycle through all modes")]
+#[given("the ribbon display control is set to cycle through all modes")]
 fn cycling(world: &mut ApplicationWorld) {
     click_display_menu(world);
     assert!(
@@ -458,6 +460,7 @@ fn groups_gone(world: &mut ApplicationWorld) {
     world.expect_text("3D Model");
 }
 #[then("the full 3D Model command groups are visible")]
+#[given("the full 3D Model ribbon is visible")]
 fn model_groups_visible(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
     world.expect_text("Extrude");
