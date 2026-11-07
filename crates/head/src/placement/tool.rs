@@ -39,6 +39,7 @@ pub enum SketchPlacementTool {
         options: CircumcircleOptions,
     },
     ThreePointRectangle,
+    ThreePointCenterRectangle,
 }
 #[cfg(any(target_os = "linux", test))]
 impl SketchPlacementTool {
@@ -84,6 +85,7 @@ impl SketchPlacementTool {
             Self::Rectangle => "Rectangle",
             Self::CenterRectangle => "Center rectangle",
             Self::ThreePointRectangle => "Three-point rectangle",
+            Self::ThreePointCenterRectangle => "Three-point center rectangle",
         }
     }
     pub(crate) fn point_count(self) -> usize {
@@ -96,6 +98,7 @@ impl SketchPlacementTool {
             | Self::CenterRectangle
             | Self::Polygon { .. } => 2,
             Self::ThreePointRectangle
+            | Self::ThreePointCenterRectangle
             | Self::ThreePointCircle { .. }
             | Self::ThreePointArc { .. }
             | Self::CenterPointArc
@@ -165,9 +168,23 @@ impl SketchPlacementTool {
             Self::StraightSlot { width } => Recipe::straight_slot([first, cursor], width),
             Self::Rectangle => Recipe::rectangle([first, cursor]),
             Self::CenterRectangle => Recipe::center_rectangle(first, cursor),
+            Self::ThreePointCenterRectangle => {
+                Recipe::three_point_center_rectangle([first, next], cursor)
+            }
             Self::ThreePointRectangle => Recipe::three_point_rectangle([first, next], cursor),
         };
         result.map_err(|cause| cause.to_string())
+    }
+    /// The values asked for at each stage, as a range of the shape's fields.
+    pub(crate) fn stage_fields(self, stage: usize) -> std::ops::Range<usize> {
+        match (self, stage) {
+            (Self::CenterPointArc, 1) => 0..1,
+            (Self::CenterPointArc, 2) => 1..2,
+            (Self::ThreePointRectangle | Self::ThreePointCenterRectangle, 1) => 0..2,
+            (Self::ThreePointRectangle | Self::ThreePointCenterRectangle, 2) => 2..3,
+            _ if stage + 1 == self.point_count() => 0..self.typed_field_count(),
+            _ => 0..0,
+        }
     }
     /// How many values can be typed at the stage that finishes the shape.
     pub(crate) fn typed_field_count(self) -> usize {
@@ -182,7 +199,12 @@ impl SketchPlacementTool {
         self,
         index: usize,
     ) -> oblikovati_model::quantity::Dimension {
-        if self == Self::CenterPointArc && index == 1 {
+        let angle = match self {
+            Self::CenterPointArc => index == 1,
+            Self::ThreePointRectangle | Self::ThreePointCenterRectangle => index == 1,
+            _ => false,
+        };
+        if angle {
             return oblikovati_model::quantity::Dimension::Angle;
         }
         oblikovati_model::quantity::Dimension::Length
@@ -199,6 +221,12 @@ impl SketchPlacementTool {
             (Self::Rectangle, _) => return "Select opposite corner".into(),
             (Self::CenterRectangle, 0) => return "Select center".into(),
             (Self::CenterRectangle, _) => return "Select corner".into(),
+            (Self::ThreePointRectangle, 0) => return "Select first corner".into(),
+            (Self::ThreePointRectangle, 1) => return "Select second corner".into(),
+            (Self::ThreePointRectangle, _) => return "Select third corner".into(),
+            (Self::ThreePointCenterRectangle, 0) => return "Select center".into(),
+            (Self::ThreePointCenterRectangle, 1) => return "Select second point".into(),
+            (Self::ThreePointCenterRectangle, _) => return "Select third point".into(),
             (Self::CenterPointArc, 0) => return "Select center".into(),
             (Self::CenterPointArc, 1) => return "Select start point".into(),
             (Self::CenterPointArc, _) => return "Select end point".into(),
@@ -233,6 +261,9 @@ impl SketchPlacementTool {
             }
             Self::Rectangle => &["the first corner", "the opposite corner"],
             Self::CenterRectangle => &["the centre point", "a corner"],
+            Self::ThreePointCenterRectangle => {
+                &["the center", "the second point", "the third point"]
+            }
             Self::ThreePointRectangle => &[
                 "the first base point",
                 "the second base point",

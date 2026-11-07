@@ -13,6 +13,8 @@ use fields::{PlacementFieldAction, PlacementFieldEntry};
 mod formats;
 #[path = "line.rs"]
 mod line;
+#[path = "typed_stage.rs"]
+mod typed_stage;
 pub(crate) struct SketchPlacementState {
     pub document: u64,
     pub sketch: DocumentSketchId,
@@ -129,20 +131,39 @@ impl SketchPlacementState {
         }
         self.shown_field_count()
     }
-    /// The fields exist from the stage that can finish, even before the pointer has moved.
-    /// An arc asks for its radius one stage sooner, and its sweep after that.
+    /// Every field asked for so far: a later stage's fields sit after an earlier stage's.
     fn shown_field_count(&self) -> usize {
-        if self.tool == crate::SketchPlacementTool::CenterPointArc {
-            return self.accepted.len().min(2);
-        }
-        if self.accepted.len() + 1 == self.tool.point_count() {
-            return self.tool.typed_field_count();
-        }
-        0
+        self.tool.stage_fields(self.accepted.len()).end
     }
-    /// How many values show beside the pointer; example: for the field display.
-    pub(crate) fn placement_field_count(&self) -> usize {
-        self.shown_field_count()
+    /// The fields showing beside the pointer; example: for the field display.
+    pub(crate) fn placement_field_range(&self) -> std::ops::Range<usize> {
+        self.tool.stage_fields(self.accepted.len())
+    }
+    /// A field's value before there is a shape to read it from, as the pointer gives it.
+    pub(crate) fn stage_field_value(&self, index: usize) -> f64 {
+        if let Some(field) = self
+            .preview
+            .as_ref()
+            .and_then(|recipe| recipe.fields.get(index))
+        {
+            return field.value;
+        }
+        let (Some(first), Some(cursor)) = (self.accepted.first(), self.cursor_point) else {
+            return 0.;
+        };
+        let delta = [cursor[0] - first[0], cursor[1] - first[1]];
+        if self.tool.typed_field_dimension(index) == oblikovati_model::quantity::Dimension::Angle {
+            return delta[1].atan2(delta[0]);
+        }
+        delta[0].hypot(delta[1]) * self.first_axis_scale()
+    }
+    /// A centered rectangle's second point is half a side from its center.
+    fn first_axis_scale(&self) -> f64 {
+        if self.tool == crate::SketchPlacementTool::ThreePointCenterRectangle {
+            2.
+        } else {
+            1.
+        }
     }
     /// The next point would complete the shape; example: before accepting typed values.
     pub(crate) fn at_finishing_stage(&self) -> bool {
@@ -168,69 +189,9 @@ impl SketchPlacementState {
             .map_err(|cause| cause.to_string())?;
         Ok(Some(recipe))
     }
-    /// A typed radius puts the start on that circle, in the pointer's direction from the center.
-    fn arc_start_at_radius(&self, point: [f64; 2]) -> [f64; 2] {
-        let radius = self.fields.line_values()[0];
-        let (crate::SketchPlacementTool::CenterPointArc, [center], Some(radius)) =
-            (self.tool, self.accepted.as_slice(), radius)
-        else {
-            return point;
-        };
-        let delta = [point[0] - center[0], point[1] - center[1]];
-        let length = delta[0].hypot(delta[1]);
-        [
-            center[0] + delta[0] / length * radius,
-            center[1] + delta[1] / length * radius,
-        ]
-    }
-    /// A typed sweep turns the start about the center, toward the pointer's side.
-    fn arc_end_at_sweep(&self, point: [f64; 2]) -> [f64; 2] {
-        let sweep = self.fields.line_values()[1];
-        let (crate::SketchPlacementTool::CenterPointArc, [center, start], Some(sweep)) =
-            (self.tool, self.accepted.as_slice(), sweep)
-        else {
-            return point;
-        };
-        let radial = [start[0] - center[0], start[1] - center[1]];
-        let toward = [point[0] - center[0], point[1] - center[1]];
-        let side = if radial[0] * toward[1] - radial[1] * toward[0] < 0. {
-            -1.
-        } else {
-            1.
-        };
-        let (sin, cos) = (side * sweep).sin_cos();
-        [
-            center[0] + radial[0] * cos - radial[1] * sin,
-            center[1] + radial[0] * sin + radial[1] * cos,
-        ]
-    }
-    fn typed_end(&self, start: [f64; 2]) -> [f64; 2] {
-        if self.tool == crate::SketchPlacementTool::CenterPointArc {
-            return self.arc_end_at_sweep(self.cursor_point.unwrap_or(start));
-        }
-        let cursor = self.cursor_point.unwrap_or(start);
-        let delta = [cursor[0] - start[0], cursor[1] - start[1]];
-        let reach = |typed: Option<f64>, axis: usize, fraction: f64| {
-            let side = if delta[axis] < 0. { -1. } else { 1. };
-            match typed {
-                Some(size) => side * size * fraction,
-                None if delta[axis] != 0. => delta[axis],
-                None => TYPED_SEED_REACH,
-            }
-        };
-        let [first, second] = self.fields.line_values();
-        let offset = match self.tool {
-            crate::SketchPlacementTool::Circle => [reach(first, 0, 0.5), 0.],
-            crate::SketchPlacementTool::CenterRectangle => {
-                [reach(first, 0, 0.5), reach(second, 1, 0.5)]
-            }
-            _ => [reach(first, 0, 1.), reach(second, 1, 1.)],
-        };
-        [start[0] + offset[0], start[1] + offset[1]]
-    }
     /// A typed zero size on a tool that shrugs it off: the shape is dropped, not refused.
     pub(crate) fn typed_size_is_zero(&self) -> bool {
-        self.fields.line_values().contains(&Some(0.))
+        self.fields.typed_values().contains(&Some(0.))
     }
     /// The pointer's sketch position, once it has moved over the sketch.
     pub(crate) fn pointer_position(&self) -> Option<[f64; 2]> {
@@ -389,13 +350,14 @@ impl SketchPlacementState {
         self.repeated_click = false;
         if self.accepted.len() + 1 < self.tool.point_count() {
             if place {
-                let point = self.arc_start_at_radius(point);
-                self.accept_point(point)?;
-                self.fields.advance_to_stage(self.accepted.len());
+                let point = self.typed_stage_point(self.arc_start_at_radius(point));
+                self.accept_stage_point(point)?;
             }
             return Ok(None);
         }
-        let point = self.arc_end_at_sweep(point);
+        let point = self
+            .typed_third_point()
+            .unwrap_or(self.arc_end_at_sweep(point));
         let mut recipe = self.tool.recipe(&self.accepted, point, construction)?;
         recipe
             .apply_creation_formats(self.formats.construction, self.formats.centerline)

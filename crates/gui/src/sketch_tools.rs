@@ -10,6 +10,7 @@ pub enum GuiSketchTool {
     Ellipse,
     CenterRectangle,
     ThreePointRectangle,
+    ThreePointCenterRectangle,
     ThreePointCircle,
     ThreePointArc,
 }
@@ -26,6 +27,8 @@ impl GuiSketchTool {
     pub fn menu_label(self) -> &'static str {
         match self {
             Self::Circle => "Center Point Circle",
+            Self::ThreePointRectangle => "Three Point Rectangle",
+            Self::ThreePointCenterRectangle => "Three Point Center Rectangle",
             other => other.label(),
         }
     }
@@ -39,7 +42,8 @@ impl GuiSketchTool {
             Self::CenterPointArc => "Center Arc",
             Self::Ellipse => "Ellipse",
             Self::CenterRectangle => "Center Rect.",
-            Self::ThreePointRectangle => "3-Point Rect.",
+            Self::ThreePointRectangle => "3-Pt Rect.",
+            Self::ThreePointCenterRectangle => "3-Pt Center Rect.",
             Self::ThreePointCircle => "3-Point Circle",
             Self::ThreePointArc => "3-Point Arc",
         }

@@ -174,7 +174,7 @@ fn sketch_tool_captions_identify_the_existing_construction_choices() {
         (CenterPointArc, "Center Arc"),
         (Ellipse, "Ellipse"),
         (CenterRectangle, "Center Rect."),
-        (ThreePointRectangle, "3-Point Rect."),
+        (ThreePointRectangle, "3-Pt Rect."),
         (ThreePointCircle, "3-Point Circle"),
         (ThreePointArc, "3-Point Arc"),
     ] {

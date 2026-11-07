@@ -78,11 +78,15 @@ pub enum SketchPlacementBinding {
     SteeringLength,
     EllipseRadius(usize),
     ArcSweep(usize),
+    LineAngle(usize),
 }
 impl SketchPlacementBinding {
     /// Read the field's unit category; example: `field.binding.dimension()` for an input box.
     pub fn dimension(self) -> crate::quantity::Dimension {
-        if matches!(self, Self::SteeringAngle | Self::ArcSweep(_)) {
+        if matches!(
+            self,
+            Self::SteeringAngle | Self::ArcSweep(_) | Self::LineAngle(_)
+        ) {
             return crate::quantity::Dimension::Angle;
         }
         crate::quantity::Dimension::Length
@@ -94,6 +98,13 @@ impl SketchPlacementBinding {
     ) -> Result<Option<SketchDimensionalConstraintCreation>, SketchError> {
         let operand = match self {
             Self::SteeringAngle | Self::SteeringLength => return Ok(None),
+            Self::LineAngle(index) => {
+                return Ok(Some(SketchDimensionalConstraintCreation::Seeded(
+                    crate::sketch::SeededDimensionOperands::LineAngle(indexed_entity(
+                        members, index,
+                    )?),
+                )));
+            }
             Self::ArcSweep(index) => {
                 return Ok(Some(SketchDimensionalConstraintCreation::Seeded(
                     crate::sketch::SeededDimensionOperands::ArcSweep(indexed_entity(

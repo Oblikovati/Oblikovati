@@ -235,7 +235,8 @@ impl<
         }
         let measured = if tool.tool == crate::SketchPlacementTool::Line {
             tool.line_restart_available().then_some(())?;
-            self.line_measured_fields(tool).unwrap_or_default().to_vec()
+            let shown = self.line_measured_fields(tool).unwrap_or_default();
+            shown.into_iter().enumerate().collect()
         } else {
             self.placement_measured_fields(tool)?
         };
@@ -243,7 +244,6 @@ impl<
             pixel: tool.cursor_pixel?,
             fields: measured
                 .into_iter()
-                .enumerate()
                 .map(|(index, shown)| {
                     let view = tool.field_view(index);
                     GuiSketchHudField {
@@ -256,25 +256,27 @@ impl<
                 .collect(),
         })
     }
-    /// Each field's value from the pending shape; none has a size until the pointer moves.
-    fn placement_measured_fields(&self, tool: &SketchPlacementState) -> Option<Vec<String>> {
-        let count = tool.placement_field_count();
-        (count > 0).then_some(())?;
+    /// Each field showing now, from the pending shape or the pointer.
+    fn placement_measured_fields(
+        &self,
+        tool: &SketchPlacementState,
+    ) -> Option<Vec<(usize, String)>> {
+        let range = tool.placement_field_range();
+        (!range.is_empty()).then_some(())?;
         let session = self.files.workspace().session(tool.document).ok()?;
         let units = session.snapshot().parameters.units();
-        let value = |index: usize| {
-            let size = tool
-                .preview
-                .as_ref()
-                .and_then(|recipe| recipe.fields.get(index))
-                .map_or(0., |field| field.value);
-            let kind = tool.tool.typed_field_dimension(index);
-            if kind == Dimension::Angle {
-                return Ok(format!("{:.2} deg", size.to_degrees()));
-            }
-            units.format_display(oblikovati_model::quantity::Quantity::new(size, kind))
-        };
-        (0..count).map(|index| value(index).ok()).collect()
+        range
+            .map(|index| {
+                let size = tool.stage_field_value(index);
+                let kind = tool.tool.typed_field_dimension(index);
+                let shown = if kind == Dimension::Angle {
+                    Ok(format!("{:.2} deg", size.to_degrees()))
+                } else {
+                    units.format_display(oblikovati_model::quantity::Quantity::new(size, kind))
+                };
+                shown.ok().map(|text| (index, text))
+            })
+            .collect()
     }
     fn line_measured_fields(&self, tool: &SketchPlacementState) -> Option<[String; 2]> {
         let recipe = tool.preview.as_ref()?;

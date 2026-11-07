@@ -145,7 +145,8 @@ fn the_scroll_tier_keeps_the_last_panel_reachable_below_its_minimum_row_width() 
         expect_ribbon(
             &mut engine,
             &mut request,
-            [250. * scale, 190. * scale],
+            // Format's second column (Precise Input) pushes the popup left against the window edge.
+            [120. * scale, 190. * scale],
             Format(Construction),
         );
     }

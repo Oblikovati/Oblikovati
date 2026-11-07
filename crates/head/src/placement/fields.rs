@@ -2,6 +2,8 @@
 use oblikovati_model::{history::SketchPlacementFieldLock, sketch::SketchPlacementField};
 use oblikovati_viewport::{ViewportInput, ViewportKey, ViewportPhysicalKey};
 
+/// The most values any shape asks for: a three-point rectangle's length, angle and width.
+const FIELD_LIMIT: usize = 3;
 #[derive(Default)]
 pub(super) struct PlacementFieldEntry {
     active: usize,
@@ -12,7 +14,7 @@ pub(super) struct PlacementFieldEntry {
     /// The buffer does not evaluate to a usable value, so Enter must not advance.
     invalid: bool,
     /// Line values evaluated by the owner, in working units and radians.
-    values: [Option<f64>; 2],
+    values: [Option<f64>; FIELD_LIMIT],
 }
 /// How one numeric field reads to the GUI; example: `field.text` beside the pointer.
 #[derive(Clone, Debug, PartialEq)]
@@ -201,13 +203,17 @@ impl PlacementFieldEntry {
             text_point: None,
         });
     }
-    /// An arc's next stage takes the next value: what was typed so far is kept as it stands.
-    pub(super) fn advance_to_stage(&mut self, stage: usize) {
-        self.locked.resize(stage.max(self.locked.len()), None);
-        if !self.locked.is_empty() {
+    /// The next stage asks from this field on: what was typed so far is kept as it stands.
+    pub(super) fn advance_to_field(&mut self, field: usize) {
+        self.lock_typed();
+        self.locked.resize(self.locked.len().max(field + 1), None);
+        self.active = field;
+    }
+    /// Keep what is typed in the active field; example: before a stage's Enter takes its values.
+    pub(super) fn lock_typed(&mut self) {
+        if self.active < self.locked.len() {
             self.lock_buffer();
         }
-        self.active = stage.saturating_sub(1);
     }
     pub(super) fn engaged(&self) -> bool {
         !self.buffer.is_empty() || self.locked.iter().any(Option::is_some)
@@ -215,7 +221,7 @@ impl PlacementFieldEntry {
     /// Evaluate what is typed; the owner holds the parameters. Example: on each field change.
     pub(super) fn evaluate_line_fields(&mut self, evaluate: &dyn Fn(usize, &str) -> Option<f64>) {
         self.invalid = false;
-        for index in 0..2 {
+        for index in 0..FIELD_LIMIT {
             let source = self.field_expression(index).map(str::to_owned);
             let value = source.as_deref().and_then(|text| evaluate(index, text));
             self.values[index] = value;
@@ -223,6 +229,9 @@ impl PlacementFieldEntry {
         }
     }
     pub(super) fn line_values(&self) -> [Option<f64>; 2] {
+        [self.values[0], self.values[1]]
+    }
+    pub(super) fn typed_values(&self) -> [Option<f64>; FIELD_LIMIT] {
         self.values
     }
     /// Field order is length then angle; `keep` false moves the geometry but retains no dimension.

@@ -177,7 +177,14 @@ impl<
     /// A value that does not evaluate holds its place; a shrugged-off zero drops the shape.
     fn commit_typed_shape(&mut self, tool: &mut SketchPlacementState) -> Result<bool, String> {
         self.evaluate_placement_fields(tool)?;
-        if tool.fields_invalid() || !tool.at_finishing_stage() {
+        if tool.fields_invalid() {
+            return Ok(false);
+        }
+        if !tool.at_finishing_stage() {
+            if tool.accept_typed_stage()? {
+                self.evaluate_placement_fields(tool)?;
+                self.placement_notice(tool.prompt());
+            }
             return Ok(false);
         }
         if tool.typed_size_is_zero() {
@@ -191,7 +198,7 @@ impl<
             self.placement_notice(tool.prompt());
             return Ok(false);
         }
-        let recipe = if tool.placement_field_count() > 0 {
+        let recipe = if !tool.placement_field_range().is_empty() {
             tool.typed_seed_recipe(&self.sketch_construction)?
         } else {
             tool.preview.clone()

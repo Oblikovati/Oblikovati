@@ -16,6 +16,7 @@ pub(super) fn gui_placement_tool(tool: Gui, scale: f64) -> Result<Tool, String> 
         Gui::Ellipse => Tool::Ellipse,
         Gui::CenterRectangle => Tool::CenterRectangle,
         Gui::ThreePointRectangle => Tool::ThreePointRectangle,
+        Gui::ThreePointCenterRectangle => Tool::ThreePointCenterRectangle,
     })
 }
 fn gui_circular_accuracy(scale: f64) -> Result<CircumcircleOptions, String> {

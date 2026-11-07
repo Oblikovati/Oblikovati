@@ -15,6 +15,10 @@ mod point;
 mod precise_input;
 #[path = "rectangle-center/steps.rs"]
 mod rectangle_center;
+#[path = "rectangle-three-point/steps.rs"]
+mod rectangle_three_point;
+#[path = "rectangle-three-point-center/steps.rs"]
+mod rectangle_three_point_center;
 #[path = "rectangle-two-point/steps.rs"]
 mod rectangle_two_point;
 
@@ -25,6 +29,8 @@ const ACCEPTED_FEATURES: &[&str] = &[
     "point",
     "precise-input",
     "rectangle-center",
+    "rectangle-three-point",
+    "rectangle-three-point-center",
     "rectangle-two-point",
 ];
 #[test]

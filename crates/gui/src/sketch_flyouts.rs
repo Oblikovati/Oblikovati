@@ -11,6 +11,7 @@ pub(crate) fn circular_tool_button(
     let alternate = match primary {
         GuiSketchTool::Circle => Some(GuiSketchTool::ThreePointCircle),
         GuiSketchTool::CenterPointArc => Some(GuiSketchTool::ThreePointArc),
+        GuiSketchTool::ThreePointRectangle => Some(GuiSketchTool::ThreePointCenterRectangle),
         _ => None,
     };
     let size = if alternate.is_some() {
