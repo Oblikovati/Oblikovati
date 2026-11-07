@@ -23,6 +23,7 @@ fn request() -> GuiFrameRequest {
             undo_label: Some("Edit".into()),
             redo_label: Some("Edit".into()),
             transaction_open: false,
+            extrude_available: false,
             sketch_tool_keyboard: false,
             dimensions_needed: None,
             sketch_hud: None,

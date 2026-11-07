@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct HeadWorkStatus {
-    pub changed: bool,
-    pub pending: bool,
-    pub wake_after: Option<std::time::Duration>,
-}
-/// Coalesced model changes from the injected document observers.
-pub trait HeadInvalidation {
-    /// Consume pending invalidation; example: `factory.take_changed()` after direct UI commands.
-    fn take_changed(&self) -> bool;
-}
+use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Apply an Extrude dialog request through the document command owner.
+    /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm")?`.
+    fn extrude_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        profile: i64,
+        distance: &str,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "extrude document {document}, sketch {sketch:?}, profile {profile}, distance {distance:?}: expected a certified extrusion owner"
+        ))
+    }
     /// Change how often a prompt appears; example: `work.set_prompt_frequency_from_gui(prompt, frequency)?`.
     fn set_prompt_frequency_from_gui(
         &mut self,
@@ -134,7 +137,6 @@ pub trait HeadWork {
             "UI scale {options:?}: expected an application preference owner"
         ))
     }
-
     /// Apply a live custom colour preview; example: `work.edit_theme_color_from_gui(name, token, value)?`.
     fn edit_theme_color_from_gui(
         &mut self,
@@ -164,7 +166,6 @@ pub trait HeadWork {
             "theme {name:?}: expected an application theme storage owner"
         ))
     }
-
     /// Apply the canonical palette selection; example: `work.select_color_scheme_from_gui(&request)?`.
     fn select_color_scheme_from_gui(
         &mut self,
@@ -175,14 +176,12 @@ pub trait HeadWork {
             request.name
         ))
     }
-
     /// Select the application theme; example: `work.select_theme_from_gui("Light")?`.
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         Err(format!(
             "theme {name:?}: expected an application theme owner"
         ))
     }
-
     /// Activate a visible document through its owner; example: `work.activate_document_from_gui(&request)?`.
     fn activate_document_from_gui(
         &mut self,

@@ -9,6 +9,15 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn extrude_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        profile: i64,
+        distance: &str,
+    ) -> Result<bool, String> {
+        self.create_extrusion_from_gui(document, sketch, profile, distance)
+    }
     fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
         if let Some(captures) = &mut self.window_captures {
             captures.observe_extent(extent);

@@ -38,6 +38,7 @@ pub struct GuiFrameEngine {
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
     dimension_editor: crate::dimensions::GuiDimensionEditor,
+    extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
     command_alias: crate::sketch::command_alias::CommandAliasBox,
@@ -79,6 +80,7 @@ impl GuiFrameEngine {
             raster_scale: 1.,
             preferences: Default::default(),
             dimension_editor: Default::default(),
+            extrude_dialog: Default::default(),
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
             command_alias: Default::default(),
@@ -258,6 +260,7 @@ impl GuiFrameEngine {
             &mut self.quick_access,
             &mut self.document_files,
             &mut self.plane_selection,
+            &mut self.extrude_dialog,
             &selected,
         );
         self.command_alias.panel(ui, &request.commands, &keys.typed);
@@ -330,6 +333,8 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.preferences.panel(ui, &request.commands, &mut selected);
         self.dimension_editor
+            .panel(ui, &request.commands, &mut selected);
+        self.extrude_dialog
             .panel(ui, &request.commands, &mut selected);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
         self.precise_input
@@ -467,6 +472,7 @@ fn apply_quick_access(
     toolbar: &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
     files: &mut crate::files::GuiDocumentFiles,
     planes: &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
+    extrude: &mut crate::extrude_dialog::ExtrudeDialog,
     selected: &[GuiShellAction],
 ) {
     let requests = toolbar.take_requests();
@@ -477,6 +483,7 @@ fn apply_quick_access(
         files.request_open();
     }
     planes.active |= requests.choose_plane || selected.contains(&GuiShellAction::ChooseSketchPlane);
+    extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);
 }
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]

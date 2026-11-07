@@ -86,7 +86,7 @@ fn muted_commands(ui: &Ui, origin: [f32; 2], labels: &[&str], reason: &str) {
         }
     }
 }
-/// Extrude has no dialog yet: with no sketch it asks for a plane, otherwise it stays muted.
+/// Extrude starts a sketch when needed, or opens the profile dialog.
 fn part_create_controls(
     ui: &Ui,
     origin: [f32; 2],
@@ -99,7 +99,7 @@ fn part_create_controls(
     {
         let _muted = ui.begin_disabled(!extrude_can_start(state));
         if crate::widget_abi::button(ui, EXTRUDE, [108., 26.]) {
-            actions.push(GuiShellAction::ChooseSketchPlane);
+            actions.push(crate::extrude_dialog::start_action(state));
         }
     }
     if !extrude_can_start(state)

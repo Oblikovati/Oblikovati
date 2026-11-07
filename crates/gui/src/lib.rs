@@ -75,6 +75,7 @@ mod sketch_constraints;
 pub use sketch_constraints::GuiSketchConstraint;
 
 mod dimensions;
+mod extrude_dialog;
 pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
 
 mod dimension_labels;

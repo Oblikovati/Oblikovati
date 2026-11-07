@@ -68,6 +68,7 @@ impl<
                 .map(|&label| label.to_owned())
                 .collect(),
             transaction_open: session.in_transaction(),
+            extrude_available: self.extrusion_access.is_some(),
             sketch_tool_keyboard: self
                 .placement_state()
                 .is_some_and(|tool| self.placement_context_valid(tool)),

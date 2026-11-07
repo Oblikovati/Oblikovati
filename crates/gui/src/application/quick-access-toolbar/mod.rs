@@ -92,6 +92,7 @@ pub(crate) struct QuickAccessRequests {
     pub new_document: bool,
     pub open_document: bool,
     pub choose_plane: bool,
+    pub open_extrude: bool,
 }
 /// The toolbar's choices for this session; a later scenario may ask for them to persist.
 #[derive(Default)]
@@ -203,7 +204,13 @@ impl QuickAccessToolbar {
             return;
         };
         if label == EXTRUDE && extrude_can_start(state) {
-            self.requests.choose_plane |= ui.button(label);
+            if ui.button(label) {
+                match crate::extrude_dialog::start_action(state) {
+                    GuiShellAction::ChooseSketchPlane => self.requests.choose_plane = true,
+                    GuiShellAction::OpenExtrude => self.requests.open_extrude = true,
+                    _ => unreachable!(),
+                }
+            }
         } else {
             muted_button(ui, label);
         }
@@ -306,13 +313,15 @@ impl QuickAccessToolbar {
 pub(crate) const EXTRUDE: &str = "Extrude";
 /// A part with no sketch has no profile to extrude, so Extrude asks for a plane to sketch on.
 pub(crate) fn extrude_can_start(state: &GuiCommandState) -> bool {
-    state.document.is_some()
-        && !state.transaction_open
-        && state
-            .browser
-            .as_ref()
-            .is_some_and(|browser| browser.sketches.is_empty())
+    if state.authoring != crate::GuiAuthoringContext::Part || state.transaction_open {
+        return false;
+    }
+    let Some(browser) = state.browser.as_ref() else {
+        return false;
+    };
+    browser.sketches.is_empty() || state.extrude_available
 }
+
 fn add_separator_after(selection: &mut KindSelection, label: &str) {
     let found = selection
         .added

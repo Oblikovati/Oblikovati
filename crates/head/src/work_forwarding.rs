@@ -2,6 +2,16 @@
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn extrude_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            profile: i64,
+            distance: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .extrude_from_gui(document, sketch, profile, distance)
+        }
         fn activate_document_from_gui(
             &mut self,
             request: &oblikovati_api::wire::ActivateDocumentArgs,

@@ -1,0 +1,188 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+impl GuiShellAction {
+    /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
+    pub fn enabled(&self, state: &GuiCommandState) -> bool {
+        match self {
+            Self::SetUiScale(_) => state.ui_scale.is_some(),
+            Self::ShowHome | Self::Recent(_) => true,
+            Self::ActivateWindow(_) | Self::CloseDocumentWindow(_) | Self::NewDocumentWindow => {
+                !state.transaction_open
+            }
+            Self::SetSketchOptions(_) => state.sketch_options.is_some(),
+            Self::LineCommand(_) => state.line_command.is_some(),
+            Self::PrecisePoint(_) | Self::PreciseTriad(_) => state.precise_target.is_some(),
+            Self::ToggleCenterPointFormat => state.authoring == GuiAuthoringContext::Sketch,
+            Self::SetCenterPoint { .. } => state.sketch_at_ready && !state.transaction_open,
+            Self::Inspect(_) => state.authoring == GuiAuthoringContext::Sketch,
+            Self::EditDimensionValue(_) => {
+                (state.sketch_at_ready || state.dimension_tool_active) && !state.transaction_open
+            }
+            Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,
+            Self::ActivateDocument(request) => {
+                !state.transaction_open
+                    && state
+                        .documents
+                        .iter()
+                        .any(|row| row.id == request.id && row.visible)
+            }
+            Self::EditThemeColor { name, .. } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.editable() && theme.active_name() == name),
+            Self::DuplicateTheme { base, .. } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.creation_available() && theme.active_name() == base),
+            Self::DeleteTheme { name } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.deletion_available() && theme.active_name() == name),
+            Self::SaveTheme { name } => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.save_available() && theme.active_name() == name),
+            Self::SetColorScheme(request) => state
+                .color_scheme
+                .as_ref()
+                .is_some_and(|palette| palette.contains(&request.name)),
+            Self::SetTheme(name) => state
+                .theme
+                .as_ref()
+                .is_some_and(|theme| theme.contains(name)),
+            Self::OpenDocument(_) | Self::CreateDocument(_) => !state.transaction_open,
+            Self::CloseDocument(request) => {
+                (state.document == Some(request.id)
+                    || state.documents.iter().any(|row| row.id == request.id))
+                    && !state.transaction_open
+            }
+            Self::SaveDocumentAs(request) => {
+                state.document == Some(request.document) && !state.transaction_open
+            }
+            Self::OrientView { .. } | Self::SetViewProjection(_) | Self::ViewCommand(_) => {
+                state.document.is_some()
+            }
+            Self::InspectFile(_) | Self::KeepDocumentPicture { .. } => true,
+            Self::ClickModel { document, .. } | Self::UpdateBodyProperties { document, .. } => {
+                state.document == Some(*document)
+            }
+            Self::SetBodyAppearance { document, .. } => {
+                state.document == Some(*document) && !state.transaction_open
+            }
+            Self::EditFeature { document, .. }
+            | Self::SetSketchLineStyle { document, .. }
+            | Self::BrowserChoice { document, .. } => {
+                state.document == Some(*document) && !state.transaction_open
+            }
+            Self::SelectBrowserFeature { document, feature } => {
+                state.document == Some(*document)
+                    && !state.transaction_open
+                    && state.browser.as_ref().is_some_and(|browser| {
+                        browser.features.iter().any(|row| row.id == *feature)
+                    })
+            }
+            Self::SelectBrowserSketch {
+                document, sketch, ..
+            }
+            | Self::SetSketchVisibility {
+                document, sketch, ..
+            } => {
+                state.document == Some(*document)
+                    && !state.transaction_open
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
+            }
+            Self::EditSketch { document, sketch } => {
+                state.document == Some(*document)
+                    && state.authoring != GuiAuthoringContext::Sketch
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
+            }
+            Self::OpenExtrude => {
+                state.extrude_available
+                    && state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| !browser.sketches.is_empty())
+            }
+            Self::Extrude {
+                document,
+                sketch,
+                profile,
+                distance,
+            } => {
+                state.extrude_available
+                    && state.document == Some(*document)
+                    && state.authoring == GuiAuthoringContext::Part
+                    && !state.transaction_open
+                    && *profile >= 0
+                    && !distance.trim().is_empty()
+                    && !distance.contains('\0')
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
+            }
+            Self::Parameter { .. } => state.document.is_some(),
+            Self::Undo => state.undo_label.is_some(),
+            Self::Redo => state.redo_label.is_some(),
+            Self::ChooseSketchPlane | Self::StartSketchOn(_) => {
+                state.authoring == GuiAuthoringContext::Part
+            }
+            Self::DeleteSketchSelection => {
+                state.authoring == GuiAuthoringContext::Sketch
+                    && state.sketch_delete_available
+                    && !state.transaction_open
+            }
+            Self::Dimension(crate::GuiDimensionAction::Start) => {
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
+            }
+            Self::Dimension(crate::GuiDimensionAction::Apply { id, .. }) => {
+                state
+                    .dimension_draft
+                    .as_ref()
+                    .is_some_and(|draft| draft.id == *id)
+                    && !state.transaction_open
+            }
+            Self::Dimension(crate::GuiDimensionAction::Cancel { id }) => state
+                .dimension_draft
+                .as_ref()
+                .is_some_and(|draft| draft.id == *id),
+            Self::ConstrainSketch(_) => {
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
+            }
+            Self::ToggleSketchFormat(_) => {
+                state.authoring == GuiAuthoringContext::Sketch
+                    && state.sketch_format_available
+                    && !state.transaction_open
+            }
+            Self::PlaceSketchTool(tool) => {
+                (*tool != crate::GuiSketchTool::Point || !state.sketch_formats.construction)
+                    && state.authoring == GuiAuthoringContext::Sketch
+                    && !state.transaction_open
+            }
+            Self::FinishSketch => {
+                state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
+            }
+            Self::NewPart | Self::Save | Self::Home => true,
+        }
+    }
+    /// Keep available history controls inert during an edit; example: `action.dispatchable(&state)` after a click.
+    pub fn dispatchable(&self, state: &GuiCommandState) -> bool {
+        let history = matches!(self, Self::Undo | Self::Redo | Self::EditSketch { .. });
+        self.enabled(state) && !(history && state.transaction_open)
+    }
+    pub(crate) fn next_label<'a>(&self, state: &'a GuiCommandState) -> Option<&'a str> {
+        match self {
+            Self::Undo => state.undo_label.as_deref(),
+            Self::Redo => state.redo_label.as_deref(),
+            _ => None,
+        }
+    }
+}

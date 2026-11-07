@@ -310,3 +310,35 @@ fn rejected_candidate_preserves_the_document_and_sketch_visibility() {
             .visible()
     );
 }
+
+#[test]
+fn desktop_extrude_checks_document_identity_and_uses_the_typed_command() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    assert!(
+        owner
+            .extrude_from_gui(document + 1, crate::scene_fixture::SKETCH, 0, "width")
+            .is_err()
+    );
+    assert!(
+        owner
+            .extrude_from_gui(
+                document,
+                oblikovati_model::document_sketch::DocumentSketchId(999),
+                0,
+                "width"
+            )
+            .is_err()
+    );
+    assert!(
+        owner
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width")
+            .unwrap()
+    );
+    assert_eq!(
+        owner.take_scene().unwrap().unwrap().status.visible_bodies,
+        1
+    );
+    assert_cube(&owner, document, 1.);
+}

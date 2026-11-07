@@ -141,7 +141,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::NewDocumentWindow
         | GuiShellAction::CloseDocumentWindow(_)
         | GuiShellAction::StartSketchOn(_)
-        | GuiShellAction::FinishSketch => {
+        | GuiShellAction::FinishSketch
+        | GuiShellAction::OpenExtrude
+        | GuiShellAction::Extrude { .. } => {
             return None;
         }
         GuiShellAction::Save => ViewportKey::Save,

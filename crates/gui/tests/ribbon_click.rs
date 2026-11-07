@@ -450,3 +450,6 @@ mod ellipse_dimensions;
 
 #[path = "ribbon_click/icon_commands.rs"]
 mod icon_commands;
+
+#[path = "ribbon_click/extrude.rs"]
+mod extrude;

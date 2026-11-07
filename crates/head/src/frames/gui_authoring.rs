@@ -104,6 +104,13 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::NewDocumentWindow => owner.new_document_window_from_gui(),
         GuiShellAction::StartSketchOn(plane) => owner.start_sketch_on_plane_from_gui(*plane),
         GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
+        GuiShellAction::OpenExtrude => Ok(false),
+        GuiShellAction::Extrude {
+            document,
+            sketch,
+            profile,
+            distance,
+        } => owner.extrude_from_gui(*document, *sketch, *profile, distance),
         GuiShellAction::ToggleSketchFormat(format) => owner.toggle_sketch_format_from_gui(*format),
         GuiShellAction::DeleteSketchSelection => owner.delete_sketch_selection_from_gui(),
         GuiShellAction::Dimension(action) => owner.dimension_tool_from_gui(action),
@@ -196,6 +203,21 @@ fn frame_view_on(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn extrusion_action_reaches_the_document_owner() {
+        let action = GuiShellAction::Extrude {
+            document: 7,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId(4),
+            profile: 0,
+            distance: "size".into(),
+        };
+        let cause = apply(&mut crate::work_idle::IdleHeadWork, &action).unwrap_err();
+        assert!(
+            cause.contains("document 7")
+                && cause.contains("size")
+                && cause.contains("certified extrusion owner")
+        );
+    }
     #[test]
     fn idle_sketch_delete_names_the_missing_editor_owner() {
         let mut owner = crate::work_idle::IdleHeadWork;
