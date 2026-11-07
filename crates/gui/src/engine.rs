@@ -242,6 +242,7 @@ impl GuiFrameEngine {
             ui,
             request,
             crate::chrome::RibbonDrawOwners {
+                home_active: self.home.active,
                 icons: &self.icons.presentation,
                 ribbon: &mut self.ribbon,
                 parameters: &mut self.parameter_editor,
@@ -332,7 +333,8 @@ impl GuiFrameEngine {
         }
         self.document_files
             .panel(ui, &request.commands, &mut selected);
-        self.preferences.panel(ui, &request.commands, &mut selected);
+        self.preferences
+            .panel(ui, &request.commands, &mut selected, self.home.active);
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
         self.extrude_dialog

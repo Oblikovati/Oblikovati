@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    SetDocumentUnits {
+        document: u64,
+        request: oblikovati_api::wire::SetDocumentUnitsArgs,
+    },
     CreateDrawingBaseView(GuiBaseViewRequest),
     PreviewDrawingBaseView(Option<GuiBaseViewRequest>),
     SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
@@ -259,6 +263,7 @@ pub struct GuiDrawingLine {
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
+    pub document_units: Option<oblikovati_api::wire::DocumentUnitsInfo>,
     pub ui_scale: Option<oblikovati_model::ui_scale::UiScaleOptions>,
     pub dimension_labels: Vec<crate::GuiDimensionLabel>,
     pub dimension_draft: Option<crate::GuiDimensionDraft>,

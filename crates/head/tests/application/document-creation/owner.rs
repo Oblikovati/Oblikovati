@@ -497,3 +497,82 @@ fn gui_base_view_is_one_undo_step_and_rolls_back_on_failure() {
         1
     );
 }
+
+#[test]
+fn gui_document_units_use_public_history_and_reject_stale_document() {
+    use oblikovati_api::wire::SetDocumentUnitsArgs;
+    let (mut owner, _) = owner();
+    owner.create_part_document().unwrap();
+    let document = owner.documents().workspace().active_document().unwrap();
+    let original = owner
+        .gui_command_state()
+        .unwrap()
+        .document_units
+        .unwrap()
+        .length_unit;
+    let request = SetDocumentUnitsArgs {
+        length_unit: Some(Box::new("in".into())),
+        ..Default::default()
+    };
+    assert!(
+        owner
+            .set_document_units_from_gui(document + 1, &request)
+            .is_err()
+    );
+    assert!(
+        owner
+            .set_document_units_from_gui(document, &request)
+            .unwrap()
+    );
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .document_units
+            .unwrap()
+            .length_unit,
+        "in"
+    );
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .document_units
+            .unwrap()
+            .length_unit,
+        original
+    );
+    owner.files.commands(document).unwrap().redo().unwrap();
+    let path = "/memory/units.opd";
+    Client::new(owner.document_host())
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document,
+            new_full_document_name: path.into(),
+        })
+        .unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.into(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .document_units
+            .unwrap()
+            .length_unit,
+        "in"
+    );
+}

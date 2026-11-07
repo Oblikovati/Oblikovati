@@ -9,6 +9,22 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn set_document_units_from_gui(
+        &mut self,
+        document: u64,
+        request: &oblikovati_api::wire::SetDocumentUnitsArgs,
+    ) -> Result<bool, String> {
+        if self.files.workspace().active_document() != Some(document) {
+            return Err(format!(
+                "document {document}: expected the active document for unit settings"
+            ));
+        }
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .set_units(request)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
     fn base_view_preview_from_gui(
         &mut self,
         request: Option<&oblikovati_gui::GuiBaseViewRequest>,

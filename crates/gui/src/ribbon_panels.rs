@@ -141,6 +141,7 @@ impl RibbonPanelLayout {
 }
 /// Editors and layout a ribbon panel's controls can change.
 pub(crate) struct RibbonPanelOwners<'a> {
+    pub home_active: bool,
     pub icons: &'a crate::icons::GuiRibbonIcons,
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
     pub preferences: &'a mut crate::ui_scale::GuiScalePreferences,
@@ -235,7 +236,7 @@ pub(crate) fn draw_side_groups(
         let lit = ui.style_color(imgui::StyleColor::ButtonActive);
         let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
         if crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON) {
-            display.temporary = Some(TemporaryPanel::Group(panel));
+            display.open_temporary(TemporaryPanel::Group(panel));
             display.side_anchor = Some(crate::application::ribbon_display::SideAnchor {
                 x: panel_x.0,
                 y: ui.item_rect_min()[1],
@@ -258,7 +259,7 @@ fn compact_row(
     let ui = context.ui;
     for panel in shown_panels(tab, context.state, &context.hidden) {
         if crate::widget_abi::button(ui, panel.label(), size) {
-            display.temporary = Some(TemporaryPanel::Group(panel));
+            display.open_temporary(TemporaryPanel::Group(panel));
             display.temporary_anchor = ui.item_rect_min()[0];
         }
         ui.same_line();
@@ -288,6 +289,7 @@ fn temporary_panel(
     crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
     let before = context.actions.len();
     let mut keep = true;
+    let focus = std::mem::take(&mut display.temporary_focus);
     ui.window("##ribbon-temporary-panel")
         // `flags` replaces the flags set so far, so it comes first.
         .flags(imgui::WindowFlags::NO_DOCKING)
@@ -295,10 +297,14 @@ fn temporary_panel(
         .movable(false)
         .resizable(false)
         .collapsible(false)
+        .focused(focus)
         .build(|| {
             let local = temporary_contents(context, tab, layout, shown);
             keep = !local
-                && (ui.is_window_hovered() || !ui.is_mouse_clicked(imgui::MouseButton::Left));
+                && (ui.is_window_hovered_with_flags(
+                    imgui::WindowHoveredFlags::CHILD_WINDOWS
+                        | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
+                ) || !ui.is_mouse_clicked(imgui::MouseButton::Left));
         });
     if !keep || context.actions.len() != before {
         display.temporary = None;

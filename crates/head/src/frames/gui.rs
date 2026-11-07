@@ -90,6 +90,7 @@ fn report_authoring_result(
 fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
     Some(match action {
         GuiShellAction::SetUiScale(_)
+        | GuiShellAction::SetDocumentUnits { .. }
         | GuiShellAction::CreateDrawingBaseView(_)
         | GuiShellAction::PreviewDrawingBaseView(_)
         | GuiShellAction::SetSketchOptions(_)

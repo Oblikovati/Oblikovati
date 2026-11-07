@@ -2,6 +2,16 @@
 use crate::HeadWorkStatus;
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork {
+    /// Set document unit preferences through the typed API; example: `work.set_document_units_from_gui(id, &request)?`.
+    fn set_document_units_from_gui(
+        &mut self,
+        document: u64,
+        request: &oblikovati_api::wire::SetDocumentUnitsArgs,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "document {document} units {request:?}: expected a document owner"
+        ))
+    }
     /// Show or clear a drawing preview; example: `work.base_view_preview_from_gui(None)?`.
     fn base_view_preview_from_gui(
         &mut self,

@@ -4,6 +4,11 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::SetDocumentUnits { document, .. } => {
+                state.document == Some(*document)
+                    && state.document_units.is_some()
+                    && !state.transaction_open
+            }
             Self::PreviewDrawingBaseView(None) => true,
             Self::PreviewDrawingBaseView(Some(request)) => {
                 Self::CreateDrawingBaseView(request.clone()).enabled(state)

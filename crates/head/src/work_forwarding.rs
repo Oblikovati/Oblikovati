@@ -2,6 +2,13 @@
 // Keep authoring state on the same document owner when scripts or add-ins wrap frame work.
 macro_rules! forward_owner_view_work {
     ($owner:ident) => {
+        fn set_document_units_from_gui(
+            &mut self,
+            document: u64,
+            request: &oblikovati_api::wire::SetDocumentUnitsArgs,
+        ) -> Result<bool, String> {
+            self.$owner.set_document_units_from_gui(document, request)
+        }
         fn base_view_preview_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiBaseViewRequest>,

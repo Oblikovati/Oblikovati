@@ -37,13 +37,17 @@ pub(crate) fn rebuild_font_atlas(context: &mut Context, scale: f32) -> GuiAtlas 
 #[derive(Default)]
 pub(crate) struct GuiScalePreferences {
     open: bool,
+    document_units: crate::document_units::GuiDocumentUnits,
 }
 impl GuiScalePreferences {
     /// Open the scale panel; example: the File menu's Options entry.
     pub(crate) fn request(&mut self) {
         self.open = true;
     }
-    pub(crate) fn menu(&mut self, ui: &Ui, state: &GuiCommandState) {
+    pub(crate) fn request_document(&mut self, document: u64) {
+        self.document_units.request(document);
+    }
+    pub(crate) fn menu(&mut self, ui: &Ui, state: &GuiCommandState, home_active: bool) {
         ui.menu("Tools", || {
             if ui
                 .menu_item_config("Application Options...")
@@ -52,6 +56,14 @@ impl GuiScalePreferences {
             {
                 self.open = true;
             }
+            if ui
+                .menu_item_config("Document Settings...")
+                .enabled(state.document_units.is_some() && !home_active)
+                .build()
+                && let Some(document) = state.document
+            {
+                self.request_document(document);
+            }
         });
     }
     pub(crate) fn panel(
@@ -59,7 +71,9 @@ impl GuiScalePreferences {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        home_active: bool,
     ) {
+        self.document_units.panel(ui, state, actions, home_active);
         let Some(options) = state.ui_scale.filter(|_| self.open) else {
             return;
         };

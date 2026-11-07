@@ -5,6 +5,7 @@ use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 
 pub(crate) struct RibbonDrawOwners<'a> {
+    pub home_active: bool,
     pub icons: &'a crate::icons::GuiRibbonIcons,
     pub ribbon: &'a mut DocumentRibbon,
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
@@ -174,6 +175,7 @@ fn side_groups(
             ribbon.active,
             &request.commands,
             crate::ribbon_panels::RibbonPanelOwners {
+                home_active: owners.home_active,
                 icons: owners.icons,
                 parameters: owners.parameters,
                 preferences: owners.preferences,
@@ -214,7 +216,9 @@ fn ribbon_contents(
 ) {
     ui.menu_bar(|| {
         owners.files.menu(ui, &request.commands, actions);
-        owners.preferences.menu(ui, &request.commands);
+        owners
+            .preferences
+            .menu(ui, &request.commands, owners.home_active);
     });
     crate::widget_abi::cursor_position(ui, [16., 35.]);
     let row_above = !owners.quick_access.below_ribbon;
@@ -258,6 +262,7 @@ fn ribbon_panel_row(
         ribbon.active,
         &request.commands,
         crate::ribbon_panels::RibbonPanelOwners {
+            home_active: owners.home_active,
             icons: owners.icons,
             parameters: owners.parameters,
             preferences: owners.preferences,
@@ -299,7 +304,7 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             ribbon.display.advance_from_tab();
         }
         if released && ribbon.display.take_tab_release() {
-            ribbon.display.temporary = Some(TemporaryPanel::WholeTab);
+            ribbon.display.open_temporary(TemporaryPanel::WholeTab);
         }
     }
     if hovered {

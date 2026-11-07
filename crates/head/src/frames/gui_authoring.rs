@@ -5,6 +5,9 @@ use oblikovati_gui::GuiShellAction;
 
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
+        GuiShellAction::SetDocumentUnits { document, request } => {
+            owner.set_document_units_from_gui(*document, request)
+        }
         GuiShellAction::CreateDrawingBaseView(request) => owner.base_view_from_gui(request),
         GuiShellAction::PreviewDrawingBaseView(request) => {
             owner.base_view_preview_from_gui(request.as_ref())

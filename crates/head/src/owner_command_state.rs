@@ -33,6 +33,14 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         Ok(oblikovati_gui::GuiCommandState {
+            document_units: Some(
+                oblikovati_api::client::Client::new(oblikovati_automation::FileQueryHost::new(
+                    &self.files,
+                ))
+                .documents()
+                .get_units()
+                .map_err(|cause| cause.to_string())?,
+            ),
             ui_scale: self.gui_ui_scale(),
             sketch_options: Some(self.sketch_options.clone()),
             // Projected by the frame, which owns the camera.

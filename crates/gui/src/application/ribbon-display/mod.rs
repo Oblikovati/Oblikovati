@@ -84,6 +84,7 @@ pub(crate) struct RibbonDisplayState {
     /// `None` cycles through every mode; a choice alternates between it and the full ribbon.
     minimized: Option<RibbonDisplay>,
     pub temporary: Option<TemporaryPanel>,
+    pub temporary_focus: bool,
     pub temporary_anchor: f32,
     tab_release_consumed: bool,
     pub placement: RibbonPlacement,
@@ -101,6 +102,7 @@ impl Default for RibbonDisplayState {
             mode: RibbonDisplay::Full,
             minimized: None,
             temporary: None,
+            temporary_focus: false,
             temporary_anchor: 8.,
             tab_release_consumed: false,
             placement: RibbonPlacement::default(),
@@ -114,6 +116,12 @@ impl Default for RibbonDisplayState {
     }
 }
 impl RibbonDisplayState {
+    pub(crate) fn open_temporary(&mut self, panel: TemporaryPanel) {
+        if self.temporary != Some(panel) {
+            self.temporary_focus = true;
+        }
+        self.temporary = Some(panel);
+    }
     /// What the display control will do next, for its tooltip.
     fn control_tooltip(&self) -> &'static str {
         let mut next = RibbonDisplayState {

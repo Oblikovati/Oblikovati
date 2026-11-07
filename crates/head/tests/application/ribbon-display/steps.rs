@@ -613,3 +613,120 @@ fn tools_ribbon_opens_application_options() {
     world.expect_no_text("Text size");
     world.close();
 }
+
+#[test]
+fn tools_document_settings_edit_the_active_part_units() {
+    use crate::HeadWork;
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    let units = world
+        .app()
+        .owner
+        .gui_command_state()
+        .unwrap()
+        .document_units
+        .unwrap();
+    let selected = if units.length_unit == "in" {
+        "mm"
+    } else {
+        "in"
+    };
+    world.click_text("Document Settings");
+    world.expect_text("Length precision");
+    world.click_text(&units.length_unit);
+    world.click_text(selected);
+    assert_eq!(
+        world
+            .app()
+            .owner
+            .gui_command_state()
+            .unwrap()
+            .document_units
+            .unwrap()
+            .length_unit,
+        selected
+    );
+    let angle = if units.angle_unit == "rad" {
+        "deg"
+    } else {
+        "rad"
+    };
+    world.click_text(&units.angle_unit);
+    world.click_text(angle);
+    let mass = if units.mass_unit == "lb" { "kg" } else { "lb" };
+    world.click_text(&units.mass_unit);
+    world.click_text(mass);
+    let time = if units.time_unit == "min" { "s" } else { "min" };
+    world.click_text(&units.time_unit);
+    world.click_text(time);
+    let format = if units.length_display_format == "fractional" {
+        "decimal"
+    } else {
+        "fractional"
+    };
+    world.click_text(&units.length_display_format);
+    world.click_text(format);
+    let updated = world
+        .app()
+        .owner
+        .gui_command_state()
+        .unwrap()
+        .document_units
+        .unwrap();
+    assert_eq!(
+        (
+            updated.angle_unit.as_str(),
+            updated.mass_unit.as_str(),
+            updated.time_unit.as_str(),
+            updated.length_display_format.as_str()
+        ),
+        (angle, mass, time, format)
+    );
+    world.click_text("Done");
+    world.expect_no_text("Length precision");
+    world.close();
+}
+
+#[test]
+fn compact_tools_closes_its_panel_when_document_settings_opens() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    click_display_menu(&mut world);
+    world.click_text("Minimize to Panel Buttons");
+    world.click_text("Options");
+    world.expect_text("Document Settings");
+    let position = super::diagnostics::pointer_pixels(world.run("Document Settings").center());
+    world.hover(position);
+    let button = |pressed| {
+        oblikovati_viewport::ViewportEvent::Input(oblikovati_viewport::ViewportInput::Button {
+            button: oblikovati_viewport::ViewportButton::Left,
+            pressed,
+            position,
+            modifiers: Default::default(),
+        })
+    };
+    world.pump(vec![button(true)]);
+    world.expect_text("Document Settings");
+    world.pump(vec![button(false)]);
+    world.expect_text("Length precision");
+    world.click_text("Done");
+    world.expect_no_text("Length precision");
+    world.expect_no_text("Document Settings");
+    world.close();
+}
+
+#[test]
+fn document_settings_is_unavailable_while_home_is_in_front() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    world.click_text("Home");
+    world.click_text("Document Settings");
+    world.expect_no_text("Length precision");
+    world.click_tab(world.previous_document.unwrap());
+    world.click_text("Document Settings");
+    world.expect_text("Length precision");
+    world.close();
+}
