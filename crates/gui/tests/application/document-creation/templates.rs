@@ -1,6 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[test]
+fn details_columns_reserve_measured_text_and_group_indent() {
+    let layout = DetailsLayout::new([200., 60., 90.], 20., 8.);
+    assert_eq!(layout.size, 228.);
+    assert_eq!(layout.type_column, 296.);
+    assert_eq!(layout.width, 394.);
+    let scaled = DetailsLayout::new([400., 120., 180.], 40., 16.);
+    assert_eq!(scaled.width, 2. * layout.width);
+}
+#[test]
+fn gallery_keeps_space_for_details_in_a_narrow_dialog() {
+    assert_eq!(gallery_column_width(820.), GALLERY_COLUMN_WIDTH);
+    let narrow = gallery_column_width(460.);
+    assert!(narrow > 0. && narrow < GALLERY_COLUMN_WIDTH);
+    assert!(460. - FOLDER_COLUMN_WIDTH - narrow > 100.);
+}
+#[test]
 fn a_drawing_cannot_be_created_until_its_template_preview_is_accepted() {
     let state = GuiCommandState::default();
     let mut chooser = TemplateChooser {

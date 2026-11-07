@@ -1,5 +1,40 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[test]
+fn details_view_retains_controls_in_a_narrow_window_with_larger_text() {
+    let mut world = ApplicationWorld::new();
+    open_narrow_scaled_details(&mut world);
+    world.expect_text("Template details");
+    world.save_capture("template-details-narrow-large-text");
+    world.drag([300, 503], [540, 503]);
+    world.expect_text("Size");
+    world.expect_text("Type");
+    world.expect_text("Presentation");
+    world.save_capture("template-details-narrow-scrolled");
+    world.close();
+}
+fn open_narrow_scaled_details(world: &mut ApplicationWorld) {
+    const TEXT_SCALE: f32 = 1.5;
+    super::super::super::super::verify_gui_resize_recovery(
+        &mut world.app().window.native,
+        [800, 600],
+    );
+    world
+        .app()
+        .owner
+        .set_ui_scale_from_gui(
+            oblikovati_model::ui_scale::UiScaleOptions::new(TEXT_SCALE, 1.).unwrap(),
+        )
+        .unwrap();
+    world.pump(Vec::new());
+    open_chooser(world);
+    let center = world.run("Display").center();
+    world.click(center.map(|coordinate| (coordinate * TEXT_SCALE) as i32));
+    world.pump(Vec::new());
+    let center = world.run("Details").center();
+    world.click(center.map(|coordinate| (coordinate * TEXT_SCALE) as i32));
+    world.pump(Vec::new());
+}
 #[then("the previously selected template details remain displayed")]
 #[then("the selected template details remain displayed")]
 fn previous_details(world: &mut ApplicationWorld) {

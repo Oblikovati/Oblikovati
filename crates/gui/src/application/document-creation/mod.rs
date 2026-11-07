@@ -145,6 +145,28 @@ impl TemplateView {
     }
 }
 impl TemplateChooser {
+    fn details_layout(&self, ui: &Ui, state: &GuiCommandState) -> DetailsLayout {
+        let units = match self.folder {
+            TemplateFolder::Units(units) => units,
+            TemplateFolder::Root => GuiTemplateUnits::Metric,
+        };
+        let mut widths = [
+            ui.calc_text_size("Name")[0],
+            ui.calc_text_size("Size v")[0],
+            ui.calc_text_size("Type")[0],
+        ];
+        for kind in TEMPLATE_GROUPS
+            .iter()
+            .flat_map(|(_, kinds)| kinds.iter().copied())
+        {
+            let template = GuiDocumentTemplate { kind, units };
+            widths[0] = widths[0].max(ui.calc_text_size(template.title())[0]);
+            widths[1] = widths[1].max(ui.calc_text_size(size_text(template_size(state, kind)))[0]);
+            widths[2] = widths[2].max(ui.calc_text_size(template.type_label())[0]);
+        }
+        let style = ui.clone_style();
+        DetailsLayout::new(widths, style.indent_spacing, style.item_spacing[0])
+    }
     pub(crate) fn request(&mut self) {
         self.requested = true;
     }
@@ -173,16 +195,27 @@ impl TemplateChooser {
         self.projects.needs_frame() || self.component.needs_frame()
     }
     fn contents(&mut self, ui: &Ui, state: &GuiCommandState) {
+        let gallery_width = gallery_column_width(ui.content_region_avail()[0]);
         ui.columns(3, "template-layout", true);
         ui.set_column_width(0, FOLDER_COLUMN_WIDTH);
-        ui.set_column_width(1, GALLERY_COLUMN_WIDTH);
+        ui.set_column_width(1, gallery_width);
         ui.text("Template folders");
         self.folders(ui);
         ui.next_column();
         self.navigation_bar(ui);
+        let layout = self.details_layout(ui, state);
         ui.child_window("##template-gallery")
             .size([0., GALLERY_HEIGHT])
-            .build(|| self.gallery(ui, state));
+            .horizontal_scrollbar(self.view == TemplateView::Details)
+            .content_size([
+                if self.view == TemplateView::Details {
+                    layout.width
+                } else {
+                    0.
+                },
+                0.,
+            ])
+            .build(|| self.gallery(ui, state, layout));
         ui.next_column();
         self.details(ui);
         ui.columns(1, "template-layout-end", false);
@@ -254,52 +287,64 @@ impl TemplateChooser {
             self.ungrouped = !self.ungrouped;
         }
     }
-    fn gallery(&mut self, ui: &Ui, state: &GuiCommandState) {
+    fn gallery(&mut self, ui: &Ui, state: &GuiCommandState, layout: DetailsLayout) {
         if self.view == TemplateView::Details {
-            self.details_header(ui);
+            self.details_header(ui, layout);
         }
         if self.ungrouped {
             let all: Vec<GuiTemplateKind> = TEMPLATE_GROUPS
                 .iter()
                 .flat_map(|(_, kinds)| kinds.iter().copied())
                 .collect();
-            self.tiles(ui, state, &all);
+            self.tiles(ui, state, &all, layout);
             return;
         }
         // A collapsed group hides its tiles only: the selection and its details stay.
         for (group, kinds) in TEMPLATE_GROUPS {
             if let Some(_tiles) = ui.tree_node_config(group).default_open(true).push() {
-                self.tiles(ui, state, kinds);
+                self.tiles(ui, state, kinds, layout);
             }
         }
     }
-    fn details_header(&mut self, ui: &Ui) {
+    fn details_header(&mut self, ui: &Ui, layout: DetailsLayout) {
         ui.text("Name");
-        ui.same_line_with_pos(DETAILS_SIZE_COLUMN);
+        ui.same_line_with_pos(layout.size);
         let clicked = ui
             .selectable_config(size_heading(self.size_sort))
             .flags(imgui::SelectableFlags::DONT_CLOSE_POPUPS)
-            .size([60., 0.])
+            .size([ui.calc_text_size("Size v")[0], 0.])
             .build();
         if clicked {
             self.size_sort = Some(next_size_order(self.size_sort));
         }
-        ui.same_line_with_pos(DETAILS_TYPE_COLUMN);
+        ui.same_line_with_pos(layout.type_column);
         ui.text("Type");
         ui.separator();
     }
-    fn tiles(&mut self, ui: &Ui, state: &GuiCommandState, kinds: &[GuiTemplateKind]) {
+    fn tiles(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        kinds: &[GuiTemplateKind],
+        layout: DetailsLayout,
+    ) {
         for kind in ordered_kinds(kinds, self.size_sort, state) {
-            self.tile(ui, state, kind);
+            self.tile(ui, state, kind, layout);
         }
     }
-    fn tile(&mut self, ui: &Ui, state: &GuiCommandState, kind: GuiTemplateKind) {
+    fn tile(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        kind: GuiTemplateKind,
+        layout: DetailsLayout,
+    ) {
         // The root holds folders only: its gallery shows the headings above nothing.
         let TemplateFolder::Units(units) = self.folder else {
             return;
         };
         let template = GuiDocumentTemplate { kind, units };
-        if self.tile_row(ui, state, template) {
+        if self.tile_row(ui, state, template, layout) {
             self.selected = Some(template);
             self.drawing_layout = None;
         }
@@ -309,6 +354,7 @@ impl TemplateChooser {
         ui: &Ui,
         state: &GuiCommandState,
         template: GuiDocumentTemplate,
+        layout: DetailsLayout,
     ) -> bool {
         let selected = self.selected == Some(template);
         let chosen = ui
@@ -323,9 +369,9 @@ impl TemplateChooser {
         self.create_requested |=
             ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
         if self.view == TemplateView::Details {
-            ui.same_line_with_pos(DETAILS_SIZE_COLUMN);
+            ui.same_line_with_pos(layout.size);
             ui.text_disabled(size_text(template_size(state, template.kind)));
-            ui.same_line_with_pos(DETAILS_TYPE_COLUMN);
+            ui.same_line_with_pos(layout.type_column);
             ui.text_disabled(template.type_label());
         }
         chosen
@@ -409,8 +455,26 @@ fn active_document_name(state: &GuiCommandState) -> &str {
 const GALLERY_HEIGHT: f32 = 280.;
 const FOLDER_COLUMN_WIDTH: f32 = 130.;
 const GALLERY_COLUMN_WIDTH: f32 = 400.;
-const DETAILS_SIZE_COLUMN: f32 = 260.;
-const DETAILS_TYPE_COLUMN: f32 = 330.;
+fn gallery_column_width(available: f32) -> f32 {
+    ((available - FOLDER_COLUMN_WIDTH).max(0.) * 0.65).min(GALLERY_COLUMN_WIDTH)
+}
+#[derive(Clone, Copy)]
+struct DetailsLayout {
+    size: f32,
+    type_column: f32,
+    width: f32,
+}
+impl DetailsLayout {
+    fn new(widths: [f32; 3], indent: f32, gap: f32) -> Self {
+        let size = indent + widths[0] + gap;
+        let type_column = size + widths[1] + gap;
+        Self {
+            size,
+            type_column,
+            width: type_column + widths[2] + gap,
+        }
+    }
+}
 const DISPLAY_MENU: &str = "##template-display";
 fn dialog_geometry(ui: &Ui) {
     let size = [

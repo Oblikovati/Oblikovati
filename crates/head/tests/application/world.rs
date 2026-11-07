@@ -51,7 +51,7 @@ impl fmt::Debug for ApplicationWorld {
     }
 }
 impl ApplicationWorld {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let native = NativeHeadWindow::open().unwrap();
         let mut owner = native_owner(native.wake.clone()).unwrap();
         // The options file outlives a scenario; one that failed part-way must not reach the next.
