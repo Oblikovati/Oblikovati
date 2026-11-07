@@ -30,6 +30,7 @@ fn expect_parameters_panel(world: &ApplicationWorld) {
     );
 }
 #[given("the Parameters panel is hidden")]
+#[given("Parameters is hidden")]
 #[then("the Parameters panel disappears from the ribbon")]
 #[then("the Parameters group button disappears")]
 #[then("the Parameters panel is absent from the expanded ribbon")]
@@ -168,6 +169,7 @@ fn model_docked_left(world: &mut ApplicationWorld) {
 #[then("the Modify group returns to the side-docked ribbon")]
 #[then("the Modify group returns to the left-docked ribbon")]
 #[then("the Modify panel is visible in the top ribbon")]
+#[then("the Modify group appears in the floating ribbon")]
 #[then("the Modify panel is visible again")]
 fn modify_visible(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
@@ -347,6 +349,7 @@ fn navigate_appears(world: &mut ApplicationWorld) {
 }
 // Dismissing the list
 #[given("the Create and Modify panels are visible")]
+#[given("the 3D Model ribbon shows Create and Modify")]
 fn shows_create_modify(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
     world.pump(Vec::new());
@@ -354,6 +357,7 @@ fn shows_create_modify(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
 }
 #[given("the View ribbon is expanded with Visibility, Appearance, Windows and Navigate visible")]
+#[given("the View ribbon is expanded with the Navigate panel visible")]
 fn view_ribbon_expanded(world: &mut ApplicationWorld) {
     world.click_text("View");
     world.pump(Vec::new());
@@ -428,3 +432,15 @@ fn parameters_is_hidden(world: &mut ApplicationWorld) {
 
 #[path = "panel_selector.rs"]
 mod panel_selector;
+
+#[then("the other compact group buttons remain visible")]
+fn other_compact_groups(world: &mut ApplicationWorld) {
+    for panel in ["Sketch", "Create", "Modify"] {
+        world.expect_text(panel);
+    }
+}
+#[then("Navigate is unchecked in Show Panels")]
+fn navigate_unchecked_in_menu(world: &mut ApplicationWorld) {
+    expand_show_panels(world);
+    navigate_unchecked(world);
+}
