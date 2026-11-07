@@ -187,7 +187,7 @@ impl ApplicationWorld {
     /// Press visible text with a real pointer event; a test never reaches for widget state.
     pub fn click_text(&mut self, text: &str) {
         let center = self.run(text).center();
-        self.click(center.map(|value| value as i32));
+        self.click(diagnostics::pointer_pixels(center));
     }
     pub fn drag(&mut self, from: [i32; 2], to: [i32; 2]) {
         self.pump(pointer_drag_press(from));

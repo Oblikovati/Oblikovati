@@ -222,6 +222,14 @@ pub(super) fn window_pixel_bounds(title: &str) -> Option<[f32; 4]> {
         (position[1] + size[1]) * scale.y,
     ])
 }
+/// Map drawn text positions to native pointer pixels, including the current UI scale.
+pub(super) fn pointer_pixels(position: [f32; 2]) -> [i32; 2] {
+    let io = unsafe { sys::igGetIO().as_ref() }.expect("expected a live GUI context");
+    [
+        (position[0] * io.DisplayFramebufferScale.x) as i32,
+        (position[1] * io.DisplayFramebufferScale.y) as i32,
+    ]
+}
 /// Screen rectangles that belong to GUI windows, not to the model beneath them.
 pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
     let context =

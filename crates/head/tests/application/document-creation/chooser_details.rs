@@ -28,11 +28,9 @@ fn open_narrow_scaled_details(world: &mut ApplicationWorld) {
         .unwrap();
     world.pump(Vec::new());
     open_chooser(world);
-    let center = world.run("Display").center();
-    world.click(center.map(|coordinate| (coordinate * TEXT_SCALE) as i32));
+    world.click_text("Display");
     world.pump(Vec::new());
-    let center = world.run("Details").center();
-    world.click(center.map(|coordinate| (coordinate * TEXT_SCALE) as i32));
+    world.click_text("Details");
     world.pump(Vec::new());
 }
 #[then("the previously selected template details remain displayed")]

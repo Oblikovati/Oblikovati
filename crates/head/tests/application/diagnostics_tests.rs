@@ -4,6 +4,15 @@ use imgui::{Condition, Context};
 use std::sync::Mutex;
 // Dear ImGui allows one active context per process.
 static HEADLESS_CONTEXT: Mutex<()> = Mutex::new(());
+#[test]
+fn pointer_pixels_follow_framebuffer_scale_on_each_axis() {
+    let _exclusive = HEADLESS_CONTEXT
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let mut context = Context::create();
+    context.io_mut().display_framebuffer_scale = [1.5, 2.];
+    assert_eq!(pointer_pixels([20., 30.]), [30, 60]);
+}
 /// Draw one headless frame with the named widgets; returns runs from its draw data.
 fn runs_of(build: impl FnOnce(&imgui::Ui), scale: f32) -> Vec<RenderedRun> {
     let _exclusive = HEADLESS_CONTEXT
