@@ -101,13 +101,22 @@ fn parse_request(request: wire::AddFeatureArgs) -> Result<Extrude, Error> {
 }
 fn require_supported(input: &Extrude) -> Result<(), Error> {
     for (field, value, supported) in [
-        ("operation", input.operation.as_str(), "new"),
-        ("extent", input.extent.as_str(), "distance"),
-        ("direction", input.direction.as_str(), "positive"),
+        (
+            "operation",
+            input.operation.as_str(),
+            &["new", "newbody", "new-body"][..],
+        ),
+        ("extent", input.extent.as_str(), &["distance"][..]),
+        ("direction", input.direction.as_str(), &["positive"][..]),
     ] {
-        if !value.is_empty() && value != supported {
+        let normalized = value.trim();
+        if !normalized.is_empty()
+            && !supported
+                .iter()
+                .any(|allowed| normalized.eq_ignore_ascii_case(allowed))
+        {
             return Err(Error(format!(
-                "extrude {field} {value:?}: expected {supported:?}"
+                "extrude {field} {value:?}: expected one of {supported:?}"
             )));
         }
     }

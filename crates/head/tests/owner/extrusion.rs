@@ -76,9 +76,13 @@ fn typed_extrude_creates_a_certified_scene_and_tracks_parameter_edits() {
     let (owner, _) = owner();
     let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
     let document = open_sketch(&mut owner);
+    let mut input = request();
+    input.operation = " New-Body ".into();
+    input.extent = " DISTANCE ".into();
+    input.direction = " Positive ".into();
     let reply = Client::new(owner.document_host())
         .features()
-        .add_feature(&request())
+        .add_feature(&input)
         .unwrap()
         .0
         .unwrap();
@@ -108,6 +112,7 @@ fn typed_extrude_creates_a_certified_scene_and_tracks_parameter_edits() {
     owner.take_scene().unwrap().unwrap();
     assert_cube(&owner, document, 2.);
     let face_key = cube_face_key(&owner, document);
+    let keys = cube_keys(&owner, document);
     let path = "/memory/certified-cube.opd";
     Client::new(owner.document_host())
         .documents()
@@ -134,6 +139,7 @@ fn typed_extrude_creates_a_certified_scene_and_tracks_parameter_edits() {
     owner.take_scene().unwrap().unwrap();
     assert_cube(&owner, reopened, 2.);
     assert_eq!(cube_face_key(&owner, reopened), face_key);
+    assert_eq!(cube_keys(&owner, reopened), keys);
     assert_face(&owner, reopened, &face_key, 4.);
 }
 #[test]
@@ -187,12 +193,44 @@ fn assert_cube(owner: &TestOwner, document: u64, side: f64) {
     let key = body.body_reference_key(session.history(), guid).unwrap();
     let report = body.body_report(session.history(), guid, key).unwrap();
     assert!((report.properties.volume - side.powi(3)).abs() < 1e-8);
+    assert_eq!(
+        (
+            report.topology.faces,
+            report.topology.edges,
+            report.topology.vertices
+        ),
+        (6, 12, 8)
+    );
+    let keys = body.reference_keys(session.history(), guid).unwrap();
+    let face_keys: Vec<_> = keys
+        .iter()
+        .filter(|candidate| candidate.as_slice() != key)
+        .collect();
+    assert_eq!(face_keys.len(), 6);
+    for face_key in face_keys {
+        let face = body.face_report(session.history(), guid, face_key).unwrap();
+        assert_eq!(face.loops, 1);
+        assert!((face.area - side.powi(2)).abs() < 1e-8);
+    }
     assert_face(
         owner,
         document,
         &cube_face_key(owner, document),
         side.powi(2),
     );
+}
+fn cube_keys(owner: &TestOwner, document: u64) -> Vec<Vec<u8>> {
+    let workspace = owner.documents().workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    owner
+        .part_scenes
+        .current(session)
+        .unwrap()
+        .body(oblikovati_model::feature::FeatureId(1))
+        .unwrap()
+        .reference_keys(session.history(), guid)
+        .unwrap()
 }
 fn cube_face_key(owner: &TestOwner, document: u64) -> Vec<u8> {
     let guid = owner
