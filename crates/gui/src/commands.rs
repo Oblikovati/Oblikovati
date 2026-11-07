@@ -199,6 +199,10 @@ pub struct GuiSketchLineStyle {
 /// What a press on a browser row other than a feature or sketch asks for.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GuiBrowserChoice {
+    /// Create and activate a new model-state member.
+    CreateModelState,
+    /// Copy a member without activating the copy.
+    CopyModelState(u64),
     /// Activate a document-owned model state.
     ActivateModelState(u64),
     /// No row stays chosen, as after a click on empty space.

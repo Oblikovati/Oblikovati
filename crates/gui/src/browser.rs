@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#[path = "browser_model_state.rs"]
+mod browser_model_state;
 use crate::application::workspace_layout::browser_view::BrowserView;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, StyleColor, Ui};
@@ -239,7 +241,12 @@ impl BrowserTree<'_> {
         let Some(_representations) = self.branch("Representations", true) else {
             return;
         };
-        let Some(_states) = self.branch("Model State", false) else {
+        let node = self.branch("Model State", false);
+        if self.ui.is_item_hovered() && self.ui.is_mouse_clicked(MouseButton::Right) {
+            self.ui.open_popup("##model-state-menu");
+        }
+        self.model_state_menu(states, actions);
+        let Some(_states) = node else {
             return;
         };
         for member in states.list() {

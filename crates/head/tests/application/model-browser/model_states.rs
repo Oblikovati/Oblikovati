@@ -31,5 +31,40 @@ fn model_state_rows_follow_document_and_double_click_activates_member() {
     world.expect_text("Primary (Active)");
     world.redo();
     world.expect_text("Variant##1 (Active)");
+    open_new_state_menu(&mut world);
+    world.expect_text("Duplicate Variant##1");
+    world.click_text("Duplicate Variant##1");
+    world.pump(Vec::new());
+    world.expect_text("Variant##1 Copy1");
+    world.expect_text("Variant##1 (Active)");
+    world.close();
+}
+
+fn open_new_state_menu(world: &mut ApplicationWorld) {
+    right_click_row(world, "Model State");
+    let menu = super::super::diagnostics::pointer_pixels(world.run("New Model State").center());
+    world.hover(menu);
+    world.pump(Vec::new());
+}
+
+#[test]
+fn model_state_menu_creates_active_and_copies_inactive_with_undo() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("Model State");
+    open_new_state_menu(&mut world);
+    world.click_text("New Model State");
+    world.pump(Vec::new());
+    world.expect_text("Model State1 (Active)");
+    world.undo();
+    world.expect_text("Primary (Active)");
+    world.expect_no_text("Model State1");
+    world.redo();
+    world.expect_text("Model State1 (Active)");
+    open_new_state_menu(&mut world);
+    world.click_text("Duplicate Model State1");
+    world.pump(Vec::new());
+    world.expect_text("Model State1 (Active)");
+    world.expect_text("Model State1 Copy1");
     world.close();
 }

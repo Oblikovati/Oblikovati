@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#[path = "owner_model_state.rs"]
+mod model_state;
 use super::*;
 use oblikovati_model::document_sketch::DocumentSketchId;
 use oblikovati_session::selection::SelectionClickMode;
@@ -148,10 +150,23 @@ impl<
         choice: &oblikovati_gui::GuiBrowserChoice,
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
-            ActivateModelState, Body, BodyVisible, Nothing, Root, ShowFeatureDimensions,
-            SketchDimensionsShown,
+            ActivateModelState, Body, BodyVisible, CopyModelState, CreateModelState, Nothing, Root,
+            ShowFeatureDimensions, SketchDimensionsShown,
         };
         self.require_browser_document(document)?;
+        if matches!(choice, CreateModelState) {
+            return self.create_active_model_state(document);
+        }
+        if let CopyModelState(id) = choice {
+            oblikovati_api::client::Client::new(self.document_host())
+                .model_states()
+                .copy(&oblikovati_api::wire::ModelStateNameArgs {
+                    id: *id,
+                    name: String::new(),
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
         if let ActivateModelState(id) = choice {
             oblikovati_api::client::Client::new(self.document_host())
                 .model_states()
@@ -171,7 +186,11 @@ impl<
             .commands(document)
             .map_err(|cause| cause.to_string())?;
         match choice {
-            ActivateModelState(_) | ShowFeatureDimensions(_) | SketchDimensionsShown { .. } => {}
+            CreateModelState
+            | CopyModelState(_)
+            | ActivateModelState(_)
+            | ShowFeatureDimensions(_)
+            | SketchDimensionsShown { .. } => {}
             Nothing => {
                 commands
                     .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
