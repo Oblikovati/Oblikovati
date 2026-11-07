@@ -175,5 +175,8 @@ fn a_line_style_round_trips_at_version_seven_and_older_recipes_refuse_it() {
     assert_eq!(restored.get(id).unwrap().line_style(), &style);
     recipe.version = 6;
     let refused = DocumentSketches::from_recipe(&recipe).unwrap_err();
-    assert!(refused.to_string().contains("expected version 7"), "{refused}");
+    assert!(
+        refused.to_string().contains("expected version 7"),
+        "{refused}"
+    );
 }
