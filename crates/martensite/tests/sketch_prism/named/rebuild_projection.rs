@@ -265,6 +265,19 @@ fn standard_base_view_centers_and_scales_current_cube_on_sheet() {
     let parameter = view.curves.visible[0]
         .parameter_range(&history, document())
         .unwrap()[0];
+    let points = view
+        .sheet_polyline(true, 0, &history, document(), 0.05)
+        .unwrap();
+    assert!(points.len() >= 2);
+    assert_eq!(
+        points[0],
+        view.sheet_point(true, 0, &history, document(), parameter)
+            .unwrap()
+    );
+    assert!(
+        view.sheet_polyline(true, 0, &history, document(), 0.)
+            .is_err()
+    );
     let token = history.begin("Size").unwrap();
     history
         .edit(&token, |snapshot, _| {
@@ -274,6 +287,10 @@ fn standard_base_view_centers_and_scales_current_cube_on_sheet() {
     history.commit(&token, false).unwrap();
     assert!(
         view.sheet_point(true, 0, &history, document(), parameter)
+            .is_err()
+    );
+    assert!(
+        view.sheet_polyline(true, 0, &history, document(), 0.05)
             .is_err()
     );
 }

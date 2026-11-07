@@ -40,16 +40,23 @@ fn require_sampling_capacity(
         PlanarGeometry::Ellipse { radii, .. } => radii[0],
         _ => return Ok(()),
     };
-    let capacity = f64::from(options.maximum_curve_points - 2);
+    require_round_sampling_capacity(radius, options.deflection, options.maximum_curve_points)
+}
+pub(crate) fn require_round_sampling_capacity(
+    radius: f64,
+    deflection: f64,
+    maximum_curve_points: u32,
+) -> Result<(), String> {
+    let capacity = f64::from(maximum_curve_points - 2);
     // A full turn is < 8 radians and 2*acos(1-d) >= sqrt(8*d). This is conservative
     // admission before the native sampler allocates, not a second facet-count policy.
     // Also keep 1-d distinct from 1 in the native acos expression. Ellipses use
     // the same major-radius admission floor; their actual native count is checked below.
     let minimum_ratio = (8. / (capacity * capacity)).max(f64::EPSILON);
-    if options.deflection / radius < minimum_ratio {
+    if deflection / radius < minimum_ratio {
         return Err(format!(
             "sketch radius {radius}, deflection {}: expected ratio >= {minimum_ratio} with a {} native sample limit",
-            options.deflection, options.maximum_curve_points
+            deflection, maximum_curve_points
         ));
     }
     Ok(())

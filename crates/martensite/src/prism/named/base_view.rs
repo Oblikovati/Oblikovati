@@ -15,6 +15,33 @@ pub struct DrawingBaseProjection {
     scale: f64,
 }
 impl DrawingBaseProjection {
+    /// Sample a curve for sheet display; example: `view.sheet_polyline(true, 0, history, guid, 0.05)?`.
+    pub fn sheet_polyline(
+        &self,
+        visible: bool,
+        index: usize,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        deflection_mm: f64,
+    ) -> Result<Vec<[f64; 2]>, String> {
+        let curves = if visible {
+            &self.curves.visible
+        } else {
+            &self.curves.hidden
+        };
+        let curve = curves.get(index).ok_or_else(|| {
+            format!(
+                "drawing curve index {index}: expected an index below {}",
+                curves.len()
+            )
+        })?;
+        let deflection = deflection_mm / self.scale / 10.;
+        curve
+            .display_parameters(history, document, deflection)?
+            .into_iter()
+            .map(|parameter| self.sheet_point(visible, index, history, document, parameter))
+            .collect()
+    }
     /// Evaluate a curve on the sheet in millimetres; example: `view.sheet_point(true, 0, history, guid, parameter)?`.
     pub fn sheet_point(
         &self,

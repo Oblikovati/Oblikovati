@@ -90,7 +90,7 @@ pub use preview::{
 };
 pub use sampling::SketchSamplingOptionsV1;
 mod presentation;
-mod sampling;
+pub(crate) mod sampling;
 pub use presentation::{
     SketchDisplayDecline, SketchDisplayEntity, SketchDisplayPrimitive, SketchDisplayReport,
     sample_sketch_display,

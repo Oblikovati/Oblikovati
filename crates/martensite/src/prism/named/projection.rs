@@ -42,6 +42,16 @@ pub struct DrawingProjection {
     pub hidden: Vec<DrawingProjectedCurve>,
 }
 impl DrawingProjectedCurve {
+    /// Sample this current curve for display; example: `curve.display_parameters(history, guid, 0.01)?` uses centimetres.
+    pub fn display_parameters(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        deflection: f64,
+    ) -> Result<Vec<f64>, String> {
+        self.require_current(history, document)?;
+        super::discretize::curve_parameters(&self.shape, self.range, deflection)
+    }
     /// Read the edge's native parameter range; example: `curve.parameter_range(history, document)?`.
     pub fn parameter_range(
         &self,

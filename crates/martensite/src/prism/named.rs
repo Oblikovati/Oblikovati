@@ -217,6 +217,8 @@ pub fn named_part_properties<'a>(
 
 #[path = "named/base_view.rs"]
 mod base_view;
+#[path = "named/discretize.rs"]
+mod discretize;
 #[path = "named/projection.rs"]
 mod projection;
 pub use base_view::{DrawingBaseProjection, drawing_base_view_bodies};
