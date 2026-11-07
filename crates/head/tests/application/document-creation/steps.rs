@@ -371,3 +371,11 @@ fn details_rows(world: &mut ApplicationWorld) {
 fn details_pane(world: &mut ApplicationWorld) {
     world.expect_text("Template details");
 }
+#[given("template grouping by document type is enabled")]
+fn grouping_on(_: &mut ApplicationWorld) {
+    // Grouping is the chooser's own default, read once it opens.
+}
+#[given("the template details are blank")]
+fn details_blank(world: &mut ApplicationWorld) {
+    world.expect_no_text("Document type:");
+}

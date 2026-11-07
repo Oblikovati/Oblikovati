@@ -141,7 +141,7 @@ impl SketchDisplayOverlay {
         {
             &self.selected_color
         } else {
-            &self.color
+            sketch.line_color.as_ref().unwrap_or(&self.color)
         };
         match build_entity(viewer, sketch, entity, color) {
             Ok(structure) => self.structures.push(structure),

@@ -1,0 +1,440 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Document-opening scenarios on what is selected, how it opens, and thumbnails.
+use super::*;
+
+const EXPRESS: &str = "Load in Express Mode";
+const DEFER: &str = "Load in Defer Mode";
+const SKIP: &str = "Skip all unresolved files";
+
+fn documents(world: &mut ApplicationWorld) -> usize {
+    world.state().documents.len()
+}
+fn click_option(world: &mut ApplicationWorld, label: &str) {
+    world.click_text(label);
+    settle(world);
+}
+/// Close what the fixture opened by saving, as a file that is "not already open".
+fn close_active(world: &mut ApplicationWorld) {
+    world.close_active_tab();
+    settle(world);
+}
+fn switch_to_tiles(world: &mut ApplicationWorld) {
+    world.click_text("Tiles");
+    settle(world);
+}
+fn drawings_in_tiles(world: &mut ApplicationWorld) -> PathBuf {
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
+    saved_document(
+        world,
+        GuiTemplateKind::Drawing,
+        &folder,
+        SECOND_DRAWING_FILE,
+    );
+    open_dialog(world);
+    look_in(world, &folder);
+    switch_to_tiles(world);
+    folder
+}
+fn rectangle_over_drawings(world: &mut ApplicationWorld) {
+    let first = world.run(DRAWING_FILE).clone();
+    let second = world.run(SECOND_DRAWING_FILE).clone();
+    let top = first.center()[1].min(second.center()[1]) as i32;
+    let bottom = first.center()[1].max(second.center()[1]) as i32;
+    let left = first.minimum[0].min(second.minimum[0]) as i32;
+    let right = first.maximum[0].max(second.maximum[0]) as i32;
+    // From the empty space under the last tile, up across both.
+    world.drag([left, bottom + 80], [right, top]);
+    settle(world);
+}
+// Assembly options
+#[given("a saved assembly with a preview is selected")]
+fn assembly_selected(world: &mut ApplicationWorld) {
+    cancel_dialog(world);
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Assembly, &folder, ASSEMBLY_FILE);
+    open_dialog(world);
+    look_in(world, &folder);
+    select_row(world, ASSEMBLY_FILE);
+}
+#[given("the Options pane displays Load in Express Mode unchecked")]
+fn express_unchecked(world: &mut ApplicationWorld) {
+    assert!(!world.checked(EXPRESS), "expected {EXPRESS} unchecked");
+}
+#[given("Model State, Design View and Position View controls are displayed")]
+fn assembly_rows(world: &mut ApplicationWorld) {
+    for row in ["Model State", "Design View", "Position View"] {
+        assert!(holds_text(world, row), "expected {row}");
+    }
+}
+#[when("I select Load in Express Mode")]
+#[when("I clear Load in Express Mode")]
+fn toggle_express(world: &mut ApplicationWorld) {
+    click_option(world, EXPRESS);
+}
+#[then("Design View and Position View become unavailable")]
+fn views_off(world: &mut ApplicationWorld) {
+    assert!(!world.run_is_enabled("Design View"), "Design View");
+    assert!(
+        !world.run_is_enabled("Position View: Primary"),
+        "Position View"
+    );
+}
+#[then("Model State remains available")]
+fn state_on(world: &mut ApplicationWorld) {
+    assert!(world.run_is_enabled("Model State: Primary"), "Model State");
+}
+#[then("Design View and Position View become available again")]
+fn views_on(world: &mut ApplicationWorld) {
+    assert!(world.run_is_enabled("Design View"), "Design View");
+    assert!(
+        world.run_is_enabled("Position View: Primary"),
+        "Position View"
+    );
+}
+#[then("the assembly preview remains displayed")]
+fn assembly_preview(world: &mut ApplicationWorld) {
+    world.expect_no_text("No preview image");
+}
+// Already open files
+#[given("a saved part is open in the MCAD Software")]
+fn part_open(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    let id = saved_document(world, GuiTemplateKind::Part, &folder, PART_FILE);
+    world.parts.push(id);
+}
+#[given("a different drawing document is active")]
+fn drawing_on_top(world: &mut ApplicationWorld) {
+    world.add_template(GuiTemplateKind::Drawing);
+    world.observed_counts = vec![documents(world)];
+}
+#[given("the open part's exact file location is known")]
+fn location_known(world: &mut ApplicationWorld) {
+    assert!(
+        models_folder(world).join(PART_FILE).exists(),
+        "expected the saved part"
+    );
+}
+#[when("I press Control+O and choose the already open part at that location")]
+fn choose_open_part(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    open_dialog(world);
+    look_in(world, &folder);
+    select_row(world, PART_FILE);
+}
+#[when("I choose Open")]
+fn press_open(world: &mut ApplicationWorld) {
+    choose_open(world);
+}
+#[then("the Open dialog closes")]
+fn dialog_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Look in");
+}
+#[then("the existing part document tab becomes active")]
+fn part_tab_active(world: &mut ApplicationWorld) {
+    let part = *world.parts.last().expect("expected the saved part");
+    assert_eq!(world.active_id(), part, "active document");
+}
+#[then("no additional document tab is created")]
+fn no_extra_tab(world: &mut ApplicationWorld) {
+    assert_eq!(documents(world), world.observed_counts[0], "documents");
+}
+#[then("the drawing tab remains available")]
+fn drawing_tab_kept(world: &mut ApplicationWorld) {
+    assert!(documents(world) >= 2, "expected the drawing still open");
+}
+// Drawing options
+#[given("a saved drawing is selected with its Options pane displayed")]
+fn drawing_selected(world: &mut ApplicationWorld) {
+    cancel_dialog(world);
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
+    open_dialog(world);
+    look_in(world, &folder);
+    select_row(world, DRAWING_FILE);
+}
+#[given("Load in Defer Mode is unchecked")]
+#[then("Load in Defer Mode is unchecked")]
+#[then("Load in Defer Mode is unchecked for the second drawing")]
+fn defer_off(world: &mut ApplicationWorld) {
+    assert!(!world.checked(DEFER), "expected {DEFER} unchecked");
+}
+#[given("Skip all unresolved files is checked")]
+fn skip_on(world: &mut ApplicationWorld) {
+    click_option(world, SKIP);
+    assert!(world.checked(SKIP), "expected {SKIP} checked");
+}
+#[when("I select Load in Defer Mode")]
+#[when("I clear Load in Defer Mode")]
+fn toggle_defer(world: &mut ApplicationWorld) {
+    click_option(world, DEFER);
+}
+#[then("Skip all unresolved files is unavailable")]
+fn skip_off(world: &mut ApplicationWorld) {
+    assert!(!world.run_is_enabled(SKIP), "expected {SKIP} unavailable");
+}
+#[then("Skip all unresolved files is available and unchecked")]
+fn skip_clear(world: &mut ApplicationWorld) {
+    assert!(world.run_is_enabled(SKIP), "expected {SKIP} available");
+    assert!(!world.checked(SKIP), "expected {SKIP} unchecked");
+}
+#[then("the selected drawing and its preview remain displayed")]
+fn drawing_kept(world: &mut ApplicationWorld) {
+    expect_name_and_preview(world, DRAWING_FILE);
+}
+#[given("two saved drawings are visible in the same folder")]
+fn two_drawings(world: &mut ApplicationWorld) {
+    cancel_dialog(world);
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
+    saved_document(
+        world,
+        GuiTemplateKind::Drawing,
+        &folder,
+        SECOND_DRAWING_FILE,
+    );
+    open_dialog(world);
+    look_in(world, &folder);
+}
+#[given("the first drawing is selected in the Options pane")]
+fn first_selected(world: &mut ApplicationWorld) {
+    select_row(world, DRAWING_FILE);
+}
+#[when("I select the second drawing")]
+fn select_second(world: &mut ApplicationWorld) {
+    select_row(world, SECOND_DRAWING_FILE);
+}
+#[then("the second drawing is selected and its file name is displayed")]
+fn second_shown(world: &mut ApplicationWorld) {
+    let shown = file_name_shown(world);
+    assert!(shown.contains(SECOND_DRAWING_FILE), "file name {shown:?}");
+}
+#[when("I select the first drawing again")]
+fn select_first_again(world: &mut ApplicationWorld) {
+    select_row(world, DRAWING_FILE);
+}
+#[then("the drawing remains selected without being opened")]
+fn still_selected(world: &mut ApplicationWorld) {
+    world.expect_text("Look in");
+    let shown = file_name_shown(world);
+    assert!(shown.contains(DRAWING_FILE), "file name {shown:?}");
+}
+// Thumbnails
+#[given(
+    "the Open dialog in the MCAD Software displays a saved drawing and a saved part as thumbnails"
+)]
+fn drawing_and_part_tiles(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
+    saved_document(world, GuiTemplateKind::Part, &folder, PART_FILE);
+    open_dialog(world);
+    look_in(world, &folder);
+    switch_to_tiles(world);
+}
+#[given("the drawing thumbnail is selected with its sheet preview displayed")]
+fn drawing_tile_selected(world: &mut ApplicationWorld) {
+    select_row(world, DRAWING_FILE);
+    expect_name_and_preview(world, DRAWING_FILE);
+}
+#[given("the Options pane shows the drawing loading choices")]
+fn drawing_choices(world: &mut ApplicationWorld) {
+    world.expect_text(DEFER);
+}
+#[when("I select the part thumbnail")]
+fn select_part_tile(world: &mut ApplicationWorld) {
+    select_row(world, PART_FILE);
+}
+#[then("the part thumbnail is highlighted")]
+fn part_tile_lit(world: &mut ApplicationWorld) {
+    assert!(row_lit(world, PART_FILE), "expected the tile's accent");
+}
+#[then("the file name field identifies the part")]
+fn name_is_part(world: &mut ApplicationWorld) {
+    let shown = file_name_shown(world);
+    assert!(shown.contains(PART_FILE), "file name {shown:?}");
+}
+#[then("the separate preview displays the part geometry")]
+fn separate_preview(world: &mut ApplicationWorld) {
+    world.expect_no_text("No preview image");
+}
+// The context menu
+#[given("the Open dialog in the MCAD Software displays a saved part as a thumbnail")]
+fn part_tile(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Part, &folder, PART_FILE);
+    open_dialog(world);
+    look_in(world, &folder);
+    switch_to_tiles(world);
+}
+#[given("the part is selected with its file name and preview displayed")]
+fn part_tile_selected(world: &mut ApplicationWorld) {
+    select_row(world, PART_FILE);
+    expect_name_and_preview(world, PART_FILE);
+}
+#[when("I right-click the part thumbnail")]
+fn right_click_tile(world: &mut ApplicationWorld) {
+    let at = world.run(PART_FILE).center().map(|value| value as i32);
+    world.right_click(at);
+    settle(world);
+}
+#[then("a context menu appears with Open, Copy, Rename and Properties choices")]
+fn tile_menu(world: &mut ApplicationWorld) {
+    for row in ["Copy", "Rename", "Properties"] {
+        world.expect_text(row);
+    }
+}
+#[when("I click an empty area of the file list")]
+fn click_empty_list(world: &mut ApplicationWorld) {
+    let tile = world.run(PART_FILE).clone();
+    world.click([tile.center()[0] as i32 + 120, tile.center()[1] as i32 + 90]);
+    settle(world);
+}
+#[then("the dialog remains open with the part name and preview displayed")]
+fn open_with_part(world: &mut ApplicationWorld) {
+    world.expect_text("Look in");
+    expect_name_and_preview(world, PART_FILE);
+}
+// Several drawings
+#[given("the Open dialog in the MCAD Software displays two adjacent saved drawings as thumbnails")]
+fn adjacent_tiles(world: &mut ApplicationWorld) {
+    drawings_in_tiles(world);
+}
+#[given("each drawing has a saved sheet preview")]
+fn each_preview(world: &mut ApplicationWorld) {
+    select_row(world, DRAWING_FILE);
+    expect_name_and_preview(world, DRAWING_FILE);
+    select_row(world, SECOND_DRAWING_FILE);
+    expect_name_and_preview(world, SECOND_DRAWING_FILE);
+}
+#[when("I drag a selection rectangle from empty list space across both thumbnails")]
+#[when("I select both drawing thumbnails with a selection rectangle")]
+fn drag_rectangle(world: &mut ApplicationWorld) {
+    rectangle_over_drawings(world);
+}
+#[then("both drawing thumbnails are selected")]
+fn both_lit(world: &mut ApplicationWorld) {
+    assert!(row_lit(world, DRAWING_FILE), "first tile");
+    assert!(row_lit(world, SECOND_DRAWING_FILE), "second tile");
+}
+#[then("the status area reports two selected items")]
+fn two_selected(world: &mut ApplicationWorld) {
+    assert!(holds_text(world, "2 items selected"), "expected the count");
+}
+#[then("the file name field contains both drawing names in quotes")]
+fn quoted(world: &mut ApplicationWorld) {
+    let shown = file_name_shown(world);
+    for name in [DRAWING_FILE, SECOND_DRAWING_FILE] {
+        assert!(
+            shown.contains(&format!("\"{name}\"")),
+            "file name {shown:?}"
+        );
+    }
+}
+#[then("the separate preview area displays a placeholder")]
+fn several_placeholder(world: &mut ApplicationWorld) {
+    expect_placeholder(world);
+}
+#[then("individual drawing loading options are not displayed")]
+fn no_options(world: &mut ApplicationWorld) {
+    world.expect_no_text(DEFER);
+}
+#[when("I select one of the drawing thumbnails")]
+fn select_one(world: &mut ApplicationWorld) {
+    select_row(world, DRAWING_FILE);
+}
+#[then("only that drawing is selected")]
+fn only_one(world: &mut ApplicationWorld) {
+    assert!(row_lit(world, DRAWING_FILE), "the chosen tile");
+    assert!(!row_lit(world, SECOND_DRAWING_FILE), "the other tile");
+}
+#[then("the file name field identifies that drawing")]
+fn name_that(world: &mut ApplicationWorld) {
+    let shown = file_name_shown(world);
+    assert!(
+        shown.contains(DRAWING_FILE) && !shown.contains('"'),
+        "file name {shown:?}"
+    );
+}
+#[then("its sheet preview and drawing loading options are displayed")]
+fn its_options(world: &mut ApplicationWorld) {
+    world.expect_no_text("No preview image");
+    world.expect_text(DEFER);
+}
+// Reopening several
+#[given("two saved drawings are already open in separate tabs in the MCAD Software")]
+fn two_open(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
+    saved_document(
+        world,
+        GuiTemplateKind::Drawing,
+        &folder,
+        SECOND_DRAWING_FILE,
+    );
+    world.observed_counts = vec![documents(world)];
+}
+#[given("one of those drawings is active")]
+fn one_active(world: &mut ApplicationWorld) {
+    assert!(world.state().document.is_some(), "expected one active");
+}
+#[given("the Open dialog displays their exact saved files")]
+fn dialog_shows_files(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    open_dialog(world);
+    look_in(world, &folder);
+    switch_to_tiles(world);
+}
+#[when("I select both drawings and choose Open")]
+fn select_both_open(world: &mut ApplicationWorld) {
+    rectangle_over_drawings(world);
+    choose_open(world);
+}
+#[then("both existing drawing tabs remain available")]
+#[then("no duplicate tab is created for either drawing")]
+fn tabs_kept(world: &mut ApplicationWorld) {
+    assert_eq!(documents(world), world.observed_counts[0], "documents");
+}
+#[then("one of those drawing tabs becomes active")]
+fn one_tab_active(world: &mut ApplicationWorld) {
+    assert!(world.state().document.is_some(), "expected one active");
+}
+#[given("a saved drawing is already open in a tab in the MCAD Software")]
+fn one_open(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
+}
+#[given("a second saved drawing with available references is not open")]
+fn second_closed(world: &mut ApplicationWorld) {
+    let folder = models_folder(world);
+    saved_document(
+        world,
+        GuiTemplateKind::Drawing,
+        &folder,
+        SECOND_DRAWING_FILE,
+    );
+    close_active(world);
+    world.observed_counts = vec![documents(world)];
+}
+#[given("the Open dialog displays the exact files for both drawings")]
+fn dialog_both_files(world: &mut ApplicationWorld) {
+    dialog_shows_files(world);
+}
+#[then("the previously open drawing retains its existing tab without a duplicate")]
+fn no_duplicate(world: &mut ApplicationWorld) {
+    assert_eq!(documents(world), world.observed_counts[0] + 1, "documents");
+}
+#[then("the second drawing opens in a new tab")]
+fn second_new_tab(world: &mut ApplicationWorld) {
+    assert_eq!(documents(world), world.observed_counts[0] + 1, "documents");
+}
+#[then("the second drawing is active with its sheet displayed")]
+fn second_active(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let active = state.document.expect("expected an active document");
+    let path = state.document_storage[&active]
+        .path
+        .clone()
+        .unwrap_or_default();
+    assert!(path.ends_with(SECOND_DRAWING_FILE), "active file {path:?}");
+    world.expect_text("Sheet 1 of 1");
+}

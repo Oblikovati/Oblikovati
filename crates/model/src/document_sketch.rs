@@ -29,6 +29,23 @@ pub(crate) use recompute::SketchSolveScope;
 pub use recompute::{
     DocumentSketchRecompute, DocumentSketchSolveOutcome, DocumentSketchSolveReport,
 };
+/// How a sketch's lines are drawn; a part left unset draws as the application's default.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SketchLineStyle {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<[u8; 3]>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line_type: Option<String>,
+    /// In millimeters.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<f32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scale: Option<f32>,
+    /// Its dimensions stay out of the view while the sketch itself shows.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub dimensions_hidden: bool,
+}
 /// Saved sketch identity, in a namespace distinct from entity and constraint IDs.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DocumentSketchId(pub u64);
@@ -40,6 +57,8 @@ pub struct PlacedSketch {
     visible: bool,
     /// Whether the sketch draws a mark beside each relation; a saved, undoable display choice.
     constraints_shown: bool,
+    /// How its lines are drawn; a saved, undoable display change.
+    line_style: SketchLineStyle,
     placement: SketchPlacement,
     orientation: Option<SketchOrientationDefinition>,
     point_projections: Vec<SketchPointProjection>,
@@ -63,6 +82,9 @@ pub struct PlacedSketchRecipe {
     /// Version 6: absent means the marks stay hidden, which every older file implies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints_shown: Option<bool>,
+    /// Version 7: absent means every line draws as the application's default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line_style: Option<SketchLineStyle>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plane: Option<SketchPlaneRecipe>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -94,6 +116,7 @@ impl PlacedSketch {
             name: name.into(),
             visible: true,
             constraints_shown: false,
+            line_style: SketchLineStyle::default(),
             placement,
             orientation: None,
             point_projections: Vec::new(),
@@ -123,6 +146,8 @@ impl PlacedSketch {
             name: self.name.clone(),
             visible: (!self.visible).then_some(false),
             constraints_shown: self.constraints_shown.then_some(true),
+            line_style: (self.line_style != SketchLineStyle::default())
+                .then(|| self.line_style.clone()),
             plane,
             plane_options,
             plane_feature,
@@ -132,6 +157,9 @@ impl PlacedSketch {
         }
     }
     fn recipe_version(&self) -> u32 {
+        if self.line_style != SketchLineStyle::default() {
+            return 7;
+        }
         if self.constraints_shown {
             return 6;
         }
@@ -163,6 +191,7 @@ impl DocumentSketches {
                         && first.name == second.name
                         && first.visible == second.visible
                         && first.constraints_shown == second.constraints_shown
+                        && first.line_style == second.line_style
                         && first.placement.same_recipe(second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
                         && first.point_projections == second.point_projections
@@ -268,9 +297,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=6) {
+        if !matches!(recipe.version, 1..=7) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1, 2, 3, 4, 5, or 6",
+                "document sketch recipe version {}: expected 1 through 7",
                 recipe.version
             )));
         }
@@ -283,6 +312,7 @@ impl DocumentSketches {
             point_projection::restore_bindings(&mut restored, sketch, recipe.version)?;
             visibility::restore_visibility(&mut restored, sketch, recipe.version)?;
             visibility::restore_constraints_shown(&mut restored, sketch, recipe.version)?;
+            visibility::restore_line_style(&mut restored, sketch, recipe.version)?;
         }
         Ok(restored)
     }
@@ -345,6 +375,7 @@ impl PartialEq for PlacedSketch {
             && self.name == other.name
             && self.visible == other.visible
             && self.constraints_shown == other.constraints_shown
+            && self.line_style == other.line_style
             && self.placement == other.placement
             && self.orientation == other.orientation
             && self.point_projections == other.point_projections

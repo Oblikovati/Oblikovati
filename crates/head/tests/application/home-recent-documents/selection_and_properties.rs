@@ -33,10 +33,6 @@ fn choose_properties(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
-#[then("an informational notice is displayed")]
-fn notice_shown(world: &mut ApplicationWorld) {
-    world.expect_text("These properties come from the file on disk.");
-}
 #[given("an informational notice is displayed after choosing its document properties action")]
 fn notice_after_properties(world: &mut ApplicationWorld) {
     open_row_actions(world);
@@ -175,4 +171,7 @@ fn columns_open(world: &mut ApplicationWorld) {
 #[then("the Filter panel remains open")]
 fn filter_open(world: &mut ApplicationWorld) {
     world.expect_text("File Types");
+}
+fn notice_shown(world: &mut ApplicationWorld) {
+    world.expect_text("These properties come from the file on disk.");
 }

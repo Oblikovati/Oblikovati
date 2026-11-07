@@ -11,7 +11,8 @@ const CLOSE_MARK_REACH: f32 = 30.;
 /// Two viewport corners well away from the browser and the ribbon.
 const RECTANGLE: [[i32; 2]; 2] = [[760, 380], [1060, 560]];
 /// The viewport rectangle a scenario reads, clear of the browser and tabs.
-pub(super) const VIEWPORT_X: [usize; 2] = [400, 1400];
+/// Between the browser and the orientation control at the view's right.
+pub(super) const VIEWPORT_X: [usize; 2] = [400, 1290];
 pub(super) const VIEWPORT_Y: [usize; 2] = [250, 650];
 
 impl ApplicationWorld {

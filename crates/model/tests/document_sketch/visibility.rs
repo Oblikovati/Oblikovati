@@ -155,3 +155,25 @@ fn explicit_true_and_missing_overrides_restore_the_legacy_default() {
     assert!(restored.sketches().iter().all(|sketch| sketch.visible()));
     assert_eq!(restored.recipe(), document().recipe());
 }
+#[test]
+fn a_line_style_round_trips_at_version_seven_and_older_recipes_refuse_it() {
+    use oblikovati_model::document_sketch::SketchLineStyle;
+    let mut original = document();
+    let id = DocumentSketchId(1);
+    assert!(original.recipe().sketches[0].line_style.is_none());
+    let style = SketchLineStyle {
+        color: Some([255, 0, 0]),
+        line_type: Some("Dashed".into()),
+        weight: Some(0.25),
+        scale: Some(2.),
+        dimensions_hidden: true,
+    };
+    original.set_line_style(id, style.clone()).unwrap();
+    let mut recipe = original.recipe();
+    assert_eq!(recipe.version, 7);
+    let restored = DocumentSketches::from_recipe(&recipe).unwrap();
+    assert_eq!(restored.get(id).unwrap().line_style(), &style);
+    recipe.version = 6;
+    let refused = DocumentSketches::from_recipe(&recipe).unwrap_err();
+    assert!(refused.to_string().contains("expected version 7"), "{refused}");
+}

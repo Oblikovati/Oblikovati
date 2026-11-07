@@ -33,6 +33,7 @@ fn failure_update() -> crate::HeadSketchSceneUpdate {
         sketch: DocumentSketchId(4),
         plane: SketchPlane::xy(),
         geometry,
+        line_color: None,
     };
     crate::HeadSketchSceneUpdate {
         source: Some((1, 2)),

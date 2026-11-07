@@ -285,16 +285,6 @@ fn second_saved(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.activate_through_tab(first);
 }
-#[then("the preview label displays the saved file's full path")]
-fn preview_path(world: &mut ApplicationWorld) {
-    let path = world.saved_path.clone().expect("expected a saved path");
-    let wanted: String = path.display().to_string().replace(' ', "");
-    assert!(
-        preview_text(world).contains(&wanted),
-        "expected {wanted} in {}",
-        preview_text(world)
-    );
-}
 #[given("the part is being edited in a sketch")]
 #[given("a sketch is being edited in the part")]
 fn part_in_edit(world: &mut ApplicationWorld) {

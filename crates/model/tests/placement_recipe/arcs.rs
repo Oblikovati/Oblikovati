@@ -33,6 +33,17 @@ fn verify_go_arc(fixture: GoRecipe) {
     }
 }
 #[test]
+fn an_arc_sweep_is_its_unsigned_turn_in_its_own_direction() {
+    let quarter = std::f64::consts::FRAC_PI_2;
+    let turn = |ccw| {
+        let recipe = SketchPlacementRecipe::arc([0., 0.], [[1., 0.], [0., 1.]], ccw).unwrap();
+        let sweep = recipe.fields.iter().find(|field| field.label == "Sweep");
+        sweep.expect("expected a Sweep field").value
+    };
+    close(turn(true), quarter);
+    close(turn(false), 3. * quarter);
+}
+#[test]
 fn arc_recipes_refuse_nonfinite_or_zero_radial_input() {
     for points in [
         [[0., 0.], [0., 0.], [1., 0.]],

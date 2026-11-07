@@ -47,6 +47,7 @@ fn committed_point(preview: &ViewportSketchPreview, position: [f64; 2]) -> Viewp
         sketch: DocumentSketchId(1),
         plane: preview.plane(),
         geometry,
+        line_color: None,
     }
 }
 fn marker_pixels(capture: &ViewportCapture) -> Vec<bool> {

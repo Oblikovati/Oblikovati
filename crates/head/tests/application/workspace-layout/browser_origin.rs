@@ -51,6 +51,23 @@ fn plane_shows(world: &mut ApplicationWorld) -> bool {
     let pixel = world.pixel_at(at);
     pixel[1] > PLANE_TINT && pixel[1] > pixel[0]
 }
+/// A chosen row's accent against the same column well below the tree, which reads plain.
+pub(in super::super) fn row_accent(world: &mut ApplicationWorld, label: &str) -> bool {
+    world.row_highlighted(label)
+}
+/// A place on a named origin plane clear of the block, as a pixel; a shown plane tints it.
+pub(in super::super) fn plane_shows_at(world: &mut ApplicationWorld, row: &str) -> bool {
+    use oblikovati_model::sketch::SketchPlane;
+    let plane = match row {
+        "XY Plane" => SketchPlane::xy(),
+        "XZ Plane" => SketchPlane::xz(),
+        _ => SketchPlane::yz(),
+    };
+    let pixel = crate::HeadWindow::sketch_pixel(&world.app().window, plane, PLANE_PROBE).unwrap();
+    let at = pixel.map(|value| value as usize);
+    let color = world.pixel_at(at);
+    color[1] > PLANE_TINT && color[1] > color[0]
+}
 #[when("I right-click the YZ Plane row")]
 fn right_click_plane(world: &mut ApplicationWorld) {
     right_click_row(world, "YZ Plane");

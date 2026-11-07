@@ -257,6 +257,49 @@ pub trait HeadWork {
             "body {key:?}, appearance {appearance:?}, document {document}: expected a properties owner"
         ))
     }
+    /// Change a feature's name and suppression; example: from Feature Properties.
+    fn edit_feature_from_gui(
+        &mut self,
+        document: u64,
+        edit: &oblikovati_gui::GuiFeatureEdit,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "feature edit {edit:?}, document {document}: expected a feature owner"
+        ))
+    }
+    /// Change how a sketch's lines are drawn; example: from Geometry Properties.
+    fn set_sketch_line_style_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        _: &oblikovati_gui::GuiSketchLineStyle,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "sketch {sketch:?}, document {document}: expected a sketch style owner"
+        ))
+    }
+    /// Choose a whole browser row or change what it shows; example: a body's Visibility.
+    fn browser_choice_from_gui(
+        &mut self,
+        document: u64,
+        choice: &oblikovati_gui::GuiBrowserChoice,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "browser choice {choice:?}, document {document}: expected a selection owner"
+        ))
+    }
+    /// Say what a document's next save stores as its picture, without a redraw of its own.
+    fn keep_document_picture_from_gui(
+        &mut self,
+        document: u64,
+        _: Option<&oblikovati_gui::GuiPreviewImage>,
+    ) -> Result<bool, String> {
+        Err(format!("document {document}: expected a picture owner"))
+    }
+    /// Read a closed file's stored properties; example: on a selection in the Open dialog.
+    fn inspect_file_from_gui(&mut self, path: &str) -> Result<bool, String> {
+        Err(format!("file {path:?}: expected a file inspection owner"))
+    }
     /// Show a running navigation command's prompt, or Ready; example: from the navigation bar.
     fn navigation_prompt_from_gui(&mut self, prompt: Option<&str>) -> Result<bool, String> {
         Err(format!(
@@ -453,37 +496,4 @@ pub trait HeadWork {
     fn close_allowed(&mut self) -> Result<bool, String>;
     /// Stop admission before window retirement; example: `work.finish()?` after the owner loop ends.
     fn finish(&mut self) -> Result<(), String>;
-}
-pub(crate) struct IdleHeadWork;
-impl HeadWork for IdleHeadWork {
-    fn poll(&mut self, _: usize) -> Result<HeadWorkStatus, String> {
-        Ok(HeadWorkStatus::default())
-    }
-    fn close_allowed(&mut self) -> Result<bool, String> {
-        Ok(true)
-    }
-    fn finish(&mut self) -> Result<(), String> {
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod document_activation_tests {
-    use super::{HeadWork, IdleHeadWork};
-    #[test]
-    fn an_owner_without_documents_names_the_refused_activation() {
-        let failure = IdleHeadWork
-            .activate_document_from_gui(&oblikovati_api::wire::ActivateDocumentArgs { id: 41 })
-            .unwrap_err();
-        assert!(failure.contains("41") && failure.contains("document owner"));
-    }
-    #[test]
-    fn idle_work_declines_curve_format_commands_without_an_owner() {
-        let failure = IdleHeadWork
-            .toggle_sketch_format_from_gui(
-                oblikovati_model::sketch::SketchCurveFormat::Construction,
-            )
-            .unwrap_err();
-        assert!(failure.contains("Construction") && failure.contains("document editor owner"));
-    }
 }

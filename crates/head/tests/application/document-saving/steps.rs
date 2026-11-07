@@ -375,3 +375,22 @@ fn other_active(world: &mut ApplicationWorld) {
     let other = world.other_document.expect("expected another document");
     world.expect_active(other);
 }
+#[given("a part with a rectangular sketch is saved in the MCAD Software")]
+fn saved_sketch_part(world: &mut ApplicationWorld) {
+    let id = world.add_part();
+    world.start_sketch();
+    world.draw_rectangle();
+    world.finish_sketch();
+    world.pump(Vec::new());
+    let path = world.save_part_to_file(id, "saved part.opd");
+    world.saved_path = Some(path);
+}
+#[given("the part uses the observed preview configuration for a sketch thumbnail")]
+fn stored_picture(world: &mut ApplicationWorld) {
+    let path = world.saved_path.clone().expect("expected a saved part");
+    let picture = oblikovati_persistence::package::preview_picture_of_file(&path);
+    assert!(
+        picture.is_some(),
+        "saved file {path:?}: expected a picture in it"
+    );
+}

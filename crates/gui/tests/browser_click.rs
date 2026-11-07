@@ -20,6 +20,8 @@ fn browser_request() -> GuiFrameRequest {
                     name: "Section##literal".into(),
                     visible: true,
                     consumed_by: None,
+                    line_style: Default::default(),
+                    dimensions_shown: true,
                     inspection: Ok(oblikovati_api::wire::SketchInfo {
                         healthy: true,
                         ..Default::default()

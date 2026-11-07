@@ -5,6 +5,7 @@ use imgui::{TabItemFlags, Ui};
 const PLUS_MENU: &str = "##panel-plus-menu";
 const MODEL_BROWSER: &str = "Model Browser";
 const LOG_PANEL: &str = "Log Panel";
+const FAVORITES_PANEL: &str = "Favorites";
 const MODEL_TAB: &str = "Model";
 const LOG_TAB: &str = "Log";
 const NO_MESSAGES: &str = "Application messages: none yet";
@@ -18,13 +19,18 @@ pub(crate) enum DockPanel {
     #[default]
     Model,
     Log,
+    Favorites,
 }
 /// What the dock shows; `model_open` is the View tab's Model Browser option.
 #[derive(Debug)]
 pub(crate) struct DockPanels {
     pub model_open: bool,
     log_open: bool,
+    favorites_open: bool,
+    pub favorites: crate::application::model_browser::favorites::FavoritesPane,
     active: DockPanel,
+    /// The Model tab was pressed: a drag from it moves the whole browser.
+    pub model_tab_pressed: bool,
     /// A panel just added or left alone takes the tab bar's selection on the next frame.
     select: Option<DockPanel>,
     messages: Vec<String>,
@@ -34,6 +40,9 @@ impl Default for DockPanels {
         Self {
             model_open: true,
             log_open: false,
+            favorites_open: false,
+            favorites: Default::default(),
+            model_tab_pressed: false,
             active: DockPanel::Model,
             select: None,
             messages: Vec::new(),
@@ -42,7 +51,7 @@ impl Default for DockPanels {
 }
 impl DockPanels {
     pub(crate) fn dock_visible(&self) -> bool {
-        self.model_open || self.log_open
+        self.model_open || self.log_open || self.favorites_open
     }
     /// A frame must follow so a changed selection takes effect without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
@@ -52,6 +61,10 @@ impl DockPanels {
         match panel {
             DockPanel::Model => self.model_open = true,
             DockPanel::Log => self.log_open = true,
+            DockPanel::Favorites => {
+                self.favorites_open = true;
+                self.favorites.reset();
+            }
         }
         self.select = Some(panel);
     }
@@ -60,12 +73,18 @@ impl DockPanels {
         match panel {
             DockPanel::Model => self.model_open = false,
             DockPanel::Log => self.log_open = false,
+            DockPanel::Favorites => self.favorites_open = false,
         }
-        let remaining = match panel {
-            DockPanel::Model => self.log_open.then_some(DockPanel::Log),
-            DockPanel::Log => self.model_open.then_some(DockPanel::Model),
-        };
-        self.select = remaining;
+        self.select = self.first_open_panel();
+    }
+    fn first_open_panel(&self) -> Option<DockPanel> {
+        [
+            (self.model_open, DockPanel::Model),
+            (self.log_open, DockPanel::Log),
+            (self.favorites_open, DockPanel::Favorites),
+        ]
+        .into_iter()
+        .find_map(|(open, panel)| open.then_some(panel))
     }
     /// Record a status message for the log; an unchanged or idle status adds nothing.
     pub(crate) fn record_status(&mut self, status: Option<&str>) {
@@ -102,6 +121,13 @@ impl DockPanels {
         {
             self.open_panel(DockPanel::Log);
         }
+        if ui
+            .menu_item_config(FAVORITES_PANEL)
+            .selected(self.favorites_open)
+            .build()
+        {
+            self.open_panel(DockPanel::Favorites);
+        }
     }
     /// Draw the tabs and answer which panel fills the dock this frame.
     pub(crate) fn tabs(&mut self, ui: &Ui) -> DockPanel {
@@ -118,6 +144,9 @@ impl DockPanels {
         if self.log_open {
             self.tab(ui, LOG_TAB, DockPanel::Log, select);
         }
+        if self.favorites_open {
+            self.tab(ui, FAVORITES_PANEL, DockPanel::Favorites, select);
+        }
         self.active
     }
     fn tab(&mut self, ui: &Ui, label: &str, panel: DockPanel, select: Option<DockPanel>) {
@@ -128,6 +157,9 @@ impl DockPanels {
         };
         let mut keep = true;
         let contents = ui.tab_item_with_flags(label, Some(&mut keep), flags);
+        self.model_tab_pressed |= panel == DockPanel::Model
+            && ui.is_item_hovered()
+            && ui.is_mouse_clicked(imgui::MouseButton::Left);
         // A tab that is about to be selected must not report the old one as chosen.
         if contents.is_some() && select.is_none() {
             self.active = panel;

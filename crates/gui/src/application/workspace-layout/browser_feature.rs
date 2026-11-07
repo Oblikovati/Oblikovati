@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! A feature's browser row: its label, its menu, and the outline of its solid over the view.
 use super::browser_view::{BrowserBranch, BrowserView, muted_menu_item};
-use crate::{GuiBrowserFeature, GuiCommandState, GuiFrameRequest, GuiModelBrowser, GuiShellAction};
+use crate::application::model_browser::{browser_root::find_in_window, relationships::RelatedRow};
+use crate::{
+    GuiBrowserChoice, GuiBrowserFeature, GuiCommandState, GuiFrameRequest, GuiModelBrowser,
+    GuiShellAction,
+};
 use imgui::{Condition, MouseButton, TreeNodeFlags, Ui};
 
 const FEATURE_MENU: &str = "##feature-menu";
@@ -9,6 +13,8 @@ const BODIES_MENU: &str = "##bodies-menu";
 const BODY_MENU: &str = "##body-menu";
 const EDGE_COLOR: [f32; 4] = [0.25, 0.6, 1., 1.];
 const EDGE_THICKNESS: f32 = 2.;
+const SELECTION_TOOLBAR: &str = "##selection-toolbar";
+const TOOLBAR_RISE: f32 = 40.;
 
 /// Show Extended Names adds what the row's feature does; a suppressed feature says so.
 fn feature_label(feature: &GuiBrowserFeature, extended_names: bool) -> String {
@@ -48,7 +54,7 @@ pub(crate) fn feature_row<'ui>(
         (false, None) => node,
     };
     let token = node.push();
-    choose_on_press(ui, state, feature, actions);
+    choose_on_press(ui, state, feature, view, actions);
     feature_menu(ui, state, browser, feature, view, actions);
     token
 }
@@ -57,6 +63,7 @@ fn choose_on_press(
     ui: &Ui,
     state: &GuiCommandState,
     feature: &GuiBrowserFeature,
+    view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let hovered = ui.is_item_hovered();
@@ -67,7 +74,16 @@ fn choose_on_press(
     let [row_left, _] = ui.item_rect_min();
     let past_arrow = ui.io().mouse_pos[0] > row_left + ui.frame_height();
     let clicked = hovered && past_arrow && ui.is_mouse_clicked(MouseButton::Left);
+    // Dimensions a row asked for go away the next time its menu is asked for.
+    if asks_menu {
+        actions.push(GuiShellAction::BrowserChoice {
+            document: state.document.unwrap_or(0),
+            choice: GuiBrowserChoice::ShowFeatureDimensions(None),
+        });
+    }
     if clicked || asks_menu {
+        view.selected_origin_row = None;
+        view.origin_folder_chosen = false;
         actions.push(GuiShellAction::SelectBrowserFeature {
             document: state.document.unwrap_or(0),
             feature: feature.id,
@@ -86,12 +102,19 @@ fn feature_menu(
         return;
     };
     edit_sketch_row(ui, state, browser, feature, actions);
-    for row in ["Edit Feature", "Show Dimensions"] {
-        muted_menu_item(ui, row);
+    muted_menu_item(ui, "Edit Feature");
+    if ui.menu_item("Show Dimensions") {
+        actions.push(GuiShellAction::BrowserChoice {
+            document: state.document.unwrap_or(0),
+            choice: GuiBrowserChoice::ShowFeatureDimensions(Some(feature.id)),
+        });
     }
     ui.separator();
-    for row in ["Copy", "Delete", "Measure", "Properties"] {
+    for row in ["Copy", "Delete", "Measure"] {
         muted_menu_item(ui, row);
+    }
+    if ui.menu_item("Properties") {
+        view.feature_properties.request(feature);
     }
     ui.separator();
     if ui.menu_item("Expand All Children") {
@@ -99,6 +122,13 @@ fn feature_menu(
     }
     // A feature's direct rows stay; only what sits below them folds, and nothing does yet.
     ui.menu_item("Collapse All Children");
+    ui.separator();
+    if ui.menu_item("Relationships") {
+        view.relationships.request(RelatedRow::Feature(feature.id));
+    }
+    if ui.menu_item("Find in Window") {
+        find_in_window(view, ui, actions);
+    }
 }
 /// One solid's row; a press on it chooses the feature that made it, which outlines the solid.
 pub(crate) fn body_row<'ui>(
@@ -111,7 +141,7 @@ pub(crate) fn body_row<'ui>(
     actions: &mut Vec<GuiShellAction>,
 ) -> Option<imgui::TreeNodeToken<'ui>> {
     let mut flags = TreeNodeFlags::OPEN_ON_ARROW | TreeNodeFlags::SPAN_AVAIL_WIDTH;
-    if browser.selected_feature == Some(body.feature) {
+    if browser.selected_body == Some(body.feature) {
         flags |= TreeNodeFlags::SELECTED;
     }
     let node = ui.tree_node_config(&body.name).flags(flags);
@@ -125,29 +155,65 @@ pub(crate) fn body_row<'ui>(
     if asks_menu {
         ui.open_popup(BODY_MENU);
     }
+    let document = state.document.unwrap_or(0);
     if asks_menu || (hovered && ui.is_mouse_clicked(MouseButton::Left)) {
-        actions.push(GuiShellAction::SelectBrowserFeature {
-            document: state.document.unwrap_or(0),
-            feature: body.feature,
+        view.selected_origin_row = None;
+        actions.push(GuiShellAction::BrowserChoice {
+            document,
+            choice: GuiBrowserChoice::Body {
+                key: body.key.clone(),
+                feature: body.feature,
+            },
         });
     }
     if let Some(_menu) = ui.begin_popup(BODY_MENU) {
         if ui.menu_item("Properties") {
             view.body_properties.request(body.feature);
         }
-        muted_menu_item(ui, "Visibility");
+        if ui
+            .menu_item_config("Visibility")
+            .selected(body.visible)
+            .build()
+        {
+            actions.push(body_visibility(document, body, !body.visible));
+        }
     }
     token
 }
+fn body_visibility(document: u64, body: &crate::GuiBrowserBody, visible: bool) -> GuiShellAction {
+    GuiShellAction::BrowserChoice {
+        document,
+        choice: GuiBrowserChoice::BodyVisible {
+            key: body.key.clone(),
+            visible,
+        },
+    }
+}
 /// A right-click on the Solid Bodies row.
-pub(crate) fn bodies_menu(ui: &Ui, view: &mut BrowserView) {
+pub(crate) fn bodies_menu(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    view: &mut BrowserView,
+    actions: &mut Vec<GuiShellAction>,
+) {
     if ui.is_item_hovered() && ui.is_mouse_clicked(MouseButton::Right) {
         ui.open_popup(BODIES_MENU);
     }
     let Some(_menu) = ui.begin_popup(BODIES_MENU) else {
         return;
     };
-    muted_menu_item(ui, "Visibility");
+    let all_visible = browser.bodies.iter().all(|body| body.visible);
+    if ui
+        .menu_item_config("Visibility")
+        .selected(all_visible)
+        .build()
+    {
+        let document = state.document.unwrap_or(0);
+        for body in &browser.bodies {
+            actions.push(body_visibility(document, body, !all_visible));
+        }
+    }
     ui.separator();
     if ui.menu_item("Expand All Children") {
         view.set_bodies_expansion(true);
@@ -179,6 +245,66 @@ fn edit_sketch_row(
         });
     }
 }
+/// A small bar over the chosen feature's solid, with what is most often done to it next.
+pub(crate) fn selection_toolbar(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let commands = &request.commands;
+    let browser = commands.browser.as_ref();
+    let chosen = browser.and_then(|browser| {
+        let feature = browser.selected_feature?;
+        browser.features.iter().find(|row| row.id == feature)
+    });
+    let (Some(browser), Some(feature)) = (browser, chosen) else {
+        return;
+    };
+    let Some(corner) = outline_corner(request) else {
+        return;
+    };
+    ui.window(SELECTION_TOOLBAR)
+        .position([corner[0], corner[1] - TOOLBAR_RISE], Condition::Always)
+        .always_auto_resize(true)
+        .no_decoration()
+        .focus_on_appearing(false)
+        .save_settings(false)
+        .build(|| {
+            edit_sketch_row_button(ui, commands, browser, feature, actions);
+            ui.same_line();
+            let _muted = ui.begin_disabled(true);
+            crate::widget_abi::button(ui, "Edit Feature", [0.; 2]);
+        });
+}
+fn edit_sketch_row_button(
+    ui: &Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    feature: &GuiBrowserFeature,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let source = browser
+        .sketches
+        .iter()
+        .find(|row| row.consumed_by == Some(feature.id));
+    let _muted = ui.begin_disabled(source.is_none());
+    if crate::widget_abi::button(ui, "Edit Sketch", [0.; 2])
+        && let Some(source) = source
+    {
+        actions.push(GuiShellAction::EditSketch {
+            document: state.document.unwrap_or(0),
+            sketch: source.id,
+        });
+    }
+}
+/// The top left of the outline, in layout units.
+fn outline_corner(request: &GuiFrameRequest) -> Option<[f32; 2]> {
+    let scale = request.layout_scale();
+    let points = request.commands.feature_edges.iter().flatten();
+    let left = points.clone().map(|pixel| pixel[0]).min()?;
+    let top = points.map(|pixel| pixel[1]).min()?;
+    Some([left as f32 / scale[0], top as f32 / scale[1]])
+}
 /// Outline the chosen feature's solid in the accent colour, under every panel.
 pub(crate) fn draw_feature_edges(ui: &Ui, request: &GuiFrameRequest) {
     let scale = request.layout_scale();
@@ -201,6 +327,7 @@ mod tests {
             name: "Extrude1".into(),
             suppressed,
             extended: Some("New Solid, 20 mm".into()),
+            kind: "Extrusion",
         }
     }
     #[test]

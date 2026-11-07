@@ -187,7 +187,7 @@ fn compass_disabled(world: &mut ApplicationWorld) {
 pub(super) fn expect_no_compass(world: &ApplicationWorld) {
     for letter in COMPASS_LETTERS {
         assert!(
-            !world.frame.runs.iter().any(|run| run.text == letter),
+            compass_observation::compass_label(world, letter).is_none(),
             "expected no compass letter {letter}"
         );
     }
@@ -206,7 +206,7 @@ pub(super) fn toggle_compass(world: &mut ApplicationWorld) {
 pub(super) fn compass_shown(world: &mut ApplicationWorld) {
     for letter in COMPASS_LETTERS {
         assert!(
-            world.frame.runs.iter().any(|run| run.text == letter),
+            compass_observation::compass_label(world, letter).is_some(),
             "expected the compass letter {letter}"
         );
     }

@@ -188,36 +188,8 @@ fn aliases_resolve_to_one_live_document() {
     assert_eq!(host.files().reads, 1);
 }
 
-#[test]
-fn save_uses_only_the_bound_package_and_destination() {
-    let mut host = host(RecordingWorkspace::default());
-    let mut source = SequenceGuids(1000);
-    let id = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
-    let _other = open_file(&mut host, "b.obk", &mut source, OpenActivation::Background);
-    host.commands(id)
-        .unwrap()
-        .run("edit", |snapshot, _| {
-            snapshot.parameters.set_expression(1, "2 cm")
-        })
-        .unwrap();
-    host.save(id, "beta", &mut source).unwrap();
-    let files = host.files().contents.borrow();
-    let written = DocumentPackage::decode(&files[&path("a.obk")]).unwrap();
-    assert_eq!(
-        written
-            .restore_document_parameters()
-            .unwrap()
-            .parameters
-            .get(1)
-            .unwrap()
-            .current_value()
-            .unwrap()
-            .value,
-        2.0
-    );
-    assert_eq!(files[&path("b.obk")], fixture(2));
-    assert!(!host.workspace().needs_save(id).unwrap());
-}
+#[path = "file_saves.rs"]
+mod file_saves;
 
 #[test]
 fn malformed_recipe_claims_no_path_identity_or_session_and_can_retry() {

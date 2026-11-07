@@ -10,6 +10,8 @@ use oblikovati_viewport::ViewportPhysicalKey;
 mod appearance;
 #[path = "behaviour.rs"]
 mod behaviour;
+#[path = "compass_observation.rs"]
+mod compass_observation;
 pub(super) use behaviour::whole_block_visible;
 #[path = "option_rows.rs"]
 mod option_rows;
@@ -94,6 +96,17 @@ fn label_is_upright(world: &ApplicationWorld) -> bool {
     maximum(0) - minimum(0) > maximum(1) - minimum(1)
 }
 /// The solid's extent on screen, read from its colour.
+/// Zero while nothing shaded is in the view.
+pub(super) fn solid_extent_or_zero(world: &mut ApplicationWorld) -> [usize; 2] {
+    let shaded = super::workspace_layout::browser_feature::colored_pixels(
+        world,
+        super::workspace_layout::browser_feature::SOLID_COLOR,
+    );
+    if shaded == 0 {
+        return [0, 0];
+    }
+    solid_extent(world)
+}
 pub(super) fn solid_extent(world: &mut ApplicationWorld) -> [usize; 2] {
     let (low, high) = solid_bounds(world);
     [high[0] - low[0] + 1, high[1] - low[1] + 1]
@@ -419,12 +432,6 @@ fn existing_view(world: &mut ApplicationWorld) {
         .expect("expected the earlier view");
     assert_eq!(control_letters(world), earlier, "control's label");
 }
-#[when("I reopen the options, choose Top Right and confirm")]
-fn back_top_right(world: &mut ApplicationWorld) {
-    open_options(world);
-    choose_list_row(world, "On-screen Position", "Top Right");
-    confirm(world);
-}
 #[then("the orientation control and navigation bar return to the right side")]
 fn returned_right(world: &mut ApplicationWorld) {
     expect_on_right(world);
@@ -462,14 +469,30 @@ fn is_larger(world: &mut ApplicationWorld) {
         size[0]
     );
 }
-#[when("I reopen the options, choose Automatic and confirm")]
-fn back_automatic(world: &mut ApplicationWorld) {
-    open_options(world);
-    choose_list_row(world, "Size", "Automatic");
-    confirm(world);
-}
 #[then("the orientation control returns to its earlier size in this viewport")]
 fn earlier_size(world: &mut ApplicationWorld) {
     let (_, size) = control_geometry();
     assert_eq!(size[0] as usize, world.observed_counts[0], "side");
+}
+#[when("I reopen the options")]
+fn reopen_options(world: &mut ApplicationWorld) {
+    open_options(world);
+}
+#[then("the on-screen position displays Top Left")]
+fn position_top_left(world: &mut ApplicationWorld) {
+    world.expect_text("Top Left");
+}
+#[when("I choose Top Right and confirm")]
+fn choose_top_right(world: &mut ApplicationWorld) {
+    choose_list_row(world, "On-screen Position", "Top Right");
+    confirm(world);
+}
+#[then("the size displays Large")]
+fn size_large(world: &mut ApplicationWorld) {
+    world.expect_text("Large");
+}
+#[when("I choose Automatic and confirm")]
+fn choose_automatic(world: &mut ApplicationWorld) {
+    choose_list_row(world, "Size", "Automatic");
+    confirm(world);
 }

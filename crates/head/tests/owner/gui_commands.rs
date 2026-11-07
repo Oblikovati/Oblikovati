@@ -75,7 +75,7 @@ fn verify_script_owner_command_state(owner: TestOwner) -> TestOwner {
     let desktop = crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
     assert_eq!(desktop.gui_command_state().unwrap(), expected);
     assert_eq!(
-        crate::work::IdleHeadWork.gui_command_state().unwrap(),
+        crate::work_idle::IdleHeadWork.gui_command_state().unwrap(),
         GuiCommandState::default()
     );
     desktop.into_document_owner()

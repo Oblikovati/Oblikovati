@@ -6,6 +6,8 @@ fn sample_row() -> GuiBrowserSketch {
         name: "Section##7".into(),
         visible: true,
         consumed_by: None,
+        line_style: Default::default(),
+        dimensions_shown: true,
         inspection: Ok(oblikovati_api::wire::SketchInfo {
             dof: 0,
             healthy: true,
@@ -85,6 +87,7 @@ fn browser_validation_refuses_ambiguous_or_dropped_identity_and_unsafe_text() {
         name: "Extrude".into(),
         suppressed: false,
         extended: None,
+        kind: "Extrusion",
     });
     browser.validate().unwrap();
     browser.sketches[0].inspection = Err("bad\0cause".into());

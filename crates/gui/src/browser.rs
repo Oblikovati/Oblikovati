@@ -25,6 +25,12 @@ pub struct GuiModelBrowser {
     pub selected_sketches: Vec<DocumentSketchId>,
     /// The feature row a press chose.
     pub selected_feature: Option<FeatureId>,
+    /// The body row a press chose, by the feature that made it.
+    pub selected_body: Option<FeatureId>,
+    /// The document's own row is chosen.
+    pub root_selected: bool,
+    /// Where the document is saved, for the commands on its own row.
+    pub path: Option<String>,
     /// The part's solids, each made by a feature of the program.
     pub bodies: Vec<GuiBrowserBody>,
     pub appearances: Vec<crate::GuiAppearanceChoice>,
@@ -37,6 +43,9 @@ pub struct GuiBrowserSketch {
     pub name: String,
     pub visible: bool,
     pub consumed_by: Option<FeatureId>,
+    pub line_style: crate::GuiSketchLineStyle,
+    /// Its dimensions show while the sketch does.
+    pub dimensions_shown: bool,
 }
 /// One solid in the part, named as the document names it; example: `Solid1` from `Extrude1`.
 #[derive(Clone, Debug, PartialEq)]
@@ -47,6 +56,7 @@ pub struct GuiBrowserBody {
     pub key: String,
     /// Where the part's API counts it.
     pub index: i64,
+    pub visible: bool,
     /// Its own appearance's id; empty when it looks as the part does.
     pub appearance: String,
     pub physical: Option<crate::GuiBodyPhysical>,
@@ -59,6 +69,8 @@ pub struct GuiBrowserFeature {
     pub suppressed: bool,
     /// What Show Extended Names adds to the row: its operation and depth.
     pub extended: Option<String>,
+    /// What the Find dialog calls this kind of feature; example: `Extrusion`.
+    pub kind: &'static str,
 }
 impl GuiModelBrowser {
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -151,8 +163,10 @@ pub(crate) fn browser_contents(
     };
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
     browser_origin::follow_view_click(ui, state, view, actions);
+    browser_origin::follow_keys(ui, view, actions, state);
+    view.follow_relationships();
     let _document = ui.push_id(format!("document-{:?}", state.document));
-    ui.text(&browser.name);
+    crate::application::model_browser::browser_root::root_row(ui, state, browser, view, actions);
     if let Some(query) = view.query() {
         crate::application::workspace_layout::browser_view::search_results(ui, browser, query);
         return;
@@ -165,6 +179,7 @@ pub(crate) fn browser_contents(
     };
     tree.draw(view, actions);
     view.body_properties.panel(ui, state, browser, actions);
+    view.dialogs(ui, state, browser, actions);
 }
 /// One frame's tree; `expansion` is set for the single frame after Expand All or Collapse All.
 struct BrowserTree<'a> {
@@ -199,7 +214,7 @@ impl BrowserTree<'_> {
         self.bodies(view, actions);
         self.origin(view, actions);
         self.parameters();
-        self.sketches(actions);
+        self.sketches(view, actions);
         self.features(view, actions);
         // The marker closes a modelled document's history; a document without an origin has none.
         if self.browser.has_origin {
@@ -259,18 +274,25 @@ impl BrowserTree<'_> {
         // Brought back by Display Preferences, the branch starts closed.
         let closed = std::mem::take(&mut view.origin_closes_on_return);
         let opened = view.take_opened_branch(BrowserBranch::Origin);
-        let node = self.ui.tree_node_config("Origin").default_open(true);
-        let node = match (closed, opened, self.expansion) {
-            (true, ..) => node.opened(false, imgui::Condition::Always),
-            (false, true, _) => node.opened(true, imgui::Condition::Always),
-            (false, false, Some(open)) => node.opened(open, imgui::Condition::Always),
-            (false, false, None) => node,
+        let keyed = view.take_origin_open();
+        let node = self
+            .ui
+            .tree_node_config("Origin")
+            .default_open(true)
+            .selected(view.origin_folder_chosen);
+        let node = match (keyed, closed, opened, self.expansion) {
+            (Some(open), ..) => node.opened(open, imgui::Condition::Always),
+            (None, true, ..) => node.opened(false, imgui::Condition::Always),
+            (None, false, true, _) => node.opened(true, imgui::Condition::Always),
+            (None, false, false, Some(open)) => node.opened(open, imgui::Condition::Always),
+            (None, false, false, None) => node,
         };
         let token = node.push();
+        view.origin_open = token.is_some();
         browser_origin::origin_branch_menu(self.ui, view);
         if let Some(_origin) = token {
             for (row, label) in ORIGIN_ROWS.into_iter().enumerate() {
-                browser_origin::origin_row(self.ui, view, row, label, actions);
+                browser_origin::origin_row(self.ui, self.state, view, row, label, actions);
             }
         }
     }
@@ -281,7 +303,7 @@ impl BrowserTree<'_> {
             }
         }
     }
-    fn sketches(&self, actions: &mut Vec<GuiShellAction>) {
+    fn sketches(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         if let Some(_sketches) = self.branch("Sketches", true) {
             for row in self
                 .browser
@@ -289,7 +311,7 @@ impl BrowserTree<'_> {
                 .iter()
                 .filter(|row| row.consumed_by.is_none())
             {
-                sketch_row(self.ui, self.state, row, actions);
+                sketch_row(self.ui, self.state, row, view, actions);
             }
         }
     }
@@ -314,7 +336,7 @@ impl BrowserTree<'_> {
             (false, None) => node,
         };
         let token = node.push();
-        browser_feature::bodies_menu(self.ui, view);
+        browser_feature::bodies_menu(self.ui, self.state, self.browser, view, actions);
         let Some(_folder) = token else {
             return;
         };
@@ -374,7 +396,7 @@ impl BrowserTree<'_> {
                 .iter()
                 .filter(|row| row.consumed_by == Some(feature.id))
             {
-                sketch_row(self.ui, self.state, row, actions);
+                sketch_row(self.ui, self.state, row, view, actions);
             }
         }
     }
@@ -391,13 +413,13 @@ pub(crate) const DRAWING_TREE: [(&str, &[&str]); 2] = [
     ("Sheet:1", &["Default Border", "Title Block"]),
 ];
 pub(crate) const ORIGIN_ROWS: [&str; 7] = [
-    "Center Point",
+    "YZ Plane",
+    "XZ Plane",
+    "XY Plane",
     "X Axis",
     "Y Axis",
     "Z Axis",
-    "XY Plane",
-    "XZ Plane",
-    "YZ Plane",
+    "Center Point",
 ];
 pub(crate) fn model_browser_width(viewport_width: f32) -> f32 {
     // Keep the native view centre available for picks even when content scale narrows the layout (#3850).

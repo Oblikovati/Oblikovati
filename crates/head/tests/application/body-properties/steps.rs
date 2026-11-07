@@ -14,7 +14,8 @@ const AS_PART: &str = "As Part";
 const BLACK: &str = "Black";
 /// The shipped look the fixture's library copies as "Black", and how that renders.
 const BLACK_BASE: &str = "abs-black";
-const BLACK_COLOR: [u8; 3] = [2, 2, 2];
+// Catalog RGB 0.0065849577 is linear; the sRGB framebuffer stores byte 19.
+const BLACK_COLOR: [u8; 3] = [19, 19, 19];
 /// The solid is 40 by 30 by 20 mm from the origin; the catalog's default density is 1 g/cm^3.
 const VOLUME: &str = "Volume: 24000.000 mm^3";
 const AREA: &str = "Area: 5200.000 mm^2";
@@ -232,9 +233,11 @@ fn solid_black(world: &mut ApplicationWorld) {
         0,
         "expected no part colour left"
     );
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let windows = diagnostics::window_occlusions();
     assert!(
-        colored_pixels(world, BLACK_COLOR) > 0,
-        "expected the solid dark"
+        super::solid_visibility::visible_appearance_fill(&capture, &windows, BLACK_COLOR),
+        "expected the model's Black appearance outside the GUI windows"
     );
 }
 #[then("the solid is displayed with the part appearance")]

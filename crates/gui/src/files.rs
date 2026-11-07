@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::application::document_opening::OpenDialog;
 use crate::application::document_saving::{
     close_prompt::{CloseOutcome, ClosePrompt},
     first_saves::FirstSaves,
     folder_browser::DialogEnd,
-    open_dialog::OpenDialog,
     save_as::SaveAsDialog,
 };
 use crate::{GuiCommandState, GuiShellAction};
@@ -229,11 +229,10 @@ impl GuiDocumentFiles {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        pictures: &crate::application::document_tabs::previews::TabPreviews,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.templates.panel(ui, state, actions);
-        self.open.panel(ui, state, pictures, actions);
+        self.open.panel(ui, state, actions);
     }
     /// Route this frame's closes, then draw the prompts and Save As. Runs after every control has
     /// drawn, and answered closes join `actions` after the routing so no answer is asked twice.

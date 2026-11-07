@@ -70,6 +70,20 @@ pub(crate) fn dialog_selectable(_: &Ui, label: &str, selected: bool) -> bool {
     // The label owner and Ui remain live; no C++ vector class crosses the ABI.
     unsafe { oblikovati_gui_selectable(label.as_ptr().cast(), selected, flags as i32) }
 }
+/// A button naming its choice, and the list it opens; returns the row chosen this frame.
+/// Example: `popup_choice(ui, "Design View: Primary", "##view", &rows)`.
+pub(crate) fn popup_choice<Row: AsRef<str>>(
+    ui: &Ui,
+    label: &str,
+    popup: &str,
+    rows: &[Row],
+) -> Option<usize> {
+    if ui.button(label) {
+        ui.open_popup(popup);
+    }
+    let _list = ui.begin_popup(popup)?;
+    rows.iter().position(|row| ui.menu_item(row.as_ref()))
+}
 /// Leave no window focused; example: after the panel that held the keyboard has closed.
 pub(crate) fn release_keyboard_focus(_: &Ui) {
     // A null name is the documented form for removing focus; no string crosses the ABI.

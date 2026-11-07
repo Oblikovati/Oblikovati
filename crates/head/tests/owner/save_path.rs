@@ -155,7 +155,7 @@ fn script_owner_forwards_choices_and_idle_owner_refuses_them() {
         document,
         "/memory/script-choice.opd",
     );
-    let mut idle = crate::work::IdleHeadWork;
+    let mut idle = crate::work_idle::IdleHeadWork;
     assert!(!idle.complete_save_path(document, None).unwrap());
     assert!(
         idle.complete_save_path(document, Some(Path::new("/memory/idle.opd")))

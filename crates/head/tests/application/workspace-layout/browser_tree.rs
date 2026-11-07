@@ -13,7 +13,7 @@ fn branches_expanded(world: &mut ApplicationWorld) {
     world.expect_text("XY Plane");
 }
 #[when("I open the model browser menu")]
-pub(super) fn open_browser_menu(world: &mut ApplicationWorld) {
+pub(in super::super) fn open_browser_menu(world: &mut ApplicationWorld) {
     world.click_text("Menu");
     world.pump(Vec::new());
 }
@@ -75,7 +75,7 @@ fn browser_visible(world: &mut ApplicationWorld) {
 fn open_search(world: &mut ApplicationWorld) {
     world.click_text("Search");
 }
-pub(super) fn type_in_search(world: &mut ApplicationWorld, query: &str) {
+pub(in super::super) fn type_in_search(world: &mut ApplicationWorld, query: &str) {
     // The empty field shows its hint, drawn after the button that opened it.
     world.click_text("Search");
     world.type_text(query);
@@ -109,7 +109,9 @@ fn matches_highlighted(world: &mut ApplicationWorld) {
 #[then("unrelated visible feature rows are filtered from the browser")]
 fn unrelated_filtered(world: &mut ApplicationWorld) {
     // Whole rows: the ribbon's Work Features group holds one of these words too.
-    for unrelated in ["Origin", "Features", "EndofPart"] {
+    // Matching work points remain under their Features ancestor.
+    world.expect_text("Features");
+    for unrelated in ["Origin", "Sketches", "EndofPart"] {
         let shown = world.frame.runs.iter().any(|run| run.text == unrelated);
         assert!(
             !shown,
@@ -118,6 +120,13 @@ fn unrelated_filtered(world: &mut ApplicationWorld) {
         );
     }
     world.expect_no_text("XY Plane");
+    let browser = world
+        .state()
+        .browser
+        .expect("expected the populated browser");
+    for sketch in browser.sketches {
+        world.expect_no_text(&sketch.name);
+    }
 }
 #[when("I clear the search text")]
 #[when("I clear the search query")]
@@ -265,7 +274,7 @@ fn x_axis_highlighted(world: &mut ApplicationWorld) {
         "expected X Axis highlighted"
     );
 }
-pub(super) fn expand_display_preferences(world: &mut ApplicationWorld) {
+pub(in super::super) fn expand_display_preferences(world: &mut ApplicationWorld) {
     open_browser_menu(world);
     world.click_text("Display Preferences");
     world.pump(Vec::new());

@@ -63,7 +63,7 @@ fn missing_scale_owner_returns_a_named_decline_and_disables_the_action() {
     let action = oblikovati_gui::GuiShellAction::SetUiScale(UiScaleOptions::default());
     assert!(state.ui_scale.is_none() && !action.enabled(&state));
     assert_scale_owner_decline(&mut owner);
-    assert_scale_owner_decline(&mut crate::work::IdleHeadWork);
+    assert_scale_owner_decline(&mut crate::work_idle::IdleHeadWork);
 }
 fn assert_scale_owner_decline(owner: &mut dyn HeadWork) {
     let error = owner

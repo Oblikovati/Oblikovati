@@ -8,6 +8,7 @@ use oblikovati_api::{
 };
 use oblikovati_gui::{GuiAppearanceChoice, GuiBodyPhysical, GuiBrowserBody};
 use oblikovati_model::assets::{AppearanceAsset, AssignmentReference};
+use oblikovati_session::selection::SelectionClickMode;
 
 impl<
     O: TransactionObserver,
@@ -27,12 +28,17 @@ impl<
             .map(|row| GuiBrowserBody {
                 appearance: self.body_appearance(document, &row.key),
                 physical: self.calculated_physical(document, &row.key),
+                visible: self.session_shows_body(document, &row.key),
                 name: row.name,
                 feature: row.feature,
                 key: row.key,
                 index: row.index,
             })
             .collect()
+    }
+    fn session_shows_body(&self, document: u64, key: &str) -> bool {
+        let session = self.files.workspace().session(document);
+        session.is_ok_and(|session| session.body_visible(key))
     }
     fn body_appearance(&self, document: u64, key: &str) -> String {
         let session = self.files.workspace().session(document).ok();
@@ -94,8 +100,27 @@ impl<
             .insert((document, key), (generation, shown));
         Ok(true)
     }
-    /// Give a body its own appearance; an empty id clears it, back to the part's.
+    /// Apply the appearance and reveal it; Cancel never reaches this operation.
+    /// Example: `owner.set_body_appearance(document, key, "abs-black")?`.
     pub(super) fn set_body_appearance(
+        &mut self,
+        document: u64,
+        key: &str,
+        appearance: &str,
+    ) -> Result<bool, String> {
+        self.assign_body_appearance(document, key, appearance)?;
+        // Selection recolors the whole body (Go head/ui/highlight.go). A successful
+        // appearance edit must expose the result required by the Body Properties benchmark.
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
+            .map_err(|cause| cause.to_string())?;
+        self.model_face = None;
+        Ok(true)
+    }
+    /// Give a body its own appearance; an empty id clears it, back to the part's.
+    fn assign_body_appearance(
         &mut self,
         document: u64,
         key: &str,

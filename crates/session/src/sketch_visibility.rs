@@ -91,6 +91,16 @@ impl<O: TransactionObserver> DocumentSession<O> {
 }
 
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Change how a sketch's lines are drawn; example: `session.set_sketch_line_style(id, style)`.
+    pub fn set_sketch_line_style(
+        &mut self,
+        sketch: DocumentSketchId,
+        style: oblikovati_model::document_sketch::SketchLineStyle,
+    ) -> Result<(), CommandError<SketchError>> {
+        self.run("Line Style", |snapshot, _| {
+            snapshot.sketches.set_line_style(sketch, style)
+        })
+    }
     /// Name a design view of the document; example: `session.create_design_view("Front")`.
     pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
         self.run("Create Design View", |snapshot, _| {

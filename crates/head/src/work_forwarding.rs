@@ -55,6 +55,40 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .set_body_appearance_from_gui(document, key, appearance)
         }
+        fn edit_feature_from_gui(
+            &mut self,
+            document: u64,
+            edit: &oblikovati_gui::GuiFeatureEdit,
+        ) -> Result<bool, String> {
+            self.$owner.edit_feature_from_gui(document, edit)
+        }
+        fn set_sketch_line_style_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            style: &oblikovati_gui::GuiSketchLineStyle,
+        ) -> Result<bool, String> {
+            self.$owner
+                .set_sketch_line_style_from_gui(document, sketch, style)
+        }
+        fn browser_choice_from_gui(
+            &mut self,
+            document: u64,
+            choice: &oblikovati_gui::GuiBrowserChoice,
+        ) -> Result<bool, String> {
+            self.$owner.browser_choice_from_gui(document, choice)
+        }
+        fn keep_document_picture_from_gui(
+            &mut self,
+            document: u64,
+            picture: Option<&oblikovati_gui::GuiPreviewImage>,
+        ) -> Result<bool, String> {
+            self.$owner
+                .keep_document_picture_from_gui(document, picture)
+        }
+        fn inspect_file_from_gui(&mut self, path: &str) -> Result<bool, String> {
+            self.$owner.inspect_file_from_gui(path)
+        }
         fn navigation_prompt_from_gui(&mut self, prompt: Option<&str>) -> Result<bool, String> {
             self.$owner.navigation_prompt_from_gui(prompt)
         }

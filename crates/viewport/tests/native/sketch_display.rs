@@ -20,6 +20,7 @@ pub(super) fn packet() -> ViewportSketchDisplay {
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry,
+        line_color: None,
     }
 }
 pub(super) fn open_display(title: &str) -> (ViewportRuntime, Viewport) {
@@ -248,6 +249,7 @@ fn spline_packet() -> ViewportSketchDisplay {
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry,
+        line_color: None,
     }
 }
 

@@ -43,6 +43,15 @@ impl<
             .session(document)
             .ok()
             .and_then(|session| session.selected_browser_feature());
+        if let Ok(session) = self.files.workspace().session(document) {
+            browser.selected_body = session.selected_browser_body().map(|(_, feature)| feature);
+            browser.root_selected = session.browser_root_selected();
+        }
+        browser.path = self
+            .files
+            .path(document)
+            .ok()
+            .and_then(|path| path.to_str().map(str::to_owned));
         Ok(browser)
     }
     fn gui_browser_root(&self, document: u64) -> Result<GuiModelBrowser, String> {
@@ -93,8 +102,20 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             name: feature.name().into(),
             suppressed: feature.suppressed(),
             extended: extended_feature_name(snapshot, feature),
+            kind: feature_kind_name(feature.definition()),
         })
         .collect();
+}
+/// What a search calls this kind of feature.
+fn feature_kind_name(
+    definition: &oblikovati_model::feature::part::PartFeatureDefinition,
+) -> &'static str {
+    use oblikovati_model::feature::part::PartFeatureDefinition::{DeleteBody, SketchPrism};
+    match definition {
+        SketchPrism(_) => "Extrusion",
+        DeleteBody(_) => "Delete Body",
+        _ => "Work Feature",
+    }
 }
 /// What a long row adds to a feature's name: its operation and depth.
 fn extended_feature_name(
@@ -137,6 +158,13 @@ fn browser_sketch<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
     GuiBrowserSketch {
         id: sketch.id(),
         visible: sketch.visible(),
+        line_style: oblikovati_gui::GuiSketchLineStyle {
+            color: sketch.line_style().color,
+            line_type: sketch.line_style().line_type.clone(),
+            weight: sketch.line_style().weight,
+            scale: sketch.line_style().scale,
+        },
+        dimensions_shown: !sketch.line_style().dimensions_hidden,
         name: sketch.name().into(),
         inspection,
         consumed_by: exclusive_sketch_consumer(snapshot, sketch.id()),

@@ -123,3 +123,33 @@ fn a_checked_box_has_a_mark_and_a_cleared_one_has_none() {
     };
     assert!(marks(true) > marks(false));
 }
+
+#[test]
+fn window_occlusions_identifies_real_ui_rectangles() {
+    let _exclusive = HEADLESS_CONTEXT
+        .lock()
+        .unwrap_or_else(|poison| poison.into_inner());
+    let mut context = Context::create();
+    context.set_ini_filename(None);
+    context.fonts().build_rgba32_texture();
+    context.io_mut().display_size = [400., 300.];
+    context.io_mut().delta_time = 0.016;
+    context
+        .frame()
+        .window("occluding panel")
+        .position([10., 10.], Condition::Always)
+        .size([120., 80.], Condition::Always)
+        .build(|| {});
+    context.render();
+    assert!(window_occlusions().contains(&[10., 10., 130., 90.]));
+    assert_eq!(
+        window_pixel_bounds("occluding panel"),
+        Some([10., 10., 130., 90.])
+    );
+    context.io_mut().display_framebuffer_scale = [2., 2.];
+    assert_eq!(
+        window_pixel_bounds("occluding panel"),
+        Some([20., 20., 260., 180.])
+    );
+    assert!(window_pixel_bounds("absent panel").is_none());
+}

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! One sketch's browser row: choosing, opening and its menu.
 use super::*;
+use crate::application::model_browser::relationships::RelatedRow;
 pub(super) fn sketch_row(
     ui: &Ui,
     state: &GuiCommandState,
     row: &GuiBrowserSketch,
+    view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let _sketch = ui.push_id(format!("sketch-{}", row.id.0));
@@ -22,7 +24,7 @@ pub(super) fn sketch_row(
     ) {
         sketch_activation(ui, state, row.id, &action, actions);
     }
-    sketch_context_menu(ui, state, row, action, actions);
+    sketch_context_menu(ui, state, row, view, action, actions);
 }
 fn sketch_activation(
     ui: &Ui,
@@ -64,6 +66,7 @@ fn sketch_context_menu(
     ui: &Ui,
     state: &GuiCommandState,
     row: &GuiBrowserSketch,
+    view: &mut BrowserView,
     action: GuiShellAction,
     actions: &mut Vec<GuiShellAction>,
 ) {
@@ -88,11 +91,56 @@ fn sketch_context_menu(
     {
         actions.push(action);
     }
-    for listed in ["Redefine", "Share Sketch", "Properties", "Measure"] {
-        crate::application::workspace_layout::browser_view::muted_menu_item(ui, listed);
+    use crate::application::workspace_layout::browser_view::muted_menu_item;
+    for listed in ["Redefine", "Share Sketch"] {
+        muted_menu_item(ui, listed);
     }
+    if ui.menu_item("Properties") {
+        view.geometry.request(row.id, row.line_style.clone());
+    }
+    muted_menu_item(ui, "Measure");
     sketch_visibility_menu(ui, state, row, actions);
-    crate::application::workspace_layout::browser_view::muted_menu_item(ui, "Export Sketch As");
+    if ui
+        .menu_item_config("Dimension Visibility")
+        .selected(row.dimensions_shown)
+        .enabled(row.visible)
+        .build()
+    {
+        actions.push(GuiShellAction::BrowserChoice {
+            document: state.document.unwrap_or(0),
+            choice: crate::GuiBrowserChoice::SketchDimensionsShown {
+                sketch: row.id,
+                shown: !row.dimensions_shown,
+            },
+        });
+    }
+    if ui.menu_item("Show Input") {
+        show_input(state, row.id, view, actions);
+    }
+    if ui.menu_item("Relationships") {
+        view.relationships.request(RelatedRow::Sketch(row.id));
+    }
+    muted_menu_item(ui, "Export Sketch As");
+}
+/// The plane the sketch stands on takes the row's place as what is chosen.
+fn show_input(
+    state: &GuiCommandState,
+    sketch: DocumentSketchId,
+    view: &mut BrowserView,
+    actions: &mut Vec<GuiShellAction>,
+) {
+    let browser = state.browser.as_ref();
+    let plane = browser.and_then(|browser| {
+        crate::application::model_browser::relationships::plane_of_sketch(browser, sketch)
+    });
+    let Some(RelatedRow::Origin(place)) = plane else {
+        return;
+    };
+    view.selected_origin_row = Some(place);
+    actions.push(GuiShellAction::BrowserChoice {
+        document: state.document.unwrap_or(0),
+        choice: crate::GuiBrowserChoice::Nothing,
+    });
 }
 fn sketch_visibility_menu(
     ui: &Ui,

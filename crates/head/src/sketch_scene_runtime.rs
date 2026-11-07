@@ -89,6 +89,10 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
     }
     Ok(update)
 }
+fn line_color([red, green, blue]: [u8; 3]) -> oblikovati_model::theme::Rgba {
+    let [r, g, b] = [red, green, blue].map(|channel| f32::from(channel) / 255.);
+    oblikovati_model::theme::Rgba { r, g, b, a: 1. }
+}
 fn collect_sketches(
     snapshot: &DocumentSnapshot,
     called_up: &[DocumentSketchId],
@@ -105,6 +109,7 @@ fn collect_sketches(
                 sketch: sketch.id(),
                 plane,
                 geometry: sketch.geometry().clone(),
+                line_color: sketch.line_style().color.map(line_color),
             }),
             Err(cause) => update.plane_declines.push((sketch.id(), cause.to_string())),
         }

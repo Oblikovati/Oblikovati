@@ -62,6 +62,150 @@ impl<
             });
         Ok(true)
     }
+    fn set_sketch_dimensions_shown(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        shown: bool,
+    ) -> Result<bool, String> {
+        let session = self.files.workspace().session(document);
+        let session = session.map_err(|cause| cause.to_string())?;
+        let placed = session.snapshot().sketches.get(sketch);
+        let style = placed
+            .map_err(|cause| cause.to_string())?
+            .line_style()
+            .clone();
+        let style = oblikovati_model::document_sketch::SketchLineStyle {
+            dimensions_hidden: !shown,
+            ..style
+        };
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .set_sketch_line_style(sketch, style)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+    /// A saved, undoable change to a feature's name and to when it is suppressed.
+    pub(super) fn edit_feature(
+        &mut self,
+        document: u64,
+        edit: &oblikovati_gui::GuiFeatureEdit,
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let edit = edit.clone();
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .run("Feature Properties", move |snapshot, _| {
+                let condition = feature_condition(&snapshot.parameters, &edit)?;
+                let features = &mut snapshot.work_geometry;
+                features
+                    .rename(edit.feature, &edit.name)
+                    .map_err(|cause| cause.to_string())?;
+                features
+                    .set_suppressed(edit.feature, edit.always_suppressed)
+                    .map_err(|cause| cause.to_string())?;
+                features
+                    .set_suppression_condition(edit.feature, condition)
+                    .map_err(|cause| cause.to_string())?;
+                Ok::<(), String>(())
+            })
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+    /// A saved, undoable change to how a sketch's lines are drawn.
+    pub(super) fn set_sketch_line_style(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        style: &oblikovati_gui::GuiSketchLineStyle,
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let saved = oblikovati_model::document_sketch::SketchLineStyle {
+            color: style.color,
+            line_type: style.line_type.clone(),
+            weight: style.weight,
+            scale: style.scale,
+            dimensions_hidden: self
+                .files
+                .workspace()
+                .session(document)
+                .ok()
+                .and_then(|session| session.snapshot().sketches.get(sketch).ok())
+                .is_some_and(|placed| placed.line_style().dimensions_hidden),
+        };
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .set_sketch_line_style(sketch, saved)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+    pub(super) fn browser_choice(
+        &mut self,
+        document: u64,
+        choice: &oblikovati_gui::GuiBrowserChoice,
+    ) -> Result<bool, String> {
+        use oblikovati_gui::GuiBrowserChoice::{
+            Body, BodyVisible, Nothing, Root, ShowFeatureDimensions, SketchDimensionsShown,
+        };
+        self.require_browser_document(document)?;
+        if let ShowFeatureDimensions(feature) = choice {
+            self.shown_feature_dimensions = feature.map(|feature| (document, feature));
+            return Ok(true);
+        }
+        if let SketchDimensionsShown { sketch, shown } = choice {
+            return self.set_sketch_dimensions_shown(document, *sketch, *shown);
+        }
+        let mut commands = self
+            .files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?;
+        match choice {
+            ShowFeatureDimensions(_) | SketchDimensionsShown { .. } => {}
+            Nothing => {
+                commands
+                    .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
+                    .map_err(|cause| cause.to_string())?;
+            }
+            Root => commands.set_browser_root_selection(),
+            Body { key, feature } => commands.set_browser_body_selection(key, *feature),
+            BodyVisible { key, visible } => {
+                commands.set_body_visible(key, *visible)?;
+            }
+        }
+        Ok(true)
+    }
+    /// Read once, on selection: a frame loop must not touch the disk.
+    pub(super) fn inspect_file(&mut self, path: &str) {
+        let file = std::path::Path::new(path);
+        let picture = oblikovati_persistence::package::preview_picture_of_file(file);
+        self.inspected_file = Some(oblikovati_gui::GuiInspectedFile {
+            path: path.to_owned(),
+            design_views: oblikovati_persistence::package::design_view_names_of_file(file),
+            properties: oblikovati_persistence::package::property_rows_of_file(file),
+            picture: picture.map(|saved| oblikovati_gui::GuiPreviewImage {
+                extent: saved.extent,
+                rgb: std::sync::Arc::new(saved.rgb),
+            }),
+        });
+    }
+    /// Keep a document's picture for its next save; only saving writes it to the file.
+    pub(super) fn keep_document_picture(
+        &mut self,
+        document: u64,
+        picture: Option<&oblikovati_gui::GuiPreviewImage>,
+    ) {
+        use oblikovati_session::files::FilePicture;
+        let kept = picture.map_or(FilePicture::Remove, |image| {
+            FilePicture::Store(oblikovati_persistence::package::SavedPicture {
+                extent: image.extent,
+                rgb: image.rgb.as_ref().clone(),
+            })
+        });
+        self.files.keep_file_picture(document, kept);
+    }
     /// Show a running navigation command's prompt in the status area, or Ready without one.
     pub(super) fn navigation_prompt(&mut self, prompt: Option<&str>) -> Result<bool, String> {
         self.command_notice = Some(match prompt {
@@ -128,6 +272,10 @@ impl<
             session.selected_browser_feature(),
             session.selected_browser_sketches().first(),
         ) {
+            _ if session.browser_root_selected() => BrowserOutlineRow::Root,
+            _ if session.selected_browser_body().is_some() => {
+                BrowserOutlineRow::Feature(session.selected_browser_body()?.1)
+            }
             (Some(feature), _) => BrowserOutlineRow::Feature(feature),
             (None, None) => {
                 let face = self.chosen_model_face(document)?;
@@ -152,6 +300,19 @@ impl<
             row,
         })
     }
+    fn outline_of_every_feature(
+        &self,
+        session: &oblikovati_session::DocumentSession<O>,
+    ) -> Result<Vec<[[f64; 3]; 2]>, String> {
+        let mut outline = Vec::new();
+        for feature in session.snapshot().work_geometry.features() {
+            outline.extend(
+                self.part_scenes
+                    .feature_edges(session, feature.id(), None)?,
+            );
+        }
+        Ok(outline)
+    }
     fn browser_outline_of(
         &self,
         source: BrowserOutlineSource,
@@ -165,6 +326,7 @@ impl<
             BrowserOutlineRow::Feature(feature) => {
                 self.part_scenes.feature_edges(session, feature, None)
             }
+            BrowserOutlineRow::Root => self.outline_of_every_feature(session),
             BrowserOutlineRow::Face(feature, role) => {
                 self.part_scenes.feature_edges(session, feature, Some(role))
             }
@@ -197,6 +359,7 @@ pub(super) struct BrowserOutlineSource {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum BrowserOutlineRow {
+    Root,
     Feature(oblikovati_model::feature::FeatureId),
     Face(
         oblikovati_model::feature::FeatureId,
@@ -267,4 +430,42 @@ pub(super) struct ChosenModelFace {
     document: u64,
     feature: oblikovati_model::feature::FeatureId,
     role: oblikovati_martensite::PrismFaceRole,
+}
+const FEATURE_COMPARISONS: [oblikovati_model::feature::FeatureSuppressionComparison; 6] = {
+    use oblikovati_model::feature::FeatureSuppressionComparison::{
+        Equal, GreaterOrEqual, GreaterThan, LessOrEqual, LessThan, NotEqual,
+    };
+    [
+        Equal,
+        NotEqual,
+        LessThan,
+        LessOrEqual,
+        GreaterThan,
+        GreaterOrEqual,
+    ]
+};
+/// The dialog names a parameter and types a value; a condition holds the identity and quantity.
+fn feature_condition(
+    parameters: &oblikovati_model::parameter::ParameterCollection<u64>,
+    edit: &oblikovati_gui::GuiFeatureEdit,
+) -> Result<Option<oblikovati_model::feature::FeatureSuppressionCondition>, String> {
+    let Some(condition) = &edit.condition else {
+        return Ok(None);
+    };
+    let parameter = parameters.find(&condition.parameter).ok_or_else(|| {
+        format!(
+            "suppression parameter {:?}: expected a parameter of this document",
+            condition.parameter
+        )
+    })?;
+    let threshold = parameters
+        .evaluate_expression(&condition.value)
+        .map_err(|cause| format!("suppression value {:?}: {cause}", condition.value))?;
+    let comparison = FEATURE_COMPARISONS
+        .get(condition.comparison)
+        .copied()
+        .ok_or_else(|| format!("comparison {}: expected one of six", condition.comparison))?;
+    oblikovati_model::feature::FeatureSuppressionCondition::new(parameter, comparison, threshold)
+        .map(Some)
+        .map_err(|cause| cause.to_string())
 }

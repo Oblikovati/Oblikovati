@@ -6,6 +6,7 @@ const SCALAR_FIELDS: &[&str] = &["schemaVersion", "documentType", "subType", "di
 const MAPPING_FIELDS: &[&str] = &[
     "identity",
     "displaySettings",
+    "previewPicture",
     "sketchSettings",
     "bodyNames",
     "bodyColorStyles",

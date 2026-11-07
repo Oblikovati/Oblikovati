@@ -41,3 +41,63 @@ fn a_body_appearance_can_be_set_cleared_and_undone() {
     owner.set_body_appearance(document, &key, "").unwrap();
     assert_eq!(only_body(&mut owner, document).appearance, "");
 }
+
+#[test]
+fn applying_a_body_appearance_reveals_it_without_selection_tint() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let body = only_body(&mut owner, document);
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .set_browser_body_selection(&body.key, body.feature);
+    owner
+        .set_body_appearance_from_gui(document, &body.key, SHIPPED_BLACK)
+        .unwrap();
+    assert_eq!(
+        owner.gui_browser_snapshot(document).unwrap().selected_body,
+        None
+    );
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .set_browser_body_selection(&body.key, body.feature);
+    owner
+        .set_body_appearance_from_gui(document, &body.key, "")
+        .unwrap();
+    assert_eq!(
+        owner.gui_browser_snapshot(document).unwrap().selected_body,
+        None
+    );
+    let scene = owner.take_scene().unwrap().unwrap();
+    assert!(!scene.scene.triangles.is_empty());
+    assert!(
+        scene
+            .scene
+            .triangles
+            .iter()
+            .all(|triangle| triangle.color == [0., 1., 0., 1.])
+    );
+}
+
+#[test]
+fn refusing_an_unknown_appearance_keeps_the_body_selected() {
+    let (mut owner, _) = owner();
+    let document = open_prism(&mut owner, false);
+    let body = only_body(&mut owner, document);
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .set_browser_body_selection(&body.key, body.feature);
+    assert!(
+        owner
+            .set_body_appearance_from_gui(document, &body.key, "missing-appearance")
+            .is_err()
+    );
+    let browser = owner.gui_browser_snapshot(document).unwrap();
+    assert_eq!(browser.selected_body, Some(body.feature));
+    assert_eq!(browser.bodies[0].appearance, "");
+}

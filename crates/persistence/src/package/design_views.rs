@@ -39,6 +39,31 @@ pub fn design_view_names_of_file(path: &std::path::Path) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// A closed file's properties by name and text, whichever set holds them; a file that cannot
+/// be read has none. Example: `property_rows_of_file(path)` for the Open dialog's Details.
+pub fn property_rows_of_file(path: &std::path::Path) -> Vec<(String, String)> {
+    let Ok(encoded) = std::fs::read(path) else {
+        return Vec::new();
+    };
+    let Ok(properties) = DocumentPackage::decode(&encoded).and_then(|p| p.restore_properties())
+    else {
+        return Vec::new();
+    };
+    properties
+        .sets()
+        .iter()
+        .flat_map(|set| set.properties())
+        .map(|property| (property.name.clone(), value_text(&property.value)))
+        .collect()
+}
+fn value_text(value: &oblikovati_api::types::VariantValue) -> String {
+    use oblikovati_api::types::VariantValue::String as Text;
+    match value {
+        Text(text) => text.clone(),
+        other => format!("{other:?}"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

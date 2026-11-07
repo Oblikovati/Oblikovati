@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{HeadOptions, HeadWork, work::IdleHeadWork};
+use crate::{HeadOptions, HeadWork, work_idle::IdleHeadWork};
 use oblikovati_viewport::ViewportEvent;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HeadPresentation {

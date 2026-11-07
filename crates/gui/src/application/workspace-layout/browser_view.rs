@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The model browser's own commands: expanding its tree and searching its rows.
+use crate::application::model_browser::{
+    feature_properties::FeatureProperties, find_dialog::FindDialog,
+    geometry_properties::GeometryProperties, relationships::RelationshipsDialog,
+};
 use crate::browser::{DRAWING_TREE, GuiBrowserKind, GuiModelBrowser, ORIGIN_ROWS};
+use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
 const BROWSER_MENU: &str = "##browser-menu";
 const NO_RESULTS: &str = "No matching entries";
 const SEARCH_HINT: &str = "Search";
 const HIGHLIGHT: [f32; 4] = [0.95, 0.75, 0.2, 0.45];
-const LISTED_DISPLAY_PREFERENCES: [&str; 6] = [
+const LISTED_DISPLAY_PREFERENCES: [&str; 5] = [
     "Hide Notes",
     "Hide Documents",
     "Hide Warnings",
     "Hide Blue Dot Indicator",
     "Auto expand Representations Folder on Open",
-    "Design View Expansion",
 ];
 
 /// A row that has rows of its own under it.
@@ -38,6 +42,8 @@ pub(crate) struct BrowserView {
     pub body_properties: super::body_properties::BodyPropertiesDialog,
     /// A navigation command owns the next click on the view.
     pub view_clicks_taken: bool,
+    /// The screen left for the document, the only place a click means the model.
+    pub document_area: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
     /// Framebuffer pixels per layout unit, for what a click reports.
     pub layout_scale: [f32; 2],
     /// The branch a row's Expand All Children opens on the next frame.
@@ -46,6 +52,19 @@ pub(crate) struct BrowserView {
     bodies_expansion: Option<bool>,
     /// The branch was just brought back: it opens closed, once.
     pub origin_closes_on_return: bool,
+    /// Origin's own row is chosen, by the arrow keys.
+    pub origin_folder_chosen: bool,
+    /// The Origin branch shows its rows, as of the last drawn tree.
+    pub origin_open: bool,
+    /// What the arrow keys asked of the branch, for the next tree.
+    origin_open_request: Option<bool>,
+    /// Origin rows made visible, by document and row: view state, as a body's visibility is.
+    pub visible_origin_rows: std::collections::BTreeSet<(u64, usize)>,
+    design_view_expansion: bool,
+    pub find: FindDialog,
+    pub relationships: RelationshipsDialog,
+    pub geometry: GeometryProperties,
+    pub feature_properties: FeatureProperties,
 }
 impl BrowserView {
     /// Draw the menu and search controls above the tree; example: `view.header(ui)`.
@@ -76,7 +95,7 @@ impl BrowserView {
         }
         if !drawing {
             if ui.menu_item("Find") {
-                self.open_search();
+                self.find.request();
             }
             self.display_preferences(ui);
         }
@@ -104,7 +123,47 @@ impl BrowserView {
             for row in rest {
                 muted_menu_item(ui, row);
             }
+            ui.menu_item_config("Design View Expansion")
+                .build_with_ref(&mut self.design_view_expansion);
         });
+    }
+    /// Open or fold the whole tree on the next frame; example: the root row's commands.
+    pub(crate) fn set_expansion(&mut self, open: bool) {
+        self.expansion = Some(open);
+    }
+    /// A frame must follow so a dialog opens without waiting for an event.
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.body_properties.needs_frame()
+            || self.find.needs_frame()
+            || self.geometry.needs_frame()
+            || self.feature_properties.needs_frame()
+    }
+    /// The dialogs over the browser; example: each frame, after its tree.
+    pub(crate) fn dialogs(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        browser: &GuiModelBrowser,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.find.panel(ui, state, browser, actions);
+        self.relationships.panel(ui, state, browser, actions);
+        self.geometry.panel(ui, state, actions);
+        self.feature_properties.panel(ui, state, browser, actions);
+    }
+    /// A row chosen in the Relationships dialog reads as chosen in the tree.
+    pub(crate) fn follow_relationships(&mut self) {
+        if let Some(row) = self.relationships.take_chosen_origin() {
+            self.selected_origin_row = Some(row);
+        }
+    }
+    pub(crate) fn set_origin_open(&mut self, open: Option<bool>) {
+        if open.is_some() {
+            self.origin_open_request = open;
+        }
+    }
+    pub(crate) fn take_origin_open(&mut self) -> Option<bool> {
+        self.origin_open_request.take()
     }
     /// Open or fold everything under Solid Bodies on the next frame; example: from its menu.
     pub(crate) fn set_bodies_expansion(&mut self, open: bool) {
@@ -163,31 +222,78 @@ pub(crate) fn muted_menu_item(ui: &Ui, label: &str) {
         ui.tooltip_text("This command is not available in this build.");
     }
 }
-/// Every row a search can reach, in tree order.
-fn searchable_rows(browser: &GuiModelBrowser) -> Vec<&str> {
+/// Where the query starts in a row, ignoring case; its length in bytes is the query's.
+pub(crate) fn match_start(row: &str, query: &str) -> Option<usize> {
+    row.to_lowercase().find(&query.to_lowercase())
+}
+/// One line of a search's results: a match, or a row above one, kept so its place can be read.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ResultRow {
+    depth: usize,
+    text: String,
+    is_match: bool,
+}
+/// A branch and its matching rows; without one the branch is not shown at all.
+fn push_branch(results: &mut Vec<ResultRow>, branch: &str, depth: usize, rows: Vec<String>) {
+    if rows.is_empty() {
+        return;
+    }
+    results.push(ResultRow {
+        depth,
+        text: branch.to_owned(),
+        is_match: false,
+    });
+    results.extend(rows.into_iter().map(|text| ResultRow {
+        depth: depth + 1,
+        text,
+        is_match: true,
+    }));
+}
+/// A feature shows where it lives in the tree: under its solid, and among the features.
+fn matching_rows(browser: &GuiModelBrowser, query: &str) -> Vec<ResultRow> {
+    let meets = |name: &str| match_start(name, query).is_some();
+    let mut results = Vec::new();
+    let solids: Vec<_> = browser
+        .bodies
+        .iter()
+        .filter_map(|body| {
+            let feature = browser.features.iter().find(|row| row.id == body.feature)?;
+            meets(&feature.name).then_some((body.name.as_str(), feature.name.clone()))
+        })
+        .collect();
+    if !solids.is_empty() {
+        results.push(ResultRow {
+            depth: 0,
+            text: "Solid Bodies".to_owned(),
+            is_match: false,
+        });
+        for (body, feature) in solids {
+            push_branch(&mut results, body, 1, vec![feature]);
+        }
+    }
     let origin: &[&str] = if browser.has_origin {
         &ORIGIN_ROWS
     } else {
         &[]
     };
-    let sketches = browser.sketches.iter().map(|row| row.name.as_str());
-    let features = browser.features.iter().map(|row| row.name.as_str());
-    origin
+    let kept = |names: &[&str]| -> Vec<String> {
+        let met = names.iter().filter(|row| meets(row));
+        met.map(|row| (*row).to_owned()).collect()
+    };
+    push_branch(&mut results, "Origin", 0, kept(origin));
+    let sketches: Vec<&str> = browser
+        .sketches
         .iter()
-        .copied()
-        .chain(sketches)
-        .chain(features)
-        .collect()
-}
-/// Where the query starts in a row, ignoring case; its length in bytes is the query's.
-pub(crate) fn match_start(row: &str, query: &str) -> Option<usize> {
-    row.to_lowercase().find(&query.to_lowercase())
-}
-fn matching_rows<'a>(browser: &'a GuiModelBrowser, query: &str) -> Vec<&'a str> {
-    let rows = searchable_rows(browser);
-    rows.into_iter()
-        .filter(|row| match_start(row, query).is_some())
-        .collect()
+        .map(|row| row.name.as_str())
+        .collect();
+    push_branch(&mut results, "Sketches", 0, kept(&sketches));
+    let features: Vec<&str> = browser
+        .features
+        .iter()
+        .map(|row| row.name.as_str())
+        .collect();
+    push_branch(&mut results, "Features", 0, kept(&features));
+    results
 }
 /// A drawing's rows under the branches that hold them; a branch with no match is left out.
 fn matching_branches(query: &str) -> Vec<(&'static str, Vec<&'static str>)> {
@@ -216,7 +322,18 @@ pub(crate) fn search_results(ui: &Ui, browser: &GuiModelBrowser, query: &str) {
         return;
     }
     for row in rows {
-        result_row(ui, row, query);
+        let indent = row.depth as f32 * ui.current_font_size();
+        if indent > 0. {
+            ui.indent_by(indent);
+        }
+        if row.is_match {
+            result_row(ui, &row.text, query);
+        } else {
+            ui.text_disabled(&row.text);
+        }
+        if indent > 0. {
+            ui.unindent_by(indent);
+        }
     }
 }
 fn drawing_results(ui: &Ui, query: &str) {

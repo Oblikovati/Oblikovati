@@ -186,6 +186,7 @@ mod tests {
             feature: FeatureId(1),
             key: "ab".into(),
             index: 0,
+            visible: true,
             appearance: "black".into(),
             physical: None,
         }

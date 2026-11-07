@@ -224,22 +224,14 @@ impl ApplicationWorld {
     /// Assert the viewport shows in this rectangle: its background gradient has uniform rows.
     pub fn expect_blank_region(&mut self, x: [usize; 2], y: [usize; 2]) {
         let capture = super::capture_framebuffer(&mut self.app().window.native);
-        let width = capture.extent[0] as usize;
-        for row in capture
-            .rgba
-            .chunks_exact(width * 4)
-            .skip(y[0])
-            .take(y[1] - y[0])
-        {
-            let span = &row[x[0] * 4..x[1] * 4];
-            assert!(
-                span.as_chunks::<4>()
-                    .0
-                    .iter()
-                    .all(|pixel| pixel[..] == span[..4]),
-                "region x={x:?} y={y:?}: expected uniform viewport background rows"
-            );
-        }
+        let controls: Vec<_> = ["##orientation-control", "##navigation-bar"]
+            .into_iter()
+            .filter_map(super::diagnostics::window_pixel_bounds)
+            .collect();
+        assert!(
+            super::viewport_background::gradient_region_visible(&capture, x, y, &controls),
+            "region x={x:?} y={y:?}: expected viewport gradient outside navigation controls"
+        );
     }
     /// Keep the final frame for visual review; a scenario's image names its scenario.
     pub fn save_capture(&mut self, scenario: &str) {
@@ -277,7 +269,18 @@ fn squeezed(text: &str) -> String {
         .collect()
 }
 pub(super) fn reports_folder() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/benchmarks/application")
+    let folder = std::env::var_os("OBK_BDD_REPORTS").map_or_else(
+        || {
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../target/benchmarks/application")
+        },
+        std::path::PathBuf::from,
+    );
+    assert!(
+        folder.is_absolute(),
+        "BDD reports {folder:?}: expected an absolute output directory"
+    );
+    folder
 }
 fn write_png(
     path: &std::path::Path,

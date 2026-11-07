@@ -25,10 +25,12 @@ const CHROME: f32 = 16.;
 #[derive(Default)]
 pub(crate) struct TabPreviews {
     images: BTreeMap<PreviewKey, GuiPreviewImage>,
-    /// The same pictures by saved file, for dialogs that list files after their tab has gone.
-    file_images: BTreeMap<String, GuiPreviewImage>,
-    /// The saved file of what is in front.
-    pub showing_file: Option<String>,
+    /// The document in front, whose picture its next save stores.
+    pub showing_document: Option<u64>,
+    /// The picture its save should store, until the owner has been told.
+    document_picture: Option<(u64, GuiPreviewImage)>,
+    /// The last one told: an unchanged picture must not wake the owner on each frame.
+    told_picture: Option<(u64, GuiPreviewImage)>,
     /// What is in front, and where, as of the last drawn frame.
     pub showing: Option<(PreviewKey, [[f32; 2]; 2])>,
 }
@@ -39,15 +41,20 @@ impl TabPreviews {
             return;
         };
         if let Some(image) = cropped_picture(extent, rgba, minimum, maximum) {
-            if let Some(file) = &self.showing_file {
-                self.file_images.insert(file.clone(), image.clone());
+            if let Some(document) = self.showing_document {
+                self.document_picture = Some((document, image.clone()));
             }
             self.images.insert(key, image);
         }
     }
-    /// The picture of a file this session has shown; example: for the Open dialog's preview.
-    pub(crate) fn picture_of_file(&self, path: &str) -> Option<&GuiPreviewImage> {
-        self.file_images.get(path)
+    /// A changed picture of the front document, once; example: each frame, for the owner.
+    pub(crate) fn take_changed_picture(&mut self) -> Option<(u64, GuiPreviewImage)> {
+        let picture = self.document_picture.take()?;
+        if self.told_picture.as_ref() == Some(&picture) {
+            return None;
+        }
+        self.told_picture = Some(picture.clone());
+        Some(picture)
     }
     /// Draw above the hovered tab; it takes no input, so moving away simply ends it.
     pub(crate) fn panel(&self, ui: &Ui, hovered: Option<&HoveredTab>) {

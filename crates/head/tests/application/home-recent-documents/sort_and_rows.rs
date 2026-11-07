@@ -6,13 +6,6 @@ use super::*;
 fn names_in_grid(world: &mut ApplicationWorld) {
     click_home(world, "Grid View");
 }
-#[given("Sort by is set to Last Opened")]
-fn sort_last_opened(world: &mut ApplicationWorld) {
-    assert!(
-        home_shows(world, "Sort by Last Opened"),
-        "expected the default sort"
-    );
-}
 #[when("I open the Sort by menu")]
 fn open_sort(world: &mut ApplicationWorld) {
     click_home(world, "Sort by");
@@ -84,10 +77,8 @@ fn menu_properties(world: &mut ApplicationWorld) {
     world.expect_text("Document Properties");
 }
 #[given("a recent-document checkbox is selected")]
-#[given("one recent-document row is checked")]
 #[given("the first part's row is checked")]
 #[given("one part row is checked and no other rows are checked")]
-#[given("one part row is checked")]
 fn one_checked(world: &mut ApplicationWorld) {
     toggle_row(world, SEARCHED);
     assert!(row_checked(world, SEARCHED), "expected {SEARCHED} checked");

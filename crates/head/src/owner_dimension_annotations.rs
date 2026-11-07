@@ -31,8 +31,15 @@ impl<
             .sketches()
             .iter()
             .filter(|sketch| crate::sketch_scene::sketch_shows(sketch, &called_up))
+            .filter(|sketch| !sketch.line_style().dimensions_hidden)
         {
             collect_dimension_annotations(snapshot, sketch, &mut output);
+        }
+        if let Some((_, feature)) = self
+            .shown_feature_dimensions
+            .filter(|(id, _)| *id == document)
+        {
+            collect_feature_annotations(snapshot, feature, &mut output);
         }
         match self.dimension_preview_annotation() {
             Ok(Some(label)) => output.labels.push(label),
@@ -42,6 +49,8 @@ impl<
         Ok(output)
     }
 }
+/// How far beside the sketch's last dimension the depth reads, in working units.
+const DEPTH_LABEL_STEP: f64 = 1.5;
 /// The stored text; a bare typed number reads with the unit the document gave it.
 fn stored_expression(
     snapshot: &DocumentSnapshot,
@@ -67,6 +76,69 @@ fn annotation_value(quantity: oblikovati_model::quantity::Quantity, shown: Strin
         .trim_end_matches('0')
         .trim_end_matches('.')
         .to_owned()
+}
+/// A feature's own dimensions: those of the sketch it used, then its depth beside them.
+fn collect_feature_annotations(
+    snapshot: &DocumentSnapshot,
+    feature: oblikovati_model::feature::FeatureId,
+    output: &mut HeadDimensionAnnotations,
+) {
+    let source = snapshot
+        .sketches
+        .sketches()
+        .iter()
+        .find(|sketch| sketch_used_by(snapshot, sketch, feature));
+    let Some(sketch) = source else {
+        return;
+    };
+    collect_dimension_annotations(snapshot, sketch, output);
+    let Some(last) = output.labels.last().cloned() else {
+        return;
+    };
+    if let Some(text) = feature_depth_text(snapshot, feature) {
+        output.labels.push(HeadDimensionAnnotation {
+            position: [last.position[0] + DEPTH_LABEL_STEP, last.position[1]],
+            text,
+            edit: None,
+            ..last
+        });
+    }
+}
+fn sketch_used_by(
+    snapshot: &DocumentSnapshot,
+    sketch: &PlacedSketch,
+    feature: oblikovati_model::feature::FeatureId,
+) -> bool {
+    use oblikovati_model::feature::part::PartFeatureDefinition::SketchPrism;
+    snapshot.work_geometry.features().iter().any(|row| {
+        row.id() == feature
+            && matches!(row.definition(), SketchPrism(prism) if prism.sketch() == sketch.id())
+    })
+}
+fn feature_depth_text(
+    snapshot: &DocumentSnapshot,
+    feature: oblikovati_model::feature::FeatureId,
+) -> Option<String> {
+    use oblikovati_model::feature::part::PartFeatureDefinition::SketchPrism;
+    use oblikovati_model::quantity::{Dimension, Quantity};
+    let row = snapshot
+        .work_geometry
+        .features()
+        .iter()
+        .find(|row| row.id() == feature)?;
+    let SketchPrism(definition) = row.definition() else {
+        return None;
+    };
+    let depth = definition.displacement()[2]
+        .resolve(&snapshot.parameters)
+        .ok()?;
+    let quantity = Quantity::new(depth.abs(), Dimension::Length);
+    let shown = snapshot
+        .parameters
+        .units()
+        .display_rounded_expression(quantity)
+        .ok()?;
+    Some(annotation_value(quantity, shown))
 }
 fn collect_dimension_annotations(
     snapshot: &DocumentSnapshot,

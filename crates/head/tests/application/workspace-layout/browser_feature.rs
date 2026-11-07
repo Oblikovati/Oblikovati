@@ -13,7 +13,7 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::package::DocumentPackage;
 
-const FEATURE: &str = "Extrude1";
+pub(in super::super) const FEATURE: &str = "Extrude1";
 /// 20 mm in working units.
 const DEPTH: f64 = 2.;
 const EMPTY_VIEWPORT: [i32; 2] = [1300, 800];
@@ -21,12 +21,11 @@ const EMPTY_VIEWPORT: [i32; 2] = [1300, 800];
 pub(in super::super) const SOLID_COLOR: [u8; 3] = [0, 255, 0];
 const EDGE_COLOR: [u8; 3] = [64, 153, 255];
 const COLOR_REACH: i32 = 40;
-const SOLID_HUE_MARGIN: u8 = 40;
 const DIMENSION_LABEL_STEP: f64 = 1.5;
 /// How far from a row its menu's first command opens.
 const MENU_REACH: f32 = 40.;
-const SKETCH: &str = "Profile";
-const BODY: &str = "Solid1";
+pub(in super::super) const SKETCH: &str = "Profile";
+pub(in super::super) const BODY: &str = "Solid1";
 
 /// The fixture stores its dimensions without label positions; a shown dimension needs one.
 fn place_dimension_labels(snapshot: &mut oblikovati_model::history::DocumentSnapshot) {
@@ -52,13 +51,13 @@ fn place_dimension_labels(snapshot: &mut oblikovati_model::history::DocumentSnap
         .unwrap();
 }
 /// The fixture profile, stored with one 20 mm extrusion; this build has no command that makes one.
-fn extruded_part_bytes() -> Vec<u8> {
+fn extruded_part_bytes(name: &str) -> Vec<u8> {
     let mut recipe = fixture::selected_prism_definition().recipe();
     recipe.displacement[2] = DatumLength::Constant(DEPTH);
     let definition = SketchPrismDefinition::from_recipe(&recipe).unwrap();
     let mut snapshot = fixture::selected_sketch_document();
     place_dimension_labels(&mut snapshot);
-    let feature = AuthoredFeature::sketch_prism(FeatureId(1), FEATURE, definition, &snapshot);
+    let feature = AuthoredFeature::sketch_prism(FeatureId(1), name, definition, &snapshot);
     snapshot.work_geometry.append(feature.unwrap()).unwrap();
     // Making the feature takes its sketch out of view; only its browser row calls it back.
     snapshot
@@ -77,8 +76,11 @@ fn extruded_part_bytes() -> Vec<u8> {
         .unwrap()
 }
 pub(in super::super) fn open_extruded_part(world: &mut ApplicationWorld) {
+    open_extruded_part_named(world, FEATURE);
+}
+pub(in super::super) fn open_extruded_part_named(world: &mut ApplicationWorld, name: &str) {
     let path = world.scratch_folder().join("extruded.opd");
-    std::fs::write(&path, extruded_part_bytes()).unwrap();
+    std::fs::write(&path, extruded_part_bytes(name)).unwrap();
     Client::new(world.app().owner.document_host())
         .documents()
         .open(&OpenDocumentArgs {
@@ -102,14 +104,13 @@ pub(in super::super) fn colored_pixels(world: &mut ApplicationWorld, wanted: [u8
         })
         .count()
 }
-fn expect_solid_visible(world: &mut ApplicationWorld) {
-    // By hue: a dialog over the view dims the solid without changing what colour it is.
+pub(in super::super) fn expect_solid_visible(world: &mut ApplicationWorld) {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    let green = capture.rgba.as_chunks::<4>().0.iter().filter(|pixel| {
-        pixel[1] > pixel[0].saturating_add(SOLID_HUE_MARGIN)
-            && pixel[1] > pixel[2].saturating_add(SOLID_HUE_MARGIN)
-    });
-    assert!(green.count() > 0, "expected the solid in the viewport");
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(
+        super::super::solid_visibility::visible_solid_fill(&capture, &windows),
+        "expected a shaded solid outside the GUI windows, not only an outline or a selected row"
+    );
 }
 fn expect_row_and_edges_highlighted(world: &mut ApplicationWorld) {
     assert!(
@@ -142,7 +143,8 @@ pub(in super::super) fn choose_menu_row(world: &mut ApplicationWorld, label: &st
 }
 pub(super) fn expect_menu_beside(world: &ApplicationWorld, row_label: &str, first_row: &str) {
     let row = world.run(row_label).clone();
-    let first = world.run(first_row).clone();
+    let first = nearest_matching_run(&world.frame.runs, first_row, row.center())
+        .unwrap_or_else(|| panic!("expected menu entry {first_row:?} beside row {row:?}"));
     assert!(
         first.minimum[0] >= row.minimum[0],
         "menu {first:?} beside row {row:?}"
@@ -157,11 +159,11 @@ pub(in super::super) fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
         world.expect_text(row);
     }
 }
-pub(super) fn expect_outline(world: &mut ApplicationWorld, shown: bool) {
+pub(in super::super) fn expect_outline(world: &mut ApplicationWorld, shown: bool) {
     let outlined = colored_pixels(world, EDGE_COLOR);
     assert_eq!(outlined > 0, shown, "outline pixels {outlined}");
 }
-fn click_empty_viewport(world: &mut ApplicationWorld) {
+pub(in super::super) fn click_empty_viewport(world: &mut ApplicationWorld) {
     world.click(EMPTY_VIEWPORT);
     world.pump(Vec::new());
     world.pump(Vec::new());
@@ -403,4 +405,42 @@ fn collapse_bodies(world: &mut ApplicationWorld) {
 fn body_hides(world: &mut ApplicationWorld) {
     assert_eq!(runs_reading(world, FEATURE), 1, "{FEATURE} rows");
     assert_eq!(runs_reading(world, SKETCH), 1, "{SKETCH} rows");
+}
+
+// The selection toolbar repeats menu labels; draw order does not identify the menu.
+fn nearest_matching_run<'a>(
+    runs: &'a [super::super::diagnostics::RenderedRun],
+    label: &str,
+    anchor: [f32; 2],
+) -> Option<&'a super::super::diagnostics::RenderedRun> {
+    let wanted = label.replace(' ', "");
+    let distance = |run: &super::super::diagnostics::RenderedRun| {
+        let center = run.center();
+        (center[0] - anchor[0]).hypot(center[1] - anchor[1])
+    };
+    runs.iter()
+        .filter(|run| run.text == wanted)
+        .min_by(|left, right| distance(left).total_cmp(&distance(right)))
+}
+
+#[test]
+fn context_entry_is_not_the_duplicate_selection_toolbar_button() {
+    use super::super::diagnostics::RenderedRun;
+    let entry = RenderedRun {
+        text: "EditSketch".into(),
+        minimum: [95., 480.],
+        maximum: [170., 490.],
+        ..Default::default()
+    };
+    let toolbar = RenderedRun {
+        minimum: [733., 287.],
+        maximum: [808., 296.],
+        ..entry.clone()
+    };
+    let runs = [entry.clone(), toolbar];
+    assert_eq!(
+        nearest_matching_run(&runs, "Edit Sketch", [86., 468.]),
+        Some(&entry)
+    );
+    assert!(nearest_matching_run(&runs, "Properties", [86., 468.]).is_none());
 }

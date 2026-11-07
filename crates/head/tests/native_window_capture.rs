@@ -47,7 +47,7 @@ fn run_capture_frames(window: &mut NativeHeadWindow) {
     crate::frames::run_frames(
         window,
         crate::HeadOptions { frames: Some(3) },
-        &mut crate::work::IdleHeadWork,
+        &mut crate::work_idle::IdleHeadWork,
     )
     .unwrap();
 }

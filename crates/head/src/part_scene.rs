@@ -149,6 +149,9 @@ impl DesktopPartScenes {
             if !session.body_visible(&key) {
                 return Ok(None);
             }
+            if session.selected_browser_body().map(|(chosen, _)| chosen) == Some(key.as_str()) {
+                return Ok(Some(CHOSEN_BODY_COLOR));
+            }
             Ok(Some(body_color(files, session.snapshot(), &key)))
         })
     }
@@ -273,6 +276,9 @@ const DISPLAY_MESH: PrismMeshOptions = PrismMeshOptions {
 };
 /// The colour a body shows without an appearance of its own or of its part.
 const PART_COLOR: [f32; 4] = [0., 1., 0., 1.];
+/// A body whose browser row is chosen: scene colours are linear, so this draws as the accent
+/// the browser's rows use.
+const CHOSEN_BODY_COLOR: [f32; 4] = [0.05, 0.32, 1., 1.];
 /// A body's own appearance, or its part's, by its base colour; an unknown id reads as no choice.
 fn body_color<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,

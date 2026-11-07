@@ -41,6 +41,42 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .map(|pick| pick.sketch())
             .collect()
     }
+    /// The body row chosen in the browser; example: to tint that body in the scene.
+    pub fn selected_browser_body(&self) -> Option<(&str, oblikovati_model::feature::FeatureId)> {
+        let (key, feature) = self.browser_body.as_ref()?;
+        Some((key.as_str(), *feature))
+    }
+    /// Choose a body row; its shading follows, so the display changes without a model edit.
+    /// Example: `session.set_browser_body_selection(key, feature);`.
+    pub fn set_browser_body_selection(
+        &mut self,
+        key: &str,
+        feature: oblikovati_model::feature::FeatureId,
+    ) {
+        self.browser_selection.clear();
+        self.browser_feature = None;
+        self.browser_root = false;
+        self.browser_body = Some((key.to_owned(), feature));
+        self.body_visibility.note_display_change();
+    }
+    /// The document's own row is chosen; example: for its row's accent.
+    pub fn browser_root_selected(&self) -> bool {
+        self.browser_root
+    }
+    /// Choose the document's own row, in place of every other row.
+    /// Example: `session.set_browser_root_selection();`.
+    pub fn set_browser_root_selection(&mut self) {
+        self.browser_selection.clear();
+        self.browser_feature = None;
+        self.let_go_of_whole_rows();
+        self.browser_root = true;
+    }
+    fn let_go_of_whole_rows(&mut self) {
+        self.browser_root = false;
+        if self.browser_body.take().is_some() {
+            self.body_visibility.note_display_change();
+        }
+    }
     /// The feature row chosen in the browser, while that feature still exists.
     /// Example: `session.selected_browser_feature()` for the row's accent.
     pub fn selected_browser_feature(&self) -> Option<oblikovati_model::feature::FeatureId> {
@@ -65,6 +101,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             )));
         }
         self.browser_selection.clear();
+        self.let_go_of_whole_rows();
         self.browser_feature = Some(feature);
         Ok(())
     }
@@ -83,6 +120,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.validate_browser_click(picked, mode, &self.browser_selection)?;
         let retire_editor = (picked.is_some() || mode == SelectionClickMode::Replace)
             && !self.editor_selection.items().is_empty();
+        self.let_go_of_whole_rows();
         let count = self.browser_selection.apply_click(picked, mode, false);
         self.browser_feature = None;
         if retire_editor {

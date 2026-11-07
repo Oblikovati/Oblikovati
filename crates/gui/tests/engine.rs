@@ -42,6 +42,7 @@ fn request() -> GuiFrameRequest {
             origin_axes: Vec::new(),
             view_axes: None,
             model_face_chosen: false,
+            inspected_file: None,
             document_windows: Vec::new(),
             active_window: None,
             recent_documents: Vec::new(),

@@ -118,3 +118,23 @@ fn zoom_prompt(world: &mut ApplicationWorld) {
     world.expect_status("Zoom:");
     world.expect_status(ON_THE_STATUS);
 }
+/// A running command's button draws in the pressed colour; its neighbour stays plain.
+pub(super) fn bar_button_lit(world: &mut ApplicationWorld, letter: &str, other: &str) -> bool {
+    let beside = |world: &mut ApplicationWorld, letter: &str| {
+        let run = world.run_in_window(NAVIGATION, letter).clone();
+        let at = [
+            run.minimum[0] as usize - BUTTON_PROBE,
+            run.center()[1] as usize,
+        ];
+        world.pixel_at(at)
+    };
+    beside(world, letter) != beside(world, other)
+}
+const BUTTON_PROBE: usize = 3;
+#[then("the Pan control is highlighted")]
+fn pan_lit(world: &mut ApplicationWorld) {
+    assert!(
+        bar_button_lit(world, "P", "W"),
+        "expected the Pan button lit"
+    );
+}

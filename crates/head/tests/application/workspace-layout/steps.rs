@@ -5,9 +5,9 @@ use cucumber::{given, then, when};
 #[path = "browser_feature.rs"]
 pub(super) mod browser_feature;
 #[path = "browser_origin.rs"]
-mod browser_origin;
+pub(super) mod browser_origin;
 #[path = "browser_tree.rs"]
-mod browser_tree;
+pub(super) mod browser_tree;
 #[path = "drawing_browser.rs"]
 mod drawing_browser;
 const BROWSER: &str = "Model";
@@ -86,7 +86,7 @@ fn browser_hidden(world: &mut ApplicationWorld) {
 #[then("the viewport extends into the space it occupied")]
 #[then("the sketch viewport extends into the freed space")]
 #[then("the viewport occupies the space previously used by the docked browser")]
-fn left_space_free(world: &mut ApplicationWorld) {
+pub(super) fn left_space_free(world: &mut ApplicationWorld) {
     let height = world.extent()[1] as usize;
     world.expect_blank_region([20, 290], [height - 200, height - 20]);
 }

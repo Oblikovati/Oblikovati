@@ -12,20 +12,35 @@ fn browser(features: &[&str]) -> GuiModelBrowser {
                 name: (*name).into(),
                 suppressed: false,
                 extended: None,
+                kind: "Work Feature",
             })
             .collect(),
         ..Default::default()
     }
 }
+fn matches_of(tree: &GuiModelBrowser, query: &str) -> Vec<String> {
+    let rows = matching_rows(tree, query);
+    let matches = rows.into_iter().filter(|row| row.is_match);
+    matches.map(|row| row.text).collect()
+}
+#[test]
+fn a_match_keeps_the_branch_above_it_and_nothing_else() {
+    let rows = matching_rows(&browser(&["Work Point1", "Work Plane1"]), "plane1");
+    let shown: Vec<_> = rows
+        .iter()
+        .map(|row| (row.depth, row.text.as_str()))
+        .collect();
+    assert_eq!(shown, [(0, "Features"), (1, "Work Plane1")]);
+}
 #[test]
 fn a_query_keeps_matching_rows_in_any_case() {
     let tree = browser(&["Work Point1", "Work Plane1", "Work Point2"]);
     assert_eq!(
-        matching_rows(&tree, "work point"),
+        matches_of(&tree, "work point"),
         ["Work Point1", "Work Point2"]
     );
     assert_eq!(
-        matching_rows(&tree, "POINT"),
+        matches_of(&tree, "POINT"),
         ["Center Point", "Work Point1", "Work Point2"]
     );
 }

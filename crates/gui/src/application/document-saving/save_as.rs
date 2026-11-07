@@ -191,7 +191,20 @@ impl SaveAsDialog {
         )
     }
 }
-/// What the preview area shows; the picture itself is not stored in the file yet.
+/// What the Save Preview Picture choice asks of this save; the Active Window's capture replaces
+/// the workspace's last picture, and without the choice the file holds none.
+fn kept_picture(draft: &SaveAsDraft) -> Option<GuiShellAction> {
+    let picture = match (draft.save_preview, shown_window_preview(draft)) {
+        (false, _) => None,
+        (true, Some(image)) => Some(image.clone()),
+        (true, None) => return None,
+    };
+    Some(GuiShellAction::KeepDocumentPicture {
+        document: draft.document,
+        picture,
+    })
+}
+/// What the preview area shows.
 fn preview_text(draft: &SaveAsDraft) -> &str {
     if !draft.save_preview {
         return NO_PREVIEW;
@@ -208,9 +221,16 @@ fn shown_window_preview(draft: &SaveAsDraft) -> Option<&crate::GuiPreviewImage> 
         .flatten()
 }
 /// A grid of filled cells: the GUI binds one font texture, and a preview needs no other.
-pub(super) fn draw_preview_image(ui: &Ui, image: &crate::GuiPreviewImage) {
-    let origin = ui.cursor_screen_pos();
-    let size = ui.content_region_avail();
+pub(crate) fn draw_preview_image(ui: &Ui, image: &crate::GuiPreviewImage) {
+    draw_preview_cells(ui, image, ui.cursor_screen_pos(), ui.content_region_avail());
+}
+/// The same picture at a place and size of the caller's; example: a tile in a file list.
+pub(crate) fn draw_preview_cells(
+    ui: &Ui,
+    image: &crate::GuiPreviewImage,
+    origin: [f32; 2],
+    size: [f32; 2],
+) {
     let cell = (size[0] / image.extent[0] as f32).min(size[1] / image.extent[1] as f32);
     let list = ui.get_window_draw_list();
     for (index, color) in image.rgb.iter().enumerate() {
@@ -318,6 +338,7 @@ fn footer(
         }
     }
     if confirmed {
+        actions.extend(kept_picture(draft));
         actions.push(action);
         actions.extend(
             draft

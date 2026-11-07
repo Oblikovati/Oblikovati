@@ -165,7 +165,15 @@ fn verify_fields(actual: &SketchPlacementRecipe, fixture: &GoRecipe) {
     assert_eq!(actual.fields.len(), fixture.fields.len());
     for (a, b) in actual.fields.iter().zip(&fixture.fields) {
         assert_eq!(a.label, b.label);
+        // The arc's sweep and the rectangle's base angle left the Go recipe on purpose, for what
+        // the sketch scenarios ask of them (b2e3718a, 5605c1c1); arcs.rs pins the sweep itself.
+        if matches!(a.binding, SketchPlacementBinding::ArcSweep(_)) {
+            continue;
+        }
         close(a.value, b.value);
+        if matches!(a.binding, SketchPlacementBinding::LineAngle(_)) {
+            continue;
+        }
         for (a, b) in a.witness.iter().flatten().zip(b.witness.iter().flatten()) {
             close(*a, *b);
         }

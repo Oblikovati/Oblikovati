@@ -34,6 +34,8 @@ mod window_capture;
 #[cfg(target_os = "linux")]
 mod work;
 mod work_forwarding;
+#[path = "work_idle.rs"]
+mod work_idle;
 #[cfg(target_os = "linux")]
 pub use capture_png::{NativeWindowCaptureFiles, WindowCaptureFiles};
 #[cfg(target_os = "linux")]

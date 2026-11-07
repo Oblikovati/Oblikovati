@@ -44,6 +44,22 @@ pub enum GuiShellAction {
         document: u64,
         feature: oblikovati_model::feature::FeatureId,
     },
+    /// Change a feature's name and when it is suppressed; a saved, undoable change.
+    EditFeature {
+        document: u64,
+        edit: crate::GuiFeatureEdit,
+    },
+    /// Change how a sketch's lines are drawn; a saved, undoable change.
+    SetSketchLineStyle {
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        style: GuiSketchLineStyle,
+    },
+    /// Choose a whole row of the browser, or change what it shows.
+    BrowserChoice {
+        document: u64,
+        choice: GuiBrowserChoice,
+    },
     /// Calculate one solid's physical values, for the Body Properties dialog.
     UpdateBodyProperties {
         document: u64,
@@ -64,6 +80,13 @@ pub enum GuiShellAction {
     SetViewProjection(crate::GuiViewProjection),
     /// The navigation bar's commands on the view and the status area.
     ViewCommand(crate::GuiViewCommand),
+    /// Read a closed file's stored properties, for the Open dialog's panes.
+    InspectFile(String),
+    /// What this document's next save stores as its picture; `None` stores none.
+    KeepDocumentPicture {
+        document: u64,
+        picture: Option<GuiPreviewImage>,
+    },
     /// A click on the view, off every panel: it chooses the face there, or nothing.
     ClickModel {
         document: u64,
@@ -126,6 +149,40 @@ pub enum GuiAuthoringContext {
     OtherDocument,
     Part,
     Sketch,
+}
+pub use crate::application::model_browser::feature_properties::{
+    GuiFeatureCondition, GuiFeatureEdit,
+};
+/// How a sketch's lines are drawn; a part left unset draws as the application's default.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiSketchLineStyle {
+    pub color: Option<[u8; 3]>,
+    pub line_type: Option<String>,
+    /// In millimeters.
+    pub weight: Option<f32>,
+    pub scale: Option<f32>,
+}
+/// What a press on a browser row other than a feature or sketch asks for.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GuiBrowserChoice {
+    /// No row stays chosen, as after a click on empty space.
+    Nothing,
+    /// Show this feature's dimensions in the view, or none.
+    ShowFeatureDimensions(Option<oblikovati_model::feature::FeatureId>),
+    /// Whether a sketch shows its dimensions while it is visible.
+    SketchDimensionsShown {
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        shown: bool,
+    },
+    Root,
+    Body {
+        key: String,
+        feature: oblikovati_model::feature::FeatureId,
+    },
+    BodyVisible {
+        key: String,
+        visible: bool,
+    },
 }
 /// A small picture of the window: enough cells for a preview area, drawn without a texture.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -207,6 +264,8 @@ pub struct GuiCommandState {
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,
     pub origin_axes: Vec<crate::GuiOriginAxis>,
+    /// What the owner read from the file an Open dialog has selected.
+    pub inspected_file: Option<crate::GuiInspectedFile>,
     /// A face of the model is chosen in the view.
     pub model_face_chosen: bool,
     /// How the view looks at the model, for the orientation control.
@@ -307,10 +366,16 @@ impl GuiShellAction {
             Self::OrientView { .. } | Self::SetViewProjection(_) | Self::ViewCommand(_) => {
                 state.document.is_some()
             }
+            Self::InspectFile(_) | Self::KeepDocumentPicture { .. } => true,
             Self::ClickModel { document, .. } | Self::UpdateBodyProperties { document, .. } => {
                 state.document == Some(*document)
             }
             Self::SetBodyAppearance { document, .. } => {
+                state.document == Some(*document) && !state.transaction_open
+            }
+            Self::EditFeature { document, .. }
+            | Self::SetSketchLineStyle { document, .. }
+            | Self::BrowserChoice { document, .. } => {
                 state.document == Some(*document) && !state.transaction_open
             }
             Self::SelectBrowserFeature { document, feature } => {

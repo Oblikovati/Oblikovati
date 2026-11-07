@@ -14,6 +14,10 @@ pub(crate) mod panel_tabs;
 pub(crate) mod status_bar;
 /// The tab strip and the gap under it.
 const TAB_STRIP_HEIGHT: f32 = 34.;
+/// A press on the Model tab that travels this far moves the browser.
+const TAB_DRAG_REACH: f32 = 24.;
+/// Where a floated browser hangs from the pointer.
+const TAB_GRIP: [f32; 2] = [40., 12.];
 const BOUNDARY_WIDTH: f32 = 6.;
 const PLUS_CONTROL_WIDTH: f32 = 34.;
 const MINIMUM_BROWSER_WIDTH: f32 = 180.;
@@ -41,6 +45,8 @@ pub(crate) struct WorkspaceLayout {
     pub switcher: crate::application::document_tabs::WindowSwitcher,
     browser_width_override: Option<f32>,
     view: browser_view::BrowserView,
+    /// Where a press on the Model tab began.
+    tab_press: Option<[f32; 2]>,
     /// A navigation command owns the next click on the view, not the browser's selection.
     pub view_clicks_taken: bool,
     /// What a docked ribbon takes from each side of the window.
@@ -59,6 +65,7 @@ impl Default for WorkspaceLayout {
             switcher: Default::default(),
             browser_width_override: None,
             view: Default::default(),
+            tab_press: None,
             view_clicks_taken: false,
             ribbon_left: 0.,
             ribbon_right: 0.,
@@ -76,6 +83,7 @@ impl WorkspaceLayout {
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.pending_layout = false;
+        self.view.document_area = Some(self.document_area(ui.io().display_size, band_height));
         if !self.panels.dock_visible() {
             self.empty_dock_control(ui, band_height);
             return;
@@ -105,10 +113,12 @@ impl WorkspaceLayout {
         let active = self.panels.tabs(ui);
         if active == panel_tabs::DockPanel::Log {
             self.panels.log_area(ui);
+        } else if active == panel_tabs::DockPanel::Favorites {
+            self.panels.favorites.panel(ui);
         } else if self.panels.model_open {
             self.view.view_clicks_taken = self.view_clicks_taken;
             crate::browser::browser_contents(ui, state, &mut self.view, actions);
-            self.pending_layout |= self.view.body_properties.needs_frame();
+            self.pending_layout |= self.view.needs_frame();
         }
     }
     /// With every panel closed, only the plus control remains to bring one back.
@@ -131,7 +141,12 @@ impl WorkspaceLayout {
     /// Show which origin row is chosen, in the view; example: each frame, under the panels.
     pub(crate) fn draw_selected_origin(&mut self, ui: &Ui, request: &crate::GuiFrameRequest) {
         self.view.layout_scale = request.layout_scale();
-        browser_origin::draw_selected_origin(ui, request, self.view.selected_origin_row);
+        let document = request.commands.document.unwrap_or(0);
+        let visible = self.view.visible_origin_rows.iter();
+        let shown = visible
+            .filter(|(owner, _)| *owner == document)
+            .map(|(_, row)| *row);
+        browser_origin::draw_selected_origin(ui, request, self.view.selected_origin_row, shown);
     }
     pub(crate) fn reserve_for_ribbon(&mut self, left: f32, right: f32) {
         self.ribbon_left = left;
@@ -213,6 +228,7 @@ impl WorkspaceLayout {
         }
     }
     fn finish_drag(&mut self, ui: &Ui) {
+        self.follow_tab_drag(ui);
         if self.dragging && ui.is_mouse_released(MouseButton::Left) {
             self.dragging = false;
             self.pending_layout = true;
@@ -221,6 +237,26 @@ impl WorkspaceLayout {
                 ui.io().display_size[0],
                 self.window_position,
             );
+        }
+    }
+    /// The Model tab carries the browser as its title bar does; a press that stays put only
+    /// chooses the tab.
+    fn follow_tab_drag(&mut self, ui: &Ui) {
+        let [x, y] = ui.io().mouse_pos;
+        if std::mem::take(&mut self.panels.model_tab_pressed) {
+            self.tab_press = Some([x, y]);
+        }
+        let Some(from) = self.tab_press else {
+            return;
+        };
+        if !ui.is_mouse_released(MouseButton::Left) {
+            return;
+        }
+        self.tab_press = None;
+        if (x - from[0]).abs().max((y - from[1]).abs()) >= TAB_DRAG_REACH {
+            self.pending_layout = true;
+            let display = ui.io().display_size[0];
+            self.dock = drop_target(x, display, [x - TAB_GRIP[0], y - TAB_GRIP[1]]);
         }
     }
     /// The horizontal span the document tab strip may use; example: `layout.tab_span(1440.)`.

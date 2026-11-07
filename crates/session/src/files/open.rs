@@ -137,6 +137,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 path: Some(path),
                 package,
                 display_override,
+                picture: None,
             },
         );
         self.refresh_display_name(registration.session_id);

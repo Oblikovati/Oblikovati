@@ -34,3 +34,19 @@ fn each_window_keeps_its_own_last_picture() {
     assert_eq!(previews.images[&PreviewKey::Window(7)].rgb[0], [200, 0, 0]);
     assert_eq!(previews.images[&PreviewKey::Home].rgb[0], [0, 0, 200]);
 }
+#[test]
+fn an_unchanged_picture_is_told_once() {
+    let mut previews = TabPreviews {
+        showing: Some((PreviewKey::Window(1), [[0., 0.], [2., 2.]])),
+        showing_document: Some(1),
+        ..Default::default()
+    };
+    let rgba = [9_u8; 16];
+    previews.note_frame([2, 2], &rgba);
+    assert_eq!(previews.take_changed_picture().map(|(id, _)| id), Some(1));
+    assert_eq!(previews.take_changed_picture(), None);
+    previews.note_frame([2, 2], &rgba);
+    assert_eq!(previews.take_changed_picture(), None);
+    previews.note_frame([2, 2], &[200_u8; 16]);
+    assert!(previews.take_changed_picture().is_some());
+}

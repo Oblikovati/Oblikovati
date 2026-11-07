@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::application::file_system::FileFacts;
+use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PRESENTATION};
 struct FakeFolders;
 impl GuiFolders for FakeFolders {
     fn default_folder(&self) -> String {
@@ -39,11 +40,12 @@ fn a_document_name_becomes_a_native_file_name_once() {
 }
 #[test]
 fn a_filter_keeps_folders_and_its_files_only() {
-    assert!(listed(&entry("old", true), Some("opd")));
-    assert!(listed(&entry("a.opd", false), Some("opd")));
-    assert!(listed(&entry("A.OPD", false), Some("opd")));
-    assert!(!listed(&entry("b.png", false), Some("opd")));
-    assert!(listed(&entry("b.png", false), None));
+    let parts = FileFilter::Extension("opd");
+    assert!(listed(&entry("old", true), parts));
+    assert!(listed(&entry("a.opd", false), parts));
+    assert!(listed(&entry("A.OPD", false), parts));
+    assert!(!listed(&entry("b.png", false), parts));
+    assert!(listed(&entry("b.png", false), FileFilter::Everything));
 }
 #[test]
 fn each_document_kind_saves_as_its_native_type() {
@@ -76,11 +78,14 @@ fn the_extensions_are_the_registered_ones() {
 fn file_type_rows_name_what_they_keep() {
     let saving = FileTypeList::saving(PART_FILES);
     assert_eq!(saving.labels(), [PART_FILES.label, ALL_FILES]);
-    assert_eq!(saving.filter(0), Some("opd"));
-    assert_eq!(saving.filter(1), None);
-    assert_eq!(FileTypeList::opening().rows.len(), 5);
-    assert_eq!(FileTypeList::assemblies().filter(0), Some("oad"));
-    assert_eq!(FileTypeList::any().filter(0), None);
+    assert_eq!(saving.filter(0), FileFilter::Extension("opd"));
+    assert_eq!(saving.filter(1), FileFilter::Everything);
+    assert_eq!(FileTypeList::opening().rows.len(), 9);
+    assert_eq!(
+        FileTypeList::assemblies().filter(0),
+        FileFilter::Extension("oad")
+    );
+    assert_eq!(FileTypeList::any().filter(0), FileFilter::Everything);
 }
 #[test]
 fn a_folder_row_reads_as_a_folder() {
@@ -139,8 +144,9 @@ fn a_file_type_names_its_document_kind() {
 }
 #[test]
 fn the_status_names_a_selection_or_counts_the_rows() {
-    assert_eq!(status_text(true, 3), "1 item selected");
-    assert_eq!(status_text(false, 3), "3 items");
+    assert_eq!(status_text(2, 3), "2 items selected");
+    assert_eq!(status_text(1, 3), "1 item selected");
+    assert_eq!(status_text(0, 3), "3 items");
 }
 #[test]
 fn the_breadcrumb_shows_each_step_of_the_folder() {
@@ -164,4 +170,51 @@ fn navigation_reads_the_new_folder_and_reports_a_bad_one() {
     browser.up();
     assert_eq!(browser.folder, "/work/parts");
     assert_eq!(browser.listing.as_ref().unwrap().len(), 3);
+}
+#[test]
+fn the_open_list_starts_with_all_documents_and_offers_exchange_formats() {
+    let types = FileTypeList::opening();
+    assert!(types.labels()[0].starts_with("All Documents"));
+    assert!(types.labels().iter().any(|label| label.starts_with("STEP")));
+    assert!(types.filter(0).keeps("a.ODD") && !types.filter(0).keeps("a.stp"));
+    assert_eq!(types.filter(99), FileFilter::Everything);
+}
+#[test]
+fn only_a_picture_view_asks_for_pictures_and_it_lists_files_alone() {
+    let mut browser = FolderBrowser::new(Rc::new(FakeFolders));
+    browser.refresh();
+    assert!(
+        browser
+            .listed_for_pictures(FileFilter::Everything)
+            .is_empty()
+    );
+    browser.view = FileListView::Tiles;
+    assert_eq!(
+        browser.listed_for_pictures(FileFilter::Extension("opd")),
+        ["/work/parts/a.opd"]
+    );
+}
+#[test]
+fn each_picture_view_has_a_cell_and_the_row_views_have_none() {
+    for (view, _) in FileListView::MENU {
+        assert_eq!(
+            file_rows::FileCell::of_view(view).is_some(),
+            view.shows_pictures(),
+            "{view:?}"
+        );
+    }
+}
+#[test]
+fn showing_the_dialog_again_forgets_what_it_chose_and_read() {
+    let mut browser = FolderBrowser::new(Rc::new(FakeFolders));
+    let image = crate::GuiPreviewImage {
+        extent: [1, 1],
+        rgb: std::sync::Arc::new(vec![[1, 2, 3]]),
+    };
+    browser.note_file_picture("/work/parts/a.opd", Some(&image));
+    browser.several = vec!["a".into(), "b".into()];
+    browser.folder_highlight = Some("old".into());
+    browser.begin_showing();
+    assert!(browser.file_pictures.is_empty() && browser.several.is_empty());
+    assert_eq!(browser.highlighted_folder(), None);
 }

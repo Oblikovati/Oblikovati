@@ -112,6 +112,9 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     sketch_memory: owner_precise_input::SketchCommandMemory,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
     model_face: Option<browser_selection::ChosenModelFace>,
+    inspected_file: Option<oblikovati_gui::GuiInspectedFile>,
+    /// The feature whose dimensions a row's Show Dimensions put in the view.
+    shown_feature_dimensions: Option<(u64, oblikovati_model::feature::FeatureId)>,
     /// Values a user asked for, by document and body, with the model state they came from.
     body_physical:
         std::collections::BTreeMap<(u64, String), (u64, oblikovati_gui::GuiBodyPhysical)>,
@@ -170,6 +173,8 @@ impl<
             sketch_memory: Default::default(),
             opened_hidden_sketch: None,
             model_face: None,
+            inspected_file: None,
+            shown_feature_dimensions: None,
             body_physical: Default::default(),
             browser_outline: None,
             document_windows: Vec::new(),
@@ -315,6 +320,8 @@ mod sketch_environment;
 #[path = "owner_themes.rs"]
 mod application_themes;
 
+#[path = "owner_command_state.rs"]
+mod owner_command_state;
 #[path = "owner_prompts.rs"]
 mod owner_prompts;
 #[path = "owner_ui_scale.rs"]

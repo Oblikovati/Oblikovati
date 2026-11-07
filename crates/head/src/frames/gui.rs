@@ -115,7 +115,12 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetSketchVisibility { .. }
         | GuiShellAction::SelectBrowserSketch { .. }
         | GuiShellAction::SelectBrowserFeature { .. }
+        | GuiShellAction::BrowserChoice { .. }
+        | GuiShellAction::SetSketchLineStyle { .. }
+        | GuiShellAction::EditFeature { .. }
         | GuiShellAction::ClickModel { .. }
+        | GuiShellAction::InspectFile(_)
+        | GuiShellAction::KeepDocumentPicture { .. }
         | GuiShellAction::OrientView { .. }
         | GuiShellAction::SetViewProjection(_)
         | GuiShellAction::ViewCommand(_)

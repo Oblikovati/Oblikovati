@@ -29,6 +29,7 @@ mod ribbon_fit;
 mod ribbon_panel_contents;
 mod ribbon_panels;
 mod sketch;
+pub use application::document_opening::GuiInspectedFile;
 pub use application::document_tabs::windows::{GuiDocumentWindow, active_window_name};
 pub use application::home_recent_documents::{GuiRecentAction, GuiRecentDocument};
 pub use application::quick_access_toolbar::plane_selection::{GuiOriginPlane, GuiOriginPlaneKind};
@@ -59,8 +60,9 @@ pub use theme_state::GuiThemeState;
 #[allow(unsafe_code)]
 mod widget_abi;
 pub use commands::{
-    GuiAuthoringContext, GuiCommandState, GuiDocumentStorage, GuiParameterMutation,
-    GuiPreviewImage, GuiProject, GuiProjectGroup, GuiShellAction,
+    GuiAuthoringContext, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
+    GuiFeatureCondition, GuiFeatureEdit, GuiParameterMutation, GuiPreviewImage, GuiProject,
+    GuiProjectGroup, GuiShellAction, GuiSketchLineStyle,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

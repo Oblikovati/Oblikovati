@@ -272,9 +272,14 @@ fn orientation_returned(world: &mut ApplicationWorld) {
     view_restored(world);
     solid_extent(world);
 }
+/// Scenarios of several dialogs share these words: whichever is up must still be.
 #[then("the dialog remains open")]
 fn dialog_open(world: &mut ApplicationWorld) {
-    world.expect_text("Incremental View Rotate");
+    assert!(
+        world.shows("Incremental View Rotate") || world.shows("Look in"),
+        "expected a dialog on screen in {:?}",
+        world.text()
+    );
 }
 #[then("the dialog closes and the status area displays Ready")]
 fn dialog_closed_ready(world: &mut ApplicationWorld) {

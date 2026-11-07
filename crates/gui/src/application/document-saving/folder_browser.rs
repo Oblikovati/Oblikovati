@@ -2,15 +2,11 @@
 //! The location, listing and bottom row that the Save As and Open dialogs share.
 use crate::application::file_system::{FolderEntry, GuiFolders};
 use imgui::{Condition, Key, Ui};
-use oblikovati_api::types::{
-    DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PRESENTATION, DocumentType,
-};
 use std::{path::Path, rc::Rc};
 #[path = "file_rows.rs"]
-mod file_rows;
-use file_rows::{details_heading, details_row, tile_row};
+pub(super) mod file_rows;
 
-const LISTING_HEIGHT: f32 = 180.;
+pub(super) const LISTING_HEIGHT: f32 = 180.;
 const NAVIGATION_WIDTH: f32 = 150.;
 const RECENT_FOLDERS: usize = 8;
 const LOCATION_FIELD_WIDTH: f32 = 480.;
@@ -19,95 +15,39 @@ pub(crate) const BROWSER_COLUMN_WIDTH: f32 = 720.;
 const BREADCRUMB_STEPS: usize = 3;
 /// Space between a field and its label, wide enough to read as two things.
 const LABEL_GAP: f32 = 16.;
-const ALL_FILES: &str = "All Files (*.*)";
+const DISPLAY_MENU: &str = "##file-display";
 
-/// One native file kind: the list's words and the extension without its dot.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct NativeFileType {
-    label: &'static str,
-    pub extension: &'static str,
-}
-const PART_FILES: NativeFileType = NativeFileType {
-    label: "Part Files (*.opd)",
-    extension: "opd",
-};
-const ASSEMBLY_FILES: NativeFileType = NativeFileType {
-    label: "Assembly Files (*.oad)",
-    extension: "oad",
-};
-const DRAWING_FILES: NativeFileType = NativeFileType {
-    label: "Drawing Files (*.odd)",
-    extension: "odd",
-};
-const PRESENTATION_FILES: NativeFileType = NativeFileType {
-    label: "Presentation Files (*.ord)",
-    extension: "ord",
-};
-const NATIVE_FILE_TYPES: [NativeFileType; 4] = [
-    PART_FILES,
-    ASSEMBLY_FILES,
-    DRAWING_FILES,
-    PRESENTATION_FILES,
-];
-/// The file type of a document; an unknown kind falls back to the part file a new document is.
-pub(crate) fn native_file_type(kind: Option<DocumentType>) -> NativeFileType {
-    match kind {
-        Some(DOCUMENT_ASSEMBLY) => ASSEMBLY_FILES,
-        Some(DOCUMENT_DRAWING) => DRAWING_FILES,
-        Some(DOCUMENT_PRESENTATION) => PRESENTATION_FILES,
-        _ => PART_FILES,
-    }
-}
-/// The rows a dialog's file type list offers, each with the extension it keeps.
-pub(crate) struct FileTypeList {
-    rows: Vec<(&'static str, Option<&'static str>)>,
-}
-impl FileTypeList {
-    /// One document's own type and All Files; example: `FileTypeList::saving(PART_FILES)`.
-    pub(crate) fn saving(native: NativeFileType) -> Self {
-        Self {
-            rows: vec![(native.label, Some(native.extension)), (ALL_FILES, None)],
-        }
-    }
-    /// Every native type and All Files; example: the Open dialog.
-    pub(crate) fn opening() -> Self {
-        let native = NATIVE_FILE_TYPES.map(|kind| (kind.label, Some(kind.extension)));
-        let mut rows = native.to_vec();
-        rows.push((ALL_FILES, None));
-        Self { rows }
-    }
-    /// Only assemblies; example: inserting a model into a presentation.
-    pub(crate) fn assemblies() -> Self {
-        Self {
-            rows: vec![(ASSEMBLY_FILES.label, Some(ASSEMBLY_FILES.extension))],
-        }
-    }
-    /// All files, for choices that are not documents; example: a preview image.
-    pub(crate) fn any() -> Self {
-        Self {
-            rows: vec![(ALL_FILES, None)],
-        }
-    }
-    /// The extension a row keeps, or `None` for all files.
-    pub(crate) fn filter(&self, row: usize) -> Option<&'static str> {
-        self.rows.get(row).and_then(|(_, extension)| *extension)
-    }
-    fn labels(&self) -> Vec<&'static str> {
-        self.rows.iter().map(|(label, _)| *label).collect()
-    }
-}
-
+#[path = "file_types.rs"]
+mod file_types;
+use file_types::has_extension;
+#[cfg(test)]
+use file_types::{ALL_FILES, ASSEMBLY_FILES, DRAWING_FILES, PART_FILES, PRESENTATION_FILES};
+pub(crate) use file_types::{FileFilter, FileTypeList, native_file_type};
 pub(crate) struct FolderBrowser {
     folders: Rc<dyn GuiFolders>,
     pub folder: String,
-    listing: Result<Vec<FolderEntry>, String>,
+    pub(super) listing: Result<Vec<FolderEntry>, String>,
     /// Folders left behind, most recent last; Back returns to them.
     history: Vec<String>,
-    selected: Option<String>,
+    /// Folders Back left, most recent last; Forward returns to them.
+    forward: Vec<String>,
+    pub(super) selected: Option<String>,
+    /// What a selection rectangle chose, when it crossed more than one file.
+    pub(super) several: Vec<String>,
+    /// A folder row chosen, or just left through Up; Open enters it.
+    pub(super) folder_highlight: Option<String>,
+    /// A click on a folder only chooses it, in a dialog that opens things with its button.
+    pub folders_select_first: bool,
+    pub(super) size_order_descending: Option<bool>,
+    pub(super) request: super::file_list::FileRequest,
+    pub(super) menu_row: Option<String>,
+    pub(super) rectangle_start: Option<[f32; 2]>,
     /// Folders this dialog has shown, most recent first, for the recent-folder pane.
     recent: Vec<String>,
     navigation: NavigationPane,
-    view: FileListView,
+    pub(super) view: FileListView,
+    /// Stored pictures by full path, as far as the dialog has read them.
+    pub(super) file_pictures: std::collections::BTreeMap<String, crate::GuiPreviewImage>,
 }
 /// What the pane left of the file list offers.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -119,9 +59,31 @@ pub(crate) enum NavigationPane {
 /// How the file list shows its entries.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) enum FileListView {
+    ExtraLargeIcons,
+    LargeIcons,
+    MediumIcons,
+    SmallIcons,
+    List,
     #[default]
     Details,
     Tiles,
+    Content,
+}
+impl FileListView {
+    const MENU: [(Self, &'static str); 8] = [
+        (Self::ExtraLargeIcons, "Extra Large Icons"),
+        (Self::LargeIcons, "Large Icons"),
+        (Self::MediumIcons, "Medium Icons"),
+        (Self::SmallIcons, "Small Icons"),
+        (Self::List, "List"),
+        (Self::Details, "Details"),
+        (Self::Tiles, "Tiles"),
+        (Self::Content, "Content"),
+    ];
+    /// True when its rows draw each file's stored picture.
+    pub(crate) fn shows_pictures(self) -> bool {
+        !matches!(self, Self::List | Self::Details)
+    }
 }
 impl FolderBrowser {
     pub(crate) fn new(folders: Rc<dyn GuiFolders>) -> Self {
@@ -130,10 +92,19 @@ impl FolderBrowser {
             folders,
             listing: Ok(Vec::new()),
             history: Vec::new(),
+            forward: Vec::new(),
             selected: None,
+            several: Vec::new(),
+            folder_highlight: None,
+            folders_select_first: false,
+            size_order_descending: None,
+            request: Default::default(),
+            menu_row: None,
+            rectangle_start: None,
             recent: Vec::new(),
             navigation: NavigationPane::default(),
             view: FileListView::default(),
+            file_pictures: Default::default(),
         }
     }
     /// Read the current folder again; example: `browser.refresh()` after a save.
@@ -156,23 +127,17 @@ impl FolderBrowser {
         self.refresh();
     }
     /// Draw the location and listing; returns the file row a click chose.
-    /// Example: `browser.controls(ui, "Save in", Some("opd"))`.
-    pub(crate) fn controls(
-        &mut self,
-        ui: &Ui,
-        label: &str,
-        filter: Option<&str>,
-    ) -> Option<String> {
+    /// Example: `browser.controls(ui, "Save in", FileFilter::Extension("opd"))`.
+    pub(crate) fn controls(&mut self, ui: &Ui, label: &str, filter: FileFilter) -> Option<String> {
         self.location(ui, label);
         ui.text_disabled(breadcrumb(&self.folder));
         self.toolbar(ui);
         let visited = self.navigation_pane(ui);
         ui.same_line();
-        let (chosen, opened) = self.listing_rows(ui, filter);
-        ui.text_disabled(status_text(
-            self.selected.is_some(),
-            self.shown_count(filter),
-        ));
+        let outcome = self.listing_rows(ui, filter);
+        let (chosen, opened) = (outcome.chosen, outcome.entered);
+        let selected = self.several.len().max(usize::from(self.selected.is_some()));
+        ui.text_disabled(status_text(selected, self.shown_count(filter)));
         if let Some(folder) = opened {
             self.navigate(&folder);
         }
@@ -200,7 +165,27 @@ impl FolderBrowser {
             }
             ui.same_line();
         }
-        ui.new_line();
+        self.display_menu(ui);
+    }
+    fn display_menu(&mut self, ui: &Ui) {
+        if crate::widget_abi::button(ui, "Display", [0.; 2]) {
+            ui.open_popup(DISPLAY_MENU);
+        }
+        let Some(_menu) = ui.begin_popup(DISPLAY_MENU) else {
+            return;
+        };
+        for (view, label) in FileListView::MENU {
+            if ui
+                .menu_item_config(label)
+                .selected(self.view == view)
+                .build()
+            {
+                self.view = view;
+            }
+            if view == FileListView::SmallIcons {
+                ui.separator();
+            }
+        }
     }
     fn navigation_rows(&self) -> Vec<(String, String)> {
         match self.navigation {
@@ -251,7 +236,11 @@ impl FolderBrowser {
         let up = crate::widget_abi::button(ui, "Up", [0.; 2]);
         ui.same_line();
         let back = crate::widget_abi::button(ui, "Back", [0.; 2]);
-        if back {
+        ui.same_line();
+        let forward = crate::widget_abi::button(ui, "Forward", [0.; 2]);
+        if forward {
+            self.forward();
+        } else if back {
             self.back();
         } else if up {
             self.up();
@@ -259,9 +248,11 @@ impl FolderBrowser {
             self.refresh();
         }
     }
+    /// The folder just left stays highlighted in its parent's list.
     fn up(&mut self) {
         let parent = Path::new(&self.folder).parent().map(Path::to_path_buf);
         if let Some(parent) = parent {
+            self.folder_highlight = Some(folder_name(&self.folder));
             self.history.push(self.folder.clone());
             self.folder = parent.display().to_string();
             self.refresh();
@@ -269,50 +260,33 @@ impl FolderBrowser {
     }
     fn back(&mut self) {
         if let Some(previous) = self.history.pop() {
+            self.forward.push(self.folder.clone());
+            self.folder_highlight = None;
             self.folder = previous;
             self.refresh();
         }
     }
-    fn navigate(&mut self, name: &str) {
+    /// Forward to a parent shows the folder Back came from, still highlighted.
+    fn forward(&mut self) {
+        if let Some(next) = self.forward.pop() {
+            let left = folder_name(&self.folder);
+            self.history.push(self.folder.clone());
+            let into_parent = Path::new(&self.folder).parent() == Some(Path::new(&next));
+            self.folder_highlight = into_parent.then_some(left);
+            self.folder = next;
+            self.refresh();
+        }
+    }
+    pub(super) fn navigate(&mut self, name: &str) {
         self.history.push(self.folder.clone());
+        self.forward.clear();
+        self.folder_highlight = None;
         self.folder = Path::new(&self.folder).join(name).display().to_string();
         self.refresh();
     }
-    fn shown_count(&self, filter: Option<&str>) -> usize {
+    fn shown_count(&self, filter: FileFilter) -> usize {
         let rows = self.listing.as_deref().unwrap_or_default();
         rows.iter().filter(|row| listed(row, filter)).count()
-    }
-    fn listing_rows(&self, ui: &Ui, filter: Option<&str>) -> (Option<String>, Option<String>) {
-        let (mut chosen, mut opened) = (None, None);
-        ui.child_window("##folder-listing")
-            .size([0., LISTING_HEIGHT])
-            .border(true)
-            .build(|| match &self.listing {
-                Err(cause) => ui.text_disabled(cause),
-                Ok(rows) => {
-                    if self.view == FileListView::Details {
-                        details_heading(ui);
-                    }
-                    for row in rows.iter().filter(|row| listed(row, filter)) {
-                        if self.file_row(ui, row) {
-                            let target = if row.is_folder {
-                                &mut opened
-                            } else {
-                                &mut chosen
-                            };
-                            *target = Some(row.name.clone());
-                        }
-                    }
-                }
-            });
-        (chosen, opened)
-    }
-    fn file_row(&self, ui: &Ui, row: &FolderEntry) -> bool {
-        let highlighted = self.selected.as_deref() == Some(row.name.as_str());
-        match self.view {
-            FileListView::Details => details_row(ui, row, highlighted),
-            FileListView::Tiles => tile_row(ui, row, highlighted),
-        }
     }
 }
 /// The small toolbar's two groups of choices.
@@ -347,21 +321,17 @@ fn breadcrumb(folder: &str) -> String {
     }
     tail
 }
-fn status_text(selected: bool, count: usize) -> String {
-    if selected {
-        return "1 item selected".to_string();
+fn status_text(selected: usize, count: usize) -> String {
+    match selected {
+        0 => format!("{count} items"),
+        1 => "1 item selected".to_string(),
+        several => format!("{several} items selected"),
     }
-    format!("{count} items")
 }
-fn listed(row: &FolderEntry, filter: Option<&str>) -> bool {
-    row.is_folder || filter.is_none_or(|extension| has_extension(&row.name, extension))
+pub(super) fn listed(row: &FolderEntry, filter: FileFilter) -> bool {
+    row.is_folder || filter.keeps(&row.name)
 }
-fn has_extension(name: &str, extension: &str) -> bool {
-    Path::new(name)
-        .extension()
-        .is_some_and(|found| found.eq_ignore_ascii_case(extension))
-}
-fn row_label(row: &FolderEntry) -> String {
+pub(super) fn row_label(row: &FolderEntry) -> String {
     if row.is_folder {
         format!("{}/", row.name)
     } else {

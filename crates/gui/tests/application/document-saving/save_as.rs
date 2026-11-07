@@ -41,7 +41,10 @@ fn an_assembly_proposes_its_own_file_type() {
     );
     let draft = dialog.draft.as_ref().unwrap();
     assert_eq!(draft.name, "Assembly1.oad");
-    assert_eq!(draft.types.filter(0), Some("oad"));
+    assert_eq!(
+        draft.types.filter(0),
+        super::super::folder_browser::FileFilter::Extension("oad")
+    );
 }
 #[test]
 fn the_preview_area_follows_the_options() {

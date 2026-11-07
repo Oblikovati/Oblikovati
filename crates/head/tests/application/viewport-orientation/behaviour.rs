@@ -15,11 +15,7 @@ fn enter_north_angle(world: &mut ApplicationWorld, degrees: &str) {
     world.pump(Vec::new());
 }
 fn compass_letter(world: &ApplicationWorld, letter: &str) -> [f32; 2] {
-    world
-        .frame
-        .runs
-        .iter()
-        .find(|run| run.text == letter)
+    compass_observation::compass_label(world, letter)
         .unwrap_or_else(|| panic!("expected the compass letter {letter}"))
         .center()
 }

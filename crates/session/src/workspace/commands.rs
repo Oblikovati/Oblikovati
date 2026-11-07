@@ -76,6 +76,20 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
 }
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Choose a body row; a transient choice, so it makes no undo step.
+    /// Example: `commands.set_browser_body_selection(key, feature);`.
+    pub fn set_browser_body_selection(
+        &mut self,
+        key: &str,
+        feature: oblikovati_model::feature::FeatureId,
+    ) {
+        self.session.set_browser_body_selection(key, feature);
+    }
+    /// Choose the document's own row; a transient choice, so it makes no undo step.
+    /// Example: `commands.set_browser_root_selection();`.
+    pub fn set_browser_root_selection(&mut self) {
+        self.session.set_browser_root_selection();
+    }
     /// Change view state for a resolved body without editing history or saved content.
     /// Example: `commands.set_body_visible(current_body_key, false)?;` returns whether display changed.
     pub fn set_body_visible(&mut self, key: &str, visible: bool) -> Result<bool, String> {

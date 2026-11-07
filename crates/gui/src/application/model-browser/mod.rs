@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! The model browser's dialogs and panes: Find, Relationships, line properties and Favorites.
+#[path = "browser_keys.rs"]
+pub(crate) mod browser_keys;
+#[path = "browser_root.rs"]
+pub(crate) mod browser_root;
+#[path = "color_dialog.rs"]
+pub(crate) mod color_dialog;
+#[path = "favorites.rs"]
+pub(crate) mod favorites;
+#[path = "feature_properties.rs"]
+pub(crate) mod feature_properties;
+#[path = "find_criteria.rs"]
+pub(crate) mod find_criteria;
+#[path = "find_dialog.rs"]
+pub(crate) mod find_dialog;
+#[path = "find_prompts.rs"]
+pub(crate) mod find_prompts;
+#[path = "geometry_properties.rs"]
+pub(crate) mod geometry_properties;
+#[path = "relationships.rs"]
+pub(crate) mod relationships;

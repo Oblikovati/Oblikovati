@@ -9,6 +9,8 @@ pub struct ViewportSketchDisplay {
     pub sketch: DocumentSketchId,
     pub plane: SketchPlane,
     pub geometry: Sketch2D,
+    /// What its lines draw in, in place of the palette's geometry colour.
+    pub line_color: Option<oblikovati_model::theme::Rgba>,
 }
 /// Display failure names the sketch as well as its entity within the current source packet.
 #[derive(Clone, Debug, PartialEq)]

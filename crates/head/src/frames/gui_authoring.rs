@@ -65,6 +65,21 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::SelectBrowserFeature { document, feature } => {
             owner.select_browser_feature_from_gui(*document, *feature)
         }
+        GuiShellAction::EditFeature { document, edit } => {
+            owner.edit_feature_from_gui(*document, edit)
+        }
+        GuiShellAction::SetSketchLineStyle {
+            document,
+            sketch,
+            style,
+        } => owner.set_sketch_line_style_from_gui(*document, *sketch, style),
+        GuiShellAction::BrowserChoice { document, choice } => {
+            owner.browser_choice_from_gui(*document, choice)
+        }
+        GuiShellAction::KeepDocumentPicture { document, picture } => {
+            owner.keep_document_picture_from_gui(*document, picture.as_ref())
+        }
+        GuiShellAction::InspectFile(path) => owner.inspect_file_from_gui(path),
         GuiShellAction::UpdateBodyProperties { document, body } => {
             owner.update_body_properties_from_gui(*document, *body)
         }
@@ -183,13 +198,13 @@ mod tests {
     use super::*;
     #[test]
     fn idle_sketch_delete_names_the_missing_editor_owner() {
-        let mut owner = crate::work::IdleHeadWork;
+        let mut owner = crate::work_idle::IdleHeadWork;
         let cause = apply(&mut owner, &GuiShellAction::DeleteSketchSelection).unwrap_err();
         assert!(cause.contains("Delete Sketch Selection") && cause.contains("expected"));
     }
     #[test]
     fn idle_theme_editor_requests_return_named_owner_declines() {
-        let mut owner = crate::work::IdleHeadWork;
+        let mut owner = crate::work_idle::IdleHeadWork;
         let color = oblikovati_api::types::Rgba {
             r: 1.,
             g: 0.,
@@ -218,7 +233,7 @@ mod tests {
     }
     #[test]
     fn semantic_keys_and_wrong_authoring_groups_are_refused_without_owner_work() {
-        let mut owner = crate::work::IdleHeadWork;
+        let mut owner = crate::work_idle::IdleHeadWork;
         for action in [
             GuiShellAction::Save,
             GuiShellAction::Undo,
@@ -252,7 +267,7 @@ mod browser_selection_tests {
             sketch: oblikovati_model::document_sketch::DocumentSketchId(3),
             toggle: false,
         };
-        let cause = apply(&mut crate::work::IdleHeadWork, &action).unwrap_err();
+        let cause = apply(&mut crate::work_idle::IdleHeadWork, &action).unwrap_err();
         assert!(cause.contains("document 9") && cause.contains("selection owner"));
     }
 }

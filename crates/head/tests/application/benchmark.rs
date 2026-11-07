@@ -5,15 +5,20 @@ use cucumber::{
     writer::{self, Stats as _},
 };
 use std::{fmt, fs, path::PathBuf};
+mod binding_inventory;
 mod diagnostics;
 mod documents;
 mod refinements;
+mod solid_visibility;
+mod viewport_background;
 mod world;
 use world::ApplicationWorld;
 #[path = "body-properties/steps.rs"]
 mod body_properties;
 #[path = "document-creation/steps.rs"]
 mod document_creation;
+#[path = "document-opening/steps.rs"]
+mod document_opening;
 #[path = "document-saving/steps.rs"]
 mod document_saving;
 #[path = "document-tabs/steps.rs"]
@@ -22,6 +27,8 @@ mod document_tabs;
 mod file_menu;
 #[path = "home-recent-documents/steps.rs"]
 mod home_recent_documents;
+#[path = "model-browser/steps.rs"]
+mod model_browser;
 #[path = "project-dialog/steps.rs"]
 mod project_dialog;
 #[path = "quick-access-toolbar/steps.rs"]

@@ -470,7 +470,7 @@ impl HeadWindow for RefusingPreviewWindow {
 #[test]
 fn unsupported_window_declines_edit_framing_without_mutation() {
     assert!(
-        crate::work::IdleHeadWork
+        crate::work_idle::IdleHeadWork
             .decline_sketch_edit("test".into())
             .is_err()
     );

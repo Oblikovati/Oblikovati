@@ -98,29 +98,17 @@ fn option_rows(ui: &Ui, target: &mut OpenTarget) {
 }
 fn mode_row(ui: &Ui, target: &mut OpenTarget) {
     let label = format!("Mode: {}", target.mode_name());
-    if ui.button(&label) {
-        ui.open_popup("##open-mode");
-    }
-    if let Some(_list) = ui.begin_popup("##open-mode") {
-        for (index, mode) in target.modes.clone().into_iter().enumerate() {
-            if ui.menu_item(mode) {
-                target.mode = index;
-            }
-        }
+    let modes = target.modes.clone();
+    if let Some(mode) = crate::widget_abi::popup_choice(ui, &label, "##open-mode", &modes) {
+        target.mode = mode;
     }
 }
 fn view_row(ui: &Ui, target: &mut OpenTarget) {
     let _disabled = ui.begin_disabled(!target.full());
     let label = format!("Design View: {}", target.views[target.view]);
-    if ui.button(&label) {
-        ui.open_popup("##open-view");
-    }
-    if let Some(_list) = ui.begin_popup("##open-view") {
-        for (index, view) in target.views.clone().iter().enumerate() {
-            if ui.menu_item(view) {
-                target.view = index;
-            }
-        }
+    let views = target.views.clone();
+    if let Some(view) = crate::widget_abi::popup_choice(ui, &label, "##open-view", &views) {
+        target.view = view;
     }
 }
 /// True when the dialog closes. Only Full mode opens: the others have no loader behind them.

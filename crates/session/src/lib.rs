@@ -67,6 +67,10 @@ pub struct DocumentSession<O> {
     document: u64,
     browser_selection: selection::SelectionSet<selection::BrowserSketchPick>,
     browser_feature: Option<oblikovati_model::feature::FeatureId>,
+    /// The solid body row chosen, by its stable reference and the feature that made it.
+    browser_body: Option<(String, oblikovati_model::feature::FeatureId)>,
+    /// The document's own row is chosen: everything it holds shows as chosen.
+    browser_root: bool,
     editor_selection: selection::SelectionSet<selection::SketchPick>,
     history: DocumentEditHistory,
     observer: O,
@@ -93,6 +97,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
             document,
             browser_selection: Default::default(),
             browser_feature: None,
+            browser_body: None,
+            browser_root: false,
             editor_selection: Default::default(),
             history,
             observer,

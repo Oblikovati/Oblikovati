@@ -9,6 +9,10 @@ pub(super) struct BodyVisibilityState {
     revision: u64,
 }
 impl BodyVisibilityState {
+    /// What the scene shows of a body changed for another reason than its visibility.
+    pub(super) fn note_display_change(&mut self) {
+        self.revision = self.revision.wrapping_add(1);
+    }
     pub(super) fn set(&mut self, key: &str, visible: bool) -> Result<bool, String> {
         if key.is_empty() {
             return Err(format!(

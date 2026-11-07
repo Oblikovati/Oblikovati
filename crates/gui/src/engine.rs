@@ -285,12 +285,15 @@ impl GuiFrameEngine {
             &mut selected,
         );
         self.document_tabs.previews.showing = workspace_front(request, area, self.home.active);
-        self.document_tabs.previews.showing_file = request
-            .commands
-            .document
-            .filter(|_| !self.home.active)
-            .and_then(|id| request.commands.document_storage.get(&id))
-            .and_then(|storage| storage.path.clone());
+        self.document_tabs.previews.showing_document =
+            request.commands.document.filter(|_| !self.home.active);
+        if !self.home.active {
+            crate::application::workspace_layout::browser_feature::selection_toolbar(
+                ui,
+                request,
+                &mut selected,
+            );
+        }
         self.home.panel(ui, &request.commands, area, &mut selected);
         let home_requests = std::mem::take(&mut self.home.requests);
         if home_requests.new_document {
@@ -302,12 +305,8 @@ impl GuiFrameEngine {
         if let Some(path) = home_requests.file_properties {
             self.document_tabs.menu.properties.request_file(&path);
         }
-        self.document_files.panel(
-            ui,
-            &request.commands,
-            &self.document_tabs.previews,
-            &mut selected,
-        );
+        self.document_files
+            .panel(ui, &request.commands, &mut selected);
         self.preferences.panel(ui, &request.commands, &mut selected);
         self.dimension_editor
             .panel(ui, &request.commands, &mut selected);
@@ -355,6 +354,16 @@ impl GuiFrameEngine {
         // A popup that closed this frame still owned the key that closed it.
         let popup_open = self.popup_was_open || crate::widget_abi::any_popup_open(ui);
         self.popup_was_open = crate::widget_abi::any_popup_open(ui);
+        // A dialog over the workspace is not a picture of the document, nor of its tab.
+        if popup_open {
+            self.document_tabs.previews.showing = None;
+        }
+        selected.extend(self.document_tabs.previews.take_changed_picture().map(
+            |(document, picture)| GuiShellAction::KeepDocumentPicture {
+                document,
+                picture: Some(picture),
+            },
+        ));
         let snapshot = capture_frame(self.context.render(), request.extent)?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;

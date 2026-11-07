@@ -50,6 +50,14 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
 }
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Change how a sketch's lines are drawn; example: `commands.set_sketch_line_style(id, style)`.
+    pub fn set_sketch_line_style(
+        &mut self,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        style: oblikovati_model::document_sketch::SketchLineStyle,
+    ) -> Result<(), crate::CommandError<oblikovati_model::sketch::SketchError>> {
+        self.session.set_sketch_line_style(sketch, style)
+    }
     /// Name a design view of this document; example: `commands.create_design_view("Front")`.
     pub fn create_design_view(&mut self, name: &str) -> Result<(), CommandError<SketchError>> {
         self.session.create_design_view(name)

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[path = "document-creation/mod.rs"]
 pub(crate) mod document_creation;
+#[path = "document-opening/mod.rs"]
+pub(crate) mod document_opening;
 #[path = "document-saving/mod.rs"]
 pub(crate) mod document_saving;
 #[path = "document-tabs/mod.rs"]
@@ -9,6 +11,8 @@ pub(crate) mod document_tabs;
 pub(crate) mod file_system;
 #[path = "home-recent-documents/mod.rs"]
 pub(crate) mod home_recent_documents;
+#[path = "model-browser/mod.rs"]
+pub(crate) mod model_browser;
 #[path = "project-dialog/mod.rs"]
 pub(crate) mod project_dialog;
 #[path = "quick-access-toolbar/mod.rs"]

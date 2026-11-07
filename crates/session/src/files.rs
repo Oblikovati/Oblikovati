@@ -48,6 +48,26 @@ struct RetainedFile {
     display_override: Option<String>,
     path: Option<PathBuf>,
     package: DocumentPackage,
+    /// What the next save stores as the file's picture; nothing asked leaves it as it is.
+    picture: Option<FilePicture>,
+}
+/// A picture for the next save of a file, or none in it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FilePicture {
+    Store(oblikovati_persistence::package::SavedPicture),
+    Remove,
+}
+impl RetainedFile {
+    /// A save writes what is latest; keeping it apart stops a redraw encoding a package.
+    fn apply_picture(&mut self) {
+        match self.picture.take() {
+            Some(FilePicture::Store(picture)) => {
+                self.package = self.package.with_preview_picture(Some(&picture));
+            }
+            Some(FilePicture::Remove) => self.package = self.package.with_preview_picture(None),
+            None => {}
+        }
+    }
 }
 
 /// An existing path keeps its live recipe; a new path reports identity registration.
@@ -139,6 +159,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     /// Route edits without allowing replacement of the document owner; example: `host.commands(id)?.undo()?`.
     pub fn commands(&mut self, id: u64) -> Result<SessionCommands<'_, O>, WorkspaceError> {
         self.workspace.commands(id)
+    }
+
+    /// Say what the document's next save stores as its picture; a closed document needs none.
+    /// Example: `host.keep_file_picture(id, FilePicture::Remove);`.
+    pub fn keep_file_picture(&mut self, id: u64, picture: FilePicture) {
+        if let Some(file) = self.retained.get_mut(&id) {
+            file.picture = Some(picture);
+        }
     }
 
     /// Change focus without changing command ownership; example: `host.activate(id)?;`.
@@ -233,6 +261,7 @@ fn bound_target<'a, F: DocumentFiles>(
     let file = retained
         .get_mut(&id)
         .ok_or(FileWorkspaceError::MissingFile(id))?;
+    file.apply_picture();
     let path = file
         .path
         .as_deref()

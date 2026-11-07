@@ -210,6 +210,42 @@ pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
         .Active
         .then_some(([window.Pos.x, window.Pos.y], [window.Size.x, window.Size.y]))
 }
+/// Framebuffer bounds for a named GUI window, including display density.
+/// Example: `window_pixel_bounds("##navigation-bar")` for screenshot exclusion.
+pub(super) fn window_pixel_bounds(title: &str) -> Option<[f32; 4]> {
+    let (position, size) = window_geometry(title)?;
+    let scale = unsafe { sys::igGetIO().as_ref() }?.DisplayFramebufferScale;
+    Some([
+        position[0] * scale.x,
+        position[1] * scale.y,
+        (position[0] + size[0]) * scale.x,
+        (position[1] + size[1]) * scale.y,
+    ])
+}
+/// Screen rectangles that belong to GUI windows, not to the model beneath them.
+pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
+    let context =
+        unsafe { sys::igGetCurrentContext().as_ref() }.expect("expected a live native GUI");
+    let windows =
+        unsafe { std::slice::from_raw_parts(context.Windows.Data, context.Windows.Size as usize) };
+    let scale = context.IO.DisplayFramebufferScale;
+    windows
+        .iter()
+        .filter_map(|window| {
+            let window = unsafe { window.as_ref() }?;
+            if !window.Active || window.Hidden {
+                return None;
+            }
+            let bounds = window.OuterRectClipped;
+            Some([
+                bounds.Min.x * scale.x,
+                bounds.Min.y * scale.y,
+                bounds.Max.x * scale.x,
+                bounds.Max.y * scale.y,
+            ])
+        })
+        .collect()
+}
 #[cfg(test)]
 #[path = "diagnostics_tests.rs"]
 mod tests;

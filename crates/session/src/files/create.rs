@@ -44,6 +44,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 display_override: Some(package.manifest().display_name.clone()),
                 path: None,
                 package,
+                picture: None,
             },
         );
         self.refresh_display_name(registration.session_id);

@@ -168,4 +168,6 @@ mod body_display;
 
 mod body_names;
 mod design_views;
-pub use design_views::design_view_names_of_file;
+pub use design_views::{design_view_names_of_file, property_rows_of_file};
+mod preview_picture;
+pub use preview_picture::{SavedPicture, preview_picture_of_file};

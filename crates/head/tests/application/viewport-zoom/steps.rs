@@ -302,3 +302,12 @@ fn unchanged_face(world: &mut ApplicationWorld) {
     assert_eq!(camera(world), earlier, "view");
     expect_part_and_solid(world);
 }
+#[then("the Zoom control is highlighted")]
+fn zoom_lit(world: &mut ApplicationWorld) {
+    let lit = super::viewport_pan::bar_button_lit(world, "Z", "W");
+    assert!(lit, "expected the Zoom button lit");
+}
+#[then("the face is no longer highlighted as selected")]
+fn face_let_go(world: &mut ApplicationWorld) {
+    assert!(!world.state().model_face_chosen, "expected no face chosen");
+}

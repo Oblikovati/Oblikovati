@@ -147,12 +147,6 @@ fn model_compact(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.expect_no_text("Start 2D Sketch");
 }
-#[then("the other compact group buttons remain visible")]
-fn other_groups_remain(world: &mut ApplicationWorld) {
-    for group in ["Sketch", "Create", "Modify"] {
-        world.expect_text(group);
-    }
-}
 #[when("I return the ribbon to its expanded display")]
 fn return_expanded(world: &mut ApplicationWorld) {
     while !world.shows("Start 2D Sketch") {
@@ -379,21 +373,6 @@ fn create_modify_without_parameters(world: &mut ApplicationWorld) {
     shows_create_modify(world);
     parameters_is_hidden(world);
 }
-#[given("Parameters is hidden")]
-fn parameters_is_hidden(world: &mut ApplicationWorld) {
-    // Whether a new part shows the panel is the ribbon's default, not this scenario's subject.
-    if parameters_panel_shown(world) {
-        expand_show_panels(world);
-        toggle_panel(world, PARAMETERS);
-        world.escape();
-        world.escape();
-        world.pump(Vec::new());
-    }
-    assert!(
-        !parameters_panel_shown(world),
-        "expected no Parameters panel"
-    );
-}
 #[then("Create and Modify are checked and Parameters is unchecked")]
 fn checks_read(world: &mut ApplicationWorld) {
     for panel in ["Create", "Modify"] {
@@ -426,6 +405,20 @@ fn create_modify_visible(world: &mut ApplicationWorld) {
 }
 #[then("Parameters remains hidden")]
 fn parameters_stays_hidden(world: &mut ApplicationWorld) {
+    assert!(
+        !parameters_panel_shown(world),
+        "expected no Parameters panel"
+    );
+}
+fn parameters_is_hidden(world: &mut ApplicationWorld) {
+    // Whether a new part shows the panel is the ribbon's default, not this scenario's subject.
+    if parameters_panel_shown(world) {
+        expand_show_panels(world);
+        toggle_panel(world, PARAMETERS);
+        world.escape();
+        world.escape();
+        world.pump(Vec::new());
+    }
     assert!(
         !parameters_panel_shown(world),
         "expected no Parameters panel"
