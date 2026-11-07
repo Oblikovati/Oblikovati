@@ -18,17 +18,19 @@ impl<
         let Some(document) = self.files.workspace().active_document() else {
             return Ok(output);
         };
-        let snapshot = self
+        let session = self
             .files
             .workspace()
             .session(document)
-            .map_err(|cause| cause.to_string())?
-            .snapshot();
+            .map_err(|cause| cause.to_string())?;
+        let snapshot = session.snapshot();
+        let mut called_up = session.selected_browser_sketches();
+        called_up.extend(self.sketch_opened_while_hidden());
         for sketch in snapshot
             .sketches
             .sketches()
             .iter()
-            .filter(|sketch| sketch.visible())
+            .filter(|sketch| crate::sketch_scene::sketch_shows(sketch, &called_up))
         {
             collect_dimension_annotations(snapshot, sketch, &mut output);
         }

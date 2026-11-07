@@ -84,6 +84,7 @@ fn browser_validation_refuses_ambiguous_or_dropped_identity_and_unsafe_text() {
         id: FeatureId(42),
         name: "Extrude".into(),
         suppressed: false,
+        extended: None,
     });
     browser.validate().unwrap();
     browser.sketches[0].inspection = Err("bad\0cause".into());

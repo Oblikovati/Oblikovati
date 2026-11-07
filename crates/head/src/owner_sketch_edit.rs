@@ -49,9 +49,23 @@ impl<
     ) -> Result<(), String> {
         self.require_sketch_edit_entry(document)?;
         self.watch_sketch_edit(document, sketch)?;
+        // A feature took this sketch out of view: opening it brings it back while it is open.
+        self.opened_hidden_sketch = self
+            .files
+            .workspace()
+            .session(document)
+            .ok()
+            .and_then(|session| session.snapshot().sketches.get(sketch).ok().cloned())
+            .filter(|placed| !placed.visible())
+            .map(|_| sketch);
         // What the last command reported is over; an open sketch at rest reads Ready.
         self.command_notice = Some(DesktopCommandNotice::Ready);
         Ok(())
+    }
+    /// The open sketch, if it was hidden when it was opened; example: for what the view shows.
+    pub(super) fn sketch_opened_while_hidden(&self) -> Option<DocumentSketchId> {
+        let open = self.active_sketch_edit()?.sketch;
+        self.opened_hidden_sketch.filter(|sketch| *sketch == open)
     }
     /// Create one history step and select the new sketch; example: `owner.create_sketch_for_edit(document, &request)?`.
     pub fn create_sketch_for_edit(

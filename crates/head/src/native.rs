@@ -215,6 +215,10 @@ impl HeadWindow for NativeHeadWindow {
         NativeHeadWindow::sketch_pixel(self, plane, point)
     }
 
+    fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
+        self.view.model_pixel(point)
+    }
+
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
         if let (crate::DesktopCommandNotice::SavePathRequired { document }, Some(gui)) =
             (&notice, &mut self.gui)

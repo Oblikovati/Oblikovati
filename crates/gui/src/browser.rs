@@ -23,6 +23,10 @@ pub struct GuiModelBrowser {
     pub sketches: Vec<GuiBrowserSketch>,
     pub features: Vec<GuiBrowserFeature>,
     pub selected_sketches: Vec<DocumentSketchId>,
+    /// The feature row a press chose.
+    pub selected_feature: Option<FeatureId>,
+    /// The part's solids, each made by a feature of the program.
+    pub bodies: Vec<GuiBrowserBody>,
 }
 /// Stable sketch identity paired with its current canonical API inspection or local decline.
 #[derive(Clone, Debug, PartialEq)]
@@ -33,12 +37,20 @@ pub struct GuiBrowserSketch {
     pub visible: bool,
     pub consumed_by: Option<FeatureId>,
 }
+/// One solid in the part, named as the document names it; example: `Solid1` from `Extrude1`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiBrowserBody {
+    pub name: String,
+    pub feature: FeatureId,
+}
 /// One authored feature in model program order, with its actual suppression state.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiBrowserFeature {
     pub id: FeatureId,
     pub name: String,
     pub suppressed: bool,
+    /// What Show Extended Names adds to the row: its operation and depth.
+    pub extended: Option<String>,
 }
 impl GuiModelBrowser {
     pub(crate) fn validate(&self) -> Result<(), String> {
@@ -112,6 +124,12 @@ impl GuiBrowserSketch {
         Ok(())
     }
 }
+#[path = "browser_sketch_row.rs"]
+mod sketch_rows;
+use crate::application::workspace_layout::{
+    browser_feature, browser_origin, browser_view::BrowserBranch,
+};
+use sketch_rows::sketch_row;
 /// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
 pub(crate) fn browser_contents(
     ui: &Ui,
@@ -124,6 +142,7 @@ pub(crate) fn browser_contents(
         return;
     };
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
+    browser_origin::clear_on_empty_click(ui, state, browser, view, actions);
     let _document = ui.push_id(format!("document-{:?}", state.document));
     ui.text(&browser.name);
     if let Some(query) = view.query() {
@@ -168,10 +187,11 @@ impl BrowserTree<'_> {
         view: &mut BrowserView,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        self.origin(view);
+        self.bodies(view, actions);
+        self.origin(view, actions);
         self.parameters();
         self.sketches(actions);
-        self.features(actions);
+        self.features(view, actions);
         // The marker closes a modelled document's history; a document without an origin has none.
         if self.browser.has_origin {
             self.ui.text(end_marker);
@@ -223,26 +243,25 @@ impl BrowserTree<'_> {
         }
         chosen
     }
-    fn origin(&self, view: &mut BrowserView) {
+    fn origin(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         if !self.browser.has_origin || view.hide_work_features {
             return;
         }
         // Brought back by Display Preferences, the branch starts closed.
         let closed = std::mem::take(&mut view.origin_closes_on_return);
+        let opened = view.take_opened_branch(BrowserBranch::Origin);
         let node = self.ui.tree_node_config("Origin").default_open(true);
-        let node = match (closed, self.expansion) {
-            (true, _) => node.opened(false, imgui::Condition::Always),
-            (false, Some(open)) => node.opened(open, imgui::Condition::Always),
-            (false, None) => node,
+        let node = match (closed, opened, self.expansion) {
+            (true, ..) => node.opened(false, imgui::Condition::Always),
+            (false, true, _) => node.opened(true, imgui::Condition::Always),
+            (false, false, Some(open)) => node.opened(open, imgui::Condition::Always),
+            (false, false, None) => node,
         };
-        if let Some(_origin) = node.push() {
+        let token = node.push();
+        browser_origin::origin_branch_menu(self.ui, view);
+        if let Some(_origin) = token {
             for (row, label) in ORIGIN_ROWS.into_iter().enumerate() {
-                self.ui.bullet();
-                self.ui.same_line();
-                let selected = view.selected_origin_row == Some(row);
-                if self.ui.selectable_config(label).selected(selected).build() {
-                    view.selected_origin_row = Some(row);
-                }
+                browser_origin::origin_row(self.ui, view, row, label, actions);
             }
         }
     }
@@ -265,10 +284,85 @@ impl BrowserTree<'_> {
             }
         }
     }
-    fn features(&self, actions: &mut Vec<GuiShellAction>) {
+    fn features(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         if let Some(_features) = self.branch("Features", true) {
             for feature in &self.browser.features {
-                feature_row(self.ui, self.state, self.browser, feature, actions);
+                self.feature(feature, self.expansion, view, actions);
+            }
+        }
+    }
+    /// The Solid Bodies folder: each solid, and under it the feature that made it.
+    fn bodies(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
+        if self.browser.bodies.is_empty() {
+            return;
+        }
+        let children = view.take_bodies_expansion();
+        let node = self.ui.tree_node_config("Solid Bodies");
+        // Collapse All Children folds what is under the folder and leaves the folder open.
+        let node = match (children == Some(true), self.expansion) {
+            (true, _) => node.opened(true, imgui::Condition::Always),
+            (false, Some(open)) => node.opened(open, imgui::Condition::Always),
+            (false, None) => node,
+        };
+        let token = node.push();
+        browser_feature::bodies_menu(self.ui, view);
+        let Some(_folder) = token else {
+            return;
+        };
+        for body in &self.browser.bodies {
+            self.body(body, children.or(self.expansion), view, actions);
+        }
+    }
+    fn body(
+        &self,
+        body: &GuiBrowserBody,
+        expansion: Option<bool>,
+        view: &mut BrowserView,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let _body = self.ui.push_id(format!("body-{}", body.feature.0));
+        let node = self.ui.tree_node_config(&body.name);
+        let node = match expansion {
+            Some(open) => node.opened(open, imgui::Condition::Always),
+            None => node,
+        };
+        let Some(_row) = node.push() else {
+            return;
+        };
+        let made_by = self
+            .browser
+            .features
+            .iter()
+            .find(|feature| feature.id == body.feature);
+        if let Some(feature) = made_by {
+            self.feature(feature, expansion, view, actions);
+        }
+    }
+    fn feature(
+        &self,
+        feature: &GuiBrowserFeature,
+        expansion: Option<bool>,
+        view: &mut BrowserView,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let _feature = self.ui.push_id(format!("feature-{}", feature.id.0));
+        let token = browser_feature::feature_row(
+            self.ui,
+            self.state,
+            self.browser,
+            feature,
+            expansion,
+            view,
+            actions,
+        );
+        if let Some(_children) = token {
+            for row in self
+                .browser
+                .sketches
+                .iter()
+                .filter(|row| row.consumed_by == Some(feature.id))
+            {
+                sketch_row(self.ui, self.state, row, actions);
             }
         }
     }
@@ -293,152 +387,6 @@ pub(crate) const ORIGIN_ROWS: [&str; 7] = [
     "XZ Plane",
     "YZ Plane",
 ];
-fn feature_row(
-    ui: &Ui,
-    state: &GuiCommandState,
-    browser: &GuiModelBrowser,
-    feature: &GuiBrowserFeature,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let _feature = ui.push_id(format!("feature-{}", feature.id.0));
-    ui.text(if feature.suppressed {
-        format!("{} (suppressed)", feature.name)
-    } else {
-        feature.name.clone()
-    });
-    ui.indent();
-    for row in browser
-        .sketches
-        .iter()
-        .filter(|row| row.consumed_by == Some(feature.id))
-    {
-        sketch_row(ui, state, row, actions);
-    }
-    ui.unindent();
-}
-fn sketch_row(
-    ui: &Ui,
-    state: &GuiCommandState,
-    row: &GuiBrowserSketch,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let _sketch = ui.push_id(format!("sketch-{}", row.id.0));
-    let action = GuiShellAction::EditSketch {
-        document: state.document.unwrap_or(0),
-        sketch: row.id,
-    };
-    if sketch_selectable(
-        ui,
-        row,
-        state
-            .browser
-            .as_ref()
-            .is_some_and(|browser| browser.selected_sketches.contains(&row.id)),
-    ) {
-        sketch_activation(ui, state, row.id, &action, actions);
-    }
-    sketch_context_menu(ui, state, row, action, actions);
-}
-fn sketch_activation(
-    ui: &Ui,
-    state: &GuiCommandState,
-    sketch: DocumentSketchId,
-    edit: &GuiShellAction,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let select = GuiShellAction::SelectBrowserSketch {
-        document: state.document.unwrap_or(0),
-        sketch,
-        // #3811: edit activation must retain its sketch even after a modified first click.
-        toggle: !ui.is_mouse_double_clicked(MouseButton::Left)
-            && (ui.io().key_shift || ui.io().key_ctrl),
-    };
-    if select.dispatchable(state) {
-        actions.push(select);
-    }
-    if ui.is_mouse_double_clicked(MouseButton::Left) && edit.dispatchable(state) {
-        actions.push(edit.clone());
-    }
-}
-fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch, selected: bool) -> bool {
-    let position = ui.cursor_screen_pos();
-    let activated = crate::widget_abi::selectable(ui, "##sketch-row", selected, true);
-    // Literal labels are drawn separately so imported names containing ## remain visible.
-    crate::widget_abi::literal_text(
-        ui,
-        position,
-        ui.style_color(StyleColor::Text),
-        &sketch_caption(row),
-    );
-    if ui.is_item_hovered() {
-        ui.tooltip_text(sketch_tooltip(row));
-    }
-    activated
-}
-fn sketch_context_menu(
-    ui: &Ui,
-    state: &GuiCommandState,
-    row: &GuiBrowserSketch,
-    action: GuiShellAction,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let Some(_popup) = ui.begin_popup_context_item() else {
-        return;
-    };
-    if ui
-        .menu_item_config("Edit Sketch")
-        .enabled(action.dispatchable(state))
-        .build()
-    {
-        actions.push(action);
-    }
-    sketch_visibility_menu(ui, state, row, actions);
-}
-fn sketch_visibility_menu(
-    ui: &Ui,
-    state: &GuiCommandState,
-    row: &GuiBrowserSketch,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let visibility = GuiShellAction::SetSketchVisibility {
-        document: state.document.unwrap_or(0),
-        sketch: row.id,
-        visible: !row.visible,
-    };
-    if ui
-        .menu_item_config("Visibility")
-        .selected(row.visible)
-        .enabled(visibility.dispatchable(state))
-        .build()
-    {
-        actions.push(visibility);
-    }
-}
-fn sketch_caption(row: &GuiBrowserSketch) -> String {
-    match &row.inspection {
-        Ok(summary) => format!(
-            "{}  [DOF {}{}]",
-            row.name,
-            summary.dof,
-            if summary.healthy { "" } else { ", sick" }
-        ),
-        Err(_) => format!("{}  [unavailable]", row.name),
-    }
-}
-fn sketch_tooltip(row: &GuiBrowserSketch) -> String {
-    match &row.inspection {
-        Ok(summary) => format!(
-            "{} plane, {} entities. Double-click to edit.",
-            summary.plane, summary.entity_count
-        ),
-        Err(cause) => format!("{}: {cause}", row.name),
-    }
-}
-
-#[cfg(test)]
-#[path = "../tests/browser/unit.rs"]
-mod tests;
-
 pub(crate) fn model_browser_width(viewport_width: f32) -> f32 {
     // Keep the native view centre available for picks even when content scale narrows the layout (#3850).
     300_f32.min((viewport_width * 0.5 - 16.).max(1.))

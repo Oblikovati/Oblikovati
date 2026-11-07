@@ -28,6 +28,38 @@ impl DesktopPartScenes {
             .collect()
     }
 }
+impl DesktopPartScenes {
+    /// Each solid and the feature that made it, for the browser's folder.
+    /// Example: `scenes.body_rows(files, document)?` reads `(Extrude1's id, "Solid1")`.
+    pub(crate) fn body_rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<Vec<(oblikovati_model::feature::FeatureId, String)>, String> {
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        let evaluated = self.current(session)?;
+        let mut rows = Vec::new();
+        for record in evaluated.health() {
+            let Some(body) = evaluated.body(record.feature) else {
+                continue;
+            };
+            let key = body_reference_text(body.body_reference_key(session.history(), guid)?);
+            let (name, _) = files
+                .body_display_metadata(document, &key)
+                .map_err(|cause| cause.to_string())?;
+            let shown = name.map_or_else(|| format!("Solid{}", rows.len() + 1), Into::into);
+            rows.push((record.feature, shown));
+        }
+        Ok(rows)
+    }
+}
 fn native_body_info<O: TransactionObserver>(
     session: &DocumentSession<O>,
     guid: DocumentGuid,

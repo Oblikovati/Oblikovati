@@ -33,6 +33,20 @@ impl<
             .with_sketch_edit(self.sketch_inspection_edit());
         populate_browser(&mut browser, snapshot, &Client::new(query));
         browser.selected_sketches = self.selected_browser_sketches(document);
+        // A part that cannot evaluate says so on the scene; its folder just stays empty.
+        browser.bodies = self
+            .part_scenes
+            .body_rows(&self.files, document)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(feature, name)| oblikovati_gui::GuiBrowserBody { name, feature })
+            .collect();
+        browser.selected_feature = self
+            .files
+            .workspace()
+            .session(document)
+            .ok()
+            .and_then(|session| session.selected_browser_feature());
         Ok(browser)
     }
     fn gui_browser_root(&self, document: u64) -> Result<GuiModelBrowser, String> {
@@ -82,8 +96,33 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             id: feature.id(),
             name: feature.name().into(),
             suppressed: feature.suppressed(),
+            extended: extended_feature_name(snapshot, feature),
         })
         .collect();
+}
+/// What a long row adds to a feature's name: its operation and depth.
+fn extended_feature_name(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    feature: &oblikovati_model::feature::AuthoredFeature<
+        oblikovati_model::feature::part::PartFeatureDefinition,
+    >,
+) -> Option<String> {
+    use oblikovati_model::{
+        feature::part::PartFeatureDefinition::SketchPrism,
+        quantity::{Dimension, Quantity},
+    };
+    let SketchPrism(definition) = feature.definition() else {
+        return None;
+    };
+    let depth = definition.displacement()[2]
+        .resolve(&snapshot.parameters)
+        .ok()?;
+    let shown = snapshot
+        .parameters
+        .units()
+        .display_rounded_expression(Quantity::new(depth.abs(), Dimension::Length))
+        .ok()?;
+    Some(format!("New Solid, {shown}"))
 }
 fn browser_sketch<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     snapshot: &oblikovati_model::history::DocumentSnapshot,
@@ -113,6 +152,6 @@ fn exclusive_sketch_consumer(
 ) -> Option<oblikovati_model::feature::FeatureId> {
     let mut consumers = snapshot.work_geometry.sketch_consumers(sketch);
     let first = consumers.next()?;
-    // Go app/browser.go keeps a sketch at top level when several features consume it.
+    // Go app/browser.go keeps a sketch at top level when several features share it.
     consumers.next().is_none().then(|| first.id())
 }

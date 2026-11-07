@@ -226,6 +226,26 @@ pub trait HeadWork {
             "browser sketch {sketch:?}, document {document}: expected a selection owner"
         ))
     }
+    /// Choose one feature row; example: `work.select_browser_feature_from_gui(document, feature)?`.
+    fn select_browser_feature_from_gui(
+        &mut self,
+        document: u64,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "browser feature {feature:?}, document {document}: expected a selection owner"
+        ))
+    }
+    /// Choose no browser row; example: after a click on nothing in the view.
+    fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
+        Err(format!(
+            "browser selection, document {document}: expected a selection owner"
+        ))
+    }
+    /// The chosen row's outline, in model space; example: to draw it over the view.
+    fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
+        Vec::new()
+    }
     /// Change stored sketch visibility; example: `work.set_sketch_visibility_from_gui(document, sketch, false)?`.
     fn set_sketch_visibility_from_gui(
         &mut self,

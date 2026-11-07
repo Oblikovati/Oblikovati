@@ -15,6 +15,24 @@ pub struct PrismFaceMesh {
     pub role: PrismFaceRole,
     pub triangles: Vec<[[f64; 3]; 3]>,
 }
+impl PrismFaceMesh {
+    /// The face's outline, for display: facet sides only one of this face's facets uses.
+    /// Example: `face.boundary_segments()` gives a square's four sides for its two triangles.
+    pub fn boundary_segments(&self) -> Vec<[[f64; 3]; 2]> {
+        let key = |point: [f64; 3]| point.map(f64::to_bits);
+        let mut uses = std::collections::BTreeMap::new();
+        for [a, b, c] in &self.triangles {
+            for (from, to) in [(a, b), (b, c), (c, a)] {
+                let (low, high) = (key(*from).min(key(*to)), key(*from).max(key(*to)));
+                uses.entry((low, high)).or_insert(([*from, *to], 0)).1 += 1;
+            }
+        }
+        uses.into_values()
+            .filter(|(_, count)| *count == 1)
+            .map(|(segment, _)| segment)
+            .collect()
+    }
+}
 /// Derived display geometry. Construction roles are not persistent pick references.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrismPresentation {
@@ -141,4 +159,22 @@ fn transformed_node(
         ));
     }
     Ok(vertex)
+}
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+    #[test]
+    fn a_face_outline_is_the_facet_sides_only_one_facet_uses() {
+        let [a, b, c, d] = [[0., 0., 0.], [1., 0., 0.], [1., 1., 0.], [0., 1., 0.]];
+        let face = PrismFaceMesh {
+            role: PrismFaceRole::Start,
+            triangles: vec![[a, b, c], [a, c, d]],
+        };
+        let outline = face.boundary_segments();
+        assert_eq!(outline.len(), 4, "{outline:?}");
+        let is_diagonal =
+            |[from, to]: &[[f64; 3]; 2]| (*from, *to) == (a, c) || (*from, *to) == (c, a);
+        assert!(!outline.iter().any(is_diagonal), "{outline:?}");
+    }
 }

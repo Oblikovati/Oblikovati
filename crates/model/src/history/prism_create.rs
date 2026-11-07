@@ -28,6 +28,7 @@ impl DocumentSnapshot {
         ids: &mut RecipeReservations<'_>,
     ) -> Result<FeatureId, HistoryError> {
         let id = ids.allocate_feature().map_err(HistoryError::Identity)?;
+        let sketch = definition.sketch();
         let feature =
             AuthoredFeature::sketch_prism(id, name, definition, self).map_err(|cause| {
                 HistoryError::PartProgram(PartFeatureProgramError::Prism { feature: id, cause })
@@ -35,6 +36,10 @@ impl DocumentSnapshot {
         self.work_geometry
             .append(feature)
             .map_err(|cause| HistoryError::PartProgram(PartFeatureProgramError::Sequence(cause)))?;
+        // The solid now stands for the profile; its browser row calls the sketch back.
+        self.sketches
+            .set_visible(sketch, false)
+            .map_err(|_| HistoryError::UnreservedSketchId(sketch.0))?;
         Ok(id)
     }
 }

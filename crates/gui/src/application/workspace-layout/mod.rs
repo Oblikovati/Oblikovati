@@ -3,6 +3,8 @@
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, MouseButton, Ui, WindowFlags};
 
+pub(crate) mod browser_feature;
+pub(crate) mod browser_origin;
 #[path = "browser_view.rs"]
 pub(crate) mod browser_view;
 #[path = "panel_tabs.rs"]
@@ -120,6 +122,10 @@ impl WorkspaceLayout {
         self.pending_layout |= self.panels.needs_frame();
     }
     /// Leave room for a docked ribbon; example: `layout.reserve_for_ribbon(196., 0.)`.
+    /// Show which origin row is chosen, in the view; example: each frame, under the panels.
+    pub(crate) fn draw_selected_origin(&self, ui: &Ui, request: &crate::GuiFrameRequest) {
+        browser_origin::draw_selected_origin(ui, request, self.view.selected_origin_row);
+    }
     pub(crate) fn reserve_for_ribbon(&mut self, left: f32, right: f32) {
         self.ribbon_left = left;
         self.ribbon_right = right;

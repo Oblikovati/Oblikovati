@@ -24,6 +24,8 @@ pub(super) fn advance_gui(
     let mut commands = owner.gui_command_state()?;
     commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
+    commands.feature_edges = dimension_labels::projected_browser_outline(window, owner);
+    commands.origin_axes = dimension_labels::origin_axis_lines(window, &commands);
     commands.constraint_glyphs = dimension_labels::projected_constraint_glyphs(window, owner);
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
@@ -88,6 +90,8 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SaveDocumentAs(_)
         | GuiShellAction::SetSketchVisibility { .. }
         | GuiShellAction::SelectBrowserSketch { .. }
+        | GuiShellAction::SelectBrowserFeature { .. }
+        | GuiShellAction::ClearBrowserSelection { .. }
         | GuiShellAction::EditSketch { .. }
         | GuiShellAction::Dimension(_)
         | GuiShellAction::ConstrainSketch(_)

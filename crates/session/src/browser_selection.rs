@@ -41,6 +41,33 @@ impl<O: TransactionObserver> DocumentSession<O> {
             .map(|pick| pick.sketch())
             .collect()
     }
+    /// The feature row chosen in the browser, while that feature still exists.
+    /// Example: `session.selected_browser_feature()` for the row's accent.
+    pub fn selected_browser_feature(&self) -> Option<oblikovati_model::feature::FeatureId> {
+        let feature = self.browser_feature?;
+        self.snapshot()
+            .work_geometry
+            .features()
+            .iter()
+            .any(|known| known.id() == feature)
+            .then_some(feature)
+    }
+    /// Choose one feature row; a transient choice, so it makes no undo step.
+    /// Example: `session.set_browser_feature_selection(feature)?;`.
+    pub fn set_browser_feature_selection(
+        &mut self,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Result<(), SketchError> {
+        let known = self.snapshot().work_geometry.features();
+        if !known.iter().any(|row| row.id() == feature) {
+            return Err(SketchError::Definition(format!(
+                "browser feature {feature:?}: expected a feature of the current program"
+            )));
+        }
+        self.browser_selection.clear();
+        self.browser_feature = Some(feature);
+        Ok(())
+    }
     /// Change transient session selection without creating an undo step.
     /// Example: `session.set_browser_sketch_selection(Some(sketch), mode, false)?;`.
     pub fn set_browser_sketch_selection(
@@ -57,6 +84,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         let retire_editor = (picked.is_some() || mode == SelectionClickMode::Replace)
             && !self.editor_selection.items().is_empty();
         let count = self.browser_selection.apply_click(picked, mode, false);
+        self.browser_feature = None;
         if retire_editor {
             self.editor_selection.clear();
             return Ok(Some(self.browser_selection.items().len()));

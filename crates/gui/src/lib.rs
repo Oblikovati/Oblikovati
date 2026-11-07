@@ -7,7 +7,9 @@ pub use application::document_creation::templates::{
 };
 mod appearance_choice;
 mod browser;
-pub use browser::{GuiBrowserFeature, GuiBrowserKind, GuiBrowserSketch, GuiModelBrowser};
+pub use browser::{
+    GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind, GuiBrowserSketch, GuiModelBrowser,
+};
 mod clipboard;
 pub use activity::GuiFrameActivity;
 pub use clipboard::GuiClipboard;
@@ -30,6 +32,7 @@ mod sketch;
 pub use application::document_tabs::windows::{GuiDocumentWindow, active_window_name};
 pub use application::home_recent_documents::{GuiRecentAction, GuiRecentDocument};
 pub use application::quick_access_toolbar::plane_selection::{GuiOriginPlane, GuiOriginPlaneKind};
+pub use application::workspace_layout::browser_origin::GuiOriginAxis;
 pub use sketch::constraint_glyphs::GuiConstraintGlyph;
 pub use sketch::dimension_edit::{GuiDimensionEdit, GuiDimensionValue};
 pub use sketch::inspect::{GuiInspectAction, GuiMeasurePanel, GuiSketchContext};

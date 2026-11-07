@@ -190,3 +190,12 @@ fn owned_browser_selection_can_clear_without_model_history_and_tools_do_not_take
     assert!(session.undo_labels().is_empty());
     assert!(session.observer().observations.is_empty());
 }
+
+#[test]
+fn a_feature_row_must_name_a_feature_of_the_current_program() {
+    let mut session = selection_session(None);
+    let missing = oblikovati_model::feature::FeatureId(99);
+    let error = session.set_browser_feature_selection(missing).unwrap_err();
+    assert!(error.to_string().contains("FeatureId(99)"), "{error}");
+    assert_eq!(session.selected_browser_feature(), None);
+}

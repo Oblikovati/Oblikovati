@@ -248,6 +248,8 @@ impl<
             sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
             // Projected by the frame, which owns the camera.
             origin_planes: Vec::new(),
+            feature_edges: Vec::new(),
+            origin_axes: Vec::new(),
             document_windows: self.document_windows.clone(),
             active_window: Some(self.active_view_slot()),
             measure: self.gui_measure_panel(),
@@ -304,6 +306,19 @@ impl<
         toggle: bool,
     ) -> Result<bool, String> {
         self.select_browser_sketch(document, sketch, toggle)
+    }
+    fn select_browser_feature_from_gui(
+        &mut self,
+        document: u64,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Result<bool, String> {
+        self.select_browser_feature(document, feature)
+    }
+    fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
+        self.clear_browser_selection(document)
+    }
+    fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
+        self.current_browser_outline()
     }
     fn set_sketch_visibility_from_gui(
         &mut self,
@@ -456,7 +471,8 @@ impl<
         })
     }
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
-        self.sketch_scenes.refresh(&self.files)
+        let opened_hidden = self.sketch_opened_while_hidden();
+        self.sketch_scenes.refresh(&self.files, opened_hidden)
     }
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         self.part_scenes.refresh(&mut self.files)

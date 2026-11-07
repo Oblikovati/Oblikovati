@@ -60,6 +60,18 @@ fn append_prism(owner: &mut DocumentEditHistory) -> FeatureId {
     owner.commit(&token, false).unwrap();
     id
 }
+#[test]
+fn a_prism_takes_its_sketch_out_of_view_and_undo_brings_it_back() {
+    let mut owner = part_owner();
+    let sketch = prism_source().sketch();
+    let visible =
+        |owner: &DocumentEditHistory| owner.snapshot().sketches.get(sketch).unwrap().visible();
+    assert!(visible(&owner));
+    append_prism(&mut owner);
+    assert!(!visible(&owner));
+    owner.undo().unwrap();
+    assert!(visible(&owner));
+}
 fn assert_prism_definition(owner: &DocumentEditHistory) {
     assert!(matches!(
         owner

@@ -61,6 +61,12 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
             sketch,
             toggle,
         } => owner.select_browser_sketch_from_gui(*document, *sketch, *toggle),
+        GuiShellAction::SelectBrowserFeature { document, feature } => {
+            owner.select_browser_feature_from_gui(*document, *feature)
+        }
+        GuiShellAction::ClearBrowserSelection { document } => {
+            owner.clear_browser_selection_from_gui(*document)
+        }
         GuiShellAction::SetSketchVisibility {
             document,
             sketch,

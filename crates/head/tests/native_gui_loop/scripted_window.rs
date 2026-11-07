@@ -17,6 +17,9 @@ impl HeadWindow for ScriptedGuiWindow {
     ) -> Result<[i32; 2], String> {
         HeadWindow::sketch_pixel(&self.native, plane, point)
     }
+    fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
+        self.native.model_pixel(point)
+    }
     fn navigation_active(&self) -> bool {
         self.native.navigation_active()
     }

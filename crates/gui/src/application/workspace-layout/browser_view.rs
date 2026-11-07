@@ -7,16 +7,21 @@ const BROWSER_MENU: &str = "##browser-menu";
 const NO_RESULTS: &str = "No matching entries";
 const SEARCH_HINT: &str = "Search";
 const HIGHLIGHT: [f32; 4] = [0.95, 0.75, 0.2, 0.45];
-const LISTED_DISPLAY_PREFERENCES: [&str; 7] = [
+const LISTED_DISPLAY_PREFERENCES: [&str; 6] = [
     "Hide Notes",
     "Hide Documents",
     "Hide Warnings",
-    "Show Extended Names",
     "Hide Blue Dot Indicator",
     "Auto expand Representations Folder on Open",
     "Design View Expansion",
 ];
 
+/// A row that has rows of its own under it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum BrowserBranch {
+    Origin,
+    Feature(oblikovati_model::feature::FeatureId),
+}
 #[derive(Debug, Default)]
 pub(crate) struct BrowserView {
     autoscroll: bool,
@@ -28,6 +33,12 @@ pub(crate) struct BrowserView {
     /// The origin row a click chose.
     pub selected_origin_row: Option<usize>,
     pub hide_work_features: bool,
+    /// Feature rows also say their operation and depth.
+    pub show_extended_names: bool,
+    /// The branch a row's Expand All Children opens on the next frame.
+    opened_branch: Option<BrowserBranch>,
+    /// What the Solid Bodies menu asked of everything under the folder.
+    bodies_expansion: Option<bool>,
     /// The branch was just brought back: it opens closed, once.
     pub origin_closes_on_return: bool,
 }
@@ -79,10 +90,35 @@ impl BrowserView {
                 self.hide_work_features = !hidden;
                 self.origin_closes_on_return = hidden;
             }
-            for row in LISTED_DISPLAY_PREFERENCES {
+            let [notes, documents, warnings, rest @ ..] = LISTED_DISPLAY_PREFERENCES;
+            for row in [notes, documents, warnings] {
+                muted_menu_item(ui, row);
+            }
+            ui.menu_item_config("Show Extended Names")
+                .build_with_ref(&mut self.show_extended_names);
+            for row in rest {
                 muted_menu_item(ui, row);
             }
         });
+    }
+    /// Open or fold everything under Solid Bodies on the next frame; example: from its menu.
+    pub(crate) fn set_bodies_expansion(&mut self, open: bool) {
+        self.bodies_expansion = Some(open);
+    }
+    pub(crate) fn take_bodies_expansion(&mut self) -> Option<bool> {
+        self.bodies_expansion.take()
+    }
+    /// Open one branch on the next frame; example: from its menu's Expand All Children.
+    pub(crate) fn open_branch(&mut self, branch: BrowserBranch) {
+        self.opened_branch = Some(branch);
+    }
+    /// This frame's tree opens the branch, once: later a user may close it again.
+    pub(crate) fn take_opened_branch(&mut self, branch: BrowserBranch) -> bool {
+        let opened = self.opened_branch == Some(branch);
+        if opened {
+            self.opened_branch = None;
+        }
+        opened
     }
     fn open_search(&mut self) {
         self.query.get_or_insert_with(String::new);
@@ -116,7 +152,7 @@ impl BrowserView {
         self.expansion.take()
     }
 }
-fn muted_menu_item(ui: &Ui, label: &str) {
+pub(crate) fn muted_menu_item(ui: &Ui, label: &str) {
     ui.menu_item_config(label).enabled(false).build();
     if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
         ui.tooltip_text("This command is not available in this build.");

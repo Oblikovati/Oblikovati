@@ -49,6 +49,19 @@ pub(super) fn projected_constraint_glyphs(
 }
 /// How far the triad's axes reach on screen, in pixels: a mark, not a measure.
 const TRIAD_REACH: i32 = 28;
+/// The chosen row's outline in pixels; a segment a window cannot project shows nothing.
+pub(super) fn projected_browser_outline(
+    window: &dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+) -> Vec<[[i32; 2]; 2]> {
+    owner
+        .selected_browser_outline()
+        .into_iter()
+        .filter_map(|[from, to]| {
+            Some([window.model_pixel(from).ok()?, window.model_pixel(to).ok()?])
+        })
+        .collect()
+}
 /// The toolbar's triad at its sketch position; a window that cannot project shows none.
 pub(super) fn project_precise_triad(
     window: &dyn HeadWindow,
@@ -72,6 +85,31 @@ pub(super) fn project_precise_triad(
 /// A half-side of the displayed origin planes, in working lengths: readable at the default view.
 const ORIGIN_PLANE_REACH: f64 = 6.;
 /// The planes as the camera sees them; a window that cannot project shows none.
+/// The origin's axes in pixels, with the rows that name them.
+pub(super) fn origin_axis_lines(
+    window: &dyn HeadWindow,
+    commands: &oblikovati_gui::GuiCommandState,
+) -> Vec<oblikovati_gui::GuiOriginAxis> {
+    if commands.document.is_none()
+        || commands.authoring != oblikovati_gui::GuiAuthoringContext::Part
+    {
+        return Vec::new();
+    }
+    const R: f64 = ORIGIN_PLANE_REACH;
+    [
+        ("X Axis", [[-R, 0., 0.], [R, 0., 0.]]),
+        ("Y Axis", [[0., -R, 0.], [0., R, 0.]]),
+        ("Z Axis", [[0., 0., -R], [0., 0., R]]),
+    ]
+    .into_iter()
+    .filter_map(|(label, [from, to])| {
+        Some(oblikovati_gui::GuiOriginAxis {
+            label,
+            ends: [window.model_pixel(from).ok()?, window.model_pixel(to).ok()?],
+        })
+    })
+    .collect()
+}
 pub(super) fn origin_plane_outlines(
     window: &dyn HeadWindow,
     commands: &oblikovati_gui::GuiCommandState,

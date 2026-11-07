@@ -215,6 +215,8 @@ impl GuiFrameEngine {
         let ui = self.context.frame();
         crate::dimension_labels::draw_dimension_labels(ui, request);
         crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
+        crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
+        self.workspace.draw_selected_origin(ui, request);
         let mut selected = Vec::new();
         self.document_files.home_in_front = self.home.active;
         let band_height = crate::chrome::ribbon_band(

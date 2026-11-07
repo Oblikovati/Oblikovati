@@ -31,6 +31,20 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .select_browser_sketch_from_gui(document, sketch, toggle)
         }
+        fn select_browser_feature_from_gui(
+            &mut self,
+            document: u64,
+            feature: oblikovati_model::feature::FeatureId,
+        ) -> Result<bool, String> {
+            self.$owner
+                .select_browser_feature_from_gui(document, feature)
+        }
+        fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
+            self.$owner.clear_browser_selection_from_gui(document)
+        }
+        fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
+            self.$owner.selected_browser_outline()
+        }
         fn set_sketch_visibility_from_gui(
             &mut self,
             document: u64,

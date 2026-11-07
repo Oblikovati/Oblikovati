@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::HeadSketchSceneUpdate;
-#[cfg(test)]
 use oblikovati_model::document_sketch::DocumentSketchId;
 use oblikovati_model::history::DocumentSnapshot;
 use oblikovati_persistence::file_access::DocumentFiles;
@@ -9,18 +8,23 @@ use oblikovati_viewport::ViewportSketchDisplay;
 #[derive(Default)]
 pub(crate) struct DesktopSketchScenes {
     source: Option<(u64, u64)>,
+    /// The sketches shown although hidden; a new choice redraws without any model change.
+    called_up: Vec<DocumentSketchId>,
 }
 impl DesktopSketchScenes {
     pub(crate) fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
         files: &FileWorkspace<O, W, F>,
+        opened_hidden: Option<DocumentSketchId>,
     ) -> Result<Option<HeadSketchSceneUpdate>, String> {
         let source = active_sketch_source(files)?;
-        if source == self.source {
+        let called_up = called_up_sketches(files, source, opened_hidden);
+        if source == self.source && called_up == self.called_up {
             return Ok(None);
         }
-        let update = prepare_sketch_scene(files, source)?;
+        let update = prepare_sketch_scene(files, source, &called_up)?;
         self.source = source;
+        self.called_up = called_up;
         Ok(Some(update))
     }
     pub(crate) fn clear(&mut self) {
@@ -42,9 +46,34 @@ fn active_sketch_source<O: TransactionObserver, W: WorkspaceObserver, F: Documen
         .transpose()
         .map_err(|cause| cause.to_string())
 }
+fn called_up_sketches<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    source: Option<(u64, u64)>,
+    opened_hidden: Option<DocumentSketchId>,
+) -> Vec<DocumentSketchId> {
+    let session = source.and_then(|(id, _)| files.workspace().session(id).ok());
+    let Some(session) = session else {
+        return Vec::new();
+    };
+    // Only a hidden sketch needs calling up: choosing one in view must not redraw the scene.
+    let snapshot = session.snapshot();
+    let mut called_up: Vec<_> = session
+        .selected_browser_sketches()
+        .into_iter()
+        .filter(|sketch| {
+            snapshot
+                .sketches
+                .get(*sketch)
+                .is_ok_and(|placed| !placed.visible())
+        })
+        .collect();
+    called_up.extend(opened_hidden);
+    called_up
+}
 fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     source: Option<(u64, u64)>,
+    called_up: &[DocumentSketchId],
 ) -> Result<HeadSketchSceneUpdate, String> {
     let mut update = HeadSketchSceneUpdate {
         source,
@@ -56,16 +85,20 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
             .workspace()
             .session(id)
             .map_err(|cause| cause.to_string())?;
-        collect_sketches(session.snapshot(), &mut update);
+        collect_sketches(session.snapshot(), called_up, &mut update);
     }
     Ok(update)
 }
-fn collect_sketches(snapshot: &DocumentSnapshot, update: &mut HeadSketchSceneUpdate) {
+fn collect_sketches(
+    snapshot: &DocumentSnapshot,
+    called_up: &[DocumentSketchId],
+    update: &mut HeadSketchSceneUpdate,
+) {
     for sketch in snapshot
         .sketches
         .sketches()
         .iter()
-        .filter(|sketch| sketch.visible())
+        .filter(|sketch| super::sketch_shows(sketch, called_up))
     {
         match snapshot.resolve_sketch_plane(sketch.id()) {
             Ok(plane) => update.sketches.push(ViewportSketchDisplay {

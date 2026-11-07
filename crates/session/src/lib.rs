@@ -66,6 +66,7 @@ struct BoundedGroup {
 pub struct DocumentSession<O> {
     document: u64,
     browser_selection: selection::SelectionSet<selection::BrowserSketchPick>,
+    browser_feature: Option<oblikovati_model::feature::FeatureId>,
     editor_selection: selection::SelectionSet<selection::SketchPick>,
     history: DocumentEditHistory,
     observer: O,
@@ -91,6 +92,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         Self {
             document,
             browser_selection: Default::default(),
+            browser_feature: None,
             editor_selection: Default::default(),
             history,
             observer,

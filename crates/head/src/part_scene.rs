@@ -163,6 +163,25 @@ impl DesktopPartScenes {
             },
         }
     }
+    /// The outline of a feature's solid, face by face; empty for a feature with no body.
+    /// Example: `scenes.feature_edges(session, feature)?` while its row is chosen.
+    pub(crate) fn feature_edges<O: TransactionObserver>(
+        &self,
+        session: &oblikovati_session::DocumentSession<O>,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Result<Vec<[[f64; 3]; 2]>, String> {
+        let evaluation = self.current(session)?;
+        let Some(body) = evaluation.body(feature) else {
+            return Ok(Vec::new());
+        };
+        let mesh =
+            oblikovati_martensite::PrismPresentationSource::presentation(body, DISPLAY_MESH)?;
+        Ok(mesh
+            .faces
+            .iter()
+            .flat_map(|face| face.boundary_segments())
+            .collect())
+    }
     pub fn clear(&mut self) {
         self.slot.clear();
         self.source = None;
@@ -209,6 +228,11 @@ fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
         .map_err(|cause| cause.to_string())
 }
 
+/// How finely a body is meshed for display, in working units and radians.
+const DISPLAY_MESH: PrismMeshOptions = PrismMeshOptions {
+    chord_error: 0.05,
+    angular_error: 0.5,
+};
 fn render_part_scene(
     evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
         NamedPrismSnapshot,
@@ -219,10 +243,7 @@ fn render_part_scene(
 ) -> Result<HeadSceneUpdate, String> {
     let presentation = ViewportScene::from_part_evaluation_with_visibility(
         evaluated,
-        PrismMeshOptions {
-            chord_error: 0.05,
-            angular_error: 0.5,
-        },
+        DISPLAY_MESH,
         [0., 0., 1.],
         [0., 1., 0., 1.],
         visible,

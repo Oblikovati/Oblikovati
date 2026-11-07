@@ -14,4 +14,12 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session
             .set_browser_sketch_selection(sketch, mode, tool_active)
     }
+    /// Choose one feature row, read by the desktop for its accent and the solid's edges.
+    /// Example: `commands.set_browser_feature_selection(feature)?;`.
+    pub fn set_browser_feature_selection(
+        &mut self,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Result<(), SketchError> {
+        self.session.set_browser_feature_selection(feature)
+    }
 }

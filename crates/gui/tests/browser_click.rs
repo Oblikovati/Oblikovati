@@ -97,14 +97,19 @@ fn context_engine() -> (GuiFrameEngine, GuiFrameRequest) {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = browser_request();
     engine.frame(&request).unwrap();
-    assert!(
+    // A right-click chooses the row it opens the menu for.
+    assert_eq!(
         pointer_gesture(
             &mut engine,
             &mut request,
             [90., 297.],
             GuiPointerButton::Right
-        )
-        .is_empty()
+        ),
+        [GuiShellAction::SelectBrowserSketch {
+            document: 12,
+            sketch: DocumentSketchId(7),
+            toggle: false
+        }]
     );
     (engine, request)
 }
@@ -200,14 +205,18 @@ fn identically_named_sketch_contexts_use_the_clicked_row_identity() {
     second.id = DocumentSketchId(8);
     rows.push(second);
     engine.frame(&request).unwrap();
-    assert!(
+    assert_eq!(
         pointer_gesture(
             &mut engine,
             &mut request,
             [90., 314.],
             GuiPointerButton::Right
-        )
-        .is_empty()
+        ),
+        [GuiShellAction::SelectBrowserSketch {
+            document: 12,
+            sketch: DocumentSketchId(8),
+            toggle: false
+        }]
     );
     assert_eq!(
         pointer_gesture(
@@ -309,7 +318,7 @@ fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
             pointer_gesture(
                 &mut engine,
                 &mut request,
-                [140., 325.],
+                [140., 393.],
                 GuiPointerButton::Left
             ),
             [GuiShellAction::SetSketchVisibility {
@@ -328,7 +337,7 @@ fn context_visibility_rechecks_an_open_transaction() {
         pointer_gesture(
             &mut engine,
             &mut request,
-            [140., 325.],
+            [140., 393.],
             GuiPointerButton::Left
         )
         .is_empty()

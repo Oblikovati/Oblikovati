@@ -11,6 +11,7 @@ fn browser(features: &[&str]) -> GuiModelBrowser {
                 id: oblikovati_model::feature::FeatureId(index as u64 + 1),
                 name: (*name).into(),
                 suppressed: false,
+                extended: None,
             })
             .collect(),
         ..Default::default()

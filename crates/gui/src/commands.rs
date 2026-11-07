@@ -40,6 +40,14 @@ pub enum GuiShellAction {
     CloseDocument(oblikovati_api::wire::CloseDocumentArgs),
     OpenDocument(oblikovati_api::wire::OpenDocumentArgs),
     SaveDocumentAs(oblikovati_api::wire::SaveDocumentAsArgs),
+    SelectBrowserFeature {
+        document: u64,
+        feature: oblikovati_model::feature::FeatureId,
+    },
+    /// A click on nothing: no browser row stays chosen.
+    ClearBrowserSelection {
+        document: u64,
+    },
     SelectBrowserSketch {
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
@@ -167,6 +175,9 @@ pub struct GuiCommandState {
     /// A sketch is open with no command running: the canvas offers its own menu.
     pub sketch_at_ready: bool,
     pub origin_planes: Vec<crate::GuiOriginPlane>,
+    /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
+    pub feature_edges: Vec<[[i32; 2]; 2]>,
+    pub origin_axes: Vec<crate::GuiOriginAxis>,
     pub document_windows: Vec<crate::GuiDocumentWindow>,
     pub active_window: Option<u64>,
     pub recent_documents: Vec<crate::GuiRecentDocument>,
@@ -259,6 +270,14 @@ impl GuiShellAction {
             }
             Self::SaveDocumentAs(request) => {
                 state.document == Some(request.document) && !state.transaction_open
+            }
+            Self::ClearBrowserSelection { document } => state.document == Some(*document),
+            Self::SelectBrowserFeature { document, feature } => {
+                state.document == Some(*document)
+                    && !state.transaction_open
+                    && state.browser.as_ref().is_some_and(|browser| {
+                        browser.features.iter().any(|row| row.id == *feature)
+                    })
             }
             Self::SelectBrowserSketch {
                 document, sketch, ..

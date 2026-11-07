@@ -22,7 +22,11 @@ impl Viewport {
     /// Project a sketch point to the kernel's integer framebuffer pixel convention.
     /// Example: `view.sketch_pixel(SketchPlane::xy(), [2.,3.])?` for a witness endpoint.
     pub fn sketch_pixel(&self, plane: SketchPlane, point: [f64; 2]) -> Result<[i32; 2], String> {
-        let [x, y, z] = plane.to_model(point).map_err(|cause| cause.to_string())?;
+        let model = plane.to_model(point).map_err(|cause| cause.to_string())?;
+        self.model_pixel(model)
+    }
+    /// The pixel a model position shows at; example: to draw a solid's edges over the view.
+    pub fn model_pixel(&self, [x, y, z]: [f64; 3]) -> Result<[i32; 2], String> {
         self.require_projection_extent()?;
         self.require_representable_projection(Point3::new(x, y, z))?;
         self.live()?

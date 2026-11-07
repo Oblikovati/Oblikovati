@@ -123,6 +123,13 @@ pub trait HeadWindow {
         ))
     }
 
+    /// The pixel a model position shows at; example: to draw a solid's edges over the view.
+    fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
+        Err(format!(
+            "model position {point:?}: expected a window with a projection"
+        ))
+    }
+
     /// Show an owner command result without terminating the window; example: `window.show_command_notice(notice)?`.
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {
         Err(format!(

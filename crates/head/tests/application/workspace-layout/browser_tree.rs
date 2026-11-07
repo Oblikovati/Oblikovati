@@ -184,6 +184,10 @@ fn part_with_sketch_under_edit(world: &mut ApplicationWorld) {
 #[given("the model browser shows an expanded Origin branch")]
 #[given("the Origin branch is expanded in the model browser")]
 fn origin_expanded(world: &mut ApplicationWorld) {
+    // Outside a sketch, the scenarios go on to watch a solid: this fixture part has one.
+    if world.state().authoring == oblikovati_gui::GuiAuthoringContext::Part {
+        super::browser_feature::open_extruded_part(world);
+    }
     world.expect_text("Center Point");
     world.expect_text("Sketches");
     world.expect_text("Features");
@@ -261,7 +265,7 @@ fn x_axis_highlighted(world: &mut ApplicationWorld) {
         "expected X Axis highlighted"
     );
 }
-fn expand_display_preferences(world: &mut ApplicationWorld) {
+pub(super) fn expand_display_preferences(world: &mut ApplicationWorld) {
     open_browser_menu(world);
     world.click_text("Display Preferences");
     world.pump(Vec::new());

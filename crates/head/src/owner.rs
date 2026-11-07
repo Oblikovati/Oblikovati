@@ -108,6 +108,9 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     dimension_serial: u64,
     sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_memory: owner_precise_input::SketchCommandMemory,
+    opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
+    /// The last outlined browser row, keyed by what it was worked out from.
+    browser_outline: Option<(browser_selection::BrowserOutlineSource, Vec<[[f64; 3]; 2]>)>,
     document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
     active_window: Option<u64>,
     window_serial: u64,
@@ -159,6 +162,8 @@ impl<
             sketch_construction: Default::default(),
             sketch_formats: Default::default(),
             sketch_memory: Default::default(),
+            opened_hidden_sketch: None,
+            browser_outline: None,
             document_windows: Vec::new(),
             active_window: None,
             window_serial: 0,

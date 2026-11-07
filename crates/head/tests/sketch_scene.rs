@@ -17,7 +17,7 @@ fn invalid_plane_is_named_without_removing_other_sketches() {
         sketches: vec![],
         plane_declines: vec![],
     };
-    collect_sketches(&snapshot, &mut update);
+    collect_sketches(&snapshot, &[], &mut update);
     assert_eq!(update.sketches.len(), 1);
     assert_eq!(update.plane_declines.len(), 1);
     assert_eq!(update.plane_declines[0].0, DocumentSketchId(2));
@@ -44,13 +44,22 @@ fn hidden_sketches_leave_the_scene_before_plane_resolution() {
         sketches: vec![],
         plane_declines: vec![],
     };
-    collect_sketches(&snapshot, &mut update);
+    collect_sketches(&snapshot, &[], &mut update);
     assert!(update.sketches.is_empty());
     assert!(update.plane_declines.is_empty());
     snapshot
         .sketches
         .set_visible(DocumentSketchId(1), true)
         .unwrap();
-    collect_sketches(&snapshot, &mut update);
+    collect_sketches(&snapshot, &[], &mut update);
     assert_eq!(update.sketches.len(), 1);
+}
+#[test]
+fn a_hidden_sketch_shows_only_while_it_is_called_up() {
+    let mut snapshot = crate::scene_fixture::selected_prism_document();
+    let sketch = crate::scene_fixture::SKETCH;
+    snapshot.sketches.set_visible(sketch, false).unwrap();
+    let hidden = snapshot.sketches.get(sketch).unwrap();
+    assert!(!crate::sketch_scene::sketch_shows(hidden, &[]));
+    assert!(crate::sketch_scene::sketch_shows(hidden, &[sketch]));
 }
