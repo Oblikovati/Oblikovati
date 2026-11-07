@@ -93,13 +93,13 @@ pub use evaluation_failure::{
 mod prism;
 pub use prism::{
     CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, CertifiedPrismSnapshot,
-    DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
-    NamedPrismEvaluator, NamedPrismSnapshot, PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe,
-    PrismFaceRole, PrismFaceTopology, PrismHistoryRelation, PrismHistorySource, PrismMeshOptions,
-    PrismPresentation, PrismPresentationSource, PrismProbeDefinition, PrismProbeLoop,
-    PrismProbeReport, PrismProbeSnapshot, PrismResolution, PrismResolutionPolicy,
-    PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole, PrismSurfaceKind,
-    PrismTopologySummary, named_part_properties, probe_planar_prism,
+    DrawingBaseProjection, DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind,
+    DrawingProjectionFrame, NamedPrismEvaluator, NamedPrismSnapshot, PrismAchievedTolerance,
+    PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismFaceTopology, PrismHistoryRelation,
+    PrismHistorySource, PrismMeshOptions, PrismPresentation, PrismPresentationSource,
+    PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution,
+    PrismResolutionPolicy, PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole,
+    PrismSurfaceKind, PrismTopologySummary, named_part_properties, probe_planar_prism,
     retain_certified_named_sketch_prism, retain_certified_profile_prism, retain_named_sketch_prism,
     retain_planar_prism, retain_prism_on_plane,
 };

@@ -205,3 +205,75 @@ fn exact_projection_retains_a_hole_in_an_oblique_prism() {
     });
     assert!(found, "expected the visible top boundary of the hole");
 }
+
+#[test]
+fn standard_base_view_centers_and_scales_current_cube_on_sheet() {
+    use oblikovati_api::types::{BASE_VIEW_BACK, BASE_VIEW_FRONT, BASE_VIEW_TOP};
+    use oblikovati_model::drawing::DrawingBaseViewDefinition;
+    let mut history = owner(cube_document());
+    let body = certified(&history);
+    let key = body.body_reference_key(&history, document()).unwrap();
+    for orientation in [BASE_VIEW_FRONT, BASE_VIEW_BACK, BASE_VIEW_TOP] {
+        let definition =
+            DrawingBaseViewDefinition::new("View", orientation, 0.5, [100., 80.]).unwrap();
+        let view = body
+            .drawing_base_view(&history, document(), key, &definition)
+            .unwrap();
+        let mut bounds = [
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ];
+        for (index, curve) in view.curves.visible.iter().enumerate() {
+            for parameter in curve.parameter_range(&history, document()).unwrap() {
+                let [x, y] = view
+                    .sheet_point(true, index, &history, document(), parameter)
+                    .unwrap();
+                bounds = [
+                    bounds[0].min(x),
+                    bounds[1].min(y),
+                    bounds[2].max(x),
+                    bounds[3].max(y),
+                ];
+            }
+        }
+        for (actual, expected) in bounds.into_iter().zip([97.5, 77.5, 102.5, 82.5]) {
+            assert!((actual - expected).abs() < 1e-8, "sheet bounds {bounds:?}");
+        }
+        assert!(
+            view.sheet_point(true, usize::MAX, &history, document(), 0.)
+                .is_err()
+        );
+    }
+    let definition = DrawingBaseViewDefinition::new("View", BASE_VIEW_TOP, 1., [0., 0.]).unwrap();
+    let mut invalid = definition.clone();
+    invalid.scale = f64::NAN;
+    assert!(
+        body.drawing_base_view(&history, document(), key, &invalid)
+            .is_err()
+    );
+    invalid = definition.clone();
+    invalid.orientation = oblikovati_api::types::BaseViewOrientation(255);
+    assert!(
+        body.drawing_base_view(&history, document(), key, &invalid)
+            .is_err()
+    );
+    let view = body
+        .drawing_base_view(&history, document(), key, &definition)
+        .unwrap();
+    let parameter = view.curves.visible[0]
+        .parameter_range(&history, document())
+        .unwrap()[0];
+    let token = history.begin("Size").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot.parameters.set_expression(1, "20 mm")
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert!(
+        view.sheet_point(true, 0, &history, document(), parameter)
+            .is_err()
+    );
+}
