@@ -319,3 +319,36 @@ fn viewport_and_browser(world: &mut ApplicationWorld) {
     let id = world.active_id();
     world.expect_browser_of(id);
 }
+
+#[given("one part document is active")]
+fn one_part_active(world: &mut ApplicationWorld) {
+    world.activate_through_tab(first(world));
+    let id = world.active_id();
+    assert!(
+        world.parts.contains(&id),
+        "active document {id}: expected an open part"
+    );
+    world.previous_document = Some(id);
+}
+#[then("another open part document becomes active")]
+fn another_part_active(world: &mut ApplicationWorld) {
+    let old = world
+        .previous_document
+        .expect("expected the previously active part");
+    let current = world.active_id();
+    assert_ne!(current, old);
+    assert!(
+        world.parts.contains(&current),
+        "active document {current}: expected an open part"
+    );
+}
+#[then("the previously active part remains open")]
+fn previous_part_open(world: &mut ApplicationWorld) {
+    let old = world
+        .previous_document
+        .expect("expected the previously active part");
+    assert!(
+        world.document_is_open(old),
+        "previous document {old}: expected it open"
+    );
+}
