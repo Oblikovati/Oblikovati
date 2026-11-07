@@ -111,6 +111,7 @@ fn close_tab(world: &mut ApplicationWorld) {
 }
 #[when("I open the saved file from the same folder")]
 #[when("I reopen the newly saved part in the same session")]
+#[when("I reopen the saved part in the same session")]
 #[when("I reopen the saved part file")]
 fn reopen(world: &mut ApplicationWorld) {
     let path = world.saved_path.clone().expect("expected a saved file");
@@ -294,6 +295,15 @@ fn unsaved_with_sketch(world: &mut ApplicationWorld) {
     let other = world.add_part();
     world.other_document = Some(other);
     modified_part(world);
+}
+#[given("an unsaved part containing a finished sketch is active in the MCAD Software")]
+fn unsaved_with_rectangle(world: &mut ApplicationWorld) {
+    let other = world.add_part();
+    world.other_document = Some(other);
+    world.add_part();
+    world.start_sketch();
+    world.draw_rectangle();
+    world.finish_sketch();
 }
 #[given("another document is open")]
 fn another_open(world: &mut ApplicationWorld) {
