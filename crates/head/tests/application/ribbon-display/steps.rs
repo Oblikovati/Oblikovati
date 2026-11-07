@@ -33,9 +33,26 @@ fn expect_compact_groups(world: &ApplicationWorld) {
     }
     world.expect_no_text(WINDOWS_COMMAND);
 }
+fn click_display_menu(world: &mut ApplicationWorld) {
+    let control = world.run("Ribbon Display");
+    let center = control.center();
+    let arrow = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.text == "v"
+                && run.center()[0] > control.maximum[0]
+                && (run.center()[1] - center[1]).abs() < 5.
+        })
+        .min_by(|left, right| left.center()[0].total_cmp(&right.center()[0]))
+        .expect("expected the menu arrow beside Ribbon Display")
+        .center();
+    world.click(super::diagnostics::pointer_pixels(arrow));
+}
 #[given("the ribbon display control is configured to cycle through all modes")]
 fn cycling(world: &mut ApplicationWorld) {
-    world.click_text("v");
+    click_display_menu(world);
     assert!(
         world.checked("Cycle through All"),
         "expected the cycling default"
@@ -133,7 +150,7 @@ fn expanded_remains(world: &mut ApplicationWorld) {
 }
 #[when("I open the ribbon display control menu")]
 fn open_menu(world: &mut ApplicationWorld) {
-    world.click_text("v");
+    click_display_menu(world);
 }
 #[then("the menu offers minimization to tabs, panel titles and panel buttons")]
 fn menu_choices(world: &mut ApplicationWorld) {
@@ -397,7 +414,7 @@ fn buttons_checked(world: &mut ApplicationWorld) {
     );
 }
 fn choose_tabs_mode(world: &mut ApplicationWorld) {
-    world.click_text("v");
+    click_display_menu(world);
     world.click_text("Minimize to Tabs");
     world.expect_no_text("Start 2D Sketch");
 }
