@@ -20,6 +20,7 @@ pub(super) struct BaseViewDialog {
     orientation: usize,
     scale: f32,
     center: [f32; 2],
+    previewed: bool,
 }
 impl BaseViewDialog {
     pub(super) fn request(&mut self) {
@@ -34,6 +35,10 @@ impl BaseViewDialog {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        if self.requested && self.previewed {
+            actions.push(GuiShellAction::PreviewDrawingBaseView(None));
+            self.previewed = false;
+        }
         if std::mem::take(&mut self.requested) {
             self.open(state);
         }
@@ -42,14 +47,22 @@ impl BaseViewDialog {
         {
             self.drawing = None;
         }
+        if self.drawing.is_none() && self.previewed {
+            actions.push(GuiShellAction::PreviewDrawingBaseView(None));
+            self.previewed = false;
+        }
         let Some(drawing) = self.drawing else { return };
-        crate::widget_abi::fit_dialog(ui, "Base View", [500., 260.], [360., 210.]);
+        crate::widget_abi::fit_dialog(ui, "Base View", [20., 180.], [360., 210.]);
         ui.window("Base View").build(|| {
-            self.source_choice(ui, state);
+            let mut edited = self.source_choice(ui, state);
             let labels = ORIENTATIONS.map(|(label, _)| label);
-            ui.combo_simple_string("Orientation", &mut self.orientation, &labels);
-            ui.input_float("Scale", &mut self.scale).build();
-            ui.input_float2("Center (mm)", &mut self.center).build();
+            edited |= ui.combo_simple_string("Orientation", &mut self.orientation, &labels);
+            edited |= ui.input_float("Scale", &mut self.scale).build();
+            edited |= ui.input_float2("Center (mm)", &mut self.center).build();
+            if edited && self.previewed {
+                actions.push(GuiShellAction::PreviewDrawingBaseView(None));
+                self.previewed = false;
+            }
             self.controls(ui, state, drawing, actions);
         });
     }
@@ -70,15 +83,16 @@ impl BaseViewDialog {
                 [(size[0] / 2.) as f32, (size[1] / 2.) as f32]
             });
     }
-    fn source_choice(&mut self, ui: &Ui, state: &GuiCommandState) {
+    fn source_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
         let shown = state
             .documents
             .iter()
             .find(|row| Some(row.id) == self.source && row.type_ == "part")
             .map_or("Choose an open part", |row| row.name.as_str());
         let Some(_combo) = ui.begin_combo("Model", shown) else {
-            return;
+            return false;
         };
+        let previous = self.source;
         for row in state.documents.iter().filter(|row| row.type_ == "part") {
             if ui
                 .selectable_config(&row.name)
@@ -88,6 +102,7 @@ impl BaseViewDialog {
                 self.source = Some(row.id);
             }
         }
+        previous != self.source
     }
     fn controls(
         &mut self,
@@ -109,16 +124,29 @@ impl BaseViewDialog {
             .as_ref()
             .is_some_and(|action| action.dispatchable(state));
         let disabled = ui.begin_disabled(!enabled);
+        if crate::widget_abi::button(ui, "Preview", [0.; 2])
+            && enabled
+            && let Some(GuiShellAction::CreateDrawingBaseView(request)) = action.clone()
+        {
+            actions.push(GuiShellAction::PreviewDrawingBaseView(Some(request)));
+            self.previewed = true;
+        }
+        ui.same_line();
         let apply = crate::widget_abi::button(ui, "Apply", [0.; 2]);
         if enabled && (apply || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Enter)) {
             actions.extend(action);
             self.drawing = None;
+            self.previewed = false;
         }
         drop(disabled);
         ui.same_line();
         if crate::widget_abi::button(ui, "Cancel", [0.; 2])
             || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
         {
+            if self.previewed {
+                actions.push(GuiShellAction::PreviewDrawingBaseView(None));
+                self.previewed = false;
+            }
             self.drawing = None;
         }
     }

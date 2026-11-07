@@ -17,10 +17,15 @@ pub(super) fn draw(
                 };
                 let a = screen_point(a, minimum, maximum, dimensions);
                 let b = screen_point(b, minimum, maximum, dimensions);
-                if line.hidden {
-                    dashed(list, a, b);
+                let color = if line.preview {
+                    [0.1, 0.35, 0.85, 1.]
                 } else {
-                    list.add_line(a, b, [0.1, 0.1, 0.12, 1.]).build();
+                    [0.1, 0.1, 0.12, 1.]
+                };
+                if line.hidden {
+                    dashed(list, a, b, color);
+                } else {
+                    list.add_line(a, b, color).build();
                 }
             }
         }
@@ -81,7 +86,7 @@ fn clip_segment(a: [f64; 2], b: [f64; 2], dimensions: [f64; 2]) -> Option<[[f64;
     }
     Some(range.map(|t| [a[0] + t * delta[0], a[1] + t * delta[1]]))
 }
-fn dashed(list: &imgui::DrawListMut<'_>, a: [f32; 2], b: [f32; 2]) {
+fn dashed(list: &imgui::DrawListMut<'_>, a: [f32; 2], b: [f32; 2], color: [f32; 4]) {
     let delta = [b[0] - a[0], b[1] - a[1]];
     let length = delta[0].hypot(delta[1]);
     if length == 0. {
@@ -91,8 +96,7 @@ fn dashed(list: &imgui::DrawListMut<'_>, a: [f32; 2], b: [f32; 2]) {
     while start < length {
         let end = (start + 5.).min(length);
         let point = |t: f32| [a[0] + delta[0] * t / length, a[1] + delta[1] * t / length];
-        list.add_line(point(start), point(end), [0.2, 0.2, 0.22, 1.])
-            .build();
+        list.add_line(point(start), point(end), color).build();
         start += 8.;
     }
 }

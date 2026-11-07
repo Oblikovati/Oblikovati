@@ -20,6 +20,7 @@ impl<
         &mut self,
         request: &oblikovati_gui::GuiBaseViewRequest,
     ) -> Result<bool, String> {
+        self.drawing_view_preview = None;
         let reference = self.drawing_source_reference(request)?;
         let client = Client::new(self.document_host());
         client
@@ -55,7 +56,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
-    fn drawing_source_reference(
+    pub(super) fn drawing_source_reference(
         &self,
         request: &oblikovati_gui::GuiBaseViewRequest,
     ) -> Result<String, String> {

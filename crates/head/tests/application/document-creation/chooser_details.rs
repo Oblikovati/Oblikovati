@@ -437,8 +437,39 @@ fn drawing_sheet_displays_the_referenced_part_projection() {
     let before = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
     world.click_text("Base View");
     world.expect_text("Orientation");
+    world.click_text("Preview");
+    let preview_capture =
+        super::super::super::super::capture_framebuffer(&mut world.app().window.native);
+    let state = world.app().owner.gui_command_state().unwrap();
+    let drawing = state.document.unwrap();
+    assert!(
+        state.drawing_projections[&drawing]
+            .lines
+            .iter()
+            .any(|line| line.preview)
+    );
+    assert!(
+        state.drawing_documents[&drawing].sheets()[0]
+            .views
+            .is_empty()
+    );
+    let width = preview_capture.extent[0] as usize;
+    let height = preview_capture.extent[1] as usize;
+    let mut blue = 0;
+    for y in height * 35 / 100..height * 65 / 100 {
+        for x in width * 40 / 100..width * 75 / 100 {
+            let index = (y * width + x) * 4;
+            let pixel = &preview_capture.rgba[index..index + 3];
+            if before.rgba[index] > 200 && pixel[0] < 90 && pixel[1] < 150 && pixel[2] > 170 {
+                blue += 1;
+            }
+        }
+    }
+    assert!(blue > 20, "expected blue preview pixels, found {blue}");
     world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
     assert!(!world.shows("Orientation"));
+    let state = world.app().owner.gui_command_state().unwrap();
+    assert!(state.drawing_projections[&drawing].lines.is_empty());
     world.click_text("Base View");
     world.expect_text("Orientation");
     world.click_text("Apply");

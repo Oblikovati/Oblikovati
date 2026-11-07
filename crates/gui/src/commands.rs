@@ -2,6 +2,7 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
     CreateDrawingBaseView(GuiBaseViewRequest),
+    PreviewDrawingBaseView(Option<GuiBaseViewRequest>),
     SetUiScale(oblikovati_model::ui_scale::UiScaleOptions),
     SetPromptFrequency {
         prompt: oblikovati_model::application_prompts::ApplicationPrompt,
@@ -253,6 +254,7 @@ pub struct GuiDrawingProjection {
 pub struct GuiDrawingLine {
     pub points: Vec<[f64; 2]>,
     pub hidden: bool,
+    pub preview: bool,
 }
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]

@@ -414,6 +414,7 @@ fn gui_base_view_is_one_undo_step_and_rolls_back_on_failure() {
         scale: 1.,
         center: [100., 80.],
     };
+    assert!(owner.base_view_preview_from_gui(Some(&request)).is_err());
     assert!(owner.base_view_from_gui(&request).is_err());
     let current = owner.gui_command_state().unwrap();
     assert!(
@@ -427,6 +428,48 @@ fn gui_base_view_is_one_undo_step_and_rolls_back_on_failure() {
             .is_empty()
     );
     request.orientation = "front".into();
+    assert!(owner.base_view_preview_from_gui(Some(&request)).unwrap());
+    let preview = owner.gui_command_state().unwrap();
+    assert!(!preview.drawing_projections[&drawing].lines.is_empty());
+    assert!(
+        preview.drawing_projections[&drawing]
+            .lines
+            .iter()
+            .all(|line| line.preview)
+    );
+    assert!(
+        preview.drawing_documents[&drawing].sheets()[0]
+            .views
+            .is_empty()
+    );
+    owner
+        .files
+        .commands(part)
+        .unwrap()
+        .run("Change depth", |snapshot, _| {
+            snapshot.parameters.set_expression(3, "3 cm")
+        })
+        .unwrap();
+    assert!(
+        owner.gui_command_state().unwrap().drawing_projections[&drawing]
+            .lines
+            .is_empty()
+    );
+    assert!(owner.base_view_preview_from_gui(Some(&request)).unwrap());
+    owner.files.activate(part).unwrap();
+    owner.files.activate(drawing).unwrap();
+    assert!(
+        owner.gui_command_state().unwrap().drawing_projections[&drawing]
+            .lines
+            .is_empty()
+    );
+    assert!(owner.base_view_preview_from_gui(Some(&request)).unwrap());
+    assert!(owner.base_view_preview_from_gui(None).unwrap());
+    assert!(
+        owner.gui_command_state().unwrap().drawing_projections[&drawing]
+            .lines
+            .is_empty()
+    );
     assert!(owner.base_view_from_gui(&request).unwrap());
     let current = owner.gui_command_state().unwrap();
     assert_eq!(

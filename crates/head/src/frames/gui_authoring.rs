@@ -6,6 +6,9 @@ use oblikovati_gui::GuiShellAction;
 pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, String> {
     match action {
         GuiShellAction::CreateDrawingBaseView(request) => owner.base_view_from_gui(request),
+        GuiShellAction::PreviewDrawingBaseView(request) => {
+            owner.base_view_preview_from_gui(request.as_ref())
+        }
         GuiShellAction::SetUiScale(options) => owner.set_ui_scale_from_gui(*options),
         GuiShellAction::SetSketchOptions(options) => {
             owner.set_sketch_options_from_gui(options.clone())

@@ -9,6 +9,12 @@ impl<
     S: DispatchWakeup,
 > HeadWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn base_view_preview_from_gui(
+        &mut self,
+        request: Option<&oblikovati_gui::GuiBaseViewRequest>,
+    ) -> Result<bool, String> {
+        self.set_drawing_view_preview(request)
+    }
     fn base_view_from_gui(
         &mut self,
         request: &oblikovati_gui::GuiBaseViewRequest,

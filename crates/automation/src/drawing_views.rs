@@ -53,7 +53,7 @@ pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: Document
                 "drawing document {drawing_id}: expected drawing content"
             ))
         })?;
-    let definition = view_definition(drawing, &request)?;
+    let definition = prepare_base_view(drawing, &request)?;
     let source = files
         .resolve_parameter_source(drawing.model_reference())
         .map_err(api_error)?
@@ -98,7 +98,8 @@ pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: Document
         )
         .map_err(api_error)
 }
-fn view_definition(
+/// Validate a base-view draft without changing a document; example: `prepare_base_view(&drawing, &args)?`.
+pub fn prepare_base_view(
     drawing: &oblikovati_model::drawing::DrawingDocument,
     request: &AddBaseViewArgs,
 ) -> Result<DrawingBaseViewDefinition, Error> {
@@ -236,7 +237,7 @@ mod tests {
                 scale: -1.,
                 ..Default::default()
             };
-            let view = view_definition(&drawing, &input).unwrap();
+            let view = prepare_base_view(&drawing, &input).unwrap();
             assert_eq!(
                 (view.orientation, view.scale, view.name.as_str()),
                 (orientation, 1., "VIEW:1")
@@ -260,7 +261,7 @@ mod tests {
                 ..Default::default()
             },
         ] {
-            assert!(view_definition(&drawing, &input).is_err());
+            assert!(prepare_base_view(&drawing, &input).is_err());
         }
     }
 }

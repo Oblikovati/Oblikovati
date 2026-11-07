@@ -8,6 +8,14 @@ use std::collections::BTreeMap;
 type ProjectionKey = (u64, u64, u64);
 #[derive(Default)]
 pub(super) struct DrawingProjectionCache(BTreeMap<u64, (ProjectionKey, GuiDrawingProjection)>);
+pub(super) struct DrawingViewPreview {
+    drawing: u64,
+    drawing_generation: u64,
+    source: u64,
+    source_generation: u64,
+    focus: oblikovati_session::workspace::WorkspaceFocusIdentity,
+    projection: GuiDrawingProjection,
+}
 pub(super) struct DrawingProjectionAccess;
 impl oblikovati_automation::DrawingViewProjectionAccess for DrawingProjectionAccess {
     fn counts(
@@ -49,11 +57,78 @@ impl<
             let output = self.drawing_projection(id, session.generation(), drawing);
             outputs.insert(id, output);
         }
+        if let Some(preview) = &self.drawing_view_preview
+            && workspace.active_document() == Some(preview.drawing)
+            && workspace.retains_focus(&preview.focus)
+            && workspace
+                .session(preview.drawing)
+                .is_ok_and(|session| session.generation() == preview.drawing_generation)
+            && workspace
+                .session(preview.source)
+                .is_ok_and(|session| session.generation() == preview.source_generation)
+            && let Some(output) = outputs.get_mut(&preview.drawing)
+        {
+            output.lines.extend(preview.projection.lines.clone());
+        }
         self.drawing_projections
             .borrow_mut()
             .0
             .retain(|id, _| outputs.contains_key(id));
         Ok(outputs)
+    }
+    pub(super) fn set_drawing_view_preview(
+        &mut self,
+        request: Option<&oblikovati_gui::GuiBaseViewRequest>,
+    ) -> Result<bool, String> {
+        let changed = self.drawing_view_preview.take().is_some();
+        let Some(request) = request else {
+            return Ok(changed);
+        };
+        self.drawing_source_reference(request)?;
+        let workspace = self.files.workspace();
+        let drawing = workspace
+            .session(request.drawing)
+            .map_err(|cause| cause.to_string())?;
+        let source = workspace
+            .session(request.source)
+            .map_err(|cause| cause.to_string())?;
+        let content = drawing
+            .snapshot()
+            .drawing
+            .as_ref()
+            .ok_or("drawing preview: expected drawing content")?;
+        let args = oblikovati_api::wire::AddBaseViewArgs {
+            orientation: request.orientation.clone(),
+            scale: request.scale,
+            center_xmm: request.center[0],
+            center_ymm: request.center[1],
+            ..Default::default()
+        };
+        let view = oblikovati_automation::prepare_base_view(content, &args)
+            .map_err(|cause| cause.to_string())?;
+        let document = workspace
+            .identity(request.source)
+            .map_err(|cause| cause.to_string())?
+            .internal_name;
+        let history = source.history();
+        let evaluated = evaluate_part(history, document)?;
+        let bodies: Vec<_> = evaluated.ordered_bodies().collect();
+        let projected =
+            oblikovati_martensite::drawing_base_view_bodies(history, document, &bodies, &view)?;
+        let mut projection = GuiDrawingProjection::default();
+        append_curves(&mut projection, &projected, view.style, history, document)?;
+        for line in &mut projection.lines {
+            line.preview = true;
+        }
+        self.drawing_view_preview = Some(DrawingViewPreview {
+            drawing: request.drawing,
+            drawing_generation: drawing.generation(),
+            source: request.source,
+            source_generation: source.generation(),
+            focus: workspace.focus_identity(),
+            projection,
+        });
+        Ok(true)
     }
     fn drawing_projection(
         &self,
@@ -218,6 +293,7 @@ fn append_curves(
             output.lines.push(GuiDrawingLine {
                 points,
                 hidden: !visible && style != WIREFRAME_VIEW_STYLE,
+                preview: false,
             });
         }
     }
