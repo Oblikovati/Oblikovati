@@ -40,7 +40,10 @@ pub use wake::{ViewportReady, ViewportWake};
 
 #[path = "gui/packet.rs"]
 mod gui_packet;
+#[path = "gui/resources.rs"]
+mod gui_resources;
 pub use gui_packet::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
+pub use gui_resources::{GuiTextureKey, GuiTextureResources, GuiTextureSource};
 #[cfg(target_os = "linux")]
 #[path = "gui/render.rs"]
 mod gui_render;

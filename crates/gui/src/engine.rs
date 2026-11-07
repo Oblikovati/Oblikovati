@@ -33,6 +33,8 @@ pub struct GuiFrameOutput {
 pub struct GuiFrameEngine {
     context: Context,
     atlas: GuiAtlas,
+    resources: crate::GuiTextureResources,
+    icons: crate::icons::GuiIconCache,
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
     dimension_editor: crate::dimensions::GuiDimensionEditor,
@@ -67,9 +69,13 @@ impl GuiFrameEngine {
         require_vacant_context()?;
         let mut context = Context::create();
         let atlas = configure_owner_context(&mut context);
+        let resources = crate::GuiTextureResources::new(atlas.clone(), [])?;
+        let icons = crate::icons::GuiIconCache::new(atlas.clone())?;
         Ok(Self {
             context,
             atlas,
+            resources,
+            icons,
             raster_scale: 1.,
             preferences: Default::default(),
             dimension_editor: Default::default(),
@@ -108,12 +114,20 @@ impl GuiFrameEngine {
     pub fn atlas(&self) -> &GuiAtlas {
         &self.atlas
     }
+    /// Retain the exact resource generation; example: `GuiFrameCompiler::with_resources(engine.resources())?`.
+    pub fn resources(&self) -> &crate::GuiTextureResources {
+        &self.resources
+    }
     /// Build controls and copy every draw before returning to the owner.
     /// Example: `engine.frame(&request)?` returns draws, actions, and channel capture requests.
     pub fn frame(&mut self, request: &GuiFrameRequest) -> Result<GuiFrameOutput, String> {
         validate_request(request)?;
         self.document_files.validate()?;
         self.refresh_font_scale(request)?;
+        if self.icons.prepare(request, &self.atlas)? {
+            self.ribbon.panels = Default::default();
+        }
+        self.resources = self.icons.resources.clone();
         if let Some(theme) = &request.commands.theme {
             crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
         }
@@ -368,7 +382,7 @@ impl GuiFrameEngine {
                 picture: Some(picture),
             },
         ));
-        let snapshot = capture_frame(self.context.render(), request.extent)?;
+        let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;
         // Dear ImGui claims the keyboard for whichever window last had focus. A click on the
@@ -481,6 +495,7 @@ impl GuiFrameEngine {
             return Ok(());
         }
         self.atlas = crate::ui_scale::rebuild_font_atlas(&mut self.context, scale);
+        self.resources = self.resources.with_font(self.atlas.clone())?;
         self.raster_scale = scale;
         self.ribbon.panels = Default::default();
         Ok(())
@@ -490,3 +505,7 @@ impl GuiFrameEngine {
 #[cfg(test)]
 #[path = "../tests/ui_scale/engine.rs"]
 mod scale_tests;
+
+#[cfg(test)]
+#[path = "../tests/textures/owner.rs"]
+mod texture_tests;

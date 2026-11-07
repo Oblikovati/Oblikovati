@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::ViewportTriangle;
-use crate::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
+use crate::{GuiAtlas, GuiBatch, GuiFrame, GuiTextureKey, GuiTextureResources, GuiVertex};
 use martensite_tkmath::gp::Point3;
 use martensite_tkservice::aspect::AspectNeutralWindow;
 

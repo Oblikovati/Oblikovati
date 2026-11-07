@@ -2,10 +2,15 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <cstddef>
+#include <cstdint>
 
 // #3803: Rust C aggregates and MSVC ARM64 C++ vector classes use different registers.
 // Only scalars and byte pointers cross this boundary; C++ constructs its own vectors.
 extern "C" {
+void oblikovati_gui_image(std::uint32_t texture, float width, float height) {
+    ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(texture)), ImVec2(width, height));
+}
+
 void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height) {
     const ImGuiWindow* previous = ImGui::FindWindowByName(reinterpret_cast<const char*>(title));
     const ImVec2 position = previous ? previous->Pos : ImVec2(x, y);

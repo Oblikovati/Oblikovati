@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 unsafe extern "C" {
+    fn oblikovati_gui_image(texture: u32, width: f32, height: f32);
     fn oblikovati_gui_fit_dialog(title: *const u8, x: f32, y: f32, width: f32, height: f32);
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
@@ -202,4 +203,10 @@ pub(crate) fn rotated_text(ui: &Ui, center: [f32; 2], color: [f32; 4], text: &st
             vertex.pos.y = center[1] + x * sin + y * cos;
         }
     }
+}
+
+/// Draw a registered resource through scalar ABI; example: `image(ui, key, [40.,40.])`.
+pub(crate) fn image(_: &Ui, texture: crate::GuiTextureKey, size: [f32; 2]) {
+    // SAFETY: keys are validated portable u32 IDs, not native pointers; C++ constructs ImVec2 (#3803).
+    unsafe { oblikovati_gui_image(texture.raw() as u32, size[0], size[1]) };
 }

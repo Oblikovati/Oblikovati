@@ -13,7 +13,7 @@ const GUI_TICK: Duration = Duration::from_nanos(1_000_000_000 / 60);
 pub(super) struct NativeGui {
     engine: GuiFrameEngine,
     compiler: GuiFrameCompiler,
-    atlas: oblikovati_gui::GuiAtlas,
+    textures: oblikovati_gui::GuiTextureResources,
     draws: Option<GuiFrame>,
     commands: Option<GuiCommandState>,
     notice: Option<String>,
@@ -47,7 +47,7 @@ impl NativeGui {
             Some(clipboard) => GuiFrameEngine::with_clipboard(clipboard.clone())?,
             None => GuiFrameEngine::new()?,
         };
-        let compiler = GuiFrameCompiler::new(engine.atlas())?;
+        let compiler = GuiFrameCompiler::with_resources(engine.resources())?;
         Ok(Self::with_compiler(engine, compiler, clipboard))
     }
     fn with_compiler(
@@ -55,10 +55,10 @@ impl NativeGui {
         compiler: GuiFrameCompiler,
         clipboard: Option<GuiClipboard>,
     ) -> Self {
-        let atlas = engine.atlas().clone();
+        let textures = engine.resources().clone();
         Self {
             engine,
-            atlas,
+            textures,
             compiler,
             draws: None,
             commands: None,
@@ -90,7 +90,7 @@ impl NativeGui {
         }
         let request = self.request(now, extent, event, commands, notice)?;
         let output = self.frame_input(&request)?;
-        self.refresh_gui_atlas()?;
+        self.refresh_gui_resources()?;
         self.dirty |= self.draws.as_ref() != Some(&output.draws);
         self.draws = Some(output.draws);
         self.commands = Some(commands.clone());
@@ -273,13 +273,13 @@ mod provider_tests;
 mod tests;
 
 impl NativeGui {
-    fn refresh_gui_atlas(&mut self) -> Result<(), String> {
-        let atlas = self.engine.atlas();
-        if std::sync::Arc::ptr_eq(&self.atlas.rgba, &atlas.rgba) {
+    fn refresh_gui_resources(&mut self) -> Result<(), String> {
+        let resources = self.engine.resources();
+        if &self.textures == resources {
             return Ok(());
         }
-        self.compiler = GuiFrameCompiler::new(atlas)?;
-        self.atlas = atlas.clone();
+        self.compiler = GuiFrameCompiler::with_resources(resources)?;
+        self.textures = resources.clone();
         self.dirty = true;
         Ok(())
     }
