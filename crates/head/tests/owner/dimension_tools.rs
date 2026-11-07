@@ -379,3 +379,6 @@ fn hidden_sketch_dimensions_leave_the_overlay_and_return_after_show() {
         .unwrap();
     assert_eq!(owner.sketch_dimension_annotations().unwrap(), authored);
 }
+
+#[path = "dimension_ellipses.rs"]
+mod ellipses;

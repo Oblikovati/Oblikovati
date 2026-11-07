@@ -259,5 +259,9 @@ fn rotated_ellipse_pick_matches_the_independent_occt_minimum() {
         (hit.distance - 0.019024451883025126).abs() < 1e-9,
         "{hit:?}: expected the independent OCCT closest distance"
     );
+    assert!(
+        (hit.parameter - 0.682_817_513_323_967_3).abs() < 1e-9,
+        "{hit:?}: expected the independent OCCT closest parameter"
+    );
     assert_eq!(hit.origin, PlanarPickOrigin::Stationary);
 }

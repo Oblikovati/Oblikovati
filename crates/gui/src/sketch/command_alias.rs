@@ -9,6 +9,11 @@ pub(crate) struct CommandAliasBox {
     text: String,
 }
 impl CommandAliasBox {
+    /// Borrow the existing command buffer for status feedback; example: `alias.text()`.
+    pub(crate) fn text(&self) -> Option<&str> {
+        (!self.text.is_empty()).then_some(self.text.as_str())
+    }
+
     /// Show what was typed; a command that ends or regains a field closes the box.
     /// Example: `alias.panel(ui, state, &keys.typed)` once per frame.
     pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState, typed: &str) {
@@ -32,5 +37,16 @@ impl CommandAliasBox {
                     | WindowFlags::NO_NAV,
             )
             .build(|| ui.text(&self.text));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn only_a_nonempty_command_buffer_has_status_feedback() {
+        assert_eq!(CommandAliasBox::default().text(), None);
+        let alias = CommandAliasBox { text: "86".into() };
+        assert_eq!(alias.text(), Some("86"));
     }
 }

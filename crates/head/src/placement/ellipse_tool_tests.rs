@@ -43,3 +43,16 @@ fn ellipse_input_refuses_zero_nonfinite_overflow_and_reversed_radii() {
             .is_ok()
     );
 }
+
+#[test]
+fn ellipse_prompts_follow_the_three_defining_points() {
+    let prompts = [0, 1, 2].map(|placed| SketchPlacementTool::Ellipse.prompt(placed));
+    assert_eq!(
+        prompts,
+        [
+            "Select center",
+            "Select first axis point",
+            "Select point on ellipse"
+        ]
+    );
+}

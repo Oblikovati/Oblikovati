@@ -199,7 +199,7 @@ impl<
         let message = if ready {
             "Dimension: click to place the label, or select a second line for an angle."
         } else {
-            "Dimension: select points, a line, a circle or two lines. Escape cancels."
+            "Dimension: select points, a line, a circle, an arc, an ellipse, or two lines. Escape cancels."
         };
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: message.into(),

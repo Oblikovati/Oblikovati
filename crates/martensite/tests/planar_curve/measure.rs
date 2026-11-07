@@ -21,7 +21,7 @@ fn a_segment_measures_its_length_and_its_ends() {
     let measure = measure_sketch_curve(&sketch, first).unwrap();
     assert!((measure.length - 4.).abs() < 1e-9, "{measure:?}");
     assert_eq!(measure.endpoints, Some([[0., 0.], [4., 0.]]));
-    assert!(measure.circular.is_none());
+    assert!(measure.conic.is_none());
 }
 #[test]
 fn two_segments_report_their_nearest_and_farthest_ends() {
@@ -59,4 +59,31 @@ fn a_point_inside_a_segments_span_is_nearest_at_its_foot() {
         (range.maximum.distance - 18f64.sqrt()).abs() < 1e-9,
         "{range:?}"
     );
+}
+
+#[test]
+fn rotated_ellipses_return_converged_length_and_canonical_axis_properties() {
+    use oblikovati_model::sketch::SketchEllipse2D;
+    for axis in [[1., 0.], [0.6, 0.8]] {
+        let mut sketch = Sketch2D::default();
+        let center = SketchEntityId(10);
+        let entity = SketchEntityId(1);
+        sketch.add_point(center, [0.2, -0.3]).unwrap();
+        sketch
+            .add_ellipse(SketchEllipse2D::new(entity, center, axis, [0.8, 0.4]).unwrap())
+            .unwrap();
+        let measure = measure_sketch_curve(&sketch, entity).unwrap();
+        assert!(
+            (measure.length - 3.87537928821907).abs() < 1e-12,
+            "{measure:?}"
+        );
+        let conic = measure.conic.unwrap();
+        assert_eq!(
+            conic.curve_type,
+            oblikovati_api::types::ELLIPSE_FULL_CURVE2D
+        );
+        assert_eq!(conic.center, [0.2, -0.3]);
+        assert_eq!(conic.radii, [0.8, 0.4]);
+        assert_eq!(conic.sweep, std::f64::consts::TAU);
+    }
 }

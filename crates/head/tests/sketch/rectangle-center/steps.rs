@@ -281,11 +281,15 @@ fn ready_no_new(world: &mut ApplicationWorld) {
 fn previous_geometry(world: &mut ApplicationWorld) {
     ready_with_rectangle(world);
     world.observed_counts = vec![SIDES];
+    let witnesses = (0..SIDES)
+        .map(|index| world.line_point(index, 0.3))
+        .collect();
+    world.remember_edited_sketch(witnesses);
 }
 #[then("Ready returns with the previous geometry retained")]
 fn previous_retained(world: &mut ApplicationWorld) {
     world.expect_ready();
-    expect_shape(world);
+    world.expect_edited_sketch_retained();
 }
 #[when("I enter 6, press Tab, enter 4 and press Return")]
 fn six_four_typed(world: &mut ApplicationWorld) {

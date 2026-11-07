@@ -98,7 +98,7 @@ pub use presentation::{
 
 mod measure;
 pub use measure::{
-    SketchCircularMeasure, SketchCurveMeasure, SketchDistanceRange, SketchDistanceWitness,
+    SketchConicMeasure, SketchCurveMeasure, SketchDistanceRange, SketchDistanceWitness,
     measure_sketch_curve, resolve_sketch_curve, sketch_curve_distance_range,
     sketch_point_curve_distance_range,
 };

@@ -77,3 +77,77 @@ fn a_third_selection_starts_over_and_a_repeat_changes_nothing() {
     state.add_pick(MeasurePick::Point([0., 0.]));
     assert_eq!(state.picks, [MeasurePick::Point([0., 0.])]);
 }
+
+fn ellipse_for_measurement() -> (Sketch2D, SketchEntityId) {
+    use oblikovati_model::sketch::SketchEllipse2D;
+    let mut sketch = Sketch2D::default();
+    let center = SketchEntityId(10);
+    let curve = SketchEntityId(1);
+    sketch.add_point(center, [0.2, -0.3]).unwrap();
+    sketch
+        .add_ellipse(SketchEllipse2D::new(curve, center, [0.6, 0.8], [0.8, 0.4]).unwrap())
+        .unwrap();
+    (sketch, curve)
+}
+#[test]
+fn a_rotated_ellipse_reads_both_axis_sizes_and_its_exact_center() {
+    let (sketch, ellipse) = ellipse_for_measurement();
+    assert_eq!(
+        rows(&sketch, &[MeasurePick::Curve(ellipse)]),
+        [
+            "Selection 1: Ellipse",
+            "Major radius 8.000 mm",
+            "Minor radius 4.000 mm",
+            "Major diameter 16.000 mm",
+            "Minor diameter 8.000 mm",
+            "Length 38.754 mm",
+            "Center X 2.000 Y -3.000 Z 0.000 mm",
+        ]
+    );
+}
+
+#[test]
+fn circles_keep_their_existing_numeric_readout_and_full_turn_label() {
+    let mut sketch = Sketch2D::default();
+    sketch.add_point(SketchEntityId(10), [0., 0.]).unwrap();
+    sketch
+        .add_circle(SketchEntityId(1), SketchEntityId(10), 0.5)
+        .unwrap();
+    assert_eq!(
+        rows(&sketch, &[MeasurePick::Curve(SketchEntityId(1))]),
+        [
+            "Selection 1: Curve",
+            "Radius 5.000 mm",
+            "Diameter 10.000 mm",
+            "Length 31.416 mm",
+            "Angle 360.00 deg",
+            "Center X 0.000 Y 0.000 Z 0.000 mm",
+        ]
+    );
+}
+#[test]
+fn circular_arcs_keep_their_existing_numeric_readout_and_sweep_label() {
+    let mut sketch = Sketch2D::default();
+    for (id, point) in [(10, [0., 0.]), (11, [0.5, 0.]), (12, [0., 0.5])] {
+        sketch.add_point(SketchEntityId(id), point).unwrap();
+    }
+    sketch
+        .add_arc(
+            SketchEntityId(1),
+            SketchEntityId(10),
+            [SketchEntityId(11), SketchEntityId(12)],
+            true,
+        )
+        .unwrap();
+    assert_eq!(
+        rows(&sketch, &[MeasurePick::Curve(SketchEntityId(1))]),
+        [
+            "Selection 1: Curve",
+            "Radius 5.000 mm",
+            "Diameter 10.000 mm",
+            "Length 7.854 mm",
+            "Sweep 90.00 deg",
+            "Center X 0.000 Y 0.000 Z 0.000 mm",
+        ]
+    );
+}

@@ -39,19 +39,23 @@ fn circular_tool_menu(
         ui.open_popup(&identity);
     }
     drop(disabled);
-    circular_tool_choices(ui, state, actions, &identity, [primary, alternate]);
+    let mut choices = vec![primary, alternate];
+    if primary == GuiSketchTool::Circle {
+        choices.push(GuiSketchTool::Ellipse);
+    }
+    circular_tool_choices(ui, state, actions, &identity, &choices);
 }
 fn circular_tool_choices(
     ui: &Ui,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     identity: &str,
-    choices: [GuiSketchTool; 2],
+    choices: &[GuiSketchTool],
 ) {
     let Some(_popup) = ui.begin_popup(identity) else {
         return;
     };
-    for choice in choices {
+    for &choice in choices {
         let action = GuiShellAction::PlaceSketchTool(choice);
         if !action.dispatchable(state) {
             ui.close_current_popup();

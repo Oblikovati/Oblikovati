@@ -62,3 +62,17 @@ fn a_context_change_retires_the_circular_menu_without_dispatch() {
     settle_ribbon(&mut engine, &mut request);
     expect_ribbon(&mut engine, &mut request, [180., 68.], Place(Tool::Circle));
 }
+
+#[test]
+fn circle_flyout_dispatches_ellipse_at_both_scales() {
+    for scale in [1., 2.] {
+        let (mut engine, mut request) = circular_ribbon_fixture(scale);
+        assert!(click_ribbon(&mut engine, &mut request, [240. * scale, 68. * scale]).is_empty());
+        expect_ribbon(
+            &mut engine,
+            &mut request,
+            [300. * scale, 115. * scale],
+            Place(Tool::Ellipse),
+        );
+    }
+}

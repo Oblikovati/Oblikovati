@@ -6,7 +6,7 @@ use imgui::{Ui, WindowFlags};
 pub(crate) const STATUS_BAR_HEIGHT: f32 = 22.;
 
 /// Draw the status line across the window's foot; example: `Ready` and `4 dimensions needed`.
-pub(crate) fn status_bar(ui: &Ui, request: &GuiFrameRequest) {
+pub(crate) fn status_bar(ui: &Ui, request: &GuiFrameRequest, alias: Option<&str>) {
     let [width, height] = ui.io().display_size;
     ui.window("##status-bar")
         .position([0., height - STATUS_BAR_HEIGHT], imgui::Condition::Always)
@@ -14,7 +14,7 @@ pub(crate) fn status_bar(ui: &Ui, request: &GuiFrameRequest) {
         .flags(flags())
         .build(|| {
             crate::widget_abi::cursor_position(ui, [8., 4.]);
-            ui.text(request.status.as_deref().unwrap_or("Ready"));
+            ui.text(command_status(request.status.as_deref(), alias));
             if let Some(needed) = request.commands.dimensions_needed {
                 let text = dimensions_needed_text(needed);
                 let advance = ui.calc_text_size(&text)[0];
@@ -22,6 +22,12 @@ pub(crate) fn status_bar(ui: &Ui, request: &GuiFrameRequest) {
                 ui.text(text);
             }
         });
+}
+fn command_status<'a>(prompt: Option<&'a str>, alias: Option<&str>) -> std::borrow::Cow<'a, str> {
+    match alias {
+        Some(text) => format!("Command alias input: {text}").into(),
+        None => prompt.unwrap_or("Ready").into(),
+    }
 }
 fn flags() -> WindowFlags {
     WindowFlags::NO_DECORATION
@@ -46,6 +52,18 @@ pub(crate) fn dimensions_needed_text(needed: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn status_feedback_reads_the_existing_alias_before_the_tool_prompt() {
+        assert_eq!(
+            command_status(Some("Select first axis point"), Some("8")),
+            "Command alias input: 8"
+        );
+        assert_eq!(
+            command_status(Some("Select first axis point"), None),
+            "Select first axis point"
+        );
+        assert_eq!(command_status(None, None), "Ready");
+    }
     #[test]
     fn the_count_reads_as_dimensions_with_a_named_finished_state() {
         assert_eq!(dimensions_needed_text(0), "Fully Constrained");

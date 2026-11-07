@@ -244,7 +244,12 @@ impl GuiFrameEngine {
             &mut self.plane_selection,
             &selected,
         );
-        crate::application::workspace_layout::status_bar::status_bar(ui, request);
+        self.command_alias.panel(ui, &request.commands, &keys.typed);
+        crate::application::workspace_layout::status_bar::status_bar(
+            ui,
+            request,
+            self.command_alias.text(),
+        );
         let over_fields = crate::sketch::line::hud_panel(ui, request);
         self.document_tabs.panel(
             ui,
@@ -313,7 +318,6 @@ impl GuiFrameEngine {
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
         self.precise_input
             .panel(ui, &request.commands, &mut selected);
-        self.command_alias.panel(ui, &request.commands, &keys.typed);
         crate::sketch::inspect::canvas_menu(ui, &request.commands, &mut selected);
         self.dimension_value_editor
             .panel(ui, request, &mut selected);
