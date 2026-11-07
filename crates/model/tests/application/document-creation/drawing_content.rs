@@ -161,3 +161,54 @@ fn parts_list_definitions_require_a_model_and_unique_finite_names() {
     bad.sheets[0].annotations.push(duplicate);
     assert!(DrawingDocument::from_recipe(bad).is_err());
 }
+
+#[test]
+fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
+    use oblikovati_model::drawing::{
+        DrawingAnnotationDefinition, DrawingPartsListRow, DrawingPartsListSource,
+    };
+    use std::cell::RefCell;
+    struct FakePartsSource {
+        rows: RefCell<Vec<DrawingPartsListRow>>,
+    }
+    impl DrawingPartsListSource for FakePartsSource {
+        fn parts_list_rows(&self, reference: &str) -> Result<Vec<DrawingPartsListRow>, String> {
+            if reference != "assembly.oba" {
+                return Err(format!("model {reference:?}: expected assembly.oba"));
+            }
+            Ok(self.rows.borrow().clone())
+        }
+    }
+    let source = FakePartsSource {
+        rows: RefCell::new(vec![DrawingPartsListRow {
+            item: 1,
+            part_number: "BRKT-01".into(),
+            description: "Bracket".into(),
+            quantity: 2,
+        }]),
+    };
+    let list = DrawingAnnotationDefinition::parts_list("Parts", [40., 200.]).unwrap();
+    let first = list.evaluate_parts_list("assembly.oba", &source).unwrap();
+    assert_eq!(first.row_count, 1);
+    assert_eq!(first.lines.len(), 8);
+    assert_eq!(first.labels.len(), 8);
+    assert_eq!(first.lines[0].start, [40., 200.]);
+    assert_eq!(first.lines[0].end, [154., 200.]);
+    assert_eq!(first.labels[1].text, "PART NUMBER");
+    assert_eq!(first.labels[5].text, "BRKT-01");
+    assert_eq!(first.labels[5].center, [72., 188.]);
+    source.rows.borrow_mut().push(DrawingPartsListRow {
+        item: 2,
+        part_number: "BOLT".into(),
+        description: "Bolt".into(),
+        quantity: 4,
+    });
+    let updated = list.evaluate_parts_list("assembly.oba", &source).unwrap();
+    assert_eq!(
+        (updated.row_count, updated.lines.len(), updated.labels.len()),
+        (2, 9, 12)
+    );
+    assert_eq!(updated.labels[9].text, "BOLT");
+    assert!(list.evaluate_parts_list("missing.oba", &source).is_err());
+    assert!(list.evaluate_parts_list("", &source).is_err());
+}

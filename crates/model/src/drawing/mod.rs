@@ -5,6 +5,7 @@ mod document;
 mod format;
 pub use format::DrawingTitleProperty;
 mod error;
+mod parts_list;
 mod recipe;
 mod sheet;
 mod spelling;
@@ -13,5 +14,9 @@ mod view;
 pub use annotation::DrawingAnnotationDefinition;
 pub use document::DrawingDocument;
 pub use error::DrawingError;
+pub use parts_list::{
+    DrawingPartsListPresentation, DrawingPartsListRow, DrawingPartsListSource, DrawingTableLabel,
+    DrawingTableLine,
+};
 pub use recipe::{DrawingRecipe, DrawingSheetRecipe};
 pub use view::DrawingBaseViewDefinition;
