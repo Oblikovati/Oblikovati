@@ -27,6 +27,9 @@ impl<
                 .map(|input| self.preview_sketch_line_chain(tool.document, tool.sketch, &input))
                 .transpose();
         }
+        if tool.tool == crate::SketchPlacementTool::Point {
+            return self.resolved_point_preview(tool);
+        }
         if !tool.fields_engaged() || !tool.at_finishing_stage() {
             return Ok(None);
         }
@@ -117,7 +120,7 @@ impl<
             })
     }
 }
-fn placement_preview_packet(
+pub(super) fn placement_preview_packet(
     plane: oblikovati_model::sketch::SketchPlane,
     preview: oblikovati_session::SketchPlacementPreview,
 ) -> oblikovati_viewport::ViewportSketchPreview {

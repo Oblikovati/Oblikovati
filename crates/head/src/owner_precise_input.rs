@@ -92,11 +92,7 @@ impl<
         position: [f64; 2],
         coincident_with: Option<SketchEntityId>,
     ) -> Result<(), String> {
-        let placement = oblikovati_model::history::SketchPointPlacement {
-            position,
-            center: tool.center_point,
-            coincident_with,
-        };
+        let placement = tool.point_placement(position, coincident_with);
         self.files
             .commands(tool.document)
             .map_err(|cause| cause.to_string())?
@@ -219,6 +215,7 @@ impl<
         };
         tool.center_point = center;
         let prompt = tool.prompt();
+        self.refresh_point_role_preview()?;
         self.placement_notice(prompt);
         Ok(true)
     }

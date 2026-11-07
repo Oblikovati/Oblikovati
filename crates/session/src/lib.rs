@@ -184,4 +184,5 @@ mod sketch_continuity;
 pub use sketch_continuity::SketchContinuityWatch;
 
 mod sketch_line_chain;
+mod sketch_point_preview;
 pub use sketch_line_chain::SketchLineChainPreview;

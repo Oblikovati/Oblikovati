@@ -196,6 +196,18 @@ impl SketchPlacementState {
     pub(crate) fn typed_size_is_zero(&self) -> bool {
         self.fields.typed_values().contains(&Some(0.))
     }
+    /// Keep Point preview and commit bound to the same authored role and coincidence.
+    pub(crate) fn point_placement(
+        &self,
+        position: [f64; 2],
+        coincident_with: Option<oblikovati_model::sketch::SketchEntityId>,
+    ) -> oblikovati_model::history::SketchPointPlacement {
+        oblikovati_model::history::SketchPointPlacement {
+            position,
+            center: self.center_point,
+            coincident_with,
+        }
+    }
     /// The pointer's sketch position, once it has moved over the sketch.
     pub(crate) fn pointer_position(&self) -> Option<[f64; 2]> {
         self.cursor_point

@@ -474,3 +474,6 @@ mod ellipse;
 
 #[path = "sketch_primitive/chain_preview.rs"]
 mod chain_preview;
+
+#[path = "sketch_primitive/point_preview.rs"]
+mod point_preview;
