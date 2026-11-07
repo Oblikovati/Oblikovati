@@ -345,7 +345,12 @@ impl ApplicationWorld {
         let run = self.run(label).clone();
         let y = run.center()[1] as usize;
         let centre = run.minimum[0] as usize - 14;
-        self.pixel_at([centre, y]) != self.pixel_at([centre - 8, y])
+        let capture = super::capture_framebuffer(&mut self.app().window.native);
+        let sample = |x: usize| {
+            let offset = (y * capture.extent[0] as usize + x) * 4;
+            &capture.rgba[offset..offset + 4]
+        };
+        sample(centre) != sample(centre - 8)
     }
     /// Selected text sits on a highlight: the most common colour behind it differs from the field.
     pub fn text_is_selected(&mut self, text: &str) -> bool {
