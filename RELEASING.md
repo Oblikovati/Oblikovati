@@ -99,7 +99,7 @@ Martensite pin. Windows and macOS native runtime acceptance remains incomplete.
 
 ## Dependency ownership
 
-**Oblikovati.API and RustyCADKernel each test, package, and publish their own
+**Oblikovati.API and Martensite each test, package, and publish their own
 releases.** Application CI does not run their private test suites, publish their
 packages, or read sibling working trees. It tests application integration with
 their released Rust crates.
@@ -108,16 +108,19 @@ Update `release.toml`, the Cargo dependency declarations, and `Cargo.lock` in a
 reviewed dependency change. Each owner pin records its version and full release
 commit. Cargo Git dependencies must resolve to that exact release commit. The
 preflight check requires a published, stable `vVERSION` GitHub release with a
-`NAME-VERSION.crate` asset for every consumed owner crate. Annotated tags are
+published API crate artifacts. Martensite qualification uses its schema-2
+package catalog and complete source workspace; independently versioned toolkit
+crates need not all be reattached to each product release. Annotated tags are
 resolved to their commit before comparison. All consumed Martensite toolkits
 must resolve to the same owner release and commit.
 
 The API repository owns Go/Rust contract synchronization, examples, and wiki
 gates. The kernel repository owns geometry, oracle, and kernel-package gates.
 The application still owns its API/host inventory, kernel integration, feature,
-live GUI, and installation tests. The application now pins the stable kernel
-v0.1.2 release; an unpublished local kernel revision is not a release pin. See
-[kernel intake evidence](architecture/rust-port/implementation-kernel-release.md).
+live GUI, and installation tests. `release.toml` records the current released
+kernel target; an unpublished local revision is not a release pin. See the
+[0.13 qualification record](architecture/rust-port/implementation-martensite-0-13.md)
+for the candidate's checks and remaining blockers.
 Product publication remains blocked by the R9 readiness fields.
 
 ## Product version
