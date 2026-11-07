@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_api::{
     client::Client,
     json::EmptyObject,
-    wire::{BodyInfo, BodyPhysicalPropertiesArgs},
+    wire::{AssignAppearanceArgs, BodyInfo, BodyPhysicalPropertiesArgs},
 };
 
 pub(super) fn create_from_ribbon(
@@ -175,4 +175,42 @@ pub(super) fn face_keys(owner: &NativeDesktopOwner, document: u64, side: f64) ->
         assert!((face.area - side.powi(2)).abs() < 1e-8);
     }
     keys
+}
+
+pub(super) fn topology_keys(owner: &mut NativeDesktopOwner) -> std::collections::BTreeSet<String> {
+    let response = Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap();
+    let [body] = response.bodies.unwrap().try_into().unwrap();
+    let body: oblikovati_api::wire::BodyTopology = body;
+    let groups = [
+        body.faces.unwrap(),
+        body.edges.unwrap(),
+        body.vertices.unwrap(),
+    ];
+    assert_eq!(groups.each_ref().map(Vec::len), [6, 12, 8]);
+    let keys: std::collections::BTreeSet<_> = groups
+        .into_iter()
+        .flatten()
+        .map(|entity| entity.key)
+        .collect();
+    assert_eq!(keys.len(), 26);
+    keys
+}
+pub(super) fn resolve_public_face(owner: &mut NativeDesktopOwner) {
+    let response = Client::new(owner.document_host())
+        .model()
+        .reference_keys()
+        .unwrap();
+    let face = response.bodies.unwrap()[0].faces.as_ref().unwrap()[0].clone();
+    assert_eq!(face.kind, "plane");
+    Client::new(owner.document_host())
+        .appearances()
+        .assign(&AssignAppearanceArgs {
+            scope: "face".into(),
+            key: face.key,
+            appearance_id: "default".into(),
+        })
+        .unwrap();
 }

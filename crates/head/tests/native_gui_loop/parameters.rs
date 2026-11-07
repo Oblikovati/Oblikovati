@@ -42,13 +42,16 @@ pub(super) fn edit_size_and_history(
     owner: &mut NativeDesktopOwner,
     edit: crate::HeadSketchEdit,
 ) {
+    let keys = cube::topology_keys(owner);
     edit_size_parameter(window, owner);
+    assert_eq!(cube::topology_keys(owner), keys);
     verify_rectangle(owner, edit, 2.);
     cube::verify(owner, edit.document, 2.);
     for (button, expected) in [(156, 1.), (201, 2.)] {
         click_shell(window, owner, button);
         verify_rectangle(owner, edit, expected);
         cube::verify(owner, edit.document, expected);
+        assert_eq!(cube::topology_keys(owner), keys);
     }
 }
 pub(super) fn verify_rectangle(

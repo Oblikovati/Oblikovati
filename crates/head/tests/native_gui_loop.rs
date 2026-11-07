@@ -165,11 +165,14 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
     cube::verify(&mut owner, edit.document, 2.);
     let key = cube::body_key(&mut owner);
     let face_keys = cube::face_keys(&owner, edit.document, 2.);
+    let topology_keys = cube::topology_keys(&mut owner);
     let _saved_directory = files::save_rectangle_file(&mut window, &mut owner, edit);
     let reopened = owner.documents().workspace().active_document().unwrap();
     cube::verify(&mut owner, reopened, 2.);
     assert_eq!(cube::body_key(&mut owner), key);
     assert_eq!(cube::face_keys(&owner, reopened, 2.), face_keys);
+    assert_eq!(cube::topology_keys(&mut owner), topology_keys);
+    cube::resolve_public_face(&mut owner);
     owner.finish().unwrap();
     window.finish().unwrap();
 }
