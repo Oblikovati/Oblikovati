@@ -167,12 +167,14 @@ fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
     use oblikovati_model::drawing::{
         DrawingAnnotationDefinition, DrawingPartsListRow, DrawingPartsListSource,
     };
-    use std::cell::RefCell;
+    use std::cell::{Cell, RefCell};
     struct FakePartsSource {
         rows: RefCell<Vec<DrawingPartsListRow>>,
+        calls: Cell<usize>,
     }
     impl DrawingPartsListSource for FakePartsSource {
         fn parts_list_rows(&self, reference: &str) -> Result<Vec<DrawingPartsListRow>, String> {
+            self.calls.set(self.calls.get() + 1);
             if reference != "assembly.oba" {
                 return Err(format!("model {reference:?}: expected assembly.oba"));
             }
@@ -180,6 +182,7 @@ fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
         }
     }
     let source = FakePartsSource {
+        calls: Cell::new(0),
         rows: RefCell::new(vec![DrawingPartsListRow {
             item: 1,
             part_number: "BRKT-01".into(),
@@ -212,8 +215,16 @@ fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
     let mut drawing = DrawingDocument::new();
     drawing.set_model_reference("assembly.oba").unwrap();
     drawing.add_annotation_definition(0, list.clone()).unwrap();
+    drawing
+        .add_annotation_definition(
+            0,
+            DrawingAnnotationDefinition::parts_list("Other", [10., 20.]).unwrap(),
+        )
+        .unwrap();
+    let before = source.calls.get();
     let tables = drawing.evaluate_parts_lists(0, &source).unwrap();
-    assert_eq!(tables.len(), 1);
+    assert_eq!(source.calls.get() - before, 1);
+    assert_eq!(tables.len(), 2);
     assert_eq!(tables[0].0, "Parts");
     assert_eq!(tables[0].1, updated);
     assert!(drawing.evaluate_parts_lists(1, &source).is_err());

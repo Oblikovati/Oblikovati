@@ -48,16 +48,28 @@ impl DrawingAnnotationDefinition {
         reference: &str,
         source: &dyn DrawingPartsListSource,
     ) -> Result<DrawingPartsListPresentation, DrawingError> {
-        self.validate()?;
-        super::validation::require_label("parts list model reference", reference)?;
-        let rows = source.parts_list_rows(reference).map_err(|cause| {
-            DrawingError(format!(
-                "parts list model {reference:?}: expected a current BOM: {cause}"
-            ))
-        })?;
-        let Self::PartsList { x_mm, y_mm, .. } = self;
-        Ok(parts_list_geometry([*x_mm, *y_mm], &rows))
+        let rows = resolve_rows(reference, source)?;
+        self.table_from_rows(&rows)
     }
+    fn table_from_rows(
+        &self,
+        rows: &[DrawingPartsListRow],
+    ) -> Result<DrawingPartsListPresentation, DrawingError> {
+        self.validate()?;
+        let Self::PartsList { x_mm, y_mm, .. } = self;
+        Ok(parts_list_geometry([*x_mm, *y_mm], rows))
+    }
+}
+fn resolve_rows(
+    reference: &str,
+    source: &dyn DrawingPartsListSource,
+) -> Result<Vec<DrawingPartsListRow>, DrawingError> {
+    super::validation::require_label("parts list model reference", reference)?;
+    source.parts_list_rows(reference).map_err(|cause| {
+        DrawingError(format!(
+            "parts list model {reference:?}: expected a current BOM: {cause}"
+        ))
+    })
 }
 fn parts_list_geometry(
     origin: [f64; 2],
@@ -141,11 +153,15 @@ impl super::DrawingDocument {
                 self.sheets().len()
             ))
         })?;
+        if target.annotations.is_empty() {
+            return Ok(Vec::new());
+        }
+        let rows = resolve_rows(self.model_reference(), source)?;
         target
             .annotations
             .iter()
             .map(|annotation| {
-                let table = annotation.evaluate_parts_list(self.model_reference(), source)?;
+                let table = annotation.table_from_rows(&rows)?;
                 Ok((annotation.name().to_string(), table))
             })
             .collect()
