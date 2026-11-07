@@ -191,6 +191,16 @@ fn subentity_signatures(
         .map(|record| (record.role, record.source))
         .collect()
 }
+fn subentity_keys(history: &DocumentEditHistory) -> Vec<Vec<u8>> {
+    let body = certified(history);
+    let keys = body.subentity_reference_keys(history, document()).unwrap();
+    assert_eq!(keys.len(), 20);
+    for key in &keys {
+        let provenance = body.subentity_provenance(history, document(), key).unwrap();
+        assert!(provenance.point.iter().all(|value| value.is_finite()));
+    }
+    keys
+}
 #[test]
 fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
     let mut history = owner(cube_document());
@@ -199,6 +209,8 @@ fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
         .unwrap();
     assert_cube(&history, 1., &keys);
     let subentities = subentity_signatures(&history);
+    let lower_keys = subentity_keys(&history);
+    let retained = certified(&history);
     let token = history.begin("Size").unwrap();
     history
         .edit(&token, |snapshot, _| {
@@ -210,15 +222,24 @@ fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
     history.commit(&token, false).unwrap();
     assert_cube(&history, 2., &keys);
     assert_eq!(subentity_signatures(&history), subentities);
+    assert_eq!(subentity_keys(&history), lower_keys);
+    assert!(
+        retained
+            .subentity_provenance(&history, document(), &lower_keys[0])
+            .is_err()
+    );
     history.undo().unwrap();
     assert_cube(&history, 1., &keys);
     assert_eq!(subentity_signatures(&history), subentities);
+    assert_eq!(subentity_keys(&history), lower_keys);
     history.redo().unwrap();
     assert_cube(&history, 2., &keys);
     assert_eq!(subentity_signatures(&history), subentities);
+    assert_eq!(subentity_keys(&history), lower_keys);
     let reopened = restored_owner(history.snapshot());
     assert_cube(&reopened, 2., &keys);
     assert_eq!(subentity_signatures(&reopened), subentities);
+    assert_eq!(subentity_keys(&reopened), lower_keys);
 }
 
 #[test]

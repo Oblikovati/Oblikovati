@@ -44,19 +44,58 @@ pub(super) fn copied_prism(
     shape: &Shape,
     lineage: &[(PrismFaceRole, Shape)],
 ) -> Result<(Shape, Vec<(PrismFaceRole, Shape)>), EvaluationFailure> {
+    let (shape, faces, _) = copied_prism_entities(shape, lineage, &[])?;
+    Ok((shape, faces))
+}
+type PrismCopy = (Shape, Vec<(PrismFaceRole, Shape)>, Vec<Shape>);
+fn copied_prism_entities(
+    shape: &Shape,
+    lineage: &[(PrismFaceRole, Shape)],
+    subentities: &[Shape],
+) -> Result<PrismCopy, EvaluationFailure> {
     let mut copier = crate::checked_shape::copy_shape(shape, "prism copy")?;
     let copied = copier
         .shape()
         .map_err(|error| Phase::Copy.native(Entity::Body, String::new(), error))?
         .clone();
-    let mut faces = Vec::new();
-    for (role, source) in lineage {
-        faces.push((*role, copied_role(&mut copier, *role, source)?));
-    }
+    let faces = lineage
+        .iter()
+        .map(|(role, source)| Ok((*role, copied_role(&mut copier, *role, source)?)))
+        .collect::<Result<Vec<_>, EvaluationFailure>>()?;
+    let subentities = subentities
+        .iter()
+        .enumerate()
+        .map(|(index, source)| copied_subentity(&mut copier, index, source))
+        .collect::<Result<Vec<_>, _>>()?;
     crate::checked_shape::require_geometry(&copied, "copied prism")?;
     report::checked_report(&copied, &faces)?;
-    Ok((copied, faces))
+    Ok((copied, faces, subentities))
 }
+fn copied_subentity(
+    copier: &mut martensite_tktopalgo::brep_builder_api::BRepBuilderAPICopy,
+    index: usize,
+    source: &Shape,
+) -> Result<Shape, EvaluationFailure> {
+    let mapped = copier.modified(source).map_err(|cause| {
+        Phase::Copy.native(
+            Entity::Body,
+            format!("prism subentity {index} copy history"),
+            cause,
+        )
+    })?;
+    if mapped.len() != 1 {
+        return Err(Phase::Copy.refused(
+            Kind::IncompleteHistory,
+            Entity::Body,
+            format!(
+                "prism subentity {index} copied {} shapes: expected exactly one",
+                mapped.len()
+            ),
+        ));
+    }
+    Ok(mapped.first().expect("one copy").clone())
+}
+
 fn copied_role(
     copier: &mut martensite_tktopalgo::brep_builder_api::BRepBuilderAPICopy,
     role: PrismFaceRole,
@@ -93,6 +132,94 @@ pub(super) fn capture_prism(
         report,
         owner: PhantomData,
     })
+}
+pub(super) fn capture_prism_with_subentities(
+    shape: &Shape,
+    lineage: &[(PrismFaceRole, Shape)],
+    subentities: &[Shape],
+) -> Result<(PrismProbeSnapshot, Vec<Shape>), EvaluationFailure> {
+    let (shape, faces, copied) = copied_prism_entities(shape, lineage, subentities)?;
+    verify_subentities(&shape, &copied)?;
+    let report = report::checked_report(&shape, &faces)?;
+    Ok((
+        PrismProbeSnapshot {
+            shape,
+            faces,
+            report,
+            owner: PhantomData,
+        },
+        copied,
+    ))
+}
+fn verify_subentities(shape: &Shape, subentities: &[Shape]) -> Result<(), EvaluationFailure> {
+    use martensite_tkbrep::{topexp, toptools::IndexedMapOfShape};
+    use martensite_tkg3d::top_abs::ShapeEnum;
+    for entity in subentities {
+        let kind = entity.shape_type().map_err(|cause| {
+            Phase::Copy.native(Entity::Body, "copied prism subentity kind".into(), cause)
+        })?;
+        if !matches!(kind, ShapeEnum::Edge | ShapeEnum::Vertex) {
+            return Err(Phase::Copy.refused(
+                Kind::IncompleteHistory,
+                Entity::Body,
+                format!("copied prism subentity {kind:?}: expected edge or vertex"),
+            ));
+        }
+    }
+    for kind in [ShapeEnum::Edge, ShapeEnum::Vertex] {
+        let mut census = IndexedMapOfShape::default();
+        topexp::map_shapes_of_type(shape, kind, &mut census).map_err(|cause| {
+            Phase::Copy.native(Entity::Body, "copied prism topology".into(), cause)
+        })?;
+        let typed = subentities
+            .iter()
+            .map(|entity| {
+                entity
+                    .shape_type()
+                    .map(|actual| (entity, actual))
+                    .map_err(|cause| {
+                        Phase::Copy.native(
+                            Entity::Body,
+                            "copied prism subentity kind".into(),
+                            cause,
+                        )
+                    })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let matching: Vec<_> = typed
+            .into_iter()
+            .filter_map(|(entity, actual)| (actual == kind).then_some(entity))
+            .collect();
+        if matching.len() != census.extent() {
+            return Err(Phase::Copy.refused(
+                Kind::IncompleteHistory,
+                Entity::Body,
+                format!(
+                    "copied prism {kind:?} names={}, topology={}: expected complete coverage",
+                    matching.len(),
+                    census.extent()
+                ),
+            ));
+        }
+        for index in 1..=census.extent() {
+            let entity = census.find_key(index).map_err(|cause| {
+                Phase::Copy.native(Entity::Body, "copied prism topology member".into(), cause)
+            })?;
+            if matching
+                .iter()
+                .filter(|candidate| candidate.is_same(entity))
+                .count()
+                != 1
+            {
+                return Err(Phase::Copy.refused(
+                    Kind::IncompleteHistory,
+                    Entity::Body,
+                    format!("copied prism {kind:?} {index}: expected exactly one mapped source"),
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 impl PrismProbeSnapshot {
     /// Read only the checked analytic report; example: `snapshot.report().properties.volume`.

@@ -52,3 +52,20 @@ fn duplicate_source_role_pairs_are_refused_before_naming() {
             .contains("unique source-role")
     );
 }
+#[test]
+fn circular_edge_representative_lies_on_the_curve() {
+    use martensite_tkmath::gp::{Axis2, Circle3, Direction3, Point3};
+    use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeEdge;
+    let axes = Axis2::new(
+        Point3::new(0., 0., 0.),
+        Direction3::new(0., 0., 1.).unwrap(),
+    )
+    .unwrap();
+    let edge = BRepBuilderAPIMakeEdge::from_circ(Circle3::new(axes, 2.).unwrap())
+        .unwrap()
+        .edge()
+        .unwrap();
+    let point = edge_midpoint(&edge.into()).unwrap();
+    assert!((point[0].hypot(point[1]) - 2.).abs() < 1e-10, "{point:?}");
+    assert!(point[2].abs() < 1e-10);
+}

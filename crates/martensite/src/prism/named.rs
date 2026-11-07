@@ -11,6 +11,7 @@ use oblikovati_model::{
 pub struct NamedPrismSnapshot {
     snapshot: PrismProbeSnapshot,
     bindings: ExactReferenceBindings<Option<PrismFaceRole>>,
+    subentity_bindings: Option<ExactReferenceBindings<subentities::BoundSubentity>>,
     certification: Option<CertifiedPrismEvidence>,
 }
 /// Measured tolerance and authored point identities retained with a certified replay.
@@ -36,9 +37,12 @@ pub fn retain_named_sketch_prism(
     evaluation.into_body(feature).ok_or(decline)
 }
 mod evaluate;
+mod face_topology;
+mod subentities;
 pub use evaluate::{
     CertifiedNamedPrismEvaluator, NamedPrismEvaluator, retain_certified_named_sketch_prism,
 };
+pub use face_topology::{PrismFaceTopology, PrismSurfaceKind};
 fn attach_names(
     snapshot: PrismProbeSnapshot,
     document: DocumentGuid,
@@ -57,6 +61,7 @@ fn attach_names(
     Ok(NamedPrismSnapshot {
         snapshot,
         bindings,
+        subentity_bindings: None,
         certification: None,
     })
 }

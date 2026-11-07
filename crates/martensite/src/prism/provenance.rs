@@ -4,7 +4,11 @@ use super::*;
 use martensite_tkbo::profile_extrusion::{
     HistoryRecord, HistoryRelation, HistoryRole, HistorySource, OperationResult, ResultEntity,
 };
-use martensite_tkbrep::topods::Shape;
+use martensite_tkbrep::{
+    brep_adaptor::BRepAdaptorCurve,
+    topods::{self, Shape},
+};
+use martensite_tkg3d::adaptor3d::Adaptor3dCurve;
 use martensite_tkmath::bnd::BoundingBox3;
 use martensite_tktopalgo::brep_bnd_lib::BRepBndLib;
 use std::collections::BTreeSet;
@@ -64,6 +68,56 @@ pub(super) fn capture(
         vertices: ordered(vertices)?,
     })
 }
+pub(super) fn source_shapes(
+    result: &OperationResult,
+    history: &PrismSubentityHistory,
+) -> Result<Vec<Shape>, EvaluationFailure> {
+    history
+        .edges
+        .iter()
+        .chain(&history.vertices)
+        .map(|wanted| {
+            let matches: Vec<_> = result
+                .history()
+                .records
+                .iter()
+                .filter(|record| {
+                    semantic_role(record, record.result)
+                        .is_ok_and(|(source, role)| source == wanted.source && role == wanted.role)
+                })
+                .collect();
+            let [record] = matches.as_slice() else {
+                return Err(Phase::History.refused(
+                    Kind::IncompleteHistory,
+                    Entity::Body,
+                    format!(
+                        "extrusion {:?} {:?} has {} matching source shapes: expected one",
+                        wanted.role,
+                        wanted.source,
+                        matches.len()
+                    ),
+                ));
+            };
+            match record.result {
+                ResultEntity::Edge(index) => result.edges().get(index).cloned().map(Into::into),
+                ResultEntity::Vertex(index) => {
+                    result.vertices().get(index).cloned().map(Into::into)
+                }
+                ResultEntity::Face(_) => None,
+            }
+            .ok_or_else(|| {
+                Phase::History.refused(
+                    Kind::IncompleteHistory,
+                    Entity::Body,
+                    format!(
+                        "extrusion {:?}: expected an indexed edge or vertex",
+                        record.result
+                    ),
+                )
+            })
+        })
+        .collect()
+}
 fn record(
     result: &OperationResult,
     entity: ResultEntity,
@@ -94,7 +148,10 @@ fn record(
         role,
         source,
         relation,
-        point: representative(shape, entity)?,
+        point: match entity {
+            ResultEntity::Edge(_) => edge_midpoint(shape)?,
+            _ => representative(shape, &format!("{entity:?}"))?,
+        },
     })
 }
 fn semantic_role(
@@ -147,7 +204,28 @@ fn semantic_role(
     }
     Ok((source, role))
 }
-fn representative(shape: &Shape, entity: ResultEntity) -> Result<[f64; 3], EvaluationFailure> {
+fn edge_midpoint(shape: &Shape) -> Result<[f64; 3], EvaluationFailure> {
+    let measure = || -> Result<[f64; 3], martensite_tkernel::standard::Failure> {
+        let edge = topods::edge(shape)?;
+        let curve = BRepAdaptorCurve::with_edge(&edge)?;
+        let first = curve.first_parameter()?;
+        let last = curve.last_parameter()?;
+        let point = curve.value(first / 2. + last / 2.)?;
+        Ok([point.x(), point.y(), point.z()])
+    };
+    let point = measure().map_err(|cause| {
+        Phase::Measurement.native(Entity::Body, "extrusion edge midpoint".into(), cause)
+    })?;
+    if point.iter().any(|value| !value.is_finite()) {
+        return Err(Phase::Measurement.refused(
+            Kind::InvalidResult,
+            Entity::Body,
+            format!("extrusion edge midpoint {point:?}: expected finite coordinates"),
+        ));
+    }
+    Ok(point)
+}
+pub(super) fn representative(shape: &Shape, entity: &str) -> Result<[f64; 3], EvaluationFailure> {
     let mut bounds = BoundingBox3::default();
     BRepBndLib::add_optimal(shape, &mut bounds, false, false).map_err(|cause| {
         Phase::Measurement.native(

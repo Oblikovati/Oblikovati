@@ -11,7 +11,8 @@ pub use certified::{
 mod named;
 pub use named::{
     CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, NamedPrismEvaluator, NamedPrismSnapshot,
-    named_part_properties, retain_certified_named_sketch_prism, retain_named_sketch_prism,
+    PrismFaceTopology, PrismSurfaceKind, named_part_properties,
+    retain_certified_named_sketch_prism, retain_named_sketch_prism,
 };
 mod mesh;
 pub(crate) mod placement;

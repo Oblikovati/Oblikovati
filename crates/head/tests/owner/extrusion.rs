@@ -474,3 +474,6 @@ fn closing_the_document_clears_its_preview_from_the_scene() {
 
 #[path = "extrusion_policy.rs"]
 mod policy;
+
+#[path = "extrusion_topology.rs"]
+mod topology;

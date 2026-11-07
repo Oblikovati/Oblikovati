@@ -13,6 +13,7 @@ pub struct CertifiedPrismSnapshot {
     pub achieved_tolerance: PrismAchievedTolerance,
     /// Complete lower-dimensional kernel lineage, without native handles.
     pub subentities: PrismSubentityHistory,
+    pub(super) subentity_shapes: Vec<martensite_tkbrep::topods::Shape>,
     /// Authored point identities represented by each input profile vertex identity.
     pub vertex_sources: std::collections::BTreeMap<u64, Vec<u64>>,
 }
@@ -75,7 +76,10 @@ fn retain_result(result: &OperationResult) -> Result<CertifiedPrismSnapshot, Eva
         .enumerate()
         .map(|(index, face)| Ok((face_role(result, index)?, face.clone().into())))
         .collect::<Result<Vec<_>, EvaluationFailure>>()?;
-    let body = snapshot::capture_prism(result.solid(), &lineage)?;
+    let subentities = super::provenance::capture(result)?;
+    let sources = super::provenance::source_shapes(result, &subentities)?;
+    let (body, subentity_shapes) =
+        snapshot::capture_prism_with_subentities(result.solid(), &lineage, &sources)?;
     let achieved = result.achieved_tolerance();
     Ok(CertifiedPrismSnapshot {
         body,
@@ -84,7 +88,8 @@ fn retain_result(result: &OperationResult) -> Result<CertifiedPrismSnapshot, Eva
             edge: achieved.edge,
             face: achieved.face,
         },
-        subentities: super::provenance::capture(result)?,
+        subentities,
+        subentity_shapes,
         vertex_sources: Default::default(),
     })
 }

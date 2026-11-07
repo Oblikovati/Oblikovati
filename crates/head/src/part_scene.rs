@@ -359,6 +359,8 @@ mod bodies;
 
 mod physical;
 
+mod topology;
+
 #[cfg(test)]
 #[path = "../tests/part_scene_certified.rs"]
 mod certified_tests;

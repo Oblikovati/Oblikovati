@@ -112,6 +112,16 @@ impl SketchPrismEvaluator for CertifiedNamedPrismEvaluator<'_> {
             .names
             .attach_verified(feature, sketch, result.body)
             .map_err(|error| error.for_feature(feature))?;
+        named
+            .bind_subentities(
+                self.names.history,
+                self.names.document,
+                feature,
+                sketch.0,
+                &result.subentities,
+                result.subentity_shapes,
+            )
+            .map_err(|message| naming_decline(sketch, message).for_feature(feature))?;
         named.certification = Some(CertifiedPrismEvidence {
             achieved_tolerance: result.achieved_tolerance,
             subentities: result.subentities,
