@@ -6,9 +6,33 @@
 
 // #3803: Rust C aggregates and MSVC ARM64 C++ vector classes use different registers.
 // Only scalars and byte pointers cross this boundary; C++ constructs its own vectors.
+namespace {
+void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, bool large) {
+    const ImVec2 lo = ImGui::GetItemRectMin(), hi = ImGui::GetItemRectMax();
+    const char* end = ImGui::FindRenderedTextEnd(label);
+    const ImVec2 text = ImGui::CalcTextSize(label, end);
+    const ImVec2 at(large ? (lo.x + hi.x - icon.x) * 0.5f : lo.x + 2.0f,
+                    large ? lo.y + 2.0f : (lo.y + hi.y - icon.y) * 0.5f);
+    const ImVec2 caption(large ? (lo.x + hi.x - text.x) * 0.5f : at.x + icon.x + 3.0f,
+                         large ? hi.y - text.y - 2.0f : (lo.y + hi.y - text.y) * 0.5f);
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    draw->PushClipRect(lo, hi, true);
+    draw->AddImage(reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(texture)), at,
+                   ImVec2(at.x + icon.x, at.y + icon.y), ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(ImVec4(1,1,1,1)));
+    draw->AddText(caption, ImGui::GetColorU32(ImGuiCol_Text), label, end);
+    draw->PopClipRect();
+}
+}
 extern "C" {
-void oblikovati_gui_image(std::uint32_t texture, float width, float height) {
-    ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(texture)), ImVec2(width, height));
+bool oblikovati_gui_icon_button(const unsigned char* bytes, std::uint32_t texture,
+                                float width, float height, float icon_width, float icon_height, bool large) {
+    const char* label = reinterpret_cast<const char*>(bytes);
+    // Normal Button owns identity, navigation, disabled state, hit testing and last-item state.
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0,0,0,0));
+    const bool clicked = ImGui::Button(label, ImVec2(width, height));
+    ImGui::PopStyleColor();
+    if (ImGui::IsItemVisible()) draw_ribbon_icon(label, texture, ImVec2(icon_width, icon_height), large);
+    return clicked;
 }
 
 void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height) {

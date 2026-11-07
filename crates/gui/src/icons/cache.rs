@@ -15,6 +15,14 @@ pub(crate) enum IconSize {
     Large,
 }
 impl IconSize {
+    pub(crate) fn for_height(height: f32) -> Self {
+        if height >= 40. {
+            Self::Large
+        } else {
+            Self::Small
+        }
+    }
+
     pub(crate) fn index(self) -> usize {
         match self {
             Self::Small => 0,
@@ -69,11 +77,17 @@ impl GuiIconCache {
             presentation: GuiRibbonIcons::new()?,
         })
     }
+    /// Retain the startup palette when a frame has no theme snapshot; example: `cache.set_theme(theme)`.
+    pub(crate) fn set_theme(&mut self, theme: &oblikovati_model::theme::ThemeDefinition) {
+        self.defaults = role_colors(theme.palette());
+    }
+    /// Prepare owned pixels; true means ribbon geometry changed, not only its colors.
     pub(crate) fn prepare(
         &mut self,
         request: &GuiFrameRequest,
         font: &GuiAtlas,
     ) -> Result<bool, String> {
+        let first_preparation = self.prepared.is_none();
         let preparation = IconPreparation {
             edges: physical_edges(request)?,
             colors: request
@@ -82,6 +96,7 @@ impl GuiIconCache {
                 .as_ref()
                 .map_or(self.defaults, |theme| role_colors(theme.palette())),
         };
+        let previous_logical = self.presentation.logical;
         self.presentation.logical = preparation
             .edges
             .map(|edge| std::array::from_fn(|axis| edge as f32 / request.layout_scale()[axis]));
@@ -95,7 +110,7 @@ impl GuiIconCache {
         let resources = GuiTextureResources::new(font.clone(), images)?;
         self.resources = resources;
         self.prepared = Some(preparation);
-        Ok(true)
+        Ok(first_preparation || previous_logical != self.presentation.logical)
     }
     fn compose_images(
         &mut self,

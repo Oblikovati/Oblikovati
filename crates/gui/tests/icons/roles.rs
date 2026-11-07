@@ -2,7 +2,7 @@
 use super::*;
 const QUADRANTS: &[u8] = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" stroke="none" fill="none"><rect x="0" y="0" width="5" height="5" fill="#00ff00"/><rect x="5" y="0" width="5" height="5" fill="#0000ff"/><rect x="0" y="5" width="5" height="5" fill="#ff0000"/><rect x="5" y="5" width="5" height="5" fill="#000000"/></svg>"##;
 fn quadrant(role: usize) -> usize {
-    let x = if role % 2 == 0 { 4 } else { 12 };
+    let x = if role.is_multiple_of(2) { 4 } else { 12 };
     let y = if role < 2 { 4 } else { 12 };
     y * 16 + x
 }

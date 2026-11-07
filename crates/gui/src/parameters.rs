@@ -11,10 +11,20 @@ pub(crate) struct GuiParameterEditor {
     expression: String,
 }
 impl GuiParameterEditor {
-    pub(crate) fn toolbar(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
+    pub(crate) fn toolbar(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        icons: &crate::icons::GuiRibbonIcons,
+    ) -> bool {
         self.synchronize_document(state.document);
         let disabled = ui.begin_disabled(state.document.is_none());
-        let clicked = crate::widget_abi::button(ui, "Parameters", [108., 58.]);
+        let clicked = icons.button(
+            ui,
+            "Parameters",
+            crate::icons::IconGlyph::Parameters,
+            [108., 58.],
+        );
         if clicked {
             self.visible = !self.visible;
         }

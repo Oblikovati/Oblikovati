@@ -17,14 +17,16 @@ pub(crate) fn draw_panel_content(
 ) -> bool {
     crate::widget_abi::cursor_position(ui, origin);
     match panel {
-        RibbonPanel::Create => sketch_create_controls(ui, origin, state, actions),
-        RibbonPanel::Constrain => sketch_constraint_controls(ui, origin, state, actions),
+        RibbonPanel::Create => sketch_create_controls(ui, origin, state, owners.icons, actions),
+        RibbonPanel::Constrain => {
+            sketch_constraint_controls(ui, origin, state, owners.icons, actions)
+        }
         RibbonPanel::Format => {
-            crate::sketch_formats::sketch_format_controls(ui, origin, state, actions);
-            crate::widget_abi::cursor_position(ui, [origin[0] + PRECISE_INPUT_COLUMN, origin[1]]);
+            crate::sketch_formats::sketch_format_controls(ui, origin, state, owners.icons, actions);
+            owners.icons.cursor(ui, origin, [PRECISE_INPUT_COLUMN, 0.]);
             owners.precise_input.toggle(ui);
         }
-        RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state),
+        RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state, owners.icons),
         RibbonPanel::Appearance => return appearance_controls(ui, state, owners.editor, actions),
         RibbonPanel::Visibility => visibility_controls(ui, state, actions),
         RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
@@ -64,7 +66,7 @@ pub(crate) fn draw_panel_content(
             }
         }
         RibbonPanel::Sketch => start_sketch_command(ui, state, owners, actions),
-        other => single_command(ui, other, state, actions),
+        other => single_command(ui, other, state, owners.icons, actions),
     }
     false
 }
@@ -129,16 +131,17 @@ fn start_sketch_command(
     let _highlight = owners
         .plane_selection_active
         .then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
-    single_command(ui, RibbonPanel::Sketch, state, actions);
+    single_command(ui, RibbonPanel::Sketch, state, owners.icons, actions);
 }
 fn single_command(
     ui: &Ui,
     panel: RibbonPanel,
     state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
     if let Some((label, action)) = panel.command() {
-        crate::chrome::command_button(ui, label, action, state, [108., 58.], actions);
+        icons.command_button(ui, label, action, state, [108., 58.], actions);
     }
 }
 fn windows_controls(
@@ -226,11 +229,12 @@ fn sketch_constraint_controls(
     ui: &Ui,
     origin: [f32; 2],
     state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
     for (choice, position) in CONSTRAINT_CONTROLS {
-        crate::widget_abi::cursor_position(ui, [origin[0] + position[0], origin[1] + position[1]]);
-        crate::chrome::command_button(
+        icons.cursor(ui, origin, position);
+        icons.command_button(
             ui,
             choice.label(),
             GuiShellAction::ConstrainSketch(choice),
@@ -239,8 +243,8 @@ fn sketch_constraint_controls(
             actions,
         );
     }
-    crate::widget_abi::cursor_position(ui, [origin[0] + 116., origin[1]]);
-    crate::chrome::command_button(
+    icons.cursor(ui, origin, [116., 0.]);
+    icons.command_button(
         ui,
         "Dimension",
         GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
@@ -253,22 +257,35 @@ fn sketch_create_controls(
     ui: &Ui,
     origin: [f32; 2],
     state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
     crate::widget_abi::cursor_position(ui, origin);
     let rectangle = crate::GuiSketchTool::Rectangle;
-    crate::chrome::sketch_tool_button(ui, state, actions, rectangle, [108., 58.]);
+    icons.command_button(
+        ui,
+        rectangle.label(),
+        GuiShellAction::PlaceSketchTool(rectangle),
+        state,
+        [108., 58.],
+        actions,
+    );
     let secondary = crate::sketch_tools::SECONDARY_SKETCH_TOOLS;
     for (index, tool) in secondary.into_iter().enumerate() {
-        crate::widget_abi::cursor_position(
+        icons.cursor(
             ui,
-            [
-                origin[0] + 124. + (index % 2) as f32 * 116.,
-                origin[1] + (index / 2) as f32 * 20.,
-            ],
+            origin,
+            [124. + (index % 2) as f32 * 116., (index / 2) as f32 * 20.],
         );
-        crate::sketch_flyouts::circular_tool_button(ui, state, actions, tool);
+        crate::sketch_flyouts::circular_tool_button(ui, state, actions, tool, icons);
     }
-    crate::widget_abi::cursor_position(ui, [origin[0] + 124., origin[1] + 60.]);
-    crate::chrome::sketch_tool_button(ui, state, actions, crate::GuiSketchTool::Line, [108., 18.]);
+    icons.cursor(ui, origin, [124., 60.]);
+    icons.command_button(
+        ui,
+        "Line",
+        GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Line),
+        state,
+        [108., 18.],
+        actions,
+    );
 }

@@ -59,7 +59,7 @@ fn content_scale_composes_with_real_backing_density_for_draws_and_hit_regions() 
         #[cfg(target_os = "linux")]
         {
             let draws = owner.frame(&request).unwrap().draws;
-            oblikovati_viewport::GuiFrameCompiler::new(owner.atlas())
+            oblikovati_viewport::GuiFrameCompiler::with_resources(&draws.resources)
                 .unwrap()
                 .compile(&draws)
                 .unwrap();

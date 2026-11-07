@@ -6,6 +6,7 @@ pub(crate) fn sketch_format_controls(
     ui: &Ui,
     origin: [f32; 2],
     state: &GuiCommandState,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let modes = &state.sketch_formats;
@@ -13,17 +14,30 @@ pub(crate) fn sketch_format_controls(
         (Construction, 0., modes.construction),
         (Centerline, 20., modes.centerline),
     ] {
-        widget_abi::cursor_position(ui, [origin[0], origin[1] + y]);
+        icons.cursor(ui, origin, [0., y]);
         let action = GuiShellAction::ToggleSketchFormat(format);
         let disabled = ui.begin_disabled(!action.enabled(state));
-        let clicked = widget_abi::toggle_button(ui, format.label(), [108., 18.], armed);
+        let lit = ui.style_color(imgui::StyleColor::ButtonActive);
+        let highlight = armed.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
+        let glyph = if format == Construction {
+            crate::icons::IconGlyph::Construction
+        } else {
+            crate::icons::IconGlyph::Centerline
+        };
+        let clicked = icons.button(ui, format.label(), glyph, [108., 18.]);
+        drop(highlight);
         drop(disabled);
         if clicked && action.dispatchable(state) {
             actions.push(action);
         }
     }
-    widget_abi::cursor_position(ui, [origin[0], origin[1] + 40.]);
-    if widget_abi::toggle_button(ui, "Center Point", [108., 18.], state.center_point_format) {
+    icons.cursor(ui, origin, [0., 40.]);
+    if widget_abi::toggle_button(
+        ui,
+        "Center Point",
+        icons.cell([108., 18.]),
+        state.center_point_format,
+    ) {
         actions.push(GuiShellAction::ToggleCenterPointFormat);
     }
 }

@@ -7,6 +7,7 @@ pub(crate) fn circular_tool_button(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     primary: GuiSketchTool,
+    icons: &crate::icons::GuiRibbonIcons,
 ) {
     let alternate = match primary {
         GuiSketchTool::Circle => Some(GuiSketchTool::ThreePointCircle),
@@ -19,9 +20,16 @@ pub(crate) fn circular_tool_button(
     } else {
         [108., 18.]
     };
-    super::chrome::sketch_tool_button(ui, state, actions, primary, size);
+    icons.command_button(
+        ui,
+        primary.label(),
+        GuiShellAction::PlaceSketchTool(primary),
+        state,
+        size,
+        actions,
+    );
     if let Some(alternate) = alternate {
-        circular_tool_menu(ui, state, actions, primary, alternate);
+        circular_tool_menu(ui, state, actions, primary, alternate, icons);
     }
 }
 fn circular_tool_menu(
@@ -30,12 +38,13 @@ fn circular_tool_menu(
     actions: &mut Vec<GuiShellAction>,
     primary: GuiSketchTool,
     alternate: GuiSketchTool,
+    icons: &crate::icons::GuiRibbonIcons,
 ) {
     let identity = format!("##{:?}-choices", primary);
     let enabled = GuiShellAction::PlaceSketchTool(primary).dispatchable(state);
     let disabled = ui.begin_disabled(!enabled);
-    ui.same_line_with_spacing(0., 2.);
-    if widget_abi::button(ui, &format!("v{identity}"), [16., 18.]) && enabled {
+    ui.same_line_with_spacing(0., 2. * icons.layout_factor());
+    if widget_abi::button(ui, &format!("v{identity}"), icons.cell([16., 18.])) && enabled {
         ui.open_popup(&identity);
     }
     drop(disabled);

@@ -138,6 +138,7 @@ impl RibbonPanelLayout {
 }
 /// Editors and layout a ribbon panel's controls can change.
 pub(crate) struct RibbonPanelOwners<'a> {
+    pub icons: &'a crate::icons::GuiRibbonIcons,
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
     pub editor: &'a mut crate::theme_editor::GuiThemeEditor,
     pub workspace: &'a mut crate::application::workspace_layout::WorkspaceLayout,
@@ -193,7 +194,7 @@ pub(crate) fn draw_panels(
 fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut RibbonPanelLayout) {
     let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
-    let height = 80. + layout.scrollbar_height(ui);
+    let height = 80. * context.owners.icons.layout_factor() + layout.scrollbar_height(ui);
     let region = crate::widget_abi::scroll_region(ui, "##ribbon-panels", [available, height]);
     if region.visible {
         draw_row(context, tab, layout, available);
@@ -268,7 +269,15 @@ fn temporary_panel(
     };
     let ui = context.ui;
     let top = ui.window_size()[1];
-    let (position, size) = temporary_geometry(ui, tab, layout, display, shown, top);
+    let (position, size) = temporary_geometry(
+        ui,
+        tab,
+        layout,
+        display,
+        shown,
+        top,
+        context.owners.icons.layout_factor(),
+    );
     crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
     let before = context.actions.len();
     let mut keep = true;
@@ -296,10 +305,12 @@ fn temporary_geometry(
     display: &RibbonDisplayState,
     shown: TemporaryPanel,
     top: f32,
+    factor: f32,
 ) -> ([f32; 2], [f32; 2]) {
+    let panel_height = 104. + 80. * (factor - 1.);
     let viewport = ui.io().display_size[0];
     let TemporaryPanel::Group(panel) = shown else {
-        return ([8., top], [viewport - 16., 104.]);
+        return ([8., top], [viewport - 16., panel_height]);
     };
     let measured = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
     let width = (measured + 32.).max(140.).min(viewport - 16.);
@@ -309,10 +320,10 @@ fn temporary_geometry(
         } else {
             anchor.x
         };
-        return ([x, anchor.y], [width, 104.]);
+        return ([x, anchor.y], [width, panel_height]);
     }
     let x = display.temporary_anchor.min(viewport - width - 8.).max(8.);
-    ([x, top], [width, 104.])
+    ([x, top], [width, panel_height])
 }
 fn temporary_contents(
     context: &mut PanelDrawContext<'_>,
@@ -322,7 +333,14 @@ fn temporary_contents(
 ) -> bool {
     let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
-    let region = crate::widget_abi::scroll_region(ui, "##temporary-contents", [available, 86.]);
+    let region = crate::widget_abi::scroll_region(
+        ui,
+        "##temporary-contents",
+        [
+            available,
+            86. + 80. * (context.owners.icons.layout_factor() - 1.),
+        ],
+    );
     if !region.visible {
         return false;
     }
@@ -414,12 +432,12 @@ fn draw_expanded(
     let mut local_action = false;
     ui.group(|| {
         local_action = context.content(panel, origin);
-        crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 66.]);
+        context.owners.icons.cursor(ui, origin, [0., 66.]);
         ui.text(panel.label());
         if panel == RibbonPanel::Create {
             // Preserve the existing Create grid's trailing space and wide-window command positions.
             crate::widget_abi::cursor_position(ui, origin);
-            crate::widget_abi::dummy(ui, [364., 0.]);
+            crate::widget_abi::dummy(ui, context.owners.icons.cell([364., 0.]));
         }
     });
     (ui.item_rect_size()[0], local_action)
@@ -435,59 +453,22 @@ fn draw_collapsed(
     let ui = context.ui;
     let identity = format!("##panel-{tab:?}-{panel:?}");
     crate::widget_abi::cursor_position(ui, origin);
-    if crate::widget_abi::button(ui, &format!("v{identity}"), [width, 58.]) {
+    if crate::widget_abi::button(
+        ui,
+        &format!("v{identity}"),
+        [width, 58. * context.owners.icons.layout_factor()],
+    ) {
         ui.open_popup(&identity);
     }
     let anchor = ui.item_rect_min()[0];
     if ui.is_item_hovered() {
         ui.tooltip_text(format!("Show {} commands", panel.label()));
     }
-    crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 66.]);
+    context.owners.icons.cursor(ui, origin, [0., 66.]);
     ui.text(panel.label());
     draw_panel_popup(context, tab, panel, &identity, anchor, layout);
 }
-fn draw_panel_popup(
-    context: &mut PanelDrawContext<'_>,
-    tab: RibbonTab,
-    panel: RibbonPanel,
-    identity: &str,
-    anchor: f32,
-    layout: &mut RibbonPanelLayout,
-) {
-    let ui = context.ui;
-    let width = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
-    let size = popup_geometry(ui, anchor, width, 158. + layout.scrollbar_height(ui));
-    let Some(_popup) = ui.begin_popup(identity) else {
-        return;
-    };
-    let region = crate::widget_abi::scroll_region(ui, "##panel-contents", size);
-    if !region.visible {
-        return;
-    }
-    let before = context.actions.len();
-    let (measured, local_action) = draw_expanded(context, panel, [0.; 2]);
-    layout.record_width(tab, panel, measured);
-    if context.actions.len() != before || local_action {
-        ui.close_current_popup();
-    }
-}
-fn popup_geometry(ui: &Ui, anchor: f32, width: f32, band_height: f32) -> [f32; 2] {
-    let viewport = ui.io().display_size[0];
-    let content_width = width.min((viewport - 32.).max(1.));
-    let padding = ui.clone_style().window_padding;
-    let outer_width = content_width + 2. * padding[0];
-    let height = 80.
-        + if content_width < width {
-            ui.clone_style().scrollbar_size
-        } else {
-            0.
-        };
-    let x = crate::ribbon_fit::clamp_panel_flyout_x(anchor, outer_width, viewport);
-    crate::widget_abi::window_geometry(
-        ui,
-        [x, band_height],
-        [outer_width, height + 2. * padding[1]],
-        imgui::Condition::Always,
-    );
-    [content_width, height]
-}
+
+#[path = "ribbon_panel_flyout.rs"]
+mod flyout;
+use flyout::draw_panel_popup;

@@ -447,3 +447,6 @@ mod panel_overflow;
 
 #[path = "ribbon_click/ellipse_dimensions.rs"]
 mod ellipse_dimensions;
+
+#[path = "ribbon_click/icon_commands.rs"]
+mod icon_commands;

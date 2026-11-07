@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::icons::catalog;
 use crate::{GuiCommandState, GuiFrameRequest};
 use oblikovati_model::ui_scale::UiScaleOptions;
 fn request(font: f32, icon: f32, backing: f32) -> GuiFrameRequest {
@@ -73,10 +74,9 @@ fn theme_changes_recompose_without_rasterizing_the_svg_again() {
     let mut request = request(1., 1., 1.);
     cache.prepare(&request, &font()).unwrap();
     let first = cache.resources.clone();
-    let mut library = oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Light").unwrap();
-    library.select("Light").unwrap();
+    let library = oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Light").unwrap();
     request.commands.theme = Some(crate::GuiThemeState::from_library(&library));
-    assert!(cache.prepare(&request, &font()).unwrap());
+    assert!(!cache.prepare(&request, &font()).unwrap());
     assert_eq!(cache.masks.len(), catalog::GLYPHS.len() * 2);
     assert!(cache.resources != first);
 }
@@ -92,4 +92,15 @@ fn invalid_edges_leave_the_published_bank_unchanged() {
             .contains("expected finite pixel sizes")
     );
     assert_eq!(cache.resources, initial);
+}
+
+#[test]
+fn text_only_scale_changes_invalidate_layout_without_recomposing_icons() {
+    let mut cache = GuiIconCache::new(font()).unwrap();
+    cache.prepare(&request(1., 1., 1.), &font()).unwrap();
+    let previous = cache.resources.clone();
+    assert!(cache.prepare(&request(2., 1., 1.), &font()).unwrap());
+    assert_eq!(cache.presentation.logical[1], [20.; 2]);
+    assert_eq!(cache.resources, previous);
+    assert!(!cache.prepare(&request(2., 1., 1.), &font()).unwrap());
 }

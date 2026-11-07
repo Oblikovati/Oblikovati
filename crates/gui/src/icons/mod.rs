@@ -14,3 +14,5 @@ mod catalog;
 mod cache;
 pub(crate) use cache::{GuiIconCache, GuiRibbonIcons, IconSize};
 pub(crate) use catalog::IconGlyph;
+
+mod buttons;

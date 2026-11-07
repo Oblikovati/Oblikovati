@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 unsafe extern "C" {
-    fn oblikovati_gui_image(texture: u32, width: f32, height: f32);
+    fn oblikovati_gui_icon_button(
+        label: *const u8,
+        texture: u32,
+        width: f32,
+        height: f32,
+        icon_width: f32,
+        icon_height: f32,
+        large: bool,
+    ) -> bool;
     fn oblikovati_gui_fit_dialog(title: *const u8, x: f32, y: f32, width: f32, height: f32);
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
@@ -205,8 +213,27 @@ pub(crate) fn rotated_text(ui: &Ui, center: [f32; 2], color: [f32; 4], text: &st
     }
 }
 
-/// Draw a registered resource through scalar ABI; example: `image(ui, key, [40.,40.])`.
-pub(crate) fn image(_: &Ui, texture: crate::GuiTextureKey, size: [f32; 2]) {
-    // SAFETY: keys are validated portable u32 IDs, not native pointers; C++ constructs ImVec2 (#3803).
-    unsafe { oblikovati_gui_image(texture.raw() as u32, size[0], size[1]) };
+/// Scalar payload for an owned ribbon image; example: a 40px glyph above its caption.
+pub(crate) struct IconButtonPresentation {
+    pub texture: crate::GuiTextureKey,
+    pub size: [f32; 2],
+    pub icon: [f32; 2],
+    pub large: bool,
+}
+/// Keep normal button identity and last-item state; example: `icon_button(ui, "Rectangle", presentation)`.
+pub(crate) fn icon_button(_: &Ui, label: &str, presentation: IconButtonPresentation) -> bool {
+    let label = ImString::new(label);
+    // #3803: C++ owns all ImVec2/ImRect construction; only validated resource IDs cross ABI.
+    // SAFETY: the NUL-terminated label stays live for this synchronous call; resource keys are scalars.
+    unsafe {
+        oblikovati_gui_icon_button(
+            label.as_ptr().cast(),
+            presentation.texture.raw() as u32,
+            presentation.size[0],
+            presentation.size[1],
+            presentation.icon[0],
+            presentation.icon[1],
+            presentation.large,
+        )
+    }
 }

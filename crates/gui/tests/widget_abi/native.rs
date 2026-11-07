@@ -148,3 +148,92 @@ fn collapsed_dialog_refits_its_full_size_before_it_is_expanded() {
         });
     context.render();
 }
+
+#[test]
+fn decorated_buttons_keep_the_normal_button_identity_and_hit_bounds() {
+    let mut context = probe_context();
+    let plain = button_item_probe(&mut context, false);
+    let decorated = button_item_probe(&mut context, true);
+    assert_eq!(decorated, plain);
+    assert_eq!(decorated.0, [108., 58.]);
+}
+fn button_item_probe(context: &mut imgui::Context, decorated: bool) -> ([f32; 2], u32) {
+    let ui = context.frame();
+    window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
+    let mut result = ([0.; 2], 0);
+    ui.window("Icon identity").build(|| {
+        cursor_position(ui, [31., 47.]);
+        draw_probe_button(ui, decorated);
+        // The sole live context owns LastItemData; no pointer survives this observation.
+        let identity = unsafe { imgui::sys::igGetCurrentContext().as_ref() }
+            .unwrap()
+            .LastItemData
+            .ID;
+        result = (ui.item_rect_size(), identity);
+    });
+    context.render();
+    result
+}
+
+#[test]
+fn icon_button_captions_are_opaque_and_inside_the_clickable_cell() {
+    for large in [true, false] {
+        check_icon_caption(large);
+    }
+}
+fn check_icon_caption(large: bool) {
+    let mut context = probe_context();
+    draw_colored_caption(&mut context, large);
+    context.render();
+    draw_colored_caption(&mut context, large);
+    let ink = colored_caption_points(context.render());
+    assert_eq!(
+        ink.len(),
+        "Rectangle".len() * 4,
+        "expected every opaque caption glyph"
+    );
+    assert!(
+        ink.iter()
+            .all(|position| position[0] >= 31. && position[0] <= 139.)
+    );
+    let (low, high) = if large { (89., 105.) } else { (47., 65.) };
+    assert!(
+        ink.iter()
+            .all(|position| position[1] >= low && position[1] <= high)
+    );
+}
+fn colored_caption_points(draws: &imgui::DrawData) -> Vec<[f32; 2]> {
+    let color = ImColor32::from_rgba(51, 102, 153, 255)
+        .to_bits()
+        .to_ne_bytes();
+    draws
+        .draw_lists()
+        .flat_map(|list| list.vtx_buffer())
+        .filter(|vertex| vertex.col == color)
+        .map(|vertex| vertex.pos)
+        .collect()
+}
+fn draw_probe_button(ui: &Ui, decorated: bool) {
+    if decorated {
+        icon_button(ui, "Rectangle", caption_presentation(true));
+    } else {
+        button(ui, "Rectangle", [108., 58.]);
+    }
+}
+fn caption_presentation(large: bool) -> IconButtonPresentation {
+    IconButtonPresentation {
+        texture: crate::GuiTextureKey::from_raw(2).unwrap(),
+        size: if large { [108., 58.] } else { [108., 18.] },
+        icon: if large { [40.; 2] } else { [18.; 2] },
+        large,
+    }
+}
+fn draw_colored_caption(context: &mut imgui::Context, large: bool) {
+    let ui = context.frame();
+    window_geometry(ui, [0., 0.], [400., 300.], Condition::Always);
+    ui.window("Caption visibility").build(|| {
+        cursor_position(ui, [31., 47.]);
+        let _color = ui.push_style_color(imgui::StyleColor::Text, [0.2, 0.4, 0.6, 1.]);
+        icon_button(ui, "Rectangle", caption_presentation(large));
+    });
+}

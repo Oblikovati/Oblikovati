@@ -5,6 +5,7 @@ use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, TabItemFlags, Ui};
 
 pub(crate) struct RibbonDrawOwners<'a> {
+    pub icons: &'a crate::icons::GuiRibbonIcons,
     pub ribbon: &'a mut DocumentRibbon,
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
     pub files: &'a mut crate::files::GuiDocumentFiles,
@@ -29,6 +30,11 @@ pub(crate) fn ribbon_band(
     // A moved ribbon leaves only the menu, quick access and status in the top band.
     let height = if placement == RibbonPlacement::Top {
         owners.ribbon.display.mode.band_height(scrollbar)
+            + if owners.ribbon.display.mode == RibbonDisplay::Full {
+                80. * (owners.icons.layout_factor() - 1.)
+            } else {
+                0.
+            }
     } else {
         RibbonDisplay::Tabs.band_height(scrollbar)
     };
@@ -157,6 +163,7 @@ fn side_groups(
             ribbon.active,
             &request.commands,
             crate::ribbon_panels::RibbonPanelOwners {
+                icons: owners.icons,
                 parameters: owners.parameters,
                 editor: owners.theme_editor,
                 workspace: owners.workspace,
@@ -231,6 +238,7 @@ fn ribbon_panel_row(
         ribbon.active,
         &request.commands,
         crate::ribbon_panels::RibbonPanelOwners {
+            icons: owners.icons,
             parameters: owners.parameters,
             editor: owners.theme_editor,
             workspace: owners.workspace,
@@ -272,22 +280,6 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         }
     }
 }
-pub(crate) fn sketch_tool_button(
-    ui: &Ui,
-    state: &GuiCommandState,
-    actions: &mut Vec<GuiShellAction>,
-    tool: crate::GuiSketchTool,
-    size: [f32; 2],
-) {
-    command_button(
-        ui,
-        tool.label(),
-        GuiShellAction::PlaceSketchTool(tool),
-        state,
-        size,
-        actions,
-    );
-}
 pub(crate) fn command_button(
     ui: &Ui,
     label: &str,
@@ -296,8 +288,20 @@ pub(crate) fn command_button(
     size: [f32; 2],
     actions: &mut Vec<GuiShellAction>,
 ) {
+    command_control(ui, label, action, state, actions, || {
+        crate::widget_abi::button(ui, label, size)
+    });
+}
+pub(crate) fn command_control(
+    ui: &Ui,
+    label: &str,
+    action: GuiShellAction,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    draw: impl FnOnce() -> bool,
+) {
     let disabled = ui.begin_disabled(!action.enabled(state));
-    let clicked = crate::widget_abi::button(ui, label, size);
+    let clicked = draw();
     drop(disabled);
     if ui.is_item_hovered()
         && let Some(next) = action.next_label(state)

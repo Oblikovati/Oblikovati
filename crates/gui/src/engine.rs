@@ -102,6 +102,7 @@ impl GuiFrameEngine {
     }
     /// Apply semantic chrome colours on the GUI thread; example: `engine.apply_theme(library.active())`.
     pub fn apply_theme(&mut self, theme: &oblikovati_model::theme::ThemeDefinition) {
+        self.icons.set_theme(theme);
         crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
     }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
@@ -239,6 +240,7 @@ impl GuiFrameEngine {
             ui,
             request,
             crate::chrome::RibbonDrawOwners {
+                icons: &self.icons.presentation,
                 ribbon: &mut self.ribbon,
                 parameters: &mut self.parameter_editor,
                 files: &mut self.document_files,
@@ -480,32 +482,5 @@ fn apply_quick_access(
 #[path = "../tests/parameter_journey/platform.rs"]
 mod parameter_shortcuts;
 
-impl GuiFrameRequest {
-    /// Convert UI layout units to backing pixels; native backing density stays independently recorded.
-    /// Example: backing 1 and content 2 produce `layout_scale() == [2.; 2]`.
-    pub(crate) fn layout_scale(&self) -> [f32; 2] {
-        let content = self.commands.ui_scale.unwrap_or_default().font();
-        self.framebuffer_scale.map(|backing| backing * content)
-    }
-}
-impl GuiFrameEngine {
-    fn refresh_font_scale(&mut self, request: &GuiFrameRequest) -> Result<(), String> {
-        let scale = crate::ui_scale::font_raster_scale(request)?;
-        if self.raster_scale == scale {
-            return Ok(());
-        }
-        self.atlas = crate::ui_scale::rebuild_font_atlas(&mut self.context, scale);
-        self.resources = self.resources.with_font(self.atlas.clone())?;
-        self.raster_scale = scale;
-        self.ribbon.panels = Default::default();
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-#[path = "../tests/ui_scale/engine.rs"]
-mod scale_tests;
-
-#[cfg(test)]
-#[path = "../tests/textures/owner.rs"]
-mod texture_tests;
+#[path = "engine_resources.rs"]
+mod resources;

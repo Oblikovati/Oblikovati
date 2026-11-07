@@ -14,7 +14,16 @@ fn image_frame(owner: &mut GuiFrameEngine, key: GuiTextureKey) -> Result<GuiFram
     crate::widget_abi::window_geometry(ui, [0.; 2], [128.; 2], imgui::Condition::Always);
     ui.window("Images").build(|| {
         ui.text("Font");
-        crate::widget_abi::image(ui, key, [32.; 2]);
+        crate::widget_abi::icon_button(
+            ui,
+            "Owned Image",
+            crate::widget_abi::IconButtonPresentation {
+                texture: key,
+                size: [96., 58.],
+                icon: [32.; 2],
+                large: true,
+            },
+        );
     });
     capture_frame(owner.context.render(), [128; 2], &owner.resources)
 }
