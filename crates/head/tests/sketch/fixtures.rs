@@ -12,6 +12,7 @@ const SEED_STEP: f64 = 40.;
 /// A drawn line differs from the empty view within this reach of its centre, in pixels.
 const LINE_REACH: i32 = 2;
 /// A dot ends inside this many pixels of its center; a cross's arms pass it.
+const ARC_PICK_FRACTION: f64 = 0.25;
 const CROSS_ARM: i32 = 7;
 const MARK_REACH: i32 = 1;
 /// The mono font's advance; a label's run starts this far per glyph left of its end.
@@ -292,7 +293,7 @@ impl ApplicationWorld {
         let at = std::array::from_fn(|axis| from[axis] + (to[axis] - from[axis]) * fraction);
         crate::HeadWindow::sketch_pixel(&self.app().window, edit.plane, at).unwrap()
     }
-    /// The first arc at mid-sweep, in window pixels; example: a click that picks the arc itself.
+    /// The first arc a quarter along its turn, in window pixels: its middle is a pick of its own.
     pub fn arc_pixel(&mut self) -> [i32; 2] {
         let edit = self.app().owner.active_sketch_edit().unwrap();
         let geometry = self.edited_geometry();
@@ -312,7 +313,7 @@ impl ApplicationWorld {
         } else {
             sweep - std::f64::consts::TAU
         };
-        let middle = angle_of(arc.start) + sweep * 0.5;
+        let middle = angle_of(arc.start) + sweep * ARC_PICK_FRACTION;
         let at = [
             center[0] + radius * middle.cos(),
             center[1] + radius * middle.sin(),

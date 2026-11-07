@@ -15,10 +15,11 @@ const NUMERIC_START: [f64; 2] = [-10., -20.];
 const SOURCE_PIXELS: [[i32; 2]; 2] = [[560, 340], [760, 340]];
 const FIRST_DRAG: [i32; 2] = [900, 460];
 const LATER_DRAG: [i32; 2] = [980, 300];
-const CHAIN: [[i32; 2]; 3] = [[420, 260], [560, 300], [600, 240]];
+/// Each corner clear of the numeric fields, which sit just below and right of the last click.
+const CHAIN: [[i32; 2]; 3] = [[420, 260], [560, 230], [620, 320]];
 const SEPARATE: [[i32; 2]; 2] = [[900, 280], [1100, 280]];
-/// Away from the chain's first edge, so no parallel relation takes one of its four directions.
-const OBLIQUE: [[i32; 2]; 2] = [[1000, 560], [1180, 500]];
+/// Away from the chain's edges, so no parallel relation takes one of its four directions.
+const OBLIQUE: [[i32; 2]; 2] = [[1000, 560], [1180, 620]];
 const TRIANGLE_START: [f64; 2] = [-40., 40.];
 const CLEAR_START: [i32; 2] = [620, 480];
 /// Where the pointer rests while values are typed; clear of every fixture.
