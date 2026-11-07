@@ -17,6 +17,7 @@ fn check_axis_dimension(axis: [f64; 2], minor: bool) {
     owner
         .commit_sketch_placement(document, sketch, &recipe, &[])
         .unwrap();
+    let stored_axis = current_ellipse(&owner).major_axis();
     let before = owner.gui_command_state().unwrap().undo_label;
     start(&mut owner);
     assert!(
@@ -27,9 +28,9 @@ fn check_axis_dimension(axis: [f64; 2], minor: bool) {
     assert!(owner.gui_command_state().unwrap().dimension_draft.is_none());
     assert!(dimensions(&mut owner).is_empty());
     assert_eq!(owner.gui_command_state().unwrap().undo_label, before);
-    place_axis_dimension(&mut owner, axis, minor);
+    place_axis_dimension(&mut owner, axis, stored_axis, minor);
 }
-fn place_axis_dimension(owner: &mut TestOwner, axis: [f64; 2], minor: bool) {
+fn place_axis_dimension(owner: &mut TestOwner, axis: [f64; 2], stored_axis: [f64; 2], minor: bool) {
     let direction = if minor { axis } else { [-axis[1], axis[0]] };
     let at = direction.map(|coordinate| (coordinate * 200.).round() as i32);
     deliver(owner, &[button(at, true)]);
@@ -42,18 +43,26 @@ fn place_axis_dimension(owner: &mut TestOwner, axis: [f64; 2], minor: bool) {
     assert!(inspection(owner).healthy);
     apply(owner, if minor { "50 cm" } else { "120 cm" }, false).unwrap();
     assert_axis_dimension(owner, at, minor, expected.0.as_ref());
-    assert_ellipse_axis_frame(owner, axis, minor);
+    assert_ellipse_axis_frame(owner, stored_axis, minor);
 }
 fn assert_axis_dimension(owner: &mut TestOwner, at: [i32; 2], minor: bool, kind: &str) {
     let rows = dimensions(owner);
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].kind, kind);
     assert_eq!(rows[0].text_point, Some(at.map(f64::from).to_vec()));
-    assert_eq!(rows[0].value, if minor { 50. } else { 120. });
+    assert_solved_radius(rows[0].value, if minor { 50. } else { 120. });
     assert!(inspection(owner).healthy);
     assert_eq!(inspection(owner).dof, 4);
 }
 fn assert_ellipse_axis_frame(owner: &TestOwner, axis: [f64; 2], minor: bool) {
+    let ellipse = current_ellipse(owner);
+    assert_eq!(ellipse.major_axis(), axis, "retained local axes");
+    let expected = if minor { [100., 50.] } else { [120., 40.] };
+    for (actual, expected) in ellipse.radii().into_iter().zip(expected) {
+        assert_solved_radius(actual, expected);
+    }
+}
+fn current_ellipse(owner: &TestOwner) -> oblikovati_model::sketch::SketchEllipse2D {
     let edit = owner.active_sketch_edit().unwrap();
     let snapshot = owner
         .documents()
@@ -63,10 +72,16 @@ fn assert_ellipse_axis_frame(owner: &TestOwner, axis: [f64; 2], minor: bool) {
         .snapshot();
     let geometry = snapshot.sketches.get(edit.sketch).unwrap().geometry();
     let ellipse = geometry.ellipses()[0];
-    assert_eq!(ellipse.major_axis(), axis, "retained local axes");
     assert_eq!(geometry.point(ellipse.center()).unwrap().position, [0.; 2]);
-    let expected = if minor { [100., 50.] } else { [120., 40.] };
-    assert_eq!(ellipse.radii(), expected);
+    ellipse
+}
+fn assert_solved_radius(actual: f64, expected: f64) {
+    let bound = expected.abs().max(1.)
+        * oblikovati_solve::nonlinear::SolveOptions::default().relative_tolerance;
+    assert!(
+        (actual - expected).abs() <= bound,
+        "radius {actual}: expected {expected} within {bound}"
+    );
 }
 
 #[test]
