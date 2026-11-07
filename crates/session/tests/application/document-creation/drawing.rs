@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::drawing::{DrawingBaseViewDefinition, DrawingDocument, DrawingSheetRecipe};
+use oblikovati_model::drawing::{
+    DrawingAnnotationDefinition, DrawingBaseViewDefinition, DrawingDocument, DrawingSheetRecipe,
+};
 type DrawingHost = FileWorkspace<ContentObserver, RecordingWorkspace, WorkspaceFiles>;
 fn drawing_state(host: &DrawingHost, id: u64) -> &DrawingDocument {
     host.workspace()
@@ -21,6 +23,10 @@ fn author_view(host: &mut DrawingHost, id: u64) {
             drawing.add_base_view_definition(
                 1,
                 DrawingBaseViewDefinition::new("Front", BASE_VIEW_FRONT, 0.5, [90., 120.])?,
+            )?;
+            drawing.add_annotation_definition(
+                1,
+                DrawingAnnotationDefinition::parts_list("Parts", [250., 180.])?,
             )
         })
         .unwrap();
@@ -74,6 +80,10 @@ fn verify_reopened_drawing(
     assert_eq!(
         drawing_state(host, reopened).sheets()[1].views[0].name,
         "Front"
+    );
+    assert_eq!(
+        drawing_state(host, reopened).sheets()[1].annotations[0].name(),
+        "Parts"
     );
     assert!(!host.workspace().needs_save(reopened).unwrap());
 }
