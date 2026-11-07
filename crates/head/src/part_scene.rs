@@ -167,12 +167,13 @@ impl DesktopPartScenes {
             },
         }
     }
-    /// The outline of a feature's solid, face by face; empty for a feature with no body.
-    /// Example: `scenes.feature_edges(session, feature)?` while its row is chosen.
+    /// The outline of a feature's solid, face by face, or of one of its faces; empty for a
+    /// feature with no body. Example: `scenes.feature_edges(session, feature, None)?`.
     pub(crate) fn feature_edges<O: TransactionObserver>(
         &self,
         session: &oblikovati_session::DocumentSession<O>,
         feature: oblikovati_model::feature::FeatureId,
+        only: Option<oblikovati_martensite::PrismFaceRole>,
     ) -> Result<Vec<[[f64; 3]; 2]>, String> {
         let evaluation = self.current(session)?;
         let Some(body) = evaluation.body(feature) else {
@@ -183,8 +184,41 @@ impl DesktopPartScenes {
         Ok(mesh
             .faces
             .iter()
+            .filter(|face| only.is_none_or(|role| face.role == role))
             .flat_map(|face| face.boundary_segments())
             .collect())
+    }
+    /// The nearest face on a line of sight, over every solid of the part.
+    /// Example: `scenes.face_on_line(files, document, window.view_line(pixel)?)?`.
+    pub(crate) fn face_on_line<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        line: [[f64; 3]; 2],
+    ) -> Result<
+        Option<(
+            oblikovati_model::feature::FeatureId,
+            oblikovati_martensite::PrismFaceRole,
+        )>,
+        String,
+    > {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let evaluated = self.current(session)?;
+        let mut nearest = None;
+        for record in evaluated.health() {
+            let Some(body) = evaluated.body(record.feature) else {
+                continue;
+            };
+            if let Some((role, reach)) = body.face_on_line(line)?
+                && nearest.is_none_or(|(_, _, best)| reach < best)
+            {
+                nearest = Some((record.feature, role, reach));
+            }
+        }
+        Ok(nearest.map(|(feature, role, _)| (feature, role)))
     }
     pub fn clear(&mut self) {
         self.slot.clear();

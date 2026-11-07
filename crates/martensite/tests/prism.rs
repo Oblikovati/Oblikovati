@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_martensite::{
-    PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, probe_planar_prism,
+    PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, probe_planar_prism, retain_planar_prism,
 };
 fn rectangle() -> PrismProbeDefinition {
     PrismProbeDefinition {
@@ -188,3 +188,21 @@ fn native_topology_counts_unique_entities_including_inner_wires() {
 }
 #[path = "prism/physical.rs"]
 mod physical;
+#[test]
+fn a_line_of_sight_finds_the_nearest_face_of_the_solid_and_misses_beside_it() {
+    let snapshot = retain_planar_prism(&rectangle()).unwrap();
+    let looking_down = |x: f64, y: f64| [[x, y, 100.], [0., 0., -1.]];
+    let [x, y] = [0.5, 0.5];
+    let (role, reach) = snapshot.face_on_line(looking_down(x, y)).unwrap().unwrap();
+    assert_eq!(role, PrismFaceRole::End);
+    assert!(reach > 0., "reach {reach}");
+    assert_eq!(
+        snapshot.face_on_line(looking_down(500., 500.)).unwrap(),
+        None
+    );
+    let looking_up = [[x, y, -100.], [0., 0., 1.]];
+    assert_eq!(
+        snapshot.face_on_line(looking_up).unwrap().unwrap().0,
+        PrismFaceRole::Start
+    );
+}

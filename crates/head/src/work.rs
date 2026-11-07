@@ -257,10 +257,11 @@ pub trait HeadWork {
             "body {key:?}, appearance {appearance:?}, document {document}: expected a properties owner"
         ))
     }
-    /// Choose no browser row; example: after a click on nothing in the view.
-    fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
+    /// A click on the view chooses the face on its line of sight, or nothing.
+    /// Example: `work.click_model_from_gui(document, window.view_line(pixel)?)?`.
+    fn click_model_from_gui(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {
         Err(format!(
-            "browser selection, document {document}: expected a selection owner"
+            "view line {line:?}, document {document}: expected a selection owner"
         ))
     }
     /// The chosen row's outline, in model space; example: to draw it over the view.

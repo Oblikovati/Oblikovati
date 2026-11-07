@@ -111,6 +111,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_memory: owner_precise_input::SketchCommandMemory,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
+    model_face: Option<browser_selection::ChosenModelFace>,
     /// Values a user asked for, by document and body, with the model state they came from.
     body_physical:
         std::collections::BTreeMap<(u64, String), (u64, oblikovati_gui::GuiBodyPhysical)>,
@@ -168,6 +169,7 @@ impl<
             sketch_formats: Default::default(),
             sketch_memory: Default::default(),
             opened_hidden_sketch: None,
+            model_face: None,
             body_physical: Default::default(),
             browser_outline: None,
             document_windows: Vec::new(),

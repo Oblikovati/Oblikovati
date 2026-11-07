@@ -26,6 +26,11 @@ pub(super) fn advance_gui(
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
     commands.feature_edges = dimension_labels::projected_browser_outline(window, owner);
     commands.origin_axes = dimension_labels::origin_axis_lines(window, &commands);
+    follow_view_projection(window);
+    commands.view_axes = window
+        .view_camera()
+        .ok()
+        .map(|camera| crate::view_orientation::view_axes(&camera));
     commands.constraint_glyphs = dimension_labels::projected_constraint_glyphs(window, owner);
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
@@ -42,6 +47,18 @@ fn dispatch_gui_action(
     match action {
         GuiShellAction::CaptureWindowPreview => return window.capture_window_preview(),
         GuiShellAction::Exit => return window.request_close(),
+        GuiShellAction::OrientView { command, fit } => {
+            let camera = crate::view_orientation::oriented(&window.view_camera()?, *command);
+            let changed = window.set_view_camera(camera)?;
+            return if *fit { window.fit_view() } else { Ok(changed) };
+        }
+        GuiShellAction::SetViewProjection(mode) => {
+            window.set_view_projection(*mode);
+            return Ok(true);
+        }
+        GuiShellAction::ClickModel { document, pixel } => {
+            return owner.click_model_from_gui(*document, window.view_line(*pixel)?);
+        }
         _ => {}
     }
     if let Some(key) = action_key(action) {
@@ -91,7 +108,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetSketchVisibility { .. }
         | GuiShellAction::SelectBrowserSketch { .. }
         | GuiShellAction::SelectBrowserFeature { .. }
-        | GuiShellAction::ClearBrowserSelection { .. }
+        | GuiShellAction::ClickModel { .. }
+        | GuiShellAction::OrientView { .. }
+        | GuiShellAction::SetViewProjection(_)
         | GuiShellAction::UpdateBodyProperties { .. }
         | GuiShellAction::SetBodyAppearance { .. }
         | GuiShellAction::EditSketch { .. }
@@ -117,6 +136,21 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         GuiShellAction::Redo => ViewportKey::Redo,
         GuiShellAction::Home => ViewportKey::Home,
     })
+}
+/// Keep the camera on the chosen projection as the viewpoint changes, by whatever means.
+fn follow_view_projection(window: &mut dyn HeadWindow) {
+    let Ok(camera) = window.view_camera() else {
+        return;
+    };
+    let mode = window.view_projection();
+    let perspective = crate::view_orientation::projects_in_perspective(&camera, mode);
+    if perspective != camera.perspective {
+        // A window that cannot take the camera keeps its view; nothing here depends on it.
+        let _ = window.set_view_camera(oblikovati_viewport::ViewportCamera {
+            perspective,
+            ..camera
+        });
+    }
 }
 pub(super) fn dispatch_frame_input(
     window: &mut dyn HeadWindow,

@@ -39,14 +39,32 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
-    pub(super) fn clear_browser_selection(&mut self, document: u64) -> Result<bool, String> {
+    /// A click on the view: the face on the line of sight is chosen, and every browser row is
+    /// let go. On nothing, nothing stays chosen.
+    pub(super) fn click_model(
+        &mut self,
+        document: u64,
+        line: [[f64; 3]; 2],
+    ) -> Result<bool, String> {
         self.require_browser_document(document)?;
         self.files
             .commands(document)
             .map_err(|cause| cause.to_string())?
             .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)
             .map_err(|cause| cause.to_string())?;
+        self.model_face = self
+            .part_scenes
+            .face_on_line(&self.files, document, line)?
+            .map(|(feature, role)| ChosenModelFace {
+                document,
+                feature,
+                role,
+            });
         Ok(true)
+    }
+    /// The face chosen in the view, while its document is the active one.
+    pub(super) fn chosen_model_face(&self, document: u64) -> Option<ChosenModelFace> {
+        self.model_face.filter(|face| face.document == document)
     }
     /// The chosen row's outline; worked out once per model state, then read every frame.
     pub(super) fn current_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
@@ -71,6 +89,10 @@ impl<
             session.selected_browser_sketches().first(),
         ) {
             (Some(feature), _) => BrowserOutlineRow::Feature(feature),
+            (None, None) => {
+                let face = self.chosen_model_face(document)?;
+                BrowserOutlineRow::Face(face.feature, face.role)
+            }
             // A sketch in view already reads as chosen by its colour; only a hidden one needs this.
             (None, Some(sketch))
                 if self.active_sketch_edit().is_none()
@@ -100,7 +122,12 @@ impl<
             .session(source.document)
             .map_err(|cause| cause.to_string())?;
         match source.row {
-            BrowserOutlineRow::Feature(feature) => self.part_scenes.feature_edges(session, feature),
+            BrowserOutlineRow::Feature(feature) => {
+                self.part_scenes.feature_edges(session, feature, None)
+            }
+            BrowserOutlineRow::Face(feature, role) => {
+                self.part_scenes.feature_edges(session, feature, Some(role))
+            }
             BrowserOutlineRow::Sketch(sketch) => sketch_outline(session.snapshot(), sketch),
         }
     }
@@ -131,6 +158,10 @@ pub(super) struct BrowserOutlineSource {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum BrowserOutlineRow {
     Feature(oblikovati_model::feature::FeatureId),
+    Face(
+        oblikovati_model::feature::FeatureId,
+        oblikovati_martensite::PrismFaceRole,
+    ),
     Sketch(DocumentSketchId),
 }
 /// A sketch's curves as segments in model space, as finely as they are drawn when edited.
@@ -172,3 +203,28 @@ fn sketch_outline(
 }
 /// Display fineness of an outlined sketch, in working units.
 const OUTLINE_DEFLECTION: f64 = 0.01;
+/// What the view marks as chosen: whole sketches from the browser, entities from the editor.
+pub(super) fn gui_sketch_selection<O: TransactionObserver>(
+    session: &oblikovati_session::DocumentSession<O>,
+) -> oblikovati_viewport::ViewportSketchSelection {
+    oblikovati_viewport::ViewportSketchSelection {
+        sketches: session.selected_browser_sketches(),
+        entities: session
+            .selected_editor_picks()
+            .iter()
+            .filter_map(|pick| match pick.target() {
+                oblikovati_session::selection::SketchPickTarget::Entity(entity) => {
+                    Some((pick.sketch(), entity))
+                }
+                _ => None,
+            })
+            .collect(),
+    }
+}
+/// A face a click chose in the view; it lasts until the next click, and no edit depends on it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct ChosenModelFace {
+    document: u64,
+    feature: oblikovati_model::feature::FeatureId,
+    role: oblikovati_martensite::PrismFaceRole,
+}

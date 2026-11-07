@@ -61,6 +61,13 @@ fn prism_key(
     SemanticReferenceName::new(document, feature.0, kind, "sketch-prism", tag, &sources)?.encode()
 }
 impl NamedPrismSnapshot {
+    /// The nearest face a line meets; example: `body.face_on_line(window_line)?`.
+    pub fn face_on_line(
+        &self,
+        line: [[f64; 3]; 2],
+    ) -> Result<Option<(PrismFaceRole, f64)>, String> {
+        self.snapshot.face_on_line(line)
+    }
     /// Borrow the sole current body name; example: `named.body_reference_key(history, guid)?` for API enumeration.
     pub fn body_reference_key<'a>(
         &'a self,

@@ -55,8 +55,12 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .set_body_appearance_from_gui(document, key, appearance)
         }
-        fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
-            self.$owner.clear_browser_selection_from_gui(document)
+        fn click_model_from_gui(
+            &mut self,
+            document: u64,
+            line: [[f64; 3]; 2],
+        ) -> Result<bool, String> {
+            self.$owner.click_model_from_gui(document, line)
         }
         fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
             self.$owner.selected_browser_outline()

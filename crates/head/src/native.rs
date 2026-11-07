@@ -9,12 +9,15 @@ use oblikovati_viewport::{
     Viewport, ViewportEvent, ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene,
     ViewportWake,
 };
+/// The border left around a fitted model, as a share of the view.
+const FIT_MARGIN: f64 = 0.1;
 pub struct NativeHeadWindow {
     capture_files: Box<dyn crate::WindowCaptureFiles>,
     capture_requests: Vec<crate::WindowCaptureJob>,
     exit_requested: bool,
     runtime: ViewportRuntime,
     view: Viewport,
+    view_projection: oblikovati_gui::GuiViewProjection,
     wake: ViewportWake,
     scene_status: Option<crate::HeadSceneStatus>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
@@ -58,6 +61,7 @@ impl NativeHeadWindow {
             exit_requested: false,
             runtime,
             view,
+            view_projection: Default::default(),
             wake: ViewportWake::new()?,
             scene_status: None,
             sketch_scene: None,
@@ -217,6 +221,37 @@ impl HeadWindow for NativeHeadWindow {
 
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         self.view.model_pixel(point)
+    }
+
+    fn view_camera(&self) -> Result<oblikovati_viewport::ViewportCamera, String> {
+        self.view.camera_state()
+    }
+
+    fn set_view_camera(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+    ) -> Result<bool, String> {
+        self.view.set_camera(camera)?;
+        self.view
+            .navigate(oblikovati_viewport::ViewportNavigation::FitDepth)?;
+        Ok(true)
+    }
+
+    fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
+        self.view.view_line(pixel)
+    }
+
+    fn fit_view(&mut self) -> Result<bool, String> {
+        self.view
+            .navigate(oblikovati_viewport::ViewportNavigation::Fit { margin: FIT_MARGIN })
+    }
+
+    fn view_projection(&self) -> oblikovati_gui::GuiViewProjection {
+        self.view_projection
+    }
+
+    fn set_view_projection(&mut self, mode: oblikovati_gui::GuiViewProjection) {
+        self.view_projection = mode;
     }
 
     fn show_command_notice(&mut self, notice: crate::DesktopCommandNotice) -> Result<(), String> {

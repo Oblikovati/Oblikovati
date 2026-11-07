@@ -52,6 +52,7 @@ pub struct GuiFrameEngine {
     ribbon: crate::ribbon::DocumentRibbon,
     document_tabs: crate::document_tabs::DocumentTabs,
     workspace: crate::application::workspace_layout::WorkspaceLayout,
+    orientation: crate::application::viewport_orientation::OrientationControl,
     /// The documents of the latest frame, for dialogs an owner notice opens between frames.
     known_documents: Vec<oblikovati_api::wire::DocumentInfo>,
     known_document_type: Option<oblikovati_api::types::DocumentType>,
@@ -85,6 +86,7 @@ impl GuiFrameEngine {
             ribbon: Default::default(),
             document_tabs: Default::default(),
             workspace: Default::default(),
+            orientation: Default::default(),
             known_documents: Vec::new(),
             known_document_type: None,
             workspaces: Default::default(),
@@ -268,6 +270,11 @@ impl GuiFrameEngine {
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let area = self.workspace.document_area(logical, band_height);
+        // Over Home there is no view for it to turn.
+        if !self.home.active {
+            self.orientation
+                .panel(ui, &request.commands, area, &mut selected);
+        }
         let detached = self.document_tabs.is_detached(request.commands.document);
         self.workspaces.panel(ui, &request.commands, area, detached);
         self.plane_selection.panel(
@@ -359,6 +366,7 @@ impl GuiFrameEngine {
         capture.popup = popup_open || self.dimension_value_editor.had_keyboard();
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
         let mut activity = frame_activity()?;
+        activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=
             self.workspace.pending_layout || home_changed || self.home.hover_changed;

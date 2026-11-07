@@ -2,7 +2,7 @@
 //! The Origin branch's rows: their menus, what a chosen row shows in the view, and clearing them.
 use super::browser_view::{BrowserBranch, BrowserView, muted_menu_item};
 use crate::browser::ORIGIN_ROWS;
-use crate::{GuiCommandState, GuiFrameRequest, GuiModelBrowser, GuiShellAction};
+use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{MouseButton, Ui};
 
 const ORIGIN_MENU: &str = "##origin-menu";
@@ -92,26 +92,27 @@ fn auto_resize_row(ui: &Ui) {
         .enabled(false)
         .build();
 }
-/// A click on nothing in the part's view, once no menu is left to close, chooses no row.
-pub(crate) fn clear_on_empty_click(
+/// A click on the part's view, once no menu is left to close: no origin row stays chosen, and
+/// the owner looks for a face under the pointer.
+pub(crate) fn follow_view_click(
     ui: &Ui,
     state: &GuiCommandState,
-    browser: &GuiModelBrowser,
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let on_nothing = ui.is_mouse_clicked(MouseButton::Left)
+    let on_view = ui.is_mouse_clicked(MouseButton::Left)
         && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
         && !crate::widget_abi::any_popup_open(ui);
-    if !on_nothing || state.authoring != crate::GuiAuthoringContext::Part {
+    if !on_view || state.authoring != crate::GuiAuthoringContext::Part {
         return;
     }
     view.selected_origin_row = None;
-    if browser.selected_feature.is_some() || !browser.selected_sketches.is_empty() {
-        actions.push(GuiShellAction::ClearBrowserSelection {
-            document: state.document.unwrap_or(0),
-        });
-    }
+    let [x, y] = ui.io().mouse_pos;
+    let scale = view.layout_scale;
+    actions.push(GuiShellAction::ClickModel {
+        document: state.document.unwrap_or(0),
+        pixel: [(x * scale[0]) as i32, (y * scale[1]) as i32],
+    });
 }
 /// Show the chosen origin row in the view: a plane as a clear surface, an axis as a line.
 pub(crate) fn draw_selected_origin(ui: &Ui, request: &GuiFrameRequest, selected: Option<usize>) {

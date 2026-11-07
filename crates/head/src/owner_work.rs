@@ -202,7 +202,7 @@ impl<
                     edit.document == document
                         && !session.selected_sketch_picks(edit.sketch).is_empty()
                 }),
-            sketch_selection: gui_sketch_selection(session),
+            sketch_selection: browser_selection::gui_sketch_selection(session),
             documents: self.gui_document_rows()?,
             document_storage: self.gui_document_storage()?,
             projects: self.gui_projects(),
@@ -238,6 +238,8 @@ impl<
             origin_planes: Vec::new(),
             feature_edges: Vec::new(),
             origin_axes: Vec::new(),
+            view_axes: None,
+            model_face_chosen: self.chosen_model_face(document).is_some(),
             document_windows: self.document_windows.clone(),
             active_window: Some(self.active_view_slot()),
             measure: self.gui_measure_panel(),
@@ -317,8 +319,8 @@ impl<
     ) -> Result<bool, String> {
         self.set_body_appearance(document, key, appearance)
     }
-    fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
-        self.clear_browser_selection(document)
+    fn click_model_from_gui(&mut self, document: u64, line: [[f64; 3]; 2]) -> Result<bool, String> {
+        self.click_model(document, line)
     }
     fn selected_browser_outline(&mut self) -> Vec<[[f64; 3]; 2]> {
         self.current_browser_outline()
@@ -490,23 +492,5 @@ impl<
         self.sketch_scenes.clear();
         self.dispatch.close();
         Ok(())
-    }
-}
-/// What the view marks as chosen: whole sketches from the browser, entities from the editor.
-fn gui_sketch_selection<O: TransactionObserver>(
-    session: &oblikovati_session::DocumentSession<O>,
-) -> oblikovati_viewport::ViewportSketchSelection {
-    oblikovati_viewport::ViewportSketchSelection {
-        sketches: session.selected_browser_sketches(),
-        entities: session
-            .selected_editor_picks()
-            .iter()
-            .filter_map(|pick| match pick.target() {
-                oblikovati_session::selection::SketchPickTarget::Entity(entity) => {
-                    Some((pick.sketch(), entity))
-                }
-                _ => None,
-            })
-            .collect(),
     }
 }

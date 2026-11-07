@@ -40,6 +40,8 @@ fn request() -> GuiFrameRequest {
             origin_planes: Vec::new(),
             feature_edges: Vec::new(),
             origin_axes: Vec::new(),
+            view_axes: None,
+            model_face_chosen: false,
             document_windows: Vec::new(),
             active_window: None,
             recent_documents: Vec::new(),

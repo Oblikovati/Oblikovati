@@ -68,6 +68,13 @@ fn normalized_up(axis: [f64; 3]) -> [f64; 3] {
 mod tests {
     use super::*;
     #[test]
+    fn a_perspective_view_shows_the_same_height_at_the_target() {
+        let camera = ViewportCamera::default();
+        let half_angle = (camera.perspective_field_of_view() / 2.).to_radians();
+        let shown = 2. * 20. * half_angle.tan();
+        assert!((shown - camera.scale).abs() < 1e-9, "height {shown}");
+    }
+    #[test]
     fn facing_preserves_viewer_side_distance_scale_and_projection() {
         let plane =
             SketchPlane::new([2., 3., 4.], [1., 0., 0.], [0., 0., 1.], Default::default()).unwrap();

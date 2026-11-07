@@ -150,7 +150,7 @@ pub(crate) fn browser_contents(
         return;
     };
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
-    browser_origin::clear_on_empty_click(ui, state, browser, view, actions);
+    browser_origin::follow_view_click(ui, state, view, actions);
     let _document = ui.push_id(format!("document-{:?}", state.document));
     ui.text(&browser.name);
     if let Some(query) = view.query() {

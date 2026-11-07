@@ -64,9 +64,6 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::SelectBrowserFeature { document, feature } => {
             owner.select_browser_feature_from_gui(*document, *feature)
         }
-        GuiShellAction::ClearBrowserSelection { document } => {
-            owner.clear_browser_selection_from_gui(*document)
-        }
         GuiShellAction::UpdateBodyProperties { document, body } => {
             owner.update_body_properties_from_gui(*document, *body)
         }

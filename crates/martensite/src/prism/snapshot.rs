@@ -1,7 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use rustycad_tkbrep::topods::Shape;
+use rustycad_tkmath::gp::{Direction3, Line3, Point3};
+use rustycad_tktopalgo::int_curves_face::IntCurvesFaceShapeIntersector;
 use std::{marker::PhantomData, rc::Rc};
+/// How near a face's boundary a line of sight still lands on the face.
+const PICK_TOLERANCE: f64 = 1e-7; // tol:pick
+fn sight_line([x, y, z]: [f64; 3], [dx, dy, dz]: [f64; 3]) -> Result<Line3, String> {
+    let direction = Direction3::new(dx, dy, dz).map_err(|cause| {
+        format!(
+            "line direction {:?}: expected a nonzero vector: {cause}",
+            [dx, dy, dz]
+        )
+    })?;
+    Ok(Line3::new(Point3::new(x, y, z), direction))
+}
 /// Retained diagnostic prism with immutable native geometry and copied construction roles.
 /// ```compile_fail
 /// fn require_send<T: Send>() {}
@@ -91,6 +104,33 @@ impl PrismProbeSnapshot {
         capture_prism(&self.shape, &self.faces).map_err(|cause| cause.to_string())
     }
     /// Derive presentation from a detached B-rep copy; example: `snapshot.presentation(options)?`.
+    /// The nearest face a line meets, and how far along the line: exact, from the kernel's
+    /// faces, never from a display mesh. Example: `body.face_on_line([point, direction])?`.
+    pub fn face_on_line(
+        &self,
+        [point, direction]: [[f64; 3]; 2],
+    ) -> Result<Option<(PrismFaceRole, f64)>, String> {
+        let line = sight_line(point, direction)?;
+        let mut nearest: Option<(PrismFaceRole, f64)> = None;
+        for (role, face) in &self.faces {
+            let mut intersector = IntCurvesFaceShapeIntersector::new();
+            let reach = (|| -> Result<Option<f64>, rustycad_tkernel::standard::Failure> {
+                intersector.load(face, PICK_TOLERANCE)?;
+                intersector.perform_nearest(&line, f64::MIN / 2., f64::MAX / 2.)?;
+                if intersector.nb_pnt() == 0 {
+                    return Ok(None);
+                }
+                intersector.w_parameter(1).map(Some)
+            })()
+            .map_err(|cause| format!("face on line {point:?} {direction:?}: {cause}"))?;
+            if let Some(reach) = reach
+                && nearest.is_none_or(|(_, best)| reach < best)
+            {
+                nearest = Some((*role, reach));
+            }
+        }
+        Ok(nearest)
+    }
     pub fn presentation(&self, options: PrismMeshOptions) -> Result<PrismPresentation, String> {
         mesh::derive_presentation(self, options)
     }

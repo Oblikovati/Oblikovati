@@ -348,7 +348,10 @@ fn work_commands(world: &mut ApplicationWorld) {
 }
 #[then("the same part remains active")]
 fn same_part(world: &mut ApplicationWorld) {
-    let id = world.previous_document.expect("expected a prior part");
+    let id = world
+        .previous_document
+        .or(world.parts.last().copied())
+        .expect("expected a remembered part");
     assert_eq!(world.active_id(), id);
 }
 #[when("I select the Annotate tab on the floating ribbon")]

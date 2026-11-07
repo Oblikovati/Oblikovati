@@ -164,3 +164,28 @@ pub(crate) fn fit_dialog(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) 
 pub(crate) fn over_any_panel() -> imgui::WindowHoveredFlags {
     imgui::WindowHoveredFlags::ANY_WINDOW | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP
 }
+/// Draw text centred on a point and turned by an angle in radians, in the current window.
+/// Dear ImGui has no turned text, so the glyph quads just drawn are turned where they lie.
+pub(crate) fn rotated_text(ui: &Ui, center: [f32; 2], color: [f32; 4], text: &str, angle: f32) {
+    let [width, height] = ui.calc_text_size(text);
+    let list = ui.get_window_draw_list();
+    // SAFETY: the current window's list is live for this frame, and these reads and writes stay
+    // inside the vertices this call appended; nothing else draws between the two reads.
+    unsafe {
+        let raw = imgui::sys::igGetWindowDrawList();
+        let first = (*raw).VtxBuffer.Size;
+        list.add_text(
+            [center[0] - width / 2., center[1] - height / 2.],
+            color,
+            text,
+        );
+        let last = (*raw).VtxBuffer.Size;
+        let (sin, cos) = angle.sin_cos();
+        for index in first..last {
+            let vertex = &mut *(*raw).VtxBuffer.Data.add(index as usize);
+            let (x, y) = (vertex.pos.x - center[0], vertex.pos.y - center[1]);
+            vertex.pos.x = center[0] + x * cos - y * sin;
+            vertex.pos.y = center[1] + x * sin + y * cos;
+        }
+    }
+}

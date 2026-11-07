@@ -178,8 +178,13 @@ fn configure_projection(
     input: ViewportCamera,
     extent: [u32; 2],
 ) -> Result<(), String> {
-    camera.set_projection_type(Graphic3dCameraProjection::Orthographic);
-    camera.set_scale(input.scale);
+    if input.perspective {
+        camera.set_projection_type(Graphic3dCameraProjection::Perspective);
+        camera.set_fov_y(input.perspective_field_of_view());
+    } else {
+        camera.set_projection_type(Graphic3dCameraProjection::Orthographic);
+        camera.set_scale(input.scale);
+    }
     camera.set_aspect(f64::from(extent[0]) / f64::from(extent[1]));
     camera
         .set_z_range(input.near, input.far)

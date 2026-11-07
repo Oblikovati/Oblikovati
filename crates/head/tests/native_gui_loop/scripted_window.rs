@@ -20,6 +20,27 @@ impl HeadWindow for ScriptedGuiWindow {
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         self.native.model_pixel(point)
     }
+    fn view_camera(&self) -> Result<oblikovati_viewport::ViewportCamera, String> {
+        self.native.view_camera()
+    }
+    fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
+        self.native.view_line(pixel)
+    }
+    fn fit_view(&mut self) -> Result<bool, String> {
+        self.native.fit_view()
+    }
+    fn view_projection(&self) -> oblikovati_gui::GuiViewProjection {
+        self.native.view_projection()
+    }
+    fn set_view_projection(&mut self, mode: oblikovati_gui::GuiViewProjection) {
+        self.native.set_view_projection(mode);
+    }
+    fn set_view_camera(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+    ) -> Result<bool, String> {
+        self.native.set_view_camera(camera)
+    }
     fn navigation_active(&self) -> bool {
         self.native.navigation_active()
     }

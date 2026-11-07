@@ -55,9 +55,17 @@ pub enum GuiShellAction {
         key: String,
         appearance: String,
     },
-    /// A click on nothing: no browser row stays chosen.
-    ClearBrowserSelection {
+    /// Turn the view as the orientation control asks.
+    OrientView {
+        command: crate::GuiOrientCommand,
+        /// The options ask to fit the model to the new view.
+        fit: bool,
+    },
+    SetViewProjection(crate::GuiViewProjection),
+    /// A click on the view, off every panel: it chooses the face there, or nothing.
+    ClickModel {
         document: u64,
+        pixel: [i32; 2],
     },
     SelectBrowserSketch {
         document: u64,
@@ -197,6 +205,10 @@ pub struct GuiCommandState {
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,
     pub origin_axes: Vec<crate::GuiOriginAxis>,
+    /// A face of the model is chosen in the view.
+    pub model_face_chosen: bool,
+    /// How the view looks at the model, for the orientation control.
+    pub view_axes: Option<crate::GuiViewAxes>,
     pub document_windows: Vec<crate::GuiDocumentWindow>,
     pub active_window: Option<u64>,
     pub recent_documents: Vec<crate::GuiRecentDocument>,
@@ -290,8 +302,10 @@ impl GuiShellAction {
             Self::SaveDocumentAs(request) => {
                 state.document == Some(request.document) && !state.transaction_open
             }
-            Self::ClearBrowserSelection { document }
-            | Self::UpdateBodyProperties { document, .. } => state.document == Some(*document),
+            Self::OrientView { .. } | Self::SetViewProjection(_) => state.document.is_some(),
+            Self::ClickModel { document, .. } | Self::UpdateBodyProperties { document, .. } => {
+                state.document == Some(*document)
+            }
             Self::SetBodyAppearance { document, .. } => {
                 state.document == Some(*document) && !state.transaction_open
             }

@@ -19,6 +19,17 @@ impl Viewport {
         // UI conditioning only: retain Go aa8297d1 screenToSketch's DefaultTolerance.
         oblikovati_martensite::sketch_projection(plane, [x, y, z], [dx, dy, dz], 1e-9)
     }
+    /// The line of sight through a pixel: a point on it, and its direction into the view.
+    /// Example: `view.view_line([320, 240])?` to find what lies under the pointer.
+    pub fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
+        self.require_projection_pixel(pixel)?;
+        let [x, y, z, dx, dy, dz] = self
+            .live()?
+            .view
+            .convert_with_proj(pixel[0], pixel[1])
+            .map_err(|cause| format!("viewport pixel {pixel:?}: {cause}"))?;
+        Ok([[x, y, z], [dx, dy, dz]])
+    }
     /// Project a sketch point to the kernel's integer framebuffer pixel convention.
     /// Example: `view.sketch_pixel(SketchPlane::xy(), [2.,3.])?` for a witness endpoint.
     pub fn sketch_pixel(&self, plane: SketchPlane, point: [f64; 2]) -> Result<[i32; 2], String> {

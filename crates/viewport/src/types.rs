@@ -77,6 +77,8 @@ pub struct ViewportCamera {
     pub scale: f64,
     pub near: f64,
     pub far: f64,
+    /// Draw with depth foreshortening; `scale` stays the view's height at the target.
+    pub perspective: bool,
 }
 impl Default for ViewportCamera {
     fn default() -> Self {
@@ -87,10 +89,18 @@ impl Default for ViewportCamera {
             scale: 20.,
             near: 1.,
             far: 100.,
+            perspective: false,
         }
     }
 }
 impl ViewportCamera {
+    /// The angle that shows `scale` of height at the target, in degrees: switching projection
+    /// keeps what lies at the target the same size on screen.
+    pub(crate) fn perspective_field_of_view(&self) -> f64 {
+        let delta: [f64; 3] = std::array::from_fn(|axis| self.eye[axis] - self.target[axis]);
+        let distance = delta.iter().map(|value| value * value).sum::<f64>().sqrt();
+        2. * (self.scale / 2. / distance).atan().to_degrees()
+    }
     pub(crate) fn validate(&self) -> Result<(), String> {
         let vectors = [self.eye, self.target, self.up];
         if vectors.iter().flatten().any(|value| !value.is_finite())

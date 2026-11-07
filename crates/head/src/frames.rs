@@ -123,6 +123,35 @@ pub trait HeadWindow {
         ))
     }
 
+    /// The camera the view looks through; example: for the orientation control.
+    fn view_camera(&self) -> Result<oblikovati_viewport::ViewportCamera, String> {
+        Err("view camera: expected a window with a view".into())
+    }
+    /// Look through this camera instead; example: after a press on the orientation control.
+    fn set_view_camera(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "view camera {camera:?}: expected a window with a view"
+        ))
+    }
+    /// The line of sight through a pixel, as a point and a direction away from the viewer.
+    fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
+        Err(format!(
+            "view line {pixel:?}: expected a window with a view"
+        ))
+    }
+    /// Bring the whole model into view; example: after an orientation change, if asked for.
+    fn fit_view(&mut self) -> Result<bool, String> {
+        Err("fit view: expected a window with a view".into())
+    }
+    /// The projection the view keeps to; example: from the orientation control's menu.
+    fn view_projection(&self) -> oblikovati_gui::GuiViewProjection {
+        Default::default()
+    }
+    /// Keep the view to this projection; example: from the orientation control's menu.
+    fn set_view_projection(&mut self, _: oblikovati_gui::GuiViewProjection) {}
     /// The pixel a model position shows at; example: to draw a solid's edges over the view.
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         Err(format!(

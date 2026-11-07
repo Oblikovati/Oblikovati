@@ -14,6 +14,7 @@ impl RenderView {
             scale: camera.scale(),
             near: camera.z_near(),
             far: camera.z_far(),
+            perspective: !camera.is_orthographic(),
         }
     }
     pub(crate) fn navigate(&self, command: ViewportNavigation) -> Result<(), String> {
@@ -39,11 +40,18 @@ impl RenderView {
         let result = match command {
             ViewportNavigation::Fit { margin } => self.fit_displayed(margin),
             ViewportNavigation::Home { margin } => self.home_displayed(margin),
+            ViewportNavigation::FitDepth => self.fit_displayed_depth(),
             ViewportNavigation::Pan([x, y]) => self.view.pan(x, -y, 1., true),
             ViewportNavigation::Orbit { yaw, pitch } => self.orbit_screen_axes(yaw, pitch),
             ViewportNavigation::Zoom { factor, anchor } => self.zoom_anchor(factor, anchor),
         };
         result.map_err(|cause| cause.to_string())
+    }
+    fn fit_displayed_depth(&self) -> Result<(), martensite_tkernel::standard::Failure> {
+        if self.structures.is_empty() && self.sketches.is_empty() {
+            return Ok(());
+        }
+        self.view.z_fit_all(1.)
     }
     fn fit_displayed(&self, margin: f64) -> Result<(), martensite_tkernel::standard::Failure> {
         self.preview.without_preview(|| self.fit_scene(margin))

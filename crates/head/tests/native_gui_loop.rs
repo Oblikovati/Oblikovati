@@ -205,7 +205,8 @@ fn verify_browser_reentry_pixels(
         .take(before.extent[1] as usize - 168 - STATUS_LINE_ROWS)
     {
         assert!(
-            old[500 * 4..] == new[500 * 4..],
+            // The orientation control shows over a part and not over a sketch; it sits past 1300.
+            old[500 * 4..1300 * 4] == new[500 * 4..1300 * 4],
             "re-entering the same XY camera must preserve rectangle pixels on row {row}"
         );
     }
