@@ -74,6 +74,7 @@ fn expect_no_origin_rows(world: &ApplicationWorld) {
     }
 }
 #[given("an active part in the MCAD Software has a visible model browser")]
+#[given("The MCAD Software shows a visible block made by an extrusion")]
 #[given("an active part in the MCAD Software contains a single block created by an extrusion")]
 #[given("an active part in the MCAD Software contains an extrusion with a nested sketch")]
 #[given("an active part in the MCAD Software contains a block created by an extrusion")]

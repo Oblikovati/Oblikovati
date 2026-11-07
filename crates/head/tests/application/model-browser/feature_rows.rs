@@ -26,6 +26,7 @@ fn expect_nothing_chosen(world: &mut ApplicationWorld) {
 }
 // One extrusion
 #[given("the model browser shows the extrusion and its nested sketch")]
+#[given("the extrusion branch is expanded and shows its direct sketch child")]
 #[given("the extrusion row is visible in the model browser")]
 fn nested_rows(world: &mut ApplicationWorld) {
     expect_rows(world, &[FEATURE, SKETCH]);
@@ -88,9 +89,22 @@ fn sketch_back(world: &mut ApplicationWorld) {
     );
 }
 #[when("I right-click the extrusion row")]
+#[when("the user right-clicks the extrusion row")]
 #[when("I right-click the extrusion row in the model browser")]
 fn right_click_extrusion(world: &mut ApplicationWorld) {
     right_click_row(world, FEATURE);
+}
+
+#[when("chooses Collapse All Children")]
+fn collapse_extrusion_children(world: &mut ApplicationWorld) {
+    choose_menu_row(world, "Collapse All Children");
+    settle(world);
+}
+
+#[then("the direct sketch row remains visible under the extrusion")]
+fn direct_sketch_remains(world: &mut ApplicationWorld) {
+    sketch_back(world);
+    expect_rows(world, &[FEATURE, SKETCH]);
 }
 #[then("the row is highlighted and the block edges are highlighted in blue")]
 fn row_and_edges(world: &mut ApplicationWorld) {
