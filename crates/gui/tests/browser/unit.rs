@@ -105,6 +105,15 @@ fn labels_are_checked_before_imgui_receives_a_nul_terminated_name() {
     browser.sketches[0].id = DocumentSketchId(0);
     assert!(browser.validate().unwrap_err().contains("unique nonzero"));
 }
+
+#[test]
+fn model_state_labels_reject_nul_before_rendering() {
+    let mut browser = sample_state().browser.unwrap();
+    let mut states = oblikovati_model::model_state::ModelStateMembers::default();
+    states.insert(2, "bad\0state").unwrap();
+    browser.model_states = Some(states);
+    assert!(browser.validate().unwrap_err().contains("NUL"));
+}
 #[test]
 fn canonical_plane_text_is_checked_before_it_reaches_the_tooltip() {
     let mut browser = sample_state().browser.unwrap();

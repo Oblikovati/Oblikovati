@@ -20,6 +20,8 @@ pub struct GuiModelBrowser {
     pub name: String,
     pub kind: GuiBrowserKind,
     pub has_origin: bool,
+    /// Part members owned by the document, including its active member.
+    pub model_states: Option<oblikovati_model::model_state::ModelStateMembers>,
     pub sketches: Vec<GuiBrowserSketch>,
     pub features: Vec<GuiBrowserFeature>,
     pub selected_sketches: Vec<DocumentSketchId>,
@@ -76,6 +78,9 @@ impl GuiModelBrowser {
     pub(crate) fn validate(&self) -> Result<(), String> {
         self.validate_labels()?;
         self.validate_identities()?;
+        if let Some(states) = &self.model_states {
+            states.validate()?;
+        }
         for id in &self.selected_sketches {
             if !self.sketches.iter().any(|row| row.id == *id) {
                 return Err(format!(
@@ -92,6 +97,11 @@ impl GuiModelBrowser {
         for text in std::iter::once(&self.name)
             .chain(self.sketches.iter().map(|row| &row.name))
             .chain(self.features.iter().map(|row| &row.name))
+            .chain(
+                self.model_states
+                    .iter()
+                    .flat_map(|states| states.list().iter().map(|row| &row.name)),
+            )
         {
             if text.contains('\0') {
                 return Err(format!("browser label {text:?}: expected text without NUL"));
@@ -211,6 +221,7 @@ impl BrowserTree<'_> {
         view: &mut BrowserView,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.model_states(actions);
         self.bodies(view, actions);
         self.origin(view, actions);
         self.parameters();
@@ -219,6 +230,43 @@ impl BrowserTree<'_> {
         // The marker closes a modelled document's history; a document without an origin has none.
         if self.browser.has_origin {
             self.ui.text(end_marker);
+        }
+    }
+    fn model_states(&self, actions: &mut Vec<GuiShellAction>) {
+        let Some(states) = &self.browser.model_states else {
+            return;
+        };
+        let Some(_representations) = self.branch("Representations", true) else {
+            return;
+        };
+        let Some(_states) = self.branch("Model State", false) else {
+            return;
+        };
+        for member in states.list() {
+            let active = states.active().is_some_and(|row| row.id == member.id);
+            let label = if active {
+                format!("{} (Active)", member.name)
+            } else {
+                member.name.clone()
+            };
+            let _id = self.ui.push_id(format!("model-state-{}", member.id));
+            let position = self.ui.cursor_screen_pos();
+            crate::widget_abi::selectable(self.ui, "##model-state", active, true);
+            crate::widget_abi::literal_text(
+                self.ui,
+                position,
+                self.ui.style_color(StyleColor::Text),
+                &label,
+            );
+            if !active
+                && self.ui.is_item_hovered()
+                && self.ui.is_mouse_double_clicked(MouseButton::Left)
+            {
+                actions.push(GuiShellAction::BrowserChoice {
+                    document: self.state.document.unwrap_or(0),
+                    choice: crate::GuiBrowserChoice::ActivateModelState(member.id),
+                });
+            }
         }
     }
     fn folded_model(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {

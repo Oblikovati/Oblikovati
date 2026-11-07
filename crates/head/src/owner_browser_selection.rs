@@ -148,9 +148,17 @@ impl<
         choice: &oblikovati_gui::GuiBrowserChoice,
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
-            Body, BodyVisible, Nothing, Root, ShowFeatureDimensions, SketchDimensionsShown,
+            ActivateModelState, Body, BodyVisible, Nothing, Root, ShowFeatureDimensions,
+            SketchDimensionsShown,
         };
         self.require_browser_document(document)?;
+        if let ActivateModelState(id) = choice {
+            oblikovati_api::client::Client::new(self.document_host())
+                .model_states()
+                .activate(&oblikovati_api::wire::RepRef { id: *id })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
         if let ShowFeatureDimensions(feature) = choice {
             self.shown_feature_dimensions = feature.map(|feature| (document, feature));
             return Ok(true);
@@ -163,7 +171,7 @@ impl<
             .commands(document)
             .map_err(|cause| cause.to_string())?;
         match choice {
-            ShowFeatureDimensions(_) | SketchDimensionsShown { .. } => {}
+            ActivateModelState(_) | ShowFeatureDimensions(_) | SketchDimensionsShown { .. } => {}
             Nothing => {
                 commands
                     .set_browser_sketch_selection(None, SelectionClickMode::Replace, false)

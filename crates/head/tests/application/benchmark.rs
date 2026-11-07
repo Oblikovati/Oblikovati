@@ -29,6 +29,18 @@ pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
         });
     diagnostics::pointer_pixels(run.center())
 }
+pub(super) fn rendered_sketch_row_center() -> [i32; 2] {
+    let frame = diagnostics::rendered_frame();
+    let rows: Vec<_> = frame
+        .runs
+        .iter()
+        .filter(|run| run.text.contains("[DOF"))
+        .collect();
+    let [row] = rows.as_slice() else {
+        panic!("sketch rows {rows:?}: expected exactly one visible sketch")
+    };
+    diagnostics::pointer_pixels(row.center())
+}
 #[path = "body-properties/steps.rs"]
 mod body_properties;
 #[path = "document-creation/steps.rs"]

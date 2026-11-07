@@ -86,6 +86,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     snapshot: &oblikovati_model::history::DocumentSnapshot,
     client: &Client<oblikovati_automation::FileQueryHost<'_, O, W, F>>,
 ) {
+    browser.model_states = snapshot.model_states.clone();
     browser.sketches = snapshot
         .sketches
         .sketches()
