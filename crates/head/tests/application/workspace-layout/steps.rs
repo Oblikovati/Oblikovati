@@ -84,6 +84,7 @@ fn browser_hidden(world: &mut ApplicationWorld) {
     world.expect_no_text("Origin");
 }
 #[then("the viewport extends into the space it occupied")]
+#[then("the drawing area extends into the space it occupied")]
 #[then("the sketch viewport extends into the freed space")]
 #[then("the viewport occupies the space previously used by the docked browser")]
 pub(super) fn left_space_free(world: &mut ApplicationWorld) {

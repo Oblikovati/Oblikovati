@@ -124,8 +124,26 @@ fn unrelated_filtered(world: &mut ApplicationWorld) {
         .state()
         .browser
         .expect("expected the populated browser");
+    let (position, size) = super::browser_geometry();
     for sketch in browser.sketches {
-        world.expect_no_text(&sketch.name);
+        let name: String = sketch
+            .name
+            .chars()
+            .filter(|ch| !ch.is_whitespace())
+            .collect();
+        let shown = world.frame.runs.iter().any(|run| {
+            let [x, y] = run.center();
+            run.text == name
+                && x >= position[0]
+                && x < position[0] + size[0]
+                && y >= position[1]
+                && y < position[1] + size[1]
+        });
+        assert!(
+            !shown,
+            "filtered sketch {:?}: expected no browser row",
+            sketch.name
+        );
     }
 }
 #[when("I clear the search text")]

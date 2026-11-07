@@ -9,6 +9,7 @@ const SHEET_TITLE_BLOCK: &str = "Title Block";
 #[given("a drawing with a border and title block is open in the MCAD Software")]
 #[given("a drawing with a sheet and drawing resources is open in the MCAD Software")]
 #[given("a drawing with a border resource and a sheet border is open in the MCAD Software")]
+#[given("a drawing with a border resource is open in the MCAD Software")]
 fn drawing_open(world: &mut ApplicationWorld) {
     world.previous_document = Some(world.add_drawing());
 }
