@@ -123,6 +123,7 @@ fn document_from_sketches(sketches: DocumentSketches) -> DocumentSnapshot {
         work_geometry: Default::default(),
         assets: Default::default(),
         drawing: None,
+        model_states: None,
         body_names: Default::default(),
         design_views: Default::default(),
         sketch_settings: None,
