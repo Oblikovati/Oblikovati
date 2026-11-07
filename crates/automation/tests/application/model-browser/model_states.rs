@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_api::json::EmptyObject;
 use oblikovati_automation::SessionHost;
 fn member_workspace() -> (Workspace, u64) {
     let mut workspace = WorkspaceSession::new(QueryObserver::default());
@@ -24,7 +25,12 @@ fn typed_model_state_lifecycle_keeps_copy_inactive_and_rename_identity_stable() 
     let created;
     {
         let client = Client::new(SessionHost::new(&mut workspace));
-        let primary = client.model_states().list().unwrap().model_states.unwrap();
+        let primary = client
+            .model_states()
+            .list(&EmptyObject::default())
+            .unwrap()
+            .model_states
+            .unwrap();
         assert_eq!(primary.len(), 1);
         assert!(primary[0].primary && primary[0].active);
         created = client
@@ -36,7 +42,11 @@ fn typed_model_state_lifecycle_keeps_copy_inactive_and_rename_identity_stable() 
             .unwrap()
             .model_state
             .id;
-        let activated = client.model_states().activate(created).unwrap().model_state;
+        let activated = client
+            .model_states()
+            .activate(&RepRef { id: created })
+            .unwrap()
+            .model_state;
         assert!(activated.active);
         let renamed = client
             .model_states()
@@ -67,7 +77,7 @@ fn typed_model_state_lifecycle_keeps_copy_inactive_and_rename_identity_stable() 
                 })
                 .is_err()
         );
-        assert!(client.model_states().delete(1).is_err());
+        assert!(client.model_states().delete(&RepRef { id: 1 }).is_err());
     }
     workspace.commands(id).unwrap().undo().unwrap();
     assert_eq!(
@@ -86,7 +96,7 @@ fn typed_model_state_lifecycle_keeps_copy_inactive_and_rename_identity_stable() 
     let client = Client::new(SessionHost::new(&mut workspace));
     let remaining = client
         .model_states()
-        .delete(created)
+        .delete(&RepRef { id: created })
         .unwrap()
         .model_states
         .unwrap();
