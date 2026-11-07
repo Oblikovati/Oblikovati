@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{ReleaseProbeProperties, require_finite_result};
-use rustycad_tkbrep::topods::Shape;
-use rustycad_tkgeombase::gprop::GProps;
-use rustycad_tktopalgo::brep_gprop::BRepGProp;
+use martensite_tkbrep::topods::Shape;
+use martensite_tkgeombase::gprop::GProps;
+use martensite_tktopalgo::brep_gprop::BRepGProp;
 // tol:numerical — ADR-0022 bounds eigensolver error, never model incidence.
 const PRINCIPAL_RELATIVE_ERROR: f64 = 128. * f64::EPSILON;
 /// Analytic B-rep integrals in working units, with unit-density centroidal inertia.

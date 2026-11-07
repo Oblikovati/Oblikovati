@@ -18,6 +18,15 @@ fn parse_placed_row(line: &str) -> (usize, [f64; 16]) {
     (placement.parse().unwrap(), oracle::parse_oracle_row(row))
 }
 #[test]
+fn skewed_small_prism_keeps_the_occt_volume_accuracy() {
+    let row = oracle::parse_oracle_row(
+        "0,0.01,0,0,0.02,0,0,0.0012000000006000197,10.0200000000175,-19.984999999999999,30,1,2.4000000012000228e-05,10.020000000017498,-19.984999999999999,30.009999999999998",
+    );
+    let snapshot =
+        retain_prism_on_plane(&oracle::oracle_definition(&row), oracle_plane(5)).unwrap();
+    oracle::verify_face(&row, snapshot.report());
+}
+#[test]
 fn all_placed_prism_faces_match_independent_occt_results() {
     let corpus = include_str!("occt-8.0.0-placed.csv");
     assert_eq!(corpus.lines().count(), 1080);
@@ -33,7 +42,9 @@ fn all_placed_prism_faces_match_independent_occt_results() {
             verify_placed_mesh(snapshot.as_ref().unwrap(), row[1]);
             cases += 1;
         }
-        oracle::verify_face(&row, snapshot.as_ref().unwrap().report());
+        let report = snapshot.as_ref().unwrap().report();
+        let checked = std::panic::catch_unwind(|| oracle::verify_face(&row, report));
+        assert!(checked.is_ok(), "placed prism oracle row {line:?}");
     }
     assert_eq!(cases, 135);
 }

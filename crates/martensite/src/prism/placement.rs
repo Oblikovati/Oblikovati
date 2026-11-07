@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkmath::gp::{Point3, Vector3};
+use martensite_tkmath::gp::{Point3, Vector3};
 pub(super) fn model_point(
     plane: SketchPlane,
     point: [f64; 2],

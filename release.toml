@@ -14,6 +14,30 @@ version = "0.158.0"
 revision = "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd"
 
 [kernel]
+repository = "Oblikovati/Martensite"
+version = "0.7.0"
+revision = "66fe4eb0da43b7df4e734296a9d19c01bd07d03e"
+
+[kernel.packages]
+martensite-cmath = "0.3.5"
+martensite-tkbrep = "0.3.8"
+martensite-tkernel = "0.4.2"
+martensite-tkg2d = "0.3.7"
+martensite-tkg3d = "0.3.7"
+martensite-tkgeomalgo = "0.3.8"
+martensite-tkgeombase = "0.3.5"
+martensite-tkhlr = "0.3.6"
+martensite-tkmath = "0.3.6"
+martensite-tkmesh = "0.3.6"
+martensite-tkprim = "0.3.7"
+martensite-tkservice = "0.4.1"
+martensite-tkshhealing = "0.3.6"
+martensite-tktopalgo = "0.4.1"
+martensite-tkv3d = "0.7.0"
+martensite-vulkan = "0.7.0"
+
+# Martensite #365: this dependency is confined to the TKBO test oracle.
+[kernel-oracle]
 repository = "Oblikovati/RustyCADKernel"
 version = "0.2.7"
 revision = "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b"

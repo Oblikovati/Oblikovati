@@ -79,6 +79,7 @@ fn dependency_boundaries_and_head_display_are_required() {
         name: "rustycad-tkbrep".into(),
         source: Some("git+https://example.test/kernel".into()),
         path: None,
+        kind: Some("dev".into()),
     });
     assert!(
         validate_package(tree.root(), &member)
@@ -101,4 +102,32 @@ fn dependency_boundaries_and_head_display_are_required() {
             .unwrap_err()
             .contains("license")
     );
+}
+
+#[test]
+fn legacy_kernel_is_confined_to_adapter_test_oracles() {
+    let tree = FixtureTree::new();
+    let mut member = package(&tree);
+    let mut dependency = Dependency {
+        name: "rustycad-tkbo".into(),
+        source: Some("git+https://example.test/kernel".into()),
+        path: None,
+        kind: Some("dev".into()),
+    };
+    member.name = "oblikovati-martensite".into();
+    assert!(validate_legacy_kernel(&member, &dependency).is_ok());
+    for kind in [None, Some("build".into())] {
+        dependency.kind = kind;
+        assert!(
+            validate_legacy_kernel(&member, &dependency)
+                .unwrap_err()
+                .contains("dev-dependencies")
+        );
+    }
+    member.name = "oblikovati-viewport".into();
+    dependency.kind = Some("dev".into());
+    assert!(validate_legacy_kernel(&member, &dependency).is_err());
+    dependency.name = "martensite-tkbrep".into();
+    dependency.kind = None;
+    assert!(validate_legacy_kernel(&member, &dependency).is_ok());
 }

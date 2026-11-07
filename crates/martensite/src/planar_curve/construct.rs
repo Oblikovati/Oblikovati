@@ -2,11 +2,11 @@
 use super::PlanarConicFrame;
 use super::{PlanarCurveDefinition, PlanarCurveFailure, PlanarGeometry, PlanarIntersectionOptions};
 use crate::{PlanarSplineDefinition, planar_spline};
-use rustycad_tkernel::standard::Handle;
-use rustycad_tkg2d::geom2d::{
+use martensite_tkernel::standard::Handle;
+use martensite_tkg2d::geom2d::{
     Geom2dCircle, Geom2dCurve, Geom2dEllipse, Geom2dLine, Geom2dTrimmedCurve,
 };
-use rustycad_tkmath::gp::{Axis2d, Direction2, Ellipse2, Point2};
+use martensite_tkmath::gp::{Axis2d, Direction2, Ellipse2, Point2};
 pub(super) type CurveHandle = Handle<dyn Geom2dCurve>;
 
 pub(super) fn require_options(

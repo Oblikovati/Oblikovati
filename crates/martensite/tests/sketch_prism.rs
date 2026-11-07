@@ -55,7 +55,7 @@ fn current_plane_changes_placement_without_editing_local_geometry() {
         retain_selected_sketch_prism(&document, SKETCH, &selected_sketch_boundary(), [0., 0., 2.])
             .unwrap();
     assert_volume(body.report().properties.volume, 24.);
-    assert_eq!(body.report().properties.centroid, [1., 2., 1.5]);
+    assert_centroid_rounding(body.report().properties.centroid, [1., 2., 1.5]);
     assert_eq!(
         document.sketches.get(SKETCH).unwrap().geometry().recipe(),
         before
@@ -66,6 +66,16 @@ fn assert_volume(actual: f64, expected: f64) {
         (actual - expected).abs() < expected * 1e-9,
         "volume {actual}, expected {expected}"
     );
+}
+fn assert_centroid_rounding(actual: [f64; 3], expected: [f64; 3]) {
+    for (actual, expected) in actual.into_iter().zip(expected) {
+        // Numerical integration can round an exact centroid by one ULP.
+        let bound = 16. * f64::EPSILON * expected.abs().max(1.);
+        assert!(
+            (actual - expected).abs() <= bound,
+            "centroid {actual}, expected {expected}, rounding bound {bound}"
+        );
+    }
 }
 #[path = "sketch_prism/placement.rs"]
 mod placement;

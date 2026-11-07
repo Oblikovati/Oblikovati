@@ -38,6 +38,7 @@ pub(crate) struct Dependency {
     pub(crate) name: String,
     pub(crate) source: Option<String>,
     pub(crate) path: Option<PathBuf>,
+    pub(crate) kind: Option<String>,
 }
 
 pub(crate) fn inventory(root: &Path, runner: &dyn Runner) -> BuildResult<Vec<Metadata>> {
@@ -120,8 +121,23 @@ fn validate_package(root: &Path, package: &Package) -> BuildResult<()> {
             ));
         }
         validate_dependency(package, dependency)?;
+        validate_legacy_kernel(package, dependency)?;
     }
     Ok(())
+}
+
+fn validate_legacy_kernel(package: &Package, dependency: &Dependency) -> BuildResult<()> {
+    if !dependency.name.starts_with("rustycad-") {
+        return Ok(());
+    }
+    // Martensite #365 keeps the TKBO qualification oracle outside the application.
+    if package.name == "oblikovati-martensite" && dependency.kind.as_deref() == Some("dev") {
+        return Ok(());
+    }
+    Err(format!(
+        "{} dependency {} kind {:?}: expected legacy kernel use only in adapter dev-dependencies",
+        package.name, dependency.name, dependency.kind
+    ))
 }
 
 fn validate_dependency(package: &Package, dependency: &Dependency) -> BuildResult<()> {

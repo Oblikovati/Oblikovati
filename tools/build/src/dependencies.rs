@@ -2,7 +2,7 @@
 
 use crate::{
     process::{BuildResult, Runner},
-    release_config::{ReleasedDependency, validate_pin},
+    release_config::{ReleasedDependency, package_version, validate_pin},
     tree::read_text,
 };
 use serde::Deserialize;
@@ -34,11 +34,14 @@ pub(crate) fn check_pins(root: &Path) -> BuildResult<()> {
     for dependency in [&config.api, &config.kernel] {
         locked_crates(&root.join("Cargo.lock"), dependency)?;
     }
-    check_renderer_pin(root)?;
+    if let Some(oracle) = &config.kernel_oracle {
+        locked_crates(&root.join("Cargo.lock"), oracle)?;
+    }
+    require_renderer_toolkits(root)?;
     Ok(())
 }
 
-fn check_renderer_pin(root: &Path) -> BuildResult<()> {
+fn require_renderer_toolkits(root: &Path) -> BuildResult<()> {
     let lock: CargoLock = toml::from_str(&read_text(&root.join("Cargo.lock"))?)
         .map_err(|error| format!("renderer lock: expected Cargo packages: {error}"))?;
     for required in ["martensite-vulkan", "martensite-tkv3d"] {
@@ -47,26 +50,6 @@ fn check_renderer_pin(root: &Path) -> BuildResult<()> {
                 "renderer lock: missing {required}; expected both renderer toolkits"
             ));
         }
-    }
-    for package in lock
-        .package
-        .iter()
-        .filter(|item| item.name.starts_with("martensite-"))
-    {
-        verify_renderer_package(package)?;
-    }
-    Ok(())
-}
-
-fn verify_renderer_package(package: &LockedPackage) -> BuildResult<()> {
-    const REVISION: &str = "a65734bde6eaf7d724222ed280a42928909d537c";
-    let expected =
-        format!("git+https://github.com/Oblikovati/Martensite?rev={REVISION}#{REVISION}");
-    if package.source.as_deref() != Some(expected.as_str()) {
-        return Err(format!(
-            "renderer {} source {:?}: expected {expected}",
-            package.name, package.source
-        ));
     }
     Ok(())
 }
@@ -119,7 +102,7 @@ fn require_assets(
         ));
     }
     for name in names {
-        let filename = format!("{name}-{}.crate", dependency.version);
+        let filename = format!("{name}-{}.crate", package_version(dependency, name)?);
         if !release.assets.iter().any(|asset| asset.name == filename) {
             return Err(format!(
                 "{}: missing owner-tested release package {filename}",
@@ -179,6 +162,9 @@ fn owned_package(name: &str, dependency: &ReleasedDependency) -> bool {
     if dependency.repository.ends_with("Oblikovati.API") {
         return name == "oblikovati-api";
     }
+    if dependency.repository == "Oblikovati/Martensite" {
+        return name.starts_with("martensite-");
+    }
     name.starts_with("rustycad-")
 }
 
@@ -190,13 +176,14 @@ fn verify_locked(package: &LockedPackage, dependency: &ReleasedDependency) -> Bu
         .next()
         .unwrap_or_default()
         .trim_end_matches(".git");
-    if package.version != dependency.version
+    let expected_version = package_version(dependency, &package.name)?;
+    if package.version != expected_version
         || base != repository
         || !source.ends_with(&format!("#{}", dependency.revision))
     {
         return Err(format!(
             "locked {} {} source {source:?}: expected released {} at {}",
-            package.name, package.version, dependency.version, dependency.revision
+            package.name, package.version, expected_version, dependency.revision
         ));
     }
     Ok(())

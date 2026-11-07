@@ -1,6 +1,6 @@
 # Martensite integration and readiness
 
-This plan consumes Martensite from `RustyCADKernel`. It does not assume that
+This plan consumes the toolkits from the `Martensite` repository. It does not assume that
 all OCCT capabilities are already usable. It also requires Martensite to gain
 the Go-kernel capabilities needed by Oblikovati that OCCT does not provide. The
 [source baseline](source-map.md) fixes the inspected revision.
@@ -9,9 +9,28 @@ The accepted application contracts are
 [ADR-0007: Martensite integration](../decisions/ADR-0007-martensite-integration.md)
 and [ADR-0008: Vulkan renderer](../decisions/ADR-0008-vulkan-renderer.md).
 Their acceptance does not close any capability check below. Required new
-kernel-internal decisions still belong to RustyCADKernel.
+kernel-internal decisions still belong to Martensite.
+
+## Current dependency boundary
+
+The production model adapter and native viewport use one Martensite revision.
+`release.toml` records the individual toolkit versions and the common source pin.
+The dependency gate rejects a local source, an unlisted toolkit version, or a
+different source revision. It also rejects RustyCAD dependencies in the production
+or build dependency paths.
+
+RustyCAD remains only in the adapter's TKBO qualification test while
+[Martensite #365](https://github.com/Oblikovati/Martensite/issues/365) remains open.
+The old source and version are recorded separately as `kernel-oracle`.
+Qualification of the new production adapter must also include the narrow-trim
+volume regression in
+[Martensite #386](https://github.com/Oblikovati/Martensite/issues/386).
 
 ## Observed integration limits
+
+The following observations describe the original source baseline. Native
+presentation has since been integrated through the Martensite Vulkan/TKV3D crates
+and tested with the application GUI. Feature-specific qualification still applies.
 
 - The package `rustycad-kernel` currently re-exports only `rustycad_tkernel`
   as `foundation`. A dependency on that facade alone will not provide modeling.

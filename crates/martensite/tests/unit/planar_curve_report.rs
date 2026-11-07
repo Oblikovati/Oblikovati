@@ -3,7 +3,7 @@ use super::*;
 use crate::planar_curve::{
     PlanarCurveDefinition, PlanarCurveFailureKind, PlanarGeometry, construct::build_curve,
 };
-use rustycad_tkgeomalgo::int_res2d::Transition;
+use martensite_tkgeomalgo::int_res2d::Transition;
 fn axis() -> CurveHandle {
     build_curve(&PlanarCurveDefinition {
         geometry: PlanarGeometry::Line {

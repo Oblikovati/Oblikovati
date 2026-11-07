@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::super::{PlanarConicFrame, PlanarCurveDefinition, PlanarGeometry, construct};
 use super::{ResolvedSketchCurve, SketchCurveFailure, SketchLineDomain};
+use martensite_tkmath::{elclib, gp::Point2};
 use oblikovati_model::sketch::{
     OwnedSketchGeometry, SketchArc2D, SketchCircle2D, SketchEllipse2D, SketchEntityId,
     SketchLine2D, SketchReadIndex,
 };
-use rustycad_tkmath::{elclib, gp::Point2};
 pub(super) mod endpoints;
 pub(super) fn point(
     sketch: &SketchReadIndex<'_>,

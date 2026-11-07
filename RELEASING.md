@@ -69,7 +69,7 @@ Martensite pin. Windows and macOS tests remain deferred by user instruction.
 
 ## Dependency ownership
 
-**Oblikovati.API and RustyCADKernel each test, package, and publish their own
+**Oblikovati.API and Martensite each test, package, and publish their own
 releases.** Application CI does not run their private test suites, publish their
 packages, or read sibling working trees. It tests application integration with
 their released Rust crates.
@@ -82,11 +82,18 @@ preflight check requires a published, stable `vVERSION` GitHub release with a
 resolved to their commit before comparison. All consumed Martensite toolkits
 must resolve to the same owner release and commit.
 
+Martensite toolkits have individual package versions. `kernel.packages` records
+each consumed toolkit version; preflight checks its corresponding crate asset.
+The repository release version selects the release tag and does not replace the
+toolkit versions. `kernel-oracle` records the old RustyCAD TKBO qualification
+dependency while Martensite issue #365 remains open. The dependency gate permits
+that source only in the adapter's development dependencies.
+
 The API repository owns Go/Rust contract synchronization, examples, and wiki
 gates. The kernel repository owns geometry, oracle, and kernel-package gates.
 The application still owns its API/host inventory, kernel integration, feature,
-live GUI, and installation tests. The application now pins the stable kernel
-v0.1.2 release; an unpublished local kernel revision is not a release pin. See
+live GUI, and installation tests. The current pins are in `release.toml`;
+an unpublished local kernel revision is not a release pin. See
 [kernel intake evidence](architecture/rust-port/implementation-kernel-release.md).
 Product publication remains blocked by the R9 readiness fields.
 

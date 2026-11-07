@@ -30,18 +30,19 @@ fn linked_plane_changes_and_failures_are_resolved_on_every_kernel_call() {
     let first =
         retain_selected_sketch_prism(&document, SKETCH, &selected_sketch_boundary(), [0., 0., 2.])
             .unwrap();
-    assert_eq!(first.report().properties.centroid, [2., 1.5, 5.]);
+    assert_centroid_rounding(first.report().properties.centroid, [2., 1.5, 5.]);
+    let original_properties = first.report().properties.clone();
     let local = document.sketches.get(SKETCH).unwrap().geometry().recipe();
     document.parameters.set_expression(3, "7 cm").unwrap();
     let moved =
         retain_selected_sketch_prism(&document, SKETCH, &selected_sketch_boundary(), [0., 0., 2.])
             .unwrap();
-    assert_eq!(moved.report().properties.centroid, [2., 1.5, 8.]);
+    assert_centroid_rounding(moved.report().properties.centroid, [2., 1.5, 8.]);
     assert_eq!(
         document.sketches.get(SKETCH).unwrap().geometry().recipe(),
         local
     );
-    assert_eq!(first.report().properties.centroid, [2., 1.5, 5.]);
+    assert_eq!(first.report().properties, original_properties);
 }
 
 fn elevation_definition() -> WorkPlaneDefinition {

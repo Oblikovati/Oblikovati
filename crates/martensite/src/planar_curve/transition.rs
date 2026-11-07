@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::PlanarCurveFailure;
-use rustycad_tkgeomalgo::int_res2d::{Position, Situation, Transition, TypeTrans};
+use martensite_tkgeomalgo::int_res2d::{Position, Situation, Transition, TypeTrans};
 /// Native incidence position on an operand's domain.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CurvePosition {

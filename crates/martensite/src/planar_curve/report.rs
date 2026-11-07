@@ -3,12 +3,12 @@ use super::{
     PlanarCurveFailure, PlanarIntersectionOptions, PlanarIntersectionPoint,
     PlanarIntersectionReport, PlanarOverlap, construct::CurveHandle, transition,
 };
-use rustycad_tkg2d::{geom2d::Geom2dCurve, geom2d_adaptor::Geom2dAdaptorCurve};
-use rustycad_tkgeomalgo::{
+use martensite_tkg2d::{geom2d::Geom2dCurve, geom2d_adaptor::Geom2dAdaptorCurve};
+use martensite_tkgeomalgo::{
     geom2d_int::GInter,
     int_res2d::{IntersectionPoint, IntersectionSegment},
 };
-use rustycad_tkmath::gp::Point2;
+use martensite_tkmath::gp::Point2;
 use std::cmp::Ordering;
 
 pub(super) fn intersect(

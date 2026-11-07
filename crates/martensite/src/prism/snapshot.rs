@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::topods::Shape;
+use martensite_tkbrep::topods::Shape;
 use std::{marker::PhantomData, rc::Rc};
 /// Retained diagnostic prism with immutable native geometry and copied construction roles.
 /// ```compile_fail
@@ -45,7 +45,7 @@ pub(super) fn copied_prism(
     Ok((copied, faces))
 }
 fn copied_role(
-    copier: &mut rustycad_tktopalgo::brep_builder_api::BRepBuilderAPICopy,
+    copier: &mut martensite_tktopalgo::brep_builder_api::BRepBuilderAPICopy,
     role: PrismFaceRole,
     source: &Shape,
 ) -> Result<Shape, EvaluationFailure> {

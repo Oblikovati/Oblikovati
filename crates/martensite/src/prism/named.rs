@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use martensite_tkbrep::topods::Shape;
 use oblikovati_model::{
     feature::FeatureId,
     history::{DocumentEditHistory, EvaluationScope},
     identity::{DocumentGuid, ExactReferenceBindings, SemanticReferenceName},
 };
-use rustycad_tkbrep::topods::Shape;
 
 /// Retained exact geometry and current semantic names; native handles remain private.
 pub struct NamedPrismSnapshot {

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::{brep::BRepTool, topods::Shape};
-use rustycad_tkg3d::top_abs::Orientation;
-use rustycad_tkmath::poly::{Triangulation, mesh_purpose};
-use rustycad_tkmesh::brep_mesh::{BRepMeshDiscretRoot, BRepMeshIncrementalMesh};
+use martensite_tkbrep::{brep::BRepTool, topods::Shape};
+use martensite_tkg3d::top_abs::Orientation;
+use martensite_tkmath::poly::{Triangulation, mesh_purpose};
+use martensite_tkmesh::brep_mesh::{BRepMeshDiscretRoot, BRepMeshIncrementalMesh};
 /// Absolute display approximation limits in working units and radians; these are not modeling tolerances.
 #[derive(Clone, Copy, Debug)]
 pub struct PrismMeshOptions {
@@ -67,7 +67,7 @@ fn validate_options(options: PrismMeshOptions) -> Result<(), String> {
     Ok(())
 }
 fn face_mesh(role: PrismFaceRole, shape: &Shape) -> Result<PrismFaceMesh, String> {
-    let face = rustycad_tkbrep::topods::face(shape)
+    let face = martensite_tkbrep::topods::face(shape)
         .map_err(|error| format!("prism {role:?}: expected a face: {error}"))?;
     let (mesh, location) =
         BRepTool::triangulation(&face, mesh_purpose::NONE).map_err(|error| error.to_string())?;
@@ -96,7 +96,7 @@ fn triangle_positions(
     mesh: &Triangulation,
     index: i32,
     orientation: Orientation,
-    transform: rustycad_tkmath::gp::Transform3,
+    transform: martensite_tkmath::gp::Transform3,
 ) -> Result<[[f64; 3]; 3], String> {
     let (a, b, c) = mesh
         .triangle(index)
@@ -128,7 +128,7 @@ pub(super) fn oriented_indices(
 fn transformed_node(
     mesh: &Triangulation,
     index: i32,
-    transform: rustycad_tkmath::gp::Transform3,
+    transform: martensite_tkmath::gp::Transform3,
 ) -> Result<[f64; 3], String> {
     let point = mesh
         .node(index)

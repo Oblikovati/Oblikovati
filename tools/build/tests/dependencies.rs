@@ -5,19 +5,21 @@ use crate::{process::tests::FakeRunner, release_config::tests::config, tree::tes
 
 #[test]
 fn renderer_pin_rejects_local_and_changed_sources() {
+    let config: crate::release_config::ReleaseConfig =
+        toml::from_str(include_str!("../../../release.toml")).unwrap();
     let mut package = LockedPackage {
         name: "martensite-vulkan".into(),
         version: "0.7.0".into(),
         source: None,
     };
-    assert!(verify_renderer_package(&package).is_err());
+    assert!(verify_locked(&package, &config.kernel).is_err());
     package.source = Some("git+https://github.com/Oblikovati/Martensite#changed".into());
-    assert!(verify_renderer_package(&package).is_err());
+    assert!(verify_locked(&package, &config.kernel).is_err());
     let tree = FixtureTree::new();
     tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
-    check_renderer_pin(tree.root()).unwrap();
+    require_renderer_toolkits(tree.root()).unwrap();
     tree.put("Cargo.lock", "package = []");
-    assert!(check_renderer_pin(tree.root()).is_err());
+    assert!(require_renderer_toolkits(tree.root()).is_err());
 }
 
 #[test]
@@ -27,15 +29,84 @@ fn application_lock_consumes_the_pinned_kernel_modeling_release() {
     tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
     let pin = crate::release_config::load(tree.root()).unwrap().kernel;
     let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
-    assert_eq!(pin.version, "0.2.7");
-    assert_eq!(pin.revision, "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b");
+    assert_eq!(pin.version, "0.7.0");
+    assert_eq!(pin.revision, "01a9d38268fd937e36a083520080c0f13a8a94eb");
     for name in [
-        "rustycad-tkprim",
-        "rustycad-tkbrep",
-        "rustycad-tkgeombase",
-        "rustycad-tktopalgo",
+        "martensite-tkprim",
+        "martensite-tkbrep",
+        "martensite-tkgeombase",
+        "martensite-tktopalgo",
     ] {
         assert!(names.iter().any(|locked| locked == name), "missing {name}");
+    }
+}
+
+#[test]
+fn mixed_kernel_versions_and_test_oracle_have_distinct_pins() {
+    let tree = FixtureTree::new();
+    tree.put("release.toml", include_str!("../../../release.toml"));
+    tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
+    check_pins(tree.root()).unwrap();
+    let config = crate::release_config::load(tree.root()).unwrap();
+    let oracle = config.kernel_oracle.unwrap();
+    assert_eq!(oracle.repository, "Oblikovati/RustyCADKernel");
+    assert!(!owned_package("rustycad-tkbo", &config.kernel));
+    assert!(owned_package("rustycad-tkbo", &oracle));
+}
+
+#[test]
+fn kernel_lockfile_uses_each_toolkit_version() {
+    let config: crate::release_config::ReleaseConfig =
+        toml::from_str(include_str!("../../../release.toml")).unwrap();
+    let lock: CargoLock = toml::from_str(include_str!("../../../Cargo.lock")).unwrap();
+    let mut locked = lock
+        .package
+        .into_iter()
+        .find(|package| package.name == "martensite-tkprim")
+        .unwrap();
+    verify_locked(&locked, &config.kernel).unwrap();
+    locked.version = "0.7.0".into();
+    assert!(verify_locked(&locked, &config.kernel).is_err());
+}
+
+#[test]
+fn release_assets_use_each_toolkit_version() {
+    let dependency = heterogeneous_kernel_pin();
+    validate_pin(&dependency).unwrap();
+    let release = UpstreamRelease {
+        draft: false,
+        prerelease: false,
+        assets: vec![ReleaseAsset {
+            name: "martensite-tkprim-0.3.7.crate".into(),
+        }],
+    };
+    require_assets(&release, &dependency, &["martensite-tkprim".into()]).unwrap();
+    assert!(require_assets(&release, &dependency, &["martensite-tkmath".into()]).is_err());
+}
+
+fn heterogeneous_kernel_pin() -> ReleasedDependency {
+    let mut dependency = config().kernel;
+    dependency.repository = "Oblikovati/Martensite".into();
+    dependency.revision = "a".repeat(40);
+    dependency.version = "0.7.0".into();
+    dependency
+        .packages
+        .insert("martensite-tkprim".into(), "0.3.7".into());
+    dependency
+}
+
+#[test]
+fn incomplete_or_invalid_toolkit_maps_are_refused() {
+    let mut dependency = heterogeneous_kernel_pin();
+    dependency.packages.clear();
+    assert!(validate_pin(&dependency).is_err());
+    for (name, version) in [
+        ("wrong-package", "0.3.7"),
+        ("martensite-tkprim", "wrong-version"),
+    ] {
+        dependency.packages.clear();
+        dependency.packages.insert(name.into(), version.into());
+        assert!(validate_pin(&dependency).is_err());
     }
 }
 

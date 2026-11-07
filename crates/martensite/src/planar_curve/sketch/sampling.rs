@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::planar_curve::{PlanarGeometry, construct};
-use rustycad_tkg2d::geom2d_adaptor::Geom2dAdaptorCurve;
-use rustycad_tkgeombase::gcpnts::QuasiUniformDeflection;
-use rustycad_tkmath::geom_abs::Shape;
+use martensite_tkg2d::geom2d_adaptor::Geom2dAdaptorCurve;
+use martensite_tkgeombase::gcpnts::QuasiUniformDeflection;
+use martensite_tkmath::geom_abs::Shape;
 /// Presentation error and resource policy, separate from modelling tolerance.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SketchSamplingOptionsV1 {

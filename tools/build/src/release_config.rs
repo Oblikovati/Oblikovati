@@ -2,7 +2,7 @@
 
 use crate::{cargo_tree::Metadata, process::BuildResult, tree::read_text, version::api_field};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::{collections::BTreeMap, path::Path};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -10,6 +10,12 @@ pub(crate) struct ReleaseConfig {
     pub(crate) product: Product,
     pub(crate) api: ReleasedDependency,
     pub(crate) kernel: ReleasedDependency,
+    #[serde(
+        default,
+        rename = "kernel-oracle",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub(crate) kernel_oracle: Option<ReleasedDependency>,
     pub(crate) linuxdeploy: Download,
 }
 
@@ -30,6 +36,8 @@ pub(crate) struct ReleasedDependency {
     pub(crate) repository: String,
     pub(crate) version: String,
     pub(crate) revision: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) packages: BTreeMap<String, String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -60,15 +68,50 @@ pub(crate) fn validate_pin(dependency: &ReleasedDependency) -> BuildResult<()> {
             dependency.repository, dependency.revision
         ));
     }
-    if !["Oblikovati/Oblikovati.API", "Oblikovati/RustyCADKernel"]
-        .contains(&dependency.repository.as_str())
+    if ![
+        "Oblikovati/Oblikovati.API",
+        "Oblikovati/RustyCADKernel",
+        "Oblikovati/Martensite",
+    ]
+    .contains(&dependency.repository.as_str())
     {
         return Err(format!(
             "dependency repository {:?}: expected the API or kernel owner",
             dependency.repository
         ));
     }
+    validate_package_versions(dependency)
+}
+
+fn validate_package_versions(dependency: &ReleasedDependency) -> BuildResult<()> {
+    if dependency.repository == "Oblikovati/Martensite" && dependency.packages.is_empty() {
+        return Err("Martensite packages: expected individually versioned toolkit pins".into());
+    }
+    for (name, version) in &dependency.packages {
+        if !name.starts_with("martensite-") {
+            return Err(format!(
+                "kernel package {name:?}: expected a martensite- toolkit name"
+            ));
+        }
+        api_field(version)?;
+    }
     Ok(())
+}
+
+pub(crate) fn package_version<'a>(
+    dependency: &'a ReleasedDependency,
+    name: &str,
+) -> BuildResult<&'a str> {
+    if dependency.packages.is_empty() {
+        return Ok(&dependency.version);
+    }
+    match dependency.packages.get(name) {
+        Some(version) => Ok(version),
+        None => Err(format!(
+            "{} package {name:?}: expected an explicit toolkit version",
+            dependency.repository
+        )),
+    }
 }
 
 pub(crate) fn require_application(workspaces: &[Metadata]) -> BuildResult<()> {

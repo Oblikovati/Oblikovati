@@ -17,10 +17,10 @@ mod snapshot;
 #[path = "../tests/unit/prism_snapshot.rs"]
 mod snapshot_tests;
 mod types;
+use martensite_tkprim::brep_prim_api::BRepPrimAPIMakePrism;
+use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
 pub use mesh::{PrismFaceMesh, PrismMeshOptions, PrismPresentation};
 use oblikovati_model::sketch::SketchPlane;
-use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakePrism;
-use rustycad_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
 pub use snapshot::{PrismProbeSnapshot, retain_planar_prism, retain_prism_on_plane};
 pub use types::{
     PrismFaceProbe, PrismFaceRole, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
@@ -47,8 +47,8 @@ pub(crate) fn build_prism(
 }
 
 fn construct_prism(
-    face: &rustycad_tkbrep::topods::Face,
-    vector: rustycad_tkmath::gp::Vector3,
+    face: &martensite_tkbrep::topods::Face,
+    vector: martensite_tkmath::gp::Vector3,
     displacement: [f64; 3],
 ) -> Result<BRepPrimAPIMakePrism, EvaluationFailure> {
     BRepPrimAPIMakePrism::new(face, vector, true, true).map_err(|cause| {
@@ -61,7 +61,7 @@ fn construct_prism(
 }
 fn completed_prism(
     maker: &mut BRepPrimAPIMakePrism,
-) -> Result<rustycad_tkbrep::topods::Shape, EvaluationFailure> {
+) -> Result<martensite_tkbrep::topods::Shape, EvaluationFailure> {
     maker.shape().cloned().map_err(|cause| {
         Phase::Prism.native(
             Entity::Body,
