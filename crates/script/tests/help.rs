@@ -129,12 +129,12 @@ fn hover_help_requires_full_method_and_rejects_invalid_positions() {
 fn complete_embedded_catalog_round_trips_with_unique_named_fields() {
     let snapshot: MethodHelpSnapshot =
         serde_json::from_str(include_str!("../resources/method-help.json")).unwrap();
-    assert_eq!(snapshot.api_version, "0.158.0");
+    assert_eq!(snapshot.api_version, "0.159.0");
     assert_eq!(
         snapshot.api_revision,
-        "32ff38398ab6d6a7df0ca838654d5b8bc8d8b9cd"
+        "f0943c724a6e07ec49533769c9e680137bb3d55c"
     );
-    assert_eq!(snapshot.methods.len(), 628);
+    assert_eq!(snapshot.methods.len(), 630);
     verify_snapshot_names(&snapshot);
     MethodHelpCatalog::new(snapshot).unwrap();
 }
