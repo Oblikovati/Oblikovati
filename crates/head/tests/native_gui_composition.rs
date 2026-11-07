@@ -28,7 +28,6 @@ fn native_owned_imgui_packet_composes_with_the_document_after_context_destructio
 }
 fn owned_shell_packet(extent: [u32; 2]) -> (GuiFrameCompiler, GuiFrame) {
     let mut engine = GuiFrameEngine::new().unwrap();
-    let compiler = GuiFrameCompiler::new(engine.atlas()).unwrap();
     let request = GuiFrameRequest {
         extent,
         status: None,
@@ -47,6 +46,7 @@ fn owned_shell_packet(extent: [u32; 2]) -> (GuiFrameCompiler, GuiFrame) {
         attempts += 1;
     }
     assert!(!output.draws.batches.is_empty());
+    let compiler = GuiFrameCompiler::with_resources(&output.draws.resources).unwrap();
     (compiler, output.draws)
 }
 fn verify_panel_and_document(
