@@ -40,3 +40,37 @@ fn tools_remains_visible(world: &mut ApplicationWorld) {
     world.expect_text("Tools");
     world.expect_no_text("Document Settings");
 }
+
+#[given("the ribbon is in tabs-only display with View active")]
+fn view_in_tabs_only(world: &mut ApplicationWorld) {
+    world.click_text("View");
+    choose_tabs_mode(world);
+    world.expect_no_text("User Interface");
+}
+
+#[given("the temporary View command groups are open")]
+fn open_temporary_view(world: &mut ApplicationWorld) {
+    world.click_text("View");
+    world.expect_text("User Interface");
+    assert!(window_geometry("##ribbon-temporary-panel").is_some());
+}
+
+#[then("the temporary Tools command groups replace the View command groups")]
+fn tools_replace_view(world: &mut ApplicationWorld) {
+    temporary_tools(world);
+    world.expect_no_text("User Interface");
+}
+
+#[then("the temporary Tools command groups close")]
+fn tools_commands_close(world: &mut ApplicationWorld) {
+    assert!(window_geometry("##ribbon-temporary-panel").is_none());
+    world.expect_no_text("Document Settings");
+}
+
+#[then("Tools remains the active tab in tabs-only display")]
+fn tools_selected(world: &mut ApplicationWorld) {
+    let tools = world.pixel_left_of("Tools");
+    let view = world.pixel_left_of("View");
+    assert_ne!(tools, view, "expected Tools to be selected");
+    world.expect_no_text("Document Settings");
+}
