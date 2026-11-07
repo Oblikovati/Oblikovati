@@ -13,6 +13,22 @@ mod solid_visibility;
 mod viewport_background;
 mod world;
 use world::ApplicationWorld;
+
+pub(super) fn rendered_label_center(label: &str) -> [i32; 2] {
+    let frame = diagnostics::rendered_frame();
+    let run = frame
+        .runs
+        .iter()
+        .filter(|run| run.text == label)
+        .min_by(|a, b| a.minimum[1].total_cmp(&b.minimum[1]))
+        .unwrap_or_else(|| {
+            panic!(
+                "label {label:?}: expected visible control in {:?}",
+                frame.runs
+            )
+        });
+    diagnostics::pointer_pixels(run.center())
+}
 #[path = "body-properties/steps.rs"]
 mod body_properties;
 #[path = "document-creation/steps.rs"]

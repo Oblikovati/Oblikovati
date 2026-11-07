@@ -111,6 +111,8 @@ pub(super) fn verify_rectangle(
 }
 
 fn open_parameter_ribbon(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
-    click_shell_position(window, owner, [403, 44]);
-    click_shell_position(window, owner, [50, 90]);
+    let manage = application_bdd::rendered_label_center("Manage");
+    click_shell_position(window, owner, manage);
+    let parameters = application_bdd::rendered_label_center("Parameters");
+    click_shell_position(window, owner, parameters);
 }

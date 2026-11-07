@@ -184,11 +184,11 @@ pub(super) fn topology_keys(owner: &mut NativeDesktopOwner) -> std::collections:
         .unwrap();
     let [body] = response.bodies.unwrap().try_into().unwrap();
     let body: oblikovati_api::wire::BodyTopology = body;
-    let groups = [
-        body.faces.unwrap(),
-        body.edges.unwrap(),
-        body.vertices.unwrap(),
-    ];
+    let faces = body.faces.unwrap();
+    for face in &faces {
+        assert_eq!(face.kind, "plane", "cube face {}", face.key);
+    }
+    let groups = [faces, body.edges.unwrap(), body.vertices.unwrap()];
     assert_eq!(groups.each_ref().map(Vec::len), [6, 12, 8]);
     let keys: std::collections::BTreeSet<_> = groups
         .into_iter()
