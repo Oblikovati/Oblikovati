@@ -58,7 +58,7 @@ pub(crate) fn draw_panel_content(
             muted_commands(ui, origin, &["General Note", "Leader Note"], NOT_PORTED);
         }
         RibbonPanel::PartWorkFeatures => {
-            muted_commands(ui, origin, &["Plane", "Axis", "Point"], NOT_PORTED);
+            muted_commands(ui, origin, &["Plane", "Axis", "Point", "UCS"], NOT_PORTED);
         }
         RibbonPanel::PresentationModel => {
             if crate::widget_abi::button(ui, "Insert Model", [108., 58.]) {

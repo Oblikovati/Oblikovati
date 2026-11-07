@@ -434,3 +434,6 @@ pub(super) fn dock_ribbon_top(world: &mut ApplicationWorld) {
 
 #[path = "active_tab.rs"]
 mod active_tab;
+
+#[path = "right_docked.rs"]
+mod right_docked;

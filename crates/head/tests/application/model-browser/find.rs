@@ -141,7 +141,6 @@ fn dismiss_and_close(world: &mut ApplicationWorld) {
 }
 #[then("the model browser and part remain visible")]
 #[then("the model browser and part are visible")]
-#[then("the part remains visible")]
 #[then("the part workspace is visible")]
 fn part_stays(world: &mut ApplicationWorld) {
     world.expect_no_text("Find Now");
