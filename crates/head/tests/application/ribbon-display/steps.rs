@@ -718,6 +718,23 @@ fn compact_tools_closes_its_panel_when_document_settings_opens() {
 }
 
 #[test]
+fn tabs_only_tools_closes_temporary_commands_after_opening_settings() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    choose_tabs_mode(&mut world);
+    world.click_text("Tools");
+    world.expect_text("Document Settings");
+    world.click_text("Document Settings");
+    world.expect_text("Length precision");
+    world.expect_no_text("Application Options");
+    world.click_text("Done");
+    world.expect_no_text("Length precision");
+    world.expect_no_text("Document Settings");
+    world.close();
+}
+
+#[test]
 fn document_settings_is_unavailable_while_home_is_in_front() {
     let mut world = ApplicationWorld::new();
     part_with_full_ribbon(&mut world);

@@ -363,10 +363,7 @@ fn temporary_contents(
             layout.record_width(tab, panel, width);
             local
         }
-        TemporaryPanel::WholeTab => {
-            draw_row(context, tab, layout, available);
-            false
-        }
+        TemporaryPanel::WholeTab => draw_row(context, tab, layout, available),
     }
 }
 /// The panels a user has not hidden, in the tab's order.
@@ -416,7 +413,7 @@ fn draw_row(
     tab: RibbonTab,
     layout: &mut RibbonPanelLayout,
     available: f32,
-) {
+) -> bool {
     let panels = shown_panels(tab, context.state, &context.hidden);
     let collapsed = panels
         .iter()
@@ -424,9 +421,11 @@ fn draw_row(
         .fold(0., f32::max);
     let expanded = layout.expanded_count(tab, &panels, collapsed, available);
     let mut x = 0.;
+    let mut activated = false;
     for (index, panel) in panels.into_iter().enumerate() {
         let width = if index < expanded {
-            let (width, _) = draw_expanded(context, panel, [x, 0.]);
+            let (width, local_action) = draw_expanded(context, panel, [x, 0.]);
+            activated |= local_action;
             layout.record_width(tab, panel, width);
             width
         } else {
@@ -435,6 +434,7 @@ fn draw_row(
         };
         x += width + 8.;
     }
+    activated
 }
 fn draw_expanded(
     context: &mut PanelDrawContext<'_>,
