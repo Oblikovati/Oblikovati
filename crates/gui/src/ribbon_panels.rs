@@ -470,9 +470,8 @@ fn draw_collapsed(
         ui.tooltip_text(format!("Show {} commands", panel.label()));
     }
     context.owners.icons.cursor(ui, origin, [0., 66.]);
-    if context.show_panel_titles {
-        ui.text(panel.label());
-    }
+    // Collapsed buttons need their label even when expanded panel captions are hidden.
+    ui.text(panel.label());
     draw_panel_popup(context, tab, panel, &identity, anchor, layout);
 }
 
