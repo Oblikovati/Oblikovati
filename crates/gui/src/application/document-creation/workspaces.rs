@@ -11,9 +11,9 @@ use std::rc::Rc;
 
 const INSERT: &str = "Insert";
 /// An A3 landscape sheet: the built-in drawing template's only format.
+#[cfg(test)]
 const SHEET_RATIO: f32 = 420. / 297.;
 const SHEET_MARGIN: f32 = 12.;
-const BORDER_INSET: f32 = 12.;
 const TITLE_BLOCK_SIZE: [f32; 2] = [280., 70.];
 const SHEET_COLOR: [f32; 4] = [0.93, 0.93, 0.91, 1.];
 const LINE_COLOR: [f32; 4] = [0.1, 0.1, 0.12, 1.];
@@ -75,7 +75,14 @@ impl DocumentWorkspaces {
             self.insert.request();
         }
         match state.document_type {
-            Some(DOCUMENT_DRAWING) if !detached => draw_sheet(ui, active_name(state), area),
+            Some(DOCUMENT_DRAWING) if !detached => {
+                if let Some(drawing) = state
+                    .document
+                    .and_then(|id| state.drawing_documents.get(&id))
+                {
+                    draw_sheet(ui, active_name(state), area, drawing);
+                }
+            }
             Some(DOCUMENT_PRESENTATION) => presentation_panels(ui, area),
             _ => {}
         }
@@ -90,13 +97,16 @@ fn active_name(state: &GuiCommandState) -> &str {
         .map_or("", |row| row.name.as_str())
 }
 /// The largest sheet of the template's ratio inside the area, centred.
-fn sheet_rectangle(area: WorkspaceArea) -> ([f32; 2], [f32; 2]) {
+fn sheet_rectangle(area: WorkspaceArea, dimensions: [f64; 2]) -> ([f32; 2], [f32; 2]) {
+    let ratio = dimensions[0] / dimensions[1];
     let available = [
         (area.right - area.left - 2. * SHEET_MARGIN).max(1.),
         (area.bottom - area.top - 2. * SHEET_MARGIN).max(1.),
     ];
-    let width = available[0].min(available[1] * SHEET_RATIO);
-    let height = width / SHEET_RATIO;
+    let width = f64::from(available[0]).min(f64::from(available[1]) * ratio);
+    let height = width / ratio;
+    let width = (width as f32).max(f32::MIN_POSITIVE);
+    let height = (height as f32).max(f32::MIN_POSITIVE);
     let minimum = [
         area.left + (area.right - area.left - width) * 0.5,
         area.top + (area.bottom - area.top - height) * 0.5,
@@ -104,11 +114,20 @@ fn sheet_rectangle(area: WorkspaceArea) -> ([f32; 2], [f32; 2]) {
     (minimum, [minimum[0] + width, minimum[1] + height])
 }
 /// Drawn over the viewport, behind every window: the host has no drawing renderer yet.
-fn draw_sheet(ui: &Ui, name: &str, area: WorkspaceArea) {
-    sheet_on_list(&ui.get_background_draw_list(), name, area);
+fn draw_sheet(
+    ui: &Ui,
+    name: &str,
+    area: WorkspaceArea,
+    drawing: &oblikovati_model::drawing::DrawingDocument,
+) {
+    sheet_on_list(&ui.get_background_draw_list(), name, area, drawing);
 }
 /// A sheet in a window's own content; example: a drawing detached from the tab strip.
-pub(crate) fn draw_sheet_in_window(ui: &Ui, name: &str) {
+pub(crate) fn draw_sheet_in_window(
+    ui: &Ui,
+    name: &str,
+    drawing: &oblikovati_model::drawing::DrawingDocument,
+) {
     let minimum = ui.cursor_screen_pos();
     let size = ui.content_region_avail();
     let area = WorkspaceArea {
@@ -117,27 +136,39 @@ pub(crate) fn draw_sheet_in_window(ui: &Ui, name: &str) {
         right: minimum[0] + size[0],
         bottom: minimum[1] + size[1],
     };
-    sheet_on_list(&ui.get_window_draw_list(), name, area);
+    sheet_on_list(&ui.get_window_draw_list(), name, area, drawing);
 }
-fn sheet_on_list(list: &imgui::DrawListMut<'_>, name: &str, area: WorkspaceArea) {
-    let (minimum, maximum) = sheet_rectangle(area);
+fn sheet_on_list(
+    list: &imgui::DrawListMut<'_>,
+    name: &str,
+    area: WorkspaceArea,
+    drawing: &oblikovati_model::drawing::DrawingDocument,
+) {
+    let sheet = &drawing.sheets()[drawing.active_sheet()];
+    let Ok(dimensions) = sheet.dimensions_mm() else {
+        return;
+    };
+    let (minimum, maximum) = sheet_rectangle(area, dimensions);
     list.add_rect(minimum, maximum, SHEET_COLOR)
         .filled(true)
         .build();
-    let border_minimum = minimum.map(|value| value + BORDER_INSET);
-    let border_maximum = maximum.map(|value| value - BORDER_INSET);
-    list.add_rect(border_minimum, border_maximum, LINE_COLOR)
+    let (border_minimum, border_maximum) =
+        sheet_inner_bounds(minimum, maximum, dimensions, sheet.border_margins_mm());
+    if sheet.border {
+        list.add_rect(border_minimum, border_maximum, LINE_COLOR)
+            .build();
+    }
+    if sheet.title_block.is_empty() {
+        return;
+    }
+    let (title_minimum, title_maximum) =
+        title_bounds(border_minimum, border_maximum, sheet.title_block_at);
+    list.add_rect(title_minimum, title_maximum, LINE_COLOR)
         .build();
-    let title_minimum = [
-        (border_maximum[0] - TITLE_BLOCK_SIZE[0]).max(border_minimum[0]),
-        (border_maximum[1] - TITLE_BLOCK_SIZE[1]).max(border_minimum[1]),
-    ];
-    list.add_rect(title_minimum, border_maximum, LINE_COLOR)
-        .build();
-    let divider = title_minimum[1] + TITLE_BLOCK_SIZE[1] * 0.5;
+    let divider = (title_minimum[1] + title_maximum[1]) * 0.5;
     list.add_line(
         [title_minimum[0], divider],
-        [border_maximum[0], divider],
+        [title_maximum[0], divider],
         LINE_COLOR,
     )
     .build();
@@ -150,8 +181,50 @@ fn sheet_on_list(list: &imgui::DrawListMut<'_>, name: &str, area: WorkspaceArea)
     list.add_text(
         [inset, divider + 10.],
         LINE_COLOR,
-        "Scale 1:1   Sheet 1 of 1",
+        format!(
+            "Scale 1:1   Sheet {} of {}",
+            drawing.active_sheet() + 1,
+            drawing.sheets().len()
+        ),
     );
+}
+fn title_bounds(
+    minimum: [f32; 2],
+    maximum: [f32; 2],
+    location: oblikovati_api::types::TitleBlockLocation,
+) -> ([f32; 2], [f32; 2]) {
+    use oblikovati_api::types::{
+        BOTTOM_LEFT_TITLE_BLOCK, TOP_LEFT_TITLE_BLOCK, TOP_RIGHT_TITLE_BLOCK,
+    };
+    let width = TITLE_BLOCK_SIZE[0].min(maximum[0] - minimum[0]);
+    let height = TITLE_BLOCK_SIZE[1].min(maximum[1] - minimum[1]);
+    let left = matches!(location, BOTTOM_LEFT_TITLE_BLOCK | TOP_LEFT_TITLE_BLOCK);
+    let top = matches!(location, TOP_LEFT_TITLE_BLOCK | TOP_RIGHT_TITLE_BLOCK);
+    let x = if left { minimum[0] } else { maximum[0] - width };
+    let y = if top { minimum[1] } else { maximum[1] - height };
+    ([x, y], [x + width, y + height])
+}
+fn sheet_inner_bounds(
+    minimum: [f32; 2],
+    maximum: [f32; 2],
+    dimensions: [f64; 2],
+    margins: Option<[f64; 4]>,
+) -> ([f32; 2], [f32; 2]) {
+    let Some([left, right, top, bottom]) = margins else {
+        return (minimum, maximum);
+    };
+    let scale_x = f64::from(maximum[0] - minimum[0]) / dimensions[0];
+    let scale_y = f64::from(maximum[1] - minimum[1]) / dimensions[1];
+    (
+        [
+            minimum[0] + (left * scale_x) as f32,
+            minimum[1] + (top * scale_y) as f32,
+        ],
+        [
+            maximum[0] - (right * scale_x) as f32,
+            maximum[1] - (bottom * scale_y) as f32,
+        ],
+    )
 }
 fn presentation_panels(ui: &Ui, area: WorkspaceArea) {
     let snapshot_x = area.right - SNAPSHOT_WIDTH;

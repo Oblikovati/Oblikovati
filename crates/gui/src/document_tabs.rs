@@ -221,8 +221,12 @@ fn detached_tab(
     };
     let tab = ui.tab_item(&row.name);
     menu.popup(ui, state, row, actions);
-    if tab.is_some() {
-        crate::application::document_creation::workspaces::draw_sheet_in_window(ui, &row.name);
+    if tab.is_some()
+        && let Some(drawing) = state.drawing_documents.get(&row.id)
+    {
+        crate::application::document_creation::workspaces::draw_sheet_in_window(
+            ui, &row.name, drawing,
+        );
     }
 }
 fn document_strip(

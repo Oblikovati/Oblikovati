@@ -244,6 +244,9 @@ pub struct GuiCommandState {
     pub browser: Option<crate::GuiModelBrowser>,
     pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
     pub document_storage: std::collections::BTreeMap<u64, GuiDocumentStorage>,
+    /// Current drawing recipes, including drawings in detached windows.
+    pub drawing_documents:
+        std::collections::BTreeMap<u64, oblikovati_model::drawing::DrawingDocument>,
     pub prompts: oblikovati_model::application_prompts::PromptPreferences,
     pub projects: Vec<GuiProject>,
     /// What a new document from each template measures as a file, in bytes.

@@ -77,3 +77,36 @@ fn an_open_transaction_refuses_a_template_and_creates_nothing() {
     assert!(refusal.contains("transaction"), "refusal {refusal:?}");
     assert_eq!(owner.documents().workspace().documents().len(), 1);
 }
+
+#[test]
+fn gui_snapshot_keeps_current_sheets_for_inactive_drawings() {
+    use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
+    use oblikovati_model::drawing::DrawingSheetRecipe;
+    let (mut owner, _) = owner();
+    let template = GuiDocumentTemplate {
+        kind: GuiTemplateKind::Drawing,
+        units: GuiTemplateUnits::Metric,
+    };
+    owner.create_document_template(template).unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    owner
+        .files
+        .commands(drawing)
+        .unwrap()
+        .run("Add sheet", |snapshot, _| {
+            let mut sheet = DrawingSheetRecipe::a3_landscape("Portrait");
+            sheet.orientation = oblikovati_api::types::SHEET_PORTRAIT;
+            sheet.border = false;
+            snapshot.drawing.as_mut().unwrap().add_sheet(sheet)
+        })
+        .unwrap();
+    owner.create_part_document().unwrap();
+    let state = owner.gui_command_state().unwrap();
+    let content = &state.drawing_documents[&drawing];
+    assert_eq!(content.active_sheet(), 1);
+    assert_eq!(content.sheets()[1].dimensions_mm().unwrap(), [297., 420.]);
+    assert!(!content.sheets()[1].border);
+    owner.files.commands(drawing).unwrap().undo().unwrap();
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.drawing_documents[&drawing].active_sheet(), 0);
+}

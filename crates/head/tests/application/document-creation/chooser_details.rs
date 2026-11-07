@@ -343,3 +343,52 @@ fn component_browser_keeps_selected_file_name() {
     component_shows_file(&mut world);
     world.close();
 }
+
+#[test]
+fn reopened_drawing_displays_its_authored_active_sheet() {
+    use oblikovati_api::{client::Client, wire::OpenDocumentArgs};
+    use oblikovati_model::drawing::{DrawingDocument, DrawingSheetRecipe};
+    use oblikovati_persistence::package::DocumentPackage;
+    let mut world = ApplicationWorld::new();
+    let mut drawing = DrawingDocument::new();
+    let mut sheet = DrawingSheetRecipe::a3_landscape("Portrait");
+    sheet.orientation = oblikovati_api::types::SHEET_PORTRAIT;
+    drawing.add_sheet(sheet).unwrap();
+    let bytes = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 3\n")
+        .unwrap()
+        .with_drawing(Some(&drawing))
+        .unwrap()
+        .encode()
+        .unwrap();
+    let file = world.scratch_folder().join("portrait.odd");
+    std::fs::write(&file, bytes).unwrap();
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: file.to_string_lossy().into_owned(),
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.expect_text("Sheet 2 of 2");
+    let capture = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
+    let pixel = |x: usize, y: usize| {
+        let at = (y * capture.extent[0] as usize + x) * 4;
+        &capture.rgba[at..at + 3]
+    };
+    let width = capture.extent[0] as usize;
+    let height = capture.extent[1] as usize;
+    assert!(
+        pixel(width * 59 / 100, height * 45 / 100)
+            .iter()
+            .all(|channel| *channel > 200),
+        "expected portrait paper at its center"
+    );
+    assert!(
+        pixel(width * 35 / 100, height * 45 / 100)
+            .iter()
+            .all(|channel| *channel < 200),
+        "expected workspace beside portrait paper"
+    );
+    world.close();
+}

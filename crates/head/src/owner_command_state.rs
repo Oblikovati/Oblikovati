@@ -48,6 +48,7 @@ impl<
             sketch_selection: browser_selection::gui_sketch_selection(session),
             documents: self.gui_document_rows()?,
             document_storage: self.gui_document_storage()?,
+            drawing_documents: self.gui_drawing_documents()?,
             projects: self.gui_projects(),
             template_sizes: document_creation::gui_template_sizes(),
             prompts: self.prompt_frequencies,
@@ -96,5 +97,19 @@ impl<
             repeat_tool: self.sketch_memory.repeat_tool,
             line_command: self.gui_line_command_menu(),
         })
+    }
+    fn gui_drawing_documents(
+        &self,
+    ) -> Result<std::collections::BTreeMap<u64, oblikovati_model::drawing::DrawingDocument>, String>
+    {
+        let workspace = self.files.workspace();
+        let mut drawings = std::collections::BTreeMap::new();
+        for &id in workspace.documents() {
+            let session = workspace.session(id).map_err(|cause| cause.to_string())?;
+            if let Some(drawing) = &session.snapshot().drawing {
+                drawings.insert(id, drawing.clone());
+            }
+        }
+        Ok(drawings)
     }
 }
