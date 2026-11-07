@@ -37,7 +37,7 @@ defaults:
     shell: bash
 jobs:
   prepare:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       platforms: ${{ steps.matrix.outputs.platforms }}
     steps:
@@ -118,7 +118,7 @@ jobs:
   macos-universal:
     needs: package
     # #3795: actions/runner-images#13518 retired Sonoma on 2026-11-02.
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
