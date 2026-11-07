@@ -49,7 +49,7 @@ fn open_orbit_menu(world: &mut ApplicationWorld) {
         .frame
         .runs
         .iter()
-        .filter(|run| {
+        .rfind(|run| {
             let [x, y] = run.center();
             run.text == "v"
                 && x >= position[0]
@@ -57,7 +57,6 @@ fn open_orbit_menu(world: &mut ApplicationWorld) {
                 && y >= position[1]
                 && y <= position[1] + size[1]
         })
-        .next_back()
         .expect("expected the orbit dropdown")
         .center();
     world.click(arrow.map(|value| value as i32));

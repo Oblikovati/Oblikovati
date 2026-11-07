@@ -34,6 +34,8 @@ mod ribbon_docking;
 mod ribbon_panel_visibility;
 #[path = "../sketch/benchmark.rs"]
 mod sketch;
+#[path = "viewport-navigation-wheel/steps.rs"]
+mod viewport_navigation_wheel;
 #[path = "viewport-orbit/steps.rs"]
 mod viewport_orbit;
 #[path = "viewport-orientation/steps.rs"]

@@ -11,6 +11,8 @@ mod drawing;
 use cube::{ShownFace, inside, shown_faces};
 #[path = "navigation_bar.rs"]
 mod navigation_bar;
+#[path = "navigation_wheel.rs"]
+mod navigation_wheel;
 pub use navigation_bar::{GuiNavigationMode, GuiViewCommand};
 use navigation_bar::{NAVIGATION_SIZE, NAVIGATION_WINDOW, NavigationBar};
 #[path = "options.rs"]
@@ -303,6 +305,7 @@ impl OrientationControl {
         let reach = (area.right - area.left).min(area.bottom - area.top);
         self.navigation.draw_guide(ui, center, reach);
         self.navigation.rotate_dialog(ui, actions);
+        self.navigation.wheel_panel(ui, state, actions);
         self.options.panel(ui);
     }
     fn position(&self, area: WorkspaceArea, side: f32) -> [f32; 2] {
