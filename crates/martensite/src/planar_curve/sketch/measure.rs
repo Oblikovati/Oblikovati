@@ -13,13 +13,15 @@ use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
 pub struct SketchCurveMeasure {
     pub length: f64,
     pub endpoints: Option<[[f64; 2]; 2]>,
-    pub circular: Option<SketchCircularMeasure>,
+    pub conic: Option<SketchConicMeasure>,
 }
-/// Center and size of a circle or arc; `sweep` is in radians.
+/// Analytic conic properties, classified once with the public API's curve kinds.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct SketchCircularMeasure {
+pub struct SketchConicMeasure {
+    pub curve_type: oblikovati_api::types::Curve2dType,
     pub center: [f64; 2],
-    pub radius: f64,
+    pub radii: [f64; 2],
+    /// Native parameter span, in radians; a full conic spans one turn.
     pub sweep: f64,
 }
 /// One extreme separation and where it occurs on the two operands.
@@ -47,14 +49,16 @@ pub fn measure_sketch_curve(
     let curve = construct::build_curve(&resolved).map_err(|cause| curve_failure(entity, cause))?;
     let adaptor = Geom2dAdaptorCurve::with_curve(&curve)
         .map_err(|cause| curve_failure(entity, cause.into()))?;
+    // ADR-0035: fixed-order length has no error bound; use the kernel's metric resolution.
     let length =
-        AbscissaPoint::length(&adaptor).map_err(|cause| curve_failure(entity, cause.into()))?;
+        AbscissaPoint::length_with_tolerance(&adaptor, martensite_tkernel::precision::confusion())
+            .map_err(|cause| curve_failure(entity, cause.into()))?;
     let ends = curve_ends(&adaptor);
     Ok(SketchCurveMeasure {
         length,
         // An unbounded basis has no authored ends, and a full circle's two ends are one point.
         endpoints: ends.filter(|_| resolved.bounds.is_some()),
-        circular: circular_measure(&resolved.geometry, resolved.bounds),
+        conic: conic_measure(&resolved.geometry, resolved.bounds),
     })
 }
 fn curve_ends(curve: &Geom2dAdaptorCurve) -> Option<[[f64; 2]; 2]> {
@@ -64,16 +68,26 @@ fn curve_ends(curve: &Geom2dAdaptorCurve) -> Option<[[f64; 2]; 2]> {
 fn parameter_span(curve: &Geom2dAdaptorCurve) -> Option<[f64; 2]> {
     Some([curve.first_parameter().ok()?, curve.last_parameter().ok()?])
 }
-fn circular_measure(
+fn conic_measure(
     geometry: &PlanarGeometry,
     bounds: Option<[f64; 2]>,
-) -> Option<SketchCircularMeasure> {
-    let PlanarGeometry::Circle { frame, radius } = geometry else {
-        return None;
+) -> Option<SketchConicMeasure> {
+    use oblikovati_api::types::{
+        CIRCLE_CURVE2D, CIRCULAR_ARC_CURVE2D, ELLIPSE_FULL_CURVE2D, ELLIPTICAL_ARC_CURVE2D,
     };
-    Some(SketchCircularMeasure {
+    let (frame, radii, full, trimmed) = match geometry {
+        PlanarGeometry::Circle { frame, radius } => {
+            (frame, [*radius; 2], CIRCLE_CURVE2D, CIRCULAR_ARC_CURVE2D)
+        }
+        PlanarGeometry::Ellipse { frame, radii } => {
+            (frame, *radii, ELLIPSE_FULL_CURVE2D, ELLIPTICAL_ARC_CURVE2D)
+        }
+        _ => return None,
+    };
+    Some(SketchConicMeasure {
+        curve_type: if bounds.is_some() { trimmed } else { full },
         center: frame.center,
-        radius: *radius,
+        radii,
         sweep: bounds.map_or(std::f64::consts::TAU, |[first, last]| last - first),
     })
 }

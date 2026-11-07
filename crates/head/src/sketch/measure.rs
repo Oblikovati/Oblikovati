@@ -2,8 +2,8 @@
 //! What Measure holds and how its selections read as result rows.
 use crate::HeadSketchEdit;
 use oblikovati_martensite::planar_curve::sketch::{
-    SketchCurveMeasure, SketchDistanceRange, measure_sketch_curve, sketch_curve_distance_range,
-    sketch_point_curve_distance_range,
+    SketchConicMeasure, SketchCurveMeasure, SketchDistanceRange, measure_sketch_curve,
+    sketch_curve_distance_range, sketch_point_curve_distance_range,
 };
 use oblikovati_model::{
     quantity::{Dimension, Quantity},
@@ -77,39 +77,87 @@ fn pick_rows(
         MeasurePick::Curve(curve) => {
             let measure =
                 measure_sketch_curve(context.sketch, curve).map_err(|cause| cause.to_string())?;
-            rows.push(format!("Selection {number}: Curve"));
-            let full_turn = context.sketch.circle(curve).is_ok();
-            curve_rows(context, measure, full_turn, rows)?;
+            rows.push(format!(
+                "Selection {number}: {}",
+                selection_name(measure.conic)
+            ));
+            curve_rows(context, measure, rows)?;
         }
     }
     Ok(())
 }
+fn selection_name(conic: Option<SketchConicMeasure>) -> &'static str {
+    use oblikovati_api::types::{ELLIPSE_FULL_CURVE2D, ELLIPTICAL_ARC_CURVE2D};
+    match conic.map(|conic| conic.curve_type) {
+        Some(ELLIPSE_FULL_CURVE2D) => "Ellipse",
+        Some(ELLIPTICAL_ARC_CURVE2D) => "Elliptical Arc",
+        _ => "Curve",
+    }
+}
 fn curve_rows(
     context: &MeasureContext<'_>,
     measure: SketchCurveMeasure,
-    full_turn: bool,
     rows: &mut Vec<String>,
 ) -> Result<(), String> {
-    if let Some(circular) = measure.circular {
-        rows.push(format!("Radius {}", length(context, circular.radius)?));
-        rows.push(format!(
-            "Diameter {}",
-            length(context, circular.radius * 2.)?
-        ));
+    if let Some(conic) = measure.conic {
+        conic_size_rows(context, conic, rows)?;
     }
     rows.push(format!("Length {}", length(context, measure.length)?));
-    if let Some(circular) = measure.circular {
-        // A circle has no sweep of its own: it reads as the angle it closes.
-        let label = if full_turn { "Angle" } else { "Sweep" };
+    if let Some(conic) = measure.conic {
+        conic_tail_rows(context, conic, rows)?;
+    }
+    Ok(())
+}
+type ConicSizeLabel = (&'static str, usize, f64);
+const CIRCULAR_SIZES: [ConicSizeLabel; 2] = [("Radius", 0, 1.), ("Diameter", 0, 2.)];
+const ELLIPTICAL_SIZES: [ConicSizeLabel; 4] = [
+    ("Major radius", 0, 1.),
+    ("Minor radius", 1, 1.),
+    ("Major diameter", 0, 2.),
+    ("Minor diameter", 1, 2.),
+];
+fn conic_size_labels(
+    kind: oblikovati_api::types::Curve2dType,
+) -> Result<&'static [ConicSizeLabel], String> {
+    use oblikovati_api::types::{
+        CIRCLE_CURVE2D, CIRCULAR_ARC_CURVE2D, ELLIPSE_FULL_CURVE2D, ELLIPTICAL_ARC_CURVE2D,
+    };
+    match kind {
+        CIRCLE_CURVE2D | CIRCULAR_ARC_CURVE2D => Ok(&CIRCULAR_SIZES),
+        ELLIPSE_FULL_CURVE2D | ELLIPTICAL_ARC_CURVE2D => Ok(&ELLIPTICAL_SIZES),
+        _ => Err(format!(
+            "measured conic {kind:?}: expected a canonical circle or ellipse curve kind"
+        )),
+    }
+}
+fn conic_size_rows(
+    context: &MeasureContext<'_>,
+    conic: SketchConicMeasure,
+    rows: &mut Vec<String>,
+) -> Result<(), String> {
+    for (label, axis, scale) in conic_size_labels(conic.curve_type)? {
         rows.push(format!(
-            "{label} {:.2} deg",
-            circular.sweep.abs().to_degrees()
-        ));
-        rows.push(format!(
-            "Center {}",
-            model_position(context, circular.center)?
+            "{label} {}",
+            length(context, conic.radii[*axis] * scale)?
         ));
     }
+    Ok(())
+}
+fn conic_tail_rows(
+    context: &MeasureContext<'_>,
+    conic: SketchConicMeasure,
+    rows: &mut Vec<String>,
+) -> Result<(), String> {
+    use oblikovati_api::types::{CIRCLE_CURVE2D, CIRCULAR_ARC_CURVE2D};
+    let angle = match conic.curve_type {
+        CIRCLE_CURVE2D => Some("Angle"),
+        CIRCULAR_ARC_CURVE2D => Some("Sweep"),
+        _ => None,
+    };
+    if let Some(label) = angle {
+        rows.push(format!("{label} {:.2} deg", conic.sweep.abs().to_degrees()));
+    }
+    rows.push(format!("Center {}", model_position(context, conic.center)?));
     Ok(())
 }
 fn pair_rows(
@@ -180,7 +228,7 @@ fn line_pair_angle(sketch: &Sketch2D, picks: [MeasurePick; 2]) -> Result<Option<
 }
 fn line_direction(sketch: &Sketch2D, curve: SketchEntityId) -> Option<[f64; 2]> {
     let measure = measure_sketch_curve(sketch, curve).ok()?;
-    if measure.circular.is_some() {
+    if measure.conic.is_some() {
         return None;
     }
     let [start, end] = measure.endpoints?;

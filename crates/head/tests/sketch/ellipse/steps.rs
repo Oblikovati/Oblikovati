@@ -5,6 +5,8 @@ use cucumber::{given, then, when};
 
 #[path = "alias.rs"]
 mod alias;
+#[path = "measure.rs"]
+mod measure;
 
 const CENTER: [i32; 2] = [850, 550];
 const FIRST_AXIS: [i32; 2] = [1010, 470];
