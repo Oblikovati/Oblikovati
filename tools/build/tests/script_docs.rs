@@ -70,11 +70,9 @@ fn help_generation_is_stable_and_stale_catalog_is_refused() {
 fn help_sources_require_released_owner_package_and_source_shape() {
     let root = FixtureTree::new();
     let fixture = HelpSourceFixture::new(&root);
-    for metadata in [
-        "invalid",
-        r#"{"packages":[]}"#,
-        &fixture.metadata().replace("0.158.0", "9.0.0"),
-    ] {
+    let mut mismatched: serde_json::Value = serde_json::from_str(&fixture.metadata()).unwrap();
+    mismatched["packages"][0]["version"] = serde_json::json!("9.0.0");
+    for metadata in ["invalid", r#"{"packages":[]}"#, &mismatched.to_string()] {
         let runner = FakeRunner::default();
         runner.replies.borrow_mut().push_back(Ok(metadata.into()));
         assert!(generated(root.root(), &runner).is_err());
