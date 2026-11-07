@@ -11,7 +11,9 @@ mod attachments;
 mod attributes;
 mod command_owner;
 mod edit;
+mod extrusion;
 mod file_host;
+pub use extrusion::ExtrudeRegionAccess;
 mod interests;
 pub use file_host::{
     DERIVED_COMMAND_METHODS, DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,

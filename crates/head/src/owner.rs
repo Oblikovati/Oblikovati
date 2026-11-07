@@ -96,6 +96,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     caller: QueuedCaller<S>,
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
+    extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
     command_notice: Option<DesktopCommandNotice>,
     /// Sketches being edited in documents that are not active, by document.
@@ -166,6 +167,7 @@ impl<
             caller,
             refused_close: Vec::new(),
             part_scenes: Default::default(),
+            extrusion_access: None,
             sketch_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),
@@ -196,6 +198,18 @@ impl<
     pub fn with_window_captures(mut self, captures: crate::DesktopWindowCaptures) -> Self {
         self.window_captures = Some(captures);
         self
+    }
+    /// Configure certified extrusion and scene replay; example: `owner.with_extrusion_resolution(resolution)?`.
+    pub fn with_extrusion_resolution(
+        mut self,
+        resolution: oblikovati_martensite::PrismResolution,
+    ) -> Result<Self, String> {
+        let resolution = resolution.validate()?;
+        self.part_scenes.use_certified_resolution(resolution);
+        self.extrusion_access = Some(crate::part_scene::extrusion::CertifiedExtrudeAccess(
+            resolution,
+        ));
+        Ok(self)
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.
     pub fn caller(&self) -> QueuedCaller<S> {
@@ -229,6 +243,10 @@ impl<
         )
         .with_sketch_edit(editing)
         .with_color_schemes(&mut self.color_schemes);
+        let host = match &self.extrusion_access {
+            Some(backend) => host.with_extrusion(backend),
+            None => host,
+        };
         match &self.themes {
             Some(library) => host.with_themes(library),
             None => host,
@@ -247,6 +265,10 @@ impl<
         )
         .with_sketch_edit(editing)
         .with_color_schemes(&mut self.color_schemes);
+        let host = match &self.extrusion_access {
+            Some(backend) => host.with_extrusion(backend),
+            None => host,
+        };
         let host = match &self.themes {
             Some(library) => host.with_themes(library),
             None => host,

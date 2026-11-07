@@ -272,6 +272,8 @@ fn ui_commands_borrow_the_same_canonical_owner_without_worker_admission() {
     assert!(!owner.close_allowed().unwrap());
 }
 
+#[path = "owner/extrusion.rs"]
+mod extrusion;
 #[path = "owner/part_scene.rs"]
 mod part_scene;
 

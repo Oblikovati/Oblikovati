@@ -5,7 +5,51 @@ use martensite_tkbo::profile_extrusion::{
     ProfileCurve, ProfileCurveId, ProfileVertex, ProfileVertexId, Resolution,
 };
 use oblikovati_model::feature::sketch_prism::ResolvedSketchPrism;
+use oblikovati_model::feature::{FeatureId, part::SketchPrismEvaluator};
 use std::collections::BTreeMap;
+
+/// Certified replay for candidate validation with an explicit modelling resolution.
+pub struct CertifiedPrismEvaluator {
+    resolution: crate::PrismResolution,
+}
+impl CertifiedPrismEvaluator {
+    /// Bind the caller's resolution; example: `CertifiedPrismEvaluator::new(resolution)`.
+    pub fn new(resolution: crate::PrismResolution) -> Self {
+        Self { resolution }
+    }
+}
+impl SketchPrismEvaluator for CertifiedPrismEvaluator {
+    type Body = crate::CertifiedPrismSnapshot;
+    type Failure = EvaluationFailure;
+    fn verify_body_reference(&self, _body: &Self::Body, key: &[u8]) -> Result<(), String> {
+        Err(format!(
+            "certified prism reference {key:?}: expected a document-scoped named evaluator"
+        ))
+    }
+    fn evaluate_prism(
+        &mut self,
+        feature: FeatureId,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<Self::Body, Self::Failure> {
+        evaluate_feature(input, self.resolution, feature)
+    }
+}
+
+pub(crate) fn evaluate_feature(
+    input: ResolvedSketchPrism<'_>,
+    resolution: crate::PrismResolution,
+    feature: FeatureId,
+) -> Result<crate::CertifiedPrismSnapshot, EvaluationFailure> {
+    let sketch = input.sketch.sketch.id();
+    let resolution = resolution.validate().map_err(|message| {
+        Phase::Input
+            .refused(Kind::InvalidInput, Entity::Body, message)
+            .with_sketch_identity(sketch)
+            .for_feature(feature)
+    })?;
+    evaluate(input, resolution.kernel())
+        .map_err(|error| error.with_sketch_identity(sketch).for_feature(feature))
+}
 
 /// Evaluate a current, fully constrained saved prism with an explicit modelling resolution.
 /// Example: `retain_certified_sketch_prism(&document, &definition, resolution)?`.

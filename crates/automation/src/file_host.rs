@@ -52,10 +52,16 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     observers: Option<&'a mut dyn DocumentObserverFactory<Observer = O>>,
     sketch_construction: Option<SketchConstructionAccess<'a>>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
+    extrusion: Option<&'a dyn crate::ExtrudeRegionAccess>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Supply profile discovery and candidate validation; example: `host.with_extrusion(&backend)`.
+    pub fn with_extrusion(mut self, backend: &'a dyn crate::ExtrudeRegionAccess) -> Self {
+        self.context.get_mut().extrusion = Some(backend);
+        self
+    }
     /// Borrow the application viewport palettes; example: `host.with_color_schemes(&mut registry)`.
     pub fn with_color_schemes(
         mut self,
@@ -107,6 +113,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 external: None,
                 sketch_preferences: None,
                 part_topology: None,
+                extrusion: None,
                 sketch_construction: None,
             }),
         }
@@ -151,6 +158,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == METHOD_FEATURES_ADD {
+            return crate::extrusion::apply(self.files, self.extrusion, request);
+        }
         if crate::BODY_COMMAND_METHODS.contains(&method) {
             return crate::body_commands::apply(
                 self.files,

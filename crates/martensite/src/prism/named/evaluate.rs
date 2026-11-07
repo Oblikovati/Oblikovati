@@ -94,14 +94,8 @@ impl SketchPrismEvaluator for CertifiedNamedPrismEvaluator<'_> {
         input: ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure> {
         let sketch = input.sketch.sketch.id();
-        let resolution = self.resolution.validate().map_err(|message| {
-            Phase::Input
-                .refused(Kind::InvalidInput, Entity::Body, message)
-                .with_sketch_identity(sketch)
-                .for_feature(feature)
-        })?;
-        let result = crate::sketch_prism::certified::evaluate(input, resolution.kernel())
-            .map_err(|error| error.with_sketch_identity(sketch).for_feature(feature))?;
+        let result =
+            crate::sketch_prism::certified::evaluate_feature(input, self.resolution, feature)?;
         let mut named = self
             .names
             .attach_verified(feature, sketch, result.body)

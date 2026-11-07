@@ -105,9 +105,10 @@ mod sketch_prism;
 pub use region_identity::{RegionSelectionError, resolve_region_by_boundary};
 mod stored_prism;
 pub use sketch_prism::{
-    MartensitePrismEvaluator, SketchDirectedLine, SketchPrismSelection, SketchRegionBoundary,
-    SketchRegionCurveUse, certified_sketch_regions, retain_certified_sketch_prism,
-    retain_resolved_sketch_prism, retain_selected_sketch_prism, retain_sketch_prism_definition,
+    CertifiedPrismEvaluator, MartensitePrismEvaluator, SketchDirectedLine, SketchPrismSelection,
+    SketchRegionBoundary, SketchRegionCurveUse, certified_sketch_regions,
+    retain_certified_sketch_prism, retain_resolved_sketch_prism, retain_selected_sketch_prism,
+    retain_sketch_prism_definition,
 };
 pub use stored_prism::retain_stored_sketch_prism;
 

@@ -97,6 +97,75 @@ fn native_depth_edit(owner: &mut NativePartSession) {
         })
         .unwrap();
 }
+
+fn certified_resolution(maximum_tolerance: f64) -> oblikovati_martensite::PrismResolution {
+    oblikovati_martensite::PrismResolution {
+        version: 1,
+        weld: 1e-6,
+        sew: 1e-7,
+        angular: 1e-9,
+        display_chordal: 1e-3,
+        display_angular: 0.1,
+        maximum_tolerance,
+    }
+}
+fn create_certified(
+    owner: &mut NativePartSession,
+    limit: f64,
+) -> Result<FeatureId, oblikovati_session::CommandError<String>> {
+    owner.run_projected(
+        "Create extrusion",
+        |snapshot, ids| {
+            snapshot
+                .create_sketch_prism("Extrude", stored_definition(), ids)
+                .map_err(|cause| cause.to_string())
+        },
+        |candidate, id| {
+            let mut backend =
+                oblikovati_martensite::CertifiedPrismEvaluator::new(certified_resolution(limit));
+            let replay = candidate
+                .evaluate_part_features(&mut backend)
+                .map_err(|cause| cause.to_string())?;
+            if replay.body(id).is_none() {
+                return Err(format!(
+                    "feature {id:?}: expected certified body; health {:?}",
+                    replay.health()
+                ));
+            }
+            Ok(id)
+        },
+    )
+}
+#[test]
+fn candidate_certification_rolls_back_a_refused_extrusion_before_commit() {
+    let mut snapshot = selected_prism_document();
+    snapshot.work_geometry = Default::default();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    let mut owner = DocumentSession::new(
+        7,
+        DocumentEditHistory::new(snapshot, ids).unwrap(),
+        NativeResultObserver,
+    );
+    let before = owner.snapshot().work_geometry.features().len();
+    assert!(create_certified(&mut owner, 1e-12).is_err());
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before);
+    assert!(owner.snapshot().sketches.get(SKETCH).unwrap().visible());
+    let id = create_certified(&mut owner, 1e-5).unwrap();
+    let mut evaluator =
+        oblikovati_martensite::CertifiedPrismEvaluator::new(certified_resolution(1e-5));
+    let replay = owner
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let body = replay.body(id).unwrap();
+    assert_analytic_scalar(body.body.report().properties.volume, 24.);
+    use oblikovati_model::feature::part::SketchPrismEvaluator;
+    assert!(evaluator.verify_body_reference(body, b"unscoped").is_err());
+    owner.undo().unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before);
+    owner.redo().unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
+}
 #[test]
 fn retained_current_bodies_reject_late_results_and_track_undo_redo_generations() {
     let mut owner = native_part_session();

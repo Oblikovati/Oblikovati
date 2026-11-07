@@ -9,6 +9,7 @@ use oblikovati_session::{
     workspace::WorkspaceObserver,
 };
 use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
+pub(crate) mod extrusion;
 /// Owned display state names its document and generation; kernel handles stay in result storage.
 #[derive(Clone, Debug)]
 pub struct HeadSceneStatus {
@@ -53,9 +54,17 @@ pub struct HeadSceneUpdate {
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
     source: Option<(u64, u64, u64)>,
+    resolution: Option<oblikovati_martensite::PrismResolution>,
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
+    pub(crate) fn use_certified_resolution(
+        &mut self,
+        resolution: oblikovati_martensite::PrismResolution,
+    ) {
+        self.resolution = Some(resolution);
+        self.clear();
+    }
     pub fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
@@ -105,7 +114,7 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
-        let completed = complete_desktop_replay(files, document)?;
+        let completed = complete_desktop_replay(files, document, self.resolution)?;
         files
             .commands(document)
             .map_err(|cause| cause.to_string())?
@@ -232,6 +241,7 @@ impl DesktopPartScenes {
 fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
+    resolution: Option<oblikovati_martensite::PrismResolution>,
 ) -> Result<
     oblikovati_session::part_evaluation::CompletedPartEvaluation<
         NamedPrismSnapshot,
@@ -247,10 +257,18 @@ fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: Docu
     let session = workspace
         .session(document)
         .map_err(|cause| cause.to_string())?;
-    session
-        .prepare_part_evaluation()
-        .evaluate(&mut NamedPrismEvaluator::new(session.history(), guid))
-        .map_err(|cause| cause.to_string())
+    let request = session.prepare_part_evaluation();
+    match resolution {
+        Some(resolution) => request.evaluate(
+            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::new(
+                session.history(),
+                guid,
+                resolution,
+            ),
+        ),
+        None => request.evaluate(&mut NamedPrismEvaluator::new(session.history(), guid)),
+    }
+    .map_err(|cause| cause.to_string())
 }
 
 fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
