@@ -1,16 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::drawing::{DrawingBaseViewDefinition, DrawingDocument, DrawingSheetRecipe};
-#[derive(Default)]
-struct DrawingObserver;
-impl TransactionObserver for DrawingObserver {
-    fn before(&mut self, _: &TransactionEventPayload, _: &DocumentSnapshot) -> Result<(), String> {
-        Ok(())
-    }
-    fn after(&mut self, _: &TransactionEventPayload, _: &DocumentSnapshot) {}
-    fn changed(&mut self, _: u64, _: u64) {}
-}
-type DrawingHost = FileWorkspace<DrawingObserver, RecordingWorkspace, WorkspaceFiles>;
+type DrawingHost = FileWorkspace<ContentObserver, RecordingWorkspace, WorkspaceFiles>;
 fn drawing_state(host: &DrawingHost, id: u64) -> &DrawingDocument {
     host.workspace()
         .session(id)
@@ -41,7 +32,7 @@ fn drawing_content_is_owned_by_history_and_survives_save_close_and_reopen() {
     let created = host
         .create_unbound(
             DocumentPackage::empty(DOCUMENT_DRAWING, "Drawing1"),
-            DrawingObserver,
+            ContentObserver,
             "alpha",
             &mut source,
         )
@@ -71,7 +62,7 @@ fn verify_reopened_drawing(
     let reopened = host
         .open(
             &path("drawing.odd"),
-            DrawingObserver,
+            ContentObserver,
             "alpha",
             source,
             OpenActivation::Activate,

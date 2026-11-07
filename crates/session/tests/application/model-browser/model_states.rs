@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::model_state::ModelStateMembers;
-fn members(host: &Host, id: u64) -> &ModelStateMembers {
+type PartMemberHost = FileWorkspace<ContentObserver, RecordingWorkspace, WorkspaceFiles>;
+fn members(host: &PartMemberHost, id: u64) -> &ModelStateMembers {
     host.workspace()
         .session(id)
         .unwrap()
@@ -10,7 +11,7 @@ fn members(host: &Host, id: u64) -> &ModelStateMembers {
         .as_ref()
         .unwrap()
 }
-fn author_member(host: &mut Host, id: u64, name: &str) -> u64 {
+fn author_member(host: &mut PartMemberHost, id: u64, name: &str) -> u64 {
     host.commands(id)
         .unwrap()
         .run("Create model-state member", |snapshot, ids| {
@@ -26,12 +27,12 @@ fn author_member(host: &mut Host, id: u64, name: &str) -> u64 {
 }
 #[test]
 fn part_members_survive_undo_redo_save_reopen_with_permanent_reservations() {
-    let mut host = host(RecordingWorkspace::default());
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), WorkspaceFiles::default());
     let mut source = SequenceGuids(1000);
     let id = host
         .create_unbound(
             DocumentPackage::empty(DOCUMENT_PART, "Part1"),
-            RecordingObserver::default(),
+            ContentObserver,
             "alpha",
             &mut source,
         )
@@ -47,7 +48,7 @@ fn part_members_survive_undo_redo_save_reopen_with_permanent_reservations() {
     verify_reopened_members(&mut host, id, &expected, reserved, &mut source);
 }
 fn verify_reopened_members(
-    host: &mut Host,
+    host: &mut PartMemberHost,
     id: u64,
     expected: &ModelStateMembers,
     reserved: u64,
@@ -59,7 +60,7 @@ fn verify_reopened_members(
     let reopened = host
         .open(
             &path("states.opd"),
-            RecordingObserver::default(),
+            ContentObserver,
             "alpha",
             source,
             OpenActivation::Activate,

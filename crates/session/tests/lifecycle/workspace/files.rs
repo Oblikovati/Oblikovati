@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
+#[path = "files/content_observer.rs"]
+mod content_observer;
+use content_observer::ContentObserver;
 use oblikovati_persistence::{
     atomic::{AtomicFiles, StagedFile},
     file_access::{DocumentFiles, NativeDocumentFiles},
