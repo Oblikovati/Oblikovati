@@ -24,6 +24,7 @@ pub(super) struct ApplicationWorld {
     /// The edited sketch's view with nothing drawn, for what a scenario later added or removed.
     pub sketch_baseline: Option<oblikovati_viewport::ViewportCapture>,
     pub observed_counts: Vec<usize>,
+    pub observed_sketch: Option<ObservedSketch>,
     pub observed_row_gap: Option<f32>,
     pub observed_row_plain: Option<[u8; 4]>,
     pub observed_view: Option<[i32; 2]>,
@@ -78,6 +79,7 @@ impl ApplicationWorld {
             dragged_tab_x: None,
             sketch_baseline: None,
             observed_counts: Vec::new(),
+            observed_sketch: None,
             observed_row_gap: None,
             observed_row_plain: None,
             observed_view: None,
@@ -308,4 +310,11 @@ fn pointer_drag_press(position: [i32; 2]) -> Vec<ViewportEvent> {
 }
 fn pointer_drag_release(position: [i32; 2]) -> Vec<ViewportEvent> {
     vec![pointer_motion(position), pointer_button(position, false)]
+}
+
+/// The fixture's actual geometry, committed history, and visible curve witnesses.
+pub(super) struct ObservedSketch {
+    pub geometry: oblikovati_model::sketch::Sketch2D,
+    pub history: [Vec<String>; 2],
+    pub witnesses: Vec<[i32; 2]>,
 }

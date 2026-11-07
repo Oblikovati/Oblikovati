@@ -3,6 +3,9 @@
 use super::super::ApplicationWorld;
 use cucumber::{given, then, when};
 
+#[path = "alias.rs"]
+mod alias;
+
 const CENTER: [i32; 2] = [850, 550];
 const FIRST_AXIS: [i32; 2] = [1010, 470];
 const MINOR_AXIS: [i32; 2] = [880, 610];

@@ -19,6 +19,8 @@ const MARK_REACH: i32 = 1;
 const LABEL_GLYPH_WIDTH: f32 = 7.;
 /// From a label's start into the middle of the field left of it.
 const FIELD_INSIDE_LABEL: f32 = 40.;
+#[path = "fixtures_observation.rs"]
+mod observation;
 #[path = "fixtures_panels.rs"]
 mod panels;
 impl ApplicationWorld {
