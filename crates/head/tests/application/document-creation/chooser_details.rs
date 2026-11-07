@@ -34,8 +34,21 @@ fn click_size_heading(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I click the Size column header")]
+#[when("I click the Size column header again")]
 fn click_size(world: &mut ApplicationWorld) {
     click_size_heading(world);
+}
+#[given("the Size column is not the active sort column")]
+fn size_not_active(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.run("Size").text,
+        "Size",
+        "expected an unsorted Size heading"
+    );
+}
+#[then("the visible part templates are ordered by increasing file size")]
+fn ordered_increasing(world: &mut ApplicationWorld) {
+    expect_part_tiles_ordered(world, true);
 }
 #[given("Size is the active sort with visible part templates ordered by increasing file size")]
 fn sorted_ascending(world: &mut ApplicationWorld) {
