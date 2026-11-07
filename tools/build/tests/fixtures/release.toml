@@ -14,7 +14,7 @@ version = "0.154.0"
 revision = ""
 
 [kernel]
-repository = "Oblikovati/RustyCADKernel"
+repository = "Oblikovati/Martensite"
 version = ""
 revision = ""
 

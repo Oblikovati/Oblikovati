@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 use super::*;
-use rustycad_tkbrep::{brep::BRepBuilder, topods::Face};
+use martensite_tkbrep::{brep::BRepBuilder, topods::Face};
 
 #[test]
 fn validity_checker_failure_retains_the_probe_input() {

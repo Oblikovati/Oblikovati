@@ -9,6 +9,12 @@ fn mesh_declines_retain_feature_identity_without_mutating_analytic_outputs() {
     let evaluated = document
         .evaluate_part_features(&mut oblikovati_martensite::MartensitePrismEvaluator)
         .unwrap();
+    let body = evaluated
+        .body(oblikovati_model::feature::FeatureId(1))
+        .unwrap();
+    let original = body.physical_properties().unwrap();
+    // tol:oracle independent analytic volume integration permits floating-point roundoff.
+    assert!((original.geometry.volume - 24.).abs() < 24. * f64::EPSILON * 8.);
     let options = oblikovati_martensite::PrismMeshOptions {
         chord_error: 0.,
         angular_error: 0.5,
@@ -17,10 +23,7 @@ fn mesh_declines_retain_feature_identity_without_mutating_analytic_outputs() {
         ViewportScene::from_part_evaluation(&evaluated, options, [0.; 3], [0., 1., 0., 1.])
             .unwrap();
     verify_mesh_decline(&presentation);
-    let body = evaluated
-        .body(oblikovati_model::feature::FeatureId(1))
-        .unwrap();
-    assert_eq!(body.report().properties.volume, 24.);
+    assert_eq!(body.physical_properties().unwrap(), original);
 }
 
 fn verify_mesh_decline(presentation: &PartPresentation) {

@@ -9,7 +9,7 @@ fn parameter_driven_prism_consumes_current_fully_constrained_sketch() {
     let mut document = selected_sketch_document();
     let selection = selected_sketch_boundary();
     let before = retain_selected_sketch_prism(&document, SKETCH, &selection, [0., 0., 2.]).unwrap();
-    assert_volume(before.report().properties.volume, 24.);
+    assert_analytic_scalar(before.report().properties.volume, 24.);
     document.parameters.set_expression(1, "6 cm").unwrap();
     assert!(
         retain_selected_sketch_prism(&document, SKETCH, &selection, [0., 0., 2.])
@@ -19,8 +19,8 @@ fn parameter_driven_prism_consumes_current_fully_constrained_sketch() {
     );
     solve_selected_sketches(&mut document);
     let after = retain_selected_sketch_prism(&document, SKETCH, &selection, [0., 0., 2.]).unwrap();
-    assert_volume(after.report().properties.volume, 36.);
-    assert_volume(before.report().properties.volume, 24.);
+    assert_analytic_scalar(after.report().properties.volume, 36.);
+    assert_analytic_scalar(before.report().properties.volume, 24.);
     assert_source_roles(after.report());
 }
 #[test]
@@ -34,7 +34,7 @@ fn directed_lines_and_holes_reuse_the_same_kernel_path() {
     solve_selected_sketches(&mut document);
     let before = document.sketches.recipe();
     let body = retain_selected_sketch_prism(&document, SKETCH, &selection, [1., 2., -3.]).unwrap();
-    assert_volume(body.report().properties.volume, 30.);
+    assert_analytic_scalar(body.report().properties.volume, 30.);
     assert_eq!(body.report().faces.len(), 10);
     body.presentation(PrismMeshOptions {
         chord_error: 0.05,
@@ -54,17 +54,17 @@ fn current_plane_changes_placement_without_editing_local_geometry() {
     let body =
         retain_selected_sketch_prism(&document, SKETCH, &selected_sketch_boundary(), [0., 0., 2.])
             .unwrap();
-    assert_volume(body.report().properties.volume, 24.);
-    assert_eq!(body.report().properties.centroid, [1., 2., 1.5]);
+    assert_analytic_scalar(body.report().properties.volume, 24.);
+    assert_analytic_centroid(body.report().properties.centroid, [1., 2., 1.5]);
     assert_eq!(
         document.sketches.get(SKETCH).unwrap().geometry().recipe(),
         before
     );
 }
-fn assert_volume(actual: f64, expected: f64) {
+fn assert_analytic_scalar(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() < expected * 1e-9,
-        "volume {actual}, expected {expected}"
+        "analytic scalar {actual}, expected {expected}"
     );
 }
 #[path = "sketch_prism/placement.rs"]
@@ -88,3 +88,10 @@ fn assert_source_roles(report: &oblikovati_martensite::PrismProbeReport) {
 }
 #[path = "sketch_prism/named.rs"]
 mod named;
+
+fn assert_analytic_centroid(actual: [f64; 3], expected: [f64; 3]) {
+    // These are independently integrated metric quantities, not exact incidence predicates.
+    for (measured, oracle) in actual.into_iter().zip(expected) {
+        assert_analytic_scalar(measured, oracle);
+    }
+}

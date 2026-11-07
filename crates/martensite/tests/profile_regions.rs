@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Integration evidence for released kernel arrangement, not an application profile engine.
-use rustycad_tkbo::{bop_algo::BuilderFace, brep_algo_api::BRepAlgoAPIBuilderAlgo};
-use rustycad_tkbrep::{
+use martensite_tkbo::{bop_algo::BuilderFace, brep_algo_api::BRepAlgoAPIBuilderAlgo};
+use martensite_tkbrep::{
     topexp,
     topods::{Shape, edge, face},
     toptools::IndexedMapOfShape,
 };
-use rustycad_tkernel::{ncollection::List, standard::Failure};
-use rustycad_tkg3d::top_abs::{Orientation, ShapeEnum, State};
-use rustycad_tkgeombase::gprop::GProps;
-use rustycad_tkmath::gp::Plane3;
-use rustycad_tktopalgo::{
+use martensite_tkernel::{ncollection::List, standard::Failure};
+use martensite_tkg3d::top_abs::{Orientation, ShapeEnum, State};
+use martensite_tkgeombase::gprop::GProps;
+use martensite_tkmath::gp::Plane3;
+use martensite_tktopalgo::{
     brep_builder_api::BRepBuilderAPIMakeFace, brep_check::BRepCheckAnalyzer, brep_gprop::BRepGProp,
     brep_lib, brep_top_adaptor::BRepTopAdaptorFClass2d,
 };
@@ -65,7 +65,7 @@ fn fuse_region_edges(sources: &IndexedMapOfShape) -> Result<BRepAlgoAPIBuilderAl
 }
 fn orient_split_edges(
     split: &IndexedMapOfShape,
-    plane: &rustycad_tkbrep::topods::Face,
+    plane: &martensite_tkbrep::topods::Face,
 ) -> Result<List<Shape>, Failure> {
     let mut inputs = List::default();
     for index in 1..=split.extent() {
@@ -176,20 +176,9 @@ fn check_region_case(case: &str) {
     history::require_region_history_coverage(&arrangement).unwrap();
 }
 fn verify_region_set(case: &str, reports: &[RegionReport]) {
-    let rows = occt_region_rows(case);
-    assert!(
-        !rows.is_empty(),
-        "{case}: expected retained independent OCCT evidence"
-    );
-    assert_eq!(
-        reports.len(),
-        rows.len(),
-        "{case}: expected complete bounded-region coverage"
-    );
-    for (region_receipt, row) in reports.iter().zip(rows) {
-        verify_occt_region(region_receipt, &row);
-    }
+    oracle_match::verify_rows(case, reports, &occt_region_rows(case));
 }
+
 #[test]
 fn released_arrangement_regions_match_each_independent_occt_face() {
     for case in [
@@ -233,22 +222,28 @@ fn single_closed_curves_expose_the_recorded_general_fuse_limit() {
         let mut failures = Vec::new();
         fuse.dump_errors(&mut failures).unwrap();
         let failures = String::from_utf8(failures).unwrap();
-        let expected = include_str!("profile_regions/occt-8.0.0-declines.csv");
+        // The port keeps the typed failure but its message key drops OCCT's underscore.
+        use martensite_tkbo::bop_algo::AlertTooFewArguments;
+        use martensite_tkernel::standard::RuntimeTyped;
         assert!(
-            expected
+            fuse.has_error(AlertTooFewArguments::static_type()),
+            "{case}: {failures}"
+        );
+        assert!(
+            include_str!("profile_regions/occt-8.0.0-declines.csv")
                 .lines()
-                .any(|line| line == format!("{case},{}", failures.trim()))
+                .any(|line| line == format!("{case},BOPAlgo_AlertTooFewArguments"))
         );
         assert!(fuse.shape().is_null());
     }
 }
 
 fn exact_seed_state(
-    face: &rustycad_tkbrep::topods::Face,
+    face: &martensite_tkbrep::topods::Face,
     seed: [f64; 2],
 ) -> Result<State, Failure> {
-    use rustycad_tkmath::gp::Point2;
-    use rustycad_tktopalgo::brep_class::BRepClassFaceClassifier;
+    use martensite_tkmath::gp::Point2;
+    use martensite_tktopalgo::brep_class::BRepClassFaceClassifier;
     // tol:metric fixture precision; this test does not choose application tolerances.
     Ok(BRepClassFaceClassifier::with_face_point2d(
         face,
@@ -261,7 +256,13 @@ fn exact_seed_state(
 }
 fn region_surface_properties(shape: &Shape) -> Result<GProps, Failure> {
     let mut props = GProps::default();
-    BRepGProp::surface_properties(shape, &mut props, false, false)?;
+    // tol:oracle relative integration, stricter than the retained 1e-8 metric comparisons.
+    let requested = 1e-12;
+    let achieved = BRepGProp::surface_properties_eps(shape, &mut props, requested, false)?;
+    assert!(
+        achieved.is_finite() && achieved <= requested,
+        "surface integration error {achieved}: expected <= {requested}"
+    );
     Ok(props)
 }
 fn classify_region_seed(
@@ -311,3 +312,6 @@ mod curved_history;
 
 #[path = "profile_regions/curved_prism.rs"]
 mod curved_prism;
+
+#[path = "profile_regions/oracle_match.rs"]
+mod oracle_match;

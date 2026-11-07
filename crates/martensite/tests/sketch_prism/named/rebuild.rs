@@ -41,14 +41,14 @@ fn hole_and_oblique_negative_sweep_names_ignore_traversal_order() {
         let a = left.face_report(&first, document(), &key).unwrap();
         let b = right.face_report(&second, document(), &key).unwrap();
         assert_eq!(a.role, b.role);
-        assert_volume(a.area, b.area);
+        assert_analytic_scalar(a.area, b.area);
         assert_eq!(a.loops, b.loops);
     }
     for role in ["start", "end"] {
         let face = left
             .face_report(&first, document(), &key(role, &[1]))
             .unwrap();
-        assert_volume(face.area, 10.);
+        assert_analytic_scalar(face.area, 10.);
         assert_eq!(face.loops, 2);
         let expected_z = if role == "start" { 0. } else { -3. };
         assert_centroid([0., 0., face.centroid[2]], [0., 0., expected_z]);

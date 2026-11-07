@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Structured evaluation failures stay intact until a text-only caller renders them.
 use crate::PrismFaceRole;
+use martensite_tkernel::standard::Failure;
 use oblikovati_model::{
     document_sketch::DocumentSketchId, feature::FeatureId, sketch::SketchError,
 };
-use rustycad_tkernel::standard::Failure;
 use std::{error::Error, fmt};
 
 /// The operation stage that refused or failed an evaluation.

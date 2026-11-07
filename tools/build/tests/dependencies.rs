@@ -55,13 +55,13 @@ fn application_lock_consumes_the_pinned_kernel_modeling_release() {
     tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
     let pin = crate::release_config::load(tree.root()).unwrap().kernel;
     let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
-    assert_eq!(pin.version, "0.2.7");
-    assert_eq!(pin.revision, "d40ed71b704efd08310a4c56a1c1c3a64d4e3e9b");
+    assert_eq!(pin.version, "0.13.0");
+    assert_eq!(pin.revision, "d051ff699982faba4ec2df3ee9a47e14f38dedbd");
     for name in [
-        "rustycad-tkprim",
-        "rustycad-tkbrep",
-        "rustycad-tkgeombase",
-        "rustycad-tktopalgo",
+        "martensite-tkprim",
+        "martensite-tkbrep",
+        "martensite-tkgeombase",
+        "martensite-tktopalgo",
     ] {
         assert!(names.iter().any(|locked| locked == name), "missing {name}");
     }
@@ -154,7 +154,7 @@ fn lockfile_cannot_substitute_a_local_or_different_dependency() {
     assert!(locked_crates(&tree.root().join("Cargo.lock"), &dependency).is_err());
     tree.put("Cargo.lock", "malformed");
     assert!(locked_crates(&tree.root().join("Cargo.lock"), &dependency).is_err());
-    assert!(owned_package("rustycad-tkbrep", &config().kernel));
+    assert!(owned_package("martensite-tkbrep", &config().kernel));
     assert!(!owned_package("serde", &config().kernel));
 }
 

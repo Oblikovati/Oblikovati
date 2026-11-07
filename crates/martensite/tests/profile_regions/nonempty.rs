@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Diagnostic cardinality contract, not the production sketch-region API.
 use super::*;
-use rustycad_tkbo::bop_algo::{BOPAlgoBuilder, BOPAlgoPaveFiller, BuilderHooks};
+use martensite_tkbo::bop_algo::{BOPAlgoBuilder, BOPAlgoPaveFiller, BuilderHooks};
 struct NonemptyRegionBuilder(BOPAlgoBuilder);
 impl BuilderHooks for NonemptyRegionBuilder {
     fn general_fuse(&mut self) -> &mut BOPAlgoBuilder {
@@ -106,11 +106,7 @@ fn nonempty_cardinality_uses_the_same_pipeline_for_all_eight_profile_inputs() {
                     .collect()
             })
             .collect();
-        assert_eq!(reports.len(), rows.len(), "case {case}");
-        assert!(!rows.is_empty());
-        for (report, row) in reports.iter().zip(rows) {
-            verify_occt_region(report, &row);
-        }
+        oracle_match::verify_rows(case, &reports, &rows);
     }
 }
 #[test]

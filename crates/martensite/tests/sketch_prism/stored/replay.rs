@@ -41,7 +41,7 @@ fn broken_boundary_document() -> DocumentSnapshot {
 }
 fn assert_current_volume(evaluated: &NativePartEvaluation, id: u64) {
     let body = evaluated.body(FeatureId(id)).unwrap();
-    assert_volume(body.report().properties.volume, 24.);
+    assert_analytic_scalar(body.report().properties.volume, 24.);
 }
 #[test]
 fn kernel_boundary_decline_keeps_independent_current_prism_and_recovers() {

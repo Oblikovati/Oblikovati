@@ -41,7 +41,7 @@ impl ReleaseFixture {
             "fixture smoke program",
         );
         resources_fixture(&self.tree);
-        let locks = [(&self.config.api, "oblikovati-api"), (&self.config.kernel, "rustycad-kernel")].iter().map(|(pin, name)| {
+        let locks = [(&self.config.api, "oblikovati-api"), (&self.config.kernel, "martensite-kernel")].iter().map(|(pin, name)| {
             format!("[[package]]\nname = '{name}'\nversion = '{}'\nsource = 'git+https://github.com/{}?tag=v{}#{}'\n", pin.version, pin.repository, pin.version, pin.revision)
         }).collect::<String>();
         self.tree.put("Cargo.lock", &locks);
@@ -88,12 +88,26 @@ impl ReleaseFixture {
     }
 
     fn release_output(&self, endpoint: &str) -> String {
-        let name = if endpoint.contains("Oblikovati.API") {
-            "oblikovati-api-0.154.0.crate"
-        } else {
-            "rustycad-kernel-0.1.0.crate"
-        };
-        serde_json::json!({"draft":false,"prerelease":false,"assets":[{"name":name}]}).to_string()
+        if endpoint.contains("Oblikovati.API") {
+            return serde_json::json!({"draft":false,"prerelease":false,"assets":[{"name":"oblikovati-api-0.154.0.crate"}]}).to_string();
+        }
+        self.sdk_release_metadata()
+    }
+
+    pub(crate) fn sdk_catalog(&self) -> String {
+        serde_json::json!({
+            "schema":2,"release":self.config.kernel.version,"source_consumption":"source_workspace",
+            "source_workspace":{"archive":format!("martensite-{}-source-workspace.tar.gz",self.config.kernel.version),"revision":self.config.kernel.revision,"sha256":"c".repeat(64),"verification":"offline-production-libraries-all-features-and-external-consumer"},
+            "packages":[{"name":"martensite-kernel","version":"0.1.0"}]
+        }).to_string()
+    }
+    pub(crate) fn sdk_release_metadata(&self) -> String {
+        use sha2::{Digest, Sha256};
+        let digest = format!("sha256:{:x}", Sha256::digest(self.sdk_catalog().as_bytes()));
+        serde_json::json!({"draft":false,"prerelease":false,"assets":[
+            {"name":format!("martensite-{}-packages.json",self.config.kernel.version),"digest":digest},
+            {"name":format!("martensite-{}-source-workspace.tar.gz",self.config.kernel.version),"digest":format!("sha256:{}","c".repeat(64))}
+        ]}).to_string()
     }
 
     fn build_binaries(&self) {
@@ -140,6 +154,7 @@ impl Runner for ReleaseFixture {
             }
             ("git", arguments) => Ok(self.git_output(arguments)),
             ("gh", ["api", endpoint]) => Ok(self.release_output(endpoint)),
+            ("gh", ["release", "download", ..]) => Ok(self.sdk_catalog()),
             ("rustc", ["-vV"]) => Ok(format!("host: {}", self.platform.target)),
             ("rustc", _) => Ok("rustc 1.99.0 (fixture)".into()),
             ("brew", ["--prefix", formula]) => Ok(self

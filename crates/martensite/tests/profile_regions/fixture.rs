@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::brep::BRepBuilder;
-use rustycad_tkmath::gp::{Axis2, Circle3, Direction3, Ellipse3, Point3};
-use rustycad_tktopalgo::brep_builder_api::BRepBuilderAPIMakeEdge;
+use martensite_tkbrep::brep::BRepBuilder;
+use martensite_tkmath::gp::{Axis2, Circle3, Direction3, Ellipse3, Point3};
+use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeEdge;
 /// Build fresh analytic edges, including separate coincident endpoints.
 /// Example: `let input = build_region_fixture("divider")?;`.
 pub(super) fn build_region_fixture(case: &str) -> Result<Shape, Failure> {
-    let mut shape = rustycad_tkbrep::topods::Compound::default();
+    let mut shape = martensite_tkbrep::topods::Compound::default();
     let builder = BRepBuilder::default();
     builder.make_compound(&mut shape);
     let mut shape = shape.into_shape();

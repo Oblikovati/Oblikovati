@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! End-to-end diagnostic region extrusion; this does not publish a feature.
 use super::*;
-use rustycad_tkbrep::brep_adaptor::BRepAdaptorSurface;
-use rustycad_tkg3d::adaptor3d::Adaptor3dSurface;
-use rustycad_tkmath::gp::Vector3;
-use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakePrism;
-use rustycad_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
+use martensite_tkbrep::brep_adaptor::BRepAdaptorSurface;
+use martensite_tkg3d::adaptor3d::Adaptor3dSurface;
+use martensite_tkmath::gp::Vector3;
+use martensite_tkprim::brep_prim_api::BRepPrimAPIMakePrism;
+use martensite_tktopalgo::brep_builder_api::BRepBuilderAPIMakeShape;
 use std::collections::BTreeSet;
 
 struct PrismOracleRow {
@@ -151,7 +151,7 @@ fn verify_prism_generated_history(
     faces: &IndexedMapOfShape,
     maker: &mut BRepPrimAPIMakePrism,
 ) {
-    use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeSweep;
+    use martensite_tkprim::brep_prim_api::BRepPrimAPIMakeSweep;
     let edges = indexed_region_shapes(region, ShapeEnum::Edge).unwrap();
     let mut roles = vec![maker.first_shape().unwrap(), maker.last_shape().unwrap()];
     for index in 1..=edges.extent() {

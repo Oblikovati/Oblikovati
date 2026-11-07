@@ -24,13 +24,13 @@ fn restored_parameter_backed_definition_builds_current_kernel_geometry() {
     let recipe: SketchPrismRecipe = serde_json::from_str(&encoded).unwrap();
     let definition = SketchPrismDefinition::from_recipe(&recipe).unwrap();
     let first = retain_sketch_prism_definition(&document, &definition).unwrap();
-    assert_volume(first.report().properties.volume, 24.);
+    assert_analytic_scalar(first.report().properties.volume, 24.);
     document.parameters.set_expression(3, "30 mm").unwrap();
     let deeper = retain_sketch_prism_definition(&document, &definition).unwrap();
-    assert_volume(deeper.report().properties.volume, 36.);
+    assert_analytic_scalar(deeper.report().properties.volume, 36.);
     document.parameters.set_expression(3, "missing").unwrap();
     assert!(retain_sketch_prism_definition(&document, &definition).is_err());
-    assert_volume(first.report().properties.volume, 24.);
+    assert_analytic_scalar(first.report().properties.volume, 24.);
     assert_eq!(
         serde_json::to_string(&definition.recipe()).unwrap(),
         encoded

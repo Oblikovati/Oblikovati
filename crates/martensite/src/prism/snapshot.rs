@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use rustycad_tkbrep::topods::Shape;
-use rustycad_tkmath::gp::{Direction3, Line3, Point3};
-use rustycad_tktopalgo::int_curves_face::IntCurvesFaceShapeIntersector;
+use martensite_tkbrep::topods::Shape;
+use martensite_tkmath::gp::{Direction3, Line3, Point3};
+use martensite_tktopalgo::int_curves_face::IntCurvesFaceShapeIntersector;
 use std::{marker::PhantomData, rc::Rc};
 /// How near a face's boundary a line of sight still lands on the face.
 const PICK_TOLERANCE: f64 = 1e-7; // tol:pick
@@ -58,7 +58,7 @@ pub(super) fn copied_prism(
     Ok((copied, faces))
 }
 fn copied_role(
-    copier: &mut rustycad_tktopalgo::brep_builder_api::BRepBuilderAPICopy,
+    copier: &mut martensite_tktopalgo::brep_builder_api::BRepBuilderAPICopy,
     role: PrismFaceRole,
     source: &Shape,
 ) -> Result<Shape, EvaluationFailure> {
@@ -114,7 +114,7 @@ impl PrismProbeSnapshot {
         let mut nearest: Option<(PrismFaceRole, f64)> = None;
         for (role, face) in &self.faces {
             let mut intersector = IntCurvesFaceShapeIntersector::new();
-            let reach = (|| -> Result<Option<f64>, rustycad_tkernel::standard::Failure> {
+            let reach = (|| -> Result<Option<f64>, martensite_tkernel::standard::Failure> {
                 intersector.load(face, PICK_TOLERANCE)?;
                 intersector.perform_nearest(&line, f64::MIN / 2., f64::MAX / 2.)?;
                 if intersector.nb_pnt() == 0 {

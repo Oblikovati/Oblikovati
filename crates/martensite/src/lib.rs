@@ -2,8 +2,8 @@
 
 //! Release acceptance at the application-owned Martensite boundary.
 //! Diagnostic snapshots retain isolated geometry; full evaluation and provenance remain open.
-use rustycad_tkbrep::topods::Shape;
-use rustycad_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
+use martensite_tkbrep::topods::Shape;
+use martensite_tkprim::brep_prim_api::BRepPrimAPIMakeBox;
 mod checked_shape;
 
 /// Analytic values from a release probe, in the supplied working units.

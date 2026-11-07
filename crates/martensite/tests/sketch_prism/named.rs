@@ -37,7 +37,7 @@ fn assert_faces(body: &NamedPrismSnapshot, history: &DocumentEditHistory, depth:
         let face = body
             .face_report(history, document(), &key(role, &[1]))
             .unwrap();
-        assert_volume(face.area, 12.);
+        assert_analytic_scalar(face.area, 12.);
         assert_eq!(face.loops, 1);
         assert_centroid(
             face.centroid,
@@ -48,7 +48,7 @@ fn assert_faces(body: &NamedPrismSnapshot, history: &DocumentEditHistory, depth:
         let face = body
             .face_report(history, document(), &key("side", &[1, edge]))
             .unwrap();
-        assert_volume(face.area, length * depth);
+        assert_analytic_scalar(face.area, length * depth);
         assert_eq!(face.role, PrismFaceRole::ProfileEdge(edge));
         assert_eq!(face.loops, 1);
     }
@@ -94,7 +94,7 @@ fn exact_names_reject_wrong_kind_source_feature_document_and_history() {
     let history = owner(selected_prism_document());
     let body = named(&history);
     let body_key = key("body", &[1]);
-    assert_volume(
+    assert_analytic_scalar(
         body.body_report(&history, document(), &body_key)
             .unwrap()
             .properties
@@ -136,13 +136,13 @@ fn profile_parameter_changes_preserve_source_names_and_change_exact_face_area() 
         .unwrap();
     let body = named(&history);
     assert_eq!(body.reference_keys(&history, document()).unwrap(), before);
-    assert_volume(
+    assert_analytic_scalar(
         body.face_report(&history, document(), &key("start", &[1]))
             .unwrap()
             .area,
         18.,
     );
-    assert_volume(
+    assert_analytic_scalar(
         body.face_report(&history, document(), &key("side", &[1, 101]))
             .unwrap()
             .area,

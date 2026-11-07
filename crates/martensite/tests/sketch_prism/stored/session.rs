@@ -59,7 +59,7 @@ fn assert_created_faces(
     let mut areas: Vec<f64> = report.faces.iter().map(|face| face.area).collect();
     areas.sort_by(f64::total_cmp);
     for (area, expected_area) in areas.into_iter().zip(expected) {
-        assert_volume(area, expected_area);
+        assert_analytic_scalar(area, expected_area);
     }
 }
 fn native_part_session() -> NativePartSession {
@@ -80,7 +80,7 @@ fn publish_native(owner: &mut NativePartSession, slot: &mut NativePartSlot) {
 }
 fn assert_native_volume(slot: &NativePartSlot, owner: &NativePartSession, expected: f64) {
     let evaluated = slot.current(owner).unwrap();
-    assert_volume(
+    assert_analytic_scalar(
         evaluated
             .body(FeatureId(1))
             .unwrap()
@@ -138,7 +138,7 @@ fn closed_native_owner_marks_retained_presentation_stale_and_cancels_queued_inpu
     let retained = slot.latest().unwrap();
     assert!(!retained.is_current);
     let body = retained.evaluation.body(FeatureId(1)).unwrap();
-    assert_volume(body.report().properties.volume, 24.);
+    assert_analytic_scalar(body.report().properties.volume, 24.);
     assert!(queued.is_superseded());
     assert!(queued.evaluate(&mut MartensitePrismEvaluator).is_err());
     slot.clear();
