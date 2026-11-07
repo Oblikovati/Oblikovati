@@ -51,6 +51,7 @@ impl<
                 location: project.path.display().to_string(),
                 active: active == Some(&project.path),
                 settings: project_settings(&project.configuration),
+                groups: project_groups(&project.configuration),
             })
             .collect()
     }
@@ -174,7 +175,37 @@ fn project_settings(
     vec![
         ("Workspace".to_string(), configuration.workspace.clone()),
         ("Libraries".to_string(), configuration.libraries.join(", ")),
-        ("Templates".to_string(), configuration.templates.clone()),
-        ("Design data".to_string(), configuration.design_data.clone()),
+    ]
+}
+/// A project file holds these folders; this build keeps no other per-project options, so the
+/// rows it cannot read say what the application does for every project.
+fn project_groups(
+    configuration: &oblikovati_persistence::project_file::ProjectConfiguration,
+) -> Vec<oblikovati_gui::GuiProjectGroup> {
+    let group = |label: &str, rows: Vec<String>| oblikovati_gui::GuiProjectGroup {
+        label: label.to_string(),
+        rows,
+    };
+    vec![
+        group(
+            "Folder Options",
+            vec![
+                format!("Templates: {}", configuration.templates),
+                format!("Design Data: {}", configuration.design_data),
+                "Presets: Default".to_string(),
+            ],
+        ),
+        group(
+            "Options",
+            vec![
+                "Old Versions To Keep: 0".to_string(),
+                "Using Unique File Names: No".to_string(),
+            ],
+        ),
+        group(
+            "Appearance Libraries",
+            vec!["Default Appearances".to_string()],
+        ),
+        group("Material Libraries", vec!["Default Materials".to_string()]),
     ]
 }

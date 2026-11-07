@@ -88,7 +88,9 @@ fn accept_proposed(world: &mut ApplicationWorld) {
 }
 #[then("the dialog closes")]
 fn dialog_closes(world: &mut ApplicationWorld) {
+    world.pump(Vec::new());
     world.expect_no_text(SAVE_IN);
+    world.expect_no_text("General Properties");
 }
 #[then("the active document tab displays the saved file name")]
 fn tab_has_file_name(world: &mut ApplicationWorld) {

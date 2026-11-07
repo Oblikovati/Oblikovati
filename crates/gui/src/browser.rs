@@ -27,6 +27,7 @@ pub struct GuiModelBrowser {
     pub selected_feature: Option<FeatureId>,
     /// The part's solids, each made by a feature of the program.
     pub bodies: Vec<GuiBrowserBody>,
+    pub appearances: Vec<crate::GuiAppearanceChoice>,
 }
 /// Stable sketch identity paired with its current canonical API inspection or local decline.
 #[derive(Clone, Debug, PartialEq)]
@@ -42,6 +43,13 @@ pub struct GuiBrowserSketch {
 pub struct GuiBrowserBody {
     pub name: String,
     pub feature: FeatureId,
+    /// The body's stable reference, for what the owner changes on it.
+    pub key: String,
+    /// Where the part's API counts it.
+    pub index: i64,
+    /// Its own appearance's id; empty when it looks as the part does.
+    pub appearance: String,
+    pub physical: Option<crate::GuiBodyPhysical>,
 }
 /// One authored feature in model program order, with its actual suppression state.
 #[derive(Clone, Debug, PartialEq)]
@@ -156,6 +164,7 @@ pub(crate) fn browser_contents(
         expansion: view.take_expansion(),
     };
     tree.draw(view, actions);
+    view.body_properties.panel(ui, state, browser, actions);
 }
 /// One frame's tree; `expansion` is set for the single frame after Expand All or Collapse All.
 struct BrowserTree<'a> {
@@ -321,12 +330,15 @@ impl BrowserTree<'_> {
         actions: &mut Vec<GuiShellAction>,
     ) {
         let _body = self.ui.push_id(format!("body-{}", body.feature.0));
-        let node = self.ui.tree_node_config(&body.name);
-        let node = match expansion {
-            Some(open) => node.opened(open, imgui::Condition::Always),
-            None => node,
-        };
-        let Some(_row) = node.push() else {
+        let Some(_row) = browser_feature::body_row(
+            self.ui,
+            self.state,
+            self.browser,
+            body,
+            expansion,
+            view,
+            actions,
+        ) else {
             return;
         };
         let made_by = self

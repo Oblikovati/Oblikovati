@@ -202,19 +202,7 @@ impl<
                     edit.document == document
                         && !session.selected_sketch_picks(edit.sketch).is_empty()
                 }),
-            sketch_selection: oblikovati_viewport::ViewportSketchSelection {
-                sketches: session.selected_browser_sketches(),
-                entities: session
-                    .selected_editor_picks()
-                    .iter()
-                    .filter_map(|pick| match pick.target() {
-                        oblikovati_session::selection::SketchPickTarget::Entity(entity) => {
-                            Some((pick.sketch(), entity))
-                        }
-                        _ => None,
-                    })
-                    .collect(),
-            },
+            sketch_selection: gui_sketch_selection(session),
             documents: self.gui_document_rows()?,
             document_storage: self.gui_document_storage()?,
             projects: self.gui_projects(),
@@ -313,6 +301,21 @@ impl<
         feature: oblikovati_model::feature::FeatureId,
     ) -> Result<bool, String> {
         self.select_browser_feature(document, feature)
+    }
+    fn update_body_properties_from_gui(
+        &mut self,
+        document: u64,
+        body: i64,
+    ) -> Result<bool, String> {
+        self.update_body_physical(document, body)
+    }
+    fn set_body_appearance_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+        appearance: &str,
+    ) -> Result<bool, String> {
+        self.set_body_appearance(document, key, appearance)
     }
     fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
         self.clear_browser_selection(document)
@@ -431,7 +434,6 @@ impl<
     fn sketch_edit(&self) -> Option<crate::HeadSketchEdit> {
         self.active_sketch_edit()
     }
-
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         let recipe = self.placement_preview()?.clone();
         let tool = self.placement_state()?;
@@ -445,7 +447,6 @@ impl<
             recipe,
         })
     }
-
     fn process_window_inputs(
         &mut self,
         inputs: &[oblikovati_viewport::ViewportEvent],
@@ -489,5 +490,23 @@ impl<
         self.sketch_scenes.clear();
         self.dispatch.close();
         Ok(())
+    }
+}
+/// What the view marks as chosen: whole sketches from the browser, entities from the editor.
+fn gui_sketch_selection<O: TransactionObserver>(
+    session: &oblikovati_session::DocumentSession<O>,
+) -> oblikovati_viewport::ViewportSketchSelection {
+    oblikovati_viewport::ViewportSketchSelection {
+        sketches: session.selected_browser_sketches(),
+        entities: session
+            .selected_editor_picks()
+            .iter()
+            .filter_map(|pick| match pick.target() {
+                oblikovati_session::selection::SketchPickTarget::Entity(entity) => {
+                    Some((pick.sketch(), entity))
+                }
+                _ => None,
+            })
+            .collect(),
     }
 }

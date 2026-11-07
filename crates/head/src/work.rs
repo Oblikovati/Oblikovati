@@ -236,6 +236,27 @@ pub trait HeadWork {
             "browser feature {feature:?}, document {document}: expected a selection owner"
         ))
     }
+    /// Calculate one solid's physical values; example: `work.update_body_properties_from_gui(document, 0)?`.
+    fn update_body_properties_from_gui(
+        &mut self,
+        document: u64,
+        body: i64,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "body {body}, document {document}: expected a properties owner"
+        ))
+    }
+    /// Give a solid its own appearance; example: `work.set_body_appearance_from_gui(document, key, id)?`.
+    fn set_body_appearance_from_gui(
+        &mut self,
+        document: u64,
+        key: &str,
+        appearance: &str,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "body {key:?}, appearance {appearance:?}, document {document}: expected a properties owner"
+        ))
+    }
     /// Choose no browser row; example: after a click on nothing in the view.
     fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
         Err(format!(

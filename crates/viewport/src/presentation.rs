@@ -65,7 +65,7 @@ impl ViewportScene {
         })
     }
     /// Filter display bodies without changing analytic results or feature health.
-    /// Example: `ViewportScene::from_part_evaluation_with_visibility(&evaluated, options, background, color, |_| Ok(false))`.
+    /// Example: `ViewportScene::from_part_evaluation_with_visibility(&evaluated, options, background, color, visible)`.
     pub fn from_part_evaluation_with_visibility<
         Failure,
         Body: oblikovati_martensite::PrismPresentationSource,
@@ -75,6 +75,21 @@ impl ViewportScene {
         background: [f64; 3],
         color: [f32; 4],
         mut visible: impl FnMut(&Body) -> Result<bool, String>,
+    ) -> Result<PartPresentation, String> {
+        Self::from_part_evaluation_styled(evaluation, options, background, |body| {
+            Ok(visible(body)?.then_some(color))
+        })
+    }
+    /// Give each body its own colour, or leave it out with `None`.
+    /// Example: `ViewportScene::from_part_evaluation_styled(&evaluated, options, background, style)`.
+    pub fn from_part_evaluation_styled<
+        Failure,
+        Body: oblikovati_martensite::PrismPresentationSource,
+    >(
+        evaluation: &oblikovati_model::feature::part::PartFeatureEvaluation<Body, Failure>,
+        options: oblikovati_martensite::PrismMeshOptions,
+        background: [f64; 3],
+        mut style: impl FnMut(&Body) -> Result<Option<[f32; 4]>, String>,
     ) -> Result<PartPresentation, String> {
         let mut result = PartPresentation {
             scene: Self {
@@ -89,7 +104,7 @@ impl ViewportScene {
             let Some(body) = evaluation.body(record.feature) else {
                 continue;
             };
-            if visible(body)? {
+            if let Some(color) = style(body)? {
                 result.append_body(record.feature, body, options, color);
             }
         }

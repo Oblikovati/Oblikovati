@@ -15,6 +15,8 @@ mod documents_gui;
 #[path = "owner_sketch_tools.rs"]
 mod sketch_tools_gui;
 use sketch_tools_gui::gui_placement_tool;
+#[path = "owner_body_properties.rs"]
+mod body_properties;
 #[path = "owner_browser_selection.rs"]
 mod browser_selection;
 #[path = "owner_browser_visibility.rs"]
@@ -109,6 +111,9 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     sketch_formats: oblikovati_api::types::SketchFormatModes,
     sketch_memory: owner_precise_input::SketchCommandMemory,
     opened_hidden_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
+    /// Values a user asked for, by document and body, with the model state they came from.
+    body_physical:
+        std::collections::BTreeMap<(u64, String), (u64, oblikovati_gui::GuiBodyPhysical)>,
     /// The last outlined browser row, keyed by what it was worked out from.
     browser_outline: Option<(browser_selection::BrowserOutlineSource, Vec<[[f64; 3]; 2]>)>,
     document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
@@ -163,6 +168,7 @@ impl<
             sketch_formats: Default::default(),
             sketch_memory: Default::default(),
             opened_hidden_sketch: None,
+            body_physical: Default::default(),
             browser_outline: None,
             document_windows: Vec::new(),
             active_window: None,

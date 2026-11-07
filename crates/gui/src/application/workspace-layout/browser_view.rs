@@ -35,6 +35,7 @@ pub(crate) struct BrowserView {
     pub hide_work_features: bool,
     /// Feature rows also say their operation and depth.
     pub show_extended_names: bool,
+    pub body_properties: super::body_properties::BodyPropertiesDialog,
     /// The branch a row's Expand All Children opens on the next frame.
     opened_branch: Option<BrowserBranch>,
     /// What the Solid Bodies menu asked of everything under the folder.

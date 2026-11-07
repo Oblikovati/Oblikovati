@@ -7,6 +7,7 @@ fn only_the_active_project_is_marked() {
         location: "/work/gearbox.opj".into(),
         active: true,
         settings: Vec::new(),
+        groups: Vec::new(),
     };
     assert_eq!(
         project_row_text(&project),

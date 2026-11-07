@@ -6,6 +6,7 @@ use imgui::{Condition, MouseButton, TreeNodeFlags, Ui};
 
 const FEATURE_MENU: &str = "##feature-menu";
 const BODIES_MENU: &str = "##bodies-menu";
+const BODY_MENU: &str = "##body-menu";
 const EDGE_COLOR: [f32; 4] = [0.25, 0.6, 1., 1.];
 const EDGE_THICKNESS: f32 = 2.;
 
@@ -98,6 +99,45 @@ fn feature_menu(
     }
     // A feature's direct rows stay; only what sits below them folds, and nothing does yet.
     ui.menu_item("Collapse All Children");
+}
+/// One solid's row; a press on it chooses the feature that made it, which outlines the solid.
+pub(crate) fn body_row<'ui>(
+    ui: &'ui Ui,
+    state: &GuiCommandState,
+    browser: &GuiModelBrowser,
+    body: &crate::GuiBrowserBody,
+    expansion: Option<bool>,
+    view: &mut BrowserView,
+    actions: &mut Vec<GuiShellAction>,
+) -> Option<imgui::TreeNodeToken<'ui>> {
+    let mut flags = TreeNodeFlags::OPEN_ON_ARROW | TreeNodeFlags::SPAN_AVAIL_WIDTH;
+    if browser.selected_feature == Some(body.feature) {
+        flags |= TreeNodeFlags::SELECTED;
+    }
+    let node = ui.tree_node_config(&body.name).flags(flags);
+    let node = match expansion {
+        Some(open) => node.opened(open, Condition::Always),
+        None => node,
+    };
+    let token = node.push();
+    let hovered = ui.is_item_hovered();
+    let asks_menu = hovered && ui.is_mouse_clicked(MouseButton::Right);
+    if asks_menu {
+        ui.open_popup(BODY_MENU);
+    }
+    if asks_menu || (hovered && ui.is_mouse_clicked(MouseButton::Left)) {
+        actions.push(GuiShellAction::SelectBrowserFeature {
+            document: state.document.unwrap_or(0),
+            feature: body.feature,
+        });
+    }
+    if let Some(_menu) = ui.begin_popup(BODY_MENU) {
+        if ui.menu_item("Properties") {
+            view.body_properties.request(body.feature);
+        }
+        muted_menu_item(ui, "Visibility");
+    }
+    token
 }
 /// A right-click on the Solid Bodies row.
 pub(crate) fn bodies_menu(ui: &Ui, view: &mut BrowserView) {

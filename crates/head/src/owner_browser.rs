@@ -33,14 +33,10 @@ impl<
             .with_sketch_edit(self.sketch_inspection_edit());
         populate_browser(&mut browser, snapshot, &Client::new(query));
         browser.selected_sketches = self.selected_browser_sketches(document);
-        // A part that cannot evaluate says so on the scene; its folder just stays empty.
-        browser.bodies = self
-            .part_scenes
-            .body_rows(&self.files, document)
-            .unwrap_or_default()
-            .into_iter()
-            .map(|(feature, name)| oblikovati_gui::GuiBrowserBody { name, feature })
-            .collect();
+        browser.bodies = self.gui_browser_bodies(document);
+        if !browser.bodies.is_empty() {
+            browser.appearances = self.gui_appearance_choices(document);
+        }
         browser.selected_feature = self
             .files
             .workspace()

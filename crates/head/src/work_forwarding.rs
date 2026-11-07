@@ -39,6 +39,22 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .select_browser_feature_from_gui(document, feature)
         }
+        fn update_body_properties_from_gui(
+            &mut self,
+            document: u64,
+            body: i64,
+        ) -> Result<bool, String> {
+            self.$owner.update_body_properties_from_gui(document, body)
+        }
+        fn set_body_appearance_from_gui(
+            &mut self,
+            document: u64,
+            key: &str,
+            appearance: &str,
+        ) -> Result<bool, String> {
+            self.$owner
+                .set_body_appearance_from_gui(document, key, appearance)
+        }
         fn clear_browser_selection_from_gui(&mut self, document: u64) -> Result<bool, String> {
             self.$owner.clear_browser_selection_from_gui(document)
         }

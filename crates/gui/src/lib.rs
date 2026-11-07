@@ -32,6 +32,7 @@ mod sketch;
 pub use application::document_tabs::windows::{GuiDocumentWindow, active_window_name};
 pub use application::home_recent_documents::{GuiRecentAction, GuiRecentDocument};
 pub use application::quick_access_toolbar::plane_selection::{GuiOriginPlane, GuiOriginPlaneKind};
+pub use application::workspace_layout::body_properties::{GuiAppearanceChoice, GuiBodyPhysical};
 pub use application::workspace_layout::browser_origin::GuiOriginAxis;
 pub use sketch::constraint_glyphs::GuiConstraintGlyph;
 pub use sketch::dimension_edit::{GuiDimensionEdit, GuiDimensionValue};
@@ -55,7 +56,7 @@ pub use theme_state::GuiThemeState;
 mod widget_abi;
 pub use commands::{
     GuiAuthoringContext, GuiCommandState, GuiDocumentStorage, GuiParameterMutation,
-    GuiPreviewImage, GuiProject, GuiShellAction,
+    GuiPreviewImage, GuiProject, GuiProjectGroup, GuiShellAction,
 };
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

@@ -3,7 +3,7 @@ use super::{ApplicationWorld, diagnostics::window_geometry};
 use crate::HeadWork;
 use cucumber::{given, then, when};
 #[path = "browser_feature.rs"]
-mod browser_feature;
+pub(super) mod browser_feature;
 #[path = "browser_origin.rs"]
 mod browser_origin;
 #[path = "browser_tree.rs"]

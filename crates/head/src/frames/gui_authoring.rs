@@ -67,6 +67,14 @@ fn sketch(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, Str
         GuiShellAction::ClearBrowserSelection { document } => {
             owner.clear_browser_selection_from_gui(*document)
         }
+        GuiShellAction::UpdateBodyProperties { document, body } => {
+            owner.update_body_properties_from_gui(*document, *body)
+        }
+        GuiShellAction::SetBodyAppearance {
+            document,
+            key,
+            appearance,
+        } => owner.set_body_appearance_from_gui(*document, key, appearance),
         GuiShellAction::SetSketchVisibility {
             document,
             sketch,

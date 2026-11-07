@@ -18,9 +18,10 @@ const FEATURE: &str = "Extrude1";
 const DEPTH: f64 = 2.;
 const EMPTY_VIEWPORT: [i32; 2] = [1300, 800];
 /// The body's flat display colour and the outline's accent, as drawn.
-const SOLID_COLOR: [u8; 3] = [0, 255, 0];
+pub(in super::super) const SOLID_COLOR: [u8; 3] = [0, 255, 0];
 const EDGE_COLOR: [u8; 3] = [64, 153, 255];
 const COLOR_REACH: i32 = 40;
+const SOLID_HUE_MARGIN: u8 = 40;
 const DIMENSION_LABEL_STEP: f64 = 1.5;
 /// How far from a row its menu's first command opens.
 const MENU_REACH: f32 = 40.;
@@ -75,7 +76,7 @@ fn extruded_part_bytes() -> Vec<u8> {
         .encode()
         .unwrap()
 }
-pub(super) fn open_extruded_part(world: &mut ApplicationWorld) {
+pub(in super::super) fn open_extruded_part(world: &mut ApplicationWorld) {
     let path = world.scratch_folder().join("extruded.opd");
     std::fs::write(&path, extruded_part_bytes()).unwrap();
     Client::new(world.app().owner.document_host())
@@ -88,11 +89,13 @@ pub(super) fn open_extruded_part(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
-pub(super) fn colored_pixels(world: &mut ApplicationWorld, wanted: [u8; 3]) -> usize {
+pub(in super::super) fn colored_pixels(world: &mut ApplicationWorld, wanted: [u8; 3]) -> usize {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     capture
         .rgba
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .filter(|pixel| {
             (0..3)
                 .all(|channel| (pixel[channel] as i32 - wanted[channel] as i32).abs() < COLOR_REACH)
@@ -100,10 +103,13 @@ pub(super) fn colored_pixels(world: &mut ApplicationWorld, wanted: [u8; 3]) -> u
         .count()
 }
 fn expect_solid_visible(world: &mut ApplicationWorld) {
-    assert!(
-        colored_pixels(world, SOLID_COLOR) > 0,
-        "expected the solid in the viewport"
-    );
+    // By hue: a dialog over the view dims the solid without changing what colour it is.
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let green = capture.rgba.as_chunks::<4>().0.iter().filter(|pixel| {
+        pixel[1] > pixel[0].saturating_add(SOLID_HUE_MARGIN)
+            && pixel[1] > pixel[2].saturating_add(SOLID_HUE_MARGIN)
+    });
+    assert!(green.count() > 0, "expected the solid in the viewport");
 }
 fn expect_row_and_edges_highlighted(world: &mut ApplicationWorld) {
     assert!(
@@ -115,7 +121,7 @@ fn expect_row_and_edges_highlighted(world: &mut ApplicationWorld) {
         "expected the solid's edges outlined"
     );
 }
-pub(super) fn right_click_row(world: &mut ApplicationWorld, label: &str) {
+pub(in super::super) fn right_click_row(world: &mut ApplicationWorld, label: &str) {
     let at = world.run(label).center().map(|value| value as i32);
     world.right_click(at);
     world.pump(Vec::new());
@@ -125,12 +131,12 @@ fn right_click_feature(world: &mut ApplicationWorld) {
     right_click_row(world, FEATURE);
 }
 /// A branch's arrow sits just left of its text, and folds it without choosing the row.
-pub(super) fn click_branch_arrow(world: &mut ApplicationWorld, label: &str) {
+pub(in super::super) fn click_branch_arrow(world: &mut ApplicationWorld, label: &str) {
     let run = world.run(label).clone();
     world.click([run.minimum[0] as i32 - 10, run.center()[1] as i32]);
     world.pump(Vec::new());
 }
-pub(super) fn choose_menu_row(world: &mut ApplicationWorld, label: &str) {
+pub(in super::super) fn choose_menu_row(world: &mut ApplicationWorld, label: &str) {
     world.click_text(label);
     world.pump(Vec::new());
 }
@@ -146,7 +152,7 @@ pub(super) fn expect_menu_beside(world: &ApplicationWorld, row_label: &str, firs
         "menu {first:?} beside row {row:?}"
     );
 }
-pub(super) fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
+pub(in super::super) fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
     for row in rows {
         world.expect_text(row);
     }

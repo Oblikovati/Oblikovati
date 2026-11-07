@@ -144,8 +144,12 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?
             .internal_name;
         render_part_scene(evaluated, (document, session.generation()), |body| {
-            let key = body.body_reference_key(session.history(), guid)?;
-            Ok(session.body_visible(&bodies::body_reference_text(key)))
+            let key =
+                bodies::body_reference_text(body.body_reference_key(session.history(), guid)?);
+            if !session.body_visible(&key) {
+                return Ok(None);
+            }
+            Ok(Some(body_color(files, session.snapshot(), &key)))
         })
     }
     fn empty(&mut self) -> HeadSceneUpdate {
@@ -233,21 +237,47 @@ const DISPLAY_MESH: PrismMeshOptions = PrismMeshOptions {
     chord_error: 0.05,
     angular_error: 0.5,
 };
+/// The colour a body shows without an appearance of its own or of its part.
+const PART_COLOR: [f32; 4] = [0., 1., 0., 1.];
+/// A body's own appearance, or its part's, by its base colour; an unknown id reads as no choice.
+fn body_color<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    key: &str,
+) -> [f32; 4] {
+    use oblikovati_api::contract::Appearance;
+    let reference = oblikovati_model::assets::AssignmentReference::new(key, vec![]);
+    let id = reference.ok().and_then(|reference| {
+        snapshot
+            .assets
+            .assignments
+            .effective_appearance_id(&reference)
+            .map(str::to_owned)
+    });
+    let Some(id) = id else {
+        return PART_COLOR;
+    };
+    let appearance = snapshot
+        .assets
+        .appearances()
+        .get(&id)
+        .or_else(|| files.active_project()?.assets.appearances().get(&id))
+        .or_else(|| files.builtin_catalog().ok()?.appearances().get(&id));
+    appearance.map_or(PART_COLOR, |asset| {
+        let color = asset.base().color;
+        [color.r, color.g, color.b, 1.]
+    })
+}
 fn render_part_scene(
     evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
         NamedPrismSnapshot,
         oblikovati_martensite::EvaluationFailure,
     >,
     source: (u64, u64),
-    visible: impl FnMut(&NamedPrismSnapshot) -> Result<bool, String>,
+    style: impl FnMut(&NamedPrismSnapshot) -> Result<Option<[f32; 4]>, String>,
 ) -> Result<HeadSceneUpdate, String> {
-    let presentation = ViewportScene::from_part_evaluation_with_visibility(
-        evaluated,
-        DISPLAY_MESH,
-        [0., 0., 1.],
-        [0., 1., 0., 1.],
-        visible,
-    )?;
+    let presentation =
+        ViewportScene::from_part_evaluation_styled(evaluated, DISPLAY_MESH, [0., 0., 1.], style)?;
     Ok(HeadSceneUpdate {
         scene: presentation.scene,
         status: HeadSceneStatus {

@@ -28,14 +28,22 @@ impl DesktopPartScenes {
             .collect()
     }
 }
+/// What the browser's folder shows of one solid.
+pub(crate) struct BodyRow {
+    pub feature: oblikovati_model::feature::FeatureId,
+    pub name: String,
+    pub key: String,
+    /// Where the API's body list counts it.
+    pub index: i64,
+}
 impl DesktopPartScenes {
     /// Each solid and the feature that made it, for the browser's folder.
-    /// Example: `scenes.body_rows(files, document)?` reads `(Extrude1's id, "Solid1")`.
+    /// Example: `scenes.body_rows(files, document)?` reads Extrude1 as `Solid1`.
     pub(crate) fn body_rows<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &self,
         files: &FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Result<Vec<(oblikovati_model::feature::FeatureId, String)>, String> {
+    ) -> Result<Vec<BodyRow>, String> {
         let workspace = files.workspace();
         let session = workspace
             .session(document)
@@ -45,17 +53,33 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let evaluated = self.current(session)?;
+        let key_of = |body: &NamedPrismSnapshot| {
+            body.body_reference_key(session.history(), guid)
+                .map(body_reference_text)
+        };
+        let ordered: Vec<String> = evaluated
+            .ordered_bodies()
+            .map(&key_of)
+            .collect::<Result<_, _>>()?;
         let mut rows = Vec::new();
         for record in evaluated.health() {
             let Some(body) = evaluated.body(record.feature) else {
                 continue;
             };
-            let key = body_reference_text(body.body_reference_key(session.history(), guid)?);
+            let key = key_of(body)?;
+            let index = ordered
+                .iter()
+                .position(|known| *known == key)
+                .unwrap_or_default();
             let (name, _) = files
                 .body_display_metadata(document, &key)
                 .map_err(|cause| cause.to_string())?;
-            let shown = name.map_or_else(|| format!("Solid{}", rows.len() + 1), Into::into);
-            rows.push((record.feature, shown));
+            rows.push(BodyRow {
+                feature: record.feature,
+                name: name.map_or_else(|| format!("Solid{}", index + 1), Into::into),
+                key,
+                index: api_count("body index", index)?,
+            });
         }
         Ok(rows)
     }

@@ -44,6 +44,17 @@ pub enum GuiShellAction {
         document: u64,
         feature: oblikovati_model::feature::FeatureId,
     },
+    /// Calculate one solid's physical values, for the Body Properties dialog.
+    UpdateBodyProperties {
+        document: u64,
+        body: i64,
+    },
+    /// Give a solid its own appearance; an empty id clears it.
+    SetBodyAppearance {
+        document: u64,
+        key: String,
+        appearance: String,
+    },
     /// A click on nothing: no browser row stays chosen.
     ClearBrowserSelection {
         document: u64,
@@ -119,6 +130,14 @@ pub struct GuiProject {
     pub location: String,
     pub active: bool,
     pub settings: Vec<(String, String)>,
+    /// What the tree folds away until it is asked for; example: `Folder Options` and its rows.
+    pub groups: Vec<GuiProjectGroup>,
+}
+/// One foldable branch of a project's settings.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiProjectGroup {
+    pub label: String,
+    pub rows: Vec<String>,
 }
 /// What the owner knows about one open document's file beyond its wire row.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -271,7 +290,11 @@ impl GuiShellAction {
             Self::SaveDocumentAs(request) => {
                 state.document == Some(request.document) && !state.transaction_open
             }
-            Self::ClearBrowserSelection { document } => state.document == Some(*document),
+            Self::ClearBrowserSelection { document }
+            | Self::UpdateBodyProperties { document, .. } => state.document == Some(*document),
+            Self::SetBodyAppearance { document, .. } => {
+                state.document == Some(*document) && !state.transaction_open
+            }
             Self::SelectBrowserFeature { document, feature } => {
                 state.document == Some(*document)
                     && !state.transaction_open

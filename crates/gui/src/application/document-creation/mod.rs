@@ -393,6 +393,10 @@ impl TemplateChooser {
         if crate::widget_abi::button(ui, "Projects", [0.; 2]) {
             self.projects.request();
         }
+        if let Some(active) = state.projects.iter().find(|project| project.active) {
+            ui.same_line();
+            ui.text(format!("Project: {}", active.name));
+        }
     }
 }
 fn active_document_name(state: &GuiCommandState) -> &str {

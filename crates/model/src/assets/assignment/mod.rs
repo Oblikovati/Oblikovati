@@ -73,6 +73,18 @@ impl AssetAssignments {
             .iter()
             .map(|(key, id)| (key, id.as_str()))
     }
+    /// Read effective visual intent without resolving properties; example: a body's own, or else
+    /// the part's: `assignments.effective_appearance_id(&body)`.
+    pub fn effective_appearance_id(&self, body: &AssignmentReference) -> Option<&str> {
+        self.body_appearance
+            .get(body)
+            .or(self.part_appearance.as_ref())
+            .map(String::as_str)
+    }
+    /// Read a body's own visual override; example: `assignments.body_appearance_id(&body)`.
+    pub fn body_appearance_id(&self, body: &AssignmentReference) -> Option<&str> {
+        self.body_appearance.get(body).map(String::as_str)
+    }
     /// Read effective physical intent without resolving properties; example: `assignments.effective_material_id(&body)`.
     pub fn effective_material_id(&self, body: &AssignmentReference) -> Option<&str> {
         self.body_material
@@ -103,4 +115,22 @@ fn set_entity_asset(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod effective_appearance_tests {
+    use super::*;
+    #[test]
+    fn a_body_reads_its_own_appearance_or_else_the_parts() {
+        let body = AssignmentReference::new("ab", vec![]).unwrap();
+        let mut assignments = AssetAssignments::default();
+        assert_eq!(assignments.effective_appearance_id(&body), None);
+        assignments.set_part_appearance("part").unwrap();
+        assert_eq!(assignments.effective_appearance_id(&body), Some("part"));
+        assert_eq!(assignments.body_appearance_id(&body), None);
+        assignments.set_body_appearance(&body, "own").unwrap();
+        assert_eq!(assignments.effective_appearance_id(&body), Some("own"));
+        assignments.set_body_appearance(&body, "").unwrap();
+        assert_eq!(assignments.body_appearance_id(&body), None);
+    }
 }

@@ -3,6 +3,7 @@
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, MouseButton, Ui, WindowFlags};
 
+pub(crate) mod body_properties;
 pub(crate) mod browser_feature;
 pub(crate) mod browser_origin;
 #[path = "browser_view.rs"]
@@ -103,6 +104,7 @@ impl WorkspaceLayout {
             self.panels.log_area(ui);
         } else if self.panels.model_open {
             crate::browser::browser_contents(ui, state, &mut self.view, actions);
+            self.pending_layout |= self.view.body_properties.needs_frame();
         }
     }
     /// With every panel closed, only the plus control remains to bring one back.

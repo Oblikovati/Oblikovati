@@ -10,6 +10,8 @@ mod documents;
 mod refinements;
 mod world;
 use world::ApplicationWorld;
+#[path = "body-properties/steps.rs"]
+mod body_properties;
 #[path = "document-creation/steps.rs"]
 mod document_creation;
 #[path = "document-saving/steps.rs"]
