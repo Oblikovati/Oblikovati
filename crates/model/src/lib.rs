@@ -8,6 +8,7 @@ pub mod assets;
 pub mod attachment;
 pub mod attribute;
 pub mod dependency;
+pub mod drawing;
 pub mod expression;
 pub mod feature;
 pub mod fits;
