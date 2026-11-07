@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #![cfg(target_os = "linux")]
+use super::gui_fixture;
 use oblikovati_viewport::*;
 use std::sync::Arc;
-#[path = "gui_fixture.rs"]
-mod gui_fixture;
 fn image(color: [u8; 4]) -> GuiAtlas {
     GuiAtlas {
         extent: [1; 2],
