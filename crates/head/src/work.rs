@@ -15,6 +15,15 @@ pub trait HeadWork {
             "extrude document {document}, sketch {sketch:?}, profile {profile}, distance {distance:?}: expected a certified extrusion owner"
         ))
     }
+    /// Show or clear a transient extrusion; example: `work.extrusion_preview_from_gui(None)?`.
+    fn extrusion_preview_from_gui(
+        &mut self,
+        request: Option<&oblikovati_gui::GuiExtrudePreview>,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "extrusion preview {request:?}: expected a certified extrusion owner"
+        ))
+    }
     /// Change how often a prompt appears; example: `work.set_prompt_frequency_from_gui(prompt, frequency)?`.
     fn set_prompt_frequency_from_gui(
         &mut self,
@@ -192,7 +201,6 @@ pub trait HeadWork {
             request.id
         ))
     }
-
     /// Close a document through its owner's save guard; example: `work.close_document_from_gui(&request)?`.
     fn close_document_from_gui(
         &mut self,
@@ -415,29 +423,24 @@ pub trait HeadWork {
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         Ok(None)
     }
-
     /// End an edit whose view could not be prepared; example: `work.decline_sketch_edit(cause)?` after a camera refusal.
     fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
         Err(format!(
             "sketch edit framing {cause}: expected an owner that can cancel the edit"
         ))
     }
-
     /// Copy the current placed sketch edit; example: `work.sketch_edit()` before camera synchronization.
     fn sketch_edit(&self) -> Option<crate::HeadSketchEdit> {
         None
     }
-
     /// Copy the current transient authoring graph; example: `work.sketch_preview()` before drawing.
     fn sketch_preview(&self) -> Option<oblikovati_viewport::ViewportSketchPreview> {
         None
     }
-
     /// Count bounded frames only after startup is complete; example: `work.startup_ready()` before smoke accounting.
     fn startup_ready(&self) -> bool {
         true
     }
-
     /// Complete the requesting document's path choice; example: `work.complete_save_path(id, Some(path))?`.
     fn complete_save_path(
         &mut self,
@@ -451,7 +454,6 @@ pub trait HeadWork {
             "save path for document {document}, selection {selected:?}: expected a document-save owner"
         ))
     }
-
     /// Copy bounded command metadata on the owner; example: `work.gui_command_state()?` after polling.
     fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
         Ok(Default::default())
@@ -466,7 +468,6 @@ pub trait HeadWork {
             "GUI parameter {mutation:?} {request:?}: expected a document parameter owner"
         ))
     }
-
     /// Apply native commands on the document owner; example: `work.process_inputs(&events)?` before polling.
     fn process_inputs(&mut self, _: &[oblikovati_viewport::ViewportEvent]) -> Result<bool, String> {
         Ok(false)
@@ -483,12 +484,10 @@ pub trait HeadWork {
     fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
         None
     }
-
     /// Consume a complete scene update after all owner services; example: `work.take_scene()?` before presentation.
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         Ok(None)
     }
-
     /// Drain one bounded request batch; example: `work.poll(32)?` before presentation.
     fn poll(&mut self, budget: usize) -> Result<HeadWorkStatus, String>;
     /// Check close without discarding documents; example: `work.close_allowed()?` after a native close request.

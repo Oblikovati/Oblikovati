@@ -129,6 +129,14 @@ impl GuiShellAction {
                         .as_ref()
                         .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
             }
+            Self::PreviewExtrude(None) => true,
+            Self::PreviewExtrude(Some(preview)) => Self::Extrude {
+                document: preview.document,
+                sketch: preview.sketch,
+                profile: preview.profile,
+                distance: preview.distance.clone(),
+            }
+            .enabled(state),
             Self::Parameter { .. } => state.document.is_some(),
             Self::Undo => state.undo_label.is_some(),
             Self::Redo => state.redo_label.is_some(),

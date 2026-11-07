@@ -13,7 +13,7 @@ mod command_owner;
 mod edit;
 mod extrusion;
 mod file_host;
-pub use extrusion::ExtrudeRegionAccess;
+pub use extrusion::{ExtrudeRegionAccess, PreparedExtrusion, prepare_extrusion};
 mod interests;
 pub use file_host::{
     DERIVED_COMMAND_METHODS, DocumentObserverFactory, FILE_COMMAND_METHODS, FileHost,

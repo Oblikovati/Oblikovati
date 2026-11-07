@@ -97,6 +97,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
+    extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene)>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
     command_notice: Option<DesktopCommandNotice>,
     /// Sketches being edited in documents that are not active, by document.
@@ -168,6 +169,7 @@ impl<
             refused_close: Vec::new(),
             part_scenes: Default::default(),
             extrusion_access: None,
+            extrusion_preview: None,
             sketch_scenes: Default::default(),
             command_notice: None,
             sketch_construction: Default::default(),
@@ -353,3 +355,6 @@ mod ui_scale;
 
 #[path = "owner_extrusion.rs"]
 mod owner_extrusion;
+
+#[path = "owner_extrusion_preview.rs"]
+mod owner_extrusion_preview;

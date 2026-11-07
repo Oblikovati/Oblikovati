@@ -12,6 +12,12 @@ macro_rules! forward_owner_view_work {
             self.$owner
                 .extrude_from_gui(document, sketch, profile, distance)
         }
+        fn extrusion_preview_from_gui(
+            &mut self,
+            request: Option<&oblikovati_gui::GuiExtrudePreview>,
+        ) -> Result<bool, String> {
+            self.$owner.extrusion_preview_from_gui(request)
+        }
         fn activate_document_from_gui(
             &mut self,
             request: &oblikovati_api::wire::ActivateDocumentArgs,

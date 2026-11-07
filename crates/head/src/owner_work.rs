@@ -18,6 +18,20 @@ impl<
     ) -> Result<bool, String> {
         self.create_extrusion_from_gui(document, sketch, profile, distance)
     }
+    fn extrusion_preview_from_gui(
+        &mut self,
+        request: Option<&oblikovati_gui::GuiExtrudePreview>,
+    ) -> Result<bool, String> {
+        let Some(preview) = request else {
+            return Ok(self.clear_extrusion_preview());
+        };
+        self.set_extrusion_preview(
+            preview.document,
+            preview.sketch,
+            preview.profile,
+            &preview.distance,
+        )
+    }
     fn observe_window_capture_extent(&mut self, extent: Option<[u32; 2]>) {
         if let Some(captures) = &mut self.window_captures {
             captures.observe_extent(extent);
@@ -444,7 +458,7 @@ impl<
         self.sketch_scenes.refresh(&self.files, opened_hidden)
     }
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
-        self.part_scenes.refresh(&mut self.files)
+        self.take_scene_with_extrusion_preview()
     }
     fn close_allowed(&mut self) -> Result<bool, String> {
         self.refused_close = self.close_blockers()?;

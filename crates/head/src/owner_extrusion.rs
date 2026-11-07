@@ -17,6 +17,7 @@ impl<
         profile: i64,
         distance: &str,
     ) -> Result<bool, String> {
+        self.clear_extrusion_preview();
         let sketch_index = self.extrusion_sketch_index(document, sketch)?;
         let request = oblikovati_api::wire::featureargs::Extrude {
             sketch_index,
@@ -30,7 +31,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
-    fn extrusion_sketch_index(
+    pub(super) fn extrusion_sketch_index(
         &self,
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,

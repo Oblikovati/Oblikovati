@@ -32,6 +32,25 @@ impl<O: TransactionObserver> DocumentSession<O> {
     ) -> Result<T, CommandError<E>> {
         self.run_recomputed_projected(label, command, SketchUpdateMode::Automatic, project)
     }
+    /// Evaluate a command on a private solved candidate without reserving live IDs.
+    /// Example: `session.preview_projected(edit, |candidate, value| inspect(candidate, value))?`.
+    pub fn preview_projected<R, T, E>(
+        &self,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(&DocumentSnapshot, R) -> Result<T, E>,
+    ) -> Result<T, CommandError<E>> {
+        self.history
+            .preview(|snapshot, ids| {
+                crate::sketch_recompute::apply_recipe_edit(
+                    snapshot,
+                    ids,
+                    command,
+                    Some(self.sketch_options),
+                    project,
+                )
+            })
+            .map_err(CommandError::Edit)
+    }
     fn run_recomputed_projected<R, T, E>(
         &mut self,
         label: &str,

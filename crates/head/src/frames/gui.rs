@@ -143,6 +143,7 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::StartSketchOn(_)
         | GuiShellAction::FinishSketch
         | GuiShellAction::OpenExtrude
+        | GuiShellAction::PreviewExtrude(_)
         | GuiShellAction::Extrude { .. } => {
             return None;
         }

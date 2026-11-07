@@ -54,6 +54,7 @@ pub struct HeadSceneUpdate {
 #[derive(Default)]
 pub(crate) struct DesktopPartScenes {
     source: Option<(u64, u64, u64)>,
+    presentation_invalidated: bool,
     resolution: Option<oblikovati_martensite::PrismResolution>,
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
@@ -70,7 +71,7 @@ impl DesktopPartScenes {
         files: &mut FileWorkspace<O, W, F>,
     ) -> Result<Option<HeadSceneUpdate>, String> {
         let source = active_scene_source(files)?;
-        if source == self.source {
+        if source == self.source && !self.presentation_invalidated {
             return Ok(None);
         }
         let update = match source {
@@ -78,6 +79,7 @@ impl DesktopPartScenes {
             None => self.empty(),
         };
         self.source = source;
+        self.presentation_invalidated = false;
         Ok(Some(update))
     }
     fn evaluate<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -232,6 +234,9 @@ impl DesktopPartScenes {
         }
         Ok(nearest.map(|(feature, role, _)| (feature, role)))
     }
+    pub(crate) fn invalidate_presentation(&mut self) {
+        self.presentation_invalidated = true;
+    }
     pub fn clear(&mut self) {
         self.slot.clear();
         self.source = None;
@@ -288,7 +293,7 @@ fn active_scene_source<O: TransactionObserver, W: WorkspaceObserver, F: Document
 }
 
 /// How finely a body is meshed for display, in working units and radians.
-const DISPLAY_MESH: PrismMeshOptions = PrismMeshOptions {
+pub(crate) const DISPLAY_MESH: PrismMeshOptions = PrismMeshOptions {
     chord_error: 0.05,
     angular_error: 0.5,
 };

@@ -47,6 +47,34 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .session(document)
         .map_err(api_error)?
         .snapshot();
+    let prepared = prepare_extrusion(snapshot, backend, &input)?;
+    create(files, document, backend, prepared)
+}
+
+/// Validated authored inputs shared by preview and commit.
+pub struct PreparedExtrusion {
+    name: String,
+    definition: SketchPrismDefinition,
+}
+impl PreparedExtrusion {
+    /// Create the feature on a caller-owned candidate; example: `prepared.create(candidate, ids)?`.
+    pub fn create(
+        self,
+        candidate: &mut DocumentSnapshot,
+        ids: &mut oblikovati_model::history::RecipeReservations<'_>,
+    ) -> Result<FeatureId, Error> {
+        candidate
+            .create_sketch_prism(&self.name, self.definition, ids)
+            .map_err(api_error)
+    }
+}
+/// Resolve a canonical Extrude request against current geometry; example: `prepare_extrusion(snapshot, backend, &input)?`.
+pub fn prepare_extrusion(
+    snapshot: &DocumentSnapshot,
+    backend: &dyn ExtrudeRegionAccess,
+    input: &Extrude,
+) -> Result<PreparedExtrusion, Error> {
+    require_supported(input)?;
     let sketch = sketch_index(snapshot, input.sketch_index)?;
     let index = usize::try_from(input.profile_index).map_err(|_| {
         Error(format!(
@@ -63,19 +91,19 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     )
     .map_err(api_error)?;
     let name = next_name(snapshot)?;
-    create(files, document, backend, name, definition)
+    Ok(PreparedExtrusion { name, definition })
 }
 
 fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     document: u64,
     backend: &dyn ExtrudeRegionAccess,
-    name: String,
-    definition: SketchPrismDefinition,
+    prepared: PreparedExtrusion,
 ) -> Result<Vec<u8>, Error> {
+    let name = prepared.name.clone();
     files.commands(document).map_err(api_error)?.run_projected(
         "Create extrusion",
-        |snapshot, ids| snapshot.create_sketch_prism(&name, definition, ids).map_err(api_error),
+        |snapshot, ids| prepared.create(snapshot, ids),
         |candidate, id| {
             let bodies = backend.validate(candidate, id).map_err(Error)?;
             crate::encode(&serde_json::json!({"feature": name, "kind": wire::featureargs::KIND_EXTRUDE, "bodies": bodies, "healthy": true}))
@@ -96,7 +124,6 @@ fn parse_request(request: wire::AddFeatureArgs) -> Result<Extrude, Error> {
             "extrude arguments: expected the canonical Extrude object: {cause}"
         ))
     })?;
-    require_supported(&input)?;
     Ok(input)
 }
 fn require_supported(input: &Extrude) -> Result<(), Error> {

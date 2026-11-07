@@ -342,3 +342,132 @@ fn desktop_extrude_checks_document_identity_and_uses_the_typed_command() {
     );
     assert_cube(&owner, document, 1.);
 }
+
+#[test]
+fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    let generation = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let preview = oblikovati_gui::GuiExtrudePreview {
+        document,
+        sketch: crate::scene_fixture::SKETCH,
+        profile: 0,
+        distance: "width".into(),
+    };
+    assert!(owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
+    let shown = owner.take_scene().unwrap().unwrap();
+    assert!(!shown.scene.triangles.is_empty());
+    assert_eq!(shown.status.visible_bodies, 0);
+    let session = owner.documents().workspace().session(document).unwrap();
+    assert_eq!(session.generation(), generation);
+    assert!(session.snapshot().work_geometry.features().is_empty());
+    assert!(
+        session
+            .snapshot()
+            .sketches
+            .get(crate::scene_fixture::SKETCH)
+            .unwrap()
+            .visible()
+    );
+    assert!(owner.extrusion_preview_from_gui(None).unwrap());
+    assert!(
+        owner
+            .take_scene()
+            .unwrap()
+            .unwrap()
+            .scene
+            .triangles
+            .is_empty()
+    );
+    assert!(
+        owner
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width")
+            .unwrap()
+    );
+    owner.take_scene().unwrap().unwrap();
+    assert_cube(&owner, document, 1.);
+}
+
+#[test]
+fn invalid_or_stale_extrusion_preview_clears_the_old_scene() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    let mut preview = oblikovati_gui::GuiExtrudePreview {
+        document,
+        sketch: crate::scene_fixture::SKETCH,
+        profile: 0,
+        distance: "width".into(),
+    };
+    owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
+    owner.take_scene().unwrap().unwrap();
+    preview.distance = "0 mm".into();
+    assert!(owner.extrusion_preview_from_gui(Some(&preview)).is_err());
+    assert!(
+        owner
+            .take_scene()
+            .unwrap()
+            .unwrap()
+            .scene
+            .triangles
+            .is_empty()
+    );
+    preview.distance = "width".into();
+    owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
+    owner.take_scene().unwrap().unwrap();
+    set_size(&mut owner, "20 mm");
+    assert!(
+        owner
+            .take_scene()
+            .unwrap()
+            .unwrap()
+            .scene
+            .triangles
+            .is_empty()
+    );
+}
+
+#[test]
+fn closing_the_document_clears_its_preview_from_the_scene() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    let preview = oblikovati_gui::GuiExtrudePreview {
+        document,
+        sketch: crate::scene_fixture::SKETCH,
+        profile: 0,
+        distance: "width".into(),
+    };
+    owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
+    assert!(
+        !owner
+            .take_scene()
+            .unwrap()
+            .unwrap()
+            .scene
+            .triangles
+            .is_empty()
+    );
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: document,
+            force: true,
+        })
+        .unwrap();
+    assert!(
+        owner
+            .take_scene()
+            .unwrap()
+            .unwrap()
+            .scene
+            .triangles
+            .is_empty()
+    );
+}

@@ -135,6 +135,8 @@ pub enum GuiShellAction {
         profile: i64,
         distance: String,
     },
+    /// Show or clear a transient extrusion preview.
+    PreviewExtrude(Option<GuiExtrudePreview>),
     DeleteSketchSelection,
     ToggleSketchFormat(oblikovati_model::sketch::SketchCurveFormat),
     PlaceSketchTool(crate::GuiSketchTool),
@@ -144,6 +146,14 @@ pub enum GuiShellAction {
     Undo,
     Redo,
     Home,
+}
+/// Transient profile preview request owned by the current document.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiExtrudePreview {
+    pub document: u64,
+    pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    pub profile: i64,
+    pub distance: String,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiParameterMutation {
