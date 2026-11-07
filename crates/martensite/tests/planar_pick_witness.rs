@@ -68,3 +68,19 @@ fn nonfinite_coordinates_and_distance_overflow_are_named_result_failures() {
         assert!(require_residual(residual, 0.5, "test").is_err());
     }
 }
+#[test]
+fn a_query_level_with_a_lines_end_picks_that_end_instead_of_failing() {
+    // A solved rectangle side, its direction a rounding off the axis, from a real click.
+    let side = PlanarCurveDefinition {
+        geometry: PlanarGeometry::Line {
+            origin: [-1.5777777777777777, -2.022222222576029],
+            direction: [1.0, 2.063842430288787e-10],
+        },
+        bounds: Some([0.0, 1.0]),
+        left_offset: 0.,
+    };
+    let query = [-0.5777777777777781, -1.8222222222222229];
+    let picked =
+        nearest_planar_curve_candidate(&side, query, PlanarPickOptionsV1::default()).unwrap();
+    assert!((picked.parameter - 1.).abs() < 1e-9, "{picked:?}");
+}

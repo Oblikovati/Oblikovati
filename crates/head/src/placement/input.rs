@@ -35,6 +35,17 @@ pub(crate) struct SketchPlacementState {
     navigation: [bool; 3],
     fields: PlacementFieldEntry,
 }
+/// A witness's middle, moved off it by a fraction of its length so the text clears the line.
+fn annotation_beside([from, to]: [[f64; 2]; 2]) -> [f64; 2] {
+    const SIDE: f64 = 0.2;
+    let delta = [to[0] - from[0], to[1] - from[1]];
+    [
+        (from[0] + to[0]) * 0.5 - delta[1] * SIDE,
+        (from[1] + to[1]) * 0.5 + delta[0] * SIDE,
+    ]
+}
+/// How far from its first point a shape starts when values were typed with no pointer motion.
+const TYPED_SEED_REACH: f64 = 1.;
 struct PlacementPress {
     pixel: [i32; 2],
     dragged: bool,
@@ -101,9 +112,38 @@ impl SketchPlacementState {
         if self.tool == crate::SketchPlacementTool::Line {
             return self.line_field_count();
         }
-        self.preview
-            .as_ref()
-            .map_or(0, |recipe| recipe.fields.len())
+        // The fields exist from the stage that can finish, even before the pointer has moved.
+        if self.accepted.len() + 1 == self.tool.point_count() {
+            return self.tool.typed_field_count();
+        }
+        0
+    }
+    /// Whether the numeric fields are up; example: for the field display beside the pointer.
+    pub(crate) fn placement_field_count(&self) -> usize {
+        self.field_count()
+    }
+    /// The recipe the typed values apply to, when the pointer has given none of its own yet.
+    pub(crate) fn typed_seed_recipe(
+        &mut self,
+        construction: &dyn oblikovati_model::sketch::SketchCircleConstruction,
+    ) -> Result<Option<SketchPlacementRecipe>, String> {
+        if self.preview.is_some() {
+            return Ok(self.preview.clone());
+        }
+        let Some(start) = self.accepted.last().copied() else {
+            return Ok(None);
+        };
+        // The solver takes the typed size; this only needs to be a shape it can start from.
+        let seed = [start[0] + TYPED_SEED_REACH, start[1] + TYPED_SEED_REACH];
+        let mut recipe = self.tool.recipe(&self.accepted, seed, construction)?;
+        recipe
+            .apply_creation_formats(self.formats.construction, self.formats.centerline)
+            .map_err(|cause| cause.to_string())?;
+        Ok(Some(recipe))
+    }
+    /// A typed zero size on a tool that shrugs it off: the shape is dropped, not refused.
+    pub(crate) fn typed_size_is_zero(&self) -> bool {
+        self.fields.line_values().contains(&Some(0.))
     }
     /// The pointer's sketch position, once it has moved over the sketch.
     pub(crate) fn pointer_position(&self) -> Option<[f64; 2]> {
@@ -131,12 +171,17 @@ impl SketchPlacementState {
     pub(crate) fn evaluate_line_values(&mut self, evaluate: &dyn Fn(usize, &str) -> Option<f64>) {
         self.fields.evaluate_line_fields(evaluate);
     }
-    pub(crate) fn preview_locks(
+    /// Typed values with where each dimension's text goes: beside the edge it measures.
+    pub(crate) fn locks_for(
         &self,
+        recipe: &SketchPlacementRecipe,
     ) -> Result<Vec<Option<oblikovati_model::history::SketchPlacementFieldLock>>, String> {
-        let locks = self.fields.preview_locks();
-        if let Some(recipe) = &self.preview {
-            fields::validate_dimension_locks(&recipe.fields, &locks)?;
+        let mut locks = self.fields.preview_locks();
+        fields::validate_dimension_locks(&recipe.fields, &locks)?;
+        for (lock, field) in locks.iter_mut().zip(&recipe.fields) {
+            if let Some(lock) = lock {
+                lock.text_point = Some(annotation_beside(field.witness));
+            }
         }
         Ok(locks)
     }
@@ -243,13 +288,14 @@ impl SketchPlacementState {
             self.press = None;
             return Ok(None);
         };
+        // A click where the last one landed is no shape yet: the command keeps asking.
+        if self.accepted.last() == Some(&point) {
+            return Ok(None);
+        }
         if self.accepted.len() + 1 < self.tool.point_count() {
             if place {
                 self.accept_point(point)?;
             }
-            return Ok(None);
-        }
-        if !place && self.accepted.last() == Some(&point) {
             return Ok(None);
         }
         let mut recipe = self.tool.recipe(&self.accepted, point, construction)?;

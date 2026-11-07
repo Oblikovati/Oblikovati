@@ -105,14 +105,8 @@ impl<
         }
         let action = tool.event(event);
         if matches!(action, PlacementAction::Cancel) {
-            self.command_notice = Some(if tool.tool == crate::SketchPlacementTool::Point {
-                // Point ends cleanly: every placed point is already its own step.
-                DesktopCommandNotice::Ready
-            } else {
-                DesktopCommandNotice::PlacementPrompt {
-                    message: format!("{} canceled.", tool.tool.name()),
-                }
-            });
+            // Whatever was placed is already its own step; the sketch is at rest again.
+            self.command_notice = Some(DesktopCommandNotice::Ready);
             return true;
         }
         let changed = !matches!(action, PlacementAction::Idle);
@@ -174,15 +168,58 @@ impl<
         }
     }
     fn commit_placement_fields(&mut self, tool: &mut SketchPlacementState) -> bool {
-        let recipe = tool.preview.clone();
-        self.commit_placement_cursor(tool, recipe)
-            .unwrap_or_else(|cause| {
-                self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
-                false
-            })
+        let outcome = self.commit_typed_shape(tool);
+        outcome.unwrap_or_else(|cause| {
+            self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+            false
+        })
+    }
+    /// A value that does not evaluate holds its place; a shrugged-off zero drops the shape.
+    fn commit_typed_shape(&mut self, tool: &mut SketchPlacementState) -> Result<bool, String> {
+        self.evaluate_placement_fields(tool)?;
+        if tool.fields_invalid() {
+            return Ok(false);
+        }
+        if tool.typed_size_is_zero() {
+            let generation = self
+                .files
+                .workspace()
+                .session(tool.document)
+                .map_err(|cause| cause.to_string())?
+                .generation();
+            tool.restart(generation);
+            self.placement_notice(tool.prompt());
+            return Ok(false);
+        }
+        let recipe = tool.typed_seed_recipe(&self.sketch_construction)?;
+        let completed = self.commit_placement_cursor(tool, recipe)?;
+        self.placement_notice(tool.prompt());
+        Ok(completed)
+    }
+    /// Evaluate each typed field against the document's parameters; example: after a key.
+    fn evaluate_placement_fields(&self, tool: &mut SketchPlacementState) -> Result<(), String> {
+        let session = self
+            .files
+            .workspace()
+            .session(tool.document)
+            .map_err(|cause| cause.to_string())?;
+        let parameters = &session.snapshot().parameters;
+        let refuse_zero = tool.tool.typed_zero_is_invalid();
+        tool.evaluate_line_values(&|_, source| {
+            let value = parameters
+                .evaluate_scalar_expression(source, oblikovati_model::quantity::Dimension::Length)
+                .ok()?
+                .value;
+            (!refuse_zero || value > 0.).then_some(value)
+        });
+        Ok(())
     }
     pub(super) fn refresh_placement_fields(&mut self, tool: &mut SketchPlacementState) {
         tool.resolved_preview = None;
+        if let Err(cause) = self.evaluate_placement_fields(tool) {
+            self.command_notice = Some(DesktopCommandNotice::PlacementFailed { cause });
+            return;
+        }
         match self.resolved_placement_preview(tool) {
             Ok(preview) => {
                 tool.resolved_preview = preview;
@@ -207,6 +244,7 @@ impl<
             }
             return false;
         }
+        tool.cursor_pixel = Some(pixel);
         let outcome = window
             .sketch_point(pixel, tool.plane)
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
@@ -242,7 +280,7 @@ impl<
             self.commit_point(tool, recipe.points[0], None)?;
             return Ok(false);
         }
-        let locks = tool.preview_locks()?;
+        let locks = tool.locks_for(&recipe)?;
         self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &locks)?;
         let generation = self
             .files
@@ -252,6 +290,17 @@ impl<
             .generation();
         tool.restart(generation);
         Ok(false)
+    }
+    /// Feed an exact point to any placement command, as a click there would.
+    pub(super) fn place_exact_point(
+        &mut self,
+        tool: &mut SketchPlacementState,
+        position: [f64; 2],
+    ) -> Result<(), String> {
+        let recipe = tool.cursor(Some(position), true, &self.sketch_construction)?;
+        self.commit_placement_cursor(tool, recipe)?;
+        self.placement_notice(tool.prompt());
+        Ok(())
     }
     pub(super) fn placement_notice(&mut self, message: String) {
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt { message });

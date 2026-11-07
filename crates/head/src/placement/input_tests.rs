@@ -29,7 +29,8 @@ fn restart_preserves_document_identity_and_clears_dimension_entry() {
     enter_rectangle_width(&mut state);
     assert!(state.fields_engaged());
     assert!(state.field_prompt().contains("size"));
-    let locks = state.preview_locks().unwrap();
+    let recipe = state.preview.clone().unwrap();
+    let locks = state.locks_for(&recipe).unwrap();
     assert_eq!(locks[0].as_ref().unwrap().expression, "size");
     state.restart(12);
     let identity = (state.document, state.sketch, state.generation);

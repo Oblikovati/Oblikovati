@@ -22,6 +22,7 @@ pub struct GuiDimensionValue {
 #[derive(Default)]
 pub(crate) struct GuiDimensionValueEditor {
     open: Option<GuiDimensionEdit>,
+    closed_this_frame: bool,
     /// The pointer is on a label that opens an editor, so its clicks are not a viewport pick.
     pub over_label: bool,
     text: String,
@@ -32,6 +33,10 @@ const TITLE: &str = "Edit Dimension";
 const SIZE: [f32; 2] = [240., 70.];
 
 impl GuiDimensionValueEditor {
+    /// The editor owned this frame's keys; the Escape that closed it was not the command's.
+    pub(crate) fn had_keyboard(&self) -> bool {
+        self.open.is_some() || self.closed_this_frame
+    }
     /// Open on a double-click over a label, then draw while open.
     pub(crate) fn panel(
         &mut self,
@@ -39,8 +44,10 @@ impl GuiDimensionValueEditor {
         request: &GuiFrameRequest,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.closed_this_frame = false;
         self.open_at_pointer(ui, request);
-        if !request.commands.sketch_at_ready {
+        let state = &request.commands;
+        if !state.sketch_at_ready && !state.dimension_tool_active {
             self.open = None;
         }
         let Some(edit) = self.open.clone() else {
@@ -71,13 +78,15 @@ impl GuiDimensionValueEditor {
         });
         if close {
             self.open = None;
+            self.closed_this_frame = true;
             // Keyboard focus was this editor's; the sketch's own keys work again without a click.
             crate::widget_abi::release_keyboard_focus(ui);
         }
     }
     fn open_at_pointer(&mut self, ui: &Ui, request: &GuiFrameRequest) {
         self.over_label = false;
-        if !request.commands.sketch_at_ready
+        let state = &request.commands;
+        if !(state.sketch_at_ready || state.dimension_tool_active)
             || ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
         {
             return;
@@ -86,7 +95,13 @@ impl GuiDimensionValueEditor {
             return;
         };
         self.over_label = true;
-        if !ui.is_mouse_double_clicked(imgui::MouseButton::Left) {
+        // At rest a label opens on a double-click; the running command takes a single one.
+        let opens = if state.dimension_tool_active {
+            ui.is_mouse_clicked(imgui::MouseButton::Left)
+        } else {
+            ui.is_mouse_double_clicked(imgui::MouseButton::Left)
+        };
+        if !opens {
             return;
         }
         self.text.clone_from(&edit.expression);

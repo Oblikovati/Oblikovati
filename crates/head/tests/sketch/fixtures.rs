@@ -204,6 +204,13 @@ impl ApplicationWorld {
             "expected a length and an angle in the fields {text:?}"
         );
     }
+    pub fn expect_hud_shows_length(&self) {
+        let text = self.window_text("##sketch-hud");
+        assert!(
+            text.contains("mm"),
+            "expected a length in the fields {text:?}"
+        );
+    }
     pub fn expect_hud_value_invalid(&self, value: &str) {
         let run = self.run(value);
         let [red, green, blue] = run.color;

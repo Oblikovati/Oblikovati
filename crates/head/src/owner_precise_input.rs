@@ -42,10 +42,7 @@ impl<
         match tool.tool {
             crate::SketchPlacementTool::Line => self.line_place_exact(tool, position),
             crate::SketchPlacementTool::Point => self.commit_point(tool, position, None),
-            other => Err(format!(
-                "precise point {point:?} for {}: expected Line or Point",
-                other.name()
-            )),
+            _ => self.place_exact_point(tool, position),
         }
     }
     fn precise_position(&self, document: u64, point: &GuiPrecisePoint) -> Result<[f64; 2], String> {
@@ -129,14 +126,9 @@ impl<
         let position = acquired.map_or(at, |(position, _)| position);
         self.commit_point(tool, position, acquired.map(|(_, vertex)| vertex))
     }
-    /// What the toolbar may act on; only Line and Point take typed points yet.
+    /// What the toolbar acts on: any placement command's next point.
     pub(super) fn gui_precise_target(&self) -> Option<oblikovati_gui::GuiPreciseTarget> {
         let tool = self.placement_state()?;
-        matches!(
-            tool.tool,
-            crate::SketchPlacementTool::Line | crate::SketchPlacementTool::Point
-        )
-        .then_some(())?;
         Some(oblikovati_gui::GuiPreciseTarget {
             pointer: self.precise_pointer(tool),
             triad: None,

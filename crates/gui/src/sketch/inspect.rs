@@ -18,7 +18,7 @@ pub enum GuiInspectAction {
     FinishRegionProperties,
 }
 const CANVAS_MENU: &str = "##sketch-canvas-menu";
-const MEASURE_SIZE: [f32; 2] = [340., 300.];
+const MEASURE_SIZE: [f32; 2] = [300., 300.];
 
 /// Draw the open measurement; example: rows of a selected curve, with Done below them.
 pub(crate) fn measure_panel(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

@@ -50,7 +50,8 @@ fn collapsed_polygon_can_retry_then_cancel_without_history_changes() {
             button([0, 0], true),
         ],
     );
-    assert!(matches!(
+    // A repeated click is no shape yet and no error: the command keeps asking.
+    assert!(!matches!(
         owner.take_command_notice(),
         Some(crate::DesktopCommandNotice::PlacementFailed { .. })
     ));

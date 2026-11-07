@@ -42,7 +42,7 @@ impl<
             .preview_sketch_placement(
                 tool.sketch,
                 recipe,
-                &tool.preview_locks()?,
+                &tool.locks_for(recipe)?,
                 &self.sketch_construction,
             )
             .map_err(|cause| format!("placement preview {}: {cause}", tool.field_prompt()))?;

@@ -94,7 +94,10 @@ fn slot_click_click_and_drag_release_share_geometry_and_one_history_command() {
         }
         deliver(&mut owner, &[motion([10, 0])]);
         assert_eq!(count(&owner, document, sketch), before);
-        assert_eq!(owner.gui_command_state().unwrap(), history);
+        assert_eq!(
+            super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+            super::sketch_tools::without_tool_state(history.clone())
+        );
         let preview = owner.placement_preview().unwrap().clone();
         deliver(&mut owner, &[button([10, 0], !drag)]);
         assert_eq!(count(&owner, document, sketch), before + 6);
@@ -202,7 +205,8 @@ fn slot_projection_failure_and_invalid_second_point_keep_a_retryable_first_point
             button([0, 0], true),
         ],
     );
-    assert!(matches!(
+    // A repeated click is no shape yet and no error: the command keeps asking.
+    assert!(!matches!(
         owner.take_command_notice(),
         Some(DesktopCommandNotice::PlacementFailed { .. })
     ));

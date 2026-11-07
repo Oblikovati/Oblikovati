@@ -71,7 +71,8 @@ fn pick_rows(
             let measure =
                 measure_sketch_curve(context.sketch, curve).map_err(|cause| cause.to_string())?;
             rows.push(format!("Selection {number}: Curve"));
-            curve_rows(context, measure, rows)?;
+            let full_turn = context.sketch.circle(curve).is_ok();
+            curve_rows(context, measure, full_turn, rows)?;
         }
     }
     Ok(())
@@ -79,6 +80,7 @@ fn pick_rows(
 fn curve_rows(
     context: &MeasureContext<'_>,
     measure: SketchCurveMeasure,
+    full_turn: bool,
     rows: &mut Vec<String>,
 ) -> Result<(), String> {
     if let Some(circular) = measure.circular {
@@ -90,8 +92,10 @@ fn curve_rows(
     }
     rows.push(format!("Length {}", length(context, measure.length)?));
     if let Some(circular) = measure.circular {
+        // A circle has no sweep of its own: it reads as the angle it closes.
+        let label = if full_turn { "Angle" } else { "Sweep" };
         rows.push(format!(
-            "Sweep {:.2} deg",
+            "{label} {:.2} deg",
             circular.sweep.abs().to_degrees()
         ));
         rows.push(format!(

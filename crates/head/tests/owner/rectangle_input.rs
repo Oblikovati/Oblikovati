@@ -68,7 +68,10 @@ fn place_rectangle(
         [10, 5]
     };
     deliver(&mut owner, &[motion(endpoint)]);
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        super::sketch_tools::without_tool_state(before.clone())
+    );
     if kind == SketchPlacementTool::ThreePointRectangle {
         assert!(owner.placement_preview().is_none());
     } else {
@@ -83,7 +86,10 @@ fn place_rectangle(
     }
     deliver(&mut owner, &[button(endpoint, !drag)]);
     if kind == SketchPlacementTool::ThreePointRectangle {
-        assert_eq!(owner.gui_command_state().unwrap(), before);
+        assert_eq!(
+            super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+            super::sketch_tools::without_tool_state(before.clone())
+        );
         deliver(&mut owner, &[motion([3, 5]), button([3, 5], true)]);
     }
     let snapshot = owner
@@ -154,7 +160,8 @@ fn rectangle_failed_points_keep_the_current_stage_and_escape_cancels() {
             button([0, 0], true),
         ],
     );
-    assert!(matches!(
+    // A repeated click is no shape yet and no error: the command keeps asking.
+    assert!(!matches!(
         owner.take_command_notice(),
         Some(DesktopCommandNotice::PlacementFailed { .. })
     ));

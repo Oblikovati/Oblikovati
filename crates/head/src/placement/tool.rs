@@ -169,7 +169,26 @@ impl SketchPlacementTool {
         };
         result.map_err(|cause| cause.to_string())
     }
+    /// How many values can be typed at the stage that finishes the shape.
+    pub(crate) fn typed_field_count(self) -> usize {
+        match self {
+            Self::Circle => 1,
+            Self::Rectangle => 2,
+            _ => 0,
+        }
+    }
+    /// A typed zero keeps the field red on some tools; others drop the shape without a word.
+    pub(crate) fn typed_zero_is_invalid(self) -> bool {
+        self != Self::Rectangle
+    }
     pub(crate) fn prompt(self, placed: usize) -> String {
+        match (self, placed) {
+            (Self::Circle, 0) => return "Select center of circle".into(),
+            (Self::Circle, _) => return "Select point on circle".into(),
+            (Self::Rectangle, 0) => return "Select first corner".into(),
+            (Self::Rectangle, _) => return "Select opposite corner".into(),
+            _ => {}
+        }
         let labels = self.point_labels();
         let next = labels[placed.min(labels.len() - 1)];
         format!("{}: select {next}. Escape cancels.", self.name())

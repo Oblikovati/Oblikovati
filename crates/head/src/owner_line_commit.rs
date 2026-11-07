@@ -230,23 +230,50 @@ impl<
     /// The numeric fields beside the pointer; the option hides them without changing the command.
     pub(super) fn gui_sketch_hud(&self) -> Option<GuiSketchHud> {
         let tool = self.placement_state()?;
-        if tool.tool != crate::SketchPlacementTool::Line || !self.sketch_hud_enabled() {
+        if !self.sketch_hud_enabled() {
             return None;
         }
-        tool.line_restart_available().then_some(())?;
-        let measured = self.line_measured_fields(tool).unwrap_or_default();
+        let measured = if tool.tool == crate::SketchPlacementTool::Line {
+            tool.line_restart_available().then_some(())?;
+            self.line_measured_fields(tool).unwrap_or_default().to_vec()
+        } else {
+            self.placement_measured_fields(tool)?
+        };
         Some(GuiSketchHud {
             pixel: tool.cursor_pixel?,
-            fields: std::array::from_fn(|index| {
-                let view = tool.field_view(index);
-                GuiSketchHudField {
-                    text: view.typed.unwrap_or_else(|| measured[index].clone()),
-                    active: view.active,
-                    invalid: view.invalid,
-                    selected: view.selected,
-                }
-            }),
+            fields: measured
+                .into_iter()
+                .enumerate()
+                .map(|(index, shown)| {
+                    let view = tool.field_view(index);
+                    GuiSketchHudField {
+                        text: view.typed.unwrap_or(shown),
+                        active: view.active,
+                        invalid: view.invalid,
+                        selected: view.selected,
+                    }
+                })
+                .collect(),
         })
+    }
+    /// Each field's value from the pending shape; none has a size until the pointer moves.
+    fn placement_measured_fields(&self, tool: &SketchPlacementState) -> Option<Vec<String>> {
+        let count = tool.placement_field_count();
+        (count > 0).then_some(())?;
+        let session = self.files.workspace().session(tool.document).ok()?;
+        let units = session.snapshot().parameters.units();
+        let value = |index: usize| {
+            let size = tool
+                .preview
+                .as_ref()
+                .and_then(|recipe| recipe.fields.get(index))
+                .map_or(0., |field| field.value);
+            units.format_display(oblikovati_model::quantity::Quantity::new(
+                size,
+                Dimension::Length,
+            ))
+        };
+        (0..count).map(|index| value(index).ok()).collect()
     }
     fn line_measured_fields(&self, tool: &SketchPlacementState) -> Option<[String; 2]> {
         let recipe = tool.preview.as_ref()?;

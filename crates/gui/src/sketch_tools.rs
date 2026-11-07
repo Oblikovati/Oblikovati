@@ -22,6 +22,13 @@ pub(crate) const SECONDARY_SKETCH_TOOLS: [GuiSketchTool; 6] = [
     GuiSketchTool::ThreePointRectangle,
 ];
 impl GuiSketchTool {
+    /// The fuller name a dropdown has room for; example: `GuiSketchTool::Circle.menu_label()`.
+    pub fn menu_label(self) -> &'static str {
+        match self {
+            Self::Circle => "Center Point Circle",
+            other => other.label(),
+        }
+    }
     /// Supply the compact ribbon caption; example: `GuiSketchTool::Circle.label()`.
     pub fn label(self) -> &'static str {
         match self {

@@ -351,7 +351,7 @@ impl GuiFrameEngine {
         // A popup always owns them, even on the frame Escape closes it and focus moves on.
         capture.keyboard &= capture.text || self.context.io().nav_visible;
         capture.keyboard |= popup_open;
-        capture.popup = popup_open;
+        capture.popup = popup_open || self.dimension_value_editor.had_keyboard();
         capture.pointer |= self.dimension_value_editor.over_label;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();

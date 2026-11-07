@@ -56,7 +56,7 @@ fn circular_tool_choices(
             ui.close_current_popup();
             return;
         }
-        if ui.menu_item(choice.label()) {
+        if ui.menu_item(choice.menu_label()) {
             actions.push(action);
         }
     }

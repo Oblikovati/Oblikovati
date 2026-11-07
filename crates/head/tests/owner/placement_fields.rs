@@ -135,7 +135,10 @@ fn typed_rectangle_fields_commit_parameter_dimensions_in_one_history_step() {
     let before = owner.gui_command_state().unwrap();
     begin_rectangle_preview(&mut owner);
     enter_expression(&mut owner, "size", ViewportPhysicalKey::Tab);
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        super::sketch_tools::without_tool_state(before.clone())
+    );
     enter_expression(&mut owner, "size", ViewportPhysicalKey::Enter);
     verify_dimensions(&owner, document, sketch);
     deliver(
@@ -175,20 +178,21 @@ fn invalid_field_keeps_preview_and_history_until_corrected() {
     let (mut owner, document, sketch) = parameter_rectangle_owner();
     begin_rectangle_preview(&mut owner);
     let before = owner.gui_command_state().unwrap();
+    // A value that does not evaluate holds its field: neither Tab nor Enter takes it anywhere.
     enter_expression(&mut owner, "missing_size", ViewportPhysicalKey::Tab);
-    enter_expression(&mut owner, "size", ViewportPhysicalKey::Enter);
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    deliver(&mut owner, &[field_key(ViewportPhysicalKey::Enter)]);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        super::sketch_tools::without_tool_state(before.clone())
+    );
     assert!(
         rectangle_geometry(&owner, document, sketch)
             .lines()
             .is_empty()
     );
     assert!(owner.placement_preview().is_some());
-    assert!(owner.sketch_preview().is_none());
-    assert!(
-        matches!(owner.take_command_notice(), Some(DesktopCommandNotice::PlacementFailed { cause }) if cause.contains("missing_size"))
-    );
-    enter_expression(&mut owner, "", ViewportPhysicalKey::Tab);
+    deliver(&mut owner, &[field_key(ViewportPhysicalKey::Escape)]);
+    enter_expression(&mut owner, "size", ViewportPhysicalKey::Tab);
     enter_expression(&mut owner, "size", ViewportPhysicalKey::Enter);
     verify_dimensions(&owner, document, sketch);
 }
@@ -212,7 +216,10 @@ fn solved_preview_has_commit_geometry_and_does_not_reserve_live_identities() {
         panic!("locked rectangle: expected solved private preview");
     };
     assert_eq!(members.len(), 4);
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        super::sketch_tools::without_tool_state(before.clone())
+    );
     assert_eq!(
         owner
             .documents()

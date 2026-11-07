@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! `features/sketch` on the same native window and owner as the application scenarios.
 use super::*;
+#[path = "circle-center-point/steps.rs"]
+mod circle_center_point;
 #[path = "fixtures.rs"]
 pub(super) mod fixtures;
 #[path = "line/steps.rs"]
@@ -9,9 +11,17 @@ mod line;
 mod point;
 #[path = "precise-input/steps.rs"]
 mod precise_input;
+#[path = "rectangle-two-point/steps.rs"]
+mod rectangle_two_point;
 
 /// Features the gate requires; each is one finished folder under `features/sketch`.
-const ACCEPTED_FEATURES: &[&str] = &["line", "point", "precise-input"];
+const ACCEPTED_FEATURES: &[&str] = &[
+    "circle-center-point",
+    "line",
+    "point",
+    "precise-input",
+    "rectangle-two-point",
+];
 #[test]
 fn sketch_scenarios_use_the_native_window() {
     std::thread::Builder::new()

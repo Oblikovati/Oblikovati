@@ -88,6 +88,10 @@ impl<
         });
         Ok(true)
     }
+    /// The General Dimension command is running, so a click on a label opens that dimension.
+    pub(super) fn dimension_tool_active(&self) -> bool {
+        matches!(self.sketch_tool, Some(SketchToolState::Dimension(_)))
+    }
     pub(super) fn process_dimension_event(
         &mut self,
         mut tool: Box<SketchDimensionState>,
@@ -99,12 +103,14 @@ impl<
             ViewportEvent::Input(ViewportInput::Key {
                 key: ViewportKey::Cancel,
                 pressed: true
+            }) | ViewportEvent::Input(ViewportInput::PhysicalKey {
+                command: Some(ViewportKey::Cancel),
+                pressed: true,
+                ..
             })
         ) {
             self.command_notice = Some(match self.clear_geometric_picks(tool.edit) {
-                Ok(()) => DesktopCommandNotice::PlacementPrompt {
-                    message: "Dimension canceled.".into(),
-                },
+                Ok(()) => DesktopCommandNotice::Ready,
                 Err(cause) => DesktopCommandNotice::AuthoringFailed { cause },
             });
             return true;

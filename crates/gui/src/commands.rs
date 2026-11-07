@@ -146,6 +146,7 @@ pub struct GuiCommandState {
     pub transaction_open: bool,
     /// The running Line command reads the keyboard before any GUI widget does.
     pub sketch_tool_keyboard: bool,
+    pub dimension_tool_active: bool,
     /// The edited sketch's remaining freedom; `None` outside a sketch.
     pub dimensions_needed: Option<usize>,
     pub sketch_hud: Option<crate::GuiSketchHud>,
@@ -213,7 +214,9 @@ impl GuiShellAction {
             Self::ToggleCenterPointFormat => state.authoring == GuiAuthoringContext::Sketch,
             Self::SetCenterPoint { .. } => state.sketch_at_ready && !state.transaction_open,
             Self::Inspect(_) => state.authoring == GuiAuthoringContext::Sketch,
-            Self::EditDimensionValue(_) => state.sketch_at_ready && !state.transaction_open,
+            Self::EditDimensionValue(_) => {
+                (state.sketch_at_ready || state.dimension_tool_active) && !state.transaction_open
+            }
             Self::SetPromptFrequency { .. } | Self::CaptureWindowPreview | Self::Exit => true,
             Self::ActivateDocument(request) => {
                 !state.transaction_open

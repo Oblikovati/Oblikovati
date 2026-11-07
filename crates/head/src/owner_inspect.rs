@@ -78,10 +78,19 @@ impl<
         else {
             return Ok(false);
         };
-        if modifiers.control || self.active_sketch_edit().is_none() {
+        if self.active_sketch_edit().is_none() {
+            return Ok(false);
+        }
+        if modifiers.control && !modifiers.shift {
             return Ok(false);
         }
         match key {
+            ViewportPhysicalKey::C if modifiers.control && modifiers.shift => {
+                crate::HeadWork::place_sketch_tool_from_gui(
+                    self,
+                    oblikovati_gui::GuiSketchTool::Circle,
+                )?;
+            }
             ViewportPhysicalKey::M => self.start_measure()?,
             ViewportPhysicalKey::F8 => self.set_constraints_shown(true)?,
             ViewportPhysicalKey::F9 => self.set_constraints_shown(false)?,
@@ -185,8 +194,11 @@ impl<
             .get(tool.edit.sketch)
             .map_err(|cause| cause.to_string())?
             .geometry();
+        // A click on nothing starts the selection over, as Done would without closing the panel.
         let Some(pick) = measure_target(geometry, tool.edit.plane, pixel, window)? else {
-            return Ok(false);
+            tool.picks.clear();
+            tool.rows.clear();
+            return Ok(true);
         };
         tool.add_pick(pick);
         let context = MeasureContext {

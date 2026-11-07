@@ -15,7 +15,7 @@ pub struct GuiSketchHudField {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiSketchHud {
     pub pixel: [i32; 2],
-    pub fields: [GuiSketchHudField; 2],
+    pub fields: Vec<GuiSketchHudField>,
 }
 /// What the running Line command offers now; example: `close_enabled` after two segments.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

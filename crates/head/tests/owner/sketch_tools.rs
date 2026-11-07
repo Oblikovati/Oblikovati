@@ -54,6 +54,7 @@ pub(super) fn without_tool_state(
     state.sketch_tool_keyboard = false;
     state.line_command = None;
     state.precise_target = None;
+    state.sketch_hud = None;
     state.repeat_tool = None;
     state
 }

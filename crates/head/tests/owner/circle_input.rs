@@ -40,7 +40,10 @@ pub(super) fn place_round_tool(
     let before = owner.gui_command_state().unwrap();
     round_tool_prefix(&mut owner, kind, drag);
     deliver(&mut owner, &[motion([5, 5])]);
-    assert_eq!(owner.gui_command_state().unwrap(), before);
+    assert_eq!(
+        super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
+        super::sketch_tools::without_tool_state(before.clone())
+    );
     let preview = owner.placement_preview().unwrap().clone();
     deliver(
         &mut owner,
@@ -118,8 +121,9 @@ fn repeated_and_collinear_points_preserve_stage_for_retry_and_escape() {
     let (mut owner, document, _) = placement_owner(three_point_circle(0.));
     let before = owned_sketches(&owner, document).clone();
     click(&mut owner, [0, 0]);
+    // A repeated click is no shape yet and no error: the command keeps asking.
     click(&mut owner, [0, 0]);
-    assert_placement_failed(&mut owner);
+    assert!(owner.placement_preview().is_none());
     click(&mut owner, [10, 0]);
     click(&mut owner, [5, 0]);
     assert_placement_failed(&mut owner);

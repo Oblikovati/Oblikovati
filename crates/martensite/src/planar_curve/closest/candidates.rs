@@ -36,14 +36,14 @@ pub(super) fn stationary(
     for index in 1..=extrema.nb_ext()? {
         // v0.8.0 (59aca389) recomputes the distance derivative when classifying extrema.
         // Keep this runtime minimum check; root order does not identify the physical branch.
-        if extrema.is_min(index)? {
-            points.push(checked_stationary(
-                curve,
-                query,
-                span,
-                extrema.point(index)?,
-                options,
-            )?);
+        if !extrema.is_min(index)? {
+            continue;
+        }
+        let native = extrema.point(index)?;
+        // A root rounded just past the span's end is that end, which the boundary witness holds:
+        // a pointer level with a line's last point must not fail the whole pick.
+        if (span[0]..=span[1]).contains(&native.parameter()) {
+            points.push(checked_stationary(curve, query, span, native, options)?);
         }
     }
     Ok(points)
