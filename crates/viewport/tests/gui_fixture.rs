@@ -19,8 +19,10 @@ pub fn frame(extent: [u32; 2], color: [u8; 4], clip_rect: [f32; 4]) -> GuiFrame 
         })
         .into();
     GuiFrame {
+        resources: super::GuiTextureResources::new(atlas(), []).unwrap(),
         extent,
         batches: vec![GuiBatch {
+            texture: super::GuiTextureKey::FONT,
             vertices,
             indices: vec![0, 1, 2, 0, 2, 3],
             clip_rect,

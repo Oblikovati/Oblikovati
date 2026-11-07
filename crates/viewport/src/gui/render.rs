@@ -1,18 +1,29 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{GuiAtlas, GuiBatch, GuiFrame};
+use crate::{GuiAtlas, GuiBatch, GuiFrame, GuiTextureKey, GuiTextureResources, GuiTextureSource};
 use martensite_vulkan::{
     PrimitiveDraw, RasterImage, RenderClipping, RenderFrame, RenderLayer, RenderVertex,
     TexturedStyle, identity_clip,
 };
-/// The atlas is converted once and shared by all immutable kernel submissions.
+use std::collections::BTreeMap;
+/// Resource pixels are converted once and shared by immutable kernel submissions.
 pub struct GuiFrameCompiler {
-    image: RasterImage,
+    resources: GuiTextureResources,
+    images: BTreeMap<GuiTextureKey, RasterImage>,
 }
 impl GuiFrameCompiler {
     /// Prepare the font resource independently of the UI context; example: `GuiFrameCompiler::new(&atlas)?`.
     pub fn new(atlas: &GuiAtlas) -> Result<Self, String> {
+        Self::with_resources(&GuiTextureResources::new(atlas.clone(), [])?)
+    }
+    /// Prepare the exact frame resources once; example: `GuiFrameCompiler::with_resources(&frame.resources)?`.
+    pub fn with_resources(resources: &GuiTextureResources) -> Result<Self, String> {
+        let images = resources
+            .iter()
+            .map(|(key, source)| source_image(source).map(|image| (key, image)))
+            .collect::<Result<BTreeMap<_, _>, _>>()?;
         Ok(Self {
-            image: font_image(atlas)?,
+            resources: resources.clone(),
+            images,
         })
     }
     /// Compile a standalone review frame; example: `compiler.compile(&snapshot)?`.
@@ -28,42 +39,46 @@ impl GuiFrameCompiler {
     }
     /// Prepare a depth-independent layer for shared composition; example: `compiler.layer(&snapshot)?`.
     pub fn layer(&self, frame: &GuiFrame) -> Result<RenderLayer, String> {
+        if self.resources != frame.resources {
+            return Err(
+                "GUI frame resources: expected a compiler for this immutable resource generation"
+                    .into(),
+            );
+        }
         let projection = pixel_projection(frame.extent)?;
-        let draws = frame
-            .batches
-            .iter()
-            .filter(|batch| !batch.indices.is_empty())
-            .map(|batch| compile_batch(batch, self.image.clone(), projection))
-            .collect::<Result<Vec<_>, _>>()?;
+        let mut draws = Vec::new();
+        for batch in &frame.batches {
+            let image = self.image(batch.texture)?;
+            if !batch.indices.is_empty() {
+                draws.push(compile_batch(batch, image, projection)?);
+            }
+        }
         Ok(RenderLayer::new(draws, false, false, false))
+    }
+    fn image(&self, key: GuiTextureKey) -> Result<RasterImage, String> {
+        self.images
+            .get(&key)
+            .cloned()
+            .ok_or_else(|| format!("GUI texture {}: expected a compiled resource", key.raw()))
     }
 }
 /// Lower a complete owned GUI frame before any GPU work.
 /// Example: `compile_gui_frame(&snapshot, &atlas)?`; retain a compiler for repeated frames.
 pub fn compile_gui_frame(frame: &GuiFrame, atlas: &GuiAtlas) -> Result<RenderFrame, String> {
-    GuiFrameCompiler::new(atlas)?.compile(frame)
+    let supplied = GuiTextureResources::new(atlas.clone(), [])?;
+    if supplied.source(GuiTextureKey::FONT)? != frame.resources.source(GuiTextureKey::FONT)? {
+        return Err("GUI supplied font: expected the immutable font retained by this frame".into());
+    }
+    GuiFrameCompiler::with_resources(&frame.resources)?.compile(frame)
 }
-fn font_image(atlas: &GuiAtlas) -> Result<RasterImage, String> {
-    validate_font_pixels(atlas)?;
+fn source_image(source: &GuiTextureSource) -> Result<RasterImage, String> {
+    let atlas = source.pixels();
     let pixels = atlas
         .rgba
         .iter()
-        .map(|pixel| pixel.map(|byte| f32::from(byte) / 255.))
+        .map(|pixel| vertex_color(*pixel))
         .collect();
     RasterImage::new(atlas.extent, pixels).map_err(|cause| cause.to_string())
-}
-fn validate_font_pixels(atlas: &GuiAtlas) -> Result<(), String> {
-    if let Some((index, pixel)) = atlas
-        .rgba
-        .iter()
-        .enumerate()
-        .find(|(_, pixel)| pixel[..3] != [255; 3])
-    {
-        return Err(format!(
-            "GUI font atlas pixel {index} {pixel:?}: expected white RGB with alpha coverage"
-        ));
-    }
-    Ok(())
 }
 fn compile_batch(
     batch: &GuiBatch,

@@ -8,16 +8,18 @@ pub struct GuiVertex {
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiBatch {
+    pub texture: crate::GuiTextureKey,
     pub vertices: Vec<GuiVertex>,
     pub indices: Vec<u32>,
     pub clip_rect: [f32; 4],
 }
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiFrame {
+    pub resources: crate::GuiTextureResources,
     pub extent: [u32; 2],
     pub batches: Vec<GuiBatch>,
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiAtlas {
     pub extent: [u32; 2],
     pub rgba: Arc<Vec<[u8; 4]>>,

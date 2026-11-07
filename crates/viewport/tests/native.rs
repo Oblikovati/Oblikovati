@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #![cfg(target_os = "linux")]
 use oblikovati_viewport::{
-    GuiAtlas, GuiBatch, GuiFrame, GuiVertex, Viewport, ViewportCamera, ViewportCapture,
-    ViewportOptions, ViewportPresentation, ViewportRuntime, ViewportScene, ViewportTriangle,
+    GuiAtlas, GuiBatch, GuiFrame, GuiTextureKey, GuiTextureResources, GuiVertex, Viewport,
+    ViewportCamera, ViewportCapture, ViewportOptions, ViewportPresentation, ViewportRuntime,
+    ViewportScene, ViewportTriangle,
 };
 use std::time::{Duration, Instant};
 #[path = "native/background.rs"]

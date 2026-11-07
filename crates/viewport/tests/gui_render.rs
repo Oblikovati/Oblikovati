@@ -114,3 +114,6 @@ fn require_invalid_font(snapshot: &GuiFrame) {
             .contains("white RGB")
     );
 }
+
+#[path = "gui_resources.rs"]
+mod resources;

@@ -36,7 +36,9 @@ mod widget_abi;
 pub use commands::{GuiAuthoringContext, GuiCommandState, GuiParameterMutation, GuiShellAction};
 pub use engine::{GuiFrameEngine, GuiFrameOutput, GuiFrameRequest};
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};
-pub use oblikovati_viewport::{GuiAtlas, GuiBatch, GuiFrame, GuiVertex};
+pub use oblikovati_viewport::{
+    GuiAtlas, GuiBatch, GuiFrame, GuiTextureKey, GuiTextureResources, GuiTextureSource, GuiVertex,
+};
 pub use sketch_tools::GuiSketchTool;
 
 mod sketch_constraints;
@@ -51,3 +53,5 @@ pub use dimension_labels::{GuiDimensionLabel, GuiDimensionLabelRole};
 mod sketch_delete;
 
 mod ui_scale;
+
+mod icons;
