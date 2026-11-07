@@ -15,30 +15,7 @@ const RECORDED_HALF_WIDTH: f64 = 2.5935;
 const CENTER_BEFORE_RESIZE: [f64; 2] = [-20.19303, 29.387];
 
 fn open_tool(world: &mut ApplicationWorld) {
-    let caption = world.run("3-Pt Rect.").clone();
-    let arrow = world
-        .frame
-        .runs
-        .iter()
-        .find(|run| {
-            run.text == "v"
-                && run.minimum[0] > caption.maximum[0]
-                && (run.center()[1] - caption.center()[1]).abs() < 4.
-        })
-        .expect("expected the rectangle dropdown")
-        .center()
-        .map(|value| value as i32);
-    world.click(arrow);
-    world.pump(Vec::new());
-    world.click_text("Three Point Center Rectangle");
-    world.pump(Vec::new());
-}
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
+    world.choose_from_flyout("3-Pt Rect.", "Three Point Center Rectangle");
 }
 fn line_counts(world: &mut ApplicationWorld) -> (usize, usize) {
     let geometry = world.edited_geometry();
@@ -225,13 +202,13 @@ fn adjacent(world: &mut ApplicationWorld) {
 }
 #[then("their lengths are 12.754 mm and 5.187 mm for this fixture")]
 fn recorded_lengths(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 12.754 mm");
-    expect_measure(world, "Length 5.187 mm");
+    world.expect_measure("Length 12.754 mm");
+    world.expect_measure("Length 5.187 mm");
 }
 #[then("the angle is 90.00 degrees with minimum distance 0.000 mm")]
 fn square(world: &mut ApplicationWorld) {
-    expect_measure(world, "Angle 90.00 deg");
-    expect_measure(world, "Minimum distance 0.000 mm");
+    world.expect_measure("Angle 90.00 deg");
+    world.expect_measure("Minimum distance 0.000 mm");
 }
 // rectangle-three-point-center-10 to rectangle-three-point-center-11
 #[given("an editable metric sketch")]
@@ -299,17 +276,17 @@ fn numeric_retained(world: &mut ApplicationWorld) {
 }
 #[then("their lengths are 6.000 and 4.000 mm")]
 fn six_four(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 6.000 mm");
-    expect_measure(world, "Length 4.000 mm");
+    world.expect_measure("Length 6.000 mm");
+    world.expect_measure("Length 4.000 mm");
 }
 #[then("their angle is 90.00 degrees")]
 fn right_angle(world: &mut ApplicationWorld) {
-    expect_measure(world, "Angle 90.00 deg");
+    world.expect_measure("Angle 90.00 deg");
 }
 #[then("minimum and maximum distances are 0.000 and 7.211 mm")]
 fn distances(world: &mut ApplicationWorld) {
-    expect_measure(world, "Minimum distance 0.000 mm");
-    expect_measure(world, "Maximum distance 7.211 mm");
+    world.expect_measure("Minimum distance 0.000 mm");
+    world.expect_measure("Maximum distance 7.211 mm");
 }
 #[then("Measure closes")]
 fn measure_closes(world: &mut ApplicationWorld) {
@@ -355,14 +332,14 @@ fn lengthened(world: &mut ApplicationWorld) {
 }
 #[then("lengths are 8.000 and 4.000 mm with angle 90.00 degrees")]
 fn eight_four(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 8.000 mm");
-    expect_measure(world, "Length 4.000 mm");
-    expect_measure(world, "Angle 90.00 deg");
+    world.expect_measure("Length 8.000 mm");
+    world.expect_measure("Length 4.000 mm");
+    world.expect_measure("Angle 90.00 deg");
 }
 #[then("minimum and maximum distances are 0.000 and 8.944 mm")]
 fn longer_distances(world: &mut ApplicationWorld) {
-    expect_measure(world, "Minimum distance 0.000 mm");
-    expect_measure(world, "Maximum distance 8.944 mm");
+    world.expect_measure("Minimum distance 0.000 mm");
+    world.expect_measure("Maximum distance 8.944 mm");
 }
 #[given("the accepted length edit and closed Measure window")]
 fn accepted_edit(world: &mut ApplicationWorld) {
@@ -421,8 +398,8 @@ fn measure_intersection(world: &mut ApplicationWorld) {
 }
 #[then("Middle Point coordinates are (0.000, -19.327, 29.887) mm")]
 fn middle_coordinates(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Middle Point");
-    expect_measure(world, "Position X 0.000 Y -19.327 Z 29.887 mm");
+    world.expect_measure("Selection 1: Middle Point");
+    world.expect_measure("Position X 0.000 Y -19.327 Z 29.887 mm");
 }
 #[when("I clear selection and measure the two opposite vertices")]
 fn opposite_vertices(world: &mut ApplicationWorld) {
@@ -434,12 +411,12 @@ fn opposite_vertices(world: &mut ApplicationWorld) {
 }
 #[then("Point coordinates are (0.000, -16.863, 33.619) and (0.000, -21.791, 26.155) mm")]
 fn vertex_coordinates(world: &mut ApplicationWorld) {
-    expect_measure(world, "Position X 0.000 Y -16.863 Z 33.619 mm");
-    expect_measure(world, "Position X 0.000 Y -21.791 Z 26.155 mm");
+    world.expect_measure("Position X 0.000 Y -16.863 Z 33.619 mm");
+    world.expect_measure("Position X 0.000 Y -21.791 Z 26.155 mm");
 }
 #[then("the distance is 8.944 mm")]
 fn diagonal_distance(world: &mut ApplicationWorld) {
-    expect_measure(world, "Minimum distance 8.944 mm");
+    world.expect_measure("Minimum distance 8.944 mm");
 }
 #[then("the arithmetic average of the displayed endpoints matches the displayed Middle Point")]
 fn average_matches(_: &mut ApplicationWorld) {

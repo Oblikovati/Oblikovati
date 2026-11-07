@@ -68,7 +68,7 @@ impl ApplicationWorld {
     }
     /// Type one exact point, in millimetres, and accept it.
     pub fn precise_point(&mut self, at: [f64; 2]) {
-        self.precise_values(&format!("{:.6}", at[0]), &format!("{:.6}", at[1]));
+        self.precise_values(&format!("{:.9}", at[0]), &format!("{:.9}", at[1]));
     }
     /// The text run inside one named window, for a word the ribbon also shows.
     pub fn run_in_window(&self, title: &str, text: &str) -> &diagnostics::RenderedRun {

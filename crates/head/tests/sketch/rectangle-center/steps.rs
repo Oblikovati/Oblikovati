@@ -16,13 +16,6 @@ fn select_tool(world: &mut ApplicationWorld) {
     world.click_text(TOOL);
     world.pump(Vec::new());
 }
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
 fn line_counts(world: &mut ApplicationWorld) -> (usize, usize) {
     let geometry = world.edited_geometry();
     let index = geometry.read_index();
@@ -255,13 +248,13 @@ fn select_adjacent(world: &mut ApplicationWorld) {
 }
 #[then("their lengths are 8.000 mm and 4.000 mm")]
 fn lengths(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 8.000 mm");
-    expect_measure(world, "Length 4.000 mm");
+    world.expect_measure("Length 8.000 mm");
+    world.expect_measure("Length 4.000 mm");
 }
 #[then("the included angle is 90.00 degrees and minimum distance is 0.000 mm")]
 fn angle_and_distance(world: &mut ApplicationWorld) {
-    expect_measure(world, "Angle 90.00 deg");
-    expect_measure(world, "Minimum distance 0.000 mm");
+    world.expect_measure("Angle 90.00 deg");
+    world.expect_measure("Minimum distance 0.000 mm");
 }
 #[then("Measure closes without changing the rectangle")]
 fn measure_closed(world: &mut ApplicationWorld) {
@@ -344,8 +337,8 @@ fn point_rows(world: &mut ApplicationWorld) {
 }
 #[then("the corner distance is 7.211 mm with displayed component differences 0, 6 and 4 mm")]
 fn corner_distance(world: &mut ApplicationWorld) {
-    expect_measure(world, "Minimum distance 7.211 mm");
-    expect_measure(world, "Minimum delta X 0.000 Y 6.000 Z 4.000 mm");
+    world.expect_measure("Minimum distance 7.211 mm");
+    world.expect_measure("Minimum delta X 0.000 Y 6.000 Z 4.000 mm");
 }
 #[then("the opposite-corner arithmetic midpoint equals the measured center at displayed precision")]
 fn midpoint_is_center(world: &mut ApplicationWorld) {
@@ -423,8 +416,8 @@ fn measure_center(world: &mut ApplicationWorld) {
 }
 #[then("Measure reports center Point (0,-16.513,4.675) mm")]
 fn moved_center(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Point");
-    expect_measure(world, "Position X 0.000 Y -16.513 Z 4.675 mm");
+    world.expect_measure("Selection 1: Point");
+    world.expect_measure("Position X 0.000 Y -16.513 Z 4.675 mm");
 }
 #[when("I clear the selection and select the vertical edge")]
 fn select_vertical(world: &mut ApplicationWorld) {
@@ -434,7 +427,7 @@ fn select_vertical(world: &mut ApplicationWorld) {
 }
 #[then("the selected vertical Curve length is 8.000 mm")]
 fn vertical_eight(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 8.000 mm");
+    world.expect_measure("Length 8.000 mm");
 }
 #[then("width annotation 4 and construction diagonals remain visible")]
 fn width_retained(world: &mut ApplicationWorld) {

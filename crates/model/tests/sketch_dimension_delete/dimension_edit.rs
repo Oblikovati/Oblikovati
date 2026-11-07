@@ -154,6 +154,51 @@ fn invalid_owners_are_refused_before_any_settings_change() {
     );
 }
 
+/// A quarter arc of radius 1 about the origin, with its radius dimension.
+fn arc_snapshot() -> DocumentSnapshot {
+    let mut geometry = Sketch2D::default();
+    for (id, position) in [(1, [0., 0.]), (2, [1., 0.]), (3, [0., 1.])] {
+        geometry.add_point(SketchEntityId(id), position).unwrap();
+    }
+    geometry
+        .add_arc(
+            SketchEntityId(4),
+            SketchEntityId(1),
+            [SketchEntityId(2), SketchEntityId(3)],
+            true,
+        )
+        .unwrap();
+    let relation = PlanarConstraint::Radius {
+        curve: SketchEntityId(4),
+        parameter: 1,
+    };
+    geometry
+        .add_constraint(SketchConstraintId(1), relation)
+        .unwrap();
+    let mut snapshot = document_snapshot::empty_snapshot();
+    snapshot
+        .parameters
+        .insert_expression(1, "radius", MODEL_PARAM, "1 cm")
+        .unwrap();
+    snapshot
+        .sketches
+        .add(DocumentSketchId(1), "Arc", SketchPlane::xy(), geometry)
+        .unwrap();
+    snapshot
+}
+#[test]
+fn an_arc_keeps_its_center_and_its_turn_when_its_radius_is_driven() {
+    let mut snapshot = arc_snapshot();
+    drive(&mut snapshot, "3 cm").unwrap();
+    let geometry = source_geometry(&snapshot);
+    let at = |id| geometry.point(SketchEntityId(id)).unwrap().position;
+    let close = |left: [f64; 2], right: [f64; 2]| {
+        (left[0] - right[0]).abs() < 1e-9 && (left[1] - right[1]).abs() < 1e-9
+    };
+    assert!(close(at(1), [0., 0.]), "center {:?}", at(1));
+    assert!(close(at(2), [3., 0.]), "start {:?}", at(2));
+    assert!(close(at(3), [0., 3.]), "end {:?}", at(3));
+}
 fn source_geometry(snapshot: &DocumentSnapshot) -> &Sketch2D {
     let placed = snapshot.sketches.get(DocumentSketchId(1)).unwrap();
     placed.geometry()

@@ -23,13 +23,6 @@ fn select_tool(world: &mut ApplicationWorld) {
     world.click_text(TOOL);
     world.pump(Vec::new());
 }
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
 fn arc_count(world: &mut ApplicationWorld) -> usize {
     world.edited_geometry().arcs().len()
 }
@@ -44,7 +37,7 @@ fn newest_arc(world: &mut ApplicationWorld) -> SketchArc2D {
         .expect("expected an arc")
 }
 /// A point on the newest arc this fraction along its turn, away from where a pick reads a point.
-fn arc_fraction_pixel(world: &mut ApplicationWorld, fraction: f64) -> [i32; 2] {
+pub(super) fn arc_fraction_pixel(world: &mut ApplicationWorld, fraction: f64) -> [i32; 2] {
     let arc = newest_arc(world);
     let geometry = world.edited_geometry();
     let position = |point| geometry.point(point).unwrap().position;
@@ -200,7 +193,7 @@ fn select_middle(world: &mut ApplicationWorld) {
 }
 #[then("the selection type is Middle Point")]
 fn is_middle(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Middle Point");
+    world.expect_measure("Selection 1: Middle Point");
 }
 #[when("I clear the selection and select the curve near its start")]
 fn clear_and_select(world: &mut ApplicationWorld) {
@@ -210,21 +203,21 @@ fn clear_and_select(world: &mut ApplicationWorld) {
 }
 #[then("the selection type is Curve")]
 fn is_curve(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Curve");
+    world.expect_measure("Selection 1: Curve");
 }
 #[then("the radius is 4.759 mm and diameter is 9.518 mm")]
 fn recorded_radius(world: &mut ApplicationWorld) {
-    expect_measure(world, "Radius 4.759 mm");
-    expect_measure(world, "Diameter 9.518 mm");
+    world.expect_measure("Radius 4.759 mm");
+    world.expect_measure("Diameter 9.518 mm");
 }
 #[then("the length is 7.037 mm and sweep is 81.72 degrees")]
 fn recorded_length(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 7.037 mm");
-    expect_measure(world, "Sweep 81.72 deg");
+    world.expect_measure("Length 7.037 mm");
+    world.expect_measure("Sweep 81.72 deg");
 }
 #[then("its center is X 0.000 mm, Y -7.023 mm, Z -83.568 mm")]
 fn recorded_center(world: &mut ApplicationWorld) {
-    expect_measure(world, "Center X 0.000 Y -7.023 Z -83.568 mm");
+    world.expect_measure("Center X 0.000 Y -7.023 Z -83.568 mm");
 }
 // arc-center-point-10
 #[given("Center Point Arc requests its start point after center selection")]
@@ -297,9 +290,9 @@ fn escape_and_measure(world: &mut ApplicationWorld) {
 }
 #[then("Measure reports radius 4.000 mm, sweep 90.00 degrees and length 6.283 mm")]
 fn typed_rows(world: &mut ApplicationWorld) {
-    expect_measure(world, "Radius 4.000 mm");
-    expect_measure(world, "Sweep 90.00 deg");
-    expect_measure(world, "Length 6.283 mm");
+    world.expect_measure("Radius 4.000 mm");
+    world.expect_measure("Sweep 90.00 deg");
+    world.expect_measure("Length 6.283 mm");
 }
 #[then("the resulting arc is oriented toward the upper right")]
 fn upper_right(world: &mut ApplicationWorld) {
@@ -352,8 +345,8 @@ fn exit_and_measure(world: &mut ApplicationWorld) {
 }
 #[then("Measure reports radius 5.000 mm, length 7.854 mm and the same center")]
 fn five_rows(world: &mut ApplicationWorld) {
-    expect_measure(world, "Radius 5.000 mm");
-    expect_measure(world, "Length 7.854 mm");
+    world.expect_measure("Radius 5.000 mm");
+    world.expect_measure("Length 7.854 mm");
     let arc = newest_arc(world);
     let geometry = world.edited_geometry();
     let center = format!("{:?}", geometry.point(arc.center).unwrap().position);
@@ -402,13 +395,13 @@ fn accept_and_measure(world: &mut ApplicationWorld) {
 }
 #[then("Measure reports sweep 120 degrees, length 10.472 mm and radius 5 mm")]
 fn sweep_rows(world: &mut ApplicationWorld) {
-    expect_measure(world, "Sweep 120.00 deg");
-    expect_measure(world, "Length 10.472 mm");
-    expect_measure(world, "Radius 5.000 mm");
+    world.expect_measure("Sweep 120.00 deg");
+    world.expect_measure("Length 10.472 mm");
+    world.expect_measure("Radius 5.000 mm");
 }
 #[then("its center remains (0, 4.914, 17.623) mm")]
 fn numeric_center(world: &mut ApplicationWorld) {
-    expect_measure(world, "Center X 0.000 Y 4.914 Z 17.623 mm");
+    world.expect_measure("Center X 0.000 Y 4.914 Z 17.623 mm");
 }
 #[then("the displayed sweep returns to 90 degrees")]
 fn sweep_ninety_back(world: &mut ApplicationWorld) {

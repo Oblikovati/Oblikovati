@@ -125,21 +125,19 @@ fn repeated_and_collinear_points_preserve_stage_for_retry_and_escape() {
     click(&mut owner, [0, 0]);
     assert!(owner.placement_preview().is_none());
     click(&mut owner, [10, 0]);
+    // Nor is a place no circle runs through: there is simply nothing to show there.
     click(&mut owner, [5, 0]);
-    assert_placement_failed(&mut owner);
+    assert!(!matches!(
+        owner.take_command_notice(),
+        Some(DesktopCommandNotice::PlacementFailed { .. })
+    ));
+    assert!(owner.placement_preview().is_none());
     assert!(owned_sketches(&owner, document).same_recipe(&before));
     deliver(&mut owner, &[motion([5, 5])]);
     assert!(owner.placement_preview().is_some());
     deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
     assert!(!owner.placement_active());
     assert!(owned_sketches(&owner, document).same_recipe(&before));
-}
-fn assert_placement_failed(owner: &mut TestOwner) {
-    assert!(matches!(
-        owner.take_command_notice(),
-        Some(DesktopCommandNotice::PlacementFailed { .. })
-    ));
-    assert!(owner.placement_preview().is_none());
 }
 fn click(owner: &mut TestOwner, pixel: [i32; 2]) {
     deliver(owner, &[button(pixel, true), button(pixel, false)]);

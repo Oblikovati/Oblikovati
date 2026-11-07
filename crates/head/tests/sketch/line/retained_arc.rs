@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The retained arc fixtures, and comparing a pointer drag with the fields hidden.
 use super::super::super::ApplicationWorld;
-use super::recorded::{expect_measure, finish_and_save, reopen_and_edit};
+use super::recorded::{finish_and_save, reopen_and_edit};
 use cucumber::{given, then, when};
 use oblikovati_model::history::SketchTangentArcCreation;
 use oblikovati_viewport::ViewportPhysicalKey;
@@ -79,11 +79,11 @@ fn measure_arc(world: &mut ApplicationWorld) {
     world.sketch_click(at);
 }
 fn expect_arc_rows(world: &ApplicationWorld) {
-    expect_measure(world, "Radius 2.580 mm");
-    expect_measure(world, "Diameter 5.160 mm");
-    expect_measure(world, "Length 4.200 mm");
-    expect_measure(world, "Sweep 93.27 deg");
-    expect_measure(world, "Center X 0.000 Y 1.203 Z 38.923 mm");
+    world.expect_measure("Radius 2.580 mm");
+    world.expect_measure("Diameter 5.160 mm");
+    world.expect_measure("Length 4.200 mm");
+    world.expect_measure("Sweep 93.27 deg");
+    world.expect_measure("Center X 0.000 Y 1.203 Z 38.923 mm");
 }
 // line-27
 #[given("an editable sketch contains a retained arc and shows 28 dimensions needed")]
@@ -96,17 +96,17 @@ fn select_arc(world: &mut ApplicationWorld) {
 }
 #[then("radius is 2.580 mm and diameter is 5.160 mm")]
 fn radius_diameter(world: &mut ApplicationWorld) {
-    expect_measure(world, "Radius 2.580 mm");
-    expect_measure(world, "Diameter 5.160 mm");
+    world.expect_measure("Radius 2.580 mm");
+    world.expect_measure("Diameter 5.160 mm");
 }
 #[then("length is 4.200 mm and sweep is 93.27 degrees")]
 fn length_sweep(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 4.200 mm");
-    expect_measure(world, "Sweep 93.27 deg");
+    world.expect_measure("Length 4.200 mm");
+    world.expect_measure("Sweep 93.27 deg");
 }
 #[then("its center is X 0.000 Y 1.203 Z 38.923 mm")]
 fn center_row(world: &mut ApplicationWorld) {
-    expect_measure(world, "Center X 0.000 Y 1.203 Z 38.923 mm");
+    world.expect_measure("Center X 0.000 Y 1.203 Z 38.923 mm");
 }
 // line-28
 #[given("the retained source line, arc and following line")]

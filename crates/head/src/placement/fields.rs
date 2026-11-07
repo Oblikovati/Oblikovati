@@ -20,6 +20,8 @@ pub(super) struct PlacementFieldEntry {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct PlacementFieldView {
     pub typed: Option<String>,
+    /// The value is held whatever the pointer does, so the field reads as a value, not as text.
+    pub locked: bool,
     pub active: bool,
     pub invalid: bool,
     pub selected: bool,
@@ -252,6 +254,8 @@ impl PlacementFieldEntry {
     pub(super) fn view(&self, index: usize) -> PlacementFieldView {
         PlacementFieldView {
             typed: self.field_expression(index).map(str::to_owned),
+            locked: !(index == self.active && !self.buffer.is_empty())
+                && self.locked.get(index).is_some_and(Option::is_some),
             active: index == self.active,
             invalid: index == self.active && self.invalid,
             selected: index == self.active && self.replace_on_type,

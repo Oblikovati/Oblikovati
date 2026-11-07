@@ -24,13 +24,6 @@ fn press_m_and_select_last_line(world: &mut ApplicationWorld) {
     let at = world.last_line_point(ON_THE_CURVE);
     world.sketch_click(at);
 }
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
 // line-04 and line-08
 #[when("I open Measure and select the segment")]
 #[when("I measure the visible upper segment")]
@@ -39,12 +32,12 @@ fn measure_upper(world: &mut ApplicationWorld) {
 }
 #[then("Measure reports its length as 10.000 mm")]
 fn reports_ten(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 10.000 mm");
+    world.expect_measure("Length 10.000 mm");
 }
 #[then("Measure identifies a Curve of length 10.000 mm")]
 fn identifies_ten(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Curve");
-    expect_measure(world, "Length 10.000 mm");
+    world.expect_measure("Selection 1: Curve");
+    world.expect_measure("Length 10.000 mm");
 }
 // line-11
 #[given("a length-four segment remains after exiting Line")]
@@ -58,8 +51,8 @@ fn press_m(world: &mut ApplicationWorld) {
 }
 #[then("Measure identifies Curve with Length 4.000 mm")]
 fn identifies_four(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Curve");
-    expect_measure(world, "Length 4.000 mm");
+    world.expect_measure("Selection 1: Curve");
+    world.expect_measure("Length 4.000 mm");
 }
 #[when("I click Done")]
 fn click_done(world: &mut ApplicationWorld) {
@@ -135,8 +128,8 @@ fn lengthened(world: &mut ApplicationWorld) {
 }
 #[then("Selection 1 is Curve with Length 5.000 mm")]
 fn selection_five(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Curve");
-    expect_measure(world, "Length 5.000 mm");
+    world.expect_measure("Selection 1: Curve");
+    world.expect_measure("Length 5.000 mm");
 }
 #[then("the measurement panel closes")]
 fn measurement_closed(_: &mut ApplicationWorld) {

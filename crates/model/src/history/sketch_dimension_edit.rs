@@ -4,7 +4,7 @@ use crate::{
     document_sketch::DocumentSketchId,
     sketch::{
         PlanarConstraint, Sketch2D, SketchConstraintId, SketchDimensionLimits, SketchEntityId,
-        SketchError,
+        SketchError, SketchPoint2D,
     },
 };
 use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
@@ -73,6 +73,14 @@ impl DocumentSnapshot {
                 anchors.push(*geometry.point(point)?);
             }
         }
+        let value = self.driven_value(sketch, dimension)?;
+        for end in value.map_or(Vec::new(), |value| {
+            arc_ends_at_radius(geometry, dimension, value)
+        }) {
+            if !anchors.iter().any(|anchor| anchor.id == end.id) {
+                anchors.push(end);
+            }
+        }
         let solved = geometry.solve_with_grounded_points(
             &self.parameters,
             &anchors,
@@ -87,6 +95,23 @@ impl DocumentSnapshot {
         }
         let candidate = outcome.candidate().clone();
         self.sketches.replace_geometry(sketch, candidate)
+    }
+    /// The value a just-driven dimension now holds; example: an arc's new radius.
+    fn driven_value(
+        &self,
+        sketch: DocumentSketchId,
+        dimension: SketchConstraintId,
+    ) -> Result<Option<f64>, SketchError> {
+        let (parameter, _) = self
+            .sketches
+            .get(sketch)?
+            .geometry()
+            .dimension_source(dimension)?;
+        Ok(self
+            .parameters
+            .get(parameter)
+            .and_then(|state| state.current_value())
+            .map(|value| value.value))
     }
     fn drive_dimension_target(
         &mut self,
@@ -136,6 +161,40 @@ fn held_while_driven(geometry: &Sketch2D, dimension: SketchConstraintId) -> Vec<
             .map_or(Vec::new(), |arc| vec![arc.center, arc.start]),
         _ => Vec::new(),
     }
+}
+/// An arc keeps its turn as its size changes: both ends slide out along their own radii.
+fn arc_ends_at_radius(
+    geometry: &Sketch2D,
+    dimension: SketchConstraintId,
+    value: f64,
+) -> Vec<SketchPoint2D> {
+    let relation = geometry
+        .constraints()
+        .iter()
+        .find(|known| known.id == dimension)
+        .map(|constraint| &constraint.relation);
+    let (curve, radius) = match relation {
+        Some(PlanarConstraint::Radius { curve, .. }) => (*curve, value),
+        Some(PlanarConstraint::Diameter { curve, .. }) => (*curve, value / 2.),
+        _ => return Vec::new(),
+    };
+    let Ok(arc) = geometry.arc(curve) else {
+        return Vec::new();
+    };
+    let Ok(center) = geometry.point(arc.center).map(|point| point.position) else {
+        return Vec::new();
+    };
+    let slid = |id| {
+        let at = geometry.point(id).ok()?.position;
+        let reach = (at[0] - center[0]).hypot(at[1] - center[1]);
+        (reach > 0.).then(|| SketchPoint2D {
+            id,
+            position: std::array::from_fn(|axis| {
+                center[axis] + (at[axis] - center[axis]) * radius / reach
+            }),
+        })
+    };
+    [arc.start, arc.end].into_iter().filter_map(slid).collect()
 }
 fn drive_error(parameter: u64, source: &str, cause: impl std::fmt::Display) -> SketchError {
     SketchError::Definition(format!(

@@ -40,14 +40,7 @@ fn exact_typed_line(world: &mut ApplicationWorld, start: [f64; 2], length: &str,
     world.escape();
     world.pump(Vec::new());
 }
-pub(super) fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
-fn measure_two_curves(world: &mut ApplicationWorld) {
+pub(super) fn measure_two_curves(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::M, false);
     let numeric = world.line_point(1, 0.3);
     world.sketch_click(numeric);
@@ -188,20 +181,20 @@ fn select_both(world: &mut ApplicationWorld) {
 }
 #[then("Measure reports the new curve length as 10.000 mm")]
 fn new_curve_length(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 10.000 mm");
+    world.expect_measure("Length 10.000 mm");
 }
 #[then("the reference length is 13.544 mm")]
 fn reference_length(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 13.544 mm");
+    world.expect_measure("Length 13.544 mm");
 }
 #[then("the angle between them is 60.00 degrees")]
 fn angle_sixty(world: &mut ApplicationWorld) {
-    expect_measure(world, "Angle 60.00 deg");
+    world.expect_measure("Angle 60.00 deg");
 }
 #[then("the minimum and maximum distances are 9.664 mm and 21.681 mm")]
 fn distances(world: &mut ApplicationWorld) {
-    expect_measure(world, "Minimum distance 9.664 mm");
-    expect_measure(world, "Maximum distance 21.681 mm");
+    world.expect_measure("Minimum distance 9.664 mm");
+    world.expect_measure("Maximum distance 21.681 mm");
     world.observed_rows = Some(world.window_text("Measure"));
 }
 #[when("I close Measure, undo and redo creation")]
@@ -237,18 +230,18 @@ fn saved_closed_reopened(world: &mut ApplicationWorld) {
 }
 #[then("the numeric curve measures 10.000 mm and the reference measures 13.544 mm")]
 fn lengths_measured(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 10.000 mm");
-    expect_measure(world, "Length 13.544 mm");
+    world.expect_measure("Length 10.000 mm");
+    world.expect_measure("Length 13.544 mm");
 }
 #[then("their angle is 60.00 degrees and minimum distance is 9.664 mm")]
 fn angle_and_minimum(world: &mut ApplicationWorld) {
-    expect_measure(world, "Angle 60.00 deg");
-    expect_measure(world, "Minimum distance 9.664 mm");
+    world.expect_measure("Angle 60.00 deg");
+    world.expect_measure("Minimum distance 9.664 mm");
 }
 #[then("the maximum distance is 21.681 mm with minimum delta X 0.000 Y 8.270 Z 5.000 mm")]
 fn maximum_and_delta(world: &mut ApplicationWorld) {
-    expect_measure(world, "Maximum distance 21.681 mm");
-    expect_measure(world, "Minimum delta X 0.000 Y 8.270 Z 5.000 mm");
+    world.expect_measure("Maximum distance 21.681 mm");
+    world.expect_measure("Minimum delta X 0.000 Y 8.270 Z 5.000 mm");
 }
 // line-25
 /// Two typed legs and Close: only its first vertex stays free.

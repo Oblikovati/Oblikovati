@@ -57,6 +57,18 @@ fn all_display_and_rounded_strings_match_the_fixed_go_capture() {
 }
 
 #[test]
+fn measured_source_keeps_a_length_finer_than_the_display_shows() {
+    let units = UnitsOfMeasure::default();
+    let radius = Quantity::new(0.42941329, Dimension::Length);
+    assert_eq!(units.format_display(radius).unwrap(), "4.294 mm");
+    assert_eq!(units.measured_expression(radius).unwrap(), "4.2941329 mm");
+    let angle = Quantity::new(std::f64::consts::FRAC_PI_6, Dimension::Angle);
+    assert_eq!(
+        units.measured_expression(angle).unwrap(),
+        units.display_rounded_expression(angle).unwrap()
+    );
+}
+#[test]
 fn architectural_display_and_rounded_source_honor_working_scale() {
     for scale in [0.001, 0.1, 1.0, 100.0] {
         let (units, _) = configured("architectural");

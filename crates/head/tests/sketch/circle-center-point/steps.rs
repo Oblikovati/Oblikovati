@@ -20,13 +20,6 @@ fn select_circle(world: &mut ApplicationWorld) {
     world.click_text("Circle");
     world.pump(Vec::new());
 }
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
 /// On the circle's circumference, along sketch +x from its center.
 fn circle_pixel(world: &mut ApplicationWorld) -> [i32; 2] {
     let geometry = world.edited_geometry();
@@ -85,7 +78,7 @@ fn retained_six_millimetre_circle(world: &mut ApplicationWorld) {
     world.expect_annotation("6");
 }
 fn expect_center_row(world: &ApplicationWorld) {
-    expect_measure(world, "Center X 0.000 Y 6.553 Z -12.440 mm");
+    world.expect_measure("Center X 0.000 Y 6.553 Z -12.440 mm");
 }
 // circle-center-point-10
 #[given("an editable metric sketch with a midpoint line")]
@@ -117,8 +110,8 @@ fn exit_and_measure(world: &mut ApplicationWorld) {
 }
 #[then("its diameter is 6.000 mm and radius is 3.000 mm")]
 fn six_millimetres(world: &mut ApplicationWorld) {
-    expect_measure(world, "Diameter 6.000 mm");
-    expect_measure(world, "Radius 3.000 mm");
+    world.expect_measure("Diameter 6.000 mm");
+    world.expect_measure("Radius 3.000 mm");
 }
 #[then("its global center is (0.000, 6.553, -12.440) mm within displayed precision")]
 fn global_center(world: &mut ApplicationWorld) {
@@ -152,8 +145,8 @@ fn exit_dimension_and_measure(world: &mut ApplicationWorld) {
 }
 #[then("diameter is 8.000 mm and radius is 4.000 mm")]
 fn eight_millimetres(world: &mut ApplicationWorld) {
-    expect_measure(world, "Diameter 8.000 mm");
-    expect_measure(world, "Radius 4.000 mm");
+    world.expect_measure("Diameter 8.000 mm");
+    world.expect_measure("Radius 4.000 mm");
 }
 #[then("its measured center remains (0.000, 6.553, -12.440) mm")]
 fn center_remains(world: &mut ApplicationWorld) {
@@ -320,17 +313,17 @@ fn measure_circumference(world: &mut ApplicationWorld) {
 }
 #[then("Measure displays diameter 8.375 mm and radius 4.187 mm")]
 fn upper_size(world: &mut ApplicationWorld) {
-    expect_measure(world, "Diameter 8.375 mm");
-    expect_measure(world, "Radius 4.187 mm");
+    world.expect_measure("Diameter 8.375 mm");
+    world.expect_measure("Radius 4.187 mm");
 }
 #[then("length 26.310 mm and angle 360.00 degrees")]
 fn upper_length(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 26.310 mm");
-    expect_measure(world, "Angle 360.00 deg");
+    world.expect_measure("Length 26.310 mm");
+    world.expect_measure("Angle 360.00 deg");
 }
 #[then("center X 0.000 mm, Y 27.574 mm, Z -85.283 mm")]
 fn upper_center(world: &mut ApplicationWorld) {
-    expect_measure(world, "Center X 0.000 Y 27.574 Z -85.283 mm");
+    world.expect_measure("Center X 0.000 Y 27.574 Z -85.283 mm");
 }
 // circle-center-point-09
 #[when("I click the same position for its circumference")]

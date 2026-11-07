@@ -14,13 +14,6 @@ fn select_rectangle(world: &mut ApplicationWorld) {
     world.click_text("Rectangle");
     world.pump(Vec::new());
 }
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
 fn sides(world: &mut ApplicationWorld) -> usize {
     world.edited_geometry().lines().len()
 }
@@ -184,8 +177,8 @@ fn measure_vertical(world: &mut ApplicationWorld) {
 }
 #[then("Selection 1 is a Curve with Length 10.000 mm")]
 fn ten_long(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Curve");
-    expect_measure(world, "Length 10.000 mm");
+    world.expect_measure("Selection 1: Curve");
+    world.expect_measure("Length 10.000 mm");
 }
 #[when("I click empty canvas and select its horizontal edge away from endpoints")]
 fn then_horizontal(world: &mut ApplicationWorld) {
@@ -194,8 +187,8 @@ fn then_horizontal(world: &mut ApplicationWorld) {
 }
 #[then("Selection 1 is a Curve with Length 6.000 mm")]
 fn six_long(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Curve");
-    expect_measure(world, "Length 6.000 mm");
+    world.expect_measure("Selection 1: Curve");
+    world.expect_measure("Length 6.000 mm");
     let text = world.window_text("Measure");
     assert!(
         !text.contains("Selection2"),
@@ -304,7 +297,7 @@ fn measure_left(world: &mut ApplicationWorld) {
 }
 #[then("Measure reports the selected left edge length as 8.000 mm")]
 fn left_eight(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 8.000 mm");
+    world.expect_measure("Length 8.000 mm");
 }
 #[when("I close Measure and undo the height edit")]
 fn close_and_undo(world: &mut ApplicationWorld) {

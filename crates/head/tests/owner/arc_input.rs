@@ -58,10 +58,16 @@ fn refuse_then_retry(tool: SketchPlacementTool) {
         ],
     );
     deliver(&mut owner, &[button([20, 0], true)]);
-    assert!(matches!(
+    // A place no circle runs through is no error: those commands simply keep asking.
+    let keeps_asking = matches!(
+        tool,
+        SketchPlacementTool::ThreePointArc { .. } | SketchPlacementTool::ThreePointArcSlot { .. }
+    );
+    let refused = matches!(
         owner.take_command_notice(),
         Some(crate::DesktopCommandNotice::PlacementFailed { .. })
-    ));
+    );
+    assert_eq!(refused, !keeps_asking, "{tool:?}");
     assert_eq!(
         super::sketch_tools::without_tool_state(owner.gui_command_state().unwrap()),
         super::sketch_tools::without_tool_state(before.clone())

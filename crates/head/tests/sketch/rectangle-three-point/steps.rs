@@ -16,13 +16,6 @@ fn open_tool(world: &mut ApplicationWorld) {
     world.click_text("3-Pt Rect.");
     world.pump(Vec::new());
 }
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
 fn sides(world: &mut ApplicationWorld) -> usize {
     world.edited_geometry().lines().len()
 }
@@ -182,19 +175,19 @@ fn measure_adjacent(world: &mut ApplicationWorld) {
 }
 #[then("both selections are Curves")]
 fn both_curves(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Curve");
-    expect_measure(world, "Selection 2: Curve");
+    world.expect_measure("Selection 1: Curve");
+    world.expect_measure("Selection 2: Curve");
 }
 #[then("their lengths are 10.912 mm and 5.296 mm for this fixture")]
 fn recorded_lengths(world: &mut ApplicationWorld) {
-    expect_measure(world, "Length 10.912 mm");
-    expect_measure(world, "Length 5.296 mm");
+    world.expect_measure("Length 10.912 mm");
+    world.expect_measure("Length 5.296 mm");
 }
 #[then("the angle is 90.00 degrees and minimum distance is 0.000 mm")]
 #[then("their angle is 90.00 degrees and minimum distance is 0.000 mm")]
 fn square_and_touching(world: &mut ApplicationWorld) {
-    expect_measure(world, "Angle 90.00 deg");
-    expect_measure(world, "Minimum distance 0.000 mm");
+    world.expect_measure("Angle 90.00 deg");
+    world.expect_measure("Minimum distance 0.000 mm");
 }
 // rectangle-three-point-10 and rectangle-three-point-11
 #[when("I choose Three Point Rectangle and select the fixture first corner")]
@@ -257,12 +250,12 @@ fn numeric_retained(world: &mut ApplicationWorld) {
 #[then("both selections are Curves with lengths 6.000 and 4.000 mm")]
 fn six_and_four(world: &mut ApplicationWorld) {
     both_curves(world);
-    expect_measure(world, "Length 6.000 mm");
-    expect_measure(world, "Length 4.000 mm");
+    world.expect_measure("Length 6.000 mm");
+    world.expect_measure("Length 4.000 mm");
 }
 #[then("maximum distance is 7.211 mm")]
 fn max_diagonal(world: &mut ApplicationWorld) {
-    expect_measure(world, "Maximum distance 7.211 mm");
+    world.expect_measure("Maximum distance 7.211 mm");
 }
 // rectangle-three-point-13 to rectangle-three-point-15
 #[given("the retained numeric rectangle has a driving width dimension equal to 4 mm")]
@@ -305,12 +298,12 @@ fn measure_width_and_length(world: &mut ApplicationWorld) {
 #[then("both selections are Curves with lengths 5.000 and 6.000 mm")]
 fn five_and_six(world: &mut ApplicationWorld) {
     both_curves(world);
-    expect_measure(world, "Length 5.000 mm");
-    expect_measure(world, "Length 6.000 mm");
+    world.expect_measure("Length 5.000 mm");
+    world.expect_measure("Length 6.000 mm");
 }
 #[then("maximum distance is 7.810 mm")]
 fn max_after_widening(world: &mut ApplicationWorld) {
-    expect_measure(world, "Maximum distance 7.810 mm");
+    world.expect_measure("Maximum distance 7.810 mm");
 }
 #[given("the accepted width 5 rectangle is retained and Measure is closed")]
 fn accepted_width(world: &mut ApplicationWorld) {

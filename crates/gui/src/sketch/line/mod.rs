@@ -7,6 +7,8 @@ use imgui::{StyleColor, Ui, WindowFlags};
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiSketchHudField {
     pub text: String,
+    /// A typed value holds the field: a padlock says the pointer no longer moves it.
+    pub locked: bool,
     pub active: bool,
     pub invalid: bool,
     pub selected: bool,
@@ -36,6 +38,7 @@ pub enum GuiLineCommand {
 
 const HUD_OFFSET: [f32; 2] = [18., 14.];
 const FIELD_WIDTH: f32 = 86.;
+const PADLOCK_WIDTH: f32 = 7.;
 const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 const MENU_ID: &str = "##line-command-menu";
 
@@ -95,6 +98,10 @@ fn hud_field(ui: &Ui, field: &GuiSketchHudField) {
         border,
     )
     .build();
+    if field.locked {
+        let color = ui.style_color(StyleColor::Text);
+        draw_padlock(&draw, color, [x + FIELD_WIDTH - PADLOCK_WIDTH, y], height);
+    }
     drop(draw);
     if field.invalid {
         ui.text_colored(INVALID_TEXT, &field.text);
@@ -103,6 +110,17 @@ fn hud_field(ui: &Ui, field: &GuiSketchHudField) {
     }
     ui.same_line_with_pos(x - ui.window_pos()[0] + FIELD_WIDTH + 8.);
     ui.dummy([0., height]);
+}
+/// A body with a shackle above it, sized from the text line it sits in.
+fn draw_padlock(draw: &imgui::DrawListMut, color: [f32; 4], [x, y]: [f32; 2], height: f32) {
+    let body_top = y + height * 0.45;
+    draw.add_rect([x, body_top], [x + PADLOCK_WIDTH, y + height - 1.], color)
+        .filled(true)
+        .build();
+    let shackle = [x + PADLOCK_WIDTH / 2., body_top];
+    draw.add_circle(shackle, PADLOCK_WIDTH / 3., color)
+        .num_segments(12)
+        .build();
 }
 /// Open on the pointer's release over the workspace: the press itself belongs to no panel.
 pub(crate) fn command_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

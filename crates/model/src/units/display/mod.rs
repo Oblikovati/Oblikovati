@@ -4,6 +4,8 @@ mod engineering;
 mod number;
 mod property;
 use super::{UnitError, UnitsOfMeasure};
+/// As finely as a new dimension holds what it measured, past any display precision in use.
+const MEASURED_DECIMALS: i64 = 7;
 use crate::quantity::{Dimension, Quantity};
 use oblikovati_api::types::{
     DISPLAY_FORMAT_ARCHITECTURAL, DISPLAY_FORMAT_DECIMAL, DISPLAY_FORMAT_FRACTIONAL,
@@ -158,6 +160,18 @@ impl UnitsOfMeasure {
         Ok(number::with_unit(number::shortest(rounded), unit))
     }
 
+    /// Source that keeps a measured length where it is, so a new dimension moves nothing.
+    /// Example: `units.measured_expression(radius)` reads `"4.2941329 mm"`.
+    pub fn measured_expression(&self, quantity: Quantity) -> Result<String, UnitError> {
+        if quantity.dimension != Dimension::Length
+            || self.display.length_format != DISPLAY_FORMAT_DECIMAL
+        {
+            return self.display_rounded_expression(quantity);
+        }
+        let held = number::round_decimal(self.display_value(quantity)?, MEASURED_DECIMALS)?;
+        let unit = self.preferred_name(Dimension::Length);
+        Ok(number::with_unit(number::shortest(held), unit))
+    }
     fn rounded_length(&self, quantity: Quantity, preferred: f64) -> Result<(f64, &str), UnitError> {
         let unit = self.preferred_name(Dimension::Length);
         match self.display.length_format {

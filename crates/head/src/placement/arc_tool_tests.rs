@@ -83,3 +83,34 @@ fn arc_tools_refuse_invalid_accuracy_collinearity_and_zero_sweep() {
         );
     }
 }
+#[test]
+fn a_three_point_arc_asks_for_its_ends_then_a_point_on_it() {
+    let prompts = [0, 1, 2].map(|placed| three_point_arc().prompt(placed));
+    assert_eq!(
+        prompts,
+        [
+            "Select start of arc",
+            "Select end of arc",
+            "Select point on arc"
+        ]
+    );
+    assert_eq!(three_point_arc().stage_fields(0), 0..0);
+    assert_eq!(three_point_arc().stage_fields(1), 0..2);
+    assert_eq!(three_point_arc().stage_fields(2), 0..1);
+}
+#[test]
+fn a_third_point_on_the_chord_gives_no_curve_and_one_off_it_does() {
+    let ends = [[0., 0.], [10., 0.]];
+    let service = &MartensiteSketchConstruction;
+    assert!(three_point_arc().has_no_curve_through(&ends, [5., 0.], service));
+    assert!(!three_point_arc().has_no_curve_through(&ends, [5., 2.], service));
+    assert!(!SketchPlacementTool::Rectangle.has_no_curve_through(&ends, [5., 0.], service));
+}
+#[test]
+fn a_direction_may_be_zero_where_a_size_may_not() {
+    let tool = three_point_arc();
+    assert!(tool.typed_value_is_usable(1, 0.));
+    assert!(!tool.typed_value_is_usable(0, 0.));
+    assert!(tool.typed_value_is_usable(0, 4.));
+    assert!(SketchPlacementTool::Rectangle.typed_value_is_usable(0, 0.));
+}

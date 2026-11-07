@@ -72,7 +72,7 @@ impl SketchDimensionState {
             .measure_dimension_input(&input)
             .map_err(|cause| cause.to_string())?;
         let expression = units
-            .display_rounded_expression(measured)
+            .measured_expression(measured)
             .map_err(|cause| cause.to_string())?;
         Ok(AddDimensionArgs {
             sketch_index: index,

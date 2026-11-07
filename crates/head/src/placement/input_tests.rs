@@ -89,3 +89,48 @@ fn abandoned_press_cannot_place_on_release() {
     let released = state.event(button([30, 10], false));
     assert!(matches!(released, PlacementAction::Idle));
 }
+
+fn arc_awaiting_its_point() -> SketchPlacementState {
+    let mut state = SketchPlacementState::new(
+        7,
+        DocumentSketchId(3),
+        11,
+        SketchPlane::xz(),
+        crate::SketchPlacementTool::ThreePointArc {
+            options: oblikovati_model::sketch::CircumcircleOptions {
+                maximum_point_residual: 1e-9,
+            },
+        },
+    )
+    .unwrap();
+    let construction = oblikovati_martensite::planar_curve::MartensiteSketchConstruction;
+    state.cursor(Some([0., 0.]), true, &construction).unwrap();
+    state.cursor(Some([8., 0.]), true, &construction).unwrap();
+    state
+}
+fn typed_radius(state: &mut SketchPlacementState, radius: f64) {
+    for character in radius.to_string().chars() {
+        state.event(ViewportEvent::Input(ViewportInput::Text(character)));
+    }
+    state.evaluate_line_values(&|_, text| text.parse().ok());
+}
+#[test]
+fn a_typed_radius_bows_the_arc_to_the_pointers_side_on_the_nearer_circle() {
+    let mut state = arc_awaiting_its_point();
+    typed_radius(&mut state, 5.);
+    // The ends' chord is 8 long, so the circles of radius 5 have centers at (4, 3) and (4, -3).
+    assert_eq!(state.typed_finishing_point([4., 2.]), [4., 2.]);
+    assert_eq!(state.typed_finishing_point([4., -2.]), [4., -2.]);
+    // Past the near circle's top, the pointer is nearer the far circle's: the longer arc.
+    assert_eq!(state.typed_finishing_point([4., 9.]), [4., 8.]);
+    assert_eq!(state.least_typed_radius(), 4.);
+}
+#[test]
+fn enter_at_the_arcs_point_goes_back_for_its_end_because_a_radius_names_no_side() {
+    let mut state = arc_awaiting_its_point();
+    typed_radius(&mut state, 5.);
+    assert!(!state.enter_finishes_shape());
+    assert!(state.accept_typed_stage().unwrap());
+    assert_eq!(state.prompt(), "Select end of arc");
+    assert!(!state.fields_engaged());
+}

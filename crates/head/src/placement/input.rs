@@ -141,6 +141,9 @@ impl SketchPlacementState {
     }
     /// A field's value before there is a shape to read it from, as the pointer gives it.
     pub(crate) fn stage_field_value(&self, index: usize) -> f64 {
+        if let Some(typed) = self.fields.typed_values().get(index).copied().flatten() {
+            return typed;
+        }
         if let Some(field) = self
             .preview
             .as_ref()
@@ -355,9 +358,13 @@ impl SketchPlacementState {
             }
             return Ok(None);
         }
-        let point = self
-            .typed_third_point()
-            .unwrap_or(self.arc_end_at_sweep(point));
+        let point = self.typed_finishing_point(point);
+        if self
+            .tool
+            .has_no_curve_through(&self.accepted, point, construction)
+        {
+            return Ok(None);
+        }
         let mut recipe = self.tool.recipe(&self.accepted, point, construction)?;
         recipe
             .apply_creation_formats(self.formats.construction, self.formats.centerline)

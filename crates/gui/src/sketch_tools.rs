@@ -29,6 +29,7 @@ impl GuiSketchTool {
             Self::Circle => "Center Point Circle",
             Self::ThreePointRectangle => "Three Point Rectangle",
             Self::ThreePointCenterRectangle => "Three Point Center Rectangle",
+            Self::ThreePointArc => "Three Point Arc",
             other => other.label(),
         }
     }

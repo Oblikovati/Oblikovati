@@ -175,6 +175,26 @@ impl SketchPlacementTool {
         };
         result.map_err(|cause| cause.to_string())
     }
+    /// No circle runs through these points, so this place is simply not one the command can use yet.
+    pub(crate) fn has_no_curve_through(
+        self,
+        accepted: &[[f64; 2]],
+        cursor: [f64; 2],
+        construction: &dyn SketchCircleConstruction,
+    ) -> bool {
+        let (
+            Self::ThreePointArc { options }
+            | Self::ThreePointCircle { options }
+            | Self::ThreePointArcSlot { options, .. },
+            [start, end],
+        ) = (self, accepted)
+        else {
+            return false;
+        };
+        construction
+            .circumcircle([*start, cursor, *end], options)
+            .is_err()
+    }
     /// The values asked for at each stage, as a range of the shape's fields.
     pub(crate) fn stage_fields(self, stage: usize) -> std::ops::Range<usize> {
         match (self, stage) {
@@ -182,6 +202,9 @@ impl SketchPlacementTool {
             (Self::CenterPointArc, 2) => 1..2,
             (Self::ThreePointRectangle | Self::ThreePointCenterRectangle, 1) => 0..2,
             (Self::ThreePointRectangle | Self::ThreePointCenterRectangle, 2) => 2..3,
+            // The end's distance and direction become its point; only the radius outlives them.
+            (Self::ThreePointArc { .. }, 1) => 0..2,
+            (Self::ThreePointArc { .. }, 2) => 0..1,
             _ if stage + 1 == self.point_count() => 0..self.typed_field_count(),
             _ => 0..0,
         }
@@ -201,7 +224,9 @@ impl SketchPlacementTool {
     ) -> oblikovati_model::quantity::Dimension {
         let angle = match self {
             Self::CenterPointArc => index == 1,
-            Self::ThreePointRectangle | Self::ThreePointCenterRectangle => index == 1,
+            Self::ThreePointRectangle
+            | Self::ThreePointCenterRectangle
+            | Self::ThreePointArc { .. } => index == 1,
             _ => false,
         };
         if angle {
@@ -212,6 +237,17 @@ impl SketchPlacementTool {
     /// A typed zero keeps the field red on some tools; others drop the shape without a word.
     pub(crate) fn typed_zero_is_invalid(self) -> bool {
         !matches!(self, Self::Rectangle | Self::CenterRectangle)
+    }
+    /// A size must not collapse the shape; a direction may point anywhere, zero included.
+    pub(crate) fn typed_value_is_usable(self, index: usize, value: f64) -> bool {
+        let direction = index == 1
+            && matches!(
+                self,
+                Self::ThreePointRectangle
+                    | Self::ThreePointCenterRectangle
+                    | Self::ThreePointArc { .. }
+            );
+        direction || !self.typed_zero_is_invalid() || value > 0.
     }
     pub(crate) fn prompt(self, placed: usize) -> String {
         match (self, placed) {
@@ -230,6 +266,9 @@ impl SketchPlacementTool {
             (Self::CenterPointArc, 0) => return "Select center".into(),
             (Self::CenterPointArc, 1) => return "Select start point".into(),
             (Self::CenterPointArc, _) => return "Select end point".into(),
+            (Self::ThreePointArc { .. }, 0) => return "Select start of arc".into(),
+            (Self::ThreePointArc { .. }, 1) => return "Select end of arc".into(),
+            (Self::ThreePointArc { .. }, _) => return "Select point on arc".into(),
             _ => {}
         }
         let labels = self.point_labels();

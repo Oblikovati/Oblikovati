@@ -3,6 +3,8 @@
 use super::*;
 #[path = "arc-center-point/steps.rs"]
 mod arc_center_point;
+#[path = "arc-three-point/steps.rs"]
+mod arc_three_point;
 #[path = "circle-center-point/steps.rs"]
 mod circle_center_point;
 #[path = "fixtures.rs"]
@@ -24,6 +26,7 @@ mod rectangle_two_point;
 
 /// Features the gate requires; each is one finished folder under `features/sketch`.
 const ACCEPTED_FEATURES: &[&str] = &[
+    "arc-three-point",
     "circle-center-point",
     "line",
     "point",

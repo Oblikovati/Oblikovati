@@ -247,7 +247,11 @@ impl<
                 .map(|(index, shown)| {
                     let view = tool.field_view(index);
                     GuiSketchHudField {
-                        text: view.typed.unwrap_or(shown),
+                        text: match view.typed {
+                            Some(typed) if !view.locked => typed,
+                            _ => shown,
+                        },
+                        locked: view.locked,
                         active: view.active,
                         invalid: view.invalid,
                         selected: view.selected,

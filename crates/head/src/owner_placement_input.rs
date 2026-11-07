@@ -180,7 +180,7 @@ impl<
         if tool.fields_invalid() {
             return Ok(false);
         }
-        if !tool.at_finishing_stage() {
+        if !tool.enter_finishes_shape() {
             if tool.accept_typed_stage()? {
                 self.evaluate_placement_fields(tool)?;
                 self.placement_notice(tool.prompt());
@@ -215,14 +215,14 @@ impl<
             .session(tool.document)
             .map_err(|cause| cause.to_string())?;
         let parameters = &session.snapshot().parameters;
-        let refuse_zero = tool.tool.typed_zero_is_invalid();
+        let least_radius = tool.least_typed_radius();
         let kind = tool.tool;
         tool.evaluate_line_values(&|index, source| {
             let value = parameters
                 .evaluate_scalar_expression(source, kind.typed_field_dimension(index))
                 .ok()?
                 .value;
-            (!refuse_zero || value > 0.).then_some(value)
+            (kind.typed_value_is_usable(index, value) && value >= least_radius).then_some(value)
         });
         Ok(())
     }

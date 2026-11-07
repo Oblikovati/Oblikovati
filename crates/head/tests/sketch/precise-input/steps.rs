@@ -26,13 +26,6 @@ fn point_active_on_yz(world: &mut ApplicationWorld) {
     world.seed_dimensions_needed(31);
     world.select_point_tool();
 }
-fn expect_measure(world: &ApplicationWorld, row: &str) {
-    let text = world.window_text("Measure");
-    assert!(
-        text.contains(&row.replace(' ', "")),
-        "expected {row:?} in Measure {text:?}"
-    );
-}
 fn toolbar_shows(_: &ApplicationWorld) -> bool {
     diagnostics::window_geometry(TOOLBAR).is_some()
 }
@@ -178,11 +171,11 @@ fn measure_marker(world: &mut ApplicationWorld) {
 }
 #[then("it is identified as Selection 1 Point")]
 fn identified_point(world: &mut ApplicationWorld) {
-    expect_measure(world, "Selection 1: Point");
+    world.expect_measure("Selection 1: Point");
 }
 #[then("its global position is X 5.000 Y 0.500 Z -6.000 mm")]
 fn position_on_offset_plane(world: &mut ApplicationWorld) {
-    expect_measure(world, "Position X 5.000 Y 0.500 Z -6.000 mm");
+    world.expect_measure("Position X 5.000 Y 0.500 Z -6.000 mm");
 }
 #[then("Measure closes and the marker remains")]
 fn measure_closes(world: &mut ApplicationWorld) {
@@ -218,7 +211,7 @@ fn escape_and_measure(world: &mut ApplicationWorld) {
     "its global position is X=0.000 mm, Y=5.000 mm, Z=6.000 mm in the specified sketch-plane fixture"
 )]
 fn position_on_yz(world: &mut ApplicationWorld) {
-    expect_measure(world, "Position X 0.000 Y 5.000 Z 6.000 mm");
+    world.expect_measure("Position X 0.000 Y 5.000 Z 6.000 mm");
 }
 // precise-input-03
 fn expect_red_value(world: &ApplicationWorld) {
