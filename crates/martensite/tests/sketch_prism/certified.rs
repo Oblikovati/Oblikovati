@@ -91,7 +91,7 @@ fn certified_sketch_prism_accepts_holes_and_reversed_source_lines() {
 }
 
 #[test]
-fn distinct_coincident_endpoint_identities_are_declined_without_moving_points() {
+fn exactly_coincident_endpoint_identities_remain_in_source_lineage() {
     use oblikovati_model::sketch::{
         PlanarConstraint, Sketch2D, SketchConstraintId, SketchEntityId, SketchPoint2D,
     };
@@ -122,17 +122,12 @@ fn distinct_coincident_endpoint_identities_are_declined_without_moving_points() 
         .insert_expression(3, "depth", oblikovati_api::types::USER_PARAM, "2 cm")
         .unwrap();
     let before = document.sketches.get(SKETCH).unwrap().geometry().recipe();
-    let error = retain_certified_sketch_prism(&document, &definition, resolution())
-        .err()
-        .unwrap();
-    assert_eq!(
-        error.phase(),
-        oblikovati_martensite::EvaluationPhase::Profile
-    );
+    let result = retain_certified_sketch_prism(&document, &definition, resolution()).unwrap();
+    assert_analytic_scalar(result.body.report().properties.volume, 24.);
+    assert_eq!(result.vertex_sources.get(&1), Some(&vec![1, 50]));
     assert_eq!(
         document.sketches.get(SKETCH).unwrap().geometry().recipe(),
         before
     );
-    // Keep the authored definition unchanged when the kernel refuses the incidence.
     assert_eq!(definition.selection(), &selected_sketch_boundary());
 }

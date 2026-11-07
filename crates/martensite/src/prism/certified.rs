@@ -11,6 +11,8 @@ use oblikovati_model::feature::sketch_prism::SketchPrismSelection;
 pub struct CertifiedPrismSnapshot {
     pub body: PrismProbeSnapshot,
     pub achieved_tolerance: PrismAchievedTolerance,
+    /// Authored point identities represented by each input profile vertex identity.
+    pub vertex_sources: std::collections::BTreeMap<u64, Vec<u64>>,
 }
 /// Maximum measured tolerances on the kernel operation result, in model units.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -45,7 +47,13 @@ pub fn retain_certified_profile_prism(
     })?;
     let result = extrude(region, vector, &ExtrudeOptions { resolution })
         .map_err(|cause| Phase::Prism.operation(Entity::Body, cause))?;
-    retain_result(&result)
+    let mut retained = retain_result(&result)?;
+    retained.vertex_sources = profile
+        .vertices
+        .iter()
+        .map(|vertex| (vertex.id.0, vec![vertex.id.0]))
+        .collect();
+    Ok(retained)
 }
 
 fn retain_result(result: &OperationResult) -> Result<CertifiedPrismSnapshot, EvaluationFailure> {
@@ -74,6 +82,7 @@ fn retain_result(result: &OperationResult) -> Result<CertifiedPrismSnapshot, Eva
             edge: achieved.edge,
             face: achieved.face,
         },
+        vertex_sources: Default::default(),
     })
 }
 

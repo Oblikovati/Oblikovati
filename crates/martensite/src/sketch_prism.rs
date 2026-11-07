@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod boundary;
 mod certified;
+mod incidence;
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase, PrismProbeDefinition, PrismProbeSnapshot,
