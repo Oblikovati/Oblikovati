@@ -98,7 +98,9 @@ pub use prism::{
     named_part_properties, probe_planar_prism, retain_named_sketch_prism, retain_planar_prism,
     retain_prism_on_plane,
 };
+mod region_identity;
 mod sketch_prism;
+pub use region_identity::{RegionSelectionError, resolve_region_by_boundary};
 mod stored_prism;
 pub use sketch_prism::{
     MartensitePrismEvaluator, SketchDirectedLine, SketchPrismSelection,
