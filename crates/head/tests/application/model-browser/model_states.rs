@@ -24,6 +24,9 @@ fn model_state_rows_follow_document_and_double_click_activates_member() {
     world.double_click(position);
     world.pump(Vec::new());
     world.expect_text("Variant##1 (Active)");
+    assert!(
+        (world.run("<Variant##1>").center()[1] - world.run("Model State").center()[1]).abs() < 3.
+    );
     let state = world.app().owner.gui_command_state().unwrap();
     let states = state.browser.unwrap().model_states.unwrap();
     assert_eq!(states.active().unwrap().id, member.id);
@@ -98,6 +101,7 @@ fn created_model_state_name_can_be_edited_or_cancelled() {
     world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
     world.expect_text("Large (Active)");
+    assert!((world.run("<Large>").center()[1] - world.run("Model State").center()[1]).abs() < 3.);
     world.expect_text("Part1 <Large>");
     assert_eq!(
         world

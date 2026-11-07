@@ -234,62 +234,6 @@ impl BrowserTree<'_> {
             self.ui.text(end_marker);
         }
     }
-    fn model_states(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
-        let Some(states) = &self.browser.model_states else {
-            return;
-        };
-        let Some(_representations) = self.branch("Representations", true) else {
-            return;
-        };
-        view.model_state_edit.observe(self.state.document, states);
-        let node = if view.model_state_edit.needs_open_branch() {
-            self.ui
-                .tree_node_config("Model State")
-                .opened(true, imgui::Condition::Always)
-                .push()
-        } else {
-            self.branch("Model State", false)
-        };
-        if self.ui.is_item_hovered() && self.ui.is_mouse_clicked(MouseButton::Right) {
-            self.ui.open_popup("##model-state-menu");
-        }
-        self.model_state_menu(states, view, actions);
-        let Some(_states) = node else {
-            return;
-        };
-        for member in states.list() {
-            if view
-                .model_state_edit
-                .draw(self.ui, self.state.document, member, states, actions)
-            {
-                continue;
-            }
-            let active = states.active().is_some_and(|row| row.id == member.id);
-            let label = if active {
-                format!("{} (Active)", member.name)
-            } else {
-                member.name.clone()
-            };
-            let _id = self.ui.push_id(format!("model-state-{}", member.id));
-            let position = self.ui.cursor_screen_pos();
-            crate::widget_abi::selectable(self.ui, "##model-state", active, true);
-            crate::widget_abi::literal_text(
-                self.ui,
-                position,
-                self.ui.style_color(StyleColor::Text),
-                &label,
-            );
-            if !active
-                && self.ui.is_item_hovered()
-                && self.ui.is_mouse_double_clicked(MouseButton::Left)
-            {
-                actions.push(GuiShellAction::BrowserChoice {
-                    document: self.state.document.unwrap_or(0),
-                    choice: crate::GuiBrowserChoice::ActivateModelState(member.id),
-                });
-            }
-        }
-    }
     fn folded_model(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         if let Some(_folded) = self.branch("Folded Model", true) {
             self.modeling("End of Folded", view, actions);
