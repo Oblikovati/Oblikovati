@@ -362,6 +362,7 @@ fn view_ribbon_expanded(world: &mut ApplicationWorld) {
     }
 }
 #[given("the 3D Model ribbon is expanded and docked at the top")]
+#[given("the expanded 3D Model ribbon is docked at the top")]
 fn model_ribbon_at_top(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
     world.pump(Vec::new());
@@ -424,3 +425,6 @@ fn parameters_is_hidden(world: &mut ApplicationWorld) {
         "expected no Parameters panel"
     );
 }
+
+#[path = "panel_selector.rs"]
+mod panel_selector;

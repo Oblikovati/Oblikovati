@@ -4,6 +4,8 @@ use crate::ribbon::RibbonTab;
 use crate::ribbon_panels::RibbonPanel;
 use imgui::Ui;
 use std::collections::BTreeSet;
+mod panel_selector;
+pub(crate) use panel_selector::PANEL_SELECTOR_WIDTH;
 
 const CYCLE: [RibbonDisplay; 4] = [
     RibbonDisplay::Full,

@@ -214,8 +214,16 @@ fn ribbon_contents(
             ui.same_line();
         }
         ribbon_tabs(ui, owners.ribbon, frame);
-        let control = [ui.window_size()[0] - 160., 35.];
+        let control = [
+            ui.window_size()[0] - 160. - crate::application::ribbon_display::PANEL_SELECTOR_WIDTH,
+            35.,
+        ];
         owners.ribbon.display.control(ui, control);
+        // #3856: adopt selector changes before the row takes its visibility snapshot.
+        owners
+            .ribbon
+            .display
+            .panel_selector(ui, owners.ribbon.active, &request.commands);
         ribbon_panel_row(ui, request, owners, actions);
     }
     crate::theme_editor::panel(

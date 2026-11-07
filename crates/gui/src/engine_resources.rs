@@ -34,3 +34,7 @@ mod texture_tests;
 #[cfg(test)]
 #[path = "../tests/icons/engine.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "../tests/application/ribbon-display/panel_selector.rs"]
+mod panel_selector_tests;
