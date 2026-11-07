@@ -48,6 +48,7 @@ impl DrawingAnnotationDefinition {
         reference: &str,
         source: &dyn DrawingPartsListSource,
     ) -> Result<DrawingPartsListPresentation, DrawingError> {
+        self.validate()?;
         let rows = resolve_rows(reference, source)?;
         self.table_from_rows(&rows)
     }
