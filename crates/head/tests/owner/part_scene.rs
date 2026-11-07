@@ -34,7 +34,7 @@ fn append_independent_body(snapshot: &mut oblikovati_model::history::DocumentSna
         AuthoredFeature::sketch_prism(FeatureId(2), "Independent", definition, snapshot).unwrap();
     snapshot.work_geometry.append(feature).unwrap();
 }
-fn open_prism(owner: &mut TestOwner, independent: bool) -> u64 {
+pub(super) fn open_prism(owner: &mut TestOwner, independent: bool) -> u64 {
     let path = std::env::temp_dir().join("head-scene.opd");
     owner
         .documents()

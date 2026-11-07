@@ -225,7 +225,10 @@ fn detached_tab(
         && let Some(drawing) = state.drawing_documents.get(&row.id)
     {
         crate::application::document_creation::workspaces::draw_sheet_in_window(
-            ui, &row.name, drawing,
+            ui,
+            &row.name,
+            drawing,
+            state.drawing_projections.get(&row.id),
         );
     }
 }

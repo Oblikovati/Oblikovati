@@ -232,6 +232,18 @@ pub struct GuiDocumentStorage {
     /// Closing without saving would lose work; a new, untouched part has none to lose.
     pub unsaved_edits: bool,
 }
+/// Sheet-space display geometry and any model-resolution failure.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiDrawingProjection {
+    pub lines: Vec<GuiDrawingLine>,
+    pub error: Option<String>,
+}
+/// One sampled edge in sheet millimetres.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiDrawingLine {
+    pub points: Vec<[f64; 2]>,
+    pub hidden: bool,
+}
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
@@ -247,6 +259,7 @@ pub struct GuiCommandState {
     /// Current drawing recipes, including drawings in detached windows.
     pub drawing_documents:
         std::collections::BTreeMap<u64, oblikovati_model::drawing::DrawingDocument>,
+    pub drawing_projections: std::collections::BTreeMap<u64, GuiDrawingProjection>,
     pub prompts: oblikovati_model::application_prompts::PromptPreferences,
     pub projects: Vec<GuiProject>,
     /// What a new document from each template measures as a file, in bytes.

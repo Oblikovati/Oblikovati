@@ -17,6 +17,7 @@ fn request() -> GuiFrameRequest {
             documents: Vec::new(),
             document_storage: Default::default(),
             drawing_documents: Default::default(),
+            drawing_projections: Default::default(),
             prompts: Default::default(),
             projects: Vec::new(),
             template_sizes: Vec::new(),

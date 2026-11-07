@@ -27,6 +27,8 @@ mod dimension_annotations;
 mod dimension_query;
 #[path = "application/document-creation/mod.rs"]
 mod document_creation;
+#[path = "owner_drawing_projection.rs"]
+mod drawing_projection;
 #[path = "owner_geometric_batch.rs"]
 mod geometric_batch;
 #[path = "owner_inspect.rs"]
@@ -96,6 +98,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     caller: QueuedCaller<S>,
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
+    drawing_projections: std::cell::RefCell<drawing_projection::DrawingProjectionCache>,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
     extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene)>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
@@ -168,6 +171,7 @@ impl<
             caller,
             refused_close: Vec::new(),
             part_scenes: Default::default(),
+            drawing_projections: Default::default(),
             extrusion_access: None,
             extrusion_preview: None,
             sketch_scenes: Default::default(),

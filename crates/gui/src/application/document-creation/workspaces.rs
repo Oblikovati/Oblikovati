@@ -8,6 +8,8 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui};
 use oblikovati_api::types::{DOCUMENT_DRAWING, DOCUMENT_PRESENTATION};
 use std::rc::Rc;
+#[path = "drawing_lines.rs"]
+mod drawing_lines;
 
 const INSERT: &str = "Insert";
 /// An A3 landscape sheet: the built-in drawing template's only format.
@@ -80,7 +82,15 @@ impl DocumentWorkspaces {
                     .document
                     .and_then(|id| state.drawing_documents.get(&id))
                 {
-                    draw_sheet(ui, active_name(state), area, drawing);
+                    draw_sheet(
+                        ui,
+                        active_name(state),
+                        area,
+                        drawing,
+                        state
+                            .document
+                            .and_then(|id| state.drawing_projections.get(&id)),
+                    );
                 }
             }
             Some(DOCUMENT_PRESENTATION) => presentation_panels(ui, area),
@@ -119,14 +129,22 @@ fn draw_sheet(
     name: &str,
     area: WorkspaceArea,
     drawing: &oblikovati_model::drawing::DrawingDocument,
+    projection: Option<&crate::GuiDrawingProjection>,
 ) {
-    sheet_on_list(&ui.get_background_draw_list(), name, area, drawing);
+    sheet_on_list(
+        &ui.get_background_draw_list(),
+        name,
+        area,
+        drawing,
+        projection,
+    );
 }
 /// A sheet in a window's own content; example: a drawing detached from the tab strip.
 pub(crate) fn draw_sheet_in_window(
     ui: &Ui,
     name: &str,
     drawing: &oblikovati_model::drawing::DrawingDocument,
+    projection: Option<&crate::GuiDrawingProjection>,
 ) {
     let minimum = ui.cursor_screen_pos();
     let size = ui.content_region_avail();
@@ -136,13 +154,14 @@ pub(crate) fn draw_sheet_in_window(
         right: minimum[0] + size[0],
         bottom: minimum[1] + size[1],
     };
-    sheet_on_list(&ui.get_window_draw_list(), name, area, drawing);
+    sheet_on_list(&ui.get_window_draw_list(), name, area, drawing, projection);
 }
 fn sheet_on_list(
     list: &imgui::DrawListMut<'_>,
     name: &str,
     area: WorkspaceArea,
     drawing: &oblikovati_model::drawing::DrawingDocument,
+    projection: Option<&crate::GuiDrawingProjection>,
 ) {
     let sheet = &drawing.sheets()[drawing.active_sheet()];
     let Ok(dimensions) = sheet.dimensions_mm() else {
@@ -152,6 +171,9 @@ fn sheet_on_list(
     list.add_rect(minimum, maximum, SHEET_COLOR)
         .filled(true)
         .build();
+    if let Some(projection) = projection {
+        drawing_lines::draw(list, projection, minimum, maximum, dimensions);
+    }
     let (border_minimum, border_maximum) =
         sheet_inner_bounds(minimum, maximum, dimensions, sheet.border_margins_mm());
     if sheet.border {

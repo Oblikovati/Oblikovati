@@ -392,3 +392,81 @@ fn reopened_drawing_displays_its_authored_active_sheet() {
     );
     world.close();
 }
+
+#[test]
+fn drawing_sheet_displays_the_referenced_part_projection() {
+    use oblikovati_api::{client::Client, wire::OpenDocumentArgs};
+    use oblikovati_model::drawing::{DrawingBaseViewDefinition, DrawingDocument};
+    use oblikovati_persistence::package::DocumentPackage;
+    let mut world = ApplicationWorld::new();
+    let folder = world.scratch_folder();
+    let source = folder.join("model.opd");
+    let snapshot = crate::scene_fixture::selected_prism_document();
+    let part = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n")
+        .unwrap()
+        .with_parameters(&snapshot.parameters, snapshot.parameters.units().clone())
+        .unwrap()
+        .with_sketches(&snapshot.sketches, 1, 104)
+        .unwrap()
+        .with_work_geometry(&snapshot.work_geometry, 1)
+        .unwrap()
+        .encode()
+        .unwrap();
+    std::fs::write(&source, part).unwrap();
+    let open = |world: &mut ApplicationWorld, path: &std::path::Path| {
+        Client::new(world.app().owner.document_host())
+            .documents()
+            .open(&OpenDocumentArgs {
+                full_document_name: path.to_string_lossy().into_owned(),
+                ..Default::default()
+            })
+            .unwrap();
+        world.pump(Vec::new());
+    };
+    open(&mut world, &source);
+    let blank_path = folder.join("blank.odd");
+    let view_path = folder.join("view.odd");
+    let blank = DrawingDocument::new();
+    let mut view = blank.clone();
+    view.set_model_reference(source.to_str().unwrap()).unwrap();
+    view.add_base_view_definition(
+        0,
+        DrawingBaseViewDefinition::new(
+            "Front",
+            oblikovati_api::types::BASE_VIEW_FRONT,
+            1.,
+            [210., 148.5],
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    for (path, drawing) in [(&blank_path, &blank), (&view_path, &view)] {
+        let bytes = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 3\n")
+            .unwrap()
+            .with_drawing(Some(drawing))
+            .unwrap()
+            .encode()
+            .unwrap();
+        std::fs::write(path, bytes).unwrap();
+    }
+    open(&mut world, &blank_path);
+    let before = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
+    open(&mut world, &view_path);
+    let after = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
+    let width = after.extent[0] as usize;
+    let height = after.extent[1] as usize;
+    let mut darker = 0;
+    for y in height * 35 / 100..height * 65 / 100 {
+        for x in width * 40 / 100..width * 75 / 100 {
+            let index = (y * width + x) * 4;
+            if before.rgba[index] > 200 && after.rgba[index] < 100 {
+                darker += 1;
+            }
+        }
+    }
+    assert!(
+        darker > 20,
+        "expected projected drawing lines, found {darker} darker pixels"
+    );
+    world.close();
+}

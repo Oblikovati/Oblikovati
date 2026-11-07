@@ -110,3 +110,74 @@ fn gui_snapshot_keeps_current_sheets_for_inactive_drawings() {
     let state = owner.gui_command_state().unwrap();
     assert_eq!(state.drawing_documents[&drawing].active_sheet(), 0);
 }
+
+#[test]
+fn drawing_projection_tracks_open_part_edits_and_missing_sources() {
+    use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
+    use oblikovati_model::drawing::DrawingBaseViewDefinition;
+    let (mut owner, _) = owner();
+    let part = super::part_scene::open_prism(&mut owner, false);
+    owner
+        .create_document_template(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        })
+        .unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    let path = std::env::temp_dir()
+        .join("head-scene.opd")
+        .to_string_lossy()
+        .into_owned();
+    owner
+        .files
+        .commands(drawing)
+        .unwrap()
+        .run("Add view", |snapshot, _| {
+            let drawing = snapshot.drawing.as_mut().unwrap();
+            drawing.set_model_reference(&path)?;
+            drawing.add_base_view_definition(
+                0,
+                DrawingBaseViewDefinition::new(
+                    "Front",
+                    oblikovati_api::types::BASE_VIEW_FRONT,
+                    1.,
+                    [100., 80.],
+                )?,
+            )
+        })
+        .unwrap();
+    let before = owner.gui_command_state().unwrap().drawing_projections[&drawing].clone();
+    assert!(before.error.is_none(), "{:?}", before.error);
+    assert!(!before.lines.is_empty());
+    owner
+        .files
+        .commands(part)
+        .unwrap()
+        .run("Change depth", |snapshot, _| {
+            snapshot.parameters.set_expression(3, "3 cm")
+        })
+        .unwrap();
+    let after = owner.gui_command_state().unwrap().drawing_projections[&drawing].clone();
+    assert!(after.error.is_none(), "{:?}", after.error);
+    assert_ne!(before.lines, after.lines);
+    owner.files.commands(part).unwrap().undo().unwrap();
+    assert_eq!(
+        owner.gui_command_state().unwrap().drawing_projections[&drawing].lines,
+        before.lines
+    );
+    owner
+        .files
+        .commands(drawing)
+        .unwrap()
+        .run("Break reference", |snapshot, _| {
+            snapshot
+                .drawing
+                .as_mut()
+                .unwrap()
+                .set_model_reference("missing.opd")
+        })
+        .unwrap();
+    let missing = &owner.gui_command_state().unwrap().drawing_projections[&drawing];
+    assert!(missing.lines.is_empty());
+    assert!(missing.error.as_ref().unwrap().contains("missing.opd"));
+}
