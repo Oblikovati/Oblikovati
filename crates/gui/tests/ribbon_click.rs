@@ -444,3 +444,6 @@ mod sketch_formats;
 
 #[path = "ribbon_click/panel_overflow.rs"]
 mod panel_overflow;
+
+#[path = "ribbon_click/ellipse_dimensions.rs"]
+mod ellipse_dimensions;

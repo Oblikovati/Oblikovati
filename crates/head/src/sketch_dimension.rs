@@ -2,12 +2,12 @@
 use crate::sketch_operands as operands;
 use crate::{
     HeadSketchEdit,
-    sketch_operands::OperandCategory::{Circular, Line, Point},
+    sketch_operands::OperandCategory::{Circular, Elliptical, Line, Point},
 };
 use oblikovati_api::{
     types::{
-        DIM_CONSTRAINT_ANGLE, DIM_CONSTRAINT_DISTANCE, DIM_CONSTRAINT_RADIUS,
-        DimensionConstraintKind,
+        DIM_CONSTRAINT_ANGLE, DIM_CONSTRAINT_DISTANCE, DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS,
+        DIM_CONSTRAINT_ELLIPSE_RADIUS, DIM_CONSTRAINT_RADIUS, DimensionConstraintKind,
     },
     wire::AddDimensionArgs,
 };
@@ -45,6 +45,9 @@ impl SketchDimensionState {
         let Some(category) = operands::category(&kind) else {
             return Ok(false);
         };
+        if matches!(category, Circular | Elliptical) && !selected.is_empty() {
+            return Ok(false);
+        }
         if !dimension_pick_set_ready(&selected) {
             return Ok(true);
         }
@@ -92,7 +95,7 @@ impl SketchDimensionState {
 fn dimension_pick_set_ready(selected: &[operands::SketchOperand]) -> bool {
     selected
         .iter()
-        .any(|operand| matches!(operand.category, Line | Circular))
+        .any(|operand| matches!(operand.category, Line | Circular | Elliptical))
         || operands::ids(selected, Point).len() >= 2
 }
 fn dimension_selection_recipe(
@@ -100,8 +103,11 @@ fn dimension_selection_recipe(
     selected: &[operands::SketchOperand],
     at: [f64; 2],
 ) -> Result<(DimensionConstraintKind, Vec<u64>, String), String> {
-    if let Some(circle) = operands::ids(selected, Circular).first() {
-        return Ok((DIM_CONSTRAINT_RADIUS, vec![circle.0], String::new()));
+    if let [operand] = selected
+        && matches!(operand.category, Circular | Elliptical)
+    {
+        let kind = curve_dimension_kind(geometry, *operand, at)?;
+        return Ok((kind, vec![operand.id.0], String::new()));
     }
     let lines = operands::ids(selected, Line);
     if let [first, second, ..] = lines.as_slice() {
@@ -121,6 +127,39 @@ fn dimension_selection_recipe(
         points.map(|id| id.0).to_vec(),
         dimension_placement_orientation(a, b, at).into(),
     ))
+}
+fn curve_dimension_kind(
+    geometry: &Sketch2D,
+    operand: operands::SketchOperand,
+    at: [f64; 2],
+) -> Result<DimensionConstraintKind, String> {
+    match operand.category {
+        Circular => Ok(DIM_CONSTRAINT_RADIUS),
+        Elliptical => ellipse_dimension_kind(geometry, operand.id, at),
+        _ => Err(format!(
+            "dimension curve {operand:?}: expected a circular or elliptical curve"
+        )),
+    }
+}
+fn ellipse_dimension_kind(
+    geometry: &Sketch2D,
+    id: SketchEntityId,
+    at: [f64; 2],
+) -> Result<DimensionConstraintKind, String> {
+    let ellipse = geometry.ellipse(id).map_err(|cause| cause.to_string())?;
+    let center = geometry
+        .point(ellipse.center())
+        .map_err(|cause| cause.to_string())?
+        .position;
+    let [u, v] = ellipse.major_axis();
+    let [x, y] = [at[0] - center[0], at[1] - center[1]];
+    // Extend Go #2025's perpendicular label-drag choice in the ellipse's own frame.
+    // A tie keeps the major axis, matching the existing aligned-first tie policy.
+    Ok(if (u * x + v * y).abs() <= (-v * x + u * y).abs() {
+        DIM_CONSTRAINT_ELLIPSE_RADIUS
+    } else {
+        DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS
+    })
 }
 fn dimension_point_pair(
     geometry: &Sketch2D,
@@ -166,32 +205,57 @@ pub(crate) fn dimension_measurement_input(
     entities: &[u64],
     orientation: &str,
 ) -> Result<SketchDimensionalConstraintCreation, String> {
+    let input = match entities {
+        [curve] => curve_dimension_input(kind, SketchEntityId(*curve)),
+        [first, second] => pair_dimension_input(kind, [*first, *second], orientation),
+        _ => None,
+    };
+    input.ok_or_else(|| format!(
+        "dimension {kind:?} operands {entities:?}: expected a distance, circular or elliptical radius, or angle recipe"
+    ))
+}
+fn curve_dimension_input(
+    kind: &str,
+    curve: SketchEntityId,
+) -> Option<SketchDimensionalConstraintCreation> {
+    let measured = match kind {
+        kind if kind == DIM_CONSTRAINT_RADIUS.0.as_ref() => {
+            MeasuredDimensionOperands::Radius { curve }
+        }
+        kind if kind == DIM_CONSTRAINT_ELLIPSE_RADIUS.0.as_ref() => {
+            MeasuredDimensionOperands::EllipseRadius { ellipse: curve }
+        }
+        kind if kind == DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS.0.as_ref() => {
+            MeasuredDimensionOperands::EllipseMinorRadius { ellipse: curve }
+        }
+        _ => return None,
+    };
+    Some(SketchDimensionalConstraintCreation::Measured(measured))
+}
+fn pair_dimension_input(
+    kind: &str,
+    entities: [u64; 2],
+    orientation: &str,
+) -> Option<SketchDimensionalConstraintCreation> {
     use SketchDimensionalConstraintCreation::{Measured, Seeded};
-    match (kind, entities) {
-        (kind, [curve]) if kind == DIM_CONSTRAINT_RADIUS.0.as_ref() => {
-            Ok(Measured(MeasuredDimensionOperands::Radius {
-                curve: SketchEntityId(*curve),
-            }))
+    let points = entities.map(SketchEntityId);
+    Some(match kind {
+        kind if kind == DIM_CONSTRAINT_ANGLE.0.as_ref() => {
+            Seeded(SeededDimensionOperands::Angle(points))
         }
-        (kind, [first, second]) if kind == DIM_CONSTRAINT_ANGLE.0.as_ref() => {
-            Ok(Seeded(SeededDimensionOperands::Angle([
-                SketchEntityId(*first),
-                SketchEntityId(*second),
-            ])))
+        kind if kind == DIM_CONSTRAINT_DISTANCE.0.as_ref() => {
+            Measured(MeasuredDimensionOperands::Distance {
+                points,
+                measure: dimension_distance_measure(orientation),
+            })
         }
-        (kind, [first, second]) if kind == DIM_CONSTRAINT_DISTANCE.0.as_ref() => {
-            let measure = match orientation {
-                "horizontal" => DistanceMeasure::Horizontal,
-                "vertical" => DistanceMeasure::Vertical,
-                _ => DistanceMeasure::Aligned,
-            };
-            Ok(Measured(MeasuredDimensionOperands::Distance {
-                points: [SketchEntityId(*first), SketchEntityId(*second)],
-                measure,
-            }))
-        }
-        _ => Err(format!(
-            "dimension {kind:?} operands {entities:?}: expected a distance, radius or angle recipe"
-        )),
+        _ => return None,
+    })
+}
+fn dimension_distance_measure(orientation: &str) -> DistanceMeasure {
+    match orientation {
+        "horizontal" => DistanceMeasure::Horizontal,
+        "vertical" => DistanceMeasure::Vertical,
+        _ => DistanceMeasure::Aligned,
     }
 }

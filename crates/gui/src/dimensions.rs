@@ -98,7 +98,8 @@ impl GuiDimensionEditor {
 
 pub(crate) fn validate_dimension_draft(state: &GuiCommandState) -> Result<(), String> {
     use oblikovati_api::types::{
-        DIM_CONSTRAINT_ANGLE, DIM_CONSTRAINT_DISTANCE, DIM_CONSTRAINT_RADIUS,
+        DIM_CONSTRAINT_ANGLE, DIM_CONSTRAINT_DISTANCE, DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS,
+        DIM_CONSTRAINT_ELLIPSE_RADIUS, DIM_CONSTRAINT_RADIUS,
     };
     let Some(draft) = state.dimension_draft.as_ref() else {
         return Ok(());
@@ -107,6 +108,8 @@ pub(crate) fn validate_dimension_draft(state: &GuiCommandState) -> Result<(), St
         DIM_CONSTRAINT_ANGLE,
         DIM_CONSTRAINT_DISTANCE,
         DIM_CONSTRAINT_RADIUS,
+        DIM_CONSTRAINT_ELLIPSE_RADIUS,
+        DIM_CONSTRAINT_ELLIPSE_MINOR_RADIUS,
     ]
     .iter()
     .any(|kind| kind.0.as_ref() == draft.kind);
