@@ -10,6 +10,7 @@ use oblikovati_session::{
 };
 use oblikovati_viewport::{PartPresentationDecline, ViewportScene};
 pub(crate) mod extrusion;
+pub(crate) mod resolution_policy;
 /// Owned display state names its document and generation; kernel handles stay in result storage.
 #[derive(Clone, Debug)]
 pub struct HeadSceneStatus {
@@ -55,13 +56,13 @@ pub struct HeadSceneUpdate {
 pub(crate) struct DesktopPartScenes {
     source: Option<(u64, u64, u64)>,
     presentation_invalidated: bool,
-    resolution: Option<oblikovati_martensite::PrismResolution>,
+    resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
     slot: PartEvaluationSlot<NamedPrismSnapshot, oblikovati_martensite::EvaluationFailure>,
 }
 impl DesktopPartScenes {
     pub(crate) fn use_certified_resolution(
         &mut self,
-        resolution: oblikovati_martensite::PrismResolution,
+        resolution: oblikovati_martensite::PrismResolutionPolicy,
     ) {
         self.resolution = Some(resolution);
         self.clear();
@@ -246,7 +247,7 @@ impl DesktopPartScenes {
 fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
-    resolution: Option<oblikovati_martensite::PrismResolution>,
+    resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
 ) -> Result<
     oblikovati_session::part_evaluation::CompletedPartEvaluation<
         NamedPrismSnapshot,
@@ -265,7 +266,7 @@ fn complete_desktop_replay<O: TransactionObserver, W: WorkspaceObserver, F: Docu
     let request = session.prepare_part_evaluation();
     match resolution {
         Some(resolution) => request.evaluate(
-            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::new(
+            &mut oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
                 session.history(),
                 guid,
                 resolution,

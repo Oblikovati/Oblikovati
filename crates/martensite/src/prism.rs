@@ -18,7 +18,7 @@ pub(crate) mod placement;
 mod profile;
 mod report;
 mod resolution;
-pub use resolution::PrismResolution;
+pub use resolution::{PrismResolution, PrismResolutionPolicy};
 mod snapshot;
 #[cfg(test)]
 #[path = "../tests/unit/prism_snapshot.rs"]

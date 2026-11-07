@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod boundary;
 mod regions;
-pub use regions::{SketchRegionBoundary, SketchRegionCurveUse, certified_sketch_regions};
+pub use regions::{
+    SketchRegionBoundary, SketchRegionCurveUse, certified_sketch_regions,
+    certified_sketch_regions_with_policy,
+};
 pub(crate) mod certified;
 mod incidence;
-mod profile_extent;
+pub(crate) mod profile_extent;
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase, PrismProbeDefinition, PrismProbeSnapshot,

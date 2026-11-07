@@ -471,3 +471,6 @@ fn closing_the_document_clears_its_preview_from_the_scene() {
             .is_empty()
     );
 }
+
+#[path = "extrusion_policy.rs"]
+mod policy;

@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Owner-thread bridge from typed commands to certified profile operations.
 use oblikovati_automation::ExtrudeRegionAccess;
-use oblikovati_martensite::{CertifiedPrismEvaluator, PrismResolution, certified_sketch_regions};
+use oblikovati_martensite::{
+    CertifiedPrismEvaluator, PrismResolutionPolicy, certified_sketch_regions_with_policy,
+};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{FeatureId, sketch_prism::SketchPrismSelection},
     history::DocumentSnapshot,
 };
 
-pub(crate) struct CertifiedExtrudeAccess(pub PrismResolution);
+pub(crate) struct CertifiedExtrudeAccess(pub PrismResolutionPolicy);
 impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
     fn region(
         &self,
@@ -16,7 +18,7 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
         sketch: DocumentSketchId,
         index: usize,
     ) -> Result<SketchPrismSelection, String> {
-        let regions = certified_sketch_regions(snapshot, sketch, self.0)
+        let regions = certified_sketch_regions_with_policy(snapshot, sketch, self.0)
             .map_err(|cause| cause.to_string())?;
         let region = regions.get(index).ok_or_else(|| {
             format!(
@@ -34,7 +36,7 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
             .map_err(|cause| cause.to_string())
     }
     fn validate(&self, candidate: &DocumentSnapshot, feature: FeatureId) -> Result<usize, String> {
-        let mut backend = CertifiedPrismEvaluator::new(self.0);
+        let mut backend = CertifiedPrismEvaluator::with_policy(self.0);
         let replay = candidate
             .evaluate_part_features(&mut backend)
             .map_err(|cause| cause.to_string())?;

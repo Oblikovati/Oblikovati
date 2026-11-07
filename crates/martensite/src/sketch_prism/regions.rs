@@ -74,9 +74,19 @@ pub fn certified_sketch_regions(
     sketch_id: DocumentSketchId,
     resolution: crate::PrismResolution,
 ) -> Result<Vec<SketchRegionBoundary>, EvaluationFailure> {
-    let resolution = resolution
-        .validate()
-        .map_err(|cause| Phase::Input.refused(Kind::InvalidInput, Entity::Body, cause))?;
+    certified_sketch_regions_with_policy(
+        document,
+        sketch_id,
+        crate::PrismResolutionPolicy::Fixed(resolution),
+    )
+}
+/// Discover profiles with the same per-sketch policy as certified replay.
+/// Example: `certified_sketch_regions_with_policy(&document, sketch_id, policy)?`.
+pub fn certified_sketch_regions_with_policy(
+    document: &DocumentSnapshot,
+    sketch_id: DocumentSketchId,
+    policy: crate::PrismResolutionPolicy,
+) -> Result<Vec<SketchRegionBoundary>, EvaluationFailure> {
     let sketch = document
         .require_resolved_sketch(sketch_id)
         .map_err(|cause| {
@@ -84,11 +94,17 @@ pub fn certified_sketch_regions(
                 .refused(Kind::InvalidInput, Entity::Body, cause.to_string())
                 .with_sketch_identity(sketch_id)
         })?;
+    let policy = policy.validate().map_err(|cause| {
+        Phase::Input
+            .refused(Kind::InvalidInput, Entity::Body, cause)
+            .with_sketch_identity(sketch_id)
+    })?;
     let (profile, _) = input::profile(sketch.sketch.geometry(), sketch.plane)
         .map_err(|cause| cause.with_sketch_identity(sketch_id))?;
     if profile.curves.is_empty() {
         return Ok(Vec::new());
     }
+    let resolution = policy.for_sketch(&sketch)?;
     let regions = build_planar_regions(&profile, resolution.kernel()).map_err(|cause| {
         Phase::Profile
             .operation(Entity::Body, cause)

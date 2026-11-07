@@ -96,7 +96,7 @@ pub use prism::{
     NamedPrismEvaluator, NamedPrismSnapshot, PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe,
     PrismFaceRole, PrismMeshOptions, PrismPresentation, PrismPresentationSource,
     PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution,
-    PrismTopologySummary, named_part_properties, probe_planar_prism,
+    PrismResolutionPolicy, PrismTopologySummary, named_part_properties, probe_planar_prism,
     retain_certified_named_sketch_prism, retain_certified_profile_prism, retain_named_sketch_prism,
     retain_planar_prism, retain_prism_on_plane,
 };
@@ -107,8 +107,9 @@ mod stored_prism;
 pub use sketch_prism::{
     CertifiedPrismEvaluator, MartensitePrismEvaluator, SketchDirectedLine, SketchPrismSelection,
     SketchProfileExtent, SketchRegionBoundary, SketchRegionCurveUse, certified_sketch_regions,
-    retain_certified_sketch_prism, retain_resolved_sketch_prism, retain_selected_sketch_prism,
-    retain_sketch_prism_definition, sketch_profile_extent,
+    certified_sketch_regions_with_policy, retain_certified_sketch_prism,
+    retain_resolved_sketch_prism, retain_selected_sketch_prism, retain_sketch_prism_definition,
+    sketch_profile_extent,
 };
 pub use stored_prism::retain_stored_sketch_prism;
 

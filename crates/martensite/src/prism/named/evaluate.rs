@@ -67,7 +67,7 @@ impl NamedPrismEvaluator<'_> {
 /// Inject an explicit model resolution into certified, named feature replay.
 pub struct CertifiedNamedPrismEvaluator<'a> {
     names: NamedPrismEvaluator<'a>,
-    resolution: PrismResolution,
+    resolution: PrismResolutionPolicy,
 }
 impl<'a> CertifiedNamedPrismEvaluator<'a> {
     /// Bind the document and its explicit resolution; example: `CertifiedNamedPrismEvaluator::new(&history, guid, resolution)`.
@@ -75,6 +75,18 @@ impl<'a> CertifiedNamedPrismEvaluator<'a> {
         history: &'a DocumentEditHistory,
         document: DocumentGuid,
         resolution: PrismResolution,
+    ) -> Self {
+        Self {
+            names: NamedPrismEvaluator::new(history, document),
+            resolution: PrismResolutionPolicy::Fixed(resolution),
+        }
+    }
+    /// Bind the same per-sketch policy used by profile discovery.
+    /// Example: `CertifiedNamedPrismEvaluator::with_policy(history, guid, policy)`.
+    pub fn with_policy(
+        history: &'a DocumentEditHistory,
+        document: DocumentGuid,
+        resolution: PrismResolutionPolicy,
     ) -> Self {
         Self {
             names: NamedPrismEvaluator::new(history, document),

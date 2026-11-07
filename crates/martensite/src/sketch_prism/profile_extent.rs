@@ -28,6 +28,12 @@ pub fn sketch_profile_extent(
                 .refused(Kind::InvalidInput, Entity::Body, cause.to_string())
                 .with_sketch_identity(sketch_id)
         })?;
+    resolved_profile_extent(&sketch)
+}
+pub(crate) fn resolved_profile_extent(
+    sketch: &oblikovati_model::history::ResolvedDocumentSketch<'_>,
+) -> Result<SketchProfileExtent, EvaluationFailure> {
+    let sketch_id = sketch.sketch.id();
     let geometry = sketch.sketch.geometry();
     let (profile, _) = super::regions::input::profile(geometry, sketch.plane)
         .map_err(|cause| cause.with_sketch_identity(sketch_id))?;

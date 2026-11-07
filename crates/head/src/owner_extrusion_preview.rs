@@ -101,7 +101,7 @@ impl<
                 |snapshot, ids| prepared.create(snapshot, ids),
                 |candidate, id| {
                     let mut evaluator =
-                        oblikovati_martensite::CertifiedPrismEvaluator::new(backend.0);
+                        oblikovati_martensite::CertifiedPrismEvaluator::with_policy(backend.0);
                     let result = candidate
                         .evaluate_part_features(&mut evaluator)
                         .map_err(|cause| oblikovati_api::Error(cause.to_string()))?;

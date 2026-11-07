@@ -203,14 +203,22 @@ impl<
     }
     /// Configure certified extrusion and scene replay; example: `owner.with_extrusion_resolution(resolution)?`.
     pub fn with_extrusion_resolution(
-        mut self,
+        self,
         resolution: oblikovati_martensite::PrismResolution,
     ) -> Result<Self, String> {
-        let resolution = resolution.validate()?;
-        self.part_scenes.use_certified_resolution(resolution);
-        self.extrusion_access = Some(crate::part_scene::extrusion::CertifiedExtrudeAccess(
+        self.with_extrusion_policy(oblikovati_martensite::PrismResolutionPolicy::Fixed(
             resolution,
-        ));
+        ))
+    }
+    /// Configure one policy for preview, feature creation and replay.
+    /// Example: `owner.with_extrusion_policy(policy)?`.
+    pub fn with_extrusion_policy(
+        mut self,
+        policy: oblikovati_martensite::PrismResolutionPolicy,
+    ) -> Result<Self, String> {
+        let policy = policy.validate()?;
+        self.part_scenes.use_certified_resolution(policy);
+        self.extrusion_access = Some(crate::part_scene::extrusion::CertifiedExtrudeAccess(policy));
         Ok(self)
     }
     /// Clone only the queued worker transport; example: `Client::new(owner.caller())` on a worker.

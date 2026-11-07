@@ -10,11 +10,17 @@ use std::collections::BTreeMap;
 
 /// Certified replay for candidate validation with an explicit modelling resolution.
 pub struct CertifiedPrismEvaluator {
-    resolution: crate::PrismResolution,
+    resolution: crate::PrismResolutionPolicy,
 }
 impl CertifiedPrismEvaluator {
     /// Bind the caller's resolution; example: `CertifiedPrismEvaluator::new(resolution)`.
     pub fn new(resolution: crate::PrismResolution) -> Self {
+        Self {
+            resolution: crate::PrismResolutionPolicy::Fixed(resolution),
+        }
+    }
+    /// Bind per-sketch policy; example: `CertifiedPrismEvaluator::with_policy(policy)`.
+    pub fn with_policy(resolution: crate::PrismResolutionPolicy) -> Self {
         Self { resolution }
     }
 }
@@ -37,16 +43,13 @@ impl SketchPrismEvaluator for CertifiedPrismEvaluator {
 
 pub(crate) fn evaluate_feature(
     input: ResolvedSketchPrism<'_>,
-    resolution: crate::PrismResolution,
+    resolution: crate::PrismResolutionPolicy,
     feature: FeatureId,
 ) -> Result<crate::CertifiedPrismSnapshot, EvaluationFailure> {
     let sketch = input.sketch.sketch.id();
-    let resolution = resolution.validate().map_err(|message| {
-        Phase::Input
-            .refused(Kind::InvalidInput, Entity::Body, message)
-            .with_sketch_identity(sketch)
-            .for_feature(feature)
-    })?;
+    let resolution = resolution
+        .for_sketch(&input.sketch)
+        .map_err(|error| error.for_feature(feature))?;
     evaluate(input, resolution.kernel())
         .map_err(|error| error.with_sketch_identity(sketch).for_feature(feature))
 }

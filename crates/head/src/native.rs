@@ -356,6 +356,7 @@ fn native_owner(wake: ViewportWake) -> Result<NativeDesktopOwner, String> {
         NativeOwnerWake(wake),
         crate::DesktopDispatchOptions::default(),
     )
+    .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())?
     .with_ui_scale_preferences(Box::new(preferences::load_native_application_options()?))
     .with_prompt_preferences(Box::new(preferences::load_native_application_options()?))
     .with_sketch_preferences(Box::new(preferences::load_native_application_options()?))
