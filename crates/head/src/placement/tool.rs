@@ -173,13 +173,23 @@ impl SketchPlacementTool {
     pub(crate) fn typed_field_count(self) -> usize {
         match self {
             Self::Circle => 1,
-            Self::Rectangle => 2,
+            Self::Rectangle | Self::CenterRectangle => 2,
             _ => 0,
         }
     }
+    /// Which kind of value a field holds; only an arc's sweep is not a length.
+    pub(crate) fn typed_field_dimension(
+        self,
+        index: usize,
+    ) -> oblikovati_model::quantity::Dimension {
+        if self == Self::CenterPointArc && index == 1 {
+            return oblikovati_model::quantity::Dimension::Angle;
+        }
+        oblikovati_model::quantity::Dimension::Length
+    }
     /// A typed zero keeps the field red on some tools; others drop the shape without a word.
     pub(crate) fn typed_zero_is_invalid(self) -> bool {
-        self != Self::Rectangle
+        !matches!(self, Self::Rectangle | Self::CenterRectangle)
     }
     pub(crate) fn prompt(self, placed: usize) -> String {
         match (self, placed) {
@@ -187,6 +197,11 @@ impl SketchPlacementTool {
             (Self::Circle, _) => return "Select point on circle".into(),
             (Self::Rectangle, 0) => return "Select first corner".into(),
             (Self::Rectangle, _) => return "Select opposite corner".into(),
+            (Self::CenterRectangle, 0) => return "Select center".into(),
+            (Self::CenterRectangle, _) => return "Select corner".into(),
+            (Self::CenterPointArc, 0) => return "Select center".into(),
+            (Self::CenterPointArc, 1) => return "Select start point".into(),
+            (Self::CenterPointArc, _) => return "Select end point".into(),
             _ => {}
         }
         let labels = self.point_labels();

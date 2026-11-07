@@ -293,7 +293,7 @@ fn measure_target(
     window: &dyn HeadWindow,
 ) -> Result<Option<MeasurePick>, String> {
     if let Some(point) = measure_point(geometry, plane, pixel, window)? {
-        return Ok(Some(MeasurePick::Point(point)));
+        return Ok(Some(point));
     }
     let picked = pick_witness(geometry, plane, pixel, window, SketchPickFilter::Curves)?;
     Ok(picked.map(|witness| MeasurePick::Curve(witness.entity)))
@@ -303,11 +303,11 @@ fn measure_point(
     plane: SketchPlane,
     pixel: [i32; 2],
     window: &dyn HeadWindow,
-) -> Result<Option<[f64; 2]>, String> {
+) -> Result<Option<MeasurePick>, String> {
     for point in geometry.points() {
         let at = window.sketch_pixel(plane, point.position)?;
         if super::sketch_picking::screen_distance(at, pixel) <= VERTEX_REACH {
-            return Ok(Some(point.position));
+            return Ok(Some(MeasurePick::Point(point.position)));
         }
     }
     for line in geometry.lines() {
@@ -319,8 +319,45 @@ fn measure_point(
         let middle = [(start[0] + end[0]) * 0.5, (start[1] + end[1]) * 0.5];
         let at = window.sketch_pixel(plane, middle)?;
         if super::sketch_picking::screen_distance(at, pixel) <= MIDPOINT_REACH {
-            return Ok(Some(middle));
+            return Ok(Some(MeasurePick::Middle(middle)));
+        }
+    }
+    for arc in geometry.arcs() {
+        let middle = arc_middle(geometry, arc)?;
+        let at = window.sketch_pixel(plane, middle)?;
+        if super::sketch_picking::screen_distance(at, pixel) <= MIDPOINT_REACH {
+            return Ok(Some(MeasurePick::Middle(middle)));
         }
     }
     Ok(None)
+}
+/// The point halfway along an arc, the way it runs.
+fn arc_middle(
+    geometry: &oblikovati_model::sketch::Sketch2D,
+    arc: &oblikovati_model::sketch::SketchArc2D,
+) -> Result<[f64; 2], String> {
+    let position = |point| {
+        geometry
+            .point(point)
+            .map(|point| point.position)
+            .map_err(|cause| cause.to_string())
+    };
+    let (center, start, end) = (
+        position(arc.center)?,
+        position(arc.start)?,
+        position(arc.end)?,
+    );
+    let from = (start[1] - center[1]).atan2(start[0] - center[0]);
+    let to = (end[1] - center[1]).atan2(end[0] - center[0]);
+    let turn = if arc.counter_clockwise {
+        (to - from).rem_euclid(std::f64::consts::TAU)
+    } else {
+        -(from - to).rem_euclid(std::f64::consts::TAU)
+    };
+    let radius = (start[0] - center[0]).hypot(start[1] - center[1]);
+    let middle = from + turn * 0.5;
+    Ok([
+        center[0] + radius * middle.cos(),
+        center[1] + radius * middle.sin(),
+    ])
 }

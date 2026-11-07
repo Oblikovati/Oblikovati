@@ -51,6 +51,13 @@ fn measurement(
                 .map_err(|cause| ResidualError::Domain(cause.to_string()))?
                 .counter_clockwise,
         ),
+        ArcSweep { arc, .. } => super::arc_sweep::sweep_measure(
+            variables,
+            sketch
+                .arc(*arc)
+                .map_err(|cause| ResidualError::Domain(cause.to_string()))?
+                .counter_clockwise,
+        ),
         Angle { .. } | ThreePointAngle { .. } => Ok(super::angle::angle_measure(variables)?.abs()?),
         LineAngle { .. } => positive_direction(super::angle::line_angle_measure(variables)?),
         TangentDistance { options, .. } => tangent_measurement(variables, *options),

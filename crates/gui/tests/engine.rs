@@ -29,6 +29,7 @@ fn request() -> GuiFrameRequest {
             constraint_glyphs: Vec::new(),
             precise_target: None,
             dimension_tool_active: false,
+            takes_command_alias: false,
             center_point_format: false,
             sketch_context: None,
             repeat_tool: None,

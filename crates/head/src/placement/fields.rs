@@ -201,6 +201,14 @@ impl PlacementFieldEntry {
             text_point: None,
         });
     }
+    /// An arc's next stage takes the next value: what was typed so far is kept as it stands.
+    pub(super) fn advance_to_stage(&mut self, stage: usize) {
+        self.locked.resize(stage.max(self.locked.len()), None);
+        if !self.locked.is_empty() {
+            self.lock_buffer();
+        }
+        self.active = stage.saturating_sub(1);
+    }
     pub(super) fn engaged(&self) -> bool {
         !self.buffer.is_empty() || self.locked.iter().any(Option::is_some)
     }

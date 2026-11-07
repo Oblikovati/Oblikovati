@@ -268,10 +268,11 @@ impl<
                 .as_ref()
                 .and_then(|recipe| recipe.fields.get(index))
                 .map_or(0., |field| field.value);
-            units.format_display(oblikovati_model::quantity::Quantity::new(
-                size,
-                Dimension::Length,
-            ))
+            let kind = tool.tool.typed_field_dimension(index);
+            if kind == Dimension::Angle {
+                return Ok(format!("{:.2} deg", size.to_degrees()));
+            }
+            units.format_display(oblikovati_model::quantity::Quantity::new(size, kind))
         };
         (0..count).map(|index| value(index).ok()).collect()
     }

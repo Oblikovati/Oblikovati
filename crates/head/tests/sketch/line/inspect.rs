@@ -79,22 +79,17 @@ fn line_with_driving_length(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     line_with_values(world, "4", "30");
 }
-fn open_length_editor(world: &mut ApplicationWorld, value: &str) {
-    let at = world.exact_run_center(value);
-    world.double_click(at);
-    world.pump(Vec::new());
-}
 #[given("a line has a driving length dimension storing 4 mm")]
 fn stores_four(world: &mut ApplicationWorld) {
     line_with_driving_length(world);
-    open_length_editor(world, "4");
+    world.open_dimension_label("4");
     let text = world.window_text("Edit Dimension");
     assert!(text.contains("4mm"), "expected 4 mm in the editor {text:?}");
     world.escape();
 }
 #[when("I open the length dimension and type 5 then press Escape")]
 fn type_five_escape(world: &mut ApplicationWorld) {
-    open_length_editor(world, "4");
+    world.open_dimension_label("4");
     world.type_text("5");
     world.escape();
 }
@@ -108,7 +103,11 @@ fn editor_closed(world: &mut ApplicationWorld) {
 }
 #[when("I reopen the annotation")]
 fn reopen_annotation(world: &mut ApplicationWorld) {
-    open_length_editor(world, "4");
+    let value = world
+        .opened_value
+        .clone()
+        .expect("expected an opened dimension");
+    world.open_dimension_label(&value);
 }
 #[then("the stored expression is 4 mm")]
 fn expression_four(world: &mut ApplicationWorld) {
@@ -119,7 +118,7 @@ fn expression_four(world: &mut ApplicationWorld) {
 #[given("the driving length dimension is reopened with 4 mm selected")]
 fn reopened_selected(world: &mut ApplicationWorld) {
     line_with_driving_length(world);
-    open_length_editor(world, "4");
+    world.open_dimension_label("4");
     assert!(world.text_is_selected("4mm"), "expected the value selected");
 }
 #[when("I type 5 and press Enter then Escape")]

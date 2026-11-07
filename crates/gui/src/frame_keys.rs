@@ -10,6 +10,8 @@ use imgui::Context;
 #[derive(Default)]
 pub(crate) struct FrameKeys {
     pub tool_keyboard: bool,
+    /// Characters no widget had the keyboard for, in the order they came.
+    pub typed: String,
     pub switch_document: Option<crate::application::document_tabs::DocumentStep>,
 }
 pub(crate) fn prepare_frame_inputs(
@@ -26,6 +28,11 @@ pub(crate) fn prepare_frame_inputs(
     io.delta_time = request.delta_seconds;
     let mut keys = FrameKeys::default();
     for event in &request.events {
+        if let crate::GuiInputEvent::Text(text) = event
+            && !io.want_text_input
+        {
+            keys.typed.push_str(text);
+        }
         if let crate::GuiInputEvent::Modifiers(modifiers) = event {
             *held = *modifiers;
         }

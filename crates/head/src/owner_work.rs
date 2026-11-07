@@ -241,6 +241,9 @@ impl<
                 .placement_state()
                 .is_some_and(|tool| self.placement_context_valid(tool)),
             dimension_tool_active: self.dimension_tool_active(),
+            takes_command_alias: self
+                .placement_state()
+                .is_some_and(|tool| tool.takes_command_alias()),
             dimensions_needed: self.gui_dimensions_needed(document),
             sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
             // Projected by the frame, which owns the camera.

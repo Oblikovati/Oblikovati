@@ -107,6 +107,10 @@ fn equation(
             target: positive_length_target(constraint, parameter, parameters, "arc length")?,
             counter_clockwise: sketch.arc(arc)?.counter_clockwise,
         },
+        PlanarConstraint::ArcSweep { arc, parameter } => PlanarEquation::ArcSweep {
+            target: line_angle_target(constraint, parameter, parameters)?,
+            counter_clockwise: sketch.arc(arc)?.counter_clockwise,
+        },
         PlanarConstraint::Radius { parameter, .. }
         | PlanarConstraint::EllipseRadius { parameter, .. }
         | PlanarConstraint::EllipseMinorRadius { parameter, .. } => PlanarEquation::ScalarLength {

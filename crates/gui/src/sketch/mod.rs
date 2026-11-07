@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sketch commands, one folder per scenario feature under `features/sketch/`.
+pub(crate) mod command_alias;
 pub(crate) mod constraint_glyphs;
 #[path = "dimension-edit/mod.rs"]
 pub(crate) mod dimension_edit;

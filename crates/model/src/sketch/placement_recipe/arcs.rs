@@ -15,13 +15,17 @@ impl SketchPlacementRecipe {
             members: vec![arc_member(ccw)],
             // Go aa8297d1 ArcRecipe: circularity is structural; no extra equation is authored.
             relations: vec![],
-            fields: arc_fields(center, endpoints),
+            fields: arc_fields(center, endpoints, ccw),
         };
         recipe.validate()?;
         Ok(recipe)
     }
 }
-fn arc_fields(center: [f64; 2], [start, end]: [[f64; 2]; 2]) -> Vec<SketchPlacementField> {
+fn arc_fields(
+    center: [f64; 2],
+    [start, end]: [[f64; 2]; 2],
+    ccw: bool,
+) -> Vec<SketchPlacementField> {
     vec![
         field(
             "Radius",
@@ -29,8 +33,24 @@ fn arc_fields(center: [f64; 2], [start, end]: [[f64; 2]; 2]) -> Vec<SketchPlacem
             [center, start],
             SketchPlacementBinding::Radius(0),
         ),
-        super::fields::sweep_field(center, [start, end]),
+        arc_sweep_field(center, [start, end], ccw),
     ]
+}
+/// The arc's unsigned turn, as a dimension can hold it.
+fn arc_sweep_field(
+    center: [f64; 2],
+    [start, end]: [[f64; 2]; 2],
+    ccw: bool,
+) -> SketchPlacementField {
+    let from = (start[1] - center[1]).atan2(start[0] - center[0]);
+    let to = (end[1] - center[1]).atan2(end[0] - center[0]);
+    let turn = if ccw { to - from } else { from - to };
+    field(
+        "Sweep",
+        turn.rem_euclid(std::f64::consts::TAU),
+        [start, end],
+        SketchPlacementBinding::ArcSweep(0),
+    )
 }
 fn require_arc_points(center: [f64; 2], endpoints: [[f64; 2]; 2]) -> Result<(), SketchError> {
     let [start, end] = endpoints;

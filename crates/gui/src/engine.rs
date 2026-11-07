@@ -38,6 +38,7 @@ pub struct GuiFrameEngine {
     dimension_editor: crate::dimensions::GuiDimensionEditor,
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
+    command_alias: crate::sketch::command_alias::CommandAliasBox,
     /// A popup was open last frame: Escape closes it, and the frame that opens is already too
     /// late to ask, since Dear ImGui acts on the key as the frame begins.
     popup_was_open: bool,
@@ -73,6 +74,7 @@ impl GuiFrameEngine {
             dimension_editor: Default::default(),
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
+            command_alias: Default::default(),
             popup_was_open: false,
             widget_keys: Vec::new(),
             quick_access: Default::default(),
@@ -239,7 +241,7 @@ impl GuiFrameEngine {
             &selected,
         );
         crate::application::workspace_layout::status_bar::status_bar(ui, request);
-        crate::sketch::line::hud_panel(ui, request);
+        let over_fields = crate::sketch::line::hud_panel(ui, request);
         self.document_tabs.panel(
             ui,
             request,
@@ -303,6 +305,7 @@ impl GuiFrameEngine {
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
         self.precise_input
             .panel(ui, &request.commands, &mut selected);
+        self.command_alias.panel(ui, &request.commands, &keys.typed);
         crate::sketch::inspect::canvas_menu(ui, &request.commands, &mut selected);
         self.dimension_value_editor
             .panel(ui, request, &mut selected);
@@ -352,7 +355,7 @@ impl GuiFrameEngine {
         capture.keyboard &= capture.text || self.context.io().nav_visible;
         capture.keyboard |= popup_open;
         capture.popup = popup_open || self.dimension_value_editor.had_keyboard();
-        capture.pointer |= self.dimension_value_editor.over_label;
+        capture.pointer |= self.dimension_value_editor.over_label || over_fields;
         let mut activity = frame_activity()?;
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=

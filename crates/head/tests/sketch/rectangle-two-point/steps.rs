@@ -39,11 +39,6 @@ fn typed_rectangle(world: &mut ApplicationWorld, first: &str, second: &str) {
     world.escape();
     world.pump(Vec::new());
 }
-fn open_value(world: &mut ApplicationWorld, value: &str) {
-    let at = world.exact_run_center(value);
-    world.double_click(at);
-    world.pump(Vec::new());
-}
 /// A side's pick clear of its ends: the one running up the screen, or across it.
 fn side_pixel(world: &mut ApplicationWorld, upright: bool) -> [i32; 2] {
     let count = sides(world);
@@ -252,7 +247,7 @@ fn remains(world: &mut ApplicationWorld) {
 #[given("the rectangle height editor is open with 6 mm selected")]
 fn editor_open(world: &mut ApplicationWorld) {
     typed_rectangle(world, "6", "4");
-    open_value(world, "6");
+    world.open_dimension_label("6");
     assert!(world.text_is_selected("6mm"), "expected the value selected");
 }
 #[when("I enter 8 and press Escape")]
@@ -263,7 +258,7 @@ fn enter_and_escape(world: &mut ApplicationWorld) {
 }
 #[when("I reopen the height annotation")]
 fn reopen_height(world: &mut ApplicationWorld) {
-    open_value(world, "6");
+    world.open_dimension_label("6");
 }
 #[then("the height editor still contains 6 mm")]
 fn still_six(world: &mut ApplicationWorld) {
@@ -278,7 +273,7 @@ fn retained_six_four(world: &mut ApplicationWorld) {
 }
 #[when("I accept height 8 mm and exit General Dimension")]
 fn accept_eight(world: &mut ApplicationWorld) {
-    open_value(world, "6");
+    world.open_dimension_label("6");
     world.type_text("8");
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());

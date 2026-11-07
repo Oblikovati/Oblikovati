@@ -33,6 +33,8 @@ pub(super) struct ApplicationWorld {
     pub observed_rows: Option<String>,
     /// The latest drag, for a step that checks the preview it left.
     pub last_drag: Option<[[i32; 2]; 2]>,
+    /// The dimension value last opened, for a step that reopens "the annotation".
+    pub opened_value: Option<String>,
 }
 pub(super) struct NativeApplication {
     pub window: ScriptedGuiWindow,
@@ -82,6 +84,7 @@ impl ApplicationWorld {
             observed_annotations: None,
             observed_rows: None,
             last_drag: None,
+            opened_value: None,
         };
         world.pump(Vec::new());
         world

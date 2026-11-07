@@ -147,6 +147,8 @@ pub struct GuiCommandState {
     /// The running Line command reads the keyboard before any GUI widget does.
     pub sketch_tool_keyboard: bool,
     pub dimension_tool_active: bool,
+    /// A running command has no field for what is typed, so it opens the command box.
+    pub takes_command_alias: bool,
     /// The edited sketch's remaining freedom; `None` outside a sketch.
     pub dimensions_needed: Option<usize>,
     pub sketch_hud: Option<crate::GuiSketchHud>,

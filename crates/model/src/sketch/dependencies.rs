@@ -58,6 +58,7 @@ pub(super) fn dimension_parameter(relation: &PlanarConstraint) -> Option<u64> {
         | PlanarConstraint::Offset { parameter, .. }
         | PlanarConstraint::TangentDistance { parameter, .. }
         | PlanarConstraint::ArcLength { parameter, .. }
+        | PlanarConstraint::ArcSweep { parameter, .. }
         | PlanarConstraint::Angle { parameter, .. }
         | PlanarConstraint::LineAngle { parameter, .. }
         | PlanarConstraint::ThreePointAngle { parameter, .. } => Some(parameter),
@@ -70,6 +71,7 @@ pub(super) fn dimension_category(relation: &PlanarConstraint) -> crate::quantity
         relation,
         PlanarConstraint::Angle { .. }
             | PlanarConstraint::LineAngle { .. }
+            | PlanarConstraint::ArcSweep { .. }
             | PlanarConstraint::ThreePointAngle { .. }
     ) {
         return crate::quantity::Dimension::Angle;

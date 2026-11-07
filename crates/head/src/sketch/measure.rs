@@ -16,7 +16,10 @@ use oblikovati_model::{
 pub(crate) enum MeasurePick {
     Curve(SketchEntityId),
     Point([f64; 2]),
+    /// A curve's own middle, which reads as a point and is named for what it is.
+    Middle([f64; 2]),
 }
+
 /// The running Measure command on one sketch.
 pub(crate) struct SketchMeasureState {
     pub edit: HeadSketchEdit,
@@ -65,6 +68,10 @@ fn pick_rows(
     match pick {
         MeasurePick::Point(point) => {
             rows.push(format!("Selection {number}: Point"));
+            rows.push(format!("Position {}", model_position(context, point)?));
+        }
+        MeasurePick::Middle(point) => {
+            rows.push(format!("Selection {number}: Middle Point"));
             rows.push(format!("Position {}", model_position(context, point)?));
         }
         MeasurePick::Curve(curve) => {
@@ -133,11 +140,18 @@ fn pair_range(sketch: &Sketch2D, picks: [MeasurePick; 2]) -> Result<SketchDistan
         [MeasurePick::Curve(first), MeasurePick::Curve(second)] => {
             sketch_curve_distance_range(sketch, [first, second])
         }
-        [MeasurePick::Point(point), MeasurePick::Curve(curve)]
-        | [MeasurePick::Curve(curve), MeasurePick::Point(point)] => {
-            sketch_point_curve_distance_range(sketch, point, curve)
-        }
-        [MeasurePick::Point(first), MeasurePick::Point(second)] => {
+        [
+            MeasurePick::Point(point) | MeasurePick::Middle(point),
+            MeasurePick::Curve(curve),
+        ]
+        | [
+            MeasurePick::Curve(curve),
+            MeasurePick::Point(point) | MeasurePick::Middle(point),
+        ] => sketch_point_curve_distance_range(sketch, point, curve),
+        [
+            MeasurePick::Point(first) | MeasurePick::Middle(first),
+            MeasurePick::Point(second) | MeasurePick::Middle(second),
+        ] => {
             let distance = (first[0] - second[0]).hypot(first[1] - second[1]);
             let witness = oblikovati_martensite::planar_curve::sketch::SketchDistanceWitness {
                 distance,

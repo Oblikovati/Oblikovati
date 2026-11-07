@@ -41,6 +41,8 @@ pub enum SeededDimensionOperands {
     Angle([SketchEntityId; 2]),
     /// One line's direction from the sketch +x axis.
     LineAngle(SketchEntityId),
+    /// The turn an arc spans.
+    ArcSweep(SketchEntityId),
     /// Vertex, first ray point, second ray point.
     ThreePointAngle([SketchEntityId; 3]),
     Offset {
@@ -62,6 +64,7 @@ impl SketchDimensionalConstraintCreation {
             Self::Seeded(
                 SeededDimensionOperands::Angle(_)
                     | SeededDimensionOperands::LineAngle(_)
+                    | SeededDimensionOperands::ArcSweep(_)
                     | SeededDimensionOperands::ThreePointAngle(_)
             )
         ) {
@@ -125,6 +128,13 @@ impl SeededDimensionOperands {
                 id,
                 PlanarConstraint::LineAngle {
                     line: *line,
+                    parameter,
+                },
+            ),
+            Self::ArcSweep(arc) => geometry.add_constraint(
+                id,
+                PlanarConstraint::ArcSweep {
+                    arc: *arc,
                     parameter,
                 },
             ),

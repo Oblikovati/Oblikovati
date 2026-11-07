@@ -2,8 +2,12 @@
 use super::DocumentSnapshot;
 use crate::{
     document_sketch::DocumentSketchId,
-    sketch::{SketchConstraintId, SketchDimensionLimits, SketchError},
+    sketch::{
+        PlanarConstraint, Sketch2D, SketchConstraintId, SketchDimensionLimits, SketchEntityId,
+        SketchError,
+    },
 };
+use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
 /// Optional authored changes; omitted fields preserve the existing dimension state.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SketchDimensionEdit {
@@ -47,7 +51,42 @@ impl DocumentSnapshot {
         let Some(source) = &edit.target_expression else {
             return Ok(());
         };
-        self.drive_dimension_target(sketch, dimension, source)
+        self.drive_dimension_target(sketch, dimension, source)?;
+        self.hold_measured_start(sketch, dimension)
+    }
+    /// A distance grows from its first point, an arc's turn from its center and start, a radius
+    /// from its center: those hold, and what hangs off the rest follows. With them held the
+    /// sketch may have no solution; the ordinary recompute then decides.
+    fn hold_measured_start(
+        &mut self,
+        sketch: DocumentSketchId,
+        dimension: SketchConstraintId,
+    ) -> Result<(), SketchError> {
+        let geometry = self.sketches.get(sketch)?.geometry();
+        let held = held_while_driven(geometry, dimension);
+        if held.is_empty() {
+            return Ok(());
+        }
+        let mut anchors = self.resolve_sketch_projected_points(sketch)?;
+        for point in held {
+            if !anchors.iter().any(|anchor| anchor.id == point) {
+                anchors.push(*geometry.point(point)?);
+            }
+        }
+        let solved = geometry.solve_with_grounded_points(
+            &self.parameters,
+            &anchors,
+            SolveOptions::default(),
+            || false,
+        );
+        let Ok(outcome) = solved else {
+            return Ok(());
+        };
+        if outcome.numerical().termination != SolveTermination::Converged {
+            return Ok(());
+        }
+        let candidate = outcome.candidate().clone();
+        self.sketches.replace_geometry(sketch, candidate)
     }
     fn drive_dimension_target(
         &mut self,
@@ -70,6 +109,32 @@ impl DocumentSnapshot {
         self.parameters
             .set_value(parameter, target)
             .map_err(|cause| drive_error(parameter, source, cause))
+    }
+}
+fn held_while_driven(geometry: &Sketch2D, dimension: SketchConstraintId) -> Vec<SketchEntityId> {
+    let Some(constraint) = geometry
+        .constraints()
+        .iter()
+        .find(|known| known.id == dimension)
+    else {
+        return Vec::new();
+    };
+    let center_of = |curve: SketchEntityId| {
+        geometry
+            .circle(curve)
+            .map(|circle| circle.center)
+            .or_else(|_| geometry.arc(curve).map(|arc| arc.center))
+            .map_or(Vec::new(), |center| vec![center])
+    };
+    match constraint.relation {
+        PlanarConstraint::Distance { points, .. } => vec![points[0]],
+        PlanarConstraint::Radius { curve, .. } | PlanarConstraint::Diameter { curve, .. } => {
+            center_of(curve)
+        }
+        PlanarConstraint::ArcSweep { arc, .. } => geometry
+            .arc(arc)
+            .map_or(Vec::new(), |arc| vec![arc.center, arc.start]),
+        _ => Vec::new(),
     }
 }
 fn drive_error(parameter: u64, source: &str, cause: impl std::fmt::Display) -> SketchError {

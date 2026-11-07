@@ -15,6 +15,29 @@ pub(super) fn radial_sweep(
     let angle = first.cross(&second)?.atan2(&first.dot(&second)?)?;
     directed_sweep(angle, counter_clockwise)
 }
+/// The unsigned turn from an arc's start to its end; variables are center, start and end.
+pub(super) fn sweep_measure(
+    variables: &[DualNumber],
+    counter_clockwise: bool,
+) -> Result<DualNumber, ResidualError> {
+    let center = super::residual::point(variables, 0)?;
+    let start = super::residual::point(variables, 2)?.minus(&center)?;
+    let end = super::residual::point(variables, 4)?.minus(&center)?;
+    let sweep = radial_sweep(&start, &end, counter_clockwise)?;
+    if counter_clockwise {
+        return Ok(sweep);
+    }
+    Ok(sweep.negated()?)
+}
+pub(super) fn sweep_residual(
+    variables: &[DualNumber],
+    target: f64,
+    counter_clockwise: bool,
+) -> Result<Vec<DualNumber>, ResidualError> {
+    Ok(vec![
+        sweep_measure(variables, counter_clockwise)?.shifted(-target)?,
+    ])
+}
 fn directed_sweep(angle: DualNumber, counter_clockwise: bool) -> Result<DualNumber, ResidualError> {
     if angle.value() == 0.0 {
         return Err(ResidualError::Domain(format!(

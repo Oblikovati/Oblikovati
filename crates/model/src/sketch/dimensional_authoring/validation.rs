@@ -16,6 +16,7 @@ impl SeededDimensionOperands {
         Ok(match *self {
             Self::OffsetSpline { offset } => offset_spline_ownership_relation(offset),
             Self::Angle(lines) => angle_ownership_relation(lines),
+            Self::ArcSweep(arc) => PlanarConstraint::ArcSweep { arc, parameter: 0 },
             Self::LineAngle(line) => PlanarConstraint::LineAngle { line, parameter: 0 },
             Self::ThreePointAngle([vertex, first, second]) => {
                 three_point_ownership_relation(vertex, [first, second])

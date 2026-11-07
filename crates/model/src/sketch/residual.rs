@@ -21,6 +21,10 @@ pub(super) enum PlanarEquation {
         target: f64,
         counter_clockwise: bool,
     },
+    ArcSweep {
+        target: f64,
+        counter_clockwise: bool,
+    },
     AxisCollinear {
         layouts: [super::axis_operand::AxisLayout; 2],
     },
@@ -121,7 +125,8 @@ impl PreparedConstraint {
             PlanarEquation::PinnedCircularTangent(_) | PlanarEquation::ArcMidpoint(_) => 8,
             PlanarEquation::CircleTangent(_)
             | PlanarEquation::ArcCircularity
-            | PlanarEquation::ArcLength { .. } => 6,
+            | PlanarEquation::ArcLength { .. }
+            | PlanarEquation::ArcSweep { .. } => 6,
             PlanarEquation::Midpoint
             | PlanarEquation::PointOnLine
             | PlanarEquation::Offset { .. } => 6,
@@ -203,6 +208,10 @@ impl ResidualSource for PreparedConstraint {
                 target,
                 counter_clockwise,
             } => super::arc_length::length_residual(variables, target, counter_clockwise),
+            PlanarEquation::ArcSweep {
+                target,
+                counter_clockwise,
+            } => super::arc_sweep::sweep_residual(variables, target, counter_clockwise),
             PlanarEquation::AxisRelation {
                 layouts,
                 perpendicular,

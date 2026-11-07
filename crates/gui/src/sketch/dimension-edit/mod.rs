@@ -117,13 +117,17 @@ fn label_under_pointer(
 ) -> Option<GuiDimensionEdit> {
     let [x, y] = ui.io().mouse_pos;
     let scale = request.layout_scale();
-    state.dimension_labels.iter().find_map(|label| {
+    // Labels can overlap on a small shape; the one nearest the pointer is the one meant.
+    let hits = state.dimension_labels.iter().filter_map(|label| {
         let size = ui.calc_text_size(&label.text);
         let [cx, cy] = [
             label.pixel[0] as f32 / scale[0],
             label.pixel[1] as f32 / scale[1],
         ];
         let hit = (x - cx).abs() <= size[0] / 2. + 2. && (y - cy).abs() <= size[1] / 2. + 2.;
-        hit.then(|| label.edit.clone()).flatten()
-    })
+        let edit = label.edit.clone().filter(|_| hit)?;
+        Some(((x - cx).hypot(y - cy), edit))
+    });
+    hits.min_by(|first, second| first.0.total_cmp(&second.0))
+        .map(|(_, edit)| edit)
 }

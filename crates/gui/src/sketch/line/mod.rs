@@ -40,9 +40,10 @@ const INVALID_TEXT: [f32; 4] = [0.95, 0.2, 0.2, 1.];
 const MENU_ID: &str = "##line-command-menu";
 
 /// Draw the pending segment's fields beside the pointer; they follow it and take no input.
-pub(crate) fn hud_panel(ui: &Ui, request: &GuiFrameRequest) {
+/// True while the pointer rests on the fields: a click there is theirs, not the sketch's.
+pub(crate) fn hud_panel(ui: &Ui, request: &GuiFrameRequest) -> bool {
     let Some(hud) = &request.commands.sketch_hud else {
-        return;
+        return false;
     };
     let scale = request.layout_scale();
     let position =
@@ -57,7 +58,12 @@ pub(crate) fn hud_panel(ui: &Ui, request: &GuiFrameRequest) {
                 }
                 hud_field(ui, field);
             }
-        });
+            let [x, y] = ui.io().mouse_pos;
+            let [left, top] = ui.window_pos();
+            let [width, height] = ui.window_size();
+            (x >= left && x <= left + width) && (y >= top && y <= top + height)
+        })
+        .unwrap_or(false)
 }
 fn hud_flags() -> WindowFlags {
     WindowFlags::NO_DECORATION

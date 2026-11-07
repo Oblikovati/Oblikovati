@@ -117,6 +117,11 @@ pub enum PlanarConstraint {
         curve: SketchEntityId,
         parameter: u64,
     },
+    /// The turn an arc spans, whichever way it runs.
+    ArcSweep {
+        arc: SketchEntityId,
+        parameter: u64,
+    },
     ArcLength {
         arc: SketchEntityId,
         parameter: u64,
@@ -262,7 +267,7 @@ impl Sketch2D {
                 self.ellipse(*ellipse)?;
                 Vec::new()
             }
-            PlanarConstraint::ArcLength { arc, .. } => {
+            PlanarConstraint::ArcLength { arc, .. } | PlanarConstraint::ArcSweep { arc, .. } => {
                 let arc = self.arc(*arc)?;
                 vec![arc.center, arc.start, arc.end]
             }

@@ -398,6 +398,13 @@ impl ApplicationWorld {
         rows.sort_by(|first, second| first.center()[1].total_cmp(&second.center()[1]));
         rows.into_iter().map(|run| run.text.clone()).collect()
     }
+    /// Open a dimension's editor from its annotation, as a double-click at Ready does.
+    pub fn open_dimension_label(&mut self, value: &str) {
+        let at = self.exact_run_center(value);
+        self.double_click(at);
+        self.pump(Vec::new());
+        self.opened_value = Some(value.to_owned());
+    }
     /// The centre of a run reading exactly `text`, for an annotation under the pointer.
     pub fn exact_run_center(&self, text: &str) -> [i32; 2] {
         let run = self

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! `features/sketch` on the same native window and owner as the application scenarios.
 use super::*;
+#[path = "arc-center-point/steps.rs"]
+mod arc_center_point;
 #[path = "circle-center-point/steps.rs"]
 mod circle_center_point;
 #[path = "fixtures.rs"]
@@ -11,6 +13,8 @@ mod line;
 mod point;
 #[path = "precise-input/steps.rs"]
 mod precise_input;
+#[path = "rectangle-center/steps.rs"]
+mod rectangle_center;
 #[path = "rectangle-two-point/steps.rs"]
 mod rectangle_two_point;
 
@@ -20,6 +24,7 @@ const ACCEPTED_FEATURES: &[&str] = &[
     "line",
     "point",
     "precise-input",
+    "rectangle-center",
     "rectangle-two-point",
 ];
 #[test]

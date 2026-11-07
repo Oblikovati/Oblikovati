@@ -177,7 +177,7 @@ impl<
     /// A value that does not evaluate holds its place; a shrugged-off zero drops the shape.
     fn commit_typed_shape(&mut self, tool: &mut SketchPlacementState) -> Result<bool, String> {
         self.evaluate_placement_fields(tool)?;
-        if tool.fields_invalid() {
+        if tool.fields_invalid() || !tool.at_finishing_stage() {
             return Ok(false);
         }
         if tool.typed_size_is_zero() {
@@ -191,7 +191,11 @@ impl<
             self.placement_notice(tool.prompt());
             return Ok(false);
         }
-        let recipe = tool.typed_seed_recipe(&self.sketch_construction)?;
+        let recipe = if tool.placement_field_count() > 0 {
+            tool.typed_seed_recipe(&self.sketch_construction)?
+        } else {
+            tool.preview.clone()
+        };
         let completed = self.commit_placement_cursor(tool, recipe)?;
         self.placement_notice(tool.prompt());
         Ok(completed)
@@ -205,9 +209,10 @@ impl<
             .map_err(|cause| cause.to_string())?;
         let parameters = &session.snapshot().parameters;
         let refuse_zero = tool.tool.typed_zero_is_invalid();
-        tool.evaluate_line_values(&|_, source| {
+        let kind = tool.tool;
+        tool.evaluate_line_values(&|index, source| {
             let value = parameters
-                .evaluate_scalar_expression(source, oblikovati_model::quantity::Dimension::Length)
+                .evaluate_scalar_expression(source, kind.typed_field_dimension(index))
                 .ok()?
                 .value;
             (!refuse_zero || value > 0.).then_some(value)

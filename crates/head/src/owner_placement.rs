@@ -27,10 +27,12 @@ impl<
                 .map(|input| self.preview_sketch_line_chain(tool.document, tool.sketch, &input))
                 .transpose();
         }
-        if !tool.fields_engaged() {
+        if !tool.fields_engaged() || !tool.at_finishing_stage() {
             return Ok(None);
         }
-        let Some(recipe) = tool.preview.as_ref() else {
+        // The preview shows what Enter would commit: the shape at its typed sizes.
+        let seeded = tool.typed_seed_recipe(&self.sketch_construction)?;
+        let Some(recipe) = seeded.as_ref().or(tool.preview.as_ref()) else {
             return Ok(None);
         };
         let session = self

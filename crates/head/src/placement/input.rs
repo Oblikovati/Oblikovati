@@ -29,6 +29,7 @@ pub(crate) struct SketchPlacementState {
     pub(crate) formats: oblikovati_api::types::SketchFormatModes,
     /// For Point: what the next click makes, and so what the command asks for.
     pub(crate) center_point: bool,
+    repeated_click: bool,
     /// A typed value becomes a dimension unless the application option turns that off.
     pub(crate) committing_value_dimensions: bool,
     press: Option<PlacementPress>,
@@ -42,6 +43,15 @@ fn annotation_beside([from, to]: [[f64; 2]; 2]) -> [f64; 2] {
     [
         (from[0] + to[0]) * 0.5 - delta[1] * SIDE,
         (from[1] + to[1]) * 0.5 + delta[0] * SIDE,
+    ]
+}
+/// Past a chord's middle, away from the center it turns about.
+fn annotation_outside(center: [f64; 2], [from, to]: [[f64; 2]; 2]) -> [f64; 2] {
+    const REACH: f64 = 1.6;
+    let middle = [(from[0] + to[0]) * 0.5, (from[1] + to[1]) * 0.5];
+    [
+        center[0] + (middle[0] - center[0]) * REACH,
+        center[1] + (middle[1] - center[1]) * REACH,
     ]
 }
 /// How far from its first point a shape starts when values were typed with no pointer motion.
@@ -80,6 +90,7 @@ impl SketchPlacementState {
             line: Default::default(),
             cursor_point: None,
             center_point: false,
+            repeated_click: false,
             cursor_pixel: None,
             formats: Default::default(),
             committing_value_dimensions: true,
@@ -112,34 +123,110 @@ impl SketchPlacementState {
         if self.tool == crate::SketchPlacementTool::Line {
             return self.line_field_count();
         }
-        // The fields exist from the stage that can finish, even before the pointer has moved.
+        // A repeated click leaves nothing to size yet: keys go to the command box instead.
+        if self.repeated_click {
+            return 0;
+        }
+        self.shown_field_count()
+    }
+    /// The fields exist from the stage that can finish, even before the pointer has moved.
+    /// An arc asks for its radius one stage sooner, and its sweep after that.
+    fn shown_field_count(&self) -> usize {
+        if self.tool == crate::SketchPlacementTool::CenterPointArc {
+            return self.accepted.len().min(2);
+        }
         if self.accepted.len() + 1 == self.tool.point_count() {
             return self.tool.typed_field_count();
         }
         0
     }
-    /// Whether the numeric fields are up; example: for the field display beside the pointer.
+    /// How many values show beside the pointer; example: for the field display.
     pub(crate) fn placement_field_count(&self) -> usize {
-        self.field_count()
+        self.shown_field_count()
     }
-    /// The recipe the typed values apply to, when the pointer has given none of its own yet.
+    /// The next point would complete the shape; example: before accepting typed values.
+    pub(crate) fn at_finishing_stage(&self) -> bool {
+        self.accepted.len() + 1 == self.tool.point_count()
+    }
+    /// Keys typed now reach no field, so they open the command box.
+    pub(crate) fn takes_command_alias(&self) -> bool {
+        self.tool != crate::SketchPlacementTool::Line && self.field_count() == 0
+    }
+    /// The shape at the typed sizes, on the pointer's side of its first point: nothing is left
+    /// for the solver to move, so the first point stays exactly where it was placed.
     pub(crate) fn typed_seed_recipe(
-        &mut self,
+        &self,
         construction: &dyn oblikovati_model::sketch::SketchCircleConstruction,
     ) -> Result<Option<SketchPlacementRecipe>, String> {
-        if self.preview.is_some() {
-            return Ok(self.preview.clone());
-        }
         let Some(start) = self.accepted.last().copied() else {
             return Ok(None);
         };
-        // The solver takes the typed size; this only needs to be a shape it can start from.
-        let seed = [start[0] + TYPED_SEED_REACH, start[1] + TYPED_SEED_REACH];
-        let mut recipe = self.tool.recipe(&self.accepted, seed, construction)?;
+        let end = self.typed_end(start);
+        let mut recipe = self.tool.recipe(&self.accepted, end, construction)?;
         recipe
             .apply_creation_formats(self.formats.construction, self.formats.centerline)
             .map_err(|cause| cause.to_string())?;
         Ok(Some(recipe))
+    }
+    /// A typed radius puts the start on that circle, in the pointer's direction from the center.
+    fn arc_start_at_radius(&self, point: [f64; 2]) -> [f64; 2] {
+        let radius = self.fields.line_values()[0];
+        let (crate::SketchPlacementTool::CenterPointArc, [center], Some(radius)) =
+            (self.tool, self.accepted.as_slice(), radius)
+        else {
+            return point;
+        };
+        let delta = [point[0] - center[0], point[1] - center[1]];
+        let length = delta[0].hypot(delta[1]);
+        [
+            center[0] + delta[0] / length * radius,
+            center[1] + delta[1] / length * radius,
+        ]
+    }
+    /// A typed sweep turns the start about the center, toward the pointer's side.
+    fn arc_end_at_sweep(&self, point: [f64; 2]) -> [f64; 2] {
+        let sweep = self.fields.line_values()[1];
+        let (crate::SketchPlacementTool::CenterPointArc, [center, start], Some(sweep)) =
+            (self.tool, self.accepted.as_slice(), sweep)
+        else {
+            return point;
+        };
+        let radial = [start[0] - center[0], start[1] - center[1]];
+        let toward = [point[0] - center[0], point[1] - center[1]];
+        let side = if radial[0] * toward[1] - radial[1] * toward[0] < 0. {
+            -1.
+        } else {
+            1.
+        };
+        let (sin, cos) = (side * sweep).sin_cos();
+        [
+            center[0] + radial[0] * cos - radial[1] * sin,
+            center[1] + radial[0] * sin + radial[1] * cos,
+        ]
+    }
+    fn typed_end(&self, start: [f64; 2]) -> [f64; 2] {
+        if self.tool == crate::SketchPlacementTool::CenterPointArc {
+            return self.arc_end_at_sweep(self.cursor_point.unwrap_or(start));
+        }
+        let cursor = self.cursor_point.unwrap_or(start);
+        let delta = [cursor[0] - start[0], cursor[1] - start[1]];
+        let reach = |typed: Option<f64>, axis: usize, fraction: f64| {
+            let side = if delta[axis] < 0. { -1. } else { 1. };
+            match typed {
+                Some(size) => side * size * fraction,
+                None if delta[axis] != 0. => delta[axis],
+                None => TYPED_SEED_REACH,
+            }
+        };
+        let [first, second] = self.fields.line_values();
+        let offset = match self.tool {
+            crate::SketchPlacementTool::Circle => [reach(first, 0, 0.5), 0.],
+            crate::SketchPlacementTool::CenterRectangle => {
+                [reach(first, 0, 0.5), reach(second, 1, 0.5)]
+            }
+            _ => [reach(first, 0, 1.), reach(second, 1, 1.)],
+        };
+        [start[0] + offset[0], start[1] + offset[1]]
     }
     /// A typed zero size on a tool that shrugs it off: the shape is dropped, not refused.
     pub(crate) fn typed_size_is_zero(&self) -> bool {
@@ -180,7 +267,13 @@ impl SketchPlacementState {
         fields::validate_dimension_locks(&recipe.fields, &locks)?;
         for (lock, field) in locks.iter_mut().zip(&recipe.fields) {
             if let Some(lock) = lock {
-                lock.text_point = Some(annotation_beside(field.witness));
+                lock.text_point = Some(match field.binding {
+                    // Outside the arc: its radius text already sits between center and start.
+                    oblikovati_model::sketch::SketchPlacementBinding::ArcSweep(_) => {
+                        annotation_outside(recipe.points[0], field.witness)
+                    }
+                    _ => annotation_beside(field.witness),
+                });
             }
         }
         Ok(locks)
@@ -290,14 +383,19 @@ impl SketchPlacementState {
         };
         // A click where the last one landed is no shape yet: the command keeps asking.
         if self.accepted.last() == Some(&point) {
+            self.repeated_click |= place;
             return Ok(None);
         }
+        self.repeated_click = false;
         if self.accepted.len() + 1 < self.tool.point_count() {
             if place {
+                let point = self.arc_start_at_radius(point);
                 self.accept_point(point)?;
+                self.fields.advance_to_stage(self.accepted.len());
             }
             return Ok(None);
         }
+        let point = self.arc_end_at_sweep(point);
         let mut recipe = self.tool.recipe(&self.accepted, point, construction)?;
         recipe
             .apply_creation_formats(self.formats.construction, self.formats.centerline)

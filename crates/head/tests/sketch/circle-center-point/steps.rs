@@ -84,11 +84,6 @@ fn retained_six_millimetre_circle(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.expect_annotation("6");
 }
-fn open_diameter_by_double_click(world: &mut ApplicationWorld, value: &str) {
-    let at = world.exact_run_center(value);
-    world.double_click(at);
-    world.pump(Vec::new());
-}
 fn expect_center_row(world: &ApplicationWorld) {
     expect_measure(world, "Center X 0.000 Y 6.553 Z -12.440 mm");
 }
@@ -144,7 +139,7 @@ fn displayed_center(world: &mut ApplicationWorld) {
 }
 #[when("I open the diameter dimension and accept the value 8 mm")]
 fn accept_eight(world: &mut ApplicationWorld) {
-    open_diameter_by_double_click(world, "6");
+    world.open_dimension_label("6");
     world.type_text("8");
     world.key(ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
