@@ -68,6 +68,7 @@ fn failed_choice_can_retry_without_binding_a_path_or_losing_history() {
             unsaved_edits: false,
         },
     );
+    saved.browser.as_mut().unwrap().path = Some("/memory/retry.opd".into());
     let after = owner.gui_command_state().unwrap();
     // The new file also joins the recent list, which the rest of this comparison does not cover.
     saved.recent_documents = after.recent_documents.clone();
