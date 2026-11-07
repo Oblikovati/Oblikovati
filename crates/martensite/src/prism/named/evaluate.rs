@@ -67,14 +67,14 @@ impl NamedPrismEvaluator<'_> {
 /// Inject an explicit model resolution into certified, named feature replay.
 pub struct CertifiedNamedPrismEvaluator<'a> {
     names: NamedPrismEvaluator<'a>,
-    resolution: martensite_tkbo::profile_extrusion::Resolution,
+    resolution: PrismResolution,
 }
 impl<'a> CertifiedNamedPrismEvaluator<'a> {
     /// Bind the document and its explicit resolution; example: `CertifiedNamedPrismEvaluator::new(&history, guid, resolution)`.
     pub fn new(
         history: &'a DocumentEditHistory,
         document: DocumentGuid,
-        resolution: martensite_tkbo::profile_extrusion::Resolution,
+        resolution: PrismResolution,
     ) -> Self {
         Self {
             names: NamedPrismEvaluator::new(history, document),
@@ -94,7 +94,13 @@ impl SketchPrismEvaluator for CertifiedNamedPrismEvaluator<'_> {
         input: ResolvedSketchPrism<'_>,
     ) -> Result<Self::Body, Self::Failure> {
         let sketch = input.sketch.sketch.id();
-        let result = crate::sketch_prism::certified::evaluate(input, self.resolution)
+        let resolution = self.resolution.validate().map_err(|message| {
+            Phase::Input
+                .refused(Kind::InvalidInput, Entity::Body, message)
+                .with_sketch_identity(sketch)
+                .for_feature(feature)
+        })?;
+        let result = crate::sketch_prism::certified::evaluate(input, resolution.kernel())
             .map_err(|error| error.with_sketch_identity(sketch).for_feature(feature))?;
         let mut named = self
             .names
@@ -113,7 +119,7 @@ pub fn retain_certified_named_sketch_prism(
     history: &DocumentEditHistory,
     document: DocumentGuid,
     feature: FeatureId,
-    resolution: martensite_tkbo::profile_extrusion::Resolution,
+    resolution: PrismResolution,
 ) -> Result<NamedPrismSnapshot, String> {
     let job = history.evaluation_snapshot();
     let evaluation = job

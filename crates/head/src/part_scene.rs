@@ -308,7 +308,7 @@ fn body_color<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         [color.r, color.g, color.b, 1.]
     })
 }
-fn render_part_scene(
+pub(crate) fn render_part_scene(
     evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
         NamedPrismSnapshot,
         oblikovati_martensite::EvaluationFailure,
@@ -334,3 +334,7 @@ mod references;
 mod bodies;
 
 mod physical;
+
+#[cfg(test)]
+#[path = "../tests/part_scene_certified.rs"]
+mod certified_tests;

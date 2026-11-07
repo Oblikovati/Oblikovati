@@ -95,7 +95,7 @@ pub use prism::{
     CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, CertifiedPrismSnapshot,
     NamedPrismEvaluator, NamedPrismSnapshot, PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe,
     PrismFaceRole, PrismMeshOptions, PrismPresentation, PrismPresentationSource,
-    PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot,
+    PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution,
     PrismTopologySummary, named_part_properties, probe_planar_prism,
     retain_certified_named_sketch_prism, retain_certified_profile_prism, retain_named_sketch_prism,
     retain_planar_prism, retain_prism_on_plane,

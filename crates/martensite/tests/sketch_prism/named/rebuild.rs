@@ -97,18 +97,16 @@ fn saved_recipes_rebuild_the_same_keys_under_a_new_history_owner() {
     assert_faces(&after, &restored, 2.);
     assert!(before.reference_keys(&restored, document()).is_err());
 }
-fn certified_resolution() -> martensite_tkbo::profile_extrusion::Resolution {
-    use martensite_tkbo::profile_extrusion::{DisplayTolerance, Resolution, ToleranceCap};
-    Resolution::new(
-        1e-6,
-        1e-7,
-        1e-9,
-        DisplayTolerance {
-            chordal: 1e-3,
-            angular: 0.1,
-        },
-        ToleranceCap::Refuse(1e-5),
-    )
+fn certified_resolution() -> oblikovati_martensite::PrismResolution {
+    oblikovati_martensite::PrismResolution {
+        version: 1,
+        weld: 1e-6,
+        sew: 1e-7,
+        angular: 1e-9,
+        display_chordal: 1e-3,
+        display_angular: 0.1,
+        maximum_tolerance: 1e-5,
+    }
 }
 fn certified(history: &DocumentEditHistory) -> NamedPrismSnapshot {
     oblikovati_martensite::retain_certified_named_sketch_prism(
@@ -199,6 +197,22 @@ fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
     history.redo().unwrap();
     assert_cube(&history, 2., &keys);
     assert_cube(&restored_owner(history.snapshot()), 2., &keys);
+}
+
+#[test]
+fn certified_replay_declines_an_unknown_resolution_version() {
+    let history = owner(cube_document());
+    let mut resolution = certified_resolution();
+    resolution.version = 2;
+    let error = oblikovati_martensite::retain_certified_named_sketch_prism(
+        &history,
+        document(),
+        FeatureId(1),
+        resolution,
+    )
+    .err()
+    .unwrap();
+    assert!(error.contains("version 2"), "{error}");
 }
 #[test]
 fn certified_replay_keeps_named_faces_through_undo_redo_and_reopen() {

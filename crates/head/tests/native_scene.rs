@@ -317,6 +317,8 @@ fn rotate_native_profile(owner: &mut NativeDesktopOwner) {
         .unwrap();
     assert!(result.created.is_none());
 }
+#[path = "native_scene/certified.rs"]
+mod certified_tests;
 #[path = "native_scene/copy.rs"]
 mod copy_tests;
 #[path = "native_scene/placement_recipe.rs"]
