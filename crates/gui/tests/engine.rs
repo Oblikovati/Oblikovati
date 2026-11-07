@@ -16,6 +16,7 @@ fn request() -> GuiFrameRequest {
             theme: None,
             color_scheme: None,
             documents: Vec::new(),
+            document_model_states: Default::default(),
             document_storage: Default::default(),
             drawing_documents: Default::default(),
             drawing_projections: Default::default(),

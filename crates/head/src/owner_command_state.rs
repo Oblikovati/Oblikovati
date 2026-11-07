@@ -55,6 +55,7 @@ impl<
             sketch_delete_available: self.sketch_delete_available(document),
             sketch_selection: browser_selection::gui_sketch_selection(session),
             documents: self.gui_document_rows()?,
+            document_model_states: self.gui_document_model_states()?,
             document_storage: self.gui_document_storage()?,
             drawing_documents: self.gui_drawing_documents()?,
             drawing_projections: self.gui_drawing_projections()?,

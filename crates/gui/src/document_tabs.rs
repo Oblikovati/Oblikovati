@@ -85,10 +85,9 @@ impl DocumentTabs {
     /// event: without this, a new document's tab stays invisible until the pointer moves.
     fn track_labels(&mut self, state: &crate::GuiCommandState) {
         self.settling_frames = self.settling_frames.saturating_sub(1);
-        let labels: Vec<(u64, String, bool)> = state
-            .documents
-            .iter()
-            .map(|row| (row.id, row.name.clone(), row.dirty))
+        let labels: Vec<(u64, String, bool)> = tab_rows(state)
+            .into_iter()
+            .map(|tab| (tab.window, tab.name, tab.row.dirty))
             .collect();
         if labels != self.drawn_labels {
             self.drawn_labels = labels;

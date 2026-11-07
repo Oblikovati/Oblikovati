@@ -98,5 +98,29 @@ fn created_model_state_name_can_be_edited_or_cancelled() {
     world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
     world.expect_text("Large (Active)");
+    world.expect_text("Part1 <Large>");
+    assert_eq!(
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text.contains("Part1") && run.text.contains("Large"))
+            .count(),
+        2,
+        "expected the browser root and document tab to show the member"
+    );
+    assert_eq!(
+        world.app().window.native.document_title.as_deref(),
+        Some("Part1 <Large>")
+    );
+    let state = world.app().owner.gui_command_state().unwrap();
+    assert_eq!(state.documents[0].name, "Part1");
+    assert_eq!(
+        state
+            .document_model_states
+            .get(&state.documents[0].id)
+            .unwrap(),
+        "Large"
+    );
     world.close();
 }

@@ -56,3 +56,20 @@ fn two_windows_read_as_numbered_tabs_and_only_the_other_one_activates() {
     );
     assert_eq!(activation(&state, &rows[1]), None);
 }
+
+#[test]
+fn tab_captions_use_each_documents_active_model_state() {
+    let mut state = state(vec![FIRST, SECOND], Some(90));
+    state.document_model_states.insert(1, "Variant##1".into());
+    state.document_model_states.insert(2, "Primary".into());
+    let rows = tab_rows(&state);
+    assert_eq!(
+        rows.iter().map(|row| row.name.as_str()).collect::<Vec<_>>(),
+        [
+            "Part1:1 <Variant##1>",
+            "Part1:2 <Variant##1>",
+            "Part2 <Primary>"
+        ]
+    );
+    assert_eq!(state.documents[0].name, "Part1");
+}

@@ -283,6 +283,8 @@ pub struct GuiCommandState {
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,
     pub documents: Vec<oblikovati_api::wire::DocumentInfo>,
+    /// Active model-state names, keyed by document identity.
+    pub document_model_states: std::collections::BTreeMap<u64, String>,
     pub document_storage: std::collections::BTreeMap<u64, GuiDocumentStorage>,
     /// Current drawing recipes, including drawings in detached windows.
     pub drawing_documents:
@@ -349,6 +351,13 @@ impl GuiCommandState {
         crate::dimensions::validate_dimension_draft(self)?;
         crate::dimension_labels::validate_dimension_labels(&self.dimension_labels)?;
         crate::document_tabs::validate_documents(&self.documents)?;
+        for (id, name) in &self.document_model_states {
+            if name.contains('\0') || !self.documents.iter().any(|document| document.id == *id) {
+                return Err(format!(
+                    "document model state {id}={name:?}: expected an open document and text without NUL"
+                ));
+            }
+        }
         if self.browser.is_some() && self.document.is_none() {
             return Err("GUI browser document None: expected an active document identity".into());
         }

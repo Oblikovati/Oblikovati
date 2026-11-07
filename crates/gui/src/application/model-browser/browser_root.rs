@@ -26,10 +26,21 @@ pub(crate) fn root_row(
         ui.text(&browser.name);
         return;
     }
-    let chosen = ui
-        .selectable_config(&browser.name)
-        .selected(browser.root_selected)
-        .build();
+    let caption = crate::application::document_tabs::windows::document_caption(
+        &browser.name,
+        state
+            .document
+            .and_then(|id| state.document_model_states.get(&id)),
+    );
+    let position = ui.cursor_screen_pos();
+    let chosen =
+        crate::widget_abi::selectable(ui, "##browser-root-row", browser.root_selected, false);
+    crate::widget_abi::literal_text(
+        ui,
+        position,
+        ui.style_color(imgui::StyleColor::Text),
+        &caption,
+    );
     let asks_menu = ui.is_item_hovered() && ui.is_mouse_clicked(MouseButton::Right);
     if asks_menu {
         ui.open_popup(ROOT_MENU);

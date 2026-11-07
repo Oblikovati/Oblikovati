@@ -92,6 +92,24 @@ impl<
             })
             .collect()
     }
+    pub(super) fn gui_document_model_states(
+        &self,
+    ) -> Result<std::collections::BTreeMap<u64, String>, String> {
+        let workspace = self.files.workspace();
+        let mut result = std::collections::BTreeMap::new();
+        for &id in workspace.documents() {
+            let session = workspace.session(id).map_err(|cause| cause.to_string())?;
+            if let Some(active) = session
+                .snapshot()
+                .model_states
+                .as_ref()
+                .and_then(|states| states.active())
+            {
+                result.insert(id, active.name.clone());
+            }
+        }
+        Ok(result)
+    }
     /// Guard and apply the existing document activation; example: `owner.activate_gui_document(&request)?`.
     pub(super) fn activate_gui_document(
         &mut self,
