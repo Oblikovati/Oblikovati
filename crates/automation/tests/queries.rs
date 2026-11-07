@@ -314,7 +314,7 @@ fn unregistered_methods_and_malformed_arguments_are_refused_before_model_work() 
             .iter()
             .collect::<std::collections::BTreeSet<_>>()
             .len(),
-        33
+        34
     );
     assert!(QUERY_METHODS.contains(&METHOD_MODEL_SELECTION));
     assert!(
@@ -412,3 +412,6 @@ mod derived_delete;
 
 #[path = "queries/sketch_updates.rs"]
 mod sketch_updates;
+
+#[path = "application/model-browser/model_states.rs"]
+mod model_states;
