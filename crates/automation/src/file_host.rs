@@ -158,6 +158,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == oblikovati_api::wire::METHOD_DRAWING_SET_MODEL_REFERENCE {
+            return crate::drawing_reference::apply(self.files, decode(method, request)?);
+        }
         if method == METHOD_FEATURES_ADD {
             return crate::extrusion::apply(self.files, self.extrusion, request);
         }

@@ -181,3 +181,89 @@ fn drawing_projection_tracks_open_part_edits_and_missing_sources() {
     assert!(missing.lines.is_empty());
     assert!(missing.error.as_ref().unwrap().contains("missing.opd"));
 }
+
+#[test]
+fn drawing_model_reference_api_uses_history_and_rejects_other_documents() {
+    use oblikovati_api::wire::SetModelReferenceArgs;
+    use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
+    let (mut owner, _) = owner();
+    let request = SetModelReferenceArgs {
+        full_document_name: "/parts/bracket.opd".into(),
+    };
+    assert!(
+        Client::new(owner.document_host())
+            .drawing()
+            .set_model_reference(&request)
+            .is_err()
+    );
+    owner.create_part_document().unwrap();
+    assert!(
+        Client::new(owner.document_host())
+            .drawing()
+            .set_model_reference(&request)
+            .is_err()
+    );
+    owner
+        .create_document_template(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        })
+        .unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    let reply = Client::new(owner.document_host())
+        .drawing()
+        .set_model_reference(&request)
+        .unwrap();
+    assert_eq!(reply.model_reference, request.full_document_name);
+    let reference = |owner: &TestOwner| {
+        owner
+            .documents()
+            .workspace()
+            .session(drawing)
+            .unwrap()
+            .snapshot()
+            .drawing
+            .as_ref()
+            .unwrap()
+            .model_reference()
+            .to_owned()
+    };
+    assert_eq!(reference(&owner), request.full_document_name);
+    owner.files.commands(drawing).unwrap().undo().unwrap();
+    assert_eq!(reference(&owner), "");
+    owner.files.commands(drawing).unwrap().redo().unwrap();
+    assert_eq!(reference(&owner), request.full_document_name);
+    let path = "/memory/model-reference.odd";
+    Client::new(owner.document_host())
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document: drawing,
+            new_full_document_name: path.into(),
+        })
+        .unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: drawing,
+            force: true,
+        })
+        .unwrap();
+    let reopened = Client::new(owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    let stored = owner
+        .documents()
+        .workspace()
+        .session(reopened)
+        .unwrap()
+        .snapshot()
+        .drawing
+        .as_ref()
+        .unwrap();
+    assert_eq!(stored.model_reference(), request.full_document_name);
+}
