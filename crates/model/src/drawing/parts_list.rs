@@ -126,3 +126,28 @@ fn grid_lines(origin: [f64; 2], row_count: usize) -> Vec<DrawingTableLine> {
     });
     lines
 }
+
+impl super::DrawingDocument {
+    /// Resolve every parts list on a sheet using the drawing's model reference.
+    /// Example: `drawing.evaluate_parts_lists(0, source)?` rebuilds the active sheet's tables.
+    pub fn evaluate_parts_lists(
+        &self,
+        sheet: usize,
+        source: &dyn DrawingPartsListSource,
+    ) -> Result<Vec<(String, DrawingPartsListPresentation)>, DrawingError> {
+        let target = self.sheets().get(sheet).ok_or_else(|| {
+            DrawingError(format!(
+                "sheet index {sheet}: expected an index below {}",
+                self.sheets().len()
+            ))
+        })?;
+        target
+            .annotations
+            .iter()
+            .map(|annotation| {
+                let table = annotation.evaluate_parts_list(self.model_reference(), source)?;
+                Ok((annotation.name().to_string(), table))
+            })
+            .collect()
+    }
+}

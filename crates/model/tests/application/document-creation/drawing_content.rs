@@ -209,6 +209,16 @@ fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
         (2, 9, 12)
     );
     assert_eq!(updated.labels[9].text, "BOLT");
+    let mut drawing = DrawingDocument::new();
+    drawing.set_model_reference("assembly.oba").unwrap();
+    drawing.add_annotation_definition(0, list.clone()).unwrap();
+    let tables = drawing.evaluate_parts_lists(0, &source).unwrap();
+    assert_eq!(tables.len(), 1);
+    assert_eq!(tables[0].0, "Parts");
+    assert_eq!(tables[0].1, updated);
+    assert!(drawing.evaluate_parts_lists(1, &source).is_err());
+    drawing.set_model_reference("missing.oba").unwrap();
+    assert!(drawing.evaluate_parts_lists(0, &source).is_err());
     assert!(list.evaluate_parts_list("missing.oba", &source).is_err());
     assert!(list.evaluate_parts_list("", &source).is_err());
 }
