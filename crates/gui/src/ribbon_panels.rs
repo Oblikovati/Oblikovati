@@ -293,6 +293,7 @@ fn temporary_panel(
     let before = context.actions.len();
     let mut keep = true;
     let focus = std::mem::take(&mut display.temporary_focus);
+    let keep_on_click = std::mem::take(&mut display.keep_temporary_on_click);
     ui.window("##ribbon-temporary-panel")
         // `flags` replaces the flags set so far, so it comes first.
         .flags(imgui::WindowFlags::NO_DOCKING)
@@ -307,7 +308,8 @@ fn temporary_panel(
                 && (ui.is_window_hovered_with_flags(
                     imgui::WindowHoveredFlags::CHILD_WINDOWS
                         | imgui::WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM,
-                ) || !ui.is_mouse_clicked(imgui::MouseButton::Left));
+                ) || !ui.is_mouse_clicked(imgui::MouseButton::Left)
+                    || keep_on_click);
         });
     if !keep || context.actions.len() != before {
         display.temporary = None;

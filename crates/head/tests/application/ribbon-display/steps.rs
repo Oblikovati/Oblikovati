@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
+mod compact_options;
 const VIEW_GROUPS: [&str; 4] = ["Visibility", "Appearance", "Windows", "Navigate"];
 const WINDOWS_COMMAND: &str = "User Interface";
 fn band_height() -> f32 {

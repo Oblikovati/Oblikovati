@@ -85,6 +85,7 @@ pub(crate) struct RibbonDisplayState {
     minimized: Option<RibbonDisplay>,
     pub temporary: Option<TemporaryPanel>,
     pub temporary_focus: bool,
+    pub keep_temporary_on_click: bool,
     pub temporary_anchor: f32,
     tab_release_consumed: bool,
     pub placement: RibbonPlacement,
@@ -103,6 +104,7 @@ impl Default for RibbonDisplayState {
             minimized: None,
             temporary: None,
             temporary_focus: false,
+            keep_temporary_on_click: false,
             temporary_anchor: 8.,
             tab_release_consumed: false,
             placement: RibbonPlacement::default(),
@@ -273,6 +275,8 @@ impl RibbonDisplayState {
         if crate::widget_abi::button(ui, "v##ribbon-display-menu", [0.; 2]) {
             ui.open_popup("##ribbon-display-menu");
         }
+        self.keep_temporary_on_click =
+            ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
         if let Some(_menu) = ui.begin_popup("##ribbon-display-menu") {
             self.menu(ui);
         }
