@@ -28,6 +28,7 @@ impl DrawingSheetRecipe {
             title_block_at: BOTTOM_RIGHT_TITLE_BLOCK,
             revision: String::new(),
             views: Vec::new(),
+            annotations: Vec::new(),
         }
     }
     /// Return laid-out millimeter dimensions; custom dimensions are already orientation-applied.

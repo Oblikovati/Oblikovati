@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DrawingBaseViewDefinition, spelling};
+use super::{DrawingAnnotationDefinition, DrawingBaseViewDefinition, spelling};
 use oblikovati_api::types::{DraftingStandard, SheetOrientation, SheetSize, TitleBlockLocation};
 use serde::{Deserialize, Serialize};
 /// Drawing content in the Go native recipe shape; no workspace pointers or kernel handles are stored.
@@ -38,6 +38,8 @@ pub struct DrawingSheetRecipe {
     pub revision: String,
     #[serde(default)]
     pub views: Vec<DrawingBaseViewDefinition>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub annotations: Vec<DrawingAnnotationDefinition>,
 }
 
 fn default_sheets() -> Vec<DrawingSheetRecipe> {

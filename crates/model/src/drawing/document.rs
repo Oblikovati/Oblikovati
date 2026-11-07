@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    DrawingBaseViewDefinition, DrawingError, DrawingRecipe, DrawingSheetRecipe,
+    DrawingAnnotationDefinition, DrawingBaseViewDefinition, DrawingError, DrawingRecipe,
+    DrawingSheetRecipe,
     validation::{validate_drawing, validate_sheet},
 };
 /// One owner of the sheet and view definitions; workspace resolvers never enter history snapshots.
@@ -51,6 +52,17 @@ impl DrawingDocument {
     /// Example: `drawing.set_model_reference("/project/bracket.opd")?`.
     pub fn set_model_reference(&mut self, name: &str) -> Result<(), DrawingError> {
         super::validation::require_model_reference(name)?;
+        if name.is_empty()
+            && self
+                .recipe
+                .sheets
+                .iter()
+                .any(|sheet| !sheet.annotations.is_empty())
+        {
+            return Err(DrawingError(format!(
+                "model reference {name:?}: expected a referenced model while annotations exist"
+            )));
+        }
         self.recipe.model_reference = name.into();
         Ok(())
     }
@@ -68,6 +80,12 @@ impl DrawingDocument {
     /// Append a checked sheet and activate it; example: `drawing.add_sheet(DrawingSheetRecipe::a3_landscape("Second"))?`.
     pub fn add_sheet(&mut self, sheet: DrawingSheetRecipe) -> Result<(), DrawingError> {
         validate_sheet(&sheet)?;
+        if !sheet.annotations.is_empty() && self.recipe.model_reference.is_empty() {
+            return Err(DrawingError(format!(
+                "sheet {:?} annotations: expected a referenced model",
+                sheet.name
+            )));
+        }
         if self
             .recipe
             .sheets
@@ -105,9 +123,30 @@ impl DrawingDocument {
         target.views.push(view);
         Ok(())
     }
+    /// Append an authored parts list; example: `drawing.add_annotation_definition(0, annotation)?`.
+    pub fn add_annotation_definition(
+        &mut self,
+        sheet: usize,
+        annotation: DrawingAnnotationDefinition,
+    ) -> Result<(), DrawingError> {
+        annotation.validate()?;
+        let target = self.referenced_sheet(sheet)?;
+        if target
+            .annotations
+            .iter()
+            .any(|existing| existing.name() == annotation.name())
+        {
+            return Err(DrawingError(format!(
+                "annotation {:?}: expected a unique name within sheet {sheet}",
+                annotation.name()
+            )));
+        }
+        target.annotations.push(annotation);
+        Ok(())
+    }
     fn referenced_sheet(&mut self, sheet: usize) -> Result<&mut DrawingSheetRecipe, DrawingError> {
         if self.recipe.model_reference.is_empty() {
-            return Err(DrawingError("model reference \"\": expected a referenced document before a base-view definition".into()));
+            return Err(DrawingError("model reference \"\": expected a referenced document before adding model-dependent drawing content".into()));
         }
         let count = self.recipe.sheets.len();
         self.recipe.sheets.get_mut(sheet).ok_or_else(|| {

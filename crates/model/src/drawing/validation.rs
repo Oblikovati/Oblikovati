@@ -23,6 +23,12 @@ pub(super) fn validate_drawing(recipe: &DrawingRecipe) -> Result<(), DrawingErro
     let mut names = BTreeSet::new();
     for sheet in &recipe.sheets {
         validate_sheet(sheet)?;
+        if !sheet.annotations.is_empty() && recipe.model_reference.is_empty() {
+            return Err(DrawingError(format!(
+                "sheet {:?} annotations: expected a referenced model",
+                sheet.name
+            )));
+        }
         if !names.insert(&sheet.name) {
             return Err(DrawingError(format!(
                 "sheet {:?}: expected a unique sheet name",
@@ -59,6 +65,16 @@ pub(super) fn validate_sheet(sheet: &DrawingSheetRecipe) -> Result<(), DrawingEr
             return Err(DrawingError(format!(
                 "view {:?}: expected a unique name within its sheet",
                 view.name
+            )));
+        }
+    }
+    let mut annotation_names = BTreeSet::new();
+    for annotation in &sheet.annotations {
+        annotation.validate()?;
+        if !annotation_names.insert(annotation.name()) {
+            return Err(DrawingError(format!(
+                "annotation {:?}: expected a unique name within its sheet",
+                annotation.name()
             )));
         }
     }

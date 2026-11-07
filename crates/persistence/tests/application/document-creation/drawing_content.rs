@@ -113,3 +113,47 @@ fn unsupported_drawing_recipe_content_is_refused_instead_of_dropped() {
         "{cause}"
     );
 }
+
+#[test]
+fn go_parts_list_definition_round_trips_without_cached_bom_rows() {
+    use oblikovati_model::drawing::DrawingAnnotationDefinition;
+    let encoded = br#"schemaVersion: 2
+documentType: 3
+model:
+  modelReference: /project/bracket.opd
+  sheets:
+    - name: 'Sheet:1'
+      size: a3
+      orientation: landscape
+      border: true
+      annotations:
+        - name: Parts
+          kind: partsList
+          xmm: 40
+          ymm: 200
+          characteristic: enum(?)
+          materialRemoval: any
+"#;
+    let package = DocumentPackage::decode(encoded).unwrap();
+    let drawing = package.restore_drawing().unwrap().unwrap();
+    assert_eq!(drawing.sheets()[0].annotations[0].name(), "Parts");
+    assert_eq!(
+        DrawingAnnotationDefinition::parts_list("Parts", [40., 200.])
+            .unwrap()
+            .name(),
+        "Parts"
+    );
+    let saved = package
+        .with_drawing(Some(&drawing))
+        .unwrap()
+        .encode()
+        .unwrap();
+    assert_eq!(
+        DocumentPackage::decode(&saved)
+            .unwrap()
+            .restore_drawing()
+            .unwrap(),
+        Some(drawing)
+    );
+    assert!(!String::from_utf8(saved).unwrap().contains("rows:"));
+}

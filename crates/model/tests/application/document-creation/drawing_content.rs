@@ -131,3 +131,33 @@ fn a_standard_sheet_cannot_retain_nonfinite_custom_dimension_fields() {
     recipe.sheets[0].width_mm = f64::NAN;
     assert!(DrawingDocument::from_recipe(recipe).is_err());
 }
+
+#[test]
+fn parts_list_definitions_require_a_model_and_unique_finite_names() {
+    use oblikovati_model::drawing::DrawingAnnotationDefinition;
+    let mut drawing = DrawingDocument::new();
+    let list = DrawingAnnotationDefinition::parts_list("Parts", [40., 200.]).unwrap();
+    assert_eq!(list.name(), "Parts");
+    assert!(drawing.add_annotation_definition(0, list.clone()).is_err());
+    let mut annotated = oblikovati_model::drawing::DrawingSheetRecipe::a3_landscape("Extra");
+    annotated.annotations.push(list.clone());
+    assert!(drawing.add_sheet(annotated).is_err());
+    assert_eq!(drawing.sheets().len(), 1);
+    drawing.set_model_reference("/project/bracket.opd").unwrap();
+    drawing.add_annotation_definition(0, list.clone()).unwrap();
+    assert_eq!(
+        drawing.sheets()[0].annotations.as_slice(),
+        std::slice::from_ref(&list)
+    );
+    assert!(drawing.add_annotation_definition(0, list).is_err());
+    assert!(drawing.set_model_reference("").is_err());
+    assert!(DrawingAnnotationDefinition::parts_list("", [1., 2.]).is_err());
+    assert!(DrawingAnnotationDefinition::parts_list("Parts", [f64::NAN, 2.]).is_err());
+    let mut bad = drawing.recipe().clone();
+    bad.model_reference.clear();
+    assert!(DrawingDocument::from_recipe(bad).is_err());
+    let mut bad = drawing.recipe().clone();
+    let duplicate = bad.sheets[0].annotations[0].clone();
+    bad.sheets[0].annotations.push(duplicate);
+    assert!(DrawingDocument::from_recipe(bad).is_err());
+}
