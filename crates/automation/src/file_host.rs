@@ -53,10 +53,19 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
     sketch_construction: Option<SketchConstructionAccess<'a>>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
     extrusion: Option<&'a dyn crate::ExtrudeRegionAccess>,
+    drawing_views: Option<&'a dyn crate::DrawingViewProjectionAccess>,
     sketch_preferences:
         Option<&'a mut dyn oblikovati_model::application_options::SketchPreferenceAccess>,
 }
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
+    /// Supply exact drawing projection; example: `host.with_drawing_views(&backend)`.
+    pub fn with_drawing_views(
+        mut self,
+        backend: &'a dyn crate::DrawingViewProjectionAccess,
+    ) -> Self {
+        self.context.get_mut().drawing_views = Some(backend);
+        self
+    }
     /// Supply profile discovery and candidate validation; example: `host.with_extrusion(&backend)`.
     pub fn with_extrusion(mut self, backend: &'a dyn crate::ExtrudeRegionAccess) -> Self {
         self.context.get_mut().extrusion = Some(backend);
@@ -114,6 +123,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 sketch_preferences: None,
                 part_topology: None,
                 extrusion: None,
+                drawing_views: None,
                 sketch_construction: None,
             }),
         }
@@ -160,6 +170,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
     fn owned_command(&mut self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         if method == oblikovati_api::wire::METHOD_DRAWING_SET_MODEL_REFERENCE {
             return crate::drawing_reference::apply(self.files, decode(method, request)?);
+        }
+        if method == oblikovati_api::wire::METHOD_DRAWING_VIEWS_ADD_BASE {
+            return crate::drawing_views::add_base(
+                self.files,
+                self.drawing_views,
+                decode(method, request)?,
+            );
         }
         if method == METHOD_FEATURES_ADD {
             return crate::extrusion::apply(self.files, self.extrusion, request);

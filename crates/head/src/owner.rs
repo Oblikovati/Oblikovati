@@ -99,6 +99,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     refused_close: Vec<u64>,
     part_scenes: crate::part_scene::DesktopPartScenes,
     drawing_projections: std::cell::RefCell<drawing_projection::DrawingProjectionCache>,
+    drawing_projection_access: drawing_projection::DrawingProjectionAccess,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
     extrusion_preview: Option<(u64, u64, oblikovati_viewport::ViewportScene)>,
     sketch_scenes: crate::sketch_scene::DesktopSketchScenes,
@@ -172,6 +173,7 @@ impl<
             refused_close: Vec::new(),
             part_scenes: Default::default(),
             drawing_projections: Default::default(),
+            drawing_projection_access: drawing_projection::DrawingProjectionAccess,
             extrusion_access: None,
             extrusion_preview: None,
             sketch_scenes: Default::default(),
@@ -255,6 +257,7 @@ impl<
             &self.sketch_construction,
             &mut self.window_captures,
         )
+        .with_drawing_views(&self.drawing_projection_access)
         .with_sketch_edit(editing)
         .with_color_schemes(&mut self.color_schemes);
         let host = match &self.extrusion_access {
@@ -277,6 +280,7 @@ impl<
             &self.sketch_construction,
             &mut self.window_captures,
         )
+        .with_drawing_views(&self.drawing_projection_access)
         .with_sketch_edit(editing)
         .with_color_schemes(&mut self.color_schemes);
         let host = match &self.extrusion_access {

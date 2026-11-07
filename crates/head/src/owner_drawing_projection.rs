@@ -8,6 +8,24 @@ use std::collections::BTreeMap;
 type ProjectionKey = (u64, u64, u64);
 #[derive(Default)]
 pub(super) struct DrawingProjectionCache(BTreeMap<u64, (ProjectionKey, GuiDrawingProjection)>);
+pub(super) struct DrawingProjectionAccess;
+impl oblikovati_automation::DrawingViewProjectionAccess for DrawingProjectionAccess {
+    fn counts(
+        &self,
+        history: &oblikovati_model::history::DocumentEditHistory,
+        document: oblikovati_model::identity::DocumentGuid,
+        view: &oblikovati_model::drawing::DrawingBaseViewDefinition,
+    ) -> Result<[usize; 2], String> {
+        let result = evaluate_part(history, document)?;
+        let bodies: Vec<_> = result.ordered_bodies().collect();
+        let projection =
+            oblikovati_martensite::drawing_base_view_bodies(history, document, &bodies, view)?;
+        Ok([
+            projection.curves.visible.len(),
+            projection.curves.hidden.len(),
+        ])
+    }
+}
 
 impl<
     O: TransactionObserver,
@@ -115,28 +133,7 @@ impl<
             .map_err(|cause| cause.to_string())?
             .internal_name;
         let history = session.history();
-        let mut evaluator = oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
-            history,
-            document,
-            crate::part_scene::resolution_policy::desktop_policy(),
-        );
-        let result = history
-            .snapshot()
-            .evaluate_part_features(&mut evaluator)
-            .map_err(|cause| cause.to_string())?;
-        for health in result.health() {
-            if matches!(
-                health.status,
-                FeatureEvaluationStatus::Failed(_)
-                    | FeatureEvaluationStatus::Blocked { .. }
-                    | FeatureEvaluationStatus::ConditionFailed(_)
-            ) {
-                return Err(format!(
-                    "drawing source feature {:?}: {:?}",
-                    health.feature, health.status
-                ));
-            }
-        }
+        let result = evaluate_part(history, document)?;
         let bodies: Vec<_> = result.ordered_bodies().collect();
         let mut output = GuiDrawingProjection::default();
         for definition in &drawing.sheets()[drawing.active_sheet()].views {
@@ -153,6 +150,40 @@ impl<
         }
         Ok(output)
     }
+}
+fn evaluate_part(
+    history: &oblikovati_model::history::DocumentEditHistory,
+    document: oblikovati_model::identity::DocumentGuid,
+) -> Result<
+    oblikovati_model::feature::part::PartFeatureEvaluation<
+        oblikovati_martensite::NamedPrismSnapshot,
+        oblikovati_martensite::EvaluationFailure,
+    >,
+    String,
+> {
+    let mut evaluator = oblikovati_martensite::CertifiedNamedPrismEvaluator::with_policy(
+        history,
+        document,
+        crate::part_scene::resolution_policy::desktop_policy(),
+    );
+    let result = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .map_err(|cause| cause.to_string())?;
+    for health in result.health() {
+        if matches!(
+            health.status,
+            FeatureEvaluationStatus::Failed(_)
+                | FeatureEvaluationStatus::Blocked { .. }
+                | FeatureEvaluationStatus::ConditionFailed(_)
+        ) {
+            return Err(format!(
+                "drawing source feature {:?}: {:?}",
+                health.feature, health.status
+            ));
+        }
+    }
+    Ok(result)
 }
 fn append_curves(
     output: &mut GuiDrawingProjection,

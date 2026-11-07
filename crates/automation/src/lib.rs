@@ -241,6 +241,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
 
 mod derived_edit;
 mod drawing_reference;
+mod drawing_views;
+pub use drawing_views::{DRAWING_COMMAND_METHODS, DrawingViewProjectionAccess};
 
 mod wire_json;
 pub use wire_json::{decode_wire_arguments, encode_wire_reply};

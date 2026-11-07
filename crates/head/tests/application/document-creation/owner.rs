@@ -267,3 +267,128 @@ fn drawing_model_reference_api_uses_history_and_rejects_other_documents() {
         .unwrap();
     assert_eq!(stored.model_reference(), request.full_document_name);
 }
+
+#[test]
+fn drawing_base_view_api_validates_current_geometry_and_replays() {
+    use oblikovati_api::wire::{AddBaseViewArgs, SetModelReferenceArgs};
+    use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
+    let (mut owner, _) = owner();
+    let part = super::part_scene::open_prism(&mut owner, false);
+    owner
+        .create_document_template(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        })
+        .unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    let args = AddBaseViewArgs {
+        center_xmm: 100.,
+        center_ymm: 80.,
+        ..Default::default()
+    };
+    assert!(
+        Client::new(owner.document_host())
+            .drawing_views()
+            .add_base(&args)
+            .is_err()
+    );
+    let reference = std::env::temp_dir()
+        .join("head-scene.opd")
+        .to_string_lossy()
+        .into_owned();
+    Client::new(owner.document_host())
+        .drawing()
+        .set_model_reference(&SetModelReferenceArgs {
+            full_document_name: reference,
+        })
+        .unwrap();
+    let reply = Client::new(owner.document_host())
+        .drawing_views()
+        .add_base(&args)
+        .unwrap();
+    assert_eq!(
+        (
+            reply.view.name.as_str(),
+            reply.view.orientation.as_str(),
+            reply.view.scale
+        ),
+        ("VIEW:1", "front", 1.)
+    );
+    assert!(reply.view.visible_count > 0);
+    assert_eq!(reply.view.label, "VIEW:1  SCALE 1:1");
+    let state = owner.gui_command_state().unwrap();
+    assert!(!state.drawing_projections[&drawing].lines.is_empty());
+    let duplicate = AddBaseViewArgs {
+        name: "VIEW:1".into(),
+        ..args.clone()
+    };
+    assert!(
+        Client::new(owner.document_host())
+            .drawing_views()
+            .add_base(&duplicate)
+            .is_err()
+    );
+    owner.files.commands(drawing).unwrap().undo().unwrap();
+    assert!(
+        owner.gui_command_state().unwrap().drawing_documents[&drawing].sheets()[0]
+            .views
+            .is_empty()
+    );
+    owner.files.commands(drawing).unwrap().redo().unwrap();
+    assert_eq!(
+        owner.gui_command_state().unwrap().drawing_documents[&drawing].sheets()[0]
+            .views
+            .len(),
+        1
+    );
+    owner
+        .files
+        .commands(part)
+        .unwrap()
+        .run("Break extrusion", |snapshot, _| {
+            snapshot.parameters.set_expression(3, "0 cm")
+        })
+        .unwrap();
+    assert!(
+        Client::new(owner.document_host())
+            .drawing_views()
+            .add_base(&args)
+            .is_err()
+    );
+    assert_eq!(
+        owner.gui_command_state().unwrap().drawing_documents[&drawing].sheets()[0]
+            .views
+            .len(),
+        1
+    );
+    owner.files.commands(part).unwrap().undo().unwrap();
+    let path = "/memory/base-view.odd";
+    Client::new(owner.document_host())
+        .documents()
+        .save_as(&SaveDocumentAsArgs {
+            document: drawing,
+            new_full_document_name: path.into(),
+        })
+        .unwrap();
+    Client::new(owner.document_host())
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: drawing,
+            force: true,
+        })
+        .unwrap();
+    let reopened = Client::new(owner.document_host())
+        .documents()
+        .open(&OpenDocumentArgs {
+            full_document_name: path.into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(
+        state.drawing_documents[&reopened].sheets()[0].views[0].name,
+        "VIEW:1"
+    );
+    assert!(!state.drawing_projections[&reopened].lines.is_empty());
+}
