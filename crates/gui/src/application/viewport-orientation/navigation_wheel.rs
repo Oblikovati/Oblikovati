@@ -13,6 +13,7 @@ const FULL_SIDE: f32 = 220.;
 const BASIC_SIDE: f32 = 240.;
 const MINI_SIDE: f32 = 64.;
 const BIG_SCALES: [f32; 3] = [0.75, 1., 1.3];
+const MINI_SCALES: [f32; 4] = [0.75, 1., 1.3, 1.7];
 const OUTER_REACH: f32 = 0.38;
 const INNER_REACH: f32 = 0.16;
 const RING_SHARE: f32 = 0.48;
@@ -140,6 +141,7 @@ impl Default for WheelOptions {
 #[derive(Default)]
 pub(super) struct NavigationWheel {
     open: bool,
+    used: bool,
     /// Follows the pointer until a click sets it down.
     placed: Option<[f32; 2]>,
     layout: WheelLayout,
@@ -151,7 +153,12 @@ pub(super) struct NavigationWheel {
 impl NavigationWheel {
     pub(super) fn request(&mut self) {
         self.open = true;
+        self.used = true;
         self.placed = None;
+    }
+    /// It has been up since the part opened, so the view's menu can bring it back.
+    pub(super) fn can_repeat(&self) -> bool {
+        self.used && !self.open
     }
     /// The wheel is up, so a click on the view belongs to it.
     pub(super) fn is_open(&self) -> bool {
@@ -195,10 +202,12 @@ impl NavigationWheel {
         self.close_on_escape(ui);
     }
     fn side(&self) -> f32 {
-        if self.layout.is_mini() {
-            return self.layout.side();
-        }
-        self.layout.side() * BIG_SCALES[self.options.big_size]
+        let scale = if self.layout.is_mini() {
+            MINI_SCALES[self.options.mini_size]
+        } else {
+            BIG_SCALES[self.options.big_size]
+        };
+        self.layout.side() * scale
     }
     fn close_on_escape(&mut self, ui: &Ui) {
         if !crate::widget_abi::any_popup_open(ui) && ui.is_key_pressed_no_repeat(Key::Escape) {
@@ -245,7 +254,7 @@ impl NavigationWheel {
                 under.and_then(|tool| rim.iter().position(|row| *row == tool)),
             );
             drop(list);
-            if let Some(tool) = under {
+            if let Some(tool) = under.filter(|_| self.options.tool_tips) {
                 ui.tooltip_text(tool);
             }
             return;

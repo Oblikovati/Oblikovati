@@ -9,6 +9,9 @@ const WHEEL: &str = "##navigation-wheel";
 const PLACED_AT: [i32; 2] = [760, 480];
 const OPTIONS_TITLE: &str = "Navigation Wheel Options";
 const MINI_SIDE: f32 = 80.;
+const FULL_WHEEL_SIDE: f32 = 160.;
+#[path = "preferences.rs"]
+mod preferences;
 /// How much further away the "small" block's view stands.
 const SMALL: f64 = 5.;
 const LAYOUTS: [&str; 6] = [

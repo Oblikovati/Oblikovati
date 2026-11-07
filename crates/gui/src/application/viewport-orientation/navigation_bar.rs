@@ -12,6 +12,7 @@ pub(super) const NAVIGATION_SIZE: [f32; 2] = [36., 176.];
 const ZOOM_MENU: &str = "##zoom-menu";
 const ORBIT_MENU: &str = "##orbit-menu";
 const VIEW_MENU: &str = "##navigation-menu";
+const REPEAT_MENU: &str = "##navigation-repeat";
 const BUTTON: [f32; 2] = [20., 22.];
 /// A press that travels less than this is a click, not a drag.
 const CLICK_REACH: f32 = 4.;
@@ -268,6 +269,7 @@ impl NavigationBar {
         actions: &mut Vec<GuiShellAction>,
     ) {
         let Some(mode) = self.mode else {
+            self.repeat_menu(ui);
             return;
         };
         self.view_menu(ui, mode, actions);
@@ -287,6 +289,23 @@ impl NavigationBar {
             GuiNavigationMode::ZoomWindow => self.window_click(ui, request, over_panel, actions),
             GuiNavigationMode::ZoomSelected => self.face_click(ui, request, over_panel, actions),
             _ => self.drag(ui, mode, over_panel, actions),
+        }
+    }
+    /// With nothing running, a right-click on the view offers the wheel that was last up.
+    fn repeat_menu(&mut self, ui: &Ui) {
+        let over_panel = ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel());
+        if self.wheel.can_repeat()
+            && !over_panel
+            && !crate::widget_abi::any_popup_open(ui)
+            && ui.is_mouse_released(MouseButton::Right)
+        {
+            ui.open_popup(REPEAT_MENU);
+        }
+        let Some(_menu) = ui.begin_popup(REPEAT_MENU) else {
+            return;
+        };
+        if ui.menu_item("Repeat Navigation Wheel") {
+            self.wheel.request();
         }
     }
     fn drag(
