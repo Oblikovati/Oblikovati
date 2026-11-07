@@ -85,3 +85,27 @@ fn panel_titles_toggle_from_active_tab_context_menu() {
     world.expect_text("Extrude");
     world.close();
 }
+
+#[test]
+fn hidden_captions_keep_narrow_collapsed_panels_named() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.app().window.native.view.resize([700, 600]).unwrap();
+    world.pump(Vec::new());
+    world.click_text("Manage");
+    world.pump(Vec::new());
+    right_click_manage(&mut world);
+    world.click_text("Show Panel Titles");
+    world.pump(Vec::new());
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+    world.expect_text("Extrude");
+    let modify = world.run("Modify").center();
+    world.click(super::super::diagnostics::pointer_pixels([
+        modify[0],
+        modify[1] - 35.,
+    ]));
+    world.pump(Vec::new());
+    world.expect_text("Hole");
+    world.close();
+}
