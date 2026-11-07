@@ -92,10 +92,11 @@ pub use evaluation_failure::{
 };
 mod prism;
 pub use prism::{
-    NamedPrismEvaluator, NamedPrismSnapshot, PrismFaceMesh, PrismFaceProbe, PrismFaceRole,
-    PrismMeshOptions, PrismPresentation, PrismPresentationSource, PrismProbeDefinition,
-    PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismTopologySummary,
-    named_part_properties, probe_planar_prism, retain_named_sketch_prism, retain_planar_prism,
+    CertifiedPrismSnapshot, NamedPrismEvaluator, NamedPrismSnapshot, PrismAchievedTolerance,
+    PrismFaceMesh, PrismFaceProbe, PrismFaceRole, PrismMeshOptions, PrismPresentation,
+    PrismPresentationSource, PrismProbeDefinition, PrismProbeLoop, PrismProbeReport,
+    PrismProbeSnapshot, PrismTopologySummary, named_part_properties, probe_planar_prism,
+    retain_certified_profile_prism, retain_named_sketch_prism, retain_planar_prism,
     retain_prism_on_plane,
 };
 mod region_identity;

@@ -3,7 +3,11 @@ use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase,
 };
+mod certified;
 mod input;
+pub use certified::{
+    CertifiedPrismSnapshot, PrismAchievedTolerance, retain_certified_profile_prism,
+};
 mod named;
 pub use named::{
     NamedPrismEvaluator, NamedPrismSnapshot, named_part_properties, retain_named_sketch_prism,

@@ -29,6 +29,9 @@ pub enum EvaluationFailureKind {
     IncompleteHistory,
     InvalidResult,
     InvalidReference,
+    Unsupported,
+    Incomplete,
+    ToleranceExceeded,
 }
 /// Authored identity or semantic result role; indices are diagnostic, never persistent names.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -45,6 +48,7 @@ pub enum EvaluationEntity {
 enum EvaluationCause {
     Kernel(Failure),
     Sketch(SketchError),
+    Operation(martensite_tkbo::profile_extrusion::OperationDecline),
 }
 #[derive(Clone, PartialEq)]
 struct FailureDetails {
@@ -123,6 +127,7 @@ impl Error for EvaluationFailure {
         match &self.0.cause {
             Some(EvaluationCause::Kernel(cause)) => Some(cause),
             Some(EvaluationCause::Sketch(cause)) => Some(cause),
+            Some(EvaluationCause::Operation(cause)) => Some(cause),
             None => None,
         }
     }

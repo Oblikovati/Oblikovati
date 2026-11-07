@@ -1,6 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl EvaluationPhase {
+    pub(crate) fn operation(
+        self,
+        entity: EvaluationEntity,
+        cause: martensite_tkbo::profile_extrusion::OperationDecline,
+    ) -> EvaluationFailure {
+        use martensite_tkbo::profile_extrusion::DeclineClass;
+        let kind = match cause.class() {
+            DeclineClass::InvalidInput => EvaluationFailureKind::InvalidInput,
+            DeclineClass::Unsupported => EvaluationFailureKind::Unsupported,
+            DeclineClass::InvalidGeometry => EvaluationFailureKind::InvalidGeometry,
+            DeclineClass::Incomplete => EvaluationFailureKind::Incomplete,
+            DeclineClass::OverBudget => EvaluationFailureKind::ToleranceExceeded,
+            DeclineClass::Native => EvaluationFailureKind::Kernel,
+        };
+        let mut failure = self.refused(kind, entity, String::new());
+        failure.0.cause = Some(EvaluationCause::Operation(cause));
+        failure
+    }
     pub(crate) fn refused(
         self,
         kind: EvaluationFailureKind,
