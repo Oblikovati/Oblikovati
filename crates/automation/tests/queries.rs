@@ -98,6 +98,8 @@ fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut Query
         interests: Default::default(),
         resources: Default::default(),
         assets: Default::default(),
+        model_states: None,
+        drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
         sketch_settings: None,
@@ -312,7 +314,7 @@ fn unregistered_methods_and_malformed_arguments_are_refused_before_model_work() 
             .iter()
             .collect::<std::collections::BTreeSet<_>>()
             .len(),
-        33
+        34
     );
     assert!(QUERY_METHODS.contains(&METHOD_MODEL_SELECTION));
     assert!(
@@ -410,3 +412,6 @@ mod derived_delete;
 
 #[path = "queries/sketch_updates.rs"]
 mod sketch_updates;
+
+#[path = "application/model-browser/model_states.rs"]
+mod model_states;

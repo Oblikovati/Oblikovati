@@ -70,6 +70,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             interests: prepared.interests,
             resources: prepared.resources,
             assets: prepared.assets,
+            model_states: prepared.model_states,
+            drawing: prepared.drawing,
             body_names: prepared.body_names,
             design_views: prepared.design_views,
             sketch_settings: prepared.sketch_settings,

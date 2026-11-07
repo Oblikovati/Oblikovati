@@ -69,6 +69,9 @@ use std::sync::{
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {
+    /// Drawing content belongs to the document history, not to a GUI window.
+    pub drawing: Option<crate::drawing::DrawingDocument>,
+    pub model_states: Option<crate::model_state::ModelStateMembers>,
     pub body_names: std::collections::BTreeMap<String, String>,
     /// Named design views, in the order they were made.
     pub design_views: Vec<String>,
@@ -167,10 +170,15 @@ impl DocumentEditHistory {
     /// Take ownership of loaded state and its allocator; example: `DocumentEditHistory::new(snapshot, ids)?`.
     pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, HistoryError> {
         snapshot.validate_datum_metadata()?;
+        snapshot.validate_model_state_members()?;
         snapshot
             .validate_scalar_ownership()
             .map_err(HistoryError::ScalarOwnership)?;
         RecipeIdAllocator::restore(Some(ids.high_water()), snapshot.parameters.ids())?;
+        RecipeIdAllocator::restore(
+            Some(ids.high_water()),
+            &model_state_ids::authored_ids(&snapshot),
+        )?;
         let derived_high_water = snapshot
             .parameters
             .derived_tables()
@@ -374,6 +382,7 @@ impl DocumentEditHistory {
         candidate: &DocumentSnapshot,
         reserved_before: u64,
     ) -> Result<(), HistoryError> {
+        self.validate_model_state_ids(candidate, reserved_before)?;
         for &id in candidate.parameters.ids() {
             if self.current.parameters.get(id).is_none()
                 && (id <= reserved_before || id > self.ids.high_water())
@@ -389,6 +398,7 @@ impl DocumentEditHistory {
 mod tests;
 
 mod metadata_recipe;
+mod model_state_ids;
 
 mod sketch_split;
 

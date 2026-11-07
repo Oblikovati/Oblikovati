@@ -13,6 +13,8 @@ pub fn empty_snapshot() -> DocumentSnapshot {
         interests: Default::default(),
         resources: Default::default(),
         assets: Default::default(),
+        model_states: None,
+        drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
         sketch_settings: None,

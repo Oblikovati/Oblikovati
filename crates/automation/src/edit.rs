@@ -9,7 +9,12 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 23] = [
+pub const EDIT_METHODS: [&str; 28] = [
+    METHOD_MODEL_STATES_CREATE,
+    METHOD_MODEL_STATES_RENAME,
+    METHOD_MODEL_STATES_COPY,
+    METHOD_MODEL_STATES_ACTIVATE,
+    METHOD_MODEL_STATES_DELETE,
     METHOD_DOCUMENTS_REMOVE_ATTACHMENT,
     METHOD_DOCUMENTS_ADD_INTEREST,
     METHOD_DOCUMENTS_REMOVE_INTEREST,
@@ -36,6 +41,7 @@ pub const EDIT_METHODS: [&str; 23] = [
 ];
 
 pub(super) enum PreparedEdit {
+    ModelState(crate::model_states::MemberEdit),
     AttachmentRemove(RemoveAttachmentArgs),
     InterestAdd(AddDocumentInterestArgs),
     InterestRemove(RemoveDocumentInterestArgs),
@@ -63,6 +69,21 @@ pub(super) enum PreparedEdit {
 impl PreparedEdit {
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_MODEL_STATES_CREATE => Ok(Self::ModelState(
+                crate::model_states::MemberEdit::Create(decode(method, request)?),
+            )),
+            METHOD_MODEL_STATES_RENAME => Ok(Self::ModelState(
+                crate::model_states::MemberEdit::Rename(decode(method, request)?),
+            )),
+            METHOD_MODEL_STATES_COPY => Ok(Self::ModelState(
+                crate::model_states::MemberEdit::Copy(decode(method, request)?),
+            )),
+            METHOD_MODEL_STATES_ACTIVATE => Ok(Self::ModelState(
+                crate::model_states::MemberEdit::Activate(decode(method, request)?),
+            )),
+            METHOD_MODEL_STATES_DELETE => Ok(Self::ModelState(
+                crate::model_states::MemberEdit::Delete(decode(method, request)?),
+            )),
             METHOD_DOCUMENTS_REMOVE_ATTACHMENT => {
                 Ok(Self::AttachmentRemove(decode(method, request)?))
             }
@@ -104,6 +125,7 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::ModelState(edit) => edit.label(),
             Self::AttachmentRemove(_) => "Remove Attachment",
             Self::InterestAdd(_) => "Register Interest",
             Self::InterestRemove(_) => "Remove Interest",
@@ -137,6 +159,7 @@ impl PreparedEdit {
     ) -> Result<Vec<u8>, Error> {
         let parameters = &mut snapshot.parameters;
         match self {
+            Self::ModelState(edit) => edit.apply(snapshot, reservations),
             Self::AttachmentRemove(request) => encode(&crate::attachments::remove(
                 &mut snapshot.attachments,
                 request,

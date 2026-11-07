@@ -76,6 +76,8 @@ fn saved_recipes_rebuild_the_same_keys_under_a_new_history_owner() {
         sketches: reopened.restore_sketches().unwrap().sketches,
         work_geometry: reopened.restore_work_geometry().unwrap().program,
         assets: Default::default(),
+        model_states: None,
+        drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
         sketch_settings: None,

@@ -8,6 +8,7 @@ pub mod assets;
 pub mod attachment;
 pub mod attribute;
 pub mod dependency;
+pub mod drawing;
 pub mod expression;
 pub mod feature;
 pub mod fits;
@@ -21,6 +22,7 @@ pub mod resource;
 pub mod units;
 
 pub mod interest;
+pub mod model_state;
 
 pub mod document_sketch;
 pub mod sketch;

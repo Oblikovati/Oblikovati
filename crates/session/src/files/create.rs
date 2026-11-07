@@ -94,6 +94,12 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
             .restore_attachments()
             .map_err(FileWorkspaceError::Package)?,
         resources: package.resources().clone(),
+        model_states: package
+            .restore_model_states()
+            .map_err(FileWorkspaceError::Package)?,
+        drawing: package
+            .restore_drawing()
+            .map_err(FileWorkspaceError::Package)?,
         body_names: package
             .restore_body_names()
             .map_err(FileWorkspaceError::Package)?,

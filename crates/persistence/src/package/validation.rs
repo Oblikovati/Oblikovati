@@ -12,6 +12,7 @@ const MAPPING_FIELDS: &[&str] = &[
     "bodyColorStyles",
     "resources",
     "model",
+    "partModelStates",
     "data",
 ];
 const SEQUENCE_FIELDS: &[&str] = &[
