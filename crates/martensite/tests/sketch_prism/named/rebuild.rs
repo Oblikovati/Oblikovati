@@ -286,3 +286,6 @@ fn certified_replay_keeps_named_faces_through_undo_redo_and_reopen() {
     );
     assert_faces(&restored, &reopened, 3.);
 }
+
+#[path = "rebuild_projection.rs"]
+mod projection;

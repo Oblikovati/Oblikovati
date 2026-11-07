@@ -93,6 +93,7 @@ pub use evaluation_failure::{
 mod prism;
 pub use prism::{
     CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, CertifiedPrismSnapshot,
+    DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
     NamedPrismEvaluator, NamedPrismSnapshot, PrismAchievedTolerance, PrismFaceMesh, PrismFaceProbe,
     PrismFaceRole, PrismFaceTopology, PrismHistoryRelation, PrismHistorySource, PrismMeshOptions,
     PrismPresentation, PrismPresentationSource, PrismProbeDefinition, PrismProbeLoop,

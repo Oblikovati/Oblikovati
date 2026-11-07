@@ -214,3 +214,9 @@ pub fn named_part_properties<'a>(
     }
     crate::analytic_body::integrate_system(shapes)
 }
+
+#[path = "named/projection.rs"]
+mod projection;
+pub use projection::{
+    DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
+};

@@ -10,7 +10,8 @@ pub use certified::{
 };
 mod named;
 pub use named::{
-    CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, NamedPrismEvaluator, NamedPrismSnapshot,
+    CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, DrawingProjectedCurve, DrawingProjection,
+    DrawingProjectionCurveKind, DrawingProjectionFrame, NamedPrismEvaluator, NamedPrismSnapshot,
     PrismFaceTopology, PrismSurfaceKind, named_part_properties,
     retain_certified_named_sketch_prism, retain_named_sketch_prism,
 };
