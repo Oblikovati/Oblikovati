@@ -4,7 +4,7 @@ use oblikovati_session::{
     TransactionObserver,
     workspace::{WorkspaceObserver, WorkspaceSession},
 };
-pub(super) fn list<O: TransactionObserver, W: WorkspaceObserver>(
+pub(crate) fn list<O: TransactionObserver, W: WorkspaceObserver>(
     workspace: &WorkspaceSession<O, W>,
 ) -> Result<ModelStatesResult, Error> {
     let id = workspace
