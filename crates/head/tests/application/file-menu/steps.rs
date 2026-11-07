@@ -156,3 +156,9 @@ fn row_pin(world: &mut ApplicationWorld) {
 fn part_around_menu(world: &mut ApplicationWorld) {
     world.expect_text("Origin");
 }
+
+#[then("the region lists document names with document-type symbols and pin controls")]
+fn recent_rows_with_controls(world: &mut ApplicationWorld) {
+    row_left(world);
+    row_pin(world);
+}
