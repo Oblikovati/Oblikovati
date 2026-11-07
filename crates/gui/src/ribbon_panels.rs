@@ -258,6 +258,9 @@ fn compact_row(
     };
     let ui = context.ui;
     for panel in shown_panels(tab, context.state, &context.hidden) {
+        let open = display.temporary == Some(TemporaryPanel::Group(panel));
+        let lit = ui.style_color(imgui::StyleColor::ButtonActive);
+        let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
         if crate::widget_abi::button(ui, panel.label(), size) {
             display.open_temporary(TemporaryPanel::Group(panel));
             display.temporary_anchor = ui.item_rect_min()[0];

@@ -735,6 +735,50 @@ fn tabs_only_tools_closes_temporary_commands_after_opening_settings() {
 }
 
 #[test]
+fn widening_an_open_width_collapsed_panel_closes_its_popup() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    world.app().window.native.view.resize([700, 600]).unwrap();
+    world.pump(Vec::new());
+    let modify = world.run("Modify").center();
+    world.click(super::diagnostics::pointer_pixels([
+        modify[0],
+        modify[1] - 35.,
+    ]));
+    world.expect_text("Hole");
+    world.app().window.native.view.resize([1600, 900]).unwrap();
+    world.pump(Vec::new());
+    world.expect_text("Hole");
+    world.app().window.native.view.resize([700, 600]).unwrap();
+    world.pump(Vec::new());
+    world.expect_no_text("Hole");
+    world.close();
+}
+
+#[test]
+fn compact_options_stays_highlighted_when_clicked_again() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    click_display_menu(&mut world);
+    world.click_text("Minimize to Panel Buttons");
+    let label = world.run("Options").clone();
+    let sample = [label.minimum[0] as usize - 4, label.center()[1] as usize];
+    world.hover([1000, 600]);
+    let idle = world.pixel_at(sample);
+    world.click_text("Options");
+    world.hover([1000, 600]);
+    world.expect_text("Document Settings");
+    let selected = world.pixel_at(sample);
+    assert_ne!(idle, selected, "open Options button: expected a highlight");
+    world.click_text("Options");
+    world.hover([1000, 600]);
+    world.expect_text("Document Settings");
+    assert_eq!(world.pixel_at(sample), selected);
+    world.close();
+}
+
+#[test]
 fn document_settings_is_unavailable_while_home_is_in_front() {
     let mut world = ApplicationWorld::new();
     part_with_full_ribbon(&mut world);
