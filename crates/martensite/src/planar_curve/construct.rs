@@ -7,7 +7,7 @@ use martensite_tkg2d::geom2d::{
     Geom2dCircle, Geom2dCurve, Geom2dEllipse, Geom2dLine, Geom2dTrimmedCurve,
 };
 use martensite_tkmath::gp::{Axis2d, Direction2, Ellipse2, Point2};
-pub(super) type CurveHandle = Handle<dyn Geom2dCurve>;
+pub(crate) type CurveHandle = Handle<dyn Geom2dCurve>;
 
 pub(super) fn require_options(
     options: PlanarIntersectionOptions,
@@ -27,7 +27,7 @@ pub(super) fn require_options(
     }
     Ok(())
 }
-pub(super) fn build_curve(
+pub(crate) fn build_curve(
     input: &PlanarCurveDefinition,
 ) -> Result<CurveHandle, PlanarCurveFailure> {
     require_finite(&[input.left_offset])?;

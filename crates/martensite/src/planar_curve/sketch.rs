@@ -6,7 +6,7 @@ use super::{
 use oblikovati_model::sketch::{Sketch2D, SketchEntityId};
 mod failure;
 mod prepare;
-mod shape;
+pub(crate) mod shape;
 mod spline;
 pub use failure::{SketchCurveFailure, SketchCurveFailureCause};
 pub use spline::SketchSplineConstructionReport;

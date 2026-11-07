@@ -16,7 +16,7 @@ pub(super) fn point(
         .map(|point| point.position)
         .map_err(|cause| SketchCurveFailure::model(entity, cause))
 }
-pub(super) fn resolve(
+pub(crate) fn resolve(
     sketch: &SketchReadIndex<'_>,
     entity: SketchEntityId,
     domain: SketchLineDomain,
