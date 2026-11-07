@@ -39,6 +39,17 @@ pub enum SolveTermination {
     Cancelled,
 }
 
+/// Raw residual evidence by declared domain. These maxima do not certify geometry tolerance.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct ResidualEvidence {
+    /// Largest absolute residual declared in model length units, if any.
+    pub model_length: Option<f64>,
+    /// Largest absolute unitless residual, if any; not every unitless row is an angle.
+    pub unitless: Option<f64>,
+    /// Rows needing gradient interpretation before their units can be determined.
+    pub model_relative_rows: usize,
+}
+
 /// Final accepted values and evaluation; no trial writes into caller-owned state.
 #[derive(Clone, Debug)]
 pub struct NonlinearResult {
@@ -50,6 +61,8 @@ pub struct NonlinearResult {
     pub trial_steps: usize,
     /// Maximum convergence error: model-relative displacement or declared unitless residual.
     pub relative_residual: f64,
+    /// Accepted raw domain evidence, distinct from the combined convergence metric.
+    pub residual_evidence: ResidualEvidence,
     /// Unsatisfied sources, descending severity, with input index as a tie break.
     pub conflicts: Vec<usize>,
     /// Most recent rejected numerical/domain trial, if any; success may follow it.

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use super::{SolveError, checked};
+use super::{ResidualEvidence, SolveError, checked};
 use crate::residual::{ResidualBlock, ResidualEvaluation, ResidualTolerance};
 
 use crate::row_scaling::RowScale;
@@ -78,6 +78,24 @@ pub(super) fn infinity_norm(values: &[f64]) -> f64 {
     values
         .iter()
         .fold(0.0_f64, |largest, value| largest.max(value.abs()))
+}
+
+pub(super) fn residual_evidence(
+    evaluation: &ResidualEvaluation,
+    domains: &[ResidualTolerance],
+) -> ResidualEvidence {
+    let mut evidence = ResidualEvidence::default();
+    for (&value, domain) in evaluation.values().iter().zip(domains) {
+        match domain {
+            ResidualTolerance::ModelLength => record_maximum(&mut evidence.model_length, value),
+            ResidualTolerance::Unitless => record_maximum(&mut evidence.unitless, value),
+            ResidualTolerance::ModelRelative => evidence.model_relative_rows += 1,
+        }
+    }
+    evidence
+}
+fn record_maximum(maximum: &mut Option<f64>, value: f64) {
+    *maximum = Some(maximum.map_or(value.abs(), |current| current.max(value.abs())));
 }
 
 pub(super) fn conflicts(

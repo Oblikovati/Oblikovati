@@ -1,6 +1,38 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_solve::residual::ResidualTolerance;
+struct LengthTarget;
+impl ResidualSource for LengthTarget {
+    fn tolerance_kind(&self) -> ResidualTolerance {
+        ResidualTolerance::ModelLength
+    }
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].clone()])
+    }
+}
+#[test]
+fn accepted_evaluation_retains_each_declared_residual_domain() {
+    let length = LengthTarget;
+    let angular = RadianTarget;
+    let relative = Target {
+        target: 0.,
+        coefficient: 1.,
+    };
+    let blocks = [
+        block(&length, &[0]),
+        block(&length, &[3]),
+        block(&angular, &[1]),
+        block(&relative, &[2]),
+    ];
+    let options = SolveOptions {
+        max_iterations: 0,
+        ..Default::default()
+    };
+    let result = solve_constraints(&[2., 0.1, 1e12, -3.], &blocks, options, || false).unwrap();
+    assert_eq!(result.residual_evidence.model_length, Some(3.));
+    assert_eq!(result.residual_evidence.unitless, Some(0.1));
+    assert_eq!(result.residual_evidence.model_relative_rows, 1);
+}
 struct RadianTarget;
 impl ResidualSource for RadianTarget {
     fn tolerance_kind(&self) -> ResidualTolerance {
@@ -70,6 +102,8 @@ fn mixed_source_reports_angular_error_without_relaxing_it_by_length() {
     let result = mixed_result(0.1, 1.0);
     assert_eq!(result.termination, SolveTermination::IterationLimit);
     assert_eq!(result.relative_residual, 0.1);
+    assert_eq!(result.residual_evidence.model_length, None);
+    assert_eq!(result.residual_evidence.unitless, Some(0.1));
     assert_eq!(result.conflicts, [0]);
 }
 #[test]

@@ -52,6 +52,21 @@ fn assert_current_failure(placed: &PlacedSketch, parameters: &ParameterCollectio
         SketchReadinessCause::Failed(cause.clone()),
     );
 }
+#[test]
+fn accepted_solver_domain_evidence_survives_document_verification() {
+    let parameters = parameters();
+    let outcome = document().solve(&parameters, SolveOptions::default(), || false);
+    let numerical = outcome.report.reports[0]
+        .result
+        .as_ref()
+        .unwrap()
+        .numerical();
+    let verified = first(&outcome.candidate)
+        .require_fully_constrained(&parameters)
+        .unwrap();
+    assert_eq!(verified.residual_evidence, numerical.residual_evidence);
+    assert!(verified.residual_evidence.model_relative_rows > 0);
+}
 fn assert_recipe_restores_without_health(
     solved: &DocumentSketches,
     parameters: &ParameterCollection<u64>,

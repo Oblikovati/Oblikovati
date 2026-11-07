@@ -224,6 +224,7 @@ fn finish(
     let structure = analyze_structure(&state.evaluation, options.rank_tolerance)?;
     let residuals = &state.scaled.residuals;
     let conflicts = metrics::conflicts(&state.evaluation, residuals, options.relative_tolerance);
+    let residual_evidence = metrics::residual_evidence(&state.evaluation, &state.scaled.domains);
     Ok(NonlinearResult {
         values: state.values,
         evaluation: state.evaluation,
@@ -232,6 +233,7 @@ fn finish(
         iterations: state.iterations,
         trial_steps: state.trials,
         relative_residual: metrics::infinity_norm(residuals),
+        residual_evidence,
         conflicts,
         rejected_trial: state.rejected,
     })
