@@ -67,6 +67,8 @@ fn assert_analytic_scalar(actual: f64, expected: f64) {
         "analytic scalar {actual}, expected {expected}"
     );
 }
+#[path = "sketch_prism/certified.rs"]
+mod certified;
 #[path = "sketch_prism/placement.rs"]
 mod placement;
 #[path = "sketch_prism/recipe.rs"]

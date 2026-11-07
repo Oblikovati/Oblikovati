@@ -11,7 +11,7 @@ pub(super) fn model_point(
         .map_err(|error| Phase::Placement.sketch(Entity::Edge(edge), error))?;
     Ok(Point3::new(x, y, z))
 }
-pub(super) fn model_displacement(
+pub(crate) fn model_displacement(
     plane: SketchPlane,
     local: [f64; 3],
 ) -> Result<Vector3, EvaluationFailure> {

@@ -52,7 +52,7 @@ fn require_shared_closed_boundary(edges: &[DirectedEndpoints]) -> Result<(), Eva
     Ok(())
 }
 
-fn require_boundary_line(
+pub(super) fn require_boundary_line(
     geometry: &Sketch2D,
     id: SketchEntityId,
 ) -> Result<oblikovati_model::sketch::SketchLine2D, EvaluationFailure> {

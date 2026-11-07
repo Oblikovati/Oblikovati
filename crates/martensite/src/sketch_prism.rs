@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod boundary;
+mod certified;
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase, PrismProbeDefinition, PrismProbeSnapshot,
 };
+pub use certified::retain_certified_sketch_prism;
 pub use oblikovati_model::feature::sketch_prism::{SketchDirectedLine, SketchPrismSelection};
 use oblikovati_model::feature::{sketch_prism::SketchPrismDefinition, work_geometry::DatumLength};
 use oblikovati_model::{document_sketch::DocumentSketchId, history::DocumentSnapshot};

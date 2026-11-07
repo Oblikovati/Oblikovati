@@ -13,7 +13,7 @@ pub use named::{
     NamedPrismEvaluator, NamedPrismSnapshot, named_part_properties, retain_named_sketch_prism,
 };
 mod mesh;
-mod placement;
+pub(crate) mod placement;
 mod profile;
 mod report;
 mod snapshot;
