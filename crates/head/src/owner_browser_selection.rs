@@ -150,22 +150,18 @@ impl<
         choice: &oblikovati_gui::GuiBrowserChoice,
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
-            ActivateModelState, Body, BodyVisible, CopyModelState, CreateModelState, Nothing, Root,
-            ShowFeatureDimensions, SketchDimensionsShown,
+            ActivateModelState, Body, BodyVisible, CopyModelState, CreateModelState, Nothing,
+            RenameModelState, Root, ShowFeatureDimensions, SketchDimensionsShown,
         };
         self.require_browser_document(document)?;
+        if let RenameModelState { id, name } = choice {
+            return self.rename_model_state(*id, name);
+        }
         if matches!(choice, CreateModelState) {
             return self.create_active_model_state(document);
         }
         if let CopyModelState(id) = choice {
-            oblikovati_api::client::Client::new(self.document_host())
-                .model_states()
-                .copy(&oblikovati_api::wire::ModelStateNameArgs {
-                    id: *id,
-                    name: String::new(),
-                })
-                .map_err(|cause| cause.to_string())?;
-            return Ok(true);
+            return self.copy_model_state(*id);
         }
         if let ActivateModelState(id) = choice {
             oblikovati_api::client::Client::new(self.document_host())
@@ -188,6 +184,7 @@ impl<
         match choice {
             CreateModelState
             | CopyModelState(_)
+            | RenameModelState { .. }
             | ActivateModelState(_)
             | ShowFeatureDimensions(_)
             | SketchDimensionsShown { .. } => {}

@@ -11,6 +11,26 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn copy_model_state(&mut self, id: u64) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .model_states()
+            .copy(&oblikovati_api::wire::ModelStateNameArgs {
+                id,
+                name: String::new(),
+            })
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+    pub(super) fn rename_model_state(&mut self, id: u64, name: &str) -> Result<bool, String> {
+        oblikovati_api::client::Client::new(self.document_host())
+            .model_states()
+            .rename(&oblikovati_api::wire::ModelStateNameArgs {
+                id,
+                name: name.into(),
+            })
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
     pub(super) fn create_active_model_state(&mut self, document: u64) -> Result<bool, String> {
         self.files
             .commands(document)

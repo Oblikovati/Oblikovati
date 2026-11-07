@@ -203,6 +203,11 @@ pub enum GuiBrowserChoice {
     CreateModelState,
     /// Copy a member without activating the copy.
     CopyModelState(u64),
+    /// Rename one document-owned member.
+    RenameModelState {
+        id: u64,
+        name: String,
+    },
     /// Activate a document-owned model state.
     ActivateModelState(u64),
     /// No row stays chosen, as after a click on empty space.

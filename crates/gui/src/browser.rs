@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[path = "browser_model_state.rs"]
-mod browser_model_state;
+pub(crate) mod browser_model_state;
 use crate::application::workspace_layout::browser_view::BrowserView;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, StyleColor, Ui};
@@ -223,7 +223,7 @@ impl BrowserTree<'_> {
         view: &mut BrowserView,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        self.model_states(actions);
+        self.model_states(view, actions);
         self.bodies(view, actions);
         self.origin(view, actions);
         self.parameters();
@@ -234,22 +234,36 @@ impl BrowserTree<'_> {
             self.ui.text(end_marker);
         }
     }
-    fn model_states(&self, actions: &mut Vec<GuiShellAction>) {
+    fn model_states(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         let Some(states) = &self.browser.model_states else {
             return;
         };
         let Some(_representations) = self.branch("Representations", true) else {
             return;
         };
-        let node = self.branch("Model State", false);
+        view.model_state_edit.observe(self.state.document, states);
+        let node = if view.model_state_edit.needs_open_branch() {
+            self.ui
+                .tree_node_config("Model State")
+                .opened(true, imgui::Condition::Always)
+                .push()
+        } else {
+            self.branch("Model State", false)
+        };
         if self.ui.is_item_hovered() && self.ui.is_mouse_clicked(MouseButton::Right) {
             self.ui.open_popup("##model-state-menu");
         }
-        self.model_state_menu(states, actions);
+        self.model_state_menu(states, view, actions);
         let Some(_states) = node else {
             return;
         };
         for member in states.list() {
+            if view
+                .model_state_edit
+                .draw(self.ui, self.state.document, member, states, actions)
+            {
+                continue;
+            }
             let active = states.active().is_some_and(|row| row.id == member.id);
             let label = if active {
                 format!("{} (Active)", member.name)

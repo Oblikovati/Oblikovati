@@ -35,6 +35,8 @@ fn model_state_rows_follow_document_and_double_click_activates_member() {
     world.expect_text("Duplicate Variant##1");
     world.click_text("Duplicate Variant##1");
     world.pump(Vec::new());
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
     world.expect_text("Variant##1 Copy1");
     world.expect_text("Variant##1 (Active)");
     world.close();
@@ -55,6 +57,8 @@ fn model_state_menu_creates_active_and_copies_inactive_with_undo() {
     open_new_state_menu(&mut world);
     world.click_text("New Model State");
     world.pump(Vec::new());
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
     world.expect_text("Model State1 (Active)");
     world.undo();
     world.expect_text("Primary (Active)");
@@ -64,7 +68,35 @@ fn model_state_menu_creates_active_and_copies_inactive_with_undo() {
     open_new_state_menu(&mut world);
     world.click_text("Duplicate Model State1");
     world.pump(Vec::new());
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
     world.expect_text("Model State1 (Active)");
     world.expect_text("Model State1 Copy1");
+    world.close();
+}
+
+#[test]
+fn created_model_state_name_can_be_edited_or_cancelled() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("Model State");
+    open_new_state_menu(&mut world);
+    world.click_text("New Model State");
+    world.pump(Vec::new());
+    assert!(world.text_is_selected("Model State1"));
+    world.type_text("Primary");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.expect_text("Enter a unique, nonempty name");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    world.pump(Vec::new());
+    world.expect_text("Model State1 (Active)");
+    open_new_state_menu(&mut world);
+    world.click_text("New Model State");
+    world.pump(Vec::new());
+    assert!(world.text_is_selected("Model State2"));
+    world.type_text("Large");
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    world.expect_text("Large (Active)");
     world.close();
 }
