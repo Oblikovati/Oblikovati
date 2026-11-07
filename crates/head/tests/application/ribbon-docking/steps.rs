@@ -8,7 +8,7 @@ const SIDE_WIDTH: f32 = 212.;
 /// A point on the ribbon with no control under it, wherever the ribbon sits now.
 fn ribbon_blank_point() -> [i32; 2] {
     if let Some((position, _)) = window_geometry(FLOATING) {
-        return [position[0] as i32 + 60, position[1] as i32 + 8];
+        return [position[0] as i32 + 195, position[1] as i32 + 55];
     }
     if let Some((position, size)) = window_geometry(COLUMN) {
         return [position[0] as i32 + 30, (position[1] + size[1]) as i32 - 20];
@@ -437,3 +437,6 @@ mod active_tab;
 
 #[path = "right_docked.rs"]
 mod right_docked;
+
+#[path = "floating_title.rs"]
+mod floating_title;

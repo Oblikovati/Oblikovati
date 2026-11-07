@@ -129,7 +129,7 @@ impl RibbonDisplayState {
         self.context_requested = true;
     }
     /// Move the ribbon; a temporary panel opened for the old place closes.
-    fn place(&mut self, placement: RibbonPlacement) {
+    pub(crate) fn place(&mut self, placement: RibbonPlacement) {
         self.placement = placement;
         self.temporary = None;
         self.side_anchor = None;
@@ -194,6 +194,30 @@ impl RibbonDisplayState {
             .build()
         {
             self.place(RibbonPlacement::Floating);
+        }
+    }
+    /// Dock a floating ribbon from its title-bar menu.
+    pub(crate) fn floating_title_menu(&mut self, ui: &Ui) {
+        let [left, top] = ui.window_pos();
+        let right = left + ui.window_size()[0];
+        let bottom = top + ui.frame_height();
+        let [x, y] = ui.io().mouse_pos;
+        let title_hovered =
+            x >= left && x < right && y >= top && y < bottom && ui.is_window_hovered();
+        if title_hovered && ui.is_mouse_clicked(imgui::MouseButton::Right) {
+            ui.open_popup("##floating-ribbon-dock");
+        }
+        let Some(_menu) = ui.begin_popup("##floating-ribbon-dock") else {
+            return;
+        };
+        for (label, position) in [
+            ("Dock to Top", RibbonPlacement::Top),
+            ("Dock to Left", RibbonPlacement::Left),
+            ("Dock to Right", RibbonPlacement::Right),
+        ] {
+            if ui.menu_item(label) {
+                self.place(position);
+            }
         }
     }
     /// A double click on the active tab acts like the display control. Its own release must not
