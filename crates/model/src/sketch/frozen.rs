@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{PlanarConstraint, Sketch2D, SketchEntityId, SketchError};
 use std::collections::BTreeMap;
-type CoordinateTargets = BTreeMap<usize, Option<f64>>;
+pub(super) type CoordinateTargets = BTreeMap<usize, Option<f64>>;
 
-pub(super) fn authored_constants(sketch: &Sketch2D) -> Result<Vec<(usize, f64)>, SketchError> {
+pub(super) fn authored_targets(sketch: &Sketch2D) -> Result<CoordinateTargets, SketchError> {
     let mut targets = CoordinateTargets::new();
     for constraint in &sketch.constraints {
         record_relation(sketch, &mut targets, &constraint.relation)?;
     }
-    // Disagreeing targets remain equations, so the shared solver reports every conflicting source.
-    Ok(targets
-        .into_iter()
-        .filter_map(|(column, value)| value.map(|value| (column, value)))
-        .collect())
+    // Disagreeing targets remain equations, so the solver reports every conflicting source.
+    Ok(targets)
 }
 fn record_relation(
     sketch: &Sketch2D,

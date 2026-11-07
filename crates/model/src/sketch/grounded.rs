@@ -8,6 +8,7 @@ use oblikovati_solve::{
     residual::{ResidualBlock, ResidualError, ResidualSource},
 };
 use std::collections::BTreeSet;
+mod coincident_constants;
 mod layout;
 use layout::{GroundedLayout, GroundedSlot};
 
@@ -69,8 +70,8 @@ fn prepare_coordinates(
     // #3762 / #3808: branch and contact preparation must see the current reference coordinates.
     let (warm, identities) = grounded_seed(sketch, anchors)?;
     let columns = grounded_columns(&warm, &identities);
-    let mut constants = super::frozen::authored_constants(&warm)?;
-    constants.retain(|(column, _)| !columns.contains(column));
+    let targets = super::frozen::authored_targets(&warm)?;
+    let constants = coincident_constants::propagate(&warm, anchors, &targets, &columns)?;
     let seed = super::frozen::seed_authored(&warm, &constants)?;
     // #3808: rank inspection evaluates the same fixed target positions as nonlinear iteration.
     let prepared = compile::prepare(&seed, parameters)?;

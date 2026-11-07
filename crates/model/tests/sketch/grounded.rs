@@ -60,3 +60,77 @@ fn all_active_source_layout_preserves_existing_value_order() {
     assert_eq!(prepared.values, [2.0, 3.0]);
     assert_eq!(prepared.restore(&prepared.values).unwrap(), prepared.values);
 }
+
+#[test]
+fn coincident_to_projected_anchor_is_bitwise_exact_after_solve() {
+    use crate::sketch::{PlanarConstraint, SketchConstraintId};
+    let mut sketch = Sketch2D::default();
+    sketch.add_point(SketchEntityId(1), [0., 0.]).unwrap();
+    sketch.add_point(SketchEntityId(2), [0.4, -0.3]).unwrap();
+    sketch
+        .add_constraint(
+            SketchConstraintId(1),
+            PlanarConstraint::Coincident {
+                points: [SketchEntityId(1), SketchEntityId(2)],
+            },
+        )
+        .unwrap();
+    let anchor = SketchPoint2D {
+        id: SketchEntityId(1),
+        position: [2., -3.],
+    };
+    let parameters = ParameterCollection::new(UnitsOfMeasure::default());
+    let result = sketch
+        .solve_with_grounded_points(&parameters, &[anchor], Default::default(), || false)
+        .unwrap();
+    assert_eq!(
+        result.numerical().termination,
+        oblikovati_solve::nonlinear::SolveTermination::Converged
+    );
+    assert_eq!(result.numerical().structure.degrees_of_freedom, 0);
+    assert_eq!(
+        result
+            .candidate()
+            .point(SketchEntityId(2))
+            .unwrap()
+            .position
+            .map(f64::to_bits),
+        anchor.position.map(f64::to_bits)
+    );
+    assert!(result.conflicting_relations().is_empty());
+}
+
+#[test]
+fn conflicting_projected_anchors_remain_a_reported_constraint_failure() {
+    use crate::sketch::{PlanarConstraint, SketchConstraintId};
+    let mut sketch = Sketch2D::default();
+    sketch.add_point(SketchEntityId(1), [0., 0.]).unwrap();
+    sketch.add_point(SketchEntityId(2), [1., 0.]).unwrap();
+    sketch
+        .add_constraint(
+            SketchConstraintId(1),
+            PlanarConstraint::Coincident {
+                points: [SketchEntityId(1), SketchEntityId(2)],
+            },
+        )
+        .unwrap();
+    let anchors = [
+        SketchPoint2D {
+            id: SketchEntityId(1),
+            position: [0., 0.],
+        },
+        SketchPoint2D {
+            id: SketchEntityId(2),
+            position: [1., 0.],
+        },
+    ];
+    let parameters = ParameterCollection::new(UnitsOfMeasure::default());
+    let result = sketch
+        .solve_with_grounded_points(&parameters, &anchors, Default::default(), || false)
+        .unwrap();
+    assert_ne!(
+        result.numerical().termination,
+        oblikovati_solve::nonlinear::SolveTermination::Converged
+    );
+    assert_eq!(result.conflicting_constraints(), [SketchConstraintId(1)]);
+}
