@@ -463,3 +463,120 @@ fn model_groups_visible(world: &mut ApplicationWorld) {
 fn back_to_tabs_only(world: &mut ApplicationWorld) {
     groups_gone(world);
 }
+
+#[given("a part is active in the MCAD Software with the full ribbon visible")]
+fn part_with_full_ribbon(world: &mut ApplicationWorld) {
+    use crate::HeadWork;
+    world.app().owner.create_part_document().unwrap();
+    world.previous_document = world.app().owner.gui_command_state().unwrap().document;
+    world.pump(Vec::new());
+    world.expect_text("Extrude");
+}
+#[given("the 3D Model tab is the first visible command tab and is active")]
+fn model_is_first(world: &mut ApplicationWorld) {
+    world.expect_text("3D Model");
+    world.expect_text("Extrude");
+}
+fn scroll_tab(world: &mut ApplicationWorld, label: &str, notches: i32) {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput};
+    let position = super::diagnostics::pointer_pixels(world.run(label).center());
+    world.hover(position);
+    world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
+        notches,
+        position,
+    })]);
+}
+#[when("the user scrolls up over the 3D Model tab")]
+fn wheel_up_on_model(world: &mut ApplicationWorld) {
+    scroll_tab(world, "3D Model", 1);
+}
+#[then("the 3D Model tab remains active")]
+fn model_remains(world: &mut ApplicationWorld) {
+    world.expect_text("Extrude");
+}
+#[when("the user selects the last visible command tab")]
+fn select_last_tab(world: &mut ApplicationWorld) {
+    world.click_text("Annotate");
+}
+#[when("the user scrolls down over that tab")]
+fn wheel_down_on_last(world: &mut ApplicationWorld) {
+    scroll_tab(world, "Annotate", -1);
+}
+#[then("the last visible command tab remains active")]
+fn last_remains(world: &mut ApplicationWorld) {
+    world.expect_text("General Note");
+}
+#[then("its command groups remain visible")]
+fn current_groups_remain(world: &mut ApplicationWorld) {
+    assert!(
+        world.shows("Extrude") || world.shows("General Note"),
+        "expected current tab commands"
+    );
+}
+
+#[test]
+fn mouse_wheel_selects_adjacent_ribbon_tabs() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    let camera = crate::HeadWindow::view_camera(&world.app().window).unwrap();
+    scroll_tab(&mut world, "3D Model", -1);
+    world.expect_text("Parameters");
+    world.expect_no_text("Extrude");
+    scroll_tab(&mut world, "Manage", 1);
+    world.expect_text("Extrude");
+    assert_eq!(
+        crate::HeadWindow::view_camera(&world.app().window).unwrap(),
+        camera
+    );
+    world.close();
+}
+
+#[test]
+fn mouse_wheel_keeps_tabs_only_closed_until_a_tab_is_clicked() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    choose_tabs_mode(&mut world);
+    scroll_tab(&mut world, "3D Model", -1);
+    world.expect_no_text("Extrude");
+    assert_eq!(
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text == "Parameters")
+            .count(),
+        1
+    );
+    world.click_text("Manage");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text == "Parameters")
+            .count()
+            > 1
+    );
+    world.close();
+}
+
+#[test]
+fn mouse_wheel_switches_an_open_temporary_ribbon() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    choose_tabs_mode(&mut world);
+    world.click_text("3D Model");
+    world.expect_text("Extrude");
+    scroll_tab(&mut world, "3D Model", -1);
+    world.expect_no_text("Extrude");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text == "Parameters")
+            .count()
+            > 1
+    );
+    world.close();
+}

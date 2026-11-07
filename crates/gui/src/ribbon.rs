@@ -43,6 +43,7 @@ pub(crate) struct DocumentRibbon {
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
     pub display: crate::application::ribbon_display::RibbonDisplayState,
     settling_frames: u8,
+    pending_tab: Option<RibbonTab>,
 }
 pub(crate) struct RibbonFrame {
     pub tabs: Vec<RibbonTab>,
@@ -51,7 +52,7 @@ pub(crate) struct RibbonFrame {
 const TAB_SETTLING_FRAMES: u8 = 2;
 impl DocumentRibbon {
     pub(crate) fn needs_frame(&self) -> bool {
-        self.settling_frames > 0
+        self.settling_frames > 0 || self.pending_tab.is_some()
     }
     pub(crate) fn prepare(&mut self, state: &GuiCommandState) -> RibbonFrame {
         let key = document_ribbon_key(state);
@@ -66,11 +67,33 @@ impl DocumentRibbon {
             self.settling_frames = TAB_SETTLING_FRAMES;
             self.active = contextual_tab(&tabs, sketch);
             self.previous = Some(identity);
+            self.pending_tab = None;
         }
         RibbonFrame {
             tabs,
-            select: changed.then_some(self.active),
+            select: if changed {
+                Some(self.active)
+            } else {
+                self.pending_tab.take()
+            },
         }
+    }
+    pub(crate) fn scroll_tabs(&mut self, tabs: &[RibbonTab], wheel: f32) {
+        let Some(index) = tabs.iter().position(|tab| *tab == self.active) else {
+            return;
+        };
+        let next = if wheel > 0. {
+            index.saturating_sub(1)
+        } else if wheel < 0. {
+            (index + 1).min(tabs.len() - 1)
+        } else {
+            return;
+        };
+        if next == index {
+            return;
+        }
+        self.active = tabs[next];
+        self.pending_tab = Some(self.active);
     }
 }
 fn document_ribbon_key(state: &GuiCommandState) -> RibbonKey {

@@ -143,15 +143,20 @@ fn side_ribbon(
 }
 fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     ui.group(|| {
+        let mut hovered = false;
         for tab in &frame.tabs {
             let chosen = ui
                 .selectable_config(tab.label())
                 .selected(ribbon.active == *tab)
                 .size([SIDE_TABS_WIDTH - 16., 0.])
                 .build();
+            hovered |= ui.is_item_hovered();
             if chosen {
                 ribbon.active = *tab;
             }
+        }
+        if hovered {
+            ribbon.scroll_tabs(&frame.tabs, ui.io().mouse_wheel);
         }
     });
 }
@@ -270,6 +275,7 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     let Some(_tabs) = ui.tab_bar("##document-ribbon-tabs") else {
         return;
     };
+    let mut hovered = false;
     for tab in &frame.tabs {
         let flags = if frame.select == Some(*tab) {
             TabItemFlags::SET_SELECTED
@@ -277,6 +283,7 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
             TabItemFlags::empty()
         };
         let item = ui.tab_item_with_flags(tab.label(), None, flags);
+        hovered |= ui.is_item_hovered();
         // On release: the press itself is a click outside any panel still open, and closes it.
         let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
         let doubled = ui.is_item_hovered()
@@ -292,6 +299,9 @@ fn ribbon_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         if released && ribbon.display.take_tab_release() {
             ribbon.display.temporary = Some(TemporaryPanel::WholeTab);
         }
+    }
+    if hovered {
+        ribbon.scroll_tabs(&frame.tabs, ui.io().mouse_wheel);
     }
 }
 pub(crate) fn command_button(

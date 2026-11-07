@@ -1,5 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn wheel_moves_between_visible_tabs_without_wrapping() {
+    let mut ribbon = DocumentRibbon::default();
+    let mut state = part_state();
+    let frame = ribbon.prepare(&state);
+    ribbon.scroll_tabs(&frame.tabs, 1.);
+    assert_eq!(ribbon.active, RibbonTab::Model);
+    ribbon.scroll_tabs(&frame.tabs, -1.);
+    assert_eq!(ribbon.active, RibbonTab::Manage);
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Manage));
+    ribbon.scroll_tabs(&frame.tabs, 1.);
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::Model));
+    ribbon.active = *frame.tabs.last().unwrap();
+    ribbon.scroll_tabs(&frame.tabs, -1.);
+    assert_eq!(ribbon.active, *frame.tabs.last().unwrap());
+    ribbon.scroll_tabs(&frame.tabs, 1.);
+    state.document_type = Some(DOCUMENT_DRAWING);
+    assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::PlaceViews));
+}
 fn part_state() -> GuiCommandState {
     GuiCommandState {
         document: Some(7),
