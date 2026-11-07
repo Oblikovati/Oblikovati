@@ -36,7 +36,7 @@ class FakeWindowsBuildHost : BuildBootstrapHost {
     [int] Run([string] $Executable, [string[]] $Arguments) {
         $this.Calls.Add($Executable + ' ' + [string]::Join('|', $Arguments))
         $name = [IO.Path]::GetFileName($Executable)
-        if ($name -eq 'cargo' -and $Arguments[1] -eq 'build') { return $this.BuildFixtureGui() }
+        if ($name -eq 'cargo' -and $Arguments[1] -in @('build', 'gui')) { return $this.BuildFixtureGui() }
         if ($name -eq 'oblikovati.exe') { $this.GuiArguments = $Arguments; return $this.GuiExit }
         if ($name -eq 'git-install.exe' -or $Arguments -contains 'Git.Git' -or $Arguments -contains 'git') { $this.GitInstalled = $true }
         if ($name -eq 'rustup-init.exe' -or $name -eq 'rustup') { $this.RustInstalled = $true }

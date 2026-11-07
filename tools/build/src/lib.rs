@@ -50,6 +50,7 @@ pub fn run(arguments: &[String], root: &Path) -> Result<(), String> {
 fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult<()> {
     match arguments {
         [task @ ("build" | "test" | "lint")] => quality::run(root, runner, task),
+        ["gui"] => quality::gui(root, runner),
         ["matrix"] => print_matrix(),
         ["scenarios", path] => scenarios::print_inventory(Path::new(path)),
         ["native-validation", directory, environment] => {
@@ -108,7 +109,7 @@ fn distribution_task(arguments: &[&str], root: &Path, runner: &dyn Runner) -> Bu
             driver::verify_release(root, runner, version, Path::new(output))
         }
         _ => Err(format!(
-            "arguments {arguments:?}: expected build|test|lint|native|gate|docs|script-docs|script-docs-check|tools|cache-tools|matrix|version CHANNEL|preflight build/publish|release-request CHANNEL|package TARGET VERSION [--signed]|mac-bundle VERSION [--signed]|collect VERSION INPUT OUTPUT|verify-release VERSION OUTPUT"
+            "arguments {arguments:?}: expected build|gui|test|lint|native|gate|docs|script-docs|script-docs-check|tools|cache-tools|matrix|version CHANNEL|preflight build/publish|release-request CHANNEL|package TARGET VERSION [--signed]|mac-bundle VERSION [--signed]|collect VERSION INPUT OUTPUT|verify-release VERSION OUTPUT"
         )),
     }
 }

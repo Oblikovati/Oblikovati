@@ -30,6 +30,7 @@ function Test-StaleSourceAndFailedBuild {
     $fixture = [FakeWindowsCheckout]::new($repository)
     try {
         Assert-Equal ($fixture.Invoke('run', @('--frames', '1'))) 0 'missing GUI builds then runs'
+        Assert-True ($fixture.HostAccess.Calls -contains 'cargo xtask|gui') 'run builds the GUI target only'
         Set-Content -LiteralPath (Join-Path $fixture.Root 'source.rs') -Value 'new source'
         $fixture.HostAccess.BuildExit = 19
         $fixture.HostAccess.Calls.Clear()

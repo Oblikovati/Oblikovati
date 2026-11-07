@@ -41,12 +41,13 @@ bootstrap_virtual_display() {
     bootstrap_fail 'Xvfb did not provide a display within 10 seconds; expected a usable X server for the Rust build system'
 }
 bootstrap_compile() {
-    local before after binary
+    local before after binary task=build
+    [[ ${1:-build} != run ]] || task=gui
     before=$(bootstrap_source_fingerprint) || return
     mkdir -p -- "$BOOTSTRAP_ROOT/.tools"
     rm -f -- "$BOOTSTRAP_STAMP"
     bootstrap_virtual_display || return
-    cargo xtask build || return
+    cargo xtask "$task" || return
     [[ -x $BOOTSTRAP_GUI ]] || {
         bootstrap_fail "build output $BOOTSTRAP_GUI: expected the oblikovati GUI executable"
         return 1

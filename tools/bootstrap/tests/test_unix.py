@@ -24,7 +24,7 @@ elif name == "uname": print("Linux" if args == ["-s"] else "x86_64")
 elif name == "rustup" and args[:2] == ["component", "list"]:
     print("rustfmt-x86_64-unknown-linux-gnu\nclippy-x86_64-unknown-linux-gnu\nllvm-tools-x86_64-unknown-linux-gnu")
 elif name == "kache": print("kache 2.0.0")
-elif name == "cargo" and args == ["xtask", "build"]:
+elif name == "cargo" and args in (["xtask", "build"], ["xtask", "gui"]):
     if os.environ.get("FAKE_EDIT_DURING_BUILD"): pathlib.Path("during-build.rs").write_text("changed during build")
     if os.environ.get("FAKE_BUILD_FAIL"): sys.exit(19)
     output = pathlib.Path(os.environ["CARGO_TARGET_DIR"]) / "debug" / "oblikovati"
@@ -111,7 +111,7 @@ class UnixBootstrapTests(unittest.TestCase):
         result = self.host.invoke("run", "file with spaces.obk")
         self.assertEqual(result.returncode, 7, result.stderr)
         calls = [call for call in self.host.calls() if call[0] in ("cargo", "gui")]
-        self.assertEqual(calls, [["cargo", "xtask", "build"], ["gui", "file with spaces.obk"]])
+        self.assertEqual(calls, [["cargo", "xtask", "gui"], ["gui", "file with spaces.obk"]])
 
     def test_failed_build_never_launches_an_old_binary(self) -> None:
         self.assertEqual(self.host.invoke().returncode, 0)
@@ -133,12 +133,12 @@ class UnixBootstrapTests(unittest.TestCase):
         (self.host.root / "new.rs").write_text("new source")
         self.host.log.write_text("")
         self.assertEqual(self.host.invoke("run").returncode, 0)
-        self.assertIn(["cargo", "xtask", "build"], self.host.calls())
+        self.assertIn(["cargo", "xtask", "gui"], self.host.calls())
         binary = self.host.root / "target/debug/oblikovati"
         binary.write_text(binary.read_text() + "# changed binary\n")
         self.host.log.write_text("")
         self.assertEqual(self.host.invoke("run").returncode, 0)
-        self.assertIn(["cargo", "xtask", "build"], self.host.calls())
+        self.assertIn(["cargo", "xtask", "gui"], self.host.calls())
 
     def test_wayland_without_xwayland_cannot_launch_or_install(self) -> None:
         self.host.environment.pop("DISPLAY")

@@ -4,6 +4,24 @@ use super::*;
 use crate::{cargo_tree::tests::package, process::tests::FakeRunner, tree::tests::FixtureTree};
 
 #[test]
+fn gui_command_builds_only_the_desktop_binary() {
+    let runner = FakeRunner::default();
+    gui(Path::new("."), &runner).unwrap();
+    assert_eq!(
+        runner.calls.borrow()[0],
+        [
+            "cargo",
+            "build",
+            "--locked",
+            "--package",
+            "oblikovati-head",
+            "--bin",
+            "oblikovati"
+        ]
+    );
+}
+
+#[test]
 fn command_plan_tests_all_targets_and_docs_with_locked_dependencies() {
     let runner = FakeRunner::default();
     for task in ["build", "test", "lint"] {

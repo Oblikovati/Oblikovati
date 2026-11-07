@@ -98,11 +98,12 @@ function Install-BootstrapDependencies {
 }
 function Invoke-BootstrapBuild {
     [OutputType([int])]
-    param([string] $Root, [string] $Target, [string] $Gui, [string] $Stamp, [BuildBootstrapHost] $HostAccess)
+    param([string] $Root, [string] $Target, [string] $Gui, [string] $Stamp, [string] $Mode, [BuildBootstrapHost] $HostAccess)
     $before = Get-BootstrapSourceFingerprint $Root $Target $HostAccess
     $null = New-Item -ItemType Directory -Path (Split-Path -Parent $Stamp) -Force
     if (Test-Path -LiteralPath $Stamp) { Remove-Item -LiteralPath $Stamp -Force }
-    $status = $HostAccess.Run('cargo', @('xtask', 'build'))
+    $task = if ($Mode -eq 'run') { 'gui' } else { 'build' }
+    $status = $HostAccess.Run('cargo', @('xtask', $task))
     if ($status -ne 0) { return $status }
     if (-not (Test-Path -LiteralPath $Gui -PathType Leaf)) { throw "build output $Gui`: expected the oblikovati GUI executable" }
     $after = Get-BootstrapSourceFingerprint $Root $Target $HostAccess
@@ -146,7 +147,7 @@ function Invoke-PreparedBootstrap {
     param([string] $Root, [string] $Mode, [string[]] $GuiArguments, [string] $Architecture, [string] $Target, [string] $Gui, [string] $Stamp, [string] $Temporary, [BuildBootstrapHost] $HostAccess)
     Install-BootstrapDependencies $Root $Temporary $Architecture ($Mode -eq 'check') $HostAccess
     if ($Mode -eq 'check') { Write-Host 'Build dependencies are installed.'; return 0 }
-    $status = Invoke-BootstrapBuild $Root $Target $Gui $Stamp $HostAccess
+    $status = Invoke-BootstrapBuild $Root $Target $Gui $Stamp $Mode $HostAccess
     if ($status -ne 0 -or $Mode -ne 'run') { return $status }
     return $HostAccess.Run($Gui, $GuiArguments)
 }

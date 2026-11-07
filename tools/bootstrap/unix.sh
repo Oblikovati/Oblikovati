@@ -124,6 +124,6 @@ bootstrap_main() {
     trap 'exit 130' INT
     trap 'exit 143' TERM
     bootstrap_dependencies || return
-    bootstrap_compile || return
+    bootstrap_compile "$mode" || return
     [[ $mode != run ]] || "$BOOTSTRAP_GUI" "$@"
 }

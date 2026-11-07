@@ -32,6 +32,22 @@ struct LineCount {
     covered: u64,
 }
 
+pub(crate) fn gui(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
+    execute(
+        runner,
+        root,
+        &[
+            "cargo",
+            "build",
+            "--locked",
+            "--package",
+            "oblikovati-head",
+            "--bin",
+            "oblikovati",
+        ],
+    )
+}
+
 pub(crate) fn workspace_command(
     runner: &dyn Runner,
     workspace: &Path,
