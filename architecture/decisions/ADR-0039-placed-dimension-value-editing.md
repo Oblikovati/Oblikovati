@@ -1,6 +1,7 @@
 # ADR-0039: One value editor for placed sketch dimensions
 
 Status: Proposed for the Rust target. Date: 2026-11-07.
+Implementation: [#3855](https://github.com/Oblikovati/Oblikovati/issues/3855).
 
 ## Context
 
