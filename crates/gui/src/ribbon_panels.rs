@@ -151,6 +151,7 @@ struct PanelDrawContext<'a> {
     ui: &'a Ui,
     state: &'a GuiCommandState,
     hidden: std::collections::BTreeSet<(RibbonTab, RibbonPanel)>,
+    show_panel_titles: bool,
     owners: RibbonPanelOwners<'a>,
     actions: &'a mut Vec<GuiShellAction>,
 }
@@ -181,6 +182,7 @@ pub(crate) fn draw_panels(
         ui,
         state,
         hidden: display.hidden_panels.clone(),
+        show_panel_titles: display.show_panel_titles,
         owners,
         actions,
     };
@@ -220,6 +222,7 @@ pub(crate) fn draw_side_groups(
         ui,
         state,
         hidden: display.hidden_panels.clone(),
+        show_panel_titles: display.show_panel_titles,
         owners,
         actions,
     };
@@ -433,7 +436,9 @@ fn draw_expanded(
     ui.group(|| {
         local_action = context.content(panel, origin);
         context.owners.icons.cursor(ui, origin, [0., 66.]);
-        ui.text(panel.label());
+        if context.show_panel_titles {
+            ui.text(panel.label());
+        }
         if panel == RibbonPanel::Create {
             // Preserve the existing Create grid's trailing space and wide-window command positions.
             crate::widget_abi::cursor_position(ui, origin);
@@ -465,7 +470,9 @@ fn draw_collapsed(
         ui.tooltip_text(format!("Show {} commands", panel.label()));
     }
     context.owners.icons.cursor(ui, origin, [0., 66.]);
-    ui.text(panel.label());
+    if context.show_panel_titles {
+        ui.text(panel.label());
+    }
     draw_panel_popup(context, tab, panel, &identity, anchor, layout);
 }
 

@@ -431,3 +431,6 @@ fn sheet_metal_active(world: &mut ApplicationWorld) {
 pub(super) fn dock_ribbon_top(world: &mut ApplicationWorld) {
     choose_position(world, "Top");
 }
+
+#[path = "active_tab.rs"]
+mod active_tab;

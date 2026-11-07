@@ -93,6 +93,7 @@ pub(crate) struct RibbonDisplayState {
     close_context_menu: bool,
     /// Panels a user has hidden, per tab; they stay listed in Show Panels.
     pub hidden_panels: BTreeSet<(RibbonTab, RibbonPanel)>,
+    pub show_panel_titles: bool,
 }
 impl Default for RibbonDisplayState {
     fn default() -> Self {
@@ -108,6 +109,7 @@ impl Default for RibbonDisplayState {
             close_context_menu: false,
             // Parameters lives on Manage, and is offered here for those who want it beside Create.
             hidden_panels: BTreeSet::from([(RibbonTab::Model, RibbonPanel::Parameters)]),
+            show_panel_titles: true,
         }
     }
 }
@@ -166,6 +168,13 @@ impl RibbonDisplayState {
         };
         muted_context_item(ui, "Ribbon Appearance");
         self.show_panels_menu(ui, tab, panels);
+        if ui
+            .menu_item_config("Show Panel Titles")
+            .selected(self.show_panel_titles)
+            .build()
+        {
+            self.show_panel_titles = !self.show_panel_titles;
+        }
         if std::mem::take(&mut self.close_context_menu) {
             ui.close_current_popup();
         }
