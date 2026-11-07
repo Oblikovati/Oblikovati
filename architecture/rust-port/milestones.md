@@ -299,7 +299,7 @@ Work:
 
 1. Split the exchange inventory by format, direction, document kind, metadata,
    assembly handling, platform, and required external tools.
-2. Consume released Martensite exchange capabilities. DWG uses
+2. Consume released Martensite exchange capabilities. DWG and DXF use
    [acadrust](https://github.com/hakanaktt/acadrust) inside the kernel. All
    exchange parsers, writers, and format-specific translators belong to
    RustyCADKernel, including required Go behavior outside OCCT. Do not port
@@ -309,7 +309,10 @@ Work:
    and add-in workflows from the inventory; Inventor, OLE, and SolidWorks
    format implementations remain kernel-owned. Follow
    [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md).
-4. Test import, edit, save, reopen, and export with units, analytic face types,
+4. Treat SolidWorks (Bessemer) and Inventor (Corliss) as first-class documents
+   beside YAML: direct open, edit, history, source-format save, and reopen.
+   Follow [ADR-0040](../decisions/ADR-0040-first-class-cad-document-formats.md).
+   Test import, edit, save, reopen, and export with units, analytic face types,
    topology, names, colors, references, and assembly structure. Include the
    elliptical-arc STEP regression linked in the source map.
 5. Document formats that were already unavailable at the fixed baseline as

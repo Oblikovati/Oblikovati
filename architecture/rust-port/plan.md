@@ -31,12 +31,18 @@ The [source map](source-map.md) records the starting revisions. The
 | `Oblikovati.AddIns.*` | Separate add-ins | Keep the C ABI. Test existing Go add-ins against the Rust host. |
 | `Oblikovati` | Go reference application | Read source and run comparison tests at the recorded revision. |
 
-All exchange format implementations belong to `RustyCADKernel`. DWG uses
+All exchange format implementations belong to `RustyCADKernel`. DWG and DXF use
 [acadrust](https://github.com/hakanaktt/acadrust) inside the kernel. The
 application port covers exchange commands, dialogs, API routing, storage, and
 kernel result integration. It does not port format parsers, writers, or
 translators. See [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md).
 Native Oblikovati recipe persistence remains application-owned.
+
+SolidWorks and Inventor files are first-class document formats beside Oblikovati
+YAML. Use Bessemer for SolidWorks and Corliss for Inventor through Martensite.
+Direct open, edit, history, save in the source format, and reopen are application
+requirements. See [ADR-0040](../decisions/ADR-0040-first-class-cad-document-formats.md).
+Provider selection does not establish read/write or edit completeness.
 
 **Required scope: Go-kernel capabilities that support application features
 and are not part of OCCT must be ported and adapted into Martensite.** OCCT
