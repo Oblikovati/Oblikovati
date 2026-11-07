@@ -323,4 +323,23 @@ fn select_different_file(world: &mut ApplicationWorld) {
 fn component_shows_file(world: &mut ApplicationWorld) {
     world.expect_no_text("Look in");
     world.expect_text("Select Component");
+    world.expect_text(LAYOUT_FILE);
+}
+
+#[then("it displays a file list, a file name field and Open and Cancel controls")]
+fn component_file_chooser_controls(world: &mut ApplicationWorld) {
+    for label in ["Name", "File name", "Open", "Cancel"] {
+        world.expect_text(label);
+    }
+}
+
+#[test]
+fn component_browser_keeps_selected_file_name() {
+    let mut world = ApplicationWorld::new();
+    layout_being_created(&mut world);
+    different_part_file(&mut world);
+    browse_component(&mut world);
+    select_different_file(&mut world);
+    component_shows_file(&mut world);
+    world.close();
 }
