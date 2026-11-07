@@ -31,8 +31,10 @@ The [source map](source-map.md) records the starting revisions. The
 | `Oblikovati.AddIns.*` | Separate add-ins | Keep the C ABI. Test existing Go add-ins against the Rust host. |
 | `Oblikovati` | Go reference application | Read source and run comparison tests at the recorded revision. |
 
-All exchange format implementations belong to `RustyCADKernel`. DWG uses
-[acadrust](https://github.com/hakanaktt/acadrust) inside the kernel. The
+All exchange format implementations belong to Martensite. DWG and DXF use
+[acadrust](https://github.com/hakanaktt/acadrust) inside the kernel, as confirmed
+by the user on 2026-11-07. Provider implementation and dependency qualification
+remain kernel-owner prerequisites; this decision does not establish host support. The
 application port covers exchange commands, dialogs, API routing, storage, and
 kernel result integration. It does not port format parsers, writers, or
 translators. See [ADR-0018](../decisions/ADR-0018-exchange-format-ownership.md).
