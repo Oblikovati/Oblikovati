@@ -20,11 +20,18 @@ fn version_four_round_trip_preserves_sources_without_saving_verification() {
 fn old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore() {
     let snapshot = snapshot();
     let recipe = snapshot.sketches.recipe();
-    for version in [0, 1, 2, 3, 7] {
+    for version in [0, 1, 2, 3, 8] {
         let mut invalid = recipe.clone();
         invalid.version = version;
         assert!(DocumentSketches::from_recipe(&invalid).is_err());
     }
+    let mut latest = recipe.clone();
+    latest.version = 7;
+    assert!(
+        DocumentSketches::from_recipe(&latest)
+            .unwrap()
+            .same_recipe(&snapshot.sketches)
+    );
     let mut invalid = recipe;
     invalid.sketches[0].point_projections[0].anchor = SketchEntityId(99);
     assert!(DocumentSketches::from_recipe(&invalid).is_err());
