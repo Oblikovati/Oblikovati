@@ -2,6 +2,7 @@
 use super::{ApplicationWorld, diagnostics::window_geometry};
 use cucumber::{given, then, when};
 mod compact_options;
+mod tabs_only;
 const VIEW_GROUPS: [&str; 4] = ["Visibility", "Appearance", "Windows", "Navigate"];
 const WINDOWS_COMMAND: &str = "User Interface";
 fn band_height() -> f32 {
@@ -187,6 +188,7 @@ fn model_commands(world: &mut ApplicationWorld) {
 #[then("the temporary command groups close")]
 fn groups_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Start 2D Sketch");
+    assert!(window_geometry("##ribbon-temporary-panel").is_none());
 }
 #[then("the 3D Model tab remains selected")]
 fn model_selected(world: &mut ApplicationWorld) {
