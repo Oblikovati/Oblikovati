@@ -1,20 +1,23 @@
 # Martensite integration and readiness
 
-The original geometry baseline uses `RustyCADKernel`. The native renderer now
-consumes the released `Oblikovati/Martensite` toolkits. The
-[v0.13 adoption record](implementation-martensite-0-13.md) states the candidate pin
-and its qualification limits. The production geometry adapter remains on its
-qualified baseline until the replacement passes its mass-property and analytic
-region contracts. The [source baseline](source-map.md) records the original
-inspection; it is not proof that every later toolkit is ready for the host.
+The current branch targets the released `Oblikovati/Martensite` v0.13 toolkits
+for geometry and rendering, with no RustyCAD dependency in the current graph.
+The [v0.13 adoption record](implementation-martensite-0-13.md) states the exact
+candidate pin and its qualification limits. The full migration remains
+unqualified while the strict extrema and surface-property regressions fail.
+The [source baseline](source-map.md) records the original inspection; it is not
+proof that every later toolkit is ready for the host.
 
 The accepted application contracts are
 [ADR-0007: Martensite integration](../decisions/ADR-0007-martensite-integration.md)
 and [ADR-0008: Vulkan renderer](../decisions/ADR-0008-vulkan-renderer.md).
 Their acceptance does not close any capability check below. Required new
-kernel-internal decisions still belong to RustyCADKernel.
+kernel-internal decisions still belong to Martensite.
 
-## Observed integration limits
+## Historical baseline observations
+
+These observations describe the original RustyCAD inspection. Use the current
+adoption record for the released Martensite candidate's capabilities and limits.
 
 - The package `rustycad-kernel` currently re-exports only `rustycad_tkernel`
   as `foundation`. A dependency on that facade alone will not provide modeling.

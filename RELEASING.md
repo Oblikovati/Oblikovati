@@ -107,7 +107,7 @@ their released Rust crates.
 Update `release.toml`, the Cargo dependency declarations, and `Cargo.lock` in a
 reviewed dependency change. Each owner pin records its version and full release
 commit. Cargo Git dependencies must resolve to that exact release commit. The
-preflight check requires a published, stable `vVERSION` GitHub release with a
+preflight check requires a published, stable `vVERSION` GitHub release and
 published API crate artifacts. Martensite qualification uses its schema-2
 package catalog and complete source workspace; independently versioned toolkit
 crates need not all be reattached to each product release. Annotated tags are

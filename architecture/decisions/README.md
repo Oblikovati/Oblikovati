@@ -130,6 +130,11 @@ Each record states its decision date. No application runtime acceptance is claim
 | [ADR-0032](ADR-0032-converged-dimension-authoring.md) | Converged dimension authoring with available targets | R3/R4; #3824 |
 | [ADR-0033](ADR-0033-independent-dimension-authoring.md) | Independent driving dimension authoring | R3/R4; #3824 |
 | [ADR-0034](ADR-0034-identity-collinear-equations.md) | Identity supplies collinear incidence | R3/R4; #3837 |
+| [ADR-0035](ADR-0035-conic-sketch-measurements.md) | Conic sketch measurements | R2/R3/R4/R8 |
+| [ADR-0036](ADR-0036-martensite-model-backend.md) | One released Martensite model backend | R2/R3/R4/R8 |
+| [ADR-0037](ADR-0037-owned-drawing-recipes.md) | Own drawing content in document history | R2/R3/R4/R8 |
+| [ADR-0038](ADR-0038-owned-part-model-state-members.md) | Own part model-state member recipes | R2/R3/R4/R8 |
+| [ADR-0039](ADR-0039-placed-dimension-value-editing.md) | One value editor for placed sketch dimensions | R2/R3/R4/R8 |
 | [ADR-0040](ADR-0040-first-class-cad-document-formats.md) | First-class SolidWorks and Inventor documents through Bessemer and Corliss | R2/R6/R8; K10 |
 
 Use the [domain glossary](../../CONTEXT.md) for shared model terms. The
