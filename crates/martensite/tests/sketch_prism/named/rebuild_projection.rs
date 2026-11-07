@@ -277,3 +277,89 @@ fn standard_base_view_centers_and_scales_current_cube_on_sheet() {
             .is_err()
     );
 }
+
+#[test]
+fn standard_view_projects_all_current_part_bodies_together() {
+    use oblikovati_api::types::BASE_VIEW_FRONT;
+    use oblikovati_martensite::{CertifiedNamedPrismEvaluator, drawing_base_view_bodies};
+    use oblikovati_model::{drawing::DrawingBaseViewDefinition, feature::AuthoredFeature};
+    let mut snapshot = cube_document();
+    let definition = SketchPrismDefinition::new(
+        SKETCH,
+        selected_sketch_boundary(),
+        [0., 0., -1.].map(DatumLength::Constant),
+    )
+    .unwrap();
+    let second =
+        AuthoredFeature::sketch_prism(FeatureId(2), "Second body", definition, &snapshot).unwrap();
+    snapshot.work_geometry.append(second).unwrap();
+    let mut history = owner(snapshot);
+    let mut evaluator =
+        CertifiedNamedPrismEvaluator::new(&history, document(), certified_resolution());
+    let result = history
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let bodies: Vec<_> = result.ordered_bodies().collect();
+    assert_eq!(bodies.len(), 2);
+    let definition =
+        DrawingBaseViewDefinition::new("Front", BASE_VIEW_FRONT, 1., [100., 80.]).unwrap();
+    let view = drawing_base_view_bodies(&history, document(), &bodies, &definition).unwrap();
+    let mut bounds = [
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    ];
+    for (index, curve) in view.curves.visible.iter().enumerate() {
+        for parameter in curve.parameter_range(&history, document()).unwrap() {
+            let [x, y] = view
+                .sheet_point(true, index, &history, document(), parameter)
+                .unwrap();
+            bounds = [
+                bounds[0].min(x),
+                bounds[1].min(y),
+                bounds[2].max(x),
+                bounds[3].max(y),
+            ];
+        }
+    }
+    for (actual, expected) in bounds.into_iter().zip([95., 70., 105., 90.]) {
+        assert!((actual - expected).abs() < 1e-8, "sheet bounds {bounds:?}");
+    }
+    let top =
+        DrawingBaseViewDefinition::new("Top", oblikovati_api::types::BASE_VIEW_TOP, 1., [0., 0.])
+            .unwrap();
+    let top_view = drawing_base_view_bodies(&history, document(), &bodies, &top).unwrap();
+    let near = drawing_base_view_bodies(&history, document(), &[bodies[0]], &top).unwrap();
+    let far = drawing_base_view_bodies(&history, document(), &[bodies[1]], &top).unwrap();
+    assert!(
+        top_view.curves.hidden.len() > near.curves.hidden.len() + far.curves.hidden.len(),
+        "the far body must gain hidden edges when the near body is present"
+    );
+    assert!(drawing_base_view_bodies(&history, document(), &[], &definition).is_err());
+    assert!(
+        drawing_base_view_bodies(&history, document(), &[bodies[0], bodies[0]], &definition)
+            .is_err()
+    );
+    assert!(
+        drawing_base_view_bodies(&owner(cube_document()), document(), &bodies, &definition)
+            .is_err()
+    );
+    let parameter = view.curves.visible[0]
+        .parameter_range(&history, document())
+        .unwrap()[0];
+    drop(result);
+    drop(evaluator);
+    let token = history.begin("Size").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot.parameters.set_expression(1, "20 mm")
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert!(
+        view.sheet_point(true, 0, &history, document(), parameter)
+            .is_err()
+    );
+}

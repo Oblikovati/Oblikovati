@@ -99,9 +99,10 @@ pub use prism::{
     PrismHistorySource, PrismMeshOptions, PrismPresentation, PrismPresentationSource,
     PrismProbeDefinition, PrismProbeLoop, PrismProbeReport, PrismProbeSnapshot, PrismResolution,
     PrismResolutionPolicy, PrismSubentityHistory, PrismSubentityProvenance, PrismSubentityRole,
-    PrismSurfaceKind, PrismTopologySummary, named_part_properties, probe_planar_prism,
-    retain_certified_named_sketch_prism, retain_certified_profile_prism, retain_named_sketch_prism,
-    retain_planar_prism, retain_prism_on_plane,
+    PrismSurfaceKind, PrismTopologySummary, drawing_base_view_bodies, drawing_projection_bodies,
+    named_part_properties, probe_planar_prism, retain_certified_named_sketch_prism,
+    retain_certified_profile_prism, retain_named_sketch_prism, retain_planar_prism,
+    retain_prism_on_plane,
 };
 mod region_identity;
 mod sketch_prism;

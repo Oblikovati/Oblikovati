@@ -104,34 +104,54 @@ impl NamedPrismSnapshot {
         frame: DrawingProjectionFrame,
     ) -> Result<DrawingProjection, String> {
         self.body_report(history, document, body_key)?;
-        let axis = projection_axis(frame)?;
+        drawing_projection_bodies(history, document, &[self], frame)
+    }
+}
+/// Project a part's current bodies together so that they can hide each other.
+/// Example: `drawing_projection_bodies(history, guid, &bodies, frame)?`.
+pub fn drawing_projection_bodies(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: &[&NamedPrismSnapshot],
+    frame: DrawingProjectionFrame,
+) -> Result<DrawingProjection, String> {
+    if bodies.is_empty() {
+        return Err("drawing bodies 0: expected at least one current body".into());
+    }
+    let axis = projection_axis(frame)?;
+    let algo = Handle::new(Algo::new().map_err(|cause| cause.to_string())?);
+    let engine = algo
+        .get()
+        .ok_or("drawing projection: expected a live HLR engine")?;
+    let mut keys = std::collections::BTreeSet::new();
+    for body in bodies {
+        let key = body.body_reference_key(history, document)?;
+        if !keys.insert(key.to_vec()) {
+            return Err(format!("drawing body key {key:?}: expected unique bodies"));
+        }
         let mut copier =
-            crate::checked_shape::copy_shape(&self.snapshot.shape, "drawing projection copy")
+            crate::checked_shape::copy_shape(&body.snapshot.shape, "drawing projection copy")
                 .map_err(|cause| cause.to_string())?;
         let shape = copier.shape().map_err(|cause| cause.to_string())?;
-        let algo = Handle::new(Algo::new().map_err(|cause| cause.to_string())?);
-        let engine = algo
-            .get()
-            .ok_or("drawing projection: expected a live HLR engine")?;
         engine.add(shape, 0);
-        let projector = Projector::with_frame(axis).map_err(|cause| cause.to_string())?;
-        engine.set_projector(&projector);
-        engine
-            .update()
-            .map_err(|cause| format!("drawing projection update: {cause}"))?;
-        engine
-            .hide()
-            .map_err(|cause| format!("drawing projection hide: {cause}"))?;
-        let output = HLRToShape::new(&algo);
-        let visible = classified_curves(&output, &projector, true, history, document)?;
-        if visible.is_empty() {
-            return Err(
-                "drawing projection: expected at least one visible curve for a valid solid".into(),
-            );
-        }
-        let hidden = classified_curves(&output, &projector, false, history, document)?;
-        Ok(DrawingProjection { visible, hidden })
     }
+    let projector = Projector::with_frame(axis).map_err(|cause| cause.to_string())?;
+    engine.set_projector(&projector);
+    engine
+        .update()
+        .map_err(|cause| format!("drawing projection update: {cause}"))?;
+    engine
+        .hide()
+        .map_err(|cause| format!("drawing projection hide: {cause}"))?;
+    let output = HLRToShape::new(&algo);
+    let visible = classified_curves(&output, &projector, true, history, document)?;
+    if visible.is_empty() {
+        return Err(
+            "drawing projection: expected at least one visible curve for a valid solid".into(),
+        );
+    }
+    let hidden = classified_curves(&output, &projector, false, history, document)?;
+    Ok(DrawingProjection { visible, hidden })
 }
 fn projection_axis(frame: DrawingProjectionFrame) -> Result<Axis2, String> {
     if frame

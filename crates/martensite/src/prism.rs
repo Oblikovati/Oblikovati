@@ -13,7 +13,8 @@ pub use named::{
     CertifiedNamedPrismEvaluator, CertifiedPrismEvidence, DrawingBaseProjection,
     DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
     NamedPrismEvaluator, NamedPrismSnapshot, PrismFaceTopology, PrismSurfaceKind,
-    named_part_properties, retain_certified_named_sketch_prism, retain_named_sketch_prism,
+    drawing_base_view_bodies, drawing_projection_bodies, named_part_properties,
+    retain_certified_named_sketch_prism, retain_named_sketch_prism,
 };
 mod mesh;
 pub(crate) mod placement;

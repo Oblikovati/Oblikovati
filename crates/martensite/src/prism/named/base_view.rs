@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Standard drawing views retain exact curves and map them to sheet coordinates.
 use super::{DrawingProjection, DrawingProjectionFrame, NamedPrismSnapshot};
+use martensite_tkmath::bnd::BoundingBox3;
+use martensite_tktopalgo::brep_bnd_lib::BRepBndLib;
 use oblikovati_api::types::*;
 use oblikovati_model::{
     drawing::DrawingBaseViewDefinition, history::DocumentEditHistory, identity::DocumentGuid,
@@ -56,26 +58,54 @@ impl NamedPrismSnapshot {
         view: &DrawingBaseViewDefinition,
     ) -> Result<DrawingBaseProjection, String> {
         self.body_report(history, document, key)?;
-        let center = [view.center_x_mm, view.center_y_mm];
-        if !view.scale.is_finite()
-            || view.scale <= 0.
-            || center.iter().any(|value| !value.is_finite())
-        {
-            return Err(format!(
-                "drawing view scale {}, center {center:?}: expected positive finite scale and finite center",
-                view.scale
-            ));
-        }
-        let origin = super::super::provenance::representative(&self.snapshot.shape, "drawing view")
-            .map_err(|cause| cause.to_string())?;
-        let frame = standard_frame(view.orientation, origin)?;
-        let curves = self.drawing_projection(history, document, key, frame)?;
-        Ok(DrawingBaseProjection {
-            curves,
-            center,
-            scale: view.scale,
-        })
+        drawing_base_view_bodies(history, document, &[self], view)
     }
+}
+/// Project all current bodies in one standard view; example: `drawing_base_view_bodies(history, guid, &bodies, &view)?`.
+pub fn drawing_base_view_bodies(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: &[&NamedPrismSnapshot],
+    view: &DrawingBaseViewDefinition,
+) -> Result<DrawingBaseProjection, String> {
+    let center = [view.center_x_mm, view.center_y_mm];
+    if !view.scale.is_finite() || view.scale <= 0. || center.iter().any(|value| !value.is_finite())
+    {
+        return Err(format!(
+            "drawing view scale {}, center {center:?}: expected positive finite scale and finite center",
+            view.scale
+        ));
+    }
+    let origin = body_bounds_center(history, document, bodies)?;
+    let frame = standard_frame(view.orientation, origin)?;
+    let curves = super::projection::drawing_projection_bodies(history, document, bodies, frame)?;
+    Ok(DrawingBaseProjection {
+        curves,
+        center,
+        scale: view.scale,
+    })
+}
+fn body_bounds_center(
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    bodies: &[&NamedPrismSnapshot],
+) -> Result<[f64; 3], String> {
+    let mut bounds = BoundingBox3::default();
+    for body in bodies {
+        body.body_reference_key(history, document)?;
+        BRepBndLib::add_optimal(&body.snapshot.shape, &mut bounds, false, false)
+            .map_err(|cause| format!("drawing body bounds: {cause}"))?;
+    }
+    let point = bounds
+        .center()
+        .ok_or("drawing bodies: expected non-empty finite bounds")?;
+    let origin = [point.x(), point.y(), point.z()];
+    if origin.iter().any(|value| !value.is_finite()) {
+        return Err(format!(
+            "drawing body center {origin:?}: expected finite coordinates"
+        ));
+    }
+    Ok(origin)
 }
 fn standard_frame(
     orientation: BaseViewOrientation,

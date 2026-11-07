@@ -219,7 +219,8 @@ pub fn named_part_properties<'a>(
 mod base_view;
 #[path = "named/projection.rs"]
 mod projection;
-pub use base_view::DrawingBaseProjection;
+pub use base_view::{DrawingBaseProjection, drawing_base_view_bodies};
 pub use projection::{
     DrawingProjectedCurve, DrawingProjection, DrawingProjectionCurveKind, DrawingProjectionFrame,
+    drawing_projection_bodies,
 };
