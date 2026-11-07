@@ -114,6 +114,7 @@ impl SketchPrismEvaluator for CertifiedNamedPrismEvaluator<'_> {
             .map_err(|error| error.for_feature(feature))?;
         named.certification = Some(CertifiedPrismEvidence {
             achieved_tolerance: result.achieved_tolerance,
+            subentities: result.subentities,
             vertex_sources: result.vertex_sources,
         });
         Ok(named)

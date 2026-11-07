@@ -17,6 +17,7 @@ pub struct NamedPrismSnapshot {
 #[derive(Clone, Debug, PartialEq)]
 pub struct CertifiedPrismEvidence {
     pub achieved_tolerance: PrismAchievedTolerance,
+    pub subentities: PrismSubentityHistory,
     pub vertex_sources: std::collections::BTreeMap<u64, Vec<u64>>,
 }
 /// Evaluate an authored prism and certify its body/face names against construction history.

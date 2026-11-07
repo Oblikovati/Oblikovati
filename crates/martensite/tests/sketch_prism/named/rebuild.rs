@@ -175,6 +175,22 @@ fn assert_cube(history: &DocumentEditHistory, size_cm: f64, keys: &[Vec<u8>]) {
         );
     }
 }
+fn subentity_signatures(
+    history: &DocumentEditHistory,
+) -> Vec<(
+    oblikovati_martensite::PrismSubentityRole,
+    oblikovati_martensite::PrismHistorySource,
+)> {
+    let body = certified(history);
+    let history = &body.certification().unwrap().subentities;
+    assert_eq!((history.edges.len(), history.vertices.len()), (12, 8));
+    history
+        .edges
+        .iter()
+        .chain(&history.vertices)
+        .map(|record| (record.role, record.source))
+        .collect()
+}
 #[test]
 fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
     let mut history = owner(cube_document());
@@ -182,6 +198,7 @@ fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
         .reference_keys(&history, document())
         .unwrap();
     assert_cube(&history, 1., &keys);
+    let subentities = subentity_signatures(&history);
     let token = history.begin("Size").unwrap();
     history
         .edit(&token, |snapshot, _| {
@@ -192,11 +209,16 @@ fn one_size_parameter_drives_certified_cube_replay_and_saved_names() {
         .unwrap();
     history.commit(&token, false).unwrap();
     assert_cube(&history, 2., &keys);
+    assert_eq!(subentity_signatures(&history), subentities);
     history.undo().unwrap();
     assert_cube(&history, 1., &keys);
+    assert_eq!(subentity_signatures(&history), subentities);
     history.redo().unwrap();
     assert_cube(&history, 2., &keys);
-    assert_cube(&restored_owner(history.snapshot()), 2., &keys);
+    assert_eq!(subentity_signatures(&history), subentities);
+    let reopened = restored_owner(history.snapshot());
+    assert_cube(&reopened, 2., &keys);
+    assert_eq!(subentity_signatures(&reopened), subentities);
 }
 
 #[test]

@@ -16,6 +16,11 @@ pub use named::{
 mod mesh;
 pub(crate) mod placement;
 mod profile;
+mod provenance;
+pub use provenance::{
+    PrismHistoryRelation, PrismHistorySource, PrismSubentityHistory, PrismSubentityProvenance,
+    PrismSubentityRole,
+};
 mod report;
 mod resolution;
 pub use resolution::{PrismResolution, PrismResolutionPolicy};

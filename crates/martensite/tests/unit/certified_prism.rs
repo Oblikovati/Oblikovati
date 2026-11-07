@@ -185,3 +185,63 @@ fn certified_prism_keeps_source_faces_for_an_oblique_negative_sweep() {
         assert!((actual - expected).abs() < 1e-8);
     }
 }
+
+#[test]
+fn certified_cube_retains_every_edge_and_vertex_parent_with_analytic_positions() {
+    use PrismHistorySource::{Curve, Vertex};
+    use PrismSubentityRole::{EndEdge, EndVertex, LateralEdge, StartEdge, StartVertex};
+    let build = |size| {
+        let (profile, selection) = square(size);
+        retain_certified_profile_prism(
+            &profile,
+            &selection,
+            [0., 0., size],
+            resolution(ToleranceCap::Refuse(1e-5)),
+        )
+        .unwrap()
+        .subentities
+    };
+    let first = build(10.);
+    let second = build(20.);
+    assert_eq!((first.edges.len(), first.vertices.len()), (12, 8));
+    for role in [StartEdge, EndEdge] {
+        for id in 11..15 {
+            assert!(
+                first
+                    .edges
+                    .iter()
+                    .any(|entry| entry.role == role && entry.source == Curve(id))
+            );
+        }
+    }
+    for id in 1..5 {
+        assert!(
+            first
+                .edges
+                .iter()
+                .any(|entry| entry.role == LateralEdge && entry.source == Vertex(id))
+        );
+        for role in [StartVertex, EndVertex] {
+            assert!(
+                first
+                    .vertices
+                    .iter()
+                    .any(|entry| entry.role == role && entry.source == Vertex(id))
+            );
+        }
+    }
+    for (before, after) in first
+        .edges
+        .iter()
+        .chain(&first.vertices)
+        .zip(second.edges.iter().chain(&second.vertices))
+    {
+        assert_eq!(
+            (before.role, before.source, before.relation),
+            (after.role, after.source, after.relation)
+        );
+        for (original, doubled) in before.point.into_iter().zip(after.point) {
+            assert!((doubled - original * 2.).abs() < 1e-8);
+        }
+    }
+}

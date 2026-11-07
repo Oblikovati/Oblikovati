@@ -11,6 +11,8 @@ use oblikovati_model::feature::sketch_prism::SketchPrismSelection;
 pub struct CertifiedPrismSnapshot {
     pub body: PrismProbeSnapshot,
     pub achieved_tolerance: PrismAchievedTolerance,
+    /// Complete lower-dimensional kernel lineage, without native handles.
+    pub subentities: PrismSubentityHistory,
     /// Authored point identities represented by each input profile vertex identity.
     pub vertex_sources: std::collections::BTreeMap<u64, Vec<u64>>,
 }
@@ -82,6 +84,7 @@ fn retain_result(result: &OperationResult) -> Result<CertifiedPrismSnapshot, Eva
             edge: achieved.edge,
             face: achieved.face,
         },
+        subentities: super::provenance::capture(result)?,
         vertex_sources: Default::default(),
     })
 }
