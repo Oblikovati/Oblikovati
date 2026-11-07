@@ -232,4 +232,22 @@ fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
     assert!(drawing.evaluate_parts_lists(0, &source).is_err());
     assert!(list.evaluate_parts_list("missing.oba", &source).is_err());
     assert!(list.evaluate_parts_list("", &source).is_err());
+    let invalid = DrawingAnnotationDefinition::PartsList {
+        name: "bad".into(),
+        x_mm: f64::NAN,
+        y_mm: 0.,
+        characteristic: None,
+        material_removal: None,
+    };
+    let before = source.calls.get();
+    assert!(
+        invalid
+            .evaluate_parts_list("assembly.oba", &source)
+            .is_err()
+    );
+    assert_eq!(
+        source.calls.get(),
+        before,
+        "invalid input must not query the source"
+    );
 }
